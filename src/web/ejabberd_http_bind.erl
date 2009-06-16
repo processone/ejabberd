@@ -26,7 +26,7 @@
 	 close/1,
 	 process_request/1]).
 
-%%-define(ejabberd_debug, true).
+-define(ejabberd_debug, true).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -54,7 +54,7 @@
 	       }).
 
 
-%-define(DBGFSM, true).
+%%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
@@ -64,10 +64,10 @@
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, "2"). % don't poll faster than that or we will shoot you
--define(MAX_WAIT, 60).     % max num of secs to keep a request on hold
+-define(MAX_WAIT, 3600).     % max num of secs to keep a request on hold
 -define(MAX_INACTIVITY, 30000). % msecs to wait before terminating idle sessions
 -define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
--define(BAD_REQUEST, ?CT).
+-define(HEADER, [?CT,{"X-Sponsored-By", "http://mabber.com"}]).
 
 
 %%%----------------------------------------------------------------------
@@ -88,7 +88,7 @@ send({http_bind, FsmRef}, Packet) ->
 setopts({http_bind, FsmRef}, Opts) ->
     case lists:member({active, once}, Opts) of
 	true ->
-	    gen_fsm:sync_send_all_state_event(FsmRef, activate);
+	    gen_fsm:send_all_state_event(FsmRef, {activate, self()});
 	_ ->
 	    ok
     end.
@@ -100,14 +100,13 @@ close({http_bind, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
 
-process_request(#request{path = [],
-			 data = Data}) ->
+process_request(Data) ->
     case catch parse_request(Data) of
 	{ok, ID1, RID, Key, NewKey, Attrs, Packet} ->
 	    XmppDomain = xml:get_attr_s("to",Attrs),
 	    if 
 		(ID1 == "") and (XmppDomain == "") ->
-		    {200, [?CT], "<body type='terminate' "
+		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
 		     "xmlns='http://jabber.org/protocol/httpbind'/>"};
 		true ->
@@ -116,6 +115,7 @@ process_request(#request{path = [],
 			 %% create new session
 			 NewID = sha:sha(term_to_binary({now(), make_ref()})),
 			 {ok, Pid} = start(NewID, Key),
+                         ?DEBUG("got pid: ~p", [Pid]),
 			 Wait = case
 				    string:to_integer(xml:get_attr_s("wait",Attrs))
 				    of
@@ -184,24 +184,24 @@ process_request(#request{path = [],
 	    case http_put(ID, RID, Key, NewKey, Hold, InPacket, StreamStart) of
 		{error, not_exists} ->
 		    ?DEBUG("no session associated with sid: ~p", [ID]),
-		    {404, [?BAD_REQUEST], ""};
+		    {404, ?HEADER, ""};
 		{error, bad_key} ->
 		    ?DEBUG("bad key: ~s", [Key]),
 		    case mnesia:dirty_read({http_bind, ID}) of
 			[] ->
-			    {404, [?BAD_REQUEST], ""};
+			    {404, ?HEADER, ""};
 			[#http_bind{pid = FsmRef}] ->
 			    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-			    {404, [?BAD_REQUEST], ""}		    
+			    {404, ?HEADER, ""}		    
 		    end;
 		{error, polling_too_frequently} ->
 		    ?DEBUG("polling too frequently: ~p", [ID]),
 		    case mnesia:dirty_read({http_bind, ID}) of
 			[] -> %% unlikely! (?)
-			    {404, [?BAD_REQUEST], ""};
+			    {404, ?HEADER, ""};
 			[#http_bind{pid = FsmRef}] ->
 			    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-			    {403, [?BAD_REQUEST], ""}		    
+			    {403, ?HEADER, ""}		    
 		    end;
 		{repeat, OutPacket} ->
 		    ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
@@ -212,11 +212,8 @@ process_request(#request{path = [],
 	    end
 	    end;
 	_ ->
-	    {400, [?BAD_REQUEST], ""}
-    end;
-process_request(_Request) ->
-    {400, [], {xmlelement, "h1", [],
-	       [{xmlcdata, "400 Bad Request"}]}}.
+	    {400, ?HEADER, ""}
+    end.
 
 receive_loop(ID,ID1,RID,Wait,Hold,Attrs) ->
     receive
@@ -228,14 +225,14 @@ prepare_response(ID,ID1,RID,Wait,Hold,Attrs) ->
     case http_get(ID,RID) of
 	{error, not_exists} ->
             ?DEBUG("no session associated with sid: ~s", ID),
-	    {404, [?BAD_REQUEST], ""};
+	    {404, ?HEADER, ""};
 	{ok, keep_on_hold} ->
 	    receive_loop(ID,ID1,RID,Wait,Hold,Attrs);
 	{ok, cancel} ->
 	    %% actually it would be better if we could completely
 	    %% cancel this request, but then we would have to hack
 	    %% ejabberd_http and I'm too lazy now
-	    {404, [?BAD_REQUEST], ""}; 
+	    {404, ?HEADER, ""}; 
 	{ok, OutPacket} ->
             ?DEBUG("OutPacket: ~s", [OutPacket]),
 	    if
@@ -264,15 +261,15 @@ prepare_response(ID,ID1,RID,Wait,Hold,Attrs) ->
                              end,
 		    if
 			To == "" ->
-			    {200, [?CT], "<body type='terminate' "
+			    {200, ?HEADER, "<body type='terminate' "
 			     "condition='improper-addressing' "
 			     "xmlns='http://jabber.org/protocol/httpbind'/>"};
 			StreamError == true ->
-			    {200, [?CT], "<body type='terminate' "
+			    {200, ?HEADER, "<body type='terminate' "
 			     "condition='host-unknown' "
 			     "xmlns='http://jabber.org/protocol/httpbind'/>"};
 			true ->
-			    {200, [?CT],
+			    {200, ?HEADER,
 			     xml:element_to_string(
 			       {xmlelement,"body",
 				[{"xmlns",
@@ -292,13 +289,13 @@ prepare_response(ID,ID1,RID,Wait,Hold,Attrs) ->
 send_outpacket(ID, OutPacket) ->
     case OutPacket of
 	"" ->
-	    {200, [?CT], "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+	    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
 	"</stream:stream>" ->
 	    case mnesia:dirty_read({http_bind, ID}) of
 		[#http_bind{pid = FsmRef}] ->
 		    gen_fsm:sync_send_all_state_event(FsmRef,stop)
 	    end,
-	    {200, [?CT], "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+	    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
 	_ ->
 	    case xml_stream:parse_element("<body>" 
 					  ++ OutPacket
@@ -316,7 +313,7 @@ send_outpacket(ID, OutPacket) ->
 				 "http://jabber.org/protocol/httpbind"}],
 			       TypedEls})]
 			  ),
-		    {200, [?CT],
+		    {200, ?HEADER,
 		     xml:element_to_string(
 		       {xmlelement,"body",
 			[{"xmlns",
@@ -367,12 +364,12 @@ send_outpacket(ID, OutPacket) ->
                             end,
                             case StreamErrCond of
                                 null ->
-                                    {200, [?CT],
+                                    {200, ?HEADER,
                                      "<body type='terminate' "
                                      "condition='internal-server-error' "
                                      "xmlns='http://jabber.org/protocol/httpbind'/>"};
                                 _ ->
-                                    {200, [?CT],
+                                    {200, ?HEADER,
                                      "<body type='terminate' "
                                      "condition='remote-stream-error' "
                                      "xmlns='http://jabber.org/protocol/httpbind'>" ++
@@ -380,7 +377,7 @@ send_outpacket(ID, OutPacket) ->
                                      "</body>"}
                             end;
                         true ->
-                            {200, [?CT],
+                            {200, ?HEADER,
                              xml:element_to_string(
                                {xmlelement,"body",
                                 [{"xmlns",
@@ -404,8 +401,9 @@ send_outpacket(ID, OutPacket) ->
 init([ID, Key]) ->
     ?INFO_MSG("started: ~p", [{ID, Key}]),
     Opts = [], % TODO
-    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_bind, self()}}, Opts),
-    ejabberd_c2s:become_controller(C2SPid),
+    ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_bind, self()}, Opts),
+%    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_bind, self()}}, Opts),
+%    ejabberd_c2s:become_controller(C2SPid),
     Timer = erlang:start_timer(?MAX_INACTIVITY, self(), []),
     {ok, loop, #state{id = ID,
 		      key = Key,
@@ -438,6 +436,20 @@ init([ID, Key]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
 %%----------------------------------------------------------------------
+handle_event({activate, From}, StateName, StateData) ->
+    case StateData#state.input of
+	"" ->
+	    {next_state, StateName, StateData#state{
+				     waiting_input = {From, ok}}};
+	Input ->
+            Receiver = From,
+	    Receiver ! {tcp, {http_bind, self()}, list_to_binary(Input)},
+	    {next_state, StateName, StateData#state{
+				     input = "",
+				     waiting_input = false,
+				     last_receiver = Receiver}}
+    end;
+
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -454,19 +466,6 @@ handle_sync_event({send, Packet}, _From, StateName, StateData) ->
     Output = [StateData#state.output | Packet],
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
-
-handle_sync_event(activate, From, StateName, StateData) ->
-    case StateData#state.input of
-	"" ->
-	    {reply, ok, StateName, StateData#state{
-				     waiting_input = From}};
-	Input ->
-	    From ! {tcp, {http_bind, self()}, list_to_binary(Input)},
-	    {reply, ok, StateName, StateData#state{
-				     input = "",
-				     waiting_input = false,
-				     last_receiver = From}}
-    end;
 
 handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
@@ -751,6 +750,16 @@ parse_request(Data) ->
     case xml_stream:parse_element(Data) of
 	El when element(1, El) == xmlelement ->
 	    {xmlelement, Name, Attrs, Els} = El,
+            FixedEls = 
+                lists:filter(
+                  fun(I) -> 
+                          case I of 
+                              {xmlelement, _, _, _} ->
+                                  true;
+                              _ ->
+                                  false
+                          end
+                  end, Els),
 	    ID = xml:get_attr_s("sid",Attrs),
 	    {RID,_X} = string:to_integer(xml:get_attr_s("rid",Attrs)),
 	    Key = xml:get_attr_s("key",Attrs),
@@ -760,13 +769,12 @@ parse_request(Data) ->
                               EXmlns = xml:get_tag_attr_s("xmlns",E),
                               if 
                                   EXmlns == "jabber:client" ->
-                                      xml:remove_tag_attr("xmlns",E);
+                                      remove_tag_attr("xmlns",E);
                                   true ->
                                       ok
                               end
-                      end, Els),
-	    Packet = [xml:element_to_string(E) || E <- Els],
-            ?DEBUG("ns fixed packet(s): ~s", [Packet]),
+                      end, FixedEls),
+	    Packet = [xml:element_to_string(E) || E <- FixedEls],
 	    if 
 		Name /= "body" -> 
 		    {error, bad_request};
@@ -802,3 +810,13 @@ elements_to_string([]) ->
     [];
 elements_to_string([El | Els]) ->
     xml:element_to_string(El) ++ elements_to_string(Els).
+
+
+remove_tag_attr(Attr, El) ->
+    case El of
+        {xmlelement, Name, Attrs, Els} ->
+            Attrs1 = lists:keydelete(Attr, 1, Attrs),
+            {xmlelement, Name, Attrs1, Els};
+        _ ->
+            El
+    end.

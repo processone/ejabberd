@@ -17,8 +17,7 @@
 
 -define(MOD_HTTP_BIND_VERSION, "1.0").
 -vsn(?MOD_HTTP_BIND_VERSION).
-
-%%-define(ejabberd_debug, true).
+-define(ejabberd_debug, true).
 
 -behaviour(gen_mod).
 
@@ -44,7 +43,7 @@ process([], #request{method = 'POST',
 	       [{xmlcdata, "400 Bad Request"}]}};
 process([], #request{method = 'POST',
                      data = Data}) ->
-    ?DEBUG("Incoming data: ~s", [Data]),
+    ?DEBUG("Data: '~p'", [Data]),
     ejabberd_http_bind:process_request(Data);
 process([], #request{method = 'GET',
                      data = []}) ->
@@ -75,28 +74,9 @@ process(_Path, _Request) ->
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
+
 start(_Host, _Opts) ->
-    HTTPBindSupervisor =
-        {ejabberd_http_bind_sup,
-         {ejabberd_tmp_sup, start_link,
-          [ejabberd_http_bind_sup, ejabberd_http_bind]},
-         permanent,
-         infinity,
-         supervisor,
-         [ejabberd_tmp_sup]},
-    case supervisor:start_child(ejabberd_sup, HTTPBindSupervisor) of
-        {ok, _Pid} ->
-            ok;
-        {ok, _Pid, _Info} ->
-            ok;
-        {error, Error} ->
-            {'EXIT', {start_child_error, Error}}
-    end.
+	ok.
 
 stop(_Host) ->
-    case supervisor:terminate_child(ejabberd_sup, ejabberd_http_bind_sup) of
-        ok ->
-            ok;
-        {error, Error} ->
-            {'EXIT', {terminate_child_error, Error}}
-    end.
+	ok.
