@@ -4,12 +4,12 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 349 2007-08-30 13:39:57Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 389 2007-09-25 15:27:44Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 349 $').
+-vsn('$Rev: 389 $').
 
 -behaviour(gen_fsm).
 
@@ -213,7 +213,7 @@ process_request(Data) ->
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
 init([Sid, Key]) ->
-    ?INFO_MSG("started: ~p", [{Sid, Key}]),
+    ?DEBUG("started: ~p", [{Sid, Key}]),
     Opts = [], % TODO
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_bind, self()}, Opts),
 %    {ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_bind, self()}}, Opts),
@@ -793,14 +793,12 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
                                 case xml_stream:parse_element(
                                        "<stream:stream>"++OutPacket) of
                                     El when element(1, El) == xmlelement ->
-                                        {xmlelement, _Tag, _Attr, Els} = El,
-                                        [{xmlelement, SE, _, Cond} | _] = Els,
-                                        if 
-                                            SE == "stream:error" ->
-                                                Cond;
-                                            true ->
-                                                null
-                                        end;
+										case xml:get_subtag(El, "stream:error") of
+											false ->
+												null;
+											{xmlelement, _, _, Cond} ->
+												Cond
+										end;
                                     {error, _E} ->
                                         null
                                 end,
