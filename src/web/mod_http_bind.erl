@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 412 2007-11-15 10:10:09Z mremond $
+%%% Id      : $Id: mod_http_bind.erl 440 2007-12-06 22:36:21Z badlop $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
@@ -16,7 +16,6 @@
 -author('steve@zeank.in-berlin.de').
 
 -define(MOD_HTTP_BIND_VERSION, "1.2").
--vsn(?MOD_HTTP_BIND_VERSION).
 
 %%-define(ejabberd_debug, true).
 
