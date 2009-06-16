@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 944 2009-04-30 18:03:23Z gcant $
+%%% Id      : $Id: ejabberd_http_bind.erl 949 2009-05-04 01:16:36Z mremond $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -94,8 +94,15 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Sid, Key, IP) ->
-    supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key, IP]).
+%% TODO: If compile with no supervisor option, start the session without
+%%       supervisor
+start(XMPPDomain, Sid, Key, IP) ->
+    ?DEBUG("Starting session", []),
+    case catch supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key, IP]) of
+	{ok, Pid} -> {ok, Pid};
+	_ -> check_bind_module(XMPPDomain),
+             {error, "Cannot start HTTP bind session"}
+    end.
 
 start_link(Sid, Key, IP) ->
     gen_fsm:start_link(?MODULE, [Sid, Key, IP], ?FSMOPTS).
@@ -134,55 +141,14 @@ process_request(Data, IP) ->
                 XmppDomain ->
                     %% create new session
                     Sid = sha:sha(term_to_binary({now(), make_ref()})),
-                    {ok, Pid} = start(Sid, "", IP),
-                    ?DEBUG("got pid: ~p", [Pid]),
-                    Wait = case
-                               string:to_integer(xml:get_attr_s("wait",Attrs))
-                               of
-                               {error, _} ->
-                                   ?MAX_WAIT;
-                               {CWait, _} ->
-                                   if 
-                                       (CWait > ?MAX_WAIT) ->
-                                           ?MAX_WAIT;
-                                       true ->
-                                           CWait
-                                   end
-                           end,
-                    Hold = case
-                               string:to_integer(
-                                 xml:get_attr_s("hold",Attrs))
-                               of
-                               {error, _} ->
-                                   (?MAX_REQUESTS - 1);
-                               {CHold, _} ->
-                                   if 
-                                       (CHold > (?MAX_REQUESTS - 1)) ->
-                                           (?MAX_REQUESTS - 1);
-                                       true ->
-                                           CHold
-                                   end
-                           end,
-                    Version = 
-                        case catch list_to_float(
-                                     xml:get_attr_s("ver", Attrs)) of
-                            {'EXIT', _} -> 0.0;
-                            V -> V
-                        end,
-                    XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
-                    mnesia:transaction(
-                      fun() ->
-                              mnesia:write(
-                                #http_bind{id = Sid,
-                                           pid = Pid,
-                                           to = {XmppDomain, 
-                                                 XmppVersion},
-                                           hold = Hold,
-                                           wait = Wait,
-                                           version = Version
-                                          })
-                      end),
-                    handle_http_put(Sid, Rid, Attrs, Payload, true, IP)
+                    case start(XmppDomain, Sid, "", IP) of
+			{error, _} ->
+			    {200, ?HEADER, "<body type='terminate' "
+			     "condition='internal-server-error' "
+			     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>BOSH module not started</body"};
+			{ok, Pid} ->
+			    handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs, Payload, IP)
+		    end
             end;
         {ok, {Sid, Rid, Attrs, Payload1}} ->
             %% old session
@@ -204,6 +170,55 @@ process_request(Data, IP) ->
         _ ->
             {400, ?HEADER, ""}
     end.
+
+handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs, Payload, IP) ->
+    ?DEBUG("got pid: ~p", [Pid]),
+    Wait = case
+	       string:to_integer(xml:get_attr_s("wait",Attrs))
+	       of
+	       {error, _} ->
+		   ?MAX_WAIT;
+	       {CWait, _} ->
+		   if 
+		       (CWait > ?MAX_WAIT) ->
+			   ?MAX_WAIT;
+		       true ->
+			   CWait
+		   end
+	   end,
+    Hold = case
+	       string:to_integer(xml:get_attr_s("hold",Attrs))
+	       of
+	       {error, _} ->
+		   (?MAX_REQUESTS - 1);
+	       {CHold, _} ->
+		   if 
+		       (CHold > (?MAX_REQUESTS - 1)) ->
+			   (?MAX_REQUESTS - 1);
+		       true ->
+			   CHold
+		   end
+	   end,
+    Version = 
+	case catch list_to_float(
+		     xml:get_attr_s("ver", Attrs)) of
+	    {'EXIT', _} -> 0.0;
+	    V -> V
+	end,
+    XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
+    mnesia:transaction(
+      fun() ->
+	      mnesia:write(
+		#http_bind{id = Sid,
+			   pid = Pid,
+			   to = {XmppDomain, 
+				 XmppVersion},
+			   hold = Hold,
+			   wait = Wait,
+			   version = Version
+			  })
+      end),
+    handle_http_put(Sid, Rid, Attrs, Payload, true, IP).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -1107,4 +1122,11 @@ check_default_xmlns({xmlelement, Name, Attrs, Els} = El) ->
 	    {xmlelement, Name, [{"xmlns", ?NS_CLIENT} | Attrs], Els};
 	true ->
 	    El
+    end.
+
+check_bind_module(XmppDomain) ->
+    case gen_mod:is_loaded(XmppDomain, mod_http_bind) of
+	true -> ok;
+	false -> ?ERROR_MSG("You are trying to use HTTP Bind (BOSH), but the module mod_http_bind is not started.~n"
+			    "Check your 'modules' section in your ejabberd configuration file.",[])
     end.
