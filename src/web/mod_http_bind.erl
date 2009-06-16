@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 549 2008-04-02 09:12:44Z cromain $
+%%% Id      : $Id: mod_http_bind.erl 665 2008-06-26 08:41:48Z mremond $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
@@ -57,14 +57,7 @@ process([], #request{method = 'GET',
          [{xmlcdata, "An implementation of "},
           {xmlelement, "a", [{"href", "http://www.xmpp.org/extensions/xep-0206.html"}],
            [{xmlcdata, "XMPP over BOSH (XEP-0206)"}]}]},
-        {xmlelement, "p", [],
-         [{xmlcdata, integer_to_list(mnesia:table_info(http_bind, size)) ++ " sessions found."}]},
-        {xmlelement, "p", [],
-         [{xmlcdata, "Sponsored by "},
-          {xmlelement, "a", [{"href", "http://mabber.com"}],
-           [{xmlcdata, "mabber"}]},
-          {xmlcdata, "."}]}
-          ]}]};
+       ]}]};
 process(_Path, _Request) ->
     ?DEBUG("Bad Request: ~p", [_Request]),
     {400, [], {xmlelement, "h1", [],
