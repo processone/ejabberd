@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 449 2007-12-18 15:00:10Z alexey $
+%%% Id      : $Id: ejabberd_http_bind.erl 453 2007-12-20 14:35:04Z alexey $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -74,7 +74,7 @@
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
-                               % shoot you (time in  sec)
+                               % shoot you (time in microsec)
 -define(MAX_WAIT, 3600). % max num of secs to keep a request on hold
 -define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
                                 % idle sessions
@@ -110,7 +110,7 @@ controlling_process(_Socket, _Pid) ->
     ok.
 
 close({http_bind, FsmRef}) ->
-    catch gen_fsm:sync_send_all_state_event(FsmRef, close).
+    catch gen_fsm:sync_send_all_state_event(FsmRef, stop).
 
 sockname(_Socket) ->
     {ok, {{0, 0, 0, 0}, 0}}.
@@ -287,6 +287,20 @@ handle_sync_event({send, Packet}, _From, StateName, StateData) ->
     Output = [StateData#state.output | Packet],
     if
 	StateData#state.http_receiver /= undefined ->
+	    if
+		StateData#state.timer /= undefined ->
+		    cancel_timer(StateData#state.timer);
+		true ->
+		    ok
+	    end,
+	    Timer = if 
+			StateData#state.pause > 0 ->
+			    erlang:start_timer(
+			      StateData#state.pause*1000, self(), []);
+			true ->
+			    erlang:start_timer(
+			      ?MAX_INACTIVITY, self(), [])
+		    end,
 	    HTTPReply = case Output of
 			    [[]| OutPacket] ->
 				{ok, OutPacket};
@@ -304,7 +318,8 @@ handle_sync_event({send, Packet}, _From, StateName, StateData) ->
 	    {reply, Reply, StateName,
 	     StateData#state{output = [],
 			     http_receiver = undefined,
-			     wait_timer = undefined}};
+			     wait_timer = undefined,
+			     timer = Timer}};
 	true ->
 	    Reply = ok,
 	    {reply, Reply, StateName, StateData#state{output = Output}}
@@ -371,8 +386,8 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 			       end
 		       end
 	       end,
-    {_,TSec,TMSec} = now(),
-    TNow = TSec*1000*1000 + TMSec,
+    {TMegSec, TSec, TMSec} = now(),
+    TNow = (TMegSec * 1000000 + TSec) * 1000000 + TMSec,
     LastPoll = if 
 		   Payload == "" ->
 		       TNow;
@@ -425,15 +440,20 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 %%		    ?DEBUG("reqlist: ~p", [ReqList]),
                     
                     %% setup next timer
-                    cancel_timer(StateData#state.timer),
-                    if 
-                        Pause > 0 ->
-			    Timer = erlang:start_timer(
+		    if
+			StateData#state.timer /= undefined ->
+			    cancel_timer(StateData#state.timer);
+			true ->
+			    ok
+		    end,
+		    Timer = if
+				Pause > 0 ->
+				    erlang:start_timer(
 				      Pause*1000, self(), []);
-                        true ->
-			    Timer = erlang:start_timer(
+				true ->
+				    erlang:start_timer(
 				      ?MAX_INACTIVITY, self(), [])
-                    end,
+			    end,
 		    case StateData#state.waiting_input of
 			false ->
 			    Input = Payload ++ [StateData#state.input],
@@ -490,15 +510,6 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 
 handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
     %% setup timer
-    cancel_timer(StateData#state.timer),
-    Timer = if 
-		StateData#state.pause > 0 ->
-		    erlang:start_timer(
-                      StateData#state.pause*1000, self(), []);
-		true ->
-		    erlang:start_timer(
-                      ?MAX_INACTIVITY, self(), [])
-	    end,
     if
 	StateData#state.http_receiver /= undefined ->
 	    gen_fsm:reply(StateData#state.http_receiver, {ok, empty});
@@ -511,8 +522,8 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 	true ->
 	    ok
     end,
-    {_,TSec,TMSec} = now(),
-    TNow = TSec*1000*1000 + TMSec,
+    {TMegSec, TSec, TMSec} = now(),
+    TNow = (TMegSec * 1000000 + TSec) * 1000000 + TMSec,
     if 
 	(Hold > 0) and 
 	(StateData#state.output == "") and 
@@ -528,9 +539,23 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 				      output = Output,
 				      http_receiver = From,
 				      wait_timer = WaitTimer,
-				      timer = Timer,
+				      timer = undefined,
 				      req_list = ReqList}};
 	(StateData#state.input == "cancel") ->
+	    if
+		StateData#state.timer /= undefined ->
+		    cancel_timer(StateData#state.timer);
+		true ->
+		    ok
+	    end,
+	    Timer = if 
+			StateData#state.pause > 0 ->
+			    erlang:start_timer(
+			      StateData#state.pause*1000, self(), []);
+			true ->
+			    erlang:start_timer(
+			      ?MAX_INACTIVITY, self(), [])
+		    end,
 	    Output = StateData#state.output,
 	    ReqList = StateData#state.req_list,
 	    Reply = {ok, cancel},
@@ -542,6 +567,20 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 					timer = Timer,
 					req_list = ReqList}};
 	true ->
+	    if
+		StateData#state.timer /= undefined ->
+		    cancel_timer(StateData#state.timer);
+		true ->
+		    ok
+	    end,
+	    Timer = if 
+			StateData#state.pause > 0 ->
+			    erlang:start_timer(
+			      StateData#state.pause*1000, self(), []);
+			true ->
+			    erlang:start_timer(
+			      ?MAX_INACTIVITY, self(), [])
+		    end,
 	    case StateData#state.output of
 		[[]| OutPacket] ->
 		    Reply = {ok, OutPacket};
@@ -585,14 +624,29 @@ handle_info({timeout, Timer, _}, _StateName,
     ?DEBUG("ding dong", []),
     {stop, normal, StateData};
 
-handle_info({timeout, Timer, _}, StateName,
-	    #state{wait_timer = Timer} = StateData) ->
+handle_info({timeout, WaitTimer, _}, StateName,
+	    #state{wait_timer = WaitTimer} = StateData) ->
     if
 	StateData#state.http_receiver /= undefined ->
+	    if
+		StateData#state.timer /= undefined ->
+		    cancel_timer(StateData#state.timer);
+		true ->
+		    ok
+	    end,
+	    Timer = if 
+			StateData#state.pause > 0 ->
+			    erlang:start_timer(
+			      StateData#state.pause*1000, self(), []);
+			true ->
+			    erlang:start_timer(
+			      ?MAX_INACTIVITY, self(), [])
+		    end,
 	    gen_fsm:reply(StateData#state.http_receiver, {ok, empty}),
 	    {next_state, StateName,
 	     StateData#state{http_receiver = undefined,
-			     wait_timer = undefined}};
+			     wait_timer = undefined,
+			     timer = Timer}};
 	true ->
 	    {next_state, StateName, StateData}
     end;
@@ -611,6 +665,12 @@ terminate(_Reason, _StateName, StateData) ->
       fun() ->
 	      mnesia:delete({http_bind, StateData#state.id})
       end),
+    if
+	StateData#state.http_receiver /= undefined ->
+	    gen_fsm:reply(StateData#state.http_receiver, {ok, terminate});
+	true ->
+	    ok
+    end,
     case StateData#state.waiting_input of
 	false ->
 	    case StateData#state.last_receiver of
@@ -706,6 +766,8 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess,
             {200, ?HEADER, "<body type='error' xmlns='"++?NS_HTTP_BIND++"'/>"};
 	{ok, empty} ->
             {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+	{ok, terminate} ->
+            {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND++"'/>"};
 	{ok, OutPacket} ->
             ?DEBUG("OutPacket: ~s", [OutPacket]),
 	    case StreamStart of
