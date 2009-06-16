@@ -74,9 +74,18 @@ process(_Path, _Request) ->
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
-
 start(_Host, _Opts) ->
-	ok.
+    supervisor:start_child(
+      ejabberd_sup,
+      {ejabberd_http_bind_sup,
+       {ejabberd_tmp_sup, start_link,
+        [ejabberd_http_bind_sup, ejabberd_http_bind]},
+       permanent,
+       infinity,
+       supervisor,
+       [ejabberd_tmp_sup]}),
+    ok.
 
 stop(_Host) ->
-	ok.
+    supervisor:terminate_child(ejabberd_sup, ejabberd_http_bind_sup),
+    ok.
