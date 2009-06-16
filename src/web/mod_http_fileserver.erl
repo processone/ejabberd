@@ -129,6 +129,7 @@ content_type(Filename) ->
         ".xul"  -> "application/vnd.mozilla.xul+xml";
         ".jar"  -> "application/java-archive";
         ".xpi"  -> "application/x-xpinstall";
+        ".js"   -> "application/x-javascript";
         _Else   -> "application/octet-stream"
     end.
 
