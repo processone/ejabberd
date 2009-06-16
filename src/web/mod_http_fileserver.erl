@@ -1,29 +1,50 @@
-%%%----------------------------------------------------------------------
+%%%-------------------------------------------------------------------
 %%% File    : mod_http_fileserver.erl
 %%% Author  : Massimiliano Mirra <mmirra [at] process-one [dot] net>
 %%% Purpose : Simple file server plugin for embedded ejabberd web server
-%%% Created :
-%%% Id      :
-%%%----------------------------------------------------------------------
-
+%%% Created : 26 Sep 2008 by Badlop <badlop@process-one.net>
+%%%-------------------------------------------------------------------
 -module(mod_http_fileserver).
 -author('mmirra@process-one.net').
 
 -behaviour(gen_mod).
+-behaviour(gen_server).
 
--export([
-	 start/2,
-	 stop/1,
-	 process/2,
-	 loop/1,
-	 ctl_process/2
-	]).
+%% gen_mod callbacks
+-export([start/2, stop/1]).
+
+%% API
+-export([start_link/2]).
+
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
+
+%% request_handlers callbacks
+-export([process/2]).
+
+%% ejabberd_hooks callbacks
+-export([reopen_log/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include("ejabberd_http.hrl").
--include("ejabberd_ctl.hrl").
 -include_lib("kernel/include/file.hrl").
+
+%%-include("ejabberd_http.hrl").
+%% TODO: When ejabberd-modules SVN gets the new ejabberd_http.hrl, delete this code:
+-record(request, {method,
+		  path,
+		  q = [],
+		  us,
+		  auth,
+		  lang = "",
+		  data = "",
+		  ip,
+		  host, % string()
+		  port, % integer()
+		  tp, % transfer protocol = http | https
+		  headers
+		 }).
 
 -ifdef(SSL39).
 -define(STRING2LOWER, string).
@@ -31,46 +52,191 @@
 -define(STRING2LOWER, httpd_util).
 -endif.
 
-%%%----------------------------------------------------------------------
-%%% REQUEST HANDLERS
-%%%----------------------------------------------------------------------
+-record(state, {host, docroot, accesslog, accesslogfd}).
 
-%%-----------------------------------------------------------------------
-%% FUNCTION
-%%
-%%   process/2
-%%
-%% PURPOSE
-%%
-%%   Handle an HTTP request.
-%%
-%% RETURNS
-%%
-%%   Page to be sent back to the client and/or HTTP status code.
-%%
-%% ARGUMENTS
-%%
-%% - LocalPath: part of the requested URL path that is "local to the
-%%   module".
-%%
-%%-----------------------------------------------------------------------
+-define(PROCNAME, ejabberd_mod_http_fileserver).
 
+%%====================================================================
+%% gen_mod callbacks
+%%====================================================================
 
+start(Host, Opts) ->
+    Proc = get_proc_name(Host),
+    ChildSpec =
+	{Proc,
+	 {?MODULE, start_link, [Host, Opts]},
+	 temporary,
+	 1000,
+	 worker,
+	 [?MODULE]},
+    supervisor:start_child(ejabberd_sup, ChildSpec).
+
+stop(Host) ->
+    Proc = get_proc_name(Host),
+    gen_server:call(Proc, stop),
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc).
+
+%%====================================================================
+%% API
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
+%% Description: Starts the server
+%%--------------------------------------------------------------------
+start_link(Host, Opts) ->
+    Proc = get_proc_name(Host),
+    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
+
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: init(Args) -> {ok, State} |
+%%                         {ok, State, Timeout} |
+%%                         ignore               |
+%%                         {stop, Reason}
+%% Description: Initiates the server
+%%--------------------------------------------------------------------
+init([Host, Opts]) ->
+    try initialize(Host, Opts) of
+	{DocRoot, AccessLog, AccessLogFD} ->
+	    {ok, #state{host = Host,
+			accesslog = AccessLog,
+			accesslogfd = AccessLogFD,
+			docroot = DocRoot}}
+    catch
+	throw:Reason ->
+	    {stop, Reason}
+    end.
+
+initialize(Host, Opts) ->
+    DocRoot = gen_mod:get_opt(docroot, Opts, undefined),
+    check_docroot_defined(DocRoot, Host),
+    DRInfo = check_docroot_exists(DocRoot),
+    check_docroot_is_dir(DRInfo, DocRoot),
+    check_docroot_is_readable(DRInfo, DocRoot),
+    AccessLog = gen_mod:get_opt(accesslog, Opts, undefined),
+    AccessLogFD = try_open_log(AccessLog, Host),
+    {DocRoot, AccessLog, AccessLogFD}.
+
+check_docroot_defined(DocRoot, Host) ->
+    case DocRoot of
+	undefined -> throw({undefined_docroot_option, Host});
+	_ -> ok
+    end.
+
+check_docroot_exists(DocRoot) ->
+    case file:read_file_info(DocRoot) of
+	{error, Reason} -> throw({error_access_docroot, DocRoot, Reason});
+	{ok, FI} -> FI
+    end.
+
+check_docroot_is_dir(DRInfo, DocRoot) ->
+    case DRInfo#file_info.type of
+	directory -> ok;
+	_ -> throw({docroot_not_directory, DocRoot})
+    end.
+
+check_docroot_is_readable(DRInfo, DocRoot) ->
+    case DRInfo#file_info.access of
+	read -> ok;
+	read_write -> ok;
+	_ -> throw({docroot_not_readable, DocRoot})
+    end.
+
+try_open_log(undefined, _Host) ->
+    undefined;
+try_open_log(FN, Host) ->
+    FD = try open_log(FN) of
+	     FD1 -> FD1
+	 catch
+	     throw:{cannot_open_accesslog, FN, Reason} ->
+		 ?ERROR_MSG("Cannot open access log file: ~p~nReason: ~p", [FN, Reason]),
+		 undefined
+	 end,
+    ejabberd_hooks:add(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
+    FD.
+
+%%--------------------------------------------------------------------
+%% Function: handle_call(Request, From, State) -> {reply, Reply, State} |
+%%                                      {reply, Reply, State, Timeout} |
+%%                                      {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, Reply, State} |
+%%                                      {stop, Reason, State}
+%% Description: Handling call messages
+%%--------------------------------------------------------------------
+handle_call({serve, LocalPath}, _From, State) ->
+    Reply = serve(LocalPath, State#state.docroot),
+    {reply, Reply, State};
+handle_call(_Request, _From, State) ->
+    {reply, ok, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_cast(Msg, State) -> {noreply, State} |
+%%                                      {noreply, State, Timeout} |
+%%                                      {stop, Reason, State}
+%% Description: Handling cast messages
+%%--------------------------------------------------------------------
+handle_cast({add_to_log, Code, Request}, State) ->
+    add_to_log(State#state.accesslogfd, Code, Request),
+    {noreply, State};
+handle_cast(reopen_log, State) ->
+    FD2 = reopen_log(State#state.accesslog, State#state.accesslogfd),
+    {noreply, State#state{accesslogfd = FD2}};
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_info(Info, State) -> {noreply, State} |
+%%                                       {noreply, State, Timeout} |
+%%                                       {stop, Reason, State}
+%% Description: Handling all non call/cast messages
+%%--------------------------------------------------------------------
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+%%--------------------------------------------------------------------
+%% Function: terminate(Reason, State) -> void()
+%% Description: This function is called by a gen_server when it is about to
+%% terminate. It should be the opposite of Module:init/1 and do any necessary
+%% cleaning up. When it returns, the gen_server terminates with Reason.
+%% The return value is ignored.
+%%--------------------------------------------------------------------
+terminate(_Reason, State) ->
+    close_log(State#state.accesslogfd),
+    ejabberd_hooks:delete(reopen_log_hook, State#state.host, ?MODULE, reopen_log, 50),
+    ok.
+
+%%--------------------------------------------------------------------
+%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
+%% Description: Convert process state when code is changed
+%%--------------------------------------------------------------------
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%====================================================================
+%% request_handlers callbacks
+%%====================================================================
+
+%% @spec (LocalPath, Request) -> {HTTPCode::integer(), [Header], Page::string()}
+%% @doc Handle an HTTP request.
+%% LocalPath is the part of the requested URL path that is "local to the module".
+%% Returns the page to be sent back to the client and/or HTTP status code.
 process(LocalPath, Request) ->
     ?DEBUG("Requested ~p", [LocalPath]),
-
-    Result = serve(LocalPath),
-    case ets:lookup(mod_http_fileserver, accessfile) of
-	[] ->
-	    ok;
-	[{accessfile, AccessFile}] ->
+    try gen_server:call(get_proc_name(Request#request.host), {serve, LocalPath}) of
+	Result ->
 	    {Code, _, _} = Result,
-	    log(AccessFile, Code, Request)
-    end,
-    Result.
+	    add_to_log(Code, Request),
+	    Result
+    catch
+	exit:{noproc, _} -> 
+	    ejabberd_web:error(not_found)
+    end.
 
-serve(LocalPath) ->
-    [{docroot, DocRoot}] = ets:lookup(mod_http_fileserver, docroot),
+serve(LocalPath, DocRoot) ->
     FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
     case file:read_file(FileName) of
         {ok, FileContents} ->
@@ -89,15 +255,67 @@ serve(LocalPath) ->
             end
     end.
 
-ctl_process(_Val, ["reopen-weblog"]) ->
-    mod_http_fileserver_server ! reopenlog,
-    ?STATUS_SUCCESS;
-ctl_process(Val, _Args) ->
-	Val.
+%%----------------------------------------------------------------------
+%% Log file
+%%----------------------------------------------------------------------
 
-%%%----------------------------------------------------------------------
-%%% UTILITIES
-%%%----------------------------------------------------------------------
+open_log(FN) ->
+    case file:open(FN, [append]) of
+	{ok, FD} ->
+	    FD;
+	{error, Reason} ->
+	    throw({cannot_open_accesslog, FN, Reason})
+    end.
+
+close_log(FD) ->
+    file:close(FD).
+
+reopen_log(undefined, undefined) ->
+    ok;
+reopen_log(FN, FD) ->
+    close_log(FD),
+    open_log(FN).
+
+reopen_log(Host) ->
+    gen_server:cast(get_proc_name(Host), reopen_log).
+
+add_to_log(Code, Request) ->
+    gen_server:cast(get_proc_name(Request#request.host),
+		    {add_to_log, Code, Request}).
+
+add_to_log(undefined, _Code, _Request) ->
+    ok;
+add_to_log(File, Code, Request) ->
+    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
+    %% TODO: This IP address conversion supports only IPv4, not IPv6
+    IP = join(tuple_to_list(element(1, Request#request.ip)), "."),
+    Path = join(Request#request.path, "/"),
+    Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", element(2, E)]) end,
+				Request#request.q), "&") of
+		[] ->
+		    "";
+		String ->
+		    [$? | String]
+	    end,
+    %% Pseudo Combined Apache log format:
+    %% 127.0.0.1 - - [28/Mar/2007:18:41:55 +0200] "GET / HTTP/1.1" 302 303 "-" "tsung"
+    %% TODO some fields are harcoded/missing:
+    %%   The date/time integers should have always 2 digits. For example day "7" should be "07"
+    %%   Month should be 3*letter, not integer 1..12
+    %%   Missing time zone = (`+' | `-') 4*digit
+    %%   Missing protocol version: HTTP/1.1
+    %%   Missing size of the object, not including response headers. If no content: "-"
+    %%   Missing Referer HTTP request header
+    %%   Missing User-Agent HTTP request header.
+    %% For reference: http://httpd.apache.org/docs/2.2/logs.html
+    io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p -1 \"-\" \"-\"~n",
+	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code]).
+
+%%----------------------------------------------------------------------
+%% Utilities
+%%----------------------------------------------------------------------
+
+get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?PROCNAME).
 
 join([], _) ->
     "";
@@ -105,23 +323,6 @@ join([E], _) ->
     E;
 join([H | T], Separator) ->
     lists:foldl(fun(E, Acc) -> lists:concat([Acc, Separator, E]) end, H, T).
-
-log(File, Code, Request) ->
-    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
-    IP = join(tuple_to_list(element(1, Request#request.ip)), "."),
-    Path = join(Request#request.path, "/"),
-    Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", element(2, E)]) end,
-				Request#request.q), "&") of
-		[] ->
-		    "";
-		String ->
-		    [$? | String]
-	    end,
-    % combined apache like log format :
-    % 127.0.0.1 - - [28/Mar/2007:18:41:55 +0200] "GET / HTTP/1.1" 302 303 "-" "tsung"
-    % XXX TODO some fields are harcoded/missing (reply size, user agent or referer for example)
-    io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p -1 \"-\" \"-\"~n",
-	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code]).
 
 content_type(Filename) ->
     case ?STRING2LOWER:to_lower(filename:extension(Filename)) of
@@ -143,96 +344,3 @@ last_modified(FileName) ->
     {ok, FileInfo} = file:read_file_info(FileName),
     Then = FileInfo#file_info.mtime,
     httpd_util:rfc1123_date(Then).
-
-open_file(Filename) ->
-    case file:open(Filename, [append]) of
-	{ok, File} ->
-	    ets:insert(mod_http_fileserver, {accessfile, File}),
-	    ok;
-	{error, _Reason} ->
-	    {'EXIT', {unaccessible_accessfile, ?MODULE}}
-    end.
-
-loop(Filename) ->
-    receive
-	reopenlog ->
-	    case ets:lookup(mod_http_fileserver, accessfile) of
-		[] ->
-		    ok;
-		[{accessfile, AccessFile}] ->
-		    file:close(AccessFile),
-		    case open_file(Filename) of
-			ok ->
-			    ok;
-			_ ->
-			    error
-		    end
-	    end,
-	    loop(Filename);
-	stop ->
-	    ok
-    end.
-
-
-%%%----------------------------------------------------------------------
-%%% BEHAVIOUR CALLBACKS
-%%%----------------------------------------------------------------------
-
-%% TODO: Improve this module to allow each virtual host to have a different
-%% options. See http://support.process-one.net/browse/EJAB-561
-start(_Host, Opts) ->
-    case ets:info(mod_http_fileserver, name) of
-	undefined ->
-	    start2(_Host, Opts);
-	_ ->
-	    ok
-    end.
-
-start2(_Host, Opts) ->
-    case gen_mod:get_opt(docroot, Opts, undefined) of
-        undefined ->
-            {'EXIT', {missing_document_root, ?MODULE}};
-        DocRoot ->
-            case filelib:is_dir(DocRoot) of
-                true ->
-		    %% XXX WARNING, using a single ets table name will
-		    %% not work with virtual hosts
-                    ets:new(mod_http_fileserver, [named_table, public]),
-                    ets:insert(mod_http_fileserver, [{docroot, DocRoot}]),
-		    case gen_mod:get_opt(accesslog, Opts, undefined) of
-			undefined ->
-			    ok;
-			Filename ->
-			    %% XXX same remark as above for proc name
-    			    ejabberd_ctl:register_commands(
-			      [{"reopen-weblog",
-				"reopen http fileserver log file"}],
-			      ?MODULE, ctl_process),
-			    register(mod_http_fileserver_server,
-				     spawn(?MODULE, loop, [Filename])),
-			    open_file(Filename)
-		    end;
-                _Else ->
-                    {'EXIT', {unaccessible_document_root, ?MODULE}}
-            end
-    end.
-
-stop(_Host) ->
-    case ets:info(mod_http_fileserver, name) of
-	undefined ->
-	    ok;
-	_ ->
-	    case ets:lookup(mod_http_fileserver, accessfile) of
-		[] ->
-		    ok;
-		[{accessfile, AccessFile}] ->
-		    ejabberd_ctl:unregister_commands(
-		      [{"reopen-weblog",
-			"reopen http fileserver log file"}],
-		      ?MODULE, ctl_process),
-		    mod_http_fileserver_server ! stop,
-		    file:close(AccessFile)
-	    end,
-	    ets:delete(mod_http_fileserver)
-    end,
-    ok.
