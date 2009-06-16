@@ -68,7 +68,6 @@
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
 \newcommand{\modecho}{\module{mod\_echo}}
-\newcommand{\modirc}{\module{mod\_irc}}
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
@@ -304,7 +303,6 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
 \item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
-\item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc. See section \ref{modirc}.
 \item ImageMagick's Convert program. Optional. For CAPTCHA challenges. See section \ref{captcha}.
 \end{itemize}
 
@@ -486,9 +484,6 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 \item MS Visual C++ 6.0 Compiler
 \item \footahref{http://www.erlang.org/download.html}{Erlang/OTP R11B-5}
 \item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 2.0.0 or higher}
-\item
-\footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.2}
-(optional)
 \item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8d or higher}
 (to enable SSL connections)
 \item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
@@ -507,21 +502,12 @@ We assume that we will try to put as much library as possible into \verb|C:\sdk\
   Copy file \verb|C:\sdk\Expat-2.0.0\Libs\libexpat.dll|
   to your Windows system directory (for example, \verb|C:\WINNT| or
   \verb|C:\WINNT\System32|)
-\item Build and install the Iconv library into the directory
-  \verb|C:\sdk\GnuWin32|.
-
-  Copy file \verb|C:\sdk\GnuWin32\bin\lib*.dll| to your
-  Windows system directory (more installation instructions can be found in the
-  file README.woe32 in the iconv distribution).
-
-  Note: instead of copying libexpat.dll and iconv.dll to the Windows
-  directory, you can add the directories
-  \verb|C:\sdk\Expat-2.0.0\Libs| and
-  \verb|C:\sdk\GnuWin32\bin| to the \verb|PATH| environment
-  variable.
+  Note: instead of copying libexpat.dll to the Windows
+  directory, you can add the directory \verb|C:\sdk\Expat-2.0.0\Libs|
+  to the \verb|PATH| environment variable.
 \item Install OpenSSL in \verb|C:\sdk\OpenSSL| and add \verb|C:\sdk\OpenSSL\lib\VC| to your path or copy the binaries to your system directory.
 \item Install ZLib in \verb|C:\sdk\gnuWin32|. Copy
-  \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory. If you change your path it should already be set after  libiconv install.
+  \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory.
 \item Make sure the you can access Erlang binaries from your path. For example: \verb|set PATH=%PATH%;"C:\sdk\erl5.6.5\bin"|
 \item Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 \item While in the directory \verb|ejabberd\src| run:
@@ -2367,7 +2353,6 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
     \hline \ahrefloc{modecho}{\modecho{}} & Echoes Jabber packets &  \\
-    \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
@@ -2666,72 +2651,6 @@ Example: Mirror, mirror, on the wall, who is the most beautiful
 \ifthenelse{\boolean{modhttpbind}}{\input{mod_http_bind.tex}}{}
 
 \ifthenelse{\boolean{modhttpfileserver}}{\input{mod_http_fileserver.tex}}{}
-
-\makesubsection{modirc}{\modirc{}}
-\ind{modules!\modirc{}}\ind{IRC}
-
-This module is an IRC transport that can be used to join channels on IRC
-servers.
-
-End user information:
-\ind{protocols!groupchat 1.0}\ind{protocols!XEP-0045: Multi-User Chat}
-\begin{itemize}
-\item A \Jabber{} client with `groupchat 1.0' support or Multi-User
-  Chat support (\xepref{0045}) is necessary to join IRC channels.
-\item An IRC channel can be joined in nearly the same way as joining a
-  \Jabber{} Multi-User Chat room. The difference is that the room name will
-  be `channel\%\jid{irc.example.org}' in case \jid{irc.example.org} is
-  the IRC server hosting `channel'. And of course the host should point
-  to the IRC transport instead of the Multi-User Chat service.
-\item You can register your nickame by sending `IDENTIFY password' to \\
-  \jid{nickserver!irc.example.org@irc.jabberserver.org}.
-\item Entering your password is possible by sending `LOGIN nick password' \\
-  to \jid{nickserver!irc.example.org@irc.jabberserver.org}.
-\item When using a popular \Jabber{} server, it can occur that no
-  connection can be achieved with some IRC servers because they limit the
-  number of conections from one IP.
-\end{itemize}
-
-Options:
-\begin{description}
-\hostitem{irc}
-\titem{access} \ind{options!access}This option can be used to specify who
-  may use the IRC transport (default value: \term{all}).
-\titem{default\_encoding} \ind{options!defaultencoding}Set the default IRC encoding (default value: \term{"koi8-r"}).
-\end{description}
-
-Examples:
-\begin{itemize}
-\item In the first example, the IRC transport is available on (all) your
-  virtual host(s) with the prefix `\jid{irc.}'. Furthermore, anyone is
-  able to use the transport. The default encoding is set to "iso8859-15".
-\begin{verbatim}
-{modules,
- [
-  ...
-  {mod_irc, [{access, all}, {default_encoding, "iso8859-15"}]},
-  ...
- ]}.
-\end{verbatim}
-\item In next example the IRC transport is available with JIDs with prefix \jid{irc-t.net}.
-  Moreover, the transport is only accessible to two users 
-  of \term{example.org}, and any user of \term{example.com}:
-\begin{verbatim}
-{acl, paying_customers, {user, "customer1", "example.org"}}.
-{acl, paying_customers, {user, "customer2", "example.org"}}.
-{acl, paying_customers, {server, "example.com"}}.
-
-{access, irc_users, [{allow, paying_customers}, {deny, all}]}.
-
-{modules,
- [
-  ...
-  {mod_irc, [{access, irc_users},
-             {host, "irc.example.net"}]},
-  ...
- ]}.
-\end{verbatim}
-\end{itemize}
 
 \makesubsection{modlast}{\modlast{}}
 \ind{modules!\modlast{}}\ind{protocols!XEP-0012: Last Activity}
@@ -4612,7 +4531,7 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
 \item Now run \ejabberd{} on \term{second} with a configuration similar as
   on \term{first}: you probably do not need to duplicate `\verb|acl|'
   and `\verb|access|' options because they will be taken from
-  \term{first}; and \verb|mod_irc| should be
+  \term{first}. If you installed \verb|mod_irc|, notice that it should be
   enabled only on one machine in the cluster.
 \end{enumerate}
 

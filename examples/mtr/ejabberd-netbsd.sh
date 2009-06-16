@@ -70,7 +70,7 @@ done
 echo '7. compile ejabberd'
 
 gmake
-for A in mod_irc mod_muc mod_pubsub; do
+for A in mod_muc mod_pubsub; do
     (cd $A; gmake)
 done
 

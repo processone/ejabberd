@@ -474,7 +474,6 @@
   {mod_configure,[]}, % requires mod_adhoc
   {mod_disco,    []},
   %%{mod_echo,   [{host, "echo.localhost"}]},
-  {mod_irc,      []},
   {mod_last,     []},
   {mod_muc,      [
 		  %%{host, "conference.@HOST@"},

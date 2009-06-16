@@ -666,15 +666,12 @@ ERLANG_CFLAGS
 ERLANG_LIBS
 ERLANG_SSL39
 ERLANG_EXMPP
-LIBICONV
 CPP
 GREP
 EGREP
 EXPAT_CFLAGS
 EXPAT_LIBS
 LIBOBJS
-mod_irc
-make_mod_irc
 mod_muc
 make_mod_muc
 mod_proxy65
@@ -1286,7 +1283,6 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-mod_irc        enable mod_irc (default: yes)
   --enable-mod_muc        enable mod_muc (default: yes)
   --enable-mod_proxy65    enable mod_proxy65 (default: yes)
   --enable-mod_pubsub     enable mod_pubsub (default: yes)
@@ -1315,8 +1311,6 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-erlang=PREFIX    path to erlc and erl
-  --with-libiconv-prefix=PREFIX
-                          prefix where libiconv is installed
   --with-expat=PREFIX     prefix where EXPAT is installed
   --with-zlib=PREFIX      prefix where zlib is installed
   --with-pam=PREFIX       prefix where PAM is installed
@@ -3040,277 +3034,8 @@ echo "$as_me: error: erlang program was not properly executed, (conftest.out was
 
 
 
-#locating iconv
-
-
-
-# Check whether --with-libiconv-prefix was given.
-if test "${with_libiconv_prefix+set}" = set; then
-  withval=$with_libiconv_prefix;
-    for dir in `echo "$withval" | tr : ' '`; do
-      if test -d $dir/include; then CPPFLAGS="$CPPFLAGS -I$dir/include"; fi
-      if test -d $dir/include; then CFLAGS="$CFLAGS -I$dir/include"; fi
-      if test -d $dir/lib; then LDFLAGS="$LDFLAGS -L$dir/lib"; fi
-    done
-
-fi
-
-
-  { echo "$as_me:$LINENO: checking for iconv" >&5
-echo $ECHO_N "checking for iconv... $ECHO_C" >&6; }
-if test "${am_cv_func_iconv+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-    am_cv_func_iconv="no, consider installing GNU libiconv"
-    am_cv_lib_iconv=no
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <stdlib.h>
-#include <iconv.h>
-int
-main ()
-{
-iconv_t cd = iconv_open("","");
-       iconv(cd,NULL,NULL,NULL,NULL);
-       iconv_close(cd);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  am_cv_func_iconv=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-    if test "$am_cv_func_iconv" != yes; then
-      am_save_LIBS="$LIBS"
-      LIBS="$LIBS -liconv"
-      cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <stdlib.h>
-#include <iconv.h>
-int
-main ()
-{
-iconv_t cd = iconv_open("","");
-         iconv(cd,NULL,NULL,NULL,NULL);
-         iconv_close(cd);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  am_cv_lib_iconv=yes
-        am_cv_func_iconv=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-      LIBS="$am_save_LIBS"
-    fi
-	    if test "$am_cv_func_iconv" != yes; then
-      am_save_LIBS="$LIBS"
-	  am_save_CFLAGS="$CFLAGS"
-	  am_save_LDFLAGS="$LDFLAGS"
-      LIBS="$LIBS -liconv"
-	  LDFLAGS="$LDFLAGS -L/usr/local/lib"
-	  CFLAGS="$CFLAGS -I/usr/local/include"
-      cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <stdlib.h>
-#include <iconv.h>
-int
-main ()
-{
-iconv_t cd = iconv_open("","");
-         iconv(cd,NULL,NULL,NULL,NULL);
-         iconv_close(cd);
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  am_cv_lib_iconv=yes
-        am_cv_func_iconv=yes
-		CPPFLAGS="$CPPFLAGS -I/usr/local/include"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	LDFLAGS="$am_save_LDFLAGS"
-		CFLAGS="$am_save_CFLAGS"
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-      LIBS="$am_save_LIBS"
-    fi
-
-
-fi
-{ echo "$as_me:$LINENO: result: $am_cv_func_iconv" >&5
-echo "${ECHO_T}$am_cv_func_iconv" >&6; }
-  if test "$am_cv_func_iconv" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ICONV 1
-_ACEOF
-
-    { echo "$as_me:$LINENO: checking for iconv declaration" >&5
-echo $ECHO_N "checking for iconv declaration... $ECHO_C" >&6; }
-    if test "${am_cv_proto_iconv+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-      cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#include <stdlib.h>
-#include <iconv.h>
-extern
-#ifdef __cplusplus
-"C"
-#endif
-#if defined(__STDC__) || defined(__cplusplus)
-size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
-#else
-size_t iconv();
-#endif
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  am_cv_proto_iconv_arg1=""
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	am_cv_proto_iconv_arg1="const"
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"
-fi
-
-    am_cv_proto_iconv=`echo "$am_cv_proto_iconv" | tr -s ' ' | sed -e 's/( /(/'`
-    { echo "$as_me:$LINENO: result: ${ac_t:-
-         }$am_cv_proto_iconv" >&5
-echo "${ECHO_T}${ac_t:-
-         }$am_cv_proto_iconv" >&6; }
-
-cat >>confdefs.h <<_ACEOF
-#define ICONV_CONST $am_cv_proto_iconv_arg1
-_ACEOF
-
-  fi
-  LIBICONV=
-  if test "$am_cv_lib_iconv" = yes; then
-    LIBICONV="-liconv"
-  fi
-
-
 #locating libexpat
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4723,28 +4448,6 @@ fi
 
 
 
-mod_irc=
-make_mod_irc=
-{ echo "$as_me:$LINENO: checking whether build mod_irc" >&5
-echo $ECHO_N "checking whether build mod_irc... $ECHO_C" >&6; }
-# Check whether --enable-mod_irc was given.
-if test "${enable_mod_irc+set}" = set; then
-  enableval=$enable_mod_irc; mr_enable_mod_irc="$enableval"
-else
-  mr_enable_mod_irc=yes
-fi
-
-if test "$mr_enable_mod_irc" = "yes"; then
-mod_irc=mod_irc
-make_mod_irc=mod_irc/Makefile
-fi
-{ echo "$as_me:$LINENO: result: $mr_enable_mod_irc" >&5
-echo "${ECHO_T}$mr_enable_mod_irc" >&6; }
-
-
-
-
-
 mod_muc=
 make_mod_muc=
 { echo "$as_me:$LINENO: checking whether build mod_muc" >&5
@@ -5523,7 +5226,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_mod_proxy65 $make_eldap $make_pam $make_web stringprep/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
+ac_config_files="$ac_config_files Makefile $make_mod_muc $make_mod_pubsub $make_mod_proxy65 $make_eldap $make_pam $make_web stringprep/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
 
 #openssl
 
@@ -6510,7 +6213,6 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "$make_mod_irc") CONFIG_FILES="$CONFIG_FILES $make_mod_irc" ;;
     "$make_mod_muc") CONFIG_FILES="$CONFIG_FILES $make_mod_muc" ;;
     "$make_mod_pubsub") CONFIG_FILES="$CONFIG_FILES $make_mod_pubsub" ;;
     "$make_mod_proxy65") CONFIG_FILES="$CONFIG_FILES $make_mod_proxy65" ;;
@@ -6632,15 +6334,12 @@ ERLANG_CFLAGS!$ERLANG_CFLAGS$ac_delim
 ERLANG_LIBS!$ERLANG_LIBS$ac_delim
 ERLANG_SSL39!$ERLANG_SSL39$ac_delim
 ERLANG_EXMPP!$ERLANG_EXMPP$ac_delim
-LIBICONV!$LIBICONV$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
 EXPAT_CFLAGS!$EXPAT_CFLAGS$ac_delim
 EXPAT_LIBS!$EXPAT_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
-mod_irc!$mod_irc$ac_delim
-make_mod_irc!$make_mod_irc$ac_delim
 mod_muc!$mod_muc$ac_delim
 make_mod_muc!$make_mod_muc$ac_delim
 mod_proxy65!$mod_proxy65$ac_delim
@@ -6674,7 +6373,7 @@ INSTALLUSER!$INSTALLUSER$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 91; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

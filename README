@@ -17,8 +17,6 @@ To compile ejabberd you need:
  - Erlang mysql library. Optional. MySQL authentication/storage.
  - Erlang pgsql library. Optional. PostgreSQL authentication/storage.
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
- - GNU Iconv 1.8 or higher, for the IRC Transport
-   (mod_irc). Optional. Not needed on systems with GNU Libc.
 
 
 1. Compile and install on *nix systems
