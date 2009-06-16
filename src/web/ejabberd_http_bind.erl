@@ -4,12 +4,12 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 280 2007-08-16 13:25:41Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 282 2007-08-16 14:53:04Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 280 $').
+-vsn('$Rev: 282 $').
 
 -behaviour(gen_fsm).
 
@@ -299,8 +299,12 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
                         if 
                             (OldRid < Rid) and 
                             (Rid =< (OldRid + Hold + 1)) ->
-                                case xml:get_attr_s("pause", Attrs) of
+                                case catch list_to_integer(
+                                       xml:get_attr_s("pause", Attrs)) of
+                                    {'EXIT', _} ->
+                                        {true, 0};
                                     Pause1 when Pause1 =< ?MAX_PAUSE ->
+                                        ?DEBUG("got pause: ~p", [Pause1]),
                                         {true, Pause1};
                                     _ ->
                                         {true, 0}
@@ -395,7 +399,7 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
                     if 
                         Pause > 0 ->
 			    Timer = erlang:start_timer(
-				      Pause, self(), []);
+				      Pause*1000, self(), []);
                         true ->
 			    Timer = erlang:start_timer(
 				      ?MAX_INACTIVITY, self(), [])
@@ -460,7 +464,7 @@ handle_sync_event({http_get, Rid, Wait, Hold}, _From, StateName, StateData) ->
     if 
         StateData#state.pause > 0 ->
             Timer = erlang:start_timer(
-                      StateData#state.pause, self(), []);
+                      StateData#state.pause*1000, self(), []);
         true ->
             Timer = erlang:start_timer(
                       ?MAX_INACTIVITY, self(), [])
