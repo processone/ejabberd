@@ -165,25 +165,38 @@ loop(Filename) ->
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
 
+%% TODO: Improve this module to allow each virtual host to have a different
+%% options. See http://support.process-one.net/browse/EJAB-561
 start(_Host, Opts) ->
-    ejabberd_ctl:register_commands([{"reopen-weblog", "reopen http fileserver log file"}],
-				   ?MODULE, ctl_process),
+    case ets:info(mod_http_fileserver, name) of
+	undefined ->
+	    start2(_Host, Opts);
+	_ ->
+	    ok
+    end.
+
+start2(_Host, Opts) ->
     case gen_mod:get_opt(docroot, Opts, undefined) of
         undefined ->
             {'EXIT', {missing_document_root, ?MODULE}};
         DocRoot ->
             case filelib:is_dir(DocRoot) of
                 true ->
-		    % XXX WARNING, using a single ets table name will
-		    % not work with virtual hosts
+		    %% XXX WARNING, using a single ets table name will
+		    %% not work with virtual hosts
                     ets:new(mod_http_fileserver, [named_table, public]),
                     ets:insert(mod_http_fileserver, [{docroot, DocRoot}]),
 		    case gen_mod:get_opt(accesslog, Opts, undefined) of
 			undefined ->
 			    ok;
 			Filename ->
-			    % XXX same remark as above for proc name
-			    register(mod_http_fileserver_server, spawn(?MODULE, loop, [Filename])),
+			    %% XXX same remark as above for proc name
+    			    ejabberd_ctl:register_commands(
+			      [{"reopen-weblog",
+				"reopen http fileserver log file"}],
+			      ?MODULE, ctl_process),
+			    register(mod_http_fileserver_server,
+				     spawn(?MODULE, loop, [Filename])),
 			    open_file(Filename)
 		    end;
                 _Else ->
@@ -200,6 +213,10 @@ stop(_Host) ->
 		[] ->
 		    ok;
 		[{accessfile, AccessFile}] ->
+		    ejabberd_ctl:unregister_commands(
+		      [{"reopen-weblog",
+			"reopen http fileserver log file"}],
+		      ?MODULE, ctl_process),
 		    mod_http_fileserver_server ! stop,
 		    file:close(AccessFile)
 	    end,
