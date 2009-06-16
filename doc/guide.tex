@@ -68,6 +68,7 @@
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
 \newcommand{\modecho}{\module{mod\_echo}}
+\newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
@@ -96,8 +97,6 @@
 \usepackage{ifthen}
 \newboolean{modhttpbind}
 \newcommand{\modhttpbind}{\module{mod\_http\_bind}}
-\newboolean{modhttpfileserver}
-\newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
 \include{contributed_modules}
 
 %% Common options
@@ -2650,7 +2649,61 @@ Example: Mirror, mirror, on the wall, who is the most beautiful
 
 \ifthenelse{\boolean{modhttpbind}}{\input{mod_http_bind.tex}}{}
 
-\ifthenelse{\boolean{modhttpfileserver}}{\input{mod_http_fileserver.tex}}{}
+\makesubsection{modhttpfileserver}{\modhttpfileserver{}}
+\ind{modules!\modhttpfileserver{}}\ind{modhttpfileserver}
+
+This simple module serves files from the local disk over HTTP.
+
+Options:
+\begin{description}
+  \titem{docroot} \ind{options!docroot}
+    Directory to serve the files.
+  \titem{accesslog} \ind{options!accesslog}
+    File to log accesses using an Apache-like format.
+    No log will be recorded if this option is not specified.
+  \titem{directory\_indices} \ind{options!directoryindices}
+    Indicate one or more directory index files, similarly to Apache's
+    DirectoryIndex variable. When a web request hits a directory
+    instead of a regular file, those directory indices are looked in
+    order, and the first one found is returned.
+\end{description}
+
+This example configuration will serve the files from 
+the local directory \verb|/var/www|
+in the address \verb|http://example.org:5280/pub/archive/|.
+To use this module you must enable it:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_http_fileserver, [
+                         {docroot, "/var/www"}, 
+			 {directory_indices, ["index.html", "main.htm"]},
+                         {accesslog, "/var/log/ejabberd/access.log"}
+                        ]
+  },
+  ...
+]}.
+\end{verbatim}
+And define it as a handler in the HTTP service:
+\begin{verbatim}
+{listen, 
+ [
+  ...
+  {5280, ejabberd_http, [
+                         ...
+                         {request_handlers, [
+                                             ...
+                                             {["pub", "archive"], mod_http_fileserver},
+                                             ...
+                                            ]
+                         },
+                         ...
+                        ]
+  },
+  ...
+]}.
+\end{verbatim}
 
 \makesubsection{modlast}{\modlast{}}
 \ind{modules!\modlast{}}\ind{protocols!XEP-0012: Last Activity}

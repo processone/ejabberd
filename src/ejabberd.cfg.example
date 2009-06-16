@@ -150,8 +150,12 @@
   %%			   ]},
 
   {5280, ejabberd_http, [
-			 captcha, 
-			 http_poll, 
+			 %%{request_handlers,
+			 %% [
+			 %%  {["pub", "archive"], mod_http_fileserver},
+			 %% ]},
+			 captcha,
+			 http_poll,
 			 web_admin
 			]}
 
@@ -474,6 +478,10 @@
   {mod_configure,[]}, % requires mod_adhoc
   {mod_disco,    []},
   %%{mod_echo,   [{host, "echo.localhost"}]},
+  %%{mod_http_fileserver, [
+  %%                       {docroot, "/var/www"}, 
+  %%                       {accesslog, "/var/log/ejabberd/access.log"}
+  %%                      ]},
   {mod_last,     []},
   {mod_muc,      [
 		  %%{host, "conference.@HOST@"},
