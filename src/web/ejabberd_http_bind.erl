@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 123 2007-05-30 13:48:02Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 156 2007-06-25 09:22:57Z cromain $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 123 $').
+-vsn('$Rev: 156 $').
 
 -behaviour(gen_fsm).
 
@@ -542,6 +542,7 @@ handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StartTo},
     {MinPoll, _} = string:to_integer(?MIN_POLLING),
     if
 	(Packet == "") and 
+        (Hold == 0) and
 	(TNow - StateData#state.last_poll < MinPoll*1000*1000) ->
 	    Reply = {error, polling_too_frequently},
 	    {reply, Reply, StateName, StateData};

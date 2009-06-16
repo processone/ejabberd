@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: $
+%%% Id      : $Id: mod_http_bind.erl 156 2007-06-25 09:22:57Z cromain $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
@@ -15,7 +15,7 @@
 -module(mod_http_bind).
 -author('steve@zeank.in-berlin.de').
 
--define(MOD_HTTP_BIND_VERSION, "1.0").
+-define(MOD_HTTP_BIND_VERSION, "1.2").
 -vsn(?MOD_HTTP_BIND_VERSION).
 
 %%-define(ejabberd_debug, true).
@@ -23,9 +23,9 @@
 -behaviour(gen_mod).
 
 -export([
-	start/2,
-	stop/1,
-	process/2
+         start/2,
+         stop/1,
+         process/2
 	]).
 
 -include("ejabberd.hrl").
