@@ -22,6 +22,7 @@
 	 terminate/3,
 	 send/2,
 	 setopts/2,
+     sockname/1, peername/1,
 	 controlling_process/2,
 	 close/1,
 	 process_request/1]).
@@ -99,6 +100,11 @@ controlling_process(_Socket, _Pid) ->
 close({http_bind, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
+sockname(_Socket) ->
+    {ok, {{0, 0, 0, 0}, 0}}.
+
+peername(_Socket) ->
+    {ok, {{0, 0, 0, 0}, 0}}.
 
 process_request(Data) ->
     case catch parse_request(Data) of
