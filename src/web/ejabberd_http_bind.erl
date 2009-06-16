@@ -4,12 +4,12 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 278 2007-08-16 10:53:28Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 280 2007-08-16 13:25:41Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 278 $').
+-vsn('$Rev: 280 $').
 
 -behaviour(gen_fsm).
 
@@ -53,6 +53,7 @@
 		last_poll,
 		ctime = 0,
 		timer,
+                pause=0,
 		req_list = [] % list of requests
 	       }).
 
@@ -73,9 +74,12 @@
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
                                % shoot you (time in µsec)
--define(MAX_WAIT, 3600).  % max num of secs to keep a request on hold
+-define(MAX_WAIT, 3600). % max num of secs to keep a request on hold
 -define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
                                 % idle sessions
+-define(MAX_PAUSE, 120). % may num of sec a client is allowed to pause 
+                         % the session
+
 -define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
 -define(HEADER, [?CT]).
 
@@ -288,14 +292,19 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
     RidAllow =  case StateData#state.rid of
                     none -> 
                         %% first request - nothing saved so far
-                        true;
+                        {true, 0};
                     OldRid ->
                         ?DEBUG("state.rid/cur rid: ~p/~p", 
                                [OldRid, Rid]),
                         if 
                             (OldRid < Rid) and 
                             (Rid =< (OldRid + Hold + 1)) ->
-                                true;
+                                case xml:get_attr_s("pause", Attrs) of
+                                    Pause1 when Pause1 =< ?MAX_PAUSE ->
+                                        {true, Pause1};
+                                    _ ->
+                                        {true, 0}
+                                end;
                             (Rid =< OldRid) and 
                             (Rid > OldRid - Hold - 1) ->
                                 repeat;
@@ -309,7 +318,7 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 		       true;
 		   false ->
 		       false;
-		   true ->
+		   {true, _} ->
 		       case StateData#state.key of
 			   "" ->
 			       true;
@@ -360,7 +369,7 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 		    end,
 		    {reply, Reply, StateName, 
 		     StateData#state{input = "cancel", last_poll = LastPoll}};
-		true ->
+		{true, Pause} ->
 		    SaveKey = if 
 				  NewKey == "" ->
 				      Key;
@@ -380,11 +389,19 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 				      El#hbr.rid > (Rid - 1 - Hold)]
 			      ],
 %%		    ?DEBUG("reqlist: ~p", [ReqList]),
+                    
+                    %% setup next timer
+                    cancel_timer(StateData#state.timer),
+                    if 
+                        Pause > 0 ->
+			    Timer = erlang:start_timer(
+				      Pause, self(), []);
+                        true ->
+			    Timer = erlang:start_timer(
+				      ?MAX_INACTIVITY, self(), [])
+                    end,
 		    case StateData#state.waiting_input of
 			false ->
-			    cancel_timer(StateData#state.timer),
-			    Timer = erlang:start_timer(
-				      ?MAX_INACTIVITY, self(), []),
 			    Input = Payload ++ [StateData#state.input],
 			    Reply = ok,
 			    {reply, Reply, StateName, 
@@ -393,6 +410,7 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 					     key = SaveKey,
 					     ctime = TNow,
 					     timer = Timer,
+                                             pause = Pause,
 					     last_poll = LastPoll,
 					     req_list = ReqList
 					    }};
@@ -416,9 +434,6 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
                             ?DEBUG("really sending now: ~s", [SendPacket]),
 			    Receiver ! {tcp, {http_bind, self()},
 					list_to_binary(SendPacket)},
-			    cancel_timer(StateData#state.timer),
-			    Timer = erlang:start_timer(
-				      ?MAX_INACTIVITY, self(), []),
 			    Reply = ok,
 			    {reply, Reply, StateName,
 			     StateData#state{waiting_input = false,
@@ -428,6 +443,7 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
 					     key = SaveKey,
 					     ctime = TNow,
 					     timer = Timer,
+                                             pause = Pause,
 					     last_poll = LastPoll,
 					     req_list = ReqList
 					    }}
@@ -439,16 +455,26 @@ handle_sync_event({http_put, Rid, Attrs, Payload, Hold, StreamTo},
     end;
 
 handle_sync_event({http_get, Rid, Wait, Hold}, _From, StateName, StateData) ->
+    %% setup timer
+    cancel_timer(StateData#state.timer),
+    if 
+        StateData#state.pause > 0 ->
+            Timer = erlang:start_timer(
+                      StateData#state.pause, self(), []);
+        true ->
+            Timer = erlang:start_timer(
+                      ?MAX_INACTIVITY, self(), [])
+    end,
+
     {_,TSec,TMSec} = now(),
     TNow = TSec*1000*1000 + TMSec,
-    cancel_timer(StateData#state.timer),
-    Timer = erlang:start_timer(?MAX_INACTIVITY, self(), []),
     if 
 	(Hold > 0) and 
 	(StateData#state.output == "") and 
 	((TNow - StateData#state.ctime) < (Wait*1000*1000)) and 
 	(StateData#state.rid == Rid) and 
-	(StateData#state.input /= "cancel") ->
+	(StateData#state.input /= "cancel") and
+        (StateData#state.pause == 0) ->
 	    Output = StateData#state.output,
 	    ReqList = StateData#state.req_list,
 	    Reply = {ok, keep_on_hold};
@@ -678,6 +704,8 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess,
 				 {"inactivity", 
 				  integer_to_list(
                                     trunc(?MAX_INACTIVITY/1000))},
+                                 {"maxpause",
+                                  integer_to_list(?MAX_PAUSE)},
 				 {"polling", 
                                   integer_to_list(
                                     trunc(?MIN_POLLING/1000000))},
