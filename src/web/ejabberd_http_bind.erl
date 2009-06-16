@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 276 2007-08-15 16:09:23Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 277 2007-08-16 09:39:05Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 276 $').
+-vsn('$Rev: 277 $').
 
 -behaviour(gen_fsm).
 
@@ -160,23 +160,18 @@ process_request(Data) ->
                             V -> V
                         end,
                     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
-                    case catch mnesia:transaction(
-                                 fun() ->
-                                         mnesia:write(
-                                           #http_bind{id = Sid,
-                                                      pid = Pid,
-                                                      to = {XmppDomain, 
-                                                            XmppVersion},
-                                                      hold = Hold,
-                                                      wait = Wait,
-                                                      version = Version
-                                                     })
-                                 end) of 
-                        {'EXIT', Reason} ->
-                            ?DEBUG("failed storing session: ~p", [Reason]);
-                        Foo ->
-                            ?DEBUG("foo: ~p", [Foo])
-                    end,
+                    mnesia:transaction(
+                      fun() ->
+                              mnesia:write(
+                                #http_bind{id = Sid,
+                                           pid = Pid,
+                                           to = {XmppDomain, 
+                                                 XmppVersion},
+                                           hold = Hold,
+                                           wait = Wait,
+                                           version = Version
+                                          })
+                      end),
                     handle_http_put(Sid, Rid, Attrs, Payload, true)
             end;
         {ok, {Sid, Rid, Attrs, Payload1}} ->
@@ -609,14 +604,6 @@ receive_loop(Sess, Rid, Attrs, StreamStart) ->
 prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold}=Sess, 
                  Rid, Attrs, StreamStart) ->
     case http_get(Sess, Rid) of
-	{error, not_exists} ->
-            case xml:get_attr_s("type", Attrs) of
-                "terminate" ->
-                    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
-                _ ->
-                    ?DEBUG("no session associated with sid: ~s", [Sid]),
-                    {404, ?HEADER, ""}
-            end;
 	{ok, keep_on_hold} ->
 	    receive_loop(Sess, Rid, Attrs, StreamStart);
 	{ok, cancel} ->
