@@ -3,12 +3,12 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 243 2007-08-03 13:48:49Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 272 2007-08-15 12:11:06Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 243 $').
+-vsn('$Rev: 272 $').
 
 -behaviour(gen_fsm).
 
@@ -65,6 +65,9 @@
 -endif.
 
 -define(BOSH_VERSION, "1.6").
+-define(NS_CLIENT, "jabber:client").
+-define(NS_BOSH, "urn:xmpp:xbosh").
+-define(NS_HTTP_BIND, "http://jabber.org/protocol/httpbind").
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, "2"). % don't poll faster than that or we will
@@ -118,7 +121,7 @@ process_request(Data) ->
                 "" ->
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
-		     "xmlns='http://jabber.org/protocol/httpbind'/>"};
+		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'/>"};
                 XmppDomain ->
                     %% create new session
                     Sid = sha:sha(term_to_binary({now(), make_ref()})),
@@ -156,11 +159,13 @@ process_request(Data) ->
                       fun() ->
                               mnesia:write(#http_bind{id = Sid,
                                                       pid = Pid,
-                                                      to = {XmppDomain, XmppVersion},
+                                                      to = {XmppDomain, 
+                                                            XmppVersion},
                                                       wait = Wait,
                                                       hold = Hold})
                       end),
-                    handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, Packet, true)
+                    handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, 
+                                    Attrs, Packet, true)
             end;
         {ok, {Sid, Rid, Key, NewKey, Attrs, Packet}} ->
             %% old session
@@ -180,12 +185,14 @@ process_request(Data) ->
                            _ ->
                                Packet
                        end,
-            handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, InPacket, StreamStart);
+            handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, 
+                            InPacket, StreamStart);
         _ ->
             {400, ?HEADER, ""}
     end.
 
-handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, Packet, StreamStart) ->
+handle_http_put(Sid, Rid, Key, NewKey, Wait, Hold, Attrs, 
+                Packet, StreamStart) ->
     case http_put(Sid, Rid, Key, NewKey, Hold, Packet, StreamStart) of
         {error, not_exists} ->
             ?DEBUG("no session associated with sid: ~p", [Sid]),
@@ -228,7 +235,7 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
 	{error, not_exists} ->
             case xml:get_attr_s("type", Attrs) of
                 "terminate" ->
-                    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+                    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
                 _ ->
                     ?DEBUG("no session associated with sid: ~s", [Sid]),
                     {404, ?HEADER, ""}
@@ -239,47 +246,56 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
 	    %% actually it would be better if we could completely
 	    %% cancel this request, but then we would have to hack
 	    %% ejabberd_http and I'm too lazy now
-	    {404, ?HEADER, ""}; 
+            {200, ?HEADER, "<body type='error' xmlns='"++?NS_HTTP_BIND++"'/>"};
 	{ok, OutPacket} ->
             ?DEBUG("OutPacket: ~s", [OutPacket]),
 	    case StreamStart of
                 false ->
 		    send_outpacket(Sid, OutPacket);
 		true ->
-		    OutEls = case xml_stream:parse_element(
-                                    OutPacket++"</stream:stream>") of
-                                 El when element(1, El) == xmlelement ->
-                                     ?DEBUG("~p", [El]),
-                                     {xmlelement, _, OutAttrs, Els} = El,
-                                     AuthID = xml:get_attr_s("id", OutAttrs),
-                                     From = xml:get_attr_s("from", OutAttrs),
-                                     Version = xml:get_attr_s("version", OutAttrs),
-                                     StreamError = false,
-                                     case Els of
-                                         [] ->
-                                             [];
-                                         [{xmlelement, "stream:features", StreamAttribs, StreamEls} | StreamTail] ->
-                                             [{xmlelement, "stream:features", [{"xmlns:stream","http://etherx.jabber.org/streams"}] ++ StreamAttribs, StreamEls}] ++ StreamTail;
-                                         Xml ->
-                                             Xml
-                                     end;
-                                 {error, _} ->
-                                     AuthID = "",
-                                     From = "",
-                                     Version = "",
-                                     StreamError = true,
-                                     []
-                             end,
+		    OutEls = 
+                        case xml_stream:parse_element(
+                               OutPacket++"</stream:stream>") of
+                            El when element(1, El) == xmlelement ->
+                                ?DEBUG("~p", [El]),
+                                {xmlelement, _, OutAttrs, Els} = El,
+                                AuthID = xml:get_attr_s("id", OutAttrs),
+                                From = xml:get_attr_s("from", OutAttrs),
+                                Version = xml:get_attr_s("version", OutAttrs),
+                                StreamError = false,
+                                case Els of
+                                    [] ->
+                                        [];
+                                    [{xmlelement, "stream:features", 
+                                      StreamAttribs, StreamEls} 
+                                     | StreamTail] ->
+                                        [{xmlelement, "stream:features", 
+                                          [{"xmlns:stream",
+                                            ?NS_STREAM}
+                                          ] 
+                                          ++ StreamAttribs, 
+                                          StreamEls
+                                         }] ++ StreamTail;
+                                    Xml ->
+                                        Xml
+                                end;
+                            {error, _} ->
+                                AuthID = "",
+                                From = "",
+                                Version = "",
+                                StreamError = true,
+                                []
+                        end,
 		    if
 			StreamError == true ->
 			    {200, ?HEADER, "<body type='terminate' "
 			     "condition='host-unknown' "
-			     "xmlns='http://jabber.org/protocol/httpbind'/>"};
+			     "xmlns='"++?NS_HTTP_BIND++"'/>"};
 			true ->
                             BOSH_attribs = 
                                 [{"authid", AuthID},
-                                 {"xmlns:xmpp", "urn:xmpp:xbosh"},
-                                 {"xmlns:stream","http://etherx.jabber.org/streams"}] ++
+                                 {"xmlns:xmpp", ?NS_BOSH},
+                                 {"xmlns:stream", ?NS_STREAM}] ++
                                 case OutEls of 
                                     [] ->
                                         [];
@@ -290,7 +306,7 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
 			     xml:element_to_string(
 			       {xmlelement,"body",
 				[{"xmlns",
-				  "http://jabber.org/protocol/httpbind"},
+				  ?NS_HTTP_BIND},
 				 {"sid",Sid},
 				 {"wait", integer_to_list(Wait)},
 				 {"requests", integer_to_list(Hold+1)},
@@ -308,13 +324,13 @@ prepare_response(Sid, Rid, Wait, Hold, Attrs, StreamStart) ->
 send_outpacket(Sid, OutPacket) ->
     case OutPacket of
 	"" ->
-	    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	"</stream:stream>" ->
 	    case mnesia:dirty_read({http_bind, Sid}) of
 		[#http_bind{pid = FsmRef}] ->
 		    gen_fsm:sync_send_all_state_event(FsmRef,stop)
 	    end,
-	    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	_ ->
 	    case xml_stream:parse_element("<body>" 
 					  ++ OutPacket
@@ -323,20 +339,20 @@ send_outpacket(Sid, OutPacket) ->
 		El when element(1, El) == xmlelement ->
 		    {xmlelement, _, _, OEls} = El,
 		    TypedEls = [xml:replace_tag_attr("xmlns",
-						     "jabber:client",OEl) ||
+						     ?NS_CLIENT,OEl) ||
 				   OEl <- OEls],
 		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
 			   [xml:element_to_string(
 			      {xmlelement,"body",
 			       [{"xmlns",
-				 "http://jabber.org/protocol/httpbind"}],
+				 ?NS_HTTP_BIND}],
 			       TypedEls})]
 			  ),
 		    {200, ?HEADER,
 		     xml:element_to_string(
 		       {xmlelement,"body",
 			[{"xmlns",
-			  "http://jabber.org/protocol/httpbind"}],
+			  ?NS_HTTP_BIND}],
 			TypedEls})};
 		{error, _E} ->
 		    OutEls = case xml_stream:parse_element(
@@ -347,11 +363,21 @@ send_outpacket(Sid, OutPacket) ->
                                      case SEls of
                                          [] ->
                                              [];
-                                         [{xmlelement, "stream:features", StreamAttribs, StreamEls} | StreamTail] ->
-                                             TypedTail = [xml:replace_tag_attr("xmlns",
-                                                                              "jabber:client",OEl) ||
+                                         [{xmlelement, 
+                                           "stream:features", 
+                                           StreamAttribs, StreamEls} | 
+                                          StreamTail] ->
+                                             TypedTail = 
+                                                 [xml:replace_tag_attr(
+                                                    "xmlns",
+                                                    ?NS_CLIENT,OEl) ||
                                                             OEl <- StreamTail],
-                                             [{xmlelement, "stream:features", [{"xmlns:stream","http://etherx.jabber.org/streams"}] ++ StreamAttribs, StreamEls}] ++ TypedTail;
+                                             [{xmlelement, 
+                                               "stream:features", 
+                                               [{"xmlns:stream",
+                                                 ?NS_STREAM}] ++ 
+                                               StreamAttribs, StreamEls}] ++ 
+                                                 TypedTail;
                                          Xml ->
                                              Xml
                                      end;
@@ -361,23 +387,25 @@ send_outpacket(Sid, OutPacket) ->
                              end,
                     if 
                         StreamError ->
-                            StreamErrCond = case xml_stream:parse_element(
-                                                   "<stream:stream>"++OutPacket) of
-                                                El when element(1, El) == xmlelement ->
-                                                    {xmlelement, _Tag, _Attr, Els} = El,
-                                                    [{xmlelement, SE, _, Cond} | _] = Els,
-                                                    if 
-                                                        SE == "stream:error" ->
-                                                            Cond;
-                                                        true ->
-                                                            null
-                                                    end;
-                                                {error, _E} ->
-                                                    null
-                                            end,
+                            StreamErrCond = 
+                                case xml_stream:parse_element(
+                                       "<stream:stream>"++OutPacket) of
+                                    El when element(1, El) == xmlelement ->
+                                        {xmlelement, _Tag, _Attr, Els} = El,
+                                        [{xmlelement, SE, _, Cond} | _] = Els,
+                                        if 
+                                            SE == "stream:error" ->
+                                                Cond;
+                                            true ->
+                                                null
+                                        end;
+                                    {error, _E} ->
+                                        null
+                                end,
                             case mnesia:dirty_read({http_bind, Sid}) of
                                 [#http_bind{pid = FsmRef}] ->
-                                    gen_fsm:sync_send_all_state_event(FsmRef,stop);
+                                    gen_fsm:sync_send_all_state_event(FsmRef,
+                                                                      stop);
                                 _ ->
                                     err %% hu?
                             end,
@@ -386,12 +414,12 @@ send_outpacket(Sid, OutPacket) ->
                                     {200, ?HEADER,
                                      "<body type='terminate' "
                                      "condition='internal-server-error' "
-                                     "xmlns='http://jabber.org/protocol/httpbind'/>"};
+                                     "xmlns='"++?NS_HTTP_BIND++"'/>"};
                                 _ ->
                                     {200, ?HEADER,
                                      "<body type='terminate' "
                                      "condition='remote-stream-error' "
-                                     "xmlns='http://jabber.org/protocol/httpbind'>" ++
+                                     "xmlns='"++?NS_HTTP_BIND++"'>" ++
                                      elements_to_string(StreamErrCond) ++
                                      "</body>"}
                             end;
@@ -400,7 +428,7 @@ send_outpacket(Sid, OutPacket) ->
                              xml:element_to_string(
                                {xmlelement,"body",
                                 [{"xmlns",
-                                  "http://jabber.org/protocol/httpbind"}],
+                                  ?NS_HTTP_BIND}],
                                 OutEls})}
                     end
 	    end
@@ -615,13 +643,15 @@ handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StreamTo},
                                 case StreamTo of
                                     {To, ""} ->
                                         ["<stream:stream to='", To, "' "
-                                         "xmlns='jabber:client' "
-                                         "xmlns:stream='http://etherx.jabber.org/streams'>"] ++ Packet;
+                                         "xmlns='"++?NS_CLIENT++"' "
+                                         "xmlns:stream='"++?NS_STREAM++"'>"] 
+                                            ++ Packet;
                                     {To, Version} ->
                                         ["<stream:stream to='", To, "' "
-                                         "xmlns='jabber:client' "
+                                         "xmlns='"++?NS_CLIENT++"' "
                                          "version='", Version, "' "
-                                         "xmlns:stream='http://etherx.jabber.org/streams'>"] ++ Packet;
+                                         "xmlns:stream='"++?NS_STREAM++"'>"] 
+                                            ++ Packet;
                                     _ ->
                                         Packet
                                 end,
@@ -791,7 +821,7 @@ parse_request(Data) ->
             lists:map(fun(E) ->
                               EXmlns = xml:get_tag_attr_s("xmlns",E),
                               if 
-                                  EXmlns == "jabber:client" ->
+                                  EXmlns == ?NS_CLIENT ->
                                       remove_tag_attr("xmlns",E);
                                   true ->
                                       ok
@@ -801,7 +831,7 @@ parse_request(Data) ->
 	    if 
 		Name /= "body" -> 
 		    {error, bad_request};
-		Xmlns /= "http://jabber.org/protocol/httpbind" ->
+		Xmlns /= ?NS_HTTP_BIND ->
 		    {error, bad_request};
 		true ->
 		    {ok, {Sid, Rid, Key, NewKey, Attrs, Packet}}
