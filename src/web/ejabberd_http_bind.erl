@@ -4,7 +4,7 @@
 %%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 942 2009-04-22 15:25:31Z mremond $
+%%% Id      : $Id: ejabberd_http_bind.erl 944 2009-04-30 18:03:23Z gcant $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -413,7 +413,6 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 	    ReqList = StateData#state.req_list,
 	    WaitTimer = erlang:start_timer(Wait * 1000, self(), []),
 	    {next_state, StateName, StateData#state{
-				      input = "",
 				      output = Output,
 				      http_receiver = From,
 				      wait_timer = WaitTimer,
