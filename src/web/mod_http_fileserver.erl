@@ -108,7 +108,7 @@ join([H | T], Separator) ->
 
 log(File, Code, Request) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
-    IP = join(tuple_to_list(Request#request.ip), "."),
+    IP = join(tuple_to_list(element(1, Request#request.ip)), "."),
     Path = join(Request#request.path, "/"),
     Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", element(2, E)]) end,
 				Request#request.q), "&") of
