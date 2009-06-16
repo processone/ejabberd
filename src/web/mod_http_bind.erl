@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 440 2007-12-06 22:36:21Z badlop $
+%%% Id      : $Id: mod_http_bind.erl 514 2008-03-12 21:54:18Z badlop $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
@@ -74,7 +74,7 @@ process(_Path, _Request) ->
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
-start(_Host, _Opts) ->
+start(Host, _Opts) ->
     HTTPBindSupervisor =
         {ejabberd_http_bind_sup,
          {ejabberd_tmp_sup, start_link,
@@ -88,6 +88,11 @@ start(_Host, _Opts) ->
             ok;
         {ok, _Pid, _Info} ->
             ok;
+        {error, {already_started, _PidOther}} ->
+            ErrorText = "mod_http_bind is already started, "
+		"so it will not be started again for "
+		++ Host,
+            {'EXIT', {start_child_error, ErrorText}};
         {error, Error} ->
             {'EXIT', {start_child_error, Error}}
     end.
