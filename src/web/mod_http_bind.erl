@@ -3,7 +3,7 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : Implementation of XMPP over BOSH (XEP-0206)
 %%% Created : Tue Feb 20 13:15:52 CET 2007
-%%% Id      : $Id: mod_http_bind.erl 514 2008-03-12 21:54:18Z badlop $
+%%% Id      : $Id: mod_http_bind.erl 549 2008-04-02 09:12:44Z cromain $
 %%%----------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------
@@ -89,10 +89,8 @@ start(Host, _Opts) ->
         {ok, _Pid, _Info} ->
             ok;
         {error, {already_started, _PidOther}} ->
-            ErrorText = "mod_http_bind is already started, "
-		"so it will not be started again for "
-		++ Host,
-            {'EXIT', {start_child_error, ErrorText}};
+            % mod_http_bind is already started so it will not be started again
+            ok;
         {error, Error} ->
             {'EXIT', {start_child_error, Error}}
     end.
