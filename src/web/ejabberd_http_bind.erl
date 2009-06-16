@@ -1,14 +1,15 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_http_bind.erl
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Purpose : HTTP Binding support (JEP-0124)
+%%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as 
+%%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Id      : $Id: ejabberd_http_bind.erl 277 2007-08-16 09:39:05Z sstrigler $
+%%% Id      : $Id: ejabberd_http_bind.erl 278 2007-08-16 10:53:28Z sstrigler $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('$Rev: 277 $').
+-vsn('$Rev: 278 $').
 
 -behaviour(gen_fsm).
 
