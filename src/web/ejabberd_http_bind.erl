@@ -3,16 +3,17 @@
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Purpose : HTTP Binding support (JEP-0124)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
+%%% Id      : $Id: $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
 -author('steve@zeank.in-berlin.de').
--vsn('1.9').
+-vsn('Revision: 1.4').
 
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/3,
+-export([start_link/2,
 	 init/1,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -25,7 +26,7 @@
 	 close/1,
 	 process_request/1]).
 
--define(ejabberd_debug, true).
+%%-define(ejabberd_debug, true).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -34,7 +35,10 @@
 -record(http_bind, {id, pid, to, hold, wait}).
 
 %% http binding request
--record(hbr, {rid, key, in, out}).
+-record(hbr, {rid,
+	      key,
+	      in,
+	      out}).
 
 -record(state, {id,
 		rid = error,
@@ -49,15 +53,14 @@
 		req_list = [] % list of requests
 	       }).
 
--define(DBGFSM, true).
+
+%%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
 -else.
 -define(FSMOPTS, []).
 -endif.
-
--define(BOSH_VERSION, "1.6").
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, "2"). % don't poll faster than that or we will shoot you
@@ -66,17 +69,18 @@
 -define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
 -define(HEADER, [?CT,{"X-Sponsored-By", "http://mabber.com"}]).
 
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Sid, Rid, Key) ->
+start(Sid, Key) ->
     mnesia:create_table(http_bind,
         		[{ram_copies, [node()]},
         		 {attributes, record_info(fields, http_bind)}]),
-    supervisor:start_child(ejabberd_http_bind_sup, [Sid, Rid, Key]).
+    supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key]).
 
-start_link(Sid, Rid, Key) ->
-    gen_fsm:start_link(?MODULE, [Sid, Rid, Key], ?FSMOPTS).
+start_link(Sid, Key) ->
+    gen_fsm:start_link(?MODULE, [Sid, Key], ?FSMOPTS).
 
 send({http_bind, FsmRef}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
@@ -95,56 +99,292 @@ controlling_process(_Socket, _Pid) ->
 close({http_bind, FsmRef}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
+
 process_request(Data) ->
     case catch parse_request(Data) of
-        {ok, {[], Attrs, Packet}} -> %% no session id - create a new one!
-            ?DEBUG("no sid given. create a new session?", []),
-            case xml:get_attr_s("to",Attrs) of
-                [] -> %% missing 'to' - can't proceed
-                    ?DEBUG("missing 'to' attribute, can't create session", []),
-                    {200, ?HEADER, "<body type='terminate' "
-                     "condition='improper-addressing' "
-                     "xmlns='http://jabber.org/protocol/httpbind'/>"};
-                XmppDomain ->
-                    create_session(XmppDomain, Attrs, Packet)
-            end;
-	{ok, {Sid, Attrs, Packet}} ->
-            case check_request(Sid, Attrs, Packet) of
-                {error, not_exists} ->
-                    ?DEBUG("no session associated with sid: ~p", [Sid]),
-                    {404, ?HEADER, ""};
-                {error, bad_key} ->
-                    %%?DEBUG("bad key: ~s", [Key]),
-                    case mnesia:dirty_read({http_bind, Sid}) of
-                        [] ->
-                            {404, ?HEADER, ""};
-                        [#http_bind{pid = FsmRef}] ->
-                            gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                            {404, ?HEADER, ""}		    
-                    end;
-                {repeat, OutPacket} ->
-                    ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
-                           [OutPacket]),
-                    send_outpacket(Sid, OutPacket);
-                {ok, Rid} ->
-                    case http_put(Sid, Attrs, Packet) of
-                        {error, polling_too_frequently} ->
-                            ?DEBUG("polling too frequently: ~p", [Sid]),
-                            case mnesia:dirty_read({http_bind, Sid}) of
-                                [] -> %% unlikely! (?)
-                                    {404, ?HEADER, ""};
-                                [#http_bind{pid = FsmRef}] ->
-                                    gen_fsm:sync_send_all_state_event(FsmRef,stop),
-                                    {403, ?HEADER, ""}		    
-                            end;
-                        ok ->
-                            receive_loop(Sid, Rid);
-                        _ ->
-                            {400, ?HEADER, ""}
-                    end
-            end;
+	{ok, {ParsedSid, Rid, Key, NewKey, Attrs, Packet}} ->
+	    XmppDomain = xml:get_attr_s("to",Attrs),
+	    if 
+		(ParsedSid == "") and (XmppDomain == "") ->
+		    {200, ?HEADER, "<body type='terminate' "
+		     "condition='improper-addressing' "
+		     "xmlns='http://jabber.org/protocol/httpbind'/>"};
+		true ->
+	    Sid = if
+		     (ParsedSid == "") ->
+			 %% create new session
+			 NewSid = sha:sha(term_to_binary({now(), make_ref()})),
+			 {ok, Pid} = start(NewSid, Key),
+                         ?DEBUG("got pid: ~p", [Pid]),
+			 Wait = case
+				    string:to_integer(xml:get_attr_s("wait",Attrs))
+				    of
+				    {error, _} ->
+					?MAX_WAIT;
+				    {CWait, _} ->
+					if 
+					    (CWait > ?MAX_WAIT) ->
+						?MAX_WAIT;
+					    true ->
+						CWait
+					end
+				end,
+			 Hold = case
+				    string:to_integer(
+				      xml:get_attr_s("hold",Attrs))
+				    of
+				    {error, _} ->
+					(?MAX_REQUESTS - 1);
+				    {CHold, _} ->
+					if 
+					    (CHold > (?MAX_REQUESTS - 1)) ->
+						(?MAX_REQUESTS - 1);
+					    true ->
+						CHold
+					end
+				end,
+			 mnesia:transaction(
+			   fun() ->
+				   mnesia:write(#http_bind{id = NewSid,
+							   pid = Pid,
+                                                           to = XmppDomain,
+							   wait = Wait,
+							   hold = Hold})
+			   end),
+			 StreamStart = if
+                                           (XmppDomain /= "") ->
+                                               true;
+                                           true ->
+                                               false
+				    end,
+                         InPacket = Packet,
+			 NewSid;
+		     true ->
+			 %% old session
+			 Type = xml:get_attr_s("type",Attrs),
+                         StreamStart =  
+                             case xml:get_attr_s("xmpp:restart",Attrs) of
+                                 "true" ->
+                                     true;
+                                 _ ->
+                                     false
+                             end,
+			 Wait = ?MAX_WAIT,
+			 Hold = (?MAX_REQUESTS - 1),
+			 if 
+			     (Type == "terminate") ->
+				 %% terminate session
+				 InPacket = Packet ++ "</stream:stream>";
+			     true ->
+				 InPacket = Packet
+			 end,
+			 ParsedSid
+		 end,
+%%		    ?DEBUG("~n InPacket: ~s ~n", [InPacket]),
+	    case http_put(Sid, Rid, Key, NewKey, Hold, InPacket, StreamStart) of
+		{error, not_exists} ->
+		    ?DEBUG("no session associated with sid: ~p", [Sid]),
+		    {404, ?HEADER, ""};
+		{error, bad_key} ->
+		    ?DEBUG("bad key: ~s", [Key]),
+		    case mnesia:dirty_read({http_bind, Sid}) of
+			[] ->
+			    {404, ?HEADER, ""};
+			[#http_bind{pid = FsmRef}] ->
+			    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+			    {404, ?HEADER, ""}		    
+		    end;
+		{error, polling_too_frequently} ->
+		    ?DEBUG("polling too frequently: ~p", [Sid]),
+		    case mnesia:dirty_read({http_bind, Sid}) of
+			[] -> %% unlikely! (?)
+			    {404, ?HEADER, ""};
+			[#http_bind{pid = FsmRef}] ->
+			    gen_fsm:sync_send_all_state_event(FsmRef,stop),
+			    {403, ?HEADER, ""}		    
+		    end;
+		{repeat, OutPacket} ->
+		    ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", 
+			   [OutPacket]),
+		    send_outpacket(Sid, OutPacket);
+		ok ->
+		    receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs)
+	    end
+	    end;
 	_ ->
 	    {400, ?HEADER, ""}
+    end.
+
+receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
+    receive
+	after 100 -> ok
+	end,
+    prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs).
+
+prepare_response(Sid,ParsedSid,Rid,Wait,Hold,Attrs) ->
+    case http_get(Sid,Rid) of
+	{error, not_exists} ->
+            ?DEBUG("no session associated with sid: ~s", Sid),
+	    {404, ?HEADER, ""};
+	{ok, keep_on_hold} ->
+	    receive_loop(Sid,ParsedSid,Rid,Wait,Hold,Attrs);
+	{ok, cancel} ->
+	    %% actually it would be better if we could completely
+	    %% cancel this request, but then we would have to hack
+	    %% ejabberd_http and I'm too lazy now
+	    {404, ?HEADER, ""}; 
+	{ok, OutPacket} ->
+            ?DEBUG("OutPacket: ~s", [OutPacket]),
+	    if
+		Sid == ParsedSid ->
+		    send_outpacket(Sid, OutPacket);
+		true ->
+		    To = xml:get_attr_s("to",Attrs),
+		    OutEls = case xml_stream:parse_element(
+                                    OutPacket++"</stream:stream>") of
+                                 El when element(1, El) == xmlelement ->
+                                     {xmlelement, _, OutAttrs, Els} = El,
+                                     AuthID = xml:get_attr_s("id", OutAttrs),
+                                     StreamError = false,
+                                     case Els of
+                                         [] ->
+                                             [];
+                                         [{xmlelement, "stream:features", StreamAttribs, StreamEls} | StreamTail] ->
+                                             [{xmlelement, "stream:features", [{"xmlns:stream","http://etherx.jabber.org/streams"}] ++ StreamAttribs, StreamEls}] ++ StreamTail;
+                                         Xml ->
+                                             Xml
+                                     end;
+                                 {error, _} ->
+                                     AuthID = "",
+                                     StreamError = true,
+                                     []
+                             end,
+		    if
+			To == "" ->
+			    {200, ?HEADER, "<body type='terminate' "
+			     "condition='improper-addressing' "
+			     "xmlns='http://jabber.org/protocol/httpbind'/>"};
+			StreamError == true ->
+			    {200, ?HEADER, "<body type='terminate' "
+			     "condition='host-unknown' "
+			     "xmlns='http://jabber.org/protocol/httpbind'/>"};
+			true ->
+			    {200, ?HEADER,
+			     xml:element_to_string(
+			       {xmlelement,"body",
+				[{"xmlns",
+				  "http://jabber.org/protocol/httpbind"},
+				 {"sid",Sid},
+				 {"wait", integer_to_list(Wait)},
+				 {"requests", integer_to_list(Hold+1)},
+				 {"inactivity", 
+				  integer_to_list(trunc(?MAX_INACTIVITY/1000))},
+				 {"polling", ?MIN_POLLING},
+				 {"authid", AuthID}
+				],OutEls})}
+		    end
+	    end
+    end.
+    
+send_outpacket(Sid, OutPacket) ->
+    case OutPacket of
+	"" ->
+	    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+	"</stream:stream>" ->
+	    case mnesia:dirty_read({http_bind, Sid}) of
+		[#http_bind{pid = FsmRef}] ->
+		    gen_fsm:sync_send_all_state_event(FsmRef,stop)
+	    end,
+	    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
+	_ ->
+	    case xml_stream:parse_element("<body>" 
+					  ++ OutPacket
+					  ++ "</body>") 
+		of
+		El when element(1, El) == xmlelement ->
+		    {xmlelement, _, _, OEls} = El,
+		    TypedEls = [xml:replace_tag_attr("xmlns",
+						     "jabber:client",OEl) ||
+				   OEl <- OEls],
+		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
+			   [xml:element_to_string(
+			      {xmlelement,"body",
+			       [{"xmlns",
+				 "http://jabber.org/protocol/httpbind"}],
+			       TypedEls})]
+			  ),
+		    {200, ?HEADER,
+		     xml:element_to_string(
+		       {xmlelement,"body",
+			[{"xmlns",
+			  "http://jabber.org/protocol/httpbind"}],
+			TypedEls})};
+		{error, _E} ->
+		    OutEls = case xml_stream:parse_element(
+                                    OutPacket++"</stream:stream>") of
+                                 SEl when element(1, SEl) == xmlelement ->
+                                     {xmlelement, _, _OutAttrs, SEls} = SEl,
+                                     StreamError = false,
+                                     case SEls of
+                                         [] ->
+                                             [];
+                                         [{xmlelement, "stream:features", StreamAttribs, StreamEls} | StreamTail] ->
+                                             TypedTail = [xml:replace_tag_attr("xmlns",
+                                                                              "jabber:client",OEl) ||
+                                                            OEl <- StreamTail],
+                                             [{xmlelement, "stream:features", [{"xmlns:stream","http://etherx.jabber.org/streams"}] ++ StreamAttribs, StreamEls}] ++ TypedTail;
+                                         Xml ->
+                                             Xml
+                                     end;
+                                 {error, _} ->
+                                     StreamError = true,
+                                     []
+                             end,
+                    if 
+                        StreamError ->
+                            StreamErrCond = case xml_stream:parse_element(
+                                                   "<stream:stream>"++OutPacket) of
+                                                El when element(1, El) == xmlelement ->
+                                                    {xmlelement, _Tag, _Attr, Els} = El,
+                                                    [{xmlelement, SE, _, Cond} | _] = Els,
+                                                    if 
+                                                        SE == "stream:error" ->
+                                                            Cond;
+                                                        true ->
+                                                            null
+                                                    end;
+                                                {error, _E} ->
+                                                    null
+                                            end,
+                            case mnesia:dirty_read({http_bind, Sid}) of
+                                [#http_bind{pid = FsmRef}] ->
+                                    gen_fsm:sync_send_all_state_event(FsmRef,stop);
+                                _ ->
+                                    err %% hu?
+                            end,
+                            case StreamErrCond of
+                                null ->
+                                    {200, ?HEADER,
+                                     "<body type='terminate' "
+                                     "condition='internal-server-error' "
+                                     "xmlns='http://jabber.org/protocol/httpbind'/>"};
+                                _ ->
+                                    {200, ?HEADER,
+                                     "<body type='terminate' "
+                                     "condition='remote-stream-error' "
+                                     "xmlns='http://jabber.org/protocol/httpbind'>" ++
+                                     elements_to_string(StreamErrCond) ++
+                                     "</body>"}
+                            end;
+                        true ->
+                            {200, ?HEADER,
+                             xml:element_to_string(
+                               {xmlelement,"body",
+                                [{"xmlns",
+                                  "http://jabber.org/protocol/httpbind"}],
+                                OutEls})}
+                    end
+	    end
     end.
 
 %%%----------------------------------------------------------------------
@@ -158,7 +398,7 @@ process_request(Data) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([Sid, Rid, Key]) ->
+init([Sid, Key]) ->
     ?INFO_MSG("started: ~p", [{Sid, Key}]),
     Opts = [], % TODO
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_bind, self()}, Opts),
@@ -166,7 +406,6 @@ init([Sid, Rid, Key]) ->
 %    ejabberd_c2s:become_controller(C2SPid),
     Timer = erlang:start_timer(?MAX_INACTIVITY, self(), []),
     {ok, loop, #state{id = Sid,
-                      rid = Rid,
 		      key = Key,
 		      timer = Timer}}.
 
@@ -232,73 +471,57 @@ handle_sync_event(stop, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 
-handle_sync_event({check_request, Attrs, Packet, _Hold},
-                  _From, check_key, StateData) ->
-    Key = xml:get_attr_s("key", Attrs),
-    case StateData#state.key of
-        "" ->
-            NewKey = xml:get_attr_s("newkey", Attrs),
-            {next_state, check_rid, StateData#state{key = NewKey}};
-        StateKey ->
-            case httpd_util:to_lower(
-                   hex(binary_to_list(
-                         crypto:sha(Key)))) of
-                StateKey ->
-                    case xml:get_attr_s("newkey", Attrs) of
-                        "" ->
-                            {next_state, check_rid, StateData#state{key = Key}};
-                        NewKey ->
-                            {next_state, check_rid, StateData#state{key = NewKey}}
-                    end;
-                _ ->
-                    Reply = {error, bad_key},
-                    {reply, Reply, check_key, StateData}
-            end
-    end;
-
-handle_sync_event({check_request, Attrs, Packet, Hold},
-                  _From, check_rid = StateName, StateData) ->
-    case string:to_integer(xml:get_attr_s("rid", Attrs)) of
-        {error, _} ->
-            Reply = {error, not_exists},
-            {reply, Reply, StateName, StateData};
-        {Rid, _} ->
-            case StateData#state.rid of
-                error ->
-                    {reply, ok, request_checked, StateData#state{rid = Rid}};
-                StateRid -> 
-                    if 
-                        (StateRid < Rid) and 
-                        (Rid =< StateRid + Hold + 1) ->
-                            {reply, {ok, Rid}, request_checked, StateData#state{rid = Rid}};
-                        ((StateRid-Hold-1) < Rid )and 
-                        (Rid =< StateRid) ->
-                            %% Repeat request
-                            [Out | _XS] = [El#hbr.out || 
-                                              El <- StateData#state.req_list, 
-                                              El#hbr.rid == Rid],
-                            Reply = case Out of 
-                                        [[] | OutPacket] ->
-                                            {repeat, OutPacket};
-                                        _ ->
-                                            {repeat, Out}
-                                    end,
-                            {reply, Reply, StateName, 
-                             StateData#state{input = "cancel"}};
-                        true ->
-                            Reply = {error, not_exists},
-                            {reply, Reply, StateName, StateData}
-                    end
-            end
-    end;
-
-handle_sync_event({check_request, Attrs, Packet, Hold},
-                  _From, _StateName, StateData) ->
-    {next_state, check_key, StateData};
-
-handle_sync_event({http_put, _Rid, Attrs, Packet, Hold},
-                  _From, check_activity, StateData) ->
-    ?DEBUG("check activity", []),
+handle_sync_event({http_put, Rid, Key, NewKey, Hold, Packet, StartTo},
+		  _From, StateName, StateData) ->
+    %% check if Rid valid
+    RidAllow = case Rid of
+		   error -> 
+		       false;
+		   _ ->
+		       case StateData#state.rid of
+			   error -> 
+			       %% first request - nothing saved so far
+			       true;
+			   OldRid ->
+			       ?DEBUG("state.rid/cur rid: ~p/~p", 
+				      [OldRid, Rid]),
+			       if 
+				   (OldRid < Rid) and 
+				   (Rid =< (OldRid + Hold + 1)) ->
+				       true;
+				   (Rid =< OldRid) and 
+				   (Rid > OldRid - Hold - 1) ->
+				       repeat;
+				   true ->
+				       false
+			       end
+		       end
+	       end,
+    %% check if key valid
+    KeyAllow = case RidAllow of
+		   repeat -> 
+		       true;
+		   false ->
+		       false;
+		   true ->
+		       case StateData#state.key of
+			   "" ->
+			       true;
+			   OldKey ->
+			       NextKey = httpd_util:to_lower(
+					   hex(binary_to_list(
+						 crypto:sha(Key)))),
+			       ?DEBUG("Key/OldKey/NextKey: ~s/~s/~s", 
+				      [Key, OldKey, NextKey]),
+			       if
+				   OldKey == NextKey ->
+				       true;
+				   true ->
+				       ?DEBUG("wrong key: ~s",[Key]),
+				       false
+			       end
+		       end
+	       end,
     {_,TSec,TMSec} = now(),
     TNow = TSec*1000*1000 + TMSec,
     LastPoll = if 
@@ -312,74 +535,97 @@ handle_sync_event({http_put, _Rid, Attrs, Packet, Hold},
 	(Packet == "") and 
 	(TNow - StateData#state.last_poll < MinPoll*1000*1000) ->
 	    Reply = {error, polling_too_frequently},
-	    {reply, Reply, send2server, StateData};
-        true ->
-            {next_state, send2server, StateData#state{last_poll = LastPoll}}
+	    {reply, Reply, StateName, StateData};
+	KeyAllow ->
+	    case RidAllow of
+		false ->
+		    Reply = {error, not_exists},
+		    {reply, Reply, StateName, StateData};
+		repeat ->
+		    ?DEBUG("REPEATING ~p", [Rid]),
+		    [Out | _XS] = [El#hbr.out || 
+				      El <- StateData#state.req_list, 
+				      El#hbr.rid == Rid],
+		    case Out of 
+			[[] | OutPacket] ->
+			    Reply = {repeat, OutPacket};
+			_ ->
+			    Reply = {repeat, Out}
+		    end,
+		    {reply, Reply, StateName, 
+		     StateData#state{input = "cancel", last_poll = LastPoll}};
+		true ->
+		    SaveKey = if 
+				  NewKey == "" ->
+				      Key;
+				  true ->
+				      NewKey
+			      end,
+		    ?DEBUG(" -- SaveKey: ~s~n", [SaveKey]),
+
+		    %% save request
+		    ReqList = [#hbr{rid=Rid,
+				    key=StateData#state.key,
+				    in=StateData#state.input,
+				    out=StateData#state.output
+				   } | 
+			       [El || El <- StateData#state.req_list, 
+				      El#hbr.rid < Rid, 
+				      El#hbr.rid > (Rid - 1 - Hold)]
+			      ],
+%%		    ?DEBUG("reqlist: ~p", [ReqList]),
+		    case StateData#state.waiting_input of
+			false ->
+			    cancel_timer(StateData#state.timer),
+			    Timer = erlang:start_timer(
+				      ?MAX_INACTIVITY, self(), []),
+			    Input = Packet ++ [StateData#state.input],
+			    Reply = ok,
+			    {reply, Reply, StateName, 
+			     StateData#state{input = Input,
+					     rid = Rid,
+					     key = SaveKey,
+					     ctime = TNow,
+					     timer = Timer,
+					     last_poll = LastPoll,
+					     req_list = ReqList
+					    }};
+			{Receiver, _Tag} ->
+                            SendPacket = 
+                                if 
+                                    StartTo /= "" ->
+                                        ["<stream:stream to='",
+                                         StartTo, 
+                                         "' xmlns='jabber:client' "
+                                         "version='1.0' "
+                                         "xmlns:stream='http://etherx.jabber.org/streams'>"] ++ Packet;
+                                    true ->
+                                        Packet
+                                end,
+                            ?DEBUG("really sending now: ~s", [SendPacket]),
+			    Receiver ! {tcp, {http_bind, self()},
+					list_to_binary(SendPacket)},
+			    cancel_timer(StateData#state.timer),
+			    Timer = erlang:start_timer(
+				      ?MAX_INACTIVITY, self(), []),
+			    Reply = ok,
+			    {reply, Reply, StateName,
+			     StateData#state{waiting_input = false,
+					     last_receiver = Receiver,
+					     input = "",
+					     rid = Rid,
+					     key = SaveKey,
+					     ctime = TNow,
+					     timer = Timer,
+					     last_poll = LastPoll,
+					     req_list = ReqList
+					    }}
+		    end
+	    end;
+	true ->
+	    Reply = {error, bad_key},
+	    {reply, Reply, StateName, StateData}
     end;
-
-handle_sync_event({http_put, Rid, Packet, StartTo, Hold},
-		  _From, send2server = StateName, StateData) ->
-
-    %% save request
-    ReqList = [#hbr{rid=Rid,
-                    key=StateData#state.key,
-                    in=StateData#state.input,
-                    out=StateData#state.output
-                   } | 
-               [El || El <- StateData#state.req_list, 
-                      El#hbr.rid < Rid, 
-                      El#hbr.rid > (Rid - 1 - Hold)]
-              ],
-
-    {_,TSec,TMSec} = now(),
-    TNow = TSec*1000*1000 + TMSec,
-
-    case StateData#state.waiting_input of
-        false ->
-            cancel_timer(StateData#state.timer),
-            Timer = erlang:start_timer(
-                      ?MAX_INACTIVITY, self(), []),
-            Input = Packet ++ [StateData#state.input],
-            Reply = ok,
-            {reply, Reply, StateName, 
-             StateData#state{input = Input,
-                             ctime = TNow,
-                             timer = Timer,
-                             req_list = ReqList
-                            }};
-        {Receiver, _Tag} ->
-            SendPacket = 
-                if 
-                    StartTo /= "" ->
-                        ["<stream:stream to='",
-                         StartTo, 
-                         "' xmlns='jabber:client' "
-                         %% version='1.0' "
-                         "xmlns:stream='http://etherx.jabber.org/streams'>"] ++ Packet;
-                    true ->
-                        Packet
-                end,
-            ?DEBUG("really sending now: ~s", [SendPacket]),
-            Receiver ! {tcp, {http_bind, self()},
-                        list_to_binary(SendPacket)},
-            cancel_timer(StateData#state.timer),
-            Timer = erlang:start_timer(
-                      ?MAX_INACTIVITY, self(), []),
-            Reply = ok,
-            {reply, Reply, StateName,
-             StateData#state{waiting_input = false,
-                             last_receiver = Receiver,
-                             input = "",
-                             ctime = TNow,
-                             timer = Timer,
-                             req_list = ReqList
-                            }}
-    end;
-handle_sync_event({http_put, Rid, Packet, StartTo, Hold},
-		  _From, StateName, StateData) ->
-    ?DEBUG("http-put checking acitivtiy", []),
-    {next_state, check_activity, StateData};
-
 
 handle_sync_event({http_get, Rid, Wait, Hold}, _From, StateName, StateData) ->
     {_,TSec,TMSec} = now(),
@@ -468,251 +714,27 @@ terminate(_Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-limit_val_max(Val, Max) when is_list(Val) ->
-    case string:to_integer(Val) of
-        {error, _} -> Max;
-        {IntVal, _} -> limit_val_max(IntVal, Max)
-    end;
-limit_val_max(Val, Max) when is_integer(Val) and (Val =< Max) ->
-    Val;
-limit_val_max(Val, Max) when is_integer(Val) and (Val > Max) -> 
-    Max;
-limit_val_max(_, Max) -> Max.
 
-create_session(XmppDomain, Attrs, Packet) ->
-    case string:to_integer(xml:get_attr_s("rid", Attrs)) of
-        {error, _} ->
-            ?DEBUG("'rid' invalid", []),
-            {400, ?HEADER, ""};
-        {Rid, _} ->
-            Sid = sha:sha(term_to_binary({now(), make_ref()})),
-            Key = xml:get_attr_s("key", Attrs),
-            {ok, Pid} = start(Sid, Rid, Key),
-            Wait = limit_val_max(xml:get_attr_s("wait",Attrs), ?MAX_WAIT),
-            Hold = limit_val_max(xml:get_attr_s("hold",Attrs), (?MAX_REQUESTS-1)),
-            F = fun() -> 
-                        mnesia:write(
-                          #http_bind{id   = Sid,
-                                     pid  = Pid,
-                                     to   = XmppDomain,
-                                     wait = Wait,
-                                     hold = Hold})
-                end,
-            case catch mnesia:transaction(F) of
-                {atomic, ok} ->
-                    ?DEBUG("created session with sid: ~s", [Sid]),
-                    case http_put(Sid, Attrs, Packet) of
-                        ok ->
-                            receive_loop(Sid, Rid);
-                        _ ->
-                            {400, ?HEADER, ""}
-                    end;
-                _E ->
-                    ?DEBUG("error creating session: ~p", [_E]),
-                    close({http_bind, Pid}),
-                    {200, ?HEADER,
-                     "<body type='terminate' "
-                     "condition='internal-server-error' "
-                     "xmlns='http://jabber.org/protocol/httpbind'/>"}
-            end
-    end.
 
-receive_loop(Sid, Rid) ->
-    receive
-	after 100 -> ok
-	end,
-    prepare_response(Sid, Rid).
-
-prepare_response(Sid, Rid) ->
-    case http_get(Sid,Rid) of
-	{error, not_exists} ->
-            ?DEBUG("no session associated with sid: ~s", Sid),
-	    {404, ?HEADER, ""};
-	{ok, keep_on_hold} ->
-	    receive_loop(Sid, Rid);
-	{ok, cancel} ->
-	    %% actually it would be better if we could completely
-	    %% cancel this request, but then we would have to hack
-	    %% ejabberd_http and I'm too lazy now
-	    {404, ?HEADER, ""}; 
-	{ok, OutPacket} ->
-            ?DEBUG("OutPacket: ~s", [OutPacket]),
-            send_outpacket(Sid, OutPacket);
-	{ok, stream_start, OutPacket} ->
-            ?DEBUG("OutPacket: ~s", [OutPacket]),
-            OutEls = case xml_stream:parse_element(
-                            OutPacket++"</stream:stream>") of
-                         El when element(1, El) == xmlelement ->
-                             {xmlelement, _, OutAttrs, Els} = El,
-                             AuthID = xml:get_attr_s("id", OutAttrs),
-                             StreamError = false,
-                             case Els of
-                                 [] ->
-                                     [];
-                                 [{xmlelement, "stream:features", StreamAttribs, StreamEls} | StreamTail] ->
-                                     [{xmlelement, "stream:features", [{"xmlns:stream","http://etherx.jabber.org/streams"}] ++ StreamAttribs, StreamEls}] ++ StreamTail;
-                                 Xml ->
-                                     Xml
-                             end;
-                         {error, _} ->
-                             AuthID = "",
-                             StreamError = true,
-                             []
-                     end,
-%            To = xml:get_attr_s("to",Attrs),
-            if
-%                To == "" ->
-%                    {200, ?HEADER, "<body type='terminate' "
-%                     "condition='improper-addressing' "
-%                     "xmlns='http://jabber.org/protocol/httpbind'/>"};
-                StreamError == true ->
-                    {200, ?HEADER, "<body type='terminate' "
-                     "condition='host-unknown' "
-                     "xmlns='http://jabber.org/protocol/httpbind'/>"};
-                true ->
-                    case mnesia:dirty_read({http_bind, Sid}) of 
-                        [#http_bind{wait = Wait, hold = Hold}] ->
-                            {200, ?HEADER,
-                             xml:element_to_string(
-                               {xmlelement,"body",
-                                [{"xmlns",
-                                  "http://jabber.org/protocol/httpbind"},
-                                 {"sid",Sid},
-                                 {"wait", integer_to_list(Wait)},
-                                 {"requests", integer_to_list(Hold+1)},
-                                 {"inactivity", 
-                                  integer_to_list(trunc(?MAX_INACTIVITY/1000))},
-                                 {"polling", ?MIN_POLLING},
-                                 {"authid", AuthID}
-                                ],OutEls})};
-                        _ ->
-                            {404, ?HEADER, ""}
-                    end
-            end
-    end.
-    
-send_outpacket(Sid, []) ->
-    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
-send_outpacket(Sid, "</stream:stream>") ->
-    case mnesia:dirty_read({http_bind, Sid}) of
-        [#http_bind{pid = FsmRef}] ->
-            gen_fsm:sync_send_all_state_event(FsmRef,stop)
-    end,
-    {200, ?HEADER, "<body xmlns='http://jabber.org/protocol/httpbind'/>"};
-send_outpacket(Sid, OutPacket) ->
-    case xml_stream:parse_element("<body>" 
-                                  ++ OutPacket
-                                  ++ "</body>") of
-        El when element(1, El) == xmlelement ->
-            {xmlelement, _, _, OEls} = El,
-            TypedEls = [xml:replace_tag_attr("xmlns",
-                                             "jabber:client",OEl) ||
-                           OEl <- OEls],
-            ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
-                   [xml:element_to_string(
-                      {xmlelement,"body",
-                       [{"xmlns",
-                         "http://jabber.org/protocol/httpbind"}],
-                       TypedEls})]
-                  ),
-            {200, ?HEADER,
-             xml:element_to_string(
-               {xmlelement,"body",
-                [{"xmlns",
-                  "http://jabber.org/protocol/httpbind"}],
-                TypedEls})};
-        {error, _E} ->
-            OutEls = case xml_stream:parse_element(
-                            OutPacket++"</stream:stream>") of
-                         SEl when element(1, SEl) == xmlelement ->
-                             {xmlelement, _, _OutAttrs, SEls} = SEl,
-                             StreamError = false,
-                             case SEls of
-                                 [] ->
-                                     [];
-                                 [{xmlelement, "stream:features", StreamAttribs, StreamEls} | StreamTail] ->
-                                     TypedTail = [xml:replace_tag_attr("xmlns",
-                                                                       "jabber:client",OEl) ||
-                                                     OEl <- StreamTail],
-                                     [{xmlelement, "stream:features", [{"xmlns:stream","http://etherx.jabber.org/streams"}] ++ StreamAttribs, StreamEls}] ++ TypedTail;
-                                 Xml ->
-                                     Xml
-                             end;
-                         {error, _} ->
-                             StreamError = true,
-                             []
-                     end,
-            if 
-                StreamError ->
-                    StreamErrCond = case xml_stream:parse_element(
-                                           "<stream:stream>"++OutPacket) of
-                                        El when element(1, El) == xmlelement ->
-                                            {xmlelement, _Tag, _Attr, Els} = El,
-                                            [{xmlelement, SE, _, Cond} | _] = Els,
-                                            if 
-                                                SE == "stream:error" ->
-                                                    Cond;
-                                                true ->
-                                                    null
-                                            end;
-                                        {error, _E} ->
-                                            null
-                                    end,
-                    case mnesia:dirty_read({http_bind, Sid}) of
-                        [#http_bind{pid = FsmRef}] ->
-                            gen_fsm:sync_send_all_state_event(FsmRef,stop);
-                        _ ->
-                            err %% hu?
-                    end,
-                    case StreamErrCond of
-                        null ->
-                            {200, ?HEADER,
-                             "<body type='terminate' "
-                             "condition='internal-server-error' "
-                             "xmlns='http://jabber.org/protocol/httpbind'/>"};
-                        _ ->
-                            {200, ?HEADER,
-                             "<body type='terminate' "
-                             "condition='remote-stream-error' "
-                             "xmlns='http://jabber.org/protocol/httpbind'>" ++
-                             elements_to_string(StreamErrCond) ++
-                             "</body>"}
-                    end;
-                true ->
-                    {200, ?HEADER,
-                     xml:element_to_string(
-                       {xmlelement,"body",
-                        [{"xmlns",
-                          "http://jabber.org/protocol/httpbind"}],
-                        OutEls})}
-            end
-    end.
-
-check_request(Sid, Attrs, Packet) ->
-    case mnesia:dirty_read({http_bind, Sid}) of
-	[] ->
-            ?DEBUG("not found",[]),
-	    {error, not_exists};
-	[#http_bind{pid = FsmRef, hold = Hold}] ->
-            gen_fsm:sync_send_all_state_event(
-              FsmRef, {http_put, Attrs, Packet, Hold})
-    end.
-            
-
-http_put(Sid, Attrs, Packet) ->
+http_put(Sid, Rid, Key, NewKey, Hold, Packet, Restart) ->
     ?DEBUG("http-put",[]),
-    {Rid, _} = string:to_integer(xml:get_attr_s("rid", Attrs)),
-    To = xml:get_attr_s("to", Attrs),
     case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
             ?DEBUG("not found",[]),
 	    {error, not_exists};
-	[#http_bind{pid = FsmRef, to = To, hold = Hold}] ->
-            gen_fsm:sync_send_all_state_event(
-              FsmRef, {http_put, Rid, Packet, To, Hold})
+	[#http_bind{pid = FsmRef,to=To}] ->
+            case Restart of
+                true ->
+                    ?DEBUG("restart requested for ~s", [To]),
+                    gen_fsm:sync_send_all_state_event(
+                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, To});
+                _ ->
+                    gen_fsm:sync_send_all_state_event(
+                      FsmRef, {http_put, Rid, Key, NewKey, Hold, Packet, ""})
+            end
     end.
 
-http_get(Sid, Rid) ->
+http_get(Sid,Rid) ->
     case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
 	    {error, not_exists};
@@ -725,39 +747,43 @@ http_get(Sid, Rid) ->
 parse_request(Data) ->
     ?DEBUG("--- incoming data --- ~n~s~n --- END --- ",
 	   [Data]),
-    case catch xml_stream:parse_element(Data) of
-        {xmlelement, "body", Attrs, Els} ->
-            case xml:get_attr_s("xmlns",Attrs) of
-		"http://jabber.org/protocol/httpbind" ->
-                    Sid = xml:get_attr_s("sid",Attrs),
-                    %% normalize tree - actually not needed by XEP but
-                    %% where playing nicely here
-                    FixedEls = 
-                        lists:filter(
-                          fun(I) -> 
-                                  case I of 
-                                      {xmlelement, _, _, _} ->
-                                          true;
-                                      _ ->
-                                          false
-                                  end
-                          end, Els),
-                    %% fix namespace of child element
-                    lists:map(fun(E) ->
-                                      case xml:get_tag_attr_s("xmlns",E) of
-                                          "jabber:client" ->
-                                              remove_tag_attr("xmlns",E);
-                                          true ->
-                                              ok
-                                      end
-                              end, FixedEls),
-                    %% revert to string
-                    Packet = [xml:element_to_string(E) || E <- FixedEls],
-		    {ok, {Sid, Attrs, Packet}};
-                _ -> %% bad namespace
-		    {error, bad_request}
-            end;
-	_ ->
+    case xml_stream:parse_element(Data) of
+	El when element(1, El) == xmlelement ->
+	    {xmlelement, Name, Attrs, Els} = El,
+            FixedEls = 
+                lists:filter(
+                  fun(I) -> 
+                          case I of 
+                              {xmlelement, _, _, _} ->
+                                  true;
+                              _ ->
+                                  false
+                          end
+                  end, Els),
+	    Sid = xml:get_attr_s("sid",Attrs),
+	    {Rid,_X} = string:to_integer(xml:get_attr_s("rid",Attrs)),
+	    Key = xml:get_attr_s("key",Attrs),
+	    NewKey = xml:get_attr_s("newkey",Attrs),
+	    Xmlns = xml:get_attr_s("xmlns",Attrs),
+            lists:map(fun(E) ->
+                              EXmlns = xml:get_tag_attr_s("xmlns",E),
+                              if 
+                                  EXmlns == "jabber:client" ->
+                                      remove_tag_attr("xmlns",E);
+                                  true ->
+                                      ok
+                              end
+                      end, FixedEls),
+	    Packet = [xml:element_to_string(E) || E <- FixedEls],
+	    if 
+		Name /= "body" -> 
+		    {error, bad_request};
+		Xmlns /= "http://jabber.org/protocol/httpbind" ->
+		    {error, bad_request};
+		true ->
+		    {ok, {Sid, Rid, Key, NewKey, Attrs, Packet}}
+	    end;
+	{error, _Reason} ->
 	    {error, bad_request}
     end.
 
