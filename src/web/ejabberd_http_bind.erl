@@ -26,7 +26,7 @@
 	 close/1,
 	 process_request/1]).
 
--define(ejabberd_debug, true).
+%%-define(ejabberd_debug, true).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -61,8 +61,6 @@
 -else.
 -define(FSMOPTS, []).
 -endif.
-
--define(BOSH_VERSION, "1.6").
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, "2"). % don't poll faster than that or we will shoot you
