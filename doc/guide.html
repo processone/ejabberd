@@ -336,7 +336,7 @@ as long as your system have all the dependencies.</P><P> <A NAME="installreq"></
 GNU Make
 </LI><LI CLASS="li-itemize">GCC
 </LI><LI CLASS="li-itemize">Libexpat 1.95 or higher
-</LI><LI CLASS="li-itemize">Erlang/OTP R12B-5. R13 is not supported yet.
+</LI><LI CLASS="li-itemize">Erlang/OTP R12B-5. Support for R13 or higher is experimental.
 </LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 </LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
 </LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
@@ -457,14 +457,14 @@ for example:
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#windowsreq">Requirements</A></H4><!--SEC END --><P> <A NAME="windowsreq"></A> </P><P>To compile <TT>ejabberd</TT> on a Microsoft Windows system, you need:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 MS Visual C++ 6.0 Compiler
-</LI><LI CLASS="li-itemize"><A HREF="http://www.erlang.org/download.html">Erlang/OTP R11B-5</A>
+</LI><LI CLASS="li-itemize"><A HREF="http://www.erlang.org/download.html">Erlang/OTP R12B-5</A>. Support for R13 or higher is experimental.
 </LI><LI CLASS="li-itemize"><A HREF="http://sourceforge.net/project/showfiles.php?group_id=10127&package_id=11277">Expat 2.0.0 or higher</A>
 </LI><LI CLASS="li-itemize"><A HREF="http://www.slproweb.com/products/Win32OpenSSL.html">Shining Light OpenSSL 0.9.8d or higher</A>
 (to enable SSL connections)
 </LI><LI CLASS="li-itemize"><A HREF="http://www.zlib.net/">Zlib 1.2.3 or higher</A>
 </LI></UL><P> <A NAME="windowscom"></A> </P><!--TOC subsubsection Compilation-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#windowscom">Compilation</A></H4><!--SEC END --><P> <A NAME="windowscom"></A> </P><P>We assume that we will try to put as much library as possible into <CODE>C:\sdk\</CODE> to make it easier to track what is install for <TT>ejabberd</TT>.</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
-Install Erlang emulator (for example, into <CODE>C:\sdk\erl5.5.5</CODE>).
+Install Erlang emulator (for example, into <CODE>C:\sdk\erl5.6.5</CODE>).
 </LI><LI CLASS="li-enumerate">Install Expat library into <CODE>C:\sdk\Expat-2.0.0</CODE>
 directory.<P>Copy file <CODE>C:\sdk\Expat-2.0.0\Libs\libexpat.dll</CODE>
 to your Windows system directory (for example, <CODE>C:\WINNT</CODE> or

@@ -300,7 +300,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GNU Make
 \item GCC
 \item Libexpat 1.95 or higher
-\item Erlang/OTP R12B-5. R13 is not supported yet.
+\item Erlang/OTP R12B-5. Support for R13 or higher is experimental.
 \item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
@@ -485,7 +485,7 @@ gmake -f Makefile.gi ginstall
 To compile \ejabberd{} on a Microsoft Windows system, you need:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://www.erlang.org/download.html}{Erlang/OTP R11B-5}
+\item \footahref{http://www.erlang.org/download.html}{Erlang/OTP R12B-5}. Support for R13 or higher is experimental.
 \item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 2.0.0 or higher}
 \item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8d or higher}
 (to enable SSL connections)
@@ -498,7 +498,7 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 We assume that we will try to put as much library as possible into \verb|C:\sdk\| to make it easier to track what is install for \ejabberd{}.
 
 \begin{enumerate}
-\item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.5.5|).
+\item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.6.5|).
 \item Install Expat library into \verb|C:\sdk\Expat-2.0.0|
   directory.
 
