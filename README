@@ -10,6 +10,7 @@ To compile ejabberd you need:
  - GCC
  - Libexpat 1.95 or higher
  - Erlang/OTP R12B-5. Support for R13 or higher is experimental.
+ - exmpp 0.9.1 or higher
  - OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL
    encryption. Optional, highly recommended.
  - Zlib 1.2.3 or higher, for Stream Compression support
@@ -17,6 +18,7 @@ To compile ejabberd you need:
  - Erlang mysql library. Optional. MySQL authentication/storage.
  - Erlang pgsql library. Optional. PostgreSQL authentication/storage.
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
+ - ImageMagick’s Convert program. Optional. For CAPTCHA challenges.
 
 
 1. Compile and install on *nix systems
