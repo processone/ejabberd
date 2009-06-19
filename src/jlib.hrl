@@ -74,6 +74,12 @@
 
 -define(NS_CAPS,          "http://jabber.org/protocol/caps").
 
+%% CAPTCHA related NSes.
+-define(NS_OOB, "jabber:x:oob").
+-define(NS_CAPTCHA, "urn:xmpp:captcha").
+-define(NS_MEDIA, "urn:xmpp:media-element").
+-define(NS_BOB, "urn:xmpp:bob").
+
 % TODO: remove "code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
 	{xmlelement, "error",
