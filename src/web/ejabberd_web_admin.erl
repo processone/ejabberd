@@ -45,7 +45,6 @@
              ?XMLATTR('name', Name),
              ?XMLATTR('value', Value)])).
 
-
 process(["doc", LocalFile], _Request) ->
     DocPath = case os:getenv("EJABBERD_DOC_PATH") of
 		  P when is_list(P) -> P;
@@ -70,71 +69,87 @@ process(["doc", LocalFile], _Request) ->
             end
     end;
 
-process(["server", SHost | RPath], #request{auth = Auth} = Request) ->
+process(["server", SHost | RPath], #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
     Host = exmpp_stringprep:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
 	true ->
-	    case get_auth(Auth) of
-		{User, Server} ->
-		    case acl:match_rule(
-			   Host, configure, exmpp_jid:make(User, Server)) of
-			deny ->
-			    ejabberd_web:error(not_allowed);
-			allow ->
-			    process_admin(
-			      Host, Request#request{path = RPath,
-						    us = {User, Server}})
-		    end;
-		unauthorized ->
+	    case get_auth_admin(Auth, Host, HostHTTP) of
+		{ok, {User, Server}} ->
+		    process_admin(Host, Request#request{path = RPath,
+							us = {User, Server}});
+		{unauthorized, "no-auth-provided"} ->
 		    {401,
 		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-		     ejabberd_web:make_xhtml([#xmlel{ns = ?NS_XHTML, name = 'h1', children =
-					       [#xmlcdata{cdata = <<"401 Unauthorized">>}]}])}
+		     ejabberd_web:make_xhtml([?XCT('h1', "Unauthorized")])};
+		{unauthorized, Error} ->
+		    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
+				 [Auth, Error, Request]),
+		    {401,
+		     [{"WWW-Authenticate",
+		       "basic realm=\"auth error, retry login to ejabberd\""}],
+		     ejabberd_web:make_xhtml([?XCT('h1', "Unauthorized")])}
 	    end;
 	false ->
 	    ejabberd_web:error(not_found)
     end;
 
-process(RPath, #request{auth = Auth} = Request) ->
-    case get_auth(Auth) of
-	{User, Server} ->
-	    case acl:match_rule(
-		   global, configure, exmpp_jid:make(User, Server)) of
-		deny ->
-		    ejabberd_web:error(not_allowed);
-		allow ->
-		    process_admin(
-		      global, Request#request{path = RPath,
-					      us = {User, Server}})
-	    end;
-	unauthorized ->
-	    %% XXX bard: any reason to send this data now and not
-	    %% always in case of an 401? ought to check http specs...
-	    {401, 
+process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
+    case get_auth_admin(Auth, global, HostHTTP) of
+	{ok, {User, Server}} ->
+	    process_admin(global, Request#request{path = RPath,
+						  us = {User, Server}});
+        {unauthorized, "no-auth-provided"} ->
+	    {401,
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-	     ejabberd_web:make_xhtml([#xmlel{ns = ?NS_XHTML, name = 'h1', children =
-				       [#xmlcdata{cdata = <<"401 Unauthorized">>}]}])}
+	     ejabberd_web:make_xhtml([?XCT('h1', "Unauthorized")])};
+	{unauthorized, Error} ->
+	    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
+			 [Auth, Error, Request]),
+	    {401,
+	     [{"WWW-Authenticate",
+	       "basic realm=\"auth error, retry login to ejabberd\""}],
+	     ejabberd_web:make_xhtml([?XCT('h1', "Unauthorized")])}
     end.
 
-get_auth(Auth) ->
+get_auth_admin(Auth, Host, HostHTTP) ->
     case Auth of
-	{SJID, P} ->
+	{SJID, Pass} ->
 	    try
 		JID = exmpp_jid:parse(SJID),
-                U = exmpp_jid:node_as_list(JID),
-                S = exmpp_jid:domain_as_list(JID),
-		case ejabberd_auth:check_password(U, S, P) of
+                User = exmpp_jid:node_as_list(JID),
+                Server = exmpp_jid:domain_as_list(JID),
+		case User == undefined of
 		    true ->
-			{U, S};
+			%% If only specified username, not username@server
+			get_auth_account(Host, Server, HostHTTP, Pass);
 		    false ->
-			unauthorized
+			get_auth_account(Host, User, Server, Pass)
 		end
 	    catch
 		_ ->
-		    unauthorized
+                    {unauthorized, "badformed-jid"}
 	    end;
 	_ ->
-	    unauthorized
+            {unauthorized, "no-auth-provided"}
+    end.
+
+get_auth_account(Host, User, Server, Pass) ->
+    case ejabberd_auth:check_password(User, Server, Pass) of
+	true ->
+	    case acl:match_rule(Host, configure,
+				exmpp_jid:make(User, Server)) of
+		deny ->
+		    {unauthorized, "unprivileged-account"};
+		allow ->
+		    {ok, {User, Server}}
+	    end;
+	false ->
+	    case ejabberd_auth:is_user_exists(User, Server) of
+		true ->
+		    {unauthorized, "bad-password"};
+		false ->
+		    {unauthorized, "inexistent-account"}
+	    end
     end.
 
 make_xhtml(Els, Host, Lang) ->
