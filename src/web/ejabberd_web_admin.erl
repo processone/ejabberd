@@ -45,7 +45,6 @@
 	     {"name", Name},
 	     {"value", Value}])).
 
-
 process(["doc", LocalFile], _Request) ->
     DocPath = case os:getenv("EJABBERD_DOC_PATH") of
 		  P when is_list(P) -> P;
@@ -70,68 +69,81 @@ process(["doc", LocalFile], _Request) ->
             end
     end;
 
-process(["server", SHost | RPath], #request{auth = Auth} = Request) ->
+process(["server", SHost | RPath], #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
     Host = jlib:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
 	true ->
-	    case get_auth(Auth) of
-		{User, Server} ->
-		    case acl:match_rule(
-			   Host, configure, jlib:make_jid(User, Server, "")) of
-			deny ->
-                            ejabberd_web:error(not_allowed);
-			allow ->
-			    process_admin(
-			      Host, Request#request{path = RPath,
-						    us = {User, Server}})
-		    end;
-		unauthorized ->
+	    case get_auth_admin(Auth, Host, HostHTTP) of
+		{ok, {User, Server}} ->
+		    process_admin(Host, Request#request{path = RPath,
+							us = {User, Server}});
+		{unauthorized, "no-auth-provided"} ->
 		    {401,
 		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-		     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-                                               [{xmlcdata, "401 Unauthorized"}]}])}
+		     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])};
+		{unauthorized, Error} ->
+		    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
+				 [Auth, Error, Request]),
+		    {401,
+		     [{"WWW-Authenticate",
+		       "basic realm=\"auth error, retry login to ejabberd\""}],
+		     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])}
 	    end;
 	false ->
             ejabberd_web:error(not_found)
     end;
 
-process(RPath, #request{auth = Auth} = Request) ->
-    case get_auth(Auth) of
-	{User, Server} ->
-	    case acl:match_rule(
-		   global, configure, jlib:make_jid(User, Server, "")) of
-		deny ->
-                    ejabberd_web:error(not_allowed);
-		allow ->
-		    process_admin(
-		      global, Request#request{path = RPath,
-					      us = {User, Server}})
-	    end;
-	unauthorized ->
-            %% XXX bard: any reason to send this data now and not
-            %% always in case of an 401? ought to check http specs...
-	    {401, 
+process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
+    case get_auth_admin(Auth, global, HostHTTP) of
+	{ok, {User, Server}} ->
+	    process_admin(global, Request#request{path = RPath,
+						  us = {User, Server}});
+        {unauthorized, "no-auth-provided"} ->
+	    {401,
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
-	     ejabberd_web:make_xhtml([{xmlelement, "h1", [],
-				       [{xmlcdata, "401 Unauthorized"}]}])}
+	     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])};
+	{unauthorized, Error} ->
+	    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
+			 [Auth, Error, Request]),
+	    {401,
+	     [{"WWW-Authenticate",
+	       "basic realm=\"auth error, retry login to ejabberd\""}],
+	     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])}
     end.
 
-get_auth(Auth) ->
+get_auth_admin(Auth, Host, HostHTTP) ->
     case Auth of
-        {SJID, P} ->
+        {SJID, Pass} ->
             case jlib:string_to_jid(SJID) of
                 error ->
-                    unauthorized;
-                #jid{user = U, server = S} ->
-                    case ejabberd_auth:check_password(U, S, P) of
-                        true ->
-                            {U, S};
-                        false ->
-                            unauthorized
-                    end
+                    {unauthorized, "badformed-jid"};
+                #jid{user = "", server = User} ->
+		    %% If the user only specified username, not username@server
+		    get_auth_account(Host, User, HostHTTP, Pass);
+                #jid{user = User, server = Server} ->
+		    get_auth_account(Host, User, Server, Pass)
             end;
-         _ ->
-            unauthorized
+	undefined ->
+            {unauthorized, "no-auth-provided"}
+    end.
+
+get_auth_account(Host, User, Server, Pass) ->
+    case ejabberd_auth:check_password(User, Server, Pass) of
+	true ->
+	    case acl:match_rule(Host, configure,
+				jlib:make_jid(User, Server, "")) of
+		deny ->
+		    {unauthorized, "unprivileged-account"};
+		allow ->
+		    {ok, {User, Server}}
+	    end;
+	false ->
+	    case ejabberd_auth:is_user_exists(User, Server) of
+		true ->
+		    {unauthorized, "bad-password"};
+		false ->
+		    {unauthorized, "inexistent-account"}
+	    end
     end.
 
 make_xhtml(Els, Host, Lang) ->
