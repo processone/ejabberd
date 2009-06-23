@@ -48,6 +48,95 @@
 	     {"value", Value}])).
 
 %%%==================================
+%%%% get_acl_access
+
+%% @spec (Path::[string()]) -> {HostOfRule, AccessRule}
+
+%% All accounts can access those URLs
+get_acl_rule([]) -> {"localhost", all};
+get_acl_rule(["style.css"]) -> {"localhost", all};
+get_acl_rule(["logo.png"]) -> {"localhost", all};
+get_acl_rule(["logo-fill.png"]) -> {"localhost", all};
+get_acl_rule(["favicon.ico"]) -> {"localhost", all};
+get_acl_rule(["additions.js"]) -> {"localhost", all};
+%% This page only displays vhosts that the user is admin:
+get_acl_rule(["vhosts"]) -> {"localhost", all};
+
+%% The pages of a vhost are only accesible if the user is admin of that vhost:
+get_acl_rule(["server", VHost | _RPath]) -> {VHost, configure};
+
+%% Default rule: only global admins can access any other random page
+get_acl_rule(_RPath) -> {global, configure}.
+
+%%%==================================
+%%%% Menu Items Access
+
+get_jid(Auth, HostHTTP) ->
+    case get_auth_admin(Auth, HostHTTP, []) of
+        {ok, {User, Server}} ->
+	    jlib:make_jid(User, Server, "");
+	{unauthorized, Error} ->
+	    ?ERROR_MSG("Unauthorized ~p: ~p", [Auth, Error]),
+	    throw({unauthorized, Auth})
+    end.
+
+get_menu_items(global, cluster, Lang, JID) ->
+    {Base, _, Items} = make_server_menu([], [], Lang, JID),
+    lists:map(
+	fun({URI, Name}) ->
+		{Base++URI++"/", Name};
+	   ({URI, Name, _SubMenu}) ->
+		{Base++URI++"/", Name}
+	end,
+	Items
+    );
+get_menu_items(Host, cluster, Lang, JID) ->
+    {Base, _, Items} = make_host_menu(Host, [], Lang, JID),
+    lists:map(
+	fun({URI, Name}) ->
+		{Base++URI++"/", Name};
+	   ({URI, Name, _SubMenu}) ->
+		{Base++URI++"/", Name}
+	end,
+	Items
+    );
+get_menu_items(Host, Node, Lang, JID) ->
+    {Base, _, Items} = make_host_node_menu(Host, Node, Lang, JID),
+    lists:map(
+	fun({URI, Name}) ->
+		{Base++URI++"/", Name};
+	   ({URI, Name, _SubMenu}) ->
+		{Base++URI++"/", Name}
+	end,
+	Items
+    ).
+
+is_allowed_path(BasePath, {Path, _}, JID) ->
+    is_allowed_path(BasePath ++ [Path], JID);
+is_allowed_path(BasePath, {Path, _, _}, JID) ->
+    is_allowed_path(BasePath ++ [Path], JID).
+
+is_allowed_path(["admin" | Path], JID) ->
+    is_allowed_path(Path, JID);
+is_allowed_path(Path, JID) ->
+    {HostOfRule, AccessRule} = get_acl_rule(Path),
+    allow == acl:match_rule(HostOfRule, AccessRule, JID).
+
+%% @spec(Path) -> URL
+%% where Path = [string()]
+%%       URL = string()
+%% Convert ["admin", "user", "tom"] -> "/admin/user/tom/"
+%%path_to_url(Path) ->
+%%    "/" ++ string:join(Path, "/") ++ "/".
+
+%% @spec(URL) -> Path
+%% where Path = [string()]
+%%       URL = string()
+%% Convert "admin/user/tom" -> ["admin", "user", "tom"]
+url_to_path(URL) ->
+    string:tokens(URL, "/").
+  
+%%%==================================
 %%%% process/2
 
 process(["doc", LocalFile], _Request) ->
@@ -74,13 +163,15 @@ process(["doc", LocalFile], _Request) ->
             end
     end;
 
-process(["server", SHost | RPath], #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
+process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
     Host = jlib:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
 	true ->
-	    case get_auth_admin(Auth, Host, HostHTTP) of
+	    case get_auth_admin(Auth, HostHTTP, Path) of
 		{ok, {User, Server}} ->
+		    AJID = get_jid(Auth, HostHTTP),
 		    process_admin(Host, Request#request{path = RPath,
+							auth = {auth_jid, Auth, AJID},
 							us = {User, Server}});
 		{unauthorized, "no-auth-provided"} ->
 		    {401,
@@ -99,9 +190,11 @@ process(["server", SHost | RPath], #request{auth = Auth, lang = Lang, host = Hos
     end;
 
 process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
-    case get_auth_admin(Auth, global, HostHTTP) of
+    case get_auth_admin(Auth, HostHTTP, RPath) of
 	{ok, {User, Server}} ->
+	    AJID = get_jid(Auth, HostHTTP),
 	    process_admin(global, Request#request{path = RPath,
+						  auth = {auth_jid, Auth, AJID},
 						  us = {User, Server}});
         {unauthorized, "no-auth-provided"} ->
 	    {401,
@@ -116,26 +209,27 @@ process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
 	     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])}
     end.
 
-get_auth_admin(Auth, Host, HostHTTP) ->
+get_auth_admin(Auth, HostHTTP, RPath) ->
     case Auth of
         {SJID, Pass} ->
+	    {HostOfRule, AccessRule} = get_acl_rule(RPath),
             case jlib:string_to_jid(SJID) of
                 error ->
                     {unauthorized, "badformed-jid"};
                 #jid{user = "", server = User} ->
 		    %% If the user only specified username, not username@server
-		    get_auth_account(Host, User, HostHTTP, Pass);
+		    get_auth_account(HostOfRule, AccessRule, User, HostHTTP, Pass);
                 #jid{user = User, server = Server} ->
-		    get_auth_account(Host, User, Server, Pass)
+		    get_auth_account(HostOfRule, AccessRule, User, Server, Pass)
             end;
 	undefined ->
             {unauthorized, "no-auth-provided"}
     end.
 
-get_auth_account(Host, User, Server, Pass) ->
+get_auth_account(HostOfRule, AccessRule, User, Server, Pass) ->
     case ejabberd_auth:check_password(User, Server, Pass) of
 	true ->
-	    case acl:match_rule(Host, configure,
+	    case acl:match_rule(HostOfRule, AccessRule,
 				jlib:make_jid(User, Server, "")) of
 		deny ->
 		    {unauthorized, "unprivileged-account"};
@@ -154,15 +248,16 @@ get_auth_account(Host, User, Server, Pass) ->
 %%%==================================
 %%%% make_xhtml
 
-make_xhtml(Els, Host, Lang) ->
-    make_xhtml(Els, Host, cluster, Lang).
+make_xhtml(Els, Host, Lang, JID) ->
+    make_xhtml(Els, Host, cluster, Lang, JID).
 
-%% @spec (Els, Host, Node, Lang) -> {200, [html], xmlelement()}
+%% @spec (Els, Host, Node, Lang, JID) -> {200, [html], xmlelement()}
 %% where Host = global | string()
 %%       Node = cluster | atom()
-make_xhtml(Els, Host, Node, Lang) ->
+%%       JID = jid()
+make_xhtml(Els, Host, Node, Lang, JID) ->
     Base = get_base_path(Host, cluster), %% Enforcing 'cluster' on purpose here
-    MenuItems = make_navigation(Host, Node, Lang),
+    MenuItems = make_navigation(Host, Node, Lang, JID),
     {200, [html],
      {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
 			   {"xml:lang", Lang},
@@ -648,41 +743,25 @@ logo_fill() ->
 
 process_admin(global,
 	      #request{path = [],
+		       auth = {_, _, AJID},
 		       lang = Lang}) ->
-    Base = get_base_path(global, cluster),
-    MenuItems2 = make_menu_items(global, cluster, Base, Lang),
+    %%Base = get_base_path(global, cluster),
     make_xhtml(?H1GL(?T("Administration"), "toc", "Contents") ++
 		[?XE("ul",
-		    [?LI([?ACT("/admin/acls/", "Access Control Lists"), ?C(" "),
-			  ?ACT("/admin/acls-raw/", "(Raw)")]),
-		     ?LI([?ACT("/admin/access/", "Access Rules"), ?C(" "),
-			  ?ACT("/admin/access-raw/", "(Raw)")]),
-		     ?LI([?ACT("/admin/vhosts/", "Virtual Hosts")]),
-		     ?LI([?ACT("/admin/nodes/", "Nodes")]),
-		     ?LI([?ACT("/admin/stats/", "Statistics")])
-		    ] ++ MenuItems2
+		    [?LI([?ACT(MIU, MIN)]) || {MIU, MIN} <- get_menu_items(global, cluster, Lang, AJID)]
 		   )
-	       ], global, Lang);
+	       ], global, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = [],
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
-    Base = get_base_path(Host, cluster),
-    MenuItems2 = make_menu_items(Host, cluster, Base, Lang),
+    %%Base = get_base_path(Host, cluster),
     make_xhtml([?XCT("h1", "Administration"),
 		?XE("ul",
-		    [?LI([?ACT(Base ++ "acls/", "Access Control Lists"), ?C(" "),
-			  ?ACT(Base ++ "acls-raw/", "(Raw)")]),
-		     ?LI([?ACT(Base ++ "access/", "Access Rules"), ?C(" "),
-			  ?ACT(Base ++ "access-raw/", "(Raw)")]),
-		     ?LI([?ACT(Base ++ "users/", "Users")]),
-		     ?LI([?ACT(Base ++ "online-users/", "Online Users")]),
-		     ?LI([?ACT(Base ++ "last-activity/", "Last Activity")]),
-		     ?LI([?ACT(Base ++ "nodes/", "Nodes")]),
-		     ?LI([?ACT(Base ++ "stats/", "Statistics")])
-		    ] ++ MenuItems2
+		    [?LI([?ACT(MIU, MIN)]) || {MIU, MIN} <- get_menu_items(Host, cluster, Lang, AJID)]
 		   )
-	       ], Host, Lang);
+	       ], Host, Lang, AJID);
 
 process_admin(Host, #request{path = ["style.css"]}) ->
     {200, [{"Content-Type", "text/css"}, last_modified(), cache_control_public()], css(Host)};
@@ -702,6 +781,7 @@ process_admin(_Host, #request{path = ["additions.js"]}) ->
 process_admin(Host,
 	      #request{path = ["acls-raw"],
 		       q = Query,
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
 
     Res = case lists:keysearch("acls", 1, Query) of
@@ -739,11 +819,12 @@ process_admin(Host,
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Host, Lang);
+	       ], Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{method = Method,
 			path = ["acls"],
+		        auth = {_, _Auth, AJID},
 			q = Query,
 			lang = Lang}) ->
     ?DEBUG("query: ~p", [Query]),
@@ -782,10 +863,11 @@ process_admin(Host,
 		      ?C(" "),
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Host, Lang);
+	       ], Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["access-raw"],
+		       auth = {_, _Auth, AJID},
 			q = Query,
 			lang = Lang}) ->
     SetAccess =
@@ -846,12 +928,13 @@ process_admin(Host,
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Host, Lang);
+	       ], Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{method = Method,
 		       path = ["access"],
 		       q = Query,
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     ?DEBUG("query: ~p", [Query]),
     Res = case Method of
@@ -882,11 +965,12 @@ process_admin(Host,
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected")
 		     ])
-	       ], Host, Lang);
+	       ], Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["access", SName],
 		       q = Query,
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     ?DEBUG("query: ~p", [Query]),
     Name = list_to_atom(SName),
@@ -921,36 +1005,41 @@ process_admin(Host,
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
 		     ])
-	       ], Host, Lang);
+	       ], Host, Lang, AJID);
 
 process_admin(global,
 	      #request{path = ["vhosts"],
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
-    Res = list_vhosts(Lang),
-    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang);
+    Res = list_vhosts(Lang, AJID),
+    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["users"],
 		       q = Query,
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) when is_list(Host) ->
     Res = list_users(Host, Query, Lang, fun url_func/1),
-    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["users", Diap],
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) when is_list(Host) ->
     Res = list_users_in_diapason(Host, Diap, Lang, fun url_func/1),
-    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Users")] ++ Res, Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{
 		       path = ["online-users"],
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) when is_list(Host) ->
     Res = list_online_users(Host, Lang),
-    make_xhtml([?XCT("h1", "Online Users")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Online Users")] ++ Res, Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["last-activity"],
+		       auth = {_, _Auth, AJID},
 		       q = Query,
 		       lang = Lang}) when is_list(Host) ->
     ?DEBUG("query: ~p", [Query]),
@@ -986,55 +1075,61 @@ process_admin(Host,
 		      ?C(" "),
 		      ?INPUTT("submit", "integral", "Show Integral Table")
 		     ])] ++
-	       Res, Host, Lang);
+	       Res, Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["stats"],
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     Res = get_stats(Host, Lang),
-    make_xhtml([?XCT("h1", "Statistics")] ++ Res, Host, Lang);
+    make_xhtml([?XCT("h1", "Statistics")] ++ Res, Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["user", U],
+		       auth = {_, _Auth, AJID},
 		       q = Query,
 		       lang = Lang}) ->
     case ejabberd_auth:is_user_exists(U, Host) of
 	true ->
 	    Res = user_info(U, Host, Query, Lang),
-	    make_xhtml(Res, Host, Lang);
+	    make_xhtml(Res, Host, Lang, AJID);
 	false ->
-	    make_xhtml([?XCT("h1", "Not Found")], Host, Lang)
+	    make_xhtml([?XCT("h1", "Not Found")], Host, Lang, AJID)
     end;
 
 process_admin(Host,
 	      #request{path = ["nodes"],
+		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     Res = get_nodes(Lang),
-    make_xhtml(Res, Host, Lang);
+    make_xhtml(Res, Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["node", SNode | NPath],
+		       auth = {_, _Auth, AJID},
 		       q = Query,
 		       lang = Lang}) ->
     case search_running_node(SNode) of
 	false ->
-	    make_xhtml([?XCT("h1", "Node not found")], Host, Lang);
+	    make_xhtml([?XCT("h1", "Node not found")], Host, Lang, AJID);
 	Node ->
 	    Res = get_node(Host, Node, NPath, Query, Lang),
-	    make_xhtml(Res, Host, Node, Lang)
+	    make_xhtml(Res, Host, Node, Lang, AJID)
     end;
 
 %%%==================================
 %%%% process_admin default case
 
-process_admin(Host, #request{lang = Lang} = Request) ->
+process_admin(Host, #request{lang = Lang, 
+		       auth = {_, _Auth, AJID}
+		    } = Request) ->
     {Hook, Opts} = case Host of
 		       global -> {webadmin_page_main, [Request]};
 		       Host -> {webadmin_page_host, [Host, Request]}
 		   end,
     case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
-	[] -> setelement(1, make_xhtml([?XC("h1", "Not Found")], Host, Lang), 404);
-	Res -> make_xhtml(Res, Host, Lang)
+	[] -> setelement(1, make_xhtml([?XC("h1", "Not Found")], Host, Lang, AJID), 404);
+	Res -> make_xhtml(Res, Host, Lang, AJID)
     end.
 
 %%%==================================
@@ -1328,8 +1423,17 @@ parse_access_rule(Text) ->
 %%%==================================
 %%%% list_vhosts
 
-list_vhosts(Lang) ->
+list_vhosts(Lang, JID) ->
     Hosts = ?MYHOSTS,
+    HostsAllowed = lists:filter(
+		     fun(Host) ->
+			     allow == acl:match_rule(Host, configure, JID)
+		     end,
+		     Hosts
+		    ),
+    list_vhosts2(Lang, HostsAllowed).
+
+list_vhosts2(Lang, Hosts) ->
     SHosts = lists:sort(Hosts),
     [?XE("table",
 	 [?XE("thead",
@@ -2454,13 +2558,23 @@ pretty_string_int(String) when is_list(String) ->
 %%%==================================
 %%%% navigation menu
 
-%% @spec (Host, Node, Lang) -> [LI]
-make_navigation(Host, Node, Lang) ->
-    HostNodeMenu = make_host_node_menu(Host, Node, Lang),
-    HostMenu = make_host_menu(Host, HostNodeMenu, Lang),
-    NodeMenu = make_node_menu(Host, Node, Lang),
-    Menu = make_server_menu(HostMenu, NodeMenu, Lang),
+%% @spec (Host, Node, Lang, JID::jid()) -> [LI]
+make_navigation(Host, Node, Lang, JID) ->
+    Menu = make_navigation_menu(Host, Node, Lang, JID),
     make_menu_items(Lang, Menu).
+
+%% @spec (Host, Node, Lang, JID::jid()) -> Menu
+%% where Host = global | string()
+%%       Node = cluster | string()
+%%       Lang = string()
+%%       Menu = {URL, Title} | {URL, Title, [Menu]}
+%%       URL = string()
+%%       Title = string()
+make_navigation_menu(Host, Node, Lang, JID) ->
+    HostNodeMenu = make_host_node_menu(Host, Node, Lang, JID),
+    HostMenu = make_host_menu(Host, HostNodeMenu, Lang, JID),
+    NodeMenu = make_node_menu(Host, Node, Lang),
+    make_server_menu(HostMenu, NodeMenu, Lang, JID).
 
 %% @spec (Host, Node, Base, Lang) -> [LI]
 make_menu_items(global, cluster, Base, Lang) ->
@@ -2480,19 +2594,21 @@ make_menu_items(Host, Node, Base, Lang) ->
     make_menu_items(Lang, {Base, "", HookItems}).
 
 
-make_host_node_menu(global, _, _Lang) ->
+make_host_node_menu(global, _, _Lang, _JID) ->
     {"", "", []};
-make_host_node_menu(_, cluster, _Lang) ->
+make_host_node_menu(_, cluster, _Lang, _JID) ->
     {"", "", []};
-make_host_node_menu(Host, Node, Lang) ->
+make_host_node_menu(Host, Node, Lang, JID) ->
     HostNodeBase = get_base_path(Host, Node),
-    HostNodeFixed = [{"modules/", "Modules"}],
-    HostNodeHook = get_menu_items_hook({hostnode, Host, Node}, Lang),
-    {HostNodeBase, atom_to_list(Node), HostNodeFixed ++ HostNodeHook}.
+    HostNodeFixed = [{"modules/", "Modules"}]
+    ++ get_menu_items_hook({hostnode, Host, Node}, Lang),
+    HostNodeBasePath = url_to_path(HostNodeBase),
+    HostNodeFixed2 = [Tuple || Tuple <- HostNodeFixed, is_allowed_path(HostNodeBasePath, Tuple, JID)],
+    {HostNodeBase, atom_to_list(Node), HostNodeFixed2}.
 
-make_host_menu(global, _HostNodeMenu, _Lang) ->
+make_host_menu(global, _HostNodeMenu, _Lang, _JID) ->
     {"", "", []};
-make_host_menu(Host, HostNodeMenu, Lang) ->
+make_host_menu(Host, HostNodeMenu, Lang, JID) ->
     HostBase = get_base_path(Host, cluster),
     HostFixed = [{"acls", "Access Control Lists"},
 		 {"access", "Access Rules"},
@@ -2500,9 +2616,11 @@ make_host_menu(Host, HostNodeMenu, Lang) ->
 		 {"online-users", "Online Users"},
 		 {"last-activity", "Last Activity"},
 		 {"nodes", "Nodes", HostNodeMenu},
-		 {"stats", "Statistics"}],
-    HostHook = get_menu_items_hook({host, Host}, Lang),
-    {HostBase, Host, HostFixed ++ HostHook}.
+		 {"stats", "Statistics"}]
+	++ get_menu_items_hook({host, Host}, Lang),
+    HostBasePath = url_to_path(HostBase),
+    HostFixed2 = [Tuple || Tuple <- HostFixed, is_allowed_path(HostBasePath, Tuple, JID)],
+    {HostBase, Host, HostFixed2}.
 
 make_node_menu(_Host, cluster, _Lang) ->
     {"", "", []};
@@ -2512,21 +2630,23 @@ make_node_menu(global, Node, Lang) ->
 		 {"backup/", "Backup"},
 		 {"ports/", "Listened Ports"},
 		 {"stats/", "Statistics"},
-		 {"update/", "Update"}],
-    NodeHook = get_menu_items_hook({node, Node}, Lang),
-    {NodeBase, atom_to_list(Node), NodeFixed ++ NodeHook};
+		 {"update/", "Update"}]
+	++ get_menu_items_hook({node, Node}, Lang),
+    {NodeBase, atom_to_list(Node), NodeFixed};
 make_node_menu(_Host, _Node, _Lang) ->
     {"", "", []}.
 
-make_server_menu(HostMenu, NodeMenu, Lang) ->
+make_server_menu(HostMenu, NodeMenu, Lang, JID) ->
     Base = get_base_path(global, cluster),
     Fixed = [{"acls", "Access Control Lists"},
 	     {"access", "Access Rules"},
 	     {"vhosts", "Virtual Hosts", HostMenu},
 	     {"nodes", "Nodes", NodeMenu},
-	     {"stats", "Statistics"}],
-    Hook = get_menu_items_hook(server, Lang),
-    {Base, "ejabberd", Fixed ++ Hook}.
+	     {"stats", "Statistics"}]
+	++ get_menu_items_hook(server, Lang),
+    BasePath = url_to_path(Base),
+    Fixed2 = [Tuple || Tuple <- Fixed, is_allowed_path(BasePath, Tuple, JID)],
+    {Base, "ejabberd", Fixed2}.
 
 
 get_menu_items_hook({hostnode, Host, Node}, Lang) ->
