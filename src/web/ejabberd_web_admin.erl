@@ -24,6 +24,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%%% definitions
+
 -module(ejabberd_web_admin).
 -author('alexey@process-one.net').
 
@@ -44,6 +46,9 @@
 	    [{"type", Type},
 	     {"name", Name},
 	     {"value", Value}])).
+
+%%%==================================
+%%%% process/2
 
 process(["doc", LocalFile], _Request) ->
     DocPath = case os:getenv("EJABBERD_DOC_PATH") of
@@ -146,6 +151,9 @@ get_auth_account(Host, User, Server, Pass) ->
 	    end
     end.
 
+%%%==================================
+%%%% make_xhtml
+
 make_xhtml(Els, Host, Lang) ->
     make_xhtml(Els, Host, cluster, Lang).
 
@@ -203,6 +211,9 @@ get_base_path(global, cluster) -> "/admin/";
 get_base_path(Host, cluster) -> "/admin/server/" ++ Host ++ "/";
 get_base_path(global, Node) -> "/admin/node/" ++ atom_to_list(Node) ++ "/";
 get_base_path(Host, Node) -> "/admin/server/" ++ Host ++ "/node/" ++ atom_to_list(Node) ++ "/".
+
+%%%==================================
+%%%% css & images
 
 additions_js() ->
 "
@@ -632,6 +643,8 @@ logo_fill() ->
       "AEFJREFUCNdlw0sRwCAQBUE+gSRHLGABC1jAAhbWAhZwC+88XdXOXb4UlFAr"
       "SmwN5ekdJY2BkudEec1QvrVQ/r3xOlK9HsTvertmAAAAAElFTkSuQmCC").
 
+%%%==================================
+%%%% process_admin
 
 process_admin(global,
 	      #request{path = [],
@@ -1011,6 +1024,9 @@ process_admin(Host,
 	    make_xhtml(Res, Host, Node, Lang)
     end;
 
+%%%==================================
+%%%% process_admin default case
+
 process_admin(Host, #request{lang = Lang} = Request) ->
     {Hook, Opts} = case Host of
 		       global -> {webadmin_page_main, [Request]};
@@ -1021,7 +1037,8 @@ process_admin(Host, #request{lang = Lang} = Request) ->
 	Res -> make_xhtml(Res, Host, Lang)
     end.
 
-
+%%%==================================
+%%%% acl
 
 acls_to_xhtml(ACLs) ->
     ?XAE("table", [],
@@ -1308,6 +1325,8 @@ parse_access_rule(Text) ->
 	    {ok, Rs}
     end.
 
+%%%==================================
+%%%% list_vhosts
 
 list_vhosts(Lang) ->
     Hosts = ?MYHOSTS,
@@ -1334,6 +1353,8 @@ list_vhosts(Lang) ->
 		end, SHosts)
 	     )])].
 
+%%%==================================
+%%%% list_users
 
 list_users(Host, Query, Lang, URLFunc) ->
     Res = list_users_parse_query(Query, Host),
@@ -1472,6 +1493,8 @@ us_to_list({User, Server}) ->
 su_to_list({Server, User}) ->
     jlib:jid_to_string({User, Server, ""}).
 
+%%%==================================
+%%%% get_stats
 
 get_stats(global, Lang) ->
     OnlineUsers = mnesia:table_info(session, size),
@@ -1672,6 +1695,8 @@ histogram([], _Integral, _Current, Count, Hist) ->
 	    lists:reverse(Hist)
     end.
 
+%%%==================================
+%%%% get_nodes
 
 get_nodes(Lang) ->
     RunningNodes = mnesia:system_info(running_db_nodes),
@@ -2026,7 +2051,8 @@ get_node(Host, Node, NPath, Query, Lang) ->
 	Res -> Res
     end.
 
-
+%%%==================================
+%%%% node parse
 
 node_parse_query(Node, Query) ->
     case lists:keysearch("restart", 1, Query) of
@@ -2425,10 +2451,8 @@ pretty_string_int(String) when is_list(String) ->
 		    lists:reverse(String)),
     Result.
 
-
-%%%
-%%% Navigation Menu
-%%%
+%%%==================================
+%%%% navigation menu
 
 %% @spec (Host, Node, Lang) -> [LI]
 make_navigation(Host, Node, Lang) ->
@@ -2555,3 +2579,7 @@ make_menu_item(item, 2, URI, Name, Lang) ->
     ?LI([?XAE("div", [{"id", "navitemsub"}], [?ACT(URI, Name)] )]);
 make_menu_item(item, 3, URI, Name, Lang) ->
     ?LI([?XAE("div", [{"id", "navitemsubsub"}], [?ACT(URI, Name)] )]).
+
+%%%==================================
+
+%%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:
