@@ -1063,6 +1063,8 @@ to this file, so a malicious user can&#X2019;t use your configuration to perform
 attacks.
 </LI><LI CLASS="li-itemize">You may want to allow login access only for certain users. <TT>pam_listfile.so</TT>
 module provides such functionality.
+</LI><LI CLASS="li-itemize">If you use <TT>pam_winbind</TT> to authorise against a Windows Active Directory,
+then <TT>/etc/nssswitch.conf</TT> must be configured to use <TT>winbind</TT> as well.
 </LI></UL><P> <A NAME="accessrules"></A> </P><!--TOC subsection Access Rules-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc25">3.1.5</A>&#XA0;&#XA0;<A HREF="#accessrules">Access Rules</A></H3><!--SEC END --><P> <A NAME="accessrules"></A> 
 </P><P> <A NAME="ACLDefinition"></A> </P><!--TOC subsubsection ACL Definition-->

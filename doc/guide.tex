@@ -1267,6 +1267,8 @@ to this file, so a malicious user can't use your configuration to perform brute-
 attacks.
 \item You may want to allow login access only for certain users. \term{pam\_listfile.so}
 module provides such functionality.
+\item If you use \term{pam\_winbind} to authorise against a Windows Active Directory,
+then \term{/etc/nssswitch.conf} must be configured to use \term{winbind} as well.
 \end{itemize}
 
 \makesubsection{accessrules}{Access Rules}
