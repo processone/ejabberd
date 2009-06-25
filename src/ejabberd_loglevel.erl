@@ -59,8 +59,8 @@ set(_) ->
     exit("Loglevel must be an integer").
 
 level_to_integer(Level) ->
-    case lists:keyfind(Level, 2, ?LOG_LEVELS) of
-        {Int, Level, _Desc} -> Int;
+    case lists:keysearch(Level, 2, ?LOG_LEVELS) of
+        {value, {Int, Level, _Desc}} -> Int;
         _ -> erlang:error({no_such_loglevel, Level})
     end.
 
