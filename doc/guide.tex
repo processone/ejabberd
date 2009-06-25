@@ -884,8 +884,14 @@ This is a detailed description of each option allowed by the listening modules:
     You should also set the \option{certfile} option.
     You can define a certificate file for a specific domain using the global option \option{domain\_certfile}.
   \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
-    the port will be encrypted using SSL immediately after connecting. You
-    should also set the \option{certfile} option.
+    the port will be encrypted using SSL immediately after connecting.
+    This was the traditional encryption method in the early Jabber software,
+    commonly on port 5223 for client-to-server communications.
+    But this method is nowadays deprecated and not recommended.
+    The preferable encryption method is STARTTLS on port 5222, as defined 
+    \footahref{http://www.xmpp.org/specs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
+    which can be enabled in \ejabberd{} with the option \term{starttls}.
+    If this option is set, you should also set the \option{certfile} option.
   \titem{web\_admin} \ind{options!web\_admin}\ind{web admin}This option
     enables the Web Admin for \ejabberd{} administration which is available
     at \verb|http://server:port/admin/|. Login and password are the username and
@@ -895,7 +901,7 @@ This is a detailed description of each option allowed by the listening modules:
     option specifies that Zlib stream compression (as defined in \xepref{0138})
     is available on connections to the port. Client connections cannot use
     stream compression and stream encryption simultaneously. Hence, if you
-    specify both \option{tls} (or \option{ssl}) and \option{zlib}, the latter
+    specify both \option{starttls} (or \option{tls}) and \option{zlib}, the latter
     option will not affect connections (there will be no stream compression).
 \end{description}
 

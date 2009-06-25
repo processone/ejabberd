@@ -751,8 +751,14 @@ No unencrypted connections will be allowed.
 You should also set the <TT>certfile</TT> option.
 You can define a certificate file for a specific domain using the global option <TT>domain_certfile</TT>.
 </DD><DT CLASS="dt-description"><B><TT>tls</TT></B></DT><DD CLASS="dd-description"> This option specifies that traffic on
-the port will be encrypted using SSL immediately after connecting. You
-should also set the <TT>certfile</TT> option.
+the port will be encrypted using SSL immediately after connecting.
+This was the traditional encryption method in the early Jabber software,
+commonly on port 5223 for client-to-server communications.
+But this method is nowadays deprecated and not recommended.
+The preferable encryption method is STARTTLS on port 5222, as defined 
+<A HREF="http://www.xmpp.org/specs/rfc3920.html#tls">RFC 3920: XMPP Core</A>,
+which can be enabled in <TT>ejabberd</TT> with the option <TT>starttls</TT>.
+If this option is set, you should also set the <TT>certfile</TT> option.
 </DD><DT CLASS="dt-description"><B><TT>web_admin</TT></B></DT><DD CLASS="dd-description"> This option
 enables the Web Admin for <TT>ejabberd</TT> administration which is available
 at <CODE>http://server:port/admin/</CODE>. Login and password are the username and
@@ -762,7 +768,7 @@ password of one of the registered users who are granted access by the
 option specifies that Zlib stream compression (as defined in <A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>)
 is available on connections to the port. Client connections cannot use
 stream compression and stream encryption simultaneously. Hence, if you
-specify both <TT>tls</TT> (or <TT>ssl</TT>) and <TT>zlib</TT>, the latter
+specify both <TT>starttls</TT> (or <TT>tls</TT>) and <TT>zlib</TT>, the latter
 option will not affect connections (there will be no stream compression).
 </DD></DL><P>There are some additional global options that can be specified in the ejabberd configuration file (outside <TT>listen</TT>):
 </P><DL CLASS="description"><DT CLASS="dt-description">
