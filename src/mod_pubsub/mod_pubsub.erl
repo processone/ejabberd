@@ -2651,7 +2651,7 @@ sub_to_deliver(_LJID, NotifyType, Depth, SubOptions) ->
 sub_option_can_deliver(items, _, {subscription_type, nodes}) -> false;
 sub_option_can_deliver(nodes, _, {subscription_type, items}) -> false;
 sub_option_can_deliver(_, _, {subscription_depth, all})      -> true;
-sub_option_can_deliver(_, Depth, {subscription_depth, D})    -> Depth < D;
+sub_option_can_deliver(_, Depth, {subscription_depth, D})    -> Depth =< D;
 sub_option_can_deliver(_, _, {deliver, false})	       -> false;
 sub_option_can_deliver(_, _, {expire, When})		 -> now() < When;
 sub_option_can_deliver(_, _, _)			      -> true.

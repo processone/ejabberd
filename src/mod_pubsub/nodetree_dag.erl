@@ -108,6 +108,7 @@ delete_node(Key, NodeID) ->
 			  end, get_subnodes(Key, NodeID)),
 
 	    %% Remove and return the requested node.
+	    pubsub_index:free(node, Node#pubsub_node.id),
 	    mnesia:delete_object(pubsub_node, Node, write),
 	    [Node]
     end.

@@ -150,13 +150,8 @@ get_subnodes_tree(_Host, _Node) ->
 %% @doc <p>No node record is stored on database. Any valid node
 %% is considered as already created.</p>
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
-create_node(Host, Node, _Type, Owner, _Options) ->
-    UserName = Owner#jid.luser,
-    UserHost = Owner#jid.lserver,
-    case Node of
-	["home", UserHost, UserName | _] -> {error, {virtual, {Host, Node}}};
-	_ -> {error, ?ERR_NOT_ALLOWED}
-    end.
+create_node(Host, Node, _Type, _Owner, _Options) ->
+	{error, {virtual, {Host, Node}}}.
 
 %% @spec (Host, Node) -> [mod_pubsub:node()]
 %%     Host = mod_pubsub:host()
