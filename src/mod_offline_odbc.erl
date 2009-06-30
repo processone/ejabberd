@@ -112,6 +112,13 @@ loop(Host, AccessMaxOfflineMsgs) ->
 						Els ++
 						[jlib:timestamp_to_xml(
 						   calendar:now_to_universal_time(
+					     M#offline_msg.timestamp),
+					   utc,
+					   jlib:make_jid("", Host, ""),
+					   "Offline Storage"),
+					 %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+					 jlib:timestamp_to_xml( 
+					   calendar:now_to_universal_time(
 						     M#offline_msg.timestamp))]},
 				      XML =
 					  ejabberd_odbc:escape(

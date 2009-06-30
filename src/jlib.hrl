@@ -30,11 +30,13 @@
 -define(NS_PRIVACY,      "jabber:iq:privacy").
 -define(NS_PRIVATE,      "jabber:iq:private").
 -define(NS_VERSION,      "jabber:iq:version").
--define(NS_TIME,         "jabber:iq:time").
+-define(NS_TIME90,       "jabber:iq:time"). % TODO: Remove once XEP-0090 is Obsolete
+-define(NS_TIME,         "urn:xmpp:time").
 -define(NS_LAST,         "jabber:iq:last").
 -define(NS_XDATA,        "jabber:x:data").
 -define(NS_IQDATA,       "jabber:iq:data").
--define(NS_DELAY,        "jabber:x:delay").
+-define(NS_DELAY91,      "jabber:x:delay"). % TODO: Remove once XEP-0091 is Obsolete
+-define(NS_DELAY,        "urn:xmpp:delay").
 -define(NS_EXPIRE,       "jabber:x:expire").
 -define(NS_EVENT,        "jabber:x:event").
 -define(NS_XCONFERENCE,  "jabber:x:conference").
@@ -71,6 +73,7 @@
 -define(NS_FEATURE_IQAUTH, "http://jabber.org/features/iq-auth").
 -define(NS_FEATURE_IQREGISTER, "http://jabber.org/features/iq-register").
 -define(NS_FEATURE_COMPRESS, "http://jabber.org/features/compress").
+-define(NS_FEATURE_MSGOFFLINE, "msgoffline").
 
 -define(NS_COMPRESS,     "http://jabber.org/protocol/compress").
 

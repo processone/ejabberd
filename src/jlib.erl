@@ -55,8 +55,10 @@
 	 is_iq_request_type/1,
 	 iq_to_xml/1,
 	 parse_xdata_submit/1,
-	 timestamp_to_iso/1,
-	 timestamp_to_xml/1,
+	 timestamp_to_iso/1, % TODO: Remove once XEP-0091 is Obsolete
+	 timestamp_to_iso/2,
+	 timestamp_to_xml/4,
+	 timestamp_to_xml/1, % TODO: Remove once XEP-0091 is Obsolete
 	 now_to_utc_string/1,
 	 now_to_local_string/1,
 	 datetime_string_to_timestamp/1,
@@ -553,14 +555,45 @@ rsm_encode_count(Count, Arr)->
 i2l(I) when is_integer(I) -> integer_to_list(I);
 i2l(L) when is_list(L)    -> L.
 
+%% Timezone = utc | {Hours, Minutes}
+%% Hours = integer()
+%% Minutes = integer()
+timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
+    Timestamp_string =
+	lists:flatten(
+	  io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+			[Year, Month, Day, Hour, Minute, Second])),
+    Timezone_string =
+	case Timezone of
+	    utc -> "Z";
+	    {TZh, TZm} ->
+		Sign = case TZh >= 0 of
+			   true -> "+";
+			   false -> "-"
+		       end,
+		io_lib:format("~s~2..0w:~2..0w", [Sign, abs(TZh),TZm])
+	end,
+    {Timestamp_string, Timezone_string}.
+
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     lists:flatten(
       io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
 		    [Year, Month, Day, Hour, Minute, Second])).
 
+timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
+    {T_string, Tz_string} = timestamp_to_iso(DateTime, Timezone),
+    Text = [{xmlcdata, Desc}],
+    From = jlib:jid_to_string(FromJID),
+    {xmlelement, "delay",
+     [{"xmlns", ?NS_DELAY},
+      {"from", From},
+      {"stamp", T_string ++ Tz_string}],
+     Text}.
+
+%% TODO: Remove this function once XEP-0091 is Obsolete
 timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     {xmlelement, "x",
-     [{"xmlns", ?NS_DELAY},
+     [{"xmlns", ?NS_DELAY91},
       {"stamp", lists:flatten(
 		  io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
 				[Year, Month, Day, Hour, Minute, Second]))}],

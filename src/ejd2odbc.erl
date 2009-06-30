@@ -131,7 +131,14 @@ export_offline(Server, Output) ->
 	      NewPacket = {xmlelement, Name, Attrs2,
 			   Els ++
 			   [jlib:timestamp_to_xml(
-			      calendar:now_to_universal_time(TimeStamp))]},
+			      calendar:now_to_universal_time(TimeStamp),
+			      utc,
+			      jlib:make_jid("", Server, ""),
+			      "Offline Storage"),
+			    %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+			    jlib:timestamp_to_xml(
+			      calendar:now_to_universal_time(
+				TimeStamp))]},
 	      XML =
 		  ejabberd_odbc:escape(
 		    lists:flatten(

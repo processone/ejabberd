@@ -294,6 +294,13 @@ resend_offline_messages(User, Server) ->
 			    Els ++
 			    [jlib:timestamp_to_xml(
 			       calendar:now_to_universal_time(
+				 R#offline_msg.timestamp),
+			       utc,
+			       jlib:make_jid("", Server, ""),
+			       "Offline Storage"),
+			     %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+			     jlib:timestamp_to_xml(
+			       calendar:now_to_universal_time(
 				 R#offline_msg.timestamp))]}}
 	      end,
 	      lists:keysort(#offline_msg.timestamp, Rs));
@@ -322,7 +329,14 @@ pop_offline_messages(Ls, User, Server) ->
 			     {xmlelement, Name, Attrs,
 			      Els ++
 			      [jlib:timestamp_to_xml(
-				 calendar:now_to_universal_time(
+			         calendar:now_to_universal_time(
+				   R#offline_msg.timestamp),
+				 utc,
+				 jlib:make_jid("", Server, ""),
+				 "Offline Storage"),
+			       %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+			       jlib:timestamp_to_xml(
+			         calendar:now_to_universal_time(
 				   R#offline_msg.timestamp))]}}
 		    end,
 		    lists:filter(
