@@ -39,6 +39,7 @@
 -define(NS_DELAY,        "urn:xmpp:delay").
 -define(NS_EXPIRE,       "jabber:x:expire").
 -define(NS_EVENT,        "jabber:x:event").
+-define(NS_CHATSTATES,   "http://jabber.org/protocol/chatstates").
 -define(NS_XCONFERENCE,  "jabber:x:conference").
 -define(NS_STATS,        "http://jabber.org/protocol/stats").
 -define(NS_MUC,          "http://jabber.org/protocol/muc").
