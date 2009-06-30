@@ -35,6 +35,7 @@
 	 store_packet/3,
 	 resend_offline_messages/2,
 	 pop_offline_messages/3,
+	 get_sm_features/5,
 	 remove_expired_messages/0,
 	 remove_old_messages/1,
 	 remove_user/2,
@@ -76,6 +77,10 @@ start(Host, Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, HostB,
 		       ?MODULE, remove_user, 50),
+    ejabberd_hooks:add(disco_sm_features, HostB,
+		       ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_local_features, HostB,
+		       ?MODULE, get_sm_features, 50),
     ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, HostB,
@@ -152,6 +157,8 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, HostB,
 			  ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, HostB,
@@ -161,6 +168,21 @@ stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
     {wait, Proc}.
+
+get_sm_features(Acc, _From, _To, "", _Lang) ->
+    Feats = case Acc of
+		{result, I} -> I;
+		_ -> []
+	    end,
+    {result, Feats ++ [?NS_FEATURE_MSGOFFLINE]};
+
+get_sm_features(_Acc, _From, _To, ?NS_FEATURE_MSGOFFLINE, _Lang) ->
+    %% override all lesser features...
+    {result, []};
+
+get_sm_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
 
 store_packet(From, To, Packet) ->
     Type = exmpp_stanza:get_type(Packet),
@@ -320,6 +342,7 @@ pop_offline_messages(Ls, User, Server)
 	_ ->
 	    Ls
     end.
+
 
 remove_expired_messages() ->
     TimeStamp = now(),
