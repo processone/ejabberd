@@ -1827,7 +1827,7 @@ send_new_presence(NJID, Reason, StateData) ->
 			   false ->
 			       []
 		       end,
-	      Packet = append_subtags(
+	      Packet = xml:append_subtags(
 			 Presence,
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status]}]),
@@ -1868,7 +1868,7 @@ send_existing_presences(ToJID, StateData) ->
 				    affiliation_to_list(FromAffiliation)},
 				   {"role", role_to_list(FromRole)}]
 			  end,
-		      Packet = append_subtags(
+		      Packet = xml:append_subtags(
 				 Presence,
 				 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 				   [{xmlelement, "item", ItemAttrs, []}]}]),
@@ -1879,10 +1879,6 @@ send_existing_presences(ToJID, StateData) ->
 			Packet)
 	      end
       end, ?DICT:to_list(StateData#state.users)).
-
-
-append_subtags({xmlelement, Name, Attrs, SubTags1}, SubTags2) ->
-    {xmlelement, Name, Attrs, SubTags1 ++ SubTags2}.
 
 
 now_to_usec({MSec, Sec, USec}) ->
@@ -1944,7 +1940,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 		   [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 		     [{xmlelement, "item", ItemAttrs1, []},
 		      {xmlelement, "status", [{"code", "303"}], []}]}]},
-	      Packet2 = append_subtags(
+	      Packet2 = xml:append_subtags(
 			  Presence,
 			  [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			    [{xmlelement, "item", ItemAttrs2, []}]}]),
@@ -2004,7 +2000,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 	true -> StateData#state.jid;
 	false -> FromJID
     end,
-    TSPacket = append_subtags(Packet,
+    TSPacket = xml:append_subtags(Packet,
 			      [jlib:timestamp_to_xml(TimeStamp, utc, SenderJid, ""),
 			       %% TODO: Delete the next line once XEP-0091 is Obsolete
 			       jlib:timestamp_to_xml(TimeStamp)]),

@@ -34,6 +34,7 @@
 	 get_attr/2, get_attr_s/2,
 	 get_tag_attr/2, get_tag_attr_s/2,
 	 get_subtag/2, get_subtag_cdata/2,
+	 append_subtags/2,
 	 get_path_s/2,
 	 replace_tag_attr/3]).
 
@@ -218,6 +219,9 @@ get_subtag_cdata(Tag, Name) ->
 	Subtag ->
 	    get_tag_cdata(Subtag)
     end.
+
+append_subtags({xmlelement, Name, Attrs, SubTags1}, SubTags2) ->
+    {xmlelement, Name, Attrs, SubTags1 ++ SubTags2}.
 
 get_path_s(El, []) ->
     El;

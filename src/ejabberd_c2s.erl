@@ -1441,7 +1441,13 @@ process_presence_probe(From, To, StateData) ->
 		andalso ?SETS:is_element(LFrom, StateData#state.pres_a),
 	    if
 		Cond1 ->
-		    Packet = StateData#state.pres_last,
+		    Timestamp = StateData#state.pres_timestamp,
+		    Packet = xml:append_subtags(
+			       StateData#state.pres_last,
+			       %% To is the one sending the presence (the target of the probe)
+			       [jlib:timestamp_to_xml(Timestamp, utc, To, ""),
+				%% TODO: Delete the next line once XEP-0091 is Obsolete
+				jlib:timestamp_to_xml(Timestamp)]),
 		    case ejabberd_hooks:run_fold(
 			   privacy_check_packet, StateData#state.server,
 			   allow,
@@ -1495,6 +1501,7 @@ presence_update(From, Packet, StateData) ->
 	    presence_broadcast(StateData, From, StateData#state.pres_a, Packet),
 	    presence_broadcast(StateData, From, StateData#state.pres_i, Packet),
 	    StateData#state{pres_last = undefined,
+			    pres_timestamp = undefined,
 			    pres_a = ?SETS:new(),
 			    pres_i = ?SETS:new(),
 			    pres_invis = false};
@@ -1511,6 +1518,7 @@ presence_update(From, Packet, StateData) ->
 					   StateData#state.pres_i,
 					   Packet),
 			S1 = StateData#state{pres_last = undefined,
+					     pres_timestamp = undefined,
 					     pres_a = ?SETS:new(),
 					     pres_i = ?SETS:new(),
 					     pres_invis = true},
@@ -1539,6 +1547,7 @@ presence_update(From, Packet, StateData) ->
 				  get_priority_from_presence(OldPresence)
 			  end,
 	    NewPriority = get_priority_from_presence(Packet),
+	    Timestamp = calendar:now_to_universal_time(now()),
 	    update_priority(NewPriority, Packet, StateData),
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
@@ -1557,7 +1566,8 @@ presence_update(From, Packet, StateData) ->
 			end,
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,
-						pres_invis = false
+						pres_invis = false,
+						pres_timestamp = Timestamp
 					       }, Packet);
 		    true ->
 			presence_broadcast_to_trusted(StateData,
@@ -1571,7 +1581,8 @@ presence_update(From, Packet, StateData) ->
 				ok
 			end,
 			StateData#state{pres_last = Packet,
-					pres_invis = false
+					pres_invis = false,
+					pres_timestamp = Timestamp
 				       }
 		end,
 	    NewState
