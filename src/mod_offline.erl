@@ -189,7 +189,7 @@ store_packet(From, To, Packet) ->
     if
 	(Type /= <<"error">>) and (Type /= <<"groupchat">>) and
 	(Type /= <<"headline">>) ->
-	    case check_event(From, To, Packet) of
+	    case check_event_chatstates(From, To, Packet) of
 		true ->
             LUser = exmpp_jid:prep_node_as_list(To),
             LServer = exmpp_jid:prep_domain_as_list(To),
@@ -210,11 +210,21 @@ store_packet(From, To, Packet) ->
 	    ok
     end.
 
-check_event(From, To, Packet) ->
-    case find_x_event(Packet#xmlel.children) of
-	false ->
+%% Check if the packet has any content about XEP-0022 or XEP-0085
+check_event_chatstates(From, To, Packet) ->
+    case find_x_event_chatstates(Packet#xmlel.children, {false, false, false}) of
+	%% There wasn't any x:event or chatstates subelements
+	{false, false, _} ->
 	    true;
-	El ->
+	%% There a chatstates subelement and other stuff, but no x:event
+	{false, CEl, true} when CEl /= false ->
+  	    true;
+	%% There was only a subelement: a chatstates
+	{false, CEl, false} when CEl /= false ->
+	    %% Don't allow offline storage
+	    false;
+	%% There was an x:event element, and maybe also other stuff
+	{El, _, _} when El /= false->
 	    case exmpp_xml:get_element(El, 'id') of
 		undefined ->
 		    case exmpp_xml:get_element(El, 'offline') of
@@ -240,12 +250,17 @@ check_event(From, To, Packet) ->
 	    end
     end.
 
-find_x_event([]) ->
-    false;
-find_x_event([#xmlel{ns = ?NS_MESSAGE_EVENT} = El | _Els]) ->
-    El;
-find_x_event([_ | Els]) ->
-    find_x_event(Els).
+%% Check if the packet has subelements about XEP-0022, XEP-0085 or other
+find_x_event_chatstates([], Res) ->
+    Res;
+find_x_event_chatstates([#xmlel{ns = ?NS_MESSAGE_EVENT} = El | Els], {_, B, C}) ->
+    find_x_event_chatstates(Els, {El, B, C});
+find_x_event_chatstates([#xmlel{ns = ?NS_CHATSTATES} = El | Els], {A, _, C}) ->
+    find_x_event_chatstates(Els, {A, El, C});
+find_x_event_chatstates([#xmlcdata{} = _ | Els], {A, B, C}) ->
+    find_x_event_chatstates(Els, {A, B, C});
+find_x_event_chatstates([_ | Els], {A, B, _}) ->
+    find_x_event_chatstates(Els, {A, B, true}).
 
 find_x_expire(_, []) ->
     never;
