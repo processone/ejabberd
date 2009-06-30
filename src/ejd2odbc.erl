@@ -127,7 +127,14 @@ export_offline(Server, Output) ->
 	      Packet0 = exmpp_stanza:set_jids(Packet,
 		exmpp_jid:to_list(From),
 		exmpp_jid:to_list(To)),
-	      Packet1 = exmpp_xml:append_child(Packet0,
+	      Packet0b = exmpp_xml:append_child(Packet0,
+			   jlib:timestamp_to_xml(
+			      calendar:now_to_universal_time(TimeStamp), 
+			      utc,
+			      exmpp_jid:make("", Server, ""),
+			      "Offline Storage")),
+	      %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+	      Packet1 = exmpp_xml:append_child(Packet0b,
 		jlib:timestamp_to_xml(
                   calendar:now_to_universal_time(TimeStamp))),
 	      XML =

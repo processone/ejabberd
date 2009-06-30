@@ -31,6 +31,7 @@
 
 -export([start/2,
 	 stop/1,
+	 process_local_iq90/3, % TODO: Remove once XEP-0090 is Obsolete
 	 process_local_iq/3]).
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -40,21 +41,45 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    %% TODO: Remove the next two lines once XEP-0090 is Obsolete
+    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME_OLD,
+				  ?MODULE, process_local_iq90, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME,
 				  ?MODULE, process_local_iq, IQDisc).
 
 stop(Host) ->
+    %% TODO: Remove the next two lines once XEP-0090 is Obsolete
+    gen_iq_handler:remove_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME_OLD),
     gen_iq_handler:remove_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME).
 
 process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
-    UTC = jlib:timestamp_to_iso(calendar:universal_time()),
-    Result = #xmlel{ns = ?NS_TIME, name = 'query', children = [
-	#xmlel{ns = ?NS_TIME, name = 'utc', children = [
-	    #xmlcdata{cdata = list_to_binary(UTC)}
-	  ]}
+	    Now = now(),
+	    Now_universal = calendar:now_to_universal_time(Now),
+	    Now_local = calendar:now_to_local_time(Now),
+	    {UTC, UTC_diff} = jlib:timestamp_to_iso(Now_universal, utc),
+	    Seconds_diff = calendar:datetime_to_gregorian_seconds(Now_local)
+	     - calendar:datetime_to_gregorian_seconds(Now_universal),
+	    {Hd, Md, _} = calendar:seconds_to_time(Seconds_diff),
+	    {_, TZO_diff} = jlib:timestamp_to_iso({{0, 0, 0}, {0, 0, 0}}, {Hd, Md}),
+    Result = #xmlel{ns = ?NS_TIME, name = 'time', children = [
+	    	#xmlel{ns = ?NS_TIME, name = 'tzo', children = [
+		    #xmlcdata{cdata = list_to_binary(TZO_diff)}]},
+	    	#xmlel{ns = ?NS_TIME, name = 'utc', children = [
+		    #xmlcdata{cdata = list_to_binary(UTC ++ UTC_diff)}]}
       ]},
     exmpp_iq:result(IQ_Rec, Result);
 process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
-
+%% TODO: Remove this function once XEP-0090 is Obsolete
+process_local_iq90(_From, _To, #iq{type = get} = IQ_Rec) ->
+    UTC = jlib:timestamp_to_iso(calendar:universal_time()),
+    Result = #xmlel{ns = ?NS_TIME_OLD, name = 'query',
+		    children = [#xmlel{ns = ?NS_TIME_OLD, name = 'utc',
+				       children=[#xmlcdata{cdata =
+							   list_to_binary(UTC)}
+						]}
+			       ]},
+    exmpp_iq:result(IQ_Rec, Result);
+process_local_iq90(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').

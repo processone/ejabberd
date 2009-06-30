@@ -113,10 +113,18 @@ loop(Host, AccessMaxOfflineMsgs) ->
 						 M#offline_msg.packet,
 						 From,
 						 To),
-				      Packet1 = exmpp_xml:append_child(Packet0,
-						jlib:timestamp_to_xml(
-						   calendar:now_to_universal_time(
-						     M#offline_msg.timestamp))),
+				      Packet1 = exmpp_xml:append_children(
+						  Packet0,
+						  [jlib:timestamp_to_xml(
+						     calendar:now_to_universal_time(
+						       M#offline_msg.timestamp),
+						     utc,
+						     jlib:make_jid("", Host, ""),
+						     "Offline Storage"),
+						   %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+						   jlib:timestamp_to_xml(
+						     calendar:now_to_universal_time(
+						       M#offline_msg.timestamp))]),
 				      XML =
 					  ejabberd_odbc:escape(
 					    exmpp_xml:document_to_list(Packet1)),
@@ -181,9 +189,9 @@ get_sm_features(Acc, _From, _To, "", _Lang) ->
 		{result, I} -> I;
 		_ -> []
 	    end,
-    {result, Feats ++ [?NS_FEATURE_MSGOFFLINE]};
+    {result, Feats ++ [?NS_MSGOFFLINE]};
 
-get_sm_features(_Acc, _From, _To, ?NS_FEATURE_MSGOFFLINE, _Lang) ->
+get_sm_features(_Acc, _From, _To, ?NS_MSGOFFLINE, _Lang) ->
     %% override all lesser features...
     {result, []};
 

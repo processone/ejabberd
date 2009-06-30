@@ -570,6 +570,7 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
       end,
       ?DICT:to_list(StateData#state.users)),
     NSD = add_message_to_history("",
+				 StateData#state.jid,
 				 MessagePkt,
 				 StateData),
     {next_state, normal_state, NSD};
@@ -810,6 +811,7 @@ process_groupchat_message(From, #xmlel{name = 'message'} = Packet,
 			      ?DICT:to_list(StateData#state.users)),
 			    NewStateData2 =
 				add_message_to_history(FromNick,
+						       From,
 						       Packet,
 						       NewStateData1),
 			    {next_state, normal_state, NewStateData2};
@@ -2025,11 +2027,21 @@ lqueue_to_list(#lqueue{queue = Q1}) ->
     queue:to_list(Q1).
 
 
-add_message_to_history(FromNick, Packet, StateData) ->
+add_message_to_history(FromNick, FromJID, Packet, StateData) ->
     HaveSubject = exmpp_xml:has_element(Packet, 'subject'),
     TimeStamp = calendar:now_to_universal_time(now()),
-    TSPacket = exmpp_xml:append_child(Packet,
-			      jlib:timestamp_to_xml(TimeStamp)),
+    %% Chatroom history is stored as XMPP packets, so
+    %% the decision to include the original sender's JID or not is based on the
+    %% chatroom configuration when the message was originally sent.
+    %% Also, if the chatroom is anonymous, even moderators will not get the real JID
+    SenderJid = case ((StateData#state.config)#config.anonymous) of
+	true -> StateData#state.jid;
+	false -> FromJID
+    end,
+    TSPacket = exmpp_xml:append_children(Packet,
+			      [jlib:timestamp_to_xml(TimeStamp, utc, SenderJid, ""),
+			       %% TODO: Delete the next line once XEP-0091 is Obsolete
+			       jlib:timestamp_to_xml(TimeStamp)]),
     SPacket = exmpp_stanza:set_recipient(
                     exmpp_stanza:set_sender(TSPacket,
 		                jid_replace_resource(StateData#state.jid, FromNick)),

@@ -28,8 +28,10 @@
 -author('alexey@process-one.net').
 
 -export([parse_xdata_submit/1,
-	 timestamp_to_iso/1,
-	 timestamp_to_xml/1,
+	 timestamp_to_iso/1, % TODO: Remove once XEP-0091 is Obsolete
+	 timestamp_to_iso/2,
+	 timestamp_to_xml/4,
+	 timestamp_to_xml/1, % TODO: Remove once XEP-0091 is Obsolete
 	 now_to_utc_string/1,
 	 now_to_local_string/1,
 	 datetime_string_to_timestamp/1,
@@ -149,11 +151,38 @@ rsm_encode_count(Count, Arr)->
 i2b(I) when is_integer(I) -> list_to_binary(integer_to_list(I));
 i2b(L) when is_list(L)    -> list_to_binary(L).
 
+%% Timezone = utc | {Hours, Minutes}
+%% Hours = integer()
+%% Minutes = integer()
+timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
+    Timestamp_string = lists:flatten(
+      io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+        [Year, Month, Day, Hour, Minute, Second])),
+    Timezone_string = case Timezone of
+	utc -> "Z";
+	{TZh, TZm} -> 
+		Sign = case TZh >= 0 of
+			true -> "+";
+			false -> "-"
+		end,
+		io_lib:format("~s~2..0w:~2..0w", [Sign, abs(TZh),TZm])
+    end,
+    {Timestamp_string, Timezone_string}.
+
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     lists:flatten(
       io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
 		    [Year, Month, Day, Hour, Minute, Second])).
 
+timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
+    {T_string, Tz_string} = timestamp_to_iso(DateTime, Timezone),
+    From = exmpp_jid:to_list(FromJID),
+    P1 = exmpp_xml:set_attributes(#xmlel{ns = ?NS_DELAY, name = 'delay'},
+      [{'from', From},
+       {'stamp', T_string ++ Tz_string}]),
+    exmpp_xml:set_cdata(P1, Desc).
+
+%% TODO: Remove this function once XEP-0091 is Obsolete
 timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     Timestamp = lists:flatten(
       io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",

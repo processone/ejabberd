@@ -174,9 +174,9 @@ get_sm_features(Acc, _From, _To, "", _Lang) ->
 		{result, I} -> I;
 		_ -> []
 	    end,
-    {result, Feats ++ [?NS_FEATURE_MSGOFFLINE]};
+    {result, Feats ++ [?NS_MSGOFFLINE]};
 
-get_sm_features(_Acc, _From, _To, ?NS_FEATURE_MSGOFFLINE, _Lang) ->
+get_sm_features(_Acc, _From, _To, ?NS_MSGOFFLINE, _Lang) ->
     %% override all lesser features...
     {result, []};
 
@@ -286,10 +286,19 @@ resend_offline_messages(User, Server) ->
 			      {route,
 			       R#offline_msg.from,
 			       R#offline_msg.to,
-			       exmpp_xml:append_child(Packet,
-				 jlib:timestamp_to_xml(
-				   calendar:now_to_universal_time(
-				     R#offline_msg.timestamp)))}
+			       exmpp_xml:append_children(
+				 Packet,
+				 [jlib:timestamp_to_xml(
+				    calendar:now_to_universal_time(R#offline_msg.timestamp),
+				    utc,
+				    exmpp_jid:make("", Server, ""),
+				    "Offline Storage"),
+				  %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+				  jlib:timestamp_to_xml(
+				    calendar:now_to_universal_time(
+				      R#offline_msg.timestamp))
+				 ]
+				)}
 		  end,
 		  lists:keysort(#offline_msg.timestamp, Rs));
 	    _ ->
@@ -320,10 +329,19 @@ pop_offline_messages(Ls, User, Server)
 				{route,
 				 R#offline_msg.from,
 				 R#offline_msg.to,
-				 exmpp_xml:append_child(Packet,
-				   jlib:timestamp_to_xml(
-				     calendar:now_to_universal_time(
-				       R#offline_msg.timestamp)))}
+			       exmpp_xml:append_children(
+				 Packet,
+				 [jlib:timestamp_to_xml(
+				    calendar:now_to_universal_time(
+				      R#offline_msg.timestamp),
+				    utc,
+				    exmpp_jid:make("", Server, ""),
+				    "Offline Storage"),
+				  %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+				  jlib:timestamp_to_xml(
+				    calendar:now_to_universal_time(
+				      R#offline_msg.timestamp))]
+				)}
 			end,
 			lists:filter(
 			  fun(R) ->
