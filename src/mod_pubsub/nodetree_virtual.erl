@@ -93,9 +93,13 @@ set_node(_NodeRecord) ->
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
 get_node(Host, Node) ->
-    #pubsub_node{nodeid = {Host, Node}, id = {Host, Node}, owners = [{"",Host,""}]}.
+    get_node({Host, Node}).
 get_node({Host, _} = NodeId) ->
-    #pubsub_node{nodeid = NodeId, id = NodeId, owners = [{"",Host,""}]}.
+    Record = #pubsub_node{nodeid = NodeId, id = NodeId},
+    Module = list_to_atom("node_" ++ Record#pubsub_node.type),
+    Options = Module:options(),
+    Owners = [{"", Host, ""}],
+    Record#pubsub_node{owners = Owners, options = Options}.
 
 %% @spec (Host) -> [pubsubNode()]
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
