@@ -39,6 +39,7 @@ function debug
       -sname debug$NODE@$HOST \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
+      -hidden \
       -remsh $NODE@$HOST
 }
 
@@ -48,6 +49,7 @@ function ctl
       -noinput \
       -sname ejabberdctl@$HOST \
       -pa $EJABBERD_EBIN \
+      -hidden \
       -s ejabberd_ctl -extra $NODE@$HOST $@
 }
 
