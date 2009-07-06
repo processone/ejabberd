@@ -164,6 +164,7 @@ debug ()
     $EXEC_CMD "$ERL \
       $NAME ${NODE}debug \
       -remsh $ERLANG_NODE \
+      -hidden \
       $ERLANG_OPTS $ARGS \"$@\""
 }
 
@@ -218,6 +219,7 @@ ctl ()
     $EXEC_CMD "$ERL \
       $NAME ejabberdctl \
       -noinput \
+      -hidden \
       -pa $EJABBERD_EBIN_PATH \
       -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
     result=$?

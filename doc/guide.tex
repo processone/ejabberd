@@ -4111,6 +4111,10 @@ The command line parameters:
 	Maximum number of Erlang processes.
   \titem{-remsh ejabberd@localhost}
 	Open an Erlang shell in a remote Erlang node.
+  \titem{-hidden}
+	The connections to other nodes are hidden (not published).
+	The result is that this node is not considered part of the cluster.
+	This is important when starting a temporary \term{ctl} or \term{debug} node.
 \end{description}
 Note that some characters need to be escaped when used in shell scripts, for instance \verb|"| and \verb|{}|.
 You can find other options in the Erlang manual page (\shell{erl -man erl}).
