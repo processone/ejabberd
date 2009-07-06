@@ -162,7 +162,7 @@ debug ()
     read foo
     echo ""
     $EXEC_CMD "$ERL \
-      $NAME ${NODE}debug \
+      $NAME debug-${ERLANG_NODE} \
       -remsh $ERLANG_NODE \
       -hidden \
       $ERLANG_OPTS $ARGS \"$@\""
@@ -217,7 +217,7 @@ ctl ()
 {
     COMMAND=$@
     $EXEC_CMD "$ERL \
-      $NAME ejabberdctl \
+      $NAME ctl-${ERLANG_NODE} \
       -noinput \
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
