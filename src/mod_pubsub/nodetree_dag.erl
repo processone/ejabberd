@@ -166,12 +166,13 @@ get_subnodes(Host, NodeID) ->
 	    qlc:e(Q)
     end.
 
-get_subnodes_tree(Host, NodeID, _From) ->
+get_subnodes_tree(Host, NodeID, From) ->
     Pred = fun (NID, #pubsub_node{parents = Parents}) ->
 		   lists:member(NID, Parents)
 	   end,
-    Tr = fun (#pubsub_node{nodeid = {_, N}}) -> N end,
-    traversal_helper(Pred, Tr, Host, [NodeID]).
+    Tr = fun (#pubsub_node{nodeid = {_, N}}) -> [N] end,
+    traversal_helper(Pred, Tr, 1, Host, [NodeID],
+                     [{0, [get_node(Host, NodeID, From)]}]).
 
 %%====================================================================
 %% Internal functions
@@ -232,8 +233,9 @@ validate_parentage(Key, Owners, [ParentID | T]) ->
 	    MutualOwners = [O || O <- Owners, PO <- POwners,
 				 O == PO],
 	    case {MutualOwners, NodeType} of
-		{[], _}	 -> {error, ?ERR_NOT_ALLOWED};
-		{_, collection} -> validate_parentage(Key, Owners, T)
+		{[], _}	 -> {error, ?ERR_FORBIDDEN};
+		{_, collection} -> validate_parentage(Key, Owners, T);
+		{_, _} -> {error, ?ERR_NOT_ALLOWED}
 	    end
     end.
 
