@@ -723,8 +723,11 @@ set_subscriptions(NodeId, Owner, Subscriptions) ->
 %% ```get_states(NodeId) ->
 %%	   node_default:get_states(NodeId).'''</p>
 get_states(NodeId) ->
-    States = mnesia:match_object(
-	       #pubsub_state{stateid = {'_', NodeId}, _ = '_'}),
+    States = case catch mnesia:match_object(
+	       #pubsub_state{stateid = {'_', NodeId}, _ = '_'}) of
+	List when is_list(List) -> List;
+	_ -> []
+    end,
     {result, States}.
 
 %% @spec (NodeId, JID) -> [State] | []
@@ -734,7 +737,7 @@ get_states(NodeId) ->
 %% @doc <p>Returns a state (one state list), given its reference.</p>
 get_state(NodeId, JID) ->
     StateId = {JID, NodeId},
-    case mnesia:read({pubsub_state, StateId}) of
+    case catch mnesia:read({pubsub_state, StateId}) of
 	[State] when is_record(State, pubsub_state) -> State;
 	_ -> #pubsub_state{stateid=StateId}
     end.
