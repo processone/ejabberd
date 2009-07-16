@@ -238,7 +238,7 @@ register_commands(Commands) ->
 		  true ->
 		      ok;
 		  false ->
-		      ?WARNING_MSG("This command is already defined:~n~p", [Command])
+		      ?DEBUG("This command is already defined:~n~p", [Command])
 	      end
       end,
       Commands).
