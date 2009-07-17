@@ -43,6 +43,7 @@
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
 	 get_vh_session_list/1,
+	 get_vh_session_number/1,
 	 register_iq_handler/4,
 	 register_iq_handler/5,
 	 unregister_iq_handler/2,
@@ -65,6 +66,7 @@
 -include("mod_privacy.hrl").
 
 -record(session, {sid, usr, us, priority, info}).
+-record(session_counter, {vhost, count}).
 -record(state, {}).
 
 %% default value for the maximum number of user connections
@@ -111,6 +113,7 @@ route(From, To, Packet) ->
 
 open_session(SID, JID, Info) when ?IS_JID(JID) ->
     set_session(SID, JID, undefined, Info),
+    inc_session_counter(exmpp_jid:domain(JID)),
     check_for_sessions_to_replace(JID),
     ejabberd_hooks:run(sm_register_connection_hook, exmpp_jid:prep_domain(JID),
 		       [SID, JID, Info]).
@@ -121,7 +124,8 @@ close_session(SID, JID ) when ?IS_JID(JID)->
 	[#session{info=I}] -> I
     end,
     F = fun() ->
-		mnesia:delete({session, SID})
+		mnesia:delete({session, SID}),
+		dec_session_counter(exmpp_jid:domain(JID))
 	end,
     mnesia:sync_dirty(F),
     ejabberd_hooks:run(sm_remove_connection_hook, exmpp_jid:prep_domain(JID),
@@ -249,6 +253,19 @@ get_vh_session_list(Server) when is_binary(Server) ->
 	[{'==', {element, 2, '$1'}, LServer}],
 	['$1']}]).
 
+get_vh_session_number(Server) ->
+    LServer = exmpp_jid:prep_domain(exmpp_jid:parse(Server)),
+    Query = mnesia:dirty_select(
+		session_counter,
+		[{#session_counter{vhost = LServer, count = '$1'},
+		  [],
+		  ['$1']}]),
+    case Query of
+	[Count] ->
+	    Count;
+	_ -> 0
+    end.
+    
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
 
@@ -275,6 +292,9 @@ init([]) ->
     mnesia:create_table(session,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, session)}]),
+    mnesia:create_table(session_counter,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, session_counter)}]),
     mnesia:add_table_index(session, usr),
     mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies),
@@ -406,6 +426,8 @@ clean_table_from_bad_node(Node) ->
 			 [{'==', {node, '$1'}, Node}],
 			 ['$_']}]),
 		lists:foreach(fun(E) ->
+				      {_, LServer} = E#session.us,
+				      dec_session_counter(LServer),
 				      mnesia:delete({session, E#session.sid})
 			      end, Es)
 	end,
@@ -683,6 +705,33 @@ get_max_user_sessions(JID) ->
 	infinity -> infinity;
 	_ -> ?MAX_USER_SESSIONS
     end.
+
+inc_session_counter(LServer) ->
+    F = fun() ->
+		case mnesia:wread({session_counter, LServer}) of
+		    [C] ->
+			Count = C#session_counter.count + 1,
+			C2 = C#session_counter{count = Count},
+			mnesia:write(C2);
+		    _ ->
+			mnesia:write(#session_counter{vhost = LServer,
+						      count = 1})
+		end
+	end,
+    mnesia:sync_dirty(F).
+
+dec_session_counter(LServer) ->
+    F = fun() ->
+		case mnesia:wread({session_counter, LServer}) of
+		    [C] ->
+			Count = C#session_counter.count - 1,
+			C2 = C#session_counter{count = Count},
+			mnesia:write(C2);
+		    _ ->
+			error
+		end
+	end,
+    mnesia:sync_dirty(F).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
