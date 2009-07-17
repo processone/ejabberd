@@ -1416,35 +1416,17 @@ update_auth(Host, Node, Type, NodeId, Subscriber,
     case Subscription of
 	[{pending, SubID}] -> %% TODO does not work if several pending
 	    NewSubscription = case Allow of
-				  true  ->
-				      node_call(Type, set_subscriptions,
-						[NodeId, Subscriber,
-						 replace_subscription({subscribed, SubID},
-								      Subscriptions)]),
-				      {subscribed, SubID};
-				  false ->
-				      node_call(Type, unsubscribe_node,
-						[NodeId, Subscriber, Subscriber,
-						 SubID]),
-				      none
+				  true  -> subscribed;
+				  false -> none
 			      end,
+            node_call(Type, set_subscriptions,
+                      [NodeId, Subscriber, NewSubscription, SubID]),
 	    send_authorization_approval(Host, Subscriber, Node,
 					NewSubscription),
 	    {result, ok};
 	_ ->
 	    {error, ?ERR_UNEXPECTED_REQUEST}
     end.
-
-replace_subscription(NewSub, Subs) ->
-    lists:foldl(fun(S, A) -> replace_subscription_helper(NewSub, S, A) end,
-		[], Subs).
-
-replace_subscription_helper({none, SubID}, {_, SubID}, Acc) ->
-    Acc;
-replace_subscription_helper({NewSub, SubID}, {_, SubID}, Acc) ->
-    [{NewSub, SubID} | Acc];
-replace_subscription_helper(_, OldSub, Acc) ->
-    [OldSub | Acc].
 
 -define(XFIELD(Type, Label, Var, Val),
 	{xmlelement, "field", [{"type", Type},

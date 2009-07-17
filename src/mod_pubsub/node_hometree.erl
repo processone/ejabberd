@@ -703,7 +703,30 @@ set_subscriptions(NodeId, Owner, none, SubId) ->
             {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
         _ ->
             unsub_with_subid(NodeId, SubId, SubState)
+    end;
+set_subscriptions(NodeId, Owner, Subscription, SubId) ->
+    SubKey = jlib:jid_tolower(Owner),
+    SubState = get_state(NodeId, SubKey),
+    case {SubId, SubState#pubsub_state.subscriptions} of
+        {_, []} ->
+            {error, ?ERR_ITEM_NOT_FOUND};
+        {"", [{_, SID}]} ->
+            replace_subscription({Subscription, SID}, SubState);
+        {"", [_|_]} ->
+            {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+         _ ->
+            replace_subscription({Subscription, SubId}, SubState)
     end.
+
+replace_subscription(NewSub, SubState) ->
+    NewSubs = replace_subscription(NewSub,
+                                   SubState#pubsub_state.subscriptions, []),
+    set_state(SubState#pubsub_state{subscriptions = NewSubs}).
+
+replace_subscription(_, [], Acc) ->
+    Acc;
+replace_subscription({Sub, SubID}, [{_, SubID} | T], Acc) ->
+    replace_subscription({Sub, SubID}, T, [{Sub, SubID} | Acc]).
 
 unsub_with_subid(NodeId, SubId, SubState) ->
     pubsub_subscription:unsubscribe_node(SubState#pubsub_state.stateid,
