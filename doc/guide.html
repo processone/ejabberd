@@ -1949,6 +1949,7 @@ disabled for instances of <TT>ejabberd</TT> with hundreds of thousands users.</P
 
 
 
+
 </P><P>This module adds support for Service Discovery (<A HREF="http://www.xmpp.org/extensions/xep-0030.html">XEP-0030</A>). With
 this module enabled, services on your server can be discovered by
 Jabber clients. Note that <TT>ejabberd</TT> has no modules with support
@@ -1960,8 +1961,16 @@ the services you offer.</P><P>Options:
 <B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Service Discovery (<TT>http://jabber.org/protocol/disco#items</TT> and
 <TT>http://jabber.org/protocol/disco#info</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
-</DD><DT CLASS="dt-description"><B><TT>extra_domains</TT></B></DT><DD CLASS="dd-description"> With this option,
-extra domains can be added to the Service Discovery item list.
+</DD><DT CLASS="dt-description"><B><TT>{extra_domains, [ Domain ]}</TT></B></DT><DD CLASS="dd-description"> With this option,
+you can specify a list of extra domains that are added to the Service Discovery item list.
+</DD><DT CLASS="dt-description"><B><TT>{server_info, [ {Modules, Field, [Value]} ]}</TT></B></DT><DD CLASS="dd-description"> 
+Specify additional information about the server,
+as described in Contact Addresses for XMPP Services (<A HREF="http://www.xmpp.org/extensions/xep-0157.html">XEP-0157</A>).
+<TT>Modules</TT> can be the keyword &#X2018;all&#X2019;, 
+in which case the information is reported in all the services;
+or a list of <TT>ejabberd</TT> modules, 
+in which case the information is only specified for the services provided by those modules.
+Any arbitrary <TT>Field</TT> and <TT>Value</TT> can be specified, not only contact addresses.
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To serve a link to the Jabber User Directory on <TT>jabber.org</TT>:
@@ -1985,6 +1994,28 @@ To serve a link to the Jabber User Directory on <TT>jabber.org</TT>:
   ...
   {mod_disco, [{extra_domains, ["example.org",
                                 "example.com"]}]},
+  ...
+ ]}.
+</PRE></LI><LI CLASS="li-itemize">With this configuration, all services show abuse addresses,
+feedback address on the main server,
+and admin addresses for both the main server and the vJUD service:
+<PRE CLASS="verbatim">{modules,
+ [
+  ...
+  {mod_disco, [{server_info, [
+      {all,
+       "abuse-addresses",
+       ["mailto:abuse@shakespeare.lit"]},
+      {[mod_muc],
+       "Web chatroom logs",
+       ["http://www.example.org/muc-logs"]},
+      {[mod_disco],
+       "feedback-addresses",
+       ["http://shakespeare.lit/feedback.php", "mailto:feedback@shakespeare.lit", "xmpp:feedback@shakespeare.lit"]},
+      {[mod_disco, mod_vcard],
+       "admin-addresses",
+       ["mailto:xmpp@shakespeare.lit", "xmpp:admins@shakespeare.lit"]}
+  ]}]},
   ...
  ]}.
 </PRE></LI></UL><P> <A NAME="modecho"></A> </P><!--TOC subsection <TT>mod_echo</TT>-->
@@ -3206,6 +3237,10 @@ Starts the Erlang system detached from the system console.
 	Maximum number of Erlang processes.
 </DD><DT CLASS="dt-description"><B><TT>-remsh ejabberd@localhost</TT></B></DT><DD CLASS="dd-description">
 	Open an Erlang shell in a remote Erlang node.
+</DD><DT CLASS="dt-description"><B><TT>-hidden</TT></B></DT><DD CLASS="dd-description">
+	The connections to other nodes are hidden (not published).
+	The result is that this node is not considered part of the cluster.
+	This is important when starting a temporary <TT>ctl</TT> or <TT>debug</TT> node.
 </DD></DL><P>
 Note that some characters need to be escaped when used in shell scripts, for instance <CODE>"</CODE> and <CODE>{}</CODE>.
 You can find other options in the Erlang manual page (<TT>erl -man erl</TT>).</P><P> <A NAME="eja-commands"></A> </P><!--TOC section <TT>ejabberd</TT> Commands-->

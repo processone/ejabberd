@@ -41,6 +41,7 @@
 	 get_sm_identity/5,
 	 get_sm_features/5,
 	 get_sm_items/5,
+	 get_info/5,
 	 register_feature/2,
 	 unregister_feature/2,
 	 register_extra_domain/2,
@@ -82,6 +83,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(disco_sm_items, HostB, ?MODULE, get_sm_items, 100),
     ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:add(disco_sm_identity, HostB, ?MODULE, get_sm_identity, 100),
+    ejabberd_hooks:add(disco_info, HostB, ?MODULE, get_info, 100),
     ok.
 
 stop(Host) ->
@@ -92,6 +94,7 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_identity, HostB, ?MODULE, get_local_identity, 100),
     ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_local_features, 100),
     ejabberd_hooks:delete(disco_local_items, HostB, ?MODULE, get_local_services, 100),
+    ejabberd_hooks:delete(disco_info, HostB, ?MODULE, get_info, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_DISCO_ITEMS),
@@ -143,10 +146,14 @@ process_local_iq_items(_From, _To, #iq{type = set} = IQ_Rec) ->
 process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
+    HostB = exmpp_jid:prep_domain(To),
     Identity = ejabberd_hooks:run_fold(disco_local_identity,
-				       exmpp_jid:prep_domain(To),
+				       HostB,
 				       [],
 				       [From, To, Node, Lang]),
+    Host = exmpp_jid:prep_domain_as_list(To),
+    Info = ejabberd_hooks:run_fold(disco_info, HostB, [],
+				   [Host, ?MODULE, Node, Lang]),
     case ejabberd_hooks:run_fold(disco_local_features,
 				 exmpp_jid:prep_domain(To),
 				 empty,
@@ -158,7 +165,7 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
 	      attrs = ANode,
-	      children = Identity ++ lists:map(fun feature_to_xml/1,
+	      children = Identity ++ Info ++ lists:map(fun feature_to_xml/1,
 		Features)},
 	    exmpp_iq:result(IQ_Rec, Result);
 	{error, Error} ->
@@ -369,3 +376,60 @@ get_user_resources(JID) ->
 			  ?XMLATTR('name', exmpp_jid:prep_node(JID))
 			]}
 	      end, lists:sort(Rs)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Support for: XEP-0157 Contact Addresses for XMPP Services
+ 
+get_info(Acc, Host, Module, Node, _Lang) when Node == <<>> ->
+    Serverinfo_fields = get_fields_xml(Host, Module),
+    CData1 = #xmlcdata{cdata = list_to_binary(?NS_SERVERINFO_s)},
+    Value1 = #xmlel{name = 'value', children = [CData1]},
+    Field1 = #xmlel{name = 'field',
+		    attrs = [?XMLATTR('type', <<"hidden">>),
+			     ?XMLATTR('var', <<"FORM_TYPE">>)],
+		    children = [Value1]
+		   },
+    X = #xmlel{name = 'x',
+	       ns = ?NS_DATA_FORMS,
+	       attrs = [?XMLATTR('type', <<"result">>)],
+	       children = [Field1 | Serverinfo_fields]
+	      },
+    [X | Acc];
+
+get_info(_, _, _, _Node, _) ->
+    [].
+
+get_fields_xml(Host, Module) ->
+    Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),
+
+    %% filter, and get only the ones allowed for this module
+    Fields_good = lists:filter(
+		    fun({Modules, _, _}) ->
+			    case Modules of
+				all -> true;
+				Modules -> lists:member(Module, Modules)
+			    end
+		    end,
+		    Fields),
+
+    fields_to_xml(Fields_good).
+
+fields_to_xml(Fields) ->
+    [ field_to_xml(Field) || Field <- Fields].
+
+field_to_xml({_, Var, Values}) ->
+    Values_xml = values_to_xml(Values),
+    #xmlel{name = 'field',
+	   attrs = [?XMLATTR('var', list_to_binary(Var))],
+	   children = Values_xml
+	  }.
+
+values_to_xml(Values) ->
+    lists:map(
+      fun(Value) ->
+	      CData= #xmlcdata{cdata = list_to_binary(Value)},
+	      #xmlel{name = 'value', children = [CData]}
+      end,
+      Values
+     ).

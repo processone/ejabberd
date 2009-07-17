@@ -122,9 +122,13 @@ delete_listener(Host) ->
 %%%------------------------
 
 %% disco#info request
-process_iq(_, #iq{type = get, ns = ?NS_DISCO_INFO, lang = Lang} = IQ_Rec, #state{name=Name}) ->
+process_iq(_, #iq{type = get, ns = ?NS_DISCO_INFO, lang = Lang} = IQ_Rec,
+    #state{name=Name, serverhost = ServerHost}) ->
+    ServerHostB = list_to_binary(ServerHost),
+    Info = ejabberd_hooks:run_fold(
+	     disco_info, ServerHostB, [], [ServerHost, ?MODULE, <<>>, ""]),
     Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-      children = iq_disco_info(Lang, Name)},
+      children = iq_disco_info(Lang, Name)++Info},
     exmpp_iq:result(IQ_Rec, Result);
 
 %% disco#items request

@@ -2587,6 +2587,7 @@ disabled for instances of \ejabberd{} with hundreds of thousands users.
 \ind{protocols!XEP-0030: Service Discovery}
 \ind{protocols!XEP-0011: Jabber Browsing}
 \ind{protocols!XEP-0094: Agent Information}
+\ind{protocols!XEP-0157: Contact Addresses for XMPP Services}
 
 This module adds support for Service Discovery (\xepref{0030}). With
 this module enabled, services on your server can be discovered by
@@ -2600,8 +2601,16 @@ Options:
 \begin{description}
 \iqdiscitem{Service Discovery (\ns{http://jabber.org/protocol/disco\#items} and
   \ns{http://jabber.org/protocol/disco\#info})}
-\titem{extra\_domains} \ind{options!extra\_domains}With this option,
-  extra domains can be added to the Service Discovery item list.
+\titem{\{extra\_domains, [ Domain ]\}} \ind{options!extra\_domains}With this option,
+  you can specify a list of extra domains that are added to the Service Discovery item list.
+\titem{\{server\_info, [ \{Modules, Field, [Value]\} ]\}} \ind{options!server\_info}
+  Specify additional information about the server,
+  as described in Contact Addresses for XMPP Services (\xepref{0157}).
+  \term{Modules} can be the keyword `all', 
+  in which case the information is reported in all the services;
+  or a list of \ejabberd{} modules, 
+  in which case the information is only specified for the services provided by those modules.
+  Any arbitrary \term{Field} and \term{Value} can be specified, not only contact addresses.
 \end{description}
 
 Examples:
@@ -2635,8 +2644,31 @@ Examples:
   ...
  ]}.
 \end{verbatim}
+\item With this configuration, all services show abuse addresses,
+feedback address on the main server,
+and admin addresses for both the main server and the vJUD service:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_disco, [{server_info, [
+      {all,
+       "abuse-addresses",
+       ["mailto:abuse@shakespeare.lit"]},
+      {[mod_muc],
+       "Web chatroom logs",
+       ["http://www.example.org/muc-logs"]},
+      {[mod_disco],
+       "feedback-addresses",
+       ["http://shakespeare.lit/feedback.php", "mailto:feedback@shakespeare.lit", "xmpp:feedback@shakespeare.lit"]},
+      {[mod_disco, mod_vcard],
+       "admin-addresses",
+       ["mailto:xmpp@shakespeare.lit", "xmpp:admins@shakespeare.lit"]}
+  ]}]},
+  ...
+ ]}.
+\end{verbatim}
 \end{itemize}
-
 
 \makesubsection{modecho}{\modecho{}}
 \ind{modules!\modecho{}}\ind{debugging}

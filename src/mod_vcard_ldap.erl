@@ -410,6 +410,7 @@ do_route(State, From, To, Packet) ->
 route(State, From, To, Packet) ->
     User = exmpp_jid:node(To),
     Resource = exmpp_jid:resource(To),
+    ServerHost = State#state.serverhost,
     if
 	(User /= undefined) or (Resource /= undefined) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'service-unavailable'),
@@ -463,8 +464,12 @@ route(State, From, To, Packet) ->
 			Err = exmpp_iq:error(Packet, 'not-allowed'),
 			ejabberd_router:route(To, From, Err);
 		    {get, ?NS_DISCO_INFO} ->
+			ServerHostB = list_to_binary(ServerHost),
+			Info = ejabberd_hooks:run_fold(
+				 disco_info, ServerHostB, [],
+				 [ServerHost, ?MODULE, <<>>, ""]),
 			Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-			  children = [
+			  children = Info ++ [
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
 			      attrs = [
 				?XMLATTR('category', <<"directory">>),

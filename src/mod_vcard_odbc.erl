@@ -333,8 +333,12 @@ do_route(ServerHost, From, To, Packet) ->
 			Err = exmpp_iq:error(Packet, 'not-allowed'),
 			ejabberd_router:route(To, From, Err);
 		    {get, ?NS_DISCO_INFO} ->
+			ServerHostB = list_to_binary(ServerHost),
+			Info = ejabberd_hooks:run_fold(
+				 disco_info, ServerHostB, [],
+				 [ServerHost, ?MODULE, <<>>, ""]),
 			Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-			  children = [
+			  children = Info ++ [
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
 			      attrs = [
 				?XMLATTR('category', <<"directory">>),

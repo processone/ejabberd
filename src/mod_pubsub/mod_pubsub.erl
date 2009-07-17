@@ -840,11 +840,15 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			    QAttrs = SubEl#xmlel.attrs,
 			    Node = exmpp_xml:get_attribute_from_list_as_list(QAttrs,
 			      'node', ""),
+			    ServerHostB = exmpp_jid:prep_domain(ServerHost),
+			    Info = ejabberd_hooks:run_fold(
+				     disco_info, ServerHostB, [],
+				     [ServerHost, ?MODULE, <<>>, ""]),
 			    Res = case iq_disco_info(Host, Node, From, Lang) of
 				      {result, IQRes} ->
 					  Result = #xmlel{ns = ?NS_DISCO_INFO,
 					    name = 'query', attrs = QAttrs,
-					    children = IQRes},
+					    children = IQRes++Info},
 					  exmpp_iq:result(Packet, Result);
 				      {error, Error} ->
 					  exmpp_iq:error(Packet, Error)

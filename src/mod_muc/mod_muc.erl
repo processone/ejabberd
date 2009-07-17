@@ -356,9 +356,12 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			    case exmpp_iq:xmlel_to_iq(Packet) of
 				#iq{type = get, ns = ?NS_DISCO_INFO = XMLNS,
  				    payload = _SubEl, lang = Lang} = IQ ->
-                    
+		    ServerHostB = list_to_binary(ServerHost),
+		    Info = ejabberd_hooks:run_fold(
+			     disco_info, ServerHostB, [],
+			     [ServerHost, ?MODULE, <<>>, ""]),
                     ResPayload = #xmlel{ns = XMLNS, name = 'query',
-                                        children = iq_disco_info(Lang)},
+                                        children = iq_disco_info(Lang)++Info},
                     Res = exmpp_iq:result(IQ, ResPayload),
 				    ejabberd_router:route(To,
 							  From,
