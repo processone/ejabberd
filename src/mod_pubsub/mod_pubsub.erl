@@ -2522,12 +2522,13 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 					  xml:get_attr_s("jid", Attrs)),
 				  Subscription = string_to_subscription(
 						   xml:get_attr_s("subscription", Attrs)),
+                                  SubId = xml:get_attr_s("subid", Attrs),
 				  if
 				      (JID == error) or
 				      (Subscription == false) ->
 					  error;
 				      true ->
-					  [{jlib:jid_tolower(JID), Subscription} | Acc]
+					  [{jlib:jid_tolower(JID), Subscription, SubId} | Acc]
 				  end
 			  end
 		  end
@@ -2539,10 +2540,10 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    Action = fun(#pubsub_node{owners = Owners, type = Type, id = NodeId}) ->
 			     case lists:member(Owner, Owners) of
 				 true ->
-				     lists:foreach(fun({JID, Subscription}) ->
-							   node_call(Type, set_subscriptions, [NodeId, JID, Subscription])
-						   end, Entities),
-				     {result, []};
+                                     lists:foreach(fun({JID, Subscription, SubId}) ->
+                                                           node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId])
+                                                   end, Entities),
+                                     {result, []};
 				 _ ->
 				     {error, ?ERR_FORBIDDEN}
 			     end
@@ -2552,7 +2553,6 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 		Other -> Other
 	    end
     end.
-
 
 %% @spec (OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, SubscriberResource}, AllowedGroups)
 %%    -> {PresenceSubscription, RosterGroup}

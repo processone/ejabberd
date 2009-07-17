@@ -61,7 +61,7 @@
 	 get_entity_subscriptions/2,
 	 get_node_subscriptions/1,
 	 get_subscriptions/2,
-	 set_subscriptions/3,
+	 set_subscriptions/4,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -166,8 +166,8 @@ get_node_subscriptions(NodeId) ->
 get_subscriptions(NodeId, Owner) ->
     node_pep:get_subscriptions(NodeId, Owner).
 
-set_subscriptions(NodeId, Owner, Subscription) ->
-    node_pep:set_subscriptions(NodeId, Owner, Subscription).
+set_subscriptions(NodeId, Owner, Subscription, SubId) ->
+    node_pep:set_subscriptions(NodeId, Owner, Subscription, SubId).
 
 get_states(NodeId) ->
     node_pep:get_states(NodeId).

@@ -65,7 +65,7 @@
 	 get_entity_subscriptions/2,
 	 get_node_subscriptions/1,
 	 get_subscriptions/2,
-	 set_subscriptions/3,
+	 set_subscriptions/4,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -691,23 +691,30 @@ get_subscriptions(NodeId, Owner) ->
     SubState = get_state(NodeId, SubKey),
     {result, SubState#pubsub_state.subscriptions}.
 
-set_subscriptions(NodeId, Owner, Subscriptions) ->
+set_subscriptions(NodeId, Owner, none, SubId) ->
     SubKey = jlib:jid_tolower(Owner),
     SubState = get_state(NodeId, SubKey),
+    case {SubId, SubState#pubsub_state.subscriptions} of
+        {_, []} ->
+            {error, ?ERR_ITEM_NOT_FOUND};
+        {"", [{_, SID}]} ->
+            unsub_with_subid(NodeId, SID, SubState);
+        {"", [_|_]} ->
+            {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+        _ ->
+            unsub_with_subid(NodeId, SubId, SubState)
+    end.
 
-    OSIDs = [SID || {_, SID} <- SubState#pubsub_state.subscriptions],
-    NSIDs = [SID || {_, SID} <- Subscriptions],
-    RSIDs = OSIDs -- NSIDs,
-
-    lists:foreach(fun(SubID) ->
-			  pubsub_subscription:unsubscribe_node(SubKey, NodeId,
-							       SubID)
-		  end, RSIDs),
-    case {Subscriptions, SubState#pubsub_state.affiliation} of
+unsub_with_subid(NodeId, SubId, SubState) ->
+    pubsub_subscription:unsubscribe_node(SubState#pubsub_state.stateid,
+                                         NodeId, SubId),
+    NewSubs = lists:filter(fun ({_, SID}) -> SubId =/= SID end,
+                           SubState#pubsub_state.subscriptions),
+    case {NewSubs, SubState#pubsub_state.affiliation} of
 	{[], none} ->
-	    del_state(NodeId, SubKey);
+	    del_state(NodeId, element(1, SubState#pubsub_state.stateid));
 	_ ->
-	    set_state(SubState#pubsub_state{subscriptions = Subscriptions})
+	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
 
 %% @spec (NodeId) -> [States] | []
