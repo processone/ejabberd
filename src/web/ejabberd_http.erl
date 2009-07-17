@@ -453,10 +453,7 @@ recv_data(_State, 0, Acc) ->
 recv_data(State, Len, Acc) ->
     case State#state.trail of
 	[] ->
-	    %% TODO: Fix the problem in tls C driver and revert this workaround
-	    %% https://support.process-one.net/browse/EJAB-611
-	    %%case (State#state.sockmod):recv(State#state.socket, Len, 300000) of
-	    case (State#state.sockmod):recv(State#state.socket,   0, 300000) of
+	    case (State#state.sockmod):recv(State#state.socket,   Len, 300000) of
 		{ok, Data} ->
 		    recv_data(State, Len - size(Data), [Acc | Data]);
 		_ ->
