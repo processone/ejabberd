@@ -888,12 +888,15 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			    sub_el = SubEl, lang = Lang} = IQ ->
 			    {xmlelement, _, QAttrs, _} = SubEl,
 			    Node = xml:get_attr_s("node", QAttrs),
+			    Info = ejabberd_hooks:run_fold(
+				     disco_info, ServerHost, [],
+				     [ServerHost, ?MODULE, "", ""]),
 			    Res = case iq_disco_info(Host, Node, From, Lang) of
 				      {result, IQRes} ->
 					  jlib:iq_to_xml(
 					    IQ#iq{type = result,
 						  sub_el = [{xmlelement, "query",
-							     QAttrs, IQRes}]});
+							     QAttrs, IQRes++Info}]});
 				      {error, Error} ->
 					  jlib:make_error_reply(Packet, Error)
 				  end,

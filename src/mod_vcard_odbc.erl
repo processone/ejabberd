@@ -344,6 +344,9 @@ do_route(ServerHost, From, To, Packet) ->
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
+			    Info = ejabberd_hooks:run_fold(
+				     disco_info, ServerHost, [],
+				     [ServerHost, ?MODULE, "", ""]),
 			    ResIQ =
 				IQ#iq{type = result,
 				      sub_el = [{xmlelement,
@@ -359,7 +362,7 @@ do_route(ServerHost, From, To, Packet) ->
 						   [{"var", ?NS_SEARCH}], []},
 						  {xmlelement, "feature",
 						   [{"var", ?NS_VCARD}], []}
-						 ]
+						 ] ++ Info
 						}]},
 			    ejabberd_router:route(To,
 						  From,

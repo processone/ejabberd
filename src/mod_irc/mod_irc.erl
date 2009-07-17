@@ -214,6 +214,9 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
 			    sub_el = SubEl, lang = Lang} = IQ ->
 			    Node = xml:get_tag_attr_s("node", SubEl),
+			    Info = ejabberd_hooks:run_fold(
+				     disco_info, ServerHost, [],
+				     [ServerHost, ?MODULE, "", ""]),
 			    case iq_disco(Node, Lang) of
 				[] ->
 				    Res = IQ#iq{type = result,
@@ -227,7 +230,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 				    Res = IQ#iq{type = result,
 						sub_el = [{xmlelement, "query",
 							   [{"xmlns", XMLNS}],
-							   DiscoInfo}]},
+							   DiscoInfo ++ Info}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res))

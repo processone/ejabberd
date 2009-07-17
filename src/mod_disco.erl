@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_disco.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Service Discovery (JEP-0030) support
+%%% Purpose : Service Discovery (XEP-0030) support
 %%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -41,6 +41,7 @@
 	 get_sm_identity/5,
 	 get_sm_features/5,
 	 get_sm_items/5,
+	 get_info/5,
 	 register_feature/2,
 	 unregister_feature/2,
 	 register_extra_domain/2,
@@ -79,6 +80,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_items, 100),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, get_sm_identity, 100),
+    ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 100),
     ok.
 
 stop(Host) ->
@@ -88,6 +90,7 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 100),
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 100),
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_services, 100),
+    ejabberd_hooks:delete(disco_info, Host, ?MODULE, get_info, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
@@ -153,6 +156,8 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 					       Host,
 					       [],
 					       [From, To, Node, Lang]),
+	    Info = ejabberd_hooks:run_fold(disco_info, Host, [],
+					   [Host, ?MODULE, Node, Lang]),
 	    case ejabberd_hooks:run_fold(disco_local_features,
 					 Host,
 					 empty,
@@ -166,6 +171,7 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", ?NS_DISCO_INFO} | ANode],
 				     Identity ++ 
+				     Info ++
 				     lists:map(fun feature_to_xml/1, Features)
 				    }]};
 		{error, Error} ->
@@ -362,3 +368,60 @@ get_user_resources(User, Server) ->
 		       [{"jid", User ++ "@" ++ Server ++ "/" ++ R},
 			{"name", User}], []}
 	      end, lists:sort(Rs)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Support for: XEP-0157 Contact Addresses for XMPP Services
+
+get_info(_A, Host, Module, Node, _Lang) when Node == [] ->
+    Serverinfo_fields = get_fields_xml(Host, Module),
+    [{xmlelement, "x",
+      [{"xmlns", ?NS_XDATA}, {"type", "result"}],
+      [{xmlelement, "field",
+	[{"var", "FORM_TYPE"}, {"type", "hidden"}],
+	[{xmlelement, "value",
+	  [],
+	  [{xmlcdata, ?NS_SERVERINFO}]
+	 }]
+       }]
+      ++ Serverinfo_fields
+     }];
+
+get_info(_, _, _, _Node, _) ->
+    [].
+
+get_fields_xml(Host, Module) ->
+    Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),
+
+    %% filter, and get only the ones allowed for this module
+    Fields_good = lists:filter(
+		    fun({Modules, _, _}) ->
+			    case Modules of
+				all -> true;
+				Modules -> lists:member(Module, Modules)
+			    end
+		    end,
+		    Fields),
+
+    fields_to_xml(Fields_good).
+
+fields_to_xml(Fields) ->
+    [ field_to_xml(Field) || Field <- Fields].
+
+field_to_xml({_, Var, Values}) ->
+    Values_xml = values_to_xml(Values),
+    {xmlelement, "field",
+     [{"var", Var}],
+     Values_xml
+    }.
+
+values_to_xml(Values) ->
+    lists:map(
+      fun(Value) ->
+	      {xmlelement, "value",
+	       [],
+	       [{xmlcdata, Value}]
+	      }
+      end,
+      Values
+     ).
