@@ -66,6 +66,7 @@
 	 get_node_subscriptions/1,
 	 get_subscriptions/2,
 	 set_subscriptions/4,
+	 get_pending_nodes/2,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -155,6 +156,7 @@ features() ->
      "access-authorize",
      "delete-nodes",
      "delete-items",
+     "get-pending",
      "instant-nodes",
      "manage-subscriptions",
      "modify-affiliations",
@@ -658,10 +660,8 @@ get_entity_subscriptions(Host, Owner) ->
     Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscriptions = Ss}, Acc) ->
 	case NodeTree:get_node(N) of
 	    #pubsub_node{nodeid = {Host, _}} = Node ->
-			lists:foldl(fun({subscribed, SubID}, Acc2) ->
-					    [{Node, subscribed, SubID, J} | Acc2];
-					({pending, _SubID}, Acc2) ->
-					    [{Node, pending, J} | Acc2];
+			lists:foldl(fun({Sub, SubID}, Acc2) ->
+					    [{Node, Sub, SubID, J} | Acc2];
 					(S, Acc2) ->
 					    [{Node, S, J} | Acc2]
 				    end, Acc, Ss);
@@ -676,10 +676,13 @@ get_node_subscriptions(NodeId) ->
 		 %% TODO: get rid of cases to handle non-list subscriptions
 		 case Subscriptions of
 		    [_|_] ->
-			lists:map(fun({subscribed, SubID}) -> {J, subscribed, SubID};
-				     ({pending, _SubID}) -> {J, pending};
-				     (S) -> {J, S}
-				end, Subscriptions);
+			lists:foldl(fun({S, SubID}, Acc) ->
+                                            [{J, S, SubID} | Acc];
+                                       (S, Acc) ->
+                                            [{J, S} | Acc]
+				end, [], Subscriptions);
+                    [] ->
+                         [];
 		    _ ->
 			 [{J, none}]
 		 end
@@ -695,32 +698,32 @@ set_subscriptions(NodeId, Owner, none, SubId) ->
     SubKey = jlib:jid_tolower(Owner),
     SubState = get_state(NodeId, SubKey),
     case {SubId, SubState#pubsub_state.subscriptions} of
-        {_, []} ->
-            {error, ?ERR_ITEM_NOT_FOUND};
-        {"", [{_, SID}]} ->
-            unsub_with_subid(NodeId, SID, SubState);
-        {"", [_|_]} ->
-            {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
-        _ ->
-            unsub_with_subid(NodeId, SubId, SubState)
+	{_, []} ->
+	    {error, ?ERR_ITEM_NOT_FOUND};
+	{"", [{_, SID}]} ->
+	    unsub_with_subid(NodeId, SID, SubState);
+	{"", [_|_]} ->
+	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+	_ ->
+	    unsub_with_subid(NodeId, SubId, SubState)
     end;
 set_subscriptions(NodeId, Owner, Subscription, SubId) ->
     SubKey = jlib:jid_tolower(Owner),
     SubState = get_state(NodeId, SubKey),
     case {SubId, SubState#pubsub_state.subscriptions} of
-        {_, []} ->
-            {error, ?ERR_ITEM_NOT_FOUND};
-        {"", [{_, SID}]} ->
-            replace_subscription({Subscription, SID}, SubState);
-        {"", [_|_]} ->
-            {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
-         _ ->
-            replace_subscription({Subscription, SubId}, SubState)
+	{_, []} ->
+	    {error, ?ERR_ITEM_NOT_FOUND};
+	{"", [{_, SID}]} ->
+	    replace_subscription({Subscription, SID}, SubState);
+	{"", [_|_]} ->
+	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+	_ ->
+	    replace_subscription({Subscription, SubId}, SubState)
     end.
 
 replace_subscription(NewSub, SubState) ->
     NewSubs = replace_subscription(NewSub,
-                                   SubState#pubsub_state.subscriptions, []),
+				   SubState#pubsub_state.subscriptions, []),
     set_state(SubState#pubsub_state{subscriptions = NewSubs}).
 
 replace_subscription(_, [], Acc) ->
@@ -730,14 +733,61 @@ replace_subscription({Sub, SubID}, [{_, SubID} | T], Acc) ->
 
 unsub_with_subid(NodeId, SubId, SubState) ->
     pubsub_subscription:unsubscribe_node(SubState#pubsub_state.stateid,
-                                         NodeId, SubId),
+					 NodeId, SubId),
     NewSubs = lists:filter(fun ({_, SID}) -> SubId =/= SID end,
-                           SubState#pubsub_state.subscriptions),
+			   SubState#pubsub_state.subscriptions),
     case {NewSubs, SubState#pubsub_state.affiliation} of
 	{[], none} ->
 	    del_state(NodeId, element(1, SubState#pubsub_state.stateid));
 	_ ->
 	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
+    end.
+
+%% @spec (Host, Owner) -> {result, [Node]} | {error, Reason}
+%%       Host = host()
+%%       Owner = jid()
+%%       Node = pubsubNode()
+%% @doc <p>Returns a list of Owner's nodes on Host with pending
+%% subscriptions.</p>
+get_pending_nodes(Host, Owner) ->
+    GenKey = jlib:jid_remove_resource(jlib:jid_tolower(Owner)),
+    States = mnesia:match_object(#pubsub_state{stateid     = {GenKey, '_'},
+					       affiliation = owner,
+					       _           = '_'}),
+    NodeIDs = [ID || #pubsub_state{stateid = {_, ID}} <- States],
+    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
+		    [{nodetree, N}] -> N;
+		    _               -> nodetree_tree
+	       end,
+    Reply = mnesia:foldl(fun(#pubsub_state{stateid = {_, NID}} = S, Acc) ->
+		case lists:member(NID, NodeIDs) of
+		    true ->
+			case get_nodes_helper(NodeTree, S) of
+			    {value, Node} -> [Node | Acc];
+			    false         -> Acc
+			end;
+		    false ->
+			Acc
+		end
+	    end, [], pubsub_state),
+    {result, Reply}.
+
+get_nodes_helper(NodeTree,
+		 #pubsub_state{stateid = {_, N}, subscriptions = Subs}) ->
+    HasPending = fun ({pending, _}) -> true;
+		     (pending)      -> true;
+		     (_)            -> false
+		 end,
+    case lists:any(HasPending, Subs) of
+	true ->
+	    case NodeTree:get_node(N) of
+		#pubsub_node{nodeid = {_, Node}} ->
+		    {value, Node};
+		_ ->
+		    false
+	    end;
+	false ->
+	    false
     end.
 
 %% @spec (NodeId) -> [States] | []

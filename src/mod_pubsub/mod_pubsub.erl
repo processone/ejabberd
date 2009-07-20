@@ -53,6 +53,7 @@
 -behaviour(gen_mod).
 
 -include("ejabberd.hrl").
+-include("adhoc.hrl").
 -include("jlib.hrl").
 -include("pubsub.hrl").
 
@@ -945,6 +946,15 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 					sub_el = [{xmlelement, "vCard", [{"xmlns", XMLNS}],
 						   iq_get_vcard(Lang)}]},
 			    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+                        #iq{type = set, xmlns = ?NS_COMMANDS} = IQ ->
+                            Res = case iq_command(Host, ServerHost, From, IQ, Access, Plugins) of
+                                      {error, Error} ->
+                                          jlib:make_error_reply(Packet, Error);
+                                      {result, IQRes} ->
+					  jlib:iq_to_xml(IQ#iq{type = result,
+                                                               sub_el = IQRes})
+                                  end,
+                            ejabberd_router:route(To, From, Res);
 			#iq{} ->
 			    Err = jlib:make_error_reply(
 				    Packet,
@@ -1281,6 +1291,140 @@ iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
 	    ?INFO_MSG("Too many actions: ~p", [Action]),
 	    {error, ?ERR_BAD_REQUEST}
     end.
+
+iq_command(Host, ServerHost, From, IQ, Access, Plugins) ->
+    case adhoc:parse_request(IQ) of
+        Req when is_record(Req, adhoc_request) ->
+            case adhoc_request(Host, ServerHost, From, Req, Access, Plugins) of
+                Resp when is_record(Resp, adhoc_response) ->
+                    {result, [adhoc:produce_response(Req, Resp)]};
+                Error ->
+                    Error
+            end;
+        Err ->
+            Err
+    end.
+
+%% @doc <p>Processes an Ad Hoc Command.</p>
+adhoc_request(Host, _ServerHost, Owner,
+              #adhoc_request{node   = ?NS_PUBSUB_GET_PENDING,
+                             lang   = Lang,
+                             action = "execute",
+                             xdata  = false},
+             _Access, Plugins) ->
+    send_pending_node_form(Host, Owner, Lang, Plugins);
+adhoc_request(Host, _ServerHost, Owner,
+              #adhoc_request{node   = ?NS_PUBSUB_GET_PENDING,
+                             action = "execute",
+                             xdata  = XData},
+             _Access, _Plugins) ->
+    ParseOptions = case XData of
+		       {xmlelement, "x", _Attrs, _SubEls} = XEl ->
+			   case jlib:parse_xdata_submit(XEl) of
+			       invalid ->
+				   {error, ?ERR_BAD_REQUEST};
+			       XData2 ->
+				   case set_xoption(XData2, []) of
+				       NewOpts when is_list(NewOpts) ->
+					   {result, NewOpts};
+				       Err ->
+					   Err
+				   end
+			   end;
+		       _ ->
+			   ?INFO_MSG("Bad XForm: ~p", [XData]),
+			   {error, ?ERR_BAD_REQUEST}
+		   end,
+    case ParseOptions of
+        {result, XForm} ->
+            case lists:keysearch(node, 1, XForm) of
+                {value, {_, Node}} ->
+                    send_pending_auth_events(Host, Node, Owner);
+                false ->
+                    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "bad-payload")}
+            end;
+        Error ->
+            Error
+    end;
+adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
+    ?DEBUG("Couldn't process ad hoc command:~n~p", [Other]),
+    {error, ?ERR_ITEM_NOT_FOUND}.
+
+%% @spec (Host, Owner) -> iqRes()
+%% @doc <p>Sends the process pending subscriptions XForm for Host to
+%% Owner.</p>
+send_pending_node_form(Host, Owner, _Lang, Plugins) ->
+    Filter =
+        fun (Plugin) ->
+                lists:member("get-pending", features(Plugin))
+        end,
+    case lists:filter(Filter, Plugins) of
+        [] ->
+            {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+        Ps ->
+            XOpts = lists:map(fun (Node) ->
+                                      {xmlelement, "option", [],
+                                       [{xmlelement, "value", [],
+                                         [{xmlcdata, node_to_string(Node)}]}]}
+                              end, get_pending_nodes(Host, Owner, Ps)),
+            XForm = {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+                     [{xmlelement, "field",
+                       [{"type", "list-single"}, {"var", "pubsub#node"}],
+                       lists:usort(XOpts)}]},
+            #adhoc_response{status = executing,
+                            defaultaction = "execute",
+                            elements = [XForm]}
+    end.
+
+get_pending_nodes(Host, Owner, Plugins) ->
+    Tr =
+        fun (Type) ->
+                case node_call(Type, get_pending_nodes, [Host, Owner]) of
+                    {result, Nodes} -> Nodes;
+                    _               -> []
+                end
+        end,
+    case transaction(fun () -> {result, lists:flatmap(Tr, Plugins)} end,
+                     sync_dirty) of
+        {result, Res} -> Res;
+        Err           -> Err
+    end.
+
+%% @spec (Host, Node, Owner) -> iqRes()
+%% @doc <p>Send a subscription approval form to Owner for all pending
+%% subscriptions on Host and Node.</p>
+send_pending_auth_events(Host, Node, Owner) ->
+    ?DEBUG("Sending pending auth events for ~s on ~s:~s",
+           [jlib:jid_to_string(Owner), Host, node_to_string(Node)]),
+    Action =
+        fun (#pubsub_node{id = NodeID, type = Type} = N) ->
+                case lists:member("get-pending", features(Type)) of
+                    true ->
+                        case node_call(Type, get_affiliation, [NodeID, Owner]) of
+                            {result, owner} ->
+                                broadcast_pending_auth_events(N),
+                                {result, ok};
+                            _ ->
+                                {error, ?ERR_FORBIDDEN}
+                        end;
+                    false ->
+                        {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
+                end
+        end,
+    case transaction(Host, Node, Action, sync_dirty) of
+        {result, _} ->
+            #adhoc_response{};
+        Err ->
+            Err
+    end.
+
+broadcast_pending_auth_events(#pubsub_node{type = Type, id = NodeID} = Node) ->
+    {result, Subscriptions} = node_call(Type, get_node_subscriptions, [NodeID]),
+    lists:foreach(fun ({J, pending, _SubID}) ->
+                          send_authorization_request(Node, jlib:make_jid(J));
+                      ({J, pending}) ->
+                          send_authorization_request(Node, jlib:make_jid(J))
+                  end, Subscriptions).
 
 %%% authorization handling
 
@@ -2412,19 +2556,19 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				end;
 			    ({_, none, _}) ->
 				[];
-			    ({#pubsub_node{nodeid = {_, SubsNode}}, subscribed, SubID, SubJID}) ->
+			    ({#pubsub_node{nodeid = {_, SubsNode}}, Subscription, SubID, SubJID}) ->
 				case Node of
 				[] ->
 				 [{xmlelement, "subscription",
 				   [{"jid", jlib:jid_to_string(SubJID)},
 				    {"subid", SubID},
-				    {"subscription", subscription_to_string(subscribed)}|nodeAttr(SubsNode)],
+				    {"subscription", subscription_to_string(Subscription)}|nodeAttr(SubsNode)],
 				   []}];
 				SubsNode ->
 				 [{xmlelement, "subscription",
 				   [{"jid", jlib:jid_to_string(SubJID)},
 				    {"subid", SubID},
-				    {"subscription", subscription_to_string(subscribed)}],
+				    {"subscription", subscription_to_string(Subscription)}],
 				   []}];
 				_ ->
 				 []
@@ -2468,11 +2612,10 @@ get_subscriptions(Host, Node, JID) ->
 		     end
 	     end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, []}} ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
 	{result, {_, Subscriptions}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
+                            ({_, pending, _}) -> [];
 			    ({AJID, Subscription}) ->
 				 [{xmlelement, "subscription",
 				   [{"jid", jlib:jid_to_string(AJID)},
@@ -3238,6 +3381,9 @@ set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
 set_xoption([{"pubsub#collection", Value} | Opts], NewOpts) ->
     NewValue = [string_to_node(V) || V <- Value],
     ?SET_LIST_XOPT(collection, NewValue);
+set_xoption([{"pubsub#node", [Value]} | Opts], NewOpts) ->
+    NewValue = string_to_node(Value),
+    ?SET_LIST_XOPT(node, NewValue);
 set_xoption([_ | Opts], NewOpts) ->
     % skip unknown field
     set_xoption(Opts, NewOpts).
@@ -3319,7 +3465,7 @@ features() ->
 	 % see plugin "delete-items",   % RECOMMENDED
 	 % see plugin "delete-nodes",   % RECOMMENDED
 	 % see plugin "filtered-notifications",   % RECOMMENDED
-	 %TODO "get-pending",   % OPTIONAL
+	 % see plugin "get-pending",   % OPTIONAL
 	 % see plugin "instant-nodes",   % RECOMMENDED
 	 "item-ids",   % RECOMMENDED
 	 "last-published",   % RECOMMENDED
