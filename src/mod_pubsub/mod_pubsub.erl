@@ -458,7 +458,7 @@ send_loop(State) ->
 	lists:foreach(fun(PType) ->
 	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, JID]),
 	    lists:foreach(
-		fun({Node, subscribed, SubJID}) -> 
+		fun({Node, subscribed, _, SubJID}) -> 
 		    if (SubJID == LJID) or (SubJID == BJID) ->
 			#pubsub_node{options = Options, type = Type, id = NodeId} = Node,
 			case get_option(Options, send_last_published_item) of
@@ -767,7 +767,7 @@ handle_cast({remove_user, LUser, LServer}, State) ->
     lists:foreach(fun(PType) ->
 	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Owner]),
 	lists:foreach(fun
-	    ({#pubsub_node{nodeid = {H, N}}, subscribed, JID}) ->
+	    ({#pubsub_node{nodeid = {H, N}}, subscribed, _, JID}) ->
 		unsubscribe_node(H, N, Owner, JID, all);
 	    (_) ->
 		ok
@@ -788,7 +788,7 @@ handle_cast({unsubscribe, Subscriber, Owner}, State) ->
     lists:foreach(fun(PType) ->
 	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Subscriber]),
 	lists:foreach(fun
-	    ({Node, subscribed, JID}) ->
+	    ({Node, subscribed, _, JID}) ->
 		#pubsub_node{options = Options, owners = Owners, type = Type, id = NodeId} = Node,
 		case get_option(Options, access_model) of
 		    presence ->
