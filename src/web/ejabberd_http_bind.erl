@@ -363,7 +363,7 @@ handle_sync_event({stop,stream_closed}, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 handle_sync_event({stop,Reason}, _From, _StateName, StateData) ->
-    ?ERROR_MSG("Closing bind session ~p - Reason: ~p", [StateData#state.id, Reason]),
+    ?DEBUG("Closing bind session ~p - Reason: ~p", [StateData#state.id, Reason]),
     Reply = ok,
     {stop, normal, Reply, StateData};
 
@@ -737,10 +737,10 @@ process_buffered_request(Reply, StateName, StateData) ->
 handle_http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) ->
     case http_put(Sid, Rid, Attrs, Payload, StreamStart, IP) of
         {error, not_exists} ->
-            ?ERROR_MSG("no session associated with sid: ~p", [Sid]),
+            ?DEBUG("no session associated with sid: ~p", [Sid]),
             {404, ?HEADER, ""};
         {{error, Reason}, Sess} ->
-            ?ERROR_MSG("Error on HTTP put. Reason: ~p", [Reason]),
+            ?DEBUG("Error on HTTP put. Reason: ~p", [Reason]),
             handle_http_put_error(Reason, Sess);
         {{repeat, OutPacket}, Sess} ->
             ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", [OutPacket]),
