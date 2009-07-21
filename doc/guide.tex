@@ -2775,11 +2775,21 @@ Options:
     DirectoryIndex variable. When a web request hits a directory
     instead of a regular file, those directory indices are looked in
     order, and the first one found is returned.
+  \titem{content\_types} \ind{options!contenttypes}
+    Specify a mapping of extensions to content types.
+    There are several content types already defined,
+    with this option you can add new definitions, modify or delete existing ones.
+    To delete an existing definition, simply define it with a value: `undefined'.
+  \titem{default\_content\_type} \ind{options!defaultcontenttype}
+    Specify the content type to use for unknown extensions.
+    Default value is `application/octet-stream'.
 \end{description}
 
 This example configuration will serve the files from 
 the local directory \verb|/var/www|
 in the address \verb|http://example.org:5280/pub/archive/|.
+In this example a new content type \term{ogg} is defined,
+\term{png} is redefined, and \term{jpg} definition is deleted.
 To use this module you must enable it:
 \begin{verbatim}
 {modules,
@@ -2787,8 +2797,13 @@ To use this module you must enable it:
   ...
   {mod_http_fileserver, [
                          {docroot, "/var/www"}, 
-			 {directory_indices, ["index.html", "main.htm"]},
-                         {accesslog, "/var/log/ejabberd/access.log"}
+                         {accesslog, "/var/log/ejabberd/access.log"},
+                         {directory_indices, ["index.html", "main.htm"]},
+                         {content_types, [{".ogg", "audio/ogg"},
+                                          {".png", "image/png"},
+                                          {".jpg", undefined}
+                                         ]},
+                         {default_content_type, "text/html"}
                         ]
   },
   ...

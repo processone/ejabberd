@@ -2102,17 +2102,32 @@ Indicate one or more directory index files, similarly to Apache&#X2019;s
 DirectoryIndex variable. When a web request hits a directory
 instead of a regular file, those directory indices are looked in
 order, and the first one found is returned.
+</DD><DT CLASS="dt-description"><B><TT>content_types</TT></B></DT><DD CLASS="dd-description"> 
+Specify a mapping of extensions to content types.
+There are several content types already defined,
+with this option you can add new definitions, modify or delete existing ones.
+To delete an existing definition, simply define it with a value: &#X2018;undefined&#X2019;.
+</DD><DT CLASS="dt-description"><B><TT>default_content_type</TT></B></DT><DD CLASS="dd-description"> 
+Specify the content type to use for unknown extensions.
+Default value is &#X2018;application/octet-stream&#X2019;.
 </DD></DL><P>This example configuration will serve the files from 
 the local directory <CODE>/var/www</CODE>
 in the address <CODE>http://example.org:5280/pub/archive/</CODE>.
+In this example a new content type <TT>ogg</TT> is defined,
+<TT>png</TT> is redefined, and <TT>jpg</TT> definition is deleted.
 To use this module you must enable it:
 </P><PRE CLASS="verbatim">{modules,
  [
   ...
   {mod_http_fileserver, [
                          {docroot, "/var/www"}, 
-    {directory_indices, ["index.html", "main.htm"]},
-                         {accesslog, "/var/log/ejabberd/access.log"}
+                         {accesslog, "/var/log/ejabberd/access.log"},
+                         {directory_indices, ["index.html", "main.htm"]},
+                         {content_types, [{".ogg", "audio/ogg"},
+                                          {".png", "image/png"},
+                                          {".jpg", undefined}
+                                         ]},
+                         {default_content_type, "text/html"}
                         ]
   },
   ...

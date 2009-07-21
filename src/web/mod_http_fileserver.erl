@@ -72,13 +72,27 @@
 -define(STRING2LOWER, httpd_util).
 -endif.
 
--record(state, {host, docroot, accesslog, accesslogfd, directory_indices}).
+-record(state, {host, docroot, accesslog, accesslogfd, directory_indices,
+                default_content_type, content_types = []}).
 
 -define(PROCNAME, ejabberd_mod_http_fileserver).
 
 %% Response is {DataSize, Code, [{HeaderKey, HeaderValue}], Data}
 -define(HTTP_ERR_FILE_NOT_FOUND, {-1, 404, [], "Not found"}).
 -define(HTTP_ERR_FORBIDDEN,      {-1, 403, [], "Forbidden"}).
+
+-define(DEFAULT_CONTENT_TYPE, "application/octet-stream").
+-define(DEFAULT_CONTENT_TYPES, [{".css",  "text/css"},
+                                {".gif",  "image/gif"},
+                                {".html", "text/html"},
+                                {".jar",  "application/java-archive"},
+                                {".jpeg", "image/jpeg"},
+				{".jpg",  "image/jpeg"},
+                                {".js",   "text/javascript"},
+                                {".png",  "image/png"},
+                                {".txt",  "text/plain"},
+                                {".xpi",  "application/x-xpinstall"},
+                                {".xul",  "application/vnd.mozilla.xul+xml"}]).
 
 -compile(export_all).
 
@@ -91,7 +105,7 @@ start(Host, Opts) ->
     ChildSpec =
 	{Proc,
 	 {?MODULE, start_link, [Host, Opts]},
-	 temporary,
+	 transient, % if process crashes abruptly, it gets restarted
 	 1000,
 	 worker,
 	 [?MODULE]},
@@ -126,12 +140,15 @@ start_link(Host, Opts) ->
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     try initialize(Host, Opts) of
-	{DocRoot, AccessLog, AccessLogFD, DirectoryIndices} ->
+	{DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
+         DefaultContentType, ContentTypes} ->
 	    {ok, #state{host = Host,
 			accesslog = AccessLog,
 			accesslogfd = AccessLogFD,
 			docroot = DocRoot,
-                        directory_indices = DirectoryIndices}}
+                        directory_indices = DirectoryIndices,
+                        default_content_type = DefaultContentType,
+                        content_types = ContentTypes}}
     catch
 	throw:Reason ->
 	    {stop, Reason}
@@ -146,7 +163,23 @@ initialize(Host, Opts) ->
     AccessLog = gen_mod:get_opt(accesslog, Opts, undefined),
     AccessLogFD = try_open_log(AccessLog, Host),
     DirectoryIndices = gen_mod:get_opt(directory_indices, Opts, []),
-    {DocRoot, AccessLog, AccessLogFD, DirectoryIndices}.
+    DefaultContentType = gen_mod:get_opt(default_content_type, Opts,
+                                         ?DEFAULT_CONTENT_TYPE),
+    ContentTypes = build_list_content_types(gen_mod:get_opt(content_types, Opts, []), ?DEFAULT_CONTENT_TYPES),
+    ?INFO_MSG("initialize: ~n ~p", [ContentTypes]),%+++
+    {DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
+     DefaultContentType, ContentTypes}.
+
+%% @spec (AdminCTs::[CT], Default::[CT]) -> [CT]
+%% where CT = {Extension::string(), Value}
+%%       Value = string() | undefined
+%% Returns a unified list without duplicates where elements of AdminCTs have more priority.
+%% If a CT is declared as 'undefined', then it is not included in the result.
+build_list_content_types(AdminCTsUnsorted, DefaultCTsUnsorted) ->
+    AdminCTs = lists:ukeysort(1, AdminCTsUnsorted),
+    DefaultCTs = lists:ukeysort(1, DefaultCTsUnsorted),
+    CTsUnfiltered = lists:ukeymerge(1, AdminCTs, DefaultCTs),
+    [{Extension, Value} || {Extension, Value} <- CTsUnfiltered, Value /= undefined].
 
 check_docroot_defined(DocRoot, Host) ->
     case DocRoot of
@@ -183,7 +216,8 @@ try_open_log(FN, Host) ->
 		 ?ERROR_MSG("Cannot open access log file: ~p~nReason: ~p", [FN, Reason]),
 		 undefined
 	 end,
-    ejabberd_hooks:add(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(reopen_log_hook, HostB, ?MODULE, reopen_log, 50),
     FD.
 
 %%--------------------------------------------------------------------
@@ -196,7 +230,8 @@ try_open_log(FN, Host) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({serve, LocalPath}, _From, State) ->
-    Reply = serve(LocalPath, State#state.docroot, State#state.directory_indices),
+    Reply = serve(LocalPath, State#state.docroot, State#state.directory_indices,
+                  State#state.default_content_type, State#state.content_types),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -263,36 +298,42 @@ process(LocalPath, Request) ->
 	    ejabberd_web:error(not_found)
     end.
 
-serve(LocalPath, DocRoot, DirectoryIndices) ->
+serve(LocalPath, DocRoot, DirectoryIndices, DefaultContentType, ContentTypes) ->
     FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
     case file:read_file_info(FileName) of
         {error, enoent}                    -> ?HTTP_ERR_FILE_NOT_FOUND;
         {error, eacces}                    -> ?HTTP_ERR_FORBIDDEN;
-        {ok, #file_info{type = directory}} -> serve_index(FileName, DirectoryIndices);
-        {ok, FileInfo}                     -> serve_file(FileInfo, FileName)
+        {ok, #file_info{type = directory}} -> serve_index(FileName,
+                                                          DirectoryIndices,
+                                                          DefaultContentType,
+                                                          ContentTypes);
+        {ok, FileInfo}                     -> serve_file(FileInfo, FileName,
+                                                         DefaultContentType,
+                                                         ContentTypes)
     end.
 
 %% Troll through the directory indices attempting to find one which
 %% works, if none can be found, return a 404.
-serve_index(_FileName, []) ->
+serve_index(_FileName, [], _DefaultContentType, _ContentTypes) ->
     ?HTTP_ERR_FILE_NOT_FOUND;
-serve_index(FileName, [Index | T]) ->
+serve_index(FileName, [Index | T], DefaultContentType, ContentTypes) ->
     IndexFileName = filename:join([FileName] ++ [Index]),
     case file:read_file_info(IndexFileName) of
-        {error, _Error}                    -> serve_index(FileName, T);
-        {ok, #file_info{type = directory}} -> serve_index(FileName, T);
-        {ok, FileInfo}                     -> serve_file(FileInfo, IndexFileName)
+        {error, _Error}                    -> serve_index(FileName, T, DefaultContentType, ContentTypes);
+        {ok, #file_info{type = directory}} -> serve_index(FileName, T, DefaultContentType, ContentTypes);
+        {ok, FileInfo}                     -> serve_file(FileInfo, IndexFileName, DefaultContentType, ContentTypes)
     end.
 
 %% Assume the file exists if we got this far and attempt to read it in
 %% and serve it up.
-serve_file(FileInfo, FileName) ->
+serve_file(FileInfo, FileName, DefaultContentType, ContentTypes) ->
     ?DEBUG("Delivering: ~s", [FileName]),
     {ok, FileContents} = file:read_file(FileName),
+    ContentType = content_type(FileName, DefaultContentType, ContentTypes),
     {FileInfo#file_info.size,
      200, [{"Server", "ejabberd"},
            {"Last-Modified", last_modified(FileInfo)},
-           {"Content-Type", content_type(FileName)}],
+           {"Content-Type", ContentType}],
      FileContents}.
 
 %%----------------------------------------------------------------------
@@ -369,20 +410,11 @@ join([E], _) ->
 join([H | T], Separator) ->
     lists:foldl(fun(E, Acc) -> lists:concat([Acc, Separator, E]) end, H, T).
 
-content_type(Filename) ->
-    case ?STRING2LOWER:to_lower(filename:extension(Filename)) of
-        ".jpg"  -> "image/jpeg";
-        ".jpeg" -> "image/jpeg";
-        ".gif"  -> "image/gif";
-        ".png"  -> "image/png";
-        ".html" -> "text/html";
-        ".css"  -> "text/css";
-        ".txt"  -> "text/plain";
-        ".xul"  -> "application/vnd.mozilla.xul+xml";
-        ".jar"  -> "application/java-archive";
-        ".xpi"  -> "application/x-xpinstall";
-        ".js"   -> "application/x-javascript";
-        _Else   -> "application/octet-stream"
+content_type(Filename, DefaultContentType, ContentTypes) ->
+    Extension = ?STRING2LOWER:to_lower(filename:extension(Filename)),
+    case lists:keysearch(Extension, 1, ContentTypes) of
+        {value, {_, ContentType}} -> ContentType;
+        false                     -> DefaultContentType
     end.
 
 last_modified(FileInfo) ->
