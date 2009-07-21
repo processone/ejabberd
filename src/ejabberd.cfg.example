@@ -152,7 +152,7 @@
   {5280, ejabberd_http, [
 			 %%{request_handlers,
 			 %% [
-			 %%  {["pub", "archive"], mod_http_fileserver},
+			 %%  {["pub", "archive"], mod_http_fileserver}
 			 %% ]},
 			 captcha,
 			 http_bind,
