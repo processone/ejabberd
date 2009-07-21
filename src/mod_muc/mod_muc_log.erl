@@ -44,13 +44,17 @@
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
+-include("mod_muc_room.hrl").
+
+%% Copied from mod_muc/mod_muc.erl
+-record(muc_online_room, {name_host, pid}).
 
 -define(T(Text), translate:translate(Lang, Text)).
 -define(PROCNAME, ejabberd_mod_muc_log).
 -record(room, {jid, title, subject, subject_author, config}).
 
 
--record(state, {host,
+-record(logstate, {host,
 		out_dir,
 		dir_type,
 		dir_name,
@@ -131,7 +135,7 @@ init([Host, Opts]) ->
 		   end;
 	       L -> L
 	   end,
-    {ok, #state{host = Host,
+    {ok, #logstate{host = Host,
 		out_dir = OutDir,
 		dir_type = DirType,
 		dir_name = DirName,
@@ -153,7 +157,7 @@ init([Host, Opts]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({check_access_log, ServerHost, FromJID}, _From, State) ->
-    Reply = acl:match_rule(ServerHost, State#state.access, FromJID),
+    Reply = acl:match_rule(ServerHost, State#logstate.access, FromJID),
     {reply, Reply, State};
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
@@ -217,8 +221,11 @@ add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
 	    add_message_to_log(binary_to_list(Nick), Message, Room, Opts, State)
     end;
 
-add_to_log2(roomconfig_change, _, Room, Opts, State) ->
+add_to_log2(roomconfig_change, _Occupants, Room, Opts, State) ->
     add_message_to_log("", roomconfig_change, Room, Opts, State);
+
+add_to_log2(roomconfig_change_enabledlogging, Occupants, Room, Opts, State) ->
+    add_message_to_log("", {roomconfig_change, Occupants}, Room, Opts, State);
 
 add_to_log2(nickchange, {OldNick, NewNick}, Room, Opts, State) ->
     add_message_to_log(binary_to_list(NewNick), {nickchange, binary_to_list(OldNick)}, Room, Opts, State);
@@ -304,7 +311,7 @@ write_last_lines(F, Images_dir, _FileFormat) ->
     fw(F, "</span></div></body></html>").
 
 add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
-    #state{out_dir = OutDir,
+    #logstate{out_dir = OutDir,
 	   dir_type = DirType,
 	   dir_name = DirName,
 	   file_format = FileFormat,
@@ -362,6 +369,13 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	       roomconfig_change ->
 		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
 		   put_room_config(F, RoomConfig, Lang, FileFormat),
+		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
+				 [?T("Chatroom configuration modified")]);
+	       {roomconfig_change, Occupants} ->
+		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
+		   put_room_config(F, RoomConfig, Lang, FileFormat),
+		   RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
+		   put_room_occupants(F, RoomOccupants, Lang, FileFormat),
 		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
 				 [?T("Chatroom configuration modified")]);
 	       join ->  
@@ -675,6 +689,9 @@ put_header(F, Room, Date, CSSFile, Lang, Hour_offset, Date_prev, Date_next, Top_
     end,
     RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
     put_room_config(F, RoomConfig, Lang, FileFormat),
+    Occupants = get_room_occupants(Room#room.jid),
+    RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
+    put_room_occupants(F, RoomOccupants, Lang, FileFormat),
     Time_offset_str = case Hour_offset<0 of
 			  true -> io_lib:format("~p", [Hour_offset]);
 			  false -> io_lib:format("+~p", [Hour_offset])
@@ -733,6 +750,15 @@ put_room_config(F, RoomConfig, Lang, _FileFormat) ->
     fw(F,   "<div class=\"rcos\" id=\"a~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomConfig]),
     fw(F, "</div>").
 
+put_room_occupants(_F, _RoomOccupants, _Lang, plaintext) ->
+    ok;
+put_room_occupants(F, RoomOccupants, Lang, _FileFormat) ->
+    {_, Now2, _} = now(),
+    fw(F, "<div class=\"rc\">"),
+    fw(F,   "<div class=\"rct\" onclick=\"sh('o~p');return false;\">~s</div>", [Now2, ?T("Room Occupants")]),
+    fw(F,   "<div class=\"rcos\" id=\"o~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomOccupants]),
+    fw(F, "</div>").
+
 %% htmlize
 %% The default behaviour is to ignore the nofollow spam prevention on links
 %% (NoFollow=false)
@@ -770,7 +796,9 @@ htmlize2(S1, NoFollow) ->
     S5 = element(2, regexp:gsub(S4, "((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+",
 				link_regexp(NoFollow))),
     %% Remove 'right-to-left override' unicode character 0x202e
-    element(2, regexp:gsub(S5, [226,128,174], "[RLO]")).
+    S6 = element(2, regexp:gsub(S5, "  ", "\\&nbsp;\\&nbsp;")),
+    S7 = element(2, regexp:gsub(S6, "\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;")),
+    element(2, regexp:gsub(S7, [226,128,174], "[RLO]")).
 
 %% Regexp link
 %% Add the nofollow rel attribute when required
@@ -858,6 +886,60 @@ get_roomconfig_text(allow_query_users) -> "Allow users to query other users";
 get_roomconfig_text(allow_user_invites) -> "Allow users to send invites";
 get_roomconfig_text(logging) ->  "Enable logging";
 get_roomconfig_text(_) -> undefined.
+
+%% Users = [{JID, Nick, Role}]
+roomoccupants_to_string(Users, _FileFormat) ->
+    Res = [role_users_to_string(RoleS, Users1)
+	   || {RoleS, Users1} <- group_by_role(Users), Users1 /= []],
+    lists:flatten(["<div class=\"rcot\">", Res, "</div>"]).
+
+%% Users = [{JID, Nick, Role}]
+group_by_role(Users) ->
+    {Ms, Ps, Vs, Ns} =
+	lists:foldl(
+	  fun({JID, Nick, moderator}, {Mod, Par, Vis, Non}) ->
+		  {[{JID, Nick}]++Mod, Par, Vis, Non};
+	     ({JID, Nick, participant}, {Mod, Par, Vis, Non}) ->
+		  {Mod, [{JID, Nick}]++Par, Vis, Non};
+	     ({JID, Nick, visitor}, {Mod, Par, Vis, Non}) ->
+		  {Mod, Par, [{JID, Nick}]++Vis, Non};
+	     ({JID, Nick, none}, {Mod, Par, Vis, Non}) ->
+		  {Mod, Par, Vis, [{JID, Nick}]++Non}
+	  end,
+	  {[], [], [], []},
+	  Users),
+    case Ms of [] -> []; _ -> [{"Moderator", Ms}] end
+	++ case Ms of [] -> []; _ -> [{"Participant", Ps}] end
+	++ case Ms of [] -> []; _ -> [{"Visitor", Vs}] end
+	++ case Ms of [] -> []; _ -> [{"None", Ns}] end.
+
+%% Role = atom()
+%% Users = [{JID, Nick}]
+role_users_to_string(RoleS, Users) ->
+    SortedUsers = lists:keysort(2, Users),
+    UsersString = [[Nick, "<br/>"] || {_JID, Nick} <- SortedUsers],
+    [RoleS, ": ", UsersString].
+
+get_room_occupants(RoomJIDString) ->
+    RoomJID = exmpp_jid:parse(RoomJIDString),
+    RoomName = exmpp_jid:node(RoomJID),
+    MucService = exmpp_jid:domain(RoomJID),
+    StateData = get_room_state(RoomName, MucService),
+    [{U#user.jid, U#user.nick, U#user.role}
+     || {_, U} <- ?DICT:to_list(StateData#state.users)].
+
+get_room_state(RoomName, MucService) ->
+    case mnesia:dirty_read(muc_online_room, {RoomName, MucService}) of
+        [R] ->
+	    RoomPid = R#muc_online_room.pid,
+	    get_room_state(RoomPid);
+	[] ->
+	    room_not_found
+    end.
+
+get_room_state(RoomPid) ->
+    {ok, R} = gen_fsm:sync_send_all_state_event(RoomPid, get_state),
+    R.
 
 get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?PROCNAME).
 

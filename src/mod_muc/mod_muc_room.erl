@@ -2981,7 +2981,18 @@ set_config(XEl, StateData) ->
 		#config{} = Config ->
 		    Res = change_config(Config, StateData),
 		    {result, _, NSD} = Res,
-		    add_to_log(roomconfig_change, [], NSD),
+		    Type = case {(StateData#state.config)#config.logging,
+				 Config#config.logging} of
+			       {true, false} ->
+				   roomconfig_change_disabledlogging;
+			       {false, true} ->
+				   roomconfig_change_enabledlogging;
+			       {_, _} ->
+				   roomconfig_change
+			   end,
+		    Users = [{U#user.jid, U#user.nick, U#user.role} ||
+				{_, U} <- ?DICT:to_list(StateData#state.users)],
+		    add_to_log(Type, Users, NSD),
 		    Res;
 		Err ->
 		    Err
@@ -3492,6 +3503,12 @@ send_error_only_occupants(Packet, Lang, RoomJID, From) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Logging
 
+add_to_log(Type, Data, StateData)
+  when Type == roomconfig_change_disabledlogging ->
+    %% When logging is disabled, the config change message must be logged:
+    mod_muc_log:add_to_log(
+      StateData#state.server_host, roomconfig_change, Data,
+      StateData#state.jid, make_opts(StateData));
 add_to_log(Type, Data, StateData) ->
     case (StateData#state.config)#config.logging of
 	true ->
