@@ -240,7 +240,8 @@ remove_connection(_SID, JID, _Info) ->
     clear_caps(JID).
 
 jid_to_binary(JID) ->
-    list_to_binary(jlib:jid_to_string(JID)).
+    {U, S, R} = jlib:jid_tolower(JID),
+    list_to_binary(jlib:jid_to_string({U, S, R})).
 
 caps_to_binary(#caps{node = Node, version = Version, exts = Exts}) ->
     BExts = [list_to_binary(Ext) || Ext <- Exts],
