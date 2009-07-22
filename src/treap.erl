@@ -32,7 +32,8 @@
 	 delete_root/1,
 	 get_root/1,
 	 lookup/2,
-	 is_empty/1]).
+	 is_empty/1,
+	 fold/3]).
 
 empty() ->
     nil.
@@ -105,6 +106,8 @@ delete(Key, Tree) ->
     HashKey = {erlang:phash2(Key), Key},
     delete1(HashKey, Tree).
 
+delete1(_HashKey, nil) ->
+    nil;
 delete1(HashKey, {HashKey1, Priority1, Value1, Left, Right} = Tree) ->
     if
 	HashKey < HashKey1 ->
@@ -162,3 +165,9 @@ lookup1({HashKey1, Priority1, Value1, Left, Right}, HashKey) ->
 	    {ok, Priority1, Value1}
     end.
 
+fold(_F, Acc, nil) ->
+    Acc;
+fold(F, Acc, {{_Hash, Key}, Priority, Value, Left, Right}) ->
+    Acc1 = F({Key, Priority, Value}, Acc),
+    Acc2 = fold(F, Acc1, Left),
+    fold(F, Acc2, Right).
