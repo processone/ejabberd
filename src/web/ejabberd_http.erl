@@ -239,6 +239,9 @@ process_header(State, Data) ->
 			request_headers=add_header(Name, Host, State)};
 	{ok, {http_header, _, Name, _, Value}} ->
 	    State#state{request_headers=add_header(Name, Value, State)};
+	{ok, http_eoh} when State#state.request_host == undefined ->
+	    ?WARNING_MSG("An HTTP request without 'Host' HTTP header was received.", []),
+	    throw(http_request_no_host_header);
 	{ok, http_eoh} ->
 	    ?DEBUG("(~w) http query: ~w ~s~n",
 		   [State#state.socket,
