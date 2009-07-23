@@ -2233,7 +2233,9 @@ db_storage_select(ID, Opt, Lang) ->
 	   end, [{ram_copies, "RAM copy"},
 		 {disc_copies, "RAM and disc copy"},
 		 {disc_only_copies, "Disc only copy"},
-		 {unknown, "Remote copy"}])).
+		 {unknown, "Remote copy"},
+		 {delete_content, "Delete content"},
+		 {delete_table, "Delete table"}])).
 
 node_db_parse_query(_Node, _Tables, [{nokey,[]}]) ->
     nothing;
@@ -2248,11 +2250,17 @@ node_db_parse_query(Node, Tables, Query) ->
 				 "ram_copies" -> ram_copies;
 				 "disc_copies" -> disc_copies;
 				 "disc_only_copies" -> disc_only_copies;
+				 "delete_content" -> delete_content;
+				 "delete_table" -> delete_table;
 				 _ -> false
 			     end,
 		      if
 			  Type == false ->
 			      ok;
+			  Type == delete_content ->
+			      mnesia:clear_table(Table);
+			  Type == delete_table ->
+			      mnesia:delete_table(Table);
 			  Type == unknown ->
 			      mnesia:del_table_copy(Table, Node);
 			  true ->
