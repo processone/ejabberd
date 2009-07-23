@@ -39,9 +39,9 @@
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
 	 backup_mnesia/1, restore_mnesia/1,
-	 dump_mnesia/1, load_mnesia/1,
+	 dump_mnesia/1, dump_table/2, load_mnesia/1,
 	 install_fallback_mnesia/1,
-	 dump_to_textfile/1,
+	 dump_to_textfile/1, dump_to_textfile/2,
 	 mnesia_change_nodename/4,
 	 restore/1 % Still used by some modules
 	]).
@@ -133,6 +133,10 @@ commands() ->
 			desc = "Dump the database to text file",
 			module = ?MODULE, function = dump_mnesia,
 			args = [{file, string}], result = {res, restuple}},
+     #ejabberd_commands{name = dump_table, tags = [mnesia],
+			desc = "Dump a table to text file",
+			module = ?MODULE, function = dump_table,
+			args = [{file, string}, {table, string}], result = {res, restuple}},
      #ejabberd_commands{name = load, tags = [mnesia],
 			desc = "Restore the database from text file",
 			module = ?MODULE, function = load_mnesia,
@@ -320,19 +324,7 @@ module_tables(mod_shared_roster) -> [sr_group, sr_user];
 module_tables(mod_vcard) -> [vcard, vcard_search];
 module_tables(_Other) -> [].
 
-dump_mnesia(Path) ->
-    case dump_to_textfile(Path) of
-	ok ->
-	    {ok, ""};
-	{error, Reason} ->
-            String = io_lib:format("Can't store dump in ~p at node ~p: ~p",
-				   [filename:absname(Path), node(), Reason]),
-	    {cannot_dump, String}
-    end.
-
-dump_to_textfile(File) ->
-    dump_to_textfile(mnesia:system_info(is_running), file:open(File, [write])).
-dump_to_textfile(yes, {ok, F}) ->
+get_local_tables() ->
     Tabs1 = lists:delete(schema, mnesia:system_info(local_tables)),
     Tabs = lists:filter(
 	     fun(T) ->
@@ -342,6 +334,33 @@ dump_to_textfile(yes, {ok, F}) ->
 			 _ -> false
 		     end
 	     end, Tabs1),
+    Tabs.
+
+dump_mnesia(Path) ->
+    Tabs = get_local_tables(),
+    dump_tables(Path, Tabs).
+
+dump_table(Path, STable) ->
+    Table = list_to_atom(STable),
+    dump_tables(Path, [Table]).
+
+dump_tables(Path, Tables) ->
+    case dump_to_textfile(Path, Tables) of
+	ok ->
+	    {ok, ""};
+	{error, Reason} ->
+            String = io_lib:format("Can't store dump in ~p at node ~p: ~p",
+				   [filename:absname(Path), node(), Reason]),
+	    {cannot_dump, String}
+    end.
+
+dump_to_textfile(File) ->
+    Tabs = get_local_tables(),
+    dump_to_textfile(File, Tabs).
+
+dump_to_textfile(File, Tabs) ->
+    dump_to_textfile(mnesia:system_info(is_running), Tabs, file:open(File, [write])).
+dump_to_textfile(yes, Tabs, {ok, F}) ->
     Defs = lists:map(
 	     fun(T) -> {T, [{record_name, mnesia:table_info(T, record_name)},
 			    {attributes, mnesia:table_info(T, attributes)}]}
@@ -350,10 +369,10 @@ dump_to_textfile(yes, {ok, F}) ->
     io:format(F, "~p.~n", [{tables, Defs}]),
     lists:foreach(fun(T) -> dump_tab(F, T) end, Tabs),
     file:close(F);
-dump_to_textfile(_, {ok, F}) ->
+dump_to_textfile(_, _, {ok, F}) ->
     file:close(F),
     {error, mnesia_not_running};
-dump_to_textfile(_, {error, Reason}) ->
+dump_to_textfile(_, _, {error, Reason}) ->
     {error, Reason}.
 
 dump_tab(F, T) ->
