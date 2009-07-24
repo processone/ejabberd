@@ -3207,7 +3207,7 @@ max_items(Options) ->
 
 -define(NLIST_CONFIG_FIELD(Label, Var),
 	?STRINGMXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
-		       [node_to_string(N) || N <- get_option(Options, Var)])).
+		       [node_to_string(N) || N <- get_option(Options, Var, [])])).
 
 get_configure_xfields(_Type, Options, Lang, Groups) ->
     [?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NODE_CONFIG),
