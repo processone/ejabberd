@@ -467,13 +467,15 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	_ -> get_state(NodeId, SubKey)
 	end,
     Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = SubState#pubsub_state.subscriptions,
+    Subscribed = case PublishModel of
+	subscribers -> is_subscribed(SubState#pubsub_state.subscriptions);
+	_ -> undefined
+    end,
     if
 	not ((PublishModel == open)
 	     or ((PublishModel == publishers)
 		 and ((Affiliation == owner) or (Affiliation == publisher)))
-	     or ((PublishModel == subscribers)
-		 and (Subscription == subscribed))) ->
+	     or (Subscribed == true)) ->
 	    %% Entity does not have sufficient privileges to publish to node
 	    {error, ?ERR_FORBIDDEN};
 	true ->
@@ -906,8 +908,8 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _S
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(NodeId, GenKey),
     Affiliation = GenState#pubsub_state.affiliation,
-    Subscription = GenState#pubsub_state.subscriptions,
-    Whitelisted = can_fetch_item(Affiliation, Subscription),
+    Subscriptions = GenState#pubsub_state.subscriptions,
+    Whitelisted = can_fetch_item(Affiliation, Subscriptions),
     if
 	%%SubID == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
@@ -970,11 +972,13 @@ can_fetch_item(owner,        _)             -> true;
 can_fetch_item(member,       _)             -> true;
 can_fetch_item(publisher,    _)             -> true;
 can_fetch_item(outcast,      _)             -> false;
-can_fetch_item(none, Subscriptions) ->
+can_fetch_item(none, Subscriptions) -> is_subscribed(Subscriptions);
+can_fetch_item(_Affiliation, _Subscription) -> false.
+
+is_subscribed(Subscriptions) ->
     lists:any(fun ({subscribed, _SubID}) -> true;
                   (_)                    -> false
-              end, Subscriptions);
-can_fetch_item(_Affiliation, _Subscription) -> false.
+              end, Subscriptions).
 
 %% Returns the first item where Pred() is true in List
 first_in_list(_Pred, []) ->
