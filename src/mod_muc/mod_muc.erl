@@ -756,14 +756,14 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 				    {error, 'bad-request'};
 				_ ->
 				    case lists:keysearch("nick", 1, XData) of
-					false ->
+					{value, {_, [Nick]}} ->
+					    iq_set_register_info(Host, From, list_to_binary(Nick), Lang);
+					_ ->
 					    ErrText = "You must fill in field \"Nickname\" in the form",
                         Err = exmpp_stanza:error(SubEl#xmlel.ns, 
                                    'not-acceptable', 
                                    {Lang, translate:translate(Lang,ErrText)}),
-					    {error, Err};
-					{value, {_, [Nick]}} ->
-					    iq_set_register_info(Host, From, list_to_binary(Nick), Lang)
+					    {error, Err}
 				    end
 			    end;
 			_ ->
