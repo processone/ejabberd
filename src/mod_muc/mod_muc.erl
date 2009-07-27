@@ -742,11 +742,11 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 				    {error, ?ERR_BAD_REQUEST};
 				_ ->
 				    case lists:keysearch("nick", 1, XData) of
-					false ->
+					{value, {_, [Nick]}} when Nick /= "" ->
+					    iq_set_register_info(Host, From, Nick, Lang);
+					_ ->
 					    ErrText = "You must fill in field \"Nickname\" in the form",
-					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
-					{value, {_, [Nick]}} ->
-					    iq_set_register_info(Host, From, Nick, Lang)
+					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
 				    end
 			    end;
 			_ ->
