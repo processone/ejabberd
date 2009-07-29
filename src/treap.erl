@@ -44,7 +44,7 @@ insert(Key, Priority, Value, Tree) ->
 
 insert1(nil, HashKey, Priority, Value) ->
     {HashKey, Priority, Value, nil, nil};
-insert1({HashKey1, Priority1, Value1, Left, Right},
+insert1({HashKey1, Priority1, Value1, Left, Right} = Tree,
 	HashKey, Priority, Value) ->
     if
 	HashKey < HashKey1 ->
@@ -55,8 +55,10 @@ insert1({HashKey1, Priority1, Value1, Left, Right},
 	    heapify({HashKey1, Priority1, Value1,
 		     Left,
 		     insert1(Right, HashKey, Priority, Value)});
+	Priority == Priority1 ->
+	    {HashKey, Priority, Value, Left, Right};
 	true ->
-	    erlang:error(key_exists)
+	    insert1(delete_root(Tree), HashKey, Priority, Value)
     end.
 
 heapify(nil) ->
