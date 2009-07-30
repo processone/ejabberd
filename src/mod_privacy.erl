@@ -566,7 +566,7 @@ get_user_list(_, User, Server)
 %% If Dir = in, User@Server is the destination account (To).
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
-	     {From, To, #xmlel{name = PName, attrs = Attrs}},
+	     {From, To, #xmlel{name = PName} = El},
 	     Dir) when 
                PName =:= message ; 
 		       PName =:= iq ;
@@ -579,7 +579,7 @@ check_packet(_, User, Server,
 			'message' -> message;
 			'iq' -> iq;
 			'presence' ->
-			    case xml:get_attr_s("type", Attrs) of
+			    case exmpp_xml:get_attribute(El, type, '') of
 				%% notification
 				'' -> presence;
 				'unavailable' -> presence;

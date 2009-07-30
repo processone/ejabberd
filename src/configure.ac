@@ -14,8 +14,6 @@ fi
 
 #locating erlang
 AM_WITH_ERLANG
-#locating libexpat
-AM_WITH_EXPAT
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -98,7 +96,6 @@ AC_CONFIG_FILES([Makefile
                  $make_eldap
                  $make_pam
                  $make_web
-                 stringprep/Makefile
                  $make_tls
                  $make_odbc
                  $make_ejabberd_zlib])
