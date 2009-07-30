@@ -1962,7 +1962,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    Features = features(Type),
 		    PublishFeature = lists:member("publish", Features),
 		    PublishModel = get_option(Options, publish_model),
-		    MaxItems = max_items(Options),
+		    MaxItems = max_items(Host, Options),
 		    DeliverPayloads = get_option(Options, deliver_payloads),
 		    PersistItems = get_option(Options, persist_items),
 		    PayloadCount = payload_xmlelements(Payload),
@@ -3154,6 +3154,7 @@ node_options(Type) ->
     end.
 
 %% @spec (Options) -> MaxItems
+%%	 Host = host()
 %%	 Options = [Option]
 %%	 Option = {Key::atom(), Value::term()}
 %%	 MaxItems = integer() | unlimited
@@ -3163,7 +3164,7 @@ node_options(Type) ->
 %% @todo In practice, the current data structure means that we cannot manage
 %% millions of items on a given node. This should be addressed in a new
 %% version.
-max_items(Options) ->
+max_items(Host, Options) ->
     case get_option(Options, persist_items) of
 	true ->
 	    case get_option(Options, max_items) of
@@ -3397,7 +3398,7 @@ set_xoption([_ | Opts], NewOpts) ->
 is_last_item_cache_enabled(Host) ->
     case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
     [{last_item_cache, true}] -> true;
-    _ false
+    _ -> false
     end.
 
 set_cached_item({_, ServerHost, _}, NodeId, ItemId, Payload) ->
