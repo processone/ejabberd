@@ -948,11 +948,7 @@ is_verify_res(_) ->
 -include_lib("kernel/include/inet.hrl").
 
 get_addr_port(Server) ->
-    Res = case inet_res:getbyname("_xmpp-server._tcp." ++ Server, srv) of
-	      {error, _Reason1} ->
-		  inet_res:getbyname("_jabber._tcp." ++ Server, srv);
-	      {ok, _HEnt} = R -> R
-	  end,
+    Res = srv_lookup(Server),
     case Res of
 	{error, Reason} ->
 	    ?DEBUG("srv lookup of '~s' failed: ~p~n", [Server, Reason]),
@@ -987,6 +983,34 @@ get_addr_port(Server) ->
 			    List
 		    end
 	    end
+    end.
+
+srv_lookup(Server) ->
+    Options = case ejabberd_config:get_local_option(s2s_dns_options) of
+                  L when is_list(L) -> L;
+                  _ -> []
+              end,
+    Timeout = proplists:get_value(timeout, Options, timer:seconds(10)),
+    Retries = proplists:get_value(retries, Options, 2),
+    srv_lookup(Server, Timeout, Retries).
+
+%% XXX - this behaviour is suboptimal in the case that the domain
+%% has a "_xmpp-server._tcp." but not a "_jabber._tcp." record and
+%% we don't get a DNS reply for the "_xmpp-server._tcp." lookup. In this
+%% case we'll give up when we get the "_jabber._tcp." nxdomain reply.
+srv_lookup(_Server, _Timeout, Retries) when Retries < 1 ->
+    {error, timeout};
+srv_lookup(Server, Timeout, Retries) ->
+    case inet_res:getbyname("_xmpp-server._tcp." ++ Server, srv, Timeout) of
+        {error, _Reason} ->
+            case inet_res:getbyname("_jabber._tcp." ++ Server, srv, Timeout) of
+                {error, timeout} ->
+                    ?ERROR_MSG("Couldn't resolve SRV records for ~p via nameservers ~p.",
+                               [Server, inet_db:res_option(nameserver)]),
+                    srv_lookup(Server, Timeout, Retries - 1);
+                R -> R
+            end;
+        {ok, _HEnt} = R -> R
     end.
 
 test_get_addr_port(Server) ->
