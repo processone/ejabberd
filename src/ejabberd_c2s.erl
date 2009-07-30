@@ -32,6 +32,7 @@
 
 %% External exports
 -export([start/2,
+	 stop/1,
 	 start_link/2,
 	 send_text/2,
 	 send_element/2,
@@ -150,6 +151,9 @@ socket_type() ->
 %% Return Username, Resource and presence information
 get_presence(FsmRef) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {get_presence}, 1000).
+
+stop(FsmRef) ->
+    gen_fsm:send_event(FsmRef, closed).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm

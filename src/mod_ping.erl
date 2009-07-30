@@ -58,6 +58,7 @@
 -record(state, {host = "",
                 send_pings = ?DEFAULT_SEND_PINGS,
                 ping_interval = ?DEFAULT_PING_INTERVAL,
+		timeout_action = none,
                 timers = ?DICT:new()}).
 
 %%====================================================================
@@ -95,6 +96,7 @@ stop(Host) ->
 init([Host, Opts]) ->
     SendPings = gen_mod:get_opt(send_pings, Opts, ?DEFAULT_SEND_PINGS),
     PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
+    TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mod_disco:register_feature(Host, ?NS_PING),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PING,
@@ -115,6 +117,7 @@ init([Host, Opts]) ->
     {ok, #state{host = Host,
                 send_pings = SendPings,
                 ping_interval = PingInterval,
+		timeout_action = TimeoutAction,
                 timers = ?DICT:new()}}.
 
 terminate(_Reason, #state{host = Host}) ->
@@ -142,6 +145,18 @@ handle_cast({stop_ping, JID}, State) ->
 handle_cast({iq_pong, JID, timeout}, State) ->
     Timers = del_timer(JID, State#state.timers),
     ejabberd_hooks:run(user_ping_timeout, State#state.host, [JID]),
+    case State#state.timeout_action of
+	kill ->
+	    #jid{user = User, server = Server, resource = Resource} = JID,
+	    case ejabberd_sm:get_session_pid(User, Server, Resource) of
+		Pid when is_pid(Pid) ->
+		    ejabberd_c2s:stop(Pid);
+		_ ->
+		    ok
+	    end;
+	_ ->
+	    ok
+    end,
     {noreply, State#state{timers = Timers}};
 handle_cast(_Msg, State) ->
     {noreply, State}.
