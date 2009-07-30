@@ -241,8 +241,10 @@ process(_Handlers, #request{method='POST', q=Q, lang=Lang, path=[_, Id]}) ->
 	    ejabberd_web:error(not_allowed);
 	captcha_not_found ->
 	    ejabberd_web:error(not_found)
-    end.
+    end;
 
+process(_Handlers, _Request) ->
+    ejabberd_web:error(not_found).
 
 %%====================================================================
 %% gen_server callbacks
