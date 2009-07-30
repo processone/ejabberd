@@ -205,7 +205,7 @@ create_node(Host, Node, Type, Owner, Options) ->
 			_ ->
 			    case mnesia:read({pubsub_node, {Host, Parent}}) of
 				[] -> {Parent, false};
-				_ -> {Parent, true}
+				_ -> {Parent, lists:member(BJID, Parent#pubsub_node.owners)}
 			    end
 			end
 		end,
