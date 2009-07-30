@@ -1,31 +1,29 @@
-%%%-------------------------------------------------------------------
-%%% @doc Implements support for XEP-0199 (XMPP Ping) and periodic
-%%% keepalives.
+%%%----------------------------------------------------------------------
+%%% File    : mod_ping.erl
+%%% Author  : Brian Cully <bjc@kublai.com>
+%%% Purpose : Support XEP-0199 XMPP Ping and periodic keepalives
+%%% Created : 11 Jul 2009 by Brian Cully <bjc@kublai.com>
 %%%
-%%% <p>When enabled (see below), ejabberd will respond correctly to
-%%% ping packets, as defined in XEP-0199.</p>
 %%%
-%%% <p>In addition you can have the server generate pings to clients
-%%% as a method of keeping them alive or checking
-%%% availibility. However, this feature is disabled by default since
-%%% it is mostly not needed and consumes resources. For "interesting"
-%%% uses it can be enabled in the config (see below).</p>
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
-%%% <p>To use this module simply include it in the modules section of
-%%% your ejabberd config.</p>
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
 %%%
-%%% <p>Configuration options:</p>
-%%% <dl>
-%%%   <dt>{send_pings, true | false}</dt>
-%%%   <dd>Whether to send pings to connected clients.</dd>
-%%%   <dt>{ping_interval, Seconds}</dt>
-%%%   <dd>How often to send pings to connected clients.</dd>
-%%% </dl>
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
 %%%
-%%% @reference <a
-%%% href="http://xmpp.org/extensions/xep-0199.html">XEP-0199</a>
-%%% @end
-%%% -------------------------------------------------------------------
+%%% You should have received a copy of the GNU General Public License
+%%% along with this program; if not, write to the Free Software
+%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+%%% 02111-1307 USA
+%%%
+%%%----------------------------------------------------------------------
+
 -module(mod_ping).
 -author('bjc@kublai.com').
 
