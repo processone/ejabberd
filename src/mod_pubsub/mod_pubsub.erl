@@ -2918,14 +2918,13 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
 		SubsByDepth when is_list(SubsByDepth) ->
 		    Content = case get_option(NodeOptions, deliver_payloads) of
 			true ->
-			    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+			    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "result"}],
 				get_configure_xfields(Type, NodeOptions, Lang, [])}];
 			false ->
 			    []
 		    end,
 		    Stanza = event_stanza(
-			[{xmlelement, "items", nodeAttr(Node),
-			    [{xmlelement, "item", itemAttr("configuration"), Content}]}]),
+			[{xmlelement, "configuration", nodeAttr(Node), Content}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
 				     NodeOptions, SubsByDepth, nodes, Stanza),
 		    {result, true};

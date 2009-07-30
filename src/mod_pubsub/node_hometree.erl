@@ -679,14 +679,14 @@ get_node_subscriptions(NodeId) ->
 		 case Subscriptions of
 		    [_|_] ->
 			lists:foldl(fun({S, SubID}, Acc) ->
-                                            [{J, S, SubID} | Acc];
-                                       (S, Acc) ->
-                                            [{J, S} | Acc]
+					    [{J, S, SubID} | Acc];
+					(S, Acc) ->
+					    [{J, S} | Acc]
 				end, [], Subscriptions);
-                    [] ->
-                         [];
+		    [] ->
+			[];
 		    _ ->
-			 [{J, none}]
+			[{J, none}]
 		 end
 	 end,
     {result, lists:flatmap(Tr, States)}.
