@@ -3173,8 +3173,13 @@ max_items(Options) ->
 	    end;
 	false ->
 	    case get_option(Options, send_last_published_item) of
-		never -> 0;
-		_ -> 1
+		never ->
+		    0;
+		_ ->
+		    case is_last_item_cache_enabled(Host) of
+		    true -> 0;
+		    false -> 1
+		    end
 	    end
     end.
 
@@ -3389,29 +3394,31 @@ set_xoption([_ | Opts], NewOpts) ->
 
 %%%% last item cache handling
 
+is_last_item_cache_enabled(Host) ->
+    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
+    [{last_item_cache, true}] -> true;
+    _ false
+    end.
+
 set_cached_item({_, ServerHost, _}, NodeId, ItemId, Payload) ->
     set_cached_item(ServerHost, NodeId, ItemId, Payload);
 set_cached_item(Host, NodeId, ItemId, Payload) ->
-    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
-    [{last_item_cache, true}] ->
-	ets:insert(gen_mod:get_module_proc(Host, last_items), {NodeId, {ItemId, Payload}});
-    _ ->
-	ok
+    case is_last_item_cache_enabled(Host) of
+    true -> ets:insert(gen_mod:get_module_proc(Host, last_items), {NodeId, {ItemId, Payload}});
+    _ -> ok
     end.
 unset_cached_item({_, ServerHost, _}, NodeId) ->
     unset_cached_item(ServerHost, NodeId);
 unset_cached_item(Host, NodeId) ->
-    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
-    [{last_item_cache, true}] ->
-	ets:delete(gen_mod:get_module_proc(Host, last_items), NodeId);
-    _ ->
-	ok
+    case is_last_item_cache_enabled(Host) of
+    true -> ets:delete(gen_mod:get_module_proc(Host, last_items), NodeId);
+    _ -> ok
     end.
 get_cached_item({_, ServerHost, _}, NodeId) ->
     get_cached_item(ServerHost, NodeId);
 get_cached_item(Host, NodeId) ->
-    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
-    [{last_item_cache, true}] ->
+    case is_last_item_cache_enabled(Host) of
+    true ->
 	case ets:lookup(gen_mod:get_module_proc(Host, last_items), NodeId) of
 	[{NodeId, {ItemId, Payload}}] ->
 	    #pubsub_item{itemid = {ItemId, NodeId}, payload = Payload};
