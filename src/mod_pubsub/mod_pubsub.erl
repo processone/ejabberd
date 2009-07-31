@@ -166,9 +166,9 @@ stop(Host) ->
 
 %%--------------------------------------------------------------------
 %% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
+%%			 {ok, State, Timeout} |
+%%			 ignore	       |
+%%			 {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([ServerHost, Opts]) ->
@@ -726,11 +726,11 @@ remove_user(User, Server) ->
 %%--------------------------------------------------------------------
 %% Function:
 %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
+%%				      {reply, Reply, State, Timeout} |
+%%				      {noreply, State} |
+%%				      {noreply, State, Timeout} |
+%%				      {stop, Reason, Reply, State} |
+%%				      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 %% @private
@@ -747,8 +747,8 @@ handle_call(stop, _From, State) ->
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
+%%				      {noreply, State, Timeout} |
+%%				      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 %% @private
@@ -812,8 +812,8 @@ handle_cast(_Msg, State) ->
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
+%%				       {noreply, State, Timeout} |
+%%				       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 %% @private
@@ -946,15 +946,15 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 					sub_el = [{xmlelement, "vCard", [{"xmlns", XMLNS}],
 						   iq_get_vcard(Lang)}]},
 			    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
-                        #iq{type = set, xmlns = ?NS_COMMANDS} = IQ ->
-                            Res = case iq_command(Host, ServerHost, From, IQ, Access, Plugins) of
-                                      {error, Error} ->
-                                          jlib:make_error_reply(Packet, Error);
-                                      {result, IQRes} ->
+			#iq{type = set, xmlns = ?NS_COMMANDS} = IQ ->
+			    Res = case iq_command(Host, ServerHost, From, IQ, Access, Plugins) of
+				      {error, Error} ->
+					  jlib:make_error_reply(Packet, Error);
+				      {result, IQRes} ->
 					  jlib:iq_to_xml(IQ#iq{type = result,
-                                                               sub_el = IQRes})
-                                  end,
-                            ejabberd_router:route(To, From, Res);
+							       sub_el = IQRes})
+				  end,
+			    ejabberd_router:route(To, From, Res);
 			#iq{} ->
 			    Err = jlib:make_error_reply(
 				    Packet,
@@ -1294,30 +1294,30 @@ iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
 
 iq_command(Host, ServerHost, From, IQ, Access, Plugins) ->
     case adhoc:parse_request(IQ) of
-        Req when is_record(Req, adhoc_request) ->
-            case adhoc_request(Host, ServerHost, From, Req, Access, Plugins) of
-                Resp when is_record(Resp, adhoc_response) ->
-                    {result, [adhoc:produce_response(Req, Resp)]};
-                Error ->
-                    Error
-            end;
-        Err ->
-            Err
+	Req when is_record(Req, adhoc_request) ->
+	    case adhoc_request(Host, ServerHost, From, Req, Access, Plugins) of
+		Resp when is_record(Resp, adhoc_response) ->
+		    {result, [adhoc:produce_response(Req, Resp)]};
+		Error ->
+		    Error
+	    end;
+	Err ->
+	    Err
     end.
 
 %% @doc <p>Processes an Ad Hoc Command.</p>
 adhoc_request(Host, _ServerHost, Owner,
-              #adhoc_request{node   = ?NS_PUBSUB_GET_PENDING,
-                             lang   = Lang,
-                             action = "execute",
-                             xdata  = false},
-             _Access, Plugins) ->
+	      #adhoc_request{node   = ?NS_PUBSUB_GET_PENDING,
+			     lang   = Lang,
+			     action = "execute",
+			     xdata  = false},
+	     _Access, Plugins) ->
     send_pending_node_form(Host, Owner, Lang, Plugins);
 adhoc_request(Host, _ServerHost, Owner,
-              #adhoc_request{node   = ?NS_PUBSUB_GET_PENDING,
-                             action = "execute",
-                             xdata  = XData},
-             _Access, _Plugins) ->
+	      #adhoc_request{node   = ?NS_PUBSUB_GET_PENDING,
+			     action = "execute",
+			     xdata  = XData},
+	     _Access, _Plugins) ->
     ParseOptions = case XData of
 		       {xmlelement, "x", _Attrs, _SubEls} = XEl ->
 			   case jlib:parse_xdata_submit(XEl) of
@@ -1336,15 +1336,15 @@ adhoc_request(Host, _ServerHost, Owner,
 			   {error, ?ERR_BAD_REQUEST}
 		   end,
     case ParseOptions of
-        {result, XForm} ->
-            case lists:keysearch(node, 1, XForm) of
-                {value, {_, Node}} ->
-                    send_pending_auth_events(Host, Node, Owner);
-                false ->
-                    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "bad-payload")}
-            end;
-        Error ->
-            Error
+	{result, XForm} ->
+	    case lists:keysearch(node, 1, XForm) of
+		{value, {_, Node}} ->
+		    send_pending_auth_events(Host, Node, Owner);
+		false ->
+		    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "bad-payload")}
+	    end;
+	Error ->
+	    Error
     end;
 adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
     ?DEBUG("Couldn't process ad hoc command:~n~p", [Other]),
@@ -1355,39 +1355,39 @@ adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
 %% Owner.</p>
 send_pending_node_form(Host, Owner, _Lang, Plugins) ->
     Filter =
-        fun (Plugin) ->
-                lists:member("get-pending", features(Plugin))
-        end,
+	fun (Plugin) ->
+		lists:member("get-pending", features(Plugin))
+	end,
     case lists:filter(Filter, Plugins) of
-        [] ->
-            {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
-        Ps ->
-            XOpts = lists:map(fun (Node) ->
-                                      {xmlelement, "option", [],
-                                       [{xmlelement, "value", [],
-                                         [{xmlcdata, node_to_string(Node)}]}]}
-                              end, get_pending_nodes(Host, Owner, Ps)),
-            XForm = {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-                     [{xmlelement, "field",
-                       [{"type", "list-single"}, {"var", "pubsub#node"}],
-                       lists:usort(XOpts)}]},
-            #adhoc_response{status = executing,
-                            defaultaction = "execute",
-                            elements = [XForm]}
+	[] ->
+	    {error, ?ERR_FEATURE_NOT_IMPLEMENTED};
+	Ps ->
+	    XOpts = lists:map(fun (Node) ->
+				      {xmlelement, "option", [],
+				       [{xmlelement, "value", [],
+					 [{xmlcdata, node_to_string(Node)}]}]}
+			      end, get_pending_nodes(Host, Owner, Ps)),
+	    XForm = {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+		     [{xmlelement, "field",
+		       [{"type", "list-single"}, {"var", "pubsub#node"}],
+		       lists:usort(XOpts)}]},
+	    #adhoc_response{status = executing,
+			    defaultaction = "execute",
+			    elements = [XForm]}
     end.
 
 get_pending_nodes(Host, Owner, Plugins) ->
     Tr =
-        fun (Type) ->
-                case node_call(Type, get_pending_nodes, [Host, Owner]) of
-                    {result, Nodes} -> Nodes;
-                    _               -> []
-                end
-        end,
+	fun (Type) ->
+		case node_call(Type, get_pending_nodes, [Host, Owner]) of
+		    {result, Nodes} -> Nodes;
+		    _	       -> []
+		end
+	end,
     case transaction(fun () -> {result, lists:flatmap(Tr, Plugins)} end,
-                     sync_dirty) of
-        {result, Res} -> Res;
-        Err           -> Err
+		     sync_dirty) of
+	{result, Res} -> Res;
+	Err	   -> Err
     end.
 
 %% @spec (Host, Node, Owner) -> iqRes()
@@ -1395,36 +1395,36 @@ get_pending_nodes(Host, Owner, Plugins) ->
 %% subscriptions on Host and Node.</p>
 send_pending_auth_events(Host, Node, Owner) ->
     ?DEBUG("Sending pending auth events for ~s on ~s:~s",
-           [jlib:jid_to_string(Owner), Host, node_to_string(Node)]),
+	   [jlib:jid_to_string(Owner), Host, node_to_string(Node)]),
     Action =
-        fun (#pubsub_node{id = NodeID, type = Type} = N) ->
-                case lists:member("get-pending", features(Type)) of
-                    true ->
-                        case node_call(Type, get_affiliation, [NodeID, Owner]) of
-                            {result, owner} ->
-                                broadcast_pending_auth_events(N),
-                                {result, ok};
-                            _ ->
-                                {error, ?ERR_FORBIDDEN}
-                        end;
-                    false ->
-                        {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
-                end
-        end,
+	fun (#pubsub_node{id = NodeID, type = Type} = N) ->
+		case lists:member("get-pending", features(Type)) of
+		    true ->
+			case node_call(Type, get_affiliation, [NodeID, Owner]) of
+			    {result, owner} ->
+				broadcast_pending_auth_events(N),
+				{result, ok};
+			    _ ->
+				{error, ?ERR_FORBIDDEN}
+			end;
+		    false ->
+			{error, ?ERR_FEATURE_NOT_IMPLEMENTED}
+		end
+	end,
     case transaction(Host, Node, Action, sync_dirty) of
-        {result, _} ->
-            #adhoc_response{};
-        Err ->
-            Err
+	{result, _} ->
+	    #adhoc_response{};
+	Err ->
+	    Err
     end.
 
 broadcast_pending_auth_events(#pubsub_node{type = Type, id = NodeID} = Node) ->
     {result, Subscriptions} = node_call(Type, get_node_subscriptions, [NodeID]),
     lists:foreach(fun ({J, pending, _SubID}) ->
-                          send_authorization_request(Node, jlib:make_jid(J));
-                      ({J, pending}) ->
-                          send_authorization_request(Node, jlib:make_jid(J))
-                  end, Subscriptions).
+			  send_authorization_request(Node, jlib:make_jid(J));
+		      ({J, pending}) ->
+			  send_authorization_request(Node, jlib:make_jid(J))
+		  end, Subscriptions).
 
 %%% authorization handling
 
@@ -1566,8 +1566,8 @@ update_auth(Host, Node, Type, NodeId, Subscriber,
 				  true  -> subscribed;
 				  false -> none
 			      end,
-            node_call(Type, set_subscriptions,
-                      [NodeId, Subscriber, NewSubscription, SubID]),
+	    node_call(Type, set_subscriptions,
+		      [NodeId, Subscriber, NewSubscription, SubID]),
 	    send_authorization_approval(Host, Subscriber, Node,
 					NewSubscription),
 	    {result, ok};
@@ -2615,7 +2615,7 @@ get_subscriptions(Host, Node, JID) ->
 	{result, {_, Subscriptions}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
-                            ({_, pending, _}) -> [];
+			    ({_, pending, _}) -> [];
 			    ({AJID, Subscription}) ->
 				 [{xmlelement, "subscription",
 				   [{"jid", jlib:jid_to_string(AJID)},
@@ -2650,7 +2650,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 					  xml:get_attr_s("jid", Attrs)),
 				  Subscription = string_to_subscription(
 						   xml:get_attr_s("subscription", Attrs)),
-                                  SubId = xml:get_attr_s("subid", Attrs),
+				  SubId = xml:get_attr_s("subid", Attrs),
 				  if
 				      (JID == error) or
 				      (Subscription == false) ->
@@ -2668,10 +2668,10 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    Action = fun(#pubsub_node{owners = Owners, type = Type, id = NodeId}) ->
 			     case lists:member(Owner, Owners) of
 				 true ->
-                                     lists:foreach(fun({JID, Subscription, SubId}) ->
-                                                           node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId])
-                                                   end, Entities),
-                                     {result, []};
+				     lists:foreach(fun({JID, Subscription, SubId}) ->
+							   node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId])
+						   end, Entities),
+				     {result, []};
 				 _ ->
 				     {error, ?ERR_FORBIDDEN}
 			     end
@@ -2794,7 +2794,7 @@ presence_can_deliver({User, Server, _}, true) ->
     [] -> false;
     Ss ->
 	lists:foldl(fun({session, _, _, _, undefined, _}, Acc) -> Acc;
-	               ({session, _, _, _, _Priority, _}, _Acc) -> true
+		       ({session, _, _, _, _Priority, _}, _Acc) -> true
 	end, false, Ss)
     end.
 
@@ -2936,16 +2936,9 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
     end.
 
 get_collection_subscriptions(Host, Node) ->
-    case mnesia:transaction(fun tree_call/3,
-			    [Host, get_parentnodes_tree,
-			     [Host, Node, service_jid(Host)]]) of
-	{atomic, NodesByDepth} when is_list(NodesByDepth) ->
-	    lists:map(fun ({Depth, Nodes}) ->
-			      {Depth, [{N, get_node_subs(N)} || N <- Nodes]}
-		      end, NodesByDepth);
-	Other ->
-	    Other
-    end.
+    lists:map(fun ({Depth, Nodes}) ->
+		{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
+	    end, tree_action(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)])).
 
 get_node_subs(#pubsub_node{type   = Type,
 			   nodeid = {Host, Node},
@@ -2956,6 +2949,14 @@ get_node_subs(#pubsub_node{type   = Type,
 	Other ->
 	    Other
     end.
+
+get_options_for_subs(_Host, Node, NodeID, Subs) ->
+    lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
+			{result, #pubsub_subscription{options = Options}} = pubsub_subscription:get_subscription(JID, NodeID, SubID),
+			[{JID, Node, Options} | Acc];
+		    (_, Acc) ->
+			Acc
+		end, [], Subs).
 
 % TODO: merge broadcast code that way
 %broadcast(Host, Node, NodeId, Type, NodeOptions, Feature, Force, ElName, SubEls) ->
@@ -3128,7 +3129,7 @@ get_default(Host, Node, _From, Lang) ->
     {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB_OWNER}],
 		[{xmlelement, "default", [],
 		    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-		        get_configure_xfields(Type, Options, Lang, [])
+			get_configure_xfields(Type, Options, Lang, [])
 		}]}]}]}.
 
 %% Get node option
@@ -3296,14 +3297,6 @@ set_configure(Host, Node, From, Els, Lang) ->
 	    {error, ?ERR_BAD_REQUEST}
     end.
 
-get_options_for_subs(_Host, Node, NodeID, Subs) ->
-    lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
-			{result, #pubsub_subscription{options = Options}} = pubsub_subscription:get_subscription(JID, NodeID, SubID),
-			[{JID, Node, Options} | Acc];
-		    (_, Acc) ->
-			Acc
-		end, [], Subs).
-
 add_opt(Key, Value, Opts) ->
     Opts1 = lists:keydelete(Key, 1, Opts),
     [{Key, Value} | Opts1].
@@ -3395,6 +3388,8 @@ set_xoption([_ | Opts], NewOpts) ->
 
 %%%% last item cache handling
 
+is_last_item_cache_enabled({_, ServerHost, _}) ->
+    is_last_item_cache_enabled(ServerHost);
 is_last_item_cache_enabled(Host) ->
     case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
     [{last_item_cache, true}] -> true;
