@@ -629,8 +629,10 @@ map_vcard_attr(VCardName, Attributes, Pattern, UD) ->
     end.
 
 process_pattern(Str, {User, Domain}, AttrValues) ->
-	eldap_filter:do_sub(Str,
-		[{"%s", V, 1} || V <- AttrValues] ++ [{"%u", User},{"%d", Domain}]).
+    eldap_filter:do_sub(
+      Str,
+      [{"%u", User},{"%d", Domain}] ++
+      [{"%s", V, 1} || V <- AttrValues]).
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
