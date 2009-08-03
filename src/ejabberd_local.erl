@@ -33,6 +33,8 @@
 -export([start_link/0]).
 
 -export([route/3,
+	 route_iq/4,
+	 process_iq_reply/3,
 	 register_iq_handler/4,
 	 register_iq_handler/5,
 	 register_iq_response_handler/4,
@@ -52,9 +54,12 @@
 
 -record(state, {}).
 
--record(iq_response, {id, module, function}).
+-record(iq_response, {id, module, function, timer}).
 
 -define(IQTABLE, local_iqtable).
+
+%% This value is used in SIP and Megaco for a transaction lifetime.
+-define(IQ_TIMEOUT, 32000).
 
 % These are the namespace already declared by the stream opening. This is
 % used at serialization time.
@@ -94,37 +99,27 @@ process_iq(From, To, Packet) ->
 		    Err = exmpp_iq:error(Packet, 'feature-not-implemented'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-        #iq{kind = response} = IQ_Rec ->
-	    process_iq_reply(From, To, IQ_Rec);
+        #iq{kind = response} = IQReply ->
+ 	    %%IQReply = jlib:iq_query_or_response_info(IQ_Rec),
+ 	    process_iq_reply(From, To, IQReply);
 	_ ->
 	    Err = exmpp_iq:error(Packet, 'bad-request'),
 	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
 
-process_iq_reply(From, To, #iq{id = ID} = IQ_Rec) ->
-    case catch mnesia:dirty_read(iq_response, ID) of
-	[] ->
+process_iq_reply(From, To, #iq{id = ID} = IQ) ->
+    case get_iq_callback(ID) of
+	{ok, undefined, Function} ->
+	    Function(IQ),
+	    ok;
+	{ok, Module, Function} ->
+	    Module:Function(From, To, IQ),
 	    ok;
 	_ ->
-	    F = fun() ->
-			case mnesia:read({iq_response, ID}) of
-			    [] ->
-				nothing;
-			    [#iq_response{module = Module,
-					  function = Function}] ->
-				mnesia:delete({iq_response, ID}),
-				{Module, Function}
-			end
-		end,
-	    case mnesia:transaction(F) of
-		{atomic, {Module, Function}} ->
-		    Module:Function(From, To, IQ_Rec);
-		_ ->
-		    ok
-	    end
+	    nothing
     end.
-
+  
 route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
     catch throw(for_stacktrace), % To have a stacktrace.
     io:format("~nLOCAL: old #xmlelement:~n~p~n~p~n~n",
@@ -144,8 +139,21 @@ route(From, To, Packet) ->
 	    ok
     end.
 
+route_iq(From, To, #iq{type = Type} = IQ, F) when is_function(F) ->
+    Packet = if Type == set; Type == get ->
+		     ID = list_to_binary(randoms:get_string()),
+		     Host = exmpp_jid:prep_domain(From),
+		     register_iq_response_handler(Host, ID, undefined, F),
+		     exmpp_iq:iq_to_xmlel(IQ#iq{id = ID});
+		true ->
+		     exmpp_iq:iq_to_xmlel(IQ)
+	     end,
+    ejabberd_router:route(From, To, Packet).
+
 register_iq_response_handler(Host, ID, Module, Fun) ->
-    ejabberd_local ! {register_iq_response_handler, Host, ID, Module, Fun}.
+    gen_server:call(ejabberd_local,
+		    {register_iq_response_handler,
+		     Host, ID, Module, Fun}).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.
@@ -153,8 +161,9 @@ register_iq_handler(Host, XMLNS, Module, Fun) ->
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
 
-unregister_iq_response_handler(Host, ID) ->
-    ejabberd_local ! {unregister_iq_response_handler, Host, ID}.
+unregister_iq_response_handler(_Host, ID) ->
+    catch get_iq_callback(ID),
+    ok.
 
 unregister_iq_handler(Host, XMLNS) ->
     ejabberd_local ! {unregister_iq_handler, Host, XMLNS}.
@@ -186,6 +195,7 @@ init([]) ->
 				 ?MODULE, bounce_resource_packet, 100)
       end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
+    update_table(),
     mnesia:create_table(iq_response,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, iq_response)}]),
@@ -201,6 +211,14 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({register_iq_response_handler, _Host,
+	     ID, Module, Function}, _From, State) ->
+    TRef = erlang:start_timer(?IQ_TIMEOUT, self(), ID),
+    mnesia:dirty_write(#iq_response{id = ID,
+				    module = Module,
+				    function = Function,
+				    timer = TRef}),
+    {reply, ok, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -239,12 +257,6 @@ handle_info({route, From, To, Packet}, State) ->
 	    ok
     end,
     {noreply, State};
-handle_info({register_iq_response_handler, _Host, ID, Module, Function}, State) ->
-    mnesia:dirty_write(#iq_response{id = ID, module = Module, function = Function}),
-    {noreply, State};
-handle_info({unregister_iq_response_handler, _Host, ID}, State) ->
-    mnesia:dirty_delete({iq_response, ID}),
-    {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
     ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
     catch mod_disco:register_feature(Host, XMLNS),
@@ -275,6 +287,9 @@ handle_info(refresh_iq_handlers, State) ->
 		      ok
 	      end
       end, ets:tab2list(?IQTABLE)),
+    {noreply, State};
+handle_info({timeout, _TRef, ID}, State) ->
+    process_iq_timeout(ID),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -330,3 +345,52 @@ do_route(From, To, Packet) ->
 	    end
 	end.
 
+update_table() ->
+    case catch mnesia:table_info(iq_response, attributes) of
+	[id, module, function] ->
+	    mnesia:delete_table(iq_response);
+	[id, module, function, timer] ->
+	    ok;
+	{'EXIT', _} ->
+	    ok
+    end.
+
+get_iq_callback(ID) ->
+    case mnesia:dirty_read(iq_response, ID) of
+	[#iq_response{module = Module, timer = TRef,
+		      function = Function}] ->
+	    cancel_timer(TRef),
+	    mnesia:dirty_delete(iq_response, ID),
+	    {ok, Module, Function};
+	_ ->
+	    error
+    end.
+
+process_iq_timeout(ID) ->
+    spawn(fun process_iq_timeout/0) ! ID.
+
+process_iq_timeout() ->
+    receive
+	ID ->
+	    case get_iq_callback(ID) of
+		{ok, undefined, Function} ->
+		    Function(timeout);
+		_ ->
+		    ok
+	    end
+    after 5000 ->
+	    ok
+    end.
+
+cancel_timer(TRef) ->
+    case erlang:cancel_timer(TRef) of
+	false ->
+	    receive
+                {timeout, TRef, _} ->
+                    ok
+            after 0 ->
+                    ok
+            end;
+        _ ->
+            ok
+    end.

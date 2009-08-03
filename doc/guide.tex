@@ -76,6 +76,7 @@
 \newcommand{\modmuclog}{\module{mod\_muc\_log}}
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
+\newcommand{\modping}{\module{mod\_ping}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
 \newcommand{\modprivacyodbc}{\module{mod\_privacy\_odbc}}
 \newcommand{\modprivate}{\module{mod\_private}}
@@ -2375,6 +2376,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} \\
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
+    \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
     \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (XMPP IM) &  \\
     \hline \ahrefloc{modprivacy}{\modprivacyodbc{}} & Blocking Communication (XMPP IM) & supported DB (*) \\
     \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) &  \\
@@ -3224,7 +3226,8 @@ Examples:
 \makesubsection{modoffline}{\modoffline{}}
 \ind{modules!\modoffline{}}
 
-This module implements offline message storage. This means that all messages
+This module implements offline message storage (\xepref{0160}).
+This means that all messages
 sent to an offline user will be stored on the server until that user comes
 online again. Thus it is very similar to how email works. Note that
 \term{ejabberdctl}\ind{ejabberdctl} has a command to delete expired messages
@@ -3260,6 +3263,43 @@ and all the other users up to 100.
  ]}.
 \end{verbatim}
 
+\makesubsection{modping}{\modping{}}
+\ind{modules!\modping{}}
+
+This module implements support for XMPP Ping (\xepref{0199}) and periodic keepalives.
+When this module is enabled ejabberd responds correctly to
+ping requests, as defined in the protocol.
+
+Configuration options:
+\begin{description}
+  \titem{\{send\_pings, true | false\}}\ind{options!send\_pings}
+  If this option is set to \term{true}, the server sends pings to connected clients
+  that are not active in a given interval \term{ping\_interval}.
+  This is useful to keep client connections alive or checking availability.
+  By default this option is disabled.
+  % because it is mostly not needed and consumes resources.
+  \titem{\{ping\_interval, Seconds\}}\ind{options!ping\_interval}
+  How often to send pings to connected clients, if the previous option is enabled.
+  If a client connection does not send or receive any stanza in this interval,
+  a ping request is sent to the client.
+  The default value is 60 seconds.
+  \titem{\{timeout\_action, none | kill\}}\ind{options!timeout\_action}
+  What to do when a client does not answer to a server ping request in less than 32 seconds.
+  % Those 32 seconds are defined in ejabberd_local.erl: -define(IQ_TIMEOUT, 32000).
+  The default is to do nothing.
+\end{description}
+
+This example enables Ping responses, configures the module to send pings
+to client connections that are inactive for 4 minutes,
+and if a client does not answer to the ping in less than 32 seconds, its connection is closed:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_ping,  [{send_pings, true}, {ping_interval, 240}, {timeout_action, kill}]},
+  ...
+ ]}.
+\end{verbatim}
 
 \makesubsection{modprivacy}{\modprivacy{}}
 \ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!RFC 3921: XMPP IM}
