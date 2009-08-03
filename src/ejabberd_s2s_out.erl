@@ -990,9 +990,9 @@ srv_lookup(Server) ->
                   L when is_list(L) -> L;
                   _ -> []
               end,
-    Timeout = proplists:get_value(timeout, Options, timer:seconds(10)),
+    TimeoutMs = timer:seconds(proplists:get_value(timeout, Options, 10)),
     Retries = proplists:get_value(retries, Options, 2),
-    srv_lookup(Server, Timeout, Retries).
+    srv_lookup(Server, TimeoutMs, Retries).
 
 %% XXX - this behaviour is suboptimal in the case that the domain
 %% has a "_xmpp-server._tcp." but not a "_jabber._tcp." record and

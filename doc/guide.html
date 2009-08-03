@@ -782,6 +782,10 @@ Full path to the file containing the SSL certificate for a specific domain.
 Specify which address families to try, in what order, and connect timeout in milliseconds.
 By default it first tries connecting with IPv4, if that fails it tries using IPv6,
 with a timeout of 10000 milliseconds.
+</DD><DT CLASS="dt-description"><B><TT>{s2s_dns_options, [{Property, Value}]}</TT></B></DT><DD CLASS="dd-description">
+Define properties to use for DNS resolving.
+Allowed Properties are: <TT>timeout</TT> in seconds which default value is <TT>10</TT>
+and <TT>retries</TT> which default value is <TT>2</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{s2s_default_policy, allow|deny}</TT></B></DT><DD CLASS="dd-description">
 The default policy for incoming and outgoing s2s connections to other Jabber servers.
 The default value is <TT>allow</TT>.

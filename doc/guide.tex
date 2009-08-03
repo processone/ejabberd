@@ -917,6 +917,10 @@ There are some additional global options that can be specified in the ejabberd c
   Specify which address families to try, in what order, and connect timeout in milliseconds.
   By default it first tries connecting with IPv4, if that fails it tries using IPv6,
   with a timeout of 10000 milliseconds.
+  \titem{\{s2s\_dns\_options, [\{Property, Value\}]\}}
+  \ind{options!s2s\_dns\_options}Define properties to use for DNS resolving.
+  Allowed Properties are: \term{timeout} in seconds which default value is \term{10}
+  and \term{retries} which default value is \term{2}.
   \titem{\{s2s\_default\_policy, allow|deny\}}
   The default policy for incoming and outgoing s2s connections to other Jabber servers.
   The default value is \term{allow}.
