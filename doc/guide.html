@@ -3334,9 +3334,19 @@ Dump internal Mnesia database to a text file dump.
 Restore immediately from a text file dump.
 This is not recommended for big databases, as it will consume much time,
 memory and processor. In that case it&#X2019;s preferable to use <TT>backup</TT> and <TT>install-fallback</TT>.
+</DD><DT CLASS="dt-description"><B><TT>import-piefxis, export-piefxis, export-piefxis-host</TT></B></DT><DD CLASS="dd-description"> 
+These options can be used to migrate accounts
+using <A HREF="http://www.xmpp.org/extensions/xep-0227.html">XEP-0227</A> formatted XML files
+from/to other Jabber/XMPP servers
+or move users of a vhost to another ejabberd installation.
+See also 
+<A HREF="https://support.process-one.net/doc/display/P1/ejabberd+migration+kit">ejabberd migration kit</A>.
 </DD><DT CLASS="dt-description"><B><TT>import-file, import-dir</TT></B></DT><DD CLASS="dd-description"> 
-These options can be used to migrate from other Jabber/XMPP servers. There
-exist tutorials to <A HREF="http://www.ejabberd.im/migrate-to-ejabberd">migrate from other software to ejabberd</A>.
+These options can be used to migrate accounts
+using jabberd1.4 formatted XML files.
+from other Jabber/XMPP servers
+There exist tutorials to
+<A HREF="http://www.ejabberd.im/migrate-to-ejabberd">migrate from other software to ejabberd</A>.
 </DD><DT CLASS="dt-description"><B><TT>delete-expired-messages</TT></B></DT><DD CLASS="dd-description"> This option can be used to delete old messages
 in offline storage. This might be useful when the number of offline messages
 is very high.

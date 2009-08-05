@@ -4264,9 +4264,19 @@ The more interesting ones are:
   memory and processor. In that case it's preferable to use \term{backup} and \term{install-fallback}.
 %%More information about backuping can
 %%  be found in section~\ref{backup}.
+\titem{import-piefxis, export-piefxis, export-piefxis-host} \ind{migrate between servers}
+  These options can be used to migrate accounts
+  using \xepref{0227} formatted XML files
+  from/to other \Jabber{}/XMPP servers
+  or move users of a vhost to another ejabberd installation.
+  See also 
+  \footahref{https://support.process-one.net/doc/display/P1/ejabberd+migration+kit}{ejabberd migration kit}.
 \titem{import-file, import-dir} \ind{migration from other software}
-  These options can be used to migrate from other \Jabber{}/XMPP servers. There
-  exist tutorials to \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
+  These options can be used to migrate accounts
+  using jabberd1.4 formatted XML files.
+  from other \Jabber{}/XMPP servers
+  There exist tutorials to
+  \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
 \titem{delete-expired-messages} This option can be used to delete old messages
   in offline storage. This might be useful when the number of offline messages
   is very high.
