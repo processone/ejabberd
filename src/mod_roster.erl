@@ -271,8 +271,7 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    Item2 = process_item_els(Item1, El#xmlel.children),
 		    case Item2#roster.subscription of
 			remove ->
-			    send_unsubscribing_presence(From, Item),
-			    ok;
+			    mnesia:delete({roster, {LUser, LServer, LJID}});
 			_ ->
 			    mnesia:write(Item2)
 		    end,
@@ -725,28 +724,24 @@ send_unsubscribing_presence(From, Item) ->
 		 from -> true;
 		 _ -> false
 	     end,
-	{INode, IDom, IRes} = Item#roster.jid,
-	SendToJID = exmpp_jid:make(INode, IDom, IRes),
+    {INode, IDom, IRes} = Item#roster.jid,
+    SendToJID = exmpp_jid:make(INode, IDom, IRes),
     if IsTo ->
-	    send_presence_type(
-	      jlib:jid_remove_resource(From),
-	      SendToJID, "unsubscribe");
+    	 ejabberd_router:route(
+	    	exmpp_jid:bare(From),
+		SendToJID,
+		exmpp_presence:unsubscribe());
        true -> ok
     end,
     if IsFrom ->
-	    send_presence_type(
-	      jlib:jid_remove_resource(From),
-	      SendToJID, "unsubscribed");
+    	 ejabberd_router:route(
+	    	exmpp_jid:bare(From),
+		SendToJID,
+		exmpp_presence:unsubscribed());
        true -> ok
     end,
     ok.
 
-send_presence_type(From, To, Type) ->
-    ejabberd_router:route(
-      From, To,
-      {xmlelement, "presence",
-       [{"type", Type}],
-       []}).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

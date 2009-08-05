@@ -253,8 +253,7 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    Item2 = process_item_els(Item1, El#xmlel.children),
 		    case Item2#roster.subscription of
 			remove ->
-			    send_unsubscribing_presence(From, Item),
-			    ok;
+			    odbc_queries:del_roster(LServer, Username, SJID);
 			_ ->
 			    ItemVals = record_to_string(Item2),
 			    ItemGroups = groups_to_string(Item2),
@@ -661,26 +660,24 @@ send_unsubscribing_presence(From, Item) ->
 		 from -> true;
 		 _ -> false
 	     end,
+    {INode, IDom, IRes} = Item#roster.jid,
+    SendToJID = exmpp_jid:make(INode, IDom, IRes),
     if IsTo ->
-	    send_presence_type(
-	      jlib:jid_remove_resource(From),
-	      jlib:make_jid(Item#roster.jid), "unsubscribe");
+    	 ejabberd_router:route(
+	    	exmpp_jid:bare(From),
+		SendToJID,
+		exmpp_presence:unsubscribe());
        true -> ok
     end,
     if IsFrom ->
-	    send_presence_type(
-	      jlib:jid_remove_resource(From),
-	      jlib:make_jid(Item#roster.jid), "unsubscribed");
+    	 ejabberd_router:route(
+	    	exmpp_jid:bare(From),
+		SendToJID,
+		exmpp_presence:unsubscribed());
        true -> ok
     end,
     ok.
 
-send_presence_type(From, To, Type) ->
-    ejabberd_router:route(
-      From, To,
-      {xmlelement, "presence",
-       [{"type", Type}],
-       []}).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
