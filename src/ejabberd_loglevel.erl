@@ -31,7 +31,7 @@
 -module(ejabberd_loglevel).
 -author('mickael.remond@process-one.net').
 
--export([set/1]).
+-export([set/1, get/0]).
 
 -include("ejabberd.hrl").
 
@@ -45,6 +45,14 @@
                     ,{4, info, "Info"}
                     ,{5, debug, "Debug"}
                     ]).
+
+get() ->
+    Level = ejabberd_logger:get(),
+    case lists:keysearch(Level, 1, ?LOG_LEVELS) of
+        {value, Result} -> Result;
+        _ -> erlang:error({no_such_loglevel, Level})
+    end.
+
 
 set(LogLevel) when is_atom(LogLevel) ->
     set(level_to_integer(LogLevel));
@@ -67,7 +75,7 @@ level_to_integer(Level) ->
 %% --------------------------------------------------------------
 %% Code of the ejabberd logger, dynamically compiled and loaded
 %% This allows to dynamically change log level while keeping a
-%% very efficient code.        
+%% very efficient code.
 ejabberd_logger_src(Loglevel) ->
     L = integer_to_list(Loglevel),
     "-module(ejabberd_logger).
@@ -77,7 +85,10 @@ ejabberd_logger_src(Loglevel) ->
              info_msg/4,
              warning_msg/4,
              error_msg/4,
-             critical_msg/4]).
+             critical_msg/4,
+             get/0]).
+
+   get() -> "++ L ++".
 
     %% Helper functions
     debug_msg(Module, Line, Format, Args) when " ++ L ++ " >= 5 ->
