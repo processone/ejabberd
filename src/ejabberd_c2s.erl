@@ -326,11 +326,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				_ ->
 				    case StateData#state.resource of
 					"" ->
-					    RosterVersioningFeature = 
-						case roster_versioning:is_enabled(Server) of
-							true -> [roster_versioning:stream_feature()];
-							false -> []
-						end,
+					    RosterVersioningFeature = ejabberd_hooks:run_fold(roster_get_versioning_feature, Server, [], [Server]),
 				            StreamFeatures = [{xmlelement, "bind",
 						 [{"xmlns", ?NS_BIND}], []},
 						{xmlelement, "session",
