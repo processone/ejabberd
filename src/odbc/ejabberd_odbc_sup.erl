@@ -39,6 +39,11 @@
 -define(DEFAULT_POOL_SIZE, 10).
 -define(DEFAULT_ODBC_START_INTERVAL, 30). % 30 seconds
 
+% time to wait for the supervisor to start its child before returning
+% a timeout error to the request
+-define(CONNECT_TIMEOUT, 500). % milliseconds
+
+
 start_link(Host) ->
     supervisor:start_link({local, gen_mod:get_module_proc(Host, ?MODULE)},
 			  ?MODULE, [Host]).
@@ -50,19 +55,23 @@ init([Host]) ->
 	    undefined ->
 		       ?DEFAULT_POOL_SIZE;
 		   Other ->
-		       ?ERROR_MSG("Wrong odbc_pool_size definition '~p' for host ~p, default to ~p~n",
+		       ?ERROR_MSG("Wrong odbc_pool_size definition '~p' "
+				  "for host ~p, default to ~p~n",
 				  [Other, Host, ?DEFAULT_POOL_SIZE]),
 		       ?DEFAULT_POOL_SIZE
 	       end,
-    StartInterval = case ejabberd_config:get_local_option({odbc_start_interval, Host}) of
+    StartInterval = case ejabberd_config:get_local_option({odbc_start_interval,
+							   Host}) of
 			Interval when is_integer(Interval) ->
 			    Interval;
 			undefined ->
 			    ?DEFAULT_ODBC_START_INTERVAL;
 			_Other2 ->
-			    ?ERROR_MSG("Wrong odbc_start_interval definition '~p' for host ~p"
-				       ", defaulting to ~p~n",
-				       [_Other2, Host, ?DEFAULT_ODBC_START_INTERVAL]),
+			    ?ERROR_MSG("Wrong odbc_start_interval "
+				       "definition '~p' for host ~p, "
+				       "defaulting to ~p~n",
+				       [_Other2, Host,
+					?DEFAULT_ODBC_START_INTERVAL]),
 			    ?DEFAULT_ODBC_START_INTERVAL
 		    end,
     {ok, {{one_for_one, PoolSize+1, StartInterval},
@@ -78,6 +87,11 @@ init([Host]) ->
 
 get_pids(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
+
+    % throw an exception if supervisor is not ready (i.e. if it cannot
+    % start its children, if the database is down for example)
+    sys:get_status(Proc, ?CONNECT_TIMEOUT),
+
     [Child ||
 	{_Id, Child, _Type, _Modules} <- supervisor:which_children(Proc),
 	Child /= undefined].
