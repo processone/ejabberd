@@ -2782,11 +2782,31 @@ Also define a registration timeout of one hour:
  ]}.
 </PRE></LI></UL><P> <A NAME="modroster"></A> </P><!--TOC subsection <TT>mod_roster</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc55">3.3.18</A>&#XA0;&#XA0;<A HREF="#modroster"><TT>mod_roster</TT></A></H3><!--SEC END --><P> <A NAME="modroster"></A> 
-</P><P>This module implements roster management as defined in <A HREF="http://www.xmpp.org/specs/rfc3921.html#roster">RFC 3921: XMPP IM</A>.</P><P>Options:
+</P><P>This module implements roster management as defined in
+<A HREF="http://www.xmpp.org/specs/rfc3921.html#roster">RFC 3921: XMPP IM</A>.
+It also supports Roster Versioning (<A HREF="http://www.xmpp.org/extensions/xep-0237.html">XEP-0237</A>).</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Roster Management (<TT>jabber:iq:roster</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
-</DD></DL><P> <A NAME="modservicelog"></A> </P><!--TOC subsection <TT>mod_service_log</TT>-->
+</DD><DT CLASS="dt-description"><B><TT>{versioning, false | true}</TT></B></DT><DD CLASS="dd-description"> Enables
+Roster Versioning.
+This option is disabled by default.
+</DD><DT CLASS="dt-description"><B><TT>{store_current_id, false | true}</TT></B></DT><DD CLASS="dd-description"> 
+If this option is enabled, the current version number is stored on the database.
+If disabled, the version number is calculated on the fly each time.
+Enabling this option reduces the load for both ejabberd and the database.
+This option does not affect the client in any way.
+This option is only useful if Roster Versioning is enabled.
+This option is disabled by default.
+Important: if you use <TT>mod_shared_roster</TT>, you must disable this option.
+</DD></DL><P>This example configuration enables Roster Versioning with storage of current id:
+</P><PRE CLASS="verbatim">{modules,
+ [
+  ...
+  {mod_roster, [{versioning, true}, {store_current_id, true}]},
+  ...
+ ]}.
+</PRE><P> <A NAME="modservicelog"></A> </P><!--TOC subsection <TT>mod_service_log</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc56">3.3.19</A>&#XA0;&#XA0;<A HREF="#modservicelog"><TT>mod_service_log</TT></A></H3><!--SEC END --><P> <A NAME="modservicelog"></A> 
 </P><P>This module adds support for logging end user packets via a Jabber message
 auditing service such as

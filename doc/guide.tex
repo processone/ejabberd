@@ -3561,12 +3561,35 @@ Also define a registration timeout of one hour:
 \makesubsection{modroster}{\modroster{}}
 \ind{modules!\modroster{}}\ind{roster management}\ind{protocols!RFC 3921: XMPP IM}
 
-This module implements roster management as defined in \footahref{http://www.xmpp.org/specs/rfc3921.html\#roster}{RFC 3921: XMPP IM}.
+This module implements roster management as defined in
+\footahref{http://www.xmpp.org/specs/rfc3921.html\#roster}{RFC 3921: XMPP IM}.
+It also supports Roster Versioning (\xepref{0237}).
 
 Options:
 \begin{description}
 \iqdiscitem{Roster Management (\ns{jabber:iq:roster})}
+  \titem{\{versioning, false | true\}} \ind{options!versioning}Enables
+  Roster Versioning.
+  This option is disabled by default.
+  \titem{\{store\_current\_id, false | true\}} \ind{options!storecurrentid}
+  If this option is enabled, the current version number is stored on the database.
+  If disabled, the version number is calculated on the fly each time.
+  Enabling this option reduces the load for both ejabberd and the database.
+  This option does not affect the client in any way.
+  This option is only useful if Roster Versioning is enabled.
+  This option is disabled by default.
+  Important: if you use \modsharedroster, you must disable this option.
 \end{description}
+
+This example configuration enables Roster Versioning with storage of current id:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_roster, [{versioning, true}, {store_current_id, true}]},
+  ...
+ ]}.
+\end{verbatim}
 
 \makesubsection{modservicelog}{\modservicelog{}}
 \ind{modules!\modservicelog{}}\ind{message auditing}\ind{Bandersnatch}
