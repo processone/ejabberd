@@ -469,7 +469,8 @@ mysql_item_to_odbc(Columns, Recs) ->
 
 % perform a harmless query on all opened connexions to avoid connexion close.
 keep_alive(PID) ->
-    gen_server:call(PID, {sql_query, ?KEEPALIVE_QUERY}, ?KEEPALIVE_TIMEOUT).
+    gen_server:call(PID, {sql_cmd, {sql_query, ?KEEPALIVE_QUERY}},
+		    ?KEEPALIVE_TIMEOUT).
 
 % log function used by MySQL driver
 log(Level, Format, Args) ->
