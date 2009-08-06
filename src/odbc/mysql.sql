@@ -148,6 +148,12 @@ CREATE TABLE private_storage (
 CREATE INDEX i_private_storage_username USING BTREE ON private_storage(username);
 CREATE UNIQUE INDEX i_private_storage_username_namespace USING BTREE ON private_storage(username(75), namespace(75));
 
+-- Not tested in mysql
+CREATE TABLE roster_version (
+    username varchar(250) PRIMARY KEY,
+    version text NOT NULL
+) CHARACTER SET utf8;
+
 -- To update from 1.x:
 -- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;
 -- UPDATE rosterusers SET askmessage = '';

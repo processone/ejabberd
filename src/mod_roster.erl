@@ -42,7 +42,9 @@
 	 get_jid_info/4,
 	 item_to_xml/1,
 	 webadmin_page/3,
-	 webadmin_user/4]).
+	 webadmin_user/4,
+	 roster_versioning_enabled/1,
+	 roster_version/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -55,8 +57,12 @@ start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
+    mnesia:create_table(roster_version, [{disc_copies, [node()]},
+    				{attributes, record_info(fields, roster_version)}]),
+
     update_table(),
     mnesia:add_table_index(roster, us),
+    mnesia:add_table_index(roster_version, us),
     ejabberd_hooks:add(roster_get, Host,
 		       ?MODULE, get_user_roster, 50),
     ejabberd_hooks:add(roster_in_subscription, Host,
@@ -104,6 +110,12 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 
+roster_versioning_enabled(Host) ->
+	gen_mod:get_module_opt(Host, ?MODULE, versioning, false).
+
+roster_version_on_db(Host) ->
+	gen_mod:get_module_opt(Host, ?MODULE, store_current_id, false).
+
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
@@ -122,22 +134,78 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 	    process_iq_get(From, To, IQ)
     end.
 
+roster_hash(Items) ->
+	sha:sha(term_to_binary(
+		lists:sort(
+			[R#roster{groups = lists:sort(Grs)} || 
+				R = #roster{groups = Grs} <- Items]))).
+		
+roster_version(LServer ,LUser) ->
+	US = {LUser, LServer},
+	case roster_version_on_db(LServer) of
+		true ->
+			case mnesia:dirty_read(roster_version, US) of
+				[#roster_version{version = V}] -> V;
+				[] -> not_found
+			end;
+		false ->
+			roster_hash(ejabberd_hooks:run_fold(roster_get, LServer, [], [US]))
+	end.
 
-
+%% Load roster from DB only if neccesary. 
+%% It is neccesary if
+%%     - roster versioning is disabled in server OR
+%%     - roster versioning is not used by the client OR
+%%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR
+%%     - the roster version from client don't match current version.
 process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
     LUser = From#jid.luser,
     LServer = From#jid.lserver,
     US = {LUser, LServer},
-    case catch ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US]) of
-	Items when is_list(Items) ->
-	    XItems = lists:map(fun item_to_xml/1, Items),
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "query",
-			     [{"xmlns", ?NS_ROSTER}],
-			     XItems}]};
-	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+    try
+	    {ItemsToSend, VersionToSend} = 
+		case {xml:get_tag_attr("ver", SubEl), 
+		      roster_versioning_enabled(LServer),
+		      roster_version_on_db(LServer)} of
+		{{value, RequestedVersion}, true, true} ->
+			%% Retrieve version from DB. Only load entire roster
+			%% when neccesary.
+			case mnesia:dirty_read(roster_version, US) of
+				[#roster_version{version = RequestedVersion}] ->
+					{false, false};
+				[#roster_version{version = NewVersion}] ->
+					{lists:map(fun item_to_xml/1, 
+						ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US])), NewVersion};
+				[] ->
+					RosterVersion = sha:sha(term_to_binary(now())),
+					mnesia:dirty_write(#roster_version{us = US, version = RosterVersion}),
+					{lists:map(fun item_to_xml/1,
+						ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US])), RosterVersion}
+			end;
+
+		{{value, RequestedVersion}, true, false} ->
+			RosterItems = ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [] , [US]),
+			case roster_hash(RosterItems) of
+				RequestedVersion ->
+					{false, false};
+				New ->
+					{lists:map(fun item_to_xml/1, RosterItems), New}
+			end;
+			
+		_ ->
+			{lists:map(fun item_to_xml/1, 
+					ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US])), false}
+		end,
+		IQ#iq{type = result, sub_el = case {ItemsToSend, VersionToSend} of
+					 	 {false, false} ->  [];
+						 {Items, false} -> [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}], Items}];
+						 {Items, Version} -> [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}, {"ver", Version}], Items}]
+						end}
+    catch 
+    	_:_ ->  
+		IQ#iq{type =error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
+
 
 get_user_roster(Acc, US) ->
     case catch mnesia:dirty_index_read(roster, US, #roster.us) of
@@ -226,6 +294,10 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			%% subscription information from there:
 			Item3 = ejabberd_hooks:run_fold(roster_process_item,
 							LServer, Item2, [LServer]),
+			case roster_version_on_db(LServer) of
+				true -> mnesia:write(#roster_version{us = {LUser, LServer}, version = sha:sha(term_to_binary(now()))});
+				false -> ok
+			end,
 			{Item, Item3}
 		end,
 	    case mnesia:transaction(F) of
@@ -302,9 +374,14 @@ push_item(User, Server, From, Item) ->
 		       [{item,
 			 Item#roster.jid,
 			 Item#roster.subscription}]}),
-    lists:foreach(fun(Resource) ->
+    case roster_versioning_enabled(Server) of
+	true ->
+		roster_versioning:push_item(Server, User, From, Item, roster_version(Server, User));
+	false ->
+	    lists:foreach(fun(Resource) ->
 			  push_item(User, Server, Resource, From, Item)
-		  end, ejabberd_sm:get_user_resources(User, Server)).
+		  end, ejabberd_sm:get_user_resources(User, Server))
+    end.
 
 % TODO: don't push to those who didn't load roster
 push_item(User, Server, Resource, From, Item) ->
@@ -408,6 +485,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 					      ask = Pending,
 					      askmessage = list_to_binary(AskMessage)},
 			mnesia:write(NewItem),
+			case roster_version_on_db(LServer) of
+				true -> mnesia:write(#roster_version{us = {LUser, LServer}, version = sha:sha(term_to_binary(now()))});
+				false -> ok
+			end,
 			{{push, NewItem}, AutoReply}
 		end
 	end,

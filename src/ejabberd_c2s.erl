@@ -326,13 +326,19 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				_ ->
 				    case StateData#state.resource of
 					"" ->
+					    RosterVersioningFeature = 
+						case roster_versioning:is_enabled(Server) of
+							true -> [roster_versioning:stream_feature()];
+							false -> []
+						end,
+				            StreamFeatures = [{xmlelement, "bind",
+						 [{"xmlns", ?NS_BIND}], []},
+						{xmlelement, "session",
+						 [{"xmlns", ?NS_SESSION}], []} | RosterVersioningFeature],
 					    send_element(
 					      StateData,
 					      {xmlelement, "stream:features", [],
-					       [{xmlelement, "bind",
-						 [{"xmlns", ?NS_BIND}], []},
-						{xmlelement, "session",
-						 [{"xmlns", ?NS_SESSION}], []}]}),
+					       StreamFeatures}),
 					    fsm_next_state(wait_for_bind,
 						       StateData#state{
 							 server = Server,
