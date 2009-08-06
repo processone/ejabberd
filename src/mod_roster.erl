@@ -42,7 +42,8 @@
 	 get_jid_info/4,
 	 item_to_xml/1,
 	 webadmin_page/3,
-	 webadmin_user/4]).
+	 webadmin_user/4,
+	 roster_versioning_enabled/1]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
@@ -74,8 +75,11 @@ start(Host, Opts) when is_list(Host) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(roster,[{disc_copies, [node()]},
 				{attributes, record_info(fields, roster)}]),
+    mnesia:create_table(roster_version, [{disc_copies, [node()]},
+				{attributes, record_info(fields, roster_version)}]),
     update_table(),
     mnesia:add_table_index(roster, us),
+    mnesia:add_table_index(roster_version, us),
     ejabberd_hooks:add(roster_get, HostB,
 		       ?MODULE, get_user_roster, 50),
     ejabberd_hooks:add(roster_in_subscription, HostB,
@@ -127,6 +131,16 @@ stop(Host) when is_list(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB,
 				     ?NS_ROSTER).
 
+%% @spec (Host) -> true | false
+%% @type Host = binary()
+roster_versioning_enabled(Host)  ->
+	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, versioning, false).
+
+%% @spec (Host) -> true | false
+%% @type Host = binary()
+roster_version_on_db(Host) ->
+	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, store_current_id, false).
+
 %% @spec (From, To, IQ_Rec) -> IQ_Result
 %%     From = exmpp_jid:jid()
 %%     To = exmpp_jid:jid()
@@ -156,23 +170,90 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec)
   when ?IS_JID(From), ?IS_JID(To), ?IS_IQ_RECORD(IQ_Rec) ->
     process_iq_set(From, To, IQ_Rec).
 
+roster_hash(Items) ->
+	sha:sha(term_to_binary(
+		lists:sort(
+			[R#roster{groups = lists:sort(Grs)} || 
+				R = #roster{groups = Grs} <- Items]))).
+		
+roster_version(LServer ,LUser) ->
+	US = {LUser, LServer},
+	case roster_version_on_db(LServer) of
+		true ->
+			case mnesia:dirty_read(roster_version, US) of
+				[#roster_version{version =V}] -> V;
+				[] -> not_found
+			end;
+		false ->
+			roster_hash(ejabberd_hooks:run_fold(roster_get, LServer, [], [US]))
+	end.
+
 %% @spec (From, To, IQ_Rec) -> IQ_Result
 %%     From = exmpp_jid:jid()
 %%     To = exmpp_jid:jid()
 %%     IQ_Rec = exmpp_iq:iq()
 %%     IQ_Result = exmpp_iq:iq()
-
+%% Load roster from DB only if neccesary
+%% It is neccesary if
+%%  	- roster versioning is disabled in server OR
+%%	- roster versioning is not used by the client OR
+%%	- roster versioning is used by server and client BUT the server isn't storing version IDs on db OR
+%%	- the roster version from client don't match current version
 process_iq_get(From, To, IQ_Rec) ->
-    US = {exmpp_jid:prep_node(From), exmpp_jid:prep_domain(From)},
-    case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US]) of
-	Items when is_list(Items) ->
-	    XItems = lists:map(fun item_to_xml/1, Items),
-	    Result = #xmlel{ns = ?NS_ROSTER, name = 'query',
-	      children = XItems},
-	    exmpp_iq:result(IQ_Rec, Result);
-	_ ->
-	    exmpp_iq:error(IQ_Rec, 'internal-server-error')
-    end.
+    US = {_, LServer} = {exmpp_jid:prep_node(From), exmpp_jid:prep_domain(From)},
+    try
+	    {ItemsToSend, VersionToSend} = 
+		case {exmpp_xml:get_attribute_as_list(exmpp_iq:get_request(IQ_Rec), ver,  not_found), 
+		      roster_versioning_enabled(LServer),
+		      roster_version_on_db(LServer)} of
+		{not_found, _ , _} ->
+			{lists:map(fun item_to_xml/1, 
+					ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), false};
+		{_, false, _} ->
+			{lists:map(fun item_to_xml/1, 
+					ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), false};
+		
+		{RequestedVersion, true, true} ->
+			%% Retrieve version from DB. Only load entire roster
+			%% when neccesary.
+			case mnesia:dirty_read(roster_version, US) of
+				[#roster_version{version = RequestedVersion}] ->
+					{false, false};
+				[#roster_version{version = NewVersion}] ->
+					{lists:map(fun item_to_xml/1, 
+						ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), NewVersion};
+				[] ->
+					RosterVersion = sha:sha(term_to_binary(now())),
+					mnesia:dirty_write(#roster_version{us = US, version = RosterVersion}),
+					{lists:map(fun item_to_xml/1,
+						ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), RosterVersion}
+			end;
+		{RequestedVersion, true, false} ->
+			RosterItems = ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [] , [US]),
+			case roster_hash(RosterItems) of
+				RequestedVersion ->
+					{false, false};
+				New ->
+					{lists:map(fun item_to_xml/1, RosterItems), New}
+			end
+			
+		end,
+		case {ItemsToSend, VersionToSend} of
+			{false, false} -> 
+				exmpp_iq:result(IQ_Rec);
+			{Items, false} -> 
+				exmpp_iq:result(IQ_Rec, exmpp_xml:element(?NS_ROSTER, 'query', [] , Items));
+			{Items, Version} -> 
+				exmpp_iq:result(IQ_Rec, exmpp_xml:element(?NS_ROSTER, 'query', [?XMLATTR('ver', Version)], Items))
+		end
+    catch 
+    	_:_ ->  
+ 	    exmpp_iq:error(IQ_Rec, 'internal-server-error')
+     end.
+
+
+
+
 
 %% @spec (Acc, US) -> New_Acc
 %%     Acc = [rosteritem()]
@@ -279,6 +360,10 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    %% subscription information from there:
 		    Item3 = ejabberd_hooks:run_fold(roster_process_item,
 						    exmpp_jid:prep_domain(From), Item2, [exmpp_jid:prep_domain(From)]),
+		    case roster_version_on_db(LServer) of
+		    	true -> mnesia:write(#roster_version{us = {LUser, LServer}, version = sha:sha(term_to_binary(now()))});
+			false -> ok
+		    end,
 		    {Item, Item3}
 	    end,
 	case mnesia:transaction(F) of
@@ -389,9 +474,15 @@ push_item(User, Server, From, Item)
 		       [{item,
 			 Item#roster.jid,
 			 Item#roster.subscription}]}),
-    lists:foreach(fun(Resource) ->
-			  push_item(User, Server, Resource, From, Item)
-		  end, ejabberd_sm:get_user_resources(User, Server)).
+
+    case roster_versioning_enabled(Server) of
+    	true ->
+		roster_versioning:push_item(Server, User, From, Item, roster_version(Server, User));
+	false ->
+	    lists:foreach(fun(Resource) ->
+ 			  push_item(User, Server, Resource, From, Item)
+		  end, ejabberd_sm:get_user_resources(User, Server))
+    end.
 
 %% @spec (User, Server, Resource, From, Item) -> term()
 %%     User = binary()
@@ -548,6 +639,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 						  ask = Pending,
 						  askmessage = AskBinary},
 			    mnesia:write(NewItem),
+			    case roster_version_on_db(Server) of
+				true -> mnesia:write(#roster_version{us = {User, Server}, version = sha:sha(term_to_binary(now()))});
+				false -> ok
+			    end,
 			    {{push, NewItem}, AutoReply}
 		    end
 	    end,

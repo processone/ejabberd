@@ -29,3 +29,5 @@
 		 askmessage = <<>>,
 		 xs = []}).
 
+-record(roster_version, {us,
+			version}).

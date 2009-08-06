@@ -145,7 +145,10 @@ CREATE TABLE private_storage (
 CREATE INDEX i_private_storage_username ON private_storage USING btree (username);
 CREATE UNIQUE INDEX i_private_storage_username_namespace ON private_storage USING btree (username, namespace);
 
-
+CREATE TABLE roster_version (
+    username text PRIMARY KEY,
+    version text NOT NULL
+);
 -- To update from 0.9.8:
 -- CREATE SEQUENCE spool_seq_seq;
 -- ALTER TABLE spool ADD COLUMN seq integer;

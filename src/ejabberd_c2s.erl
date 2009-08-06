@@ -310,12 +310,17 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				_ ->
 				    case StateData#state.resource of
 					undefined ->
+					    RosterVersioningFeature =
+					    	case roster_versioning:is_enabled(ServerB) of
+							true -> [roster_versioning:stream_feature()];
+							false -> []
+						end,
 					    send_element(
 					      StateData,
 					      exmpp_stream:features([
 						  exmpp_server_binding:feature(),
 						  exmpp_server_session:feature()
-						])),
+						| RosterVersioningFeature])),
 					    fsm_next_state(wait_for_bind,
 						       StateData#state{
 							 server = ServerB,

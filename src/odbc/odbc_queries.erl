@@ -78,7 +78,9 @@
 	 set_vcard/26,
 	 get_vcard/2,
 	 escape/1,
-	 count_records_where/3]).
+	 count_records_where/3,
+	 get_roster_version/2,
+	 set_roster_version/2]).
 
 %% We have only two compile time options for db queries:
 %-define(generic, true).
@@ -555,6 +557,12 @@ count_records_where(LServer, Table, WhereClause) ->
     ejabberd_odbc:sql_query(
       LServer,
       ["select count(*) from ", Table, " ", WhereClause, ";"]).
+
+get_roster_version(LServer, LUser) ->
+	ejabberd_odbc:sql_query(LServer,
+		["select version from roster_version where username = '", LUser, "'"]).
+set_roster_version(LUser, Version) ->
+	update_t("roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
 -endif.
 
 %% -----------------
@@ -791,4 +799,10 @@ count_records_where(LServer, Table, WhereClause) ->
     ejabberd_odbc:sql_query(
       LServer,
       ["select count(*) from ", Table, " ", WhereClause, " with (nolock)"]).
+
+get_roster_version(LServer, LUser) ->
+	ejabberd_odbc:sql_query(LServer, 
+		["select version from dbo.roster_version where username = '", LUser, "'"]).
+set_roster_version(LUser, Version) ->
+	update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
 -endif.

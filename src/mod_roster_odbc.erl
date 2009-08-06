@@ -41,7 +41,8 @@
 	 remove_user/2,
 	 get_jid_info/4,
 	 webadmin_page/3,
-	 webadmin_user/4]).
+	 webadmin_user/4,
+	 roster_versioning_enabled/1]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
@@ -102,6 +103,12 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_ROSTER).
 
 
+roster_versioning_enabled(Host)  ->
+	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, versioning, false).
+
+roster_version_on_db(Host) ->
+	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, store_current_id, false).
+
 process_iq(From, To, IQ_Rec) ->
     LServer = exmpp_jid:prep_domain_as_list(From),
     case lists:member(LServer, ?MYHOSTS) of
@@ -118,17 +125,84 @@ process_local_iq(From, To, #iq{type = set} = IQ_Rec) ->
 
 
 
+roster_hash(Items) ->
+	sha:sha(term_to_binary(
+		lists:sort(
+			[R#roster{groups = lists:sort(Grs)} || 
+				R = #roster{groups = Grs} <- Items]))).
+		
+roster_version(LServer ,LUser) ->
+	US = {LUser, LServer},
+	case roster_version_on_db(LServer) of
+		true ->
+			case odbc_queries:get_roster_version(ejabberd_odbc:escape(LServer), ejabberd_odbc:escape(LUser)) of
+				{selected, ["version"], [{Version}]} -> Version;
+				{selected, ["version"], []} -> not_found
+			end;
+		false ->
+			roster_hash(ejabberd_hooks:run_fold(roster_get, LServer, [], [US]))
+	end.
+ 
+%% Load roster from DB only if neccesary. 
+%% It is neccesary if
+%%     - roster versioning is disabled in server OR
+%%     - roster versioning is not used by the client OR
+%%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR
+%%     - the roster version from client don't match current version.
 process_iq_get(From, To, IQ_Rec) ->
-    US = {exmpp_jid:prep_node(From), exmpp_jid:prep_domain(From)},
-    case catch ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US]) of
-	Items when is_list(Items) ->
-	    XItems = lists:map(fun item_to_xml/1, Items),
-	    Result = #xmlel{ns = ?NS_ROSTER, name = 'query',
-	      children = XItems},
-	    exmpp_iq:result(IQ_Rec, Result);
-	_ ->
-	    exmpp_iq:error(IQ_Rec, 'internal-server-error')
-    end.
+    US = {LUser, LServer} = {exmpp_jid:prep_node(From), exmpp_jid:prep_domain(From)},
+    try
+	    {ItemsToSend, VersionToSend} = 
+		case {exmpp_xml:get_attribute_as_list(exmpp_iq:get_request(IQ_Rec), ver,  not_found), 
+		      roster_versioning_enabled(LServer),
+		      roster_version_on_db(LServer)} of
+		{not_found, _ , _} ->
+			{lists:map(fun item_to_xml/1, 
+					ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), false};
+		{_, false, _} ->
+			{lists:map(fun item_to_xml/1, 
+					ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), false};
+		
+		{RequestedVersion, true, true} ->
+			%% Retrieve version from DB. Only load entire roster
+			%% when neccesary.
+			case odbc_queries:get_roster_version(ejabberd_odbc:escape(LServer), ejabberd_odbc:escape(LUser)) of
+				{selected, ["version"], [{RequestedVersion}]} ->
+					{false, false};
+				{selected, ["version"], [{NewVersion}]} ->
+					{lists:map(fun item_to_xml/1, 
+						ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), NewVersion};
+				{selected, ["version"], []} ->
+					RosterVersion = sha:sha(term_to_binary(now())),
+					{atomic, {updated,1}} = odbc_queries:sql_transaction(binary_to_list(LServer), fun() ->
+									odbc_queries:set_roster_version(ejabberd_odbc:escape(LUser), RosterVersion)
+								  end),
+					{lists:map(fun item_to_xml/1,
+						ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [], [US])), RosterVersion}
+			end;
+
+		{RequestedVersion, true, false} ->
+			RosterItems = ejabberd_hooks:run_fold(roster_get, exmpp_jid:prep_domain(To), [] , [US]),
+			case roster_hash(RosterItems) of
+				RequestedVersion ->
+					{false, false};
+				New ->
+					{lists:map(fun item_to_xml/1, RosterItems), New}
+			end
+			
+		end,
+		case {ItemsToSend, VersionToSend} of
+			{false, false} -> 
+				exmpp_iq:result(IQ_Rec);
+			{Items, false} -> 
+				exmpp_iq:result(IQ_Rec, exmpp_xml:element(?NS_ROSTER, 'query', [] , Items));
+			{Items, Version} -> 
+				exmpp_iq:result(IQ_Rec, exmpp_xml:element(?NS_ROSTER, 'query', [?XMLATTR('ver', Version)], Items))
+		end
+    catch 
+    	_:_ ->  
+ 	    exmpp_iq:error(IQ_Rec, 'internal-server-error')
+     end.
 
 get_user_roster(Acc, {LUser, LServer}) ->
     Items = get_roster(LUser, LServer),
@@ -263,6 +337,11 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    %% subscription information from there:
 		    Item3 = ejabberd_hooks:run_fold(roster_process_item,
 						    exmpp_jid:prep_domain(From), Item2, [exmpp_jid:prep_domain(From)]),
+		    case roster_version_on_db(Server) of
+		    	true -> odbc_queries:set_roster_version(Username, sha:sha(term_to_binary(now())));
+			false -> ok
+		    end,
+ 
 		    {Item, Item3}
 	    end,
 	case odbc_queries:sql_transaction(LServer, F) of
@@ -352,9 +431,15 @@ push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
 		       [{item,
 			 Item#roster.jid,
 			 Item#roster.subscription}]}),
-    lists:foreach(fun(Resource) ->
-			  push_item(User, Server, Resource, From, Item)
-		  end, ejabberd_sm:get_user_resources(User, Server)).
+    case roster_versioning_enabled(Server) of
+    	true ->
+		roster_versioning:push_item(Server, User, From, Item, roster_version(Server, User));
+	false ->
+	    lists:foreach(fun(Resource) ->
+ 			  push_item(User, Server, Resource, From, Item)
+		  end, ejabberd_sm:get_user_resources(User, Server))
+    end.
+ 
 
 % TODO: don't push to those who not load roster
 push_item(User, Server, Resource, From, Item) ->
@@ -492,6 +577,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 						  askmessage = AskBinary},
 			    ItemVals = record_to_string(NewItem),
 			    odbc_queries:roster_subscribe(LServer, Username, SJID, ItemVals),
+			    case roster_version_on_db(Server) of
+			    	true -> odbc_queries:set_roster_version(Username, sha:sha(term_to_binary(now())));
+				false -> ok
+			    end,
 			    {{push, NewItem}, AutoReply}
 		    end
 	    end,
