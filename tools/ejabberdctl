@@ -47,9 +47,9 @@ debug()
 ctl()
 {
     $ERL \
-      -noinput \
-      -sname ejabberdctl@$HOST \
+      -sname ctl$NODE@$HOST \
       -pa $EJABBERD_EBIN \
+      -noinput \
       -hidden \
       -s ejabberd_ctl -extra $NODE@$HOST $@
 }
