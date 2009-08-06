@@ -4,6 +4,7 @@ NODE=ejabberd
 HOST=localhost
 
 # Define ejabberd environment
+ERL=erl
 here=`which "$0" 2>/dev/null || echo .`
 base="`dirname $here`/.."
 ROOTDIR=`(cd "$base"; echo $PWD)`
@@ -20,9 +21,9 @@ export ERL_MAX_PORTS=32000
 [ -d $EJABBERD_DB ] || mkdir -p $EJABBERD_DB
 [ -f $EJABBERD_CONFIG_PATH ] || cp $ROOTDIR/src/ejabberd.cfg.example $EJABBERD_CONFIG_PATH
 
-function start
+start()
 {
-    erl \
+    $ERL \
       -noinput -detached \
       -sname $NODE@$HOST \
       -pa $EJABBERD_EBIN \
@@ -33,9 +34,9 @@ function start
       -sasl sasl_error_logger \{file,\"$SASL_LOG_PATH\"\}
 }
 
-function debug
+debug()
 {
-    erl \
+    $ERL \
       -sname debug$NODE@$HOST \
       -pa $EJABBERD_EBIN \
       -mnesia dir "\"$EJABBERD_DB\"" \
@@ -43,17 +44,17 @@ function debug
       -remsh $NODE@$HOST
 }
 
-function ctl
+ctl()
 {
-    erl \
-      -noinput \
-      -sname ejabberdctl@$HOST \
+    $ERL \
+      -sname ctl$NODE@$HOST \
       -pa $EJABBERD_EBIN \
+      -noinput \
       -hidden \
       -s ejabberd_ctl -extra $NODE@$HOST $@
 }
 
-function usage
+usage()
 {
     ctl
     exit
@@ -66,4 +67,3 @@ case $1 in
     debug) debug;;
     *) ctl $@;;
 esac
-
