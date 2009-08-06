@@ -24,6 +24,15 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%% @doc Roster management (Mnesia storage).
+%%%
+%%% Includes support for XEP-0237: Roster Versioning.
+%%% The roster versioning follows an all-or-nothing strategy:
+%%%  - If the version supplied by the client is the latest, return an empty response.
+%%%  - If not, return the entire new roster (with updated version string).
+%%% Roster version is a hash digest of the entire roster.
+%%% No additional data is stored in DB.
+
 -module(mod_roster_odbc).
 -author('alexey@process-one.net').
 
@@ -42,6 +51,7 @@
 	 get_jid_info/4,
 	 webadmin_page/3,
 	 webadmin_user/4,
+	 get_versioning_feature/2,
 	 roster_versioning_enabled/1]).
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -51,6 +61,7 @@
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
+-define(NS_ROSTER_VER, "urn:xmpp:features:rosterver").
 
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
@@ -71,6 +82,8 @@ start(Host, Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(resend_subscription_requests_hook, HostB,
 		       ?MODULE, get_in_pending_subscriptions, 50),
+    ejabberd_hooks:add(roster_get_versioning_feature, HostB,
+		       ?MODULE, get_versioning_feature, 50),
     ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, HostB,
@@ -96,18 +109,14 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(resend_subscription_requests_hook, HostB,
 		       ?MODULE, get_in_pending_subscriptions, 50),
+    ejabberd_hooks:delete(roster_get_versioning_feature, HostB,
+		          ?MODULE, get_versioning_feature, 50),
     ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, HostB,
 			  ?MODULE, webadmin_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_ROSTER).
 
-
-roster_versioning_enabled(Host)  ->
-	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, versioning, false).
-
-roster_version_on_db(Host) ->
-	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, store_current_id, false).
 
 process_iq(From, To, IQ_Rec) ->
     LServer = exmpp_jid:prep_domain_as_list(From),
@@ -131,6 +140,26 @@ roster_hash(Items) ->
 			[R#roster{groups = lists:sort(Grs)} || 
 				R = #roster{groups = Grs} <- Items]))).
 		
+%% @spec (Host) -> true | false
+%% @type Host = binary()
+roster_versioning_enabled(Host)  ->
+	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, versioning, false).
+
+%% @spec (Host) -> true | false
+%% @type Host = binary()
+roster_version_on_db(Host) ->
+	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, store_current_id, false).
+
+%% Returns a list that may contain an xmlelement with the XEP-237 feature if it's enabled.
+get_versioning_feature(Acc, Host) ->
+    case roster_versioning_enabled(Host) of
+	true ->
+	    Feature = exmpp_xml:element(?NS_ROSTER_VER, 'ver', [],
+		       [exmpp_xml:element(?NS_ROSTER_VER, 'optional')]),
+	    [Feature | Acc];
+	false -> []
+    end.
+
 roster_version(LServer ,LUser) ->
 	US = {LUser, LServer},
 	case roster_version_on_db(LServer) of
@@ -433,7 +462,7 @@ push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
 			 Item#roster.subscription}]}),
     case roster_versioning_enabled(Server) of
     	true ->
-		roster_versioning:push_item(Server, User, From, Item, roster_version(Server, User));
+		push_item_version(Server, User, From, Item, roster_version(Server, User));
 	false ->
 	    lists:foreach(fun(Resource) ->
  			  push_item(User, Server, Resource, From, Item)
@@ -445,6 +474,23 @@ push_item(User, Server, From, Item) when is_binary(User), is_binary(Server) ->
 push_item(User, Server, Resource, From, Item) ->
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [item_to_xml(Item)]},
+    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
+      "push" ++ randoms:get_string()),
+    ejabberd_router:route(
+      From,
+      exmpp_jid:make(User, Server, Resource),
+      ResIQ).
+
+%% @doc Roster push, calculate and include the version attribute.
+%% TODO: don't push to those who didn't load roster
+push_item_version(Server, User, From, Item, RosterVersion)  ->
+    lists:foreach(fun(Resource) ->
+			  push_item_version(User, Server, Resource, From, Item, RosterVersion)
+		end, ejabberd_sm:get_user_resources(User, Server)).
+
+push_item_version(User, Server, Resource, From, Item, RosterVersion) ->
+    Request = #xmlel{ns = ?NS_ROSTER, name = 'query', attrs = [?XMLATTR('ver', RosterVersion)],
+      children = [mod_roster:item_to_xml(Item)]},
     ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
       "push" ++ randoms:get_string()),
     ejabberd_router:route(

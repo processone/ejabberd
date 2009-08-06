@@ -310,11 +310,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				_ ->
 				    case StateData#state.resource of
 					undefined ->
-					    RosterVersioningFeature =
-					    	case roster_versioning:is_enabled(ServerB) of
-							true -> [roster_versioning:stream_feature()];
-							false -> []
-						end,
+					    RosterVersioningFeature = ejabberd_hooks:run_fold(roster_get_versioning_feature, Server, [], [Server]),
 					    send_element(
 					      StateData,
 					      exmpp_stream:features([
