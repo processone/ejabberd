@@ -4267,7 +4267,7 @@ Available commands in this ejabberd node:
 
 The more interesting ones are:
 \begin{description}
-\titem{reopen-log} Reopen the log files after they were renamed.
+\titem{reopen\_log} Reopen the log files after they were renamed.
   If the old files were not renamed before calling this command,
   they are automatically renamed to \term{"*-old.log"}. See section \ref{logfiles}.
 \titem {backup ejabberd.backup}
@@ -4275,7 +4275,7 @@ The more interesting ones are:
 \titem {restore ejabberd.backup}
   Restore immediately from a binary backup file the internal Mnesia database.
   This will consume quite some memory for big servers.
-\titem {install-fallback ejabberd.backup}
+\titem {install\_fallback ejabberd.backup}
   The binary backup file is installed as fallback:
   it will be used to restore the database at the next ejabberd start.
   Similar to \term{restore}, but requires less memory.
@@ -4284,23 +4284,23 @@ The more interesting ones are:
 \titem {load ejabberd.dump}
   Restore immediately from a text file dump.
   This is not recommended for big databases, as it will consume much time,
-  memory and processor. In that case it's preferable to use \term{backup} and \term{install-fallback}.
+  memory and processor. In that case it's preferable to use \term{backup} and \term{install\_fallback}.
 %%More information about backuping can
 %%  be found in section~\ref{backup}.
-\titem{import-piefxis, export-piefxis, export-piefxis-host} \ind{migrate between servers}
+\titem{import\_piefxis, export\_piefxis, export\_piefxis\_host} \ind{migrate between servers}
   These options can be used to migrate accounts
   using \xepref{0227} formatted XML files
   from/to other \Jabber{}/XMPP servers
   or move users of a vhost to another ejabberd installation.
   See also 
   \footahref{https://support.process-one.net/doc/display/P1/ejabberd+migration+kit}{ejabberd migration kit}.
-\titem{import-file, import-dir} \ind{migration from other software}
+\titem{import\_file, import\_dir} \ind{migration from other software}
   These options can be used to migrate accounts
   using jabberd1.4 formatted XML files.
   from other \Jabber{}/XMPP servers
   There exist tutorials to
   \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
-\titem{delete-expired-messages} This option can be used to delete old messages
+\titem{delete\_expired\_messages} This option can be used to delete old messages
   in offline storage. This might be useful when the number of offline messages
   is very high.
 \end{description}
