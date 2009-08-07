@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/5, start/6, route_chan/4, route_nick/3]).
+-export([start_link/7, start/8, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -48,8 +48,8 @@
 
 -define(SETS, gb_sets).
 
--record(state, {socket, encoding, queue,
-		user, host, server, nick,
+-record(state, {socket, encoding, port, password, 
+		queue, user, host, server, nick,
 		channels = dict:new(),
 		nickchannel,
 		inbuf = "", outbuf = ""}).
@@ -65,13 +65,13 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(From, Host, ServerHost, Server, Username, Encoding) ->
+start(From, Host, ServerHost, Server, Username, Encoding, Port, Password) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_irc_sup),
     supervisor:start_child(
-      Supervisor, [From, Host, Server, Username, Encoding]).
+      Supervisor, [From, Host, Server, Username, Encoding, Port, Password]).
 
-start_link(From, Host, Server, Username, Encoding) ->
-    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding],
+start_link(From, Host, Server, Username, Encoding, Port, Password) ->
+    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding, Port, Password],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -85,10 +85,12 @@ start_link(From, Host, Server, Username, Encoding) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([From, Host, Server, Username, Encoding]) ->
+init([From, Host, Server, Username, Encoding, Port, Password]) ->
     gen_fsm:send_event(self(), init),
     {ok, open_socket, #state{queue = queue:new(),
 			     encoding = Encoding,
+			     port = Port,
+			     password = Password,
 			     user = From,
 			     nick = Username,
 			     host = Host,
@@ -102,11 +104,17 @@ init([From, Host, Server, Username, Encoding]) ->
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
     Addr = StateData#state.server,
-    Port = 6667,
+    Port = StateData#state.port,
     ?DEBUG("connecting to ~s:~p~n", [Addr, Port]),
     case gen_tcp:connect(Addr, Port, [binary, {packet, 0}]) of
 	{ok, Socket} ->
 	    NewStateData = StateData#state{socket = Socket},
+	    if 
+		StateData#state.password /= "" -> 
+		    send_text(NewStateData,
+			      io_lib:format("PASS ~s\r\n", [StateData#state.password]));
+		true -> true
+	    end,
 	    send_text(NewStateData,
 		      io_lib:format("NICK ~s\r\n", [StateData#state.nick])),
 	    send_text(NewStateData,
