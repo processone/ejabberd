@@ -188,7 +188,7 @@ CREATE TABLE pubsub_state (
   nodeid bigint,
   jid text,
   affiliation character(1),
-  subscription character(1),
+  subscriptions text,
   stateid bigint auto_increment primary key
 ) CHARACTER SET utf8;
 CREATE INDEX i_pubsub_state_jid ON pubsub_state(jid(60));

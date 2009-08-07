@@ -190,7 +190,7 @@ CREATE TABLE pubsub_state (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
   jid text,
   affiliation character(1),
-  subscription character(1),
+  subscriptions text,
   stateid SERIAL UNIQUE
 );
 CREATE INDEX i_pubsub_state_jid ON pubsub_state USING btree (jid);
