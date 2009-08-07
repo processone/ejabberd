@@ -264,8 +264,8 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     ok.
 
 init_nodes(Host, ServerHost) ->
-    create_node(Host, ServerHost, ["home"], service_jid(Host), ?STDNODE),
-    create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), ?STDNODE),
+    %create_node(Host, ServerHost, ["home"], service_jid(Host), "hometree"),
+    %create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree"),
     ok.
 
 update_node_database(Host, ServerHost) ->

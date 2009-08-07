@@ -263,8 +263,8 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     ok.
 
 init_nodes(Host, ServerHost) ->
-    create_node(Host, ServerHost, ["home"], service_jid(Host), ?STDNODE),
-    create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), ?STDNODE),
+    %create_node(Host, ServerHost, ["home"], service_jid(Host), "hometree_odbc"),
+    %create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree_odbc"),
     ok.
 
 update_node_database(Host, ServerHost) ->
