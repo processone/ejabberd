@@ -148,10 +148,8 @@ get_parentnodes(_Host, _Node, _From) ->
 %% containing just this node.</p>
 get_parentnodes_tree(Host, Node, From) ->
     case get_node(Host, Node, From) of
-	N when is_record(N, pubsub_node) ->
-	    [{0, mnesia:read(pubsub_node, {Host, Node})}];
-	Error ->
-	    Error
+	N when is_record(N, pubsub_node) -> [{0, [N]}];
+	Error -> Error
     end.
 
 %% @spec (Host, Node, From) -> [pubsubNode()] | {error, Reason}

@@ -15,12 +15,13 @@
 %%% All Rights Reserved.''
 %%% This software is copyright 2006-2009, ProcessOne.
 %%%
-%%% @author Brian Cully <bjc@kublai.com>
+%%% @author Pablo Polvorin <pablo.polvorin@process-one.net>, based on 
+%%          pubsub_subscription.erl by Brian Cully <bjc@kublai.com>
 %%% @version {@vsn}, {@date} {@time}
 %%% @end
 %%% ====================================================================
 
--module(pubsub_subscription).
+-module(pubsub_subscription_odbc).
 -author("bjc@kublai.com").
 
 %% API
@@ -79,39 +80,42 @@
 -define(SUBSCRIPTION_DEPTH_VALUE_ALL_LABEL,
 	"Receive notification from all descendent nodes").
 
+
+-define(DB_MOD, pubsub_db_odbc).
 %%====================================================================
 %% API
 %%====================================================================
 init() ->
     ok = create_table().
 
-subscribe_node(JID, NodeID, Options) ->
-    case mnesia:sync_dirty(fun add_subscription/3,
-			    [JID, NodeID, Options]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
-    end.
+subscribe_node(_JID, _NodeID, Options) ->
+    SubId = make_subid(),
+    ok =  pubsub_db_odbc:add_subscription(#pubsub_subscription{subid = SubId,
+							      options = Options}),
+    {result, SubId}.
+	
 
-unsubscribe_node(JID, NodeID, SubID) ->
-    case mnesia:sync_dirty(fun delete_subscription/3,
-			    [JID, NodeID, SubID]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
-    end.
+unsubscribe_node(_JID, _NodeID, SubID) ->
+    {ok, Sub} = ?DB_MOD:read_subscription(SubID),
+    ok = ?DB_MOD:delete_subscription(SubID),
+    {result, Sub}.
 
-get_subscription(JID, NodeID, SubID) ->
-    case mnesia:sync_dirty(fun read_subscription/3,
-			    [JID, NodeID, SubID]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
+get_subscription(_JID, _NodeID, SubID) ->
+    case ?DB_MOD:read_subscription(SubID) of
+	{ok, Sub} -> {result, Sub};
+	notfound -> {error, notfound}
     end.
+	
 
-set_subscription(JID, NodeID, SubID, Options) ->
-    case mnesia:sync_dirty(fun write_subscription/4,
-			    [JID, NodeID, SubID, Options]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
+set_subscription(_JID, _NodeID, SubID, Options) ->
+    case ?DB_MOD:read_subscription(SubID) of
+	{ok, _} ->
+	     ok = ?DB_MOD:update_subscription(#pubsub_subscription{subid = SubID, options = Options}),
+	     {result, ok};
+	notfound -> 
+	     {error, notfound}
     end.
+	
 
 get_options_xform(Lang, Options) ->
     Keys = [deliver, show_values, subscription_type, subscription_depth],
@@ -143,37 +147,8 @@ parse_options_xform(XFields) ->
 %% Internal functions
 %%====================================================================
 create_table() ->
-    case mnesia:create_table(pubsub_subscription,
-			     [{disc_copies, [node()]},
-			      {attributes, record_info(fields, pubsub_subscription)},
-			      {type, set}]) of
-	{atomic, ok}		   -> ok;
-	{aborted, {already_exists, _}} -> ok;
-	Other			  -> Other
-    end.
+    ok.
 
-add_subscription(_JID, _NodeID, Options) ->
-    SubID = make_subid(),
-    Record = #pubsub_subscription{subid = SubID, options = Options},
-    mnesia:write(Record),
-    SubID.
-
-delete_subscription(JID, NodeID, SubID) ->
-    Sub = read_subscription(JID, NodeID, SubID),
-    mnesia:delete({pubsub_subscription, SubID}),
-    Sub.
-
-read_subscription(_JID, _NodeID, SubID) ->
-    Q = qlc:q([Sub || Sub <- mnesia:table(pubsub_subscription),
-		      Sub#pubsub_subscription.subid == SubID]),
-    case qlc:e(Q) of
-	[Sub] -> Sub;
-	[]    -> mnesia:abort({error, notfound})
-    end.
-
-write_subscription(JID, NodeID, SubID, Options) ->
-    Sub = read_subscription(JID, NodeID, SubID),
-    mnesia:write(Sub#pubsub_subscription{options = Options}).
 
 make_subid() ->
     {T1, T2, T3} = now(),
