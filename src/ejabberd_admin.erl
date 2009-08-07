@@ -33,7 +33,7 @@
 	 %% Accounts
 	 register/3, unregister/2,
 	 registered_users/1,
-	 %% Migration
+	 %% Migration jabberd1.4
 	 import_file/1, import_dir/1,
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
@@ -101,10 +101,23 @@ commands() ->
 			module = ?MODULE, function = import_file,
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = import_dir, tags = [mnesia],
-			desc = "Import user data from jabberd14 spool dir",
+			desc = "Import users data from jabberd14 spool dir",
 			module = ?MODULE, function = import_dir,
 			args = [{file, string}],
 			result = {res, restuple}},
+
+     #ejabberd_commands{name = import_piefxis, tags = [mnesia],
+			desc = "Import users data from a PIEFXIS file (XEP-0227)",
+			module = ejabberd_piefxis, function = import_file,
+			args = [{file, string}], result = {res, rescode}},
+     #ejabberd_commands{name = export_piefxis, tags = [mnesia],
+			desc = "Export data of all users in the server to PIEFXIS files (XEP-0227)",
+			module = ejabberd_piefxis, function = export_server,
+			args = [{dir, string}], result = {res, rescode}},
+     #ejabberd_commands{name = export_piefxis_host, tags = [mnesia],
+			desc = "Export data of users in a host to PIEFXIS files (XEP-0227)",
+			module = ejabberd_piefxis, function = export_host,
+			args = [{dir, string}, {host, string}], result = {res, rescode}},
 
      #ejabberd_commands{name = delete_expired_messages, tags = [purge],
 			desc = "Delete expired offline messages from database",

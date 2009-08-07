@@ -1946,6 +1946,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
     end;
 
 get_node(global, Node, ["backup"], Query, Lang) ->
+    HomeDir = re:replace(filename:nativename(os:cmd("echo $HOME")), "\n", "", [{return, list}]),
     ResS = case node_backup_parse_query(Node, Query) of
 	       nothing -> [];
 	       ok -> [?XREST("Submitted")];
@@ -1960,14 +1961,14 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 		     [?XE("tr",
  			  [?XCT("td", "Store binary backup:"),
 			   ?XE("td", [?INPUT("text", "storepath",
-					     "ejabberd.backup")]),
+ 					     filename:join(HomeDir, "ejabberd.backup"))]),
 			   ?XE("td", [?INPUTT("submit", "store",
 					      "OK")])
 			  ]),
 		      ?XE("tr",
  			  [?XCT("td", "Restore binary backup immediately:"),
 			   ?XE("td", [?INPUT("text", "restorepath",
-					     "ejabberd.backup")]),
+ 					     filename:join(HomeDir, "ejabberd.backup"))]),
 			   ?XE("td", [?INPUTT("submit", "restore",
 					      "OK")])
 			  ]),
@@ -1975,23 +1976,59 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 			  [?XCT("td",
 				"Restore binary backup after next ejabberd restart (requires less memory):"),
 			   ?XE("td", [?INPUT("text", "fallbackpath",
-					     "ejabberd.backup")]),
+ 					     filename:join(HomeDir, "ejabberd.backup"))]),
 			   ?XE("td", [?INPUTT("submit", "fallback",
 					      "OK")])
 			  ]),
 		      ?XE("tr",
 			  [?XCT("td", "Store plain text backup:"),
 			   ?XE("td", [?INPUT("text", "dumppath",
-					     "ejabberd.dump")]),
+ 					     filename:join(HomeDir, "ejabberd.dump"))]),
 			   ?XE("td", [?INPUTT("submit", "dump",
 					      "OK")])
 			  ]),
 		      ?XE("tr",
 			  [?XCT("td", "Restore plain text backup immediately:"),
 			   ?XE("td", [?INPUT("text", "loadpath",
-					     "ejabberd.dump")]),
+ 					     filename:join(HomeDir, "ejabberd.dump"))]),
 			   ?XE("td", [?INPUTT("submit", "load",
 					      "OK")])
+ 			  ]),
+ 		      ?XE("tr",
+ 			  [?XCT("td", "Import users data from a PIEFXIS file (XEP-0277):"),
+ 			   ?XE("td", [?INPUT("text", "import_piefxis_filepath",
+ 					     filename:join(HomeDir, "users.xml"))]),
+ 			   ?XE("td", [?INPUTT("submit", "import_piefxis_file",
+ 					      "OK")])
+ 			  ]),
+ 		      ?XE("tr",
+ 			  [?XCT("td", "Export data of all users in the server to PIEFXIS files (XEP-0277):"),
+ 			   ?XE("td", [?INPUT("text", "export_piefxis_dirpath",
+ 					     HomeDir)]),
+ 			   ?XE("td", [?INPUTT("submit", "export_piefxis_dir",
+ 					      "OK")])
+ 			  ]),
+ 		      ?XE("tr",
+ 			  [?XE("td", [?CT("Export data of users in a host to PIEFXIS files (XEP-0277):"),
+ 			              ?CT(" "),
+ 			              ?INPUT("text", "export_piefxis_host_dirhost", ?MYNAME)]),
+ 			   ?XE("td", [?INPUT("text", "export_piefxis_host_dirpath", HomeDir)]),
+ 			   ?XE("td", [?INPUTT("submit", "export_piefxis_host_dir",
+ 					      "OK")])
+ 			  ]),
+ 		      ?XE("tr",
+ 			  [?XCT("td", "Import user data from jabberd14 spool file:"),
+ 			   ?XE("td", [?INPUT("text", "import_filepath",
+ 					     filename:join(HomeDir, "user1.xml"))]),
+ 			   ?XE("td", [?INPUTT("submit", "import_file",
+ 					      "OK")])
+ 			  ]),
+ 		      ?XE("tr",
+ 			  [?XCT("td", "Import users data from jabberd14 spool directory:"),
+ 			   ?XE("td", [?INPUT("text", "import_dirpath",
+ 					     "/var/spool/jabber/")]),
+ 			   ?XE("td", [?INPUTT("submit", "import_dir",
+ 					      "OK")])
 			  ])
 		     ])
 		])])];
@@ -2266,7 +2303,23 @@ node_backup_parse_query(Node, Query) ->
 						   dump_to_textfile, [Path]);
 				      "load" ->
 					  rpc:call(Node, mnesia,
-						   load_textfile, [Path])
+						   load_textfile, [Path]);
+				      "import_piefxis_file" ->
+					  rpc:call(Node, ejabberd_piefxis,
+						   import_file, [Path]);
+				      "export_piefxis_dir" ->
+					  rpc:call(Node, ejabberd_piefxis,
+						   export_server, [Path]);
+				      "export_piefxis_host_dir" ->
+					  {value, {_, Host}} = lists:keysearch(Action ++ "host", 1, Query),
+					  rpc:call(Node, ejabberd_piefxis,
+						   export_host, [Path, Host]);
+				      "import_file" ->
+					  rpc:call(Node, ejabberd_admin,
+						   import_file, [Path]);
+				      "import_dir" ->
+					  rpc:call(Node, ejabberd_admin,
+						   import_dir, [Path])
 				  end,
 			      case Res of
 				  {error, Reason} ->
@@ -2284,8 +2337,8 @@ node_backup_parse_query(Node, Query) ->
 	      end;
 	 (_Action, Res) ->
 	      Res
-      end, nothing, ["store", "restore", "fallback", "dump", "load"]).
-
+      end, nothing, ["store", "restore", "fallback", "dump", "load", "import_file", "import_dir",
+	     "import_piefxis_file", "export_piefxis_dir", "export_piefxis_host_dir"]).
 
 node_ports_to_xhtml(Ports, Lang) ->
     ?XAE("table", [{"class", "withtextareas"}],
