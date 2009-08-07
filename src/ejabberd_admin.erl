@@ -79,6 +79,14 @@ commands() ->
 			desc = "Reopen the log files",
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
+     #ejabberd_commands{name = get_loglevel, tags = [logs, server],
+			desc = "Get the current loglevel",
+			module = ejabberd_loglevel, function = get,
+			args = [],
+                        result = {leveltuple, {tuple, [{levelnumber, integer},
+                                                       {levelatom, atom},
+                                                       {leveldesc, string}
+                                                      ]}}},
 
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
