@@ -169,6 +169,14 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
+    STUNSupervisor =
+	{ejabberd_stun_sup,
+	 {ejabberd_tmp_sup, start_link,
+	  [ejabberd_stun_sup, ejabberd_stun]},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [ejabberd_tmp_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
 	   NodeGroups,
@@ -186,6 +194,7 @@ init([]) ->
 	   HTTPSupervisor,
 	   HTTPPollSupervisor,
 	   IQSupervisor,
+	   STUNSupervisor,
 	   FrontendSocketSupervisor,
 	   Listener]}}.
 

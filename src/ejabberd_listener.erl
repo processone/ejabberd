@@ -96,8 +96,8 @@ start_dependent(Port, Module, Opts) ->
 	    {error, Error}
     end.
 
-init(PortIP, Module, Opts1) ->
-    {Port, IPT, IPS, IPV, OptsClean} = parse_listener_portip(PortIP, Opts1),
+init(PortIP, Module, RawOpts) ->
+    {Port, IPT, IPS, IPV, OptsClean} = parse_listener_portip(PortIP, RawOpts),
     %% The first inet|inet6 and the last {ip, _} work,
     %% so overriding those in Opts
     Opts = [IPV | OptsClean] ++ [{ip, IPT}],
@@ -106,6 +106,27 @@ init(PortIP, Module, Opts1) ->
 			       (inet) -> true;
 			       (_) -> false
 			    end, Opts),
+    case lists:member(udp, RawOpts) of
+	true ->
+	    init_udp(PortIP, Module, Opts, SockOpts, Port, IPS);
+	false ->
+	    init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS)
+    end.
+
+init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
+    case gen_udp:open(Port, [binary,
+			     {active, false},
+			     {reuseaddr, true} |
+			     SockOpts]) of
+	{ok, Socket} ->
+	    %% Inform my parent that this port was opened succesfully
+	    proc_lib:init_ack({ok, self()}),
+	    udp_recv(Socket, Module, Opts);
+	{error, Reason} ->
+	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
+    end.
+
+init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     Res = gen_tcp:listen(Port, [binary,
 				{packet, 0},
 				{active, false},
@@ -116,19 +137,12 @@ init(PortIP, Module, Opts1) ->
 				SockOpts]),
     case Res of
 	{ok, ListenSocket} ->
-		%% Inform my parent that this port was opened succesfully
-		proc_lib:init_ack({ok, self()}),
-		%% And now start accepting connection attempts
+	    %% Inform my parent that this port was opened succesfully
+	    proc_lib:init_ack({ok, self()}),
+	    %% And now start accepting connection attempts
 	    accept(ListenSocket, Module, Opts);
 	{error, Reason} ->
-	    ReasonT = case Reason of
-			  eaddrnotavail -> "IP address not available: " ++ IPS;
-			  eaddrinuse -> "IP address and port number already used: "++IPS++" "++integer_to_list(Port);
-			  _ -> atom_to_list(Reason)
-		      end,
-	    ?ERROR_MSG("Failed to open socket:~n  ~p~nReason: ~s",
-		       [{Port, Module, SockOpts}, ReasonT]),
-	    throw({Reason, PortIP})
+	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
     end.
 
 %% @spec (PortIP, Opts) -> {Port, IPT, IPS, IPV, OptsClean}
@@ -213,6 +227,24 @@ accept(ListenSocket, Module, Opts) ->
 	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
 		      [ListenSocket, Reason]),
 	    accept(ListenSocket, Module, Opts)
+    end.
+
+udp_recv(Socket, Module, Opts) ->
+    case gen_udp:recv(Socket, 0) of
+	{ok, {Addr, Port, Packet}} ->
+	    case catch Module:udp_recv(Socket, Addr, Port, Packet, Opts) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("failed to process UDP packet:~n"
+			       "** Source: {~p, ~p}~n"
+			       "** Reason: ~p~n** Packet: ~p",
+			       [Addr, Port, Reason, Packet]);
+		_ ->
+		    ok
+	    end,
+	    udp_recv(Socket, Module, Opts);
+	{error, Reason} ->
+	    ?ERROR_MSG("unexpected UDP error: ~s", [format_error(Reason)]),
+	    throw({error, Reason})
     end.
 
 %% @spec (Port, Module, Opts) -> {ok, Pid} | {error, Error}
@@ -367,4 +399,26 @@ certfile_readable(Opts) ->
 		true -> true;
 		false -> {false, Path}
 	    end
+    end.
+
+socket_error(Reason, PortIP, Module, SockOpts, Port, IPS) ->
+    ReasonT = case Reason of
+		  eaddrnotavail ->
+		      "IP address not available: " ++ IPS;
+		  eaddrinuse ->
+		      "IP address and port number already used: "
+			  ++IPS++" "++integer_to_list(Port);
+		  _ ->
+		      format_error(Reason)
+	      end,
+    ?ERROR_MSG("Failed to open socket:~n  ~p~nReason: ~s",
+	       [{Port, Module, SockOpts}, ReasonT]),
+    throw({Reason, PortIP}).
+
+format_error(Reason) ->
+    case inet:format_error(Reason) of
+	"unknown POSIX error" ->
+	    atom_to_list(Reason);
+	ReasonStr ->
+	    ReasonStr
     end.
