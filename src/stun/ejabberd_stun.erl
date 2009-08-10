@@ -143,15 +143,14 @@ handle_info({tcp, Sock, TLSData}, wait_for_tls, State) ->
 	<<_:16, 1, _/binary>> ->
 	    TLSOpts = [{certfile, State#state.certfile}],
 	    {ok, TLSSock} = tls:tcp_to_tls(Sock, TLSOpts),
+	    NewState = State#state{sock = TLSSock,
+				   buf = <<>>,
+				   sock_mod = tls},
 	    case tls:recv_data(TLSSock, Buf) of
 		{ok, Data} ->
-		    process_data(session_established,
-				 State#state{sock = TLSSock,
-					     buf = <<>>,
-					     sock_mod = tls},
-				 Data);
+		    process_data(session_established, NewState, Data);
 		_Err ->
-		    {stop, normal, State}
+		    {stop, normal, NewState}
 	    end;
 	_ ->
 	    process_data(session_established, State, TLSData)
