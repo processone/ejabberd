@@ -103,6 +103,7 @@ AC_CONFIG_FILES([Makefile
                  $make_pam
                  $make_web
                  stringprep/Makefile
+                 stun/Makefile
                  $make_tls
                  $make_odbc
                  $make_ejabberd_zlib])
