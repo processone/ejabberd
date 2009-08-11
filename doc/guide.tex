@@ -720,11 +720,11 @@ other different modules for some specific virtual hosts:
 \makesubsection{listened}{Listening Ports}
 \ind{options!listen}
 
-The option \option{listen} defines for which addresses and ports \ejabberd{}
+The option \option{listen} defines for which ports, addresses and network protocols \ejabberd{}
 will listen and what services will be run on them. Each element of the list is a
 tuple with the following elements:
 \begin{itemize}
-\item Port number. Optionally also the IP address.
+\item Port number. Optionally also the IP address and/or a transport protocol.
 \item Listening module that serves this port.
 \item Options for the TCP socket and for the listening module.
 \end{itemize}
@@ -742,10 +742,12 @@ With the basic syntax the ports will listen on all IPv4 network addresses:
 It is possible to specify the IP address for a port using the full syntax:
 \begin{verbatim}
           {{<port-number>, <ip-address>}, <module>, [<options>]}
+          {{<port-number>, <transport-protocol>}, <module>, [<options>]}
+          {{<port-number>, <ip-address>, <transport-protocol>}, <module>, [<options>]}
 \end{verbatim}
 
 
-\makesubsubsection{listened-port}{Port Number and IP Address}
+\makesubsubsection{listened-port}{Port Number, IP Address and Transport Protocol}
 
 The port number defines which port to listen for incoming connections.
 It can be a Jabber/XMPP standard port 
@@ -769,6 +771,9 @@ Some example values for IP address:
 \item \verb|{16#fdca, 16#8ab6, 16#a243, 16#75ef, 0, 0, 0, 1}| is the IPv6 address \verb|FDCA:8AB6:A243:75EF::1/128|
 \end{itemize}
 
+The transport protocol can be \term{tcp} or \term{udp}.
+Default is \term{tcp}.
+
 
 \makesubsubsection{listened-module}{Listening Module}
 
@@ -789,6 +794,10 @@ The available modules, their purpose and the options allowed by each one are:
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts},
     \texttt{shaper}, \texttt{service\_check\_from}
+  \titem{\texttt{ejabberd\_stun}}
+    Handles STUN Binding requests as defined in
+    \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}.\\
+    Options: \texttt{certfile}
   \titem{\texttt{ejabberd\_http}}
     Handles incoming HTTP connections.\\
     Options: \texttt{captcha}, \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
@@ -944,6 +953,7 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
   and also allows plain connections for old clients.
 \item Port 5223 listens for c2s connections with the old SSL.
 \item Port 5269 listens for s2s connections with STARTTLS. The socket is set for IPv6 instead of IPv4.
+\item Port 3478 listens for STUN requests over UDP.
 \item Port 5280 listens for HTTP requests, and serves the HTTP Poll service.
 \item Port 5281 listens for HTTP requests, and serves the Web Admin using HTTPS as explained in
   section~\ref{webadmin}. The socket only listens connections to the IP address 127.0.0.1.
@@ -968,6 +978,7 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
                                    {shaper, s2s_shaper},
                                    {max_stanza_size, 131072}
                                   ]},
+  {{3478, udp}, ejabberd_stun, []},
   {5280, ejabberd_http, [
                          http_poll
                         ]},
@@ -1548,6 +1559,45 @@ Example configuration:
 ]}.
 \end{verbatim}
 
+\makesubsection{stun}{STUN}
+\ind{options!stun}\ind{stun}
+
+\ejabberd{} is able to act as a stand-alone STUN server
+(\footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}). Currently only Binding usage
+is supported. In that role \ejabberd{} helps clients with Jingle ICE (\xepref{0176}) support to discover their external addresses and ports.
+
+You should configure \term{ejabberd\_stun} listening module as described in \ref{listened} section.
+If \option{certfile} option is defined, \ejabberd{} multiplexes TCP and
+TLS over TCP connections on the same port. Obviously, \option{certfile} option
+is defined for \term{tcp} only. Note however that TCP or TLS over TCP
+support is not required for Binding usage and is reserved for
+\footahref{http://tools.ietf.org/html/draft-ietf-behave-turn-16}{TURN}
+functionality. Feel free to configure \term{udp} transport only.
+
+Example configuration:
+\begin{verbatim}
+{listen,
+ [
+  ...
+  {{3478, udp}, ejabberd_stun, []},
+  {3478, ejabberd_stun, []},
+  {5349, ejabberd_stun, [{certfile, "/etc/ejabberd/server.pem"}]},
+  ...
+ ]
+}.
+\end{verbatim}
+
+You also need to configure DNS SRV records properly so clients can easily discover a
+STUN server serving your XMPP domain. Refer to section
+\footahref{http://tools.ietf.org/html/rfc5389\#section-9}{DNS Discovery of a Server}
+of \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389} for details.
+
+Example DNS SRV configuration:
+\begin{verbatim}
+_stun._udp   IN SRV  0 0 3478 stun.example.com.
+_stun._tcp   IN SRV  0 0 3478 stun.example.com.
+_stuns._tcp  IN SRV  0 0 5349 stun.example.com.
+\end{verbatim}
 
 \makesubsection{includeconfigfile}{Include Additional Configuration Files}
 \ind{options!includeconfigfile}\ind{includeconfigfile}

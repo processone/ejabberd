@@ -149,6 +149,11 @@
   %%			    }
   %%			   ]},
 
+  %%
+  %% ejabberd_stun: Handles STUN Binding requests
+  %%
+  %%{{3478, udp}, ejabberd_stun, []},
+
   {5280, ejabberd_http, [
 			 %%{request_handlers,
 			 %% [
