@@ -97,7 +97,7 @@ start_dependent(Port, Module, Opts) ->
     end.
 
 init(PortIP, Module, RawOpts) ->
-    {Port, IPT, IPS, IPV, OptsClean} = parse_listener_portip(PortIP, RawOpts),
+    {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
     %% The first inet|inet6 and the last {ip, _} work,
     %% so overriding those in Opts
     Opts = [IPV | OptsClean] ++ [{ip, IPT}],
@@ -106,10 +106,9 @@ init(PortIP, Module, RawOpts) ->
 			       (inet) -> true;
 			       (_) -> false
 			    end, Opts),
-    case lists:member(udp, RawOpts) of
-	true ->
+    if Proto == udp ->
 	    init_udp(PortIP, Module, Opts, SockOpts, Port, IPS);
-	false ->
+       true ->
 	    init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS)
     end.
 
@@ -167,24 +166,34 @@ parse_listener_portip(PortIP, Opts) ->
 			      true -> {inet6, Opts2 -- [inet6]};
 			      false -> {inet, Opts2}
 			  end,
-    {Port, IPT, IPS} = case PortIP of
-			   P when is_integer(P) ->
-			       T = get_ip_tuple(IPOpt, IPVOpt),
-			       S = inet_parse:ntoa(T),
-			       {P, T, S};
-			   {P, T} when is_integer(P) and is_tuple(T) ->
-			       S = inet_parse:ntoa(T),
-			       {P, T, S};
-			   {P, S} when is_integer(P) and is_list(S) ->
-			       [S | _] = string:tokens(S, "/"),
-			       {ok, T} = inet_parse:address(S),
-			       {P, T, S}
-		       end,
+    {Port, IPT, IPS, Proto} =
+	case add_proto(PortIP, Opts) of
+	    {P, Prot} ->
+		T = get_ip_tuple(IPOpt, IPVOpt),
+		S = inet_parse:ntoa(T),
+		{P, T, S, Prot};
+	    {P, T, Prot} when is_integer(P) and is_tuple(T) ->
+		S = inet_parse:ntoa(T),
+		{P, T, S, Prot};
+	    {P, S, Prot} when is_integer(P) and is_list(S) ->
+		[S | _] = string:tokens(S, "/"),
+		{ok, T} = inet_parse:address(S),
+		{P, T, S, Prot}
+	end,
     IPV = case size(IPT) of
 	      4 -> inet;
 	      8 -> inet6
 	  end,
-    {Port, IPT, IPS, IPV, OptsClean}.
+    {Port, IPT, IPS, IPV, Proto, OptsClean}.
+
+add_proto(Port, Opts) when is_integer(Port) ->
+    {Port, get_proto(Opts)};
+add_proto({Port, Proto}, _Opts) when is_atom(Proto) ->
+    {Port, normalize_proto(Proto)};
+add_proto({Port, Addr}, Opts) ->
+    {Port, Addr, get_proto(Opts)};
+add_proto({Port, Addr, Proto}, _Opts) ->
+    {Port, Addr, normalize_proto(Proto)}.
 
 strip_ip_option(Opts) ->
     {IPL, OptsNoIP} = lists:partition(
@@ -312,7 +321,9 @@ stop_listener(PortIP, _Module) ->
 %%      Opts = [IPV | {ip, IPT} | atom() | tuple()]
 %% @doc Add a listener and store in config if success
 add_listener(PortIP, Module, Opts) ->
-    case start_listener(PortIP, Module, Opts) of
+    {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
+    PortIP1 = {Port, IPT, Proto},
+    case start_listener(PortIP1, Module, Opts) of
 	{ok, _Pid} ->
 	    Ports = case ejabberd_config:get_local_option(listen) of
 			undefined ->
@@ -320,33 +331,39 @@ add_listener(PortIP, Module, Opts) ->
 			Ls ->
 			    Ls
 		    end,
-	    Ports1 = lists:keydelete(PortIP, 1, Ports),
-	    Ports2 = [{PortIP, Module, Opts} | Ports1],
+	    Ports1 = lists:keydelete(PortIP1, 1, Ports),
+	    Ports2 = [{PortIP1, Module, Opts} | Ports1],
 	    ejabberd_config:add_local_option(listen, Ports2),
-		ok;
+	    ok;
 	{error, {already_started, _Pid}} ->
 	    {error, {already_started, PortIP}};
 	{error, Error} ->
 	    {error, Error}
     end.
-  
-%% @spec (PortIP, Module) -> ok
+
+delete_listener(PortIP, Module) ->
+    delete_listener(PortIP, Module, []).
+
+%% @spec (PortIP, Module, Opts) -> ok
 %% where
 %%      PortIP = {Port, IPT | IPS}
 %%      Port = integer()
 %%      IPT = tuple()
 %%      IPS = string()
 %%      Module = atom()
-delete_listener(PortIP, Module) ->
+%%      Opts = [term()]
+delete_listener(PortIP, Module, Opts) ->
+    {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
+    PortIP1 = {Port, IPT, Proto},
     Ports = case ejabberd_config:get_local_option(listen) of
 		undefined ->
 		    [];
 		Ls ->
 		    Ls
 	    end,
-    Ports1 = lists:keydelete(PortIP, 1, Ports),
+    Ports1 = lists:keydelete(PortIP1, 1, Ports),
     ejabberd_config:add_local_option(listen, Ports1),
-    stop_listener(PortIP, Module).
+    stop_listener(PortIP1, Module).
 
 is_frontend({frontend, _Module}) -> true;
 is_frontend(_) -> false.
@@ -400,6 +417,22 @@ certfile_readable(Opts) ->
 		false -> {false, Path}
 	    end
     end.
+
+get_proto(Opts) ->
+    case proplists:get_value(proto, Opts) of
+	undefined ->
+	    tcp;
+	Proto ->
+	    normalize_proto(Proto)
+    end.
+
+normalize_proto(tcp) -> tcp;
+normalize_proto(udp) -> udp;
+normalize_proto(UnknownProto) ->
+    ?WARNING_MSG("There is a problem in the configuration: "
+		 "~p is an unknown IP protocol. Using tcp as fallback",
+		 [UnknownProto]),
+    tcp.
 
 socket_error(Reason, PortIP, Module, SockOpts, Port, IPS) ->
     ReasonT = case Reason of
