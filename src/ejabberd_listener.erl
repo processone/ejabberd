@@ -96,8 +96,8 @@ start_dependent(Port, Module, Opts) ->
 	    {error, Error}
     end.
 
-init(PortIP, Module, Opts1) ->
-    {Port, IPT, IPS, IPV, OptsClean} = parse_listener_portip(PortIP, Opts1),
+init(PortIP, Module, RawOpts) ->
+    {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
     %% The first inet|inet6 and the last {ip, _} work,
     %% so overriding those in Opts
     Opts = [IPV | OptsClean] ++ [{ip, IPT}],
@@ -106,6 +106,26 @@ init(PortIP, Module, Opts1) ->
 			       (inet) -> true;
 			       (_) -> false
 			    end, Opts),
+    if Proto == udp ->
+	    init_udp(PortIP, Module, Opts, SockOpts, Port, IPS);
+       true ->
+	    init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS)
+    end.
+
+init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
+    case gen_udp:open(Port, [binary,
+			     {active, false},
+			     {reuseaddr, true} |
+			     SockOpts]) of
+	{ok, Socket} ->
+	    %% Inform my parent that this port was opened succesfully
+	    proc_lib:init_ack({ok, self()}),
+	    udp_recv(Socket, Module, Opts);
+	{error, Reason} ->
+	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
+    end.
+
+init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     Res = gen_tcp:listen(Port, [binary,
 				{packet, 0},
 				{active, false},
@@ -116,19 +136,12 @@ init(PortIP, Module, Opts1) ->
 				SockOpts]),
     case Res of
 	{ok, ListenSocket} ->
-		%% Inform my parent that this port was opened succesfully
-		proc_lib:init_ack({ok, self()}),
-		%% And now start accepting connection attempts
+	    %% Inform my parent that this port was opened succesfully
+	    proc_lib:init_ack({ok, self()}),
+	    %% And now start accepting connection attempts
 	    accept(ListenSocket, Module, Opts);
 	{error, Reason} ->
-	    ReasonT = case Reason of
-			  eaddrnotavail -> "IP address not available: " ++ IPS;
-			  eaddrinuse -> "IP address and port number already used: "++IPS++" "++integer_to_list(Port);
-			  _ -> atom_to_list(Reason)
-		      end,
-	    ?ERROR_MSG("Failed to open socket:~n  ~p~nReason: ~s",
-		       [{Port, Module, SockOpts}, ReasonT]),
-	    throw({Reason, PortIP})
+	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
     end.
 
 %% @spec (PortIP, Opts) -> {Port, IPT, IPS, IPV, OptsClean}
@@ -153,24 +166,34 @@ parse_listener_portip(PortIP, Opts) ->
 			      true -> {inet6, Opts2 -- [inet6]};
 			      false -> {inet, Opts2}
 			  end,
-    {Port, IPT, IPS} = case PortIP of
-			   P when is_integer(P) ->
-			       T = get_ip_tuple(IPOpt, IPVOpt),
-			       S = inet_parse:ntoa(T),
-			       {P, T, S};
-			   {P, T} when is_integer(P) and is_tuple(T) ->
-			       S = inet_parse:ntoa(T),
-			       {P, T, S};
-			   {P, S} when is_integer(P) and is_list(S) ->
-			       [S | _] = string:tokens(S, "/"),
-			       {ok, T} = inet_parse:address(S),
-			       {P, T, S}
-		       end,
+    {Port, IPT, IPS, Proto} =
+	case add_proto(PortIP, Opts) of
+	    {P, Prot} ->
+		T = get_ip_tuple(IPOpt, IPVOpt),
+		S = inet_parse:ntoa(T),
+		{P, T, S, Prot};
+	    {P, T, Prot} when is_integer(P) and is_tuple(T) ->
+		S = inet_parse:ntoa(T),
+		{P, T, S, Prot};
+	    {P, S, Prot} when is_integer(P) and is_list(S) ->
+		[S | _] = string:tokens(S, "/"),
+		{ok, T} = inet_parse:address(S),
+		{P, T, S, Prot}
+	end,
     IPV = case size(IPT) of
 	      4 -> inet;
 	      8 -> inet6
 	  end,
-    {Port, IPT, IPS, IPV, OptsClean}.
+    {Port, IPT, IPS, IPV, Proto, OptsClean}.
+
+add_proto(Port, Opts) when is_integer(Port) ->
+    {Port, get_proto(Opts)};
+add_proto({Port, Proto}, _Opts) when is_atom(Proto) ->
+    {Port, normalize_proto(Proto)};
+add_proto({Port, Addr}, Opts) ->
+    {Port, Addr, get_proto(Opts)};
+add_proto({Port, Addr, Proto}, _Opts) ->
+    {Port, Addr, normalize_proto(Proto)}.
 
 strip_ip_option(Opts) ->
     {IPL, OptsNoIP} = lists:partition(
@@ -213,6 +236,24 @@ accept(ListenSocket, Module, Opts) ->
 	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
 		      [ListenSocket, Reason]),
 	    accept(ListenSocket, Module, Opts)
+    end.
+
+udp_recv(Socket, Module, Opts) ->
+    case gen_udp:recv(Socket, 0) of
+	{ok, {Addr, Port, Packet}} ->
+	    case catch Module:udp_recv(Socket, Addr, Port, Packet, Opts) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("failed to process UDP packet:~n"
+			       "** Source: {~p, ~p}~n"
+			       "** Reason: ~p~n** Packet: ~p",
+			       [Addr, Port, Reason, Packet]);
+		_ ->
+		    ok
+	    end,
+	    udp_recv(Socket, Module, Opts);
+	{error, Reason} ->
+	    ?ERROR_MSG("unexpected UDP error: ~s", [format_error(Reason)]),
+	    throw({error, Reason})
     end.
 
 %% @spec (Port, Module, Opts) -> {ok, Pid} | {error, Error}
@@ -280,7 +321,9 @@ stop_listener(PortIP, _Module) ->
 %%      Opts = [IPV | {ip, IPT} | atom() | tuple()]
 %% @doc Add a listener and store in config if success
 add_listener(PortIP, Module, Opts) ->
-    case start_listener(PortIP, Module, Opts) of
+    {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
+    PortIP1 = {Port, IPT, Proto},
+    case start_listener(PortIP1, Module, Opts) of
 	{ok, _Pid} ->
 	    Ports = case ejabberd_config:get_local_option(listen) of
 			undefined ->
@@ -288,33 +331,39 @@ add_listener(PortIP, Module, Opts) ->
 			Ls ->
 			    Ls
 		    end,
-	    Ports1 = lists:keydelete(PortIP, 1, Ports),
-	    Ports2 = [{PortIP, Module, Opts} | Ports1],
+	    Ports1 = lists:keydelete(PortIP1, 1, Ports),
+	    Ports2 = [{PortIP1, Module, Opts} | Ports1],
 	    ejabberd_config:add_local_option(listen, Ports2),
-		ok;
+	    ok;
 	{error, {already_started, _Pid}} ->
 	    {error, {already_started, PortIP}};
 	{error, Error} ->
 	    {error, Error}
     end.
-  
-%% @spec (PortIP, Module) -> ok
+
+delete_listener(PortIP, Module) ->
+    delete_listener(PortIP, Module, []).
+
+%% @spec (PortIP, Module, Opts) -> ok
 %% where
 %%      PortIP = {Port, IPT | IPS}
 %%      Port = integer()
 %%      IPT = tuple()
 %%      IPS = string()
 %%      Module = atom()
-delete_listener(PortIP, Module) ->
+%%      Opts = [term()]
+delete_listener(PortIP, Module, Opts) ->
+    {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
+    PortIP1 = {Port, IPT, Proto},
     Ports = case ejabberd_config:get_local_option(listen) of
 		undefined ->
 		    [];
 		Ls ->
 		    Ls
 	    end,
-    Ports1 = lists:keydelete(PortIP, 1, Ports),
+    Ports1 = lists:keydelete(PortIP1, 1, Ports),
     ejabberd_config:add_local_option(listen, Ports1),
-    stop_listener(PortIP, Module).
+    stop_listener(PortIP1, Module).
 
 is_frontend({frontend, _Module}) -> true;
 is_frontend(_) -> false.
@@ -367,4 +416,42 @@ certfile_readable(Opts) ->
 		true -> true;
 		false -> {false, Path}
 	    end
+    end.
+
+get_proto(Opts) ->
+    case proplists:get_value(proto, Opts) of
+	undefined ->
+	    tcp;
+	Proto ->
+	    normalize_proto(Proto)
+    end.
+
+normalize_proto(tcp) -> tcp;
+normalize_proto(udp) -> udp;
+normalize_proto(UnknownProto) ->
+    ?WARNING_MSG("There is a problem in the configuration: "
+		 "~p is an unknown IP protocol. Using tcp as fallback",
+		 [UnknownProto]),
+    tcp.
+
+socket_error(Reason, PortIP, Module, SockOpts, Port, IPS) ->
+    ReasonT = case Reason of
+		  eaddrnotavail ->
+		      "IP address not available: " ++ IPS;
+		  eaddrinuse ->
+		      "IP address and port number already used: "
+			  ++IPS++" "++integer_to_list(Port);
+		  _ ->
+		      format_error(Reason)
+	      end,
+    ?ERROR_MSG("Failed to open socket:~n  ~p~nReason: ~s",
+	       [{Port, Module, SockOpts}, ReasonT]),
+    throw({Reason, PortIP}).
+
+format_error(Reason) ->
+    case inet:format_error(Reason) of
+	"unknown POSIX error" ->
+	    atom_to_list(Reason);
+	ReasonStr ->
+	    ReasonStr
     end.

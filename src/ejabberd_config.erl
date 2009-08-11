@@ -332,9 +332,9 @@ process_term(Term, State) ->
 	    Listeners2 =
 		lists:map(
 		  fun({PortIP, Module, Opts}) ->
-			  {Port, IPT, _, _, OptsClean} =
+			  {Port, IPT, _, _, Proto, OptsClean} =
 			      ejabberd_listener:parse_listener_portip(PortIP, Opts),
-			  {{Port, IPT}, Module, OptsClean}
+			  {{Port, IPT, Proto}, Module, OptsClean}
 		  end,
 		  Listeners),
 	    add_option(listen, Listeners2, State);
