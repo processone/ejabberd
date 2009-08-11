@@ -2383,13 +2383,14 @@ node_ports_to_xhtml(Ports, Lang) ->
 	      [?XE('tr',
 		   [?XCT('td', "Port"),
 		    ?XCT('td', "IP"),
+		    ?XCT('td', "Prot"),
 		    ?XCT('td', "Module"),
 		    ?XCT('td', "Options")
 		   ])]),
 	  ?XE('tbody',
 	      lists:map(
 		fun({PortIP, Module, Opts} = _E) ->
-			{_Port, SPort, _TIP, SIP, SSPort, OptsClean} =
+			{_Port, SPort, _TIP, SIP, SSPort, NetProt, OptsClean} =
 			    get_port_data(PortIP, Opts),
 			SModule = atom_to_list(Module),
 			{NumLines, SOptsClean} = term_to_paragraph(OptsClean, 40),
@@ -2397,6 +2398,7 @@ node_ports_to_xhtml(Ports, Lang) ->
 			?XE('tr',
 			    [?XAE('td', [?XMLATTR('size', <<"6">>)], [?C(SPort)]),
 			     ?XAE('td', [?XMLATTR('size', <<"15">>)], [?C(SIP)]),
+			     ?XAE('td', [?XMLATTR('size', <<"4">>)], [?C(atom_to_list(NetProt))]),
 			     ?XE('td', [?INPUTS("text", "module" ++ SSPort,
 						SModule, "15")]),
 			     ?XE('td', [?TEXTAREA("opts" ++ SSPort, integer_to_list(NumLines), "35", SOptsClean)]),
@@ -2410,6 +2412,7 @@ node_ports_to_xhtml(Ports, Lang) ->
 	      [?XE('tr',
 		   [?XE('td', [?INPUTS("text", "portnew", "", "6")]),
 		    ?XE('td', [?INPUTS("text", "ipnew", "0.0.0.0", "15")]),
+		    ?XE("td", [make_netprot_html("tcp")]),
 		    ?XE('td', [?INPUTS("text", "modulenew", "", "15")]),
 		    ?XE('td', [?TEXTAREA("optsnew", "2", "35", "[]")]),
 		    ?XAE('td', [?XMLATTR("colspan", "2")],
@@ -2418,25 +2421,38 @@ node_ports_to_xhtml(Ports, Lang) ->
 		  )]
 	     )]).
 
+make_netprot_html(NetProt) ->
+    ?XAE('select', [?XMLATTR('name', "netprotnew")],
+	 lists:map(
+	   fun(O) ->
+		   Sel = if
+			     O == NetProt -> [?XMLATTR('selected', <<"selected">>)];
+			     true -> []
+			 end,
+		   ?XAC('option',
+			Sel ++ [?XMLATTR('value', O)],
+			O)
+	   end, ["tcp", "udp"])).
+
 get_port_data(PortIP, Opts) ->
-    {Port, IPT, IPS, _IPV, OptsClean} = ejabberd_listener:parse_listener_portip(PortIP, Opts),
+    {Port, IPT, IPS, _IPV, NetProt, OptsClean} = ejabberd_listener:parse_listener_portip(PortIP, Opts),
     SPort = io_lib:format("~p", [Port]),
 
     SSPort = lists:flatten(
 	       lists:map(
 		 fun(N) -> io_lib:format("~.16b", [N]) end,
-		 binary_to_list(crypto:md5(SPort++IPS)))),
-    {Port, SPort, IPT, IPS, SSPort, OptsClean}.
+		 binary_to_list(crypto:md5(SPort++IPS++atom_to_list(NetProt))))),
+    {Port, SPort, IPT, IPS, SSPort, NetProt, OptsClean}.
   
 
 node_ports_parse_query(Node, Ports, Query) ->
     lists:foreach(
-      fun({PortIP, Module1, Opts1}) ->
-	      {Port, _SPort, TIP, _SIP, SSPort, _OptsClean} =
-		  get_port_data(PortIP, Opts1),
+      fun({PortIpNetp, Module1, Opts1}) ->
+	      {Port, _SPort, TIP, _SIP, SSPort, NetProt, _OptsClean} =
+		  get_port_data(PortIpNetp, Opts1),
 	      case lists:keysearch("add" ++ SSPort, 1, Query) of
 		  {value, _} ->
-		      PortIP2 = {Port, TIP},
+		      PortIpNetp2 = {Port, TIP, NetProt},
 		      {{value, {_, SModule}}, {value, {_, SOpts}}} =
 			  {lists:keysearch("module" ++ SSPort, 1, Query),
 			   lists:keysearch("opts" ++ SSPort, 1, Query)},
@@ -2444,15 +2460,15 @@ node_ports_parse_query(Node, Ports, Query) ->
 		      {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 		      {ok, Opts} = erl_parse:parse_term(Tokens),
 		      rpc:call(Node, ejabberd_listener, delete_listener,
-			       [PortIP2, Module1]),
+			       [PortIpNetp2, Module1]),
 		      R=rpc:call(Node, ejabberd_listener, add_listener,
-				 [PortIP2, Module, Opts]),
+				 [PortIpNetp2, Module, Opts]),
 		      throw({is_added, R});
 		  _ ->
 		      case lists:keysearch("delete" ++ SSPort, 1, Query) of
 			  {value, _} ->
 			      rpc:call(Node, ejabberd_listener, delete_listener,
-				       [PortIP, Module1]),
+				       [PortIpNetp, Module1]),
 			      throw(submitted);
 			  _ ->
 			      ok
@@ -2463,10 +2479,12 @@ node_ports_parse_query(Node, Ports, Query) ->
 	{value, _} ->
 	    {{value, {_, SPort}},
 	     {value, {_, STIP}}, %% It is a string that may represent a tuple
+	     {value, {_, SNetProt}},
 	     {value, {_, SModule}},
 	     {value, {_, SOpts}}} =
 		{lists:keysearch("portnew", 1, Query),
 		 lists:keysearch("ipnew", 1, Query),
+		 lists:keysearch("netprotnew", 1, Query),
 		 lists:keysearch("modulenew", 1, Query),
 		 lists:keysearch("optsnew", 1, Query)},
 	    {ok, Toks, _} = erl_scan:string(SPort ++ "."),
@@ -2477,12 +2495,13 @@ node_ports_parse_query(Node, Ports, Query) ->
 			{error, _} -> STIP
 		    end,
 	    Module = list_to_atom(SModule),
+	    NetProt2 = list_to_atom(SNetProt),
 	    {ok, Tokens, _} = erl_scan:string(SOpts ++ "."),
 	    {ok, Opts} = erl_parse:parse_term(Tokens),
-	    {Port2, _SPort, IP2, _SIP, _SSPort, OptsClean} =
-		get_port_data({Port2, STIP2}, Opts),
+	    {Port2, _SPort, IP2, _SIP, _SSPort, NetProt2, OptsClean} =
+		get_port_data({Port2, STIP2, NetProt2}, Opts),
 	    R=rpc:call(Node, ejabberd_listener, add_listener,
-		       [{Port2, IP2}, Module, OptsClean]),
+		       [{Port2, IP2, NetProt2}, Module, OptsClean]),
 	    throw({is_added, R});
 	_ ->
 	    ok
