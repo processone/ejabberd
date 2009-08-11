@@ -169,7 +169,7 @@ ejabberd Development Team
 \gdef\ahrefurl#1{\href{#1}{\texttt{#1}}}
 \gdef\footahref#1#2{#2\footnote{\href{#1}{\texttt{#1}}}}
 \end{latexonly}
-\newcommand{\txepref}[2]{\footahref{http://www.xmpp.org/extensions/xep-#1.html}{#2}}
+\newcommand{\txepref}[2]{\footahref{http://xmpp.org/extensions/xep-#1.html}{#2}}
 \newcommand{\xepref}[1]{\txepref{#1}{XEP-#1}}
 
 \begin{document}
@@ -889,7 +889,7 @@ This is a detailed description of each option allowed by the listening modules:
     commonly on port 5223 for client-to-server communications.
     But this method is nowadays deprecated and not recommended.
     The preferable encryption method is STARTTLS on port 5222, as defined 
-    \footahref{http://www.xmpp.org/specs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
+    \footahref{http://xmpp.org/specs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
     which can be enabled in \ejabberd{} with the option \term{starttls}.
     If this option is set, you should also set the \option{certfile} option.
   \titem{web\_admin} \ind{options!web\_admin}\ind{web admin}This option
@@ -2159,9 +2159,9 @@ You can authenticate users against an LDAP directory. Available options are:
     user's part of a JID. For example, \term{"\%u@example.org"}. The default
     value is \term{"\%u"}.
   \end{description}
-  \titem{ldap\_filter}\ind{options!ldap\_filter}\ind{protocols!RFC 2254: The
-  String Representation of LDAP Search Filters}
-  \footahref{http://www.faqs.org/rfcs/rfc2254.html}{RFC 2254} LDAP filter. The
+  \titem{ldap\_filter}\ind{options!ldap\_filter}\ind{protocols!RFC 4515:
+  LDAP String Representation of Search Filters}
+  \footahref{http://tools.ietf.org/html/rfc4515}{RFC 4515} LDAP filter. The
   default is \term{none}. Example:
   \term{"(\&(objectClass=shadowAccount)(memberOf=Jabber Users))"}. Please, do
   not forget to close brackets and do not use superfluous whitespaces. Also you
@@ -3104,7 +3104,7 @@ Features:
   author, subject and configuration.
 \item \ind{protocols!RFC 5122: Internationalized Resource Identifiers (IRIs) and Uniform Resource Identifiers (URIs) for the Extensible Messaging and Presence Protocol (XMPP)}
   The room JID in the generated HTML is a link to join the room (using
-  \footahref{http://www.xmpp.org/rfcs/rfc5122.html}{XMPP URI}).
+  \footahref{http://xmpp.org/rfcs/rfc5122.html}{XMPP URI}).
 \item Subject and room configuration changes are tracked and displayed.
 \item Joins, leaves, nick changes, kicks, bans and `/me' are tracked and
   displayed, including the reason if available.
@@ -3325,7 +3325,7 @@ their \Jabber{} client, they will be able to:
 \item Allowing or blocking all communications based on JID, group, or
   subscription type (or globally).
 \end{itemize}
-(from \ahrefurl{http://www.xmpp.org/specs/rfc3921.html\#privacy})
+(from \ahrefurl{http://xmpp.org/specs/rfc3921.html\#privacy})
 \end{quote}
 
 Options:
@@ -3562,7 +3562,7 @@ Also define a registration timeout of one hour:
 \ind{modules!\modroster{}}\ind{roster management}\ind{protocols!RFC 3921: XMPP IM}
 
 This module implements roster management as defined in
-\footahref{http://www.xmpp.org/specs/rfc3921.html\#roster}{RFC 3921: XMPP IM}.
+\footahref{http://xmpp.org/specs/rfc3921.html\#roster}{RFC 3921: XMPP IM}.
 It also supports Roster Versioning (\xepref{0237}).
 
 Options:
@@ -3893,7 +3893,7 @@ consists of the following \modvcardldap{}-specific options:
   set the table that maps LDAP attributes to vCard fields. The format is:
   \term{[{Name\_of\_vCard\_field, Pattern, List\_of\_LDAP\_attributes}, ...]}.\ind{protocols!RFC 2426: vCard MIME Directory Profile}
   \term{Name\_of\_vcard\_field} is the type name of the vCard as defined in
-  \footahref{http://www.ietf.org/rfc/rfc2426.txt}{RFC 2426}. \term{Pattern} is a
+  \footahref{http://tools.ietf.org/html/rfc2426}{RFC 2426}. \term{Pattern} is a
   string which contains pattern variables \term{"\%u"}, \term{"\%d"} or
   \term{"\%s"}. \term{List\_of\_LDAP\_attributes} is the list containing LDAP
   attributes. The pattern variables \term{"\%s"} will be sequentially replaced

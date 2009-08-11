@@ -217,7 +217,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </LI><LI CLASS="li-toc"><A HREF="#htoc97">Appendix&#XA0;D&#XA0;&#XA0;Copyright Information</A>
 </LI></UL><!--TOC chapter Introduction-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc1">Chapter&#XA0;1</A>&#XA0;&#XA0;Introduction</H1><!--SEC END --><P>
-<A NAME="intro"></A></P><P><TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang</A>.</P><P><TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
+<A NAME="intro"></A></P><P><TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang/OTP</A>.</P><P><TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc2">1.1</A>&#XA0;&#XA0;Key Features</H2><!--SEC END --><P>
 <A NAME="keyfeatures"></A>
 </P><P><TT>ejabberd</TT> is:
@@ -268,12 +268,12 @@ Internal Authentication.
 </LI><LI CLASS="li-itemize">Others
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Support for virtual hosting.
-</LI><LI CLASS="li-itemize">Compressing XML streams with Stream Compression (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>).
-</LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
+</LI><LI CLASS="li-itemize">Compressing XML streams with Stream Compression (<A HREF="http://xmpp.org/extensions/xep-0138.html">XEP-0138</A>).
+</LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
 </LI><LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</A>.
-</LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
+</LI><LI CLASS="li-itemize"><A HREF="http://xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
+</LI><LI CLASS="li-itemize"><A HREF="http://xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</A>.
+</LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
 </LI><LI CLASS="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
 </LI></UL>
 </LI></UL><P> <A NAME="installing"></A> </P><!--TOC chapter Installing <TT>ejabberd</TT>-->
@@ -339,7 +339,7 @@ GNU Make
 </LI><LI CLASS="li-itemize">Erlang/OTP R12B-4 or higher, R13B or higher.
 </LI><LI CLASS="li-itemize">exmpp 0.9.1 or higher
 </LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
-</LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
+</LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
 </LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
 </LI><LI CLASS="li-itemize">Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section <A HREF="#compilepgsql">3.2.3</A>.
 </LI><LI CLASS="li-itemize">PAM library. Optional. For Pluggable Authentication Modules (PAM). See section <A HREF="#pam">3.1.4</A>.
@@ -667,7 +667,7 @@ Handles incoming s2s connections.<BR>
  Options: <TT>max_stanza_size</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_service</TT></B></DT><DD CLASS="dd-description">
 Interacts with an <A HREF="http://www.ejabberd.im/tutorials-transports">external component</A>
-(as defined in the Jabber Component Protocol (<A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A>).<BR>
+(as defined in the Jabber Component Protocol (<A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A>).<BR>
  Options: <TT>access</TT>, <TT>hosts</TT>,
 <TT>shaper</TT>, <TT>service_check_from</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_http</TT></B></DT><DD CLASS="dd-description">
@@ -685,7 +685,7 @@ To define a certificate file specific for a given domain, use the global option 
 This option can be used with <TT>ejabberd_service</TT> only. It is
 used to disable control on the from field on packets send by an
 external components. The option can be either <TT>true</TT> or
-<TT>false</TT>. The default value is <TT>true</TT> which conforms to <A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A>.
+<TT>false</TT>. The default value is <TT>true</TT> which conforms to <A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A>.
 </DD><DT CLASS="dt-description"><B><TT>{hosts, [Hostnames], [HostOptions]}</TT></B></DT><DD CLASS="dd-description"> 
 The external Jabber component that connects to this <TT>ejabberd_service</TT>
 can serve one or more hostnames.
@@ -698,7 +698,7 @@ as seen in an example below.
 </DD><DT CLASS="dt-description"><B><TT>captcha</TT></B></DT><DD CLASS="dd-description"> 
 Simple web page that allows a user to fill a CAPTCHA challenge (see section <A HREF="#captcha">3.1.8</A>).
 </DD><DT CLASS="dt-description"><B><TT>http_bind</TT></B></DT><DD CLASS="dd-description"> 
-This option enables HTTP Binding (<A HREF="http://www.xmpp.org/extensions/xep-0124.html">XEP-0124</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">XEP-0206</A>) support. HTTP Bind
+This option enables HTTP Binding (<A HREF="http://xmpp.org/extensions/xep-0124.html">XEP-0124</A> and <A HREF="http://xmpp.org/extensions/xep-0206.html">XEP-0206</A>) support. HTTP Bind
 enables access via HTTP requests to <TT>ejabberd</TT> from behind firewalls which
 do not allow outgoing sockets on port 5222.<P>Remember that you must also install and enable the module mod_http_bind.</P><P>If HTTP Bind is enabled, it will be available at
 <CODE>http://server:port/http-bind/</CODE>. Be aware that support for HTTP Bind
@@ -709,7 +709,7 @@ interesting to host a web-based Jabber client such as
 <A HREF="http://www.ejabberd.im/jwchat-localserver">embedded local web server</A>
 or <A HREF="http://www.ejabberd.im/jwchat-apache">Apache</A>).
 </P></DD><DT CLASS="dt-description"><B><TT>http_poll</TT></B></DT><DD CLASS="dd-description"> 
-This option enables HTTP Polling (<A HREF="http://www.xmpp.org/extensions/xep-0025.html">XEP-0025</A>) support. HTTP Polling
+This option enables HTTP Polling (<A HREF="http://xmpp.org/extensions/xep-0025.html">XEP-0025</A>) support. HTTP Polling
 enables access via HTTP requests to <TT>ejabberd</TT> from behind firewalls which
 do not allow outgoing sockets on port 5222.<P>If HTTP Polling is enabled, it will be available at
 <CODE>http://server:port/http-poll/</CODE>. Be aware that support for HTTP Polling
@@ -735,7 +735,7 @@ and you also want <TT>mod_http_bind</TT> to serve the URIs <TT>/http-bind/</TT>,
 use this option: <TT>{request_handlers, [{["a", "b"], mod_foo}, {["http-bind"], mod_http_bind}]}</TT>
 </DD><DT CLASS="dt-description"><B><TT>{service_check_from, true|false}</TT></B></DT><DD CLASS="dd-description">
 By enabling this option, <TT>ejabberd</TT> allows the component to send packets with any arbitrary domain in the &#X2019;from&#X2019; attribute.
-Note that <A HREF="http://www.xmpp.org/extensions/xep-0114.html">XEP-0114</A> requires that the domain must match the hostname of the component.
+Note that <A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A> requires that the domain must match the hostname of the component.
 Only enable this option if you are completely sure you need to enable it.
 Default value: false.
 </DD><DT CLASS="dt-description"><B><TT>{shaper, &lt;access rule&gt;}</TT></B></DT><DD CLASS="dd-description"> This option defines a
@@ -756,7 +756,7 @@ This was the traditional encryption method in the early Jabber software,
 commonly on port 5223 for client-to-server communications.
 But this method is nowadays deprecated and not recommended.
 The preferable encryption method is STARTTLS on port 5222, as defined 
-<A HREF="http://www.xmpp.org/specs/rfc3920.html#tls">RFC 3920: XMPP Core</A>,
+<A HREF="http://xmpp.org/specs/rfc3920.html#tls">RFC 3920: XMPP Core</A>,
 which can be enabled in <TT>ejabberd</TT> with the option <TT>starttls</TT>.
 If this option is set, you should also set the <TT>certfile</TT> option.
 </DD><DT CLASS="dt-description"><B><TT>web_admin</TT></B></DT><DD CLASS="dd-description"> This option
@@ -765,7 +765,7 @@ at <CODE>http://server:port/admin/</CODE>. Login and password are the username a
 password of one of the registered users who are granted access by the
 &#X2018;configure&#X2019; access rule.
 </DD><DT CLASS="dt-description"><B><TT>zlib</TT></B></DT><DD CLASS="dd-description"> This
-option specifies that Zlib stream compression (as defined in <A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>)
+option specifies that Zlib stream compression (as defined in <A HREF="http://xmpp.org/extensions/xep-0138.html">XEP-0138</A>)
 is available on connections to the port. Client connections cannot use
 stream compression and stream encryption simultaneously. Hence, if you
 specify both <TT>starttls</TT> (or <TT>tls</TT>) and <TT>zlib</TT>, the latter
@@ -1216,7 +1216,7 @@ can be seen by Jabber clients. If a Jabber client does not support
 </PRE><P>Appendix <A HREF="#i18ni10n">A</A> provides more details about internationalization and localization.</P><P> <A NAME="captcha"></A> </P><!--TOC subsection CAPTCHA-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc28">3.1.8</A>&#XA0;&#XA0;<A HREF="#captcha">CAPTCHA</A></H3><!--SEC END --><P> <A NAME="captcha"></A> 
 </P><P>Some <TT>ejabberd</TT> modules can be configured to require a CAPTCHA challenge on certain actions.
-If the client does not support CAPTCHA Forms (<A HREF="http://www.xmpp.org/extensions/xep-0158.html">XEP-0158</A>),
+If the client does not support CAPTCHA Forms (<A HREF="http://xmpp.org/extensions/xep-0158.html">XEP-0158</A>),
 a web link is provided so the user can fill the challenge in a web browser.</P><P>An example script is provided that generates the image
 using ImageMagick&#X2019;s Convert program.</P><P>The configurable options are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -1616,7 +1616,7 @@ user&#X2019;s part of a JID. For example, <TT>"%u@example.org"</TT>. The default
 value is <TT>"%u"</TT>.
 </DD></DL>
 </DD><DT CLASS="dt-description"><B><TT>ldap_filter</TT></B></DT><DD CLASS="dd-description">
-<A HREF="http://www.faqs.org/rfcs/rfc2254.html">RFC 2254</A> LDAP filter. The
+<A HREF="http://tools.ietf.org/html/rfc4515">RFC 4515</A> LDAP filter. The
 default is <TT>none</TT>. Example:
 <TT>"(&amp;(objectClass=shadowAccount)(memberOf=Jabber Users))"</TT>. Please, do
 not forget to close brackets and do not use superfluous whitespaces. Also you
@@ -1775,37 +1775,37 @@ all entries end with a comma:
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc38">3.3.1</A>&#XA0;&#XA0;<A HREF="#modoverview">Modules Overview</A></H3><!--SEC END --><P> <A NAME="modoverview"></A> 
 </P><P>The following table lists all modules included in <TT>ejabberd</TT>.</P><BLOCKQUOTE CLASS="table"><DIV CLASS="center"><DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV>
 <TABLE BORDER=1 CELLSPACING=0 CELLPADDING=1><TR><TD ALIGN=left NOWRAP><B>Module</B></TD><TD ALIGN=left NOWRAP><B>Feature</B></TD><TD ALIGN=left NOWRAP><B>Dependencies</B></TD></TR>
-<TR><TD ALIGN=left NOWRAP><TT>mod_adhoc</TT></TD><TD ALIGN=left NOWRAP>Ad-Hoc Commands (<A HREF="http://www.xmpp.org/extensions/xep-0050.html">XEP-0050</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><TT>mod_adhoc</TT></TD><TD ALIGN=left NOWRAP>Ad-Hoc Commands (<A HREF="http://xmpp.org/extensions/xep-0050.html">XEP-0050</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modannounce"><TT>mod_announce</TT></A></TD><TD ALIGN=left NOWRAP>Manage announcements</TD><TD ALIGN=left NOWRAP>recommends <TT>mod_adhoc</TT></TD></TR>
-<TR><TD ALIGN=left NOWRAP><TT>mod_caps</TT></TD><TD ALIGN=left NOWRAP>Entity Capabilities (<A HREF="http://www.xmpp.org/extensions/xep-0115.html">XEP-0115</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><TT>mod_caps</TT></TD><TD ALIGN=left NOWRAP>Entity Capabilities (<A HREF="http://xmpp.org/extensions/xep-0115.html">XEP-0115</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><TT>mod_configure</TT></TD><TD ALIGN=left NOWRAP>Server configuration using Ad-Hoc</TD><TD ALIGN=left NOWRAP><TT>mod_adhoc</TT></TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#moddisco"><TT>mod_disco</TT></A></TD><TD ALIGN=left NOWRAP>Service Discovery (<A HREF="http://www.xmpp.org/extensions/xep-0030.html">XEP-0030</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#moddisco"><TT>mod_disco</TT></A></TD><TD ALIGN=left NOWRAP>Service Discovery (<A HREF="http://xmpp.org/extensions/xep-0030.html">XEP-0030</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modecho"><TT>mod_echo</TT></A></TD><TD ALIGN=left NOWRAP>Echoes Jabber packets</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modlast"><TT>mod_last</TT></A></TD><TD ALIGN=left NOWRAP>Last Activity (<A HREF="http://www.xmpp.org/extensions/xep-0012.html">XEP-0012</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modlast"><TT>mod_last_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Last Activity (<A HREF="http://www.xmpp.org/extensions/xep-0012.html">XEP-0012</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modmuc"><TT>mod_muc</TT></A></TD><TD ALIGN=left NOWRAP>Multi-User Chat (<A HREF="http://www.xmpp.org/extensions/xep-0045.html">XEP-0045</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modlast"><TT>mod_last</TT></A></TD><TD ALIGN=left NOWRAP>Last Activity (<A HREF="http://xmpp.org/extensions/xep-0012.html">XEP-0012</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modlast"><TT>mod_last_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Last Activity (<A HREF="http://xmpp.org/extensions/xep-0012.html">XEP-0012</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modmuc"><TT>mod_muc</TT></A></TD><TD ALIGN=left NOWRAP>Multi-User Chat (<A HREF="http://xmpp.org/extensions/xep-0045.html">XEP-0045</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modmuclog"><TT>mod_muc_log</TT></A></TD><TD ALIGN=left NOWRAP>Multi-User Chat room logging</TD><TD ALIGN=left NOWRAP><TT>mod_muc</TT></TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://www.xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://www.xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modping"><TT>mod_ping</TT></A></TD><TD ALIGN=left NOWRAP>XMPP Ping and periodic keepalives (<A HREF="http://www.xmpp.org/extensions/xep-0199.html">XEP-0199</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modping"><TT>mod_ping</TT></A></TD><TD ALIGN=left NOWRAP>XMPP Ping and periodic keepalives (<A HREF="http://xmpp.org/extensions/xep-0199.html">XEP-0199</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivacy"><TT>mod_privacy</TT></A></TD><TD ALIGN=left NOWRAP>Blocking Communication (XMPP IM)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivacy"><TT>mod_privacy_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Blocking Communication (XMPP IM)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://www.xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://www.xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modproxy"><TT>mod_proxy65</TT></A></TD><TD ALIGN=left NOWRAP>SOCKS5 Bytestreams (<A HREF="http://www.xmpp.org/extensions/xep-0065.html">XEP-0065</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modpubsub"><TT>mod_pubsub</TT></A></TD><TD ALIGN=left NOWRAP>Pub-Sub (<A HREF="http://www.xmpp.org/extensions/xep-0060.html">XEP-0060</A>), PEP (<A HREF="http://www.xmpp.org/extensions/xep-0163.html">XEP-0163</A>)</TD><TD ALIGN=left NOWRAP><TT>mod_caps</TT></TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modregister"><TT>mod_register</TT></A></TD><TD ALIGN=left NOWRAP>In-Band Registration (<A HREF="http://www.xmpp.org/extensions/xep-0077.html">XEP-0077</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modproxy"><TT>mod_proxy65</TT></A></TD><TD ALIGN=left NOWRAP>SOCKS5 Bytestreams (<A HREF="http://xmpp.org/extensions/xep-0065.html">XEP-0065</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modpubsub"><TT>mod_pubsub</TT></A></TD><TD ALIGN=left NOWRAP>Pub-Sub (<A HREF="http://xmpp.org/extensions/xep-0060.html">XEP-0060</A>), PEP (<A HREF="http://xmpp.org/extensions/xep-0163.html">XEP-0163</A>)</TD><TD ALIGN=left NOWRAP><TT>mod_caps</TT></TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modregister"><TT>mod_register</TT></A></TD><TD ALIGN=left NOWRAP>In-Band Registration (<A HREF="http://xmpp.org/extensions/xep-0077.html">XEP-0077</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modroster"><TT>mod_roster</TT></A></TD><TD ALIGN=left NOWRAP>Roster management (XMPP IM)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modroster"><TT>mod_roster_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Roster management (XMPP IM)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modservicelog"><TT>mod_service_log</TT></A></TD><TD ALIGN=left NOWRAP>Copy user messages to logger service</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modsharedroster"><TT>mod_shared_roster</TT></A></TD><TD ALIGN=left NOWRAP>Shared roster management</TD><TD ALIGN=left NOWRAP><TT>mod_roster</TT> or</TD></TR>
 <TR><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP><TT>mod_roster_odbc</TT></TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modstats"><TT>mod_stats</TT></A></TD><TD ALIGN=left NOWRAP>Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modtime"><TT>mod_time</TT></A></TD><TD ALIGN=left NOWRAP>Entity Time (<A HREF="http://www.xmpp.org/extensions/xep-0202.html">XEP-0202</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modvcard"><TT>mod_vcard</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://www.xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modvcardldap"><TT>mod_vcard_ldap</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://www.xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>LDAP server</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modvcard"><TT>mod_vcard_odbc</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://www.xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modversion"><TT>mod_version</TT></A></TD><TD ALIGN=left NOWRAP>Software Version (<A HREF="http://www.xmpp.org/extensions/xep-0092.html">XEP-0092</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modstats"><TT>mod_stats</TT></A></TD><TD ALIGN=left NOWRAP>Statistics Gathering (<A HREF="http://xmpp.org/extensions/xep-0039.html">XEP-0039</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modtime"><TT>mod_time</TT></A></TD><TD ALIGN=left NOWRAP>Entity Time (<A HREF="http://xmpp.org/extensions/xep-0202.html">XEP-0202</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modvcard"><TT>mod_vcard</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modvcardldap"><TT>mod_vcard_ldap</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>LDAP server</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modvcard"><TT>mod_vcard_odbc</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modversion"><TT>mod_version</TT></A></TD><TD ALIGN=left NOWRAP>Software Version (<A HREF="http://xmpp.org/extensions/xep-0092.html">XEP-0092</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 </TABLE>
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><UL CLASS="itemize"><LI CLASS="li-itemize">
 (*) This module requires a supported database. For a list of supported databases, see section&#XA0;<A HREF="#database">3.2</A>.
@@ -1955,11 +1955,11 @@ disabled for instances of <TT>ejabberd</TT> with hundreds of thousands users.</P
 
 
 
-</P><P>This module adds support for Service Discovery (<A HREF="http://www.xmpp.org/extensions/xep-0030.html">XEP-0030</A>). With
+</P><P>This module adds support for Service Discovery (<A HREF="http://xmpp.org/extensions/xep-0030.html">XEP-0030</A>). With
 this module enabled, services on your server can be discovered by
 Jabber clients. Note that <TT>ejabberd</TT> has no modules with support
-for the superseded Jabber Browsing (<A HREF="http://www.xmpp.org/extensions/xep-0011.html">XEP-0011</A>) and Agent Information
-(<A HREF="http://www.xmpp.org/extensions/xep-0094.html">XEP-0094</A>). Accordingly, Jabber clients need to have support for
+for the superseded Jabber Browsing (<A HREF="http://xmpp.org/extensions/xep-0011.html">XEP-0011</A>) and Agent Information
+(<A HREF="http://xmpp.org/extensions/xep-0094.html">XEP-0094</A>). Accordingly, Jabber clients need to have support for
 the newer Service Discovery protocol if you want them be able to discover
 the services you offer.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -1970,7 +1970,7 @@ the processing discipline for Service Discovery (<TT>http://jabber.org/protocol/
 you can specify a list of extra domains that are added to the Service Discovery item list.
 </DD><DT CLASS="dt-description"><B><TT>{server_info, [ {Modules, Field, [Value]} ]}</TT></B></DT><DD CLASS="dd-description"> 
 Specify additional information about the server,
-as described in Contact Addresses for XMPP Services (<A HREF="http://www.xmpp.org/extensions/xep-0157.html">XEP-0157</A>).
+as described in Contact Addresses for XMPP Services (<A HREF="http://xmpp.org/extensions/xep-0157.html">XEP-0157</A>).
 <TT>Modules</TT> can be the keyword &#X2018;all&#X2019;, 
 in which case the information is reported in all the services;
 or a list of <TT>ejabberd</TT> modules, 
@@ -2046,7 +2046,7 @@ of them all?
 </PRE><P> <A NAME="modhttpbind"></A> </P><!--TOC subsection <TT>mod_http_bind</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc43">3.3.6</A>&#XA0;&#XA0;<A HREF="#modhttpbind"><TT>mod_http_bind</TT></A></H3><!--SEC END --><P> <A NAME="modhttpbind"></A> 
 </P><P>This module implements XMPP over Bosh (formerly known as HTTP Binding)
-as defined in <A HREF="http://www.xmpp.org/extensions/xep-0124.html">XEP-0124</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">XEP-0206</A>.
+as defined in <A HREF="http://xmpp.org/extensions/xep-0124.html">XEP-0124</A> and <A HREF="http://xmpp.org/extensions/xep-0206.html">XEP-0206</A>.
 It extends ejabberd&#X2019;s built in HTTP service with a configurable
 resource at which this service will be hosted.</P><P>To use HTTP-Binding, enable the module:
 </P><PRE CLASS="verbatim">{modules,
@@ -2156,7 +2156,7 @@ To use this module you must enable it:
 ]}.
 </PRE><P> <A NAME="modlast"></A> </P><!--TOC subsection <TT>mod_last</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc45">3.3.8</A>&#XA0;&#XA0;<A HREF="#modlast"><TT>mod_last</TT></A></H3><!--SEC END --><P> <A NAME="modlast"></A> 
-</P><P>This module adds support for Last Activity (<A HREF="http://www.xmpp.org/extensions/xep-0012.html">XEP-0012</A>). It can be used to
+</P><P>This module adds support for Last Activity (<A HREF="http://xmpp.org/extensions/xep-0012.html">XEP-0012</A>). It can be used to
 discover when a disconnected user last accessed the server, to know when a
 connected user was last active on the server, or to query the uptime of the
 <TT>ejabberd</TT> server.</P><P>Options:
@@ -2165,7 +2165,7 @@ connected user was last active on the server, or to query the uptime of the
 the processing discipline for Last activity (<TT>jabber:iq:last</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modmuc"></A> </P><!--TOC subsection <TT>mod_muc</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc46">3.3.9</A>&#XA0;&#XA0;<A HREF="#modmuc"><TT>mod_muc</TT></A></H3><!--SEC END --><P> <A NAME="modmuc"></A> 
-</P><P>This module provides a Multi-User Chat (<A HREF="http://www.xmpp.org/extensions/xep-0045.html">XEP-0045</A>) service.
+</P><P>This module provides a Multi-User Chat (<A HREF="http://xmpp.org/extensions/xep-0045.html">XEP-0045</A>) service.
 Users can discover existing rooms, join or create them.
 Occupants of a room can chat in public or have private chats.</P><P>Some of the features of Multi-User Chat:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -2397,7 +2397,7 @@ Room details are added on top of each page: room title, JID,
 author, subject and configuration.
 </LI><LI CLASS="li-itemize">
 The room JID in the generated HTML is a link to join the room (using
-<A HREF="http://www.xmpp.org/rfcs/rfc5122.html">XMPP URI</A>).
+<A HREF="http://xmpp.org/rfcs/rfc5122.html">XMPP URI</A>).
 </LI><LI CLASS="li-itemize">Subject and room configuration changes are tracked and displayed.
 </LI><LI CLASS="li-itemize">Joins, leaves, nick changes, kicks, bans and &#X2018;/me&#X2019; are tracked and
 displayed, including the reason if available.
@@ -2508,7 +2508,7 @@ top link will be the default <CODE>&lt;a href="/"&gt;Home&lt;/a&gt;</CODE>.
  ]}.
 </PRE></LI></UL><P> <A NAME="modoffline"></A> </P><!--TOC subsection <TT>mod_offline</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc48">3.3.11</A>&#XA0;&#XA0;<A HREF="#modoffline"><TT>mod_offline</TT></A></H3><!--SEC END --><P> <A NAME="modoffline"></A> 
-</P><P>This module implements offline message storage (<A HREF="http://www.xmpp.org/extensions/xep-0160.html">XEP-0160</A>).
+</P><P>This module implements offline message storage (<A HREF="http://xmpp.org/extensions/xep-0160.html">XEP-0160</A>).
 This means that all messages
 sent to an offline user will be stored on the server until that user comes
 online again. Thus it is very similar to how email works. Note that
@@ -2540,7 +2540,7 @@ and all the other users up to 100.
  ]}.
 </PRE><P> <A NAME="modping"></A> </P><!--TOC subsection <TT>mod_ping</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc49">3.3.12</A>&#XA0;&#XA0;<A HREF="#modping"><TT>mod_ping</TT></A></H3><!--SEC END --><P> <A NAME="modping"></A> 
-</P><P>This module implements support for XMPP Ping (<A HREF="http://www.xmpp.org/extensions/xep-0199.html">XEP-0199</A>) and periodic keepalives.
+</P><P>This module implements support for XMPP Ping (<A HREF="http://xmpp.org/extensions/xep-0199.html">XEP-0199</A>) and periodic keepalives.
 When this module is enabled ejabberd responds correctly to
 ping requests, as defined in the protocol.</P><P>Configuration options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -2589,26 +2589,26 @@ or subscription type (or globally).
 </LI><LI CLASS="li-itemize">Allowing or blocking all communications based on JID, group, or
 subscription type (or globally).
 </LI></UL>
-(from <A HREF="http://www.xmpp.org/specs/rfc3921.html#privacy"><TT>http://www.xmpp.org/specs/rfc3921.html#privacy</TT></A>)
+(from <A HREF="http://xmpp.org/specs/rfc3921.html#privacy"><TT>http://xmpp.org/specs/rfc3921.html#privacy</TT></A>)
 </BLOCKQUOTE><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Blocking Communication (<TT>jabber:iq:privacy</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modprivate"></A> </P><!--TOC subsection <TT>mod_private</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc51">3.3.14</A>&#XA0;&#XA0;<A HREF="#modprivate"><TT>mod_private</TT></A></H3><!--SEC END --><P> <A NAME="modprivate"></A> 
-</P><P>This module adds support for Private XML Storage (<A HREF="http://www.xmpp.org/extensions/xep-0049.html">XEP-0049</A>):
+</P><P>This module adds support for Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>):
 </P><BLOCKQUOTE CLASS="quote">
 Using this method, Jabber entities can store private data on the server and
 retrieve it whenever necessary. The data stored might be anything, as long as
 it is valid XML. One typical usage for this namespace is the server-side storage
-of client-specific preferences; another is Bookmark Storage (<A HREF="http://www.xmpp.org/extensions/xep-0048.html">XEP-0048</A>).
+of client-specific preferences; another is Bookmark Storage (<A HREF="http://xmpp.org/extensions/xep-0048.html">XEP-0048</A>).
 </BLOCKQUOTE><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Private XML Storage (<TT>jabber:iq:private</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modproxy"></A> </P><!--TOC subsection <TT>mod_proxy65</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc52">3.3.15</A>&#XA0;&#XA0;<A HREF="#modproxy"><TT>mod_proxy65</TT></A></H3><!--SEC END --><P> <A NAME="modproxy"></A> 
-</P><P>This module implements SOCKS5 Bytestreams (<A HREF="http://www.xmpp.org/extensions/xep-0065.html">XEP-0065</A>).
+</P><P>This module implements SOCKS5 Bytestreams (<A HREF="http://xmpp.org/extensions/xep-0065.html">XEP-0065</A>).
 It allows <TT>ejabberd</TT> to act as a file transfer proxy between two
 XMPP clients.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -2663,9 +2663,9 @@ The simpliest configuration of the module:
  ]}.
 </PRE></LI></UL><P> <A NAME="modpubsub"></A> </P><!--TOC subsection <TT>mod_pubsub</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc53">3.3.16</A>&#XA0;&#XA0;<A HREF="#modpubsub"><TT>mod_pubsub</TT></A></H3><!--SEC END --><P> <A NAME="modpubsub"></A> 
-</P><P>This module offers a Publish-Subscribe Service (<A HREF="http://www.xmpp.org/extensions/xep-0060.html">XEP-0060</A>).
+</P><P>This module offers a Publish-Subscribe Service (<A HREF="http://xmpp.org/extensions/xep-0060.html">XEP-0060</A>).
 The functionality in <TT>mod_pubsub</TT> can be extended using plugins.
-The plugin that implements PEP (Personal Eventing via Pubsub) (<A HREF="http://www.xmpp.org/extensions/xep-0163.html">XEP-0163</A>)
+The plugin that implements PEP (Personal Eventing via Pubsub) (<A HREF="http://xmpp.org/extensions/xep-0163.html">XEP-0163</A>)
 is enabled in the default ejabberd configuration file,
 and it requires <TT>mod_caps</TT>.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -2709,7 +2709,7 @@ The following example will use node_tune instead of node_pep for every PEP node 
  ]}.
 </PRE><P> <A NAME="modregister"></A> </P><!--TOC subsection <TT>mod_register</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc54">3.3.17</A>&#XA0;&#XA0;<A HREF="#modregister"><TT>mod_register</TT></A></H3><!--SEC END --><P> <A NAME="modregister"></A> 
-</P><P>This module adds support for In-Band Registration (<A HREF="http://www.xmpp.org/extensions/xep-0077.html">XEP-0077</A>). This protocol
+</P><P>This module adds support for In-Band Registration (<A HREF="http://xmpp.org/extensions/xep-0077.html">XEP-0077</A>). This protocol
 enables end users to use a Jabber client to:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Register a new account on the server.
@@ -2783,8 +2783,8 @@ Also define a registration timeout of one hour:
 </PRE></LI></UL><P> <A NAME="modroster"></A> </P><!--TOC subsection <TT>mod_roster</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc55">3.3.18</A>&#XA0;&#XA0;<A HREF="#modroster"><TT>mod_roster</TT></A></H3><!--SEC END --><P> <A NAME="modroster"></A> 
 </P><P>This module implements roster management as defined in
-<A HREF="http://www.xmpp.org/specs/rfc3921.html#roster">RFC 3921: XMPP IM</A>.
-It also supports Roster Versioning (<A HREF="http://www.xmpp.org/extensions/xep-0237.html">XEP-0237</A>).</P><P>Options:
+<A HREF="http://xmpp.org/specs/rfc3921.html#roster">RFC 3921: XMPP IM</A>.
+It also supports Roster Versioning (<A HREF="http://xmpp.org/extensions/xep-0237.html">XEP-0237</A>).</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Roster Management (<TT>jabber:iq:roster</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
@@ -2913,7 +2913,7 @@ roster groups as shown in the following table:
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE>
 </LI></UL><P> <A NAME="modstats"></A> </P><!--TOC subsection <TT>mod_stats</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc58">3.3.21</A>&#XA0;&#XA0;<A HREF="#modstats"><TT>mod_stats</TT></A></H3><!--SEC END --><P> <A NAME="modstats"></A> 
-</P><P>This module adds support for Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>). This protocol
+</P><P>This module adds support for Statistics Gathering (<A HREF="http://xmpp.org/extensions/xep-0039.html">XEP-0039</A>). This protocol
 allows you to retrieve next statistics from your <TT>ejabberd</TT> deployment:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Total number of registered users on the current virtual host (users/total).
@@ -2945,7 +2945,7 @@ by sending:
 &lt;/iq&gt;
 </PRE></LI></UL><P> <A NAME="modtime"></A> </P><!--TOC subsection <TT>mod_time</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc59">3.3.22</A>&#XA0;&#XA0;<A HREF="#modtime"><TT>mod_time</TT></A></H3><!--SEC END --><P> <A NAME="modtime"></A> 
-</P><P>This module features support for Entity Time (<A HREF="http://www.xmpp.org/extensions/xep-0202.html">XEP-0202</A>). By using this XEP,
+</P><P>This module features support for Entity Time (<A HREF="http://xmpp.org/extensions/xep-0202.html">XEP-0202</A>). By using this XEP,
 you are able to discover the time at another entity&#X2019;s location.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>iqdisc</TT></B></DT><DD CLASS="dd-description"> This specifies
@@ -2953,7 +2953,7 @@ the processing discipline for Entity Time (<TT>jabber:iq:time</TT>) IQ queries (
 </DD></DL><P> <A NAME="modvcard"></A> </P><!--TOC subsection <TT>mod_vcard</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc60">3.3.23</A>&#XA0;&#XA0;<A HREF="#modvcard"><TT>mod_vcard</TT></A></H3><!--SEC END --><P> <A NAME="modvcard"></A> 
 </P><P>This module allows end users to store and retrieve their vCard, and to retrieve
-other users vCards, as defined in vcard-temp (<A HREF="http://www.xmpp.org/extensions/xep-0054.html">XEP-0054</A>). The module also
+other users vCards, as defined in vcard-temp (<A HREF="http://xmpp.org/extensions/xep-0054.html">XEP-0054</A>). The module also
 implements an uncomplicated Jabber User Directory based on the vCards of
 these users. Moreover, it enables the server to send its vCard when queried.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -3040,7 +3040,7 @@ all search results are reported. The default value is <TT>30</TT>.
 set the table that maps LDAP attributes to vCard fields. The format is:
 <TT>[</TT><TT>Name_of_vCard_field, Pattern, List_of_LDAP_attributes</TT><TT>, ...]</TT>.
 <TT>Name_of_vcard_field</TT> is the type name of the vCard as defined in
-<A HREF="http://www.ietf.org/rfc/rfc2426.txt">RFC 2426</A>. <TT>Pattern</TT> is a
+<A HREF="http://tools.ietf.org/html/rfc2426">RFC 2426</A>. <TT>Pattern</TT> is a
 string which contains pattern variables <TT>"%u"</TT>, <TT>"%d"</TT> or
 <TT>"%s"</TT>. <TT>List_of_LDAP_attributes</TT> is the list containing LDAP
 attributes. The pattern variables <TT>"%s"</TT> will be sequentially replaced
@@ -3183,7 +3183,7 @@ searching his info in LDAP.</P></LI><LI CLASS="li-itemize"><TT>ldap_vcard_map</T
  ]},
 </PRE></LI></UL><P> <A NAME="modversion"></A> </P><!--TOC subsection <TT>mod_version</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc62">3.3.25</A>&#XA0;&#XA0;<A HREF="#modversion"><TT>mod_version</TT></A></H3><!--SEC END --><P> <A NAME="modversion"></A> 
-</P><P>This module implements Software Version (<A HREF="http://www.xmpp.org/extensions/xep-0092.html">XEP-0092</A>). Consequently, it
+</P><P>This module implements Software Version (<A HREF="http://xmpp.org/extensions/xep-0092.html">XEP-0092</A>). Consequently, it
 answers <TT>ejabberd</TT>&#X2019;s version when queried.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>show_os</TT></B></DT><DD CLASS="dd-description">Should the operating system be revealed or not.
@@ -3356,7 +3356,7 @@ This is not recommended for big databases, as it will consume much time,
 memory and processor. In that case it&#X2019;s preferable to use <TT>backup</TT> and <TT>install_fallback</TT>.
 </DD><DT CLASS="dt-description"><B><TT>import_piefxis, export_piefxis, export_piefxis_host</TT></B></DT><DD CLASS="dd-description"> 
 These options can be used to migrate accounts
-using <A HREF="http://www.xmpp.org/extensions/xep-0227.html">XEP-0227</A> formatted XML files
+using <A HREF="http://xmpp.org/extensions/xep-0227.html">XEP-0227</A> formatted XML files
 from/to other Jabber/XMPP servers
 or move users of a vhost to another ejabberd installation.
 See also 
@@ -3492,7 +3492,7 @@ See section <A HREF="#erlangconfiguration">4.1.2</A>.</P><P> <A NAME="adhoccomma
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc71">4.4</A>&#XA0;&#XA0;<A HREF="#adhoccommands">Ad-hoc Commands</A></H2><!--SEC END --><P> <A NAME="adhoccommands"></A> </P><P>If you enable <TT>mod_configure</TT> and <TT>mod_adhoc</TT>,
 you can perform several administrative tasks in <TT>ejabberd</TT>
 with a Jabber client.
-The client must support Ad-Hoc Commands (<A HREF="http://www.xmpp.org/extensions/xep-0050.html">XEP-0050</A>),
+The client must support Ad-Hoc Commands (<A HREF="http://xmpp.org/extensions/xep-0050.html">XEP-0050</A>),
 and you must login in the Jabber server with
 an account with proper privileges.</P><P> <A NAME="changeerlangnodename"></A> </P><!--TOC section Change Computer Hostname-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc72">4.5</A>&#XA0;&#XA0;<A HREF="#changeerlangnodename">Change Computer Hostname</A></H2><!--SEC END --><P> <A NAME="changeerlangnodename"></A> </P><P><TT>ejabberd</TT> uses the distributed Mnesia database.
