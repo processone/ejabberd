@@ -96,6 +96,7 @@ AC_CONFIG_FILES([Makefile
                  $make_eldap
                  $make_pam
                  $make_web
+                 stun/Makefile
                  $make_tls
                  $make_odbc
                  $make_ejabberd_zlib])
