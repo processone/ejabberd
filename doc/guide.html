@@ -630,7 +630,7 @@ other different modules for some specific virtual hosts:
  ]}.
 </PRE><P> <A NAME="listened"></A> </P><!--TOC subsection Listening Ports-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc23">3.1.3</A>&#XA0;&#XA0;<A HREF="#listened">Listening Ports</A></H3><!--SEC END --><P> <A NAME="listened"></A> 
-</P><P>The option <TT>listen</TT> defines for which addresses, protocols and ports <TT>ejabberd</TT>
+</P><P>The option <TT>listen</TT> defines for which ports, addresses and network protocols <TT>ejabberd</TT>
 will listen and what services will be run on them. Each element of the list is a
 tuple with the following elements:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -651,8 +651,7 @@ Port number. Optionally also the IP address and/or a transport protocol.
 </PRE><P> <A NAME="listened-port"></A> </P><!--TOC subsubsection Port Number, IP Address and Transport Protocol-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#listened-port">Port Number, IP Address and Transport Protocol</A></H4><!--SEC END --><P> <A NAME="listened-port"></A> </P><P>The port number defines which port to listen for incoming connections.
 It can be a Jabber/XMPP standard port 
-(see section <A HREF="#firewall">5.1</A>) or any other valid port number.</P><P>The transport protocol is always <TT>tcp</TT> or <TT>udp</TT> if defined.
-Default is <TT>tcp</TT>.</P><P>The IP address can be represented with a string
+(see section <A HREF="#firewall">5.1</A>) or any other valid port number.</P><P>The IP address can be represented with a string
 or an Erlang tuple with decimal or hexadecimal numbers.
 The socket will listen only in that network interface.
 It is possible to specify a generic address,
@@ -666,7 +665,8 @@ Depending in the type of the IP address, IPv4 or IPv6 will be used.</P><P>Some e
 </LI><LI CLASS="li-itemize"><CODE>{10, 11, 12, 13}</CODE> is the IPv4 address <CODE>10.11.12.13</CODE>
 </LI><LI CLASS="li-itemize"><CODE>{0, 0, 0, 0, 0, 65535, 32512, 1}</CODE> is the IPv6 address <CODE>::FFFF:127.0.0.1/128</CODE>
 </LI><LI CLASS="li-itemize"><CODE>{16#fdca, 16#8ab6, 16#a243, 16#75ef, 0, 0, 0, 1}</CODE> is the IPv6 address <CODE>FDCA:8AB6:A243:75EF::1/128</CODE>
-</LI></UL><P> <A NAME="listened-module"></A> </P><!--TOC subsubsection Listening Module-->
+</LI></UL><P>The transport protocol can be <TT>tcp</TT> or <TT>udp</TT>.
+Default is <TT>tcp</TT>.</P><P> <A NAME="listened-module"></A> </P><!--TOC subsubsection Listening Module-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#listened-module">Listening Module</A></H4><!--SEC END --><P> <A NAME="listened-module"></A> </P><P>
 The available modules, their purpose and the options allowed by each one are:
 </P><DL CLASS="description"><DT CLASS="dt-description">

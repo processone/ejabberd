@@ -54,10 +54,12 @@
 - Check certfiles are readable on server start and listener start
 - Config file management mix file reading and sanity check
 - Include example PAM configuration file: ejabberd.pam
+- New ejabberd listener: ejabberd_stun
 - Support to bind the same port to multiple interfaces
 - New syntax to specify the IP address and IPv6 in listeners
   configuration. The old options {ip,{1,2,3,4}} and inet6 are
   supported even if they aren't documented.
+- New syntax to specify the network protocol: tcp or udp
 - Report error at startup if a listener module isn't available
 - Only listen in a port when actually ready to serve requests
 
@@ -86,6 +88,9 @@
 * HTTP Binding and HTTP Polling
 - HTTP-Bind: allow configuration of max_inactivity timeout
 - HTTP-Poll: turn session timeout into a config file parameter
+
+* Jingle
+- STUN server that facilitates the client-to-client negotiation process
 
 * LDAP
 - Faster reconnection to LDAP servers
@@ -159,6 +164,7 @@
 - Added XEP-0085 Chat State Notifications
 - Added XEP-0157 Contact Addresses for XMPP Services
 - Added XEP-0158 CAPTCHA Forms (in MUC rooms)
+- Added STUN server, for XEP-0176: Jingle ICE-UDP Transport Method
 - Added XEP-0199 XMPP Ping
 - Added XEP-0202 Entity Time
 - Added XEP-0203 Delayed Delivery

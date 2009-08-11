@@ -734,7 +734,7 @@ other different modules for some specific virtual hosts:
 \makesubsection{listened}{Listening Ports}
 \ind{options!listen}
 
-The option \option{listen} defines for which addresses, protocols and ports \ejabberd{}
+The option \option{listen} defines for which ports, addresses and network protocols \ejabberd{}
 will listen and what services will be run on them. Each element of the list is a
 tuple with the following elements:
 \begin{itemize}
@@ -767,9 +767,6 @@ The port number defines which port to listen for incoming connections.
 It can be a Jabber/XMPP standard port 
 (see section \ref{firewall}) or any other valid port number.
 
-The transport protocol is always \term{tcp} or \term{udp} if defined.
-Default is \term{tcp}.
-
 The IP address can be represented with a string
 or an Erlang tuple with decimal or hexadecimal numbers.
 The socket will listen only in that network interface.
@@ -787,6 +784,9 @@ Some example values for IP address:
 \item \verb|{0, 0, 0, 0, 0, 65535, 32512, 1}| is the IPv6 address \verb|::FFFF:127.0.0.1/128|
 \item \verb|{16#fdca, 16#8ab6, 16#a243, 16#75ef, 0, 0, 0, 1}| is the IPv6 address \verb|FDCA:8AB6:A243:75EF::1/128|
 \end{itemize}
+
+The transport protocol can be \term{tcp} or \term{udp}.
+Default is \term{tcp}.
 
 
 \makesubsubsection{listened-module}{Listening Module}
