@@ -9,28 +9,28 @@ msgstr ""
 "X-Additional-Translator: Juraj Michalek\n"
 "X-Additional-Translator: SkLUG\n"
 
-#: ejabberd_c2s.erl:358 ejabberd_c2s.erl:662
+#: ejabberd_c2s.erl:364 ejabberd_c2s.erl:668
 msgid "Use of STARTTLS required"
 msgstr "Použitie STARTTLS je vyžadované"
 
-#: ejabberd_c2s.erl:442
+#: ejabberd_c2s.erl:448
 msgid "No resource provided"
 msgstr "Nebol poskytnutý žiadny zdroj"
 
-#: ejabberd_c2s.erl:1067
+#: ejabberd_c2s.erl:1073
 msgid "Replaced by new connection"
 msgstr "Nahradené novým spojením"
 
-#: ejabberd_captcha.erl:74 ejabberd_captcha.erl:106
+#: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
 #, fuzzy
 msgid "Enter the text you see"
 msgstr "Zadajte cestu k textovému súboru"
 
-#: ejabberd_captcha.erl:78
+#: ejabberd_captcha.erl:97
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
 
-#: ejabberd_captcha.erl:212
+#: ejabberd_captcha.erl:235
 msgid "The captcha is valid."
 msgstr ""
 
@@ -112,7 +112,7 @@ msgstr "Zmazať správu dňa na všetkých serveroch"
 msgid "Configuration"
 msgstr "Konfigurácia"
 
-#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1721
+#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1862
 msgid "Database"
 msgstr "Databáza"
 
@@ -124,7 +124,7 @@ msgstr "Spustiť moduly"
 msgid "Stop Modules"
 msgstr "Zastaviť moduly"
 
-#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1722
+#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1863
 msgid "Backup"
 msgstr "Zálohovať"
 
@@ -153,7 +153,7 @@ msgid "Shut Down Service"
 msgstr "Vypnúť službu"
 
 #: mod_configure.erl:145 mod_configure.erl:486 mod_configure.erl:1165
-#: web/ejabberd_web_admin.erl:1371
+#: web/ejabberd_web_admin.erl:1508
 msgid "Add User"
 msgstr "Pridať používateľa"
 
@@ -190,15 +190,13 @@ msgstr "Zobraziť počet registrovaných užívateľov"
 msgid "Get Number of Online Users"
 msgstr "Zobraziť počet pripojených užívateľov"
 
-#: mod_configure.erl:163 mod_configure.erl:477 web/ejabberd_web_admin.erl:631
-#: web/ejabberd_web_admin.erl:649 web/ejabberd_web_admin.erl:706
-#: web/ejabberd_web_admin.erl:746
+#: mod_configure.erl:163 mod_configure.erl:477 web/ejabberd_web_admin.erl:811
+#: web/ejabberd_web_admin.erl:852
 msgid "Access Control Lists"
 msgstr "Zoznamy prístupových oprávnení (ACL)"
 
-#: mod_configure.erl:165 mod_configure.erl:478 web/ejabberd_web_admin.erl:633
-#: web/ejabberd_web_admin.erl:651 web/ejabberd_web_admin.erl:813
-#: web/ejabberd_web_admin.erl:848
+#: mod_configure.erl:165 mod_configure.erl:478 web/ejabberd_web_admin.erl:920
+#: web/ejabberd_web_admin.erl:956
 msgid "Access Rules"
 msgstr "Prístupové pravidlá"
 
@@ -206,8 +204,8 @@ msgstr "Prístupové pravidlá"
 msgid "User Management"
 msgstr "Správa užívateľov"
 
-#: mod_configure.erl:468 web/ejabberd_web_admin.erl:654
-#: web/ejabberd_web_admin.erl:925 web/ejabberd_web_admin.erl:1308
+#: mod_configure.erl:468 web/ejabberd_web_admin.erl:1038
+#: web/ejabberd_web_admin.erl:1443
 msgid "Online Users"
 msgstr "Online užívatelia"
 
@@ -219,15 +217,15 @@ msgstr "Všetci užívatelia"
 msgid "Outgoing s2s Connections"
 msgstr "Odchádzajúce s2s spojenia"
 
-#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1692
+#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1833
 msgid "Running Nodes"
 msgstr "Bežiace uzly"
 
-#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1694
+#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1835
 msgid "Stopped Nodes"
 msgstr "Zastavené uzly"
 
-#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1738
+#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1879
 msgid "Modules"
 msgstr "Moduly"
 
@@ -359,14 +357,14 @@ msgstr "Prístupové pravidlá"
 #: mod_configure.erl:1168 mod_configure.erl:1190 mod_configure.erl:1202
 #: mod_configure.erl:1214 mod_configure.erl:1226 mod_configure.erl:1243
 #: mod_configure.erl:1255 mod_configure.erl:1620 mod_configure.erl:1670
-#: mod_configure.erl:1691 mod_roster.erl:822 mod_roster_odbc.erl:922
-#: mod_vcard.erl:462 mod_vcard_ldap.erl:546 mod_vcard_odbc.erl:437
+#: mod_configure.erl:1691 mod_roster.erl:948 mod_roster_odbc.erl:1049
+#: mod_vcard.erl:465 mod_vcard_ldap.erl:550 mod_vcard_odbc.erl:440
 msgid "Jabber ID"
 msgstr "Jabber ID"
 
 #: mod_configure.erl:1173 mod_configure.erl:1231 mod_configure.erl:1621
-#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2801
-#: web/ejabberd_web_admin.erl:1364
+#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2809
+#: web/ejabberd_web_admin.erl:1501
 msgid "Password"
 msgstr "Heslo"
 
@@ -382,11 +380,11 @@ msgstr "Počet registrovaných užívateľov"
 msgid "Number of online users"
 msgstr "Počet online užívateľov"
 
-#: mod_configure.erl:1652 web/ejabberd_web_admin.erl:1430
+#: mod_configure.erl:1652 web/ejabberd_web_admin.erl:1567
 msgid "Never"
 msgstr "Nikdy"
 
-#: mod_configure.erl:1666 web/ejabberd_web_admin.erl:1444
+#: mod_configure.erl:1666 web/ejabberd_web_admin.erl:1581
 msgid "Online"
 msgstr "Online"
 
@@ -418,233 +416,301 @@ msgstr "Operácia aplikovaná na užívateľa"
 msgid "Edit Properties"
 msgstr "Editovať vlastnosti"
 
-#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1556
+#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1695
 msgid "Remove User"
 msgstr "Odstrániť užívateľa"
 
-#: mod_irc/mod_irc.erl:198 mod_muc/mod_muc.erl:335
+#: mod_irc/mod_irc.erl:201 mod_muc/mod_muc.erl:335
 msgid "Access denied by service policy"
 msgstr "Prístup bol zamietnutý nastavením služby"
 
-#: mod_irc/mod_irc.erl:311
+#: mod_irc/mod_irc.erl:400
 msgid "IRC Transport"
 msgstr "IRC Transport"
 
-#: mod_irc/mod_irc.erl:323
+#: mod_irc/mod_irc.erl:427
 msgid "ejabberd IRC module"
 msgstr "ejabberd IRC modul"
 
-#: mod_irc/mod_irc.erl:441
+#: mod_irc/mod_irc.erl:557
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr "Pre konfiguráciu mod_irc potrebujete klienta podporujúceho x:data"
 
-#: mod_irc/mod_irc.erl:448
+#: mod_irc/mod_irc.erl:564
 msgid "Registration in mod_irc for "
 msgstr "Registrácia do mod_irc na "
 
-#: mod_irc/mod_irc.erl:453
+#: mod_irc/mod_irc.erl:569
+#, fuzzy
 msgid ""
-"Enter username and encodings you wish to use for connecting to IRC servers"
+"Enter username, encodings, ports and passwords you wish to use for "
+"connecting to IRC servers"
 msgstr ""
 "Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na "
 "IRC server"
 
-#: mod_irc/mod_irc.erl:458
+#: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
 msgstr "IRC prezývka"
 
-#: mod_irc/mod_irc.erl:468
+#: mod_irc/mod_irc.erl:584
+#, fuzzy
 msgid ""
-"If you want to specify different encodings for IRC servers, fill this list "
-"with values in format '{\"irc server\", \"encoding\"}'.  By default this "
-"service use \"~s\" encoding."
+"If you want to specify different ports, passwords, encodings for IRC "
+"servers, fill this list with values in format '{\"irc server\", \"encoding"
+"\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
+"~p, empty password."
 msgstr ""
 "Ak chcete zadať iné kódovania pre IRC servery, vyplnte zoznam s hodnotami vo "
 "formáte '{\"irc server\",\"encoding\"}'. Predvolené kódovanie pre túto "
 "službu je \"~s\"."
 
-#: mod_irc/mod_irc.erl:478
+#: mod_irc/mod_irc.erl:596
+#, fuzzy
 msgid ""
-"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
-"\"}]."
+"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
 "Príklad: [{\"irc.freenode.net\",\"utf-8\"}, {\"irc.freenode.net\", \"iso8859-"
 "2\"}]."
 
-#: mod_irc/mod_irc.erl:483
-msgid "Encodings"
-msgstr "Kódovania"
+#: mod_irc/mod_irc.erl:601
+msgid "Connections parameters"
+msgstr ""
 
-#: mod_muc/mod_muc.erl:433
+#: mod_irc/mod_irc.erl:711
+msgid "Join IRC channel"
+msgstr ""
+
+#: mod_irc/mod_irc.erl:715
+msgid "IRC channel (don't put the first #)"
+msgstr ""
+
+#: mod_irc/mod_irc.erl:720
+#, fuzzy
+msgid "IRC server"
+msgstr "IRC prezývka"
+
+#: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
+msgid "Join the IRC channel here."
+msgstr ""
+
+#: mod_irc/mod_irc.erl:761
+msgid "Join the IRC channel in this Jabber ID: ~s"
+msgstr ""
+
+#: mod_irc/mod_irc.erl:846
+msgid "IRC settings"
+msgstr ""
+
+#: mod_irc/mod_irc.erl:851
+#, fuzzy
+msgid ""
+"Enter username and encodings you wish to use for connecting to IRC servers.  "
+"Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
+"settings."
+msgstr ""
+"Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na "
+"IRC server"
+
+#: mod_irc/mod_irc.erl:857
+#, fuzzy
+msgid "IRC username"
+msgstr "IRC prezývka"
+
+#: mod_irc/mod_irc.erl:904
+#, fuzzy
+msgid "Password ~b"
+msgstr "Heslo"
+
+#: mod_irc/mod_irc.erl:909
+#, fuzzy
+msgid "Port ~b"
+msgstr "Port"
+
+#: mod_irc/mod_irc.erl:914
+msgid "Encoding for server ~b"
+msgstr ""
+
+#: mod_irc/mod_irc.erl:923
+msgid "Server ~b"
+msgstr ""
+
+#: mod_muc/mod_muc.erl:437
 msgid "Only service administrators are allowed to send service messages"
 msgstr "Iba správcovia služby majú povolené odosielanie servisných správ"
 
-#: mod_muc/mod_muc.erl:478
+#: mod_muc/mod_muc.erl:482
 msgid "Room creation is denied by service policy"
 msgstr "Vytváranie miestnosti nie je povolené"
 
-#: mod_muc/mod_muc.erl:485
+#: mod_muc/mod_muc.erl:489
 msgid "Conference room does not exist"
 msgstr "Diskusná miestnosť neexistuje"
 
-#: mod_muc/mod_muc.erl:549
+#: mod_muc/mod_muc.erl:553
 msgid "Chatrooms"
 msgstr "Diskusné miestnosti"
 
-#: mod_muc/mod_muc.erl:668
+#: mod_muc/mod_muc.erl:672
 msgid "You need an x:data capable client to register nickname"
 msgstr "Na registráciu prezývky potrebujete klienta podporujúceho z x:data"
 
-#: mod_muc/mod_muc.erl:674
+#: mod_muc/mod_muc.erl:678
 msgid "Nickname Registration at "
 msgstr "Registrácia prezývky na "
 
-#: mod_muc/mod_muc.erl:678
+#: mod_muc/mod_muc.erl:682
 msgid "Enter nickname you want to register"
 msgstr "Zadajte prezývku, ktorú chcete registrovať"
 
-#: mod_muc/mod_muc.erl:679 mod_roster.erl:823 mod_roster_odbc.erl:923
-#: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:442
+#: mod_muc/mod_muc.erl:683 mod_roster.erl:949 mod_roster_odbc.erl:1050
+#: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:445
 msgid "Nickname"
 msgstr "Prezývka"
 
-#: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_room.erl:924
-#: mod_muc/mod_muc_room.erl:1511
+#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
+#: mod_muc/mod_muc_room.erl:1513
 #, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "Prezývka je registrovaná inou osobou"
 
-#: mod_muc/mod_muc.erl:742
+#: mod_muc/mod_muc.erl:748
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Musíte vyplniť políčko \"Prezývka\" vo formulári"
 
-#: mod_muc/mod_muc.erl:764
+#: mod_muc/mod_muc.erl:768
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC modul"
 
-#: mod_muc/mod_muc_log.erl:364
+#: mod_muc/mod_muc_log.erl:371 mod_muc/mod_muc_log.erl:378
 msgid "Chatroom configuration modified"
 msgstr "Nastavenie diskusnej miestnosti bolo zmenené"
 
-#: mod_muc/mod_muc_log.erl:367
+#: mod_muc/mod_muc_log.erl:381
 msgid "joins the room"
 msgstr "vstúpil(a) do miestnosti"
 
-#: mod_muc/mod_muc_log.erl:370 mod_muc/mod_muc_log.erl:373
+#: mod_muc/mod_muc_log.erl:384 mod_muc/mod_muc_log.erl:387
 msgid "leaves the room"
 msgstr "odišiel(a) z miestnosti"
 
-#: mod_muc/mod_muc_log.erl:376 mod_muc/mod_muc_log.erl:379
+#: mod_muc/mod_muc_log.erl:390 mod_muc/mod_muc_log.erl:393
 msgid "has been banned"
 msgstr "bol(a) zablokovaný(á)"
 
-#: mod_muc/mod_muc_log.erl:382 mod_muc/mod_muc_log.erl:385
+#: mod_muc/mod_muc_log.erl:396 mod_muc/mod_muc_log.erl:399
 msgid "has been kicked"
 msgstr "bol(a) vyhodený(á) z miestnosti"
 
-#: mod_muc/mod_muc_log.erl:388
+#: mod_muc/mod_muc_log.erl:402
 msgid "has been kicked because of an affiliation change"
 msgstr "bol vyhodený(á) kvôli zmene priradenia"
 
-#: mod_muc/mod_muc_log.erl:391
+#: mod_muc/mod_muc_log.erl:405
 msgid "has been kicked because the room has been changed to members-only"
 msgstr "bol vyhodený(á), pretože miestnosť bola vyhradená len pre členov"
 
-#: mod_muc/mod_muc_log.erl:394
+#: mod_muc/mod_muc_log.erl:408
 msgid "has been kicked because of a system shutdown"
 msgstr "bol vyhodený(á) kvôli reštartu systému"
 
-#: mod_muc/mod_muc_log.erl:397
+#: mod_muc/mod_muc_log.erl:411
 msgid "is now known as"
 msgstr "sa premenoval(a) na"
 
-#: mod_muc/mod_muc_log.erl:400 mod_muc/mod_muc_log.erl:661
-#: mod_muc/mod_muc_room.erl:2032
+#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:675
+#: mod_muc/mod_muc_room.erl:2040
 msgid " has set the subject to: "
 msgstr "zmenil(a) tému na: "
 
-#: mod_muc/mod_muc_log.erl:431
+#: mod_muc/mod_muc_log.erl:445
 msgid "Monday"
 msgstr "Pondelok"
 
-#: mod_muc/mod_muc_log.erl:432
+#: mod_muc/mod_muc_log.erl:446
 msgid "Tuesday"
 msgstr "Utorok"
 
-#: mod_muc/mod_muc_log.erl:433
+#: mod_muc/mod_muc_log.erl:447
 msgid "Wednesday"
 msgstr "Streda"
 
-#: mod_muc/mod_muc_log.erl:434
+#: mod_muc/mod_muc_log.erl:448
 msgid "Thursday"
 msgstr "Štvrtok"
 
-#: mod_muc/mod_muc_log.erl:435
+#: mod_muc/mod_muc_log.erl:449
 msgid "Friday"
 msgstr "Piatok"
 
-#: mod_muc/mod_muc_log.erl:436
+#: mod_muc/mod_muc_log.erl:450
 msgid "Saturday"
 msgstr "Sobota"
 
-#: mod_muc/mod_muc_log.erl:437
+#: mod_muc/mod_muc_log.erl:451
 msgid "Sunday"
 msgstr "Nedeľa"
 
-#: mod_muc/mod_muc_log.erl:441
+#: mod_muc/mod_muc_log.erl:455
 msgid "January"
 msgstr "Január"
 
-#: mod_muc/mod_muc_log.erl:442
+#: mod_muc/mod_muc_log.erl:456
 msgid "February"
 msgstr "Február"
 
-#: mod_muc/mod_muc_log.erl:443
+#: mod_muc/mod_muc_log.erl:457
 msgid "March"
 msgstr "Marec"
 
-#: mod_muc/mod_muc_log.erl:444
+#: mod_muc/mod_muc_log.erl:458
 msgid "April"
 msgstr "Apríl"
 
-#: mod_muc/mod_muc_log.erl:445
+#: mod_muc/mod_muc_log.erl:459
 msgid "May"
 msgstr "Máj"
 
-#: mod_muc/mod_muc_log.erl:446
+#: mod_muc/mod_muc_log.erl:460
 msgid "June"
 msgstr "Jún"
 
-#: mod_muc/mod_muc_log.erl:447
+#: mod_muc/mod_muc_log.erl:461
 msgid "July"
 msgstr "Júl"
 
-#: mod_muc/mod_muc_log.erl:448
+#: mod_muc/mod_muc_log.erl:462
 msgid "August"
 msgstr "August"
 
-#: mod_muc/mod_muc_log.erl:449
+#: mod_muc/mod_muc_log.erl:463
 msgid "September"
 msgstr "September"
 
-#: mod_muc/mod_muc_log.erl:450
+#: mod_muc/mod_muc_log.erl:464
 msgid "October"
 msgstr "Október"
 
-#: mod_muc/mod_muc_log.erl:451
+#: mod_muc/mod_muc_log.erl:465
 msgid "November"
 msgstr "November"
 
-#: mod_muc/mod_muc_log.erl:452
+#: mod_muc/mod_muc_log.erl:466
 msgid "December"
 msgstr "December"
 
-#: mod_muc/mod_muc_log.erl:719
+#: mod_muc/mod_muc_log.erl:736
 msgid "Room Configuration"
 msgstr "Nastavenia miestnosti"
 
-#: mod_muc/mod_muc_log.erl:820 mod_muc/mod_muc_room.erl:2777
+#: mod_muc/mod_muc_log.erl:745
+#, fuzzy
+msgid "Room Occupants"
+msgstr "Počet zúčastnených"
+
+#: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
 msgid "Room title"
 msgstr "Názov miestnosti"
 
@@ -681,8 +747,8 @@ msgstr "Nie je dovolené odoslanie súkromnej správy typu \"Skupinová správa\
 msgid "Recipient is not in the conference room"
 msgstr "Príjemca sa nenachádza v konferenčnej miestnosti"
 
-#: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:823
-#: mod_muc/mod_muc_room.erl:3388
+#: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:825
+#: mod_muc/mod_muc_room.erl:3407
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Len členovia majú povolené zasielať správy do konferencie"
 
@@ -698,347 +764,351 @@ msgstr "Len členovia majú povolené dotazovať sa o konferencii"
 msgid "Queries to the conference members are not allowed in this room"
 msgstr "Dotazovať sa o členoch nie je v tejto miestnosti povolené"
 
-#: mod_muc/mod_muc_room.erl:600
+#: mod_muc/mod_muc_room.erl:601
 msgid "private, "
 msgstr "súkromná, "
 
-#: mod_muc/mod_muc_room.erl:799
+#: mod_muc/mod_muc_room.erl:801
 #, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "Len moderátori a zúčastnený majú povolené meniť tému tejto miestnosti"
 
-#: mod_muc/mod_muc_room.erl:804
+#: mod_muc/mod_muc_room.erl:806
 #, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Len moderátori majú povolené meniť tému miestnosti"
 
-#: mod_muc/mod_muc_room.erl:814
+#: mod_muc/mod_muc_room.erl:816
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr ""
 "Návštevníci nemajú povolené zasielať správy všetkým prihláseným do "
 "konferencie"
 
-#: mod_muc/mod_muc_room.erl:882
+#: mod_muc/mod_muc_room.erl:884
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
 msgstr ""
 "Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu o stave"
 
-#: mod_muc/mod_muc_room.erl:900
+#: mod_muc/mod_muc_room.erl:902
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "V tejto miestnosti nieje povolené meniť prezývky"
 
-#: mod_muc/mod_muc_room.erl:913 mod_muc/mod_muc_room.erl:1503
+#: mod_muc/mod_muc_room.erl:915 mod_muc/mod_muc_room.erl:1505
 #, fuzzy
 msgid "That nickname is already in use by another occupant"
 msgstr "Prezývka je už používaná iným členom"
 
-#: mod_muc/mod_muc_room.erl:1492
+#: mod_muc/mod_muc_room.erl:1494
 msgid "You have been banned from this room"
 msgstr "Boli ste vylúčený z tejto miestnosti"
 
-#: mod_muc/mod_muc_room.erl:1495
+#: mod_muc/mod_muc_room.erl:1497
 #, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "Pre vstup do miestnosti je potrebné byť členom"
 
-#: mod_muc/mod_muc_room.erl:1531
+#: mod_muc/mod_muc_room.erl:1533
 msgid "This room is not anonymous"
 msgstr "Táto miestnosť nie je anonymná"
 
-#: mod_muc/mod_muc_room.erl:1557
+#: mod_muc/mod_muc_room.erl:1559
 #, fuzzy
 msgid "A password is required to enter this room"
 msgstr "Pre vstup do miestnosti je potrebné heslo"
 
-#: mod_muc/mod_muc_room.erl:1579
+#: mod_muc/mod_muc_room.erl:1581
 msgid "Unable to generate a captcha"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1589
+#: mod_muc/mod_muc_room.erl:1591
 msgid "Incorrect password"
 msgstr "Nesprávne heslo"
 
-#: mod_muc/mod_muc_room.erl:2087
+#: mod_muc/mod_muc_room.erl:2095
 msgid "Administrator privileges required"
 msgstr "Sú potrebné práva administrátora"
 
-#: mod_muc/mod_muc_room.erl:2102
+#: mod_muc/mod_muc_room.erl:2110
 msgid "Moderator privileges required"
 msgstr "Sú potrebné práva moderátora"
 
-#: mod_muc/mod_muc_room.erl:2257
+#: mod_muc/mod_muc_room.erl:2265
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s je neplatné"
 
-#: mod_muc/mod_muc_room.erl:2271
+#: mod_muc/mod_muc_room.erl:2279
 msgid "Nickname ~s does not exist in the room"
 msgstr "Prezývka ~s v miestnosti neexistuje"
 
-#: mod_muc/mod_muc_room.erl:2297 mod_muc/mod_muc_room.erl:2673
+#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2681
 msgid "Invalid affiliation: ~s"
 msgstr "Neplatné priradenie: ~s"
 
-#: mod_muc/mod_muc_room.erl:2354
+#: mod_muc/mod_muc_room.erl:2362
 msgid "Invalid role: ~s"
 msgstr "Neplatná rola: ~s"
 
-#: mod_muc/mod_muc_room.erl:2650 mod_muc/mod_muc_room.erl:2686
+#: mod_muc/mod_muc_room.erl:2658 mod_muc/mod_muc_room.erl:2694
 msgid "Owner privileges required"
 msgstr "Sú vyžadované práva vlastníka"
 
-#: mod_muc/mod_muc_room.erl:2772
+#: mod_muc/mod_muc_room.erl:2780
 #, fuzzy
 msgid "Configuration of room ~s"
 msgstr "Konfigurácia pre "
 
-#: mod_muc/mod_muc_room.erl:2780 mod_muc/mod_muc_room.erl:3187
+#: mod_muc/mod_muc_room.erl:2788 mod_muc/mod_muc_room.erl:3206
 #, fuzzy
 msgid "Room description"
 msgstr "Popis:"
 
-#: mod_muc/mod_muc_room.erl:2787
+#: mod_muc/mod_muc_room.erl:2795
 msgid "Make room persistent"
 msgstr "Nastaviť miestnosť ako trvalú"
 
-#: mod_muc/mod_muc_room.erl:2792
+#: mod_muc/mod_muc_room.erl:2800
 msgid "Make room public searchable"
 msgstr "Nastaviť miestnosť ako verejne prehľadávateľnú"
 
-#: mod_muc/mod_muc_room.erl:2795
+#: mod_muc/mod_muc_room.erl:2803
 msgid "Make participants list public"
 msgstr "Nastaviť zoznam zúčastnených ako verejný"
 
-#: mod_muc/mod_muc_room.erl:2798
+#: mod_muc/mod_muc_room.erl:2806
 msgid "Make room password protected"
 msgstr "Chrániť miestnosť heslom"
 
-#: mod_muc/mod_muc_room.erl:2809
+#: mod_muc/mod_muc_room.erl:2817
 msgid "Maximum Number of Occupants"
 msgstr "Počet účastníkov"
 
-#: mod_muc/mod_muc_room.erl:2816
+#: mod_muc/mod_muc_room.erl:2824
 msgid "No limit"
 msgstr "Bez limitu"
 
-#: mod_muc/mod_muc_room.erl:2827
+#: mod_muc/mod_muc_room.erl:2835
 msgid "Present real Jabber IDs to"
 msgstr "Zobrazovať skutočné Jabber ID"
 
-#: mod_muc/mod_muc_room.erl:2835
+#: mod_muc/mod_muc_room.erl:2843
 msgid "moderators only"
 msgstr "moderátorom"
 
-#: mod_muc/mod_muc_room.erl:2837
+#: mod_muc/mod_muc_room.erl:2845
 msgid "anyone"
 msgstr "všetkým"
 
-#: mod_muc/mod_muc_room.erl:2839
+#: mod_muc/mod_muc_room.erl:2847
 msgid "Make room members-only"
 msgstr "Nastaviť miestnosť len pre členov"
 
-#: mod_muc/mod_muc_room.erl:2842
+#: mod_muc/mod_muc_room.erl:2850
 msgid "Make room moderated"
 msgstr "Nastaviť miestnosť ako moderovanú"
 
-#: mod_muc/mod_muc_room.erl:2845
+#: mod_muc/mod_muc_room.erl:2853
 msgid "Default users as participants"
 msgstr "Užívatelia sú implicitne členmi"
 
-#: mod_muc/mod_muc_room.erl:2848
+#: mod_muc/mod_muc_room.erl:2856
 #, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Povoliť užívateľom zmeniť tému tejto miestnosti"
 
-#: mod_muc/mod_muc_room.erl:2851
+#: mod_muc/mod_muc_room.erl:2859
 msgid "Allow users to send private messages"
 msgstr "Povoliť užívateľom odosielať súkromné správy"
 
-#: mod_muc/mod_muc_room.erl:2854
+#: mod_muc/mod_muc_room.erl:2862
 msgid "Allow users to query other users"
 msgstr "Povoliť užívateľom dotazovať sa informácie o iných užívateľoch"
 
-#: mod_muc/mod_muc_room.erl:2857
+#: mod_muc/mod_muc_room.erl:2865
 msgid "Allow users to send invites"
 msgstr "Povoliť používateľom posielanie pozvánok"
 
-#: mod_muc/mod_muc_room.erl:2860
+#: mod_muc/mod_muc_room.erl:2868
 msgid "Allow visitors to send status text in presence updates"
 msgstr "Návštevníci môžu posielať textové informácie v stavových správach"
 
-#: mod_muc/mod_muc_room.erl:2863
+#: mod_muc/mod_muc_room.erl:2871
 msgid "Allow visitors to change nickname"
 msgstr "Návštevníci môžu meniť prezývky"
 
-#: mod_muc/mod_muc_room.erl:2869
+#: mod_muc/mod_muc_room.erl:2877
 #, fuzzy
 msgid "Make room captcha protected"
 msgstr "Chrániť miestnosť heslom"
 
-#: mod_muc/mod_muc_room.erl:2878
+#: mod_muc/mod_muc_room.erl:2886
 msgid "Enable logging"
 msgstr "Zapnúť zaznamenávanie histórie"
 
-#: mod_muc/mod_muc_room.erl:2886
+#: mod_muc/mod_muc_room.erl:2894
 msgid "You need an x:data capable client to configure room"
 msgstr "Na konfiguráciu miestnosti potrebujete klienta podporujúceho x:data"
 
-#: mod_muc/mod_muc_room.erl:3189
+#: mod_muc/mod_muc_room.erl:3208
 msgid "Number of occupants"
 msgstr "Počet zúčastnených"
 
-#: mod_muc/mod_muc_room.erl:3308
+#: mod_muc/mod_muc_room.erl:3327
 msgid "~s invites you to the room ~s"
 msgstr "~s Vás pozýva do miestnosti ~s"
 
-#: mod_muc/mod_muc_room.erl:3317
+#: mod_muc/mod_muc_room.erl:3336
 msgid "the password is"
 msgstr "heslo je"
 
-#: mod_offline.erl:451 mod_offline_odbc.erl:303
+#: mod_offline.erl:509 mod_offline_odbc.erl:352
 msgid ""
 "Your contact offline message queue is full. The message has been discarded."
 msgstr "Fronta offline správ tohoto kontaktu je plná. Správa bola zahodená."
 
-#: mod_offline.erl:500 mod_offline_odbc.erl:358
+#: mod_offline.erl:558 mod_offline_odbc.erl:407
 msgid "~s's Offline Messages Queue"
 msgstr "~s Offline správy"
 
-#: mod_offline.erl:503 mod_offline_odbc.erl:361 mod_roster.erl:866
-#: mod_roster_odbc.erl:966 mod_shared_roster.erl:778 mod_shared_roster.erl:879
-#: web/ejabberd_web_admin.erl:708 web/ejabberd_web_admin.erl:748
-#: web/ejabberd_web_admin.erl:815 web/ejabberd_web_admin.erl:850
-#: web/ejabberd_web_admin.erl:890 web/ejabberd_web_admin.erl:1352
-#: web/ejabberd_web_admin.erl:1548 web/ejabberd_web_admin.erl:1716
-#: web/ejabberd_web_admin.erl:1748 web/ejabberd_web_admin.erl:1810
-#: web/ejabberd_web_admin.erl:1878 web/ejabberd_web_admin.erl:1903
-#: web/ejabberd_web_admin.erl:1991
+#: mod_offline.erl:561 mod_offline_odbc.erl:410 mod_roster.erl:992
+#: mod_roster_odbc.erl:1093 mod_shared_roster.erl:778
+#: mod_shared_roster.erl:879 web/ejabberd_web_admin.erl:813
+#: web/ejabberd_web_admin.erl:854 web/ejabberd_web_admin.erl:922
+#: web/ejabberd_web_admin.erl:958 web/ejabberd_web_admin.erl:999
+#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1687
+#: web/ejabberd_web_admin.erl:1857 web/ejabberd_web_admin.erl:1889
+#: web/ejabberd_web_admin.erl:1952 web/ejabberd_web_admin.erl:2056
+#: web/ejabberd_web_admin.erl:2081 web/ejabberd_web_admin.erl:2169
 msgid "Submitted"
 msgstr "Odoslané"
 
-#: mod_offline.erl:511
+#: mod_offline.erl:569
 msgid "Time"
 msgstr "Čas"
 
-#: mod_offline.erl:512
+#: mod_offline.erl:570
 msgid "From"
 msgstr "Od"
 
-#: mod_offline.erl:513
+#: mod_offline.erl:571
 msgid "To"
 msgstr "Pre"
 
-#: mod_offline.erl:514 mod_offline_odbc.erl:369
+#: mod_offline.erl:572 mod_offline_odbc.erl:418
 msgid "Packet"
 msgstr "Paket"
 
-#: mod_offline.erl:527 mod_offline_odbc.erl:382 mod_shared_roster.erl:785
-#: web/ejabberd_web_admin.erl:756 web/ejabberd_web_admin.erl:858
+#: mod_offline.erl:585 mod_offline_odbc.erl:431 mod_shared_roster.erl:785
+#: web/ejabberd_web_admin.erl:862 web/ejabberd_web_admin.erl:966
 msgid "Delete Selected"
 msgstr "Zmazať vybrané"
 
-#: mod_offline.erl:562 mod_offline_odbc.erl:447
+#: mod_offline.erl:620 mod_offline_odbc.erl:496
 msgid "Offline Messages:"
 msgstr "Offline správy"
 
-#: mod_offline.erl:562 mod_offline_odbc.erl:447
+#: mod_offline.erl:620 mod_offline_odbc.erl:496
 #, fuzzy
 msgid "Remove All Offline Messages"
 msgstr "Offline správy"
 
-#: mod_proxy65/mod_proxy65_service.erl:209
+#: mod_proxy65/mod_proxy65_service.erl:213
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams modul"
 
-#: mod_pubsub/mod_pubsub.erl:1022
+#: mod_pubsub/mod_pubsub.erl:1054 mod_pubsub/mod_pubsub_odbc.erl:1053
 msgid "Publish-Subscribe"
 msgstr "Publish-Subscribe"
 
-#: mod_pubsub/mod_pubsub.erl:1118
+#: mod_pubsub/mod_pubsub.erl:1150 mod_pubsub/mod_pubsub_odbc.erl:1150
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe modul"
 
-#: mod_pubsub/mod_pubsub.erl:1271
+#: mod_pubsub/mod_pubsub.erl:1437 mod_pubsub/mod_pubsub_odbc.erl:1442
 msgid "PubSub subscriber request"
 msgstr "Žiadosť odberateľa PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1273
+#: mod_pubsub/mod_pubsub.erl:1439 mod_pubsub/mod_pubsub_odbc.erl:1444
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Zvolte, či chcete povoliť toto odoberanie"
 
-#: mod_pubsub/mod_pubsub.erl:1279
+#: mod_pubsub/mod_pubsub.erl:1445 mod_pubsub/mod_pubsub_odbc.erl:1450
 msgid "Node ID"
 msgstr "ID uzlu"
 
-#: mod_pubsub/mod_pubsub.erl:1284
+#: mod_pubsub/mod_pubsub.erl:1450 mod_pubsub/mod_pubsub_odbc.erl:1455
 msgid "Subscriber Address"
 msgstr "Adresa odberateľa"
 
-#: mod_pubsub/mod_pubsub.erl:1290
+#: mod_pubsub/mod_pubsub.erl:1456 mod_pubsub/mod_pubsub_odbc.erl:1461
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Dovoliť tomuto Jabber ID odoberať PubSub uzol?"
 
-#: mod_pubsub/mod_pubsub.erl:3005
+#: mod_pubsub/mod_pubsub.erl:3220 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Deliver payloads with event notifications"
 msgstr "Doručiť náklad s upozornením na udalosť"
 
-#: mod_pubsub/mod_pubsub.erl:3006
+#: mod_pubsub/mod_pubsub.erl:3221 mod_pubsub/mod_pubsub_odbc.erl:3245
 msgid "Deliver event notifications"
 msgstr "Doručiť oznamy o udalosti"
 
-#: mod_pubsub/mod_pubsub.erl:3007
+#: mod_pubsub/mod_pubsub.erl:3222 mod_pubsub/mod_pubsub_odbc.erl:3246
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Upozorniť prihlásených používateľov na zmenu nastavenia uzlu"
 
-#: mod_pubsub/mod_pubsub.erl:3008
+#: mod_pubsub/mod_pubsub.erl:3223 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Notify subscribers when the node is deleted"
 msgstr "Upozorniť prihlásených používateľov na zmazanie uzlu"
 
-#: mod_pubsub/mod_pubsub.erl:3009
+#: mod_pubsub/mod_pubsub.erl:3224 mod_pubsub/mod_pubsub_odbc.erl:3248
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Upozorniť prihlásených používateľov na odstránenie položiek z uzlu"
 
-#: mod_pubsub/mod_pubsub.erl:3010
+#: mod_pubsub/mod_pubsub.erl:3225 mod_pubsub/mod_pubsub_odbc.erl:3249
 msgid "Persist items to storage"
 msgstr "Uložiť položky natrvalo do úložiska"
 
-#: mod_pubsub/mod_pubsub.erl:3011
+#: mod_pubsub/mod_pubsub.erl:3226 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "A friendly name for the node"
 msgstr "Prístupný názov pre uzol"
 
-#: mod_pubsub/mod_pubsub.erl:3012
+#: mod_pubsub/mod_pubsub.erl:3227 mod_pubsub/mod_pubsub_odbc.erl:3251
 msgid "Max # of items to persist"
 msgstr "Maximálny počet položiek, ktoré je možné natrvalo uložiť"
 
-#: mod_pubsub/mod_pubsub.erl:3013
+#: mod_pubsub/mod_pubsub.erl:3228 mod_pubsub/mod_pubsub_odbc.erl:3252
 msgid "Whether to allow subscriptions"
 msgstr "Povoliť prihlasovanie"
 
-#: mod_pubsub/mod_pubsub.erl:3014
+#: mod_pubsub/mod_pubsub.erl:3229 mod_pubsub/mod_pubsub_odbc.erl:3253
 msgid "Specify the access model"
 msgstr "Uveďte model prístupu"
 
-#: mod_pubsub/mod_pubsub.erl:3017
+#: mod_pubsub/mod_pubsub.erl:3232 mod_pubsub/mod_pubsub_odbc.erl:3256
 msgid "Roster groups allowed to subscribe"
 msgstr "Skupiny kontaktov, ktoré môžu odoberať"
 
-#: mod_pubsub/mod_pubsub.erl:3018
+#: mod_pubsub/mod_pubsub.erl:3233 mod_pubsub/mod_pubsub_odbc.erl:3257
 msgid "Specify the publisher model"
 msgstr "Špecifikovať model publikovania"
 
-#: mod_pubsub/mod_pubsub.erl:3020
+#: mod_pubsub/mod_pubsub.erl:3235 mod_pubsub/mod_pubsub_odbc.erl:3259
 msgid "Max payload size in bytes"
 msgstr "Maximálny náklad v bajtoch"
 
-#: mod_pubsub/mod_pubsub.erl:3021
+#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3260
 msgid "When to send the last published item"
 msgstr "Kedy odoslať posledne publikovanú položku"
 
-#: mod_pubsub/mod_pubsub.erl:3023
+#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3262
 msgid "Only deliver notifications to available users"
 msgstr "Doručovať upozornenia len aktuálne prihláseným používateľom"
+
+#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3263
+msgid "The collections with which a node is affiliated"
+msgstr ""
 
 #: mod_register.erl:190
 msgid "Choose a username and password to register with this server"
@@ -1049,51 +1119,51 @@ msgstr "Zvolte meno užívateľa a heslo pre registráciu na tomto servere"
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Nieje možné vytvárať účty tak rýchlo po sebe"
 
-#: mod_roster.erl:817 mod_roster_odbc.erl:917 web/ejabberd_web_admin.erl:1514
-#: web/ejabberd_web_admin.erl:1671 web/ejabberd_web_admin.erl:1682
-#: web/ejabberd_web_admin.erl:1962
+#: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
+#: web/ejabberd_web_admin.erl:1812 web/ejabberd_web_admin.erl:1823
+#: web/ejabberd_web_admin.erl:2140
 msgid "None"
 msgstr "Nič"
 
-#: mod_roster.erl:824 mod_roster_odbc.erl:924
+#: mod_roster.erl:950 mod_roster_odbc.erl:1051
 msgid "Subscription"
 msgstr "Prihlásenie"
 
-#: mod_roster.erl:825 mod_roster_odbc.erl:925
+#: mod_roster.erl:951 mod_roster_odbc.erl:1052
 msgid "Pending"
 msgstr "Čakajúce"
 
-#: mod_roster.erl:826 mod_roster_odbc.erl:926
+#: mod_roster.erl:952 mod_roster_odbc.erl:1053
 msgid "Groups"
 msgstr "Skupiny"
 
-#: mod_roster.erl:853 mod_roster_odbc.erl:953
+#: mod_roster.erl:979 mod_roster_odbc.erl:1080
 msgid "Validate"
 msgstr "Overiť"
 
-#: mod_roster.erl:861 mod_roster_odbc.erl:961
+#: mod_roster.erl:987 mod_roster_odbc.erl:1088
 msgid "Remove"
 msgstr "Odstrániť"
 
-#: mod_roster.erl:864 mod_roster_odbc.erl:964
+#: mod_roster.erl:990 mod_roster_odbc.erl:1091
 msgid "Roster of "
 msgstr "Zoznam kontaktov "
 
-#: mod_roster.erl:867 mod_roster_odbc.erl:967 mod_shared_roster.erl:779
-#: mod_shared_roster.erl:880 web/ejabberd_web_admin.erl:709
-#: web/ejabberd_web_admin.erl:749 web/ejabberd_web_admin.erl:816
-#: web/ejabberd_web_admin.erl:851 web/ejabberd_web_admin.erl:891
-#: web/ejabberd_web_admin.erl:1353 web/ejabberd_web_admin.erl:1549
-#: web/ejabberd_web_admin.erl:1717 web/ejabberd_web_admin.erl:1879
-#: web/ejabberd_web_admin.erl:1904 web/ejabberd_web_admin.erl:1992
+#: mod_roster.erl:993 mod_roster_odbc.erl:1094 mod_shared_roster.erl:779
+#: mod_shared_roster.erl:880 web/ejabberd_web_admin.erl:814
+#: web/ejabberd_web_admin.erl:855 web/ejabberd_web_admin.erl:923
+#: web/ejabberd_web_admin.erl:959 web/ejabberd_web_admin.erl:1000
+#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1688
+#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:2057
+#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
 msgid "Bad format"
 msgstr "Zlý formát"
 
-#: mod_roster.erl:874 mod_roster_odbc.erl:974
+#: mod_roster.erl:1000 mod_roster_odbc.erl:1101
 msgid "Add Jabber ID"
 msgstr "Pridať Jabber ID"
 
-#: mod_roster.erl:973 mod_roster_odbc.erl:1073
+#: mod_roster.erl:1099 mod_roster_odbc.erl:1200
 msgid "Roster"
 msgstr "Zoznam kontaktov"
 
@@ -1102,8 +1172,8 @@ msgstr "Zoznam kontaktov"
 msgid "Shared Roster Groups"
 msgstr "Skupiny pre zdieľaný zoznam kontaktov"
 
-#: mod_shared_roster.erl:772 web/ejabberd_web_admin.erl:1222
-#: web/ejabberd_web_admin.erl:2176
+#: mod_shared_roster.erl:772 web/ejabberd_web_admin.erl:1346
+#: web/ejabberd_web_admin.erl:2382
 msgid "Add New"
 msgstr "Pridať nový"
 
@@ -1127,9 +1197,9 @@ msgstr "Zobrazené skupiny:"
 msgid "Group "
 msgstr "Skupina "
 
-#: mod_shared_roster.erl:886 web/ejabberd_web_admin.erl:715
-#: web/ejabberd_web_admin.erl:758 web/ejabberd_web_admin.erl:822
-#: web/ejabberd_web_admin.erl:897 web/ejabberd_web_admin.erl:1802
+#: mod_shared_roster.erl:886 web/ejabberd_web_admin.erl:820
+#: web/ejabberd_web_admin.erl:864 web/ejabberd_web_admin.erl:929
+#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1943
 msgid "Submit"
 msgstr "Odoslať"
 
@@ -1137,28 +1207,28 @@ msgstr "Odoslať"
 msgid "Erlang Jabber Server"
 msgstr "Erlang Jabber Server"
 
-#: mod_vcard.erl:357 mod_vcard.erl:468 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:443
+#: mod_vcard.erl:357 mod_vcard.erl:471 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:446
 msgid "Birthday"
 msgstr "Dátum narodenia: "
 
-#: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:445
+#: mod_vcard.erl:357 mod_vcard.erl:473 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:448
 msgid "City"
 msgstr "Mesto: "
 
-#: mod_vcard.erl:357 mod_vcard.erl:469 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:444
+#: mod_vcard.erl:357 mod_vcard.erl:472 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:447
 msgid "Country"
 msgstr "Krajina: "
 
-#: mod_vcard.erl:357 mod_vcard.erl:471 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:446
+#: mod_vcard.erl:357 mod_vcard.erl:474 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:449
 msgid "Email"
 msgstr "E-mail"
 
-#: mod_vcard.erl:357 mod_vcard.erl:466 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:441
+#: mod_vcard.erl:357 mod_vcard.erl:469 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:444
 msgid "Family Name"
 msgstr "Priezvisko: "
 
@@ -1170,244 +1240,237 @@ msgstr ""
 "Pre vyhľadanie Jabber používateľa vyplňte formulár (pridajte znak * na "
 "koniec, pre vyhľadanie podreťazca)"
 
-#: mod_vcard.erl:357 mod_vcard.erl:463 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:438
+#: mod_vcard.erl:357 mod_vcard.erl:466 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:441
 msgid "Full Name"
 msgstr "Celé meno: "
 
-#: mod_vcard.erl:357 mod_vcard.erl:465 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:440
+#: mod_vcard.erl:357 mod_vcard.erl:468 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:443
 msgid "Middle Name"
 msgstr "Prostredné meno: "
 
-#: mod_vcard.erl:357 mod_vcard.erl:464 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:439 web/ejabberd_web_admin.erl:1791
+#: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1932
 msgid "Name"
 msgstr "Meno"
 
-#: mod_vcard.erl:357 mod_vcard.erl:472 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:447
+#: mod_vcard.erl:357 mod_vcard.erl:475 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:450
 msgid "Organization Name"
 msgstr "Meno organizácie: "
 
-#: mod_vcard.erl:357 mod_vcard.erl:473 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:448
+#: mod_vcard.erl:357 mod_vcard.erl:476 mod_vcard_odbc.erl:334
+#: mod_vcard_odbc.erl:451
 msgid "Organization Unit"
 msgstr "Organizačná jednotka: "
 
-#: mod_vcard.erl:357 mod_vcard_ldap.erl:457 mod_vcard_odbc.erl:334
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:334
 msgid "Search users in "
 msgstr "Hľadať užívateľov v "
 
-#: mod_vcard.erl:357 mod_vcard_odbc.erl:334 web/ejabberd_web_admin.erl:1359
-#: web/ejabberd_web_admin.erl:1414
+#: mod_vcard.erl:357 mod_vcard_odbc.erl:334 web/ejabberd_web_admin.erl:1496
+#: web/ejabberd_web_admin.erl:1551
 msgid "User"
 msgstr "Užívateľ: "
 
-#: mod_vcard.erl:357 mod_vcard_ldap.erl:457 mod_vcard_odbc.erl:334
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:334
 msgid "You need an x:data capable client to search"
 msgstr "Na vyhľadávanie potrebujete klienta podporujúceho x:data"
 
-#: mod_vcard.erl:379 mod_vcard_ldap.erl:479 mod_vcard_odbc.erl:356
+#: mod_vcard.erl:382 mod_vcard_ldap.erl:483 mod_vcard_odbc.erl:359
 msgid "vCard User Search"
 msgstr "Hľadať užívateľov vo vCard"
 
-#: mod_vcard.erl:435 mod_vcard_ldap.erl:533 mod_vcard_odbc.erl:410
+#: mod_vcard.erl:438 mod_vcard_ldap.erl:537 mod_vcard_odbc.erl:413
 msgid "ejabberd vCard module"
 msgstr "ejabberd vCard modul"
 
-#: mod_vcard.erl:459 mod_vcard_ldap.erl:543 mod_vcard_odbc.erl:434
+#: mod_vcard.erl:462 mod_vcard_ldap.erl:547 mod_vcard_odbc.erl:437
 msgid "Search Results for "
 msgstr "Hľadať výsledky pre "
 
-#: mod_vcard_ldap.erl:457
+#: mod_vcard_ldap.erl:458
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Vyplnte políčka pre vyhľadávanie Jabber užívateľa"
 
-#: web/ejabberd_web_admin.erl:151 web/ejabberd_web_admin.erl:168
+#: web/ejabberd_web_admin.erl:179 web/ejabberd_web_admin.erl:186
+#: web/ejabberd_web_admin.erl:202 web/ejabberd_web_admin.erl:209
+msgid "Unauthorized"
+msgstr ""
+
+#: web/ejabberd_web_admin.erl:266 web/ejabberd_web_admin.erl:283
 msgid "ejabberd Web Admin"
 msgstr "ejabberd Web Admin"
 
-#: web/ejabberd_web_admin.erl:629 web/ejabberd_web_admin.erl:647
+#: web/ejabberd_web_admin.erl:749 web/ejabberd_web_admin.erl:760
 msgid "Administration"
 msgstr "Administrácia"
 
-#: web/ejabberd_web_admin.erl:632 web/ejabberd_web_admin.erl:634
-#: web/ejabberd_web_admin.erl:650 web/ejabberd_web_admin.erl:652
-msgid "(Raw)"
-msgstr "(Raw)"
-
-#: web/ejabberd_web_admin.erl:635
-msgid "Virtual Hosts"
-msgstr "Virtuálne servery"
-
-#: web/ejabberd_web_admin.erl:636 web/ejabberd_web_admin.erl:656
-#: web/ejabberd_web_admin.erl:1691
-msgid "Nodes"
-msgstr "Uzly"
-
-#: web/ejabberd_web_admin.erl:637 web/ejabberd_web_admin.erl:657
-#: web/ejabberd_web_admin.erl:970 web/ejabberd_web_admin.erl:1724
-msgid "Statistics"
-msgstr "Štatistiky"
-
-#: web/ejabberd_web_admin.erl:653 web/ejabberd_web_admin.erl:912
-#: web/ejabberd_web_admin.erl:918
-msgid "Users"
-msgstr "Používatelia"
-
-#: web/ejabberd_web_admin.erl:655 web/ejabberd_web_admin.erl:1416
-msgid "Last Activity"
-msgstr "Posledná aktivita"
-
-#: web/ejabberd_web_admin.erl:752 web/ejabberd_web_admin.erl:854
+#: web/ejabberd_web_admin.erl:858 web/ejabberd_web_admin.erl:962
 msgid "Raw"
 msgstr "Raw"
 
-#: web/ejabberd_web_admin.erl:888
+#: web/ejabberd_web_admin.erl:997
 msgid "~s access rule configuration"
 msgstr "~s konfigurácia prístupového pravidla"
 
-#: web/ejabberd_web_admin.erl:905
+#: web/ejabberd_web_admin.erl:1015
 msgid "ejabberd virtual hosts"
 msgstr "ejabberd virtuálne servery"
 
-#: web/ejabberd_web_admin.erl:944
+#: web/ejabberd_web_admin.erl:1023 web/ejabberd_web_admin.erl:1030
+msgid "Users"
+msgstr "Používatelia"
+
+#: web/ejabberd_web_admin.erl:1058
 msgid "Users Last Activity"
 msgstr "Posledná aktivita používateľa"
 
-#: web/ejabberd_web_admin.erl:946
+#: web/ejabberd_web_admin.erl:1060
 msgid "Period: "
 msgstr "Čas:"
 
-#: web/ejabberd_web_admin.erl:956
+#: web/ejabberd_web_admin.erl:1070
 msgid "Last month"
 msgstr "Posledný mesiac"
 
-#: web/ejabberd_web_admin.erl:957
+#: web/ejabberd_web_admin.erl:1071
 msgid "Last year"
 msgstr "Posledný rok"
 
-#: web/ejabberd_web_admin.erl:958
+#: web/ejabberd_web_admin.erl:1072
 msgid "All activity"
 msgstr "Všetky aktivity"
 
-#: web/ejabberd_web_admin.erl:960
+#: web/ejabberd_web_admin.erl:1074
 msgid "Show Ordinary Table"
 msgstr "Zobraziť bežnú tabuľku"
 
-#: web/ejabberd_web_admin.erl:962
+#: web/ejabberd_web_admin.erl:1076
 msgid "Show Integral Table"
 msgstr "Zobraziť kompletnú tabuľku"
 
-#: web/ejabberd_web_admin.erl:981
+#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1865
+msgid "Statistics"
+msgstr "Štatistiky"
+
+#: web/ejabberd_web_admin.erl:1097
 #, fuzzy
 msgid "Not Found"
 msgstr "Uzol nenájdený"
 
-#: web/ejabberd_web_admin.erl:996
+#: web/ejabberd_web_admin.erl:1114
 msgid "Node not found"
 msgstr "Uzol nenájdený"
 
-#: web/ejabberd_web_admin.erl:1306
+#: web/ejabberd_web_admin.erl:1441
 msgid "Host"
 msgstr "Server"
 
-#: web/ejabberd_web_admin.erl:1307
+#: web/ejabberd_web_admin.erl:1442
 msgid "Registered Users"
 msgstr "Registrovaní používatelia"
 
-#: web/ejabberd_web_admin.erl:1415
+#: web/ejabberd_web_admin.erl:1552
 msgid "Offline Messages"
 msgstr "Offline správy"
 
-#: web/ejabberd_web_admin.erl:1472 web/ejabberd_web_admin.erl:1488
+#: web/ejabberd_web_admin.erl:1553
+msgid "Last Activity"
+msgstr "Posledná aktivita"
+
+#: web/ejabberd_web_admin.erl:1611 web/ejabberd_web_admin.erl:1627
 msgid "Registered Users:"
 msgstr "Registrovaní používatelia:"
 
-#: web/ejabberd_web_admin.erl:1474 web/ejabberd_web_admin.erl:1490
-#: web/ejabberd_web_admin.erl:1935
+#: web/ejabberd_web_admin.erl:1613 web/ejabberd_web_admin.erl:1629
+#: web/ejabberd_web_admin.erl:2113
 msgid "Online Users:"
 msgstr "Online používatelia:"
 
-#: web/ejabberd_web_admin.erl:1476
+#: web/ejabberd_web_admin.erl:1615
 msgid "Outgoing s2s Connections:"
 msgstr "Odchádzajúce s2s spojenia:"
 
-#: web/ejabberd_web_admin.erl:1478
+#: web/ejabberd_web_admin.erl:1617
 msgid "Outgoing s2s Servers:"
 msgstr "Odchádzajúce s2s servery:"
 
-#: web/ejabberd_web_admin.erl:1543
+#: web/ejabberd_web_admin.erl:1682
 msgid "Change Password"
 msgstr "Zmeniť heslo"
 
-#: web/ejabberd_web_admin.erl:1546
+#: web/ejabberd_web_admin.erl:1685
 msgid "User "
 msgstr "Používateľ "
 
-#: web/ejabberd_web_admin.erl:1553
+#: web/ejabberd_web_admin.erl:1692
 msgid "Connected Resources:"
 msgstr "Pripojené zdroje:"
 
-#: web/ejabberd_web_admin.erl:1554
+#: web/ejabberd_web_admin.erl:1693
 msgid "Password:"
 msgstr "Heslo:"
 
-#: web/ejabberd_web_admin.erl:1615
+#: web/ejabberd_web_admin.erl:1754
 msgid "No Data"
 msgstr "Žiadne dáta"
 
-#: web/ejabberd_web_admin.erl:1714 web/ejabberd_web_admin.erl:1736
+#: web/ejabberd_web_admin.erl:1832
+msgid "Nodes"
+msgstr "Uzly"
+
+#: web/ejabberd_web_admin.erl:1855 web/ejabberd_web_admin.erl:1877
 msgid "Node "
 msgstr "Uzol "
 
-#: web/ejabberd_web_admin.erl:1723
+#: web/ejabberd_web_admin.erl:1864
 msgid "Listened Ports"
 msgstr "Otvorené portov"
 
-#: web/ejabberd_web_admin.erl:1725 web/ejabberd_web_admin.erl:2003
-#: web/ejabberd_web_admin.erl:2164
+#: web/ejabberd_web_admin.erl:1866 web/ejabberd_web_admin.erl:2181
+#: web/ejabberd_web_admin.erl:2369
 msgid "Update"
 msgstr "Aktualizovať"
 
-#: web/ejabberd_web_admin.erl:1728 web/ejabberd_web_admin.erl:2268
+#: web/ejabberd_web_admin.erl:1869 web/ejabberd_web_admin.erl:2490
 msgid "Restart"
 msgstr "Reštart"
 
-#: web/ejabberd_web_admin.erl:1730 web/ejabberd_web_admin.erl:2270
+#: web/ejabberd_web_admin.erl:1871 web/ejabberd_web_admin.erl:2492
 msgid "Stop"
 msgstr "Stop"
 
-#: web/ejabberd_web_admin.erl:1744
+#: web/ejabberd_web_admin.erl:1885
 msgid "RPC Call Error"
 msgstr "Chyba RPC volania"
 
-#: web/ejabberd_web_admin.erl:1785
+#: web/ejabberd_web_admin.erl:1926
 msgid "Database Tables at "
 msgstr "Databázové tabuľky na "
 
-#: web/ejabberd_web_admin.erl:1792
+#: web/ejabberd_web_admin.erl:1933
 msgid "Storage Type"
 msgstr "Typ úložiska"
 
-#: web/ejabberd_web_admin.erl:1793
+#: web/ejabberd_web_admin.erl:1934
 msgid "Elements"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:1794
+#: web/ejabberd_web_admin.erl:1935
 msgid "Memory"
 msgstr "Pamäť"
 
-#: web/ejabberd_web_admin.erl:1811 web/ejabberd_web_admin.erl:1880
+#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
 msgid "Error"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:1813
+#: web/ejabberd_web_admin.erl:1955
 msgid "Backup of "
 msgstr "Záloha na "
 
-#: web/ejabberd_web_admin.erl:1815
+#: web/ejabberd_web_admin.erl:1957
 #, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
@@ -1418,119 +1481,161 @@ msgstr ""
 "databázy. Ak používate ODBC modul, musíte zálohovať vašu SQL databázu "
 "separátne."
 
-#: web/ejabberd_web_admin.erl:1820
+#: web/ejabberd_web_admin.erl:1962
 msgid "Store binary backup:"
 msgstr "Uložiť binárnu zálohu:"
 
-#: web/ejabberd_web_admin.erl:1824 web/ejabberd_web_admin.erl:1831
-#: web/ejabberd_web_admin.erl:1839 web/ejabberd_web_admin.erl:1846
-#: web/ejabberd_web_admin.erl:1853
+#: web/ejabberd_web_admin.erl:1966 web/ejabberd_web_admin.erl:1973
+#: web/ejabberd_web_admin.erl:1981 web/ejabberd_web_admin.erl:1988
+#: web/ejabberd_web_admin.erl:1995 web/ejabberd_web_admin.erl:2002
+#: web/ejabberd_web_admin.erl:2009 web/ejabberd_web_admin.erl:2017
+#: web/ejabberd_web_admin.erl:2024 web/ejabberd_web_admin.erl:2031
 msgid "OK"
 msgstr "OK"
 
-#: web/ejabberd_web_admin.erl:1827
+#: web/ejabberd_web_admin.erl:1969
 msgid "Restore binary backup immediately:"
 msgstr "Okamžite obnoviť binárnu zálohu:"
 
-#: web/ejabberd_web_admin.erl:1835
+#: web/ejabberd_web_admin.erl:1977
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Obnoviť binárnu zálohu pri nasledujúcom reštarte ejabberd (vyžaduje menej "
 "pamäte)"
 
-#: web/ejabberd_web_admin.erl:1842
+#: web/ejabberd_web_admin.erl:1984
 msgid "Store plain text backup:"
 msgstr "Uložiť zálohu do textového súboru:"
 
-#: web/ejabberd_web_admin.erl:1849
+#: web/ejabberd_web_admin.erl:1991
 msgid "Restore plain text backup immediately:"
 msgstr "Okamžite obnoviť zálohu z textového súboru:"
 
-#: web/ejabberd_web_admin.erl:1875
+#: web/ejabberd_web_admin.erl:1998
+msgid "Import users data from a PIEFXIS file (XEP-0277):"
+msgstr ""
+
+#: web/ejabberd_web_admin.erl:2005
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
+msgstr ""
+
+#: web/ejabberd_web_admin.erl:2012
+msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
+msgstr ""
+
+#: web/ejabberd_web_admin.erl:2013
+msgid " "
+msgstr ""
+
+#: web/ejabberd_web_admin.erl:2020
+#, fuzzy
+msgid "Import user data from jabberd14 spool file:"
+msgstr "Importovať užívateľov z jabberd14 spool súborov"
+
+#: web/ejabberd_web_admin.erl:2027
+#, fuzzy
+msgid "Import users data from jabberd14 spool directory:"
+msgstr "Importovať užívateľov z jabberd14 spool súborov"
+
+#: web/ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
 msgstr "Otvorené porty na "
 
-#: web/ejabberd_web_admin.erl:1900
+#: web/ejabberd_web_admin.erl:2078
 msgid "Modules at "
 msgstr "Moduly na "
 
-#: web/ejabberd_web_admin.erl:1926
+#: web/ejabberd_web_admin.erl:2104
 msgid "Statistics of ~p"
 msgstr "Štatistiky ~p"
 
-#: web/ejabberd_web_admin.erl:1929
+#: web/ejabberd_web_admin.erl:2107
 msgid "Uptime:"
 msgstr "Uptime:"
 
-#: web/ejabberd_web_admin.erl:1932
+#: web/ejabberd_web_admin.erl:2110
 msgid "CPU Time:"
 msgstr "Čas procesoru"
 
-#: web/ejabberd_web_admin.erl:1938
+#: web/ejabberd_web_admin.erl:2116
 msgid "Transactions Committed:"
 msgstr "Transakcie potvrdená"
 
-#: web/ejabberd_web_admin.erl:1941
+#: web/ejabberd_web_admin.erl:2119
 msgid "Transactions Aborted:"
 msgstr "Transakcie zrušená"
 
-#: web/ejabberd_web_admin.erl:1944
+#: web/ejabberd_web_admin.erl:2122
 msgid "Transactions Restarted:"
 msgstr "Transakcie reštartovaná"
 
-#: web/ejabberd_web_admin.erl:1947
+#: web/ejabberd_web_admin.erl:2125
 msgid "Transactions Logged:"
 msgstr "Transakcie zaznamenaná"
 
-#: web/ejabberd_web_admin.erl:1989
+#: web/ejabberd_web_admin.erl:2167
 msgid "Update "
 msgstr "Aktualizovať "
 
-#: web/ejabberd_web_admin.erl:1997
+#: web/ejabberd_web_admin.erl:2175
 msgid "Update plan"
 msgstr "Aktualizovať plán"
 
-#: web/ejabberd_web_admin.erl:1998
+#: web/ejabberd_web_admin.erl:2176
 #, fuzzy
 msgid "Modified modules"
 msgstr "Aktualizované moduly"
 
-#: web/ejabberd_web_admin.erl:1999
+#: web/ejabberd_web_admin.erl:2177
 msgid "Update script"
 msgstr "Aktualizované skripty"
 
-#: web/ejabberd_web_admin.erl:2000
+#: web/ejabberd_web_admin.erl:2178
 msgid "Low level update script"
 msgstr "Nízkoúrovňový aktualizačný skript"
 
-#: web/ejabberd_web_admin.erl:2001
+#: web/ejabberd_web_admin.erl:2179
 msgid "Script check"
 msgstr "Kontrola skriptu"
 
-#: web/ejabberd_web_admin.erl:2144
+#: web/ejabberd_web_admin.erl:2347
 msgid "Port"
 msgstr "Port"
 
-#: web/ejabberd_web_admin.erl:2145
+#: web/ejabberd_web_admin.erl:2348
 msgid "IP"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2146 web/ejabberd_web_admin.erl:2255
+#: web/ejabberd_web_admin.erl:2349
+#, fuzzy
+msgid "Prot"
+msgstr "Port"
+
+#: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
 msgid "Module"
 msgstr "Modul"
 
-#: web/ejabberd_web_admin.erl:2147 web/ejabberd_web_admin.erl:2256
+#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
 msgid "Options"
 msgstr "Nastavenia"
 
-#: web/ejabberd_web_admin.erl:2166
+#: web/ejabberd_web_admin.erl:2371
 msgid "Delete"
 msgstr "Zmazať"
 
-#: web/ejabberd_web_admin.erl:2278
+#: web/ejabberd_web_admin.erl:2500
 msgid "Start"
 msgstr "Štart"
+
+#~ msgid "Encodings"
+#~ msgstr "Kódovania"
+
+#~ msgid "(Raw)"
+#~ msgstr "(Raw)"
+
+#~ msgid "Virtual Hosts"
+#~ msgstr "Virtuálne servery"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "Zadaná prezývka je už registrovaná"
