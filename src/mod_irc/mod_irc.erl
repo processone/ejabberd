@@ -860,7 +860,7 @@ generate_adhoc_register_form(Lang, Username, ConnectionsParams) ->
     generate_connection_params_fields(Lang, ConnectionsParams, 1, [])}.
 
 generate_connection_params_fields(Lang, [], Number, Acc) ->
-    Field = generate_connection_params_field(Lang, "", "", 0, "", Number),
+    Field = generate_connection_params_field(Lang, "", "", -1, "", Number),
     lists:reverse(Field ++ Acc);
     
 generate_connection_params_fields(Lang, [ConnectionParams | ConnectionsParams], Number, Acc) ->
@@ -885,31 +885,33 @@ generate_connection_params_field(Lang, Server, Encoding, Port, Password, Number)
 		       _ ->
 			   Encoding
 		   end,
-    PortUsed = if 
+    PortUsedInt = if
 		    Port >= 0 andalso Port =< 65535 ->
 			Port;
 		    true ->
 			?DEFAULT_IRC_PORT
 	       end,	
+    PortUsed = integer_to_list(PortUsedInt),
     PasswordUsed = case Password of
 		    [] -> 
 			"";
 		    _ -> 
 			Password
 		   end,	      		
+    NumberString = integer_to_list(Number),
     %% Fields are in reverse order, as they will be reversed again later.
     [{xmlelement, "field",
-      [{"var", "password" ++ io_lib:format("~b", [Number])},
+      [{"var", "password" ++ NumberString},
        {"type", "text-single"},
        {"label", io_lib:format(translate:translate(Lang, "Password ~b"), [Number])}],
       [{xmlelement, "value", [], [{xmlcdata, PasswordUsed}]}]},
      {xmlelement, "field",
-      [{"var", "port" ++ io_lib:format("~b", [Number])},
+      [{"var", "port" ++ NumberString},
        {"type", "text-single"},
        {"label", io_lib:format(translate:translate(Lang, "Port ~b"), [Number])}],
       [{xmlelement, "value", [], [{xmlcdata, PortUsed}]}]},    
      {xmlelement, "field",
-      [{"var", "encoding" ++ io_lib:format("~b", [Number])},
+      [{"var", "encoding" ++ NumberString},
        {"type", "list-single"},
        {"label", io_lib:format(translate:translate(Lang, "Encoding for server ~b"), [Number])}],
       [{xmlelement, "value", [], [{xmlcdata, EncodingUsed}]} |
@@ -918,7 +920,7 @@ generate_connection_params_field(Lang, Server, Encoding, Port, Password, Number)
 			  [{xmlelement, "value", [], [{xmlcdata, E}]}]}
 		 end, ?POSSIBLE_ENCODINGS)]},
      {xmlelement, "field",
-      [{"var", "server" ++ io_lib:format("~b", [Number])},
+      [{"var", "server" ++ NumberString},
        {"type", "text-single"},
        {"label", io_lib:format(translate:translate(Lang, "Server ~b"), [Number])}],
       [{xmlelement, "value", [], [{xmlcdata, Server}]}]}].
