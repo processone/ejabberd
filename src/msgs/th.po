@@ -1516,10 +1516,6 @@ msgstr ""
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2013
-msgid " "
-msgstr ""
-
 #: web/ejabberd_web_admin.erl:2020
 #, fuzzy
 msgid "Import user data from jabberd14 spool file:"
@@ -1601,7 +1597,7 @@ msgstr ""
 
 #: web/ejabberd_web_admin.erl:2349
 #, fuzzy
-msgid "Prot"
+msgid "Protocol"
 msgstr "พอร์ท"
 
 #: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
