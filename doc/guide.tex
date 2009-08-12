@@ -59,6 +59,7 @@
 \newcommand{\shell}[1]{\texttt{#1}}
 \newcommand{\ejabberd}{\texttt{ejabberd}}
 \newcommand{\Jabber}{Jabber}
+\newcommand{\esyntax}[1]{\begin{description}\titem{#1}\end{description}}
 
 %% Modules
 \newcommand{\module}[1]{\texttt{#1}}
@@ -105,10 +106,10 @@
 %\ifthenelse{\boolean{modhttpbind}}{\input{mod_http_bind.tex}}{}
 
 %% Common options
-\newcommand{\iqdiscitem}[1]{\titem{iqdisc} \ind{options!iqdisc}This specifies
+\newcommand{\iqdiscitem}[1]{\titem{\{iqdisc, Discipline\}} \ind{options!iqdisc}This specifies
 the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).}
 \newcommand{\hostitem}[1]{
-  \titem{host} \ind{options!host} This option defines the Jabber ID of the
+  \titem{\{host, HostName\}} \ind{options!host} This option defines the Jabber ID of the
   service. If the \texttt{host} option is not specified, the Jabber ID will be the
   hostname of the virtual host with the prefix `\jid{#1.}'. The keyword "@HOST@"
   is replaced at start time with the real virtual host name.
@@ -594,7 +595,7 @@ host name(s) stored in the database will be used.
 
 
 You can override the old values stored in the database by adding next lines to
-the configuration file:
+the beginning of the configuration file:
 \begin{verbatim}
 override_global.
 override_local.
@@ -610,20 +611,18 @@ and ACLs will be removed before new ones are added.
 The option \option{hosts} defines a list containing one or more domains that
 \ejabberd{} will serve.
 
+The syntax is:
+\esyntax{\{hosts, [HostName, ...]\}.}
+
 Examples:
 \begin{itemize}
 \item Serving one domain:
 \begin{verbatim}
 {hosts, ["example.org"]}.
 \end{verbatim}
-\item Serving one domain, and backwards compatible with older \ejabberd{}
-  versions:
+\item Serving three domains:
 \begin{verbatim}
-{host, "example.org"}.
-\end{verbatim}
-\item Serving two domains:
-\begin{verbatim}
-{hosts, ["example.net", "example.com"]}.
+{hosts, ["example.net", "example.com", "jabber.somesite.org"]}.
 \end{verbatim}
 \end{itemize}
 
@@ -631,11 +630,10 @@ Examples:
 \ind{virtual hosting}\ind{virtual hosts}\ind{virtual domains}
 
 Options can be defined separately for every virtual host using the
-\term{host\_config} option.\ind{options!host\_config} It has the following
-syntax:
-\begin{verbatim}
-{host_config, <hostname>, [<option>, <option>, ...]}.
-\end{verbatim}
+\term{host\_config} option.
+
+The syntax is: \ind{options!host\_config}
+\esyntax{\{host\_config, HostName, [Option, ...]\}}
 
 Examples:
 \begin{itemize}
@@ -671,14 +669,10 @@ Examples:
 To define specific ejabberd modules in a virtual host,
 you can define the global \term{modules} option with the common modules,
 and later add specific modules to certain virtual hosts.
-To accomplish that, instead of defining each option in \term{host\_config} with the syntax
-\begin{verbatim}
-{<option-name>, <option-value>}
-\end{verbatim}
+To accomplish that, instead of defining each option in \term{host\_config} with the general syntax
+\esyntax{\{OptionName, OptionValue\}}
 use this syntax:
-\begin{verbatim}
-{{add, <option-name>}, <option-value>}
-\end{verbatim}
+\esyntax{\{\{add, OptionName\}, OptionValue\}}
 
 In this example three virtual hosts have some similar modules, but there are also
 other different modules for some specific virtual hosts:
@@ -729,22 +723,14 @@ tuple with the following elements:
 \item Options for the TCP socket and for the listening module.
 \end{itemize}
 
-With the basic syntax the ports will listen on all IPv4 network addresses:
-\begin{verbatim}
-{listen, [
-          {<port-number>, <module>, [<options>]},
-          {<port-number>, <module>, [<options>]},
-          ...
-          {<port-number>, <module>, [<options>]}
-         ]}.
-\end{verbatim}
+The option syntax is:
+\esyntax{\{listen, [Listener, ...]\}.}
 
-It is possible to specify the IP address for a port using the full syntax:
-\begin{verbatim}
-          {{<port-number>, <ip-address>}, <module>, [<options>]}
-          {{<port-number>, <transport-protocol>}, <module>, [<options>]}
-          {{<port-number>, <ip-address>, <transport-protocol>}, <module>, [<options>]}
-\end{verbatim}
+To define a listener there are several syntax.
+\esyntax{\{PortNumber, Module, [Option, ...]\}}
+\esyntax{\{\{PortNumber, IPaddress\}, Module, [Option, ...]\}}
+\esyntax{\{\{PortNumber, TransportProtocol\}, Module, [Option, ...]\}}
+\esyntax{\{\{PortNumber, IPaddress, TransportProtocol\}, Module, [Option, ...]\}}
 
 
 \makesubsubsection{listened-port}{Port Number, IP Address and Transport Protocol}
@@ -759,6 +745,7 @@ The socket will listen only in that network interface.
 It is possible to specify a generic address,
 so \ejabberd{} will listen in all addresses.
 Depending in the type of the IP address, IPv4 or IPv6 will be used.
+When not specified the IP address, it will listen on all IPv4 network addresses.
 
 Some example values for IP address:
 \begin{itemize}
@@ -809,19 +796,19 @@ The available modules, their purpose and the options allowed by each one are:
 
 This is a detailed description of each option allowed by the listening modules:
 \begin{description}
-  \titem{\{access, <access rule>\}} \ind{options!access}This option defines
+  \titem{\{access, AccessName\}} \ind{options!access}This option defines
     access to the port. The default value is \term{all}.
   \titem{\{certfile, Path\}} Full path to a file containing the default SSL certificate.
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
-  \titem{service\_check\_from} \ind{options!service\_check\_from}
+  \titem{\{service\_check\_from, true|false\}} \ind{options!service\_check\_from}
     This option can be used with \term{ejabberd\_service} only. It is
     used to disable control on the from field on packets send by an
     external components. The option can be either \term{true} or
     \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
-  \titem{\{hosts, [Hostnames], [HostOptions]\}} \ind{options!hosts}
+  \titem{\{hosts, [Hostname, ...], [HostOption, ...]\}} \ind{options!hosts}
     The external Jabber component that connects to this \term{ejabberd\_service}
     can serve one or more hostnames.
-    In \term{HostOptions} you can define options for the component;
+    As \term{HostOption} you can define options for the component;
     currently the only allowed option is the password required to the component
     when attempt to connect to ejabberd: \poption{\{password, Secret\}}.
     Note that you cannot define in a single \term{ejabberd\_service} components of
@@ -870,7 +857,7 @@ This is a detailed description of each option allowed by the listening modules:
     connections and 131072 for s2s connections. s2s max stanza size
     must always much higher than c2s limit. Change this value with
     extreme care as it can cause unwanted disconnect if set too low.
-  \titem{\{request\_handlers, [\{Path, Module\}]\}} To define one or several handlers that will serve HTTP requests.
+  \titem{\{request\_handlers, [ \{Path, Module\}, ...]\}} To define one or several handlers that will serve HTTP requests.
     The Path is a list of strings; so the URIs that start with that Path will be served by Module.
     For example, if you want \term{mod\_foo} to serve the URIs that start with \term{/a/b/},
     and you also want \term{mod\_http\_bind} to serve the URIs \term{/http-bind/},
@@ -880,7 +867,7 @@ This is a detailed description of each option allowed by the listening modules:
     Note that \xepref{0114} requires that the domain must match the hostname of the component.
     Only enable this option if you are completely sure you need to enable it.
     Default value: false.
-  \titem{\{shaper, <access rule>\}} \ind{options!shaper}This option defines a
+  \titem{\{shaper, none|ShaperName\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.
   \titem{starttls} \ind{options!starttls}\ind{STARTTLS}This option
@@ -927,7 +914,7 @@ There are some additional global options that can be specified in the ejabberd c
   Specify which address families to try, in what order, and connect timeout in milliseconds.
   By default it first tries connecting with IPv4, if that fails it tries using IPv6,
   with a timeout of 10000 milliseconds.
-  \titem{\{s2s\_dns\_options, [\{Property, Value\}]\}}
+  \titem{\{s2s\_dns\_options, [ \{Property, Value\}, ...]\}}
   \ind{options!s2s\_dns\_options}Define properties to use for DNS resolving.
   Allowed Properties are: \term{timeout} in seconds which default value is \term{10}
   and \term{retries} which default value is \term{2}.
@@ -1122,11 +1109,9 @@ you have to make the transports log and do \ind{XDB}XDB by themselves:
 \makesubsection{auth}{Authentication}
 \ind{authentication}\ind{options!auth\_method}
 
-The option \option{auth\_method} defines the authentication method that is used
-for user authentication:
-\begin{verbatim}
-{auth_method, [<method>]}.
-\end{verbatim}
+The option \option{auth\_method} defines the authentication methods that are used
+for user authentication. The syntax is:
+\esyntax{\{auth\_method, [Method, ...]\}.}
 
 The following authentication methods are supported by \ejabberd{}:
 \begin{itemize}
@@ -1146,11 +1131,7 @@ Account creation is only supported by internal and odbc methods.
 \ind{internal authentication}\ind{Mnesia}
 
 \ejabberd{} uses its internal Mnesia database as the default authentication method.
-
-\begin{itemize}
-\item \term{auth\_method}: The value \term{internal} will enable the internal
-  authentication method.
-\end{itemize}
+The value \term{internal} will enable the internal authentication method.
 
 Examples:
 \begin{itemize}
@@ -1169,6 +1150,8 @@ Examples:
 \makesubsubsection{saslanonymous}{SASL Anonymous and Anonymous Login}
 \ind{sasl anonymous}\ind{anonymous login}
 
+The value \term{anonymous} will enable the internal authentication method.
+
 %TODO: introduction; tell what people can do with this
 The anonymous authentication method can be configured with the following
 options. Remember that you can use the \term{host\_config} option to set virtual
@@ -1176,21 +1159,19 @@ host specific options (see section~\ref{virtualhost}). Note that there also
 is a detailed tutorial regarding \footahref{http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support}{SASL
 Anonymous and anonymous login configuration}.
 
-\begin{itemize}
-\item \term{auth\_method}: The value \term{anonymous} will enable the anonymous
-  authentication method.
-\item \term{allow\_multiple\_connections}: This value for this option can be
-  either \term{true} or \term{false} and is only used when the anonymous mode is
+\begin{description}
+\titem{\{allow\_multiple\_connections, false|true\}} This option is only used
+  when the anonymous mode is
   enabled. Setting it to \term{true} means that the same username can be taken
   multiple times in anonymous login mode if different resource are used to
   connect. This option is only useful in very special occasions. The default
   value is \term{false}.
-\item \term{anonymous\_protocol}: This option can take three values:
-  \term{sasl\_anon}, \term{login\_anon} or \term{both}. \term{sasl\_anon} means
+\titem{\{anonymous\_protocol, sasl\_anon | login\_anon | both\}} 
+  \term{sasl\_anon} means
   that the SASL Anonymous method will be used. \term{login\_anon} means that the
   anonymous login method will be used. \term{both} means that SASL Anonymous and
   login anonymous are both enabled.
-\end{itemize}
+\end{description}
 
 Those options are defined for each virtual host with the \term{host\_config}
 parameter (see section~\ref{virtualhost}).
@@ -1243,7 +1224,7 @@ PAM authentication is disabled by default, so you have to configure and compile
 
 Options:
 \begin{description}
-\titem{pam\_service}\ind{options!pam\_service}This option defines the PAM service name.
+\titem{\{pam\_service, Name\}}\ind{options!pam\_service}This option defines the PAM service name.
 Default is \term{"ejabberd"}. Refer to the PAM documentation of your operation system
 for more information.
 \end{description}
@@ -1300,75 +1281,74 @@ then \term{/etc/nssswitch.conf} must be configured to use \term{winbind} as well
 
 Access control in \ejabberd{} is performed via Access Control Lists (ACLs). The
 declarations of ACLs in the configuration file have the following syntax:
-\begin{verbatim}
-{acl, <aclname>, {<acltype>, ...}}.
-\end{verbatim}
-\term{<acltype>} can be one of the following:
+\esyntax{\{acl, ACLName, ACLValue\}.}
+
+\term{ACLValue} can be one of the following:
 \begin{description}
 \titem{all} Matches all JIDs. Example:
 \begin{verbatim}
 {acl, all, all}.
 \end{verbatim}
-\titem{\{user, <username>\}} Matches the user with the name
-  \term{<username>} at the first virtual host. Example:
+\titem{\{user, Username\}} Matches the user with the name
+  \term{Username} at the first virtual host. Example:
 \begin{verbatim}
 {acl, admin, {user, "yozhik"}}.
 \end{verbatim}
-\titem{\{user, <username>, <server>\}} Matches the user with the JID
-  \term{<username>@<server>} and any resource. Example:
+\titem{\{user, Username, Server\}} Matches the user with the JID
+  \term{Username@Server} and any resource. Example:
 \begin{verbatim}
 {acl, admin, {user, "yozhik", "example.org"}}.
 \end{verbatim}
-\titem{\{server, <server>\}} Matches any JID from server
-  \term{<server>}. Example:
+\titem{\{server, Server\}} Matches any JID from server
+  \term{Server}. Example:
 \begin{verbatim}
 {acl, exampleorg, {server, "example.org"}}.
 \end{verbatim}
-\titem{\{resource, <resource>\}} Matches any JID with a resource
-  \term{<resource>}. Example:
+\titem{\{resource, Resource\}} Matches any JID with a resource
+  \term{Resource}. Example:
 \begin{verbatim}
 {acl, mucklres, {resource, "muckl"}}.
 \end{verbatim}
-\titem{\{shared\_group, <groupname>\}} Matches any member of a Shared Roster Group with name \term{<groupname>} in the virtual host. Example:
+\titem{\{shared\_group, Groupname\}} Matches any member of a Shared Roster Group with name \term{Groupname} in the virtual host. Example:
 \begin{verbatim}
 {acl, techgroupmembers, {shared_group, "techteam"}}.
 \end{verbatim}
-\titem{\{shared\_group, <groupname>, <server>\}} Matches any member of a Shared Roster Group with name \term{<groupname>} in the virtual host \term{<server>}. Example:
+\titem{\{shared\_group, Groupname, Server\}} Matches any member of a Shared Roster Group with name \term{Groupname} in the virtual host \term{Server}. Example:
 \begin{verbatim}
 {acl, techgroupmembers, {shared_group, "techteam", "example.org"}}.
 \end{verbatim}
-\titem{\{user\_regexp, <regexp>\}} Matches any local user with a name that
-  matches \term{<regexp>} on local virtual hosts. Example:
+\titem{\{user\_regexp, Regexp\}} Matches any local user with a name that
+  matches \term{Regexp} on local virtual hosts. Example:
 \begin{verbatim}
 {acl, tests, {user_regexp, "^test[0-9]*$"}}.
 \end{verbatim}
 %$
-\titem{\{user\_regexp, <regexp>, <server>\}} Matches any user with a name
-  that matches \term{<regexp>} at server \term{<server>}. Example:
+\titem{\{user\_regexp, UserRegexp, Server\}} Matches any user with a name
+  that matches \term{Regexp} at server \term{Server}. Example:
 \begin{verbatim}
-{acl, tests, {user_regexp, "^test", "example.org"}}.
+{acl, tests, {user_Userregexp, "^test", "example.org"}}.
 \end{verbatim}
-\titem{\{server\_regexp, <regexp>\}} Matches any JID from the server that
-  matches \term{<regexp>}. Example:
+\titem{\{server\_regexp, Regexp\}} Matches any JID from the server that
+  matches \term{Regexp}. Example:
 \begin{verbatim}
 {acl, icq, {server_regexp, "^icq\\."}}.
 \end{verbatim}
-\titem{\{resource\_regexp, <regexp>\}} Matches any JID with a resource that
-  matches \term{<regexp>}. Example:
+\titem{\{resource\_regexp, Regexp\}} Matches any JID with a resource that
+  matches \term{Regexp}. Example:
 \begin{verbatim}
 {acl, icq, {resource_regexp, "^laptop\\."}}.
 \end{verbatim}
-\titem{\{node\_regexp, <user\_regexp>, <server\_regexp>\}} Matches any user
-  with a name that matches \term{<user\_regexp>} at any server that matches
-  \term{<server\_regexp>}. Example:
+\titem{\{node\_regexp, UserRegexp, ServerRegexp\}} Matches any user
+  with a name that matches \term{UserRegexp} at any server that matches
+  \term{ServerRegexp}. Example:
 \begin{verbatim}
 {acl, yohzik, {node_regexp, "^yohzik$", "^example.(com|org)$"}}.
 \end{verbatim}
-\titem{\{user\_glob, <glob>\}}
-\titem{\{user\_glob, <glob>, <server>\}}
-\titem{\{server\_glob, <glob>\}}
-\titem{\{resource\_glob, <glob>\}}
-\titem{\{node\_glob, <user\_glob>, <server\_glob>\}} This is the same as
+\titem{\{user\_glob, Glob\}}
+\titem{\{user\_glob, Glob, Server\}}
+\titem{\{server\_glob, Glob\}}
+\titem{\{resource\_glob, Glob\}}
+\titem{\{node\_glob, UserGlob, ServerGlob\}} This is the same as
   above. However, it uses shell glob patterns instead of regexp. These patterns
   can have the following special characters:
   \begin{description}
@@ -1381,7 +1361,7 @@ declarations of ACLs in the configuration file have the following syntax:
   \end{description}
 \end{description}
 
-The following ACLs are pre-defined:
+The following \term{ACLName} are pre-defined:
 \begin{description}
 \titem{all} Matches any JID.
 \titem{none} Matches no JID.
@@ -1390,15 +1370,11 @@ The following ACLs are pre-defined:
 \makesubsubsection{AccessRights}{Access Rights}
 \ind{access}\ind{ACL}\ind{options!acl}\ind{ACL}\ind{Access Control List}
 
-An entry allowing or denying access to different services looks similar to
-this:
-\begin{verbatim}
-{access, <accessname>, [{allow, <aclname>},
-                        {deny, <aclname>},
-                        ...
-                       ]}.
-\end{verbatim}
-When a JID is checked to have access to \term{<accessname>}, the server
+An entry allowing or denying access to different services.
+The syntax is:
+\esyntax{\{access, AccessName, [ \{allow|deny, ACLName\}, ...]\}.}
+
+When a JID is checked to have access to \term{Accessname}, the server
 sequentially checks if that JID matches any of the ACLs that are named in the
 second elements of the tuples in the list. If it matches, the first element of
 the first matched tuple is returned, otherwise the value `\term{deny}' is
@@ -1411,7 +1387,7 @@ Example:
                      {allow, all}]}.
 \end{verbatim}
 
-The following access rules are pre-defined:
+The following \term{AccessName} are pre-defined:
 \begin{description}
 \titem{all} Always returns the value `\term{allow}'.
 \titem{none} Always returns the value `\term{deny}'.
@@ -1429,19 +1405,12 @@ can be either a number, or \term{infinity}.  The default value is
 \term{infinity}.
 
 The syntax is:
-\begin{verbatim}
-{access, max_user_sessions, [{<maxnumber>, <aclname>},
-                             ...
-                            ]}.
-\end{verbatim}
+\esyntax{\{access, max\_user\_sessions, [ \{MaxNumber, ACLName\}, ...]\}.}
 
-Examples:
-\begin{itemize}
-\item To limit the number of sessions per user to 10 for all users:
+This example limits the number of sessions per user to 5 for all users, and to 10 for admins:
 \begin{verbatim}
-{access, max_user_sessions, [{10, all}]}.
+{access, max_user_sessions, [{10, admin}, {5, all}]}.
 \end{verbatim}
-\end{itemize}
 
 \makesubsubsection{configmaxs2sconns}{Several connections to a remote Jabber server with ACL}
 \ind{options!max\_s2s\_connections}
@@ -1452,11 +1421,7 @@ The default value is \term{1}.
 There's also available the access \term{max\_s2s\_connections\_per\_node}.
 
 The syntax is:
-\begin{verbatim}
-{access, max_s2s_connections, [{<maxnumber>, <aclname>},
-                               ...
-                              ]}.
-\end{verbatim}
+\esyntax{\{access, max\_s2s\_connections, [ \{MaxNumber, ACLName\}, ...]\}.}
 
 Examples:
 \begin{itemize}
@@ -1469,17 +1434,13 @@ Examples:
 \makesubsection{shapers}{Shapers}
 \ind{options!shaper}\ind{options!maxrate}\ind{shapers}\ind{maxrate}\ind{traffic speed}
 
-Shapers enable you to limit connection traffic. The syntax of
-shapers is like this:
-\begin{verbatim}
-{shaper, <shapername>, <kind>}.
-\end{verbatim}
+Shapers enable you to limit connection traffic.
+The syntax is:
+\esyntax{\{shaper, ShaperName, Kind\}.}
 Currently only one kind of shaper called \term{maxrate} is available. It has the
 following syntax:
-\begin{verbatim}
-{maxrate, <rate>}
-\end{verbatim}
-where \term{<rate>} stands for the maximum allowed incoming rate in bytes per
+\esyntax{\{maxrate, Rate\}}
+where \term{Rate} stands for the maximum allowed incoming rate in bytes per
 second.
 When a connection exceeds this limit, \ejabberd{} stops reading from the socket
 until the average rate is again below the allowed maximum.
@@ -1503,9 +1464,14 @@ Examples:
 
 The option \option{language} defines the default language of server strings that
 can be seen by \Jabber{} clients. If a \Jabber{} client does not support
-\option{xml:lang}, the specified language is used. The default value is
-\term{en}. In order to take effect there must be a translation file
-\term{<language>.msg} in \ejabberd{}'s \term{msgs} directory.
+\option{xml:lang}, the specified language is used.
+
+The option syntax is:
+\esyntax{\{language, Language\}.}
+
+The default value is \term{en}.
+In order to take effect there must be a translation file
+\term{Language.msg} in \ejabberd{}'s \term{msgs} directory.
 
 For example, to set Russian as default language:
 \begin{verbatim}
@@ -1604,14 +1570,10 @@ _stuns._tcp  IN SRV  0 0 5349 stun.example.com.
 
 The option \option{include\_config\_file} in a configuration file instructs \ejabberd{} to include other configuration files immediately.
 
-The basic usage is:
-\begin{verbatim}
-{include_config_file, <filename>}.
-\end{verbatim}
-It is also possible to specify suboptions:
-\begin{verbatim}
-{include_config_file, <filename>, [<suboption>, <suboption>, ...]}.
-\end{verbatim}
+The basic syntax is:
+\esyntax{\{include\_config\_file, Filename\}.}
+It is possible to specify suboptions using the full syntax:
+\esyntax{\{include\_config\_file, Filename, [Suboption, ...]\}.}
 
 The filename can be indicated either as an absolute path,
 or relative to the main \ejabberd{} configuration file.
@@ -1620,10 +1582,10 @@ The file must exist and be readable.
 
 The allowed suboptions are:
 \begin{description}
-  \titem{\{disallow, [<option>, <option>, ...]\}} Disallows the usage of those options in the included configuration file.
+  \titem{\{disallow, [Optionname, ...]\}} Disallows the usage of those options in the included configuration file.
   The options that match this criteria are not accepted.
   The default value is an empty list: \term{[]}
-  \titem{\{allow\_only, [<option>, <option>, ...]\}} Allows only the usage of those options in the included configuration file.
+  \titem{\{allow\_only, [Optionname, ...]\}} Allows only the usage of those options in the included configuration file.
   The options that do not match this criteria are not accepted.
   The default value is: \term{all}
 \end{description}
@@ -1662,9 +1624,7 @@ it is possible to define a macro for a value
 and later use this macro when defining an option.
 
 A macro is defined with this syntax:
-\begin{verbatim}
-{define_macro, '<MACRO>', <value>}.
-\end{verbatim}
+\esyntax{\{define\_macro, 'MACRO', Value\}.}
 The \term{MACRO} must be surrounded by single quotation marks,
 and all letters in uppercase; check the examples bellow.
 The \term{value} can be any valid arbitrary Erlang term.
@@ -1683,20 +1643,20 @@ of another macro.
 There are two ways to use a macro:
 \begin{description}
 
-  \titem{'<MACRO>'}
+  \titem{'MACRO'}
   You can put this instead of a value in an \ejabberd{} option,
   and will be replaced with the \term{value} previously defined.
   If the macro is not defined previously,
   the program will crash and report an error.
 
-  \titem{\{use\_macro, '<MACRO>', <defaultvalue>\}}
+  \titem{\{use\_macro, 'MACRO', Defaultvalue\}}
   Use a macro even if it may not be defined.
   If the macro is not defined previously,
   the provided \term{defaultvalue} is used.
   This usage behaves as if it were defined and used this way:
 \begin{verbatim}
-{define_macro, '<MACRO>', <defaultvalue>}.
-'<MACRO>'
+{define_macro, 'MACRO', Defaultvalue}.
+'MACRO'
 \end{verbatim}
 
 \end{description}
@@ -1825,27 +1785,19 @@ interface available, PostgreSQL or MySQL.
 
 To use the native MySQL interface, you can pass a tuple of the following form as
 parameter:
-\begin{verbatim}
-{mysql, "Server", "Database", "Username", "Password"}
-\end{verbatim}
+\esyntax{\{mysql, "Server", "Database", "Username", "Password"\}}
 
 \term{mysql} is a keyword that should be kept as is. For example:
-\begin{verbatim}
-{odbc_server, {mysql, "localhost", "test", "root", "password"}}.
-\end{verbatim}
+\esyntax{\{odbc\_server, \{mysql, "localhost", "test", "root", "password"\}\}.}
 
 Optionally, it is possible to define the MySQL port to use. This
 option is only useful, in very rare cases, when you are not running
 MySQL with the default port setting. The \term{mysql} parameter
 can thus take the following form:
-\begin{verbatim}
-{mysql, "Server", Port, "Database", "Username", "Password"}
-\end{verbatim}
+\esyntax{\{mysql, "Server", Port, "Database", "Username", "Password"\}}
 
 The \term{Port} value should be an integer, without quotes. For example:
-\begin{verbatim}
-{odbc_server, {mysql, "localhost", Port, "test", "root", "password"}}.
-\end{verbatim}
+\esyntax{\{odbc\_server, \{mysql, "localhost", Port, "test", "root", "password"\}\}.}
 
 By default \ejabberd{} opens 10 connections to the database for each virtual host.
 Use this option to modify the value:
@@ -2003,27 +1955,20 @@ interface available, PostgreSQL or MySQL.
 
 To use the native PostgreSQL interface, you can pass a tuple of the following
 form as parameter:
-\begin{verbatim}
-{pgsql, "Server", "Database", "Username", "Password"}
-\end{verbatim}
+\esyntax{\{pgsql, "Server", "Database", "Username", "Password"\}}
 
 \term{pgsql} is a keyword that should be kept as is. For example:
-\begin{verbatim}
-{odbc_server, {pgsql, "localhost", "database", "ejabberd", "password"}}.
-\end{verbatim}
+\esyntax{\{odbc\_server, \{pgsql, "localhost", "database", "ejabberd", "password"\}\}.}
 
 Optionally, it is possible to define the PostgreSQL port to use. This
 option is only useful, in very rare cases, when you are not running
 PostgreSQL with the default port setting. The \term{pgsql} parameter
 can thus take the following form:
-\begin{verbatim}
-{pgsql, "Server", Port, "Database", "Username", "Password"}
-\end{verbatim}
+\esyntax{\{pgsql, "Server", Port, "Database", "Username", "Password"\}}
 
 The \term{Port} value should be an integer, without quotes. For example:
-\begin{verbatim}
-{odbc_server, {pgsql, "localhost", 5432, "database", "ejabberd", "password"}}.
-\end{verbatim}
+\esyntax{\{odbc\_server, \{pgsql, "localhost", 5432, "database", "ejabberd", "password"\}\}.}
+
 By default \ejabberd{} opens 10 connections to the database for each virtual host.
 Use this option to modify the value:
 \begin{verbatim}
@@ -2156,20 +2101,20 @@ create accounts, change password or edit vCard that is stored in LDAP.
 
 Parameters:
 \begin{description}
-\titem{ldap\_servers} \ind{options!ldap\_server}List of IP addresses or DNS names of your
+\titem{\{ldap\_servers, [Servers, ...]\}} \ind{options!ldap\_server}List of IP addresses or DNS names of your
 LDAP servers. This option is required.
-\titem{ldap\_encrypt} \ind{options!ldap\_encrypt}Type of connection encryption to the LDAP server.
+\titem{\{ldap\_encrypt, none|tls\}} \ind{options!ldap\_encrypt}Type of connection encryption to the LDAP server.
 Allowed values are: \term{none}, \term{tls}.
 Note that STARTTLS is not supported.
 The default value is: \term{none}.
-\titem{ldap\_port} \ind{options!ldap\_port}Port to connect to your LDAP server.
+\titem{\{ldap\_port, Number\}} \ind{options!ldap\_port}Port to connect to your LDAP server.
 The default port is~389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in \ejabberd{}'s database.
 Then, if you remove that value from the configuration file,
 the value previously stored in the database will be used instead of the default port.
-\titem{ldap\_rootdn} \ind{options!ldap\_rootdn}Bind DN. The default value
+\titem{\{ldap\_rootdn, RootDN\}} \ind{options!ldap\_rootdn}Bind DN. The default value
   is~\term{""} which means `anonymous connection'.
-\titem{ldap\_password} \ind{options!ldap\_password}Bind password. The default
+\titem{\{ldap\_password, Password\}} \ind{options!ldap\_password}Bind password. The default
   value is \term{""}.
 \end{description}
 
@@ -2190,15 +2135,15 @@ and SASL authentication.
 You can authenticate users against an LDAP directory. Available options are:
 
 \begin{description}
-\titem{ldap\_base}\ind{options!ldap\_base}LDAP base directory which stores
+\titem{\{ldap\_base, Base\}}\ind{options!ldap\_base}LDAP base directory which stores
   users accounts. This option is required.
-  \titem{ldap\_uids}\ind{options!ldap\_uids}LDAP attribute which holds a list
-  of attributes to use as alternatives for getting the JID. The value is of
-  the form: \term{[\{ldap\_uidattr\}]} or \term{[\{ldap\_uidattr,
-  ldap\_uidattr\_format\}]}. You can use as many comma separated tuples
-  \term{\{ldap\_uidattr, ldap\_uidattr\_format\}} that is needed. The default
-  value is \term{[\{"uid", "\%u"\}]}. The defaut \term{ldap\_uidattr\_format}
-  is \term{"\%u"}. The values for \term{ldap\_uidattr} and
+  \titem{\{ldap\_uids, [ \{ldap\_uidattr\} | \{ldap\_uidattr, ldap\_uidattr\_format\}, ...]\}}\ind{options!ldap\_uids}
+  LDAP attribute which holds a list of attributes to use as alternatives for getting the JID. 
+  The default attributes are \term{[\{"uid", "\%u"\}]}.
+  The attributes are of the form:
+  \term{[\{ldap\_uidattr\}]} or \term{[\{ldap\_uidattr, ldap\_uidattr\_format\}]}.
+  You can use as many comma separated attributes as needed. 
+  The values for \term{ldap\_uidattr} and
   \term{ldap\_uidattr\_format} are described as follow:
   \begin{description}
     \titem{ldap\_uidattr}\ind{options!ldap\_uidattr}LDAP attribute which holds
@@ -2209,7 +2154,7 @@ You can authenticate users against an LDAP directory. Available options are:
     user's part of a JID. For example, \term{"\%u@example.org"}. The default
     value is \term{"\%u"}.
   \end{description}
-  \titem{ldap\_filter}\ind{options!ldap\_filter}\ind{protocols!RFC 4515:
+  \titem{\{ldap\_filter, Filter\}}\ind{options!ldap\_filter}\ind{protocols!RFC 4515:
   LDAP String Representation of Search Filters}
   \footahref{http://tools.ietf.org/html/rfc4515}{RFC 4515} LDAP filter. The
   default is \term{none}. Example:
@@ -2218,7 +2163,7 @@ You can authenticate users against an LDAP directory. Available options are:
   \emph{must not} use \option{ldap\_uidattr} attribute in filter because this
   attribute will be substituted in LDAP filter automatically.
 
-  \titem{ldap\_local\_filter}\ind{options!ldap\_local\_filter}
+  \titem{\{ldap\_local\_filter, Filter\}}\ind{options!ldap\_local\_filter}
   If you can't use \term{ldap\_filter} due to performance reasons
   (the LDAP server has many users registered),
   you can use this local filter.
@@ -2381,6 +2326,9 @@ The option \term{modules} defines the list of modules that will be loaded after
 element is the name of a module and the second is a list of options for that
 module.
 
+The syntax is:
+\esyntax{\{modules, [ \{ModuleName, ModuleOptions\}, ...]\}.}
+
 Examples:
 \begin{itemize}
 \item In this example only the module \modecho{} is loaded and no module
@@ -2497,7 +2445,12 @@ this separate section.
 Many modules define handlers for processing IQ queries of different namespaces
 to this server or to a user (e.\,g.\ to \jid{example.org} or to
 \jid{user@example.org}). This option defines processing discipline for
-these queries. Possible values are:
+these queries.
+
+The syntax is:
+\esyntax{\{iqdisc, Value\}}
+
+Possible \term{Value} are:
 \begin{description}
 \titem{no\_queue} All queries of a namespace with this processing discipline are
   processed immediately. This also means that no other packets can be processed
@@ -2531,7 +2484,12 @@ Example:
 \ind{options!host}
 
 This option defines the Jabber ID of a service provided by an \ejabberd{} module.
-The keyword "@HOST@" is replaced at start time with the real virtual host string.
+
+The syntax is:
+\esyntax{\{host, HostName\}}
+
+If you include the keyword "@HOST@" in the HostName,
+it is replaced at start time with the real virtual host string.
 
 This example configures
 the \ind{modules!\modecho{}}echo module to provide its echoing service
@@ -2595,7 +2553,7 @@ hosts in ejabberd.
 
 Options:
 \begin{description}
-\titem{access} \ind{options!access}This option specifies who is allowed to
+\titem{\{access, AccessName\}} \ind{options!access}This option specifies who is allowed to
   send announcements and to set the message of the day (by default, nobody is
   able to send such messages).
 \end{description}
@@ -2656,9 +2614,9 @@ Options:
 \begin{description}
 \iqdiscitem{Service Discovery (\ns{http://jabber.org/protocol/disco\#items} and
   \ns{http://jabber.org/protocol/disco\#info})}
-\titem{\{extra\_domains, [ Domain ]\}} \ind{options!extra\_domains}With this option,
+\titem{\{extra\_domains, [Domain, ...]\}} \ind{options!extra\_domains}With this option,
   you can specify a list of extra domains that are added to the Service Discovery item list.
-\titem{\{server\_info, [ \{Modules, Field, [Value]\} ]\}} \ind{options!server\_info}
+\titem{\{server\_info, [ \{Modules, Field, [Value, ...]\}, ... ]\}} \ind{options!server\_info}
   Specify additional information about the server,
   as described in Contact Addresses for XMPP Services (\xepref{0157}).
   \term{Modules} can be the keyword `all', 
@@ -2801,9 +2759,12 @@ For example:
 ]}.
 \end{verbatim}
 
-The maximum inactivity period is by default 30 seconds.
-This can be configured with the module option \term{max\_inactivity}.
-For example, to set 50 seconds:
+Options:
+\begin{description}
+  \titem{\{max\_inactivity, Seconds\}} \ind{options!max\_inactivity}
+  Define the maximum inactivity period in seconds.
+  Default value is 30 seconds.
+  For example, to set 50 seconds:
 \begin{verbatim}
 {modules,
  [
@@ -2812,6 +2773,8 @@ For example, to set 50 seconds:
   ...
 ]}.
 \end{verbatim}
+\end{description}
+
 
 \makesubsection{modhttpfileserver}{\modhttpfileserver{}}
 \ind{modules!\modhttpfileserver{}}\ind{modhttpfileserver}
@@ -2820,22 +2783,26 @@ This simple module serves files from the local disk over HTTP.
 
 Options:
 \begin{description}
-  \titem{docroot} \ind{options!docroot}
+  \titem{\{docroot, Path\}} \ind{options!docroot}
     Directory to serve the files.
-  \titem{accesslog} \ind{options!accesslog}
+  \titem{\{accesslog, Path\}} \ind{options!accesslog}
     File to log accesses using an Apache-like format.
     No log will be recorded if this option is not specified.
-  \titem{directory\_indices} \ind{options!directoryindices}
+  \titem{\{directory\_indices, [Index, ...]\}} \ind{options!directoryindices}
     Indicate one or more directory index files, similarly to Apache's
     DirectoryIndex variable. When a web request hits a directory
     instead of a regular file, those directory indices are looked in
     order, and the first one found is returned.
-  \titem{content\_types} \ind{options!contenttypes}
+  %B \titem{content\_types} \ind{options!contenttypes}
+  %M \titem{\{content\_types, \{Extension, Type\} \}} \ind{options!contenttypes}
+  %B \titem{\{content\_types, [ Extension, Type, ... ]\}} \ind{options!contenttypes}
+  %B \titem{\{content\_types, [ {Extension, Type}, ... ]\}} \ind{options!contenttypes}
+  %M \titem{\{content\_types, [ \{Extension, Type\}, ... ]\}} \ind{options!contenttypes}
     Specify a mapping of extensions to content types.
     There are several content types already defined,
     with this option you can add new definitions, modify or delete existing ones.
     To delete an existing definition, simply define it with a value: `undefined'.
-  \titem{default\_content\_type} \ind{options!defaultcontenttype}
+  \titem{\{default\_content\_type, Type\}} \ind{options!defaultcontenttype}
     Specify the content type to use for unknown extensions.
     Default value is `application/octet-stream'.
 \end{description}
@@ -2929,15 +2896,15 @@ on an available node on first connection attempt.
 Module options:
 \begin{description}
 \hostitem{conference}
-\titem{access} \ind{options!access}You can specify who is allowed to use
+\titem{\{access, AccessName\}} \ind{options!access}You can specify who is allowed to use
   the Multi-User Chat service. By default everyone is allowed to use it.
-\titem{access\_create} \ind{options!access\_create}To configure who is
+\titem{\{access\_create, AccessName\}} \ind{options!access\_create}To configure who is
   allowed to create new rooms at the Multi-User Chat service, this option
   can be used. By default everybody is allowed to create rooms.
-\titem{access\_persistent} \ind{options!access\_persistent}To configure who is
+\titem{\{access\_persistent, AccessName\}} \ind{options!access\_persistent}To configure who is
   allowed to modify the 'persistent' room option.
   By default everybody is allowed to modify that option.
-\titem{access\_admin} \ind{options!access\_admin}This option specifies
+\titem{\{access\_admin, AccessName\}} \ind{options!access\_admin}This option specifies
   who is allowed to administrate the Multi-User Chat service. The default
   value is \term{none}, which means that only the room creator can
   administer his room.
@@ -2945,7 +2912,7 @@ Module options:
   and it will be shown in all active rooms as a service message.
   The administrators can send a groupchat message to the JID of an active room,
   and the message will be shown in the room as a service message.
-\titem{history\_size} \ind{options!history\_size}A small history of
+\titem{\{history\_size, Size\}} \ind{options!history\_size}A small history of
   the current discussion is sent to users when they enter the
   room. With this option you can define the number of history messages
   to keep and send to users joining the room. The value is an
@@ -2953,35 +2920,35 @@ Module options:
   and, as a result, nothing is kept in memory. The default value is
   \term{20}. This value is global and thus affects all rooms on the
   service.
-\titem{max\_users} \ind{options!max\_users} This option defines at
+\titem{\{max\_users, Number\}} \ind{options!max\_users} This option defines at
   the service level, the maximum number of users allowed per
   room. It can be lowered in each room configuration but cannot be
   increased in individual room configuration. The default value is
   200.
-\titem{max\_users\_admin\_threshold}
+\titem{\{max\_users\_admin\_threshold, Number\}}
   \ind{options!max\_users\_admin\_threshold} This option defines the
   number of service admins or room owners allowed to enter the room when
   the maximum number of allowed occupants was reached. The default limit
   is 5.
-\titem{max\_user\_conferences}
+\titem{\{max\_user\_conferences, Number\}}
   \ind{options!max\_user\_conferences} This option defines the maximum
   number of rooms that any given user can join. The default value
   is 10. This option is used to prevent possible abuses. Note that
   this is a soft limit: some users can sometimes join more conferences
   in cluster configurations.
-\titem{max\_room\_id} \ind{options!max\_room\_id}
+\titem{\{max\_room\_id, Number\}} \ind{options!max\_room\_id}
   This option defines the maximum number of characters that Room ID
   can have when creating a new room.
   The default value is to not limit: infinite.
-\titem{max\_room\_name} \ind{options!max\_room\_name}
+\titem{\{max\_room\_name, Number\}} \ind{options!max\_room\_name}
   This option defines the maximum number of characters that Room Name
   can have when configuring the room.
   The default value is to not limit: infinite.
-\titem{max\_room\_desc} \ind{options!max\_room\_desc}
+\titem{\{max\_room\_desc, Number\}} \ind{options!max\_room\_desc}
   This option defines the maximum number of characters that Room Description
   can have when configuring the room.
   The default value is to not limit: infinite.
-\titem{min\_message\_interval} \ind{options!min\_message\_interval}
+\titem{\{min\_message\_interval, Number\}} \ind{options!min\_message\_interval}
   This option defines the minimum interval between two messages send
   by an occupant in seconds. This option is global and valid for all
   rooms. A decimal value can be used. When this option is not defined,
@@ -2991,7 +2958,7 @@ Module options:
   interval is 0.4 second. If an occupant tries to send messages faster, an
   error is send back explaining that the message has been discarded
   and describing the reason why the message is not acceptable.
-\titem{min\_presence\_interval}
+\titem{\{min\_presence\_interval, Number\}}
   \ind{options!min\_presence\_interval} This option defines the
   minimum of time between presence changes coming from a given occupant in
   seconds. This option is global and valid for all rooms. A
@@ -3003,36 +2970,36 @@ Module options:
   broadcasted to all occupants in the room after expiration of the
   interval delay. Intermediate presence packets are silently
   discarded. A good value for this option is 4 seconds.
-\titem{default\_room\_options} \ind{options!default\_room\_options}
+\titem{\{default\_room\_options, [ \{OptionName, OptionValue\}, ...]\}} \ind{options!default\_room\_options}
   This module option allows to define the desired default room options.
   Note that the creator of a room can modify the options of his room
   at any time using a Jabber client with MUC capability.
   The available room options and the default values are:
   \begin{description}
-  \titem{\{allow\_change\_subj, true\}} Allow occupants to change the subject.
-  \titem{\{allow\_private\_messages, true\}} Occupants can send private messages to other occupants.
-  \titem{\{allow\_query\_users, true\}} Occupants can send IQ queries to other occupants.
-  \titem{\{allow\_user\_invites, false\}} Allow occupants to send invitations.
-  \titem{\{allow\_visitor\_nickchange, true\}} Allow visitors to
+  \titem{\{allow\_change\_subj, true|false\}} Allow occupants to change the subject.
+  \titem{\{allow\_private\_messages, true|false\}} Occupants can send private messages to other occupants.
+  \titem{\{allow\_query\_users, true|false\}} Occupants can send IQ queries to other occupants.
+  \titem{\{allow\_user\_invites, false|true\}} Allow occupants to send invitations.
+  \titem{\{allow\_visitor\_nickchange, true|false\}} Allow visitors to
   change nickname.
-  \titem{\{allow\_visitor\_status, true\}} Allow visitors to send
+  \titem{\{allow\_visitor\_status, true|false\}} Allow visitors to send
   status text in presence updates.  If disallowed, the \term{status}
   text is stripped before broadcasting the presence update to all
   the room occupants.
-  \titem{\{anonymous, true\}} The room is anonymous:
+  \titem{\{anonymous, true|false\}} The room is anonymous:
   occupants don't see the real JIDs of other occupants.
   Note that the room moderators can always see the real JIDs of the occupants.
-  \titem{\{logging, false\}} The public messages are logged using \term{mod\_muc\_log}.
+  \titem{\{logging, false|true\}} The public messages are logged using \term{mod\_muc\_log}.
   \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
-  \titem{\{members\_by\_default, true\}} The occupants that enter the room are participants by default, so they have 'voice'.
-  \titem{\{members\_only, false\}} Only members of the room can enter.
-  \titem{\{moderated, true\}} Only occupants with 'voice' can send public messages.
-  \titem{\{password, ""\}} Password of the room. You may want to enable the next option too.
-  \titem{\{password\_protected, false\}} The password is required to enter the room.
-  \titem{\{persistent, false\}} The room persists even if the last participant leaves.
-  \titem{\{public, true\}} The room is public in the list of the MUC service, so it can be discovered.
-  \titem{\{public\_list, true\}} The list of participants is public, without requiring to enter the room.
-  \titem{\{title, ""\}} A human-readable title of the room.
+  \titem{\{members\_by\_default, true|false\}} The occupants that enter the room are participants by default, so they have 'voice'.
+  \titem{\{members\_only, false|true\}} Only members of the room can enter.
+  \titem{\{moderated, true|false\}} Only occupants with 'voice' can send public messages.
+  \titem{\{password, "roompass123"\}} Password of the room. You may want to enable the next option too.
+  \titem{\{password\_protected, false|true\}} The password is required to enter the room.
+  \titem{\{persistent, false|true\}} The room persists even if the last participant leaves.
+  \titem{\{public, true|false\}} The room is public in the list of the MUC service, so it can be discovered.
+  \titem{\{public\_list, true|false\}} The list of participants is public, without requiring to enter the room.
+  \titem{\{title, "Room Title"\}} A human-readable title of the room.
   \end{description}
   All of those room options can be set to \term{true} or \term{false},
   except \term{password} and \term{title} which are strings,
@@ -3169,53 +3136,52 @@ Features:
 
 Options:
 \begin{description}
-\titem{access\_log}\ind{options!access\_log}
+\titem{\{access\_log, AccessName\}}\ind{options!access\_log}
   This option restricts which occupants are allowed to enable or disable room
   logging. The default value is \term{muc\_admin}. Note for this default setting
   you need to have an access rule for \term{muc\_admin} in order to take effect.
-\titem{cssfile}\ind{options!cssfile}
+\titem{\{cssfile, false|URL\}}\ind{options!cssfile}
   With this option you can set whether the HTML files should have a custom CSS
   file or if they need to use the embedded CSS file. Allowed values are
   \term{false} and an URL to a CSS file. With the first value, HTML files will
   include the embedded CSS code. With the latter, you can specify the URL of the
-  custom CSS file (for example: `http://example.com/my.css'). The default value
+  custom CSS file (for example: \term{"http://example.com/my.css"}). The default value
   is \term{false}.
-\titem{dirname}\ind{options!dirname}
+\titem{\{dirname, room\_jid|room\_name\}}\ind{options!dirname}
   Allows to configure the name of the room directory.
   Allowed values are \term{room\_jid} and \term{room\_name}.
   With the first value, the room directory name will be the full room JID.
   With the latter, the room directory name will be only the room name,
   not including the MUC service name.
   The default value is \term{room\_jid}.
-\titem{dirtype}\ind{options!dirtype}
+\titem{\{dirtype, subdirs|plain\}}\ind{options!dirtype}
   The type of the created directories can be specified with this option. Allowed
   values are \term{subdirs} and \term{plain}. With the first value,
   subdirectories are created for each year and month. With the latter, the
   names of the log files contain the full date, and there are no subdirectories.
   The default value is \term{subdirs}.
-\titem{file\_format}\ind{options!file\_format}
+\titem{\{file\_format, html|plaintext\}}\ind{options!file\_format}
   Define the format of the log files:
   \term{html} stores in HTML format,
   \term{plaintext} stores in plain text.
   The default value is \term{html}.
-\titem{outdir}\ind{options!outdir}
+\titem{\{outdir, Path\}}\ind{options!outdir}
   This option sets the full path to the directory in which the HTML files should
   be stored. Make sure the \ejabberd{} daemon user has write access on that
   directory. The default value is \term{"www/muc"}.
-\titem{spam\_prevention}\ind{options!spam\_prevention}
+\titem{\{spam\_prevention true|false\}}\ind{options!spam\_prevention}
   To prevent spam, the \term{spam\_prevention} option adds a special attribute
   to links that prevent their indexation by search engines. The default value
   is \term{true}, which mean that nofollow attributes will be added to user
   submitted links.
-\titem{timezone}\ind{options!timezone}
+\titem{\{timezone, local|universal\}}\ind{options!timezone}
   The time zone for the logs is configurable with this option. Allowed values
   are \term{local} and \term{universal}. With the first value, the local time,
   as reported to Erlang by the operating system, will be used. With the latter,
   GMT/UTC time will be used. The default value is \term{local}.
-\titem{top\_link}\ind{options!top\_link}
+\titem{\{top\_link, \{URL, Text\}\}}\ind{options!top\_link}
   With this option you can customize the link on the top right corner of each
-  log file. The syntax of this option is \term{\{"URL", "Text"\}}. The default
-  value is \term{\{"/", "Home"\}}.
+  log file. The default value is \term{\{"/", "Home"\}}.
 \end{description}
 
 Examples:
@@ -3284,7 +3250,7 @@ online again. Thus it is very similar to how email works. Note that
 (see section~\ref{ejabberdctl}).
 
 \begin{description}
-  \titem{access\_max\_user\_messages}\ind{options!access\_max\_user\_messages}
+  \titem{\{access\_max\_user\_messages, Number\}}\ind{options!access\_max\_user\_messages}
   This option defines which access rule will be enforced to limit
   the maximum number of offline messages that a user can have (quota).
   When a user has too many offline messages, any new messages that he receive are discarded,
@@ -3322,7 +3288,7 @@ ping requests, as defined in the protocol.
 
 Configuration options:
 \begin{description}
-  \titem{\{send\_pings, true | false\}}\ind{options!send\_pings}
+  \titem{\{send\_pings, true|false\}}\ind{options!send\_pings}
   If this option is set to \term{true}, the server sends pings to connected clients
   that are not active in a given interval \term{ping\_interval}.
   This is useful to keep client connections alive or checking availability.
@@ -3333,7 +3299,7 @@ Configuration options:
   If a client connection does not send or receive any stanza in this interval,
   a ping request is sent to the client.
   The default value is 60 seconds.
-  \titem{\{timeout\_action, none | kill\}}\ind{options!timeout\_action}
+  \titem{\{timeout\_action, none|kill\}}\ind{options!timeout\_action}
   What to do when a client does not answer to a server ping request in less than 32 seconds.
   % Those 32 seconds are defined in ejabberd_local.erl: -define(IQ_TIMEOUT, 32000).
   The default is to do nothing.
@@ -3408,24 +3374,22 @@ XMPP clients.
 
 Options:
 \begin{description}
-\titem{host}\ind{options!host}This option defines the hostname of the service.
-If this option is not set, the prefix `\jid{proxy.}' is added to \ejabberd{}
-hostname.
-\titem{name}\ind{options!name}Defines Service Discovery name of the service.
+\hostitem{proxy}
+\titem{\{name, Text\}}\ind{options!name}Defines Service Discovery name of the service.
 Default is \term{"SOCKS5 Bytestreams"}.
-\titem{ip}\ind{options!ip}This option specifies which network interface
+\titem{\{ip, IPTuple\}}\ind{options!ip}This option specifies which network interface
 to listen for. Default is an IP address of the service's DNS name, or,
 if fails, \verb|{127,0,0,1}|.
-\titem{port}\ind{options!port}This option defines port to listen for
+\titem{\{port, Number\}}\ind{options!port}This option defines port to listen for
 incoming connections. Default is~7777.
-\titem{auth\_type}\ind{options!auth\_type}SOCKS5 authentication type.
+\titem{\{auth\_type, anonymous|plain\}}\ind{options!auth\_type}SOCKS5 authentication type.
 Possible values are \term{anonymous} and \term{plain}. Default is
 \term{anonymous}.
-\titem{access}\ind{options!access}Defines ACL for file transfer initiators.
+\titem{\{access, AccessName\}}\ind{options!access}Defines ACL for file transfer initiators.
 Default is \term{all}.
-\titem{max\_connections}\ind{options!max\_connections}Maximum number of
+\titem{\{max\_connections, Number\}}\ind{options!max\_connections}Maximum number of
 active connections per file transfer initiator. No limit by default.
-\titem{shaper}\ind{options!shaper}This option defines shaper for
+\titem{\{shaper, none|ShaperName\}}\ind{options!shaper}This option defines shaper for
 the file transfer peers. Shaper with the maximum bandwidth will be selected.
 Default is \term{none}.
 \end{description}
@@ -3477,26 +3441,26 @@ and it requires \modcaps{}.
 Options:
 \begin{description}
 \hostitem{pubsub}
-\titem{access\_createnode} \ind{options!access\_createnode}
+\titem{\{access\_createnode, AccessName\}} \ind{options!access\_createnode}
   This option restricts which users are allowed to create pubsub nodes using
   ACL and ACCESS. The default value is \term{pubsub\_createnode}. % Not clear enough + do not use abbreviations.
-\titem{plugins} \ind{options!plugins}
+\titem{\{plugins, [ Plugin, ...]\}} \ind{options!plugins}
   To specify which pubsub node plugins to use. If not defined, the default
   pubsub plugin is always used.
-\titem{nodetree} \ind{options!nodetree}
+\titem{\{nodetree, Name\}} \ind{options!nodetree}
   To specify which nodetree to use. If not defined, the default pubsub
   nodetree is used. Only one nodetree can be used per host,
   and is shared by all node plugins.
-\titem{pep\_sendlast\_offline} \ind{options!pep\_sendlast\_offline}
+\titem{\{pep\_sendlast\_offline, false|true\}} \ind{options!pep\_sendlast\_offline}
   To specify whether or not we should get last published PEP items
   from users in our roster which are offline when we connect. Value is true or false.
   If not defined, pubsub assumes false so we only get last items of online contacts.
-\titem{last\_item\_cache} \ind{options!last\_item\_cache}
+\titem{\{last\_item\_cache, false|true\}} \ind{options!last\_item\_cache}
   To specify whether or not pubsub should cache last items. Value is true
   or false. If not defined, pubsub do not cache last items. On systems with not so many nodes,
   caching last items speeds up pubsub and allows to raise user connection rate. The cost is memory
   usage, as every item is stored in memory.
-\titem{pep\_mapping} \ind{pep\_mapping}
+\titem{\{pep\_mapping, [ \{Key, Value\}, ...]\}} \ind{pep\_mapping}
   This allow to define a Key-Value list to choose defined node plugins on given PEP namespace.
   The following example will use node\_tune instead of node\_pep for every PEP node with tune namespace:
 \begin{verbatim}
@@ -3534,15 +3498,15 @@ enables end users to use a \Jabber{} client to:
 
 Options:
 \begin{description}
-\titem{access} \ind{options!access}This option can be configured to specify
+\titem{\{access, AccessName\}} \ind{options!access}This option can be configured to specify
   rules to restrict registration. If a rule returns `deny' on the requested
   user name, registration for that user name is denied. (there are no
   restrictions by default).
-\titem{welcome\_message} \ind{options!welcomem}Set a welcome message that
+\titem{\{welcome\_message, Message\}} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and
   the second string is the message body.
   In the body you can set a newline with the characters: \verb|\n|
-\titem{registration\_watchers} \ind{options!rwatchers}This option defines a
+\titem{\{registration\_watchers, [ JID, ...]\}} \ind{options!rwatchers}This option defines a
   list of JIDs which will be notified each time a new account is registered.
 \iqdiscitem{In-Band Registration (\ns{jabber:iq:register})}
 \end{description}
@@ -3618,10 +3582,10 @@ It also supports Roster Versioning (\xepref{0237}).
 Options:
 \begin{description}
 \iqdiscitem{Roster Management (\ns{jabber:iq:roster})}
-  \titem{\{versioning, false | true\}} \ind{options!versioning}Enables
+  \titem{\{versioning, false|true\}} \ind{options!versioning}Enables
   Roster Versioning.
   This option is disabled by default.
-  \titem{\{store\_current\_id, false | true\}} \ind{options!storecurrentid}
+  \titem{\{store\_current\_id, false|true\}} \ind{options!storecurrentid}
   If this option is enabled, the current version number is stored on the database.
   If disabled, the version number is calculated on the fly each time.
   Enabling this option reduces the load for both ejabberd and the database.
@@ -3652,7 +3616,7 @@ service(s).
 
 Options:
 \begin{description}
-\titem{loggers} \ind{options!loggers}With this option a (list of) service(s)
+\titem{\{loggers, [Names, ...]\}} \ind{options!loggers}With this option a (list of) service(s)
   that will receive the packets can be specified.
 \end{description}
 
@@ -3855,19 +3819,19 @@ Options:
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
-\titem{search}\ind{options!search}This option specifies whether the search
-  functionality is enabled (value: \term{true}) or disabled (value:
-  \term{false}). If disabled, the option \term{host} will be ignored and the
+\titem{\{search, true|false\}}\ind{options!search}This option specifies whether the search
+  functionality is enabled or not
+  If disabled, the option \term{host} will be ignored and the
   \Jabber{} User Directory service will not appear in the Service Discovery item
   list. The default value is \term{true}.
-\titem{matches}\ind{options!matches}With this option, the number of reported
+\titem{\{matches, infinity|Number\}}\ind{options!matches}With this option, the number of reported
   search results can be limited. If the option's value is set to \term{infinity},
   all search results are reported. The default value is \term{30}.
-\titem{allow\_return\_all}\ind{options!allow\_return\_all}This option enables
+\titem{\{allow\_return\_all, false|true\}}\ind{options!allow\_return\_all}This option enables
   you to specify if search operations with empty input fields should return all
   users who added some information to their vCard. The default value is
   \term{false}.
-\titem{search\_all\_hosts}\ind{options!search\_all\_hosts}If this option is set
+\titem{\{search\_all\_hosts, true|false\}}\ind{options!search\_all\_hosts}If this option is set
   to \term{true}, search operations will apply to all virtual hosts. Otherwise
   only the current host will be searched. The default value is \term{true}.
   This option is available in \modvcard, but not available in \modvcardodbc.
@@ -3931,25 +3895,28 @@ consists of the following \modvcardldap{}-specific options:
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
-\titem{search}\ind{options!search}This option specifies whether the search
+\titem{\{search, true|false\}}\ind{options!search}This option specifies whether the search
   functionality is enabled (value: \term{true}) or disabled (value:
   \term{false}). If disabled, the option \term{host} will be ignored and the
   \Jabber{} User Directory service will not appear in the Service Discovery item
   list. The default value is \term{true}.
-\titem{matches}\ind{options!matches}With this option, the number of reported
+\titem{\{matches, infinity|Number\}}\ind{options!matches}With this option, the number of reported
   search results can be limited. If the option's value is set to \term{infinity},
   all search results are reported. The default value is \term{30}.
-\titem{ldap\_vcard\_map}\ind{options!ldap\_vcard\_map}With this option you can
-  set the table that maps LDAP attributes to vCard fields. The format is:
-  \term{[{Name\_of\_vCard\_field, Pattern, List\_of\_LDAP\_attributes}, ...]}.\ind{protocols!RFC 2426: vCard MIME Directory Profile}
-  \term{Name\_of\_vcard\_field} is the type name of the vCard as defined in
-  \footahref{http://tools.ietf.org/html/rfc2426}{RFC 2426}. \term{Pattern} is a
-  string which contains pattern variables \term{"\%u"}, \term{"\%d"} or
-  \term{"\%s"}. \term{List\_of\_LDAP\_attributes} is the list containing LDAP
-  attributes. The pattern variables \term{"\%s"} will be sequentially replaced
+\titem{\{ldap\_vcard\_map, [ \{Name, Pattern, LDAPattributes\}, ...]\}} \ind{options!ldap\_vcard\_map}
+  With this option you can set the table that maps LDAP attributes to vCard fields.
+  \ind{protocols!RFC 2426: vCard MIME Directory Profile}
+  \term{Name} is the type name of the vCard as defined in
+  \footahref{http://tools.ietf.org/html/rfc2426}{RFC 2426}.
+  \term{Pattern} is a string which contains pattern variables
+  \term{"\%u"}, \term{"\%d"} or \term{"\%s"}.
+  \term{LDAPattributes} is the list containing LDAP attributes.
+  The pattern variables 
+  \term{"\%s"} will be sequentially replaced 
   with the values of LDAP attributes from \term{List\_of\_LDAP\_attributes},
-  \term{"\%u"} will be replaced with the user part of a JID, and \term{"\%d"}
-  will be replaced with the domain part of a JID. The default is:
+  \term{"\%u"} will be replaced with the user part of a JID, 
+  and \term{"\%d"} will be replaced with the domain part of a JID. 
+  The default is:
 \begin{verbatim}
 [{"NICKNAME", "%u", []},
  {"FN", "%s", ["displayName"]},
@@ -3972,9 +3939,9 @@ consists of the following \modvcardldap{}-specific options:
  {"ROLE", "%s", ["employeeType"]},
  {"PHOTO", "%s", ["jpegPhoto"]}]
 \end{verbatim}
-\titem{ldap\_search\_fields}\ind{options!ldap\_search\_fields}This option
-  defines the search form and the LDAP attributes to search within. The format
-  is: \term{[{Name, Attribute}, ...]}. \term{Name} is the name of a search form
+\titem{\{ldap\_search\_fields, [ \{Name, Attribute\}, ...]\}}\ind{options!ldap\_search\_fields}This option
+  defines the search form and the LDAP attributes to search within.
+  \term{Name} is the name of a search form
   field which will be automatically translated by using the translation
   files (see \term{msgs/*.msg} for available words). \term{Attribute} is the
   LDAP attribute or the pattern \term{"\%u"}. The default is:
@@ -3992,11 +3959,11 @@ consists of the following \modvcardldap{}-specific options:
  {"Organization Name", "o"},
  {"Organization Unit", "ou"}]
 \end{verbatim}
-\titem{ldap\_search\_reported}\ind{options!ldap\_search\_reported}This option
-  defines which search fields should be reported. The format is:
-  \term{[{Name, vCard\_Name}, ...]}. \term{Name} is the name of a search form
+\titem{\{ldap\_search\_reported, [ \{SearchField, VcardField\}, ...]\}}\ind{options!ldap\_search\_reported}This option
+  defines which search fields should be reported.
+  \term{SearchField} is the name of a search form
   field which will be automatically translated by using the translation
-  files (see \term{msgs/*.msg} for available words). \term{vCard\_Name} is the
+  files (see \term{msgs/*.msg} for available words). \term{VcardField} is the
   vCard field name defined in the \option{ldap\_vcard\_map} option. The default
   is:
 \begin{verbatim}
@@ -4123,7 +4090,7 @@ answers \ejabberd{}'s version when queried.
 
 Options:
 \begin{description}
-\titem{show\_os}\ind{options!showos}Should the operating system be revealed or not.
+\titem{\{show\_os, true|false\}}\ind{options!showos}Should the operating system be revealed or not.
   The default value is \term{true}.
 \iqdiscitem{Software Version (\ns{jabber:iq:version})}
 \end{description}
@@ -4362,11 +4329,11 @@ In that case, authentication information must be provided.
 In each frontend the \term{AccessCommands} option is defined
 in a different place. But in all cases the option syntax is the same:
 \begin{verbatim}
-AccessCommands = [ {Access, CommandNames, Arguments} ]
+AccessCommands = [ {Access, CommandNames, Arguments}, ...]
 Access = atom()
 CommandNames = all | [CommandName]
 CommandName = atom()
-Arguments = [{ArgumentName, ArgumentValue}]
+Arguments = [ {ArgumentName, ArgumentValue}, ...]
 ArgumentName = atom()
 ArgumentValue = any()
 \end{verbatim}
@@ -4858,10 +4825,7 @@ domain.
 The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is chosen randomly. If no instance is available locally, one instance is chosen randomly among the remote component instances.
 
 If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain\_balancing}. The syntax of the option is the following:
-
-\begin{verbatim}
-{domain_balancing, "component.example.com", <balancing_criterium>}.
-\end{verbatim}
+\esyntax{\{domain\_balancing, "component.example.com", BalancingCriteria\}.}
 
 Several balancing criteria are available:
 \begin{itemize}
@@ -4880,10 +4844,8 @@ When there is a risk of failure for a given component, domain balancing can caus
 
 In this case, it is best to limit the problem to the sessions handled by the failing component. This is what the \term{domain\_balancing\_component\_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
 
-The syntax is the following:
-\begin{verbatim}
-{domain_balancing_component_number, "component.example.com", N}
-\end{verbatim}
+The syntax is:
+\esyntax{\{domain\_balancing\_component\_number, "component.example.com", Number\}.}
 
 
 
@@ -4904,8 +4866,10 @@ An \ejabberd{} node writes two log files:
 	\titem{sasl.log} is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 \end{description}
 
-The option \term{loglevel} modifies the verbosity of the file ejabberd.log.
-The possible levels are:
+The option \term{loglevel} modifies the verbosity of the file ejabberd.log. The syntax is:
+\esyntax{\{loglevel, Level\}.}
+
+The possible \term{Level} are:
 \begin{description}
 	\titem{0} No ejabberd log at all (not recommended)
 	\titem{1} Critical
@@ -4950,12 +4914,18 @@ a message is sent to the Jabber accounts defined with the option
 \term{watchdog\_admins}
 \ind{options!watchdog\_admins} in the \ejabberd{} configuration file.
 
+The syntax is:
+\esyntax{\{watchdog\_admins, [JID, ...]\}.}
+
 The memory consumed is measured in \term{words}:
 a word on 32-bit architecture is 4 bytes,
 and a word on 64-bit architecture is 8 bytes.
 The threshold by default is 1000000 words.
 This value can be configured with the option \term{watchdog\_large\_heap},
 or in a conversation with the watchdog alert bot.
+
+The syntax is:
+\esyntax{\{watchdog\_large\_heap, Number\}.}
 
 Example configuration:
 \begin{verbatim}
