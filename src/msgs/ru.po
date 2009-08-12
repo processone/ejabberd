@@ -443,38 +443,36 @@ msgid "Registration in mod_irc for "
 msgstr "Регистрация в mod_irc для "
 
 #: mod_irc/mod_irc.erl:569
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Введите имя пользователя и кодировки, которые будут использоваться при "
-"подключении к IRC-серверам"
+"Введите имя пользователя, кодировки, порты и пароли, которые "
+"будут использоваться при подключении к IRC-серверам"
 
 #: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
 msgstr "Имя пользователя IRC"
 
 #: mod_irc/mod_irc.erl:584
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"Чтобы указать различные кодировки для разных серверов IRC, заполните список "
-"значениями в формате '{\"irc server\", \"encoding\"}'. По умолчанию эта "
-"служба использует кодировку \"~s\"."
+"Чтобы указать различные порты, пароли, кодировки для разных "
+"серверов IRC, заполните список значениями в формате '{\"сервер IRC\", "
+"\"кодировка\", порт, \"пароль\"}'. По умолчанию сервис использует кодировку "
+"\"~s\", порт ~p, пустой пароль."
 
 #: mod_irc/mod_irc.erl:596
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Примеры: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
-"\"}]."
+"Пример: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:601
 msgid "Connections parameters"
@@ -489,9 +487,8 @@ msgid "IRC channel (don't put the first #)"
 msgstr "Канал IRC (без символа #)"
 
 #: mod_irc/mod_irc.erl:720
-#, fuzzy
 msgid "IRC server"
-msgstr "Имя пользователя IRC"
+msgstr "Сервер IRC"
 
 #: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
 msgid "Join the IRC channel here."
@@ -506,29 +503,26 @@ msgid "IRC settings"
 msgstr "Настройки IRC"
 
 #: mod_irc/mod_irc.erl:851
-#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"Введите имя пользователя и кодировки, которые будут использоваться при "
-"подключении к IRC-серверам"
+"Введите имя пользователя и кодировки, которые будут использоваться "
+"при подключении к IRC-серверам. Нажмите 'Далее' для получения "
+"дополнительных полей для заполнения. Нажмите 'Завершить' для сохранения настроек."
 
 #: mod_irc/mod_irc.erl:857
-#, fuzzy
 msgid "IRC username"
 msgstr "Имя пользователя IRC"
 
 #: mod_irc/mod_irc.erl:904
-#, fuzzy
 msgid "Password ~b"
-msgstr "Пароль"
+msgstr "Пароль ~b"
 
 #: mod_irc/mod_irc.erl:909
-#, fuzzy
 msgid "Port ~b"
-msgstr "Порт"
+msgstr "Порт ~b"
 
 #: mod_irc/mod_irc.erl:914
 msgid "Encoding for server ~b"
@@ -707,9 +701,8 @@ msgid "Room Configuration"
 msgstr "Конфигурация комнаты"
 
 #: mod_muc/mod_muc_log.erl:745
-#, fuzzy
 msgid "Room Occupants"
-msgstr "Число присутствующих"
+msgstr "Участники комнаты"
 
 #: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
 msgid "Room title"
@@ -1509,14 +1502,12 @@ msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
 msgstr "Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2020
-#, fuzzy
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Импорт пользователей из спула jabberd14"
+msgstr "Импорт пользовательских данных из буферного файла jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2027
-#, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Импорт пользователей из спула jabberd14"
+msgstr "Импорт пользовательских данных из буферной директории jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
@@ -1587,9 +1578,8 @@ msgid "IP"
 msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2349
-#, fuzzy
 msgid "Protocol"
-msgstr "Порт"
+msgstr "Протокол"
 
 #: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
 msgid "Module"
