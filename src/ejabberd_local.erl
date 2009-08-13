@@ -150,10 +150,12 @@ route_iq(From, To, #iq{type = Type} = IQ, F) when is_function(F) ->
 	     end,
     ejabberd_router:route(From, To, Packet).
 
-register_iq_response_handler(Host, ID, Module, Fun) ->
-    gen_server:call(ejabberd_local,
-		    {register_iq_response_handler,
-		     Host, ID, Module, Fun}).
+register_iq_response_handler(_Host, ID, Module, Function) ->
+    TRef = erlang:start_timer(?IQ_TIMEOUT, ejabberd_local, ID),
+    mnesia:dirty_write(#iq_response{id = ID,
+				    module = Module,
+				    function = Function,
+				    timer = TRef}).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.
@@ -211,14 +213,6 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({register_iq_response_handler, _Host,
-	     ID, Module, Function}, _From, State) ->
-    TRef = erlang:start_timer(?IQ_TIMEOUT, self(), ID),
-    mnesia:dirty_write(#iq_response{id = ID,
-				    module = Module,
-				    function = Function,
-				    timer = TRef}),
-    {reply, ok, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
