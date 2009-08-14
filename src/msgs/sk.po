@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Marek Becka\n"
+"Last-Translator: Marek Bečka\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -22,17 +22,16 @@ msgid "Replaced by new connection"
 msgstr "Nahradené novým spojením"
 
 #: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
-#, fuzzy
 msgid "Enter the text you see"
-msgstr "Zadajte cestu k textovému súboru"
+msgstr "Zadajte zobrazený text"
 
 #: ejabberd_captcha.erl:97
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
+msgstr "Správa určená pre ~s bola zablokovaná. Oblokovať ju môžete na ~s"
 
 #: ejabberd_captcha.erl:235
 msgid "The captcha is valid."
-msgstr ""
+msgstr "Platná captcha."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -441,100 +440,94 @@ msgid "Registration in mod_irc for "
 msgstr "Registrácia do mod_irc na "
 
 #: mod_irc/mod_irc.erl:569
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na "
-"IRC server"
+"Vložte meno používateľa, kódovanie, porty a heslo ktoré chcete používať pri "
+"pripojení na IRC server"
 
 #: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
 msgstr "IRC prezývka"
 
 #: mod_irc/mod_irc.erl:584
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"Ak chcete zadať iné kódovania pre IRC servery, vyplnte zoznam s hodnotami vo "
-"formáte '{\"irc server\",\"encoding\"}'. Predvolené kódovanie pre túto "
-"službu je \"~s\"."
+"Ak chcete zadať iné porty, heslá a kódovania pre IRC servery, vyplnte zoznam "
+"s hodnotami vo formáte '{\"irc server\",\"kódovanie\", \"port\", \"heslo"
+"\"}'. Predvolenéi hodnoty pre túto službu sú: kódovanie \"~s\", port ~p a  "
+"žiadne heslo."
 
 #: mod_irc/mod_irc.erl:596
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Príklad: [{\"irc.freenode.net\",\"utf-8\"}, {\"irc.freenode.net\", \"iso8859-"
-"2\"}]."
+"Príklad: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:601
 msgid "Connections parameters"
-msgstr ""
+msgstr "Parametre spojenia"
 
 #: mod_irc/mod_irc.erl:711
 msgid "Join IRC channel"
-msgstr ""
+msgstr "Pripojit IRC kanál"
 
 #: mod_irc/mod_irc.erl:715
 msgid "IRC channel (don't put the first #)"
-msgstr ""
+msgstr "IRC kanál (bez počiatočnej #)"
 
 #: mod_irc/mod_irc.erl:720
-#, fuzzy
 msgid "IRC server"
-msgstr "IRC prezývka"
+msgstr "IRC server"
 
 #: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
 msgid "Join the IRC channel here."
-msgstr ""
+msgstr "Propojiť IRC kanál sem."
 
 #: mod_irc/mod_irc.erl:761
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr ""
+msgstr "Pripojit IRC kanál k tomuto Jabber ID: ~s"
 
 #: mod_irc/mod_irc.erl:846
 msgid "IRC settings"
-msgstr ""
+msgstr "Nastavania IRC"
 
 #: mod_irc/mod_irc.erl:851
-#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
 "Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na "
-"IRC server"
+"IRC servery. Kliknutím na tlačítko 'Ďalej' môžete zadať niektoré ďalšie "
+"hodnoty. Pomocou 'Ukončiť ' uložíte nastavenia."
 
 #: mod_irc/mod_irc.erl:857
-#, fuzzy
 msgid "IRC username"
 msgstr "IRC prezývka"
 
-#: mod_irc/mod_irc.erl:904
-#, fuzzy
+#: mod_irc/mod_irc.erl:906
 msgid "Password ~b"
-msgstr "Heslo"
+msgstr "Heslo ~b"
 
-#: mod_irc/mod_irc.erl:909
-#, fuzzy
+#: mod_irc/mod_irc.erl:911
 msgid "Port ~b"
-msgstr "Port"
+msgstr "Port ~b"
 
-#: mod_irc/mod_irc.erl:914
+#: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
-msgstr ""
+msgstr "Kódovanie pre server ~b"
 
-#: mod_irc/mod_irc.erl:923
+#: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
-msgstr ""
+msgstr "Server ~b"
 
 #: mod_muc/mod_muc.erl:437
 msgid "Only service administrators are allowed to send service messages"
@@ -572,9 +565,8 @@ msgstr "Prezývka"
 
 #: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
-#, fuzzy
 msgid "That nickname is registered by another person"
-msgstr "Prezývka je registrovaná inou osobou"
+msgstr "Prezývka je už zaregistrovaná inou osobou"
 
 #: mod_muc/mod_muc.erl:748
 msgid "You must fill in field \"Nickname\" in the form"
@@ -706,9 +698,8 @@ msgid "Room Configuration"
 msgstr "Nastavenia miestnosti"
 
 #: mod_muc/mod_muc_log.erl:745
-#, fuzzy
 msgid "Room Occupants"
-msgstr "Počet zúčastnených"
+msgstr "Ľudí v miestnosti"
 
 #: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
 msgid "Room title"
@@ -769,14 +760,12 @@ msgid "private, "
 msgstr "súkromná, "
 
 #: mod_muc/mod_muc_room.erl:801
-#, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "Len moderátori a zúčastnený majú povolené meniť tému tejto miestnosti"
 
 #: mod_muc/mod_muc_room.erl:806
-#, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Len moderátori majú povolené meniť tému miestnosti"
 
@@ -797,7 +786,6 @@ msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "V tejto miestnosti nieje povolené meniť prezývky"
 
 #: mod_muc/mod_muc_room.erl:915 mod_muc/mod_muc_room.erl:1505
-#, fuzzy
 msgid "That nickname is already in use by another occupant"
 msgstr "Prezývka je už používaná iným členom"
 
@@ -806,7 +794,6 @@ msgid "You have been banned from this room"
 msgstr "Boli ste vylúčený z tejto miestnosti"
 
 #: mod_muc/mod_muc_room.erl:1497
-#, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "Pre vstup do miestnosti je potrebné byť členom"
 
@@ -815,13 +802,12 @@ msgid "This room is not anonymous"
 msgstr "Táto miestnosť nie je anonymná"
 
 #: mod_muc/mod_muc_room.erl:1559
-#, fuzzy
 msgid "A password is required to enter this room"
 msgstr "Pre vstup do miestnosti je potrebné heslo"
 
 #: mod_muc/mod_muc_room.erl:1581
 msgid "Unable to generate a captcha"
-msgstr ""
+msgstr "Nepodarilo sa vygenerovat captcha"
 
 #: mod_muc/mod_muc_room.erl:1591
 msgid "Incorrect password"
@@ -856,14 +842,12 @@ msgid "Owner privileges required"
 msgstr "Sú vyžadované práva vlastníka"
 
 #: mod_muc/mod_muc_room.erl:2780
-#, fuzzy
 msgid "Configuration of room ~s"
-msgstr "Konfigurácia pre "
+msgstr "Konfigurácia miestnosti ~s"
 
 #: mod_muc/mod_muc_room.erl:2788 mod_muc/mod_muc_room.erl:3206
-#, fuzzy
 msgid "Room description"
-msgstr "Popis:"
+msgstr "Popis miestnosti"
 
 #: mod_muc/mod_muc_room.erl:2795
 msgid "Make room persistent"
@@ -914,9 +898,8 @@ msgid "Default users as participants"
 msgstr "Užívatelia sú implicitne členmi"
 
 #: mod_muc/mod_muc_room.erl:2856
-#, fuzzy
 msgid "Allow users to change the subject"
-msgstr "Povoliť užívateľom zmeniť tému tejto miestnosti"
+msgstr "Povoliť užívateľom meniť tému"
 
 #: mod_muc/mod_muc_room.erl:2859
 msgid "Allow users to send private messages"
@@ -939,9 +922,8 @@ msgid "Allow visitors to change nickname"
 msgstr "Návštevníci môžu meniť prezývky"
 
 #: mod_muc/mod_muc_room.erl:2877
-#, fuzzy
 msgid "Make room captcha protected"
-msgstr "Chrániť miestnosť heslom"
+msgstr "Chrániť miestnosť systémom captcha"
 
 #: mod_muc/mod_muc_room.erl:2886
 msgid "Enable logging"
@@ -1010,9 +992,8 @@ msgid "Offline Messages:"
 msgstr "Offline správy"
 
 #: mod_offline.erl:620 mod_offline_odbc.erl:496
-#, fuzzy
 msgid "Remove All Offline Messages"
-msgstr "Offline správy"
+msgstr "Odstrániť všetky offline správy"
 
 #: mod_proxy65/mod_proxy65_service.erl:213
 msgid "ejabberd SOCKS5 Bytestreams module"
@@ -1108,16 +1089,15 @@ msgstr "Doručovať upozornenia len aktuálne prihláseným používateľom"
 
 #: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3263
 msgid "The collections with which a node is affiliated"
-msgstr ""
+msgstr "Kolekcie asociované s uzlom"
 
 #: mod_register.erl:190
 msgid "Choose a username and password to register with this server"
 msgstr "Zvolte meno užívateľa a heslo pre registráciu na tomto servere"
 
 #: mod_register.erl:243
-#, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
-msgstr "Nieje možné vytvárať účty tak rýchlo po sebe"
+msgstr "Nieje dovolené vytvárať účty tak rýchlo po sebe"
 
 #: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
 #: web/ejabberd_web_admin.erl:1812 web/ejabberd_web_admin.erl:1823
@@ -1210,17 +1190,17 @@ msgstr "Erlang Jabber Server"
 #: mod_vcard.erl:357 mod_vcard.erl:471 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:446
 msgid "Birthday"
-msgstr "Dátum narodenia: "
+msgstr "Dátum narodenia"
 
 #: mod_vcard.erl:357 mod_vcard.erl:473 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:448
 msgid "City"
-msgstr "Mesto: "
+msgstr "Mesto"
 
 #: mod_vcard.erl:357 mod_vcard.erl:472 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:447
 msgid "Country"
-msgstr "Krajina: "
+msgstr "Krajina"
 
 #: mod_vcard.erl:357 mod_vcard.erl:474 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:449
@@ -1230,7 +1210,7 @@ msgstr "E-mail"
 #: mod_vcard.erl:357 mod_vcard.erl:469 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:444
 msgid "Family Name"
-msgstr "Priezvisko: "
+msgstr "Priezvisko"
 
 #: mod_vcard.erl:357 mod_vcard_odbc.erl:334
 msgid ""
@@ -1272,7 +1252,7 @@ msgstr "Hľadať užívateľov v "
 #: mod_vcard.erl:357 mod_vcard_odbc.erl:334 web/ejabberd_web_admin.erl:1496
 #: web/ejabberd_web_admin.erl:1551
 msgid "User"
-msgstr "Užívateľ: "
+msgstr "Užívateľ"
 
 #: mod_vcard.erl:357 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:334
 msgid "You need an x:data capable client to search"
@@ -1297,7 +1277,7 @@ msgstr "Vyplnte políčka pre vyhľadávanie Jabber užívateľa"
 #: web/ejabberd_web_admin.erl:179 web/ejabberd_web_admin.erl:186
 #: web/ejabberd_web_admin.erl:202 web/ejabberd_web_admin.erl:209
 msgid "Unauthorized"
-msgstr ""
+msgstr "Neautorizovaný"
 
 #: web/ejabberd_web_admin.erl:266 web/ejabberd_web_admin.erl:283
 msgid "ejabberd Web Admin"
@@ -1356,9 +1336,8 @@ msgid "Statistics"
 msgstr "Štatistiky"
 
 #: web/ejabberd_web_admin.erl:1097
-#, fuzzy
 msgid "Not Found"
-msgstr "Uzol nenájdený"
+msgstr "Nebol nájdený"
 
 #: web/ejabberd_web_admin.erl:1114
 msgid "Node not found"
@@ -1440,7 +1419,7 @@ msgstr "Reštart"
 
 #: web/ejabberd_web_admin.erl:1871 web/ejabberd_web_admin.erl:2492
 msgid "Stop"
-msgstr "Stop"
+msgstr "Zastaviť"
 
 #: web/ejabberd_web_admin.erl:1885
 msgid "RPC Call Error"
@@ -1456,7 +1435,7 @@ msgstr "Typ úložiska"
 
 #: web/ejabberd_web_admin.erl:1934
 msgid "Elements"
-msgstr ""
+msgstr "Prvky"
 
 #: web/ejabberd_web_admin.erl:1935
 msgid "Memory"
@@ -1464,21 +1443,20 @@ msgstr "Pamäť"
 
 #: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
 msgid "Error"
-msgstr ""
+msgstr "Chyba"
 
 #: web/ejabberd_web_admin.erl:1955
 msgid "Backup of "
-msgstr "Záloha na "
+msgstr "Záloha "
 
 #: web/ejabberd_web_admin.erl:1957
-#, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
 "separately."
 msgstr ""
-"Podotýkame, že tieto nastavenia budú zálohované do zabudovanej Mnesia "
-"databázy. Ak používate ODBC modul, musíte zálohovať vašu SQL databázu "
+"Prosím, berte na vedomie, že tieto nastavenia zázálohujú iba zabudovnú "
+"Mnesia databázu. Ak používate ODBC modul, musíte zálohovať vašu SQL databázu "
 "separátne."
 
 #: web/ejabberd_web_admin.erl:1962
@@ -1514,25 +1492,25 @@ msgstr "Okamžite obnoviť zálohu z textového súboru:"
 
 #: web/ejabberd_web_admin.erl:1998
 msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr ""
+msgstr "Importovat dáta užívateľov zo súboru PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2005
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
 msgstr ""
+"Exportovať dáta všetkých uživateľov na serveri do súborov PIEFXIS (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2012
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
 msgstr ""
+"Exportovať dáta uživateľov na hostitelovi do súborov PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2020
-#, fuzzy
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Importovať užívateľov z jabberd14 spool súborov"
+msgstr "Importovať dáta užívateľov z jabberd14 spool súboru:"
 
 #: web/ejabberd_web_admin.erl:2027
-#, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importovať užívateľov z jabberd14 spool súborov"
+msgstr "Importovať dáta užívateľov z jabberd14 spool adresára:"
 
 #: web/ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
@@ -1579,9 +1557,8 @@ msgid "Update plan"
 msgstr "Aktualizovať plán"
 
 #: web/ejabberd_web_admin.erl:2176
-#, fuzzy
 msgid "Modified modules"
-msgstr "Aktualizované moduly"
+msgstr "Modifikované moduly"
 
 #: web/ejabberd_web_admin.erl:2177
 msgid "Update script"
@@ -1601,12 +1578,11 @@ msgstr "Port"
 
 #: web/ejabberd_web_admin.erl:2348
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2349
-#, fuzzy
 msgid "Protocol"
-msgstr "Port"
+msgstr "Protokol"
 
 #: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
 msgid "Module"
