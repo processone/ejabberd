@@ -166,11 +166,11 @@ msgstr "Pechar sesión de usuario"
 #: mod_configure.erl:151 mod_configure.erl:489 mod_configure.erl:1211
 #: mod_configure.erl:1223
 msgid "Get User Password"
-msgstr "Ver contraseña de usuario"
+msgstr "Ver contrasinal de usuario"
 
 #: mod_configure.erl:153 mod_configure.erl:490
 msgid "Change User Password"
-msgstr "Cambiar contraseña de usuario"
+msgstr "Cambiar contrasinal de usuario"
 
 #: mod_configure.erl:155 mod_configure.erl:491 mod_configure.erl:1240
 msgid "Get User Last Login Time"
@@ -364,11 +364,11 @@ msgstr "Jabber ID"
 #: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2809
 #: web/ejabberd_web_admin.erl:1501
 msgid "Password"
-msgstr "Contraseña"
+msgstr "Contrasinal"
 
 #: mod_configure.erl:1178
 msgid "Password Verification"
-msgstr "Verificación da contraseña"
+msgstr "Verificación da contrasinal"
 
 #: mod_configure.erl:1269
 msgid "Number of registered users"
@@ -441,46 +441,44 @@ msgid "Registration in mod_irc for "
 msgstr "Rexistro en mod_irc para"
 
 #: mod_irc/mod_irc.erl:569
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Introduce o nome de usuario e codificaciones de carácteres que queiras usar "
-"ao conectar nos servidores de IRC"
+"Introduza o nome de usuario, codificaciones de carácter, portos e "
+"contrasinal que pretende utilizar a conectar a servidores de IRC"
 
 #: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
 msgstr "Nome de usuario en IRC"
 
 #: mod_irc/mod_irc.erl:584
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"Se queres especificar codificaciones de carácteres distintos para cada "
+"Se quere especificar codificaciones de caracteres diferentes, contrasinal ou "
 "servidor IRC rechea esta lista con valores no formato '{\"servidor irc\", "
-"\"codificación\"}'. Este servizo usa por defecto a codificación \"~s\"."
+"\"codificación\", \"porto\", \"contrasinal\"}'.  Este servizo utiliza por "
+"defecto a codificación \"~s\", porto ~p, sen contrasinal."
 
 #: mod_irc/mod_irc.erl:596
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Ejemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
-"\"}]."
+"Exemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:601
 msgid "Connections parameters"
-msgstr ""
+msgstr "Parámetros de conexiones"
 
 #: mod_irc/mod_irc.erl:711
 msgid "Join IRC channel"
-msgstr "Únete á canle de IRC"
+msgstr "Entrar en canle IRC"
 
 #: mod_irc/mod_irc.erl:715
 msgid "IRC channel (don't put the first #)"
@@ -516,21 +514,19 @@ msgstr ""
 msgid "IRC username"
 msgstr "Nome de usuario en IRC"
 
-#: mod_irc/mod_irc.erl:904
-#, fuzzy
+#: mod_irc/mod_irc.erl:906
 msgid "Password ~b"
-msgstr "Contraseña"
+msgstr "Contrasinal ~b"
 
-#: mod_irc/mod_irc.erl:909
-#, fuzzy
+#: mod_irc/mod_irc.erl:911
 msgid "Port ~b"
-msgstr "Porto"
+msgstr "Porto ~b"
 
-#: mod_irc/mod_irc.erl:914
+#: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
 msgstr "Codificación de servidor ~b"
 
-#: mod_irc/mod_irc.erl:923
+#: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
 msgstr "Servidor ~b"
 
@@ -594,15 +590,15 @@ msgstr "entra en la sala"
 
 #: mod_muc/mod_muc_log.erl:384 mod_muc/mod_muc_log.erl:387
 msgid "leaves the room"
-msgstr "sale de la sala"
+msgstr "sae da sala"
 
 #: mod_muc/mod_muc_log.erl:390 mod_muc/mod_muc_log.erl:393
 msgid "has been banned"
-msgstr "ha sido bloqueado"
+msgstr "foi bloqueado"
 
 #: mod_muc/mod_muc_log.erl:396 mod_muc/mod_muc_log.erl:399
 msgid "has been kicked"
-msgstr "ha sido expulsado"
+msgstr "foi expulsado"
 
 #: mod_muc/mod_muc_log.erl:402
 msgid "has been kicked because of an affiliation change"
@@ -706,9 +702,8 @@ msgid "Room Configuration"
 msgstr "Configuración da Sala"
 
 #: mod_muc/mod_muc_log.erl:745
-#, fuzzy
 msgid "Room Occupants"
-msgstr "Número de ocupantes"
+msgstr "Ocupantes da sala"
 
 #: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
 msgid "Room title"
@@ -822,7 +817,7 @@ msgstr "Non se pode xerar un Captcha"
 
 #: mod_muc/mod_muc_room.erl:1591
 msgid "Incorrect password"
-msgstr "Contraseña incorrecta"
+msgstr "Contrasinal incorrecta"
 
 #: mod_muc/mod_muc_room.erl:2095
 msgid "Administrator privileges required"
@@ -874,7 +869,7 @@ msgstr "A lista de participantes é pública"
 
 #: mod_muc/mod_muc_room.erl:2806
 msgid "Make room password protected"
-msgstr "Protexer a sala con contraseña"
+msgstr "Protexer a sala con contrasinal"
 
 #: mod_muc/mod_muc_room.erl:2817
 msgid "Maximum Number of Occupants"
@@ -955,7 +950,7 @@ msgstr "~s invítache á sala ~s"
 
 #: mod_muc/mod_muc_room.erl:3336
 msgid "the password is"
-msgstr "a contraseña é"
+msgstr "a contrasinal é"
 
 #: mod_offline.erl:509 mod_offline_odbc.erl:352
 msgid ""
@@ -1108,7 +1103,7 @@ msgstr "As coleccións coas que un nodo está afiliado"
 #: mod_register.erl:190
 msgid "Choose a username and password to register with this server"
 msgstr ""
-"Escolle un nome de usuario e contraseña para rexistrarche neste servidor"
+"Escolle un nome de usuario e contrasinal para rexistrarche neste servidor"
 
 #: mod_register.erl:243
 msgid "Users are not allowed to register accounts so quickly"
@@ -1393,7 +1388,7 @@ msgstr "Servidores S2S saíntes:"
 
 #: web/ejabberd_web_admin.erl:1682
 msgid "Change Password"
-msgstr "Cambiar contraseña"
+msgstr "Cambiar contrasinal"
 
 #: web/ejabberd_web_admin.erl:1685
 msgid "User "
@@ -1405,7 +1400,7 @@ msgstr "Recursos conectados:"
 
 #: web/ejabberd_web_admin.erl:1693
 msgid "Password:"
-msgstr "Contraseña:"
+msgstr "Contrasinal:"
 
 #: web/ejabberd_web_admin.erl:1754
 msgid "No Data"
@@ -1507,25 +1502,27 @@ msgstr "Restaurar copias de seguridade de texto plano inmediatamente:"
 
 #: web/ejabberd_web_admin.erl:1998
 msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr ""
+msgstr "Importar usuarios desde un fichero PIEFXIS"
 
 #: web/ejabberd_web_admin.erl:2005
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
 msgstr ""
+"Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-"
+"0277):"
 
 #: web/ejabberd_web_admin.erl:2012
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
 msgstr ""
+"Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-"
+"0277):"
 
 #: web/ejabberd_web_admin.erl:2020
-#, fuzzy
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Importar usuarios de ficheiros spool de jabberd-1.4"
+msgstr "Importar usuario de fichero spool de jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2027
-#, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importar usuarios de ficheiros spool de jabberd-1.4"
+msgstr "Importar usuarios do directorio spool de jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
@@ -1596,9 +1593,8 @@ msgid "IP"
 msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2349
-#, fuzzy
 msgid "Protocol"
-msgstr "Porto"
+msgstr "Protocolo"
 
 #: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
 msgid "Module"
