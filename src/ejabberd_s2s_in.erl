@@ -532,6 +532,14 @@ handle_sync_event(get_state_infos, _From, StateName, StateData) ->
 		  catch
 		      _:_ -> {unknown,unknown}
 		  end,
+    Domains =	case StateData#state.authenticated of
+		    true -> 
+			[StateData#state.auth_domain];
+		    false ->
+			Connections = StateData#state.connections,
+			[D || {{D, _}, established} <- 
+			    dict:to_list(Connections)]
+		end,
     Infos = [
 	     {direction, in},
 	     {statename, StateName},
@@ -543,7 +551,8 @@ handle_sync_event(get_state_infos, _From, StateName, StateData) ->
 	     {tls_options, StateData#state.tls_options},
 	     {authenticated, StateData#state.authenticated},
 	     {shaper, StateData#state.shaper},
-	     {sockmod, SockMod}
+	     {sockmod, SockMod},
+	     {domains, Domains}
 	    ],
     Reply = {state_infos, Infos},
     {reply,Reply,StateName,StateData};
