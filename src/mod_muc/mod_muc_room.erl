@@ -2698,7 +2698,7 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 				is_allowed_room_name_desc_limits(XEl,
 								 StateData) of
 				true -> set_config(XEl, StateData);
-				false -> {error, 'bad-request'}
+				false -> {error, 'not-acceptable'}
 			    end;
 			_ ->
 			    {error, 'bad-request'}
