@@ -415,11 +415,14 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
 				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow,FileFormat)]);
 	       {body, T} ->  
-		   case regexp:first_match(T, "^/me\s") of
-		       {match, _, _} ->
+		   case {regexp:first_match(T, "^/me\s"), Nick} of
+		       {_, ""} ->
+			   io_lib:format("<font class=\"msm\">~s</font><br/>",
+					 [htmlize(T,NoFollow,FileFormat)]);
+		       {{match, _, _}, _} ->
 			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>", 
 					 [Nick, string:substr(htmlize(T,FileFormat), 5)]);
-		       nomatch ->
+		       {nomatch, _} ->
 			   io_lib:format("<font class=\"mn\">~s</font> ~s<br/>",
 					 [Nick2, htmlize(T,NoFollow,FileFormat)])
 		   end
@@ -704,6 +707,7 @@ put_header_css(F, false) ->
     fw(F, ".ts {color: #AAAAAA; text-decoration: none;}"),
     fw(F, ".mrcm {color: #009900; font-style: italic; font-weight: bold;}"),
     fw(F, ".msc {color: #009900; font-style: italic; font-weight: bold;}"),
+    fw(F, ".msm {color: #000099; font-style: italic; font-weight: bold;}"),
     fw(F, ".mj {color: #009900; font-style: italic;}"),
     fw(F, ".ml {color: #009900; font-style: italic;}"),
     fw(F, ".mk {color: #009900; font-style: italic;}"),
