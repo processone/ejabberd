@@ -126,7 +126,7 @@ process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} = IQ,
 	     disco_info, ServerHost, [], [ServerHost, ?MODULE, "", ""]),
     IQ#iq{type = result, sub_el =
 	  [{xmlelement, "query", [{"xmlns", ?NS_DISCO_INFO}],
-	    iq_disco_info(Name, Lang) ++ Info}]};
+	    iq_disco_info(Lang, Name) ++ Info}]};
 
 %% disco#items request
 process_iq(_, #iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ, _) ->
