@@ -2640,7 +2640,9 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 							     From)
 				andalso
 				is_allowed_room_name_desc_limits(XEl,
-								 StateData) of
+								 StateData)
+				andalso
+				is_password_settings_correct(XEl, StateData) of
 				true -> set_config(XEl, StateData);
 				false -> {error, ?ERR_NOT_ACCEPTABLE}
 			    end;
@@ -2739,6 +2741,44 @@ is_allowed_room_name_desc_limits(XEl, StateData) ->
 		true
 	end,
     IsNameAccepted and IsDescAccepted.
+
+%% Return false if:
+%% "the password for a password-protected room is blank"
+is_password_settings_correct(XEl, StateData) ->
+    Config = StateData#state.config,
+    OldProtected = Config#config.password_protected,
+    OldPassword = Config#config.password,
+    NewProtected =
+	case lists:keysearch("muc#roomconfig_passwordprotectedroom", 1,
+			     jlib:parse_xdata_submit(XEl)) of
+	    {value, {_, ["1"]}} ->
+		true;
+	    {value, {_, ["0"]}} ->
+		false;
+	    _ ->
+		undefined
+	end,
+    NewPassword =
+	case lists:keysearch("muc#roomconfig_roomsecret", 1,
+			     jlib:parse_xdata_submit(XEl)) of
+	    {value, {_, [P]}} ->
+		P;
+	    _ ->
+		undefined
+	end,
+    case {OldProtected, NewProtected, OldPassword, NewPassword} of
+	{true, undefined, "", undefined} ->
+	    false;
+	{true, undefined, _, ""} ->
+	    false;
+	{_, true , "", undefined} ->
+	    false;
+	{_, true, _, ""} ->
+	    false;
+	_ ->
+	    true
+    end.
+
 
 -define(XFIELD(Type, Label, Var, Val),
 	{xmlelement, "field", [{"type", Type},
