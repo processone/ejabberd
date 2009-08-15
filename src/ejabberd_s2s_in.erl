@@ -49,17 +49,10 @@
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
--ifdef(SSL39).
+-include("XmppAddr.hrl").
 -include_lib("ssl/include/ssl_pkix.hrl").
 -define(PKIXEXPLICIT, 'OTP-PKIX').
 -define(PKIXIMPLICIT, 'OTP-PKIX').
--else.
--include_lib("ssl/include/PKIX1Explicit88.hrl").
--include_lib("ssl/include/PKIX1Implicit88.hrl").
--define(PKIXEXPLICIT, 'PKIX1Explicit88').
--define(PKIXIMPLICIT, 'PKIX1Implicit88').
--endif.
--include("XmppAddr.hrl").
 
 -define(DICT, dict).
 

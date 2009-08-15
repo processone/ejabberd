@@ -28,7 +28,7 @@ else
   CHOWN_OUTPUT=&1
 endif
 
-EFLAGS += @ERLANG_SSL39@ -pa .
+EFLAGS += -pa .
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug

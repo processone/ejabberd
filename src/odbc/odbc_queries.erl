@@ -90,14 +90,6 @@
 -define(generic, true).
 -endif.
 
-%% Almost a copy of string:join/2.
-%% We use this version because string:join/2 is relatively
-%% new function (introduced in R12B-0).
-join([], _Sep) ->
-    [];
-join([H|T], Sep) ->
-    [H, [[Sep, X] || X <- T]].
-
 %% -----------------
 %% Generic queries
 -ifdef(generic).
@@ -111,14 +103,14 @@ update_t(Table, Fields, Vals, Where) ->
 			   Fields, Vals),
     case ejabberd_odbc:sql_query_t(
 	   ["update ", Table, " set ",
-	    join(UPairs, ", "),
+	    string:join(UPairs, ", "),
 	    " where ", Where, ";"]) of
 	{updated, 1} ->
 	    ok;
 	_ ->
 	    ejabberd_odbc:sql_query_t(
-	      ["insert into ", Table, "(", join(Fields, ", "),
-	       ") values ('", join(Vals, "', '"), "');"])
+	      ["insert into ", Table, "(", string:join(Fields, ", "),
+	       ") values ('", string:join(Vals, "', '"), "');"])
     end.
 
 %% F can be either a fun or a list of queries
@@ -353,7 +345,7 @@ update_roster(_LServer, Username, SJID, ItemVals, ItemGroups) ->
 			  ejabberd_odbc:sql_query_t(
 			    ["insert into rostergroups("
 			     "              username, jid, grp) "
-			     " values ('", join(ItemGroup, "', '"), "');"])
+			     " values ('", string:join(ItemGroup, "', '"), "');"])
 		  end,
 		  ItemGroups).
 
@@ -365,13 +357,13 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
       "              username, jid, nick, "
       "              subscription, ask, askmessage, "
       "              server, subscribe, type) "
-      " values ('", join(ItemVals, "', '"), "');"],
+      " values ('", string:join(ItemVals, "', '"), "');"],
      ["delete from rostergroups "
       "      where username='", Username, "' "
       "        and jid='", SJID, "';"]] ++
      [["insert into rostergroups("
        "              username, jid, grp) "
-       " values ('", join(ItemGroup, "', '"), "');"] ||
+       " values ('", string:join(ItemGroup, "', '"), "');"] ||
 	 ItemGroup <- ItemGroups].
 
 roster_subscribe(_LServer, Username, SJID, ItemVals) ->
@@ -527,7 +519,7 @@ set_privacy_list(ID, RItems) ->
 			     "match_presence_out "
 			     ") "
 			     "values ('", ID, "', '",
-			     join(Items, "', '"), "');"])
+			     string:join(Items, "', '"), "');"])
 		  end, RItems).
 
 del_privacy_lists(LServer, Server, Username) ->

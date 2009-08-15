@@ -66,12 +66,6 @@
 		  headers
 		 }).
 
--ifdef(SSL39).
--define(STRING2LOWER, string).
--else.
--define(STRING2LOWER, httpd_util).
--endif.
-
 -record(state, {host, docroot, accesslog, accesslogfd, directory_indices,
                 default_content_type, content_types = []}).
 
@@ -411,7 +405,7 @@ join([H | T], Separator) ->
     lists:foldl(fun(E, Acc) -> lists:concat([Acc, Separator, E]) end, H, T).
 
 content_type(Filename, DefaultContentType, ContentTypes) ->
-    Extension = ?STRING2LOWER:to_lower(filename:extension(Filename)),
+    Extension = string:to_lower(filename:extension(Filename)),
     case lists:keysearch(Extension, 1, ContentTypes) of
         {value, {_, ContentType}} -> ContentType;
         false                     -> DefaultContentType
@@ -427,4 +421,4 @@ ip_to_string(Address) when size(Address) == 4 ->
     join(tuple_to_list(Address), ".");
 ip_to_string(Address) when size(Address) == 8 ->
     Parts = lists:map(fun (Int) -> io_lib:format("~.16B", [Int]) end, tuple_to_list(Address)),
-    ?STRING2LOWER:to_lower(lists:flatten(join(Parts, ":"))).
+    string:to_lower(lists:flatten(join(Parts, ":"))).
