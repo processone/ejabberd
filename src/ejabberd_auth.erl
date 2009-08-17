@@ -135,6 +135,7 @@ check_password_with_authmodule(User, Server, Password)
 %%     Digest = string() | undefined
 %%     DigestGen = function()
 %%     AuthModule = authmodule()
+%% @doc Check the password is valid and also return the authentication module that accepts it.
 %% The password is 'undefined' if the client
 %% authenticates using the digest method as defined in 
 %% XEP-0078: Non-SASL Authentication

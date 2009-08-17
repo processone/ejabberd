@@ -167,7 +167,8 @@ initialize(Host, Opts) ->
 %% @spec (AdminCTs::[CT], Default::[CT]) -> [CT]
 %% where CT = {Extension::string(), Value}
 %%       Value = string() | undefined
-%% Returns a unified list without duplicates where elements of AdminCTs have more priority.
+%% @doc Return a unified list without duplicates.
+%% Elements of AdminCTs have more priority.
 %% If a CT is declared as 'undefined', then it is not included in the result.
 build_list_content_types(AdminCTsUnsorted, DefaultCTsUnsorted) ->
     AdminCTs = lists:ukeysort(1, AdminCTsUnsorted),

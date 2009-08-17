@@ -182,13 +182,11 @@ roster_hash(Items) ->
 			[R#roster{groups = lists:sort(Grs)} || 
 				R = #roster{groups = Grs} <- Items]))).
 		
-%% @spec (Host) -> true | false
-%% @type Host = binary()
+%% @spec (Host::binary()) -> true | false
 roster_versioning_enabled(Host)  ->
 	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, versioning, false).
 
-%% @spec (Host) -> true | false
-%% @type Host = binary()
+%% @spec (Host::binary()) -> true | false
 roster_version_on_db(Host) ->
 	gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, store_current_id, false).
 
@@ -219,7 +217,7 @@ roster_version(LServer ,LUser) ->
 %%     To = exmpp_jid:jid()
 %%     IQ_Rec = exmpp_iq:iq()
 %%     IQ_Result = exmpp_iq:iq()
-%% Load roster from DB only if neccesary
+%% @doc Load roster from DB only if neccesary.
 %% It is neccesary if
 %%  	- roster versioning is disabled in server OR
 %%	- roster versioning is not used by the client OR

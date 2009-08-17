@@ -42,12 +42,13 @@
 
 -record(sasl_mechanism, {mechanism, module, require_plain_password}).
 
-%% @type saslstate() = {sasl_state, Service, Myname, Realm, GetPassword, CheckPassword, Mech_Mod, Mech_State}
+%% @type saslstate() = {sasl_state, Service, Myname, Realm, GetPassword, CheckPassword, CheckPasswordDigest, Mech_Mod, Mech_State}
 %%     Service = string()
 %%     Myname = string()
 %%     Realm = string()
 %%     GetPassword = function()
 %%     CheckPassword = function()
+%%     CheckPasswordDigest = any()
 %%     Mech_Mod = atom()
 %%     Mech_State = term().
 %% State of this process.
@@ -148,7 +149,7 @@ listmech(Host) ->
 			 ['$1']}]),
     filter_anonymous(Host, Mechs).
 
-%% @spec (Service, ServerFQDN, UserRealm, SecFlags, GetPassword, CheckPassword) -> saslstate()
+%% @spec (Service, ServerFQDN, UserRealm, SecFlags, GetPassword, CheckPassword, CheckPasswordDigest) -> saslstate()
 %%     Service = string()
 %%     ServerFQDN = string()
 %%     UserRealm = string()

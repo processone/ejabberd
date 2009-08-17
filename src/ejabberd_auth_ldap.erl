@@ -241,11 +241,10 @@ get_password(_User, _Server) ->
 get_password_s(_User, _Server) ->
     "".
 
-%% @spec (User, Server) -> bool()
+%% @spec (User, Server) -> true | false | {error, Error}
 %%     User = string()
 %%     Server = string()
 
-%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     case catch is_user_exists_ldap(User, Server) of
 	{'EXIT', Error} ->

@@ -286,11 +286,10 @@ get_password_s(User, Server) ->
 	    ""
     end.
 
-%% @spec (User, Server) -> bool()
+%% @spec (User, Server) -> true | false | {error, Error}
 %%     User = string()
 %%     Server = string()
 
-%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
