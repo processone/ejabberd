@@ -32,6 +32,12 @@
 	 get_options_xform/2,
 	 parse_options_xform/1]).
 
+% Internal function also exported for use in transactional bloc from pubsub plugins
+-export([add_subscription/3,
+	 delete_subscription/3,
+	 read_subscription/3,
+	 write_subscription/4]).
+
 -include_lib("stdlib/include/qlc.hrl").
 
 -include("pubsub.hrl").

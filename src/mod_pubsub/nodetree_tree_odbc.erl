@@ -220,13 +220,15 @@ create_node(Host, Node, Type, _Owner, Options) ->
 		    %% PEP does not uses hierarchy
 		    {[], true};
 		_ ->
-		    Parent = lists:sublist(Node, length(Node) - 1),
-		    ParentE = (Parent == []) orelse 
+		    case lists:sublist(Node, length(Node) - 1) of
+		    [] ->
+			{[], true};
+		    Parent ->
 			case nodeid(Host, Parent) of
-			    {result, _} -> true;
-			    _ -> false
-			end,
-		    {Parent, ParentE}
+			    {result, _} -> {Parent, true};
+			    _ -> {Parent, false}
+			end
+		    end
 		end,
 	    case ParentExists of
 		true -> 

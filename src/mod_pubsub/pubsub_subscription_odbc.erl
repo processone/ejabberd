@@ -22,7 +22,7 @@
 %%% ====================================================================
 
 -module(pubsub_subscription_odbc).
--author("bjc@kublai.com").
+-author("pablo.polvorin@process-one.net").
 
 %% API
 -export([init/0,
@@ -32,8 +32,6 @@
 	 set_subscription/4,
 	 get_options_xform/2,
 	 parse_options_xform/1]).
-
--include_lib("stdlib/include/qlc.hrl").
 
 -include("pubsub.hrl").
 -include("jlib.hrl").
@@ -90,10 +88,9 @@ init() ->
 
 subscribe_node(_JID, _NodeID, Options) ->
     SubId = make_subid(),
-    ok =  pubsub_db_odbc:add_subscription(#pubsub_subscription{subid = SubId,
-							      options = Options}),
+    ok = ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubId, options = Options}),
     {result, SubId}.
-	
+
 
 unsubscribe_node(_JID, _NodeID, SubID) ->
     {ok, Sub} = ?DB_MOD:read_subscription(SubID),
@@ -105,7 +102,7 @@ get_subscription(_JID, _NodeID, SubID) ->
 	{ok, Sub} -> {result, Sub};
 	notfound -> {error, notfound}
     end.
-	
+
 
 set_subscription(_JID, _NodeID, SubID, Options) ->
     case ?DB_MOD:read_subscription(SubID) of
@@ -115,7 +112,7 @@ set_subscription(_JID, _NodeID, SubID, Options) ->
 	notfound -> 
 	     {error, notfound}
     end.
-	
+
 
 get_options_xform(Lang, Options) ->
     Keys = [deliver, show_values, subscription_type, subscription_depth],

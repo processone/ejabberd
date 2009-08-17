@@ -321,8 +321,8 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 	%%	% Requesting entity is anonymous
 	%%	{error, ?ERR_FORBIDDEN};
 	true ->
-	    case pubsub_subscription:subscribe_node(Subscriber, NodeId, Options) of
-		{result, SubId} ->
+	    case pubsub_subscription:add_subscription(Subscriber, NodeId, Options) of
+		SubId when is_list(SubId) ->
 		    NewSub = case AccessModel of
 				 authorize -> pending;
 				 _ -> subscribed
@@ -409,7 +409,7 @@ delete_subscription(SubKey, NodeID, {Subscription, SubId}, SubState) ->
     Affiliation = SubState#pubsub_state.affiliation,
     AllSubs = SubState#pubsub_state.subscriptions,
     NewSubs = AllSubs -- [{Subscription, SubId}],
-    pubsub_subscription:unsubscribe_node(SubKey, NodeID, SubId),
+    pubsub_subscription:delete_subscription(SubKey, NodeID, SubId),
     case {Affiliation, NewSubs} of
 	{none, []} ->
 	    % Just a regular subscriber, and this is final item, so
@@ -727,7 +727,7 @@ replace_subscription({Sub, SubId}, [{_, SubID} | T], Acc) ->
     replace_subscription({Sub, SubId}, T, [{Sub, SubID} | Acc]).
 
 unsub_with_subid(NodeId, SubId, SubState) ->
-    pubsub_subscription:unsubscribe_node(SubState#pubsub_state.stateid,
+    pubsub_subscription:delete_subscription(SubState#pubsub_state.stateid,
 					 NodeId, SubId),
     NewSubs = lists:filter(fun ({_, SID}) -> SubId =/= SID end,
 			   SubState#pubsub_state.subscriptions),
