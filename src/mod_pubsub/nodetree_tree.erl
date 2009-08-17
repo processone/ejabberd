@@ -103,11 +103,12 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 set_node(_) ->
     {error, ?ERR_INTERNAL_SERVER_ERROR}.
 
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
+
 %% @spec (Host, Node) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
-get_node(Host, Node, _From) ->
-    get_node(Host, Node).
 get_node(Host, Node) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
@@ -121,10 +122,11 @@ get_node(NodeId) ->
 	Error -> Error
     end.
 
-%% @spec (Host) -> [pubsubNode()] | {error, Reason}
-%%     Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
+
+%% @spec (Host) -> [pubsubNode()] | {error, Reason}
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host) ->
     mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}).
 
@@ -165,12 +167,13 @@ get_subnodes(Host, Node) ->
 		       lists:member(Node, Parents)]),
     qlc:e(Q).
 
+get_subnodes_tree(Host, Node, _From) ->
+    get_subnodes_tree(Host, Node).
+
 %% @spec (Host, Index) -> [pubsubNodeIdx()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
-get_subnodes_tree(Host, Node, _From) ->
-    get_subnodes_tree(Host, Node).
 get_subnodes_tree(Host, Node) ->
     mnesia:foldl(fun(#pubsub_node{nodeid = {H, N}} = R, Acc) ->
 			 case lists:prefix(Node, N) and (H == Host) of

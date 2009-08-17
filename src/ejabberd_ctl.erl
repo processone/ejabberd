@@ -275,7 +275,7 @@ try_call_command(Args, Auth, AccessCommands) ->
 	    {io_lib:format("Problem '~p ~p' occurred executing the command.~nStacktrace: ~p", [A, Why, Stack]), ?STATUS_ERROR}
     end.
 
-%% @spec (Args::[string()], Auth) -> string() | integer() | {string(), integer()} | {error, ErrorType}
+%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, ErrorType}
 call_command([CmdString | Args], Auth, AccessCommands) ->
     {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
     Command = list_to_atom(CmdStringU),

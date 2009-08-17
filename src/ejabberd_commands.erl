@@ -290,12 +290,12 @@ get_command_definition(Name) ->
 execute_command(Name, Arguments) ->
     execute_command([], noauth, Name, Arguments).
 
-%% @spec (AccessCommands, AuthList, Name::atom(), Arguments) -> ResultTerm | {error, Error}
+%% @spec (AccessCommands, Auth, Name::atom(), Arguments) -> ResultTerm | {error, Error}
 %% where 
 %%       AccessCommands = [{Access, CommandNames, Arguments}]
-%%       Auth = {user, string()}, {server, string()}, {password, string()} | noauth
+%%       Auth = {User::string(), Server::string(), Password::string()} | noauth
 %%       Method = atom()
-%%       Arguments = [...]
+%%       Arguments = [any()]
 %%       Error = command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
 execute_command(AccessCommands, Auth, Name, Arguments) ->
     case ets:lookup(ejabberd_commands, Name) of
@@ -346,14 +346,15 @@ get_tags_commands() ->
 %% Access verification
 %% -----------------------------
 
-%% At least one AccessCommand must be satisfied
 %% @spec (AccessCommands, Auth, Method, Command, Arguments) -> ok
 %% where 
 %%       AccessCommands =  [ {Access, CommandNames, Arguments} ]
-%%       Auth = {User::string(), Server::string(), Password::string()}
+%%       Auth = {User::string(), Server::string(), Password::string()} | noauth
 %%       Method = atom()
-%%       Arguments = [...]
-%% It may throw {error, Error} where
+%%       Arguments = [any()]
+%% @doc Check access is allowed to that command.
+%% At least one AccessCommand must be satisfied.
+%% It may throw {error, Error} where:
 %% Error = account_unprivileged | invalid_account_data | no_auth_provided
 check_access_commands([], _Auth, _Method, _Command, _Arguments) ->
     ok;

@@ -35,7 +35,7 @@
 %%% Functions concerning configuration should be rewritten.
 %%%
 %%% Support for subscription-options and multi-subscribe features was
-%%% added by Brian Cully <bjc@kublai.com>. Subscriptions and options are
+%%% added by Brian Cully (bjc AT kublai.com). Subscriptions and options are
 %%% stored in the pubsub_subscription table, with a link to them provided
 %%% by the subscriptions field of pubsub_state. For information on
 %%% subscription-options and mulit-subscribe see XEP-0060 sections 6.1.6,
@@ -1354,7 +1354,7 @@ adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
     ?DEBUG("Couldn't process ad hoc command:~n~p", [Other]),
     {error, ?ERR_ITEM_NOT_FOUND}.
 
-%% @spec (Host, Owner) -> iqRes()
+%% @spec (Host, Owner, Lang, Plugins) -> iqRes()
 %% @doc <p>Sends the process pending subscriptions XForm for Host to
 %% Owner.</p>
 send_pending_node_form(Host, Owner, _Lang, Plugins) ->
@@ -1800,7 +1800,7 @@ delete_node(Host, Node, Owner) ->
 	    Error
     end.
 
-%% @spec (Host, Node, From, JID) ->
+%% @spec (Host, Node, From, JID, Configuration) ->
 %%		  {error, Reason::stanzaError()} |
 %%		  {result, []}
 %%	 Host = host()
@@ -2255,7 +2255,7 @@ get_item(Host, Node, ItemId) ->
 	Error -> Error
     end.
 
-%% @spec (Host, Node, NodeId, Type LJID, Number) -> any()
+%% @spec (Host, Node, NodeId, Type, LJID, Number) -> any()
 %%	 Host = pubsubHost()
 %%	 Node = pubsubNode()
 %%	 NodeId = pubsubNodeId()
@@ -2759,7 +2759,7 @@ service_jid(Host) ->
     _ -> {jid, "", Host, "", "", Host, ""}
     end.
 
-%% @spec (LJID, PresenceDelivery) -> boolean()
+%% @spec (LJID, NotifyType, Depth, NodeOptions, SubOptions) -> boolean()
 %%	LJID = jid()
 %%	NotifyType = items | nodes
 %%	Depth = integer()
@@ -3154,7 +3154,7 @@ node_options(Type) ->
 	    Result
     end.
 
-%% @spec (NodeId) -> [ljid()]
+%% @spec (Host, Type, NodeId) -> [ljid()]
 %%    NodeId = pubsubNodeId()
 %% @doc <p>Return list of node owners.</p>
 node_owners(Host, Type, NodeId) ->
@@ -3178,7 +3178,7 @@ node_owners_call(Type, NodeId) ->
 	    []
     end.
 
-%% @spec (Options) -> MaxItems
+%% @spec (Host, Options) -> MaxItems
 %%	 Host = host()
 %%	 Options = [Option]
 %%	 Option = {Key::atom(), Value::term()}

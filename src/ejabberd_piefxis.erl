@@ -201,11 +201,8 @@ add_user(El, Domain) ->
     Password = exmpp_xml:get_attribute(El,password,none),
     add_user(El, Domain, ?BTL(User), ?BTL(Password)).
 
-%% @spec El = XML element
-%%       Domain = String with a domain name
-%%       User = String with an user name
-%%       Password = String with an user password
-%% @ret ok | {atomic, exists} | {error, not_allowed}
+%% @spec (El::xmlel(), Domain::string(), User::string(), Password::string())
+%%       -> ok | {atomic, exists} | {error, not_allowed}
 %% @doc Add a new user to the database.
 %% If user already exists, it will be only updated.
 add_user(El, Domain, User, Password) ->
@@ -230,10 +227,8 @@ add_user(El, Domain, User, Password) ->
 	    ?ERROR_MSG("Error adding user ~s@~s: ~p~n", [User, Domain, Other])
     end.
 
-%% @spec User = String with User name
-%%       Password = String with a Password value
-%%       Domain = Stirng with a Domain name
-%% @ret  ok | {atomic, exists} | {error, not_allowed}
+%% @spec (User::string(), Password::string(), Domain::string())
+%%       -> ok | {atomic, exists} | {error, not_allowed}
 %% @doc  Create a new user
 create_user(User,Password,Domain) ->
     case ejabberd_auth:try_register(User,Domain,Password) of
@@ -246,14 +241,13 @@ create_user(User,Password,Domain) ->
 %%%==================================
 %%%% Populate user
 
-%% @spec User = String
-%%       Domain = String
-%%       El = XML element
-%% @ret  ok | {error, not_found}
+%% @spec (User::string(), Domain::string(), El::xml())
+%%      -> ok | {error, not_found}
 %%
 %% @doc  Add a new user from a XML file with a roster list.
 %%
 %% Example of a file:
+%% ```
 %% <?xml version='1.0' encoding='UTF-8'?>
 %% <server-data xmlns='http://www.xmpp.org/extensions/xep-0227.html#ns'>
 %%   <host jid='localhost'>
@@ -268,6 +262,7 @@ create_user(User,Password,Domain) ->
 %%     </user>
 %%   </host>
 %%  </server-data>
+%% '''
 
 populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
     io:format("Trying to add/update roster list...",[]),
@@ -297,6 +292,7 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
 %% @doc  Read vcards from the XML and send it to the server
 %%
 %% Example:
+%% ```
 %% <?xml version='1.0' encoding='UTF-8'?>
 %% <server-data xmlns='http://www.xmpp.org/extensions/xep-0227.html#ns'>
 %%   <host jid='localhost'>
@@ -307,6 +303,7 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
 %%     </user>
 %%   </host>
 %% </server-data>
+%% '''
 
 populate_user(User,Domain,El=#xmlel{name='vCard', ns='vcard-temp'}) ->
     io:format("Trying to add/update vCards...",[]),
@@ -515,7 +512,7 @@ make_xinclude(Fn) ->
 %%%% Export user
 
 %% @spec (Fd, Username::string(), Host::string()) -> ok
-%% extraer su informacion e imprimirla
+%% @doc Extract user information and print it.
 export_user(Fd, Username, Host) ->
     UserString = extract_user(Username, Host),
     print(Fd, UserString).
@@ -663,9 +660,8 @@ make_main_basefilename(Dir, FnT) ->
     filename:join([Dir, Filename2]).
 
 %% @spec (FnT::string(), Host::string()) -> FnH::string()
-%% FnH = FnT + _ + Host2 + Extension
-%% Host2 = Host with any . replaced by _
-%% Example: ("20080804-231550", "jabber.example.org") -> "20080804-231550_jabber_example_org.xml"
+%% @doc Make the filename for the host.
+%% Example: ``("20080804-231550", "jabber.example.org") -> "20080804-231550_jabber_example_org.xml"''
 make_host_filename(FnT, Host) ->
     Host2 = string:join(string:tokens(Host, "."), "_"),
     filename:flatten([FnT, "_", Host2, ".xml"]).

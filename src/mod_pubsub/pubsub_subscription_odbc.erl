@@ -15,8 +15,8 @@
 %%% All Rights Reserved.''
 %%% This software is copyright 2006-2009, ProcessOne.
 %%%
-%%% @author Pablo Polvorin <pablo.polvorin@process-one.net>, based on 
-%%          pubsub_subscription.erl by Brian Cully <bjc@kublai.com>
+%%% @author Pablo Polvorin <pablo.polvorin@process-one.net>
+%%% @author based on pubsub_subscription.erl by Brian Cully <bjc@kublai.com>
 %%% @version {@vsn}, {@date} {@time}
 %%% @end
 %%% ====================================================================

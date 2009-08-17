@@ -89,11 +89,12 @@ options() ->
      {odbc, true}].
 
 
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
+
 %% @spec (Host, Node) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
-get_node(Host, Node, _From) ->
-    get_node(Host, Node).
 get_node(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -123,10 +124,10 @@ get_node(NodeId) ->
 	    {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
-%% @spec (Host) -> [pubsubNode()] | {error, Reason}
-%%	 Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
+%% @spec (Host) -> [pubsubNode()] | {error, Reason}
+%%	 Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host) ->
     H = ?PUBSUB:escape(Host),
     case catch ejabberd_odbc:sql_query_t(
@@ -164,11 +165,12 @@ get_parentnodes_tree(Host, Node, From) ->
 	Error -> Error
     end.
 
+get_subnodes(Host, Node, _From) ->
+    get_subnodes(Host, Node).
+
 %% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
 %%	 Host = mod_pubsub:host()
 %%	 Node = mod_pubsub:pubsubNode()
-get_subnodes(Host, Node, _From) ->
-    get_subnodes(Host, Node).
 get_subnodes(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -183,11 +185,12 @@ get_subnodes(Host, Node) ->
 	    []
     end.
 
+get_subnodes_tree(Host, Node, _From) ->
+    get_subnodes_tree(Host, Node).
+
 %% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
 %%	 Host = mod_pubsub:host()
 %%	 Node = mod_pubsub:pubsubNode()
-get_subnodes_tree(Host, Node, _From) ->
-    get_subnodes_tree(Host, Node).
 get_subnodes_tree(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),

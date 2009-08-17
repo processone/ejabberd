@@ -256,7 +256,7 @@ delete_node(Removed) ->
 	end, Removed),
     {result, {default, broadcast, Reply}}.
 
-%% @spec (NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
+%% @spec (NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
 %%		 {error, Reason} | {result, Result}
 %% @doc <p>Accepts or rejects subcription requests on a PubSub node.</p>
 %% <p>The mechanism works as follow:
@@ -905,8 +905,9 @@ set_state(NodeId, State) ->
     end,
     {result, []}.
 
-%% @spec (StateId) -> ok | {error, Reason::stanzaError()}
-%%	 StateId = mod_pubsub:pubsubStateId()
+%% @spec (NodeId, JID) -> ok | {error, Reason::stanzaError()}
+%%	 NodeId = mod_pubsub:pubsubNodeId()
+%%	 JID = mod_pubsub:jid()
 %% @doc <p>Delete a state from database.</p>
 del_state(NodeId, JID) ->
     J = encode_jid(JID),
@@ -916,11 +917,9 @@ del_state(NodeId, JID) ->
 	 "and nodeid='", NodeId, "';"]),
     ok.
 
-%% @spec (NodeId, From, Rsm) -> {[Items],RsmOut} | []
+%% @spec (NodeId, From) -> {[Items],RsmOut} | []
 %%	 NodeId = mod_pubsub:pubsubNodeId()
 %%	 Items = mod_pubsub:pubsubItems()
-%%	 Rsm = jlib:rsm_in() | none
-%%	 RsmOut=jlib:rsm_out() | none
 %% @doc Returns the list of stored items for a given node.
 %% <p>For the default PubSub module, items are stored in Mnesia database.</p>
 %% <p>We can consider that the pubsub_item table have been created by the main

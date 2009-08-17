@@ -84,7 +84,7 @@ check_password(User, Server, Password) ->
     end.
 
 %% @doc Check if the user and password can login in server.
-%% @spec (User::string(), Server::string(), Password::string()
+%% @spec (User::string(), Server::string(), Password::string(),
 %%        Digest::string(), DigestGen::function()) ->
 %%     true | false
 check_password(User, Server, Password, Digest, DigestGen) ->
