@@ -2757,7 +2757,10 @@ is replaced at start time with the real virtual host name.
 This option restricts which users are allowed to create pubsub nodes using
 ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>{plugins, [ Plugin, ...]}</TT></B></DT><DD CLASS="dd-description"> 
 To specify which pubsub node plugins to use.
-If not defined, the default pubsub plugin is always used: "flat".
+The first one in the list is used by default.
+If this option is not defined, the default plugins list is: <TT>["flat"]</TT>.
+PubSub clients can define which plugin to use when creating a node:
+add <TT>type=&#X2019;plugin-name&#X2019;</TT> attribute to the <TT>create</TT> stanza element.
 </DD><DT CLASS="dt-description"><B><TT>{nodetree, Nodetree}</TT></B></DT><DD CLASS="dd-description"> 
 To specify which nodetree to use.
 If not defined, the default pubsub nodetree is used: "tree".

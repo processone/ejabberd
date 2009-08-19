@@ -3532,7 +3532,10 @@ Options:
   ACL and ACCESS. The default value is \term{pubsub\_createnode}. % Not clear enough + do not use abbreviations.
 \titem{\{plugins, [ Plugin, ...]\}} \ind{options!plugins}
   To specify which pubsub node plugins to use.
-  If not defined, the default pubsub plugin is always used: "flat".
+  The first one in the list is used by default.
+  If this option is not defined, the default plugins list is: \term{["flat"]}.
+  PubSub clients can define which plugin to use when creating a node:
+  add \term{type='plugin-name'} attribute to the \term{create} stanza element.
 \titem{\{nodetree, Nodetree\}} \ind{options!nodetree}
   To specify which nodetree to use.
   If not defined, the default pubsub nodetree is used: "tree".
