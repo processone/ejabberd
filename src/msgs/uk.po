@@ -365,7 +365,7 @@ msgid "Jabber ID"
 msgstr "Jabber ID"
 
 #: mod_configure.erl:1173 mod_configure.erl:1231 mod_configure.erl:1621
-#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2809
+#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2849
 #: web/ejabberd_web_admin.erl:1501
 msgid "Password"
 msgstr "Пароль"
@@ -618,96 +618,96 @@ msgstr "вигнано з кімнати як наслідок зупинки с
 msgid "is now known as"
 msgstr "змінив(ла) им'я на"
 
-#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:675
+#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:678
 #: mod_muc/mod_muc_room.erl:2040
 msgid " has set the subject to: "
 msgstr " встановив(ла) тему: "
 
-#: mod_muc/mod_muc_log.erl:445
+#: mod_muc/mod_muc_log.erl:448
 msgid "Monday"
 msgstr "Понеділок"
 
-#: mod_muc/mod_muc_log.erl:446
+#: mod_muc/mod_muc_log.erl:449
 msgid "Tuesday"
 msgstr "Вівторок"
 
-#: mod_muc/mod_muc_log.erl:447
+#: mod_muc/mod_muc_log.erl:450
 msgid "Wednesday"
 msgstr "Середа"
 
-#: mod_muc/mod_muc_log.erl:448
+#: mod_muc/mod_muc_log.erl:451
 msgid "Thursday"
 msgstr "Четвер"
 
-#: mod_muc/mod_muc_log.erl:449
+#: mod_muc/mod_muc_log.erl:452
 msgid "Friday"
 msgstr "П'ятниця"
 
-#: mod_muc/mod_muc_log.erl:450
+#: mod_muc/mod_muc_log.erl:453
 msgid "Saturday"
 msgstr "Субота"
 
-#: mod_muc/mod_muc_log.erl:451
+#: mod_muc/mod_muc_log.erl:454
 msgid "Sunday"
 msgstr "Неділя"
 
-#: mod_muc/mod_muc_log.erl:455
+#: mod_muc/mod_muc_log.erl:458
 msgid "January"
 msgstr "січня"
 
-#: mod_muc/mod_muc_log.erl:456
+#: mod_muc/mod_muc_log.erl:459
 msgid "February"
 msgstr "лютого"
 
-#: mod_muc/mod_muc_log.erl:457
+#: mod_muc/mod_muc_log.erl:460
 msgid "March"
 msgstr "березня"
 
-#: mod_muc/mod_muc_log.erl:458
+#: mod_muc/mod_muc_log.erl:461
 msgid "April"
 msgstr "квітня"
 
-#: mod_muc/mod_muc_log.erl:459
+#: mod_muc/mod_muc_log.erl:462
 msgid "May"
 msgstr "травня"
 
-#: mod_muc/mod_muc_log.erl:460
+#: mod_muc/mod_muc_log.erl:463
 msgid "June"
 msgstr "червня"
 
-#: mod_muc/mod_muc_log.erl:461
+#: mod_muc/mod_muc_log.erl:464
 msgid "July"
 msgstr "липня"
 
-#: mod_muc/mod_muc_log.erl:462
+#: mod_muc/mod_muc_log.erl:465
 msgid "August"
 msgstr "серпня"
 
-#: mod_muc/mod_muc_log.erl:463
+#: mod_muc/mod_muc_log.erl:466
 msgid "September"
 msgstr "вересня"
 
-#: mod_muc/mod_muc_log.erl:464
+#: mod_muc/mod_muc_log.erl:467
 msgid "October"
 msgstr "грудня"
 
-#: mod_muc/mod_muc_log.erl:465
+#: mod_muc/mod_muc_log.erl:468
 msgid "November"
 msgstr "листопада"
 
-#: mod_muc/mod_muc_log.erl:466
+#: mod_muc/mod_muc_log.erl:469
 msgid "December"
 msgstr "грудня"
 
-#: mod_muc/mod_muc_log.erl:736
+#: mod_muc/mod_muc_log.erl:740
 msgid "Room Configuration"
 msgstr "Конфігурація кімнати"
 
-#: mod_muc/mod_muc_log.erl:745
+#: mod_muc/mod_muc_log.erl:749
 msgid "Room Occupants"
 msgstr "Учасники кімнати"
 
-#: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
+#: mod_muc/mod_muc_log.erl:852 mod_muc/mod_muc_room.erl:2825
 msgid "Room title"
 msgstr "Назва кімнати"
 
@@ -747,7 +747,7 @@ msgid "Recipient is not in the conference room"
 msgstr "Адресата немає в конференції"
 
 #: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:825
-#: mod_muc/mod_muc_room.erl:3407
+#: mod_muc/mod_muc_room.erl:3447
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Тільки присутнім дозволяється надсилати повідомленняя в конференцію"
 
@@ -836,7 +836,7 @@ msgstr "Jabber ID ~s недопустимий"
 msgid "Nickname ~s does not exist in the room"
 msgstr "Псевдонім ~s в кімнаті відсутній"
 
-#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2681
+#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2683
 msgid "Invalid affiliation: ~s"
 msgstr "Недопустимий ранг: ~s"
 
@@ -844,114 +844,114 @@ msgstr "Недопустимий ранг: ~s"
 msgid "Invalid role: ~s"
 msgstr "Недопустима роль: ~s"
 
-#: mod_muc/mod_muc_room.erl:2658 mod_muc/mod_muc_room.erl:2694
+#: mod_muc/mod_muc_room.erl:2660 mod_muc/mod_muc_room.erl:2696
 msgid "Owner privileges required"
 msgstr "Необхідні права власника"
 
-#: mod_muc/mod_muc_room.erl:2780
+#: mod_muc/mod_muc_room.erl:2820
 msgid "Configuration of room ~s"
 msgstr "Конфігурація кімнати ~s"
 
-#: mod_muc/mod_muc_room.erl:2788 mod_muc/mod_muc_room.erl:3206
+#: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
 msgid "Room description"
 msgstr "Опис кімнати"
 
-#: mod_muc/mod_muc_room.erl:2795
+#: mod_muc/mod_muc_room.erl:2835
 msgid "Make room persistent"
 msgstr "Зробити кімнату постійною"
 
-#: mod_muc/mod_muc_room.erl:2800
+#: mod_muc/mod_muc_room.erl:2840
 msgid "Make room public searchable"
 msgstr "Зробити кімнату видимою всім"
 
-#: mod_muc/mod_muc_room.erl:2803
+#: mod_muc/mod_muc_room.erl:2843
 msgid "Make participants list public"
 msgstr "Зробити список учасників видимим всім"
 
-#: mod_muc/mod_muc_room.erl:2806
+#: mod_muc/mod_muc_room.erl:2846
 msgid "Make room password protected"
 msgstr "Зробити кімнату захищеною паролем"
 
-#: mod_muc/mod_muc_room.erl:2817
+#: mod_muc/mod_muc_room.erl:2857
 msgid "Maximum Number of Occupants"
 msgstr "Максимальна кількість учасників"
 
-#: mod_muc/mod_muc_room.erl:2824
+#: mod_muc/mod_muc_room.erl:2864
 msgid "No limit"
 msgstr "Без обмежень"
 
-#: mod_muc/mod_muc_room.erl:2835
+#: mod_muc/mod_muc_room.erl:2875
 msgid "Present real Jabber IDs to"
 msgstr "Зробити реальні Jabber ID учасників видимими"
 
-#: mod_muc/mod_muc_room.erl:2843
+#: mod_muc/mod_muc_room.erl:2883
 msgid "moderators only"
 msgstr "тільки модераторам"
 
-#: mod_muc/mod_muc_room.erl:2845
+#: mod_muc/mod_muc_room.erl:2885
 msgid "anyone"
 msgstr "всім учасникам"
 
-#: mod_muc/mod_muc_room.erl:2847
+#: mod_muc/mod_muc_room.erl:2887
 msgid "Make room members-only"
 msgstr "Кімната тільки для зареєтрованых учасників"
 
-#: mod_muc/mod_muc_room.erl:2850
+#: mod_muc/mod_muc_room.erl:2890
 msgid "Make room moderated"
 msgstr "Зробити кімнату модерованою"
 
-#: mod_muc/mod_muc_room.erl:2853
+#: mod_muc/mod_muc_room.erl:2893
 msgid "Default users as participants"
 msgstr "Зробити користувачів учасниками за замовчуванням"
 
-#: mod_muc/mod_muc_room.erl:2856
+#: mod_muc/mod_muc_room.erl:2896
 msgid "Allow users to change the subject"
 msgstr "Дозволити користувачам змінювати тему"
 
-#: mod_muc/mod_muc_room.erl:2859
+#: mod_muc/mod_muc_room.erl:2899
 msgid "Allow users to send private messages"
 msgstr "Дозволити приватні повідомлення"
 
-#: mod_muc/mod_muc_room.erl:2862
+#: mod_muc/mod_muc_room.erl:2902
 msgid "Allow users to query other users"
 msgstr "Дозволити iq-запити до користувачів"
 
-#: mod_muc/mod_muc_room.erl:2865
+#: mod_muc/mod_muc_room.erl:2905
 msgid "Allow users to send invites"
 msgstr "Дозволити користувачам надсилати запрошення"
 
-#: mod_muc/mod_muc_room.erl:2868
+#: mod_muc/mod_muc_room.erl:2908
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Дозволити відвідувачам відсилати текст статусу в оновленнях присутності"
 
-#: mod_muc/mod_muc_room.erl:2871
+#: mod_muc/mod_muc_room.erl:2911
 msgid "Allow visitors to change nickname"
 msgstr "Дозволити відвідувачам змінювати псевдонім"
 
-#: mod_muc/mod_muc_room.erl:2877
+#: mod_muc/mod_muc_room.erl:2917
 msgid "Make room captcha protected"
 msgstr "Зробити кімнату захищеною капчею"
 
-#: mod_muc/mod_muc_room.erl:2886
+#: mod_muc/mod_muc_room.erl:2926
 msgid "Enable logging"
 msgstr "Включити журнал роботи"
 
-#: mod_muc/mod_muc_room.erl:2894
+#: mod_muc/mod_muc_room.erl:2934
 msgid "You need an x:data capable client to configure room"
 msgstr ""
 "Для конфігурування кімнати потрібно використовувати клієнт з підтримкою x:"
 "data"
 
-#: mod_muc/mod_muc_room.erl:3208
+#: mod_muc/mod_muc_room.erl:3248
 msgid "Number of occupants"
 msgstr "Кількість присутніх"
 
-#: mod_muc/mod_muc_room.erl:3327
+#: mod_muc/mod_muc_room.erl:3367
 msgid "~s invites you to the room ~s"
 msgstr "~s запрошує вас до кімнати ~s"
 
-#: mod_muc/mod_muc_room.erl:3336
+#: mod_muc/mod_muc_room.erl:3376
 msgid "the password is"
 msgstr "пароль:"
 

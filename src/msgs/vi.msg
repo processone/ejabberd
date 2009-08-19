@@ -69,7 +69,6 @@
 {"ejabberd virtual hosts","Máy chủ ảo ejabberd"}.
 {"Email","Email"}.
 {"Enable logging","Cho phép ghi nhật ký"}.
-{"Encodings","Mã hóa"}.
 {"End User Session","Kết Thúc Phiên Giao Dịch Người Sử Dụng"}.
 {"Enter list of {Module, [Options]}","Nhập danh sách {Môđun, [Các Tùy Chọn]}"}.
 {"Enter nickname you want to register","Nhập bí danh bạn muốn đăng ký"}.
@@ -77,9 +76,7 @@
 {"Enter path to jabberd14 spool dir","Nhập đường dẫn đến thư mục spool jabberd14"}.
 {"Enter path to jabberd14 spool file","Nhập đường dẫn đến tập tin spool jabberd14"}.
 {"Enter path to text file","Nhập đường dẫn đến tập tin văn bản"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Nhập tên truy cập và mã hóa mà bạn muốn sử dụng khi kết nối với các máy chủ IRC"}.
 {"Erlang Jabber Server","Erlang Jabber Server Bản quyền"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Ví dụ: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]"}.
 {"Family Name","Họ"}.
 {"February","Tháng Hai"}.
 {"Fill in fields to search for any matching Jabber User","Điền vào các ô để tìm kiếm bất kỳ các thông tin nào khớp với Người sử dụng Jabber"}.
@@ -99,7 +96,6 @@
 {"has been kicked","đã bị đẩy ra khỏi"}.
 {" has set the subject to: "," đã đặt chủ đề thành: "}.
 {"Host","Máy chủ"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Nếu bạn muốn xác định các cách thức mã hóa khác nhau cho các máy chủ IRC, hãy điền vào danh sách này những giá trị theo định dạng '{\"máy chủ irc\", \"mã hóa\"}'. Dịch vụ này mặc định sử dụng định dạng mã hóa \"~s\"."}.
 {"Import Directory","Nhập Thư Mục"}.
 {"Import File","Nhập Tập Tin"}.
 {"Import User from File at ","Nhập Người Sử Dụng từ Tập Tin tại"}.
@@ -209,7 +205,6 @@
 {"Queries to the conference members are not allowed in this room","Không được phép gửi các yêu cầu gửi đến các thành viên trong phòng họp này"}.
 {"RAM and disc copy","Sao chép vào RAM và đĩa"}.
 {"RAM copy","Sao chép vào RAM"}.
-{"(Raw)","(Thô)"}.
 {"Raw","Thô"}.
 {"Really delete message of the day?","Có thực sự xóa thư trong ngày này không?"}.
 {"Recipient is not in the conference room","Người nhận không có trong phòng họp"}.
@@ -302,7 +297,6 @@
 {"Users","Người sử dụng"}.
 {"Validate","Xác nhận hợp lệ"}.
 {"vCard User Search","Tìm Kiếm Người Sử Dụng vCard"}.
-{"Virtual Hosts","Máy Chủ Ảo"}.
 {"Visitors are not allowed to send messages to all occupants","Người ghé thăm không được phép gửi thư đến tất cả các người tham dự"}.
 {"Wednesday","Thứ Tư"}.
 {"When to send the last published item","Khi cần gửi mục được xuất bản cuối cùng"}.

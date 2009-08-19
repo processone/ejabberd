@@ -73,7 +73,6 @@
 {"ejabberd Web Admin","Web d'administració del ejabberd"}.
 {"Email","Email"}.
 {"Enable logging","Habilitar el registre de la conversa"}.
-{"Encodings","Codificacions"}.
 {"End User Session","Finalitzar Sesió d'Usuari"}.
 {"Enter list of {Module, [Options]}","Introdueix llista de {mòdul, [opcions]}"}.
 {"Enter nickname you want to register","Introdueix el nickname que vols registrar"}.
@@ -81,9 +80,7 @@
 {"Enter path to jabberd14 spool dir","Introdueix la ruta al directori de jabberd14 spools"}.
 {"Enter path to jabberd14 spool file","Introdueix ruta al fitxer jabberd14 spool"}.
 {"Enter path to text file","Introdueix ruta al fitxer de text"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Introdueix el nom d'usuari i les codificacions de caràcters per a utilitzar als servidors de IRC"}.
 {"Erlang Jabber Server","Servidor Erlang Jabber"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Exemple: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","Cognom"}.
 {"February","Febrer"}.
 {"Fill in fields to search for any matching Jabber User","Emplena camps per a buscar usuaris Jabber que concorden"}.
@@ -106,7 +103,6 @@
 {"has been kicked","Has sigut expulsat"}.
 {" has set the subject to: "," ha posat l'assumpte: "}.
 {"Host","Host"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Si vols especificar codificacions de caràcters distints per a cada servidor IRC emplena aquesta llista amb els valors amb el format '{\"servidor irc\", \"codificació\"}'.  Aquest servei utilitza per defecte la codificació \"~s\"."}.
 {"Import Directory","Importar directori"}.
 {"Import File","Importar fitxer"}.
 {"Import User from File at ","Importa usuari des de fitxer en "}.
@@ -218,7 +214,6 @@
 {"Queries to the conference members are not allowed in this room"," En aquesta sala no es permeten solicituts als membres de la sala"}.
 {"RAM and disc copy","Còpia en RAM i disc"}.
 {"RAM copy","Còpia en RAM"}.
-{"(Raw)","(en format text)"}.
 {"Raw","en format text"}.
 {"Really delete message of the day?","Segur que vols eliminar el missatge del dia?"}.
 {"Recipient is not in the conference room","El receptor no està en la sala de conferència"}.
@@ -315,7 +310,6 @@
 {"User","Usuari"}.
 {"Validate","Validar"}.
 {"vCard User Search","Recerca de vCard d'usuari"}.
-{"Virtual Hosts","Hosts Virtuals"}.
 {"Visitors are not allowed to change their nicknames in this room","Els visitants no tenen permés canviar el seus Nicknames en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Els visitants no poden enviar missatges a tots els ocupants"}.
 {"Wednesday","Dimecres"}.

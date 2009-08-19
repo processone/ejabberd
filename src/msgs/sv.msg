@@ -73,7 +73,6 @@
 {"ejabberd Web Admin","ejabberd Web Admin"}.
 {"Email","Email"}.
 {"Enable logging","Möjliggör login"}.
-{"Encodings","Textkodningar"}.
 {"End User Session","Avsluta användarsession"}.
 {"Enter list of {Module, [Options]}","Skriv in en lista av {Module, [Options]}"}.
 {"Enter nickname you want to register","Skriv in smeknamnet du vill registrera"}.
@@ -81,9 +80,7 @@
 {"Enter path to jabberd14 spool dir","Skriv in sökväg till spoolkatalog från jabberd14"}.
 {"Enter path to jabberd14 spool file","Skriv in sökväg till spoolfil från jabberd14"}.
 {"Enter path to text file","Skriv in sökväg till textfil"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Skriv in användarnamn och textkodning du vill använda för att ansluta till IRC-servrar"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Exempel: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","Efternamn"}.
 {"February","Februari"}.
 {"Fill in fields to search for any matching Jabber User","Fyll i fält för att söka efter jabberanvändare"}.
@@ -106,7 +103,6 @@
 {"has been kicked","har blivit kickad"}.
 {" has set the subject to: "," har satt ämnet till: "}.
 {"Host","Server"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Om du vill specifiera textkodning för IRC-servrar, fyll i listan med värden i formatet '{\"irc server\", \"encoding\"}'. Som standard används \"~s\"."}.
 {"Import Directory","Importera katalog"}.
 {"Import File","Importera fil"}.
 {"Import User from File at ","Importera användare från fil på "}.
@@ -218,7 +214,6 @@
 {"Queries to the conference members are not allowed in this room","Det är förbjudet att skicka iq-queries till konferensdeltagare"}.
 {"RAM and disc copy","RAM- och diskkopia"}.
 {"RAM copy","RAM-kopia"}.
-{"(Raw)","(Ra)"}.
 {"Raw","Ra"}.
 {"Really delete message of the day?","Verkligen ta bort dagens meddelanden?"}.
 {"Recipient is not in the conference room","Mottagaren finns inte i rummet"}.
@@ -315,7 +310,6 @@
 {"Users Last Activity","Användarens senaste aktivitet"}.
 {"Validate","Validera"}.
 {"vCard User Search","vCard användare sök"}.
-{"Virtual Hosts","Virtuella servrar"}.
 {"Visitors are not allowed to change their nicknames in this room","Det är inte tillåtet for gäster att ändra sina smeknamn i detta rummet"}.
 {"Visitors are not allowed to send messages to all occupants","Besökare får inte skicka medelande till alla"}.
 {"Wednesday","Onsdag"}.

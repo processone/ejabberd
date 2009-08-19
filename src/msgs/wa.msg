@@ -73,7 +73,6 @@
 {"ejabberd Web Admin","Manaedjeu waibe ejabberd"}.
 {"Email","Emile"}.
 {"Enable logging","Mete en alaedje li djournå"}.
-{"Encodings","Ecôdaedjes"}.
 {"End User Session","Fini l' session d' l' uzeu"}.
 {"Enter list of {Module, [Options]}","Dinez ene djivêye del cogne {Module, [Tchuzes]}"}.
 {"Enter nickname you want to register","Dinez l' metou no ki vos vloz edjîstrer"}.
@@ -81,9 +80,7 @@
 {"Enter path to jabberd14 spool dir","Dinez l' tchimin viè l' ridant di spool jabberd14"}.
 {"Enter path to jabberd14 spool file","Dinez l' tchimin viè l' fitchî di spool jabberd14"}.
 {"Enter path to text file","Dinez l' tchimin viè l' fitchî tecse"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Dinez les nos d' uzeu et ls ecôdaedjes ki vos vloz eployî po vs raloyî åzès sierveus IRC"}.
 {"Erlang Jabber Server","Sierveu Jabber Erlang"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Egzimpe: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","No d' famile"}.
 {"February","fevrî"}.
 {"Fill in fields to search for any matching Jabber User","Rimplixhoz les tchamps po cweri èn uzeu Jabber"}.
@@ -106,7 +103,6 @@
 {"has been kicked because the room has been changed to members-only","a stî pité evoye cåze ki l' såle a stî ristrindowe åzès mimbes seulmint"}.
 {" has set the subject to: "," a candjî l' tite a: "}.
 {"Host","Sierveu"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Si vos vloz dner des ecôdaedjes diferins po les sierveus IRC, rimplixhoz cisse djivêye ci avou des valixhances del cogne «{\"sierveu irc\", \"ecôdaedje\"}». Li prémetou ecôdaedje do siervice c' est «~s»."}.
 {"Import Directory","Sititchî d' on ridant"}.
 {"Import File","Sititchî d' on fitchî"}.
 {"Import User from File at ","Sititchî uzeu d' on fitchî so "}.
@@ -218,7 +214,6 @@
 {"Queries to the conference members are not allowed in this room","Les cweraedjes des mimbes del conferince ni sont nén permetous dins cisse såle ci"}.
 {"RAM and disc copy","Copeye e memwere (RAM) et sol deure plake"}.
 {"RAM copy","Copeye e memwere (RAM)"}.
-{"(Raw)","(Dinêyes brutes)"}.
 {"Raw","Dinêyes brutes"}.
 {"Really delete message of the day?","Voloz vs vormint disfacer l' messaedje do djoû?"}.
 {"Recipient is not in the conference room","Li riçuveu n' est nén dins l' såle di conferince"}.
@@ -315,7 +310,6 @@
 {"User","Uzeu"}.
 {"Validate","Valider"}.
 {"vCard User Search","Calpin des uzeus"}.
-{"Virtual Hosts","Forveyous sierveus"}.
 {"Visitors are not allowed to change their nicknames in this room","Les viziteus èn polèt nén candjî leus metous no po ç' såle ci"}.
 {"Visitors are not allowed to send messages to all occupants","Les viziteus n' polèt nén evoyî des messaedjes a tos les prezints"}.
 {"Wednesday","mierkidi"}.

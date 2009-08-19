@@ -361,7 +361,7 @@ msgid "Jabber ID"
 msgstr "ID Jabber"
 
 #: mod_configure.erl:1173 mod_configure.erl:1231 mod_configure.erl:1621
-#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2809
+#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2849
 #: web/ejabberd_web_admin.erl:1501
 msgid "Password"
 msgstr "Sicret"
@@ -518,21 +518,21 @@ msgstr ""
 msgid "IRC username"
 msgstr "No d' uzeu IRC"
 
-#: mod_irc/mod_irc.erl:904
+#: mod_irc/mod_irc.erl:906
 #, fuzzy
 msgid "Password ~b"
 msgstr "Sicret"
 
-#: mod_irc/mod_irc.erl:909
+#: mod_irc/mod_irc.erl:911
 #, fuzzy
 msgid "Port ~b"
 msgstr "Pôrt"
 
-#: mod_irc/mod_irc.erl:914
+#: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:923
+#: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
 msgstr ""
 
@@ -623,97 +623,97 @@ msgstr "a stî pité evoye cåze d' èn arestaedje do sistinme"
 msgid "is now known as"
 msgstr "est asteure kinoxhou come"
 
-#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:675
+#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:678
 #: mod_muc/mod_muc_room.erl:2040
 msgid " has set the subject to: "
 msgstr " a candjî l' tite a: "
 
-#: mod_muc/mod_muc_log.erl:445
+#: mod_muc/mod_muc_log.erl:448
 msgid "Monday"
 msgstr "londi"
 
-#: mod_muc/mod_muc_log.erl:446
+#: mod_muc/mod_muc_log.erl:449
 msgid "Tuesday"
 msgstr "mårdi"
 
-#: mod_muc/mod_muc_log.erl:447
+#: mod_muc/mod_muc_log.erl:450
 msgid "Wednesday"
 msgstr "mierkidi"
 
-#: mod_muc/mod_muc_log.erl:448
+#: mod_muc/mod_muc_log.erl:451
 msgid "Thursday"
 msgstr "djudi"
 
-#: mod_muc/mod_muc_log.erl:449
+#: mod_muc/mod_muc_log.erl:452
 msgid "Friday"
 msgstr "vénrdi"
 
-#: mod_muc/mod_muc_log.erl:450
+#: mod_muc/mod_muc_log.erl:453
 msgid "Saturday"
 msgstr "semdi"
 
-#: mod_muc/mod_muc_log.erl:451
+#: mod_muc/mod_muc_log.erl:454
 msgid "Sunday"
 msgstr "dimegne"
 
-#: mod_muc/mod_muc_log.erl:455
+#: mod_muc/mod_muc_log.erl:458
 msgid "January"
 msgstr "djanvî"
 
-#: mod_muc/mod_muc_log.erl:456
+#: mod_muc/mod_muc_log.erl:459
 msgid "February"
 msgstr "fevrî"
 
-#: mod_muc/mod_muc_log.erl:457
+#: mod_muc/mod_muc_log.erl:460
 msgid "March"
 msgstr "måss"
 
-#: mod_muc/mod_muc_log.erl:458
+#: mod_muc/mod_muc_log.erl:461
 msgid "April"
 msgstr "avri"
 
-#: mod_muc/mod_muc_log.erl:459
+#: mod_muc/mod_muc_log.erl:462
 msgid "May"
 msgstr "may"
 
-#: mod_muc/mod_muc_log.erl:460
+#: mod_muc/mod_muc_log.erl:463
 msgid "June"
 msgstr "djun"
 
-#: mod_muc/mod_muc_log.erl:461
+#: mod_muc/mod_muc_log.erl:464
 msgid "July"
 msgstr "djulete"
 
-#: mod_muc/mod_muc_log.erl:462
+#: mod_muc/mod_muc_log.erl:465
 msgid "August"
 msgstr "awousse"
 
-#: mod_muc/mod_muc_log.erl:463
+#: mod_muc/mod_muc_log.erl:466
 msgid "September"
 msgstr "setimbe"
 
-#: mod_muc/mod_muc_log.erl:464
+#: mod_muc/mod_muc_log.erl:467
 msgid "October"
 msgstr "octôbe"
 
-#: mod_muc/mod_muc_log.erl:465
+#: mod_muc/mod_muc_log.erl:468
 msgid "November"
 msgstr "nôvimbe"
 
-#: mod_muc/mod_muc_log.erl:466
+#: mod_muc/mod_muc_log.erl:469
 msgid "December"
 msgstr "decimbe"
 
-#: mod_muc/mod_muc_log.erl:736
+#: mod_muc/mod_muc_log.erl:740
 msgid "Room Configuration"
 msgstr "Apontiaedje del såle"
 
-#: mod_muc/mod_muc_log.erl:745
+#: mod_muc/mod_muc_log.erl:749
 #, fuzzy
 msgid "Room Occupants"
 msgstr "Nombe di prezints"
 
-#: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
+#: mod_muc/mod_muc_log.erl:852 mod_muc/mod_muc_room.erl:2825
 msgid "Room title"
 msgstr "Tite del såle"
 
@@ -753,7 +753,7 @@ msgid "Recipient is not in the conference room"
 msgstr "Li riçuveu n' est nén dins l' såle di conferince"
 
 #: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:825
-#: mod_muc/mod_muc_room.erl:3407
+#: mod_muc/mod_muc_room.erl:3447
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Seulmint les prezints polèt evoyî des messaedjes al conferince"
 
@@ -851,7 +851,7 @@ msgstr "Li Jabber ID ~s n' est nén valide"
 msgid "Nickname ~s does not exist in the room"
 msgstr "Li metou no ~s n' egzistêye nén dins l' såle"
 
-#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2681
+#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2683
 msgid "Invalid affiliation: ~s"
 msgstr "Afiyaedje nén valide: ~s"
 
@@ -859,117 +859,117 @@ msgstr "Afiyaedje nén valide: ~s"
 msgid "Invalid role: ~s"
 msgstr "Role nén valide: ~s"
 
-#: mod_muc/mod_muc_room.erl:2658 mod_muc/mod_muc_room.erl:2694
+#: mod_muc/mod_muc_room.erl:2660 mod_muc/mod_muc_room.erl:2696
 msgid "Owner privileges required"
 msgstr "I fåt des priviledjes di prôpietaire"
 
-#: mod_muc/mod_muc_room.erl:2780
+#: mod_muc/mod_muc_room.erl:2820
 #, fuzzy
 msgid "Configuration of room ~s"
 msgstr "Apontiaedje po "
 
-#: mod_muc/mod_muc_room.erl:2788 mod_muc/mod_muc_room.erl:3206
+#: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
 #, fuzzy
 msgid "Room description"
 msgstr "Discrijhaedje:"
 
-#: mod_muc/mod_muc_room.erl:2795
+#: mod_muc/mod_muc_room.erl:2835
 msgid "Make room persistent"
 msgstr "Rinde li såle permaninte"
 
-#: mod_muc/mod_muc_room.erl:2800
+#: mod_muc/mod_muc_room.erl:2840
 msgid "Make room public searchable"
 msgstr "Rinde li såle di berdelaedje cweråve publicmint"
 
-#: mod_muc/mod_muc_room.erl:2803
+#: mod_muc/mod_muc_room.erl:2843
 msgid "Make participants list public"
 msgstr "Rinde publike li djivêye des pårticipants"
 
-#: mod_muc/mod_muc_room.erl:2806
+#: mod_muc/mod_muc_room.erl:2846
 msgid "Make room password protected"
 msgstr "Rinde li såle di berdelaedje protedjeye pa scret"
 
-#: mod_muc/mod_muc_room.erl:2817
+#: mod_muc/mod_muc_room.erl:2857
 msgid "Maximum Number of Occupants"
 msgstr "Nombe macsimom di prezints"
 
-#: mod_muc/mod_muc_room.erl:2824
+#: mod_muc/mod_muc_room.erl:2864
 msgid "No limit"
 msgstr "Pont d' limite"
 
-#: mod_muc/mod_muc_room.erl:2835
+#: mod_muc/mod_muc_room.erl:2875
 msgid "Present real Jabber IDs to"
 msgstr "Mostrer les vraiys Jabber IDs a"
 
-#: mod_muc/mod_muc_room.erl:2843
+#: mod_muc/mod_muc_room.erl:2883
 msgid "moderators only"
 msgstr "les moderateus seulmint"
 
-#: mod_muc/mod_muc_room.erl:2845
+#: mod_muc/mod_muc_room.erl:2885
 msgid "anyone"
 msgstr "tot l' minme kî"
 
-#: mod_muc/mod_muc_room.erl:2847
+#: mod_muc/mod_muc_room.erl:2887
 msgid "Make room members-only"
 msgstr "Rinde li såle di berdelaedje ristrindowe ås mimbes seulmint"
 
-#: mod_muc/mod_muc_room.erl:2850
+#: mod_muc/mod_muc_room.erl:2890
 msgid "Make room moderated"
 msgstr "Rinde li såle di berdelaedje moderêye"
 
-#: mod_muc/mod_muc_room.erl:2853
+#: mod_muc/mod_muc_room.erl:2893
 msgid "Default users as participants"
 msgstr "Les uzeus sont des pårticipants come prémetowe dujhance"
 
-#: mod_muc/mod_muc_room.erl:2856
+#: mod_muc/mod_muc_room.erl:2896
 #, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Les uzeus polèt candjî l' tite"
 
-#: mod_muc/mod_muc_room.erl:2859
+#: mod_muc/mod_muc_room.erl:2899
 msgid "Allow users to send private messages"
 msgstr "Les uzeus polèt evoyî des messaedjes privés"
 
-#: mod_muc/mod_muc_room.erl:2862
+#: mod_muc/mod_muc_room.erl:2902
 msgid "Allow users to query other users"
 msgstr "Les uzeus polèt cweri ls ôtes uzeus"
 
-#: mod_muc/mod_muc_room.erl:2865
+#: mod_muc/mod_muc_room.erl:2905
 msgid "Allow users to send invites"
 msgstr "Les uzeus polèt evoyî priyaedjes"
 
-#: mod_muc/mod_muc_room.erl:2868
+#: mod_muc/mod_muc_room.erl:2908
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Permete ki les viziteus evoyexhe des tecse d' estat dins leus messaedjes di "
 "prezince"
 
-#: mod_muc/mod_muc_room.erl:2871
+#: mod_muc/mod_muc_room.erl:2911
 msgid "Allow visitors to change nickname"
 msgstr "Permete ki les viziteus candjexhe leus metous nos"
 
-#: mod_muc/mod_muc_room.erl:2877
+#: mod_muc/mod_muc_room.erl:2917
 #, fuzzy
 msgid "Make room captcha protected"
 msgstr "Rinde li såle di berdelaedje protedjeye pa scret"
 
-#: mod_muc/mod_muc_room.erl:2886
+#: mod_muc/mod_muc_room.erl:2926
 msgid "Enable logging"
 msgstr "Mete en alaedje li djournå"
 
-#: mod_muc/mod_muc_room.erl:2894
+#: mod_muc/mod_muc_room.erl:2934
 msgid "You need an x:data capable client to configure room"
 msgstr "I vs fåt on cliyint ki sopoite x:data por vos poleur apontyî l' såle"
 
-#: mod_muc/mod_muc_room.erl:3208
+#: mod_muc/mod_muc_room.erl:3248
 msgid "Number of occupants"
 msgstr "Nombe di prezints"
 
-#: mod_muc/mod_muc_room.erl:3327
+#: mod_muc/mod_muc_room.erl:3367
 msgid "~s invites you to the room ~s"
 msgstr "~s vos preye sol såle ~s"
 
-#: mod_muc/mod_muc_room.erl:3336
+#: mod_muc/mod_muc_room.erl:3376
 msgid "the password is"
 msgstr "li scret est"
 

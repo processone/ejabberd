@@ -367,7 +367,7 @@ msgid "Jabber ID"
 msgstr "Jabber ID"
 
 #: mod_configure.erl:1173 mod_configure.erl:1231 mod_configure.erl:1621
-#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2809
+#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2849
 #: web/ejabberd_web_admin.erl:1501
 msgid "Password"
 msgstr "Contraseña"
@@ -520,19 +520,19 @@ msgstr ""
 msgid "IRC username"
 msgstr "Nombre de usuario en IRC"
 
-#: mod_irc/mod_irc.erl:904
+#: mod_irc/mod_irc.erl:906
 msgid "Password ~b"
 msgstr "Contraseña ~b"
 
-#: mod_irc/mod_irc.erl:909
+#: mod_irc/mod_irc.erl:911
 msgid "Port ~b"
 msgstr "Puerto ~b"
 
-#: mod_irc/mod_irc.erl:914
+#: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
 msgstr "Codificación del servidor ~b"
 
-#: mod_irc/mod_irc.erl:923
+#: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
 msgstr "Servidor ~b"
 
@@ -622,96 +622,96 @@ msgstr "ha sido expulsado porque el sistema se va a detener"
 msgid "is now known as"
 msgstr "se cambia el nombre a"
 
-#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:675
+#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:678
 #: mod_muc/mod_muc_room.erl:2040
 msgid " has set the subject to: "
 msgstr " ha puesto el asunto: "
 
-#: mod_muc/mod_muc_log.erl:445
+#: mod_muc/mod_muc_log.erl:448
 msgid "Monday"
 msgstr "lunes"
 
-#: mod_muc/mod_muc_log.erl:446
+#: mod_muc/mod_muc_log.erl:449
 msgid "Tuesday"
 msgstr "martes"
 
-#: mod_muc/mod_muc_log.erl:447
+#: mod_muc/mod_muc_log.erl:450
 msgid "Wednesday"
 msgstr "miércoles"
 
-#: mod_muc/mod_muc_log.erl:448
+#: mod_muc/mod_muc_log.erl:451
 msgid "Thursday"
 msgstr "jueves"
 
-#: mod_muc/mod_muc_log.erl:449
+#: mod_muc/mod_muc_log.erl:452
 msgid "Friday"
 msgstr "viernes"
 
-#: mod_muc/mod_muc_log.erl:450
+#: mod_muc/mod_muc_log.erl:453
 msgid "Saturday"
 msgstr "sábado"
 
-#: mod_muc/mod_muc_log.erl:451
+#: mod_muc/mod_muc_log.erl:454
 msgid "Sunday"
 msgstr "domingo"
 
-#: mod_muc/mod_muc_log.erl:455
+#: mod_muc/mod_muc_log.erl:458
 msgid "January"
 msgstr "enero"
 
-#: mod_muc/mod_muc_log.erl:456
+#: mod_muc/mod_muc_log.erl:459
 msgid "February"
 msgstr "febrero"
 
-#: mod_muc/mod_muc_log.erl:457
+#: mod_muc/mod_muc_log.erl:460
 msgid "March"
 msgstr "marzo"
 
-#: mod_muc/mod_muc_log.erl:458
+#: mod_muc/mod_muc_log.erl:461
 msgid "April"
 msgstr "abril"
 
-#: mod_muc/mod_muc_log.erl:459
+#: mod_muc/mod_muc_log.erl:462
 msgid "May"
 msgstr "mayo"
 
-#: mod_muc/mod_muc_log.erl:460
+#: mod_muc/mod_muc_log.erl:463
 msgid "June"
 msgstr "junio"
 
-#: mod_muc/mod_muc_log.erl:461
+#: mod_muc/mod_muc_log.erl:464
 msgid "July"
 msgstr "julio"
 
-#: mod_muc/mod_muc_log.erl:462
+#: mod_muc/mod_muc_log.erl:465
 msgid "August"
 msgstr "agosto"
 
-#: mod_muc/mod_muc_log.erl:463
+#: mod_muc/mod_muc_log.erl:466
 msgid "September"
 msgstr "septiembre"
 
-#: mod_muc/mod_muc_log.erl:464
+#: mod_muc/mod_muc_log.erl:467
 msgid "October"
 msgstr "octubre"
 
-#: mod_muc/mod_muc_log.erl:465
+#: mod_muc/mod_muc_log.erl:468
 msgid "November"
 msgstr "noviembre"
 
-#: mod_muc/mod_muc_log.erl:466
+#: mod_muc/mod_muc_log.erl:469
 msgid "December"
 msgstr "diciembre"
 
-#: mod_muc/mod_muc_log.erl:736
+#: mod_muc/mod_muc_log.erl:740
 msgid "Room Configuration"
 msgstr "Configuración de la sala"
 
-#: mod_muc/mod_muc_log.erl:745
+#: mod_muc/mod_muc_log.erl:749
 msgid "Room Occupants"
 msgstr "Ocupantes de la sala"
 
-#: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
+#: mod_muc/mod_muc_log.erl:852 mod_muc/mod_muc_room.erl:2825
 msgid "Room title"
 msgstr "Título de la sala"
 
@@ -751,7 +751,7 @@ msgid "Recipient is not in the conference room"
 msgstr "El receptor no está en la sala de conferencia"
 
 #: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:825
-#: mod_muc/mod_muc_room.erl:3407
+#: mod_muc/mod_muc_room.erl:3447
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Solo los ocupantes pueden enviar mensajes a la sala"
 
@@ -841,7 +841,7 @@ msgstr "El Jabber ID ~s no es válido"
 msgid "Nickname ~s does not exist in the room"
 msgstr "El apodo ~s no existe en la sala"
 
-#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2681
+#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2683
 msgid "Invalid affiliation: ~s"
 msgstr "Afiliación no válida: ~s"
 
@@ -849,113 +849,113 @@ msgstr "Afiliación no válida: ~s"
 msgid "Invalid role: ~s"
 msgstr "Rol no válido: ~s"
 
-#: mod_muc/mod_muc_room.erl:2658 mod_muc/mod_muc_room.erl:2694
+#: mod_muc/mod_muc_room.erl:2660 mod_muc/mod_muc_room.erl:2696
 msgid "Owner privileges required"
 msgstr "Se requieren privilegios de propietario de la sala"
 
-#: mod_muc/mod_muc_room.erl:2780
+#: mod_muc/mod_muc_room.erl:2820
 msgid "Configuration of room ~s"
 msgstr "Configuración para la sala ~s"
 
-#: mod_muc/mod_muc_room.erl:2788 mod_muc/mod_muc_room.erl:3206
+#: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
 msgid "Room description"
 msgstr "Descripción de la sala"
 
-#: mod_muc/mod_muc_room.erl:2795
+#: mod_muc/mod_muc_room.erl:2835
 msgid "Make room persistent"
 msgstr "Sala permanente"
 
-#: mod_muc/mod_muc_room.erl:2800
+#: mod_muc/mod_muc_room.erl:2840
 msgid "Make room public searchable"
 msgstr "Sala públicamente visible"
 
-#: mod_muc/mod_muc_room.erl:2803
+#: mod_muc/mod_muc_room.erl:2843
 msgid "Make participants list public"
 msgstr "La lista de participantes es pública"
 
-#: mod_muc/mod_muc_room.erl:2806
+#: mod_muc/mod_muc_room.erl:2846
 msgid "Make room password protected"
 msgstr "Proteger la sala con contraseña"
 
-#: mod_muc/mod_muc_room.erl:2817
+#: mod_muc/mod_muc_room.erl:2857
 msgid "Maximum Number of Occupants"
 msgstr "Número máximo de ocupantes"
 
-#: mod_muc/mod_muc_room.erl:2824
+#: mod_muc/mod_muc_room.erl:2864
 msgid "No limit"
 msgstr "Sin límite"
 
-#: mod_muc/mod_muc_room.erl:2835
+#: mod_muc/mod_muc_room.erl:2875
 msgid "Present real Jabber IDs to"
 msgstr "Los Jabber ID reales pueden verlos"
 
-#: mod_muc/mod_muc_room.erl:2843
+#: mod_muc/mod_muc_room.erl:2883
 msgid "moderators only"
 msgstr "solo moderadores"
 
-#: mod_muc/mod_muc_room.erl:2845
+#: mod_muc/mod_muc_room.erl:2885
 msgid "anyone"
 msgstr "cualquiera"
 
-#: mod_muc/mod_muc_room.erl:2847
+#: mod_muc/mod_muc_room.erl:2887
 msgid "Make room members-only"
 msgstr "Sala sólo para miembros"
 
-#: mod_muc/mod_muc_room.erl:2850
+#: mod_muc/mod_muc_room.erl:2890
 msgid "Make room moderated"
 msgstr "Sala moderada"
 
-#: mod_muc/mod_muc_room.erl:2853
+#: mod_muc/mod_muc_room.erl:2893
 msgid "Default users as participants"
 msgstr "Los usuarios son participantes por defecto"
 
-#: mod_muc/mod_muc_room.erl:2856
+#: mod_muc/mod_muc_room.erl:2896
 msgid "Allow users to change the subject"
 msgstr "Permitir a los usuarios cambiar el asunto"
 
-#: mod_muc/mod_muc_room.erl:2859
+#: mod_muc/mod_muc_room.erl:2899
 msgid "Allow users to send private messages"
 msgstr "Permitir a los usuarios enviar mensajes privados"
 
-#: mod_muc/mod_muc_room.erl:2862
+#: mod_muc/mod_muc_room.erl:2902
 msgid "Allow users to query other users"
 msgstr "Permitir a los usuarios consultar a otros usuarios"
 
-#: mod_muc/mod_muc_room.erl:2865
+#: mod_muc/mod_muc_room.erl:2905
 msgid "Allow users to send invites"
 msgstr "Permitir a los usuarios enviar invitaciones"
 
-#: mod_muc/mod_muc_room.erl:2868
+#: mod_muc/mod_muc_room.erl:2908
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Permitir a los visitantes enviar texto de estado en las actualizaciones de "
 "presencia"
 
-#: mod_muc/mod_muc_room.erl:2871
+#: mod_muc/mod_muc_room.erl:2911
 msgid "Allow visitors to change nickname"
 msgstr "Permitir a los visitantes cambiarse el apodo"
 
-#: mod_muc/mod_muc_room.erl:2877
+#: mod_muc/mod_muc_room.erl:2917
 msgid "Make room captcha protected"
 msgstr "Proteger la sala con captcha"
 
-#: mod_muc/mod_muc_room.erl:2886
+#: mod_muc/mod_muc_room.erl:2926
 msgid "Enable logging"
 msgstr "Guardar históricos"
 
-#: mod_muc/mod_muc_room.erl:2894
+#: mod_muc/mod_muc_room.erl:2934
 msgid "You need an x:data capable client to configure room"
 msgstr "Necesitas un cliente con soporte de x:data para configurar la sala"
 
-#: mod_muc/mod_muc_room.erl:3208
+#: mod_muc/mod_muc_room.erl:3248
 msgid "Number of occupants"
 msgstr "Número de ocupantes"
 
-#: mod_muc/mod_muc_room.erl:3327
+#: mod_muc/mod_muc_room.erl:3367
 msgid "~s invites you to the room ~s"
 msgstr "~s te invita a la sala ~s"
 
-#: mod_muc/mod_muc_room.erl:3336
+#: mod_muc/mod_muc_room.erl:3376
 msgid "the password is"
 msgstr "la contraseña es"
 

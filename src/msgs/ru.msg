@@ -47,6 +47,7 @@
 {"Configuration of room ~s","Конфигурация комнаты ~s"}.
 {"Configuration","Конфигурация"}.
 {"Connected Resources:","Подключённые ресурсы:"}.
+{"Connections parameters","Параметры соединения"}.
 {"Country","Страна"}.
 {"CPU Time:","Процессорное время:"}.
 {"Database Tables at ","Таблицы базы данных на "}.
@@ -77,7 +78,7 @@
 {"Elements","Элементы"}.
 {"Email","Электронная почта"}.
 {"Enable logging","Включить журналирование"}.
-{"Encodings","Кодировки"}.
+{"Encoding for server ~b","Кодировка сервера ~b"}.
 {"End User Session","Завершить сеанс пользователя"}.
 {"Enter list of {Module, [Options]}","Введите список вида {Module, [Options]}"}.
 {"Enter nickname you want to register","Введите псевдоним, который Вы хотели бы зарегистрировать"}.
@@ -86,10 +87,13 @@
 {"Enter path to jabberd14 spool file","Введите путь к файлу из спула jabberd14"}.
 {"Enter path to text file","Введите путь к текстовому файлу"}.
 {"Enter the text you see","Введите увиденный текст"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Введите имя пользователя и кодировки, которые будут использоваться при подключении к IRC-серверам"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers.  Press 'Next' to get more fields to fill in.  Press 'Complete' to save settings.","Введите имя пользователя и кодировки, которые будут использоваться при подключении к IRC-серверам. Нажмите 'Далее' для получения дополнительных полей для заполнения. Нажмите 'Завершить' для сохранения настроек."}.
+{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","Введите имя пользователя, кодировки, порты и пароли, которые будут использоваться при подключении к IRC-серверам"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Ошибка"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Примеры: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Пример: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0277):","Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0277):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0277):","Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0277):"}.
 {"Family Name","Фамилия"}.
 {"February","февраля"}.
 {"Fill in fields to search for any matching Jabber User","Заполните форму для поиска пользователя Jabber"}.
@@ -112,10 +116,13 @@
 {"has been kicked","выгнали из комнаты"}.
 {" has set the subject to: "," установил(а) тему: "}.
 {"Host","Хост"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Чтобы указать различные кодировки для разных серверов IRC, заполните список значениями в формате '{\"irc server\", \"encoding\"}'. По умолчанию эта служба использует кодировку \"~s\"."}.
+{"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Чтобы указать различные порты, пароли, кодировки для разных серверов IRC, заполните список значениями в формате '{\"сервер IRC\", \"кодировка\", порт, \"пароль\"}'. По умолчанию сервис использует кодировку \"~s\", порт ~p, пустой пароль."}.
 {"Import Directory","Импорт из директории"}.
 {"Import File","Импорт из файла"}.
+{"Import user data from jabberd14 spool file:","Импорт пользовательских данных из буферного файла jabberd14:"}.
 {"Import User from File at ","Импорт пользователя из файла на "}.
+{"Import users data from a PIEFXIS file (XEP-0277):","Импорт пользовательских данных из файла формата PIEFXIS (XEP-0277):"}.
+{"Import users data from jabberd14 spool directory:","Импорт пользовательских данных из буферной директории jabberd14:"}.
 {"Import Users from Dir at ","Импорт пользователей из директории на "}.
 {"Import Users From jabberd14 Spool Files","Импорт пользователей из спула jabberd14"}.
 {"Improper message type","Неправильный тип сообщения"}.
@@ -124,7 +131,11 @@
 {"Invalid role: ~s","Недопустимая роль: ~s"}.
 {"IP addresses","IP адреса"}.
 {"IP","IP"}.
+{"IRC channel (don't put the first #)","Канал IRC (без символа #)"}.
+{"IRC server","Сервер IRC"}.
+{"IRC settings","Настройки IRC"}.
 {"IRC Transport","IRC Транспорт"}.
+{"IRC username","Имя пользователя IRC"}.
 {"IRC Username","Имя пользователя IRC"}.
 {"is now known as","изменил(а) имя на"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Нельзя посылать частные сообщения типа \"groupchat\""}.
@@ -133,7 +144,10 @@
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s недопустимый"}.
 {"January","января"}.
+{"Join IRC channel","Присоединиться к каналу IRC"}.
 {"joins the room","вошёл(а) в комнату"}.
+{"Join the IRC channel here.","Присоединяйтесь к каналу IRC"}.
+{"Join the IRC channel in this Jabber ID: ~s","Присоединиться к каналу IRC с Jabber ID: ~s"}.
 {"July","июля"}.
 {"June","июня"}.
 {"Last Activity","Последнее подключение"}.
@@ -213,6 +227,7 @@
 {"Outgoing s2s Servers:","Исходящие s2s-серверы:"}.
 {"Owner privileges required","Требуются права владельца"}.
 {"Packet","Пакет"}.
+{"Password ~b","Пароль ~b"}.
 {"Password Verification","Проверка пароля"}.
 {"Password:","Пароль:"}.
 {"Password","Пароль"}.
@@ -224,15 +239,16 @@
 {"Ping","Пинг"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
 {"Pong","Понг"}.
+{"Port ~b","Порт ~b"}.
 {"Port","Порт"}.
 {"Present real Jabber IDs to","Сделать реальные Jabber ID участников видимыми"}.
 {"private, ","приватная, "}.
+{"Protocol","Протокол"}.
 {"Publish-Subscribe","Публикация-Подписка"}.
 {"PubSub subscriber request","Запрос подписчика PubSub"}.
 {"Queries to the conference members are not allowed in this room","Запросы к пользователям в этой конференции запрещены"}.
 {"RAM and disc copy","ОЗУ и диск"}.
 {"RAM copy","ОЗУ"}.
-{"(Raw)","(Необработанный формат)"}.
 {"Raw","Необработанный формат"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
 {"Recipient is not in the conference room","Адресата нет в конференции"}.
@@ -255,6 +271,7 @@
 {"Room Configuration","Конфигурация комнаты"}.
 {"Room creation is denied by service policy","Cоздавать конференцию запрещено политикой службы"}.
 {"Room description","Описание комнаты"}.
+{"Room Occupants","Участники комнаты"}.
 {"Room title","Название комнаты"}.
 {"Roster groups allowed to subscribe","Группы списка контактов, которым разрешена подписка"}.
 {"Roster of ","Ростер пользователя "}.
@@ -272,6 +289,7 @@
 {"Send announcement to all users on all hosts","Разослать объявление всем пользователям на всех виртуальных серверах"}.
 {"Send announcement to all users","Разослать объявление всем пользователям"}.
 {"September","сентября"}.
+{"Server ~b","Сервер ~b"}.
 {"Set message of the day and send to online users","Установить сообщение дня и разослать его подключённым пользователям"}.
 {"Set message of the day on all hosts and send to online users","Установить сообщение дня на всех виртуальных серверах и разослать его подключённым пользователям"}.
 {"Shared Roster Groups","Группы общих контактов"}.
@@ -303,6 +321,7 @@
 {"That nickname is already in use by another occupant","Этот псевдоним уже знят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
 {"The captcha is valid.","Проверка капчи прошла успешно."}.
+{"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
 {"the password is","пароль:"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
 {"This participant is kicked from the room because he sent an error message","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
@@ -320,6 +339,7 @@
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
 {"Unable to generate a captcha","Не получилось создать капчу"}.
+{"Unauthorized","Не авторизован"}.
 {"Update message of the day (don't send)","Обновить сообщение дня (не рассылать)"}.
 {"Update message of the day on all hosts (don't send)","Обновить сообщение дня на всех виртуальных серверах (не рассылать)"}.
 {"Update plan","План обновления"}.
@@ -336,7 +356,6 @@
 {"User","Пользователь"}.
 {"Validate","Утвердить"}.
 {"vCard User Search","Поиск пользователей по vCard"}.
-{"Virtual Hosts","Виртуальные хосты"}.
 {"Visitors are not allowed to change their nicknames in this room","Посетителям запрещено изменять свои псевдонимы в этой комнате"}.
 {"Visitors are not allowed to send messages to all occupants","Посетителям не разрешается посылать сообщения всем присутствующим"}.
 {"Wednesday","Среда"}.

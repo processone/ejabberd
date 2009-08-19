@@ -73,7 +73,6 @@
 {"ejabberd Web Admin","Webová administrace ejabberd"}.
 {"Email","E-mail"}.
 {"Enable logging","Zaznamenávat konverzace"}.
-{"Encodings","Kódování"}.
 {"End User Session","Ukončit sezení uživatele"}.
 {"Enter list of {Module, [Options]}","Vložte seznam modulů {Modul, [Parametry]}"}.
 {"Enter nickname you want to register","Zadejte přezdívku, kterou chcete zaregistrovat"}.
@@ -81,9 +80,7 @@
 {"Enter path to jabberd14 spool dir","Zadejte cestu k jabberd14 spool adresáři"}.
 {"Enter path to jabberd14 spool file","Zadejte cestu k spool souboru jabberd14"}.
 {"Enter path to text file","Zadajte cestu k textovému souboru"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Vložte jméno uživatele a kódování, které chcete používat při připojení na IRC server"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Příklad: [{\"irc.freenode.net\",\"utf-8\"}, {\"irc.freenode.net\", \"iso8859-2\"}]."}.
 {"Family Name","Příjmení: "}.
 {"February",". února"}.
 {"Fill in fields to search for any matching Jabber User","Vyplňte políčka pro vyhledání uživatele Jabberu"}.
@@ -106,7 +103,6 @@
 {"has been kicked","byl(a) vyhozen(a) z místnosti"}.
 {" has set the subject to: "," změnil(a) téma na: "}.
 {"Host","Hostitel"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Pokud chcete zadat jiné kódování pro IRC servery, vyplňte seznam s hodnotami ve formátu '{\"irc server\",\"encoding\"}'. Předvolené kódování pro tuto službu je \"~s\"."}.
 {"Import Directory","Import adresáře"}.
 {"Import File","Import souboru"}.
 {"Import User from File at ","Importovat uživatele ze souboru na "}.
@@ -218,7 +214,6 @@
 {"Queries to the conference members are not allowed in this room","Požadavky (queries) na členy konference nejsou v této místnosti povolené"}.
 {"RAM and disc copy","Kopie RAM a disku"}.
 {"RAM copy","Kopie RAM"}.
-{"(Raw)","(Zdroj)"}.
 {"Raw","Zdroj"}.
 {"Really delete message of the day?","Skutečně smazat zprávu dne?"}.
 {"Recipient is not in the conference room","Příjemce se nenachází v konferenční místnosti"}.
@@ -315,7 +310,6 @@
 {"User","Uživatel: "}.
 {"Validate","Ověřit"}.
 {"vCard User Search","Hledání uživatelů podle vizitek"}.
-{"Virtual Hosts","Virtuální hostitelé"}.
 {"Visitors are not allowed to change their nicknames in this room","Návštěvníkům této místnosti je zakázáno měnit přezdívku"}.
 {"Visitors are not allowed to send messages to all occupants","Návštevníci nemají povoleno zasílat zprávy všem přihlášeným do konference"}.
 {"Wednesday","Středa"}.

@@ -73,7 +73,6 @@
 {"ejabberd Web Admin","ejabberd Web 管理"}.
 {"Email","メールアドレス"}.
 {"Enable logging","ロギングを有効にする"}.
-{"Encodings","エンコーディング"}.
 {"End User Session","エンドユーザーセッション"}.
 {"Enter list of {Module, [Options]}","{モジュール, [オプション]}のリストを入力して下さい"}.
 {"Enter nickname you want to register","登録するニックネームを入力して下さい"}.
@@ -81,9 +80,7 @@
 {"Enter path to jabberd14 spool dir","jabberd14 spool ディレクトリのパスを入力して下さい"}.
 {"Enter path to jabberd14 spool file","jabberd14 spool ファイルのパスを入力して下さい"}.
 {"Enter path to text file","テキストファイルのパスを入力して下さい"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","IRCサーバーに接続先する為のユーザー名と文字エンコーディングを入力して下さい"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","例: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","姓"}.
 {"February","2月"}.
 {"Fill in fields to search for any matching Jabber User","項目を埋めて Jabber User を検索して下さい"}.
@@ -106,7 +103,6 @@
 {"has been kicked because the room has been changed to members-only","はチャットルームのメンバー制限によりキックされました"}.
 {" has set the subject to: "," は件名を設定しました: "}.
 {"Host","ホスト"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","別の文字エンコーディングを使用したい場合、'{\"irc server\", \"encoding\"}' という形式のリストを入力して下さい。デフォルトで \"~s\" を使用します"}.
 {"Import Directory","ディレクトリインポート"}.
 {"Import File","ファイルかインポート"}.
 {"Import User from File at ","ファイルからユーザーをインポート"}.
@@ -218,7 +214,6 @@
 {"Queries to the conference members are not allowed in this room","このチャットルームではカンファレンスメンバーへのクエリーは禁止されています"}.
 {"RAM and disc copy","RAM, ディスクコピー"}.
 {"RAM copy","RAMコピー"}.
-{"(Raw)","(Raw)"}.
 {"Raw","Raw"}.
 {"Really delete message of the day?","本当にお知らせメッセージを削除しますか？"}.
 {"Recipient is not in the conference room","受信者がカンファレンスルームに居ません"}.
@@ -315,7 +310,6 @@
 {"Users Last Activity","ユーザーの活動履歴"}.
 {"Validate","検証"}.
 {"vCard User Search","vCard ユーザー検索"}.
-{"Virtual Hosts","ヴァーチャルホスト"}.
 {"Visitors are not allowed to change their nicknames in this room","ビジターはこのチャットルームでニックネームを変更することは許可されていません"}.
 {"Visitors are not allowed to send messages to all occupants","ビジターが移住者ににメッセージを送ることは許可されていません"}.
 {"Wednesday","水曜日"}.

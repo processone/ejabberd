@@ -33,14 +33,12 @@
 {"ejabberd IRC module","Módulo de IRC ejabberd"}.
 {"ejabberd MUC module","Módulo MUC de ejabberd"}.
 {"ejabberd vCard module","Módulo vCard de ejabberd"}.
-{"Encodings","Codificações"}.
 {"Enter list of {Module, [Options]}","Introduza lista de {módulos, [opções]}"}.
 {"Enter nickname you want to register","Introduza a alcunha que quer registar"}.
 {"Enter path to backup file","Introduza o caminho do ficheiro de cópia de segurança"}.
 {"Enter path to jabberd14 spool dir","Introduza o caminho para o directório de spools do jabberd14"}.
 {"Enter path to jabberd14 spool file","Introduza o caminho para o ficheiro de spool do jabberd14"}.
 {"Enter path to text file","Introduza caminho para o ficheiro de texto"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Introduza o nome de utilizador e codificações de caracteres que quer usar ao conectar-se aos servidores de IRC"}.
 {"Erlang Jabber Server","Servidor Jabber em Erlang"}.
 {"Family Name","Apelido"}.
 {"Fill in fields to search for any matching Jabber User","Preencha os campos para procurar utilizadores Jabber coincidentes"}.
@@ -49,7 +47,6 @@
 {"Full Name","Nome completo"}.
 {"Groups","Grupos"}.
 {" has set the subject to: "," colocou o tópico: "}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Se deseja especificar codificações de caracteres diferentes para cada servidor IRC preencha esta lista con valores no formato '{\"servidor irc\", \"codificação\"}'.  Este serviço usa por omissão a codificação \"~s\"."}.
 {"Import Directory","Importar directório"}.
 {"Import File","Importar ficheiro"}.
 {"Import User from File at ","Importar utilizador a partir do ficheiro em "}.

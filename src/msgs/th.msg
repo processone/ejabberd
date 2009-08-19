@@ -69,7 +69,6 @@
 {"ejabberd virtual hosts","โฮสต์เสมือน ejabberd"}.
 {"Email","อีเมล"}.
 {"Enable logging","เปิดใช้งานการบันทึก"}.
-{"Encodings","การเข้ารหัส"}.
 {"End User Session","สิ้นสุดเซสชันของผู้ใช้"}.
 {"Enter list of {Module, [Options]}","ป้อนรายการของ {โมดูล, [ตัวเลือก]}"}.
 {"Enter nickname you want to register","ป้อนชื่อเล่นที่คุณต้องการลงทะเบียน"}.
@@ -77,9 +76,7 @@
 {"Enter path to jabberd14 spool dir","ป้อนพาธไปยัง jabberd14 spool dir"}.
 {"Enter path to jabberd14 spool file","ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd14"}.
 {"Enter path to text file","ป้อนพาธของไฟล์ข้อความ"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","ป้อนชื่อผู้ใช้และการเข้ารหัสที่คุณต้องการใช้สำหรับเชื่อมต่อกับเซิร์ฟเวอร์ IRC"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","ตัวอย่าง: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","นามสกุล"}.
 {"February","กุมภาพันธ์"}.
 {"Fill in fields to search for any matching Jabber User","กรอกข้อมูลลงในฟิลด์เพื่อค้นหาผู้ใช้ Jabber ที่ตรงกัน"}.
@@ -99,7 +96,6 @@
 {"has been kicked","ถูกไล่ออก"}.
 {" has set the subject to: "," ตั้งหัวข้อว่า: "}.
 {"Host","โฮสต์"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","ถ้าคุณต้องการระบุการเข้ารหัสที่ต่างกันสำหรับเซิร์ฟเวอร์ IRC ให้กรอกค่าโดยใช้รูปแบบ '{\"irc server\", \"encoding\"}' ลงในรายการ  การบริการนี้ใช้การเข้ารหัสในรูปแบบ \"~s\" โดยค่าดีฟอลต์ "}.
 {"Import Directory","อิมพอร์ตไดเร็กทอรี"}.
 {"Import File","อิมพอร์ตไฟล์"}.
 {"Import User from File at ","อิมพอร์ตผู้ใช้จากไฟล์ที่"}.
@@ -209,7 +205,6 @@
 {"Queries to the conference members are not allowed in this room","ห้องนี้ไม่อนุญาตให้ส่งกระทู้ถามถึงสมาชิกในห้องประชุม"}.
 {"RAM and disc copy","คัดลอก RAM และดิสก์"}.
 {"RAM copy","คัดลอก RAM"}.
-{"(Raw)","(ข้อมูลดิบ)"}.
 {"Raw","ข้อมูลดิบ"}.
 {"Really delete message of the day?","แน่ใจว่าต้องการลบข้อความของวันหรือไม่"}.
 {"Recipient is not in the conference room","ผู้รับไม่ได้อยู่ในห้องประชุม"}.
@@ -302,7 +297,6 @@
 {"Users Last Activity","กิจกรรมล่าสุดของผู้ใช้"}.
 {"Validate","ตรวจสอบ"}.
 {"vCard User Search","ค้นหาผู้ใช้ vCard "}.
-{"Virtual Hosts","โฮสต์เสมือน"}.
 {"Visitors are not allowed to send messages to all occupants","ผู้เยี่ยมเยือนไม่ได้รับอนุญาตให้ส่งข้อความถึงผู้ครอบครองห้องทั้งหมด"}.
 {"Wednesday","วันพุธ"}.
 {"When to send the last published item","เวลาที่ส่งรายการที่เผยแพร่ครั้งล่าสุด"}.

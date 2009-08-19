@@ -27,7 +27,8 @@ msgstr "Введите увиденный текст"
 
 #: ejabberd_captcha.erl:97
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr "Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"
+msgstr ""
+"Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"
 
 #: ejabberd_captcha.erl:235
 msgid "The captcha is valid."
@@ -365,7 +366,7 @@ msgid "Jabber ID"
 msgstr "Jabber ID"
 
 #: mod_configure.erl:1173 mod_configure.erl:1231 mod_configure.erl:1621
-#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2809
+#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2849
 #: web/ejabberd_web_admin.erl:1501
 msgid "Password"
 msgstr "Пароль"
@@ -447,8 +448,8 @@ msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Введите имя пользователя, кодировки, порты и пароли, которые "
-"будут использоваться при подключении к IRC-серверам"
+"Введите имя пользователя, кодировки, порты и пароли, которые будут "
+"использоваться при подключении к IRC-серверам"
 
 #: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
@@ -461,10 +462,10 @@ msgid ""
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"Чтобы указать различные порты, пароли, кодировки для разных "
-"серверов IRC, заполните список значениями в формате '{\"сервер IRC\", "
-"\"кодировка\", порт, \"пароль\"}'. По умолчанию сервис использует кодировку "
-"\"~s\", порт ~p, пустой пароль."
+"Чтобы указать различные порты, пароли, кодировки для разных серверов IRC, "
+"заполните список значениями в формате '{\"сервер IRC\", \"кодировка\", порт, "
+"\"пароль\"}'. По умолчанию сервис использует кодировку \"~s\", порт ~p, "
+"пустой пароль."
 
 #: mod_irc/mod_irc.erl:596
 msgid ""
@@ -508,27 +509,27 @@ msgid ""
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"Введите имя пользователя и кодировки, которые будут использоваться "
-"при подключении к IRC-серверам. Нажмите 'Далее' для получения "
-"дополнительных полей для заполнения. Нажмите 'Завершить' для сохранения настроек."
+"Введите имя пользователя и кодировки, которые будут использоваться при "
+"подключении к IRC-серверам. Нажмите 'Далее' для получения дополнительных "
+"полей для заполнения. Нажмите 'Завершить' для сохранения настроек."
 
 #: mod_irc/mod_irc.erl:857
 msgid "IRC username"
 msgstr "Имя пользователя IRC"
 
-#: mod_irc/mod_irc.erl:904
+#: mod_irc/mod_irc.erl:906
 msgid "Password ~b"
 msgstr "Пароль ~b"
 
-#: mod_irc/mod_irc.erl:909
+#: mod_irc/mod_irc.erl:911
 msgid "Port ~b"
 msgstr "Порт ~b"
 
-#: mod_irc/mod_irc.erl:914
+#: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
 msgstr "Кодировка сервера ~b"
 
-#: mod_irc/mod_irc.erl:923
+#: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
 msgstr "Сервер ~b"
 
@@ -615,96 +616,96 @@ msgstr "выгнали из комнаты из-за останова систе
 msgid "is now known as"
 msgstr "изменил(а) имя на"
 
-#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:675
+#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:678
 #: mod_muc/mod_muc_room.erl:2040
 msgid " has set the subject to: "
 msgstr " установил(а) тему: "
 
-#: mod_muc/mod_muc_log.erl:445
+#: mod_muc/mod_muc_log.erl:448
 msgid "Monday"
 msgstr "Понедельник"
 
-#: mod_muc/mod_muc_log.erl:446
+#: mod_muc/mod_muc_log.erl:449
 msgid "Tuesday"
 msgstr "Вторник"
 
-#: mod_muc/mod_muc_log.erl:447
+#: mod_muc/mod_muc_log.erl:450
 msgid "Wednesday"
 msgstr "Среда"
 
-#: mod_muc/mod_muc_log.erl:448
+#: mod_muc/mod_muc_log.erl:451
 msgid "Thursday"
 msgstr "Четверг"
 
-#: mod_muc/mod_muc_log.erl:449
+#: mod_muc/mod_muc_log.erl:452
 msgid "Friday"
 msgstr "Пятница"
 
-#: mod_muc/mod_muc_log.erl:450
+#: mod_muc/mod_muc_log.erl:453
 msgid "Saturday"
 msgstr "Суббота"
 
-#: mod_muc/mod_muc_log.erl:451
+#: mod_muc/mod_muc_log.erl:454
 msgid "Sunday"
 msgstr "Воскресенье"
 
-#: mod_muc/mod_muc_log.erl:455
+#: mod_muc/mod_muc_log.erl:458
 msgid "January"
 msgstr "января"
 
-#: mod_muc/mod_muc_log.erl:456
+#: mod_muc/mod_muc_log.erl:459
 msgid "February"
 msgstr "февраля"
 
-#: mod_muc/mod_muc_log.erl:457
+#: mod_muc/mod_muc_log.erl:460
 msgid "March"
 msgstr "марта"
 
-#: mod_muc/mod_muc_log.erl:458
+#: mod_muc/mod_muc_log.erl:461
 msgid "April"
 msgstr "апреля"
 
-#: mod_muc/mod_muc_log.erl:459
+#: mod_muc/mod_muc_log.erl:462
 msgid "May"
 msgstr "мая"
 
-#: mod_muc/mod_muc_log.erl:460
+#: mod_muc/mod_muc_log.erl:463
 msgid "June"
 msgstr "июня"
 
-#: mod_muc/mod_muc_log.erl:461
+#: mod_muc/mod_muc_log.erl:464
 msgid "July"
 msgstr "июля"
 
-#: mod_muc/mod_muc_log.erl:462
+#: mod_muc/mod_muc_log.erl:465
 msgid "August"
 msgstr "августа"
 
-#: mod_muc/mod_muc_log.erl:463
+#: mod_muc/mod_muc_log.erl:466
 msgid "September"
 msgstr "сентября"
 
-#: mod_muc/mod_muc_log.erl:464
+#: mod_muc/mod_muc_log.erl:467
 msgid "October"
 msgstr "октября"
 
-#: mod_muc/mod_muc_log.erl:465
+#: mod_muc/mod_muc_log.erl:468
 msgid "November"
 msgstr "ноября"
 
-#: mod_muc/mod_muc_log.erl:466
+#: mod_muc/mod_muc_log.erl:469
 msgid "December"
 msgstr "декабря"
 
-#: mod_muc/mod_muc_log.erl:736
+#: mod_muc/mod_muc_log.erl:740
 msgid "Room Configuration"
 msgstr "Конфигурация комнаты"
 
-#: mod_muc/mod_muc_log.erl:745
+#: mod_muc/mod_muc_log.erl:749
 msgid "Room Occupants"
 msgstr "Участники комнаты"
 
-#: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
+#: mod_muc/mod_muc_log.erl:852 mod_muc/mod_muc_room.erl:2825
 msgid "Room title"
 msgstr "Название комнаты"
 
@@ -713,8 +714,10 @@ msgid "Traffic rate limit is exceeded"
 msgstr "Превышен лимит скорости посылки информации"
 
 #: mod_muc/mod_muc_room.erl:239
-msgid "This participant is kicked from the room because he sent an error message"
-msgstr "Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"
+msgid ""
+"This participant is kicked from the room because he sent an error message"
+msgstr ""
+"Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"
 
 #: mod_muc/mod_muc_room.erl:248
 msgid "It is not allowed to send private messages to the conference"
@@ -741,7 +744,7 @@ msgid "Recipient is not in the conference room"
 msgstr "Адресата нет в конференции"
 
 #: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:825
-#: mod_muc/mod_muc_room.erl:3407
+#: mod_muc/mod_muc_room.erl:3447
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Только присутствующим разрешается посылать сообщения в конференцию"
 
@@ -776,8 +779,10 @@ msgid "Visitors are not allowed to send messages to all occupants"
 msgstr "Посетителям не разрешается посылать сообщения всем присутствующим"
 
 #: mod_muc/mod_muc_room.erl:884
-msgid "This participant is kicked from the room because he sent an error presence"
-msgstr "Этого участника выгнали из комнаты за то, что он послал присутствие с ошибкой"
+msgid ""
+"This participant is kicked from the room because he sent an error presence"
+msgstr ""
+"Этого участника выгнали из комнаты за то, что он послал присутствие с ошибкой"
 
 #: mod_muc/mod_muc_room.erl:902
 msgid "Visitors are not allowed to change their nicknames in this room"
@@ -827,7 +832,7 @@ msgstr "Jabber ID ~s недопустимый"
 msgid "Nickname ~s does not exist in the room"
 msgstr "Псевдоним ~s в комнате отсутствует"
 
-#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2681
+#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2683
 msgid "Invalid affiliation: ~s"
 msgstr "Недопустимый ранг: ~s"
 
@@ -835,116 +840,118 @@ msgstr "Недопустимый ранг: ~s"
 msgid "Invalid role: ~s"
 msgstr "Недопустимая роль: ~s"
 
-#: mod_muc/mod_muc_room.erl:2658 mod_muc/mod_muc_room.erl:2694
+#: mod_muc/mod_muc_room.erl:2660 mod_muc/mod_muc_room.erl:2696
 msgid "Owner privileges required"
 msgstr "Требуются права владельца"
 
-#: mod_muc/mod_muc_room.erl:2780
+#: mod_muc/mod_muc_room.erl:2820
 msgid "Configuration of room ~s"
 msgstr "Конфигурация комнаты ~s"
 
-#: mod_muc/mod_muc_room.erl:2788 mod_muc/mod_muc_room.erl:3206
+#: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
 msgid "Room description"
 msgstr "Описание комнаты"
 
-#: mod_muc/mod_muc_room.erl:2795
+#: mod_muc/mod_muc_room.erl:2835
 msgid "Make room persistent"
 msgstr "Сделать комнату постоянной"
 
-#: mod_muc/mod_muc_room.erl:2800
+#: mod_muc/mod_muc_room.erl:2840
 msgid "Make room public searchable"
 msgstr "Сделать комнату видимой всем"
 
-#: mod_muc/mod_muc_room.erl:2803
+#: mod_muc/mod_muc_room.erl:2843
 msgid "Make participants list public"
 msgstr "Сделать список участников видимым всем"
 
-#: mod_muc/mod_muc_room.erl:2806
+#: mod_muc/mod_muc_room.erl:2846
 msgid "Make room password protected"
 msgstr "Сделать комнату защищённой паролем"
 
-#: mod_muc/mod_muc_room.erl:2817
+#: mod_muc/mod_muc_room.erl:2857
 msgid "Maximum Number of Occupants"
 msgstr "Максимальное количество участников"
 
-#: mod_muc/mod_muc_room.erl:2824
+#: mod_muc/mod_muc_room.erl:2864
 msgid "No limit"
 msgstr "Не ограничено"
 
-#: mod_muc/mod_muc_room.erl:2835
+#: mod_muc/mod_muc_room.erl:2875
 msgid "Present real Jabber IDs to"
 msgstr "Сделать реальные Jabber ID участников видимыми"
 
-#: mod_muc/mod_muc_room.erl:2843
+#: mod_muc/mod_muc_room.erl:2883
 msgid "moderators only"
 msgstr "только модераторам"
 
-#: mod_muc/mod_muc_room.erl:2845
+#: mod_muc/mod_muc_room.erl:2885
 msgid "anyone"
 msgstr "всем участникам"
 
-#: mod_muc/mod_muc_room.erl:2847
+#: mod_muc/mod_muc_room.erl:2887
 msgid "Make room members-only"
 msgstr "Комната только для зарегистрированных участников"
 
-#: mod_muc/mod_muc_room.erl:2850
+#: mod_muc/mod_muc_room.erl:2890
 msgid "Make room moderated"
 msgstr "Сделать комнату модерируемой"
 
-#: mod_muc/mod_muc_room.erl:2853
+#: mod_muc/mod_muc_room.erl:2893
 msgid "Default users as participants"
 msgstr "Сделать пользователей участниками по умолчанию"
 
-#: mod_muc/mod_muc_room.erl:2856
+#: mod_muc/mod_muc_room.erl:2896
 msgid "Allow users to change the subject"
 msgstr "Разрешить пользователям изменять тему"
 
-#: mod_muc/mod_muc_room.erl:2859
+#: mod_muc/mod_muc_room.erl:2899
 msgid "Allow users to send private messages"
 msgstr "Разрешить приватные сообщения"
 
-#: mod_muc/mod_muc_room.erl:2862
+#: mod_muc/mod_muc_room.erl:2902
 msgid "Allow users to query other users"
 msgstr "Разрешить iq-запросы к пользователям"
 
-#: mod_muc/mod_muc_room.erl:2865
+#: mod_muc/mod_muc_room.erl:2905
 msgid "Allow users to send invites"
 msgstr "Разрешить пользователям посылать приглашения"
 
-#: mod_muc/mod_muc_room.erl:2868
+#: mod_muc/mod_muc_room.erl:2908
 msgid "Allow visitors to send status text in presence updates"
-msgstr "Разрешить посетителям вставлять текcт статуса в сообщения о присутствии"
+msgstr ""
+"Разрешить посетителям вставлять текcт статуса в сообщения о присутствии"
 
-#: mod_muc/mod_muc_room.erl:2871
+#: mod_muc/mod_muc_room.erl:2911
 msgid "Allow visitors to change nickname"
 msgstr "Разрешить посетителям изменять псевдоним"
 
-#: mod_muc/mod_muc_room.erl:2877
+#: mod_muc/mod_muc_room.erl:2917
 msgid "Make room captcha protected"
 msgstr "Сделать комнату защищённой капчей"
 
-#: mod_muc/mod_muc_room.erl:2886
+#: mod_muc/mod_muc_room.erl:2926
 msgid "Enable logging"
 msgstr "Включить журналирование"
 
-#: mod_muc/mod_muc_room.erl:2894
+#: mod_muc/mod_muc_room.erl:2934
 msgid "You need an x:data capable client to configure room"
 msgstr "Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"
 
-#: mod_muc/mod_muc_room.erl:3208
+#: mod_muc/mod_muc_room.erl:3248
 msgid "Number of occupants"
 msgstr "Число присутствующих"
 
-#: mod_muc/mod_muc_room.erl:3327
+#: mod_muc/mod_muc_room.erl:3367
 msgid "~s invites you to the room ~s"
 msgstr "~s приглашает вас в комнату ~s"
 
-#: mod_muc/mod_muc_room.erl:3336
+#: mod_muc/mod_muc_room.erl:3376
 msgid "the password is"
 msgstr "пароль:"
 
 #: mod_offline.erl:509 mod_offline_odbc.erl:352
-msgid "Your contact offline message queue is full. The message has been discarded."
+msgid ""
+"Your contact offline message queue is full. The message has been discarded."
 msgstr ""
 "Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не "
 "было сохранено."
@@ -1476,7 +1483,8 @@ msgid "Restore binary backup immediately:"
 msgstr "Восстановить из бинарной резервной копии немедленно:"
 
 #: web/ejabberd_web_admin.erl:1977
-msgid "Restore binary backup after next ejabberd restart (requires less memory):"
+msgid ""
+"Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Восстановить из бинарной резервной копии при следующем запуске (требует "
 "меньше памяти):"
@@ -1495,11 +1503,13 @@ msgstr "Импорт пользовательских данных из файл
 
 #: web/ejabberd_web_admin.erl:2005
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
-msgstr "Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0277):"
+msgstr ""
+"Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2012
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
-msgstr "Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0277):"
+msgstr ""
+"Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2020
 msgid "Import user data from jabberd14 spool file:"
@@ -1596,4 +1606,3 @@ msgstr "Удалить"
 #: web/ejabberd_web_admin.erl:2500
 msgid "Start"
 msgstr "Запустить"
-

@@ -73,7 +73,6 @@
 {"ejabberd Web Admin","ejabberd Teksaĵa Administro"}.
 {"Email","Retpoŝto"}.
 {"Enable logging","Ŝaltu protokoladon"}.
-{"Encodings","Enkodigoj"}.
 {"End User Session","Haltigu Uzant-seancon"}.
 {"Enter list of {Module, [Options]}","Enmetu liston de {Modulo, [Elektebloj]}"}.
 {"Enter nickname you want to register","Enmetu kaŝnomon kiun vi volas registri"}.
@@ -81,9 +80,7 @@
 {"Enter path to jabberd14 spool dir","Enmetu vojon al jabberd14-uzantdosierujo"}.
 {"Enter path to jabberd14 spool file","Enmetu vojon al jabberd14-uzantdosiero"}.
 {"Enter path to text file","Enmetu vojon al plata teksto"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-serviloj"}.
 {"Erlang Jabber Server","Erlang-a Jabber-Servilo"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Ekzemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","Lasta Nomo"}.
 {"February","Februaro"}.
 {"Fill in fields to search for any matching Jabber User","Kompletigu la formon por serĉi rekonata Jabber-uzanto"}.
@@ -106,7 +103,6 @@
 {"has been kicked","estas forpelita"}.
 {" has set the subject to: "," ŝanĝis la temon al: "}.
 {"Host","Gastigo"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Se vi volas specifi diversajn enkodigojn por IRC-serviloj, kompletigu la jenan liston kun la formo '{\"irc-servilo\", \"enkodigo\"}'. Se ne specifita, ĉi tiu servilo uzas la enkodigo \"~s\""}.
 {"Import Directory","Importu dosierujo"}.
 {"Import File","Importu dosieron"}.
 {"Import User from File at ","Importu uzanton de dosiero el "}.
@@ -218,7 +214,6 @@
 {"Queries to the conference members are not allowed in this room","Malpermesas informmendoj al partoprenantoj en ĉi tiu babilejo"}.
 {"RAM and disc copy","RAM- kaj disk-kopio"}.
 {"RAM copy","RAM-kopio"}.
-{"(Raw)","(Kruda)"}.
 {"Raw","Kruda"}.
 {"Really delete message of the day?","Ĉu vere forigi mesaĝon de la tago?"}.
 {"Recipient is not in the conference room","Ricevanto ne ĉeestas en la babilejo "}.
@@ -315,7 +310,6 @@
 {"User","Uzanto"}.
 {"Validate","Validigu"}.
 {"vCard User Search","Serĉado de vizitkartoj"}.
-{"Virtual Hosts","Virtual-gastigoj"}.
 {"Visitors are not allowed to change their nicknames in this room","Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"}.
 {"Visitors are not allowed to send messages to all occupants","Vizitantoj ne rajtas sendi mesaĝojn al ĉiuj partoprenantoj"}.
 {"Wednesday","Merkredo"}.
