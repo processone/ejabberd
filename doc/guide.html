@@ -2756,13 +2756,24 @@ is replaced at start time with the real virtual host name.
 </DD><DT CLASS="dt-description"><B><TT>{access_createnode, AccessName}</TT></B></DT><DD CLASS="dd-description"> 
 This option restricts which users are allowed to create pubsub nodes using
 ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>{plugins, [ Plugin, ...]}</TT></B></DT><DD CLASS="dd-description"> 
-To specify which pubsub node plugins to use. If not defined, the default
-pubsub plugin is always used.
-</DD><DT CLASS="dt-description"><B><TT>{nodetree, Name}</TT></B></DT><DD CLASS="dd-description"> 
-To specify which nodetree to use. If not defined, the default pubsub
-nodetree is used. Only one nodetree can be used per host,
-and is shared by all node plugins.
-</DD><DT CLASS="dt-description"><B><TT>{pep_sendlast_offline, false|true}</TT></B></DT><DD CLASS="dd-description"> 
+To specify which pubsub node plugins to use.
+If not defined, the default pubsub plugin is always used: "flat".
+</DD><DT CLASS="dt-description"><B><TT>{nodetree, Nodetree}</TT></B></DT><DD CLASS="dd-description"> 
+To specify which nodetree to use.
+If not defined, the default pubsub nodetree is used: "tree".
+Only one nodetree can be used per host, and is shared by all node plugins.<P>The "virtual" nodetree does not store nodes on database.
+This saves resources on systems with tons of nodes.
+If using the "virtual" nodetree,
+you can only enable those node plugins:
+["flat","pep"] or ["flat"];
+any other plugins configuration will not work. 
+Also, all nodes will have the defaut configuration,
+and this can not be changed.
+Using "virtual" nodetree requires to start from a clean database,
+it will not work if you used the default "tree" nodetree before.</P><P>The "dag" nodetree provides experimental support for PubSub Collection Nodes (<A HREF="http://xmpp.org/extensions/xep-0248.html">XEP-0248</A>).
+In that case you should also add "dag" node plugin as default, for example:
+<TT>{plugins, ["dag","flat","hometree","pep"]}</TT>
+</P></DD><DT CLASS="dt-description"><B><TT>{pep_sendlast_offline, false|true}</TT></B></DT><DD CLASS="dd-description"> 
 To specify whether or not we should get last published PEP items
 from users in our roster which are offline when we connect. Value is true or false.
 If not defined, pubsub assumes false so we only get last items of online contacts.
