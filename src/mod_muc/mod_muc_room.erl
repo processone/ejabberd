@@ -1584,7 +1584,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			    NewState#state{robots = Robots}
 		    end;
 		nopass ->
-		    ErrText = "The password is required to enter this room",
+		    ErrText = "A password is required to enter this room",
 		    Err = exmpp_stanza:reply_with_error(
 			    Packet, ?ERR(Packet, 'not-authorized', Lang, ErrText)),
 		    ejabberd_router:route( % TODO: s/Nick/""/

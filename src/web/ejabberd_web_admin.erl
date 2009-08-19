@@ -1964,8 +1964,8 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				 [?XE('tr',
 				      [?XCT('td', "Name"),
 				       ?XCT('td', "Storage Type"),
-				       ?XCT('td', "Size"),
-				       ?XCT('td', "Memory")
+				       ?XCT('td', "Elements"), %% Elements/items/records inserted in the table
+				       ?XCT('td', "Memory") %% Words or Bytes allocated to the table on this node
 				      ])]),
 			     ?XE('tbody',
 				 Rows ++
@@ -2043,7 +2043,7 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 			  ]),
 		      ?XE("tr",
 			  [?XE("td", [?CT("Export data of users in a host to PIEFXIS files (XEP-0277):"),
-			              ?CT(" "),
+			              ?C(" "),
 			              ?INPUT("text", "export_piefxis_host_dirhost", ?MYNAME)]),
 			   ?XE("td", [?INPUT("text", "export_piefxis_host_dirpath", HomeDir)]),
 			   ?XE("td", [?INPUTT("submit", "export_piefxis_host_dir",
@@ -2383,7 +2383,7 @@ node_ports_to_xhtml(Ports, Lang) ->
 	      [?XE('tr',
 		   [?XCT('td', "Port"),
 		    ?XCT('td', "IP"),
-		    ?XCT('td', "Prot"),
+		    ?XCT('td', "Protocol"),
 		    ?XCT('td', "Module"),
 		    ?XCT('td', "Options")
 		   ])]),
