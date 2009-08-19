@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Stian B. Barmen\n"
+"Last-Translator: Stian B. Barmen <stian@barmen.nu>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,17 +20,16 @@ msgid "Replaced by new connection"
 msgstr "Erstattet av en ny tilkobling"
 
 #: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
-#, fuzzy
 msgid "Enter the text you see"
-msgstr "Skriv inn sti til tekstfil"
+msgstr "Skriv inn teksten du ser"
 
 #: ejabberd_captcha.erl:97
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
+msgstr "Dine meldinger til ~s blir blokkert. For å åpne igjen, besøk ~s"
 
 #: ejabberd_captcha.erl:235
 msgid "The captcha is valid."
-msgstr ""
+msgstr "Captchaen er ikke gyldig"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -78,7 +77,7 @@ msgstr "Send kunngjøring alle tilkoblede brukere"
 
 #: mod_announce.erl:641 mod_configure.erl:1046 mod_configure.erl:1091
 msgid "Send announcement to all online users on all hosts"
-msgstr "Send kunngjøring til alle tilkoblede brukere på alle maskiner"
+msgstr "Send kunngjøring til alle tilkoblede brukere på alle "
 
 #: mod_announce.erl:643
 msgid "Set message of the day and send to online users"
@@ -86,7 +85,7 @@ msgstr "Angi melding for dagen og send til tilkoblede brukere"
 
 #: mod_announce.erl:645
 msgid "Set message of the day on all hosts and send to online users"
-msgstr "Angi melding for dagen på alle maskiner og send til tilkoblede brukere"
+msgstr "Angi melding for dagen på alle maskiner og send til "
 
 #: mod_announce.erl:647
 msgid "Update message of the day (don't send)"
@@ -360,7 +359,7 @@ msgid "Jabber ID"
 msgstr "Jabber ID"
 
 #: mod_configure.erl:1173 mod_configure.erl:1231 mod_configure.erl:1621
-#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2809
+#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2849
 #: web/ejabberd_web_admin.erl:1501
 msgid "Password"
 msgstr "Passord"
@@ -432,28 +431,25 @@ msgstr "ejabberd IRC modul"
 #: mod_irc/mod_irc.erl:557
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr ""
-"Du trenger en klient som støtter x:data for å konfigurere mod_irc "
-"instillinger"
+"Du trenger en x:data kompatibel klient for å konfigurere mod_irc instillinger"
 
 #: mod_irc/mod_irc.erl:564
 msgid "Registration in mod_irc for "
 msgstr "Registrering i mod_irc for "
 
 #: mod_irc/mod_irc.erl:569
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Skriv inn brukernavn og tekstkoding du ønsker å bruke for å koble til IRC "
-"tjenere"
+"Skriv brukernavn, tekstkoding, porter og passord du ønsker å bruke for "
+"tilkobling til IRC servere"
 
 #: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
 msgstr "IRC Brukernavn"
 
 #: mod_irc/mod_irc.erl:584
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -461,83 +457,78 @@ msgid ""
 "~p, empty password."
 msgstr ""
 "Om du ønsker å spesifisere tekstkoding for IRC tjenere, fyller du ut en "
-"liste med verdier i formatet '{\"irc server\", \"encoding\"}'. Denne "
-"tjenesten bruker \"~s\" som standard."
+"liste med verdier i formatet '{\"irc server\", \"encoding\", port, \"password"
+"\"}'. Denne tjenesten bruker \"~s\" som standard, port ~p, empty password."
 
 #: mod_irc/mod_irc.erl:596
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Eksempel: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-"
-"1\"}]."
+"Eksempel: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta."
+"fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:601
 msgid "Connections parameters"
-msgstr ""
+msgstr "Tilkoblings parametere"
 
 #: mod_irc/mod_irc.erl:711
 msgid "Join IRC channel"
-msgstr ""
+msgstr "Bli med i IRC kanal"
 
 #: mod_irc/mod_irc.erl:715
 msgid "IRC channel (don't put the first #)"
-msgstr ""
+msgstr "IRC kanal (ikke skriv den første #)"
 
 #: mod_irc/mod_irc.erl:720
-#, fuzzy
 msgid "IRC server"
-msgstr "IRC Brukernavn"
+msgstr "IRC server"
 
 #: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
 msgid "Join the IRC channel here."
-msgstr ""
+msgstr "Bli med i IRC kanalen her. "
 
 #: mod_irc/mod_irc.erl:761
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr ""
+msgstr "Bli med i IRC kanalen med denne Jabber ID: ~s"
 
 #: mod_irc/mod_irc.erl:846
 msgid "IRC settings"
-msgstr ""
+msgstr "IRC instillinger"
 
 #: mod_irc/mod_irc.erl:851
-#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"Skriv inn brukernavn og tekstkoding du ønsker å bruke for å koble til IRC "
-"tjenere"
+"Angi brukernavn og kodinger du ønsker å bruke for å koble til IRC servere. "
+"Trykk 'Neste' for å få flere felt for å fylle i. Trykk 'Fullfør' for å lagre "
+"innstillingene."
 
 #: mod_irc/mod_irc.erl:857
-#, fuzzy
 msgid "IRC username"
-msgstr "IRC Brukernavn"
+msgstr "IRC brukernavn"
 
-#: mod_irc/mod_irc.erl:904
-#, fuzzy
+#: mod_irc/mod_irc.erl:906
 msgid "Password ~b"
-msgstr "Passord"
+msgstr "Passord ~b"
 
-#: mod_irc/mod_irc.erl:909
-#, fuzzy
+#: mod_irc/mod_irc.erl:911
 msgid "Port ~b"
-msgstr "Port"
+msgstr "Port ~b"
 
-#: mod_irc/mod_irc.erl:914
+#: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
-msgstr ""
+msgstr "Tekstkoding for server ~b"
 
-#: mod_irc/mod_irc.erl:923
+#: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
-msgstr ""
+msgstr "Server ~b"
 
 #: mod_muc/mod_muc.erl:437
 msgid "Only service administrators are allowed to send service messages"
-msgstr "Bare tjeneste administratorer er tilatt å sende tjeneste meldinger"
+msgstr "Bare tjeneste administratorer er tilatt å sende tjeneste "
 
 #: mod_muc/mod_muc.erl:482
 msgid "Room creation is denied by service policy"
@@ -553,7 +544,7 @@ msgstr "Samtalerom"
 
 #: mod_muc/mod_muc.erl:672
 msgid "You need an x:data capable client to register nickname"
-msgstr "Du trenger en klient som søtter x:data for å registrere kallenavn"
+msgstr "Du trenger en klient som støtter x:data for å "
 
 #: mod_muc/mod_muc.erl:678
 msgid "Nickname Registration at "
@@ -571,9 +562,8 @@ msgstr "Kallenavn"
 
 #: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
-#, fuzzy
 msgid "That nickname is registered by another person"
-msgstr "Kallenavnet er reservert av en annen person"
+msgstr "Det kallenavnet er registrert av en annen person"
 
 #: mod_muc/mod_muc.erl:748
 msgid "You must fill in field \"Nickname\" in the form"
@@ -620,97 +610,96 @@ msgstr "har blitt kastet ut på grunn av at systemet avslutter"
 msgid "is now known as"
 msgstr "er nå kjent som"
 
-#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:675
+#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:678
 #: mod_muc/mod_muc_room.erl:2040
 msgid " has set the subject to: "
 msgstr " har satt emnet til: "
 
-#: mod_muc/mod_muc_log.erl:445
+#: mod_muc/mod_muc_log.erl:448
 msgid "Monday"
 msgstr "mandag"
 
-#: mod_muc/mod_muc_log.erl:446
+#: mod_muc/mod_muc_log.erl:449
 msgid "Tuesday"
 msgstr "tirsdag"
 
-#: mod_muc/mod_muc_log.erl:447
+#: mod_muc/mod_muc_log.erl:450
 msgid "Wednesday"
 msgstr "onsdag"
 
-#: mod_muc/mod_muc_log.erl:448
+#: mod_muc/mod_muc_log.erl:451
 msgid "Thursday"
 msgstr "torsdag"
 
-#: mod_muc/mod_muc_log.erl:449
+#: mod_muc/mod_muc_log.erl:452
 msgid "Friday"
 msgstr "fredag"
 
-#: mod_muc/mod_muc_log.erl:450
+#: mod_muc/mod_muc_log.erl:453
 msgid "Saturday"
 msgstr "lørdag"
 
-#: mod_muc/mod_muc_log.erl:451
+#: mod_muc/mod_muc_log.erl:454
 msgid "Sunday"
 msgstr "søndag"
 
-#: mod_muc/mod_muc_log.erl:455
+#: mod_muc/mod_muc_log.erl:458
 msgid "January"
 msgstr "januar"
 
-#: mod_muc/mod_muc_log.erl:456
+#: mod_muc/mod_muc_log.erl:459
 msgid "February"
 msgstr "februar"
 
-#: mod_muc/mod_muc_log.erl:457
+#: mod_muc/mod_muc_log.erl:460
 msgid "March"
 msgstr "mars"
 
-#: mod_muc/mod_muc_log.erl:458
+#: mod_muc/mod_muc_log.erl:461
 msgid "April"
 msgstr "april"
 
-#: mod_muc/mod_muc_log.erl:459
+#: mod_muc/mod_muc_log.erl:462
 msgid "May"
 msgstr "mai"
 
-#: mod_muc/mod_muc_log.erl:460
+#: mod_muc/mod_muc_log.erl:463
 msgid "June"
 msgstr "juni"
 
-#: mod_muc/mod_muc_log.erl:461
+#: mod_muc/mod_muc_log.erl:464
 msgid "July"
 msgstr "juli"
 
-#: mod_muc/mod_muc_log.erl:462
+#: mod_muc/mod_muc_log.erl:465
 msgid "August"
 msgstr "august"
 
-#: mod_muc/mod_muc_log.erl:463
+#: mod_muc/mod_muc_log.erl:466
 msgid "September"
 msgstr "september"
 
-#: mod_muc/mod_muc_log.erl:464
+#: mod_muc/mod_muc_log.erl:467
 msgid "October"
 msgstr "oktober"
 
-#: mod_muc/mod_muc_log.erl:465
+#: mod_muc/mod_muc_log.erl:468
 msgid "November"
 msgstr "november"
 
-#: mod_muc/mod_muc_log.erl:466
+#: mod_muc/mod_muc_log.erl:469
 msgid "December"
 msgstr "desember"
 
-#: mod_muc/mod_muc_log.erl:736
+#: mod_muc/mod_muc_log.erl:740
 msgid "Room Configuration"
 msgstr "Rom Konfigurasjon"
 
-#: mod_muc/mod_muc_log.erl:745
-#, fuzzy
+#: mod_muc/mod_muc_log.erl:749
 msgid "Room Occupants"
-msgstr "Antall deltakere"
+msgstr "Samtalerom Deltakere"
 
-#: mod_muc/mod_muc_log.erl:848 mod_muc/mod_muc_room.erl:2785
+#: mod_muc/mod_muc_log.erl:852 mod_muc/mod_muc_room.erl:2825
 msgid "Room title"
 msgstr "Romtittel"
 
@@ -726,7 +715,7 @@ msgstr ""
 
 #: mod_muc/mod_muc_room.erl:248
 msgid "It is not allowed to send private messages to the conference"
-msgstr "Det er ikke tillatt å sende private meldinger til konferansen"
+msgstr "Det er ikke tillatt å sende private meldinger til "
 
 #: mod_muc/mod_muc_room.erl:293
 msgid "Improper message type"
@@ -742,14 +731,14 @@ msgstr ""
 
 #: mod_muc/mod_muc_room.erl:416
 msgid "It is not allowed to send private messages of type \"groupchat\""
-msgstr "Det er ikke tillatt å sende private meldinger med typen \"groupchat\""
+msgstr "Det er ikke tillatt å sende private meldinger med typen "
 
 #: mod_muc/mod_muc_room.erl:428 mod_muc/mod_muc_room.erl:482
 msgid "Recipient is not in the conference room"
 msgstr "Mottakeren er ikke i konferanserommet"
 
 #: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:825
-#: mod_muc/mod_muc_room.erl:3407
+#: mod_muc/mod_muc_room.erl:3447
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Bare deltakere får sende normale meldinger til konferansen"
 
@@ -759,28 +748,25 @@ msgstr "Det er ikke tillatt å sende private meldinger"
 
 #: mod_muc/mod_muc_room.erl:503
 msgid "Only occupants are allowed to send queries to the conference"
-msgstr "Bare deltakere er tillatt å sende forespørsler til konferansen"
+msgstr "Bare deltakere er tillatt å sende forespørsler til "
 
 #: mod_muc/mod_muc_room.erl:515
 msgid "Queries to the conference members are not allowed in this room"
-msgstr ""
-"Det er ikke tillatt å sende forespørsler til deltakerene i dette rommet"
+msgstr "Forespørsler til konferanse medlemmene er ikke tillat i dette rommet"
 
 #: mod_muc/mod_muc_room.erl:601
 msgid "private, "
 msgstr "privat, "
 
 #: mod_muc/mod_muc_room.erl:801
-#, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "Bare redaktører og deltakere kan endre emnet i dette rommet"
 
 #: mod_muc/mod_muc_room.erl:806
-#, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
-msgstr "Bare redaktører kan endre emnet i dette rommet"
+msgstr "Bare ordstyrer tillates å  endre emnet i dette rommet"
 
 #: mod_muc/mod_muc_room.erl:816
 msgid "Visitors are not allowed to send messages to all occupants"
@@ -795,34 +781,31 @@ msgstr ""
 
 #: mod_muc/mod_muc_room.erl:902
 msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr "Besøkende får ikke lov å endre kallenavn i dette rommet"
+msgstr "Besøkende får ikke lov å endre kallenavn i dette "
 
 #: mod_muc/mod_muc_room.erl:915 mod_muc/mod_muc_room.erl:1505
-#, fuzzy
 msgid "That nickname is already in use by another occupant"
-msgstr "Kallenavnet er allerede i bruk av en annen bruker"
+msgstr "Det kallenavnet er allerede i bruk av en annen deltaker"
 
 #: mod_muc/mod_muc_room.erl:1494
 msgid "You have been banned from this room"
 msgstr "Du har blitt bannlyst i dette rommet."
 
 #: mod_muc/mod_muc_room.erl:1497
-#, fuzzy
 msgid "Membership is required to enter this room"
-msgstr "Du må være medlem for å gå inn i dette rommet"
+msgstr "Medlemskap kreves for tilgang til samtalerommet"
 
 #: mod_muc/mod_muc_room.erl:1533
 msgid "This room is not anonymous"
 msgstr "Dette rommet er ikke anonymt"
 
 #: mod_muc/mod_muc_room.erl:1559
-#, fuzzy
 msgid "A password is required to enter this room"
-msgstr "Passord kreves for å komme inn i dette rommet"
+msgstr "Et passord kreves for tilgang til samtalerommet"
 
 #: mod_muc/mod_muc_room.erl:1581
 msgid "Unable to generate a captcha"
-msgstr ""
+msgstr "Umulig å generere en captcha"
 
 #: mod_muc/mod_muc_room.erl:1591
 msgid "Incorrect password"
@@ -844,7 +827,7 @@ msgstr "Ugyldig Jabber ID ~s"
 msgid "Nickname ~s does not exist in the room"
 msgstr "Kallenavn ~s eksisterer ikke i dette rommet"
 
-#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2681
+#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2683
 msgid "Invalid affiliation: ~s"
 msgstr "Ugyldig rang: ~s"
 
@@ -852,115 +835,111 @@ msgstr "Ugyldig rang: ~s"
 msgid "Invalid role: ~s"
 msgstr "Ugyldig rolle: ~s"
 
-#: mod_muc/mod_muc_room.erl:2658 mod_muc/mod_muc_room.erl:2694
+#: mod_muc/mod_muc_room.erl:2660 mod_muc/mod_muc_room.erl:2696
 msgid "Owner privileges required"
 msgstr "Eierprivilegier kreves"
 
-#: mod_muc/mod_muc_room.erl:2780
-#, fuzzy
+#: mod_muc/mod_muc_room.erl:2820
 msgid "Configuration of room ~s"
-msgstr "Konfigurasjon for "
+msgstr "Konfigurasjon for rom ~s"
 
-#: mod_muc/mod_muc_room.erl:2788 mod_muc/mod_muc_room.erl:3206
-#, fuzzy
+#: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
 msgid "Room description"
-msgstr "Beskrivelse:"
+msgstr "Rom beskrivelse"
 
-#: mod_muc/mod_muc_room.erl:2795
+#: mod_muc/mod_muc_room.erl:2835
 msgid "Make room persistent"
 msgstr "Gjør rommet permanent"
 
-#: mod_muc/mod_muc_room.erl:2800
+#: mod_muc/mod_muc_room.erl:2840
 msgid "Make room public searchable"
 msgstr "Gjør rommet offentlig søkbart"
 
-#: mod_muc/mod_muc_room.erl:2803
+#: mod_muc/mod_muc_room.erl:2843
 msgid "Make participants list public"
 msgstr "Gjør deltakerlisten offentlig"
 
-#: mod_muc/mod_muc_room.erl:2806
+#: mod_muc/mod_muc_room.erl:2846
 msgid "Make room password protected"
 msgstr "Passordbeskytt rommet"
 
-#: mod_muc/mod_muc_room.erl:2817
+#: mod_muc/mod_muc_room.erl:2857
 msgid "Maximum Number of Occupants"
 msgstr "Maksimum Antall Deltakere"
 
-#: mod_muc/mod_muc_room.erl:2824
+#: mod_muc/mod_muc_room.erl:2864
 msgid "No limit"
 msgstr "Ingen grense"
 
-#: mod_muc/mod_muc_room.erl:2835
+#: mod_muc/mod_muc_room.erl:2875
 msgid "Present real Jabber IDs to"
 msgstr "Presenter ekte Jabber IDer til"
 
-#: mod_muc/mod_muc_room.erl:2843
+#: mod_muc/mod_muc_room.erl:2883
 msgid "moderators only"
 msgstr "kun for redaktører"
 
-#: mod_muc/mod_muc_room.erl:2845
+#: mod_muc/mod_muc_room.erl:2885
 msgid "anyone"
 msgstr "hvem som helst"
 
-#: mod_muc/mod_muc_room.erl:2847
+#: mod_muc/mod_muc_room.erl:2887
 msgid "Make room members-only"
 msgstr "Gjør rommet tilgjengelig kun for medlemmer"
 
-#: mod_muc/mod_muc_room.erl:2850
+#: mod_muc/mod_muc_room.erl:2890
 msgid "Make room moderated"
 msgstr "Gjør rommet redaktørstyrt"
 
-#: mod_muc/mod_muc_room.erl:2853
+#: mod_muc/mod_muc_room.erl:2893
 msgid "Default users as participants"
 msgstr "Standard brukere som deltakere"
 
-#: mod_muc/mod_muc_room.erl:2856
-#, fuzzy
+#: mod_muc/mod_muc_room.erl:2896
 msgid "Allow users to change the subject"
 msgstr "Tillat brukere å endre emne"
 
-#: mod_muc/mod_muc_room.erl:2859
+#: mod_muc/mod_muc_room.erl:2899
 msgid "Allow users to send private messages"
 msgstr "Tillat brukere å sende private meldinger"
 
-#: mod_muc/mod_muc_room.erl:2862
+#: mod_muc/mod_muc_room.erl:2902
 msgid "Allow users to query other users"
 msgstr "Tillat brukere å sende forespørsel til andre brukere"
 
-#: mod_muc/mod_muc_room.erl:2865
+#: mod_muc/mod_muc_room.erl:2905
 msgid "Allow users to send invites"
 msgstr "Tillat brukere å sende invitasjoner"
 
-#: mod_muc/mod_muc_room.erl:2868
+#: mod_muc/mod_muc_room.erl:2908
 msgid "Allow visitors to send status text in presence updates"
-msgstr "Tillat besøkende å sende status tekst i tilgjengelighets oppdateringer"
+msgstr "Tillat besøkende å sende status tekst i "
 
-#: mod_muc/mod_muc_room.erl:2871
+#: mod_muc/mod_muc_room.erl:2911
 msgid "Allow visitors to change nickname"
 msgstr "Tillat besøkende å endre kallenavn"
 
-#: mod_muc/mod_muc_room.erl:2877
-#, fuzzy
+#: mod_muc/mod_muc_room.erl:2917
 msgid "Make room captcha protected"
-msgstr "Passordbeskytt rommet"
+msgstr "Gjør rommet captcha beskyttet"
 
-#: mod_muc/mod_muc_room.erl:2886
+#: mod_muc/mod_muc_room.erl:2926
 msgid "Enable logging"
 msgstr "Slå på logging"
 
-#: mod_muc/mod_muc_room.erl:2894
+#: mod_muc/mod_muc_room.erl:2934
 msgid "You need an x:data capable client to configure room"
-msgstr "Du trenger en klient som støtter x:data for å konfigurere rommet"
+msgstr "Du trenger en klient som støtter x:data for å "
 
-#: mod_muc/mod_muc_room.erl:3208
+#: mod_muc/mod_muc_room.erl:3248
 msgid "Number of occupants"
 msgstr "Antall deltakere"
 
-#: mod_muc/mod_muc_room.erl:3327
+#: mod_muc/mod_muc_room.erl:3367
 msgid "~s invites you to the room ~s"
 msgstr "~s inviterer deg til rommet ~s"
 
-#: mod_muc/mod_muc_room.erl:3336
+#: mod_muc/mod_muc_room.erl:3376
 msgid "the password is"
 msgstr "passordet er"
 
@@ -1011,9 +990,8 @@ msgid "Offline Messages:"
 msgstr "Frakoblede Meldinger:"
 
 #: mod_offline.erl:620 mod_offline_odbc.erl:496
-#, fuzzy
 msgid "Remove All Offline Messages"
-msgstr "Frakoblede Meldinger"
+msgstr "Fjern Alle Frakoblede Meldinger"
 
 #: mod_proxy65/mod_proxy65_service.erl:213
 msgid "ejabberd SOCKS5 Bytestreams module"
@@ -1045,7 +1023,7 @@ msgstr "Abonnements Adresse"
 
 #: mod_pubsub/mod_pubsub.erl:1456 mod_pubsub/mod_pubsub_odbc.erl:1461
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "Tillat denne Jabber ID å abonnere på denne pubsub noden?"
+msgstr "Tillat denne Jabber ID å abonnere på denne pubsub "
 
 #: mod_pubsub/mod_pubsub.erl:3220 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Deliver payloads with event notifications"
@@ -1109,16 +1087,15 @@ msgstr "Send kunngjøringer bare til tilgjengelige brukere"
 
 #: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3263
 msgid "The collections with which a node is affiliated"
-msgstr ""
+msgstr "Samlingene som en node er assosiert med"
 
 #: mod_register.erl:190
 msgid "Choose a username and password to register with this server"
-msgstr "Velg et brukernavn og passord for å registrere på denne serveren"
+msgstr "Velg et brukernavn og passord for å registrere på "
 
 #: mod_register.erl:243
-#, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
-msgstr "Brukere får ikke lov til å registrere kontoer så fort"
+msgstr "Brukere får ikke lov til  registrere kontoer så fort"
 
 #: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
 #: web/ejabberd_web_admin.erl:1812 web/ejabberd_web_admin.erl:1823
@@ -1277,7 +1254,7 @@ msgstr "Bruker"
 
 #: mod_vcard.erl:357 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:334
 msgid "You need an x:data capable client to search"
-msgstr "Du tregner en klient som støtter x:data for å kunne søke"
+msgstr "Du tregner en klient som støtter x:data for å kunne "
 
 #: mod_vcard.erl:382 mod_vcard_ldap.erl:483 mod_vcard_odbc.erl:359
 msgid "vCard User Search"
@@ -1298,7 +1275,7 @@ msgstr "Fyll inn felt for å søke etter Jabber brukere"
 #: web/ejabberd_web_admin.erl:179 web/ejabberd_web_admin.erl:186
 #: web/ejabberd_web_admin.erl:202 web/ejabberd_web_admin.erl:209
 msgid "Unauthorized"
-msgstr ""
+msgstr "Uautorisert"
 
 #: web/ejabberd_web_admin.erl:266 web/ejabberd_web_admin.erl:283
 msgid "ejabberd Web Admin"
@@ -1357,9 +1334,8 @@ msgid "Statistics"
 msgstr "Statistikk"
 
 #: web/ejabberd_web_admin.erl:1097
-#, fuzzy
 msgid "Not Found"
-msgstr "Noden finnes ikke"
+msgstr "Finnes Ikke"
 
 #: web/ejabberd_web_admin.erl:1114
 msgid "Node not found"
@@ -1457,7 +1433,7 @@ msgstr "Lagringstype"
 
 #: web/ejabberd_web_admin.erl:1934
 msgid "Elements"
-msgstr ""
+msgstr "Elementer"
 
 #: web/ejabberd_web_admin.erl:1935
 msgid "Memory"
@@ -1465,14 +1441,13 @@ msgstr "Minne"
 
 #: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
 msgid "Error"
-msgstr ""
+msgstr "Feil"
 
 #: web/ejabberd_web_admin.erl:1955
 msgid "Backup of "
 msgstr "Sikkerhetskopi av "
 
 #: web/ejabberd_web_admin.erl:1957
-#, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1514,25 +1489,23 @@ msgstr "Gjenopprette rentekst sikkerhetskopi umiddelbart:"
 
 #: web/ejabberd_web_admin.erl:1998
 msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr ""
+msgstr "Importer brukeres data fra en PIEFXIS fil (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2005
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
-msgstr ""
+msgstr "Eksporter data om alle brukere i en server til PIEFXIS filer"
 
 #: web/ejabberd_web_admin.erl:2012
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
-msgstr ""
+msgstr "Eksporter data om alle brukere i en host til PIEFXIS filer (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2020
-#, fuzzy
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Importer Brukere Fra jabberd14 Spoolfiler"
+msgstr "Importer bruker data fra jabberd14 spoolfiler:"
 
 #: web/ejabberd_web_admin.erl:2027
-#, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importer Brukere Fra jabberd14 Spoolfiler"
+msgstr "Importer brukeres data fra jabberd14 spoolfil katalog:"
 
 #: web/ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
@@ -1579,9 +1552,8 @@ msgid "Update plan"
 msgstr "Oppdaterings plan"
 
 #: web/ejabberd_web_admin.erl:2176
-#, fuzzy
 msgid "Modified modules"
-msgstr "Oppdater moduler"
+msgstr "Endrede moduler"
 
 #: web/ejabberd_web_admin.erl:2177
 msgid "Update script"
@@ -1601,12 +1573,11 @@ msgstr "Port"
 
 #: web/ejabberd_web_admin.erl:2348
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2349
-#, fuzzy
 msgid "Protocol"
-msgstr "Port"
+msgstr "Protokoll"
 
 #: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
 msgid "Module"
@@ -1623,21 +1594,3 @@ msgstr "Slett"
 #: web/ejabberd_web_admin.erl:2500
 msgid "Start"
 msgstr "Start"
-
-#~ msgid "Encodings"
-#~ msgstr "Tekstkodinger"
-
-#~ msgid "(Raw)"
-#~ msgstr "(Rå)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Virtuelle Maskiner"
-
-#~ msgid "Specified nickname is already registered"
-#~ msgstr "Dette kallenavnet er allerede registrert"
-
-#~ msgid "Size"
-#~ msgstr "Størrelse"
-
-#~ msgid "You must fill in field \"nick\" in the form"
-#~ msgstr "Du må fylle inn feltet \"nick\" i skjemaet"
