@@ -275,7 +275,7 @@ update_node_database(Host, ServerHost) ->
 	[host_node, host_parent, info] ->
 	    ?INFO_MSG("upgrade node pubsub tables",[]),
 	    F = fun() ->
-			lists:foldl(
+			{Result, LastIdx} = lists:foldl(
 			  fun({pubsub_node, NodeId, ParentId, {nodeinfo, Items, Options, Entities}}, {RecList, NodeIdx}) ->
 				  ItemsList =
 				      lists:foldl(
@@ -319,7 +319,9 @@ update_node_database(Host, ServerHost) ->
 				   RecList], NodeIdx + 1}
 			  end, {[], 1},
 			  mnesia:match_object(
-			    {pubsub_node, {Host, '_'}, '_', '_'}))
+			    {pubsub_node, {Host, '_'}, '_', '_'})),
+			mnesia:write(#pubsub_index{index = node, last = LastIdx, free = []}),
+			Result
 		end,
 	    {atomic, NewRecords} = mnesia:transaction(F),
 	    {atomic, ok} = mnesia:delete_table(pubsub_node),
@@ -350,7 +352,7 @@ update_node_database(Host, ServerHost) ->
 		end,
 	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]),
 	    FNew = fun() ->
-		lists:foldl(fun(#pubsub_node{nodeid = NodeId} = PubsubNode, NodeIdx) ->
+		LastIdx = lists:foldl(fun(#pubsub_node{nodeid = NodeId} = PubsubNode, NodeIdx) ->
 		    mnesia:write(PubsubNode#pubsub_node{id = NodeIdx}),
 		    lists:foreach(fun(#pubsub_state{stateid = StateId} = State) ->
 			{JID, _} = StateId,
@@ -370,7 +372,8 @@ update_node_database(Host, ServerHost) ->
 		end, 1, mnesia:match_object(
 			{pubsub_node, {Host, '_'}, '_', '_', '_', '_', '_'})
 		    ++  mnesia:match_object(
-			{pubsub_node, {{'_', ServerHost, '_'}, '_'}, '_', '_', '_', '_', '_'}))
+			{pubsub_node, {{'_', ServerHost, '_'}, '_'}, '_', '_', '_', '_', '_'})),
+		mnesia:write(#pubsub_index{index = node, last = LastIdx, free = []})
 		end,
 	    case mnesia:transaction(FNew) of
 		{atomic, Result} ->
