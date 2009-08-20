@@ -2759,14 +2759,20 @@ Next example prohibits the registration of too short account names:
   {mod_register, [{access, register}]},
   ...
  ]}.
-</PRE></LI><LI CLASS="li-itemize">The in-band registration of new accounts can be prohibited by changing the
-<TT>access</TT> option. If you really want to disable all In-Band Registration
-functionality, that is changing passwords in-band and deleting accounts
-in-band, you have to remove <TT>mod_register</TT> from the modules list. In this
-example all In-Band Registration functionality is disabled:
+</PRE></LI><LI CLASS="li-itemize">This configuration prohibits usage of In-Band Registration
+to create or delete accounts,
+but allows existing accounts to change the password:
 <PRE CLASS="verbatim">{access, register, [{deny, all}]}.
 
 {modules,
+ [
+  ...
+  {mod_register, [{access, register}]},
+  ...
+ ]}.
+</PRE></LI><LI CLASS="li-itemize">This configuration disables all In-Band Registration
+functionality: create, delete accounts and change password:
+<PRE CLASS="verbatim">{modules,
  [
   ...
   %% {mod_register, [{access, register}]},
