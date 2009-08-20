@@ -92,31 +92,31 @@ init() ->
     ok = create_table().
 
 subscribe_node(JID, NodeID, Options) ->
-    case mnesia:sync_dirty(fun add_subscription/3,
+    case catch mnesia:sync_dirty(fun add_subscription/3,
 			    [JID, NodeID, Options]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
+	{'EXIT', {aborted, Error}} -> Error;
+	Result -> {result, Result}
     end.
 
 unsubscribe_node(JID, NodeID, SubID) ->
-    case mnesia:sync_dirty(fun delete_subscription/3,
+    case catch mnesia:sync_dirty(fun delete_subscription/3,
 			    [JID, NodeID, SubID]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
+	{'EXIT', {aborted, Error}} -> Error;
+	Result -> {result, Result}
     end.
 
 get_subscription(JID, NodeID, SubID) ->
-    case mnesia:sync_dirty(fun read_subscription/3,
+    case catch mnesia:sync_dirty(fun read_subscription/3,
 			    [JID, NodeID, SubID]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
+	{'EXIT', {aborted, Error}} -> Error;
+	Result -> {result, Result}
     end.
 
 set_subscription(JID, NodeID, SubID, Options) ->
-    case mnesia:sync_dirty(fun write_subscription/4,
+    case catch mnesia:sync_dirty(fun write_subscription/4,
 			    [JID, NodeID, SubID, Options]) of
-	{atomic, Result} -> {result, Result};
-	{aborted, Error} -> Error
+	{'EXIT', {aborted, Error}} -> Error;
+	Result -> {result, Result}
     end.
 
 get_options_xform(Lang, Options) ->

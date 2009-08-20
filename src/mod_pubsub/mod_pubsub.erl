@@ -2952,8 +2952,10 @@ get_node_subs(#pubsub_node{type   = Type,
 
 get_options_for_subs(_Host, Node, NodeID, Subs) ->
     lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
-			{result, #pubsub_subscription{options = Options}} = pubsub_subscription:get_subscription(JID, NodeID, SubID),
-			[{JID, Node, Options} | Acc];
+			case pubsub_subscription:get_subscription(JID, NodeID, SubID) of
+			    {result, #pubsub_subscription{options = Options}} -> [{JID, Node, Options} | Acc];
+			    _ -> Acc
+			end;
 		    (_, Acc) ->
 			Acc
 		end, [], Subs).
