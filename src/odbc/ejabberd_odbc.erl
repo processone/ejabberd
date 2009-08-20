@@ -58,7 +58,7 @@
 -define(PGSQL_PORT, 5432).
 -define(MYSQL_PORT, 3306).
 
--define(TRANSACTION_TIMEOUT, 60000).
+-define(TRANSACTION_TIMEOUT, 60000). % milliseconds
 -define(KEEPALIVE_TIMEOUT, 60000).
 -define(KEEPALIVE_QUERY, "SELECT 1;").
 
@@ -96,7 +96,7 @@ sql_call(Host, Msg) ->
     case get(?STATE_KEY) of
         undefined ->
             gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
-                            {sql_cmd, Msg}, ?TRANSACTION_TIMEOUT);
+			    {sql_cmd, Msg}, ?TRANSACTION_TIMEOUT);
         _State ->
             nested_op(Msg)
     end.
@@ -150,24 +150,30 @@ escape_like(C)  -> odbc_queries:escape(C).
 init([Host, StartInterval]) ->
     case ejabberd_config:get_local_option({odbc_keepalive_interval, Host}) of
 	KeepaliveInterval when is_integer(KeepaliveInterval) ->
-	    timer:apply_interval(KeepaliveInterval*1000, ?MODULE, keep_alive, [self()]);
+	    timer:apply_interval(KeepaliveInterval*1000, ?MODULE,
+				 keep_alive, [self()]);
 	undefined ->
 	    ok;
 	_Other ->
-	    ?ERROR_MSG("Wrong odbc_keepalive_interval definition '~p' for host ~p.~n", [_Other, Host])
+	    ?ERROR_MSG("Wrong odbc_keepalive_interval definition '~p'"
+		       " for host ~p.~n", [_Other, Host])
     end,
     SQLServer = ejabberd_config:get_local_option({odbc_server, Host}),
     case SQLServer of
 	%% Default pgsql port
 	{pgsql, Server, DB, Username, Password} ->
-	    pgsql_connect(Server, ?PGSQL_PORT, DB, Username, Password, StartInterval);
+	    pgsql_connect(Server, ?PGSQL_PORT, DB, Username, Password,
+			  StartInterval);
 	{pgsql, Server, Port, DB, Username, Password} when is_integer(Port) ->
-	    pgsql_connect(Server, Port, DB, Username, Password, StartInterval);
+	    pgsql_connect(Server, Port, DB, Username, Password,
+			  StartInterval);
 	%% Default mysql port
 	{mysql, Server, DB, Username, Password} ->
-	    mysql_connect(Server, ?MYSQL_PORT, DB, Username, Password, StartInterval);
+	    mysql_connect(Server, ?MYSQL_PORT, DB, Username, Password,
+			  StartInterval);
 	{mysql, Server, Port, DB, Username, Password} when is_integer(Port) ->
-	    mysql_connect(Server, Port, DB, Username, Password, StartInterval);
+	    mysql_connect(Server, Port, DB, Username, Password,
+			  StartInterval);
 	_ when is_list(SQLServer) ->
 	    odbc_connect(SQLServer, StartInterval)
     end.
@@ -270,7 +276,8 @@ inner_transaction(F) ->
     case get(?NESTING_KEY) of
         ?TOP_LEVEL_TXN ->
             {backtrace, T} = process_info(self(), backtrace),
-            ?ERROR_MSG("inner transaction called at outer txn level. Trace: ~s", [T]),
+            ?ERROR_MSG("inner transaction called at outer txn level. Trace: ~s",
+		       [T]),
             erlang:exit(implementation_faulty);
         _N -> ok
     end,
@@ -295,7 +302,8 @@ outer_transaction(F, NRestarts, _Reason) ->
             ok;
         _N ->
             {backtrace, T} = process_info(self(), backtrace),
-            ?ERROR_MSG("outer transaction called at inner txn level. Trace: ~s", [T]),
+            ?ERROR_MSG("outer transaction called at inner txn level. Trace: ~s",
+		       [T]),
             erlang:exit(implementation_faulty)
     end,
     sql_query_internal("begin;"),
@@ -329,7 +337,8 @@ outer_transaction(F, NRestarts, _Reason) ->
     end.
 
 execute_bloc(F) ->
-    %% We don't alter ?NESTING_KEY here as only SQL transactions alter txn nesting
+    %% We don't alter ?NESTING_KEY here as only SQL transactions alter
+    %% txn nesting
     case catch F() of
         {aborted, Reason} ->
             {aborted, Reason};
@@ -348,7 +357,8 @@ sql_query_internal(Query) ->
                   pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
               mysql ->
                   ?DEBUG("MySQL, Send query~n~p~n", [Query]),
-                  R = mysql_to_odbc(mysql_conn:fetch(State#state.db_ref, Query, self())),
+                  R = mysql_to_odbc(mysql_conn:fetch(State#state.db_ref,
+						     Query, self())),
                   ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
                   R
           end,
@@ -441,7 +451,8 @@ mysql_connect(Server, Port, DB, Username, Password, StartInterval) ->
             mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
-	    ?ERROR_MSG("MySQL connection failed: ~p~nWaiting ~p seconds before retrying...~n",
+	    ?ERROR_MSG("MySQL connection failed: ~p~n"
+		       "Waiting ~p seconds before retrying...~n",
 		       [Reason, StartInterval div 1000]),
 	    %% If we can't connect we wait before retrying
 	    timer:sleep(StartInterval),
