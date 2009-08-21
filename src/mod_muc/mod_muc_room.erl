@@ -917,7 +917,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 		    true ->
 			case is_nick_change(From, Nick, StateData) of
 			    true ->
-				case {is_nick_exists(Nick, StateData),
+				case {nick_collision(From, Nick, StateData),
 				      mod_muc:can_use_nick(
 					StateData#state.host, From, Nick),
                                       {(StateData#state.config)#config.allow_visitor_nickchange,
@@ -1253,21 +1253,31 @@ set_role(JID, Role, StateData) ->
 			    []
 		    end
 	    end,
-    Users = case Role of
-		none ->
-		    lists:foldl(fun(J, Us) ->
-					?DICT:erase(J,
-						    Us)
-				end, StateData#state.users, LJIDs);
-		_ ->
-		    lists:foldl(fun(J, Us) ->
-					{ok, User} = ?DICT:find(J, Us),
-					?DICT:store(J,
-						    User#user{role = Role},
-						    Us)
-				end, StateData#state.users, LJIDs)
-	    end,
-    StateData#state{users = Users}.
+    {Users, Nicks}
+	= case Role of
+	      none ->
+		  lists:foldl(fun(J, {Us, Ns}) ->
+				      NewNs =
+					  case ?DICT:find(J, Us) of
+					      {ok, #user{nick = Nick}} ->
+						  ?DICT:erase(Nick, Ns);
+					      _ ->
+						  Ns
+					  end,
+				      {?DICT:erase(J, Us), NewNs}
+			      end,
+			      {StateData#state.users, StateData#state.nicks},
+			      LJIDs);
+	      _ ->
+		  {lists:foldl(fun(J, Us) ->
+				       {ok, User} = ?DICT:find(J, Us),
+				       ?DICT:store(J,
+						   User#user{role = Role},
+						   Us)
+			       end, StateData#state.users, LJIDs),
+		   StateData#state.nicks}
+	  end,
+    StateData#state{users = Users, nicks = Nicks}.
 
 get_role(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -1450,8 +1460,19 @@ add_online_user(JID, Nick, Role, StateData) ->
 			      role = Role},
 			StateData#state.users),
     add_to_log(join, Nick, StateData),
+    Nicks = ?DICT:update(Nick,
+			 fun(Entry) ->
+				 case lists:member(LJID, Entry) of
+				     true ->
+					 Entry;
+				     false ->
+					 [LJID|Entry]
+				 end
+			 end,
+			 [LJID],
+			 StateData#state.nicks),
     tab_add_online_user(JID, StateData),
-    StateData#state{users = Users}.
+    StateData#state{users = Users, nicks = Nicks}.
 
 remove_online_user(JID, StateData) ->
 	remove_online_user(JID, StateData, "").
@@ -1463,7 +1484,15 @@ remove_online_user(JID, StateData, Reason) ->
     add_to_log(leave, {Nick, Reason}, StateData),
     tab_remove_online_user(JID, StateData),
     Users = ?DICT:erase(LJID, StateData#state.users),
-    StateData#state{users = Users}.
+    Nicks = case ?DICT:find(Nick, StateData#state.nicks) of
+		{ok, [LJID]} ->
+		    ?DICT:erase(Nick, StateData#state.nicks);
+		{ok, U} ->
+		    ?DICT:store(Nick, U -- [LJID], StateData#state.nicks);
+		false ->
+		    StateData#state.nicks
+	    end,
+    StateData#state{users = Users, nicks = Nicks}.
 
 
 filter_presence({xmlelement, "presence", Attrs, Els}) ->
@@ -1516,18 +1545,48 @@ add_user_presence_un(JID, Presence, StateData) ->
     StateData#state{users = Users}.
 
 
-is_nick_exists(Nick, StateData) ->
-    ?DICT:fold(fun(_, #user{nick = N}, B) ->
-		       B orelse (N == Nick)
-	       end, false, StateData#state.users).
-
+%% Find and return the full JID of the user of Nick with
+%% highest-priority presence.  Return jid record.
 find_jid_by_nick(Nick, StateData) ->
-    ?DICT:fold(fun(_, #user{jid = JID, nick = N}, R) ->
-		       case Nick of
-			   N -> JID;
-			   _ -> R
-		       end
-	       end, false, StateData#state.users).
+    case ?DICT:find(Nick, StateData#state.nicks) of
+	{ok, [User]} ->
+	    jlib:make_jid(User);
+	{ok, [FirstUser|Users]} ->
+	    #user{last_presence = FirstPresence} =
+		?DICT:fetch(FirstUser, StateData#state.users),
+	    {LJID, _} =
+		lists:foldl(fun(Compare, {HighestUser, HighestPresence}) ->
+				    #user{last_presence = P1} =
+					?DICT:fetch(Compare, StateData#state.users),
+				    case higher_presence(P1, HighestPresence) of
+					true ->
+					    {Compare, P1};
+					false ->
+					    {HighestUser, HighestPresence}
+				    end
+			    end, {FirstUser, FirstPresence}, Users),
+	    jlib:make_jid(LJID);
+	error ->
+	    false
+    end.
+
+higher_presence(Pres1, Pres2) ->
+    Pri1 = get_priority_from_presence(Pres1),
+    Pri2 = get_priority_from_presence(Pres2),
+    Pri1 > Pri2.
+
+get_priority_from_presence(PresencePacket) ->
+    case xml:get_subtag(PresencePacket, "priority") of
+	false ->
+	    0;
+	SubEl ->
+	    case catch list_to_integer(xml:get_tag_cdata(SubEl)) of
+		P when is_integer(P) ->
+		    P;
+		_ ->
+		    0
+	    end
+    end.
 
 is_nick_change(JID, Nick, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -1539,6 +1598,14 @@ is_nick_change(JID, Nick, StateData) ->
 		?DICT:find(LJID, StateData#state.users),
 	    Nick /= OldNick
     end.
+
+nick_collision(User, Nick, StateData) ->
+    UserOfNick = find_jid_by_nick(Nick, StateData),
+    %% if nick is not used, or is used by another resource of the same
+    %% user, it's ok.
+    UserOfNick /= false andalso
+	jlib:jid_remove_resource(jlib:jid_tolower(UserOfNick)) /=
+	jlib:jid_remove_resource(jlib:jid_tolower(User)).
 
 add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -1552,13 +1619,14 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     MaxConferences = gen_mod:get_module_opt(
 		       StateData#state.server_host,
 		       mod_muc, max_user_conferences, 10),
+    Collision = nick_collision(From, Nick, StateData),
     case {(ServiceAffiliation == owner orelse
 	   MaxUsers == none orelse
 	   ((Affiliation == admin orelse Affiliation == owner) andalso
 	    NUsers < MaxAdminUsers) orelse
 	   NUsers < MaxUsers) andalso
 	  NConferences < MaxConferences,
-	  is_nick_exists(Nick, StateData),
+	  Collision,
 	  mod_muc:can_use_nick(StateData#state.host, From, Nick),
 	  get_default_role(Affiliation, StateData)} of
 	{false, _, _, _} ->
@@ -1903,12 +1971,16 @@ send_new_presence(NJID, StateData) ->
     send_new_presence(NJID, "", StateData).
 
 send_new_presence(NJID, Reason, StateData) ->
+    %% First, find the nick associated with this JID.
+    #user{nick = Nick} = ?DICT:fetch(jlib:jid_tolower(NJID), StateData#state.users),
+    %% Then find the JID using this nick with highest priority.
+    LJID = find_jid_by_nick(Nick, StateData),
+    %% Then we get the presence data we're supposed to send.
     {ok, #user{jid = RealJID,
-	       nick = Nick,
 	       role = Role,
 	       last_presence = Presence}} =
-	?DICT:find(jlib:jid_tolower(NJID), StateData#state.users),
-    Affiliation = get_affiliation(NJID, StateData),
+	?DICT:find(jlib:jid_tolower(LJID), StateData#state.users),
+    Affiliation = get_affiliation(LJID, StateData),
     SAffiliation = affiliation_to_list(Affiliation),
     SRole = role_to_list(Role),
     lists:foreach(
@@ -1969,11 +2041,12 @@ send_existing_presences(ToJID, StateData) ->
 	       role = Role}} =
 	?DICT:find(LToJID, StateData#state.users),
     lists:foreach(
-      fun({LJID, #user{jid = FromJID,
-		       nick = FromNick,
-		       role = FromRole,
-		       last_presence = Presence
-		      }}) ->
+      fun({FromNick, _Users}) ->
+	      LJID = find_jid_by_nick(FromNick, StateData),
+	      #user{jid = FromJID,
+		    role = FromRole,
+		    last_presence = Presence
+		   } = ?DICT:fetch(jlib:jid_tolower(LJID), StateData#state.users),
 	      case RealToJID of
 		  FromJID ->
 		      ok;
@@ -2003,7 +2076,7 @@ send_existing_presences(ToJID, StateData) ->
 			RealToJID,
 			Packet)
 	      end
-      end, ?DICT:to_list(StateData#state.users)).
+      end, ?DICT:to_list(StateData#state.nicks)).
 
 
 now_to_usec({MSec, Sec, USec}) ->
@@ -2020,12 +2093,37 @@ change_nick(JID, Nick, StateData) ->
 	   fun(#user{} = User) ->
 		   User#user{nick = Nick}
 	   end, StateData#state.users),
-    NewStateData = StateData#state{users = Users},
-    send_nick_changing(JID, OldNick, NewStateData),
+    OldNickUsers = ?DICT:fetch(OldNick, StateData#state.nicks),
+    NewNickUsers = case ?DICT:find(Nick, StateData#state.nicks) of
+		       {ok, U} -> U;
+		       error -> []
+		   end,
+    %% Send unavailable presence from the old nick if it's no longer
+    %% used.
+    SendOldUnavailable = length(OldNickUsers) == 1,
+    %% If we send unavailable presence from the old nick, we should
+    %% probably send presence from the new nick, in order not to
+    %% confuse clients.  Otherwise, do it only if the new nick was
+    %% unused.
+    SendNewAvailable = SendOldUnavailable orelse
+	NewNickUsers == [],
+    Nicks =
+	case OldNickUsers of
+	    [LJID] ->
+		?DICT:store(Nick, [LJID|NewNickUsers],
+			     ?DICT:erase(OldNick, StateData#state.nicks));
+	    [_|_] ->
+		?DICT:store(Nick, [LJID|NewNickUsers],
+			     ?DICT:store(OldNick, OldNickUsers -- [LJID],
+					 StateData#state.nicks))
+	end,
+    NewStateData = StateData#state{users = Users, nicks = Nicks},
+    send_nick_changing(JID, OldNick, NewStateData, SendOldUnavailable, SendNewAvailable),
     add_to_log(nickchange, {OldNick, Nick}, StateData),
     NewStateData.
 
-send_nick_changing(JID, OldNick, StateData) ->
+send_nick_changing(JID, OldNick, StateData,
+		  SendOldUnavailable, SendNewAvailable) ->
     {ok, #user{jid = RealJID,
 	       nick = Nick,
 	       role = Role,
@@ -2069,14 +2167,22 @@ send_nick_changing(JID, OldNick, StateData) ->
 			  Presence,
 			  [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			    [{xmlelement, "item", ItemAttrs2, []}]}]),
-	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, OldNick),
-		Info#user.jid,
-		Packet1),
-	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, Nick),
-		Info#user.jid,
-		Packet2)
+	      if SendOldUnavailable ->
+		      ejabberd_router:route(
+			jlib:jid_replace_resource(StateData#state.jid, OldNick),
+			Info#user.jid,
+			Packet1);
+		 true ->
+		      ok
+	      end,
+	      if SendNewAvailable ->
+		      ejabberd_router:route(
+			jlib:jid_replace_resource(StateData#state.jid, Nick),
+			Info#user.jid,
+			Packet2);
+		 true ->
+		      ok
+	      end
       end, ?DICT:to_list(StateData#state.users)).
 
 
@@ -3439,7 +3545,7 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
 	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
 
 iq_disco_info_extras(Lang, StateData) ->
-    Len = length(?DICT:to_list(StateData#state.users)),
+    Len = ?DICT:size(StateData#state.users),
     RoomDescription = (StateData#state.config)#config.description,
     [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "result"}],
       [?RFIELDT("hidden", "FORM_TYPE",
