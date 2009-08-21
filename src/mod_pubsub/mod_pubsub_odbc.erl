@@ -263,8 +263,8 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     ok.
 
 init_nodes(Host, ServerHost) ->
-    create_node(Host, ServerHost, ["home"], service_jid(Host), "hometree_odbc"),
-    create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree_odbc"),
+    create_node(Host, ServerHost, ["home"], service_jid(Host), "hometree"),
+    create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree"),
     ok.
 
 update_node_database(Host, ServerHost) ->
@@ -274,7 +274,7 @@ update_node_database(Host, ServerHost) ->
 	[host_node, host_parent, info] ->
 	    ?INFO_MSG("upgrade node pubsub tables",[]),
 	    F = fun() ->
-			lists:foldl(
+			{Result, LastIdx} = lists:foldl(
 			  fun({pubsub_node, NodeId, ParentId, {nodeinfo, Items, Options, Entities}}, {RecList, NodeIdx}) ->
 				  ItemsList =
 				      lists:foldl(
@@ -318,7 +318,9 @@ update_node_database(Host, ServerHost) ->
 				   RecList], NodeIdx + 1}
 			  end, {[], 1},
 			  mnesia:match_object(
-			    {pubsub_node, {Host, '_'}, '_', '_'}))
+			    {pubsub_node, {Host, '_'}, '_', '_'})),
+			mnesia:write(#pubsub_index{index = node, last = LastIdx, free = []}),
+			Result
 		end,
 	    {atomic, NewRecords} = mnesia:transaction(F),
 	    {atomic, ok} = mnesia:delete_table(pubsub_node),
@@ -349,7 +351,7 @@ update_node_database(Host, ServerHost) ->
 		end,
 	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]),
 	    FNew = fun() ->
-		lists:foldl(fun(#pubsub_node{nodeid = NodeId} = PubsubNode, NodeIdx) ->
+		LastIdx = lists:foldl(fun(#pubsub_node{nodeid = NodeId} = PubsubNode, NodeIdx) ->
 		    mnesia:write(PubsubNode#pubsub_node{id = NodeIdx}),
 		    lists:foreach(fun(#pubsub_state{stateid = StateId} = State) ->
 			{JID, _} = StateId,
@@ -369,7 +371,8 @@ update_node_database(Host, ServerHost) ->
 		end, 1, mnesia:match_object(
 			{pubsub_node, {Host, '_'}, '_', '_', '_', '_', '_'})
 		    ++  mnesia:match_object(
-			{pubsub_node, {{'_', ServerHost, '_'}, '_'}, '_', '_', '_', '_', '_'}))
+			{pubsub_node, {{'_', ServerHost, '_'}, '_'}, '_', '_', '_', '_', '_'})),
+		mnesia:write(#pubsub_index{index = node, last = LastIdx, free = []})
 		end,
 	    case mnesia:transaction(FNew) of
 		{atomic, Result} ->
@@ -2952,8 +2955,10 @@ get_node_subs(#pubsub_node{type   = Type,
 
 get_options_for_subs(_Host, Node, NodeID, Subs) ->
     lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
-			{result, #pubsub_subscription{options = Options}} = pubsub_subscription:get_subscription(JID, NodeID, SubID),
-			[{JID, Node, Options} | Acc];
+			case pubsub_subscription:get_subscription(JID, NodeID, SubID) of
+			    {result, #pubsub_subscription{options = Options}} -> [{JID, Node, Options} | Acc];
+			    _ -> Acc
+			end;
 		    (_, Acc) ->
 			Acc
 		end, [], Subs).
@@ -3154,7 +3159,7 @@ node_options(Type) ->
 	    Result
     end.
 
-%% @spec (Host, Type, NodeId) -> [ljid()]
+%% @spec (NodeId) -> [ljid()]
 %%    NodeId = pubsubNodeId()
 %% @doc <p>Return list of node owners.</p>
 node_owners(Host, Type, NodeId) ->
