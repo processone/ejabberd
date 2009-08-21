@@ -47,37 +47,34 @@
 %% Copied from exmpp header files:
 -define(NS_ROSTER,                   "jabber:iq:roster").
 -define(NS_VCARD,                    "vcard-temp").
--type(xmlname() :: atom() | string()).
 -record(xmlcdata, {
-	  cdata = <<>>     :: binary()
+	  cdata = <<>>
 	 }).
--type(xmlcdata() :: #xmlcdata{}).
 -record(xmlattr, {
-	  ns = undefined   :: xmlname() | undefined,
-	  name             :: xmlname(),
-	  value            :: binary()
+	  ns = undefined,
+	  name,
+	  value
 	 }).
--type(xmlattr() :: #xmlattr{}).
 -record(xmlel, {
-	  ns = undefined   :: xmlname() | undefined,
-	  declared_ns = [] :: [{xmlname(), string() | none}],
-	  name             :: xmlname(),
-	  attrs = []       :: [xmlattr()],
-	  children = []    :: [#xmlel{} | xmlcdata()] | undefined
+	  ns = undefined,
+	  declared_ns = [],
+	  name,
+	  attrs = [],
+	  children = []
 	 }).
 -record(iq, {
-	  kind    :: request | response,
-	  type    :: get | set | result | error,
-	  id      :: binary() | undefined,
-	  ns      :: xmlname() | undefined,
-	  payload :: #xmlel{} | undefined,
-	  error   :: #xmlel{} | undefined,
-	  lang    :: binary() | undefined,
-	  iq_ns   :: xmlname() | undefined
+	  kind,
+	  type,
+	  id,
+	  ns,
+	  payload,
+	  error,
+	  lang,
+	  iq_ns
 	 }).
 -record(xmlendtag, {
-	  ns = undefined   :: xmlname() | undefined,
-	  name             :: xmlname()
+	  ns = undefined,
+	  name
 	 }).
 
 
