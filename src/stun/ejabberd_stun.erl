@@ -197,7 +197,6 @@ process(Addr, Port, #stun{class = request, unsupported = []} = Msg) ->
 			      'MAPPED-ADDRESS' = {Addr, Port}};
 		new ->
 		    Resp#stun{class = response,
-			      'MAPPED-ADDRESS' = {Addr, Port},
 			      'XOR-MAPPED-ADDRESS' = {Addr, Port}}
 	    end;
        true ->
