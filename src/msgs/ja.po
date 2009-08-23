@@ -20,17 +20,18 @@ msgid "Replaced by new connection"
 msgstr "新しいコネクションによって置き換えられました"
 
 #: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
-#, fuzzy
 msgid "Enter the text you see"
-msgstr "テキストファイルのパスを入力して下さい"
+msgstr "見えているテキストを入力してください"
 
 #: ejabberd_captcha.erl:97
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
+"~s 宛のメッセージはブロックされています、解除するためにはこちらを見てくださ"
+"い ~s"
 
 #: ejabberd_captcha.erl:235
 msgid "The captcha is valid."
-msgstr ""
+msgstr "キャプチャは有効です。"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -438,96 +439,94 @@ msgid "Registration in mod_irc for "
 msgstr "mod_irc での登録: "
 
 #: mod_irc/mod_irc.erl:569
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"IRCサーバーに接続先する為のユーザー名と文字エンコーディングを入力して下さい"
+"IRCサーバーに接続先する為に、使用するユーザー名、文字エンコーディング、ポー"
+"ト、パスワードを入力して下さい"
 
 #: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
 msgstr "IRCユーザー名"
 
 #: mod_irc/mod_irc.erl:584
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"別の文字エンコーディングを使用したい場合、'{\"irc server\", \"encoding\"}' と"
-"いう形式のリストを入力して下さい。デフォルトで \"~s\" を使用します"
+"別のポートやパスワード、文字エンコーディングを使用したい場合、'{\"irc server"
+"\", \"encoding\", port, \"password\"}' という形式のリストを入力して下さい。デ"
+"フォルトでエンコーディングは \"~s\" を使用し、ポートは ~p、パスワードは空に"
+"なっています。"
 
 #: mod_irc/mod_irc.erl:596
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"例: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."
+"例: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net"
+"\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:601
 msgid "Connections parameters"
-msgstr ""
+msgstr "接続パラメータ"
 
 #: mod_irc/mod_irc.erl:711
 msgid "Join IRC channel"
-msgstr ""
+msgstr "IRCチャンネルに参加"
 
 #: mod_irc/mod_irc.erl:715
 msgid "IRC channel (don't put the first #)"
-msgstr ""
+msgstr "IRCチャンネル(先頭に#は不要)"
 
 #: mod_irc/mod_irc.erl:720
-#, fuzzy
 msgid "IRC server"
-msgstr "IRCユーザー名"
+msgstr "IRCサーバー"
 
 #: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
 msgid "Join the IRC channel here."
-msgstr ""
+msgstr "このIRCチャンネルに参加"
 
 #: mod_irc/mod_irc.erl:761
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr ""
+msgstr "Jabber ID: ~s でIRCチャンネルに参加"
 
 #: mod_irc/mod_irc.erl:846
 msgid "IRC settings"
-msgstr ""
+msgstr "IRC設定"
 
 #: mod_irc/mod_irc.erl:851
-#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"IRCサーバーに接続先する為のユーザー名と文字エンコーディングを入力して下さい"
+"IRCサーバーに接続先する為のユーザー名と文字エンコーディングを入力して下さ"
+"い。'Next' を押して次の項目に進みます。'Complete' を押すと設定が保存されま"
+"す。"
 
 #: mod_irc/mod_irc.erl:857
-#, fuzzy
 msgid "IRC username"
 msgstr "IRCユーザー名"
 
 #: mod_irc/mod_irc.erl:906
-#, fuzzy
 msgid "Password ~b"
-msgstr "パスワード"
+msgstr "パスワード ~b"
 
 #: mod_irc/mod_irc.erl:911
-#, fuzzy
 msgid "Port ~b"
-msgstr "ポート"
+msgstr "ポート ~b"
 
 #: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
-msgstr ""
+msgstr "サーバーのエンコーディング ~b"
 
 #: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
-msgstr ""
+msgstr "サーバー ~b"
 
 #: mod_muc/mod_muc.erl:437
 msgid "Only service administrators are allowed to send service messages"
@@ -566,7 +565,6 @@ msgstr "ニックネーム"
 
 #: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
-#, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "ニックネームは他の人によって登録されています"
 
@@ -700,7 +698,6 @@ msgid "Room Configuration"
 msgstr "チャットルーム設定"
 
 #: mod_muc/mod_muc_log.erl:749
-#, fuzzy
 msgid "Room Occupants"
 msgstr "居住者の数"
 
@@ -763,14 +760,13 @@ msgid "private, "
 msgstr "プライベート"
 
 #: mod_muc/mod_muc_room.erl:801
-#, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
-msgstr "モデレーターと参加者のみがチャットルームの件名を変更出来ます"
+msgstr ""
+"モデレーターと参加者のみがチャットルームの件名を変更する事を許可されています"
 
 #: mod_muc/mod_muc_room.erl:806
-#, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "モデレーターのみがチャットルームの件名を変更出来ます"
 
@@ -789,7 +785,6 @@ msgstr ""
 "ビジターはこのチャットルームでニックネームを変更することは許可されていません"
 
 #: mod_muc/mod_muc_room.erl:915 mod_muc/mod_muc_room.erl:1505
-#, fuzzy
 msgid "That nickname is already in use by another occupant"
 msgstr "ニックネームは既に他の移住者によって使用されています"
 
@@ -798,7 +793,6 @@ msgid "You have been banned from this room"
 msgstr "あなたはチャットルームからバンされています"
 
 #: mod_muc/mod_muc_room.erl:1497
-#, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "チャットルームに入るにはメンバーでなければなりません"
 
@@ -807,13 +801,12 @@ msgid "This room is not anonymous"
 msgstr "このチャットルームは非匿名です"
 
 #: mod_muc/mod_muc_room.erl:1559
-#, fuzzy
 msgid "A password is required to enter this room"
 msgstr "チャットルームに入るにはパスワードが必要です"
 
 #: mod_muc/mod_muc_room.erl:1581
 msgid "Unable to generate a captcha"
-msgstr ""
+msgstr "チャプタを生成することが出来ません。"
 
 #: mod_muc/mod_muc_room.erl:1591
 msgid "Incorrect password"
@@ -848,14 +841,12 @@ msgid "Owner privileges required"
 msgstr "オーナー権限が必要です"
 
 #: mod_muc/mod_muc_room.erl:2820
-#, fuzzy
 msgid "Configuration of room ~s"
-msgstr "設定: "
+msgstr "チャットルーム ~s の設定"
 
 #: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
-#, fuzzy
 msgid "Room description"
-msgstr "詳細:"
+msgstr "チャットルームの詳細"
 
 #: mod_muc/mod_muc_room.erl:2835
 msgid "Make room persistent"
@@ -906,7 +897,6 @@ msgid "Default users as participants"
 msgstr "デフォルトのユーザーは参加者にする"
 
 #: mod_muc/mod_muc_room.erl:2896
-#, fuzzy
 msgid "Allow users to change the subject"
 msgstr "ユーザーによる件名の変更を許可する"
 
@@ -931,9 +921,8 @@ msgid "Allow visitors to change nickname"
 msgstr "ビジターがニックネームを変更する事を許可します"
 
 #: mod_muc/mod_muc_room.erl:2917
-#, fuzzy
 msgid "Make room captcha protected"
-msgstr "チャットルームにパスワードを設定します"
+msgstr "チャットルームをキャプチャで保護します"
 
 #: mod_muc/mod_muc_room.erl:2926
 msgid "Enable logging"
@@ -1005,114 +994,112 @@ msgid "Offline Messages:"
 msgstr "オフラインメッセージ"
 
 #: mod_offline.erl:620 mod_offline_odbc.erl:496
-#, fuzzy
 msgid "Remove All Offline Messages"
-msgstr "オフラインメッセージ"
+msgstr "すべてのオフラインメッセージを削除します"
 
 #: mod_proxy65/mod_proxy65_service.erl:213
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub/mod_pubsub.erl:1054 mod_pubsub/mod_pubsub_odbc.erl:1053
+#: mod_pubsub/mod_pubsub.erl:1057 mod_pubsub/mod_pubsub_odbc.erl:1053
 msgid "Publish-Subscribe"
 msgstr "Publish-Subscribe"
 
-#: mod_pubsub/mod_pubsub.erl:1150 mod_pubsub/mod_pubsub_odbc.erl:1150
+#: mod_pubsub/mod_pubsub.erl:1153 mod_pubsub/mod_pubsub_odbc.erl:1150
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe module"
 
-#: mod_pubsub/mod_pubsub.erl:1437 mod_pubsub/mod_pubsub_odbc.erl:1442
+#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1442
 msgid "PubSub subscriber request"
 msgstr "PubSub 購読リクエスト"
 
-#: mod_pubsub/mod_pubsub.erl:1439 mod_pubsub/mod_pubsub_odbc.erl:1444
+#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1444
 msgid "Choose whether to approve this entity's subscription."
 msgstr "このエントリを承認するかどうかを選択して下さい"
 
-#: mod_pubsub/mod_pubsub.erl:1445 mod_pubsub/mod_pubsub_odbc.erl:1450
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1450
 msgid "Node ID"
 msgstr "ノードID"
 
-#: mod_pubsub/mod_pubsub.erl:1450 mod_pubsub/mod_pubsub_odbc.erl:1455
+#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1455
 msgid "Subscriber Address"
 msgstr "購読アドレス"
 
-#: mod_pubsub/mod_pubsub.erl:1456 mod_pubsub/mod_pubsub_odbc.erl:1461
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1461
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "この Jabber ID をこの pubsubノードへ購読することを許可しますか？"
 
-#: mod_pubsub/mod_pubsub.erl:3220 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3225 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Deliver payloads with event notifications"
 msgstr "イベント通知と同時にペイロードを配送します"
 
-#: mod_pubsub/mod_pubsub.erl:3221 mod_pubsub/mod_pubsub_odbc.erl:3245
+#: mod_pubsub/mod_pubsub.erl:3226 mod_pubsub/mod_pubsub_odbc.erl:3245
 msgid "Deliver event notifications"
 msgstr "イベント通知を配送します"
 
-#: mod_pubsub/mod_pubsub.erl:3222 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3227 mod_pubsub/mod_pubsub_odbc.erl:3246
 msgid "Notify subscribers when the node configuration changes"
 msgstr "ノード設定に変更があった時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3223 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3228 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Notify subscribers when the node is deleted"
 msgstr "ノードが削除された時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3224 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3229 mod_pubsub/mod_pubsub_odbc.erl:3248
 msgid "Notify subscribers when items are removed from the node"
 msgstr "アイテムがノードから消された時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3225 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3230 mod_pubsub/mod_pubsub_odbc.erl:3249
 msgid "Persist items to storage"
 msgstr "アイテムをストレージに保存する"
 
-#: mod_pubsub/mod_pubsub.erl:3226 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3231 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "A friendly name for the node"
 msgstr "ノードの為のフレンドリネーム"
 
-#: mod_pubsub/mod_pubsub.erl:3227 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3232 mod_pubsub/mod_pubsub_odbc.erl:3251
 msgid "Max # of items to persist"
 msgstr "アイテムの最大保存数 #"
 
-#: mod_pubsub/mod_pubsub.erl:3228 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3233 mod_pubsub/mod_pubsub_odbc.erl:3252
 msgid "Whether to allow subscriptions"
 msgstr "購読を許可するかどうか"
 
-#: mod_pubsub/mod_pubsub.erl:3229 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3234 mod_pubsub/mod_pubsub_odbc.erl:3253
 msgid "Specify the access model"
 msgstr "アクセスモデルを設定する"
 
-#: mod_pubsub/mod_pubsub.erl:3232 mod_pubsub/mod_pubsub_odbc.erl:3256
+#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3256
 msgid "Roster groups allowed to subscribe"
 msgstr "名簿グループは購読を許可しました"
 
-#: mod_pubsub/mod_pubsub.erl:3233 mod_pubsub/mod_pubsub_odbc.erl:3257
+#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3257
 msgid "Specify the publisher model"
 msgstr "公開モデルを指定する"
 
-#: mod_pubsub/mod_pubsub.erl:3235 mod_pubsub/mod_pubsub_odbc.erl:3259
+#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3259
 msgid "Max payload size in bytes"
 msgstr "最大ぺイロードサイズ(byte)"
 
-#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3260
+#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3260
 msgid "When to send the last published item"
 msgstr "最後の公開アイテムを送信するタイミングで"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3262
+#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3262
 msgid "Only deliver notifications to available users"
 msgstr "有効なユーザーにのみ告知を送信する"
 
-#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3263
+#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3263
 msgid "The collections with which a node is affiliated"
-msgstr ""
+msgstr "提携されたノードの集合です"
 
 #: mod_register.erl:190
 msgid "Choose a username and password to register with this server"
 msgstr "サーバーに登録するユーザー名とパスワードを選択して下さい"
 
 #: mod_register.erl:243
-#, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
-msgstr "早すぎるユーザーアカウント登録は許可されませんでした"
+msgstr "早すぎるユーザーアカウント登録は許可されていません"
 
 #: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
 #: web/ejabberd_web_admin.erl:1812 web/ejabberd_web_admin.erl:1823
@@ -1292,7 +1279,7 @@ msgstr "項目を埋めて Jabber User を検索して下さい"
 #: web/ejabberd_web_admin.erl:179 web/ejabberd_web_admin.erl:186
 #: web/ejabberd_web_admin.erl:202 web/ejabberd_web_admin.erl:209
 msgid "Unauthorized"
-msgstr ""
+msgstr "認証されていません"
 
 #: web/ejabberd_web_admin.erl:266 web/ejabberd_web_admin.erl:283
 msgid "ejabberd Web Admin"
@@ -1351,9 +1338,8 @@ msgid "Statistics"
 msgstr "統計"
 
 #: web/ejabberd_web_admin.erl:1097
-#, fuzzy
 msgid "Not Found"
-msgstr "ノードが見つかりません"
+msgstr "見つかりません"
 
 #: web/ejabberd_web_admin.erl:1114
 msgid "Node not found"
@@ -1418,7 +1404,7 @@ msgstr "ノード"
 
 #: web/ejabberd_web_admin.erl:1855 web/ejabberd_web_admin.erl:1877
 msgid "Node "
-msgstr "ノード"
+msgstr "ノード "
 
 #: web/ejabberd_web_admin.erl:1864
 msgid "Listened Ports"
@@ -1451,7 +1437,7 @@ msgstr "ストレージタイプ"
 
 #: web/ejabberd_web_admin.erl:1934
 msgid "Elements"
-msgstr ""
+msgstr "要素"
 
 #: web/ejabberd_web_admin.erl:1935
 msgid "Memory"
@@ -1459,14 +1445,13 @@ msgstr "メモリ"
 
 #: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
 msgid "Error"
-msgstr ""
+msgstr "エラー"
 
 #: web/ejabberd_web_admin.erl:1955
 msgid "Backup of "
 msgstr "バックアップ: "
 
 #: web/ejabberd_web_admin.erl:1957
-#, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1507,33 +1492,32 @@ msgstr "直ちにプレーンテキストバックアップからリストア"
 
 #: web/ejabberd_web_admin.erl:1998
 msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr ""
+msgstr "ユーザーデータを PIEFXISファイルからインポート(XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2005
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
 msgstr ""
+"サーバーにある全てのユーザーデータをPIEFXISファイルにエクスポート(XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2012
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
-msgstr ""
+msgstr "ホストのユーザーデータをPIEFXISファイルにエクスポート(XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2020
-#, fuzzy
 msgid "Import user data from jabberd14 spool file:"
-msgstr "jabberd14 Spool ファイルからユーザーをインポート"
+msgstr "ユーザーデータを jabberd14 Spool ファイルからインポート:"
 
 #: web/ejabberd_web_admin.erl:2027
-#, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "jabberd14 Spool ファイルからユーザーをインポート"
+msgstr "ユーザーデータを jabberd14 Spool ディレクトリからインポート:"
 
 #: web/ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
-msgstr "Listen ポート: "
+msgstr "Listen ポート "
 
 #: web/ejabberd_web_admin.erl:2078
 msgid "Modules at "
-msgstr "モジュール: "
+msgstr "モジュール "
 
 #: web/ejabberd_web_admin.erl:2104
 msgid "Statistics of ~p"
@@ -1572,9 +1556,8 @@ msgid "Update plan"
 msgstr "更新計画"
 
 #: web/ejabberd_web_admin.erl:2176
-#, fuzzy
 msgid "Modified modules"
-msgstr "モジュールを更新しました"
+msgstr "モジュールを変更しました"
 
 #: web/ejabberd_web_admin.erl:2177
 msgid "Update script"
@@ -1594,12 +1577,11 @@ msgstr "ポート"
 
 #: web/ejabberd_web_admin.erl:2348
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2349
-#, fuzzy
 msgid "Protocol"
-msgstr "ポート"
+msgstr "プロトコル"
 
 #: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
 msgid "Module"
