@@ -239,9 +239,42 @@ usage ()
     exit
 }
 
+# stop epmd if there is no other running node
+stop_epmd()
+{
+    epmd -names | grep -q name || epmd -kill
+}
+
+# allow sync calls
+wait_for_status()
+{
+    # args: status try delay
+    # return: 0 OK, 1 KO
+    timeout=$2
+    status=4
+    while [ $status -ne $1 ]; do
+        sleep $3
+        let timeout=timeout-1
+        [ $timeout -eq 0 ] && {
+            status=$1
+        } || {
+            ctl status > /dev/null
+            status=$?
+        }
+    done
+    [ $timeout -eq 0 ] && {
+        status=1
+    } || {
+        status=0
+    }
+    return $status
+}
+
 case $ARGS in
     ' start') start;;
     ' debug') debug;;
     ' live') live;;
+    ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
+    ' stopped') wait_for_status 3 15 2; stop_epmd;; # wait 15x2s before timeout
     *) ctl $ARGS;;
 esac
