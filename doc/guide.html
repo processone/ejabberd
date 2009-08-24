@@ -298,7 +298,10 @@ go to the Windows service settings and set ejabberd to be automatically started.
 Note that the Windows service is a feature still in development,
 and for example it doesn&#X2019;t read the file ejabberdctl.cfg.</P><P>On a *nix system, if you want ejabberd to be started as daemon at boot time,
 copy <TT>ejabberd.init</TT> from the &#X2019;bin&#X2019; directory to something like <TT>/etc/init.d/ejabberd</TT>
-(depending on your distribution) and call <TT>/etc/inid.d/ejabberd start</TT> to start it.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly in Windows,
+(depending on your distribution).
+Create a system user called <TT>ejabberd</TT>;
+it will be used by the script to start the server.
+Then you can call <TT>/etc/inid.d/ejabberd start</TT> as root to start the server.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly in Windows,
 try to start it using the shortcut in desktop or start menu.
 If the window shows error 14001, the solution is to install:
 "Microsoft Visual C++ 2005 SP1 Redistributable Package".
@@ -434,7 +437,12 @@ You can try starting <TT>ejabberd</TT> with
 the command <TT>ejabberdctl live</TT>
 to see the error message provided by Erlang
 and can identify what is exactly the problem.</P><P>Please refer to the section&#XA0;<A HREF="#ejabberdctl">4.1</A> for details about <TT>ejabberdctl</TT>,
-and configurable options to fine tune the Erlang runtime system.</P><P> <A NAME="bsd"></A> </P><!--TOC subsection Specific Notes for BSD-->
+and configurable options to fine tune the Erlang runtime system.</P><P>If you want ejabberd to be started as daemon at boot time,
+copy <TT>ejabberd.init</TT> to something like <TT>/etc/init.d/ejabberd</TT>
+(depending on your distribution).
+Create a system user called <TT>ejabberd</TT>;
+it will be used by the script to start the server.
+Then you can call <TT>/etc/inid.d/ejabberd start</TT> as root to start the server.</P><P> <A NAME="bsd"></A> </P><!--TOC subsection Specific Notes for BSD-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc14">2.4.6</A>&#XA0;&#XA0;<A HREF="#bsd">Specific Notes for BSD</A></H3><!--SEC END --><P> <A NAME="bsd"></A> 
 </P><P>The command to compile <TT>ejabberd</TT> in BSD systems is:
 </P><PRE CLASS="verbatim">gmake

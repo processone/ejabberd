@@ -240,7 +240,10 @@ and for example it doesn't read the file ejabberdctl.cfg.
 
 On a *nix system, if you want ejabberd to be started as daemon at boot time,
 copy \term{ejabberd.init} from the 'bin' directory to something like \term{/etc/init.d/ejabberd}
-(depending on your distribution) and call \term{/etc/inid.d/ejabberd start} to start it.
+(depending on your distribution).
+Create a system user called \term{ejabberd};
+it will be used by the script to start the server.
+Then you can call \term{/etc/inid.d/ejabberd start} as root to start the server.
 
 If \term{ejabberd} doesn't start correctly in Windows,
 try to start it using the shortcut in desktop or start menu.
@@ -444,6 +447,13 @@ and can identify what is exactly the problem.
 
 Please refer to the section~\ref{ejabberdctl} for details about \term{ejabberdctl},
 and configurable options to fine tune the Erlang runtime system.
+
+If you want ejabberd to be started as daemon at boot time,
+copy \term{ejabberd.init} to something like \term{/etc/init.d/ejabberd}
+(depending on your distribution).
+Create a system user called \term{ejabberd};
+it will be used by the script to start the server.
+Then you can call \term{/etc/inid.d/ejabberd start} as root to start the server.
 
 \makesubsection{bsd}{Specific Notes for BSD}
 \ind{install!bsd}
