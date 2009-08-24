@@ -21,11 +21,13 @@ ifeq ($(INSTALLUSER),)
   G_USER=
   CHOWN_COMMAND=echo
   CHOWN_OUTPUT=/dev/null
+  INIT_USER=root
 else
   O_USER=-o $(INSTALLUSER)
   G_USER=-g $(INSTALLUSER)
   CHOWN_COMMAND=chown
   CHOWN_OUTPUT=&1
+  INIT_USER=$(INSTALLUSER)
 endif
 
 EFLAGS += -pa .
@@ -185,6 +187,11 @@ install: all
 	# Administration script
 	[ -d $(SBINDIR) ] || install -d -m 755 $(SBINDIR)
 	install -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
+	#
+	# Init script
+	sed -e "s*@ctlscriptpath@*$(SBINDIR)*" \
+		-e "s*@installuser@*$(INIT_USER)*" ejabberd.init.template \
+		> ejabberd.init
 	#
 	# Binary Erlang files
 	install -d $(BEAMDIR)
