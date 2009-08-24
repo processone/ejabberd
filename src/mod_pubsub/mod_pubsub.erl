@@ -2669,16 +2669,23 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    Action = fun(#pubsub_node{owners = Owners, type = Type, id = NodeId}) ->
-			     case lists:member(Owner, Owners) of
-				 true ->
-				     lists:foreach(fun({JID, Subscription, SubId}) ->
-							   node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId])
-						   end, Entities),
-				     {result, []};
-				 _ ->
-				     {error, ?ERR_FORBIDDEN}
-			     end
-		     end,
+			    case lists:member(Owner, Owners) of
+				true ->
+				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
+
+						    case node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId]) of
+							{error, Err} -> [{error, Err} | Acc];
+							_ -> Acc
+						    end
+						end, [], Entities),
+				    case Result of
+					[] -> {result, []};
+					_ -> {error, ?ERR_NOT_ACCEPTABLE}
+				    end;
+				_ ->
+				    {error, ?ERR_FORBIDDEN}
+			    end
+		    end,
 	    case transaction(Host, Node, Action, sync_dirty) of
 		{result, {_, Result}} -> {result, Result};
 		Other -> Other
