@@ -2,11 +2,11 @@
 set -o errexit
 set -o nounset
 
-DIR=@@INSTALLDIR@@
-CTL="$DIR"/bin/ejabberdctl
-USER=ejabberd
+DIR=@ctlscriptpath@
+CTL="$DIR"/ejabberdctl
+USER=@installuser@
 
-test -d "$DIR" || {
+test -x "$CTL" || {
 	echo "ERROR: ejabberd not found: $DIR"
 	exit 1
 }
