@@ -40,6 +40,7 @@
 
 start(normal, _Args) ->
     ejabberd_loglevel:set(4),
+    write_pid_file(),
     application:start(sasl),
     application:start(exmpp),
     randoms:start(),
@@ -81,6 +82,7 @@ prep_stop(State) ->
 %% All the processes were killed when this function is called
 stop(_State) ->
     ?INFO_MSG("ejabberd ~s is stopped in the node ~p", [?VERSION, node()]),
+    delete_pid_file(),
     ejabberd_debug:stop(),
     ok.
 
@@ -182,3 +184,34 @@ add_windows_nameservers() ->
     IPTs = win32_dns:get_nameservers(),
     ?INFO_MSG("Adding machine's DNS IPs to Erlang system:~n~p", [IPTs]),
     lists:foreach(fun(IPT) -> inet_db:add_ns(IPT) end, IPTs).
+
+
+%%%
+%%% PID file
+%%%
+
+write_pid_file() ->
+    case ejabberd:get_pid_file() of
+	false ->
+	    ok;
+	PidFilename ->
+	    write_pid_file(os:getpid(), PidFilename)
+    end.
+
+write_pid_file(Pid, PidFilename) ->
+    case file:open(PidFilename, [write]) of
+	{ok, Fd} ->
+	    io:format(Fd, "~s~n", [Pid]),
+	    file:close(Fd);
+	{error, Reason} ->
+	    ?ERROR_MSG("Cannot write PID file ~s~nReason: ~p", [PidFilename, Reason]),
+	    throw({cannot_write_pid_file, PidFilename, Reason})
+    end.
+
+delete_pid_file() ->
+    case ejabberd:get_pid_file() of
+	false ->
+	    ok;
+	PidFilename ->
+	    file:delete(PidFilename)
+    end.

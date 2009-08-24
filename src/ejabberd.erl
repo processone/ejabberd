@@ -28,6 +28,7 @@
 -author('alexey@process-one.net').
 
 -export([start/0, stop/0,
+	 get_pid_file/0,
 	 get_so_path/0, get_bin_path/0]).
 
 start() ->
@@ -60,6 +61,17 @@ get_bin_path() ->
 		Path ->
 		    filename:join([Path, "bin"])
 	    end;
+	Path ->
+	    Path
+    end.
+
+%% @spec () -> false | string()
+get_pid_file() ->
+    case os:getenv("EJABBERD_PID_PATH") of
+	false ->
+	    false;
+	"" ->
+	    false;
 	Path ->
 	    Path
     end.

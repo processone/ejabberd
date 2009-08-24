@@ -111,5 +111,17 @@
 #ERLANG_NODE=ejabberd
 
 #.
+#' EJABBERD_PID_PATH: ejabberd PID file
+#
+# Indicate the full path to the ejabberd Process identifier (PID) file.
+# If this variable is defined, ejabberd writes the PID file when starts,
+# and deletes it when stops.
+# Remember to create the directory and grant write permission to ejabberd.
+#
+# Default: don't write PID file
+#
+#EJABBERD_PID_PATH=/var/run/ejabberd/ejabberd.pid
+
+#.
 #'
 # vim: foldmarker=#',#. foldmethod=marker:
