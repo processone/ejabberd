@@ -1,0 +1,46 @@
+#! /bin/sh
+set -o errexit
+set -o nounset
+
+DIR=@@INSTALLDIR@@
+CTL="$DIR"/bin/ejabberdctl
+USER=ejabberd
+
+test -d "$DIR" || {
+	echo "ERROR: ejabberd not found: $DIR"
+	exit 1
+}
+grep ^"$USER": /etc/passwd >/dev/null || {
+	echo "ERROR: System user not found: $USER"
+	exit 2
+}
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
+case "$1" in
+  start)
+    test -x "$CTL" || exit 0
+    echo "Starting ejabberd..."
+    su - $USER -c "$CTL start"
+    su - $USER -c "$CTL started"
+    echo "done."
+    ;;
+  stop)
+    test -x "$CTL" || exit 0
+    echo "Stopping ejabberd..."
+    su - $USER -c "$CTL stop"
+    su - $USER -c "$CTL stopped"
+    echo "done."
+    ;;
+
+  force-reload|restart)
+    "$0" stop
+    "$0" start
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|restart|force-reload}"
+    exit 1
+esac
+
+exit 0
