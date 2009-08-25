@@ -3701,8 +3701,9 @@ itemsEls(Items) ->
 	#xmlel{ns = ?NS_PUBSUB, name = 'item', attrs = itemAttr(ItemId), children = Payload}
     end, Items).
 
-add_headers(#xmlel{} = El, Headers) ->
-     exmpp_xml:append_children(El, Headers).
+add_headers(#xmlel{} = El, HeaderEls) ->
+     HeaderEl = #xmlel{ns = ?NS_SHIM, name = 'headers', children = HeaderEls},
+     exmpp_xml:prepend_child(El, HeaderEl).
 
 collection_shim(Node, Nodes) ->
     [#xmlel{ns = ?NS_PUBSUB, name ='header', 
