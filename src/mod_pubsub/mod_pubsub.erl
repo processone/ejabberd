@@ -104,7 +104,8 @@
 	 string_to_subscription/1,
 	 string_to_affiliation/1,
 	 extended_error/2,
-	 extended_error/3
+	 extended_error/3,
+	 rename_default_nodeplugin/0
 	]).
 
 %% API and gen_server callbacks
@@ -334,11 +335,9 @@ update_node_database(Host, ServerHost) ->
 		   end,
 	    case mnesia:transaction(FNew) of
 		{atomic, Result} ->
-		    ?INFO_MSG("Pubsub node tables updated correctly: ~p",
-			      [Result]);
+		    ?INFO_MSG("Pubsub node tables updated correctly: ~p", [Result]);
 		{aborted, Reason} ->
-		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p",
-			       [Reason])
+		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p", [Reason])
 	    end;
 	[nodeid, parentid, type, owners, options] ->
 	    F = fun({pubsub_node, NodeId, {_, Parent}, Type, Owners, Options}) ->
@@ -377,11 +376,10 @@ update_node_database(Host, ServerHost) ->
 		end,
 	    case mnesia:transaction(FNew) of
 		{atomic, Result} ->
-		    ?INFO_MSG("Pubsub node tables updated correctly: ~p",
-			      [Result]);
+		    rename_default_nodeplugin(),
+		    ?INFO_MSG("Pubsub node tables updated correctly: ~p", [Result]);
 		{aborted, Reason} ->
-		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p",
-			       [Reason])
+		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p", [Reason])
 	    end;
 	[nodeid, id, parent, type, owners, options] ->
 	    F = fun({pubsub_node, NodeId, Id, Parent, Type, Owners, Options}) ->
@@ -393,10 +391,16 @@ update_node_database(Host, ServerHost) ->
 			owners = Owners,
 			options = Options}
 		end,
-	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]);
+	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]),
+	    rename_default_nodeplugin();
 	_ ->
 	    ok
     end.
+
+rename_default_nodeplugin() ->
+    lists:foreach(fun(Node) ->
+	mnesia:dirty_write(Node#pubsub_node{type = "hometree"})
+    end, mnesia:dirty_match_object(#pubsub_node{type = "default", _ = '_'})).
 
 update_state_database(_Host, _ServerHost) ->
     case catch mnesia:table_info(pubsub_state, attributes) of

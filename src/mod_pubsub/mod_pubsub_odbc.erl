@@ -105,7 +105,8 @@
 	 string_to_affiliation/1,
 	 extended_error/2,
 	 extended_error/3,
-	 escape/1
+	 escape/1,
+	 rename_default_nodeplugin/0
 	]).
 
 %% API and gen_server callbacks
@@ -333,11 +334,9 @@ update_node_database(Host, ServerHost) ->
 		   end,
 	    case mnesia:transaction(FNew) of
 		{atomic, Result} ->
-		    ?INFO_MSG("Pubsub node tables updated correctly: ~p",
-			      [Result]);
+		    ?INFO_MSG("Pubsub node tables updated correctly: ~p", [Result]);
 		{aborted, Reason} ->
-		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p",
-			       [Reason])
+		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p", [Reason])
 	    end;
 	[nodeid, parentid, type, owners, options] ->
 	    F = fun({pubsub_node, NodeId, {_, Parent}, Type, Owners, Options}) ->
@@ -376,11 +375,10 @@ update_node_database(Host, ServerHost) ->
 		end,
 	    case mnesia:transaction(FNew) of
 		{atomic, Result} ->
-		    ?INFO_MSG("Pubsub node tables updated correctly: ~p",
-			      [Result]);
+		    rename_default_nodeplugin(),
+		    ?INFO_MSG("Pubsub node tables updated correctly: ~p", [Result]);
 		{aborted, Reason} ->
-		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p",
-			       [Reason])
+		    ?ERROR_MSG("Problem updating Pubsub node tables:~n~p", [Reason])
 	    end;
 	[nodeid, id, parent, type, owners, options] ->
 	    F = fun({pubsub_node, NodeId, Id, Parent, Type, Owners, Options}) ->
@@ -392,10 +390,17 @@ update_node_database(Host, ServerHost) ->
 			owners = Owners,
 			options = Options}
 		end,
-	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]);
+	    mnesia:transform_table(pubsub_node, F, [nodeid, id, parents, type, owners, options]),
+	    rename_default_nodeplugin();
 	_ ->
 	    ok
     end.
+
+rename_default_nodeplugin() ->
+%    lists:foreach(fun(Node) ->
+%	mnesia:dirty_write(Node#pubsub_node{type = "hometree"})
+%    end, mnesia:dirty_match_object(#pubsub_node{type = "default", _ = '_'})).
+    ok.
 
 update_state_database(_Host, _ServerHost) ->
     case catch mnesia:table_info(pubsub_state, attributes) of
@@ -2669,16 +2674,23 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-			     case lists:member(Owner, node_owners_call(Type, NodeId)) of
-				 true ->
-				     lists:foreach(fun({JID, Subscription, SubId}) ->
-							   node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId])
-						   end, Entities),
-				     {result, []};
-				 _ ->
-				     {error, ?ERR_FORBIDDEN}
-			     end
-		     end,
+			    case lists:member(Owner, node_owners_call(Type, NodeId)) of
+				true ->
+				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
+
+						    case node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId]) of
+							{error, Err} -> [{error, Err} | Acc];
+							_ -> Acc
+						    end
+						end, [], Entities),
+				    case Result of
+					[] -> {result, []};
+					_ -> {error, ?ERR_NOT_ACCEPTABLE}
+				    end;
+				_ ->
+				    {error, ?ERR_FORBIDDEN}
+			    end
+		    end,
 	    case transaction(Host, Node, Action, sync_dirty) of
 		{result, {_, Result}} -> {result, Result};
 		Other -> Other
