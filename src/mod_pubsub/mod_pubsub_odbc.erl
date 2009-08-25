@@ -2673,6 +2673,15 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	error ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
+	    Notify = fun(JID, Sub, _SubId) ->
+		Stanza = {xmlelement, "message", [],
+			    [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
+				[{xmlelement, "subscription",
+				    [{"jid", jlib:jid_to_string(JID)}, 
+				    %{"subid", SubId},
+				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
+		ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza}
+	    end,
 	    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
 			    case lists:member(Owner, node_owners_call(Type, NodeId)) of
 				true ->
@@ -2680,7 +2689,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 
 						    case node_call(Type, set_subscriptions, [NodeId, JID, Subscription, SubId]) of
 							{error, Err} -> [{error, Err} | Acc];
-							_ -> Acc
+							_ -> Notify(JID, Subscription, SubId), Acc
 						    end
 						end, [], Entities),
 				    case Result of
