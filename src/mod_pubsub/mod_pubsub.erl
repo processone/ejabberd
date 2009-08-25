@@ -3632,8 +3632,9 @@ itemsEls(Items) ->
 	{xmlelement, "item", itemAttr(ItemId), Payload}
     end, Items).
 
-add_headers({xmlelement, Name, Attrs, Els}, Headers) ->
-    {xmlelement, Name, Attrs, Els ++ Headers}.
+add_headers({xmlelement, Name, Attrs, Els}, HeaderEls) ->
+    HeaderEl = {xmlelement, "headers", [{"xmlns", ?NS_SHIM}], HeaderEls},
+    {xmlelement, Name, Attrs, [HeaderEl | Els]}.
 
 collection_shim(Node, Nodes) ->
     [{xmlelement, "header", [{"name", "Collection"}],
