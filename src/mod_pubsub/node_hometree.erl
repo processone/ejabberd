@@ -460,7 +460,7 @@ delete_subscription(SubKey, NodeID, {Subscription, SubId}, SubState) ->
 %% <p>In the default plugin module, the record is unchanged.</p>
 publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
     SubKey = jlib:short_prepd_jid(Publisher),
-    GenKey = jlib:short_prepd_bare_jid(SubKey),
+    GenKey = jlib:short_prepd_bare_jid(Publisher),
     GenState = get_state(NodeId, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;

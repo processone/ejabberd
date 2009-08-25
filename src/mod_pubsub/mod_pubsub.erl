@@ -2037,7 +2037,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			    node_call(Type, publish_item, [NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload])
 		    end
 	    end,
-    ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
+    ServerHostB = list_to_binary(ServerHost),
+    ejabberd_hooks:run(pubsub_publish_item, ServerHostB, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
     Reply = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 		[#xmlel{ns = ?NS_PUBSUB, name = 'publish', attrs = nodeAttr(Node), children =
 		    [#xmlel{ns = ?NS_PUBSUB, name = 'item', attrs = itemAttr(ItemId)}]}]},
