@@ -91,7 +91,7 @@
 %%% <p>The <tt>parentid</tt> and <tt>type</tt> fields are indexed.</p>
 -record(pubsub_node, {nodeid,
 		      id,
-		      parent,
+		      parents = [],
 		      type = "flat",
 		      owners = [],
 		      options = []
@@ -101,13 +101,13 @@
 %%%    stateid = {ljid(), nodeidx()}},
 %%%    items = [ItemId::string()],
 %%%    affiliation = affiliation(),
-%%%    subscription = subscription()}.
+%%%    subscriptions = [subscription()]}.
 %%% <p>This is the format of the <tt>affiliations</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 -record(pubsub_state, {stateid,
 		       items = [],
 		       affiliation = none,
-		       subscription = none
+		       subscriptions = none
 }).
 
 %%% @type pubsubItem() = #pubsub_item{
@@ -123,3 +123,11 @@
 		      payload = []
 		     }).
 
+%% @type pubsubSubscription() = #pubsub_subscription{
+%%     subid     = string(),
+%%     state_key = {ljid(), pubsubNodeId()},
+%%     options   = [{atom(), term()}]
+%% }.
+%% <p>This is the format of the <tt>subscriptions</tt> table. The type of the
+%% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
+-record(pubsub_subscription, {subid, options}).

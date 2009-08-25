@@ -43,7 +43,7 @@
 	 create_node/2,
 	 delete_node/1,
 	 purge_node/2,
-	 subscribe_node/7,
+	 subscribe_node/8,
 	 unsubscribe_node/4,
 	 publish_item/6,
 	 delete_item/4,
@@ -54,8 +54,9 @@
 	 set_affiliation/3,
 	 get_entity_subscriptions/2,
 	 get_node_subscriptions/1,
-	 get_subscription/2,
-	 set_subscription/3,
+	 get_subscriptions/2,
+	 set_subscriptions/4,
+	 get_pending_nodes/2,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -77,8 +78,7 @@ terminate(Host, ServerHost) ->
     ok.
 
 options() ->
-    [{node_type, pep},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, false},
@@ -146,10 +146,10 @@ delete_node(Removed) ->
     end.
 
 subscribe_node(NodeId, Sender, Subscriber, AccessModel,
-	       SendLast, PresenceSubscription, RosterGroup) ->
+	       SendLast, PresenceSubscription, RosterGroup, Options) ->
     node_hometree:subscribe_node(
       NodeId, Sender, Subscriber, AccessModel, SendLast,
-      PresenceSubscription, RosterGroup).
+      PresenceSubscription, RosterGroup, Options).
 
 unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
     case node_hometree:unsubscribe_node(NodeId, Sender, Subscriber, SubID) of
@@ -176,7 +176,7 @@ get_entity_affiliations(_Host, Owner) ->
     States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
     NodeTree = case ets:lookup(gen_mod:get_module_proc(D, config), nodetree) of
 	    [{nodetree, N}] -> N;
-	    _ -> nodetree_default
+	    _ -> nodetree_tree
 	end,
     Reply = lists:foldl(fun(#pubsub_state{stateid = {_, N}, affiliation = A}, Acc) ->
 	case NodeTree:get_node(N) of
@@ -208,11 +208,18 @@ get_entity_subscriptions(_Host, Owner) ->
     end,
     NodeTree = case ets:lookup(gen_mod:get_module_proc(D, config), nodetree) of
 	    [{nodetree, N}] -> N;
-	    _ -> nodetree_default
+	    _ -> nodetree_tree
 	end,
-    Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscription = S}, Acc) ->
+    Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscriptions = Ss}, Acc) ->
 	case NodeTree:get_node(N) of
-	    #pubsub_node{nodeid = {{_, D, _}, _}} = Node -> [{Node, S, J}|Acc];
+	    #pubsub_node{nodeid = {{_, D, _}, _}} = Node ->
+			lists:foldl(fun({subscribed, SubID}, Acc2) ->
+					   [{Node, subscribed, SubID, J} | Acc2];
+					({pending, _SubID}, Acc2) ->
+					    [{Node, pending, J} | Acc2];
+					(S, Acc2) ->
+					    [{Node, S, J} | Acc2]
+				    end, Acc, Ss);
 	    _ -> Acc
 	end
     end, [], States),
@@ -226,11 +233,14 @@ get_node_subscriptions(NodeId) ->
     %% DO NOT REMOVE
     node_hometree:get_node_subscriptions(NodeId).
 
-get_subscription(NodeId, Owner) ->
-    node_hometree:get_subscription(NodeId, Owner).
+get_subscriptions(NodeId, Owner) ->
+    node_hometree:get_subscriptions(NodeId, Owner).
 
-set_subscription(NodeId, Owner, Subscription) ->
-    node_hometree:set_subscription(NodeId, Owner, Subscription).
+set_subscriptions(NodeId, Owner, Subscription, SubId) ->
+    node_hometree:set_subscriptions(NodeId, Owner, Subscription, SubId).
+
+get_pending_nodes(Host, Owner) ->
+    node_hometree:get_pending_nodes(Host, Owner).
 
 get_states(NodeId) ->
     node_hometree:get_states(NodeId).
@@ -279,4 +289,3 @@ complain_if_modcaps_disabled(ServerHost) ->
 	_ ->
 	    ok
     end.
-

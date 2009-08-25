@@ -36,6 +36,7 @@
 -module(nodetree_tree).
 -author('christophe.romain@process-one.net').
 
+-include_lib("stdlib/include/qlc.hrl").
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("pubsub.hrl").
@@ -51,6 +52,8 @@
 	 get_node/1,
 	 get_nodes/2,
 	 get_nodes/1,
+	 get_parentnodes/3,
+	 get_parentnodes_tree/3,
 	 get_subnodes/3,
 	 get_subnodes_tree/3,
 	 create_node/5,
@@ -125,6 +128,29 @@ get_nodes(Host, _From) ->
 get_nodes(Host) ->
     mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}).
 
+%% @spec (Host, Node, From) -> [{Depth, Record}] | {error, Reason}
+%%     Host   = mod_pubsub:host() | mod_pubsub:jid()
+%%     Node   = mod_pubsub:pubsubNode()
+%%     From   = mod_pubsub:jid()
+%%     Depth  = integer()
+%%     Record = pubsubNode()
+%% @doc <p>Default node tree does not handle parents, return empty list.</p>
+get_parentnodes(_Host, _Node, _From) ->
+    [].
+
+%% @spec (Host, Node, From) -> [{Depth, Record}] | {error, Reason}
+%%     Host   = mod_pubsub:host() | mod_pubsub:jid()
+%%     Node   = mod_pubsub:pubsubNode()
+%%     From   = mod_pubsub:jid()
+%%     Depth  = integer()
+%%     Record = pubsubNode()
+%% @doc <p>Default node tree does not handle parents, return a list
+%% containing just this node.</p>
+get_parentnodes_tree(Host, Node, From) ->
+    case get_node(Host, Node, From) of
+	N when is_record(N, pubsub_node) -> [{0, [N]}];
+	Error -> Error
+    end.
 %% @spec (Host, Node, From) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
@@ -132,9 +158,13 @@ get_nodes(Host) ->
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
 get_subnodes(Host, Node) ->
-    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, parent = Node, _ = '_'}).
+    Q = qlc:q([N || #pubsub_node{nodeid = {NHost, _},
+				 parents = Parents} = N <- mnesia:table(pubsub_node),
+		       Host == NHost,
+		       lists:member(Node, Parents)]),
+    qlc:e(Q).
 
-%% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
+%% @spec (Host, Index) -> [pubsubNodeIdx()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
@@ -172,7 +202,7 @@ create_node(Host, Node, Type, Owner, Options) ->
 			_ ->
 			    case mnesia:read({pubsub_node, {Host, Parent}}) of
 				[] -> {Parent, false};
-				_ -> {Parent, true}
+				_ -> {Parent, lists:member(BJID, Parent#pubsub_node.owners)}
 			    end
 			end
 		end,
@@ -181,7 +211,7 @@ create_node(Host, Node, Type, Owner, Options) ->
 		    NodeId = pubsub_index:new(node),
 		    mnesia:write(#pubsub_node{nodeid = {Host, Node},
 					      id = NodeId,
-					      parent = ParentNode,
+					      parents = [ParentNode],
 					      type = Type,
 					      owners = [BJID],
 					      options = Options}),
