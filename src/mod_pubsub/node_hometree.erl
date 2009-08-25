@@ -536,7 +536,7 @@ remove_extra_items(NodeId, MaxItems, ItemIds) ->
 %%	 ItemId = string()
 %% @doc <p>Triggers item deletion.</p>
 %% <p>Default plugin: The user performing the deletion must be the node owner
-%% or a publisher.</p>
+%% or a publisher, or PublishModel being open.</p>
 delete_item(NodeId, Publisher, PublishModel, ItemId) ->
     GenKey = jlib:short_prepd_bare_jid(Publisher),
     GenState = get_state(NodeId, GenKey),
@@ -696,7 +696,10 @@ set_subscriptions(NodeId, Owner, Subscription, SubId) ->
     SubState = get_state(NodeId, SubKey),
     case {SubId, SubState#pubsub_state.subscriptions} of
 	{_, []} ->
-	    {error, 'item-not-found'};
+	    case Subscription of
+		none -> ok;
+		_ -> new_subscription(NodeId, Owner, Subscription, SubState)
+	    end;
 	{"", [{_, SID}]} ->
 	    case Subscription of
 		none -> unsub_with_subid(NodeId, SID, SubState);
@@ -721,8 +724,14 @@ replace_subscription(_, [], Acc) ->
 replace_subscription({Sub, SubId}, [{_, SubID} | T], Acc) ->
     replace_subscription({Sub, SubId}, T, [{Sub, SubID} | Acc]).
 
+new_subscription(NodeId, Owner, Subscription, SubState) ->
+    SubId = pubsub_subscription:add_subscription(Owner, NodeId, []),
+    Subscriptions = SubState#pubsub_state.subscriptions,
+    set_state(SubState#pubsub_state{subscriptions = [{Subscription, SubId} | Subscriptions]}),
+    {Subscription, SubId}.
+
 unsub_with_subid(NodeId, SubId, SubState) ->
-    pubsub_subscription:unsubscribe_node(SubState#pubsub_state.stateid,
+    pubsub_subscription:delete_subscription(SubState#pubsub_state.stateid,
 					 NodeId, SubId),
     NewSubs = lists:filter(fun ({_, SID}) -> SubId =/= SID end,
 			   SubState#pubsub_state.subscriptions),

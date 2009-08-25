@@ -107,7 +107,7 @@
 -record(pubsub_state, {stateid,
 		       items = [],
 		       affiliation = none,
-		       subscriptions = none
+		       subscriptions = []
 }).
 
 %%% @type pubsubItem() = #pubsub_item{
