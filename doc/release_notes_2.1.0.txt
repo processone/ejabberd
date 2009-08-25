@@ -50,6 +50,7 @@
 - Added option s2s_dns_options to define DNS timeout and retries
 - Added option ERL_OPTIONS to ejabberdctl.cfg
 - Added option FIREWALL_WINDOW to ejabberdctl.cfg
+- Added option EJABBERD_PID_PATH to ejabberdctl.cfg
 - Deleted option user_max_messages of mod_offline
 - Check certfiles are readable on server start and listener start
 - Config file management mix file reading and sanity check
@@ -147,6 +148,7 @@
   no need to use root account to.
 - Only try to install epam if pam was enabled in configure script
 - Spool, config and log dirs: owner writes, group reads, others do nothing.
+- Provides an example ejabberd.init file
 
 * S2S
 - Option to define s2s outgoing behaviour: IPv4, IPv6 and timeout
@@ -212,6 +214,9 @@
 
 - mod_offline has a new option: access_max_user_messages.
   The old option user_max_messages is no longer supported.
+
+- If you upgrade from ejabberd trunk SVN, you must execute this:
+  $ ejabberdctl rename_default_nodeplugin
 
 - Default installation directories changed a bit:
   * The Mnesia spool files that were previously stored in
