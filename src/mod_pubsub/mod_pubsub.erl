@@ -2395,7 +2395,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 			      #xmlel{name = 'affiliation', attrs = Attrs} ->
 				  JID = try
 				      exmpp_jid:parse(
-					exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""))
+					exmpp_xml:get_attribute_from_list(Attrs, 'jid', ""))
 				  catch
 				      _:_ -> error
 				  end,
@@ -2406,7 +2406,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 				      (Affiliation == false) ->
 					  error;
 				      true ->
-					  [{jlib:short_prepd_jid(JID), Affiliation} | Acc]
+					  [{JID, Affiliation} | Acc]
 				  end
 			  end
 		  end
@@ -2420,7 +2420,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 			    true ->
 				lists:foreach(
 				    fun({JID, Affiliation}) ->
-					node_call(Type, set_affiliation, [NodeId, JID, Affiliation]),
+					{result, _} = node_call(Type, set_affiliation, [NodeId, JID, Affiliation]),
 					case Affiliation of
 					    owner ->
 						NewOwner = jlib:short_prepd_bare_jid(JID),

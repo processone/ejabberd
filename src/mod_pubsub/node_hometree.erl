@@ -619,7 +619,7 @@ get_affiliation(NodeId, Owner) ->
     GenState = get_state(NodeId, GenKey),
     {result, GenState#pubsub_state.affiliation}.
 
-set_affiliation(NodeId, Owner, Affiliation) ->
+set_affiliation(NodeId, Owner, Affiliation) when ?IS_JID(Owner)->
     GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(NodeId, GenKey),
     case {Affiliation, GenState#pubsub_state.subscriptions} of
