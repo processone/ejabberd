@@ -1029,7 +1029,7 @@ node_disco_info(Host, Node, From, Identity, Features) ->
 			    [];
 			true ->
 			    Types =
-				case tree_call(Host, get_subnodes, [NodeId, From]) of
+				case tree_call(Host, get_subnodes, [Host, Node, From]) of
 				    [] ->
 					["leaf"]; %% No sub-nodes: it's a leaf node
 				    _ ->
@@ -1117,7 +1117,7 @@ iq_disco_items(Host, Item, From) ->
 					  RN = lists:last(SubNode),
 					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('node', SN), 
 								?XMLATTR('name', RN)]}
-				  end, tree_call(Host, get_subnodes, [NodeId, From])),
+				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
 					  SN = node_to_string(Node) ++ "!" ++ RN,
