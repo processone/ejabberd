@@ -454,8 +454,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 							    AccessCreate, From,
 							    Room) of
 				true ->
-				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
-				    {ok, Pid} = mod_muc_room:start(
+				    {ok, Pid} = start_new_room(
 						  Host, ServerHost, Access,
 						  Room, HistorySize,
 						  RoomShaper, From,
@@ -525,6 +524,23 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 			      ok
 		      end
 	      end, Rs)
+    end.
+
+start_new_room(Host, ServerHost, Access, Room,
+	       HistorySize, RoomShaper, From,
+	       Nick, DefRoomOpts) ->
+    case mnesia:dirty_read(muc_room, {Room, Host}) of
+	[] ->
+	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
+	    mod_muc_room:start(Host, ServerHost, Access,
+			       Room, HistorySize,
+			       RoomShaper, From,
+			       Nick, DefRoomOpts);
+	[#muc_room{opts = Opts}|_] ->
+	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
+	    mod_muc_room:start(Host, ServerHost, Access,
+			       Room, HistorySize,
+			       RoomShaper, Opts)
     end.
 
 register_room(Host, Room, Pid) when is_binary(Host), is_binary(Room) ->
