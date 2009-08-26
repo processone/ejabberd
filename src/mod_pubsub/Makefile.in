@@ -25,7 +25,7 @@ ERLBEHAVBEAMS = $(addprefix $(OUTDIR)/,$(ERLBEHAVS:.erl=.beam))
 BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
 
 
-all:    $(ERLBEHAVBEAMS) $(BEAMS)
+all: mod_pubsub_odbc.erl $(ERLBEHAVBEAMS) $(BEAMS)
 
 $(BEAMS): $(ERLBEHAVBEAMS)
 
@@ -37,6 +37,9 @@ clean:
 
 distclean: clean
 	rm -f Makefile
+
+mod_pubsub_odbc.erl:
+	patch -o mod_pubsub_odbc.erl mod_pubsub.erl pubsub_odbc.patch
 
 TAGS:
 	etags *.erl
