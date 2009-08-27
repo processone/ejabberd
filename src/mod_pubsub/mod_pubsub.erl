@@ -105,7 +105,8 @@
 	 string_to_subscription/1,
 	 string_to_affiliation/1,
 	 extended_error/2,
-	 extended_error/3
+	 extended_error/3,
+	 rename_default_nodeplugin/0
 	]).
 
 %% API and gen_server callbacks
@@ -2720,7 +2721,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    {error, 'bad-request'};
 	_ ->
 	    Notify = fun(JID, Sub, _SubId) ->
-	    	Stanza = #xmlel{ns = ?NS_JABBER_CLIENT, 
+		Stanza = #xmlel{ns = ?NS_JABBER_CLIENT, 
 			name = 'message',
 			children = 
 			 [#xmlel{ns = ?NS_PUBSUB, 
@@ -2730,7 +2731,6 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 					name = 'subscription',
 					attrs = [?XMLATTR('jid', exmpp_jid:to_binary(JID)),
 						 ?XMLATTR('subsription', subscription_to_string(Sub)) | nodeAttr(Node)]}]}]},
-
 		ejabberd_router ! {route, service_jid(Host), JID, Stanza}
 	    end,
 	    Action = fun(#pubsub_node{owners = Owners, type = Type, id = NodeId}) ->
