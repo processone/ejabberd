@@ -145,10 +145,12 @@ CREATE TABLE private_storage (
 CREATE INDEX i_private_storage_username ON private_storage USING btree (username);
 CREATE UNIQUE INDEX i_private_storage_username_namespace ON private_storage USING btree (username, namespace);
 
+
 CREATE TABLE roster_version (
     username text PRIMARY KEY,
     version text NOT NULL
 );
+
 -- To update from 0.9.8:
 -- CREATE SEQUENCE spool_seq_seq;
 -- ALTER TABLE spool ADD COLUMN seq integer;
@@ -160,3 +162,54 @@ CREATE TABLE roster_version (
 -- ALTER TABLE rosterusers ADD COLUMN askmessage text;
 -- UPDATE rosterusers SET askmessage = '';
 -- ALTER TABLE rosterusers ALTER COLUMN askmessage SET NOT NULL;
+
+CREATE TABLE pubsub_node (
+  host text,
+  node text,
+  parent text,
+  "type" text,
+  nodeid SERIAL UNIQUE
+);
+CREATE INDEX i_pubsub_node_parent ON pubsub_node USING btree (parent);
+CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node USING btree (host, node);
+
+CREATE TABLE pubsub_node_option (
+  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
+  name text,
+  val text
+);
+CREATE INDEX i_pubsub_node_option_nodeid ON pubsub_node_option USING btree (nodeid);
+
+CREATE TABLE pubsub_node_owner (
+  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
+  owner text
+);
+CREATE INDEX i_pubsub_node_owner_nodeid ON pubsub_node_owner USING btree (nodeid);
+
+CREATE TABLE pubsub_state (
+  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
+  jid text,
+  affiliation character(1),
+  subscriptions text,
+  stateid SERIAL UNIQUE
+);
+CREATE INDEX i_pubsub_state_jid ON pubsub_state USING btree (jid);
+CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state USING btree (nodeid, jid);
+
+CREATE TABLE pubsub_item (
+  nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
+  itemid text, 
+  publisher text,
+  creation text,
+  modification text,
+  payload text
+);
+CREATE INDEX i_pubsub_item_itemid ON pubsub_item USING btree (itemid);
+CREATE UNIQUE INDEX i_pubsub_item_tuple ON pubsub_item USING btree (nodeid, itemid);
+
+CREATE TABLE pubsub_subscription_opt (
+  subid text,
+  opt_name varchar(32),
+  opt_value text
+);
+CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt USING btree (subid, opt_name);
