@@ -37,7 +37,7 @@
 	 create_node/2,
 	 delete_node/1,
 	 purge_node/2,
-	 subscribe_node/7,
+	 subscribe_node/8,
 	 unsubscribe_node/4,
 	 publish_item/6,
 	 delete_item/4,
@@ -49,8 +49,9 @@
 	 get_entity_subscriptions/2,
 	 get_entity_subscriptions_for_send_last/2,
 	 get_node_subscriptions/1,
-	 get_subscription/2,
-	 set_subscription/3,
+	 get_subscriptions/2,
+	 set_subscriptions/4,
+	 get_pending_nodes/2,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -112,8 +113,8 @@ create_node(NodeId, Owner) ->
 delete_node(Removed) ->
     node_hometree_odbc:delete_node(Removed).
 
-subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
-    node_hometree_odbc:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup).
+subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
+    node_hometree_odbc:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options).
 
 unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
     node_hometree_odbc:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
@@ -151,11 +152,14 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
 get_node_subscriptions(NodeId) ->
     node_hometree_odbc:get_node_subscriptions(NodeId).
 
-get_subscription(NodeId, Owner) ->
-    node_hometree_odbc:get_subscription(NodeId, Owner).
+get_subscriptions(NodeId, Owner) ->
+    node_hometree_odbc:get_subscriptions(NodeId, Owner).
 
-set_subscription(NodeId, Owner, Subscription) ->
-    node_hometree_odbc:set_subscription(NodeId, Owner, Subscription).
+set_subscriptions(NodeId, Owner, Subscription, SubId) ->
+    node_hometree_odbc:set_subscriptions(NodeId, Owner, Subscription, SubId).
+
+get_pending_nodes(Host, Owner) ->
+    node_hometree_odbc:get_pending_nodes(Host, Owner).
 
 get_states(NodeId) ->
     node_hometree_odbc:get_states(NodeId).
