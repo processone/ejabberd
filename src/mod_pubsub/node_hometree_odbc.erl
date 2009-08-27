@@ -392,8 +392,7 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
 		    delete_subscription(SubKey, NodeId, S, Affiliation, Subscriptions),
 		    {result, default};
 		false ->
-		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST,
-					  "not-subscribed")}
+		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST, "not-subscribed")}
 	    end;
 	%% No subid supplied, but there's only one matching
 	%% subscription, so use that.
@@ -702,10 +701,18 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
     end,
     Reply = case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected, ["node", "type", "nodeid", "jid", "subscriptions"], RItems} ->
-	    lists:map(fun({N, T, I, J, S}) ->
+	    lists:foldl(fun({N, T, I, J, S}, Acc) ->
 		Node = nodetree_tree_odbc:raw_to_node(Host, {N, "", T, I}),
-		{Node, decode_subscriptions(S), decode_jid(J)}
-	    end, RItems);
+		Jid = decode_jid(J),
+		case decode_subscriptions(S) of
+		    [] ->
+			[{Node, none, Jid}|Acc];
+		    Subs ->
+			lists:foldl(fun({Sub, SubId}, Acc2) -> [{Node, Sub, SubId, Jid}|Acc2];
+				       (Sub, Acc2) -> [{Node, Sub, Jid}|Acc2]
+			end, Acc, Subs)
+		end
+	    end, [], RItems);
 	_ ->
 	    []
 	end,
@@ -717,8 +724,17 @@ get_node_subscriptions(NodeId) ->
 		  "from pubsub_state "
 		  "where nodeid='", NodeId, "';"]) of
 	    {selected, ["jid", "subscriptions"], RItems} ->
-		lists:map(fun({J, S}) -> {decode_jid(J), decode_subscriptions(S)} end, RItems);
-    % TODO {J, S, SubId}
+		lists:foldl(fun({J, S}, Acc) ->
+		    Jid = decode_jid(J),
+		    case decode_subscriptions(S) of
+			[] ->
+			    [{Jid, none}|Acc];
+			Subs ->
+			    lists:foldl(fun({Sub, SubId}, Acc2) -> [{Jid, Sub, SubId}|Acc2];
+					   (Sub, Acc2) -> [{Jid, Sub}|Acc2]
+			    end, Acc, Subs)
+		    end
+		end, [], RItems);
 	    _ ->
 		[]
     end,
@@ -731,7 +747,7 @@ get_subscriptions(NodeId, Owner) ->
 		 ["select subscriptions from pubsub_state "
 		  "where nodeid='", NodeId, "' and jid='", J, "';"]) of
 	{selected, ["subscriptions"], [{S}]} -> decode_subscriptions(S);
-	_ -> none
+	_ -> []
     end,
     {result, Reply}.
 
@@ -1223,7 +1239,7 @@ select_affiliation_subscriptions(NodeId, JID) ->
 	{selected, ["affiliation", "subscriptions"], [{A, S}]} ->
 	    {decode_affiliation(A), decode_subscriptions(S)};
 	_ ->
-	    {none, none}
+	    {none, []}
     end.
 select_affiliation_subscriptions(NodeId, JID, JID) ->
     select_affiliation_subscriptions(NodeId, JID);

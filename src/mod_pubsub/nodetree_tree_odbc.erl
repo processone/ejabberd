@@ -88,13 +88,11 @@ options() ->
     [{virtual_tree, false},
      {odbc, true}].
 
-
-get_node(Host, Node, _From) ->
-    get_node(Host, Node).
-
 %% @spec (Host, Node) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
 get_node(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -124,10 +122,10 @@ get_node(NodeId) ->
 	    {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
-get_nodes(Host, _From) ->
-    get_nodes(Host).
 %% @spec (Host) -> [pubsubNode()] | {error, Reason}
 %%	 Host = mod_pubsub:host() | mod_pubsub:jid()
+get_nodes(Host, _From) ->
+    get_nodes(Host).
 get_nodes(Host) ->
     H = ?PUBSUB:escape(Host),
     case catch ejabberd_odbc:sql_query_t(
@@ -162,7 +160,7 @@ get_parentnodes(_Host, _Node, _From) ->
 get_parentnodes_tree(Host, Node, From) ->
     case get_node(Host, Node, From) of
 	N when is_record(N, pubsub_node) -> [{0, [N]}];
-	Error -> Error
+	_Error -> []
     end.
 
 get_subnodes(Host, Node, _From) ->

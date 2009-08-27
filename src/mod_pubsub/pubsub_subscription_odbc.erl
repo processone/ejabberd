@@ -88,14 +88,18 @@ init() ->
 
 subscribe_node(_JID, _NodeID, Options) ->
     SubId = make_subid(),
-    ok = ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubId, options = Options}),
+    ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubId, options = Options}),
     {result, SubId}.
 
 
 unsubscribe_node(_JID, _NodeID, SubID) ->
-    {ok, Sub} = ?DB_MOD:read_subscription(SubID),
-    ok = ?DB_MOD:delete_subscription(SubID),
-    {result, Sub}.
+    case ?DB_MOD:read_subscription(SubID) of
+	{ok, Sub} ->
+	    ?DB_MOD:delete_subscription(SubID),
+	    {result, Sub};
+	notfound ->
+	    {error, notfound}
+    end.
 
 get_subscription(_JID, _NodeID, SubID) ->
     case ?DB_MOD:read_subscription(SubID) of
@@ -107,7 +111,7 @@ get_subscription(_JID, _NodeID, SubID) ->
 set_subscription(_JID, _NodeID, SubID, Options) ->
     case ?DB_MOD:read_subscription(SubID) of
 	{ok, _} ->
-	     ok = ?DB_MOD:update_subscription(#pubsub_subscription{subid = SubID, options = Options}),
+	     ?DB_MOD:update_subscription(#pubsub_subscription{subid = SubID, options = Options}),
 	     {result, ok};
 	notfound -> 
 	     {error, notfound}
