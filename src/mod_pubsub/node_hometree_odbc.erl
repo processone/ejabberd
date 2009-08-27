@@ -741,8 +741,10 @@ set_subscriptions(NodeId, Owner, Subscription, SubId) ->
     SubState = get_state_without_itemids(NodeId, SubKey),
     case {SubId, SubState#pubsub_state.subscriptions} of
 	{_, []} ->
-        %% pablo  TODO, there seems that commit 2528 was applied to mnesia but not ported to odbc 
-        {error, 'item-not-found'};
+	    case Subscription of
+		none -> {error, ?ERR_EXTENDED('bad_request', "not-subscribed")};
+		_ -> new_subscription(NodeId, Owner, Subscription, SubState)
+	    end;
 	{"", [{_, SID}]} ->
 	    case Subscription of
 		none -> unsub_with_subid(NodeId, SID, SubState);
@@ -767,6 +769,16 @@ replace_subscription(_, [], Acc) ->
 replace_subscription({Sub, SubId}, [{_, SubID} | T], Acc) ->
     replace_subscription({Sub, SubId}, T, [{Sub, SubID} | Acc]).
 
+new_subscription(NodeId, Owner, Subscription, SubState) ->
+    case pubsub_subscription_odbc:subscribe_node(Owner, NodeId, []) of
+	{result, SubId} ->
+	    Subscriptions = SubState#pubsub_state.subscriptions,
+	    set_state(SubState#pubsub_state{subscriptions = [{Subscription, SubId} | Subscriptions]}),
+	    {Subscription, SubId};
+	_ ->
+	    {error, 'internal-server-error'}
+    end.
+
 unsub_with_subid(NodeId, SubId, SubState) ->
     pubsub_subscription_odbc:unsubscribe_node(SubState#pubsub_state.stateid,
 					 NodeId, SubId),
@@ -778,6 +790,7 @@ unsub_with_subid(NodeId, SubId, SubState) ->
 	_ ->
 	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
+
 %% @spec (Host, Owner) -> {result, [Node]} | {error, Reason}
 %%       Host = host()
 %%       Owner = jid()
