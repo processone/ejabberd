@@ -1434,12 +1434,21 @@ send_pending_auth_events(Host, Node, Owner) ->
     ?DEBUG("Sending pending auth events for ~s on ~s:~s",
 	   [exmpp_jid:jid_to_string(Owner), Host, node_to_string(Node)]),
     Action =
-	fun (#pubsub_node{id = NodeID, type = Type} = N) ->
+	fun(#pubsub_node{id = NodeID, type = Type}) ->
 		case lists:member("get-pending", features(Type)) of
 		    true ->
 			case node_call(Type, get_affiliation, [NodeID, Owner]) of
 			    {result, owner} ->
-				broadcast_pending_auth_events(N),
+				{result, Subscriptions} = node_call(Type, get_node_subscriptions, [NodeID]),
+				lists:foreach(fun({J, pending, _SubID}) ->
+						    {U, S, R} = J,
+						    send_authorization_request(Node, exmpp_jid:make(U,S,R));
+						 ({J, pending}) ->
+						    {U, S, R} = J,
+						    send_authorization_request(Node, exmpp_jid:make(U,S,R));
+						 (_) ->
+						    ok
+					    end, Subscriptions),
 				{result, ok};
 			    _ ->
 				{error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')}
@@ -1454,16 +1463,6 @@ send_pending_auth_events(Host, Node, Owner) ->
 	Err ->
 	    Err
     end.
-
-broadcast_pending_auth_events(#pubsub_node{type = Type, id = NodeID} = Node) ->
-    {result, Subscriptions} = node_call(Type, get_node_subscriptions, [NodeID]),
-    lists:foreach(fun ({J, pending, _SubID}) ->
-    			  {U, S, R} = J,
-			  send_authorization_request(Node, exmpp_jid:make(U,S,R));
-		      ({J, pending}) ->
-    			  {U, S, R} = J,
-			  send_authorization_request(Node, exmpp_jid:make(U,S,R))
-		  end, Subscriptions).
 
 %%% authorization handling
 
@@ -1795,18 +1794,19 @@ delete_node(_Host, [], _Owner) ->
     {error, 'not-allowed'};
 delete_node(Host, Node, Owner) ->
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-		     SubsByDepth = get_collection_subscriptions(Host, Node),
-		     case node_call(Type, get_affiliation, [NodeId, Owner]) of
-			 {result, owner} ->
-			     Removed = tree_call(Host, delete_node, [Host, Node]),
-			     case node_call(Type, delete_node, [Removed]) of
+		    case node_call(Type, get_affiliation, [NodeId, Owner]) of
+			{result, owner} ->
+			    ParentTree = tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]),
+			    SubsByDepth = [{Depth, [{N, get_node_subs(N)} || N <- Nodes]} || {Depth, Nodes} <- ParentTree],
+			    Removed = tree_call(Host, delete_node, [Host, Node]),
+			    case node_call(Type, delete_node, [Removed]) of
 				{result, Res} -> {result, {SubsByDepth, Res}};
-				Error	 -> Error
-			     end;
-			 _ ->
-			     %% Entity is not an owner
-			     {error, 'forbidden'}
-		     end
+				Error -> Error
+			    end;
+			_ ->
+			    %% Entity is not an owner
+			    {error, 'forbidden'}
+		    end
 	     end,
     Reply = [],
     case transaction(Host, Node, Action, transaction) of
@@ -2559,8 +2559,7 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
     end.
 
 write_sub(Subscriber, NodeID, SubID, Options) ->
-    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID,
-					      Options) of
+    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
 	{error, notfound} ->
 	    {error, extended_error('not-acceptable', "invalid-subid")};
 	{result, _} ->
@@ -3016,24 +3015,28 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
     end.
 
 get_collection_subscriptions(Host, Node) ->
-    lists:map(fun ({Depth, Nodes}) ->
-		{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
-	    end, tree_action(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)])).
-
-get_node_subs(#pubsub_node{type   = Type,
-			   nodeid = {Host, Node},
-			   id     = NodeID}) ->
-    case node_action(Host, Type, get_node_subscriptions, [NodeID]) of
-	{result, Subs} ->
-	    get_options_for_subs(Host, Node, NodeID, Subs);
-	Other ->
-	    Other
+    Action = fun() ->
+	    {result, lists:map(fun({Depth, Nodes}) ->
+			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
+	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
+	end,
+    case transaction(Action, sync_dirty) of
+	{result, CollSubs} -> CollSubs;
+	_ -> []
     end.
 
-get_options_for_subs(_Host, Node, NodeID, Subs) ->
+get_node_subs(#pubsub_node{type   = Type,
+			   id     = NodeID}) ->
+    case node_call(Type, get_node_subscriptions, [NodeID]) of
+	{result, Subs} -> get_options_for_subs(NodeID, Subs);
+	Other -> Other
+    end.
+
+get_options_for_subs(NodeID, Subs) ->
     lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
-			case pubsub_subscription:get_subscription(JID, NodeID, SubID) of
-			    {result, #pubsub_subscription{options = Options}} -> [{JID, Node, Options} | Acc];
+			case pubsub_subscription:read_subscription(JID, NodeID, SubID) of
+			    {error, notfound} -> [{JID, SubID, []} | Acc];
+			    #pubsub_subscription{options = Options} -> [{JID, SubID, Options} | Acc];
 			    _ -> Acc
 			end;
 		    (_, Acc) ->
@@ -3063,8 +3066,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
     %% Handles explicit subscriptions
-    FilteredSubsByDepth = depths_to_deliver(NotifyType, SubsByDepth),
-    NodesByJID = collate_subs_by_jid(FilteredSubsByDepth),
+    NodesByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
     lists:foreach(fun ({LJID, Nodes}) ->
 			  LJIDs = case BroadcastAll of
 				      true ->
@@ -3125,36 +3127,28 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 	    ok
     end.
 
-depths_to_deliver(NotifyType, SubsByDepth) ->
-    NodesToDeliver =
-	fun (Depth, Node, Subs, Acc) ->
-		lists:foldl(fun ({LJID, _Node, SubOptions} = S, Acc2) ->
+subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
+    NodesToDeliver = fun(Depth, Node, Subs, Acc) ->
+		NodeId = case Node#pubsub_node.nodeid of
+		    {_, N} -> N;
+		    Other -> Other
+		end,
+		NodeOptions = Node#pubsub_node.options,
+		lists:foldl(fun({LJID, _SubID, SubOptions}, Acc2) ->
 				     case is_to_deliver(LJID, NotifyType, Depth,
-							Node#pubsub_node.options,
-							SubOptions) of
-					 true  -> [S | Acc2];
+							NodeOptions, SubOptions) of
+					 true  -> [{LJID, NodeId}|Acc2];
 					 false -> Acc2
 				     end
 			     end, Acc, Subs)
 	end,
-
-    DepthsToDeliver =
-	fun ({Depth, SubsByNode}, Acc) ->
-		lists:foldl(fun ({Node, Subs}, Acc2) ->
+    DepthsToDeliver = fun({Depth, SubsByNode}, Acc) ->
+		lists:foldl(fun({Node, Subs}, Acc2) ->
 				    NodesToDeliver(Depth, Node, Subs, Acc2)
 			    end, Acc, SubsByNode)
 	end,
-
-    lists:foldl(DepthsToDeliver, [], SubsByDepth).
-
-collate_subs_by_jid(SubsByDepth) ->
-    lists:foldl(fun ({JID, Node, _Options}, Acc) ->
-			OldNodes = case lists:keysearch(JID, 1, Acc) of
-				       {value, {JID, Nodes}} -> Nodes;
-				       false		 -> []
-				   end,
-			lists:keystore(JID, 1, Acc, {JID, [Node | OldNodes]})
-		end, [], SubsByDepth).
+    JIDSubs = lists:foldl(DepthsToDeliver, [], SubsByDepth),
+    [{LJID, proplists:append_values(LJID, JIDSubs)} || LJID <- proplists:get_keys(JIDSubs)].
 
 %% If we don't know the resource, just pick first if any
 %% If no resource available, check if caps anyway (remote online)

@@ -59,7 +59,8 @@
 	 get_item/7,
 	 get_item/2,
 	 set_item/1,
-	 get_item_name/3
+	 get_item_name/3,
+	 get_last_items/3
 	]).
 
 
@@ -181,3 +182,6 @@ set_item(Item) ->
 
 get_item_name(Host, Node, Id) ->
     node_hometree_odbc:get_item_name(Host, Node, Id).
+
+get_last_items(NodeId, From, Count) ->
+    node_hometree_odbc:get_last_items(NodeId, From, Count).

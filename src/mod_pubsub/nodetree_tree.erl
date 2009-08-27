@@ -149,8 +149,9 @@ get_parentnodes(_Host, _Node, _From) ->
 get_parentnodes_tree(Host, Node, From) ->
     case get_node(Host, Node, From) of
 	N when is_record(N, pubsub_node) -> [{0, [N]}];
-	Error -> Error
+	_Error -> []
     end.
+
 %% @spec (Host, Node, From) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
