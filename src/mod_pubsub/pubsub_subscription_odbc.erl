@@ -87,9 +87,9 @@ init() ->
     ok = create_table().
 
 subscribe_node(_JID, _NodeID, Options) ->
-    SubId = make_subid(),
-    ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubId, options = Options}),
-    {result, SubId}.
+    SubID = make_subid(),
+    ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubID, options = Options}),
+    {result, SubID}.
 
 
 unsubscribe_node(_JID, _NodeID, SubID) ->
@@ -114,7 +114,8 @@ set_subscription(_JID, _NodeID, SubID, Options) ->
 	     ?DB_MOD:update_subscription(#pubsub_subscription{subid = SubID, options = Options}),
 	     {result, ok};
 	notfound -> 
-	     {error, notfound}
+	     ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubID, options = Options}),
+	     {result, ok}
     end.
 
 

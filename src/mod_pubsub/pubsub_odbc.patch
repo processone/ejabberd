@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-08-27 23:21:24.000000000 +0200
-+++ mod_pubsub_odbc.erl	2009-08-27 23:36:47.000000000 +0200
+--- mod_pubsub.erl	2009-08-27 23:47:01.000000000 +0200
++++ mod_pubsub_odbc.erl	2009-08-27 23:56:49.000000000 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
  %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -565,7 +565,8 @@
 -    case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
 +    case pubsub_subscription_odbc:get_subscription(Subscriber, NodeID, SubID) of
  	{error, notfound} ->
- 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
++	    pubsub_subscription_odbc:get_options_xform(Lang, []);
  	{result, #pubsub_subscription{options = Options}} ->
 -	    pubsub_subscription:get_options_xform(Lang, Options)
 +	    pubsub_subscription_odbc:get_options_xform(Lang, Options)
@@ -585,12 +586,12 @@
      end.
  
  write_sub(Subscriber, NodeID, SubID, Options) ->
--    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID,
-+    case pubsub_subscription_odbc:set_subscription(Subscriber, NodeID, SubID,
- 					      Options) of
+-    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
++    case pubsub_subscription_odbc:set_subscription(Subscriber, NodeID, SubID, Options) of
  	{error, notfound} ->
  	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-@@ -2681,8 +2505,8 @@
+ 	{result, _} ->
+@@ -2680,8 +2504,8 @@
  				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
  		ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza}
  	    end,
@@ -601,7 +602,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -2964,7 +2788,7 @@
+@@ -2963,7 +2787,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -610,7 +611,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -2978,9 +2802,9 @@
+@@ -2977,9 +2801,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -622,7 +623,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3174,6 +2998,30 @@
+@@ -3173,6 +2997,30 @@
  	    Result
      end.
  
@@ -653,7 +654,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3547,7 +3395,13 @@
+@@ -3546,7 +3394,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -668,7 +669,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3567,13 +3421,13 @@
+@@ -3566,13 +3420,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -684,7 +685,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3586,8 +3440,14 @@
+@@ -3585,8 +3439,14 @@
  			end
  		end, Trans).
  
@@ -701,7 +702,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3595,6 +3455,15 @@
+@@ -3594,6 +3454,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -717,7 +718,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-@@ -3603,6 +3472,17 @@
+@@ -3602,6 +3471,17 @@
  	    {error, ?ERR_INTERNAL_SERVER_ERROR}
      end.
  

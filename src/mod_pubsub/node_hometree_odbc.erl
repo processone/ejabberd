@@ -665,10 +665,18 @@ get_entity_subscriptions(Host, Owner) ->
     end,
     Reply = case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected, ["node", "type", "nodeid", "jid", "subscriptions"], RItems} ->
-	    lists:map(fun({N, T, I, J, S}) ->
+	    lists:foldl(fun({N, T, I, J, S}, Acc) ->
 		Node = nodetree_tree_odbc:raw_to_node(Host, {N, "", T, I}),
-		{Node, decode_subscriptions(S), decode_jid(J)}
-	    end, RItems);
+		Jid = decode_jid(J),
+		case decode_subscriptions(S) of
+		    [] ->
+			[{Node, none, Jid}|Acc];
+		    Subs ->
+			lists:foldl(fun({Sub, SubId}, Acc2) -> [{Node, Sub, SubId, Jid}|Acc2];
+				       (Sub, Acc2) -> [{Node, Sub, Jid}|Acc2]
+			end, Acc, Subs)
+		end
+	    end, [], RItems);
 	_ ->
 	    []
 	end,

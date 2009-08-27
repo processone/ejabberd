@@ -2512,8 +2512,7 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
     end.
 
 write_sub(Subscriber, NodeID, SubID, Options) ->
-    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID,
-					      Options) of
+    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
 	{error, notfound} ->
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, _} ->

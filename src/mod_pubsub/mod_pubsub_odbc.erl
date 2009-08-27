@@ -2289,7 +2289,7 @@ get_options_helper(JID, Lang, NodeID, SubID, Type) ->
 read_sub(Subscriber, NodeID, SubID, Lang) ->
     case pubsub_subscription_odbc:get_subscription(Subscriber, NodeID, SubID) of
 	{error, notfound} ->
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+	    pubsub_subscription_odbc:get_options_xform(Lang, []);
 	{result, #pubsub_subscription{options = Options}} ->
 	    pubsub_subscription_odbc:get_options_xform(Lang, Options)
     end.
@@ -2336,8 +2336,7 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
     end.
 
 write_sub(Subscriber, NodeID, SubID, Options) ->
-    case pubsub_subscription_odbc:set_subscription(Subscriber, NodeID, SubID,
-					      Options) of
+    case pubsub_subscription_odbc:set_subscription(Subscriber, NodeID, SubID, Options) of
 	{error, notfound} ->
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, _} ->
