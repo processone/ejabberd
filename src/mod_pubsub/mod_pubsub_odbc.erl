@@ -3005,7 +3005,7 @@ node_options(Type) ->
 	    Result
     end.
 
-%% @spec (NodeId) -> [ljid()]
+%% @spec (Host, Type, NodeId) -> [ljid()]
 %%    NodeId = pubsubNodeId()
 %% @doc <p>Return list of node owners.</p>
 node_owners(Host, Type, NodeId) ->
