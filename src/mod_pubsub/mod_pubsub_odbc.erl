@@ -1093,7 +1093,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 
 iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
     {xmlelement, _, _, SubEls} = SubEl,
-    Action = lists:filter(fun({xmlelement, "set", _, _}) -> false
+    Action = lists:filter(fun({xmlelement, "set", _, _}) -> false;
 			     (_) -> true
 			end, xml:remove_cdata(SubEls)),
     case Action of
