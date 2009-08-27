@@ -740,7 +740,10 @@ set_subscriptions(NodeId, Owner, Subscription, SubId) ->
     SubState = get_state_without_itemids(NodeId, SubKey),
     case {SubId, SubState#pubsub_state.subscriptions} of
 	{_, []} ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
+	    case Subscription of
+		none -> {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "not-subscribed")};
+		_ -> new_subscription(NodeId, Owner, Subscription, SubState)
+	    end;
 	{"", [{_, SID}]} ->
 	    case Subscription of
 		none -> unsub_with_subid(NodeId, SID, SubState);
@@ -764,6 +767,16 @@ replace_subscription(_, [], Acc) ->
     Acc;
 replace_subscription({Sub, SubId}, [{_, SubID} | T], Acc) ->
     replace_subscription({Sub, SubId}, T, [{Sub, SubID} | Acc]).
+
+new_subscription(NodeId, Owner, Subscription, SubState) ->
+    case pubsub_subscription_odbc:subscribe_node(Owner, NodeId, []) of
+	{result, SubId} ->
+	    Subscriptions = SubState#pubsub_state.subscriptions,
+	    set_state(SubState#pubsub_state{subscriptions = [{Subscription, SubId} | Subscriptions]}),
+	    {Subscription, SubId};
+	_ ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
 
 unsub_with_subid(NodeId, SubId, SubState) ->
     pubsub_subscription_odbc:unsubscribe_node(SubState#pubsub_state.stateid,

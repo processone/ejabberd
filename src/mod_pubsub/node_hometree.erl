@@ -702,7 +702,7 @@ set_subscriptions(NodeId, Owner, Subscription, SubId) ->
     case {SubId, SubState#pubsub_state.subscriptions} of
 	{_, []} ->
 	    case Subscription of
-		none -> ok;
+		none -> {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "not-subscribed")};
 		_ -> new_subscription(NodeId, Owner, Subscription, SubState)
 	    end;
 	{"", [{_, SID}]} ->
