@@ -1758,13 +1758,10 @@ delete_node(_Host, [], _Owner) ->
     {error, ?ERR_NOT_ALLOWED};
 delete_node(Host, Node, Owner) ->
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-		    SubsByDepth = get_collection_subscriptions(Host, Node),
 		    case node_call(Type, get_affiliation, [NodeId, Owner]) of
 			{result, owner} ->
-			    SubsByDepth = case tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]) of
-				{result, T} -> [{Depth, [{N, get_node_subs(N)} || N <- Nodes]} || {Depth, Nodes} <- T];
-				_ -> []
-			    end,
+			    ParentTree = tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]),
+			    SubsByDepth = [{Depth, [{N, get_node_subs(N)} || N <- Nodes]} || {Depth, Nodes} <- ParentTree],
 			    Removed = tree_call(Host, delete_node, [Host, Node]),
 			    case node_call(Type, delete_node, [Removed]) of
 				{result, Res} -> {result, {SubsByDepth, Res}};
