@@ -828,7 +828,7 @@ get_pending_nodes(Host, Owner) ->
 					       affiliation = owner,
 					       _           = '_'}),
     NodeIDs = [ID || #pubsub_state{stateid = {_, ID}} <- States],
-    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
+    NodeTree = case catch ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 		    [{nodetree, N}] -> N;
 		    _               -> nodetree_tree_odbc
 	       end,
