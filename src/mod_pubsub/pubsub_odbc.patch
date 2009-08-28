@@ -1,4 +1,4 @@
---- mod_pubsub.erl	2009-08-28 01:07:30.000000000 +0200
+--- mod_pubsub.erl	2009-08-28 02:08:43.000000000 +0200
 +++ mod_pubsub_odbc.erl	2009-08-28 01:08:15.000000000 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
@@ -239,10 +239,10 @@
  	    lists:foreach(
  		fun({Node, subscribed, _, SubJID}) -> 
  		    if (SubJID == LJID) or (SubJID == BJID) ->
--			#pubsub_node{options = Options, type = Type, id = NodeId} = Node,
+-			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId, options = Options} = Node,
 -			case get_option(Options, send_last_published_item) of
 -			    on_sub_and_presence ->
--				send_items(Host, Node, NodeId, Type, SubJID, last);
+-				send_items(H, N, NodeId, Type, SubJID, last);
 -			    _ ->
 -				ok
 -			end;

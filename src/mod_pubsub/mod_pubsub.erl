@@ -476,10 +476,10 @@ send_loop(State) ->
 	    lists:foreach(
 		fun({Node, subscribed, _, SubJID}) -> 
 		    if (SubJID == LJID) or (SubJID == BJID) ->
-			#pubsub_node{options = Options, type = Type, id = NodeId} = Node,
+			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId, options = Options} = Node,
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
-				send_items(Host, Node, NodeId, Type, SubJID, last);
+				send_items(H, N, NodeId, Type, SubJID, last);
 			    _ ->
 				ok
 			end;
