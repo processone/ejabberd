@@ -598,7 +598,7 @@ get_entity_affiliations(Host, Owner) ->
     SubKey = jlib:jid_tolower(Owner),
     GenKey = jlib:jid_remove_resource(SubKey),
     States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
-    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
+    NodeTree = case catch ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	    [{nodetree, N}] -> N;
 	    _ -> nodetree_tree
 	end,
@@ -655,7 +655,7 @@ get_entity_subscriptions(Host, Owner) ->
 	    ++ mnesia:match_object(
 	       #pubsub_state{stateid = {SubKey, '_'}, _ = '_'})
     end,
-    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
+    NodeTree = case catch ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	    [{nodetree, N}] -> N;
 	    _ -> nodetree_tree
 	end,
@@ -759,7 +759,7 @@ get_pending_nodes(Host, Owner) ->
 					       affiliation = owner,
 					       _           = '_'}),
     NodeIDs = [ID || #pubsub_state{stateid = {_, ID}} <- States],
-    NodeTree = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
+    NodeTree = case catch ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 		    [{nodetree, N}] -> N;
 		    _               -> nodetree_tree
 	       end,

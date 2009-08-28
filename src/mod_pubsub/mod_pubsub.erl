@@ -3407,7 +3407,7 @@ set_xoption([_ | Opts], NewOpts) ->
 is_last_item_cache_enabled({_, ServerHost, _}) ->
     is_last_item_cache_enabled(ServerHost);
 is_last_item_cache_enabled(Host) ->
-    case ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
+    case catch ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
     [{last_item_cache, true}] -> true;
     _ -> false
     end.
@@ -3431,7 +3431,7 @@ get_cached_item({_, ServerHost, _}, NodeId) ->
 get_cached_item(Host, NodeId) ->
     case is_last_item_cache_enabled(Host) of
     true ->
-	case ets:lookup(gen_mod:get_module_proc(Host, last_items), NodeId) of
+	case catch ets:lookup(gen_mod:get_module_proc(Host, last_items), NodeId) of
 	[{NodeId, {ItemId, Payload}}] ->
 	    #pubsub_item{itemid = {ItemId, NodeId}, payload = Payload};
 	_ ->
@@ -3444,7 +3444,7 @@ get_cached_item(Host, NodeId) ->
 %%%% plugin handling
 
 plugins(Host) ->
-    case ets:lookup(gen_mod:get_module_proc(Host, config), plugins) of
+    case catch ets:lookup(gen_mod:get_module_proc(Host, config), plugins) of
     [{plugins, []}] -> [?STDNODE];
     [{plugins, PL}] -> PL;
     _ -> [?STDNODE]
@@ -3452,7 +3452,7 @@ plugins(Host) ->
 select_type(ServerHost, Host, Node, Type)->
     SelectedType = case Host of
     {_User, _Server, _Resource} -> 
-	case ets:lookup(gen_mod:get_module_proc(ServerHost, config), pep_mapping) of
+	case catch ets:lookup(gen_mod:get_module_proc(ServerHost, config), pep_mapping) of
 	[{pep_mapping, PM}] -> proplists:get_value(Node, PM, ?PEPNODE);
 	_ -> ?PEPNODE
 	end;
@@ -3535,7 +3535,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
     tree_call(Server, Function, Args);
 tree_call(Host, Function, Args) ->
     ?DEBUG("tree_call ~p ~p ~p",[Host, Function, Args]),
-    Module = case ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
+    Module = case catch ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	[{nodetree, N}] -> N;
 	_ -> list_to_atom(?TREE_PREFIX ++ ?STDTREE)
     end,
