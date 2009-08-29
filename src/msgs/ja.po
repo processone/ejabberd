@@ -532,47 +532,47 @@ msgstr "サーバー ~b"
 msgid "Only service administrators are allowed to send service messages"
 msgstr "カービス管理者のみがサービスメッセージを送信出来ます"
 
-#: mod_muc/mod_muc.erl:482
+#: mod_muc/mod_muc.erl:481
 msgid "Room creation is denied by service policy"
 msgstr "サービスポリシーにっよってチャットルームの作成が禁止されています"
 
-#: mod_muc/mod_muc.erl:489
+#: mod_muc/mod_muc.erl:488
 msgid "Conference room does not exist"
 msgstr "カンファレンスルームは存在しません"
 
-#: mod_muc/mod_muc.erl:553
+#: mod_muc/mod_muc.erl:569
 msgid "Chatrooms"
 msgstr "チャットルーム"
 
-#: mod_muc/mod_muc.erl:672
+#: mod_muc/mod_muc.erl:688
 msgid "You need an x:data capable client to register nickname"
 msgstr ""
 "ニックネームを登録するにはクライアントが x:data をサポートする必要があります"
 
-#: mod_muc/mod_muc.erl:678
+#: mod_muc/mod_muc.erl:694
 msgid "Nickname Registration at "
 msgstr "ニックネーム登録: "
 
-#: mod_muc/mod_muc.erl:682
+#: mod_muc/mod_muc.erl:698
 msgid "Enter nickname you want to register"
 msgstr "登録するニックネームを入力して下さい"
 
-#: mod_muc/mod_muc.erl:683 mod_roster.erl:949 mod_roster_odbc.erl:1050
+#: mod_muc/mod_muc.erl:699 mod_roster.erl:949 mod_roster_odbc.erl:1050
 #: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:445
 msgid "Nickname"
 msgstr "ニックネーム"
 
-#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
+#: mod_muc/mod_muc.erl:738 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
 msgid "That nickname is registered by another person"
 msgstr "ニックネームは他の人によって登録されています"
 
-#: mod_muc/mod_muc.erl:748
+#: mod_muc/mod_muc.erl:764
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "フォームの\"ニックネーム\"フィールドを入力する必要があります"
 
-#: mod_muc/mod_muc.erl:768
+#: mod_muc/mod_muc.erl:784
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC module"
 
@@ -1001,95 +1001,95 @@ msgstr "すべてのオフラインメッセージを削除します"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub/mod_pubsub.erl:1057 mod_pubsub/mod_pubsub_odbc.erl:1053
+#: mod_pubsub/mod_pubsub.erl:1061 mod_pubsub/mod_pubsub_odbc.erl:887
 msgid "Publish-Subscribe"
 msgstr "Publish-Subscribe"
 
-#: mod_pubsub/mod_pubsub.erl:1153 mod_pubsub/mod_pubsub_odbc.erl:1150
+#: mod_pubsub/mod_pubsub.erl:1157 mod_pubsub/mod_pubsub_odbc.erl:984
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe module"
 
-#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1442
+#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1271
 msgid "PubSub subscriber request"
 msgstr "PubSub 購読リクエスト"
 
-#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1444
+#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1273
 msgid "Choose whether to approve this entity's subscription."
 msgstr "このエントリを承認するかどうかを選択して下さい"
 
-#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1450
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
 msgid "Node ID"
 msgstr "ノードID"
 
-#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1455
+#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1284
 msgid "Subscriber Address"
 msgstr "購読アドレス"
 
-#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1461
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "この Jabber ID をこの pubsubノードへ購読することを許可しますか？"
 
-#: mod_pubsub/mod_pubsub.erl:3225 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3086
 msgid "Deliver payloads with event notifications"
 msgstr "イベント通知と同時にペイロードを配送します"
 
-#: mod_pubsub/mod_pubsub.erl:3226 mod_pubsub/mod_pubsub_odbc.erl:3245
+#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3087
 msgid "Deliver event notifications"
 msgstr "イベント通知を配送します"
 
-#: mod_pubsub/mod_pubsub.erl:3227 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3088
 msgid "Notify subscribers when the node configuration changes"
 msgstr "ノード設定に変更があった時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3228 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3089
 msgid "Notify subscribers when the node is deleted"
 msgstr "ノードが削除された時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3229 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3090
 msgid "Notify subscribers when items are removed from the node"
 msgstr "アイテムがノードから消された時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3230 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3091
 msgid "Persist items to storage"
 msgstr "アイテムをストレージに保存する"
 
-#: mod_pubsub/mod_pubsub.erl:3231 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
 msgid "A friendly name for the node"
 msgstr "ノードの為のフレンドリネーム"
 
-#: mod_pubsub/mod_pubsub.erl:3232 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
 msgid "Max # of items to persist"
 msgstr "アイテムの最大保存数 #"
 
-#: mod_pubsub/mod_pubsub.erl:3233 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
 msgid "Whether to allow subscriptions"
 msgstr "購読を許可するかどうか"
 
-#: mod_pubsub/mod_pubsub.erl:3234 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
 msgid "Specify the access model"
 msgstr "アクセスモデルを設定する"
 
-#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3256
+#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
 msgid "Roster groups allowed to subscribe"
 msgstr "名簿グループは購読を許可しました"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3257
+#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
 msgid "Specify the publisher model"
 msgstr "公開モデルを指定する"
 
-#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3259
+#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
 msgid "Max payload size in bytes"
 msgstr "最大ぺイロードサイズ(byte)"
 
-#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3260
+#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
 msgid "When to send the last published item"
 msgstr "最後の公開アイテムを送信するタイミングで"
 
-#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3262
+#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
 msgid "Only deliver notifications to available users"
 msgstr "有効なユーザーにのみ告知を送信する"
 
-#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3263
+#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
 msgid "The collections with which a node is affiliated"
 msgstr "提携されたノードの集合です"
 

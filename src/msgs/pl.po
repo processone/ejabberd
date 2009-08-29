@@ -536,46 +536,46 @@ msgstr "Serwer ~b"
 msgid "Only service administrators are allowed to send service messages"
 msgstr "Jedynie administrator może wysyłać wiadomości"
 
-#: mod_muc/mod_muc.erl:482
+#: mod_muc/mod_muc.erl:481
 msgid "Room creation is denied by service policy"
 msgstr "Zasady serwera zabraniają tworzyć nowe pokoje"
 
-#: mod_muc/mod_muc.erl:489
+#: mod_muc/mod_muc.erl:488
 msgid "Conference room does not exist"
 msgstr "Pokój konferencyjny nie istnieje"
 
-#: mod_muc/mod_muc.erl:553
+#: mod_muc/mod_muc.erl:569
 msgid "Chatrooms"
 msgstr "Pokoje rozmów"
 
-#: mod_muc/mod_muc.erl:672
+#: mod_muc/mod_muc.erl:688
 msgid "You need an x:data capable client to register nickname"
 msgstr "Potrzebujesz klienta kompatybilnego z x:data aby zarejestrować nick"
 
-#: mod_muc/mod_muc.erl:678
+#: mod_muc/mod_muc.erl:694
 msgid "Nickname Registration at "
 msgstr "Rejestracja użytkownika na "
 
-#: mod_muc/mod_muc.erl:682
+#: mod_muc/mod_muc.erl:698
 msgid "Enter nickname you want to register"
 msgstr "Wprowadz nazwę użytkownika którego chcesz zarejestrować"
 
-#: mod_muc/mod_muc.erl:683 mod_roster.erl:949 mod_roster_odbc.erl:1050
+#: mod_muc/mod_muc.erl:699 mod_roster.erl:949 mod_roster_odbc.erl:1050
 #: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:445
 msgid "Nickname"
 msgstr "Nazwa użytkownika"
 
-#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
+#: mod_muc/mod_muc.erl:738 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
 msgid "That nickname is registered by another person"
 msgstr "Ta nazwa użytkownika jest już zarejestrowana przez inną osobę"
 
-#: mod_muc/mod_muc.erl:748
+#: mod_muc/mod_muc.erl:764
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Musisz wypełnić pole \"Nazwa użytkownika\" w formularzu"
 
-#: mod_muc/mod_muc.erl:768
+#: mod_muc/mod_muc.erl:784
 msgid "ejabberd MUC module"
 msgstr "Moduł MUC"
 
@@ -1003,97 +1003,97 @@ msgstr "Usuń wszystkie wiadomości typu 'Offline'"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "Moduł SOCKS5 Bytestreams"
 
-#: mod_pubsub/mod_pubsub.erl:1054 mod_pubsub/mod_pubsub_odbc.erl:1053
+#: mod_pubsub/mod_pubsub.erl:1061 mod_pubsub/mod_pubsub_odbc.erl:887
 msgid "Publish-Subscribe"
 msgstr "PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1150 mod_pubsub/mod_pubsub_odbc.erl:1150
+#: mod_pubsub/mod_pubsub.erl:1157 mod_pubsub/mod_pubsub_odbc.erl:984
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Moduł Publish-Subscribe"
 
-#: mod_pubsub/mod_pubsub.erl:1437 mod_pubsub/mod_pubsub_odbc.erl:1442
+#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1271
 msgid "PubSub subscriber request"
 msgstr "Rządzanie subskrybenta PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1439 mod_pubsub/mod_pubsub_odbc.erl:1444
+#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1273
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Wybierz, czy akceptować subskrypcję tej jednostki"
 
-#: mod_pubsub/mod_pubsub.erl:1445 mod_pubsub/mod_pubsub_odbc.erl:1450
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
 msgid "Node ID"
 msgstr "ID noda"
 
-#: mod_pubsub/mod_pubsub.erl:1450 mod_pubsub/mod_pubsub_odbc.erl:1455
+#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1284
 msgid "Subscriber Address"
 msgstr "Adres subskrybenta"
 
-#: mod_pubsub/mod_pubsub.erl:1456 mod_pubsub/mod_pubsub_odbc.erl:1461
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Pozwól temu Jabber ID na zapisanie się do tego noda pubsub"
 
-#: mod_pubsub/mod_pubsub.erl:3220 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3086
 msgid "Deliver payloads with event notifications"
 msgstr ""
 "Dołącz zawartość publikowanego przedmiotu podczas wysyłania powiadomienia o "
 "publikacji"
 
-#: mod_pubsub/mod_pubsub.erl:3221 mod_pubsub/mod_pubsub_odbc.erl:3245
+#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3087
 msgid "Deliver event notifications"
 msgstr "Dostarczaj powiadomienia o zdarzeniach"
 
-#: mod_pubsub/mod_pubsub.erl:3222 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3088
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Informuj subskrybentów gdy konfiguracja gałęzi się zmieni"
 
-#: mod_pubsub/mod_pubsub.erl:3223 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3089
 msgid "Notify subscribers when the node is deleted"
 msgstr "Informuj subskrybentów gdy gałąż zostanie wykasowana"
 
-#: mod_pubsub/mod_pubsub.erl:3224 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3090
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Informuj subskrybentów kiedy zostaną z gałęzi usunięte jakieś elementy"
 
-#: mod_pubsub/mod_pubsub.erl:3225 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3091
 msgid "Persist items to storage"
 msgstr "Przechowuj przedmioty pub/sub w pamięci"
 
-#: mod_pubsub/mod_pubsub.erl:3226 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
 msgid "A friendly name for the node"
 msgstr "Przyjazna nazwa węzła"
 
-#: mod_pubsub/mod_pubsub.erl:3227 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
 msgid "Max # of items to persist"
 msgstr "Maksymalna ilość przechowywanych przedmiotów"
 
-#: mod_pubsub/mod_pubsub.erl:3228 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
 msgid "Whether to allow subscriptions"
 msgstr "Czy pozwolić na subskrypcje"
 
-#: mod_pubsub/mod_pubsub.erl:3229 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
 msgid "Specify the access model"
 msgstr "Oznacz model dostępu"
 
-#: mod_pubsub/mod_pubsub.erl:3232 mod_pubsub/mod_pubsub_odbc.erl:3256
+#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
 msgid "Roster groups allowed to subscribe"
 msgstr "Grupy kontaktów które mogą się zapisać"
 
-#: mod_pubsub/mod_pubsub.erl:3233 mod_pubsub/mod_pubsub_odbc.erl:3257
+#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
 msgid "Specify the publisher model"
 msgstr "Oznacz model publikującego"
 
-#: mod_pubsub/mod_pubsub.erl:3235 mod_pubsub/mod_pubsub_odbc.erl:3259
+#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
 msgid "Max payload size in bytes"
 msgstr "Maksymalna wielkość powiadomienia w bajtach"
 
-#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3260
+#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
 msgid "When to send the last published item"
 msgstr "Kiedy wysłać ostatnio opublikowaną rzecz"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3262
+#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
 msgid "Only deliver notifications to available users"
 msgstr "Dostarczaj notyfikacje tylko do osiągalnych użytkowników"
 
-#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3263
+#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
 msgid "The collections with which a node is affiliated"
 msgstr "Grupy do których należy węzeł"
 

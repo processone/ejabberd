@@ -540,47 +540,47 @@ msgstr ""
 msgid "Only service administrators are allowed to send service messages"
 msgstr "Endast administratörer får skicka tjänstmeddelanden"
 
-#: mod_muc/mod_muc.erl:482
+#: mod_muc/mod_muc.erl:481
 msgid "Room creation is denied by service policy"
 msgstr "Skapandet av rum är förbjudet enligt lokal policy"
 
-#: mod_muc/mod_muc.erl:489
+#: mod_muc/mod_muc.erl:488
 msgid "Conference room does not exist"
 msgstr "Rummet finns inte"
 
-#: mod_muc/mod_muc.erl:553
+#: mod_muc/mod_muc.erl:569
 msgid "Chatrooms"
 msgstr "Chattrum"
 
-#: mod_muc/mod_muc.erl:672
+#: mod_muc/mod_muc.erl:688
 msgid "You need an x:data capable client to register nickname"
 msgstr "Du behöver en klient som stödjer x:data för att registrera smeknamn"
 
-#: mod_muc/mod_muc.erl:678
+#: mod_muc/mod_muc.erl:694
 msgid "Nickname Registration at "
 msgstr "Registrera smeknamn på "
 
-#: mod_muc/mod_muc.erl:682
+#: mod_muc/mod_muc.erl:698
 msgid "Enter nickname you want to register"
 msgstr "Skriv in smeknamnet du vill registrera"
 
-#: mod_muc/mod_muc.erl:683 mod_roster.erl:949 mod_roster_odbc.erl:1050
+#: mod_muc/mod_muc.erl:699 mod_roster.erl:949 mod_roster_odbc.erl:1050
 #: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:445
 msgid "Nickname"
 msgstr "Smeknamn"
 
-#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
+#: mod_muc/mod_muc.erl:738 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
 #, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "Smeknamnet är reserverat"
 
-#: mod_muc/mod_muc.erl:748
+#: mod_muc/mod_muc.erl:764
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Du måste fylla i fält \"smeknamn\" i formen"
 
-#: mod_muc/mod_muc.erl:768
+#: mod_muc/mod_muc.erl:784
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC modul"
 
@@ -1022,95 +1022,95 @@ msgstr "Offline meddelanden"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestrem modul"
 
-#: mod_pubsub/mod_pubsub.erl:1054 mod_pubsub/mod_pubsub_odbc.erl:1053
+#: mod_pubsub/mod_pubsub.erl:1061 mod_pubsub/mod_pubsub_odbc.erl:887
 msgid "Publish-Subscribe"
 msgstr "Publikprenumeration"
 
-#: mod_pubsub/mod_pubsub.erl:1150 mod_pubsub/mod_pubsub_odbc.erl:1150
+#: mod_pubsub/mod_pubsub.erl:1157 mod_pubsub/mod_pubsub_odbc.erl:984
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd publikprenumerations modul"
 
-#: mod_pubsub/mod_pubsub.erl:1437 mod_pubsub/mod_pubsub_odbc.erl:1442
+#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1271
 msgid "PubSub subscriber request"
 msgstr "Pubsub prenumerationsforfrågan"
 
-#: mod_pubsub/mod_pubsub.erl:1439 mod_pubsub/mod_pubsub_odbc.erl:1444
+#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1273
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Välj om du vill godkänna hela denna  prenumertion."
 
-#: mod_pubsub/mod_pubsub.erl:1445 mod_pubsub/mod_pubsub_odbc.erl:1450
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
 msgid "Node ID"
 msgstr "Node ID"
 
-#: mod_pubsub/mod_pubsub.erl:1450 mod_pubsub/mod_pubsub_odbc.erl:1455
+#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1284
 msgid "Subscriber Address"
 msgstr "Prenumerationsadress"
 
-#: mod_pubsub/mod_pubsub.erl:1456 mod_pubsub/mod_pubsub_odbc.erl:1461
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Tillåt denna Jabber ID att prenumerera på denna pubsub node"
 
-#: mod_pubsub/mod_pubsub.erl:3220 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3086
 msgid "Deliver payloads with event notifications"
 msgstr "Skicka innehåll tillsammans med notifikationer"
 
-#: mod_pubsub/mod_pubsub.erl:3221 mod_pubsub/mod_pubsub_odbc.erl:3245
+#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3087
 msgid "Deliver event notifications"
 msgstr "Skicka eventnotifikation"
 
-#: mod_pubsub/mod_pubsub.erl:3222 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3088
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Meddela prenumeranter när nodens konfiguration ändras"
 
-#: mod_pubsub/mod_pubsub.erl:3223 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3089
 msgid "Notify subscribers when the node is deleted"
 msgstr "Meddela prenumeranter när noden tas bort"
 
-#: mod_pubsub/mod_pubsub.erl:3224 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3090
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Meddela prenumeranter när dataposter tas bort från noden"
 
-#: mod_pubsub/mod_pubsub.erl:3225 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3091
 msgid "Persist items to storage"
 msgstr "Spara dataposter permanent"
 
-#: mod_pubsub/mod_pubsub.erl:3226 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
 msgid "A friendly name for the node"
 msgstr "Ett vänligt namn for noden"
 
-#: mod_pubsub/mod_pubsub.erl:3227 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
 msgid "Max # of items to persist"
 msgstr "Högsta antal dataposter som sparas"
 
-#: mod_pubsub/mod_pubsub.erl:3228 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
 msgid "Whether to allow subscriptions"
 msgstr "Tillåta prenumerationer?"
 
-#: mod_pubsub/mod_pubsub.erl:3229 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
 msgid "Specify the access model"
 msgstr "Specificera accessmodellen"
 
-#: mod_pubsub/mod_pubsub.erl:3232 mod_pubsub/mod_pubsub_odbc.erl:3256
+#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
 msgid "Roster groups allowed to subscribe"
 msgstr "Rostergrupper tillåts att prenumerera"
 
-#: mod_pubsub/mod_pubsub.erl:3233 mod_pubsub/mod_pubsub_odbc.erl:3257
+#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
 msgid "Specify the publisher model"
 msgstr "Ange publiceringsmodell"
 
-#: mod_pubsub/mod_pubsub.erl:3235 mod_pubsub/mod_pubsub_odbc.erl:3259
+#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
 msgid "Max payload size in bytes"
 msgstr "Högsta innehållsstorlek i bytes"
 
-#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3260
+#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
 msgid "When to send the last published item"
 msgstr "När att skicka senast publicerade ämne"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3262
+#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
 msgid "Only deliver notifications to available users"
 msgstr "Skicka notifikationer bara till uppkopplade användare"
 
-#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3263
+#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
 msgid "The collections with which a node is affiliated"
 msgstr ""
 
