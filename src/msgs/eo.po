@@ -1,7 +1,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Andreas van Cranenburgh\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Andreas van Cranenburgh <andreas@unstable.nl>\n"
+"Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,17 +23,16 @@ msgid "Replaced by new connection"
 msgstr "Anstataŭigita je nova konekto"
 
 #: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
-#, fuzzy
 msgid "Enter the text you see"
-msgstr "Enmetu vojon al plata teksto"
+msgstr "Enmetu montrita teksto"
 
 #: ejabberd_captcha.erl:97
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
+msgstr "Viaj mesaĝoj al ~s estas blokata. Por malbloki ilin, iru al ~s"
 
 #: ejabberd_captcha.erl:235
 msgid "The captcha is valid."
-msgstr ""
+msgstr "La aŭtomata Turingtesto estas ĝusta"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -439,146 +441,139 @@ msgid "Registration in mod_irc for "
 msgstr "Registraĵo en mod_irc de "
 
 #: mod_irc/mod_irc.erl:569
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-"
-"serviloj"
+"Enmetu uzantnomon,j enkodigojn, pordojn kaj pasvortojn kiujn vi volas uzi "
+"por konektoj al IRC-serviloj"
 
 #: mod_irc/mod_irc.erl:574
 msgid "IRC Username"
 msgstr "IRC-kaŝnomo"
 
 #: mod_irc/mod_irc.erl:584
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"Se vi volas specifi diversajn enkodigojn por IRC-serviloj, kompletigu la "
-"jenan liston kun la formo '{\"irc-servilo\", \"enkodigo\"}'. Se ne "
-"specifita, ĉi tiu servilo uzas la enkodigo \"~s\""
+"Se vi volas specifi diversajn pordojn, pasvortojn, enkodigojn por IRC-"
+"serviloj, kompletigu la jenan liston kun la formo '{\"irc-servilo\", "
+"\"enkodigo\", porto, \"pasvorto\"}'. Se ne specifita, ĉi tiu servilo uzas la "
+"enkodigo \"~s\", porto ~p, malplena pasvorto."
 
 #: mod_irc/mod_irc.erl:596
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Ekzemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-"
-"1\"}]."
+"Ekzemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"sekreto\"}, {\"vendetta."
+"fef.net\", \"iso8859-1\", 7000}, {\"irc.iutestservilo.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:601
 msgid "Connections parameters"
-msgstr ""
+msgstr "Konekto-parametroj"
 
 #: mod_irc/mod_irc.erl:711
 msgid "Join IRC channel"
-msgstr ""
+msgstr "Eniras IRC-babilejon"
 
 #: mod_irc/mod_irc.erl:715
 msgid "IRC channel (don't put the first #)"
-msgstr ""
+msgstr "IRC-babilejo (ne aldonu #-prefikson)"
 
 #: mod_irc/mod_irc.erl:720
-#, fuzzy
 msgid "IRC server"
-msgstr "IRC-kaŝnomo"
+msgstr "IRC-servilo"
 
 #: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
 msgid "Join the IRC channel here."
-msgstr ""
+msgstr "Eniru IRC-babilejon jen"
 
 #: mod_irc/mod_irc.erl:761
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr ""
+msgstr "Eniru IRC-babilejon en ĉi Jabber-ID: ~s"
 
 #: mod_irc/mod_irc.erl:846
 msgid "IRC settings"
-msgstr ""
+msgstr "IRC agordoj"
 
 #: mod_irc/mod_irc.erl:851
-#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
 "Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-"
-"serviloj"
+"serviloj. Elektu \"Sekvonto\" por ekhavi pliajn kampojn. Elektu \"Kompletigu"
+"\" por savi agordojn."
 
 #: mod_irc/mod_irc.erl:857
-#, fuzzy
 msgid "IRC username"
-msgstr "IRC-kaŝnomo"
+msgstr "IRC-uzantnomo"
 
 #: mod_irc/mod_irc.erl:906
-#, fuzzy
 msgid "Password ~b"
-msgstr "Pasvorto"
+msgstr "Pasvorto ~b"
 
 #: mod_irc/mod_irc.erl:911
-#, fuzzy
 msgid "Port ~b"
-msgstr "Pordo"
+msgstr "Pordo ~b"
 
 #: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
-msgstr ""
+msgstr "Enkodigo por servilo ~b"
 
 #: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
-msgstr ""
+msgstr "Servilo ~b"
 
 #: mod_muc/mod_muc.erl:437
 msgid "Only service administrators are allowed to send service messages"
 msgstr "Nur servo-administrantoj rajtas sendi serv-mesaĝojn"
 
-#: mod_muc/mod_muc.erl:482
+#: mod_muc/mod_muc.erl:481
 msgid "Room creation is denied by service policy"
 msgstr "Ĉi tiu serv-politiko ne permesas babilejo-kreadon"
 
-#: mod_muc/mod_muc.erl:489
+#: mod_muc/mod_muc.erl:488
 msgid "Conference room does not exist"
 msgstr "Babilejo ne ekzistas"
 
-#: mod_muc/mod_muc.erl:553
+#: mod_muc/mod_muc.erl:569
 msgid "Chatrooms"
 msgstr "Babilejoj"
 
-#: mod_muc/mod_muc.erl:672
+#: mod_muc/mod_muc.erl:688
 msgid "You need an x:data capable client to register nickname"
 msgstr "Vi bezonas klienton kun x:data-funkcio por registri kaŝnomon"
 
-#: mod_muc/mod_muc.erl:678
+#: mod_muc/mod_muc.erl:694
 msgid "Nickname Registration at "
 msgstr "Kaŝnomo-registrado je "
 
-#: mod_muc/mod_muc.erl:682
+#: mod_muc/mod_muc.erl:698
 msgid "Enter nickname you want to register"
 msgstr "Enmetu kaŝnomon kiun vi volas registri"
 
-#: mod_muc/mod_muc.erl:683 mod_roster.erl:949 mod_roster_odbc.erl:1050
+#: mod_muc/mod_muc.erl:699 mod_roster.erl:949 mod_roster_odbc.erl:1050
 #: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:334
 #: mod_vcard_odbc.erl:445
 msgid "Nickname"
 msgstr "Kaŝnomo"
 
-#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_room.erl:926
+#: mod_muc/mod_muc.erl:738 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
-#, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "Kaŝnomo estas registrita de alia persono"
 
-#: mod_muc/mod_muc.erl:748
+#: mod_muc/mod_muc.erl:764
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Vi devas kompletigi la \"Kaŝnomo\" kampon"
 
-#: mod_muc/mod_muc.erl:768
+#: mod_muc/mod_muc.erl:784
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC-modulo"
 
@@ -704,7 +699,6 @@ msgid "Room Configuration"
 msgstr "Babilejo-agordo"
 
 #: mod_muc/mod_muc_log.erl:749
-#, fuzzy
 msgid "Room Occupants"
 msgstr "Nombro de ĉeestantoj"
 
@@ -769,7 +763,6 @@ msgid "private, "
 msgstr "privata, "
 
 #: mod_muc/mod_muc_room.erl:801
-#, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -777,7 +770,6 @@ msgstr ""
 "Nur moderigantoj kaj partoprenantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"
 
 #: mod_muc/mod_muc_room.erl:806
-#, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Nur moderigantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"
 
@@ -797,16 +789,14 @@ msgstr ""
 "Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"
 
 #: mod_muc/mod_muc_room.erl:915 mod_muc/mod_muc_room.erl:1505
-#, fuzzy
 msgid "That nickname is already in use by another occupant"
-msgstr "Kaŝnomo estas jam uzata de alia partoprenanto"
+msgstr "Tiu kaŝnomo jam estas uzata de alia partoprenanto"
 
 #: mod_muc/mod_muc_room.erl:1494
 msgid "You have been banned from this room"
 msgstr "Vi estas malpermesata en ĉi tiu babilejo"
 
 #: mod_muc/mod_muc_room.erl:1497
-#, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "Membreco estas bezonata por eniri ĉi tiun babilejon"
 
@@ -815,13 +805,12 @@ msgid "This room is not anonymous"
 msgstr "Ĉi tiu babilejo ne estas anonima"
 
 #: mod_muc/mod_muc_room.erl:1559
-#, fuzzy
 msgid "A password is required to enter this room"
 msgstr "Pasvorto estas bezonata por eniri ĉi tiun babilejon"
 
 #: mod_muc/mod_muc_room.erl:1581
 msgid "Unable to generate a captcha"
-msgstr ""
+msgstr "Ne eblis krei aŭtomatas turingteston"
 
 #: mod_muc/mod_muc_room.erl:1591
 msgid "Incorrect password"
@@ -856,14 +845,12 @@ msgid "Owner privileges required"
 msgstr "Mastraj rajtoj bezonata"
 
 #: mod_muc/mod_muc_room.erl:2820
-#, fuzzy
 msgid "Configuration of room ~s"
-msgstr "Agordo de "
+msgstr "Agordo de babilejo ~s"
 
 #: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
-#, fuzzy
 msgid "Room description"
-msgstr "Priskribo:"
+msgstr "Babilejo-priskribo"
 
 #: mod_muc/mod_muc_room.erl:2835
 msgid "Make room persistent"
@@ -914,7 +901,6 @@ msgid "Default users as participants"
 msgstr "Kutime farigu uzantojn kiel partpoprenantoj"
 
 #: mod_muc/mod_muc_room.erl:2896
-#, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Permesu uzantojn ŝanĝi la temon"
 
@@ -939,9 +925,8 @@ msgid "Allow visitors to change nickname"
 msgstr "Permesu al vizitantoj ŝanĝi siajn kaŝnomojn"
 
 #: mod_muc/mod_muc_room.erl:2917
-#, fuzzy
 msgid "Make room captcha protected"
-msgstr "Farigu babilejon protektata per pasvorto"
+msgstr "Farigu babilejon protektata per aŭtomata Turingtesto"
 
 #: mod_muc/mod_muc_room.erl:2926
 msgid "Enable logging"
@@ -1012,112 +997,110 @@ msgid "Offline Messages:"
 msgstr "Liverontaj mesaĝoj"
 
 #: mod_offline.erl:620 mod_offline_odbc.erl:496
-#, fuzzy
 msgid "Remove All Offline Messages"
-msgstr "Liverontaj mesaĝoj"
+msgstr "Forigu ĉiujn liverontajn mesaĝojn"
 
 #: mod_proxy65/mod_proxy65_service.erl:213
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bajtfluo modulo"
 
-#: mod_pubsub/mod_pubsub.erl:1054 mod_pubsub/mod_pubsub_odbc.erl:1053
+#: mod_pubsub/mod_pubsub.erl:1061 mod_pubsub/mod_pubsub_odbc.erl:887
 msgid "Publish-Subscribe"
 msgstr "Public-Abonado"
 
-#: mod_pubsub/mod_pubsub.erl:1150 mod_pubsub/mod_pubsub_odbc.erl:1150
+#: mod_pubsub/mod_pubsub.erl:1157 mod_pubsub/mod_pubsub_odbc.erl:984
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Public-Abonada modulo"
 
-#: mod_pubsub/mod_pubsub.erl:1437 mod_pubsub/mod_pubsub_odbc.erl:1442
+#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1271
 msgid "PubSub subscriber request"
 msgstr "PubAbo abonpeto"
 
-#: mod_pubsub/mod_pubsub.erl:1439 mod_pubsub/mod_pubsub_odbc.erl:1444
+#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1273
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Elektu ĉu permesi la abonon de ĉi tiu ento"
 
-#: mod_pubsub/mod_pubsub.erl:1445 mod_pubsub/mod_pubsub_odbc.erl:1450
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
 msgid "Node ID"
 msgstr "Nodo ID"
 
-#: mod_pubsub/mod_pubsub.erl:1450 mod_pubsub/mod_pubsub_odbc.erl:1455
+#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1284
 msgid "Subscriber Address"
 msgstr "Abonanta adreso"
 
-#: mod_pubsub/mod_pubsub.erl:1456 mod_pubsub/mod_pubsub_odbc.erl:1461
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3220 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3086
 msgid "Deliver payloads with event notifications"
 msgstr "Liveru aĵojn de event-sciigoj"
 
-#: mod_pubsub/mod_pubsub.erl:3221 mod_pubsub/mod_pubsub_odbc.erl:3245
+#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3087
 msgid "Deliver event notifications"
 msgstr "Liveru event-sciigojn"
 
-#: mod_pubsub/mod_pubsub.erl:3222 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3088
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Sciigu abonantoj kiam la agordo de la nodo ŝanĝas"
 
-#: mod_pubsub/mod_pubsub.erl:3223 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3089
 msgid "Notify subscribers when the node is deleted"
 msgstr "Sciigu abonantoj kiam la nodo estas forigita"
 
-#: mod_pubsub/mod_pubsub.erl:3224 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3090
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Sciigu abonantoj kiam eroj estas forigita de la nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3225 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3091
 msgid "Persist items to storage"
 msgstr "Savu erojn en konservado"
 
-#: mod_pubsub/mod_pubsub.erl:3226 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
 msgid "A friendly name for the node"
 msgstr "Kromnomo por ĉi tiu nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3227 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
 msgid "Max # of items to persist"
 msgstr "Maksimuma kiomo de eroj en konservado"
 
-#: mod_pubsub/mod_pubsub.erl:3228 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
 msgid "Whether to allow subscriptions"
 msgstr "Ĉu permesi aboni"
 
-#: mod_pubsub/mod_pubsub.erl:3229 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
 msgid "Specify the access model"
 msgstr "Specifu atingo-modelon"
 
-#: mod_pubsub/mod_pubsub.erl:3232 mod_pubsub/mod_pubsub_odbc.erl:3256
+#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
 msgid "Roster groups allowed to subscribe"
 msgstr "Kontaktlist-grupoj kiuj rajtas aboni"
 
-#: mod_pubsub/mod_pubsub.erl:3233 mod_pubsub/mod_pubsub_odbc.erl:3257
+#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
 msgid "Specify the publisher model"
 msgstr "Enmetu publikadan modelon"
 
-#: mod_pubsub/mod_pubsub.erl:3235 mod_pubsub/mod_pubsub_odbc.erl:3259
+#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
 msgid "Max payload size in bytes"
 msgstr "Maksimuma aĵo-grando je bajtoj"
 
-#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3260
+#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
 msgid "When to send the last published item"
 msgstr "Kiam sendi la laste publicitan eron"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3262
+#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
 msgid "Only deliver notifications to available users"
 msgstr "Nur liveru sciigojn al konektataj uzantoj"
 
-#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3263
+#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
 msgid "The collections with which a node is affiliated"
-msgstr ""
+msgstr "Aro kun kiu nodo estas filigita"
 
 #: mod_register.erl:190
 msgid "Choose a username and password to register with this server"
 msgstr "Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"
 
 #: mod_register.erl:243
-#, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Ne estas permesata al uzantoj registri tiel rapide"
 
@@ -1299,7 +1282,7 @@ msgstr "Kompletigu la formon por serĉi rekonata Jabber-uzanto"
 #: web/ejabberd_web_admin.erl:179 web/ejabberd_web_admin.erl:186
 #: web/ejabberd_web_admin.erl:202 web/ejabberd_web_admin.erl:209
 msgid "Unauthorized"
-msgstr ""
+msgstr "Nepermesita"
 
 #: web/ejabberd_web_admin.erl:266 web/ejabberd_web_admin.erl:283
 msgid "ejabberd Web Admin"
@@ -1358,9 +1341,8 @@ msgid "Statistics"
 msgstr "Statistikoj"
 
 #: web/ejabberd_web_admin.erl:1097
-#, fuzzy
 msgid "Not Found"
-msgstr "Nodo ne trovita"
+msgstr "Ne trovita"
 
 #: web/ejabberd_web_admin.erl:1114
 msgid "Node not found"
@@ -1458,7 +1440,7 @@ msgstr "Konserv-tipo"
 
 #: web/ejabberd_web_admin.erl:1934
 msgid "Elements"
-msgstr ""
+msgstr "Eroj"
 
 #: web/ejabberd_web_admin.erl:1935
 msgid "Memory"
@@ -1466,14 +1448,13 @@ msgstr "Memoro"
 
 #: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
 msgid "Error"
-msgstr ""
+msgstr "Eraro"
 
 #: web/ejabberd_web_admin.erl:1955
 msgid "Backup of "
 msgstr "Sekurkopio de "
 
 #: web/ejabberd_web_admin.erl:1957
-#, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1514,23 +1495,22 @@ msgstr "Restaŭrigu sekurkopion el plata tekstdosiero tuj"
 
 #: web/ejabberd_web_admin.erl:1998
 msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr ""
+msgstr "Importu uzanto-datumojn de PIEFXIS dosiero (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2005
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
 msgstr ""
+"Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2012
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
-msgstr ""
+msgstr "Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0277):"
 
 #: web/ejabberd_web_admin.erl:2020
-#, fuzzy
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
 
 #: web/ejabberd_web_admin.erl:2027
-#, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
 
@@ -1579,7 +1559,6 @@ msgid "Update plan"
 msgstr "Ĝisdatigo-plano"
 
 #: web/ejabberd_web_admin.erl:2176
-#, fuzzy
 msgid "Modified modules"
 msgstr "Ĝisdatigitaj moduloj"
 
@@ -1601,12 +1580,11 @@ msgstr "Pordo"
 
 #: web/ejabberd_web_admin.erl:2348
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2349
-#, fuzzy
 msgid "Protocol"
-msgstr "Pordo"
+msgstr "Protokolo"
 
 #: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
 msgid "Module"
