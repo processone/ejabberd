@@ -73,6 +73,7 @@
 * Crypto
 - Do not ask certificate for client (c2s)
 - SSL code remove from ejabberd in favor of TLS
+- Support Zlib compression after STARTTLS encryption
 - tls v1 client hello
 
 * Documentation
