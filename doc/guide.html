@@ -769,10 +769,7 @@ password of one of the registered users who are granted access by the
 &#X2018;configure&#X2019; access rule.
 </DD><DT CLASS="dt-description"><B><TT>zlib</TT></B></DT><DD CLASS="dd-description"> This
 option specifies that Zlib stream compression (as defined in <A HREF="http://xmpp.org/extensions/xep-0138.html">XEP-0138</A>)
-is available on connections to the port. Client connections cannot use
-stream compression and stream encryption simultaneously. Hence, if you
-specify both <TT>starttls</TT> (or <TT>tls</TT>) and <TT>zlib</TT>, the latter
-option will not affect connections (there will be no stream compression).
+is available on connections to the port.
 </DD></DL><P>There are some additional global options that can be specified in the ejabberd configuration file (outside <TT>listen</TT>):
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{s2s_use_starttls, true|false}</TT></B></DT><DD CLASS="dd-description">
