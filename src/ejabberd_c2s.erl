@@ -71,6 +71,7 @@
 -record(state, {socket,
 		sockmod,
 		socket_monitor,
+		xml_socket,
 		streamid,
 		sasl_state,
 		access,
@@ -124,6 +125,24 @@
 -define(DEFAULT_NS, ?NS_JABBER_CLIENT).
 -define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
 
+-define(STREAM_HEADER,
+	"<?xml version='1.0'?>"
+	"<stream:stream xmlns='jabber:client' "
+	"xmlns:stream='http://etherx.jabber.org/streams' "
+	"id='~s' from='~s'~s~s>"
+       ).
+
+-define(STREAM_TRAILER, "</stream:stream>").
+
+-define(INVALID_NS_ERR, exmpp_stream:error('invalid-namespace')).
+-define(INVALID_XML_ERR,  exmpp_stream:error('xml-not-well-formed')).
+-define(HOST_UNKNOWN_ERR, exmpp_stream:error('host-unknown')).
+-define(SERRT_CONFLICT, exmpp_stream:error('conflict')).
+-define(POLICY_VIOLATION_ERR(Lang, Text),
+	exmpp_stream:error('policy-violation', {Lang, Text})).
+
+-define(INVALID_FROM, exmpp_stream:error('invalid-from')).
+
 -define(STANZA_ERROR(NS, Condition),
   exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(NS, Condition),
     [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
@@ -174,6 +193,11 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
+    XMLSocket =
+	case lists:keysearch(xml_socket, 1, Opts) of
+	    {value, {_, XS}} -> XS;
+	    _ -> false
+	end,
     Zlib = lists:member(zlib, Opts),
     StartTLS = lists:member(starttls, Opts),
     StartTLSRequired = lists:member(starttls_required, Opts),
@@ -203,6 +227,7 @@ init([{SockMod, Socket}, Opts]) ->
 	    {ok, wait_for_stream, #state{socket         = Socket1,
 					 sockmod        = SockMod,
 					 socket_monitor = SocketMonitor,
+					 xml_socket     = XMLSocket,
 					 zlib           = Zlib,
 					 tls            = TLS,
 					 tls_required   = StartTLSRequired,
@@ -248,7 +273,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		      exmpp_jid:make(ServerB)),
 		    case exmpp_stream:get_version(Opening) of
 			{1, 0} ->
-			    send_element(StateData, Header),
+			    send_header(StateData, Server, "1.0", DefaultLang),
 			    case StateData#state.authenticated of
 				false ->
 				    SASLState =
@@ -333,6 +358,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				    end
 			    end;
 			_ ->
+			    send_header(StateData, Server, "", DefaultLang),
 			    if
 				(not StateData#state.tls_enabled) and
 				StateData#state.tls_required ->
@@ -340,6 +366,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				      exmpp_xml:append_child(Header,
 					exmpp_stream:error('policy-violation',
 					  {"en", "Use of STARTTLS required"}))),
+				    send_trailer(StateData),
 				    {stop, normal, StateData};
 				true ->
 				    send_element(StateData, Header),
@@ -350,16 +377,15 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 			    end
 		    end;
 		_ ->
-		    Header2 = exmpp_stream:set_initiating_entity(Header,
-		      ?MYNAME),
-		    send_element(StateData, exmpp_xml:append_child(Header2,
-			exmpp_stream:error('host-unknown'))),
+		    send_header(StateData, ?MYNAME, "", DefaultLang),
+		    send_element(StateData, ?HOST_UNKNOWN_ERR),
+		    send_trailer(StateData),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
-	    Header2 = exmpp_stream:set_initiating_entity(Header, ?MYNAME),
-	    send_element(StateData, exmpp_xml:append_child(Header2,
-		exmpp_stream:error('invalid-namespace'))),
+	    send_header(StateData, ?MYNAME, "", DefaultLang),
+	    send_element(StateData, ?INVALID_NS_ERR),
+	    send_trailer(StateData),
 	    {stop, normal, StateData}
     end;
 
@@ -367,21 +393,19 @@ wait_for_stream(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_stream({xmlstreamelement, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_stream({xmlstreamend, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
-    Header = exmpp_stream:opening_reply(?MYNAME, 'jabber:client', "1.0",
-      "none"),
-    Header1 = exmpp_xml:append_child(Header,
-      exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, Header1),
+    send_header(StateData, ?MYNAME, "1.0", ""),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_stream(closed, StateData) ->
@@ -495,12 +519,12 @@ wait_for_auth(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_auth({xmlstreamend, _Name}, StateData) ->
-    send_element(StateData, exmpp_stream:closing()),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_auth({xmlstreamerror, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_auth(closed, StateData) ->
@@ -604,9 +628,10 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 	_ ->
 	    if
 		(SockMod == gen_tcp) and TLSRequired ->
+		    Lang = StateData#state.lang,
 		    send_element(StateData, exmpp_stream:error(
-			'policy-violation', {"en", "Use of STARTTLS required"})),
-		    send_element(StateData, exmpp_stream:closing()),
+			'policy-violation', {Lang, "Use of STARTTLS required"})),
+		    send_trailer(StateData),
 		    {stop, normal, StateData};
 		true ->
 		    process_unauthenticated_stanza(StateData, El),
@@ -619,11 +644,12 @@ wait_for_feature_request(timeout, StateData) ->
 
 wait_for_feature_request({xmlstreamend, _Name}, StateData) ->
     send_element(StateData, exmpp_stream:closing()),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_feature_request({xmlstreamerror, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_feature_request(closed, StateData) ->
@@ -678,12 +704,12 @@ wait_for_sasl_response(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_sasl_response({xmlstreamend, _Name}, StateData) ->
-    send_element(StateData, exmpp_stream:closing()),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_sasl_response({xmlstreamerror, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_sasl_response(closed, StateData) ->
@@ -717,12 +743,12 @@ wait_for_bind(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_bind({xmlstreamend, _Name}, StateData) ->
-    send_element(StateData, exmpp_stream:closing()),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_bind({xmlstreamerror, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_bind(closed, StateData) ->
@@ -791,12 +817,12 @@ wait_for_session(timeout, StateData) ->
     {stop, normal, StateData};
 
 wait_for_session({xmlstreamend, _Name}, StateData) ->
-    send_element(StateData, exmpp_stream:closing()),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_session({xmlstreamerror, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 wait_for_session(closed, StateData) ->
@@ -804,10 +830,11 @@ wait_for_session(closed, StateData) ->
 
 
 session_established({xmlstreamelement, El}, StateData) ->
+    %% Check 'from' attribute in stanza RFC 3920 Section 9.1.2
     case check_from(El, StateData#state.jid) of
         'invalid-from' ->
-            send_element(StateData, exmpp_stream:error('invalid-from')),
-            send_element(StateData, exmpp_stream:closing()),
+	    send_element(StateData, ?INVALID_FROM),
+	    send_trailer(StateData),
             {stop, normal, StateData};
          _ ->
             session_established2(El, StateData)
@@ -823,12 +850,17 @@ session_established(timeout, StateData) ->
     fsm_next_state(session_established, StateData);
 
 session_established({xmlstreamend, _Name}, StateData) ->
-    send_element(StateData, exmpp_stream:closing()),
+    send_trailer(StateData),
+    {stop, normal, StateData};
+
+session_established({xmlstreamerror, "XML stanza is too big" = E}, StateData) ->
+    send_element(StateData, ?POLICY_VIOLATION_ERR(StateData#state.lang, E)),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 session_established({xmlstreamerror, _}, StateData) ->
-    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
-    send_element(StateData, exmpp_stream:closing()),
+    send_element(StateData, ?INVALID_XML_ERR),
+    send_trailer(StateData),
     {stop, normal, StateData};
 
 session_established(closed, StateData) ->
@@ -1002,8 +1034,10 @@ handle_info({send_text, Text}, StateName, StateData) ->
     ejabberd_hooks:run(c2s_loop_debug, [Text]),
     fsm_next_state(StateName, StateData);
 handle_info(replaced, _StateName, StateData) ->
-    send_element(StateData, exmpp_stream:error('conflict')),
-    send_element(StateData, exmpp_stream:closing()),
+    _Lang = StateData#state.lang,
+    send_element(StateData,
+		 ?SERRT_CONFLICT), %% (Lang, "Replaced by new connection")),
+    send_trailer(StateData),
     {stop, normal, StateData#state{authenticated = replaced}};
 %% Process Packets that are to be send to the user
 handle_info({route, From, To, Packet}, StateName, StateData) ->
@@ -1194,9 +1228,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
     if
 	Pass == exit ->
 	    %% When Pass==exit, NewState contains a string instead of a #state{}
-	    Lang = StateData#state.lang,
-	    catch send_element(StateData, exmpp_stream:error('undefined-condition', {Lang, NewState})),
-	    catch send_element(StateData, exmpp_stream:closing()),
+	    _Lang = StateData#state.lang,
+	    send_element(StateData, ?SERRT_CONFLICT), %% (Lang, NewState)),
+	    send_trailer(StateData),
 	    {stop, normal, StateData};
 	Pass ->
 	    Attrs2 = exmpp_stanza:set_sender_in_attrs(NewAttrs, From),
@@ -1292,8 +1326,59 @@ send_text(StateData, Text) ->
 
 send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
     send_text(StateData, exmpp_stream:to_iolist(El));
+send_element(StateData, El) when StateData#state.xml_socket ->
+    (StateData#state.sockmod):send_xml(StateData#state.socket,
+				       {xmlstreamelement, El});
 send_element(StateData, El) ->
     send_text(StateData, exmpp_stanza:to_iolist(El)).
+
+send_header(StateData, Server, Version, Lang)
+  when StateData#state.xml_socket ->
+    VersionAttr =
+	case Version of
+	    "" -> [];
+	    _ -> [{"version", Version}]
+	end,
+    LangAttr =
+	case Lang of
+	    "" -> [];
+	    _ -> [{"xml:lang", Lang}]
+	end,
+    Header =
+	{xmlstreamstart,
+	 "stream:stream",
+	 VersionAttr ++
+	 LangAttr ++
+	 [{"xmlns", "jabber:client"},
+	  {"xmlns:stream", "http://etherx.jabber.org/streams"},
+	  {"id", StateData#state.streamid},
+	  {"from", Server}]},
+    (StateData#state.sockmod):send_xml(
+      StateData#state.socket, Header);
+send_header(StateData, Server, Version, Lang) ->
+    VersionStr =
+	case Version of
+	    "" -> "";
+	    _ -> [" version='", Version, "'"]
+	end,
+    LangStr =
+	case Lang of
+	    "" -> "";
+	    _ -> [" xml:lang='", Lang, "'"]
+	end,
+    Header = io_lib:format(?STREAM_HEADER,
+			   [StateData#state.streamid,
+			    Server,
+			    VersionStr,
+			    LangStr]),
+    send_text(StateData, Header).
+
+send_trailer(StateData) when StateData#state.xml_socket ->
+    (StateData#state.sockmod):send_xml(
+      StateData#state.socket,
+      {xmlstreamend, "stream:stream"});
+send_trailer(StateData) ->
+    send_element(StateData, exmpp_stream:closing()).
 
 
 new_id() ->

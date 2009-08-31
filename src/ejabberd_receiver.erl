@@ -198,7 +198,7 @@ handle_cast(_Msg, State) ->
 handle_info({Tag, _TCPSocket, Data},
 	    #state{socket = Socket,
 		   sock_mod = SockMod} = State)
-  when (Tag == tcp) or (Tag == ssl) ->
+  when (Tag == tcp) or (Tag == ssl) or (Tag == ejabberd_xml) ->
     case SockMod of
 	tls ->
 	    case tls:recv_data(Socket, Data) of
@@ -288,6 +288,25 @@ activate_socket(#state{socket = Socket,
 	    ok
     end.
 
+%% Data processing for connectors directly generating xmlelement in
+%% Erlang data structure.
+%% WARNING: Shaper does not work with Erlang data structure.
+process_data([], State) ->
+    activate_socket(State),
+    State;
+process_data([Element|Els], #state{c2s_pid = C2SPid} = State)
+  when element(1, Element) == xmlelement;
+       element(1, Element) == xmlstreamstart;
+      element(1, Element) == xmlstreamelement;
+       element(1, Element) == xmlstreamend ->
+    if
+	C2SPid == undefined ->
+	    State;
+	true ->
+	    catch gen_fsm:send_event(C2SPid, element_wrapper(Element)),
+	    process_data(Els, State)
+    end;
+%% Data processing for connectors receivind data as string.
 process_data(Data,
 	     #state{xml_stream_state = XMLStreamState,
 		    shaper_state = ShaperState,
@@ -309,6 +328,16 @@ process_data(Data,
         end,
     {State#state{xml_stream_state = XMLStreamState1,
 		shaper_state = NewShaperState}, HibTimeout}.
+
+%% Element coming from XML parser are wrapped inside xmlstreamelement
+%% When we receive directly xmlelement tuple (from a socket module
+%% speaking directly Erlang XML), we wrap it inside the same
+%% xmlstreamelement coming from the XML parser.
+element_wrapper(XMLElement)
+  when element(1, XMLElement) == xmlelement ->
+    {xmlstreamelement, XMLElement};
+element_wrapper(Element) ->
+    Element.
 
 close_stream(undefined) ->
     ok;

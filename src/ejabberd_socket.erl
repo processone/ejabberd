@@ -37,6 +37,7 @@
 	 compress/2,
 	 reset_stream/1,
 	 send/2,
+	 send_xml/2,
 	 change_shaper/2,
 	 monitor/1,
 	 get_sockmod/1,
@@ -62,10 +63,18 @@ start(Module, SockMod, Socket, Opts) ->
 		    {value, {_, Size}} -> Size;
 		    _ -> infinity
 		end,
-	    Receiver = ejabberd_receiver:start(Socket, SockMod, none, MaxStanzaSize),
+	    {ReceiverMod, Receiver, RecRef} =
+		case catch SockMod:custom_receiver(Socket) of
+		    {receiver, RecMod, RecPid} ->
+			{RecMod, RecPid, RecMod};
+		    _ -> 
+			RecPid = ejabberd_receiver:start(
+				   Socket, SockMod, none, MaxStanzaSize),
+			{ejabberd_receiver, RecPid, RecPid}
+		end,
 	    SocketData = #socket_state{sockmod = SockMod,
 				       socket = Socket,
-				       receiver = Receiver},
+				       receiver = RecRef},
 	    case Module:start({?MODULE, SocketData}, Opts) of
 		{ok, Pid} ->
 		    case SockMod:controlling_process(Socket, Receiver) of
@@ -74,7 +83,7 @@ start(Module, SockMod, Socket, Opts) ->
 			{error, _Reason} ->
 			    SockMod:close(Socket)
 		    end,
-		    ejabberd_receiver:become_controller(Receiver, Pid);
+		    ReceiverMod:become_controller(Receiver, Pid);
 		{error, _Reason} ->
 		    SockMod:close(Socket)
 	    end;
@@ -143,18 +152,33 @@ compress(SocketData, Data) ->
     send(SocketData, Data),
     SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
 
-reset_stream(SocketData) ->
-    ejabberd_receiver:reset_stream(SocketData#socket_state.receiver).
+reset_stream(SocketData) when is_pid(SocketData#socket_state.receiver) ->
+    ejabberd_receiver:reset_stream(SocketData#socket_state.receiver);
+reset_stream(SocketData) when is_atom(SocketData#socket_state.receiver) ->
+    (SocketData#socket_state.receiver):reset_stream(
+      SocketData#socket_state.socket).
 
 send(SocketData, Data) ->
     catch (SocketData#socket_state.sockmod):send(
 	    SocketData#socket_state.socket, Data).
 
-change_shaper(SocketData, Shaper) ->
-    ejabberd_receiver:change_shaper(SocketData#socket_state.receiver, Shaper).
+send_xml(SocketData, Data) ->
+    catch (SocketData#socket_state.sockmod):send_xml(
+	    SocketData#socket_state.socket, Data).
 
-monitor(SocketData) ->
-    erlang:monitor(process, SocketData#socket_state.receiver).
+change_shaper(SocketData, Shaper)
+  when is_pid(SocketData#socket_state.receiver) ->
+    ejabberd_receiver:change_shaper(SocketData#socket_state.receiver, Shaper);
+change_shaper(SocketData, Shaper)
+  when is_atom(SocketData#socket_state.receiver) ->
+    (SocketData#socket_state.receiver):change_shaper(
+      SocketData#socket_state.socket, Shaper).
+
+monitor(SocketData) when is_pid(SocketData#socket_state.receiver) ->
+    erlang:monitor(process, SocketData#socket_state.receiver);
+monitor(SocketData) when is_atom(SocketData#socket_state.receiver) ->
+    (SocketData#socket_state.receiver):monitor(
+      SocketData#socket_state.socket).
 
 get_sockmod(SocketData) ->
     SocketData#socket_state.sockmod.
