@@ -278,7 +278,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				    Zlib = StateData#state.zlib,
 				    CompressFeature =
 					case Zlib andalso
-					    (SockMod == gen_tcp) of
+					    ((SockMod == gen_tcp) orelse
+					     (SockMod == tls)) of
 					    true ->
 						[{xmlelement, "compression",
 						  [{"xmlns", ?NS_FEATURE_COMPRESS}],
@@ -628,7 +629,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					   tls_enabled = true
 					  });
 	{?NS_COMPRESS, "compress"} when Zlib == true,
-					SockMod == gen_tcp ->
+					((SockMod == gen_tcp) or
+					 (SockMod == tls)) ->
 	    case xml:get_subtag(El, "method") of
 		false ->
 		    send_element(StateData,
@@ -1415,11 +1417,18 @@ get_auth_tags([_ | L], U, P, D, R) ->
 get_auth_tags([], U, P, D, R) ->
     {U, P, D, R}.
 
+%% Copied from ejabberd_socket.erl
+-record(socket_state, {sockmod, socket, receiver}).
+
 get_conn_type(StateData) ->
     case (StateData#state.sockmod):get_sockmod(StateData#state.socket) of
     gen_tcp -> c2s;
     tls -> c2s_tls;
-    ejabberd_zlib -> c2s_compressed;
+    ejabberd_zlib ->
+	case ejabberd_zlib:get_sockmod((StateData#state.socket)#socket_state.socket) of
+	    gen_tcp -> c2s_compressed;
+	    tls -> c2s_compressed_tls
+	end;
     ejabberd_http_poll -> http_poll;
     ejabberd_http_bind -> http_bind;
     _ -> unknown
