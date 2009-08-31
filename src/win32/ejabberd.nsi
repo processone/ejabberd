@@ -180,7 +180,7 @@ SectionIn 1 RO
 	'-sname ejabberd -pa ebin \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
 	-s ejabberd -kernel inetrc \"./inetrc\" -mnesia dir \"spool\" \
-	-sasl sasl_error_logger {file,\"log/sasl.log\"}' \
+	-sasl sasl_error_logger {file,\"log/erlang.log\"}' \
 	$INSTDIR\win32\ejabberd.ico
     CreateShortCut "$0\Edit Config.lnk" "%SystemRoot%\system32\notepad.exe" \
 	"$INSTDIR\ejabberd.cfg"
@@ -215,7 +215,7 @@ SectionIn 1 RO
 	-args "-s ejabberd -pa ebin \
 	-kernel inetrc \\\"./inetrc\\\" \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
-	-sasl sasl_error_logger {file,\\\"log/sasl.log\\\"} \
+	-sasl sasl_error_logger {file,\\\"log/erlang.log\\\"} \
 	-mnesia dir \\\"spool\\\"" -d'
     Pop $0
 

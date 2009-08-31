@@ -209,6 +209,8 @@
   There is a new syntax to define IP address and IP version.
   As usual, check the ejabberd Guide for more information.
 
+- The log file sasl.log is now called erlang.log
+
 - ejabberdctl commands now have _ characters instead of -.
   For backwards compatibility, it is still supported -.
 
