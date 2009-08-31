@@ -102,7 +102,7 @@ if [ "$EJABBERD_MSGS_PATH" = "" ]; then
 fi
 
 EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
-SASL_LOG_PATH=$LOGS_DIR/sasl.log
+SASL_LOG_PATH=$LOGS_DIR/erlang.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
 ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
 ERL_INETRC=$ETCDIR/inetrc

@@ -415,7 +415,7 @@ The files and directories created are, by default:
 	\titem{/var/log/ejabberd/} Log directory (see section~\ref{logfiles}):
 		\begin{description}
 			\titem{ejabberd.log} ejabberd service log
-			\titem{sasl.log} Erlang/OTP system log
+			\titem{erlang.log} Erlang/OTP system log
 		\end{description}
 \end{description}
 
@@ -4252,8 +4252,10 @@ The command line parameters:
 	Tell Erlang runtime system to start the \ejabberd{} application.
   \titem{-mnesia dir "/var/lib/ejabberd/"}
 	Specify the Mnesia database directory.
-  \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/sasl.log"\}}
+  \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/erlang.log"\}}
 	Path to the Erlang/OTP system log file.
+        SASL here means ``System Architecture Support Libraries''
+        not ``Simple Authentication and Security Layer''.
   \titem{+K [true|false]}
 	Kernel polling.
   \titem{-smp [auto|enable|disable]}
@@ -4884,7 +4886,7 @@ The syntax is:
 An \ejabberd{} node writes two log files:
 \begin{description}
 	\titem{ejabberd.log} is the ejabberd service log, with the messages reported by \ejabberd{} code
-	\titem{sasl.log} is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
+	\titem{erlang.log} is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 \end{description}
 
 The option \term{loglevel} modifies the verbosity of the file ejabberd.log. The syntax is:

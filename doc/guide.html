@@ -417,7 +417,7 @@ to install <TT>ejabberd</TT>.</P><P>The files and directories created are, by de
 	</DD><DT CLASS="dt-description"><B><TT>/var/log/ejabberd/</TT></B></DT><DD CLASS="dd-description"> Log directory (see section&#XA0;<A HREF="#logfiles">7.1</A>):
 		<DL CLASS="description"><DT CLASS="dt-description">
 			<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> ejabberd service log
-			</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> Erlang/OTP system log
+			</DD><DT CLASS="dt-description"><B><TT>erlang.log</TT></B></DT><DD CLASS="dd-description"> Erlang/OTP system log
 		</DD></DL>
 </DD></DL><P> <A NAME="start"></A> </P><!--TOC subsection Start-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc13">2.4.5</A>&#XA0;&#XA0;<A HREF="#start">Start</A></H3><!--SEC END --><P> <A NAME="start"></A> 
@@ -3320,8 +3320,10 @@ Starts the Erlang system detached from the system console.
 	Tell Erlang runtime system to start the <TT>ejabberd</TT> application.
 </DD><DT CLASS="dt-description"><B><TT>-mnesia dir "/var/lib/ejabberd/"</TT></B></DT><DD CLASS="dd-description">
 	Specify the Mnesia database directory.
-</DD><DT CLASS="dt-description"><B><TT>-sasl sasl_error_logger {file, "/var/log/ejabberd/sasl.log"}</TT></B></DT><DD CLASS="dd-description">
+</DD><DT CLASS="dt-description"><B><TT>-sasl sasl_error_logger {file, "/var/log/ejabberd/erlang.log"}</TT></B></DT><DD CLASS="dd-description">
 	Path to the Erlang/OTP system log file.
+SASL here means &#X201C;System Architecture Support Libraries&#X201D;
+not &#X201C;Simple Authentication and Security Layer&#X201D;.
 </DD><DT CLASS="dt-description"><B><TT>+K [true|false]</TT></B></DT><DD CLASS="dd-description">
 	Kernel polling.
 </DD><DT CLASS="dt-description"><B><TT>-smp [auto|enable|disable]</TT></B></DT><DD CLASS="dd-description">
@@ -3726,13 +3728,13 @@ domain.</P><P> <A NAME="servicelb"></A> </P><!--TOC section Service Load-Balanci
 </LI></UL><P>If the value corresponding to the criteria is the same, the same component instance in the cluster will be used.</P><P> <A NAME="lbbuckets"></A> </P><!--TOC subsection Load-Balancing Buckets-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc90">6.3.3</A>&#XA0;&#XA0;<A HREF="#lbbuckets">Load-Balancing Buckets</A></H3><!--SEC END --><P> <A NAME="lbbuckets"></A> 
 </P><P>When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failing the service will not work correctly unless the sessions are rebalanced.</P><P>In this case, it is best to limit the problem to the sessions handled by the failing component. This is what the <TT>domain_balancing_component_number</TT> option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.</P><P>The syntax is:
-</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{domain_balancing_component_number, "component.example.com", N}.</TT></B></DT></DL><P> <A NAME="debugging"></A> </P><!--TOC chapter Debugging-->
+</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{domain_balancing_component_number, "component.example.com", Number}.</TT></B></DT></DL><P> <A NAME="debugging"></A> </P><!--TOC chapter Debugging-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc91">Chapter&#XA0;7</A>&#XA0;&#XA0;<A HREF="#debugging">Debugging</A></H1><!--SEC END --><P> <A NAME="debugging"></A> 
 </P><P> <A NAME="logfiles"></A> </P><!--TOC section Log Files-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc92">7.1</A>&#XA0;&#XA0;<A HREF="#logfiles">Log Files</A></H2><!--SEC END --><P> <A NAME="logfiles"></A> </P><P>An <TT>ejabberd</TT> node writes two log files:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> is the ejabberd service log, with the messages reported by <TT>ejabberd</TT> code
-	</DD><DT CLASS="dt-description"><B><TT>sasl.log</TT></B></DT><DD CLASS="dd-description"> is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
+	</DD><DT CLASS="dt-description"><B><TT>erlang.log</TT></B></DT><DD CLASS="dd-description"> is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 </DD></DL><P>The option <TT>loglevel</TT> modifies the verbosity of the file ejabberd.log. The syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{loglevel, Level}.</TT></B></DT></DL><P>The possible <TT>Level</TT> are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
