@@ -88,7 +88,7 @@ options() ->
     [{virtual_tree, false},
      {odbc, true}].
 
-%% @spec (Host, Node) -> pubsubNode() | {error, Reason}
+%% @spec (Host, Node, From) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 get_node(Host, Node, _From) ->
@@ -122,7 +122,7 @@ get_node(NodeId) ->
 	    {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
-%% @spec (Host) -> [pubsubNode()] | {error, Reason}
+%% @spec (Host, From) -> [pubsubNode()] | {error, Reason}
 %%	 Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
