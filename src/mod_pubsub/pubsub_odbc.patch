@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-08-28 02:08:43.000000000 +0200
-+++ mod_pubsub_odbc.erl	2009-08-28 01:08:15.000000000 +0200
+--- mod_pubsub.erl	2009-09-01 15:20:44.000000000 +0200
++++ mod_pubsub_odbc.erl	2009-09-01 15:22:27.000000000 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
  %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -555,19 +555,18 @@
 @@ -2508,11 +2336,11 @@
      end.
  
- read_sub(Subscriber, NodeID, SubID, Lang) ->
+ read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
 -    case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
 +    case pubsub_subscription_odbc:get_subscription(Subscriber, NodeID, SubID) of
  	{error, notfound} ->
--	    {error, extended_error('not-acceptable', "invalid-subid")};
-+	    pubsub_subscription_odbc:get_options_xform(Lang, []);
+ 	    {error, extended_error('not-acceptable', "invalid-subid")};
  	{result, #pubsub_subscription{options = Options}} ->
--	    pubsub_subscription:get_options_xform(Lang, Options)
-+	    pubsub_subscription_odbc:get_options_xform(Lang, Options)
-     end.
- 
- set_options(Host, Node, JID, SubID, Configuration) ->
-@@ -2539,7 +2367,7 @@
+-            {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
++            {result, XdataEl} = pubsub_subscription_odbc:get_options_xform(Lang, Options),
+             OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
+ 			       attrs = [?XMLATTR('node', node_to_string(Node)),
+ 					?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
+@@ -2546,7 +2374,7 @@
  		      _ ->
  		         {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
  		 end,
@@ -576,7 +575,7 @@
      {result, Subs} = node_call(Type, get_subscriptions,
  			       [NodeID, Subscriber]),
      SubIDs = lists:foldl(fun({subscribed, SID}, Acc) ->
-@@ -2559,7 +2387,7 @@
+@@ -2566,7 +2394,7 @@
      end.
  
  write_sub(Subscriber, NodeID, SubID, Options) ->
@@ -585,7 +584,7 @@
  	{error, notfound} ->
  	    {error, extended_error('not-acceptable', "invalid-subid")};
  	{result, _} ->
-@@ -2732,8 +2560,8 @@
+@@ -2739,8 +2567,8 @@
  						 ?XMLATTR('subsription', subscription_to_string(Sub)) | nodeAttr(Node)]}]}]},
  		ejabberd_router ! {route, service_jid(Host), JID, Stanza}
  	    end,
@@ -596,7 +595,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3020,7 +2848,7 @@
+@@ -3027,7 +2855,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -605,7 +604,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -3034,9 +2862,9 @@
+@@ -3041,9 +2869,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -617,7 +616,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3231,6 +3059,30 @@
+@@ -3238,6 +3066,30 @@
  	    Result
      end.
  
@@ -648,7 +647,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3607,7 +3459,13 @@
+@@ -3614,7 +3466,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -663,7 +662,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3627,13 +3485,13 @@
+@@ -3634,13 +3492,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -679,7 +678,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3646,8 +3504,15 @@
+@@ -3653,8 +3511,15 @@
  			end
  		end, Trans).
  
@@ -697,7 +696,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3655,6 +3520,15 @@
+@@ -3662,6 +3527,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, 'internal-server-error'};
@@ -713,7 +712,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, 'internal-server-error'};
-@@ -3663,6 +3537,16 @@
+@@ -3670,6 +3544,16 @@
  	    {error, 'internal-server-error'}
      end.
  

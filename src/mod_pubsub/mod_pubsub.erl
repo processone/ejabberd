@@ -2470,7 +2470,7 @@ get_options(Host, Node, JID, SubID, Lang) ->
     Action = fun(#pubsub_node{type = Type, id = NodeID}) ->
 		     case lists:member("subscription-options", features(Type)) of
 			 true  ->
-			     get_options_helper(JID, Lang, NodeID, SubID, Type);
+			     get_options_helper(JID, Lang, Node, NodeID, SubID, Type);
 			 false ->
 			    {error, extended_error(
 					'feature-not-implemented',
@@ -2482,7 +2482,7 @@ get_options(Host, Node, JID, SubID, Lang) ->
 	Error		    -> Error
     end.
 
-get_options_helper(JID, Lang, NodeID, SubID, Type) ->
+get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
     Subscriber = try exmpp_jid:parse(JID) of
     		    J -> jlib:short_jid(J)
 		  catch
@@ -2500,24 +2500,21 @@ get_options_helper(JID, Lang, NodeID, SubID, Type) ->
 	{_, []} ->
 	    {error, extended_error('not-acceptable', "not-subscribed")};
 	{[], [SID]} ->
-	    read_sub(Subscriber, NodeID, SID, Lang);
+	    read_sub(Subscriber, Node, NodeID, SID, Lang);
 	{[], _} ->
 	    {error, extended_error('not-acceptable', "subid-required")};
 	{_, _} ->
-	    read_sub(Subscriber, NodeID, SubID, Lang)
+	    read_sub(Subscriber, Node, NodeID, SubID, Lang)
     end.
 
-read_sub(Subscriber, NodeID, SubID, Lang) ->
+read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
     case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
 	{error, notfound} ->
 	    {error, extended_error('not-acceptable', "invalid-subid")};
 	{result, #pubsub_subscription{options = Options}} ->
             {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
-            [N] = mnesia:dirty_match_object({pubsub_node,'_',NodeID,'_','_','_','_'}),
-            {_, Node} = N#pubsub_node.nodeid,
-            NodeIDStr = node_to_string(Node),
             OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
-			       attrs = [?XMLATTR('node', NodeIDStr),
+			       attrs = [?XMLATTR('node', node_to_string(Node)),
 					?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
 					?XMLATTR('Subid', SubID)],
 			       children = [XdataEl]},
