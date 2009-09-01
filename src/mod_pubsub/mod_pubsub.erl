@@ -2464,7 +2464,17 @@ read_sub(Subscriber, NodeID, SubID, Lang) ->
 	{error, notfound} ->
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, #pubsub_subscription{options = Options}} ->
-	    pubsub_subscription:get_options_xform(Lang, Options)
+            {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
+            [N] = mnesia:dirty_match_object({pubsub_node,'_',NodeID,'_','_','_','_'}),
+            {_, Node} = N#pubsub_node.nodeid,
+            NodeIDStr = node_to_string(Node),
+            SubscriberStr = jlib:jid_to_string(Subscriber),
+            OptionsEl = {xmlelement, "options", [{"node", NodeIDStr},
+						 {"jid", SubscriberStr},
+						 {"subid", SubID}],
+			 [XdataEl]},
+            PubsubEl = {xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], [OptionsEl]},
+            {result, PubsubEl}
     end.
 
 set_options(Host, Node, JID, SubID, Configuration) ->
