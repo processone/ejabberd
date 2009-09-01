@@ -2424,7 +2424,7 @@ get_options(Host, Node, JID, SubID, Lang) ->
     Action = fun(#pubsub_node{type = Type, id = NodeID}) ->
 		     case lists:member("subscription-options", features(Type)) of
 			 true  ->
-			     get_options_helper(JID, Lang, NodeID, SubID, Type);
+			     get_options_helper(JID, Lang, Node, NodeID, SubID, Type);
 			 false ->
 			    {error, extended_error(
 					?ERR_FEATURE_NOT_IMPLEMENTED,
@@ -2436,7 +2436,7 @@ get_options(Host, Node, JID, SubID, Lang) ->
 	Error		    -> Error
     end.
 
-get_options_helper(JID, Lang, NodeID, SubID, Type) ->
+get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
     Subscriber = case jlib:string_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
@@ -2452,25 +2452,21 @@ get_options_helper(JID, Lang, NodeID, SubID, Type) ->
 	{_, []} ->
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "not-subscribed")};
 	{[], [SID]} ->
-	    read_sub(Subscriber, NodeID, SID, Lang);
+	    read_sub(Subscriber, Node, NodeID, SID, Lang);
 	{[], _} ->
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "subid-required")};
 	{_, _} ->
-	    read_sub(Subscriber, NodeID, SubID, Lang)
+	    read_sub(Subscriber, Node, NodeID, SubID, Lang)
     end.
 
-read_sub(Subscriber, NodeID, SubID, Lang) ->
+read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
     case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
 	{error, notfound} ->
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, #pubsub_subscription{options = Options}} ->
-            {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
-            [N] = mnesia:dirty_match_object({pubsub_node,'_',NodeID,'_','_','_','_'}),
-            {_, Node} = N#pubsub_node.nodeid,
-            NodeIDStr = node_to_string(Node),
-            SubscriberStr = jlib:jid_to_string(Subscriber),
-            OptionsEl = {xmlelement, "options", [{"node", NodeIDStr},
-						 {"jid", SubscriberStr},
+	    {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
+	    OptionsEl = {xmlelement, "options", [{"node", node_to_string(Node)},
+						 {"jid", jlib:jid_to_string(Subscriber)},
 						 {"subid", SubID}],
 			 [XdataEl]},
             PubsubEl = {xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], [OptionsEl]},
