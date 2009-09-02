@@ -298,9 +298,11 @@ match_acl(ACLName, JID, Host) ->
     end.
 
 %% @spec (String, RegExp) -> bool()
-%%     String = string()
+%%     String = string() | undefined
 %%     RegExp = string()
 
+is_regexp_match(undefined, RegExp) ->
+    false;
 is_regexp_match(String, RegExp) ->
     case regexp:first_match(String, RegExp) of
 	nomatch ->
@@ -315,7 +317,7 @@ is_regexp_match(String, RegExp) ->
     end.
 
 %% @spec (String, Glob) -> bool()
-%%     String = string()
+%%     String = string() | undefined
 %%     Glob = string()
 
 is_glob_match(String, Glob) ->

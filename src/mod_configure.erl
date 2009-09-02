@@ -325,7 +325,7 @@ adhoc_local_items(Acc, From, To, Lang) ->
 						Lang),
 	    Nodes1 = lists:filter(
 		       fun(N) ->
-			       Nd = exmpp_xml:get_attribute_as_list(N, 'node', ""),
+			       Nd = exmpp_xml:get_attribute_as_binary(N, 'node', ""),
 			       F = get_local_features([], From, To, Nd, Lang),
 			       case F of
 				   {result, [?NS_ADHOC_s]} ->
