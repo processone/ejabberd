@@ -277,7 +277,7 @@ try_call_command(Args, Auth, AccessCommands) ->
 
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, ErrorType}
 call_command([CmdString | Args], Auth, AccessCommands) ->
-    {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
+    CmdStringU = re:replace(CmdString, "-", "_", [global,{return,list}]),
     Command = list_to_atom(CmdStringU),
     case ejabberd_commands:get_command_format(Command) of
 	{error, command_unknown} ->
@@ -673,13 +673,13 @@ filter_commands(All, SubString) ->
     end.
 
 filter_commands_regexp(All, Glob) ->
-    RegExp = regexp:sh_to_awk(Glob),
+    RegExp = xmerl_regexp:sh_to_awk(Glob),
     lists:filter(
       fun(Command) ->
-	      case regexp:first_match(Command, RegExp) of
-		  {match, _, _} ->
+	      case re:run(Command, RegExp, [{capture, none}]) of
+		  match ->
 		      true;
-		  _ ->
+		  nomatch ->
 		      false
 	      end
       end,

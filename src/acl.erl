@@ -301,18 +301,19 @@ match_acl(ACLName, JID, Host) ->
 %%     String = string() | undefined
 %%     RegExp = string()
 
-is_regexp_match(undefined, RegExp) ->
+is_regexp_match(undefined, _RegExp) ->
     false;
 is_regexp_match(String, RegExp) ->
-    case regexp:first_match(String, RegExp) of
+    try re:run(String, RegExp, [{capture, none}]) of
 	nomatch ->
 	    false;
-	{match, _, _} ->
-	    true;
-	{error, ErrDesc} ->
+	match ->
+	    true
+    catch
+	_:ErrDesc ->
 	    ?ERROR_MSG(
-	       "Wrong regexp ~p in ACL: ~p",
-	       [RegExp, lists:flatten(regexp:format_error(ErrDesc))]),
+	       "Wrong regexp ~p in ACL:~n~p",
+	       [RegExp, ErrDesc]),
 	    false
     end.
 
@@ -321,6 +322,6 @@ is_regexp_match(String, RegExp) ->
 %%     Glob = string()
 
 is_glob_match(String, Glob) ->
-    is_regexp_match(String, regexp:sh_to_awk(Glob)).
+    is_regexp_match(String, xmerl_regexp:sh_to_awk(Glob)).
 
 

@@ -524,7 +524,7 @@ get_local_items({_, Host}, ["all users", [$@ | Diap]], _Server, _Lang) ->
 	Users ->
 	    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
 	    case catch begin
-			   {ok, [S1, S2]} = regexp:split(Diap, "-"),
+			   [S1, S2] = re:split(Diap, "-", [{return, list}]),
 			   N1 = list_to_integer(S1),
 			   N2 = list_to_integer(S2),
 			   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),

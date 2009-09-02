@@ -89,8 +89,8 @@ get_user_part(String, Pattern) ->
 	{'EXIT', _} ->
 	    {error, badmatch};
 	Result ->
-	    case regexp:sub(Pattern, "%u", Result) of
-		{ok, String, _} -> {ok, Result};
+	    case re:replace(Pattern, "%u", Result, [{return, list}]) of
+		String -> {ok, Result};
 		_ -> {error, badmatch}
 	    end
     end.

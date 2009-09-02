@@ -415,11 +415,11 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
 				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow,FileFormat)]);
 	       {body, T} ->  
-		   case {regexp:first_match(T, "^/me\s"), Nick} of
+		   case {re:run(T, "^/me\s", [{capture, none}]), Nick} of
 		       {_, ""} ->
 			   io_lib:format("<font class=\"msm\">~s</font><br/>",
 					 [htmlize(T,NoFollow,FileFormat)]);
-		       {{match, _, _}, _} ->
+		       {match, _} ->
 			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>", 
 					 [Nick, string:substr(htmlize(T,FileFormat), 5)]);
 		       {nomatch, _} ->
@@ -664,8 +664,7 @@ fw(F, S, O, FileFormat) ->
 	     html ->
 		 S1;
 	     plaintext ->
-		 {ok, Res, _} = regexp:gsub(S1, "<[^>]*>", ""),
-		 Res
+		 re:replace(S1, "<[^>]*>", "", [global,{return,list}])
 	 end,
     io:format(F, S2, []).
 
@@ -794,15 +793,20 @@ htmlize(S1, NoFollow, _FileFormat) ->
       S2_list).
 
 htmlize2(S1, NoFollow) ->
-    S2 = element(2, regexp:gsub(S1, "\\&", "\\&amp;")),
-    S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
-    S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
-    S5 = element(2, regexp:gsub(S4, "((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+",
-				link_regexp(NoFollow))),
-    %% Remove 'right-to-left override' unicode character 0x202e
-    S6 = element(2, regexp:gsub(S5, "  ", "\\&nbsp;\\&nbsp;")),
-    S7 = element(2, regexp:gsub(S6, "\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;")),
-    element(2, regexp:gsub(S7, [226,128,174], "[RLO]")).
+    ReplacementRules =
+	[{"\\&", "\\&amp;"},
+	{"<", "\\&lt;"},
+	{">", "\\&gt;"},
+	{"((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+", link_regexp(NoFollow)},
+	{"  ", "\\&nbsp;\\&nbsp;"},
+	{"\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;"},
+	{[226,128,174], "[RLO]"}], %% Remove 'right-to-left override' unicode character 0x202e
+    lists:foldl(
+        fun({RegExp, Replace}, Acc) ->
+	    re:replace(Acc, RegExp, Replace)
+	end,
+	S1,
+	ReplacementRules).
 
 %% Regexp link
 %% Add the nofollow rel attribute when required

@@ -182,7 +182,7 @@ parse_attr(less, {Name, Value}, ListOfSubValues) ->
     eldap:lessOrEqual(Name, NewValue);
 
 parse_attr(equal, {Name, Value}, ListOfSubValues) ->
-    {ok, RegSList} = regexp:split(remove_extra_asterisks(Value), "[*]"),
+    RegSList = re:split(remove_extra_asterisks(Value), "[*]", [{return, list}]),
     Pattern = case [do_sub(X, ListOfSubValues) || X <- RegSList] of
 		  [Head | Tail] when Tail /= [] ->
 		      {Head, lists:sublist(Tail, length(Tail)-1), lists:last(Tail)};
@@ -228,14 +228,15 @@ do_sub(S, [{RegExp, New, Times} | T]) ->
     do_sub(Result, T).
 
 do_sub(S, {RegExp, New}, Iter) ->
-    case regexp:sub(S, RegExp, New) of
-	{ok, NewS, 0} ->
+    try re:replace(S, RegExp, New, [{return, list}]) of
+	NewS when NewS == S ->
 	    NewS;
-	{ok, NewS, _} when Iter =< ?MAX_RECURSION ->
+	NewS when Iter =< ?MAX_RECURSION ->
 	    do_sub(NewS, {RegExp, New}, Iter+1);
-	{ok, _, _} when Iter > ?MAX_RECURSION ->
-	    throw({regexp, max_substitute_recursion});
-	_ ->
+	_ when Iter > ?MAX_RECURSION ->
+	    throw({regexp, max_substitute_recursion})
+    catch
+	_:_ ->
 	    throw({regexp, bad_regexp})
     end;
 
@@ -243,14 +244,15 @@ do_sub(S, {_, _, N}, _) when N<1 ->
     S;
 
 do_sub(S, {RegExp, New, Times}, Iter) ->
-    case regexp:sub(S, RegExp, New) of
-	{ok, NewS, 0} ->
+    try re:replace(S, RegExp, New, [{return, list}]) of
+	NewS when NewS == S ->
 	    NewS;
-	{ok, NewS, _} when Iter < Times ->
+	NewS when Iter < Times ->
 	    do_sub(NewS, {RegExp, New, Times}, Iter+1);
-	{ok, NewS, _} ->
-	    NewS;
-	_ ->
+	NewS ->
+	    NewS
+    catch
+	_:_ ->
 	    throw({regexp, bad_regexp})
     end.
 

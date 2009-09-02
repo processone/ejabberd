@@ -281,14 +281,14 @@ build_additional_translators(List) ->
       List).
 
 print_translation(File, Line, Str, StrT) ->
-    {ok, StrQ, _} = regexp:gsub(Str, "\"", "\\\""),
-    {ok, StrTQ, _} = regexp:gsub(StrT, "\"", "\\\""),
+    StrQ = re:replace(Str, "\"", "\\\"", [global, {return, list}]),
+    StrTQ = re:replace(StrT, "\"", "\\\"", [global, {return, list}]),
     io:format("#: ~s:~p~nmsgid \"~s\"~nmsgstr \"~s\"~n~n", [File, Line, StrQ, StrTQ]).
 
 print_translation_obsolete(Str, StrT) ->
     File = "unknown.erl",
     Line = 1,
-    {ok, StrQ, _} = regexp:gsub(Str, "\"", "\\\""),
-    {ok, StrTQ, _} = regexp:gsub(StrT, "\"", "\\\""),
+    StrQ = re:replace(Str, "\"", "\\\"", [global, {return, list}]),
+    StrTQ = re:replace(StrT, "\"", "\\\"", [global, {return, list}]),
     io:format("#: ~s:~p~n#~~ msgid \"~s\"~n#~~ msgstr \"~s\"~n~n", [File, Line, StrQ, StrTQ]).
 

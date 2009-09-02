@@ -1232,13 +1232,13 @@ acl_spec_select(ID, Opt) ->
 term_to_string(T) ->
     StringParagraph = lists:flatten(io_lib:format("~1000000p", [T])),
     %% Remove from the string all the carriage returns characters
-    {ok, StringLine, _} = regexp:gsub(StringParagraph, "\\n ", ""),
+    StringLine = re:replace(StringParagraph, "\\n ", "", [global,{return,list}]),
     StringLine.
 
 %% @spec (T::any(), Cols::integer()) -> {NumLines::integer(), Paragraph::string()}
 term_to_paragraph(T, Cols) ->
     Paragraph = erl_prettypr:format(erl_syntax:abstract(T), [{paper, Cols}]),
-    {ok, FieldList} = regexp:split(Paragraph, "\n"),
+    FieldList = re:split(Paragraph, "\n", [{return, list}]),
     NumLines = length(FieldList),
     {NumLines, Paragraph}.
 
@@ -1563,7 +1563,7 @@ list_users_parse_query(Query, Host) ->
 list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
-    {ok, [S1, S2]} = regexp:split(Diap, "-"),
+    [S1, S2] = re:split(Diap, "-", [{return, list}]),
     N1 = list_to_integer(S1),
     N2 = list_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
