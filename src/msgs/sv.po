@@ -1,39 +1,40 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Thore Alstromer\n"
+"Last-Translator: Gustaf Alströmer\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Swedish (svenska)\n"
+"X-Additional-Translator: Thore Alstromer\n"
 "X-Additional-Translator: Heysan\n"
 "X-Additional-Translator: Magnus Henoch\n"
 "X-Additional-Translator: Jonas Ådahl\n"
 
-#: ejabberd_c2s.erl:364 ejabberd_c2s.erl:668
+#: ejabberd_c2s.erl:360 ejabberd_c2s.erl:661
 msgid "Use of STARTTLS required"
 msgstr "Du måste använda STARTTLS"
 
-#: ejabberd_c2s.erl:448
+#: ejabberd_c2s.erl:439
 msgid "No resource provided"
 msgstr "Ingen resurs angiven"
 
-#: ejabberd_c2s.erl:1073
+#: ejabberd_c2s.erl:1071
 msgid "Replaced by new connection"
 msgstr "Ersatt av ny anslutning"
 
 #: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
-#, fuzzy
 msgid "Enter the text you see"
 msgstr "Skriv in sökväg till textfil"
 
 #: ejabberd_captcha.erl:97
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
+"Dina meddelanden till ~s är blockerade. För att avblockera dem, gå till ~s"
 
 #: ejabberd_captcha.erl:235
 msgid "The captcha is valid."
-msgstr ""
+msgstr "Din captcha är godkänd."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -113,7 +114,7 @@ msgstr "Ta bort dagens meddelande på alla värdar"
 msgid "Configuration"
 msgstr "Konfiguration"
 
-#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1862
+#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1863
 msgid "Database"
 msgstr "Databas"
 
@@ -125,7 +126,7 @@ msgstr "Starta moduler"
 msgid "Stop Modules"
 msgstr "Stanna moduler"
 
-#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1863
+#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1864
 msgid "Backup"
 msgstr "Säkerhetskopiera"
 
@@ -218,15 +219,15 @@ msgstr "Alla användare"
 msgid "Outgoing s2s Connections"
 msgstr "Utgaende s2s anslutning"
 
-#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1833
+#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1834
 msgid "Running Nodes"
 msgstr "Körande noder"
 
-#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1835
+#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1836
 msgid "Stopped Nodes"
 msgstr "Stannade noder"
 
-#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1879
+#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1880
 msgid "Modules"
 msgstr "Moduler"
 
@@ -417,7 +418,7 @@ msgstr "Handling mot användare"
 msgid "Edit Properties"
 msgstr "Redigera egenskaper"
 
-#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1695
+#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1696
 msgid "Remove User"
 msgstr "Ta bort användare"
 
@@ -442,7 +443,6 @@ msgid "Registration in mod_irc for "
 msgstr "mod_irc-registrering för "
 
 #: mod_irc/mod_irc.erl:569
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
@@ -455,7 +455,6 @@ msgid "IRC Username"
 msgstr "IRC-användarnamn"
 
 #: mod_irc/mod_irc.erl:584
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -463,45 +462,44 @@ msgid ""
 "~p, empty password."
 msgstr ""
 "Om du vill specifiera textkodning för IRC-servrar, fyll i listan med värden "
-"i formatet '{\"irc server\", \"encoding\"}'. Som standard används \"~s\"."
+"i formatet '{\"irc server\", \"encoding\", port, \"password\"}'. Som "
+"standard används \"~s\", port ~p, no password."
 
 #: mod_irc/mod_irc.erl:596
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Exempel: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
-"\"}]."
+"Exempel: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:601
 msgid "Connections parameters"
-msgstr ""
+msgstr "Uppkopplingsparametrar"
 
 #: mod_irc/mod_irc.erl:711
 msgid "Join IRC channel"
-msgstr ""
+msgstr "Lägg till IRC kanal"
 
 #: mod_irc/mod_irc.erl:715
 msgid "IRC channel (don't put the first #)"
-msgstr ""
+msgstr "IRC kanal (skriv inte första #)"
 
 #: mod_irc/mod_irc.erl:720
-#, fuzzy
 msgid "IRC server"
 msgstr "IRC-användarnamn"
 
 #: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
 msgid "Join the IRC channel here."
-msgstr ""
+msgstr "Lägg till IRC kanal här."
 
 #: mod_irc/mod_irc.erl:761
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr ""
+msgstr "Lägg till IRC kanal till detta Jabber ID: ~s"
 
 #: mod_irc/mod_irc.erl:846
 msgid "IRC settings"
-msgstr ""
+msgstr "IRC Inställningar"
 
 #: mod_irc/mod_irc.erl:851
 #, fuzzy
@@ -514,27 +512,24 @@ msgstr ""
 "IRC-servrar"
 
 #: mod_irc/mod_irc.erl:857
-#, fuzzy
 msgid "IRC username"
 msgstr "IRC-användarnamn"
 
 #: mod_irc/mod_irc.erl:906
-#, fuzzy
 msgid "Password ~b"
-msgstr "Lösenord"
+msgstr "Lösenord ~b"
 
 #: mod_irc/mod_irc.erl:911
-#, fuzzy
 msgid "Port ~b"
-msgstr "Port"
+msgstr "Port ~b"
 
 #: mod_irc/mod_irc.erl:916
 msgid "Encoding for server ~b"
-msgstr ""
+msgstr "Encoding för server ~b"
 
 #: mod_irc/mod_irc.erl:925
 msgid "Server ~b"
-msgstr ""
+msgstr "Server ~b"
 
 #: mod_muc/mod_muc.erl:437
 msgid "Only service administrators are allowed to send service messages"
@@ -572,7 +567,6 @@ msgstr "Smeknamn"
 
 #: mod_muc/mod_muc.erl:738 mod_muc/mod_muc_room.erl:926
 #: mod_muc/mod_muc_room.erl:1513
-#, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "Smeknamnet är reserverat"
 
@@ -706,7 +700,6 @@ msgid "Room Configuration"
 msgstr "Rumkonfiguration"
 
 #: mod_muc/mod_muc_log.erl:749
-#, fuzzy
 msgid "Room Occupants"
 msgstr "Antal besökare"
 
@@ -773,7 +766,6 @@ msgid "private, "
 msgstr "privat, "
 
 #: mod_muc/mod_muc_room.erl:801
-#, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -810,7 +802,6 @@ msgid "You have been banned from this room"
 msgstr "Du har blivit bannlyst från det här rummet"
 
 #: mod_muc/mod_muc_room.erl:1497
-#, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "Du måste vara medlem för att komma in i det här rummet"
 
@@ -825,7 +816,7 @@ msgstr "Lösenord erfordras"
 
 #: mod_muc/mod_muc_room.erl:1581
 msgid "Unable to generate a captcha"
-msgstr ""
+msgstr "Kunde inte generera ett captcha"
 
 #: mod_muc/mod_muc_room.erl:1591
 msgid "Incorrect password"
@@ -860,9 +851,8 @@ msgid "Owner privileges required"
 msgstr "Ägarprivilegier krävs"
 
 #: mod_muc/mod_muc_room.erl:2820
-#, fuzzy
 msgid "Configuration of room ~s"
-msgstr "Konfiguration för "
+msgstr "Konfiguration för ~s"
 
 #: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
 #, fuzzy
@@ -918,7 +908,6 @@ msgid "Default users as participants"
 msgstr "Gör om användare till deltagare"
 
 #: mod_muc/mod_muc_room.erl:2896
-#, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Tillåt användare att byta ämne"
 
@@ -981,10 +970,10 @@ msgstr "~s's offline meddelandekö"
 #: mod_shared_roster.erl:879 web/ejabberd_web_admin.erl:813
 #: web/ejabberd_web_admin.erl:854 web/ejabberd_web_admin.erl:922
 #: web/ejabberd_web_admin.erl:958 web/ejabberd_web_admin.erl:999
-#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1687
-#: web/ejabberd_web_admin.erl:1857 web/ejabberd_web_admin.erl:1889
-#: web/ejabberd_web_admin.erl:1952 web/ejabberd_web_admin.erl:2056
-#: web/ejabberd_web_admin.erl:2081 web/ejabberd_web_admin.erl:2169
+#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1688
+#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:1890
+#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2057
+#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
 msgid "Submitted"
 msgstr "Skicka in"
 
@@ -1050,67 +1039,67 @@ msgstr "Prenumerationsadress"
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Tillåt denna Jabber ID att prenumerera på denna pubsub node"
 
-#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3086
+#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
 msgid "Deliver payloads with event notifications"
 msgstr "Skicka innehåll tillsammans med notifikationer"
 
-#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3087
+#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
 msgid "Deliver event notifications"
 msgstr "Skicka eventnotifikation"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3088
+#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Meddela prenumeranter när nodens konfiguration ändras"
 
-#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3089
+#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
 msgid "Notify subscribers when the node is deleted"
 msgstr "Meddela prenumeranter när noden tas bort"
 
-#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3090
+#: mod_pubsub/mod_pubsub.erl:3246 mod_pubsub/mod_pubsub_odbc.erl:3096
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Meddela prenumeranter när dataposter tas bort från noden"
 
-#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3091
+#: mod_pubsub/mod_pubsub.erl:3247 mod_pubsub/mod_pubsub_odbc.erl:3097
 msgid "Persist items to storage"
 msgstr "Spara dataposter permanent"
 
-#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
+#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
 msgid "A friendly name for the node"
 msgstr "Ett vänligt namn for noden"
 
-#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
+#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
 msgid "Max # of items to persist"
 msgstr "Högsta antal dataposter som sparas"
 
-#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
+#: mod_pubsub/mod_pubsub.erl:3250 mod_pubsub/mod_pubsub_odbc.erl:3100
 msgid "Whether to allow subscriptions"
 msgstr "Tillåta prenumerationer?"
 
-#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
+#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
 msgid "Specify the access model"
 msgstr "Specificera accessmodellen"
 
-#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
+#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
 msgid "Roster groups allowed to subscribe"
 msgstr "Rostergrupper tillåts att prenumerera"
 
-#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
+#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
 msgid "Specify the publisher model"
 msgstr "Ange publiceringsmodell"
 
-#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
+#: mod_pubsub/mod_pubsub.erl:3257 mod_pubsub/mod_pubsub_odbc.erl:3107
 msgid "Max payload size in bytes"
 msgstr "Högsta innehållsstorlek i bytes"
 
-#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
+#: mod_pubsub/mod_pubsub.erl:3258 mod_pubsub/mod_pubsub_odbc.erl:3108
 msgid "When to send the last published item"
 msgstr "När att skicka senast publicerade ämne"
 
-#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
+#: mod_pubsub/mod_pubsub.erl:3260 mod_pubsub/mod_pubsub_odbc.erl:3110
 msgid "Only deliver notifications to available users"
 msgstr "Skicka notifikationer bara till uppkopplade användare"
 
-#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
+#: mod_pubsub/mod_pubsub.erl:3261 mod_pubsub/mod_pubsub_odbc.erl:3111
 msgid "The collections with which a node is affiliated"
 msgstr ""
 
@@ -1119,13 +1108,12 @@ msgid "Choose a username and password to register with this server"
 msgstr "Välj ett användarnamn och lösenord för att registrera mot denna server"
 
 #: mod_register.erl:243
-#, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Det är inte tillåtet för användare att skapa konton så fort"
 
 #: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
-#: web/ejabberd_web_admin.erl:1812 web/ejabberd_web_admin.erl:1823
-#: web/ejabberd_web_admin.erl:2140
+#: web/ejabberd_web_admin.erl:1813 web/ejabberd_web_admin.erl:1824
+#: web/ejabberd_web_admin.erl:2141
 msgid "None"
 msgstr "Inga"
 
@@ -1157,9 +1145,9 @@ msgstr "Kontaktlista för "
 #: mod_shared_roster.erl:880 web/ejabberd_web_admin.erl:814
 #: web/ejabberd_web_admin.erl:855 web/ejabberd_web_admin.erl:923
 #: web/ejabberd_web_admin.erl:959 web/ejabberd_web_admin.erl:1000
-#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1688
-#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:2057
-#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
+#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1689
+#: web/ejabberd_web_admin.erl:1859 web/ejabberd_web_admin.erl:2058
+#: web/ejabberd_web_admin.erl:2083 web/ejabberd_web_admin.erl:2171
 msgid "Bad format"
 msgstr "Dåligt format"
 
@@ -1177,7 +1165,7 @@ msgid "Shared Roster Groups"
 msgstr "Delade Rostergrupper"
 
 #: mod_shared_roster.erl:772 web/ejabberd_web_admin.erl:1346
-#: web/ejabberd_web_admin.erl:2382
+#: web/ejabberd_web_admin.erl:2383
 msgid "Add New"
 msgstr "Lägg till ny"
 
@@ -1203,7 +1191,7 @@ msgstr "Grupp "
 
 #: mod_shared_roster.erl:886 web/ejabberd_web_admin.erl:820
 #: web/ejabberd_web_admin.erl:864 web/ejabberd_web_admin.erl:929
-#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1943
+#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1944
 msgid "Submit"
 msgstr "Skicka"
 
@@ -1255,7 +1243,7 @@ msgid "Middle Name"
 msgstr "Mellannamn"
 
 #: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1932
+#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1933
 msgid "Name"
 msgstr "Namn"
 
@@ -1301,7 +1289,7 @@ msgstr "Fyll i fält för att söka efter jabberanvändare"
 #: web/ejabberd_web_admin.erl:179 web/ejabberd_web_admin.erl:186
 #: web/ejabberd_web_admin.erl:202 web/ejabberd_web_admin.erl:209
 msgid "Unauthorized"
-msgstr ""
+msgstr "Ej auktoriserad"
 
 #: web/ejabberd_web_admin.erl:266 web/ejabberd_web_admin.erl:283
 msgid "ejabberd Web Admin"
@@ -1355,12 +1343,11 @@ msgstr "Visa normal tabell"
 msgid "Show Integral Table"
 msgstr "Visa kumulativ tabell"
 
-#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1865
+#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1866
 msgid "Statistics"
 msgstr "Statistik"
 
 #: web/ejabberd_web_admin.erl:1097
-#, fuzzy
 msgid "Not Found"
 msgstr "Noden finns inte"
 
@@ -1389,7 +1376,7 @@ msgid "Registered Users:"
 msgstr "Registrerade användare"
 
 #: web/ejabberd_web_admin.erl:1613 web/ejabberd_web_admin.erl:1629
-#: web/ejabberd_web_admin.erl:2113
+#: web/ejabberd_web_admin.erl:2114
 msgid "Online Users:"
 msgstr "Inloggade användare"
 
@@ -1401,81 +1388,80 @@ msgstr "Utgående s2s anslutning"
 msgid "Outgoing s2s Servers:"
 msgstr "Utgående s2s server"
 
-#: web/ejabberd_web_admin.erl:1682
+#: web/ejabberd_web_admin.erl:1683
 msgid "Change Password"
 msgstr "Ändra lösenord"
 
-#: web/ejabberd_web_admin.erl:1685
+#: web/ejabberd_web_admin.erl:1686
 msgid "User "
 msgstr "Användare "
 
-#: web/ejabberd_web_admin.erl:1692
+#: web/ejabberd_web_admin.erl:1693
 msgid "Connected Resources:"
 msgstr "Anslutna resurser:"
 
-#: web/ejabberd_web_admin.erl:1693
+#: web/ejabberd_web_admin.erl:1694
 msgid "Password:"
 msgstr "Lösenord:"
 
-#: web/ejabberd_web_admin.erl:1754
+#: web/ejabberd_web_admin.erl:1755
 msgid "No Data"
 msgstr "Ingen data"
 
-#: web/ejabberd_web_admin.erl:1832
+#: web/ejabberd_web_admin.erl:1833
 msgid "Nodes"
 msgstr "Noder"
 
-#: web/ejabberd_web_admin.erl:1855 web/ejabberd_web_admin.erl:1877
+#: web/ejabberd_web_admin.erl:1856 web/ejabberd_web_admin.erl:1878
 msgid "Node "
 msgstr "Nod "
 
-#: web/ejabberd_web_admin.erl:1864
+#: web/ejabberd_web_admin.erl:1865
 msgid "Listened Ports"
 msgstr "Lyssnarport"
 
-#: web/ejabberd_web_admin.erl:1866 web/ejabberd_web_admin.erl:2181
-#: web/ejabberd_web_admin.erl:2369
+#: web/ejabberd_web_admin.erl:1867 web/ejabberd_web_admin.erl:2182
+#: web/ejabberd_web_admin.erl:2370
 msgid "Update"
 msgstr "Uppdatera"
 
-#: web/ejabberd_web_admin.erl:1869 web/ejabberd_web_admin.erl:2490
+#: web/ejabberd_web_admin.erl:1870 web/ejabberd_web_admin.erl:2491
 msgid "Restart"
 msgstr "Omstart"
 
-#: web/ejabberd_web_admin.erl:1871 web/ejabberd_web_admin.erl:2492
+#: web/ejabberd_web_admin.erl:1872 web/ejabberd_web_admin.erl:2493
 msgid "Stop"
 msgstr "Stoppa"
 
-#: web/ejabberd_web_admin.erl:1885
+#: web/ejabberd_web_admin.erl:1886
 msgid "RPC Call Error"
 msgstr "RPC Uppringningserror"
 
-#: web/ejabberd_web_admin.erl:1926
+#: web/ejabberd_web_admin.erl:1927
 msgid "Database Tables at "
 msgstr "Databas tabell pa"
 
-#: web/ejabberd_web_admin.erl:1933
+#: web/ejabberd_web_admin.erl:1934
 msgid "Storage Type"
 msgstr "Lagringstyp"
 
-#: web/ejabberd_web_admin.erl:1934
-msgid "Elements"
-msgstr ""
-
 #: web/ejabberd_web_admin.erl:1935
+msgid "Elements"
+msgstr "Elements"
+
+#: web/ejabberd_web_admin.erl:1936
 msgid "Memory"
 msgstr "Minne"
 
-#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
+#: web/ejabberd_web_admin.erl:1954 web/ejabberd_web_admin.erl:2059
 msgid "Error"
-msgstr ""
+msgstr "Fel"
 
-#: web/ejabberd_web_admin.erl:1955
+#: web/ejabberd_web_admin.erl:1956
 msgid "Backup of "
 msgstr "Backup av"
 
-#: web/ejabberd_web_admin.erl:1957
-#, fuzzy
+#: web/ejabberd_web_admin.erl:1958
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1485,161 +1471,140 @@ msgstr ""
 "databas. Om du använder ODBC modul så måste du ta backup på SQLs databas "
 "enskilt"
 
-#: web/ejabberd_web_admin.erl:1962
+#: web/ejabberd_web_admin.erl:1963
 msgid "Store binary backup:"
 msgstr "Lagra den binära backupen"
 
-#: web/ejabberd_web_admin.erl:1966 web/ejabberd_web_admin.erl:1973
-#: web/ejabberd_web_admin.erl:1981 web/ejabberd_web_admin.erl:1988
-#: web/ejabberd_web_admin.erl:1995 web/ejabberd_web_admin.erl:2002
-#: web/ejabberd_web_admin.erl:2009 web/ejabberd_web_admin.erl:2017
-#: web/ejabberd_web_admin.erl:2024 web/ejabberd_web_admin.erl:2031
+#: web/ejabberd_web_admin.erl:1967 web/ejabberd_web_admin.erl:1974
+#: web/ejabberd_web_admin.erl:1982 web/ejabberd_web_admin.erl:1989
+#: web/ejabberd_web_admin.erl:1996 web/ejabberd_web_admin.erl:2003
+#: web/ejabberd_web_admin.erl:2010 web/ejabberd_web_admin.erl:2018
+#: web/ejabberd_web_admin.erl:2025 web/ejabberd_web_admin.erl:2032
 msgid "OK"
 msgstr "OK"
 
-#: web/ejabberd_web_admin.erl:1969
+#: web/ejabberd_web_admin.erl:1970
 msgid "Restore binary backup immediately:"
 msgstr "återställ den binära backupen omedelbart"
 
-#: web/ejabberd_web_admin.erl:1977
+#: web/ejabberd_web_admin.erl:1978
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr "återställ den binära backupen efter nästa ejabberd omstart"
 
-#: web/ejabberd_web_admin.erl:1984
+#: web/ejabberd_web_admin.erl:1985
 msgid "Store plain text backup:"
 msgstr "Lagra textbackup"
 
-#: web/ejabberd_web_admin.erl:1991
+#: web/ejabberd_web_admin.erl:1992
 msgid "Restore plain text backup immediately:"
 msgstr "återställ textbackup omedelbart"
 
-#: web/ejabberd_web_admin.erl:1998
+#: web/ejabberd_web_admin.erl:1999
 msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr ""
+msgstr "Importera användardata från en PIEFXIS fil (XEP-0277):"
 
-#: web/ejabberd_web_admin.erl:2005
+#: web/ejabberd_web_admin.erl:2006
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
 msgstr ""
+"Exportera data av alla användare i servern till en PIEFXIS fil (XEP-0277):"
 
-#: web/ejabberd_web_admin.erl:2012
+#: web/ejabberd_web_admin.erl:2013
 msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
-msgstr ""
+msgstr "Exportera data av användare i en host till PIEFXIS fil (XEP-0277):"
 
-#: web/ejabberd_web_admin.erl:2020
-#, fuzzy
+#: web/ejabberd_web_admin.erl:2021
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Importera användare från jabberd14 Spool filer"
 
-#: web/ejabberd_web_admin.erl:2027
-#, fuzzy
+#: web/ejabberd_web_admin.erl:2028
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importera användare från jabberd14 Spool filer"
+msgstr "Importera användare från jabberd14 Spool directory:"
 
-#: web/ejabberd_web_admin.erl:2053
+#: web/ejabberd_web_admin.erl:2054
 msgid "Listened Ports at "
 msgstr "Lyssnande portar på "
 
-#: web/ejabberd_web_admin.erl:2078
+#: web/ejabberd_web_admin.erl:2079
 msgid "Modules at "
 msgstr "Moduler på"
 
-#: web/ejabberd_web_admin.erl:2104
+#: web/ejabberd_web_admin.erl:2105
 msgid "Statistics of ~p"
 msgstr "Statistik på ~p"
 
-#: web/ejabberd_web_admin.erl:2107
+#: web/ejabberd_web_admin.erl:2108
 msgid "Uptime:"
 msgstr "Tid upp"
 
-#: web/ejabberd_web_admin.erl:2110
+#: web/ejabberd_web_admin.erl:2111
 msgid "CPU Time:"
 msgstr "CPU tid"
 
-#: web/ejabberd_web_admin.erl:2116
+#: web/ejabberd_web_admin.erl:2117
 msgid "Transactions Committed:"
 msgstr "Transaktioner kommittade"
 
-#: web/ejabberd_web_admin.erl:2119
+#: web/ejabberd_web_admin.erl:2120
 msgid "Transactions Aborted:"
 msgstr "Transaktioner borttagna"
 
-#: web/ejabberd_web_admin.erl:2122
+#: web/ejabberd_web_admin.erl:2123
 msgid "Transactions Restarted:"
 msgstr "Transaktioner omstartade"
 
-#: web/ejabberd_web_admin.erl:2125
+#: web/ejabberd_web_admin.erl:2126
 msgid "Transactions Logged:"
 msgstr "Transaktioner loggade "
 
-#: web/ejabberd_web_admin.erl:2167
+#: web/ejabberd_web_admin.erl:2168
 msgid "Update "
 msgstr "Uppdatera"
 
-#: web/ejabberd_web_admin.erl:2175
+#: web/ejabberd_web_admin.erl:2176
 msgid "Update plan"
 msgstr "Uppdateringsplan"
 
-#: web/ejabberd_web_admin.erl:2176
-#, fuzzy
+#: web/ejabberd_web_admin.erl:2177
 msgid "Modified modules"
 msgstr "Uppdaterade moduler"
 
-#: web/ejabberd_web_admin.erl:2177
+#: web/ejabberd_web_admin.erl:2178
 msgid "Update script"
 msgstr "Uppdatera skript"
 
-#: web/ejabberd_web_admin.erl:2178
+#: web/ejabberd_web_admin.erl:2179
 msgid "Low level update script"
 msgstr "Uppdaterade laglevel skript"
 
-#: web/ejabberd_web_admin.erl:2179
+#: web/ejabberd_web_admin.erl:2180
 msgid "Script check"
 msgstr "Skript kollat"
 
-#: web/ejabberd_web_admin.erl:2347
+#: web/ejabberd_web_admin.erl:2348
 msgid "Port"
 msgstr "Port"
 
-#: web/ejabberd_web_admin.erl:2348
-msgid "IP"
-msgstr ""
-
 #: web/ejabberd_web_admin.erl:2349
-#, fuzzy
-msgid "Protocol"
-msgstr "Port"
+msgid "IP"
+msgstr "IP"
 
-#: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
+#: web/ejabberd_web_admin.erl:2350
+msgid "Protocol"
+msgstr "Protocol"
+
+#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
 msgid "Module"
 msgstr "Modul"
 
-#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
+#: web/ejabberd_web_admin.erl:2352 web/ejabberd_web_admin.erl:2479
 msgid "Options"
 msgstr "Parametrar"
 
-#: web/ejabberd_web_admin.erl:2371
+#: web/ejabberd_web_admin.erl:2372
 msgid "Delete"
 msgstr "Ta bort"
 
-#: web/ejabberd_web_admin.erl:2500
+#: web/ejabberd_web_admin.erl:2501
 msgid "Start"
 msgstr "Starta"
-
-#~ msgid "Encodings"
-#~ msgstr "Textkodningar"
-
-#~ msgid "(Raw)"
-#~ msgstr "(Ra)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Virtuella servrar"
-
-#~ msgid "Specified nickname is already registered"
-#~ msgstr "Detta smeknamnet är redan registrerat"
-
-#~ msgid "Size"
-#~ msgstr "Storlek"
-
-#~ msgid "You must fill in field \"nick\" in the form"
-#~ msgstr "Du måste fylla i fältet \"nick\" i formuläret"
