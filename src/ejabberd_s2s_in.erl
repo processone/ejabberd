@@ -399,7 +399,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == 'presence')) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      exmpp_jid:prep_domain(From),
+					      exmpp_jid:prep_domain(To),
 					      [From, To, El]),
 					    ejabberd_router:route(
 					      From, To, El);
@@ -419,7 +419,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == 'presence')) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      exmpp_jid:prep_domain(From),
+					      exmpp_jid:prep_domain(To),
 					      [From, To, El]),
 					    ejabberd_router:route(
 					      From, To, El);
