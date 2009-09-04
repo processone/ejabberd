@@ -481,14 +481,15 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	true ->
 	    %% TODO: check creation, presence, roster
 	    if MaxItems > 0 ->
-		PubId = {now(), SubKey},
+		Now = now(),
+		PubId = {Now, SubKey},
 		Item = case get_item(NodeId, ItemId) of
 		       {result, OldItem} ->
 			   OldItem#pubsub_item{modification = PubId,
 					       payload = Payload};
 		       _ ->
 			   #pubsub_item{itemid = {ItemId, NodeId},
-					creation = {now(), GenKey},
+					creation = {Now, GenKey},
 					modification = PubId,
 					payload = Payload}
 		   end,
