@@ -414,7 +414,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == "presence")) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      LFrom,
+					      LTo,
 					      [From, To, NewEl]),
 					    ejabberd_router:route(
 					      From, To, NewEl);
@@ -433,7 +433,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					(Name == "presence")) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      LFrom,
+					      LTo,
 					      [From, To, NewEl]),
 					    ejabberd_router:route(
 					      From, To, NewEl);
