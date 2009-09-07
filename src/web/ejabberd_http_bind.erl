@@ -180,7 +180,7 @@ process_request(Data, IP) ->
 	{ok, {"", Rid, Attrs, Payload}} ->
 	    case xml:get_attr_s("to",Attrs) of
                 "" ->
-		    ?ERROR_MSG("Session not created (Improper addressing)", []),
+		    ?INFO_MSG("Session not created (Improper addressing).~nAttributes: ~p", [Attrs]),
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
 		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'/>"};

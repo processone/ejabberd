@@ -1005,8 +1005,10 @@ srv_lookup(Server, Timeout, Retries) ->
         {error, _Reason} ->
             case inet_res:getbyname("_jabber._tcp." ++ Server, srv, Timeout) of
                 {error, timeout} ->
-                    ?ERROR_MSG("Couldn't resolve SRV records for ~p via nameservers ~p.",
-                               [Server, inet_db:res_option(nameserver)]),
+                    ?ERROR_MSG("The DNS servers~n  ~p~ntimed out on request"
+			       " for ~p IN SRV."
+			       " You should check your DNS configuration.",
+                               [inet_db:res_option(nameserver), Server]),
                     srv_lookup(Server, Timeout, Retries - 1);
                 R -> R
             end;
