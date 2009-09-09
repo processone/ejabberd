@@ -38,8 +38,6 @@
 	 read_subscription/3,
 	 write_subscription/4]).
 
--include_lib("stdlib/include/qlc.hrl").
-
 -include("pubsub.hrl").
 -include("jlib.hrl").
 
