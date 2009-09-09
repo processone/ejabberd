@@ -562,9 +562,12 @@ purge_node(NodeId, Owner) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(NodeId, GenKey),
     case GenState of
-	#pubsub_state{items = Items, affiliation = owner} ->
-	    del_items(NodeId, Items),
-	    %% set new item list use useless
+	#pubsub_state{affiliation = owner} ->
+	    {result, States} = get_states(NodeId),
+	    lists:foreach(
+		fun(#pubsub_state{items = []}) -> ok;
+		   (#pubsub_state{items = Items}) -> del_items(NodeId, Items)
+	    end, States),
 	    {result, {default, broadcast}};
 	_ ->
 	    %% Entity is not owner

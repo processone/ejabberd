@@ -556,12 +556,30 @@ delete_item(NodeId, Publisher, PublishModel, ItemId) ->
 	    case lists:member(ItemId, Items) of
 		true ->
 		    del_item(NodeId, ItemId),
-		    NewItems = lists:delete(ItemId, Items),
-		    set_state(GenState#pubsub_state{items = NewItems}),
+		    set_state(GenState#pubsub_state{items = lists:delete(ItemId, Items)}),
 		    {result, {default, broadcast}};
 		false ->
-		    %% Non-existent node or item
-		    {error, 'item-not-found'}
+		    case Affiliation of
+			owner ->
+			    %% Owner can delete other publishers items as well
+			    {result, States} = get_states(NodeId),
+			    lists:foldl(
+				fun(#pubsub_state{items = PI, affiliation = publisher} = S, Res) ->
+				    case lists:member(ItemId, PI) of
+					true ->
+					    del_item(NodeId, ItemId),
+					    set_state(S#pubsub_state{items = lists:delete(ItemId, PI)}),
+					    {result, {default, broadcast}};
+					false ->
+					    Res
+				    end;
+				   (_, Res) ->
+				    Res
+			    end, {error, 'item-not-found'}, States);
+			_ ->
+			    %% Non-existent node or item
+			    {error, 'item-not-found'}
+		    end
 	    end
     end.
 
@@ -574,9 +592,15 @@ purge_node(NodeId, Owner) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(NodeId, GenKey),
     case GenState of
-	#pubsub_state{items = Items, affiliation = owner} ->
-	    del_items(NodeId, Items),
-	    set_state(GenState#pubsub_state{items = []}),
+	#pubsub_state{affiliation = owner} ->
+	    {result, States} = get_states(NodeId),
+	    lists:foreach(
+		fun(#pubsub_state{items = []}) ->
+		    ok;
+		   (#pubsub_state{items = Items} = S) ->
+		    del_items(NodeId, Items),
+		    set_state(S#pubsub_state{items = []})
+	    end, States),
 	    {result, {default, broadcast}};
 	_ ->
 	    %% Entity is not owner
