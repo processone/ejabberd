@@ -657,6 +657,7 @@ disco_sm_items(Acc, From, To, [], _Lang) ->
 disco_sm_items(Acc, From, To, Node, _Lang) ->
     Host = To#jid.lserver,
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
+	% TODO call get_items/6 instead for access control (EJAB-1033)
 	case node_call(Type, get_items, [NodeId, From]) of
 	    {result, []} ->
 		none;
@@ -1092,6 +1093,7 @@ iq_disco_items(Host, Item, From) ->
 	    %% TODO That is, remove name attribute (or node?, please check for 2.1)
 	    Action =
 		fun(#pubsub_node{type = Type, id = NodeId}) ->
+			% TODO call get_items/6 instead for access control (EJAB-1033)
 			NodeItems = case node_call(Type, get_items, [NodeId, From]) of
 					{result, I} -> I;
 					_ -> []
