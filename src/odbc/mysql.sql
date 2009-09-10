@@ -22,7 +22,8 @@ SET table_type=InnoDB;
 
 CREATE TABLE users (
     username varchar(250) PRIMARY KEY,
-    password text NOT NULL
+    password text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
 
@@ -42,7 +43,8 @@ CREATE TABLE rosterusers (
     askmessage text NOT NULL,
     server character(1) NOT NULL,
     subscribe text NOT NULL,
-    type text
+    type text,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
 CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers(username(75), jid(75));
@@ -61,7 +63,8 @@ CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 CREATE TABLE spool (
     username varchar(250) NOT NULL,
     xml text NOT NULL,
-    seq BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+    seq BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
 CREATE INDEX i_despool USING BTREE ON spool(username);
@@ -69,7 +72,8 @@ CREATE INDEX i_despool USING BTREE ON spool(username);
 
 CREATE TABLE vcard (
     username varchar(250) PRIMARY KEY,
-    vcard text NOT NULL
+    vcard text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
 
@@ -120,7 +124,8 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username varchar(250) NOT NULL,
     name varchar(250) NOT NULL,
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
 CREATE INDEX i_privacy_list_username  USING BTREE ON privacy_list(username);
@@ -142,7 +147,8 @@ CREATE TABLE privacy_list_data (
 CREATE TABLE private_storage (
     username varchar(250) NOT NULL,
     namespace varchar(250) NOT NULL,
-    data text NOT NULL
+    data text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
 CREATE INDEX i_private_storage_username USING BTREE ON private_storage(username);
