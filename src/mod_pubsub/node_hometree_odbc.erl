@@ -1350,12 +1350,12 @@ raw_to_item(NodeId, {ItemId, SJID, Creation, Modification, XML}) ->
 		 modification={ToTime(Modification), JID},
 		 payload = Payload}.
 
-l2i(L) when list(L) -> list_to_integer(L);
-l2i(I) when integer(I) -> I.
-i2l(I) when integer(I) -> integer_to_list(I);
-i2l(L) when list(L)    -> L.
-i2l(I, N) when integer(I) -> i2l(i2l(I), N);
-i2l(L, N) when list(L) ->
+l2i(L) when is_list(L) -> list_to_integer(L);
+l2i(I) when is_integer(I) -> I.
+i2l(I) when is_integer(I) -> integer_to_list(I);
+i2l(L) when is_list(L)    -> L.
+i2l(I, N) when is_integer(I) -> i2l(i2l(I), N);
+i2l(L, N) when is_list(L) ->
     case length(L) of
 	N -> L;
 	C when C > N -> L;
