@@ -88,6 +88,7 @@
 - ejabberdctl script now displays help and categorization of commands
 
 * HTTP Binding and HTTP Polling
+- HTTP-Bind: module optimization and clean-up
 - HTTP-Bind: allow configuration of max_inactivity timeout
 - HTTP-Poll: turn session timeout into a config file parameter
 
