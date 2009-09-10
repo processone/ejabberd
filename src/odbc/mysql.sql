@@ -10,7 +10,7 @@
 -- but WITHOUT ANY WARRANTY; without even the implied warranty of
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 -- General Public License for more details.
---                         
+--
 -- You should have received a copy of the GNU General Public License
 -- along with this program; if not, write to the Free Software
 -- Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -175,14 +175,14 @@ CREATE TABLE pubsub_node_option (
   val text
 ) CHARACTER SET utf8;
 CREATE INDEX i_pubsub_node_option_nodeid ON pubsub_node_option(nodeid);
-ALTER TABLE `pubsub_node_option` ADD FOREIGN KEY (`nodeid`) REFERENCES `ejabberd`.`pubsub_node` (`nodeid`) ON DELETE CASCADE;
+ALTER TABLE `pubsub_node_option` ADD FOREIGN KEY (`nodeid`) REFERENCES `pubsub_node` (`nodeid`) ON DELETE CASCADE;
 
 CREATE TABLE pubsub_node_owner (
   nodeid bigint,
   owner text
 ) CHARACTER SET utf8;
 CREATE INDEX i_pubsub_node_owner_nodeid ON pubsub_node_owner(nodeid);
-ALTER TABLE `pubsub_node_owner` ADD FOREIGN KEY (`nodeid`) REFERENCES `ejabberd`.`pubsub_node` (`nodeid`) ON DELETE CASCADE;
+ALTER TABLE `pubsub_node_owner` ADD FOREIGN KEY (`nodeid`) REFERENCES `pubsub_node` (`nodeid`) ON DELETE CASCADE;
 
 CREATE TABLE pubsub_state (
   nodeid bigint,
@@ -193,11 +193,11 @@ CREATE TABLE pubsub_state (
 ) CHARACTER SET utf8;
 CREATE INDEX i_pubsub_state_jid ON pubsub_state(jid(60));
 CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state(nodeid, jid(60));
-ALTER TABLE `pubsub_state` ADD FOREIGN KEY (`nodeid`) REFERENCES `ejabberd`.`pubsub_node` (`nodeid`) ON DELETE CASCADE;
+ALTER TABLE `pubsub_state` ADD FOREIGN KEY (`nodeid`) REFERENCES `pubsub_node` (`nodeid`) ON DELETE CASCADE;
 
 CREATE TABLE pubsub_item (
   nodeid bigint,
-  itemid text, 
+  itemid text,
   publisher text,
   creation text,
   modification text,
@@ -205,7 +205,7 @@ CREATE TABLE pubsub_item (
 ) CHARACTER SET utf8;
 CREATE INDEX i_pubsub_item_itemid ON pubsub_item(itemid(36));
 CREATE UNIQUE INDEX i_pubsub_item_tuple ON pubsub_item(nodeid, itemid(36));
-ALTER TABLE `pubsub_item` ADD FOREIGN KEY (`nodeid`) REFERENCES `ejabberd`.`pubsub_node` (`nodeid`) ON DELETE CASCADE;
+ALTER TABLE `pubsub_item` ADD FOREIGN KEY (`nodeid`) REFERENCES `pubsub_node` (`nodeid`) ON DELETE CASCADE;
 
 CREATE TABLE pubsub_subscription_opt (
   subid text,
