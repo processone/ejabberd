@@ -277,6 +277,7 @@ distclean: distclean-recursive clean-local
 	rm -f config.status
 	rm -f config.log
 	rm -f Makefile
+	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
 TAGS:
 	etags *.erl
