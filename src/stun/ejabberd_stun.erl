@@ -75,10 +75,10 @@ socket_type() ->
 udp_recv(Sock, Addr, Port, Data, _Opts) ->
     case stun_codec:decode(Data) of
 	{ok, Msg, <<>>} ->
-	    ?DEBUG("got:~n~s", [stun_codec:pp(Msg)]),
+	    ?DEBUG("got:~n~p", [Msg]),
 	    case process(Addr, Port, Msg) of
 		RespMsg when is_record(RespMsg, stun) ->
-		    ?DEBUG("sent:~n~s", [stun_codec:pp(RespMsg)]),
+		    ?DEBUG("sent:~n~p", [RespMsg]),
 		    Data1 = stun_codec:encode(RespMsg),
 		    gen_udp:send(Sock, Addr, Port, Data1);
 		_ ->
@@ -112,11 +112,11 @@ wait_for_tls(Event, State) ->
     {next_state, wait_for_tls, State}.
 
 session_established(Msg, State) when is_record(Msg, stun) ->
-    ?DEBUG("got:~n~s", [stun_codec:pp(Msg)]),
+    ?DEBUG("got:~n~p", [Msg]),
     {Addr, Port} = State#state.peer,
     case process(Addr, Port, Msg) of
 	Resp when is_record(Resp, stun) ->
-	    ?DEBUG("sent:~n~s", [stun_codec:pp(Resp)]),
+	    ?DEBUG("sent:~n~p", [Resp]),
 	    Data = stun_codec:encode(Resp),
 	    (State#state.sock_mod):send(State#state.sock, Data);
 	_ ->
