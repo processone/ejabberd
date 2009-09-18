@@ -1296,6 +1296,7 @@ decode_node(N) -> ?PUBSUB:string_to_node(N).
 
 decode_affiliation("o") -> owner;
 decode_affiliation("p") -> publisher;
+decode_affiliation("m") -> member;
 decode_affiliation("c") -> outcast;
 decode_affiliation(_) -> none.
 
@@ -1315,6 +1316,7 @@ encode_jid(JID) -> ?PUBSUB:escape(jlib:jid_to_string(JID)).
 
 encode_affiliation(owner) -> "o";
 encode_affiliation(publisher) -> "p";
+encode_affiliation(member) -> "m";
 encode_affiliation(outcast) -> "c";
 encode_affiliation(_) -> "n".
 
