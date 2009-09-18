@@ -401,10 +401,8 @@ handle_sync_event(#http_put{rid = Rid},
     ?DEBUG("Shaper timer for RID ~p: ~p", [Rid, Reply]),
     {reply, Reply, StateName, StateData};
 
-handle_sync_event(#http_put{rid = Rid, attrs = Attrs,
-			    payload_size = PayloadSize,
-			    hold = Hold} = Request,
-		  From, StateName, StateData) ->
+handle_sync_event(#http_put{payload_size = PayloadSize} = Request,
+		  _From, StateName, StateData) ->
     ?DEBUG("New request: ~p",[Request]),
     %% Updating trafic shaper
     {NewShaperState, NewShaperTimer} =
