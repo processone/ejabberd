@@ -180,7 +180,7 @@ process_request(Data, IP) ->
 	{ok, {"", Rid, Attrs, Payload}} ->
 	    case xml:get_attr_s("to",Attrs) of
                 "" ->
-		    ?INFO_MSG("Session not created (Improper addressing).~nAttributes: ~p", [Attrs]),
+		    ?ERROR_MSG("Session not created (Improper addressing)", []),
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
 		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'/>"};
@@ -216,8 +216,16 @@ process_request(Data, IP) ->
                        end,
             handle_http_put(Sid, Rid, Attrs, Payload2, PayloadSize,
 			    StreamStart, IP);
-        {error, size_limit} ->
-            {413, ?HEADER, "Request Too Large"};
+        {size_limit, Sid} ->
+	    case mnesia:dirty_read({http_bind, Sid}) of
+		[] ->
+		    {404, ?HEADER, ""};
+		[#http_bind{pid = FsmRef}] ->
+		    gen_fsm:sync_send_all_state_event(FsmRef, {stop, close}),
+		    {200, ?HEADER, "<body type='terminate' "
+		     "condition='undefined-condition' "
+		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>Request Too Large</body>"}
+            end;
         _ ->
 	    ?DEBUG("Received bad request: ~p", [Data]),
             {400, ?HEADER, ""}
@@ -396,9 +404,7 @@ handle_sync_event(#http_put{rid = Rid},
     ?DEBUG("Shaper timer for RID ~p: ~p", [Rid, Reply]),
     {reply, Reply, StateName, StateData};
 
-handle_sync_event(#http_put{rid = _Rid, attrs = _Attrs,
-			    payload_size = PayloadSize,
-			    hold = _Hold} = Request,
+handle_sync_event(#http_put{payload_size = PayloadSize} = Request,
 		  _From, StateName, StateData) ->
     ?DEBUG("New request: ~p",[Request]),
     %% Updating trafic shaper
@@ -1076,10 +1082,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 	    end
     end.
 
-parse_request(_Data, PayloadSize, MaxStanzaSize)
-  when PayloadSize > MaxStanzaSize ->
-    {error, size_limit};
-parse_request(Data, _PayloadSize, _MaxStanzaSize) ->
+parse_request(Data, PayloadSize, MaxStanzaSize) ->
     ?DEBUG("--- incoming data --- ~n~s~n --- END --- ", [Data]),
     %% MR: I do not think it works if put put several elements in the
     %% same body:
@@ -1106,7 +1109,12 @@ parse_request(Data, _PayloadSize, _MaxStanzaSize) ->
                                           end
                                   end, Els),
                             Sid = xml:get_attr_s("sid",Attrs),
-			    {ok, {Sid, Rid, Attrs, FixedEls}}
+			    if
+				PayloadSize =< MaxStanzaSize ->
+				    {ok, {Sid, Rid, Attrs, FixedEls}};
+				true ->
+				    {size_limit, Sid}
+			    end
                     end
 	    end;
 	{xmlelement, _Name, _Attrs, _Els} ->
