@@ -1185,20 +1185,15 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
     iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, plugins(ServerHost)).
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
-    WithoutCdata = exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children),
-    Configuration = lists:filter(fun(#xmlel{name = 'configure'}) -> true;
-				    (_) -> false
-				 end, WithoutCdata),
-    Action = WithoutCdata -- Configuration,
-    case Action of
-	[#xmlel{name = Name, attrs = Attrs, children = Els}] ->
+    case exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children) of
+	[#xmlel{name = Name, attrs = Attrs, children = Els} | Rest] ->
 	    Node = case Host of
 		       {_, _, _} -> exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false);
 		       _ -> string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false))
 		   end,
 	    case {IQType, Name} of
 		{set, 'create'} ->
-		    Config = case Configuration of
+		    Config = case Rest of
 			[#xmlel{name = 'configure', children = C}] -> C;
 			_ -> []
 		    end,
