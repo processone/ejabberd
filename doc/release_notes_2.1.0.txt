@@ -105,6 +105,8 @@
 * Localization
 - Use Gettext PO for translators, export to ejabberd MSG
 - Support translation files for additional projects
+- Most translations are updated to latest code
+- New translation to Greek language
 
 * Multi-User Chat (MUC)
 - Allow admins to send messages to rooms
