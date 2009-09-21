@@ -206,6 +206,9 @@
   Anyway, it is recommended to backup the Mnesia spool directory and
   your SQL database (if used) before upgrading ejabberd.
 
+- The plugin of mod_pubsub "default" is renamed to "flat". You need
+  to edit the ejabberd configuration file and replace those names.
+
 - The listener options 'ip' and inet6' are not documented anymore
   but they are supported and you can continue using them.
   There is a new syntax to define IP address and IP version.
