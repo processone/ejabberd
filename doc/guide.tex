@@ -4297,12 +4297,10 @@ Available commands in this ejabberd node:
   backup file                  Store the database to backup file
   connected_users              List all established sessions
   connected_users_number       Get the number of established sessions
-  delete_expired_messages      Delete expired offline messages from database
-  delete_old_messages days     Delete offline messages older than DAYS
   ...
 \end{verbatim}
 
-The more interesting ones are:
+The most interesting ones are:
 \begin{description}
 \titem{reopen\_log} Reopen the log files after they were renamed.
   If the old files were not renamed before calling this command,
@@ -4340,6 +4338,9 @@ The more interesting ones are:
 \titem{delete\_expired\_messages} This option can be used to delete old messages
   in offline storage. This might be useful when the number of offline messages
   is very high.
+\titem{delete\_old\_messages days} Delete offline messages older than the given days.
+\titem{register user host password} Register an account in that domain with the given password.
+\titem{unregister user host} Unregister the given account.
 \end{description}
 
 \makesubsection{accesscommands}{Restrict Execution with AccessCommands}
