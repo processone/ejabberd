@@ -6,7 +6,7 @@
  
  
 
- ejabberd 2.1.0
+ ejabberd 2.1.0 
  
  Installation and Operation Guide
  
@@ -233,7 +233,7 @@ Comprehensive documentation.
 </LI><LI CLASS="li-itemize">Capability to send announce messages.
 </LI></UL></LI><LI CLASS="li-itemize">Internationalized: <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Translated to 24 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
+Translated to 25 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
 </LI></UL></LI><LI CLASS="li-itemize">Open Standards: <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Fully XMPP compliant.
@@ -3452,10 +3452,8 @@ Available commands in this ejabberd node:
   backup file                  Store the database to backup file
   connected_users              List all established sessions
   connected_users_number       Get the number of established sessions
-  delete_expired_messages      Delete expired offline messages from database
-  delete_old_messages days     Delete offline messages older than DAYS
   ...
-</PRE><P>The more interesting ones are:
+</PRE><P>The most interesting ones are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>reopen_log</TT></B></DT><DD CLASS="dd-description"> Reopen the log files after they were renamed.
 If the old files were not renamed before calling this command,
@@ -3491,6 +3489,9 @@ There exist tutorials to
 </DD><DT CLASS="dt-description"><B><TT>delete_expired_messages</TT></B></DT><DD CLASS="dd-description"> This option can be used to delete old messages
 in offline storage. This might be useful when the number of offline messages
 is very high.
+</DD><DT CLASS="dt-description"><B><TT>delete_old_messages days</TT></B></DT><DD CLASS="dd-description"> Delete offline messages older than the given days.
+</DD><DT CLASS="dt-description"><B><TT>register user host password</TT></B></DT><DD CLASS="dd-description"> Register an account in that domain with the given password.
+</DD><DT CLASS="dt-description"><B><TT>unregister user host</TT></B></DT><DD CLASS="dd-description"> Unregister the given account.
 </DD></DL><P> <A NAME="accesscommands"></A> </P><!--TOC subsection Restrict Execution with AccessCommands-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc71">4.2.2</A>&#XA0;&#XA0;<A HREF="#accesscommands">Restrict Execution with AccessCommands</A></H3><!--SEC END --><P> <A NAME="accesscommands"></A> </P><P>The frontends can be configured to restrict access to certain commands.
 In that case, authentication information must be provided.
