@@ -2100,17 +2100,22 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
     Stanza = case get_cached_item(Host, NodeId) of
 	undefined ->
 	    % special ODBC optimization, works only with node_hometree_odbc, node_flat_odbc and node_pep_odbc
-	    ToSend = case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
-		{result, []} -> [];
-		{result, Items} -> Items
-	    end,
-	    event_stanza(
-		[{xmlelement, "items", nodeAttr(Node),
-		itemsEls(ToSend)}]);
+	    case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
+		{result, [LastItem]} ->
+		    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+		    event_stanza_with_delay(
+			[{xmlelement, "items", nodeAttr(Node),
+			  itemsEls([LastItem])}], ModifNow, ModifLjid);
+		_ ->
+		    event_stanza(
+			[{xmlelement, "items", nodeAttr(Node),
+			  itemsEls([])}])
+	    end;
 	LastItem ->
-	    event_stanza(
+	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    event_stanza_with_delay(
 		[{xmlelement, "items", nodeAttr(Node),
-		itemsEls([LastItem])}])
+		  itemsEls([LastItem])}], ModifNow, ModifLjid)
     end,
     ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza};
 send_items(Host, Node, NodeId, Type, LJID, Number) ->
@@ -2125,9 +2130,17 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 	_ ->
 	    []
     end,
-    Stanza = event_stanza(
-	[{xmlelement, "items", nodeAttr(Node),
-	  itemsEls(ToSend)}]),
+    Stanza = case ToSend of
+	[LastItem] ->
+	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    event_stanza_with_delay(
+		[{xmlelement, "items", nodeAttr(Node),
+		  itemsEls(ToSend)}], ModifNow, ModifLjid);
+	_ ->
+	    event_stanza(
+		[{xmlelement, "items", nodeAttr(Node),
+		  itemsEls(ToSend)}])
+    end,
     ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza}.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
@@ -2663,8 +2676,16 @@ payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
 %%	Els = [xmlelement()]
 %% @doc <p>Build pubsub event stanza</p>
 event_stanza(Els) ->
+    event_stanza_withmoreels(Els, []).
+
+event_stanza_with_delay(Els, ModifNow, ModifLjid) ->
+    DateTime = calendar:now_to_datetime(ModifNow),
+    MoreEls = [jlib:timestamp_to_xml(DateTime, utc, ModifLjid, "")],
+    event_stanza_withmoreels(Els, MoreEls).
+
+event_stanza_withmoreels(Els, MoreEls) ->
     {xmlelement, "message", [],
-     [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}], Els}]}.
+     [{xmlelement, "event", [{"xmlns", ?NS_PUBSUB_EVENT}], Els} | MoreEls]}.
 
 %%%%%% broadcast functions
 
