@@ -26,6 +26,7 @@
 \newcommand{\ns}[1]{\texttt{#1}}
 \newcommand{\ejabberd}{\texttt{ejabberd}}
 \newcommand{\Jabber}{Jabber}
+\newcommand{\XMPP}{XMPP}
 
 %% Modules
 \newcommand{\module}[1]{\texttt{#1}}
@@ -100,7 +101,7 @@
 \label{howitworks}
 
 
-A \Jabber{} domain is served by one or more \ejabberd{} nodes.  These nodes can
+A \XMPP{} domain is served by one or more \ejabberd{} nodes.  These nodes can
 be run on different machines that are connected via a network.  They all must
 have the ability to connect to port 4369 of all another nodes, and must have
 the same magic cookie (see Erlang/OTP documentation, in other words the file
@@ -121,7 +122,7 @@ Each \ejabberd{} node have following modules:
 
 \subsection{Router}
 
-This module is the main router of \Jabber{} packets on each node.  It routes
+This module is the main router of \XMPP{} packets on each node.  It routes
 them based on their destinations domains.  It has two tables: local and global
 routes.  First, domain of packet destination searched in local table, and if it
 found, then the packet is routed to appropriate process.  If no, then it
@@ -147,7 +148,7 @@ the packet is sent to session manager on that node.
 
 \subsection{S2S Manager}
 
-This module routes packets to other \Jabber{} servers.  First, it checks if an
+This module routes packets to other \XMPP{} servers.  First, it checks if an
 open S2S connection from the domain of the packet source to the domain of
 packet destination already exists. If it is open on another node, then it
 routes the packet to S2S manager on that node, if it is open on this node, then
