@@ -134,6 +134,7 @@
 		pep_mapping = [],
 		pep_sendlast_offline = false,
 		last_item_cache = false,
+		max_items_node = ?MAXITEMS,
 		nodetree = ?STDTREE,
 		plugins = [?STDNODE],
 		send_loop}).
@@ -179,6 +180,7 @@ init([ServerHost, Opts]) ->
     PepOffline = gen_mod:get_opt(pep_sendlast_offline, Opts, false),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     LastItemCache = gen_mod:get_opt(last_item_cache, Opts, false),
+    MaxItemsNode = gen_mod:get_opt(max_items_node, Opts, ?MAXITEMS),
     pubsub_index:init(Host, ServerHost, Opts),
     ets:new(gen_mod:get_module_proc(Host, config), [set, named_table]),
     ets:new(gen_mod:get_module_proc(ServerHost, config), [set, named_table]),
@@ -189,6 +191,7 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(Host, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(Host, config), {plugins, Plugins}),
     ets:insert(gen_mod:get_module_proc(Host, config), {last_item_cache, LastItemCache}),
+    ets:insert(gen_mod:get_module_proc(Host, config), {max_items_node, MaxItemsNode}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {plugins, Plugins}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
@@ -220,6 +223,7 @@ init([ServerHost, Opts]) ->
 		pep_mapping = PepMapping,
 		pep_sendlast_offline = PepOffline,
 		last_item_cache = LastItemCache,
+		max_items_node = MaxItemsNode,
 		nodetree = NodeTree,
 		plugins = Plugins},
     SendLoop = spawn(?MODULE, send_loop, [State]),
@@ -1163,7 +1167,7 @@ adhoc_request(Host, _ServerHost, Owner,
 			       invalid ->
 				   {error, ?ERR_BAD_REQUEST};
 			       XData2 ->
-				   case set_xoption(XData2, []) of
+				   case set_xoption(Host, XData2, []) of
 				       NewOpts when is_list(NewOpts) ->
 					   {result, NewOpts};
 				       Err ->
@@ -1515,7 +1519,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			       invalid ->
 				   {error, ?ERR_BAD_REQUEST};
 			       XData ->
-				   case set_xoption(XData, node_options(Type)) of
+				   case set_xoption(Host, XData, node_options(Type)) of
 				       NewOpts when is_list(NewOpts) ->
 					   {result, NewOpts};
 				       Err ->
@@ -2011,7 +2015,7 @@ purge_node(Host, Node, Owner) ->
 get_items(Host, Node, From, SubId, SMaxItems, ItemIDs, RSM) ->
     MaxItems =
 	if
-	    SMaxItems == "" -> ?MAXITEMS;
+	    SMaxItems == "" -> get_max_items_node(Host);
 	    true ->
 		case catch list_to_integer(SMaxItems) of
 		    {'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
@@ -3161,7 +3165,7 @@ set_configure(Host, Node, From, Els, Lang) ->
 							      [] -> node_options(Type);
 							      _ -> Options
 							  end,
-						case set_xoption(XData, OldOpts) of
+						case set_xoption(Host, XData, OldOpts) of
 						    NewOpts when is_list(NewOpts) ->
 							case tree_call(Host, set_node, [N#pubsub_node{options = NewOpts}]) of
 							    ok -> {result, ok};
@@ -3206,80 +3210,89 @@ add_opt(Key, Value, Opts) ->
 		  end,
 	case BoolVal of
 	    error -> {error, ?ERR_NOT_ACCEPTABLE};
-	    _ -> set_xoption(Opts, add_opt(Opt, BoolVal, NewOpts))
+	    _ -> set_xoption(Host, Opts, add_opt(Opt, BoolVal, NewOpts))
 	end).
 
 -define(SET_STRING_XOPT(Opt, Val),
-	set_xoption(Opts, add_opt(Opt, Val, NewOpts))).
+	set_xoption(Host, Opts, add_opt(Opt, Val, NewOpts))).
 
 -define(SET_INTEGER_XOPT(Opt, Val, Min, Max),
 	case catch list_to_integer(Val) of
 	    IVal when is_integer(IVal),
 	    IVal >= Min,
 	    IVal =< Max ->
-		set_xoption(Opts, add_opt(Opt, IVal, NewOpts));
+		set_xoption(Host, Opts, add_opt(Opt, IVal, NewOpts));
 	    _ ->
 		{error, ?ERR_NOT_ACCEPTABLE}
 	end).
 
 -define(SET_ALIST_XOPT(Opt, Val, Vals),
 	case lists:member(Val, [atom_to_list(V) || V <- Vals]) of
-	    true -> set_xoption(Opts, add_opt(Opt, list_to_atom(Val), NewOpts));
+	    true -> set_xoption(Host, Opts, add_opt(Opt, list_to_atom(Val), NewOpts));
 	    false -> {error, ?ERR_NOT_ACCEPTABLE}
 	end).
 
 -define(SET_LIST_XOPT(Opt, Val),
-	set_xoption(Opts, add_opt(Opt, Val, NewOpts))).
+	set_xoption(Host, Opts, add_opt(Opt, Val, NewOpts))).
 
-set_xoption([], NewOpts) ->
+set_xoption(_Host, [], NewOpts) ->
     NewOpts;
-set_xoption([{"FORM_TYPE", _} | Opts], NewOpts) ->
-    set_xoption(Opts, NewOpts);
-set_xoption([{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"FORM_TYPE", _} | Opts], NewOpts) ->
+    set_xoption(Host, Opts, NewOpts);
+set_xoption(Host, [{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
     ?SET_LIST_XOPT(roster_groups_allowed, Value);
-set_xoption([{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_payloads, Val);
-set_xoption([{"pubsub#deliver_notifications", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#deliver_notifications", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_notifications, Val);
-set_xoption([{"pubsub#notify_config", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#notify_config", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_config, Val);
-set_xoption([{"pubsub#notify_delete", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#notify_delete", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_delete, Val);
-set_xoption([{"pubsub#notify_retract", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#notify_retract", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_retract, Val);
-set_xoption([{"pubsub#persist_items", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#persist_items", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(persist_items, Val);
-set_xoption([{"pubsub#max_items", [Val]} | Opts], NewOpts) ->
-    ?SET_INTEGER_XOPT(max_items, Val, 0, ?MAXITEMS);
-set_xoption([{"pubsub#subscribe", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#max_items", [Val]} | Opts], NewOpts) ->
+    MaxItems = get_max_items_node(Host),
+    ?SET_INTEGER_XOPT(max_items, Val, 0, MaxItems);
+set_xoption(Host, [{"pubsub#subscribe", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(subscribe, Val);
-set_xoption([{"pubsub#access_model", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#access_model", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(access_model, Val, [open, authorize, presence, roster, whitelist]);
-set_xoption([{"pubsub#publish_model", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#publish_model", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(publish_model, Val, [publishers, subscribers, open]);
-set_xoption([{"pubsub#node_type", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#node_type", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(node_type, Val, [leaf, collection]);
-set_xoption([{"pubsub#max_payload_size", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#max_payload_size", [Val]} | Opts], NewOpts) ->
     ?SET_INTEGER_XOPT(max_payload_size, Val, 0, ?MAX_PAYLOAD_SIZE);
-set_xoption([{"pubsub#send_last_published_item", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#send_last_published_item", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(send_last_published_item, Val, [never, on_sub, on_sub_and_presence]);
-set_xoption([{"pubsub#presence_based_delivery", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#presence_based_delivery", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(presence_based_delivery, Val);
-set_xoption([{"pubsub#title", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#title", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(title, Value);
-set_xoption([{"pubsub#type", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#type", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(type, Value);
-set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(body_xslt, Value);
-set_xoption([{"pubsub#collection", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#collection", Value} | Opts], NewOpts) ->
     NewValue = [string_to_node(V) || V <- Value],
     ?SET_LIST_XOPT(collection, NewValue);
-set_xoption([{"pubsub#node", [Value]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#node", [Value]} | Opts], NewOpts) ->
     NewValue = string_to_node(Value),
     ?SET_LIST_XOPT(node, NewValue);
-set_xoption([_ | Opts], NewOpts) ->
+set_xoption(Host, [_ | Opts], NewOpts) ->
     % skip unknown field
-    set_xoption(Opts, NewOpts).
+    set_xoption(Host, Opts, NewOpts).
+
+get_max_items_node({_, ServerHost, _}) ->
+    get_max_items_node(ServerHost);
+get_max_items_node(Host) ->
+    case catch ets:lookup(gen_mod:get_module_proc(Host, config), max_items_node) of
+    [{max_items_node, Integer}] -> Integer;
+    _ -> ?MAXITEMS
+    end.
 
 %%%% last item cache handling
 
