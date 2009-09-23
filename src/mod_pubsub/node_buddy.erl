@@ -85,7 +85,7 @@ options() ->
      {notify_delete, false},
      {notify_retract, true},
      {persist_items, true},
-     {max_items, ?MAXITEMS div 2},
+     {max_items, ?MAXITEMS},
      {subscribe, true},
      {access_model, presence},
      {roster_groups_allowed, []},

@@ -140,7 +140,7 @@ options() ->
      {notify_delete, false},
      {notify_retract, true},
      {persist_items, true},
-     {max_items, ?MAXITEMS div 2},
+     {max_items, ?MAXITEMS},
      {subscribe, true},
      {access_model, open},
      {roster_groups_allowed, []},
@@ -978,12 +978,22 @@ get_items(NodeId, _From) ->
              "where nodeid='", NodeId, "' "
              "order by modification desc;"]) of
     {selected, ["itemid", "publisher", "creation", "modification", "payload"], RItems} ->
-	    {result, lists:map(fun(RItem) -> raw_to_item(NodeId, RItem) end, RItems)};
+	{result, lists:map(fun(RItem) -> raw_to_item(NodeId, RItem) end, RItems)};
     _ ->
-    	{result, []}
+	{result, []}
     end.
 get_items(NodeId, From, none) ->
-    get_items(NodeId, From, #rsm_in{max = ?MAXITEMS div 2});
+    MaxItems = case catch ejabberd_odbc:sql_query_t(
+	["select val from pubsub_node_option "
+	 "where nodeid='", NodeId, "' "
+	 "and name='max_items';"]) of
+    {selected, ["val"], [{Value}]} ->
+	Tokens = element(2, erl_scan:string(Value++".")),
+	element(2, erl_parse:parse_term(Tokens));
+    _ ->
+	?MAXITEMS
+    end,
+    get_items(NodeId, From, #rsm_in{max=MaxItems});
 get_items(NodeId, _From, #rsm_in{max=M, direction=Direction, id=I, index=IncIndex})->
 	Max =  ?PUBSUB:escape(i2l(M)),
 	

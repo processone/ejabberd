@@ -135,6 +135,7 @@
 		pep_mapping = [],
 		pep_sendlast_offline = false,
 		last_item_cache = false,
+		max_items_node = ?MAXITEMS,
 		nodetree = ?STDTREE,
 		plugins = [?STDNODE],
 		send_loop}).
@@ -186,6 +187,7 @@ init([ServerHost, Opts]) ->
     PepOffline = gen_mod:get_opt(pep_sendlast_offline, Opts, false),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     LastItemCache = gen_mod:get_opt(last_item_cache, Opts, false),
+    MaxItemsNode = gen_mod:get_opt(max_items_node, Opts, ?MAXITEMS),
     ServerHostB = list_to_binary(ServerHost),
     pubsub_index:init(Host, ServerHost, Opts),
     ets:new(gen_mod:get_module_proc(Host, config), [set, named_table]),
@@ -197,6 +199,7 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(Host, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(Host, config), {plugins, Plugins}),
     ets:insert(gen_mod:get_module_proc(Host, config), {last_item_cache, LastItemCache}),
+    ets:insert(gen_mod:get_module_proc(Host, config), {max_items_node, MaxItemsNode}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {plugins, Plugins}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
@@ -229,6 +232,7 @@ init([ServerHost, Opts]) ->
 		pep_mapping = PepMapping,
 		pep_sendlast_offline = PepOffline,
 		last_item_cache = LastItemCache,
+		max_items_node = MaxItemsNode,
 		nodetree = NodeTree,
 		plugins = Plugins},
     SendLoop = spawn(?MODULE, send_loop, [State]),
@@ -1014,20 +1018,15 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
     iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, plugins(ServerHost)).
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
-    WithoutCdata = exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children),
-    Configuration = lists:filter(fun(#xmlel{name = 'configure'}) -> true;
-				    (_) -> false
-				 end, WithoutCdata),
-    Action = WithoutCdata -- Configuration,
-    case Action of
-	[#xmlel{name = Name, attrs = Attrs, children = Els}] ->
+    case exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children) of
+	[#xmlel{name = Name, attrs = Attrs, children = Els} | Rest] ->
 	    Node = case Host of
 		       {_, _, _} -> exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false);
 		       _ -> string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false))
 		   end,
 	    case {IQType, Name} of
 		{set, 'create'} ->
-		    Config = case Configuration of
+		    Config = case Rest of
 			[#xmlel{name = 'configure', children = C}] -> C;
 			_ -> []
 		    end,
@@ -1077,7 +1076,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 						   "item-required")}
 		    end;
 		{set, 'subscribe'} ->
-		    Config = case Configuration of
+		    Config = case Rest of
 			[#xmlel{name = 'configure', children = C}] -> C;
 			_ -> []
 		    end,
@@ -1116,8 +1115,8 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		_ ->
 		    {error, 'feature-not-implemented'}
 	    end;
-	_ ->
-	    ?INFO_MSG("Too many actions: ~p", [Action]),
+	Other ->
+	    ?INFO_MSG("Too many actions: ~p", [Other]),
 	    {error, 'bad-request'}
     end.
 
@@ -1190,7 +1189,7 @@ adhoc_request(Host, _ServerHost, Owner,
 			       invalid ->
 				   {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'bad-request')};
 			       XData2 ->
-				   case set_xoption(XData2, []) of
+				   case set_xoption(Host, XData2, []) of
 				       NewOpts when is_list(NewOpts) ->
 					   {result, NewOpts};
 				       Err ->
@@ -1553,7 +1552,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			       invalid ->
 				   {error, 'bad-request'};
 			       XData ->
-				   case set_xoption(XData, node_options(Type)) of
+				   case set_xoption(Host, XData, node_options(Type)) of
 				       NewOpts when is_list(NewOpts) ->
 					   {result, NewOpts};
 				       Err ->
@@ -2054,7 +2053,7 @@ purge_node(Host, Node, Owner) ->
 get_items(Host, Node, From, SubId, SMaxItems, ItemIDs, RSM) ->
     MaxItems =
 	if
-	    SMaxItems == "" -> ?MAXITEMS;
+	    SMaxItems == "" -> get_max_items_node(Host);
 	    true ->
 		case catch list_to_integer(SMaxItems) of
 		    {'EXIT', _} -> {error, 'bad-request'};
@@ -2142,22 +2141,26 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
     Stanza = case get_cached_item(Host, NodeId) of
 	undefined ->
 	    % special ODBC optimization, works only with node_hometree_odbc, node_flat_odbc and node_pep_odbc
-	    ToSend = case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
-		    {result, []} -> [];
-    		{result, Items} -> Items
-	    end,
-	    event_stanza([#xmlel{ns = ?NS_PUBSUB_EVENT, 
-                            name = 'items',
-                            attrs =  nodeAttr(Node), 
-                            children =	itemsEls(ToSend)}]);
+	    case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
+		{result, [LastItem]} ->
+		    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+		    event_stanza_with_delay([#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items',
+					attrs = nodeAttr(Node),
+					children = itemsEls([])}],
+				ModifNow, ModifLjid);
+		_ ->
+		    event_stanza([#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items',
+					attrs = nodeAttr(Node),
+					children = itemsEls([])}])
+	    end;
 	LastItem ->
-	    event_stanza(
+	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    event_stanza_with_delay(
 	    	[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node),
-			        children = itemsEls(LastItem)}])
+			children = itemsEls(LastItem)}], ModifNow, ModifLjid)
     end,
     {U, S, R} = LJID,
-	ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(U, S, R), Stanza};
-
+    ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(U, S, R), Stanza};
 send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
 	{result, []} -> 
@@ -2170,9 +2173,17 @@ send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
 	_ ->
 	    []
     end,
-    Stanza = event_stanza(
+    Stanza = case ToSend of
+	[LastItem] ->
+	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    event_stanza_with_delay(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
-		  itemsEls(ToSend)}]),
+		  itemsEls(ToSend)}], ModifNow, ModifLjid);
+	_ ->
+	    event_stanza(
+		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
+		  itemsEls(ToSend)}])
+    end,
     ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(LU, LS, LR), Stanza}.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
@@ -2723,8 +2734,17 @@ payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
 %%    Els = [xmlelement()]
 %% @doc <p>Build pubsub event stanza</p>
 event_stanza(Els) ->
+    event_stanza_withmoreels(Els, []).
+
+
+event_stanza_with_delay(Els, ModifNow, ModifLjid) ->
+    DateTime = calendar:now_to_datetime(ModifNow),
+    MoreEls = [jlib:timestamp_to_xml(DateTime, utc, ModifLjid, "")],
+    event_stanza_withmoreels(Els, MoreEls).
+
+event_stanza_withmoreels(Els, MoreEls) ->
     #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', children =
-	[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'event', children = Els}]}.
+	[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'event', children = Els} | MoreEls]}.
 
 %%%%%% broadcast functions
 
@@ -3204,7 +3224,7 @@ set_configure(Host, Node, From, Els, Lang) ->
 							      [] -> node_options(Type);
 							      _ -> Options
 							  end,
-						case set_xoption(XData, OldOpts) of
+						case set_xoption(Host, XData, OldOpts) of
 						    NewOpts when is_list(NewOpts) ->
 							case tree_call(Host, set_node, [N#pubsub_node{options = NewOpts}]) of
 							    ok -> {result, ok};
@@ -3249,80 +3269,89 @@ add_opt(Key, Value, Opts) ->
 		  end,
 	case BoolVal of
 	    error -> {error, 'not-acceptable'};
-	    _ -> set_xoption(Opts, add_opt(Opt, BoolVal, NewOpts))
+	    _ -> set_xoption(Host, Opts, add_opt(Opt, BoolVal, NewOpts))
 	end).
 
 -define(SET_STRING_XOPT(Opt, Val),
-	set_xoption(Opts, add_opt(Opt, Val, NewOpts))).
+	set_xoption(Host, Opts, add_opt(Opt, Val, NewOpts))).
 
 -define(SET_INTEGER_XOPT(Opt, Val, Min, Max),
 	case catch list_to_integer(Val) of
 	    IVal when is_integer(IVal),
 	    IVal >= Min,
 	    IVal =< Max ->
-		set_xoption(Opts, add_opt(Opt, IVal, NewOpts));
+		set_xoption(Host, Opts, add_opt(Opt, IVal, NewOpts));
 	    _ ->
 		{error, 'not-acceptable'}
 	end).
 
 -define(SET_ALIST_XOPT(Opt, Val, Vals),
 	case lists:member(Val, [atom_to_list(V) || V <- Vals]) of
-	    true -> set_xoption(Opts, add_opt(Opt, list_to_atom(Val), NewOpts));
+	    true -> set_xoption(Host, Opts, add_opt(Opt, list_to_atom(Val), NewOpts));
 	    false -> {error, 'not-acceptable'}
 	end).
 
 -define(SET_LIST_XOPT(Opt, Val),
-	set_xoption(Opts, add_opt(Opt, Val, NewOpts))).
+	set_xoption(Host, Opts, add_opt(Opt, Val, NewOpts))).
 
-set_xoption([], NewOpts) ->
+set_xoption(_Host, [], NewOpts) ->
     NewOpts;
-set_xoption([{"FORM_TYPE", _} | Opts], NewOpts) ->
-    set_xoption(Opts, NewOpts);
-set_xoption([{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"FORM_TYPE", _} | Opts], NewOpts) ->
+    set_xoption(Host, Opts, NewOpts);
+set_xoption(Host, [{"pubsub#roster_groups_allowed", Value} | Opts], NewOpts) ->
     ?SET_LIST_XOPT(roster_groups_allowed, Value);
-set_xoption([{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#deliver_payloads", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_payloads, Val);
-set_xoption([{"pubsub#deliver_notifications", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#deliver_notifications", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(deliver_notifications, Val);
-set_xoption([{"pubsub#notify_config", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#notify_config", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_config, Val);
-set_xoption([{"pubsub#notify_delete", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#notify_delete", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_delete, Val);
-set_xoption([{"pubsub#notify_retract", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#notify_retract", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_retract, Val);
-set_xoption([{"pubsub#persist_items", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#persist_items", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(persist_items, Val);
-set_xoption([{"pubsub#max_items", [Val]} | Opts], NewOpts) ->
-    ?SET_INTEGER_XOPT(max_items, Val, 0, ?MAXITEMS);
-set_xoption([{"pubsub#subscribe", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#max_items", [Val]} | Opts], NewOpts) ->
+    MaxItems = get_max_items_node(Host),
+    ?SET_INTEGER_XOPT(max_items, Val, 0, MaxItems);
+set_xoption(Host, [{"pubsub#subscribe", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(subscribe, Val);
-set_xoption([{"pubsub#access_model", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#access_model", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(access_model, Val, [open, authorize, presence, roster, whitelist]);
-set_xoption([{"pubsub#publish_model", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#publish_model", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(publish_model, Val, [publishers, subscribers, open]);
-set_xoption([{"pubsub#node_type", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#node_type", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(node_type, Val, [leaf, collection]);
-set_xoption([{"pubsub#max_payload_size", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#max_payload_size", [Val]} | Opts], NewOpts) ->
     ?SET_INTEGER_XOPT(max_payload_size, Val, 0, ?MAX_PAYLOAD_SIZE);
-set_xoption([{"pubsub#send_last_published_item", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#send_last_published_item", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(send_last_published_item, Val, [never, on_sub, on_sub_and_presence]);
-set_xoption([{"pubsub#presence_based_delivery", [Val]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#presence_based_delivery", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(presence_based_delivery, Val);
-set_xoption([{"pubsub#title", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#title", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(title, Value);
-set_xoption([{"pubsub#type", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#type", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(type, Value);
-set_xoption([{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#body_xslt", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(body_xslt, Value);
-set_xoption([{"pubsub#collection", Value} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#collection", Value} | Opts], NewOpts) ->
     NewValue = [string_to_node(V) || V <- Value],
     ?SET_LIST_XOPT(collection, NewValue);
-set_xoption([{"pubsub#node", [Value]} | Opts], NewOpts) ->
+set_xoption(Host, [{"pubsub#node", [Value]} | Opts], NewOpts) ->
     NewValue = string_to_node(Value),
     ?SET_LIST_XOPT(node, NewValue);
-set_xoption([_ | Opts], NewOpts) ->
+set_xoption(Host, [_ | Opts], NewOpts) ->
     % skip unknown field
-    set_xoption(Opts, NewOpts).
+    set_xoption(Host, Opts, NewOpts).
+
+get_max_items_node({_, ServerHost, _}) ->
+    get_max_items_node(ServerHost);
+get_max_items_node(Host) ->
+    case catch ets:lookup(gen_mod:get_module_proc(Host, config), max_items_node) of
+    [{max_items_node, Integer}] -> Integer;
+    _ -> ?MAXITEMS
+    end.
 
 %%%% last item cache handling
 
