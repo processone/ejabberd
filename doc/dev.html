@@ -145,7 +145,7 @@ Support for virtual hosting.
 </LI></UL>
 </LI></UL><!--TOC section How it Works-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc3">3</A>&#XA0;&#XA0;How it Works</H2><!--SEC END --><P>
-<A NAME="howitworks"></A></P><P>A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
+<A NAME="howitworks"></A></P><P>A XMPP domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
 be run on different machines that are connected via a network. They all must
 have the ability to connect to port 4369 of all another nodes, and must have
 the same magic cookie (see Erlang/OTP documentation, in other words the file
@@ -158,7 +158,7 @@ router;
 </LI><LI CLASS="li-itemize">session manager;
 </LI><LI CLASS="li-itemize">S2S manager;
 </LI></UL><!--TOC subsection Router-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc4">3.1</A>&#XA0;&#XA0;Router</H3><!--SEC END --><P>This module is the main router of Jabber packets on each node. It routes
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc4">3.1</A>&#XA0;&#XA0;Router</H3><!--SEC END --><P>This module is the main router of XMPP packets on each node. It routes
 them based on their destinations domains. It has two tables: local and global
 routes. First, domain of packet destination searched in local table, and if it
 found, then the packet is routed to appropriate process. If no, then it
@@ -172,7 +172,7 @@ session manager, else it is processed depending on it&#X2019;s content.</P><!--T
 packet must be sended via presence table. If this resource is connected to
 this node, it is routed to C2S process, if it connected via another node, then
 the packet is sent to session manager on that node.</P><!--TOC subsection S2S Manager-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc7">3.4</A>&#XA0;&#XA0;S2S Manager</H3><!--SEC END --><P>This module routes packets to other Jabber servers. First, it checks if an
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc7">3.4</A>&#XA0;&#XA0;S2S Manager</H3><!--SEC END --><P>This module routes packets to other XMPP servers. First, it checks if an
 open S2S connection from the domain of the packet source to the domain of
 packet destination already exists. If it is open on another node, then it
 routes the packet to S2S manager on that node, if it is open on this node, then

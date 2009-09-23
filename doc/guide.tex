@@ -59,6 +59,7 @@
 \newcommand{\shell}[1]{\texttt{#1}}
 \newcommand{\ejabberd}{\texttt{ejabberd}}
 \newcommand{\Jabber}{Jabber}
+\newcommand{\XMPP}{XMPP}
 \newcommand{\esyntax}[1]{\begin{description}\titem{#1}\end{description}}
 
 %% Modules
@@ -369,7 +370,7 @@ Some options that you may be interested in modifying:
 	\titem{--enable-full-xml}
 	Enable the use of XML based optimisations.
 	It will for example use CDATA to escape characters in the XMPP stream.
-	Use this option only if you are sure your Jabber clients include a fully compliant XML parser.
+	Use this option only if you are sure your XMPP clients include a fully compliant XML parser.
 
 	\titem{--disable-transient-supervisors}
 	Disable the use of Erlang/OTP supervision for transient processes.
@@ -540,27 +541,27 @@ werl -s ejabberd -name ejabberd
 %TODO: how to compile database support on windows?
 
 
-\makesection{initialadmin}{Create a Jabber Account for Administration}
+\makesection{initialadmin}{Create a XMPP Account for Administration}
 
-You need a Jabber account and grant him administrative privileges
+You need a XMPP account and grant him administrative privileges
 to enter the \ejabberd{} Web Admin:
 \begin{enumerate}
-\item Register a Jabber account on your \ejabberd{} server, for example \term{admin1@example.org}.
-  There are two ways to register a Jabber account:
+\item Register a XMPP account on your \ejabberd{} server, for example \term{admin1@example.org}.
+  There are two ways to register a XMPP account:
   \begin{enumerate}
   \item Using \term{ejabberdctl}\ind{ejabberdctl} (see section~\ref{ejabberdctl}):
 \begin{verbatim}
 ejabberdctl register admin1 example.org FgT5bk3
 \end{verbatim}
-  \item Using a Jabber client and In-Band Registration (see section~\ref{modregister}).
+  \item Using a XMPP client and In-Band Registration (see section~\ref{modregister}).
   \end{enumerate}
-\item Edit the \ejabberd{} configuration file to give administration rights to the Jabber account you created:
+\item Edit the \ejabberd{} configuration file to give administration rights to the XMPP account you created:
 \begin{verbatim}
 {acl, admins, {user, "admin1", "example.org"}}.
 {access, configure, [{allow, admins}]}.
 \end{verbatim}
-  You can grant administrative privileges to many Jabber accounts,
-  and also to accounts in other Jabber servers.
+  You can grant administrative privileges to many XMPP accounts,
+  and also to accounts in other XMPP servers.
 \item Restart \ejabberd{} to load the new configuration.
 \item Open the Web Admin (\verb|http://server:port/admin/|) in your
   favourite browser. Make sure to enter the \emph{full} JID as username (in this
@@ -826,7 +827,7 @@ This is a detailed description of each option allowed by the listening modules:
     as seen in an example below.
   \titem{captcha} \ind{options!http-captcha}
     Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
-  \titem{http\_bind} \ind{options!http\_bind}\ind{protocols!XEP-0206: HTTP Binding}\ind{JWChat}\ind{web-based Jabber client}
+  \titem{http\_bind} \ind{options!http\_bind}\ind{protocols!XEP-0206: HTTP Binding}\ind{JWChat}\ind{web-based XMPP client}
     This option enables HTTP Binding (\xepref{0124} and \xepref{0206}) support. HTTP Bind
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
     do not allow outgoing sockets on port 5222.
@@ -835,21 +836,21 @@ This is a detailed description of each option allowed by the listening modules:
 
     If HTTP Bind is enabled, it will be available at
     \verb|http://server:port/http-bind/|. Be aware that support for HTTP Bind
-    is also needed in the \Jabber{} client. Remark also that HTTP Bind can be
-    interesting to host a web-based \Jabber{} client such as
+    is also needed in the \XMPP{} client. Remark also that HTTP Bind can be
+    interesting to host a web-based \XMPP{} client such as
     \footahref{http://jwchat.sourceforge.net/}{JWChat}
     (check the tutorials to install JWChat with ejabberd and an
     \footahref{http://www.ejabberd.im/jwchat-localserver}{embedded local web server}
     or \footahref{http://www.ejabberd.im/jwchat-apache}{Apache}).
-  \titem{http\_poll} \ind{options!http\_poll}\ind{protocols!XEP-0025: HTTP Polling}\ind{JWChat}\ind{web-based Jabber client}
+  \titem{http\_poll} \ind{options!http\_poll}\ind{protocols!XEP-0025: HTTP Polling}\ind{JWChat}\ind{web-based XMPP client}
     This option enables HTTP Polling (\xepref{0025}) support. HTTP Polling
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
     do not allow outgoing sockets on port 5222.
 
     If HTTP Polling is enabled, it will be available at
     \verb|http://server:port/http-poll/|. Be aware that support for HTTP Polling
-    is also needed in the \Jabber{} client. Remark also that HTTP Polling can be
-    interesting to host a web-based \Jabber{} client such as
+    is also needed in the \XMPP{} client. Remark also that HTTP Polling can be
+    interesting to host a web-based \XMPP{} client such as
     \footahref{http://jwchat.sourceforge.net/}{JWChat}.
 
     The maximum period of time to keep a client session active without
@@ -926,7 +927,7 @@ There are some additional global options that can be specified in the ejabberd c
   Allowed Properties are: \term{timeout} in seconds which default value is \term{10}
   and \term{retries} which default value is \term{2}.
   \titem{\{s2s\_default\_policy, allow|deny\}}
-  The default policy for incoming and outgoing s2s connections to other Jabber servers.
+  The default policy for incoming and outgoing s2s connections to other XMPP servers.
   The default value is \term{allow}.
   \titem{\{\{s2s\_host, Host\}, allow|deny\}}
   Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
@@ -994,7 +995,7 @@ In this example, the following configuration defines that:
   for the user called `\term{bad}'.
 \item s2s connections are listened for on port 5269 (all IPv4 addresses) 
   with STARTTLS for secured traffic enabled. 
-  Incoming and outgoing connections of remote Jabber servers are denied,
+  Incoming and outgoing connections of remote XMPP servers are denied,
   only two servers can connect: "jabber.example.org" and "example.com".
 \item Port 5280 is serving the Web Admin and the HTTP Polling service
   in all the IPv4 addresses. Note
@@ -1096,7 +1097,7 @@ you have to make the transports log and do \ind{XDB}XDB by themselves:
   </log>
 
   <!--
-     Some Jabber server implementations do not provide
+     Some XMPP server implementations do not provide
      XDB services (for example, jabberd2 and ejabberd).
      xdb_file.so is loaded in to handle all XDB requests.
   -->
@@ -1419,11 +1420,11 @@ This example limits the number of sessions per user to 5 for all users, and to 1
 {access, max_user_sessions, [{10, admin}, {5, all}]}.
 \end{verbatim}
 
-\makesubsubsection{configmaxs2sconns}{Several connections to a remote Jabber server with ACL}
+\makesubsubsection{configmaxs2sconns}{Several connections to a remote XMPP server with ACL}
 \ind{options!max\_s2s\_connections}
 
 The special access \term{max\_s2s\_connections} specifies how many
-simultaneus S2S connections can be established to a specific remote Jabber server.
+simultaneus S2S connections can be established to a specific remote XMPP server.
 The default value is \term{1}.
 There's also available the access \term{max\_s2s\_connections\_per\_node}.
 
@@ -1470,7 +1471,7 @@ Examples:
 \ind{options!language}\ind{language}
 
 The option \option{language} defines the default language of server strings that
-can be seen by \Jabber{} clients. If a \Jabber{} client does not support
+can be seen by \XMPP{} clients. If a \XMPP{} client does not support
 \option{xml:lang}, the specified language is used.
 
 The option syntax is:
@@ -2527,7 +2528,7 @@ the "@HOST@" keyword must be used:
 This module enables configured users to broadcast announcements and to set
 the message of the day (MOTD).
 Configured users can perform these actions with a
-\Jabber{} client either using Ad-hoc commands
+\XMPP{} client either using Ad-hoc commands
 or sending messages to specific JIDs.
 
 The Ad-hoc commands are listed in the Server Discovery.
@@ -2611,9 +2612,9 @@ disabled for instances of \ejabberd{} with hundreds of thousands users.
 
 This module adds support for Service Discovery (\xepref{0030}). With
 this module enabled, services on your server can be discovered by
-\Jabber{} clients. Note that \ejabberd{} has no modules with support
+\XMPP{} clients. Note that \ejabberd{} has no modules with support
 for the superseded Jabber Browsing (\xepref{0011}) and Agent Information
-(\xepref{0094}). Accordingly, \Jabber{} clients need to have support for
+(\xepref{0094}). Accordingly, \XMPP{} clients need to have support for
 the newer Service Discovery protocol if you want them be able to discover
 the services you offer.
 
@@ -2693,9 +2694,9 @@ and admin addresses for both the main server and the vJUD service:
 \makesubsection{modecho}{\modecho{}}
 \ind{modules!\modecho{}}\ind{debugging}
 
-This module simply echoes any \Jabber{}
+This module simply echoes any \XMPP{}
 packet back to the sender. This mirror can be of interest for
-\ejabberd{} and \Jabber{} client debugging.
+\ejabberd{} and \XMPP{} client debugging.
 
 Options:
 \begin{description}
@@ -2747,7 +2748,7 @@ and add \verb|http_bind| in the HTTP service. For example:
 With this configuration, the module will serve the requests sent to 
 \verb|http://example.org:5280/http-bind/|
 Remember that this page is not designed to be used by web browsers,
-it is used by Jabber clients that support XMPP over Bosh.
+it is used by XMPP clients that support XMPP over Bosh.
 
 If you want to set the service in a different URI path or use a different module, 
 you can configure it manually using the option \verb|request_handlers|. 
@@ -2890,7 +2891,7 @@ Some of the features of Multi-User Chat:
 The MUC service allows any Jabber ID to register a nickname,
 so nobody else can use that nickname in any room in the MUC service.
 To register a nickname, open the Service Discovery in your
-Jabber client and register in the MUC service.
+XMPP client and register in the MUC service.
 
 This module supports clustering and load
 balancing. One module can be started per cluster node. Rooms are
@@ -2980,7 +2981,7 @@ Module options:
 \titem{\{default\_room\_options, [ \{OptionName, OptionValue\}, ...]\}} \ind{options!default\_room\_options}
   This module option allows to define the desired default room options.
   Note that the creator of a room can modify the options of his room
-  at any time using a Jabber client with MUC capability.
+  at any time using a XMPP client with MUC capability.
   The available room options and the default values are:
   \begin{description}
   \titem{\{allow\_change\_subj, true|false\}} Allow occupants to change the subject.
@@ -3019,7 +3020,7 @@ Examples:
   service. Everyone will also be able to create new rooms but only the user
   \jid{admin@example.org} is allowed to administrate any room. In this
   example he is also a global administrator. When \jid{admin@example.org}
-  sends a message such as `Tomorrow, the \Jabber{} server will be moved
+  sends a message such as `Tomorrow, the \XMPP{} server will be moved
   to new hardware. This will involve service breakdowns around 23:00 UMT.
   We apologise for this inconvenience.' to \jid{conference.example.org},
   it will be displayed in all active rooms. In this example the history
@@ -3119,7 +3120,7 @@ defined, but some user restriction could be added as well:
 
 This module enables optional logging of Multi-User Chat (MUC) public conversations to
 HTML. Once you enable this module, users can join a room using a MUC capable
-Jabber client, and if they have enough privileges, they can request the
+XMPP client, and if they have enough privileges, they can request the
 configuration form in which they can set the option to enable room logging.
 
 Features:
@@ -3329,7 +3330,7 @@ and if a client does not answer to the ping in less than 32 seconds, its connect
 
 This module implements Blocking Communication (also known as Privacy Rules)
 as defined in section 10 from XMPP IM. If end users have support for it in
-their \Jabber{} client, they will be able to:
+their \XMPP{} client, they will be able to:
 \begin{quote}
 \begin{itemize}
 \item Retrieving one's privacy lists.
@@ -3361,7 +3362,7 @@ Options:
 
 This module adds support for Private XML Storage (\xepref{0049}):
 \begin{quote}
-Using this method, Jabber entities can store private data on the server and
+Using this method, XMPP entities can store private data on the server and
 retrieve it whenever necessary. The data stored might be anything, as long as
 it is valid XML. One typical usage for this namespace is the server-side storage
 of client-specific preferences; another is Bookmark Storage (\xepref{0048}).
@@ -3495,7 +3496,7 @@ Example:
 \ind{modules!\modregister{}}\ind{protocols!XEP-0077: In-Band Registration}\ind{public registration}
 
 This module adds support for In-Band Registration (\xepref{0077}). This protocol
-enables end users to use a \Jabber{} client to:
+enables end users to use a \XMPP{} client to:
 \begin{itemize}
 \item Register a new account on the server.
 \item Change the password from an existing account on the server.
@@ -3624,7 +3625,7 @@ This example configuration enables Roster Versioning with storage of current id:
 \makesubsection{modservicelog}{\modservicelog{}}
 \ind{modules!\modservicelog{}}\ind{message auditing}\ind{Bandersnatch}
 
-This module adds support for logging end user packets via a \Jabber{} message
+This module adds support for logging end user packets via a \XMPP{} message
 auditing service such as
 \footahref{http://www.funkypenguin.info/project/bandersnatch/}{Bandersnatch}. All user
 packets are encapsulated in a \verb|<route/>| element and sent to the specified
@@ -3670,7 +3671,7 @@ create groups of people that can see members from (other) groups in their
 rosters. The big advantages of this feature are that end users do not need to
 manually add all users to their rosters, and that they cannot permanently delete
 users from the shared roster groups.
-A shared roster group can have members from any Jabber server,
+A shared roster group can have members from any XMPP server,
 but the presence will only be available from and to members
 of the same virtual host where the group is created.
 
@@ -4325,14 +4326,14 @@ The most interesting ones are:
 \titem{import\_piefxis, export\_piefxis, export\_piefxis\_host} \ind{migrate between servers}
   These options can be used to migrate accounts
   using \xepref{0227} formatted XML files
-  from/to other \Jabber{}/XMPP servers
+  from/to other Jabber/XMPP servers
   or move users of a vhost to another ejabberd installation.
   See also 
   \footahref{https://support.process-one.net/doc/display/P1/ejabberd+migration+kit}{ejabberd migration kit}.
 \titem{import\_file, import\_dir} \ind{migration from other software}
   These options can be used to migrate accounts
   using jabberd1.4 formatted XML files.
-  from other \Jabber{}/XMPP servers
+  from other Jabber/XMPP servers
   There exist tutorials to
   \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
 \titem{delete\_expired\_messages} This option can be used to delete old messages
@@ -4362,7 +4363,7 @@ ArgumentValue = any()
 The default value is to not define any restriction: \term{[]}.
 If at least one restriction is defined, then the frontend expects 
 that authentication information is provided when executing a command.
-The authentication information is Username, Hostname and Password of a local Jabber account
+The authentication information is Username, Hostname and Password of a local XMPP account
 that has permission to execute the corresponding command.
 This means that the account must be registered in the local ejabberd,
 because the information will be verified.
@@ -4495,9 +4496,9 @@ See section \ref{erlangconfiguration}.
 
 If you enable \modconfigure\ and \modadhoc,
 you can perform several administrative tasks in \ejabberd{}
-with a Jabber client.
+with a XMPP client.
 The client must support Ad-Hoc Commands (\xepref{0050}),
-and you must login in the Jabber server with
+and you must login in the XMPP server with
 an account with proper privileges.
 
 
@@ -4696,7 +4697,7 @@ write and execute those files and directories.
 \makesection{howitworks}{How it Works}
 \ind{clustering!how it works}
 
-A \Jabber{} domain is served by one or more \ejabberd{} nodes. These nodes can
+A \XMPP{} domain is served by one or more \ejabberd{} nodes. These nodes can
 be run on different machines that are connected via a network. They all
 must have the ability to connect to port 4369 of all another nodes, and must
 have the same magic cookie (see Erlang/OTP documentation, in other words the
@@ -4715,7 +4716,7 @@ Each \ejabberd{} node has the following modules:
 \makesubsection{router}{Router}
 \ind{clustering!router}
 
-This module is the main router of \Jabber{} packets on each node. It
+This module is the main router of \XMPP{} packets on each node. It
 routes them based on their destination's domains. It uses a global
 routing table. The domain of the packet's destination is searched in the
 routing table, and if it is found, the packet is routed to the
@@ -4740,7 +4741,7 @@ storage, or bounced back.
 \makesubsection{s2smanager}{s2s Manager}
 \ind{clustering!s2s manager}
 
-This module routes packets to other \Jabber{} servers. First, it
+This module routes packets to other \XMPP{} servers. First, it
 checks if an opened s2s connection from the domain of the packet's
 source to the domain of the packet's destination exists. If that is the case,
 the s2s manager routes the packet to the process
@@ -4931,7 +4932,7 @@ To exit the shell, close the window or press the keys: control+c control+c.
 \ejabberd{} includes a watchdog mechanism that may be useful to developers
 when troubleshooting a problem related to memory usage.
 If a process in the \ejabberd{} server consumes more memory than the configured threshold,
-a message is sent to the Jabber accounts defined with the option
+a message is sent to the XMPP accounts defined with the option
 \term{watchdog\_admins}
 \ind{options!watchdog\_admins} in the \ejabberd{} configuration file.
 
@@ -5075,7 +5076,7 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA.
 %\titem{Regular Expression}
 %\titem{ACL} (Access Control List) <Wikipedia>
 %\titem{IPv6} <Wikipedia>
-%\titem{Jabber}
+%\titem{XMPP}
 %\titem{LDAP} (Lightweight Directory Access Protocol) <Wikipedia>
 %\titem{ODBC} (Open Database Connectivity) <Wikipedia>
 %\titem{Virtual Hosting} <Wikipedia>

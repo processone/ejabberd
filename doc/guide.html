@@ -109,7 +109,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </LI><LI CLASS="li-toc"><A HREF="#htoc15">2.4.7&#XA0;&#XA0;Specific Notes for Sun Solaris</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc16">2.4.8&#XA0;&#XA0;Specific Notes for Microsoft Windows</A>
 </LI></UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc17">2.5&#XA0;&#XA0;Create a Jabber Account for Administration</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc17">2.5&#XA0;&#XA0;Create a XMPP Account for Administration</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc18">2.6&#XA0;&#XA0;Upgrading <TT>ejabberd</TT></A>
 </LI></UL>
 </LI><LI CLASS="li-toc"><A HREF="#htoc19">Chapter&#XA0;3&#XA0;&#XA0;Configuring <TT>ejabberd</TT></A>
@@ -381,7 +381,7 @@ To get the full list run the command:
 	See section&#XA0;<A HREF="#database">3.2</A> for more information.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-full-xml</TT></B></DT><DD CLASS="dd-description">
 	Enable the use of XML based optimisations.
 	It will for example use CDATA to escape characters in the XMPP stream.
-	Use this option only if you are sure your Jabber clients include a fully compliant XML parser.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--disable-transient-supervisors</TT></B></DT><DD CLASS="dd-description">
+	Use this option only if you are sure your XMPP clients include a fully compliant XML parser.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--disable-transient-supervisors</TT></B></DT><DD CLASS="dd-description">
 	Disable the use of Erlang/OTP supervision for transient processes.
 </DD></DL><P> <A NAME="install"></A> </P><!--TOC subsection Install-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc12">2.4.4</A>&#XA0;&#XA0;<A HREF="#install">Install</A></H3><!--SEC END --><P> <A NAME="install"></A> 
@@ -493,22 +493,22 @@ to the <CODE>PATH</CODE> environment variable.
 nmake -f Makefile.win32
 </PRE></LI><LI CLASS="li-enumerate">Edit the file <CODE>ejabberd\src\ejabberd.cfg</CODE> and run
 <PRE CLASS="verbatim">werl -s ejabberd -name ejabberd
-</PRE></LI></OL><P> <A NAME="initialadmin"></A> </P><!--TOC section Create a Jabber Account for Administration-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc17">2.5</A>&#XA0;&#XA0;<A HREF="#initialadmin">Create a Jabber Account for Administration</A></H2><!--SEC END --><P> <A NAME="initialadmin"></A> </P><P>You need a Jabber account and grant him administrative privileges
+</PRE></LI></OL><P> <A NAME="initialadmin"></A> </P><!--TOC section Create a XMPP Account for Administration-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc17">2.5</A>&#XA0;&#XA0;<A HREF="#initialadmin">Create a XMPP Account for Administration</A></H2><!--SEC END --><P> <A NAME="initialadmin"></A> </P><P>You need a XMPP account and grant him administrative privileges
 to enter the <TT>ejabberd</TT> Web Admin:
 </P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
-Register a Jabber account on your <TT>ejabberd</TT> server, for example <TT>admin1@example.org</TT>.
-There are two ways to register a Jabber account:
+Register a XMPP account on your <TT>ejabberd</TT> server, for example <TT>admin1@example.org</TT>.
+There are two ways to register a XMPP account:
 <OL CLASS="enumerate" type=a><LI CLASS="li-enumerate">
 Using <TT>ejabberdctl</TT> (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>):
 <PRE CLASS="verbatim">ejabberdctl register admin1 example.org FgT5bk3
-</PRE></LI><LI CLASS="li-enumerate">Using a Jabber client and In-Band Registration (see section&#XA0;<A HREF="#modregister">3.3.17</A>).
+</PRE></LI><LI CLASS="li-enumerate">Using a XMPP client and In-Band Registration (see section&#XA0;<A HREF="#modregister">3.3.17</A>).
 </LI></OL>
-</LI><LI CLASS="li-enumerate">Edit the <TT>ejabberd</TT> configuration file to give administration rights to the Jabber account you created:
+</LI><LI CLASS="li-enumerate">Edit the <TT>ejabberd</TT> configuration file to give administration rights to the XMPP account you created:
 <PRE CLASS="verbatim">{acl, admins, {user, "admin1", "example.org"}}.
 {access, configure, [{allow, admins}]}.
-</PRE>You can grant administrative privileges to many Jabber accounts,
-and also to accounts in other Jabber servers.
+</PRE>You can grant administrative privileges to many XMPP accounts,
+and also to accounts in other XMPP servers.
 </LI><LI CLASS="li-enumerate">Restart <TT>ejabberd</TT> to load the new configuration.
 </LI><LI CLASS="li-enumerate">Open the Web Admin (<CODE>http://server:port/admin/</CODE>) in your
 favourite browser. Make sure to enter the <EM>full</EM> JID as username (in this
@@ -705,8 +705,8 @@ This option enables HTTP Binding (<A HREF="http://xmpp.org/extensions/xep-0124.h
 enables access via HTTP requests to <TT>ejabberd</TT> from behind firewalls which
 do not allow outgoing sockets on port 5222.<P>Remember that you must also install and enable the module mod_http_bind.</P><P>If HTTP Bind is enabled, it will be available at
 <CODE>http://server:port/http-bind/</CODE>. Be aware that support for HTTP Bind
-is also needed in the Jabber client. Remark also that HTTP Bind can be
-interesting to host a web-based Jabber client such as
+is also needed in the XMPP client. Remark also that HTTP Bind can be
+interesting to host a web-based XMPP client such as
 <A HREF="http://jwchat.sourceforge.net/">JWChat</A>
 (check the tutorials to install JWChat with ejabberd and an
 <A HREF="http://www.ejabberd.im/jwchat-localserver">embedded local web server</A>
@@ -716,8 +716,8 @@ This option enables HTTP Polling (<A HREF="http://xmpp.org/extensions/xep-0025.h
 enables access via HTTP requests to <TT>ejabberd</TT> from behind firewalls which
 do not allow outgoing sockets on port 5222.<P>If HTTP Polling is enabled, it will be available at
 <CODE>http://server:port/http-poll/</CODE>. Be aware that support for HTTP Polling
-is also needed in the Jabber client. Remark also that HTTP Polling can be
-interesting to host a web-based Jabber client such as
+is also needed in the XMPP client. Remark also that HTTP Polling can be
+interesting to host a web-based XMPP client such as
 <A HREF="http://jwchat.sourceforge.net/">JWChat</A>.</P><P>The maximum period of time to keep a client session active without
 an incoming POST request can be configured with the global option
 <TT>http_poll_timeout</TT>. The default value is five minutes.
@@ -788,7 +788,7 @@ Define properties to use for DNS resolving.
 Allowed Properties are: <TT>timeout</TT> in seconds which default value is <TT>10</TT>
 and <TT>retries</TT> which default value is <TT>2</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{s2s_default_policy, allow|deny}</TT></B></DT><DD CLASS="dd-description">
-The default policy for incoming and outgoing s2s connections to other Jabber servers.
+The default policy for incoming and outgoing s2s connections to other XMPP servers.
 The default value is <TT>allow</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{{s2s_host, Host}, allow|deny}</TT></B></DT><DD CLASS="dd-description">
 Defines if incoming and outgoing s2s connections with a specific remote host are allowed or denied.
@@ -849,7 +849,7 @@ on port 5223 (SSL, IP 192.168.0.1 and fdca:8ab6:a243:75ef::1) and denied
 for the user called &#X2018;<TT>bad</TT>&#X2019;.
 </LI><LI CLASS="li-itemize">s2s connections are listened for on port 5269 (all IPv4 addresses) 
 with STARTTLS for secured traffic enabled. 
-Incoming and outgoing connections of remote Jabber servers are denied,
+Incoming and outgoing connections of remote XMPP servers are denied,
 only two servers can connect: "jabber.example.org" and "example.com".
 </LI><LI CLASS="li-itemize">Port 5280 is serving the Web Admin and the HTTP Polling service
 in all the IPv4 addresses. Note
@@ -947,7 +947,7 @@ you have to make the transports log and do XDB by themselves:
   &lt;/log&gt;
 
   &lt;!--
-     Some Jabber server implementations do not provide
+     Some XMPP server implementations do not provide
      XDB services (for example, jabberd2 and ejabberd).
      xdb_file.so is loaded in to handle all XDB requests.
   --&gt;
@@ -1160,10 +1160,10 @@ can be either a number, or <TT>infinity</TT>. The default value is
 <TT>infinity</TT>.</P><P>The syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{access, max_user_sessions, [ {MaxNumber, ACLName}, ...]}.</TT></B></DT></DL><P>This example limits the number of sessions per user to 5 for all users, and to 10 for admins:
 </P><PRE CLASS="verbatim">{access, max_user_sessions, [{10, admin}, {5, all}]}.
-</PRE><P> <A NAME="configmaxs2sconns"></A> </P><!--TOC subsubsection Several connections to a remote Jabber server with ACL-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configmaxs2sconns">Several connections to a remote Jabber server with ACL</A></H4><!--SEC END --><P> <A NAME="configmaxs2sconns"></A> 
+</PRE><P> <A NAME="configmaxs2sconns"></A> </P><!--TOC subsubsection Several connections to a remote XMPP server with ACL-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configmaxs2sconns">Several connections to a remote XMPP server with ACL</A></H4><!--SEC END --><P> <A NAME="configmaxs2sconns"></A> 
 </P><P>The special access <TT>max_s2s_connections</TT> specifies how many
-simultaneus S2S connections can be established to a specific remote Jabber server.
+simultaneus S2S connections can be established to a specific remote XMPP server.
 The default value is <TT>1</TT>.
 There&#X2019;s also available the access <TT>max_s2s_connections_per_node</TT>.</P><P>The syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{access, max_s2s_connections, [ {MaxNumber, ACLName}, ...]}.</TT></B></DT></DL><P>Examples:
@@ -1192,7 +1192,7 @@ To define a shaper named &#X2018;<TT>normal</TT>&#X2019; with traffic speed limi
 </PRE></LI></UL><P> <A NAME="language"></A> </P><!--TOC subsection Default Language-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc27">3.1.7</A>&#XA0;&#XA0;<A HREF="#language">Default Language</A></H3><!--SEC END --><P> <A NAME="language"></A> 
 </P><P>The option <TT>language</TT> defines the default language of server strings that
-can be seen by Jabber clients. If a Jabber client does not support
+can be seen by XMPP clients. If a XMPP client does not support
 <TT>xml:lang</TT>, the specified language is used.</P><P>The option syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{language, Language}.</TT></B></DT></DL><P>The default value is <TT>en</TT>.
 In order to take effect there must be a translation file
@@ -1896,7 +1896,7 @@ the "@HOST@" keyword must be used:
 </P><P>This module enables configured users to broadcast announcements and to set
 the message of the day (MOTD).
 Configured users can perform these actions with a
-Jabber client either using Ad-hoc commands
+XMPP client either using Ad-hoc commands
 or sending messages to specific JIDs.</P><P>The Ad-hoc commands are listed in the Server Discovery.
 For this feature to work, <TT>mod_adhoc</TT> must be enabled.</P><P>The specific JIDs where messages can be sent are listed bellow.
 The first JID in each entry will apply only to the specified virtual host
@@ -1963,9 +1963,9 @@ disabled for instances of <TT>ejabberd</TT> with hundreds of thousands users.</P
 
 </P><P>This module adds support for Service Discovery (<A HREF="http://xmpp.org/extensions/xep-0030.html">XEP-0030</A>). With
 this module enabled, services on your server can be discovered by
-Jabber clients. Note that <TT>ejabberd</TT> has no modules with support
+XMPP clients. Note that <TT>ejabberd</TT> has no modules with support
 for the superseded Jabber Browsing (<A HREF="http://xmpp.org/extensions/xep-0011.html">XEP-0011</A>) and Agent Information
-(<A HREF="http://xmpp.org/extensions/xep-0094.html">XEP-0094</A>). Accordingly, Jabber clients need to have support for
+(<A HREF="http://xmpp.org/extensions/xep-0094.html">XEP-0094</A>). Accordingly, XMPP clients need to have support for
 the newer Service Discovery protocol if you want them be able to discover
 the services you offer.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
@@ -2031,9 +2031,9 @@ and admin addresses for both the main server and the vJUD service:
  ]}.
 </PRE></LI></UL><P> <A NAME="modecho"></A> </P><!--TOC subsection <TT>mod_echo</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc43">3.3.5</A>&#XA0;&#XA0;<A HREF="#modecho"><TT>mod_echo</TT></A></H3><!--SEC END --><P> <A NAME="modecho"></A> 
-</P><P>This module simply echoes any Jabber
+</P><P>This module simply echoes any XMPP
 packet back to the sender. This mirror can be of interest for
-<TT>ejabberd</TT> and Jabber client debugging.</P><P>Options:
+<TT>ejabberd</TT> and XMPP client debugging.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 
 <B><TT>{host, HostName}</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
@@ -2076,7 +2076,7 @@ resource at which this service will be hosted.</P><P>To use HTTP-Binding, enable
 </PRE><P>With this configuration, the module will serve the requests sent to 
 <CODE>http://example.org:5280/http-bind/</CODE>
 Remember that this page is not designed to be used by web browsers,
-it is used by Jabber clients that support XMPP over Bosh.</P><P>If you want to set the service in a different URI path or use a different module, 
+it is used by XMPP clients that support XMPP over Bosh.</P><P>If you want to set the service in a different URI path or use a different module, 
 you can configure it manually using the option <CODE>request_handlers</CODE>. 
 For example:
 </P><PRE CLASS="verbatim">{listen, 
@@ -2185,7 +2185,7 @@ Sending public and private messages to room occupants.
 </LI></UL><P>The MUC service allows any Jabber ID to register a nickname,
 so nobody else can use that nickname in any room in the MUC service.
 To register a nickname, open the Service Discovery in your
-Jabber client and register in the MUC service.</P><P>This module supports clustering and load
+XMPP client and register in the MUC service.</P><P>This module supports clustering and load
 balancing. One module can be started per cluster node. Rooms are
 distributed at creation time on all available MUC module
 instances. The multi-user chat module is clustered but the rooms
@@ -2276,7 +2276,7 @@ discarded. A good value for this option is 4 seconds.
 </DD><DT CLASS="dt-description"><B><TT>{default_room_options, [ {OptionName, OptionValue}, ...]}</TT></B></DT><DD CLASS="dd-description"> 
 This module option allows to define the desired default room options.
 Note that the creator of a room can modify the options of his room
-at any time using a Jabber client with MUC capability.
+at any time using a XMPP client with MUC capability.
 The available room options and the default values are:
 <DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{allow_change_subj, true|false}</TT></B></DT><DD CLASS="dd-description"> Allow occupants to change the subject.
@@ -2313,7 +2313,7 @@ In the first example everyone is allowed to use the Multi-User Chat
 service. Everyone will also be able to create new rooms but only the user
 <TT>admin@example.org</TT> is allowed to administrate any room. In this
 example he is also a global administrator. When <TT>admin@example.org</TT>
-sends a message such as &#X2018;Tomorrow, the Jabber server will be moved
+sends a message such as &#X2018;Tomorrow, the XMPP server will be moved
 to new hardware. This will involve service breakdowns around 23:00 UMT.
 We apologise for this inconvenience.&#X2019; to <TT>conference.example.org</TT>,
 it will be displayed in all active rooms. In this example the history
@@ -2398,7 +2398,7 @@ the newly created rooms have by default those options.
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc48">3.3.10</A>&#XA0;&#XA0;<A HREF="#modmuclog"><TT>mod_muc_log</TT></A></H3><!--SEC END --><P> <A NAME="modmuclog"></A> 
 </P><P>This module enables optional logging of Multi-User Chat (MUC) public conversations to
 HTML. Once you enable this module, users can join a room using a MUC capable
-Jabber client, and if they have enough privileges, they can request the
+XMPP client, and if they have enough privileges, they can request the
 configuration form in which they can set the option to enable room logging.</P><P>Features:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Room details are added on top of each page: room title, JID,
@@ -2577,7 +2577,7 @@ and if a client does not answer to the ping in less than 32 seconds, its connect
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc51">3.3.13</A>&#XA0;&#XA0;<A HREF="#modprivacy"><TT>mod_privacy</TT></A></H3><!--SEC END --><P> <A NAME="modprivacy"></A> 
 </P><P>This module implements Blocking Communication (also known as Privacy Rules)
 as defined in section 10 from XMPP IM. If end users have support for it in
-their Jabber client, they will be able to:
+their XMPP client, they will be able to:
 </P><BLOCKQUOTE CLASS="quote">
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Retrieving one&#X2019;s privacy lists.
@@ -2605,7 +2605,7 @@ the processing discipline for Blocking Communication (<TT>jabber:iq:privacy</TT>
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc52">3.3.14</A>&#XA0;&#XA0;<A HREF="#modprivate"><TT>mod_private</TT></A></H3><!--SEC END --><P> <A NAME="modprivate"></A> 
 </P><P>This module adds support for Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>):
 </P><BLOCKQUOTE CLASS="quote">
-Using this method, Jabber entities can store private data on the server and
+Using this method, XMPP entities can store private data on the server and
 retrieve it whenever necessary. The data stored might be anything, as long as
 it is valid XML. One typical usage for this namespace is the server-side storage
 of client-specific preferences; another is Bookmark Storage (<A HREF="http://xmpp.org/extensions/xep-0048.html">XEP-0048</A>).
@@ -2720,7 +2720,7 @@ The following example will use node_tune instead of node_pep for every PEP node 
 </PRE><P> <A NAME="modregister"></A> </P><!--TOC subsection <TT>mod_register</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc55">3.3.17</A>&#XA0;&#XA0;<A HREF="#modregister"><TT>mod_register</TT></A></H3><!--SEC END --><P> <A NAME="modregister"></A> 
 </P><P>This module adds support for In-Band Registration (<A HREF="http://xmpp.org/extensions/xep-0077.html">XEP-0077</A>). This protocol
-enables end users to use a Jabber client to:
+enables end users to use a XMPP client to:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Register a new account on the server.
 </LI><LI CLASS="li-itemize">Change the password from an existing account on the server.
@@ -2824,7 +2824,7 @@ Important: if you use <TT>mod_shared_roster</TT>, you must disable this option.
  ]}.
 </PRE><P> <A NAME="modservicelog"></A> </P><!--TOC subsection <TT>mod_service_log</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc57">3.3.19</A>&#XA0;&#XA0;<A HREF="#modservicelog"><TT>mod_service_log</TT></A></H3><!--SEC END --><P> <A NAME="modservicelog"></A> 
-</P><P>This module adds support for logging end user packets via a Jabber message
+</P><P>This module adds support for logging end user packets via a XMPP message
 auditing service such as
 <A HREF="http://www.funkypenguin.info/project/bandersnatch/">Bandersnatch</A>. All user
 packets are encapsulated in a <CODE>&lt;route/&gt;</CODE> element and sent to the specified
@@ -2859,7 +2859,7 @@ create groups of people that can see members from (other) groups in their
 rosters. The big advantages of this feature are that end users do not need to
 manually add all users to their rosters, and that they cannot permanently delete
 users from the shared roster groups.
-A shared roster group can have members from any Jabber server,
+A shared roster group can have members from any XMPP server,
 but the presence will only be available from and to members
 of the same virtual host where the group is created.</P><P>Shared roster groups can be edited <EM>only</EM> via the Web Admin. Each group
 has a unique identification and the following parameters:
@@ -3409,7 +3409,7 @@ ArgumentValue = any()
 </PRE><P>The default value is to not define any restriction: <TT>[]</TT>.
 If at least one restriction is defined, then the frontend expects 
 that authentication information is provided when executing a command.
-The authentication information is Username, Hostname and Password of a local Jabber account
+The authentication information is Username, Hostname and Password of a local XMPP account
 that has permission to execute the corresponding command.
 This means that the account must be registered in the local ejabberd,
 because the information will be verified.
@@ -3515,9 +3515,9 @@ the environment variable <TT>EJABBERD_DOC_PATH</TT>.
 See section <A HREF="#erlangconfiguration">4.1.2</A>.</P><P> <A NAME="adhoccommands"></A> </P><!--TOC section Ad-hoc Commands-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc72">4.4</A>&#XA0;&#XA0;<A HREF="#adhoccommands">Ad-hoc Commands</A></H2><!--SEC END --><P> <A NAME="adhoccommands"></A> </P><P>If you enable <TT>mod_configure</TT> and <TT>mod_adhoc</TT>,
 you can perform several administrative tasks in <TT>ejabberd</TT>
-with a Jabber client.
+with a XMPP client.
 The client must support Ad-Hoc Commands (<A HREF="http://xmpp.org/extensions/xep-0050.html">XEP-0050</A>),
-and you must login in the Jabber server with
+and you must login in the XMPP server with
 an account with proper privileges.</P><P> <A NAME="changeerlangnodename"></A> </P><!--TOC section Change Computer Hostname-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc73">4.5</A>&#XA0;&#XA0;<A HREF="#changeerlangnodename">Change Computer Hostname</A></H2><!--SEC END --><P> <A NAME="changeerlangnodename"></A> </P><P><TT>ejabberd</TT> uses the distributed Mnesia database.
 Being distributed, Mnesia enforces consistency of its file,
@@ -3639,7 +3639,7 @@ See section <A HREF="#cookie">5.3</A>.
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc80">Chapter&#XA0;6</A>&#XA0;&#XA0;<A HREF="#clustering">Clustering</A></H1><!--SEC END --><P> <A NAME="clustering"></A> 
 </P><P> <A NAME="howitworks"></A> </P><!--TOC section How it Works-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc81">6.1</A>&#XA0;&#XA0;<A HREF="#howitworks">How it Works</A></H2><!--SEC END --><P> <A NAME="howitworks"></A> 
-</P><P>A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
+</P><P>A XMPP domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
 be run on different machines that are connected via a network. They all
 must have the ability to connect to port 4369 of all another nodes, and must
 have the same magic cookie (see Erlang/OTP documentation, in other words the
@@ -3653,7 +3653,7 @@ router,
 </LI><LI CLASS="li-itemize">s2s manager.
 </LI></UL><P> <A NAME="router"></A> </P><!--TOC subsection Router-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc82">6.1.1</A>&#XA0;&#XA0;<A HREF="#router">Router</A></H3><!--SEC END --><P> <A NAME="router"></A> 
-</P><P>This module is the main router of Jabber packets on each node. It
+</P><P>This module is the main router of XMPP packets on each node. It
 routes them based on their destination&#X2019;s domains. It uses a global
 routing table. The domain of the packet&#X2019;s destination is searched in the
 routing table, and if it is found, the packet is routed to the
@@ -3669,7 +3669,7 @@ resource a packet must be sent via a presence table. Then the packet is
 either routed to the appropriate c2s process, or stored in offline
 storage, or bounced back.</P><P> <A NAME="s2smanager"></A> </P><!--TOC subsection s2s Manager-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc85">6.1.4</A>&#XA0;&#XA0;<A HREF="#s2smanager">s2s Manager</A></H3><!--SEC END --><P> <A NAME="s2smanager"></A> 
-</P><P>This module routes packets to other Jabber servers. First, it
+</P><P>This module routes packets to other XMPP servers. First, it
 checks if an opened s2s connection from the domain of the packet&#X2019;s
 source to the domain of the packet&#X2019;s destination exists. If that is the case,
 the s2s manager routes the packet to the process
@@ -3760,7 +3760,7 @@ There are some simple and safe examples in the article
 </P><P><TT>ejabberd</TT> includes a watchdog mechanism that may be useful to developers
 when troubleshooting a problem related to memory usage.
 If a process in the <TT>ejabberd</TT> server consumes more memory than the configured threshold,
-a message is sent to the Jabber accounts defined with the option
+a message is sent to the XMPP accounts defined with the option
 <TT>watchdog_admins</TT>
  in the <TT>ejabberd</TT> configuration file.</P><P>The syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{watchdog_admins, [JID, ...]}.</TT></B></DT></DL><P>The memory consumed is measured in <TT>words</TT>:
