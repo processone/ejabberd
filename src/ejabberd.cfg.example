@@ -74,7 +74,7 @@
 
 %%
 %% watchdog_admins: Only useful for developers: if an ejabberd process
-%% consumes a lot of memory, send live notifications to these Jabber
+%% consumes a lot of memory, send live notifications to these XMPP 
 %% accounts.
 %%
 %%{watchdog_admins, ["bob@example.com"]}.
@@ -91,9 +91,9 @@
 {hosts, ["localhost"]}.
 
 %%
-%% route_subdomains: Delegate subdomains to other Jabber server.
+%% route_subdomains: Delegate subdomains to other XMPP server.
 %% For example, if this ejabberd serves example.org and you want
-%% to allow communication with a Jabber server called im.example.org.
+%% to allow communication with a XMPP server called im.example.org.
 %%
 %%{route_subdomains, s2s}.
 
@@ -348,7 +348,7 @@
 %%%'   ACCESS CONTROL LISTS
 
 %%
-%% The 'admin' ACL grants administrative privileges to Jabber accounts.
+%% The 'admin' ACL grants administrative privileges to XMPP accounts.
 %% You can put as many accounts as you want.
 %%
 %%{acl, admin, {user, "aleksey", "localhost"}}.
@@ -515,11 +515,11 @@
 		  %% a message with this subject and body.
 		  %%
 		  {welcome_message, {"Welcome!",
-				     "Hi.\nWelcome to this Jabber server."}},
+				     "Hi.\nWelcome to this XMPP server."}},
 
 		  %%
 		  %% When a user registers, send a notification to
-		  %% these Jabber accounts.
+		  %% these XMPP accounts.
 		  %%
 		  %%{registration_watchers, ["admin1@example.org"]},
 
