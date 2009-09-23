@@ -92,8 +92,8 @@
 {"Erlang Jabber Server","Servidor Jabber en Erlang"}.
 {"Error","Erro"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Exemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0277):","Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-0277):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0277):","Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-0277):"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-0227):"}.
 {"Family Name","Apelido"}.
 {"February","Febreiro"}.
 {"Fill in fields to search for any matching Jabber User","Rechea campos para buscar usuarios Jabber que concuerden"}.
@@ -121,7 +121,7 @@
 {"Import File","Importar ficheiro"}.
 {"Import user data from jabberd14 spool file:","Importar usuario de fichero spool de jabberd14:"}.
 {"Import User from File at ","Importa usuario desde ficheiro en "}.
-{"Import users data from a PIEFXIS file (XEP-0277):","Importar usuarios desde un fichero PIEFXIS"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Importar usuarios desde un fichero PIEFXIS"}.
 {"Import users data from jabberd14 spool directory:","Importar usuarios do directorio spool de jabberd14:"}.
 {"Import Users from Dir at ","Importar usuarios desde o directorio en "}.
 {"Import Users From jabberd14 Spool Files","Importar usuarios de ficheiros spool de jabberd-1.4"}.

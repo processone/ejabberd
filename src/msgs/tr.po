@@ -1505,19 +1505,19 @@ msgid "Restore plain text backup immediately:"
 msgstr "Hemen düz metin yedekten geri al"
 
 #: web/ejabberd_web_admin.erl:1998
-msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr "Kullanıcıları bir PIEFXIS dosyasından (XEP-0277) içe aktar:"
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "Kullanıcıları bir PIEFXIS dosyasından (XEP-0227) içe aktar:"
 
 #: web/ejabberd_web_admin.erl:2005
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0277) dışa "
+"Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa "
 "aktar:"
 
 #: web/ejabberd_web_admin.erl:2012
-msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Bir sunucudaki kullanıcıların verisini PIEFXIS dosyalarına (XEP-0277) dışa "
+"Bir sunucudaki kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa "
 "aktar:"
 
 #: web/ejabberd_web_admin.erl:2020

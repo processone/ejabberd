@@ -1494,17 +1494,17 @@ msgid "Restore plain text backup immediately:"
 msgstr "Restaŭrigu sekurkopion el plata tekstdosiero tuj"
 
 #: web/ejabberd_web_admin.erl:1998
-msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr "Importu uzanto-datumojn de PIEFXIS dosiero (XEP-0277):"
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "Importu uzanto-datumojn de PIEFXIS dosiero (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2005
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0277):"
+"Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2012
-msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
-msgstr "Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0277):"
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
+msgstr "Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2020
 msgid "Import user data from jabberd14 spool file:"

@@ -1498,18 +1498,18 @@ msgid "Restore plain text backup immediately:"
 msgstr "Восстановить из текстовой резервной копии немедленно:"
 
 #: web/ejabberd_web_admin.erl:1998
-msgid "Import users data from a PIEFXIS file (XEP-0277):"
-msgstr "Импорт пользовательских данных из файла формата PIEFXIS (XEP-0277):"
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "Импорт пользовательских данных из файла формата PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2005
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0277):"
+"Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2012
-msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0277):"
+"Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2020
 msgid "Import user data from jabberd14 spool file:"

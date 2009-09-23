@@ -92,8 +92,8 @@
 {"Erlang Jabber Server","Erlang Jabber Διακομιστής"}.
 {"Error","Σφάλμα"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Παράδειγμα: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0277):","Εξαγωγή δεδομένων όλων των χρηστών του διακομιστή σε PIEFXIS αρχεία (XEP-0277):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0277):","Εξαγωγή δεδομένων των χρηστών κεντρικού υπολογιστή σε PIEFXIS αρχεία (XEP-0277):"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Εξαγωγή δεδομένων όλων των χρηστών του διακομιστή σε PIEFXIS αρχεία (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Εξαγωγή δεδομένων των χρηστών κεντρικού υπολογιστή σε PIEFXIS αρχεία (XEP-0227):"}.
 {"Family Name","Επώνυμο"}.
 {"February","Φεβρουάριος"}.
 {"Fill in fields to search for any matching Jabber User","Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα Jabber χρήστη"}.
@@ -121,7 +121,7 @@
 {"Import File","Εισαγωγή αρχείων"}.
 {"Import user data from jabberd14 spool file:","Εισαγωγή δεδομένων χρήστη από το αρχείο σειράς jabberd14:"}.
 {"Import User from File at ","Εισαγωγή χρηστών από αρχείο στο "}.
-{"Import users data from a PIEFXIS file (XEP-0277):","Εισαγωγή δεδομένων χρηστών από ένα αρχείο PIEFXIS (XEP-0277):"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Εισαγωγή δεδομένων χρηστών από ένα αρχείο PIEFXIS (XEP-0227):"}.
 {"Import users data from jabberd14 spool directory:","Εισαγωγή δεδομένων χρηστών από κατάλογο αρχείων σειράς jabberd14:"}.
 {"Import Users from Dir at ","Εισαγωγή χρηστών από κατάλογο αρχείων στο "}.
 {"Import Users From jabberd14 Spool Files","Εισαγωγή Χρηστών από αρχεία σειράς jabberd14"}.

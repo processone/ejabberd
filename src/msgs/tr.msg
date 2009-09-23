@@ -92,8 +92,8 @@
 {"Erlang Jabber Server","Erlang Jabber Sunucusu"}.
 {"Error","Hata"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Örnek: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"gizli\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}], {\"irc.sometestserver.net\", \"utf-8\"}]"}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0277):","Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0277) dışa aktar:"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0277):","Bir sunucudaki kullanıcıların verisini PIEFXIS dosyalarına (XEP-0277) dışa aktar:"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa aktar:"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Bir sunucudaki kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa aktar:"}.
 {"Family Name","Soyisim"}.
 {"February","Şubat"}.
 {"Fill in fields to search for any matching Jabber User","Eşleşen jabber kullanıcılarını aramak için alanları doldurunuz"}.
@@ -121,7 +121,7 @@
 {"Import File","Dosyayı İçe Aktar"}.
 {"Import user data from jabberd14 spool file:","Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçe Aktar:"}.
 {"Import User from File at ","Dosyadan Kullanıcıları İçe Aktar : "}.
-{"Import users data from a PIEFXIS file (XEP-0277):","Kullanıcıları bir PIEFXIS dosyasından (XEP-0277) içe aktar:"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Kullanıcıları bir PIEFXIS dosyasından (XEP-0227) içe aktar:"}.
 {"Import users data from jabberd14 spool directory:","Jabberd 1.4 Spool Dizininden Kullanıcıları İçe Aktar:"}.
 {"Import Users from Dir at ","Dizinden Kullanıcıları İçe Aktar : "}.
 {"Import Users From jabberd14 Spool Files","Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçeri Aktar"}.

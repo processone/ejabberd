@@ -1520,15 +1520,15 @@ msgid "Restore plain text backup immediately:"
 msgstr "Restaurar una còpia de seguretat en format de text pla ara mateix:"
 
 #: web/ejabberd_web_admin.erl:1998
-msgid "Import users data from a PIEFXIS file (XEP-0277):"
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr ""
 
 #: web/ejabberd_web_admin.erl:2005
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 
 #: web/ejabberd_web_admin.erl:2012
-msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 
 #: web/ejabberd_web_admin.erl:2020

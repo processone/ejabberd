@@ -1491,16 +1491,16 @@ msgid "Restore plain text backup immediately:"
 msgstr "Okamžite obnoviť zálohu z textového súboru:"
 
 #: web/ejabberd_web_admin.erl:1998
-msgid "Import users data from a PIEFXIS file (XEP-0277):"
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr "Importovat dáta užívateľov zo súboru PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2005
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0277):"
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Exportovať dáta všetkých uživateľov na serveri do súborov PIEFXIS (XEP-0277):"
+"Exportovať dáta všetkých uživateľov na serveri do súborov PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2012
-msgid "Export data of users in a host to PIEFXIS files (XEP-0277):"
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Exportovať dáta uživateľov na hostitelovi do súborov PIEFXIS (XEP-0227):"
 

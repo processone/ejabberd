@@ -92,8 +92,8 @@
 {"Erlang Jabber Server","Erlang Jabber 服务器"}.
 {"Error","错误"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","例如: [{\"irc.lucky.net\", \"koi8-r\"}, 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0277):","将服务器上所有用户的数据导出到 PIEFXIS 文件 (XEP-0277):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0277):","将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0277):"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","将服务器上所有用户的数据导出到 PIEFXIS 文件 (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"}.
 {"Family Name","姓氏"}.
 {"February","二月"}.
 {"Fill in fields to search for any matching Jabber User","填充字段以搜索任何匹配的 Jabber 用户"}.
@@ -121,7 +121,7 @@
 {"Import File","导入文件"}.
 {"Import user data from jabberd14 spool file:","从 jabberd14 Spool文件导入用户数据:"}.
 {"Import User from File at ","导入用户的文件位于 "}.
-{"Import users data from a PIEFXIS file (XEP-0277):","从 PIEFXIS 文件 (XEP-0277)导入用户数据:"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","从 PIEFXIS 文件 (XEP-0227)导入用户数据:"}.
 {"Import users data from jabberd14 spool directory:","从 jabberd14 Spool目录导入用户数据:"}.
 {"Import Users from Dir at ","导入用户的目录位于 "}.
 {"Import Users From jabberd14 Spool Files","从 jabberd14 Spool 文件导入用户"}.

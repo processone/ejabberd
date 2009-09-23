@@ -92,8 +92,8 @@
 {"Erlang Jabber Server","Serveur Jabber Erlang"}.
 {"Error","Erreur"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Exemple: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0277):","Exporter les données de tous les utilisateurs du serveur vers un fichier PIEFXIS (XEP-0277):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0277):","Exporter les données utilisateurs d'un hôte vers un fichier PIEFXIS (XEP-0277):"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exporter les données de tous les utilisateurs du serveur vers un fichier PIEFXIS (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exporter les données utilisateurs d'un hôte vers un fichier PIEFXIS (XEP-0227):"}.
 {"Family Name","Nom de famille"}.
 {"February","Février"}.
 {"Fill in fields to search for any matching Jabber User","Remplissez les champs pour rechercher un utilisateur Jabber"}.
@@ -121,7 +121,7 @@
 {"Import File","Importer un fichier"}.
 {"Import user data from jabberd14 spool file:","Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"}.
 {"Import User from File at ","Importer un utilisateur depuis le fichier sur "}.
-{"Import users data from a PIEFXIS file (XEP-0277):","Importer les données utilisateurs à partir d'un fichier PIEFXIS (XEP-0277):"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Importer les données utilisateurs à partir d'un fichier PIEFXIS (XEP-0227):"}.
 {"Import users data from jabberd14 spool directory:","Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"}.
 {"Import Users from Dir at ","Importer des utilisateurs depuis le répertoire sur "}.
 {"Import Users From jabberd14 Spool Files","Importer des utilisateurs depuis un fichier spool Jabberd 1.4"}.

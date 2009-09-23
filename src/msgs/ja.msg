@@ -92,8 +92,8 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","エラー"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","例: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0277):","サーバーにある全てのユーザーデータをPIEFXISファイルにエクスポート(XEP-0277):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0277):","ホストのユーザーデータをPIEFXISファイルにエクスポート(XEP-0277):"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","サーバーにある全てのユーザーデータをPIEFXISファイルにエクスポート(XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","ホストのユーザーデータをPIEFXISファイルにエクスポート(XEP-0227):"}.
 {"Family Name","姓"}.
 {"February","2月"}.
 {"Fill in fields to search for any matching Jabber User","項目を埋めて Jabber User を検索して下さい"}.
@@ -121,7 +121,7 @@
 {"Import File","ファイルかインポート"}.
 {"Import user data from jabberd14 spool file:","ユーザーデータを jabberd14 Spool ファイルからインポート:"}.
 {"Import User from File at ","ファイルからユーザーをインポート"}.
-{"Import users data from a PIEFXIS file (XEP-0277):","ユーザーデータを PIEFXISファイルからインポート(XEP-0277):"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","ユーザーデータを PIEFXISファイルからインポート(XEP-0227):"}.
 {"Import users data from jabberd14 spool directory:","ユーザーデータを jabberd14 Spool ディレクトリからインポート:"}.
 {"Import Users from Dir at ","ディレクトリからユーザーをインポート"}.
 {"Import Users From jabberd14 Spool Files","jabberd14 Spool ファイルからユーザーをインポート"}.

@@ -92,8 +92,8 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Chyba"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Príklad: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0277):","Exportovať dáta všetkých uživateľov na serveri do súborov PIEFXIS (XEP-0277):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0277):","Exportovať dáta uživateľov na hostitelovi do súborov PIEFXIS (XEP-0227):"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportovať dáta všetkých uživateľov na serveri do súborov PIEFXIS (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportovať dáta uživateľov na hostitelovi do súborov PIEFXIS (XEP-0227):"}.
 {"Family Name","Priezvisko"}.
 {"February","Február"}.
 {"Fill in fields to search for any matching Jabber User","Vyplnte políčka pre vyhľadávanie Jabber užívateľa"}.
@@ -121,7 +121,7 @@
 {"Import File","Import súboru"}.
 {"Import user data from jabberd14 spool file:","Importovať dáta užívateľov z jabberd14 spool súboru:"}.
 {"Import User from File at ","Importovať užívateľa zo súboru na "}.
-{"Import users data from a PIEFXIS file (XEP-0277):","Importovat dáta užívateľov zo súboru PIEFXIS (XEP-0227):"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Importovat dáta užívateľov zo súboru PIEFXIS (XEP-0227):"}.
 {"Import users data from jabberd14 spool directory:","Importovať dáta užívateľov z jabberd14 spool adresára:"}.
 {"Import Users from Dir at ","Importovať užívateľov z adresára na "}.
 {"Import Users From jabberd14 Spool Files","Importovať užívateľov z jabberd14 spool súborov"}.
