@@ -3462,10 +3462,10 @@ Options:
   To specify which nodetree to use. If not defined, the default pubsub
   nodetree is used. Only one nodetree can be used per host,
   and is shared by all node plugins.
-\titem{\{pep\_sendlast\_offline, false|true\}} \ind{options!pep\_sendlast\_offline}
+\titem{\{ignore\_pep\_from\_offline, false|true\}} \ind{options!ignore\_pep\_from\_offline}
   To specify whether or not we should get last published PEP items
   from users in our roster which are offline when we connect. Value is true or false.
-  If not defined, pubsub assumes false so we only get last items of online contacts.
+  If not defined, pubsub assumes true so we only get last items of online contacts.
 \titem{\{last\_item\_cache, false|true\}} \ind{options!last\_item\_cache}
   To specify whether or not pubsub should cache last items. Value is true
   or false. If not defined, pubsub do not cache last items. On systems with not so many nodes,

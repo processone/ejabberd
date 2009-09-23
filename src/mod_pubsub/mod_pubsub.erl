@@ -133,7 +133,7 @@
 		host,
 		access,
 		pep_mapping = [],
-		pep_sendlast_offline = false,
+		ignore_pep_from_offline = true,
 		last_item_cache = false,
 		max_items_node = ?MAXITEMS,
 		nodetree = ?STDTREE,
@@ -184,7 +184,7 @@ init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p",[ServerHost,Opts]),
     Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
-    PepOffline = gen_mod:get_opt(pep_sendlast_offline, Opts, false),
+    PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     LastItemCache = gen_mod:get_opt(last_item_cache, Opts, false),
     MaxItemsNode = gen_mod:get_opt(max_items_node, Opts, ?MAXITEMS),
@@ -232,7 +232,7 @@ init([ServerHost, Opts]) ->
 		server_host = ServerHost,
 		access = Access,
 		pep_mapping = PepMapping,
-		pep_sendlast_offline = PepOffline,
+		ignore_pep_from_offline = PepOffline,
 		last_item_cache = LastItemCache,
 		max_items_node = MaxItemsNode,
 		nodetree = NodeTree,
@@ -500,7 +500,7 @@ send_loop(State) ->
 	%% this is a hack in a sense that PEP should only be based on presence
 	%% and is not able to "store" events of remote users (via s2s)
 	%% this makes that hack only work for local domain by now
-	if State#state.pep_sendlast_offline ->
+	if not State#state.ignore_pep_from_offline ->
 	    {User, Server, Resource} = LJID,
 	    case mod_caps:get_caps({User, Server, Resource}) of
 	    nothing ->

@@ -505,7 +505,7 @@
   %%{mod_proxy65,[]},
   {mod_pubsub,   [
 		  {access_createnode, pubsub_createnode},
-		  {pep_sendlast_offline, false},
+		  {ignore_pep_from_offline, true},
 		  {last_item_cache, false},
 		  {plugins, ["flat", "pep"]}  % pep requires mod_caps
 		 ]},
