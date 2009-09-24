@@ -149,6 +149,8 @@ get_user_resources(LUser, LServer) ->
 note_caps(Host, From, Caps) ->
     case Caps of
 	nothing -> 
+	    BJID = jid_to_binary(From),
+	    catch mnesia:dirty_delete({user_caps, BJID}),
 	    ok;
 	_ ->
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -362,7 +364,7 @@ handle_cast({note_caps, From,
 			  ejabberd_local:register_iq_response_handler
 			    (Host, ID, ?MODULE, handle_disco_response),
 			  ejabberd_router:route(jlib:make_jid("", Host, ""), From, Stanza),
-			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
+			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID, BJID}),
 			  ?DICT:store(ID, node_to_binary(Node, SubNode), Dict)
 		  end, Requests, Missing),
 	    {noreply, State#state{disco_requests = NewRequests}}
@@ -409,10 +411,11 @@ handle_cast({disco_response, From, _To,
     end,
     NewRequests = ?DICT:erase(ID, Requests),
     {noreply, State#state{disco_requests = NewRequests}};
-handle_cast({disco_timeout, ID}, #state{host = Host, disco_requests = Requests} = State) ->
+handle_cast({disco_timeout, ID, BJID}, #state{host = Host, disco_requests = Requests} = State) ->
     %% do not wait a response anymore for this IQ, client certainly will never answer
     NewRequests = case ?DICT:is_key(ID, Requests) of
     true ->
+	catch mnesia:dirty_delete({user_caps, BJID}),
 	ejabberd_local:unregister_iq_response_handler(Host, ID),
 	?DICT:erase(ID, Requests);
     false ->
