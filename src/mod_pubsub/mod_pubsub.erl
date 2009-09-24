@@ -47,7 +47,7 @@
 
 -module(mod_pubsub).
 -author('christophe.romain@process-one.net').
--version('1.12-06').
+-version('1.13-0').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -474,7 +474,7 @@ send_loop(State) ->
 			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId, options = Options} = Node,
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
-				send_items(H, N, NodeId, Type, SubJID, last);
+				send_items(H, N, NodeId, Type, LJID, last);
 			    _ ->
 				ok
 			end;
@@ -3030,10 +3030,14 @@ get_options_for_subs(NodeID, Subs) ->
 %	    {result, false}
 %    end
 
-broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, Stanza) ->
-    %AccessModel = get_option(NodeOptions, access_model),
+broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza) ->
+    NotificationType = get_option(NodeOptions, notification_type),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
+    Stanza = case NotificationType of
+	normal -> BaseStanza;
+	MsgType -> add_message_type(BaseStanza, atom_to_list(MsgType))
+	end,
     %% Handles explicit subscriptions
     NodesByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
     lists:foreach(fun ({LJID, Nodes}) ->
@@ -3277,6 +3281,8 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
      ?LISTM_CONFIG_FIELD("Roster groups allowed to subscribe", roster_groups_allowed, Groups),
      ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
 			 [publishers, subscribers, open]),
+     ?ALIST_CONFIG_FIELD("Specify the event message type", notification_type,
+			 [headline, normal]),
      ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
      ?ALIST_CONFIG_FIELD("When to send the last published item", send_last_published_item,
 			 [never, on_sub, on_sub_and_presence]),
@@ -3408,6 +3414,8 @@ set_xoption(Host, [{"pubsub#access_model", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(access_model, Val, [open, authorize, presence, roster, whitelist]);
 set_xoption(Host, [{"pubsub#publish_model", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(publish_model, Val, [publishers, subscribers, open]);
+set_xoption(Host, [{"pubsub#notification_type", [Val]} | Opts], NewOpts) ->
+    ?SET_ALIST_XOPT(notification_type, Val, [headline, normal]);
 set_xoption(Host, [{"pubsub#node_type", [Val]} | Opts], NewOpts) ->
     ?SET_ALIST_XOPT(node_type, Val, [leaf, collection]);
 set_xoption(Host, [{"pubsub#max_payload_size", [Val]} | Opts], NewOpts) ->
@@ -3669,6 +3677,11 @@ itemsEls(Items) ->
     lists:map(fun(#pubsub_item{itemid = {ItemId, _}, payload = Payload}) ->
 	{xmlelement, "item", itemAttr(ItemId), Payload}
     end, Items).
+
+add_message_type({xmlelement, "message", Attrs, Els}, Type) ->
+    {xmlelement, "message", [{"type", Type}|Attrs], Els};
+add_message_type(XmlEl, _Type) ->
+    XmlEl.
 
 add_headers({xmlelement, Name, Attrs, Els}, HeaderEls) ->
     HeaderEl = {xmlelement, "headers", [{"xmlns", ?NS_SHIM}], HeaderEls},

@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-09-23 17:53:47.000000000 +0200
-+++ mod_pubsub_odbc.erl	2009-09-23 17:54:27.000000000 +0200
+--- mod_pubsub.erl	2009-09-24 18:34:03.471785103 +0200
++++ mod_pubsub_odbc.erl	2009-09-24 18:35:20.256479455 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
  %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -7,7 +7,7 @@
 --module(mod_pubsub).
 +-module(mod_pubsub_odbc).
  -author('christophe.romain@process-one.net').
- -version('1.12-06').
+ -version('1.13-0').
  
 @@ -57,9 +57,9 @@
  -include("jlib.hrl").
@@ -243,12 +243,12 @@
 -			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId, options = Options} = Node,
 -			case get_option(Options, send_last_published_item) of
 -			    on_sub_and_presence ->
--				send_items(H, N, NodeId, Type, SubJID, last);
+-				send_items(H, N, NodeId, Type, LJID, last);
 -			    _ ->
 -				ok
 -			end;
 +			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId} = Node,
-+			send_items(H, N, NodeId, Type, SubJID, last);
++			send_items(H, N, NodeId, Type, LJID, last);
  		    true ->
  			% resource not concerned about that subscription
  			ok
@@ -612,7 +612,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3199,6 +3029,30 @@
+@@ -3203,6 +3033,30 @@
  	    Result
      end.
  
@@ -643,7 +643,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3581,7 +3435,13 @@
+@@ -3589,7 +3443,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -658,7 +658,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3601,13 +3461,13 @@
+@@ -3609,13 +3469,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -674,7 +674,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3620,8 +3480,14 @@
+@@ -3628,8 +3488,14 @@
  			end
  		end, Trans).
  
@@ -691,7 +691,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3629,6 +3495,15 @@
+@@ -3637,6 +3503,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -707,7 +707,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-@@ -3637,6 +3512,17 @@
+@@ -3645,6 +3520,17 @@
  	    {error, ?ERR_INTERNAL_SERVER_ERROR}
      end.
  
