@@ -2760,7 +2760,10 @@ is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>{access_createnode, AccessName}</TT></B></DT><DD CLASS="dd-description"> 
 This option restricts which users are allowed to create pubsub nodes using
-ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>{plugins, [ Plugin, ...]}</TT></B></DT><DD CLASS="dd-description"> 
+ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>{max_items_node, MaxItems}</TT></B></DT><DD CLASS="dd-description"> 
+Define the maximum number of items that can be stored in a node.
+Default value is 10.
+</DD><DT CLASS="dt-description"><B><TT>{plugins, [ Plugin, ...]}</TT></B></DT><DD CLASS="dd-description"> 
 To specify which pubsub node plugins to use.
 The first one in the list is used by default.
 If this option is not defined, the default plugins list is: <TT>["flat"]</TT>.
@@ -2781,10 +2784,10 @@ Using "virtual" nodetree requires to start from a clean database,
 it will not work if you used the default "tree" nodetree before.</P><P>The "dag" nodetree provides experimental support for PubSub Collection Nodes (<A HREF="http://xmpp.org/extensions/xep-0248.html">XEP-0248</A>).
 In that case you should also add "dag" node plugin as default, for example:
 <TT>{plugins, ["dag","flat","hometree","pep"]}</TT>
-</P></DD><DT CLASS="dt-description"><B><TT>{pep_sendlast_offline, false|true}</TT></B></DT><DD CLASS="dd-description"> 
+</P></DD><DT CLASS="dt-description"><B><TT>{ignore_pep_from_offline, false|true}</TT></B></DT><DD CLASS="dd-description"> 
 To specify whether or not we should get last published PEP items
 from users in our roster which are offline when we connect. Value is true or false.
-If not defined, pubsub assumes false so we only get last items of online contacts.
+If not defined, pubsub assumes true so we only get last items of online contacts.
 </DD><DT CLASS="dt-description"><B><TT>{last_item_cache, false|true}</TT></B></DT><DD CLASS="dd-description"> 
 To specify whether or not pubsub should cache last items. Value is true
 or false. If not defined, pubsub do not cache last items. On systems with not so many nodes,

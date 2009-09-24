@@ -10,15 +10,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Esperanto\n"
 
-#: ejabberd_c2s.erl:364 ejabberd_c2s.erl:668
+#: ejabberd_c2s.erl:360 ejabberd_c2s.erl:661
 msgid "Use of STARTTLS required"
 msgstr "Uzo de STARTTLS bezonata"
 
-#: ejabberd_c2s.erl:448
+#: ejabberd_c2s.erl:439
 msgid "No resource provided"
 msgstr "Neniu risurco donita"
 
-#: ejabberd_c2s.erl:1073
+#: ejabberd_c2s.erl:1071
 msgid "Replaced by new connection"
 msgstr "Anstataŭigita je nova konekto"
 
@@ -112,7 +112,7 @@ msgstr "Forigu mesaĝo de la tago je ĉiu gastigo"
 msgid "Configuration"
 msgstr "Agordo"
 
-#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1862
+#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1863
 msgid "Database"
 msgstr "Datumbazo"
 
@@ -124,7 +124,7 @@ msgstr "Startu Modulojn"
 msgid "Stop Modules"
 msgstr "Haltigu Modulojn"
 
-#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1863
+#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1864
 msgid "Backup"
 msgstr "Faru Sekurkopion"
 
@@ -217,15 +217,15 @@ msgstr "Ĉiuj Uzantoj"
 msgid "Outgoing s2s Connections"
 msgstr "Elirantaj s-al-s-konektoj"
 
-#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1833
+#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1834
 msgid "Running Nodes"
 msgstr "Funkciantaj Nodoj"
 
-#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1835
+#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1836
 msgid "Stopped Nodes"
 msgstr "Neaktivaj Nodoj"
 
-#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1879
+#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1880
 msgid "Modules"
 msgstr "Moduloj"
 
@@ -416,7 +416,7 @@ msgstr "Ago je uzanto"
 msgid "Edit Properties"
 msgstr "Redaktu atributojn"
 
-#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1695
+#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1696
 msgid "Remove User"
 msgstr "Forigu uzanton"
 
@@ -964,10 +964,10 @@ msgstr "Mesaĝo-atendovico de ~s"
 #: mod_shared_roster.erl:879 web/ejabberd_web_admin.erl:813
 #: web/ejabberd_web_admin.erl:854 web/ejabberd_web_admin.erl:922
 #: web/ejabberd_web_admin.erl:958 web/ejabberd_web_admin.erl:999
-#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1687
-#: web/ejabberd_web_admin.erl:1857 web/ejabberd_web_admin.erl:1889
-#: web/ejabberd_web_admin.erl:1952 web/ejabberd_web_admin.erl:2056
-#: web/ejabberd_web_admin.erl:2081 web/ejabberd_web_admin.erl:2169
+#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1688
+#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:1890
+#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2057
+#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
 msgid "Submitted"
 msgstr "Sendita"
 
@@ -1004,95 +1004,95 @@ msgstr "Forigu ĉiujn liverontajn mesaĝojn"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bajtfluo modulo"
 
-#: mod_pubsub/mod_pubsub.erl:1061 mod_pubsub/mod_pubsub_odbc.erl:887
+#: mod_pubsub/mod_pubsub.erl:1066 mod_pubsub/mod_pubsub_odbc.erl:892
 msgid "Publish-Subscribe"
 msgstr "Public-Abonado"
 
-#: mod_pubsub/mod_pubsub.erl:1157 mod_pubsub/mod_pubsub_odbc.erl:984
+#: mod_pubsub/mod_pubsub.erl:1163 mod_pubsub/mod_pubsub_odbc.erl:990
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Public-Abonada modulo"
 
-#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1271
+#: mod_pubsub/mod_pubsub.erl:1446 mod_pubsub/mod_pubsub_odbc.erl:1277
 msgid "PubSub subscriber request"
 msgstr "PubAbo abonpeto"
 
-#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1273
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Elektu ĉu permesi la abonon de ĉi tiu ento"
 
-#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
+#: mod_pubsub/mod_pubsub.erl:1454 mod_pubsub/mod_pubsub_odbc.erl:1285
 msgid "Node ID"
 msgstr "Nodo ID"
 
-#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1284
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
 msgid "Subscriber Address"
 msgstr "Abonanta adreso"
 
-#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
+#: mod_pubsub/mod_pubsub.erl:1465 mod_pubsub/mod_pubsub_odbc.erl:1296
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3086
+#: mod_pubsub/mod_pubsub.erl:3265 mod_pubsub/mod_pubsub_odbc.erl:3119
 msgid "Deliver payloads with event notifications"
 msgstr "Liveru aĵojn de event-sciigoj"
 
-#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3087
+#: mod_pubsub/mod_pubsub.erl:3266 mod_pubsub/mod_pubsub_odbc.erl:3120
 msgid "Deliver event notifications"
 msgstr "Liveru event-sciigojn"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3088
+#: mod_pubsub/mod_pubsub.erl:3267 mod_pubsub/mod_pubsub_odbc.erl:3121
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Sciigu abonantoj kiam la agordo de la nodo ŝanĝas"
 
-#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3089
+#: mod_pubsub/mod_pubsub.erl:3268 mod_pubsub/mod_pubsub_odbc.erl:3122
 msgid "Notify subscribers when the node is deleted"
 msgstr "Sciigu abonantoj kiam la nodo estas forigita"
 
-#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3090
+#: mod_pubsub/mod_pubsub.erl:3269 mod_pubsub/mod_pubsub_odbc.erl:3123
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Sciigu abonantoj kiam eroj estas forigita de la nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3091
+#: mod_pubsub/mod_pubsub.erl:3270 mod_pubsub/mod_pubsub_odbc.erl:3124
 msgid "Persist items to storage"
 msgstr "Savu erojn en konservado"
 
-#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
+#: mod_pubsub/mod_pubsub.erl:3271 mod_pubsub/mod_pubsub_odbc.erl:3125
 msgid "A friendly name for the node"
 msgstr "Kromnomo por ĉi tiu nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
+#: mod_pubsub/mod_pubsub.erl:3272 mod_pubsub/mod_pubsub_odbc.erl:3126
 msgid "Max # of items to persist"
 msgstr "Maksimuma kiomo de eroj en konservado"
 
-#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
+#: mod_pubsub/mod_pubsub.erl:3273 mod_pubsub/mod_pubsub_odbc.erl:3127
 msgid "Whether to allow subscriptions"
 msgstr "Ĉu permesi aboni"
 
-#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
+#: mod_pubsub/mod_pubsub.erl:3274 mod_pubsub/mod_pubsub_odbc.erl:3128
 msgid "Specify the access model"
 msgstr "Specifu atingo-modelon"
 
-#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
+#: mod_pubsub/mod_pubsub.erl:3277 mod_pubsub/mod_pubsub_odbc.erl:3131
 msgid "Roster groups allowed to subscribe"
 msgstr "Kontaktlist-grupoj kiuj rajtas aboni"
 
-#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
+#: mod_pubsub/mod_pubsub.erl:3278 mod_pubsub/mod_pubsub_odbc.erl:3132
 msgid "Specify the publisher model"
 msgstr "Enmetu publikadan modelon"
 
-#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
+#: mod_pubsub/mod_pubsub.erl:3280 mod_pubsub/mod_pubsub_odbc.erl:3134
 msgid "Max payload size in bytes"
 msgstr "Maksimuma aĵo-grando je bajtoj"
 
-#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
+#: mod_pubsub/mod_pubsub.erl:3281 mod_pubsub/mod_pubsub_odbc.erl:3135
 msgid "When to send the last published item"
 msgstr "Kiam sendi la laste publicitan eron"
 
-#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
+#: mod_pubsub/mod_pubsub.erl:3283 mod_pubsub/mod_pubsub_odbc.erl:3137
 msgid "Only deliver notifications to available users"
 msgstr "Nur liveru sciigojn al konektataj uzantoj"
 
-#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
+#: mod_pubsub/mod_pubsub.erl:3284 mod_pubsub/mod_pubsub_odbc.erl:3138
 msgid "The collections with which a node is affiliated"
 msgstr "Aro kun kiu nodo estas filigita"
 
@@ -1105,8 +1105,8 @@ msgid "Users are not allowed to register accounts so quickly"
 msgstr "Ne estas permesata al uzantoj registri tiel rapide"
 
 #: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
-#: web/ejabberd_web_admin.erl:1812 web/ejabberd_web_admin.erl:1823
-#: web/ejabberd_web_admin.erl:2140
+#: web/ejabberd_web_admin.erl:1813 web/ejabberd_web_admin.erl:1824
+#: web/ejabberd_web_admin.erl:2141
 msgid "None"
 msgstr "Nenio"
 
@@ -1138,9 +1138,9 @@ msgstr "Kontaktlisto de "
 #: mod_shared_roster.erl:880 web/ejabberd_web_admin.erl:814
 #: web/ejabberd_web_admin.erl:855 web/ejabberd_web_admin.erl:923
 #: web/ejabberd_web_admin.erl:959 web/ejabberd_web_admin.erl:1000
-#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1688
-#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:2057
-#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
+#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1689
+#: web/ejabberd_web_admin.erl:1859 web/ejabberd_web_admin.erl:2058
+#: web/ejabberd_web_admin.erl:2083 web/ejabberd_web_admin.erl:2171
 msgid "Bad format"
 msgstr "Malĝusta formo"
 
@@ -1158,7 +1158,7 @@ msgid "Shared Roster Groups"
 msgstr "Komuna Kontaktlist-grupo"
 
 #: mod_shared_roster.erl:772 web/ejabberd_web_admin.erl:1346
-#: web/ejabberd_web_admin.erl:2382
+#: web/ejabberd_web_admin.erl:2383
 msgid "Add New"
 msgstr "Aldonu novan"
 
@@ -1184,7 +1184,7 @@ msgstr "Grupo "
 
 #: mod_shared_roster.erl:886 web/ejabberd_web_admin.erl:820
 #: web/ejabberd_web_admin.erl:864 web/ejabberd_web_admin.erl:929
-#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1943
+#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1944
 msgid "Submit"
 msgstr "Sendu"
 
@@ -1236,7 +1236,7 @@ msgid "Middle Name"
 msgstr "Meza Nomo"
 
 #: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1932
+#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1933
 msgid "Name"
 msgstr "Nomo"
 
@@ -1336,7 +1336,7 @@ msgstr "Montru ordinaran tabelon"
 msgid "Show Integral Table"
 msgstr "Montru integran tabelon"
 
-#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1865
+#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1866
 msgid "Statistics"
 msgstr "Statistikoj"
 
@@ -1369,7 +1369,7 @@ msgid "Registered Users:"
 msgstr "Registritaj uzantoj:"
 
 #: web/ejabberd_web_admin.erl:1613 web/ejabberd_web_admin.erl:1629
-#: web/ejabberd_web_admin.erl:2113
+#: web/ejabberd_web_admin.erl:2114
 msgid "Online Users:"
 msgstr "Konektataj uzantoj:"
 
@@ -1381,80 +1381,80 @@ msgstr "Elirantaj s-al-s-konektoj:"
 msgid "Outgoing s2s Servers:"
 msgstr "Elirantaj s-al-s-serviloj"
 
-#: web/ejabberd_web_admin.erl:1682
+#: web/ejabberd_web_admin.erl:1683
 msgid "Change Password"
 msgstr "Ŝanĝu pasvorton"
 
-#: web/ejabberd_web_admin.erl:1685
+#: web/ejabberd_web_admin.erl:1686
 msgid "User "
 msgstr "Uzanto "
 
-#: web/ejabberd_web_admin.erl:1692
+#: web/ejabberd_web_admin.erl:1693
 msgid "Connected Resources:"
 msgstr "Konektataj risurcoj:"
 
-#: web/ejabberd_web_admin.erl:1693
+#: web/ejabberd_web_admin.erl:1694
 msgid "Password:"
 msgstr "Pasvorto:"
 
-#: web/ejabberd_web_admin.erl:1754
+#: web/ejabberd_web_admin.erl:1755
 msgid "No Data"
 msgstr "Neniu datumo"
 
-#: web/ejabberd_web_admin.erl:1832
+#: web/ejabberd_web_admin.erl:1833
 msgid "Nodes"
 msgstr "Nodoj"
 
-#: web/ejabberd_web_admin.erl:1855 web/ejabberd_web_admin.erl:1877
+#: web/ejabberd_web_admin.erl:1856 web/ejabberd_web_admin.erl:1878
 msgid "Node "
 msgstr "Nodo "
 
-#: web/ejabberd_web_admin.erl:1864
+#: web/ejabberd_web_admin.erl:1865
 msgid "Listened Ports"
 msgstr "Atentataj pordoj"
 
-#: web/ejabberd_web_admin.erl:1866 web/ejabberd_web_admin.erl:2181
-#: web/ejabberd_web_admin.erl:2369
+#: web/ejabberd_web_admin.erl:1867 web/ejabberd_web_admin.erl:2182
+#: web/ejabberd_web_admin.erl:2370
 msgid "Update"
 msgstr "Ĝisdatigu"
 
-#: web/ejabberd_web_admin.erl:1869 web/ejabberd_web_admin.erl:2490
+#: web/ejabberd_web_admin.erl:1870 web/ejabberd_web_admin.erl:2491
 msgid "Restart"
 msgstr "Restartu"
 
-#: web/ejabberd_web_admin.erl:1871 web/ejabberd_web_admin.erl:2492
+#: web/ejabberd_web_admin.erl:1872 web/ejabberd_web_admin.erl:2493
 msgid "Stop"
 msgstr "Haltigu"
 
-#: web/ejabberd_web_admin.erl:1885
+#: web/ejabberd_web_admin.erl:1886
 msgid "RPC Call Error"
 msgstr "Eraro de RPC-alvoko"
 
-#: web/ejabberd_web_admin.erl:1926
+#: web/ejabberd_web_admin.erl:1927
 msgid "Database Tables at "
 msgstr "Datumbaz-tabeloj je "
 
-#: web/ejabberd_web_admin.erl:1933
+#: web/ejabberd_web_admin.erl:1934
 msgid "Storage Type"
 msgstr "Konserv-tipo"
 
-#: web/ejabberd_web_admin.erl:1934
+#: web/ejabberd_web_admin.erl:1935
 msgid "Elements"
 msgstr "Eroj"
 
-#: web/ejabberd_web_admin.erl:1935
+#: web/ejabberd_web_admin.erl:1936
 msgid "Memory"
 msgstr "Memoro"
 
-#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
+#: web/ejabberd_web_admin.erl:1954 web/ejabberd_web_admin.erl:2059
 msgid "Error"
 msgstr "Eraro"
 
-#: web/ejabberd_web_admin.erl:1955
+#: web/ejabberd_web_admin.erl:1956
 msgid "Backup of "
 msgstr "Sekurkopio de "
 
-#: web/ejabberd_web_admin.erl:1957
+#: web/ejabberd_web_admin.erl:1958
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1464,141 +1464,141 @@ msgstr ""
 "Se vi uzas la ODBC-modulon, vi ankaŭ devas sekurkopii tiujn SQL-datumbazoj "
 "aparte."
 
-#: web/ejabberd_web_admin.erl:1962
+#: web/ejabberd_web_admin.erl:1963
 msgid "Store binary backup:"
 msgstr "Konservu duuman sekurkopion:"
 
-#: web/ejabberd_web_admin.erl:1966 web/ejabberd_web_admin.erl:1973
-#: web/ejabberd_web_admin.erl:1981 web/ejabberd_web_admin.erl:1988
-#: web/ejabberd_web_admin.erl:1995 web/ejabberd_web_admin.erl:2002
-#: web/ejabberd_web_admin.erl:2009 web/ejabberd_web_admin.erl:2017
-#: web/ejabberd_web_admin.erl:2024 web/ejabberd_web_admin.erl:2031
+#: web/ejabberd_web_admin.erl:1967 web/ejabberd_web_admin.erl:1974
+#: web/ejabberd_web_admin.erl:1982 web/ejabberd_web_admin.erl:1989
+#: web/ejabberd_web_admin.erl:1996 web/ejabberd_web_admin.erl:2003
+#: web/ejabberd_web_admin.erl:2010 web/ejabberd_web_admin.erl:2018
+#: web/ejabberd_web_admin.erl:2025 web/ejabberd_web_admin.erl:2032
 msgid "OK"
 msgstr "Bone"
 
-#: web/ejabberd_web_admin.erl:1969
+#: web/ejabberd_web_admin.erl:1970
 msgid "Restore binary backup immediately:"
 msgstr "Restaŭrigu duuman sekurkopion tuj:"
 
-#: web/ejabberd_web_admin.erl:1977
+#: web/ejabberd_web_admin.erl:1978
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr "Restaŭrigu duuman sekurkopion post sekvonta ejabberd-restarto"
 
-#: web/ejabberd_web_admin.erl:1984
+#: web/ejabberd_web_admin.erl:1985
 msgid "Store plain text backup:"
 msgstr "Skribu sekurkopion en plata tekstdosiero"
 
-#: web/ejabberd_web_admin.erl:1991
+#: web/ejabberd_web_admin.erl:1992
 msgid "Restore plain text backup immediately:"
 msgstr "Restaŭrigu sekurkopion el plata tekstdosiero tuj"
 
-#: web/ejabberd_web_admin.erl:1998
+#: web/ejabberd_web_admin.erl:1999
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr "Importu uzanto-datumojn de PIEFXIS dosiero (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2005
+#: web/ejabberd_web_admin.erl:2006
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2012
+#: web/ejabberd_web_admin.erl:2013
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr "Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2020
+#: web/ejabberd_web_admin.erl:2021
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
 
-#: web/ejabberd_web_admin.erl:2027
+#: web/ejabberd_web_admin.erl:2028
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
 
-#: web/ejabberd_web_admin.erl:2053
+#: web/ejabberd_web_admin.erl:2054
 msgid "Listened Ports at "
 msgstr "Atentataj pordoj je "
 
-#: web/ejabberd_web_admin.erl:2078
+#: web/ejabberd_web_admin.erl:2079
 msgid "Modules at "
 msgstr "Moduloj je "
 
-#: web/ejabberd_web_admin.erl:2104
+#: web/ejabberd_web_admin.erl:2105
 msgid "Statistics of ~p"
 msgstr "Statistikoj de ~p"
 
-#: web/ejabberd_web_admin.erl:2107
+#: web/ejabberd_web_admin.erl:2108
 msgid "Uptime:"
 msgstr "Daŭro de funkciado"
 
-#: web/ejabberd_web_admin.erl:2110
+#: web/ejabberd_web_admin.erl:2111
 msgid "CPU Time:"
 msgstr "CPU-tempo"
 
-#: web/ejabberd_web_admin.erl:2116
+#: web/ejabberd_web_admin.erl:2117
 msgid "Transactions Committed:"
 msgstr "Transakcioj enmetitaj"
 
-#: web/ejabberd_web_admin.erl:2119
+#: web/ejabberd_web_admin.erl:2120
 msgid "Transactions Aborted:"
 msgstr "Transakcioj nuligitaj"
 
-#: web/ejabberd_web_admin.erl:2122
+#: web/ejabberd_web_admin.erl:2123
 msgid "Transactions Restarted:"
 msgstr "Transakcioj restartitaj"
 
-#: web/ejabberd_web_admin.erl:2125
+#: web/ejabberd_web_admin.erl:2126
 msgid "Transactions Logged:"
 msgstr "Transakcioj protokolitaj"
 
-#: web/ejabberd_web_admin.erl:2167
+#: web/ejabberd_web_admin.erl:2168
 msgid "Update "
 msgstr "Ĝisdatigu "
 
-#: web/ejabberd_web_admin.erl:2175
+#: web/ejabberd_web_admin.erl:2176
 msgid "Update plan"
 msgstr "Ĝisdatigo-plano"
 
-#: web/ejabberd_web_admin.erl:2176
+#: web/ejabberd_web_admin.erl:2177
 msgid "Modified modules"
 msgstr "Ĝisdatigitaj moduloj"
 
-#: web/ejabberd_web_admin.erl:2177
+#: web/ejabberd_web_admin.erl:2178
 msgid "Update script"
 msgstr "Ĝisdatigo-skripto"
 
-#: web/ejabberd_web_admin.erl:2178
+#: web/ejabberd_web_admin.erl:2179
 msgid "Low level update script"
 msgstr "Bazanivela ĝisdatigo-skripto"
 
-#: web/ejabberd_web_admin.erl:2179
+#: web/ejabberd_web_admin.erl:2180
 msgid "Script check"
 msgstr "Skript-kontrolo"
 
-#: web/ejabberd_web_admin.erl:2347
+#: web/ejabberd_web_admin.erl:2348
 msgid "Port"
 msgstr "Pordo"
 
-#: web/ejabberd_web_admin.erl:2348
+#: web/ejabberd_web_admin.erl:2349
 msgid "IP"
 msgstr "IP"
 
-#: web/ejabberd_web_admin.erl:2349
+#: web/ejabberd_web_admin.erl:2350
 msgid "Protocol"
 msgstr "Protokolo"
 
-#: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
+#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
 msgid "Module"
 msgstr "Modulo"
 
-#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
+#: web/ejabberd_web_admin.erl:2352 web/ejabberd_web_admin.erl:2479
 msgid "Options"
 msgstr "Elektebloj"
 
-#: web/ejabberd_web_admin.erl:2371
+#: web/ejabberd_web_admin.erl:2372
 msgid "Delete"
 msgstr "Forigu"
 
-#: web/ejabberd_web_admin.erl:2500
+#: web/ejabberd_web_admin.erl:2501
 msgid "Start"
 msgstr "Startu"
 

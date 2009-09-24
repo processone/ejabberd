@@ -9,15 +9,15 @@ msgstr ""
 "X-Additional-Translator: Gabriele Stilli <superenzima@libero.it>\n"
 "X-Additional-Translator: Smart2128\n"
 
-#: ejabberd_c2s.erl:364 ejabberd_c2s.erl:668
+#: ejabberd_c2s.erl:360 ejabberd_c2s.erl:661
 msgid "Use of STARTTLS required"
 msgstr "Utilizzo di STARTTLS obbligatorio"
 
-#: ejabberd_c2s.erl:448
+#: ejabberd_c2s.erl:439
 msgid "No resource provided"
 msgstr "Nessuna risorsa fornita"
 
-#: ejabberd_c2s.erl:1073
+#: ejabberd_c2s.erl:1071
 msgid "Replaced by new connection"
 msgstr "Sostituito da una nuova connessione"
 
@@ -114,7 +114,7 @@ msgstr "Eliminare il messaggio del giorno (MOTD) su tutti gli host"
 msgid "Configuration"
 msgstr "Configurazione"
 
-#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1862
+#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1863
 msgid "Database"
 msgstr "Database"
 
@@ -126,7 +126,7 @@ msgstr "Avviare moduli"
 msgid "Stop Modules"
 msgstr "Arrestare moduli"
 
-#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1863
+#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1864
 msgid "Backup"
 msgstr "Salvare"
 
@@ -219,15 +219,15 @@ msgstr "Tutti gli utenti"
 msgid "Outgoing s2s Connections"
 msgstr "Connessioni s2s in uscita"
 
-#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1833
+#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1834
 msgid "Running Nodes"
 msgstr "Nodi attivi"
 
-#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1835
+#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1836
 msgid "Stopped Nodes"
 msgstr "Nodi arrestati"
 
-#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1879
+#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1880
 msgid "Modules"
 msgstr "Moduli"
 
@@ -418,7 +418,7 @@ msgstr "Azione sull'utente"
 msgid "Edit Properties"
 msgstr "Modificare le proprietà"
 
-#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1695
+#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1696
 msgid "Remove User"
 msgstr "Eliminare l'utente"
 
@@ -973,10 +973,10 @@ msgstr "Coda di ~s messaggi offline"
 #: mod_shared_roster.erl:879 web/ejabberd_web_admin.erl:813
 #: web/ejabberd_web_admin.erl:854 web/ejabberd_web_admin.erl:922
 #: web/ejabberd_web_admin.erl:958 web/ejabberd_web_admin.erl:999
-#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1687
-#: web/ejabberd_web_admin.erl:1857 web/ejabberd_web_admin.erl:1889
-#: web/ejabberd_web_admin.erl:1952 web/ejabberd_web_admin.erl:2056
-#: web/ejabberd_web_admin.erl:2081 web/ejabberd_web_admin.erl:2169
+#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1688
+#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:1890
+#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2057
+#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
 msgid "Submitted"
 msgstr "Inviato"
 
@@ -1013,95 +1013,95 @@ msgstr "Eliminare tutti i messaggi offline"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "Modulo SOCKS5 Bytestreams per ejabberd"
 
-#: mod_pubsub/mod_pubsub.erl:1061 mod_pubsub/mod_pubsub_odbc.erl:887
+#: mod_pubsub/mod_pubsub.erl:1066 mod_pubsub/mod_pubsub_odbc.erl:892
 msgid "Publish-Subscribe"
 msgstr "Pubblicazione-Iscrizione"
 
-#: mod_pubsub/mod_pubsub.erl:1157 mod_pubsub/mod_pubsub_odbc.erl:984
+#: mod_pubsub/mod_pubsub.erl:1163 mod_pubsub/mod_pubsub_odbc.erl:990
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Modulo Pubblicazione/Iscrizione (PubSub) per ejabberd"
 
-#: mod_pubsub/mod_pubsub.erl:1440 mod_pubsub/mod_pubsub_odbc.erl:1271
+#: mod_pubsub/mod_pubsub.erl:1446 mod_pubsub/mod_pubsub_odbc.erl:1277
 msgid "PubSub subscriber request"
 msgstr "Richiesta di iscrizione per PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1273
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Scegliere se approvare l'iscrizione per questa entità"
 
-#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
+#: mod_pubsub/mod_pubsub.erl:1454 mod_pubsub/mod_pubsub_odbc.erl:1285
 msgid "Node ID"
 msgstr "ID del nodo"
 
-#: mod_pubsub/mod_pubsub.erl:1453 mod_pubsub/mod_pubsub_odbc.erl:1284
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
 msgid "Subscriber Address"
 msgstr "Indirizzo dell'iscritta/o"
 
-#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
+#: mod_pubsub/mod_pubsub.erl:1465 mod_pubsub/mod_pubsub_odbc.erl:1296
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Consentire a questo Jabber ID l'iscrizione a questo nodo pubsub?"
 
-#: mod_pubsub/mod_pubsub.erl:3236 mod_pubsub/mod_pubsub_odbc.erl:3086
+#: mod_pubsub/mod_pubsub.erl:3265 mod_pubsub/mod_pubsub_odbc.erl:3119
 msgid "Deliver payloads with event notifications"
 msgstr "Inviare il contenuto del messaggio con la notifica dell'evento"
 
-#: mod_pubsub/mod_pubsub.erl:3237 mod_pubsub/mod_pubsub_odbc.erl:3087
+#: mod_pubsub/mod_pubsub.erl:3266 mod_pubsub/mod_pubsub_odbc.erl:3120
 msgid "Deliver event notifications"
 msgstr "Inviare notifiche degli eventi"
 
-#: mod_pubsub/mod_pubsub.erl:3238 mod_pubsub/mod_pubsub_odbc.erl:3088
+#: mod_pubsub/mod_pubsub.erl:3267 mod_pubsub/mod_pubsub_odbc.erl:3121
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Notificare gli iscritti quando la configurazione del nodo cambia"
 
-#: mod_pubsub/mod_pubsub.erl:3239 mod_pubsub/mod_pubsub_odbc.erl:3089
+#: mod_pubsub/mod_pubsub.erl:3268 mod_pubsub/mod_pubsub_odbc.erl:3122
 msgid "Notify subscribers when the node is deleted"
 msgstr "Notificare gli iscritti quando il nodo è cancellato"
 
-#: mod_pubsub/mod_pubsub.erl:3240 mod_pubsub/mod_pubsub_odbc.erl:3090
+#: mod_pubsub/mod_pubsub.erl:3269 mod_pubsub/mod_pubsub_odbc.erl:3123
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Notificare gli iscritti quando sono eliminati degli elementi dal nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3241 mod_pubsub/mod_pubsub_odbc.erl:3091
+#: mod_pubsub/mod_pubsub.erl:3270 mod_pubsub/mod_pubsub_odbc.erl:3124
 msgid "Persist items to storage"
 msgstr "Conservazione persistente degli elementi"
 
-#: mod_pubsub/mod_pubsub.erl:3242 mod_pubsub/mod_pubsub_odbc.erl:3092
+#: mod_pubsub/mod_pubsub.erl:3271 mod_pubsub/mod_pubsub_odbc.erl:3125
 msgid "A friendly name for the node"
 msgstr "Un nome comodo per il nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3243 mod_pubsub/mod_pubsub_odbc.erl:3093
+#: mod_pubsub/mod_pubsub.erl:3272 mod_pubsub/mod_pubsub_odbc.erl:3126
 msgid "Max # of items to persist"
 msgstr "Numero massimo di elementi da conservare persistentemente"
 
-#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
+#: mod_pubsub/mod_pubsub.erl:3273 mod_pubsub/mod_pubsub_odbc.erl:3127
 msgid "Whether to allow subscriptions"
 msgstr "Consentire iscrizioni?"
 
-#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
+#: mod_pubsub/mod_pubsub.erl:3274 mod_pubsub/mod_pubsub_odbc.erl:3128
 msgid "Specify the access model"
 msgstr "Specificare il modello di accesso"
 
-#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
+#: mod_pubsub/mod_pubsub.erl:3277 mod_pubsub/mod_pubsub_odbc.erl:3131
 msgid "Roster groups allowed to subscribe"
 msgstr "Gruppi roster abilitati alla registrazione"
 
-#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
+#: mod_pubsub/mod_pubsub.erl:3278 mod_pubsub/mod_pubsub_odbc.erl:3132
 msgid "Specify the publisher model"
 msgstr "Definire il modello di pubblicazione"
 
-#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
+#: mod_pubsub/mod_pubsub.erl:3280 mod_pubsub/mod_pubsub_odbc.erl:3134
 msgid "Max payload size in bytes"
 msgstr "Dimensione massima del contenuto del messaggio in byte"
 
-#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
+#: mod_pubsub/mod_pubsub.erl:3281 mod_pubsub/mod_pubsub_odbc.erl:3135
 msgid "When to send the last published item"
 msgstr "Quando inviare l'ultimo elemento pubblicato"
 
-#: mod_pubsub/mod_pubsub.erl:3254 mod_pubsub/mod_pubsub_odbc.erl:3104
+#: mod_pubsub/mod_pubsub.erl:3283 mod_pubsub/mod_pubsub_odbc.erl:3137
 msgid "Only deliver notifications to available users"
 msgstr "Inviare le notifiche solamente agli utenti disponibili"
 
-#: mod_pubsub/mod_pubsub.erl:3255 mod_pubsub/mod_pubsub_odbc.erl:3105
+#: mod_pubsub/mod_pubsub.erl:3284 mod_pubsub/mod_pubsub_odbc.erl:3138
 msgid "The collections with which a node is affiliated"
 msgstr "Le collezioni a cui è affiliato un nodo"
 
@@ -1116,8 +1116,8 @@ msgid "Users are not allowed to register accounts so quickly"
 msgstr "Non è consentito agli utenti registrare account così rapidamente"
 
 #: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
-#: web/ejabberd_web_admin.erl:1812 web/ejabberd_web_admin.erl:1823
-#: web/ejabberd_web_admin.erl:2140
+#: web/ejabberd_web_admin.erl:1813 web/ejabberd_web_admin.erl:1824
+#: web/ejabberd_web_admin.erl:2141
 msgid "None"
 msgstr "Nessuno"
 
@@ -1149,9 +1149,9 @@ msgstr "Lista dei contatti di "
 #: mod_shared_roster.erl:880 web/ejabberd_web_admin.erl:814
 #: web/ejabberd_web_admin.erl:855 web/ejabberd_web_admin.erl:923
 #: web/ejabberd_web_admin.erl:959 web/ejabberd_web_admin.erl:1000
-#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1688
-#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:2057
-#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
+#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1689
+#: web/ejabberd_web_admin.erl:1859 web/ejabberd_web_admin.erl:2058
+#: web/ejabberd_web_admin.erl:2083 web/ejabberd_web_admin.erl:2171
 msgid "Bad format"
 msgstr "Formato non valido"
 
@@ -1169,7 +1169,7 @@ msgid "Shared Roster Groups"
 msgstr "Gruppi di liste di contatti comuni"
 
 #: mod_shared_roster.erl:772 web/ejabberd_web_admin.erl:1346
-#: web/ejabberd_web_admin.erl:2382
+#: web/ejabberd_web_admin.erl:2383
 msgid "Add New"
 msgstr "Aggiungere nuovo"
 
@@ -1195,7 +1195,7 @@ msgstr "Gruppo "
 
 #: mod_shared_roster.erl:886 web/ejabberd_web_admin.erl:820
 #: web/ejabberd_web_admin.erl:864 web/ejabberd_web_admin.erl:929
-#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1943
+#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1944
 msgid "Submit"
 msgstr "Inviare"
 
@@ -1247,7 +1247,7 @@ msgid "Middle Name"
 msgstr "Altro nome"
 
 #: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1932
+#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1933
 msgid "Name"
 msgstr "Nome"
 
@@ -1348,7 +1348,7 @@ msgstr "Mostrare la tabella normale"
 msgid "Show Integral Table"
 msgstr "Mostrare la tabella integrale"
 
-#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1865
+#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1866
 msgid "Statistics"
 msgstr "Statistiche"
 
@@ -1381,7 +1381,7 @@ msgid "Registered Users:"
 msgstr "Utenti registrati:"
 
 #: web/ejabberd_web_admin.erl:1613 web/ejabberd_web_admin.erl:1629
-#: web/ejabberd_web_admin.erl:2113
+#: web/ejabberd_web_admin.erl:2114
 msgid "Online Users:"
 msgstr "Utenti connessi:"
 
@@ -1393,80 +1393,80 @@ msgstr "Connessioni s2s in uscita:"
 msgid "Outgoing s2s Servers:"
 msgstr "Server s2s in uscita"
 
-#: web/ejabberd_web_admin.erl:1682
+#: web/ejabberd_web_admin.erl:1683
 msgid "Change Password"
 msgstr "Modificare la password"
 
-#: web/ejabberd_web_admin.erl:1685
+#: web/ejabberd_web_admin.erl:1686
 msgid "User "
 msgstr "Utente "
 
-#: web/ejabberd_web_admin.erl:1692
+#: web/ejabberd_web_admin.erl:1693
 msgid "Connected Resources:"
 msgstr "Risorse connesse:"
 
-#: web/ejabberd_web_admin.erl:1693
+#: web/ejabberd_web_admin.erl:1694
 msgid "Password:"
 msgstr "Password:"
 
-#: web/ejabberd_web_admin.erl:1754
+#: web/ejabberd_web_admin.erl:1755
 msgid "No Data"
 msgstr "Nessuna informazione"
 
-#: web/ejabberd_web_admin.erl:1832
+#: web/ejabberd_web_admin.erl:1833
 msgid "Nodes"
 msgstr "Nodi"
 
-#: web/ejabberd_web_admin.erl:1855 web/ejabberd_web_admin.erl:1877
+#: web/ejabberd_web_admin.erl:1856 web/ejabberd_web_admin.erl:1878
 msgid "Node "
 msgstr "Nodo "
 
-#: web/ejabberd_web_admin.erl:1864
+#: web/ejabberd_web_admin.erl:1865
 msgid "Listened Ports"
 msgstr "Porte in ascolto"
 
-#: web/ejabberd_web_admin.erl:1866 web/ejabberd_web_admin.erl:2181
-#: web/ejabberd_web_admin.erl:2369
+#: web/ejabberd_web_admin.erl:1867 web/ejabberd_web_admin.erl:2182
+#: web/ejabberd_web_admin.erl:2370
 msgid "Update"
 msgstr "Aggiornare"
 
-#: web/ejabberd_web_admin.erl:1869 web/ejabberd_web_admin.erl:2490
+#: web/ejabberd_web_admin.erl:1870 web/ejabberd_web_admin.erl:2491
 msgid "Restart"
 msgstr "Riavviare"
 
-#: web/ejabberd_web_admin.erl:1871 web/ejabberd_web_admin.erl:2492
+#: web/ejabberd_web_admin.erl:1872 web/ejabberd_web_admin.erl:2493
 msgid "Stop"
 msgstr "Arrestare"
 
-#: web/ejabberd_web_admin.erl:1885
+#: web/ejabberd_web_admin.erl:1886
 msgid "RPC Call Error"
 msgstr "Errore di chiamata RPC"
 
-#: web/ejabberd_web_admin.erl:1926
+#: web/ejabberd_web_admin.erl:1927
 msgid "Database Tables at "
 msgstr "Tabelle del database su "
 
-#: web/ejabberd_web_admin.erl:1933
+#: web/ejabberd_web_admin.erl:1934
 msgid "Storage Type"
 msgstr "Tipo di conservazione"
 
-#: web/ejabberd_web_admin.erl:1934
+#: web/ejabberd_web_admin.erl:1935
 msgid "Elements"
 msgstr "Elementi"
 
-#: web/ejabberd_web_admin.erl:1935
+#: web/ejabberd_web_admin.erl:1936
 msgid "Memory"
 msgstr "Memoria"
 
-#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2058
+#: web/ejabberd_web_admin.erl:1954 web/ejabberd_web_admin.erl:2059
 msgid "Error"
 msgstr "Errore"
 
-#: web/ejabberd_web_admin.erl:1955
+#: web/ejabberd_web_admin.erl:1956
 msgid "Backup of "
 msgstr "Salvataggio di "
 
-#: web/ejabberd_web_admin.erl:1957
+#: web/ejabberd_web_admin.erl:1958
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1476,142 +1476,142 @@ msgstr ""
 "interno Mnesia. Se si sta utilizzando il modulo ODBC, è necessario salvare "
 "anche il proprio database SQL separatamente."
 
-#: web/ejabberd_web_admin.erl:1962
+#: web/ejabberd_web_admin.erl:1963
 msgid "Store binary backup:"
 msgstr "Conservare un salvataggio binario:"
 
-#: web/ejabberd_web_admin.erl:1966 web/ejabberd_web_admin.erl:1973
-#: web/ejabberd_web_admin.erl:1981 web/ejabberd_web_admin.erl:1988
-#: web/ejabberd_web_admin.erl:1995 web/ejabberd_web_admin.erl:2002
-#: web/ejabberd_web_admin.erl:2009 web/ejabberd_web_admin.erl:2017
-#: web/ejabberd_web_admin.erl:2024 web/ejabberd_web_admin.erl:2031
+#: web/ejabberd_web_admin.erl:1967 web/ejabberd_web_admin.erl:1974
+#: web/ejabberd_web_admin.erl:1982 web/ejabberd_web_admin.erl:1989
+#: web/ejabberd_web_admin.erl:1996 web/ejabberd_web_admin.erl:2003
+#: web/ejabberd_web_admin.erl:2010 web/ejabberd_web_admin.erl:2018
+#: web/ejabberd_web_admin.erl:2025 web/ejabberd_web_admin.erl:2032
 msgid "OK"
 msgstr "OK"
 
-#: web/ejabberd_web_admin.erl:1969
+#: web/ejabberd_web_admin.erl:1970
 msgid "Restore binary backup immediately:"
 msgstr "Recuperare un salvataggio binario adesso:"
 
-#: web/ejabberd_web_admin.erl:1977
+#: web/ejabberd_web_admin.erl:1978
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Recuperare un salvataggio binario dopo il prossimo riavvio di ejabberd "
 "(necessita di meno memoria):"
 
-#: web/ejabberd_web_admin.erl:1984
+#: web/ejabberd_web_admin.erl:1985
 msgid "Store plain text backup:"
 msgstr "Conservare un salvataggio come semplice testo:"
 
-#: web/ejabberd_web_admin.erl:1991
+#: web/ejabberd_web_admin.erl:1992
 msgid "Restore plain text backup immediately:"
 msgstr "Recuperare un salvataggio come semplice testo adesso:"
 
-#: web/ejabberd_web_admin.erl:1998
+#: web/ejabberd_web_admin.erl:1999
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr "Importare i dati utenti da un file PIEFXIS (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2005
+#: web/ejabberd_web_admin.erl:2006
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Esportare i dati di tutti gli utenti nel server in file PIEFXIS (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2012
+#: web/ejabberd_web_admin.erl:2013
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr "Esportare i dati degli utenti di un host in file PIEFXIS (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2020
+#: web/ejabberd_web_admin.erl:2021
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Importare i dati utente da file di spool di jabberd14:"
 
-#: web/ejabberd_web_admin.erl:2027
+#: web/ejabberd_web_admin.erl:2028
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Importare i dati utenti da directory di spool di jabberd14:"
 
-#: web/ejabberd_web_admin.erl:2053
+#: web/ejabberd_web_admin.erl:2054
 msgid "Listened Ports at "
 msgstr "Porte in ascolto su "
 
-#: web/ejabberd_web_admin.erl:2078
+#: web/ejabberd_web_admin.erl:2079
 msgid "Modules at "
 msgstr "Moduli su "
 
-#: web/ejabberd_web_admin.erl:2104
+#: web/ejabberd_web_admin.erl:2105
 msgid "Statistics of ~p"
 msgstr "Statistiche di ~p"
 
-#: web/ejabberd_web_admin.erl:2107
+#: web/ejabberd_web_admin.erl:2108
 msgid "Uptime:"
 msgstr "Tempo dall'avvio:"
 
-#: web/ejabberd_web_admin.erl:2110
+#: web/ejabberd_web_admin.erl:2111
 msgid "CPU Time:"
 msgstr "Tempo CPU:"
 
-#: web/ejabberd_web_admin.erl:2116
+#: web/ejabberd_web_admin.erl:2117
 msgid "Transactions Committed:"
 msgstr "Transazioni avvenute:"
 
-#: web/ejabberd_web_admin.erl:2119
+#: web/ejabberd_web_admin.erl:2120
 msgid "Transactions Aborted:"
 msgstr "Transazioni abortite:"
 
-#: web/ejabberd_web_admin.erl:2122
+#: web/ejabberd_web_admin.erl:2123
 msgid "Transactions Restarted:"
 msgstr "Transazioni riavviate:"
 
-#: web/ejabberd_web_admin.erl:2125
+#: web/ejabberd_web_admin.erl:2126
 msgid "Transactions Logged:"
 msgstr "Transazioni con log:"
 
-#: web/ejabberd_web_admin.erl:2167
+#: web/ejabberd_web_admin.erl:2168
 msgid "Update "
 msgstr "Aggiornare "
 
-#: web/ejabberd_web_admin.erl:2175
+#: web/ejabberd_web_admin.erl:2176
 msgid "Update plan"
 msgstr "Piano di aggiornamento"
 
-#: web/ejabberd_web_admin.erl:2176
+#: web/ejabberd_web_admin.erl:2177
 msgid "Modified modules"
 msgstr "Moduli modificati"
 
-#: web/ejabberd_web_admin.erl:2177
+#: web/ejabberd_web_admin.erl:2178
 msgid "Update script"
 msgstr "Script di aggiornamento"
 
-#: web/ejabberd_web_admin.erl:2178
+#: web/ejabberd_web_admin.erl:2179
 msgid "Low level update script"
 msgstr "Script di aggiornamento di basso livello"
 
-#: web/ejabberd_web_admin.erl:2179
+#: web/ejabberd_web_admin.erl:2180
 msgid "Script check"
 msgstr "Verifica dello script"
 
-#: web/ejabberd_web_admin.erl:2347
+#: web/ejabberd_web_admin.erl:2348
 msgid "Port"
 msgstr "Porta"
 
-#: web/ejabberd_web_admin.erl:2348
+#: web/ejabberd_web_admin.erl:2349
 msgid "IP"
 msgstr "IP"
 
-#: web/ejabberd_web_admin.erl:2349
+#: web/ejabberd_web_admin.erl:2350
 msgid "Protocol"
 msgstr "Protocollo"
 
-#: web/ejabberd_web_admin.erl:2350 web/ejabberd_web_admin.erl:2477
+#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
 msgid "Module"
 msgstr "Modulo"
 
-#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
+#: web/ejabberd_web_admin.erl:2352 web/ejabberd_web_admin.erl:2479
 msgid "Options"
 msgstr "Opzioni"
 
-#: web/ejabberd_web_admin.erl:2371
+#: web/ejabberd_web_admin.erl:2372
 msgid "Delete"
 msgstr "Eliminare"
 
-#: web/ejabberd_web_admin.erl:2500
+#: web/ejabberd_web_admin.erl:2501
 msgid "Start"
 msgstr "Avviare"

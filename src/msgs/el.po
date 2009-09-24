@@ -1021,97 +1021,97 @@ msgstr "Αφαίρεση Όλων των Χωρίς Σύνδεση Μηνύμα�
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub/mod_pubsub.erl:1062 mod_pubsub/mod_pubsub_odbc.erl:888
+#: mod_pubsub/mod_pubsub.erl:1066 mod_pubsub/mod_pubsub_odbc.erl:892
 msgid "Publish-Subscribe"
 msgstr "Δημοσίευση-Εγγραφή"
 
-#: mod_pubsub/mod_pubsub.erl:1159 mod_pubsub/mod_pubsub_odbc.erl:986
+#: mod_pubsub/mod_pubsub.erl:1163 mod_pubsub/mod_pubsub_odbc.erl:990
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd module Δημοσίευσης-Εγγραφής"
 
-#: mod_pubsub/mod_pubsub.erl:1442 mod_pubsub/mod_pubsub_odbc.erl:1273
+#: mod_pubsub/mod_pubsub.erl:1446 mod_pubsub/mod_pubsub_odbc.erl:1277
 msgid "PubSub subscriber request"
 msgstr "Αίτηση συνδρομητή Δημοσίευσης-Εγγραφής"
 
-#: mod_pubsub/mod_pubsub.erl:1444 mod_pubsub/mod_pubsub_odbc.erl:1275
+#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Επιλέξτε αν θα εγκρίθεί η εγγραφή αυτής της οντότητας."
 
-#: mod_pubsub/mod_pubsub.erl:1450 mod_pubsub/mod_pubsub_odbc.erl:1281
+#: mod_pubsub/mod_pubsub.erl:1454 mod_pubsub/mod_pubsub_odbc.erl:1285
 msgid "Node ID"
 msgstr "Ταυτότητα Κόμβου"
 
-#: mod_pubsub/mod_pubsub.erl:1455 mod_pubsub/mod_pubsub_odbc.erl:1286
+#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
 msgid "Subscriber Address"
 msgstr "Διεύθυνση Συνδρομητή"
 
-#: mod_pubsub/mod_pubsub.erl:1461 mod_pubsub/mod_pubsub_odbc.erl:1292
+#: mod_pubsub/mod_pubsub.erl:1465 mod_pubsub/mod_pubsub_odbc.erl:1296
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr ""
 "Επιτρέπετε σε αυτή την Jabber Ταυτότητα να εγγραφεί σε αυτό τον κόμβο "
 "Δημοσίευσης-Εγγραφής;"
 
-#: mod_pubsub/mod_pubsub.erl:3244 mod_pubsub/mod_pubsub_odbc.erl:3094
+#: mod_pubsub/mod_pubsub.erl:3265 mod_pubsub/mod_pubsub_odbc.erl:3119
 msgid "Deliver payloads with event notifications"
 msgstr "Κοινοποιήσεις με την παράδοση φορτίων"
 
-#: mod_pubsub/mod_pubsub.erl:3245 mod_pubsub/mod_pubsub_odbc.erl:3095
+#: mod_pubsub/mod_pubsub.erl:3266 mod_pubsub/mod_pubsub_odbc.erl:3120
 msgid "Deliver event notifications"
 msgstr "Κοινοποιήσεις παράδοσης"
 
-#: mod_pubsub/mod_pubsub.erl:3246 mod_pubsub/mod_pubsub_odbc.erl:3096
+#: mod_pubsub/mod_pubsub.erl:3267 mod_pubsub/mod_pubsub_odbc.erl:3121
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Ειδοποιηση στους συνδρομητές όταν αλλάζει η διαμόρφωση κόμβου"
 
-#: mod_pubsub/mod_pubsub.erl:3247 mod_pubsub/mod_pubsub_odbc.erl:3097
+#: mod_pubsub/mod_pubsub.erl:3268 mod_pubsub/mod_pubsub_odbc.erl:3122
 msgid "Notify subscribers when the node is deleted"
 msgstr "Ειδοποιηση στους συνδρομητές όταν ο κόμβος διαγράφεται"
 
-#: mod_pubsub/mod_pubsub.erl:3248 mod_pubsub/mod_pubsub_odbc.erl:3098
+#: mod_pubsub/mod_pubsub.erl:3269 mod_pubsub/mod_pubsub_odbc.erl:3123
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Ειδοποιηση στους συνδρομητές  όταν αφαίρούντε στοιχεία από τον κόμβο"
 
-#: mod_pubsub/mod_pubsub.erl:3249 mod_pubsub/mod_pubsub_odbc.erl:3099
+#: mod_pubsub/mod_pubsub.erl:3270 mod_pubsub/mod_pubsub_odbc.erl:3124
 msgid "Persist items to storage"
 msgstr "Μονιμη αποθήκευση στοιχείων"
 
-#: mod_pubsub/mod_pubsub.erl:3250 mod_pubsub/mod_pubsub_odbc.erl:3100
+#: mod_pubsub/mod_pubsub.erl:3271 mod_pubsub/mod_pubsub_odbc.erl:3125
 msgid "A friendly name for the node"
 msgstr "Ένα φιλικό όνομα για τον κόμβο"
 
-#: mod_pubsub/mod_pubsub.erl:3251 mod_pubsub/mod_pubsub_odbc.erl:3101
+#: mod_pubsub/mod_pubsub.erl:3272 mod_pubsub/mod_pubsub_odbc.erl:3126
 msgid "Max # of items to persist"
 msgstr "Μέγιστος αριθμός μόνιμων στοιχείων"
 
-#: mod_pubsub/mod_pubsub.erl:3252 mod_pubsub/mod_pubsub_odbc.erl:3102
+#: mod_pubsub/mod_pubsub.erl:3273 mod_pubsub/mod_pubsub_odbc.erl:3127
 msgid "Whether to allow subscriptions"
 msgstr "Εάν επιτρέποντε συνδρομές"
 
-#: mod_pubsub/mod_pubsub.erl:3253 mod_pubsub/mod_pubsub_odbc.erl:3103
+#: mod_pubsub/mod_pubsub.erl:3274 mod_pubsub/mod_pubsub_odbc.erl:3128
 msgid "Specify the access model"
 msgstr "Καθορίστε το μοντέλο πρόσβασης"
 
-#: mod_pubsub/mod_pubsub.erl:3256 mod_pubsub/mod_pubsub_odbc.erl:3106
+#: mod_pubsub/mod_pubsub.erl:3277 mod_pubsub/mod_pubsub_odbc.erl:3131
 msgid "Roster groups allowed to subscribe"
 msgstr "Ομάδες Καταλόγου Επαφών μπορούν να εγγραφούν"
 
-#: mod_pubsub/mod_pubsub.erl:3257 mod_pubsub/mod_pubsub_odbc.erl:3107
+#: mod_pubsub/mod_pubsub.erl:3278 mod_pubsub/mod_pubsub_odbc.erl:3132
 msgid "Specify the publisher model"
 msgstr "Καθορίστε το μοντέλο εκδότη"
 
-#: mod_pubsub/mod_pubsub.erl:3259 mod_pubsub/mod_pubsub_odbc.erl:3109
+#: mod_pubsub/mod_pubsub.erl:3280 mod_pubsub/mod_pubsub_odbc.erl:3134
 msgid "Max payload size in bytes"
 msgstr "Μέγιστο μέγεθος φορτίου σε bytes"
 
-#: mod_pubsub/mod_pubsub.erl:3260 mod_pubsub/mod_pubsub_odbc.erl:3110
+#: mod_pubsub/mod_pubsub.erl:3281 mod_pubsub/mod_pubsub_odbc.erl:3135
 msgid "When to send the last published item"
 msgstr "Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"
 
-#: mod_pubsub/mod_pubsub.erl:3262 mod_pubsub/mod_pubsub_odbc.erl:3112
+#: mod_pubsub/mod_pubsub.erl:3283 mod_pubsub/mod_pubsub_odbc.erl:3137
 msgid "Only deliver notifications to available users"
 msgstr "Παράδωση κοινοποιήσεων μόνο σε διαθέσιμους χρήστες"
 
-#: mod_pubsub/mod_pubsub.erl:3263 mod_pubsub/mod_pubsub_odbc.erl:3113
+#: mod_pubsub/mod_pubsub.erl:3284 mod_pubsub/mod_pubsub_odbc.erl:3138
 msgid "The collections with which a node is affiliated"
 msgstr "Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"
 
