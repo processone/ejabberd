@@ -2687,17 +2687,20 @@ is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>{access_createnode, AccessName}</TT></B></DT><DD CLASS="dd-description"> 
 This option restricts which users are allowed to create pubsub nodes using
-ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>{plugins, [ Plugin, ...]}</TT></B></DT><DD CLASS="dd-description"> 
+ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>{max_items_node, MaxItems}</TT></B></DT><DD CLASS="dd-description"> 
+Define the maximum number of items that can be stored in a node.
+Default value is 10.
+</DD><DT CLASS="dt-description"><B><TT>{plugins, [ Plugin, ...]}</TT></B></DT><DD CLASS="dd-description"> 
 To specify which pubsub node plugins to use. If not defined, the default
 pubsub plugin is always used.
 </DD><DT CLASS="dt-description"><B><TT>{nodetree, Name}</TT></B></DT><DD CLASS="dd-description"> 
 To specify which nodetree to use. If not defined, the default pubsub
 nodetree is used. Only one nodetree can be used per host,
 and is shared by all node plugins.
-</DD><DT CLASS="dt-description"><B><TT>{pep_sendlast_offline, false|true}</TT></B></DT><DD CLASS="dd-description"> 
+</DD><DT CLASS="dt-description"><B><TT>{ignore_pep_from_offline, false|true}</TT></B></DT><DD CLASS="dd-description"> 
 To specify whether or not we should get last published PEP items
 from users in our roster which are offline when we connect. Value is true or false.
-If not defined, pubsub assumes false so we only get last items of online contacts.
+If not defined, pubsub assumes true so we only get last items of online contacts.
 </DD><DT CLASS="dt-description"><B><TT>{last_item_cache, false|true}</TT></B></DT><DD CLASS="dd-description"> 
 To specify whether or not pubsub should cache last items. Value is true
 or false. If not defined, pubsub do not cache last items. On systems with not so many nodes,
