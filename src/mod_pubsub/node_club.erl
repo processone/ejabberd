@@ -89,6 +89,7 @@ options() ->
      {access_model, authorize},
      {roster_groups_allowed, []},
      {publish_model, publishers},
+     {notification_type, headline},
      {max_payload_size, ?MAX_PAYLOAD_SIZE},
      {send_last_published_item, never},
      {deliver_notifications, true},

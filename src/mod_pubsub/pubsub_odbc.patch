@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-09-23 18:18:35.000000000 +0200
-+++ mod_pubsub_odbc.erl	2009-09-23 18:26:41.000000000 +0200
+--- mod_pubsub.erl	2009-09-24 21:40:32.000000000 +0200
++++ mod_pubsub_odbc.erl	2009-09-24 21:46:01.000000000 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
  %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -7,7 +7,7 @@
 --module(mod_pubsub).
 +-module(mod_pubsub_odbc).
  -author('christophe.romain@process-one.net').
- -version('1.12-06').
+ -version('1.13-0').
  
 @@ -58,9 +58,9 @@
  -include("adhoc.hrl").
@@ -233,21 +233,21 @@
  	lists:foreach(fun(PType) ->
 -	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, JID]),
 +	    Subscriptions = case catch node_action(Host, PType, get_entity_subscriptions_for_send_last, [Host, JID]) of
-+            {result, S} -> S;
-+            _ -> []
-+        end,
++		{result, S} -> S;
++		_ -> []
++	    end,
  	    lists:foreach(
  		fun({Node, subscribed, _, SubJID}) -> 
  		    if (SubJID == LJID) or (SubJID == BJID) ->
 -			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId, options = Options} = Node,
 -			case get_option(Options, send_last_published_item) of
 -			    on_sub_and_presence ->
--				send_items(H, N, NodeId, Type, SubJID, last);
+-				send_items(H, N, NodeId, Type, LJID, last);
 -			    _ ->
 -				ok
 -			end;
-+                    #pubsub_node{nodeid = {H, N}, type = Type, id = NodeId} = Node,
-+                    send_items(H, N, NodeId, Type, SubJID, last);
++			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId} = Node,
++			send_items(H, N, NodeId, Type, LJID, last);
  		    true ->
  			% resource not concerned about that subscription
  			ok
@@ -622,7 +622,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3257,6 +3088,30 @@
+@@ -3261,6 +3092,30 @@
  	    Result
      end.
  
@@ -653,7 +653,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3642,7 +3497,13 @@
+@@ -3650,7 +3505,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -668,7 +668,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3662,13 +3523,13 @@
+@@ -3670,13 +3531,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -684,7 +684,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3681,8 +3542,15 @@
+@@ -3689,8 +3550,15 @@
  			end
  		end, Trans).
  
@@ -702,7 +702,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3690,6 +3558,15 @@
+@@ -3698,6 +3566,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, 'internal-server-error'};
@@ -718,7 +718,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, 'internal-server-error'};
-@@ -3698,6 +3575,16 @@
+@@ -3706,6 +3583,16 @@
  	    {error, 'internal-server-error'}
      end.
  
