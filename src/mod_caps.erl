@@ -142,6 +142,8 @@ get_user_resources(U, S) ->
 note_caps(Host, From, Caps) ->
     case Caps of
 	nothing -> 
+	    BJID = exmpp_jid:to_binary(From),
+	    catch mnesia:dirty_delete({user_caps, BJID}),
 	    ok;
 	_ ->
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -352,9 +354,8 @@ handle_cast({note_caps, From,
 			  Stanza = exmpp_iq:get(?NS_JABBER_CLIENT, Query, ID),
 			  ejabberd_local:register_iq_response_handler
 			    (list_to_binary(Host), ID, ?MODULE, handle_disco_response),
-			  ejabberd_router:route(exmpp_jid:make(Host),
-			    From, Stanza),
-			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID}),
+			  ejabberd_router:route(exmpp_jid:make(Host), From, Stanza),
+			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID, BJID}),
 			  ?DICT:store(ID, node_to_binary(Node, SubNode), Dict)
 		  end, Requests, Missing),
 	    {noreply, State#state{disco_requests = NewRequests}}
@@ -399,10 +400,11 @@ handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payl
     end,
     NewRequests = ?DICT:erase(ID, Requests),
     {noreply, State#state{disco_requests = NewRequests}};
-handle_cast({disco_timeout, ID}, #state{host = Host, disco_requests = Requests} = State) ->
+handle_cast({disco_timeout, ID, BJID}, #state{host = Host, disco_requests = Requests} = State) ->
     %% do not wait a response anymore for this IQ, client certainly will never answer
     NewRequests = case ?DICT:is_key(ID, Requests) of
     true ->
+	catch mnesia:dirty_delete({user_caps, BJID}),
 	ejabberd_local:unregister_iq_response_handler(list_to_binary(Host), ID),
 	?DICT:erase(ID, Requests);
     false ->
