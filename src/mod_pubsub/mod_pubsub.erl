@@ -227,7 +227,7 @@ init([ServerHost, Opts]) ->
     ejabberd_router:register_route(Host),
     update_node_database(Host, ServerHost),
     update_state_database(Host, ServerHost),
-    init_nodes(Host, ServerHost),
+    init_nodes(Host, ServerHost, NodeTree, Plugins),
     State = #state{host = Host,
 		server_host = ServerHost,
 		access = Access,
@@ -277,10 +277,15 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     TreePlugin:terminate(Host, ServerHost),
     ok.
 
-init_nodes(Host, ServerHost) ->
-    create_node(Host, ServerHost, ["home"], service_jid(Host), "hometree"),
-    create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree"),
-    ok.
+init_nodes(Host, ServerHost, _NodeTree, Plugins) ->
+    %% TODO, this call should be done PLugin side
+    case lists:member("hometree", Plugins) of
+    true ->
+	create_node(Host, ServerHost, ["home"], service_jid(Host), "hometree"),
+	create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree");
+    false ->
+	ok
+    end.
 
 update_node_database(Host, ServerHost) ->
     mnesia:del_table_index(pubsub_node, type),

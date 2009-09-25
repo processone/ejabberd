@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-09-24 21:40:32.000000000 +0200
-+++ mod_pubsub_odbc.erl	2009-09-24 21:46:01.000000000 +0200
+--- mod_pubsub.erl	2009-09-25 15:13:13.000000000 +0200
++++ mod_pubsub_odbc.erl	2009-09-25 15:13:50.000000000 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
  %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -46,12 +46,12 @@
      ejabberd_router:register_route(Host),
 -    update_node_database(Host, ServerHost),
 -    update_state_database(Host, ServerHost),
-     init_nodes(Host, ServerHost),
+     init_nodes(Host, ServerHost, NodeTree, Plugins),
      State = #state{host = Host,
  		server_host = ServerHost,
-@@ -282,177 +280,7 @@
-     create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree"),
-     ok.
+@@ -287,177 +285,7 @@
+ 	ok
+     end.
  
 -update_node_database(Host, ServerHost) ->
 -    mnesia:del_table_index(pubsub_node, type),
@@ -227,7 +227,7 @@
  
  send_queue(State, Msg) ->
      Pid = State#state.send_loop,
-@@ -476,17 +304,15 @@
+@@ -481,17 +309,15 @@
  	%% for each node From is subscribed to
  	%% and if the node is so configured, send the last published item to From
  	lists:foreach(fun(PType) ->
@@ -251,7 +251,7 @@
  		    true ->
  			% resource not concerned about that subscription
  			ok
-@@ -814,10 +640,10 @@
+@@ -819,10 +645,10 @@
  	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Subscriber]),
  	lists:foreach(fun
  	    ({Node, subscribed, _, JID}) ->
@@ -264,7 +264,7 @@
  			    true ->
  				node_action(Host, Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
  			    false ->
-@@ -935,11 +761,12 @@
+@@ -940,11 +766,12 @@
  				  end,
  			    ejabberd_router:route(To, From, Res);
  			#iq{type = get, ns = ?NS_DISCO_ITEMS,
@@ -279,7 +279,7 @@
  				      {result, IQRes} ->
  					  Result = #xmlel{ns = ?NS_DISCO_ITEMS,
  					    name = 'query', attrs = QAttrs,
-@@ -1042,7 +869,7 @@
+@@ -1047,7 +874,7 @@
  				    [] ->
  					["leaf"]; %% No sub-nodes: it's a leaf node
  				    _ ->
@@ -288,7 +288,7 @@
  					    {result, []} -> ["collection"];
  					    {result, _} -> ["leaf", "collection"];
  					    _ -> []
-@@ -1058,8 +885,9 @@
+@@ -1063,8 +890,9 @@
  			    [];
  			true ->
  			    [#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s)]} |
@@ -300,7 +300,7 @@
  				       end, features(Type))]
  		    end,
  		%% TODO: add meta-data info (spec section 5.4)
-@@ -1087,14 +915,15 @@
+@@ -1092,14 +920,15 @@
  		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_ITEMS_s)]},
  		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s)]},
  		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_VCARD_s)]}] ++
@@ -319,7 +319,7 @@
      {result, lists:map(
  	       fun(#pubsub_node{nodeid = {_, SubNode}}) ->
  		       SN = node_to_string(SubNode),
-@@ -1104,7 +933,7 @@
+@@ -1109,7 +938,7 @@
  					     ?XMLATTR('node', SN),
  					     ?XMLATTR('name', RN)]}
  	       end, tree_action(Host, get_subnodes, [Host, [], From]))};
@@ -328,7 +328,7 @@
      case string:tokens(Item, "!") of
  	[_SNode, _ItemID] ->
  	    {result, []};
-@@ -1116,10 +945,10 @@
+@@ -1121,10 +950,10 @@
  	    %% TODO That is, remove name attribute (or node?, please check for 2.1)
  	    Action =
  		fun(#pubsub_node{type = Type, id = NodeId}) ->
@@ -342,7 +342,7 @@
  				    end,
  			Nodes = lists:map(
  				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
-@@ -1135,7 +964,7 @@
+@@ -1140,7 +969,7 @@
  					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('node', SN),
  								?XMLATTR('name', Name)]}
  				  end, NodeItems),
@@ -351,7 +351,7 @@
  		end,
  	    case transaction(Host, Node, Action, sync_dirty) of
  		{result, {_, Result}} -> {result, Result};
-@@ -1269,7 +1098,8 @@
+@@ -1274,7 +1103,8 @@
  			(_, Acc) ->
  			    Acc
  			end, [], exmpp_xml:remove_cdata_from_list(Els)),
@@ -361,7 +361,7 @@
  		{get, 'subscriptions'} ->
  		    get_subscriptions(Host, Node, From, Plugins);
  		{get, 'affiliations'} ->
-@@ -1291,8 +1121,9 @@
+@@ -1296,8 +1126,9 @@
      end.
  
  iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
@@ -373,7 +373,7 @@
      case Action of
  	[#xmlel{name = Name, attrs = Attrs, children = Els}] ->
  	    Node = case Host of
-@@ -1422,7 +1253,8 @@
+@@ -1427,7 +1258,8 @@
  		    _	       -> []
  		end
  	end,
@@ -383,7 +383,7 @@
  		     sync_dirty) of
  	{result, Res} -> Res;
  	Err	   -> Err
-@@ -1467,7 +1299,7 @@
+@@ -1472,7 +1304,7 @@
  
  %%% authorization handling
  
@@ -392,7 +392,7 @@
      Lang = "en", %% TODO fix
      {U, S, R} = Subscriber,
      Stanza = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', children =
-@@ -1497,7 +1329,7 @@
+@@ -1502,7 +1334,7 @@
      lists:foreach(fun(Owner) ->
      	{U, S, R} = Owner,
  	ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(U, S, R), Stanza}
@@ -401,7 +401,7 @@
  
  find_authorization_response(Packet) ->
      Els = Packet#xmlel.children,
-@@ -1560,8 +1392,8 @@
+@@ -1565,8 +1397,8 @@
  			"true" -> true;
  			_ -> false
  		    end,
@@ -412,7 +412,7 @@
  			     {result, Subscriptions} = node_call(Type, get_subscriptions, [NodeId, Subscriber]),
  			     if
  				 not IsApprover ->
-@@ -1751,7 +1583,7 @@
+@@ -1756,7 +1588,7 @@
  		end,
  	    Reply = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
  		      [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = nodeAttr(Node)}]},
@@ -421,7 +421,7 @@
  		{result, {Result, broadcast}} ->
  		    %%Lang = "en", %% TODO: fix
  		    %%OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-@@ -1860,7 +1692,7 @@
+@@ -1865,7 +1697,7 @@
  %%<li>The node does not exist.</li>
  %%</ul>
  subscribe_node(Host, Node, From, JID, Configuration) ->
@@ -430,7 +430,7 @@
      Subscriber = try
  	jlib:short_prepd_jid(exmpp_jid:parse(JID))
      catch
-@@ -1868,7 +1700,7 @@
+@@ -1873,7 +1705,7 @@
  	    {undefined, undefined, undefined}
      end,
      SubId = uniqid(),
@@ -439,7 +439,7 @@
  		    Features = features(Type),
  		    SubscribeFeature = lists:member("subscribe", Features),
  		    OptionsFeature = lists:member("subscription-options", Features),
-@@ -1887,9 +1719,13 @@
+@@ -1892,9 +1724,13 @@
  				    {"", "", ""} ->
  					{false, false};
  				    _ ->
@@ -456,7 +456,7 @@
  				end
  			end,
  		    if
-@@ -2214,7 +2050,7 @@
+@@ -2219,7 +2055,7 @@
  %% <p>The permission are not checked in this function.</p>
  %% @todo We probably need to check that the user doing the query has the right
  %% to read the items.
@@ -465,7 +465,7 @@
      MaxItems =
  	if
  	    SMaxItems == "" -> get_max_items_node(Host);
-@@ -2253,11 +2089,11 @@
+@@ -2258,11 +2094,11 @@
  			     node_call(Type, get_items,
  				       [NodeId, From,
  					AccessModel, PresenceSubscription, RosterGroup,
@@ -479,7 +479,7 @@
  		    SendItems = case ItemIDs of
  			[] -> 
  			    Items;
-@@ -2270,7 +2106,7 @@
+@@ -2275,7 +2111,7 @@
  		    %% number of items sent to MaxItems:
  		    {result, #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
  				[#xmlel{ns = ?NS_PUBSUB, name = 'items', attrs = nodeAttr(Node), children =
@@ -488,7 +488,7 @@
  		Error ->
  		    Error
  	    end
-@@ -2302,17 +2138,29 @@
+@@ -2307,17 +2143,29 @@
  %% @doc <p>Resend the items of a node to the user.</p>
  %% @todo use cache-last-item feature
  send_items(Host, Node, NodeId, Type, LJID, last) ->
@@ -525,7 +525,7 @@
  send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
      ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
  	{result, []} -> 
-@@ -2441,29 +2289,12 @@
+@@ -2446,29 +2294,12 @@
  	error ->
  	    {error, 'bad-request'};
  	_ ->
@@ -558,7 +558,7 @@
  				    end, Entities),
  				    {result, []};
  				_ ->
-@@ -2518,11 +2349,11 @@
+@@ -2523,11 +2354,11 @@
      end.
  
  read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
@@ -572,7 +572,7 @@
              OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
  			       attrs = [?XMLATTR('node', node_to_string(Node)),
  					?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
-@@ -2556,7 +2387,7 @@
+@@ -2561,7 +2392,7 @@
  		      _ ->
  		         {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
  		 end,
@@ -581,7 +581,7 @@
      {result, Subs} = node_call(Type, get_subscriptions,
  			       [NodeID, Subscriber]),
      SubIDs = lists:foldl(fun({subscribed, SID}, Acc) ->
-@@ -2576,7 +2407,7 @@
+@@ -2581,7 +2412,7 @@
      end.
  
  write_sub(Subscriber, NodeID, SubID, Options) ->
@@ -590,7 +590,7 @@
  	{error, notfound} ->
  	    {error, extended_error('not-acceptable', "invalid-subid")};
  	{result, _} ->
-@@ -2749,8 +2580,8 @@
+@@ -2754,8 +2585,8 @@
  						 ?XMLATTR('subsription', subscription_to_string(Sub)) | nodeAttr(Node)]}]}]},
  		ejabberd_router ! {route, service_jid(Host), JID, Stanza}
  	    end,
@@ -601,7 +601,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3046,7 +2877,7 @@
+@@ -3051,7 +2882,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -610,7 +610,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -3060,9 +2891,9 @@
+@@ -3065,9 +2896,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -622,7 +622,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3261,6 +3092,30 @@
+@@ -3266,6 +3097,30 @@
  	    Result
      end.
  
@@ -653,7 +653,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3650,7 +3505,13 @@
+@@ -3655,7 +3510,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -668,7 +668,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3670,13 +3531,13 @@
+@@ -3675,13 +3536,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -684,7 +684,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3689,8 +3550,15 @@
+@@ -3694,8 +3555,15 @@
  			end
  		end, Trans).
  
@@ -702,7 +702,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3698,6 +3566,15 @@
+@@ -3703,6 +3571,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, 'internal-server-error'};
@@ -718,7 +718,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, 'internal-server-error'};
-@@ -3706,6 +3583,16 @@
+@@ -3711,6 +3588,16 @@
  	    {error, 'internal-server-error'}
      end.
  
