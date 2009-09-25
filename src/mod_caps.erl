@@ -147,15 +147,8 @@ get_user_resources(LUser, LServer) ->
 %% information.  Host is the host that asks, From is the full JID that
 %% sent the caps packet, and Caps is what read_caps returned.
 note_caps(Host, From, Caps) ->
-    case Caps of
-	nothing -> 
-	    BJID = jid_to_binary(From),
-	    catch mnesia:dirty_delete({user_caps, BJID}),
-	    ok;
-	_ ->
-	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	    gen_server:cast(Proc, {note_caps, From, Caps})
-    end.
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:cast(Proc, {note_caps, From, Caps}).
 
 %% wait_caps should be called just before note_caps
 %% it allows to lock get_caps usage for code using presence_probe
@@ -318,6 +311,10 @@ handle_call({get_features, Caps}, From, State) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
+handle_cast({note_caps, From, nothing}, State) ->
+    BJID = jid_to_binary(From),
+    catch mnesia:dirty_delete({user_caps, BJID}),
+    {noreply, State};
 handle_cast({note_caps, From, 
 	     #caps{node = Node, version = Version, exts = Exts} = Caps}, 
 	    #state{host = Host, disco_requests = Requests} = State) ->
