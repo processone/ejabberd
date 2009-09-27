@@ -376,6 +376,20 @@ Some options that you may be interested in modifying:
 	Disable the use of Erlang/OTP supervision for transient processes.
 \end{description}
 
+\makesubsection{snowleopard}{Compiling ejabberd under Snow Leopard with Erlang R13B}
+\ind{install!snowleopard}
+
+Erl Interface, the library to link Erlang with C code, is compiled as
+32-bits code in Erlang R13B-2. Mac OS X Snow Leopard is a 64-bits
+system and will try compiling ejabberd C code in 64-bits as a default.
+
+To compile ejabberd on Mac OS X Snow Leopard with Erlang R13B-2, you
+need to force C code to be compiled with 32-bits. This is done with
+the following configure command:
+
+\begin{verbatim}
+CC='gcc -m32' CFLAGS=-m32 LDFLAGS=-m32 ./configure
+\end{verbatim}
 
 \makesubsection{install}{Install}
 \ind{install!install}
