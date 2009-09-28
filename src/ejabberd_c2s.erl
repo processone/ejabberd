@@ -478,8 +478,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  privacy_get_user_list, StateData#state.server,
 				  #userlist{},
 				  [U, StateData#state.server]),
-			    fsm_next_state(session_established,
-					   StateData#state{
+                            NewStateData =
+                                StateData#state{
 					     user = U,
 					     resource = R,
 					     jid = JID,
@@ -488,7 +488,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     auth_module = AuthModule,
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
-					     privacy_list = PrivList});
+					     privacy_list = PrivList},
+			    fsm_next_state_pack(session_established,
+                                                NewStateData);
 			_ ->
 			    ?INFO_MSG(
 			       "(~w) Failed legacy authentication for ~s",
@@ -837,13 +839,15 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			  privacy_get_user_list, StateData#state.server,
 			  #userlist{},
 			  [U, StateData#state.server]),
-		    fsm_next_state(session_established,
-				   StateData#state{
+                    NewStateData =
+                        StateData#state{
 				     sid = SID,
 				     conn = Conn,
 				     pres_f = ?SETS:from_list(Fs1),
 				     pres_t = ?SETS:from_list(Ts1),
-				     privacy_list = PrivList});
+				     privacy_list = PrivList},
+		    fsm_next_state_pack(session_established,
+                                        NewStateData);
 		_ ->
 		    ejabberd_hooks:run(forbidden_session_hook,
 				       StateData#state.server, [JID]),
@@ -2070,6 +2074,17 @@ peerip(SockMod, Socket) ->
 	_ -> undefined
     end.
 
+%% fsm_next_state_pack: Pack the StateData structure to improve
+%% sharing.
+fsm_next_state_pack(StateName, StateData) ->
+    fsm_next_state_gc(StateName, pack(StateData)).
+
+%% fsm_next_state_gc: Garbage collect the process heap to make use of
+%% the newly packed StateData structure.
+fsm_next_state_gc(StateName, PackedStateData) ->
+    erlang:garbage_collect(),
+    fsm_next_state(StateName, PackedStateData).
+
 %% fsm_next_state: Generate the next_state FSM tuple with different
 %% timeout, depending on the future state
 fsm_next_state(session_established, StateData) ->
@@ -2115,4 +2130,53 @@ check_from(El, FromJID) ->
 			    'invalid-from'
 		    end
 	    end
+    end.
+
+%%%----------------------------------------------------------------------
+%%% JID Set memory footprint reduction code
+%%%----------------------------------------------------------------------
+
+%% Try to reduce the heap footprint of the four presence sets
+%% by ensuring that we re-use strings and Jids wherever possible.
+pack(S = #state{pres_a=A,
+                pres_i=I,
+                pres_f=F,
+                pres_t=T}) ->
+    {NewA, Pack1} = pack_jid_set(A, gb_trees:empty()),
+    {NewI, Pack2} = pack_jid_set(I, Pack1),
+    {NewF, Pack3} = pack_jid_set(F, Pack2),
+    {NewT, _Pack4} = pack_jid_set(T, Pack3),
+    %% Throw away Pack4 so that if we delete references to
+    %% Strings or Jids in any of the sets there will be
+    %% no live references for the GC to find.
+    S#state{pres_a=NewA,
+            pres_i=NewI,
+            pres_f=NewF,
+            pres_t=NewT}.
+
+pack_jid_set(Set, Pack) ->
+    Jids = ?SETS:to_list(Set),
+    {PackedJids, NewPack} = pack_jids(Jids, Pack, []),
+    {?SETS:from_list(PackedJids), NewPack}.
+
+pack_jids([], Pack, Acc) -> {Acc, Pack};
+pack_jids([{U,S,R}=Jid | Jids], Pack, Acc) ->
+    case gb_trees:lookup(Jid, Pack) of
+        {value, PackedJid} ->
+            pack_jids(Jids, Pack, [PackedJid | Acc]);
+        none ->
+            {NewU, Pack1} = pack_string(U, Pack),
+            {NewS, Pack2} = pack_string(S, Pack1),
+            {NewR, Pack3} = pack_string(R, Pack2),
+            NewJid = {NewU, NewS, NewR},
+            NewPack = gb_trees:insert(NewJid, NewJid, Pack3),
+            pack_jids(Jids, NewPack, [NewJid | Acc])
+    end.
+
+pack_string(String, Pack) ->
+    case gb_trees:lookup(String, Pack) of
+        {value, PackedString} ->
+            {PackedString, Pack};
+        none ->
+            {String, gb_trees:insert(String, String, Pack)}
     end.
