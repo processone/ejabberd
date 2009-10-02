@@ -1,21 +1,52 @@
 #!/bin/sh
 
-SIGN=$(($RANDOM % 2))
+INPUT=$1
 
-R1=$(($RANDOM % 20))
-R2=$(($RANDOM % 10 + 40))
+WAVE1_AMPLITUDE=$((2 + $RANDOM % 5))
+WAVE1_LENGTH=$((50 + $RANDOM % 25))
+WAVE2_AMPLITUDE=$((2 + $RANDOM % 5))
+WAVE2_LENGTH=$((50 + $RANDOM % 25))
+WAVE3_AMPLITUDE=$((2 + $RANDOM % 5))
+WAVE3_LENGTH=$((50 + $RANDOM % 25))
+W1_LINE_START_Y=$((10 + $RANDOM % 40))
+W1_LINE_STOP_Y=$((10 + $RANDOM % 40))
+W2_LINE_START_Y=$((10 + $RANDOM % 40))
+W2_LINE_STOP_Y=$((10 + $RANDOM % 40))
+W3_LINE_START_Y=$((10 + $RANDOM % 40))
+W3_LINE_STOP_Y=$((10 + $RANDOM % 40))
 
-if [ $SIGN -eq "0" ]; then
-    S1=$(( -1*($RANDOM % 20 + 50) ))
-    S2=$(( $RANDOM % 20 + 50 ))
-else
-    S2=$(( -1*($RANDOM % 20 + 50) ))
-    S1=$(( $RANDOM % 20 + 50 ))
-fi
+B1_LINE_START_Y=$(($RANDOM % 40))
+B1_LINE_STOP_Y=$(($RANDOM % 40))
+B2_LINE_START_Y=$(($RANDOM % 40))
+B2_LINE_STOP_Y=$(($RANDOM % 40))
+#B3_LINE_START_Y=$(($RANDOM % 40))
+#B3_LINE_STOP_Y=$(($RANDOM % 40))
 
-convert -size 140x60 xc:white \
-    -pointsize 30 -draw "text 20,30 '$1'" \
-    -roll -$R2+$R1 -swirl $S1 \
-    -roll +$R2-$R1 -swirl $S2 \
-    +repage -resize 120x60 \
-    -quality 90 -depth 8 png:-
+B1_LINE_START_X=$(($RANDOM % 20))
+B1_LINE_STOP_X=$((100 + $RANDOM % 40))
+B2_LINE_START_X=$(($RANDOM % 20))
+B2_LINE_STOP_X=$((100 + $RANDOM % 40))
+#B3_LINE_START_X=$(($RANDOM % 20))
+#B3_LINE_STOP_X=$((100 + $RANDOM % 40))
+
+ROLL_X=$(($RANDOM % 40))
+
+convert -size 180x60 xc:none -pointsize 40 \
+	\( -clone 0 -fill white \
+	-stroke black -strokewidth 4 -annotate +0+40 "$INPUT" \
+	-stroke white -strokewidth 2 -annotate +0+40 "$INPUT" \
+	-roll +$ROLL_X+0 \
+	-wave "$WAVE1_AMPLITUDE"x"$WAVE1_LENGTH" \
+	-roll -$ROLL_X+0 \) \
+	\( -clone 0 -stroke black \
+	-strokewidth 1 -draw \
+	"line $B1_LINE_START_X,$B1_LINE_START_Y $B1_LINE_STOP_X,$B1_LINE_STOP_Y" \
+	-strokewidth 1 -draw \
+	"line $B2_LINE_START_X,$B2_LINE_START_Y $B2_LINE_STOP_X,$B2_LINE_STOP_Y" \
+	-wave "$WAVE2_AMPLITUDE"x"$WAVE2_LENGTH" \) \
+	\( -clone 0 -stroke white \
+	-strokewidth 2 -draw "line 0,$W1_LINE_START_Y 140,$W1_LINE_STOP_Y" \
+	-strokewidth 2 -draw "line 0,$W2_LINE_START_Y 140,$W2_LINE_STOP_Y" \
+	-strokewidth 2 -draw "line 0,$W3_LINE_START_Y 140,$W3_LINE_STOP_Y" \
+	-wave "$WAVE3_AMPLITUDE"x"$WAVE3_LENGTH" \) \
+	-flatten -crop 140x60 +repage -quality 90 -depth 8 png:-
