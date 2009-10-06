@@ -202,6 +202,8 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(Host, config), {max_items_node, MaxItemsNode}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {plugins, Plugins}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, config), {last_item_cache, LastItemCache}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, config), {max_items_node, MaxItemsNode}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
     ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
