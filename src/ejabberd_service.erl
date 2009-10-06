@@ -80,7 +80,11 @@
        ).
 
 -define(INVALID_HANDSHAKE_ERR,
-	"<stream:error>Invalid Handshake</stream:error>"
+	"<stream:error>"
+	"<not-authorized xmlns='urn:ietf:params:xml:ns:xmpp-streams'/>"
+	"<text xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>"
+	"Invalid Handshake</text>"
+	"</stream:error>"
 	"</stream:stream>"
        ).
 
