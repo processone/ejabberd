@@ -198,9 +198,23 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 		      end, StateData#state.hosts),
 		    {next_state, stream_established, StateData};
 		 _ ->
-		    send_element(StateData,
-		      #xmlel{ns = ?NS_XMPP, name = 'error', children = [
-			  #xmlcdata{cdata = <<"Invalid Handshake">>}]}),
+		    TextEl =
+			#xmlel{ns = ?NS_STANZA_ERRORS,
+			       name = 'text',
+			       children =
+			       [#xmlcdata{cdata = <<"Invalid Handshake">>}]
+			      },
+		    NotAuthorizedEl =
+			#xmlel{ns = ?NS_STANZA_ERRORS,
+			       name = 'not-authorized',
+			       children = [TextEl]
+			      },
+		    InvalidHandshakeEl =
+			#xmlel{ns = ?NS_XMPP,
+			       name = 'error',
+			       children = [NotAuthorizedEl]
+			      },
+		    send_element(StateData, InvalidHandshakeEl),
 		    send_element(StateData, exmpp_stream:closing()),
 		    {stop, normal, StateData}
 	    end;
