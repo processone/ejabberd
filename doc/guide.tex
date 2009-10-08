@@ -804,7 +804,7 @@ The available modules, their purpose and the options allowed by each one are:
   \titem{\texttt{ejabberd\_service}}
     Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component}
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
-    Options: \texttt{access}, \texttt{hosts},
+    Options: \texttt{access}, \texttt{hosts}, \texttt{max\_fsm\_queue},
     \texttt{shaper}, \texttt{service\_check\_from}
   \titem{\texttt{ejabberd\_stun}}
     Handles STUN Binding requests as defined in
@@ -872,7 +872,14 @@ This is a detailed description of each option allowed by the listening modules:
     \term{http\_poll\_timeout}. The default value is five minutes.
     The option can be defined in \term{ejabberd.cfg}, expressing the time
     in seconds: \verb|{http_poll_timeout, 300}.|
-
+  \titem{\{max\_fsm\_queue, Size\}}
+    This option specifies the maximum number of elements in the queue of the FSM.
+    This option can be specified for an \term{ejabberd\_service} listener,
+    or also globally for \term{ejabberd\_s2s\_out}.
+    If the option is not specified for an \term{ejabberd\_service} listener,
+    the globally configured value is used.
+    The allowed values are integers and 'undefined'.
+    Default value: 'undefined'.
   \titem{\{max\_stanza\_size, Size\}}
     \ind{options!max\_stanza\_size}This option specifies an
     approximate maximum size in bytes of XML stanzas.  Approximate,
@@ -950,6 +957,14 @@ There are some additional global options that can be specified in the ejabberd c
   \titem{\{s2s\_max\_retry\_delay, Seconds\}} \ind{options!s2s\_max\_retry\_delay}
   The maximum allowed delay for retry to connect after a failed connection attempt.
   Specified in seconds. The default value is 300 seconds (5 minutes).
+  \titem{\{max\_fsm\_queue, Size\}}
+    This option specifies the maximum number of elements in the queue of the FSM.
+    This option can be specified for an \term{ejabberd\_service} listener,
+    or also globally for \term{ejabberd\_s2s\_out}.
+    If the option is not specified for an \term{ejabberd\_service} listener,
+    the globally configured value is used.
+    The allowed values are integers and 'undefined'.
+    Default value: 'undefined'.
 \end{description}
 
 \makesubsubsection{listened-examples}{Examples}
