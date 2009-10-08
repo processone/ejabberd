@@ -45,6 +45,7 @@
 - Added option access_max_user_messages for mod_offline
 - Added option define_macro and use_macro
 - Added option include_config_file to include additional configuration files
+- Added option max_fsm_queue
 - Added option outgoing_s2s_options to define IP address families and timeout
 - Added option registration_timeout to ejabberd.cfg.example
 - Added option s2s_dns_options to define DNS timeout and retries
