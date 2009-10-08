@@ -311,6 +311,7 @@ execute_command(AccessCommands, Auth, Name, Arguments) ->
 execute_command2(Command, Arguments) ->
     Module = Command#ejabberd_commands.module,
     Function = Command#ejabberd_commands.function,
+    ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, Arguments]),
     apply(Module, Function, Arguments).
 
 %% @spec () -> [{Tag::string(), [CommandName::string()]}]
