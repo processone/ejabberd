@@ -27,7 +27,9 @@
 -module(ejabberd_service).
 -author('alexey@process-one.net').
 
--behaviour(gen_fsm).
+-define(GEN_FSM, p1_fsm).
+
+-behaviour(?GEN_FSM).
 
 %% External exports
 -export([start/2,
@@ -68,6 +70,11 @@
 -define(DEFAULT_NS, ?NS_COMPONENT_ACCEPT).
 -define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
 
+%% Only change this value if you now what your are doing:
+-define(FSMLIMITS,[]).
+%% -define(FSMLIMITS, [{max_queue, 2000}]).
+
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -75,7 +82,8 @@ start(SockData, Opts) ->
     supervisor:start_child(ejabberd_service_sup, [SockData, Opts]).
 
 start_link(SockData, Opts) ->
-    gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
+    ?GEN_FSM:start_link(
+       ejabberd_service, [SockData, Opts], ?FSMLIMITS ++ ?FSMOPTS).
 
 socket_type() ->
     xml_stream.
