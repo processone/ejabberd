@@ -85,15 +85,12 @@
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
 -define(SUPERVISOR_START, p1_fsm:start(ejabberd_s2s_out, [From, Host, Type],
-				       ?FSMLIMITS ++ ?FSMOPTS)).
+				       fsm_limit_opts() ++ ?FSMOPTS)).
 -else.
 -define(SUPERVISOR_START, supervisor:start_child(ejabberd_s2s_out_sup,
 						 [From, Host, Type])).
 -endif.
 
-%% Only change this value if you now what your are doing:
--define(FSMLIMITS,[]).
-%% -define(FSMLIMITS, [{max_queue, 2000}]).
 -define(FSMTIMEOUT, 30000).
 
 %% We do not block on send anymore.
@@ -121,7 +118,7 @@ start(From, Host, Type) ->
 
 start_link(From, Host, Type) ->
     p1_fsm:start_link(ejabberd_s2s_out, [From, Host, Type],
-		      ?FSMLIMITS ++ ?FSMOPTS).
+		      fsm_limit_opts() ++ ?FSMOPTS).
 
 start_connection(Pid) ->
     p1_fsm:send_event(Pid, init).
@@ -1147,3 +1144,11 @@ terminate_if_waiting_delay(From, To) ->
 	      Pid ! terminate_if_waiting_before_retry
       end,
       Pids).
+
+fsm_limit_opts() ->
+    case ejabberd_config:get_local_option(max_fsm_queue) of
+	N when is_integer(N) ->
+	    [{max_queue, N}];
+	_ ->
+	    []
+    end.

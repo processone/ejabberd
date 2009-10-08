@@ -70,11 +70,6 @@
 -define(DEFAULT_NS, ?NS_COMPONENT_ACCEPT).
 -define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
 
-%% Only change this value if you now what your are doing:
--define(FSMLIMITS,[]).
-%% -define(FSMLIMITS, [{max_queue, 2000}]).
-
-
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -82,8 +77,8 @@ start(SockData, Opts) ->
     supervisor:start_child(ejabberd_service_sup, [SockData, Opts]).
 
 start_link(SockData, Opts) ->
-    ?GEN_FSM:start_link(
-       ejabberd_service, [SockData, Opts], ?FSMLIMITS ++ ?FSMOPTS).
+    ?GEN_FSM:start_link(ejabberd_service, [SockData, Opts],
+			fsm_limit_opts(Opts) ++ ?FSMOPTS).
 
 socket_type() ->
     xml_stream.
@@ -390,3 +385,16 @@ send_element(StateData, El) ->
 
 new_id() ->
     randoms:get_string().
+
+fsm_limit_opts(Opts) ->
+    case lists:keysearch(max_fsm_queue, 1, Opts) of
+	{value, {_, N}} when is_integer(N) ->
+	    [{max_queue, N}];
+	_ ->
+	    case ejabberd_config:get_local_option(max_fsm_queue) of
+		N when is_integer(N) ->
+		    [{max_queue, N}];
+		_ ->
+		    []
+	    end
+    end.

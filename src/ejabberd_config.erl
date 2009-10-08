@@ -387,6 +387,8 @@ process_term(Term, State) ->
 	{loglevel, Loglevel} ->
 	    ejabberd_loglevel:set(Loglevel),
 	    State;
+	{max_fsm_queue, N} ->
+	    add_option(max_fsm_queue, N, State);
 	{_Opt, _Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)
