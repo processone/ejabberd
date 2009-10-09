@@ -319,9 +319,6 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
-	(AccessModel == authorize) -> % TODO: to be done
-	    %% Node has authorize access model
-	    {error, ?ERR_FORBIDDEN};
 	%%MustPay ->
 	%%	% Payment is required for a subscription
 	%%	{error, ?ERR_PAYMENT_REQUIRED};
