@@ -293,10 +293,11 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    {next_state, wait_for_features, StateData, ?FSMTIMEOUT};
 	{"jabber:server", "", true} when StateData#state.use_v10 ->
 	    {next_state, wait_for_features, StateData#state{db_enabled = false}, ?FSMTIMEOUT};
-	_ ->
+	{NSProvided, _, _} ->
 	    send_text(StateData, ?INVALID_NAMESPACE_ERR),
-	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid namespace)",
-		      [StateData#state.myname, StateData#state.server]),
+	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid namespace).~n"
+		      "Namespace provided: ~p~nNamespace expected: \"jabber:server\"",
+		      [StateData#state.myname, StateData#state.server, NSProvided]),
 	    {stop, normal, StateData}
     end;
 
