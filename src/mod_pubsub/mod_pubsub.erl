@@ -1867,7 +1867,10 @@ delete_node(Host, Node, Owner) ->
 %%<li>The node does not exist.</li>
 %%</ul>
 subscribe_node(Host, Node, From, JID, Configuration) ->
-    {result, SubOpts} = pubsub_subscription:parse_options_xform(Configuration),
+    SubOpts = case pubsub_subscription:parse_options_xform(Configuration) of
+	{result, GoodSubOpts} -> GoodSubOpts;
+	_ -> invalid
+    end,
     Subscriber = try
 	jlib:short_prepd_jid(exmpp_jid:parse(JID))
     catch
@@ -1907,8 +1910,11 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 			    %% Node does not support subscriptions
 			    {error, extended_error('feature-not-implemented', unsupported, "subscribe")};
 			HasOptions andalso not OptionsFeature ->
-			   %% Node does not support subscription options
-			   {error, extended_error('feature-not-implemented', unsupported, "subscription-options")};
+			    %% Node does not support subscription options
+			    {error, extended_error('feature-not-implemented', unsupported, "subscription-options")};
+			SubOpts == invalid ->
+			    %% Passed invalit options submit form
+			    {error, extended_error('bad-request', "invalid-options")};
 			true ->
 			    node_call(Type, subscribe_node,
 					[NodeId, From, Subscriber,
@@ -2557,13 +2563,15 @@ set_options(Host, Node, JID, SubID, Configuration) ->
     end.
 
 set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
+    SubOpts = case pubsub_subscription:parse_options_xform(Configuration) of
+	{result, GoodSubOpts} -> GoodSubOpts;
+	_ -> invalid
+    end,
     Subscriber = try exmpp_jid:parse(JID) of
-    		    J -> jlib:short_jid(J)
+		     J -> jlib:short_jid(J)
 		  catch
-		      _ ->
-		         {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
+		     _ -> {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
 		 end,
-    {result, SubOpts} = pubsub_subscription:parse_options_xform(Configuration),
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
     SubIDs = lists:foldl(fun({subscribed, SID}, Acc) ->
@@ -2582,6 +2590,8 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 	    write_sub(Subscriber, NodeID, SubID, SubOpts)
     end.
 
+write_sub(_Subscriber, _NodeID, _SubID, invalid) ->
+    {error, extended_error('bad-request', "invalid-options")};
 write_sub(Subscriber, NodeID, SubID, Options) ->
     case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
 	{error, notfound} ->
