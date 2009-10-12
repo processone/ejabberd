@@ -1361,7 +1361,7 @@ adhoc_request(Host, _ServerHost, Owner,
 		{value, {_, Node}} ->
 		    send_pending_auth_events(Host, Node, Owner);
 		false ->
-		    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "bad-payload")}
+		    {error, extended_error(?ERR_BAD_REQUEST, "bad-payload")}
 	    end;
 	Error ->
 	    Error
@@ -1835,7 +1835,10 @@ delete_node(Host, Node, Owner) ->
 %%<li>The node does not exist.</li>
 %%</ul>
 subscribe_node(Host, Node, From, JID, Configuration) ->
-    {result, SubOpts} = pubsub_subscription:parse_options_xform(Configuration),
+    SubOpts = case pubsub_subscription:parse_options_xform(Configuration) of
+	{result, GoodSubOpts} -> GoodSubOpts;
+	_ -> invalid
+    end,
     Subscriber = case jlib:string_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
@@ -1874,6 +1877,9 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 			HasOptions andalso not OptionsFeature ->
 			    %% Node does not support subscription options
 			    {error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "subscription-options")};
+			SubOpts == invalid ->
+			    %% Passed invalit options submit form
+			    {error, extended_error(?ERR_BAD_REQUEST, "invalid-options")};
 			true ->
 			    node_call(Type, subscribe_node,
 					[NodeId, From, Subscriber,
@@ -2472,11 +2478,11 @@ get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
 			 end, [], Subs),
     case {SubID, SubIDs} of
 	{_, []} ->
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "not-subscribed")};
+	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "not-subscribed")};
 	{[], [SID]} ->
 	    read_sub(Subscriber, Node, NodeID, SID, Lang);
 	{[], _} ->
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "subid-required")};
+	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "subid-required")};
 	{_, _} ->
 	    read_sub(Subscriber, Node, NodeID, SubID, Lang)
     end.
@@ -2484,7 +2490,7 @@ get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
 read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
     case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
 	{error, notfound} ->
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, #pubsub_subscription{options = Options}} ->
 	    {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
 	    OptionsEl = {xmlelement, "options", [{"node", node_to_string(Node)},
@@ -2513,11 +2519,14 @@ set_options(Host, Node, JID, SubID, Configuration) ->
     end.
 
 set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
+    SubOpts = case pubsub_subscription:parse_options_xform(Configuration) of
+	{result, GoodSubOpts} -> GoodSubOpts;
+	_ -> invalid
+    end,
     Subscriber = case jlib:string_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
 		 end,
-    {result, SubOpts} = pubsub_subscription:parse_options_xform(Configuration),
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
     SubIDs = lists:foldl(fun({subscribed, SID}, Acc) ->
@@ -2527,19 +2536,21 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 			 end, [], Subs),
     case {SubID, SubIDs} of
 	{_, []} ->
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "not-subscribed")};
+	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "not-subscribed")};
 	{[], [SID]} ->
 	    write_sub(Subscriber, NodeID, SID, SubOpts);
 	{[], _} ->
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "subid-required")};
+	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "subid-required")};
 	{_, _} ->
 	    write_sub(Subscriber, NodeID, SubID, SubOpts)
     end.
 
+write_sub(_Subscriber, _NodeID, _SubID, invalid) ->
+    {error, extended_error(?ERR_BAD_REQUEST, "invalid-options")};
 write_sub(Subscriber, NodeID, SubID, Options) ->
     case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
 	{error, notfound} ->
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, _} ->
 	    {result, []}
     end.

@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-10-12 11:03:50.000000000 +0200
-+++ mod_pubsub_odbc.erl	2009-10-12 11:04:09.000000000 +0200
+--- mod_pubsub.erl	2009-10-12 11:57:04.000000000 +0200
++++ mod_pubsub_odbc.erl	2009-10-12 11:57:19.000000000 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
  %%% plugin: generate Reply (do not use broadcast atom anymore)
@@ -416,13 +416,16 @@
  		{result, {Result, broadcast}} ->
  		    %%Lang = "en", %% TODO: fix
  		    %%OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-@@ -1835,12 +1666,12 @@
+@@ -1835,7 +1666,7 @@
  %%<li>The node does not exist.</li>
  %%</ul>
  subscribe_node(Host, Node, From, JID, Configuration) ->
--    {result, SubOpts} = pubsub_subscription:parse_options_xform(Configuration),
-+    {result, SubOpts} = pubsub_subscription_odbc:parse_options_xform(Configuration),
-     Subscriber = case jlib:string_to_jid(JID) of
+-    SubOpts = case pubsub_subscription:parse_options_xform(Configuration) of
++    SubOpts = case pubsub_subscription_odbc:parse_options_xform(Configuration) of
+ 	{result, GoodSubOpts} -> GoodSubOpts;
+ 	_ -> invalid
+     end,
+@@ -1843,7 +1674,7 @@
  		     error -> {"", "", ""};
  		     J -> jlib:jid_tolower(J)
  		 end,
@@ -431,7 +434,7 @@
  		    Features = features(Type),
  		    SubscribeFeature = lists:member("subscribe", Features),
  		    OptionsFeature = lists:member("subscription-options", Features),
-@@ -1859,9 +1690,13 @@
+@@ -1862,9 +1693,13 @@
  				    {"", "", ""} ->
  					{false, false};
  				    _ ->
@@ -448,7 +451,7 @@
  				end
  			end,
  		    if
-@@ -2184,7 +2019,7 @@
+@@ -2190,7 +2025,7 @@
  %% <p>The permission are not checked in this function.</p>
  %% @todo We probably need to check that the user doing the query has the right
  %% to read the items.
@@ -457,7 +460,7 @@
      MaxItems =
  	if
  	    SMaxItems == "" -> get_max_items_node(Host);
-@@ -2223,11 +2058,11 @@
+@@ -2229,11 +2064,11 @@
  			     node_call(Type, get_items,
  				       [NodeId, From,
  					AccessModel, PresenceSubscription, RosterGroup,
@@ -471,7 +474,7 @@
  		    SendItems = case ItemIDs of
  			[] -> 
  			    Items;
-@@ -2240,7 +2075,8 @@
+@@ -2246,7 +2081,8 @@
  		    %% number of items sent to MaxItems:
  		    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
  				[{xmlelement, "items", nodeAttr(Node),
@@ -481,7 +484,7 @@
  		Error ->
  		    Error
  	    end
-@@ -2272,16 +2108,27 @@
+@@ -2278,16 +2114,27 @@
  %% @doc <p>Resend the items of a node to the user.</p>
  %% @todo use cache-last-item feature
  send_items(Host, Node, NodeId, Type, LJID, last) ->
@@ -515,7 +518,7 @@
  send_items(Host, Node, NodeId, Type, LJID, Number) ->
      ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
  	{result, []} -> 
-@@ -2407,29 +2254,12 @@
+@@ -2413,29 +2260,12 @@
  	error ->
  	    {error, ?ERR_BAD_REQUEST};
  	_ ->
@@ -548,39 +551,39 @@
  				    end, Entities),
  				{result, []};
  			    _ ->
-@@ -2482,11 +2312,11 @@
+@@ -2488,11 +2318,11 @@
      end.
  
  read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
 -    case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
 +    case pubsub_subscription_odbc:get_subscription(Subscriber, NodeID, SubID) of
  	{error, notfound} ->
- 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+ 	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
  	{result, #pubsub_subscription{options = Options}} ->
 -	    {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
 +	    {result, XdataEl} = pubsub_subscription_odbc:get_options_xform(Lang, Options),
  	    OptionsEl = {xmlelement, "options", [{"node", node_to_string(Node)},
  						 {"jid", jlib:jid_to_string(Subscriber)},
  						 {"subid", SubID}],
-@@ -2517,7 +2347,7 @@
- 		     error -> {"", "", ""};
- 		     J -> jlib:jid_tolower(J)
- 		 end,
--    {result, SubOpts} = pubsub_subscription:parse_options_xform(Configuration),
-+    {result, SubOpts} = pubsub_subscription_odbc:parse_options_xform(Configuration),
-     {result, Subs} = node_call(Type, get_subscriptions,
- 			       [NodeID, Subscriber]),
-     SubIDs = lists:foldl(fun({subscribed, SID}, Acc) ->
-@@ -2537,7 +2367,7 @@
+@@ -2519,7 +2349,7 @@
      end.
  
+ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
+-    SubOpts = case pubsub_subscription:parse_options_xform(Configuration) of
++    SubOpts = case pubsub_subscription_odbc:parse_options_xform(Configuration) of
+ 	{result, GoodSubOpts} -> GoodSubOpts;
+ 	_ -> invalid
+     end,
+@@ -2548,7 +2378,7 @@
+ write_sub(_Subscriber, _NodeID, _SubID, invalid) ->
+     {error, extended_error(?ERR_BAD_REQUEST, "invalid-options")};
  write_sub(Subscriber, NodeID, SubID, Options) ->
 -    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
 +    case pubsub_subscription_odbc:set_subscription(Subscriber, NodeID, SubID, Options) of
  	{error, notfound} ->
- 	    {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+ 	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
  	{result, _} ->
-@@ -2705,8 +2535,8 @@
+@@ -2716,8 +2546,8 @@
  				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
  		ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza}
  	    end,
@@ -591,7 +594,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -2996,7 +2826,7 @@
+@@ -3007,7 +2837,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -600,7 +603,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -3010,9 +2840,9 @@
+@@ -3021,9 +2851,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -612,7 +615,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3210,6 +3040,30 @@
+@@ -3221,6 +3051,30 @@
  	    Result
      end.
  
@@ -643,7 +646,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3596,7 +3450,13 @@
+@@ -3607,7 +3461,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -658,7 +661,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3616,13 +3476,13 @@
+@@ -3627,13 +3487,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -674,7 +677,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3635,8 +3495,14 @@
+@@ -3646,8 +3506,14 @@
  			end
  		end, Trans).
  
@@ -691,7 +694,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3644,6 +3510,15 @@
+@@ -3655,6 +3521,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -707,7 +710,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-@@ -3652,6 +3527,17 @@
+@@ -3663,6 +3538,17 @@
  	    {error, ?ERR_INTERNAL_SERVER_ERROR}
      end.
  
