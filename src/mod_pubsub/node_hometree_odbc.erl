@@ -1082,7 +1082,7 @@ get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, R
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
-	(AccessModel == authorize) -> % TODO: to be done
+	(AccessModel == authorize) and (not Whitelisted)
 	    %% Node has authorize access model
 	    {error, ?ERR_FORBIDDEN};
 	%%MustPay ->
@@ -1145,7 +1145,7 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _S
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
 	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
-	(AccessModel == authorize) -> % TODO: to be done
+	(AccessModel == authorize) and (not Whitelisted)
 	    %% Node has authorize access model
 	    {error, ?ERR_FORBIDDEN};
 	%%MustPay ->
