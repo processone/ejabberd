@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-10-06 17:21:15.000000000 +0200
-+++ mod_pubsub_odbc.erl	2009-10-06 17:21:35.000000000 +0200
+--- mod_pubsub.erl	2009-10-12 11:05:54.000000000 +0200
++++ mod_pubsub_odbc.erl	2009-10-12 11:06:09.000000000 +0200
 @@ -45,7 +45,7 @@
  %%% TODO
  %%% plugin: generate Reply (do not use broadcast atom anymore)

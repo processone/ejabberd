@@ -2926,7 +2926,7 @@ get_options_for_subs(NodeID, Subs) ->
 %    end
 
 broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza) ->
-    NotificationType = get_option(NodeOptions, notification_type),
+    NotificationType = get_option(NodeOptions, notification_type, headline),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
     Stanza = case NotificationType of
