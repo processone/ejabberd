@@ -1368,7 +1368,7 @@ find_authorization_response(Packet) ->
 %%     Host = mod_pubsub:host()
 %%     JID = jlib:jid()
 %%     SNode = string()
-%%     Subscription = atom() | {atom(), mod_pubsub:subid)}
+%%     Subscription = atom() | {atom(), mod_pubsub:subid()}
 %%     Plugins = [Plugin::string()]
 %% @doc Send a message to JID with the supplied Subscription
 send_authorization_approval(Host, JID, SNode, Subscription) ->

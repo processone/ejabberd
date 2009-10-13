@@ -91,7 +91,7 @@ options() ->
      {odbc, true}].
 
 
-%% @spec (Host, Node) -> pubsubNode() | {error, Reason}
+%% @spec (Host, Node, From) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 get_node(Host, Node, _From) ->
@@ -125,7 +125,7 @@ get_node(NodeId) ->
 	    {error, 'item_not_found'}
     end.
 
-%% @spec (Host) -> [pubsubNode()] | {error, Reason}
+%% @spec (Host, From) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
@@ -182,7 +182,7 @@ get_subnodes(Host, Node) ->
 	    []
     end.
 
-%% @spec (Host, Index) -> [pubsubNodeIdx()] | {error, Reason}
+%% @spec (Host, Index, From) -> [pubsubNodeIdx()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()

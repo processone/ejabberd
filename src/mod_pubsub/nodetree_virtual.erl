@@ -26,7 +26,7 @@
 %%% @doc The module <strong>{@module}</strong> is the PubSub node tree plugin that
 %%% allow virtual nodes handling.
 %%% <p>PubSub node tree plugins are using the {@link gen_nodetree} behaviour.</p>
-%%% This plugin development is still a work in progress. Due to optimizations in
+%%% <p>The development of this plugin is still a work in progress. Due to optimizations in
 %%% mod_pubsub, this plugin can not work anymore without altering functioning.
 %%% Please, send us comments, feedback and improvements.</p>
 
@@ -84,7 +84,7 @@ options() ->
 set_node(_NodeRecord) ->
     ok.
 
-%% @spec (Host, Node) -> pubsubNode()
+%% @spec (Host, Node, From) -> pubsubNode()
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
@@ -96,7 +96,7 @@ get_node(Host, Node) ->
 get_node({Host, _} = NodeId) ->
     #pubsub_node{nodeid = NodeId, id = NodeId, owners = [{undefined, list_to_binary(Host), undefined}]}.
 
-%% @spec (Host) -> [pubsubNode()]
+%% @spec (Host, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Nodes list can not be determined.</p>
@@ -115,7 +115,7 @@ get_subnodes(Host, Node, _From) ->
 get_subnodes(_Host, _Node) ->
     [].
 
-%% @spec (Host, Index) -> [pubsubNode()]
+%% @spec (Host, Index, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>

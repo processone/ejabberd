@@ -85,12 +85,13 @@
 %%% @type pubsubNode() = #pubsub_node{
 %%%    nodeid = {Host::host(), Node::pubsubNode()},
 %%%    parentid = Node::pubsubNode(),
-%%%    nodeidx = int(). % can be anything you want
+%%%    nodeidx = int(),
 %%%    type = nodeType(),
-%%%    options = [nodeOption()]}
+%%%    options = [nodeOption()]}.
 %%% <p>This is the format of the <tt>nodes</tt> table. The type of the table
 %%% is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 %%% <p>The <tt>parentid</tt> and <tt>type</tt> fields are indexed.</p>
+%%% <p><tt>nodeidx</tt> can be anything you want.</p>
 -record(pubsub_node, {nodeid,
 		      id,
 		      parents = [],
@@ -100,7 +101,7 @@
 		     }).
 
 %%% @type pubsubState() = #pubsub_state{
-%%%    stateid = {ljid(), nodeidx()}},
+%%%    stateid = {ljid(), nodeidx()},
 %%%    items = [ItemId::string()],
 %%%    affiliation = affiliation(),
 %%%    subscriptions = [subscription()]}.
@@ -113,7 +114,7 @@
 }).
 
 %%% @type pubsubItem() = #pubsub_item{
-%%%    itemid = {ItemId::string(), nodeidx()}},
+%%%    itemid = {ItemId::string(), nodeidx()},
 %%%    creation = {now(), ljid()},
 %%%    modification = {now(), ljid()},
 %%%    payload = XMLContent::string()}.

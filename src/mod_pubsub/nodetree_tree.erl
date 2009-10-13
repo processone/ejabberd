@@ -103,7 +103,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 set_node(_) ->
     {error, 'internal-server-error'}.
 
-%% @spec (Host, Node) -> pubsubNode() | {error, Reason}
+%% @spec (Host, Node, From) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 get_node(Host, Node, _From) ->
@@ -121,7 +121,7 @@ get_node(NodeId) ->
 	Error -> Error
     end.
 
-%% @spec (Host) -> [pubsubNode()] | {error, Reason}
+%% @spec (Host, From) -> [pubsubNode()] | {error, Reason}
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
@@ -165,7 +165,7 @@ get_subnodes(Host, Node) ->
 		       lists:member(Node, Parents)]),
     qlc:e(Q).
 
-%% @spec (Host, Index) -> [pubsubNodeIdx()] | {error, Reason}
+%% @spec (Host, Index, From) -> [pubsubNodeIdx()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()

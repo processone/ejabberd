@@ -245,7 +245,7 @@ delete_node(Removed) ->
 	end, Removed),
     {result, {default, broadcast, Reply}}.
 
-%% @spec (NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
+%% @spec (NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
 %%		 {error, Reason} | {result, Result}
 %% @doc <p>Accepts or rejects subcription requests on a PubSub node.</p>
 %% <p>The mechanism works as follow:
@@ -851,8 +851,8 @@ set_state(State) when is_record(State, pubsub_state) ->
 set_state(_) ->
     {error, 'internal-server-error'}.
 
-%% @spec (StateId) -> ok | {error, Reason::stanzaError()}
-%%	 StateId = mod_pubsub:pubsubStateId()
+%% @spec (NodeId, JID) -> ok | {error, Reason::stanzaError()}
+%%	 NodeId = mod_pubsub:pubsubNodeId()
 %% @doc <p>Delete a state from database.</p>
 del_state(NodeId, JID) ->
     mnesia:delete({pubsub_state, {JID, NodeId}}).
