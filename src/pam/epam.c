@@ -144,7 +144,7 @@ static int write_cmd(char *buf, int len)
 {
   byte hd[2];
   enc_int16(len, hd);
-  if (write_buf(1, hd, 2) != 2)
+  if (write_buf(1, (char *)hd, 2) != 2)
     return 0;
   if (write_buf(1, buf, len) != len)
     return 0;
@@ -167,7 +167,7 @@ static int process_reply(ETERM *pid, int cmd, int res)
   len = erl_term_len(result);
   buf = erl_malloc(len);
   erl_encode(result, buf);
-  retval = write_cmd(buf, len);
+  retval = write_cmd((char *)buf, len);
   erl_free_term(result);
   erl_free(buf);
   return retval;
