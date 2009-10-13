@@ -42,9 +42,6 @@
 %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
 %%% XEP-0060 section 12.18.
 
-%%% TODO
-%%% plugin: generate Reply (do not use broadcast atom anymore)
-
 -module(mod_pubsub_odbc).
 -author('christophe.romain@process-one.net').
 -version('1.13-0').
@@ -619,50 +616,54 @@ handle_cast({presence, User, Server, Resources, JID}, State) ->
     {noreply, send_queue(State, {presence, User, Server, Resources, JID})};
 
 handle_cast({remove_user, LUser, LServer}, State) ->
-    Host = State#state.host,
-    Owner = exmpp_jid:make(LUser, LServer),
-    %% remove user's subscriptions
-    lists:foreach(fun(PType) ->
-	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Owner]),
-	lists:foreach(fun
-	    ({#pubsub_node{nodeid = {H, N}}, subscribed, _, JID}) ->
-		unsubscribe_node(H, N, Owner, JID, all);
-	    (_) ->
-		ok
-	end, Subscriptions),
-	{result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Owner]),
-	lists:foreach(fun
-	    ({#pubsub_node{nodeid = {H, N}}, owner}) ->
-		delete_node(H, N, Owner);
-	    (_) ->
-		ok
-	end, Affiliations)
-    end, State#state.plugins),
+    spawn(fun() ->
+	Host = State#state.host,
+	Owner = exmpp_jid:make(LUser, LServer),
+	%% remove user's subscriptions
+	lists:foreach(fun(PType) ->
+	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Owner]),
+	    lists:foreach(fun
+		({#pubsub_node{nodeid = {H, N}}, subscribed, _, JID}) ->
+		    unsubscribe_node(H, N, Owner, JID, all);
+		(_) ->
+		    ok
+	    end, Subscriptions),
+	    {result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Owner]),
+	    lists:foreach(fun
+		({#pubsub_node{nodeid = {H, N}}, owner}) ->
+		    delete_node(H, N, Owner);
+		(_) ->
+		    ok
+	    end, Affiliations)
+	end, State#state.plugins)
+    end),
     {noreply, State}; 
 
 handle_cast({unsubscribe, Subscriber, Owner}, State) ->
-    Host = State#state.host,
-    BJID = jlib:short_prepd_bare_jid(Owner),
-    lists:foreach(fun(PType) ->
-	{result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Subscriber]),
-	lists:foreach(fun
-	    ({Node, subscribed, _, JID}) ->
-		#pubsub_node{options = Options, type = Type, id = NodeId} = Node,
-		case get_option(Options, access_model) of
-		    presence ->
-			case lists:member(BJID, node_owners(Host, Type, NodeId)) of
-			    true ->
-				node_action(Host, Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
-			    false ->
-				{result, ok}
-			end;
-		    _ ->
-			{result, ok}
-		end;
-	    (_) ->  
-		ok
-	end, Subscriptions)
-    end, State#state.plugins),
+    spawn(fun() ->
+	Host = State#state.host,
+	BJID = jlib:short_prepd_bare_jid(Owner),
+	lists:foreach(fun(PType) ->
+	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Subscriber]),
+	    lists:foreach(fun
+		({Node, subscribed, _, JID}) ->
+		    #pubsub_node{options = Options, type = Type, id = NodeId} = Node,
+		    case get_option(Options, access_model) of
+			presence ->
+			    case lists:member(BJID, node_owners(Host, Type, NodeId)) of
+				true ->
+				    node_action(Host, Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
+				false ->
+				    {result, ok}
+			    end;
+			_ ->
+			    {result, ok}
+		    end;
+		(_) ->  
+		    ok
+	    end, Subscriptions)
+	end, State#state.plugins)
+    end),
     {noreply, State}; 
 
 handle_cast(_Msg, State) ->
@@ -1894,11 +1895,16 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		[#xmlel{ns = ?NS_PUBSUB, name = 'publish', attrs = nodeAttr(Node), children =
 		    [#xmlel{ns = ?NS_PUBSUB, name = 'item', attrs = itemAttr(ItemId)}]}]},
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {TNode, {Result, broadcast, Removed}}} ->
+	{result, {TNode, {Result, Broadcast, Removed}}} ->
 	    NodeId = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
-	    broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, jlib:short_prepd_jid(Publisher), Payload),
+	    BroadcastPayload = case Broadcast of
+		default -> Payload;
+		broadcast -> Payload;
+		PluginPayload -> PluginPayload
+	    end,
+	    broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, jlib:short_prepd_jid(Publisher), BroadcastPayload),
 	    set_cached_item(Host, NodeId, ItemId, Payload),
 	    case Result of
 		default -> {result, Reply};
