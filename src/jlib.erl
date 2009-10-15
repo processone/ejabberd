@@ -92,7 +92,7 @@ rsm_decode(#xmlel{}=SubEl)->
 	case exmpp_xml:get_element(SubEl, 'set') of
 		undefined ->
 			none;
-		#xmlelement{name = 'set', children = SubEls}->
+		#xmlel{name = 'set', children = SubEls}->
 			lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
 	end.
 
