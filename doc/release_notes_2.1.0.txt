@@ -43,6 +43,7 @@
 
 * Configuration
 - Added option access_max_user_messages for mod_offline
+- Added option backlog for ejabberd_listener to increase TCP backlog
 - Added option define_macro and use_macro
 - Added option include_config_file to include additional configuration files
 - Added option max_fsm_queue
