@@ -188,7 +188,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </LI><LI CLASS="li-toc"><A HREF="#htoc77">5.2&#XA0;&#XA0;epmd</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc78">5.3&#XA0;&#XA0;Erlang Cookie</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc79">5.4&#XA0;&#XA0;Erlang Node Name</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc80">5.5&#XA0;&#XA0;Securing Sensible Files</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc80">5.5&#XA0;&#XA0;Securing Sensitive Files</A>
 </LI></UL>
 </LI><LI CLASS="li-toc"><A HREF="#htoc81">Chapter&#XA0;6&#XA0;&#XA0;Clustering</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
@@ -3643,8 +3643,8 @@ to difficult unauthorized access to your Erlang node.
 However, it is not ultimately effective to prevent access to the Erlang node,
 because it may be possible to fake the fact that you are on another network
 using a modified version of Erlang <TT>epmd</TT>.
-The recommended way to secure the Erlang node is to block the port 4369.</P><P> <A NAME="secure-files"></A> </P><!--TOC section Securing Sensible Files-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc80">5.5</A>&#XA0;&#XA0;<A HREF="#secure-files">Securing Sensible Files</A></H2><!--SEC END --><P> <A NAME="secure-files"></A> </P><P><TT>ejabberd</TT> stores sensible data in the file system either in plain text or binary files.
+The recommended way to secure the Erlang node is to block the port 4369.</P><P> <A NAME="secure-files"></A> </P><!--TOC section Securing Sensitive Files-->
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc80">5.5</A>&#XA0;&#XA0;<A HREF="#secure-files">Securing Sensitive Files</A></H2><!--SEC END --><P> <A NAME="secure-files"></A> </P><P><TT>ejabberd</TT> stores sensitive data in the file system either in plain text or binary files.
 The file system permissions should be set to only allow the proper user to read,
 write and execute those files and directories.</P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>ejabberd configuration file: /etc/ejabberd/ejabberd.cfg</TT></B></DT><DD CLASS="dd-description">
