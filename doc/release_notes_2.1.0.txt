@@ -65,6 +65,7 @@
 - New syntax to specify the network protocol: tcp or udp
 - Report error at startup if a listener module isn't available
 - Only listen in a port when actually ready to serve requests
+- In default config, only local accounts can create rooms and PubSub nodes
 
 * Core architecture
 - More verbose error reporting for xml:element_to_string
