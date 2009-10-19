@@ -79,7 +79,7 @@ attrs_to_list(Attrs) ->
     [attr_to_list(A) || A <- Attrs].
 
 attr_to_list({Name, Value}) ->
-    [$\s, crypt(Name), $=, $', crypt(Value), $'].
+    [$\s, Name, $=, $', crypt(Value), $'].
 
 crypt(S) when is_list(S) ->
     [case C of
