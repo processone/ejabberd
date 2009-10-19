@@ -690,6 +690,12 @@ Handles incoming HTTP connections.<BR>
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{access, AccessName}</TT></B></DT><DD CLASS="dd-description"> This option defines
 access to the port. The default value is <TT>all</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{backlog, Value}</TT></B></DT><DD CLASS="dd-description"> The backlog value
+defines the maximum length that the queue of pending connections may
+grow to. This should be increased if the server is going to handle
+lots of new incoming connections as they may be dropped if there is
+no space in the queue (and ejabberd was not able to accept them
+immediately). Default value is 5.
 </DD><DT CLASS="dt-description"><B><TT>{certfile, Path}</TT></B></DT><DD CLASS="dd-description"> Full path to a file containing the default SSL certificate.
 To define a certificate file specific for a given domain, use the global option <TT>domain_certfile</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{service_check_from, true|false}</TT></B></DT><DD CLASS="dd-description"> 

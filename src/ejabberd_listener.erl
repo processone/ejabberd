@@ -104,6 +104,7 @@ init(PortIP, Module, RawOpts) ->
     SockOpts = lists:filter(fun({ip, _}) -> true;
 			       (inet6) -> true;
 			       (inet) -> true;
+			       ({backlog, _}) -> true;
 			       (_) -> false
 			    end, Opts),
     if Proto == udp ->

@@ -823,6 +823,12 @@ This is a detailed description of each option allowed by the listening modules:
 \begin{description}
   \titem{\{access, AccessName\}} \ind{options!access}This option defines
     access to the port. The default value is \term{all}.
+  \titem{\{backlog, Value\}} \ind{options!backlog}The backlog value
+    defines the maximum length that the queue of pending connections may
+    grow to. This should be increased if the server is going to handle
+    lots of new incoming connections as they may be dropped if there is
+    no space in the queue (and ejabberd was not able to accept them
+    immediately). Default value is 5.
   \titem{\{certfile, Path\}} Full path to a file containing the default SSL certificate.
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
   \titem{\{service\_check\_from, true|false\}} \ind{options!service\_check\_from}
