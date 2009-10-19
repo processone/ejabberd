@@ -110,7 +110,7 @@ db_init() ->
 	_ ->
 	    ok
     end,
-    mnesia:start(),
+    application:start(mnesia, permanent),
     mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
 
 %% Start all the modules in all the hosts
