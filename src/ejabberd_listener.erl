@@ -133,6 +133,7 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 				{reuseaddr, true},
 				{nodelay, true},
 				{send_timeout, ?TCP_SEND_TIMEOUT},
+                                {send_timeout_close, true},
 				{keepalive, true} |
 				SockOpts]),
     case Res of

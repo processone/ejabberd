@@ -46,13 +46,15 @@
 	 close/1,
 	 sockname/1, peername/1]).
 
+-include("ejabberd.hrl").
+
 -record(socket_state, {sockmod, socket, receiver}).
 
 %%====================================================================
 %% API
 %%====================================================================
 %%--------------------------------------------------------------------
-%% Function: 
+%% Function:
 %% Description:
 %%--------------------------------------------------------------------
 start(Module, SockMod, Socket, Opts) ->
@@ -67,7 +69,7 @@ start(Module, SockMod, Socket, Opts) ->
 		case catch SockMod:custom_receiver(Socket) of
 		    {receiver, RecMod, RecPid} ->
 			{RecMod, RecPid, RecMod};
-		    _ -> 
+		    _ ->
 			RecPid = ejabberd_receiver:start(
 				   Socket, SockMod, none, MaxStanzaSize),
 			{ejabberd_receiver, RecPid, RecPid}
@@ -158,10 +160,22 @@ reset_stream(SocketData) when is_atom(SocketData#socket_state.receiver) ->
     (SocketData#socket_state.receiver):reset_stream(
       SocketData#socket_state.socket).
 
+%% sockmod=gen_tcp|tls|ejabberd_zlib
 send(SocketData, Data) ->
-    catch (SocketData#socket_state.sockmod):send(
-	    SocketData#socket_state.socket, Data).
+    case catch (SocketData#socket_state.sockmod):send(
+	     SocketData#socket_state.socket, Data) of
+        ok -> ok;
+	{error, timeout} ->
+	    ?INFO_MSG("Timeout on ~p:send",[SocketData#socket_state.sockmod]),
+	    exit(normal);
+        Error ->
+	    ?DEBUG("Error in ~p:send: ~p",[SocketData#socket_state.sockmod, Error]),
+	    exit(normal)
+    end.
 
+%% Can only be called when in c2s StateData#state.xml_socket is true
+%% This function is used for HTTP bind
+%% sockmod=ejabberd_http_poll|ejabberd_http_bind or any custom module
 send_xml(SocketData, Data) ->
     catch (SocketData#socket_state.sockmod):send_xml(
 	    SocketData#socket_state.socket, Data).

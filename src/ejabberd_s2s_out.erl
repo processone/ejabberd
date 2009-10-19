@@ -260,6 +260,7 @@ open_socket2(Type, Addr, Port) ->
     case (catch ejabberd_socket:connect(Addr, Port,
 					[binary, {packet, 0},
 					 {send_timeout, ?TCP_SEND_TIMEOUT},
+                                         {send_timeout_close, true},
 					 {active, false}, Type],
 					Timeout)) of
 	{ok, _Socket} = R -> R;

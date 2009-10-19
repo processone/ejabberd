@@ -105,7 +105,7 @@ start_link({SockMod, Socket}, Opts) ->
     end,
 
     %% XXX bard: for backward compatibility, expand in Opts:
-    %%  web_admin -> {["admin"], ejabberd_web_admin} 
+    %%  web_admin -> {["admin"], ejabberd_web_admin}
     %%  http_bind -> {["http-bind"], mod_http_bind}
     %%  http_poll -> {["http-poll"], ejabberd_http_poll}
 
@@ -147,8 +147,15 @@ socket_type() ->
     raw.
 
 send_text(State, Text) ->
-    (State#state.sockmod):send(State#state.socket, Text).
-
+    case catch (State#state.sockmod):send(State#state.socket, Text) of
+        ok -> ok;
+	{error, timeout} ->
+	    ?INFO_MSG("Timeout on ~p:send",[State#state.sockmod]),
+	    exit(normal);
+        Error ->
+	    ?DEBUG("Error in ~p:send: ~p",[State#state.sockmod, Error]),
+	    exit(normal)
+    end.
 
 receive_headers(State) ->
     SockMod = State#state.sockmod,
@@ -605,7 +612,7 @@ start_dir(N, Path, "./"  ++ T ) -> start_dir(N    , Path, T);
 start_dir(N, Path, "../" ++ T ) -> start_dir(N + 1, Path, T);
 start_dir(N, Path,          T ) -> rest_dir (N    , Path, T).
 
-rest_dir (_N, Path, []         ) -> case Path of 
+rest_dir (_N, Path, []         ) -> case Path of
 				       [] -> "/";
 				       _  -> Path
 				   end;
