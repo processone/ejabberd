@@ -415,11 +415,14 @@
 %% Admins of this server are also admins of MUC service:
 {access, muc_admin, [{allow, admin}]}.
 
+%% Only accounts of the local ejabberd server can create rooms:
+{access, muc_create, [{allow, local}]}.
+
 %% All users are allowed to use MUC service:
 {access, muc, [{allow, all}]}.
 
-%% Everybody can create pubsub nodes
-{access, pubsub_createnode, [{allow, all}]}.
+%% Only accounts in the local ejabberd server can create Pubsub nodes:
+{access, pubsub_createnode, [{allow, local}]}.
 
 %% In-band registration allows registration of any possible username.
 %% To disable in-band registration, replace 'allow' with 'deny'.
@@ -493,8 +496,8 @@
   {mod_muc,      [
 		  %%{host, "conference.@HOST@"},
 		  {access, muc},
-		  {access_create, muc},
-		  {access_persistent, muc},
+		  {access_create, muc_create},
+		  {access_persistent, muc_create},
 		  {access_admin, muc_admin}
 		 ]},
   %%{mod_muc_log,[]},

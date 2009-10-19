@@ -2942,11 +2942,11 @@ Module options:
 \titem{\{access, AccessName\}} \ind{options!access}You can specify who is allowed to use
   the Multi-User Chat service. By default everyone is allowed to use it.
 \titem{\{access\_create, AccessName\}} \ind{options!access\_create}To configure who is
-  allowed to create new rooms at the Multi-User Chat service, this option
-  can be used. By default everybody is allowed to create rooms.
+  allowed to create new rooms at the Multi-User Chat service, this option can be used.
+  By default any account in the local ejabberd server is allowed to create rooms.
 \titem{\{access\_persistent, AccessName\}} \ind{options!access\_persistent}To configure who is
   allowed to modify the 'persistent' room option.
-  By default everybody is allowed to modify that option.
+  By default any account in the local ejabberd server is allowed to modify that option.
 \titem{\{access\_admin, AccessName\}} \ind{options!access\_admin}This option specifies
   who is allowed to administrate the Multi-User Chat service. The default
   value is \term{none}, which means that only the room creator can
@@ -3486,7 +3486,8 @@ Options:
 \hostitem{pubsub}
 \titem{\{access\_createnode, AccessName\}} \ind{options!access\_createnode}
   This option restricts which users are allowed to create pubsub nodes using
-  ACL and ACCESS. The default value is \term{pubsub\_createnode}. % Not clear enough + do not use abbreviations.
+  ACL and ACCESS.
+  By default any account in the local ejabberd server is allowed to create pubsub nodes.
 \titem{\{max\_items\_node, MaxItems\}} \ind{options!max\_items\_node}
   Define the maximum number of items that can be stored in a node.
   Default value is 10.

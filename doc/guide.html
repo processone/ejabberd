@@ -2233,11 +2233,11 @@ is replaced at start time with the real virtual host name.
 </DD><DT CLASS="dt-description"><B><TT>{access, AccessName}</TT></B></DT><DD CLASS="dd-description"> You can specify who is allowed to use
 the Multi-User Chat service. By default everyone is allowed to use it.
 </DD><DT CLASS="dt-description"><B><TT>{access_create, AccessName}</TT></B></DT><DD CLASS="dd-description"> To configure who is
-allowed to create new rooms at the Multi-User Chat service, this option
-can be used. By default everybody is allowed to create rooms.
+allowed to create new rooms at the Multi-User Chat service, this option can be used.
+By default any account in the local ejabberd server is allowed to create rooms.
 </DD><DT CLASS="dt-description"><B><TT>{access_persistent, AccessName}</TT></B></DT><DD CLASS="dd-description"> To configure who is
 allowed to modify the &#X2019;persistent&#X2019; room option.
-By default everybody is allowed to modify that option.
+By default any account in the local ejabberd server is allowed to modify that option.
 </DD><DT CLASS="dt-description"><B><TT>{access_admin, AccessName}</TT></B></DT><DD CLASS="dd-description"> This option specifies
 who is allowed to administrate the Multi-User Chat service. The default
 value is <TT>none</TT>, which means that only the room creator can
@@ -2718,7 +2718,9 @@ is replaced at start time with the real virtual host name.
 
 </DD><DT CLASS="dt-description"><B><TT>{access_createnode, AccessName}</TT></B></DT><DD CLASS="dd-description"> 
 This option restricts which users are allowed to create pubsub nodes using
-ACL and ACCESS. The default value is <TT>pubsub_createnode</TT>. </DD><DT CLASS="dt-description"><B><TT>{max_items_node, MaxItems}</TT></B></DT><DD CLASS="dd-description"> 
+ACL and ACCESS.
+By default any account in the local ejabberd server is allowed to create pubsub nodes.
+</DD><DT CLASS="dt-description"><B><TT>{max_items_node, MaxItems}</TT></B></DT><DD CLASS="dd-description"> 
 Define the maximum number of items that can be stored in a node.
 Default value is 10.
 </DD><DT CLASS="dt-description"><B><TT>{plugins, [ Plugin, ...]}</TT></B></DT><DD CLASS="dd-description"> 
