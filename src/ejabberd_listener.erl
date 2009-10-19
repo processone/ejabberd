@@ -127,15 +127,18 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     end.
 
 init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
+    SockOpts2 = case erlang:system_info(otp_release) >= "R13B" of
+	true -> [{send_timeout_close, true} | SockOpts];
+	false -> []
+    end,
     Res = gen_tcp:listen(Port, [binary,
 				{packet, 0},
 				{active, false},
 				{reuseaddr, true},
 				{nodelay, true},
 				{send_timeout, ?TCP_SEND_TIMEOUT},
-                                {send_timeout_close, true},
 				{keepalive, true} |
-				SockOpts]),
+				SockOpts2]),
     case Res of
 	{ok, ListenSocket} ->
 	    %% Inform my parent that this port was opened succesfully
