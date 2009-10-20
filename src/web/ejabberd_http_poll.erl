@@ -5,7 +5,7 @@
 %%% Created :  4 Mar 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/2,
+-export([start_link/3,
 	 init/1,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -52,10 +52,12 @@
 
 -record(state, {id,
 		key,
+		socket,
 		output = "",
 		input = "",
 		waiting_input = false, %% {ReceiverPid, Tag}
 		last_receiver,
+		http_poll_timeout,
 		timer}).
 
 %-define(DBGFSM, true).
@@ -74,19 +76,19 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(ID, Key) ->
+start(ID, Key, IP) ->
     mnesia:create_table(http_poll,
         		[{ram_copies, [node()]},
         		 {attributes, record_info(fields, http_poll)}]),
-    supervisor:start_child(ejabberd_http_poll_sup, [ID, Key]).
+    supervisor:start_child(ejabberd_http_poll_sup, [ID, Key, IP]).
 
-start_link(ID, Key) ->
-    gen_fsm:start_link(?MODULE, [ID, Key], ?FSMOPTS).
+start_link(ID, Key, IP) ->
+    gen_fsm:start_link(?MODULE, [ID, Key, IP], ?FSMOPTS).
 
-send({http_poll, FsmRef}, Packet) ->
+send({http_poll, FsmRef, _IP}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
 
-setopts({http_poll, FsmRef}, Opts) ->
+setopts({http_poll, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
 	true ->
 	    gen_fsm:send_all_state_event(FsmRef, {activate, self()});
@@ -97,23 +99,24 @@ setopts({http_poll, FsmRef}, Opts) ->
 sockname(_Socket) ->
     {ok, {{0, 0, 0, 0}, 0}}.
 
-peername(_Socket) ->
-    {ok, {{0, 0, 0, 0}, 0}}.
+peername({http_poll, _FsmRef, IP}) ->
+    {ok, IP}.
 
 controlling_process(_Socket, _Pid) ->
     ok.
 
-close({http_poll, FsmRef}) ->
+close({http_poll, FsmRef, _IP}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
 
-process([], #request{data = Data} = _Request) ->
+process([], #request{data = Data,
+		     ip = IP} = _Request) ->
     case catch parse_request(Data) of
 	{ok, ID1, Key, NewKey, Packet} ->
 	    ID = if
 		     (ID1 == "0") or (ID1 == "mobile") ->
 			 NewID = sha:sha(term_to_binary({now(), make_ref()})),
-			 {ok, Pid} = start(NewID, ""),
+			 {ok, Pid} = start(NewID, "", IP),
 			 mnesia:transaction(
 			   fun() ->
 				   mnesia:write(#http_poll{id = NewID,
@@ -168,8 +171,8 @@ process(_, _Request) ->
 %%          ignore                              |
 %%          {stop, StopReason}                   
 %%----------------------------------------------------------------------
-init([ID, Key]) ->
-    ?INFO_MSG("started: ~p", [{ID, Key}]),
+init([ID, Key, IP]) ->
+    ?INFO_MSG("started: ~p", [{ID, Key, IP}]),
 
     %% Read c2s options from the first ejabberd_c2s configuration in
     %% the config file listen section
@@ -179,12 +182,20 @@ init([ID, Key]) ->
     %% connector.
     Opts = ejabberd_c2s_config:get_c2s_limits(),
 
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, {http_poll, self()}, Opts),
-    %{ok, C2SPid} = ejabberd_c2s:start({?MODULE, {http_poll, self()}}, Opts),
-    %ejabberd_c2s:become_controller(C2SPid),
-    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
+    HTTPPollTimeout = case ejabberd_config:get_local_option({http_poll_timeout,
+							     ?MYNAME}) of
+			  %% convert seconds of option into milliseconds
+			  Int when is_integer(Int) -> Int*1000;
+			  undefined -> ?HTTP_POLL_TIMEOUT
+		      end,
+    
+    Socket = {http_poll, self(), IP},
+    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
+    Timer = erlang:start_timer(HTTPPollTimeout, self(), []),
     {ok, loop, #state{id = ID,
 		      key = Key,
+		      socket = Socket,
+		      http_poll_timeout = HTTPPollTimeout,
 		      timer = Timer}}.
 
 %%----------------------------------------------------------------------
@@ -221,7 +232,7 @@ handle_event({activate, From}, StateName, StateData) ->
 	     StateData#state{waiting_input = {From, ok}}};
 	Input ->
             Receiver = From,
-	    Receiver ! {tcp, {http_poll, self()}, list_to_binary(Input)},
+	    Receiver ! {tcp, StateData#state.socket, list_to_binary(Input)},
 	    {next_state, StateName, StateData#state{input = "",
 						    waiting_input = false,
 						    last_receiver = Receiver
@@ -273,10 +284,10 @@ handle_sync_event({http_put, Key, NewKey, Packet},
 		    {reply, Reply, StateName, StateData#state{input = Input,
 							      key = NewKey}};
 		{Receiver, _Tag} ->
-		    Receiver ! {tcp, {http_poll, self()},
+		    Receiver ! {tcp, StateData#state.socket,
 				list_to_binary(Packet)},
 		    cancel_timer(StateData#state.timer),
-		    Timer = erlang:start_timer(?HTTP_POLL_TIMEOUT, self(), []),
+		    Timer = erlang:start_timer(StateData#state.http_poll_timeout, self(), []),
 		    Reply = ok,
 		    {reply, Reply, StateName,
 		     StateData#state{waiting_input = false,
@@ -331,10 +342,10 @@ terminate(_Reason, _StateName, StateData) ->
 	    case StateData#state.last_receiver of
 		undefined -> ok;
 		Receiver  ->
-		    Receiver ! {tcp_closed, {http_poll, self()}}
+		    Receiver ! {tcp_closed, StateData#state.socket}
 	    end;
 	{Receiver, _Tag} ->
-	    Receiver ! {tcp_closed, {http_poll, self()}}
+	    Receiver ! {tcp_closed, StateData#state.socket}
     end,
     catch resend_messages(StateData#state.output),
     ok.

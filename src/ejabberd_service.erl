@@ -1,11 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_service.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : External component management
+%%% Purpose : External component management (XEP-0114)
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -27,7 +27,9 @@
 -module(ejabberd_service).
 -author('alexey@process-one.net').
 
--behaviour(gen_fsm).
+-define(GEN_FSM, p1_fsm).
+
+-behaviour(?GEN_FSM).
 
 %% External exports
 -export([start/2,
@@ -73,13 +75,18 @@
 -define(STREAM_TRAILER, "</stream:stream>").
 
 -define(INVALID_HEADER_ERR,
-	"<stream:stream>"
+	"<stream:stream "
+	"xmlns:stream='http://etherx.jabber.org/streams'>"
 	"<stream:error>Invalid Stream Header</stream:error>"
 	"</stream:stream>"
        ).
 
 -define(INVALID_HANDSHAKE_ERR,
-	"<stream:error>Invalid Handshake</stream:error>"
+	"<stream:error>"
+	"<not-authorized xmlns='urn:ietf:params:xml:ns:xmpp-streams'/>"
+	"<text xmlns='urn:ietf:params:xml:ns:xmpp-streams' xml:lang='en'>"
+	"Invalid Handshake</text>"
+	"</stream:error>"
 	"</stream:stream>"
        ).
 
@@ -95,7 +102,8 @@ start(SockData, Opts) ->
     supervisor:start_child(ejabberd_service_sup, [SockData, Opts]).
 
 start_link(SockData, Opts) ->
-    gen_fsm:start_link(ejabberd_service, [SockData, Opts], ?FSMOPTS).
+    ?GEN_FSM:start_link(ejabberd_service, [SockData, Opts],
+			fsm_limit_opts(Opts) ++ ?FSMOPTS).
 
 socket_type() ->
     xml_stream.
@@ -168,11 +176,15 @@ init([{SockMod, Socket}, Opts]) ->
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
-    % TODO
     case xml:get_attr_s("xmlns", Attrs) of
 	"jabber:component:accept" ->
+	    %% Note: XEP-0114 requires to check that destination is a Jabber
+	    %% component served by this Jabber server.
+	    %% However several transports don't respect that,
+	    %% so ejabberd doesn't check 'to' attribute (EJAB-717)
+	    To = xml:get_attr_s("to", Attrs),
 	    Header = io_lib:format(?STREAM_HEADER,
-				   [StateData#state.streamid, ?MYNAME]),
+				   [StateData#state.streamid, xml:crypt(To)]),
 	    send_text(StateData, Header),
 	    {next_state, wait_for_handshake, StateData};
 	_ ->
@@ -374,3 +386,16 @@ send_element(StateData, El) ->
 
 new_id() ->
     randoms:get_string().
+
+fsm_limit_opts(Opts) ->
+    case lists:keysearch(max_fsm_queue, 1, Opts) of
+	{value, {_, N}} when is_integer(N) ->
+	    [{max_queue, N}];
+	_ ->
+	    case ejabberd_config:get_local_option(max_fsm_queue) of
+		N when is_integer(N) ->
+		    [{max_queue, N}];
+		_ ->
+		    []
+	    end
+    end.

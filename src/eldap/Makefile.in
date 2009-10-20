@@ -6,10 +6,14 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
+ASN_FLAGS = -bber_bin +optimize +driver
+
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
-EFLAGS = -I .. -pz ..
+EFLAGS += -I ..
+EFLAGS += -pz ..
+
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
 	EFLAGS+=+debug_info
@@ -25,7 +29,7 @@ all:    $(BEAMS) ELDAPv3.beam
 ELDAPv3.beam: ELDAPv3.erl
 
 ELDAPv3.erl:       ELDAPv3.asn
-	@ERLC@ -bber_bin -W $(EFLAGS) $<
+	@ERLC@ $(ASN_FLAGS) -W $(EFLAGS) $<
 
 $(OUTDIR)/%.beam:	%.erl ELDAPv3.erl
 	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<

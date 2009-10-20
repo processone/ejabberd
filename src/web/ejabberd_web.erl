@@ -5,7 +5,7 @@
 %%% Created : 28 Feb 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -28,7 +28,7 @@
 -author('alexey@process-one.net').
 
 %% External exports
--export([make_xhtml/1,
+-export([make_xhtml/1, make_xhtml/2,
          error/1]).
 
 -include("ejabberd.hrl").
@@ -42,12 +42,16 @@
 %% that third parties can use ejabberd_web as an "utility" library.
 
 make_xhtml(Els) ->
+    make_xhtml([], Els).
+
+make_xhtml(HeadEls, Els) ->
     {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
 			  {"xml:lang", "en"},
 			  {"lang", "en"}],
      [{xmlelement, "head", [],
        [{xmlelement, "meta", [{"http-equiv", "Content-Type"},
-			      {"content", "text/html; charset=utf-8"}], []}]},
+			      {"content", "text/html; charset=utf-8"}], []}
+	| HeadEls]},
       {xmlelement, "body", [], Els}
      ]}.
 

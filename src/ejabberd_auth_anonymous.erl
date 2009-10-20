@@ -5,7 +5,7 @@
 %%% Created : 17 Feb 2006 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -141,11 +141,17 @@ remove_connection(SID, LUser, LServer) ->
     mnesia:transaction(F).
 
 %% Register connection
-register_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
-    US = {LUser, LServer},
-    mnesia:sync_dirty(
-      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
-      end).
+register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
+    AuthModule = xml:get_attr_s(auth_module, Info),
+    case AuthModule == ?MODULE of
+	true ->
+	    US = {LUser, LServer},
+	    mnesia:sync_dirty(
+	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
+	      end);
+	false ->
+	    ok
+    end.
 
 %% Remove an anonymous user from the anonymous users table
 unregister_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
@@ -167,12 +173,15 @@ purge_hook(true, LUser, LServer) ->
 %% before allowing access
 check_password(User, Server, Password) ->
     check_password(User, Server, Password, undefined, undefined).
-check_password(User, Server, _Password, _StreamID, _Digest) ->
+check_password(User, Server, _Password, _Digest, _DigestGen) ->
     %% We refuse login for registered accounts (They cannot logged but
     %% they however are "reserved")
     case ejabberd_auth:is_user_exists_in_other_modules(?MODULE, 
 						       User, Server) of
+	%% If user exists in other module, reject anonnymous authentication
 	true  -> false;
+	%% If we are not sure whether the user exists in other module, reject anon auth
+	maybe  -> false;
 	false -> login(User, Server)
     end.
 
@@ -217,7 +226,7 @@ get_password(User, Server) ->
     get_password(User, Server, "").
 
 get_password(User, Server, DefaultValue) ->
-    case anonymous_user_exist(User, Server) of
+    case anonymous_user_exist(User, Server) or login(User, Server) of
 	%% We return the default value if the user is anonymous
 	true ->
 	    DefaultValue;

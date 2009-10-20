@@ -5,7 +5,7 @@
 %%% Created : 20 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -34,6 +34,7 @@
 	 get_attr/2, get_attr_s/2,
 	 get_tag_attr/2, get_tag_attr_s/2,
 	 get_subtag/2, get_subtag_cdata/2,
+	 append_subtags/2,
 	 get_path_s/2,
 	 replace_tag_attr/3]).
 
@@ -47,18 +48,26 @@
 -endif.
 
 element_to_string(El) ->
+    case catch element_to_string_nocatch(El) of
+	{'EXIT', Reason} ->
+	    erlang:error({badxml, El, Reason});
+	Result ->
+	    Result
+    end.
+
+element_to_string_nocatch(El) ->
     case El of
 	{xmlelement, Name, Attrs, Els} ->
 	    if
 		Els /= [] ->
 		    [$<, Name, attrs_to_list(Attrs), $>,
-		     [element_to_string(E) || E <- Els],
+		     [element_to_string_nocatch(E) || E <- Els],
 		     $<, $/, Name, $>];
 	       true ->
 		    [$<, Name, attrs_to_list(Attrs), $/, $>]
 	       end;
 	%% We do not crypt CDATA binary, but we enclose it in XML CDATA
-	{xmlcdata, CData} when binary(CData) ->
+	{xmlcdata, CData} when is_binary(CData) ->
 	    ?ESCAPE_BINARY(CData);
 	%% We crypt list and possibly binaries if full XML usage is
 	%% disabled unsupported (implies a conversion to list).
@@ -70,7 +79,7 @@ attrs_to_list(Attrs) ->
     [attr_to_list(A) || A <- Attrs].
 
 attr_to_list({Name, Value}) ->
-    [$\s, crypt(Name), $=, $', crypt(Value), $'].
+    [$\s, Name, $=, $', crypt(Value), $'].
 
 crypt(S) when is_list(S) ->
     [case C of
@@ -210,6 +219,9 @@ get_subtag_cdata(Tag, Name) ->
 	Subtag ->
 	    get_tag_cdata(Subtag)
     end.
+
+append_subtags({xmlelement, Name, Attrs, SubTags1}, SubTags2) ->
+    {xmlelement, Name, Attrs, SubTags1 ++ SubTags2}.
 
 get_path_s(El, []) ->
     El;

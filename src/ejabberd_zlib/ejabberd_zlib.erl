@@ -5,7 +5,7 @@
 %%% Created : 19 Jan 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -35,6 +35,7 @@
 	 recv/2, recv/3, recv_data/2,
 	 setopts/2,
 	 sockname/1, peername/1,
+	 get_sockmod/1,
 	 controlling_process/2,
 	 close/1]).
 
@@ -116,7 +117,20 @@ recv(#zlibsock{sockmod = SockMod, socket = Socket} = ZlibSock,
 	    Error
     end.
 
-recv_data(ZlibSock, Packet) ->
+recv_data(#zlibsock{sockmod = SockMod, socket = Socket} = ZlibSock, Packet) ->
+    case SockMod of
+	gen_tcp ->
+	    recv_data2(ZlibSock, Packet);
+	_ ->
+	    case SockMod:recv_data(Socket, Packet) of
+		{ok, Packet2} ->
+		    recv_data2(ZlibSock, Packet2);
+		Error ->
+		    Error
+	    end
+    end.
+
+recv_data2(ZlibSock, Packet) ->
     case catch recv_data1(ZlibSock, Packet) of
 	{'EXIT', Reason} ->
 	    {error, Reason};
@@ -157,6 +171,9 @@ sockname(#zlibsock{sockmod = SockMod, socket = Socket}) ->
 	_ ->
 	    SockMod:sockname(Socket)
     end.
+
+get_sockmod(#zlibsock{sockmod = SockMod}) ->
+    SockMod.
 
 peername(#zlibsock{sockmod = SockMod, socket = Socket}) ->
     case SockMod of

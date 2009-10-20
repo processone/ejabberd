@@ -1,11 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_disco.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Service Discovery (JEP-0030) support
+%%% Purpose : Service Discovery (XEP-0030) support
 %%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -41,7 +41,7 @@
 	 get_sm_identity/5,
 	 get_sm_features/5,
 	 get_sm_items/5,
-	 get_publish_items/5,
+	 get_info/5,
 	 register_feature/2,
 	 unregister_feature/2,
 	 register_extra_domain/2,
@@ -50,15 +50,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(disco_publish, {owner_node, jid, name, node}).
-
 start(Host, Opts) ->
-    mnesia:create_table(disco_publish,
-			[{disc_only_copies, [node()]},
-			 {attributes, record_info(fields, disco_publish)},
-			 {type, bag}]),
-    mnesia:add_table_index(disco_publish, owner_node),
-
     ejabberd_local:refresh_iq_handlers(),
 
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -75,7 +67,6 @@ start(Host, Opts) ->
     register_feature(Host, "iq"),
     register_feature(Host, "presence"),
     register_feature(Host, "presence-invisible"),
-    register_feature(Host, "http://jabber.org/protocol/disco#publish"),
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
@@ -89,17 +80,17 @@ start(Host, Opts) ->
     ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_sm_items, 100),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, get_sm_identity, 100),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, get_publish_items, 75),
+    ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 100),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_publish_items, 75),
     ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, get_sm_identity, 100),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 100),
     ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_items, 100),
     ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, get_local_identity, 100),
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_local_features, 100),
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, get_local_services, 100),
+    ejabberd_hooks:delete(disco_info, Host, ?MODULE, get_info, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
@@ -165,6 +156,8 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 					       Host,
 					       [],
 					       [From, To, Node, Lang]),
+	    Info = ejabberd_hooks:run_fold(disco_info, Host, [],
+					   [Host, ?MODULE, Node, Lang]),
 	    case ejabberd_hooks:run_fold(disco_local_features,
 					 Host,
 					 empty,
@@ -178,6 +171,7 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", ?NS_DISCO_INFO} | ANode],
 				     Identity ++ 
+				     Info ++
 				     lists:map(fun feature_to_xml/1, Features)
 				    }]};
 		{error, Error} ->
@@ -267,24 +261,7 @@ get_vh_services(Host) ->
 process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    #jid{luser = LTo, lserver = ToServer} = To,
-	    #jid{luser = LFrom, lserver = LServer} = From,
-	    Self = (LTo == LFrom) andalso (ToServer == LServer),
-	    Node = xml:get_tag_attr_s("node", SubEl),
-	    if
-		Self, Node /= [] ->
-		    %% Here, we treat disco publish attempts to your own JID.
-		    {xmlelement, _, _, Items} = SubEl,
-		    case process_disco_publish({LFrom, LServer}, Node, Items) of
-			ok ->
-			    IQ#iq{type = result, sub_el = []};
-			{error, Err} ->
-			    IQ#iq{type = error, sub_el = [SubEl, Err]}
-		    end;
-
-		true ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
-	    end;
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    Host = To#jid.lserver,
 	    Node = xml:get_tag_attr_s("node", SubEl),
@@ -384,8 +361,6 @@ get_sm_features(empty, From, To, _Node, _Lang) ->
 get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-
-
 get_user_resources(User, Server) ->
     Rs = ejabberd_sm:get_user_resources(User, Server),
     lists:map(fun(R) ->
@@ -394,104 +369,59 @@ get_user_resources(User, Server) ->
 			{"name", User}], []}
 	      end, lists:sort(Rs)).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_publish_items(empty,
-		  #jid{luser = LFrom, lserver = LSFrom},
-		  #jid{luser = LTo, lserver = LSTo} = _To,
-		  Node, _Lang) ->
-    if
-	(LFrom == LTo) and (LSFrom == LSTo) ->
-	    retrieve_disco_publish({LTo, LSTo}, Node);
-	true ->
-	    empty
-    end;
-get_publish_items(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
+%%% Support for: XEP-0157 Contact Addresses for XMPP Services
 
-process_disco_publish(User, Node, Items) ->
-    F = fun() ->
-		lists:foreach(
-		  fun({xmlelement, _Name, _Attrs, _SubEls} = Item) ->
-			  Action = xml:get_tag_attr_s("action", Item),
-			  Jid = xml:get_tag_attr_s("jid", Item),
-			  PNode = xml:get_tag_attr_s("node", Item),
-			  Name = xml:get_tag_attr_s("name", Item),
-			  ?INFO_MSG("Disco publish: ~p ~p ~p ~p ~p ~p~n",
-				    [User, Action, Node, Jid, PNode, Name]),
+get_info(_A, Host, Module, Node, _Lang) when Node == [] ->
+    Serverinfo_fields = get_fields_xml(Host, Module),
+    [{xmlelement, "x",
+      [{"xmlns", ?NS_XDATA}, {"type", "result"}],
+      [{xmlelement, "field",
+	[{"var", "FORM_TYPE"}, {"type", "hidden"}],
+	[{xmlelement, "value",
+	  [],
+	  [{xmlcdata, ?NS_SERVERINFO}]
+	 }]
+       }]
+      ++ Serverinfo_fields
+     }];
 
-			  %% The disco_publish table isn't strictly a "bag" table, as
-			  %% entries with same jid and node combination are considered
-			  %% the same, even if they have different names.  Therefore,
-			  %% we find a list of items to supersede.
-			  SupersededItems = mnesia:match_object(
-					      #disco_publish{owner_node = {User, Node},
-							     jid = Jid,
-							     node = PNode,
-							     _ = '_'}),
-			  case Action of
-			      "update" ->
-				  lists:map(
-				    fun(O) ->
-					    mnesia:delete_object(O)
-				    end, SupersededItems),
-				  mnesia:write(
-				    #disco_publish{owner_node = {User, Node},
-						   jid = Jid,
-						   name = Name,
-						   node = PNode});
-			      "remove" ->
-				  case SupersededItems of
-				      [] ->
-					  mnesia:abort({error, ?ERR_ITEM_NOT_FOUND});
-				      _ ->
-					  lists:map(
-					    fun(O) ->
-						    mnesia:delete_object(O)
-					    end, SupersededItems)
-				  end;
-			      _ ->
-				  %% invalid "action" attribute - return an error
-				  mnesia:abort({error, ?ERR_BAD_REQUEST})
-			  end;
-		     ({xmlcdata, _CDATA}) ->
-			  ok
-		  end, Items)
-	end,
-    case mnesia:transaction(F) of
-	{aborted, {error, _} = Error} ->
-	    Error;
-	{atomic, _} ->
-	    ok;
-	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end.
+get_info(_, _, _, _Node, _) ->
+    [].
 
-retrieve_disco_publish(User, Node) ->
-    case catch mnesia:dirty_read({disco_publish, {User, Node}}) of
-	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-	[] ->
-	    empty;
-	Items ->
-	    {result,
-	     lists:map(
-	       fun(#disco_publish{jid = Jid,
-				  name = Name,
-				  node = PNode}) ->
-		       {xmlelement, "item",
-			lists:append([[{"jid", Jid}],
-				      case Name of
-					  "" ->
-					      [];
-					  _ ->
-					      [{"name", Name}]
-				      end,
-				      case PNode of
-					  "" ->
-					      [];
-					  _ ->
-					      [{"node", PNode}]
-				      end]), []}
-	       end, Items)}
-    end.
+get_fields_xml(Host, Module) ->
+    Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),
 
+    %% filter, and get only the ones allowed for this module
+    Fields_good = lists:filter(
+		    fun({Modules, _, _}) ->
+			    case Modules of
+				all -> true;
+				Modules -> lists:member(Module, Modules)
+			    end
+		    end,
+		    Fields),
+
+    fields_to_xml(Fields_good).
+
+fields_to_xml(Fields) ->
+    [ field_to_xml(Field) || Field <- Fields].
+
+field_to_xml({_, Var, Values}) ->
+    Values_xml = values_to_xml(Values),
+    {xmlelement, "field",
+     [{"var", Var}],
+     Values_xml
+    }.
+
+values_to_xml(Values) ->
+    lists:map(
+      fun(Value) ->
+	      {xmlelement, "value",
+	       [],
+	       [{xmlcdata, Value}]
+	      }
+      end,
+      Values
+     ).

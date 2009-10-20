@@ -5,7 +5,7 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -84,6 +84,13 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_local]},
+    Captcha =
+	{ejabberd_captcha,
+	 {ejabberd_captcha, start_link, []},
+	 permanent,
+	 brutal_kill,
+	 worker,
+	 [ejabberd_captcha]},
     Listener =
 	{ejabberd_listener,
 	 {ejabberd_listener, start_link, []},
@@ -162,6 +169,14 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
+    STUNSupervisor =
+	{ejabberd_stun_sup,
+	 {ejabberd_tmp_sup, start_link,
+	  [ejabberd_stun_sup, ejabberd_stun]},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [ejabberd_tmp_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
 	   NodeGroups,
@@ -170,6 +185,7 @@ init([]) ->
 	   SM,
 	   S2S,
 	   Local,
+	   Captcha,
 	   ReceiverSupervisor,
 	   C2SSupervisor,
 	   S2SInSupervisor,
@@ -178,6 +194,7 @@ init([]) ->
 	   HTTPSupervisor,
 	   HTTPPollSupervisor,
 	   IQSupervisor,
+	   STUNSupervisor,
 	   FrontendSocketSupervisor,
 	   Listener]}}.
 

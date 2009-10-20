@@ -5,7 +5,7 @@
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -352,6 +352,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
             case {ejabberd_s2s:allow_host(To, From),
                   lists:member(LTo, ejabberd_router:dirty_get_all_domains())} of
                 {true, true} ->
+		    ejabberd_s2s_out:terminate_if_waiting_delay(To, From),
 		    ejabberd_s2s_out:start(To, From,
 					   {verify, self(),
 					    Key, StateData#state.streamid}),
@@ -411,6 +412,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == "iq") or
 					(Name == "message") or
 					(Name == "presence")) ->
+					    ejabberd_hooks:run(
+					      s2s_receive_packet,
+					      LTo,
+					      [From, To, NewEl]),
 					    ejabberd_router:route(
 					      From, To, NewEl);
 				       true ->
@@ -426,6 +431,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				    if ((Name == "iq") or
 					(Name == "message") or
 					(Name == "presence")) ->
+					    ejabberd_hooks:run(
+					      s2s_receive_packet,
+					      LTo,
+					      [From, To, NewEl]),
 					    ejabberd_router:route(
 					      From, To, NewEl);
 				       true ->
@@ -509,6 +518,44 @@ stream_established(closed, StateData) ->
 %%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
+%%----------------------------------------------------------------------
+%% Func: handle_sync_event/4
+%% Returns: The associated StateData for this connection
+%%   {reply, Reply, NextStateName, NextStateData}
+%%   Reply = {state_infos, [{InfoName::atom(), InfoValue::any()]
+%%----------------------------------------------------------------------
+handle_sync_event(get_state_infos, _From, StateName, StateData) ->
+    SockMod = StateData#state.sockmod,
+    {Addr,Port} = try SockMod:peername(StateData#state.socket) of
+		      {ok, {A,P}} ->  {A,P};
+		      {error, _} -> {unknown,unknown}
+		  catch
+		      _:_ -> {unknown,unknown}
+		  end,
+    Domains =	case StateData#state.authenticated of
+		    true -> 
+			[StateData#state.auth_domain];
+		    false ->
+			Connections = StateData#state.connections,
+			[D || {{D, _}, established} <- 
+			    dict:to_list(Connections)]
+		end,
+    Infos = [
+	     {direction, in},
+	     {statename, StateName},
+	     {addr, Addr},
+	     {port, Port},
+	     {streamid, StateData#state.streamid},
+	     {tls, StateData#state.tls},
+	     {tls_enabled, StateData#state.tls_enabled},
+	     {tls_options, StateData#state.tls_options},
+	     {authenticated, StateData#state.authenticated},
+	     {shaper, StateData#state.shaper},
+	     {sockmod, SockMod},
+	     {domains, Domains}
+	    ],
+    Reply = {state_infos, Infos},
+    {reply,Reply,StateName,StateData};
 
 %%----------------------------------------------------------------------
 %% Func: handle_sync_event/4

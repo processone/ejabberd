@@ -5,7 +5,7 @@
 %%% Created : 5 Jul 2007 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -55,7 +55,7 @@ start(_Host) ->
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
-check_password(User, Server, Password, _StreamID, _Digest) ->
+check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
 check_password(User, Host, Password) ->
@@ -80,6 +80,8 @@ get_password(_User, _Server) ->
 get_password_s(_User, _Server) ->
     "".
 
+%% @spec (User, Server) -> true | false | {error, Error}
+%% TODO: Improve this function to return an error instead of 'false' when connection to PAM failed
 is_user_exists(User, Host) ->
     Service = get_pam_service(Host),
     case catch epam:acct_mgmt(Service, User) of
@@ -91,7 +93,7 @@ remove_user(_User, _Server) ->
     {error, not_allowed}.
 
 remove_user(_User, _Server, _Password) ->
-    {error, not_allowed}.
+    not_allowed.
 
 plain_password_required() ->
     true.

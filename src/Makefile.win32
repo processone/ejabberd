@@ -66,6 +66,9 @@ release : build release_clean
 	copy stringprep\*.erl $(SRC_DIR)\stringprep
 	copy stringprep\*.c $(SRC_DIR)\stringprep
 	copy stringprep\*.tcl $(SRC_DIR)\stringprep
+	mkdir $(SRC_DIR)\stun
+	copy stun\*.erl $(SRC_DIR)\stun
+	copy stun\*.hrl $(SRC_DIR)\stun
 	mkdir $(SRC_DIR)\tls
 	copy tls\*.erl $(SRC_DIR)\tls
 	copy tls\*.c $(SRC_DIR)\tls
@@ -100,6 +103,8 @@ all-recursive :
 	cd ..\mod_proxy65
 	nmake -nologo -f Makefile.win32
 	cd ..\stringprep
+	nmake -nologo -f Makefile.win32
+	cd ..\stun
 	nmake -nologo -f Makefile.win32
 	cd ..\tls
 	nmake -nologo -f Makefile.win32
@@ -142,6 +147,8 @@ clean-recursive :
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\stringprep
 	nmake -nologo -f Makefile.win32 clean
+	cd ..\stun
+	nmake -nologo -f Makefile.win32 clean
 	cd ..\tls
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\ejabberd_zlib
@@ -166,5 +173,4 @@ $(DLL) : $(OBJECT)
 	$(LD) $(LD_FLAGS) -out:$(DLL) $(OBJECT)
 
 $(OBJECT) : $(SOURCE)
-    	$(CC) $(CC_FLAGS) -c -Fo$(OBJECT) $(SOURCE) 
-
+	$(CC) $(CC_FLAGS) -c -Fo$(OBJECT) $(SOURCE)

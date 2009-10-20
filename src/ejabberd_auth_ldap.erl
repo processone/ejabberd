@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -48,6 +48,7 @@
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
+	 get_vh_registered_users_number/1,
 	 get_password/2,
 	 get_password_s/2,
 	 is_user_exists/2,
@@ -65,6 +66,7 @@
 		servers,
 		backups,
 		port,
+		encrypt,
 		dn,
 		password,
 		base,
@@ -84,6 +86,10 @@ code_change(_OldVsn, State, _Extra) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 %% -----
+
+
+-define(LDAP_SEARCH_TIMEOUT, 5). % Timeout for LDAP search queries in seconds
+
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -107,11 +113,8 @@ start_link(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:start_link({local, Proc}, ?MODULE, Host, []).
 
-terminate(_Reason, State) ->
-    ejabberd_ctl:unregister_commands(
-      State#state.host,
-      [{"registered-users", "list all registered users"}],
-      ejabberd_auth, ctl_process_get_registered).
+terminate(_Reason, _State) ->
+    ok.
 
 init(Host) ->
     State = parse_options(Host),
@@ -120,17 +123,15 @@ init(Host) ->
 		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
-		     State#state.password),
+		     State#state.password,
+		     State#state.encrypt),
     eldap_pool:start_link(State#state.bind_eldap_id,
 		     State#state.servers,
 		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
-		     State#state.password),
-    ejabberd_ctl:register_commands(
-      Host,
-      [{"registered-users", "list all registered users"}],
-      ejabberd_auth, ctl_process_get_registered),
+		     State#state.password,
+		     State#state.encrypt),
     {ok, State}.
 
 plain_password_required() ->
@@ -149,12 +150,13 @@ check_password(User, Server, Password) ->
         end
     end.
 
-check_password(User, Server, Password, _StreamID, _Digest) ->
+check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
+%% @spec (User, Server, Password) -> {error, not_allowed}
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
 
@@ -171,16 +173,20 @@ get_vh_registered_users(Server) ->
 	Result -> Result
 	end.
 
+get_vh_registered_users_number(Server) ->
+    length(get_vh_registered_users(Server)).
+
 get_password(_User, _Server) ->
     false.
 
 get_password_s(_User, _Server) ->
     "".
 
+%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     case catch is_user_exists_ldap(User, Server) of
-	{'EXIT', _} ->
-	    false;
+	{'EXIT', Error} ->
+	    {error, Error};
 	Result ->
 	    Result
     end.
@@ -216,6 +222,7 @@ get_vh_registered_users_ldap(Server) ->
 		{ok, EldapFilter} ->
 		    case eldap_pool:search(Eldap_ID, [{base, State#state.base},
 						 {filter, EldapFilter},
+						 {timeout, ?LDAP_SEARCH_TIMEOUT},
 						 {attributes, SortedDNAttrs}]) of
 			#eldap_search_result{entries = Entries} ->
 			    lists:flatmap(
@@ -350,8 +357,13 @@ parse_options(Host) ->
 		   undefined -> [];
 		   Backups -> Backups
 		   end,
+    LDAPEncrypt = ejabberd_config:get_local_option({ldap_encrypt, Host}),
     LDAPPort = case ejabberd_config:get_local_option({ldap_port, Host}) of
-		   undefined -> 389;
+		   undefined -> case LDAPEncrypt of
+				    tls -> ?LDAPS_PORT;
+				    starttls -> ?LDAP_PORT;
+				    _ -> ?LDAP_PORT
+				end;
 		   P -> P
 	       end,
     RootDN = case ejabberd_config:get_local_option({ldap_rootdn, Host}) of
@@ -386,6 +398,7 @@ parse_options(Host) ->
 	   servers = LDAPServers,
 	   backups = LDAPBackups,
 	   port = LDAPPort,
+	   encrypt = LDAPEncrypt,
 	   dn = RootDN,
 	   password = Password,
 	   base = LDAPBase,

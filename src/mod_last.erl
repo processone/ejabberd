@@ -5,7 +5,7 @@
 %%% Created : 24 Oct 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -68,12 +68,16 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_LAST),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_LAST).
 
+%%%
+%%% Uptime of ejabberd node
+%%%
+
 process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Sec = trunc(element(1, erlang:statistics(wall_clock))/1000),
+	    Sec = get_node_uptime(),
 	    IQ#iq{type = result,
 		  sub_el =  [{xmlelement, "query",
 			      [{"xmlns", ?NS_LAST},
@@ -81,6 +85,24 @@ process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			      []}]}
     end.
 
+%% @spec () -> integer()
+%% @doc Get the uptime of the ejabberd node, expressed in seconds.
+%% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
+get_node_uptime() ->
+    case ejabberd_config:get_local_option(node_start) of
+	{_, _, _} = StartNow ->
+	    now_to_seconds(now()) - now_to_seconds(StartNow);
+	_undefined ->
+	    trunc(element(1, erlang:statistics(wall_clock))/1000)
+    end.
+
+now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
+    MegaSecs * 1000000 + Secs.
+
+
+%%%
+%%% Serve queries about user last online
+%%%
 
 process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
@@ -126,8 +148,7 @@ get_last(IQ, SubEl, LUser, LServer) ->
 	[] ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
 	[#last_activity{timestamp = TimeStamp, status = Status}] ->
-	    {MegaSecs, Secs, _MicroSecs} = now(),
-	    TimeStamp2 = MegaSecs * 1000000 + Secs,
+	    TimeStamp2 = now_to_seconds(now()),
 	    Sec = TimeStamp2 - TimeStamp,
 	    IQ#iq{type = result,
 		  sub_el = [{xmlelement, "query",
@@ -139,8 +160,7 @@ get_last(IQ, SubEl, LUser, LServer) ->
 
 
 on_presence_update(User, Server, _Resource, Status) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp = MegaSecs * 1000000 + Secs,
+    TimeStamp = now_to_seconds(now()),
     store_last_info(User, Server, TimeStamp, Status).
 
 store_last_info(User, Server, TimeStamp, Status) ->
@@ -153,8 +173,9 @@ store_last_info(User, Server, TimeStamp, Status) ->
 					    status = Status})
 	end,
     mnesia:transaction(F).
-    
-%% Returns: {ok, Timestamp, Status} | not_found
+
+%% @spec (LUser::string(), LServer::string()) ->
+%%      {ok, Timestamp::integer(), Status::string()} | not_found
 get_last_info(LUser, LServer) ->
     case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
 	{'EXIT', _Reason} ->

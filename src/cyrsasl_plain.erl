@@ -5,7 +5,7 @@
 %%% Created :  8 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -27,7 +27,7 @@
 -module(cyrsasl_plain).
 -author('alexey@process-one.net').
 
--export([start/1, stop/0, mech_new/3, mech_step/2, parse/1]).
+-export([start/1, stop/0, mech_new/4, mech_step/2, parse/1]).
 
 -behaviour(cyrsasl).
 
@@ -40,15 +40,16 @@ start(_Opts) ->
 stop() ->
     ok.
 
-mech_new(_Host, _GetPassword, CheckPassword) ->
+mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
     {ok, #state{check_password = CheckPassword}}.
 
 mech_step(State, ClientIn) ->
     case parse(ClientIn) of
 	[AuthzId, User, Password] ->
 	    case (State#state.check_password)(User, Password) of
-		true ->
-		    {ok, [{username, User}, {authzid, AuthzId}]};
+		{true, AuthModule} ->
+		    {ok, [{username, User}, {authzid, AuthzId},
+			  {auth_module, AuthModule}]};
 		_ ->
 		    {error, "not-authorized", User}
 	    end;

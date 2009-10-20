@@ -9,14 +9,19 @@ LIBS = @LIBS@ @LIBICONV@
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
+# Assume Linux-style dynamic library flags
+DYNAMIC_LIB_CFLAGS = -fpic -shared
 ifeq ($(shell uname),Darwin)
-	DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
-else
-	# Assume Linux-style dynamic library flags
-	DYNAMIC_LIB_CFLAGS = -fpic -shared
+    DYNAMIC_LIB_CFLAGS = -fPIC -bundle -flat_namespace -undefined suppress
+endif
+ifeq ($(shell uname),SunOs)
+    DYNAMIC_LIB_CFLAGS = -KPIC -G -z text
 endif
 
-EFLAGS = -I .. -pz ..
+
+EFLAGS += -I ..
+EFLAGS += -pz ..
+
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
 	EFLAGS+=+debug_info
@@ -36,10 +41,13 @@ $(OUTDIR)/%.beam:       %.erl
 #	erl -s make all report "{outdir, \"..\"}" -noinput -s erlang halt
 
 $(ERLSHLIBS):	../%.so:	%.c
-			$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) \
-			$(subst ../,,$(subst .so,.c,$@)) $(LIBS) \
-			$(ERLANG_CFLAGS) $(ERLANG_LIBS) \
-			-o $@ $(DYNAMIC_LIB_CFLAGS)
+	$(CC) $(INCLUDES) $(CFLAGS) $(LDFLAGS) \
+		$(subst ../,,$(subst .so,.c,$@)) \
+		$(LIBS) \
+		$(ERLANG_CFLAGS) \
+		$(ERLANG_LIBS) \
+		-o $@ \
+		$(DYNAMIC_LIB_CFLAGS)
 
 clean:
 	rm -f $(BEAMS) $(ERLSHLIBS)

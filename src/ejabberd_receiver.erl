@@ -5,7 +5,7 @@
 %%% Created : 10 Nov 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -53,6 +53,8 @@
 		max_stanza_size,
 		xml_stream_state,
 		timeout}).
+
+-define(HIBERNATE_TIMEOUT, 90000).
 
 %%====================================================================
 %% API
@@ -141,7 +143,7 @@ handle_call({starttls, TLSSocket}, _From,
 			   xml_stream_state = NewXMLStreamState},
     case tls:recv_data(TLSSocket, "") of
 	{ok, TLSData} ->
-	    {reply, ok, process_data(TLSData, NewState)};
+	    {reply, ok, process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
@@ -156,7 +158,7 @@ handle_call({compress, ZlibSocket}, _From,
 			   xml_stream_state = NewXMLStreamState},
     case ejabberd_zlib:recv_data(ZlibSocket, "") of
 	{ok, ZlibData} ->
-	    {reply, ok, process_data(ZlibData, NewState)};
+	    {reply, ok, process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
@@ -167,17 +169,18 @@ handle_call(reset_stream, _From,
     close_stream(XMLStreamState),
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     Reply = ok,
-    {reply, Reply, State#state{xml_stream_state = NewXMLStreamState}};
+    {reply, Reply, State#state{xml_stream_state = NewXMLStreamState},
+     ?HIBERNATE_TIMEOUT};
 handle_call({become_controller, C2SPid}, _From, State) ->
     XMLStreamState = xml_stream:new(C2SPid, State#state.max_stanza_size),
     NewState = State#state{c2s_pid = C2SPid,
 			   xml_stream_state = XMLStreamState},
     activate_socket(NewState),
     Reply = ok,
-    {reply, Reply, NewState};
+    {reply, Reply, NewState, ?HIBERNATE_TIMEOUT};
 handle_call(_Request, _From, State) ->
     Reply = ok,
-    {reply, Reply, State}.
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -187,11 +190,11 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({change_shaper, Shaper}, State) ->
     NewShaperState = shaper:new(Shaper),
-    {noreply, State#state{shaper_state = NewShaperState}};
+    {noreply, State#state{shaper_state = NewShaperState}, ?HIBERNATE_TIMEOUT};
 handle_cast(close, State) ->
     {stop, normal, State};
 handle_cast(_Msg, State) ->
-    {noreply, State}.
+    {noreply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -202,24 +205,26 @@ handle_cast(_Msg, State) ->
 handle_info({Tag, _TCPSocket, Data},
 	    #state{socket = Socket,
 		   sock_mod = SockMod} = State)
-  when (Tag == tcp) or (Tag == ssl) ->
+  when (Tag == tcp) or (Tag == ssl) or (Tag == ejabberd_xml) ->
     case SockMod of
 	tls ->
 	    case tls:recv_data(Socket, Data) of
 		{ok, TLSData} ->
-		    {noreply, process_data(TLSData, State)};
+		    {noreply, process_data(TLSData, State),
+		     ?HIBERNATE_TIMEOUT};
 		{error, _Reason} ->
 		    {stop, normal, State}
 	    end;
 	ejabberd_zlib ->
 	    case ejabberd_zlib:recv_data(Socket, Data) of
 		{ok, ZlibData} ->
-		    {noreply, process_data(ZlibData, State)};
+		    {noreply, process_data(ZlibData, State),
+		     ?HIBERNATE_TIMEOUT};
 		{error, _Reason} ->
 		    {stop, normal, State}
 	    end;
 	_ ->
-	    {noreply, process_data(Data, State)}
+	    {noreply, process_data(Data, State), ?HIBERNATE_TIMEOUT}
     end;
 handle_info({Tag, _TCPSocket}, State)
   when (Tag == tcp_closed) or (Tag == ssl_closed) ->
@@ -228,15 +233,18 @@ handle_info({Tag, _TCPSocket, Reason}, State)
   when (Tag == tcp_error) or (Tag == ssl_error) ->
     case Reason of
 	timeout ->
-	    {noreply, State};
+	    {noreply, State, ?HIBERNATE_TIMEOUT};
 	_ ->
 	    {stop, normal, State}
     end;
 handle_info({timeout, _Ref, activate}, State) ->
     activate_socket(State),
-    {noreply, State};
+    {noreply, State, ?HIBERNATE_TIMEOUT};
+handle_info(timeout, State) ->
+    proc_lib:hibernate(gen_server, enter_loop, [?MODULE, [], State]),
+    {noreply, State, ?HIBERNATE_TIMEOUT};
 handle_info(_Info, State) ->
-    {noreply, State}.
+    {noreply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: terminate(Reason, State) -> void()
@@ -286,13 +294,35 @@ activate_socket(#state{socket = Socket,
 	    ok
     end.
 
+%% Data processing for connectors directly generating xmlelement in
+%% Erlang data structure.
+%% WARNING: Shaper does not work with Erlang data structure.
+process_data([], State) ->
+    activate_socket(State),
+    State;
+process_data([Element|Els], #state{c2s_pid = C2SPid} = State)
+  when element(1, Element) == xmlelement;
+       element(1, Element) == xmlstreamstart;
+      element(1, Element) == xmlstreamelement;
+       element(1, Element) == xmlstreamend ->
+    if
+	C2SPid == undefined ->
+	    State;
+	true ->
+	    catch gen_fsm:send_event(C2SPid, element_wrapper(Element)),
+	    process_data(Els, State)
+    end;
+%% Data processing for connectors receivind data as string.
 process_data(Data,
 	     #state{xml_stream_state = XMLStreamState,
-		    shaper_state = ShaperState} = State) ->
+		    shaper_state = ShaperState,
+		    c2s_pid = C2SPid} = State) ->
     ?DEBUG("Received XML on stream = ~p", [binary_to_list(Data)]),
     XMLStreamState1 = xml_stream:parse(XMLStreamState, Data),
     {NewShaperState, Pause} = shaper:update(ShaperState, size(Data)),
     if
+	C2SPid == undefined ->
+	    ok;
 	Pause > 0 ->
 	    erlang:start_timer(Pause, self(), activate);
 	true ->
@@ -300,6 +330,16 @@ process_data(Data,
     end,
     State#state{xml_stream_state = XMLStreamState1,
 		shaper_state = NewShaperState}.
+
+%% Element coming from XML parser are wrapped inside xmlstreamelement
+%% When we receive directly xmlelement tuple (from a socket module
+%% speaking directly Erlang XML), we wrap it inside the same
+%% xmlstreamelement coming from the XML parser.
+element_wrapper(XMLElement)
+  when element(1, XMLElement) == xmlelement ->
+    {xmlstreamelement, XMLElement};
+element_wrapper(Element) ->
+    Element.
 
 close_stream(undefined) ->
     ok;

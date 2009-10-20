@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(ejabberd.erl,, ejabberd@process-one.net)
+AC_INIT(ejabberd.erl, version, [ejabberd@process-one.net], [ejabberd])
 
 # Checks for programs.
 AC_PROG_CC
@@ -18,13 +18,12 @@ AM_WITH_ERLANG
 AM_ICONV
 #locating libexpat
 AM_WITH_EXPAT
-#locating zlib
-AM_WITH_ZLIB
-#locating PAM
-AM_WITH_PAM
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
+
+# Check Erlang headers are installed
+#AC_CHECK_HEADER(erl_driver.h,,[AC_MSG_ERROR([cannot find Erlang header files])])
 
 # Change default prefix
 AC_PREFIX_DEFAULT(/)
@@ -33,19 +32,25 @@ AC_PREFIX_DEFAULT(/)
 AC_FUNC_MALLOC
 AC_HEADER_STDC
 
-AC_MOD_ENABLE(mod_pubsub, yes)
 AC_MOD_ENABLE(mod_irc, yes)
 AC_MOD_ENABLE(mod_muc, yes)
 AC_MOD_ENABLE(mod_proxy65, yes)
+AC_MOD_ENABLE(mod_pubsub, yes)
 AC_MOD_ENABLE(eldap, yes)
-AC_MOD_ENABLE(pam, no)
-AC_MOD_ENABLE(web, yes)
-AC_MOD_ENABLE(tls, yes)
 AC_MOD_ENABLE(odbc, no)
+AC_MOD_ENABLE(tls, yes)
+AC_MOD_ENABLE(web, yes)
+
 AC_MOD_ENABLE(ejabberd_zlib, yes)
+#locating zlib
+AM_WITH_ZLIB
+
+AC_MOD_ENABLE(pam, no)
+#locating PAM
+AM_WITH_PAM
 
 AC_ARG_ENABLE(hipe,
-[  --enable-hipe        Compile natively with HiPE, not recommended (default: no)],
+[AC_HELP_STRING([--enable-hipe], [compile natively with HiPE, not recommended (default: no)])],
 [case "${enableval}" in
   yes) hipe=true ;;
   no)  hipe=false ;;
@@ -54,7 +59,7 @@ esac],[hipe=false])
 AC_SUBST(hipe)
 
 AC_ARG_ENABLE(roster_gateway_workaround,
-[  --enable-roster-gateway-workaround    Turn on workaround for processing gateway subscriptions (default: no)],
+[AC_HELP_STRING([--enable-roster-gateway-workaround], [turn on workaround for processing gateway subscriptions (default: no)])],
 [case "${enableval}" in
   yes) roster_gateway_workaround=true ;;
   no)  roster_gateway_workaround=false ;;
@@ -63,7 +68,7 @@ esac],[roster_gateway_workaround=false])
 AC_SUBST(roster_gateway_workaround)
 
 AC_ARG_ENABLE(mssql,
-[  --enable-mssql    Use Microsoft SQL Server database (default: no, requires --enable-odbc)],
+[AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
 [case "${enableval}" in
   yes) db_type=mssql ;;
   no)  db_type=generic ;;
@@ -72,7 +77,7 @@ esac],[db_type=generic])
 AC_SUBST(db_type)
 
 AC_ARG_ENABLE(transient_supervisors,
-[  --enable-transient_supervisors    Use Erlang supervision for transient process (default: yes)],
+[AC_HELP_STRING([--enable-transient_supervisors], [use Erlang supervision for transient process (default: yes)])],
 [case "${enableval}" in
   yes) transient_supervisors=true ;;
   no)  transient_supervisors=false ;;
@@ -81,7 +86,7 @@ esac],[transient_supervisors=true])
 AC_SUBST(transient_supervisors)
 
 AC_ARG_ENABLE(full_xml,
-[  --enable-full-xml    Use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)],
+[AC_HELP_STRING([--enable-full-xml], [use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)])],
 [case "${enableval}" in
   yes) full_xml=true ;;
   no)  full_xml=false ;;
@@ -98,6 +103,7 @@ AC_CONFIG_FILES([Makefile
                  $make_pam
                  $make_web
                  stringprep/Makefile
+                 stun/Makefile
                  $make_tls
                  $make_odbc
                  $make_ejabberd_zlib])
@@ -119,13 +125,45 @@ else
 fi
 AC_CHECK_HEADER(krb5.h,,)
 
-AC_OUTPUT
-
-if test -n "$ERLANG_SSL39" ; then
-	echo
-	echo "**************** WARNING ! ********************"
-	echo "ejabberd will be compiled with Erlang R12."
-	echo "This version of Erlang is not supported"
-	echo "and not recommended for production servers"
-	echo "***********************************************"
+ENABLEUSER=""
+AC_ARG_ENABLE(user,
+  [AS_HELP_STRING([--enable-user[[[[=USER]]]]], [allow this system user to start ejabberd (default: no)])],
+  [case "${enableval}" in
+     yes) ENABLEUSER=`whoami` ;;
+     no) ENABLEUSER="" ;;
+     *) ENABLEUSER=$enableval
+   esac],
+  [])
+if test "$ENABLEUSER" != ""; then
+  echo "allow this system user to start ejabberd: $ENABLEUSER"
+  AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
+
+AC_CANONICAL_SYSTEM
+#AC_DEFINE_UNQUOTED(CPU_VENDOR_OS, "$target")
+#AC_SUBST(target_os)
+
+
+case "$target_os" in
+    *darwin10*)
+	echo "Target OS is 'Darwin10'"
+	AC_LANG(Erlang)
+	AC_RUN_IFELSE(
+	    [AC_LANG_PROGRAM([],[dnl
+	     halt(case erlang:system_info(wordsize) of
+	     8 -> 0; 4 -> 1 end)])],
+	    [AC_MSG_NOTICE(found 64-bit Erlang)
+	     CBIT=-m64],
+	    [AC_MSG_NOTICE(found 32-bit Erlang)
+	     CBIT=-m32])
+	;;
+    *)        
+	echo "Target OS is '$target_os'"
+	CBIT=""
+	;;
+esac
+CFLAGS="$CFLAGS $CBIT"
+LD_SHARED="$LD_SHARED $CBIT"
+echo "CBIT is set to '$CBIT'"
+
+AC_OUTPUT

@@ -9,7 +9,7 @@
 %%% Created : 29 Nov 2006 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -31,64 +31,51 @@
 -module(ejabberd_loglevel).
 -author('mickael.remond@process-one.net').
 
--export([set/1]).
+-export([set/1, get/0]).
 
 -include("ejabberd.hrl").
 
 -define(LOGMODULE, "error_logger").
 
 %% Error levels:
-%% 0 -> No log
-%% 1 -> Critical
-%% 2 -> Error
-%% 3 -> Warning
-%% 4 -> Info
-%% 5 -> Debug
+-define(LOG_LEVELS,[ {0, no_log, "No log"}
+                    ,{1, critical, "Critical"}
+                    ,{2, error, "Error"}
+                    ,{3, warning, "Warning"}
+                    ,{4, info, "Info"}
+                    ,{5, debug, "Debug"}
+                    ]).
+
+get() ->
+    Level = ejabberd_logger:get(),
+    case lists:keysearch(Level, 1, ?LOG_LEVELS) of
+        {value, Result} -> Result;
+        _ -> erlang:error({no_such_loglevel, Level})
+    end.
+
+
+set(LogLevel) when is_atom(LogLevel) ->
+    set(level_to_integer(LogLevel));
 set(Loglevel) when is_integer(Loglevel) ->
-   Forms = compile_string(?LOGMODULE, ejabberd_logger_src(Loglevel)),
-   load_logger(Forms, ?LOGMODULE, Loglevel);
+    try
+        {Mod,Code} = dynamic_compile:from_string(ejabberd_logger_src(Loglevel)),
+        code:load_binary(Mod, ?LOGMODULE ++ ".erl", Code)
+    catch
+        Type:Error -> ?CRITICAL_MSG("Error compiling logger (~p): ~p~n", [Type, Error])
+    end;
 set(_) ->
     exit("Loglevel must be an integer").
-                
-%% --------------------------------------------------------------  
-%% Compile a string into a module and returns the binary
-compile_string(Mod, Str) ->
-    Fname = Mod ++ ".erl",
-    {ok, Fd} = open_ram_file(Fname),
-    file:write(Fd, Str),
-    file:position(Fd, 0),
-    case epp_dodger:parse(Fd) of
-	{ok, Tree} ->
-	    Forms = revert_tree(Tree),
-	    close_ram_file(Fd),
-	    Forms;
-	Error ->
-	    close_ram_file(Fd),
-	    Error
-    end.
-   
-open_ram_file(Fname) ->
-    ram_file_io_server:start(self(), Fname, [read,write]).
 
-close_ram_file(Fd) ->
-    file:close(Fd).
-
-revert_tree(Tree) ->
-    [erl_syntax:revert(T) || T <- Tree].
-
-load_logger(Forms, Mod, Loglevel) ->
-    Fname = Mod ++ ".erl",
-    case compile:forms(Forms, [binary, {d,'LOGLEVEL',Loglevel}]) of
-        {ok, M, Bin} ->
-            code:load_binary(M, Fname, Bin);
-        Error ->
-            ?CRITICAL_MSG("Error ~p~n", [Error])
+level_to_integer(Level) ->
+    case lists:keysearch(Level, 2, ?LOG_LEVELS) of
+        {value, {Int, Level, _Desc}} -> Int;
+        _ -> erlang:error({no_such_loglevel, Level})
     end.
 
 %% --------------------------------------------------------------
 %% Code of the ejabberd logger, dynamically compiled and loaded
 %% This allows to dynamically change log level while keeping a
-%% very efficient code.        
+%% very efficient code.
 ejabberd_logger_src(Loglevel) ->
     L = integer_to_list(Loglevel),
     "-module(ejabberd_logger).
@@ -98,7 +85,10 @@ ejabberd_logger_src(Loglevel) ->
              info_msg/4,
              warning_msg/4,
              error_msg/4,
-             critical_msg/4]).
+             critical_msg/4,
+             get/0]).
+
+   get() -> "++ L ++".
 
     %% Helper functions
     debug_msg(Module, Line, Format, Args) when " ++ L ++ " >= 5 ->

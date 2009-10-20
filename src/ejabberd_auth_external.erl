@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -57,11 +57,14 @@ plain_password_required() ->
 check_password(User, Server, Password) ->
     extauth:check_password(User, Server, Password) andalso Password /= "".
 
-check_password(User, Server, Password, _StreamID, _Digest) ->
+check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
 set_password(User, Server, Password) ->
-    extauth:set_password(User, Server, Password).
+    case extauth:set_password(User, Server, Password) of
+	true -> ok;
+	_ -> {error, unknown_problem}
+    end.
 
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
@@ -80,8 +83,13 @@ get_password(_User, _Server) ->
 get_password_s(_User, _Server) ->
     "".
 
+%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
-    extauth:is_user_exists(User, Server).
+    try extauth:is_user_exists(User, Server) of
+	Res -> Res
+    catch
+	_:Error -> {error, Error}
+    end.
 
 remove_user(_User, _Server) ->
     {error, not_allowed}.

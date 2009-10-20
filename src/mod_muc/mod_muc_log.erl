@@ -5,7 +5,7 @@
 %%% Created : 12 Mar 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -43,15 +43,21 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("mod_muc_room.hrl").
+
+%% Copied from mod_muc/mod_muc.erl
+-record(muc_online_room, {name_host, pid}).
 
 -define(T(Text), translate:translate(Lang, Text)).
 -define(PROCNAME, ejabberd_mod_muc_log).
 -record(room, {jid, title, subject, subject_author, config}).
 
 
--record(state, {host,
+-record(logstate, {host,
 		out_dir,
 		dir_type,
+		dir_name,
+		file_format,
 		css_file,
 		access,
 		lang,
@@ -113,6 +119,8 @@ check_access_log(Host, From) ->
 init([Host, Opts]) ->
     OutDir = gen_mod:get_opt(outdir, Opts, "www/muc"),
     DirType = gen_mod:get_opt(dirtype, Opts, subdirs),
+    DirName = gen_mod:get_opt(dirname, Opts, room_jid),
+    FileFormat = gen_mod:get_opt(file_format, Opts, html), % Allowed values: html|plaintext
     CSSFile = gen_mod:get_opt(cssfile, Opts, false),
     AccessLog = gen_mod:get_opt(access_log, Opts, muc_admin),
     Timezone = gen_mod:get_opt(timezone, Opts, local),
@@ -120,13 +128,17 @@ init([Host, Opts]) ->
     NoFollow = gen_mod:get_opt(spam_prevention, Opts, true),
     Lang = case ejabberd_config:get_local_option({language, Host}) of
 	       undefined ->
-		   "";
-	       L ->
-		   L
+		   case ejabberd_config:get_global_option(language) of
+		       undefined -> "en";
+		       L -> L
+		   end;
+	       L -> L
 	   end,
-    {ok, #state{host = Host,
+    {ok, #logstate{host = Host,
 		out_dir = OutDir,
 		dir_type = DirType,
+		dir_name = DirName,
+		file_format = FileFormat,
 		css_file = CSSFile,
 		access = AccessLog,
 		lang = Lang,
@@ -144,7 +156,7 @@ init([Host, Opts]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({check_access_log, ServerHost, FromJID}, _From, State) ->
-    Reply = acl:match_rule(ServerHost, State#state.access, FromJID),
+    Reply = acl:match_rule(ServerHost, State#logstate.access, FromJID),
     {reply, Reply, State};
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
@@ -207,8 +219,11 @@ add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
 	    add_message_to_log(Nick, Message, Room, Opts, State)
     end;
 
-add_to_log2(roomconfig_change, _, Room, Opts, State) ->
+add_to_log2(roomconfig_change, _Occupants, Room, Opts, State) ->
     add_message_to_log("", roomconfig_change, Room, Opts, State);
+
+add_to_log2(roomconfig_change_enabledlogging, Occupants, Room, Opts, State) ->
+    add_message_to_log("", {roomconfig_change, Occupants}, Room, Opts, State);
 
 add_to_log2(nickchange, {OldNick, NewNick}, Room, Opts, State) ->
     add_message_to_log(NewNick, {nickchange, OldNick}, Room, Opts, State);
@@ -229,10 +244,10 @@ add_to_log2(kickban, {Nick, Reason, Code}, Room, Opts, State) ->
 %%----------------------------------------------------------------------
 %% Core
 
-build_filename_string(TimeStamp, OutDir, RoomJID, DirType) ->
+build_filename_string(TimeStamp, OutDir, RoomJID, DirType, DirName, FileFormat) ->
     {{Year, Month, Day}, _Time} = TimeStamp,
 
-    % Directory and file names
+    %% Directory and file names
     {Dir, Filename, Rel} =
 	case DirType of
 	    subdirs ->
@@ -246,54 +261,75 @@ build_filename_string(TimeStamp, OutDir, RoomJID, DirType) ->
 				       [Year, Month, Day])),
 		{"", Date, "."}
 	end,
-    Fd = filename:join([OutDir, RoomJID, Dir]),
-    Fn = filename:join([Fd, Filename ++ ".html"]),
-    Fnrel = filename:join([Rel, Dir, Filename ++ ".html"]),
+
+    RoomString = case DirName of
+		     room_jid -> RoomJID;
+		     room_name -> get_room_name(RoomJID)
+		 end,
+    Extension = case FileFormat of
+		    html -> ".html";
+		    plaintext -> ".txt"
+		end,
+    Fd = filename:join([OutDir, RoomString, Dir]),
+    Fn = filename:join([Fd, Filename ++ Extension]),
+    Fnrel = filename:join([Rel, Dir, Filename ++ Extension]),
     {Fd, Fn, Fnrel}.
 
-% calculate day before
+get_room_name(RoomJID) ->
+    JID = jlib:string_to_jid(RoomJID),
+    JID#jid.user.
+
+%% calculate day before
 get_timestamp_daydiff(TimeStamp, Daydiff) ->
     {Date1, HMS} = TimeStamp,
     Date2 = calendar:gregorian_days_to_date(
 	      calendar:date_to_gregorian_days(Date1) + Daydiff),
     {Date2, HMS}.
 
-% Try to close the previous day log, if it exists
-close_previous_log(Fn, Images_dir) ->
+%% Try to close the previous day log, if it exists
+close_previous_log(Fn, Images_dir, FileFormat) ->
     case file:read_file_info(Fn) of
 	{ok, _} ->
 	    {ok, F} = file:open(Fn, [append]),
-	    %fw(F, "<div class=\"legend\">ejabberd/mod_muc log<span class=\"w3c\">"),
-	    fw(F, "<div class=\"legend\">"),
-	    fw(F, "  <a href=\"http://www.ejabberd.im\"><img style=\"border:0\" src=\"~s/powered-by-ejabberd.png\" alt=\"Powered by ejabberd\"/></a>", [Images_dir]),
-	    fw(F, "  <a href=\"http://www.erlang.org/\"><img style=\"border:0\" src=\"~s/powered-by-erlang.png\" alt=\"Powered by Erlang\"/></a>", [Images_dir]),
-	    fw(F, "<span class=\"w3c\">"),
-	    fw(F, "  <a href=\"http://validator.w3.org/check?uri=referer\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/valid-xhtml10.png\" alt=\"Valid XHTML 1.0 Transitional\" /></a>", [Images_dir]),
-	    fw(F, "  <a href=\"http://jigsaw.w3.org/css-validator/\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/vcss.png\" alt=\"Valid CSS!\"/></a>", [Images_dir]),
-	    fw(F, "</span></div></body></html>"),
+	    write_last_lines(F, Images_dir, FileFormat),
 	    file:close(F);
 	_ -> ok
     end.
 
+write_last_lines(_, _, plaintext) ->
+    ok;
+write_last_lines(F, Images_dir, _FileFormat) ->
+    %%fw(F, "<div class=\"legend\">ejabberd/mod_muc log<span class=\"w3c\">"),
+    fw(F, "<div class=\"legend\">"),
+    fw(F, "  <a href=\"http://www.ejabberd.im\"><img style=\"border:0\" src=\"~s/powered-by-ejabberd.png\" alt=\"Powered by ejabberd\"/></a>", [Images_dir]),
+    fw(F, "  <a href=\"http://www.erlang.org/\"><img style=\"border:0\" src=\"~s/powered-by-erlang.png\" alt=\"Powered by Erlang\"/></a>", [Images_dir]),
+    fw(F, "<span class=\"w3c\">"),
+    fw(F, "  <a href=\"http://validator.w3.org/check?uri=referer\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/valid-xhtml10.png\" alt=\"Valid XHTML 1.0 Transitional\" /></a>", [Images_dir]),
+    fw(F, "  <a href=\"http://jigsaw.w3.org/css-validator/\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/vcss.png\" alt=\"Valid CSS!\"/></a>", [Images_dir]),
+    fw(F, "</span></div></body></html>").
+
 add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
-    Nick = htmlize(Nick1),
-    #state{out_dir = OutDir,
+    #logstate{out_dir = OutDir,
 	   dir_type = DirType,
+	   dir_name = DirName,
+	   file_format = FileFormat,
 	   css_file = CSSFile,
 	   lang = Lang,
 	   timezone = Timezone,
 	   spam_prevention = NoFollow,
 	   top_link = TopLink} = State,
     Room = get_room_info(RoomJID, Opts),
-
+    Nick = htmlize(Nick1, FileFormat),
+    Nick2 = htmlize("<"++Nick1++">", FileFormat),
+    Now = now(),
     TimeStamp = case Timezone of
-		    local -> calendar:now_to_local_time(now());
-		    universal -> calendar:now_to_universal_time(now())
+		    local -> calendar:now_to_local_time(Now);
+		    universal -> calendar:now_to_universal_time(Now)
 		end,
-    {Fd, Fn, _Dir} = build_filename_string(TimeStamp, OutDir, Room#room.jid, DirType),
+    {Fd, Fn, _Dir} = build_filename_string(TimeStamp, OutDir, Room#room.jid, DirType, DirName, FileFormat),
     {Date, Time} = TimeStamp,
 
-    % Open file, create if it does not exist, create parent dirs if needed
+    %% Open file, create if it does not exist, create parent dirs if needed
     case file:read_file_info(Fn) of
 	{ok, _} ->
 	    {ok, F} = file:open(Fn, [append]);
@@ -305,32 +341,39 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	    TimeStampYesterday = get_timestamp_daydiff(TimeStamp, -1),
 	    {_FdYesterday, FnYesterday, DatePrev} =
 		build_filename_string(
-		  TimeStampYesterday, OutDir, Room#room.jid, DirType),
+		  TimeStampYesterday, OutDir, Room#room.jid, DirType, DirName, FileFormat),
 
 	    TimeStampTomorrow = get_timestamp_daydiff(TimeStamp, 1),
 	    {_FdTomorrow, _FnTomorrow, DateNext} =
 		build_filename_string(
-		  TimeStampTomorrow, OutDir, Room#room.jid, DirType),
+		  TimeStampTomorrow, OutDir, Room#room.jid, DirType, DirName, FileFormat),
 
 	    HourOffset = calc_hour_offset(TimeStamp),
 	    put_header(F, Room, Datestring, CSSFile, Lang,
-		       HourOffset, DatePrev, DateNext, TopLink),
+		       HourOffset, DatePrev, DateNext, TopLink, FileFormat),
 
-		Images_dir = filename:join([OutDir, "images"]),
+	    Images_dir = filename:join([OutDir, "images"]),
 	    file:make_dir(Images_dir),
-		create_image_files(Images_dir),
-		Images_url = case DirType of
-			subdirs -> "../../../images";
-			plain -> "../images"
-		end,
-	    close_previous_log(FnYesterday, Images_url)
+	    create_image_files(Images_dir),
+	    Images_url = case DirType of
+			     subdirs -> "../../../images";
+			     plain -> "../images"
+			 end,
+	    close_previous_log(FnYesterday, Images_url, FileFormat)
     end,
 
-    % Build message
+    %% Build message
     Text = case Message of
 	       roomconfig_change ->
-		   RoomConfig = roomconfig_to_string(Room#room.config, Lang),
-		   put_room_config(F, RoomConfig, Lang),
+		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
+		   put_room_config(F, RoomConfig, Lang, FileFormat),
+		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
+				 [?T("Chatroom configuration modified")]);
+	       {roomconfig_change, Occupants} ->
+		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
+		   put_room_config(F, RoomConfig, Lang, FileFormat),
+		   RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
+		   put_room_occupants(F, RoomOccupants, Lang, FileFormat),
 		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
 				 [?T("Chatroom configuration modified")]);
 	       join ->  
@@ -341,19 +384,19 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 				 [Nick, ?T("leaves the room")]);
 	       {leave, Reason} ->  
 		   io_lib:format("<font class=\"ml\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("leaves the room"), htmlize(Reason,NoFollow)]);
+				 [Nick, ?T("leaves the room"), htmlize(Reason,NoFollow,FileFormat)]);
 	       {kickban, "301", ""} ->  
 		   io_lib:format("<font class=\"mb\">~s ~s</font><br/>", 
 				 [Nick, ?T("has been banned")]);
 	       {kickban, "301", Reason} ->  
 		   io_lib:format("<font class=\"mb\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("has been banned"), htmlize(Reason)]);
+				 [Nick, ?T("has been banned"), htmlize(Reason,FileFormat)]);
 	       {kickban, "307", ""} ->  
 		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
 				 [Nick, ?T("has been kicked")]);
 	       {kickban, "307", Reason} ->  
 		   io_lib:format("<font class=\"mk\">~s ~s: ~s</font><br/>", 
-				 [Nick, ?T("has been kicked"), htmlize(Reason)]);
+				 [Nick, ?T("has been kicked"), htmlize(Reason,FileFormat)]);
 	       {kickban, "321", ""} ->  
 		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
 				 [Nick, ?T("has been kicked because of an affiliation change")]);
@@ -365,29 +408,34 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 				 [Nick, ?T("has been kicked because of a system shutdown")]);
 	       {nickchange, OldNick} ->  
 		   io_lib:format("<font class=\"mnc\">~s ~s ~s</font><br/>", 
-				 [htmlize(OldNick), ?T("is now known as"), Nick]);
+				 [htmlize(OldNick,FileFormat), ?T("is now known as"), Nick]);
 	       {subject, T} ->  
 		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
-				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow)]);
+				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow,FileFormat)]);
 	       {body, T} ->  
-		   case regexp:first_match(T, "^/me\s") of
-		       {match, _, _} ->
+		   case {regexp:first_match(T, "^/me\s"), Nick} of
+		       {_, ""} ->
+			   io_lib:format("<font class=\"msm\">~s</font><br/>",
+					 [htmlize(T,NoFollow,FileFormat)]);
+		       {{match, _, _}, _} ->
 			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>", 
-					 [Nick, string:substr(htmlize(T), 5)]);
-		       nomatch ->
-			   io_lib:format("<font class=\"mn\">&lt;~s&gt;</font> ~s<br/>", 
-					 [Nick, htmlize(T,NoFollow)])
+					 [Nick, string:substr(htmlize(T,FileFormat), 5)]);
+		       {nomatch, _} ->
+			   io_lib:format("<font class=\"mn\">~s</font> ~s<br/>",
+					 [Nick2, htmlize(T,NoFollow,FileFormat)])
 		   end
 	   end,
     {Hour, Minute, Second} = Time,
     STime = lists:flatten(
 	      io_lib:format("~2..0w:~2..0w:~2..0w", [Hour, Minute, Second])),
+    {_, _, Microsecs} = Now,
+    STimeUnique = io_lib:format("~s.~w", [STime, Microsecs]),
 
-    % Write message
-    file:write(F, io_lib:format("<a name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ~s~n", 
-				[STime, STime, STime, Text])),
+    %% Write message
+    fw(F, io_lib:format("<a id=\"~s\" name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ", 
+			[STimeUnique, STimeUnique, STimeUnique, STime]) ++ Text, FileFormat),
 
-    % Close file
+    %% Close file
     file:close(F),
     ok.
 
@@ -438,13 +486,13 @@ make_dir_rec(Dir) ->
     end.
 
 
-% {ok, F1}=file:open("valid-xhtml10.png", [read]).
-% {ok, F1b}=file:read(F1, 1000000).
-% c("../../ejabberd/src/jlib.erl").
-% jlib:encode_base64(F1b).
+%% {ok, F1}=file:open("valid-xhtml10.png", [read]).
+%% {ok, F1b}=file:read(F1, 1000000).
+%% c("../../ejabberd/src/jlib.erl").
+%% jlib:encode_base64(F1b).
 
 image_base64("powered-by-erlang.png") ->
-	"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAYAAAD+xQNoAAADN0lEQVRo3u1a"
+    "iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAYAAAD+xQNoAAADN0lEQVRo3u1a"
 	"P0waURz+rjGRRQ+nUyRCYmJyDPTapDARaSIbTUjt1gVSh8ZW69aBAR0cWLSx"
 	"CXWp59LR1jbdqKnGxoQuRZZrSYyHEVM6iZMbHewROA7u3fHvkr5vOn737vcu"
 	"33ffu9/vcQz+gef5Cij6CkmSGABgFEH29r5SVvqIsTEOHo8HkiQxDBXEOjg9"
@@ -466,7 +514,7 @@ image_base64("powered-by-erlang.png") ->
 	"KF/d/wX3cJvREzl1vAAAAABJRU5ErkJggg==";
 
 image_base64("valid-xhtml10.png") ->
-	"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAAEjEcpEAAACiFBMVEUAAADe"
+    "iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAAEjEcpEAAACiFBMVEUAAADe"
 	"5+fOezmtra3ejEKlhELvvWO9WlrehELOe3vepaWclHvetVLGc3PerVKcCAj3"
 	"vVqUjHOUe1JjlL0xOUpjjL2UAAC91ueMrc7vrVKlvdbW3u+EpcbO3ufO1ucY"
 	"WpSMKQi9SiF7e3taWkoQEAiMczkQSoxaUkpzc3O1lEoICACEazEhGAgIAACE"
@@ -522,7 +570,7 @@ image_base64("valid-xhtml10.png") ->
 	"QZ+RYfpNE/4Xosmq7jsZAJsAAAAASUVORK5CYII=";
 
 image_base64("vcss.png") ->
-	"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAABUFvrSAAABKVBMVEUAAAAj"
+    "iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAABUFvrSAAABKVBMVEUAAAAj"
 	"Ix8MR51ZVUqAdlmdnZ3ejEWLDAuNjY1kiMG0n2d9fX19Ghfrp1FtbW3y39+3"
 	"Ph6lIRNdXV2qJBFcVUhcVUhPT0/dsmpUfLr57+/u7u4/PDWZAACZAADOp1Gd"
 	"GxG+SyTgvnNdSySzk16+mkuxw+BOS0BOS0DOzs7MzMy4T09RRDwsJBG+vr73"
@@ -550,7 +598,7 @@ image_base64("vcss.png") ->
 	"AElFTkSuQmCC";
 
 image_base64("powered-by-ejabberd.png") ->
-	"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAMAAADJG/NaAAAAw1BMVEUAAAAj"
+    "iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAMAAADJG/NaAAAAw1BMVEUAAAAj"
 	"BgYtBAM5AwFCAAAYGAJNAABcAABIDQ5qAAAoJRV7AACFAAAoKSdJHByLAAAw"
 	"Lwk1NQA1MzFJKyo4NxtDQQBEQT5KSCxSTgBSUBlgQ0JYSEpZWQJPUU5hYABb"
 	"W0ZiYClcW1poaCVwbQRpaDhzYWNsakhuZ2VrbFZ8dwCEgAB3dnd4d2+OjACD"
@@ -574,27 +622,43 @@ image_base64("powered-by-ejabberd.png") ->
 	"AElFTkSuQmCC".
 
 create_image_files(Images_dir) ->
-	Filenames = [
-	    "powered-by-ejabberd.png",
-	    "powered-by-erlang.png",
-	    "valid-xhtml10.png",
-	    "vcss.png"
-	],
-	lists:foreach(
-		fun(Filename) ->
-			Filename_full = filename:join([Images_dir, Filename]),
-			{ok, F} = file:open(Filename_full, [write]),
-			Image = jlib:decode_base64(image_base64(Filename)),
-			io:format(F, "~s", [Image]),
-			file:close(F)
-		end,
-		Filenames),
-	ok.
+    Filenames = ["powered-by-ejabberd.png",
+		 "powered-by-erlang.png",
+		 "valid-xhtml10.png",
+		 "vcss.png"
+		],
+    lists:foreach(
+      fun(Filename) ->
+	      Filename_full = filename:join([Images_dir, Filename]),
+	      {ok, F} = file:open(Filename_full, [write]),
+	      Image = jlib:decode_base64(image_base64(Filename)),
+	      io:format(F, "~s", [Image]),
+	      file:close(F)
+      end,
+      Filenames),
+    ok.
 
-fw(F, S, O) -> io:format(F, S ++ "~n", O).
-fw(F, S) -> fw(F, S, []).
+fw(F, S) -> fw(F, S, [], html).
 
-put_header(F, Room, Date, CSSFile, Lang, Hour_offset, Date_prev, Date_next, Top_link) ->
+fw(F, S, O) when is_list(O) ->
+    fw(F, S, O, html);
+fw(F, S, FileFormat) when is_atom(FileFormat) ->
+    fw(F, S, [], FileFormat).
+
+fw(F, S, O, FileFormat) ->
+    S1 = io_lib:format(S ++ "~n", O),
+    S2 = case FileFormat of
+	     html ->
+		 S1;
+	     plaintext ->
+		 {ok, Res, _} = regexp:gsub(S1, "<[^>]*>", ""),
+		 Res
+	 end,
+    io:format(F, S2, []).
+
+put_header(_, _, _, _, _, _, _, _, _, plaintext) ->
+    ok;
+put_header(F, Room, Date, CSSFile, Lang, Hour_offset, Date_prev, Date_next, Top_link, FileFormat) ->
     fw(F, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"),
     fw(F, "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"~s\" lang=\"~s\">", [Lang, Lang]),
     fw(F, "<head>"),
@@ -613,8 +677,11 @@ put_header(F, Room, Date, CSSFile, Lang, Hour_offset, Date_prev, Date_next, Top_
 	{"", ""} -> ok;
 	{SuA, Su} -> fw(F, "<div class=\"roomsubject\">~s~s~s</div>", [SuA, ?T(" has set the subject to: "), Su])
     end,
-    RoomConfig = roomconfig_to_string(Room#room.config, Lang),
-    put_room_config(F, RoomConfig, Lang),
+    RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
+    put_room_config(F, RoomConfig, Lang, FileFormat),
+    Occupants = get_room_occupants(Room#room.jid),
+    RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
+    put_room_occupants(F, RoomOccupants, Lang, FileFormat),
     Time_offset_str = case Hour_offset<0 of
 			  true -> io_lib:format("~p", [Hour_offset]);
 			  false -> io_lib:format("+~p", [Hour_offset])
@@ -627,6 +694,7 @@ put_header_css(F, false) ->
     fw(F, ".ts {color: #AAAAAA; text-decoration: none;}"),
     fw(F, ".mrcm {color: #009900; font-style: italic; font-weight: bold;}"),
     fw(F, ".msc {color: #009900; font-style: italic; font-weight: bold;}"),
+    fw(F, ".msm {color: #000099; font-style: italic; font-weight: bold;}"),
     fw(F, ".mj {color: #009900; font-style: italic;}"),
     fw(F, ".ml {color: #009900; font-style: italic;}"),
     fw(F, ".mk {color: #009900; font-style: italic;}"),
@@ -664,22 +732,40 @@ put_header_script(F) ->
     fw(F, "else {document.getElementById(e).style.display='none';}}"),
     fw(F, "</script>").
 
-put_room_config(F, RoomConfig, Lang) ->
+put_room_config(_F, _RoomConfig, _Lang, plaintext) ->
+    ok;
+put_room_config(F, RoomConfig, Lang, _FileFormat) ->
     {_, Now2, _} = now(),
     fw(F, "<div class=\"rc\">"),
     fw(F,   "<div class=\"rct\" onclick=\"sh('a~p');return false;\">~s</div>", [Now2, ?T("Room Configuration")]),
     fw(F,   "<div class=\"rcos\" id=\"a~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomConfig]),
     fw(F, "</div>").
 
+put_room_occupants(_F, _RoomOccupants, _Lang, plaintext) ->
+    ok;
+put_room_occupants(F, RoomOccupants, Lang, _FileFormat) ->
+    {_, Now2, _} = now(),
+    fw(F, "<div class=\"rc\">"),
+    fw(F,   "<div class=\"rct\" onclick=\"sh('o~p');return false;\">~s</div>", [Now2, ?T("Room Occupants")]),
+    fw(F,   "<div class=\"rcos\" id=\"o~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomOccupants]),
+    fw(F, "</div>").
+
 %% htmlize
 %% The default behaviour is to ignore the nofollow spam prevention on links
 %% (NoFollow=false)
 htmlize(S1) ->
-    htmlize(S1, false).
+    htmlize(S1, html).
+
+htmlize(S1, plaintext) ->
+    S1;
+htmlize(S1, FileFormat) ->
+    htmlize(S1, false, FileFormat).
 
 %% The NoFollow parameter tell if the spam prevention should be applied to the link found
 %% true means 'apply nofollow on links'.
-htmlize(S1, NoFollow) ->
+htmlize(S1, _NoFollow, plaintext) ->
+    S1;
+htmlize(S1, NoFollow, _FileFormat) ->
     S2_list = string:tokens(S1, "\n"),
     lists:foldl(
       fun(Si, Res) -> 
@@ -696,9 +782,12 @@ htmlize2(S1, NoFollow) ->
     S2 = element(2, regexp:gsub(S1, "\\&", "\\&amp;")),
     S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
     S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
-    S5 = element(2, regexp:gsub(S4, "[-+.a-zA-Z0-9]+://[^] )\'\"}]+", link_regexp(NoFollow))),
+    S5 = element(2, regexp:gsub(S4, "((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+",
+				link_regexp(NoFollow))),
     %% Remove 'right-to-left override' unicode character 0x202e
-    element(2, regexp:gsub(S5, [226,128,174], "[RLO]")).
+    S6 = element(2, regexp:gsub(S5, "  ", "\\&nbsp;\\&nbsp;")),
+    S7 = element(2, regexp:gsub(S6, "\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;")),
+    element(2, regexp:gsub(S7, [226,128,174], "[RLO]")).
 
 %% Regexp link
 %% Add the nofollow rel attribute when required
@@ -730,20 +819,20 @@ get_room_info(RoomJID, Opts) ->
 	  config = Opts
 	 }.
 
-roomconfig_to_string(Options, Lang) ->
-    % Get title, if available
+roomconfig_to_string(Options, Lang, FileFormat) ->
+    %% Get title, if available
     Title = case lists:keysearch(title, 1, Options) of
 		{value, Tuple} -> [Tuple];
 		false -> []
 	    end,
-	
-    % Remove title from list
+
+    %% Remove title from list
     Os1 = lists:keydelete(title, 1, Options),
-	
-    % Order list
+
+    %% Order list
     Os2 = lists:sort(Os1),
-	
-    % Add title to ordered list
+
+    %% Add title to ordered list
     Options2 = Title ++ Os2,
 
     lists:foldl(
@@ -760,7 +849,7 @@ roomconfig_to_string(Options, Lang) ->
 			       T -> 
 				   case Opt of
 				       password -> "<div class=\"rcoe\">" ++ OptText ++ "</div>";
-				       title -> "<div class=\"rcot\">" ++ ?T("Room title") ++ ": \"" ++ htmlize(T) ++ "\"</div>";
+				       title -> "<div class=\"rcot\">" ++ ?T("Room title") ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
 				       _ -> "\"" ++ T ++ "\""
 				   end
 			   end,
@@ -780,17 +869,71 @@ get_roomconfig_text(anonymous) -> "Make room semianonymous";
 get_roomconfig_text(members_only) -> "Make room members-only";
 get_roomconfig_text(moderated) -> "Make room moderated";
 get_roomconfig_text(members_by_default) -> "Default users as participants";
-get_roomconfig_text(allow_change_subj) -> "Allow users to change subject";
+get_roomconfig_text(allow_change_subj) -> "Allow users to change the subject";
 get_roomconfig_text(allow_private_messages) -> "Allow users to send private messages";
 get_roomconfig_text(allow_query_users) -> "Allow users to query other users";
 get_roomconfig_text(allow_user_invites) -> "Allow users to send invites";
 get_roomconfig_text(logging) ->  "Enable logging";
 get_roomconfig_text(_) -> undefined.
 
+%% Users = [{JID, Nick, Role}]
+roomoccupants_to_string(Users, _FileFormat) ->
+    Res = [role_users_to_string(RoleS, Users1)
+	   || {RoleS, Users1} <- group_by_role(Users), Users1 /= []],
+    lists:flatten(["<div class=\"rcot\">", Res, "</div>"]).
+
+%% Users = [{JID, Nick, Role}]
+group_by_role(Users) ->
+    {Ms, Ps, Vs, Ns} =
+	lists:foldl(
+	  fun({JID, Nick, moderator}, {Mod, Par, Vis, Non}) ->
+		  {[{JID, Nick}]++Mod, Par, Vis, Non};
+	     ({JID, Nick, participant}, {Mod, Par, Vis, Non}) ->
+		  {Mod, [{JID, Nick}]++Par, Vis, Non};
+	     ({JID, Nick, visitor}, {Mod, Par, Vis, Non}) ->
+		  {Mod, Par, [{JID, Nick}]++Vis, Non};
+	     ({JID, Nick, none}, {Mod, Par, Vis, Non}) ->
+		  {Mod, Par, Vis, [{JID, Nick}]++Non}
+	  end,
+	  {[], [], [], []},
+	  Users),
+    case Ms of [] -> []; _ -> [{"Moderator", Ms}] end
+	++ case Ms of [] -> []; _ -> [{"Participant", Ps}] end
+	++ case Ms of [] -> []; _ -> [{"Visitor", Vs}] end
+	++ case Ms of [] -> []; _ -> [{"None", Ns}] end.
+
+%% Role = atom()
+%% Users = [{JID, Nick}]
+role_users_to_string(RoleS, Users) ->
+    SortedUsers = lists:keysort(2, Users),
+    UsersString = [[Nick, "<br/>"] || {_JID, Nick} <- SortedUsers],
+    [RoleS, ": ", UsersString].
+
+get_room_occupants(RoomJIDString) ->
+    RoomJID = jlib:string_to_jid(RoomJIDString),
+    RoomName = RoomJID#jid.luser,
+    MucService = RoomJID#jid.lserver,
+    StateData = get_room_state(RoomName, MucService),
+    [{U#user.jid, U#user.nick, U#user.role}
+     || {_, U} <- ?DICT:to_list(StateData#state.users)].
+
+get_room_state(RoomName, MucService) ->
+    case mnesia:dirty_read(muc_online_room, {RoomName, MucService}) of
+        [R] ->
+	    RoomPid = R#muc_online_room.pid,
+	    get_room_state(RoomPid);
+	[] ->
+	    room_not_found
+    end.
+
+get_room_state(RoomPid) ->
+    {ok, R} = gen_fsm:sync_send_all_state_event(RoomPid, get_state),
+    R.
+
 get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?PROCNAME).
 
 calc_hour_offset(TimeHere) ->
-	TimeZero = calendar:now_to_universal_time(now()),
-	TimeHereHour = calendar:datetime_to_gregorian_seconds(TimeHere) div 3600,
-	TimeZeroHour = calendar:datetime_to_gregorian_seconds(TimeZero) div 3600,
-	TimeHereHour - TimeZeroHour.
+    TimeZero = calendar:now_to_universal_time(now()),
+    TimeHereHour = calendar:datetime_to_gregorian_seconds(TimeHere) div 3600,
+    TimeZeroHour = calendar:datetime_to_gregorian_seconds(TimeZero) div 3600,
+    TimeHereHour - TimeZeroHour.

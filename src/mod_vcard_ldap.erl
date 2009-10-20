@@ -5,7 +5,7 @@
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -62,6 +62,7 @@
 		servers,
 		backups,
 		port,
+		encrypt,
 		dn,
 		base,
 		password,
@@ -179,7 +180,8 @@ init([Host, Opts]) ->
 		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
-		     State#state.password),
+		     State#state.password,
+		     State#state.encrypt),
     case State#state.search of
 	true ->
 	    ejabberd_router:register_route(State#state.myhost);
@@ -233,7 +235,7 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 				 translate:translate(
 				   Lang,
 				   "Erlang Jabber Server") ++
-				   "\nCopyright (c) 2002-2008 ProcessOne"}]},
+				   "\nCopyright (c) 2002-2009 ProcessOne"}]},
 			      {xmlelement, "BDAY", [],
 			       [{xmlcdata, "2002-11-16"}]}
 			     ]}]}
@@ -404,6 +406,7 @@ do_route(State, From, To, Packet) ->
 
 route(State, From, To, Packet) ->
     #jid{user = User, resource = Resource} = To,
+    ServerHost = State#state.serverhost,
     if
 	(User /= "") or (Resource /= "") ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -465,6 +468,9 @@ route(State, From, To, Packet) ->
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
+			    Info = ejabberd_hooks:run_fold(
+				     disco_info, ServerHost, [],
+				     [ServerHost, ?MODULE, "", ""]),
 			    ResIQ =
 				IQ#iq{type = result,
 				      sub_el = [{xmlelement,
@@ -480,7 +486,7 @@ route(State, From, To, Packet) ->
 						   [{"var", ?NS_SEARCH}], []},
 						  {xmlelement, "feature",
 						   [{"var", ?NS_VCARD}], []}
-						 ]
+						 ] ++ Info
 						}]},
 			    ejabberd_router:route(To,
 						  From,
@@ -529,7 +535,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, translate:translate(
 		    Lang,
 		    "ejabberd vCard module") ++
-		    "\nCopyright (c) 2003-2008 ProcessOne"}]}].
+		    "\nCopyright (c) 2003-2009 ProcessOne"}]}].
 
 -define(LFIELD(Label, Var),
 	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
@@ -637,8 +643,10 @@ map_vcard_attr(VCardName, Attributes, Pattern, UD) ->
     end.
 
 process_pattern(Str, {User, Domain}, AttrValues) ->
-	eldap_filter:do_sub(Str,
-		[{"%s", V, 1} || V <- AttrValues] ++ [{"%u", User},{"%d", Domain}]).
+    eldap_filter:do_sub(
+      Str,
+      [{"%u", User},{"%d", Domain}] ++
+      [{"%s", V, 1} || V <- AttrValues]).
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
@@ -673,11 +681,22 @@ parse_options(Host, Opts) ->
 			  ejabberd_config:get_local_option({ldap_servers, Host});
 		      Backups -> Backups
 		  end,
-    LDAPPort = case gen_mod:get_opt(ldap_port, Opts, undefined) of
+    LDAPEncrypt = case gen_mod:get_opt(ldap_encrypt, Opts, undefined) of
+		      undefined ->
+			  ejabberd_config:get_local_option({ldap_encrypt, Host});
+		      E -> E
+	          end,
+    LDAPPortTemp = case gen_mod:get_opt(ldap_port, Opts, undefined) of
+		       undefined ->
+			   ejabberd_config:get_local_option({ldap_port, Host});
+		       PT -> PT
+	           end,
+    LDAPPort = case LDAPPortTemp of
 		   undefined ->
-		       case ejabberd_config:get_local_option({ldap_port, Host}) of
-			   undefined -> 389;
-			   P -> P
+		       case LDAPEncrypt of
+			   tls -> ?LDAPS_PORT;
+			   starttls -> ?LDAP_PORT;
+			   _ -> ?LDAP_PORT
 		       end;
 		   P -> P
 	       end,
@@ -747,6 +766,7 @@ parse_options(Host, Opts) ->
 	   servers = LDAPServers,
 	   backups = LDAPBackups,
 	   port = LDAPPort,
+	   encrypt = LDAPEncrypt,
 	   dn = RootDN,
 	   base = LDAPBase,
 	   password = Password,

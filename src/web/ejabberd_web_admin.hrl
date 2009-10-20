@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -11,7 +11,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -50,3 +50,27 @@
 		      {"size", Size}])).
 -define(INPUTST(Type, Name, Value, Size), ?INPUT(Type, Name, ?T(Value), Size)).
 -define(ACLINPUT(Text), ?XE("td", [?INPUT("text", "value" ++ ID, Text)])).
+
+-define(TEXTAREA(Name, Rows, Cols, Value),
+	?XAC("textarea", [{"name", Name},
+			  {"rows", Rows},
+			  {"cols", Cols}],
+	     Value)).
+
+%% Build an xmlelement for result
+-define(XRES(Text), ?XAC("p", [{"class", "result"}], Text)).
+-define(XREST(Text), ?XRES(?T(Text))).
+
+%% Guide Link
+-define(GL(Ref, Title),
+	?XAE("div",
+	     [{"class", "guidelink"}],
+	     [?XAE("a",
+		   [{"href", "/admin/doc/guide.html#"++ Ref},
+		    {"target", "_blank"}],
+		   [?C("[Guide: " ++ Title ++ "]")])
+	     ])).
+
+
+%% h1 with a Guide Link
+-define(H1GL(Name, Ref, Title), [?XC("h1", Name), ?GL(Ref, Title)]).

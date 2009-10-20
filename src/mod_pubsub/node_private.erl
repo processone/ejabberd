@@ -10,13 +10,13 @@
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
 %%% 
-%%% The Initial Developer of the Original Code is Process-one.
-%%% Portions created by Process-one are Copyright 2006-2008, Process-one
+%%% The Initial Developer of the Original Code is ProcessOne.
+%%% Portions created by ProcessOne are Copyright 2006-2009, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2008, Process-one.
+%%% This software is copyright 2006-2009, ProcessOne.
 %%%
 %%%
-%%% @copyright 2006-2008 Process-one
+%%% @copyright 2006-2009 ProcessOne
 %%% @author Christophe romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -36,57 +36,62 @@
 %%   it's possible not to define some function at all
 %%   in that case, warning will be generated at compilation
 %%   and function call will fail,
-%%   then mod_pubsub will call function from node_default
+%%   then mod_pubsub will call function from node_hometree
 %%   (this makes code cleaner, but execution a little bit longer)
 
 %% API definition
 -export([init/3, terminate/2,
 	 options/0, features/0,
 	 create_node_permission/6,
-	 create_node/3,
-	 delete_node/2,
-	 purge_node/3,
+	 create_node/2,
+	 delete_node/1,
+	 purge_node/2,
 	 subscribe_node/8,
-	 unsubscribe_node/5,
-	 publish_item/7,
+	 unsubscribe_node/4,
+	 publish_item/6,
 	 delete_item/4,
-	 remove_extra_items/4,
+	 remove_extra_items/3,
 	 get_entity_affiliations/2,
-	 get_node_affiliations/2,
-	 get_affiliation/3,
-	 set_affiliation/4,
+	 get_node_affiliations/1,
+	 get_affiliation/2,
+	 set_affiliation/3,
 	 get_entity_subscriptions/2,
-	 get_node_subscriptions/2,
-	 get_subscription/3,
-	 set_subscription/4,
-	 get_states/2,
-	 get_state/3,
+	 get_node_subscriptions/1,
+	 get_subscriptions/2,
+	 set_subscriptions/4,
+	 get_pending_nodes/2,
+	 get_states/1,
+	 get_state/2,
 	 set_state/1,
+	 get_items/6,
 	 get_items/2,
-	 get_item/3,
+	 get_item/7,
+	 get_item/2,
 	 set_item/1,
-	 get_item_name/3
+	 get_item_name/3,
+	 node_to_path/1,
+	 path_to_node/1
 	]).
 
 
 init(Host, ServerHost, Opts) ->
-    node_default:init(Host, ServerHost, Opts).
+    node_hometree:init(Host, ServerHost, Opts).
 
 terminate(Host, ServerHost) ->
-    node_default:terminate(Host, ServerHost).
+    node_hometree:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, private},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
      {persist_items, true},
-     {max_items, ?MAXITEMS div 2},
+     {max_items, ?MAXITEMS},
      {subscribe, true},
      {access_model, whitelist},
      {roster_groups_allowed, []},
      {publish_model, publishers},
+     {notification_type, headline},
      {max_payload_size, ?MAX_PAYLOAD_SIZE},
      {send_last_published_item, never},
      {deliver_notifications, false},
@@ -95,8 +100,8 @@ options() ->
 features() ->
     ["create-nodes",
      "delete-nodes",
+     "delete-items",
      "instant-nodes",
-     "item-ids",
      "outcast-affiliation",
      "persistent-items",
      "publish",
@@ -110,76 +115,93 @@ features() ->
     ].
 
 create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
-    node_default:create_node_permission(Host, ServerHost, Node, ParentNode,
+    node_hometree:create_node_permission(Host, ServerHost, Node, ParentNode,
 					Owner, Access).
 
-create_node(Host, Node, Owner) ->
-    node_default:create_node(Host, Node, Owner).
+create_node(NodeId, Owner) ->
+    node_hometree:create_node(NodeId, Owner).
 
-delete_node(Host, Removed) ->
-    node_default:delete_node(Host, Removed).
+delete_node(Removed) ->
+    node_hometree:delete_node(Removed).
 
-subscribe_node(Host, Node, Sender, Subscriber, AccessModel, SendLast,
-	       PresenceSubscription, RosterGroup) ->
-    node_default:subscribe_node(Host, Node, Sender, Subscriber, AccessModel,
-				SendLast, PresenceSubscription, RosterGroup).
+subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast,
+	       PresenceSubscription, RosterGroup, Options) ->
+    node_hometree:subscribe_node(NodeId, Sender, Subscriber, AccessModel,
+				SendLast, PresenceSubscription, RosterGroup,
+				Options).
 
-unsubscribe_node(Host, Node, Sender, Subscriber, SubID) ->
-    node_default:unsubscribe_node(Host, Node, Sender, Subscriber, SubID).
+unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
+    node_hometree:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
 
-publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload) ->
-    node_default:publish_item(Host, Node, Publisher, Model, MaxItems, ItemId, Payload).
+publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
+    node_hometree:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).
 
-remove_extra_items(Host, Node, MaxItems, ItemIds) ->
-    node_default:remove_extra_items(Host, Node, MaxItems, ItemIds).
+remove_extra_items(NodeId, MaxItems, ItemIds) ->
+    node_hometree:remove_extra_items(NodeId, MaxItems, ItemIds).
 
-delete_item(Host, Node, JID, ItemId) ->
-    node_default:delete_item(Host, Node, JID, ItemId).
+delete_item(NodeId, Publisher, PublishModel, ItemId) ->
+    node_hometree:delete_item(NodeId, Publisher, PublishModel, ItemId).
 
-purge_node(Host, Node, Owner) ->
-    node_default:purge_node(Host, Node, Owner).
+purge_node(NodeId, Owner) ->
+    node_hometree:purge_node(NodeId, Owner).
 
 get_entity_affiliations(Host, Owner) ->
-    node_default:get_entity_affiliations(Host, Owner).
+    node_hometree:get_entity_affiliations(Host, Owner).
 
-get_node_affiliations(Host, Node) ->
-    node_default:get_node_affiliations(Host, Node).
+get_node_affiliations(NodeId) ->
+    node_hometree:get_node_affiliations(NodeId).
 
-get_affiliation(Host, Node, Owner) ->
-    node_default:get_affiliation(Host, Node, Owner).
+get_affiliation(NodeId, Owner) ->
+    node_hometree:get_affiliation(NodeId, Owner).
 
-set_affiliation(Host, Node, Owner, Affiliation) ->
-    node_default:set_affiliation(Host, Node, Owner, Affiliation).
+set_affiliation(NodeId, Owner, Affiliation) ->
+    node_hometree:set_affiliation(NodeId, Owner, Affiliation).
 
 get_entity_subscriptions(Host, Owner) ->
-    node_default:get_entity_subscriptions(Host, Owner).
+    node_hometree:get_entity_subscriptions(Host, Owner).
 
-get_node_subscriptions(Host, Node) ->
-    node_default:get_node_subscriptions(Host, Node).
+get_node_subscriptions(NodeId) ->
+    node_hometree:get_node_subscriptions(NodeId).
 
-get_subscription(Host, Node, Owner) ->
-    node_default:get_subscription(Host, Node, Owner).
+get_subscriptions(NodeId, Owner) ->
+    node_hometree:get_subscriptions(NodeId, Owner).
 
-set_subscription(Host, Node, Owner, Subscription) ->
-    node_default:set_subscription(Host, Node, Owner, Subscription).
+set_subscriptions(NodeId, Owner, Subscription, SubId) ->
+    node_hometree:set_subscriptions(NodeId, Owner, Subscription, SubId).
 
-get_states(Host, Node) ->
-    node_default:get_states(Host, Node).
+get_pending_nodes(Host, Owner) ->
+    node_hometree:get_pending_nodes(Host, Owner).
 
-get_state(Host, Node, JID) ->
-    node_default:get_state(Host, Node, JID).
+get_states(NodeId) ->
+    node_hometree:get_states(NodeId).
+
+get_state(NodeId, JID) ->
+    node_hometree:get_state(NodeId, JID).
 
 set_state(State) ->
-    node_default:set_state(State).
+    node_hometree:set_state(State).
 
-get_items(Host, Node) ->
-    node_default:get_items(Host, Node).
+get_items(NodeId, From) ->
+    node_hometree:get_items(NodeId, From).
 
-get_item(Host, Node, ItemId) ->
-    node_default:get_item(Host, Node, ItemId).
+get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
+    node_hometree:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
+
+get_item(NodeId, ItemId) ->
+    node_hometree:get_item(NodeId, ItemId).
+
+get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
+    node_hometree:get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 set_item(Item) ->
-    node_default:set_item(Item).
+    node_hometree:set_item(Item).
 
 get_item_name(Host, Node, Id) ->
-    node_default:get_item_name(Host, Node, Id).
+    node_hometree:get_item_name(Host, Node, Id).
+
+node_to_path(Node) ->
+    node_flat:node_to_path(Node).
+
+path_to_node(Path) ->
+    node_flat:path_to_node(Path).
+

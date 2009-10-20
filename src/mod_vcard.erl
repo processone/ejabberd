@@ -5,7 +5,7 @@
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -138,9 +138,9 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 	[] ->
 	    case Acc of
 		{result, Features} ->
-		    {result, [?NS_VCARD | Features]};
+		    {result, [?NS_DISCO_INFO, ?NS_VCARD | Features]};
 		empty ->
-		    {result, [?NS_VCARD]}
+		    {result, [?NS_DISCO_INFO, ?NS_VCARD]}
 	    end;
  	_ ->
 	    Acc
@@ -163,7 +163,7 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 				 translate:translate(
 				   Lang,
 				   "Erlang Jabber Server") ++
-				   "\nCopyright (c) 2002-2008 ProcessOne"}]},
+				   "\nCopyright (c) 2002-2009 ProcessOne"}]},
 			      {xmlelement, "BDAY", [],
 			       [{xmlcdata, "2002-11-16"}]}
 			     ]}]}
@@ -367,6 +367,9 @@ do_route(ServerHost, From, To, Packet) ->
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
+			    Info = ejabberd_hooks:run_fold(
+				     disco_info, ServerHost, [],
+				     [ServerHost, ?MODULE, "", ""]),
 			    ResIQ =
 				IQ#iq{type = result,
 				      sub_el = [{xmlelement,
@@ -379,10 +382,12 @@ do_route(ServerHost, From, To, Packet) ->
 						     translate:translate(Lang, "vCard User Search")}],
 						   []},
 						  {xmlelement, "feature",
+						   [{"var", ?NS_DISCO_INFO}], []},
+						  {xmlelement, "feature",
 						   [{"var", ?NS_SEARCH}], []},
 						  {xmlelement, "feature",
 						   [{"var", ?NS_VCARD}], []}
-						 ]
+						 ] ++ Info
 						}]},
 			    ejabberd_router:route(To,
 						  From,
@@ -431,7 +436,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, translate:translate(
 		    Lang,
 		    "ejabberd vCard module") ++
-		    "\nCopyright (c) 2003-2008 ProcessOne"}]}].
+		    "\nCopyright (c) 2003-2009 ProcessOne"}]}].
 
 find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).

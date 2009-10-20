@@ -1,5 +1,5 @@
 /*
- * ejabberd, Copyright (C) 2002-2008   Process-one
+ * ejabberd, Copyright (C) 2002-2009   ProcessOne
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- *                         
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -144,7 +144,7 @@ static int write_cmd(char *buf, int len)
 {
   byte hd[2];
   enc_int16(len, hd);
-  if (write_buf(1, hd, 2) != 2)
+  if (write_buf(1, (char *)hd, 2) != 2)
     return 0;
   if (write_buf(1, buf, len) != len)
     return 0;
@@ -167,7 +167,7 @@ static int process_reply(ETERM *pid, int cmd, int res)
   len = erl_term_len(result);
   buf = erl_malloc(len);
   erl_encode(result, buf);
-  retval = write_cmd(buf, len);
+  retval = write_cmd((char *)buf, len);
   erl_free_term(result);
   erl_free(buf);
   return retval;

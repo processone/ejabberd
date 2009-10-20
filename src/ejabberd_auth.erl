@@ -5,7 +5,7 @@
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -34,6 +34,8 @@
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
+	 check_password_with_authmodule/3,
+	 check_password_with_authmodule/5,
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
@@ -42,18 +44,17 @@
 	 get_vh_registered_users_number/2,
 	 get_password/2,
 	 get_password_s/2,
+	 get_password_with_authmodule/2,
 	 is_user_exists/2,
 	 is_user_exists_in_other_modules/3,
 	 remove_user/2,
 	 remove_user/3,
-	 plain_password_required/1,
-	 ctl_process_get_registered/3
+	 plain_password_required/1
 	]).
 
 -export([auth_modules/1]).
 
 -include("ejabberd.hrl").
--include("ejabberd_ctl.hrl").
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -73,21 +74,60 @@ plain_password_required(Server) ->
 	      M:plain_password_required()
       end, auth_modules(Server)).
 
+%% @doc Check if the user and password can login in server.
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%     true | false
 check_password(User, Server, Password) ->
-    lists:any(
-      fun(M) ->
-	      M:check_password(User, Server, Password)
-      end, auth_modules(Server)).
+    case check_password_with_authmodule(User, Server, Password) of
+	{true, _AuthModule} -> true;
+	false -> false
+    end.
 
-check_password(User, Server, Password, StreamID, Digest) ->
-    lists:any(
-      fun(M) ->
-	      M:check_password(User, Server, Password, StreamID, Digest)
-      end, auth_modules(Server)).
+%% @doc Check if the user and password can login in server.
+%% @spec (User::string(), Server::string(), Password::string(),
+%%        Digest::string(), DigestGen::function()) ->
+%%     true | false
+check_password(User, Server, Password, Digest, DigestGen) ->
+    case check_password_with_authmodule(User, Server, Password,
+					Digest, DigestGen) of
+	{true, _AuthModule} -> true;
+	false -> false
+    end.
 
-%% We do not allow empty password:
+%% @doc Check if the user and password can login in server.
+%% The user can login if at least an authentication method accepts the user
+%% and the password.
+%% The first authentication method that accepts the credentials is returned.
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%     {true, AuthModule} | false
+%% where
+%%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
+%%                 | ejabberd_auth_internal | ejabberd_auth_ldap
+%%                 | ejabberd_auth_odbc | ejabberd_auth_pam
+check_password_with_authmodule(User, Server, Password) ->
+    check_password_loop(auth_modules(Server), [User, Server, Password]).
+
+check_password_with_authmodule(User, Server, Password, Digest, DigestGen) ->
+    check_password_loop(auth_modules(Server), [User, Server, Password,
+					       Digest, DigestGen]).
+
+check_password_loop([], _Args) ->
+    false;
+check_password_loop([AuthModule | AuthModules], Args) ->
+    case apply(AuthModule, check_password, Args) of
+	true ->
+	    {true, AuthModule};
+	false ->
+	    check_password_loop(AuthModules, Args)
+    end.
+
+
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%       ok | {error, ErrorType}
+%% where ErrorType = empty_password | not_allowed | invalid_jid
 set_password(_User, _Server, "") ->
-    {error, not_allowed};
+    %% We do not allow empty password
+    {error, empty_password};
 set_password(User, Server, Password) ->
     lists:foldl(
       fun(M, {error, _}) ->
@@ -96,8 +136,9 @@ set_password(User, Server, Password) ->
 	      Res
       end, {error, not_allowed}, auth_modules(Server)).
 
-%% We do not allow empty password:
+%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, not_allowed}
 try_register(_User, _Server, "") ->
+    %% We do not allow empty password
     {error, not_allowed};    
 try_register(User, Server, Password) ->
     case is_user_exists(User,Server) of
@@ -106,12 +147,19 @@ try_register(User, Server, Password) ->
 	false ->
 	    case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
 		true ->
-		    lists:foldl(
+		    Res = lists:foldl(
 		      fun(_M, {atomic, ok} = Res) ->
 			      Res;
 			 (M, _) ->
 			      M:try_register(User, Server, Password)
-		      end, {error, not_allowed}, auth_modules(Server));
+		      end, {error, not_allowed}, auth_modules(Server)),
+		    case Res of
+			{atomic, ok} ->
+			    ejabberd_hooks:run(register_user, Server,
+					       [User, Server]),
+			    {atomic, ok};
+			_ -> Res
+		    end;
 		false ->
 		    {error, not_allowed}
 	    end
@@ -134,7 +182,13 @@ get_vh_registered_users(Server) ->
 get_vh_registered_users(Server, Opts) ->
     lists:flatmap(
       fun(M) ->
-	      M:get_vh_registered_users(Server, Opts)
+		case erlang:function_exported(
+		       M, get_vh_registered_users, 2) of
+		    true ->
+			M:get_vh_registered_users(Server, Opts);
+		    false ->
+			M:get_vh_registered_users(Server)
+		end
       end, auth_modules(Server)).
 
 get_vh_registered_users_number(Server) ->
@@ -163,6 +217,8 @@ get_vh_registered_users_number(Server, Opts) ->
 		end
 	end, auth_modules(Server))).
 
+%% @doc Get the password of the user.
+%% @spec (User::string(), Server::string()) -> Password::string()
 get_password(User, Server) ->
     lists:foldl(
       fun(M, false) ->
@@ -179,6 +235,17 @@ get_password_s(User, Server) ->
 	    Password
     end.
 
+%% @doc Get the password of the user and the auth module.
+%% @spec (User::string(), Server::string()) ->
+%%     {Password::string(), AuthModule::atom()} | {false, none}
+get_password_with_authmodule(User, Server) ->
+    lists:foldl(
+      fun(M, {false, _}) ->
+	      {M:get_password(User, Server), M};
+	 (_M, {Password, AuthModule}) ->
+	      {Password, AuthModule}
+      end, {false, none}, auth_modules(Server)).
+
 %% Returns true if the user exists in the DB or if an anonymous user is logged
 %% under the given name
 is_user_exists(User, Server) ->
@@ -189,33 +256,59 @@ is_user_exists(User, Server) ->
 
 %% Check if the user exists in all authentications module except the module
 %% passed as parameter
+%% @spec (Module::atom(), User, Server) -> true | false | maybe
 is_user_exists_in_other_modules(Module, User, Server) ->
-    lists:any(
-      fun(M) ->
-	      M:is_user_exists(User, Server)
-      end, auth_modules(Server)--[Module]).
+    is_user_exists_in_other_modules_loop(
+      auth_modules(Server)--[Module],
+      User, Server).
+is_user_exists_in_other_modules_loop([], _User, _Server) ->
+    false;
+is_user_exists_in_other_modules_loop([AuthModule|AuthModules], User, Server) ->
+    case AuthModule:is_user_exists(User, Server) of
+	true ->
+	    true;
+	false ->
+	    is_user_exists_in_other_modules_loop(AuthModules, User, Server);
+	{error, Error} ->
+	    ?DEBUG("The authentication module ~p returned an error~nwhen "
+		   "checking user ~p in server ~p~nError message: ~p",
+		   [AuthModule, User, Server, Error]),
+	    maybe
+    end.
 
+
+%% @spec (User, Server) -> ok | error | {error, not_allowed}
+%% @doc Remove user.
+%% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
-    lists:foreach(
+    R = lists:foreach(
       fun(M) ->
 	      M:remove_user(User, Server)
-      end, auth_modules(Server)).
+      end, auth_modules(Server)),
+    case R of
+		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
+		_ -> none
+    end,
+    R.
 
+%% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error
+%% @doc Try to remove user if the provided password is correct.
+%% The removal is attempted in each auth method provided:
+%% when one returns 'ok' the loop stops;
+%% if no method returns 'ok' then it returns the error message indicated by the last method attempted.
 remove_user(User, Server, Password) ->
-    lists:foreach(
-      fun(M) ->
+    R = lists:foldl(
+      fun(_M, ok = Res) ->
+	      Res;
+	 (M, _) ->
 	      M:remove_user(User, Server, Password)
-      end, auth_modules(Server)).
+      end, error, auth_modules(Server)),
+    case R of
+		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
+		_ -> none
+    end,
+    R.
 
-ctl_process_get_registered(_Val, Host, ["registered-users"]) ->
-    Users = ejabberd_auth:get_vh_registered_users(Host),
-    NewLine = io_lib:format("~n", []),
-    SUsers = lists:sort(Users),
-    FUsers = lists:map(fun({U, _S}) -> [U, NewLine] end, SUsers),
-    ?PRINT("~s", [FUsers]),
-    {stop, ?STATUS_SUCCESS};
-ctl_process_get_registered(Val, _Host, _Args) ->
-    Val.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions

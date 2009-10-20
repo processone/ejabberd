@@ -10,13 +10,13 @@
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
 %%% 
-%%% The Initial Developer of the Original Code is Process-one.
-%%% Portions created by Process-one are Copyright 2006-2008, Process-one
+%%% The Initial Developer of the Original Code is ProcessOne.
+%%% Portions created by ProcessOne are Copyright 2006-2009, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2008, Process-one.
+%%% This software is copyright 2006-2009, ProcessOne.
 %%%
 %%%
-%%% @copyright 2006-2008 Process-one
+%%% @copyright 2006-2009 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -42,11 +42,16 @@ behaviour_info(callbacks) ->
 	 {terminate, 2},
 	 {options, 0},
 	 {set_node, 1},
+	 {get_node, 3},
 	 {get_node, 2},
+	 {get_node, 1},
+	 {get_nodes, 2},
 	 {get_nodes, 1},
+	 {get_parentnodes, 3},
+	 {get_parentnodes_tree, 3},
 	 {get_subnodes, 3},
-	 {get_subnodes_tree, 2},
-	 {create_node, 5},
+	 {get_subnodes_tree, 3},
+	 {create_node, 6},
 	 {delete_node, 2}
 	];
 behaviour_info(_Other) ->

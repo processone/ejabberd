@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -28,14 +28,16 @@
 -author('alexey@process-one.net').
 
 -export([start/0, stop/0,
+	 get_pid_file/0,
 	 get_so_path/0, get_bin_path/0]).
 
 start() ->
+    %%ejabberd_cover:start(),
     application:start(ejabberd).
 
 stop() ->
     application:stop(ejabberd).
-
+    %%ejabberd_cover:stop().
 
 get_so_path() ->
     case os:getenv("EJABBERD_SO_PATH") of
@@ -59,6 +61,17 @@ get_bin_path() ->
 		Path ->
 		    filename:join([Path, "bin"])
 	    end;
+	Path ->
+	    Path
+    end.
+
+%% @spec () -> false | string()
+get_pid_file() ->
+    case os:getenv("EJABBERD_PID_PATH") of
+	false ->
+	    false;
+	"" ->
+	    false;
 	Path ->
 	    Path
     end.

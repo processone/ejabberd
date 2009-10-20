@@ -5,7 +5,7 @@
 %%% Created : 12 Nov 2006 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -29,7 +29,7 @@
 
 %% API
 -export([
-	 start_link/6,
+	 start_link/7,
 	 bind/3,
 	 search/2
 	]).
@@ -45,12 +45,12 @@ bind(PoolName, DN, Passwd) ->
 search(PoolName, Opts) ->
     do_request(PoolName, {search, [Opts]}).
 
-start_link(Name, Hosts, Backups, Port, Rootdn, Passwd) ->
+start_link(Name, Hosts, Backups, Port, Rootdn, Passwd, Encrypt) ->
     PoolName = make_id(Name),
     pg2:create(PoolName),
     lists:foreach(fun(Host) ->
 			  ID = erlang:ref_to_list(make_ref()),
-			  case catch eldap:start_link(ID, [Host|Backups], Port, Rootdn, Passwd) of
+			  case catch eldap:start_link(ID, [Host|Backups], Port, Rootdn, Passwd, Encrypt) of
 			      {ok, Pid} ->
 				  pg2:join(PoolName, Pid);
 			      _ ->

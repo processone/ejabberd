@@ -2,7 +2,7 @@
             "http://www.w3.org/TR/REC-html40/loose.dtd">
 <HTML>
 <HEAD>
-<TITLE>Ejabberd 2.1.0-alpha Feature Sheet
+<TITLE>Ejabberd 2.1.0 Feature Sheet
 </TITLE>
 
 <META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
@@ -50,7 +50,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 <!--HEVEA command line is: /usr/bin/hevea -fix -pedantic features.tex -->
 <!--CUT DEF section 1 --><P><A NAME="titlepage"></A>
 
-</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.0-alpha Feature Sheet</H1><H3 CLASS="titlerest">Sander Devrieze<BR>
+</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.0 Feature Sheet</H1><H3 CLASS="titlerest">Sander Devrieze<BR>
  <A HREF="mailto:s.devrieze@pandora.be"><TT>mailto:s.devrieze@pandora.be</TT></A><BR>
  <A HREF="xmpp:sander@devrieze.dyndns.org"><TT>xmpp:sander@devrieze.dyndns.org</TT></A></H3></TD></TR>
 </TABLE><DIV CLASS="center">
@@ -61,7 +61,7 @@ SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
 </DIV><BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>I can thoroughly recommend ejabberd for ease of setup &#X2013;
 Kevin Smith, Current maintainer of the Psi project</I></FONT></BLOCKQUOTE><P>Introduction
 <A NAME="intro"></A></P><BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>I just tried out ejabberd and was impressed both by ejabberd itself and the language it is written in, Erlang. &#X2014;
-Joeri</I></FONT></BLOCKQUOTE><P><TT>ejabberd</TT> is a <B><FONT SIZE=4><FONT COLOR="#001376">free and open source</FONT></FONT></B> instant messaging server written in <A HREF="http://www.erlang.org/">Erlang</A>.</P><P><TT>ejabberd</TT> is <B><FONT SIZE=4><FONT COLOR="#001376">cross-platform</FONT></FONT></B>, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a <B><FONT SIZE=4><FONT COLOR="#001376">rock-solid and feature rich</FONT></FONT></B> XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be <B><FONT SIZE=4><FONT COLOR="#001376">scalable</FONT></FONT></B> or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
+Joeri</I></FONT></BLOCKQUOTE><P><TT>ejabberd</TT> is a <B><FONT SIZE=4><FONT COLOR="#001376">free and open source</FONT></FONT></B> instant messaging server written in <A HREF="http://www.erlang.org/">Erlang/OTP</A>.</P><P><TT>ejabberd</TT> is <B><FONT SIZE=4><FONT COLOR="#001376">cross-platform</FONT></FONT></B>, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a <B><FONT SIZE=4><FONT COLOR="#001376">rock-solid and feature rich</FONT></FONT></B> XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be <B><FONT SIZE=4><FONT COLOR="#001376">scalable</FONT></FONT></B> or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc1"></A>Key Features</H2><!--SEC END --><P>
 <A NAME="keyfeatures"></A>
 </P><BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>Erlang seems to be tailor-made for writing stable, robust servers. &#X2014;
@@ -76,7 +76,7 @@ Comprehensive documentation.
 </LI><LI CLASS="li-itemize">Capability to send announce messages.
 </LI></UL></LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Internationalized:</FONT></FONT></B> <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Translated to 24 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
+Translated to 25 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
 </LI></UL></LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Open Standards:</FONT></FONT></B> <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Fully XMPP compliant.
@@ -118,7 +118,7 @@ Support for virtual hosting.
 </LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
 </LI><LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
 </LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-00163.html">Personal Eventing via Pubsub</A>.
+</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</A>.
 </LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
 </LI><LI CLASS="li-itemize">IRC transport.
 </LI><LI CLASS="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.

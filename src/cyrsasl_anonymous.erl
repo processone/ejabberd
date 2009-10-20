@@ -6,7 +6,7 @@
 %%% Created : 23 Aug 2005 by Magnus Henoch <henoch@dtek.chalmers.se>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -27,7 +27,7 @@
 
 -module(cyrsasl_anonymous).
 
--export([start/1, stop/0, mech_new/3, mech_step/2]).
+-export([start/1, stop/0, mech_new/4, mech_step/2]).
 
 -behaviour(cyrsasl).
 
@@ -40,7 +40,7 @@ start(_Opts) ->
 stop() ->
     ok.
 
-mech_new(Host, _GetPassword, _CheckPassword) ->
+mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
     {ok, #state{server = Host}}.
 
 mech_step(State, _ClientIn) ->
@@ -51,5 +51,6 @@ mech_step(State, _ClientIn) ->
     %% Checks that the username is available
     case ejabberd_auth:is_user_exists(User, Server) of
 	true  -> {error, "not-authorized"};
-	false -> {ok, [{username, User}]}
+	false -> {ok, [{username, User},
+		       {auth_module, ejabberd_auth_anonymous}]}
     end.

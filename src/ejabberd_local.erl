@@ -5,7 +5,7 @@
 %%% Created : 30 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -33,10 +33,13 @@
 -export([start_link/0]).
 
 -export([route/3,
+	 route_iq/4,
+	 process_iq_reply/3,
 	 register_iq_handler/4,
 	 register_iq_handler/5,
 	 register_iq_response_handler/4,
 	 unregister_iq_handler/2,
+	 unregister_iq_response_handler/2,
 	 refresh_iq_handlers/0,
 	 bounce_resource_packet/3
 	]).
@@ -50,9 +53,12 @@
 
 -record(state, {}).
 
--record(iq_response, {id, module, function}).
+-record(iq_response, {id, module, function, timer}).
 
 -define(IQTABLE, local_iqtable).
+
+%% This value is used in SIP and Megaco for a transaction lifetime.
+-define(IQ_TIMEOUT, 32000).
 
 %%====================================================================
 %% API
@@ -88,36 +94,24 @@ process_iq(From, To, Packet) ->
 		    ejabberd_router:route(To, From, Err)
 	    end;
 	reply ->
-	    process_iq_reply(From, To, Packet);
+	    IQReply = jlib:iq_query_or_response_info(Packet),
+	    process_iq_reply(From, To, IQReply);
 	_ ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
 	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
 
-process_iq_reply(From, To, Packet) ->
-    IQ = jlib:iq_query_or_response_info(Packet),
-    #iq{id = ID} = IQ,
-    case catch mnesia:dirty_read(iq_response, ID) of
-	[] ->
+process_iq_reply(From, To, #iq{id = ID} = IQ) ->
+    case get_iq_callback(ID) of
+	{ok, undefined, Function} ->
+	    Function(IQ),
+	    ok;
+	{ok, Module, Function} ->
+	    Module:Function(From, To, IQ),
 	    ok;
 	_ ->
-	    F = fun() ->
-			case mnesia:read({iq_response, ID}) of
-			    [] ->
-				nothing;
-			    [#iq_response{module = Module,
-					  function = Function}] ->
-				mnesia:delete({iq_response, ID}),
-				{Module, Function}
-			end
-		end,
-	    case mnesia:transaction(F) of
-		{atomic, {Module, Function}} ->
-		    Module:Function(From, To, IQ);
-		_ ->
-		    ok
-	    end
+	    nothing
     end.
 
 route(From, To, Packet) ->
@@ -129,14 +123,33 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-register_iq_response_handler(Host, ID, Module, Fun) ->
-    ejabberd_local ! {register_iq_response_handler, Host, ID, Module, Fun}.
+route_iq(From, To, #iq{type = Type} = IQ, F) when is_function(F) ->
+    Packet = if Type == set; Type == get ->
+		     ID = randoms:get_string(),
+		     Host = From#jid.lserver,
+		     register_iq_response_handler(Host, ID, undefined, F),
+		     jlib:iq_to_xml(IQ#iq{id = ID});
+		true ->
+		     jlib:iq_to_xml(IQ)
+	     end,
+    ejabberd_router:route(From, To, Packet).
+
+register_iq_response_handler(_Host, ID, Module, Function) ->
+    TRef = erlang:start_timer(?IQ_TIMEOUT, ejabberd_local, ID),
+    mnesia:dirty_write(#iq_response{id = ID,
+				    module = Module,
+				    function = Function,
+				    timer = TRef}).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.
 
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
+
+unregister_iq_response_handler(_Host, ID) ->
+    catch get_iq_callback(ID),
+    ok.
 
 unregister_iq_handler(Host, XMLNS) ->
     ejabberd_local ! {unregister_iq_handler, Host, XMLNS}.
@@ -168,6 +181,7 @@ init([]) ->
 				 ?MODULE, bounce_resource_packet, 100)
       end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
+    update_table(),
     mnesia:create_table(iq_response,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, iq_response)}]),
@@ -211,9 +225,6 @@ handle_info({route, From, To, Packet}, State) ->
 	    ok
     end,
     {noreply, State};
-handle_info({register_iq_response_handler, _Host, ID, Module, Function}, State) ->
-    mnesia:dirty_write(#iq_response{id = ID, module = Module, function = Function}),
-    {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
     ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
     catch mod_disco:register_feature(Host, XMLNS),
@@ -244,6 +255,9 @@ handle_info(refresh_iq_handlers, State) ->
 		      ok
 	      end
       end, ets:tab2list(?IQTABLE)),
+    {noreply, State};
+handle_info({timeout, _TRef, ID}, State) ->
+    process_iq_timeout(ID),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -298,3 +312,52 @@ do_route(From, To, Packet) ->
 	    end
 	end.
 
+update_table() ->
+    case catch mnesia:table_info(iq_response, attributes) of
+	[id, module, function] ->
+	    mnesia:delete_table(iq_response);
+	[id, module, function, timer] ->
+	    ok;
+	{'EXIT', _} ->
+	    ok
+    end.
+
+get_iq_callback(ID) ->
+    case mnesia:dirty_read(iq_response, ID) of
+	[#iq_response{module = Module, timer = TRef,
+		      function = Function}] ->
+	    cancel_timer(TRef),
+	    mnesia:dirty_delete(iq_response, ID),
+	    {ok, Module, Function};
+	_ ->
+	    error
+    end.
+
+process_iq_timeout(ID) ->
+    spawn(fun process_iq_timeout/0) ! ID.
+
+process_iq_timeout() ->
+    receive
+	ID ->
+	    case get_iq_callback(ID) of
+		{ok, undefined, Function} ->
+		    Function(timeout);
+		_ ->
+		    ok
+	    end
+    after 5000 ->
+	    ok
+    end.
+
+cancel_timer(TRef) ->
+    case erlang:cancel_timer(TRef) of
+	false ->
+	    receive
+                {timeout, TRef, _} ->
+                    ok
+            after 0 ->
+                    ok
+            end;
+        _ ->
+            ok
+    end.

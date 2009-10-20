@@ -1,6 +1,6 @@
 AC_DEFUN(AM_WITH_EXPAT,
 [ AC_ARG_WITH(expat,
-	      [  --with-expat=PREFIX	prefix where EXPAT is installed])
+	      [AC_HELP_STRING([--with-expat=PREFIX], [prefix where EXPAT is installed])])
 
   EXPAT_CFLAGS=
   EXPAT_LIBS=
@@ -15,7 +15,7 @@ AC_DEFUN(AM_WITH_EXPAT,
 		     [ expat_found=no ],
 		     "$EXPAT_LIBS")
 	if test $expat_found = no; then
-		AC_MSG_ERROR([Could not find the Expat library])
+		AC_MSG_ERROR([Could not find development files of Expat library])
 	fi
 	expat_save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $EXPAT_CFLAGS"
@@ -34,8 +34,9 @@ AC_DEFUN(AM_WITH_EXPAT,
 
 AC_DEFUN(AM_WITH_ZLIB,
 [ AC_ARG_WITH(zlib,
-	      [  --with-zlib=PREFIX	prefix where zlib is installed])
+	      [AC_HELP_STRING([--with-zlib=PREFIX], [prefix where zlib is installed])])
 
+if test x"$ejabberd_zlib" != x; then
   ZLIB_CFLAGS=
   ZLIB_LIBS=
 	if test x"$with_zlib" != x; then
@@ -49,7 +50,7 @@ AC_DEFUN(AM_WITH_ZLIB,
 		     [ zlib_found=no ],
 		     "$ZLIB_LIBS")
 	if test $zlib_found = no; then
-		AC_MSG_ERROR([Could not find the zlib library])
+		AC_MSG_ERROR([Could not find development files of zlib library. Install them or disable `ejabberd_zlib' with: --disable-ejabberd_zlib])
 	fi
 	zlib_save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $ZLIB_CFLAGS"
@@ -57,19 +58,20 @@ AC_DEFUN(AM_WITH_ZLIB,
        CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
 	AC_CHECK_HEADERS(zlib.h, , zlib_found=no)
 	if test $zlib_found = no; then
-		AC_MSG_ERROR([Could not find zlib.h])
+		AC_MSG_ERROR([Could not find zlib.h. Install it or disable `ejabberd_zlib' with: --disable-ejabberd_zlib])
 	fi
 	CFLAGS="$zlib_save_CFLAGS"
        CPPFLAGS="$zlib_save_CPPFLAGS"
 
   AC_SUBST(ZLIB_CFLAGS)
   AC_SUBST(ZLIB_LIBS)
+fi
 ])
 
 AC_DEFUN(AM_WITH_PAM,
 [ AC_ARG_WITH(pam,
-	      [  --with-pam=PREFIX	prefix where PAM is installed])
-
+	      [AC_HELP_STRING([--with-pam=PREFIX], [prefix where PAM is installed])])
+if test x"$pam" != x; then
   PAM_CFLAGS=
   PAM_LIBS=
 	if test x"$with_pam" != x; then
@@ -83,7 +85,7 @@ AC_DEFUN(AM_WITH_PAM,
 		     [ pam_found=no ],
 		     "$PAM_LIBS")
 	if test $pam_found = no; then
-		AC_MSG_WARN([Could not find the PAM library])
+		AC_MSG_ERROR([Could not find development files of PAM library. Install them or disable `pam' with: --disable-pam])
 	fi
 	pam_save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $PAM_CFLAGS"
@@ -91,18 +93,19 @@ AC_DEFUN(AM_WITH_PAM,
        CPPFLAGS="$CPPFLAGS $PAM_CFLAGS"
 	AC_CHECK_HEADERS(security/pam_appl.h, , pam_found=no)
 	if test $pam_found = no; then
-		AC_MSG_WARN([Could not find security/pam_appl.h])
+		AC_MSG_ERROR([Could not find security/pam_appl.h. Install it or disable `pam' with: --disable-pam])
 	fi
 	CFLAGS="$pam_save_CFLAGS"
        CPPFLAGS="$pam_save_CPPFLAGS"
 
   AC_SUBST(PAM_CFLAGS)
   AC_SUBST(PAM_LIBS)
+fi
 ])
 
 AC_DEFUN(AM_WITH_ERLANG,
 [ AC_ARG_WITH(erlang,
-	      [  --with-erlang=PREFIX    path to erlc and erl ])
+	      [AC_HELP_STRING([--with-erlang=PREFIX], [path to erlc and erl])])
 
    AC_PATH_TOOL(ERLC, erlc, , $with_erlang:$with_erlang/bin:$PATH)
    AC_PATH_TOOL(ERL, erl, , $with_erlang:$with_erlang/bin:$PATH)
@@ -195,14 +198,13 @@ _EOF
    AC_SUBST(ERL)
 ])
 
-
 AC_DEFUN(AC_MOD_ENABLE,
 [
 $1=
 make_$1=
 AC_MSG_CHECKING([whether build $1])
 AC_ARG_ENABLE($1,
-  [  --enable-$1        enable $1 (default: $2)],
+  [AC_HELP_STRING([--enable-$1], [enable $1 (default: $2)])],
     [mr_enable_$1="$enableval"],
      [mr_enable_$1=$2])
 if test "$mr_enable_$1" = "yes"; then
@@ -223,7 +225,7 @@ AC_DEFUN([AM_ICONV],
   dnl Some systems have iconv in libc, some have it in libiconv (OSF/1 and
   dnl those with the standalone portable GNU libiconv installed).
   AC_ARG_WITH([libiconv-prefix],
-[  --with-libiconv-prefix=PREFIX	prefix where libiconv is installed], [
+   [AC_HELP_STRING([--with-libiconv-prefix=PREFIX], [prefix where libiconv is installed])], [
     for dir in `echo "$withval" | tr : ' '`; do
       if test -d $dir/include; then CPPFLAGS="$CPPFLAGS -I$dir/include"; fi
       if test -d $dir/include; then CFLAGS="$CFLAGS -I$dir/include"; fi
@@ -308,7 +310,7 @@ size_t iconv();
 dnl <openssl>
 AC_DEFUN(AM_WITH_OPENSSL,
 [ AC_ARG_WITH(openssl,
-          [  --with-openssl=PREFIX    prefix where OPENSSL is installed ])
+      [AC_HELP_STRING([--with-openssl=PREFIX], [prefix where OPENSSL is installed])])
 unset SSL_LIBS;
 unset SSL_CFLAGS;
 have_openssl=no
@@ -338,7 +340,7 @@ if test x"$tls" != x; then
         fi
     done
 if test x${have_openssl} != xyes; then
-    AC_MSG_ERROR([openssl library cannot be found. Install openssl or disable `tls' module (--disable-tls).])
+    AC_MSG_ERROR([Could not find development files of OpenSSL library. Install them or disable `tls' with: --disable-tls])
 fi
 AC_SUBST(SSL_LIBS)
 AC_SUBST(SSL_CFLAGS)

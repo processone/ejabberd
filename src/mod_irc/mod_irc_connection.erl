@@ -1,11 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_irc_connection.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/5, start/6, route_chan/4, route_nick/3]).
+-export([start_link/7, start/8, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -48,9 +48,10 @@
 
 -define(SETS, gb_sets).
 
--record(state, {socket, encoding, queue,
-		user, host, server, nick,
+-record(state, {socket, encoding, port, password,
+		queue, user, host, server, nick,
 		channels = dict:new(),
+		nickchannel,
 		inbuf = "", outbuf = ""}).
 
 %-define(DBGFSM, true).
@@ -64,13 +65,13 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(From, Host, ServerHost, Server, Username, Encoding) ->
+start(From, Host, ServerHost, Server, Username, Encoding, Port, Password) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_irc_sup),
     supervisor:start_child(
-      Supervisor, [From, Host, Server, Username, Encoding]).
+      Supervisor, [From, Host, Server, Username, Encoding, Port, Password]).
 
-start_link(From, Host, Server, Username, Encoding) ->
-    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding],
+start_link(From, Host, Server, Username, Encoding, Port, Password) ->
+    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding, Port, Password],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -82,12 +83,14 @@ start_link(From, Host, Server, Username, Encoding) ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}                   
+%%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([From, Host, Server, Username, Encoding]) ->
+init([From, Host, Server, Username, Encoding, Port, Password]) ->
     gen_fsm:send_event(self(), init),
     {ok, open_socket, #state{queue = queue:new(),
 			     encoding = Encoding,
+			     port = Port,
+			     password = Password,
 			     user = From,
 			     nick = Username,
 			     host = Host,
@@ -97,15 +100,21 @@ init([From, Host, Server, Username, Encoding]) ->
 %% Func: StateName/2
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 open_socket(init, StateData) ->
     Addr = StateData#state.server,
-    Port = 6667,
+    Port = StateData#state.port,
     ?DEBUG("connecting to ~s:~p~n", [Addr, Port]),
     case gen_tcp:connect(Addr, Port, [binary, {packet, 0}]) of
 	{ok, Socket} ->
 	    NewStateData = StateData#state{socket = Socket},
+	    if
+		StateData#state.password /= "" ->
+		    send_text(NewStateData,
+			      io_lib:format("PASS ~s\r\n", [StateData#state.password]));
+		true -> true
+	    end,
 	    send_text(NewStateData,
 		      io_lib:format("NICK ~s\r\n", [StateData#state.nick])),
 	    send_text(NewStateData,
@@ -150,7 +159,7 @@ stream_established(closed, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 %state_name(Event, From, StateData) ->
 %    Reply = ok,
@@ -160,7 +169,7 @@ stream_established(closed, StateData) ->
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
@@ -172,7 +181,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok,
@@ -194,7 +203,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({route_chan, Channel, Resource,
 	     {xmlelement, "presence", Attrs, _Els}},
@@ -217,15 +226,21 @@ handle_info({route_chan, Channel, Resource,
 			   _ ->
 			       Resource
 		       end,
-		S1 = ?SEND(io_lib:format("NICK ~s\r\n"
-					 "JOIN #~s\r\n",
-					 [Nick, Channel])),
+		S1 = if
+		    Nick /= StateData#state.nick ->
+			S11 = ?SEND(io_lib:format("NICK ~s\r\n", [Nick])),
+			% The server reply will change the copy of the
+			% nick in the state (or indicate a clash).
+			S11#state{nickchannel = Channel};
+		    true ->
+			StateData
+		     end,
 		case dict:is_key(Channel, S1#state.channels) of
 		    true ->
-			S1#state{nick = Nick};
+			S1;
 		    _ ->
-			S1#state{nick = Nick,
-				 channels =
+			S2 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel])),
+			S2#state{channels =
 				 dict:store(Channel, ?SETS:new(),
 					    S1#state.channels)}
 		end
@@ -234,11 +249,9 @@ handle_info({route_chan, Channel, Resource,
 	NewStateData == stop ->
 	    {stop, normal, StateData};
 	true ->
-	    case length(dict:fetch_keys(NewStateData#state.channels)) of
-		0 ->
-		    {stop, normal, NewStateData};
-		_ ->
-		    {next_state, StateName, NewStateData}
+	    case dict:fetch_keys(NewStateData#state.channels) of
+		[] -> {stop, normal, NewStateData};
+		_ -> {next_state, StateName, NewStateData}
 	    end
     end;
 
@@ -370,27 +383,27 @@ handle_info({route_chan, Channel, Resource,
     From = StateData#state.user,
     To = jlib:make_jid(lists:concat([Channel, "%", StateData#state.server]),
 		       StateData#state.host, StateData#state.nick),
-    case jlib:iq_query_info(El) of
+    _ = case jlib:iq_query_info(El) of
 	#iq{xmlns = ?NS_MUC_ADMIN} = IQ ->
 	    iq_admin(StateData, Channel, From, To, IQ);
 	#iq{xmlns = ?NS_VERSION} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001VERSION\001\r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
 	#iq{xmlns = ?NS_TIME} ->
 	    Res = io_lib:format("PRIVMSG ~s :\001TIME\001\r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
 	#iq{xmlns = ?NS_VCARD} ->
 	    Res = io_lib:format("WHOIS ~s \r\n",
 				[Resource]),
-	    ?SEND(Res),
+	    _ = ?SEND(Res),
 	    Err = jlib:make_error_reply(
 		    El, ?ERR_FEATURE_NOT_IMPLEMENTED),
 	    ejabberd_router:route(To, From, Err);
@@ -471,6 +484,35 @@ handle_info({ircstring, [$P, $I, $N, $G, $  | ID]}, StateName, StateData) ->
     send_text(StateData, "PONG " ++ ID ++ "\r\n"),
     {next_state, StateName, StateData};
 
+handle_info({ircstring, [$: | String]}, wait_for_registration, StateData) ->
+    Words = string:tokens(String, " "),
+    {NewState, NewStateData} =
+	case Words of
+	    [_, "001" | _] ->
+		{stream_established, StateData};
+	    [_, "433" | _] ->
+		{error,
+		 {error, error_nick_in_use(StateData, String), StateData}};
+	    [_, [$4, _, _] | _] ->
+		{error,
+		 {error, error_unknown_num(StateData, String, "cancel"),
+		  StateData}};
+	    [_, [$5, _, _] | _] ->
+		{error,
+		 {error, error_unknown_num(StateData, String, "cancel"),
+		  StateData}};
+	    _ ->
+		?DEBUG("unknown irc command '~s'~n", [String]),
+		{wait_for_registration, StateData}
+	end,
+    % Note that we don't send any data at this stage.
+    if
+	NewState == error ->
+	    {stop, normal, NewStateData};
+	true ->
+	    {next_state, NewState, NewStateData}
+    end;
+
 handle_info({ircstring, [$: | String]}, _StateName, StateData) ->
     Words = string:tokens(String, " "),
     NewStateData =
@@ -495,6 +537,15 @@ handle_info({ircstring, [$: | String]}, _StateName, StateData) ->
 	    [_, "319", _, Nick | _ ] ->
 		process_whois319(StateData, String, Nick),
 		StateData;
+	    [_, "433" | _] ->
+		process_nick_in_use(StateData, String);
+	    % CODEPAGE isn't standard, so don't complain if it's not there.
+	    [_, "421", _, "CODEPAGE" | _] ->
+		StateData;
+	    [_, [$4, _, _] | _] ->
+		process_num_error(StateData, String);
+	    [_, [$5, _, _] | _] ->
+		process_num_error(StateData, String);
 	    [From, "PRIVMSG", [$# | Chan] | _] ->
 		process_chanprivmsg(StateData, Chan, From, String),
 		StateData;
@@ -581,7 +632,16 @@ handle_info({tcp_error, _Socket, _Reason}, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(_Reason, _StateName, StateData) ->
+terminate(_Reason, _StateName, FullStateData) ->
+    % Extract error message if there was one.
+    {Error, StateData} = case FullStateData of
+	{error, SError, SStateData} ->
+	    {SError, SStateData};
+	_ ->
+	    {{xmlelement, "error", [{"code", "502"}],
+	      [{xmlcdata, "Server Connect Failed"}]},
+	     FullStateData}
+	end,
     mod_irc:closed_connection(StateData#state.host,
 			      StateData#state.user,
 			      StateData#state.server),
@@ -594,8 +654,7 @@ terminate(_Reason, _StateName, StateData) ->
 		  StateData#state.host, StateData#state.nick),
 		StateData#state.user,
 		{xmlelement, "presence", [{"type", "error"}],
-		 [{xmlelement, "error", [{"code", "502"}],
-		   [{xmlcdata, "Server Connect Failed"}]}]})
+		 [Error]})
       end, dict:fetch_keys(StateData#state.channels)),
     case StateData#state.socket of
 	undefined ->
@@ -726,7 +785,7 @@ process_channel_topic_who(StateData, Chan, String) ->
     Msg1 = case Words of
 	       [_, "333", _, _Chan, Whoset , Timeset] ->
 		   case string:to_integer(Timeset) of
-		       {Unixtimeset, _Rest} -> 
+		       {Unixtimeset, _Rest} ->
 			   "Topic for #" ++ Chan ++ " set by " ++ Whoset ++
 			       " at " ++ unixtime2string(Unixtimeset);
 		       _->
@@ -738,7 +797,6 @@ process_channel_topic_who(StateData, Chan, String) ->
 		   String
 	   end,
     Msg2 = filter_message(Msg1),
-
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
 		    StateData#state.host, ""),
@@ -747,6 +805,45 @@ process_channel_topic_who(StateData, Chan, String) ->
        [{xmlelement, "body", [], [{xmlcdata, Msg2}]}]}).
 
 
+error_nick_in_use(_StateData, String) ->
+    {ok, Msg, _} = regexp:sub(String, ".*433 +[^ ]* +", ""),
+    Msg1 = filter_message(Msg),
+    {xmlelement, "error", [{"code", "409"}, {"type", "cancel"}],
+     [{xmlelement, "conflict", [{"xmlns", ?NS_STANZAS}], []},
+      {xmlelement, "text", [{"xmlns", ?NS_STANZAS}],
+       [{xmlcdata, Msg1}]}]}.
+
+process_nick_in_use(StateData, String) ->
+    % We can't use the jlib macro because we don't know the language of the
+    % message.
+    Error = error_nick_in_use(StateData, String),
+    case StateData#state.nickchannel of
+	undefined ->
+	    % Shouldn't happen with a well behaved server
+	    StateData;
+	Chan ->
+	    ejabberd_router:route(
+	      jlib:make_jid(
+		lists:concat([Chan, "%", StateData#state.server]),
+		StateData#state.host, StateData#state.nick),
+	      StateData#state.user,
+	      {xmlelement, "presence", [{"type", "error"}], [Error]}),
+	    StateData#state{nickchannel = undefined}
+    end.
+
+process_num_error(StateData, String) ->
+    Error = error_unknown_num(StateData, String, "continue"),
+    lists:foreach(
+      fun(Chan) ->
+	      ejabberd_router:route(
+		jlib:make_jid(
+		  lists:concat([Chan, "%", StateData#state.server]),
+		  StateData#state.host, StateData#state.nick),
+		StateData#state.user,
+		{xmlelement, "message", [{"type", "error"}],
+		 [Error]})
+      end, dict:fetch_keys(StateData#state.channels)),
+      StateData.
 
 process_endofwhois(StateData, _String, Nick) ->
     ejabberd_router:route(
@@ -876,7 +973,7 @@ process_version(StateData, _Nick, From) ->
 		    "\001\r\n",
 		    [FromUser, ?VERSION]) ++
       io_lib:format("NOTICE ~s :\001VERSION "
-		    ?EJABBERD_URI
+		    "http://ejabberd.jabberstudio.org/"
 		    "\001\r\n",
 		    [FromUser])).
 
@@ -908,7 +1005,7 @@ process_topic(StateData, Chan, From, String) ->
 
 process_part(StateData, Chan, From, String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
-    {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*:", ""),    
+    {ok, Msg, _} = regexp:sub(String, ".*PART[^:]*:", ""),
     Msg1 = filter_message(Msg),
     ejabberd_router:route(
       jlib:make_jid(lists:concat([Chan, "%", StateData#state.server]),
@@ -936,7 +1033,7 @@ process_part(StateData, Chan, From, String) ->
 
 process_quit(StateData, From, String) ->
     [FromUser | FromIdent] = string:tokens(From, "!"),
-    
+
     {ok, Msg, _} = regexp:sub(String, ".*QUIT[^:]*:", ""),
     Msg1 = filter_message(Msg),
     %%NewChans =
@@ -1069,7 +1166,14 @@ process_nick(StateData, From, NewNick) ->
 			  Ps
 		  end
 	  end, StateData#state.channels),
-    StateData#state{channels = NewChans}.
+    if
+	FromUser == StateData#state.nick ->
+	    StateData#state{nick = Nick,
+			    nickchannel = undefined,
+			    channels = NewChans};
+	true ->
+	    StateData#state{channels = NewChans}
+    end.
 
 
 process_error(StateData, String) ->
@@ -1085,6 +1189,13 @@ process_error(StateData, String) ->
 		   [{xmlcdata, String}]}]})
       end, dict:fetch_keys(StateData#state.channels)).
 
+error_unknown_num(_StateData, String, Type) ->
+    {ok, Msg, _} = regexp:sub(String, ".*[45][0-9][0-9] +[^ ]* +", ""),
+    Msg1 = filter_message(Msg),
+    {xmlelement, "error", [{"code", "500"}, {"type", Type}],
+     [{xmlelement, "undefined-condition", [{"xmlns", ?NS_STANZAS}], []},
+      {xmlelement, "text", [{"xmlns", ?NS_STANZAS}],
+       [{xmlcdata, Msg1}]}]}.
 
 
 
@@ -1188,7 +1299,7 @@ unixtime2string(Unixtime) ->
     Secs = Unixtime + calendar:datetime_to_gregorian_seconds(
 			{{1970, 1, 1}, {0,0,0}}),
     case calendar:universal_time_to_local_time(
-	   calendar:gregorian_seconds_to_datetime(Secs)) of 
+	   calendar:gregorian_seconds_to_datetime(Secs)) of
 	{{Year, Month, Day}, {Hour, Minute, Second}} ->
 	    lists:flatten(
 	      io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",
@@ -1206,4 +1317,3 @@ toupper([C | Cs]) ->
     end;
 toupper([]) ->
     [].
-

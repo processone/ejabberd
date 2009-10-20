@@ -5,7 +5,7 @@
 %%% Created : 24 Jul 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -59,6 +59,7 @@
 -define(GET_DECRYPTED_INPUT,  6).
 -define(GET_PEER_CERTIFICATE, 7).
 -define(GET_VERIFY_RESULT,    8).
+-define(VERIFY_NONE, 16#10000).
 
 -record(tlssock, {tcpsock, tlsport}).
 
@@ -120,13 +121,20 @@ tcp_to_tls(TCPSocket, Options) ->
 		{error, already_loaded} -> ok
 	    end,
 	    Port = open_port({spawn, tls_drv}, [binary]),
+	    Flags =
+		case lists:member(verify_none, Options) of
+		    true ->
+			?VERIFY_NONE;
+		    false ->
+			0
+		end,
 	    Command = case lists:member(connect, Options) of
 			  true ->
 			      ?SET_CERTIFICATE_FILE_CONNECT;
 			  false ->
 			      ?SET_CERTIFICATE_FILE_ACCEPT
 		      end,
-	    case port_control(Port, Command, CertFile ++ [0]) of
+	    case port_control(Port, Command bor Flags, CertFile ++ [0]) of
 		<<0>> ->
 		    {ok, #tlssock{tcpsock = TCPSocket, tlsport = Port}};
 		<<1, Error/binary>> ->

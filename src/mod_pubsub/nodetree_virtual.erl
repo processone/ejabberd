@@ -10,13 +10,13 @@
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
 %%% 
-%%% The Initial Developer of the Original Code is Process-one.
-%%% Portions created by Process-one are Copyright 2006-2008, Process-one
+%%% The Initial Developer of the Original Code is ProcessOne.
+%%% Portions created by ProcessOne are Copyright 2006-2009, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2008, Process-one.
+%%% This software is copyright 2006-2009, ProcessOne.
 %%%
 %%%
-%%% @copyright 2006-2008 Process-one
+%%% @copyright 2006-2009 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -26,10 +26,9 @@
 %%% @doc The module <strong>{@module}</strong> is the PubSub node tree plugin that
 %%% allow virtual nodes handling.
 %%% <p>PubSub node tree plugins are using the {@link gen_nodetree} behaviour.</p>
-%%% <p><strong>The API isn't stabilized yet</strong>. The pubsub plugin
-%%% development is still a work in progress. However, the system is already
-%%% useable and useful as is. Please, send us comments, feedback and
-%%% improvements.</p>
+%%% <p>This plugin development is still a work in progress. Due to optimizations in
+%%% mod_pubsub, this plugin can not work anymore without altering functioning.
+%%% Please, send us comments, feedback and improvements.</p>
 
 -module(nodetree_virtual).
 -author('christophe.romain@process-one.net').
@@ -43,11 +42,16 @@
 	 terminate/2,
 	 options/0,
 	 set_node/1,
+	 get_node/3,
 	 get_node/2,
+	 get_node/1,
+	 get_nodes/2,
 	 get_nodes/1,
+	 get_parentnodes/3,
+	 get_parentnodes_tree/3,
 	 get_subnodes/3,
-	 get_subnodes_tree/2,
-	 create_node/5,
+	 get_subnodes_tree/3,
+	 create_node/6,
 	 delete_node/2
 	]).
 
@@ -81,19 +85,31 @@ options() ->
 set_node(_NodeRecord) ->
     ok.
 
-%% @spec (Host, Node) -> pubsubNode()
+%% @spec (Host, Node, From) -> pubsubNode()
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Node record contains default values.</p>
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
 get_node(Host, Node) ->
-    #pubsub_node{nodeid = {Host, Node}}.
+    get_node({Host, Node}).
+get_node({Host, _} = NodeId) ->
+    Record = #pubsub_node{nodeid = NodeId, id = NodeId},
+    Module = list_to_atom("node_" ++ Record#pubsub_node.type),
+    Options = Module:options(),
+    Owners = [{"", Host, ""}],
+    Record#pubsub_node{owners = Owners, options = Options}.
 
-%% @spec (Key) -> [pubsubNode()]
+%% @spec (Host, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
+%%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Nodes list can not be determined.</p>
-get_nodes(_Key) ->
+get_nodes(Host, _From) ->
+    get_nodes(Host).
+get_nodes(_Host) ->
     [].
 
 %% @spec (Host, Node, From) -> [pubsubNode()]
@@ -101,13 +117,34 @@ get_nodes(_Key) ->
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
-get_subnodes(_Host, _Node, _From) ->
+get_parentnodes(_Host, _Node, _From) ->
     [].
 
-%% @spec (Host, Index) -> [pubsubNode()]
+%% @spec (Host, Node, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
+get_parentnodes_tree(_Host, _Node, _From) ->
+    [].
+
+%% @spec (Host, Node, From) -> [pubsubNode()]
+%%     Host = mod_pubsub:host()
+%%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
+%% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
+get_subnodes(Host, Node, _From) ->
+    get_subnodes(Host, Node).
+get_subnodes(_Host, _Node) ->
+    [].
+
+%% @spec (Host, Node, From) -> [pubsubNode()]
+%%     Host = mod_pubsub:host()
+%%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
+%% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
+get_subnodes_tree(Host, Node, _From) ->
+    get_subnodes_tree(Host, Node).
 get_subnodes_tree(_Host, _Node) ->
     [].
 
@@ -120,18 +157,13 @@ get_subnodes_tree(_Host, _Node) ->
 %% @doc <p>No node record is stored on database. Any valid node
 %% is considered as already created.</p>
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
-create_node(_Host, Node, _Type, Owner, _Options) ->
-    UserName = Owner#jid.luser,
-    UserHost = Owner#jid.lserver,
-    case Node of
-	["home", UserHost, UserName | _] -> {error, ?ERR_CONFLICT};
-	_ -> {error, ?ERR_NOT_ALLOWED}
-    end.
+create_node(Host, Node, _Type, _Owner, _Options, _Parents) ->
+	{error, {virtual, {Host, Node}}}.
 
 %% @spec (Host, Node) -> [mod_pubsub:node()]
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %% @doc <p>Virtual node tree does not handle parent/child.
 %% node deletion just affects the corresponding node.</p>
-delete_node(_Host, Node) ->
-    [Node].
+delete_node(Host, Node) ->
+    [get_node(Host, Node)].

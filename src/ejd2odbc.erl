@@ -5,7 +5,7 @@
 %%% Created : 22 Aug 2005 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -131,7 +131,14 @@ export_offline(Server, Output) ->
 	      NewPacket = {xmlelement, Name, Attrs2,
 			   Els ++
 			   [jlib:timestamp_to_xml(
-			      calendar:now_to_universal_time(TimeStamp))]},
+			      calendar:now_to_universal_time(TimeStamp),
+			      utc,
+			      jlib:make_jid("", Server, ""),
+			      "Offline Storage"),
+			    %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+			    jlib:timestamp_to_xml(
+			      calendar:now_to_universal_time(
+				TimeStamp))]},
 	      XML =
 		  ejabberd_odbc:escape(
 		    lists:flatten(

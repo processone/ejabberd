@@ -5,7 +5,7 @@
 %%% Created : 18 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -158,7 +158,7 @@ match_acl(ACL, JID, Host) ->
 	all -> true;
 	none -> false;
 	_ ->
-	    {User, Server, _Resource} = jlib:jid_tolower(JID),
+	    {User, Server, Resource} = jlib:jid_tolower(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of
 				  all ->
@@ -173,16 +173,24 @@ match_acl(ACL, JID, Host) ->
 				      (U == User) andalso (S == Server);
 				  {server, S} ->
 				      S == Server;
+				  {resource, R} ->
+				      R == Resource;
 				  {user_regexp, UR} ->
 				      ((Host == Server) orelse
 				       ((Host == global) andalso
 					lists:member(Server, ?MYHOSTS)))
 					  andalso is_regexp_match(User, UR);
+				  {shared_group, G} ->
+				      mod_shared_roster:is_user_in_group({User, Server}, G, Host);
+				  {shared_group, G, H} ->
+				      mod_shared_roster:is_user_in_group({User, Server}, G, H);
 				  {user_regexp, UR, S} ->
 				      (S == Server) andalso
 					  is_regexp_match(User, UR);
 				  {server_regexp, SR} ->
 				      is_regexp_match(Server, SR);
+				  {resource_regexp, RR} ->
+				      is_regexp_match(Resource, RR);
 				  {node_regexp, UR, SR} ->
 				      is_regexp_match(Server, SR) andalso
 					  is_regexp_match(User, UR);
@@ -197,6 +205,8 @@ match_acl(ACL, JID, Host) ->
 					  is_glob_match(User, UR);
 				  {server_glob, SR} ->
 				      is_glob_match(Server, SR);
+				  {resource_glob, RR} ->
+				      is_glob_match(Resource, RR);
 				  {node_glob, UR, SR} ->
 				      is_glob_match(Server, SR) andalso
 					  is_glob_match(User, UR);

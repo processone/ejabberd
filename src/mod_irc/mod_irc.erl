@@ -5,7 +5,7 @@
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -34,7 +34,8 @@
 -export([start_link/2,
 	 start/2,
 	 stop/1,
-	 closed_connection/3]).
+	 closed_connection/3,
+	 get_connection_params/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -42,11 +43,16 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("adhoc.hrl").
+
+-define(DEFAULT_IRC_ENCODING, "iso8859-1").
+-define(DEFAULT_IRC_PORT, 6667).
+-define(POSSIBLE_ENCODINGS, ["koi8-r", "iso8859-1", "iso8859-2", "utf-8", "utf-8+latin-1"]).
 
 -record(irc_connection, {jid_server_host, pid}).
 -record(irc_custom, {us_host, data}).
 
--record(state, {host, server_host, default_encoding, access}).
+-record(state, {host, server_host, access}).
 
 -define(PROCNAME, ejabberd_mod_irc).
 
@@ -98,14 +104,12 @@ init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts, "irc.@HOST@"),
     update_table(MyHost),
     Access = gen_mod:get_opt(access, Opts, all),
-	DefaultEncoding = gen_mod:get_opt(default_encoding, Opts, "koi8-r"),
     catch ets:new(irc_connection, [named_table,
 				   public,
 				   {keypos, #irc_connection.jid_server_host}]),
     ejabberd_router:register_route(MyHost),
     {ok, #state{host = MyHost,
 		server_host = Host,
-		default_encoding = DefaultEncoding,
 		access = Access}}.
 
 %%--------------------------------------------------------------------
@@ -138,9 +142,8 @@ handle_cast(_Msg, State) ->
 handle_info({route, From, To, Packet},
 	    #state{host = Host,
 		   server_host = ServerHost,
-		   default_encoding = DefEnc,
 		   access = Access} = State) ->
-    case catch do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) of
+    case catch do_route(Host, ServerHost, Access, From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -188,10 +191,10 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) ->
+do_route(Host, ServerHost, Access, From, To, Packet) ->
     case acl:match_rule(ServerHost, Access, From) of
 	allow ->
-	    do_route1(Host, ServerHost, From, To, Packet, DefEnc);
+	    do_route1(Host, ServerHost, From, To, Packet);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s("xml:lang", Attrs),
@@ -201,7 +204,7 @@ do_route(Host, ServerHost, Access, From, To, Packet, DefEnc) ->
 	    ejabberd_router:route(To, From, Err)
     end.
 
-do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
+do_route1(Host, ServerHost, From, To, Packet) ->
     #jid{user = ChanServ, resource = Resource} = To,
     {xmlelement, _Name, _Attrs, _Els} = Packet,
     case ChanServ of
@@ -210,24 +213,67 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
 		"" ->
 		    case jlib:iq_query_info(Packet) of
 			#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
-			    sub_el = _SubEl, lang = Lang} = IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el = [{xmlelement, "query",
-						   [{"xmlns", XMLNS}],
-						   iq_disco(Lang)}]},
+			    sub_el = SubEl, lang = Lang} = IQ ->
+			    Node = xml:get_tag_attr_s("node", SubEl),
+			    Info = ejabberd_hooks:run_fold(
+				     disco_info, ServerHost, [],
+				     [ServerHost, ?MODULE, "", ""]),
+			    case iq_disco(Node, Lang) of
+				[] ->
+				    Res = IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   [{"xmlns", XMLNS}],
+							   []}]},
+				    ejabberd_router:route(To,
+							  From,
+							  jlib:iq_to_xml(Res));
+				DiscoInfo ->
+				    Res = IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   [{"xmlns", XMLNS}],
+							   DiscoInfo ++ Info}]},
+				    ejabberd_router:route(To,
+							  From,
+							  jlib:iq_to_xml(Res))
+			    end;
+			#iq{type = get, xmlns = ?NS_DISCO_ITEMS = XMLNS,
+			    sub_el = SubEl, lang = Lang} = IQ ->
+			    Node = xml:get_tag_attr_s("node", SubEl),
+			    case Node of
+				[] ->
+				    ResIQ = IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   [{"xmlns", XMLNS}],
+							   []}]},
+				    Res = jlib:iq_to_xml(ResIQ);
+				"join" ->
+				    ResIQ = IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   [{"xmlns", XMLNS}],
+							   []}]},
+				    Res = jlib:iq_to_xml(ResIQ);
+				"register" ->
+				    ResIQ = IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   [{"xmlns", XMLNS}],
+							   []}]},
+				    Res = jlib:iq_to_xml(ResIQ);
+				?NS_COMMANDS ->
+				    ResIQ = IQ#iq{type = result,
+						sub_el = [{xmlelement, "query",
+							   [{"xmlns", XMLNS},
+							    {"node", Node}],
+							   command_items(Host, Lang)}]},
+				    Res = jlib:iq_to_xml(ResIQ);
+				_ ->
+				    Res = jlib:make_error_reply(
+					    Packet, ?ERR_ITEM_NOT_FOUND)
+			    end,
 			    ejabberd_router:route(To,
 						  From,
-						  jlib:iq_to_xml(Res));
-			#iq{type = get, xmlns = ?NS_DISCO_ITEMS = XMLNS} = IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el = [{xmlelement, "query",
-						   [{"xmlns", XMLNS}],
-						   []}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(Res));
+						  Res);
 			#iq{xmlns = ?NS_REGISTER} = IQ ->
-			    process_register(Host, From, To, DefEnc, IQ);
+			    process_register(Host, From, To, IQ);
 			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
 			    lang = Lang} = IQ ->
 			    Res = IQ#iq{type = result,
@@ -238,6 +284,34 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
                             ejabberd_router:route(To,
                                                   From,
                                                   jlib:iq_to_xml(Res));
+			#iq{type = set, xmlns = ?NS_COMMANDS,
+			    lang = _Lang, sub_el = SubEl} = IQ ->
+			    Request = adhoc:parse_request(IQ),
+			    case lists:keysearch(Request#adhoc_request.node, 1, commands()) of
+				{value, {_, _, Function}} ->
+				    case catch Function(From, To, Request) of
+					{'EXIT', Reason} ->
+					    ?ERROR_MSG("~p~nfor ad-hoc handler of ~p",
+						       [Reason, {From, To, IQ}]),
+					    Res = IQ#iq{type = error, sub_el = [SubEl,
+										?ERR_INTERNAL_SERVER_ERROR]};
+					ignore ->
+					    Res = ignore;
+					{error, Error} ->
+					    Res = IQ#iq{type = error, sub_el = [SubEl, Error]};
+					Command ->
+					    Res = IQ#iq{type = result, sub_el = [Command]}
+				    end,
+				    if Res /= ignore ->
+					    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+				       true ->
+					    ok
+				    end;
+				_ ->
+				    Err = jlib:make_error_reply(
+					    Packet, ?ERR_ITEM_NOT_FOUND),
+				    ejabberd_router:route(To, From, Err)
+			    end;
 			#iq{} = _IQ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
@@ -255,11 +329,26 @@ do_route1(Host, ServerHost, From, To, Packet, DefEnc) ->
 		    case ets:lookup(irc_connection, {From, Server, Host}) of
 			[] ->
 			    ?DEBUG("open new connection~n", []),
-			    {Username, Encoding} = get_user_and_encoding(
-						     Host, From, Server, DefEnc),
+			    {Username, Encoding, Port, Password} = get_connection_params(
+						     Host, From, Server),
+			    ConnectionUsername =
+				case Packet of
+				    %% If the user tries to join a
+				    %% chatroom, the packet for sure
+				    %% contains the desired username.
+				    {xmlelement, "presence", _, _} ->
+					Resource;
+				    %% Otherwise, there is no firm
+				    %% conclusion from the packet.
+				    %% Better to use the configured
+				    %% username (which defaults to the
+				    %% username part of the JID).
+				    _ ->
+					Username
+				end,
 			    {ok, Pid} = mod_irc_connection:start(
 					  From, Host, ServerHost, Server,
-					  Username, Encoding),
+					  ConnectionUsername, Encoding, Port, Password),
 			    ets:insert(
 			      irc_connection,
 			      #irc_connection{jid_server_host = {From, Server, Host},
@@ -304,17 +393,30 @@ closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).
 
 
-iq_disco(Lang) ->
+iq_disco([], Lang) ->
     [{xmlelement, "identity",
       [{"category", "conference"},
        {"type", "irc"},
        {"name", translate:translate(Lang, "IRC Transport")}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_MUC}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_REGISTER}], []},
-     {xmlelement, "feature",
-      [{"var", ?NS_VCARD}], []}].
+     {xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
+     {xmlelement, "feature", [{"var", ?NS_MUC}], []},
+     {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
+     {xmlelement, "feature", [{"var", ?NS_VCARD}], []},
+     {xmlelement, "feature", [{"var", ?NS_COMMANDS}], []}];
+iq_disco(Node, Lang) ->
+    case lists:keysearch(Node, 1, commands()) of
+	{value, {_, Name, _}} ->
+	    [{xmlelement, "identity",
+	      [{"category", "automation"},
+	       {"type", "command-node"},
+	       {"name", translate:translate(Lang, Name)}], []},
+	     {xmlelement, "feature",
+	      [{"var", ?NS_COMMANDS}], []},
+	     {xmlelement, "feature",
+	      [{"var", ?NS_XDATA}], []}];
+	_ ->
+	    []
+    end.
 
 iq_get_vcard(Lang) ->
     [{xmlelement, "FN", [],
@@ -322,11 +424,23 @@ iq_get_vcard(Lang) ->
      {xmlelement, "URL", [],
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd IRC module") ++
-        "\nCopyright (c) 2003-2008 Alexey Shchepin"}]}].
+      [{xmlcdata, translate:translate(Lang, "ejabberd IRC module") ++ 
+        "\nCopyright (c) 2003-2009 Alexey Shchepin"}]}].
 
-process_register(Host, From, To, DefEnc, #iq{} = IQ) ->
-    case catch process_irc_register(Host, From, To, DefEnc, IQ) of
+command_items(Host, Lang) ->
+    lists:map(fun({Node, Name, _Function})
+		 -> {xmlelement, "item",
+		     [{"jid", Host},
+		      {"node", Node},
+		      {"name", translate:translate(Lang, Name)}], []}
+	      end, commands()).
+
+commands() ->
+    [{"join", "Join channel", fun adhoc_join/3},
+     {"register", "Configure username, encoding, port and password", fun adhoc_register/3}].
+
+process_register(Host, From, To, #iq{} = IQ) ->
+    case catch process_irc_register(Host, From, To, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
@@ -356,7 +470,7 @@ find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
-process_irc_register(Host, From, _To, DefEnc,
+process_irc_register(Host, From, _To,
 		     #iq{type = Type, xmlns = XMLNS,
 			 lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -402,7 +516,7 @@ process_irc_register(Host, From, _To, DefEnc,
 	get ->
 	    Node =
 		string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-	    case get_form(Host, From, Node, Lang ,DefEnc) of
+	    case get_form(Host, From, Node, Lang) of
 		{result, Res} ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -417,7 +531,7 @@ process_irc_register(Host, From, _To, DefEnc,
 
 
 
-get_form(Host, From, [], Lang, DefEnc) ->
+get_form(Host, From, [], Lang) ->
     #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
@@ -429,12 +543,12 @@ get_form(Host, From, [], Lang, DefEnc) ->
 		{User, []};
 	    [#irc_custom{data = Data}] ->
 		{xml:get_attr_s(username, Data),
-		 xml:get_attr_s(encodings, Data)}
+		 xml:get_attr_s(connections_params, Data)}
 	end,
     case Customs of
 	{error, _Error} ->
 	    Customs;
-	{Username, Encodings} ->
+	{Username, ConnectionsParams} ->
 	    {result,
 	     [{xmlelement, "instructions", [],
 	       [{xmlcdata,
@@ -452,7 +566,7 @@ get_form(Host, From, [], Lang, DefEnc) ->
 	               [{xmlcdata,
 	                 translate:translate(
 	                   Lang,
-			   "Enter username and encodings you wish to use for "
+			   "Enter username, encodings, ports and passwords you wish to use for "
 			   "connecting to IRC servers")}]},
 	        {xmlelement, "field", [{"type", "text-single"},
 				       {"label",
@@ -467,36 +581,38 @@ get_form(Host, From, [], Lang, DefEnc) ->
 		       io_lib:format(
 		         translate:translate(
 			   Lang,
-			   "If you want to specify different encodings "
-			   "for IRC servers, fill this list with values "
-			   "in format '{\"irc server\", \"encoding\"}'.  "
-			   "By default this service use \"~s\" encoding."),
-		         [DefEnc]))}]}]},
+			   "If you want to specify different ports, "
+			   "passwords, encodings for IRC servers, fill "
+			   "this list with values in format "
+			   "'{\"irc server\", \"encoding\", port, \"password\"}'.  "
+			   "By default this service use \"~s\" encoding, port ~p, "
+			   "empty password."),
+		         [?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT]))}]}]},
 	        {xmlelement, "field", [{"type", "fixed"}],
 	         [{xmlelement, "value", [],
 		   [{xmlcdata,
 		     translate:translate(
 		       Lang,
-		       "Example: [{\"irc.lucky.net\", \"koi8-r\"}, "
-		       "{\"vendetta.fef.net\", \"iso8859-1\"}]."
+		       "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, "
+		       "{\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 		    )}]}]},
 	        {xmlelement, "field", [{"type", "text-multi"},
 				       {"label",
-				        translate:translate(Lang, "Encodings")},
-				       {"var", "encodings"}],
+				        translate:translate(Lang, "Connections parameters")},
+				       {"var", "connections_params"}],
 		         lists:map(
 			   fun(S) ->
 				   {xmlelement, "value", [], [{xmlcdata, S}]}
 			   end,
 			   string:tokens(
 			     lists:flatten(
-			       io_lib:format("~p.", [Encodings])),
+			       io_lib:format("~p.", [ConnectionsParams])),
 			     "\n"))
 	        }
 	       ]}]}
     end;
 
-get_form(_Host, _, _, _Lang, _) ->
+get_form(_Host, _, _, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
@@ -506,7 +622,7 @@ set_form(Host, From, [], _Lang, XData) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     US = {LUser, LServer},
     case {lists:keysearch("username", 1, XData),
-	  lists:keysearch("encodings", 1, XData)} of
+	  lists:keysearch("connections_params", 1, XData)} of
 	{{value, {_, [Username]}}, {value, {_, Strings}}} ->
 	    EncString = lists:foldl(fun(S, Res) ->
 					    Res ++ S ++ "\n"
@@ -514,7 +630,7 @@ set_form(Host, From, [], _Lang, XData) ->
 	    case erl_scan:string(EncString) of
 		{ok, Tokens, _} ->
 		    case erl_parse:parse_term(Tokens) of
-			{ok, Encodings} ->
+			{ok, ConnectionsParams} ->
 			    case mnesia:transaction(
 				   fun() ->
 					   mnesia:write(
@@ -523,8 +639,8 @@ set_form(Host, From, [], _Lang, XData) ->
 							 data =
 							 [{username,
 							   Username},
-							  {encodings,
-							   Encodings}]})
+							  {connections_params,
+							   ConnectionsParams}]})
 				   end) of
 				{atomic, _} ->
 				    {result, []};
@@ -546,24 +662,318 @@ set_form(_Host, _, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
-get_user_and_encoding(Host, From, IRCServer, DefEnc) ->
+get_connection_params(Host, From, IRCServer) ->
     #jid{user = User, server = _Server,
 	 luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
     case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	{'EXIT', _Reason} ->
-	    {User, DefEnc};
+	    {User, ?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT, ""};
 	[] ->
-	    {User, DefEnc};
+	    {User, ?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT, ""};
 	[#irc_custom{data = Data}] ->
-	    {xml:get_attr_s(username, Data),
-	     case xml:get_attr_s(IRCServer, xml:get_attr_s(encodings, Data)) of
-		"" -> DefEnc;
-		E -> E
-	     end}
+	    Username = xml:get_attr_s(username, Data),
+	    {NewUsername, NewEncoding, NewPort, NewPassword} = 
+    		case lists:keysearch(IRCServer, 1, xml:get_attr_s(connections_params, Data)) of
+	    	    {value, {_, Encoding, Port, Password}} ->
+		        {Username, Encoding, Port, Password};
+		    {value, {_, Encoding, Port}} ->
+			{Username, Encoding, Port, ""};
+		    {value, {_, Encoding}} ->
+			{Username, Encoding, ?DEFAULT_IRC_PORT, ""};
+		    _ ->
+			{Username, ?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT, ""}
+    		end,
+	    {NewUsername, 
+	     NewEncoding, 
+	     if 
+	        NewPort >= 0 andalso NewPort =< 65535 -> 
+		    NewPort; 
+		true -> 
+		    ?DEFAULT_IRC_PORT
+	     end,
+	     NewPassword}
+      end.
+
+adhoc_join(_From, _To, #adhoc_request{action = "cancel"} = Request) ->
+    adhoc:produce_response(Request,
+			   #adhoc_response{status = canceled});
+adhoc_join(From, To, #adhoc_request{lang = Lang,
+				    node = _Node,
+				    action = _Action,
+				    xdata = XData} = Request) ->
+    %% Access control has already been taken care of in do_route.
+    if XData == false ->
+	    Form =
+		{xmlelement, "x",
+		 [{"xmlns", ?NS_XDATA},
+		  {"type", "form"}],
+		 [{xmlelement, "title", [], [{xmlcdata, translate:translate(Lang, "Join IRC channel")}]},
+		  {xmlelement, "field",
+		   [{"var", "channel"},
+		    {"type", "text-single"},
+		    {"label", translate:translate(Lang, "IRC channel (don't put the first #)")}],
+		   [{xmlelement, "required", [], []}]},
+		  {xmlelement, "field",
+		   [{"var", "server"},
+		    {"type", "text-single"},
+		    {"label", translate:translate(Lang, "IRC server")}],
+		   [{xmlelement, "required", [], []}]}]},
+	    adhoc:produce_response(Request,
+				   #adhoc_response{status = executing,
+						   elements = [Form]});
+       true ->
+	    case jlib:parse_xdata_submit(XData) of
+		invalid ->
+		    {error, ?ERR_BAD_REQUEST};
+		Fields ->
+		    Channel = case lists:keysearch("channel", 1, Fields) of
+				  {value, {"channel", C}} ->
+				      C;
+				  _ ->
+				      false
+			      end,
+		    Server = case lists:keysearch("server", 1, Fields) of
+				 {value, {"server", S}} ->
+				     S;
+				 _ ->
+				     false
+			     end,
+		    if Channel /= false,
+		       Server /= false ->
+			    RoomJID = Channel ++ "%" ++ Server ++ "@" ++ To#jid.server,
+			    Invite = {xmlelement, "message", [],
+				      [{xmlelement, "x",
+					[{"xmlns", ?NS_MUC_USER}],
+					[{xmlelement, "invite", 
+					  [{"from", jlib:jid_to_string(From)}],
+					  [{xmlelement, "reason", [],
+					    [{xmlcdata, 
+					      translate:translate(Lang,
+								  "Join the IRC channel here.")}]}]}]},
+				       {xmlelement, "x",
+					[{"xmlns", ?NS_XCONFERENCE}],
+					[{xmlcdata, translate:translate(Lang,
+								  "Join the IRC channel here.")}]},
+				       {xmlelement, "body", [],
+					[{xmlcdata, io_lib:format(
+						      translate:translate(Lang,
+									  "Join the IRC channel in this Jabber ID: ~s"),
+						      [RoomJID])}]}]},
+			    ejabberd_router:route(jlib:string_to_jid(RoomJID), From, Invite),
+			    adhoc:produce_response(Request, #adhoc_response{status = completed});
+		       true ->
+			    {error, ?ERR_BAD_REQUEST}
+		    end
+	    end
     end.
 
+adhoc_register(_From, _To, #adhoc_request{action = "cancel"} = Request) ->
+    adhoc:produce_response(Request,
+			   #adhoc_response{status = canceled});
+adhoc_register(From, To, #adhoc_request{lang = Lang,
+					node = _Node,
+					xdata = XData,
+					action = Action} = Request) ->
+    #jid{user = User, luser = LUser, lserver = LServer} = From,
+    #jid{lserver = Host} = To,
+    US = {LUser, LServer},
+    %% Generate form for setting username and encodings.  If the user
+    %% hasn't begun to fill out the form, generate an initial form
+    %% based on current values.
+    if XData == false ->
+	    case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
+		{'EXIT', _Reason} ->
+		    Username = User,
+		    ConnectionsParams = [];
+		[] ->
+		    Username = User,
+		    ConnectionsParams = [];
+		[#irc_custom{data = Data}] ->
+		    Username = xml:get_attr_s(username, Data),
+		    ConnectionsParams = xml:get_attr_s(connections_params, Data)
+	    end,
+	    Error = false;
+       true ->
+	    case jlib:parse_xdata_submit(XData) of
+		invalid ->
+		    Error = {error, ?ERR_BAD_REQUEST},
+		    Username = false,
+		    ConnectionsParams = false;
+		Fields ->
+		    Username = case lists:keysearch("username", 1, Fields) of
+				   {value, {"username", U}} ->
+				       U;
+				   _ ->
+				       User
+			       end,
+		    ConnectionsParams = parse_connections_params(Fields),
+		    Error = false
+	    end
+    end,
+    
+    if Error /= false ->
+	    Error;
+       Action == "complete" ->
+	    case mnesia:transaction(
+		   fun () ->
+			   mnesia:write(
+			     #irc_custom{us_host =
+					 {US, Host},
+					 data =
+					 [{username,
+					   Username},
+					  {connections_params,
+					   ConnectionsParams}]})
+		   end) of
+		{atomic, _} ->
+		    adhoc:produce_response(Request, #adhoc_response{status = completed});
+		_ ->
+		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    end;
+       true ->
+	    Form = generate_adhoc_register_form(Lang, Username, ConnectionsParams),
+	    adhoc:produce_response(Request,
+				   #adhoc_response{status = executing,
+						   elements = [Form],
+						   actions = ["next", "complete"]})
+    end.
 
+generate_adhoc_register_form(Lang, Username, ConnectionsParams) ->
+    {xmlelement, "x",
+     [{"xmlns", ?NS_XDATA},
+      {"type", "form"}],
+     [{xmlelement, "title", [], [{xmlcdata, translate:translate(Lang, "IRC settings")}]},
+      {xmlelement, "instructions", [],
+       [{xmlcdata,
+	 translate:translate(
+	   Lang,
+	   "Enter username and encodings you wish to use for "
+	   "connecting to IRC servers.  Press 'Next' to get more fields "
+	   "to fill in.  Press 'Complete' to save settings.")}]},
+      {xmlelement, "field",
+       [{"var", "username"},
+	{"type", "text-single"},
+	{"label", translate:translate(Lang, "IRC username")}], 
+       [{xmlelement, "required", [], []},
+	{xmlelement, "value", [], [{xmlcdata, Username}]}]}] ++
+    generate_connection_params_fields(Lang, ConnectionsParams, 1, [])}.
+
+generate_connection_params_fields(Lang, [], Number, Acc) ->
+    Field = generate_connection_params_field(Lang, "", "", -1, "", Number),
+    lists:reverse(Field ++ Acc);
+    
+generate_connection_params_fields(Lang, [ConnectionParams | ConnectionsParams], Number, Acc) ->
+    case ConnectionParams of
+	{Server, Encoding, Port, Password} ->
+	    Field = generate_connection_params_field(Lang, Server, Encoding, Port, Password, Number),
+	    generate_connection_params_fields(Lang, ConnectionsParams, Number + 1, Field ++ Acc);	
+	{Server, Encoding, Port} ->	    
+	    Field = generate_connection_params_field(Lang, Server, Encoding, Port, [], Number),
+	    generate_connection_params_fields(Lang, ConnectionsParams, Number + 1, Field ++ Acc);
+	{Server, Encoding} ->	
+	    Field = generate_connection_params_field(Lang, Server, Encoding, [], [], Number),
+	    generate_connection_params_fields(Lang, ConnectionsParams, Number + 1, Field ++ Acc);
+	_ -> 
+	    []
+    end.
+
+generate_connection_params_field(Lang, Server, Encoding, Port, Password, Number) ->
+    EncodingUsed = case Encoding of
+		       [] ->
+			   ?DEFAULT_IRC_ENCODING;
+		       _ ->
+			   Encoding
+		   end,
+    PortUsedInt = if
+		    Port >= 0 andalso Port =< 65535 ->
+			Port;
+		    true ->
+			?DEFAULT_IRC_PORT
+	       end,	
+    PortUsed = integer_to_list(PortUsedInt),
+    PasswordUsed = case Password of
+		    [] -> 
+			"";
+		    _ -> 
+			Password
+		   end,	      		
+    NumberString = integer_to_list(Number),
+    %% Fields are in reverse order, as they will be reversed again later.
+    [{xmlelement, "field",
+      [{"var", "password" ++ NumberString},
+       {"type", "text-single"},
+       {"label", io_lib:format(translate:translate(Lang, "Password ~b"), [Number])}],
+      [{xmlelement, "value", [], [{xmlcdata, PasswordUsed}]}]},
+     {xmlelement, "field",
+      [{"var", "port" ++ NumberString},
+       {"type", "text-single"},
+       {"label", io_lib:format(translate:translate(Lang, "Port ~b"), [Number])}],
+      [{xmlelement, "value", [], [{xmlcdata, PortUsed}]}]},    
+     {xmlelement, "field",
+      [{"var", "encoding" ++ NumberString},
+       {"type", "list-single"},
+       {"label", io_lib:format(translate:translate(Lang, "Encoding for server ~b"), [Number])}],
+      [{xmlelement, "value", [], [{xmlcdata, EncodingUsed}]} |
+       lists:map(fun(E) ->
+			 {xmlelement, "option", [{"label", E}],
+			  [{xmlelement, "value", [], [{xmlcdata, E}]}]}
+		 end, ?POSSIBLE_ENCODINGS)]},
+     {xmlelement, "field",
+      [{"var", "server" ++ NumberString},
+       {"type", "text-single"},
+       {"label", io_lib:format(translate:translate(Lang, "Server ~b"), [Number])}],
+      [{xmlelement, "value", [], [{xmlcdata, Server}]}]}].
+
+parse_connections_params(Fields) ->
+    %% Find all fields staring with serverN, encodingN, portN and passwordN for any values
+    %% of N, and generate lists of {"N", Value}.
+    Servers = lists:sort(
+		[{lists:nthtail(6, Var), lists:flatten(Value)} || {Var, Value} <- Fields,
+								  lists:prefix("server", Var)]),
+    Encodings = lists:sort(
+		  [{lists:nthtail(8, Var), lists:flatten(Value)} || {Var, Value} <- Fields,
+								    lists:prefix("encoding", Var)]),
+								    
+    Ports = lists:sort(
+	      [{lists:nthtail(4, Var), lists:flatten(Value)} || {Var, Value} <- Fields,
+								lists:prefix("port", Var)]),
+								  
+    Passwords = lists:sort(
+		  [{lists:nthtail(8, Var), lists:flatten(Value)} || {Var, Value} <- Fields,
+								    lists:prefix("password", Var)]),
+    
+    %% Now sort the lists, and find the corresponding pairs.
+    parse_connections_params(Servers, Encodings, Ports, Passwords).
+    
+retrieve_connections_params(ConnectionParams, ServerN) ->
+    case ConnectionParams of
+        [{ConnectionParamN, ConnectionParam} | ConnectionParamsTail] ->	    
+    	    if 
+		ServerN == ConnectionParamN ->
+	    	    {ConnectionParam, ConnectionParamsTail};		
+	        ServerN < ConnectionParamN ->
+		    {[], [{ConnectionParamN, ConnectionParam} | ConnectionParamsTail]};
+		ServerN > ConnectionParamN ->    
+		    {[], ConnectionParamsTail}
+	    end;
+	    _ ->
+		{[], []}
+	end.
+	
+parse_connections_params([], _, _, _) ->
+    [];
+parse_connections_params(_, [], [], []) ->
+    [];	
+
+parse_connections_params([{ServerN, Server} | Servers], Encodings, Ports, Passwords) ->
+    %% Try to match matches of servers, ports, passwords and encodings, no matter what fields
+    %% the client might have left out.
+    {NewEncoding, NewEncodings} = retrieve_connections_params(Encodings, ServerN),
+    {NewPort, NewPorts} = retrieve_connections_params(Ports, ServerN),
+    {NewPassword, NewPasswords} = retrieve_connections_params(Passwords, ServerN),
+    [{Server, NewEncoding, NewPort, NewPassword} | parse_connections_params(Servers, NewEncodings, NewPorts, NewPasswords)].
+	    
 update_table(Host) ->
     Fields = record_info(fields, irc_custom),
     case mnesia:table_info(irc_custom, attributes) of

@@ -4,8 +4,9 @@ include ..\Makefile.inc
 EFLAGS = -I .. -pz ..
 
 OUTDIR = ..
-SOURCES = $(wildcard *.erl)
-BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
+BEAMS = ..\eldap.beam ..\eldap_filter.beam ..\eldap_pool.beam ..\eldap_utils.beam
+
+ASN_FLAGS = -bber_bin +optimize +driver
 
 ALL : $(BEAMS)
 
@@ -17,7 +18,7 @@ Clean :
 	-@erase $(BEAMS)
 
 ELDAPv3.erl : ELDAPv3.asn
-	erlc -bber_bin -W $(EFLAGS) ELDAPv3.asn
+	erlc $(ASN_FLAGS) -W $(EFLAGS) ELDAPv3.asn
 
 $(OUTDIR)\eldap.beam : eldap.erl ELDAPv3.erl
 	erlc -W $(EFLAGS) -o $(OUTDIR) eldap.erl

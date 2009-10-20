@@ -1,5 +1,5 @@
 /*
- * ejabberd, Copyright (C) 2002-2008   Process-one
+ * ejabberd, Copyright (C) 2002-2009   ProcessOne
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -10,7 +10,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- *                         
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -107,14 +107,14 @@ static int ejabberd_zlib_drv_control(ErlDrvData handle,
 	 b = driver_alloc_binary(size);
 	 b->orig_bytes[0] = 0;
 
-	 d->d_stream->next_in = buf;
+	 d->d_stream->next_in = (unsigned char *)buf;
 	 d->d_stream->avail_in = len;
 	 d->d_stream->avail_out = 0;
 	 err = Z_OK;
 
 	 while (err == Z_OK && d->d_stream->avail_out == 0)
 	 {
-	    d->d_stream->next_out = b->orig_bytes + rlen;
+	    d->d_stream->next_out = (unsigned char *)b->orig_bytes + rlen;
 	    d->d_stream->avail_out = BUF_SIZE;
 
 	    err = deflate(d->d_stream, Z_SYNC_FLUSH);
@@ -135,14 +135,14 @@ static int ejabberd_zlib_drv_control(ErlDrvData handle,
 	 b->orig_bytes[0] = 0;
 
 	 if (len > 0) {
-	    d->i_stream->next_in = buf;
+	    d->i_stream->next_in = (unsigned char *)buf;
 	    d->i_stream->avail_in = len;
 	    d->i_stream->avail_out = 0;
 	    err = Z_OK;
 
 	    while (err == Z_OK && d->i_stream->avail_out == 0)
 	    {
-	       d->i_stream->next_out = b->orig_bytes + rlen;
+	       d->i_stream->next_out = (unsigned char *)b->orig_bytes + rlen;
 	       d->i_stream->avail_out = BUF_SIZE;
 
 	       err = inflate(d->i_stream, Z_SYNC_FLUSH);

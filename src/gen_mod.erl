@@ -5,7 +5,7 @@
 %%% Created : 24 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -30,6 +30,7 @@
 -export([start/0,
 	 start_module/3,
 	 stop_module/2,
+	 stop_module_keep_config/2,
 	 get_opt/2,
 	 get_opt/3,
 	 get_opt_host/3,
@@ -61,33 +62,47 @@ start() ->
 
 
 start_module(Host, Module, Opts) ->
+    set_module_opts_mnesia(Host, Module, Opts),
+    ets:insert(ejabberd_modules,
+	       #ejabberd_module{module_host = {Module, Host},
+				opts = Opts}),
     case catch Module:start(Host, Opts) of
 	{'EXIT', Reason} ->
+	    del_module_mnesia(Host, Module),
+	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
-	    set_module_opts_mnesia(Host, Module, Opts),
-	    ets:insert(ejabberd_modules,
-		       #ejabberd_module{module_host = {Module, Host},
-					opts = Opts}),
 	    ok
     end.
 
+%% @doc Stop the module in a host, and forget its configuration.
 stop_module(Host, Module) ->
+    case stop_module_keep_config(Host, Module) of
+	error ->
+	    error;
+	ok ->
+	    del_module_mnesia(Host, Module)
+    end.
+
+%% @doc Stop the module in a host, but keep its configuration.
+%% As the module configuration is kept in the Mnesia local_config table,
+%% when ejabberd is restarted the module will be started again.
+%% This function is useful when ejabberd is being stopped
+%% and it stops all modules.
+stop_module_keep_config(Host, Module) ->
     case catch Module:stop(Host) of
 	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p", [Reason]);
+	    ?ERROR_MSG("~p", [Reason]),
+	    error;
 	{wait, ProcList} when is_list(ProcList) ->
 	    lists:foreach(fun wait_for_process/1, ProcList),
-	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	{wait, Process} ->
 	    wait_for_process(Process),
-	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok;
 	_ ->
-	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok
     end.
@@ -211,6 +226,8 @@ get_hosts(Opts, Prefix) ->
 	    Hosts
     end.
 
+get_module_proc(Host, {frontend, Base}) ->
+    get_module_proc("frontend_" ++ Host, Base);
 get_module_proc(Host, Base) ->
     list_to_atom(atom_to_list(Base) ++ "_" ++ Host).
 

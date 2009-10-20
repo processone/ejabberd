@@ -5,7 +5,7 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -29,7 +29,7 @@
 
 -behaviour(application).
 
--export([start/2, prep_stop/1, stop/1, init/0]).
+-export([start_modules/0,start/2, get_log_path/0, prep_stop/1, stop/1, init/0]).
 
 -include("ejabberd.hrl").
 
@@ -40,41 +40,50 @@
 
 start(normal, _Args) ->
     ejabberd_loglevel:set(4),
+    write_pid_file(),
     application:start(sasl),
     randoms:start(),
     db_init(),
     sha:start(),
     stringprep_sup:start_link(),
+    start(),
     translate:start(),
     acl:start(),
     ejabberd_ctl:init(),
+    ejabberd_commands:init(),
+    ejabberd_admin:start(),
     gen_mod:start(),
     ejabberd_config:start(),
     ejabberd_check:config(),
-    start(),
     connect_nodes(),
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
     ejabberd_auth:start(),
     cyrsasl:start(),
     % Profiling
-    %eprof:start(),
-    %eprof:profile([self()]),
-    %fprof:trace(start, "/tmp/fprof"),
+    %ejabberd_debug:eprof_start(),
+    %ejabberd_debug:fprof_start(),
+    maybe_add_nameservers(),
     start_modules(),
+    ejabberd_listener:start_listeners(),
+    ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
 start(_, _) ->
     {error, badarg}.
 
 %% Prepare the application for termination.
-%% This function is called when an application is about to be stopped, 
+%% This function is called when an application is about to be stopped,
 %% before shutting down the processes of the application.
 prep_stop(State) ->
     stop_modules(),
+    ejabberd_admin:stop(),
     State.
 
 %% All the processes were killed when this function is called
 stop(_State) ->
+    ?INFO_MSG("ejabberd ~s is stopped in the node ~p", [?VERSION, node()]),
+    delete_pid_file(),
+    ejabberd_debug:stop(),
     ok.
 
 
@@ -89,18 +98,7 @@ init() ->
     register(ejabberd, self()),
     %erlang:system_flag(fullsweep_after, 0),
     %error_logger:logfile({open, ?LOG_PATH}),
-    LogPath =
-	case application:get_env(log_path) of
-            {ok, Path} ->
-		Path;
-	    undefined ->
-		case os:getenv("EJABBERD_LOG_PATH") of
-		    false ->
-			?LOG_PATH;
-		    Path ->
-			Path
-		end
-	end,
+    LogPath = get_log_path(),
     error_logger:add_report_handler(ejabberd_logger_h, LogPath),
     erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
     case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
@@ -124,7 +122,7 @@ db_init() ->
 	_ ->
 	    ok
     end,
-    mnesia:start(),
+    application:start(mnesia, permanent),
     mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
 
 %% Start all the modules in all the hosts
@@ -152,7 +150,7 @@ stop_modules() ->
 		  Modules ->
 		      lists:foreach(
 			fun({Module, _Args}) ->
-				gen_mod:stop_module(Host, Module)
+				gen_mod:stop_module_keep_config(Host, Module)
 			end, Modules)
 	      end
       end, ?MYHOSTS).
@@ -167,3 +165,65 @@ connect_nodes() ->
 			  end, Nodes)
     end.
 
+%% @spec () -> string()
+%% @doc Returns the full path to the ejabberd log file.
+%% It first checks for application configuration parameter 'log_path'.
+%% If not defined it checks the environment variable EJABBERD_LOG_PATH.
+%% And if that one is neither defined, returns the default value:
+%% "ejabberd.log" in current directory.
+get_log_path() ->
+    case application:get_env(log_path) of
+	{ok, Path} ->
+	    Path;
+	undefined ->
+	    case os:getenv("EJABBERD_LOG_PATH") of
+		false ->
+		    ?LOG_PATH;
+		Path ->
+		    Path
+	    end
+    end.
+
+
+%% If ejabberd is running on some Windows machine, get nameservers and add to Erlang
+maybe_add_nameservers() ->
+    case os:type() of
+	{win32, _} -> add_windows_nameservers();
+	_ -> ok
+    end.
+
+add_windows_nameservers() ->
+    IPTs = win32_dns:get_nameservers(),
+    ?INFO_MSG("Adding machine's DNS IPs to Erlang system:~n~p", [IPTs]),
+    lists:foreach(fun(IPT) -> inet_db:add_ns(IPT) end, IPTs).
+
+
+%%%
+%%% PID file
+%%%
+
+write_pid_file() ->
+    case ejabberd:get_pid_file() of
+	false ->
+	    ok;
+	PidFilename ->
+	    write_pid_file(os:getpid(), PidFilename)
+    end.
+
+write_pid_file(Pid, PidFilename) ->
+    case file:open(PidFilename, [write]) of
+	{ok, Fd} ->
+	    io:format(Fd, "~s~n", [Pid]),
+	    file:close(Fd);
+	{error, Reason} ->
+	    ?ERROR_MSG("Cannot write PID file ~s~nReason: ~p", [PidFilename, Reason]),
+	    throw({cannot_write_pid_file, PidFilename, Reason})
+    end.
+
+delete_pid_file() ->
+    case ejabberd:get_pid_file() of
+	false ->
+	    ok;
+	PidFilename ->
+	    file:delete(PidFilename)
+    end.

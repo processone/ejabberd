@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -30,10 +30,11 @@
 -behaviour(gen_server).
 
 %% External exports
--export([start/1, start_link/1,
+-export([start/1, start_link/2,
 	 sql_query/2,
 	 sql_query_t/1,
 	 sql_transaction/2,
+	 sql_bloc/2,
 	 escape/1,
 	 escape_like/1,
 	 keep_alive/1]).
@@ -51,10 +52,14 @@
 -record(state, {db_ref, db_type}).
 
 -define(STATE_KEY, ejabberd_odbc_state).
+-define(NESTING_KEY, ejabberd_odbc_nesting_level).
+-define(TOP_LEVEL_TXN, 0).
 -define(MAX_TRANSACTION_RESTARTS, 10).
 -define(PGSQL_PORT, 5432).
 -define(MYSQL_PORT, 3306).
 
+-define(TRANSACTION_TIMEOUT, 60000). % milliseconds
+-define(KEEPALIVE_TIMEOUT, 60000).
 -define(KEEPALIVE_QUERY, "SELECT 1;").
 
 %%%----------------------------------------------------------------------
@@ -63,12 +68,11 @@
 start(Host) ->
     gen_server:start(ejabberd_odbc, [Host], []).
 
-start_link(Host) ->
-    gen_server:start_link(ejabberd_odbc, [Host], []).
+start_link(Host, StartInterval) ->
+    gen_server:start_link(ejabberd_odbc, [Host, StartInterval], []).
 
 sql_query(Host, Query) ->
-    gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
-		    {sql_query, Query}, 60000).
+    sql_call(Host, {sql_query, Query}).
 
 %% SQL transaction based on a list of queries
 %% This function automatically
@@ -81,24 +85,33 @@ sql_transaction(Host, Queries) when is_list(Queries) ->
 	end,
     sql_transaction(Host, F);
 %% SQL transaction, based on a erlang anonymous function (F = fun)
-sql_transaction(Host, F) ->
-    gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
-		    {sql_transaction, F}, 60000).
+sql_transaction(Host, F) when is_function(F) ->
+    sql_call(Host, {sql_transaction, F}).
+
+%% SQL bloc, based on a erlang anonymous function (F = fun)
+sql_bloc(Host, F) ->
+    sql_call(Host, {sql_bloc, F}).
+
+sql_call(Host, Msg) ->
+    case get(?STATE_KEY) of
+        undefined ->
+            gen_server:call(ejabberd_odbc_sup:get_random_pid(Host),
+			    {sql_cmd, Msg}, ?TRANSACTION_TIMEOUT);
+        _State ->
+            nested_op(Msg)
+    end.
+
 
 %% This function is intended to be used from inside an sql_transaction:
 sql_query_t(Query) ->
-    State = get(?STATE_KEY),
-    QRes = sql_query_internal(State, Query),
+    QRes = sql_query_internal(Query),
     case QRes of
-	{error, "No SQL-driver information available."} ->
-	    % workaround for odbc bug
-	    {updated, 0};
-	{error, _} ->
-	    throw(aborted);
+	{error, Reason} ->
+	    throw({aborted, Reason});
 	Rs when is_list(Rs) ->
-	    case lists:keymember(error, 1, Rs) of
-		true ->
-		    throw(aborted);
+	    case lists:keysearch(error, 1, Rs) of
+		{value, {error, Reason}} ->
+		    throw({aborted, Reason});
 		_ ->
 		    QRes
 	    end;
@@ -131,29 +144,35 @@ escape_like(C)  -> odbc_queries:escape(C).
 %%          ignore               |
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
-init([Host]) ->
+init([Host, StartInterval]) ->
     case ejabberd_config:get_local_option({odbc_keepalive_interval, Host}) of
-	Interval when is_integer(Interval) ->
-	    timer:apply_interval(Interval*1000, ?MODULE, keep_alive, [self()]);
+	KeepaliveInterval when is_integer(KeepaliveInterval) ->
+	    timer:apply_interval(KeepaliveInterval*1000, ?MODULE,
+				 keep_alive, [self()]);
 	undefined ->
 	    ok;
 	_Other ->
-	    ?ERROR_MSG("Wrong odbc_keepalive_interval definition '~p' for host ~p.~n", [_Other, Host])
+	    ?ERROR_MSG("Wrong odbc_keepalive_interval definition '~p'"
+		       " for host ~p.~n", [_Other, Host])
     end,
     SQLServer = ejabberd_config:get_local_option({odbc_server, Host}),
     case SQLServer of
 	%% Default pgsql port
 	{pgsql, Server, DB, Username, Password} ->
-	    pgsql_connect(Server, ?PGSQL_PORT, DB, Username, Password);
+	    pgsql_connect(Server, ?PGSQL_PORT, DB, Username, Password,
+			  StartInterval);
 	{pgsql, Server, Port, DB, Username, Password} when is_integer(Port) ->
-	    pgsql_connect(Server, Port, DB, Username, Password);
+	    pgsql_connect(Server, Port, DB, Username, Password,
+			  StartInterval);
 	%% Default mysql port
 	{mysql, Server, DB, Username, Password} ->
-	    mysql_connect(Server, ?MYSQL_PORT, DB, Username, Password);
+	    mysql_connect(Server, ?MYSQL_PORT, DB, Username, Password,
+			  StartInterval);
 	{mysql, Server, Port, DB, Username, Password} when is_integer(Port) ->
-	    mysql_connect(Server, Port, DB, Username, Password);
+	    mysql_connect(Server, Port, DB, Username, Password,
+			  StartInterval);
 	_ when is_list(SQLServer) ->
-	    odbc_connect(SQLServer)
+	    odbc_connect(SQLServer, StartInterval)
     end.
 
 %%----------------------------------------------------------------------
@@ -165,17 +184,13 @@ init([Host]) ->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
-handle_call({sql_query, Query}, _From, State) ->
-    Reply = sql_query_internal(State, Query),
-    {reply, Reply, State};
-
-handle_call({sql_transaction, F}, _From, State) ->
-    Reply = execute_transaction(State, F, ?MAX_TRANSACTION_RESTARTS),
-    {reply, Reply, State};
-
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+handle_call({sql_cmd, Command}, _From, State) ->
+    put(?NESTING_KEY, ?TOP_LEVEL_TXN),
+    put(?STATE_KEY, State),
+    abort_on_driver_error(outer_op(Command));
+handle_call(Request, {Who, _Ref}, State) ->
+    ?WARNING_MSG("Unexpected call ~p from ~p.", [Request, Who]),
+    {reply, ok, State}.
 
 %%----------------------------------------------------------------------
 %% Func: handle_cast/2
@@ -209,43 +224,164 @@ handle_info(_Info, State) ->
 %% Purpose: Shutdown the server
 %% Returns: any (ignored by gen_server)
 %%----------------------------------------------------------------------
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    case State#state.db_type of
+	mysql ->
+	    % old versions of mysql driver don't have the stop function
+	    % so the catch
+	    catch mysql_conn:stop(State#state.db_ref);
+	_ ->
+	    ok
+    end,
     ok.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-sql_query_internal(State, Query) ->
-    case State#state.db_type of
-	odbc ->
-	    odbc:sql_query(State#state.db_ref, Query);
-	pgsql ->
-	    pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
-	mysql ->
-	    mysql_to_odbc(mysql_conn:fetch(State#state.db_ref, Query, self()))
+
+%% Only called by handle_call, only handles top level operations.
+%% @spec outer_op(Op) -> {error, Reason} | {aborted, Reason} | {atomic, Result}
+outer_op({sql_query, Query}) ->
+    sql_query_internal(Query);
+outer_op({sql_transaction, F}) ->
+    outer_transaction(F, ?MAX_TRANSACTION_RESTARTS, "");
+outer_op({sql_bloc, F}) ->
+    execute_bloc(F).
+
+%% Called via sql_query/transaction/bloc from client code when inside a
+%% nested operation
+nested_op({sql_query, Query}) ->
+    %% XXX - use sql_query_t here insted? Most likely would break
+    %% callers who expect {error, _} tuples (sql_query_t turns
+    %% these into throws)
+    sql_query_internal(Query);
+nested_op({sql_transaction, F}) ->
+    NestingLevel = get(?NESTING_KEY),
+    if NestingLevel =:= ?TOP_LEVEL_TXN ->
+            %% First transaction inside a (series of) sql_blocs
+            outer_transaction(F, ?MAX_TRANSACTION_RESTARTS, "");
+       true ->
+            %% Transaction inside a transaction
+            inner_transaction(F)
+    end;
+nested_op({sql_bloc, F}) ->
+    execute_bloc(F).
+
+%% Never retry nested transactions - only outer transactions
+inner_transaction(F) ->
+    PreviousNestingLevel = get(?NESTING_KEY),
+    case get(?NESTING_KEY) of
+        ?TOP_LEVEL_TXN ->
+            {backtrace, T} = process_info(self(), backtrace),
+            ?ERROR_MSG("inner transaction called at outer txn level. Trace: ~s",
+		       [T]),
+            erlang:exit(implementation_faulty);
+        _N -> ok
+    end,
+    put(?NESTING_KEY, PreviousNestingLevel + 1),
+    Result = (catch F()),
+    put(?NESTING_KEY, PreviousNestingLevel),
+    case Result of
+        {aborted, Reason} ->
+            {aborted, Reason};
+        {'EXIT', Reason} ->
+            {'EXIT', Reason};
+        {atomic, Res} ->
+            {atomic, Res};
+        Res ->
+            {atomic, Res}
     end.
 
-execute_transaction(_State, _F, 0) ->
-    {aborted, restarts_exceeded};
-execute_transaction(State, F, NRestarts) ->
-    put(?STATE_KEY, State),
-    sql_query_internal(State, "begin;"),
-    case catch F() of
-	aborted ->
-	    execute_transaction(State, F, NRestarts - 1);
-	{'EXIT', Reason} ->
-	    sql_query_internal(State, "rollback;"),
-	    {aborted, Reason};
-	Res ->
-	    sql_query_internal(State, "commit;"),
-	    {atomic, Res}
+outer_transaction(F, NRestarts, _Reason) ->
+    PreviousNestingLevel = get(?NESTING_KEY),
+    case get(?NESTING_KEY) of
+        ?TOP_LEVEL_TXN ->
+            ok;
+        _N ->
+            {backtrace, T} = process_info(self(), backtrace),
+            ?ERROR_MSG("outer transaction called at inner txn level. Trace: ~s",
+		       [T]),
+            erlang:exit(implementation_faulty)
+    end,
+    sql_query_internal("begin;"),
+    put(?NESTING_KEY, PreviousNestingLevel + 1),
+    Result = (catch F()),
+    put(?NESTING_KEY, PreviousNestingLevel),
+    case Result of
+        {aborted, Reason} when NRestarts > 0 ->
+            %% Retry outer transaction upto NRestarts times.
+            sql_query_internal("rollback;"),
+            outer_transaction(F, NRestarts - 1, Reason);
+        {aborted, Reason} when NRestarts =:= 0 ->
+            %% Too many retries of outer transaction.
+            ?ERROR_MSG("SQL transaction restarts exceeded~n"
+                       "** Restarts: ~p~n"
+                       "** Last abort reason: ~p~n"
+                       "** Stacktrace: ~p~n"
+                       "** When State == ~p",
+                       [?MAX_TRANSACTION_RESTARTS, Reason,
+                        erlang:get_stacktrace(), get(?STATE_KEY)]),
+            sql_query_internal("rollback;"),
+            {aborted, Reason};
+        {'EXIT', Reason} ->
+            %% Abort sql transaction on EXIT from outer txn only.
+            sql_query_internal("rollback;"),
+            {aborted, Reason};
+        Res ->
+            %% Commit successful outer txn
+            sql_query_internal("commit;"),
+            {atomic, Res}
     end.
+
+execute_bloc(F) ->
+    %% We don't alter ?NESTING_KEY here as only SQL transactions alter
+    %% txn nesting
+    case catch F() of
+        {aborted, Reason} ->
+            {aborted, Reason};
+        {'EXIT', Reason} ->
+            {aborted, Reason};
+        Res ->
+            {atomic, Res}
+    end.
+
+sql_query_internal(Query) ->
+    State = get(?STATE_KEY),
+    Res = case State#state.db_type of
+              odbc ->
+                  odbc:sql_query(State#state.db_ref, Query);
+              pgsql ->
+                  pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
+              mysql ->
+                  ?DEBUG("MySQL, Send query~n~p~n", [Query]),
+                  R = mysql_to_odbc(mysql_conn:fetch(State#state.db_ref,
+						     Query, self())),
+                  %% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
+                  R
+          end,
+    case Res of
+	{error, "No SQL-driver information available."} ->
+	    % workaround for odbc bug
+	    {updated, 0};
+        _Else -> Res
+    end.
+
+%% Generate the OTP callback return tuple depending on the driver result.
+abort_on_driver_error({error, "query timed out"} = Reply) ->
+    %% mysql driver error
+    {stop, timeout, Reply, get(?STATE_KEY)};
+abort_on_driver_error({error, "Failed sending data on socket"++_} = Reply) ->
+    %% mysql driver error
+    {stop, closed, Reply, get(?STATE_KEY)};
+abort_on_driver_error(Reply) ->
+    {reply, Reply, get(?STATE_KEY)}.
+
 
 %% == pure ODBC code
 
 %% part of init/1
 %% Open an ODBC database connection
-odbc_connect(SQLServer) ->
+odbc_connect(SQLServer, StartInterval) ->
     application:start(odbc),
     case odbc:connect(SQLServer,[{scrollable_cursors, off}]) of
 	{ok, Ref} ->
@@ -254,8 +390,8 @@ odbc_connect(SQLServer) ->
 	{error, Reason} ->
 	    ?ERROR_MSG("ODBC connection (~s) failed: ~p~n",
 		       [SQLServer, Reason]),
-	    %% If we can't connect we wait for 30 seconds before retrying
-	    timer:sleep(30000),
+	    %% If we can't connect we wait before retrying
+	    timer:sleep(StartInterval),
 	    {stop, odbc_connection_failed}
     end.
 
@@ -264,15 +400,15 @@ odbc_connect(SQLServer) ->
 
 %% part of init/1
 %% Open a database connection to PostgreSQL
-pgsql_connect(Server, Port, DB, Username, Password) ->
+pgsql_connect(Server, Port, DB, Username, Password, StartInterval) ->
     case pgsql:connect(Server, DB, Username, Password, Port) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
 	    {ok, #state{db_ref = Ref, db_type = pgsql}};
 	{error, Reason} ->
 	    ?ERROR_MSG("PostgreSQL connection failed: ~p~n", [Reason]),
-	    %% If we can't connect we wait for 30 seconds before retrying
-	    timer:sleep(30000),
+	    %% If we can't connect we wait before retrying
+	    timer:sleep(StartInterval),
 	    {stop, pgsql_connection_failed}
     end.
 
@@ -294,6 +430,8 @@ pgsql_item_to_odbc("INSERT " ++ OIDN) ->
     {updated, list_to_integer(N)};
 pgsql_item_to_odbc("DELETE " ++ N) ->
     {updated, list_to_integer(N)};
+pgsql_item_to_odbc("UPDATE " ++ N) ->
+    {updated, list_to_integer(N)};
 pgsql_item_to_odbc({error, Error}) ->
     {error, Error};
 pgsql_item_to_odbc(_) ->
@@ -303,17 +441,18 @@ pgsql_item_to_odbc(_) ->
 
 %% part of init/1
 %% Open a database connection to MySQL
-mysql_connect(Server, Port, DB, Username, Password) ->
-    NoLogFun = fun(_Level,_Format,_Argument) -> ok end,
-    case mysql_conn:start(Server, Port, Username, Password, DB, NoLogFun) of
+mysql_connect(Server, Port, DB, Username, Password, StartInterval) ->
+    case mysql_conn:start(Server, Port, Username, Password, DB, fun log/3) of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
-            mysql_conn:fetch(Ref, ["set names 'utf8';"], self()), 
+            mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
 	    {ok, #state{db_ref = Ref, db_type = mysql}};
 	{error, Reason} ->
-	    ?ERROR_MSG("MySQL connection failed: ~p~n", [Reason]),
-	    %% If we can't connect we wait for 30 seconds before retrying
-	    timer:sleep(30000),
+	    ?ERROR_MSG("MySQL connection failed: ~p~n"
+		       "Waiting ~p seconds before retrying...~n",
+		       [Reason, StartInterval div 1000]),
+	    %% If we can't connect we wait before retrying
+	    timer:sleep(StartInterval),
 	    {stop, mysql_connection_failed}
     end.
 
@@ -338,4 +477,16 @@ mysql_item_to_odbc(Columns, Recs) ->
 
 % perform a harmless query on all opened connexions to avoid connexion close.
 keep_alive(PID) ->
-    gen_server:call(PID, {sql_query, ?KEEPALIVE_QUERY}, 60000).
+    gen_server:call(PID, {sql_cmd, {sql_query, ?KEEPALIVE_QUERY}},
+		    ?KEEPALIVE_TIMEOUT).
+
+% log function used by MySQL driver
+log(Level, Format, Args) ->
+    case Level of
+	debug ->
+	    ?DEBUG(Format, Args);
+	normal ->
+	    ?INFO_MSG(Format, Args);
+	error ->
+	    ?ERROR_MSG(Format, Args)
+    end.

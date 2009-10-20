@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -49,6 +49,7 @@
 -include("ejabberd.hrl").
 
 -record(passwd, {us, password}).
+-record(reg_users_counter, {vhost, count}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -56,12 +57,18 @@
 start(Host) ->
     mnesia:create_table(passwd, [{disc_copies, [node()]},
 				 {attributes, record_info(fields, passwd)}]),
+    mnesia:create_table(reg_users_counter,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, reg_users_counter)}]),
     update_table(),
-    ejabberd_ctl:register_commands(
-      Host,
-      [{"registered-users", "list all registered users"}],
-      ejabberd_auth, ctl_process_get_registered),
+    update_reg_users_counter_table(Host),
     ok.
+
+update_reg_users_counter_table(Server) ->
+    Set = get_vh_registered_users(Server),
+    Size = length(Set),
+    LServer = jlib:nameprep(Server),
+    set_vh_registered_users_counter(LServer, Size).
 
 plain_password_required() ->
     false.
@@ -77,7 +84,7 @@ check_password(User, Server, Password) ->
 	    false
     end.
 
-check_password(User, Server, Password, StreamID, Digest) ->
+check_password(User, Server, Password, Digest, DigestGen) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
@@ -85,7 +92,7 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	[#passwd{password = Passwd}] ->
 	    DigRes = if
 			 Digest /= "" ->
-			     Digest == sha:sha(StreamID ++ Passwd);
+			     Digest == DigestGen(Passwd);
 			 true ->
 			     false
 		     end,
@@ -98,6 +105,8 @@ check_password(User, Server, Password, StreamID, Digest) ->
 	    false
     end.
 
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%       ok | {error, invalid_jid}
 set_password(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -110,9 +119,11 @@ set_password(User, Server, Password) ->
 			mnesia:write(#passwd{us = US,
 					     password = Password})
 		end,
-	    mnesia:transaction(F)
+	    {atomic, ok} = mnesia:transaction(F),
+	    ok
     end.
 
+%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid} | {aborted, Reason}
 try_register(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -126,6 +137,7 @@ try_register(User, Server, Password) ->
 			    [] ->
 				mnesia:write(#passwd{us = US,
 						     password = Password}),
+				inc_vh_registered_users_counter(LServer),
 				ok;
 			    [_E] ->
 				exists
@@ -193,8 +205,17 @@ get_vh_registered_users(Server, _) ->
     get_vh_registered_users(Server).
 
 get_vh_registered_users_number(Server) ->
-    Set = get_vh_registered_users(Server),
-    length(Set).
+    LServer = jlib:nameprep(Server),
+    Query = mnesia:dirty_select(
+		reg_users_counter,
+		[{#reg_users_counter{vhost = LServer, count = '$1'},
+		  [],
+		  ['$1']}]),
+    case Query of
+	[Count] ->
+	    Count;
+	_ -> 0
+    end.
 
 get_vh_registered_users_number(Server, [{prefix, Prefix}]) when is_list(Prefix) ->
     Set = [{U, S} || {U, S} <- get_vh_registered_users(Server), lists:prefix(Prefix, U)],
@@ -202,6 +223,40 @@ get_vh_registered_users_number(Server, [{prefix, Prefix}]) when is_list(Prefix) 
     
 get_vh_registered_users_number(Server, _) ->
     get_vh_registered_users_number(Server).
+
+inc_vh_registered_users_counter(LServer) ->
+    F = fun() ->
+		case mnesia:wread({reg_users_counter, LServer}) of
+		    [C] ->
+			Count = C#reg_users_counter.count + 1,
+			C2 = C#reg_users_counter{count = Count},
+			mnesia:write(C2);
+		    _ ->
+			mnesia:write(#reg_users_counter{vhost = LServer,
+						      count = 1})
+		end
+	end,
+    mnesia:sync_dirty(F).
+
+dec_vh_registered_users_counter(LServer) ->
+    F = fun() ->
+		case mnesia:wread({reg_users_counter, LServer}) of
+		    [C] ->
+			Count = C#reg_users_counter.count - 1,
+			C2 = C#reg_users_counter{count = Count},
+			mnesia:write(C2);
+		    _ ->
+			error
+		end
+	end,
+    mnesia:sync_dirty(F).
+
+set_vh_registered_users_counter(LServer, Count) ->
+    F = fun() ->
+		mnesia:write(#reg_users_counter{vhost = LServer,
+						count = Count})
+	end,
+    mnesia:sync_dirty(F).
 
 get_password(User, Server) ->
     LUser = jlib:nodeprep(User),
@@ -225,6 +280,7 @@ get_password_s(User, Server) ->
 	    []
     end.
 
+%% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -234,20 +290,26 @@ is_user_exists(User, Server) ->
 	    false;
 	[_] ->
 	    true;
-	_ ->
-	    false
+	Other ->
+	    {error, Other}
     end.
 
+%% @spec (User, Server) -> ok
+%% @doc Remove user.
+%% Note: it returns ok even if there was some problem removing the user.
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     F = fun() ->
-		mnesia:delete({passwd, US})
+		mnesia:delete({passwd, US}),
+		dec_vh_registered_users_counter(LServer)
         end,
     mnesia:transaction(F),
-    ejabberd_hooks:run(remove_user, LServer, [User, Server]).
+	ok.
 
+%% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request
+%% @doc Remove user if the provided password is correct.
 remove_user(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
@@ -256,6 +318,7 @@ remove_user(User, Server, Password) ->
 		case mnesia:read({passwd, US}) of
 		    [#passwd{password = Password}] ->
 			mnesia:delete({passwd, US}),
+			dec_vh_registered_users_counter(LServer),
 			ok;
 		    [_] ->
 			not_allowed;
@@ -265,7 +328,6 @@ remove_user(User, Server, Password) ->
         end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    ejabberd_hooks:run(remove_user, LServer, [User, Server]),
 	    ok;
 	{atomic, Res} ->
 	    Res;

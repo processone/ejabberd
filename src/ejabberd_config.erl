@@ -5,7 +5,7 @@
 %%% Created : 14 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -31,9 +31,11 @@
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/1, get_local_option/1]).
 -export([get_vh_by_auth_method/1]).
+-export([is_file_readable/1]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_config.hrl").
+-include_lib("kernel/include/file.hrl").
 
 
 %% @type macro() = {macro_key(), macro_value()}
@@ -55,7 +57,10 @@ start() ->
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
     Config = get_ejabberd_config_path(),
-    load_file(Config).
+    load_file(Config),
+    %% This start time is used by mod_last:
+    add_local_option(node_start, now()),
+    ok.
 
 %% @doc Get the filename of the ejabberd configuration file.
 %% The filename can be specified with: erl -config "/path/to/ejabberd.cfg".
@@ -76,7 +81,8 @@ get_ejabberd_config_path() ->
 
 %% @doc Load the ejabberd configuration file.
 %% It also includes additional configuration files and replaces macros.
-%% @spec (File::string()) -> [term()]
+%% This function will crash if finds some error in the configuration file.
+%% @spec (File::string()) -> ok
 load_file(File) ->
     Terms = get_plain_terms_file(File),
     State = lists:foldl(fun search_hosts/2, #state{}, Terms),
@@ -95,9 +101,15 @@ get_plain_terms_file(File1) ->
     case file:consult(File) of
 	{ok, Terms} ->
 	    include_config_files(Terms);
+	{error, {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
+	    ExitText = lists:flatten(File ++ " approximately in the line "
+				     ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
+	    exit(ExitText);
 	{error, Reason} ->
-	    ?ERROR_MSG("Can't load config file ~p: ~p", [File, Reason]),
-	    exit(File ++ ": " ++ file:format_error(Reason))
+	    ExitText = lists:flatten(File ++ ": " ++ file:format_error(Reason)),
+	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
+	    exit(ExitText)
     end.
 
 %% @doc Convert configuration filename to absolute path.
@@ -239,18 +251,18 @@ split_terms_macros(Terms) ->
     lists:foldl(
       fun(Term, {TOs, Ms}) ->
 	      case Term of
-			  {define_macro, Key, Value} -> 
-			  case is_atom(Key) and is_all_uppercase(Key) of
-				true -> 
-					{TOs, Ms++[{Key, Value}]};
-				false -> 
-					exit({macro_not_properly_defined, Term})
-				end;
-				Term ->
-					{TOs ++ [Term], Ms}
+		  {define_macro, Key, Value} -> 
+		      case is_atom(Key) and is_all_uppercase(Key) of
+			  true -> 
+			      {TOs, Ms++[{Key, Value}]};
+			  false -> 
+			      exit({macro_not_properly_defined, Term})
+		      end;
+		  Term ->
+		      {TOs ++ [Term], Ms}
 	      end
       end,
-	  {[], []},
+      {[], []},
       Terms).
 
 %% @doc Recursively replace in Terms macro usages with the defined value.
@@ -263,15 +275,15 @@ replace([Term|Terms], Macros) ->
     [replace_term(Term, Macros) | replace(Terms, Macros)].
 
 replace_term(Key, Macros) when is_atom(Key) ->
-	case is_all_uppercase(Key) of
-		true ->
-			case proplists:get_value(Key, Macros) of
-				undefined -> exit({undefined_macro, Key});
-				Value -> Value
-			end;
-		false ->
-			Key
-	end;
+    case is_all_uppercase(Key) of
+	true ->
+	    case proplists:get_value(Key, Macros) of
+		undefined -> exit({undefined_macro, Key});
+		Value -> Value
+	    end;
+	false ->
+	    Key
+    end;
 replace_term({use_macro, Key, Value}, Macros) ->
     proplists:get_value(Key, Macros, Value);
 replace_term(Term, Macros) when is_list(Term) ->
@@ -284,9 +296,10 @@ replace_term(Term, _) ->
     Term.
 
 is_all_uppercase(Atom) ->
-	String = erlang:atom_to_list(Atom),
-	(String == string:to_upper(String)).
-
+    String = erlang:atom_to_list(Atom),
+    lists:all(fun(C) when C >= $a, C =< $z -> false;
+		 (_) -> true
+	      end, String).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Process terms
@@ -314,18 +327,42 @@ process_term(Term, State) ->
 	{host_config, Host, Terms} ->
 	    lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
 			State, Terms);
-	{listen, Val} ->
-	    add_option(listen, Val, State);
+	{listen, Listeners} ->
+	    Listeners2 =
+		lists:map(
+		  fun({PortIP, Module, Opts}) ->
+			  {Port, IPT, _, _, Proto, OptsClean} =
+			      ejabberd_listener:parse_listener_portip(PortIP, Opts),
+			  {{Port, IPT, Proto}, Module, OptsClean}
+		  end,
+		  Listeners),
+	    add_option(listen, Listeners2, State);
 	{language, Val} ->
 	    add_option(language, Val, State);
 	{outgoing_s2s_port, Port} ->
 	    add_option(outgoing_s2s_port, Port, State);
+	{outgoing_s2s_options, Methods, Timeout} ->
+	    add_option(outgoing_s2s_options, {Methods, Timeout}, State);
+        {s2s_dns_options, PropList} ->
+            add_option(s2s_dns_options, PropList, State);
 	{s2s_use_starttls, Port} ->
 	    add_option(s2s_use_starttls, Port, State);
 	{s2s_certfile, CertFile} ->
-	    add_option(s2s_certfile, CertFile, State);
+	    case ejabberd_config:is_file_readable(CertFile) of
+		true -> add_option(s2s_certfile, CertFile, State);
+		false ->
+		    ErrorText = "There is a problem in the configuration: "
+			"the specified file is not readable: ",
+		    throw({error, ErrorText ++ CertFile})
+	    end;
 	{domain_certfile, Domain, CertFile} ->
-	    add_option({domain_certfile, Domain}, CertFile, State);
+	    case ejabberd_config:is_file_readable(CertFile) of
+		true -> add_option({domain_certfile, Domain}, CertFile, State);
+		false ->
+		    ErrorText = "There is a problem in the configuration: "
+			"the specified file is not readable: ",
+		    throw({error, ErrorText ++ CertFile})
+	    end;
 	{node_type, NodeType} ->
 	    add_option(node_type, NodeType, State);
 	{cluster_nodes, Nodes} ->
@@ -336,9 +373,21 @@ process_term(Term, State) ->
 	    add_option({domain_balancing_component_number, Domain}, N, State);
 	{watchdog_admins, Admins} ->
 	    add_option(watchdog_admins, Admins, State);
+	{watchdog_large_heap, LH} ->
+	    add_option(watchdog_large_heap, LH, State);
+	{registration_timeout, Timeout} ->
+	    add_option(registration_timeout, Timeout, State);
+	{captcha_cmd, Cmd} ->
+	    add_option(captcha_cmd, Cmd, State);
+	{captcha_host, Host} ->
+	    add_option(captcha_host, Host, State);
+	{ejabberdctl_access_commands, ACs} ->
+	    add_option(ejabberdctl_access_commands, ACs, State);
 	{loglevel, Loglevel} ->
 	    ejabberd_loglevel:set(Loglevel),
 	    State;
+	{max_fsm_queue, N} ->
+	    add_option(max_fsm_queue, N, State);
 	{_Opt, _Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)
@@ -493,3 +542,16 @@ get_vh_by_auth_method(AuthMethod) ->
     mnesia:dirty_select(local_config,
 			[{#local_config{key = {auth_method, '$1'},
 					value=AuthMethod},[],['$1']}]).
+
+%% @spec (Path::string()) -> true | false
+is_file_readable(Path) ->
+    case file:read_file_info(Path) of
+	{ok, FileInfo} ->
+	    case {FileInfo#file_info.type, FileInfo#file_info.access} of
+		{regular, read} -> true;
+		{regular, read_write} -> true;
+		_ -> false
+	    end;
+	{error, _Reason} ->
+	    false
+    end.

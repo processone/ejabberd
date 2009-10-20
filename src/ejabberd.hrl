@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -11,7 +11,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -19,7 +19,9 @@
 %%%
 %%%----------------------------------------------------------------------
 
--define(VERSION, "2.1.0-alpha").
+%% This macro returns a string of the ejabberd version running, e.g. "2.3.4"
+%% If the ejabberd application description isn't loaded, returns atom: undefined
+-define(VERSION, element(2, application:get_key(ejabberd,vsn))).
 
 -define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
 -define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).

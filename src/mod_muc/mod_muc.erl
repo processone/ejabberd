@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2008   Process-one
+%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 %%% but WITHOUT ANY WARRANTY; without even the implied warranty of
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
-%%%                         
+%%%
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -38,6 +38,7 @@
 	 store_room/3,
 	 restore_room/2,
 	 forget_room/2,
+	 create_room/5,
 	 process_iq_disco_items/4,
 	 can_use_nick/3]).
 
@@ -102,6 +103,13 @@ room_destroyed(Host, Room, Pid, ServerHost) ->
 	{room_destroyed, {Room, Host}, Pid},
     ok.
 
+%% @doc Create a room.
+%% If Opts = default, the default room options are used.
+%% Else use the passed options as defined in mod_muc_room.
+create_room(Host, Name, From, Nick, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:call(Proc, {create, Name, From, Nick, Opts}).
+
 store_room(Host, Name, Opts) ->
     F = fun() ->
 		mnesia:write(#muc_room{name_host = {Name, Host},
@@ -124,10 +132,11 @@ forget_room(Host, Name) ->
     mnesia:transaction(F).
 
 process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
+    Rsm = jlib:rsm_decode(IQ),
     Res = IQ#iq{type = result,
 		sub_el = [{xmlelement, "query",
 			   [{"xmlns", ?NS_DISCO_ITEMS}],
-			   iq_disco_items(Host, From, Lang)}]},
+			   iq_disco_items(Host, From, Lang, Rsm)}]},
     ejabberd_router:route(To,
 			  From,
 			  jlib:iq_to_xml(Res)).
@@ -209,7 +218,28 @@ init([Host, Opts]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
-    {stop, normal, ok, State}.
+    {stop, normal, ok, State};
+
+handle_call({create, Room, From, Nick, Opts},
+	    _From,
+	    #state{host = Host,
+		   server_host = ServerHost,
+		   access = Access,
+		   default_room_opts = DefOpts,
+		   history_size = HistorySize,
+		   room_shaper = RoomShaper} = State) ->
+    ?DEBUG("MUC: create new room '~s'~n", [Room]),
+    NewOpts = case Opts of
+		  default -> DefOpts;
+		  _ -> Opts
+	      end,
+    {ok, Pid} = mod_muc_room:start(
+		  Host, ServerHost, Access,
+		  Room, HistorySize,
+		  RoomShaper, From,
+		  Nick, NewOpts),
+    register_room(Host, Room, Pid),
+    {reply, ok, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -323,10 +353,14 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			    case jlib:iq_query_info(Packet) of
 				#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
  				    sub_el = _SubEl, lang = Lang} = IQ ->
+				    Info = ejabberd_hooks:run_fold(
+					     disco_info, ServerHost, [],
+					     [ServerHost, ?MODULE, "", ""]),
 				    Res = IQ#iq{type = result,
 						sub_el = [{xmlelement, "query",
 							   [{"xmlns", XMLNS}],
-							   iq_disco_info(Lang)}]},
+							   iq_disco_info(Lang)
+							   ++Info}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
@@ -430,10 +464,11 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		    Type = xml:get_attr_s("type", Attrs),
 		    case {Name, Type} of
 			{"presence", ""} ->
-			    case acl:match_rule(ServerHost, AccessCreate, From) of
-				allow ->
-				    ?DEBUG("MUC: open new room '~s'~n", [Room]),
-				    {ok, Pid} = mod_muc_room:start(
+			    case check_user_can_create_room(ServerHost,
+							    AccessCreate, From,
+							    Room) of
+				true ->
+				    {ok, Pid} = start_new_room(
 						  Host, ServerHost, Access,
 						  Room, HistorySize,
 						  RoomShaper, From,
@@ -441,7 +476,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    register_room(Host, Room, Pid),
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;
-				_ ->
+				false ->
 				    Lang = xml:get_attr_s("xml:lang", Attrs),
 				    ErrText = "Room creation is denied by service policy",
 				    Err = jlib:make_error_reply(
@@ -463,7 +498,14 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	    end
     end.
 
-
+check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
+    case acl:match_rule(ServerHost, AccessCreate, From) of
+	allow ->
+	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
+						      max_room_id, infinite));
+	_ ->
+	    false
+    end.
 
 
 load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
@@ -495,6 +537,23 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 	      end, Rs)
     end.
 
+start_new_room(Host, ServerHost, Access, Room,
+	       HistorySize, RoomShaper, From,
+	       Nick, DefRoomOpts) ->
+    case mnesia:dirty_read(muc_room, {Room, Host}) of
+	[] ->
+	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
+	    mod_muc_room:start(Host, ServerHost, Access,
+			       Room, HistorySize,
+			       RoomShaper, From,
+			       Nick, DefRoomOpts);
+	[#muc_room{opts = Opts}|_] ->
+	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
+	    mod_muc_room:start(Host, ServerHost, Access,
+			       Room, HistorySize,
+			       RoomShaper, Opts)
+    end.
+
 register_room(Host, Room, Pid) ->
     F = fun() ->
 		mnesia:write(#muc_online_room{name_host = {Room, Host},
@@ -508,12 +567,15 @@ iq_disco_info(Lang) ->
       [{"category", "conference"},
        {"type", "text"},
        {"name", translate:translate(Lang, "Chatrooms")}], []},
+     {xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
+     {xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
      {xmlelement, "feature", [{"var", ?NS_MUC}], []},
      {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
+     {xmlelement, "feature", [{"var", ?NS_RSM}], []},
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
 
 
-iq_disco_items(Host, From, Lang) ->
+iq_disco_items(Host, From, Lang, none) ->
     lists:zf(fun(#muc_online_room{name_host = {Name, _Host}, pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(
 				  Pid, {get_disco_item, From, Lang}, 100) of
@@ -526,7 +588,72 @@ iq_disco_items(Host, From, Lang) ->
 			 _ ->
 			     false
 		     end
-	     end, get_vh_rooms(Host)).
+	     end, get_vh_rooms(Host));
+
+iq_disco_items(Host, From, Lang, Rsm) ->
+    {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
+    RsmOut = jlib:rsm_encode(RsmO),
+    lists:zf(fun(#muc_online_room{name_host = {Name, _Host}, pid = Pid}) ->
+		     case catch gen_fsm:sync_send_all_state_event(
+				  Pid, {get_disco_item, From, Lang}, 100) of
+			 {item, Desc} ->
+			     flush(),
+			     {true,
+			      {xmlelement, "item",
+			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
+				{"name", Desc}], []}};
+			 _ ->
+			     false
+		     end
+	     end, Rooms) ++ RsmOut.
+
+get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
+    AllRooms = lists:sort(get_vh_rooms(Host)),
+    Count = erlang:length(AllRooms),
+    Guard = case Direction of
+		_ when Index =/= undefined -> [{'==', {element, 2, '$1'}, Host}];
+		aft -> [{'==', {element, 2, '$1'}, Host}, {'>=',{element, 1, '$1'} ,I}];
+		before when I =/= []-> [{'==', {element, 2, '$1'}, Host}, {'=<',{element, 1, '$1'} ,I}];
+		_ -> [{'==', {element, 2, '$1'}, Host}]
+	    end,
+    L = lists:sort(
+	  mnesia:dirty_select(muc_online_room,
+			      [{#muc_online_room{name_host = '$1', _ = '_'},
+				Guard,
+				['$_']}])),
+    L2 = if
+	     Index == undefined andalso Direction == before ->
+		 lists:reverse(lists:sublist(lists:reverse(L), 1, M));
+	     Index == undefined ->
+		 lists:sublist(L, 1, M);
+	     Index > Count  orelse Index < 0 ->
+		 [];
+	     true ->
+		 lists:sublist(L, Index+1, M)
+	 end,
+    if
+	L2 == [] ->
+	    {L2, #rsm_out{count=Count}};
+	true ->
+	    H = hd(L2),
+	    NewIndex = get_room_pos(H, AllRooms),
+	    T=lists:last(L2),
+	    {F, _}=H#muc_online_room.name_host,
+	    {Last, _}=T#muc_online_room.name_host,
+	    {L2, #rsm_out{first=F, last=Last, count=Count, index=NewIndex}}
+    end.
+
+%% @doc Return the position of desired room in the list of rooms.
+%% The room must exist in the list. The count starts in 0.
+%% @spec (Desired::muc_online_room(), Rooms::[muc_online_room()]) -> integer()
+get_room_pos(Desired, Rooms) ->
+    get_room_pos(Desired, Rooms, 0).
+get_room_pos(Desired, [HeadRoom | _], HeadPosition)
+  when (Desired#muc_online_room.name_host ==
+	HeadRoom#muc_online_room.name_host) ->
+    HeadPosition;
+get_room_pos(Desired, [_ | Rooms], HeadPosition) ->
+    get_room_pos(Desired, Rooms, HeadPosition + 1).
 
 flush() ->
     receive
@@ -608,7 +735,7 @@ iq_set_register_info(Host, From, Nick, Lang) ->
 	{atomic, ok} ->
 	    {result, []};
 	{atomic, false} ->
-	    ErrText = "Specified nickname is already registered",
+	    ErrText = "That nickname is registered by another person",
 	    {error, ?ERRT_CONFLICT(Lang, ErrText)};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
@@ -631,11 +758,11 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 				    {error, ?ERR_BAD_REQUEST};
 				_ ->
 				    case lists:keysearch("nick", 1, XData) of
-					false ->
+					{value, {_, [Nick]}} when Nick /= "" ->
+					    iq_set_register_info(Host, From, Nick, Lang);
+					_ ->
 					    ErrText = "You must fill in field \"Nickname\" in the form",
-					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
-					{value, {_, [Nick]}} ->
-					    iq_set_register_info(Host, From, Nick, Lang)
+					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
 				    end
 			    end;
 			_ ->
@@ -655,7 +782,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(Lang, "ejabberd MUC module") ++
-	  "\nCopyright (c) 2003-2008 Alexey Shchepin"}]}].
+	  "\nCopyright (c) 2003-2009 Alexey Shchepin"}]}].
 
 
 broadcast_service_message(Host, Msg) ->

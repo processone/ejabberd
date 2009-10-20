@@ -2,7 +2,7 @@
             "http://www.w3.org/TR/REC-html40/loose.dtd">
 <HTML>
 <HEAD>
-<TITLE>Ejabberd 2.1.0-alpha Developers Guide
+<TITLE>Ejabberd 2.1.0 Developers Guide
 </TITLE>
 
 <META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
@@ -49,7 +49,7 @@ TD P{margin:0px;}
 <!--HEVEA command line is: /usr/bin/hevea -fix -pedantic dev.tex -->
 <!--CUT DEF section 1 --><P><A NAME="titlepage"></A>
 
-</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.0-alpha Developers Guide</H1><H3 CLASS="titlerest">Alexey Shchepin<BR>
+</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.0 Developers Guide</H1><H3 CLASS="titlerest">Alexey Shchepin<BR>
  <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
  <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3></TD></TR>
 </TABLE><DIV CLASS="center">
@@ -84,7 +84,7 @@ Kevin Smith, Current maintainer of the Psi project</I></BLOCKQUOTE><!--TOC secti
 </LI><LI CLASS="li-toc"><A HREF="#htoc15">8.2&#XA0;&#XA0;Services</A>
 </LI></UL>
 </LI></UL><P>Introduction
-<A NAME="intro"></A></P><P><TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang</A>.</P><P><TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
+<A NAME="intro"></A></P><P><TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang/OTP</A>.</P><P><TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc1">1</A>&#XA0;&#XA0;Key Features</H2><!--SEC END --><P>
 <A NAME="keyfeatures"></A>
 </P><P><TT>ejabberd</TT> is:
@@ -98,7 +98,7 @@ Comprehensive documentation.
 </LI><LI CLASS="li-itemize">Capability to send announce messages.
 </LI></UL></LI><LI CLASS="li-itemize">Internationalized: <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
 <UL CLASS="itemize"><LI CLASS="li-itemize">
-Translated to 24 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
+Translated to 25 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
 </LI></UL></LI><LI CLASS="li-itemize">Open Standards: <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
 <UL CLASS="itemize"><LI CLASS="li-itemize">
 Fully XMPP compliant.
@@ -139,14 +139,14 @@ Support for virtual hosting.
 </LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
 </LI><LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
 </LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-00163.html">Personal Eventing via Pubsub</A>.
+</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</A>.
 </LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
 </LI><LI CLASS="li-itemize">IRC transport.
 </LI><LI CLASS="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
 </LI></UL>
 </LI></UL><!--TOC section How it Works-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc3">3</A>&#XA0;&#XA0;How it Works</H2><!--SEC END --><P>
-<A NAME="howitworks"></A></P><P>A Jabber domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
+<A NAME="howitworks"></A></P><P>A XMPP domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
 be run on different machines that are connected via a network. They all must
 have the ability to connect to port 4369 of all another nodes, and must have
 the same magic cookie (see Erlang/OTP documentation, in other words the file
@@ -159,7 +159,7 @@ router;
 </LI><LI CLASS="li-itemize">session manager;
 </LI><LI CLASS="li-itemize">S2S manager;
 </LI></UL><!--TOC subsection Router-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc4">3.1</A>&#XA0;&#XA0;Router</H3><!--SEC END --><P>This module is the main router of Jabber packets on each node. It routes
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc4">3.1</A>&#XA0;&#XA0;Router</H3><!--SEC END --><P>This module is the main router of XMPP packets on each node. It routes
 them based on their destinations domains. It has two tables: local and global
 routes. First, domain of packet destination searched in local table, and if it
 found, then the packet is routed to appropriate process. If no, then it
@@ -173,7 +173,7 @@ session manager, else it is processed depending on it&#X2019;s content.</P><!--T
 packet must be sended via presence table. If this resource is connected to
 this node, it is routed to C2S process, if it connected via another node, then
 the packet is sent to session manager on that node.</P><!--TOC subsection S2S Manager-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc7">3.4</A>&#XA0;&#XA0;S2S Manager</H3><!--SEC END --><P>This module routes packets to other Jabber servers. First, it checks if an
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc7">3.4</A>&#XA0;&#XA0;S2S Manager</H3><!--SEC END --><P>This module routes packets to other XMPP servers. First, it checks if an
 open S2S connection from the domain of the packet source to the domain of
 packet destination already exists. If it is open on another node, then it
 routes the packet to S2S manager on that node, if it is open on this node, then
