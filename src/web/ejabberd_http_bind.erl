@@ -191,7 +191,7 @@ process_request(Data, IP) ->
 			{error, _} ->
 			    {200, ?HEADER, "<body type='terminate' "
 			     "condition='internal-server-error' "
-			     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>BOSH module not started</body"};
+			     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>BOSH module not started</body>"};
 			{ok, Pid} ->
 			    handle_session_start(
 			      Pid, XmppDomain, Sid, Rid, Attrs,
