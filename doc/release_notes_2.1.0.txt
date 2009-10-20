@@ -135,6 +135,8 @@
 - Implicit item deletion is not notified when deleting node
 - Make PubSub x-data configuration form handles list value
 - Make default node name convention XEP-compatible, document usage of hierarchy
+- Node names are used verbatim, without separating by slash, unless a
+  node plugin uses its own separator
 - Send authorization update event (XEP-0060, 8.6)
 - Support of collection node subscription options
 - Support ODBC storage. Experimental, needs more testing.
