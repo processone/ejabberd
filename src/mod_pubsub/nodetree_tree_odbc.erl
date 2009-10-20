@@ -59,7 +59,7 @@
 	 get_parentnodes_tree/3,
 	 get_subnodes/3,
 	 get_subnodes_tree/3,
-	 create_node/5,
+	 create_node/6,
 	 delete_node/2
 	]).
 
@@ -208,30 +208,37 @@ get_subnodes_tree(Host, Node) ->
 %%     NodeType = mod_pubsub:nodeType()
 %%     Owner = mod_pubsub:jid()
 %%     Options = list()
-create_node(Host, Node, Type, _Owner, Options) ->
+create_node(Host, Node, Type, Owner, Options, Parents) ->
+    BJID = jlib:short_prepd_bare_jid(Owner),
     case nodeid(Host, Node) of
 	{error, 'item_not_found'} ->
-		{ParentNode, ParentExists} = case Host of 
-		{_U, _S, _R} ->
+        ParentExists = case Host of
+            {_, _, _} ->
 		    %% This is special case for PEP handling
 		    %% PEP does not uses hierarchy
-		    {[], true};
+		    true;
 		_ ->
-		    case lists:sublist(Node, length(Node) - 1) of
-		    [] ->
-                    {[], true};
-		    Parent ->
+            case Parents of
+                [] ->  true;
+                [Parent | _] ->
                     case nodeid(Host, Parent) of
-                        {result, _} -> {Parent, true};
-                        _ -> {Parent, false}
-                    end
+                        {result, PNodeId} -> 
+                            case nodeowners(PNodeId) of
+                                [{[], Host, []}] -> true;
+                                Owners -> lists:member(BJID, Owners)
+                            end;
+                        _ ->
+                            false
+                    end;
+               _ -> 
+                  false
 		    end
 		end,
 	    case ParentExists of
 		true -> 
 		    case set_node(#pubsub_node{
 				nodeid={Host, Node},
-				parents=[ParentNode],
+				parents=Parents,
 				type=Type,
 				options=Options}) of
 			{result, NodeId} -> {ok, NodeId};
@@ -286,8 +293,8 @@ raw_to_node(Host, {Node, Parent, Type, NodeId}) ->
 		      []
 	      end,
     #pubsub_node{
-		nodeid = {Host, string_to_node(Host, Node)}, 
-		parents = [string_to_node(Host, Parent)],
+		nodeid = {Host, ?PUBSUB:string_to_node(Node)}, 
+		parents = [?PUBSUB:string_to_node(Parent)],
 		id = NodeId,
 		type = Type, 
 		options = Options}.
@@ -296,7 +303,10 @@ raw_to_node(Host, {Node, Parent, Type, NodeId}) ->
 %%	 Record = mod_pubsub:pubsub_node()
 set_node(Record) ->
     {Host, Node} = Record#pubsub_node.nodeid,
-    [Parent] = Record#pubsub_node.parents,
+    Parent = case Record#pubsub_node.parents of
+                [] -> <<>>;
+                [First | _] -> First
+    end,
     Type = Record#pubsub_node.type,
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -353,5 +363,8 @@ nodeid(Host, Node) ->
 	    {error, 'item_not_found'}
     end.
 
-string_to_node({_, _, _}, Node) -> Node;
-string_to_node(_, Node) -> ?PUBSUB:string_to_node(Node).
+nodeowners(NodeId) ->
+    {result, Res} = node_hometree_odbc:get_node_affiliations(NodeId),
+    lists:foldl(fun({LJID, owner}, Acc) -> [LJID|Acc];
+		   (_, Acc) -> Acc
+		end, [], Res).

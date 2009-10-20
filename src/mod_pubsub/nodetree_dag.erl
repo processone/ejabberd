@@ -32,7 +32,7 @@
 	 get_parentnodes_tree/3,
 	 get_subnodes/3,
 	 get_subnodes_tree/3,
-	 create_node/5,
+	 create_node/6,
 	 delete_node/2]).
 
 -include_lib("stdlib/include/qlc.hrl").
@@ -53,14 +53,12 @@
 %% API
 %%====================================================================
 init(Host, ServerHost, Opts) ->
-    nodetree_tree:init(Host, ServerHost, Opts),
-    mnesia:transaction(fun create_node/5,
-		       [Host, [], "default", service_jid(ServerHost), []]).
+    nodetree_tree:init(Host, ServerHost, Opts).
 
 terminate(Host, ServerHost) ->
     nodetree_tree:terminate(Host, ServerHost).
 
-create_node(Key, NodeID, Type, Owner, Options) ->
+create_node(Key, NodeID, Type, Owner, Options, Parents) ->
     OwnerJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
     case find_node(Key, NodeID) of
 	false ->
@@ -68,6 +66,7 @@ create_node(Key, NodeID, Type, Owner, Options) ->
 	    N = #pubsub_node{nodeid = oid(Key, NodeID),
 			     id = ID,
 			     type = Type,
+                 parents = Parents,
 			     owners = [OwnerJID],
 			     options = Options},
 	    case set_node(N) of

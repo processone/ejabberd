@@ -70,7 +70,9 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-     get_last_items/3
+     get_last_items/3,
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 init(Host, ServerHost, Opts) ->
@@ -306,6 +308,11 @@ set_item(Item) ->
 get_item_name(Host, Node, Id) ->
     node_hometree_odbc:get_item_name(Host, Node, Id).
 
+node_to_path(Node) ->
+    node_flat_odbc:node_to_path(Node).
+
+path_to_node(Path) ->
+    node_flat_odbc:path_to_node(Path).
 
 %%%
 %%% Internal

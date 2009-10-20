@@ -80,7 +80,9 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-     get_last_items/3
+     get_last_items/3,
+     path_to_node/1,
+     node_to_path/1
 	]).
 
 -export([
@@ -209,7 +211,7 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
 	    {LU, LS, LR} = LOwner,
 	    case acl:match_rule(ServerHost, Access, exmpp_jid:make(LU, LS, LR)) of
 		allow ->
-		    case Node of
+		    case node_to_path(Node) of
 			["home", Server, User | _] -> true;
 			_ -> false
 		    end;
@@ -1372,3 +1374,11 @@ i2l(L, N) when is_list(L) ->
 	C when C > N -> L;
 	_ -> i2l([$0|L], N)
     end.
+
+node_to_path(Node) ->
+    string:tokens(binary_to_list(Node), "/").
+
+path_to_node([]) ->
+    <<>>;
+path_to_node(Path) ->
+    list_to_binary(string:join([""|Path], "/")).

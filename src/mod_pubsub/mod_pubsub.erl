@@ -277,11 +277,11 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     ok.
 
 init_nodes(Host, ServerHost, _NodeTree, Plugins) ->
-    %% TODO, this call should be done PLugin side
+    %% TODO, this call should be done plugin side
     case lists:member("hometree", Plugins) of
     true ->
-	create_node(Host, ServerHost, ["home"], service_jid(Host), "hometree"),
-	create_node(Host, ServerHost, ["home", ServerHost], service_jid(Host), "hometree");
+	create_node(Host, ServerHost, string_to_node("/home"), service_jid(Host), "hometree"),
+	create_node(Host, ServerHost, string_to_node("/home" ++ ServerHost), service_jid(Host), "hometree");
     false ->
 	ok
     end.
@@ -412,8 +412,29 @@ update_node_database(Host, ServerHost) ->
 	    rename_default_nodeplugin();
 	_ ->
 	    ok
-    end.
-  
+    end,
+    mnesia:transaction(fun() ->
+	    case catch mnesia:first(pubsub_node) of
+	    {_, L} when is_list(L) ->
+            lists:foreach(
+                    fun({H, N}) when is_list(N) ->
+                        [Node] = mnesia:read({pubsub_node, {H, N}}),
+                         Type = Node#pubsub_node.type,
+                         BN = element(2, node_call(Type, path_to_node, [N])),
+                         BP = case [element(2, node_call(Type, path_to_node, [P])) || P <- Node#pubsub_node.parents] of
+                            [<<>>] -> [];
+                            Parents -> Parents
+                         end,
+                         mnesia:write(Node#pubsub_node{nodeid={H, BN}, parents=BP}),
+                         mnesia:delete({pubsub_node, {H, N}});
+                      (_) ->
+                        ok
+	        end, mnesia:all_keys(pubsub_node));
+	    _ ->
+	        ok
+    	end
+    end). 
+
 rename_default_nodeplugin() ->
     lists:foreach(fun(Node) ->
 	mnesia:dirty_write(Node#pubsub_node{type = "hometree"})
@@ -557,7 +578,7 @@ send_loop(State) ->
 			    on_sub_and_presence ->
 				lists:foreach(fun({Resource, Caps}) ->
 				    CapsNotify = case catch mod_caps:get_features(ServerHost, Caps) of
-					    Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
+					    Features when is_list(Features) -> lists:member(node_to_string(Node) ++ "+notify", Features);
 					    _ -> false
 					end,
 				    case CapsNotify of
@@ -653,7 +674,7 @@ disco_sm_features(Acc, From, To, Node, _Lang) ->
 
 disco_sm_items(Acc, From, To, <<>>, _Lang) ->
     Host = exmpp_jid:prep_domain_as_list(To),
-    case tree_action(Host, get_subnodes, [Host, [], From]) of
+    case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
 	[] ->
 	    Acc;
 	Nodes ->
@@ -671,7 +692,8 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
     end;
 
 disco_sm_items(Acc, From, To, NodeB, _Lang) ->
-    Node = binary_to_list(NodeB),
+    SNode = binary_to_list(NodeB),
+    Node = string_to_node(SNode),
     %% TODO, use iq_disco_items(Host, Node, From)
     Host = exmpp_jid:prep_domain_as_list(To),
     LJID = jlib:short_prepd_bare_jid(To),
@@ -687,8 +709,6 @@ disco_sm_items(Acc, From, To, NodeB, _Lang) ->
 		    end,
 		NodeItems = lists:map(
 			  fun(#pubsub_item{itemid = {Id, _}}) ->
-				  %% "jid" is required by XEP-0030, and
-				  %% "node" is forbidden by XEP-0060.
 				  {result, Name} = node_call(Type, get_item_name, [Host, Node, Id]),
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
 				   [?XMLATTR('jid', exmpp_jid:to_binary(LJID)),
@@ -1085,7 +1105,7 @@ iq_disco_info(Host, SNode, From, Lang) ->
     end,
     Node = string_to_node(RealSNode),
     case Node of
-	[] ->
+	<<>> ->
 	    {result,
 	     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
 	       [?XMLATTR('category', "pubsub"),
@@ -1104,13 +1124,11 @@ iq_disco_info(Host, SNode, From, Lang) ->
 
 iq_disco_items(Host, [], From) ->
     {result, lists:map(
-	       fun(#pubsub_node{nodeid = {_, SubNode}}) ->
-		       SN = node_to_string(SubNode),
-		       RN = lists:last(SubNode),
-		       %% remove name attribute
+	       fun(#pubsub_node{nodeid = {_, SubNode}, type = Type}) ->
+               {result, Path} = node_call(Type, node_to_path, [SubNode]),
+               [Name | _] = lists:reverse(Path),
 		       #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host),
-					     ?XMLATTR('node', SN),
-					     ?XMLATTR('name', RN)]}
+                         ?XMLATTR('name', Name) | nodeAttr(SubNode)]}
 	       end, tree_action(Host, get_subnodes, [Host, [], From]))};
 iq_disco_items(Host, Item, From) ->
     case string:tokens(Item, "!") of
@@ -1118,10 +1136,6 @@ iq_disco_items(Host, Item, From) ->
 	    {result, []};
 	[SNode] ->
 	    Node = string_to_node(SNode),
-	    %% Note: Multiple Node Discovery not supported (mask on pubsub#type)
-	    %% TODO this code is also back-compatible with pubsub v1.8 (for client issue)
-	    %% TODO make it pubsub v1.12 compliant (breaks client compatibility ?)
-	    %% TODO That is, remove name attribute (or node?, please check for 2.1)
 	    Action =
 		fun(#pubsub_node{type = Type, id = NodeId}) ->
 			% TODO call get_items/6 instead for access control (EJAB-1033)
@@ -1131,17 +1145,12 @@ iq_disco_items(Host, Item, From) ->
 				    end,
 			Nodes = lists:map(
 				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
-					  SN = node_to_string(SubNode),
-					  RN = lists:last(SubNode),
-					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('node', SN), 
-								?XMLATTR('name', RN)]}
+					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host) | nodeAttr(SubNode)]}
 				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
-					  SN = node_to_string(Node) ++ "!" ++ RN,
-					  {result, Name} = node_call(Type, get_item_name, [NodeId, RN]),
-					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('node', SN),
-								?XMLATTR('name', Name)]}
+					  {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
+					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('name', Name)]}
 				  end, NodeItems),
 			{result, Nodes ++ Items}
 		end,
@@ -1199,10 +1208,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
     case exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children) of
 	[#xmlel{name = Name, attrs = Attrs, children = Els} | Rest] ->
-	    Node = case Host of
-		       {_, _, _} -> exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false);
-		       _ -> string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false))
-		   end,
+	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(attrs, 'node', false)),
 	    case {IQType, Name} of
 		{set, 'create'} ->
 		    Config = case Rest of
@@ -1303,10 +1309,7 @@ iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
     Action = exmpp_xml:remove_cdata_from_list(SubEls),
     case Action of
 	[#xmlel{name = Name, attrs = Attrs, children = Els}] ->
-	    Node = case Host of
-		       {_, _, _} -> exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', "");
-		       _ -> string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', ""))
-		   end,
+	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', "")),
 	    case {IQType, Name} of
 		{get, 'configure'} ->
 		    get_configure(Host, ServerHost, Node, From, Lang);
@@ -1547,8 +1550,7 @@ send_authorization_approval(Host, JID, SNode, Subscription) ->
 	       end,
     Stanza = event_stanza(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'subscription', attrs =
-		    [?XMLATTR('node', SNode),
-		     ?XMLATTR('jid', exmpp_jid:to_binary(JID))] ++ SubAttrs
+		    [ ?XMLATTR('jid', exmpp_jid:to_binary(JID)) | nodeAttr(SNode)] ++ SubAttrs
 		     }]),
     ejabberd_router ! {route, service_jid(Host), JID, Stanza}.
  
@@ -1558,10 +1560,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 	  lists:keysearch("pubsub#allow", 1, XFields)} of
 	{{value, {_, [SNode]}}, {value, {_, [SSubscriber]}},
 	 {value, {_, [SAllow]}}} ->
-	    Node = case Host of
-		       {_, _, _} -> [SNode];
-		       _ -> string:tokens(SNode, "/")
-		   end,
+	    Node = string_to_node(SNode),
 	    Subscriber = exmpp_jid:parse(SSubscriber),
 	    Allow = case SAllow of
 			"1" -> true;
@@ -1696,21 +1695,18 @@ update_auth(Host, Node, Type, NodeId, Subscriber,
 %%</ul>
 create_node(Host, ServerHost, Node, Owner, Type) ->
     create_node(Host, ServerHost, Node, Owner, Type, all, []).
-create_node(Host, ServerHost, [], Owner, Type, Access, Configuration) ->
+create_node(Host, ServerHost, <<>>, Owner, Type, Access, Configuration) ->
     case lists:member("instant-nodes", features(Type)) of
 	true ->
-	    {LOU, LOS, _} = jlib:short_prepd_jid(Owner),
-	    HomeNode = ["home", LOS, LOU],
-	    create_node(Host, ServerHost,
-			HomeNode, Owner, Type, Access, Configuration),
-	    NewNode = HomeNode ++ [randoms:get_string()],
+	    NewNode = string_to_node(randoms:get_string()),
 	    case create_node(Host, ServerHost,
 			     NewNode, Owner, Type, Access, Configuration) of
 		{result, []} ->
 		    {result,
 		     [#xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 		       [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = nodeAttr(NewNode)}]}]};
-		Error -> Error
+		Error -> 
+            Error
 	    end;
 	false ->
 	    %% Service does not support instant nodes
@@ -1718,7 +1714,6 @@ create_node(Host, ServerHost, [], Owner, Type, Access, Configuration) ->
     end;
 create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
     Type = select_type(ServerHost, Host, Node, GivenType),
-    Parent = lists:sublist(Node, length(Node) - 1),
     %% TODO, check/set node_type = Type
     ParseOptions = case exmpp_xml:remove_cdata_from_list(Configuration) of
 		       [] ->
@@ -1743,9 +1738,18 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 	{result, NodeOptions} ->
 	    CreateNode =
 		fun() ->
+			SNode = node_to_string(Node),
+			Parent = case node_call(Type, node_to_path, [Node]) of
+			    {result, [SNode]} -> <<>>;
+			    {result, Path} -> element(2, node_call(Type, path_to_node, [lists:sublist(Path, length(Path)-1)]))
+			end,
+			Parents = case Parent of
+			    <<>> -> [];
+			    _ -> [Parent]
+			end,
 			case node_call(Type, create_node_permission, [Host, ServerHost, Node, Parent, Owner, Access]) of
 			    {result, true} ->
-				case tree_call(Host, create_node, [Host, Node, Type, Owner, NodeOptions]) of
+				case tree_call(Host, create_node, [Host, Node, Type, Owner, NodeOptions, Parents]) of
 				    {ok, NodeId} ->
 					node_call(Type, create_node, [NodeId, Owner]);
 				    {error, {virtual, NodeId}} ->
@@ -2543,9 +2547,8 @@ read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
 	{result, #pubsub_subscription{options = Options}} ->
             {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
             OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
-			       attrs = [?XMLATTR('node', node_to_string(Node)),
-					?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
-					?XMLATTR('Subid', SubID)],
+			       attrs = [ ?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
+					?XMLATTR('Subid', SubID) | nodeAttr(Node)],
 			       children = [XdataEl]},
             PubsubEl = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children = [OptionsEl]},
             {result, PubsubEl}
@@ -2636,7 +2639,7 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				[];
 			    ({#pubsub_node{nodeid = {_, SubsNode}}, Subscription}) ->
 				case Node of
-				[] ->
+				<<>> ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
 				   [?XMLATTR('node', node_to_string(SubsNode)),
 				    ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
@@ -2650,7 +2653,7 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				[];
 			    ({#pubsub_node{nodeid = {_, SubsNode}}, Subscription, SubID, SubJID}) ->
 				case Node of
-				[] ->
+				<<>> ->
 				 [#xmlel{ns = ?NS_PUBSUB, name='subscription',
 				 	 attrs = [?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
 					 	 ?XMLATTR('subid', SubID),
@@ -2665,7 +2668,7 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				end;
 			    ({#pubsub_node{nodeid = {_, SubsNode}}, Subscription, SubJID}) ->
 				case Node of
-				[] ->
+				<<>> ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs =
 				   [?XMLATTR('node', node_to_string(SubsNode)),
 				    ?XMLATTR('jid', exmpp_jid:to_binary(SubJID)),
@@ -2857,14 +2860,8 @@ subscription_to_string(_) -> "none".
 %%	 Node = pubsubNode()
 %%	 NodeStr = string()
 %% @doc <p>Convert a node type from pubsubNode to string.</p>
-node_to_string([]) -> "/";
-node_to_string(Node) ->
-    case Node of
-	[[_ | _] | _] -> string:strip(lists:flatten(["/", lists:map(fun(S) -> [S, "/"] end, Node)]), right, $/);
-	[Head | _] when is_integer(Head) -> Node
-    end.
-string_to_node(SNode) ->
-    string:tokens(SNode, "/").
+node_to_string(Node) -> binary_to_list(Node).
+string_to_node(SNode) -> list_to_binary(SNode).
 
 %% @spec (Host) -> jid()
 %%	Host = host()
@@ -3093,6 +3090,7 @@ get_options_for_subs(NodeID, Subs) ->
 		end, [], Subs).
 
 % TODO: merge broadcast code that way
+% TODO: pablo: Why is this commented? Seems to be present on trunk.
 %broadcast(Host, Node, NodeId, Type, NodeOptions, Feature, Force, ElName, SubEls) ->
 %    case (get_option(NodeOptions, Feature) or Force) of
 %	true ->
@@ -3100,7 +3098,7 @@ get_options_for_subs(NodeID, Subs) ->
 %		{result, []} -> 
 %		    {result, false};
 %		{result, Subs} ->
-%		    Stanza = event_stanza([{xmlelement, ElName, [{"node", node_to_string(Node)}], SubEls}]),
+%		    Stanza = event_stanza([{xmlelement, ElName, nodeAttr(Node), SubEls}]),
 %		    broadcast_stanza(Host, Node, Type, NodeOptions, SubOpts, Stanza),
 %		    {result, true};
 %		_ ->
@@ -3217,7 +3215,7 @@ is_caps_notify(Host, Node, LJID) ->
 	    false;
 	Caps ->
 	    case catch mod_caps:get_features(Host, Caps) of
-		Features when is_list(Features) -> lists:member(Node ++ "+notify", Features);
+		Features when is_list(Features) -> lists:member(node_to_string(Node) ++ "+notify", Features);
 		_ -> false
 	    end
     end.
@@ -3748,6 +3746,8 @@ uniqid() ->
     lists:flatten(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
 
 % node attributes
+nodeAttr(Node) when is_list(Node) ->
+    [?XMLATTR('node', Node)];
 nodeAttr(Node) ->
     [?XMLATTR('node', node_to_string(Node))].
 

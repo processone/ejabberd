@@ -49,7 +49,7 @@ behaviour_info(callbacks) ->
 	 {get_nodes, 1},
 	 {get_subnodes, 3},
 	 {get_subnodes_tree, 3},
-	 {create_node, 5},
+	 {create_node, 6},
 	 {delete_node, 2}
 	];
 behaviour_info(_Other) ->

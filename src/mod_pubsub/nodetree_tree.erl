@@ -56,7 +56,7 @@
 	 get_parentnodes_tree/3,
 	 get_subnodes/3,
 	 get_subnodes_tree/3,
-	 create_node/5,
+	 create_node/6,
 	 delete_node/2
 	]).
 
@@ -158,6 +158,12 @@ get_parentnodes_tree(Host, Node, From) ->
 %%     From = mod_pubsub:jid()
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
+get_subnodes(Host, <<>>) ->
+    Q = qlc:q([N || #pubsub_node{nodeid = {NHost, _},
+                          parents = Parents} = N <- mnesia:table(pubsub_node),
+               Host == NHost,
+               Parents == []]),
+    qlc:e(Q);
 get_subnodes(Host, Node) ->
     Q = qlc:q([N || #pubsub_node{nodeid = {NHost, _},
 				 parents = Parents} = N <- mnesia:table(pubsub_node),
@@ -172,12 +178,21 @@ get_subnodes(Host, Node) ->
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
 get_subnodes_tree(Host, Node) ->
-    mnesia:foldl(fun(#pubsub_node{nodeid = {H, N}} = R, Acc) ->
-			 case lists:prefix(Node, N) and (H == Host) of
-			     true -> [R | Acc];
-			     _ -> Acc
-			 end
-		 end, [], pubsub_node).
+    case get_node(Host, Node) of
+    {error, _} ->
+	[];
+    Rec ->
+	BasePlugin = list_to_atom("node_"++Rec#pubsub_node.type),
+	BasePath = BasePlugin:node_to_path(Node),
+	mnesia:foldl(fun(#pubsub_node{nodeid = {H, N}} = R, Acc) ->
+		Plugin = list_to_atom("node_"++R#pubsub_node.type),
+		Path = Plugin:node_to_path(N),
+		case lists:prefix(BasePath, Path) and (H == Host) of
+		    true -> [R | Acc];
+		    false -> Acc
+		end
+	    end, [], pubsub_node)
+    end.
 
 %% @spec (Host, Node, Type, Owner, Options) -> ok | {error, Reason}
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
@@ -185,26 +200,27 @@ get_subnodes_tree(Host, Node) ->
 %%     NodeType = mod_pubsub:nodeType()
 %%     Owner = mod_pubsub:jid()
 %%     Options = list()
-create_node(Host, Node, Type, Owner, Options) ->
+create_node(Host, Node, Type, Owner, Options, Parents) ->
     BJID = jlib:short_prepd_bare_jid(Owner),
     case mnesia:read({pubsub_node, {Host, Node}}) of
 	[] ->
-	    {ParentNode, ParentExists} =
+	    ParentExists =
 		case Host of
 		    {_U, _S, _R} ->
 			%% This is special case for PEP handling
 			%% PEP does not uses hierarchy
-			{[], true};
+			true;
 		    _ ->
-			Parent = lists:sublist(Node, length(Node) - 1),
-			case Parent of
-			[] -> 
-			    {[], true};
-			_ ->
+			case Parents of
+                [] -> true;
+                [Parent | _] ->
 			    case mnesia:read({pubsub_node, {Host, Parent}}) of
-				[] -> {Parent, false};
-				_ -> {Parent, lists:member(BJID, Parent#pubsub_node.owners)}
-			    end
+				    [#pubsub_node{owners = [{[], Host, []}]}] -> true;
+                    [#pubsub_node{owners = Owners}] -> lists:member(BJID, Owners);
+                    _ -> false
+			    end;
+                _ -> 
+                    false
 			end
 		end,
 	    case ParentExists of
@@ -212,7 +228,7 @@ create_node(Host, Node, Type, Owner, Options) ->
 		    NodeId = pubsub_index:new(node),
 		    mnesia:write(#pubsub_node{nodeid = {Host, Node},
 					      id = NodeId,
-					      parents = [ParentNode],
+					      parents = Parents,
 					      type = Type,
 					      owners = [BJID],
 					      options = Options}),

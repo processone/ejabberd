@@ -59,7 +59,9 @@
 	 get_item/7,
 	 get_item/2,
 	 set_item/1,
-	 get_item_name/3
+	 get_item_name/3,
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 
@@ -180,3 +182,16 @@ set_item(Item) ->
 
 get_item_name(Host, Node, Id) ->
     node_hometree:get_item_name(Host, Node, Id).
+
+node_to_path(Node) ->
+    [binary_to_list(Node)].
+
+path_to_node(Path) ->
+    case Path of
+    % default slot
+    [Node] -> list_to_binary(Node);
+    % handle old possible entries, used when migrating database content to new format
+    [Node|_] when is_list(Node) -> list_to_binary(string:join([""|Path], "/"));
+    % default case (used by PEP for example)
+    _ -> list_to_binary(Path)
+    end.
