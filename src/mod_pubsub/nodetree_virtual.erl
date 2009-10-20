@@ -51,7 +51,7 @@
 	 get_parentnodes_tree/3,
 	 get_subnodes/3,
 	 get_subnodes_tree/3,
-	 create_node/5,
+	 create_node/6,
 	 delete_node/2
 	]).
 
@@ -157,7 +157,7 @@ get_subnodes_tree(_Host, _Node) ->
 %% @doc <p>No node record is stored on database. Any valid node
 %% is considered as already created.</p>
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
-create_node(Host, Node, _Type, _Owner, _Options) ->
+create_node(Host, Node, _Type, _Owner, _Options, _Parents) ->
 	{error, {virtual, {Host, Node}}}.
 
 %% @spec (Host, Node) -> [mod_pubsub:node()]

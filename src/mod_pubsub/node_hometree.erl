@@ -75,7 +75,9 @@
 	 get_item/7,
 	 get_item/2,
 	 set_item/1,
-	 get_item_name/3
+	 get_item_name/3,
+	 node_to_path/1,
+	 path_to_node/1
 	]).
 
 %% ================
@@ -203,7 +205,7 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
 	_ ->
 	    case acl:match_rule(ServerHost, Access, LOwner) of
 		allow ->
-		    case Node of
+		    case node_to_path(Node) of
 			["home", Server, User | _] -> true;
 			_ -> false
 		    end;
@@ -989,6 +991,14 @@ del_items(NodeId, ItemIds) ->
 get_item_name(_Host, _Node, Id) ->
     Id.
 
+node_to_path(Node) ->
+    string:tokens(binary_to_list(Node), "/").
+
+path_to_node([]) ->
+    <<>>;
+path_to_node(Path) ->
+    list_to_binary(string:join([""|Path], "/")).
+
 %% @spec (Affiliation, Subscription) -> true | false
 %%       Affiliation = owner | member | publisher | outcast | none
 %%       Subscription = subscribed | none
@@ -1014,3 +1024,4 @@ first_in_list(Pred, [H | T]) ->
 	true -> {value, H};
 	_    -> first_in_list(Pred, T)
     end.
+
