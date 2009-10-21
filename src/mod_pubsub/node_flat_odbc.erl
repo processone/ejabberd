@@ -26,7 +26,7 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -47,7 +47,6 @@
 	 get_affiliation/2,
 	 set_affiliation/3,
 	 get_entity_subscriptions/2,
-	 get_entity_subscriptions_for_send_last/2,
 	 get_node_subscriptions/1,
 	 get_subscriptions/2,
 	 set_subscriptions/4,
@@ -55,17 +54,15 @@
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
-	 get_items/7,
 	 get_items/6,
-	 get_items/3,
 	 get_items/2,
 	 get_item/7,
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
 	 get_last_items/3,
-	 node_to_path/1,
-	 path_to_node/1
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 
@@ -76,8 +73,7 @@ terminate(Host, ServerHost) ->
     node_hometree_odbc:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, flat},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
@@ -102,12 +98,13 @@ features() ->
 %% the home/localhost/user/... hierarchy
 %% any node is allowed
 create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
+    LOwner = jlib:short_prepd_jid(Owner),
     Allowed = case LOwner of
-	{"", Host, ""} ->
+	{undefined, Host, undefined} ->
 	    true; % pubsub service always allowed
 	_ ->
-	    acl:match_rule(ServerHost, Access, LOwner) =:= allow
+	    {LU, LS, LR} = LOwner,
+	    acl:match_rule(ServerHost, Access, exmpp_jid:make(LU, LS, LR)) =:= allow
     end,
     {result, Allowed}.
 
@@ -150,9 +147,6 @@ set_affiliation(NodeId, Owner, Affiliation) ->
 get_entity_subscriptions(Host, Owner) ->
     node_hometree_odbc:get_entity_subscriptions(Host, Owner).
 
-get_entity_subscriptions_for_send_last(Host, Owner) ->
-    node_hometree_odbc:get_entity_subscriptions_for_send_last(Host, Owner).
-
 get_node_subscriptions(NodeId) ->
     node_hometree_odbc:get_node_subscriptions(NodeId).
 
@@ -176,12 +170,9 @@ set_state(State) ->
 
 get_items(NodeId, From) ->
     node_hometree_odbc:get_items(NodeId, From).
-get_items(NodeId, From, RSM) ->
-    node_hometree_odbc:get_items(NodeId, From, RSM).
+
 get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, none).
-get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM) ->
-    node_hometree_odbc:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM).
+    node_hometree_odbc:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 get_item(NodeId, ItemId) ->
     node_hometree_odbc:get_item(NodeId, ItemId).
@@ -209,5 +200,4 @@ path_to_node(Path) ->
     [Node|_] when is_list(Node) -> list_to_binary(string:join([""|Path], "/"));
     % default case (used by PEP for example)
     _ -> list_to_binary(Path)
-    end.
-
+    end. 

@@ -27,7 +27,7 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -67,8 +67,8 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-	 node_to_path/1,
-	 path_to_node/1
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 
@@ -122,10 +122,10 @@ delete_node(Removed) ->
 
 subscribe_node(_NodeId, _Sender, _Subscriber, _AccessModel,
 	       _SendLast, _PresenceSubscription, _RosterGroup, _Options) ->
-    {error, ?ERR_FORBIDDEN}.
+    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')}.
 
 unsubscribe_node(_NodeId, _Sender, _Subscriber, _SubID) ->
-    {error, ?ERR_FORBIDDEN}.
+    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')}.
 
 publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
     lists:foreach(fun(SubNode) ->
@@ -138,10 +138,10 @@ remove_extra_items(_NodeId, _MaxItems, ItemIds) ->
     {result, {ItemIds, []}}.
 
 delete_item(_NodeId, _Publisher, _PublishModel, _ItemId) ->
-    {error, ?ERR_ITEM_NOT_FOUND}.
+    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')}.
 
 purge_node(_NodeId, _Owner) ->
-    {error, ?ERR_FORBIDDEN}.
+    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')}.
 
 get_entity_affiliations(_Host, _Owner) ->
     {result, []}.
@@ -204,4 +204,3 @@ node_to_path(Node) ->
 
 path_to_node(Path) ->
     node_flat:path_to_node(Path).
-

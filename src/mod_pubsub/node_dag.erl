@@ -53,8 +53,8 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-	 node_to_path/1,
-	 path_to_node/1]).
+     node_to_path/1,
+     path_to_node/1]).
 
 
 init(Host, ServerHost, Opts) ->
@@ -96,7 +96,7 @@ publish_item(NodeID, Publisher, Model, MaxItems, ItemID, Payload) ->
         #pubsub_node{options = Options} ->
             case find_opt(node_type, Options) of
                 collection ->
-                    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "publish")};
+                    {error, mod_pubsub:extended_error('not-allowed', "publish")};
                 _ ->
                     node_hometree:publish_item(NodeID, Publisher, Model,
                                                MaxItems, ItemID, Payload)
@@ -181,4 +181,3 @@ node_to_path(Node) ->
 
 path_to_node(Path) ->
     node_hometree:path_to_node(Path).
-

@@ -26,15 +26,16 @@
 %%% @doc The module <strong>{@module}</strong> is the PubSub node tree plugin that
 %%% allow virtual nodes handling.
 %%% <p>PubSub node tree plugins are using the {@link gen_nodetree} behaviour.</p>
-%%% <p>This plugin development is still a work in progress. Due to optimizations in
+%%% <p>The development of this plugin is still a work in progress. Due to optimizations in
 %%% mod_pubsub, this plugin can not work anymore without altering functioning.
 %%% Please, send us comments, feedback and improvements.</p>
 
 -module(nodetree_virtual).
 -author('christophe.romain@process-one.net').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_nodetree).
 
@@ -47,8 +48,6 @@
 	 get_node/1,
 	 get_nodes/2,
 	 get_nodes/1,
-	 get_parentnodes/3,
-	 get_parentnodes_tree/3,
 	 get_subnodes/3,
 	 get_subnodes_tree/3,
 	 create_node/6,
@@ -88,23 +87,17 @@ set_node(_NodeRecord) ->
 %% @spec (Host, Node, From) -> pubsubNode()
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
-%%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Node record contains default values.</p>
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
 get_node(Host, Node) ->
-    get_node({Host, Node}).
+    #pubsub_node{nodeid = {Host, Node}, id = {Host, Node}, owners = [{undefined, list_to_binary(Host), undefined}]}.
 get_node({Host, _} = NodeId) ->
-    Record = #pubsub_node{nodeid = NodeId, id = NodeId},
-    Module = list_to_atom("node_" ++ Record#pubsub_node.type),
-    Options = Module:options(),
-    Owners = [{"", Host, ""}],
-    Record#pubsub_node{owners = Owners, options = Options}.
+    #pubsub_node{nodeid = NodeId, id = NodeId, owners = [{undefined, list_to_binary(Host), undefined}]}.
 
 %% @spec (Host, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
-%%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Nodes list can not be determined.</p>
 get_nodes(Host, _From) ->
@@ -117,31 +110,14 @@ get_nodes(_Host) ->
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
-get_parentnodes(_Host, _Node, _From) ->
-    [].
-
-%% @spec (Host, Node, From) -> [pubsubNode()]
-%%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
-%%     From = mod_pubsub:jid()
-%% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
-get_parentnodes_tree(_Host, _Node, _From) ->
-    [].
-
-%% @spec (Host, Node, From) -> [pubsubNode()]
-%%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
-%%     From = mod_pubsub:jid()
-%% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
 get_subnodes(_Host, _Node) ->
     [].
 
-%% @spec (Host, Node, From) -> [pubsubNode()]
+%% @spec (Host, Index, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
-%%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
@@ -157,8 +133,13 @@ get_subnodes_tree(_Host, _Node) ->
 %% @doc <p>No node record is stored on database. Any valid node
 %% is considered as already created.</p>
 %% <p>default allowed nodes: /home/host/user/any/node/name</p>
-create_node(Host, Node, _Type, _Owner, _Options, _Parents) ->
-	{error, {virtual, {Host, Node}}}.
+create_node(Host, Node, _Type, Owner, _Options, _Parents) ->
+    UserName = exmpp_jid:prep_node_as_list(Owner),
+    UserHost = exmpp_jid:prep_domain_as_list(Owner),
+    case Node of
+	["home", UserHost, UserName | _] -> {error, {virtual, {Host, Node}}};
+	_ -> {error, 'not-allowed'}
+    end.
 
 %% @spec (Host, Node) -> [mod_pubsub:node()]
 %%     Host = mod_pubsub:host()

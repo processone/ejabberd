@@ -25,7 +25,6 @@
 %%%----------------------------------------------------------------------
 
 %%% Not implemented:
-%%% - write mod_piefxis with ejabberdctl commands
 %%% - Export from mod_offline_odbc.erl
 %%% - Export from mod_private_odbc.erl
 %%% - XEP-227: 6. Security Considerations
@@ -41,42 +40,8 @@
 -record(parsing_state, {parser, host, dir}).
 
 -include("ejabberd.hrl").
-
-%%-include_lib("exmpp/include/exmpp.hrl").
-%%-include_lib("exmpp/include/exmpp_client.hrl").
-%% Copied from exmpp header files:
--define(NS_ROSTER,                   "jabber:iq:roster").
--define(NS_VCARD,                    "vcard-temp").
--record(xmlcdata, {
-	  cdata = <<>>
-	 }).
--record(xmlattr, {
-	  ns = undefined,
-	  name,
-	  value
-	 }).
--record(xmlel, {
-	  ns = undefined,
-	  declared_ns = [],
-	  name,
-	  attrs = [],
-	  children = []
-	 }).
--record(iq, {
-	  kind,
-	  type,
-	  id,
-	  ns,
-	  payload,
-	  error,
-	  lang,
-	  iq_ns
-	 }).
--record(xmlendtag, {
-	  ns = undefined,
-	  name
-	 }).
-
+-include_lib("exmpp/include/exmpp.hrl").
+-include_lib("exmpp/include/exmpp_client.hrl").
 
 %% Copied from mod_private.erl
 -record(private_storage, {usns, xml}).
@@ -96,7 +61,6 @@
 %%%% Import file
 
 import_file(FileName) ->
-    _ = #xmlattr{}, %% this stupid line is only to prevent compilation warning about "recod xmlattr is unused"
     import_file(FileName, 2).
 
 import_file(FileName, RootDepth) ->
@@ -159,7 +123,7 @@ process_element(El=#xmlel{name=user, ns=_XMLNS},
     State;
 
 process_element(H=#xmlel{name=host},State) ->
-    State#parsing_state{host=?BTL(exmpp_xml:get_attribute(H,"jid",none))};
+    State#parsing_state{host=exmpp_xml:get_attribute(H,"jid",none)};
 
 process_element(#xmlel{name='server-data'},State) ->
     State;
@@ -196,7 +160,7 @@ process_element(El,State) ->
 add_user(El, Domain) ->
     User = exmpp_xml:get_attribute(El,name,none),
     Password = exmpp_xml:get_attribute(El,password,none),
-    add_user(El, Domain, ?BTL(User), ?BTL(Password)).
+    add_user(El, Domain, User, Password).
 
 %% @spec (El::xmlel(), Domain::string(), User::string(), Password::string())
 %%       -> ok | {atomic, exists} | {error, not_allowed}
@@ -228,7 +192,7 @@ add_user(El, Domain, User, Password) ->
 %%       -> ok | {atomic, exists} | {error, not_allowed}
 %% @doc  Create a new user
 create_user(User,Password,Domain) ->
-    case ejabberd_auth:try_register(User,Domain,Password) of
+    case ejabberd_auth:try_register(?BTL(User),?BTL(Domain),?BTL(Password)) of
 	{atomic,ok} -> ok;
 	{atomic, exists} -> {atomic, exists};
 	{error, not_allowed} -> {error, not_allowed};
@@ -265,7 +229,7 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
     io:format("Trying to add/update roster list...",[]),
     case loaded_module(Domain,[mod_roster_odbc,mod_roster]) of
 	{ok, M} ->
-	    case M:set_items(User, Domain, exmpp_xml:xmlel_to_xmlelement(El)) of
+	    case M:set_items(User, Domain, El) of
 		{atomic, ok} ->
 		    io:format(" DONE.~n",[]),
 		    ok;
@@ -305,8 +269,8 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
 populate_user(User,Domain,El=#xmlel{name='vCard', ns='vcard-temp'}) ->
     io:format("Trying to add/update vCards...",[]),
     case loaded_module(Domain,[mod_vcard,mod_vcard_odbc]) of
-	{ok, M}  ->  FullUser = jid_to_old_jid(exmpp_jid:make(User, Domain)),
-		     IQ = iq_to_old_iq(#iq{type = set, payload = El}),
+	{ok, M}  ->  FullUser = exmpp_jid:make(User, Domain),
+		     IQ = #iq{type = set, payload = El},
 		     case M:process_sm_iq(FullUser, FullUser , IQ) of
 			 {error,_Err} ->
 			     io:format(" ERROR.~n",[]),
@@ -337,11 +301,9 @@ populate_user(User,Domain,El=#xmlel{name='offline-messages'}) ->
 			   ok;
 		       (_Element, Child) ->
 			   From  = exmpp_xml:get_attribute(Child,from,none),
-			   FullFrom = jid_to_old_jid(exmpp_jid:parse(From)),
-			   FullUser = jid_to_old_jid(exmpp_jid:make(User,
-								    Domain)),
-			   OldChild = exmpp_xml:xmlel_to_xmlelement(Child),
-			   _R = M:store_packet(FullFrom, FullUser, OldChild)
+			   FullFrom = exmpp_jid:parse(From),
+			   FullUser = exmpp_jid:make(User, Domain),
+			   _R = M:store_packet(FullFrom, FullUser, Child)
 		   end, El), io:format(" DONE.~n",[]);
 	_ ->
 	    io:format(" ERROR.~n",[]),
@@ -360,12 +322,12 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:private'}) ->
     io:format("Trying to add/update private storage...",[]),
     case loaded_module(Domain,[mod_private_odbc,mod_private]) of
 	{ok, M} ->
-	    FullUser = jid_to_old_jid(exmpp_jid:make(User, Domain)),
-	    IQ = iq_to_old_iq(#iq{type = set,
-				  ns = 'jabber:iq:private',
-				  kind = request,
-				  iq_ns = 'jabberd:client',
-				  payload = El}),
+	    FullUser = exmpp_jid:make(User, Domain),
+	    IQ = #iq{type = set,
+		     ns = 'jabber:iq:private',
+		     kind = request,
+		     iq_ns = 'jabberd:client',
+		     payload = El},
 	    case M:process_sm_iq(FullUser, FullUser, IQ ) of
 		{error, _Err} ->
 		    io:format(" ERROR.~n",[]),
@@ -375,7 +337,7 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:private'}) ->
 	    end;
 	_ ->
 	    io:format(" ERROR.~n",[]),
-	    ?ERROR_MSG("No modules loaded [mod_private, mod_private_odbc] ~s ~n",
+	    ?ERROR_MSG("No modules loaded [mod_private, mod_private_odbc] ~s~n",
 		       [exmpp_xml:document_to_list(El)]),
 	    {error, not_found}
     end;
@@ -389,6 +351,8 @@ populate_user(_User, _Domain, _El) ->
 %%%==================================
 %%%% Utilities
 
+loaded_module(Domain,Options) when is_binary(Domain) ->
+    loaded_module(?BTL(Domain),Options);
 loaded_module(Domain,Options) ->
     LoadedModules = gen_mod:loaded_modules(Domain),
     case lists:filter(fun(Module) ->
@@ -398,30 +362,12 @@ loaded_module(Domain,Options) ->
         [] -> {error,not_found}
     end.
 
-jid_to_old_jid(Jid) ->
-    {jid, to_list(exmpp_jid:node_as_list(Jid)),
-     to_list(exmpp_jid:domain_as_list(Jid)),
-     to_list(exmpp_jid:resource_as_list(Jid)),
-     to_list(exmpp_jid:prep_node_as_list(Jid)),
-     to_list(exmpp_jid:prep_domain_as_list(Jid)),
-     to_list(exmpp_jid:prep_resource_as_list(Jid))}.
-
-iq_to_old_iq(#iq{id = ID, type = Type, lang = Lang, ns= NS, payload = El }) ->
-    {iq, to_list(ID), Type, to_list(NS), to_list(Lang),
-     exmpp_xml:xmlel_to_xmlelement(El)}.
-
-to_list(L) when is_list(L) -> L;
-to_list(B) when is_binary(B) -> binary_to_list(B);
-to_list(undefined) -> "";
-to_list(B) when is_atom(B) -> atom_to_list(B).
-
 %%%==================================
 
 %%%% Export server
 
 %% @spec (Dir::string()) -> ok
 export_server(Dir) ->
-    try_start_exmpp(),
 
     FnT = make_filename_template(),
     DFn = make_main_basefilename(Dir, FnT),
@@ -447,7 +393,6 @@ export_server(Dir) ->
 
 %% @spec (Dir::string(), Host::string()) -> ok
 export_host(Dir, Host) ->
-    try_start_exmpp(),
     FnT = make_filename_template(),
     FnH = make_host_filename(FnT, Host),
     export_host(Dir, FnH, Host).
@@ -525,16 +470,13 @@ extract_user(Username, Host) ->
 extract_user_info(roster, Username, Host) ->
     case loaded_module(Host,[mod_roster_odbc,mod_roster]) of
 	{ok, M} ->
-	    From = To = jlib:make_jid(Username, Host, ""),
-	    SubelGet = {xmlelement, "query", [{"xmlns",?NS_ROSTER}], []},
-	    %%IQGet = #iq{type=get, xmlns=?NS_ROSTER, payload=SubelGet}, % this is for 3.0.0 version
-	    IQGet = {iq, "", get, ?NS_ROSTER, "" , SubelGet},
+	    From = To = exmpp_jid:make(Username, Host, ""),
+	    SubelGet = exmpp_xml:element(?NS_ROSTER, 'query', [], []),
+	    IQGet = #iq{type=get, ns=?NS_ROSTER, payload=[SubelGet]},
 	    Res = M:process_local_iq(From, To, IQGet),
-	    %%[El] = Res#iq.payload, % this is for 3.0.0 version
-	    {iq, _, result, _, _, Els} = Res,
-	    case Els of
-		[El] -> exmpp_xml:document_to_list(El);
-		[] -> ""
+	    case Res#iq.payload of
+		undefined -> "";
+		El -> exmpp_xml:document_to_list(El)
 	    end;
 	_E ->
 	    ""
@@ -569,16 +511,13 @@ extract_user_info(private, Username, Host) ->
 extract_user_info(vcard, Username, Host) ->
     case loaded_module(Host,[mod_vcard, mod_vcard_odbc, mod_vcard_odbc]) of
 	{ok, M} ->
-	    From = To = jlib:make_jid(Username, Host, ""),
-	    SubelGet = {xmlelement, "vCard", [{"xmlns",?NS_VCARD}], []},
-	    %%IQGet = #iq{type=get, xmlns=?NS_VCARD, payload=SubelGet}, % this is for 3.0.0 version
-	    IQGet = {iq, "", get, ?NS_VCARD, "" , SubelGet},
+	    From = To = exmpp_jid:make(Username, Host, ""),
+	    SubelGet = exmpp_xml:element(?NS_VCARD, 'vCard', [], []),
+	    IQGet = #iq{type=get, ns=?NS_VCARD, payload=[SubelGet]},
 	    Res = M:process_sm_iq(From, To, IQGet),
-	    %%[El] = Res#iq.payload, % this is for 3.0.0 version
-	    {iq, _, result, _, _, Els} = Res,
-	    case Els of
-		[El] -> exmpp_xml:document_to_list(El);
-		[] -> ""
+	    case Res#iq.payload of
+		undefined -> "";
+		El -> exmpp_xml:document_to_list(El)
 	    end;
 	_E ->
 	    ""
@@ -590,49 +529,63 @@ extract_user_info(vcard, Username, Host) ->
 %% Copied from mod_offline.erl and customized
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
 mnesia_pop_offline_messages(Ls, User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		Rs = mnesia:wread({offline_msg, US}),
-		%%mnesia:delete({offline_msg, US}),
-		Rs
-	end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    TS = now(),
-	    Ls ++ lists:map(
-		    fun(R) ->
-			    {xmlelement, Name, Attrs, Els} = R#offline_msg.packet,
-			    FromString = jlib:jid_to_string(R#offline_msg.from),
-			    Attrs2 = lists:keystore("from", 1, Attrs, {"from", FromString}),
-			    Attrs3 = lists:keystore("xmlns", 1, Attrs2, {"xmlns", "jabber:client"}),
-			    {xmlelement, Name, Attrs3,
-			     Els ++
-			     [jlib:timestamp_to_xml(
-				calendar:now_to_universal_time(
-				  R#offline_msg.timestamp))]}
-		    end,
-		    lists:filter(
-		      fun(R) ->
-			      case R#offline_msg.expire of
-				  never ->
-				      true;
-				  TimeStamp ->
-				      TS < TimeStamp
-			      end
-		      end,
-		      lists:keysort(#offline_msg.timestamp, Rs)));
+    try
+	LUser = User,
+	LServer = Server,
+	US = {LUser, LServer},
+	F = fun() ->
+		    Rs = mnesia:wread({offline_msg, US}),
+		    mnesia:delete({offline_msg, US}),
+		    Rs
+	    end,
+	case mnesia:transaction(F) of
+	    {atomic, Rs} ->
+		TS = now(),
+		Ls ++ lists:map(
+			fun(R) ->
+				Packet = R#offline_msg.packet,
+				FromString = exmpp_jid:prep_to_list(R#offline_msg.from),
+				Packet2 = exmpp_xml:set_attribute(Packet, "from", FromString),
+				Packet3 = Packet2#xmlel{ns = ?NS_JABBER_CLIENT},
+				exmpp_xml:append_children(
+				  Packet3,
+				  [jlib:timestamp_to_xml(
+				     calendar:now_to_universal_time(
+				       R#offline_msg.timestamp),
+				     utc,
+				     exmpp_jid:make("", Server, ""),
+				     "Offline Storage"),
+				   %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+				   jlib:timestamp_to_xml(
+				     calendar:now_to_universal_time(
+				       R#offline_msg.timestamp))]
+				 )
+			end,
+			lists:filter(
+			  fun(R) ->
+				  case R#offline_msg.expire of
+				      never ->
+					  true;
+				      TimeStamp ->
+					  TS < TimeStamp
+				  end
+			  end,
+			  lists:keysort(#offline_msg.timestamp, Rs)));
+	    _ ->
+		Ls
+	end
+    catch
 	_ ->
 	    Ls
     end.
+
 
 %%%==================================
 %%%% Interface with ejabberd private storage
 
 get_user_private_mnesia(Username, Host) ->
     ListNsEl = mnesia:dirty_select(private_storage,
-				   [{#private_storage{usns={Username, Host, '$1'}, xml = '$2'},
+				   [{#private_storage{usns={?LTB(Username), ?LTB(Host), '$1'}, xml = '$2'},
 				     [], ['$$']}]),
     Els = [exmpp_xml:document_to_list(El) || [_Ns, El] <- ListNsEl],
     case lists:flatten(Els) of

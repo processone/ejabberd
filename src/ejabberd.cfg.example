@@ -390,7 +390,7 @@
 {access, max_user_sessions, [{10, all}]}.
 
 %% Maximum number of offline messages that users can have:
-{access, max_user_offline_messages, [{5000, admin}, {100, all}]}. 
+{access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
 
 %% This rule allows access only for local users:
 {access, local, [{allow, local}]}.
@@ -443,6 +443,20 @@
 %%}.
 
 
+%%%.   =======
+%%%'   CAPTCHA
+
+%%
+%% Full path to a script that generates the image.
+%%
+%%{captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
+
+%%
+%% Host part of the URL sent to the user.
+%%
+%%{captcha_host, "example.org:5280"}.
+
+
 %%%.   ================
 %%%'   DEFAULT LANGUAGE
 
@@ -460,20 +474,6 @@
 
 
 %%%.   =======
-%%%'   CAPTCHA
-
-%%
-%% Full path to a script that generates the image.
-%%
-%%{captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
-
-%%
-%% Host part of the URL sent to the user.
-%%
-%%{captcha_host, "example.org:5280"}.
-
-
-%%%.   =======
 %%%'   MODULES
 
 %%
@@ -487,7 +487,6 @@
   {mod_configure,[]}, % requires mod_adhoc
   {mod_disco,    []},
   %%{mod_echo,   [{host, "echo.localhost"}]},
-  {mod_irc,      []},
   {mod_http_bind, []},
   %%{mod_http_fileserver, [
   %%                       {docroot, "/var/www"}, 
@@ -511,7 +510,7 @@
 		  {access_createnode, pubsub_createnode},
 		  {ignore_pep_from_offline, true},
 		  {last_item_cache, false},
-		  {plugins, ["flat", "hometree", "pep"]}  % pep requires mod_caps
+		  {plugins, ["flat", "pep"]}  % pep requires mod_caps
 		 ]},
   {mod_register, [
 		  %%

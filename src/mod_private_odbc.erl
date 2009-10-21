@@ -34,70 +34,116 @@
 	 process_sm_iq/3,
 	 remove_user/2]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE,
 				  ?MODULE, process_sm_iq, IQDisc).
 
 stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE).
 
 
-process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    #jid{luser = LUser, lserver = LServer} = From,
-    case lists:member(LServer, ?MYHOSTS) of
-	true ->
-	    {xmlelement, Name, Attrs, Els} = SubEl,
+process_sm_iq(From, To, #iq{type = Type} = IQ_Rec) ->
+    case check_packet(From, To, IQ_Rec) of
+	ok ->
 	    case Type of
 		set ->
-		    F = fun() ->
-				lists:foreach(
-				  fun(El) ->
-					  set_data(LUser, LServer, El)
-				  end, Els)
-			end,
-		    odbc_queries:sql_transaction(LServer, F),
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, Name, Attrs, []}]};
+		    process_iq_set(From, To, IQ_Rec);
 		get ->
-		    case catch get_data(LUser, LServer, Els) of
-			{'EXIT', _Reason} ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl,
-					    ?ERR_INTERNAL_SERVER_ERROR]};
-			Res ->
-			    IQ#iq{type = result,
-				  sub_el = [{xmlelement, Name, Attrs, Res}]}
-		    end
+		    process_iq_get(From, To, IQ_Rec)
 	    end;
-	false ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+	{error, Error} ->
+	    exmpp_iq:error(IQ_Rec, Error)
     end.
 
-set_data(LUser, LServer, El) ->
-    case El of
-	{xmlelement, _Name, Attrs, _Els} ->
-	    XMLNS = xml:get_attr_s("xmlns", Attrs),
-	    case XMLNS of
-		"" ->
-		    ignore;
-		_ ->
-		    Username = ejabberd_odbc:escape(LUser),
-		    LXMLNS = ejabberd_odbc:escape(XMLNS),
-		    SData = ejabberd_odbc:escape(
-			       lists:flatten(xml:element_to_string(El))),
-			odbc_queries:set_private_data(LServer, Username, LXMLNS, SData)
-	    end;
-	_ ->
-	    ignore
+process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
+    LUser = exmpp_jid:prep_node_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    case catch get_data(LUser,
+			LServer,
+			exmpp_xml:get_child_elements(SubEl)) of
+	{'EXIT', _Reason} ->
+	    {error, 'internal-server-error'};
+	Res ->
+	    exmpp_iq:result(IQ_Rec, #xmlel{ns = ?NS_PRIVATE,
+					   name = 'query',
+					   children = Res})
     end.
+
+
+process_iq_set(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
+    LUser = exmpp_jid:prep_node_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    F = fun() ->
+        lists:foreach(
+          fun(El) ->
+              set_data(LUser, LServer, El)
+          end, exmpp_xml:get_child_elements(SubEl))
+    end,
+    odbc_queries:sql_transaction(LServer, F),
+    exmpp_iq:result(IQ_Rec).
+
+
+check_packet(From, To, IQ_Rec) ->
+    check_packet(From, To, IQ_Rec, [ fun check_domain/3,
+				     fun check_user/3,
+				     fun check_ns/3]).
+check_packet(_From, _To, _IQ_Rec, []) ->
+    ok;
+check_packet(From, To, IQ_Rec, [F | R]) ->
+    case F(From, To, IQ_Rec) of
+	{error, _} = Error -> Error;
+	ok -> check_packet(From, To, IQ_Rec, R)
+    end.
+
+check_domain(From, _To, _IQ_Rec) ->
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    case lists:member(LServer, ?MYHOSTS) of
+	true -> ok;
+	false -> {error, 'not-allowed'}
+    end.
+
+% the iq can't be directed to another jid
+check_user(From, To, _IQ_Rec) ->
+    case exmpp_jid:bare_compare(From, To) of
+	true -> ok;
+	false -> {error, 'forbidden'}
+    end.
+
+%there must be at least one child, and every child should have
+%a namespace specified (reject if the namespace is jabber:iq:private,
+%the same than the parent element).
+check_ns(_From, _To, #iq{payload = SubEl}) ->
+    case exmpp_xml:get_child_elements(SubEl) of
+	[] ->
+	    {error, 'not-acceptable'};
+	Children ->
+	    case lists:any(fun(Child) ->
+			       exmpp_xml:get_ns_as_atom(Child) =:= ?NS_PRIVATE
+			   end, Children) of
+		true -> {error, 'not-acceptable'};
+		false -> ok
+	    end
+    end.
+
+
+
+set_data(LUser, LServer, El) ->
+    XMLNS = exmpp_xml:get_ns_as_list(El),
+    Username = ejabberd_odbc:escape(LUser),
+	LXMLNS = ejabberd_odbc:escape(XMLNS),
+	SData = ejabberd_odbc:escape(exmpp_xml:document_to_list(El)),
+	odbc_queries:set_private_data(LServer, Username, LXMLNS, SData).
 
 get_data(LUser, LServer, Els) ->
     get_data(LUser, LServer, Els, []).
@@ -105,32 +151,31 @@ get_data(LUser, LServer, Els) ->
 get_data(_LUser, _LServer, [], Res) ->
     lists:reverse(Res);
 get_data(LUser, LServer, [El | Els], Res) ->
-    case El of
-	{xmlelement, _Name, Attrs, _} ->
-	    XMLNS = xml:get_attr_s("xmlns", Attrs),
-	    Username = ejabberd_odbc:escape(LUser),
-	    LXMLNS = ejabberd_odbc:escape(XMLNS),
-	    case catch odbc_queries:get_private_data(LServer, Username, LXMLNS) of
-		{selected, ["data"], [{SData}]} ->
-		    case xml_stream:parse_element(SData) of
-			Data when element(1, Data) == xmlelement ->
-			    get_data(LUser, LServer, Els,
-				     [Data | Res])
-		    end;
-		%% MREMOND: I wonder when the query could return a vcard ?
-		{selected, ["vcard"], []} ->
-		    get_data(LUser, LServer, Els,
-			     [El | Res]);
-	    _ -> 
-	        get_data(LUser, LServer, Els,[El | Res])
-	    end;
-	_ ->
-	    get_data(LUser, LServer, Els, Res)
-    end.
-
-
-remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    XMLNS = exmpp_xml:get_ns_as_list(El),
     Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:del_user_private_storage(LServer, Username).
+    LXMLNS = ejabberd_odbc:escape(XMLNS),
+    case catch odbc_queries:get_private_data(LServer, Username, LXMLNS) of
+    {selected, ["data"], [{SData}]} ->
+	[Data] = exmpp_xml:parse_document(SData,
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]),
+	get_data(LUser, LServer, Els, [Data | Res]);
+    %% MREMOND: I wonder when the query could return a vcard ?
+    {selected, ["vcard"], []} ->
+	get_data(LUser, LServer, Els,
+	  [El | Res]);
+    _ ->
+	get_data(LUser, LServer, Els, [El | Res])
+end.
+
+
+remove_user(User, Server) when is_binary(User), is_binary(Server) ->
+    try
+	LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
+	LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
+	Username = ejabberd_odbc:escape(LUser),
+	odbc_queries:del_user_private_storage(LServer, Username)
+    catch
+	_ ->
+	    ok
+    end.

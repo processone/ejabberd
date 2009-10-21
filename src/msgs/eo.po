@@ -1,38 +1,23 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"POT-Creation-Date: \n"
-"PO-Revision-Date: \n"
-"Last-Translator: Andreas van Cranenburgh <andreas@unstable.nl>\n"
-"Language-Team: \n"
+"Last-Translator: Andreas van Cranenburgh\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Esperanto\n"
 
-#: ejabberd_c2s.erl:360 ejabberd_c2s.erl:661
+#: ejabberd_c2s.erl:350 ejabberd_c2s.erl:651
 msgid "Use of STARTTLS required"
 msgstr "Uzo de STARTTLS bezonata"
 
-#: ejabberd_c2s.erl:439
+#: ejabberd_c2s.erl:434
 msgid "No resource provided"
 msgstr "Neniu risurco donita"
 
-#: ejabberd_c2s.erl:1071
+#: ejabberd_c2s.erl:1045
 msgid "Replaced by new connection"
 msgstr "Anstataŭigita je nova konekto"
-
-#: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
-msgid "Enter the text you see"
-msgstr "Enmetu montrita teksto"
-
-#: ejabberd_captcha.erl:97
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr "Viaj mesaĝoj al ~s estas blokata. Por malbloki ilin, iru al ~s"
-
-#: ejabberd_captcha.erl:235
-msgid "The captcha is valid."
-msgstr "La aŭtomata Turingtesto estas ĝusta"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -50,11 +35,11 @@ msgstr "Resondaĵo"
 msgid "Really delete message of the day?"
 msgstr "Ĉu vere forigi mesaĝon de la tago?"
 
-#: mod_announce.erl:513 mod_configure.erl:1051 mod_configure.erl:1096
+#: mod_announce.erl:513 mod_configure.erl:1034 mod_configure.erl:1079
 msgid "Subject"
 msgstr "Temo"
 
-#: mod_announce.erl:518 mod_configure.erl:1056 mod_configure.erl:1101
+#: mod_announce.erl:518 mod_configure.erl:1039 mod_configure.erl:1084
 msgid "Message body"
 msgstr "Teksto de mesaĝo"
 
@@ -78,7 +63,7 @@ msgstr "Sendu anoncon al ĉiu uzanto de ĉiu gastigo"
 msgid "Send announcement to all online users"
 msgstr "Sendu anoncon al ĉiu konektata uzanto"
 
-#: mod_announce.erl:641 mod_configure.erl:1046 mod_configure.erl:1091
+#: mod_announce.erl:641 mod_configure.erl:1029 mod_configure.erl:1074
 msgid "Send announcement to all online users on all hosts"
 msgstr "Sendu anoncon al ĉiu konektata uzanto de ĉiu gastigo"
 
@@ -108,624 +93,567 @@ msgid "Delete message of the day on all hosts"
 msgstr "Forigu mesaĝo de la tago je ĉiu gastigo"
 
 #: mod_configure.erl:114 mod_configure.erl:258 mod_configure.erl:280
-#: mod_configure.erl:466
+#: mod_configure.erl:453
 msgid "Configuration"
 msgstr "Agordo"
 
-#: mod_configure.erl:125 mod_configure.erl:544 web/ejabberd_web_admin.erl:1863
+#: mod_configure.erl:125 mod_configure.erl:531 web/ejabberd_web_admin.erl:1673
 msgid "Database"
 msgstr "Datumbazo"
 
-#: mod_configure.erl:127 mod_configure.erl:563
+#: mod_configure.erl:127 mod_configure.erl:545
 msgid "Start Modules"
 msgstr "Startu Modulojn"
 
-#: mod_configure.erl:129 mod_configure.erl:564
+#: mod_configure.erl:129 mod_configure.erl:546
 msgid "Stop Modules"
 msgstr "Haltigu Modulojn"
 
-#: mod_configure.erl:131 mod_configure.erl:572 web/ejabberd_web_admin.erl:1864
+#: mod_configure.erl:131 mod_configure.erl:554 web/ejabberd_web_admin.erl:1674
 msgid "Backup"
 msgstr "Faru Sekurkopion"
 
-#: mod_configure.erl:133 mod_configure.erl:573
+#: mod_configure.erl:133 mod_configure.erl:555
 msgid "Restore"
 msgstr "Restaŭru"
 
-#: mod_configure.erl:135 mod_configure.erl:574
+#: mod_configure.erl:135 mod_configure.erl:556
 msgid "Dump to Text File"
 msgstr "Skribu en plata tekst-dosiero"
 
-#: mod_configure.erl:137 mod_configure.erl:583
+#: mod_configure.erl:137 mod_configure.erl:565
 msgid "Import File"
 msgstr "Importu dosieron"
 
-#: mod_configure.erl:139 mod_configure.erl:584
+#: mod_configure.erl:139 mod_configure.erl:566
 msgid "Import Directory"
 msgstr "Importu dosierujo"
 
-#: mod_configure.erl:141 mod_configure.erl:549 mod_configure.erl:1025
+#: mod_configure.erl:141 mod_configure.erl:536 mod_configure.erl:1008
 msgid "Restart Service"
 msgstr "Restartu Servon"
 
-#: mod_configure.erl:143 mod_configure.erl:550 mod_configure.erl:1070
+#: mod_configure.erl:143 mod_configure.erl:537 mod_configure.erl:1053
 msgid "Shut Down Service"
 msgstr "Haltigu Servon"
 
-#: mod_configure.erl:145 mod_configure.erl:486 mod_configure.erl:1165
-#: web/ejabberd_web_admin.erl:1508
+#: mod_configure.erl:145 mod_configure.erl:473 mod_configure.erl:1148
+#: web/ejabberd_web_admin.erl:1338
 msgid "Add User"
 msgstr "Aldonu Uzanton"
 
-#: mod_configure.erl:147 mod_configure.erl:487 mod_configure.erl:1187
+#: mod_configure.erl:147 mod_configure.erl:474 mod_configure.erl:1170
 msgid "Delete User"
 msgstr "Forigu Uzanton"
 
-#: mod_configure.erl:149 mod_configure.erl:488 mod_configure.erl:1199
+#: mod_configure.erl:149 mod_configure.erl:475 mod_configure.erl:1182
 msgid "End User Session"
 msgstr "Haltigu Uzant-seancon"
 
-#: mod_configure.erl:151 mod_configure.erl:489 mod_configure.erl:1211
-#: mod_configure.erl:1223
+#: mod_configure.erl:151 mod_configure.erl:476 mod_configure.erl:1194
+#: mod_configure.erl:1206
 msgid "Get User Password"
 msgstr "Montru pasvorton de uzanto"
 
-#: mod_configure.erl:153 mod_configure.erl:490
+#: mod_configure.erl:153 mod_configure.erl:477
 msgid "Change User Password"
 msgstr "Ŝanĝu pasvorton de uzanto"
 
-#: mod_configure.erl:155 mod_configure.erl:491 mod_configure.erl:1240
+#: mod_configure.erl:155 mod_configure.erl:478 mod_configure.erl:1223
 msgid "Get User Last Login Time"
 msgstr "Montru tempon de lasta ensaluto"
 
-#: mod_configure.erl:157 mod_configure.erl:492 mod_configure.erl:1252
+#: mod_configure.erl:157 mod_configure.erl:479 mod_configure.erl:1235
 msgid "Get User Statistics"
 msgstr "Montru statistikojn de uzanto"
 
-#: mod_configure.erl:159 mod_configure.erl:493
+#: mod_configure.erl:159 mod_configure.erl:480
 msgid "Get Number of Registered Users"
 msgstr "Montru nombron de registritaj uzantoj"
 
-#: mod_configure.erl:161 mod_configure.erl:494
+#: mod_configure.erl:161 mod_configure.erl:481
 msgid "Get Number of Online Users"
 msgstr "Montru nombron de konektataj uzantoj"
 
-#: mod_configure.erl:163 mod_configure.erl:477 web/ejabberd_web_admin.erl:811
-#: web/ejabberd_web_admin.erl:852
+#: mod_configure.erl:163 mod_configure.erl:464 web/ejabberd_web_admin.erl:135
+#: web/ejabberd_web_admin.erl:190 web/ejabberd_web_admin.erl:605
+#: web/ejabberd_web_admin.erl:624 web/ejabberd_web_admin.erl:679
+#: web/ejabberd_web_admin.erl:722
 msgid "Access Control Lists"
 msgstr "Atingokontrol-listoj"
 
-#: mod_configure.erl:165 mod_configure.erl:478 web/ejabberd_web_admin.erl:920
-#: web/ejabberd_web_admin.erl:956
+#: mod_configure.erl:165 mod_configure.erl:465 web/ejabberd_web_admin.erl:136
+#: web/ejabberd_web_admin.erl:191 web/ejabberd_web_admin.erl:607
+#: web/ejabberd_web_admin.erl:626 web/ejabberd_web_admin.erl:790
+#: web/ejabberd_web_admin.erl:828
 msgid "Access Rules"
 msgstr "Atingo-reguloj"
 
-#: mod_configure.erl:281 mod_configure.erl:467
+#: mod_configure.erl:281 mod_configure.erl:454
 msgid "User Management"
 msgstr "Uzanto-administrado"
 
-#: mod_configure.erl:468 web/ejabberd_web_admin.erl:1038
-#: web/ejabberd_web_admin.erl:1443
+#: mod_configure.erl:455 web/ejabberd_web_admin.erl:193
+#: web/ejabberd_web_admin.erl:629 web/ejabberd_web_admin.erl:905
+#: web/ejabberd_web_admin.erl:1275
 msgid "Online Users"
 msgstr "Konektataj Uzantoj"
 
-#: mod_configure.erl:469
+#: mod_configure.erl:456
 msgid "All Users"
 msgstr "Ĉiuj Uzantoj"
 
-#: mod_configure.erl:470
+#: mod_configure.erl:457
 msgid "Outgoing s2s Connections"
 msgstr "Elirantaj s-al-s-konektoj"
 
-#: mod_configure.erl:471 web/ejabberd_web_admin.erl:1834
+#: mod_configure.erl:458 web/ejabberd_web_admin.erl:1644
 msgid "Running Nodes"
 msgstr "Funkciantaj Nodoj"
 
-#: mod_configure.erl:472 web/ejabberd_web_admin.erl:1836
+#: mod_configure.erl:459 web/ejabberd_web_admin.erl:1646
 msgid "Stopped Nodes"
 msgstr "Neaktivaj Nodoj"
 
-#: mod_configure.erl:545 mod_configure.erl:555 web/ejabberd_web_admin.erl:1880
+#: mod_configure.erl:532 web/ejabberd_web_admin.erl:1690
 msgid "Modules"
 msgstr "Moduloj"
 
-#: mod_configure.erl:546
+#: mod_configure.erl:533
 msgid "Backup Management"
 msgstr "Mastrumado de sekurkopioj"
 
-#: mod_configure.erl:547
+#: mod_configure.erl:534
 msgid "Import Users From jabberd14 Spool Files"
 msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
 
-#: mod_configure.erl:667
+#: mod_configure.erl:649
 msgid "To ~s"
 msgstr "Al ~s"
 
-#: mod_configure.erl:685
+#: mod_configure.erl:667
 msgid "From ~s"
 msgstr "De ~s"
 
-#: mod_configure.erl:881
+#: mod_configure.erl:864
 msgid "Database Tables Configuration at "
 msgstr "Agordo de datumbaz-tabeloj je "
 
-#: mod_configure.erl:886
+#: mod_configure.erl:869
 msgid "Choose storage type of tables"
 msgstr "Elektu konserv-tipon de tabeloj"
 
-#: mod_configure.erl:894 mod_configure.erl:896
+#: mod_configure.erl:877 mod_configure.erl:879
 msgid "Disc only copy"
 msgstr "Nur disk-kopio"
 
-#: mod_configure.erl:894 mod_configure.erl:896
+#: mod_configure.erl:877 mod_configure.erl:879
 msgid "RAM and disc copy"
 msgstr "RAM- kaj disk-kopio"
 
-#: mod_configure.erl:894 mod_configure.erl:896
+#: mod_configure.erl:877 mod_configure.erl:879
 msgid "RAM copy"
 msgstr "RAM-kopio"
 
-#: mod_configure.erl:894 mod_configure.erl:896
+#: mod_configure.erl:877 mod_configure.erl:879
 msgid "Remote copy"
 msgstr "Fora kopio"
 
-#: mod_configure.erl:918
+#: mod_configure.erl:901
 msgid "Stop Modules at "
 msgstr "Haltigu modulojn je "
 
-#: mod_configure.erl:922
+#: mod_configure.erl:905
 msgid "Choose modules to stop"
 msgstr "Elektu modulojn por fini"
 
-#: mod_configure.erl:937
+#: mod_configure.erl:920
 msgid "Start Modules at "
 msgstr "Startu modulojn je "
 
-#: mod_configure.erl:941
+#: mod_configure.erl:924
 msgid "Enter list of {Module, [Options]}"
 msgstr "Enmetu liston de {Modulo, [Elektebloj]}"
 
-#: mod_configure.erl:942
+#: mod_configure.erl:925
 msgid "List of modules to start"
 msgstr "Listo de moduloj por starti"
 
-#: mod_configure.erl:951
+#: mod_configure.erl:934
 msgid "Backup to File at "
 msgstr "Faru sekurkopion je "
 
-#: mod_configure.erl:955 mod_configure.erl:969
+#: mod_configure.erl:938 mod_configure.erl:952
 msgid "Enter path to backup file"
 msgstr "Enmetu vojon por sekurkopio"
 
-#: mod_configure.erl:956 mod_configure.erl:970 mod_configure.erl:984
-#: mod_configure.erl:998
+#: mod_configure.erl:939 mod_configure.erl:953 mod_configure.erl:967
+#: mod_configure.erl:981
 msgid "Path to File"
 msgstr "Voje de dosiero"
 
-#: mod_configure.erl:965
+#: mod_configure.erl:948
 msgid "Restore Backup from File at "
 msgstr "Restaŭrigu de dosiero el "
 
-#: mod_configure.erl:979
+#: mod_configure.erl:962
 msgid "Dump Backup to Text File at "
 msgstr "Skribu sekurkopion en plata teksto al "
 
-#: mod_configure.erl:983
+#: mod_configure.erl:966
 msgid "Enter path to text file"
 msgstr "Enmetu vojon al plata teksto"
 
-#: mod_configure.erl:993
+#: mod_configure.erl:976
 msgid "Import User from File at "
 msgstr "Importu uzanton de dosiero el "
 
-#: mod_configure.erl:997
+#: mod_configure.erl:980
 msgid "Enter path to jabberd14 spool file"
 msgstr "Enmetu vojon al jabberd14-uzantdosiero"
 
-#: mod_configure.erl:1007
+#: mod_configure.erl:990
 msgid "Import Users from Dir at "
 msgstr "Importu uzantojn de dosierujo ĉe "
 
-#: mod_configure.erl:1011
+#: mod_configure.erl:994
 msgid "Enter path to jabberd14 spool dir"
 msgstr "Enmetu vojon al jabberd14-uzantdosierujo"
 
-#: mod_configure.erl:1012
+#: mod_configure.erl:995
 msgid "Path to Dir"
 msgstr "Vojo al dosierujo"
 
-#: mod_configure.erl:1028 mod_configure.erl:1073
+#: mod_configure.erl:1011 mod_configure.erl:1056
 msgid "Time delay"
 msgstr "Prokrasto"
 
-#: mod_configure.erl:1111
+#: mod_configure.erl:1094
 msgid "Access Control List Configuration"
 msgstr "Agordo de atingokontrolo"
 
-#: mod_configure.erl:1115
+#: mod_configure.erl:1098
 msgid "Access control lists"
 msgstr "Atingokontrol-listoj"
 
-#: mod_configure.erl:1139
+#: mod_configure.erl:1122
 msgid "Access Configuration"
 msgstr "Agordo de atingo"
 
-#: mod_configure.erl:1143
+#: mod_configure.erl:1126
 msgid "Access rules"
 msgstr "Atingo-reguloj"
 
-#: mod_configure.erl:1168 mod_configure.erl:1190 mod_configure.erl:1202
-#: mod_configure.erl:1214 mod_configure.erl:1226 mod_configure.erl:1243
-#: mod_configure.erl:1255 mod_configure.erl:1620 mod_configure.erl:1670
-#: mod_configure.erl:1691 mod_roster.erl:948 mod_roster_odbc.erl:1049
-#: mod_vcard.erl:465 mod_vcard_ldap.erl:550 mod_vcard_odbc.erl:440
+#: mod_configure.erl:1151 mod_configure.erl:1173 mod_configure.erl:1185
+#: mod_configure.erl:1197 mod_configure.erl:1209 mod_configure.erl:1226
+#: mod_configure.erl:1238 mod_configure.erl:1599 mod_configure.erl:1647
+#: mod_configure.erl:1667 mod_roster.erl:803 mod_roster_odbc.erl:910
+#: mod_vcard.erl:460 mod_vcard_ldap.erl:544 mod_vcard_odbc.erl:457
 msgid "Jabber ID"
 msgstr "Jabber ID"
 
-#: mod_configure.erl:1173 mod_configure.erl:1231 mod_configure.erl:1621
-#: mod_configure.erl:1833 mod_muc/mod_muc_room.erl:2849
-#: web/ejabberd_web_admin.erl:1501
+#: mod_configure.erl:1156 mod_configure.erl:1214 mod_configure.erl:1600
+#: mod_configure.erl:1809 mod_muc/mod_muc_room.erl:2702
+#: web/ejabberd_web_admin.erl:1331
 msgid "Password"
 msgstr "Pasvorto"
 
-#: mod_configure.erl:1178
+#: mod_configure.erl:1161
 msgid "Password Verification"
 msgstr "Pasvortkontrolo"
 
-#: mod_configure.erl:1269
+#: mod_configure.erl:1252
 msgid "Number of registered users"
 msgstr "Nombro de registritaj uzantoj"
 
-#: mod_configure.erl:1283
+#: mod_configure.erl:1266
 msgid "Number of online users"
 msgstr "Nombro de konektataj uzantoj"
 
-#: mod_configure.erl:1652 web/ejabberd_web_admin.erl:1567
+#: mod_configure.erl:1629 web/ejabberd_web_admin.erl:1397
 msgid "Never"
 msgstr "Neniam"
 
-#: mod_configure.erl:1666 web/ejabberd_web_admin.erl:1581
+#: mod_configure.erl:1643 web/ejabberd_web_admin.erl:1411
 msgid "Online"
 msgstr "Konektata"
 
-#: mod_configure.erl:1671
+#: mod_configure.erl:1648
 msgid "Last login"
 msgstr "Lasta ensaluto"
 
-#: mod_configure.erl:1692
+#: mod_configure.erl:1668
 msgid "Roster size"
 msgstr "Kontaktlist-grando"
 
-#: mod_configure.erl:1693
+#: mod_configure.erl:1669
 msgid "IP addresses"
 msgstr "IP-adresoj"
 
-#: mod_configure.erl:1694
+#: mod_configure.erl:1670
 msgid "Resources"
 msgstr "Risurcoj"
 
-#: mod_configure.erl:1820
+#: mod_configure.erl:1796
 msgid "Administration of "
 msgstr "Mastrumado de "
 
-#: mod_configure.erl:1823
+#: mod_configure.erl:1799
 msgid "Action on user"
 msgstr "Ago je uzanto"
 
-#: mod_configure.erl:1827
+#: mod_configure.erl:1803
 msgid "Edit Properties"
 msgstr "Redaktu atributojn"
 
-#: mod_configure.erl:1830 web/ejabberd_web_admin.erl:1696
+#: mod_configure.erl:1806 web/ejabberd_web_admin.erl:1514
 msgid "Remove User"
 msgstr "Forigu uzanton"
 
-#: mod_irc/mod_irc.erl:201 mod_muc/mod_muc.erl:335
+#: mod_irc/mod_irc.erl:198 mod_muc/mod_muc.erl:305
 msgid "Access denied by service policy"
 msgstr "Atingo rifuzita de serv-politiko"
 
-#: mod_irc/mod_irc.erl:400
+#: mod_irc/mod_irc.erl:311
 msgid "IRC Transport"
 msgstr "IRC-transportilo"
 
-#: mod_irc/mod_irc.erl:427
+#: mod_irc/mod_irc.erl:325
 msgid "ejabberd IRC module"
 msgstr "ejabberd IRC-modulo"
 
-#: mod_irc/mod_irc.erl:557
+#: mod_irc/mod_irc.erl:443
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr "Vi bezonas klienton kun x:data-funkcio por agordi mod_irc"
 
-#: mod_irc/mod_irc.erl:564
+#: mod_irc/mod_irc.erl:450
 msgid "Registration in mod_irc for "
 msgstr "Registraĵo en mod_irc de "
 
-#: mod_irc/mod_irc.erl:569
+#: mod_irc/mod_irc.erl:455
 msgid ""
-"Enter username, encodings, ports and passwords you wish to use for "
-"connecting to IRC servers"
+"Enter username and encodings you wish to use for connecting to IRC servers"
 msgstr ""
-"Enmetu uzantnomon,j enkodigojn, pordojn kaj pasvortojn kiujn vi volas uzi "
-"por konektoj al IRC-serviloj"
+"Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-"
+"serviloj"
 
-#: mod_irc/mod_irc.erl:574
+#: mod_irc/mod_irc.erl:460
 msgid "IRC Username"
 msgstr "IRC-kaŝnomo"
 
-#: mod_irc/mod_irc.erl:584
+#: mod_irc/mod_irc.erl:470
 msgid ""
-"If you want to specify different ports, passwords, encodings for IRC "
-"servers, fill this list with values in format '{\"irc server\", \"encoding"
-"\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
-"~p, empty password."
+"If you want to specify different encodings for IRC servers, fill this list "
+"with values in format '{\"irc server\", \"encoding\"}'.  By default this "
+"service use \"~s\" encoding."
 msgstr ""
-"Se vi volas specifi diversajn pordojn, pasvortojn, enkodigojn por IRC-"
-"serviloj, kompletigu la jenan liston kun la formo '{\"irc-servilo\", "
-"\"enkodigo\", porto, \"pasvorto\"}'. Se ne specifita, ĉi tiu servilo uzas la "
-"enkodigo \"~s\", porto ~p, malplena pasvorto."
+"Se vi volas specifi diversajn enkodigojn por IRC-serviloj, kompletigu la "
+"jenan liston kun la formo '{\"irc-servilo\", \"enkodigo\"}'. Se ne "
+"specifita, ĉi tiu servilo uzas la enkodigo \"~s\""
 
-#: mod_irc/mod_irc.erl:596
+#: mod_irc/mod_irc.erl:480
 msgid ""
-"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
-"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
+"\"}]."
 msgstr ""
-"Ekzemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"sekreto\"}, {\"vendetta."
-"fef.net\", \"iso8859-1\", 7000}, {\"irc.iutestservilo.net\", \"utf-8\"}]."
+"Ekzemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-"
+"1\"}]."
 
-#: mod_irc/mod_irc.erl:601
-msgid "Connections parameters"
-msgstr "Konekto-parametroj"
+#: mod_irc/mod_irc.erl:485
+msgid "Encodings"
+msgstr "Enkodigoj"
 
-#: mod_irc/mod_irc.erl:711
-msgid "Join IRC channel"
-msgstr "Eniras IRC-babilejon"
-
-#: mod_irc/mod_irc.erl:715
-msgid "IRC channel (don't put the first #)"
-msgstr "IRC-babilejo (ne aldonu #-prefikson)"
-
-#: mod_irc/mod_irc.erl:720
-msgid "IRC server"
-msgstr "IRC-servilo"
-
-#: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
-msgid "Join the IRC channel here."
-msgstr "Eniru IRC-babilejon jen"
-
-#: mod_irc/mod_irc.erl:761
-msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr "Eniru IRC-babilejon en ĉi Jabber-ID: ~s"
-
-#: mod_irc/mod_irc.erl:846
-msgid "IRC settings"
-msgstr "IRC agordoj"
-
-#: mod_irc/mod_irc.erl:851
-msgid ""
-"Enter username and encodings you wish to use for connecting to IRC servers.  "
-"Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
-"settings."
-msgstr ""
-"Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-"
-"serviloj. Elektu \"Sekvonto\" por ekhavi pliajn kampojn. Elektu \"Kompletigu"
-"\" por savi agordojn."
-
-#: mod_irc/mod_irc.erl:857
-msgid "IRC username"
-msgstr "IRC-uzantnomo"
-
-#: mod_irc/mod_irc.erl:906
-msgid "Password ~b"
-msgstr "Pasvorto ~b"
-
-#: mod_irc/mod_irc.erl:911
-msgid "Port ~b"
-msgstr "Pordo ~b"
-
-#: mod_irc/mod_irc.erl:916
-msgid "Encoding for server ~b"
-msgstr "Enkodigo por servilo ~b"
-
-#: mod_irc/mod_irc.erl:925
-msgid "Server ~b"
-msgstr "Servilo ~b"
-
-#: mod_muc/mod_muc.erl:437
+#: mod_muc/mod_muc.erl:403
 msgid "Only service administrators are allowed to send service messages"
 msgstr "Nur servo-administrantoj rajtas sendi serv-mesaĝojn"
 
-#: mod_muc/mod_muc.erl:481
+#: mod_muc/mod_muc.erl:446
 msgid "Room creation is denied by service policy"
 msgstr "Ĉi tiu serv-politiko ne permesas babilejo-kreadon"
 
-#: mod_muc/mod_muc.erl:488
+#: mod_muc/mod_muc.erl:453
 msgid "Conference room does not exist"
 msgstr "Babilejo ne ekzistas"
 
-#: mod_muc/mod_muc.erl:569
+#: mod_muc/mod_muc.erl:510
 msgid "Chatrooms"
 msgstr "Babilejoj"
 
-#: mod_muc/mod_muc.erl:688
+#: mod_muc/mod_muc.erl:561
 msgid "You need an x:data capable client to register nickname"
 msgstr "Vi bezonas klienton kun x:data-funkcio por registri kaŝnomon"
 
-#: mod_muc/mod_muc.erl:694
+#: mod_muc/mod_muc.erl:567
 msgid "Nickname Registration at "
 msgstr "Kaŝnomo-registrado je "
 
-#: mod_muc/mod_muc.erl:698
+#: mod_muc/mod_muc.erl:571
 msgid "Enter nickname you want to register"
 msgstr "Enmetu kaŝnomon kiun vi volas registri"
 
-#: mod_muc/mod_muc.erl:699 mod_roster.erl:949 mod_roster_odbc.erl:1050
-#: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:445
+#: mod_muc/mod_muc.erl:572 mod_roster.erl:804 mod_roster_odbc.erl:911
+#: mod_vcard.erl:357 mod_vcard.erl:465 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:462
 msgid "Nickname"
 msgstr "Kaŝnomo"
 
-#: mod_muc/mod_muc.erl:738 mod_muc/mod_muc_room.erl:926
-#: mod_muc/mod_muc_room.erl:1513
-msgid "That nickname is registered by another person"
-msgstr "Kaŝnomo estas registrita de alia persono"
+#: mod_muc/mod_muc.erl:611
+msgid "Specified nickname is already registered"
+msgstr "Donita kaŝnomo jam estas registrita"
 
-#: mod_muc/mod_muc.erl:764
+#: mod_muc/mod_muc.erl:635
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Vi devas kompletigi la \"Kaŝnomo\" kampon"
 
-#: mod_muc/mod_muc.erl:784
+#: mod_muc/mod_muc.erl:657
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC-modulo"
 
-#: mod_muc/mod_muc_log.erl:371 mod_muc/mod_muc_log.erl:378
+#: mod_muc/mod_muc_log.erl:338
 msgid "Chatroom configuration modified"
 msgstr "Agordo de babilejo ŝanĝita"
 
-#: mod_muc/mod_muc_log.erl:381
+#: mod_muc/mod_muc_log.erl:341
 msgid "joins the room"
 msgstr "eniras la babilejo"
 
-#: mod_muc/mod_muc_log.erl:384 mod_muc/mod_muc_log.erl:387
+#: mod_muc/mod_muc_log.erl:344 mod_muc/mod_muc_log.erl:347
 msgid "leaves the room"
 msgstr "eliras la babilejo"
 
-#: mod_muc/mod_muc_log.erl:390 mod_muc/mod_muc_log.erl:393
+#: mod_muc/mod_muc_log.erl:350 mod_muc/mod_muc_log.erl:353
 msgid "has been banned"
 msgstr "estas forbarita"
 
-#: mod_muc/mod_muc_log.erl:396 mod_muc/mod_muc_log.erl:399
+#: mod_muc/mod_muc_log.erl:356 mod_muc/mod_muc_log.erl:359
 msgid "has been kicked"
 msgstr "estas forpelita"
 
-#: mod_muc/mod_muc_log.erl:402
+#: mod_muc/mod_muc_log.erl:362
 msgid "has been kicked because of an affiliation change"
 msgstr "estas forpelita pro aparteneca ŝanĝo"
 
-#: mod_muc/mod_muc_log.erl:405
+#: mod_muc/mod_muc_log.erl:365
 msgid "has been kicked because the room has been changed to members-only"
 msgstr "estas forpelita ĉar la babilejo fariĝis sole por membroj"
 
-#: mod_muc/mod_muc_log.erl:408
+#: mod_muc/mod_muc_log.erl:368
 msgid "has been kicked because of a system shutdown"
 msgstr "estas forpelita pro sistem-haltigo"
 
-#: mod_muc/mod_muc_log.erl:411
+#: mod_muc/mod_muc_log.erl:371
 msgid "is now known as"
 msgstr "nun nomiĝas"
 
-#: mod_muc/mod_muc_log.erl:414 mod_muc/mod_muc_log.erl:678
-#: mod_muc/mod_muc_room.erl:2040
+#: mod_muc/mod_muc_log.erl:374 mod_muc/mod_muc_log.erl:619
+#: mod_muc/mod_muc_room.erl:1973
 msgid " has set the subject to: "
 msgstr " ŝanĝis la temon al: "
 
-#: mod_muc/mod_muc_log.erl:448
+#: mod_muc/mod_muc_log.erl:405
 msgid "Monday"
 msgstr "Lundo"
 
-#: mod_muc/mod_muc_log.erl:449
+#: mod_muc/mod_muc_log.erl:406
 msgid "Tuesday"
 msgstr "Mardo"
 
-#: mod_muc/mod_muc_log.erl:450
+#: mod_muc/mod_muc_log.erl:407
 msgid "Wednesday"
 msgstr "Merkredo"
 
-#: mod_muc/mod_muc_log.erl:451
+#: mod_muc/mod_muc_log.erl:408
 msgid "Thursday"
 msgstr "Ĵaŭdo"
 
-#: mod_muc/mod_muc_log.erl:452
+#: mod_muc/mod_muc_log.erl:409
 msgid "Friday"
 msgstr "Vendredo"
 
-#: mod_muc/mod_muc_log.erl:453
+#: mod_muc/mod_muc_log.erl:410
 msgid "Saturday"
 msgstr "Sabato"
 
-#: mod_muc/mod_muc_log.erl:454
+#: mod_muc/mod_muc_log.erl:411
 msgid "Sunday"
 msgstr "Dimanĉo"
 
-#: mod_muc/mod_muc_log.erl:458
+#: mod_muc/mod_muc_log.erl:415
 msgid "January"
 msgstr "Januaro"
 
-#: mod_muc/mod_muc_log.erl:459
+#: mod_muc/mod_muc_log.erl:416
 msgid "February"
 msgstr "Februaro"
 
-#: mod_muc/mod_muc_log.erl:460
+#: mod_muc/mod_muc_log.erl:417
 msgid "March"
 msgstr "Marĉo"
 
-#: mod_muc/mod_muc_log.erl:461
+#: mod_muc/mod_muc_log.erl:418
 msgid "April"
 msgstr "Aprilo"
 
-#: mod_muc/mod_muc_log.erl:462
+#: mod_muc/mod_muc_log.erl:419
 msgid "May"
 msgstr "Majo"
 
-#: mod_muc/mod_muc_log.erl:463
+#: mod_muc/mod_muc_log.erl:420
 msgid "June"
 msgstr "Junio"
 
-#: mod_muc/mod_muc_log.erl:464
+#: mod_muc/mod_muc_log.erl:421
 msgid "July"
 msgstr "Julio"
 
-#: mod_muc/mod_muc_log.erl:465
+#: mod_muc/mod_muc_log.erl:422
 msgid "August"
 msgstr "Aŭgusto"
 
-#: mod_muc/mod_muc_log.erl:466
+#: mod_muc/mod_muc_log.erl:423
 msgid "September"
 msgstr "Septembro"
 
-#: mod_muc/mod_muc_log.erl:467
+#: mod_muc/mod_muc_log.erl:424
 msgid "October"
 msgstr "Oktobro"
 
-#: mod_muc/mod_muc_log.erl:468
+#: mod_muc/mod_muc_log.erl:425
 msgid "November"
 msgstr "Novembro"
 
-#: mod_muc/mod_muc_log.erl:469
+#: mod_muc/mod_muc_log.erl:426
 msgid "December"
 msgstr "Decembro"
 
-#: mod_muc/mod_muc_log.erl:740
+#: mod_muc/mod_muc_log.erl:675
 msgid "Room Configuration"
 msgstr "Babilejo-agordo"
 
-#: mod_muc/mod_muc_log.erl:749
-msgid "Room Occupants"
-msgstr "Nombro de ĉeestantoj"
-
-#: mod_muc/mod_muc_log.erl:852 mod_muc/mod_muc_room.erl:2825
+#: mod_muc/mod_muc_log.erl:768 mod_muc/mod_muc_room.erl:2678
 msgid "Room title"
 msgstr "Babilejo-nomo"
 
-#: mod_muc/mod_muc_room.erl:167
+#: mod_muc/mod_muc_room.erl:226
 msgid "Traffic rate limit is exceeded"
 msgstr "Trafikrapida limigo superita"
 
-#: mod_muc/mod_muc_room.erl:239
+#: mod_muc/mod_muc_room.erl:303
 msgid ""
 "This participant is kicked from the room because he sent an error message"
 msgstr ""
 "Ĉi tiu partoprenanta estas forpelata de la babilejo pro sendado de erar-"
 "mesaĝo"
 
-#: mod_muc/mod_muc_room.erl:248
+#: mod_muc/mod_muc_room.erl:312
 msgid "It is not allowed to send private messages to the conference"
 msgstr "Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"
 
-#: mod_muc/mod_muc_room.erl:293
+#: mod_muc/mod_muc_room.erl:357
 msgid "Improper message type"
 msgstr "Malĝusta mesaĝo-tipo"
 
-#: mod_muc/mod_muc_room.erl:403
+#: mod_muc/mod_muc_room.erl:474
 msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
@@ -733,491 +661,478 @@ msgstr ""
 "Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-mesaĝo "
 "al alia partoprenanto"
 
-#: mod_muc/mod_muc_room.erl:416
+#: mod_muc/mod_muc_room.erl:487
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr "Malpermesas sendi mesaĝojn de tipo \"groupchat\""
 
-#: mod_muc/mod_muc_room.erl:428 mod_muc/mod_muc_room.erl:482
+#: mod_muc/mod_muc_room.erl:499 mod_muc/mod_muc_room.erl:553
 msgid "Recipient is not in the conference room"
 msgstr "Ricevanto ne ĉeestas en la babilejo "
 
-#: mod_muc/mod_muc_room.erl:448 mod_muc/mod_muc_room.erl:825
-#: mod_muc/mod_muc_room.erl:3447
+#: mod_muc/mod_muc_room.erl:519 mod_muc/mod_muc_room.erl:872
+#: mod_muc/mod_muc_room.erl:3272
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Nur partoprenantoj rajtas sendi mesaĝojn al la babilejo"
 
-#: mod_muc/mod_muc_room.erl:457
+#: mod_muc/mod_muc_room.erl:528
 msgid "It is not allowed to send private messages"
 msgstr "Ne estas permesata sendi privatajn mesaĝojn"
 
-#: mod_muc/mod_muc_room.erl:503
+#: mod_muc/mod_muc_room.erl:574
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr "Nur partoprenantoj rajtas sendi informmendojn al la babilejoj"
 
-#: mod_muc/mod_muc_room.erl:515
+#: mod_muc/mod_muc_room.erl:586
 msgid "Queries to the conference members are not allowed in this room"
 msgstr "Malpermesas informmendoj al partoprenantoj en ĉi tiu babilejo"
 
-#: mod_muc/mod_muc_room.erl:601
+#: mod_muc/mod_muc_room.erl:671
 msgid "private, "
 msgstr "privata, "
 
-#: mod_muc/mod_muc_room.erl:801
+#: mod_muc/mod_muc_room.erl:848
 msgid ""
-"Only moderators and participants are allowed to change the subject in this "
-"room"
+"Only moderators and participants are allowed to change subject in this room"
 msgstr ""
 "Nur moderigantoj kaj partoprenantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"
 
-#: mod_muc/mod_muc_room.erl:806
-msgid "Only moderators are allowed to change the subject in this room"
+#: mod_muc/mod_muc_room.erl:853
+msgid "Only moderators are allowed to change subject in this room"
 msgstr "Nur moderigantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"
 
-#: mod_muc/mod_muc_room.erl:816
+#: mod_muc/mod_muc_room.erl:863
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr "Vizitantoj ne rajtas sendi mesaĝojn al ĉiuj partoprenantoj"
 
-#: mod_muc/mod_muc_room.erl:884
+#: mod_muc/mod_muc_room.erl:931
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
 msgstr ""
 "Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-ĉeesto"
 
-#: mod_muc/mod_muc_room.erl:902
+#: mod_muc/mod_muc_room.erl:949
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr ""
 "Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"
 
-#: mod_muc/mod_muc_room.erl:915 mod_muc/mod_muc_room.erl:1505
-msgid "That nickname is already in use by another occupant"
-msgstr "Tiu kaŝnomo jam estas uzata de alia partoprenanto"
+#: mod_muc/mod_muc_room.erl:962 mod_muc/mod_muc_room.erl:1484
+msgid "Nickname is already in use by another occupant"
+msgstr "Kaŝnomo estas jam uzata de alia partoprenanto"
 
-#: mod_muc/mod_muc_room.erl:1494
+#: mod_muc/mod_muc_room.erl:973 mod_muc/mod_muc_room.erl:1492
+msgid "Nickname is registered by another person"
+msgstr "Kaŝnomo estas registrita de alia persono"
+
+#: mod_muc/mod_muc_room.erl:1473
 msgid "You have been banned from this room"
 msgstr "Vi estas malpermesata en ĉi tiu babilejo"
 
-#: mod_muc/mod_muc_room.erl:1497
-msgid "Membership is required to enter this room"
+#: mod_muc/mod_muc_room.erl:1476
+msgid "Membership required to enter this room"
 msgstr "Membreco estas bezonata por eniri ĉi tiun babilejon"
 
-#: mod_muc/mod_muc_room.erl:1533
+#: mod_muc/mod_muc_room.erl:1511
 msgid "This room is not anonymous"
 msgstr "Ĉi tiu babilejo ne estas anonima"
 
-#: mod_muc/mod_muc_room.erl:1559
-msgid "A password is required to enter this room"
+#: mod_muc/mod_muc_room.erl:1536
+msgid "Password required to enter this room"
 msgstr "Pasvorto estas bezonata por eniri ĉi tiun babilejon"
 
-#: mod_muc/mod_muc_room.erl:1581
-msgid "Unable to generate a captcha"
-msgstr "Ne eblis krei aŭtomatas turingteston"
-
-#: mod_muc/mod_muc_room.erl:1591
+#: mod_muc/mod_muc_room.erl:1545
 msgid "Incorrect password"
 msgstr "Nekorekta pasvorto"
 
-#: mod_muc/mod_muc_room.erl:2095
+#: mod_muc/mod_muc_room.erl:2028
 msgid "Administrator privileges required"
 msgstr "Administrantaj rajtoj bezonata"
 
-#: mod_muc/mod_muc_room.erl:2110
+#: mod_muc/mod_muc_room.erl:2043
 msgid "Moderator privileges required"
 msgstr "Moderantaj rajtoj bezonata"
 
-#: mod_muc/mod_muc_room.erl:2265
+#: mod_muc/mod_muc_room.erl:2198
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s estas nevalida"
 
-#: mod_muc/mod_muc_room.erl:2279
+#: mod_muc/mod_muc_room.erl:2212
 msgid "Nickname ~s does not exist in the room"
 msgstr "Kaŝnomo ~s ne ekzistas en la babilejo"
 
-#: mod_muc/mod_muc_room.erl:2305 mod_muc/mod_muc_room.erl:2683
+#: mod_muc/mod_muc_room.erl:2238 mod_muc/mod_muc_room.erl:2609
 msgid "Invalid affiliation: ~s"
 msgstr "Nevalida aparteneco: ~s"
 
-#: mod_muc/mod_muc_room.erl:2362
+#: mod_muc/mod_muc_room.erl:2295
 msgid "Invalid role: ~s"
 msgstr "Nevalida rolo: ~s"
 
-#: mod_muc/mod_muc_room.erl:2660 mod_muc/mod_muc_room.erl:2696
+#: mod_muc/mod_muc_room.erl:2586 mod_muc/mod_muc_room.erl:2622
 msgid "Owner privileges required"
 msgstr "Mastraj rajtoj bezonata"
 
-#: mod_muc/mod_muc_room.erl:2820
-msgid "Configuration of room ~s"
-msgstr "Agordo de babilejo ~s"
+#: mod_muc/mod_muc_room.erl:2672
+msgid "Configuration for "
+msgstr "Agordo de "
 
-#: mod_muc/mod_muc_room.erl:2828 mod_muc/mod_muc_room.erl:3246
+#: mod_muc/mod_muc_room.erl:2681 mod_muc/mod_muc_room.erl:3082
+#, fuzzy
 msgid "Room description"
-msgstr "Babilejo-priskribo"
+msgstr "Priskribo:"
 
-#: mod_muc/mod_muc_room.erl:2835
+#: mod_muc/mod_muc_room.erl:2688
 msgid "Make room persistent"
 msgstr "Farigu babilejon daŭra"
 
-#: mod_muc/mod_muc_room.erl:2840
+#: mod_muc/mod_muc_room.erl:2693
 msgid "Make room public searchable"
 msgstr "Farigu babilejon publike trovebla"
 
-#: mod_muc/mod_muc_room.erl:2843
+#: mod_muc/mod_muc_room.erl:2696
 msgid "Make participants list public"
 msgstr "Farigu partoprento-liston publika"
 
-#: mod_muc/mod_muc_room.erl:2846
+#: mod_muc/mod_muc_room.erl:2699
 msgid "Make room password protected"
 msgstr "Farigu babilejon protektata per pasvorto"
 
-#: mod_muc/mod_muc_room.erl:2857
+#: mod_muc/mod_muc_room.erl:2710
 msgid "Maximum Number of Occupants"
 msgstr "Limigo de nombro de partoprenantoj"
 
-#: mod_muc/mod_muc_room.erl:2864
+#: mod_muc/mod_muc_room.erl:2723
 msgid "No limit"
 msgstr "Neniu limigo"
 
-#: mod_muc/mod_muc_room.erl:2875
+#: mod_muc/mod_muc_room.erl:2733
 msgid "Present real Jabber IDs to"
 msgstr "Montru verajn Jabber ID-ojn al"
 
-#: mod_muc/mod_muc_room.erl:2883
+#: mod_muc/mod_muc_room.erl:2741
 msgid "moderators only"
 msgstr "moderantoj sole"
 
-#: mod_muc/mod_muc_room.erl:2885
+#: mod_muc/mod_muc_room.erl:2743
 msgid "anyone"
 msgstr "iu ajn"
 
-#: mod_muc/mod_muc_room.erl:2887
+#: mod_muc/mod_muc_room.erl:2745
 msgid "Make room members-only"
 msgstr "Farigu babilejon sole por membroj"
 
-#: mod_muc/mod_muc_room.erl:2890
+#: mod_muc/mod_muc_room.erl:2748
 msgid "Make room moderated"
 msgstr "Farigu babilejon moderigata"
 
-#: mod_muc/mod_muc_room.erl:2893
+#: mod_muc/mod_muc_room.erl:2751
 msgid "Default users as participants"
 msgstr "Kutime farigu uzantojn kiel partpoprenantoj"
 
-#: mod_muc/mod_muc_room.erl:2896
-msgid "Allow users to change the subject"
+#: mod_muc/mod_muc_room.erl:2754
+msgid "Allow users to change subject"
 msgstr "Permesu uzantojn ŝanĝi la temon"
 
-#: mod_muc/mod_muc_room.erl:2899
+#: mod_muc/mod_muc_room.erl:2757
 msgid "Allow users to send private messages"
 msgstr "Permesu uzantojn sendi privatajn mesaĝojn"
 
-#: mod_muc/mod_muc_room.erl:2902
+#: mod_muc/mod_muc_room.erl:2760
 msgid "Allow users to query other users"
 msgstr "Permesu uzantojn informpeti aliajn uzantojn"
 
-#: mod_muc/mod_muc_room.erl:2905
+#: mod_muc/mod_muc_room.erl:2763
 msgid "Allow users to send invites"
 msgstr "Permesu uzantojn sendi invitojn"
 
-#: mod_muc/mod_muc_room.erl:2908
+#: mod_muc/mod_muc_room.erl:2766
 msgid "Allow visitors to send status text in presence updates"
 msgstr "Permesu al vizitantoj sendi statmesaĝon en ĉeest-sciigoj"
 
-#: mod_muc/mod_muc_room.erl:2911
+#: mod_muc/mod_muc_room.erl:2769
 msgid "Allow visitors to change nickname"
 msgstr "Permesu al vizitantoj ŝanĝi siajn kaŝnomojn"
 
-#: mod_muc/mod_muc_room.erl:2917
-msgid "Make room captcha protected"
-msgstr "Farigu babilejon protektata per aŭtomata Turingtesto"
-
-#: mod_muc/mod_muc_room.erl:2926
+#: mod_muc/mod_muc_room.erl:2777
 msgid "Enable logging"
 msgstr "Ŝaltu protokoladon"
 
-#: mod_muc/mod_muc_room.erl:2934
+#: mod_muc/mod_muc_room.erl:2785
 msgid "You need an x:data capable client to configure room"
 msgstr "Vi bezonas klienton kun x:data-funkcio por agordi la babilejon"
 
-#: mod_muc/mod_muc_room.erl:3248
+#: mod_muc/mod_muc_room.erl:3084
 msgid "Number of occupants"
 msgstr "Nombro de ĉeestantoj"
 
-#: mod_muc/mod_muc_room.erl:3367
+#: mod_muc/mod_muc_room.erl:3192
 msgid "~s invites you to the room ~s"
 msgstr "~s invitas vin al la babilejo ~s"
 
-#: mod_muc/mod_muc_room.erl:3376
+#: mod_muc/mod_muc_room.erl:3201
 msgid "the password is"
 msgstr "la pasvorto estas"
 
-#: mod_offline.erl:509 mod_offline_odbc.erl:352
+#: mod_offline.erl:446 mod_offline_odbc.erl:296
 msgid ""
 "Your contact offline message queue is full. The message has been discarded."
 msgstr ""
 "Mesaĝo-atendovico de la senkonekta kontakto estas plena. La mesaĝo estas "
 "forĵetita"
 
-#: mod_offline.erl:558 mod_offline_odbc.erl:407
+#: mod_offline.erl:495 mod_offline_odbc.erl:351
 msgid "~s's Offline Messages Queue"
 msgstr "Mesaĝo-atendovico de ~s"
 
-#: mod_offline.erl:561 mod_offline_odbc.erl:410 mod_roster.erl:992
-#: mod_roster_odbc.erl:1093 mod_shared_roster.erl:778
-#: mod_shared_roster.erl:879 web/ejabberd_web_admin.erl:813
-#: web/ejabberd_web_admin.erl:854 web/ejabberd_web_admin.erl:922
-#: web/ejabberd_web_admin.erl:958 web/ejabberd_web_admin.erl:999
-#: web/ejabberd_web_admin.erl:1489 web/ejabberd_web_admin.erl:1688
-#: web/ejabberd_web_admin.erl:1858 web/ejabberd_web_admin.erl:1890
-#: web/ejabberd_web_admin.erl:1953 web/ejabberd_web_admin.erl:2057
-#: web/ejabberd_web_admin.erl:2082 web/ejabberd_web_admin.erl:2170
+#: mod_offline.erl:498 mod_offline_odbc.erl:354 mod_roster.erl:847
+#: mod_roster_odbc.erl:954 mod_shared_roster.erl:648 mod_shared_roster.erl:748
+#: web/ejabberd_web_admin.erl:681 web/ejabberd_web_admin.erl:724
+#: web/ejabberd_web_admin.erl:792 web/ejabberd_web_admin.erl:830
+#: web/ejabberd_web_admin.erl:870 web/ejabberd_web_admin.erl:1319
+#: web/ejabberd_web_admin.erl:1506 web/ejabberd_web_admin.erl:1668
+#: web/ejabberd_web_admin.erl:1735 web/ejabberd_web_admin.erl:1816
+#: web/ejabberd_web_admin.erl:1839 web/ejabberd_web_admin.erl:1908
 msgid "Submitted"
 msgstr "Sendita"
 
-#: mod_offline.erl:569
+#: mod_offline.erl:506
 msgid "Time"
 msgstr "Tempo"
 
-#: mod_offline.erl:570
+#: mod_offline.erl:507
 msgid "From"
 msgstr "De"
 
-#: mod_offline.erl:571
+#: mod_offline.erl:508
 msgid "To"
 msgstr "Ĝis"
 
-#: mod_offline.erl:572 mod_offline_odbc.erl:418
+#: mod_offline.erl:509 mod_offline_odbc.erl:362
 msgid "Packet"
 msgstr "Pakaĵo"
 
-#: mod_offline.erl:585 mod_offline_odbc.erl:431 mod_shared_roster.erl:785
-#: web/ejabberd_web_admin.erl:862 web/ejabberd_web_admin.erl:966
+#: mod_offline.erl:522 mod_offline_odbc.erl:375 mod_shared_roster.erl:655
+#: web/ejabberd_web_admin.erl:732 web/ejabberd_web_admin.erl:838
 msgid "Delete Selected"
 msgstr "Forigu elektata(j)n"
 
-#: mod_offline.erl:620 mod_offline_odbc.erl:496
+#: mod_offline.erl:557 mod_offline_odbc.erl:440
 msgid "Offline Messages:"
 msgstr "Liverontaj mesaĝoj"
 
-#: mod_offline.erl:620 mod_offline_odbc.erl:496
-msgid "Remove All Offline Messages"
-msgstr "Forigu ĉiujn liverontajn mesaĝojn"
-
-#: mod_proxy65/mod_proxy65_service.erl:213
+#: mod_proxy65/mod_proxy65_service.erl:192
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bajtfluo modulo"
 
-#: mod_pubsub/mod_pubsub.erl:1066 mod_pubsub/mod_pubsub_odbc.erl:892
+#: mod_pubsub/mod_pubsub.erl:753
 msgid "Publish-Subscribe"
 msgstr "Public-Abonado"
 
-#: mod_pubsub/mod_pubsub.erl:1163 mod_pubsub/mod_pubsub_odbc.erl:990
+#: mod_pubsub/mod_pubsub.erl:846
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Public-Abonada modulo"
 
-#: mod_pubsub/mod_pubsub.erl:1446 mod_pubsub/mod_pubsub_odbc.erl:1277
+#: mod_pubsub/mod_pubsub.erl:997
 msgid "PubSub subscriber request"
 msgstr "PubAbo abonpeto"
 
-#: mod_pubsub/mod_pubsub.erl:1448 mod_pubsub/mod_pubsub_odbc.erl:1279
+#: mod_pubsub/mod_pubsub.erl:999
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Elektu ĉu permesi la abonon de ĉi tiu ento"
 
-#: mod_pubsub/mod_pubsub.erl:1454 mod_pubsub/mod_pubsub_odbc.erl:1285
+#: mod_pubsub/mod_pubsub.erl:1005
 msgid "Node ID"
 msgstr "Nodo ID"
 
-#: mod_pubsub/mod_pubsub.erl:1459 mod_pubsub/mod_pubsub_odbc.erl:1290
+#: mod_pubsub/mod_pubsub.erl:1010
 msgid "Subscriber Address"
 msgstr "Abonanta adreso"
 
-#: mod_pubsub/mod_pubsub.erl:1465 mod_pubsub/mod_pubsub_odbc.erl:1296
+#: mod_pubsub/mod_pubsub.erl:1016
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3265 mod_pubsub/mod_pubsub_odbc.erl:3119
+#: mod_pubsub/mod_pubsub.erl:2497
 msgid "Deliver payloads with event notifications"
 msgstr "Liveru aĵojn de event-sciigoj"
 
-#: mod_pubsub/mod_pubsub.erl:3266 mod_pubsub/mod_pubsub_odbc.erl:3120
+#: mod_pubsub/mod_pubsub.erl:2498
 msgid "Deliver event notifications"
 msgstr "Liveru event-sciigojn"
 
-#: mod_pubsub/mod_pubsub.erl:3267 mod_pubsub/mod_pubsub_odbc.erl:3121
+#: mod_pubsub/mod_pubsub.erl:2499
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Sciigu abonantoj kiam la agordo de la nodo ŝanĝas"
 
-#: mod_pubsub/mod_pubsub.erl:3268 mod_pubsub/mod_pubsub_odbc.erl:3122
+#: mod_pubsub/mod_pubsub.erl:2500
 msgid "Notify subscribers when the node is deleted"
 msgstr "Sciigu abonantoj kiam la nodo estas forigita"
 
-#: mod_pubsub/mod_pubsub.erl:3269 mod_pubsub/mod_pubsub_odbc.erl:3123
+#: mod_pubsub/mod_pubsub.erl:2501
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Sciigu abonantoj kiam eroj estas forigita de la nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3270 mod_pubsub/mod_pubsub_odbc.erl:3124
+#: mod_pubsub/mod_pubsub.erl:2502
 msgid "Persist items to storage"
 msgstr "Savu erojn en konservado"
 
-#: mod_pubsub/mod_pubsub.erl:3271 mod_pubsub/mod_pubsub_odbc.erl:3125
+#: mod_pubsub/mod_pubsub.erl:2503
 msgid "A friendly name for the node"
 msgstr "Kromnomo por ĉi tiu nodo"
 
-#: mod_pubsub/mod_pubsub.erl:3272 mod_pubsub/mod_pubsub_odbc.erl:3126
+#: mod_pubsub/mod_pubsub.erl:2504
 msgid "Max # of items to persist"
 msgstr "Maksimuma kiomo de eroj en konservado"
 
-#: mod_pubsub/mod_pubsub.erl:3273 mod_pubsub/mod_pubsub_odbc.erl:3127
+#: mod_pubsub/mod_pubsub.erl:2505
 msgid "Whether to allow subscriptions"
 msgstr "Ĉu permesi aboni"
 
-#: mod_pubsub/mod_pubsub.erl:3274 mod_pubsub/mod_pubsub_odbc.erl:3128
+#: mod_pubsub/mod_pubsub.erl:2506
 msgid "Specify the access model"
 msgstr "Specifu atingo-modelon"
 
-#: mod_pubsub/mod_pubsub.erl:3277 mod_pubsub/mod_pubsub_odbc.erl:3131
+#: mod_pubsub/mod_pubsub.erl:2510
 msgid "Roster groups allowed to subscribe"
 msgstr "Kontaktlist-grupoj kiuj rajtas aboni"
 
-#: mod_pubsub/mod_pubsub.erl:3278 mod_pubsub/mod_pubsub_odbc.erl:3132
+#: mod_pubsub/mod_pubsub.erl:2514
 msgid "Specify the publisher model"
 msgstr "Enmetu publikadan modelon"
 
-#: mod_pubsub/mod_pubsub.erl:3280 mod_pubsub/mod_pubsub_odbc.erl:3134
+#: mod_pubsub/mod_pubsub.erl:2516
 msgid "Max payload size in bytes"
 msgstr "Maksimuma aĵo-grando je bajtoj"
 
-#: mod_pubsub/mod_pubsub.erl:3281 mod_pubsub/mod_pubsub_odbc.erl:3135
+#: mod_pubsub/mod_pubsub.erl:2517
 msgid "When to send the last published item"
 msgstr "Kiam sendi la laste publicitan eron"
 
-#: mod_pubsub/mod_pubsub.erl:3283 mod_pubsub/mod_pubsub_odbc.erl:3137
+#: mod_pubsub/mod_pubsub.erl:2519
 msgid "Only deliver notifications to available users"
 msgstr "Nur liveru sciigojn al konektataj uzantoj"
 
-#: mod_pubsub/mod_pubsub.erl:3284 mod_pubsub/mod_pubsub_odbc.erl:3138
-msgid "The collections with which a node is affiliated"
-msgstr "Aro kun kiu nodo estas filigita"
-
-#: mod_register.erl:190
+#: mod_register.erl:191
 msgid "Choose a username and password to register with this server"
 msgstr "Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"
 
-#: mod_register.erl:243
-msgid "Users are not allowed to register accounts so quickly"
+#: mod_register.erl:232
+msgid "Users are not allowed to register accounts so fast"
 msgstr "Ne estas permesata al uzantoj registri tiel rapide"
 
-#: mod_roster.erl:943 mod_roster_odbc.erl:1044 web/ejabberd_web_admin.erl:1653
-#: web/ejabberd_web_admin.erl:1813 web/ejabberd_web_admin.erl:1824
-#: web/ejabberd_web_admin.erl:2141
+#: mod_roster.erl:798 mod_roster_odbc.erl:905 web/ejabberd_web_admin.erl:1481
+#: web/ejabberd_web_admin.erl:1623 web/ejabberd_web_admin.erl:1634
+#: web/ejabberd_web_admin.erl:1898
 msgid "None"
 msgstr "Nenio"
 
-#: mod_roster.erl:950 mod_roster_odbc.erl:1051
+#: mod_roster.erl:805 mod_roster_odbc.erl:912
 msgid "Subscription"
 msgstr "Abono"
 
-#: mod_roster.erl:951 mod_roster_odbc.erl:1052
+#: mod_roster.erl:806 mod_roster_odbc.erl:913
 msgid "Pending"
 msgstr "Atendanta"
 
-#: mod_roster.erl:952 mod_roster_odbc.erl:1053
+#: mod_roster.erl:807 mod_roster_odbc.erl:914
 msgid "Groups"
 msgstr "Grupoj"
 
-#: mod_roster.erl:979 mod_roster_odbc.erl:1080
+#: mod_roster.erl:834 mod_roster_odbc.erl:941
 msgid "Validate"
 msgstr "Validigu"
 
-#: mod_roster.erl:987 mod_roster_odbc.erl:1088
+#: mod_roster.erl:842 mod_roster_odbc.erl:949
 msgid "Remove"
 msgstr "Forigu"
 
-#: mod_roster.erl:990 mod_roster_odbc.erl:1091
+#: mod_roster.erl:845 mod_roster_odbc.erl:952
 msgid "Roster of "
 msgstr "Kontaktlisto de "
 
-#: mod_roster.erl:993 mod_roster_odbc.erl:1094 mod_shared_roster.erl:779
-#: mod_shared_roster.erl:880 web/ejabberd_web_admin.erl:814
-#: web/ejabberd_web_admin.erl:855 web/ejabberd_web_admin.erl:923
-#: web/ejabberd_web_admin.erl:959 web/ejabberd_web_admin.erl:1000
-#: web/ejabberd_web_admin.erl:1490 web/ejabberd_web_admin.erl:1689
-#: web/ejabberd_web_admin.erl:1859 web/ejabberd_web_admin.erl:2058
-#: web/ejabberd_web_admin.erl:2083 web/ejabberd_web_admin.erl:2171
+#: mod_roster.erl:848 mod_roster_odbc.erl:955 mod_shared_roster.erl:649
+#: mod_shared_roster.erl:749 web/ejabberd_web_admin.erl:682
+#: web/ejabberd_web_admin.erl:725 web/ejabberd_web_admin.erl:793
+#: web/ejabberd_web_admin.erl:831 web/ejabberd_web_admin.erl:871
+#: web/ejabberd_web_admin.erl:1320 web/ejabberd_web_admin.erl:1507
+#: web/ejabberd_web_admin.erl:1669 web/ejabberd_web_admin.erl:1817
+#: web/ejabberd_web_admin.erl:1840 web/ejabberd_web_admin.erl:1909
 msgid "Bad format"
 msgstr "Malĝusta formo"
 
-#: mod_roster.erl:1000 mod_roster_odbc.erl:1101
+#: mod_roster.erl:855 mod_roster_odbc.erl:962
 msgid "Add Jabber ID"
 msgstr "Aldonu Jabber ID"
 
-#: mod_roster.erl:1099 mod_roster_odbc.erl:1200
+#: mod_roster.erl:936 mod_roster_odbc.erl:1043
 msgid "Roster"
 msgstr "Kontaktlisto"
 
-#: mod_shared_roster.erl:734 mod_shared_roster.erl:776
-#: mod_shared_roster.erl:876
+#: mod_shared_roster.erl:604 mod_shared_roster.erl:646
+#: mod_shared_roster.erl:745
 msgid "Shared Roster Groups"
 msgstr "Komuna Kontaktlist-grupo"
 
-#: mod_shared_roster.erl:772 web/ejabberd_web_admin.erl:1346
-#: web/ejabberd_web_admin.erl:2383
+#: mod_shared_roster.erl:642 web/ejabberd_web_admin.erl:1189
+#: web/ejabberd_web_admin.erl:2082
 msgid "Add New"
 msgstr "Aldonu novan"
 
-#: mod_shared_roster.erl:847
+#: mod_shared_roster.erl:716
 msgid "Name:"
 msgstr "Nomo:"
 
-#: mod_shared_roster.erl:852
+#: mod_shared_roster.erl:721
 msgid "Description:"
 msgstr "Priskribo:"
 
-#: mod_shared_roster.erl:860
+#: mod_shared_roster.erl:729
 msgid "Members:"
 msgstr "Membroj:"
 
-#: mod_shared_roster.erl:868
+#: mod_shared_roster.erl:737
 msgid "Displayed Groups:"
 msgstr "Montrataj grupoj:"
 
-#: mod_shared_roster.erl:877
+#: mod_shared_roster.erl:746
 msgid "Group "
 msgstr "Grupo "
 
-#: mod_shared_roster.erl:886 web/ejabberd_web_admin.erl:820
-#: web/ejabberd_web_admin.erl:864 web/ejabberd_web_admin.erl:929
-#: web/ejabberd_web_admin.erl:1006 web/ejabberd_web_admin.erl:1944
+#: mod_shared_roster.erl:755 web/ejabberd_web_admin.erl:691
+#: web/ejabberd_web_admin.erl:734 web/ejabberd_web_admin.erl:802
+#: web/ejabberd_web_admin.erl:877 web/ejabberd_web_admin.erl:1751
 msgid "Submit"
 msgstr "Sendu"
 
-#: mod_vcard.erl:165 mod_vcard_ldap.erl:237 mod_vcard_odbc.erl:129
+#: mod_vcard.erl:165 mod_vcard_ldap.erl:235 mod_vcard_odbc.erl:129
 msgid "Erlang Jabber Server"
 msgstr "Erlang-a Jabber-Servilo"
 
-#: mod_vcard.erl:357 mod_vcard.erl:471 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:446
+#: mod_vcard.erl:357 mod_vcard.erl:466 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:463
 msgid "Birthday"
 msgstr "Naskiĝtago"
 
-#: mod_vcard.erl:357 mod_vcard.erl:473 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:448
+#: mod_vcard.erl:357 mod_vcard.erl:468 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:465
 msgid "City"
 msgstr "Urbo"
 
-#: mod_vcard.erl:357 mod_vcard.erl:472 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:447
+#: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:464
 msgid "Country"
 msgstr "Lando"
 
-#: mod_vcard.erl:357 mod_vcard.erl:474 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:449
+#: mod_vcard.erl:357 mod_vcard.erl:469 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:466
 msgid "Email"
 msgstr "Retpoŝto"
 
-#: mod_vcard.erl:357 mod_vcard.erl:469 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:444
+#: mod_vcard.erl:357 mod_vcard.erl:464 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:461
 msgid "Family Name"
 msgstr "Lasta Nomo"
 
-#: mod_vcard.erl:357 mod_vcard_odbc.erl:334
+#: mod_vcard.erl:357 mod_vcard_odbc.erl:354
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
@@ -1225,397 +1140,354 @@ msgstr ""
 "Kompletigu la formon por serĉi rekonata Jabber-uzanto (Aldonu * je la fino "
 "de la kampo por rekoni subĉenon"
 
-#: mod_vcard.erl:357 mod_vcard.erl:466 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:441
+#: mod_vcard.erl:357 mod_vcard.erl:461 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:458
 msgid "Full Name"
 msgstr "Plena Nomo"
 
-#: mod_vcard.erl:357 mod_vcard.erl:468 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:443
+#: mod_vcard.erl:357 mod_vcard.erl:463 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:460
 msgid "Middle Name"
 msgstr "Meza Nomo"
 
-#: mod_vcard.erl:357 mod_vcard.erl:467 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:442 web/ejabberd_web_admin.erl:1933
+#: mod_vcard.erl:357 mod_vcard.erl:462 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:459 web/ejabberd_web_admin.erl:1740
 msgid "Name"
 msgstr "Nomo"
 
-#: mod_vcard.erl:357 mod_vcard.erl:475 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:450
+#: mod_vcard.erl:357 mod_vcard.erl:470 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:467
 msgid "Organization Name"
 msgstr "Organiz-nomo"
 
-#: mod_vcard.erl:357 mod_vcard.erl:476 mod_vcard_odbc.erl:334
-#: mod_vcard_odbc.erl:451
+#: mod_vcard.erl:357 mod_vcard.erl:471 mod_vcard_odbc.erl:354
+#: mod_vcard_odbc.erl:468
 msgid "Organization Unit"
 msgstr "Organiz-parto"
 
-#: mod_vcard.erl:357 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:334
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:455 mod_vcard_odbc.erl:354
 msgid "Search users in "
 msgstr "Serĉu uzantojn en "
 
-#: mod_vcard.erl:357 mod_vcard_odbc.erl:334 web/ejabberd_web_admin.erl:1496
-#: web/ejabberd_web_admin.erl:1551
+#: mod_vcard.erl:357 mod_vcard_odbc.erl:354 web/ejabberd_web_admin.erl:1326
+#: web/ejabberd_web_admin.erl:1381
 msgid "User"
 msgstr "Uzanto"
 
-#: mod_vcard.erl:357 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:334
+#: mod_vcard.erl:357 mod_vcard_ldap.erl:455 mod_vcard_odbc.erl:354
 msgid "You need an x:data capable client to search"
 msgstr "Vi bezonas klienton kun x:data-funkcio por serĉado"
 
-#: mod_vcard.erl:382 mod_vcard_ldap.erl:483 mod_vcard_odbc.erl:359
+#: mod_vcard.erl:379 mod_vcard_ldap.erl:477 mod_vcard_odbc.erl:376
 msgid "vCard User Search"
 msgstr "Serĉado de vizitkartoj"
 
-#: mod_vcard.erl:438 mod_vcard_ldap.erl:537 mod_vcard_odbc.erl:413
+#: mod_vcard.erl:433 mod_vcard_ldap.erl:531 mod_vcard_odbc.erl:430
 msgid "ejabberd vCard module"
 msgstr "ejabberd vCard-modulo"
 
-#: mod_vcard.erl:462 mod_vcard_ldap.erl:547 mod_vcard_odbc.erl:437
+#: mod_vcard.erl:457 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:454
 msgid "Search Results for "
 msgstr "Serĉ-rezultoj de "
 
-#: mod_vcard_ldap.erl:458
+#: mod_vcard_ldap.erl:455
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Kompletigu la formon por serĉi rekonata Jabber-uzanto"
 
-#: web/ejabberd_web_admin.erl:179 web/ejabberd_web_admin.erl:186
-#: web/ejabberd_web_admin.erl:202 web/ejabberd_web_admin.erl:209
-msgid "Unauthorized"
-msgstr "Nepermesita"
-
-#: web/ejabberd_web_admin.erl:266 web/ejabberd_web_admin.erl:283
+#: web/ejabberd_web_admin.erl:115 web/ejabberd_web_admin.erl:166
 msgid "ejabberd Web Admin"
 msgstr "ejabberd Teksaĵa Administro"
 
-#: web/ejabberd_web_admin.erl:749 web/ejabberd_web_admin.erl:760
+#: web/ejabberd_web_admin.erl:130 web/ejabberd_web_admin.erl:181
+#: web/ejabberd_web_admin.erl:603 web/ejabberd_web_admin.erl:622
 msgid "Administration"
 msgstr "Administro"
 
-#: web/ejabberd_web_admin.erl:858 web/ejabberd_web_admin.erl:962
-msgid "Raw"
-msgstr "Kruda"
+#: web/ejabberd_web_admin.erl:137 web/ejabberd_web_admin.erl:609
+msgid "Virtual Hosts"
+msgstr "Virtual-gastigoj"
 
-#: web/ejabberd_web_admin.erl:997
-msgid "~s access rule configuration"
-msgstr "Agordo de atingo-reguloj de ~s"
-
-#: web/ejabberd_web_admin.erl:1015
-msgid "ejabberd virtual hosts"
-msgstr "ejabberd virtual-gastigoj"
-
-#: web/ejabberd_web_admin.erl:1023 web/ejabberd_web_admin.erl:1030
-msgid "Users"
-msgstr "Uzantoj"
-
-#: web/ejabberd_web_admin.erl:1058
-msgid "Users Last Activity"
-msgstr "Lasta aktiveco de uzanto"
-
-#: web/ejabberd_web_admin.erl:1060
-msgid "Period: "
-msgstr "Periodo: "
-
-#: web/ejabberd_web_admin.erl:1070
-msgid "Last month"
-msgstr "Lasta monato"
-
-#: web/ejabberd_web_admin.erl:1071
-msgid "Last year"
-msgstr "Lasta jaro"
-
-#: web/ejabberd_web_admin.erl:1072
-msgid "All activity"
-msgstr "Ĉiu aktiveco"
-
-#: web/ejabberd_web_admin.erl:1074
-msgid "Show Ordinary Table"
-msgstr "Montru ordinaran tabelon"
-
-#: web/ejabberd_web_admin.erl:1076
-msgid "Show Integral Table"
-msgstr "Montru integran tabelon"
-
-#: web/ejabberd_web_admin.erl:1085 web/ejabberd_web_admin.erl:1866
-msgid "Statistics"
-msgstr "Statistikoj"
-
-#: web/ejabberd_web_admin.erl:1097
-msgid "Not Found"
-msgstr "Ne trovita"
-
-#: web/ejabberd_web_admin.erl:1114
-msgid "Node not found"
-msgstr "Nodo ne trovita"
-
-#: web/ejabberd_web_admin.erl:1441
-msgid "Host"
-msgstr "Gastigo"
-
-#: web/ejabberd_web_admin.erl:1442
-msgid "Registered Users"
-msgstr "Registritaj uzantoj"
-
-#: web/ejabberd_web_admin.erl:1552
-msgid "Offline Messages"
-msgstr "Liverontaj mesaĝoj"
-
-#: web/ejabberd_web_admin.erl:1553
-msgid "Last Activity"
-msgstr "Lasta aktiveco"
-
-#: web/ejabberd_web_admin.erl:1611 web/ejabberd_web_admin.erl:1627
-msgid "Registered Users:"
-msgstr "Registritaj uzantoj:"
-
-#: web/ejabberd_web_admin.erl:1613 web/ejabberd_web_admin.erl:1629
-#: web/ejabberd_web_admin.erl:2114
-msgid "Online Users:"
-msgstr "Konektataj uzantoj:"
-
-#: web/ejabberd_web_admin.erl:1615
-msgid "Outgoing s2s Connections:"
-msgstr "Elirantaj s-al-s-konektoj:"
-
-#: web/ejabberd_web_admin.erl:1617
-msgid "Outgoing s2s Servers:"
-msgstr "Elirantaj s-al-s-serviloj"
-
-#: web/ejabberd_web_admin.erl:1683
-msgid "Change Password"
-msgstr "Ŝanĝu pasvorton"
-
-#: web/ejabberd_web_admin.erl:1686
-msgid "User "
-msgstr "Uzanto "
-
-#: web/ejabberd_web_admin.erl:1693
-msgid "Connected Resources:"
-msgstr "Konektataj risurcoj:"
-
-#: web/ejabberd_web_admin.erl:1694
-msgid "Password:"
-msgstr "Pasvorto:"
-
-#: web/ejabberd_web_admin.erl:1755
-msgid "No Data"
-msgstr "Neniu datumo"
-
-#: web/ejabberd_web_admin.erl:1833
+#: web/ejabberd_web_admin.erl:138 web/ejabberd_web_admin.erl:195
+#: web/ejabberd_web_admin.erl:610 web/ejabberd_web_admin.erl:631
+#: web/ejabberd_web_admin.erl:1643
 msgid "Nodes"
 msgstr "Nodoj"
 
-#: web/ejabberd_web_admin.erl:1856 web/ejabberd_web_admin.erl:1878
+#: web/ejabberd_web_admin.erl:139 web/ejabberd_web_admin.erl:196
+#: web/ejabberd_web_admin.erl:611 web/ejabberd_web_admin.erl:632
+#: web/ejabberd_web_admin.erl:950 web/ejabberd_web_admin.erl:1676
+msgid "Statistics"
+msgstr "Statistikoj"
+
+#: web/ejabberd_web_admin.erl:192 web/ejabberd_web_admin.erl:628
+#: web/ejabberd_web_admin.erl:892 web/ejabberd_web_admin.erl:898
+msgid "Users"
+msgstr "Uzantoj"
+
+#: web/ejabberd_web_admin.erl:194 web/ejabberd_web_admin.erl:630
+#: web/ejabberd_web_admin.erl:1383
+msgid "Last Activity"
+msgstr "Lasta aktiveco"
+
+#: web/ejabberd_web_admin.erl:606 web/ejabberd_web_admin.erl:608
+#: web/ejabberd_web_admin.erl:625 web/ejabberd_web_admin.erl:627
+msgid "(Raw)"
+msgstr "(Kruda)"
+
+#: web/ejabberd_web_admin.erl:728 web/ejabberd_web_admin.erl:834
+msgid "Raw"
+msgstr "Kruda"
+
+#: web/ejabberd_web_admin.erl:868
+msgid "~s access rule configuration"
+msgstr "Agordo de atingo-reguloj de ~s"
+
+#: web/ejabberd_web_admin.erl:885
+msgid "ejabberd virtual hosts"
+msgstr "ejabberd virtual-gastigoj"
+
+#: web/ejabberd_web_admin.erl:924
+msgid "Users Last Activity"
+msgstr "Lasta aktiveco de uzanto"
+
+#: web/ejabberd_web_admin.erl:926
+msgid "Period: "
+msgstr "Periodo: "
+
+#: web/ejabberd_web_admin.erl:936
+msgid "Last month"
+msgstr "Lasta monato"
+
+#: web/ejabberd_web_admin.erl:937
+msgid "Last year"
+msgstr "Lasta jaro"
+
+#: web/ejabberd_web_admin.erl:938
+msgid "All activity"
+msgstr "Ĉiu aktiveco"
+
+#: web/ejabberd_web_admin.erl:940
+msgid "Show Ordinary Table"
+msgstr "Montru ordinaran tabelon"
+
+#: web/ejabberd_web_admin.erl:942
+msgid "Show Integral Table"
+msgstr "Montru integran tabelon"
+
+#: web/ejabberd_web_admin.erl:971
+msgid "Node not found"
+msgstr "Nodo ne trovita"
+
+#: web/ejabberd_web_admin.erl:1273
+msgid "Host"
+msgstr "Gastigo"
+
+#: web/ejabberd_web_admin.erl:1274
+msgid "Registered Users"
+msgstr "Registritaj uzantoj"
+
+#: web/ejabberd_web_admin.erl:1382
+msgid "Offline Messages"
+msgstr "Liverontaj mesaĝoj"
+
+#: web/ejabberd_web_admin.erl:1439 web/ejabberd_web_admin.erl:1455
+msgid "Registered Users:"
+msgstr "Registritaj uzantoj:"
+
+#: web/ejabberd_web_admin.erl:1441 web/ejabberd_web_admin.erl:1457
+#: web/ejabberd_web_admin.erl:1871
+msgid "Online Users:"
+msgstr "Konektataj uzantoj:"
+
+#: web/ejabberd_web_admin.erl:1443
+msgid "Outgoing s2s Connections:"
+msgstr "Elirantaj s-al-s-konektoj:"
+
+#: web/ejabberd_web_admin.erl:1445
+msgid "Outgoing s2s Servers:"
+msgstr "Elirantaj s-al-s-serviloj"
+
+#: web/ejabberd_web_admin.erl:1501
+msgid "Change Password"
+msgstr "Ŝanĝu pasvorton"
+
+#: web/ejabberd_web_admin.erl:1504
+msgid "User "
+msgstr "Uzanto "
+
+#: web/ejabberd_web_admin.erl:1511
+msgid "Connected Resources:"
+msgstr "Konektataj risurcoj:"
+
+#: web/ejabberd_web_admin.erl:1512
+msgid "Password:"
+msgstr "Pasvorto:"
+
+#: web/ejabberd_web_admin.erl:1567
+msgid "No Data"
+msgstr "Neniu datumo"
+
+#: web/ejabberd_web_admin.erl:1666 web/ejabberd_web_admin.erl:1688
 msgid "Node "
 msgstr "Nodo "
 
-#: web/ejabberd_web_admin.erl:1865
+#: web/ejabberd_web_admin.erl:1675
 msgid "Listened Ports"
 msgstr "Atentataj pordoj"
 
-#: web/ejabberd_web_admin.erl:1867 web/ejabberd_web_admin.erl:2182
-#: web/ejabberd_web_admin.erl:2370
+#: web/ejabberd_web_admin.erl:1677 web/ejabberd_web_admin.erl:1913
+#: web/ejabberd_web_admin.erl:2071
 msgid "Update"
 msgstr "Ĝisdatigu"
 
-#: web/ejabberd_web_admin.erl:1870 web/ejabberd_web_admin.erl:2491
+#: web/ejabberd_web_admin.erl:1680 web/ejabberd_web_admin.erl:2148
 msgid "Restart"
 msgstr "Restartu"
 
-#: web/ejabberd_web_admin.erl:1872 web/ejabberd_web_admin.erl:2493
+#: web/ejabberd_web_admin.erl:1682 web/ejabberd_web_admin.erl:2150
 msgid "Stop"
 msgstr "Haltigu"
 
-#: web/ejabberd_web_admin.erl:1886
+#: web/ejabberd_web_admin.erl:1696
 msgid "RPC Call Error"
 msgstr "Eraro de RPC-alvoko"
 
-#: web/ejabberd_web_admin.erl:1927
+#: web/ejabberd_web_admin.erl:1734
 msgid "Database Tables at "
 msgstr "Datumbaz-tabeloj je "
 
-#: web/ejabberd_web_admin.erl:1934
+#: web/ejabberd_web_admin.erl:1741
 msgid "Storage Type"
 msgstr "Konserv-tipo"
 
-#: web/ejabberd_web_admin.erl:1935
-msgid "Elements"
-msgstr "Eroj"
+#: web/ejabberd_web_admin.erl:1742
+msgid "Size"
+msgstr "Grando"
 
-#: web/ejabberd_web_admin.erl:1936
+#: web/ejabberd_web_admin.erl:1743
 msgid "Memory"
 msgstr "Memoro"
 
-#: web/ejabberd_web_admin.erl:1954 web/ejabberd_web_admin.erl:2059
-msgid "Error"
-msgstr "Eraro"
-
-#: web/ejabberd_web_admin.erl:1956
+#: web/ejabberd_web_admin.erl:1758
 msgid "Backup of "
 msgstr "Sekurkopio de "
 
-#: web/ejabberd_web_admin.erl:1958
+#: web/ejabberd_web_admin.erl:1759
 msgid ""
-"Please note that these options will only backup the builtin Mnesia database. "
-"If you are using the ODBC module, you also need to backup your SQL database "
+"Remark that these options will only backup the builtin Mnesia database. If "
+"you are using the ODBC module, you also need to backup your SQL database "
 "separately."
 msgstr ""
 "Rimarku ke ĉi tiuj elektebloj nur sekurkopias la propran Mnesia-datumbazon. "
 "Se vi uzas la ODBC-modulon, vi ankaŭ devas sekurkopii tiujn SQL-datumbazoj "
 "aparte."
 
-#: web/ejabberd_web_admin.erl:1963
+#: web/ejabberd_web_admin.erl:1764
 msgid "Store binary backup:"
 msgstr "Konservu duuman sekurkopion:"
 
-#: web/ejabberd_web_admin.erl:1967 web/ejabberd_web_admin.erl:1974
-#: web/ejabberd_web_admin.erl:1982 web/ejabberd_web_admin.erl:1989
-#: web/ejabberd_web_admin.erl:1996 web/ejabberd_web_admin.erl:2003
-#: web/ejabberd_web_admin.erl:2010 web/ejabberd_web_admin.erl:2018
-#: web/ejabberd_web_admin.erl:2025 web/ejabberd_web_admin.erl:2032
+#: web/ejabberd_web_admin.erl:1768 web/ejabberd_web_admin.erl:1775
+#: web/ejabberd_web_admin.erl:1783 web/ejabberd_web_admin.erl:1790
+#: web/ejabberd_web_admin.erl:1797
 msgid "OK"
 msgstr "Bone"
 
-#: web/ejabberd_web_admin.erl:1970
+#: web/ejabberd_web_admin.erl:1771
 msgid "Restore binary backup immediately:"
 msgstr "Restaŭrigu duuman sekurkopion tuj:"
 
-#: web/ejabberd_web_admin.erl:1978
+#: web/ejabberd_web_admin.erl:1779
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr "Restaŭrigu duuman sekurkopion post sekvonta ejabberd-restarto"
 
-#: web/ejabberd_web_admin.erl:1985
+#: web/ejabberd_web_admin.erl:1786
 msgid "Store plain text backup:"
 msgstr "Skribu sekurkopion en plata tekstdosiero"
 
-#: web/ejabberd_web_admin.erl:1992
+#: web/ejabberd_web_admin.erl:1793
 msgid "Restore plain text backup immediately:"
 msgstr "Restaŭrigu sekurkopion el plata tekstdosiero tuj"
 
-#: web/ejabberd_web_admin.erl:1999
-msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "Importu uzanto-datumojn de PIEFXIS dosiero (XEP-0227):"
-
-#: web/ejabberd_web_admin.erl:2006
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0227):"
-
-#: web/ejabberd_web_admin.erl:2013
-msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr "Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0227):"
-
-#: web/ejabberd_web_admin.erl:2021
-msgid "Import user data from jabberd14 spool file:"
-msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
-
-#: web/ejabberd_web_admin.erl:2028
-msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importu uzantojn de jabberd14-uzantdosieroj"
-
-#: web/ejabberd_web_admin.erl:2054
+#: web/ejabberd_web_admin.erl:1814
 msgid "Listened Ports at "
 msgstr "Atentataj pordoj je "
 
-#: web/ejabberd_web_admin.erl:2079
+#: web/ejabberd_web_admin.erl:1837
 msgid "Modules at "
 msgstr "Moduloj je "
 
-#: web/ejabberd_web_admin.erl:2105
+#: web/ejabberd_web_admin.erl:1862
 msgid "Statistics of ~p"
 msgstr "Statistikoj de ~p"
 
-#: web/ejabberd_web_admin.erl:2108
+#: web/ejabberd_web_admin.erl:1865
 msgid "Uptime:"
 msgstr "Daŭro de funkciado"
 
-#: web/ejabberd_web_admin.erl:2111
+#: web/ejabberd_web_admin.erl:1868
 msgid "CPU Time:"
 msgstr "CPU-tempo"
 
-#: web/ejabberd_web_admin.erl:2117
+#: web/ejabberd_web_admin.erl:1874
 msgid "Transactions Committed:"
 msgstr "Transakcioj enmetitaj"
 
-#: web/ejabberd_web_admin.erl:2120
+#: web/ejabberd_web_admin.erl:1877
 msgid "Transactions Aborted:"
 msgstr "Transakcioj nuligitaj"
 
-#: web/ejabberd_web_admin.erl:2123
+#: web/ejabberd_web_admin.erl:1880
 msgid "Transactions Restarted:"
 msgstr "Transakcioj restartitaj"
 
-#: web/ejabberd_web_admin.erl:2126
+#: web/ejabberd_web_admin.erl:1883
 msgid "Transactions Logged:"
 msgstr "Transakcioj protokolitaj"
 
-#: web/ejabberd_web_admin.erl:2168
+#: web/ejabberd_web_admin.erl:1906
 msgid "Update "
 msgstr "Ĝisdatigu "
 
-#: web/ejabberd_web_admin.erl:2176
+#: web/ejabberd_web_admin.erl:1914
 msgid "Update plan"
 msgstr "Ĝisdatigo-plano"
 
-#: web/ejabberd_web_admin.erl:2177
-msgid "Modified modules"
+#: web/ejabberd_web_admin.erl:1915
+msgid "Updated modules"
 msgstr "Ĝisdatigitaj moduloj"
 
-#: web/ejabberd_web_admin.erl:2178
+#: web/ejabberd_web_admin.erl:1916
 msgid "Update script"
 msgstr "Ĝisdatigo-skripto"
 
-#: web/ejabberd_web_admin.erl:2179
+#: web/ejabberd_web_admin.erl:1917
 msgid "Low level update script"
 msgstr "Bazanivela ĝisdatigo-skripto"
 
-#: web/ejabberd_web_admin.erl:2180
+#: web/ejabberd_web_admin.erl:1918
 msgid "Script check"
 msgstr "Skript-kontrolo"
 
-#: web/ejabberd_web_admin.erl:2348
+#: web/ejabberd_web_admin.erl:2054
 msgid "Port"
 msgstr "Pordo"
 
-#: web/ejabberd_web_admin.erl:2349
-msgid "IP"
-msgstr "IP"
-
-#: web/ejabberd_web_admin.erl:2350
-msgid "Protocol"
-msgstr "Protokolo"
-
-#: web/ejabberd_web_admin.erl:2351 web/ejabberd_web_admin.erl:2478
+#: web/ejabberd_web_admin.erl:2055 web/ejabberd_web_admin.erl:2135
 msgid "Module"
 msgstr "Modulo"
 
-#: web/ejabberd_web_admin.erl:2352 web/ejabberd_web_admin.erl:2479
+#: web/ejabberd_web_admin.erl:2056 web/ejabberd_web_admin.erl:2136
 msgid "Options"
 msgstr "Elektebloj"
 
-#: web/ejabberd_web_admin.erl:2372
+#: web/ejabberd_web_admin.erl:2073
 msgid "Delete"
 msgstr "Forigu"
 
-#: web/ejabberd_web_admin.erl:2501
+#: web/ejabberd_web_admin.erl:2158
 msgid "Start"
 msgstr "Startu"
-
-#~ msgid "Encodings"
-#~ msgstr "Enkodigoj"
-
-#~ msgid "(Raw)"
-#~ msgstr "(Kruda)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Virtual-gastigoj"
-
-#~ msgid "Specified nickname is already registered"
-#~ msgstr "Donita kaŝnomo jam estas registrita"
-
-#~ msgid "Size"
-#~ msgstr "Grando"
 
 #~ msgid "You must fill in field \"nick\" in the form"
 #~ msgstr "Vi devas enmeti kampon \"kaŝnomo\""

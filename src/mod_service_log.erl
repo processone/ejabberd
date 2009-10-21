@@ -34,44 +34,42 @@
 	 log_user_send/3,
 	 log_user_receive/4]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 start(Host, _Opts) ->
-    ejabberd_hooks:add(user_send_packet, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(user_send_packet, HostB,
 		       ?MODULE, log_user_send, 50),
-    ejabberd_hooks:add(user_receive_packet, Host,
+    ejabberd_hooks:add(user_receive_packet, HostB,
 		       ?MODULE, log_user_receive, 50),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(user_send_packet, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(user_send_packet, HostB,
 			  ?MODULE, log_user_send, 50),
-    ejabberd_hooks:delete(user_receive_packet, Host,
+    ejabberd_hooks:delete(user_receive_packet, HostB,
 			  ?MODULE, log_user_receive, 50),
     ok.
 
 log_user_send(From, To, Packet) ->
-    log_packet(From, To, Packet, From#jid.lserver).
+    log_packet(From, To, Packet, exmpp_jid:prep_domain_as_list(From)).
 
 log_user_receive(_JID, From, To, Packet) ->
-    log_packet(From, To, Packet, To#jid.lserver).
+    log_packet(From, To, Packet, exmpp_jid:prep_domain_as_list(To)).
 
 
-log_packet(From, To, {xmlelement, Name, Attrs, Els}, Host) ->
+log_packet(From, To, Packet, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
-    ServerJID = #jid{user = "", server = Host, resource = "",
-		     luser = "", lserver = Host, lresource = ""},
-    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-					  jlib:jid_to_string(To),
-					  Attrs),
-    FixedPacket = {xmlelement, Name, NewAttrs, Els},
+    ServerJID = exmpp_jid:make(Host),
+    FixedPacket = exmpp_stanza:set_jids(Packet, From, To),
     lists:foreach(
       fun(Logger) ->
 	      ejabberd_router:route(
 		ServerJID,
-		#jid{user = "", server = Logger, resource = "",
-		     luser = "", lserver = Logger, lresource = ""},
-		{xmlelement, "route", [], [FixedPacket]})
+		exmpp_jid:make(Logger),
+		#xmlel{name = 'route', children = [FixedPacket]})
       end, Loggers).
     

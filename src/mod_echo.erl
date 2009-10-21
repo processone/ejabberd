@@ -37,8 +37,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(state, {host}).
 
@@ -117,8 +118,8 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
-	Packet2 = case From#jid.user of
-		"" -> jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST);
+	Packet2 = case exmpp_jid:node(From) of
+		undefined -> exmpp_stanza:reply_with_error(Packet, 'bad-request');
 		_ -> Packet
 	end,
     do_client_version(disabled, To, From), % Put 'enabled' to enable it
@@ -171,16 +172,15 @@ code_change(_OldVsn, State, _Extra) ->
 do_client_version(disabled, _From, _To) ->
     ok;
 do_client_version(enabled, From, To) ->
-    ToS = jlib:jid_to_string(To),
     %% It is important to identify this process and packet
     Random_resource = integer_to_list(random:uniform(100000)),
-    From2 = From#jid{resource = Random_resource,
-		     lresource = Random_resource},
+    From2 = exmpp_jid:full(From,Random_resource),
     
     %% Build an iq:query request
-    Packet = {xmlelement, "iq",
-	      [{"to", ToS}, {"type", "get"}],
-	      [{xmlelement, "query", [{"xmlns", ?NS_VERSION}], []}]},
+    Request = #xmlel{ns = ?NS_SOFT_VERSION, name = 'query'},
+    Packet = exmpp_stanza:set_recipient(
+      exmpp_iq:get(?NS_JABBER_CLIENT, Request),
+      To),
     
     %% Send the request 
     ejabberd_router:route(From2, To, Packet), 
@@ -189,15 +189,15 @@ do_client_version(enabled, From, To) ->
     %% It is very important to only accept a packet which is the 
     %% response to the request that he sent
     Els = receive {route, To, From2, IQ} ->
-		  {xmlelement, "query", _, List} = xml:get_subtag(IQ, "query"),
+		  #xmlel{ns = ?NS_SOFT_VERSION, name = 'query', children = List} = exmpp_iq:get_payload(IQ),
 		  List
 	  after 5000 -> % Timeout in miliseconds: 5 seconds
 		  []
 	  end,
-    Values = [{Name, Value} || {xmlelement,Name,[],[{xmlcdata,Value}]} <- Els],
+    Values = [{Name, exmpp_xml:get_cdata_as_list(El)} || #xmlel{name = Name} = El <- Els],
     
     %% Print in log
     Values_string1 = [io_lib:format("~n~s: ~p", [N, V]) || {N, V} <- Values],
     Values_string2 = lists:concat(Values_string1),
-    ?INFO_MSG("Information of the client: ~s~s", [ToS, Values_string2]).
+    ?INFO_MSG("Information of the client: ~s~s", [exmpp_jid:to_binary(To), Values_string2]).
 

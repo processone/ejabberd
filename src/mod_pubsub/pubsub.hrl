@@ -91,7 +91,7 @@
 %%% <p>This is the format of the <tt>nodes</tt> table. The type of the table
 %%% is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 %%% <p>The <tt>parentid</tt> and <tt>type</tt> fields are indexed.</p>
-%%% nodeidx can be anything you want.
+%%% <p><tt>nodeidx</tt> can be anything you want.</p>
 -record(pubsub_node, {nodeid,
 		      id,
 		      parents = [],
@@ -125,7 +125,6 @@
 		      modification = {unknown,unknown},
 		      payload = []
 		     }).
-
 
 %% @type pubsubSubscription() = #pubsub_subscription{
 %%     subid     = string(),

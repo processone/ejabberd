@@ -132,47 +132,40 @@ init([Socket, SockMod, Shaper, MaxStanzaSize]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({starttls, TLSSocket}, _From,
-	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid,
-		   max_stanza_size = MaxStanzaSize} = State) ->
-    close_stream(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
+handle_call({starttls, TLSSocket}, _From,  State) ->
+    NewXMLStreamState = do_reset_stream(State),
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = tls,
 			   xml_stream_state = NewXMLStreamState},
     case tls:recv_data(TLSSocket, "") of
 	{ok, TLSData} ->
-	    {reply, ok, process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
+        {NextState, Hib} = process_data(TLSData, NewState),
+	    {reply, ok, NextState, Hib};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
 handle_call({compress, ZlibSocket}, _From,
-	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid,
-		   max_stanza_size = MaxStanzaSize} = State) ->
-    close_stream(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
+	    #state{xml_stream_state = XMLStreamState} = State) ->
+    NewXMLStreamState = exmpp_xmlstream:reset(XMLStreamState),
     NewState = State#state{socket = ZlibSocket,
 			   sock_mod = ejabberd_zlib,
 			   xml_stream_state = NewXMLStreamState},
     case ejabberd_zlib:recv_data(ZlibSocket, "") of
 	{ok, ZlibData} ->
-	    {reply, ok, process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
+        {NextState, Hib} = process_data(ZlibData, NewState),
+	    {reply, ok, NextState, Hib};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
 handle_call(reset_stream, _From,
-	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid,
-		   max_stanza_size = MaxStanzaSize} = State) ->
-    close_stream(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
+	    #state{xml_stream_state = XMLStreamState} = State) ->
+    NewXMLStreamState = exmpp_xmlstream:reset(XMLStreamState),
     Reply = ok,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState},
      ?HIBERNATE_TIMEOUT};
 handle_call({become_controller, C2SPid}, _From, State) ->
-    XMLStreamState = xml_stream:new(C2SPid, State#state.max_stanza_size),
+    close_stream(State#state.xml_stream_state),
+    XMLStreamState = new_xmlstream(C2SPid, State#state.max_stanza_size),
     NewState = State#state{c2s_pid = C2SPid,
 			   xml_stream_state = XMLStreamState},
     activate_socket(NewState),
@@ -210,21 +203,22 @@ handle_info({Tag, _TCPSocket, Data},
 	tls ->
 	    case tls:recv_data(Socket, Data) of
 		{ok, TLSData} ->
-		    {noreply, process_data(TLSData, State),
-		     ?HIBERNATE_TIMEOUT};
+            {NextState, Hib} = process_data(TLSData, State),
+		    {noreply, NextState, Hib};
 		{error, _Reason} ->
 		    {stop, normal, State}
 	    end;
 	ejabberd_zlib ->
 	    case ejabberd_zlib:recv_data(Socket, Data) of
 		{ok, ZlibData} ->
-		    {noreply, process_data(ZlibData, State),
-		     ?HIBERNATE_TIMEOUT};
+            {NextState, Hib} = process_data(ZlibData, State),
+		    {noreply, NextState, Hib};
 		{error, _Reason} ->
 		    {stop, normal, State}
 	    end;
 	_ ->
-	    {noreply, process_data(Data, State), ?HIBERNATE_TIMEOUT}
+        {NextState, Hib} = process_data(Data, State),
+	    {noreply, NextState, Hib}
     end;
 handle_info({Tag, _TCPSocket}, State)
   when (Tag == tcp_closed) or (Tag == ssl_closed) ->
@@ -241,8 +235,8 @@ handle_info({timeout, _Ref, activate}, State) ->
     activate_socket(State),
     {noreply, State, ?HIBERNATE_TIMEOUT};
 handle_info(timeout, State) ->
-    proc_lib:hibernate(gen_server, enter_loop, [?MODULE, [], State]),
-    {noreply, State, ?HIBERNATE_TIMEOUT};
+    {noreply, State, hibernate};
+
 handle_info(_Info, State) ->
     {noreply, State, ?HIBERNATE_TIMEOUT}.
 
@@ -317,19 +311,23 @@ process_data(Data,
 	     #state{xml_stream_state = XMLStreamState,
 		    shaper_state = ShaperState,
 		    c2s_pid = C2SPid} = State) ->
-    ?DEBUG("Received XML on stream = ~p", [binary_to_list(Data)]),
-    XMLStreamState1 = xml_stream:parse(XMLStreamState, Data),
+    ?DEBUG("Received XML on stream = ~p", [Data]),
+    {ok, XMLStreamState1} = exmpp_xmlstream:parse(XMLStreamState, Data),
     {NewShaperState, Pause} = shaper:update(ShaperState, size(Data)),
-    if
-	C2SPid == undefined ->
-	    ok;
-	Pause > 0 ->
-	    erlang:start_timer(Pause, self(), activate);
-	true ->
-	    activate_socket(State)
-    end,
-    State#state{xml_stream_state = XMLStreamState1,
-		shaper_state = NewShaperState}.
+    HibTimeout = 
+        if
+        C2SPid == undefined ->
+            infinity;
+        Pause > 0 ->
+            erlang:start_timer(Pause, self(), activate),
+            hibernate;
+
+        true ->
+            activate_socket(State),
+            ?HIBERNATE_TIMEOUT
+        end,
+    {State#state{xml_stream_state = XMLStreamState1,
+		shaper_state = NewShaperState}, HibTimeout}.
 
 %% Element coming from XML parser are wrapped inside xmlstreamelement
 %% When we receive directly xmlelement tuple (from a socket module
@@ -344,4 +342,26 @@ element_wrapper(Element) ->
 close_stream(undefined) ->
     ok;
 close_stream(XMLStreamState) ->
-    xml_stream:close(XMLStreamState).
+    exmpp_xml:stop_parser(exmpp_xmlstream:get_parser(XMLStreamState)),
+    exmpp_xmlstream:stop(XMLStreamState).
+    
+
+do_reset_stream(#state{xml_stream_state = undefined, c2s_pid = C2SPid, max_stanza_size = MaxStanzaSize}) ->
+    new_xmlstream(C2SPid, MaxStanzaSize);
+
+do_reset_stream(#state{xml_stream_state = XMLStreamState}) ->
+    exmpp_xmlstream:reset(XMLStreamState).
+
+
+new_xmlstream(C2SPid, MaxStanzaSize) ->
+    Parser = exmpp_xml:start_parser([
+      {names_as_atom, true},
+      {check_nss, xmpp},
+      {check_elems, xmpp},
+      {check_attrs, xmpp},
+      {max_size, MaxStanzaSize}
+    ]),
+    exmpp_xmlstream:start(
+      {gen_fsm, C2SPid}, Parser,
+      [{xmlstreamstart, new}]
+    ).

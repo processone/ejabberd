@@ -31,10 +31,12 @@
 -export([make_xhtml/1, make_xhtml/2,
          error/1]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("ejabberd_http.hrl").
 
+%% @type html() = term()
 
 %% XXX bard: there are variants of make_xhtml in ejabberd_http and
 %% ejabberd_web_admin.  It might be a good idea to centralize it here
@@ -45,36 +47,40 @@ make_xhtml(Els) ->
     make_xhtml([], Els).
 
 make_xhtml(HeadEls, Els) ->
-    {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
-			  {"xml:lang", "en"},
-			  {"lang", "en"}],
-     [{xmlelement, "head", [],
-       [{xmlelement, "meta", [{"http-equiv", "Content-Type"},
-			      {"content", "text/html; charset=utf-8"}], []}
-	| HeadEls]},
-      {xmlelement, "body", [], Els}
-     ]}.
+    #xmlel{ns = ?NS_XHTML, name = 'html', attrs = [
+	exmpp_xml:attribute(?NS_XML, 'lang', <<"en">>),
+        ?XMLATTR('lang', <<"en">>)], children = [
+	#xmlel{ns = ?NS_XHTML, name = 'head', children = [
+	    #xmlel{ns = ?NS_XHTML, name = 'meta', attrs = [
+		?XMLATTR('http-equiv', <<"Content-Type">>),
+		?XMLATTR('content', <<"text/html; charset=utf-8">>)
+	      ]}
+	    | HeadEls
+	  ]},
+	#xmlel{ns = ?NS_XHTML, name = 'body', children = Els}
+      ]}.
 
 
--define(X(Name), {xmlelement, Name, [], []}).
--define(XA(Name, Attrs), {xmlelement, Name, Attrs, []}).
--define(XE(Name, Els), {xmlelement, Name, [], Els}).
--define(XAE(Name, Attrs, Els), {xmlelement, Name, Attrs, Els}).
--define(C(Text), {xmlcdata, Text}).
+-define(X(Name), #xmlel{ns = ?NS_XHTML, name = Name}).
+-define(XA(Name, Attrs), #xmlel{ns = ?NS_XHTML, name = Name, attrs = Attrs}).
+-define(XE(Name, Els), #xmlel{ns = ?NS_XHTML, name = Name, children = Els}).
+-define(XAE(Name, Attrs, Els), #xmlel{ns = ?NS_XHTML, name = Name,
+    attrs = Attrs, children = Els}).
+-define(C(Text), #xmlcdata{cdata = list_to_binary(Text)}).
 -define(XC(Name, Text), ?XE(Name, [?C(Text)])).
 -define(XAC(Name, Attrs, Text), ?XAE(Name, Attrs, [?C(Text)])).
 
--define(LI(Els), ?XE("li", Els)).
--define(A(URL, Els), ?XAE("a", [{"href", URL}], Els)).
+-define(LI(Els), ?XE('li', Els)).
+-define(A(URL, Els), ?XAE('a', [?XMLATTR('href', URL)], Els)).
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
--define(P, ?X("p")).
--define(BR, ?X("br")).
+-define(P, ?X('p')).
+-define(BR, ?X('br')).
 -define(INPUT(Type, Name, Value),
-	?XA("input", [{"type", Type},
-		      {"name", Name},
-		      {"value", Value}])).
+	?XA('input', [?XMLATTR('type', Type),
+		      ?XMLATTR('name', Name),
+		      ?XMLATTR('value', Value)])).
 
 error(not_found) ->
-    {404, [], make_xhtml([?XC("h1", "404 Not Found")])};
+    {404, [], make_xhtml([?XC('h1', "404 Not Found")])};
 error(not_allowed) ->
-    {401, [], make_xhtml([?XC("h1", "401 Unauthorized")])}.
+    {401, [], make_xhtml([?XC('h1', "401 Unauthorized")])}.

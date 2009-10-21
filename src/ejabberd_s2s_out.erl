@@ -55,8 +55,9 @@
 	 test_get_addr_port/1,
 	 get_addr_port/1]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(state, {socket,
 		streamid,
@@ -73,7 +74,7 @@
 		new = false, verify = false,
 		timer}).
 
-%%-define(DBGFSM, true).
+%-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
 -define(FSMOPTS, [{debug, [trace]}]).
@@ -99,25 +100,13 @@
 %% Specified in miliseconds. Default value is 5 minutes.
 -define(MAX_RETRY_DELAY, 300000).
 
--define(STREAM_HEADER,
-	"<?xml version='1.0'?>"
-	"<stream:stream "
-	"xmlns:stream='http://etherx.jabber.org/streams' "
-	"xmlns='jabber:server' "
-	"xmlns:db='jabber:server:dialback' "
-	"to='~s'~s>"
-       ).
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ?NS_JABBER_SERVER).
+-define(PREFIXED_NS, [
+  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
+]).
 
--define(STREAM_TRAILER, "</stream:stream>").
-
--define(INVALID_NAMESPACE_ERR,
-	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
-
--define(HOST_UNKNOWN_ERR,
-	xml:element_to_string(?SERR_HOST_UNKNOWN)).
-
--define(INVALID_XML_ERR,
-	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
 
 -define(SOCKET_DEFAULT_RESULT, {error, badarg}).
 
@@ -212,16 +201,19 @@ open_socket(init, StateData) ->
 	{ok, Socket} ->
 	    Version = if
 			  StateData#state.use_v10 ->
-			      " version='1.0'";
+			      "1.0";
 			  true ->
 			      ""
 		      end,
 	    NewStateData = StateData#state{socket = Socket,
 					   tls_enabled = false,
 					   streamid = new_id()},
-	    send_text(NewStateData, io_lib:format(?STREAM_HEADER,
-						  [StateData#state.server,
-						   Version])),
+	    Opening = exmpp_stream:opening(
+	      StateData#state.server,
+	      ?NS_JABBER_SERVER,
+	      Version),
+	    send_element(NewStateData,
+	      exmpp_stream:set_dialback_support(Opening)),
 	    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 	{error, _Reason} ->
 	    ?INFO_MSG("s2s connection: ~s -> ~s (remote server not found)",
@@ -287,28 +279,29 @@ open_socket2(Type, Addr, Port) ->
 %%----------------------------------------------------------------------
 
 
-wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
-    case {xml:get_attr_s("xmlns", Attrs),
-	  xml:get_attr_s("xmlns:db", Attrs),
-	  xml:get_attr_s("version", Attrs) == "1.0"} of
-	{"jabber:server", "jabber:server:dialback", false} ->
+wait_for_stream({xmlstreamstart, Opening}, StateData) ->
+    case {exmpp_stream:get_default_ns(Opening),
+	  exmpp_xml:is_ns_declared_here(Opening, ?NS_DIALBACK),
+	  exmpp_stream:get_version(Opening) == {1, 0}} of
+	{?NS_JABBER_SERVER, true, false} ->
 	    send_db_request(StateData);
-	{"jabber:server", "jabber:server:dialback", true} when
+	{?NS_JABBER_SERVER, true, true} when
 	StateData#state.use_v10 ->
 	    {next_state, wait_for_features, StateData, ?FSMTIMEOUT};
-	{"jabber:server", "", true} when StateData#state.use_v10 ->
+	{?NS_JABBER_SERVER, false, true} when StateData#state.use_v10 ->
 	    {next_state, wait_for_features, StateData#state{db_enabled = false}, ?FSMTIMEOUT};
 	{NSProvided, _, _} ->
-	    send_text(StateData, ?INVALID_NAMESPACE_ERR),
-	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid namespace).~n"
-		      "Namespace provided: ~p~nNamespace expected: \"jabber:server\"",
-		      [StateData#state.myname, StateData#state.server, NSProvided]),
+	    send_element(StateData, exmpp_stream:error('invalid-namespace')),
+	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid namespace)~n"
+		      "Namespace provided: ~p~nNamespace expected: ~p",
+		      [StateData#state.myname, StateData#state.server,
+		       NSProvided, ?NS_JABBER_SERVER]),
 	    {stop, normal, StateData}
     end;
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
-    send_text(StateData,
-	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid xml)",
 	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
@@ -392,8 +385,8 @@ wait_for_validation({xmlstreamend, _Name}, StateData) ->
 wait_for_validation({xmlstreamerror, _}, StateData) ->
     ?INFO_MSG("wait for validation: ~s -> ~s (xmlstreamerror)",
 	      [StateData#state.myname, StateData#state.server]),
-    send_text(StateData,
-	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_validation(timeout, #state{verify = {VPid, VKey, SID}} = StateData)
@@ -417,41 +410,37 @@ wait_for_validation(closed, StateData) ->
 
 wait_for_features({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlelement, "stream:features", _Attrs, Els} ->
+	#xmlel{ns = ?NS_XMPP, name = 'features'} = Features ->
 	    {SASLEXT, StartTLS, StartTLSRequired} =
 		lists:foldl(
-		  fun({xmlelement, "mechanisms", Attrs1, Els1} = _El1,
+		  fun(#xmlel{ns = ?NS_SASL, name = 'mechanisms'},
 		      {_SEXT, STLS, STLSReq} = Acc) ->
-			  case xml:get_attr_s("xmlns", Attrs1) of
-			      ?NS_SASL ->
-				  NewSEXT =
-				      lists:any(
-					fun({xmlelement, "mechanism", _, Els2}) ->
-						case xml:get_cdata(Els2) of
-						    "EXTERNAL" -> true;
-						    _ -> false
-						end;
-					   (_) -> false
-					end, Els1),
-				  {NewSEXT, STLS, STLSReq};
-			      _ ->
+			  try
+			      Mechs = exmpp_client_sasl:announced_mechanisms(
+				El),
+			      NewSEXT = lists:member("EXTERNAL", Mechs),
+			      {NewSEXT, STLS, STLSReq}
+			  catch
+			      _Exception ->
 				  Acc
 			  end;
-		     ({xmlelement, "starttls", Attrs1, _Els1} = El1,
+		     (#xmlel{ns = ?NS_TLS, name ='starttls'},
 		      {SEXT, _STLS, _STLSReq} = Acc) ->
-			  case xml:get_attr_s("xmlns", Attrs1) of
-			      ?NS_TLS ->
-				  Req = case xml:get_subtag(El1, "required") of
-					    {xmlelement, _, _, _} -> true;
-					    false -> false
-					end,
-				  {SEXT, true, Req};
-			      _ ->
+			  try
+			      Support = exmpp_client_tls:announced_support(
+				El),
+			      case Support of
+				  none     -> Acc;
+				  optional -> {SEXT, true, false};
+				  required -> {SEXT, true, true}
+			      end
+			  catch
+			      _Exception ->
 				  Acc
 			  end;
 		     (_, Acc) ->
 			  Acc
-		  end, {false, false, false}, Els),
+		  end, {false, false, false}, Features#xmlel.children),
 	    if
 		(not SASLEXT) and (not StartTLS) and
 		StateData#state.authenticated ->
@@ -466,19 +455,14 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		SASLEXT and StateData#state.try_auth and
 		(StateData#state.new /= false) ->
 		    send_element(StateData,
-				 {xmlelement, "auth",
-				  [{"xmlns", ?NS_SASL},
-				   {"mechanism", "EXTERNAL"}],
-				  [{xmlcdata,
-				    jlib:encode_base64(
-				      StateData#state.myname)}]}),
+		      exmpp_client_sasl:selected_mechanism("EXTERNAL",
+		      StateData#state.myname)),
 		    {next_state, wait_for_auth_result,
 		     StateData#state{try_auth = false}, ?FSMTIMEOUT};
 		StartTLS and StateData#state.tls and
 		(not StateData#state.tls_enabled) ->
 		    send_element(StateData,
-				 {xmlelement, "starttls",
-				  [{"xmlns", ?NS_TLS}], []}),
+		      exmpp_client_tls:starttls()),
 		    {next_state, wait_for_starttls_proceed, StateData,
 		     ?FSMTIMEOUT};
 		StartTLSRequired and (not StateData#state.tls) ->
@@ -499,9 +483,8 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 								use_v10 = false}, ?FSMTIMEOUT}
 	    end;
 	_ ->
-	    send_text(StateData,
-		      xml:element_to_string(?SERR_BAD_FORMAT) ++
-		      ?STREAM_TRAILER),
+	    send_element(StateData, exmpp_stream:error('bad-format')),
+	    send_element(StateData, exmpp_stream:closing()),
 	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
 		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
@@ -512,8 +495,8 @@ wait_for_features({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 wait_for_features({xmlstreamerror, _}, StateData) ->
-    send_text(StateData,
-	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     ?INFO_MSG("wait for features: xmlstreamerror", []),
     {stop, normal, StateData};
 
@@ -528,48 +511,29 @@ wait_for_features(closed, StateData) ->
 
 wait_for_auth_result({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlelement, "success", Attrs, _Els} ->
-	    case xml:get_attr_s("xmlns", Attrs) of
-		?NS_SASL ->
-		    ?DEBUG("auth: ~p", [{StateData#state.myname,
-					 StateData#state.server}]),
-		    ejabberd_socket:reset_stream(StateData#state.socket),
-		    send_text(StateData,
-			      io_lib:format(?STREAM_HEADER,
-					    [StateData#state.server,
-					     " version='1.0'"])),
-		    {next_state, wait_for_stream,
-		     StateData#state{streamid = new_id(),
-				     authenticated = true
-				    }, ?FSMTIMEOUT};
-		_ ->
-		    send_text(StateData,
-			      xml:element_to_string(?SERR_BAD_FORMAT) ++
-			      ?STREAM_TRAILER),
-		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
-			      [StateData#state.myname, StateData#state.server]),
-		    {stop, normal, StateData}
-	    end;
-	{xmlelement, "failure", Attrs, _Els} ->
-	    case xml:get_attr_s("xmlns", Attrs) of
-		?NS_SASL ->
-		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
-					      StateData#state.server}]),
-		    ejabberd_socket:close(StateData#state.socket),
-		    {next_state, reopen_socket,
-		     StateData#state{socket = undefined}, ?FSMTIMEOUT};
-		_ ->
-		    send_text(StateData,
-			      xml:element_to_string(?SERR_BAD_FORMAT) ++
-			      ?STREAM_TRAILER),
-		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
-			      [StateData#state.myname, StateData#state.server]),
-		    {stop, normal, StateData}
-	    end;
+	#xmlel{ns = ?NS_SASL, name = 'success'} ->
+	    ?DEBUG("auth: ~p", [{StateData#state.myname,
+				 StateData#state.server}]),
+	    ejabberd_socket:reset_stream(StateData#state.socket),
+	    Opening = exmpp_stream:opening(
+	      StateData#state.server,
+	      ?NS_JABBER_SERVER,
+	      "1.0"),
+	    send_element(StateData,
+	      exmpp_stream:set_dialback_support(Opening)),
+	    {next_state, wait_for_stream,
+	     StateData#state{streamid = new_id(),
+			     authenticated = true
+			    }, ?FSMTIMEOUT};
+	#xmlel{ns = ?NS_SASL, name = 'failure'} ->
+	    ?DEBUG("restarted: ~p", [{StateData#state.myname,
+				      StateData#state.server}]),
+	    ejabberd_socket:close(StateData#state.socket),
+	    {next_state, reopen_socket,
+	     StateData#state{socket = undefined}, ?FSMTIMEOUT};
 	_ ->
-	    send_text(StateData,
-		      xml:element_to_string(?SERR_BAD_FORMAT) ++
-		      ?STREAM_TRAILER),
+	    send_element(StateData, exmpp_stream:error('bad-format')),
+	    send_element(StateData, exmpp_stream:closing()),
 	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
 		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
@@ -580,8 +544,8 @@ wait_for_auth_result({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 wait_for_auth_result({xmlstreamerror, _}, StateData) ->
-    send_text(StateData,
-	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     ?INFO_MSG("wait for auth result: xmlstreamerror", []),
     {stop, normal, StateData};
 
@@ -596,42 +560,36 @@ wait_for_auth_result(closed, StateData) ->
 
 wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlelement, "proceed", Attrs, _Els} ->
-	    case xml:get_attr_s("xmlns", Attrs) of
-		?NS_TLS ->
-		    ?DEBUG("starttls: ~p", [{StateData#state.myname,
-					     StateData#state.server}]),
-		    Socket = StateData#state.socket,
-		    TLSOpts = case ejabberd_config:get_local_option(
-				     {domain_certfile,
-				      StateData#state.server}) of
-				  undefined ->
-				      StateData#state.tls_options;
-				  CertFile ->
-				      [{certfile, CertFile} |
-				       lists:keydelete(
-					 certfile, 1,
-					 StateData#state.tls_options)]
-			      end,
-		    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
-		    NewStateData = StateData#state{socket = TLSSocket,
-						   streamid = new_id(),
-						   tls_enabled = true
-						  },
-		    send_text(NewStateData,
-			      io_lib:format(?STREAM_HEADER,
-					    [StateData#state.server,
-					     " version='1.0'"])),
-		    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
-		_ ->
-		    send_text(StateData,
-			      xml:element_to_string(?SERR_BAD_FORMAT) ++
-			      ?STREAM_TRAILER),
-		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
-			      [StateData#state.myname, StateData#state.server]),
-		    {stop, normal, StateData}
-	    end;
+	#xmlel{ns = ?NS_TLS, name = 'proceed'} ->
+	    ?DEBUG("starttls: ~p", [{StateData#state.myname,
+				     StateData#state.server}]),
+	    Socket = StateData#state.socket,
+	    TLSOpts = case ejabberd_config:get_local_option(
+			     {domain_certfile,
+			      StateData#state.server}) of
+			  undefined ->
+			      StateData#state.tls_options;
+			  CertFile ->
+			      [{certfile, CertFile} |
+			       lists:keydelete(
+				 certfile, 1,
+				 StateData#state.tls_options)]
+		      end,
+	    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
+	    NewStateData = StateData#state{socket = TLSSocket,
+					   streamid = new_id(),
+					   tls_enabled = true
+					  },
+	    Opening = exmpp_stream:opening(
+	      StateData#state.server,
+	      ?NS_JABBER_SERVER,
+	      "1.0"),
+	    send_element(NewStateData,
+	      exmpp_stream:set_dialback_support(Opening)),
+	    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 	_ ->
+	    send_element(StateData, exmpp_stream:error('bad-format')),
+	    send_element(StateData, exmpp_stream:closing()),
 	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad format)",
 		      [StateData#state.myname, StateData#state.server]),
 	    {stop, normal, StateData}
@@ -642,8 +600,8 @@ wait_for_starttls_proceed({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 wait_for_starttls_proceed({xmlstreamerror, _}, StateData) ->
-    send_text(StateData,
-	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     ?INFO_MSG("wait for starttls proceed: xmlstreamerror", []),
     {stop, normal, StateData};
 
@@ -706,8 +664,8 @@ stream_established({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 stream_established({xmlstreamerror, _}, StateData) ->
-    send_text(StateData,
-	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     ?INFO_MSG("stream established: ~s -> ~s (xmlstreamerror)",
 	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
@@ -821,7 +779,7 @@ handle_info({send_element, El}, StateName, StateData) ->
 	%% In this state we bounce all message: We are waiting before
 	%% trying to reconnect
 	wait_before_retry ->
-	    bounce_element(El, ?ERR_REMOTE_SERVER_NOT_FOUND),
+	    bounce_element(El, 'remote-server-not-found'),
 	    {next_state, StateName, StateData};
 	_ ->
 	    Q = queue:in(El, StateData#state.queue),
@@ -863,8 +821,8 @@ terminate(Reason, StateName, StateData) ->
 	      {StateData#state.myname, StateData#state.server}, self(), Key)
     end,
     %% bounce queue manage by process and Erlang message queue
-    bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
-    bounce_messages(?ERR_REMOTE_SERVER_NOT_FOUND),
+    bounce_queue(StateData#state.queue, 'remote-server-not-found'),
+    bounce_messages('remote-server-not-found'),
     case StateData#state.socket of
 	undefined ->
 	    ok;
@@ -880,8 +838,10 @@ terminate(Reason, StateName, StateData) ->
 send_text(StateData, Text) ->
     ejabberd_socket:send(StateData#state.socket, Text).
 
+send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
+    send_text(StateData, exmpp_stream:to_iolist(El));
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, exmpp_stanza:to_iolist(El)).
 
 send_queue(StateData, Q) ->
     case queue:out(Q) of
@@ -892,24 +852,25 @@ send_queue(StateData, Q) ->
 	    ok
     end.
 
-%% Bounce a single message (xmlelement)
-bounce_element(El, Error) ->
-    {xmlelement, _Name, Attrs, _SubTags} = El,
-    case xml:get_attr_s("type", Attrs) of
-	"error" -> ok;
-	"result" -> ok;
+%% Bounce a single message (xmlel)
+bounce_element(El, Condition) ->
+    case exmpp_stanza:get_type(El) of
+	<<"error">> -> ok;
+	<<"result">> -> ok;
 	_ ->
-	    Err = jlib:make_error_reply(El, Error),
-	    From = jlib:string_to_jid(xml:get_tag_attr_s("from", El)),
-	    To = jlib:string_to_jid(xml:get_tag_attr_s("to", El)),
+	    Err = exmpp_stanza:reply_with_error(El, Condition),
+	    From = exmpp_jid:parse(exmpp_stanza:get_sender(El)),
+	    To = exmpp_jid:parse(exmpp_stanza:get_recipient(El)),
+	    % No namespace conversion (:server <-> :client) is done.
+	    % This is handled by C2S and S2S send_element functions.
 	    ejabberd_router:route(To, From, Err)
     end.
 
-bounce_queue(Q, Error) ->
+bounce_queue(Q, Condition) ->
     case queue:out(Q) of
 	{{value, El}, Q1} ->
-	    bounce_element(El, Error),
-	    bounce_queue(Q1, Error);
+	    bounce_element(El, Condition),
+	    bounce_queue(Q1, Condition);
 	{empty, _} ->
 	    ok
     end.
@@ -926,11 +887,11 @@ cancel_timer(Timer) ->
 	    ok
     end.
 
-bounce_messages(Error) ->
+bounce_messages(Condition) ->
     receive
 	{send_element, El} ->
-	    bounce_element(El, Error),
-	    bounce_messages(Error)
+	    bounce_element(El, Condition),
+	    bounce_messages(Condition)
     after 0 ->
 	    ok
     end.
@@ -954,40 +915,33 @@ send_db_request(StateData) ->
 	false ->
 	    ok;
 	Key1 ->
-	    send_element(StateData,
-			 {xmlelement,
-			  "db:result",
-			  [{"from", StateData#state.myname},
-			   {"to", Server}],
-			  [{xmlcdata, Key1}]})
+	    send_element(StateData, exmpp_dialback:key(
+		StateData#state.myname, Server, Key1))
     end,
     case StateData#state.verify of
 	false ->
 	    ok;
 	{_Pid, Key2, SID} ->
-	    send_element(StateData,
-			 {xmlelement,
-			  "db:verify",
-			  [{"from", StateData#state.myname},
-			   {"to", StateData#state.server},
-			   {"id", SID}],
-			  [{xmlcdata, Key2}]})
+	    send_element(StateData, exmpp_dialback:verify_request(
+		StateData#state.myname, StateData#state.server, SID, Key2))
     end,
     {next_state, wait_for_validation, StateData#state{new = New}, ?FSMTIMEOUT*6}.
 
 
-is_verify_res({xmlelement, Name, Attrs, _Els}) when Name == "db:result" ->
+is_verify_res(#xmlel{ns = ?NS_DIALBACK, name = 'result',
+  attrs = Attrs}) ->
     {result,
-     xml:get_attr_s("to", Attrs),
-     xml:get_attr_s("from", Attrs),
-     xml:get_attr_s("id", Attrs),
-     xml:get_attr_s("type", Attrs)};
-is_verify_res({xmlelement, Name, Attrs, _Els}) when Name == "db:verify" ->
+     exmpp_stanza:get_recipient_from_attrs(Attrs),
+     exmpp_stanza:get_sender_from_attrs(Attrs),
+     exmpp_stanza:get_id_from_attrs(Attrs),
+     binary_to_list(exmpp_stanza:get_type_from_attrs(Attrs))};
+is_verify_res(#xmlel{ns = ?NS_DIALBACK, name = 'verify',
+  attrs = Attrs}) ->
     {verify,
-     xml:get_attr_s("to", Attrs),
-     xml:get_attr_s("from", Attrs),
-     xml:get_attr_s("id", Attrs),
-     xml:get_attr_s("type", Attrs)};
+     exmpp_stanza:get_recipient_from_attrs(Attrs),
+     exmpp_stanza:get_sender_from_attrs(Attrs),
+     exmpp_stanza:get_id_from_attrs(Attrs),
+     binary_to_list(exmpp_stanza:get_type_from_attrs(Attrs))};
 is_verify_res(_) ->
     false.
 
@@ -1157,8 +1111,8 @@ get_timeout_interval(StateName) ->
 %% function that want to wait for a reconnect delay before stopping.
 wait_before_reconnect(StateData) ->
     %% bounce queue manage by process and Erlang message queue
-    bounce_queue(StateData#state.queue, ?ERR_REMOTE_SERVER_NOT_FOUND),
-    bounce_messages(?ERR_REMOTE_SERVER_NOT_FOUND),
+    bounce_queue(StateData#state.queue, 'remote-server-not-found'),
+    bounce_messages('remote-server-not-found'),
     cancel_timer(StateData#state.timer),
     Delay = case StateData#state.delay_to_retry of
 		undefined_delay ->

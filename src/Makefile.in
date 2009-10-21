@@ -30,7 +30,7 @@ else
   INIT_USER=$(INSTALLUSER)
 endif
 
-EFLAGS += @ERLANG_SSL39@ -pa .
+EFLAGS += -pa .
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
@@ -65,8 +65,8 @@ endif
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
-SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ stringprep stun @tls@ @odbc@ @ejabberd_zlib@
-ERLSHLIBS = expat_erl.so
+SUBDIRS = stun @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ @tls@ @odbc@ @ejabberd_zlib@
+ERLSHLIBS =
 ERLBEHAVS = cyrsasl.erl gen_mod.erl p1_fsm.erl
 SOURCES_ALL = $(wildcard *.erl)
 SOURCES = $(filter-out $(ERLBEHAVS),$(SOURCES_ALL))
@@ -277,7 +277,6 @@ distclean: distclean-recursive clean-local
 	rm -f config.status
 	rm -f config.log
 	rm -f Makefile
-	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
 TAGS:
 	etags *.erl

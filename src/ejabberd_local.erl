@@ -48,8 +48,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(state, {}).
 
@@ -59,6 +60,13 @@
 
 %% This value is used in SIP and Megaco for a transaction lifetime.
 -define(IQ_TIMEOUT, 32000).
+
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ?NS_JABBER_CLIENT).
+-define(PREFIXED_NS, [
+  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
+]).
 
 %%====================================================================
 %% API
@@ -71,33 +79,31 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 process_iq(From, To, Packet) ->
-    IQ = jlib:iq_query_info(Packet),
-    case IQ of
-	#iq{xmlns = XMLNS} ->
-	    Host = To#jid.lserver,
+    case exmpp_iq:xmlel_to_iq(Packet) of
+	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
+	    Host = exmpp_jid:prep_domain(To),
 	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
-		    ResIQ = Module:Function(From, To, IQ),
+		    ResIQ = Module:Function(From, To, IQ_Rec),
 		    if
 			ResIQ /= ignore ->
-			    ejabberd_router:route(
-			      To, From, jlib:iq_to_xml(ResIQ));
+			    Reply = exmpp_iq:iq_to_xmlel(ResIQ, To, From),
+			    ejabberd_router:route(To, From, Reply);
 			true ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
 		    gen_iq_handler:handle(Host, Module, Function, Opts,
-					  From, To, IQ);
+					  From, To, IQ_Rec);
 		[] ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+		    Err = exmpp_iq:error(Packet, 'feature-not-implemented'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-	reply ->
-	    IQReply = jlib:iq_query_or_response_info(Packet),
-	    process_iq_reply(From, To, IQReply);
+        #iq{kind = response} = IQReply ->
+ 	    %%IQReply = jlib:iq_query_or_response_info(IQ_Rec),
+ 	    process_iq_reply(From, To, IQReply);
 	_ ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
+	    Err = exmpp_iq:error(Packet, 'bad-request'),
 	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
@@ -113,7 +119,17 @@ process_iq_reply(From, To, #iq{id = ID} = IQ) ->
 	_ ->
 	    nothing
     end.
-
+  
+route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nLOCAL: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    route(From, To, Packet);
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
@@ -125,12 +141,12 @@ route(From, To, Packet) ->
 
 route_iq(From, To, #iq{type = Type} = IQ, F) when is_function(F) ->
     Packet = if Type == set; Type == get ->
-		     ID = randoms:get_string(),
-		     Host = From#jid.lserver,
+		     ID = list_to_binary(randoms:get_string()),
+		     Host = exmpp_jid:prep_domain(From),
 		     register_iq_response_handler(Host, ID, undefined, F),
-		     jlib:iq_to_xml(IQ#iq{id = ID});
+		     exmpp_iq:iq_to_xmlel(IQ#iq{id = ID});
 		true ->
-		     jlib:iq_to_xml(IQ)
+		     exmpp_iq:iq_to_xmlel(IQ)
 	     end,
     ejabberd_router:route(From, To, Packet).
 
@@ -158,7 +174,7 @@ refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
 bounce_resource_packet(From, To, Packet) ->
-    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
+    Err = exmpp_stanza:reply_with_error(Packet, 'item-not-found'),
     ejabberd_router:route(To, From, Err),
     stop.
 
@@ -177,7 +193,7 @@ init([]) ->
     lists:foreach(
       fun(Host) ->
 	      ejabberd_router:register_route(Host, {apply, ?MODULE, route}),
-	      ejabberd_hooks:add(local_send_to_resource_hook, Host,
+	      ejabberd_hooks:add(local_send_to_resource_hook, list_to_binary(Host),
 				 ?MODULE, bounce_resource_packet, 100)
       end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
@@ -216,6 +232,16 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
+handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nLOCAL: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    handle_info({route, From, To, Packet}, State);
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
@@ -285,29 +311,30 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
+    
+    LNode = exmpp_jid:prep_node(To),
+    LResource = exmpp_jid:prep_resource(To),
     if
-	To#jid.luser /= "" ->
+	LNode /= undefined ->
 	    ejabberd_sm:route(From, To, Packet);
-	To#jid.lresource == "" ->
-	    {xmlelement, Name, _Attrs, _Els} = Packet,
-	    case Name of
-		"iq" ->
+	LResource == undefined ->
+	    case Packet of
+		_ when ?IS_IQ(Packet) ->
 		    process_iq(From, To, Packet);
-		"message" ->
+		_ when ?IS_MESSAGE(Packet) ->
 		    ok;
-		"presence" ->
+		_ when ?IS_PRESENCE(Packet) ->
 		    ok;
 		_ ->
 		    ok
 	    end;
 	true ->
-	    {xmlelement, _Name, Attrs, _Els} = Packet,
-	    case xml:get_attr_s("type", Attrs) of
-		"error" -> ok;
-		"result" -> ok;
+            case exmpp_stanza:get_type(Packet) of
+		<<"error">> -> ok;
+		<<"result">> -> ok;
 		_ ->
 		    ejabberd_hooks:run(local_send_to_resource_hook,
-				       To#jid.lserver,
+				       exmpp_jid:prep_domain(To),
 				       [From, To, Packet])
 	    end
 	end.

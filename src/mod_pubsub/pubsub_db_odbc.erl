@@ -30,9 +30,9 @@
 	 update_subscription/1]).
 
 
-%% TODO: Those -spec lines produce errors in old Erlang versions.
+%% Those -spec lines produce errors in old Erlang versions.
 %% They can be enabled again in ejabberd 3.0 because it uses R12B or higher.
-%% -spec read_subscription(SubID :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
+-spec read_subscription(SubID :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
 read_subscription(SubID) ->
 	case ejabberd_odbc:sql_query_t(
 		["select opt_name, opt_value "
@@ -49,19 +49,19 @@ read_subscription(SubID) ->
 
 
 
-%% -spec delete_subscription(SubID :: string()) -> ok.
+-spec delete_subscription(SubID :: string()) -> ok.
 delete_subscription(SubID) ->
 	ejabberd_odbc:sql_query_t(["delete from pubsub_subscription_opt "
 	"where subid = '", ejabberd_odbc:escape(SubID), "'"]),
 	ok.
 
 
-%% -spec update_subscription(#pubsub_subscription{}) -> ok .
+-spec update_subscription(#pubsub_subscription{}) -> ok .
 update_subscription(#pubsub_subscription{subid = SubId} = Sub) -> 
 	delete_subscription(SubId),
 	add_subscription(Sub).
 
-%% -spec add_subscription(#pubsub_subscription{}) -> ok.
+-spec add_subscription(#pubsub_subscription{}) -> ok.
 add_subscription(#pubsub_subscription{subid = SubId, options = Opts}) ->
 	EscapedSubId = ejabberd_odbc:escape(SubId),
 	lists:foreach(fun(Opt) ->

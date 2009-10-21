@@ -72,7 +72,6 @@
 \newcommand{\modecho}{\module{mod\_echo}}
 \newcommand{\modhttpbind}{\module{mod\_http\_bind}}
 \newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
-\newcommand{\modirc}{\module{mod\_irc}}
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
@@ -86,7 +85,6 @@
 \newcommand{\modprivateodbc}{\module{mod\_private\_odbc}}
 \newcommand{\modproxy}{\module{mod\_proxy65}}
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
-\newcommand{\modpubsubodbc}{\module{mod\_pubsub\_odbc}}
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
 \newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
@@ -307,16 +305,14 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \begin{itemize}
 \item GNU Make
 \item GCC
-\item Libexpat 1.95 or higher
-\item Erlang/OTP R10B-9 or higher. The recommended version is R12B-5. Support for R13 is experimental.
+\item Erlang/OTP R12B-4 or higher, R13B or higher.
+\item exmpp 0.9.1 or higher
 \item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
 \item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
-\item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc. See section \ref{modirc}.
 \item ImageMagick's Convert program. Optional. For CAPTCHA challenges. See section \ref{captcha}.
-\item exmpp 0.9.1 or higher. Optional. For import/export user data with \xepref{0227} XML files.
 \end{itemize}
 
 \makesubsection{download}{Download Source Code}
@@ -516,11 +512,9 @@ gmake -f Makefile.gi ginstall
 To compile \ejabberd{} on a Microsoft Windows system, you need:
 \begin{itemize}
 \item MS Visual C++ 6.0 Compiler
-\item \footahref{http://www.erlang.org/download.html}{Erlang/OTP R11B-5}
+\item \footahref{http://www.erlang.org/download.html}{Erlang/OTP R12B-5}. Support for R13 or higher is experimental.
+\item \footahref{http://support.process-one.net/doc/display/EXMPP}{exmpp 0.9.1 or higher}
 \item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 2.0.0 or higher}
-\item
-\footahref{http://www.gnu.org/software/libiconv/}{GNU Iconv 1.9.2}
-(optional)
 \item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8d or higher}
 (to enable SSL connections)
 \item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
@@ -532,28 +526,19 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 We assume that we will try to put as much library as possible into \verb|C:\sdk\| to make it easier to track what is install for \ejabberd{}.
 
 \begin{enumerate}
-\item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.5.5|).
+\item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.6.5|).
 \item Install Expat library into \verb|C:\sdk\Expat-2.0.0|
   directory.
 
   Copy file \verb|C:\sdk\Expat-2.0.0\Libs\libexpat.dll|
   to your Windows system directory (for example, \verb|C:\WINNT| or
   \verb|C:\WINNT\System32|)
-\item Build and install the Iconv library into the directory
-  \verb|C:\sdk\GnuWin32|.
-
-  Copy file \verb|C:\sdk\GnuWin32\bin\lib*.dll| to your
-  Windows system directory (more installation instructions can be found in the
-  file README.woe32 in the iconv distribution).
-
-  Note: instead of copying libexpat.dll and iconv.dll to the Windows
-  directory, you can add the directories
-  \verb|C:\sdk\Expat-2.0.0\Libs| and
-  \verb|C:\sdk\GnuWin32\bin| to the \verb|PATH| environment
-  variable.
+  Note: instead of copying libexpat.dll to the Windows
+  directory, you can add the directory \verb|C:\sdk\Expat-2.0.0\Libs|
+  to the \verb|PATH| environment variable.
 \item Install OpenSSL in \verb|C:\sdk\OpenSSL| and add \verb|C:\sdk\OpenSSL\lib\VC| to your path or copy the binaries to your system directory.
 \item Install ZLib in \verb|C:\sdk\gnuWin32|. Copy
-  \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory. If you change your path it should already be set after  libiconv install.
+  \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory.
 \item Make sure the you can access Erlang binaries from your path. For example: \verb|set PATH=%PATH%;"C:\sdk\erl5.6.5\bin"|
 \item Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 \item While in the directory \verb|ejabberd\src| run:
@@ -2425,8 +2410,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
-    \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas &  \\
-    \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\
+    \hline \ahrefloc{modecho}{\modecho{}} & Echoes Jabber packets &  \\
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
@@ -2440,7 +2424,6 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modprivate}{\modprivateodbc{}} & Private XML Storage (\xepref{0049}) & supported DB (*) \\
     \hline \ahrefloc{modproxy}{\modproxy{}} & SOCKS5 Bytestreams (\xepref{0065}) &  \\
     \hline \ahrefloc{modpubsub}{\modpubsub{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & \modcaps{} \\
-    \hline \ahrefloc{modpubsub}{\modpubsubodbc{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & supported DB (*) and \modcaps{} \\
     \hline \ahrefloc{modregister}{\modregister{}} & In-Band Registration (\xepref{0077}) &  \\
     \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) &  \\
     \hline \ahrefloc{modroster}{\modrosterodbc{}} & Roster management (XMPP IM) & supported DB (*) \\
@@ -2910,75 +2893,6 @@ And define it as a handler in the HTTP service:
   ...
 ]}.
 \end{verbatim}
-
-\makesubsection{modirc}{\modirc{}}
-\ind{modules!\modirc{}}\ind{IRC}
-
-This module is an IRC transport that can be used to join channels on IRC
-servers.
-
-End user information:
-\ind{protocols!groupchat 1.0}\ind{protocols!XEP-0045: Multi-User Chat}
-\begin{itemize}
-\item A \XMPP{} client with `groupchat 1.0' support or Multi-User
-  Chat support (\xepref{0045}) is necessary to join IRC channels.
-\item An IRC channel can be joined in nearly the same way as joining a
-  \XMPP{} Multi-User Chat room. The difference is that the room name will
-  be `channel\%\jid{irc.example.org}' in case \jid{irc.example.org} is
-  the IRC server hosting `channel'. And of course the host should point
-  to the IRC transport instead of the Multi-User Chat service.
-\item You can register your nickame by sending `IDENTIFY password' to \\
-  \jid{nickserver!irc.example.org@irc.jabberserver.org}.
-\item Entering your password is possible by sending `LOGIN nick password' \\
-  to \jid{nickserver!irc.example.org@irc.jabberserver.org}.
-\item The IRC transport provides Ad-Hoc Commands (\xepref{0050})
-  to join a channel, and to set custom IRC username and encoding.
-\item When using a popular \XMPP{} server, it can occur that no
-  connection can be achieved with some IRC servers because they limit the
-  number of conections from one IP.
-\end{itemize}
-
-Options:
-\begin{description}
-\hostitem{irc}
-\titem{\{access, AccessName\}} \ind{options!access}This option can be used to specify who
-  may use the IRC transport (default value: \term{all}).
-\titem{\{default\_encoding, Encoding\}} \ind{options!defaultencoding}Set the default IRC encoding.
-  Default value: \term{"koi8-r"}
-\end{description}
-
-Examples:
-\begin{itemize}
-\item In the first example, the IRC transport is available on (all) your
-  virtual host(s) with the prefix `\jid{irc.}'. Furthermore, anyone is
-  able to use the transport. The default encoding is set to "iso8859-15".
-\begin{verbatim}
-{modules,
- [
-  ...
-  {mod_irc, [{access, all}, {default_encoding, "iso8859-15"}]},
-  ...
- ]}.
-\end{verbatim}
-\item In next example the IRC transport is available with JIDs with prefix \jid{irc-t.net}.
-  Moreover, the transport is only accessible to two users 
-  of \term{example.org}, and any user of \term{example.com}:
-\begin{verbatim}
-{acl, paying_customers, {user, "customer1", "example.org"}}.
-{acl, paying_customers, {user, "customer2", "example.org"}}.
-{acl, paying_customers, {server, "example.com"}}.
-
-{access, irc_users, [{allow, paying_customers}, {deny, all}]}.
-
-{modules,
- [
-  ...
-  {mod_irc, [{access, irc_users},
-             {host, "irc.example.net"}]},
-  ...
- ]}.
-\end{verbatim}
-\end{itemize}
 
 \makesubsection{modlast}{\modlast{}}
 \ind{modules!\modlast{}}\ind{protocols!XEP-0012: Last Activity}
@@ -3578,30 +3492,12 @@ Options:
   Define the maximum number of items that can be stored in a node.
   Default value is 10.
 \titem{\{plugins, [ Plugin, ...]\}} \ind{options!plugins}
-  To specify which pubsub node plugins to use.
-  The first one in the list is used by default.
-  If this option is not defined, the default plugins list is: \term{["flat"]}.
-  PubSub clients can define which plugin to use when creating a node:
-  add \term{type='plugin-name'} attribute to the \term{create} stanza element.
-\titem{\{nodetree, Nodetree\}} \ind{options!nodetree}
-  To specify which nodetree to use.
-  If not defined, the default pubsub nodetree is used: "tree".
-  Only one nodetree can be used per host, and is shared by all node plugins.
-
-  The "virtual" nodetree does not store nodes on database.
-  This saves resources on systems with tons of nodes.
-  If using the "virtual" nodetree,
-  you can only enable those node plugins:
-  ["flat","pep"] or ["flat"];
-  any other plugins configuration will not work. 
-  Also, all nodes will have the defaut configuration,
-  and this can not be changed.
-  Using "virtual" nodetree requires to start from a clean database,
-  it will not work if you used the default "tree" nodetree before.
-
-  The "dag" nodetree provides experimental support for PubSub Collection Nodes (\xepref{0248}).
-  In that case you should also add "dag" node plugin as default, for example:
-  \term{\{plugins, ["dag","flat","hometree","pep"]\}}
+  To specify which pubsub node plugins to use. If not defined, the default
+  pubsub plugin is always used.
+\titem{\{nodetree, Name\}} \ind{options!nodetree}
+  To specify which nodetree to use. If not defined, the default pubsub
+  nodetree is used. Only one nodetree can be used per host,
+  and is shared by all node plugins.
 \titem{\{ignore\_pep\_from\_offline, false|true\}} \ind{options!ignore\_pep\_from\_offline}
   To specify whether or not we should get last published PEP items
   from users in our roster which are offline when we connect. Value is true or false.
@@ -3621,32 +3517,19 @@ Options:
 %  This option allows to create additional pubsub virtual hosts in a single module instance.
 \end{description}
 
-Example of configuration that uses flat nodes as default, and allows use of flat, nodetree and pep nodes:
+Example:
 \begin{verbatim}
 {modules,
  [
   ...
   {mod_pubsub, [
                 {access_createnode, pubsub_createnode},
-                {plugins, ["flat", "hometree", "pep"]}
-               ]},
+                {plugins, ["default", "pep"]}
+               ]}
   ...
  ]}.
 \end{verbatim}
-
-Using ODBC database requires use of dedicated plugins. The following example shows previous configuration
-with ODBC usage:
-\begin{verbatim}
-{modules,
- [
-  ...
-  {mod_pubsub_odbc, [
-                {access_createnode, pubsub_createnode},
-                {plugins, ["flat_odbc", "hometree_odbc", "pep_odbc"]}
-               ]},
-  ...
- ]}.
-\end{verbatim}
+%                  {served_hosts, ["example.com", "example.org"]}
 
 \makesubsection{modregister}{\modregister{}}
 \ind{modules!\modregister{}}\ind{protocols!XEP-0077: In-Band Registration}\ind{public registration}
@@ -4983,7 +4866,7 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
 \item Now run \ejabberd{} on \term{second} with a configuration similar as
   on \term{first}: you probably do not need to duplicate `\verb|acl|'
   and `\verb|access|' options because they will be taken from
-  \term{first}; and \verb|mod_irc| should be
+  \term{first}. If you installed \verb|mod_irc|, notice that it should be
   enabled only on one machine in the cluster.
 \end{enumerate}
 

@@ -31,10 +31,9 @@
 -behavior(gen_server).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -define(SUPERVISOR, ejabberd_sup).
--define(NS_PING, "urn:xmpp:ping").
 -define(DEFAULT_SEND_PINGS, false). % bool()
 -define(DEFAULT_PING_INTERVAL, 60). % seconds
 
@@ -92,22 +91,23 @@ stop(Host) ->
 %% gen_server callbacks
 %%====================================================================
 init([Host, Opts]) ->
+    HostB = list_to_binary(Host),
     SendPings = gen_mod:get_opt(send_pings, Opts, ?DEFAULT_SEND_PINGS),
     PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
     TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mod_disco:register_feature(Host, ?NS_PING),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PING,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PING,
                                   ?MODULE, iq_ping, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PING,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_PING,
                                   ?MODULE, iq_ping, IQDisc),
     case SendPings of
         true ->
-            ejabberd_hooks:add(sm_register_connection_hook, Host,
+            ejabberd_hooks:add(sm_register_connection_hook, HostB,
                                ?MODULE, user_online, 100),
-            ejabberd_hooks:add(sm_remove_connection_hook, Host,
+            ejabberd_hooks:add(sm_remove_connection_hook, HostB,
                                ?MODULE, user_offline, 100),
-	    ejabberd_hooks:add(user_send_packet, Host,
+	    ejabberd_hooks:add(user_send_packet, HostB,
 			       ?MODULE, user_send, 100);
         _ ->
             ok
@@ -119,14 +119,15 @@ init([Host, Opts]) ->
                 timers = ?DICT:new()}}.
 
 terminate(_Reason, #state{host = Host}) ->
-    ejabberd_hooks:delete(sm_remove_connection_hook, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(sm_remove_connection_hook, HostB,
 			  ?MODULE, user_offline, 100),
-    ejabberd_hooks:delete(sm_register_connection_hook, Host,
+    ejabberd_hooks:delete(sm_register_connection_hook, HostB,
 			  ?MODULE, user_online, 100),
-    ejabberd_hooks:delete(user_send_packet, Host,
+    ejabberd_hooks:delete(user_send_packet, HostB,
 			  ?MODULE, user_send, 100),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PING),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PING),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_PING),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PING),
     mod_disco:unregister_feature(Host, ?NS_PING).
 
 handle_call(stop, _From, State) ->
@@ -142,11 +143,10 @@ handle_cast({stop_ping, JID}, State) ->
     {noreply, State#state{timers = Timers}};
 handle_cast({iq_pong, JID, timeout}, State) ->
     Timers = del_timer(JID, State#state.timers),
-    ejabberd_hooks:run(user_ping_timeout, State#state.host, [JID]),
+    ejabberd_hooks:run(user_ping_timeout, list_to_binary(State#state.host), [JID]),
     case State#state.timeout_action of
 	kill ->
-	    #jid{user = User, server = Server, resource = Resource} = JID,
-	    case ejabberd_sm:get_session_pid(User, Server, Resource) of
+	    case ejabberd_sm:get_session_pid(JID) of
 		Pid when is_pid(Pid) ->
 		    ejabberd_c2s:stop(Pid);
 		_ ->
@@ -160,13 +160,18 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
-    IQ = #iq{type = get,
-             sub_el = [{xmlelement, "ping", [{"xmlns", ?NS_PING}], []}]},
+    %%IQ = #iq{type = get,
+    %%         sub_el = [{xmlelement, "ping", [{"xmlns", ?NS_PING}], []}]},
+
+    %% Build an iq:query request
+    %%IQ = exmpp_iq:get(?NS_PING, #xmlel{ns = ?NS_PING, name = 'ping'}),
+    IQ = #iq{type = get, payload = #xmlel{name = 'ping', ns = ?NS_PING}},
+
     Pid = self(),
     F = fun(Response) ->
 		gen_server:cast(Pid, {iq_pong, JID, Response})
 	end,
-    From = jlib:make_jid("", State#state.host, ""),
+    From = exmpp_jid:make(State#state.host),
     ejabberd_local:route_iq(From, JID, IQ, F),
     Timers = add_timer(JID, State#state.ping_interval, State#state.timers),
     {noreply, State#state{timers = Timers}};
@@ -179,28 +184,31 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %% Hook callbacks
 %%====================================================================
-iq_ping(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
+iq_ping(_From, _To, #iq{type = Type, payload = SubEl} = IQ) ->
     case {Type, SubEl} of
-        {get, {xmlelement, "ping", _, _}} ->
-            IQ#iq{type = result, sub_el = []};
+        {get, #xmlel{name = ping, ns = ?NS_PING}} ->
+            exmpp_iq:result(IQ);
         _ ->
-            IQ#iq{type = error, sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
+	    exmpp_iq:error(IQ, 'feature-not-implemented')
     end.
 
 user_online(_SID, JID, _Info) ->
-    start_ping(JID#jid.lserver, JID).
+    Host = exmpp_jid:prep_domain_as_list(JID),
+    start_ping(Host, JID).
 
 user_offline(_SID, JID, _Info) ->
-    stop_ping(JID#jid.lserver, JID).
+    Host = exmpp_jid:prep_domain_as_list(JID),
+    start_ping(Host, JID).
 
 user_send(JID, _From, _Packet) ->
-    start_ping(JID#jid.lserver, JID).
+    Host = exmpp_jid:prep_domain_as_list(JID),
+    start_ping(Host, JID).
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 add_timer(JID, Interval, Timers) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = exmpp_jid:prep_to_binary(JID),
     NewTimers = case ?DICT:find(LJID, Timers) of
 		    {ok, OldTRef} ->
 			cancel_timer(OldTRef),
@@ -212,7 +220,7 @@ add_timer(JID, Interval, Timers) ->
     ?DICT:store(LJID, TRef, NewTimers).
 
 del_timer(JID, Timers) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = exmpp_jid:prep_to_binary(JID),
     case ?DICT:find(LJID, Timers) of
         {ok, TRef} ->
 	    cancel_timer(TRef),

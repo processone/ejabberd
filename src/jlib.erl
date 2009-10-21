@@ -27,34 +27,7 @@
 -module(jlib).
 -author('alexey@process-one.net').
 
--export([make_result_iq_reply/1,
-	 make_error_reply/3,
-	 make_error_reply/2,
-	 make_error_element/2,
-	 make_correct_from_to_attrs/3,
-	 replace_from_to_attrs/3,
-	 replace_from_to/3,
-	 replace_from_attrs/2,
-	 replace_from/2,
-	 remove_attr/2,
-	 make_jid/3,
-	 make_jid/1,
-	 string_to_jid/1,
-	 jid_to_string/1,
-	 is_nodename/1,
-	 tolower/1,
-	 nodeprep/1,
-	 nameprep/1,
-	 resourceprep/1,
-	 jid_tolower/1,
-	 jid_remove_resource/1,
-	 jid_replace_resource/2,
-	 get_iq_namespace/1,
-	 iq_query_info/1,
-	 iq_query_or_response_info/1,
-	 is_iq_request_type/1,
-	 iq_to_xml/1,
-	 parse_xdata_submit/1,
+-export([parse_xdata_submit/1,
 	 timestamp_to_iso/1, % TODO: Remove once XEP-0091 is Obsolete
 	 timestamp_to_iso/2,
 	 timestamp_to_xml/4,
@@ -67,390 +40,24 @@
 	 ip_to_list/1,
 	 rsm_encode/1,
 	 rsm_encode/2,
-	 rsm_decode/1]).
+	 rsm_decode/1,
+	 from_old_jid/1,
+	 short_jid/1,
+	 short_bare_jid/1,
+	 short_prepd_jid/1,
+	 short_prepd_bare_jid/1]).
+
+-include_lib("exmpp/include/exmpp.hrl").
 
 -include("jlib.hrl").
 
-%send_iq(From, To, ID, SubTags) ->
-%    ok.
+%% @type shortjid() = {U, S, R}
+%%     U = binary()
+%%     S = binary()
+%%     R = binary().
 
-make_result_iq_reply({xmlelement, Name, Attrs, SubTags}) ->
-    NewAttrs = make_result_iq_reply_attrs(Attrs),
-    {xmlelement, Name, NewAttrs, SubTags}.
-
-make_result_iq_reply_attrs(Attrs) ->
-    To = xml:get_attr("to", Attrs),
-    From = xml:get_attr("from", Attrs),
-    Attrs1 = lists:keydelete("to", 1, Attrs),
-    Attrs2 = lists:keydelete("from", 1, Attrs1),
-    Attrs3 = case To of
-		 {value, ToVal} ->
-		      [{"from", ToVal} | Attrs2];
-		 _ ->
-		     Attrs2
-	     end,
-    Attrs4 = case From of
-		 {value, FromVal} ->
-		      [{"to", FromVal} | Attrs3];
-		 _ ->
-		     Attrs3
-	     end,
-    Attrs5 = lists:keydelete("type", 1, Attrs4),
-    Attrs6 = [{"type", "result"} | Attrs5],
-    Attrs6.
-
-make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
-    NewAttrs = make_error_reply_attrs(Attrs),
-    {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, "error",
-					      [{"code", Code}],
-					      [{xmlcdata, Desc}]}]}.
-
-make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
-    NewAttrs = make_error_reply_attrs(Attrs),
-    {xmlelement, Name, NewAttrs, SubTags ++ [Error]}.
-
-make_error_reply_attrs(Attrs) ->
-    To = xml:get_attr("to", Attrs),
-    From = xml:get_attr("from", Attrs),
-    Attrs1 = lists:keydelete("to", 1, Attrs),
-    Attrs2 = lists:keydelete("from", 1, Attrs1),
-    Attrs3 = case To of
-		 {value, ToVal} ->
-		      [{"from", ToVal} | Attrs2];
-		 _ ->
-		     Attrs2
-	     end,
-    Attrs4 = case From of
-		 {value, FromVal} ->
-		      [{"to", FromVal} | Attrs3];
-		 _ ->
-		     Attrs3
-	     end,
-    Attrs5 = lists:keydelete("type", 1, Attrs4),
-    Attrs6 = [{"type", "error"} | Attrs5],
-    Attrs6.
-
-make_error_element(Code, Desc) ->
-    {xmlelement, "error",
-     [{"code", Code}],
-     [{xmlcdata, Desc}]}.
-
-make_correct_from_to_attrs(From, To, Attrs) ->
-    Attrs1 = lists:keydelete("from", 1, Attrs),
-    Attrs2 = case xml:get_attr("to", Attrs) of
-		 {value, _} ->
-		     Attrs1;
-		 _ ->
-		     [{"to", To} | Attrs1]
-	     end,
-    Attrs3 = [{"from", From} | Attrs2],
-    Attrs3.
-
-
-replace_from_to_attrs(From, To, Attrs) ->
-    Attrs1 = lists:keydelete("to", 1, Attrs),
-    Attrs2 = lists:keydelete("from", 1, Attrs1),
-    Attrs3 = [{"to", To} | Attrs2],
-    Attrs4 = [{"from", From} | Attrs3],
-    Attrs4.
-
-replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
-    NewAttrs = replace_from_to_attrs(jlib:jid_to_string(From),
-				     jlib:jid_to_string(To),
-				     Attrs),
-    {xmlelement, Name, NewAttrs, Els}.
-
-replace_from_attrs(From, Attrs) ->
-    Attrs1 = lists:keydelete("from", 1, Attrs),
-    [{"from", From} | Attrs1].
-
-replace_from(From, {xmlelement, Name, Attrs, Els}) ->
-    NewAttrs = replace_from_attrs(jlib:jid_to_string(From), Attrs),
-    {xmlelement, Name, NewAttrs, Els}.
-
-remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
-    NewAttrs = lists:keydelete(Attr, 1, Attrs),
-    {xmlelement, Name, NewAttrs, Els}.
-
-
-make_jid(User, Server, Resource) ->
-    case nodeprep(User) of
-	error -> error;
-	LUser ->
-	    case nameprep(Server) of
-		error -> error;
-		LServer ->
-		    case resourceprep(Resource) of
-			error -> error;
-			LResource ->
-			    #jid{user = User,
-				 server = Server,
-				 resource = Resource,
-				 luser = LUser,
-				 lserver = LServer,
-				 lresource = LResource}
-		    end
-	    end
-    end.
-
-make_jid({User, Server, Resource}) ->
-    make_jid(User, Server, Resource).
-
-string_to_jid(J) ->
-    string_to_jid1(J, "").
-
-string_to_jid1([$@ | _J], "") ->
-    error;
-string_to_jid1([$@ | J], N) ->
-    string_to_jid2(J, lists:reverse(N), "");
-string_to_jid1([$/ | _J], "") ->
-    error;
-string_to_jid1([$/ | J], N) ->
-    string_to_jid3(J, "", lists:reverse(N), "");
-string_to_jid1([C | J], N) ->
-    string_to_jid1(J, [C | N]);
-string_to_jid1([], "") ->
-    error;
-string_to_jid1([], N) ->
-    make_jid("", lists:reverse(N), "").
-
-%% Only one "@" is admitted per JID
-string_to_jid2([$@ | _J], _N, _S) ->
-    error;
-string_to_jid2([$/ | _J], _N, "") ->
-    error;
-string_to_jid2([$/ | J], N, S) ->
-    string_to_jid3(J, N, lists:reverse(S), "");
-string_to_jid2([C | J], N, S) ->
-    string_to_jid2(J, N, [C | S]);
-string_to_jid2([], _N, "") ->
-    error;
-string_to_jid2([], N, S) ->
-    make_jid(N, lists:reverse(S), "").
-
-string_to_jid3([C | J], N, S, R) ->
-    string_to_jid3(J, N, S, [C | R]);
-string_to_jid3([], N, S, R) ->
-    make_jid(N, S, lists:reverse(R)).
-
-jid_to_string(#jid{user = User, server = Server, resource = Resource}) ->
-    jid_to_string({User, Server, Resource});
-jid_to_string({Node, Server, Resource}) ->
-    S1 = case Node of
-	     "" ->
-		 "";
-	     _ ->
-		 Node ++ "@"
-	 end,
-    S2 = S1 ++ Server,
-    S3 = case Resource of
-	     "" ->
-		 S2;
-	     _ ->
-		 S2 ++ "/" ++ Resource
-	 end,
-    S3.
-
-
-is_nodename([]) ->
-    false;
-is_nodename(J) ->
-    nodeprep(J) /= error.
-
-
-%tolower_c(C) when C >= $A, C =< $Z ->
-%    C + 32;
-%tolower_c(C) ->
-%    C.
-
--define(LOWER(Char),
-        if
-            Char >= $A, Char =< $Z ->
-                Char + 32;
-            true ->
-                Char
-        end).
-
-%tolower(S) ->
-%    lists:map(fun tolower_c/1, S).
-
-%tolower(S) ->
-%    [?LOWER(Char) || Char <- S].
-
-% Not tail-recursive but it seems works faster than variants above
-tolower([C | Cs]) ->
-    if
-	C >= $A, C =< $Z ->
-	    [C + 32 | tolower(Cs)];
-	true ->
-	    [C | tolower(Cs)]
-    end;
-tolower([]) ->
-    [].
-
-%tolower([C | Cs]) when C >= $A, C =< $Z ->
-%    [C + 32 | tolower(Cs)];
-%tolower([C | Cs]) ->
-%    [C | tolower(Cs)];
-%tolower([]) ->
-%    [].
-
-
-nodeprep(S) when length(S) < 1024 ->
-    R = stringprep:nodeprep(S),
-    if
-	length(R) < 1024 -> R;
-	true -> error
-    end;
-nodeprep(_) ->
-    error.
-
-nameprep(S) when length(S) < 1024 ->
-    R = stringprep:nameprep(S),
-    if
-	length(R) < 1024 -> R;
-	true -> error
-    end;
-nameprep(_) ->
-    error.
-
-resourceprep(S) when length(S) < 1024 ->
-    R = stringprep:resourceprep(S),
-    if
-	length(R) < 1024 -> R;
-	true -> error
-    end;
-resourceprep(_) ->
-    error.
-
-
-jid_tolower(#jid{luser = U, lserver = S, lresource = R}) ->
-    {U, S, R};
-jid_tolower({U, S, R}) ->
-    case nodeprep(U) of
-	error -> error;
-	LUser ->
-	    case nameprep(S) of
-		error -> error;
-		LServer ->
-		    case resourceprep(R) of
-			error -> error;
-			LResource ->
-			    {LUser, LServer, LResource}
-		    end
-	    end
-    end.
-
-jid_remove_resource(#jid{} = JID) ->
-    JID#jid{resource = "", lresource = ""};
-jid_remove_resource({U, S, _R}) ->
-    {U, S, ""}.
-
-jid_replace_resource(JID, Resource) ->
-    case resourceprep(Resource) of
-	error -> error;
-	LResource ->
-	    JID#jid{resource = Resource, lresource = LResource}
-    end.
-
-
-get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == "iq" ->
-    case xml:remove_cdata(Els) of
-	[{xmlelement, _Name2, Attrs2, _Els2}] ->
-	    xml:get_attr_s("xmlns", Attrs2);
-	_ ->
-	    ""
-    end;
-get_iq_namespace(_) ->
-    "".
-
-iq_query_info(El) ->
-    iq_info_internal(El, request).
-
-iq_query_or_response_info(El) ->
-    iq_info_internal(El, any).
-
-iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
-    %% Filter is either request or any.  If it is request, any replies
-    %% are converted to the atom reply.
-    ID = xml:get_attr_s("id", Attrs),
-    Type = xml:get_attr_s("type", Attrs),
-    Lang = xml:get_attr_s("xml:lang", Attrs),
-    {Type1, Class} = case Type of
-			 "set" -> {set, request};
-			 "get" -> {get, request};
-			 "result" -> {result, reply};
-			 "error" -> {error, reply};
-			 _ -> {invalid, invalid}
-	    end,
-    if
-	Type1 == invalid ->
-	    invalid;
-	Class == request; Filter == any ->
-	    %% The iq record is a bit strange.  The sub_el field is an
-	    %% XML tuple for requests, but a list of XML tuples for
-	    %% responses.
-	    FilteredEls = xml:remove_cdata(Els),
-	    {XMLNS, SubEl} =
-		case {Class, FilteredEls} of
-		    {request, [{xmlelement, _Name2, Attrs2, _Els2}]} ->
-			{xml:get_attr_s("xmlns", Attrs2),
-			 hd(FilteredEls)};
-		    {reply, _} ->
-			%% Find the namespace of the first non-error
-			%% element, if there is one.
-			NonErrorEls = [El || 
-					  {xmlelement, SubName, _, _} = El
-					      <- FilteredEls, 
-					  SubName /= "error"],
-			{case NonErrorEls of
-			     [NonErrorEl] -> xml:get_tag_attr_s("xmlns", NonErrorEl);
-			     _ -> invalid
-			 end,
-			 FilteredEls};
-		    _ ->
-			{invalid, invalid}
-		end,
-	    if XMLNS == "", Class == request ->
-		    invalid;
-	       true ->
-			    #iq{id = ID,
-				type = Type1,
-				xmlns = XMLNS,
-				lang = Lang,
-			sub_el = SubEl}
-		    end;
-	Class == reply, Filter /= any ->
-	    reply
-    end;
-iq_info_internal(_, _) ->
-    not_iq.
-
-is_iq_request_type(set) -> true;
-is_iq_request_type(get) -> true;
-is_iq_request_type(_) -> false.
-
-iq_type_to_string(set) -> "set";
-iq_type_to_string(get) -> "get";
-iq_type_to_string(result) -> "result";
-iq_type_to_string(error) -> "error";
-iq_type_to_string(_) -> invalid.
-
-
-iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
-    if
-	ID /= "" ->
-	    {xmlelement, "iq",
-	     [{"id", ID}, {"type", iq_type_to_string(Type)}], SubEl};
-	true ->
-	    {xmlelement, "iq",
-	     [{"type", iq_type_to_string(Type)}], SubEl}
-    end.
-
-
-parse_xdata_submit(El) ->
-    {xmlelement, _Name, Attrs, Els} = El,
-    case xml:get_attr_s("type", Attrs) of
+parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
+    case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of
 	"submit" ->
 	    lists:reverse(parse_xdata_fields(Els, []));
 	_ ->
@@ -459,61 +66,51 @@ parse_xdata_submit(El) ->
 
 parse_xdata_fields([], Res) ->
     Res;
-parse_xdata_fields([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
-    case Name of
-	"field" ->
-	    case xml:get_attr_s("var", Attrs) of
-		"" ->
-		    parse_xdata_fields(Els, Res);
-		Var ->
-		    Field =
-			{Var, lists:reverse(parse_xdata_values(SubEls, []))},
-		    parse_xdata_fields(Els, [Field | Res])
-	    end;
-	_ ->
-	    parse_xdata_fields(Els, Res)
+parse_xdata_fields([#xmlel{name = 'field', attrs = Attrs, children = SubEls} |
+  Els], Res) ->
+    case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'var', "") of
+	"" ->
+	    parse_xdata_fields(Els, Res);
+	Var ->
+	    Field = {Var, lists:reverse(parse_xdata_values(SubEls, []))},
+	    parse_xdata_fields(Els, [Field | Res])
     end;
 parse_xdata_fields([_ | Els], Res) ->
     parse_xdata_fields(Els, Res).
 
 parse_xdata_values([], Res) ->
     Res;
-parse_xdata_values([{xmlelement, Name, _Attrs, SubEls} | Els], Res) ->
-    case Name of
-	"value" ->
-	    Val = xml:get_cdata(SubEls),
-	    parse_xdata_values(Els, [Val | Res]);
-	_ ->
-	    parse_xdata_values(Els, Res)
-    end;
+parse_xdata_values([#xmlel{name = 'value', children = SubEls} | Els], Res) ->
+    Val = exmpp_xml:get_cdata_from_list_as_list(SubEls),
+    parse_xdata_values(Els, [Val | Res]);
 parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
 
-rsm_decode(#iq{sub_el=SubEl})->
+rsm_decode(#iq{payload=SubEl})->
 	rsm_decode(SubEl);
-rsm_decode({xmlelement, _,_,_}=SubEl)->
-	case xml:get_subtag(SubEl,"set") of
-		false ->
+rsm_decode(#xmlel{}=SubEl)->
+	case exmpp_xml:get_element(SubEl, 'set') of
+		undefined ->
 			none;
-		{xmlelement, "set", _Attrs, SubEls}->
+		#xmlel{name = 'set', children = SubEls}->
 			lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
 	end.
 
-rsm_parse_element({xmlelement, "max",[], _}=Elem, RsmIn)->
-    CountStr = xml:get_tag_cdata(Elem),
+rsm_parse_element(#xmlel{name = 'max'}=Elem, RsmIn)->
+    CountStr = exmpp_xml:get_cdata_as_list(Elem),
     {Count, _} = string:to_integer(CountStr),
     RsmIn#rsm_in{max=Count};
 
-rsm_parse_element({xmlelement, "before", [], _}=Elem, RsmIn)->
-    UID = xml:get_tag_cdata(Elem),
+rsm_parse_element(#xmlel{name = 'before'}=Elem, RsmIn)->
+    UID = exmpp_xml:get_cdata_as_list(Elem),
     RsmIn#rsm_in{direction=before, id=UID};
 
-rsm_parse_element({xmlelement, "after", [], _}=Elem, RsmIn)->
-    UID = xml:get_tag_cdata(Elem),
+rsm_parse_element(#xmlel{name = 'after'}=Elem, RsmIn)->
+    UID = exmpp_xml:get_cdata_as_list(Elem),
     RsmIn#rsm_in{direction=aft, id=UID};
 
-rsm_parse_element({xmlelement, "index",[], _}=Elem, RsmIn)->
-    IndexStr = xml:get_tag_cdata(Elem),
+rsm_parse_element(#xmlel{name = 'index'}=Elem, RsmIn)->
+    IndexStr = exmpp_xml:get_cdata_as_list(Elem),
     {Index, _} = string:to_integer(IndexStr),
     RsmIn#rsm_in{index=Index};
 
@@ -521,17 +118,16 @@ rsm_parse_element({xmlelement, "index",[], _}=Elem, RsmIn)->
 rsm_parse_element(_, RsmIn)->
     RsmIn.
 
-rsm_encode(#iq{sub_el=SubEl}=IQ,RsmOut)->
-    Set = {xmlelement, "set", [{"xmlns", ?NS_RSM}],
+rsm_encode(#iq{payload=SubEl}=IQ_Rec,RsmOut)->
+    Set = #xmlel{ns = ?NS_RSM, name = 'set', children =
 	   lists:reverse(rsm_encode_out(RsmOut))},
-    {xmlelement, Name, Attrs, SubEls} = SubEl,
-    New = {xmlelement, Name, Attrs, [Set | SubEls]},
-    IQ#iq{sub_el=New}.
+    New = exmpp_xml:prepend_child(SubEl, Set),
+    IQ_Rec#iq{payload=New}.
 
 rsm_encode(none)->
     [];
 rsm_encode(RsmOut)->
-    [{xmlelement, "set", [{"xmlns", ?NS_RSM}], lists:reverse(rsm_encode_out(RsmOut))}].
+    [#xmlel{ns = ?NS_RSM, name = 'set', children = lists:reverse(rsm_encode_out(RsmOut))}].
 rsm_encode_out(#rsm_out{count=Count, index=Index, first=First, last=Last})->
     El = rsm_encode_first(First, Index, []),
     El2 = rsm_encode_last(Last,El),
@@ -540,39 +136,37 @@ rsm_encode_out(#rsm_out{count=Count, index=Index, first=First, last=Last})->
 rsm_encode_first(undefined, undefined, Arr) ->
     Arr;
 rsm_encode_first(First, undefined, Arr) ->
-    [{xmlelement, "first",[], [{xmlcdata, First}]}|Arr];
+    [#xmlel{ns = ?NS_RSM, name = 'first', children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr];
 rsm_encode_first(First, Index, Arr) ->
-    [{xmlelement, "first",[{"index", i2l(Index)}], [{xmlcdata, First}]}|Arr].
+    [#xmlel{ns = ?NS_RSM, name = 'first', attrs = [?XMLATTR('index', Index)], children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr].
 
 rsm_encode_last(undefined, Arr) -> Arr;
 rsm_encode_last(Last, Arr) ->
-    [{xmlelement, "last",[], [{xmlcdata, Last}]}|Arr].
+    [#xmlel{ns = ?NS_RSM, name = 'last', children = [#xmlcdata{cdata = list_to_binary(Last)}]}|Arr].
 
 rsm_encode_count(undefined, Arr)-> Arr;
 rsm_encode_count(Count, Arr)->
-    [{xmlelement, "count",[], [{xmlcdata, i2l(Count)}]} | Arr].
+    [#xmlel{ns = ?NS_RSM, name = 'count', children = [#xmlcdata{cdata = i2b(Count)}]} | Arr].
 
-i2l(I) when is_integer(I) -> integer_to_list(I);
-i2l(L) when is_list(L)    -> L.
+i2b(I) when is_integer(I) -> list_to_binary(integer_to_list(I));
+i2b(L) when is_list(L)    -> list_to_binary(L).
 
 %% Timezone = utc | {Hours, Minutes}
 %% Hours = integer()
 %% Minutes = integer()
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
-    Timestamp_string =
-	lists:flatten(
-	  io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-			[Year, Month, Day, Hour, Minute, Second])),
-    Timezone_string =
-	case Timezone of
-	    utc -> "Z";
-	    {TZh, TZm} ->
+    Timestamp_string = lists:flatten(
+      io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+        [Year, Month, Day, Hour, Minute, Second])),
+    Timezone_string = case Timezone of
+	utc -> "Z";
+	{TZh, TZm} -> 
 		Sign = case TZh >= 0 of
-			   true -> "+";
-			   false -> "-"
-		       end,
+			true -> "+";
+			false -> "-"
+		end,
 		io_lib:format("~s~2..0w:~2..0w", [Sign, abs(TZh),TZm])
-	end,
+    end,
     {Timestamp_string, Timezone_string}.
 
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
@@ -582,22 +176,19 @@ timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 
 timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
     {T_string, Tz_string} = timestamp_to_iso(DateTime, Timezone),
-    Text = [{xmlcdata, Desc}],
-    From = jlib:jid_to_string(FromJID),
-    {xmlelement, "delay",
-     [{"xmlns", ?NS_DELAY},
-      {"from", From},
-      {"stamp", T_string ++ Tz_string}],
-     Text}.
+    From = exmpp_jid:to_list(FromJID),
+    P1 = exmpp_xml:set_attributes(#xmlel{ns = ?NS_DELAY, name = 'delay'},
+      [{'from', From},
+       {'stamp', T_string ++ Tz_string}]),
+    exmpp_xml:set_cdata(P1, Desc).
 
 %% TODO: Remove this function once XEP-0091 is Obsolete
 timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
-    {xmlelement, "x",
-     [{"xmlns", ?NS_DELAY91},
-      {"stamp", lists:flatten(
-		  io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
-				[Year, Month, Day, Hour, Minute, Second]))}],
-     []}.
+    Timestamp = lists:flatten(
+      io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
+	[Year, Month, Day, Hour, Minute, Second])),
+    exmpp_xml:set_attribute(#xmlel{ns = ?NS_DELAY_OLD, name = 'x'},
+      'stamp', Timestamp).
 
 now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =
@@ -793,3 +384,38 @@ ip_to_list({IP, _Port}) ->
     ip_to_list(IP);
 ip_to_list({A,B,C,D}) ->
     lists:flatten(io_lib:format("~w.~w.~w.~w",[A,B,C,D])).
+
+% --------------------------------------------------------------------
+% Compat layer.
+% --------------------------------------------------------------------
+
+%% @spec (JID) -> New_JID
+%%     JID = jid()
+%%     New_JID = jid()
+%% @doc Convert a JID from its ejabberd form to its exmpp form.
+%%
+%% Empty fields are set to `undefined', not the empty string.
+
+%%TODO: this doesn't make sence!, it is still used?.
+from_old_jid(JID) ->
+ Node = exmpp_jid:node(JID),
+    Resource = exmpp_jid:resource(JID),
+    Domain = exmpp_jid:domain(JID),
+    exmpp_jid:make(Node,Domain,Resource).
+
+
+short_jid(JID) ->
+    {exmpp_jid:node(JID), exmpp_jid:domain(JID), exmpp_jid:resource(JID)}.
+
+short_bare_jid(JID) ->
+    short_jid(exmpp_jid:bare(JID)).
+
+short_prepd_jid(JID) ->
+    {exmpp_jid:prep_node(JID), 
+     exmpp_jid:prep_domain(JID), 
+     exmpp_jid:prep_resource(JID)}.
+
+short_prepd_bare_jid(JID) ->
+    short_prepd_jid(exmpp_jid:bare(JID)).
+
+

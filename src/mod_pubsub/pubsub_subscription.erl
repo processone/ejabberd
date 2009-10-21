@@ -39,7 +39,7 @@
 	 write_subscription/4]).
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -define(PUBSUB_DELIVER,	    "pubsub#deliver").
 -define(PUBSUB_DIGEST,	     "pubsub#digest").
@@ -90,50 +90,57 @@ init() ->
     ok = create_table().
 
 subscribe_node(JID, NodeID, Options) ->
-    case catch mnesia:sync_dirty(fun add_subscription/3,
+    try mnesia:sync_dirty(fun add_subscription/3,
 			    [JID, NodeID, Options]) of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+        Error -> Error
     end.
 
 unsubscribe_node(JID, NodeID, SubID) ->
-    case catch mnesia:sync_dirty(fun delete_subscription/3,
+    try mnesia:sync_dirty(fun delete_subscription/3,
 			    [JID, NodeID, SubID]) of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+	Error -> Error
     end.
 
 get_subscription(JID, NodeID, SubID) ->
-    case catch mnesia:sync_dirty(fun read_subscription/3,
+    try mnesia:sync_dirty(fun read_subscription/3,
 			    [JID, NodeID, SubID]) of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+	Error -> Error
     end.
 
 set_subscription(JID, NodeID, SubID, Options) ->
-    case catch mnesia:sync_dirty(fun write_subscription/4,
+    try mnesia:sync_dirty(fun write_subscription/4,
 			    [JID, NodeID, SubID, Options]) of
-	{'EXIT', {aborted, Error}} -> Error;
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
+    catch
+	Error -> Error
     end.
 
 get_options_xform(Lang, Options) ->
     Keys = [deliver, show_values, subscription_type, subscription_depth],
     XFields = [get_option_xfield(Lang, Key, Options) || Key <- Keys],
 
-    {result, {xmlelement, "x", [{"xmlns", ?NS_XDATA}],
-	      [{xmlelement, "field", [{"var", "FORM_TYPE"}, {"type", "hidden"}],
-		[{xmlelement, "value", [],
-		  [{xmlcdata, ?NS_PUBSUB_SUB_OPTIONS}]}]}] ++ XFields}}.
+     {result, #xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
+     		[#xmlel{ns = ?NS_DATA_FORMS, 
+			name = 'field', 
+			attrs = [?XMLATTR('var', <<"FORM_TYPE">>), ?XMLATTR('type', <<"hidden">>)],
+			children = [#xmlel{ns = ?NS_DATA_FORMS, 
+					   name = 'value',
+					   children = [?XMLCDATA(?NS_PUBSUB_SUBSCRIBE_OPTIONS_s)]}]}] ++ XFields}}.
 
 parse_options_xform(XFields) ->
-    case xml:remove_cdata(XFields) of
+    case exmpp_xml:get_child_elements(XFields) of
 	[] -> {result, []};
-	[{xmlelement, "x", _Attrs, _Els} = XEl] ->
+	[#xmlel{name = 'x'} = XEl] ->
 	    case jlib:parse_xdata_submit(XEl) of
 		XData when is_list(XData) ->
 		    case set_xoption(XData, []) of
@@ -226,7 +233,7 @@ val_xfield(subscription_depth, ["all"])  -> all;
 val_xfield(subscription_depth, [Depth])  ->
     case catch list_to_integer(Depth) of
 	N when is_integer(N) -> N;
-	_		    -> {error, ?ERR_NOT_ACCEPTABLE}
+	_		    -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'not-acceptable')}
     end.
 
 %% Convert XForm booleans to Erlang booleans.
@@ -234,7 +241,7 @@ xopt_to_bool("0")     -> false;
 xopt_to_bool("1")     -> true;
 xopt_to_bool("false") -> false;
 xopt_to_bool("true")  -> true;
-xopt_to_bool(_)       -> {error, ?ERR_NOT_ACCEPTABLE}.
+xopt_to_bool(_)       -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'not-acceptable')}.
 
 %% Return a field for an XForm for Key, with data filled in, if
 %% applicable, from Options.
@@ -248,10 +255,10 @@ get_option_xfield(Lang, Key, Options) ->
 	       false ->
 		   []
 	   end,
-    {xmlelement, "field",
-     [{"var", Var}, {"type", Type},
-      {"label", translate:translate(Lang, Label)}],
-     OptEls ++ Vals}.
+    #xmlel{ns = ?NS_DATA_FORMS, 
+    	   name = 'field',
+	   attrs = [?XMLATTR('var', Var), ?XMLATTR('type', Type), ?XMLATTR('label', translate:translate(Lang, Label))],
+	   children = OptEls ++ Vals}.
 
 type_and_options({Type, Options}, Lang) ->
     {Type, [tr_xfield_options(O, Lang) || O <- Options]};
@@ -259,12 +266,15 @@ type_and_options(Type, _Lang) ->
     {Type, []}.
 
 tr_xfield_options({Value, Label}, Lang) ->
-    {xmlelement, "option",
-     [{"label", translate:translate(Lang, Label)}], [{xmlelement, "value", [],
-       [{xmlcdata, Value}]}]}.
+    #xmlel{ns = ?NS_DATA_FORMS, 
+          name = 'option',
+	  attrs = [?XMLATTR('label', transalte:translate(Lang, Label))],
+	  children = [#xmlel{ns = ?NS_DATA_FORMS,
+	  		     name = 'value',
+			     children = [?XMLCDATA(Value)]}]}.
 
 tr_xfield_values(Value) ->
-    {xmlelement, "value", [], [{xmlcdata, Value}]}.
+    #xmlel{ns = ?NS_DATA_FORMS, name ='value', children = [?XMLCDATA(Value)]}.
 
 %% Return the XForm variable name for a subscription option key.
 xfield_var(deliver)	    -> ?PUBSUB_DELIVER;

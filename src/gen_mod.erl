@@ -173,11 +173,11 @@ get_module_opt(Host, Module, Opt, Default) ->
 
 get_module_opt_host(Host, Module, Default) ->
     Val = get_module_opt(Host, Module, host, Default),
-    element(2, regexp:gsub(Val, "@HOST@", Host)).
+    re:replace(Val, "@HOST@", Host, [global,{return,list}]).
 
 get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, Default),
-    element(2, regexp:gsub(Val, "@HOST@", Host)).
+    re:replace(Val, "@HOST@", Host, [global,{return,list}]).
 
 loaded_modules(Host) ->
     ets:select(ejabberd_modules,

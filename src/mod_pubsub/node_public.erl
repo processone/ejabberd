@@ -26,8 +26,9 @@
 -module(node_public).
 -author('christophe.romain@process-one.net').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -69,8 +70,8 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-	 node_to_path/1,
-	 path_to_node/1
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 
@@ -81,7 +82,8 @@ terminate(Host, ServerHost) ->
     node_hometree:terminate(Host, ServerHost).
 
 options() ->
-    [{deliver_payloads, true},
+    [{node_type, public},
+     {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
@@ -163,7 +165,7 @@ get_subscriptions(NodeId, Owner) ->
     node_hometree:get_subscriptions(NodeId, Owner).
 
 set_subscriptions(NodeId, Owner, Subscription, SubId) ->
-    node_hometree:set_subscriptions(NodeId, Owner, Subscription, SubId).
+    node_hometree:set_subscription(NodeId, Owner, Subscription, SubId).
 
 get_pending_nodes(Host, Owner) ->
     node_hometree:get_pending_nodes(Host, Owner).
@@ -202,4 +204,3 @@ node_to_path(Node) ->
 
 path_to_node(Path) ->
     node_flat:path_to_node(Path).
-

@@ -38,64 +38,66 @@
 	 remove_user/2,
 	 updated_list/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_privacy.hrl").
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    ejabberd_hooks:add(privacy_iq_get, Host,
+    ejabberd_hooks:add(privacy_iq_get, HostB,
 		       ?MODULE, process_iq_get, 50),
-    ejabberd_hooks:add(privacy_iq_set, Host,
+    ejabberd_hooks:add(privacy_iq_set, HostB,
 		       ?MODULE, process_iq_set, 50),
-    ejabberd_hooks:add(privacy_get_user_list, Host,
+    ejabberd_hooks:add(privacy_get_user_list, HostB,
 		       ?MODULE, get_user_list, 50),
-    ejabberd_hooks:add(privacy_check_packet, Host,
+    ejabberd_hooks:add(privacy_check_packet, HostB,
 		       ?MODULE, check_packet, 50),
-    ejabberd_hooks:add(privacy_updated_list, Host,
+    ejabberd_hooks:add(privacy_updated_list, HostB,
 		       ?MODULE, updated_list, 50),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVACY,
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
-    ejabberd_hooks:delete(privacy_iq_get, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(privacy_iq_get, HostB,
 			  ?MODULE, process_iq_get, 50),
-    ejabberd_hooks:delete(privacy_iq_set, Host,
+    ejabberd_hooks:delete(privacy_iq_set, HostB,
 			  ?MODULE, process_iq_set, 50),
-    ejabberd_hooks:delete(privacy_get_user_list, Host,
+    ejabberd_hooks:delete(privacy_get_user_list, HostB,
 			  ?MODULE, get_user_list, 50),
-    ejabberd_hooks:delete(privacy_check_packet, Host,
+    ejabberd_hooks:delete(privacy_check_packet, HostB,
 			  ?MODULE, check_packet, 50),
-    ejabberd_hooks:delete(privacy_updated_list, Host,
+    ejabberd_hooks:delete(privacy_updated_list, HostB,
 			  ?MODULE, updated_list, 50),
-    ejabberd_hooks:delete(remove_user, Host,
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PRIVACY).
 
-process_iq(_From, _To, IQ) ->
-    SubEl = IQ#iq.sub_el,
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
+process_iq(_From, _To, IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 
-process_iq_get(_, From, _To, #iq{sub_el = SubEl},
+process_iq_get(_, From, _To, #iq{payload = SubEl},
 	       #userlist{name = Active}) ->
-    #jid{luser = LUser, lserver = LServer} = From,
-    {xmlelement, _, _, Els} = SubEl,
-    case xml:remove_cdata(Els) of
+    LUser = exmpp_jid:prep_node_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    case exmpp_xml:get_child_elements(SubEl) of
 	[] ->
 	    process_lists_get(LUser, LServer, Active);
-	[{xmlelement, Name, Attrs, _SubEls}] ->
+	[#xmlel{name = Name} = Child] ->
 	    case Name of
-		"list" ->
-		    ListName = xml:get_attr("name", Attrs),
+		list ->
+		    ListName = exmpp_xml:get_attribute_as_list(Child, name, false),
 		    process_list_get(LUser, LServer, ListName);
 		_ ->
-		    {error, ?ERR_BAD_REQUEST}
+		    {error, 'bad-request'}
 	    end;
 	_ ->
-	    {error, ?ERR_BAD_REQUEST}
+	    {error, 'bad-request'}
     end.
 
 
@@ -110,40 +112,38 @@ process_lists_get(LUser, LServer, Active) ->
 	      end,
     case catch sql_get_privacy_list_names(LUser, LServer) of
 	{selected, ["name"], []} ->
-	    {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+	    {result, #xmlel{ns = ?NS_PRIVACY, name = 'query'}};
 	{selected, ["name"], Names} ->
 	    LItems = lists:map(
 		       fun({N}) ->
-			       {xmlelement, "list",
-				[{"name", N}], []}
+			       exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = list}, name, N)
 		       end, Names),
 	    DItems =
 		case Default of
 		    none ->
 			LItems;
 		    _ ->
-			[{xmlelement, "default",
-			  [{"name", Default}], []} | LItems]
+			[exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = default}, name, Default) | LItems]
 		end,
 	    ADItems =
 		case Active of
 		    none ->
 			DItems;
 		    _ ->
-			[{xmlelement, "active",
-			  [{"name", Active}], []} | DItems]
+			[exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = active}, name, Active) | DItems]
 		end,
-	    {result,
-	     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
-	       ADItems}]};
+		{result, #xmlel{ns = ?NS_PRIVACY, name = 'query', children = ADItems}};
 	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    {error, 'internal-server-error'}
     end.
 
-process_list_get(LUser, LServer, {value, Name}) ->
+process_list_get(_LUser, _LServer, false) ->
+    {error, 'bad-request'};
+
+process_list_get(LUser, LServer, Name) ->
     case catch sql_get_privacy_list_id(LUser, LServer, Name) of
 	{selected, ["id"], []} ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
+	    {error, 'item-not-found'};
 	{selected, ["id"], [{ID}]} ->
 	    case catch sql_get_privacy_list_data_by_id(ID, LServer) of
 		{selected, ["t", "value", "action", "ord", "match_all",
@@ -152,29 +152,29 @@ process_list_get(LUser, LServer, {value, Name}) ->
 		 RItems} ->
 		    Items = lists:map(fun raw_to_item/1, RItems),
 		    LItems = lists:map(fun item_to_xml/1, Items),
-		    {result,
-		     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
-		       [{xmlelement, "list",
-			 [{"name", Name}], LItems}]}]};
-		_ ->
-		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+            ListEl = exmpp_xml:set_attribute(#xmlel{name = list,
+                                                  ns = ?NS_PRIVACY,
+                                                  children = LItems},
+                                           name,
+                                           Name),
+            {result, #xmlel{ns = ?NS_PRIVACY, name = 'query', children = [ListEl]}};
+        _ ->
+		    {error, 'internal-server-error'}
 	    end;
 	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end;
+	    {error, 'internal-server-error'}
+    end.
 
-process_list_get(_LUser, _LServer, false) ->
-    {error, ?ERR_BAD_REQUEST}.
 
 item_to_xml(Item) ->
-    Attrs1 = [{"action", action_to_list(Item#listitem.action)},
-	      {"order", order_to_list(Item#listitem.order)}],
+    Attrs1 = [?XMLATTR('action', action_to_binary(Item#listitem.action)),
+	      ?XMLATTR('order', order_to_binary(Item#listitem.order))],
     Attrs2 = case Item#listitem.type of
 		 none ->
 		     Attrs1;
 		 Type ->
-		     [{"type", type_to_list(Item#listitem.type)},
-		      {"value", value_to_list(Type, Item#listitem.value)} |
+		     [?XMLATTR('type', type_to_binary(Item#listitem.type)),
+		      ?XMLATTR('value', value_to_binary(Type, Item#listitem.value)) |
 		      Attrs1]
 	     end,
     SubEls = case Item#listitem.match_all of
@@ -183,59 +183,61 @@ item_to_xml(Item) ->
 		 false ->
 		     SE1 = case Item#listitem.match_iq of
 			       true ->
-				   [{xmlelement, "iq", [], []}];
+				   [#xmlel{ns = ?NS_PRIVACY, name = iq}];
 			       false ->
 				   []
 			   end,
 		     SE2 = case Item#listitem.match_message of
 			       true ->
-				   [{xmlelement, "message", [], []} | SE1];
+				   [#xmlel{ns = ?NS_PRIVACY, name = message} | SE1];
 			       false ->
 				   SE1
 			   end,
 		     SE3 = case Item#listitem.match_presence_in of
 			       true ->
-				   [{xmlelement, "presence-in", [], []} | SE2];
+				   [#xmlel{ns = ?NS_PRIVACY, name = 'presence-in'} | SE2];
 			       false ->
 				   SE2
 			   end,
 		     SE4 = case Item#listitem.match_presence_out of
 			       true ->
-				   [{xmlelement, "presence-out", [], []} | SE3];
+				   [#xmlel{ns = ?NS_PRIVACY, name = 'presence-out'} | SE3];
 			       false ->
 				   SE3
 			   end,
 		     SE4
 	     end,
-    {xmlelement, "item", Attrs2, SubEls}.
+    exmpp_xml:set_attributes(#xmlel{ns = ?NS_PRIVACY, name = item, children = SubEls}, Attrs2).
 
 
-action_to_list(Action) ->
+action_to_binary(Action) ->
     case Action of
-	allow -> "allow";
-	deny -> "deny"
+	allow -> <<"allow">>;
+	deny -> <<"deny">>
     end.
 
-order_to_list(Order) ->
-    integer_to_list(Order).
+order_to_binary(Order) ->
+    list_to_binary(integer_to_list(Order)).
 
-type_to_list(Type) ->
+type_to_binary(Type) ->
     case Type of
-	jid -> "jid";
-	group -> "group";
-	subscription -> "subscription"
+	jid -> <<"jid">>;
+	group -> <<"group">>;
+	subscription -> <<"subscription">>
     end.
 
-value_to_list(Type, Val) ->
+value_to_binary(Type, Val) ->
     case Type of
-	jid -> jlib:jid_to_string(Val);
+	jid ->
+	    {N, D, R} = Val,
+	    exmpp_jid:to_binary(N, D, R);
 	group -> Val;
 	subscription ->
 	    case Val of
-		both -> "both";
-		to -> "to";
-		from -> "from";
-		none -> "none"
+		both -> <<"both">>;
+		to -> <<"to">>;
+		from -> <<"from">>;
+		none -> <<"none">>
 	    end
     end.
 
@@ -249,40 +251,50 @@ list_to_action(S) ->
 
 
 
-process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
-    #jid{luser = LUser, lserver = LServer} = From,
-    {xmlelement, _, _, Els} = SubEl,
-    case xml:remove_cdata(Els) of
-	[{xmlelement, Name, Attrs, SubEls}] ->
-	    ListName = xml:get_attr("name", Attrs),
+process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
+    LUser = exmpp_jid:prep_node_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    case exmpp_xml:get_child_elements(SubEl) of
+	[#xmlel{name = Name} = Child] ->
+	    ListName = exmpp_xml:get_attribute_as_list(Child, 'name', false),
 	    case Name of
-		"list" ->
+		list ->
 		    process_list_set(LUser, LServer, ListName,
-				     xml:remove_cdata(SubEls));
-		"active" ->
+				     exmpp_xml:get_child_elements(Child));
+		active ->
 		    process_active_set(LUser, LServer, ListName);
-		"default" ->
+		default ->
 		    process_default_set(LUser, LServer, ListName);
 		_ ->
-		    {error, ?ERR_BAD_REQUEST}
+		    {error, 'bad-request'}
 	    end;
 	_ ->
-	    {error, ?ERR_BAD_REQUEST}
+	    {error, 'bad-request'}
     end.
 
 
-process_default_set(LUser, LServer, {value, Name}) ->
+process_default_set(LUser, LServer, false) ->
+    case catch sql_unset_default_privacy_list(LUser, LServer) of
+	{'EXIT', _Reason} ->
+	    {error, 'internal_server_error'};
+	{error, _Reason} ->
+	    {error, 'internal_server_error'};
+	_ ->
+	    {result, []}
+    end;
+
+process_default_set(LUser, LServer, Name) ->
     F = fun() ->
 		case sql_get_privacy_list_names_t(LUser) of
 		    {selected, ["name"], []} ->
-			{error, ?ERR_ITEM_NOT_FOUND};
+			  {error, 'item-not-found'};
 		    {selected, ["name"], Names} ->
-			case lists:member({Name}, Names) of
+			  case lists:member({Name}, Names) of
 			    true ->
 				sql_set_default_privacy_list(LUser, Name),
 				{result, []};
 			    false ->
-				{error, ?ERR_ITEM_NOT_FOUND}
+				{error, 'item-not-found'}
 			end
 		end
 	end,
@@ -292,24 +304,17 @@ process_default_set(LUser, LServer, {value, Name}) ->
 	{atomic, {result, _} = Res} ->
 	    Res;
 	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end;
-
-process_default_set(LUser, LServer, false) ->
-    case catch sql_unset_default_privacy_list(LUser, LServer) of
-	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-	{error, _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-	_ ->
-	    {result, []}
+	    {error, 'internal-server-error'}
     end.
 
 
-process_active_set(LUser, LServer, {value, Name}) ->
+process_active_set(_LUser, _LServer, false) ->
+    {result, [], #userlist{}};
+
+process_active_set(LUser, LServer,  Name) ->
     case catch sql_get_privacy_list_id(LUser, LServer, Name) of
 	{selected, ["id"], []} ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
+	    {error, 'item-not-found'};
 	{selected, ["id"], [{ID}]} ->
 	    case catch sql_get_privacy_list_data_by_id(ID, LServer) of
 		{selected, ["t", "value", "action", "ord", "match_all",
@@ -320,24 +325,21 @@ process_active_set(LUser, LServer, {value, Name}) ->
 		    NeedDb = is_list_needdb(Items),
 		    {result, [], #userlist{name = Name, list = Items, needdb = NeedDb}};
 		_ ->
-		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+		    {error, 'internal-server-error'}
 	    end;
 	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end;
-
-process_active_set(_LUser, _LServer, false) ->
-    {result, [], #userlist{}}.
+	    {error, 'internal_server_error'}
+    end.
 
 
 
+process_list_set(_LUser, _LServer, false, _Els) ->
+    {error, 'bad-request'};
 
-
-
-process_list_set(LUser, LServer, {value, Name}, Els) ->
+process_list_set(LUser, LServer, Name, Els) ->
     case parse_items(Els) of
 	false ->
-	    {error, ?ERR_BAD_REQUEST};
+	    {error, 'bad-request'};
 	remove ->
 	    F =
 		fun() ->
@@ -346,10 +348,10 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 				sql_remove_privacy_list(LUser, Name),
 				{result, []};
 			    {selected, ["name"], [{Default}]} ->
-				%% TODO: check active
+				% TODO: check active
 				if
 				    Name == Default ->
-					{error, ?ERR_CONFLICT};
+					{error, 'conflict'};
 				    true ->
 					sql_remove_privacy_list(LUser, Name),
 					{result, []}
@@ -361,15 +363,15 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      jlib:make_jid(LUser, LServer, ""),
-		      jlib:make_jid(LUser, LServer, ""),
-		      {xmlelement, "broadcast", [],
-		       [{privacy_list,
-			 #userlist{name = Name, list = []},
-			 Name}]}),
+		      exmpp_jid:make(LUser, LServer),
+		      exmpp_jid:make(LUser, LServer),
+		      #xmlel{name = 'broadcast', 
+			children=[{privacy_list,
+				   #userlist{name = Name, list = []},
+					     Name}]}),
 		    Res;
 		_ ->
-		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+		    {error, 'internal-server-error'}
 	    end;
 	List ->
 	    RItems = lists:map(fun item_to_raw/1, List),
@@ -393,20 +395,18 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      jlib:make_jid(LUser, LServer, ""),
-		      jlib:make_jid(LUser, LServer, ""),
-		      {xmlelement, "broadcast", [],
-		       [{privacy_list,
-			 #userlist{name = Name, list = List},
-			 Name}]}),
+		      exmpp_jid:make(LUser, LServer),
+		      exmpp_jid:make(LUser, LServer),
+		      #xmlel{name = 'broadcast', 
+			children=[{privacy_list,
+				   #userlist{name = Name, list = List},
+					     Name}]}),
 		    Res;
 		_ ->
-		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+		    {error, 'internal_server_error'}
 	    end
-    end;
+    end.
 
-process_list_set(_LUser, _LServer, false, _Els) ->
-    {error, ?ERR_BAD_REQUEST}.
 
 
 parse_items([]) ->
@@ -417,16 +417,16 @@ parse_items(Els) ->
 parse_items([], Res) ->
     %% Sort the items by their 'order' attribute
     lists:keysort(#listitem.order, Res);
-parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
-    Type   = xml:get_attr("type",   Attrs),
-    Value  = xml:get_attr("value",  Attrs),
-    SAction = xml:get_attr("action", Attrs),
-    SOrder = xml:get_attr("order",  Attrs),
-    Action = case catch list_to_action(element(2, SAction)) of
+parse_items([El = #xmlel{name = item} | Els], Res) ->
+    Type   = exmpp_xml:get_attribute_as_list(El, type, false),
+    Value  = exmpp_xml:get_attribute_as_list(El, value, false),
+    SAction =exmpp_xml:get_attribute_as_list(El, action, false),
+    SOrder = exmpp_xml:get_attribute_as_list(El, order, false),
+    Action = case catch list_to_action(SAction) of
 		 {'EXIT', _} -> false;
 		 Val -> Val
 	     end,
-    Order = case catch list_to_integer(element(2, SOrder)) of
+    Order = case catch list_to_integer(SOrder) of
 		{'EXIT', _} ->
 		    false;
 		IntVal ->
@@ -441,16 +441,17 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 	(Action /= false) and (Order /= false) ->
 	    I1 = #listitem{action = Action, order = Order},
 	    I2 = case {Type, Value} of
-		     {{value, T}, {value, V}} ->
+		     {T,  V} when is_list(T), is_list(V) ->
 			 case T of
 			     "jid" ->
-				 case jlib:string_to_jid(V) of
-				     error ->
-					 false;
-				     JID ->
-					 I1#listitem{
-					   type = jid,
-					   value = jlib:jid_tolower(JID)}
+				 try
+				     JID = exmpp_jid:parse(V),
+				     I1#listitem{
+				       type = jid,
+				       value = jlib:short_prepd_jid(JID)}
+				 catch
+				     _ ->
+					 false
 				 end;
 			     "group" ->
 				 I1#listitem{type = group,
@@ -473,7 +474,7 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 					 false
 				 end
 			 end;
-		     {{value, _}, false} ->
+		     {T, false} when is_list(T) ->
 			 false;
 		     _ ->
 			 I1
@@ -482,7 +483,7 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 		false ->
 		    false;
 		_ ->
-		    case parse_matches(I2, xml:remove_cdata(SubEls)) of
+		    case parse_matches(I2, exmpp_xml:get_child_elements(El)) of
 			false ->
 			    false;
 			I3 ->
@@ -504,15 +505,15 @@ parse_matches(Item, Els) ->
 
 parse_matches1(Item, []) ->
     Item;
-parse_matches1(Item, [{xmlelement, "message", _, _} | Els]) ->
+parse_matches1(Item, [#xmlel{name = message} | Els]) ->
     parse_matches1(Item#listitem{match_message = true}, Els);
-parse_matches1(Item, [{xmlelement, "iq", _, _} | Els]) ->
+parse_matches1(Item, [#xmlel{name = iq} | Els]) ->
     parse_matches1(Item#listitem{match_iq = true}, Els);
-parse_matches1(Item, [{xmlelement, "presence-in", _, _} | Els]) ->
+parse_matches1(Item, [#xmlel{name = 'presence-in'} | Els]) ->
     parse_matches1(Item#listitem{match_presence_in = true}, Els);
-parse_matches1(Item, [{xmlelement, "presence-out", _, _} | Els]) ->
+parse_matches1(Item, [#xmlel{name = 'presence-out'} | Els]) ->
     parse_matches1(Item#listitem{match_presence_out = true}, Els);
-parse_matches1(_Item, [{xmlelement, _, _, _} | _Els]) ->
+parse_matches1(_Item, [#xmlel{} | _Els]) ->
     false.
 
 
@@ -529,25 +530,30 @@ is_list_needdb(Items) ->
 	      end
       end, Items).
 
-get_user_list(_, User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-
-    case catch sql_get_default_privacy_list(LUser, LServer) of
-	{selected, ["name"], []} ->
-	    #userlist{};
-	{selected, ["name"], [{Default}]} ->
-	    case catch sql_get_privacy_list_data(LUser, LServer, Default) of
-		{selected, ["t", "value", "action", "ord", "match_all",
-			    "match_iq", "match_message",
-			    "match_presence_in", "match_presence_out"],
-		 RItems} ->
-		    Items = lists:map(fun raw_to_item/1, RItems),
-		    NeedDb = is_list_needdb(Items),
-		    #userlist{name = Default, list = Items, needdb = NeedDb};
-		_ ->
-		    #userlist{}
-	    end;
+get_user_list(_, User, Server)
+        when is_binary(User), is_binary(Server) ->
+    try
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
+	case catch sql_get_default_privacy_list(LUser, LServer) of
+	    {selected, ["name"], []} ->
+		#userlist{};
+	    {selected, ["name"], [{Default}]} ->
+		case catch sql_get_privacy_list_data(LUser, LServer, Default) of
+		    {selected, ["t", "value", "action", "ord", "match_all",
+				"match_iq", "match_message",
+				"match_presence_in", "match_presence_out"],
+		     RItems} ->
+			Items = lists:map(fun raw_to_item/1, RItems),
+		        NeedDb = is_list_needdb(Items),
+			#userlist{name = Default, list = Items, needdb = NeedDb};
+		    _ ->
+			#userlist{}
+		end;
+	    _ ->
+		#userlist{}
+	end
+    catch
 	_ ->
 	    #userlist{}
     end.
@@ -555,47 +561,45 @@ get_user_list(_, User, Server) ->
 
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
-	     {From, To, {xmlelement, PName, _, _}},
-	     Dir) ->
+	     {From, To, #xmlel{name = PName}},
+	     Dir) when 
+               PName =:= message ; 
+		       PName =:= iq ;
+		       PName =:= presence ->
     case List of
 	[] ->
 	    allow;
 	_ ->
-	    PType = case PName of
-			"message" -> message;
-			"iq" -> iq;
-			"presence" -> presence
-		    end,
-	    case {PType, Dir} of
+	    case {PName, Dir} of
 		{message, in} ->
-		    LJID = jlib:jid_tolower(From),
+		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
 			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, LJID]);
 			    false -> {[], []}
 			end,
 		    check_packet_aux(List, message,
 				     LJID, Subscription, Groups);
 		{iq, in} ->
-		    LJID = jlib:jid_tolower(From),
+		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
 			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, LJID]);
 			    false -> {[], []}
 			end,
 		    check_packet_aux(List, iq,
 				     LJID, Subscription, Groups);
 		{presence, in} ->
-		    LJID = jlib:jid_tolower(From),
+		    LJID = jlib:short_prepd_jid(From),
 		    {Subscription, Groups} =
 			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, Server, {none, []}, [User, Server, LJID]);
 			    false -> {[], []}
 			end,
 		    check_packet_aux(List, presence_in,
 				     LJID, Subscription, Groups);
 		{presence, out} ->
-		    LJID = jlib:jid_tolower(To),
+		    LJID = jlib:short_prepd_jid(To),
 		    {Subscription, Groups} =
 			case NeedDb of
 			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
@@ -650,27 +654,14 @@ is_ptype_match(Item, PType) ->
     end.
 
 
+%% TODO: Investigate this: sometimes Value has binaries, other times has strings
 is_type_match(Type, Value, JID, Subscription, Groups) ->
     case Type of
 	jid ->
-	    case Value of
-		{"", Server, ""} ->
-		    case JID of
-			{_, Server, _} ->
-			    true;
-			_ ->
-			    false
-		    end;
-		{User, Server, ""} ->
-		    case JID of
-			{User, Server, _} ->
-			    true;
-			_ ->
-			    false
-		    end;
-		_ ->
-		    Value == JID
-	    end;
+		{User, Server, Resource} = Value,
+		    ((User == undefined) orelse (User == []) orelse (User == exmpp_jid:prep_node(JID)))
+		    andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:prep_domain(JID)))
+		    andalso ((Resource == undefined) orelse (Resource == []) orelse (Resource == exmpp_jid:prep_resource(JID)));
 	subscription ->
 	    Value == Subscription;
 	group ->
@@ -679,9 +670,9 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
 
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    sql_del_privacy_lists(LUser, LServer).
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
+    sql_del_privacy_lists(binary_to_list(LUser), binary_to_list(LServer)).
 
 
 updated_list(_,
@@ -702,10 +693,8 @@ raw_to_item({SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
 	    "n" ->
 		{none, none};
 	    "j" ->
-		case jlib:string_to_jid(SValue) of
-		    #jid{} = JID ->
-			{jid, jlib:jid_tolower(JID)}
-		end;
+		JID = exmpp_jid:parse(SValue),
+		{jid, jlib:short_prepd_jid(JID)};
 	    "g" ->
 		{group, SValue};
 	    "s" ->
@@ -757,7 +746,8 @@ item_to_raw(#listitem{type = Type,
 	    none ->
 		{"n", ""};
 	    jid ->
-		{"j", jlib:jid_to_string(Value)};
+		{N0, D0, R0} = Value,
+		{"j", exmpp_jid:to_list(N0, D0, R0)};
 	    group ->
 		{"g", Value};
 	    subscription ->

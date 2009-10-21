@@ -51,8 +51,9 @@
 	 add_user_to_group/3,
 	 remove_user_from_group/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_roster.hrl").
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
@@ -61,6 +62,7 @@
 -record(sr_user, {us, group_host}).
 
 start(Host, _Opts) ->
+    HostB = list_to_binary(Host),
     mnesia:create_table(sr_group,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, sr_group)}]),
@@ -69,51 +71,52 @@ start(Host, _Opts) ->
 			 {type, bag},
 			 {attributes, record_info(fields, sr_user)}]),
     mnesia:add_table_index(sr_user, group_host),
-    ejabberd_hooks:add(webadmin_menu_host, Host,
+    ejabberd_hooks:add(webadmin_menu_host, HostB,
 		       ?MODULE, webadmin_menu, 70),
-    ejabberd_hooks:add(webadmin_page_host, Host,
+    ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:add(roster_get, Host,
+    ejabberd_hooks:add(roster_get, HostB,
 		       ?MODULE, get_user_roster, 70),
-    ejabberd_hooks:add(roster_in_subscription, Host,
+    ejabberd_hooks:add(roster_in_subscription, HostB,
         	       ?MODULE, in_subscription, 30),
-    ejabberd_hooks:add(roster_out_subscription, Host,
+    ejabberd_hooks:add(roster_out_subscription, HostB,
         	       ?MODULE, out_subscription, 30),
-    ejabberd_hooks:add(roster_get_subscription_lists, Host,
+    ejabberd_hooks:add(roster_get_subscription_lists, HostB,
 		       ?MODULE, get_subscription_lists, 70),
-    ejabberd_hooks:add(roster_get_jid_info, Host,
+    ejabberd_hooks:add(roster_get_jid_info, HostB,
         	       ?MODULE, get_jid_info, 70),
-    ejabberd_hooks:add(roster_process_item, Host,
+    ejabberd_hooks:add(roster_process_item, HostB,
 		       ?MODULE, process_item, 50),
-    ejabberd_hooks:add(register_user, Host,
+    ejabberd_hooks:add(register_user, HostB,
 		       ?MODULE, register_user, 50),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50).
-%%ejabberd_hooks:add(remove_user, Host,
+%%ejabberd_hooks:add(remove_user, HostB,
 %%    	       ?MODULE, remove_user, 50),
 
 stop(Host) ->
-    ejabberd_hooks:delete(webadmin_menu_host, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(webadmin_menu_host, HostB,
 			  ?MODULE, webadmin_menu, 70),
-    ejabberd_hooks:delete(webadmin_page_host, Host,
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:delete(roster_get, Host,
+    ejabberd_hooks:delete(roster_get, HostB,
 			  ?MODULE, get_user_roster, 70),
-    ejabberd_hooks:delete(roster_in_subscription, Host,
+    ejabberd_hooks:delete(roster_in_subscription, HostB,
         		  ?MODULE, in_subscription, 30),
-    ejabberd_hooks:delete(roster_out_subscription, Host,
+    ejabberd_hooks:delete(roster_out_subscription, HostB,
         		  ?MODULE, out_subscription, 30),
-    ejabberd_hooks:delete(roster_get_subscription_lists, Host,
+    ejabberd_hooks:delete(roster_get_subscription_lists, HostB,
         		  ?MODULE, get_subscription_lists, 70),
-    ejabberd_hooks:delete(roster_get_jid_info, Host,
+    ejabberd_hooks:delete(roster_get_jid_info, HostB,
         		  ?MODULE, get_jid_info, 70),
-    ejabberd_hooks:delete(roster_process_item, Host,
+    ejabberd_hooks:delete(roster_process_item, HostB,
 			  ?MODULE, process_item, 50),
-    ejabberd_hooks:delete(register_user, Host,
+    ejabberd_hooks:delete(register_user, HostB,
 			  ?MODULE, register_user, 50),
-    ejabberd_hooks:delete(remove_user, Host,
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50).
-%%ejabberd_hooks:delete(remove_user, Host,
+%%ejabberd_hooks:delete(remove_user, HostB,
 %%    		  ?MODULE, remove_user, 50),
 
 
@@ -151,9 +154,9 @@ get_user_roster(Items, US) ->
 	  end, SRUsers, Items),
 
     %% Export items in roster format:
-    SRItems = [#roster{usj = {U, S, {U1, S1, ""}},
+    SRItems = [#roster{usj = {U, S, {U1, S1, undefined}},
 		       us = US,
-		       jid = {U1, S1, ""},
+		       jid = {U1, S1, undefined},
 		       name = "",
 		       subscription = both,
 		       ask = none,
@@ -196,12 +199,12 @@ process_item(RosterItem, Host) ->
 
                     %% Remove pending out subscription
                     Mod:out_subscription(UserTo, ServerTo,
-                                         jlib:make_jid(UserFrom, ServerFrom, ""),
+                                         exmpp_jid:make(UserFrom, ServerFrom),
                                          unsubscribe),
 
                     %% Remove pending in subscription
                     Mod:in_subscription(aaaa, UserFrom, ServerFrom,
-                                        jlib:make_jid(UserTo, ServerTo, ""),
+                                        exmpp_jid:make(UserTo, ServerTo),
                                         unsubscribe, ""),
 
                     %% But we're still subscribed, so respond as such.
@@ -217,7 +220,7 @@ process_item(RosterItem, Host) ->
     end.
 
 build_roster_record(User1, Server1, User2, Server2, Name2, Groups) ->
-    USR2 = {User2, Server2, ""},
+    USR2 = {User2, Server2, undefined},
     #roster{usj = {User1, Server1, USR2},
 	    us = {User1, Server1},
 	    jid = USR2,
@@ -234,12 +237,12 @@ set_new_rosteritems(UserFrom, ServerFrom,
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
-    JIDTo = jlib:make_jid(UserTo, ServerTo, ""),
+    JIDTo = exmpp_jid:make(UserTo, ServerTo),
 
-    JIDFrom = jlib:make_jid(UserFrom, ServerFrom, ""),
+    JIDFrom = exmpp_jid:make(UserFrom, ServerFrom),
     RITo = build_roster_record(UserTo, ServerTo,
 			       UserFrom, ServerFrom, UserFrom,[]),
-    set_item(UserTo, ServerTo, "", RITo),
+    set_item(UserTo, ServerTo, undefined, RITo),
 
     %% From requests
     Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribe),
@@ -260,56 +263,67 @@ set_new_rosteritems(UserFrom, ServerFrom,
     RIFrom.
 
 set_item(User, Server, Resource, Item) ->
-    ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
-		id = "push" ++ randoms:get_string(),
-		sub_el = [{xmlelement, "query",
-			   [{"xmlns", ?NS_ROSTER}],
-			   [mod_roster:item_to_xml(Item)]}]},
+    Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
+      children = [mod_roster:item_to_xml(Item)]},
+    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
+      "push" ++ randoms:get_string()),
     ejabberd_router:route(
-      jlib:make_jid(User, Server, Resource),
-      jlib:make_jid("", Server, ""),
-      jlib:iq_to_xml(ResIQ)).
+      exmpp_jid:make(User, Server, Resource),
+      exmpp_jid:make(Server),
+      ResIQ).
 
 
-get_subscription_lists({F, T}, User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers =
-	lists:usort(
-	  lists:flatmap(
-	    fun(Group) ->
-		    get_group_users(LServer, Group)
-	    end, DisplayedGroups)),
-    SRJIDs = [{U1, S1, ""} || {U1, S1} <- SRUsers],
-    {lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}.
+get_subscription_lists({F, T}, User, Server)
+        when is_binary(User), is_binary(Server) ->
+    try
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
+	US = {LUser, LServer},
+	DisplayedGroups = get_user_displayed_groups(US),
+	SRUsers =
+	    lists:usort(
+	      lists:flatmap(
+		fun(Group) ->
+			get_group_users(LServer, Group)
+		end, DisplayedGroups)),
+	SRJIDs = [{U1, S1, undefined} || {U1, S1} <- SRUsers],
+	{lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}
+    catch
+	_ ->
+	    {[], []}
+    end.
 
-get_jid_info({Subscription, Groups}, User, Server, JID) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    {U1, S1, _} = jlib:jid_tolower(JID),
-    US1 = {U1, S1},
-    DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = 
-	lists:foldl(
-	  fun(Group, Acc1) ->
-		  lists:foldl(
-		    fun(User1, Acc2) ->
-			    dict:append(
-			      User1, get_group_name(LServer, Group), Acc2)
-		    end, Acc1, get_group_users(LServer, Group))
-	  end, dict:new(), DisplayedGroups),
-    case dict:find(US1, SRUsers) of
-	{ok, GroupNames} ->
-	    NewGroups = if
-			    Groups == [] -> GroupNames;
-			    true -> Groups
-			end,
-	    {both, NewGroups};
-	error ->
-	    {Subscription, Groups}
+get_jid_info({Subscription, Groups}, User, Server, JID)
+        when is_binary(User), is_binary(Server) ->
+    try
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
+	US = {LUser, LServer},
+	{U1, S1, _} = jlib:short_prepd_jid(JID),
+	US1 = {U1, S1},
+	DisplayedGroups = get_user_displayed_groups(US),
+	SRUsers = 
+	    lists:foldl(
+	      fun(Group, Acc1) ->
+		      lists:foldl(
+			fun(User1, Acc2) ->
+				dict:append(
+				  User1, get_group_name(LServer, Group), Acc2)
+			end, Acc1, get_group_users(LServer, Group))
+	      end, dict:new(), DisplayedGroups),
+	case dict:find(US1, SRUsers) of
+	    {ok, GroupNames} ->
+		NewGroups = if
+				Groups == [] -> GroupNames;
+				true -> Groups
+			    end,
+		{both, NewGroups};
+	    error ->
+		{Subscription, Groups}
+	end
+    catch
+	_ ->
+	    {[], []}
     end.
 
 in_subscription(Acc, User, Server, JID, Type, _Reason) ->
@@ -319,8 +333,8 @@ out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
     Mod = get_roster_mod(ServerFrom),
 
     %% Remove pending out subscription
-    #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
-    JIDFrom = jlib:make_jid(UserFrom, UserTo, ""),
+    {UserTo, ServerTo, _} = jlib:short_prepd_bare_jid(JIDTo),
+    JIDFrom = exmpp_jid:make(UserFrom, UserTo),
     Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
 
     %% Remove pending in subscription
@@ -331,27 +345,32 @@ out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, false).
 
 process_subscription(Direction, User, Server, JID, _Type, Acc) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    {U1, S1, _} = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
-    US1 = {U1, S1},
-    DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers =
-	lists:usort(
-	  lists:flatmap(
-	    fun(Group) ->
-		    get_group_users(LServer, Group)
-	    end, DisplayedGroups)),
-    case lists:member(US1, SRUsers) of
-	true ->
-	    case Direction of
-		in ->
-		    {stop, false};
-		out ->
-		    stop
-	    end;
-	false ->
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	{U1, S1, _} = jlib:short_prepd_bare_jid(JID),
+	US1 = {U1, S1},
+	DisplayedGroups = get_user_displayed_groups(US),
+	SRUsers =
+	    lists:usort(
+	      lists:flatmap(
+		fun(Group) ->
+			get_group_users(LServer, Group)
+		end, DisplayedGroups)),
+	case lists:member(US1, SRUsers) of
+	    true ->
+		case Direction of
+		    in ->
+			{stop, false};
+		    out ->
+			stop
+		end;
+	    false ->
+		Acc
+	end
+    catch
+	_ ->
 	    Acc
     end.
 
@@ -542,8 +561,8 @@ is_user_in_group({_U, S} = US, Group, Host) ->
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
 add_user_to_group(Host, US, Group) ->
     {LUser, LServer} = US,
-    case regexp:match(LUser, "^@.+@$") of
-	{match,_,_} ->
+    case re:run(LUser, "^@.+@$", [{capture, none}]) of
+	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	    AllUsersOpt =
 		case LUser == "@all@" of
@@ -574,8 +593,8 @@ push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
 remove_user_from_group(Host, US, Group) ->
     GroupHost = {Group, Host},
     {LUser, LServer} = US,
-    case regexp:match(LUser, "^@.+@$") of
-	{match,_,_} ->
+    case re:run(LUser, "^@.+@$", [{capture, none}]) of
+	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	    NewGroupOpts =
 		case LUser of
@@ -617,20 +636,25 @@ remove_user(User, Server) ->
     push_user_to_members(User, Server, remove).
 
 push_user_to_members(User, Server, Subscription) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    GroupsOpts = groups_with_opts(LServer),
-    SpecialGroups = get_special_displayed_groups(GroupsOpts),
-    UserGroups = get_user_displayed_groups(LUser, LServer, GroupsOpts),
-    lists:foreach(
-      fun(Group) ->
-	      GroupOpts = proplists:get_value(Group, GroupsOpts, []),
-	      GroupName = proplists:get_value(name, GroupOpts, Group),
-	      lists:foreach(
-		fun({U, S}) ->
-			push_roster_item(U, S, LUser, LServer, GroupName, Subscription)
-		end, get_group_users(LUser, LServer, Group, GroupOpts))
-      end, lists:usort(SpecialGroups++UserGroups)).
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	GroupsOpts = groups_with_opts(LServer),
+	SpecialGroups = get_special_displayed_groups(GroupsOpts),
+	UserGroups = get_user_displayed_groups(LUser, LServer, GroupsOpts),
+	lists:foreach(
+	  fun(Group) ->
+		  GroupOpts = proplists:get_value(Group, GroupsOpts, []),
+		  GroupName = proplists:get_value(name, GroupOpts, Group),
+		  lists:foreach(
+		    fun({U, S}) ->
+                            push_roster_item(U, S, LUser, LServer, GroupName, Subscription)
+		    end, get_group_users(LUser, LServer, Group, GroupOpts))
+	  end, lists:usort(SpecialGroups++UserGroups))
+    catch
+	_ ->
+	    ok
+    end.
 
 push_user_to_displayed(LUser, LServer, Group, Subscription) ->
     GroupsOpts = groups_with_opts(LServer),
@@ -660,22 +684,20 @@ push_item(User, Server, From, Item) ->
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
     %%                    jlib:make_jid(User, Server, "")
     %% why?
-    ejabberd_sm:route(From, jlib:make_jid(User, Server, ""),
-		      {xmlelement, "broadcast", [],
-		       [{item,
-			 Item#roster.jid,
+    ejabberd_sm:route(From, exmpp_jid:make(User, Server),
+		      #xmlel{name = 'broadcast', children =
+                       [{item,
+                         Item#roster.jid,
 			 Item#roster.subscription}]}),
-    Stanza = jlib:iq_to_xml(
-	       #iq{type = set, xmlns = ?NS_ROSTER,
-		   id = "push" ++ randoms:get_string(),
-		   sub_el = [{xmlelement, "query",
-			      [{"xmlns", ?NS_ROSTER}],
-			      [item_to_xml(Item)]}]}),
+    Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
+      children = [item_to_xml(Item)]},
+    Stanza = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
+      "push" ++ randoms:get_string()),
     lists:foreach(
       fun(Resource) ->
-	      JID = jlib:make_jid(User, Server, Resource),
+	      JID = exmpp_jid:make(User, Server, Resource),
 	      ejabberd_router:route(JID, JID, Stanza)
-      end, ejabberd_sm:get_user_resources(User, Server)).
+      end, ejabberd_sm:get_user_resources(list_to_binary(User), list_to_binary(Server))).
 
 push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
     Item = #roster{usj = {User, Server, {ContactU, ContactS, ""}},
@@ -685,41 +707,36 @@ push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
 		   subscription = Subscription,
 		   ask = none,
 		   groups = [GroupName]},
-    push_item(User, Server, jlib:make_jid("", Server, ""), Item).
+    push_item(User, Server, exmpp_jid:make(Server), Item).
 
 item_to_xml(Item) ->
-    Attrs1 = [{"jid", jlib:jid_to_string(Item#roster.jid)}],
+    {U, S, R} = Item#roster.jid,
+    Attrs1 = exmpp_xml:set_attribute_in_list([],
+      'jid', exmpp_jid:to_list(U, S, R)),
     Attrs2 = case Item#roster.name of
 		 "" ->
 		     Attrs1;
 		 Name ->
-		     [{"name", Name} | Attrs1]
+		     exmpp_xml:set_attribute_in_list(Attrs1, 'name', Name)
 	     end,
-    Attrs3 = case Item#roster.subscription of
-		 none ->
-		     [{"subscription", "none"} | Attrs2];
-		 from ->
-		     [{"subscription", "from"} | Attrs2];
-		 to ->
-		     [{"subscription", "to"} | Attrs2];
-		 both ->
-		     [{"subscription", "both"} | Attrs2];
-		 remove ->
-		     [{"subscription", "remove"} | Attrs2]
-	     end,
+    Attrs3 = exmpp_xml:set_attribute_in_list(Attrs2,
+      'subscription', Item#roster.subscription),
     Attrs4 = case ask_to_pending(Item#roster.ask) of
 		 out ->
-		     [{"ask", "subscribe"} | Attrs3];
+		     exmpp_xml:set_attribute_in_list(Attrs3,
+		       'ask', "subscribe");
 		 both ->
-		     [{"ask", "subscribe"} | Attrs3];
+		     exmpp_xml:set_attribute_in_list(Attrs3,
+		       'ask', "subscribe");
 		 _ ->
 		     Attrs3
 	     end,
     SubEls1 = lists:map(fun(G) ->
-				{xmlelement, "group", [], [{xmlcdata, G}]}
+				exmpp_xml:set_cdata(
+				  #xmlel{ns = ?NS_ROSTER, name = 'group'}, G)
 			end, Item#roster.groups),
     SubEls = SubEls1 ++ Item#roster.xs,
-    {xmlelement, "item", Attrs4, SubEls}.
+    #xmlel{ns = ?NS_ROSTER, name = 'item', attrs = Attrs4, children = SubEls}.
 
 ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;
@@ -779,7 +796,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 	      [FGroups,
 	       ?BR,
 	       ?INPUTT("submit", "delete", "Delete Selected")
@@ -839,9 +856,9 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		[]
 	end ++ [[us_to_list(Member), $\n] || Member <- Members],
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
-    DescNL = length(element(2, regexp:split(Description, "\n"))),
+    DescNL = length(re:split(Description, "\n", [{return, list}])),
     FGroup =
-	?XAE("table", [{"class", "withtextareas"}],
+	?XAE("table", [?XMLATTR('class', <<"withtextareas">>)],
 	     [?XE("tbody",
 		  [?XE("tr",
 		       [?XCT("td", "Name:"),
@@ -880,7 +897,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 	      [FGroup,
 	       ?BR,
 	       ?INPUTT("submit", "submit", "Submit")
@@ -922,10 +939,11 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 			      "@all@" ->
 				  USs;
 			      _ ->
-				  case jlib:string_to_jid(SJID) of
-				      JID when is_record(JID, jid) ->
-					  [{JID#jid.luser, JID#jid.lserver} | USs];
-				      error ->
+				  try
+				      JID = exmpp_jid:parse(SJID),
+				      [{exmpp_jid:prep_node_as_list(JID), exmpp_jid:prep_domain_as_list(JID)} | USs]
+				  catch
+				      _ ->
 					  error
 				  end
 			  end
@@ -978,4 +996,4 @@ get_opt(Opts, Opt, Default) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    exmpp_jid:bare_to_list(User, Server).

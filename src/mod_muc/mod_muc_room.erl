@@ -46,9 +46,11 @@
 	 terminate/3,
 	 code_change/4]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_muc_room.hrl").
+-include("jlib.hrl"). %% Used for captcha
 
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
@@ -74,6 +76,12 @@
 	  Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
 		       Creator, Nick, DefRoomOpts])).
 -endif.
+
+
+-define(ERR(Packet,Type, Lang, ErrText),
+    exmpp_stanza:error(Packet#xmlel.ns,
+                                   Type,
+                                   {Lang, translate:translate(Lang, ErrText)})).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -119,12 +127,12 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 				   access = Access,
 				   room = Room,
 				   history = lqueue_new(HistorySize),
-				   jid = jlib:make_jid(Room, Host, ""),
+				   jid = exmpp_jid:make(Room, Host),
 				   just_created = true,
 				   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
-	      [Room, Host, jlib:jid_to_string(Creator)]),
+	      [Room, Host, exmpp_jid:to_binary(Creator)]),
     {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     process_flag(trap_exit, true),
@@ -134,7 +142,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 				  access = Access,
 				  room = Room,
 				  history = lqueue_new(HistorySize),
-				  jid = jlib:make_jid(Room, Host, ""),
+				  jid = exmpp_jid:make(Room, Host),
 				  room_shaper = Shaper}),
     {ok, normal_state, State}.
 
@@ -144,32 +152,33 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
-normal_state({route, From, "",
-	      {xmlelement, "message", Attrs, Els} = Packet},
+normal_state({route, From, undefined,
+	      #xmlel{name = 'message'} = Packet},
 	     StateData) ->
-    Lang = xml:get_attr_s("xml:lang", Attrs),
+    Lang = exmpp_stanza:get_lang(Packet),
     case is_user_online(From, StateData) orelse
 	is_user_allowed_message_nonparticipant(From, StateData) of
 	true ->
-	    case xml:get_attr_s("type", Attrs) of
-		"groupchat" ->
+	    case exmpp_message:get_type(Packet) of
+		groupchat ->
 		    Activity = get_user_activity(From, StateData),
 		    Now = now_to_usec(now()),
 		    MinMessageInterval =
 			trunc(gen_mod:get_module_opt(
 				StateData#state.server_host,
 				mod_muc, min_message_interval, 0) * 1000000),
-		    Size = lists:flatlength(xml:element_to_string(Packet)),
+		    Size = erlang:iolist_size(exmpp_xml:document_to_iolist(Packet)),
 		    {MessageShaper, MessageShaperInterval} =
 			shaper:update(Activity#activity.message_shaper, Size),
 		    if
 			Activity#activity.message /= undefined ->
 			    ErrText = "Traffic rate limit is exceeded",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
+			    Err = exmpp_stanza:error(Packet#xmlel.ns,
+			      'resource-constraint',
+			      {Lang, translate:translate(Lang, ErrText)}),
 			    ejabberd_router:route(
 			      StateData#state.jid,
-			      From, Err),
+			      From, exmpp_stanza:reply_with_error(Packet, Err)),
 			    {next_state, normal_state, StateData};
 			Now >= Activity#activity.message_time + MinMessageInterval,
 			MessageShaperInterval == 0 ->
@@ -233,7 +242,7 @@ normal_state({route, From, "",
 				  From, NewActivity, StateData),
 			    {next_state, normal_state, StateData1}
 		    end;
-		"error" ->
+		error ->
 		    case is_user_online(From, StateData) of
 			true ->
 			    ErrorText = "This participant is kicked from the room because "
@@ -244,19 +253,23 @@ normal_state({route, From, "",
 			_ ->
 			    {next_state, normal_state, StateData}
 		    end;
-		"chat" ->
+		chat ->
 		    ErrText = "It is not allowed to send private messages to the conference",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    Err = exmpp_stanza:error(Packet#xmlel.ns,
+		      'not-acceptable',
+		      {Lang, translate:translate(Lang, ErrText)}),
 		    ejabberd_router:route(
 		      StateData#state.jid,
-		      From, Err),
+		      From, exmpp_stanza:reply_with_error(Packet, Err)),
 		    {next_state, normal_state, StateData};
-		Type when (Type == "") or (Type == "normal") ->
-		    case catch check_invitation(From, Els, Lang, StateData) of
+        %%TODO: currently exmpp_message:get_type/1 never returns 'undefined'
+		Type when (Type == 'normal') orelse (Type == 'undefined') ->
+		    case catch check_invitation(From, 
+			  exmpp_xml:get_child_elements(Packet), 
+			  Lang, 
+			  StateData) of
 			{error, Error} ->
-			    Err = jlib:make_error_reply(
-				    Packet, Error),
+			    Err = exmpp_stanza:reply_with_error(Packet, Error),
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From, Err),
@@ -291,28 +304,29 @@ normal_state({route, From, "",
 		    end;
 		_ ->
 		    ErrText = "Improper message type",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    Err = exmpp_stanza:error(Packet#xmlel.ns,
+		      'not-acceptable',
+		      {Lang, translate:translate(Lang, ErrText)}),
 		    ejabberd_router:route(
 		      StateData#state.jid,
-		      From, Err),
+		      From, exmpp_stanza:reply_with_error(Packet, Err)),
 		    {next_state, normal_state, StateData}
 	    end;
 	_ ->
-	    case xml:get_attr_s("type", Attrs) of
-		"error" ->
+	    case exmpp_stanza:is_stanza_error(Packet) of
+		true ->
 		    ok;
-		_ ->
+		false ->
 		    handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From)
 	    end,
 	    {next_state, normal_state, StateData}
     end;
 
-normal_state({route, From, "",
-	      {xmlelement, "iq", _Attrs, _Els} = Packet},
+normal_state({route, From, undefined,
+	      #xmlel{name = 'iq'} = Packet},
 	     StateData) ->
-    case jlib:iq_query_info(Packet) of
-	#iq{type = Type, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ when
+    case exmpp_iq:xmlel_to_iq(Packet) of
+	#iq{type = Type, ns = XMLNS, lang = Lang, payload = SubEl} = IQ when
 	      (XMLNS == ?NS_MUC_ADMIN) or
 	      (XMLNS == ?NS_MUC_OWNER) or
 	      (XMLNS == ?NS_DISCO_INFO) or
@@ -332,21 +346,18 @@ normal_state({route, From, "",
 		   end,
 	    {IQRes, NewStateData} =
 		case Res1 of
+		    {result, [], SD} ->
+			{exmpp_iq:result(IQ), SD};
 		    {result, Res, SD} ->
-			{IQ#iq{type = result,
-			       sub_el = [{xmlelement, "query",
-					  [{"xmlns", XMLNS}],
-					  Res
-					 }]},
-			 SD};
+			{exmpp_iq:result(IQ,#xmlel{ns = XMLNS, 
+			      name = 'query', 
+			      children = Res}), SD};
 		    {error, Error} ->
-			{IQ#iq{type = error,
-			       sub_el = [SubEl, Error]},
-			 StateData}
+			{exmpp_iq:error(IQ, Error), StateData}
 		end,
 	    ejabberd_router:route(StateData#state.jid,
 				  From,
-				  jlib:iq_to_xml(IQRes)),
+				  exmpp_iq:iq_to_xmlel(IQRes)),
 	    case NewStateData of
 		stop ->
 		    {stop, normal, StateData};
@@ -356,14 +367,13 @@ normal_state({route, From, "",
 	reply ->
 	    {next_state, normal_state, StateData};
 	_ ->
-	    Err = jlib:make_error_reply(
-		    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    Err = exmpp_stanza:reply_with_error(Packet, 'feature-not-implemented'),
 	    ejabberd_router:route(StateData#state.jid, From, Err),
 	    {next_state, normal_state, StateData}
     end;
 
 normal_state({route, From, Nick,
-	      {xmlelement, "presence", _Attrs, _Els} = Packet},
+	      #xmlel{name = 'presence'} = Packet},
 	     StateData) ->
     Activity = get_user_activity(From, StateData),
     Now = now_to_usec(now()),
@@ -393,10 +403,10 @@ normal_state({route, From, Nick,
     end;
 
 normal_state({route, From, ToNick,
-	      {xmlelement, "message", Attrs, _} = Packet},
+	      #xmlel{name = 'message'} = Packet},
 	     StateData) ->
-    Type = xml:get_attr_s("type", Attrs),
-    Lang = xml:get_attr_s("xml:lang", Attrs),
+    Type = exmpp_message:get_type(Packet),
+    Lang = exmpp_stanza:get_lang(Packet),
     case decide_fate_message(Type, Packet, From, StateData) of
 	{expulse_sender, Reason} ->
 	    ?DEBUG(Reason, []),
@@ -415,10 +425,11 @@ normal_state({route, From, ToNick,
 			"groupchat" ->
 			    ErrText = "It is not allowed to send private "
 				"messages of type \"groupchat\"",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
+			    Err = exmpp_stanza:reply_with_error(Packet,
+			      exmpp_stanza:error(Packet#xmlel.ns, 'bad-request',
+				{Lang, translate:translate(Lang, ErrText)})),
 			    ejabberd_router:route(
-			      jlib:jid_replace_resource(
+			      jid_replace_resource(
 				StateData#state.jid,
 				ToNick),
 			      From, Err);
@@ -426,19 +437,20 @@ normal_state({route, From, ToNick,
 			    case find_jid_by_nick(ToNick, StateData) of
 				false ->
 				    ErrText = "Recipient is not in the conference room",
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+				    Err = exmpp_stanza:reply_with_error(Packet,
+				      exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
+					{Lang, translate:translate(Lang, ErrText)})),
 				    ejabberd_router:route(
-				      jlib:jid_replace_resource(
+				      jid_replace_resource(
 					StateData#state.jid,
 					ToNick),
 				      From, Err);
 				ToJID ->
 				    {ok, #user{nick = FromNick}} =
-					?DICT:find(jlib:jid_tolower(From),
+					?DICT:find(jlib:short_prepd_jid(From),
 						   StateData#state.users),
 				    ejabberd_router:route(
-				      jlib:jid_replace_resource(
+				      jid_replace_resource(
 					StateData#state.jid,
 					FromNick),
 				      ToJID, Packet)
@@ -446,19 +458,21 @@ normal_state({route, From, ToNick,
 		    end;
 		{true, false} ->
 		    ErrText = "Only occupants are allowed to send messages to the conference",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    Err = exmpp_stanza:reply_with_error(Packet,
+		      exmpp_stanza:error(Packet#xmlel.ns, 'not-acceptable',
+			{Lang, translate:translate(Lang, ErrText)})),
 		    ejabberd_router:route(
-		      jlib:jid_replace_resource(
+		      jid_replace_resource(
 			StateData#state.jid,
 			ToNick),
 		      From, Err);
 		{false, _} ->
 		    ErrText = "It is not allowed to send private messages",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+		    Err = exmpp_stanza:reply_with_error(Packet,
+		      exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
+			{Lang, translate:translate(Lang, ErrText)})),
 		    ejabberd_router:route(
-		      jlib:jid_replace_resource(
+		      jid_replace_resource(
 			StateData#state.jid,
 			ToNick),
 		      From, Err)
@@ -467,56 +481,65 @@ normal_state({route, From, ToNick,
     end;
 
 normal_state({route, From, ToNick,
-	      {xmlelement, "iq", Attrs, _Els} = Packet},
+	      #xmlel{name = 'iq'} = Packet},
 	     StateData) ->
-    Lang = xml:get_attr_s("xml:lang", Attrs),
+    Lang = exmpp_stanza:get_lang(Packet),
     case {(StateData#state.config)#config.allow_query_users,
 	  is_user_online(From, StateData)} of
 	{true, true} ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
-		    case jlib:iq_query_info(Packet) of
-			reply ->
+		    case exmpp_iq:get_type(Packet) of
+			result ->
+			    ok;
+			error ->
 			    ok;
 			_ ->
 			    ErrText = "Recipient is not in the conference room",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+			    Err = exmpp_stanza:reply_with_error(Packet,
+			      exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
+				{Lang, translate:translate(Lang, ErrText)})),
 			    ejabberd_router:route(
-			      jlib:jid_replace_resource(
+			      jid_replace_resource(
 				StateData#state.jid, ToNick),
 			      From, Err)
 		    end;
 		ToJID ->
 		    {ok, #user{nick = FromNick}} =
-			?DICT:find(jlib:jid_tolower(From),
+			?DICT:find(jlib:short_prepd_jid(From),
 				   StateData#state.users),
 		    ejabberd_router:route(
-		      jlib:jid_replace_resource(StateData#state.jid, FromNick),
+		      jid_replace_resource(StateData#state.jid, FromNick),
 		      ToJID, Packet)
 	    end;
 	{_, false} ->
-	    case jlib:iq_query_info(Packet) of
-		reply ->
+	    case exmpp_iq:get_type(Packet) of
+		result ->
+		    ok;
+		error ->
 		    ok;
 		_ ->
 		    ErrText = "Only occupants are allowed to send queries to the conference",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+		    Err = exmpp_stanza:reply_with_error(Packet,
+		      exmpp_stanza:error(Packet#xmlel.ns, 'not-acceptable',
+			{Lang, translate:translate(Lang, ErrText)})),
 		    ejabberd_router:route(
-		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
+		      jid_replace_resource(StateData#state.jid, ToNick),
 		      From, Err)
 	    end;
 	_ ->
-	    case jlib:iq_query_info(Packet) of
-		reply ->
+	    case exmpp_iq:get_type(Packet) of
+		result ->
+		    ok;
+		error ->
 		    ok;
 		_ ->
 		    ErrText = "Queries to the conference members are not allowed in this room",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
+		    Err = exmpp_stanza:reply_with_error(Packet,
+		      exmpp_stanza:error(Packet#xmlel.ns, 'not-allowed',
+			{Lang, translate:translate(Lang, ErrText)})),
 		    ejabberd_router:route(
-		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
+		      jid_replace_resource(StateData#state.jid, ToNick),
 		      From, Err)
 	    end
     end,
@@ -534,9 +557,10 @@ normal_state(_Event, StateData) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event({service_message, Msg}, _StateName, StateData) ->
-    MessagePkt = {xmlelement, "message",
-		  [{"type", "groupchat"}],
-		  [{xmlelement, "body", [], [{xmlcdata, Msg}]}]},
+    MessagePkt = #xmlel{name = 'message',
+      attrs = [?XMLATTR('type', <<"groupchat">>)],
+      children = [#xmlel{name = 'body',
+	  children = [#xmlcdata{cdata = Msg}]}]},
     lists:foreach(
       fun({_LJID, Info}) ->
 	      ejabberd_router:route(
@@ -553,21 +577,20 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
 
 handle_event({destroy, Reason}, _StateName, StateData) ->
     {result, [], stop} =
-        destroy_room(
-          {xmlelement, "destroy",
-           [{"xmlns", ?NS_MUC_OWNER}],
-           case Reason of
-               none -> [];
-               _Else ->
-                   [{xmlelement, "reason",
-                     [], [{xmlcdata, Reason}]}]
-           end}, StateData),
+    destroy_room(
+      #xmlel{ns = ?NS_MUC_OWNER, name = 'destroy',
+	children = case Reason of
+	    none -> [];
+	    _Else -> [#xmlel{name = 'reason',
+		    children = [#xmlcdata{cdata = Reason}]}]
+	end}, StateData),
+
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
-	      [jlib:jid_to_string(StateData#state.jid), Reason]),
+	      [exmpp_jid:to_binary(StateData#state.jid), Reason]),
     {stop, normal, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
-	      [jlib:jid_to_string(StateData#state.jid)]),
+	      [exmpp_jid:to_binary(StateData#state.jid)]),
     handle_event({destroy, none}, StateName, StateData);
 
 handle_event({set_affiliations, Affiliations}, StateName, StateData) ->
@@ -606,12 +629,12 @@ handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
 	    _ ->
 		" (n/a)"
 	end,
-    Reply = case ((StateData#state.config)#config.public == true) orelse
+	Reply = case ((StateData#state.config)#config.public == true) orelse
 		(FRole /= none) orelse
 		(FAffiliation == admin) orelse
 		(FAffiliation == owner) of
 		true ->
-		    {item, get_title(StateData) ++ Tail};
+		    {item, list_to_binary([get_title(StateData), Tail])};
 		_ ->
 		    false
 	    end,
@@ -702,10 +725,10 @@ handle_info({captcha_failed, From}, normal_state, StateData) ->
     NewState = case ?DICT:find(From, StateData#state.robots) of
 		   {ok, {Nick, Packet}} ->
 		       Robots = ?DICT:erase(From, StateData#state.robots),
-		       Err = jlib:make_error_reply(
-			       Packet, ?ERR_NOT_AUTHORIZED),
+		       Err = exmpp_stanza:reply_with_error(
+			    Packet, ?ERR(Packet, 'not-authorized', undefined, "")),
 		       ejabberd_router:route( % TODO: s/Nick/""/
-			 jlib:jid_replace_resource(
+			 jid_replace_resource(
 			   StateData#state.jid, Nick),
 			 From, Err),
 		       StateData#state{robots=Robots};
@@ -737,9 +760,9 @@ terminate(_Reason, _StateName, StateData) ->
 route(Pid, From, ToNick, Packet) ->
     gen_fsm:send_event(Pid, {route, From, ToNick, Packet}).
 
-process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
+process_groupchat_message(From, #xmlel{name = 'message'} = Packet,
 			  StateData) ->
-    Lang = xml:get_attr_s("xml:lang", Attrs),
+    Lang = exmpp_stanza:get_lang(Packet),
     case is_user_online(From, StateData) orelse
 	is_user_allowed_message_nonparticipant(From, StateData) of
 	true ->
@@ -779,7 +802,7 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 			    lists:foreach(
 			      fun({_LJID, Info}) ->
 				      ejabberd_router:route(
-					jlib:jid_replace_resource(
+					jid_replace_resource(
 					  StateData#state.jid,
 					  FromNick),
 					Info#user.jid,
@@ -796,26 +819,29 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 			    Err =
 				case (StateData#state.config)#config.allow_change_subj of
 				    true ->
-					?ERRT_FORBIDDEN(
-					   Lang,
-					   "Only moderators and participants "
-					   "are allowed to change the subject in this room");
+					exmpp_stanza:reply_with_error(Packet,
+					  exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
+					    {Lang, translate:translate(Lang,
+						"Only moderators and participants "
+						"are allowed to change the subject in this room")}));
 				    _ ->
-					?ERRT_FORBIDDEN(
-					   Lang,
-					   "Only moderators "
-					   "are allowed to change the subject in this room")
+					exmpp_stanza:reply_with_error(Packet,
+					  exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
+					    {Lang, translate:translate(Lang,
+						"Only moderators "
+						"are allowed to change the subject in this room")}))
 				end,
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From,
-			      jlib:make_error_reply(Packet, Err)),
+			      Err),
 			    {next_state, normal_state, StateData}
 		    end;
 		true ->
 		    ErrText = "Visitors are not allowed to send messages to all occupants",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+		    Err = exmpp_stanza:reply_with_error(Packet,
+		      exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
+			{Lang, translate:translate(Lang, ErrText)})),
 		    ejabberd_router:route(
 		      StateData#state.jid,
 		      From, Err),
@@ -823,8 +849,9 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 	    end;
 	false ->
 	    ErrText = "Only occupants are allowed to send messages to the conference",
-	    Err = jlib:make_error_reply(
-		    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+	    Err = exmpp_stanza:reply_with_error(Packet,
+	      exmpp_stanza:error(Packet#xmlel.ns, 'not-acceptable',
+		{Lang, translate:translate(Lang, ErrText)})),
 	    ejabberd_router:route(StateData#state.jid, From, Err),
 	    {next_state, normal_state, StateData}
     end.
@@ -850,35 +877,35 @@ is_user_allowed_message_nonparticipant(JID, StateData) ->
 %% @doc Get information of this participant, or default values.
 %% If the JID is not a participant, return values for a service message.
 get_participant_data(From, StateData) ->
-    case ?DICT:find(jlib:jid_tolower(From), StateData#state.users) of
+    case ?DICT:find(jlib:short_prepd_jid(From), StateData#state.users) of
 	{ok, #user{nick = FromNick, role = Role}} ->
 	    {FromNick, Role};
 	error ->
-	    {"", moderator}
+	    {<<>>, moderator}
     end.
 
 
-process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
+process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 		 StateData) ->
-    Type = xml:get_attr_s("type", Attrs),
-    Lang = xml:get_attr_s("xml:lang", Attrs),
+    Type = exmpp_presence:get_type(Packet),
+    Lang = exmpp_stanza:get_lang(Packet),
     StateData1 =
 	case Type of
-	    "unavailable" ->
+	    unavailable ->
 		case is_user_online(From, StateData) of
 		    true ->
 			NewState =
 			    add_user_presence_un(From, Packet, StateData),
 			send_new_presence(From, NewState),
-			Reason = case xml:get_subtag(Packet, "status") of
-				false -> "";
-				Status_el -> xml:get_tag_cdata(Status_el)
+			Reason = case exmpp_xml:get_element(Packet, 'status') of
+				undefined -> <<>>;
+				Status_el -> exmpp_xml:get_cdata(Status_el)
 			end,
 			remove_online_user(From, NewState, Reason);
 		    _ ->
 			StateData
 		end;
-	    "error" ->
+	    error ->
 		case is_user_online(From, StateData) of
 		    true ->
 			ErrorText = "This participant is kicked from the room because "
@@ -888,48 +915,48 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 		    _ ->
 			StateData
 		end;
-	    "" ->
+	    'available' ->
 		case is_user_online(From, StateData) of
 		    true ->
 			case is_nick_change(From, Nick, StateData) of
 			    true ->
 				case {is_nick_exists(Nick, StateData),
 				      mod_muc:can_use_nick(
-					StateData#state.host, From, Nick),
-                                      {(StateData#state.config)#config.allow_visitor_nickchange,
-                                       is_visitor(From, StateData)}} of
-                                    {_, _, {false, true}} ->
+					     StateData#state.host, From, Nick),
+				      {(StateData#state.config)#config.allow_visitor_nickchange,
+					is_visitor(From, StateData)}} of
+				    {_, _, {false, true}} ->
 					ErrText = "Visitors are not allowed to change their nicknames in this room",
-					Err = jlib:make_error_reply(
-						Packet,
-						?ERRT_NOT_ALLOWED(Lang, ErrText)),
+					Err = exmpp_stanza:reply_with_error(Packet,
+					  exmpp_stanza:error(Packet#xmlel.ns, 'not-allowed',
+					    {Lang, translate:translate(Lang, ErrText)})),
 					ejabberd_router:route(
 					  % TODO: s/Nick/""/
-					  jlib:jid_replace_resource(
+					  jid_replace_resource(
 					    StateData#state.jid,
 					    Nick),
 					  From, Err),
 					StateData;
 				    {true, _, _} ->
-					Lang = xml:get_attr_s("xml:lang", Attrs),
+					Lang = exmpp_stanza:get_lang(Packet),
 					ErrText = "That nickname is already in use by another occupant",
-					Err = jlib:make_error_reply(
-						Packet,
-						?ERRT_CONFLICT(Lang, ErrText)),
+					Err = exmpp_stanza:reply_with_error(Packet,
+					  exmpp_stanza:error(Packet#xmlel.ns, 'conflict',
+					    {Lang, translate:translate(Lang, ErrText)})),
 					ejabberd_router:route(
-					  jlib:jid_replace_resource(
+					  jid_replace_resource(
 					    StateData#state.jid,
 					    Nick), % TODO: s/Nick/""/
 					  From, Err),
 					StateData;
 				    {_, false, _} ->
 					ErrText = "That nickname is registered by another person",
-					Err = jlib:make_error_reply(
-						Packet,
-						?ERRT_CONFLICT(Lang, ErrText)),
+					Err = exmpp_stanza:reply_with_error(Packet,
+					  exmpp_stanza:error(Packet#xmlel.ns, 'conflict',
+					    {Lang, translate:translate(Lang, ErrText)})),
 					ejabberd_router:route(
 					  % TODO: s/Nick/""/
-					  jlib:jid_replace_resource(
+					  jid_replace_resource(
 					    StateData#state.jid,
 					    Nick),
 					  From, Err),
@@ -959,59 +986,59 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 	(?DICT:to_list(StateData1#state.users) == []) of
 	true ->
 	    ?INFO_MSG("Destroyed MUC room ~s because it's temporary and empty", 
-		      [jlib:jid_to_string(StateData#state.jid)]),
+		      [exmpp_jid:to_binary(StateData#state.jid)]),
 	    {stop, normal, StateData1};
 	_ ->
 	    {next_state, normal_state, StateData1}
     end.
 
 is_user_online(JID, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     ?DICT:is_key(LJID, StateData#state.users).
 
-role_to_list(Role) ->
+role_to_binary(Role) ->
     case Role of
-	moderator ->   "moderator";
-	participant -> "participant";
-	visitor ->     "visitor";
-	none ->        "none"
+	moderator ->   <<"moderator">>;
+	participant -> <<"participant">>;
+	visitor ->     <<"visitor">>;
+	none ->        <<"none">>
     end.
 
-affiliation_to_list(Affiliation) ->
+affiliation_to_binary(Affiliation) ->
     case Affiliation of
-	owner ->   "owner";
-	admin ->   "admin";
-	member ->  "member";
-	outcast -> "outcast";
-	none ->    "none"
+	owner ->   <<"owner">>;
+	admin ->   <<"admin">>;
+	member ->  <<"member">>;
+	outcast -> <<"outcast">>;
+	none ->    <<"none">>
     end.
 
-list_to_role(Role) ->
+binary_to_role(Role) ->
     case Role of
-	"moderator" ->   moderator;
-	"participant" -> participant;
-	"visitor" ->     visitor;
-	"none" ->        none
+	<<"moderator">> ->   moderator;
+	<<"participant">> -> participant;
+	<<"visitor">> ->     visitor;
+	<<"none">> ->        none
     end.
 
-list_to_affiliation(Affiliation) ->
+binary_to_affiliation(Affiliation) ->
     case Affiliation of
-	"owner" ->   owner;
-	"admin" ->   admin;
-	"member" ->  member;
-	"outcast" -> outcast;
-	"none" ->    none
+	<<"owner">> ->   owner;
+	<<"admin">> ->   admin;
+	<<"member">> ->  member;
+	<<"outcast">> -> outcast;
+	<<"none">> ->    none
     end.
 
 %% Decide the fate of the message and its sender
 %% Returns: continue_delivery | forget_message | {expulse_sender, Reason}
-decide_fate_message("error", Packet, From, StateData) ->
+decide_fate_message(error, Packet, From, StateData) ->
     %% Make a preliminary decision
     PD = case check_error_kick(Packet) of
 	     %% If this is an error stanza and its condition matches a criteria
 	     true ->
 		 Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
-					[jlib:jid_to_string(From)]),
+					[exmpp_jid:to_binary(From)]),
 		 {expulse_sender, Reason};
 	     false ->
 		 continue_delivery
@@ -1036,47 +1063,39 @@ decide_fate_message(_, _, _, _) ->
 %% If so, return true to kick the participant.
 check_error_kick(Packet) ->
     case get_error_condition(Packet) of
-	"gone" -> true;
-	"internal-server-error" -> true;
-	"item-not-found" -> true;
-	"jid-malformed" -> true;
-	"recipient-unavailable" -> true;
-	"redirect" -> true;
-	"remote-server-not-found" -> true;
-	"remote-server-timeout" -> true;
-	"service-unavailable" -> true;
+	'gone' -> true;
+	'internal-server-error' -> true;
+	'item-not-found' -> true;
+	'jid-malformed' -> true;
+	'recipient-unavailable' -> true;
+	'redirect' -> true;
+	'remote-server-not-found' -> true;
+	'remote-server-timeout' -> true;
+	'service-unavailable' -> true;
 	_ -> false
     end.
 
 get_error_condition(Packet) ->
-	case catch get_error_condition2(Packet) of
-	     {condition, ErrorCondition} ->
-		ErrorCondition;
-	     {'EXIT', _} ->
-		"badformed error stanza"
+	try exmpp_stanza:get_condition(Packet) of
+	      ErrorCondition -> ErrorCondition
+    catch
+	     _:_ ->
+		'badformed-error-stanza'
 	end.
-get_error_condition2(Packet) ->
-	{xmlelement, _, _, EEls} = xml:get_subtag(Packet, "error"),
-	[Condition] = [Name || {xmlelement, Name, [{"xmlns", ?NS_STANZAS}], []} <- EEls],
-	{condition, Condition}.
 
 expulse_participant(Packet, From, StateData, Reason1) ->
 	ErrorCondition = get_error_condition(Packet),
 	Reason2 = io_lib:format(Reason1 ++ ": " ++ "~s", [ErrorCondition]),
 	NewState = add_user_presence_un(
 		From,
-		{xmlelement, "presence",
-		[{"type", "unavailable"}],
-		[{xmlelement, "status", [],
-		[{xmlcdata, Reason2}]
-		}]},
+        exmpp_presence:presence('unavailable',Reason2),
 	StateData),
 	send_new_presence(From, NewState),
 	remove_online_user(From, NewState).
 
 
 set_affiliation(JID, Affiliation, StateData) ->
-    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
+    LJID = jlib:short_prepd_bare_jid(JID),
     Affiliations = case Affiliation of
 		       none ->
 			   ?DICT:erase(LJID,
@@ -1089,7 +1108,7 @@ set_affiliation(JID, Affiliation, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
 set_affiliation_and_reason(JID, Affiliation, Reason, StateData) ->
-    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
+    LJID = jlib:short_prepd_bare_jid(JID),
     Affiliations = case Affiliation of
 		       none ->
 			   ?DICT:erase(LJID,
@@ -1108,22 +1127,22 @@ get_affiliation(JID, StateData) ->
 	    allow ->
 		owner;
 	    _ ->
-		LJID = jlib:jid_tolower(JID),
+		LJID = jlib:short_prepd_jid(JID),
 		case ?DICT:find(LJID, StateData#state.affiliations) of
 		    {ok, Affiliation} ->
 			Affiliation;
 		    _ ->
-			LJID1 = jlib:jid_remove_resource(LJID),
+            LJID1 = jlib:short_prepd_bare_jid(JID),
 			case ?DICT:find(LJID1, StateData#state.affiliations) of
 			    {ok, Affiliation} ->
 				Affiliation;
 			    _ ->
-				LJID2 = setelement(1, LJID, ""),
+				LJID2 = setelement(1, LJID, undefined),
 				case ?DICT:find(LJID2, StateData#state.affiliations) of
 				    {ok, Affiliation} ->
 					Affiliation;
 				    _ ->
-					LJID3 = jlib:jid_remove_resource(LJID2),
+                    LJID3 = setelement(1,jlib:short_prepd_bare_jid(JID),undefined),
 					case ?DICT:find(LJID3, StateData#state.affiliations) of
 					    {ok, Affiliation} ->
 						Affiliation;
@@ -1152,9 +1171,9 @@ get_service_affiliation(JID, StateData) ->
     end.
 
 set_role(JID, Role, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     LJIDs = case LJID of
-		{U, S, ""} ->
+		{U, S, undefined} ->
 		    ?DICT:fold(
 		       fun(J, _, Js) ->
 			       case J of
@@ -1189,7 +1208,7 @@ set_role(JID, Role, StateData) ->
     StateData#state{users = Users}.
 
 get_role(JID, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     case ?DICT:find(LJID, StateData#state.users) of
 	{ok, #user{role = Role}} ->
 	    Role;
@@ -1237,7 +1256,7 @@ get_max_users_admin_threshold(StateData) ->
 			   mod_muc, max_users_admin_threshold, 5).
 
 get_user_activity(JID, StateData) ->
-    case treap:lookup(jlib:jid_tolower(JID),
+    case treap:lookup(jlib:short_prepd_jid(JID),
 		      StateData#state.activity) of
 	{ok, _P, A} -> A;
 	error ->
@@ -1262,7 +1281,7 @@ store_user_activity(JID, UserActivity, StateData) ->
 	gen_mod:get_module_opt(
 	  StateData#state.server_host,
 	  mod_muc, min_presence_interval, 0),
-    Key = jlib:jid_tolower(JID),
+    Key = jlib:short_prepd_jid(JID),
     Now = now_to_usec(now()),
     Activity1 = clean_treap(StateData#state.activity, {1, -Now}),
     Activity =
@@ -1334,7 +1353,7 @@ prepare_room_queue(StateData) ->
 	{{value, {message, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    Packet = Activity#activity.message,
-	    Size = lists:flatlength(xml:element_to_string(Packet)),
+	    Size = erlang:iolist_size(exmpp_xml:document_to_iolist(Packet)),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1345,7 +1364,7 @@ prepare_room_queue(StateData) ->
 	{{value, {presence, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    {_Nick, Packet} = Activity#activity.presence,
-	    Size = lists:flatlength(xml:element_to_string(Packet)),
+	    Size = erlang:iolist_size(exmpp_xml:document_to_iolist(Packet)),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1359,7 +1378,7 @@ prepare_room_queue(StateData) ->
 
 
 add_online_user(JID, Nick, Role, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     Users = ?DICT:store(LJID,
 			#user{jid = JID,
 			      nick = Nick,
@@ -1370,10 +1389,10 @@ add_online_user(JID, Nick, Role, StateData) ->
     StateData#state{users = Users}.
 
 remove_online_user(JID, StateData) ->
-	remove_online_user(JID, StateData, "").
+	remove_online_user(JID, StateData, <<>>).
 
 remove_online_user(JID, StateData, Reason) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     {ok, #user{nick = Nick}} =
     	?DICT:find(LJID, StateData#state.users),
     add_to_log(leave, {Nick, Reason}, StateData),
@@ -1382,34 +1401,31 @@ remove_online_user(JID, StateData, Reason) ->
     StateData#state{users = Users}.
 
 
-filter_presence({xmlelement, "presence", Attrs, Els}) ->
+filter_presence(#xmlel{name = 'presence'} = Packet) ->
     FEls = lists:filter(
 	     fun(El) ->
-		     case El of
-			 {xmlcdata, _} ->
-			     false;
-			 {xmlelement, _Name1, Attrs1, _Els1} ->
-			     XMLNS = xml:get_attr_s("xmlns", Attrs1),
-			     case XMLNS of
-				 ?NS_MUC ++ _ ->
+            case El of
+			 #xmlel{ns = XMLNS} ->
+			     case atom_to_list(XMLNS) of
+				 ?NS_MUC_s ++ _ ->
 				     false;
 				 _ ->
 				     true
 			     end
 		     end
-	     end, Els),
-    {xmlelement, "presence", Attrs, FEls}.
+	     end, exmpp_xml:get_child_elements(Packet)),
+    exmpp_xml:set_children(Packet, FEls).
 
-strip_status({xmlelement, "presence", Attrs, Els}) ->
+strip_status(#xmlel{name = 'presence', children = Children} = Packet) ->
     FEls = lists:filter(
-	     fun({xmlelement, "status", _Attrs1, _Els1}) ->
+	     fun(#xmlel{name = 'status'}) ->
                      false;
                 (_) -> true
-	     end, Els),
-    {xmlelement, "presence", Attrs, FEls}.
+	     end, Children),
+    exmpp_xml:set_children(Packet,FEls).
 
 add_user_presence(JID, Presence, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     FPresence = filter_presence(Presence),
     Users =
 	?DICT:update(
@@ -1420,7 +1436,7 @@ add_user_presence(JID, Presence, StateData) ->
     StateData#state{users = Users}.
 
 add_user_presence_un(JID, Presence, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     FPresence = filter_presence(Presence),
     Users =
 	?DICT:update(
@@ -1446,9 +1462,9 @@ find_jid_by_nick(Nick, StateData) ->
 	       end, false, StateData#state.users).
 
 is_nick_change(JID, Nick, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     case Nick of
-	"" ->
+	<<>> ->
 	    false;
 	_ ->
 	    {ok, #user{nick = OldNick}} =
@@ -1456,8 +1472,8 @@ is_nick_change(JID, Nick, StateData) ->
 	    Nick /= OldNick
     end.
 
-add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
-    Lang = xml:get_attr_s("xml:lang", Attrs),
+add_new_user(From, Nick, Packet, StateData) ->
+    Lang = exmpp_stanza:get_lang(Packet),
     MaxUsers = get_max_users(StateData),
     MaxAdminUsers = MaxUsers + get_max_users_admin_threshold(StateData),
     NUsers = dict:fold(fun(_, _, Acc) -> Acc + 1 end, 0,
@@ -1479,60 +1495,70 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	  get_default_role(Affiliation, StateData)} of
 	{false, _, _, _} ->
 	    % max user reached and user is not admin or owner
-	    Err = jlib:make_error_reply(
+	    Err = exmpp_stanza:reply_with_error(
 		    Packet,
-		    ?ERR_SERVICE_UNAVAILABLE),
+		    'service-unavailable'),
 	    ejabberd_router:route( % TODO: s/Nick/""/
-	      jlib:jid_replace_resource(StateData#state.jid, Nick),
+	      jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
 	{_, _, _, none} ->
-	    Err = jlib:make_error_reply(
+	    Err = exmpp_stanza:reply_with_error(
 		    Packet,
 		    case Affiliation of
 			outcast ->
 			    ErrText = "You have been banned from this room",
-			    ?ERRT_FORBIDDEN(Lang, ErrText);
+			    exmpp_stanza:error(Packet#xmlel.ns,
+			      'forbidden',
+			      {Lang, translate:translate(Lang, ErrText)});
 			_ ->
 			    ErrText = "Membership is required to enter this room",
-			    ?ERRT_REGISTRATION_REQUIRED(Lang, ErrText)
+			    exmpp_stanza:error(Packet#xmlel.ns,
+			      'registration-required',
+			      {Lang, translate:translate(Lang, ErrText)})
 		    end),
 	    ejabberd_router:route( % TODO: s/Nick/""/
-	      jlib:jid_replace_resource(StateData#state.jid, Nick),
+	      jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
 	{_, true, _, _} ->
 	    ErrText = "That nickname is already in use by another occupant",
-	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
+	    Err = exmpp_stanza:reply_with_error(Packet, 
+	      exmpp_stanza:error(Packet#xmlel.ns,
+		'conflict',
+		{Lang, translate:translate(Lang, ErrText)})),
 	    ejabberd_router:route(
 	      % TODO: s/Nick/""/
-	      jlib:jid_replace_resource(StateData#state.jid, Nick),
+	      jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
 	{_, _, false, _} ->
 	    ErrText = "That nickname is registered by another person",
-	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
+	    Err = exmpp_stanza:reply_with_error(Packet, 
+	      ?ERR(Packet, 'conflict', Lang, ErrText)),
 	    ejabberd_router:route(
 	      % TODO: s/Nick/""/
-	      jlib:jid_replace_resource(StateData#state.jid, Nick),
+	      jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
 	{_, _, _, Role} ->
 	    case check_password(ServiceAffiliation, Affiliation,
-				Els, From, StateData) of
+		  exmpp_xml:get_child_elements(Packet), From,
+		  StateData) of
 		true ->
 		    NewState =
 			add_user_presence(
 			  From, Packet,
 			  add_online_user(From, Nick, Role, StateData)),
 		    if not (NewState#state.config)#config.anonymous ->
-			    WPacket = {xmlelement, "message", [{"type", "groupchat"}],
-				       [{xmlelement, "body", [],
-					 [{xmlcdata, translate:translate(
-						       Lang,
-						       "This room is not anonymous")}]},
-					{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-					 [{xmlelement, "status", [{"code", "100"}], []}]}]},
+			    WPacket = 
+			    #xmlel{name = 'message',
+			      attrs = [?XMLATTR('type', <<"groupchat">>)],
+			      children = [
+				#xmlel{name = 'body',
+				  children = [#xmlcdata{cdata =
+				      translate:translate(Lang,
+					"This room is not anonymous")}]}]},
 			    ejabberd_router:route(
 			      StateData#state.jid,
 			      From, WPacket);
@@ -1541,7 +1567,9 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		    end,
 		    send_existing_presences(From, NewState),
 		    send_new_presence(From, NewState),
-		    Shift = count_stanza_shift(Nick, Els, NewState),
+		    Shift = count_stanza_shift(Nick, 
+		      exmpp_xml:get_child_elements(Packet), 
+		      NewState),
 		    case send_history(From, Shift, NewState) of
 			true ->
 			    ok;
@@ -1557,18 +1585,18 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		    end;
 		nopass ->
 		    ErrText = "A password is required to enter this room",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
+		    Err = exmpp_stanza:reply_with_error(
+			    Packet, ?ERR(Packet, 'not-authorized', Lang, ErrText)),
 		    ejabberd_router:route( % TODO: s/Nick/""/
-		      jlib:jid_replace_resource(
+		      jid_replace_resource(
 			StateData#state.jid, Nick),
 		      From, Err),
 		    StateData;
 		captcha_required ->
 		    ID = randoms:get_string(),
-		    SID = xml:get_attr_s("id", Attrs),
+		    SID = case exmpp_stanza:get_id(Packet) of undefined -> ""; SID1 -> SID1 end,
 		    RoomJID = StateData#state.jid,
-		    To = jlib:jid_replace_resource(RoomJID, Nick),
+		    To = jid_replace_resource(RoomJID, Nick),
 		    case ejabberd_captcha:create_captcha(
 			   ID, SID, RoomJID, To, Lang, From) of
 			{ok, CaptchaEls} ->
@@ -1579,20 +1607,20 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    StateData#state{robots = Robots};
 			error ->
 			    ErrText = "Unable to generate a captcha",
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_INTERNAL_SERVER_ERROR(Lang, ErrText)),
+		            Err = exmpp_stanza:reply_with_error(
+			            Packet, ?ERR(Packet, 'internal-server-error', Lang, ErrText)),
 			    ejabberd_router:route( % TODO: s/Nick/""/
-			      jlib:jid_replace_resource(
+			      jid_replace_resource(
 				StateData#state.jid, Nick),
 			      From, Err),
 			    StateData
 		    end;
 		_ ->
 		    ErrText = "Incorrect password",
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
+		    Err = exmpp_stanza:reply_with_error(
+			    Packet, ?ERR(Packet, 'not-authorized', Lang, ErrText)),
 		    ejabberd_router:route( % TODO: s/Nick/""/
-		      jlib:jid_replace_resource(
+		      jid_replace_resource(
 			StateData#state.jid, Nick),
 		      From, Err),
 		    StateData
@@ -1637,14 +1665,14 @@ check_captcha(Affiliation, From, StateData) ->
 
 extract_password([]) ->
     false;
-extract_password([{xmlelement, _Name, Attrs, _SubEls} = El | Els]) ->
-    case xml:get_attr_s("xmlns", Attrs) of
+extract_password([#xmlel{ns = XMLNS} = El | Els]) ->
+    case XMLNS of
 	?NS_MUC ->
-	    case xml:get_subtag(El, "password") of
-		false ->
+	    case exmpp_xml:get_element(El, 'password') of
+		undefined ->
 		    false;
 		SubEl ->
-		    xml:get_tag_cdata(SubEl)
+		    exmpp_xml:get_cdata(SubEl)
 	    end;
 	_ ->
 	    extract_password(Els)
@@ -1733,11 +1761,11 @@ calc_shift(MaxSize, Size, Shift, [S | TSizes]) ->
 
 extract_history([], _Type) ->
     false;
-extract_history([{xmlelement, _Name, Attrs, _SubEls} = El | Els], Type) ->
-    case xml:get_attr_s("xmlns", Attrs) of
+extract_history([#xmlel{ns = XMLNS} = El | Els], Type) ->
+    case XMLNS of
 	?NS_MUC ->
-	    AttrVal = xml:get_path_s(El,
-		       [{elem, "history"}, {attr, Type}]),
+	    AttrVal = exmpp_xml:get_path(El,
+		       [{element, 'history'}, {attribute, Type,""}]),
 	    case Type of
 		"since" ->
 		    case jlib:datetime_string_to_timestamp(AttrVal) of
@@ -1762,12 +1790,12 @@ extract_history([_ | Els], Type) ->
 
 
 send_update_presence(JID, StateData) ->
-    send_update_presence(JID, "", StateData).
+    send_update_presence(JID, <<>>, StateData).
 
 send_update_presence(JID, Reason, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     LJIDs = case LJID of
-		{U, S, ""} ->
+		{U, S, undefined} ->
 		    ?DICT:fold(
 		       fun(J, _, Js) ->
 			       case J of
@@ -1790,56 +1818,58 @@ send_update_presence(JID, Reason, StateData) ->
 		  end, LJIDs).
 
 send_new_presence(NJID, StateData) ->
-    send_new_presence(NJID, "", StateData).
+    send_new_presence(NJID, <<>>, StateData).
 
 send_new_presence(NJID, Reason, StateData) ->
     {ok, #user{jid = RealJID,
 	       nick = Nick,
 	       role = Role,
 	       last_presence = Presence}} =
-	?DICT:find(jlib:jid_tolower(NJID), StateData#state.users),
+	?DICT:find(jlib:short_prepd_jid(NJID), StateData#state.users),
     Affiliation = get_affiliation(NJID, StateData),
-    SAffiliation = affiliation_to_list(Affiliation),
-    SRole = role_to_list(Role),
+    SAffiliation = affiliation_to_binary(Affiliation),
+    SRole = role_to_binary(Role),
     lists:foreach(
       fun({_LJID, Info}) ->
 	      ItemAttrs =
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [{"jid", jlib:jid_to_string(RealJID)},
-			   {"affiliation", SAffiliation},
-			   {"role", SRole}];
+			  [?XMLATTR('jid', exmpp_jid:to_binary(RealJID)),
+			   ?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)];
 		      _ ->
-			  [{"affiliation", SAffiliation},
-			   {"role", SRole}]
+			  [?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)]
 		  end,
 	      ItemEls = case Reason of
-			    "" ->
+			    <<>> ->
 				[];
 			    _ ->
-				[{xmlelement, "reason", [],
-				  [{xmlcdata, Reason}]}]
+                [#xmlel{name = 'reason',
+                       children = [#xmlcdata{cdata = Reason}]}]
 			end,
 	      Status = case StateData#state.just_created of
 			   true ->
-			       [{xmlelement, "status", [{"code", "201"}], []}];
+			       [#xmlel{name = 'status', 
+                           attrs = [?XMLATTR('code', <<"201">>)]}];
 			   false ->
 			       []
 		       end,
-	      Packet = xml:append_subtags(
-			 Presence,
-			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status]}]),
+          Packet = exmpp_xml:append_child(Presence,
+             #xmlel{ns = ?NS_MUC_USER, name = 'x',
+                   children = [#xmlel{ns = ?NS_MUC_USER, name ='item',
+                                      attrs = ItemAttrs,
+                                      children = ItemEls} | Status]}),
 	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, Nick),
+		jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)).
 
 
 send_existing_presences(ToJID, StateData) ->
-    LToJID = jlib:jid_tolower(ToJID),
+    LToJID = jlib:short_prepd_jid(ToJID),
     {ok, #user{jid = RealToJID,
 	       role = Role}} =
 	?DICT:find(LToJID, StateData#state.users),
@@ -1853,27 +1883,29 @@ send_existing_presences(ToJID, StateData) ->
 		  FromJID ->
 		      ok;
 		  _ ->
-		      FromAffiliation = get_affiliation(LJID, StateData),
+              {N,D,R} = LJID,
+		      FromAffiliation = get_affiliation(exmpp_jid:make(N,D,R), 
+                                                StateData),
 		      ItemAttrs =
 			  case (Role == moderator) orelse
 			      ((StateData#state.config)#config.anonymous ==
 			       false) of
 			      true ->
-				  [{"jid", jlib:jid_to_string(FromJID)},
-				   {"affiliation",
-				    affiliation_to_list(FromAffiliation)},
-				   {"role", role_to_list(FromRole)}];
+				  [?XMLATTR('jid', exmpp_jid:to_binary(FromJID)),
+				   ?XMLATTR('affiliation', 
+                           affiliation_to_binary(FromAffiliation)),
+				   ?XMLATTR('role', role_to_binary(FromRole))];
 			      _ ->
-				  [{"affiliation",
-				    affiliation_to_list(FromAffiliation)},
-				   {"role", role_to_list(FromRole)}]
+				  [?XMLATTR('affiliation', 
+                           affiliation_to_binary(FromAffiliation)),
+				   ?XMLATTR('role', role_to_binary(FromRole))]
 			  end,
-		      Packet = xml:append_subtags(
-				 Presence,
-				 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-				   [{xmlelement, "item", ItemAttrs, []}]}]),
+		      Packet = exmpp_xml:append_child(Presence,
+				 #xmlel{ns = ?NS_MUC_USER, name = 'x',
+                       children = [#xmlel{ns = ?NS_MUC_USER, name ='item',
+                                          attrs = ItemAttrs}]}),
 		      ejabberd_router:route(
-			jlib:jid_replace_resource(
+			jid_replace_resource(
 			  StateData#state.jid, FromNick),
 			RealToJID,
 			Packet)
@@ -1881,12 +1913,13 @@ send_existing_presences(ToJID, StateData) ->
       end, ?DICT:to_list(StateData#state.users)).
 
 
+
 now_to_usec({MSec, Sec, USec}) ->
     (MSec*1000000 + Sec)*1000000 + USec.
 
 
 change_nick(JID, Nick, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     {ok, #user{nick = OldNick}} =
 	?DICT:find(LJID, StateData#state.users),
     Users =
@@ -1905,51 +1938,61 @@ send_nick_changing(JID, OldNick, StateData) ->
 	       nick = Nick,
 	       role = Role,
 	       last_presence = Presence}} =
-	?DICT:find(jlib:jid_tolower(JID), StateData#state.users),
+	?DICT:find(jlib:short_prepd_jid(JID), StateData#state.users),
     Affiliation = get_affiliation(JID, StateData),
-    SAffiliation = affiliation_to_list(Affiliation),
-    SRole = role_to_list(Role),
+    SAffiliation = affiliation_to_binary(Affiliation),
+    SRole = role_to_binary(Role),
     lists:foreach(
       fun({_LJID, Info}) ->
 	      ItemAttrs1 =
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [{"jid", jlib:jid_to_string(RealJID)},
-			   {"affiliation", SAffiliation},
-			   {"role", SRole},
-			   {"nick", Nick}];
+			  [?XMLATTR('jid', exmpp_jid:to_binary(RealJID)),
+			   ?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole),
+			   ?XMLATTR('nick', Nick)];
 		      _ ->
-			  [{"affiliation", SAffiliation},
-			   {"role", SRole},
-			   {"nick", Nick}]
+			  [?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole),
+			   ?XMLATTR('nick', Nick)]
 		  end,
 	      ItemAttrs2 =
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [{"jid", jlib:jid_to_string(RealJID)},
-			   {"affiliation", SAffiliation},
-			   {"role", SRole}];
+			  [?XMLATTR('jid', exmpp_jid:to_binary(RealJID)),
+			   ?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)];
 		      _ ->
-			  [{"affiliation", SAffiliation},
-			   {"role", SRole}]
+			  [?XMLATTR('affiliation', SAffiliation),
+			   ?XMLATTR('role', SRole)]
 		  end,
 	      Packet1 =
-		  {xmlelement, "presence", [{"type", "unavailable"}],
-		   [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-		     [{xmlelement, "item", ItemAttrs1, []},
-		      {xmlelement, "status", [{"code", "303"}], []}]}]},
-	      Packet2 = xml:append_subtags(
+               #xmlel{ns = ?NS_JABBER_CLIENT,
+                    name = 'presence', 
+                    attrs = [?XMLATTR('type', <<"unavailable">>)],
+                    children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
+                                 children = [
+                                  #xmlel{ns = ?NS_MUC_USER, name = 'item',
+                                         attrs = ItemAttrs1},
+                                  #xmlel{ns = ?NS_MUC_USER, name = 'status',
+                                         attrs = [?XMLATTR('code', 
+                                                         <<"303">>)]}]}]},
+
+	      Packet2 = exmpp_xml:append_child(
 			  Presence,
-			  [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			    [{xmlelement, "item", ItemAttrs2, []}]}]),
+			  #xmlel{ns = ?NS_MUC_USER, name = 'x',
+                     children =[#xmlel{ns = ?NS_MUC_USER, 
+                                       name = 'item', 
+                                       attrs = ItemAttrs2}]}),
+
 	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, OldNick),
+		jid_replace_resource(StateData#state.jid, OldNick),
 		Info#user.jid,
 		Packet1),
 	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, Nick),
+		jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet2)
       end, ?DICT:to_list(StateData#state.users)).
@@ -1985,12 +2028,7 @@ lqueue_to_list(#lqueue{queue = Q1}) ->
 
 
 add_message_to_history(FromNick, FromJID, Packet, StateData) ->
-    HaveSubject = case xml:get_subtag(Packet, "subject") of
-		      false ->
-			  false;
-		      _ ->
-			  true
-		  end,
+    HaveSubject = exmpp_xml:has_element(Packet, 'subject'),
     TimeStamp = calendar:now_to_universal_time(now()),
     %% Chatroom history is stored as XMPP packets, so
     %% the decision to include the original sender's JID or not is based on the
@@ -2000,15 +2038,16 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 	true -> StateData#state.jid;
 	false -> FromJID
     end,
-    TSPacket = xml:append_subtags(Packet,
+    TSPacket = exmpp_xml:append_children(Packet,
 			      [jlib:timestamp_to_xml(TimeStamp, utc, SenderJid, ""),
 			       %% TODO: Delete the next line once XEP-0091 is Obsolete
 			       jlib:timestamp_to_xml(TimeStamp)]),
-    SPacket = jlib:replace_from_to(
-		jlib:jid_replace_resource(StateData#state.jid, FromNick),
-		StateData#state.jid,
-		TSPacket),
-    Size = lists:flatlength(xml:element_to_string(SPacket)),
+    SPacket = exmpp_stanza:set_recipient(
+                    exmpp_stanza:set_sender(TSPacket,
+		                jid_replace_resource(StateData#state.jid, FromNick)),
+		            StateData#state.jid),
+
+    Size = erlang:iolist_size(exmpp_xml:document_to_iolist(SPacket)),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),
@@ -2018,7 +2057,7 @@ send_history(JID, Shift, StateData) ->
     lists:foldl(
       fun({Nick, Packet, HaveSubject, _TimeStamp, _Size}, B) ->
 	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, Nick),
+		jid_replace_resource(StateData#state.jid, Nick),
 		JID,
 		Packet),
 	      B or HaveSubject
@@ -2027,18 +2066,13 @@ send_history(JID, Shift, StateData) ->
 
 send_subject(JID, Lang, StateData) ->
     case StateData#state.subject_author of
-	"" ->
+	<<>> ->
 	    ok;
 	Nick ->
 	    Subject = StateData#state.subject,
-	    Packet = {xmlelement, "message", [{"type", "groupchat"}],
-		      [{xmlelement, "subject", [], [{xmlcdata, Subject}]},
-		       {xmlelement, "body", [],
-			[{xmlcdata,
-			  Nick ++
-			  translate:translate(Lang,
-					      " has set the subject to: ") ++
-			  Subject}]}]},
+        Packet = exmpp_message:groupchat(Subject,
+                    Nick ++ translate:translate(Lang,
+                              " has set the subject to: ") ++ Subject),
 	    ejabberd_router:route(
 	      StateData#state.jid,
 	      JID,
@@ -2046,11 +2080,11 @@ send_subject(JID, Lang, StateData) ->
     end.
 
 check_subject(Packet) ->
-    case xml:get_subtag(Packet, "subject") of
-	false ->
+    case exmpp_message:get_subject(Packet) of
+	undefined ->
 	    false;
-	SubjEl ->
-	    xml:get_tag_cdata(SubjEl)
+	Subj ->
+	    Subj
     end.
 
 can_change_subject(Role, StateData) ->
@@ -2065,25 +2099,25 @@ can_change_subject(Role, StateData) ->
 % Admin stuff
 
 process_iq_admin(From, set, Lang, SubEl, StateData) ->
-    {xmlelement, _, _, Items} = SubEl,
+    #xmlel{children = Items} = SubEl,
     process_admin_items_set(From, Items, Lang, StateData);
 
 process_iq_admin(From, get, Lang, SubEl, StateData) ->
-    case xml:get_subtag(SubEl, "item") of
-	false ->
-	    {error, ?ERR_BAD_REQUEST};
+    case exmpp_xml:get_element(SubEl, 'item') of
+	'undefined' ->
+	    {error, 'bad-request'};
 	Item ->
 	    FAffiliation = get_affiliation(From, StateData),
 	    FRole = get_role(From, StateData),
-	    case xml:get_tag_attr("role", Item) of
+	    case exmpp_xml:get_attribute_as_binary(Item, 'role', false) of
 		false ->
-		    case xml:get_tag_attr("affiliation", Item) of
+		    case exmpp_xml:get_attribute_as_binary(Item, 'affiliation', false) of
 			false ->
-			    {error, ?ERR_BAD_REQUEST};
-			{value, StrAffiliation} ->
-			    case catch list_to_affiliation(StrAffiliation) of
+			    {error, 'bad-request'};
+			StrAffiliation ->
+			    case catch binary_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
-				    {error, ?ERR_BAD_REQUEST};
+				    {error, 'bad-request'};
 				SAffiliation ->
 				    if
 					(FAffiliation == owner) or
@@ -2093,14 +2127,14 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 					    {result, Items, StateData};
 					true ->
 					    ErrText = "Administrator privileges required",
-					    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
+					    {error, ?ERR(SubEl, 'forbidden', Lang, ErrText)}
 				    end
 			    end
 		    end;
-		{value, StrRole} ->
-		    case catch list_to_role(StrRole) of
+		StrRole ->
+		    case catch binary_to_role(StrRole) of
 			{'EXIT', _} ->
-			    {error, ?ERR_BAD_REQUEST};
+			    {error, 'bad-request'};
 			SRole ->
 			    if
 				FRole == moderator ->
@@ -2108,7 +2142,7 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 				    {result, Items, StateData};
 				true ->
 				    ErrText = "Moderator privileges required",
-				    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
+				    {error, ?ERR(SubEl, 'forbidden', Lang, ErrText)}
 			    end
 		    end
 	    end
@@ -2124,15 +2158,22 @@ items_with_role(SRole, StateData) ->
 items_with_affiliation(SAffiliation, StateData) ->
     lists:map(
       fun({JID, {Affiliation, Reason}}) ->
-	      {xmlelement, "item",
-	       [{"affiliation", affiliation_to_list(Affiliation)},
-		{"jid", jlib:jid_to_string(JID)}],
-	       [{xmlelement, "reason", [], [{xmlcdata, Reason}]}]};
+        {N, D, R} = JID,
+        #xmlel{name = 'item', 
+               attrs = [?XMLATTR('affiliation', 
+                                 affiliation_to_binary(Affiliation)),
+                        ?XMLATTR('jid',
+                                 exmpp_jid:to_binary(N, D, R))],
+               children = [ #xmlel{name = 'reason',
+                                   children = [#xmlcdata{cdata = Reason}]}]};
+
 	 ({JID, Affiliation}) ->
-	      {xmlelement, "item",
-	       [{"affiliation", affiliation_to_list(Affiliation)},
-		{"jid", jlib:jid_to_string(JID)}],
-	       []}
+        {N, D, R} = JID,
+        #xmlel{name = 'item', 
+               attrs = [?XMLATTR('affiliation', 
+                                 affiliation_to_binary(Affiliation)),
+                        ?XMLATTR('jid',
+                                 exmpp_jid:to_binary(N, D, R))]}
       end, search_affiliation(SAffiliation, StateData)).
 
 user_to_item(#user{role = Role,
@@ -2140,12 +2181,13 @@ user_to_item(#user{role = Role,
 		   jid = JID
 		  }, StateData) ->
     Affiliation = get_affiliation(JID, StateData),
-    {xmlelement, "item",
-     [{"role", role_to_list(Role)},
-      {"affiliation", affiliation_to_list(Affiliation)},
-      {"nick", Nick},
-      {"jid", jlib:jid_to_string(JID)}],
-     []}.
+    #xmlel{name = 'item',
+           attrs = [
+      ?XMLATTR('role', role_to_binary(Role)),
+      ?XMLATTR('affiliation', affiliation_to_binary(Affiliation)),
+      ?XMLATTR('nick', Nick),
+      ?XMLATTR('jid', exmpp_jid:to_binary(JID))]
+     }.
 
 search_role(Role, StateData) ->
     lists:filter(
@@ -2171,17 +2213,22 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
     case find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, []) of
 	{result, Res} ->
 	    ?INFO_MSG("Processing MUC admin query from ~s in room ~s:~n ~p",
-		      [jlib:jid_to_string(UJID), jlib:jid_to_string(StateData#state.jid), Res]),
+		      [exmpp_jid:to_binary(UJID), exmpp_jid:to_binary(StateData#state.jid), Res]),
 	    NSD =
 		lists:foldl(
 		  fun(E, SD) ->
 			  case catch (
 				 case E of
-				     {JID, affiliation, owner, _} 
-				     when (JID#jid.luser == "") ->
+				     {JID, affiliation, owner, _} ->
+                        case exmpp_jid:prep_node(JID) of
+                            <<>> ->
+					            SD;
+                     %% TODO: <<>> or 'undefined' ?
+                     %% TODO: double case on the E var, because 
+                     %%       exmpp_jid:prep_node/1 can't be used in guards
 					 %% If the provided JID does not have username,
 					 %% forget the affiliation completely
-					 SD;
+                            _ -> case E of 
 				     {JID, role, none, Reason} ->
 					 catch send_kickban_presence(
 						 JID, Reason, "307", SD),
@@ -2225,6 +2272,8 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 					 send_update_presence(JID, SD1),
 					 SD1
 				       end
+                  end
+                end
 				) of
 			      {'EXIT', ErrReason} ->
 				  ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n",
@@ -2249,27 +2298,28 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 
 find_changed_items(_UJID, _UAffiliation, _URole, [], _Lang, _StateData, Res) ->
     {result, Res};
-find_changed_items(UJID, UAffiliation, URole, [{xmlcdata, _} | Items],
+find_changed_items(UJID, UAffiliation, URole, [#xmlcdata{} | Items],
 		   Lang, StateData, Res) ->
     find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, Res);
 find_changed_items(UJID, UAffiliation, URole,
-		   [{xmlelement, "item", Attrs, _Els} = Item | Items],
+		   [#xmlel{name = 'item'} = Item | Items],
 		   Lang, StateData, Res) ->
-    TJID = case xml:get_attr("jid", Attrs) of
-	       {value, S} ->
-		   case jlib:string_to_jid(S) of
-		       error ->
+    TJID = case exmpp_xml:get_attribute_as_binary(Item, 'jid',false) of
+	       S when S =/= false ->
+		   try exmpp_jid:parse(S) of
+		       J ->
+			   {value, J}
+            catch
+		       _:_ ->
 			   ErrText = io_lib:format(
 				       translate:translate(
 					 Lang,
 					 "Jabber ID ~s is invalid"), [S]),
-			   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
-		       J ->
-			   {value, J}
+			   {error, ?ERR(Item, 'not-acceptable', Lang, ErrText)}
 		   end;
 	       _ ->
-		   case xml:get_attr("nick", Attrs) of
-		       {value, N} ->
+		   case exmpp_xml:get_attribute_as_list(Item, 'nick', false) of
+		       N when N =/= false ->
 			   case find_jid_by_nick(N, StateData) of
 			       false ->
 				   ErrText =
@@ -2278,25 +2328,25 @@ find_changed_items(UJID, UAffiliation, URole,
 					   Lang,
 					   "Nickname ~s does not exist in the room"),
 					 [N]),
-				   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
+				   {error, ?ERR(Item, 'not-acceptable', Lang, ErrText)};
 			       J ->
 				   {value, J}
 			   end;
 		       _ ->
-			   {error, ?ERR_BAD_REQUEST}
+			   {error, 'bad-request'}
 		   end
 	   end,
     case TJID of
 	{value, JID} ->
 	    TAffiliation = get_affiliation(JID, StateData),
 	    TRole = get_role(JID, StateData),
-	    case xml:get_attr("role", Attrs) of
+	    case exmpp_xml:get_attribute_as_binary(Item, 'role',false) of
 		false ->
-		    case xml:get_attr("affiliation", Attrs) of
+		    case exmpp_xml:get_attribute_as_binary(Item, 'affiliation', false) of
 			false ->
-			    {error, ?ERR_BAD_REQUEST};
-			{value, StrAffiliation} ->
-			    case catch list_to_affiliation(StrAffiliation) of
+			    {error, 'bad-request'};
+			StrAffiliation ->
+			    case catch binary_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
 				    ErrText1 =
 					io_lib:format(
@@ -2304,7 +2354,7 @@ find_changed_items(UJID, UAffiliation, URole,
 					    Lang,
 					    "Invalid affiliation: ~s"),
 					    [StrAffiliation]),
-				    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText1)};
+				    {error, ?ERR(Item, 'not-acceptable', Lang, ErrText1)};
 				SAffiliation ->
 				    ServiceAf = get_service_affiliation(JID, StateData),
 				    CanChangeRA =
@@ -2321,8 +2371,8 @@ find_changed_items(UJID, UAffiliation, URole,
 						case search_affiliation(
 						       owner, StateData) of
 						    [{OJID, _}] ->
-							jlib:jid_remove_resource(OJID) /=
-							    jlib:jid_tolower(jlib:jid_remove_resource(UJID));
+                            jlib:short_bare_jid(OJID) /= 
+                                jlib:short_prepd_bare_jid(UJID);
 						    _ ->
 							true
 						end;
@@ -2341,19 +2391,19 @@ find_changed_items(UJID, UAffiliation, URole,
 					      UJID,
 					      UAffiliation, URole,
 					      Items, Lang, StateData,
-					      [{jlib:jid_remove_resource(JID),
+					      [{exmpp_jid:bare(JID),
 						affiliation,
 						SAffiliation,
-						xml:get_path_s(
-						  Item, [{elem, "reason"},
+						exmpp_xml:get_path(
+						  Item, [{element, 'reason'},
 							 cdata])} | Res]);
 					false ->
-					    {error, ?ERR_NOT_ALLOWED}
+					    {error, 'not-allowed'}
 				    end
 			    end
 		    end;
-		{value, StrRole} ->
-		    case catch list_to_role(StrRole) of
+		StrRole ->
+		    case catch binary_to_role(StrRole) of
 			{'EXIT', _} ->
 			    ErrText1 =
 				io_lib:format(
@@ -2361,7 +2411,7 @@ find_changed_items(UJID, UAffiliation, URole,
 				    Lang,
 				    "Invalid role: ~s"),
 				  [StrRole]),
-			    {error, ?ERRT_BAD_REQUEST(Lang, ErrText1)};
+			    {error, ?ERR(Item, 'bad-request', Lang, ErrText1)};
 			SRole ->
 			    ServiceAf = get_service_affiliation(JID, StateData),
 			    CanChangeRA =
@@ -2378,8 +2428,8 @@ find_changed_items(UJID, UAffiliation, URole,
 					case search_affiliation(
 					       owner, StateData) of
 					    [{OJID, _}] ->
-						jlib:jid_remove_resource(OJID) /=
-						    jlib:jid_tolower(jlib:jid_remove_resource(UJID));
+                        jlib:short_bare_jid(OJID) /= 
+                            jlib:short_prepd_bare_jid(UJID);
 					    _ ->
 						true
 					end;
@@ -2399,11 +2449,11 @@ find_changed_items(UJID, UAffiliation, URole,
 				      UAffiliation, URole,
 				      Items, Lang, StateData,
 				      [{JID, role, SRole,
-					xml:get_path_s(
-					  Item, [{elem, "reason"},
+					exmpp_xml:get_path(
+					  Item, [{element, 'reason'},
 						 cdata])} | Res]);
 				_ ->
-				    {error, ?ERR_NOT_ALLOWED}
+				    {error, 'not-allowed'}
 			    end
 		    end
 	    end;
@@ -2412,7 +2462,7 @@ find_changed_items(UJID, UAffiliation, URole,
     end;
 find_changed_items(_UJID, _UAffiliation, _URole, _Items,
 		   _Lang, _StateData, _Res) ->
-    {error, ?ERR_BAD_REQUEST}.
+    {error, 'bad-request'}.
 
 
 can_change_ra(_FAffiliation, _FRole,
@@ -2562,9 +2612,9 @@ can_change_ra(_FAffiliation, _FRole,
 
 
 send_kickban_presence(JID, Reason, Code, StateData) ->
-    LJID = jlib:jid_tolower(JID),
+    LJID = jlib:short_prepd_jid(JID),
     LJIDs = case LJID of
-		{U, S, ""} ->
+		{U, S, undefined} ->
 		    ?DICT:fold(
 		       fun(J, _, Js) ->
 			       case J of
@@ -2592,27 +2642,35 @@ send_kickban_presence(JID, Reason, Code, StateData) ->
 
 send_kickban_presence1(UJID, Reason, Code, StateData) ->
     {ok, #user{jid = _RealJID,
-	       nick = Nick}} =
-	?DICT:find(jlib:jid_tolower(UJID), StateData#state.users),
-    Affiliation = get_affiliation(UJID, StateData),
-    SAffiliation = affiliation_to_list(Affiliation),
+	       nick = Nick}} = ?DICT:find(UJID, StateData#state.users),
+    {N,D,R} = UJID,
+    Affiliation = get_affiliation(exmpp_jid:make(N,D,R), StateData),
+    SAffiliation = affiliation_to_binary(Affiliation),
     lists:foreach(
       fun({_LJID, Info}) ->
-	      ItemAttrs = [{"affiliation", SAffiliation},
-			   {"role", "none"}],
+	      ItemAttrs = [?XMLATTR('affiliation', SAffiliation),
+			           ?XMLATTR('role', <<"none">>)],
 	      ItemEls = case Reason of
-			    "" ->
+			    <<>> ->
 				[];
 			    _ ->
-				[{xmlelement, "reason", [],
-				  [{xmlcdata, Reason}]}]
-			end,
-	      Packet = {xmlelement, "presence", [{"type", "unavailable"}],
-			[{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			  [{xmlelement, "item", ItemAttrs, ItemEls},
-			   {xmlelement, "status", [{"code", Code}], []}]}]},
+				[#xmlel{name = 'reason',
+                        children = [#xmlcdata{cdata = Reason}]}]
+                end,
+          Packet = 
+            #xmlel{ns = ?NS_JABBER_CLIENT,
+                  name = 'presence',
+                  attrs = [?XMLATTR('type', <<"unavailable">>)],
+                  children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
+                                 children = [
+                                 #xmlel{ns = ?NS_MUC_USER, name = 'item',
+                                        attrs = ItemAttrs,
+                                        children = ItemEls},
+                                 #xmlel{ns = ?NS_MUC_USER, name = 'status',
+                                        attrs = [?XMLATTR('code', 
+                                                          Code)]}]}]},
 	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, Nick),
+		jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)).
@@ -2626,14 +2684,12 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     case FAffiliation of
 	owner ->
-	    {xmlelement, _Name, _Attrs, Els} = SubEl,
-	    case xml:remove_cdata(Els) of
-		[{xmlelement, "x", _Attrs1, _Els1} = XEl] ->
-		    case {xml:get_tag_attr_s("xmlns", XEl),
-			  xml:get_tag_attr_s("type", XEl)} of
-			{?NS_XDATA, "cancel"} ->
+	    case exmpp_xml:get_child_elements(SubEl) of
+		[#xmlel{ns = XMLNS, name = 'x'} = XEl] ->
+		    case {XMLNS, exmpp_xml:get_attribute_as_binary(XEl, 'type',false)} of
+			{?NS_DATA_FORMS, <<"cancel">>} ->
 			    {result, [], StateData};
-			{?NS_XDATA, "submit"} ->
+			{?NS_DATA_FORMS, <<"submit">>} ->
 			    case is_allowed_log_change(XEl, StateData, From)
 				andalso
 				is_allowed_persistent_change(XEl, StateData,
@@ -2644,37 +2700,36 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 				andalso
 				is_password_settings_correct(XEl, StateData) of
 				true -> set_config(XEl, StateData);
-				false -> {error, ?ERR_NOT_ACCEPTABLE}
+				false -> {error, 'not-acceptable'}
 			    end;
 			_ ->
-			    {error, ?ERR_BAD_REQUEST}
+			    {error, 'bad-request'}
 		    end;
-		[{xmlelement, "destroy", _Attrs1, _Els1} = SubEl1] ->
+		[#xmlel{name = 'destroy'} = SubEl1] ->
 		    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s", 
-			      [jlib:jid_to_string(StateData#state.jid), jlib:jid_to_string(From)]),
+			      [exmpp_jid:to_binary(StateData#state.jid), exmpp_jid:to_binary(From)]),
 		    destroy_room(SubEl1, StateData);
 		Items ->
 		    process_admin_items_set(From, Items, Lang, StateData)
 	    end;
 	_ ->
 	    ErrText = "Owner privileges required",
-	    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
+	    {error, ?ERR(SubEl, 'forbidden', Lang, ErrText)}
     end;
 
 process_iq_owner(From, get, Lang, SubEl, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     case FAffiliation of
 	owner ->
-	    {xmlelement, _Name, _Attrs, Els} = SubEl,
-	    case xml:remove_cdata(Els) of
+	    case exmpp_xml:get_child_elements(SubEl) of
 		[] ->
 		    get_config(Lang, StateData, From);
 		[Item] ->
-		    case xml:get_tag_attr("affiliation", Item) of
+		    case exmpp_xml:get_attribute_as_binary(Item, 'affiliation',false) of
 			false ->
-			    {error, ?ERR_BAD_REQUEST};
-			{value, StrAffiliation} ->
-			    case catch list_to_affiliation(StrAffiliation) of
+			    {error, 'bad-request'};
+			StrAffiliation ->
+			    case catch binary_to_affiliation(StrAffiliation) of
 				{'EXIT', _} ->
 				    ErrText =
 					io_lib:format(
@@ -2682,7 +2737,7 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 					    Lang,
 					    "Invalid affiliation: ~s"),
 					  [StrAffiliation]),
-				    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
+				    {error, ?ERR(SubEl, 'not-acceptable', Lang, ErrText)};
 				SAffiliation ->
 				    Items = items_with_affiliation(
 					      SAffiliation, StateData),
@@ -2690,11 +2745,11 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
 			    end
 		    end;
 		_ ->
-		    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
+		    {error, 'feature-not-implemented'}
 	    end;
 	_ ->
 	    ErrText = "Owner privileges required",
-	    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
+	    {error, ?ERR(SubEl, 'forbidden', Lang, ErrText)}
     end.
 
 is_allowed_log_change(XEl, StateData, From) ->
@@ -2781,10 +2836,13 @@ is_password_settings_correct(XEl, StateData) ->
 
 
 -define(XFIELD(Type, Label, Var, Val),
-	{xmlelement, "field", [{"type", Type},
-			       {"label", translate:translate(Lang, Label)},
-			       {"var", Var}],
-	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+    #xmlel{name = 'field', 
+           attrs = [?XMLATTR('type', Type),
+                    ?XMLATTR('label', translate:translate(Lang, Label)),
+                    ?XMLATTR('var', Var)],
+           children = [#xmlel{name = 'value',
+                              children = [#xmlcdata{cdata = Val} ]}]}).
+
 
 -define(BOOLXFIELD(Label, Var, Val),
 	?XFIELD("boolean", Label, Var,
@@ -2798,6 +2856,7 @@ is_password_settings_correct(XEl, StateData) ->
 
 -define(PRIVATEXFIELD(Label, Var, Val),
 	?XFIELD("text-private", Label, Var, Val)).
+
 
 get_default_room_maxusers(RoomState) ->
     DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, []),
@@ -2816,12 +2875,15 @@ get_config(Lang, StateData, From) ->
 	    _ -> {0, "none"}
 	end,
     Res =
-	[{xmlelement, "title", [],
-	  [{xmlcdata, io_lib:format(translate:translate(Lang, "Configuration of room ~s"), [jlib:jid_to_string(StateData#state.jid)])}]},
-	 {xmlelement, "field", [{"type", "hidden"},
-				{"var", "FORM_TYPE"}],
-	  [{xmlelement, "value", [],
-	    [{xmlcdata, "http://jabber.org/protocol/muc#roomconfig"}]}]},
+	[#xmlel{name = 'title', children = [ #xmlcdata{cdata =
+	        io_lib:format(translate:translate(Lang, "Configuration of room ~s"),
+		    [exmpp_jid:to_list(StateData#state.jid)])
+         }]},
+    #xmlel{name = 'field', attrs = [?XMLATTR('type', <<"hidden">>),
+                                  ?XMLATTR('var', <<"FORM_TYPE">>)],
+           children = [#xmlel{name = 'value', children = [#xmlcdata{cdata = 
+                               <<"http://jabber.org/protocol/muc#roomconfig">>
+                        }]}]},
 	 ?STRINGXFIELD("Room title",
 		       "muc#roomconfig_roomname",
 		       Config#config.title),
@@ -2852,65 +2914,76 @@ get_config(Lang, StateData, From) ->
 			    true -> Config#config.password;
 			    false -> ""
 			end),
-	 {xmlelement, "field",
-	  [{"type", "list-single"},
-	   {"label", translate:translate(Lang, "Maximum Number of Occupants")},
-	   {"var", "muc#roomconfig_maxusers"}],
-	  [{xmlelement, "value", [], [{xmlcdata, MaxUsersRoomString}]}] ++
+     #xmlel{name = 'field', attrs = [
+                ?XMLATTR('type', <<"list-single">>),
+                ?XMLATTR('label', translate:translate(Lang,
+                                "Maximum Number of Occupants")),
+                ?XMLATTR('var', <<"muc#roomconfig_maxusers">>)],
+            children = [#xmlel{name = 'value',
+                               children = [#xmlcdata{cdata = 
+                                MaxUsersRoomString}]}] ++
 	  if
 	      is_integer(ServiceMaxUsers) -> [];
 	      true ->
-		  [{xmlelement, "option",
-		    [{"label", translate:translate(Lang, "No limit")}],
-		    [{xmlelement, "value", [], [{xmlcdata, "none"}]}]}]
+          [#xmlel{name = 'option', attrs = [?XMLATTR('label', 
+                        translate:translate(Lang, "No limit"))],
+                  children = [#xmlel{name = 'value', children = [#xmlcdata{
+                                cdata = <<"none">>}]}]}]
 	  end ++
-	  [{xmlelement, "option", [{"label", erlang:integer_to_list(N)}],
-	    [{xmlelement, "value", [],
-	      [{xmlcdata, erlang:integer_to_list(N)}]}]} ||
-	      N <- lists:usort([ServiceMaxUsers, DefaultRoomMaxUsers, MaxUsersRoomInteger |
-			       ?MAX_USERS_DEFAULT_LIST]), N =< ServiceMaxUsers]
-	 },
-	 {xmlelement, "field",
-	  [{"type", "list-single"},
-	   {"label", translate:translate(Lang, "Present real Jabber IDs to")},
-	   {"var", "muc#roomconfig_whois"}],
-	  [{xmlelement, "value", [], [{xmlcdata,
-				       if Config#config.anonymous ->
-					       "moderators";
-					  true ->
-					       "anyone"
-				       end}]},
-	   {xmlelement, "option", [{"label", translate:translate(Lang, "moderators only")}],
-	    [{xmlelement, "value", [], [{xmlcdata, "moderators"}]}]},
-	   {xmlelement, "option", [{"label", translate:translate(Lang, "anyone")}],
-	    [{xmlelement, "value", [], [{xmlcdata, "anyone"}]}]}]},
-	 ?BOOLXFIELD("Make room members-only",
-		     "muc#roomconfig_membersonly",
-		     Config#config.members_only),
-	 ?BOOLXFIELD("Make room moderated",
-		     "muc#roomconfig_moderatedroom",
-		     Config#config.moderated),
-	 ?BOOLXFIELD("Default users as participants",
-		     "members_by_default",
-		     Config#config.members_by_default),
-	 ?BOOLXFIELD("Allow users to change the subject",
-		     "muc#roomconfig_changesubject",
-		     Config#config.allow_change_subj),
-	 ?BOOLXFIELD("Allow users to send private messages",
-		     "allow_private_messages",
-		     Config#config.allow_private_messages),
-	 ?BOOLXFIELD("Allow users to query other users",
-		     "allow_query_users",
-		     Config#config.allow_query_users),
-	 ?BOOLXFIELD("Allow users to send invites",
-		     "muc#roomconfig_allowinvites",
-		     Config#config.allow_user_invites),
-	 ?BOOLXFIELD("Allow visitors to send status text in presence updates",
-		     "muc#roomconfig_allowvisitorstatus",
-		     Config#config.allow_visitor_status),
-	 ?BOOLXFIELD("Allow visitors to change nickname",
-		     "muc#roomconfig_allowvisitornickchange",
-		     Config#config.allow_visitor_nickchange)
+      [#xmlel{name = 'option', attrs = [?XMLATTR('label', N)],
+              children = [#xmlel{name = 'value', children = [
+                #xmlcdata{cdata = erlang:integer_to_list(N)}]}]} ||
+              N <- lists:usort([ServiceMaxUsers, DefaultRoomMaxUsers, MaxUsersRoomInteger |
+                               ?MAX_USERS_DEFAULT_LIST]), N =< ServiceMaxUsers]}, 
+    #xmlel{name = 'field', attrs = [
+                ?XMLATTR('type', <<"list-single">>),
+                ?XMLATTR('label', 
+                    translate:translate(Lang, "Present real Jabber IDs to")),
+                ?XMLATTR('var', <<"muc#roomconfig_whois">>)],
+          children = [#xmlel{name = 'value',
+                        children = [#xmlcdata{cdata = 
+                                if Config#config.anonymous -> <<"moderators">>;
+                                   true -> <<"anyone">>
+                                end}]},
+                     #xmlel{name = 'option', attrs = [
+                            ?XMLATTR('label',
+                              translate:translate(Lang, "moderators only"))],
+                           children = [#xmlel{name = 'value', 
+                                       children = [#xmlcdata{cdata = 
+                                                        <<"moderators">>}]}]},
+                     #xmlel{name = 'option', attrs = [
+                            ?XMLATTR('label',
+                              translate:translate(Lang, "anyone"))],
+                           children = [#xmlel{name = 'value', 
+                                       children = [#xmlcdata{cdata = 
+                                                        <<"anyone">>}]}]}]},
+         ?BOOLXFIELD("Make room members-only",
+                 "muc#roomconfig_membersonly",
+                 Config#config.members_only),
+         ?BOOLXFIELD("Make room moderated",
+                 "muc#roomconfig_moderatedroom",
+                 Config#config.moderated),
+         ?BOOLXFIELD("Default users as participants",
+                 "members_by_default",
+                 Config#config.members_by_default),
+         ?BOOLXFIELD("Allow users to change the subject",
+                 "muc#roomconfig_changesubject",
+                 Config#config.allow_change_subj),
+         ?BOOLXFIELD("Allow users to send private messages",
+                 "allow_private_messages",
+                 Config#config.allow_private_messages),
+         ?BOOLXFIELD("Allow users to query other users",
+                 "allow_query_users",
+                 Config#config.allow_query_users),
+         ?BOOLXFIELD("Allow users to send invites",
+                 "muc#roomconfig_allowinvites",
+                 Config#config.allow_user_invites),
+         ?BOOLXFIELD("Allow visitors to send status text in presence updates",
+                 "muc#roomconfig_allowvisitorstatus",
+                 Config#config.allow_visitor_status),
+         ?BOOLXFIELD("Allow visitors to change nickname",
+                 "muc#roomconfig_allowvisitornickchange",
+                 Config#config.allow_visitor_nickchange)
 	] ++
 	case ejabberd_captcha:is_feature_available() of
 	    true ->
@@ -2920,7 +2993,7 @@ get_config(Lang, StateData, From) ->
 	    false -> []
 	end ++
 	case mod_muc_log:check_access_log(
-	       StateData#state.server_host, From) of
+       StateData#state.server_host, From) of
 	    allow ->
 		[?BOOLXFIELD(
 		    "Enable logging",
@@ -2928,14 +3001,13 @@ get_config(Lang, StateData, From) ->
 		    Config#config.logging)];
 	    _ -> []
 	end,
-    {result, [{xmlelement, "instructions", [],
-	       [{xmlcdata,
-		 translate:translate(
-		   Lang, "You need an x:data capable client to configure room")}]},
-	      {xmlelement, "x", [{"xmlns", ?NS_XDATA},
-				 {"type", "form"}],
-	       Res}],
-     StateData}.
+    {result , [#xmlel{name = 'instructions', children = [
+                #xmlcdata{cdata = translate:translate(Lang,
+		         "You need an x:data capable client to configure room")}]},
+                 #xmlel{ns = ?NS_DATA_FORMS, name = 'x', 
+                attrs = [?XMLATTR('type', <<"form">>)],
+                children = Res}],
+        StateData}.
 
 
 
@@ -2943,7 +3015,7 @@ set_config(XEl, StateData) ->
     XData = jlib:parse_xdata_submit(XEl),
     case XData of
 	invalid ->
-	    {error, ?ERR_BAD_REQUEST};
+	    {error, 'bad-request'};
 	_ ->
 	    case set_xoption(XData, StateData#state.config) of
 		#config{} = Config ->
@@ -2973,7 +3045,7 @@ set_config(XEl, StateData) ->
 	    "false" -> set_xoption(Opts, Config#config{Opt = false});
 	    "1" -> set_xoption(Opts, Config#config{Opt = true});
 	    "true" -> set_xoption(Opts, Config#config{Opt = true});
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ -> {error, 'bad-request'}
 	end).
 
 -define(SET_NAT_XOPT(Opt, Val),
@@ -2982,7 +3054,7 @@ set_config(XEl, StateData) ->
 	           I > 0 ->
 		set_xoption(Opts, Config#config{Opt = I});
 	    _ ->
-		{error, ?ERR_BAD_REQUEST}
+		{error, 'bad-request'}
 	end).
 
 -define(SET_STRING_XOPT(Opt, Val),
@@ -3034,7 +3106,7 @@ set_xoption([{"muc#roomconfig_whois", [Val]} | Opts], Config) ->
 	"anyone" ->
 	    ?SET_BOOL_XOPT(anonymous, "0");
 	_ ->
-	    {error, ?ERR_BAD_REQUEST}
+	    {error, 'bad-request'}
     end;
 set_xoption([{"muc#roomconfig_maxusers", [Val]} | Opts], Config) ->
     case Val of
@@ -3049,7 +3121,7 @@ set_xoption([{"FORM_TYPE", _} | Opts], Config) ->
     %% Ignore our FORM_TYPE
     set_xoption(Opts, Config);
 set_xoption([_ | _Opts], _Config) ->
-    {error, ?ERR_BAD_REQUEST}.
+    {error, 'bad-request'}.
 
 
 change_config(Config, StateData) ->
@@ -3169,13 +3241,18 @@ destroy_room(DEl, StateData) ->
     lists:foreach(
       fun({_LJID, Info}) ->
 	      Nick = Info#user.nick,
-	      ItemAttrs = [{"affiliation", "none"},
-			   {"role", "none"}],
-	      Packet = {xmlelement, "presence", [{"type", "unavailable"}],
-			[{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			  [{xmlelement, "item", ItemAttrs, []}, DEl]}]},
+	      ItemAttrs = [?XMLATTR('affiliation', <<"none">>),
+			   ?XMLATTR('role', <<"none">>)],
+          Packet = #xmlel{ns = ?NS_JABBER_CLIENT,
+                          name = 'presence', 
+                          attrs = [?XMLATTR('type', 
+                                            <<"unavailable">>)],
+                          children = [
+                            #xmlel{ns = ?NS_MUC_USER, name = 'x', children =
+                                    [#xmlel{name = 'item', attrs = ItemAttrs},
+                                     DEl]}]},
 	      ejabberd_router:route(
-		jlib:jid_replace_resource(StateData#state.jid, Nick),
+		jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
       end, ?DICT:to_list(StateData#state.users)),
@@ -3193,7 +3270,8 @@ destroy_room(DEl, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Disco
 
--define(FEATURE(Var), {xmlelement, "feature", [{"var", Var}], []}).
+-define(FEATURE(Var), #xmlel{name = 'feature', 
+                        attrs = [?XMLATTR('var', Var)]}).
 
 -define(CONFIG_OPT_TO_FEATURE(Opt, Fiftrue, Fiffalse),
     case Opt of
@@ -3204,16 +3282,19 @@ destroy_room(DEl, StateData) ->
     end).
 
 process_iq_disco_info(_From, set, _Lang, _StateData) ->
-    {error, ?ERR_NOT_ALLOWED};
+    {error, 'not-allowed'};
 
 process_iq_disco_info(_From, get, Lang, StateData) ->
     Config = StateData#state.config,
-    {result, [{xmlelement, "identity",
-	       [{"category", "conference"},
-		{"type", "text"},
-		{"name", get_title(StateData)}], []},
-	      {xmlelement, "feature",
-	       [{"var", ?NS_MUC}], []},
+    {result, [ #xmlel{name = 'identity',
+                      attrs = [?XMLATTR('category', 
+                                        <<"conference">>),
+                               ?XMLATTR('type', <<"text">>),
+                        	   ?XMLATTR('name', 
+                                        get_title(StateData))]},
+               #xmlel{name = 'feature', 
+                      attrs = [?XMLATTR('var', ?NS_MUC_s)]},
+    
 	      ?CONFIG_OPT_TO_FEATURE(Config#config.public,
 				     "muc_public", "muc_hidden"),
 	      ?CONFIG_OPT_TO_FEATURE(Config#config.persistent,
@@ -3229,18 +3310,24 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
 	     ] ++ iq_disco_info_extras(Lang, StateData), StateData}.
 
 -define(RFIELDT(Type, Var, Val),
-	{xmlelement, "field", [{"type", Type}, {"var", Var}],
-	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+    #xmlel{name = 'field', attrs = [?XMLATTR('type', Type),
+                                    ?XMLATTR('var', Var)],
+           children = [#xmlel{name = 'value', 
+                             children = [#xmlcdata{cdata = Val}]}]}).
 
 -define(RFIELD(Label, Var, Val),
-	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
-			       {"var", Var}],
-	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+    #xmlel{name = 'field', attrs = [?XMLATTR('label',
+                                        translate:translate(Lang, Label)),
+                                    ?XMLATTR('var', Var)],
+            children = [#xmlel{name = 'value', children = [
+                            #xmlcdata{cdata = Val}]}]}).
 
 iq_disco_info_extras(Lang, StateData) ->
     Len = length(?DICT:to_list(StateData#state.users)),
     RoomDescription = (StateData#state.config)#config.description,
-    [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "result"}],
+    [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', 
+             attrs = [?XMLATTR('type', <<"result">>)],
+             children = 
       [?RFIELDT("hidden", "FORM_TYPE",
 		"http://jabber.org/protocol/muc#roominfo"),
        ?RFIELD("Room description", "muc#roominfo_description",
@@ -3250,7 +3337,7 @@ iq_disco_info_extras(Lang, StateData) ->
       ]}].
 
 process_iq_disco_items(_From, set, _Lang, _StateData) ->
-    {error, ?ERR_NOT_ALLOWED};
+    {error, 'not-allowed'};
 
 process_iq_disco_items(From, get, _Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
@@ -3264,34 +3351,35 @@ process_iq_disco_items(From, get, _Lang, StateData) ->
 		lists:map(
 		  fun({_LJID, Info}) ->
 			  Nick = Info#user.nick,
-			  {xmlelement, "item",
-			   [{"jid", jlib:jid_to_string(
-				      {StateData#state.room,
-				       StateData#state.host,
-				       Nick})},
-			    {"name", Nick}], []}
+              #xmlel{name = 'item', attrs = [?XMLATTR('jid', 
+                                            exmpp_jid:to_binary(
+                                                    StateData#state.room,
+                              				        StateData#state.host,
+                            				        Nick)),
+                                            ?XMLATTR('name', 
+                                                     Nick)]}
 		  end,
 		  ?DICT:to_list(StateData#state.users)),
 	    {result, UList, StateData};
 	_ ->
-	    {error, ?ERR_FORBIDDEN}
+	    {error, 'forbidden'}
     end.
 
 process_iq_captcha(_From, get, _Lang, _SubEl, _StateData) ->
-    {error, ?ERR_NOT_ALLOWED};
+    {error, 'not-allowed'};
 
 process_iq_captcha(_From, set, _Lang, SubEl, StateData) ->
     case ejabberd_captcha:process_reply(SubEl) of
 	ok ->
 	    {result, [], StateData};
 	_ ->
-	    {error, ?ERR_NOT_ACCEPTABLE}
+	    {error, 'not-acceptable'}
     end.
 
 get_title(StateData) ->
     case (StateData#state.config)#config.title of
 	"" ->
-	    StateData#state.room;
+	    binary_to_list(StateData#state.room);
 	Name ->
 	    Name
     end.
@@ -3304,72 +3392,72 @@ check_invitation(From, Els, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     CanInvite = (StateData#state.config)#config.allow_user_invites
 	orelse (FAffiliation == admin) orelse (FAffiliation == owner),
-    InviteEl = case xml:remove_cdata(Els) of
-		   [{xmlelement, "x", _Attrs1, Els1} = XEl] ->
-		       case xml:get_tag_attr_s("xmlns", XEl) of
-			   ?NS_MUC_USER ->
-			       ok;
-			   _ ->
-			       throw({error, ?ERR_BAD_REQUEST})
-		       end,
-		       case xml:remove_cdata(Els1) of
-			   [{xmlelement, "invite", _Attrs2, _Els2} = InviteEl1] ->
-			       InviteEl1;
-			   _ ->
-			       throw({error, ?ERR_BAD_REQUEST})
-		       end;
-		   _ ->
-		       throw({error, ?ERR_BAD_REQUEST})
-	       end,
-    JID = case jlib:string_to_jid(
-		 xml:get_tag_attr_s("to", InviteEl)) of
-	      error ->
-		  throw({error, ?ERR_JID_MALFORMED});
-	      JID1 ->
-		  JID1
-	  end,
+    InviteEl = case Els of
+            [#xmlel{ns = XMLNS, name = 'x'} = XEl] ->
+                case XMLNS of
+                    ?NS_MUC_USER -> ok;
+                    _ -> throw({error, 'bad-request'})
+                end,
+                case exmpp_xml:get_child_elements(XEl) of
+                    [#xmlel{name = 'invite'} = InviteEl1] ->
+                        InviteEl1;
+                    _ ->
+                        throw({error, 'bad-request'})
+                end;
+            _ -> 
+                throw({error, 'bad-request'})
+            end,
+    JID = try exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(InviteEl,
+                                                            'to',
+                                                            false)) of
+	        JID1 -> JID1
+          catch
+	      _:_ ->
+    		  throw({error, 'jid-malformed'})
+	      end,
     case CanInvite of
 	false ->
-	    throw({error, ?ERR_NOT_ALLOWED});
+	    throw({error, 'not-allowed'});
 	true ->
 	    Reason =
-		xml:get_path_s(
+		exmpp_xml:get_path(
 		  InviteEl,
-		  [{elem, "reason"}, cdata]),
+		  [{element, 'reason'}, cdata]),
 	    ContinueEl =
-		case xml:get_path_s(
+		case exmpp_xml:get_path(
 		       InviteEl,
-		       [{elem, "continue"}]) of
-		    [] -> [];
+		       [{element, 'continue'}]) of
+		    'undefined' -> [];
 		    Continue1 -> [Continue1]
 		end,
 	    IEl =
-		[{xmlelement, "invite",
-		  [{"from",
-		    jlib:jid_to_string(From)}],
-		  [{xmlelement, "reason", [],
-		    [{xmlcdata, Reason}]}] ++ ContinueEl}],
+	    [#xmlel{ns = ?NS_MUC_USER,
+                name = 'invite', 
+		        attrs = [?XMLATTR('from', 
+		                          exmpp_jid:to_binary(From))],
+ 		        children = [#xmlel{ns =?NS_MUC_USER, name = 'reason', 
+		                            children = [#xmlcdata{cdata = Reason} ]}] 
+  		                    ++ ContinueEl}],
 	    PasswdEl =
 		case (StateData#state.config)#config.password_protected of
 		    true ->
-			[{xmlelement, "password", [],
-			  [{xmlcdata, (StateData#state.config)#config.password}]}];
+			[#xmlel{ns = ?NS_MUC_USER, name = 'password',
+			    children = [#xmlcdata{cdata = 
+				(StateData#state.config)#config.password}]}];
 		    _ ->
 			[]
 		end,
 	    Body =
-		{xmlelement, "body", [],
-		 [{xmlcdata,
-		   lists:flatten(
-		     io_lib:format(
-		       translate:translate(
-			 Lang,
-			 "~s invites you to the room ~s"),
-		       [jlib:jid_to_string(From),
-			jlib:jid_to_string({StateData#state.room,
-					    StateData#state.host,
-					    ""})
-		       ])) ++
+	    #xmlel{name = 'body',
+	      children = [#xmlcdata{cdata =
+		  list_to_binary([
+		    io_lib:format(
+		      translate:translate(Lang,
+			"~s invites you to the room ~s"),
+		      [exmpp_jid:to_binary(From),
+			exmpp_jid:to_binary(StateData#state.room,
+			  StateData#state.host)
+		      ]), 
 		   case (StateData#state.config)#config.password_protected of
 		       true ->
 			   ", " ++
@@ -3378,24 +3466,26 @@ check_invitation(From, Els, Lang, StateData) ->
 			       (StateData#state.config)#config.password ++ "'";
 		       _ ->
 			   ""
-		   end ++
+		   end,
 		   case Reason of
-		       "" -> "";
-		       _ -> " (" ++ Reason ++ ") "
+		       <<>> -> "";
+		       _ -> [" (",  Reason, ") "]
 		   end
-		  }]},
+          ])}]},
+        %%TODO: always NS_JABBER_CLIENT?
 	    Msg =
-		{xmlelement, "message",
-		 [{"type", "normal"}],
-		 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}], IEl ++ PasswdEl},
-		  {xmlelement, "x",
-		   [{"xmlns", ?NS_XCONFERENCE},
-		    {"jid", jlib:jid_to_string(
-			      {StateData#state.room,
-			       StateData#state.host,
-			       ""})}],
-		   [{xmlcdata, Reason}]},
-		  Body]},
+	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', 
+	      attrs = [?XMLATTR('type', <<"normal">>)], 
+	      children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
+		  children = IEl ++ PasswdEl},
+		#xmlel{ns = 'jabber:x:conference', name = 'x',
+		  attrs = [?XMLATTR('jid',
+		      exmpp_jid:to_binary(
+			StateData#state.room,
+			StateData#state.host)
+			)],
+		  children = [#xmlcdata{cdata = Reason}]},
+		Body]},
 	    ejabberd_router:route(StateData#state.jid, JID, Msg),
 	    JID
     end.
@@ -3416,36 +3506,37 @@ handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From) ->
 %% This function must be catched, 
 %% because it crashes when the packet is not a decline message.
 check_decline_invitation(Packet) ->
-    {xmlelement, "message", _, _} = Packet,
-    XEl = xml:get_subtag(Packet, "x"),
-    ?NS_MUC_USER = xml:get_tag_attr_s("xmlns", XEl),
-    DEl = xml:get_subtag(XEl, "decline"),
-    ToString = xml:get_tag_attr_s("to", DEl),
-    ToJID = jlib:string_to_jid(ToString),
+    #xmlel{name = 'message'} = Packet,
+    #xmlel{ns = ?NS_MUC_USER} = XEl = exmpp_xml:get_element(Packet, 'x'),
+    DEl = exmpp_xml:get_element(XEl, 'decline'),
+    ToString = exmpp_xml:get_attribute_as_binary(DEl, 'to', false),
+    ToJID = exmpp_jid:parse(ToString),
     {true, {Packet, XEl, DEl, ToJID}}.
 
 %% Send the decline to the inviter user.
 %% The original stanza must be slightly modified.
-send_decline_invitation({Packet, XEl, DEl, ToJID}, RoomJID, FromJID) ->
-    FromString = jlib:jid_to_string(FromJID),
-    {xmlelement, "decline", DAttrs, DEls} = DEl,
-    DAttrs2 = lists:keydelete("to", 1, DAttrs),
-    DAttrs3 = [{"from", FromString} | DAttrs2],
-    DEl2 = {xmlelement, "decline", DAttrs3, DEls},
-    XEl2 = replace_subelement(XEl, DEl2),
-    Packet2 = replace_subelement(Packet, XEl2),
+send_decline_invitation({Packet, XEl, DEl = #xmlel{name='decline'}, ToJID}, 
+                            RoomJID, FromJID) ->
+    FromString = exmpp_jid:to_binary(FromJID),
+
+    DEl1 = exmpp_xml:remove_attribute(DEl, 'to'),
+    DEl2 = exmpp_xml:set_attribute(DEl1, 'from',FromString),
+    XEl2 = replace_subelement(XEl,DEl2),
+    Packet2 = replace_subelement(Packet,XEl2),
     ejabberd_router:route(RoomJID, ToJID, Packet2).
 
 %% Given an element and a new subelement, 
 %% replace the instance of the subelement in element with the new subelement.
-replace_subelement({xmlelement, Name, Attrs, SubEls}, NewSubEl) ->
-    {_, NameNewSubEl, _, _} = NewSubEl,
-    SubEls2 = lists:keyreplace(NameNewSubEl, 2, SubEls, NewSubEl),
-    {xmlelement, Name, Attrs, SubEls2}.
+replace_subelement(#xmlel{children = Els} = El, #xmlel{name = Name} = NewSubEl) ->
+    Els2 = lists:map(fun(#xmlel{name = Name2}) when Name2 =:= Name -> NewSubEl;
+                        (S) -> S
+                     end, Els),
+    exmpp_xml:set_children(El, Els2).
 
 send_error_only_occupants(Packet, Lang, RoomJID, From) ->
     ErrText = "Only occupants are allowed to send messages to the conference",
-    Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+    Err = exmpp_stanza:reply_with_error(
+			    Packet, ?ERR(Packet, 'not-acceptable', Lang, ErrText)),
     ejabberd_router:route(RoomJID, From, Err).
 
 
@@ -3472,7 +3563,8 @@ add_to_log(Type, Data, StateData) ->
 %% Users number checking
 
 tab_add_online_user(JID, StateData) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    LUser = exmpp_jid:prep_node(JID),
+    LServer = exmpp_jid:prep_domain(JID),
     US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
@@ -3481,8 +3573,13 @@ tab_add_online_user(JID, StateData) ->
 	    #muc_online_users{us = US, room = Room, host = Host}).
 
 
-tab_remove_online_user(JID, StateData) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+
+tab_remove_online_user(JID, StateData) when ?IS_JID(JID) ->
+ LUser = exmpp_jid:prep_node(JID),
+ LServer = exmpp_jid:prep_domain(JID),
+    tab_remove_online_user({LUser, LServer, none},StateData);
+
+tab_remove_online_user({LUser, LServer,_}, StateData) ->
     US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
@@ -3491,7 +3588,8 @@ tab_remove_online_user(JID, StateData) ->
 	    #muc_online_users{us = US, room = Room, host = Host}).
 
 tab_count_user(JID) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    LUser = exmpp_jid:prep_node(JID),
+    LServer = exmpp_jid:prep_domain(JID),
     US = {LUser, LServer},
     case catch ets:select(
 		 muc_online_users,
@@ -3501,3 +3599,10 @@ tab_count_user(JID) ->
 	_ ->
 	    0
     end.
+    
+    
+jid_replace_resource(JID, Resource) ->
+    exmpp_jid:full(JID, Resource).
+
+
+

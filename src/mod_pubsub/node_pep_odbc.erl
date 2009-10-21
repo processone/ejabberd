@@ -29,12 +29,12 @@
 -module(node_pep_odbc).
 -author('christophe.romain@process-one.net').
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -define(PUBSUB, mod_pubsub_odbc).
-
 -behaviour(gen_pubsub_node).
 
 %% API definition
@@ -70,9 +70,9 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-	 get_last_items/3,
-	 node_to_path/1,
-	 path_to_node/1
+     get_last_items/3,
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 init(Host, ServerHost, Opts) ->
@@ -123,13 +123,14 @@ features() ->
     ].
 
 create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
-    {User, Server, _Resource} = LOwner,
+    LOwner = jlib:short_prepd_jid(Owner),
+    {User, Server, Resource} = LOwner,
     Allowed = case LOwner of
-	{"", Host, ""} ->
+	{undefined, Host, undefined} ->
 	    true; % pubsub service always allowed
 	_ ->
-	    case acl:match_rule(ServerHost, Access, LOwner) of
+	    JID = exmpp_jid:make(User, Server, Resource),
+	    case acl:match_rule(ServerHost, Access, JID) of
 		allow ->
 		    case Host of 
 			{User, Server, _} -> true;
@@ -179,7 +180,7 @@ purge_node(NodeId, Owner) ->
     node_hometree_odbc:purge_node(NodeId, Owner).
 
 get_entity_affiliations(_Host, Owner) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jlib:short_prepd_bare_jid(Owner),
     node_hometree_odbc:get_entity_affiliations(OwnerKey, Owner).
 
 get_node_affiliations(NodeId) ->
@@ -192,70 +193,70 @@ set_affiliation(NodeId, Owner, Affiliation) ->
     node_hometree_odbc:set_affiliation(NodeId, Owner, Affiliation).
 
 get_entity_subscriptions(_Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jlib:short_prepd_jid(Owner),
+    GenKey = jlib:short_prepd_bare_jid(SubKey),
     Host = ?PUBSUB:escape(element(2, SubKey)),
     SJ = node_hometree_odbc:encode_jid(SubKey),
     GJ = node_hometree_odbc:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
-	    ["select host, node, type, i.nodeid, jid, subscriptions "
+	    ["select host, node, type, i.nodeid, jid, subscription "
 	     "from pubsub_state i, pubsub_node n "
 	     "where i.nodeid = n.nodeid "
 	     "and jid like '", GJ, "%' "
 	     "and host like '%@", Host, "';"];
 	_ ->
-	    ["select host, node, type, i.nodeid, jid, subscriptions "
+	    ["select host, node, type, i.nodeid, jid, subscription "
 	     "from pubsub_state i, pubsub_node n "
 	     "where i.nodeid = n.nodeid "
 	     "and jid in ('", SJ, "', '", GJ, "') "
 	     "and host like '%@", Host, "';"]
     end,
     Reply = case catch ejabberd_odbc:sql_query_t(Query) of
-	{selected, ["host", "node", "type", "nodeid", "jid", "subscriptions"], RItems} ->
+	{selected, ["host", "node", "type", "nodeid", "jid", "subscription"], RItems} ->
 	    lists:map(fun({H, N, T, I, J, S}) ->
 		O = node_hometree_odbc:decode_jid(H),
 		Node = nodetree_odbc:raw_to_node(O, {N, "", T, I}),
-		{Node, node_hometree_odbc:decode_subscriptions(S), node_hometree_odbc:decode_jid(J)}
+		{Node, node_hometree_odbc:decode_subscription(S), node_hometree_odbc:decode_jid(J)}
+	    end, RItems);
+	_ ->
+	    []
+	end,
+    {result, Reply}.
+get_entity_subscriptions_for_send_last(_Host, Owner) ->
+    SubKey = jlib:short_prepd_jid(Owner),
+    GenKey = jlib:short_prepd_bare_jid(SubKey),
+    Host = ?PUBSUB:escape(element(2, SubKey)),
+    SJ = node_hometree_odbc:encode_jid(SubKey),
+    GJ = node_hometree_odbc:encode_jid(GenKey),
+    Query = case SubKey of
+	GenKey ->
+	    ["select host, node, type, i.nodeid, jid, subscription "
+	     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
+	     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid "
+	     "and name='send_last_published_item' and val='on_sub_and_presence' "
+	     "and jid like '", GJ, "%' "
+	     "and host like '%@", Host, "';"];
+	_ ->
+	    ["select host, node, type, i.nodeid, jid, subscription "
+	     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
+	     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid "
+	     "and name='send_last_published_item' and val='on_sub_and_presence' "
+	     "and jid in ('", SJ, "', '", GJ, "') "
+	     "and host like '%@", Host, "';"]
+    end,
+    Reply = case catch ejabberd_odbc:sql_query_t(Query) of
+	{selected, ["host", "node", "type", "nodeid", "jid", "subscription"], RItems} ->
+	    lists:map(fun({H, N, T, I, J, S}) ->
+		O = node_hometree_odbc:decode_jid(H),
+		Node = nodetree_odbc:raw_to_node(O, {N, "", T, I}),
+		{Node, node_hometree_odbc:decode_subscription(S), node_hometree_odbc:decode_jid(J)}
 	    end, RItems);
 	_ ->
 	    []
 	end,
     {result, Reply}.
 
-get_entity_subscriptions_for_send_last(_Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
-    Host = ?PUBSUB:escape(element(2, SubKey)),
-    SJ = node_hometree_odbc:encode_jid(SubKey),
-    GJ = node_hometree_odbc:encode_jid(GenKey),
-    Query = case SubKey of
-	GenKey ->
-	    ["select host, node, type, i.nodeid, jid, subscriptions "
-	     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
-	     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid "
-	     "and name='send_last_published_item' and val='on_sub_and_presence' "
-	     "and jid like '", GJ, "%' "
-	     "and host like '%@", Host, "';"];
-	_ ->
-	    ["select host, node, type, i.nodeid, jid, subscriptions "
-	     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
-	     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid "
-	     "and name='send_last_published_item' and val='on_sub_and_presence' "
-	     "and jid in ('", SJ, "', '", GJ, "') "
-	     "and host like '%@", Host, "';"]
-    end,
-    Reply = case catch ejabberd_odbc:sql_query_t(Query) of
-	{selected, ["host", "node", "type", "nodeid", "jid", "subscriptions"], RItems} ->
-	    lists:map(fun({H, N, T, I, J, S}) ->
-		O = node_hometree_odbc:decode_jid(H),
-		Node = nodetree_odbc:raw_to_node(O, {N, "", T, I}),
-		{Node, node_hometree_odbc:decode_subscriptions(S), node_hometree_odbc:decode_jid(J)}
-	    end, RItems);
-	_ ->
-	    []
-	end,
-    {result, Reply}.
 
 get_node_subscriptions(NodeId) ->
     %% note: get_node_subscriptions is used for broadcasting
@@ -332,4 +333,3 @@ complain_if_modcaps_disabled(ServerHost) ->
 	_ ->
 	    ok
     end.
-

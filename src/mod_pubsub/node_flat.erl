@@ -26,7 +26,7 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -60,8 +60,8 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-	 node_to_path/1,
-	 path_to_node/1
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 
@@ -95,12 +95,13 @@ features() ->
 %% the home/localhost/user/... hierarchy
 %% any node is allowed
 create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
+    LOwner = jlib:short_prepd_jid(Owner),
     Allowed = case LOwner of
-	{"", Host, ""} ->
+	{undefined, Host, undefined} ->
 	    true; % pubsub service always allowed
 	_ ->
-	    acl:match_rule(ServerHost, Access, LOwner) =:= allow
+	    {LU, LS, LR} = LOwner,
+	    acl:match_rule(ServerHost, Access, exmpp_jid:make(LU, LS, LR)) =:= allow
     end,
     {result, Allowed}.
 

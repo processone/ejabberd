@@ -135,11 +135,6 @@ commands() ->
 			desc = "Delete offline messages older than DAYS",
 			module = ?MODULE, function = delete_old_messages,
 			args = [{days, integer}], result = {res, rescode}},
-	 
-     #ejabberd_commands{name = rename_default_nodeplugin, tags = [mnesia],
-			desc = "Update PubSub table from ejabberd trunk SVN to 2.1.0",
-			module = mod_pubsub, function = rename_default_nodeplugin,
-			args = [], result = {res, rescode}},
 
      #ejabberd_commands{name = mnesia_change_nodename, tags = [mnesia],
 			desc = "Change the erlang node name in a backup file",

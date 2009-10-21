@@ -15,7 +15,7 @@
 {"A friendly name for the node","Un nombre sencillo para el nodo"}.
 {"All activity","Toda la actividad"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","¿Deseas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
-{"Allow users to change the subject","Permitir a los usuarios cambiar el asunto"}.
+{"Allow users to change subject","Permitir a los usuarios cambiar el asunto"}.
 {"Allow users to query other users","Permitir a los usuarios consultar a otros usuarios"}.
 {"Allow users to send invites","Permitir a los usuarios enviar invitaciones"}.
 {"Allow users to send private messages","Permitir a los usuarios enviar mensajes privados"}.
@@ -24,7 +24,6 @@
 {"All Users","Todos los usuarios"}.
 {"Announcements","Anuncios"}.
 {"anyone","cualquiera"}.
-{"A password is required to enter this room","Se necesita contraseña para entrar en esta sala"}.
 {"April","abril"}.
 {"August","agosto"}.
 {"Backup","Guardar copia de seguridad"}.
@@ -45,9 +44,8 @@
 {"Commands","Comandos"}.
 {"Conference room does not exist","La sala de conferencias no existe"}.
 {"Configuration","Configuración"}.
-{"Configuration of room ~s","Configuración para la sala ~s"}.
+{"Configuration for ","Configuración para "}.
 {"Connected Resources:","Recursos conectados:"}.
-{"Connections parameters","Parámetros de conexiones"}.
 {"Country","País"}.
 {"CPU Time:","Tiempo consumido de CPU:"}.
 {"Database","Base de datos"}.
@@ -75,10 +73,9 @@
 {"ejabberd vCard module","Módulo vCard para ejabberd"}.
 {"ejabberd virtual hosts","Dominios de ejabberd"}.
 {"ejabberd Web Admin","ejabberd Web Admin"}.
-{"Elements","Elementos"}.
 {"Email","correo"}.
 {"Enable logging","Guardar históricos"}.
-{"Encoding for server ~b","Codificación del servidor ~b"}.
+{"Encodings","Codificaciones"}.
 {"End User Session","Cerrar sesión de usuario"}.
 {"Enter list of {Module, [Options]}","Introduce lista de {módulo, [opciones]}"}.
 {"Enter nickname you want to register","Introduce el apodo que quieras registrar"}.
@@ -86,14 +83,9 @@
 {"Enter path to jabberd14 spool dir","Introduce la ruta al directorio de jabberd14 spools"}.
 {"Enter path to jabberd14 spool file","Introduce ruta al fichero jabberd14 spool"}.
 {"Enter path to text file","Introduce ruta al fichero de texto"}.
-{"Enter the text you see","Teclea el texto que ves"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers.  Press 'Next' to get more fields to fill in.  Press 'Complete' to save settings.","Introduce el nombre de usuario y codificaciones de carácteres que quieras usar al conectar en los servidores de IRC. Pulsa Siguiente para conseguir más campos en el formulario. Pulsa Completar para guardar las opciones."}.
-{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","Introduce el nombre de usuario, codificaciones de carácteres, puertos y contraseñas que quieras usar al conectar en los servidores de IRC"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers","Introduce el nombre de usuario y codificaciones de carácteres que quieras usar al conectar en los servidores de IRC"}.
 {"Erlang Jabber Server","Servidor Jabber en Erlang"}.
-{"Error","Error"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Ejemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar datos de todos los usuarios del servidor a ficheros PIEFXIS (XEP-0227):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar datos de los usuarios de un dominio a ficheros PIEFXIS (XEP-0227):"}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Ejemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","Apellido"}.
 {"February","febrero"}.
 {"Fill in fields to search for any matching Jabber User","Rellena campos para buscar usuarios Jabber que concuerden"}.
@@ -116,13 +108,10 @@
 {"has been kicked","ha sido expulsado"}.
 {" has set the subject to: "," ha puesto el asunto: "}.
 {"Host","Dominio"}.
-{"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Si quieres especificar distintos codificaciones de carácteres, contraseñas o puertos para cada servidor IRC rellena esta lista con valores en el formato '{\"servidor irc\", \"codificación\", \"puerto\", \"contrasela\"}'.  Este servicio usa por defecto la codificación \"~s\", puerto ~p, sin contraseña."}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Si quieres especificar codificaciones de carácteres distintos para cada servidor IRC rellena esta lista con valores en el formato '{\"servidor irc\", \"codificación\"}'.  Este servicio usa por defecto la codificación \"~s\"."}.
 {"Import Directory","Importar directorio"}.
 {"Import File","Importar fichero"}.
-{"Import user data from jabberd14 spool file:","Importar usuario de fichero spool de jabberd14:"}.
 {"Import User from File at ","Importa usuario desde fichero en "}.
-{"Import users data from a PIEFXIS file (XEP-0227):","Importar usuarios desde un fichero PIEFXIS (XEP-0227):"}.
-{"Import users data from jabberd14 spool directory:","Importar usuarios del directorio spool de jabberd14:"}.
 {"Import Users from Dir at ","Importar usuarios desde el directorio en "}.
 {"Import Users From jabberd14 Spool Files","Importar usuarios de ficheros spool de jabberd-1.4"}.
 {"Improper message type","Tipo de mensaje incorrecto"}.
@@ -130,24 +119,16 @@
 {"Invalid affiliation: ~s","Afiliación no válida: ~s"}.
 {"Invalid role: ~s","Rol no válido: ~s"}.
 {"IP addresses","Direcciones IP"}.
-{"IP","IP"}.
-{"IRC channel (don't put the first #)","Canal IRC (no pongas el # del principio)"}.
-{"IRC server","Servidor IRC"}.
-{"IRC settings","Opciones de IRC"}.
 {"IRC Transport","Transporte de IRC"}.
-{"IRC username","Nombre de usuario en IRC"}.
 {"IRC Username","Nombre de usuario en IRC"}.
 {"is now known as","se cambia el nombre a"}.
 {"It is not allowed to send private messages","No está permitido enviar mensajes privados"}.
 {"It is not allowed to send private messages of type \"groupchat\"","No está permitido enviar mensajes privados del tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir el envio de mensajes privados a la sala"}.
 {"Jabber ID","Jabber ID"}.
-{"Jabber ID ~s is invalid","El Jabber ID ~s no es válido"}.
 {"January","enero"}.
-{"Join IRC channel","Entrar en canal IRC"}.
+{"Jabber ID ~s is invalid","El JID ~s no es válido"}.
 {"joins the room","entra en la sala"}.
-{"Join the IRC channel here.","Entrar en el canal de IRC aquí"}.
-{"Join the IRC channel in this Jabber ID: ~s","Entra en el canal de IRC en esta dirección Jabber: ~s"}.
 {"July","julio"}.
 {"June","junio"}.
 {"Last Activity","Última actividad"}.
@@ -160,7 +141,6 @@
 {"List of modules to start","Lista de módulos a iniciar"}.
 {"Low level update script","Script de actualización a bajo nivel"}.
 {"Make participants list public","La lista de participantes es pública"}.
-{"Make room captcha protected","Proteger la sala con captcha"}.
 {"Make room members-only","Sala sólo para miembros"}.
 {"Make room moderated","Sala moderada"}.
 {"Make room password protected","Proteger la sala con contraseña"}.
@@ -171,14 +151,13 @@
 {"Max # of items to persist","Máximo # de elementos que persisten"}.
 {"Max payload size in bytes","Máximo tamaño del contenido en bytes"}.
 {"May","mayo"}.
-{"Membership is required to enter this room","Necesitas ser miembro de esta sala para poder entrar"}.
+{"Membership required to enter this room","Necesitas ser miembro de esta sala para poder entrar"}.
 {"Members:","Miembros:"}.
 {"Memory","Memoria"}.
 {"Message body","Cuerpo del mensaje"}.
 {"Middle Name","Segundo nombre"}.
 {"Moderator privileges required","Se necesita privilegios de moderador"}.
 {"moderators only","solo moderadores"}.
-{"Modified modules","Módulos modificados"}.
 {"Module","Módulo"}.
 {"Modules at ","Módulos en "}.
 {"Modules","Módulos"}.
@@ -187,6 +166,8 @@
 {"Name","Nombre"}.
 {"Never","Nunca"}.
 {"Nickname","Apodo"}.
+{"Nickname is already in use by another occupant","El apodo ya está siendo usado por otro ocupante"}.
+{"Nickname is registered by another person","El apodo ya está registrado por otra persona"}.
 {"Nickname Registration at ","Registro del apodo en "}.
 {"Nickname ~s does not exist in the room","El apodo ~s no existe en la sala"}.
 {"No body provided for announce message","No se ha proporcionado cuerpo de mensaje para el anuncio"}.
@@ -198,7 +179,6 @@
 {"No limit","Sin límite"}.
 {"None","Ninguno"}.
 {"No resource provided","No se ha proporcionado recurso"}.
-{"Not Found","No encontrado"}.
 {"Notify subscribers when items are removed from the node","Notificar subscriptores cuando los elementos se borran del nodo"}.
 {"Notify subscribers when the node configuration changes","Notificar subscriptores cuando cambia la configuración del nodo"}.
 {"Notify subscribers when the node is deleted","Notificar subscriptores cuando el nodo se borra"}.
@@ -214,8 +194,8 @@
 {"Online Users:","Usuarios conectados:"}.
 {"Online Users","Usuarios conectados"}.
 {"Only deliver notifications to available users","Solo enviar notificaciones a los usuarios disponibles"}.
-{"Only moderators and participants are allowed to change the subject in this room","Solo los moderadores y participantes pueden cambiar el asunto de esta sala"}.
-{"Only moderators are allowed to change the subject in this room","Solo los moderadores pueden cambiar el asunto de esta sala"}.
+{"Only moderators and participants are allowed to change subject in this room","Solo los moderadores y participantes pueden cambiar el asunto de esta sala"}.
+{"Only moderators are allowed to change subject in this room","Solo los moderadores pueden cambiar el asunto de esta sala"}.
 {"Only occupants are allowed to send messages to the conference","Solo los ocupantes pueden enviar mensajes a la sala"}.
 {"Only occupants are allowed to send queries to the conference","Solo los ocupantes pueden enviar solicitudes a la sala"}.
 {"Only service administrators are allowed to send service messages","Solo los administradores del servicio tienen permiso para enviar mensajes de servicio"}.
@@ -227,9 +207,9 @@
 {"Outgoing s2s Servers:","Servidores S2S salientes:"}.
 {"Owner privileges required","Se requieren privilegios de propietario de la sala"}.
 {"Packet","Paquete"}.
-{"Password ~b","Contraseña ~b"}.
 {"Password:","Contraseña:"}.
 {"Password","Contraseña"}.
+{"Password required to enter this room","Se necesita contraseña para entrar en esta sala"}.
 {"Password Verification","Verificación de la contraseña"}.
 {"Path to Dir","Ruta al directorio"}.
 {"Path to File","Ruta al fichero"}.
@@ -237,26 +217,24 @@
 {"Period: ","Periodo: "}.
 {"Persist items to storage","Persistir elementos al almacenar"}.
 {"Ping","Ping"}.
-{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ten en cuenta que estas opciones solo harán copia de seguridad de la base de datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia de seguridad de tu base de datos SQL."}.
 {"Pong","Pong"}.
-{"Port ~b","Puerto ~b"}.
 {"Port","Puerto"}.
-{"Present real Jabber IDs to","Los Jabber ID reales pueden verlos"}.
+{"Present real Jabber IDs to","Los JID reales pueden verlos"}.
 {"private, ","privado"}.
-{"Protocol","Protocolo"}.
 {"Publish-Subscribe","Servicio de Publicar-Subscribir"}.
 {"PubSub subscriber request","Petición de subscriptor de PubSub"}.
 {"Queries to the conference members are not allowed in this room","En esta sala no se permiten solicitudes a los miembros de la sala"}.
 {"RAM and disc copy","Copia en RAM y disco"}.
 {"RAM copy","Copia en RAM"}.
+{"(Raw)","(crudo)"}.
 {"Raw","Crudo"}.
 {"Really delete message of the day?","¿Está seguro de quere borrar el mensaje del dia?"}.
 {"Recipient is not in the conference room","El receptor no está en la sala de conferencia"}.
 {"Registered Users:","Usuarios registrados:"}.
 {"Registered Users","Usuarios registrados"}.
 {"Registration in mod_irc for ","Registro en mod_irc para"}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ten en cuenta que estas opciones solo harán copia de seguridad de la base de datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia de seguridad de tu base de datos SQL."}.
 {"Remote copy","Copia remota"}.
-{"Remove All Offline Messages","Borrar todos los mensajes diferidos"}.
 {"Remove","Borrar"}.
 {"Remove User","Eliminar usuario"}.
 {"Replaced by new connection","Reemplazado por una nueva conexión"}.
@@ -270,8 +248,6 @@
 {"Restore","Restaurar"}.
 {"Room Configuration","Configuración de la sala"}.
 {"Room creation is denied by service policy","Se te ha denegado crear la sala por política del servicio"}.
-{"Room description","Descripción de la sala"}.
-{"Room Occupants","Ocupantes de la sala"}.
 {"Room title","Título de la sala"}.
 {"Roster groups allowed to subscribe","Grupos de contactos que pueden suscribirse"}.
 {"Roster","Lista de contactos"}.
@@ -289,7 +265,6 @@
 {"Send announcement to all users","Enviar anuncio a todos los usuarios"}.
 {"Send announcement to all users on all hosts","Enviar anuncio a todos los usuarios en todos los dominios"}.
 {"September","septiembre"}.
-{"Server ~b","Servidor ~b"}.
 {"Set message of the day and send to online users","Poner mensaje del dia y enviar a todos los usuarios conectados"}.
 {"Set message of the day on all hosts and send to online users","Poner mensaje del día en todos los dominios y enviar a los usuarios conectados"}.
 {"Shared Roster Groups","Grupos Compartidos"}.
@@ -297,6 +272,8 @@
 {"Show Ordinary Table","Mostrar Tabla Ordinaria"}.
 {"Shut Down Service","Detener el servicio"}.
 {"~s invites you to the room ~s","~s te invita a la sala ~s"}.
+{"Size","Tamaño"}.
+{"Specified nickname is already registered","El apodo especificado ya está registrado, tendrás que buscar otro"}.
 {"Specify the access model","Especifica el modelo de acceso"}.
 {"Specify the publisher model","Especificar el modelo del publicante"}.
 {"~s's Offline Messages Queue","Cola de mensajes diferidos de ~s"}.
@@ -318,10 +295,6 @@
 {"Subscriber Address","Dirección del subscriptor"}.
 {"Subscription","Subscripción"}.
 {"Sunday","domingo"}.
-{"That nickname is already in use by another occupant","Ese apodo ya está siendo usado por otro ocupante"}.
-{"That nickname is registered by another person","El apodo ya está registrado por otra persona"}.
-{"The captcha is valid.","El captcha es válido."}.
-{"The collections with which a node is affiliated","Las colecciones a las que un nodo está afiliado"}.
 {"the password is","la contraseña es"}.
 {"This participant is kicked from the room because he sent an error message","Este participante ha sido expulsado de la sala porque envió un mensaje de error"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Este participante ha sido expulsado de la sala porque envió un mensaje de error a otro participante"}.
@@ -338,10 +311,9 @@
 {"Transactions Logged:","Transacciones registradas:"}.
 {"Transactions Restarted:","Transacciones reiniciadas:"}.
 {"Tuesday","martes"}.
-{"Unable to generate a captcha","No se pudo generar un captcha."}.
-{"Unauthorized","No autorizado"}.
 {"Update ","Actualizar "}.
 {"Update","Actualizar"}.
+{"Updated modules","Módulos actualizados"}.
 {"Update message of the day (don't send)","Actualizar mensaje del dia, pero no enviarlo"}.
 {"Update message of the day on all hosts (don't send)","Actualizar el mensaje del día en todos los dominos (pero no enviarlo)"}.
 {"Update plan","Plan de actualización"}.
@@ -349,13 +321,14 @@
 {"Uptime:","Tiempo desde el inicio:"}.
 {"Use of STARTTLS required","Es obligatorio usar STARTTLS"}.
 {"User Management","Administración de usuarios"}.
-{"Users are not allowed to register accounts so quickly","Los usuarios no tienen permitido crear cuentas con tanta rapidez"}.
+{"Users are not allowed to register accounts so fast","Los usuarios no tienen permitido crear cuentas con tanta rapidez"}.
 {"Users Last Activity","Última actividad de los usuarios"}.
 {"Users","Usuarios"}.
 {"User ","Usuario "}.
 {"User","Usuario"}.
 {"Validate","Validar"}.
 {"vCard User Search","Buscar vCard de usuario"}.
+{"Virtual Hosts","Dominios"}.
 {"Visitors are not allowed to change their nicknames in this room","Los visitantes no tienen permitido cambiar sus apodos en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Los visitantes no pueden enviar mensajes a todos los ocupantes"}.
 {"Wednesday","miércoles"}.
@@ -368,4 +341,3 @@
 {"You need an x:data capable client to register nickname","Necesitas un cliente con soporte de x:data para poder registrar el apodo"}.
 {"You need an x:data capable client to search","Necesitas un cliente con soporte de x:data para poder buscar"}.
 {"Your contact offline message queue is full. The message has been discarded.","Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha descartado."}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","Tus mensajes a ~s están siendo bloqueados. Para desbloquearlos, visita ~s"}.

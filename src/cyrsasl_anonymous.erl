@@ -31,17 +31,41 @@
 
 -behaviour(cyrsasl).
 
+%% @type mechstate() = {state, Server}
+%%     Server = string().
+
 -record(state, {server}).
+
+%% @spec (Opts) -> true
+%%     Opts = term()
 
 start(_Opts) ->
     cyrsasl:register_mechanism("ANONYMOUS", ?MODULE, false),
     ok.
 
+%% @spec () -> ok
+
 stop() ->
     ok.
 
+%% @spec (Host, GetPassword, CheckPassword, CheckPasswordDigest) -> {ok, State}
+%%     Host = string()
+%%     GetPassword = function()
+%%     CheckPassword = function()
+%%     State = mechstate()
+
 mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
     {ok, #state{server = Host}}.
+
+%% @spec (State, ClientIn) -> Ok | Error
+%%     State = mechstate()
+%%     ClientIn = string()
+%%     Ok = {ok, Props}
+%%         Props = [Prop]
+%%         Prop = {username, Username} | {auth_module, AuthModule}
+%%         Username = string()
+%%         AuthModule = ejabberd_auth_anonymous
+%%     Error = {error, 'not-authorized'}
 
 mech_step(State, _ClientIn) ->
     %% We generate a random username:
@@ -50,7 +74,7 @@ mech_step(State, _ClientIn) ->
     
     %% Checks that the username is available
     case ejabberd_auth:is_user_exists(User, Server) of
-	true  -> {error, "not-authorized"};
+	true  -> {error, 'not-authorized'};
 	false -> {ok, [{username, User},
 		       {auth_module, ejabberd_auth_anonymous}]}
     end.

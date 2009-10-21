@@ -26,7 +26,6 @@
 -author(__TO_BE_DEFINED__).
 
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -45,7 +44,7 @@
 	 create_node/2,
 	 delete_node/1,
 	 purge_node/2,
-	 subscribe_node/8,
+	 subscribe_node/7,
 	 unsubscribe_node/4,
 	 publish_item/6,
 	 delete_item/4,
@@ -56,9 +55,8 @@
 	 set_affiliation/3,
 	 get_entity_subscriptions/2,
 	 get_node_subscriptions/1,
-	 get_subscriptions/2,
-	 set_subscriptions/4,
-	 get_pending_nodes/2,
+	 get_subscription/2,
+	 set_subscription/3,
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
@@ -66,8 +64,7 @@
 	 get_items/2,
 	 get_item/7,
 	 get_item/2,
-	 set_item/1,
-	 get_item_name/3
+	 set_item/1
 	]).
 
 
@@ -78,7 +75,8 @@ terminate(Host, ServerHost) ->
     node_hometree:terminate(Host, ServerHost).
 
 options() ->
-    [{deliver_payloads, true},
+    [{node_type, __TO_BE_DEFINED__},
+     {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
@@ -97,7 +95,7 @@ options() ->
 features() ->
     ["create-nodes",
      "delete-nodes",
-     "delete-items",
+     "delete-any",
      "instant-nodes",
      "outcast-affiliation",
      "persistent-items",
@@ -120,8 +118,8 @@ create_node(NodeId, Owner) ->
 delete_node(Removed) ->
     node_hometree:delete_node(Removed).
 
-subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
-    node_hometree:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options).
+subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
+    node_hometree:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup).
 
 unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
     node_hometree:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
@@ -156,14 +154,11 @@ get_entity_subscriptions(Host, Owner) ->
 get_node_subscriptions(NodeId) ->
     node_hometree:get_node_subscriptions(NodeId).
 
-get_subscriptions(NodeId, Owner) ->
-    node_hometree:get_subscriptions(NodeId, Owner).
+get_subscription(NodeId, Owner) ->
+    node_hometree:get_subscription(NodeId, Owner).
 
-set_subscriptions(NodeId, Owner, Subscription, SubId) ->
-    node_hometree:set_subscriptions(NodeId, Owner, Subscription, SubId).
-
-get_pending_nodes(Host, Owner) ->
-    node_hometree:get_pending_nodes(Host, Owner).
+set_subscription(NodeId, Owner, Subscription) ->
+    node_hometree:set_subscription(NodeId, Owner, Subscription).
 
 get_states(NodeId) ->
     node_hometree:get_states(NodeId).
@@ -177,7 +172,7 @@ set_state(State) ->
 get_items(NodeId, From) ->
     node_hometree:get_items(NodeId, From).
 
-get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
+get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId)
     node_hometree:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
     
 get_item(NodeId, ItemId) ->
@@ -188,6 +183,3 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, Su
     
 set_item(Item) ->
     node_hometree:set_item(Item).
-
-get_item_name(Host, Node, Id) ->
-    node_hometree:get_item_name(Host, Node, Id).

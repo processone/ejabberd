@@ -32,14 +32,14 @@
 %% API
 -export([start_link/0,
 	 route/3,
-	 open_session/5, close_session/4,
+	 open_session/3, close_session/2,
 	 check_in_subscription/6,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
-	 set_presence/7,
-	 unset_presence/6,
-	 close_session_unset_presence/5,
+	 set_presence/5,
+	 unset_presence/4,
+	 close_session_unset_presence/3,
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
 	 get_vh_session_list/1,
@@ -50,17 +50,18 @@
 	 connected_users/0,
 	 connected_users_number/0,
 	 user_resources/2,
-	 get_session_pid/3,
+	 get_session_pid/1,
 	 get_user_info/3,
-	 get_user_ip/3
+	 get_user_ip/1
 	]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("ejabberd_commands.hrl").
 -include("mod_privacy.hrl").
 
@@ -71,6 +72,16 @@
 %% default value for the maximum number of user connections
 -define(MAX_USER_SESSIONS, infinity).
 
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ?NS_JABBER_CLIENT).
+-define(PREFIXED_NS, [
+  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
+]).
+
+
+-define(IS_BINARY_OR_UNDEF(X),
+            (is_binary(X) orelse X == 'undefined')).
 %%====================================================================
 %% API
 %%====================================================================
@@ -81,6 +92,16 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nSM: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    route(From, To, Packet);
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
@@ -90,30 +111,29 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-open_session(SID, User, Server, Resource, Info) ->
-    set_session(SID, User, Server, Resource, undefined, Info),
-    inc_session_counter(jlib:nameprep(Server)),
-    check_for_sessions_to_replace(User, Server, Resource),
-    JID = jlib:make_jid(User, Server, Resource),
-    ejabberd_hooks:run(sm_register_connection_hook, JID#jid.lserver,
+open_session(SID, JID, Info) when ?IS_JID(JID) ->
+    set_session(SID, JID, undefined, Info),
+    inc_session_counter(exmpp_jid:domain(JID)),
+    check_for_sessions_to_replace(JID),
+    ejabberd_hooks:run(sm_register_connection_hook, exmpp_jid:prep_domain(JID),
 		       [SID, JID, Info]).
 
-close_session(SID, User, Server, Resource) ->
+close_session(SID, JID ) when ?IS_JID(JID)-> 
     Info = case mnesia:dirty_read({session, SID}) of
 	[] -> [];
 	[#session{info=I}] -> I
     end,
     F = fun() ->
 		mnesia:delete({session, SID}),
-		dec_session_counter(jlib:nameprep(Server))
+		dec_session_counter(exmpp_jid:domain(JID))
 	end,
     mnesia:sync_dirty(F),
-    JID = jlib:make_jid(User, Server, Resource),
-    ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
+    ejabberd_hooks:run(sm_remove_connection_hook, exmpp_jid:prep_domain(JID),
 		       [SID, JID, Info]).
 
-check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
-    case ejabberd_auth:is_user_exists(User, Server) of
+check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) 
+        when is_binary(User), is_binary(Server)->
+    case ejabberd_auth:is_user_exists(binary_to_list(User), binary_to_list(Server)) of
 	true ->
 	    Acc;
 	false ->
@@ -121,20 +141,20 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     end.
 
 bounce_offline_message(From, To, Packet) ->
-    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
+    Err = exmpp_stanza:reply_with_error(Packet, 'service-unavailable'),
     ejabberd_router:route(To, From, Err),
     stop.
 
 disconnect_removed_user(User, Server) ->
-    ejabberd_sm:route(jlib:make_jid("", "", ""),
-		      jlib:make_jid(User, Server, ""),
-		      {xmlelement, "broadcast", [],
-		       [{exit, "User removed"}]}).
+    ejabberd_sm:route(exmpp_jid:make(),
+		      exmpp_jid:make(User, 
+                                      Server),
+                      #xmlel{name = 'broadcast',
+                        children = [{exit, "User removed"}]}).
 
-get_user_resources(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
+get_user_resources(User, Server) 
+    when is_binary(User), is_binary(Server) ->
+    US = {User, Server},
     case catch mnesia:dirty_index_read(session, US, #session.us) of
 	{'EXIT', _Reason} ->
 	    [];
@@ -142,11 +162,10 @@ get_user_resources(User, Server) ->
 	    [element(3, S#session.usr) || S <- clean_session_list(Ss)]
     end.
 
-get_user_ip(User, Server, Resource) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    LResource = jlib:resourceprep(Resource),
-    USR = {LUser, LServer, LResource},
+get_user_ip(JID) when ?IS_JID(JID) ->
+    USR = {exmpp_jid:prep_node(JID), 
+           exmpp_jid:prep_domain(JID), 
+           exmpp_jid:prep_resource(JID)},
     case mnesia:dirty_index_read(session, USR, #session.usr) of
 	[] ->
 	    undefined;
@@ -155,11 +174,16 @@ get_user_ip(User, Server, Resource) ->
 	    proplists:get_value(ip, Session#session.info)
     end.
 
-get_user_info(User, Server, Resource) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    LResource = jlib:resourceprep(Resource),
-    USR = {LUser, LServer, LResource},
+get_user_info(User, Server, Resource) 
+    when is_binary(User), 
+         is_binary(Server),
+         is_binary(Resource) ->
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
+    LResource = exmpp_stringprep:resourceprep(Resource),
+    USR = {LUser, 
+           LServer, 
+           LResource},
     case mnesia:dirty_index_read(session, USR, #session.usr) of
 	[] ->
 	    offline;
@@ -171,26 +195,37 @@ get_user_info(User, Server, Resource) ->
 	    [{node, Node}, {conn, Conn}, {ip, IP}]
     end.
 
-set_presence(SID, User, Server, Resource, Priority, Presence, Info) ->
-    set_session(SID, User, Server, Resource, Priority, Info),
-    ejabberd_hooks:run(set_presence_hook, jlib:nameprep(Server),
-		       [User, Server, Resource, Presence]).
+set_presence(SID, JID, Priority, Presence, Info) when ?IS_JID(JID) ->
+    set_session(SID, JID, Priority, Info),
+    ejabberd_hooks:run(set_presence_hook, 
+           exmpp_jid:prep_domain(JID),
+		       [exmpp_jid:prep_node(JID), 
+                exmpp_jid:prep_domain(JID), 
+                exmpp_jid:prep_resource(JID), 
+                Presence]).
 
-unset_presence(SID, User, Server, Resource, Status, Info) ->
-    set_session(SID, User, Server, Resource, undefined, Info),
-    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
-		       [User, Server, Resource, Status]).
+unset_presence(SID, JID, Status, Info) when ?IS_JID(JID)->
+    set_session(SID, JID, undefined, Info),
+    ejabberd_hooks:run(unset_presence_hook, 
+               exmpp_jid:prep_domain(JID),
+		       [exmpp_jid:prep_node(JID), 
+                exmpp_jid:prep_domain(JID), 
+                exmpp_jid:prep_resource(JID), 
+                Status]).
 
-close_session_unset_presence(SID, User, Server, Resource, Status) ->
-    close_session(SID, User, Server, Resource),
-    ejabberd_hooks:run(unset_presence_hook, jlib:nameprep(Server),
-		       [User, Server, Resource, Status]).
+close_session_unset_presence(SID, JID, Status) when ?IS_JID(JID) ->
+    close_session(SID, JID),
+    ejabberd_hooks:run(unset_presence_hook, 
+               exmpp_jid:prep_domain(JID),
+		       [exmpp_jid:prep_node(JID), 
+                exmpp_jid:prep_domain(JID), 
+                exmpp_jid:prep_resource(JID), 
+                Status]).
 
-get_session_pid(User, Server, Resource) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    LResource = jlib:resourceprep(Resource),
-    USR = {LUser, LServer, LResource},
+get_session_pid(JID) when ?IS_JID(JID) ->
+    USR = {exmpp_jid:prep_node(JID), 
+           exmpp_jid:prep_domain(JID), 
+           exmpp_jid:prep_resource(JID)},
     case catch mnesia:dirty_index_read(session, USR, #session.usr) of
 	[#session{sid = {_, Pid}}] -> Pid;
 	_ -> none
@@ -210,8 +245,8 @@ dirty_get_my_sessions_list() ->
 	[{'==', {node, '$1'}, node()}],
 	['$_']}]).
 
-get_vh_session_list(Server) ->
-    LServer = jlib:nameprep(Server),
+get_vh_session_list(Server) when is_binary(Server) ->
+    LServer = exmpp_stringprep:nameprep(Server),
     mnesia:dirty_select(
       session,
       [{#session{usr = '$1', _ = '_'},
@@ -219,7 +254,7 @@ get_vh_session_list(Server) ->
 	['$1']}]).
 
 get_vh_session_number(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_jid:prep_domain(exmpp_jid:parse(Server)),
     Query = mnesia:dirty_select(
 		session_counter,
 		[{#session_counter{vhost = LServer, count = '$1'},
@@ -267,11 +302,12 @@ init([]) ->
     ets:new(sm_iqtable, [named_table]),
     lists:foreach(
       fun(Host) ->
-	      ejabberd_hooks:add(roster_in_subscription, Host,
+          HostB = list_to_binary(Host),
+	      ejabberd_hooks:add(roster_in_subscription, HostB,
 				 ejabberd_sm, check_in_subscription, 20),
-	      ejabberd_hooks:add(offline_message_hook, Host,
+	      ejabberd_hooks:add(offline_message_hook, HostB,
 				 ejabberd_sm, bounce_offline_message, 100),
-	      ejabberd_hooks:add(remove_user, Host,
+	      ejabberd_hooks:add(remove_user, HostB,
 				 ejabberd_sm, disconnect_removed_user, 100)
       end, ?MYHOSTS),
     ejabberd_commands:register_commands(commands()),
@@ -306,6 +342,16 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
+handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nSM: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    handle_info({route, From, To, Packet}, State);
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
@@ -358,12 +404,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-set_session(SID, User, Server, Resource, Priority, Info) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    LResource = jlib:resourceprep(Resource),
-    US = {LUser, LServer},
-    USR = {LUser, LServer, LResource},
+set_session(SID, JID, Priority, Info) ->
+    US = {exmpp_jid:prep_node(JID), exmpp_jid:prep_domain(JID)},
+    USR = {exmpp_jid:prep_node(JID), 
+           exmpp_jid:prep_domain(JID), 
+           exmpp_jid:prep_resource(JID)},
     F = fun() ->
 		mnesia:write(#session{sid = SID,
 				      usr = USR,
@@ -393,95 +438,93 @@ clean_table_from_bad_node(Node) ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
-    #jid{user = User, server = Server,
-	 luser = LUser, lserver = LServer, lresource = LResource} = To,
-    {xmlelement, Name, Attrs, _Els} = Packet,
-    case LResource of
-	"" ->
-	    case Name of
-		"presence" ->
+    case exmpp_jid:prep_resource(To) of
+	undefined ->
+	    case Packet of
+		_ when ?IS_PRESENCE(Packet) ->
 		    {Pass, _Subsc} =
-			case xml:get_attr_s("type", Attrs) of
-			    "subscribe" ->
-				Reason = xml:get_path_s(
-					   Packet,
-					   [{elem, "status"}, cdata]),
+			case exmpp_presence:get_type(Packet) of
+			    'subscribe' ->
+				Reason = exmpp_presence:get_status(Packet),
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
-				   LServer,
+				   exmpp_jid:prep_domain(To),
 				   false,
-				   [User, Server, From, subscribe, Reason]),
+				   [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), From, subscribe, Reason]),
 				 true};
-			    "subscribed" ->
+			    'subscribed' ->
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
-				   LServer,
+				   exmpp_jid:prep_domain(To),
 				   false,
-				   [User, Server, From, subscribed, ""]),
+				   [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), From, subscribed, <<>>]),
 				 true};
-			    "unsubscribe" ->
+			    'unsubscribe' ->
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
-				   LServer,
+				   exmpp_jid:prep_domain(To),
 				   false,
-				   [User, Server, From, unsubscribe, ""]),
+				   [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), From, unsubscribe, <<>>]),
 				 true};
-			    "unsubscribed" ->
+			    'unsubscribed' ->
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
-				   LServer,
+				   exmpp_jid:prep_domain(To),
 				   false,
-				   [User, Server, From, unsubscribed, ""]),
+				   [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), From, unsubscribed, <<>>]),
 				 true};
 			    _ ->
 				{true, false}
 			end,
 		    if Pass ->
 			    PResources = get_user_present_resources(
-					   LUser, LServer),
+					   exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To)),
 			    lists:foreach(
 			      fun({_, R}) ->
 				      do_route(
 					From,
-					jlib:jid_replace_resource(To, R),
+					exmpp_jid:full(To, R),
 					Packet)
 			      end, PResources);
 		       true ->
 			    ok
 		    end;
-		"message" ->
+		_ when ?IS_MESSAGE(Packet) ->
 		    route_message(From, To, Packet);
-		"iq" ->
+		_ when ?IS_IQ(Packet) ->
 		    process_iq(From, To, Packet);
-		"broadcast" ->
+		#xmlel{name = 'broadcast'} ->
 		    lists:foreach(
 		      fun(R) ->
 			      do_route(From,
-				       jlib:jid_replace_resource(To, R),
+				       exmpp_jid:full(To, R),
 				       Packet)
-		      end, get_user_resources(User, Server));
+		      end, get_user_resources(exmpp_jid:prep_node(To), 
+                                      exmpp_jid:prep_domain(To)));
 		_ ->
 		    ok
 	    end;
 	_ ->
-	    USR = {LUser, LServer, LResource},
+	    USR = {exmpp_jid:prep_node(To),
+               exmpp_jid:prep_domain(To),
+               exmpp_jid:prep_resource(To)},
 	    case mnesia:dirty_index_read(session, USR, #session.usr) of
 		[] ->
-		    case Name of
-			"message" ->
+		    case Packet of
+			_ when ?IS_MESSAGE(Packet) ->
 			    route_message(From, To, Packet);
-			"iq" ->
-			    case xml:get_attr_s("type", Attrs) of
-				"error" -> ok;
-				"result" -> ok;
+			_ when ?IS_IQ(Packet) ->
+			    case exmpp_iq:get_type(Packet) of
+				'error' -> ok;
+				'result' -> ok;
 				_ ->
 				    Err =
-					jlib:make_error_reply(
-					  Packet, ?ERR_RECIPIENT_UNAVAILABLE),
+					exmpp_iq:error(Packet,
+                                          'service-unavailable'),
 				    ejabberd_router:route(To, From, Err)
 			    end;
 			_ ->
@@ -500,8 +543,8 @@ do_route(From, To, Packet) ->
 %% for the target session/resource to which a stanza is addressed,
 %% or if there are no current sessions for the user.
 is_privacy_allow(From, To, Packet) ->
-    User = To#jid.user,
-    Server = To#jid.server,
+    User = exmpp_jid:prep_node(To), 
+    Server = exmpp_jid:prep_domain(To),
     PrivacyList = ejabberd_hooks:run_fold(privacy_get_user_list, Server,
 					  #userlist{}, [User, Server]),
     is_privacy_allow(From, To, Packet, PrivacyList).
@@ -509,8 +552,8 @@ is_privacy_allow(From, To, Packet) ->
 %% Check if privacy rules allow this delivery
 %% Function copied from ejabberd_c2s.erl
 is_privacy_allow(From, To, Packet, PrivacyList) ->
-    User = To#jid.user,
-    Server = To#jid.server,
+    User = exmpp_jid:prep_node(To), 
+    Server = exmpp_jid:prep_domain(To),
     allow == ejabberd_hooks:run_fold(
 	       privacy_check_packet, Server,
 	       allow,
@@ -521,8 +564,8 @@ is_privacy_allow(From, To, Packet, PrivacyList) ->
 		in]).
 
 route_message(From, To, Packet) ->
-    LUser = To#jid.luser,
-    LServer = To#jid.lserver,
+    LUser = exmpp_jid:prep_node(To),
+    LServer = exmpp_jid:prep_domain(To),
     PrioRes = get_user_present_resources(LUser, LServer),
     case catch lists:max(PrioRes) of
 	{Priority, _R} when is_integer(Priority), Priority >= 0 ->
@@ -530,8 +573,7 @@ route_message(From, To, Packet) ->
 	      %% Route messages to all priority that equals the max, if
 	      %% positive
 	      fun({P, R}) when P == Priority ->
-		      LResource = jlib:resourceprep(R),
-		      USR = {LUser, LServer, LResource},
+		      USR = {LUser, LServer, R},
 		      case mnesia:dirty_index_read(session, USR, #session.usr) of
 			  [] ->
 			      ok; % Race condition
@@ -547,22 +589,23 @@ route_message(From, To, Packet) ->
 	      end,
 	      PrioRes);
 	_ ->
-	    case xml:get_tag_attr_s("type", Packet) of
-		"error" ->
+	    case exmpp_message:get_type(Packet) of
+		'error' ->
 		    ok;
-		"groupchat" ->
+		'groupchat' ->
 		    bounce_offline_message(From, To, Packet);
-		"headline" ->
+		'headline' ->
 		    bounce_offline_message(From, To, Packet);
 		_ ->
-		    case ejabberd_auth:is_user_exists(LUser, LServer) of
+		    case ejabberd_auth:is_user_exists(exmpp_jid:prep_node_as_list(To), 
+                                              exmpp_jid:prep_domain_as_list(To)) of
 			true ->
 			    ejabberd_hooks:run(offline_message_hook,
-					       LServer,
+					       exmpp_jid:prep_domain(To),
 					       [From, To, Packet]);
 			_ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_SERVICE_UNAVAILABLE),
+			    Err = exmpp_stanza:reply_with_error(
+				    Packet, 'service-unaivailable'),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	    end
@@ -607,18 +650,16 @@ get_user_present_resources(LUser, LServer) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% On new session, check if some existing connections need to be replace
-check_for_sessions_to_replace(User, Server, Resource) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    LResource = jlib:resourceprep(Resource),
-
+check_for_sessions_to_replace(JID) ->
     %% TODO: Depending on how this is executed, there could be an unneeded
     %% replacement for max_sessions. We need to check this at some point.
-    check_existing_resources(LUser, LServer, LResource),
-    check_max_sessions(LUser, LServer).
+    check_existing_resources(JID),
+    check_max_sessions(JID).
 
-check_existing_resources(LUser, LServer, LResource) ->
-    USR = {LUser, LServer, LResource},
+check_existing_resources(JID) ->
+    USR = {exmpp_jid:prep_node(JID),
+           exmpp_jid:prep_domain(JID),
+           exmpp_jid:prep_resource(JID)},
     %% A connection exist with the same resource. We replace it:
     SIDs = mnesia:dirty_select(
 	     session,
@@ -634,14 +675,16 @@ check_existing_resources(LUser, LServer, LResource) ->
 	      end, SIDs)
     end.
 
-check_max_sessions(LUser, LServer) ->
+check_max_sessions(JID) ->
     %% If the max number of sessions for a given is reached, we replace the
     %% first one
     SIDs = mnesia:dirty_select(
 	     session,
-	     [{#session{sid = '$1', us = {LUser, LServer}, _ = '_'}, [],
+	     [{#session{sid = '$1', 
+                    us = {exmpp_jid:prep_node(JID), exmpp_jid:prep_domain(JID)},
+                    _ = '_'}, [],
 	       ['$1']}]),
-    MaxSessions = get_max_user_sessions(LUser, LServer),
+    MaxSessions = get_max_user_sessions(JID),
     if
 	length(SIDs) =< MaxSessions ->
 	    ok;
@@ -655,9 +698,9 @@ check_max_sessions(LUser, LServer) ->
 %% This option defines the max number of time a given users are allowed to
 %% log in
 %% Defaults to infinity
-get_max_user_sessions(LUser, Host) ->
+get_max_user_sessions(JID) ->
     case acl:match_rule(
-	   Host, max_user_sessions, jlib:make_jid(LUser, Host, "")) of
+	   exmpp_jid:prep_domain_as_list(JID), max_user_sessions, exmpp_jid:bare(JID)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_SESSIONS
@@ -694,32 +737,30 @@ dec_session_counter(LServer) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 process_iq(From, To, Packet) ->
-    IQ = jlib:iq_query_info(Packet),
-    case IQ of
-	#iq{xmlns = XMLNS} ->
-	    Host = To#jid.lserver,
-	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+    case exmpp_iq:xmlel_to_iq(Packet) of
+	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
+        LServer = exmpp_jid:prep_domain(To),
+	    case ets:lookup(sm_iqtable, {XMLNS, LServer}) of
 		[{_, Module, Function}] ->
-		    ResIQ = Module:Function(From, To, IQ),
+		    ResIQ = Module:Function(From, To, IQ_Rec),
 		    if
 			ResIQ /= ignore ->
-			    ejabberd_router:route(To, From,
-						  jlib:iq_to_xml(ResIQ));
+			    Reply = exmpp_iq:iq_to_xmlel(ResIQ, To, From),
+			    ejabberd_router:route(To, From, Reply);
 			true ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
-		    gen_iq_handler:handle(Host, Module, Function, Opts,
-					  From, To, IQ);
+		    gen_iq_handler:handle(LServer, 
+                      Module, Function, Opts, From, To, IQ_Rec);
 		[] ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_SERVICE_UNAVAILABLE),
+		    Err = exmpp_iq:error(Packet, 'service-unavailable'),
 		    ejabberd_router:route(To, From, Err)
 	    end;
-	reply ->
+	#iq{kind = response} ->
 	    ok;
 	_ ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
+	    Err = exmpp_iq:error(Packet, 'bad-request'),
 	    ejabberd_router:route(To, From, Err),
 	    ok
     end.
@@ -759,7 +800,8 @@ connected_users_number() ->
     length(dirty_get_sessions_list()).
 
 user_resources(User, Server) ->
-    Resources =  get_user_resources(User, Server),
+    Resources =  get_user_resources(list_to_binary(User), 
+                                    list_to_binary(Server)),
     lists:sort(Resources).
 
 

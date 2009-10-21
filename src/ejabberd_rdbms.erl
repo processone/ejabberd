@@ -70,9 +70,14 @@ start_odbc(Host) ->
 
 %% Returns true if we have configured odbc_server for the given host
 needs_odbc(Host) ->
-    LHost = jlib:nameprep(Host),
-    case ejabberd_config:get_local_option({odbc_server, LHost}) of
-	undefined ->
-	    false;
-	_ -> true
+    try
+	LHost = exmpp_stringprep:nameprep(Host),
+	case ejabberd_config:get_local_option({odbc_server, LHost}) of
+	    undefined ->
+		false;
+	    _ -> true
+	end
+    catch
+	_ ->
+	    false
     end.

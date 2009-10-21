@@ -54,6 +54,8 @@
 	 code_change/3
 	]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 %% hook handlers
 -export([receive_packet/3,
 	 receive_packet/4,
@@ -61,7 +63,6 @@
 	 remove_connection/3]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -define(PROCNAME, ejabberd_mod_caps).
 -define(DICT, dict).
@@ -81,23 +82,13 @@
 %% capabilities are advertised.
 read_caps(Els) ->
     read_caps(Els, nothing).
-read_caps([{xmlelement, "c", Attrs, _Els} | Tail], Result) ->
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_CAPS ->
-	    Node = xml:get_attr_s("node", Attrs),
-	    Version = xml:get_attr_s("ver", Attrs),
-	    Exts = string:tokens(xml:get_attr_s("ext", Attrs), " "),
-	    read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
-	_ ->
-	    read_caps(Tail, Result)
-    end;
-read_caps([{xmlelement, "x", Attrs, _Els} | Tail], Result) ->
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_MUC_USER ->
-	    nothing;
-	_ ->
-	    read_caps(Tail, Result)
-    end;
+read_caps([#xmlel{ns = ?NS_CAPS, name = 'c'} = El | Tail], _Result) ->
+    Node = exmpp_xml:get_attribute_as_list(El, 'node', ""),
+    Version = exmpp_xml:get_attribute_as_list(El, 'ver', ""),
+    Exts = string:tokens(exmpp_xml:get_attribute_as_list(El, 'ext', ""), " "),
+    read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
+read_caps([#xmlel{ns = ?NS_MUC_USER, name = 'x'} | _Tail], _Result) ->
+    nothing;
 read_caps([_ | Tail], Result) ->
     read_caps(Tail, Result);
 read_caps([], Result) ->
@@ -114,11 +105,12 @@ get_caps(LJID) ->
     get_caps(LJID, 5).
 get_caps(_, 0) ->
     nothing;
-get_caps(LJID, Retry) ->
-    case catch mnesia:dirty_read({user_caps, jid_to_binary(LJID)}) of
+get_caps({U, S, R}, Retry) ->
+    BJID = exmpp_jid:to_binary(U, S, R),
+    case catch mnesia:dirty_read({user_caps, BJID}) of
 	[#user_caps{caps=waiting}] ->
 	    timer:sleep(2000),
-	    get_caps(LJID, Retry-1);
+	    get_caps({U, S, R}, Retry-1);
 	[#user_caps{caps=Caps}] ->
 	    Caps;
 	_ ->
@@ -127,16 +119,17 @@ get_caps(LJID, Retry) ->
 
 %% clear_caps removes user caps from database
 clear_caps(JID) ->
-    {U, S, R} = jlib:jid_tolower(JID),
-    BJID = jid_to_binary(JID),
-    BUID = jid_to_binary({U, S, []}),
+    R = exmpp_jid:prep_resource(JID),
+    BJID = exmpp_jid:to_binary(JID),
+    BUID = exmpp_jid:bare_to_binary(JID),
     catch mnesia:dirty_delete({user_caps, BJID}),
     catch mnesia:dirty_delete_object(#user_caps_resources{uid = BUID, resource = list_to_binary(R)}),
     ok.
-
+  
 %% give default user resource
-get_user_resources(LUser, LServer) ->
-    case catch mnesia:dirty_read({user_caps_resources, jid_to_binary({LUser, LServer, []})}) of
+get_user_resources(U, S) ->
+    BUID = exmpp_jid:bare_to_binary(U, S),
+    case catch mnesia:dirty_read({user_caps_resources, BUID}) of
 	{'EXIT', _} ->
 	    [];
 	Resources ->
@@ -188,25 +181,25 @@ stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop).
 
-receive_packet(From, To, {xmlelement, "presence", Attrs, Els}) ->
-    case xml:get_attr_s("type", Attrs) of
-    "probe" ->
+receive_packet(From, To, Packet) when ?IS_PRESENCE(Packet) ->
+    case exmpp_presence:get_type(Packet) of
+    'probe' ->
 	ok;
-    "error" ->
+    'error' ->
 	ok;
-    "invisible" ->
+    'invisible' ->
 	ok;
-    "subscribe" ->
+    'subscribe' ->
 	ok;
-    "subscribed" ->
+    'subscribed' ->
 	ok;
-    "unsubscribe" ->
+    'unsubscribe' ->
 	ok;
-    "unsubscribed" ->
+    'unsubscribed' ->
 	ok;
-    "unavailable" ->
-	{_, S1, _} = jlib:jid_tolower(From),
-	case jlib:jid_tolower(To) of
+    'unavailable' ->
+	{_, S1, _} = jlib:short_prepd_jid(From),
+	case jlib:short_prepd_jid(To) of
 	{_, S1, _} -> ok;
 	_ -> clear_caps(From)
 	end;
@@ -220,7 +213,9 @@ receive_packet(From, To, {xmlelement, "presence", Attrs, Els}) ->
 	%% anymore until he login again.
 	%% This is tracked in EJAB-943
     _ ->
-	note_caps(To#jid.lserver, From, read_caps(Els))
+	ServerString = exmpp_jid:prep_domain_as_list(To),
+	Els = Packet#xmlel.children,
+	note_caps(ServerString, From, read_caps(Els))
     end;
 receive_packet(_, _, _) ->
     ok.
@@ -229,14 +224,11 @@ receive_packet(_JID, From, To, Packet) ->
     receive_packet(From, To, Packet).
 
 presence_probe(From, To, _) ->
-    wait_caps(To#jid.lserver, From).
+    ServerString = exmpp_jid:prep_domain_as_list(To),
+    wait_caps(ServerString, From).
 
 remove_connection(_SID, JID, _Info) ->
     clear_caps(JID).
-
-jid_to_binary(JID) ->
-    {U, S, R} = jlib:jid_tolower(JID),
-    list_to_binary(jlib:jid_to_string({U, S, R})).
 
 caps_to_binary(#caps{node = Node, version = Version, exts = Exts}) ->
     BExts = [list_to_binary(Ext) || Ext <- Exts],
@@ -312,7 +304,7 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
 handle_cast({note_caps, From, nothing}, State) ->
-    BJID = jid_to_binary(From),
+    BJID = exmpp_jid:to_binary(From),
     catch mnesia:dirty_delete({user_caps, BJID}),
     {noreply, State};
 handle_cast({note_caps, From, 
@@ -320,29 +312,32 @@ handle_cast({note_caps, From,
 	    #state{host = Host, disco_requests = Requests} = State) ->
     %% XXX: this leads to race conditions where ejabberd will send
     %% lots of caps disco requests.
-    {U, S, R} = jlib:jid_tolower(From),
-    BJID = jid_to_binary(From),
+    %#jid{node = U, domain = S, resource = R} = From,
+    U = exmpp_jid:prep_node(From),
+    S = exmpp_jid:prep_domain(From),
+    R = exmpp_jid:resource(From),
+    BJID = exmpp_jid:to_binary(From),
     mnesia:transaction(fun() ->
-	mnesia:write(#user_caps{jid = BJID, caps = caps_to_binary(Caps)}),
+	mnesia:dirty_write(#user_caps{jid = BJID, caps = caps_to_binary(Caps)}),
 	case ejabberd_sm:get_user_resources(U, S) of
 	    [] ->
-		% only store resources of caps aware external contacts
-		BUID = jid_to_binary({U, S, []}),
-		mnesia:write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)});
-	    _ ->
+		% only store resource of caps aware external contacts
+		BUID = exmpp_jid:bare_to_binary(From),
+		mnesia:dirty_write(#user_caps_resources{uid = BUID, resource = list_to_binary(R)});
+	    _ -> 
 		ok
 	end
     end),
     %% Now, find which of these are not already in the database.
     SubNodes = [Version | Exts],
     case lists:foldl(fun(SubNode, Acc) ->
-				case mnesia:dirty_read({caps_features, node_to_binary(Node, SubNode)}) of
-				    [] ->
-					[SubNode | Acc];
-				    _ ->
-					Acc
-				end
-			end, [], SubNodes) of
+			case mnesia:dirty_read({caps_features, {Node, SubNode}}) of
+			    [] ->
+				[SubNode | Acc];
+			    _ ->
+				Acc
+			end
+		end, [], SubNodes) of
 	[] ->
 	    {noreply, State};
 	Missing ->
@@ -350,37 +345,31 @@ handle_cast({note_caps, From,
 	    NewRequests = lists:foldl(
 		fun(SubNode, Dict) ->
 			  ID = randoms:get_string(),
-			  Stanza =
-			      {xmlelement, "iq",
-			       [{"type", "get"},
-				{"id", ID}],
-			       [{xmlelement, "query",
-				 [{"xmlns", ?NS_DISCO_INFO},
-				  {"node", lists:concat([Node, "#", SubNode])}],
-				 []}]},
+			  Query = exmpp_xml:set_attribute(
+			    #xmlel{ns = ?NS_DISCO_INFO, name = 'query'},
+			    'node', lists:concat([Node, "#", SubNode])),
+			  Stanza = exmpp_iq:get(?NS_JABBER_CLIENT, Query, ID),
 			  ejabberd_local:register_iq_response_handler
-			    (Host, ID, ?MODULE, handle_disco_response),
-			  ejabberd_router:route(jlib:make_jid("", Host, ""), From, Stanza),
+			    (list_to_binary(Host), ID, ?MODULE, handle_disco_response),
+			  ejabberd_router:route(exmpp_jid:make(Host), From, Stanza),
 			  timer:send_after(?CAPS_QUERY_TIMEOUT, self(), {disco_timeout, ID, BJID}),
 			  ?DICT:store(ID, node_to_binary(Node, SubNode), Dict)
 		  end, Requests, Missing),
 	    {noreply, State#state{disco_requests = NewRequests}}
     end;
 handle_cast({wait_caps, From}, State) ->
-    BJID = jid_to_binary(From),
+    BJID = exmpp_jid:to_binary(From),
     mnesia:dirty_write(#user_caps{jid = BJID, caps = waiting}),
     {noreply, State};
-handle_cast({disco_response, From, _To, 
-	     #iq{type = Type, id = ID,
-		 sub_el = SubEls}},
+handle_cast({disco_response, From, _To, #iq{id = ID, type = Type, payload = Payload}},
 	    #state{disco_requests = Requests} = State) ->
-    case {Type, SubEls} of
-	{result, [{xmlelement, "query", _Attrs, Els}]} ->
+    case {Type, Payload} of
+	{result, #xmlel{name = 'query', children = Els}} ->
 	    case ?DICT:find(ID, Requests) of
 		{ok, BinaryNode} ->
 		    Features =
-			lists:flatmap(fun({xmlelement, "feature", FAttrs, _}) ->
-					      [xml:get_attr_s("var", FAttrs)];
+			lists:flatmap(fun(#xmlel{name = 'feature'} = F) ->
+					      [exmpp_xml:get_attribute_as_list(F, 'var', "")];
 					 (_) ->
 					      []
 				      end, Els),
@@ -399,9 +388,9 @@ handle_cast({disco_response, From, _To,
 		    ?DEBUG("ID '~s' matches no query", [ID])
 	    end;
 	    %gen_server:cast(self(), visit_feature_queries),
-	    %?DEBUG("Error IQ reponse from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
-	{result, _} ->
-	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [jlib:jid_to_string(From), SubEls]);
+	    %?DEBUG("Error IQ reponse from ~s:~n~p", [exmpp_jid:to_list(From), SubEls]);
+	{result, Payload} ->
+	    ?DEBUG("Invalid IQ contents from ~s:~n~p", [exmpp_jid:to_binary(From), Payload]);
 	_ ->
 	    %% Can't do anything about errors
 	    ok
@@ -413,7 +402,7 @@ handle_cast({disco_timeout, ID, BJID}, #state{host = Host, disco_requests = Requ
     NewRequests = case ?DICT:is_key(ID, Requests) of
     true ->
 	catch mnesia:dirty_delete({user_caps, BJID}),
-	ejabberd_local:unregister_iq_response_handler(Host, ID),
+	ejabberd_local:unregister_iq_response_handler(list_to_binary(Host), ID),
 	?DICT:erase(ID, Requests);
     false ->
 	Requests
@@ -433,10 +422,10 @@ handle_cast(visit_feature_queries, #state{feature_queries = FeatureQueries} = St
 		    end, [], FeatureQueries),
     {noreply, State#state{feature_queries = NewFeatureQueries}}.
 
-handle_disco_response(From, To, IQ) ->
-    #jid{lserver = Host} = To,
+handle_disco_response(From, To, IQ_Rec) ->
+    Host = exmpp_jid:prep_domain_as_list(To),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:cast(Proc, {disco_response, From, To, IQ}).
+    gen_server:cast(Proc, {disco_response, From, To, IQ_Rec}).
 
 handle_info(_Info, State) ->
     {noreply, State}.

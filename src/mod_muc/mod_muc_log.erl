@@ -41,8 +41,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_muc_room.hrl").
 
 %% Copied from mod_muc/mod_muc.erl
@@ -141,7 +142,7 @@ init([Host, Opts]) ->
 		file_format = FileFormat,
 		css_file = CSSFile,
 		access = AccessLog,
-		lang = Lang,
+		lang = list_to_binary(Lang),
 		timezone = Timezone,
 		spam_prevention = NoFollow,
 		top_link = Top_link}}.
@@ -208,15 +209,16 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
-    case {xml:get_subtag(Packet, "subject"), xml:get_subtag(Packet, "body")} of
-	{false, false} ->
+    case {exmpp_xml:get_element(Packet, 'subject'), 
+          exmpp_xml:get_element(Packet, 'body')} of
+	{'undefined', 'undefined'} ->
 	    ok;
-	{false, SubEl} ->
-	    Message = {body, xml:get_tag_cdata(SubEl)},
-	    add_message_to_log(Nick, Message, Room, Opts, State);
+	{'undefined', SubEl} ->
+	    Message = {body, exmpp_xml:get_cdata_as_list(SubEl)},
+	    add_message_to_log(binary_to_list(Nick), Message, Room, Opts, State);
 	{SubEl, _} ->
-	    Message = {subject, xml:get_tag_cdata(SubEl)},
-	    add_message_to_log(Nick, Message, Room, Opts, State)
+	    Message = {subject, exmpp_xml:get_cdata_as_list(SubEl)},
+	    add_message_to_log(binary_to_list(Nick), Message, Room, Opts, State)
     end;
 
 add_to_log2(roomconfig_change, _Occupants, Room, Opts, State) ->
@@ -226,19 +228,19 @@ add_to_log2(roomconfig_change_enabledlogging, Occupants, Room, Opts, State) ->
     add_message_to_log("", {roomconfig_change, Occupants}, Room, Opts, State);
 
 add_to_log2(nickchange, {OldNick, NewNick}, Room, Opts, State) ->
-    add_message_to_log(NewNick, {nickchange, OldNick}, Room, Opts, State);
+    add_message_to_log(binary_to_list(NewNick), {nickchange, binary_to_list(OldNick)}, Room, Opts, State);
 
 add_to_log2(join, Nick, Room, Opts, State) ->
-    add_message_to_log(Nick, join, Room, Opts, State);
+    add_message_to_log(binary_to_list(Nick), join, Room, Opts, State);
 
 add_to_log2(leave, {Nick, Reason}, Room, Opts, State) ->
-    case Reason of
-	"" -> add_message_to_log(Nick, leave, Room, Opts, State);
-	_ -> add_message_to_log(Nick, {leave, Reason}, Room, Opts, State)
+    case binary_to_list(Reason) of
+	"" -> add_message_to_log(binary_to_list(Nick), leave, Room, Opts, State);
+	R -> add_message_to_log(binary_to_list(Nick), {leave, R}, Room, Opts, State)
     end;
 
 add_to_log2(kickban, {Nick, Reason, Code}, Room, Opts, State) ->
-    add_message_to_log(Nick, {kickban, Code, Reason}, Room, Opts, State).
+    add_message_to_log(binary_to_list(Nick), {kickban, Code, binary_to_list(Reason)}, Room, Opts, State).
 
 
 %%----------------------------------------------------------------------
@@ -276,8 +278,8 @@ build_filename_string(TimeStamp, OutDir, RoomJID, DirType, DirName, FileFormat) 
     {Fd, Fn, Fnrel}.
 
 get_room_name(RoomJID) ->
-    JID = jlib:string_to_jid(RoomJID),
-    JID#jid.user.
+    JID = exmpp_jid:parse(RoomJID),
+    exmpp_jid:node_as_list(JID).
 
 %% calculate day before
 get_timestamp_daydiff(TimeStamp, Daydiff) ->
@@ -413,11 +415,11 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
 				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow,FileFormat)]);
 	       {body, T} ->  
-		   case {regexp:first_match(T, "^/me\s"), Nick} of
+		   case {re:run(T, "^/me\s", [{capture, none}]), Nick} of
 		       {_, ""} ->
 			   io_lib:format("<font class=\"msm\">~s</font><br/>",
 					 [htmlize(T,NoFollow,FileFormat)]);
-		       {{match, _, _}, _} ->
+		       {match, _} ->
 			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>", 
 					 [Nick, string:substr(htmlize(T,FileFormat), 5)]);
 		       {nomatch, _} ->
@@ -475,15 +477,26 @@ get_dateweek(Date, Lang) ->
     end.
 
 make_dir_rec(Dir) ->
+    Path = filename:split(Dir),
+    inc_foreach(Path,fun make_dir_if_not_exists/1).
+
+
+make_dir_if_not_exists(DirPath) ->
+    Dir = filename:join(DirPath),
     case file:read_file_info(Dir) of
 	{ok, _} ->
 	    ok;
 	{error, enoent} ->
-	    DirS = filename:split(Dir),
-	    DirR = lists:sublist(DirS, length(DirS)-1),
-	    make_dir_rec(filename:join(DirR)),
 	    file:make_dir(Dir)
     end.
+
+inc_foreach(Lists, F) ->
+    lists:foldl(fun(Item, Accum) ->
+                        New = Accum ++ [Item],
+                        F(New),
+                        New
+                end,[],Lists).
+
 
 
 %% {ok, F1}=file:open("valid-xhtml10.png", [read]).
@@ -651,8 +664,7 @@ fw(F, S, O, FileFormat) ->
 	     html ->
 		 S1;
 	     plaintext ->
-		 {ok, Res, _} = regexp:gsub(S1, "<[^>]*>", ""),
-		 Res
+		 re:replace(S1, "<[^>]*>", "", [global,{return,list}])
 	 end,
     io:format(F, S2, []).
 
@@ -753,6 +765,8 @@ put_room_occupants(F, RoomOccupants, Lang, _FileFormat) ->
 %% htmlize
 %% The default behaviour is to ignore the nofollow spam prevention on links
 %% (NoFollow=false)
+
+
 htmlize(S1) ->
     htmlize(S1, html).
 
@@ -779,15 +793,20 @@ htmlize(S1, NoFollow, _FileFormat) ->
       S2_list).
 
 htmlize2(S1, NoFollow) ->
-    S2 = element(2, regexp:gsub(S1, "\\&", "\\&amp;")),
-    S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
-    S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
-    S5 = element(2, regexp:gsub(S4, "((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+",
-				link_regexp(NoFollow))),
-    %% Remove 'right-to-left override' unicode character 0x202e
-    S6 = element(2, regexp:gsub(S5, "  ", "\\&nbsp;\\&nbsp;")),
-    S7 = element(2, regexp:gsub(S6, "\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;")),
-    element(2, regexp:gsub(S7, [226,128,174], "[RLO]")).
+    ReplacementRules =
+	[{"\\&", "\\&amp;"},
+	{"<", "\\&lt;"},
+	{">", "\\&gt;"},
+	{"((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+", link_regexp(NoFollow)},
+	{"  ", "\\&nbsp;\\&nbsp;"},
+	{"\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;"},
+	{[226,128,174], "[RLO]"}], %% Remove 'right-to-left override' unicode character 0x202e
+    lists:foldl(
+        fun({RegExp, Replace}, Acc) ->
+	    re:replace(Acc, RegExp, Replace)
+	end,
+	S1,
+	ReplacementRules).
 
 %% Regexp link
 %% Add the nofollow rel attribute when required
@@ -812,7 +831,7 @@ get_room_info(RoomJID, Opts) ->
 	    {value, {_, SA}} -> SA;
 	    false -> ""
 	end,
-    #room{jid = jlib:jid_to_string(RoomJID),
+    #room{jid = exmpp_jid:to_list(RoomJID),
 	  title = Title,
 	  subject = Subject,
 	  subject_author = SubjectAuthor,
@@ -910,9 +929,9 @@ role_users_to_string(RoleS, Users) ->
     [RoleS, ": ", UsersString].
 
 get_room_occupants(RoomJIDString) ->
-    RoomJID = jlib:string_to_jid(RoomJIDString),
-    RoomName = RoomJID#jid.luser,
-    MucService = RoomJID#jid.lserver,
+    RoomJID = exmpp_jid:parse(RoomJIDString),
+    RoomName = exmpp_jid:node(RoomJID),
+    MucService = exmpp_jid:domain(RoomJID),
     StateData = get_room_state(RoomName, MucService),
     [{U#user.jid, U#user.nick, U#user.role}
      || {_, U} <- ?DICT:to_list(StateData#state.users)].

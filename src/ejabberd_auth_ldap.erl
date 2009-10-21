@@ -95,6 +95,9 @@ handle_info(_Info, State) ->
 %%% API
 %%%----------------------------------------------------------------------
 
+%% @spec (Host) -> term()
+%%     Host = string()
+
 start(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     ChildSpec = {
@@ -103,18 +106,30 @@ start(Host) ->
      },
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
+%% @spec (Host) -> term()
+%%     Host = string()
+
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
+%% @spec (Host) -> term()
+%%     Host = string()
+
 start_link(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:start_link({local, Proc}, ?MODULE, Host, []).
 
+%% @hidden
+
 terminate(_Reason, _State) ->
     ok.
+
+%% @spec (Host) -> {ok, State}
+%%     Host = string()
+%%     State = term()
 
 init(Host) ->
     State = parse_options(Host),
@@ -134,8 +149,15 @@ init(Host) ->
 		     State#state.encrypt),
     {ok, State}.
 
+%% @spec () -> true
+
 plain_password_required() ->
     true.
+
+%% @spec (User, Server, Password) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 check_password(User, Server, Password) ->
     %% In LDAP spec: empty password means anonymous authentication.
@@ -150,15 +172,35 @@ check_password(User, Server, Password) ->
         end
     end.
 
+%% @spec (User, Server, Password, Digest, DigestGen) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     Digest = string()
+%%     DigestGen = function()
+
 check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
+
+%% @spec (User, Server, Password) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
 %% @spec (User, Server, Password) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
+
+%% @spec () -> [{LUser, LServer}]
+%%     LUser = string()
+%%     LServer = string()
 
 dirty_get_registered_users() ->
     Servers = ejabberd_config:get_vh_by_auth_method(ldap),
@@ -167,22 +209,42 @@ dirty_get_registered_users() ->
 	      get_vh_registered_users(Server)
       end, Servers).
 
+%% @spec (Server) -> [{LUser, LServer}]
+%%     Server = string()
+%%     LUser = string()
+%%     LServer = string()
+
 get_vh_registered_users(Server) ->
     case catch get_vh_registered_users_ldap(Server) of
 	{'EXIT', _} -> [];
 	Result -> Result
 	end.
 
+%% @spec (Server) -> Users_Number
+%%     Server = string()
+%%     Users_Number = integer()
+
 get_vh_registered_users_number(Server) ->
     length(get_vh_registered_users(Server)).
 
+%% @spec (User, Server) -> bool()
+%%     User = string()
+%%     Server = string()
+
 get_password(_User, _Server) ->
     false.
+
+%% @spec (User, Server) -> nil()
+%%     User = string()
+%%     Server = string()
 
 get_password_s(_User, _Server) ->
     "".
 
 %% @spec (User, Server) -> true | false | {error, Error}
+%%     User = string()
+%%     Server = string()
+
 is_user_exists(User, Server) ->
     case catch is_user_exists_ldap(User, Server) of
 	{'EXIT', Error} ->
@@ -191,8 +253,17 @@ is_user_exists(User, Server) ->
 	    Result
     end.
 
+%% @spec (User, Server) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+
 remove_user(_User, _Server) ->
     {error, not_allowed}.
+
+%% @spec (User, Server, Password) -> not_allowed
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 remove_user(_User, _Server, _Password) ->
     not_allowed.
@@ -200,6 +271,12 @@ remove_user(_User, _Server, _Password) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
+
+%% @spec (User, Server, Password) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 check_password_ldap(User, Server, Password) ->
 	{ok, State} = eldap_utils:get_state(Server, ?MODULE),
 	case find_user_dn(User, State) of
@@ -211,6 +288,11 @@ check_password_ldap(User, Server, Password) ->
 		_ -> false
 	    end
 	end.
+
+%% @spec (Server) -> [{LUser, LServer}]
+%%     Server = string()
+%%     LUser = string()
+%%     LServer = string()
 
 get_vh_registered_users_ldap(Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
@@ -236,9 +318,11 @@ get_vh_registered_users_ldap(Server) ->
 						  {User, UIDFormat} ->
 						      case eldap_utils:get_user_part(User, UIDFormat) of
 							  {ok, U} ->
-							      case jlib:nodeprep(U) of
-								  error -> [];
-								  LU -> [{LU, jlib:nameprep(Server)}]
+							      try
+								  [{exmpp_stringprep:nodeprep(U), exmpp_stringprep:nameprep(Server)}]
+							      catch
+								  _ ->
+								      []
 							      end;
 							  _ -> []
 						      end
@@ -251,6 +335,10 @@ get_vh_registered_users_ldap(Server) ->
 		_ ->
 		    []
 	end.
+
+%% @spec (User, Server) -> bool()
+%%     User = string()
+%%     Server = string()
 
 is_user_exists_ldap(User, Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),

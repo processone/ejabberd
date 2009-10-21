@@ -38,6 +38,8 @@
 -export([create_captcha/6, build_captcha_html/2, check_captcha/2,
 	 process_reply/1, process/2, is_feature_available/0]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("jlib.hrl").
 -include("ejabberd.hrl").
 -include("web/ejabberd_http.hrl").
@@ -72,12 +74,11 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 create_captcha(Id, SID, From, To, Lang, Args)
-  when is_list(Id), is_list(Lang), is_list(SID),
-       is_record(From, jid), is_record(To, jid) ->
+  when is_list(Id), is_list(SID) ->
     case create_image() of
 	{ok, Type, Key, Image} ->
 	    B64Image = jlib:encode_base64(binary_to_list(Image)),
-	    JID = jlib:jid_to_string(From),
+	    JID = exmpp_jid:to_list(From),
 	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
 	    Data = {xmlelement, "data",
 		    [{"xmlns", ?NS_BOB}, {"cid", CID},
@@ -85,9 +86,10 @@ create_captcha(Id, SID, From, To, Lang, Args)
 		    [{xmlcdata, B64Image}]},
 	    Captcha =
 		{xmlelement, "captcha", [{"xmlns", ?NS_CAPTCHA}],
-		 [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+		 %% ?NS_DATA_FORMS is 'jabber:x:data'
+		 [{xmlelement, "x", [{"xmlns", "jabber:x:data"}, {"type", "form"}],
 		   [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}),
-		    ?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
+		    ?VFIELD("hidden", "from", {xmlcdata, exmpp_jid:to_list(To)}),
 		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
 		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
 		    {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
@@ -165,12 +167,14 @@ check_captcha(Id, ProvidedKey) ->
 	       captcha_not_found
        end).
 
-
-process_reply({xmlelement, "captcha", _, _} = El) ->
-    case xml:get_subtag(El, "x") of
-	false ->
+process_reply(El) ->
+    case {exmpp_xml:element_matches(El, captcha),
+	  exmpp_xml:get_element(El, x)} of
+	{false, _} ->
 	    {error, malformed};
-	Xdata ->
+	{_, undefined} ->
+	    {error, malformed};
+	{true, Xdata} ->
 	    Fields = jlib:parse_xdata_submit(Xdata),
 	    case {proplists:get_value("challenge", Fields),
 		  proplists:get_value("ocr", Fields)} of
@@ -192,9 +196,7 @@ process_reply({xmlelement, "captcha", _, _} = El) ->
 		_ ->
 		    {error, malformed}
 	    end
-    end;
-process_reply(_) ->
-    {error, malformed}.
+    end.
 
 
 process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
@@ -243,7 +245,6 @@ process(_Handlers, #request{method='POST', q=Q, lang=Lang, path=[_, Id]}) ->
 
 process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).
-
 
 %%====================================================================
 %% gen_server callbacks

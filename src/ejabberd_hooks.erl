@@ -81,7 +81,8 @@ add(Hook, Host, Function, Seq) when is_function(Function) ->
 add(Hook, Module, Function, Seq) ->
     add(Hook, global, Module, Function, Seq).
 
-add(Hook, Host, Module, Function, Seq) ->
+add(Hook, Host, Module, Function, Seq) 
+     when is_binary(Host) orelse is_atom(Host) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Module, Function, Seq}).
 
 add_dist(Hook, Node, Module, Function, Seq) ->
@@ -104,7 +105,8 @@ delete(Hook, Host, Function, Seq) when is_function(Function) ->
 delete(Hook, Module, Function, Seq) ->
     delete(Hook, global, Module, Function, Seq).
 
-delete(Hook, Host, Module, Function, Seq) ->
+delete(Hook, Host, Module, Function, Seq) 
+     when is_binary(Host) orelse is_atom(Host) ->
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Module, Function, Seq}).
 
 delete_dist(Hook, Node, Module, Function, Seq) ->
@@ -119,7 +121,7 @@ delete_dist(Hook, Host, Node, Module, Function, Seq) ->
 run(Hook, Args) ->
     run(Hook, global, Args).
 
-run(Hook, Host, Args) ->
+run(Hook, Host, Args) when is_binary(Host) orelse is_atom(Host) ->
     case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
 	    run1(Ls, Hook, Args);
@@ -136,7 +138,7 @@ run(Hook, Host, Args) ->
 run_fold(Hook, Val, Args) ->
     run_fold(Hook, global, Val, Args).
 
-run_fold(Hook, Host, Val, Args) ->
+run_fold(Hook, Host, Val, Args) when is_binary(Host) orelse is_atom(Host) ->
     case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
 	    run_fold1(Ls, Hook, Val, Args);

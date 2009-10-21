@@ -37,7 +37,37 @@
 
 -include("ejabberd.hrl").
 
+%% @type aclspec() = all | JID_Exact | JID_Regexp | JID_Glob | Shared_Group
+%%     JID_Exact = {user, U} | {user, U, S} | {server, S} | {resource, R}
+%%         U = string()
+%%         S = string()
+%%         R = string()
+%%     JID_Regexp = {user_regexp, UR} | {user_regexp, UR, S} | {server_regexp, SR} | {resource_regexp, RR} | {node_regexp, UR, SR}
+%%         UR = string()
+%%         SR = string()
+%%         RR = string()
+%%     JID_Glob = {user_glob, UG} | {user_glob, UG, S} | {server_glob, SG} | {resource_glob, RG} | {node_glob, UG, SG}
+%%         UG = string()
+%%         SG = string()
+%%         RG = string()
+%%     Shared_Group = {shared_group, G} | {shared_group, G, H}
+%%         G = string()
+%%         H = string().
+
+%% @type acl() = {acl, ACLName, ACLSpec}
+%%     ACLName = atom()
+%%     ACLSpec = aclspec().
+%% Record in its Ejabberd-configuration-file variant.
+
+%% @type storedacl() = {acl, {ACLName, Host}, ACLSpec}
+%%     ACLName = atom()
+%%     Host = global | string()
+%%     ACLSpec = aclspec().
+%% Record in its Mnesia-table-record variant.
+
 -record(acl, {aclname, aclspec}).
+
+%% @spec () -> ok
 
 start() ->
     mnesia:create_table(acl,
@@ -47,8 +77,19 @@ start() ->
     mnesia:add_table_copy(acl, node(), ram_copies),
     ok.
 
+%% @spec (Host, ACLName, ACLSpec) -> storedacl()
+%%     Host = global | string()
+%%     ACLName = atom()
+%%     ACLSpec = aclspec()
+
 to_record(Host, ACLName, ACLSpec) ->
     #acl{aclname = {ACLName, Host}, aclspec = normalize_spec(ACLSpec)}.
+
+%% @spec (Host, ACLName, ACLSpec) -> {atomic, ok} | {aborted, Reason}
+%%     Host = global | string()
+%%     ACLName = atom()
+%%     ACLSpec = all | none | aclspec()
+%%     Reason = term()
 
 add(Host, ACLName, ACLSpec) ->
     F = fun() ->
@@ -56,6 +97,11 @@ add(Host, ACLName, ACLSpec) ->
 				  aclspec = normalize_spec(ACLSpec)})
 	end,
     mnesia:transaction(F).
+
+%% @spec (Host, ACLs, Clear) -> ok | false
+%%     Host = global | string()
+%%     ACLs = [acl()]
+%%     Clear = bool()
 
 add_list(Host, ACLs, Clear) ->
     F = fun() ->
@@ -86,8 +132,17 @@ add_list(Host, ACLs, Clear) ->
 	    false
     end.
 
-normalize(A) ->
-    jlib:nodeprep(A).
+%% @spec (String) -> Prepd_String
+%%     String = string()
+%%     Prepd_String = string()
+
+normalize(String) ->
+    exmpp_stringprep:nodeprep(String).
+
+%% @spec (ACLSpec) -> Normalized_ACLSpec
+%%     ACLSpec = all | none | aclspec()
+%%     Normalized_ACLSpec = aclspec()
+
 normalize_spec({A, B}) ->
     {A, normalize(B)};
 normalize_spec({A, B, C}) ->
@@ -98,6 +153,12 @@ normalize_spec(none) ->
     none.
 
 
+
+%% @spec (Host, Rule, JID) -> Access
+%%     Host = global | string()
+%%     Rule = all | none | atom()
+%%     JID = exmpp_jid:jid()
+%%     Access = allow | deny | atom()
 
 match_rule(global, Rule, JID) ->
     case Rule of
@@ -143,22 +204,36 @@ match_rule(Host, Rule, JID) ->
 	    end
     end.
 
+%% @spec (ACLs, JID, Host) -> Access
+%%     ACLs = [{Access, ACLName}]
+%%         Access = deny | atom()
+%%         ACLName = atom()
+%%     JID = exmpp_jid:jid()
+%%     Host = string()
+
 match_acls([], _, _Host) ->
     deny;
-match_acls([{Access, ACL} | ACLs], JID, Host) ->
-    case match_acl(ACL, JID, Host) of
+match_acls([{Access, ACLName} | ACLs], JID, Host) ->
+    case match_acl(ACLName, JID, Host) of
 	true ->
 	    Access;
 	_ ->
 	    match_acls(ACLs, JID, Host)
     end.
 
-match_acl(ACL, JID, Host) ->
-    case ACL of
+%% @spec (ACLName, JID, Host) -> bool()
+%%     ACLName = all | none | atom()
+%%     JID = exmpp_jid:jid()
+%%     Host = string()
+
+match_acl(ACLName, JID, Host) ->
+    case ACLName of
 	all -> true;
 	none -> false;
 	_ ->
-	    {User, Server, Resource} = jlib:jid_tolower(JID),
+	    User = exmpp_jid:prep_node_as_list(JID),
+	    Server = exmpp_jid:prep_domain_as_list(JID),
+	    Resource = exmpp_jid:prep_resource_as_list(JID),
 	    lists:any(fun(#acl{aclspec = Spec}) ->
 			      case Spec of
 				  all ->
@@ -218,24 +293,35 @@ match_acl(ACL, JID, Host) ->
 				      false
 			      end
 		      end,
-		      ets:lookup(acl, {ACL, global}) ++
-		      ets:lookup(acl, {ACL, Host}))
+		      ets:lookup(acl, {ACLName, global}) ++
+		      ets:lookup(acl, {ACLName, Host}))
     end.
 
+%% @spec (String, RegExp) -> bool()
+%%     String = string() | undefined
+%%     RegExp = string()
+
+is_regexp_match(undefined, _RegExp) ->
+    false;
 is_regexp_match(String, RegExp) ->
-    case regexp:first_match(String, RegExp) of
+    try re:run(String, RegExp, [{capture, none}]) of
 	nomatch ->
 	    false;
-	{match, _, _} ->
-	    true;
-	{error, ErrDesc} ->
+	match ->
+	    true
+    catch
+	_:ErrDesc ->
 	    ?ERROR_MSG(
-	       "Wrong regexp ~p in ACL: ~p",
-	       [RegExp, lists:flatten(regexp:format_error(ErrDesc))]),
+	       "Wrong regexp ~p in ACL:~n~p",
+	       [RegExp, ErrDesc]),
 	    false
     end.
 
+%% @spec (String, Glob) -> bool()
+%%     String = string() | undefined
+%%     Glob = string()
+
 is_glob_match(String, Glob) ->
-    is_regexp_match(String, regexp:sh_to_awk(Glob)).
+    is_regexp_match(String, xmerl_regexp:sh_to_awk(Glob)).
 
 

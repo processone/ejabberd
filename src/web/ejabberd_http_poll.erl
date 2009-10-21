@@ -44,8 +44,9 @@
 	 close/1,
 	 process/2]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("ejabberd_http.hrl").
 
 -record(http_poll, {id, pid}).
@@ -72,6 +73,11 @@
 -define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
 -define(BAD_REQUEST, [?CT, {"Set-Cookie", "ID=-3:0; expires=-1"}]).
 
+-define(PARSER_OPTIONS, [
+  {namespace, true},
+  {name_as_atom, true},
+  {autoload_known, true}
+]).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -157,8 +163,8 @@ process([], #request{data = Data,
 	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], ""}
     end;
 process(_, _Request) ->
-    {400, [], {xmlelement, "h1", [],
-	       [{xmlcdata, "400 Bad Request"}]}}.
+    {400, [], #xmlel{ns = ?NS_XHTML, name = 'h1', children =
+	       [#xmlcdata{cdata = <<"400 Bad Request">>}]}}.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -406,7 +412,7 @@ resend_messages(Messages) ->
 %% This function is used to resend messages that have been polled but not
 %% delivered.
 resend_message(Packet) ->
-    ParsedPacket = xml_stream:parse_element(Packet),
+    [ParsedPacket] = exmpp_xml:parse_document(Packet, ?PARSER_OPTIONS),
     From = get_jid("from", ParsedPacket),
     To = get_jid("to", ParsedPacket),
     ?DEBUG("Resend ~p ~p ~p~n",[From,To, ParsedPacket]),
@@ -414,10 +420,17 @@ resend_message(Packet) ->
 
 %% Type can be "from" or "to"
 %% Parsed packet is a parsed Jabber packet.
-get_jid(Type, ParsedPacket) ->
-    case xml:get_tag_attr(Type, ParsedPacket) of
-	{value, StringJid} ->
-	    jlib:string_to_jid(StringJid);
-	false ->
-	    jlib:make_jid("","","")
+get_jid("from", ParsedPacket) ->
+    case exmpp_stanza:get_sender(ParsedPacket) of
+	undefined ->
+            exmpp_jid:make();
+	From ->
+	    exmpp_jid:parse(From)
+    end;
+get_jid("to", ParsedPacket) ->
+    case exmpp_stanza:get_recipient(ParsedPacket) of
+	undefined ->
+            exmpp_jid:make();
+	From ->
+	    exmpp_jid:parse(From)
     end.

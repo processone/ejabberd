@@ -39,7 +39,7 @@
 
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_nodetree).
 
@@ -66,7 +66,7 @@ create_node(Key, NodeID, Type, Owner, Options, Parents) ->
 	    N = #pubsub_node{nodeid = oid(Key, NodeID),
 			     id = ID,
 			     type = Type,
-			     parents = Parents,
+                 parents = Parents,
 			     owners = [OwnerJID],
 			     options = Options},
 	    case set_node(N) of
@@ -74,7 +74,7 @@ create_node(Key, NodeID, Type, Owner, Options, Parents) ->
 		Other -> Other
 	    end;
 	_ ->
-	    {error, ?ERR_CONFLICT}
+	    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'conflict')}
     end.
 
 set_node(#pubsub_node{nodeid  = {Key, _},
@@ -92,7 +92,7 @@ set_node(#pubsub_node{nodeid  = {Key, _},
 delete_node(Key, NodeID) ->
     case find_node(Key, NodeID) of
 	false ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
+	    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
 	Node ->
 	    %% Find all of N's children, update their configs to
 	    %% remove N from the collection setting.
@@ -120,7 +120,7 @@ get_node(Host, NodeID, _From) ->
 
 get_node(Host, NodeID) ->
     case find_node(Host, NodeID) of
-	false -> {error, ?ERR_ITEM_NOT_FOUND};
+	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
 	Node  -> Node
     end.
 
@@ -135,7 +135,7 @@ get_nodes(Key) ->
 
 get_parentnodes(Host, NodeID, _From) ->
     case find_node(Host, NodeID) of
-	false -> {error, ?ERR_ITEM_NOT_FOUND};
+	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
 	#pubsub_node{parents = Parents} ->
 	    Q = qlc:q([N || #pubsub_node{nodeid = {NHost, NNode}} = N <- mnesia:table(pubsub_node),
 			    Parent <- Parents,
@@ -156,7 +156,7 @@ get_subnodes(Host, NodeID, _From) ->
 
 get_subnodes(Host, NodeID) ->
     case find_node(Host, NodeID) of
-	false -> {error, ?ERR_ITEM_NOT_FOUND};
+	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
 	_ ->
 	    Q = qlc:q([Node || #pubsub_node{nodeid  = {NHost, _},
 					    parents = Parents} = Node <- mnesia:table(pubsub_node),
@@ -226,15 +226,15 @@ validate_parentage(Key, Owners, [[] | T]) ->
     validate_parentage(Key, Owners, T);
 validate_parentage(Key, Owners, [ParentID | T]) ->
     case find_node(Key, ParentID) of
-	false -> {error, ?ERR_ITEM_NOT_FOUND};
+	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item_not_found')};
 	#pubsub_node{owners = POwners, options = POptions} ->
 	    NodeType = find_opt(node_type, ?DEFAULT_NODETYPE, POptions),
 	    MutualOwners = [O || O <- Owners, PO <- POwners,
 				 O == PO],
 	    case {MutualOwners, NodeType} of
-		{[], _}	 -> {error, ?ERR_FORBIDDEN};
+		{[], _}	 -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')};
 		{_, collection} -> validate_parentage(Key, Owners, T);
-		{_, _} -> {error, ?ERR_NOT_ALLOWED}
+		{_, _} -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'not-allowed')}
 	    end
     end.
 
@@ -243,6 +243,6 @@ validate_parentage(Key, Owners, [ParentID | T]) ->
 %% @doc <p>Generate pubsub service JID.</p>
 service_jid(Host) ->
     case Host of
-	{U,S,_} -> {jid, U, S, "", U, S, ""};
-	_       -> {jid, "", Host, "", "", Host, ""}
+	{U,S,_} -> exmpp_jid:make(U, S);
+	_       -> exmpp_jid:make(Host)
     end.

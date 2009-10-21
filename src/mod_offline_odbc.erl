@@ -42,8 +42,9 @@
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
@@ -52,27 +53,33 @@
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ?NS_JABBER_CLIENT).
+-define(PREFIXED_NS, [{?NS_XMPP, ?NS_XMPP_pfx}]).
+
 %% default value for the maximum number of user messages
 -define(MAX_USER_MESSAGES, infinity).
 
 start(Host, Opts) ->
-    ejabberd_hooks:add(offline_message_hook, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(offline_message_hook, HostB,
 		       ?MODULE, store_packet, 50),
-    ejabberd_hooks:add(resend_offline_messages_hook, Host,
+    ejabberd_hooks:add(resend_offline_messages_hook, HostB,
 		       ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, Host,
+    ejabberd_hooks:add(anonymous_purge_hook, HostB,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(disco_sm_features, Host,
+    ejabberd_hooks:add(disco_sm_features, HostB,
 		       ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:add(disco_local_features, Host,
+    ejabberd_hooks:add(disco_local_features, HostB,
 		       ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:add(webadmin_page_host, Host,
+    ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:add(webadmin_user, Host,
+    ejabberd_hooks:add(webadmin_user, HostB,
 		       ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:add(webadmin_user_parse_query, Host,
+    ejabberd_hooks:add(webadmin_user_parse_query, HostB,
                        ?MODULE, webadmin_user_parse_query, 50),
     AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, max_user_offline_messages),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -99,31 +106,28 @@ loop(Host, AccessMaxOfflineMsgs) ->
 			      fun(M) ->
 				      Username =
 					  ejabberd_odbc:escape(
-					    (M#offline_msg.to)#jid.luser),
+					    exmpp_jid:prep_node_as_list(M#offline_msg.to)),
 				      From = M#offline_msg.from,
 				      To = M#offline_msg.to,
-				      {xmlelement, Name, Attrs, Els} =
-					  M#offline_msg.packet,
-				      Attrs2 = jlib:replace_from_to_attrs(
-						 jlib:jid_to_string(From),
-						 jlib:jid_to_string(To),
-						 Attrs),
-				      Packet = {xmlelement, Name, Attrs2,
-						Els ++
-						[jlib:timestamp_to_xml(
-						   calendar:now_to_universal_time(
-					     M#offline_msg.timestamp),
-					   utc,
-					   jlib:make_jid("", Host, ""),
-					   "Offline Storage"),
-					 %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-					 jlib:timestamp_to_xml( 
-					   calendar:now_to_universal_time(
-						     M#offline_msg.timestamp))]},
+				      Packet0 = exmpp_stanza:set_jids(
+						 M#offline_msg.packet,
+						 From,
+						 To),
+				      Packet1 = exmpp_xml:append_children(
+						  Packet0,
+						  [jlib:timestamp_to_xml(
+						     calendar:now_to_universal_time(
+						       M#offline_msg.timestamp),
+						     utc,
+						     jlib:make_jid("", Host, ""),
+						     "Offline Storage"),
+						   %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+						   jlib:timestamp_to_xml(
+						     calendar:now_to_universal_time(
+						       M#offline_msg.timestamp))]),
 				      XML =
 					  ejabberd_odbc:escape(
-					    lists:flatten(
-					      xml:element_to_string(Packet))),
+					    exmpp_xml:document_to_list(Packet1)),
 				      odbc_queries:add_spool_sql(Username, XML)
 			      end, Msgs),
 		    case catch odbc_queries:add_spool(Host, Query) of
@@ -143,7 +147,7 @@ loop(Host, AccessMaxOfflineMsgs) ->
 %% Function copied from ejabberd_sm.erl:
 get_max_user_messages(AccessRule, LUser, Host) ->
     case acl:match_rule(
-	   Host, AccessRule, jlib:make_jid(LUser, Host, "")) of
+	   Host, AccessRule, exmpp_jid:make(LUser, Host, "")) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
@@ -159,21 +163,22 @@ receive_all(Username, Msgs) ->
 
 
 stop(Host) ->
-    ejabberd_hooks:delete(offline_message_hook, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(offline_message_hook, HostB,
 			  ?MODULE, store_packet, 50),
-    ejabberd_hooks:delete(resend_offline_messages_hook, Host,
+    ejabberd_hooks:delete(resend_offline_messages_hook, HostB,
 			  ?MODULE, pop_offline_messages, 50),
-    ejabberd_hooks:delete(remove_user, Host,
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, Host,
+    ejabberd_hooks:delete(anonymous_purge_hook, HostB,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:delete(webadmin_page_host, Host,
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(disco_local_features, HostB, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
-    ejabberd_hooks:delete(webadmin_user, Host,
+    ejabberd_hooks:delete(webadmin_user, HostB,
 			  ?MODULE, webadmin_user, 50),
-    ejabberd_hooks:delete(webadmin_user_parse_query, Host,
+    ejabberd_hooks:delete(webadmin_user_parse_query, HostB,
                           ?MODULE, webadmin_user_parse_query, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
@@ -184,9 +189,9 @@ get_sm_features(Acc, _From, _To, "", _Lang) ->
 		{result, I} -> I;
 		_ -> []
 	    end,
-    {result, Feats ++ [?NS_FEATURE_MSGOFFLINE]};
+    {result, Feats ++ [?NS_MSGOFFLINE]};
 
-get_sm_features(_Acc, _From, _To, ?NS_FEATURE_MSGOFFLINE, _Lang) ->
+get_sm_features(_Acc, _From, _To, ?NS_MSGOFFLINE, _Lang) ->
     %% override all lesser features...
     {result, []};
 
@@ -195,17 +200,16 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 
 
 store_packet(From, To, Packet) ->
-    Type = xml:get_tag_attr_s("type", Packet),
+    Type = exmpp_stanza:get_type(Packet),
     if
-	(Type /= "error") and (Type /= "groupchat") and
-	(Type /= "headline") ->
+	(Type /= <<"error">>) and (Type /= <<"groupchat">>) and
+	(Type /= <<"headline">>) ->
 	    case check_event_chatstates(From, To, Packet) of
 		true ->
-		    #jid{luser = LUser} = To,
+            LUser = exmpp_jid:prep_node_as_list(To),
 		    TimeStamp = now(),
-		    {xmlelement, _Name, _Attrs, Els} = Packet,
-		    Expire = find_x_expire(TimeStamp, Els),
-		    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
+		    gen_mod:get_module_proc(exmpp_jid:prep_domain_as_list(To), ?PROCNAME) !
 			#offline_msg{user = LUser,
 				     timestamp = TimeStamp,
 				     expire = Expire,
@@ -222,40 +226,37 @@ store_packet(From, To, Packet) ->
 
 %% Check if the packet has any content about XEP-0022 or XEP-0085
 check_event_chatstates(From, To, Packet) ->
-    {xmlelement, Name, Attrs, Els} = Packet,
-    case find_x_event_chatstates(Els, {false, false, false}) of
+    case find_x_event_chatstates(Packet#xmlel.children, {false, false, false}) of
 	%% There wasn't any x:event or chatstates subelements
 	{false, false, _} ->
 	    true;
 	%% There a chatstates subelement and other stuff, but no x:event
 	{false, CEl, true} when CEl /= false ->
-	    true;
+  	    true;
 	%% There was only a subelement: a chatstates
 	{false, CEl, false} when CEl /= false ->
 	    %% Don't allow offline storage
 	    false;
 	%% There was an x:event element, and maybe also other stuff
-	{El, _, _} when El /= false ->
-	    case xml:get_subtag(El, "id") of
-		false ->
-		    case xml:get_subtag(El, "offline") of
-			false ->
+	{El, _, _} when El /= false->
+	    case exmpp_xml:get_element(El, 'id') of
+		undefined ->
+		    case exmpp_xml:get_element(El, 'offline') of
+			undefined ->
 			    true;
 			_ ->
-			    ID = case xml:get_tag_attr_s("id", Packet) of
-				     "" ->
-					 {xmlelement, "id", [], []};
+			    ID = case exmpp_stanza:get_id(Packet) of
+				     undefined ->
+					 #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'id'};
 				     S ->
-					 {xmlelement, "id", [],
-					  [{xmlcdata, S}]}
+					 #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'id',
+					   children = [#xmlcdata{cdata =
+					       S}]}
 				 end,
+			    X = #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'x', children =
+			      [ID, #xmlel{ns = ?NS_MESSAGE_EVENT, name = 'offline'}]},
 			    ejabberd_router:route(
-			      To, From, {xmlelement, Name, Attrs,
-					 [{xmlelement, "x",
-					   [{"xmlns", ?NS_EVENT}],
-					   [ID,
-					    {xmlelement, "offline", [], []}]}]
-					}),
+			      To, From, exmpp_xml:set_children(Packet, [X])),
 			    true
 		    end;
 		_ ->
@@ -266,78 +267,79 @@ check_event_chatstates(From, To, Packet) ->
 %% Check if the packet has subelements about XEP-0022, XEP-0085 or other
 find_x_event_chatstates([], Res) ->
     Res;
-find_x_event_chatstates([{xmlcdata, _} | Els], Res) ->
-    find_x_event_chatstates(Els, Res);
-find_x_event_chatstates([El | Els], {A, B, C}) ->
-    case xml:get_tag_attr_s("xmlns", El) of
-	?NS_EVENT ->
-	    find_x_event_chatstates(Els, {El, B, C});
-	?NS_CHATSTATES ->
-	    find_x_event_chatstates(Els, {A, El, C});
-	_ ->
-	    find_x_event_chatstates(Els, {A, B, true})
-    end.
+find_x_event_chatstates([#xmlel{ns = ?NS_MESSAGE_EVENT} = El | Els], {_, B, C}) ->
+    find_x_event_chatstates(Els, {El, B, C});
+find_x_event_chatstates([#xmlel{ns = ?NS_CHATSTATES} = El | Els], {A, _, C}) ->
+    find_x_event_chatstates(Els, {A, El, C});
+find_x_event_chatstates([#xmlcdata{} = _ | Els], {A, B, C}) ->
+    find_x_event_chatstates(Els, {A, B, C});
+find_x_event_chatstates([_ | Els], {A, B, _}) ->
+    find_x_event_chatstates(Els, {A, B, true}).
 
 find_x_expire(_, []) ->
     never;
-find_x_expire(TimeStamp, [{xmlcdata, _} | Els]) ->
-    find_x_expire(TimeStamp, Els);
-find_x_expire(TimeStamp, [El | Els]) ->
-    case xml:get_tag_attr_s("xmlns", El) of
-	?NS_EXPIRE ->
-	    Val = xml:get_tag_attr_s("seconds", El),
-	    case catch list_to_integer(Val) of
-		{'EXIT', _} ->
-		    never;
-		Int when Int > 0 ->
-		    {MegaSecs, Secs, MicroSecs} = TimeStamp,
-		    S = MegaSecs * 1000000 + Secs + Int,
-		    MegaSecs1 = S div 1000000,
-		    Secs1 = S rem 1000000,
-		    {MegaSecs1, Secs1, MicroSecs};
-		_ ->
-		    never
-	    end;
+find_x_expire(TimeStamp, [#xmlel{ns = ?NS_MESSAGE_EXPIRE} = El | _Els]) ->
+    Val = exmpp_xml:get_attribute_as_list(El, 'seconds', ""),
+    case catch list_to_integer(Val) of
+	{'EXIT', _} ->
+	    never;
+	Int when Int > 0 ->
+	    {MegaSecs, Secs, MicroSecs} = TimeStamp,
+	    S = MegaSecs * 1000000 + Secs + Int,
+	    MegaSecs1 = S div 1000000,
+	    Secs1 = S rem 1000000,
+	    {MegaSecs1, Secs1, MicroSecs};
 	_ ->
-	    find_x_expire(TimeStamp, Els)
+	    never
+    end;
+find_x_expire(TimeStamp, [_ | Els]) ->
+    find_x_expire(TimeStamp, Els).
+
+
+pop_offline_messages(Ls, User, Server) 
+        when is_binary(User), is_binary(Server) ->
+    try
+	LUser = binary_to_list(User),
+	LServer = binary_to_list(Server),
+	EUser = ejabberd_odbc:escape(LUser),
+	case odbc_queries:get_and_del_spool_msg_t(LServer, EUser) of
+	    {atomic, {selected, ["username","xml"], Rs}} ->
+		Ls ++ lists:flatmap(
+			fun({_, XML}) ->
+				try
+				    [El] = exmpp_xml:parse_document(XML, 
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]),
+				    To = exmpp_jid:parse(
+				      exmpp_stanza:get_recipient(El)),
+				    From = exmpp_jid:parse(
+				      exmpp_stanza:get_sender(El)),
+				    [{route, From, To, El}]
+				catch
+				    _ ->
+					[]
+				end
+			end, Rs);
+	    _ ->
+		Ls
+	end
+    catch
+	_ ->
+	    []
     end.
 
 
-pop_offline_messages(Ls, User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    EUser = ejabberd_odbc:escape(LUser),
-    case odbc_queries:get_and_del_spool_msg_t(LServer, EUser) of
-	{atomic, {selected, ["username","xml"], Rs}} ->
-	    Ls ++ lists:flatmap(
-		    fun({_, XML}) ->
-			    case xml_stream:parse_element(XML) of
-				{error, _Reason} ->
-				    [];
-				El ->
-				    To = jlib:string_to_jid(
-					   xml:get_tag_attr_s("to", El)),
-				    From = jlib:string_to_jid(
-					     xml:get_tag_attr_s("from", El)),
-				    if
-					(To /= error) and
-					(From /= error) ->
-					    [{route, From, To, El}];
-					true ->
-					    []
-				    end
-			    end
-		    end, Rs);
+remove_user(User, Server) 
+        when is_binary(User), is_binary(Server) ->
+    try
+	LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
+	LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
+	Username = ejabberd_odbc:escape(LUser),
+	odbc_queries:del_spool_msg(LServer, Username)
+    catch
 	_ ->
-	    Ls
+	    ok
     end.
-
-
-remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:del_spool_msg(LServer, Username).
 
 
 %% Helper functions:
@@ -350,9 +352,9 @@ discard_warn_sender(Msgs) ->
     lists:foreach(
       fun(#offline_msg{from=From, to=To, packet=Packet}) ->
 	      ErrText = "Your contact offline message queue is full. The message has been discarded.",
-	      Lang = xml:get_tag_attr_s("xml:lang", Packet),
-	      Err = jlib:make_error_reply(
-		      Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
+	      Error = exmpp_stanza:error('resource-constraint',
+		{"en", ErrText}),
+	      Err = exmpp_stanza:reply_with_error(Packet, Error),
 	      ejabberd_router:route(
 		To,
 		From, Err)
@@ -370,38 +372,49 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    Username = ejabberd_odbc:escape(LUser),
-    US = {LUser, LServer},
-    Res = user_queue_parse_query(Username, LServer, Query),
-    Msgs = case catch ejabberd_odbc:sql_query(
-			LServer,
-			["select username, xml from spool"
-			 "  where username='", Username, "'"
-			 "  order by seq;"]) of
-	       {selected, ["username", "xml"], Rs} ->
-		   lists:flatmap(
-		     fun({_, XML}) ->
-			     case xml_stream:parse_element(XML) of
-				 {error, _Reason} ->
-				     [];
-				 El ->
-				     [El]
-			     end
-		     end, Rs);
-	       _ ->
-		   []
-	   end,
+    {US, Msgs, Res} = try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	Username = ejabberd_odbc:escape(LUser),
+	US0 = {LUser, LServer},
+	R = user_queue_parse_query(Username, LServer, Query),
+	M = case catch ejabberd_odbc:sql_query(
+			    LServer,
+			    ["select username, xml from spool"
+			     "  where username='", Username, "'"
+			     "  order by seq;"]) of
+		   {selected, ["username", "xml"], Rs} ->
+		       lists:flatmap(
+			 fun({_, XML}) ->
+				 try exmpp_xml:parse_document(XML, 
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]) of
+				     [El] ->
+					 [El]
+				 catch
+				     _ ->
+					 []
+				 end
+			 end, Rs);
+		   _ ->
+		       []
+	       end,
+	{US0, M, R}
+    catch
+	_ ->
+	    {{"invalid", "invalid"}, [], nothing}
+    end,
     FMsgs =
 	lists:map(
-	  fun({xmlelement, _Name, _Attrs, _Els} = Msg) ->
+	  fun(#xmlel{} = Msg) ->
 		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
 		  Packet = Msg,
-		  FPacket = ejabberd_web_admin:pretty_print_xml(Packet),
+		  FPacket = exmpp_xml:node_to_list(
+		    exmpp_xml:indent_document(Packet, <<"  ">>),
+		    [?DEFAULT_NS], ?PREFIXED_NS),
 		  ?XE("tr",
-		      [?XAE("td", [{"class", "valign"}], [?INPUT("checkbox", "selected", ID)]),
-		       ?XAE("td", [{"class", "valign"}], [?XC("pre", FPacket)])]
+		      [?XAE("td", [?XMLATTR('class', <<"valign">>)], [?INPUT("checkbox", "selected", ID)]),
+		       ?XAE("td", [?XMLATTR('class', <<"valign">>)], [?XC("pre", FPacket)])]
 		     )
 	  end, Msgs),
     [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
@@ -410,7 +423,7 @@ user_queue(User, Server, Query, Lang) ->
 	    ok -> [?XREST("Submitted")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [{"action", ""}, {"method", "post"}],
+	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 	      [?XE("table",
 		   [?XE("thead",
 			[?XE("tr",
@@ -421,7 +434,7 @@ user_queue(User, Server, Query, Lang) ->
 			if
 			    FMsgs == [] ->
 				[?XE("tr",
-				     [?XAC("td", [{"colspan", "4"}], " ")]
+				     [?XAC("td", [?XMLATTR('colspan', <<"4">>)], " ")]
 				    )];
 			    true ->
 				FMsgs
@@ -442,11 +455,14 @@ user_queue_parse_query(Username, LServer, Query) ->
 		       {selected, ["xml", "seq"], Rs} ->
 			   lists:flatmap(
 			     fun({XML, Seq}) ->
-				     case xml_stream:parse_element(XML) of
-					 {error, _Reason} ->
-					     [];
-					 El ->
+				     try exmpp_xml:parse_document(XML, 
+                         [names_as_atom, {check_elems, xmpp}, 
+                          {check_nss,xmpp}, {check_attrs,xmpp}]) of
+					 [El] ->
 					     [{El, Seq}]
+				     catch
+					 _ ->
+					     []
 				     end
 			     end, Rs);
 		       _ ->
@@ -477,22 +493,27 @@ user_queue_parse_query(Username, LServer, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    exmpp_jid:to_list(User, Server).
 
 webadmin_user(Acc, User, Server, Lang) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    Username = ejabberd_odbc:escape(LUser),
-    QueueLen = case catch ejabberd_odbc:sql_query(
-			    LServer,
-			    ["select count(*) from spool"
-			     "  where username='", Username, "';"]) of
-		   {selected, [_], [{SCount}]} ->
-		       SCount;
-		   _ ->
-		       0
-	       end,
-    FQueueLen = [?AC("queue/", QueueLen)],
+    FQueueLen = try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	Username = ejabberd_odbc:escape(LUser),
+	QueueLen = case catch ejabberd_odbc:sql_query(
+				LServer,
+				["select count(*) from spool"
+				 "  where username='", Username, "';"]) of
+		       {selected, [_], [{SCount}]} ->
+			   SCount;
+		       _ ->
+			   0
+		   end,
+	[?AC("queue/", QueueLen)]
+    catch
+	_ ->
+	    [?C("?")]
+    end,
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
 
 webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->

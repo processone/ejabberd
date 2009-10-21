@@ -42,10 +42,10 @@ start(normal, _Args) ->
     ejabberd_loglevel:set(4),
     write_pid_file(),
     application:start(sasl),
+    application:start(exmpp),
     randoms:start(),
     db_init(),
     sha:start(),
-    stringprep_sup:start_link(),
     start(),
     translate:start(),
     acl:start(),
@@ -101,19 +101,7 @@ init() ->
     LogPath = get_log_path(),
     error_logger:add_report_handler(ejabberd_logger_h, LogPath),
     erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
-    case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
-	ok -> ok;
-	{error, already_loaded} -> ok
-    end,
-    Port = open_port({spawn, expat_erl}, [binary]),
-    loop(Port).
-
-
-loop(Port) ->
-    receive
-	_ ->
-	    loop(Port)
-    end.
+    ok.
 
 db_init() ->
     case mnesia:system_info(extra_db_nodes) of

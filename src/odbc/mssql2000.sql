@@ -290,8 +290,6 @@ ALTER TABLE [dbo].[privacy_default_list] WITH NOCHECK ADD
 	) WITH  FILLFACTOR = 90  ON [PRIMARY] 
 GO
 
-
-
  CREATE  INDEX [IX_rostergroups_jid] ON [dbo].[rostergroups]([jid]) WITH  FILLFACTOR = 90 ON [PRIMARY]
 GO
 

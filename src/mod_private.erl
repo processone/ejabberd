@@ -34,74 +34,118 @@
 	 process_sm_iq/3,
 	 remove_user/2]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 -record(private_storage, {usns, xml}).
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, private_storage)}]),
     update_table(),
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE,
 				  ?MODULE, process_sm_iq, IQDisc).
 
 stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE).
 
 
-process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    #jid{luser = LUser, lserver = LServer} = From,
-    case lists:member(LServer, ?MYHOSTS) of
-	true ->
-	    {xmlelement, Name, Attrs, Els} = SubEl,
+process_sm_iq(From, To, #iq{type = Type} = IQ_Rec) ->
+    case check_packet(From, To, IQ_Rec) of
+	ok ->
 	    case Type of
 		set ->
-		    F = fun() ->
-				lists:foreach(
-				  fun(El) ->
-					  set_data(LUser, LServer, El)
-				  end, Els)
-			end,
-		    mnesia:transaction(F),
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, Name, Attrs, []}]};
+		    process_iq_set(From, To, IQ_Rec);
 		get ->
-		    case catch get_data(LUser, LServer, Els) of
-			{'EXIT', _Reason} ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl,
-					    ?ERR_INTERNAL_SERVER_ERROR]};
-			Res ->
-			    IQ#iq{type = result,
-				  sub_el = [{xmlelement, Name, Attrs, Res}]}
-		    end
+		    process_iq_get(From, To, IQ_Rec)
 	    end;
-	false ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+	{error, Error} ->
+	    exmpp_iq:error(IQ_Rec, Error)
+    end.
+
+process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
+    LUser = exmpp_jid:prep_node(From),
+    LServer = exmpp_jid:prep_domain(From),
+    case catch get_data(LUser,
+			LServer,
+			exmpp_xml:get_child_elements(SubEl)) of
+	{'EXIT', _Reason} ->
+	    {error, 'internal-server-error'};
+	Res ->
+	    exmpp_iq:result(IQ_Rec, #xmlel{ns = ?NS_PRIVATE,
+					   name = 'query',
+					   children = Res})
+    end.
+
+
+process_iq_set(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
+    LUser = exmpp_jid:prep_node(From),
+    LServer = exmpp_jid:prep_domain(From),
+    F = fun() ->
+        lists:foreach(
+          fun(El) ->
+              set_data(LUser, LServer, El)
+          end, exmpp_xml:get_child_elements(SubEl))
+    end,
+    mnesia:transaction(F),
+    exmpp_iq:result(IQ_Rec).
+
+
+check_packet(From, To, IQ_Rec) ->
+    check_packet(From, To, IQ_Rec, [ fun check_domain/3,
+				     fun check_user/3,
+				     fun check_ns/3]).
+check_packet(_From, _To, _IQ_Rec, []) ->
+    ok;
+check_packet(From, To, IQ_Rec, [F | R]) ->
+    case F(From, To, IQ_Rec) of
+	{error, _} = Error -> Error;
+	ok -> check_packet(From, To, IQ_Rec, R)
+    end.
+
+check_domain(From, _To, _IQ_Rec) ->
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    case lists:member(LServer, ?MYHOSTS) of
+	true -> ok;
+	false -> {error, 'not-allowed'}
+    end.
+
+% the iq can't be directed to another jid
+check_user(From, To, _IQ_Rec) ->
+    case exmpp_jid:bare_compare(From, To) of
+	true -> ok;
+	false -> {error, 'forbidden'}
+    end.
+
+%there must be at least one child, and every child should have
+%a namespace specified (reject if the namespace is jabber:iq:private,
+%the same than the parent element).
+check_ns(_From, _To, #iq{payload = SubEl}) ->
+    case exmpp_xml:get_child_elements(SubEl) of
+	[] ->
+	    {error, 'not-acceptable'};
+	Children ->
+	    case lists:any(fun(Child) ->
+			       exmpp_xml:get_ns_as_atom(Child) =:= ?NS_PRIVATE
+			   end, Children) of
+		true -> {error, 'not-acceptable'};
+		false -> ok
+	    end
     end.
 
 set_data(LUser, LServer, El) ->
-    case El of
-	{xmlelement, _Name, Attrs, _Els} ->
-	    XMLNS = xml:get_attr_s("xmlns", Attrs),
-	    case XMLNS of
-		"" ->
-		    ignore;
-		_ ->
-		    mnesia:write(
-		      #private_storage{usns = {LUser, LServer, XMLNS},
-				       xml = El})
-	    end;
-	_ ->
-	    ignore
-    end.
+    XMLNS = exmpp_xml:get_ns_as_atom(El),
+    mnesia:write(#private_storage{usns = {LUser, LServer, XMLNS},
+				  xml = El}).
 
 get_data(LUser, LServer, Els) ->
     get_data(LUser, LServer, Els, []).
@@ -109,45 +153,46 @@ get_data(LUser, LServer, Els) ->
 get_data(_LUser, _LServer, [], Res) ->
     lists:reverse(Res);
 get_data(LUser, LServer, [El | Els], Res) ->
-    case El of
-	{xmlelement, _Name, Attrs, _} ->
-	    XMLNS = xml:get_attr_s("xmlns", Attrs),
-	    case mnesia:dirty_read(private_storage, {LUser, LServer, XMLNS}) of
-		[R] ->
-		    get_data(LUser, LServer, Els,
-			     [R#private_storage.xml | Res]);
-		[] ->
-		    get_data(LUser, LServer, Els,
-			     [El | Res])
-	    end;
-	_ ->
-	    get_data(LUser, LServer, Els, Res)
+    XMLNS = exmpp_xml:get_ns_as_atom(El),
+    case mnesia:dirty_read(private_storage, {LUser, LServer, XMLNS}) of
+	[R] ->
+	    get_data(LUser, LServer, Els,
+	      [R#private_storage.xml | Res]);
+	[] ->
+	    get_data(LUser, LServer, Els,
+	      [El | Res])
     end.
 
-remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    F = fun() ->
-		Namespaces = mnesia:select(
-			    private_storage,
-			    [{#private_storage{usns={LUser, LServer, '$1'},
-					       _ = '_'},
-			     [],
-			     ['$$']}]),
-		lists:foreach(
-		  fun([Namespace]) ->
-			  mnesia:delete({private_storage,
-					 {LUser, LServer, Namespace}})
-		     end, Namespaces)
-        end,
-    mnesia:transaction(F).
+remove_user(User, Server) 
+        when is_binary(User), is_binary(Server) ->
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	F = fun() ->
+		    Namespaces = mnesia:select(
+				private_storage,
+				[{#private_storage{usns = {LUser, LServer, '$1'},
+						   _ = '_'},
+				 [],
+				 ['$$']}]),
+		    lists:foreach(
+		      fun([Namespace]) ->
+			      mnesia:delete({private_storage,
+					     {LUser, LServer, Namespace}})
+			 end, Namespaces)
+	    end,
+	mnesia:transaction(F)
+    catch
+	_ ->
+	    ok
+    end.
 
 
 update_table() ->
     Fields = record_info(fields, private_storage),
     case mnesia:table_info(private_storage, attributes) of
 	Fields ->
-	    ok;
+            convert_to_exmpp();
 	[userns, xml] ->
 	    ?INFO_MSG("Converting private_storage table from "
 		      "{user, default, lists} format", []),
@@ -163,10 +208,14 @@ update_table() ->
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_private_tmp_table),
 			 mnesia:foldl(
-			   fun(#private_storage{usns = {U, NS}} = R, _) ->
+			   fun(#private_storage{usns = {U, NS}, xml = El} = R, _) ->
+				   NS1 = list_to_atom(NS),
+				   El0 = exmpp_xml:xmlelement_to_xmlel(El,
+				     [?NS_PRIVATE], [{?NS_XMPP, ?NS_XMPP_pfx}]),
+				   El1 = exmpp_xml:remove_whitespaces_deeply(El0),
 				   mnesia:dirty_write(
 				     mod_private_tmp_table,
-				     R#private_storage{usns = {U, Host, NS}})
+				     R#private_storage{usns = {U, Host, NS1}, xml = El1})
 			   end, ok, private_storage)
 		 end,
 	    mnesia:transaction(F1),
@@ -186,3 +235,30 @@ update_table() ->
     end.
 
 
+convert_to_exmpp() ->
+    Fun = fun() ->
+	    case mnesia:first(private_storage) of
+		'$end_of_table' ->
+		    none;
+                {U, _S, _NS} when is_binary(U) ->
+                    none;
+                {U, _S, _NS} when is_list(U) ->
+                    mnesia:foldl(fun convert_to_exmpp2/2,
+                      done, private_storage, write)
+	    end
+    end,
+    mnesia:transaction(Fun).
+
+convert_to_exmpp2(#private_storage{usns = {U, S, NS} = Key, xml = El} = R,
+  Acc) ->
+    mnesia:delete({private_storage, Key}),
+    U1 = list_to_binary(U),
+    S1 = list_to_binary(S),
+    NS1 = list_to_atom(NS),
+    El1 = exmpp_xml:xmlelement_to_xmlel(El,
+      [?NS_PRIVATE], [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    New_R = R#private_storage{
+      usns = {U1, S1, NS1},
+      xml = El1},
+    mnesia:write(New_R),
+    Acc.

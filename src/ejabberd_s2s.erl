@@ -49,12 +49,20 @@
 %% ejabberd API
 -export([get_info_s2s_connections/1]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("ejabberd_commands.hrl").
 
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER, 1).
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE, 1).
+
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ?NS_JABBER_CLIENT).
+-define(PREFIXED_NS, [
+  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
+]).
 
 -record(s2s, {fromto, pid, key}).
 -record(state, {}).
@@ -69,6 +77,16 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nS2S: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    route(From, To, Packet);
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
         {'EXIT', Reason} ->
@@ -201,6 +219,16 @@ handle_cast(_Msg, State) ->
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
+handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
+    catch throw(for_stacktrace), % To have a stacktrace.
+    io:format("~nS2S: old #xmlelement:~n~p~n~p~n~n",
+      [PacketOld, erlang:get_stacktrace()]),
+    % XXX OLD FORMAT: From, To, Packet.
+    From = jlib:from_old_jid(FromOld),
+    To = jlib:from_old_jid(ToOld),
+    Packet = exmpp_xml:xmlelement_to_xmlel(PacketOld, [?NS_JABBER_CLIENT],
+      [{?NS_XMPP, ?NS_XMPP_pfx}]),
+    handle_info({route, From, To, Packet}, State);
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
         {'EXIT', Reason} ->
@@ -253,32 +281,30 @@ do_route(From, To, Packet) ->
     case find_connection(From, To) of
 	{atomic, Pid} when is_pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
-	    {xmlelement, Name, Attrs, Els} = Packet,
-	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-						  jlib:jid_to_string(To),
-						  Attrs),
-	    #jid{lserver = MyServer} = From,
+            NewPacket1 = exmpp_stanza:set_sender(Packet, From),
+            NewPacket = exmpp_stanza:set_recipient(NewPacket1, To),
+	    MyServer = exmpp_jid:prep_domain(From),
 	    ejabberd_hooks:run(
 	      s2s_send_packet,
 	      MyServer,
-	      [From, To, Packet]),
-	    send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
+	      [From, To, NewPacket]),
+	    send_element(Pid, NewPacket),
 	    ok;
 	{aborted, _Reason} ->
-	    case xml:get_tag_attr_s("type", Packet) of
-		"error" -> ok;
-		"result" -> ok;
+            case exmpp_stanza:get_type(Packet) of
+		<<"error">> -> ok;
+		<<"result">> -> ok;
 		_ ->
-		    Err = jlib:make_error_reply(
-			    Packet, ?ERR_SERVICE_UNAVAILABLE),
+                    Err = exmpp_stanza:reply_with_error(Packet,
+                      'service-unavailable'),
 		    ejabberd_router:route(To, From, Err)
 	    end,
 	    false
     end.
 
 find_connection(From, To) ->
-    #jid{lserver = MyServer} = From,
-    #jid{lserver = Server} = To,
+    MyServer = exmpp_jid:prep_domain_as_list(From),
+    Server = exmpp_jid:prep_domain_as_list(To),
     FromTo = {MyServer, Server},
     MaxS2SConnectionsNumber = max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
@@ -331,7 +357,7 @@ choose_pid(From, Pids) ->
     % Use sticky connections based on the JID of the sender (whithout
     % the resource to ensure that a muc room always uses the same
     % connection)
-    Pid = lists:nth(erlang:phash(jlib:jid_remove_resource(From), length(Pids1)),
+    Pid = lists:nth(erlang:phash(exmpp_jid:bare(From), length(Pids1)),
 		    Pids1),
     ?DEBUG("Using ejabberd_s2s_out ~p~n", [Pid]),
     Pid.
@@ -382,14 +408,14 @@ new_connection(MyServer, Server, From, FromTo,
 
 max_s2s_connections_number({From, To}) ->
     case acl:match_rule(
-	   From, max_s2s_connections, jlib:make_jid("", To, "")) of
+	   From, max_s2s_connections, exmpp_jid:make(To)) of
 	Max when is_integer(Max) -> Max;
 	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
     end.
 
 max_s2s_connections_number_per_node({From, To}) ->
     case acl:match_rule(
-	   From, max_s2s_connections_per_node, jlib:make_jid("", To, "")) of
+	   From, max_s2s_connections_per_node, exmpp_jid:make(To)) of
 	Max when is_integer(Max) -> Max;
 	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
     end.
@@ -406,12 +432,12 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 %% service.
 %% --------------------------------------------------------------------
 is_service(From, To) ->
-    LFromDomain = From#jid.lserver,
+    LFromDomain = exmpp_jid:prep_domain_as_list(From),
     case ejabberd_config:get_local_option({route_subdomains, LFromDomain}) of
         s2s -> % bypass RFC 3920 10.3
             false;
         _ ->
-            LDstDomain = To#jid.lserver,
+            LDstDomain = exmpp_jid:prep_domain_as_list(To),
             P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
             lists:any(P, ?MYHOSTS)
     end.

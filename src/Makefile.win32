@@ -52,9 +52,6 @@ release : build release_clean
 	mkdir $(SRC_DIR)\eldap
 	copy eldap\eldap.* $(SRC_DIR)\eldap
 	copy eldap\ELDAPv3.asn $(SRC_DIR)\eldap
-	mkdir $(SRC_DIR)\mod_irc
-	copy mod_irc\*.erl $(SRC_DIR)\mod_irc
-	copy mod_irc\*.c $(SRC_DIR)\mod_irc
 	mkdir $(SRC_DIR)\mod_muc
 	copy mod_muc\*.erl $(SRC_DIR)\mod_muc
 	mkdir $(SRC_DIR)\mod_pubsub
@@ -93,8 +90,6 @@ build : $(DLL) compile-beam all-recursive
 
 all-recursive :
 	cd eldap
-	nmake -nologo -f Makefile.win32
-	cd ..\mod_irc
 	nmake -nologo -f Makefile.win32
 	cd ..\mod_muc
 	nmake -nologo -f Makefile.win32
@@ -136,8 +131,6 @@ clean-local :
 
 clean-recursive :
 	cd eldap
-	nmake -nologo -f Makefile.win32 clean
-	cd ..\mod_irc
 	nmake -nologo -f Makefile.win32 clean
 	cd ..\mod_muc
 	nmake -nologo -f Makefile.win32 clean

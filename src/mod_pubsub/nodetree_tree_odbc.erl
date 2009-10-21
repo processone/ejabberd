@@ -36,8 +36,10 @@
 -module(nodetree_tree_odbc).
 -author('christophe.romain@process-one.net').
 
+-include_lib("stdlib/include/qlc.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -define(PUBSUB, mod_pubsub_odbc).
 -define(PLUGIN_PREFIX, "node_").
@@ -88,6 +90,7 @@ options() ->
     [{virtual_tree, false},
      {odbc, true}].
 
+
 %% @spec (Host, Node, From) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
@@ -104,9 +107,9 @@ get_node(Host, Node) ->
 	{selected, ["node", "parent", "type", "nodeid"], [RItem]} ->
 	    raw_to_node(Host, RItem);
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, 'internal_server_error'};
 	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	    {error, 'item_not_found'}
     end.
 get_node(NodeId) ->
     case catch ejabberd_odbc:sql_query_t(
@@ -117,13 +120,13 @@ get_node(NodeId) ->
 	{selected, ["host", "node", "parent", "type"], [{Host, Node, Parent, Type}]} ->
 	    raw_to_node(Host, {Node, Parent, Type, NodeId});
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, 'internal_server_error'};
 	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	    {error, 'item_not_found'}
     end.
 
 %% @spec (Host, From) -> [pubsubNode()] | {error, Reason}
-%%	 Host = mod_pubsub:host() | mod_pubsub:jid()
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
 get_nodes(Host) ->
@@ -165,10 +168,6 @@ get_parentnodes_tree(Host, Node, From) ->
 
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
-
-%% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
-%%	 Host = mod_pubsub:host()
-%%	 Node = mod_pubsub:pubsubNode()
 get_subnodes(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -183,12 +182,12 @@ get_subnodes(Host, Node) ->
 	    []
     end.
 
+%% @spec (Host, Index, From) -> [pubsubNodeIdx()] | {error, Reason}
+%%     Host = mod_pubsub:host()
+%%     Node = mod_pubsub:pubsubNode()
+%%     From = mod_pubsub:jid()
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
-
-%% @spec (Host, Index) -> [pubsubNode()] | {error, Reason}
-%%	 Host = mod_pubsub:host()
-%%	 Node = mod_pubsub:pubsubNode()
 get_subnodes_tree(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -204,38 +203,36 @@ get_subnodes_tree(Host, Node) ->
     end.
 
 %% @spec (Host, Node, Type, Owner, Options) -> ok | {error, Reason}
-%%	 Host = mod_pubsub:host() | mod_pubsub:jid()
-%%	 Node = mod_pubsub:pubsubNode()
-%%	 NodeType = mod_pubsub:nodeType()
-%%	 Owner = mod_pubsub:jid()
-%%	 Options = list()
-%%	 Parents = list()
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
+%%     Node = mod_pubsub:pubsubNode()
+%%     NodeType = mod_pubsub:nodeType()
+%%     Owner = mod_pubsub:jid()
+%%     Options = list()
 create_node(Host, Node, Type, Owner, Options, Parents) ->
-    BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    BJID = jlib:short_prepd_bare_jid(Owner),
     case nodeid(Host, Node) of
-	{error, ?ERR_ITEM_NOT_FOUND} ->
-	    ParentExists =
-		case Host of
-		    {_U, _S, _R} ->
-			%% This is special case for PEP handling
-			%% PEP does not uses hierarchy
-			true;
-		    _ ->
-			case Parents of
-			[] -> true;
-			[Parent|_] ->
-			    case nodeid(Host, Parent) of
-				{result, PNodeId} ->
-				    case nodeowners(PNodeId) of
-					[{[], Host, []}] -> true;
-					Owners -> lists:member(BJID, Owners)
-				    end;
-				_ ->
-				    false
-			    end;
-			_ ->
-			    false
-			end
+	{error, 'item_not_found'} ->
+        ParentExists = case Host of
+            {_, _, _} ->
+		    %% This is special case for PEP handling
+		    %% PEP does not uses hierarchy
+		    true;
+		_ ->
+            case Parents of
+                [] ->  true;
+                [Parent | _] ->
+                    case nodeid(Host, Parent) of
+                        {result, PNodeId} -> 
+                            case nodeowners(PNodeId) of
+                                [{[], Host, []}] -> true;
+                                Owners -> lists:member(BJID, Owners)
+                            end;
+                        _ ->
+                            false
+                    end;
+               _ -> 
+                  false
+		    end
 		end,
 	    case ParentExists of
 		true -> 
@@ -249,18 +246,19 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    end;
 		false -> 
 		    %% Requesting entity is prohibited from creating nodes
-		    {error, ?ERR_FORBIDDEN}
+		    {error, 'forbidden'}
 	    end;
 	{result, _} -> 
 	    %% NodeID already exists
-	    {error, ?ERR_CONFLICT};
+	    {error, 'conflict'};
 	Error -> 
 	    Error
     end.
 
+
 %% @spec (Host, Node) -> [mod_pubsub:node()]
-%%	 Host = mod_pubsub:host() | mod_pubsub:jid()
-%%	 Node = mod_pubsub:pubsubNode()
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
+%%     Node = mod_pubsub:pubsubNode()
 delete_node(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -269,6 +267,7 @@ delete_node(Host, Node) ->
 	    ["delete from pubsub_node "
 	     "where host='", H, "' and node like '", N, "%';"]),
     Removed.
+
 
 %% helpers
 
@@ -294,7 +293,7 @@ raw_to_node(Host, {Node, Parent, Type, NodeId}) ->
 		      []
 	      end,
     #pubsub_node{
-		nodeid = {Host, ?PUBSUB:string_to_node(Node)},
+		nodeid = {Host, ?PUBSUB:string_to_node(Node)}, 
 		parents = [?PUBSUB:string_to_node(Parent)],
 		id = NodeId,
 		type = Type, 
@@ -305,8 +304,8 @@ raw_to_node(Host, {Node, Parent, Type, NodeId}) ->
 set_node(Record) ->
     {Host, Node} = Record#pubsub_node.nodeid,
     Parent = case Record#pubsub_node.parents of
-	[] -> <<>>;
-	[First|_] -> First
+                [] -> <<>>;
+                [First | _] -> First
     end,
     Type = Record#pubsub_node.type,
     H = ?PUBSUB:escape(Host),
@@ -336,7 +335,7 @@ set_node(Record) ->
 	     end,
     case NodeId of
 	none ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, 'internal_server_error'};
 	_ ->
 	    lists:foreach(fun({Key, Value}) ->
 				  SKey = atom_to_list(Key),
@@ -359,9 +358,9 @@ nodeid(Host, Node) ->
 	{selected, ["nodeid"], [{NodeId}]} ->
 	    {result, NodeId};
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, 'internal_server_error'};
 	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	    {error, 'item_not_found'}
     end.
 
 nodeowners(NodeId) ->

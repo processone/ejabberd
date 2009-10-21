@@ -13,7 +13,8 @@
 {"Administration of ","การดูแล "}.
 {"Administrator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลระบบ"}.
 {"All activity","กิจกรรมทั้งหมด"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","อนุญาตให้ Jabber ID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","อนุญาตให้ JID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"}.
+{"Allow users to change subject","อนุญาตให้ผู้ใช้เปลี่ยนหัวข้อได้"}.
 {"Allow users to query other users","อนุญาตให้ผู้ใช้ถามคำถามกับผู้ใช้คนอื่นๆ ได้"}.
 {"Allow users to send invites","อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"}.
 {"Allow users to send private messages","อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"}.
@@ -40,6 +41,7 @@
 {"Commands","คำสั่ง"}.
 {"Conference room does not exist","ไม่มีห้องประชุม"}.
 {"Configuration","การกำหนดค่า"}.
+{"Configuration for ","การกำหนดค่าสำหรับ "}.
 {"Connected Resources:","ทรัพยากรที่เชื่อมต่อ:"}.
 {"Country","ประเทศ"}.
 {"CPU Time:","เวลาการทำงานของ CPU:"}.
@@ -69,6 +71,7 @@
 {"ejabberd virtual hosts","โฮสต์เสมือน ejabberd"}.
 {"Email","อีเมล"}.
 {"Enable logging","เปิดใช้งานการบันทึก"}.
+{"Encodings","การเข้ารหัส"}.
 {"End User Session","สิ้นสุดเซสชันของผู้ใช้"}.
 {"Enter list of {Module, [Options]}","ป้อนรายการของ {โมดูล, [ตัวเลือก]}"}.
 {"Enter nickname you want to register","ป้อนชื่อเล่นที่คุณต้องการลงทะเบียน"}.
@@ -76,7 +79,9 @@
 {"Enter path to jabberd14 spool dir","ป้อนพาธไปยัง jabberd14 spool dir"}.
 {"Enter path to jabberd14 spool file","ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd14"}.
 {"Enter path to text file","ป้อนพาธของไฟล์ข้อความ"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers","ป้อนชื่อผู้ใช้และการเข้ารหัสที่คุณต้องการใช้สำหรับเชื่อมต่อกับเซิร์ฟเวอร์ IRC"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","ตัวอย่าง: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","นามสกุล"}.
 {"February","กุมภาพันธ์"}.
 {"Fill in fields to search for any matching Jabber User","กรอกข้อมูลลงในฟิลด์เพื่อค้นหาผู้ใช้ Jabber ที่ตรงกัน"}.
@@ -96,6 +101,7 @@
 {"has been kicked","ถูกไล่ออก"}.
 {" has set the subject to: "," ตั้งหัวข้อว่า: "}.
 {"Host","โฮสต์"}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","ถ้าคุณต้องการระบุการเข้ารหัสที่ต่างกันสำหรับเซิร์ฟเวอร์ IRC ให้กรอกค่าโดยใช้รูปแบบ '{\"irc server\", \"encoding\"}' ลงในรายการ  การบริการนี้ใช้การเข้ารหัสในรูปแบบ \"~s\" โดยค่าดีฟอลต์ "}.
 {"Import Directory","อิมพอร์ตไดเร็กทอรี"}.
 {"Import File","อิมพอร์ตไฟล์"}.
 {"Import User from File at ","อิมพอร์ตผู้ใช้จากไฟล์ที่"}.
@@ -112,8 +118,8 @@
 {"It is not allowed to send private messages of type \"groupchat\"","ไม่อนุญาตให้ส่งข้อความส่วนตัวไปยัง \"กลุ่มสนทนา\""}.
 {"It is not allowed to send private messages to the conference","ไม่อนุญาตให้ส่งข้อความส่วนตัวไปยังห้องประชุม"}.
 {"Jabber ID","Jabber ID"}.
-{"Jabber ID ~s is invalid","Jabber ID ~s ไม่ถูกต้อง"}.
 {"January","มกราคม"}.
+{"Jabber ID ~s is invalid","JID ~s ไม่ถูกต้อง"}.
 {"joins the room","เข้าห้องสนทนานี้"}.
 {"July","กรกฎาคม"}.
 {"June","มิถุนายน"}.
@@ -137,6 +143,7 @@
 {"Max payload size in bytes","ขนาดสูงสุดของส่วนของข้อมูล (payload) มีหน่วยเป็นไบต์"}.
 {"May","พฤษภาคม"}.
 {"Members:","สมาชิก:"}.
+{"Membership required to enter this room","ต้องเป็นสมาชิกจึงจะสามารถเข้าห้องนี้ได้"}.
 {"Memory","หน่วยความจำ"}.
 {"Message body","เนื้อหาของข้อความ"}.
 {"Middle Name","ชื่อกลาง"}.
@@ -150,6 +157,8 @@
 {"Name","ชื่อ"}.
 {"Never","ไม่เคย"}.
 {"Nickname","ชื่อเล่น"}.
+{"Nickname is already in use by another occupant","ชื่อเล่นถูกใช้งานอยู่โดยผู้ครอบครองห้อง"}.
+{"Nickname is registered by another person","ชื่อเล่นถูกลงทะเบียนใช้งานโดยบุคคลอื่น"}.
 {"Nickname Registration at ","การลงทะเบียนชื่อเล่นที่ "}.
 {"Nickname ~s does not exist in the room","ไม่มีชื่อเล่น ~s อยู่ในห้องนี้"}.
 {"No body provided for announce message","ไม่ได้ป้อนเนื้อหาสำหรับข้อความที่ประกาศ"}.
@@ -176,6 +185,8 @@
 {"Online Users:","ผู้ใช้ออนไลน์:"}.
 {"Online Users","ผู้ใช้ออนไลน์"}.
 {"Only deliver notifications to available users","ส่งการแจ้งเตือนถึงผู้ใช้ที่สามารถติดต่อได้เท่านั้น"}.
+{"Only moderators and participants are allowed to change subject in this room","ผู้ดูแลการสนทนาและผู้เข้าร่วมเท่านั้นที่ได้รับอนุญาตให้เปลี่ยนหัวข้อในห้องนี้"}.
+{"Only moderators are allowed to change subject in this room","ผู้ดูแลการสนทนาเท่านั้นที่ได้รับอนุญาตให้เปลี่ยนหัวข้อในห้องนี้"}.
 {"Only occupants are allowed to send messages to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความไปยังห้องประชุม"}.
 {"Only occupants are allowed to send queries to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งกระทู้ถามไปยังห้องประชุม"}.
 {"Only service administrators are allowed to send service messages","ผู้ดูแลด้านการบริการเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความการบริการ"}.
@@ -189,6 +200,7 @@
 {"Packet","แพ็กเก็ต"}.
 {"Password:","รหัสผ่าน:"}.
 {"Password","รหัสผ่าน"}.
+{"Password required to enter this room","ต้องใส่รหัสผ่านเพื่อเข้าห้องนี้"}.
 {"Password Verification","การตรวจสอบรหัสผ่าน"}.
 {"Path to Dir","พาธไปยัง Dir"}.
 {"Path to File","พาธของไฟล์ข้อมูล"}.
@@ -198,19 +210,21 @@
 {"Ping","Ping"}.
 {"Pong","Pong"}.
 {"Port","พอร์ท"}.
-{"Present real Jabber IDs to","แสดง Jabber IDs ที่ถูกต้องแก่"}.
+{"Present real Jabber IDs to","แสดง JIDs ที่ถูกต้องแก่"}.
 {"private, ","ส่วนตัว, "}.
 {"Publish-Subscribe","เผยแพร่-สมัครเข้าใช้งาน"}.
 {"PubSub subscriber request","คำร้องขอของผู้สมัครเข้าใช้งาน PubSub"}.
 {"Queries to the conference members are not allowed in this room","ห้องนี้ไม่อนุญาตให้ส่งกระทู้ถามถึงสมาชิกในห้องประชุม"}.
 {"RAM and disc copy","คัดลอก RAM และดิสก์"}.
 {"RAM copy","คัดลอก RAM"}.
+{"(Raw)","(ข้อมูลดิบ)"}.
 {"Raw","ข้อมูลดิบ"}.
 {"Really delete message of the day?","แน่ใจว่าต้องการลบข้อความของวันหรือไม่"}.
 {"Recipient is not in the conference room","ผู้รับไม่ได้อยู่ในห้องประชุม"}.
 {"Registered Users:","ผู้ใช้ที่ลงทะเบียน:"}.
 {"Registered Users","ผู้ใช้ที่ลงทะเบียน"}.
 {"Registration in mod_irc for ","การลงทะเบียนใน mod_irc สำหรับ"}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","โปรดทราบว่าตัวเลือกเหล่านี้จะสำรองข้อมูลในฐานข้อมูล builtin Mnesia เท่านั้น หากคุณใช้โมดูล ODBC คุณต้องสำรองข้อมูลของฐานข้อมูล SQL แยกต่างหากด้วย"}.
 {"Remote copy","คัดลอกระยะไกล"}.
 {"Remove","ลบ"}.
 {"Remove User","ลบผู้ใช้"}.
@@ -248,6 +262,8 @@
 {"Show Ordinary Table","แสดงตารางทั่วไป"}.
 {"Shut Down Service","ปิดการบริการ"}.
 {"~s invites you to the room ~s","~s เชิญคุณเข้าร่วมสนทนาในห้อง ~s"}.
+{"Size","ขนาด"}.
+{"Specified nickname is already registered","ชื่อเล่นที่ระบุได้รับการลงได้ทะเบียนแล้ว"}.
 {"Specify the access model","ระบุโมเดลการเข้าถึง"}.
 {"Specify the publisher model","ระบุโมเดลผู้เผยแพร่"}.
 {"~s's Offline Messages Queue","~s's ลำดับข้อความออฟไลน์"}.
@@ -284,6 +300,7 @@
 {"Tuesday","วันอังคาร"}.
 {"Update ","อัพเดต "}.
 {"Update","อัพเดต"}.
+{"Updated modules","โมดูลที่อัพเดต"}.
 {"Update message of the day (don't send)","อัพเดตข้อความของวัน (ไม่ต้องส่ง)"}.
 {"Update message of the day on all hosts (don't send)","อัพเดตข้อความของวันบนโฮสต์ทั้งหมด (ไม่ต้องส่ง) "}.
 {"Update plan","แผนการอัพเดต"}.
@@ -297,6 +314,7 @@
 {"Users Last Activity","กิจกรรมล่าสุดของผู้ใช้"}.
 {"Validate","ตรวจสอบ"}.
 {"vCard User Search","ค้นหาผู้ใช้ vCard "}.
+{"Virtual Hosts","โฮสต์เสมือน"}.
 {"Visitors are not allowed to send messages to all occupants","ผู้เยี่ยมเยือนไม่ได้รับอนุญาตให้ส่งข้อความถึงผู้ครอบครองห้องทั้งหมด"}.
 {"Wednesday","วันพุธ"}.
 {"When to send the last published item","เวลาที่ส่งรายการที่เผยแพร่ครั้งล่าสุด"}.

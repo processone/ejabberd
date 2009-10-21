@@ -54,6 +54,10 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+
+%% @spec (Host) -> ok
+%%     Host = string()
+
 start(Host) ->
     mnesia:create_table(passwd, [{disc_copies, [node()]},
 				 {attributes, record_info(fields, passwd)}]),
@@ -67,15 +71,22 @@ start(Host) ->
 update_reg_users_counter_table(Server) ->
     Set = get_vh_registered_users(Server),
     Size = length(Set),
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_jid:prep_domain(exmpp_jid:parse(Server)),
     set_vh_registered_users_counter(LServer, Size).
+
+%% @spec () -> bool()
 
 plain_password_required() ->
     false.
 
+%% @spec (User, Server, Password) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 check_password(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
 	[#passwd{password = Password}] ->
@@ -84,9 +95,16 @@ check_password(User, Server, Password) ->
 	    false
     end.
 
+%% @spec (User, Server, Password, Digest, DigestGen) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     Digest = string()
+%%     DigestGen = function()
+
 check_password(User, Server, Password, Digest, DigestGen) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
 	[#passwd{password = Passwd}] ->
@@ -105,11 +123,14 @@ check_password(User, Server, Password, Digest, DigestGen) ->
 	    false
     end.
 
-%% @spec (User::string(), Server::string(), Password::string()) ->
-%%       ok | {error, invalid_jid}
+%% @spec (User, Server, Password) -> ok | {error, invalid_jid}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 set_password(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     if
 	(LUser == error) or (LServer == error) ->
@@ -124,9 +145,13 @@ set_password(User, Server, Password) ->
     end.
 
 %% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid} | {aborted, Reason}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 try_register(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     if
 	(LUser == error) or (LServer == error) ->
@@ -146,17 +171,44 @@ try_register(User, Server, Password) ->
 	    mnesia:transaction(F)
     end.
 
-%% Get all registered users in Mnesia
+%% @spec () -> [{LUser, LServer}]
+%%     LUser = string()
+%%     LServer = string()
+%% @doc Get all registered users in Mnesia.
+
 dirty_get_registered_users() ->
     mnesia:dirty_all_keys(passwd).
 
+%% @spec (Server) -> [{LUser, LServer}]
+%%     Server = string()
+%%     LUser = string()
+%%     LServer = string()
+
 get_vh_registered_users(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     mnesia:dirty_select(
       passwd,
       [{#passwd{us = '$1', _ = '_'}, 
 	[{'==', {element, 2, '$1'}, LServer}], 
 	['$1']}]).
+
+%% @spec (Server, Opts) -> [{LUser, LServer}]
+%%     Server = string()
+%%     Opts = [{Opt, Val}]
+%%         Opt = atom()
+%%         Val = term()
+%%     LUser = string()
+%%     LServer = string()
+%% @doc Return the registered users for the specified host.
+%%
+%% `Opts' can be one of the following:
+%% <ul>
+%% <li>`[{from, integer()}, {to, integer()}]'</li>
+%% <li>`[{limit, integer()}, {offset, integer()}]'</li>
+%% <li>`[{prefix, string()}]'</li>
+%% <li>`[{prefix, string()}, {from, integer()}, {to, integer()}]'</li>
+%% <li>`[{prefix, string()}, {limit, integer()}, {offset, integer()}]'</li>
+%% </ul>
 
 get_vh_registered_users(Server, [{from, Start}, {to, End}]) 
 	when is_integer(Start) and is_integer(End) ->
@@ -204,8 +256,12 @@ get_vh_registered_users(Server, [{prefix, Prefix}, {limit, Limit}, {offset, Offs
 get_vh_registered_users(Server, _) ->
     get_vh_registered_users(Server).
 
+%% @spec (Server) -> Users_Number
+%%     Server = string()
+%%     Users_Number = integer()
+
 get_vh_registered_users_number(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_jid:prep_domain(exmpp_jid:parse(Server)),
     Query = mnesia:dirty_select(
 		reg_users_counter,
 		[{#reg_users_counter{vhost = LServer, count = '$1'},
@@ -216,6 +272,11 @@ get_vh_registered_users_number(Server) ->
 	    Count;
 	_ -> 0
     end.
+
+%% @spec (Server, [{prefix, Prefix}]) -> Users_Number
+%%     Server = string()
+%%     Prefix = string()
+%%     Users_Number = integer()
 
 get_vh_registered_users_number(Server, [{prefix, Prefix}]) when is_list(Prefix) ->
     Set = [{U, S} || {U, S} <- get_vh_registered_users(Server), lists:prefix(Prefix, U)],
@@ -258,88 +319,137 @@ set_vh_registered_users_counter(LServer, Count) ->
 	end,
     mnesia:sync_dirty(F).
 
+%% @spec (User, Server) -> Password | false
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 get_password(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
-	    Password;
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	case catch mnesia:dirty_read(passwd, US) of
+	    [#passwd{password = Password}] ->
+		Password;
+	    _ ->
+		false
+	end
+    catch
 	_ ->
 	    false
     end.
 
+%% @spec (User, Server) -> Password | nil()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 get_password_s(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
-	    Password;
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	case catch mnesia:dirty_read(passwd, US) of
+	    [#passwd{password = Password}] ->
+		Password;
+	    _ ->
+		[]
+	end
+    catch
 	_ ->
 	    []
     end.
 
 %% @spec (User, Server) -> true | false | {error, Error}
+%%     User = string()
+%%     Server = string()
+
 is_user_exists(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-	[] ->
-	    false;
-	[_] ->
-	    true;
-	Other ->
-	    {error, Other}
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	case catch mnesia:dirty_read({passwd, US}) of
+	    [] ->
+		false;
+	    [_] ->
+		true;
+	    Other ->
+		{error, Other}
+	end
+    catch
+	_ ->
+	    false
     end.
 
 %% @spec (User, Server) -> ok
+%%     User = string()
+%%     Server = string()
 %% @doc Remove user.
 %% Note: it returns ok even if there was some problem removing the user.
+
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		mnesia:delete({passwd, US}),
-		dec_vh_registered_users_counter(LServer)
-        end,
-    mnesia:transaction(F),
-	ok.
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    mnesia:delete({passwd, US}),
+		    dec_vh_registered_users_counter(LServer)
+	    end,
+	mnesia:transaction(F),
+	ok
+    catch
+	_ ->
+	    ok
+    end.
 
 %% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 %% @doc Remove user if the provided password is correct.
+
 remove_user(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    F = fun() ->
-		case mnesia:read({passwd, US}) of
-		    [#passwd{password = Password}] ->
-			mnesia:delete({passwd, US}),
-			dec_vh_registered_users_counter(LServer),
-			ok;
-		    [_] ->
-			not_allowed;
-		    _ ->
-			not_exists
-		end
-        end,
-    case mnesia:transaction(F) of
-	{atomic, ok} ->
-	    ok;
-	{atomic, Res} ->
-	    Res;
+    try
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	US = {LUser, LServer},
+	F = fun() ->
+		    case mnesia:read({passwd, US}) of
+			[#passwd{password = Password}] ->
+			    mnesia:delete({passwd, US}),
+			    dec_vh_registered_users_counter(LServer),
+			    ok;
+			[_] ->
+			    not_allowed;
+			_ ->
+			    not_exists
+		    end
+	    end,
+	case mnesia:transaction(F) of
+	    {atomic, ok} ->
+		ok;
+	    {atomic, Res} ->
+		Res;
+	    _ ->
+		bad_request
+	end
+    catch
 	_ ->
 	    bad_request
     end.
 
+%% @spec () -> term()
 
 update_table() ->
     Fields = record_info(fields, passwd),
     case mnesia:table_info(passwd, attributes) of
 	Fields ->
+	    % No conversion is needed when the table comes from an exmpp-less
+	    % Ejabberd because ejabberd_auth* modules use string() and not
+	    % binary().
 	    ok;
 	[user, password] ->
 	    ?INFO_MSG("Converting passwd table from "

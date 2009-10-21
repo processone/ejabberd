@@ -42,7 +42,7 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -76,8 +76,8 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-	 node_to_path/1,
-	 path_to_node/1
+     node_to_path/1,
+     path_to_node/1
 	]).
 
 %% ================
@@ -197,13 +197,14 @@ features() ->
 %% ```check_create_user_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
 %%	   node_default:check_create_user_permission(Host, ServerHost, Node, ParentNode, Owner, Access).'''</p>
 create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
+    LOwner = jlib:short_prepd_jid(Owner),
     {User, Server, _Resource} = LOwner,
     Allowed = case LOwner of
-	{"", Host, ""} ->
+	{undefined, Host, undefined} ->
 	    true; % pubsub service always allowed
 	_ ->
-	    case acl:match_rule(ServerHost, Access, LOwner) of
+	    {LU, LS, LR} = LOwner,
+	    case acl:match_rule(ServerHost, Access, exmpp_jid:make(LU, LS, LR)) of
 		allow ->
 		    case node_to_path(Node) of
 			["home", Server, User | _] -> true;
@@ -221,7 +222,7 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
 %%	 Owner = mod_pubsub:jid()
 %% @doc <p></p>
 create_node(NodeId, Owner) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jlib:short_prepd_bare_jid(Owner),
     set_state(#pubsub_state{stateid = {OwnerKey, NodeId}, affiliation = owner}),
     {result, {default, broadcast}}.
 
@@ -281,9 +282,9 @@ delete_node(Removed) ->
 %% <p>In the default plugin module, the record is unchanged.</p>
 subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup, Options) ->
-    SubKey = jlib:jid_tolower(Subscriber),
-    GenKey = jlib:jid_remove_resource(SubKey),
-    Authorized = (jlib:jid_tolower(jlib:jid_remove_resource(Sender)) == GenKey),
+    SubKey = jlib:short_prepd_jid(Subscriber),
+    GenKey = jlib:short_prepd_bare_jid(SubKey),
+    Authorized = (jlib:short_prepd_bare_jid(Sender) == GenKey),
     GenState = get_state(NodeId, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
@@ -298,31 +299,31 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
     if
 	not Authorized ->
 	    %% JIDs do not match
-	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "invalid-jid")};
+	    {error, ?ERR_EXTENDED('bad-request', "invalid-jid")};
 	Affiliation == outcast ->
 	    %% Requesting entity is blocked
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	PendingSubscription ->
 	    %% Requesting entity has pending subscription
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "pending-subscription")};
+	    {error, ?ERR_EXTENDED('not-authorized', "pending-subscription")};
 	(AccessModel == presence) and (not PresenceSubscription) ->
 	    %% Entity is not authorized to create a subscription (presence subscription required)
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "presence-subscription-required")};
+	    {error, ?ERR_EXTENDED('not-authorized', "presence-subscription-required")};
 	(AccessModel == roster) and (not RosterGroup) ->
 	    %% Entity is not authorized to create a subscription (not in roster group)
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "not-in-roster-group")};
+	    {error, ?ERR_EXTENDED('not-authorized', "not-in-roster-group")};
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
+	    {error, ?ERR_EXTENDED('not-allowed', "closed-node")};
 	%%MustPay ->
 	%%	% Payment is required for a subscription
 	%%	{error, ?ERR_PAYMENT_REQUIRED};
 	%%ForbiddenAnonymous ->
 	%%	% Requesting entity is anonymous
-	%%	{error, ?ERR_FORBIDDEN};
+	%%	{error, 'forbidden'};
 	true ->
-	    case pubsub_subscription:add_subscription(Subscriber, NodeId, Options) of
-		SubId when is_list(SubId) ->
+	    case pubsub_subscription:subscribe_node(Subscriber, NodeId, Options) of
+		{result, SubId} ->
 		    NewSub = case AccessModel of
 				 authorize -> pending;
 				 _ -> subscribed
@@ -337,7 +338,7 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 			    {result, {default, pending, SubId}}
 		    end;
 		_ ->
-		    {error, ?ERR_INTERNAL_SERVER_ERROR}
+		    {error, 'internal-server-error'}
 	    end
     end.
 
@@ -350,9 +351,9 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 %%	 Reason = mod_pubsub:stanzaError()
 %% @doc <p>Unsubscribe the <tt>Subscriber</tt> from the <tt>Node</tt>.</p>
 unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
-    SubKey = jlib:jid_tolower(Subscriber),
-    GenKey = jlib:jid_remove_resource(SubKey),
-    Authorized = (jlib:jid_tolower(jlib:jid_remove_resource(Sender)) == GenKey),
+    SubKey = jlib:short_prepd_jid(Subscriber),
+    GenKey = jlib:short_prepd_bare_jid(SubKey),
+    Authorized = (jlib:short_prepd_bare_jid(Sender) == GenKey),
     GenState = get_state(NodeId, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
@@ -369,16 +370,16 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
     if
 	%% Requesting entity is prohibited from unsubscribing entity
 	not Authorized ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	%% Entity did not specify SubId
 	%%SubId == "", ?? ->
-	%%	{error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+	%%	{error, ?ERR_EXTENDED('bad-request', "subid-required")};
 	%% Invalid subscription identifier
 	%%InvalidSubId ->
-	%%	{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
+	%%	{error, ?ERR_EXTENDED('not-acceptable', "invalid-subid")};
 	%% Requesting entity is not a subscriber
 	Subscriptions == [] ->
-	    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST, "not-subscribed")};
+	    {error, ?ERR_EXTENDED('unexpected-request', "not-subscribed")};
 	%% Subid supplied, so use that.
 	SubIdExists ->
 	    Sub = first_in_list(fun(S) ->
@@ -392,7 +393,7 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
 		    delete_subscription(SubKey, NodeId, S, SubState),
 		    {result, default};
 		false ->
-		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST,
+		    {error, ?ERR_EXTENDED('unexpected-request',
 					  "not-subscribed")}
 	    end;
 	%% No subid supplied, but there's only one matching
@@ -400,16 +401,15 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
 	length(Subscriptions) == 1 ->
 	    delete_subscription(SubKey, NodeId, hd(Subscriptions), SubState),
 	    {result, default};
-	%% No subid and more than one possible subscription match.
 	true ->
-	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")}
+	    {error, ?ERR_EXTENDED('bad-request', "subid-required")}
     end.
 
 delete_subscription(SubKey, NodeID, {Subscription, SubId}, SubState) ->
     Affiliation = SubState#pubsub_state.affiliation,
     AllSubs = SubState#pubsub_state.subscriptions,
     NewSubs = AllSubs -- [{Subscription, SubId}],
-    pubsub_subscription:delete_subscription(SubKey, NodeID, SubId),
+    pubsub_subscription:unsubscribe_node(SubKey, NodeID, SubId),
     case {Affiliation, NewSubs} of
 	{none, []} ->
 	    % Just a regular subscriber, and this is final item, so
@@ -459,8 +459,8 @@ delete_subscription(SubKey, NodeID, {Subscription, SubId}, SubState) ->
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
 publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
-    SubKey = jlib:jid_tolower(Publisher),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jlib:short_prepd_jid(Publisher),
+    GenKey = jlib:short_prepd_bare_jid(Publisher),
     GenState = get_state(NodeId, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
@@ -477,7 +477,7 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 		 and ((Affiliation == owner) or (Affiliation == publisher)))
 	     or (Subscribed == true)) ->
 	    %% Entity does not have sufficient privileges to publish to node
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	true ->
 	    %% TODO: check creation, presence, roster
 	    if MaxItems > 0 ->
@@ -539,8 +539,7 @@ remove_extra_items(NodeId, MaxItems, ItemIds) ->
 %% <p>Default plugin: The user performing the deletion must be the node owner
 %% or a publisher, or PublishModel being open.</p>
 delete_item(NodeId, Publisher, PublishModel, ItemId) ->
-    SubKey = jlib:jid_tolower(Publisher),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    GenKey = jlib:short_prepd_bare_jid(Publisher),
     GenState = get_state(NodeId, GenKey),
     #pubsub_state{affiliation = Affiliation, items = Items} = GenState,
     Allowed = (Affiliation == publisher) orelse (Affiliation == owner)
@@ -552,7 +551,7 @@ delete_item(NodeId, Publisher, PublishModel, ItemId) ->
     if
 	not Allowed ->
 	    %% Requesting entity does not have sufficient privileges
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	true ->
 	    case lists:member(ItemId, Items) of
 		true ->
@@ -576,10 +575,10 @@ delete_item(NodeId, Publisher, PublishModel, ItemId) ->
 				    end;
 				   (_, Res) ->
 				    Res
-			    end, {error, ?ERR_ITEM_NOT_FOUND}, States);
+			    end, {error, 'item-not-found'}, States);
 			_ ->
 			    %% Non-existent node or item
-			    {error, ?ERR_ITEM_NOT_FOUND}
+			    {error, 'item-not-found'}
 		    end
 	    end
     end.
@@ -590,8 +589,7 @@ delete_item(NodeId, Publisher, PublishModel, ItemId) ->
 %%	 NodeId = mod_pubsub:pubsubNodeId()
 %%	 Owner = mod_pubsub:jid()
 purge_node(NodeId, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(NodeId, GenKey),
     case GenState of
 	#pubsub_state{affiliation = owner} ->
@@ -606,7 +604,7 @@ purge_node(NodeId, Owner) ->
 	    {result, {default, broadcast}};
 	_ ->
 	    %% Entity is not owner
-	    {error, ?ERR_FORBIDDEN}
+	    {error, 'forbidden'}
     end.
 
 %% @spec (Host, JID) -> [{Node,Affiliation}]
@@ -620,8 +618,7 @@ purge_node(NodeId, Owner) ->
 %% that will be added to the affiliation stored in the main
 %% <tt>pubsub_state</tt> table.</p>
 get_entity_affiliations(Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    GenKey = jlib:short_prepd_bare_jid(Owner),
     States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
     NodeTree = case catch ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 	    [{nodetree, N}] -> N;
@@ -643,14 +640,12 @@ get_node_affiliations(NodeId) ->
     {result, lists:map(Tr, States)}.
 
 get_affiliation(NodeId, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(NodeId, GenKey),
     {result, GenState#pubsub_state.affiliation}.
 
-set_affiliation(NodeId, Owner, Affiliation) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+set_affiliation(NodeId, Owner, Affiliation) when ?IS_JID(Owner)->
+    GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(NodeId, GenKey),
     case {Affiliation, GenState#pubsub_state.subscriptions} of
 	{none, none} ->
@@ -670,8 +665,8 @@ set_affiliation(NodeId, Owner, Affiliation) ->
 %% that will be added to the affiliation stored in the main
 %% <tt>pubsub_state</tt> table.</p>
 get_entity_subscriptions(Host, Owner) ->
-    {U, D, _} = SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    {U, D, _} = SubKey = jlib:short_prepd_jid(Owner),
+    GenKey = jlib:short_prepd_bare_jid(Owner),
     States = case SubKey of
 	GenKey -> mnesia:match_object(
 	       #pubsub_state{stateid = {{U, D, '_'}, '_'}, _ = '_'});
@@ -717,17 +712,17 @@ get_node_subscriptions(NodeId) ->
     {result, lists:flatmap(Tr, States)}.
 
 get_subscriptions(NodeId, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
+    SubKey = jlib:short_prepd_jid(Owner),
     SubState = get_state(NodeId, SubKey),
     {result, SubState#pubsub_state.subscriptions}.
 
 set_subscriptions(NodeId, Owner, Subscription, SubId) ->
-    SubKey = jlib:jid_tolower(Owner),
+    SubKey = jlib:short_prepd_jid(Owner),
     SubState = get_state(NodeId, SubKey),
     case {SubId, SubState#pubsub_state.subscriptions} of
 	{_, []} ->
 	    case Subscription of
-		none -> {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "not-subscribed")};
+		none -> {error, ?ERR_EXTENDED('bad_request', "not-subscribed")};
 		_ -> new_subscription(NodeId, Owner, Subscription, SubState)
 	    end;
 	{"", [{_, SID}]} ->
@@ -736,7 +731,7 @@ set_subscriptions(NodeId, Owner, Subscription, SubId) ->
 		_ -> replace_subscription({Subscription, SID}, SubState)
 	    end;
 	{"", [_|_]} ->
-	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+	    {error, ?ERR_EXTENDED('bad_request', "subid-required")};
 	_ ->
 	    case Subscription of
 		none -> unsub_with_subid(NodeId, SubId, SubState);
@@ -771,7 +766,6 @@ unsub_with_subid(NodeId, SubId, SubState) ->
 	_ ->
 	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
-
 %% @spec (Host, Owner) -> {result, [Node]} | {error, Reason}
 %%       Host = host()
 %%       Owner = jid()
@@ -857,11 +851,10 @@ get_state(NodeId, JID) ->
 set_state(State) when is_record(State, pubsub_state) ->
     mnesia:write(State);
 set_state(_) ->
-    {error, ?ERR_INTERNAL_SERVER_ERROR}.
+    {error, 'internal-server-error'}.
 
 %% @spec (NodeId, JID) -> ok | {error, Reason::stanzaError()}
 %%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 JID = mod_pubsub:jid()
 %% @doc <p>Delete a state from database.</p>
 del_state(NodeId, JID) ->
     mnesia:delete({pubsub_state, {JID, NodeId}}).
@@ -883,8 +876,8 @@ get_items(NodeId, _From) ->
     Items = mnesia:match_object(#pubsub_item{itemid = {'_', NodeId}, _ = '_'}),
     {result, lists:reverse(lists:keysort(#pubsub_item.modification, Items))}.
 get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
-    SubKey = jlib:jid_tolower(JID),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jlib:short_prepd_jid(JID),
+    GenKey = jlib:short_prepd_bare_jid(JID),
     GenState = get_state(NodeId, GenKey),
     SubState = get_state(NodeId, SubKey),
     Affiliation = GenState#pubsub_state.affiliation,
@@ -893,25 +886,25 @@ get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) -
     if
 	%%SubId == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
-	    %{error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
+	    %{error, ?ERR_EXTENDED('bad-request', "subid-required")};
 	%%InvalidSubId ->
 	    %% Entity is subscribed but specifies an invalid subscription ID
-	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	GenState#pubsub_state.affiliation == outcast ->
+	    %{error, ?ERR_EXTENDED('not-acceptable', "invalid-subid")};
+	Affiliation == outcast ->
 	    %% Requesting entity is blocked
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	(AccessModel == presence) and (not PresenceSubscription) ->
 	    %% Entity is not authorized to create a subscription (presence subscription required)
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "presence-subscription-required")};
+	    {error, ?ERR_EXTENDED('not-authorized', "presence-subscription-required")};
 	(AccessModel == roster) and (not RosterGroup) ->
 	    %% Entity is not authorized to create a subscription (not in roster group)
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "not-in-roster-group")};
+	    {error, ?ERR_EXTENDED('not-authorized', "not-in-roster-group")};
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
+	    {error, ?ERR_EXTENDED('not-allowed', "closed-node")};
 	(AccessModel == authorize) and (not Whitelisted) ->
 	    %% Node has authorize access model
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	%%MustPay ->
 	%%	% Payment is required for a subscription
 	%%	{error, ?ERR_PAYMENT_REQUIRED};
@@ -929,11 +922,10 @@ get_item(NodeId, ItemId) ->
 	[Item] when is_record(Item, pubsub_item) ->
 	    {result, Item};
 	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	    {error, 'item-not-found'}
     end.
 get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
-    SubKey = jlib:jid_tolower(JID),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    GenKey = jlib:short_prepd_bare_jid(JID),
     GenState = get_state(NodeId, GenKey),
     Affiliation = GenState#pubsub_state.affiliation,
     Subscriptions = GenState#pubsub_state.subscriptions,
@@ -941,25 +933,25 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _S
     if
 	%%SubId == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
-	    %{error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
-	%%InvalidSubId ->
+	    %{error, ?ERR_EXTENDED('bad-request', "subid-required")};
+	%%InvalidSubID ->
 	    %% Entity is subscribed but specifies an invalid subscription ID
-	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	GenState#pubsub_state.affiliation == outcast ->
+	    %{error, ?ERR_EXTENDED('not-acceptable', "invalid-subid")};
+	Affiliation == outcast ->
 	    %% Requesting entity is blocked
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	(AccessModel == presence) and (not PresenceSubscription) ->
 	    %% Entity is not authorized to create a subscription (presence subscription required)
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "presence-subscription-required")};
+	    {error, ?ERR_EXTENDED('not-authorized', "presence-subscription-required")};
 	(AccessModel == roster) and (not RosterGroup) ->
 	    %% Entity is not authorized to create a subscription (not in roster group)
-	    {error, ?ERR_EXTENDED(?ERR_NOT_AUTHORIZED, "not-in-roster-group")};
+	    {error, ?ERR_EXTENDED('not-authorized', "not-in-roster-group")};
 	(AccessModel == whitelist) and (not Whitelisted) ->
 	    %% Node has whitelist access model and entity lacks required affiliation
-	    {error, ?ERR_EXTENDED(?ERR_NOT_ALLOWED, "closed-node")};
+	    {error, ?ERR_EXTENDED('not-allowed', "closed-node")};
 	(AccessModel == authorize) and (not Whitelisted) ->
 	    %% Node has authorize access model
-	    {error, ?ERR_FORBIDDEN};
+	    {error, 'forbidden'};
 	%%MustPay ->
 	%%	% Payment is required for a subscription
 	%%	{error, ?ERR_PAYMENT_REQUIRED};
@@ -973,7 +965,7 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _S
 set_item(Item) when is_record(Item, pubsub_item) ->
     mnesia:write(Item);
 set_item(_) ->
-    {error, ?ERR_INTERNAL_SERVER_ERROR}.
+    {error, 'internal-server-error'}.
 
 %% @spec (NodeId, ItemId) -> ok | {error, Reason::stanzaError()}
 %%	 NodeId = mod_pubsub:pubsubNodeId()
@@ -993,7 +985,7 @@ get_item_name(_Host, _Node, Id) ->
 
 node_to_path(Node) ->
     string:tokens(binary_to_list(Node), "/").
-
+    
 path_to_node([]) ->
     <<>>;
 path_to_node(Path) ->

@@ -46,19 +46,13 @@
 	 handle_info/3,
 	 terminate/3]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
--ifdef(SSL39).
+-include("XmppAddr.hrl").
 -include_lib("ssl/include/ssl_pkix.hrl").
 -define(PKIXEXPLICIT, 'OTP-PKIX').
 -define(PKIXIMPLICIT, 'OTP-PKIX').
--else.
--include_lib("ssl/include/PKIX1Explicit88.hrl").
--include_lib("ssl/include/PKIX1Implicit88.hrl").
--define(PKIXEXPLICIT, 'PKIX1Explicit88').
--define(PKIXIMPLICIT, 'PKIX1Implicit88').
--endif.
--include("XmppAddr.hrl").
 
 -define(DICT, dict).
 
@@ -92,28 +86,12 @@
 						 [SockData, Opts])).
 -endif.
 
--define(STREAM_HEADER(Version),
-	("<?xml version='1.0'?>"
-	 "<stream:stream "
-	 "xmlns:stream='http://etherx.jabber.org/streams' "
-	 "xmlns='jabber:server' "
-	 "xmlns:db='jabber:server:dialback' "
-	 "id='" ++ StateData#state.streamid ++ "'" ++ Version ++ ">")
-       ).
-
--define(STREAM_TRAILER, "</stream:stream>").
-
--define(INVALID_NAMESPACE_ERR,
-	xml:element_to_string(?SERR_INVALID_NAMESPACE)).
-
--define(HOST_UNKNOWN_ERR,
-	xml:element_to_string(?SERR_HOST_UNKNOWN)).
-
--define(INVALID_FROM_ERR,
-        xml:element_to_string(?SERR_INVALID_FROM)).
-
--define(INVALID_XML_ERR,
-	xml:element_to_string(?SERR_XML_NOT_WELL_FORMED)).
+% These are the namespace already declared by the stream opening. This is
+% used at serialization time.
+-define(DEFAULT_NS, ?NS_JABBER_SERVER).
+-define(PREFIXED_NS, [
+  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
+]).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -174,13 +152,16 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
-    case {xml:get_attr_s("xmlns", Attrs),
-	  xml:get_attr_s("xmlns:db", Attrs),
-	  xml:get_attr_s("version", Attrs) == "1.0"} of
-	{"jabber:server", _, true} when
+wait_for_stream({xmlstreamstart, Opening}, StateData) ->
+    case {exmpp_stream:get_default_ns(Opening),
+	  exmpp_xml:is_ns_declared_here(Opening, ?NS_DIALBACK),
+	  exmpp_stream:get_version(Opening) == {1, 0}} of
+	{?NS_JABBER_SERVER, _, true} when
 	      StateData#state.tls and (not StateData#state.authenticated) ->
-	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
+	    Opening_Reply = exmpp_stream:opening_reply(Opening,
+	      StateData#state.streamid),
+	    send_element(StateData,
+	      exmpp_stream:set_dialback_support(Opening_Reply)),
 	    SASL =
 		if
 		    StateData#state.tls_enabled ->
@@ -190,10 +171,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				case (StateData#state.sockmod):get_verify_result(
 				       StateData#state.socket) of
 				    0 ->
-					[{xmlelement, "mechanisms",
-					  [{"xmlns", ?NS_SASL}],
-					  [{xmlelement, "mechanism", [],
-					    [{xmlcdata, "EXTERNAL"}]}]}];
+					[exmpp_server_sasl:feature(
+					    ["EXTERNAL"])];
 				    _ ->
 					[]
 				end;
@@ -207,30 +186,35 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			   StateData#state.tls_enabled ->
 			       [];
 			   true ->
-			       [{xmlelement, "starttls",
-				 [{"xmlns", ?NS_TLS}], []}]
+			       [exmpp_server_tls:feature()]
 		       end,
-	    send_element(StateData,
-			 {xmlelement, "stream:features", [],
-			  SASL ++ StartTLS}),
+	    send_element(StateData, exmpp_stream:features(SASL ++ StartTLS)),
 	    {next_state, wait_for_feature_request, StateData};
-	{"jabber:server", _, true} when
+	{?NS_JABBER_SERVER, _, true} when
 	      StateData#state.authenticated ->
-	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
+	    Opening_Reply = exmpp_stream:opening_reply(Opening,
+	      StateData#state.streamid),
 	    send_element(StateData,
-			 {xmlelement, "stream:features", [], []}),
+	      exmpp_stream:set_dialback_support(Opening_Reply)),
+	    send_element(StateData, exmpp_stream:features([])),
 	    {next_state, stream_established, StateData};
-	{"jabber:server", "jabber:server:dialback", _} ->
-	    send_text(StateData, ?STREAM_HEADER("")),
+	{?NS_JABBER_SERVER, true, _} ->
+	    Opening_Reply = exmpp_stream:opening_reply(Opening,
+	      StateData#state.streamid),
+	    send_element(StateData,
+	      exmpp_stream:set_dialback_support(Opening_Reply)),
 	    {next_state, stream_established, StateData};
 	_ ->
-	    send_text(StateData, ?INVALID_NAMESPACE_ERR),
+	    send_element(StateData, exmpp_stream:error('invalid-namespace')),
 	    {stop, normal, StateData}
     end;
 
 wait_for_stream({xmlstreamerror, _}, StateData) ->
-    send_text(StateData,
-	      ?STREAM_HEADER("") ++ ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    Opening_Reply = exmpp_stream:opening_reply(undefined, ?NS_JABBER_SERVER,
+      "", StateData#state.streamid),
+    send_element(StateData, Opening_Reply),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_stream(timeout, StateData) ->
@@ -241,67 +225,64 @@ wait_for_stream(closed, StateData) ->
 
 
 wait_for_feature_request({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
     SockMod = (StateData#state.sockmod):get_sockmod(StateData#state.socket),
-    case {xml:get_attr_s("xmlns", Attrs), Name} of
-	{?NS_TLS, "starttls"} when TLS == true,
+    case El of
+	#xmlel{ns = ?NS_TLS, name = 'starttls'} when TLS == true,
 				   TLSEnabled == false,
 				   SockMod == gen_tcp ->
 	    ?DEBUG("starttls", []),
 	    Socket = StateData#state.socket,
+	    Proceed = exmpp_xml:node_to_list(
+	      exmpp_server_tls:proceed(), [?DEFAULT_NS], ?PREFIXED_NS),
 	    TLSOpts = StateData#state.tls_options,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  xml:element_to_string(
-			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
+			  Proceed),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
 			     tls_enabled = true
 			    }};
-	{?NS_SASL, "auth"} when TLSEnabled ->
-	    Mech = xml:get_attr_s("mechanism", Attrs),
-	    case Mech of
-		"EXTERNAL" ->
-		    Auth = jlib:decode_base64(xml:get_cdata(Els)),
-		    AuthDomain = jlib:nameprep(Auth),
-		    AuthRes =
-			case (StateData#state.sockmod):get_peer_certificate(
+	#xmlel{ns = ?NS_SASL, name = 'auth'} when TLSEnabled ->
+	    case exmpp_server_sasl:next_step(El) of
+		{auth, "EXTERNAL", Auth} ->
+		    {AuthDomain, AuthRes} = try
+			AuthDomain0 = exmpp_stringprep:nameprep(Auth),
+			AuthRes0 = case (StateData#state.sockmod):get_peer_certificate(
 			       StateData#state.socket) of
 			    {ok, Cert} ->
 				case (StateData#state.sockmod):get_verify_result(
 				       StateData#state.socket) of
 				    0 ->
-					case AuthDomain of
-					    error ->
+					case idna:domain_utf8_to_ascii(AuthDomain0) of
+					    false ->
 						false;
-					    _ ->
-						case idna:domain_utf8_to_ascii(AuthDomain) of
-						    false ->
-							false;
-						    PCAuthDomain ->
-							lists:any(
-							  fun(D) ->
-								  match_domain(
-								    PCAuthDomain, D)
-							  end, get_cert_domains(Cert))
-						end
+					    PCAuthDomain ->
+						lists:any(
+						  fun(D) ->
+							  match_domain(
+							    PCAuthDomain, D)
+						  end, get_cert_domains(Cert))
 					end;
 				    _ ->
 					false
 				end;
 			    error ->
-				false
+                                {undefined, false}
 			end,
+			{AuthDomain0, AuthRes0}
+		    catch
+			_ ->
+			    false
+		    end,
 		    if
 			AuthRes ->
 			    (StateData#state.sockmod):reset_stream(
 			      StateData#state.socket),
 			    send_element(StateData,
-					 {xmlelement, "success",
-					  [{"xmlns", ?NS_SASL}], []}),
+			      exmpp_server_sasl:success()),
 			    ?DEBUG("(~w) Accepted s2s authentication for ~s",
 				      [StateData#state.socket, AuthDomain]),
 			    {next_state, wait_for_stream,
@@ -311,16 +292,14 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					    }};
 			true ->
 			    send_element(StateData,
-					 {xmlelement, "failure",
-					  [{"xmlns", ?NS_SASL}], []}),
-			    send_text(StateData, ?STREAM_TRAILER),
+			      exmpp_server_sasl:failure()),
+			    send_element(StateData,
+			      exmpp_stream:closing()),
 			    {stop, normal, StateData}
 		    end;
 		_ ->
 		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_SASL}],
-				  [{xmlelement, "invalid-mechanism", [], []}]}),
+		      exmpp_server_sasl:failure('invalid-mechanism')),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
@@ -328,11 +307,12 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     end;
 
 wait_for_feature_request({xmlstreamend, _Name}, StateData) ->
-    send_text(StateData, ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_feature_request({xmlstreamerror, _}, StateData) ->
-    send_text(StateData, ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 wait_for_feature_request(closed, StateData) ->
@@ -345,8 +325,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
 	{key, To, From, Id, Key} ->
 	    ?DEBUG("GET KEY: ~p", [{To, From, Id, Key}]),
-	    LTo = jlib:nameprep(To),
-	    LFrom = jlib:nameprep(From),
+	    LTo = exmpp_stringprep:nameprep(To),
+	    LFrom = exmpp_stringprep:nameprep(From),
 	    %% Checks if the from domain is allowed and if the to
             %% domain is handled by this server:
             case {ejabberd_s2s:allow_host(To, From),
@@ -358,49 +338,53 @@ stream_established({xmlstreamelement, El}, StateData) ->
 					    Key, StateData#state.streamid}),
 		    Conns = ?DICT:store({LFrom, LTo}, wait_for_verification,
 					StateData#state.connections),
-		    change_shaper(StateData, LTo, jlib:make_jid("", LFrom, "")),
+		    change_shaper(StateData, LTo,
+		      exmpp_jid:make(LFrom)),
 		    {next_state,
 		     stream_established,
 		     StateData#state{connections = Conns,
 				     timer = Timer}};
 		{_, false} ->
-		    send_text(StateData, ?HOST_UNKNOWN_ERR),
+		    send_element(StateData, exmpp_stream:error('host-unknown')),
 		    {stop, normal, StateData};
                 {false, _} ->
-                    send_text(StateData, ?INVALID_FROM_ERR),
+		    send_element(StateData, exmpp_stream:error('invalid-from')),
                     {stop, normal, StateData}
 	    end;
 	{verify, To, From, Id, Key} ->
 	    ?DEBUG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
-	    LTo = jlib:nameprep(To),
-	    LFrom = jlib:nameprep(From),
-	    Type = case ejabberd_s2s:has_key({LTo, LFrom}, Key) of
-		       true -> "valid";
-		       _ -> "invalid"
-		   end,
-	    %Type = if Key == Key1 -> "valid";
-	    % true -> "invalid"
-	    % end,
-	    send_element(StateData,
-			 {xmlelement,
-			  "db:verify",
-			  [{"from", To},
-			   {"to", From},
-			   {"id", Id},
-			   {"type", Type}],
-			  []}),
+	    LTo = exmpp_stringprep:nameprep(To),
+	    LFrom = exmpp_stringprep:nameprep(From),
+	    send_element(StateData, exmpp_dialback:verify_response(
+		El, ejabberd_s2s:has_key({LTo, LFrom}, Key))),
 	    {next_state, stream_established, StateData#state{timer = Timer}};
 	_ ->
-	    NewEl = jlib:remove_attr("xmlns", El),
-	    {xmlelement, Name, Attrs, _Els} = NewEl,
-	    From_s = xml:get_attr_s("from", Attrs),
-	    From = jlib:string_to_jid(From_s),
-	    To_s = xml:get_attr_s("to", Attrs),
-	    To = jlib:string_to_jid(To_s),
+	    From = case exmpp_stanza:get_sender(El) of
+		undefined ->
+		    error;
+		F ->
+		    try
+			exmpp_jid:parse(F)
+		    catch
+			_Exception1 -> error
+		    end
+	    end,
+	    To = case exmpp_stanza:get_recipient(El) of
+		undefined ->
+		    error;
+		T ->
+		    try
+			exmpp_jid:parse(T)
+		    catch
+			_Exception2 -> error
+		    end
+	    end,
+	    % No namespace conversion (:server <-> :client) is done.
+	    % This is handled by C2S and S2S send_element functions.
 	    if
 		(To /= error) and (From /= error) ->
-		    LFrom = From#jid.lserver,
-		    LTo = To#jid.lserver,
+		    LFrom = exmpp_jid:prep_domain_as_list(From),
+		    LTo = exmpp_jid:prep_domain_as_list(To),
 		    if
 			StateData#state.authenticated ->
 			    case (LFrom == StateData#state.auth_domain)
@@ -409,15 +393,16 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				  LTo,
 				  ejabberd_router:dirty_get_all_domains()) of
 				true ->
-				    if ((Name == "iq") or
-					(Name == "message") or
-					(Name == "presence")) ->
+				    Name = El#xmlel.name,
+				    if ((Name == 'iq') or
+					(Name == 'message') or
+					(Name == 'presence')) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      LTo,
-					      [From, To, NewEl]),
+					      exmpp_jid:prep_domain(To),
+					      [From, To, El]),
 					    ejabberd_router:route(
-					      From, To, NewEl);
+					      From, To, El);
 				       true ->
 					    error
 				    end;
@@ -428,15 +413,16 @@ stream_established({xmlstreamelement, El}, StateData) ->
 			    case ?DICT:find({LFrom, LTo},
 					    StateData#state.connections) of
 				{ok, established} ->
-				    if ((Name == "iq") or
-					(Name == "message") or
-					(Name == "presence")) ->
+				    Name = El#xmlel.name,
+				    if ((Name == 'iq') or
+					(Name == 'message') or
+					(Name == 'presence')) ->
 					    ejabberd_hooks:run(
 					      s2s_receive_packet,
-					      LTo,
-					      [From, To, NewEl]),
+					      exmpp_jid:prep_domain(To),
+					      [From, To, El]),
 					    ejabberd_router:route(
-					      From, To, NewEl);
+					      From, To, El);
 				       true ->
 					    error
 				    end;
@@ -452,30 +438,19 @@ stream_established({xmlstreamelement, El}, StateData) ->
     end;
 
 stream_established({valid, From, To}, StateData) ->
-    send_element(StateData,
-		 {xmlelement,
-		  "db:result",
-		  [{"from", To},
-		   {"to", From},
-		   {"type", "valid"}],
-		  []}),
-    LFrom = jlib:nameprep(From),
-    LTo = jlib:nameprep(To),
+    send_element(StateData, exmpp_dialback:validate(From, To)),
+    LFrom = exmpp_stringprep:nameprep(From),
+    LTo = exmpp_stringprep:nameprep(To),
     NSD = StateData#state{
 	    connections = ?DICT:store({LFrom, LTo}, established,
 				      StateData#state.connections)},
     {next_state, stream_established, NSD};
 
 stream_established({invalid, From, To}, StateData) ->
-    send_element(StateData,
-		 {xmlelement,
-		  "db:result",
-		  [{"from", To},
-		   {"to", From},
-		   {"type", "invalid"}],
-		  []}),
-    LFrom = jlib:nameprep(From),
-    LTo = jlib:nameprep(To),
+    Valid = exmpp_dialback:validate(From, To),
+    send_element(StateData, exmpp_stanza:set_type(Valid, "invalid")),
+    LFrom = exmpp_stringprep:nameprep(From),
+    LTo = exmpp_stringprep:nameprep(To),
     NSD = StateData#state{
 	    connections = ?DICT:erase({LFrom, LTo},
 				      StateData#state.connections)},
@@ -485,8 +460,8 @@ stream_established({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 
 stream_established({xmlstreamerror, _}, StateData) ->
-    send_text(StateData,
-	      ?INVALID_XML_ERR ++ ?STREAM_TRAILER),
+    send_element(StateData, exmpp_stream:error('xml-not-well-formed')),
+    send_element(StateData, exmpp_stream:closing()),
     {stop, normal, StateData};
 
 stream_established(timeout, StateData) ->
@@ -608,8 +583,11 @@ terminate(Reason, _StateName, StateData) ->
 send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
+
+send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->
+    send_text(StateData, exmpp_stream:to_iolist(El));
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, exmpp_stanza:to_iolist(El)).
 
 
 change_shaper(StateData, Host, JID) ->
@@ -630,18 +608,20 @@ cancel_timer(Timer) ->
     end.
 
 
-is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:result" ->
+is_key_packet(#xmlel{ns = ?NS_DIALBACK, name = 'result',
+  attrs = Attrs} = El) ->
     {key,
-     xml:get_attr_s("to", Attrs),
-     xml:get_attr_s("from", Attrs),
-     xml:get_attr_s("id", Attrs),
-     xml:get_cdata(Els)};
-is_key_packet({xmlelement, Name, Attrs, Els}) when Name == "db:verify" ->
+     binary_to_list(exmpp_stanza:get_recipient_from_attrs(Attrs)),
+     binary_to_list(exmpp_stanza:get_sender_from_attrs(Attrs)),
+     exmpp_stanza:get_id_from_attrs(Attrs),
+     exmpp_xml:get_cdata_as_list(El)};
+is_key_packet(#xmlel{ns = ?NS_DIALBACK, name = 'verify',
+  attrs = Attrs} = El) ->
     {verify,
-     xml:get_attr_s("to", Attrs),
-     xml:get_attr_s("from", Attrs),
-     xml:get_attr_s("id", Attrs),
-     xml:get_cdata(Els)};
+     binary_to_list(exmpp_stanza:get_recipient_from_attrs(Attrs)),
+     binary_to_list(exmpp_stanza:get_sender_from_attrs(Attrs)),
+     exmpp_stanza:get_id_from_attrs(Attrs),
+     exmpp_xml:get_cdata_as_list(El)};
 is_key_packet(_) ->
     false.
 
@@ -663,10 +643,11 @@ get_cert_domains(Cert) ->
 			  end,
 		      if
 			  D /= error ->
-			      case jlib:string_to_jid(D) of
-				  #jid{luser = "",
-				       lserver = LD,
-				       lresource = ""} ->
+                  JID  = exmpp_jid:parse(D),
+			      case {exmpp_jid:prep_node_as_list(JID),
+                        exmpp_jid:prep_domain_as_list(JID),
+                        exmpp_jid:prep_resource_as_list(JID)} of
+				      {undefined, LD, undefined} ->
 				      [LD];
 				  _ ->
 				      []
@@ -698,11 +679,11 @@ get_cert_domains(Cert) ->
 				    case 'XmppAddr':decode(
 					   'XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
-					    case jlib:string_to_jid(
-						   binary_to_list(D)) of
-						#jid{luser = "",
-						     lserver = LD,
-						     lresource = ""} ->
+                        JID2 = exmpp_jid:parse(binary_to_list(D)),  
+					    case {exmpp_jid:prep_node_as_list(JID2),
+                              exmpp_jid:prep_domain_as_list(JID2),
+                              exmpp_jid:prep_resource_as_list(JID2)} of
+						    { undefined, LD, undefined} ->
 						    case idna:domain_utf8_to_ascii(LD) of
 							false ->
 							    [];
@@ -716,10 +697,11 @@ get_cert_domains(Cert) ->
 					    []
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
-				    case jlib:string_to_jid(D) of
-					#jid{luser = "",
-					     lserver = LD,
-					     lresource = ""} ->
+                    JID3 = exmpp_jid:parse(D),
+				    case {exmpp_jid:prep_node_as_list(JID3),
+                          exmpp_jid:prep_domain_as_list(JID3),
+                          exmpp_jid:prep_resource_as_list(JID3)} of
+					{undefined, LD, undefined} ->
 					    [LD];
 					_ ->
 					    []
@@ -753,11 +735,11 @@ match_labels([DL | DLabels], [PL | PLabels]) ->
 				 orelse (C == $-) orelse (C == $*)
 		   end, PL) of
 	true ->
-	    Regexp = regexp:sh_to_awk(PL),
-	    case regexp:match(DL, Regexp) of
-		{match, _, _} ->
+	    Regexp = xmerl_regexp:sh_to_awk(PL),
+	    case re:run(DL, Regexp, [{capture, none}]) of
+		match ->
 		    match_labels(DLabels, PLabels);
-		_ ->
+		nomatch ->
 		    false
 	    end;
 	false ->

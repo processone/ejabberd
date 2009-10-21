@@ -14,8 +14,8 @@
 {"Administrator privileges required","Administrationsprivilegier krävs"}.
 {"A friendly name for the node","Ett vänligt namn for noden"}.
 {"All activity","All aktivitet"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Tillåt denna Jabber ID att prenumerera på denna pubsub node"}.
-{"Allow users to change the subject","Tillåt användare att byta ämne"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Tillåt denna JID att prenumerera på denna pubsub node"}.
+{"Allow users to change subject","Tillåt användare att byta ämne"}.
 {"Allow users to query other users","Tillåt användare att söka efter andra användare"}.
 {"Allow users to send invites","Tillåt användare att skicka inbjudningar"}.
 {"Allow users to send private messages","Tillåt användare att skicka privata meddelanden"}.
@@ -43,10 +43,9 @@
 {"City","Stad"}.
 {"Commands","Kommandon"}.
 {"Conference room does not exist","Rummet finns inte"}.
+{"Configuration for ","Konfiguration för "}.
 {"Configuration","Konfiguration"}.
-{"Configuration of room ~s","Konfiguration för ~s"}.
 {"Connected Resources:","Anslutna resurser:"}.
-{"Connections parameters","Uppkopplingsparametrar"}.
 {"Country","Land"}.
 {"CPU Time:","CPU tid"}.
 {"Database","Databas"}.
@@ -74,10 +73,9 @@
 {"ejabberd vCard module","ejabberd vCard-modul"}.
 {"ejabberd virtual hosts","Virtuella ejabberd-servrar"}.
 {"ejabberd Web Admin","ejabberd Web Admin"}.
-{"Elements","Elements"}.
 {"Email","Email"}.
 {"Enable logging","Möjliggör login"}.
-{"Encoding for server ~b","Encoding för server ~b"}.
+{"Encodings","Textkodningar"}.
 {"End User Session","Avsluta användarsession"}.
 {"Enter list of {Module, [Options]}","Skriv in en lista av {Module, [Options]}"}.
 {"Enter nickname you want to register","Skriv in smeknamnet du vill registrera"}.
@@ -85,13 +83,9 @@
 {"Enter path to jabberd14 spool dir","Skriv in sökväg till spoolkatalog från jabberd14"}.
 {"Enter path to jabberd14 spool file","Skriv in sökväg till spoolfil från jabberd14"}.
 {"Enter path to text file","Skriv in sökväg till textfil"}.
-{"Enter the text you see","Skriv in sökväg till textfil"}.
-{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","Skriv in användarnamn och textkodning du vill använda för att ansluta till IRC-servrar"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers","Skriv in användarnamn och textkodning du vill använda för att ansluta till IRC-servrar"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
-{"Error","Fel"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Exempel: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportera data av alla användare i servern till en PIEFXIS fil (XEP-0227):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportera data av användare i en host till PIEFXIS fil (XEP-0227):"}.
+{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Exempel: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
 {"Family Name","Efternamn"}.
 {"February","Februari"}.
 {"Fill in fields to search for any matching Jabber User","Fyll i fält för att söka efter jabberanvändare"}.
@@ -114,13 +108,10 @@
 {"has been kicked","har blivit kickad"}.
 {" has set the subject to: "," har satt ämnet till: "}.
 {"Host","Server"}.
-{"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Om du vill specifiera textkodning för IRC-servrar, fyll i listan med värden i formatet '{\"irc server\", \"encoding\", port, \"password\"}'. Som standard används \"~s\", port ~p, no password."}.
+{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Om du vill specifiera textkodning för IRC-servrar, fyll i listan med värden i formatet '{\"irc server\", \"encoding\"}'. Som standard används \"~s\"."}.
 {"Import Directory","Importera katalog"}.
 {"Import File","Importera fil"}.
-{"Import user data from jabberd14 spool file:","Importera användare från jabberd14 Spool filer"}.
 {"Import User from File at ","Importera användare från fil på "}.
-{"Import users data from a PIEFXIS file (XEP-0227):","Importera användardata från en PIEFXIS fil (XEP-0227):"}.
-{"Import users data from jabberd14 spool directory:","Importera användare från jabberd14 Spool directory:"}.
 {"Import Users from Dir at ","Importera användare från katalog på "}.
 {"Import Users From jabberd14 Spool Files","Importera användare från jabberd14 Spool filer"}.
 {"Improper message type","Felaktig medelandetyp"}.
@@ -128,24 +119,16 @@
 {"Invalid affiliation: ~s","Ogiltlig rang: ~s"}.
 {"Invalid role: ~s","Ogiltlig roll: ~s"}.
 {"IP addresses","IP adresser"}.
-{"IP","IP"}.
-{"IRC channel (don't put the first #)","IRC kanal (skriv inte första #)"}.
-{"IRC server","IRC-användarnamn"}.
-{"IRC settings","IRC Inställningar"}.
 {"IRC Transport","IRC transport"}.
-{"IRC username","IRC-användarnamn"}.
 {"IRC Username","IRC-användarnamn"}.
 {"is now known as","är känd som"}.
 {"It is not allowed to send private messages","Det ar inte tillåtet att skicka privata meddelanden"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Det är inte tillåtet att skicka privata medelanden med typen \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Det är inte tillåtet att skicka privata medelanden till den här konferensen"}.
 {"Jabber ID","Jabber ID"}.
-{"Jabber ID ~s is invalid","Otillåtet Jabber ID ~s"}.
 {"January","Januari"}.
-{"Join IRC channel","Lägg till IRC kanal"}.
+{"Jabber ID ~s is invalid","Otillåtet JID ~s"}.
 {"joins the room","joinar rummet"}.
-{"Join the IRC channel here.","Lägg till IRC kanal här."}.
-{"Join the IRC channel in this Jabber ID: ~s","Lägg till IRC kanal till detta Jabber ID: ~s"}.
 {"July","Juli"}.
 {"June","Juni"}.
 {"Last Activity","Senast aktivitet"}.
@@ -168,14 +151,13 @@
 {"Max # of items to persist","Högsta antal dataposter som sparas"}.
 {"Max payload size in bytes","Högsta innehållsstorlek i bytes"}.
 {"May","Maj"}.
-{"Membership is required to enter this room","Du måste vara medlem för att komma in i det här rummet"}.
+{"Membership required to enter this room","Du måste vara medlem för att komma in i det här rummet"}.
 {"Members:","Medlemmar:"}.
 {"Memory","Minne"}.
 {"Message body","Meddelande kropp"}.
 {"Middle Name","Mellannamn"}.
 {"Moderator privileges required","Moderatorprivilegier krävs"}.
 {"moderators only","endast moderatorer"}.
-{"Modified modules","Uppdaterade moduler"}.
 {"Module","Modul"}.
 {"Modules at ","Moduler på"}.
 {"Modules","Moduler"}.
@@ -183,6 +165,8 @@
 {"Name:","Namn:"}.
 {"Name","Namn"}.
 {"Never","Aldrig"}.
+{"Nickname is already in use by another occupant","Smeknamnet används redan"}.
+{"Nickname is registered by another person","Smeknamnet är reserverat"}.
 {"Nickname Registration at ","Registrera smeknamn på "}.
 {"Nickname ~s does not exist in the room","Smeknamnet ~s existerar inte i det här rummet"}.
 {"Nickname","Smeknamn"}.
@@ -195,7 +179,6 @@
 {"No limit","Ingen gräns"}.
 {"None","Inga"}.
 {"No resource provided","Ingen resurs angiven"}.
-{"Not Found","Noden finns inte"}.
 {"Notify subscribers when items are removed from the node","Meddela prenumeranter när dataposter tas bort från noden"}.
 {"Notify subscribers when the node configuration changes","Meddela prenumeranter när nodens konfiguration ändras"}.
 {"Notify subscribers when the node is deleted","Meddela prenumeranter när noden tas bort"}.
@@ -211,7 +194,8 @@
 {"Online Users","Anslutna användare"}.
 {"Online Users:","Inloggade användare"}.
 {"Only deliver notifications to available users","Skicka notifikationer bara till uppkopplade användare"}.
-{"Only moderators and participants are allowed to change the subject in this room","Endast moderatorer och deltagare har tillåtelse att ändra ämnet i det här rummet"}.
+{"Only moderators and participants are allowed to change subject in this room","Endast moderatorer och deltagare har tillåtelse att ändra ämnet i det här rummet"}.
+{"Only moderators are allowed to change subject in this room","Endast moderatorer får ändra ämnet i det här rummet"}.
 {"Only occupants are allowed to send messages to the conference","Utomstående får inte skicka medelanden till den här konferensen"}.
 {"Only occupants are allowed to send queries to the conference","Utomstående får inte skicka iq-queries till den här konferensen"}.
 {"Only service administrators are allowed to send service messages","Endast administratörer får skicka tjänstmeddelanden"}.
@@ -223,9 +207,9 @@
 {"Outgoing s2s Servers:","Utgående s2s server"}.
 {"Owner privileges required","Ägarprivilegier krävs"}.
 {"Packet","Paket"}.
-{"Password ~b","Lösenord ~b"}.
 {"Password:","Lösenord:"}.
 {"Password","Lösenord"}.
+{"Password required to enter this room","Lösenord erfordras"}.
 {"Password Verification","Lösenordsverifikation"}.
 {"Path to Dir","Sökväg till katalog"}.
 {"Path to File","Sökväg till fil"}.
@@ -233,24 +217,23 @@
 {"Period: ","Period: "}.
 {"Persist items to storage","Spara dataposter permanent"}.
 {"Ping","Ping"}.
-{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Kom ihåg att dessa inställningar endast tar backup pa builtin Mnesias databas. Om du använder ODBC modul så måste du ta backup på SQLs databas enskilt"}.
 {"Pong","Pong"}.
-{"Port ~b","Port ~b"}.
 {"Port","Port"}.
-{"Present real Jabber IDs to","Nuvarande äkta Jabber IDs till"}.
+{"Present real Jabber IDs to","Nuvarande äkta JIDs till"}.
 {"private, ","privat, "}.
-{"Protocol","Protocol"}.
 {"Publish-Subscribe","Publikprenumeration"}.
 {"PubSub subscriber request","Pubsub prenumerationsforfrågan"}.
 {"Queries to the conference members are not allowed in this room","Det är förbjudet att skicka iq-queries till konferensdeltagare"}.
 {"RAM and disc copy","RAM- och diskkopia"}.
 {"RAM copy","RAM-kopia"}.
+{"(Raw)","(Ra)"}.
 {"Raw","Ra"}.
 {"Really delete message of the day?","Verkligen ta bort dagens meddelanden?"}.
 {"Recipient is not in the conference room","Mottagaren finns inte i rummet"}.
 {"Registered Users:","Registrerade användare"}.
 {"Registered Users","Registrerade användare"}.
 {"Registration in mod_irc for ","mod_irc-registrering för "}.
+{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Kom ihåg att dessa inställningar endast tar backup pa builtin Mnesias databas. Om du använder ODBC modul så måste du ta backup på SQLs databas enskilt"}.
 {"Remote copy","Sparas inte lokalt"}.
 {"Remove","Ta bort"}.
 {"Remove User","Ta bort användare"}.
@@ -265,7 +248,6 @@
 {"Restore plain text backup immediately:","återställ textbackup omedelbart"}.
 {"Room Configuration","Rumkonfiguration"}.
 {"Room creation is denied by service policy","Skapandet av rum är förbjudet enligt lokal policy"}.
-{"Room Occupants","Antal besökare"}.
 {"Room title","Rumstitel"}.
 {"Roster groups allowed to subscribe","Rostergrupper tillåts att prenumerera"}.
 {"Roster","Kontaktlista"}.
@@ -283,7 +265,6 @@
 {"Send announcement to all users on all hosts","Sänd meddelanden till alla  användare på alla värdar"}.
 {"Send announcement to all users","Sänd meddelanden till alla användare"}.
 {"September","September"}.
-{"Server ~b","Server ~b"}.
 {"Set message of the day and send to online users","Sätt dagens status meddelande och skicka till alla användare"}.
 {"Set message of the day on all hosts and send to online users","Sätt dagens status meddelande pa alla värdar och skicka till alla användare"}.
 {"Shared Roster Groups","Delade Rostergrupper"}.
@@ -291,6 +272,8 @@
 {"Show Ordinary Table","Visa normal tabell"}.
 {"Shut Down Service","Stäng ner servicen"}.
 {"~s invites you to the room ~s","~s bjöd in dig till rummet ~s"}.
+{"Size","Storlek"}.
+{"Specified nickname is already registered","Detta smeknamnet är redan registrerat"}.
 {"Specify the access model","Specificera accessmodellen"}.
 {"Specify the publisher model","Ange publiceringsmodell"}.
 {"~s's Offline Messages Queue","~s's offline meddelandekö"}.
@@ -312,8 +295,6 @@
 {"Subscriber Address","Prenumerationsadress"}.
 {"Subscription","Prenumeration"}.
 {"Sunday","Söndag"}.
-{"That nickname is registered by another person","Smeknamnet är reserverat"}.
-{"The captcha is valid.","Din captcha är godkänd."}.
 {"the password is","Lösenordet är"}.
 {"This participant is kicked from the room because he sent an error message","Deltagaren har blivit kickad fran rummet p.g.a att han skickade ett errormeddelande"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Deltagaren har blivit kickad från rummet p.g.a att han skickade ett errormeddelande till en annan deltagare"}.
@@ -330,8 +311,7 @@
 {"Transactions Logged:","Transaktioner loggade "}.
 {"Transactions Restarted:","Transaktioner omstartade"}.
 {"Tuesday","Tisdag"}.
-{"Unable to generate a captcha","Kunde inte generera ett captcha"}.
-{"Unauthorized","Ej auktoriserad"}.
+{"Updated modules","Uppdaterade moduler"}.
 {"Update message of the day (don't send)","Uppdatera dagens status meddelande (skicka inte)"}.
 {"Update message of the day on all hosts (don't send)","Uppdatera dagens status meddelande på alla värdar (skicka inte)"}.
 {"Update plan","Uppdateringsplan"}.
@@ -344,10 +324,11 @@
 {"User","Användarnamn"}.
 {"User Management","Användarmanagement"}.
 {"Users","Användare"}.
-{"Users are not allowed to register accounts so quickly","Det är inte tillåtet för användare att skapa konton så fort"}.
+{"Users are not allowed to register accounts so fast","Det är inte tillåtet för användare att skapa konton så fort"}.
 {"Users Last Activity","Användarens senaste aktivitet"}.
 {"Validate","Validera"}.
 {"vCard User Search","vCard användare sök"}.
+{"Virtual Hosts","Virtuella servrar"}.
 {"Visitors are not allowed to change their nicknames in this room","Det är inte tillåtet for gäster att ändra sina smeknamn i detta rummet"}.
 {"Visitors are not allowed to send messages to all occupants","Besökare får inte skicka medelande till alla"}.
 {"Wednesday","Onsdag"}.
@@ -360,4 +341,3 @@
 {"You need an x:data capable client to register nickname","Du behöver en klient som stödjer x:data för att registrera smeknamn"}.
 {"You need an x:data capable client to search","Du behöver en klient som stödjer x:data, för att kunna söka"}.
 {"Your contact offline message queue is full. The message has been discarded.","Din kontaktkö for offlinekontakter ar full"}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","Dina meddelanden till ~s är blockerade. För att avblockera dem, gå till ~s"}.

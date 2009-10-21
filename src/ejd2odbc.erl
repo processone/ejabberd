@@ -36,8 +36,9 @@
 	 export_vcard_search/2,
 	 export_private_storage/2]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 -include("mod_roster.hrl").
 
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
@@ -88,10 +89,10 @@ export_passwd(Server, Output) ->
 export_roster(Server, Output) ->
     export_common(
       Server, roster, Output,
-      fun(Host, #roster{usj = {LUser, LServer, LJID}} = R)
+      fun(Host, #roster{usj = {LUser, LServer, {N, D, Res} = _LJID}} = R)
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
-	      SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+	      SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, Res)),
 	      ItemVals = record_to_string(R),
 	      ItemGroups = groups_to_string(R),
 	      ["delete from rosterusers "
@@ -123,26 +124,22 @@ export_offline(Server, Output) ->
 			     packet = Packet})
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
-	      {xmlelement, Name, Attrs, Els} = Packet,
-	      Attrs2 = jlib:replace_from_to_attrs(
-			 jlib:jid_to_string(From),
-			 jlib:jid_to_string(To),
-			 Attrs),
-	      NewPacket = {xmlelement, Name, Attrs2,
-			   Els ++
-			   [jlib:timestamp_to_xml(
-			      calendar:now_to_universal_time(TimeStamp),
+	      Packet0 = exmpp_stanza:set_jids(Packet,
+		exmpp_jid:to_list(From),
+		exmpp_jid:to_list(To)),
+	      Packet0b = exmpp_xml:append_child(Packet0,
+			   jlib:timestamp_to_xml(
+			      calendar:now_to_universal_time(TimeStamp), 
 			      utc,
-			      jlib:make_jid("", Server, ""),
-			      "Offline Storage"),
-			    %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-			    jlib:timestamp_to_xml(
-			      calendar:now_to_universal_time(
-				TimeStamp))]},
+			      exmpp_jid:make("", Server, ""),
+			      "Offline Storage")),
+	      %% TODO: Delete the next three lines once XEP-0091 is Obsolete
+	      Packet1 = exmpp_xml:append_child(Packet0b,
+		jlib:timestamp_to_xml(
+                  calendar:now_to_universal_time(TimeStamp))),
 	      XML =
 		  ejabberd_odbc:escape(
-		    lists:flatten(
-		      xml:element_to_string(NewPacket))),
+		    exmpp_xml:document_to_list(Packet1)),
 	      ["insert into spool(username, xml) "
 	       "values ('", Username, "', '",
 	       XML,
@@ -176,7 +173,7 @@ export_vcard(Server, Output) ->
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      SVCARD = ejabberd_odbc:escape(
-			 lists:flatten(xml:element_to_string(VCARD))),
+			 exmpp_xml:document_to_list(VCARD)),
 	      ["delete from vcard where username='", Username, "';"
 	       "insert into vcard(username, vcard) "
 	       "values ('", Username, "', '", SVCARD, "');"];
@@ -260,7 +257,7 @@ export_private_storage(Server, Output) ->
 	      Username = ejabberd_odbc:escape(LUser),
       	      LXMLNS = ejabberd_odbc:escape(XMLNS),
 	      SData = ejabberd_odbc:escape(
-			lists:flatten(xml:element_to_string(Data))),
+			exmpp_xml:document_to_list(Data)),
       	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
 	 (_Host, _R) ->
       	      []
@@ -281,7 +278,7 @@ export_common(Server, Table, Output, ConvertFun) ->
     mnesia:transaction(
       fun() ->
 	      mnesia:read_lock_table(Table),
-	      LServer = jlib:nameprep(Server),
+	      LServer = exmpp_stringprep:nameprep(Server),
 	      {_N, SQLs} =
 		  mnesia:foldl(
 		    fun(R, {N, SQLs} = Acc) ->
@@ -317,13 +314,13 @@ output(LServer, IO, SQL) ->
 	    file:write(IO, [SQL, $;, $\n])
     end.
 
-record_to_string(#roster{usj = {User, _Server, JID},
+record_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
 			 name = Name,
 			 subscription = Subscription,
 			 ask = Ask,
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
+    SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, R)),
     Nick = ejabberd_odbc:escape(Name),
     SSubscription = case Subscription of
 			both -> "B";
@@ -356,10 +353,10 @@ record_to_string(#roster{usj = {User, _Server, JID},
      "'", SAskMessage, "',"
      "'N', '', 'item')"].
 
-groups_to_string(#roster{usj = {User, _Server, JID},
+groups_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
+    SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, R)),
     [["("
       "'", Username, "',"
       "'", SJID, "',"

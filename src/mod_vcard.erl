@@ -36,8 +36,9 @@
 	 reindex_vcards/0,
 	 remove_user/2]).
 
+-include_lib("exmpp/include/exmpp.hrl").
+
 -include("ejabberd.hrl").
--include("jlib.hrl").
 
 
 -define(JUD_MATCHES, 30).
@@ -61,6 +62,7 @@
 -define(PROCNAME, ejabberd_mod_vcard).
 
 start(Host, Opts) ->
+    HostB = list_to_binary(Host),
     mnesia:create_table(vcard, [{disc_only_copies, [node()]},
 				{attributes, record_info(fields, vcard)}]),
     mnesia:create_table(vcard_search,
@@ -80,14 +82,14 @@ start(Host, Opts) ->
     mnesia:add_table_index(vcard_search, lorgname),
     mnesia:add_table_index(vcard_search, lorgunit),
 
-    ejabberd_hooks:add(remove_user, Host,
+    ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
     MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -121,11 +123,14 @@ loop(Host, ServerHost) ->
     end.
 
 stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host,
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, HostB,
+      ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB,
+      ?NS_VCARD),
+    ejabberd_hooks:delete(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
     {wait, Proc}.
@@ -138,79 +143,88 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 	[] ->
 	    case Acc of
 		{result, Features} ->
-		    {result, [?NS_DISCO_INFO, ?NS_VCARD | Features]};
+		    {result, [?NS_DISCO_INFO_s, ?NS_VCARD_s | Features]};
 		empty ->
-		    {result, [?NS_DISCO_INFO, ?NS_VCARD]}
+		    {result, [?NS_DISCO_INFO_s, ?NS_VCARD_s]}
 	    end;
  	_ ->
 	    Acc
      end.
 
-process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-	set ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	get ->
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "vCard",
-			     [{"xmlns", ?NS_VCARD}],
-			     [{xmlelement, "FN", [],
-			       [{xmlcdata, "ejabberd"}]},
-			      {xmlelement, "URL", [],
-			       [{xmlcdata, ?EJABBERD_URI}]},
-			      {xmlelement, "DESC", [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang,
-				   "Erlang Jabber Server") ++
-				   "\nCopyright (c) 2002-2009 ProcessOne"}]},
-			      {xmlelement, "BDAY", [],
-			       [{xmlcdata, "2002-11-16"}]}
-			     ]}]}
-    end.
+process_local_iq(_From, _To, #iq{type = get, lang = Lang} = IQ_Rec) ->
+    Result = #xmlel{ns = ?NS_VCARD, name = 'vCard', children = [
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'FN'},
+	  "ejabberd"),
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'URL'},
+	  ?EJABBERD_URI),
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'DESC'},
+	  translate:translate(Lang, "Erlang Jabber Server") ++
+	  "\nCopyright (c) 2002-2009 ProcessOne"),
+	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'BDAY'},
+	  "2002-11-16")
+      ]},
+    exmpp_iq:result(IQ_Rec, Result);
+process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
+    exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 
-process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    case Type of
-	set ->
-	    #jid{user = User, lserver = LServer} = From,
-	    case lists:member(LServer, ?MYHOSTS) of
-		true ->
-		    set_vcard(User, LServer, SubEl),
-		    IQ#iq{type = result, sub_el = []};
-		false ->
-		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
-	    end;
-	get ->
-	    #jid{luser = LUser, lserver = LServer} = To,
-	    US = {LUser, LServer},
-	    F = fun() ->
-			mnesia:read({vcard, US})
-		end,
-	    Els = case mnesia:transaction(F) of
-		      {atomic, Rs} ->
-			  lists:map(fun(R) ->
-					    R#vcard.vcard
-				    end, Rs);
-		      {aborted, _Reason} ->
-			  []
-		  end,
-	    IQ#iq{type = result, sub_el = Els}
+process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
+    LUser = exmpp_jid:prep_node_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
+    US = {LUser, LServer},
+    F = fun() ->
+		mnesia:read({vcard, US})
+	end,
+    Els = case mnesia:transaction(F) of
+	      {atomic, Rs} ->
+		  lists:map(fun(R) ->
+				    R#vcard.vcard
+			    end, Rs);
+	      {aborted, _Reason} ->
+		  []
+	  end,
+    case Els of
+	[VCard | _] ->
+	    exmpp_iq:result(IQ_Rec, VCard);
+	_ ->
+	    exmpp_iq:result(IQ_Rec)
+    end;
+process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
+    User = exmpp_jid:node_as_list(From),
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    case lists:member(LServer, ?MYHOSTS) of
+	true ->
+	    set_vcard(User, LServer, Request),
+	    exmpp_iq:result(IQ_Rec);
+	false ->
+	    exmpp_iq:error(IQ_Rec, 'not-allowed')
     end.
 
 set_vcard(User, LServer, VCARD) ->
-    FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
-    Family   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "FAMILY"},    cdata]),
-    Given    = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "GIVEN"},     cdata]),
-    Middle   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "MIDDLE"},    cdata]),
-    Nickname = xml:get_path_s(VCARD, [{elem, "NICKNAME"},               cdata]),
-    BDay     = xml:get_path_s(VCARD, [{elem, "BDAY"},                   cdata]),
-    CTRY     = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "CTRY"},    cdata]),
-    Locality = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "LOCALITY"},cdata]),
-    EMail1   = xml:get_path_s(VCARD, [{elem, "EMAIL"}, {elem, "USERID"},cdata]),
-    EMail2   = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
-    OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
-    OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
+    FN       = exmpp_xml:get_path(VCARD,
+      [{element, 'FN'},                         cdata_as_list]),
+    Family   = exmpp_xml:get_path(VCARD,
+      [{element, 'N'}, {element, 'FAMILY'},     cdata_as_list]),
+    Given    = exmpp_xml:get_path(VCARD,
+      [{element, 'N'}, {element, 'GIVEN'},      cdata_as_list]),
+    Middle   = exmpp_xml:get_path(VCARD,
+      [{element, 'N'}, {element, 'MIDDLE'},     cdata_as_list]),
+    Nickname = exmpp_xml:get_path(VCARD,
+      [{element, 'NICKNAME'},                   cdata_as_list]),
+    BDay     = exmpp_xml:get_path(VCARD,
+      [{element, 'BDAY'},                       cdata_as_list]),
+    CTRY     = exmpp_xml:get_path(VCARD,
+      [{element, 'ADR'}, {element, 'CTRY'},     cdata_as_list]),
+    Locality = exmpp_xml:get_path(VCARD,
+      [{element, 'ADR'}, {element, 'LOCALITY'}, cdata_as_list]),
+    EMail1   = exmpp_xml:get_path(VCARD,
+      [{element, 'EMAIL'}, {element, 'USERID'}, cdata_as_list]),
+    EMail2   = exmpp_xml:get_path(VCARD,
+      [{element, 'EMAIL'},                      cdata_as_list]),
+    OrgName  = exmpp_xml:get_path(VCARD,
+      [{element, 'ORG'}, {element, 'ORGNAME'},  cdata_as_list]),
+    OrgUnit  = exmpp_xml:get_path(VCARD,
+      [{element, 'ORG'}, {element, 'ORGUNIT'},  cdata_as_list]),
     EMail = case EMail1 of
 		"" ->
 		    EMail2;
@@ -218,285 +232,257 @@ set_vcard(User, LServer, VCARD) ->
 		    EMail1
 	    end,
 
-    LUser     = jlib:nodeprep(User),
-    LFN       = stringprep:tolower(FN),
-    LFamily   = stringprep:tolower(Family),
-    LGiven    = stringprep:tolower(Given),
-    LMiddle   = stringprep:tolower(Middle),
-    LNickname = stringprep:tolower(Nickname),
-    LBDay     = stringprep:tolower(BDay),
-    LCTRY     = stringprep:tolower(CTRY),
-    LLocality = stringprep:tolower(Locality),
-    LEMail    = stringprep:tolower(EMail),
-    LOrgName  = stringprep:tolower(OrgName),
-    LOrgUnit  = stringprep:tolower(OrgUnit),
+    try
+	LUser     = exmpp_stringprep:nodeprep(User),
+	LFN       = exmpp_stringprep:to_lower(FN),
+	LFamily   = exmpp_stringprep:to_lower(Family),
+	LGiven    = exmpp_stringprep:to_lower(Given),
+	LMiddle   = exmpp_stringprep:to_lower(Middle),
+	LNickname = exmpp_stringprep:to_lower(Nickname),
+	LBDay     = exmpp_stringprep:to_lower(BDay),
+	LCTRY     = exmpp_stringprep:to_lower(CTRY),
+	LLocality = exmpp_stringprep:to_lower(Locality),
+	LEMail    = exmpp_stringprep:to_lower(EMail),
+	LOrgName  = exmpp_stringprep:to_lower(OrgName),
+	LOrgUnit  = exmpp_stringprep:to_lower(OrgUnit),
 
-    US = {LUser, LServer},
+	US = {LUser, LServer},
 
-    if
-	(LUser     == error) or
-	(LFN       == error) or
-	(LFamily   == error) or
-	(LGiven    == error) or
-	(LMiddle   == error) or
-	(LNickname == error) or
-	(LBDay     == error) or
-	(LCTRY     == error) or
-	(LLocality == error) or
-	(LEMail    == error) or
-	(LOrgName  == error) or
-	(LOrgUnit  == error) ->
-	    {error, badarg};
-	true ->
-	    F = fun() ->
-		mnesia:write(#vcard{us = US, vcard = VCARD}),
-		mnesia:write(
-		  #vcard_search{us        = US,
-				user      = {User, LServer},
-				luser     = LUser,
-				fn        = FN,       lfn        = LFN,       
-				family    = Family,   lfamily    = LFamily,   
-				given     = Given,    lgiven     = LGiven,    
-				middle    = Middle,   lmiddle    = LMiddle,   
-				nickname  = Nickname, lnickname  = LNickname, 
-				bday      = BDay,     lbday      = LBDay,     
-				ctry      = CTRY,     lctry      = LCTRY,     
-				locality  = Locality, llocality  = LLocality, 
-				email     = EMail,    lemail     = LEMail,    
-				orgname   = OrgName,  lorgname   = LOrgName,  
-				orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
-			       })
-		end,
-		mnesia:transaction(F)
+	F = fun() ->
+	    mnesia:write(#vcard{us = US, vcard = VCARD}),
+	    mnesia:write(
+	      #vcard_search{us        = US,
+			    user      = {User, LServer},
+			    luser     = LUser,
+			    fn        = FN,       lfn        = LFN,       
+			    family    = Family,   lfamily    = LFamily,   
+			    given     = Given,    lgiven     = LGiven,    
+			    middle    = Middle,   lmiddle    = LMiddle,   
+			    nickname  = Nickname, lnickname  = LNickname, 
+			    bday      = BDay,     lbday      = LBDay,     
+			    ctry      = CTRY,     lctry      = LCTRY,     
+			    locality  = Locality, llocality  = LLocality, 
+			    email     = EMail,    lemail     = LEMail,    
+			    orgname   = OrgName,  lorgname   = LOrgName,  
+			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+			   })
+	    end,
+	    mnesia:transaction(F)
+    catch
+	_ ->
+	    {error, badarg}
     end.
 
 -define(TLFIELD(Type, Label, Var),
-	{xmlelement, "field", [{"type", Type},
-			       {"label", translate:translate(Lang, Label)},
-			       {"var", Var}], []}).
+	#xmlel{ns = ?NS_VCARD, name = 'field', attrs = [
+	    ?XMLATTR('type', Type),
+	    ?XMLATTR('label', translate:translate(Lang, Label)),
+	    ?XMLATTR('var', Var)]}).
 
 
 -define(FORM(JID),
-	[{xmlelement, "instructions", [],
-	  [{xmlcdata, translate:translate(Lang, "You need an x:data capable client to search")}]},
-	 {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-	  [{xmlelement, "title", [],
-	    [{xmlcdata, translate:translate(Lang, "Search users in ") ++
-	      jlib:jid_to_string(JID)}]},
-	   {xmlelement, "instructions", [],
-	    [{xmlcdata, translate:translate(Lang, "Fill in the form to search "
-					    "for any matching Jabber User "
-					    "(Add * to the end of field to "
-					    "match substring)")}]},
-	   ?TLFIELD("text-single", "User", "user"),
-	   ?TLFIELD("text-single", "Full Name", "fn"),
-	   ?TLFIELD("text-single", "Name", "first"),
-	   ?TLFIELD("text-single", "Middle Name", "middle"),
-	   ?TLFIELD("text-single", "Family Name", "last"),
-	   ?TLFIELD("text-single", "Nickname", "nick"),
-	   ?TLFIELD("text-single", "Birthday", "bday"),
-	   ?TLFIELD("text-single", "Country", "ctry"),
-	   ?TLFIELD("text-single", "City", "locality"),
-	   ?TLFIELD("text-single", "Email", "email"),
-	   ?TLFIELD("text-single", "Organization Name", "orgname"),
-	   ?TLFIELD("text-single", "Organization Unit", "orgunit")
+	[#xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
+	   [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "You need an x:data capable client to search"))}]},
+	 #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
+	   [?XMLATTR('type', <<"form">>)], children =
+	   [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
+	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search users in ") ++ exmpp_jid:to_list(JID))}]},
+	    #xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
+	       [#xmlcdata{cdata = list_to_binary(translate:translate(Lang,
+		       "Fill in the form to search "
+		       "for any matching Jabber User "
+		       "(Add * to the end of field to "
+		       "match substring)"))}]},
+	   ?TLFIELD(<<"text-single">>, "User", <<"user">>),
+	   ?TLFIELD(<<"text-single">>, "Full Name", <<"fn">>),
+	   ?TLFIELD(<<"text-single">>, "Name", <<"first">>),
+	   ?TLFIELD(<<"text-single">>, "Middle Name", <<"middle">>),
+	   ?TLFIELD(<<"text-single">>, "Family Name", <<"last">>),
+	   ?TLFIELD(<<"text-single">>, "Nickname", <<"nick">>),
+	   ?TLFIELD(<<"text-single">>, "Birthday", <<"bday">>),
+	   ?TLFIELD(<<"text-single">>, "Country", <<"ctry">>),
+	   ?TLFIELD(<<"text-single">>, "City", <<"locality">>),
+	   ?TLFIELD(<<"text-single">>, "Email", <<"email">>),
+	   ?TLFIELD(<<"text-single">>, "Organization Name", <<"orgname">>),
+	   ?TLFIELD(<<"text-single">>, "Organization Unit", <<"orgunit">>)
 	  ]}]).
 
 
 
 
 do_route(ServerHost, From, To, Packet) ->
-    #jid{user = User, resource = Resource} = To,
+    User = exmpp_jid:node(To),
+    Resource = exmpp_jid:resource(To),
     if
-	(User /= "") or (Resource /= "") ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
+	(User /= undefined) or (Resource /= undefined) ->
+	    Err = exmpp_stanza:reply_with_error(Packet, 'service-unavailable'),
 	    ejabberd_router ! {route, To, From, Err};
 	true ->
-	    IQ = jlib:iq_query_info(Packet),
-	    case IQ of
-		#iq{type = Type, xmlns = ?NS_SEARCH, lang = Lang, sub_el = SubEl} ->
-		    case Type of
-			set ->
-			    XDataEl = find_xdata_el(SubEl),
-			    case XDataEl of
-				false ->
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERR_BAD_REQUEST),
-				    ejabberd_router:route(To, From, Err);
-				_ ->
-				    XData = jlib:parse_xdata_submit(XDataEl),
-				    case XData of
-					invalid ->
-					    Err = jlib:make_error_reply(
-						    Packet,
-						    ?ERR_BAD_REQUEST),
-					    ejabberd_router:route(To, From,
-								  Err);
-					_ ->
-					    ResIQ =
-						IQ#iq{
-						  type = result,
-						  sub_el =
-						  [{xmlelement,
-						    "query",
-						    [{"xmlns", ?NS_SEARCH}],
-						    [{xmlelement, "x",
-						      [{"xmlns", ?NS_XDATA},
-						       {"type", "result"}],
-						      search_result(Lang, To, ServerHost, XData)
-						     }]}]},
-					    ejabberd_router:route(
-					      To, From, jlib:iq_to_xml(ResIQ))
-				    end
-			    end;
-			get ->
-			    ResIQ = IQ#iq{type = result,
-					  sub_el = [{xmlelement,
-						     "query",
-						     [{"xmlns", ?NS_SEARCH}],
-						     ?FORM(To)
-						    }]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(ResIQ))
-		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang} ->
-		    case Type of
-			set ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_NOT_ALLOWED),
-			    ejabberd_router:route(To, From, Err);
-			get ->
-			    Info = ejabberd_hooks:run_fold(
-				     disco_info, ServerHost, [],
-				     [ServerHost, ?MODULE, "", ""]),
-			    ResIQ =
-				IQ#iq{type = result,
-				      sub_el = [{xmlelement,
-						 "query",
-						 [{"xmlns", ?NS_DISCO_INFO}],
-						 [{xmlelement, "identity",
-						   [{"category", "directory"},
-						    {"type", "user"},
-						    {"name",
-						     translate:translate(Lang, "vCard User Search")}],
-						   []},
-						  {xmlelement, "feature",
-						   [{"var", ?NS_DISCO_INFO}], []},
-						  {xmlelement, "feature",
-						   [{"var", ?NS_SEARCH}], []},
-						  {xmlelement, "feature",
-						   [{"var", ?NS_VCARD}], []}
-						 ] ++ Info
-						}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(ResIQ))
-		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_ITEMS} ->
-		    case Type of
-			set ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_NOT_ALLOWED),
-			    ejabberd_router:route(To, From, Err);
-			get ->
-			    ResIQ = 
-				IQ#iq{type = result,
-				      sub_el = [{xmlelement,
-						 "query",
-						 [{"xmlns", ?NS_DISCO_ITEMS}],
-						 []}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(ResIQ))
-		    end;
-		#iq{type = get, xmlns = ?NS_VCARD, lang = Lang} ->
-		    ResIQ = 
-			IQ#iq{type = result,
-			      sub_el = [{xmlelement,
-					 "vCard",
-					 [{"xmlns", ?NS_VCARD}],
-					 iq_get_vcard(Lang)}]},
-		    ejabberd_router:route(To,
-					  From,
-					  jlib:iq_to_xml(ResIQ));
+	    try
+		Request = exmpp_iq:get_request(Packet),
+		Type = exmpp_iq:get_type(Packet),
+		Lang = exmpp_stanza:get_lang(Packet),
+		case {Type, Request#xmlel.ns} of
+		    {set, ?NS_SEARCH} ->
+			XDataEl = find_xdata_el(Request),
+			case XDataEl of
+			    false ->
+				Err = exmpp_iq:error(Packet, 'bad-request'),
+				ejabberd_router:route(To, From, Err);
+			    _ ->
+				XData = jlib:parse_xdata_submit(XDataEl),
+				case XData of
+				    invalid ->
+					Err = exmpp_iq:error(Packet,
+					  'bad-request'),
+					ejabberd_router:route(To, From,
+							      Err);
+				    _ ->
+					Result = #xmlel{
+					  ns = ?NS_SEARCH,
+					  name = 'query',
+					  children = [
+					    #xmlel{
+					      ns = ?NS_DATA_FORMS,
+					      name = 'x',
+					      attrs = [?XMLATTR('type',
+						  <<"result">>)],
+					      children = search_result(Lang,
+						To, ServerHost, XData)}]},
+					ResIQ = exmpp_iq:result(Packet,
+					  Result),
+					ejabberd_router:route(
+					  To, From, ResIQ)
+				end
+			end;
+		    {get, ?NS_SEARCH} ->
+			Result = #xmlel{ns = ?NS_SEARCH, name = 'query',
+			  children = ?FORM(To)},
+			ResIQ = exmpp_iq:result(Packet, Result),
+			ejabberd_router:route(To,
+					      From,
+					      ResIQ);
+		    {set, ?NS_DISCO_INFO} ->
+			Err = exmpp_iq:error(Packet, 'not-allowed'),
+			ejabberd_router:route(To, From, Err);
+		    {get, ?NS_DISCO_INFO} ->
+			ServerHostB = list_to_binary(ServerHost),
+			Info = ejabberd_hooks:run_fold(
+				 disco_info, ServerHostB, [],
+				 [ServerHost, ?MODULE, <<>>, ""]),
+			Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
+			  children = Info ++ [
+			    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
+			      attrs = [
+				?XMLATTR('category', <<"directory">>),
+				?XMLATTR('type', <<"user">>),
+				?XMLATTR('name', translate:translate(Lang,
+				    "vCard User Search"))]},
+			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
+			      attrs = [
+				?XMLATTR('var', ?NS_DISCO_INFO_s)]},
+			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
+			      attrs = [
+				?XMLATTR('var', ?NS_SEARCH_s)]},
+			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
+			      attrs = [
+				?XMLATTR('var', ?NS_VCARD_s)]}
+			  ]},
+			ResIQ = exmpp_iq:result(Packet, Result),
+			ejabberd_router:route(To,
+					      From,
+					      ResIQ);
+		    {set, ?NS_DISCO_ITEMS} ->
+			Err = exmpp_iq:error(Packet, 'not-allowed'),
+			ejabberd_router:route(To, From, Err);
+		    {get, ?NS_DISCO_ITEMS} ->
+			Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query'},
+			ResIQ = exmpp_iq:result(Packet, Result),
+			ejabberd_router:route(To,
+					      From,
+					      ResIQ);
+		    {get, ?NS_VCARD} ->
+			Result = #xmlel{ns = ?NS_VCARD, name = 'vCard',
+			  children = iq_get_vcard(Lang)},
+			ResIQ = exmpp_iq:result(Packet, Result),
+			ejabberd_router:route(To,
+					      From,
+					      ResIQ);
+		    _ ->
+			Err = exmpp_iq:error(Packet, 'service-unavailable'),
+			ejabberd_router:route(To, From, Err)
+		end
+	    catch
 		_ ->
-		    Err = jlib:make_error_reply(Packet,
-						?ERR_SERVICE_UNAVAILABLE),
-		    ejabberd_router:route(To, From, Err)
+		    Err1 = exmpp_iq:error(Packet, 'service-unavailable'),
+		    ejabberd_router:route(To, From, Err1)
 	    end
     end.
 
 iq_get_vcard(Lang) ->
-    [{xmlelement, "FN", [],
-      [{xmlcdata, "ejabberd/mod_vcard"}]},
-     {xmlelement, "URL", [],
-      [{xmlcdata, ?EJABBERD_URI}]},
-     {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(
-		    Lang,
-		    "ejabberd vCard module") ++
-		    "\nCopyright (c) 2003-2009 ProcessOne"}]}].
+    [
+      #xmlel{ns = ?NS_SEARCH, name = 'FN', children = [
+	  #xmlcdata{cdata = <<"ejabberd/mod_vcard">>}]},
+      #xmlel{ns = ?NS_SEARCH, name = 'URL', children = [
+	  #xmlcdata{cdata = list_to_binary(?EJABBERD_URI)}]},
+      #xmlel{ns = ?NS_SEARCH, name ='DESC', children = [
+	  #xmlcdata{cdata = list_to_binary(
+	      translate:translate(Lang, "ejabberd vCard module") ++
+	      "\nCopyright (c) 2003-2009 ProcessOne")}]}
+    ].
 
-find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+find_xdata_el(#xmlel{children = SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
     false;
-find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_XDATA ->
-	    {xmlelement, Name, Attrs, SubEls};
-	_ ->
-	    find_xdata_el1(Els)
-    end;
+find_xdata_el1([#xmlel{ns = ?NS_DATA_FORMS} = El | _Els]) ->
+    El;
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
--define(LFIELD(Label, Var),
-	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
-			       {"var", Var}], []}).
-
 search_result(Lang, JID, ServerHost, Data) ->
-    [{xmlelement, "title", [],
-      [{xmlcdata, translate:translate(Lang, "Search Results for ") ++
-	jlib:jid_to_string(JID)}]},
-     {xmlelement, "reported", [],
-      [?TLFIELD("text-single", "Jabber ID", "jid"),
-       ?TLFIELD("text-single", "Full Name", "fn"),
-       ?TLFIELD("text-single", "Name", "first"),
-       ?TLFIELD("text-single", "Middle Name", "middle"),
-       ?TLFIELD("text-single", "Family Name", "last"),
-       ?TLFIELD("text-single", "Nickname", "nick"),
-       ?TLFIELD("text-single", "Birthday", "bday"),
-       ?TLFIELD("text-single", "Country", "ctry"),
-       ?TLFIELD("text-single", "City", "locality"),
-       ?TLFIELD("text-single", "Email", "email"),
-       ?TLFIELD("text-single", "Organization Name", "orgname"),
-       ?TLFIELD("text-single", "Organization Unit", "orgunit")
+    [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
+	[#xmlcdata{cdata = list_to_binary(
+	      translate:translate(Lang, "Search Results for ") ++
+	      exmpp_jid:to_list(JID))}]},
+     #xmlel{ns = ?NS_DATA_FORMS, name = 'reported', children =
+      [?TLFIELD(<<"text-single">>, "Jabber ID", <<"jid">>),
+       ?TLFIELD(<<"text-single">>, "Full Name", <<"fn">>),
+       ?TLFIELD(<<"text-single">>, "Name", <<"first">>),
+       ?TLFIELD(<<"text-single">>, "Middle Name", <<"middle">>),
+       ?TLFIELD(<<"text-single">>, "Family Name", <<"last">>),
+       ?TLFIELD(<<"text-single">>, "Nickname", <<"nick">>),
+       ?TLFIELD(<<"text-single">>, "Birthday", <<"bday">>),
+       ?TLFIELD(<<"text-single">>, "Country", <<"ctry">>),
+       ?TLFIELD(<<"text-single">>, "City", <<"locality">>),
+       ?TLFIELD(<<"text-single">>, "Email", <<"email">>),
+       ?TLFIELD(<<"text-single">>, "Organization Name", <<"orgname">>),
+       ?TLFIELD(<<"text-single">>, "Organization Unit", <<"orgunit">>)
       ]}] ++ lists:map(fun record_to_item/1, search(ServerHost, Data)).
 
 -define(FIELD(Var, Val),
-	{xmlelement, "field", [{"var", Var}],
-	 [{xmlelement, "value", [],
-	   [{xmlcdata, Val}]}]}).
+	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
+	  [?XMLATTR('var', Var)], children =
+	  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
+	      [#xmlcdata{cdata = Val}]}]}).
 
 record_to_item(R) ->
     {User, Server} = R#vcard_search.user,
-    {xmlelement, "item", [],
+    #xmlel{ns = ?NS_DATA_FORMS, name = 'item', children =
      [
-       ?FIELD("jid",      User ++ "@" ++ Server),
-       ?FIELD("fn",       R#vcard_search.fn),
-       ?FIELD("last",     R#vcard_search.family),
-       ?FIELD("first",    R#vcard_search.given),
-       ?FIELD("middle",   R#vcard_search.middle),
-       ?FIELD("nick",     R#vcard_search.nickname),
-       ?FIELD("bday",     R#vcard_search.bday),
-       ?FIELD("ctry",     R#vcard_search.ctry),
-       ?FIELD("locality", R#vcard_search.locality),
-       ?FIELD("email",    R#vcard_search.email),
-       ?FIELD("orgname",  R#vcard_search.orgname),
-       ?FIELD("orgunit",  R#vcard_search.orgunit)
+       ?FIELD(<<"jid">>,      list_to_binary(User ++ "@" ++ Server)),
+       ?FIELD(<<"fn">>,       list_to_binary(R#vcard_search.fn)),
+       ?FIELD(<<"last">>,     list_to_binary(R#vcard_search.family)),
+       ?FIELD(<<"first">>,    list_to_binary(R#vcard_search.given)),
+       ?FIELD(<<"middle">>,   list_to_binary(R#vcard_search.middle)),
+       ?FIELD(<<"nick">>,     list_to_binary(R#vcard_search.nickname)),
+       ?FIELD(<<"bday">>,     list_to_binary(R#vcard_search.bday)),
+       ?FIELD(<<"ctry">>,     list_to_binary(R#vcard_search.ctry)),
+       ?FIELD(<<"locality">>, list_to_binary(R#vcard_search.locality)),
+       ?FIELD(<<"email">>,    list_to_binary(R#vcard_search.email)),
+       ?FIELD(<<"orgname">>,  list_to_binary(R#vcard_search.orgname)),
+       ?FIELD(<<"orgunit">>,  list_to_binary(R#vcard_search.orgunit))
       ]
      }.
 
@@ -540,7 +526,7 @@ filter_fields([], Match, _LServer) ->
     Match;
 filter_fields([{SVar, [Val]} | Ds], Match, LServer)
   when is_list(Val) and (Val /= "") ->
-    LVal = stringprep:tolower(Val),
+    LVal = exmpp_stringprep:to_lower(Val),
     NewMatch = case SVar of
                    "user" ->
 		       case gen_mod:get_module_opt(LServer, ?MODULE,
@@ -604,61 +590,60 @@ set_vcard_t(R, _) ->
     User  = US,
     VCARD = R#vcard.vcard,
 
-    FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
-    Family   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "FAMILY"},    cdata]),
-    Given    = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "GIVEN"},     cdata]),
-    Middle   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "MIDDLE"},    cdata]),
-    Nickname = xml:get_path_s(VCARD, [{elem, "NICKNAME"},               cdata]),
-    BDay     = xml:get_path_s(VCARD, [{elem, "BDAY"},                   cdata]),
-    CTRY     = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "CTRY"},    cdata]),
-    Locality = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "LOCALITY"},cdata]),
-    EMail    = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
-    OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
-    OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
+    FN       = exmpp_xml:get_path(VCARD,
+      [{element, 'FN'},                        cdata_as_list]),
+    Family   = exmpp_xml:get_path(VCARD,
+      [{element, 'N'}, {element, 'FAMILY'},    cdata_as_list]),
+    Given    = exmpp_xml:get_path(VCARD,
+      [{element, 'N'}, {element, 'GIVEN'},     cdata_as_list]),
+    Middle   = exmpp_xml:get_path(VCARD,
+      [{element, 'N'}, {element, 'MIDDLE'},    cdata_as_list]),
+    Nickname = exmpp_xml:get_path(VCARD,
+      [{element, 'NICKNAME'},                  cdata_as_list]),
+    BDay     = exmpp_xml:get_path(VCARD,
+      [{element, 'BDAY'},                      cdata_as_list]),
+    CTRY     = exmpp_xml:get_path(VCARD,
+      [{element, 'ADR'}, {element, 'CTRY'},    cdata_as_list]),
+    Locality = exmpp_xml:get_path(VCARD,
+      [{element, 'ADR'}, {element, 'LOCALITY'},cdata_as_list]),
+    EMail    = exmpp_xml:get_path(VCARD,
+      [{element, 'EMAIL'},                     cdata_as_list]),
+    OrgName  = exmpp_xml:get_path(VCARD,
+      [{element, 'ORG'}, {element, 'ORGNAME'}, cdata_as_list]),
+    OrgUnit  = exmpp_xml:get_path(VCARD,
+      [{element, 'ORG'}, {element, 'ORGUNIT'}, cdata_as_list]),
 
-    {LUser, _LServer} = US,
-    LFN       = stringprep:tolower(FN),
-    LFamily   = stringprep:tolower(Family),
-    LGiven    = stringprep:tolower(Given),
-    LMiddle   = stringprep:tolower(Middle),
-    LNickname = stringprep:tolower(Nickname),
-    LBDay     = stringprep:tolower(BDay),
-    LCTRY     = stringprep:tolower(CTRY),
-    LLocality = stringprep:tolower(Locality),
-    LEMail    = stringprep:tolower(EMail),
-    LOrgName  = stringprep:tolower(OrgName),
-    LOrgUnit  = stringprep:tolower(OrgUnit),
-
-    if
-	(LUser     == error) or
-	(LFN       == error) or
-	(LFamily   == error) or
-	(LGiven    == error) or
-	(LMiddle   == error) or
-	(LNickname == error) or
-	(LBDay     == error) or
-	(LCTRY     == error) or
-	(LLocality == error) or
-	(LEMail    == error) or
-	(LOrgName  == error) or
-	(LOrgUnit  == error) ->
-	    {error, badarg};
-	true ->
-	    mnesia:write(
-	      #vcard_search{us        = US,
-			    user      = User,     luser      = LUser,     
-			    fn        = FN,       lfn        = LFN,       
-			    family    = Family,   lfamily    = LFamily,   
-			    given     = Given,    lgiven     = LGiven,    
-			    middle    = Middle,   lmiddle    = LMiddle,   
-			    nickname  = Nickname, lnickname  = LNickname, 
-			    bday      = BDay,     lbday      = LBDay,     
-			    ctry      = CTRY,     lctry      = LCTRY,     
-			    locality  = Locality, llocality  = LLocality, 
-			    email     = EMail,    lemail     = LEMail,    
-			    orgname   = OrgName,  lorgname   = LOrgName,  
-			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
-			   })
+    try
+	{LUser, _LServer} = US,
+	LFN       = exmpp_stringprep:to_lower(FN),
+	LFamily   = exmpp_stringprep:to_lower(Family),
+	LGiven    = exmpp_stringprep:to_lower(Given),
+	LMiddle   = exmpp_stringprep:to_lower(Middle),
+	LNickname = exmpp_stringprep:to_lower(Nickname),
+	LBDay     = exmpp_stringprep:to_lower(BDay),
+	LCTRY     = exmpp_stringprep:to_lower(CTRY),
+	LLocality = exmpp_stringprep:to_lower(Locality),
+	LEMail    = exmpp_stringprep:to_lower(EMail),
+	LOrgName  = exmpp_stringprep:to_lower(OrgName),
+	LOrgUnit  = exmpp_stringprep:to_lower(OrgUnit),
+	mnesia:write(
+	  #vcard_search{us        = US,
+			user      = User,     luser      = LUser,     
+			fn        = FN,       lfn        = LFN,       
+			family    = Family,   lfamily    = LFamily,   
+			given     = Given,    lgiven     = LGiven,    
+			middle    = Middle,   lmiddle    = LMiddle,   
+			nickname  = Nickname, lnickname  = LNickname, 
+			bday      = BDay,     lbday      = LBDay,     
+			ctry      = CTRY,     lctry      = LCTRY,     
+			locality  = Locality, llocality  = LLocality, 
+			email     = EMail,    lemail     = LEMail,    
+			orgname   = OrgName,  lorgname   = LOrgName,  
+			orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+		       })
+    catch
+	_ ->
+	    {error, badarg}
     end.
 
 
@@ -669,9 +654,9 @@ reindex_vcards() ->
     mnesia:transaction(F).
 
 
-remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+remove_user(User, Server) when is_binary(User), is_binary(Server) ->
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:delete({vcard, US}),
@@ -688,7 +673,7 @@ update_vcard_table() ->
     Fields = record_info(fields, vcard),
     case mnesia:table_info(vcard, attributes) of
 	Fields ->
-	    ok;
+	    convert_to_exmpp();
 	[user, vcard] ->
 	    ?INFO_MSG("Converting vcard table from "
 		      "{user, vcard} format", []),
@@ -726,6 +711,29 @@ update_vcard_table() ->
 	    mnesia:transform_table(vcard, ignore, Fields)
     end.
 
+
+convert_to_exmpp() ->
+    Fun = fun() ->
+	case mnesia:first(vcard) of
+	    '$end_of_table' ->
+		none;
+	    Key ->
+		case mnesia:read({vcard, Key}) of
+		    [#vcard{vcard = #xmlel{}}] ->
+			none;
+		    [#vcard{vcard = #xmlelement{}}] ->
+			mnesia:foldl(fun convert_to_exmpp2/2,
+			  done, vcard, write)
+		end
+	end
+    end,
+    mnesia:transaction(Fun).
+
+convert_to_exmpp2(#vcard{vcard = ElOld} = VCard, Acc) ->
+    El0 = exmpp_xml:xmlelement_to_xmlel(ElOld, [?NS_VCARD], []),
+    El = exmpp_xml:remove_whitespaces_deeply(El0),
+    mnesia:write(VCard#vcard{vcard = El}),
+    Acc.
 
 update_vcard_search_table() ->
     Fields = record_info(fields, vcard_search),

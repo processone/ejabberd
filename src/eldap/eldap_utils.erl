@@ -89,8 +89,8 @@ get_user_part(String, Pattern) ->
 	{'EXIT', _} ->
 	    {error, badmatch};
 	Result ->
-	    case regexp:sub(Pattern, "%u", Result) of
-		{ok, String, _} -> {ok, Result};
+	    case re:replace(Pattern, "%u", Result, [{return, list}]) of
+		String -> {ok, Result};
 		_ -> {error, badmatch}
 	    end
     end.
@@ -121,8 +121,8 @@ make_filter(Data, UIDs) ->
     end.
 
 case_insensitive_match(X, Y) ->
-    X1 = stringprep:tolower(X),
-    Y1 = stringprep:tolower(Y),
+    X1 = exmpp_stringprep:to_lower(X),
+    Y1 = exmpp_stringprep:to_lower(Y),
     if
 	X1 == Y1 -> true;
 	true -> false

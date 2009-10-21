@@ -160,13 +160,14 @@ normalize_hosts(Hosts) ->
 normalize_hosts([], PrepHosts) ->
     lists:reverse(PrepHosts);
 normalize_hosts([Host|Hosts], PrepHosts) ->
-    case jlib:nodeprep(Host) of
-	error ->
+    try
+	PrepHost = exmpp_stringprep:nodeprep(Host),
+	normalize_hosts(Hosts, [PrepHost|PrepHosts])
+    catch
+	_ ->
 	    ?ERROR_MSG("Can't load config file: "
 		       "invalid host name [~p]", [Host]),
-	    exit("invalid hostname");
-	PrepHost ->
-	    normalize_hosts(Hosts, [PrepHost|PrepHosts])
+	    exit("invalid hostname")
     end.
 
 
@@ -377,12 +378,12 @@ process_term(Term, State) ->
 	    add_option(watchdog_large_heap, LH, State);
 	{registration_timeout, Timeout} ->
 	    add_option(registration_timeout, Timeout, State);
+	{ejabberdctl_access_commands, ACs} ->
+	    add_option(ejabberdctl_access_commands, ACs, State);
 	{captcha_cmd, Cmd} ->
 	    add_option(captcha_cmd, Cmd, State);
 	{captcha_host, Host} ->
 	    add_option(captcha_host, Host, State);
-	{ejabberdctl_access_commands, ACs} ->
-	    add_option(ejabberdctl_access_commands, ACs, State);
 	{loglevel, Loglevel} ->
 	    ejabberd_loglevel:set(Loglevel),
 	    State;

@@ -45,6 +45,10 @@
 %%====================================================================
 %% API
 %%====================================================================
+
+%% @spec (Host) -> ok | term()
+%%     Host = string()
+
 start(_Host) ->
     case epam:start() of
 	{ok, _} -> ok;
@@ -52,48 +56,104 @@ start(_Host) ->
 	Err -> Err
     end.
 
+%% @spec (User, Server, Password) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
-check_password(User, Server, Password, _Digest, _DigestGen) ->
+%% @spec (User, Server, Password, Digest, DigestGen) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+%%     Digest = string()
+%%     DigestGen = function()
+
+check_password(User, Server, Password, _StreamID, _Digest) ->
     check_password(User, Server, Password).
 
-check_password(User, Host, Password) ->
-    Service = get_pam_service(Host),
+%% @spec (User, Server, Password) -> bool()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
+check_password(User, Server, Password) ->
+    Service = get_pam_service(Server),
     case catch epam:authenticate(Service, User, Password) of
 	true -> true;
 	_    -> false
     end.
 
+%% @spec (User, Server, Password) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
+
+%% @spec () -> [{LUser, LServer}]
+%%     LUser = string()
+%%     LServer = string()
 
 dirty_get_registered_users() ->
     [].
 
-get_vh_registered_users(_Host) ->
+%% @spec (Server) -> [{LUser, LServer}]
+%%     Server = string()
+%%     LUser = string()
+%%     LServer = string()
+
+get_vh_registered_users(_Server) ->
     [].
+
+%% @spec (User, Server) -> Password | false
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 get_password(_User, _Server) ->
     false.
+
+%% @spec (User, Server) -> Password | nil()
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
 
 get_password_s(_User, _Server) ->
     "".
 
 %% @spec (User, Server) -> true | false | {error, Error}
-%% TODO: Improve this function to return an error instead of 'false' when connection to PAM failed
-is_user_exists(User, Host) ->
-    Service = get_pam_service(Host),
+%%     User = string()
+%%     Server = string()
+%% TODO: Improve this function to return an error instead of 'false' when
+%% connection to PAM failed
+
+is_user_exists(User, Server) ->
+    Service = get_pam_service(Server),
     case catch epam:acct_mgmt(Service, User) of
 	true -> true;
 	_    -> false
     end.
 
+%% @spec (User, Server) -> {error, not_allowed}
+%%     User = string()
+%%     Server = string()
+
 remove_user(_User, _Server) ->
     {error, not_allowed}.
 
+%% @spec (User, Server, Password) -> not_allowed
+%%     User = string()
+%%     Server = string()
+%%     Password = string()
+
 remove_user(_User, _Server, _Password) ->
     not_allowed.
+
+%% @spec () -> bool()
 
 plain_password_required() ->
     true.
@@ -101,8 +161,12 @@ plain_password_required() ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-get_pam_service(Host) ->
-    case ejabberd_config:get_local_option({pam_service, Host}) of
+
+%% @spec (Server) -> string()
+%%     Server = string()
+
+get_pam_service(Server) ->
+    case ejabberd_config:get_local_option({pam_service, Server}) of
 	undefined -> "ejabberd";
 	Service   -> Service
     end.

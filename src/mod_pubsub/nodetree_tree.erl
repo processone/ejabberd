@@ -37,9 +37,9 @@
 -author('christophe.romain@process-one.net').
 
 -include_lib("stdlib/include/qlc.hrl").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 -behaviour(gen_pubsub_nodetree).
 
@@ -101,32 +101,30 @@ options() ->
 set_node(Record) when is_record(Record, pubsub_node) ->
     mnesia:write(Record);
 set_node(_) ->
-    {error, ?ERR_INTERNAL_SERVER_ERROR}.
+    {error, 'internal-server-error'}.
 
-get_node(Host, Node, _From) ->
-    get_node(Host, Node).
-
-%% @spec (Host, Node) -> pubsubNode() | {error, Reason}
+%% @spec (Host, Node, From) -> pubsubNode() | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
 get_node(Host, Node) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	[] -> {error, ?ERR_ITEM_NOT_FOUND};
+	[] -> {error, 'item-not-found'};
 	Error -> Error
     end.
 get_node(NodeId) ->
     case catch mnesia:index_read(pubsub_node, NodeId, #pubsub_node.id) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	[] -> {error, ?ERR_ITEM_NOT_FOUND};
+	[] -> {error, 'item-not-found'};
 	Error -> Error
     end.
 
+%% @spec (Host, From) -> [pubsubNode()] | {error, Reason}
+%%     Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
-
-%% @spec (Host) -> [pubsubNode()] | {error, Reason}
-%%     Host = mod_pubsub:host() | mod_pubsub:jid()
 get_nodes(Host) ->
     mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}).
 
@@ -162,9 +160,9 @@ get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
 get_subnodes(Host, <<>>) ->
     Q = qlc:q([N || #pubsub_node{nodeid = {NHost, _},
-				 parents = Parents} = N <- mnesia:table(pubsub_node),
-		       Host == NHost,
-		       Parents == []]),
+                          parents = Parents} = N <- mnesia:table(pubsub_node),
+               Host == NHost,
+               Parents == []]),
     qlc:e(Q);
 get_subnodes(Host, Node) ->
     Q = qlc:q([N || #pubsub_node{nodeid = {NHost, _},
@@ -173,13 +171,12 @@ get_subnodes(Host, Node) ->
 		       lists:member(Node, Parents)]),
     qlc:e(Q).
 
-get_subnodes_tree(Host, Node, _From) ->
-    get_subnodes_tree(Host, Node).
-
-%% @spec (Host, Index) -> [pubsubNodeIdx()] | {error, Reason}
+%% @spec (Host, Index, From) -> [pubsubNodeIdx()] | {error, Reason}
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
+get_subnodes_tree(Host, Node, _From) ->
+    get_subnodes_tree(Host, Node).
 get_subnodes_tree(Host, Node) ->
     case get_node(Host, Node) of
     {error, _} ->
@@ -204,8 +201,8 @@ get_subnodes_tree(Host, Node) ->
 %%     Owner = mod_pubsub:jid()
 %%     Options = list()
 create_node(Host, Node, Type, Owner, Options, Parents) ->
-    BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-    case catch mnesia:read({pubsub_node, {Host, Node}}) of
+    BJID = jlib:short_prepd_bare_jid(Owner),
+    case mnesia:read({pubsub_node, {Host, Node}}) of
 	[] ->
 	    ParentExists =
 		case Host of
@@ -215,15 +212,15 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 			true;
 		    _ ->
 			case Parents of
-			[] -> true;
-			[Parent|_] ->
-			    case catch mnesia:read({pubsub_node, {Host, Parent}}) of
-				[#pubsub_node{owners = [{[], Host, []}]}] -> true;
-				[#pubsub_node{owners = Owners}] -> lists:member(BJID, Owners);
-				_ -> false
+                [] -> true;
+                [Parent | _] ->
+			    case mnesia:read({pubsub_node, {Host, Parent}}) of
+				    [#pubsub_node{owners = [{[], Host, []}]}] -> true;
+                    [#pubsub_node{owners = Owners}] -> lists:member(BJID, Owners);
+                    _ -> false
 			    end;
-			_ ->
-			    false
+                _ -> 
+                    false
 			end
 		end,
 	    case ParentExists of
@@ -238,11 +235,11 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    {ok, NodeId};
 		false ->
 		    %% Requesting entity is prohibited from creating nodes
-		    {error, ?ERR_FORBIDDEN}
+		    {error, 'forbidden'}
 	    end;
 	_ ->
 	    %% NodeID already exists
-	    {error, ?ERR_CONFLICT}
+	    {error, 'conflict'}
     end.
 
 %% @spec (Host, Node) -> [mod_pubsub:node()]
