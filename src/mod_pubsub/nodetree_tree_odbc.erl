@@ -202,7 +202,7 @@ get_subnodes_tree(Host, Node) ->
 	    []
     end.
 
-%% @spec (Host, Node, Type, Owner, Options) -> ok | {error, Reason}
+%% @spec (Host, Node, Type, Owner, Options, Parents) -> ok | {error, Reason}
 %%     Host = mod_pubsub:host() | mod_pubsub:jid()
 %%     Node = mod_pubsub:pubsubNode()
 %%     NodeType = mod_pubsub:nodeType()

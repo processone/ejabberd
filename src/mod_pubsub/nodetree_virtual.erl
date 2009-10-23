@@ -124,7 +124,7 @@ get_subnodes_tree(Host, Node, _From) ->
 get_subnodes_tree(_Host, _Node) ->
     [].
 
-%% @spec (Host, Node, Type, Owner, Options) -> ok
+%% @spec (Host, Node, Type, Owner, Options, Parents) -> ok
 %%     Host = mod_pubsub:host()
 %%     Node = mod_pubsub:pubsubNode()
 %%     Type = mod_pubsub:nodeType()
