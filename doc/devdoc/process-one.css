@@ -1,3 +1,25 @@
+div.navbar table tr td a[target="_parent"] {
+  background: transparent url("ejabberd-devdoc.png") no-repeat;
+  display: block;
+  font-size: 0%;
+  top: 0;
+  left: 0;
+  padding: 0;
+  margin: 0;
+  width: 192px;
+  height: 42px;
+}
+
+div.navbar table tr td a img {
+  border: 0;
+  padding: 0 0 0 10;
+  float: right;
+}
+
+p i {
+  display: none;
+}
+
 html, body {
   font-family: Verdana, sans-serif;
   color: #000;
@@ -5,19 +27,20 @@ html, body {
 }
 
 h1 {
+  font-size: 20px;
   color: #4a5389;
   border-bottom: solid 1px #000;
 }
 
 h2 {
-  font-size: 24px;
+  font-size: 18px;
   text-align: right;
   color: #4a5389;
   border-bottom: 1px solid #000;
 }
 
 h3 {
-  font-size: 18px;
+  font-size: 16px;
   color: #900;
 }
 
