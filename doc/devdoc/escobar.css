@@ -11,3 +11,9 @@
 .call {color: purple}
 .attribute {color: firebrick}
 .error{color: red}
+.l {
+ font-style: normal;
+ font-weight: normal;
+ text-decoration: none;
+ color: gray;
+}

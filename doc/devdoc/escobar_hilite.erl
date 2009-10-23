@@ -296,15 +296,17 @@ mu(application,Node) ->
     _ ->
       nil
   end;
+mu(function = Class, {tree, function, _, {function, _, [{tree, clause, _, {clause, Vars, _, _}} | _]}}) ->
+  dehtml('span', [{class,Class}, {arity,length(Vars)}]);
 mu(Class,_Node) -> 
   dehtml('span', [{class,Class}]).
 
 dehtml(Tag,Atts) ->
   flatten([$<,str(Tag),$ ,[[str(A),"=\"",str(V),"\" "]||{A,V}<-Atts],$>]).
 
-str(I) when integer(I) -> integer_to_list(I);
-str(A) when atom(A) -> atom_to_list(A);
-str(L) when list(L) -> L.
+str(I) when is_integer(I) -> integer_to_list(I);
+str(A) when is_atom(A) -> atom_to_list(A);
+str(L) when is_list(L) -> L.
 
 is_guard_or_builtin(atom,1)      ->guard;
 is_guard_or_builtin(binary,1)    ->guard;
