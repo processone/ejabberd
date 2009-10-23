@@ -1,10 +1,16 @@
-@author Mickael Remond <mickael.remond@process-one.net>
-  [http://www.process-one.net/]
-@copyright 2007 ProcessOne
+@title ejabberd Development Documentation
 @version {@vsn}, {@date} {@time}
-@title ejabberd Development API Documentation
+@copyright 2007-2009 ProcessOne
 
 @doc
 == Introduction ==
 
+<hr/>
+Documentation generated with [http://www.erlang.org/doc/man/edoc.html EDoc].
+<br/>
+Source code highlight generated with [http://code.google.com/p/erl-escobar/ Escobar].
+<br/>
+Function relationship graph generated with FunRelG and [http://www.graphviz.org/ Graphviz].
+
 TODO: Insert content from Jerome documentation.
+TODO: Insert content from doc/dev.html.
