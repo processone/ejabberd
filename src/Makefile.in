@@ -138,7 +138,7 @@ all-recursive: $(ERLBEHAVBEAMS)
 
 
 all-recursive install-recursive uninstall-recursive \
-clean-recursive distclean-recursive \
+clean-recursive distclean-recursive devdoc-recursive \
 mostlyclean-recursive maintainer-clean-recursive:
 	@subdirs="$(SUBDIRS)"; for subdir in $$subdirs; do \
 	target=`echo $@|sed 's,-recursive,,'`; \
@@ -267,7 +267,7 @@ uninstall-all: uninstall-binary
 	rm -rf $(SPOOLDIR)
 	rm -rf $(LOGDIR)
 
-clean: clean-recursive clean-local
+clean: clean-recursive clean-local clean-devdoc
 
 clean-local:
 	rm -f *.beam $(ERLSHLIBS) epam ejabberdctl.example
@@ -294,3 +294,91 @@ changelog:
 	    --separate-daylogs --break-before-msg --reparagraph ..
 	cat ../ChangeLog.old >> ../ChangeLog
 	rm ../ChangeLog.old
+
+
+## Devdoc definitions
+SRCDIR=.
+DDTDIR=.
+DEVDOCDIR=../doc/devdoc
+DEVDOC_ERLS = $(wildcard ../doc/devdoc/*.erl)
+DEVDOC_BEAMS = $(DEVDOC_ERLS:.erl=.beam)
+APPNAME = ejabberd
+VSN = $(shell sed '/vsn/!d;s/\(.*\)"\(.*\)"\(.*\)/\2/' ./ejabberd.app)
+.PHONY = all
+HTMLS = $(SOURCES:%.erl=../doc/devdoc/%.html)
+ERLHTMLS = $(SOURCES:%.erl=../doc/devdoc/%.erl.html)
+SVGS = $(SOURCES:%.erl=../doc/devdoc/%.svg)
+EDOCINDEX = $(DEVDOCDIR)/index.html
+
+## Devdoc rules
+devdoc: compile-devdoc devdoc-root devdoc-recursive
+	$(devdoc-customize)
+	$(devdoc-move)
+devdoc-root: $(EDOCINDEX) $(HTMLS) $(ERLHTMLS) $(SVGS)
+
+define devdoc-customize
+find $(DDTDIR) -type f -name '*.erl.html' -exec sed -i 's/<span class="attribute" >module<\/span>(\([A-Za-z0-9_]*\))/<span class="attribute" >module<\/span>(<a href="\1.html">\1<\/a>)/g;' {} \;
+find $(DDTDIR) -type f -name '*.erl.html' -exec sed -i 's/arity="\([0-9]*\)" >\([A-Za-z0-9_]*\)</><a class="function" id="\2-\1" href="EDOCFILENAME#\2-\1">\2<\/a></g;' {} \;
+find $(DDTDIR) -type f -name '*.erl.html' -exec sed -i 's/class="export" >\([A-Za-z0-9_]*\)\/\([0-9]*\)</class="export" ><a href="#\1-\2">\1\/\2<\/a></g;' {} \;
+for fn in *.erl.html; do \
+    sed -i 's/EDOCFILENAME/'$${fn%.erl.html}.html'/g;' $${fn} ; \
+    sed = $${fn} | sed 'N;s/\n/ /;s/^\([0-9_]*\)/<a href="#\1" name="\1" class="l">\1<\/a>/' >$${fn}.tmp ; \
+    mv $${fn}.tmp $${fn} ; \
+    sed -i 's/<a href="#1" name="1" class="l">1<\/a> <html><link rel="stylesheet" type="text\/css"href="escobar.css"><\/link><body><pre><span class="comment" >/<html><link rel="stylesheet" type="text\/css" href="escobar.css"><\/link><body><pre><span class="comment" ><a href="#1" name="1" class="l">1<\/a> /g;' $${fn} ; \
+done
+-mv *.erl.html $(DEVDOCDIR)
+
+find $(DDTDIR) -type f -name '*.html' -exec sed -i 's/<a href="overview-summary.html" target="overviewFrame">/<a href="index.html" target="_parent">/g;' {} \;
+find $(DDTDIR) -type f -name '*.html' -exec sed -i 's/align=\"right\" border=\"0\" alt=\"erlang logo\"/alt=\"erlang logo\"><\/a><a href=\"http:\/\/www.ejabberd.im\/\"><img src=\"ejabberd-im.png\" alt=\"ejabberd Community\"><\/a><a href=\"http:\/\/www.process-one.net\/en\/ejabberd\/\"><img src=\"ejabberd-p1.png\" alt=\"ejabberd home\"><\/a><a href=\"http:\/\/www.process-one.net\/\"><img src=\"process-one.png\" alt=\"ProcessOne\"/g;' {} \;
+find $(DDTDIR) -type f -name '*.html' -exec sed -i 's/^<h1>Module \([A-Za-z0-9_]*\)<\/h1>/<h1>Module \1 [<a href="\1.erl.html">erl<\/a> <a href="\1.svg">svg<\/a>]<\/h1>/g;' {} \;
+find $(DDTDIR) -type f -name '*.html' -exec sed -i 's/class="function"><a name="\([A-Za-z0-9_]*\)-\([0-9_]*\)">/class="function"><a name="\1-\2" href="ESCOFILENAME#\1-\2">/g;' {} \;
+-for fn in *.html; do sed -i 's/ESCOFILENAME/'$${fn%.html}.erl.html'/g;' $${fn} ; done
+
+find $(DDTDIR) -type f -name '*.svg' -exec sed -i 's/xlink:href="EXP\([A-Za-z0-9_]*\).html#\([A-Za-z0-9_]*\)\/\([0-9_]*\)"/xlink:href="\1.html#\2-\3"/g;' {} \;
+find $(DDTDIR) -type f -name '*.svg' -exec sed -i 's/xlink:href="PRI\([A-Za-z0-9_]*\).html#\([A-Za-z0-9_]*\)\/\([0-9_]*\)"/xlink:href="\1.html#\2-\3"/g;' {} \;
+find $(DDTDIR) -type f -name '*.svg' -exec sed -i 's/xlink:href="APP\([A-Za-z0-9_]*\):\([A-Za-z0-9_]*\)\/\([0-9_]*\)"/xlink:href="\1.html#\2-\3"/g;' {} \;
+find $(DDTDIR) -type f -name '*.svg' -exec sed -i 's/xlink:href="EXM\([A-Za-z0-9_]*\):\([A-Za-z0-9_]*\)\/\([0-9_]*\)"/xlink:href="http:\/\/www.process-one.net\/docs\/exmpp\/devdoc\/trunk\/\1.html#\2-\3"/g;' {} \;
+find $(DDTDIR) -type f -name '*.svg' -exec sed -i 's/xlink:href="OTP\([A-Za-z0-9_]*\):\([A-Za-z0-9_]*\)\/\([0-9_]*\)"/xlink:href="http:\/\/www.erlang.org\/doc\/man\/\1.html#\2-\3"/g;' {} \;
+find $(DDTDIR) -type f -name '*.svg' -exec sed -i 's/xlink:href="OTP\([A-Za-z0-9_]*\)\/\([0-9_]*\)"/xlink:href="http:\/\/www.erlang.org\/doc\/man\/erlang.html#\1-\2"/g;' {} \;
+endef
+
+define devdoc-move
+-rm *.dot
+-mv *.html $(DEVDOCDIR)
+-mv *.svg $(DEVDOCDIR)
+endef
+
+compile-devdoc: $(DEVDOC_BEAMS)
+	[ ! -f funrelg.beam ] || mv funrelg.beam $(DEVDOCDIR)
+	[ ! -f escobar_hilite.beam ] || mv escobar_hilite.beam $(DEVDOCDIR)
+	[ ! -f escobar_run.beam ] || mv escobar_run.beam $(DEVDOCDIR)
+
+$(EDOCINDEX): 
+	@ERL@ -noshell -run edoc_run application "'$(APPNAME)'" '"$(SRCDIR)"' \
+	'[{dir,"$(DDTDIR)"},{packages,false},{todo,true},{private,true},{def,{vsn,"$(VSN)"}},{stylesheet,"process-one.css"},{overview,"overview.edoc"}]' -s init stop
+	sed -i 's/<title>The ejabberd application<\/title>/<title>ejabberd devdoc<\/title><link rel="shortcut icon" href="favicon.ico" type="image\/x-icon"\/>/g;' $(DDTDIR)/index.html
+	mv edoc-info $(DEVDOCDIR)
+	mv *.png $(DEVDOCDIR)
+	cp *.html $(DEVDOCDIR)
+	@ERL@ -noshell -pa $(DEVDOCDIR) -run escobar_run dir $(SRCDIR) $(SRCDIR) -s init stop
+	@ERL@ -noshell -pa $(DEVDOCDIR) -run funrelg dir $(SRCDIR) $(SRCDIR) -s init stop
+	$(devdoc-customize)
+	$(devdoc-move)
+
+$(DEVDOCDIR)/%.erl.html: %.erl
+	@ERL@ -noshell -pa $(DEVDOCDIR) -run escobar_run file $< $(SRCDIR) -s init stop
+
+$(DEVDOCDIR)/%.html: %.erl
+	@ERL@ -noshell -run edoc_run file $< \
+	'[{dir,"$(DDTDIR)"},{packages,false},{todo,true},{private,true},{def,{vsn,"$(VSN)"}},{stylesheet,"process-one.css"},{overview,"overview.edoc"}]' -s init stop
+
+$(DEVDOCDIR)/%.svg: %.erl
+	@ERL@ -noshell -pa $(DEVDOCDIR) -run funrelg file $< $(SRCDIR) -s init stop
+
+clean-devdoc:
+	rm -f $(DEVDOCDIR)/edoc-info
+	rm -f $(DEVDOCDIR)/erlang.png
+	rm -f $(DEVDOCDIR)/*.beam
+	rm -f $(DEVDOCDIR)/*.dot
+	rm -f $(DEVDOCDIR)/*.html
+	rm -f $(DEVDOCDIR)/*.svg
