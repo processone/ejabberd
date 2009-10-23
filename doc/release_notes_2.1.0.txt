@@ -209,8 +209,13 @@
 
    Upgrading From ejabberd 2.0.x:
 
-- The database schemas didn't change since ejabberd 1.1.4.
-  Anyway, it is recommended to backup the Mnesia spool directory and
+- The database schemas have three changes since ejabberd 2.0.x.
+  Check the database creation SQL files and update your database.
+  1) New table roster_version to support roster versioning.
+  2) Six new tables for optional pubsub ODBC storage.
+  3) Some tables in the MySQL database have a new created_at column.
+
+- As usual, it is recommended to backup the Mnesia spool directory and
   your SQL database (if used) before upgrading ejabberd.
 
 - The plugin of mod_pubsub "default" is renamed to "flat". You need
