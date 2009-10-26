@@ -124,7 +124,7 @@ gc(Filename) ->
 
     MFAs = get_func_calls(),
 
-    AppModules1 = os:cmd("ls -1 *.erl.html | tr \".\" \" \" | awk '{print $1}'"),
+    AppModules1 = os:cmd("ls -1 ../doc/devdoc/*.html | tr \".\" \" \" | tr \"/\" \" \" | awk '{print $3}'"),
     AppModules = [list_to_atom(Str) || Str <- string:tokens(AppModules1, [10])],
 
     ExternalTypes1 = [mfa_to_externaltype(MFA, ModuleName, AppModules, FunctionsParsed) || MFA <- MFAs],
@@ -389,11 +389,11 @@ textize(ModuleName, Exports, Privates, AppExternals, ExmppExternals, OTPExternal
       %%"  node [shape = box, style = filled, color = olivedrab1, fontsize=40];~s~n"++
       %%"  node [shape = parallelogram, style = filled, color = rosybrown1, fontsize=40];~s~n"++
       %%"  node [shape = ellipse, style = filled, color = slategray1, peripheries=3, fontsize=40];~n"++
-      "  node [shape = box,   color=darkgreen, fillcolor=Honeydew,    style=filled, href=\"PRI~p.html#\\N\"];~s~n"++
-      "  node [shape = box,   color=darkgreen, fillcolor=PaleGreen,   style=filled, href=\"EXP~p.html#\\N\"];~s~n"++
-      "  node [shape = box3d, color=DarkGoldenrod,fillcolor=Chartreuse,  style=filled, href=\"APP\\N\"];~s~n"++
-      "  node [shape = box3d, color=darkblue,  fillcolor=LightSkyBlue,style=filled, href=\"EXM\\N\"];~s~n"++
-      "  node [shape = box3d, color=darkred,   fillcolor=PeachPuff,   style=filled, href=\"OTP\\N\"];~s~n"++
+      "  node [shape = box, color=darkgreen, fillcolor=Honeydew,    style=filled, href=\"PRI~p.html#\\N\"];~s~n"++
+      "  node [shape = box, color=darkgreen, fillcolor=PaleGreen,   style=filled, href=\"EXP~p.html#\\N\"];~s~n"++
+      "  node [shape = box, color=darkgreen, fillcolor=Aquamarine,  style=filled, href=\"APP\\N\"];~s~n"++
+      "  node [shape = box, color=darkblue,  fillcolor=LightSkyBlue,style=filled, href=\"EXM\\N\"];~s~n"++
+      "  node [shape = box, color=darkred,   fillcolor=PeachPuff,   style=filled, href=\"OTP\\N\"];~s~n"++
       "  node [shape = box];~n"++
       "~s"++
       "}~n",
