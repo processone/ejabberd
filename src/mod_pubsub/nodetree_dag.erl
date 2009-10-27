@@ -154,16 +154,20 @@ get_parentnodes_tree(Host, NodeID, _From) ->
 get_subnodes(Host, NodeID, _From) ->
     get_subnodes(Host, NodeID).
 
+get_subnodes(Host, <<>>) ->
+    get_subnodes_helper(Host, <<>>);
 get_subnodes(Host, NodeID) ->
     case find_node(Host, NodeID) of
 	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
-	_ ->
-	    Q = qlc:q([Node || #pubsub_node{nodeid  = {NHost, _},
-					    parents = Parents} = Node <- mnesia:table(pubsub_node),
-			       Host == NHost,
-			       lists:member(NodeID, Parents)]),
-	    qlc:e(Q)
+	_ -> get_subnodes_helper(Host, NodeID)
     end.
+
+get_subnodes_helper(Host, NodeID) ->
+    Q = qlc:q([Node || #pubsub_node{nodeid  = {NHost, _},
+		parents = Parents} = Node <- mnesia:table(pubsub_node),
+		Host == NHost,
+		lists:member(NodeID, Parents)]),
+    qlc:e(Q).
 
 get_subnodes_tree(Host, NodeID, From) ->
     Pred = fun (NID, #pubsub_node{parents = Parents}) ->
@@ -223,6 +227,8 @@ remove_config_parent(NodeID, [H | T], Acc) ->
 validate_parentage(_Key, _Owners, []) ->
     true;
 validate_parentage(Key, Owners, [[] | T]) ->
+    validate_parentage(Key, Owners, T);
+validate_parentage(Key, Owners, [<<>> | T]) ->
     validate_parentage(Key, Owners, T);
 validate_parentage(Key, Owners, [ParentID | T]) ->
     case find_node(Key, ParentID) of
