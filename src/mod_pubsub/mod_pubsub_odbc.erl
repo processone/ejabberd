@@ -907,12 +907,17 @@ iq_disco_info(Host, SNode, From, Lang) ->
     end.
 
 iq_disco_items(Host, [], From, _RSM) ->
-    {result, lists:map(
-	       fun(#pubsub_node{nodeid = {_, SubNode}, type = Type}) ->
-		    {result, Path} = node_call(Type, node_to_path, [SubNode]),
-		    [Name|_] = lists:reverse(Path),
-		    {xmlelement, "item", [{"jid", Host}, {"name", Name}|nodeAttr(SubNode)], []}
-	       end, tree_action(Host, get_subnodes, [Host, <<>>, From]))};
+    case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
+        Nodes when is_list(Nodes) ->
+            {result, lists:map(
+                       fun(#pubsub_node{nodeid = {_, SubNode}, type = Type}) ->
+                               {result, Path} = node_call(Type, node_to_path, [SubNode]),
+                               [Name|_] = lists:reverse(Path),
+                               {xmlelement, "item", [{"jid", Host}, {"name", Name}|nodeAttr(SubNode)], []}
+                       end, Nodes)};
+        Other ->
+            Other
+    end;
 iq_disco_items(Host, Item, From, RSM) ->
     case string:tokens(Item, "!") of
 	[_SNode, _ItemID] ->
@@ -928,7 +933,9 @@ iq_disco_items(Host, Item, From, RSM) ->
 				    end,
 			Nodes = lists:map(
 				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
-				      {xmlelement, "item", [{"jid", Host}|nodeAttr(SubNode)], []}
+                                      {result, Path} = node_call(Type, node_to_path, [SubNode]),
+                                      [Name|_] = lists:reverse(Path),
+				      {xmlelement, "item", [{"jid", Host}, {"name", Name}|nodeAttr(SubNode)], []}
 				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
