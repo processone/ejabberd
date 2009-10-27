@@ -1215,7 +1215,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
     case exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children) of
 	[#xmlel{name = Name, attrs = Attrs, children = Els} | Rest] ->
-	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(attrs, 'node', false)),
+	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false)),
 	    case {IQType, Name} of
 		{set, 'create'} ->
 		    Config = case Rest of
@@ -3151,7 +3151,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 		_ ->
 		    LResource
 	    end,
-	    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
+	    case ejabberd_sm:get_session_pid({LUser, LServer, SenderResource}) of
 		C2SPid when is_pid(C2SPid) ->
 		    %% set the from address on the notification to the bare JID of the account owner
 		    %% Also, add "replyto" if entity has presence subscription to the account owner

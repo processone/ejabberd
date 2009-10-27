@@ -2961,7 +2961,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 		_ ->
 		    LResource
 	    end,
-	    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
+	    case ejabberd_sm:get_session_pid({LUser, LServer, SenderResource}) of
 		C2SPid when is_pid(C2SPid) ->
 		    %% set the from address on the notification to the bare JID of the account owner
 		    %% Also, add "replyto" if entity has presence subscription to the account owner

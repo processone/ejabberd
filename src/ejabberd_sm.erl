@@ -223,9 +223,10 @@ close_session_unset_presence(SID, JID, Status) when ?IS_JID(JID) ->
                 Status]).
 
 get_session_pid(JID) when ?IS_JID(JID) ->
-    USR = {exmpp_jid:prep_node(JID), 
-           exmpp_jid:prep_domain(JID), 
-           exmpp_jid:prep_resource(JID)},
+    get_session_pid({exmpp_jid:prep_node(JID), 
+		     exmpp_jid:prep_domain(JID), 
+		     exmpp_jid:prep_resource(JID)});
+get_session_pid(USR) ->
     case catch mnesia:dirty_index_read(session, USR, #session.usr) of
 	[#session{sid = {_, Pid}}] -> Pid;
 	_ -> none

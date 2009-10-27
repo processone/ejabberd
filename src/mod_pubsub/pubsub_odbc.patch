@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-10-27 15:19:20.000000000 +0100
-+++ mod_pubsub_odbc.erl	2009-10-27 15:21:49.000000000 +0100
+--- mod_pubsub.erl	2009-10-27 15:30:13.000000000 +0100
++++ mod_pubsub_odbc.erl	2009-10-27 15:30:21.000000000 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -398,15 +398,6 @@
  		end,
  	    case transaction(Host, Node, Action, sync_dirty) of
  		{result, {_, Result}} -> {result, Result};
-@@ -1215,7 +1023,7 @@
- iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
-     case exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children) of
- 	[#xmlel{name = Name, attrs = Attrs, children = Els} | Rest] ->
--	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(attrs, 'node', false)),
-+	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false)),
- 	    case {IQType, Name} of
- 		{set, 'create'} ->
- 		    Config = case Rest of
 @@ -1290,7 +1098,8 @@
  			(_, Acc) ->
  			    Acc
