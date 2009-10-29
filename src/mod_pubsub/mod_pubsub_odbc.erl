@@ -929,7 +929,7 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	    node_disco_info(Host, Node, From)
     end.
 
-iq_disco_items(Host, [], Fromi, _RSM) ->
+iq_disco_items(Host, [], From, _RSM) ->
     case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
 	Nodes when is_list(Nodes) ->
 	    {result, lists:map(
