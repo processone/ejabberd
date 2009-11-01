@@ -369,7 +369,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       }
       last_ral = info & D1Mask;
       have_ral = have_ral || last_ral;
-      have_l = info & D2Mask;
+      have_l |= info & D2Mask;
       ADD_UCHAR(ruc);
    }
 
