@@ -1458,17 +1458,7 @@ send_pending_auth_events(Host, Node, Owner) ->
 		    true ->
 			case node_call(Type, get_affiliation, [NodeID, Owner]) of
 			    {result, owner} ->
-				{result, Subscriptions} = node_call(Type, get_node_subscriptions, [NodeID]),
-				lists:foreach(fun({J, pending, _SubID}) ->
-						    {U, S, R} = J,
-						    send_authorization_request(Node, exmpp_jid:make(U,S,R));
-						 ({J, pending}) ->
-						    {U, S, R} = J,
-						    send_authorization_request(Node, exmpp_jid:make(U,S,R));
-						 (_) ->
-						    ok
-					    end, Subscriptions),
-				{result, ok};
+				node_call(Type, get_node_subscriptions, [NodeID]);
 			    _ ->
 				{error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')}
 			end;
@@ -1477,7 +1467,16 @@ send_pending_auth_events(Host, Node, Owner) ->
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, _} ->
+	{result, {N, Subscriptions}} ->
+	    lists:foreach(fun({J, pending, _SubID}) ->
+			    {U, S, R} = J,
+			    send_authorization_request(N, exmpp_jid:make(U,S,R));
+			 ({J, pending}) ->
+			    {U, S, R} = J,
+			    send_authorization_request(N, exmpp_jid:make(U,S,R));
+			 (_) ->
+			    ok
+	    end, Subscriptions),
 	    #adhoc_response{};
 	Err ->
 	    Err
