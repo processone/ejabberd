@@ -1030,6 +1030,18 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 	    end
     end.
 
+command_disco_info(_Host, <<?NS_COMMANDS>>, _From) ->
+    IdentityEl = {xmlelement, "identity", [{"category", "automation"},
+                                        {"type", "command-list"}],
+                  []},
+    {result, [IdentityEl]};
+command_disco_info(_Host, <<?NS_PUBSUB_GET_PENDING>>, _From) ->
+    IdentityEl = {xmlelement, "identity", [{"category", "automation"},
+                                        {"type", "command-node"}],
+                  []},
+    FeaturesEl = {xmlelement, "feature", [{"var", ?NS_COMMANDS}], []},
+    {result, [IdentityEl, FeaturesEl]}.
+
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
 node_disco_identity(Host, Node, From) ->
@@ -1092,10 +1104,15 @@ iq_disco_info(Host, SNode, From, Lang) ->
 		{xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
 		{xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
 		{xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
+		{xmlelement, "feature", [{"var", ?NS_COMMANDS}], []},
 		{xmlelement, "feature", [{"var", ?NS_VCARD}], []}] ++
 	     lists:map(fun(Feature) ->
 		 {xmlelement, "feature", [{"var", ?NS_PUBSUB++"#"++Feature}], []}
 	     end, features(Host, Node))};
+        <<?NS_COMMANDS>> ->
+            command_disco_info(Host, Node, From);
+        <<?NS_PUBSUB_GET_PENDING>> ->
+            command_disco_info(Host, Node, From);
 	_ ->
 	    node_disco_info(Host, Node, From)
     end.
@@ -1112,6 +1129,13 @@ iq_disco_items(Host, [], From) ->
         Other ->
             Other
     end;
+iq_disco_items(Host, ?NS_COMMANDS, _From) ->
+    %% TODO: support localization of this string
+    CommandItems = [{xmlelement, "item", [{"jid", Host}, {"node", ?NS_PUBSUB_GET_PENDING}, {"name", "Get Pending"}], []}],
+    {result, CommandItems};
+iq_disco_items(_Host, ?NS_PUBSUB_GET_PENDING, _From) ->
+    CommandItems = [],
+    {result, CommandItems};
 iq_disco_items(Host, Item, From) ->
     case string:tokens(Item, "!") of
 	[_SNode, _ItemID] ->
@@ -1373,6 +1397,13 @@ adhoc_request(Host, _ServerHost, Owner,
 	Error ->
 	    Error
     end;
+adhoc_request(_Host, _ServerHost, _Owner, #adhoc_request{action = "cancel"},
+              _Access, _Plugins) ->
+    #adhoc_response{status = canceled};
+adhoc_request(Host, ServerHost, Owner, #adhoc_request{action = []} = R,
+              Access, Plugins) ->
+    adhoc_request(Host, ServerHost, Owner, R#adhoc_request{action = "execute"},
+                  Access, Plugins);
 adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
     ?DEBUG("Couldn't process ad hoc command:~n~p", [Other]),
     {error, ?ERR_ITEM_NOT_FOUND}.
@@ -3589,7 +3620,7 @@ features(Type) ->
 		      {'EXIT', {undef, _}} -> [];
 		      Result -> Result
 		  end.
-features(Host, []) ->
+features(Host, <<>>) ->
     lists:usort(lists:foldl(fun(Plugin, Acc) ->
 	Acc ++ features(Plugin)
     end, [], plugins(Host)));
