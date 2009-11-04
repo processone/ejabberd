@@ -857,6 +857,21 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 	    end
     end.
 
+command_disco_info(_Host, ?NS_ADHOC_b, _From) ->
+    IdentityEl =
+    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
+	   attrs = [?XMLATTR('category', <<"automation">>),
+	            ?XMLATTR('type', <<"command-list">>)]},
+    {result, [IdentityEl]};
+command_disco_info(_Host, <<?NS_PUBSUB_GET_PENDING>>, _From) ->
+    IdentityEl =
+    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
+	   attrs = [?XMLATTR('category', <<"automation">>),
+	            ?XMLATTR('type', <<"command-node">>)]},
+    FeaturesEl = #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
+	   attrs = [?XMLATTR('var', ?NS_ADHOC)]},
+    {result, [IdentityEl, FeaturesEl]}.
+
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
 node_disco_identity(Host, Node, From) ->
@@ -920,11 +935,16 @@ iq_disco_info(Host, SNode, From, Lang) ->
 		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_INFO_s)]},
 		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_DISCO_ITEMS_s)]},
 		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s)]},
+		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_ADHOC_s)]},
 		#xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_VCARD_s)]}] ++
 	     lists:map(fun
 		("rsm") -> #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_RSM_s)]};
 		(Feature) -> #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [?XMLATTR('var', ?NS_PUBSUB_s++"#"++Feature)]}
 	     end, features(Host, Node))};
+        ?NS_ADHOC_b ->
+            command_disco_info(Host, Node, From);
+        <<?NS_PUBSUB_GET_PENDING>> ->
+            command_disco_info(Host, Node, From);
 	_ ->
 	    node_disco_info(Host, Node, From)
     end.
@@ -942,6 +962,18 @@ iq_disco_items(Host, [], From, _RSM) ->
 	Other ->
 	    Other
     end;
+iq_disco_items(Host, ?NS_ADHOC_s, _From, _RSM) ->
+    %% TODO: support localization of this string
+    CommandItems = [
+	  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', 
+	      attrs = [?XMLATTR('jid', Host), 
+		  ?XMLATTR('node', ?NS_PUBSUB_GET_PENDING),
+		  ?XMLATTR('name', "Get Pending") 
+	      ]}],
+    {result, CommandItems};
+iq_disco_items(_Host, ?NS_PUBSUB_GET_PENDING, _From, _RSM) ->
+    CommandItems = [],
+    {result, CommandItems};
 iq_disco_items(Host, Item, From, RSM) ->
     case string:tokens(Item, "!") of
 	[_SNode, _ItemID] ->
@@ -1208,6 +1240,13 @@ adhoc_request(Host, _ServerHost, Owner,
 	Error ->
 	    Error
     end;
+adhoc_request(_Host, _ServerHost, _Owner, #adhoc_request{action = "cancel"},
+              _Access, _Plugins) ->
+    #adhoc_response{status = canceled};
+adhoc_request(Host, ServerHost, Owner, #adhoc_request{action = []} = R,
+              Access, Plugins) ->
+    adhoc_request(Host, ServerHost, Owner, R#adhoc_request{action = "execute"},
+                  Access, Plugins);
 adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
     ?DEBUG("Couldn't process ad hoc command:~n~p", [Other]),
     {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')}.
@@ -3487,7 +3526,7 @@ features(Type) ->
 		      {'EXIT', {undef, _}} -> [];
 		      Result -> Result
 		  end.
-features(Host, []) ->
+features(Host, <<>>) ->
     lists:usort(lists:foldl(fun(Plugin, Acc) ->
 	Acc ++ features(Plugin)
     end, [], plugins(Host)));
