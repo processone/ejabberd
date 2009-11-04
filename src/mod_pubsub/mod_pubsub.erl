@@ -1239,7 +1239,7 @@ iq_get_vcard(Lang) ->
       [#xmlcdata{cdata = list_to_binary(
 	translate:translate(Lang,
 			    "ejabberd Publish-Subscribe module") ++
-			    "\nCopyright (c) 2004-2009 Process-One")}]}].
+			    "\nCopyright (c) 2004-2009 ProcessOne")}]}].
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
     iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, plugins(ServerHost)).

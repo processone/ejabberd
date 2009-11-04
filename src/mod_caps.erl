@@ -22,7 +22,7 @@
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 %%% 02111-1307 USA
 %%%
-%%% 2009, improvements from Process-One to support correct PEP handling
+%%% 2009, improvements from ProcessOne to support correct PEP handling
 %%% through s2s, use less memory, and speedup global caps handling
 %%%----------------------------------------------------------------------
 
