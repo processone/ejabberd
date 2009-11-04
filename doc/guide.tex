@@ -2148,7 +2148,8 @@ Parameters:
 LDAP servers. This option is required.
 \titem{\{ldap\_encrypt, none|tls\}} \ind{options!ldap\_encrypt}Type of connection encryption to the LDAP server.
 Allowed values are: \term{none}, \term{tls}.
-Note that STARTTLS is not supported.
+The value \term{tls} enables encryption by using LDAP over SSL.
+Note that STARTTLS encryption is not supported.
 The default value is: \term{none}.
 \titem{\{ldap\_port, Number\}} \ind{options!ldap\_port}Port to connect to your LDAP server.
 The default port is~389 if encryption is disabled; and 636 if encryption is enabled.

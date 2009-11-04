@@ -1610,7 +1610,8 @@ create accounts, change password or edit vCard that is stored in LDAP.</P><P> <A
 LDAP servers. This option is required.
 </DD><DT CLASS="dt-description"><B><TT>{ldap_encrypt, none|tls}</TT></B></DT><DD CLASS="dd-description"> Type of connection encryption to the LDAP server.
 Allowed values are: <TT>none</TT>, <TT>tls</TT>.
-Note that STARTTLS is not supported.
+The value <TT>tls</TT> enables encryption by using LDAP over SSL.
+Note that STARTTLS encryption is not supported.
 The default value is: <TT>none</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{ldap_port, Number}</TT></B></DT><DD CLASS="dd-description"> Port to connect to your LDAP server.
 The default port is&#XA0;389 if encryption is disabled; and 636 if encryption is enabled.
