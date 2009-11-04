@@ -1424,17 +1424,12 @@ send_pending_auth_events(Host, Node, Owner) ->
     ?DEBUG("Sending pending auth events for ~s on ~s:~s",
 	   [jlib:jid_to_string(Owner), Host, node_to_string(Node)]),
     Action =
-	fun (#pubsub_node{id = NodeID, type = Type} = N) ->
+	fun (#pubsub_node{id = NodeID, type = Type}) ->
 		case lists:member("get-pending", features(Type)) of
 		    true ->
 			case node_call(Type, get_affiliation, [NodeID, Owner]) of
 			    {result, owner} ->
-				{result, Subscriptions} = node_call(Type, get_node_subscriptions, [NodeID]),
-				lists:foreach(fun({J, pending, _SubID}) -> send_authorization_request(N, jlib:make_jid(J));
-						 ({J, pending}) -> send_authorization_request(N, jlib:make_jid(J));
-						 (_) -> ok
-					      end, Subscriptions),
-				{result, ok};
+                                node_call(Type, get_node_subscriptions, [NodeID]);
 			    _ ->
 				{error, ?ERR_FORBIDDEN}
 			end;
@@ -1443,7 +1438,11 @@ send_pending_auth_events(Host, Node, Owner) ->
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, _} ->
+	{result, {N, Subscriptions}} ->
+            lists:foreach(fun({J, pending, _SubID}) -> send_authorization_request(N, jlib:make_jid(J));
+                             ({J, pending}) -> send_authorization_request(N, jlib:make_jid(J));
+                             (_) -> ok
+                          end, Subscriptions),
 	    #adhoc_response{};
 	Err ->
 	    Err
