@@ -218,10 +218,15 @@
 - As usual, it is recommended to backup the Mnesia spool directory and
   your SQL database (if used) before upgrading ejabberd.
 
-- The plugin of mod_pubsub "default" is renamed to "flat". You need
-  to edit the ejabberd configuration file and replace those names.
+- Between ejabberd 2.0.0 and 2.0.5, mod_pubsub used "default" as the
+  default node plugin. But in 2.1.0 this is renamed to "hometree".
+  You have to edit your ejabberd config file and replace those names.
+  If you used ejabberd 2.0.5 or older, the database will be updated
+  automatically. But if you were using ejabberd from SVN, you must
+  manually run ejabberdctl with the command: rename_default_nodeplugin.
+  Running this command on already updated database does nothing.
 
-- The listener options 'ip' and inet6' are not documented anymore
+- The listener options 'ip' and 'inet6' are not documented anymore
   but they are supported and you can continue using them.
   There is a new syntax to define IP address and IP version.
   As usual, check the ejabberd Guide for more information.
