@@ -1658,7 +1658,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 %%<li>The node is the root collection node, which cannot be deleted.</li>
 %%<li>The specified node does not exist.</li>
 %%</ul>
-delete_node(_Host, [], _Owner) ->
+delete_node(_Host, <<>>, _Owner) ->
     %% Node is the root
     {error, 'not-allowed'};
 delete_node(Host, Node, Owner) ->
