@@ -1036,7 +1036,7 @@ iq_sm(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = IQ_
 	  end,
     case Res of
 	{result, []}      -> exmpp_iq:result(IQ_Rec);
-	{result, [IQRes]} -> exmpp_iq:result(IQ_Rec, IQRes);
+	{result, IQRes} -> exmpp_iq:result(IQ_Rec, IQRes);
 	{error, Error}    -> exmpp_iq:error(IQ_Rec, Error)
     end.
 
@@ -2658,12 +2658,11 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 %% @spec (OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, SubscriberResource}, AllowedGroups)
 %%    -> {PresenceSubscription, RosterGroup}
 get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, AllowedGroups) ->
-     OwnerServerB = list_to_binary(OwnerServer),
     {Subscription, Groups} =
 	ejabberd_hooks:run_fold(
-	  roster_get_jid_info, OwnerServerB,
+	  roster_get_jid_info, OwnerServer,
 	  {none, []},
-	  [OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, undefined}]),
+	  [OwnerUser, OwnerServer, exmpp_jid:make({SubscriberUser, SubscriberServer, undefined})]),
     PresenceSubscription = (Subscription == both) orelse (Subscription == from)
 			    orelse ({OwnerUser, OwnerServer} == {SubscriberUser, SubscriberServer}),
     RosterGroup = lists:any(fun(Group) ->

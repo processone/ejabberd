@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2009-11-05 18:37:16.000000000 +0100
-+++ mod_pubsub_odbc.erl	2009-11-05 18:37:21.000000000 +0100
+--- mod_pubsub.erl	2009-11-06 15:30:53.000000000 +0100
++++ mod_pubsub_odbc.erl	2009-11-06 15:31:06.000000000 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -679,7 +679,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3111,7 +2921,7 @@
+@@ -3110,7 +2920,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -688,7 +688,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -3125,9 +2935,9 @@
+@@ -3124,9 +2934,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -700,7 +700,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3135,7 +2945,7 @@
+@@ -3134,7 +2944,7 @@
  		end, [], Subs).
  
  % TODO: merge broadcast code that way
@@ -709,7 +709,7 @@
  %broadcast(Host, Node, NodeId, Type, NodeOptions, Feature, Force, ElName, SubEls) ->
  %    case (get_option(NodeOptions, Feature) or Force) of
  %	true ->
-@@ -3327,6 +3137,30 @@
+@@ -3326,6 +3136,30 @@
  	    Result
      end.
  
@@ -740,7 +740,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3716,7 +3550,13 @@
+@@ -3715,7 +3549,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -755,7 +755,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3736,13 +3576,13 @@
+@@ -3735,13 +3575,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -771,7 +771,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3755,8 +3595,15 @@
+@@ -3754,8 +3594,15 @@
  			end
  		end, Trans).
  
@@ -789,7 +789,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3764,6 +3611,15 @@
+@@ -3763,6 +3610,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, 'internal-server-error'};
@@ -805,7 +805,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, 'internal-server-error'};
-@@ -3772,6 +3628,16 @@
+@@ -3771,6 +3627,16 @@
  	    {error, 'internal-server-error'}
      end.
  

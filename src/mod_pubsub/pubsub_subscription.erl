@@ -138,20 +138,23 @@ get_options_xform(Lang, Options) ->
 					   children = [?XMLCDATA(?NS_PUBSUB_SUBSCRIBE_OPTIONS_s)]}]}] ++ XFields}}.
 
 parse_options_xform(XFields) ->
-    case exmpp_xml:get_child_elements(XFields) of
-	[] -> {result, []};
-	[#xmlel{name = 'x'} = XEl] ->
-	    case jlib:parse_xdata_submit(XEl) of
-		XData when is_list(XData) ->
-		    case set_xoption(XData, []) of
-			Opts when is_list(Opts) -> {result, Opts};
-			Other		   -> Other
-		    end;
-		Other ->
-		    Other
-	    end;
-	Other ->
-	    Other
+    case XFields of
+  [] ->  {result, []};
+  _  ->  case exmpp_xml:get_child_elements(XFields) of
+	    [] -> {result, []};
+	    [#xmlel{name = 'x'} = XEl] ->
+	        case jlib:parse_xdata_submit(XEl) of
+		    XData when is_list(XData) ->
+		        case set_xoption(XData, []) of
+			    Opts when is_list(Opts) -> {result, Opts};
+			    Other		   -> Other
+		        end;
+		    Other ->
+		        Other
+	        end;
+	    Other ->
+	        Other
+        end
     end.
 
 %%====================================================================
