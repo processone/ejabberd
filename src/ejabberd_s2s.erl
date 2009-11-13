@@ -512,15 +512,31 @@ update_tables() ->
 
 %% Check if host is in blacklist or white list
 allow_host(MyServer, S2SHost) ->
-    case ejabberd_config:get_local_option({{s2s_host, S2SHost},MyServer}) of
-        deny -> false;
-        allow -> true;
-        _ ->
-            case ejabberd_config:get_local_option({s2s_default_policy, MyServer}) of
-                deny -> false;
-                allow -> true;
-                _ -> true %% The default s2s policy is allow
-            end
+    case lists:filter(
+	   fun(Host) ->
+		   is_subdomain(MyServer, Host)
+	   end, ?MYHOSTS) of
+	[MyHost|_] ->
+	    allow_host1(MyHost, S2SHost);
+	[] ->
+	    allow_host1(MyServer, S2SHost)
+    end.
+
+allow_host1(MyHost, S2SHost) ->
+    case ejabberd_config:get_local_option({{s2s_host, S2SHost}, MyHost}) of
+	deny -> false;
+	allow -> true;
+	_ ->
+	    case ejabberd_config:get_local_option({s2s_default_policy, MyHost}) of
+		deny -> false;
+		_ ->
+		    case ejabberd_hooks:run_fold(s2s_allow_host, MyHost,
+						 allow, [MyHost, S2SHost]) of
+			deny -> false;
+			allow -> true;
+			_ -> true
+		    end
+	    end
     end.
 
 %% Get information about S2S connections of the specified type.
