@@ -2201,7 +2201,7 @@ You can authenticate users against an LDAP directory. Available options are:
   \titem{\{ldap\_filter, Filter\}}\ind{options!ldap\_filter}\ind{protocols!RFC 4515:
   LDAP String Representation of Search Filters}
   \footahref{http://tools.ietf.org/html/rfc4515}{RFC 4515} LDAP filter. The
-  default is \term{none}. Example:
+  default Filter value is: \term{undefined}. Example:
   \term{"(\&(objectClass=shadowAccount)(memberOf=Jabber Users))"}. Please, do
   not forget to close brackets and do not use superfluous whitespaces. Also you
   \emph{must not} use \option{ldap\_uidattr} attribute in filter because this
