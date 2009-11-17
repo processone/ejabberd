@@ -33,6 +33,7 @@
 	 stop/1,
 	 stream_feature_register/1,
 	 unauthenticated_iq_register/4,
+	 try_register/5,
 	 process_iq/3]).
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -216,7 +217,7 @@ try_register(User, Server, Password, Source, Lang) ->
 			    case ejabberd_auth:try_register(User, Server, Password) of
 				{atomic, ok} ->
 				    send_welcome_message(JID),
-				    send_registration_notifications(JID),
+				    send_registration_notifications(JID, Source),
 				    ok;
 				Error ->
 				    remove_timeout(Source),
@@ -254,15 +255,17 @@ send_welcome_message(JID) ->
 	    ok
     end.
 
-send_registration_notifications(UJID) ->
+send_registration_notifications(UJID, Source) ->
     Host = exmpp_jid:prep_domain_as_list(UJID),
     case gen_mod:get_module_opt(Host, ?MODULE, registration_watchers, []) of
 	[] -> ok;
 	JIDs when is_list(JIDs) ->
 	    Body = lists:flatten(
 		     io_lib:format(
-		       "The user '~s' was just created on node ~w.",
-		       [exmpp_jid:to_list(UJID), node()])),
+		       "[~s] The account ~s was registered from IP address ~s "
+		       "on node ~w using ~p.",
+		       [get_time_string(), exmpp_jid:to_list(UJID),
+			ip_to_string(Source), node(), ?MODULE])),
 	    lists:foreach(
 	      fun(S) ->
                       try
@@ -370,3 +373,12 @@ remove_timeout(Source) ->
 	    ok
     end.
 
+ip_to_string(Source) when is_tuple(Source) -> inet_parse:ntoa(Source);
+ip_to_string(undefined) -> "undefined";
+ip_to_string(_) -> "unknown".
+
+get_time_string() -> write_time(erlang:localtime()).
+%% Function copied from ejabberd_logger_h.erl and customized
+write_time({{Y,Mo,D},{H,Mi,S}}) ->
+    io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+		  [Y, Mo, D, H, Mi, S]).
