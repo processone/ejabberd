@@ -348,7 +348,7 @@ GNU Make
 </LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
 </LI><LI CLASS="li-itemize">Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section <A HREF="#compilepgsql">3.2.3</A>.
 </LI><LI CLASS="li-itemize">PAM library. Optional. For Pluggable Authentication Modules (PAM). See section <A HREF="#pam">3.1.4</A>.
-</LI><LI CLASS="li-itemize">ImageMagick&#X2019;s Convert program. Optional. For CAPTCHA challenges. See section <A HREF="#captcha">3.1.8</A>.
+</LI><LI CLASS="li-itemize">ImageMagick&#X2019;s Convert program, and Bash. Optional. For CAPTCHA challenges. See section <A HREF="#captcha">3.1.8</A>.
 </LI></UL><P> <A NAME="download"></A> </P><!--TOC subsection Download Source Code-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc10">2.4.2</A>&#XA0;&#XA0;<A HREF="#download">Download Source Code</A></H3><!--SEC END --><P> <A NAME="download"></A> 
 </P><P>Released versions of <TT>ejabberd</TT> are available in the ProcessOne <TT>ejabberd</TT> downloads page:
@@ -1233,7 +1233,7 @@ In order to take effect there must be a translation file
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc29">3.1.8</A>&#XA0;&#XA0;<A HREF="#captcha">CAPTCHA</A></H3><!--SEC END --><P> <A NAME="captcha"></A> 
 </P><P>Some <TT>ejabberd</TT> modules can be configured to require a CAPTCHA challenge on certain actions.
 If the client does not support CAPTCHA Forms (<A HREF="http://xmpp.org/extensions/xep-0158.html">XEP-0158</A>),
-a web link is provided so the user can fill the challenge in a web browser.</P><P>An example script is provided that generates the image
+a web link is provided so the user can fill the challenge in a web browser.</P><P>An example Bash script is provided that generates the image
 using ImageMagick&#X2019;s Convert program.</P><P>The configurable options are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{captcha_cmd, Path}</TT></B></DT><DD CLASS="dd-description"> 
