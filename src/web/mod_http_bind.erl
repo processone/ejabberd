@@ -45,6 +45,7 @@
          process/2
 	]).
 
+-include_lib("exmpp/include/exmpp.hrl").
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
@@ -60,8 +61,8 @@
 process([], #request{method = 'POST',
                      data = []}) ->
     ?DEBUG("Bad Request: no data", []),
-    {400, [], {xmlelement, "h1", [],
-	       [{xmlcdata, "400 Bad Request"}]}};
+    {400, [], #xmlel{name = h1, children =
+	       [#xmlcdata{cdata = <<"400 Bad Request">>}]}};
 process([], #request{method = 'POST',
                      data = Data,
                      ip = IP}) ->
@@ -69,22 +70,31 @@ process([], #request{method = 'POST',
     ejabberd_http_bind:process_request(Data, IP);
 process([], #request{method = 'GET',
                      data = []}) ->
-    Heading = "Ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
-    {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"}],
-     [{xmlelement, "head", [],
-       [{xmlelement, "title", [], [{xmlcdata, Heading}]}]},
-      {xmlelement, "body", [],
-       [{xmlelement, "h1", [], [{xmlcdata, Heading}]},
-        {xmlelement, "p", [],
-         [{xmlcdata, "An implementation of "},
-          {xmlelement, "a", [{"href", "http://www.xmpp.org/extensions/xep-0206.html"}],
-           [{xmlcdata, "XMPP over BOSH (XEP-0206)"}]}]}
-       ]}]};
+    get_human_html_xmlel();
 process(_Path, _Request) ->
     ?DEBUG("Bad Request: ~p", [_Request]),
-    {400, [], {xmlelement, "h1", [],
-	       [{xmlcdata, "400 Bad Request"}]}}.
+    {400, [], #xmlel{name = h1, children =
+	       [#xmlcdata{cdata = <<"400 Bad Request">>}]}}.
 
+get_human_html_xmlel() ->
+    Heading = "ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
+    H = #xmlel{name = h1, children = [#xmlcdata{cdata = Heading}]},
+    Par1 = #xmlel{name = p, children =
+		  [#xmlcdata{cdata = <<"An implementation of ">>},
+		   #xmlel{name = a,
+			  attrs = [#xmlattr{name=href, value = <<"http://xmpp.org/extensions/xep-0206.html">>}],
+			  children = [#xmlcdata{cdata = <<"XMPP over BOSH (XEP-0206)">>}]
+			 }
+		  ]},
+    Par2 = #xmlel{name = p, children =
+		  [#xmlcdata{cdata = <<"This web page is only informative. "
+				      "To use HTTP-Bind you need a Jabber/XMPP client that supports it.">>}
+		  ]},
+    #xmlel{name = html,
+	   attrs = [#xmlattr{name = xmlns, value= <<"http://www.w3.org/1999/xhtml">>}],
+	   children =
+	   [#xmlel{name = head, children = [#xmlel{name = title, children = [#xmlcdata{cdata = Heading}]}]},
+	    #xmlel{name = body, children = [H, Par1, Par2]}]}.
 
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS

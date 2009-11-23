@@ -160,11 +160,33 @@ process([], #request{data = Data,
 		    end
 	    end;
 	_ ->
-	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], ""}
+	    HumanHTMLxmlel = get_human_html_xmlel(),
+	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], HumanHTMLxmlel}
     end;
 process(_, _Request) ->
     {400, [], #xmlel{ns = ?NS_XHTML, name = 'h1', children =
 	       [#xmlcdata{cdata = <<"400 Bad Request">>}]}}.
+
+%% Code copied from mod_http_bind.erl and customized
+get_human_html_xmlel() ->
+    Heading = "ejabberd " ++ atom_to_list(?MODULE),
+    H = #xmlel{name = h1, children = [#xmlcdata{cdata = Heading}]},
+    Par1 = #xmlel{name = p, children =
+		  [#xmlcdata{cdata = <<"An implementation of ">>},
+		   #xmlel{name = a,
+			  attrs = [#xmlattr{name=href, value = <<"http://xmpp.org/extensions/xep-0025.html">>}],
+			  children = [#xmlcdata{cdata = <<"Jabber HTTP Polling (XEP-0025)">>}]
+			 }
+		  ]},
+    Par2 = #xmlel{name = p, children =
+		  [#xmlcdata{cdata = <<"This web page is only informative. "
+				      "To use HTTP-Poll you need a Jabber/XMPP client that supports it.">>}
+		  ]},
+    #xmlel{name = html,
+	   attrs = [#xmlattr{name = xmlns, value= <<"http://www.w3.org/1999/xhtml">>}],
+	   children =
+	   [#xmlel{name = head, children = [#xmlel{name = title, children = [#xmlcdata{cdata = Heading}]}]},
+	    #xmlel{name = body, children = [H, Par1, Par2]}]}.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
