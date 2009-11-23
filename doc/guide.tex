@@ -312,7 +312,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
 \item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
-\item ImageMagick's Convert program, and Bash. Optional. For CAPTCHA challenges. See section \ref{captcha}.
+\item ImageMagick's Convert program. Optional. For CAPTCHA challenges. See section \ref{captcha}.
 \end{itemize}
 
 \makesubsection{download}{Download Source Code}
@@ -1531,7 +1531,7 @@ Some \ejabberd{} modules can be configured to require a CAPTCHA challenge on cer
 If the client does not support CAPTCHA Forms (\xepref{0158}),
 a web link is provided so the user can fill the challenge in a web browser.
 
-An example Bash script is provided that generates the image
+An example script is provided that generates the image
 using ImageMagick's Convert program.
 
 The configurable options are:
