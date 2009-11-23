@@ -212,7 +212,7 @@ add_user(El, Domain, User, Password) ->
 		   El),
 	    ok;
 	{atomic, exists} ->
-	    ?INFO_MSG("User ~p@~p already exists, using stored profile...~n",
+	    io:format("Account ~s@~s already exists, updating it...~n",
 		      [User, Domain]),
 	    io:format(""),
 	    ok = exmpp_xml:foreach(
@@ -417,10 +417,10 @@ to_list(B) when is_atom(B) -> atom_to_list(B).
 
 %%%==================================
 
-%%%% Export server
+%%%% Export hosts
 
-%% @spec (Dir::string()) -> ok
-export_server(Dir) ->
+%% @spec (Dir::string(), Hosts::[string()]) -> ok
+export_hosts(Dir, Hosts) ->
     try_start_exmpp(),
 
     FnT = make_filename_template(),
@@ -430,7 +430,6 @@ export_server(Dir) ->
     print(Fd, make_piefxis_xml_head()),
     print(Fd, make_piefxis_server_head()),
 
-    Hosts = ?MYHOSTS,
     FilesAndHosts = [{make_host_filename(FnT, Host), Host} || Host <- Hosts],
     [print(Fd, make_xinclude(FnH)) || {FnH, _Host} <- FilesAndHosts],
 
@@ -443,14 +442,20 @@ export_server(Dir) ->
     ok.
 
 %%%==================================
+%%%% Export server
+
+%% @spec (Dir::string()) -> ok
+export_server(Dir) ->
+    Hosts = ?MYHOSTS,
+    export_hosts(Dir, Hosts).
+
+%%%==================================
 %%%% Export host
 
 %% @spec (Dir::string(), Host::string()) -> ok
 export_host(Dir, Host) ->
-    try_start_exmpp(),
-    FnT = make_filename_template(),
-    FnH = make_host_filename(FnT, Host),
-    export_host(Dir, FnH, Host).
+    Hosts = [Host],
+    export_hosts(Dir, Hosts).
 
 %% @spec (Dir::string(), Fn::string(), Host::string()) -> ok
 export_host(Dir, FnH, Host) ->
