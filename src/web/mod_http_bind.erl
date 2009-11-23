@@ -69,7 +69,14 @@ process([], #request{method = 'POST',
     ejabberd_http_bind:process_request(Data, IP);
 process([], #request{method = 'GET',
                      data = []}) ->
-    Heading = "Ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
+    get_human_html_xmlel();
+process(_Path, _Request) ->
+    ?DEBUG("Bad Request: ~p", [_Request]),
+    {400, [], {xmlelement, "h1", [],
+	       [{xmlcdata, "400 Bad Request"}]}}.
+
+get_human_html_xmlel() ->
+    Heading = "ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
     {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"}],
      [{xmlelement, "head", [],
        [{xmlelement, "title", [], [{xmlcdata, Heading}]}]},
@@ -77,14 +84,14 @@ process([], #request{method = 'GET',
        [{xmlelement, "h1", [], [{xmlcdata, Heading}]},
         {xmlelement, "p", [],
          [{xmlcdata, "An implementation of "},
-          {xmlelement, "a", [{"href", "http://www.xmpp.org/extensions/xep-0206.html"}],
-           [{xmlcdata, "XMPP over BOSH (XEP-0206)"}]}]}
-       ]}]};
-process(_Path, _Request) ->
-    ?DEBUG("Bad Request: ~p", [_Request]),
-    {400, [], {xmlelement, "h1", [],
-	       [{xmlcdata, "400 Bad Request"}]}}.
-
+          {xmlelement, "a",
+	   [{"href", "http://xmpp.org/extensions/xep-0206.html"}],
+           [{xmlcdata, "XMPP over BOSH (XEP-0206)"}]}]},
+        {xmlelement, "p", [],
+         [{xmlcdata, "This web page is only informative. "
+	   "To use HTTP-Bind you need a Jabber/XMPP client that supports it."}
+	 ]}
+       ]}]}.
 
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS

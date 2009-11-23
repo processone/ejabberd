@@ -154,11 +154,31 @@ process([], #request{data = Data,
 		    end
 	    end;
 	_ ->
-	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], ""}
+	    HumanHTMLxmlel = get_human_html_xmlel(),
+	    {200, [?CT, {"Set-Cookie", "ID=-2:0; expires=-1"}], HumanHTMLxmlel}
     end;
 process(_, _Request) ->
     {400, [], {xmlelement, "h1", [],
 	       [{xmlcdata, "400 Bad Request"}]}}.
+
+%% Code copied from mod_http_bind.erl and customized
+get_human_html_xmlel() ->
+    Heading = "ejabberd " ++ atom_to_list(?MODULE),
+    {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"}],
+     [{xmlelement, "head", [],
+       [{xmlelement, "title", [], [{xmlcdata, Heading}]}]},
+      {xmlelement, "body", [],
+       [{xmlelement, "h1", [], [{xmlcdata, Heading}]},
+        {xmlelement, "p", [],
+         [{xmlcdata, "An implementation of "},
+          {xmlelement, "a",
+	   [{"href", "http://xmpp.org/extensions/xep-0025.html"}],
+           [{xmlcdata, "Jabber HTTP Polling (XEP-0025)"}]}]},
+        {xmlelement, "p", [],
+         [{xmlcdata, "This web page is only informative. "
+	   "To use HTTP-Poll you need a Jabber/XMPP client that supports it."}
+	 ]}
+       ]}]}.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
