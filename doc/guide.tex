@@ -2832,20 +2832,16 @@ Options:
   \titem{\{accesslog, Path\}} \ind{options!accesslog}
     File to log accesses using an Apache-like format.
     No log will be recorded if this option is not specified.
-  \titem{\{custom\_headers, [ \{Name, Value\}, ...]\}} \ind{options!customheaders}
-    Indicate custom HTTP headers to be included in all responses.
-    Default value is: \term{[]}
   \titem{\{directory\_indices, [Index, ...]\}} \ind{options!directoryindices}
     Indicate one or more directory index files, similarly to Apache's
     DirectoryIndex variable. When a web request hits a directory
     instead of a regular file, those directory indices are looked in
     order, and the first one found is returned.
-  %B \titem{content\_types} \ind{options!contenttypes}
-  %M \titem{\{content\_types, \{Extension, Type\} \}} \ind{options!contenttypes}
-  %B \titem{\{content\_types, [ Extension, Type, ... ]\}} \ind{options!contenttypes}
-  %B \titem{\{content\_types, [ {Extension, Type}, ... ]\}} \ind{options!contenttypes}
-  %M \titem{\{content\_types, [ \{Extension, Type\}, ... ]\}} \ind{options!contenttypes}
-    Specify a mapping of extensions to content types.
+  \titem{\{custom\_headers, [ \{Name, Value\}, ...]\}} \ind{options!customheaders}
+    Indicate custom HTTP headers to be included in all responses.
+    Default value is: \term{[]}
+  \titem{\{content\_types, [ \{Name, Type\}, ...]\}} \ind{options!contenttypes}
+    Specify mappings of extension to content type.
     There are several content types already defined,
     with this option you can add new definitions, modify or delete existing ones.
     To delete an existing definition, simply define it with a value: `undefined'.
@@ -2868,13 +2864,13 @@ To use this module you must enable it:
                          {docroot, "/var/www"}, 
                          {accesslog, "/var/log/ejabberd/access.log"},
                          {directory_indices, ["index.html", "main.htm"]},
+                         {custom_headers, [{"X-Powered-By", "Erlang/OTP"},
+                                           {"X-Fry", "It's a widely-believed fact!"}
+                                          ]},
                          {content_types, [{".ogg", "audio/ogg"},
                                           {".png", "image/png"},
                                           {".jpg", undefined}
                                          ]},
-                         {custom_headers, [{"X-Powered-By", "Erlang/OTP"},
-                                           {"X-Fry", "It's a widely-believed fact!"}
-                                          ]},
                          {default_content_type, "text/html"}
                         ]
   },
