@@ -67,7 +67,7 @@
 		 }).
 
 -record(state, {host, docroot, accesslog, accesslogfd, directory_indices,
-                default_content_type, content_types = []}).
+                custom_headers, default_content_type, content_types = []}).
 
 -define(PROCNAME, ejabberd_mod_http_fileserver).
 
@@ -135,12 +135,13 @@ start_link(Host, Opts) ->
 init([Host, Opts]) ->
     try initialize(Host, Opts) of
 	{DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
-         DefaultContentType, ContentTypes} ->
+         CustomHeaders, DefaultContentType, ContentTypes} ->
 	    {ok, #state{host = Host,
 			accesslog = AccessLog,
 			accesslogfd = AccessLogFD,
 			docroot = DocRoot,
                         directory_indices = DirectoryIndices,
+                        custom_headers = CustomHeaders,
                         default_content_type = DefaultContentType,
                         content_types = ContentTypes}}
     catch
@@ -157,12 +158,13 @@ initialize(Host, Opts) ->
     AccessLog = gen_mod:get_opt(accesslog, Opts, undefined),
     AccessLogFD = try_open_log(AccessLog, Host),
     DirectoryIndices = gen_mod:get_opt(directory_indices, Opts, []),
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
     DefaultContentType = gen_mod:get_opt(default_content_type, Opts,
                                          ?DEFAULT_CONTENT_TYPE),
     ContentTypes = build_list_content_types(gen_mod:get_opt(content_types, Opts, []), ?DEFAULT_CONTENT_TYPES),
     ?INFO_MSG("initialize: ~n ~p", [ContentTypes]),%+++
     {DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
-     DefaultContentType, ContentTypes}.
+     CustomHeaders, DefaultContentType, ContentTypes}.
 
 %% @spec (AdminCTs::[CT], Default::[CT]) -> [CT]
 %% where CT = {Extension::string(), Value}
@@ -226,6 +228,7 @@ try_open_log(FN, Host) ->
 %%--------------------------------------------------------------------
 handle_call({serve, LocalPath}, _From, State) ->
     Reply = serve(LocalPath, State#state.docroot, State#state.directory_indices,
+		  State#state.custom_headers,
                   State#state.default_content_type, State#state.content_types),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
@@ -293,42 +296,44 @@ process(LocalPath, Request) ->
 	    ejabberd_web:error(not_found)
     end.
 
-serve(LocalPath, DocRoot, DirectoryIndices, DefaultContentType, ContentTypes) ->
+serve(LocalPath, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType, ContentTypes) ->
     FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
     case file:read_file_info(FileName) of
         {error, enoent}                    -> ?HTTP_ERR_FILE_NOT_FOUND;
         {error, eacces}                    -> ?HTTP_ERR_FORBIDDEN;
         {ok, #file_info{type = directory}} -> serve_index(FileName,
                                                           DirectoryIndices,
+                                                          CustomHeaders,
                                                           DefaultContentType,
                                                           ContentTypes);
         {ok, FileInfo}                     -> serve_file(FileInfo, FileName,
+                                                         CustomHeaders,
                                                          DefaultContentType,
                                                          ContentTypes)
     end.
 
 %% Troll through the directory indices attempting to find one which
 %% works, if none can be found, return a 404.
-serve_index(_FileName, [], _DefaultContentType, _ContentTypes) ->
+serve_index(_FileName, [], CH, _DefaultContentType, _ContentTypes) ->
     ?HTTP_ERR_FILE_NOT_FOUND;
-serve_index(FileName, [Index | T], DefaultContentType, ContentTypes) ->
+serve_index(FileName, [Index | T], CH, DefaultContentType, ContentTypes) ->
     IndexFileName = filename:join([FileName] ++ [Index]),
     case file:read_file_info(IndexFileName) of
-        {error, _Error}                    -> serve_index(FileName, T, DefaultContentType, ContentTypes);
-        {ok, #file_info{type = directory}} -> serve_index(FileName, T, DefaultContentType, ContentTypes);
-        {ok, FileInfo}                     -> serve_file(FileInfo, IndexFileName, DefaultContentType, ContentTypes)
+        {error, _Error}                    -> serve_index(FileName, T, CH, DefaultContentType, ContentTypes);
+        {ok, #file_info{type = directory}} -> serve_index(FileName, T, CH, DefaultContentType, ContentTypes);
+        {ok, FileInfo}                     -> serve_file(FileInfo, IndexFileName, CH, DefaultContentType, ContentTypes)
     end.
 
 %% Assume the file exists if we got this far and attempt to read it in
 %% and serve it up.
-serve_file(FileInfo, FileName, DefaultContentType, ContentTypes) ->
+serve_file(FileInfo, FileName, CustomHeaders, DefaultContentType, ContentTypes) ->
     ?DEBUG("Delivering: ~s", [FileName]),
     {ok, FileContents} = file:read_file(FileName),
     ContentType = content_type(FileName, DefaultContentType, ContentTypes),
     {FileInfo#file_info.size,
      200, [{"Server", "ejabberd"},
            {"Last-Modified", last_modified(FileInfo)},
-           {"Content-Type", ContentType}],
+           {"Content-Type", ContentType} | CustomHeaders],
      FileContents}.
 
 %%----------------------------------------------------------------------

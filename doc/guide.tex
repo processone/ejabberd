@@ -2832,6 +2832,9 @@ Options:
   \titem{\{accesslog, Path\}} \ind{options!accesslog}
     File to log accesses using an Apache-like format.
     No log will be recorded if this option is not specified.
+  \titem{\{custom\_headers, [ \{Name, Value\}, ...]\}} \ind{options!customheaders}
+    Indicate custom HTTP headers to be included in all responses.
+    Default value is: \term{[]}
   \titem{\{directory\_indices, [Index, ...]\}} \ind{options!directoryindices}
     Indicate one or more directory index files, similarly to Apache's
     DirectoryIndex variable. When a web request hits a directory
@@ -2869,6 +2872,9 @@ To use this module you must enable it:
                                           {".png", "image/png"},
                                           {".jpg", undefined}
                                          ]},
+                         {custom_headers, [{"X-Powered-By", "Erlang/OTP"},
+                                           {"X-Fry", "It's a widely-believed fact!"}
+                                          ]},
                          {default_content_type, "text/html"}
                         ]
   },

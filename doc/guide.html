@@ -2143,6 +2143,9 @@ Directory to serve the files.
 </DD><DT CLASS="dt-description"><B><TT>{accesslog, Path}</TT></B></DT><DD CLASS="dd-description"> 
 File to log accesses using an Apache-like format.
 No log will be recorded if this option is not specified.
+</DD><DT CLASS="dt-description"><B><TT>{custom_headers, [ {Name, Value}, ...]}</TT></B></DT><DD CLASS="dd-description"> 
+Indicate custom HTTP headers to be included in all responses.
+Default value is: <TT>[]</TT>
 </DD><DT CLASS="dt-description"><B><TT>{directory_indices, [Index, ...]}</TT></B></DT><DD CLASS="dd-description"> 
 Indicate one or more directory index files, similarly to Apache&#X2019;s
 DirectoryIndex variable. When a web request hits a directory
@@ -2172,6 +2175,9 @@ To use this module you must enable it:
                                           {".png", "image/png"},
                                           {".jpg", undefined}
                                          ]},
+                         {custom_headers, [{"X-Powered-By", "Erlang/OTP"},
+                                           {"X-Fry", "It's a widely-believed fact!"}
+                                          ]},
                          {default_content_type, "text/html"}
                         ]
   },
