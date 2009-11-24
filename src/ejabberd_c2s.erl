@@ -369,7 +369,6 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				    send_trailer(StateData),
 				    {stop, normal, StateData};
 				true ->
-				    send_element(StateData, Header),
 				    fsm_next_state(wait_for_auth,
 						   StateData#state{
 						     server = ServerB,
