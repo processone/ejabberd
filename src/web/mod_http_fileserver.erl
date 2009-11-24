@@ -314,7 +314,7 @@ serve(LocalPath, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType, C
 
 %% Troll through the directory indices attempting to find one which
 %% works, if none can be found, return a 404.
-serve_index(_FileName, [], CH, _DefaultContentType, _ContentTypes) ->
+serve_index(_FileName, [], _CH, _DefaultContentType, _ContentTypes) ->
     ?HTTP_ERR_FILE_NOT_FOUND;
 serve_index(FileName, [Index | T], CH, DefaultContentType, ContentTypes) ->
     IndexFileName = filename:join([FileName] ++ [Index]),
