@@ -2032,7 +2032,7 @@ check_from(El, FromJID) ->
     case exmpp_stanza:get_sender(El) of
 	undefined ->
 	    El;
-	{value, SJID} ->
+	SJID when is_binary(SJID) ->
 	    try
 		JIDEl = exmpp_jid:parse(SJID),
 		case exmpp_jid:prep_resource(JIDEl) of 
