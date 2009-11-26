@@ -127,11 +127,12 @@ get_user_roster(Items, US) ->
     SRUsers = 
 	lists:foldl(
 	  fun(Group, Acc1) ->
+		  GroupName = get_group_name(S, Group),
 		  lists:foldl(
 		    fun(User, Acc2) ->
 			    if User == US -> Acc2;
 			       true -> dict:append(User, 
-						   get_group_name(S, Group),
+						   GroupName,
 						   Acc2)
 			    end
 		    end, Acc1, get_group_users(S, Group))
