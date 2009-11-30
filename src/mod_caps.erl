@@ -258,10 +258,11 @@ init([Host, _Opts]) ->
     mnesia:delete_table(user_caps_default),
     mnesia:clear_table(user_caps),            % clean in case of explicitely set to disc_copies
     mnesia:clear_table(user_caps_resources),  % clean in case of explicitely set to disc_copies
-    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, receive_packet, 30),
-    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
-    ejabberd_hooks:add(presence_probe_hook, Host, ?MODULE, presence_probe, 20),
-    ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, remove_connection, 20),
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:add(user_receive_packet, HostB, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:add(s2s_receive_packet, HostB, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:add(presence_probe_hook, HostB, ?MODULE, presence_probe, 20),
+    ejabberd_hooks:add(sm_remove_connection_hook, HostB, ?MODULE, remove_connection, 20),
     {ok, #state{host = Host}}.
 
 maybe_get_features(#caps{node = Node, version = Version, exts = Exts}) ->
@@ -431,11 +432,11 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, State) ->
-    Host = State#state.host,
-    ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, receive_packet, 30),
-    ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, receive_packet, 30),
-    ejabberd_hooks:delete(presence_probe_hook, Host, ?MODULE, presence_probe, 20),
-    ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, remove_connection, 20),
+    HostB = list_to_binary(State#state.host),
+    ejabberd_hooks:delete(user_receive_packet, HostB, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:delete(s2s_receive_packet, HostB, ?MODULE, receive_packet, 30),
+    ejabberd_hooks:delete(presence_probe_hook, HostB, ?MODULE, presence_probe, 20),
+    ejabberd_hooks:delete(sm_remove_connection_hook, HostB, ?MODULE, remove_connection, 20),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
