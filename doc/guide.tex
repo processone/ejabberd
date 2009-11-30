@@ -514,7 +514,6 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 \item MS Visual C++ 6.0 Compiler
 \item \footahref{http://www.erlang.org/download.html}{Erlang/OTP R12B-5}. Support for R13 or higher is experimental.
 \item \footahref{http://support.process-one.net/doc/display/EXMPP}{exmpp 0.9.1 or higher}
-\item \footahref{http://sourceforge.net/project/showfiles.php?group\_id=10127\&package\_id=11277}{Expat 2.0.0 or higher}
 \item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8d or higher}
 (to enable SSL connections)
 \item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
@@ -527,15 +526,6 @@ We assume that we will try to put as much library as possible into \verb|C:\sdk\
 
 \begin{enumerate}
 \item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.6.5|).
-\item Install Expat library into \verb|C:\sdk\Expat-2.0.0|
-  directory.
-
-  Copy file \verb|C:\sdk\Expat-2.0.0\Libs\libexpat.dll|
-  to your Windows system directory (for example, \verb|C:\WINNT| or
-  \verb|C:\WINNT\System32|)
-  Note: instead of copying libexpat.dll to the Windows
-  directory, you can add the directory \verb|C:\sdk\Expat-2.0.0\Libs|
-  to the \verb|PATH| environment variable.
 \item Install OpenSSL in \verb|C:\sdk\OpenSSL| and add \verb|C:\sdk\OpenSSL\lib\VC| to your path or copy the binaries to your system directory.
 \item Install ZLib in \verb|C:\sdk\gnuWin32|. Copy
   \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory.

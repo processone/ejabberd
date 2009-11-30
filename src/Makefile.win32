@@ -82,9 +82,9 @@ release : build release_clean
 	copy ..\doc\*.html $(DOC_DIR)
 	copy ..\doc\*.png $(DOC_DIR)
 
-SOURCE = expat_erl.c
-OBJECT = expat_erl.o
-DLL    = expat_erl.dll
+SOURCE =
+OBJECT =
+DLL    =
 
 build : $(DLL) compile-beam all-recursive
 
@@ -122,8 +122,6 @@ CLEAN : clean-recursive clean-local
 clean-local :
 	-@erase $(OBJECT)
 	-@erase $(DLL)
-	-@erase expat_erl.exp
-	-@erase expat_erl.lib
 	-@erase *.beam
 	-@erase XmppAddr.asn1db
 	-@erase XmppAddr.erl
@@ -157,10 +155,10 @@ distclean : release_clean clean
 	-@erase Makefile.inc
 
 CC=cl.exe
-CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT $(EXPAT_FLAG) -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include" -I"$(EXPAT_DIR)\source\lib"
+CC_FLAGS=-nologo -D__WIN32__ -DWIN32 -DWINDOWS -D_WIN32 -DNT -MD -Ox -I"$(ERLANG_DIR)\usr\include" -I"$(EI_DIR)\include"
 
 LD=link.exe
-LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" "$(EXPAT_LIB)" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
+LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
 
 $(DLL) : $(OBJECT)
 	$(LD) $(LD_FLAGS) -out:$(DLL) $(OBJECT)

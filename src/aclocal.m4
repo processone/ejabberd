@@ -1,37 +1,3 @@
-AC_DEFUN(AM_WITH_EXPAT,
-[ AC_ARG_WITH(expat,
-	      [AC_HELP_STRING([--with-expat=PREFIX], [prefix where EXPAT is installed])])
-
-  EXPAT_CFLAGS=
-  EXPAT_LIBS=
-	if test x"$with_expat" != x; then
-		EXPAT_CFLAGS="-I$with_expat/include"
-		EXPAT_LIBS="-L$with_expat/lib"
-	fi
-
-	AC_CHECK_LIB(expat, XML_ParserCreate,
-		     [ EXPAT_LIBS="$EXPAT_LIBS -lexpat"
-		       expat_found=yes ],
-		     [ expat_found=no ],
-		     "$EXPAT_LIBS")
-	if test $expat_found = no; then
-		AC_MSG_ERROR([Could not find development files of Expat library])
-	fi
-	expat_save_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS $EXPAT_CFLAGS"
-       expat_save_CPPFLAGS="$CPPFLAGS"
-       CPPFLAGS="$CPPFLAGS $EXPAT_CFLAGS"
-	AC_CHECK_HEADERS(expat.h, , expat_found=no)
-	if test $expat_found = no; then
-		AC_MSG_ERROR([Could not find expat.h])
-	fi
-	CFLAGS="$expat_save_CFLAGS"
-       CPPFLAGS="$expat_save_CPPFLAGS"
-
-  AC_SUBST(EXPAT_CFLAGS)
-  AC_SUBST(EXPAT_LIBS)
-])
-
 AC_DEFUN(AM_WITH_ZLIB,
 [ AC_ARG_WITH(zlib,
 	      [AC_HELP_STRING([--with-zlib=PREFIX], [prefix where zlib is installed])])

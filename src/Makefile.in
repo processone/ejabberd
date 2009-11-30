@@ -6,10 +6,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-EXPAT_CFLAGS = @EXPAT_CFLAGS@
 ERLANG_CFLAGS= @ERLANG_CFLAGS@
 
-EXPAT_LIBS = @EXPAT_LIBS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
 ASN_FLAGS = -bber_bin +der +compact_bit_string +optimize +noobj
@@ -154,8 +152,6 @@ mostlyclean-recursive maintainer-clean-recursive:
 $(ERLSHLIBS):	%.so:	%.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) \
 		$(subst ../,,$(subst .so,.c,$@)) \
-		$(EXPAT_LIBS) \
-		$(EXPAT_CFLAGS) \
 		$(ERLANG_LIBS) \
 		$(ERLANG_CFLAGS) \
 		-o $@ \
