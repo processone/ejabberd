@@ -769,7 +769,7 @@ in_subscription(_, _, _, _, _, _) ->
 remove_user(User, Server) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
-    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
+    Proc = gen_mod:get_module_proc(binary_to_list(Server), ?PROCNAME),
     gen_server:cast(Proc, {remove_user, LUser, LServer}).
 
 %%--------------------------------------------------------------------
