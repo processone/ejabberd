@@ -484,9 +484,10 @@ normal_state({route, From, ToNick,
 	      #xmlel{name = 'iq'} = Packet},
 	     StateData) ->
     Lang = exmpp_stanza:get_lang(Packet),
+    StanzaId = get_stanza_id(Packet),
     case {(StateData#state.config)#config.allow_query_users,
-	  is_user_online(From, StateData)} of
-	{true, true} ->
+	  is_user_online_iq(StanzaId, From, StateData)} of
+	{true, {true, NewId, FromFull}} ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    case exmpp_iq:get_type(Packet) of
@@ -506,13 +507,15 @@ normal_state({route, From, ToNick,
 		    end;
 		ToJID ->
 		    {ok, #user{nick = FromNick}} =
-			?DICT:find(jlib:short_prepd_jid(From),
+			?DICT:find(jlib:short_prepd_jid(FromFull),
 				   StateData#state.users),
+		    {ToJID2, Packet2} = handle_iq_vcard(FromFull, ToJID,
+							StanzaId, NewId,Packet),
 		    ejabberd_router:route(
 		      jid_replace_resource(StateData#state.jid, FromNick),
-		      ToJID, Packet)
+		      ToJID2, Packet2)
 	    end;
-	{_, false} ->
+	{_, {false, _, _}} ->
 	    case exmpp_iq:get_type(Packet) of
 		result ->
 		    ok;
@@ -856,7 +859,6 @@ process_groupchat_message(From, #xmlel{name = 'message'} = Packet,
 	    {next_state, normal_state, StateData}
     end.
 
-
 %% @doc Check if this non participant can send message to room.
 %%
 %% XEP-0045 v1.23:
@@ -995,6 +997,59 @@ process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 is_user_online(JID, StateData) ->
     LJID = jlib:short_prepd_jid(JID),
     ?DICT:is_key(LJID, StateData#state.users).
+
+%%%
+%%% Handle IQ queries of vCard
+%%%
+get_stanza_id(Packet) ->
+    case exmpp_stanza:get_id(Packet) of
+	Id when is_binary(Id) -> binary_to_list(Id);
+	undefined -> ""
+    end.
+
+is_user_online_iq(StanzaId, JID, StateData) ->
+    case exmpp_jid:resource(JID) of
+	undefined -> is_user_online_iq2(StanzaId, JID, StateData);
+	_ -> {is_user_online(JID, StateData), StanzaId, JID}
+    end.
+
+is_user_online_iq2(StanzaId, JID, StateData) ->
+    try stanzaid_unpack(StanzaId) of
+	{OriginalId, Resource} ->
+	    JIDWithResource = jid_replace_resource(JID, Resource),
+	    {is_user_online(JIDWithResource, StateData),
+	     OriginalId, JIDWithResource}
+    catch
+	_:_ ->
+	    {is_user_online(JID, StateData), StanzaId, JID}
+    end.
+
+handle_iq_vcard(FromFull, ToJID, StanzaId, NewId, Packet) ->
+    ToBareJID = exmpp_jid:bare(ToJID),
+    IsToJIDBare = exmpp_jid:full_compare(ToJID, ToBareJID),
+    IQ = exmpp_iq:xmlel_to_iq(Packet),
+    handle_iq_vcard2(FromFull, ToJID, ToBareJID, IsToJIDBare, StanzaId, NewId, IQ, Packet).
+handle_iq_vcard2(_FromFull, ToJID, ToBareJID, IsToJIDBare, StanzaId, _NewId,
+		 #iq{type = get, ns = ?NS_VCARD}, Packet)
+  when IsToJIDBare == false ->
+    {ToBareJID, change_stanzaid(StanzaId, ToJID, Packet)};
+handle_iq_vcard2(_FromFull, ToJID, _ToBareJID, _IsToJIDBare, _StanzaId, NewId, _IQ, Packet) ->
+    {ToJID, change_stanzaid(NewId, Packet)}.
+
+stanzaid_pack(OriginalId, Resource) ->
+    "berd"++base64:encode_to_string("ejab\0" ++ OriginalId ++ "\0" ++ Resource).
+stanzaid_unpack("berd"++StanzaIdBase64) ->
+    StanzaId = base64:decode_to_string(StanzaIdBase64),
+    ["ejab", OriginalId, Resource] = string:tokens(StanzaId, "\0"),
+    {OriginalId, Resource}.
+
+change_stanzaid(NewId, Packet) ->
+    exmpp_stanza:set_id(Packet, NewId).
+change_stanzaid(PreviousId, ToJID, Packet) ->
+    NewId = stanzaid_pack(PreviousId, exmpp_jid:resource_as_list(ToJID)),
+    change_stanzaid(NewId, Packet).
+%%%
+%%%
 
 role_to_binary(Role) ->
     case Role of
