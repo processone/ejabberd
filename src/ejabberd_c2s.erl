@@ -1175,8 +1175,10 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    #xmlel{attrs = Attrs} when ?IS_IQ(Packet) ->
 		case exmpp_iq:is_request(Packet) of
 		    true ->
+			ToNode = exmpp_jid:node(To),
+			ToResource = exmpp_jid:resource(To),
 			case exmpp_iq:get_request(Packet) of
-			    #xmlel{ns = ?NS_VCARD} ->
+			    #xmlel{ns = ?NS_VCARD} when (ToNode == <<"">>) or (ToResource == <<"">>) ->
 				Host = StateData#state.server,
 				case ets:lookup(sm_iqtable, {?NS_VCARD, Host}) of
 				    [{_, Module, Function, Opts}] ->
