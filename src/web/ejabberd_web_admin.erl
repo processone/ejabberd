@@ -1947,7 +1947,7 @@ get_node(global, Node, ["db"], Query, Lang) ->
     end;
 
 get_node(global, Node, ["backup"], Query, Lang) ->
-    HomeDir = re:replace(filename:nativename(os:cmd("echo $HOME")), "\n", "", [{return, list}]),
+    {ok, HomeDir, _} = regexp:sub(filename:nativename(os:cmd("echo $HOME")), "\n", ""),
     ResS = case node_backup_parse_query(Node, Query) of
 	       nothing -> [];
 	       ok -> [?XREST("Submitted")];
