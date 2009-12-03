@@ -1822,6 +1822,7 @@ all entries end with a comma:
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modproxy"><TT>mod_proxy65</TT></A></TD><TD ALIGN=left NOWRAP>SOCKS5 Bytestreams (<A HREF="http://xmpp.org/extensions/xep-0065.html">XEP-0065</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modpubsub"><TT>mod_pubsub</TT></A></TD><TD ALIGN=left NOWRAP>Pub-Sub (<A HREF="http://xmpp.org/extensions/xep-0060.html">XEP-0060</A>), PEP (<A HREF="http://xmpp.org/extensions/xep-0163.html">XEP-0163</A>)</TD><TD ALIGN=left NOWRAP><TT>mod_caps</TT></TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modpubsub"><TT>mod_pubsub_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Pub-Sub (<A HREF="http://xmpp.org/extensions/xep-0060.html">XEP-0060</A>), PEP (<A HREF="http://xmpp.org/extensions/xep-0163.html">XEP-0163</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*) and <TT>mod_caps</TT></TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modregister"><TT>mod_register</TT></A></TD><TD ALIGN=left NOWRAP>In-Band Registration (<A HREF="http://xmpp.org/extensions/xep-0077.html">XEP-0077</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modroster"><TT>mod_roster</TT></A></TD><TD ALIGN=left NOWRAP>Roster management (XMPP IM)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modroster"><TT>mod_roster_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Roster management (XMPP IM)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
@@ -2744,14 +2745,25 @@ usage, as every item is stored in memory.
 This allow to define a Key-Value list to choose defined node plugins on given PEP namespace.
 The following example will use node_tune instead of node_pep for every PEP node with tune namespace:
 <PRE CLASS="verbatim">  {mod_pubsub, [{pep_mapping, [{"http://jabber.org/protocol/tune", "tune"}]}]}
-</PRE></DD></DL><P>Example:
+</PRE></DD></DL><P>Example of configuration that uses flat nodes as default, and allows use of flat, nodetree and pep nodes:
 </P><PRE CLASS="verbatim">{modules,
  [
   ...
   {mod_pubsub, [
                 {access_createnode, pubsub_createnode},
-                {plugins, ["default", "pep"]}
-               ]}
+                {plugins, ["flat", "hometree", "pep"]}
+               ]},
+  ...
+ ]}.
+</PRE><P>Using ODBC database requires use of dedicated plugins. The following example shows previous configuration
+with ODBC usage:
+</P><PRE CLASS="verbatim">{modules,
+ [
+  ...
+  {mod_pubsub_odbc, [
+                {access_createnode, pubsub_createnode},
+                {plugins, ["flat_odbc", "hometree_odbc", "pep_odbc"]}
+               ]},
   ...
  ]}.
 </PRE><P> <A NAME="modregister"></A> </P><!--TOC subsection <TT>mod_register</TT>-->

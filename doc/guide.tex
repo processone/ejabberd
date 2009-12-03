@@ -85,6 +85,7 @@
 \newcommand{\modprivateodbc}{\module{mod\_private\_odbc}}
 \newcommand{\modproxy}{\module{mod\_proxy65}}
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
+\newcommand{\modpubsubodbc}{\module{mod\_pubsub\_odbc}}
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
 \newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
@@ -2415,6 +2416,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modprivate}{\modprivateodbc{}} & Private XML Storage (\xepref{0049}) & supported DB (*) \\
     \hline \ahrefloc{modproxy}{\modproxy{}} & SOCKS5 Bytestreams (\xepref{0065}) &  \\
     \hline \ahrefloc{modpubsub}{\modpubsub{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & \modcaps{} \\
+    \hline \ahrefloc{modpubsub}{\modpubsubodbc{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & supported DB (*) and \modcaps{} \\
     \hline \ahrefloc{modregister}{\modregister{}} & In-Band Registration (\xepref{0077}) &  \\
     \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) &  \\
     \hline \ahrefloc{modroster}{\modrosterodbc{}} & Roster management (XMPP IM) & supported DB (*) \\
@@ -3511,19 +3513,32 @@ Options:
 %  This option allows to create additional pubsub virtual hosts in a single module instance.
 \end{description}
 
-Example:
+Example of configuration that uses flat nodes as default, and allows use of flat, nodetree and pep nodes:
 \begin{verbatim}
 {modules,
  [
   ...
   {mod_pubsub, [
                 {access_createnode, pubsub_createnode},
-                {plugins, ["default", "pep"]}
-               ]}
+                {plugins, ["flat", "hometree", "pep"]}
+               ]},
   ...
  ]}.
 \end{verbatim}
-%                  {served_hosts, ["example.com", "example.org"]}
+
+Using ODBC database requires use of dedicated plugins. The following example shows previous configuration
+with ODBC usage:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_pubsub_odbc, [
+                {access_createnode, pubsub_createnode},
+                {plugins, ["flat_odbc", "hometree_odbc", "pep_odbc"]}
+               ]},
+  ...
+ ]}.
+\end{verbatim}
 
 \makesubsection{modregister}{\modregister{}}
 \ind{modules!\modregister{}}\ind{protocols!XEP-0077: In-Band Registration}\ind{public registration}
