@@ -1980,7 +1980,13 @@ get_node(global, Node, ["db"], Query, Lang) ->
     end;
 
 get_node(global, Node, ["backup"], Query, Lang) ->
-    HomeDir = re:replace(filename:nativename(os:cmd("echo $HOME")), "\n", "", [{return, list}]),
+    HomeDirRaw = case {os:getenv("HOME"), os:type()} of
+	{EnvHome, _} when is_list(EnvHome) -> EnvHome;
+	{false, win32} -> "C:/";
+	{false, {win32, _Osname}} -> "C:/";
+	{false, _} -> "/tmp/"
+    end,
+    HomeDir = filename:nativename(HomeDirRaw),
     ResS = case node_backup_parse_query(Node, Query) of
 	       nothing -> [];
 	       ok -> [?XREST("Submitted")];
