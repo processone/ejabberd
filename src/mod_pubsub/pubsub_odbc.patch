@@ -433,7 +433,7 @@
 @@ -1510,7 +1320,7 @@
  		  [{xmlelement, "value", [], [{xmlcdata, "false"}]}]}]}]},
      lists:foreach(fun(Owner) ->
- 	ejabberd_router ! {route, service_jid(Host), jlib:make_jid(Owner), Stanza}
+ 	ejabberd_router:route(service_jid(Host), jlib:make_jid(Owner), Stanza)
 -    end, Owners).
 +    end, node_owners(Host, Type, NodeId)).
  
@@ -553,11 +553,11 @@
 +	    event_stanza_with_delay(
  		[{xmlelement, "items", nodeAttr(Node),
 -		  itemsEls([LastItem])}], ModifNow, ModifLjid),
--	    ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza}
+-	    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza)
 -    end;
 +		  itemsEls([LastItem])}], ModifNow, ModifLjid)
 +    end,
-+    ejabberd_router ! {route, service_jid(Host), jlib:make_jid(LJID), Stanza};
++    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
  send_items(Host, Node, NodeId, Type, LJID, Number) ->
      ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
  	{result, []} -> 
@@ -628,7 +628,7 @@
  	{result, _} ->
 @@ -2759,8 +2568,8 @@
  				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
- 		ejabberd_router ! {route, service_jid(Host), jlib:make_jid(JID), Stanza}
+ 		ejabberd_router:route(service_jid(Host), jlib:make_jid(JID), Stanza)
  	    end,
 -	    Action = fun(#pubsub_node{owners = Owners, type = Type, id = NodeId}) ->
 -			    case lists:member(Owner, Owners) of

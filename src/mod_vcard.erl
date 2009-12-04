@@ -310,7 +310,7 @@ do_route(ServerHost, From, To, Packet) ->
     if
 	(User /= "") or (Resource /= "") ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
-	    ejabberd_router ! {route, To, From, Err};
+	    ejabberd_router:route(To, From, Err);
 	true ->
 	    IQ = jlib:iq_query_info(Packet),
 	    case IQ of
