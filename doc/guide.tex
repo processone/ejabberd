@@ -3479,7 +3479,8 @@ and it requires \modcaps{}.
 Options:
 \begin{description}
 \hostitem{pubsub}
-  If you use \modpubsubodbc, you can only use the prefix `\jid{pubsub.}'.
+  If you use \modpubsubodbc, please ensure the prefix contains only one dot,
+  for example `\jid{pubsub.}', or `\jid{publish.}',.
 \titem{\{access\_createnode, AccessName\}} \ind{options!access\_createnode}
   This option restricts which users are allowed to create pubsub nodes using
   ACL and ACCESS.

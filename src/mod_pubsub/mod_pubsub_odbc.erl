@@ -3630,7 +3630,7 @@ transaction_retry(Host, Fun, Trans, Count) ->
 odbc_conn({_U, Host, _R})->
     Host;
 odbc_conn(Host) ->
-    Host--"pubsub.".  %% TODO, improve that for custom host
+    lists:dropwhile(fun(A) -> A/=$. end, Host) -- ".".
 
 %% escape value for database storage
 escape({_U, _H, _R}=JID)->
