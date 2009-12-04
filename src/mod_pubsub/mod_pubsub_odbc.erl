@@ -434,7 +434,7 @@ disco_local_features(Acc, _From, To, [], _Lang) ->
     end,
     {result, Feats ++ lists:map(fun(Feature) ->
 	?NS_PUBSUB++"#"++Feature
-    end, features(Host, []))};
+    end, features(Host, <<>>))};
 disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
