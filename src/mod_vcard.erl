@@ -316,7 +316,7 @@ do_route(ServerHost, From, To, Packet) ->
     if
 	(User /= undefined) or (Resource /= undefined) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'service-unavailable'),
-	    ejabberd_router ! {route, To, From, Err};
+	    ejabberd_router:route(To, From, Err);
 	true ->
 	    try
 		Request = exmpp_iq:get_request(Packet),

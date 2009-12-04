@@ -1363,7 +1363,7 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node}, type = Type, id =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children = [#xmlcdata{cdata = <<"false">>}]}]}]}]},
     lists:foreach(fun(Owner) ->
     	{U, S, R} = Owner,
-	ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(U, S, R), Stanza}
+	ejabberd_router:route(service_jid(Host), exmpp_jid:make(U, S, R), Stanza)
     end, node_owners(Host, Type, NodeId)).
 
 find_authorization_response(Packet) ->
@@ -1408,7 +1408,7 @@ send_authorization_approval(Host, JID, SNode, Subscription) ->
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'subscription', attrs =
 		    [?XMLATTR('jid', exmpp_jid:to_binary(JID)) | nodeAttr(SNode)] ++ SubAttrs
 		     }]),
-    ejabberd_router ! {route, service_jid(Host), JID, Stanza}.
+    ejabberd_router:route(service_jid(Host), JID, Stanza).
  
 handle_authorization_response(Host, From, To, Packet, XFields) ->
     case {lists:keysearch("pubsub#node", 1, XFields),
@@ -2207,7 +2207,7 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 			children = itemsEls(LastItem)}], ModifNow, ModifLjid)
     end,
     {U, S, R} = LJID,
-    ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(U, S, R), Stanza};
+    ejabberd_router:route(service_jid(Host), exmpp_jid:make(U, S, R), Stanza);
 send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
 	{result, []} -> 
@@ -2231,7 +2231,7 @@ send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 		  itemsEls(ToSend)}])
     end,
-    ejabberd_router ! {route, service_jid(Host), exmpp_jid:make(LU, LS, LR), Stanza}.
+    ejabberd_router:route(service_jid(Host), exmpp_jid:make(LU, LS, LR), Stanza).
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()
@@ -2628,7 +2628,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 					name = 'subscription',
 					attrs = [?XMLATTR('jid', exmpp_jid:to_binary(JID)),
 						 ?XMLATTR('subsription', subscription_to_string(Sub)) | nodeAttr(Node)]}]}]},
-		ejabberd_router ! {route, service_jid(Host), JID, Stanza}
+		ejabberd_router:route(service_jid(Host), JID, Stanza)
 	    end,
 	    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
 			    case lists:member(Owner, node_owners_call(Type, NodeId)) of
@@ -2983,7 +2983,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 			  SHIMStanza = add_headers(Stanza, collection_shim(Node, Nodes)),
 			  lists:foreach(fun(To) ->
 			  			{TU, TS, TR} = To, 
-						ejabberd_router ! {route, From, exmpp_jid:make(TU, TS, TR), SHIMStanza}
+						ejabberd_router:route(From, exmpp_jid:make(TU, TS, TR), SHIMStanza)
 					end, LJIDs)
 		  end, NodesByJID),
     %% Handles implicit presence subscriptions
@@ -3016,7 +3016,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 					end
 				    end, [], user_resources(U, S)),
 				    lists:foreach(fun(R) ->
-					ejabberd_router ! {route, Sender, exmpp_jid:make(U, S, R), Stanza}
+					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), Stanza)
 				    end, Rs)
 				end)
 			    end, Contacts);
