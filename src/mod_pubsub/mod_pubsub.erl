@@ -718,10 +718,16 @@ disco_sm_items(Acc, From, To, SNode, _Lang) ->
 
 presence_probe(#jid{luser = User, lserver = Server, lresource = Resource} = JID, JID, Pid) ->
     Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
+    %%?DEBUG("presence probe self ~s@~s/~s  ~s@~s/~s",[User,Server,Resource,element(2,JID),element(3,JID),element(4,JID)]),
     gen_server:cast(Proc, {presence, JID, Pid}),
     gen_server:cast(Proc, {presence, User, Server, [Resource], JID});
+presence_probe(#jid{luser = User, lserver = Server}, #jid{luser = User, lserver = Server}, _Pid) ->
+    %% ignore presence_probe from other ressources for the current user
+    %% this way, we do not send duplicated last items if user already connected with other clients
+    ok;
 presence_probe(#jid{luser = User, lserver = Server, lresource = Resource}, #jid{lserver = Host} = JID, _Pid) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    %%?DEBUG("presence probe peer ~s@~s/~s  ~s@~s/~s",[User,Server,Resource,element(2,JID),element(3,JID),element(4,JID)]),
     gen_server:cast(Proc, {presence, User, Server, [Resource], JID}).
 
 %% -------
