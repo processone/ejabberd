@@ -734,6 +734,10 @@ presence_probe(JID, JID, Pid) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {presence, JID, Pid}),
     gen_server:cast(Proc, {presence, User, Server, [Resource], JID});
+presence_probe(#jid{luser = User, lserver = Server}, #jid{luser = User, lserver = Server}, _Pid) ->
+    %% ignore presence_probe from other ressources for the current user
+    %% this way, we do not send duplicated last items if user already connected with other clients
+    ok;
 presence_probe(Peer, JID, _Pid) ->
     {User, Server, Resource} = jlib:short_prepd_jid(Peer),
     Host = exmpp_jid:prep_domain_as_list(JID),
