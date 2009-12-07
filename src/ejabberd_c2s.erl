@@ -187,7 +187,6 @@ init([{SockMod, Socket}, Opts]) ->
 			(_) -> false
 		     end, Opts),
     TLSOpts = [verify_none | TLSOpts1],
-    Zlib = lists:member(zlib, Opts) andalso (not StartTLSRequired),
     IP = peerip(SockMod, Socket),
     %% Check if IP is blacklisted:
     case is_ip_blacklisted(IP) of
