@@ -35,6 +35,9 @@
 	 receive_headers/1,
 	 url_encode/1]).
 
+%% Callbacks
+-export([init/2]).
+
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
@@ -83,7 +86,10 @@
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_http_sup, [SockData, Opts]).
 
-start_link({SockMod, Socket}, Opts) ->
+start_link(SockData, Opts) ->
+    {ok, proc_lib:spawn_link(ejabberd_http, init, [SockData, Opts])}.
+
+init({SockMod, Socket}, Opts) ->
     TLSEnabled = lists:member(tls, Opts),
     TLSOpts = lists:filter(fun({certfile, _}) -> true;
 			      (_) -> false
