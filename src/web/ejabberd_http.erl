@@ -139,11 +139,10 @@ init({SockMod, Socket}, Opts) ->
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
-    {ok, proc_lib:spawn_link(ejabberd_http,
-			     receive_headers,
-			     [#state{sockmod = SockMod1,
-				     socket = Socket1,
-				     request_handlers = RequestHandlers}])}.
+    State = #state{sockmod = SockMod1,
+                   socket = Socket1,
+                   request_handlers = RequestHandlers},
+    receive_headers(State).
 
 
 become_controller(_Pid) ->
