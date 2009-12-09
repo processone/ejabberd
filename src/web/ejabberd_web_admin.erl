@@ -1489,7 +1489,7 @@ list_users(Host, Query, Lang, URLFunc) ->
     FUsers =
 	case length(SUsers) of
 	    N when N =< 100 ->
-		[list_given_users(SUsers, "../", Lang, URLFunc)];
+		[list_given_users(Host, SUsers, "../", Lang, URLFunc)];
 	    N ->
 		NParts = trunc(math:sqrt(N * 0.618)) + 1,
 		M = trunc(N / NParts) + 1,
@@ -1567,9 +1567,10 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     N1 = list_to_integer(S1),
     N2 = list_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
-    [list_given_users(Sub, "../../", Lang, URLFunc)].
+    [list_given_users(Host, Sub, "../../", Lang, URLFunc)].
 
-list_given_users(Users, Prefix, Lang, URLFunc) ->
+list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
+    ModLast = get_lastactivity_module(Host),
     ?XE('table',
 	[?XE('thead',
 	     [?XE('tr',
@@ -1593,11 +1594,10 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 		       FLast =
 			   case ejabberd_sm:get_user_resources(UserB, ServerB) of
 			       [] ->
-				   case mnesia:dirty_read({last_activity, US}) of
-				       [] ->
+				   case ModLast:get_last_info(User, Server) of
+				       not_found ->
 					   ?T("Never");
-				       [E] ->
-					   Shift = element(3, E),
+				       {ok, Shift, _Status} ->
 					   TimeStamp = {Shift div 1000000,
 							Shift rem 1000000,
 							0},
@@ -1621,6 +1621,13 @@ list_given_users(Users, Prefix, Lang, URLFunc) ->
 			    ?XC('td', FLast)])
 	       end, Users)
 	    )]).
+
+get_lastactivity_module(Server) ->
+    case lists:member(mod_last, gen_mod:loaded_modules(Server)) of
+        true -> mod_last;
+        _ -> mod_last_odbc
+    end.
+
 
 us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server, undefined).

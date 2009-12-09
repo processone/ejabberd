@@ -170,6 +170,8 @@ store_last_info(User, Server, TimeStamp, Status)
 
 %% @spec (LUser::string(), LServer::string()) ->
 %%      {ok, Timestamp::integer(), Status::string()} | not_found
+get_last_info(LUser, LServer) when is_list(LUser), is_list(LServer) ->
+    get_last_info(list_to_binary(LUser), list_to_binary(LServer));
 get_last_info(LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
     case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
