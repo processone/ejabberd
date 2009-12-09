@@ -1628,6 +1628,11 @@ get_lastactivity_module(Server) ->
         _ -> mod_last_odbc
     end.
 
+get_lastactivity_menuitem_list(Server) ->
+    case get_lastactivity_module(Server) of
+        mod_last -> [{"last-activity", "Last Activity"}];
+        mod_last_odbc -> []
+    end.
 
 us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server, undefined).
@@ -2702,9 +2707,9 @@ make_host_menu(Host, HostNodeMenu, Lang, JID) ->
     HostFixed = [{"acls", "Access Control Lists"},
 		 {"access", "Access Rules"},
 		 {"users", "Users"},
-		 {"online-users", "Online Users"},
-		 {"last-activity", "Last Activity"},
-		 {"nodes", "Nodes", HostNodeMenu},
+		 {"online-users", "Online Users"}]
+		++ get_lastactivity_menuitem_list(Host) ++
+		[{"nodes", "Nodes", HostNodeMenu},
 		 {"stats", "Statistics"}]
 	++ get_menu_items_hook({host, Host}, Lang),
     HostBasePath = url_to_path(HostBase),
