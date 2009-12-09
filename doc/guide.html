@@ -6,7 +6,7 @@
  
  
 
- ejabberd 2.1.0 
+ ejabberd 2.1.x 
  
  Installation and Operation Guide
  
@@ -76,7 +76,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <HR SIZE=2><BR>
 <BR>
 
-<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.0 </B></FONT></TD></TR>
+<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.x </B></FONT></TD></TR>
 <TR><TD ALIGN=right NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=right NOWRAP> <FONT SIZE=6>Installation and Operation Guide</FONT></TD></TR>
 </TABLE><BR>
@@ -3823,7 +3823,7 @@ serving this connection, otherwise a new connection is opened.</P><P> <A NAME="c
 and you need to setup another one to make an <TT>ejabberd</TT> cluster. Then do
 following steps:</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
 Copy <CODE>~ejabberd/.erlang.cookie</CODE> file from <TT>first</TT> to
-<TT>second</TT>.<P>(alt) You can also add &#X2018;<CODE>-cookie content_of_.erlang.cookie</CODE>&#X2019;
+<TT>second</TT>.<P>(alt) You can also add &#X2018;<CODE>-setcookie content_of_.erlang.cookie</CODE>&#X2019;
 option to all &#X2018;<TT>erl</TT>&#X2019; commands below.</P></LI><LI CLASS="li-enumerate">On <TT>second</TT> run the following command as the <TT>ejabberd</TT> daemon user,
 in the working directory of <TT>ejabberd</TT>:<PRE CLASS="verbatim">erl -sname ejabberd \
     -mnesia dir "/var/lib/ejabberd/" \
