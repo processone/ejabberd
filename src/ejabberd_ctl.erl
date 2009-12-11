@@ -197,8 +197,12 @@ process(["help" | Mode]) ->
 process(Args) ->
     AccessCommands = get_accesscommands(),
     {String, Code} = process2(Args, AccessCommands),
-    io:format(String),
-    io:format("\n"),
+    case String of
+	[] -> ok;
+	_ ->
+	    io:format(String),
+	    io:format("\n")
+    end,
     Code.
 
 %% @spec (Args::[string()], AccessCommands) -> {String::string(), Code::integer()}
