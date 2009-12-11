@@ -413,6 +413,17 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
+				#iq{type = get,
+				   xmlns = ?NS_MUC_UNIQUE
+				   } = IQ ->
+				   Res = IQ#iq{type = result,
+						sub_el =
+						[{xmlelement, "unique",
+						   [{"xmlns", ?NS_MUC_UNIQUE}],
+						   [iq_get_unique(From)]}]},
+				   ejabberd_router:route(To,
+				   			 From,
+							 jlib:iq_to_xml(Res));
 				#iq{} ->
 				    Err = jlib:make_error_reply(
 					    Packet,
@@ -570,6 +581,7 @@ iq_disco_info(Lang) ->
      {xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
      {xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
      {xmlelement, "feature", [{"var", ?NS_MUC}], []},
+     {xmlelement, "feature", [{"var", ?NS_MUC_UNIQUE}], []},
      {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
      {xmlelement, "feature", [{"var", ?NS_RSM}], []},
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
@@ -668,6 +680,16 @@ flush() ->
 			       {"label", translate:translate(Lang, Label)},
 			       {"var", Var}],
 	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+
+%% @doc Get a pseudo unique Room Name. The Room Name is generated as a hash of 
+%%      the requester JID, the local time and a random salt.
+%%
+%%      "pseudo" because we don't verify that there is not a room
+%%       with the returned Name already created, nor mark the generated Name 
+%%       as "already used".  But in practice, it is unique enough. See
+%%       http://xmpp.org/extensions/xep-0045.html#createroom-unique
+iq_get_unique(From) ->
+	{xmlcdata, sha:sha(term_to_binary([From, now(), randoms:get_string()]))}.
 
 iq_get_register_info(Host, From, Lang) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),

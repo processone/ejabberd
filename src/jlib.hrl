@@ -47,6 +47,7 @@
 -define(NS_MUC_USER,     "http://jabber.org/protocol/muc#user").
 -define(NS_MUC_ADMIN,    "http://jabber.org/protocol/muc#admin").
 -define(NS_MUC_OWNER,    "http://jabber.org/protocol/muc#owner").
+-define(NS_MUC_UNIQUE,   "http://jabber.org/protocol/muc#unique").
 -define(NS_PUBSUB,       "http://jabber.org/protocol/pubsub").
 -define(NS_PUBSUB_EVENT, "http://jabber.org/protocol/pubsub#event").
 -define(NS_PUBSUB_OWNER, "http://jabber.org/protocol/pubsub#owner").
