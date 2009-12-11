@@ -16,7 +16,7 @@ release:
 	@echo "* Do not forget to update the version number in src/ejabberd.app!"
 	@echo "* Do not forget to update the features in introduction.tex (including \new{} and \improved{} tags)."
 	@echo "Press any key to continue"
-	@read foo
+	##@read foo
 	@echo "% ejabberd version (automatically generated)." > version.tex
 	@echo "\newcommand{\version}{"`sed '/vsn/!d;s/\(.*\)"\(.*\)"\(.*\)/\2/' ../src/ejabberd.app`"}" >> version.tex
 	@echo -n "% Contributed modules (automatically generated)."  > contributed_modules.tex

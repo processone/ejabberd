@@ -159,8 +159,12 @@ debug ()
     echo "  control+c, control+c"
     echo ""
     echo "--------------------------------------------------------------------"
+    echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
+    echo "  EJABBERD_BYPASS_WARNINGS=true"
     echo "Press any key to continue"
-    read foo
+    if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
+	read foo
+    fi
     echo ""
     $EXEC_CMD "$ERL \
       $NAME debug-${ERLANG_NODE} \
@@ -184,8 +188,12 @@ live ()
     echo "  q().  and press the Enter key"
     echo ""
     echo "--------------------------------------------------------------------"
+    echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
+    echo "  EJABBERD_BYPASS_WARNINGS=true"
     echo "Press any key to continue"
-    read foo
+    if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
+	read foo
+    fi
     echo ""
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
