@@ -446,6 +446,8 @@ is_group_enabled(Host, Group) ->
 	    false
     end.
 
+%% @spec (Host::string(), Group::string(), Opt::atom(), Default::any())
+%%   -> OptValue::any() | Default::any()
 get_group_opt(Host, Group, Opt, Default) ->
     case catch mnesia:dirty_read(sr_group, {Group, Host}) of
 	[#sr_group{opts = Opts}] ->
@@ -456,7 +458,7 @@ get_group_opt(Host, Group, Opt, Default) ->
 		    Default
 	    end;
 	_ ->
-	    false
+	    Default
     end.
 
 get_group_users(Host, Group) ->
