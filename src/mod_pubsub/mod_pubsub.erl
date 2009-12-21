@@ -3634,7 +3634,7 @@ select_type(ServerHost, Host, Node, Type) ->
     SelectedType = case Host of
     {_User, _Server, _Resource} -> 
 	case catch ets:lookup(gen_mod:get_module_proc(ServerHost, config), pep_mapping) of
-	[{pep_mapping, PM}] -> proplists:get_value(Node, PM, ?PEPNODE);
+	[{pep_mapping, PM}] -> proplists:get_value(node_to_string(Node), PM, ?PEPNODE);
 	_ -> ?PEPNODE
 	end;
     _ -> 
