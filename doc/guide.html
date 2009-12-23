@@ -1165,7 +1165,10 @@ The syntax is:
 sequentially checks if that JID matches any of the ACLs that are named in the
 second elements of the tuples in the list. If it matches, the first element of
 the first matched tuple is returned, otherwise the value &#X2018;<TT>deny</TT>&#X2019; is
-returned.</P><P>Example:
+returned.</P><P>If you define specific Access rights in a virtual host,
+remember that the globally defined Access rights have precedence over those.
+This means that, in case of conflict, the Access granted or denied in the global server is used
+and the Access of a virtual host doesn&#X2019;t have effect.</P><P>Example:
 </P><PRE CLASS="verbatim">{access, configure, [{allow, admin}]}.
 {access, something, [{deny, badmans},
                      {allow, all}]}.

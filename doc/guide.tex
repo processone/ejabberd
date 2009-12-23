@@ -1415,6 +1415,11 @@ second elements of the tuples in the list. If it matches, the first element of
 the first matched tuple is returned, otherwise the value `\term{deny}' is
 returned.
 
+If you define specific Access rights in a virtual host,
+remember that the globally defined Access rights have precedence over those.
+This means that, in case of conflict, the Access granted or denied in the global server is used
+and the Access of a virtual host doesn't have effect.
+
 Example:
 \begin{verbatim}
 {access, configure, [{allow, admin}]}.
