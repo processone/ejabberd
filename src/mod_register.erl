@@ -210,7 +210,7 @@ try_register(User, Server, Password, Source, Lang) ->
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
 	    case acl:match_rule(Server, Access, JID) of
 		deny ->
-		    {error, 'conflict'};
+		    {error, 'forbidden'};
 		allow ->
 		    case check_timeout(Source) of
 			true ->
