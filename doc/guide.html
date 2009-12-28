@@ -3417,11 +3417,13 @@ they are automatically renamed to <TT>"*-old.log"</TT>. See section <A HREF="#lo
 Store internal Mnesia database to a binary backup file.
 </DD><DT CLASS="dt-description"><B><TT>restore ejabberd.backup</TT></B></DT><DD CLASS="dd-description">
 Restore immediately from a binary backup file the internal Mnesia database.
-This will consume quite some memory for big servers.
+This will consume a lot of memory if you have a large database,
+so better use <TT>install_fallback</TT>.
 </DD><DT CLASS="dt-description"><B><TT>install_fallback ejabberd.backup</TT></B></DT><DD CLASS="dd-description">
 The binary backup file is installed as fallback:
 it will be used to restore the database at the next ejabberd start.
-Similar to <TT>restore</TT>, but requires less memory.
+This means that, after running this command, you have to restart ejabberd.
+This command requires less memory than <TT>restore</TT>.
 </DD><DT CLASS="dt-description"><B><TT>dump ejabberd.dump</TT></B></DT><DD CLASS="dd-description">
 Dump internal Mnesia database to a text file dump.
 </DD><DT CLASS="dt-description"><B><TT>load ejabberd.dump</TT></B></DT><DD CLASS="dd-description">
@@ -3604,8 +3606,17 @@ mv /var/lib/ejabberd/*.* /var/lib/ejabberd/oldfiles/
 <PRE CLASS="verbatim">ejabberdctl start
 </PRE></LI><LI CLASS="li-enumerate">Convert the backup to new node name:
 <PRE CLASS="verbatim">ejabberdctl mnesia_change_nodename $OLDNODE $NEWNODE $OLDFILE $NEWFILE
-</PRE></LI><LI CLASS="li-enumerate">Import the new backup:
-<PRE CLASS="verbatim">ejabberdctl restore $NEWFILE
+</PRE></LI><LI CLASS="li-enumerate">Install the backup file as a fallback:
+<PRE CLASS="verbatim">ejabberdctl install_fallback $NEWFILE
+</PRE></LI><LI CLASS="li-enumerate">Stop ejabberd:
+<PRE CLASS="verbatim">ejabberdctl stop
+</PRE>You may see an error message in the log files, it&#X2019;s normal, so don&#X2019;t worry:
+<PRE CLASS="verbatim">Mnesia(ejabberd@newmachine):
+** ERROR ** (ignoring core)
+** FATAL ** A fallback is installed and Mnesia must be restarted.
+  Forcing shutdown after mnesia_down from ejabberd@newmachine...
+</PRE></LI><LI CLASS="li-enumerate">Now you can finally start ejabberd:
+<PRE CLASS="verbatim">ejabberdctl start
 </PRE></LI><LI CLASS="li-enumerate">Check that the information of the old database is available: accounts, rosters...
 After you finish, remember to delete the temporary backup files from public directories.
 </LI></OL><P> <A NAME="secure"></A> </P><!--TOC chapter Securing <TT>ejabberd</TT>-->
