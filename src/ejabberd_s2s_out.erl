@@ -293,8 +293,8 @@ wait_for_stream({xmlstreamstart, Opening}, StateData) ->
 	    send_element(StateData, exmpp_stream:error('invalid-namespace')),
 	    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid namespace).~n"
 		      "Namespace provided: ~p~nNamespace expected: \"jabber:server\"~n"
-		      "xmlns:db provided: ~p~nAll attributes: ~p",
-		      [StateData#state.myname, StateData#state.server, NSProvided, DB, Attrs]),
+		      "xmlns:db provided: ~p~nFull packet: ~p",
+		      [StateData#state.myname, StateData#state.server, NSProvided, DB, Opening]),
 	    {stop, normal, StateData}
     end;
 
