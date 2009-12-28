@@ -318,17 +318,18 @@ format_args(Args, ArgsFormat) ->
       [],
       lists:zip(ArgsFormat, Args)).
 
-format_arg(Arg, Format) ->
-    Parse = case Format of
-		integer ->
-		    "~d";
-		string ->
-		    NumChars = integer_to_list(string:len(Arg)),
-		    "~" ++ NumChars ++ "c"
-	    end,
+format_arg(Arg, integer) ->
+    format_arg2(Arg, "~d");
+format_arg("", string) ->
+    "";
+format_arg(Arg, string) ->
+    NumChars = integer_to_list(string:len(Arg)),
+    Parse = "~" ++ NumChars ++ "c",
+    format_arg2(Arg, Parse).
+
+format_arg2(Arg, Parse)->
     {ok, [Arg2], _RemainingArguments} = io_lib:fread(Parse, Arg),
     Arg2.
-
 
 %%-----------------------------
 %% Format result
