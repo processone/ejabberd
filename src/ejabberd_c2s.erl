@@ -724,13 +724,13 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	    Resource ->
 		Resource
 	end,
-	ServerB = StateData#state.server,
-	RosterVersioningFeature =
-		ejabberd_hooks:run_fold(roster_get_versioning_feature,
-					ServerB, [], [ServerB]),
-	send_element(StateData,
-		     exmpp_stream:features([exmpp_server_session:feature()
-					    | RosterVersioningFeature])),
+	%%ServerB = StateData#state.server,
+	%%RosterVersioningFeature =
+	%%	ejabberd_hooks:run_fold(roster_get_versioning_feature,
+	%%				ServerB, [], [ServerB]),
+	%%send_element(StateData,
+	%%	     exmpp_stream:features([exmpp_server_session:feature()
+	%%				    | RosterVersioningFeature])),
 	JID = exmpp_jid:make(StateData#state.user, StateData#state.server, R),
 	Res = exmpp_server_binding:bind(El, JID),
 	send_element(StateData, Res),
@@ -773,7 +773,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		?INFO_MSG("(~w) Opened session for ~s",
 			  [StateData#state.socket,
 			   exmpp_jid:to_binary(JID)]),
-		send_element(StateData, exmpp_stream:features([])),
+		%%send_element(StateData, exmpp_stream:features([])),
 		SID = {now(), self()},
 		Conn = get_conn_type(StateData),
 		Info = [{ip, StateData#state.ip}, {conn, Conn},
