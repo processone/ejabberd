@@ -133,6 +133,8 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
     State1 = set_opts(DefRoomOpts, State),
     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
 	      [Room, Host, exmpp_jid:to_binary(Creator)]),
+    add_to_log(room_existence, created, State1),
+    add_to_log(room_existence, started, State1),
     {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     process_flag(trap_exit, true),
@@ -144,6 +146,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 				  history = lqueue_new(HistorySize),
 				  jid = exmpp_jid:make(Room, Host),
 				  room_shaper = Shaper}),
+    add_to_log(room_existence, started, State),
     {ok, normal_state, State}.
 
 %%----------------------------------------------------------------------
@@ -590,6 +593,7 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
 
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
 	      [exmpp_jid:to_binary(StateData#state.jid), Reason]),
+    add_to_log(room_existence, destroyed, StateData),
     {stop, normal, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
@@ -748,10 +752,13 @@ handle_info(_Info, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
+    ?INFO_MSG("Stopping MUC room ~s@~s",
+	      [StateData#state.room, StateData#state.host]),
     ?DICT:fold(
        fun(J, _, _) ->
 	       tab_remove_online_user(J, StateData)
        end, [], StateData#state.users),
+    add_to_log(room_existence, stopped, StateData),
     mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
 			   StateData#state.server_host),
     ok.
@@ -989,6 +996,7 @@ process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 	true ->
 	    ?INFO_MSG("Destroyed MUC room ~s because it's temporary and empty", 
 		      [exmpp_jid:to_binary(StateData#state.jid)]),
+	    add_to_log(room_existence, destroyed, StateData),
 	    {stop, normal, StateData1};
 	_ ->
 	    {next_state, normal_state, StateData1}
@@ -2763,6 +2771,7 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 		[#xmlel{name = 'destroy'} = SubEl1] ->
 		    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s", 
 			      [exmpp_jid:to_binary(StateData#state.jid), exmpp_jid:to_binary(From)]),
+		    add_to_log(room_existence, destroyed, StateData),
 		    destroy_room(SubEl1, StateData);
 		Items ->
 		    process_admin_items_set(From, Items, Lang, StateData)

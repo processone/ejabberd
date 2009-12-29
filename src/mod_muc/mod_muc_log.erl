@@ -227,6 +227,9 @@ add_to_log2(roomconfig_change, _Occupants, Room, Opts, State) ->
 add_to_log2(roomconfig_change_enabledlogging, Occupants, Room, Opts, State) ->
     add_message_to_log("", {roomconfig_change, Occupants}, Room, Opts, State);
 
+add_to_log2(room_existence, NewStatus, Room, Opts, State) ->
+    add_message_to_log("", {room_existence, NewStatus}, Room, Opts, State);
+
 add_to_log2(nickchange, {OldNick, NewNick}, Room, Opts, State) ->
     add_message_to_log(binary_to_list(NewNick), {nickchange, binary_to_list(OldNick)}, Room, Opts, State);
 
@@ -425,7 +428,10 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 		       {nomatch, _} ->
 			   io_lib:format("<font class=\"mn\">~s</font> ~s<br/>",
 					 [Nick2, htmlize(T,NoFollow,FileFormat)])
-		   end
+		   end;
+	       {room_existence, RoomNewExistence} ->
+		   io_lib:format("<font class=\"mrcm\">~s</font><br/>",
+				 [get_room_existence_string(RoomNewExistence, Lang)])
 	   end,
     {Hour, Minute, Second} = Time,
     STime = lists:flatten(
@@ -444,6 +450,11 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 
 %%----------------------------------------------------------------------
 %% Utilities
+
+get_room_existence_string(created, Lang) -> ?T("Chatroom is created");
+get_room_existence_string(destroyed, Lang) -> ?T("Chatroom is destroyed");
+get_room_existence_string(started, Lang) -> ?T("Chatroom is started");
+get_room_existence_string(stopped, Lang) -> ?T("Chatroom is stopped").
 
 get_dateweek(Date, Lang) ->
     Weekday = case calendar:day_of_the_week(Date) of
