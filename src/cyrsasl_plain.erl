@@ -44,7 +44,7 @@ mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
     {ok, #state{check_password = CheckPassword}}.
 
 mech_step(State, ClientIn) ->
-    case parse(ClientIn) of
+    case prepare(ClientIn) of
 	[AuthzId, User, Password] ->
 	    case (State#state.check_password)(User, Password) of
 		{true, AuthModule} ->
@@ -55,6 +55,24 @@ mech_step(State, ClientIn) ->
 	    end;
 	_ ->
 	    {error, "bad-protocol"}
+    end.
+
+prepare(ClientIn) ->
+    case parse(ClientIn) of
+	[[], UserMaybeDomain, Password] ->
+	    case parse_domain(UserMaybeDomain) of
+		%% <NUL>login@domain<NUL>pwd
+		[User, Domain] ->
+		    [UserMaybeDomain, User, Password];
+		%% <NUL>login<NUL>pwd
+		[User] ->
+		    ["", User, Password]
+	    end;
+	%% login@domain<NUL>login<NUL>pwd
+	[AuthzId, User, Password] ->
+	    [AuthzId, User, Password];
+	_ ->
+	    error
     end.
 
 
@@ -71,5 +89,12 @@ parse1([], S, T) ->
     lists:reverse([lists:reverse(S) | T]).
 
 
+parse_domain(S) ->
+    parse_domain1(S, "", []).
 
-
+parse_domain1([$@ | Cs], S, T) ->
+    parse_domain1(Cs, "", [lists:reverse(S) | T]);
+parse_domain1([C | Cs], S, T) ->
+    parse_domain1(Cs, [C | S], T);
+parse_domain1([], S, T) ->
+    lists:reverse([lists:reverse(S) | T]).
