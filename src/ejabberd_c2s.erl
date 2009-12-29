@@ -773,15 +773,15 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		    fsm_next_state(wait_for_bind, StateData);
 		_ ->
 		    JID = jlib:make_jid(U, StateData#state.server, R),
-		    Server = StateData#state.server,
-		    RosterVersioningFeature =
-			ejabberd_hooks:run_fold(
-			  roster_get_versioning_feature, Server, [], [Server]),
-	            StreamFeatures = [{xmlelement, "session",
-				       [{"xmlns", ?NS_SESSION}], []} |
-				      RosterVersioningFeature],
-		    send_element(StateData, {xmlelement, "stream:features",
-					     [], StreamFeatures}),
+		    %%Server = StateData#state.server,
+		    %%RosterVersioningFeature =
+		    %%	ejabberd_hooks:run_fold(
+		    %%  roster_get_versioning_feature, Server, [], [Server]),
+	            %%StreamFeatures = [{xmlelement, "session",
+		    %%		       [{"xmlns", ?NS_SESSION}], []} |
+		    %%		      RosterVersioningFeature],
+		    %%send_element(StateData, {xmlelement, "stream:features",
+		    %%			     [], StreamFeatures}),
 		    Res = IQ#iq{type = result,
 				sub_el = [{xmlelement, "bind",
 					   [{"xmlns", ?NS_BIND}],
@@ -825,8 +825,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
-		    send_element(StateData, {xmlelement, "stream:features",
-					     [], []}),
+		    %%send_element(StateData, {xmlelement, "stream:features",
+		    %%			     [], []}),
 		    SID = {now(), self()},
 		    Conn = get_conn_type(StateData),
 		    Info = [{ip, StateData#state.ip}, {conn, Conn},
