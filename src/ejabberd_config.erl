@@ -101,15 +101,14 @@ get_plain_terms_file(File1) ->
     case file:consult(File) of
 	{ok, Terms} ->
 	    include_config_files(Terms);
-	{error, {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
-	    ExitText = lists:flatten(File ++ " approximately in the line "
-				     ++ file:format_error(Reason)),
-	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
-	    exit(ExitText);
+	{error, {LineNumber, erl_parse, _ParseMessage} = Reason} ->
+	    ExitText = describe_config_problem(File, Reason, LineNumber),
+	    ?ERROR_MSG(ExitText, []),
+	    exit_or_halt(ExitText);
 	{error, Reason} ->
-	    ExitText = lists:flatten(File ++ ": " ++ file:format_error(Reason)),
-	    ?ERROR_MSG("Problem loading ejabberd config file ~n~s", [ExitText]),
-	    exit(ExitText)
+	    ExitText = describe_config_problem(File, Reason),
+	    ?ERROR_MSG(ExitText, []),
+	    exit_or_halt(ExitText)
     end.
 
 %% @doc Convert configuration filename to absolute path.
@@ -170,6 +169,56 @@ normalize_hosts([Host|Hosts], PrepHosts) ->
 	    exit("invalid hostname")
     end.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Errors reading the config file
+
+describe_config_problem(Filename, Reason) ->
+    Text1 = lists:flatten("Problem loading ejabberd config file " ++ Filename),
+    Text2 = lists:flatten(" : " ++ file:format_error(Reason)),
+    ExitText = Text1 ++ Text2,
+    ExitText.
+
+describe_config_problem(Filename, Reason, LineNumber) ->
+    Text1 = lists:flatten("Problem loading ejabberd config file " ++ Filename),
+    Text2 = lists:flatten(" approximately in the line "
+			  ++ file:format_error(Reason)),
+    ExitText = Text1 ++ Text2,
+    Lines = get_config_lines(Filename, LineNumber, 10, 3),
+    ?ERROR_MSG("Extract from config file: ~n~s", [Lines]),
+    ExitText.
+
+get_config_lines(Filename, TargetNumber, PreContext, PostContext) ->
+    {ok, Fd} = file:open(Filename, [read]),
+    LNumbers = lists:seq(TargetNumber-PreContext, TargetNumber+PostContext),
+    NextL = file:read_line(Fd),
+    R = get_config_lines2(Fd, NextL, 1, LNumbers, []),
+    file:close(Fd),
+    R.
+
+get_config_lines2(_Fd, eof, _CurrLine, _LNumbers, R) ->
+    lists:reverse(R);
+get_config_lines2(_Fd, _NewLine, _CurrLine, [], R) ->
+    lists:reverse(R);
+get_config_lines2(Fd, {ok, Data}, CurrLine, [NextWanted | LNumbers], R) ->
+    NextL = file:read_line(Fd),
+    if
+	CurrLine >= NextWanted ->
+	    Line2 = [integer_to_list(CurrLine), ": " | Data],
+	    get_config_lines2(Fd, NextL, CurrLine+1, LNumbers, [Line2 | R]);
+	true ->
+	    get_config_lines2(Fd, NextL, CurrLine+1, [NextWanted | LNumbers], R)
+    end.
+
+%% If ejabberd isn't yet running in this node, then halt the node
+exit_or_halt(ExitText) ->
+    case [Vsn || {ejabberd, _Desc, Vsn} <- application:which_applications()] of
+	[] ->
+	    timer:sleep(1000),
+	    halt(ExitText);
+	[_] ->
+	    exit(ExitText)
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Support for 'include_config_file'
