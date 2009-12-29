@@ -88,7 +88,7 @@ prepare(ClientIn) ->
 	[[], UserMaybeDomain, Password] ->
 	    case parse_domain(UserMaybeDomain) of
 		%% <NUL>login@domain<NUL>pwd
-		[User, Domain] ->
+		[User, _Domain] ->
 		    [UserMaybeDomain, User, Password];
 		%% <NUL>login<NUL>pwd
 		[User] ->
