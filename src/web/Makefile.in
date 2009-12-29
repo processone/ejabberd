@@ -14,7 +14,7 @@ EFLAGS += -pz ..
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-	EFLAGS+=+debug_info
+	EFLAGS+=+debug_info +export_all
 endif
 
 SOURCES = $(wildcard *.erl)

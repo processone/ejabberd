@@ -32,7 +32,7 @@ EFLAGS += -pa .
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-  EFLAGS+=+debug_info
+  EFLAGS+=+debug_info +export_all
 endif
 
 ifdef ejabberd_debug
