@@ -571,7 +571,7 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
 	      [jlib:jid_to_string(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
-    {stop, normal, StateData};
+    {stop, Reason, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
 	      [jlib:jid_to_string(StateData#state.jid)]),
@@ -728,12 +728,33 @@ handle_info(_Info, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(_Reason, _StateName, StateData) ->
+terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("Stopping MUC room ~s@~s",
 	      [StateData#state.room, StateData#state.host]),
+    ReasonT = case Reason of
+		  shutdown -> "You are being removed from the room because"
+				  " of a system shutdown";
+		  _ -> atom_to_list(Reason)
+	      end,
+    ItemAttrs = [{"affiliation", "none"}, {"role", "none"}],
+    ReasonEl = {xmlelement, "reason", [], [{xmlcdata, ReasonT}]},
+    Packet = {xmlelement, "presence", [{"type", "unavailable"}],
+	      [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
+		[{xmlelement, "item", ItemAttrs, [ReasonEl]},
+		 {xmlelement, "status", [{"code", "332"}], []}
+		]}]},
     ?DICT:fold(
-       fun(J, _, _) ->
-	       tab_remove_online_user(J, StateData)
+       fun(LJID, Info, _) ->
+	       Nick = Info#user.nick,
+	       case Reason of
+		   shutdown ->
+		       ejabberd_router:route(
+			 jlib:jid_replace_resource(StateData#state.jid, Nick),
+			 Info#user.jid,
+			 Packet);
+		   _ -> ok
+	       end,
+	       tab_remove_online_user(LJID, StateData)
        end, [], StateData#state.users),
     add_to_log(room_existence, stopped, StateData),
     mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
