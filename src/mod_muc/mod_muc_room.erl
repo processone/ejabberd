@@ -594,7 +594,7 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
 	      [exmpp_jid:to_binary(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
-    {stop, normal, StateData};
+    {stop, Reason, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
 	      [exmpp_jid:to_binary(StateData#state.jid)]),
@@ -751,12 +751,40 @@ handle_info(_Info, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
-terminate(_Reason, _StateName, StateData) ->
+terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("Stopping MUC room ~s@~s",
 	      [StateData#state.room, StateData#state.host]),
+    ReasonT = case Reason of
+		  shutdown -> "You are being removed from the room because"
+				  " of a system shutdown";
+		  _ -> atom_to_list(Reason)
+	      end,
+    ReasonEl = #xmlel{name = 'reason', children = [#xmlcdata{cdata = ReasonT}]},
+    ItemAttrs = [?XMLATTR('affiliation', <<"none">>),
+		 ?XMLATTR('role', <<"none">>)],
+    XEls = [#xmlel{ns = ?NS_MUC_USER, name = 'item',
+		   attrs = ItemAttrs,
+		   children = [ReasonEl]},
+	    #xmlel{ns = ?NS_MUC_USER, name = 'status',
+		   attrs = [?XMLATTR('code', <<"332">>)]}],
+    Packet = #xmlel{ns = ?NS_JABBER_CLIENT,
+                    name = 'presence',
+                    attrs = [?XMLATTR('type', <<"unavailable">>)],
+                    children = [#xmlel{ns = ?NS_MUC_USER, name = 'x',
+				       children = XEls}
+			       ]},
     ?DICT:fold(
-       fun(J, _, _) ->
-	       tab_remove_online_user(J, StateData)
+       fun(LJID, Info, _) ->
+	       Nick = Info#user.nick,
+	       case Reason of
+		   shutdown ->
+		       ejabberd_router:route(
+			 exmpp_jid:full(StateData#state.jid, Nick),
+			 Info#user.jid,
+			 Packet);
+		   _ -> ok
+	       end,
+	       tab_remove_online_user(LJID, StateData)
        end, [], StateData#state.users),
     add_to_log(room_existence, stopped, StateData),
     mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
