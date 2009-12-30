@@ -185,7 +185,8 @@ describe_config_problem(Filename, Reason, LineNumber) ->
 			  ++ file:format_error(Reason)),
     ExitText = Text1 ++ Text2,
     Lines = get_config_lines(Filename, LineNumber, 10, 3),
-    ?ERROR_MSG("Extract from config file: ~n~s", [Lines]),
+    ?ERROR_MSG("The following lines from your configuration file might be"
+	       " relevant to the error: ~n~s", [Lines]),
     ExitText.
 
 get_config_lines(Filename, TargetNumber, PreContext, PostContext) ->
