@@ -1695,6 +1695,27 @@ user_info(User, Server, Query, Lang) ->
 		 ?INPUTT("submit", "chpassword", "Change Password")],
     UserItems = ejabberd_hooks:run_fold(webadmin_user, LServer, [],
 					[User, Server, Lang]),
+    %% Code copied from list_given_users/5:
+    ModLast = get_lastactivity_module(Server),
+    LastActivity = case ejabberd_sm:get_user_resources(User, Server) of
+		       [] ->
+			   case ModLast:get_last_info(User, Server) of
+			       not_found ->
+				   ?T("Never");
+			       {ok, Shift, _Status} ->
+				   TimeStamp = {Shift div 1000000,
+						Shift rem 1000000,
+						0},
+				   {{Year, Month, Day}, {Hour, Minute, Second}} =
+				       calendar:now_to_local_time(TimeStamp),
+				   lists:flatten(
+				     io_lib:format(
+				       "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+				       [Year, Month, Day, Hour, Minute, Second]))
+			   end;
+		       _ ->
+			   ?T("Online")
+		   end,
     [?XC("h1", ?T("User ") ++ us_to_list(US))] ++
 	case Res of
 	    ok -> [?XREST("Submitted")];
@@ -1704,6 +1725,7 @@ user_info(User, Server, Query, Lang) ->
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
 	      [?XCT("h3", "Connected Resources:")] ++ FResources ++
 	      [?XCT("h3", "Password:")] ++ FPassword ++
+	      [?XCT("h3", "Last Activity")] ++ [?C(LastActivity)] ++
 	      UserItems ++
 	      [?P, ?INPUTT("submit", "removeuser", "Remove User")])].
 
