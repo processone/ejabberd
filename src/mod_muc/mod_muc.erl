@@ -40,6 +40,7 @@
 	 forget_room/2,
 	 create_room/5,
 	 process_iq_disco_items/4,
+	 broadcast_service_message/2,
 	 can_use_nick/3]).
 
 %% gen_server callbacks
@@ -848,7 +849,6 @@ clean_table_from_bad_node(Node, Host) ->
 			      end, Es)
         end,
     mnesia:transaction(F).
-
 
 update_tables(Host) ->
     update_muc_room_table(Host),

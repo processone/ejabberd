@@ -30,6 +30,7 @@
 -export([start/0, stop/0,
 	 %% Server
 	 status/0, reopen_log/0,
+	 stop_kindly/2, send_service_message_all_mucs/2,
 	 %% Accounts
 	 register/3, unregister/2,
 	 registered_users/1,
@@ -79,6 +80,11 @@ commands() ->
 			desc = "Reopen the log files",
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
+     #ejabberd_commands{name = stop_kindly, tags = [server],
+			desc = "Inform users and rooms, wait, and stop the server",
+			module = ?MODULE, function = stop_kindly,
+			args = [{delay, integer}, {announcement, string}],
+			result = {res, rescode}},
      #ejabberd_commands{name = get_loglevel, tags = [logs, server],
 			desc = "Get the current loglevel",
 			module = ejabberd_loglevel, function = get,
@@ -214,6 +220,54 @@ get_sasl_error_logger_type () ->
 	{ok, Bad} -> exit ({bad_config, {sasl, {errlog_type, Bad}}});
 	_ -> all
     end.
+
+%%%
+%%% Stop Kindly
+%%%
+
+stop_kindly(DelaySeconds, AnnouncementText) ->
+    Subject = io_lib:format("Server stop in ~p seconds!", [DelaySeconds]),
+    WaitingDesc = io_lib:format("Waiting ~p seconds", [DelaySeconds]),
+    Steps = [
+	     {"Stopping ejabberd port listeners",
+	      ejabberd_listener, stop_listeners, []},
+	     {"Sending announcement to connected users",
+	      mod_announce, send_announcement_to_all,
+	      [?MYNAME, Subject, AnnouncementText]},
+	     {"Sending service message to MUC rooms",
+	      ejabberd_admin, send_service_message_all_mucs,
+	      [Subject, AnnouncementText]},
+	     {WaitingDesc, timer, sleep, [DelaySeconds * 1000]},
+	     {"Stopping ejabberd", application, stop, [ejabberd]},
+	     {"Stopping Mnesia", mnesia, stop, []},
+	     {"Stopping Erlang node", init, stop, []}
+    ],
+    NumberLast = length(Steps),
+    TimestampStart = calendar:datetime_to_gregorian_seconds({date(), time()}),
+    lists:foldl(
+      fun({Desc, Mod, Func, Args}, NumberThis) ->
+	      SecondsDiff =
+		  calendar:datetime_to_gregorian_seconds({date(), time()})
+		  - TimestampStart,
+	      io:format("[~p/~p ~ps] ~s... ",
+			[NumberThis, NumberLast, SecondsDiff, Desc]),
+	      Result = apply(Mod, Func, Args),
+	      io:format("~p~n", [Result]),
+	      NumberThis+1
+      end,
+      1,
+      Steps),
+    ok.
+
+send_service_message_all_mucs(Subject, AnnouncementText) ->
+    Message = io_lib:format("~s~n~s", [Subject, AnnouncementText]),
+    lists:foreach(
+      fun(ServerHost) ->
+	      MUCHost = gen_mod:get_module_opt_host(
+			  ServerHost, mod_muc, "conference.@HOST@"),
+	      mod_muc:broadcast_service_message(MUCHost, Message)
+      end,
+      ?MYHOSTS).
 
 %%%
 %%% Account management
