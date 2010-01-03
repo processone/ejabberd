@@ -77,6 +77,8 @@ start(_, _) ->
 prep_stop(State) ->
     stop_modules(),
     ejabberd_admin:stop(),
+    broadcast_c2s_shutdown(),
+    timer:sleep(5000),
     State.
 
 %% All the processes were killed when this function is called
@@ -197,6 +199,13 @@ add_windows_nameservers() ->
     ?INFO_MSG("Adding machine's DNS IPs to Erlang system:~n~p", [IPTs]),
     lists:foreach(fun(IPT) -> inet_db:add_ns(IPT) end, IPTs).
 
+
+broadcast_c2s_shutdown() ->
+    Children = supervisor:which_children(ejabberd_c2s_sup),
+    lists:foreach(
+      fun({_, C2SPid, _, _}) ->
+	      C2SPid ! system_shutdown
+      end, Children).
 
 %%%
 %%% PID file
