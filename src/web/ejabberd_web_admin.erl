@@ -1670,7 +1670,10 @@ user_info(User, Server, Query, Lang) ->
 						    User, Server, R) of
 						 offline ->
 						     "";
-						 [{node, Node}, {conn, Conn}, {ip, {IP, Port}}] ->
+						 Info when is_list(Info) ->
+						     Node = proplists:get_value(node, Info),
+						     Conn = proplists:get_value(conn, Info),
+						     {IP, Port} = proplists:get_value(ip, Info),
 						     ConnS = case Conn of
 								 c2s -> "plain";
 								 c2s_tls -> "tls";
