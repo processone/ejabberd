@@ -1258,6 +1258,19 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
   when Monitor == StateData#state.socket_monitor ->
     {stop, normal, StateData};
+handle_info(system_shutdown, StateName, StateData) ->
+    case StateName of
+	wait_for_stream ->
+	    send_header(StateData#state.streamid, ?MYNAME, "1.0", ""),
+	    send_element(StateData, exmpp_stream:error('system-shutdown')),
+	    send_text(StateData, ?STREAM_TRAILER),
+	    ok;
+	_ ->
+	    send_element(StateData, exmpp_stream:error('system-shutdown')),
+	    send_text(StateData, ?STREAM_TRAILER),
+	    ok
+    end,
+    {stop, normal, StateData};
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
