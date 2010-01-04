@@ -40,6 +40,7 @@
 	 disco_identity/5,
 	 disco_features/5,
 	 disco_items/5,
+	 send_announcement_to_all/3,
 	 announce_commands/4,
 	 announce_items/4]).
 
@@ -856,6 +857,29 @@ get_stored_motd(LServer) ->
 	_ ->
 	    {"", ""}
     end.
+
+%% This function is similar to others, but doesn't perform any ACL verification
+send_announcement_to_all(Host, SubjectS, BodyS) ->
+    SubjectEls = if SubjectS /= [] ->
+		      [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'subject', children =
+			[#xmlcdata{cdata = list_to_binary(SubjectS)}]}];
+		 true ->
+		      []
+	      end,
+    BodyEls = if BodyS /= [] ->
+		      [#xmlel{ns = ?NS_JABBER_CLIENT, name = 'body', children =
+			[#xmlcdata{cdata = list_to_binary(BodyS)}]}];
+		 true ->
+		      []
+	      end,
+    Packet = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', attrs = [?XMLATTR('type', <<"normal">>)], children = SubjectEls ++ BodyEls},
+    Sessions = ejabberd_sm:dirty_get_sessions_list(),
+    Local = exmpp_jid:make(Host),
+    lists:foreach(
+      fun({U, S, R}) ->
+	      Dest = exmpp_jid:make(U, S, R),
+	      ejabberd_router:route(Local, Dest, Packet)
+      end, Sessions).
 
 %%-------------------------------------------------------------------------
 

@@ -31,6 +31,7 @@
 	 init/3,
 	 start_listeners/0,
 	 start_listener/3,
+	 stop_listeners/0,
 	 stop_listener/2,
 	 parse_listener_portip/2,
 	 add_listener/3,
@@ -303,6 +304,14 @@ start_listener_sup(Port, Module, Opts) ->
 		 worker,
 		 [?MODULE]},
     supervisor:start_child(ejabberd_listeners, ChildSpec).
+
+stop_listeners() ->
+    Ports = ejabberd_config:get_local_option(listen),
+    lists:foreach(
+      fun({PortIpNetp, Module, _Opts}) ->
+	      delete_listener(PortIpNetp, Module)
+      end,
+      Ports).
 
 %% @spec (PortIP, Module) -> ok
 %% where
