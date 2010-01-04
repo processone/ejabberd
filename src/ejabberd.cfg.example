@@ -509,7 +509,8 @@
   %%{mod_proxy65,[]},
   {mod_pubsub,   [
 		  {access_createnode, pubsub_createnode},
-		  {ignore_pep_from_offline, true},
+		  {ignore_pep_from_offline, true}, % reduce resource comsumption, but XEP incompliant
+		  %%{ignore_pep_from_offline, false},  % XEP compliant, but increases resource comsumption
 		  {last_item_cache, false},
 		  {plugins, ["flat", "hometree", "pep"]}  % pep requires mod_caps
 		 ]},
