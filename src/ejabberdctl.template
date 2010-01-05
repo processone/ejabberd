@@ -60,7 +60,7 @@ ID=`id -g`
 EJID=`id -g $INSTALLUSER`
 EXEC_CMD="false"
 if [ $ID -eq 0 ] ; then
-	EXEC_CMD="su ${INSTALLUSER} -c"
+	EXEC_CMD="su ${INSTALLUSER} -p -c"
 fi
 if [ "$ID" -eq "$EJID" ] ; then
 	EXEC_CMD="sh -c"
