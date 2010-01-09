@@ -144,7 +144,7 @@ allow_multiple_connections(Host) when is_list(Host) ->
 %% @spec (User, Server) -> bool()
 %%     User = string()
 %%     Server = string()
-%% @doc Check if user exist in the anonymus database.
+%% @doc Check if user exist in the anonymous database.
 
 anonymous_user_exist(User, Server) when is_list(User), is_list(Server) ->
     LUser = exmpp_stringprep:nodeprep(User),
