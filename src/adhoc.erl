@@ -44,11 +44,11 @@ parse_request(#iq{type = set, lang = Lang, sub_el = SubEl, xmlns = ?NS_COMMANDS}
     Action = xml:get_tag_attr_s("action", SubEl),
     XData = find_xdata_el(SubEl),
     {xmlelement, _, _, AllEls} = SubEl,
-    case XData of
+    Others = case XData of
 	false ->
-	    Others = AllEls;
+	    AllEls;
 	_ ->
-	    Others = lists:delete(XData, AllEls)
+	    lists:delete(XData, AllEls)
     end,
 
     #adhoc_request{lang = Lang,
