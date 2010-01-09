@@ -4417,9 +4417,8 @@ ArgumentValue = any()
 \end{verbatim}
 
 The default value is to not define any restriction: \term{[]}.
-If at least one restriction is defined, then the frontend expects 
-that authentication information is provided when executing a command.
-The authentication information is Username, Hostname and Password of a local XMPP account
+The authentication information is provided when executing a command,
+and is Username, Hostname and Password of a local XMPP account
 that has permission to execute the corresponding command.
 This means that the account must be registered in the local ejabberd,
 because the information will be verified.

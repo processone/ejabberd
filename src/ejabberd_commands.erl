@@ -356,15 +356,14 @@ get_tags_commands() ->
 %% @doc Check access is allowed to that command.
 %% At least one AccessCommand must be satisfied.
 %% It may throw {error, Error} where:
-%% Error = account_unprivileged | invalid_account_data | no_auth_provided
+%% Error = account_unprivileged | invalid_account_data
 check_access_commands([], _Auth, _Method, _Command, _Arguments) ->
     ok;
 check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
-    {ok, User, Server} = check_auth(Auth),
     AccessCommandsAllowed =
 	lists:filter(
 	  fun({Access, Commands, ArgumentRestrictions}) ->
-		  case check_access(Access, User, Server) of
+		  case check_access(Access, Auth) of
 		      true ->
 			  check_access_command(Commands, Command, ArgumentRestrictions,
 					       Method, Arguments);
@@ -379,7 +378,7 @@ check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
     end.
 
 check_auth(noauth) ->
-    throw({error, no_auth_provided});
+    no_auth_provided;
 check_auth({User, Server, Password}) ->
     %% Check the account exists and password is valid
     AccountPass = ejabberd_auth:get_password_s(User, Server),
@@ -394,7 +393,10 @@ get_md5(AccountPass) ->
     lists:flatten([io_lib:format("~.16B", [X])
 		   || X <- binary_to_list(crypto:md5(AccountPass))]).
 
-check_access(Access, User, Server) ->
+check_access(all, _) ->
+    true;
+check_access(Access, Auth) ->
+    {ok, User, Server} = check_auth(Auth),
     %% Check this user has access permission
     case acl:match_rule(Server, Access, exmpp_jid:make(User, Server, "")) of
 	allow -> true;
