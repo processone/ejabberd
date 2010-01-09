@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : configure.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 27 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -58,7 +58,7 @@ start() ->
     end,
 
     EVersion = "ERLANG_VERSION = " ++ erlang:system_info(version) ++ "\n",
-    EIDirS   = "EI_DIR = " ++ code:lib_dir("erl_interface") ++ "\n",
+    EIDirS   = "EI_DIR = " ++ code:lib_dir(erl_interface) ++ "\n",
     RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
     %% Load the ejabberd application description so that ?VERSION can read the vsn key
     application:load(ejabberd),
@@ -67,8 +67,8 @@ start() ->
     OpenSSLDir = "OPENSSL_DIR = c:\\sdk\\OpenSSL\n",
     DBType = "DBTYPE = generic\n",    %% 'generic' or 'mssql'
 
-    SSLDir    = "SSLDIR = " ++ code:lib_dir("ssl") ++ "\n",
-    StdLibDir = "STDLIBDIR = " ++ code:lib_dir("stdlib") ++ "\n",
+    SSLDir    = "SSLDIR = " ++ code:lib_dir(ssl) ++ "\n",
+    StdLibDir = "STDLIBDIR = " ++ code:lib_dir(stdlib) ++ "\n",
 
     file:write_file("Makefile.inc",
 		    list_to_binary(EVersion ++
@@ -87,5 +87,3 @@ start() ->
 				   ZlibDir ++
 				   ZlibLib)),
     halt().
-
-
