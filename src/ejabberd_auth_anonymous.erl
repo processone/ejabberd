@@ -92,7 +92,7 @@ allow_anonymous(Host) when is_list(Host) ->
 
 is_sasl_anonymous_enabled(Host) when is_list(Host) ->
     case allow_anonymous(Host) of
-	false -> false;	    
+	false -> false;
 	true ->
 	    case anonymous_protocol(Host) of
 		sasl_anon -> true;
@@ -113,7 +113,7 @@ is_login_anonymous_enabled(Host) when is_list(Host) ->
 	true  ->
 	    case anonymous_protocol(Host) of
 		login_anon -> true;
-		both       -> true;		
+		both       -> true;
 		_Other     -> false
 	    end
     end.
@@ -138,10 +138,8 @@ anonymous_protocol(Host) when is_list(Host) ->
 %% defaults to false
 
 allow_multiple_connections(Host) when is_list(Host) ->
-    case ejabberd_config:get_local_option({allow_multiple_connections, Host}) of
-	true -> true;
-	_Other -> false
-    end.
+    ejabberd_config:get_local_option(
+      {allow_multiple_connections, Host}) =:= true.
 
 %% @spec (User, Server) -> bool()
 %%     User = string()
@@ -232,7 +230,7 @@ check_password(User, Server, Password) ->
 check_password(User, Server, _Password, _Digest, _DigestGen) ->
     %% We refuse login for registered accounts (They cannot logged but
     %% they however are "reserved")
-    case ejabberd_auth:is_user_exists_in_other_modules(?MODULE, 
+    case ejabberd_auth:is_user_exists_in_other_modules(?MODULE,
 						       User, Server) of
 	%% If user exists in other module, reject anonnymous authentication
 	true  -> false;
@@ -347,4 +345,3 @@ remove_user(_User, _Server, _Password) ->
 
 plain_password_required() ->
     false.
-
