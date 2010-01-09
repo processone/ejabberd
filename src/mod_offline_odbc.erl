@@ -98,7 +98,7 @@ loop(Host, AccessMaxOfflineMsgs) ->
 			    Len + count_offline_messages(User, Host);
 		       true -> 0
 		    end,
-	    if 
+	    if
 		Count > MaxOfflineMsgs ->
 		    discard_warn_sender(Msgs);
 		true ->
@@ -119,7 +119,7 @@ loop(Host, AccessMaxOfflineMsgs) ->
 						     calendar:now_to_universal_time(
 						       M#offline_msg.timestamp),
 						     utc,
-						     jlib:make_jid("", Host, ""),
+						     exmpp_jid:make("", Host, ""),
 						     "Offline Storage"),
 						   %% TODO: Delete the next three lines once XEP-0091 is Obsolete
 						   jlib:timestamp_to_xml(
@@ -296,7 +296,7 @@ find_x_expire(TimeStamp, [_ | Els]) ->
     find_x_expire(TimeStamp, Els).
 
 
-pop_offline_messages(Ls, User, Server) 
+pop_offline_messages(Ls, User, Server)
         when is_binary(User), is_binary(Server) ->
     try
 	LUser = binary_to_list(User),
@@ -307,8 +307,8 @@ pop_offline_messages(Ls, User, Server)
 		Ls ++ lists:flatmap(
 			fun({_, XML}) ->
 				try
-				    [El] = exmpp_xml:parse_document(XML, 
-                         [names_as_atom, {check_elems, xmpp}, 
+				    [El] = exmpp_xml:parse_document(XML,
+                         [names_as_atom, {check_elems, xmpp},
                           {check_nss,xmpp}, {check_attrs,xmpp}]),
 				    To = exmpp_jid:parse(
 				      exmpp_stanza:get_recipient(El)),
@@ -329,7 +329,7 @@ pop_offline_messages(Ls, User, Server)
     end.
 
 
-remove_user(User, Server) 
+remove_user(User, Server)
         when is_binary(User), is_binary(Server) ->
     try
 	LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
@@ -386,8 +386,8 @@ user_queue(User, Server, Query, Lang) ->
 		   {selected, ["username", "xml"], Rs} ->
 		       lists:flatmap(
 			 fun({_, XML}) ->
-				 try exmpp_xml:parse_document(XML, 
-                         [names_as_atom, {check_elems, xmpp}, 
+				 try exmpp_xml:parse_document(XML,
+                         [names_as_atom, {check_elems, xmpp},
                           {check_nss,xmpp}, {check_attrs,xmpp}]) of
 				     [El] ->
 					 [El]
@@ -455,8 +455,8 @@ user_queue_parse_query(Username, LServer, Query) ->
 		       {selected, ["xml", "seq"], Rs} ->
 			   lists:flatmap(
 			     fun({XML, Seq}) ->
-				     try exmpp_xml:parse_document(XML, 
-                         [names_as_atom, {check_elems, xmpp}, 
+				     try exmpp_xml:parse_document(XML,
+                         [names_as_atom, {check_elems, xmpp},
                           {check_nss,xmpp}, {check_attrs,xmpp}]) of
 					 [El] ->
 					     [{El, Seq}]
