@@ -137,7 +137,7 @@ check_password_with_authmodule(User, Server, Password)
 %%     AuthModule = authmodule()
 %% @doc Check the password is valid and also return the authentication module that accepts it.
 %% The password is 'undefined' if the client
-%% authenticates using the digest method as defined in 
+%% authenticates using the digest method as defined in
 %% XEP-0078: Non-SASL Authentication
 
 check_password_with_authmodule(User, Server, Password, Digest, DigestGen)
@@ -161,7 +161,6 @@ check_password_loop([AuthModule | AuthModules], Args) ->
 %%     Server = string()
 %%     Password = string()
 %%     ErrorType = empty_password | not_allowed | invalid_jid
-
 set_password(_User, _Server, "") ->
     %% We do not allow empty password
     {error, empty_password};
@@ -178,35 +177,35 @@ set_password(User, Server, Password)
 %%     User = string()
 %%     Server = string()
 %%     Password = string() | nil()
-
 try_register(_User, _Server, "") ->
     %% We do not allow empty password
-    {error, not_allowed};    
+    {error, not_allowed};
 try_register(User, Server, Password)
   when is_list(User), is_list(Server), is_list(Password) ->
-    case is_user_exists(User,Server) of
+    case is_user_exists(User, Server) of
 	true ->
 	    {atomic, exists};
 	false ->
 	    case lists:member(exmpp_stringprep:nameprep(Server), ?MYHOSTS) of
 		true ->
 		    Res = lists:foldl(
-		      fun(_M, {atomic, ok} = Res) ->
-			      Res;
-			 (M, _) ->
-			      M:try_register(User, Server, Password)
-		      end, {error, not_allowed}, auth_modules(Server)),
-		    case Res of
-			{atomic, ok} ->
-			    ejabberd_hooks:run(register_user, list_to_binary(Server),
-					       [User, Server]),
-			    {atomic, ok};
-			_ -> Res
-		    end;
+			    fun (_M, {atomic, ok} = Res) ->
+				    Res;
+				(M, _) ->
+				    M:try_register(User, Server, Password)
+			    end, {error, not_allowed}, auth_modules(Server)),
+		    trigger_register_hooks(Res, User, Server);
 		false ->
 		    {error, not_allowed}
 	    end
     end.
+
+trigger_register_hooks({atomic, ok} = Res, User, Server) ->
+    ejabberd_hooks:run(register_user, list_to_binary(Server),
+		       [User, Server]),
+    Res;
+trigger_register_hooks(Res, _User, _Server) ->
+    Res.
 
 %% @spec () -> [{LUser, LServer}]
 %%     LUser = string()
@@ -376,17 +375,19 @@ is_user_exists_in_other_modules_loop([AuthModule|AuthModules], User, Server) ->
 %%     User = string()
 %%     Server = string()
 %% @doc Remove user.
-%% Note: it may return ok even if there was some problem removing the user.
+%% TODO: Fix me: It always return ok even if there was some problem removing the user.
+%% dialyzer warning
+%% ejabberd_auth.erl:388: The variable _ can never match since previous clauses completely covered the type 'ok'
 
 remove_user(User, Server) when is_list(User), is_list(Server) ->
     R = lists:foreach(
-      fun(M) ->
-	      M:remove_user(User, Server)
-      end, auth_modules(Server)),
+	  fun(M) ->
+		  M:remove_user(User, Server)
+	  end, auth_modules(Server)),
     case R of
-		ok -> ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)), 
-                                    [list_to_binary(User), list_to_binary(Server)]);
-		_ -> none
+	ok -> ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)),
+				 [list_to_binary(User), list_to_binary(Server)]);
+	_ -> none
     end,
     R.
 
@@ -408,7 +409,7 @@ remove_user(User, Server, Password)
 	      M:remove_user(User, Server, Password)
       end, error, auth_modules(Server)),
     case R of
-		ok -> ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)), 
+		ok -> ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)),
                                     [list_to_binary(User), list_to_binary(Server)]);
 		_ -> none
     end,
