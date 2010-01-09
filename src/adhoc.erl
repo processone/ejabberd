@@ -48,11 +48,11 @@ parse_request(#iq{type = Type, ns = NS, payload = SubEl, lang = Lang}) ->
 		Action = exmpp_xml:get_attribute_as_list(SubEl, 'action', ""),
 		XData = find_xdata_el(SubEl),
 		AllEls = exmpp_xml:get_child_elements(SubEl),
-		case XData of
+		Others = case XData of
 		    false ->
-			Others = AllEls;
+			AllEls;
 		    _ ->
-			Others = lists:delete(XData, AllEls)
+			lists:delete(XData, AllEls)
 		end,
 
 		#adhoc_request{lang = Lang,
