@@ -2982,7 +2982,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 	end,
     %% Handles explicit subscriptions
     SubIDsByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
-    lists:foreach(fun ({LJID, SubIDs}) ->
+    lists:foreach(fun ({LJID, NodeName, SubIDs}) ->
 	    LJIDs = case BroadcastAll of
 		    true ->
 			{U, S, _} = LJID,
@@ -2993,7 +2993,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 	    %% Determine if the stanza should have SHIM ('SubID' and 'name') headers
 	    StanzaToSend = case SHIM of
 		    true ->
-			Headers = lists:append(collection_shim(Node), subid_shim(SubIDs)),
+			Headers = lists:append(collection_shim(NodeName), subid_shim(SubIDs)),
 			add_headers(Stanza, Headers);
 		    false ->
 			Stanza
@@ -3050,10 +3050,10 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun(Depth, Node, Subs, Acc) ->
-%	    NodeId = case Node#pubsub_node.nodeid of
-%		{_, N} -> N;
-%		Other -> Other
-%	    end,
+	    NodeName = case Node#pubsub_node.nodeid of
+		{_, N} -> N;
+		Other -> Other
+	    end,
 	    NodeOptions = Node#pubsub_node.options,
 	    lists:foldl(fun({LJID, SubID, SubOptions}, {JIDs, Recipients}) ->
 		case is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) of
@@ -3066,11 +3066,11 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 			%%  - add the Jid to JIDs list co-accumulator ;
 			%%  - create a tuple of the Jid, NodeId, and SubID (as list),
 			%%    and add the tuple to the Recipients list co-accumulator
-			{[LJID | JIDs], [{LJID, [SubID]} | Recipients]};
+			{[LJID | JIDs], [{LJID, NodeName, [SubID]} | Recipients]};
 		    true ->
 			%% - if the JIDs co-accumulator contains the Jid
 			%%   get the tuple containing the Jid from the Recipient list co-accumulator
-			{_, {LJID, SubIDs}} = lists:keysearch(LJID, 1, Recipients),
+			{_, {LJID, NodeName1, SubIDs}} = lists:keysearch(LJID, 1, Recipients),
 			%%   delete the tuple from the Recipients list
 			% v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
 			% v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, NodeId1, [SubID | SubIDs]}),
@@ -3079,7 +3079,7 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 			% v1.1 : {JIDs, lists:append(Recipients1, [{LJID, NodeId1, lists:append(SubIDs, [SubID])}])}
 			% v1.2 : {JIDs, [{LJID, NodeId1, [SubID | SubIDs]} | Recipients1]}
 			% v2: {JIDs, Recipients1}
-			{JIDs, lists:keyreplace(LJID, 1, Recipients, {LJID, [SubID | SubIDs]})}
+			{JIDs, lists:keyreplace(LJID, 1, Recipients, {LJID, NodeName1, [SubID | SubIDs]})}
 		    end;
 		false ->
 		    {JIDs, Recipients}
