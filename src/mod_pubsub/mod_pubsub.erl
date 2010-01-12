@@ -86,7 +86,7 @@
 	 get_items/2,
 	 get_item/3,
 	 get_cached_item/2,
-	 broadcast_stanza/8,
+	 broadcast_stanza/9,
 	 get_configure/5,
 	 set_configure/5,
 	 tree_action/3,
@@ -2936,7 +2936,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, _
 		[{xmlelement, "items", nodeAttr(Node),
 		    [{xmlelement, "item", itemAttr(ItemId), Content}]}]),
 	    broadcast_stanza(Host, Node, NodeId, Type,
-			     NodeOptions, SubsByDepth, items, Stanza),
+			     NodeOptions, SubsByDepth, items, Stanza, true),
 	    case Removed of
 		[] ->
 		    ok;
@@ -2948,7 +2948,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, _
 				    [{xmlelement, "retract", itemAttr(RId), []} || RId <- Removed]}]),
 			    broadcast_stanza(Host, Node, NodeId, Type,
 					     NodeOptions, SubsByDepth,
-					     items, RetractStanza);
+					     items, RetractStanza, true);
 			_ ->
 			    ok
 		    end
@@ -2972,7 +2972,7 @@ broadcast_retract_items(Host, Node, NodeId, Type, NodeOptions, ItemIds, ForceNot
 			[{xmlelement, "items", nodeAttr(Node),
 			    [{xmlelement, "retract", itemAttr(ItemId), []} || ItemId <- ItemIds]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubsByDepth, items, Stanza),
+				     NodeOptions, SubsByDepth, items, Stanza, true),
 		    {result, true};
 		_ ->
 		    {result, false}
@@ -2991,7 +2991,7 @@ broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
 			[{xmlelement, "purge", nodeAttr(Node),
 			    []}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubsByDepth, nodes, Stanza),
+				     NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true};
 		_ -> 
 		    {result, false}
@@ -3012,7 +3012,7 @@ broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
 			[{xmlelement, "delete", nodeAttr(Node),
 			    []}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubsByDepth, nodes, Stanza),
+				     NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true}
 	    end;
 	_ ->
@@ -3035,7 +3035,7 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
 		    Stanza = event_stanza(
 			[{xmlelement, "configuration", nodeAttr(Node), Content}]),
 		    broadcast_stanza(Host, Node, NodeId, Type,
-				     NodeOptions, SubsByDepth, nodes, Stanza),
+				     NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true};
 		_ -> 
 		    {result, false}
@@ -3091,7 +3091,7 @@ get_options_for_subs(NodeID, Subs) ->
 %	    {result, false}
 %    end
 
-broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza) ->
+broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     NotificationType = get_option(NodeOptions, notification_type, headline),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
@@ -3100,8 +3100,8 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 	MsgType -> add_message_type(BaseStanza, atom_to_list(MsgType))
 	end,
     %% Handles explicit subscriptions
-    NodesByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
-    lists:foreach(fun ({LJID, Nodes}) ->
+    SubIDsByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
+    lists:foreach(fun ({LJID, SubIDs}) ->
 			  LJIDs = case BroadcastAll of
 				      true ->
 					  {U, S, _} = LJID,
@@ -3109,11 +3109,18 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 				      false ->
 					  [LJID]
 				  end,
-			  SHIMStanza = add_headers(Stanza, collection_shim(Node, Nodes)),
+        %% Determine if the stanza should have SHIM ('SubID' and 'name') headers
+				StanzaToSend = case SHIM of
+				                 true ->
+				                   Headers = lists:append(collection_shim(Node), subid_shim(SubIDs)),
+				                   add_headers(Stanza, Headers);
+				                 false ->
+				                   Stanza
+				               end,
 			  lists:foreach(fun(To) ->
-						ejabberd_router:route(From, jlib:make_jid(To), SHIMStanza)
+						ejabberd_router:route(From, jlib:make_jid(To), StanzaToSend)
 					end, LJIDs)
-		  end, NodesByJID),
+		  end, SubIDsByJID),
     %% Handles implicit presence subscriptions
     case Host of
 	{LUser, LServer, LResource} ->
@@ -3168,21 +3175,44 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 		    Other -> Other
 		end,
 		NodeOptions = Node#pubsub_node.options,
-		lists:foldl(fun({LJID, _SubID, SubOptions}, Acc2) ->
-				     case is_to_deliver(LJID, NotifyType, Depth,
-							NodeOptions, SubOptions) of
-					 true  -> [{LJID, NodeId}|Acc2];
-					 false -> Acc2
-				     end
-			     end, Acc, Subs)
+	  lists:foldl(
+	    fun({LJID, SubID, SubOptions}, {JIDs, Recipients} = Acc) ->
+		   case is_to_deliver(LJID, NotifyType, Depth,	NodeOptions, SubOptions) of
+		    true  ->
+		      %% If is to deliver :
+		      case lists:member(LJID, JIDs) of
+              %% check if the JIDs co-accumulator contains the Subscription Jid,
+		        false ->
+                %%  - if not,
+                %%       - add the Jid to JIDs list co-accumulator ;
+                %%       - create a tuple of the Jid, NodeId, and SubID (as list),
+                %%         and add the tuple to the Recipients list co-accumulator
+		          {[LJID | JIDs], [{LJID, [SubID]} | Recipients]};
+		        true ->
+		          %% - if the JIDs co-accumulator contains the Jid
+		          %%   get the tuple containing the Jid from the Recipient list co-accumulator
+		          {_, {LJID, SubIDs}} = lists:keysearch(LJID, 1, Recipients),
+		          %%   delete the tuple from the Recipients list
+		          % v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
+		          % v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, NodeId1, [SubID | SubIDs]}),
+		          %%   add the SubID to the SubIDs list in the tuple,
+		          %%   and add the tuple back to the Recipients list co-accumulator
+		          % v1.1 : {JIDs, lists:append(Recipients1, [{LJID, NodeId1, lists:append(SubIDs, [SubID])}])}
+		          % v1.2 : {JIDs, [{LJID, NodeId1, [SubID | SubIDs]} | Recipients1]}
+		          % v2: {JIDs, Recipients1}
+		          {JIDs, lists:keyreplace(LJID, 1, Recipients, {LJID, [SubID | SubIDs]})}
+		      end;
+		    false -> {JIDs, Recipients}
+		    end
+		  end, Acc, Subs)
 	end,
     DepthsToDeliver = fun({Depth, SubsByNode}, Acc) ->
 		lists:foldl(fun({Node, Subs}, Acc2) ->
 				    NodesToDeliver(Depth, Node, Subs, Acc2)
 			    end, Acc, SubsByNode)
 	end,
-    JIDSubs = lists:foldl(DepthsToDeliver, [], SubsByDepth),
-    [{LJID, proplists:append_values(LJID, JIDSubs)} || LJID <- proplists:get_keys(JIDSubs)].
+  {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
+  JIDSubs.
 
 %% If we don't know the resource, just pick first if any
 %% If no resource available, check if caps anyway (remote online)
@@ -3746,10 +3776,34 @@ add_message_type({xmlelement, "message", Attrs, Els}, Type) ->
 add_message_type(XmlEl, _Type) ->
     XmlEl.
 
+%% Place of <headers/> changed at the bottom of the stanza
+%% cf. http://xmpp.org/extensions/xep-0060.html#publisher-publish-success-subid
+%%
+%% "[SHIM Headers] SHOULD be included after the event notification information
+%% (i.e., as the last child of the <message/> stanza)".
+
 add_headers({xmlelement, Name, Attrs, Els}, HeaderEls) ->
     HeaderEl = {xmlelement, "headers", [{"xmlns", ?NS_SHIM}], HeaderEls},
-    {xmlelement, Name, Attrs, [HeaderEl | Els]}.
+    {xmlelement, Name, Attrs, lists:append(Els, [HeaderEl])}.
 
-collection_shim(Node, Nodes) ->
+%% Removed multiple <header name=Collection>Foo</header/> elements
+%% Didn't seem compliant, but not sure. Confirmation required.
+%% cf. http://xmpp.org/extensions/xep-0248.html#notify
+%%
+%% "If an item is published to a node which is also included by a collection,
+%%  and an entity is subscribed to that collection with a subscription type of
+%%  "items" (Is there a way to check that currently ?), then the notifications
+%%  generated by the service MUST contain additional information. The <items/>
+%%  element contained in the notification message MUST specify the node
+%%  identifier of the node that generated the notification (not the collection)
+%%  and the <item/> element MUST contain a SHIM header that specifies the node
+%%  identifier of the collection".
+
+collection_shim(Node) ->
     [{xmlelement, "header", [{"name", "Collection"}],
-      [{xmlcdata, node_to_string(N)}]} || N <- Nodes -- [Node]].
+      [{xmlcdata, node_to_string(Node)}]}].
+
+subid_shim(SubIDs) ->
+    [{xmlelement, "header", [{"name", "SubID"}],
+      [{xmlcdata, SubID}]} || SubID <- SubIDs].
+
