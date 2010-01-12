@@ -57,11 +57,14 @@ fi
 
 # check the proper system user is used
 ID=`id -g`
+GIDS=`id -G`
 EJID=`id -g $INSTALLUSER`
 EXEC_CMD="false"
-if [ $ID -eq 0 ] ; then
+for GID in $GIDS; do
+    if [ $GID -eq 0 ] ; then
 	EXEC_CMD="su ${INSTALLUSER} -p -c"
-fi
+    fi
+done
 if [ "$ID" -eq "$EJID" ] ; then
 	EXEC_CMD="sh -c"
 fi
