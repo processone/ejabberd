@@ -38,6 +38,7 @@
 	 pop_offline_messages/3,
 	 get_sm_features/5,
 	 remove_user/2,
+	 get_queue_length/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
@@ -495,25 +496,23 @@ user_queue_parse_query(Username, LServer, Query) ->
 us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server).
 
+get_queue_length(Username, LServer) ->
+    case catch ejabberd_odbc:sql_query(
+			    LServer,
+			    ["select count(*) from spool"
+			     "  where username='", Username, "';"]) of
+		   {selected, [_], [{SCount}]} ->
+		       SCount;
+		   _ ->
+		       0
+	       end.
+
 webadmin_user(Acc, User, Server, Lang) ->
-    FQueueLen = try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
 	Username = ejabberd_odbc:escape(LUser),
-	QueueLen = case catch ejabberd_odbc:sql_query(
-				LServer,
-				["select count(*) from spool"
-				 "  where username='", Username, "';"]) of
-		       {selected, [_], [{SCount}]} ->
-			   SCount;
-		       _ ->
-			   0
-		   end,
-	[?AC("queue/", QueueLen)]
-    catch
-	_ ->
-	    [?C("?")]
-    end,
+    QueueLen = get_queue_length(Username, LServer),
+    FQueueLen = [?AC("queue/", QueueLen)],
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
 
 webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->

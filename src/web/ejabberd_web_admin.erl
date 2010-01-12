@@ -1571,6 +1571,7 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
 
 list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
     ModLast = get_lastactivity_module(Host),
+    ModOffline = get_offlinemsg_module(Host),
     ?XE('table',
 	[?XE('thead',
 	     [?XE('tr',
@@ -1583,14 +1584,10 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
                ServerB = list_to_binary(Server),
                UserB = list_to_binary(User),
                US = {UserB, ServerB},
-               FQueueLen = try
-     		        QueueLen = length(mnesia:dirty_read({offline_msg, US})),
-		            [?AC(URLFunc({users_queue, Prefix,
+	       QueueLenStr = get_offlinemsg_length(ModOffline, UserB, ServerB),
+               FQueueLen = [?AC(URLFunc({users_queue, Prefix,
     				          		 User, Server}),
-				        	    pretty_string_int(QueueLen))]
-               catch 
-                _:_ -> [#xmlcdata{cdata = <<"Can't access the offline messages storage.">>}]
-              end,
+				        	    QueueLenStr)],
 		       FLast =
 			   case ejabberd_sm:get_user_resources(UserB, ServerB) of
 			       [] ->
@@ -1621,6 +1618,19 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 			    ?XC('td', FLast)])
 	       end, Users)
 	    )]).
+
+get_offlinemsg_length(ModOffline, User, Server) ->
+    case ModOffline of
+	none -> "disabled";
+	_ -> pretty_string_int(ModOffline:get_queue_length(User, Server))
+    end.
+
+get_offlinemsg_module(Server) ->
+    case [mod_offline, mod_offline_odbc] -- gen_mod:loaded_modules(Server) of
+        [mod_offline, mod_offline_odbc] -> none;
+        [mod_offline_odbc] -> mod_offline;
+        [mod_offline] -> mod_offline_odbc
+    end.
 
 get_lastactivity_module(Server) ->
     case lists:member(mod_last, gen_mod:loaded_modules(Server)) of

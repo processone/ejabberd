@@ -39,6 +39,7 @@
 	 remove_expired_messages/0,
 	 remove_old_messages/1,
 	 remove_user/2,
+	 get_queue_length/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
@@ -702,19 +703,12 @@ user_queue_parse_query(US, Query) ->
 us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server).
 
+get_queue_length(User, Server) ->
+    length(mnesia:dirty_read({offline_msg, {User, Server}})).
+
 webadmin_user(Acc, User, Server, Lang) ->
-    FQueueLen = try
-	US = {
-	  exmpp_stringprep:nodeprep(User),
-	  exmpp_stringprep:nameprep(Server)
-	},
-	QueueLen = length(mnesia:dirty_read({offline_msg, US})),
-	[?AC("queue/",
-	     integer_to_list(QueueLen))]
-    catch
-	_ ->
-	    [?C("?")]
-    end,
+    QueueLen = get_queue_length(exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)),
+    FQueueLen = [?AC("queue/", integer_to_list(QueueLen))],
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
 
 webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->
