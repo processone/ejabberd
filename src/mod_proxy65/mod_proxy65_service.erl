@@ -5,7 +5,7 @@
 %%% Created : 12 Oct 2006 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -211,7 +211,7 @@ iq_vcard(Lang) ->
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(Lang, "ejabberd SOCKS5 Bytestreams module") ++
-       "\nCopyright (c) 2003-2009 Alexey Shchepin"}]}].
+       "\nCopyright (c) 2003-2010 Alexey Shchepin"}]}].
 
 parse_options(ServerHost, Opts) ->
     MyHost = gen_mod:get_opt_host(ServerHost, Opts, "proxy.@HOST@"),
