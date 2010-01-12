@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2010-01-12 11:24:41.169047172 +0100
-+++ mod_pubsub_odbc.erl	2010-01-12 13:11:52.450026878 +0100
+--- mod_pubsub.erl	2010-01-12 13:29:25.458216046 +0100
++++ mod_pubsub_odbc.erl	2010-01-12 13:30:14.538046934 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.

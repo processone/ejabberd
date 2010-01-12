@@ -2979,49 +2979,49 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun(Depth, Node, Subs, Acc) ->
-		NodeId = case Node#pubsub_node.nodeid of
-		    {_, N} -> N;
-		    Other -> Other
-		end,
-		NodeOptions = Node#pubsub_node.options,
-	  lists:foldl(
-	    fun({LJID, SubID, SubOptions}, {JIDs, Recipients} = Acc) ->
-		   case is_to_deliver(LJID, NotifyType, Depth,	NodeOptions, SubOptions) of
-		    true  ->
-		      %% If is to deliver :
-		      case lists:member(LJID, JIDs) of
-              %% check if the JIDs co-accumulator contains the Subscription Jid,
-		        false ->
-                %%  - if not,
-                %%       - add the Jid to JIDs list co-accumulator ;
-                %%       - create a tuple of the Jid, NodeId, and SubID (as list),
-                %%         and add the tuple to the Recipients list co-accumulator
-		          {[LJID | JIDs], [{LJID, [SubID]} | Recipients]};
-		        true ->
-		          %% - if the JIDs co-accumulator contains the Jid
-		          %%   get the tuple containing the Jid from the Recipient list co-accumulator
-		          {_, {LJID, SubIDs}} = lists:keysearch(LJID, 1, Recipients),
-		          %%   delete the tuple from the Recipients list
-		          % v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
-		          % v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, NodeId1, [SubID | SubIDs]}),
-		          %%   add the SubID to the SubIDs list in the tuple,
-		          %%   and add the tuple back to the Recipients list co-accumulator
-		          % v1.1 : {JIDs, lists:append(Recipients1, [{LJID, NodeId1, lists:append(SubIDs, [SubID])}])}
-		          % v1.2 : {JIDs, [{LJID, NodeId1, [SubID | SubIDs]} | Recipients1]}
-		          % v2: {JIDs, Recipients1}
-		          {JIDs, lists:keyreplace(LJID, 1, Recipients, {LJID, [SubID | SubIDs]})}
-		      end;
-		    false -> {JIDs, Recipients}
-		    end
-		  end, Acc, Subs)
+%	    NodeId = case Node#pubsub_node.nodeid of
+%		{_, N} -> N;
+%		Other -> Other
+%	    end,
+	    NodeOptions = Node#pubsub_node.options,
+	    lists:foldl(fun({LJID, SubID, SubOptions}, {JIDs, Recipients}) ->
+		case is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) of
+		true  ->
+		    %% If is to deliver :
+		    case lists:member(LJID, JIDs) of
+		    %% check if the JIDs co-accumulator contains the Subscription Jid,
+		    false ->
+			%%  - if not,
+			%%  - add the Jid to JIDs list co-accumulator ;
+			%%  - create a tuple of the Jid, NodeId, and SubID (as list),
+			%%    and add the tuple to the Recipients list co-accumulator
+			{[LJID | JIDs], [{LJID, [SubID]} | Recipients]};
+		    true ->
+			%% - if the JIDs co-accumulator contains the Jid
+			%%   get the tuple containing the Jid from the Recipient list co-accumulator
+			{_, {LJID, SubIDs}} = lists:keysearch(LJID, 1, Recipients),
+			%%   delete the tuple from the Recipients list
+			% v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
+			% v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, NodeId1, [SubID | SubIDs]}),
+			%%   add the SubID to the SubIDs list in the tuple,
+			%%   and add the tuple back to the Recipients list co-accumulator
+			% v1.1 : {JIDs, lists:append(Recipients1, [{LJID, NodeId1, lists:append(SubIDs, [SubID])}])}
+			% v1.2 : {JIDs, [{LJID, NodeId1, [SubID | SubIDs]} | Recipients1]}
+			% v2: {JIDs, Recipients1}
+			{JIDs, lists:keyreplace(LJID, 1, Recipients, {LJID, [SubID | SubIDs]})}
+		    end;
+		false ->
+		    {JIDs, Recipients}
+		end
+	    end, Acc, Subs)
 	end,
     DepthsToDeliver = fun({Depth, SubsByNode}, Acc) ->
-		lists:foldl(fun({Node, Subs}, Acc2) ->
-				    NodesToDeliver(Depth, Node, Subs, Acc2)
-			    end, Acc, SubsByNode)
+	    lists:foldl(fun({Node, Subs}, Acc2) ->
+		    NodesToDeliver(Depth, Node, Subs, Acc2)
+	    end, Acc, SubsByNode)
 	end,
-  {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
-  JIDSubs.
+    {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
+    JIDSubs.
 
 %% If we don't know the resource, just pick first if any
 %% If no resource available, check if caps anyway (remote online)
