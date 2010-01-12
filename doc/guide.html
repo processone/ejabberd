@@ -342,7 +342,7 @@ as long as your system have all the dependencies.</P><P> <A NAME="installreq"></
 GNU Make
 </LI><LI CLASS="li-itemize">GCC
 </LI><LI CLASS="li-itemize">Erlang/OTP R12B-4 or higher, R13B or higher.
-</LI><LI CLASS="li-itemize">exmpp 0.9.1 or higher
+</LI><LI CLASS="li-itemize">exmpp 0.9.2 or higher
 </LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
 </LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
 </LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
@@ -3742,7 +3742,7 @@ serving this connection, otherwise a new connection is opened.</P><P> <A NAME="c
 and you need to setup another one to make an <TT>ejabberd</TT> cluster. Then do
 following steps:</P><OL CLASS="enumerate" type=1><LI CLASS="li-enumerate">
 Copy <CODE>~ejabberd/.erlang.cookie</CODE> file from <TT>first</TT> to
-<TT>second</TT>.<P>(alt) You can also add &#X2018;<CODE>-cookie content_of_.erlang.cookie</CODE>&#X2019;
+<TT>second</TT>.<P>(alt) You can also add &#X2018;<CODE>-setcookie content_of_.erlang.cookie</CODE>&#X2019;
 option to all &#X2018;<TT>erl</TT>&#X2019; commands below.</P></LI><LI CLASS="li-enumerate">On <TT>second</TT> run the following command as the <TT>ejabberd</TT> daemon user,
 in the working directory of <TT>ejabberd</TT>:<PRE CLASS="verbatim">erl -sname ejabberd \
     -mnesia dir "/var/lib/ejabberd/" \
