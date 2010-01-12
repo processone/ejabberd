@@ -122,6 +122,7 @@
 	]).
 
 -define(PROCNAME, ejabberd_mod_pubsub_odbc).
+-define(LOOPNAME, ejabberd_mod_pubsub_loop).
 -define(PLUGIN_PREFIX, "node_").
 -define(TREE_PREFIX, "nodetree_").
 
@@ -194,6 +195,7 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {last_item_cache, LastItemCache}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {max_items_node, MaxItemsNode}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, config), {host, Host}),
     ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
@@ -225,7 +227,8 @@ init([ServerHost, Opts]) ->
 		max_items_node = MaxItemsNode,
 		nodetree = NodeTree,
 		plugins = Plugins},
-    SendLoop = spawn(?MODULE, send_loop, [State]),
+    SendLoop = spawn(?MODULE, send_loop, [State]), %% TODO put this in supervision
+    register(gen_mod:get_module_proc(ServerHost, ?LOOPNAME), SendLoop),
     {ok, State#state{send_loop = SendLoop}}.
 
 %% @spec (Host, ServerHost, Opts) -> Plugins
@@ -273,18 +276,6 @@ init_nodes(Host, ServerHost, _NodeTree, Plugins) ->
 	create_node(Host, ServerHost, string_to_node("/home/"++ServerHost), service_jid(Host), "hometree_odbc");
     false ->
 	ok
-    end.
-
-send_queue(State, Msg) ->
-    Pid = State#state.send_loop,
-    case is_process_alive(Pid) of
-    true ->
-	Pid ! Msg,
-	State;
-    false ->
-	SendLoop = spawn(?MODULE, send_loop, [State]),
-	SendLoop ! Msg,
-	State#state{send_loop = SendLoop}
     end.
 
 send_loop(State) ->
@@ -520,18 +511,20 @@ disco_sm_items(Acc, From, To, SNode, _Lang) ->
 %%
 
 presence_probe(#jid{luser = User, lserver = Server, lresource = Resource} = JID, JID, Pid) ->
-    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
     %%?DEBUG("presence probe self ~s@~s/~s  ~s@~s/~s",[User,Server,Resource,element(2,JID),element(3,JID),element(4,JID)]),
-    gen_server:cast(Proc, {presence, JID, Pid}),
-    gen_server:cast(Proc, {presence, User, Server, [Resource], JID});
+    presence(Server, {presence, JID, Pid}),
+    presence(Server, {presence, User, Server, [Resource], JID});
 presence_probe(#jid{luser = User, lserver = Server}, #jid{luser = User, lserver = Server}, _Pid) ->
     %% ignore presence_probe from other ressources for the current user
     %% this way, we do not send duplicated last items if user already connected with other clients
     ok;
 presence_probe(#jid{luser = User, lserver = Server, lresource = Resource}, #jid{lserver = Host} = JID, _Pid) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     %%?DEBUG("presence probe peer ~s@~s/~s  ~s@~s/~s",[User,Server,Resource,element(2,JID),element(3,JID),element(4,JID)]),
-    gen_server:cast(Proc, {presence, User, Server, [Resource], JID}).
+    presence(Host, {presence, User, Server, [Resource], JID}).
+
+presence(ServerHost, Presence) ->
+    Proc = gen_mod:get_module_proc(ServerHost, ?LOOPNAME),
+    Proc ! Presence.
 
 %% -------
 %% subscription hooks handling functions
@@ -544,16 +537,38 @@ out_subscription(User, Server, JID, subscribed) ->
 	[] -> user_resources(PUser, PServer);
 	_ -> [PResource]
     end,
-    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
-    gen_server:cast(Proc, {presence, PUser, PServer, PResources, Owner});
+    presence(Server, {presence, PUser, PServer, PResources, Owner});
 out_subscription(_,_,_,_) ->
     ok.
 in_subscription(_, User, Server, Owner, unsubscribed, _) ->
-    Subscriber = jlib:make_jid(User, Server, ""),
-    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
-    gen_server:cast(Proc, {unsubscribe, Subscriber, Owner});
+    unsubscribe_user(jlib:make_jid(User, Server, ""), Owner);
 in_subscription(_, _, _, _, _, _) ->
     ok.
+
+unsubscribe_user(Entity, Owner) ->
+    BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    Host = host(element(2, BJID)),
+    spawn(fun() ->
+	lists:foreach(fun(PType) ->
+	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Entity]),
+	    lists:foreach(fun
+		({#pubsub_node{options = Options, id = NodeId}, subscribed, _, JID}) ->
+		    case get_option(Options, access_model) of
+			presence ->
+			    case lists:member(BJID, node_owners(Host, PType, NodeId)) of
+				true ->
+				    node_action(Host, PType, unsubscribe_node, [NodeId, Entity, JID, all]);
+				false ->
+				    {result, ok}
+			    end;
+			_ ->
+			    {result, ok}
+		    end;
+		(_) ->
+		    ok
+	    end, Subscriptions)
+	end, plugins(Host))
+    end).
 
 %% -------
 %% user remove hook handling function
@@ -562,8 +577,22 @@ in_subscription(_, _, _, _, _, _) ->
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    Proc = gen_mod:get_module_proc(Server, ?PROCNAME),
-    gen_server:cast(Proc, {remove_user, LUser, LServer}).
+    Entity = jlib:make_jid(LUser, LServer, ""),
+    Host = host(LServer),
+    spawn(fun() ->
+	lists:foreach(fun(PType) ->
+	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Entity]),
+	    lists:foreach(fun
+		({#pubsub_node{id = NodeId}, subscribed, _, JID}) -> node_action(Host, PType, unsubscribe_node, [NodeId, Entity, JID, all]);
+		(_) -> ok
+	    end, Subscriptions),
+	    {result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Entity]),
+	    lists:foreach(fun
+		({#pubsub_node{nodeid = {H, N}}, owner}) -> delete_node(H, N, Entity);
+		({#pubsub_node{id = NodeId}, _}) -> node_action(Host, PType, set_affiliation, [NodeId, Entity, none])
+	    end, Affiliations)
+	end, plugins(Host))
+    end).
 
 %%--------------------------------------------------------------------
 %% Function:
@@ -594,65 +623,6 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 %% @private
-handle_cast({presence, JID, Pid}, State) ->
-    %% A new resource is available. send last published items
-    {noreply, send_queue(State, {presence, JID, Pid})};
-
-handle_cast({presence, User, Server, Resources, JID}, State) ->
-    %% A new resource is available. send last published PEP items
-    {noreply, send_queue(State, {presence, User, Server, Resources, JID})};
-
-handle_cast({remove_user, LUser, LServer}, State) ->
-    spawn(fun() ->
-	Host = State#state.host,
-	Owner = jlib:make_jid(LUser, LServer, ""),
-	%% remove user's subscriptions
-	lists:foreach(fun(PType) ->
-	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Owner]),
-	    lists:foreach(fun
-		({#pubsub_node{nodeid = {H, N}}, subscribed, _, JID}) ->
-		    unsubscribe_node(H, N, Owner, JID, all);
-		(_) ->
-		    ok
-	    end, Subscriptions),
-	    {result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Owner]),
-	    lists:foreach(fun
-		({#pubsub_node{nodeid = {H, N}}, owner}) ->
-		    delete_node(H, N, Owner);
-		(_) ->
-		    ok
-	    end, Affiliations)
-	end, State#state.plugins)
-    end),
-    {noreply, State};
-
-handle_cast({unsubscribe, Subscriber, Owner}, State) ->
-    spawn(fun() ->
-	Host = State#state.host,
-	BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-	lists:foreach(fun(PType) ->
-	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Subscriber]),
-	    lists:foreach(fun
-		({Node, subscribed, _, JID}) ->
-		    #pubsub_node{options = Options, type = Type, id = NodeId} = Node,
-		    case get_option(Options, access_model) of
-			presence ->
-			    case lists:member(BJID, node_owners(Host, Type, NodeId)) of
-				true ->
-				    node_action(Host, Type, unsubscribe_node, [NodeId, Subscriber, JID, all]);
-				false ->
-				    {result, ok}
-			    end;
-			_ ->
-			    {result, ok}
-		    end;
-		(_) ->  
-		    ok
-	    end, Subscriptions)
-	end, State#state.plugins)
-    end),
-    {noreply, State}; 
-
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -3412,6 +3382,12 @@ get_cached_item(Host, NodeId) ->
     end.
 
 %%%% plugin handling
+
+host(ServerHost) ->
+    case catch ets:lookup(gen_mod:get_module_proc(ServerHost, config), host) of
+    [{host, Host}] -> Host;
+    _ -> "pubsub."++ServerHost
+    end.
 
 plugins(Host) ->
     case catch ets:lookup(gen_mod:get_module_proc(Host, config), plugins) of
