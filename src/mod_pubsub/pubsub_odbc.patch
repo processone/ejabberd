@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2010-01-12 16:09:01.000000000 +0100
-+++ mod_pubsub_odbc.erl	2010-01-12 16:09:09.000000000 +0100
+--- mod_pubsub.erl	2010-01-12 16:20:07.000000000 +0100
++++ mod_pubsub_odbc.erl	2010-01-12 16:20:19.000000000 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -658,7 +658,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3264,6 +3073,30 @@
+@@ -3246,6 +3055,30 @@
  	    Result
      end.
  
@@ -689,7 +689,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3656,7 +3489,13 @@
+@@ -3638,7 +3471,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -704,7 +704,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3676,13 +3515,13 @@
+@@ -3658,13 +3497,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -720,7 +720,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3695,8 +3534,14 @@
+@@ -3677,8 +3516,14 @@
  			end
  		end, Trans).
  
@@ -737,7 +737,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3704,6 +3549,15 @@
+@@ -3686,6 +3531,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -753,7 +753,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-@@ -3712,6 +3566,17 @@
+@@ -3694,6 +3548,17 @@
  	    {error, ?ERR_INTERNAL_SERVER_ERROR}
      end.
  

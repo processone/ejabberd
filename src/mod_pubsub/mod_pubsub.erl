@@ -3043,24 +3043,6 @@ get_options_for_subs(NodeID, Subs) ->
 			Acc
 		end, [], Subs).
 
-% TODO: merge broadcast code that way
-%broadcast(Host, Node, NodeId, Type, NodeOptions, Feature, Force, ElName, SubEls) ->
-%    case (get_option(NodeOptions, Feature) or Force) of
-%	true ->
-%	    case node_action(Host, Type, get_node_subscriptions, [NodeId]) of
-%		{result, []} -> 
-%		    {result, false};
-%		{result, Subs} ->
-%		    Stanza = event_stanza([{xmlelement, ElName, nodeAttr(Node), SubEls}]),
-%		    broadcast_stanza(Host, Node, Type, NodeOptions, SubOpts, Stanza),
-%		    {result, true};
-%		_ ->
-%		    {result, false}
-%	    end;
-%	_ ->
-%	    {result, false}
-%    end
-
 broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     NotificationType = get_option(NodeOptions, notification_type, headline),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
