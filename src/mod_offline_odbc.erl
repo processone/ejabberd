@@ -376,7 +376,7 @@ user_queue(User, Server, Query, Lang) ->
     Username = ejabberd_odbc:escape(LUser),
     US = {LUser, LServer},
     Res = user_queue_parse_query(Username, LServer, Query),
-    Msgs = case catch ejabberd_odbc:sql_query(
+    MsgsAll = case catch ejabberd_odbc:sql_query(
 			LServer,
 			["select username, xml from spool"
 			 "  where username='", Username, "'"
@@ -394,6 +394,7 @@ user_queue(User, Server, Query, Lang) ->
 	       _ ->
 		   []
 	   end,
+    Msgs = get_messages_subset(User, Server, MsgsAll),
     FMsgs =
 	lists:map(
 	  fun({xmlelement, _Name, _Attrs, _Els} = Msg) ->
@@ -490,6 +491,25 @@ get_queue_length(Username, LServer) ->
 		   _ ->
 		       0
 	       end.
+
+get_messages_subset(User, Host, MsgsAll) ->
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
+				    max_user_offline_messages),
+    MaxOfflineMsgs = case get_max_user_messages(Access, User, Host) of
+			 Number when is_integer(Number) -> Number;
+			 _ -> 100
+		     end,
+    Length = length(MsgsAll),
+    get_messages_subset2(MaxOfflineMsgs, Length, MsgsAll).
+
+get_messages_subset2(Max, Length, MsgsAll) when Length =< Max*2 ->
+    MsgsAll;
+get_messages_subset2(Max, Length, MsgsAll) ->
+    FirstN = Max,
+    {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
+    MsgsLastN = lists:nthtail(Length - FirstN - FirstN, Msgs2),
+    IntermediateMsg = {xmlelement, "...", [], []},
+    MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
     LUser = jlib:nodeprep(User),
