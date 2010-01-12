@@ -2636,7 +2636,7 @@ sent to an offline user will be stored on the server until that user comes
 online again. Thus it is very similar to how email works. Note that
 <TT>ejabberdctl</TT> has a command to delete expired messages
 (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>).</P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>{access_max_user_messages, Number}</TT></B></DT><DD CLASS="dd-description">
+<B><TT>{access_max_user_messages, AccessName}</TT></B></DT><DD CLASS="dd-description">
 This option defines which access rule will be enforced to limit
 the maximum number of offline messages that a user can have (quota).
 When a user has too many offline messages, any new messages that he receive are discarded,
