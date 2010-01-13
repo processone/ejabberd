@@ -741,6 +741,8 @@ presence_probe(Peer, JID, Pid) ->
 		    presence(Host, {presence, User, Server, [Resource], JID})
 	    end
     end.
+presence(ServerHost, Presence) when is_binary(ServerHost) ->
+    presence(binary_to_list(ServerHost), Presence);
 presence(ServerHost, Presence) ->
     SendLoop = case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
 	undefined ->
