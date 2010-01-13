@@ -606,7 +606,7 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
-    {US, Msgs, Res} = try
+    {US, MsgsAll, Res} = try
 	US0 = {
 	  exmpp_stringprep:nodeprep(User),
 	  exmpp_stringprep:nameprep(Server)
@@ -621,6 +621,7 @@ user_queue(User, Server, Query, Lang) ->
 	_ ->
 	    {{"invalid", "invalid"}, [], nothing}
     end,
+    Msgs = get_messages_subset(User, Server, MsgsAll),
     FMsgs =
 	lists:map(
 	  fun(#offline_msg{timestamp = TimeStamp, from = From, to = To,
@@ -705,6 +706,27 @@ us_to_list({User, Server}) ->
 
 get_queue_length(User, Server) ->
     length(mnesia:dirty_read({offline_msg, {User, Server}})).
+
+get_messages_subset(User, Host, MsgsAll) ->
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
+				    max_user_offline_messages),
+    MaxOfflineMsgs = case get_max_user_messages(Access, User, Host) of
+			 Number when is_integer(Number) -> Number;
+			 _ -> 100
+		     end,
+    Length = length(MsgsAll),
+    get_messages_subset2(MaxOfflineMsgs, Length, MsgsAll).
+
+get_messages_subset2(Max, Length, MsgsAll) when Length =< Max*2 ->
+    MsgsAll;
+get_messages_subset2(Max, Length, MsgsAll) ->
+    FirstN = Max,
+    {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
+    MsgsLastN = lists:nthtail(Length - FirstN - FirstN, Msgs2),
+    NoJID = exmpp_jid:make("...", "...", ""),
+    IntermediateMsg = #offline_msg{timestamp = now(), from = NoJID, to = NoJID,
+				   packet = exmpp_xml:element("...")},
+    MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
     QueueLen = get_queue_length(exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)),

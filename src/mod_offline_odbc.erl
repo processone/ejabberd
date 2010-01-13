@@ -373,7 +373,7 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
-    {US, Msgs, Res} = try
+    {US, MsgsAll, Res} = try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
 	Username = ejabberd_odbc:escape(LUser),
@@ -405,6 +405,7 @@ user_queue(User, Server, Query, Lang) ->
 	_ ->
 	    {{"invalid", "invalid"}, [], nothing}
     end,
+    Msgs = get_messages_subset(User, Server, MsgsAll),
     FMsgs =
 	lists:map(
 	  fun(#xmlel{} = Msg) ->
@@ -506,6 +507,25 @@ get_queue_length(Username, LServer) ->
 		   _ ->
 		       0
 	       end.
+
+get_messages_subset(User, Host, MsgsAll) ->
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
+				    max_user_offline_messages),
+    MaxOfflineMsgs = case get_max_user_messages(Access, User, Host) of
+			 Number when is_integer(Number) -> Number;
+			 _ -> 100
+		     end,
+    Length = length(MsgsAll),
+    get_messages_subset2(MaxOfflineMsgs, Length, MsgsAll).
+
+get_messages_subset2(Max, Length, MsgsAll) when Length =< Max*2 ->
+    MsgsAll;
+get_messages_subset2(Max, Length, MsgsAll) ->
+    FirstN = Max,
+    {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
+    MsgsLastN = lists:nthtail(Length - FirstN - FirstN, Msgs2),
+    IntermediateMsg = exmpp_xml:element("..."),
+    MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
 	LUser = exmpp_stringprep:nodeprep(User),
