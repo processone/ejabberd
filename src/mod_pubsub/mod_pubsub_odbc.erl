@@ -135,8 +135,7 @@
 		last_item_cache = false,
 		max_items_node = ?MAXITEMS,
 		nodetree = ?STDTREE,
-		plugins = [?STDNODE],
-		send_loop}).
+		plugins = [?STDNODE]}).
 
 
 %%------------------- Ad hoc commands nodes --------------------------
@@ -203,6 +202,7 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {last_item_cache, LastItemCache}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {max_items_node, MaxItemsNode}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, config), {ignore_pep_from_offline, PepOffline}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {host, Host}),
     ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
@@ -236,9 +236,14 @@ init([ServerHost, Opts]) ->
 		max_items_node = MaxItemsNode,
 		nodetree = NodeTree,
 		plugins = Plugins},
-    SendLoop = spawn(?MODULE, send_loop, [State]), %% TODO put this in supervision
-    register(gen_mod:get_module_proc(ServerHost, ?LOOPNAME), SendLoop),
-    {ok, State#state{send_loop = SendLoop}}.
+    init_send_loop(ServerHost, State),
+    {ok, State}.
+
+init_send_loop(ServerHost, State) ->
+    Proc = gen_mod:get_module_proc(ServerHost, ?LOOPNAME),
+    SendLoop = spawn(?MODULE, send_loop, [State]),
+    register(Proc, SendLoop),
+    SendLoop.
 
 %% @spec (Host, ServerHost, Opts) -> Plugins
 %%	 Host = mod_pubsub:host()   Opts = [{Key,Value}]
@@ -542,8 +547,24 @@ presence_probe(Peer, JID, Pid) ->
 	    end
     end.
 presence(ServerHost, Presence) ->
-    Proc = gen_mod:get_module_proc(ServerHost, ?LOOPNAME),
-    Proc ! Presence.
+    SendLoop = case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
+	undefined ->
+	    % in case send_loop process died, we rebuild a minimal State record and respawn it
+	    Host = host(ServerHost),
+	    Plugins = plugins(Host),
+	    PepOffline = case catch ets:lookup(gen_mod:get_module_proc(ServerHost, config), ignore_pep_from_offline) of
+		[{ignore_pep_from_offline, PO}] -> PO;
+		_ -> true
+		end,
+	    State = #state{host = Host,
+		server_host = ServerHost,
+		ignore_pep_from_offline = PepOffline,
+		plugins = Plugins},
+	    init_send_loop(ServerHost, State);
+	Pid ->
+	    Pid
+    end,
+    SendLoop ! Presence.
 
 %% -------
 %% subscription hooks handling functions
@@ -676,8 +697,7 @@ handle_info(_Info, State) ->
 terminate(_Reason, #state{host = Host,
 			  server_host = ServerHost,
 			  nodetree = TreePlugin,
-			  plugins = Plugins,
-			  send_loop = SendLoop}) ->
+			  plugins = Plugins}) ->
     ejabberd_router:unregister_route(Host),
     ServerHostB = list_to_binary(ServerHost),
     case lists:member(?PEPNODE, Plugins) of
@@ -704,7 +724,7 @@ terminate(_Reason, #state{host = Host,
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB_OWNER),
     mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB_s),
-    SendLoop ! stop,
+    gen_mod:get_module_proc(ServerHost, ?LOOPNAME) ! stop,
     terminate_plugins(Host, ServerHost, Plugins, TreePlugin).
 
 %%--------------------------------------------------------------------
