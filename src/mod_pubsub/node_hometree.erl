@@ -389,40 +389,37 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
 				end, SubState#pubsub_state.subscriptions),
 	    case Sub of
 		{value, S} ->
-		    delete_subscription(SubKey, NodeId, S, SubState),
+		    delete_subscriptions(SubKey, NodeId, [S], SubState),
 		    {result, default};
 		false ->
-		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST,
-					  "not-subscribed")}
+		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST, "not-subscribed")}
 	    end;
 	%% Asking to remove all subscriptions to the given node
 	SubId == all ->
-	    [delete_subscription(SubKey, NodeId, S, SubState) || S <- Subscriptions],
+	    delete_subscriptions(SubKey, NodeId, Subscriptions, SubState),
 	    {result, default};
-	%% No subid supplied, but there's only one matching
-	%% subscription, so use that.
+	%% No subid supplied, but there's only one matching subscription
 	length(Subscriptions) == 1 ->
-	    delete_subscription(SubKey, NodeId, hd(Subscriptions), SubState),
+	    delete_subscriptions(SubKey, NodeId, Subscriptions, SubState),
 	    {result, default};
 	%% No subid and more than one possible subscription match.
 	true ->
 	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")}
     end.
 
-delete_subscription(SubKey, NodeID, {Subscription, SubId}, SubState) ->
-    Affiliation = SubState#pubsub_state.affiliation,
-    AllSubs = SubState#pubsub_state.subscriptions,
-    NewSubs = AllSubs -- [{Subscription, SubId}],
-    pubsub_subscription:delete_subscription(SubKey, NodeID, SubId),
-    case {Affiliation, NewSubs} of
+delete_subscriptions(SubKey, NodeId, Subscriptions, SubState) ->
+    NewSubs = lists:foldl(fun({Subscription, SubId}, Acc) ->
+	    pubsub_subscription:delete_subscription(SubKey, NodeId, SubId),
+	    Acc -- [{Subscription, SubId}]
+	end, SubState#pubsub_state.subscriptions, Subscriptions),
+    case {SubState#pubsub_state.affiliation, NewSubs} of
 	{none, []} ->
 	    % Just a regular subscriber, and this is final item, so
 	    % delete the state.
-	    del_state(NodeID, SubKey);
+	    del_state(NodeId, SubKey);
 	_ ->
 	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
-
 
 %% @spec (NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 %%		 {true, PubsubItem} | {result, Reply}
