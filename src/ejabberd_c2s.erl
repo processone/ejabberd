@@ -1306,17 +1306,15 @@ handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
     {stop, normal, StateData};
 handle_info(system_shutdown, StateName, StateData) ->
     case StateName of
-	wait_for_stream ->
-	    Header = io_lib:format(?STREAM_HEADER,
-				   ["none", ?MYNAME, " version='1.0'", ""]),
-	    send_text(StateData, Header),
-	    send_element(StateData, ?SERR_SYSTEM_SHUTDOWN),
-	    send_text(StateData, ?STREAM_TRAILER),
-	    ok;
-	_ ->
-	    send_element(StateData, ?SERR_SYSTEM_SHUTDOWN),
-	    send_text(StateData, ?STREAM_TRAILER),
-	    ok
+       wait_for_stream ->
+           send_header(StateData, ?MYNAME, "1.0", "en"),
+           send_element(StateData, ?SERR_SYSTEM_SHUTDOWN),
+           send_trailer(StateData),
+           ok;
+       _ ->
+           send_element(StateData, ?SERR_SYSTEM_SHUTDOWN),
+           send_trailer(StateData),
+           ok
     end,
     {stop, normal, StateData};
 handle_info(Info, StateName, StateData) ->
