@@ -132,8 +132,6 @@
 	"id='~s' from='~s'~s~s>"
        ).
 
--define(STREAM_TRAILER, "</stream:stream>").
-
 -define(INVALID_NS_ERR, exmpp_stream:error('invalid-namespace')).
 -define(INVALID_XML_ERR,  exmpp_stream:error('xml-not-well-formed')).
 -define(HOST_UNKNOWN_ERR, exmpp_stream:error('host-unknown')).
@@ -1263,11 +1261,11 @@ handle_info(system_shutdown, StateName, StateData) ->
 	wait_for_stream ->
 	    send_header(StateData#state.streamid, ?MYNAME, "1.0", ""),
 	    send_element(StateData, exmpp_stream:error('system-shutdown')),
-	    send_text(StateData, ?STREAM_TRAILER),
+	    send_trailer(StateData),
 	    ok;
 	_ ->
 	    send_element(StateData, exmpp_stream:error('system-shutdown')),
-	    send_text(StateData, ?STREAM_TRAILER),
+	    send_trailer(StateData),
 	    ok
     end,
     {stop, normal, StateData};
