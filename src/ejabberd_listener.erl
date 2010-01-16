@@ -128,10 +128,12 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     end.
 
 init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
-    SockOpts2 = case erlang:system_info(otp_release) >= "R13B" of
-	true -> [{send_timeout_close, true} | SockOpts];
-	false -> SockOpts
-    end,
+    SockOpts2 = try erlang:system_info(otp_release) >= "R13B" of
+		    true -> [{send_timeout_close, true} | SockOpts];
+		    false -> SockOpts
+		catch
+		    _:_ -> []
+		end,
     Res = gen_tcp:listen(Port, [binary,
 				{packet, 0},
 				{active, false},
