@@ -839,6 +839,11 @@ If the option is not specified for an <TT>ejabberd_service</TT> listener,
 the globally configured value is used.
 The allowed values are integers and &#X2019;undefined&#X2019;.
 Default value: &#X2019;undefined&#X2019;.
+</DD><DT CLASS="dt-description"><B><TT>{route_subdomains, local|s2s}</TT></B></DT><DD CLASS="dd-description">
+Defines if ejabberd must route stanzas directed to subdomains locally (compliant with 
+<A HREF="http://xmpp.org/rfcs/rfc3920.html#rules.subdomain">RFC 3920: XMPP Core</A>),
+or to foreign server using S2S (compliant with
+<A HREF="http://tools.ietf.org/html/draft-saintandre-rfc3920bis-09#section-11.3">RFC 3920 bis</A>).
 </DD></DL><P> <A NAME="listened-examples"></A> </P><!--TOC subsubsection Examples-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#listened-examples">Examples</A></H4><!--SEC END --><P> <A NAME="listened-examples"></A> </P><P>For example, the following simple configuration defines:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
