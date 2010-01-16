@@ -914,7 +914,7 @@ This is a detailed description of each option allowed by the listening modules:
     commonly on port 5223 for client-to-server communications.
     But this method is nowadays deprecated and not recommended.
     The preferable encryption method is STARTTLS on port 5222, as defined 
-    \footahref{http://xmpp.org/specs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
+    \footahref{http://xmpp.org/rfcs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
     which can be enabled in \ejabberd{} with the option \term{starttls}.
     If this option is set, you should also set the \option{certfile} option.
     The option \term{tls} can also be used in \term{ejabberd\_http} to support HTTPS.
@@ -3389,7 +3389,7 @@ their \XMPP{} client, they will be able to:
 \item Allowing or blocking all communications based on JID, group, or
   subscription type (or globally).
 \end{itemize}
-(from \ahrefurl{http://xmpp.org/specs/rfc3921.html\#privacy})
+(from \ahrefurl{http://xmpp.org/rfcs/rfc3921.html\#privacy})
 \end{quote}
 
 Options:
@@ -3652,7 +3652,7 @@ Also define a registration timeout of one hour:
 \ind{modules!\modroster{}}\ind{roster management}\ind{protocols!RFC 3921: XMPP IM}
 
 This module implements roster management as defined in
-\footahref{http://xmpp.org/specs/rfc3921.html\#roster}{RFC 3921: XMPP IM}.
+\footahref{http://xmpp.org/rfcs/rfc3921.html\#roster}{RFC 3921: XMPP IM}.
 It also supports Roster Versioning (\xepref{0237}).
 
 Options:
@@ -4389,8 +4389,7 @@ The most interesting ones are:
   using \xepref{0227} formatted XML files
   from/to other Jabber/XMPP servers
   or move users of a vhost to another ejabberd installation.
-  See also 
-  \footahref{https://support.process-one.net/doc/display/P1/ejabberd+migration+kit}{ejabberd migration kit}.
+  See also \footahref{https://support.process-one.net/doc/display/MESSENGER/ejabberd+migration+kit}{ejabberd migration kit}.
 \titem{import\_file, import\_dir} \ind{migration from other software}
   These options can be used to migrate accounts
   using jabberd1.4 formatted XML files.

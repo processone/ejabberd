@@ -774,7 +774,7 @@ This was the traditional encryption method in the early Jabber software,
 commonly on port 5223 for client-to-server communications.
 But this method is nowadays deprecated and not recommended.
 The preferable encryption method is STARTTLS on port 5222, as defined 
-<A HREF="http://xmpp.org/specs/rfc3920.html#tls">RFC 3920: XMPP Core</A>,
+<A HREF="http://xmpp.org/rfcs/rfc3920.html#tls">RFC 3920: XMPP Core</A>,
 which can be enabled in <TT>ejabberd</TT> with the option <TT>starttls</TT>.
 If this option is set, you should also set the <TT>certfile</TT> option.
 The option <TT>tls</TT> can also be used in <TT>ejabberd_http</TT> to support HTTPS.
@@ -2636,7 +2636,7 @@ or subscription type (or globally).
 </LI><LI CLASS="li-itemize">Allowing or blocking all communications based on JID, group, or
 subscription type (or globally).
 </LI></UL>
-(from <A HREF="http://xmpp.org/specs/rfc3921.html#privacy"><TT>http://xmpp.org/specs/rfc3921.html#privacy</TT></A>)
+(from <A HREF="http://xmpp.org/rfcs/rfc3921.html#privacy"><TT>http://xmpp.org/rfcs/rfc3921.html#privacy</TT></A>)
 </BLOCKQUOTE><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
@@ -2857,7 +2857,7 @@ Also define a registration timeout of one hour:
 </PRE></LI></UL><P> <A NAME="modroster"></A> </P><!--TOC subsection <TT>mod_roster</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc57">3.3.18</A>&#XA0;&#XA0;<A HREF="#modroster"><TT>mod_roster</TT></A></H3><!--SEC END --><P> <A NAME="modroster"></A> 
 </P><P>This module implements roster management as defined in
-<A HREF="http://xmpp.org/specs/rfc3921.html#roster">RFC 3921: XMPP IM</A>.
+<A HREF="http://xmpp.org/rfcs/rfc3921.html#roster">RFC 3921: XMPP IM</A>.
 It also supports Roster Versioning (<A HREF="http://xmpp.org/extensions/xep-0237.html">XEP-0237</A>).</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
@@ -3440,8 +3440,7 @@ These options can be used to migrate accounts
 using <A HREF="http://xmpp.org/extensions/xep-0227.html">XEP-0227</A> formatted XML files
 from/to other Jabber/XMPP servers
 or move users of a vhost to another ejabberd installation.
-See also 
-<A HREF="https://support.process-one.net/doc/display/P1/ejabberd+migration+kit">ejabberd migration kit</A>.
+See also <A HREF="https://support.process-one.net/doc/display/MESSENGER/ejabberd+migration+kit">ejabberd migration kit</A>.
 </DD><DT CLASS="dt-description"><B><TT>import_file, import_dir</TT></B></DT><DD CLASS="dd-description"> 
 These options can be used to migrate accounts
 using jabberd1.4 formatted XML files.
