@@ -963,6 +963,11 @@ There are some additional global options that can be specified in the ejabberd c
     the globally configured value is used.
     The allowed values are integers and 'undefined'.
     Default value: 'undefined'.
+  \titem{\{route\_subdomains, local|s2s\}}
+  Defines if ejabberd must route stanzas directed to subdomains locally (compliant with 
+  \footahref{http://xmpp.org/rfcs/rfc3920.html\#rules.subdomain}{RFC 3920: XMPP Core}),
+  or to foreign server using S2S (compliant with
+  \footahref{http://tools.ietf.org/html/draft-saintandre-rfc3920bis-09\#section-11.3}{RFC 3920 bis}).
 \end{description}
 
 \makesubsubsection{listened-examples}{Examples}
