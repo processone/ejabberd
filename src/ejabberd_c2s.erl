@@ -772,12 +772,6 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			  [StateData#state.socket,
 			   exmpp_jid:to_binary(JID)]),
 		%%send_element(StateData, exmpp_stream:features([])),
-		SID = {now(), self()},
-		Conn = get_conn_type(StateData),
-		Info = [{ip, StateData#state.ip}, {conn, Conn},
-			{auth_module, StateData#state.auth_module}],
-		ejabberd_sm:open_session(
-		  SID, JID, Info),
 		Res = exmpp_server_session:establish(El),
 		send_element(StateData, Res),
 		change_shaper(StateData, JID),
@@ -794,6 +788,12 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		      privacy_get_user_list, StateData#state.server,
 		      #userlist{},
 		      [StateData#state.user, StateData#state.server]),
+		SID = {now(), self()},
+		Conn = get_conn_type(StateData),
+		Info = [{ip, StateData#state.ip}, {conn, Conn},
+			{auth_module, StateData#state.auth_module}],
+		ejabberd_sm:open_session(
+		  SID, JID, Info),
 		fsm_next_state(session_established,
 			       StateData#state{
                  sasl_state = 'undefined',
