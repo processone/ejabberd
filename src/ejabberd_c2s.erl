@@ -825,14 +825,6 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
-		    %%send_element(StateData, {xmlelement, "stream:features",
-		    %%			     [], []}),
-		    SID = {now(), self()},
-		    Conn = get_conn_type(StateData),
-		    Info = [{ip, StateData#state.ip}, {conn, Conn},
-			    {auth_module, StateData#state.auth_module}],
-		    ejabberd_sm:open_session(
-		      SID, U, StateData#state.server, R, Info),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
@@ -849,6 +841,12 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			  privacy_get_user_list, StateData#state.server,
 			  #userlist{},
 			  [U, StateData#state.server]),
+		    SID = {now(), self()},
+		    Conn = get_conn_type(StateData),
+		    Info = [{ip, StateData#state.ip}, {conn, Conn},
+			    {auth_module, StateData#state.auth_module}],
+		    ejabberd_sm:open_session(
+		      SID, U, StateData#state.server, R, Info),
                     NewStateData =
                         StateData#state{
 				     sid = SID,
