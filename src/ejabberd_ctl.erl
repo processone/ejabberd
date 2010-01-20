@@ -189,8 +189,9 @@ process(["help" | Mode]) ->
 	["help"] ->
 	    print_usage_help(MaxC, ShCode),
 	    ?STATUS_SUCCESS;
-	[CommandString | _] ->
-	    print_usage_commands(CommandString, MaxC, ShCode),
+	[CmdString | _] ->
+	    {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
+	    print_usage_commands(CmdStringU, MaxC, ShCode),
 	    ?STATUS_SUCCESS
     end;
 
