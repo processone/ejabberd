@@ -5955,3 +5955,12 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
+echo
+echo "********************** WARNING ! ************************"
+echo "*  ejabberd trunk svn is NOT ready for real usage yet,  *"
+echo "*  because it is still in heavy development.            *"
+echo "*  Don't use ejabberd trunk yet, it is prealpha!        *"
+echo "*  Please use ejabberd 2.1.x branch.                    *"
+echo "*********************************************************"
+echo
