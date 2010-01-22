@@ -160,3 +160,12 @@ LD_SHARED="$LD_SHARED $CBIT"
 echo "CBIT is set to '$CBIT'"
 
 AC_OUTPUT
+
+echo
+echo "********************** WARNING ! ************************"
+echo "*  ejabberd trunk svn is NOT ready for real usage yet,  *"
+echo "*  because it is still in heavy development.            *"
+echo "*  Don't use ejabberd trunk yet, it is prealpha!        *"
+echo "*  Please use ejabberd 2.1.x branch.                    *"
+echo "*********************************************************"
+echo
