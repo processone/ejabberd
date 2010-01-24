@@ -14,6 +14,17 @@ ERLANG_NODE=$NODE@$HOST
 ERL=@erl@
 INSTALLUSER=@installuser@
 
+# Control number of connections identifiers
+# using flock if available. Expects a linux-style
+# flock that can lock a file descriptor.
+MAXCONNID=100
+CONNLOCKDIR=@LOCALSTATEDIR@/lock/ejabberdctl
+FLOCK='/usr/bin/flock'
+if [ ! -x "$FLOCK" ];then
+    FLOCK=""
+fi
+ 
+
 # parse command line parameters
 ARGS=
 while [ $# -ne 0 ] ; do
@@ -228,13 +239,54 @@ help ()
 ctl ()
 {
     COMMAND=$@
-    $EXEC_CMD "$ERL \
-      $NAME ctl-${ERLANG_NODE} \
-      -noinput \
-      -hidden \
-      -pa $EJABBERD_EBIN_PATH \
-      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
-    result=$?
+
+    if [ ! "$FLOCK" ];then
+	# no flock, simply invoke ctlexec()
+	CTL_CONN="ctl-${EJABBERD_NODE}"
+	ctlexec $CTL_CONN $COMMAND
+	result=$?
+    else
+	# we have flock so we get a lock
+	# on one of a limited number of
+	# conn names -- this allows
+	# concurrent invokations using a bound
+	# number of atoms
+	for N in $(seq 1 $MAXCONNID); do
+	    CTL_CONN="ejabberdctl-$N"
+	    CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
+	    (
+		exec 8>"$CTL_LOCKFILE"
+		if flock --nb 8; then
+		    ctlexec $CTL_CONN $COMMAND
+                    ssresult=$?
+                    # segregate from possible flock exit(1)
+		    ssresult=$(expr $ssresult \* 10)
+		    exit $ssresult
+		else
+		    exit 1
+		fi
+            )
+	    result=$?
+	    if [ $result -eq 1 ]; then
+                # means we errored out in flock
+                # rather than in the exec - stay in the loop
+                # trying other conn names...
+		badlock=1
+	    else
+		badlock=""
+		break;
+	    fi
+	done
+	result=$(expr $result / 10)
+    fi
+
+    if [ "$badlock" ];then
+        echo "Ran out of connections to try. Your ejabberd processes" >&2
+        echo "may be stuck or this is a very busy server. For very"   >&2
+       echo "busy servers, consider raising MAXCONNIDS"          >&2
+       exit 1;
+    fi
+
     case $result in
     0) :;;
     1) :;;
@@ -242,6 +294,18 @@ ctl ()
     3) help;;
     esac
     return $result
+}
+
+ctlexec ()
+{
+    CONN_NAME=$1; shift
+    COMMAND=$@
+    $EXEC_CMD "$ERL \
+      $NAME ${CONN_NAME} \
+      -noinput \
+      -hidden \
+      -pa $EJABBERD_EBIN_PATH \
+      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
 }
 
 # display ctl usage

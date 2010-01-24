@@ -110,6 +110,9 @@ MSGSDIR = $(PRIVDIR)/msgs
 # /var/lib/ejabberd/
 SPOOLDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 
+# /var/lock/ejabberdctl
+CTLLOCKDIR = $(DESTDIR)@localstatedir@/lock/ejabberdctl
+
 # /var/lib/ejabberd/.erlang.cookie
 COOKIEFILE = $(SPOOLDIR)/.erlang.cookie
 
@@ -230,6 +233,12 @@ install: all
 	install -d -m 750 $(O_USER) $(SPOOLDIR)
 	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(SPOOLDIR)
+
+	# ejabberdctl lock directory
+	install -d -m 750 $(O_USER) $(CTLLOCKDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(CTLLOCKDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(CTLLOCKDIR)
+
 	[ ! -f $(COOKIEFILE) ] || { $(CHOWN_COMMAND) @INSTALLUSER@ $(COOKIEFILE) >$(CHOWN_OUTPUT) ; chmod 400 $(COOKIEFILE) ; }
 	#
 	# Log directory
@@ -265,6 +274,7 @@ uninstall-all: uninstall-binary
 	rm -rf $(ETCDIR)
 	rm -rf $(EJABBERDDIR)
 	rm -rf $(SPOOLDIR)
+	rm -rf $(CTLLOCKDIR)
 	rm -rf $(LOGDIR)
 
 clean: clean-recursive clean-local
