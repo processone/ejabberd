@@ -94,7 +94,7 @@ fi
 if [ "$EJABBERD_PRIV_PATH" = "" ]; then
     EJABBERD_PRIV_PATH=$EJABBERDDIR/priv
 fi
-if [ "$EJABBRD_BIN_PATH" = "" ]; then
+if [ "$EJABBERD_BIN_PATH" = "" ]; then
     EJABBERD_BIN_PATH=$EJABBERD_PRIV_PATH/bin
 fi
 if [ "$EJABBERD_SO_PATH" = "" ]; then
