@@ -235,9 +235,9 @@ install: all
 	#
 	# Documentation
 	install -d $(DOCDIR)
-	install ../doc/guide.html $(DOCDIR)
-	install ../doc/*.png $(DOCDIR)
-	install ../doc/*.txt $(DOCDIR)
+	install -m 644 ../doc/guide.html $(DOCDIR)
+	install -m 644 ../doc/*.png $(DOCDIR)
+	install -m 644 ../doc/*.txt $(DOCDIR)
 
 uninstall: uninstall-binary
 
