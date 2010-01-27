@@ -45,8 +45,23 @@
 -include("web/ejabberd_http.hrl").
 
 -define(VFIELD(Type, Var, Value),
-	{xmlelement, "field", [{"type", Type}, {"var", Var}],
-	 [{xmlelement, "value", [], [Value]}]}).
+  #xmlel{name = 'field',
+         attrs = [
+           #xmlattr{
+             name = 'type',
+             value = Type
+           },
+           #xmlattr{
+             name = 'var',
+             value = Var
+           }
+         ],
+         children = [
+           #xmlel{
+             name = 'value',
+             children = [Value]
+           }
+         ]}.
 
 -define(CAPTCHA_TEXT(Lang), translate:translate(Lang, "Enter the text you see")).
 -define(CAPTCHA_LIFETIME, 120000). % two minutes
@@ -80,28 +95,126 @@ create_captcha(Id, SID, From, To, Lang, Args)
 	    B64Image = jlib:encode_base64(binary_to_list(Image)),
 	    JID = exmpp_jid:to_list(From),
 	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
-	    Data = {xmlelement, "data",
-		    [{"xmlns", ?NS_BOB}, {"cid", CID},
-		     {"max-age", "0"}, {"type", Type}],
-		    [{xmlcdata, B64Image}]},
+%	    Data = {xmlelement, "data",
+%		    [{"xmlns", ?NS_BOB}, {"cid", CID},
+%		     {"max-age", "0"}, {"type", Type}],
+%		    [{xmlcdata, B64Image}]},
+	    Data =
+	      #xmlel{
+	        name = 'data',
+	        ns = ?NS_BOB,
+	        attrs = [
+	          #xmlattr{
+	            name = 'cid',
+	            value = CID
+	          },
+	          #xmlattr{
+	            name = 'max-age',
+	            value = "0"
+	          },
+	          #xmlattr{
+	            name = 'type',
+	            value = Type	                    
+	          }
+	        ],
+	        children = [#xmlcdata{cdata = B64Image}]},
+%		{xmlelement, "captcha", [{"xmlns", ?NS_CAPTCHA}],
+%		 %% ?NS_DATA_FORMS is 'jabber:x:data'
+%		 [{xmlelement, "x", [{"xmlns", "jabber:x:data"}, {"type", "form"}],
+%		   [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}),
+%		    ?VFIELD("hidden", "from", {xmlcdata, exmpp_jid:to_list(To)}),
+%		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
+%		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
+%		    {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
+%		     [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
+%		       [{xmlelement, "uri", [{"type", Type}],
+%			 [{xmlcdata, "cid:" ++ CID}]}]}]}]}]},
+%% TODO : kael : write exmpp_captcha.erl
 	    Captcha =
-		{xmlelement, "captcha", [{"xmlns", ?NS_CAPTCHA}],
-		 %% ?NS_DATA_FORMS is 'jabber:x:data'
-		 [{xmlelement, "x", [{"xmlns", "jabber:x:data"}, {"type", "form"}],
-		   [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}),
-		    ?VFIELD("hidden", "from", {xmlcdata, exmpp_jid:to_list(To)}),
-		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
-		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
-		    {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
-		     [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
-		       [{xmlelement, "uri", [{"type", Type}],
-			 [{xmlcdata, "cid:" ++ CID}]}]}]}]}]},
+	  #xmlel{
+	    name = 'captcha',
+	    ns = ?NS_CAPTCHA,
+	    children = [
+	      #xmlel{
+	        name = 'x',
+	        ns = ?NS_DATA_FORMS_s,
+	        attrs = [
+	          #xmlattr{
+	            name = 'type',
+	            value = "form"	                      
+	          }
+	        ],
+	        children = [
+	          ?VFIELD("hidden", "FORM_TYPE", #xmlcdata{cdata = ?NS_CAPTCHA}),
+	          ?VFIELD("hidden", "from", #xmlcdata{cdata = exmpp_jid:to_list(To)}),
+	          ?VFIELD("hidden", "challenge", #xmlcdata{cdata = Id}),
+	          ?VFIELD("hidden", "sid", #xmlcdata{cdata = SID}),
+	          #xmlel{
+	            name = 'field',
+	            attrs = [
+	              #xmlattr{
+	                name = 'var',
+	                value = "ocr"
+	              },
+	              #xmlattr{
+	                name = 'label',
+	                value = ?CAPTCHA_TEXT(Lang)
+	              }	                      
+	            ],
+	            children = [
+	              #xmlel{
+	                name = 'media',
+	                ns = ?NS_MEDIA,
+	                children = [
+	                  #xmlel{
+	                    name = 'uri',
+	                    attrs = [
+	                      #xmlattr{
+	                        name = 'type',
+	                        value = Type
+	                      }
+	                    ],
+	                    children = [
+	                      #xmlcdata{cdata = "cid:" ++ CID}
+	                    ]
+	                  }
+	                ]
+	              }
+	            ]
+	          }
+	        ]
+	      }
+	    ]
+	  },
 	    BodyString1 = translate:translate(Lang, "Your messages to ~s are being blocked. To unblock them, visit ~s"),
 	    BodyString = io_lib:format(BodyString1, [JID, get_url(Id)]),
-	    Body = {xmlelement, "body", [],
-		    [{xmlcdata, BodyString}]},
-	    OOB = {xmlelement, "x", [{"xmlns", ?NS_OOB}],
-		   [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
+      Body =
+        #xmlel{
+          name = 'body',
+          children = [
+            #xmlcdata{
+              cdata = BodyString
+            }
+          ]
+        },
+      OOB =
+        #xmlel{
+          name = 'x',
+          ns = ?NS_OOB,
+          children = [
+            #xmlel{
+              name = 'url',
+              children = [
+                #xmlcdata{
+                  cdata = get_url(Id)}
+              ]
+            }
+          ]
+        },
+	    %Body = {xmlelement, "body", [],
+		  %  [{xmlcdata, BodyString}]},
+	    %OOB = {xmlelement, "x", [{"xmlns", ?NS_OOB}],
+		  % [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
 	    case ?T(mnesia:write(#captcha{id=Id, pid=self(), key=Key,
 					  tref=Tref, args=Args})) of
@@ -123,28 +236,125 @@ create_captcha(Id, SID, From, To, Lang, Args)
 build_captcha_html(Id, Lang) ->
     case mnesia:dirty_read(captcha, Id) of
 	[#captcha{}] ->
-	    ImgEl = {xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
-	    TextEl = {xmlcdata, ?CAPTCHA_TEXT(Lang)},
-	    IdEl = {xmlelement, "input", [{"type", "hidden"},
-					  {"name", "id"},
-					  {"value", Id}], []},
-	    KeyEl = {xmlelement, "input", [{"type", "text"},
-					   {"name", "key"},
-					   {"size", "10"}], []},
-	    FormEl = {xmlelement, "form", [{"action", get_url(Id)},
-					   {"name", "captcha"},
-					   {"method", "POST"}],
-		      [ImgEl,
-		       {xmlelement, "br", [], []},
-		       TextEl,
-		       {xmlelement, "br", [], []},
-		       IdEl,
-		       KeyEl,
-		       {xmlelement, "br", [], []},
-		       {xmlelement, "input", [{"type", "submit"},
-					      {"name", "enter"},
-					      {"value", "OK"}], []}
-		      ]},
+	    %ImgEl = {xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
+	    ImgEl =
+	      #xmlel{
+	        name = 'img',
+          attrs = [
+            #xmlattr{
+              name = 'src',
+              value = get_url(Id ++ "/image")
+            }
+          ]
+        },
+	    %TextEl = {xmlcdata, ?CAPTCHA_TEXT(Lang)},
+	    TextEl = #xmlcdata{cdata = ?CAPTCHA_TEXT(Lang)},
+	    %IdEl = {xmlelement, "input", [{"type", "hidden"},
+			%		  {"name", "id"},
+			%		  {"value", Id}], []},
+	    IdEl = 
+	      #xmlel{
+	        name = 'input',
+	        attrs = [
+	          #xmlattr{
+	            name = 'type',
+	            value = "hidden"
+	          },
+	          #xmlattr{
+	            name = 'name',
+	            value = "id"
+	          },
+	          #xmlattr{
+	            name = 'value',
+	            value = Id
+	          }
+	        ]
+	      },
+	    %KeyEl = {xmlelement, "input", [{"type", "text"},
+			%		   {"name", "key"},
+			%		   {"size", "10"}], []},
+			KeyEl =
+			  #xmlel{
+			    name = 'input',
+			    attrs = [
+			      #xmlattr{
+			        name = 'type',
+			        value = "text"
+			      },
+			      #xmlattr{
+			        name = 'name',
+			        value = "key"
+			      },
+			      #xmlattr{
+			        name = 'size',
+			        value = "10"
+			      }
+			    ]
+			  },
+	    %FormEl = {xmlelement, "form", [{"action", get_url(Id)},
+			%		   {"name", "captcha"},
+			%		   {"method", "POST"}],
+		  %    [ImgEl,
+		  %     {xmlelement, "br", [], []},
+		  %     TextEl,
+		  %     {xmlelement, "br", [], []},
+		  %     IdEl,
+		  %     KeyEl,
+		  %     {xmlelement, "br", [], []},
+		  %     {xmlelement, "input", [{"type", "submit"},
+			%		      {"name", "enter"},
+			%		      {"value", "OK"}], []}
+		  %    ]},
+			FormEl = 
+			  #xmlel{
+			    name = 'form',
+			    attrs = [
+			      #xmlattr{
+			        name = 'action',
+			        value = get_url(Id)
+			      },
+			      #xmlattr{
+			        name = 'name',
+			        value = "captcha"
+			      },
+			      #xmlattr{
+			        name = 'method',
+			        value = "POST"
+			      }
+			    ],
+			    children = [
+			      ImgEl,
+			      #xmlel{
+			        name = 'br'
+			      },
+			      TextEl,
+			      #xmlel{
+			        name = 'br'
+			      },
+			      IdEl,
+			      KeyEl,
+			      #xmlel{
+			        name = 'br'
+			      },
+			      #xmlel{
+			        name = 'input',
+			        attrs = [
+			          #xmlattr{
+			            name = 'type',
+			            value = "submit"
+			          },
+			          #xmlattr{
+			            name = 'name',
+			            value = "enter"
+			          },
+			          #xmlattr{
+			            name = 'value',
+			            value = "OK"
+			          }
+			        ]
+			      }
+			    ]
+			  },
 	    {FormEl, {ImgEl, TextEl, IdEl, KeyEl}};
 	_ ->
 	    captcha_not_found
@@ -203,8 +413,18 @@ process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
     case build_captcha_html(Id, Lang) of
 	{FormEl, _} when is_tuple(FormEl) ->
 	    Form =
-		{xmlelement, "div", [{"align", "center"}],
-		 [FormEl]},
+		%{xmlelement, "div", [{"align", "center"}],
+		 %[FormEl]},
+	  #xmlel{
+	    name = 'div',
+	    attrs = [
+	      #xmlattr{
+	        name = 'align',
+	        value = "center"
+	      }
+	    ],
+	    children = [FormEl]
+	  },
 	    ejabberd_web:make_xhtml([Form]);
 	captcha_not_found ->
 	    ejabberd_web:error(not_found)
@@ -232,10 +452,17 @@ process(_Handlers, #request{method='POST', q=Q, lang=Lang, path=[_, Id]}) ->
     case check_captcha(Id, ProvidedKey) of
 	captcha_valid ->
 	    Form =
-		{xmlelement, "p", [],
-		 [{xmlcdata,
-		   translate:translate(Lang, "The captcha is valid.")
-		  }]},
+		%{xmlelement, "p", [],
+		% [{xmlcdata,
+		%   translate:translate(Lang, "The captcha is valid.")
+		%  }]},
+	  #xmlel{
+	    name = 'p',
+	    children = [
+	      #xmlcdata{
+	        cdata = translate:translate(Lang, "The captcha is valid.")}
+	    ]
+	  },
 	    ejabberd_web:make_xhtml([Form]);
 	captcha_non_valid ->
 	    ejabberd_web:error(not_allowed);
