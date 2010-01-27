@@ -634,7 +634,8 @@ process_pattern(Str, {User, Domain}, AttrValues) ->
       [{"%u", User},{"%d", Domain}] ++
       [{"%s", V, 1} || V <- AttrValues]).
 
-find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+find_xdata_el(#xmlel{children = SubEls}) ->
+%find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->

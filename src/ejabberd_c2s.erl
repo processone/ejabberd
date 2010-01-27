@@ -142,8 +142,9 @@
 -define(INVALID_FROM, exmpp_stream:error('invalid-from')).
 
 -define(STANZA_ERROR(NS, Condition),
-  exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(NS, Condition),
-    [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
+%  exmpp_xml:xmlel_to_xmlelement(exmpp_stanza:error(NS, Condition),
+%    [?NS_JABBER_CLIENT], [{?NS_XMPP, "stream"}])).
+  exmpp_stanza:error(NS, Condition)).
 -define(ERR_FEATURE_NOT_IMPLEMENTED(NS),
   ?STANZA_ERROR(NS, 'feature-not-implemented')).
 

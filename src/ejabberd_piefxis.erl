@@ -496,7 +496,9 @@ extract_user_info(offline, Username, Host) ->
 	    case Els of
 		[] -> "";
 		Els ->
-		    OfEl = {xmlelement, "offline-messages", [], Els},
+                    OfEl = #xmlel{name = 'offline-messages',
+                                  children = Els},
+		    %OfEl = {xmlelement, "offline-messages", [], Els},
 		    exmpp_xml:document_to_list(OfEl)
 	    end;
 	{ok, mod_offline_odbc} ->
