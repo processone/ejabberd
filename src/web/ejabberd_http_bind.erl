@@ -37,9 +37,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
-
-%% TODO: Use exmpp library instead of including this
--define(NS_STREAM, "http://etherx.jabber.org/streams").
+-include_lib("exmpp/include/exmpp.hrl").
 
 -record(http_bind, {id, pid, to, hold, wait, version}).
 
@@ -90,9 +88,6 @@
 -endif.
 
 -define(BOSH_VERSION, "1.8").
--define(NS_CLIENT, "jabber:client").
--define(NS_BOSH, "urn:xmpp:xbosh").
--define(NS_HTTP_BIND, "http://jabber.org/protocol/httpbind").
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
@@ -183,7 +178,7 @@ process_request(Data, IP) ->
 		    ?ERROR_MSG("Session not created (Improper addressing)", []),
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
-		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'/>"};
+		     "xmlns='" ++ ?NS_HTTP_BIND_s ++ "'/>"};
                 XmppDomain ->
                     %% create new session
                     Sid = sha:sha(term_to_binary({now(), make_ref()})),
@@ -191,7 +186,7 @@ process_request(Data, IP) ->
 			{error, _} ->
 			    {200, ?HEADER, "<body type='terminate' "
 			     "condition='internal-server-error' "
-			     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>BOSH module not started</body>"};
+			     "xmlns='" ++ ?NS_HTTP_BIND_s ++ "'>BOSH module not started</body>"};
 			{ok, Pid} ->
 			    handle_session_start(
 			      Pid, XmppDomain, Sid, Rid, Attrs,
@@ -224,7 +219,7 @@ process_request(Data, IP) ->
 		    gen_fsm:sync_send_all_state_event(FsmRef, {stop, close}),
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='undefined-condition' "
-		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>Request Too Large</body>"}
+		     "xmlns='" ++ ?NS_HTTP_BIND_s ++ "'>Request Too Large</body>"}
             end;
         _ ->
 	    ?DEBUG("Received bad request: ~p", [Data]),
@@ -698,16 +693,16 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 				      C2SPid,
 				      {xmlstreamstart, "stream:stream",
 				       [{"to", To},
-					{"xmlns", ?NS_CLIENT},
-					{"xmlns:stream", ?NS_STREAM}]});
+					{"xmlns", ?NS_JABBER_CLIENT_s},
+					{"xmlns:stream", ?NS_XMPP_s}]});
 				{To, Version} ->
 				    gen_fsm:send_event(
 				      C2SPid,
 				      {xmlstreamstart, "stream:stream",
 				       [{"to", To},
-					{"xmlns", ?NS_CLIENT},
+					{"xmlns", ?NS_JABBER_CLIENT_s},
 					{"version", Version},
-					{"xmlns:stream", ?NS_STREAM}]});
+					{"xmlns:stream", ?NS_XMPP_s}]});
 				_ ->
 				    ok
 			    end,
@@ -776,12 +771,12 @@ handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
             %{200, ?HEADER,
             % xml:element_to_string(
             %   {xmlelement, "body",
-            %    [{"xmlns", ?NS_HTTP_BIND},
+            %    [{"xmlns", ?NS_HTTP_BIND_s},
             %     {"type", "error"}], []})};
             handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize,
 			    StreamStart, IP);
         {buffered, _Sess} ->
-            {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+            {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND_s++"'/>"};
         {ok, Sess} ->
             prepare_response(Sess, Rid, Attrs, StreamStart)
     end.
@@ -812,24 +807,51 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
         not_exists ->
             {200, ?HEADER,
              xml:element_to_string(
-               {xmlelement, "body",
-                [{"xmlns", ?NS_HTTP_BIND},
-                 {"type", "terminate"},
-                 {"condition", "item-not-found"}], []})};
+               #xmlel{name = 'body',
+                      ns = ?NS_HTTP_BIND_s,
+                      attrs = [
+                        #xmlattr{name = 'type',
+                                 ns = ?NS_HTTP_BIND_s,
+                                 value = 'terminate'
+                        },
+                        #xmlattr{name = 'type',
+                                 ns = ?NS_HTTP_BIND_s,
+                                 value = 'item-not-found'
+                        }
+                      ]
+               })};
         bad_key ->
             {200, ?HEADER,
              xml:element_to_string(
-               {xmlelement, "body",
-                [{"xmlns", ?NS_HTTP_BIND},
-                 {"type", "terminate"},
-                 {"condition", "item-not-found"}], []})};
+               #xmlel{name = 'body',
+                      ns = ?NS_HTTP_BIND_s,
+                      attrs = [
+                        #xmlattr{name = 'type',
+                                 ns = ?NS_HTTP_BIND_s,
+                                 value = 'terminate'
+                        },
+                        #xmlattr{name = 'type',
+                                 ns = ?NS_HTTP_BIND_s,
+                                 value = 'item-not-found'
+                        }
+                      ]
+               })};
         polling_too_frequently ->
             {200, ?HEADER,
              xml:element_to_string(
-               {xmlelement, "body",
-                [{"xmlns", ?NS_HTTP_BIND},
-                 {"type", "terminate"},
-                 {"condition", "policy-violation"}], []})}
+               #xmlel{name = 'body',
+                      ns = ?NS_HTTP_BIND_s,
+                      attrs = [
+                        #xmlattr{name = 'type',
+                                 ns = ?NS_HTTP_BIND_s,
+                                 value = 'terminate'
+                        },
+                        #xmlattr{name = 'type',
+                                 ns = ?NS_HTTP_BIND_s,
+                                 value = 'policy-violation'
+                        }
+                      ]
+               })}
     end;
 handle_http_put_error(Reason, #http_bind{pid=FsmRef}) ->
     gen_fsm:sync_send_all_state_event(FsmRef,{stop, {put_error_no_version, Reason}}),
@@ -893,11 +915,11 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess,
 	    %% actually it would be better if we could completely
 	    %% cancel this request, but then we would have to hack
 	    %% ejabberd_http and I'm too lazy now
-            {200, ?HEADER, "<body type='error' xmlns='"++?NS_HTTP_BIND++"'/>"};
+            {200, ?HEADER, "<body type='error' xmlns='"++?NS_HTTP_BIND_s++"'/>"};
 	{ok, empty} ->
-            {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+            {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND_s++"'/>"};
 	{ok, terminate} ->
-            {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND++"'/>"};
+            {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND_s++"'/>"};
 	{ok, ROutPacket} ->
 	    OutPacket = lists:reverse(ROutPacket),
             ?DEBUG("OutPacket: ~p", [OutPacket]),
@@ -915,17 +937,26 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess,
 				    [] ->
 					[];
 				    [{xmlstreamelement,
-				      {xmlelement, "stream:features",
-				       StreamAttribs, StreamEls}}
+				      #xmlel{name = 'features',
+				             declared_ns = [{undefined, ?NS_XMPP_pfx}],
+				             attrs = StreamAttribs,
+				             children = StreamEls}}
 				     | StreamTail] ->
+%				      {xmlelement, "stream:features",
+%				       StreamAttribs, StreamEls}}
+%				     | StreamTail] ->
 					TypedTail =
 					    [check_default_xmlns(OEl) ||
 						{xmlstreamelement, OEl} <-
 						    StreamTail],
-					[{xmlelement, "stream:features",
-					  [{"xmlns:stream",
-					    ?NS_STREAM}] ++
-					  StreamAttribs, StreamEls}] ++
+				  [#xmlel{name = 'features',
+				          declared_ns = [{?NS_XMPP_s, ?NS_XMPP_pfx}],
+				          attrs = StreamAttribs,
+				          children = StreamEls}] ++
+%					[{xmlelement, "stream:features",
+%					  [{"xmlns:stream",
+%					    ?NS_XMPP_s}] ++
+%					  StreamAttribs, StreamEls}] ++
 					    TypedTail;
 				    StreamTail ->
 					[check_default_xmlns(OEl) ||
@@ -934,8 +965,8 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess,
 				end,
 			    BOSH_attribs =
 				[{"authid", AuthID},
-				 {"xmlns:xmpp", ?NS_BOSH},
-				 {"xmlns:stream", ?NS_STREAM}] ++
+				 {"xmlns:xmpp", ?NS_BOSH_s},
+				 {"xmlns:stream", ?NS_XMPP_s}] ++
 				case OutEls of
 				    [] ->
 					[];
@@ -946,34 +977,76 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess,
 			    MaxPause = get_max_pause(To),
 			    {200, ?HEADER,
 			     xml:element_to_string(
-			       {xmlelement,"body",
-				[{"xmlns",
-				  ?NS_HTTP_BIND},
-				 {"sid", Sid},
-				 {"wait", integer_to_list(Wait)},
-				 {"requests", integer_to_list(Hold+1)},
-				 {"inactivity",
-				  integer_to_list(
-				    trunc(MaxInactivity/1000))},
-				 {"maxpause",
-				  integer_to_list(MaxPause)},
-				 {"polling",
-				  integer_to_list(
-				    trunc(?MIN_POLLING/1000000))},
-				 {"ver", ?BOSH_VERSION},
-				 {"from", From},
-				 {"secure", "true"} %% we're always being secure
-				] ++ BOSH_attribs,OutEls})};
+			       #xmlel{name = 'body',
+			              ns = ?NS_HTTP_BIND_s,
+			              attrs = [
+			                #xmlattr{name = 'sid',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = Sid
+			                },
+			                #xmlattr{name = 'wait',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = integer_to_list(Wait)
+			                },
+			                #xmlattr{name = 'requests',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = integer_to_list(Hold+1)
+			                },
+			                #xmlattr{name = 'inactivity',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = integer_to_list(trunc(MaxInactivity/1000))
+			                },
+			                #xmlattr{name = 'maxpause',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = integer_to_list(MaxPause)
+			                },
+			                #xmlattr{name = 'polling',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = integer_to_list(trunc(?MIN_POLLING/1000000))
+			                },
+			                #xmlattr{name = 'ver',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = ?BOSH_VERSION
+			                },
+			                #xmlattr{name = 'from',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = From
+			                },
+			                #xmlattr{name = 'secure',
+			                         ns = ?NS_HTTP_BIND_s,
+			                         value = "true"
+			                },
+			                BOSH_attribs
+			              ],
+			              children = OutEls})};
+%			       {xmlelement,"body",
+%				[{"xmlns",
+%				  ?NS_HTTP_BIND_s},
+%				 {"sid", Sid},
+%				 {"wait", integer_to_list(Wait)},
+%				 {"requests", integer_to_list(Hold+1)},
+%				 {"inactivity",
+%				  integer_to_list(
+%				    trunc(MaxInactivity/1000))},
+%				 {"maxpause",
+%				  integer_to_list(MaxPause)},
+%				 {"polling",
+%				  integer_to_list(
+%				    trunc(?MIN_POLLING/1000000))},
+%				 {"ver", ?BOSH_VERSION},
+%				 {"from", From},
+%				 {"secure", "true"} %% we're always being secure
+%				] ++ BOSH_attribs,OutEls})};
 			{error, _} ->
 			    {200, ?HEADER, "<body type='terminate' "
 			     "condition='host-unknown' "
-			     "xmlns='"++?NS_HTTP_BIND++"'/>"}
+			     "xmlns='"++?NS_HTTP_BIND_s++"'/>"}
 		    end
 	    end;
 	{'EXIT', {shutdown, _}} ->
-            {200, ?HEADER, "<body type='terminate' condition='system-shutdown' xmlns='"++?NS_HTTP_BIND++"'/>"};
+            {200, ?HEADER, "<body type='terminate' condition='system-shutdown' xmlns='"++?NS_HTTP_BIND_s++"'/>"};
 	{'EXIT', _Reason} ->
-            {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND++"'/>"}
+            {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND_s++"'/>"}
     end.
 
 http_get(#http_bind{pid = FsmRef, wait = Wait, hold = Hold}, Rid) ->
@@ -983,10 +1056,10 @@ http_get(#http_bind{pid = FsmRef, wait = Wait, hold = Hold}, Rid) ->
 send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
     case OutPacket of
 	[] ->
-	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND_s++"'/>"};
 	[{xmlstreamend, _}] ->
             gen_fsm:sync_send_all_state_event(FsmRef,{stop,stream_closed}),
-	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
+	    {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND_s++"'/>"};
 	_ ->
 	    %% TODO: We parse to add a default namespace to packet,
 	    %% The spec says adding the jabber:client namespace if
@@ -996,7 +1069,9 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 	    %% packet in most case.
 	    AllElements =
 		lists:all(fun({xmlstreamelement,
-			       {xmlelement, "stream:error", _, _}}) -> false;
+		        #xmlel{name = 'error',
+		               declared_ns =  [{undefined, ?NS_XMPP_pfx}]}}) -> false;
+%			       {xmlelement, "stream:error", _, _}}) -> false;
 			     ({xmlstreamelement, _}) -> true;
 			     (_) -> false
 			  end, OutPacket),
@@ -1005,10 +1080,13 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 		    TypedEls = [check_default_xmlns(OEl) ||
 				   {xmlstreamelement, OEl} <- OutPacket],
 		    Body = xml:element_to_string(
-			     {xmlelement,"body",
-			      [{"xmlns",
-				?NS_HTTP_BIND}],
-			      TypedEls}),
+		      #xmlel{name = 'body',
+		             ns = ?NS_HTTP_BIND_s,
+		             children = TypedEls}),
+%			     {xmlelement,"body",
+%			      [{"xmlns",
+%				?NS_HTTP_BIND_s}],
+%			      TypedEls}),
 		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
 			   [Body]),
 		    {200, ?HEADER, Body};
@@ -1018,19 +1096,27 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 			    OutEls =
 				case SEls of
 				    [{xmlstreamelement,
-				      {xmlelement,
-				       "stream:features",
-				       StreamAttribs, StreamEls}} |
+				      #xmlel{name = 'features',
+				             declared_ns = [{undefined, 'stream'}],
+				             attrs = StreamAttribs,
+				             children = StreamEls}} |
+%				      {xmlelement,
+%				       "stream:features",
+%				       StreamAttribs, StreamEls}} |
 				     StreamTail] ->
 					TypedTail =
 					    [check_default_xmlns(OEl) ||
 						{xmlstreamelement, OEl} <-
 						    StreamTail],
-					[{xmlelement,
-					  "stream:features",
-					  [{"xmlns:stream",
-					    ?NS_STREAM}] ++
-					  StreamAttribs, StreamEls}] ++
+          [#xmlel{name = 'features',
+                  declared_ns = [{?NS_XMPP_s, ?NS_XMPP_pfx}],
+                  attrs = StreamAttribs,
+                  children = StreamEls}] ++
+%					[{xmlelement,
+%					  "stream:features",
+%					  [{"xmlns:stream",
+%					    ?NS_XMPP_s}] ++
+%					  StreamAttribs, StreamEls}] ++
 					    TypedTail;
 				    StreamTail ->
 					[check_default_xmlns(OEl) ||
@@ -1039,16 +1125,21 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 				end,
                             {200, ?HEADER,
                              xml:element_to_string(
-                               {xmlelement,"body",
-                                [{"xmlns",
-                                  ?NS_HTTP_BIND}],
-                                OutEls})};
+                               #xmlel{name = 'body',
+                                      ns = ?NS_HTTP_BIND_s,
+                                      children = OutEls})};
+%                               {xmlelement,"body",
+%                                [{"xmlns",
+%                                  ?NS_HTTP_BIND_s}],
+%                                OutEls})};
 			_ ->
 			    SErrCond =
 				lists:filter(
 				  fun({xmlstreamelement,
-				       {xmlelement, "stream:error",
-					_, _}}) ->
+				    #xmlel{name = 'error',
+				           declared_ns = [{undefined, ?NS_XMPP_pfx}]}}) ->
+%				       {xmlelement, "stream:error",
+%					_, _}}) ->
 					  true;
 				     (_) -> false
 				  end, OutPacket),
@@ -1057,7 +1148,8 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 				    [] ->
 					null;
 				    [{xmlstreamelement,
-				      {xmlelement, _, _, _Cond} =
+				      #xmlel{children = _Cond} =
+%				      {xmlelement, _, _, _Cond} =
 				      StreamErrorTag} | _] ->
 					[StreamErrorTag]
 				end,
@@ -1068,13 +1160,13 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
                                     {200, ?HEADER,
                                      "<body type='terminate' "
                                      "condition='internal-server-error' "
-                                     "xmlns='"++?NS_HTTP_BIND++"'/>"};
+                                     "xmlns='"++?NS_HTTP_BIND_s++"'/>"};
                                 _ ->
                                     {200, ?HEADER,
                                      "<body type='terminate' "
                                      "condition='remote-stream-error' "
-                                     "xmlns='"++?NS_HTTP_BIND++"' " ++
-                                     "xmlns:stream='"++?NS_STREAM++"'>" ++
+                                     "xmlns='"++?NS_HTTP_BIND_s++"' " ++
+                                     "xmlns:stream='"++?NS_XMPP_s++"'>" ++
                                      elements_to_string(StreamErrCond) ++
                                      "</body>"}
                             end
@@ -1087,13 +1179,19 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
     %% MR: I do not think it works if put put several elements in the
     %% same body:
     case xml_stream:parse_element(Data) of
-	{xmlelement, "body", Attrs, Els} ->
-	    Xmlns = xml:get_attr_s("xmlns",Attrs),
+  #xmlel{name = 'body',
+         ns = Xmlns,
+         attrs = Attrs,
+         children = Els} = Xml->
+%	{xmlelement, "body", Attrs, Els} ->
+%	    Xmlns = xml:get_attr_s("xmlns",Attrs),
 	    if
-		Xmlns /= ?NS_HTTP_BIND ->
+		Xmlns /= ?NS_HTTP_BIND_s ->
 		    {error, bad_request};
 		true ->
-                    case catch list_to_integer(xml:get_attr_s("rid", Attrs)) of
+                    %case catch list_to_integer(xml:get_attr_s("rid", Attrs)) of
+                    case catch list_to_integer(exmpp_xml:get_attribute_as_list(Xml, "rid", "")) of
+
                         {'EXIT', _} ->
                             {error, bad_request};
                         Rid ->
@@ -1102,12 +1200,14 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
                                 lists:filter(
                                   fun(I) ->
                                           case I of
-                                              {xmlelement, _, _, _} ->
+                                              #xmlel{} ->
+                                              %{xmlelement, _, _, _} ->
                                                   true;
                                               _ ->
                                                   false
                                           end
                                   end, Els),
+           % Suggestion :   Sid = exmpp_xml:get_attribute_as_list(Xml, "sid", ""),
                             Sid = xml:get_attr_s("sid",Attrs),
 			    if
 				PayloadSize =< MaxStanzaSize ->
@@ -1117,7 +1217,8 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
 			    end
                     end
 	    end;
-	{xmlelement, _Name, _Attrs, _Els} ->
+  #xmlel{} ->
+%	{xmlelement, _Name, _Attrs, _Els} ->
 	    {error, bad_request};
 	{error, _Reason} ->
 	    {error, bad_request}
@@ -1178,9 +1279,12 @@ tnow() ->
     {TMegSec, TSec, TMSec} = now(),
     (TMegSec * 1000000 + TSec) * 1000000 + TMSec.
 
-check_default_xmlns({xmlelement, Name, Attrs, Els} = El) ->
-    case xml:get_tag_attr_s("xmlns", El) of
-	"" -> {xmlelement, Name, [{"xmlns", ?NS_CLIENT} | Attrs], Els};
+check_default_xmlns(#xmlel{name = Name, ns = Xmlns, attrs = Attrs, children = Els} = El) ->
+%check_default_xmlns({xmlelement, Name, Attrs, Els} = El) ->
+     case Xmlns of
+%    case xml:get_tag_attr_s("xmlns", El) of
+  "" -> #xmlel{name = Name, ns = ?NS_JABBER_CLIENT_s, attrs = Attrs, children = Els};
+%	"" -> {xmlelement, Name, [{"xmlns", ?NS_JABBER_CLIENT_s} | Attrs], Els};
 	_  -> El
     end.
 
