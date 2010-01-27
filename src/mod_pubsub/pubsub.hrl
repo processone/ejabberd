@@ -44,18 +44,34 @@
 %%% of the current node. For example: 
 %%% ```["home", "localhost", "cromain", "node1"]'''</p>
 
-%%% @type stanzaError() = #xmlelement{}.
+%%% @type stanzaError() = #xmlel{}.
 %%% Example: 
-%%%    ```{xmlelement, "error",
-%%%        [{"code", Code}, {"type", Type}],
-%%%        [{xmlelement, Condition, [{"xmlns", ?NS_STANZAS}], []}]}'''
+%%%    ```#xmlel{name = 'error'
+%%%              ns = ?NS_STANZAS,
+%%%              attrs = [
+%%%                #xmlattr{
+%%%                  name = 'code',
+%%%                  ns = ?NS_STANZAS,
+%%%                  value = Code
+%%%                },
+%%%              attrs = [
+%%%                #xmlattr{
+%%%                  name = 'type',
+%%%                  ns = ?NS_STANZAS,
+%%%                  value = Type
+%%%                }
+%%%              ]}'''
 
-%%% @type pubsubIQResponse() = #xmlelement{}.
+%%% @type pubsubIQResponse() = #xmlel{}.
 %%% Example:
-%%%    ```{xmlelement, "pubsub",
-%%%               [{"xmlns", ?NS_PUBSUB_EVENT}],
-%%%               [{xmlelement, "affiliations", [],
-%%%               []}]}'''
+%%%    ```#xmlel{name = 'pubsub',
+%%%              ns = ?NS_PUBSUB,
+%%%              children = [
+%%%                #xmlel{name = 'affiliations'
+%%%                       ns = ?NS_PUBSUB
+%%%                }
+%%%              ]
+%%%             }'''
 
 %%% @type nodeOption() = {Option::atom(), Value::term()}.
 %%% Example:

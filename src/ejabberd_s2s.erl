@@ -77,6 +77,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+%% #xmlelement{} used for retro-compatibility
 route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
     catch throw(for_stacktrace), % To have a stacktrace.
     io:format("~nS2S: old #xmlelement:~n~p~n~p~n~n",
@@ -219,6 +220,7 @@ handle_cast(_Msg, State) ->
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
+%% #xmlelement{} used for retro-compatibility
 handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
     catch throw(for_stacktrace), % To have a stacktrace.
     io:format("~nS2S: old #xmlelement:~n~p~n~p~n~n",

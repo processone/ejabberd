@@ -120,6 +120,7 @@ process_iq_reply(From, To, #iq{id = ID} = IQ) ->
 	    nothing
     end.
   
+%% #xmlelement{} used for retro-compatibility
 route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
     catch throw(for_stacktrace), % To have a stacktrace.
     io:format("~nLOCAL: old #xmlelement:~n~p~n~p~n~n",
@@ -232,6 +233,8 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
+
+%% #xmlelement{} used for retro-compatibility
 handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
     catch throw(for_stacktrace), % To have a stacktrace.
     io:format("~nLOCAL: old #xmlelement:~n~p~n~p~n~n",

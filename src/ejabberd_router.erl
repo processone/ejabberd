@@ -63,7 +63,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-
+%% #xmlelement{} used for retro-compatibility
 route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
     catch throw(for_stacktrace), % To have a stacktrace.
     io:format("~nROUTER: old #xmlelement:~n~p~n~p~n~n",
@@ -255,6 +255,7 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
+%% #xmlelement{} used for retro-compatibility
 handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
     catch throw(for_stacktrace), % To have a stacktrace.
     io:format("~nROUTER: old #xmlelement:~n~p~n~p~n~n",
