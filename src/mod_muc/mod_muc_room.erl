@@ -1691,7 +1691,9 @@ add_new_user(From, Nick, Packet, StateData) ->
 		    case ejabberd_captcha:create_captcha(
 			   ID, SID, RoomJID, To, Lang, From) of
 			{ok, CaptchaEls} ->
-			    MsgPkt = {xmlelement, "message", [{"id", ID}], CaptchaEls},
+                            MsgPkt = #xmlel{name = 'message',
+                                attrs = [#xmlattr{name = 'id', value = ID}],
+                                children = CaptchaEls},
 			    Robots = ?DICT:store(From,
 						 {Nick, Packet}, StateData#state.robots),
 			    ejabberd_router:route(RoomJID, From, MsgPkt),

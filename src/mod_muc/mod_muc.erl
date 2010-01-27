@@ -616,9 +616,23 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			 {item, Desc} ->
 			     flush(),
 			     {true,
-			      {xmlelement, "item",
-			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
-				{"name", Desc}], []}};
+            #xmlel{name = 'item',
+                   attrs = [
+                     #xmlattr{
+                       name = 'jid',
+                       value = jlib:jid_to_string({Name, Host, ""})
+                     },
+                     #xmlattr{
+                       name = 'name',
+                       value = Desc
+                     }
+                   ]
+                  }
+           };
+			      %{xmlelement, "item",
+			       %[{"jid", jlib:jid_to_string({Name, Host, ""})},
+				%{"name", Desc}], []}};
+
 			 _ ->
 			     false
 		     end
