@@ -288,14 +288,14 @@ activate_socket(#state{socket = Socket,
 	    ok
     end.
 
-%% Data processing for connectors directly generating xmlelement in
+%% Data processing for connectors directly generating xmlel in
 %% Erlang data structure.
 %% WARNING: Shaper does not work with Erlang data structure.
 process_data([], State) ->
     activate_socket(State),
     State;
 process_data([Element|Els], #state{c2s_pid = C2SPid} = State)
-  when element(1, Element) == xmlelement;
+  when element(1, Element) == xmlel;
        element(1, Element) == xmlstreamstart;
       element(1, Element) == xmlstreamelement;
        element(1, Element) == xmlstreamend ->
@@ -330,12 +330,12 @@ process_data(Data,
 		shaper_state = NewShaperState}, HibTimeout}.
 
 %% Element coming from XML parser are wrapped inside xmlstreamelement
-%% When we receive directly xmlelement tuple (from a socket module
+%% When we receive directly xmlel tuple (from a socket module
 %% speaking directly Erlang XML), we wrap it inside the same
 %% xmlstreamelement coming from the XML parser.
-element_wrapper(XMLElement)
-  when element(1, XMLElement) == xmlelement ->
-    {xmlstreamelement, XMLElement};
+element_wrapper(XmlEl)
+  when element(1, XmlEl) == xmlel ->
+    {xmlstreamelement, XmlEl};
 element_wrapper(Element) ->
     Element.
 
