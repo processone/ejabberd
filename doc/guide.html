@@ -675,7 +675,7 @@ The available modules, their purpose and the options allowed by each one are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>ejabberd_c2s</TT></B></DT><DD CLASS="dd-description">
 Handles c2s connections.<BR>
- Options: <TT>access</TT>, <TT>certfile</TT>,
+ Options: <TT>access</TT>, <TT>certfile</TT>, <TT>max_fsm_queue</TT>,
 <TT>max_stanza_size</TT>, <TT>shaper</TT>,
 <TT>starttls</TT>, <TT>starttls_required</TT>, <TT>tls</TT>,
 <TT>zlib</TT>
@@ -749,9 +749,11 @@ The option can be defined in <TT>ejabberd.cfg</TT>, expressing the time
 in seconds: <CODE>{http_poll_timeout, 300}.</CODE>
 </P></DD><DT CLASS="dt-description"><B><TT>{max_fsm_queue, Size}</TT></B></DT><DD CLASS="dd-description">
 This option specifies the maximum number of elements in the queue of the FSM.
-This option can be specified for an <TT>ejabberd_service</TT> listener,
+This option can be specified for <TT>ejabberd_service</TT> and
+<TT>ejabberd_c2s</TT> listeners,
 or also globally for <TT>ejabberd_s2s_out</TT>.
-If the option is not specified for an <TT>ejabberd_service</TT> listener,
+If the option is not specified for <TT>ejabberd_service</TT> or
+<TT>ejabberd_c2s</TT> listeners,
 the globally configured value is used.
 The allowed values are integers and &#X2019;undefined&#X2019;.
 Default value: &#X2019;undefined&#X2019;.
@@ -833,9 +835,11 @@ The maximum allowed delay for retry to connect after a failed connection attempt
 Specified in seconds. The default value is 300 seconds (5 minutes).
 </DD><DT CLASS="dt-description"><B><TT>{max_fsm_queue, Size}</TT></B></DT><DD CLASS="dd-description">
 This option specifies the maximum number of elements in the queue of the FSM.
-This option can be specified for an <TT>ejabberd_service</TT> listener,
+This option can be specified for <TT>ejabberd_service</TT> and
+<TT>ejabberd_c2s</TT> listeners,
 or also globally for <TT>ejabberd_s2s_out</TT>.
-If the option is not specified for an <TT>ejabberd_service</TT> listener,
+If the option is not specified for <TT>ejabberd_service</TT> or
+<TT>ejabberd_c2s</TT> listeners,
 the globally configured value is used.
 The allowed values are integers and &#X2019;undefined&#X2019;.
 Default value: &#X2019;undefined&#X2019;.
@@ -1213,7 +1217,7 @@ can be either a number, or <TT>infinity</TT>. The default value is
 </PRE><P> <A NAME="configmaxs2sconns"></A> </P><!--TOC subsubsection Several connections to a remote XMPP server with ACL-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configmaxs2sconns">Several connections to a remote XMPP server with ACL</A></H4><!--SEC END --><P> <A NAME="configmaxs2sconns"></A> 
 </P><P>The special access <TT>max_s2s_connections</TT> specifies how many
-simultaneus S2S connections can be established to a specific remote XMPP server.
+simultaneous S2S connections can be established to a specific remote XMPP server.
 The default value is <TT>1</TT>.
 There&#X2019;s also available the access <TT>max_s2s_connections_per_node</TT>.</P><P>The syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{access, max_s2s_connections, [ {MaxNumber, ACLName}, ...]}.</TT></B></DT></DL><P>Examples:
