@@ -785,7 +785,7 @@ The available modules, their purpose and the options allowed by each one are:
 \begin{description}
   \titem{\texttt{ejabberd\_c2s}}
     Handles c2s connections.\\
-    Options: \texttt{access}, \texttt{certfile},
+    Options: \texttt{access}, \texttt{certfile}, \texttt{max\_fsm\_queue},
     \texttt{max\_stanza\_size}, \texttt{shaper},
     \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
     \texttt{zlib}
@@ -871,9 +871,11 @@ This is a detailed description of each option allowed by the listening modules:
     in seconds: \verb|{http_poll_timeout, 300}.|
   \titem{\{max\_fsm\_queue, Size\}}
     This option specifies the maximum number of elements in the queue of the FSM.
-    This option can be specified for an \term{ejabberd\_service} listener,
+    This option can be specified for \term{ejabberd\_service} and
+    \term{ejabberd\_c2s} listeners,
     or also globally for \term{ejabberd\_s2s\_out}.
-    If the option is not specified for an \term{ejabberd\_service} listener,
+    If the option is not specified for \term{ejabberd\_service} or
+    \term{ejabberd\_c2s} listeners,
     the globally configured value is used.
     The allowed values are integers and 'undefined'.
     Default value: 'undefined'.
@@ -957,9 +959,11 @@ There are some additional global options that can be specified in the ejabberd c
   Specified in seconds. The default value is 300 seconds (5 minutes).
   \titem{\{max\_fsm\_queue, Size\}}
     This option specifies the maximum number of elements in the queue of the FSM.
-    This option can be specified for an \term{ejabberd\_service} listener,
+    This option can be specified for \term{ejabberd\_service} and
+    \term{ejabberd\_c2s} listeners,
     or also globally for \term{ejabberd\_s2s\_out}.
-    If the option is not specified for an \term{ejabberd\_service} listener,
+    If the option is not specified for \term{ejabberd\_service} or
+    \term{ejabberd\_c2s} listeners,
     the globally configured value is used.
     The allowed values are integers and 'undefined'.
     Default value: 'undefined'.
