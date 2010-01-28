@@ -28,7 +28,9 @@
 -author('alexey@process-one.net').
 -update_info({update, 0}).
 
--behaviour(gen_fsm).
+-define(GEN_FSM).
+
+-behaviour(?GEN_FSM).
 
 %% External exports
 -export([start/2,
@@ -108,8 +110,8 @@
 
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, gen_fsm:start(ejabberd_c2s, [SockData, Opts],
-					?FSMOPTS)).
+-define(SUPERVISOR_START, ?GEN_FSM:start(ejabberd_c2s, [SockData, Opts],
+					 fsm_limit_opts() ++ ?FSMOPTS)).
 -else.
 -define(SUPERVISOR_START, supervisor:start_child(ejabberd_c2s_sup,
 						 [SockData, Opts])).
@@ -155,22 +157,23 @@ start(SockData, Opts) ->
     ?SUPERVISOR_START.
 
 start_link(SockData, Opts) ->
-    gen_fsm:start_link(ejabberd_c2s, [SockData, Opts], ?FSMOPTS).
+    ?GEN_FSM:start_link(ejabberd_c2s, [SockData, Opts],
+			fsm_limit_opts() ++ ?FSMOPTS).
 
 socket_type() ->
     xml_stream.
 
 %% Return Username, Resource and presence information
 get_presence(FsmRef) ->
-    gen_fsm:sync_send_all_state_event(FsmRef, {get_presence}, 1000).
+    ?GEN_FSM:sync_send_all_state_event(FsmRef, {get_presence}, 1000).
 
 
 %%TODO: for debug only
 get_state(FsmRef) ->
-    gen_fsm:sync_send_all_state_event(FsmRef, get_state, 1000).
+    ?GEN_FSM:sync_send_all_state_event(FsmRef, get_state, 1000).
 
 stop(FsmRef) ->
-    gen_fsm:send_event(FsmRef, closed).
+    ?GEN_FSM:send_event(FsmRef, closed).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -241,7 +244,7 @@ init([{SockMod, Socket}, Opts]) ->
 
 %% Return list of all available resources of contacts,
 get_subscribed(FsmRef) ->
-    gen_fsm:sync_send_all_state_event(FsmRef, get_subscribed, 1000).
+    ?GEN_FSM:sync_send_all_state_event(FsmRef, get_subscribed, 1000).
 
 
 %%----------------------------------------------------------------------
@@ -851,7 +854,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 session_established(timeout, StateData) ->
     %% TODO: Options must be stored in state:
     Options = [],
-    proc_lib:hibernate(gen_fsm, enter_loop,
+    proc_lib:hibernate(?GEN_FSM, enter_loop,
 		       [?MODULE, Options, session_established, StateData]),
     fsm_next_state(session_established, StateData);
 
@@ -2078,4 +2081,12 @@ check_from(El, FromJID) ->
 		_:_ ->
 		    'invalid-from'
 	    end
+    end.
+
+fsm_limit_opts() ->
+    case ejabberd_config:get_local_option(max_fsm_queue) of
+	N when is_integer(N) ->
+	    [{max_queue, N}];
+	_ ->
+	    []
     end.
