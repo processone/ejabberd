@@ -107,7 +107,7 @@
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
 -define(SUPERVISOR_START, ?GEN_FSM:start(ejabberd_c2s, [SockData, Opts],
-					 fsm_limit_opts() ++ ?FSMOPTS)).
+					 fsm_limit_opts(Opts) ++ ?FSMOPTS)).
 -else.
 -define(SUPERVISOR_START, supervisor:start_child(ejabberd_c2s_sup,
 						 [SockData, Opts])).
@@ -143,7 +143,7 @@ start(SockData, Opts) ->
 
 start_link(SockData, Opts) ->
     ?GEN_FSM:start_link(ejabberd_c2s, [SockData, Opts],
-			fsm_limit_opts() ++ ?FSMOPTS).
+			fsm_limit_opts(Opts) ++ ?FSMOPTS).
 
 socket_type() ->
     xml_stream.
@@ -2156,12 +2156,17 @@ check_from(El, FromJID) ->
 	    end
     end.
 
-fsm_limit_opts() ->
-    case ejabberd_config:get_local_option(max_fsm_queue) of
-	N when is_integer(N) ->
+fsm_limit_opts(Opts) ->
+    case lists:keysearch(max_fsm_queue, 1, Opts) of
+	{value, {_, N}} when is_integer(N) ->
 	    [{max_queue, N}];
 	_ ->
-	    []
+	    case ejabberd_config:get_local_option(max_fsm_queue) of
+		N when is_integer(N) ->
+		    [{max_queue, N}];
+		_ ->
+		    []
+	    end
     end.
 
 %%%----------------------------------------------------------------------
