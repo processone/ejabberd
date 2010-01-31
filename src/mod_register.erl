@@ -166,13 +166,20 @@ process_iq(From, To,
 			#jid{user = User, lserver = Server} ->
 			    try_set_password(User, Server, Password, IQ, SubEl);
 			_ ->
-			    case try_register(User, Server, Password,
-					      Source, Lang) of
-				ok ->
-				    IQ#iq{type = result, sub_el = [SubEl]};
-				{error, Error} ->
+			    case check_from(From, Server) of
+				allow ->
+				    case try_register(User, Server, Password,
+						      Source, Lang) of
+					ok ->
+					    IQ#iq{type = result,
+						  sub_el = [SubEl]};
+					{error, Error} ->
+					    IQ#iq{type = error,
+						  sub_el = [SubEl, Error]}
+				    end;
+				deny ->
 				    IQ#iq{type = error,
-					  sub_el = [SubEl, Error]}
+					  sub_el = [SubEl, ?ERR_FORBIDDEN]}
 			    end
 		    end;
 		true ->
@@ -293,6 +300,11 @@ send_registration_notifications(UJID, Source) ->
 	    ok
     end.
 
+check_from(#jid{user = "", server = ""}, _Server) ->
+    allow;
+check_from(JID, Server) ->
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access_from, none),
+    acl:match_rule(Server, Access, JID).
 
 check_timeout(undefined) ->
     true;
