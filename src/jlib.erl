@@ -382,7 +382,7 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
 			 "result" -> {result, reply};
 			 "error" -> {error, reply};
 			 _ -> {invalid, invalid}
-	    end,
+		     end,
     if
 	Type1 == invalid ->
 	    invalid;
@@ -404,22 +404,26 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
 					      <- FilteredEls, 
 					  SubName /= "error"],
 			{case NonErrorEls of
-			     [NonErrorEl] -> xml:get_tag_attr_s("xmlns", NonErrorEl);
-			     _ -> invalid
+			     [NonErrorEl] ->
+				 xml:get_tag_attr_s("xmlns", NonErrorEl);
+			     _ ->
+				 invalid
 			 end,
 			 FilteredEls};
 		    _ ->
-			{invalid, invalid}
+			{invalid, []}
 		end,
 	    if XMLNS == "", Class == request ->
 		    invalid;
+	       XMLNS == invalid ->
+		    invalid;
 	       true ->
-			    #iq{id = ID,
-				type = Type1,
-				xmlns = XMLNS,
-				lang = Lang,
+		    #iq{id = ID,
+			type = Type1,
+			xmlns = XMLNS,
+			lang = Lang,
 			sub_el = SubEl}
-		    end;
+	    end;
 	Class == reply, Filter /= any ->
 	    reply
     end;
