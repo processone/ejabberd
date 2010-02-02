@@ -407,15 +407,13 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
 			     [NonErrorEl] ->
 				 xml:get_tag_attr_s("xmlns", NonErrorEl);
 			     _ ->
-				 invalid
+				 ""
 			 end,
 			 FilteredEls};
 		    _ ->
-			{invalid, []}
+			{"", []}
 		end,
 	    if XMLNS == "", Class == request ->
-		    invalid;
-	       XMLNS == invalid ->
 		    invalid;
 	       true ->
 		    #iq{id = ID,
