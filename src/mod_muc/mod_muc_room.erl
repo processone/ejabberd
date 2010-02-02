@@ -734,7 +734,7 @@ terminate(Reason, _StateName, StateData) ->
     ReasonT = case Reason of
 		  shutdown -> "You are being removed from the room because"
 				  " of a system shutdown";
-		  _ -> atom_to_list(Reason)
+		  _ -> "Room terminates"
 	      end,
     ItemAttrs = [{"affiliation", "none"}, {"role", "none"}],
     ReasonEl = {xmlelement, "reason", [], [{xmlcdata, ReasonT}]},
