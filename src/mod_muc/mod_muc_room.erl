@@ -571,7 +571,7 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
 	      [jlib:jid_to_string(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
-    {stop, Reason, StateData};
+    {stop, shutdown, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
 	      [jlib:jid_to_string(StateData#state.jid)]),
