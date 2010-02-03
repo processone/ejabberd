@@ -163,12 +163,17 @@ process_iq(From, To,
 			{User, Server} ->
 			    try_set_password(User, Server, Password, IQ_Rec, SubEl);
 			_ ->
-			    case try_register(User, Server, Password,
-					      Source, Lang) of
-				ok ->
-                                    exmpp_iq:result(IQ_Rec, SubEl);
-				{error, Error} ->
-                                    exmpp_iq:error(IQ_Rec, Error)
+			    case check_from(From, Server) of
+				allow ->
+				    case try_register(User, Server, Password,
+						      Source, Lang) of
+					ok ->
+					    exmpp_iq:result(IQ_Rec, SubEl);
+					{error, Error} ->
+					    exmpp_iq:error(IQ_Rec, Error)
+				    end;
+				deny ->
+				    exmpp_iq:error(IQ_Rec, 'forbidden')
 			    end
 		    end;
 		true ->
@@ -283,6 +288,14 @@ send_registration_notifications(UJID, Source) ->
 	    ok
     end.
 
+check_from(JID, Server) ->
+    case {exmpp_jid:node_as_list(JID), exmpp_jid:prep_domain_as_list(JID)} of
+	{"", ""} ->
+	    allow;
+	_ ->
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access_from, none),
+	    acl:match_rule(Server, Access, JID)
+    end.
 
 check_timeout(undefined) ->
     true;
