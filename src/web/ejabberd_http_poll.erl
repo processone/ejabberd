@@ -434,11 +434,16 @@ resend_messages(Messages) ->
 %% This function is used to resend messages that have been polled but not
 %% delivered.
 resend_message(Packet) ->
-    [ParsedPacket] = exmpp_xml:parse_document(Packet, ?PARSER_OPTIONS),
-    From = get_jid("from", ParsedPacket),
-    To = get_jid("to", ParsedPacket),
-    ?DEBUG("Resend ~p ~p ~p~n",[From,To, ParsedPacket]),
-    ejabberd_router:route(From, To, ParsedPacket).
+    [#xmlel{name = Name} = ParsedPacket] =
+	exmpp_xml:parse_document(Packet, ?PARSER_OPTIONS),
+    if Name == iq; Name == message; Name == presence ->
+	    From = get_jid("from", ParsedPacket),
+	    To = get_jid("to", ParsedPacket),
+	    ?DEBUG("Resend ~p ~p ~p~n",[From,To, ParsedPacket]),
+	    ejabberd_router:route(From, To, ParsedPacket);
+       true ->
+	    ok
+    end.
 
 %% Type can be "from" or "to"
 %% Parsed packet is a parsed Jabber packet.
