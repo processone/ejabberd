@@ -594,7 +594,7 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
 	      [exmpp_jid:to_binary(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
-    {stop, Reason, StateData};
+    {stop, shutdown, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
 	      [exmpp_jid:to_binary(StateData#state.jid)]),
