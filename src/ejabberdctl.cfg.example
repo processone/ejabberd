@@ -51,7 +51,7 @@
 #FIREWALL_WINDOW=
 
 #.
-#' PROCESSES: Maximum number of Erlang processes
+#' ERL_PROCESSES: Maximum number of Erlang processes
 #
 # Erlang consumes a lot of lightweight processes. If there is a lot of activity
 # on ejabberd so that the maximum number of processes is reached, people will
@@ -62,7 +62,7 @@
 # Default: 250000
 # Maximum: 268435456
 #
-#PROCESSES=250000
+#ERL_PROCESSES=250000
 
 #.
 #' ERL_MAX_ETS_TABLES: Maximum number of ETS and Mnesia tables
