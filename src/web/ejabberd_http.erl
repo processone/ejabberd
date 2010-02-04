@@ -329,7 +329,9 @@ process(Handlers, Request) ->
             %% requested path is "/test/foo/bar", the local path is
             %% ["foo", "bar"]
             LocalPath = lists:nthtail(length(HandlerPathPrefix), Request#request.path),
-	    HandlerModule:process(LocalPath, Request);
+	        R = HandlerModule:process(LocalPath, Request),
+            ejabberd_hooks:run(http_request_debug, [{LocalPath, Request}]),
+            R;
 	false ->
 	    process(HandlersLeft, Request)
     end.
