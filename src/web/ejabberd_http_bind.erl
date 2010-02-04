@@ -751,7 +751,7 @@ process_buffered_request(Reply, StateName, StateData) ->
 	      Request, StateName,
 	      StateData#state{unprocessed_req_list = NewRequests});
 	_ ->
-	    {reply, Reply, StateName, StateData}
+	    {reply, Reply, StateName, StateData, hibernate}
     end.
 
 handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
