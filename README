@@ -20,7 +20,7 @@ To compile ejabberd you need:
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
  - GNU Iconv 1.8 or higher, for the IRC Transport
    (mod_irc). Optional. Not needed on systems with GNU Libc.
- - ImageMagick’s Convert program. Optional. For CAPTCHA challenges.
+ - ImageMagick's Convert program. Optional. For CAPTCHA challenges.
  - exmpp 0.9.2 or higher. Optional. For import/export XEP-0227 files. 
 
 
