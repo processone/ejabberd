@@ -816,8 +816,9 @@ get_nodes_helper(NodeTree,
 	    false
     end.
 
-%% @spec (NodeId) -> [States] | []
+%% @spec (NodeId) -> {result, [State] | []}
 %%	 NodeId = mod_pubsub:pubsubNodeId()
+%%	 State = mod_pubsub:pubsubState()
 %% @doc Returns the list of stored states for a given node.
 %% <p>For the default PubSub module, states are stored in Mnesia database.</p>
 %% <p>We can consider that the pubsub_state table have been created by the main
