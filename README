@@ -17,7 +17,7 @@ To compile ejabberd you need:
  - Erlang mysql library. Optional. MySQL authentication/storage.
  - Erlang pgsql library. Optional. PostgreSQL authentication/storage.
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
- - ImageMagick’s Convert program. Optional. For CAPTCHA challenges.
+ - ImageMagick's Convert program. Optional. For CAPTCHA challenges.
 
 
 1. Compile and install on *nix systems
