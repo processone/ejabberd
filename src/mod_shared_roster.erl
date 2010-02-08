@@ -120,6 +120,8 @@ stop(Host) ->
 %%    		  ?MODULE, remove_user, 50),
 
 
+get_user_roster(Items, {U, S}) when is_binary(U) ->
+    get_user_roster(Items, {binary_to_list(U), binary_to_list(S)});
 get_user_roster(Items, US) ->
     {U, S} = US,
     DisplayedGroups = get_user_displayed_groups(US),
