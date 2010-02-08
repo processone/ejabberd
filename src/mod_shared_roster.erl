@@ -157,15 +157,47 @@ get_user_roster(Items, US) ->
 	  end, SRUsers, Items),
 
     %% Export items in roster format:
+    ModVcard = get_vcard_module(S),
     SRItems = [#roster{usj = {U, S, {U1, S1, undefined}},
 		       us = US,
 		       jid = {U1, S1, undefined},
-		       name = "",
+		       name = get_rosteritem_name(ModVcard, U1, S1),
 		       subscription = both,
 		       ask = none,
 		       groups = GroupNames} ||
 		  {{U1, S1}, GroupNames} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
+
+get_vcard_module(Server) ->
+    Modules = gen_mod:loaded_modules(Server),
+    [M || M <- Modules,
+	  (M == mod_vcard) or (M == mod_vcard_odbc) or (M == mod_vcard_ldap)].
+
+get_rosteritem_name([], _, _) ->
+    <<>>;
+get_rosteritem_name([ModVcard], U, S) ->
+    From = exmpp_jid:make("", S, "mod_shared_roster"),
+    To = exmpp_jid:make(U, S, ""),
+    Payload = #xmlel{ns = ?NS_VCARD, name = 'vCard'},
+    IQ = #iq{kind = request,
+        type = get,
+        ns = ?NS_VCARD,
+        payload = Payload},
+    IQ_Vcard = ModVcard:process_sm_iq(From, To, IQ),
+    try get_rosteritem_name_vcard(exmpp_iq:get_payload(IQ_Vcard))
+    catch E1:E2 ->
+	    ?ERROR_MSG("Error ~p found when trying to get the vCard of ~s@~s "
+		       "in ~p:~n ~p", [E1, U, S, ModVcard, E2]),
+	    <<>>
+    end.
+
+get_rosteritem_name_vcard(undefined) ->
+    <<>>;
+get_rosteritem_name_vcard(Vcard) ->
+    case exmpp_xml:get_path(Vcard, [{element, "NICKNAME"}, cdata]) of
+	<<>> -> exmpp_xml:get_path(Vcard, [{element, "FN"}, cdata]);
+	Nickname -> Nickname
+    end.
 
 %% This function rewrites the roster entries when moving or renaming
 %% them in the user contact list.
