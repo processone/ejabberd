@@ -138,6 +138,8 @@ run(Hook, Host, Args) when is_binary(Host) orelse is_atom(Host) ->
 run_fold(Hook, Val, Args) ->
     run_fold(Hook, global, Val, Args).
 
+%% @spec (Hook::atom(), Host, Val, Args) -> Val | stopped | NewVal
+%% Host = global | binary()
 run_fold(Hook, Host, Val, Args) when is_binary(Host) orelse is_atom(Host) ->
     case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
