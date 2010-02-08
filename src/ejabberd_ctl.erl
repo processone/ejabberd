@@ -190,7 +190,7 @@ process(["help" | Mode]) ->
 	    print_usage_help(MaxC, ShCode),
 	    ?STATUS_SUCCESS;
 	[CmdString | _] ->
-	    {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
+	    CmdStringU = re:replace(CmdString, "-", "_", [global, {return, list}]),
 	    print_usage_commands(CmdStringU, MaxC, ShCode),
 	    ?STATUS_SUCCESS
     end;
