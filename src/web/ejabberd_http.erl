@@ -321,7 +321,8 @@ process([], _) ->
 process(Handlers, Request) ->
     [{HandlerPathPrefix, HandlerModule} | HandlersLeft] = Handlers,
 
-    case lists:prefix(HandlerPathPrefix, Request#request.path) of
+    case (lists:prefix(HandlerPathPrefix, Request#request.path) or
+         (HandlerPathPrefix==Request#request.path)) of
 	true ->
             ?DEBUG("~p matches ~p", [Request#request.path, HandlerPathPrefix]),
             %% LocalPath is the path "local to the handler", i.e. if
