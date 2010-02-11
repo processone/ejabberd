@@ -266,7 +266,7 @@ wait_for_status()
     status=4
     while [ $status -ne $1 ]; do
         sleep $3
-        let timeout=timeout-1
+        timeout=$(($timeout - 1))
         [ $timeout -eq 0 ] && {
             status=$1
         } || {
