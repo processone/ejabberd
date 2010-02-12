@@ -169,8 +169,9 @@ debug ()
 	read foo
     fi
     echo ""
+    TTY=`tty | cut -f4 -d'/'`
     $EXEC_CMD "$ERL \
-      $NAME debug-${ERLANG_NODE} \
+      $NAME debug-${TTY}-${ERLANG_NODE} \
       -remsh $ERLANG_NODE \
       -hidden \
       $ERLANG_OPTS $ARGS \"$@\""
@@ -236,14 +237,19 @@ ctl ()
     CONNLOCKDIR=@LOCALSTATEDIR@/lock/ejabberdctl
     FLOCK='/usr/bin/flock'
     if [ ! -x "$FLOCK" ] ; then
-	FLOCK=""
-    fi
-
-    if [ ! "$FLOCK" ] ; then
-	# no flock, simply invoke ctlexec()
-	CTL_CONN="ctl-${ERLANG_NODE}"
-	ctlexec $CTL_CONN $COMMAND
-	result=$?
+	JOT='/usr/bin/jot'
+	if [ ! -x "$JOT" ] ; then
+	    # no flock or jot, simply invoke ctlexec()
+	    CTL_CONN="ctl-${ERLANG_NODE}"
+	    ctlexec $CTL_CONN $COMMAND
+	    result=$?
+	else
+	    # no flock, but at least there is jot
+	    RAND=`jot -r 1 0 $MAXCONNID`
+	    CTL_CONN="ctl-${RAND}-${ERLANG_NODE}"
+	    ctlexec $CTL_CONN $COMMAND
+	    result=$?
+	fi
     else
 	# we have flock so we get a lock
 	# on one of a limited number of
