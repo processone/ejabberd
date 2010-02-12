@@ -169,7 +169,7 @@ debug ()
 	read foo
     fi
     echo ""
-    TTY=`tty | cut -f4 -d'/'`
+    TTY=`tty | sed -e  's/.*\///g'`
     $EXEC_CMD "$ERL \
       $NAME debug-${TTY}-${ERLANG_NODE} \
       -remsh $ERLANG_NODE \
