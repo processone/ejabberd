@@ -14,17 +14,6 @@ ERLANG_NODE=$NODE@$HOST
 ERL=@erl@
 INSTALLUSER=@installuser@
 
-# Control number of connections identifiers
-# using flock if available. Expects a linux-style
-# flock that can lock a file descriptor.
-MAXCONNID=100
-CONNLOCKDIR=@LOCALSTATEDIR@/lock/ejabberdctl
-FLOCK='/usr/bin/flock'
-if [ ! -x "$FLOCK" ];then
-    FLOCK=""
-fi
- 
-
 # parse command line parameters
 ARGS=
 while [ $# -ne 0 ] ; do
@@ -164,7 +153,7 @@ debug ()
     echo ""
     echo "IMPORTANT: we will attempt to attach an INTERACTIVE shell"
     echo "to an already running ejabberd node."
-    echo "If an ERROR is printed, it means the connection was not succesfull."
+    echo "If an ERROR is printed, it means the connection was not successful."
     echo "You can interact with the ejabberd node if you know how to use it."
     echo "Please be extremely cautious with your actions,"
     echo "and exit immediately if you are not completely sure."
@@ -240,16 +229,26 @@ ctl ()
 {
     COMMAND=$@
 
-    if [ ! "$FLOCK" ];then
+    # Control number of connections identifiers
+    # using flock if available. Expects a linux-style
+    # flock that can lock a file descriptor.
+    MAXCONNID=100
+    CONNLOCKDIR=@LOCALSTATEDIR@/lock/ejabberdctl
+    FLOCK='/usr/bin/flock'
+    if [ ! -x "$FLOCK" ] ; then
+	FLOCK=""
+    fi
+
+    if [ ! "$FLOCK" ] ; then
 	# no flock, simply invoke ctlexec()
-	CTL_CONN="ctl-${EJABBERD_NODE}"
+	CTL_CONN="ctl-${ERLANG_NODE}"
 	ctlexec $CTL_CONN $COMMAND
 	result=$?
     else
 	# we have flock so we get a lock
 	# on one of a limited number of
 	# conn names -- this allows
-	# concurrent invokations using a bound
+	# concurrent invocations using a bound
 	# number of atoms
 	for N in $(seq 1 $MAXCONNID); do
 	    CTL_CONN="ejabberdctl-$N"
@@ -281,17 +280,17 @@ ctl ()
     fi
 
     if [ "$badlock" ];then
-        echo "Ran out of connections to try. Your ejabberd processes" >&2
-        echo "may be stuck or this is a very busy server. For very"   >&2
-       echo "busy servers, consider raising MAXCONNIDS"          >&2
-       exit 1;
+	echo "Ran out of connections to try. Your ejabberd processes" >&2
+	echo "may be stuck or this is a very busy server. For very"   >&2
+	echo "busy servers, consider raising MAXCONNID in ejabberdctl">&2
+	exit 1;
     fi
 
     case $result in
-    0) :;;
-    1) :;;
-    2) help;;
-    3) help;;
+	0) :;;
+	1) :;;
+	2) help;;
+	3) help;;
     esac
     return $result
 }
