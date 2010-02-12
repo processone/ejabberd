@@ -229,13 +229,12 @@ install: all
 	install -d -m 750 $(O_USER) $(SPOOLDIR)
 	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(SPOOLDIR)
-
+	[ ! -f $(COOKIEFILE) ] || { $(CHOWN_COMMAND) @INSTALLUSER@ $(COOKIEFILE) >$(CHOWN_OUTPUT) ; chmod 400 $(COOKIEFILE) ; }
+	#
 	# ejabberdctl lock directory
 	install -d -m 750 $(O_USER) $(CTLLOCKDIR)
 	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(CTLLOCKDIR) >$(CHOWN_OUTPUT)
 	chmod -R 750 $(CTLLOCKDIR)
-
-	[ ! -f $(COOKIEFILE) ] || { $(CHOWN_COMMAND) @INSTALLUSER@ $(COOKIEFILE) >$(CHOWN_OUTPUT) ; chmod 400 $(COOKIEFILE) ; }
 	#
 	# Log directory
 	install -d -m 750 $(O_USER) $(LOGDIR)
