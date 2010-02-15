@@ -49,6 +49,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
+-include("http_bind.hrl").
 
 %% Duplicated from ejabberd_http_bind.
 %% TODO: move to hrl file.
@@ -61,8 +62,8 @@
 process([], #request{method = 'POST',
                      data = []}) ->
     ?DEBUG("Bad Request: no data", []),
-    {400, [], #xmlel{name = h1, children =
-	       [#xmlcdata{cdata = <<"400 Bad Request">>}]}};
+    {400, ?HEADER, #xmlel{name = h1, children =
+			  [#xmlcdata{cdata = <<"400 Bad Request">>}]}};
 process([], #request{method = 'POST',
                      data = Data,
                      ip = IP}) ->
@@ -70,11 +71,14 @@ process([], #request{method = 'POST',
     ejabberd_http_bind:process_request(Data, IP);
 process([], #request{method = 'GET',
                      data = []}) ->
-    get_human_html_xmlel();
+    {200, ?HEADER, get_human_html_xmlel()};
+process([], #request{method = 'OPTIONS',
+                     data = []}) ->
+    {200, ?OPTIONS_HEADER, []};
 process(_Path, _Request) ->
     ?DEBUG("Bad Request: ~p", [_Request]),
-    {400, [], #xmlel{name = h1, children =
-	       [#xmlcdata{cdata = <<"400 Bad Request">>}]}}.
+    {400, ?HEADER, #xmlel{name = h1, children =
+			  [#xmlcdata{cdata = <<"400 Bad Request">>}]}}.
 
 get_human_html_xmlel() ->
     Heading = "ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
