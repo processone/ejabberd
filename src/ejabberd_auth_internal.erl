@@ -72,7 +72,11 @@ update_reg_users_counter_table(Server) ->
     Set = get_vh_registered_users(Server),
     Size = length(Set),
     LServer = exmpp_jid:prep_domain(exmpp_jid:parse(Server)),
-    set_vh_registered_users_counter(LServer, Size).
+    F = fun() ->
+        mnesia:write(#reg_users_counter{vhost = LServer,
+					count = Size})
+    end,
+    mnesia:sync_dirty(F).
 
 %% @spec () -> bool()
 
@@ -162,7 +166,9 @@ try_register(User, Server, Password) ->
 			    [] ->
 				mnesia:write(#passwd{us = US,
 						     password = Password}),
-				inc_vh_registered_users_counter(LServer),
+				mnesia:dirty_update_counter(
+						    reg_users_counter,
+						    exmpp_jid:prep_domain(exmpp_jid:parse(Server)), 1),
 				ok;
 			    [_E] ->
 				exists
@@ -285,40 +291,6 @@ get_vh_registered_users_number(Server, [{prefix, Prefix}]) when is_list(Prefix) 
 get_vh_registered_users_number(Server, _) ->
     get_vh_registered_users_number(Server).
 
-inc_vh_registered_users_counter(LServer) ->
-    F = fun() ->
-		case mnesia:wread({reg_users_counter, LServer}) of
-		    [C] ->
-			Count = C#reg_users_counter.count + 1,
-			C2 = C#reg_users_counter{count = Count},
-			mnesia:write(C2);
-		    _ ->
-			mnesia:write(#reg_users_counter{vhost = LServer,
-						      count = 1})
-		end
-	end,
-    mnesia:sync_dirty(F).
-
-dec_vh_registered_users_counter(LServer) ->
-    F = fun() ->
-		case mnesia:wread({reg_users_counter, LServer}) of
-		    [C] ->
-			Count = C#reg_users_counter.count - 1,
-			C2 = C#reg_users_counter{count = Count},
-			mnesia:write(C2);
-		    _ ->
-			error
-		end
-	end,
-    mnesia:sync_dirty(F).
-
-set_vh_registered_users_counter(LServer, Count) ->
-    F = fun() ->
-		mnesia:write(#reg_users_counter{vhost = LServer,
-						count = Count})
-	end,
-    mnesia:sync_dirty(F).
-
 %% @spec (User, Server) -> Password | false
 %%     User = string()
 %%     Server = string()
@@ -396,7 +368,8 @@ remove_user(User, Server) ->
 	US = {LUser, LServer},
 	F = fun() ->
 		    mnesia:delete({passwd, US}),
-		    dec_vh_registered_users_counter(LServer)
+		    mnesia:dirty_update_counter(reg_users_counter,
+						exmpp_jid:prep_domain(exmpp_jid:parse(Server)), -1)
 	    end,
 	mnesia:transaction(F),
 	ok
@@ -420,7 +393,8 @@ remove_user(User, Server, Password) ->
 		    case mnesia:read({passwd, US}) of
 			[#passwd{password = Password}] ->
 			    mnesia:delete({passwd, US}),
-			    dec_vh_registered_users_counter(LServer),
+			    mnesia:dirty_update_counter(reg_users_counter,
+							exmpp_jid:prep_domain(exmpp_jid:parse(Server)), -1),
 			    ok;
 			[_] ->
 			    not_allowed;
