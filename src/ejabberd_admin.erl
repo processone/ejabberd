@@ -39,6 +39,7 @@
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
+	 set_master/1,
 	 backup_mnesia/1, restore_mnesia/1,
 	 dump_mnesia/1, dump_table/2, load_mnesia/1,
 	 install_fallback_mnesia/1,
@@ -147,6 +148,12 @@ commands() ->
 			module = mod_pubsub, function = rename_default_nodeplugin,
 			args = [], result = {res, rescode}},
 
+     #ejabberd_commands{name = set_master, tags = [mnesia],
+			desc = "Set master node of the clustered Mnesia tables",
+			longdesc = "If you provie as nodename \"self\", this "
+			"node will be set as its own master.",
+			module = ?MODULE, function = set_master,
+			args = [{nodename, string}], result = {res, restuple}},
      #ejabberd_commands{name = mnesia_change_nodename, tags = [mnesia],
 			desc = "Change the erlang node name in a backup file",
 			module = ?MODULE, function = mnesia_change_nodename,
@@ -338,6 +345,20 @@ delete_old_messages(Days) ->
 %%%
 %%% Mnesia management
 %%%
+
+set_master("self") ->
+    set_master(node());
+set_master(NodeString) when is_list(NodeString) ->
+    set_master(list_to_atom(NodeString));
+set_master(Node) when is_atom(Node) ->
+    case mnesia:set_master_nodes([Node]) of
+        ok ->
+	    {ok, ""};
+	{error, Reason} ->
+	    String = io_lib:format("Can't set master node ~p at node ~p:~n~p",
+				   [Node, node(), Reason]),
+	    {error, String}
+    end.
 
 backup_mnesia(Path) ->
     case mnesia:backup(Path) of
