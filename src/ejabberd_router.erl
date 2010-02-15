@@ -91,7 +91,7 @@ register_route(Domain, LocalHint) ->
 		    mnesia:transaction(F);
 		N ->
 		    F = fun() ->
-				case mnesia:read({route, LDomain}) of
+				case mnesia:wread({route, LDomain}) of
 				    [] ->
 					mnesia:write(
 					  #route{domain = LDomain,
