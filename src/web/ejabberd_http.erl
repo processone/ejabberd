@@ -344,7 +344,7 @@ process_request(#state{request_method = Method,
 		       request_headers = RequestHeaders,
 		       sockmod = SockMod,
 		       socket = Socket} = State)
-  when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' ->
+  when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' orelse Method=:='OPTIONS' ->
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
 	    process_request(false);

@@ -37,6 +37,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
+-include("http_bind.hrl").
 
 -record(http_bind, {id, pid, to, hold, wait, version}).
 
@@ -99,9 +100,6 @@
                                 % idle sessions
 -define(MAX_PAUSE, 120). % may num of sec a client is allowed to pause
                          % the session
-
--define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
--define(HEADER, [?CT]).
 
 
 %%%----------------------------------------------------------------------
