@@ -92,7 +92,8 @@ route(From, To, Packet) ->
 
 open_session(SID, User, Server, Resource, Info) ->
     set_session(SID, User, Server, Resource, undefined, Info),
-    inc_session_counter(jlib:nameprep(Server)),
+    mnesia:dirty_update_counter(session_counter,
+				jlib:nameprep(Server), 1),
     check_for_sessions_to_replace(User, Server, Resource),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_register_connection_hook, JID#jid.lserver,
@@ -105,7 +106,8 @@ close_session(SID, User, Server, Resource) ->
     end,
     F = fun() ->
 		mnesia:delete({session, SID}),
-		dec_session_counter(jlib:nameprep(Server))
+		mnesia:dirty_update_counter(session_counter,
+					    jlib:nameprep(Server), -1)
 	end,
     mnesia:sync_dirty(F),
     JID = jlib:make_jid(User, Server, Resource),
@@ -263,6 +265,7 @@ init([]) ->
     mnesia:add_table_index(session, usr),
     mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies),
+    mnesia:add_table_copy(session_counter, node(), ram_copies),
     mnesia:subscribe(system),
     ets:new(sm_iqtable, [named_table]),
     lists:foreach(
@@ -316,7 +319,7 @@ handle_info({route, From, To, Packet}, State) ->
     end,
     {noreply, State};
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
-    clean_table_from_bad_node(Node),
+    recount_session_table(Node),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
     ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function}),
@@ -373,7 +376,9 @@ set_session(SID, User, Server, Resource, Priority, Info) ->
 	end,
     mnesia:sync_dirty(F).
 
-clean_table_from_bad_node(Node) ->
+%% Recalculates alive sessions when Node goes down 
+%% and updates session and session_counter tables 
+recount_session_table(Node) ->
     F = fun() ->
 		Es = mnesia:select(
 		       session,
@@ -381,12 +386,22 @@ clean_table_from_bad_node(Node) ->
 			 [{'==', {node, '$1'}, Node}],
 			 ['$_']}]),
 		lists:foreach(fun(E) ->
-				      {_, LServer} = E#session.us,
-				      dec_session_counter(LServer),
 				      mnesia:delete({session, E#session.sid})
-			      end, Es)
+			      end, Es),
+		%% reset session_counter table with active sessions
+		mnesia:clear_table(session_counter),
+		lists:foreach(fun(Server) ->
+				LServer = jlib:nameprep(Server),
+				Hs = mnesia:select(session,
+				    [{#session{usr = '$1', _ = '_'},
+				    [{'==', {element, 2, '$1'}, LServer}],
+				    ['$1']}]),
+				mnesia:write(
+				    #session_counter{vhost = LServer, 
+						     count = length(Hs)})
+			      end, ?MYHOSTS)
 	end,
-    mnesia:sync_dirty(F).
+    mnesia:async_dirty(F).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -662,34 +677,6 @@ get_max_user_sessions(LUser, Host) ->
 	infinity -> infinity;
 	_ -> ?MAX_USER_SESSIONS
     end.
-
-inc_session_counter(LServer) ->
-    F = fun() ->
-		case mnesia:wread({session_counter, LServer}) of
-		    [C] ->
-			Count = C#session_counter.count + 1,
-			C2 = C#session_counter{count = Count},
-			mnesia:write(C2);
-		    _ ->
-			mnesia:write(#session_counter{vhost = LServer,
-						      count = 1})
-		end
-	end,
-    mnesia:sync_dirty(F).
-
-dec_session_counter(LServer) ->
-    F = fun() ->
-		case mnesia:wread({session_counter, LServer}) of
-		    [C] ->
-			Count = C#session_counter.count - 1,
-			C2 = C#session_counter{count = Count},
-			mnesia:write(C2);
-		    _ ->
-			error
-		end
-	end,
-    mnesia:sync_dirty(F).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
