@@ -138,11 +138,6 @@
 		plugins = [?STDNODE]}).
 
 
-%%------------------- Ad hoc commands nodes --------------------------
--define(NS_PUBSUB_GET_PENDING, "http://jabber.org/protocol/pubsub#get-pending").
-%%--------------------------------------------------------------------
-
-
 %%====================================================================
 %% API
 %%====================================================================
@@ -1058,7 +1053,7 @@ command_disco_info(_Host, ?NS_ADHOC_b, _From) ->
 	   attrs = [?XMLATTR('category', <<"automation">>),
 	            ?XMLATTR('type', <<"command-list">>)]},
     {result, [IdentityEl]};
-command_disco_info(_Host, <<?NS_PUBSUB_GET_PENDING>>, _From) ->
+command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING_b, _From) ->
     IdentityEl =
     #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
 	   attrs = [?XMLATTR('category', <<"automation">>),
@@ -1136,7 +1131,7 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	     end, features(Host, Node))};
         ?NS_ADHOC_b ->
             command_disco_info(Host, Node, From);
-        <<?NS_PUBSUB_GET_PENDING>> ->
+        ?NS_PUBSUB_GET_PENDING_b ->
             command_disco_info(Host, Node, From);
 	_ ->
 	    node_disco_info(Host, Node, From)

@@ -54,8 +54,6 @@
 
 -define(PROCNAME, ejabberd_announce).
 
--define(NS_ADMIN_s,        "http://jabber.org/protocol/admin").
-
 -define(NS_ADMINL(Sub), ["http:","jabber.org","protocol","admin", Sub]).
 tokenize(Node) -> string:tokens(Node, "/#").
 

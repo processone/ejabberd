@@ -126,7 +126,7 @@ create_captcha(Id, SID, From, To, Lang, Args)
 %		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
 %		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
 %		    {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
-%		     [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
+%		     [{xmlelement, "media", [{"xmlns", ?NS_DATA_FORMS_MEDIA_s}],
 %		       [{xmlelement, "uri", [{"type", Type}],
 %			 [{xmlcdata, "cid:" ++ CID}]}]}]}]}]},
 %% TODO : kael : write exmpp_captcha.erl
@@ -164,7 +164,7 @@ create_captcha(Id, SID, From, To, Lang, Args)
 	            children = [
 	              #xmlel{
 	                name = 'media',
-	                ns = ?NS_MEDIA,
+	                ns = ?NS_DATA_FORMS_MEDIA_s,
 	                children = [
 	                  #xmlel{
 	                    name = 'uri',
@@ -200,7 +200,7 @@ create_captcha(Id, SID, From, To, Lang, Args)
       OOB =
         #xmlel{
           name = 'x',
-          ns = ?NS_OOB,
+          ns = ?NS_OOBD_X_s,
           children = [
             #xmlel{
               name = 'url',
@@ -213,7 +213,7 @@ create_captcha(Id, SID, From, To, Lang, Args)
         },
 	    %Body = {xmlelement, "body", [],
 		  %  [{xmlcdata, BodyString}]},
-	    %OOB = {xmlelement, "x", [{"xmlns", ?NS_OOB}],
+	    %OOB = {xmlelement, "x", [{"xmlns", ?NS_OOBD_X_s}],
 		  % [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
 	    case ?T(mnesia:write(#captcha{id=Id, pid=self(), key=Key,

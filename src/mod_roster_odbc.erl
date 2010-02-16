@@ -61,8 +61,6 @@
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
--define(NS_ROSTER_VER, "urn:xmpp:features:rosterver").
-
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -152,8 +150,8 @@ roster_version_on_db(Host) ->
 get_versioning_feature(Acc, Host) ->
     case roster_versioning_enabled(Host) of
 	true ->
-	    Feature = exmpp_xml:element(?NS_ROSTER_VER, 'ver', [],
-		       [exmpp_xml:element(?NS_ROSTER_VER, 'optional')]),
+	    Feature = exmpp_xml:element(?NS_ROSTER_VER_s, 'ver', [],
+		       [exmpp_xml:element(?NS_ROSTER_VER_s, 'optional')]),
 	    [Feature | Acc];
 	false -> []
     end.

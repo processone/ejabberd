@@ -56,8 +56,6 @@
 %% Copied from ejabberd_sm.erl
 -record(session, {sid, usr, us, priority, info}).
 
--define(NS_ADMIN_s,        "http://jabber.org/protocol/admin").
-
 start(Host, _Opts) ->
     HostB = list_to_binary(Host),
     ejabberd_hooks:add(disco_local_items, HostB, ?MODULE, get_local_items, 50),
