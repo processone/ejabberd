@@ -97,7 +97,7 @@ extract_lang_all ()
 	done
 
 	cd $MSGS_DIR
-	REVISION=`svn info | grep "^Rev" | head -1 | awk '{print $2}'`
+	REVISION=`git describe --always`
 	zip $HOME/ejabberd-langs-$REVISION.zip *.translate;
 
 	rm *.translate

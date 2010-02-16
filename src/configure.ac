@@ -163,9 +163,9 @@ AC_OUTPUT
 
 echo
 echo "********************** WARNING ! ************************"
-echo "*  ejabberd trunk svn is NOT ready for real usage yet,  *"
+echo "*  ejabberd master is NOT ready for real usage yet,     *"
 echo "*  because it is still in heavy development.            *"
-echo "*  Don't use ejabberd trunk yet, it is prealpha!        *"
-echo "*  Please use ejabberd 2.1.x branch.                    *"
+echo "*  Don't use ejabberd master yet, it is prealpha!       *"
+echo "*  Please use ejabberd 2.1.x branch instead.            *"
 echo "*********************************************************"
 echo
