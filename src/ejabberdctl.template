@@ -70,7 +70,7 @@ if [ "$ID" -eq "$EJID" ] ; then
 fi
 if [ "$EXEC_CMD" = "false" ] ; then
 	echo "This command can only be run by root or the user $INSTALLUSER" >&2
-	exit 1
+	exit 4
 fi
 
 NAME=-name
