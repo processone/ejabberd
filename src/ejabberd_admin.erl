@@ -144,7 +144,7 @@ commands() ->
 			args = [{days, integer}], result = {res, rescode}},
 	 
      #ejabberd_commands{name = rename_default_nodeplugin, tags = [mnesia],
-			desc = "Update PubSub table from ejabberd trunk SVN to 2.1.0",
+			desc = "Update PubSub table from old ejabberd trunk SVN to 2.1.0",
 			module = mod_pubsub, function = rename_default_nodeplugin,
 			args = [], result = {res, rescode}},
 
