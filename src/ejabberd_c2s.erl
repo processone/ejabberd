@@ -451,10 +451,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				Conn = get_conn_type(StateData),
 				Info = [{ip, StateData#state.ip}, {conn, Conn},
 				  {auth_module, AuthModule}],
-				ejabberd_sm:open_session(
-				  SID, exmpp_jid:make(U, StateData#state.server, R), Info),
 				Res = exmpp_server_legacy_auth:success(El),
 				send_element(StateData, Res),
+				ejabberd_sm:open_session(
+				  SID, exmpp_jid:make(U, StateData#state.server, R), Info),
 				change_shaper(StateData, JID),
 				{Fs, Ts} = ejabberd_hooks:run_fold(
 				  roster_get_subscription_lists,
