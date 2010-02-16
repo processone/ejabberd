@@ -460,11 +460,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    Conn = get_conn_type(StateData),
 			    Info = [{ip, StateData#state.ip}, {conn, Conn},
 				    {auth_module, AuthModule}],
-			    ejabberd_sm:open_session(
-			      SID, U, StateData#state.server, R, Info),
 			    Res1 = jlib:make_result_iq_reply(El),
 			    Res = setelement(4, Res1, []),
 			    send_element(StateData, Res),
+			    ejabberd_sm:open_session(
+			      SID, U, StateData#state.server, R, Info),
 			    change_shaper(StateData, JID),
 			    {Fs, Ts} = ejabberd_hooks:run_fold(
 					 roster_get_subscription_lists,
