@@ -222,8 +222,16 @@ parse_options(ServerHost, Opts) ->
 	     none -> get_my_ip();
 	     Addr -> Addr
 	 end,
-    StrIP = inet_parse:ntoa(IP),
-    StreamAddr = [{"jid", MyHost}, {"host", StrIP}, {"port", integer_to_list(Port)}],
+    HostName = case gen_mod:get_opt(hostname, Opts, none) of
+		   none ->
+		       inet_parse:ntoa(IP);
+		   HostAddr when is_tuple(HostAddr) ->
+		       inet_parse:ntoa(HostAddr);
+		   HostNameStr ->
+		       HostNameStr
+	     end,
+    StreamAddr = [{"jid", MyHost}, {"host", HostName},
+		  {"port", integer_to_list(Port)}],
     #state{myhost      = MyHost,
 	   serverhost  = ServerHost,
 	   name        = Name,

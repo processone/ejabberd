@@ -3515,6 +3515,12 @@ to listen for. Default is an IP address of the service's DNS name, or,
 if fails, \verb|{127,0,0,1}|.
 \titem{\{port, Number\}}\ind{options!port}This option defines port to listen for
 incoming connections. Default is~7777.
+\titem{\{hostname, HostName\}}\ind{options!hostname}Defines a hostname advertised
+by the service when establishing a session with clients. This is useful when
+you run the service behind a NAT. The default is the value of \term{ip} option.
+Examples: \term{"proxy.mydomain.org"}, \term{"200.150.100.50"}. Note that 
+not all clients understand domain names in stream negotiation,
+so you should think twice before setting domain name in this option.
 \titem{\{auth\_type, anonymous|plain\}}\ind{options!auth\_type}SOCKS5 authentication type.
 Possible values are \term{anonymous} and \term{plain}. Default is
 \term{anonymous}.
