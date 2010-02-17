@@ -230,8 +230,16 @@ parse_options(ServerHost, Opts) ->
 	     none -> get_my_ip();
 	     Addr -> Addr
 	 end,
-    StrIP = inet_parse:ntoa(IP),
-    StreamAddr = [?XMLATTR('jid', MyHost), ?XMLATTR('host', StrIP), ?XMLATTR('port', Port)],
+    HostName = case gen_mod:get_opt(hostname, Opts, none) of
+		   none ->
+		       inet_parse:ntoa(IP);
+		   HostAddr when is_tuple(HostAddr) ->
+		       inet_parse:ntoa(HostAddr);
+		   HostNameStr ->
+		       HostNameStr
+	     end,
+    StreamAddr = [?XMLATTR('jid', MyHost), ?XMLATTR('host', HostName),
+		  ?XMLATTR('port', Port)],
     #state{myhost      = MyHost,
 	   serverhost  = ServerHost,
 	   name        = Name,
