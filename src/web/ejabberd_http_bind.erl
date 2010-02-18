@@ -175,7 +175,7 @@ process_request(Data, IP) ->
 	{ok, {"", Rid, Attrs, Payload}} ->
 	    case xml:get_attr_s("to",Attrs) of
                 "" ->
-		    ?ERROR_MSG("Session not created (Improper addressing)", []),
+		    ?DEBUG("Session not created (Improper addressing)", []),
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='improper-addressing' "
 		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'/>"};
@@ -381,7 +381,7 @@ handle_sync_event({stop,stream_closed}, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
 handle_sync_event({stop,Reason}, _From, _StateName, StateData) ->
-    ?ERROR_MSG("Closing bind session ~p - Reason: ~p", [StateData#state.id, Reason]),
+    ?DEBUG("Closing bind session ~p - Reason: ~p", [StateData#state.id, Reason]),
     Reply = ok,
     {stop, normal, Reply, StateData};
 
@@ -757,10 +757,10 @@ process_buffered_request(Reply, StateName, StateData) ->
 handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
     case http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) of
         {error, not_exists} ->
-            ?ERROR_MSG("no session associated with sid: ~p", [Sid]),
+            ?DEBUG("no session associated with sid: ~p", [Sid]),
             {404, ?HEADER, ""};
         {{error, Reason}, Sess} ->
-            ?ERROR_MSG("Error on HTTP put. Reason: ~p", [Reason]),
+            ?DEBUG("Error on HTTP put. Reason: ~p", [Reason]),
             handle_http_put_error(Reason, Sess);
         {{repeat, OutPacket}, Sess} ->
             ?DEBUG("http_put said 'repeat!' ...~nOutPacket: ~p", [OutPacket]),
@@ -830,13 +830,13 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef}) ->
     gen_fsm:sync_send_all_state_event(FsmRef,{stop, {put_error_no_version, Reason}}),
     case Reason of
         not_exists -> %% bad rid
-	    ?ERROR_MSG("Closing HTTP bind session (Bad rid).", []),
+	    ?DEBUG("Closing HTTP bind session (Bad rid).", []),
             {404, ?HEADER, ""};
         bad_key ->
-	    ?ERROR_MSG("Closing HTTP bind session (Bad key).", []),
+	    ?DEBUG("Closing HTTP bind session (Bad key).", []),
             {404, ?HEADER, ""};
         polling_too_frequently ->
-	    ?ERROR_MSG("Closing HTTP bind session (User polling too frequently).", []),
+	    ?DEBUG("Closing HTTP bind session (User polling too frequently).", []),
             {403, ?HEADER, ""}
     end.
 
@@ -898,7 +898,14 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess,
             ?DEBUG("OutPacket: ~p", [OutPacket]),
 	    case StreamStart of
                 false ->
-		    send_outpacket(Sess, OutPacket);
+		    case catch send_outpacket(Sess, OutPacket) of
+			{'EXIT', _Reason} ->
+			    {200, ?HEADER,
+			     "<body type='terminate' xmlns='"++
+			     ?NS_HTTP_BIND++"'/>"};
+			SendRes ->
+			    SendRes
+		    end;
 		true ->
 		    case OutPacket of
 			[{xmlstreamstart, _, OutAttrs} | Els] ->
