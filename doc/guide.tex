@@ -3565,6 +3565,10 @@ Options:
   rules to restrict registration. If a rule returns `deny' on the requested
   user name, registration for that user name is denied. (there are no
   restrictions by default).
+\titem{\{access\_from, AccessName\}} \ind{options!access\_from}By default, \ejabberd{}
+  doesn't allow to register new accounts from s2s or existing c2s sessions. You can
+  change it by defining access rule in this option. Use with care: allowing registration
+  from s2s leads to uncontrolled massive accounts creation by rogue users.
 \titem{\{welcome\_message, Message\}} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and
   the second string is the message body.
