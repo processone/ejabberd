@@ -742,7 +742,15 @@ an incoming POST request can be configured with the global option
 The option can be defined in <TT>ejabberd.cfg</TT>, expressing the time
 in seconds: <CODE>{http_poll_timeout, 300}.</CODE>
 </P></DD><DT CLASS="dt-description"><B><TT>{max_fsm_queue, Size}</TT></B></DT><DD CLASS="dd-description">
-This option specifies the maximum number of elements in the queue of the FSM.
+This option specifies the maximum number of elements in the queue of the FSM
+(Finite State Machine).
+Roughly speaking, each message in such queues represents one XML
+stanza queued to be sent into its relevant outgoing stream. If queue size
+reaches the limit (because, for example, the receiver of stanzas is too slow),
+the FSM and the corresponding connection (if any) will be terminated
+and error message will be logged.
+The reasonable value for this option depends on your hardware configuration.
+However, there is no much sense to set the size above 1000 elements.
 This option can be specified for <TT>ejabberd_service</TT> and
 <TT>ejabberd_c2s</TT> listeners,
 or also globally for <TT>ejabberd_s2s_out</TT>.
@@ -828,7 +836,15 @@ with a small list of trusted servers, or to block some specific servers.
 The maximum allowed delay for retry to connect after a failed connection attempt.
 Specified in seconds. The default value is 300 seconds (5 minutes).
 </DD><DT CLASS="dt-description"><B><TT>{max_fsm_queue, Size}</TT></B></DT><DD CLASS="dd-description">
-This option specifies the maximum number of elements in the queue of the FSM.
+This option specifies the maximum number of elements in the queue of the FSM
+(Finite State Machine).
+Roughly speaking, each message in such queues represents one XML
+stanza queued to be sent into its relevant outgoing stream. If queue size
+reaches the limit (because, for example, the receiver of stanzas is too slow),
+the FSM and the corresponding connection (if any) will be terminated
+and error message will be logged.
+The reasonable value for this option depends on your hardware configuration.
+However, there is no much sense to set the size above 1000 elements.
 This option can be specified for <TT>ejabberd_service</TT> and
 <TT>ejabberd_c2s</TT> listeners,
 or also globally for <TT>ejabberd_s2s_out</TT>.
@@ -2750,6 +2766,12 @@ to listen for. Default is an IP address of the service&#X2019;s DNS name, or,
 if fails, <CODE>{127,0,0,1}</CODE>.
 </DD><DT CLASS="dt-description"><B><TT>{port, Number}</TT></B></DT><DD CLASS="dd-description">This option defines port to listen for
 incoming connections. Default is&#XA0;7777.
+</DD><DT CLASS="dt-description"><B><TT>{hostname, HostName}</TT></B></DT><DD CLASS="dd-description">Defines a hostname advertised
+by the service when establishing a session with clients. This is useful when
+you run the service behind a NAT. The default is the value of <TT>ip</TT> option.
+Examples: <TT>"proxy.mydomain.org"</TT>, <TT>"200.150.100.50"</TT>. Note that 
+not all clients understand domain names in stream negotiation,
+so you should think twice before setting domain name in this option.
 </DD><DT CLASS="dt-description"><B><TT>{auth_type, anonymous|plain}</TT></B></DT><DD CLASS="dd-description">SOCKS5 authentication type.
 Possible values are <TT>anonymous</TT> and <TT>plain</TT>. Default is
 <TT>anonymous</TT>.
@@ -2881,6 +2903,10 @@ Register a new account on the server.
 rules to restrict registration. If a rule returns &#X2018;deny&#X2019; on the requested
 user name, registration for that user name is denied. (there are no
 restrictions by default).
+</DD><DT CLASS="dt-description"><B><TT>{access_from, AccessName}</TT></B></DT><DD CLASS="dd-description"> By default, <TT>ejabberd</TT>
+doesn&#X2019;t allow to register new accounts from s2s or existing c2s sessions. You can
+change it by defining access rule in this option. Use with care: allowing registration
+from s2s leads to uncontrolled massive accounts creation by rogue users.
 </DD><DT CLASS="dt-description"><B><TT>{welcome_message, Message}</TT></B></DT><DD CLASS="dd-description"> Set a welcome message that
 is sent to each newly registered account. The first string is the subject, and
 the second string is the message body.
