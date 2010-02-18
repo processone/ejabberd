@@ -343,6 +343,12 @@
 %%
 {shaper, fast, {maxrate, 50000}}.
 
+%%
+%% This option specifies the maximum number of elements in the queue
+%% of the FSM. Refer to documentation for details.
+%%
+{max_fsm_queue, 1000}.
+
 
 %%%.   ====================
 %%%'   ACCESS CONTROL LISTS
