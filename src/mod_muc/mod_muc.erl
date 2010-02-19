@@ -833,7 +833,7 @@ clean_table_from_bad_node(Node) ->
 				      mnesia:delete_object(E)
 			      end, Es)
         end,
-    mnesia:transaction(F).
+    mnesia:async_dirty(F).
 
 clean_table_from_bad_node(Node, Host) ->
     F = fun() ->
@@ -848,7 +848,7 @@ clean_table_from_bad_node(Node, Host) ->
 				      mnesia:delete_object(E)
 			      end, Es)
         end,
-    mnesia:transaction(F).
+    mnesia:async_dirty(F).
 
 update_tables(Host) ->
     update_muc_room_table(Host),

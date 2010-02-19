@@ -245,7 +245,7 @@ clean_table_from_bad_node(Node) ->
 				      mnesia:delete_object(E)
 			      end, Es)
 	end,
-    mnesia:transaction(F).
+    mnesia:async_dirty(F).
 
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
