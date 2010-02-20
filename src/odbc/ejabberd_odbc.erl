@@ -194,11 +194,10 @@ connecting(connect, #state{host = Host} = State) ->
     case ConnectRes of
 	{ok, Ref} ->
 	    erlang:monitor(process, Ref),
-	    queue:filter(
+	    lists:foreach(
 	      fun(Req) ->
-		      ?GEN_FSM:send_event(self(), Req),
-		      false
-	      end, PendingRequests),
+		      ?GEN_FSM:send_event(self(), Req)
+	      end, queue:to_list(PendingRequests)),
 	    {next_state, session_established,
 	     State#state{db_ref = Ref,
 			 pending_requests = {0, queue:new()}}};
@@ -226,12 +225,11 @@ connecting({sql_cmd, Command} = Req, From, State) ->
 	if Len < State#state.max_pending_requests_len ->
 		{Len + 1, queue:in({sql_cmd, Command, From}, PendingRequests)};
 	   true ->
-		queue:filter(
+		lists:foreach(
 		  fun({sql_cmd, _, To}) ->
-			  ?GEN_FSM:reply(To,
-					 {error, "SQL connection failed"}),
-			  false
-		  end, PendingRequests),
+			  ?GEN_FSM:reply(
+			     To, {error, "SQL connection failed"})
+		  end, queue:to_list(PendingRequests)),
 		{1, queue:from_list([{sql_cmd, Command, From}])}
 	end,
     {next_state, connecting,
