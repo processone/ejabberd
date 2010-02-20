@@ -191,7 +191,7 @@ describe_config_problem(Filename, Reason, LineNumber) ->
 get_config_lines(Filename, TargetNumber, PreContext, PostContext) ->
     {ok, Fd} = file:open(Filename, [read]),
     LNumbers = lists:seq(TargetNumber-PreContext, TargetNumber+PostContext),
-    NextL = file:read_line(Fd),
+    NextL = io:get_line(Fd, no_prompt),
     R = get_config_lines2(Fd, NextL, 1, LNumbers, []),
     file:close(Fd),
     R.
@@ -200,8 +200,8 @@ get_config_lines2(_Fd, eof, _CurrLine, _LNumbers, R) ->
     lists:reverse(R);
 get_config_lines2(_Fd, _NewLine, _CurrLine, [], R) ->
     lists:reverse(R);
-get_config_lines2(Fd, {ok, Data}, CurrLine, [NextWanted | LNumbers], R) ->
-    NextL = file:read_line(Fd),
+get_config_lines2(Fd, Data, CurrLine, [NextWanted | LNumbers], R) when is_list(Data) ->
+    NextL = io:get_line(Fd, no_prompt),
     if
 	CurrLine >= NextWanted ->
 	    Line2 = [integer_to_list(CurrLine), ": " | Data],
