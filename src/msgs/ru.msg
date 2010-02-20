@@ -318,7 +318,7 @@
 {"Subscriber Address","Адрес подписчика"}.
 {"Subscription","Подписка"}.
 {"Sunday","Воскресенье"}.
-{"That nickname is already in use by another occupant","Этот псевдоним уже знят другим участником"}.
+{"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
 {"The captcha is valid.","Проверка капчи прошла успешно."}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.

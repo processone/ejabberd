@@ -790,7 +790,7 @@ msgstr "Посетителям запрещено изменять свои пс
 
 #: mod_muc/mod_muc_room.erl:917 mod_muc/mod_muc_room.erl:1551
 msgid "That nickname is already in use by another occupant"
-msgstr "Этот псевдоним уже знят другим участником"
+msgstr "Этот псевдоним уже занят другим участником"
 
 #: mod_muc/mod_muc_room.erl:1540
 msgid "You have been banned from this room"
