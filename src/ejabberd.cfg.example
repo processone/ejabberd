@@ -5,7 +5,7 @@
 
 %%% The parameters used in this configuration file are explained in more detail
 %%% in the ejabberd Installation and Operation Guide.
-%%% Please consult the Guide in case of doubts, it is included in
+%%% Please consult the Guide in case of doubts, it is included with
 %%% your copy of ejabberd, and is also available online at
 %%% http://www.process-one.net/en/ejabberd/docs/
 
@@ -26,11 +26,11 @@
 %%%      [http_poll, web_admin, tls]
 %%%
 %%%  - A keyword of ejabberd is a word in lowercase.
-%%%    The strings are enclosed in "" and can have spaces, dots...
+%%%    Strings are enclosed in "" and can contain spaces, dots, ...
 %%%      {language, "en"}.
 %%%      {ldap_rootdn, "dc=example,dc=com"}.
 %%%
-%%%  - This term includes a tuple, a keyword, a list and two strings:
+%%%  - This term includes a tuple, a keyword, a list, and two strings:
 %%%      {hosts, ["jabber.example.net", "im.example.com"]}.
 %%%
 
@@ -74,7 +74,7 @@
 
 %%
 %% watchdog_admins: Only useful for developers: if an ejabberd process
-%% consumes a lot of memory, send live notifications to these XMPP 
+%% consumes a lot of memory, send live notifications to these XMPP
 %% accounts.
 %%
 %%{watchdog_admins, ["bob@example.com"]}.
@@ -91,9 +91,9 @@
 {hosts, ["localhost"]}.
 
 %%
-%% route_subdomains: Delegate subdomains to other XMPP server.
+%% route_subdomains: Delegate subdomains to other XMPP servers.
 %% For example, if this ejabberd serves example.org and you want
-%% to allow communication with a XMPP server called im.example.org.
+%% to allow communication with an XMPP server called im.example.org.
 %%
 %%{route_subdomains, s2s}.
 
@@ -102,8 +102,8 @@
 %%%'   LISTENING PORTS
 
 %%
-%% listen: Which ports will ejabberd listen, which service handles it
-%% and what options to start it with.
+%% listen: The ports ejabberd will listen on, which service each is handled
+%% by and what options to start it with.
 %%
 {listen,
  [
@@ -111,8 +111,8 @@
   {5222, ejabberd_c2s, [
 
 			%%
-			%% If TLS is compiled and you installed a SSL
-			%% certificate, put the correct path to the
+			%% If TLS is compiled in and you installed a SSL
+			%% certificate, specify the full path to the
 			%% file and uncomment this line:
 			%%
 			%%{certfile, "/path/to/ssl.pem"}, starttls,
@@ -123,7 +123,7 @@
 		       ]},
 
   %%
-  %% To enable the old SSL connection method in port 5223:
+  %% To enable the old SSL connection method on port 5223:
   %%
   %%{5223, ejabberd_c2s, [
   %%			{access, c2s},
@@ -138,7 +138,7 @@
 			  ]},
 
   %%
-  %% ejabberd_service: Interact with external components (transports...)
+  %% ejabberd_service: Interact with external components (transports, ...)
   %%
   %%{8888, ejabberd_service, [
   %%			    {access, all},
@@ -249,14 +249,14 @@
 %%{ldap_encrypt, none}.
 %%{ldap_encrypt, tls}.
 %%
-%% Port connect to LDAP servers:
+%% Port to connect to on LDAP servers:
 %%{ldap_port, 389}.
 %%{ldap_port, 636}.
 %%
 %% LDAP manager:
 %%{ldap_rootdn, "dc=example,dc=com"}.
 %%
-%% Password to LDAP manager:
+%% Password of LDAP manager:
 %%{ldap_password, "******"}.
 %%
 %% Search base of LDAP directory:
@@ -286,11 +286,11 @@
 %%%.   ==============
 %%%'   DATABASE SETUP
 
-%% ejabberd uses by default the internal Mnesia database,
-%% so you can avoid this section.
+%% ejabberd by default uses the internal Mnesia database,
+%% so you do not necessarily need this section.
 %% This section provides configuration examples in case
 %% you want to use other database backends.
-%% Please consult the ejabberd Guide for details about database creation.
+%% Please consult the ejabberd Guide for details on database creation.
 
 %%
 %% MySQL server:
@@ -324,8 +324,8 @@
 %%{odbc_pool_size, 10}.
 
 %%
-%% Interval to make a dummy SQL request to keep alive the connections
-%% to the database. Specify in seconds: for example 28800 means 8 hours
+%% Interval to make a dummy SQL request to keep the connections to the
+%% database alive. Specify in seconds: for example 28800 means 8 hours
 %%
 %%{odbc_keepalive_interval, undefined}.
 
@@ -334,18 +334,18 @@
 %%%'   TRAFFIC SHAPERS
 
 %%
-%% The "normal" shaper limits traffic speed to 1.000 B/s
+%% The "normal" shaper limits traffic speed to 1000 B/s
 %%
 {shaper, normal, {maxrate, 1000}}.
 
 %%
-%% The "fast" shaper limits traffic speed to 50.000 B/s
+%% The "fast" shaper limits traffic speed to 50000 B/s
 %%
 {shaper, fast, {maxrate, 50000}}.
 
 %%
 %% This option specifies the maximum number of elements in the queue
-%% of the FSM. Refer to documentation for details.
+%% of the FSM. Refer to the documentation for details.
 %%
 {max_fsm_queue, 1000}.
 
@@ -355,7 +355,7 @@
 
 %%
 %% The 'admin' ACL grants administrative privileges to XMPP accounts.
-%% You can put as many accounts as you want.
+%% You can put here as many accounts as you want.
 %%
 %%{acl, admin, {user, "aleksey", "localhost"}}.
 %%{acl, admin, {user, "ermine", "example.org"}}.
@@ -396,7 +396,7 @@
 {access, max_user_sessions, [{10, all}]}.
 
 %% Maximum number of offline messages that users can have:
-{access, max_user_offline_messages, [{5000, admin}, {100, all}]}. 
+{access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
 
 %% This rule allows access only for local users:
 {access, local, [{allow, local}]}.
@@ -405,41 +405,41 @@
 {access, c2s, [{deny, blocked},
 	       {allow, all}]}.
 
-%% For C2S connections, all users except admins use "normal" shaper
+%% For C2S connections, all users except admins use the "normal" shaper
 {access, c2s_shaper, [{none, admin},
 		      {normal, all}]}.
 
-%% All S2S connections use "fast" shaper
+%% All S2S connections use the "fast" shaper
 {access, s2s_shaper, [{fast, all}]}.
 
 %% Only admins can send announcement messages:
 {access, announce, [{allow, admin}]}.
 
-%% Only admins can use configuration interface:
+%% Only admins can use the configuration interface:
 {access, configure, [{allow, admin}]}.
 
-%% Admins of this server are also admins of MUC service:
+%% Admins of this server are also admins of the MUC service:
 {access, muc_admin, [{allow, admin}]}.
 
 %% Only accounts of the local ejabberd server can create rooms:
 {access, muc_create, [{allow, local}]}.
 
-%% All users are allowed to use MUC service:
+%% All users are allowed to use the MUC service:
 {access, muc, [{allow, all}]}.
 
-%% Only accounts in the local ejabberd server can create Pubsub nodes:
+%% Only accounts on the local ejabberd server can create Pubsub nodes:
 {access, pubsub_createnode, [{allow, local}]}.
 
 %% In-band registration allows registration of any possible username.
 %% To disable in-band registration, replace 'allow' with 'deny'.
 {access, register, [{allow, all}]}.
 
-%% By default frequency of account registrations from the same IP
-%% is limited to 1 account every 10 minutes. To disable put: infinity
+%% By default the frequency of account registrations from the same IP
+%% is limited to 1 account every 10 minutes. To disable, specify: infinity
 %%{registration_timeout, 600}.
 
 %%
-%% Define specific Access rules in a virtual host.
+%% Define specific Access Rules in a virtual host.
 %%
 %%{host_config, "localhost",
 %% [
@@ -496,7 +496,7 @@
   {mod_irc,      []},
   {mod_http_bind, []},
   %%{mod_http_fileserver, [
-  %%                       {docroot, "/var/www"}, 
+  %%                       {docroot, "/var/www"},
   %%                       {accesslog, "/var/log/ejabberd/access.log"}
   %%                      ]},
   {mod_last,     []},
@@ -515,7 +515,7 @@
   %%{mod_proxy65,[]},
   {mod_pubsub,   [
 		  {access_createnode, pubsub_createnode},
-		  {ignore_pep_from_offline, true}, % reduce resource comsumption, but XEP incompliant
+		  {ignore_pep_from_offline, true}, % reduces resource comsumption, but XEP incompliant
 		  %%{ignore_pep_from_offline, false},  % XEP compliant, but increases resource comsumption
 		  {last_item_cache, false},
 		  {plugins, ["flat", "hometree", "pep"]}  % pep requires mod_caps
