@@ -1969,8 +1969,12 @@ resend_offline_messages(#state{user = UserB,
 				Packet#xmlel.attrs, From),
 			      Attrs2 = exmpp_stanza:set_recipient_in_attrs(
 				Attrs1, To),
-			      send_element(StateData,
-					   Packet#xmlel{attrs = Attrs2});
+			      FixedPacket = Packet#xmlel{attrs = Attrs2},
+			      send_element(StateData, FixedPacket),
+			      ejabberd_hooks:run(user_receive_packet,
+						 StateData#state.server,
+						 [StateData#state.jid,
+						  From, To, FixedPacket]);
 			  true ->
 			      ok
 		      end
