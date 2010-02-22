@@ -468,6 +468,7 @@ export_host(Dir, FnH, Host) ->
 
     Users = ejabberd_auth:get_vh_registered_users(Host),
     [export_user(Fd, Username, Host) || {Username, _Host} <- Users],
+    timer:sleep(500), % Delay to ensure ERROR_MSG are displayed in the shell
 
     print(Fd, make_piefxis_host_tail()),
     print(Fd, make_piefxis_xml_tail()),
@@ -516,8 +517,14 @@ make_xinclude(Fn) ->
 %% @spec (Fd, Username::string(), Host::string()) -> ok
 %% @doc Extract user information and print it.
 export_user(Fd, Username, Host) ->
-    UserString = extract_user(Username, Host),
-    print(Fd, UserString).
+    try extract_user(Username, Host) of
+	UserString ->
+	    print(Fd, UserString)
+    catch
+	E1:E2 ->
+	    ?ERROR_MSG("The account ~s@~s is not exported because a problem "
+		       "was found in it:~n~p: ~p", [Username, Host, E1, E2])
+    end.
 
 %% @spec (Username::string(), Host::string()) -> string()
 extract_user(Username, Host) ->
