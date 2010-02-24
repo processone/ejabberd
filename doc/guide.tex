@@ -4421,7 +4421,7 @@ The command line parameters:
   \titem{-name ejabberd}
 	The Erlang node will be fully identified.
     This is only useful if you plan to setup an \ejabberd{} cluster with nodes in different networks.
-  \titem{-kernel inetrc "/etc/ejabberd/inetrc"}
+  \titem{-kernel inetrc '"/etc/ejabberd/inetrc"'}
 	Indicates which IP name resolution to use.
 	If using \term{-sname}, specify either this option or \term{ERL\_INETRC}.
   \titem{-kernel inet\_dist\_listen\_min 4200 inet\_dist\_listen\_min 4210}
@@ -4436,7 +4436,7 @@ The command line parameters:
 	Specify the directory where Erlang binary files (*.beam) are located.
   \titem{-s ejabberd}
 	Tell Erlang runtime system to start the \ejabberd{} application.
-  \titem{-mnesia dir "/var/lib/ejabberd/"}
+  \titem{-mnesia dir '"/var/lib/ejabberd/"'}
 	Specify the Mnesia database directory.
   \titem{-sasl sasl\_error\_logger \{file, "/var/log/ejabberd/erlang.log"\}}
 	Path to the Erlang/OTP system log file.
@@ -4971,7 +4971,7 @@ following steps:
 
 \begin{verbatim}
 erl -sname ejabberd \
-    -mnesia dir "/var/lib/ejabberd/" \
+    -mnesia dir '"/var/lib/ejabberd/"' \
     -mnesia extra_db_nodes "['ejabberd@first']" \
     -s mnesia
 \end{verbatim}

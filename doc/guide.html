@@ -3476,7 +3476,7 @@ all the environment variables and command line parameters.</P><P>The environment
 </DD><DT CLASS="dt-description"><B><TT>-name ejabberd</TT></B></DT><DD CLASS="dd-description">
 	The Erlang node will be fully identified.
 This is only useful if you plan to setup an <TT>ejabberd</TT> cluster with nodes in different networks.
-</DD><DT CLASS="dt-description"><B><TT>-kernel inetrc "/etc/ejabberd/inetrc"</TT></B></DT><DD CLASS="dd-description">
+</DD><DT CLASS="dt-description"><B><TT>-kernel inetrc &#X2019;"/etc/ejabberd/inetrc"&#X2019;</TT></B></DT><DD CLASS="dd-description">
 	Indicates which IP name resolution to use.
 	If using <TT>-sname</TT>, specify either this option or <TT>ERL_INETRC</TT>.
 </DD><DT CLASS="dt-description"><B><TT>-kernel inet_dist_listen_min 4200 inet_dist_listen_min 4210</TT></B></DT><DD CLASS="dd-description">
@@ -3491,7 +3491,7 @@ Starts the Erlang system detached from the system console.
 	Specify the directory where Erlang binary files (*.beam) are located.
 </DD><DT CLASS="dt-description"><B><TT>-s ejabberd</TT></B></DT><DD CLASS="dd-description">
 	Tell Erlang runtime system to start the <TT>ejabberd</TT> application.
-</DD><DT CLASS="dt-description"><B><TT>-mnesia dir "/var/lib/ejabberd/"</TT></B></DT><DD CLASS="dd-description">
+</DD><DT CLASS="dt-description"><B><TT>-mnesia dir &#X2019;"/var/lib/ejabberd/"&#X2019;</TT></B></DT><DD CLASS="dd-description">
 	Specify the Mnesia database directory.
 </DD><DT CLASS="dt-description"><B><TT>-sasl sasl_error_logger {file, "/var/log/ejabberd/erlang.log"}</TT></B></DT><DD CLASS="dd-description">
 	Path to the Erlang/OTP system log file.
@@ -3867,7 +3867,7 @@ Copy <CODE>~ejabberd/.erlang.cookie</CODE> file from <TT>first</TT> to
 <TT>second</TT>.<P>(alt) You can also add &#X2018;<CODE>-setcookie content_of_.erlang.cookie</CODE>&#X2019;
 option to all &#X2018;<TT>erl</TT>&#X2019; commands below.</P></LI><LI CLASS="li-enumerate">On <TT>second</TT> run the following command as the <TT>ejabberd</TT> daemon user,
 in the working directory of <TT>ejabberd</TT>:<PRE CLASS="verbatim">erl -sname ejabberd \
-    -mnesia dir "/var/lib/ejabberd/" \
+    -mnesia dir '"/var/lib/ejabberd/"' \
     -mnesia extra_db_nodes "['ejabberd@first']" \
     -s mnesia
 </PRE><P>This will start Mnesia serving the same database as <TT>ejabberd@first</TT>.
