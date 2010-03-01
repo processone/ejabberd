@@ -897,6 +897,11 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	?XAE("table", [?XMLATTR('class', <<"withtextareas">>)],
 	     [?XE("tbody",
 		  [?XE("tr",
+		       [?XCT("td", "ID:"),
+			?XE("td", [?C(Group)])
+		       ]
+		      ),
+		   ?XE("tr",
 		       [?XCT("td", "Name:"),
 			?XE("td", [?INPUT("text", "name", Name)])
 		       ]
@@ -918,7 +923,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		       ]
 		      ),
 		   ?XE("tr",
-		       [?XCT("td", "Displayed Groups:"),
+		       [?XCT("td", "IDs of Displayed Groups:"),
 			?XE("td", [
 				   ?TEXTAREA("dispgroups", integer_to_list(lists:max([3, length(FDisplayedGroups)])), "20", FDisplayedGroups)
 				  ]
