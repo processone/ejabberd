@@ -351,8 +351,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			Item2 = process_item_els(Item1, Els),
 			case Item2#roster.subscription of
 			    remove ->
-				io:format("del_roster: ~p ~p ~p \n", [LServer, Username, SJID]),
-                                odbc_queries:del_roster(LServer, Username, SJID);
+                   odbc_queries:del_roster(LServer, Username, SJID);
 			    _ ->
 				ItemVals = record_to_string(Item2),
 				ItemGroups = groups_to_string(Item2),
