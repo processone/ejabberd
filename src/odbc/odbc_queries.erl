@@ -786,6 +786,74 @@ get_vcard(LServer, Username) ->
       LServer,
       ["EXECUTE dbo.get_vcard '", Username, "'"]).
 
+get_default_privacy_list(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.get_default_privacy_list '", Username, "'"]).
+
+get_default_privacy_list_t(Username) ->
+    ejabberd_odbc:sql_query_t(
+      ["EXECUTE dbo.get_default_privacy_list '", Username, "'"]).
+
+get_privacy_list_names(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.get_privacy_list_names '", Username, "'"]).
+
+get_privacy_list_names_t(Username) ->
+    ejabberd_odbc:sql_query_t(
+      ["EXECUTE dbo.get_privacy_list_names '", Username, "'"]).
+
+get_privacy_list_id(LServer, Username, SName) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.get_privacy_list_id '", Username, "' , '", SName, "'"]).
+
+get_privacy_list_id_t(Username, SName) ->
+    ejabberd_odbc:sql_query_t(
+      ["EXECUTE dbo.get_privacy_list_id '", Username, "' , '", SName, "'"]).
+
+get_privacy_list_data(LServer, Username, SName) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.get_privacy_list_data '", Username, "' , '", SName, "'"]).
+
+get_privacy_list_data_by_id(LServer, ID) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.get_privacy_list_data_by_id '", ID, "'"]).
+
+set_default_privacy_list(Username, SName) ->
+    ejabberd_odbc:sql_query_t(
+      ["EXECUTE dbo.set_default_privacy_list '", Username, "' , '", SName, "'"]).
+
+unset_default_privacy_list(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.unset_default_privacy_list '", Username, "'"]).
+
+remove_privacy_list(Username, SName) ->
+    ejabberd_odbc:sql_query_t(
+      ["EXECUTE dbo.remove_privacy_list '", Username, "' , '", SName, "'"]).
+
+add_privacy_list(Username, SName) ->
+    ejabberd_odbc:sql_query_t(
+      ["EXECUTE dbo.add_privacy_list '", Username, "' , '", SName, "'"]).
+
+set_privacy_list(ID, RItems) ->
+    ejabberd_odbc:sql_query_t(
+      ["EXECUTE dbo.del_privacy_list_by_id '", ID, "'"]),
+
+    lists:foreach(fun(Items) ->
+			  ejabberd_odbc:sql_query_t(
+				["EXECUTE dbo.set_privacy_list '", ID, "', '", join(Items, "', '"), "'"])
+		  end, RItems).
+
+del_privacy_lists(LServer, Server, Username) ->
+	ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.del_privacy_lists @Server='", Server ,"' @username='", Username, "'"]).
+
 %% Characters to escape
 escape($\0) -> "\\0";
 escape($\t) -> "\\t";
@@ -799,11 +867,11 @@ escape(C)   -> C.
 count_records_where(LServer, Table, WhereClause) ->
     ejabberd_odbc:sql_query(
       LServer,
-      ["select count(*) from ", Table, " ", WhereClause, " with (nolock)"]).
+      ["select count(*) from ", Table, " with (nolock) ", WhereClause]).
 
 get_roster_version(LServer, LUser) ->
 	ejabberd_odbc:sql_query(LServer, 
-		["select version from dbo.roster_version where username = '", LUser, "'"]).
+		["select version from dbo.roster_version with (nolock) where username = '", LUser, "'"]).
 set_roster_version(LUser, Version) ->
 	update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
 -endif.
