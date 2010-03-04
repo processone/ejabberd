@@ -952,30 +952,36 @@ send_db_request(StateData) ->
 	      Key ->
 		  Key
 	  end,
-    case New of
-	false ->
-	    ok;
-	Key1 ->
-	    send_element(StateData,
-			 {xmlelement,
-			  "db:result",
-			  [{"from", StateData#state.myname},
-			   {"to", Server}],
-			  [{xmlcdata, Key1}]})
-    end,
-    case StateData#state.verify of
-	false ->
-	    ok;
-	{_Pid, Key2, SID} ->
-	    send_element(StateData,
-			 {xmlelement,
-			  "db:verify",
-			  [{"from", StateData#state.myname},
-			   {"to", StateData#state.server},
-			   {"id", SID}],
-			  [{xmlcdata, Key2}]})
-    end,
-    {next_state, wait_for_validation, StateData#state{new = New}, ?FSMTIMEOUT*6}.
+    NewStateData = StateData#state{new = New},
+    try
+	case New of
+	    false ->
+		ok;
+	    Key1 ->
+		send_element(StateData,
+			     {xmlelement,
+			      "db:result",
+			      [{"from", StateData#state.myname},
+			       {"to", Server}],
+			      [{xmlcdata, Key1}]})
+	end,
+	case StateData#state.verify of
+	    false ->
+		ok;
+	    {_Pid, Key2, SID} ->
+		send_element(StateData,
+			     {xmlelement,
+			      "db:verify",
+			      [{"from", StateData#state.myname},
+			       {"to", StateData#state.server},
+			       {"id", SID}],
+			      [{xmlcdata, Key2}]})
+	end,
+	{next_state, wait_for_validation, NewStateData, ?FSMTIMEOUT*6}
+    catch
+	_:_ ->
+	    {stop, normal, NewStateData}
+    end.
 
 
 is_verify_res({xmlelement, Name, Attrs, _Els}) when Name == "db:result" ->
