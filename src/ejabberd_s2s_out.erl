@@ -910,21 +910,28 @@ send_db_request(StateData) ->
 	      Key ->
 		  Key
 	  end,
-    case New of
-	false ->
-	    ok;
-	Key1 ->
-	    send_element(StateData, exmpp_dialback:key(
-		StateData#state.myname, Server, Key1))
-    end,
-    case StateData#state.verify of
-	false ->
-	    ok;
-	{_Pid, Key2, SID} ->
-	    send_element(StateData, exmpp_dialback:verify_request(
-		StateData#state.myname, StateData#state.server, SID, Key2))
-    end,
-    {next_state, wait_for_validation, StateData#state{new = New}, ?FSMTIMEOUT*6}.
+    NewStateData = StateData#state{new = New},
+    try
+	case New of
+	    false ->
+		ok;
+	    Key1 ->
+		send_element(StateData, exmpp_dialback:key(
+					  StateData#state.myname, Server, Key1))
+	end,
+	case StateData#state.verify of
+	    false ->
+		ok;
+	    {_Pid, Key2, SID} ->
+		send_element(StateData, exmpp_dialback:verify_request(
+					  StateData#state.myname,
+					  StateData#state.server, SID, Key2))
+	end,
+	{next_state, wait_for_validation, NewStateData, ?FSMTIMEOUT*6}
+    catch
+	_:_ ->
+	    {stop, normal, NewStateData}
+    end.
 
 
 is_verify_res(#xmlel{ns = ?NS_DIALBACK, name = 'result',
