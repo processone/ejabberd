@@ -64,6 +64,7 @@
 	 in_subscription/6,
 	 out_subscription/4,
 	 remove_user/2,
+	 feature_check_packet/6,
 	 disco_local_identity/5,
 	 disco_local_features/5,
 	 disco_local_items/5,
@@ -212,6 +213,7 @@ init([ServerHost, Opts]) ->
     ejabberd_router:register_route(Host),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
+	    ejabberd_hooks:add(feature_check_packet, ServerHostB, ?MODULE, feature_check_packet, 75),
 	    ejabberd_hooks:add(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
 	    ejabberd_hooks:add(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
 	    ejabberd_hooks:add(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
@@ -323,18 +325,13 @@ send_loop(State) ->
 	%% this makes that hack only work for local domain by now
 	if not State#state.ignore_pep_from_offline ->
 	    {User, Server, Resource} = LJID,
-	    case mod_caps:get_caps({User, Server, Resource}) of
-	    nothing ->
-		%% we don't have caps, no need to handle PEP items
-		ok;
-	    _ ->
 		case catch ejabberd_c2s:get_subscribed(Pid) of
 		Contacts when is_list(Contacts) ->
 		    lists:foreach(
 			fun({U, S, R}) ->
 			    case S of
 			    ServerHost ->  %% local contacts
-				case ejabberd_sm:get_user_resources(U, S) of
+				case user_resources(U, S) of
 				[] -> %% offline
 				    PeerJID = exmpp_jid:make(U, S, R),
 				    self() ! {presence, User, Server, [Resource], PeerJID};
@@ -349,8 +346,7 @@ send_loop(State) ->
 			end, Contacts);
 		_ ->
 		    ok
-		end
-	    end;
+		end;
 	true ->
 	    ok
 	end,
@@ -358,54 +354,31 @@ send_loop(State) ->
     {presence, User, Server, Resources, JID} ->
 	%% get resources caps and check if processing is needed
 	spawn(fun() ->
-	    {HasCaps, ResourcesCaps} = lists:foldl(fun(Resource, {R, L}) ->
-			case mod_caps:get_caps({User, Server, Resource}) of
-			nothing -> {R, L};
-			Caps -> {true, [{Resource, Caps} | L]}
-			end
-		    end, {false, []}, Resources),
-	    case HasCaps of
-		true ->
-		    Host = State#state.host,
-		    ServerHost = State#state.server_host,
-		    Owner = jlib:short_prepd_bare_jid(JID),
-		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
-			case get_option(Options, send_last_published_item) of
-			    on_sub_and_presence ->
-				lists:foreach(fun({Resource, Caps}) ->
-				    CapsNotify = case catch mod_caps:get_features(ServerHost, Caps) of
-					    Features when is_list(Features) -> lists:member(node_to_string(Node) ++ "+notify", Features);
-					    _ -> false
-					end,
-				    case CapsNotify of
-					true ->
-					    LJID = {User, Server, Resource},
-					    Subscribed = case get_option(Options, access_model) of
-						    open -> true;
-						    presence -> true;
-						    whitelist -> false; % subscribers are added manually
-						    authorize -> false; % likewise
-						    roster ->
-							Grps = get_option(Options, roster_groups_allowed, []),
-							{OU, OS, _} = Owner,
-							element(2, get_roster_info(OU, OS, LJID, Grps))
-					    end,
-					    if Subscribed ->
-						send_items(Owner, Node, NodeId, Type, LJID, last);
-					    true ->
-						ok
-					    end;
-					false ->
-					    ok
+		Host = State#state.host,
+		Owner = jlib:short_prepd_bare_jid(JID),
+		lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
+		    case get_option(Options, send_last_published_item) of
+			on_sub_and_presence ->
+				lists:foreach(fun(Resource) ->
+				    LJID = {User, Server, Resource},
+				    Subscribed = case get_option(Options, access_model) of
+					open -> true;
+					presence -> true;
+					whitelist -> false; % subscribers are added manually
+					authorize -> false; % likewise
+					roster ->
+					    Grps = get_option(Options, roster_groups_allowed, []),
+					    {OU, OS, _} = Owner,
+					    element(2, get_roster_info(OU, OS, LJID, Grps))
+				    end,
+				    if Subscribed -> send_items(Owner, Node, NodeId, Type, LJID, last);
+				       true -> ok
 				    end
-				end, ResourcesCaps);
-			    _ ->
-				ok
-			end
-		    end, tree_action(Host, get_nodes, [Owner, JID]));
-		false ->
-		    ok
-	    end
+				end, Resources);
+			_ ->
+			    ok
+		    end
+		end, tree_action(Host, get_nodes, [Owner, JID]))
 	end),
 	send_loop(State);
     stop ->
@@ -699,6 +672,7 @@ terminate(_Reason, #state{host = Host,
     ServerHostB = list_to_binary(ServerHost),
     case lists:member(?PEPNODE, Plugins) of
     true ->
+	ejabberd_hooks:delete(feature_check_packet, ServerHostB, ?MODULE, feature_check_packet, 75),
 	ejabberd_hooks:delete(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
 	ejabberd_hooks:delete(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
 	ejabberd_hooks:delete(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
@@ -765,9 +739,8 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			#iq{type = get, ns = ?NS_DISCO_ITEMS,
 			    payload = SubEl} = IQ ->
 			    QAttrs = SubEl#xmlel.attrs,
-			    Node = exmpp_xml:get_attribute_from_list_as_list(QAttrs,
-			      'node', ""),
-                Rsm = jlib:rsm_decode(IQ),
+			    Node = exmpp_xml:get_attribute_from_list_as_list(QAttrs, 'node', ""),
+			    Rsm = jlib:rsm_decode(IQ),
 			    Res = case iq_disco_items(Host, Node, From, Rsm) of
 				      {result, IQRes} ->
 					  Result = #xmlel{ns = ?NS_DISCO_ITEMS,
@@ -2960,7 +2933,7 @@ get_options_for_subs(NodeID, Subs) ->
 %	    {result, false}
 %    end
 
-broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
+broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     NotificationType = get_option(NodeOptions, notification_type, headline),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
@@ -3013,15 +2986,9 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 			Contacts when is_list(Contacts) ->
 			    lists:foreach(fun({U, S, _}) ->
 				spawn(fun() ->
-				    Rs = lists:foldl(fun(R, Acc) ->
-					case is_caps_notify(LServer, Node, {U, S, R}) of
-					    true -> [R | Acc];
-					    false -> Acc
-					end
-				    end, [], user_resources(U, S)),
 				    lists:foreach(fun(R) ->
 					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), Stanza)
-				    end, Rs)
+				    end, user_resources(U, S))
 				end)
 			    end, Contacts);
 			_ ->
@@ -3082,24 +3049,8 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
     JIDSubs.
 
-%% If we don't know the resource, just pick first if any
-%% If no resource available, check if caps anyway (remote online)
 user_resources(User, Server) ->
-    case ejabberd_sm:get_user_resources(User, Server) of
-	[] -> mod_caps:get_user_resources(User, Server);
-	Rs -> Rs
-    end.
-
-is_caps_notify(Host, Node, LJID) ->
-    case mod_caps:get_caps(LJID) of
-	nothing -> 
-	    false;
-	Caps ->
-	    case catch mod_caps:get_features(Host, Caps) of
-		Features when is_list(Features) -> lists:member(node_to_string(Node) ++ "+notify", Features);
-		_ -> false
-	    end
-    end.
+    ejabberd_sm:get_user_resources(User, Server).
 
 %%%%%%% Configuration handling
 
@@ -3738,3 +3689,38 @@ subid_shim(SubIDs) ->
 	    attrs = [?XMLATTR('name', <<"SubID">>)],
 	    children = [?XMLCDATA(SubID)]}
 	|| SubID <- SubIDs].
+
+feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
+    Host = host(Server),
+	case exmpp_jid:prep_domain_as_list(From) of
+	%% If the sender Server equals Host, the message comes from the Pubsub server
+	Host ->
+	    allow;
+	%% Else, the message comes from PEP
+	_ ->
+	    case xml:get_subtag(El, "event") of
+		{xmlelement, _, Attrs, _} = EventEl ->
+		    case xml:get_attr_s("xmlns", Attrs) of
+			?NS_PUBSUB_EVENT ->
+			    Feature = xml:get_path_s(EventEl, [{elem, "items"}, {attr, "node"}]),
+			    case is_feature_supported(Pres, Feature) of
+				true ->
+				    allow;
+				false ->
+				    deny
+			    end;
+			_ ->
+			    allow
+		    end;
+		_ ->
+		    allow
+	    end
+    end;
+feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
+    Acc.
+
+is_feature_supported({xmlelement, "presence", _, Els}, Feature) ->
+    case mod_caps:read_caps(Els) of
+	nothing -> false;
+	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+    end.

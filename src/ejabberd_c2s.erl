@@ -1229,7 +1229,19 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			{From, To, Packet},
 			in]) of
 		    allow ->
-			{true, Attrs, StateData};
+			case ejabberd_hooks:run_fold(
+			       feature_check_packet, StateData#state.server,
+			       allow,
+			       [StateData#state.user,
+				StateData#state.server,
+				StateData#state.pres_last,
+				{From, To, Packet},
+				in]) of
+			    allow ->
+				{true, Attrs, StateData};
+			    deny ->
+				{false, Attrs, StateData}
+			end;
 		    deny ->
 			{false, Attrs, StateData}
 		end;
