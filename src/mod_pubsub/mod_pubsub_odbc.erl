@@ -924,11 +924,15 @@ iq_disco_items(Host, [], From, _RSM) ->
     case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
 	Nodes when is_list(Nodes) ->
 	    {result, lists:map(
-		fun(#pubsub_node{nodeid = {_, SubNode}, type = Type}) ->
-		    {result, Path} = node_call(Type, node_to_path, [SubNode]),
-		    [Name | _] = lists:reverse(Path),
-		    #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host),
-			?XMLATTR('name', Name) | nodeAttr(SubNode)]}
+		fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+		    Attrs =
+		      case get_option(Options, title) of
+		        false ->
+		          [?XMLATTR('jid', Host) | nodeAttr(SubNode)];
+		        Title ->
+		          [?XMLATTR('jid', Host),	?XMLATTR('name', Title) | nodeAttr(SubNode)]
+		      end,
+		    #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = Attrs}
 		end, Nodes)};
 	Other ->
 	    Other
@@ -959,10 +963,15 @@ iq_disco_items(Host, Item, From, RSM) ->
 					_ -> {[], none}
 				    end,
 			Nodes = lists:map(
-				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
-					  {result, Path} = node_call(Type, node_to_path, [SubNode]),
-					  [Name|_] = lists:reverse(Path),
-					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('name', Name) | nodeAttr(SubNode)]}
+				  fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+		        Attrs =
+		          case get_option(Options, title) of
+		            false ->
+		              [?XMLATTR('jid', Host) | nodeAttr(SubNode)];
+		            Title ->
+		              [?XMLATTR('jid', Host),	?XMLATTR('name', Title) | nodeAttr(SubNode)]
+		          end,
+		        #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = Attrs}
 				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
