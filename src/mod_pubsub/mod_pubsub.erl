@@ -1095,10 +1095,15 @@ iq_disco_items(Host, [], From) ->
     case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
         Nodes when is_list(Nodes) ->
             {result, lists:map(
-                       fun(#pubsub_node{nodeid = {_, SubNode}, type = Type}) ->
-                               {result, Path} = node_call(Type, node_to_path, [SubNode]),
-                               [Name|_] = lists:reverse(Path),
-                               {xmlelement, "item", [{"jid", Host}, {"name", Name}|nodeAttr(SubNode)], []}
+                       fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+                               Attrs =
+                                 case get_option(Options, title) of
+                                   false ->
+                                     [{"jid", Host} |nodeAttr(SubNode)];
+                                   Title ->
+                                     [{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
+                                 end,
+                               {xmlelement, "item", Attrs, []}
                        end, Nodes)};
         Other ->
             Other
@@ -1124,10 +1129,15 @@ iq_disco_items(Host, Item, From) ->
 					_ -> []
 				    end,
 			Nodes = lists:map(
-				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
-                                      {result, Path} = node_call(Type, node_to_path, [SubNode]),
-                                      [Name|_] = lists:reverse(Path),
-				      {xmlelement, "item", [{"jid", Host}, {"name", Name}|nodeAttr(SubNode)], []}
+				  fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+              Attrs =
+                case get_option(Options, title) of
+                  false ->
+                    [{"jid", Host} |nodeAttr(SubNode)];
+                  Title ->
+                    [{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
+                end,
+             {xmlelement, "item", Attrs, []}
 				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
