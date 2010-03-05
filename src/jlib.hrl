@@ -84,6 +84,7 @@
 
 -define(NS_CAPS,          "http://jabber.org/protocol/caps").
 -define(NS_SHIM,          "http://jabber.org/protocol/shim").
+-define(NS_ADDRESS,       "http://jabber.org/protocol/address").
 
 %% CAPTCHA related NSes.
 -define(NS_OOB, "jabber:x:oob").

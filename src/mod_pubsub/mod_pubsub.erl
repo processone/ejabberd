@@ -2900,8 +2900,7 @@ event_stanza_withmoreels(Els, MoreEls) ->
 
 %%%%%% broadcast functions
 
-broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, _From, Payload) ->
-    %broadcast(Host, Node, NodeId, NodeOptions, none, true, "items", ItemEls)
+broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, From, Payload) ->
     case get_collection_subscriptions(Host, Node) of
 	SubsByDepth when is_list(SubsByDepth) ->
 	    Content = case get_option(NodeOptions, deliver_payloads) of
@@ -2911,7 +2910,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, NodeOptions, Removed, ItemId, _
 	    Stanza = event_stanza(
 		[{xmlelement, "items", nodeAttr(Node),
 		    [{xmlelement, "item", itemAttr(ItemId), Content}]}]),
-	    broadcast_stanza(Host, Node, NodeId, Type,
+	    broadcast_stanza(Host, From, Node, NodeId, Type,
 			     NodeOptions, SubsByDepth, items, Stanza, true),
 	    case Removed of
 		[] ->
@@ -2939,7 +2938,6 @@ broadcast_retract_items(Host, Node, NodeId, Type, NodeOptions, ItemIds) ->
 broadcast_retract_items(_Host, _Node, _NodeId, _Type, _NodeOptions, [], _ForceNotify) ->
     {result, false};
 broadcast_retract_items(Host, Node, NodeId, Type, NodeOptions, ItemIds, ForceNotify) ->
-    %broadcast(Host, Node, NodeId, NodeOptions, notify_retract, ForceNotify, "retract", RetractEls)
     case (get_option(NodeOptions, notify_retract) or ForceNotify) of
 	true ->
 	    case get_collection_subscriptions(Host, Node) of
@@ -2958,7 +2956,6 @@ broadcast_retract_items(Host, Node, NodeId, Type, NodeOptions, ItemIds, ForceNot
     end.
 
 broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
-    %broadcast(Host, Node, NodeId, NodeOptions, notify_retract, false, "purge", [])
     case get_option(NodeOptions, notify_retract) of
 	true ->
 	    case get_collection_subscriptions(Host, Node) of
@@ -2977,7 +2974,6 @@ broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
     end.
 
 broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
-    %broadcast(Host, Node, NodeId, NodeOptions, notify_delete, false, "delete", [])
     case get_option(NodeOptions, notify_delete) of
 	true ->
 	    case SubsByDepth of
@@ -2996,7 +2992,6 @@ broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
     end.
 
 broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
-    %broadcast(Host, Node, NodeId, NodeOptions, notify_config, false, "items", ConfigEls)
     case get_option(NodeOptions, notify_config) of
 	true ->
 	    case get_collection_subscriptions(Host, Node) of
@@ -3068,60 +3063,61 @@ broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTy
 					  [LJID]
 				  end,
         %% Determine if the stanza should have SHIM ('SubID' and 'name') headers
-				StanzaToSend = case SHIM of
-				                 true ->
-				                   Headers = lists:append(collection_shim(NodeName), subid_shim(SubIDs)),
-				                   add_headers(Stanza, Headers);
-				                 false ->
-				                   Stanza
-				               end,
+	      StanzaToSend = case {SHIM, SubIDs} of
+				                 {false, _} ->
+				                   Stanza;
+				                 %% If there's only one SubID, don't add it
+				                 {true, [_]} ->
+				                   add_shim_headers(Stanza, collection_shim(NodeName));
+				                 {true, SubIDs} ->
+				                   add_shim_headers(Stanza, lists:append(collection_shim(NodeName), subid_shim(SubIDs)))
+		                   end,
 			  lists:foreach(fun(To) ->
-						ejabberd_router:route(From, jlib:make_jid(To), StanzaToSend)
-					end, LJIDs)
-		  end, SubIDsByJID),
+					ejabberd_router:route(From, jlib:make_jid(To), StanzaToSend)
+				end, LJIDs)
+		end, SubIDsByJID).
+
+broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
+    broadcast_stanza({LUser, LServer, LResource}, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
-    case Host of
-	{LUser, LServer, LResource} ->
-	    SenderResource = case LResource of
-		[] -> 
-		    case user_resources(LUser, LServer) of
-			[Resource|_] -> Resource;
-			_ -> ""
-		    end;
+    SenderResource = case LResource of
+	[] -> 
+	    case user_resources(LUser, LServer) of
+		[Resource|_] -> Resource;
+		_ -> ""
+	    end;
+	_ ->
+	    LResource
+    end,
+    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
+	C2SPid when is_pid(C2SPid) ->
+	    Stanza = case get_option(NodeOptions, notification_type, headline) of
+		normal -> BaseStanza;
+		MsgType -> add_message_type(BaseStanza, atom_to_list(MsgType))
+		end,
+	    %% set the from address on the notification to the bare JID of the account owner
+	    %% Also, add "replyto" if entity has presence subscription to the account owner
+	    %% See XEP-0163 1.1 section 4.3.1
+	    Sender = jlib:make_jid(LUser, LServer, ""),
+	    ReplyTo = jlib:jid_to_string(Publisher),
+	    StanzaToSend = add_extended_headers(Stanza, extended_headers([ReplyTo])),
+	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
+		Contacts when is_list(Contacts) ->
+		    lists:foreach(fun({U, S, _}) ->
+			spawn(fun() ->
+			    lists:foreach(fun(To) ->
+				ejabberd_router:route(Sender, jlib:make_jid(To), StanzaToSend)
+			    end, [{U, S, R} || R <- user_resources(U, S)])
+			end)
+		    end, Contacts);
 		_ ->
-		    LResource
-	    end,
-	    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
-		C2SPid when is_pid(C2SPid) ->
-		    %% set the from address on the notification to the bare JID of the account owner
-		    %% Also, add "replyto" if entity has presence subscription to the account owner
-		    %% See XEP-0163 1.1 section 4.3.1
-		    Sender = jlib:make_jid(LUser, LServer, ""),
-		    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
-		    case catch ejabberd_c2s:get_subscribed(C2SPid) of
-			Contacts when is_list(Contacts) ->
-			    lists:foreach(fun({U, S, _}) ->
-				spawn(fun() ->
-				    LJIDs = lists:foldl(fun(R, Acc) ->
-					LJID = {U, S, R}, 
-					[LJID | Acc]
-				    end, [], user_resources(U, S)),
-				    lists:foreach(fun(To) ->
-					ejabberd_router:route(Sender, jlib:make_jid(To), Stanza)
-				    end, LJIDs)
-				end)
-			    end, Contacts);
-			_ ->
-			    ok
-		    end,
-		    ok;
-		_ ->
-		    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
 		    ok
 	    end;
 	_ ->
-	    ok
-    end.
+	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
+    end;
+broadcast_stanza(_Host, _Publisher, _Node, _NodeId, _Type, _NodeOptions, _SubsByDepth, _NotifyType, _BaseStanza, _SHIM) ->
+    ok.
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun(Depth, Node, Subs, Acc) ->
@@ -3730,8 +3726,14 @@ add_message_type(XmlEl, _Type) ->
 %% "[SHIM Headers] SHOULD be included after the event notification information
 %% (i.e., as the last child of the <message/> stanza)".
 
-add_headers({xmlelement, Name, Attrs, Els}, HeaderEls) ->
-    HeaderEl = {xmlelement, "headers", [{"xmlns", ?NS_SHIM}], HeaderEls},
+add_shim_headers(Stanza, HeaderEls) ->
+    add_headers(Stanza, "headers", ?NS_SHIM, HeaderEls).
+
+add_extended_headers(Stanza, HeaderEls) ->
+    add_headers(Stanza, "addresses", ?NS_ADDRESS, HeaderEls).
+
+add_headers({xmlelement, Name, Attrs, Els}, HeaderName, HeaderNS, HeaderEls) ->
+    HeaderEl = {xmlelement, HeaderName, [{"xmlns", HeaderNS}], HeaderEls},
     {xmlelement, Name, Attrs, lists:append(Els, [HeaderEl])}.
 
 %% Removed multiple <header name=Collection>Foo</header/> elements
@@ -3754,6 +3756,13 @@ collection_shim(Node) ->
 subid_shim(SubIDs) ->
     [{xmlelement, "header", [{"name", "SubID"}],
       [{xmlcdata, SubID}]} || SubID <- SubIDs].
+
+%% The argument is a list of Jids because this function could be used
+%% with the 'pubsub#replyto' (type=jid-multi) node configuration.
+
+extended_headers(Jids) ->
+    [{xmlelement, "address", [{"type", "replyto"}, {"jid", Jid}], []} || Jid <- Jids].
+
 
 feature_check_packet(allow, _User, Server, Pres, {#jid{lserver = LServer}, _To, {xmlelement, "message", _, _} = El}, in) ->
     Host = host(Server),
