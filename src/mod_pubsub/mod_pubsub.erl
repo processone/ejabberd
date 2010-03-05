@@ -547,10 +547,9 @@ send_loop(State) ->
     {presence, User, Server, Resources, JID} ->
 	%% get resources caps and check if processing is needed
 	spawn(fun() ->
-     Host = State#state.host,
-     ServerHost = State#state.server_host,
-     Owner = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
-     lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
+		Host = State#state.host,
+		Owner = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
+		lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
 				    lists:foreach(
@@ -576,7 +575,7 @@ send_loop(State) ->
 				ok
 			end
 		    end, tree_action(Host, get_nodes, [Owner, JID]))
-	end),
+		end),
 	send_loop(State);
     stop ->
 	ok
@@ -3050,7 +3049,7 @@ get_options_for_subs(NodeID, Subs) ->
 			Acc
 		end, [], Subs).
 
-broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
+broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     NotificationType = get_option(NodeOptions, notification_type, headline),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
@@ -3814,10 +3813,10 @@ purge_offline({User, Server, _} = LJID) ->
     case Result of
 	{ok, Affiliations} ->
 	    lists:foreach(
-		fun({#pubsub_node{nodeid = {_, NodeId}, options = Options, type = Type, id = NodeIdx}, Affiliation})
+		fun({#pubsub_node{nodeid = {_, NodeId}, options = Options, type = Type}, Affiliation})
 		    when Affiliation == 'owner' orelse Affiliation == 'publisher' ->
-			Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-			    node_call(Type, get_items, [NodeId, service_jid(Host)])
+			Action = fun(#pubsub_node{type = NType, id = NodeIdx}) ->
+			    node_call(NType, get_items, [NodeIdx, service_jid(Host)])
 			end,
 			case transaction(Host, NodeId, Action, sync_dirty) of
 			    {result, {_, []}}    ->
@@ -3848,8 +3847,7 @@ purge_offline({User, Server, _} = LJID) ->
 				end;
 			    Error ->
 				Error
-			end
-		    end;
+			end;
 		   (_) ->
 		       true
 	    end, lists:usort(lists:flatten(Affiliations)));
