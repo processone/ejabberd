@@ -567,7 +567,7 @@ send_loop(State) ->
 					          element(2, get_roster_info(OU, OS, LJID, Grps))
 			          end,
 			          if Subscribed ->
-    				          send_items(Owner, Node, NodeId, Type, LJID, last);
+				          send_items(Owner, Node, NodeId, Type, LJID, last);
 				          true ->
 						          ok
 			          end    
@@ -1008,14 +1008,10 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
     end.
 
 command_disco_info(_Host, <<?NS_COMMANDS>>, _From) ->
-    IdentityEl = {xmlelement, "identity", [{"category", "automation"},
-                                        {"type", "command-list"}],
-                  []},
+    IdentityEl = {xmlelement, "identity", [{"category", "automation"}, {"type", "command-list"}], []},
     {result, [IdentityEl]};
 command_disco_info(_Host, <<?NS_PUBSUB_GET_PENDING>>, _From) ->
-    IdentityEl = {xmlelement, "identity", [{"category", "automation"},
-                                        {"type", "command-node"}],
-                  []},
+    IdentityEl = {xmlelement, "identity", [{"category", "automation"}, {"type", "command-node"}], []},
     FeaturesEl = {xmlelement, "feature", [{"var", ?NS_COMMANDS}], []},
     {result, [IdentityEl, FeaturesEl]}.
 
@@ -1096,20 +1092,20 @@ iq_disco_info(Host, SNode, From, Lang) ->
 
 iq_disco_items(Host, [], From) ->
     case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
-        Nodes when is_list(Nodes) ->
-            {result, lists:map(
-                       fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
-                               Attrs =
-                                 case get_option(Options, title) of
-                                   false ->
-                                     [{"jid", Host} |nodeAttr(SubNode)];
-                                   Title ->
-                                     [{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
-                                 end,
-                               {xmlelement, "item", Attrs, []}
-                       end, Nodes)};
-        Other ->
-            Other
+	Nodes when is_list(Nodes) ->
+	    {result, lists:map(
+		fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+		    Attrs =
+			case get_option(Options, title) of
+			    false ->
+				[{"jid", Host} |nodeAttr(SubNode)];
+			    Title ->
+				[{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
+			end,
+		    {xmlelement, "item", Attrs, []}
+		end, Nodes)};
+	Other ->
+	    Other
     end;
 iq_disco_items(Host, ?NS_COMMANDS, _From) ->
     %% TODO: support localization of this string
@@ -1132,21 +1128,21 @@ iq_disco_items(Host, Item, From) ->
 					_ -> []
 				    end,
 			Nodes = lists:map(
-				  fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
-              Attrs =
-                case get_option(Options, title) of
-                  false ->
-                    [{"jid", Host} |nodeAttr(SubNode)];
-                  Title ->
-                    [{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
-                end,
-             {xmlelement, "item", Attrs, []}
-				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
+				fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+				    Attrs =
+					case get_option(Options, title) of
+					    false ->
+						[{"jid", Host} |nodeAttr(SubNode)];
+					    Title ->
+						[{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
+					end,
+					{xmlelement, "item", Attrs, []}
+				end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
-				  fun(#pubsub_item{itemid = {RN, _}}) ->
-				      {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
-				      {xmlelement, "item", [{"jid", Host}, {"name", Name}], []}
-				  end, NodeItems),
+				fun(#pubsub_item{itemid = {RN, _}}) ->
+				    {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
+				    {xmlelement, "item", [{"jid", Host}, {"name", Name}], []}
+				end, NodeItems),
 			{result, Nodes ++ Items}
 		end,
 	    case transaction(Host, Node, Action, sync_dirty) of
@@ -1447,7 +1443,7 @@ send_pending_auth_events(Host, Node, Owner) ->
 		    true ->
 			case node_call(Type, get_affiliation, [NodeID, Owner]) of
 			    {result, owner} ->
-                                node_call(Type, get_node_subscriptions, [NodeID]);
+				node_call(Type, get_node_subscriptions, [NodeID]);
 			    _ ->
 				{error, ?ERR_FORBIDDEN}
 			end;
@@ -1457,10 +1453,10 @@ send_pending_auth_events(Host, Node, Owner) ->
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {N, Subscriptions}} ->
-            lists:foreach(fun({J, pending, _SubID}) -> send_authorization_request(N, jlib:make_jid(J));
-                             ({J, pending}) -> send_authorization_request(N, jlib:make_jid(J));
-                             (_) -> ok
-                          end, Subscriptions),
+	    lists:foreach(fun({J, pending, _SubID}) -> send_authorization_request(N, jlib:make_jid(J));
+			     ({J, pending}) -> send_authorization_request(N, jlib:make_jid(J));
+			     (_) -> ok
+			  end, Subscriptions),
 	    #adhoc_response{};
 	Err ->
 	    Err
@@ -3761,107 +3757,102 @@ subid_shim(SubIDs) ->
       [{xmlcdata, SubID}]} || SubID <- SubIDs].
 
 feature_check_packet(allow, _User, Server, Pres, {#jid{lserver = LServer}, _To, {xmlelement, "message", _, _} = El}, in) ->
-  Host = host(Server),
-  case LServer of
-    %% If the sender Server equals Host, the message comes from the Pubsub server
-    Host ->
-      allow;
-    %% Else, the message comes from PEP
-    _ ->
-      case xml:get_subtag(El, "event") of
-        {xmlelement, _, Attrs, _} = EventEl ->
-          case xml:get_attr_s("xmlns", Attrs) of
-            ?NS_PUBSUB_EVENT ->
-              Feature = xml:get_path_s(EventEl, [{elem, "items"}, {attr, "node"}]),
-              case is_feature_supported(Pres, Feature) of
-                true ->
-                  allow;
-                false ->
-                  deny
-              end;
-            _ ->
-              allow
-          end;
-        _ ->
-          allow
-      end
+    Host = host(Server),
+    case LServer of
+	%% If the sender Server equals Host, the message comes from the Pubsub server
+	Host ->
+	    allow;
+	%% Else, the message comes from PEP
+	_ ->
+	    case xml:get_subtag(El, "event") of
+		{xmlelement, _, Attrs, _} = EventEl ->
+		    case xml:get_attr_s("xmlns", Attrs) of
+			?NS_PUBSUB_EVENT ->
+			    Feature = xml:get_path_s(EventEl, [{elem, "items"}, {attr, "node"}]),
+			    case is_feature_supported(Pres, Feature) of
+				true ->
+				    allow;
+				false ->
+				    deny
+			    end;
+			_ ->
+			    allow
+		    end;
+		_ ->
+		    allow
+	    end
     end;
-
 feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
-  Acc.
+    Acc.
 
 is_feature_supported({xmlelement, "presence", _, Els}, Feature) ->
-  case mod_caps:read_caps(Els) of
-    nothing -> false;
-    Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
-  end.
+    case mod_caps:read_caps(Els) of
+	nothing -> false;
+	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+    end.
 
 on_user_offline(_, JID, _) ->
-  {User, Server, Resource} = jlib:jid_tolower(JID),
-  case ejabberd_sm:get_user_resources(User, Server) of
-    [] -> purge_offline({User, Server, Resource});
-    _  -> true
-  end.
+    {User, Server, Resource} = jlib:jid_tolower(JID),
+    case ejabberd_sm:get_user_resources(User, Server) of
+	[] -> purge_offline({User, Server, Resource});
+	_  -> true
+    end.
 
 purge_offline({User, Server, _} = LJID) ->
-  Host = host(element(2, LJID)),
-  Plugins = plugins(Host),
-  Result =
-    lists:foldl(
-      fun(Type, {Status, Acc}) ->
-        case lists:member("retrieve-affiliations", features(Type)) of
-          false ->
-            {{error, extended_error('feature-not-implemented', unsupported, "retrieve-affiliations")}, Acc};
-          true ->
-            {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, LJID]),
-            {Status, [Affiliations|Acc]}
-        end
-      end,
-        {ok, []}, Plugins),
-  case Result of
-    {ok, Affiliations} ->
-      lists:foreach(
-        fun({#pubsub_node{nodeid = {_, NodeId}, options = Options, type = Type, id = NodeIdx}, Affiliation})
-             when Affiliation == 'owner' orelse Affiliation == 'publisher' ->
-               Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-                 node_call(Type, get_items, [NodeId, service_jid(Host)])
-               end,
-               case transaction(Host, NodeId, Action, sync_dirty) of
-                 {result, {_, []}}    -> true;
-                 {result, {_, Items}} ->
-                   Features = features(Type),
-                   case
-                     {lists:member("retract-items", Features),
-                      lists:member("persistent-items", Features),
-                      get_option(Options, persist_items),
-                      get_option(Options, purge_offline)}
-                   of
-                     {true, true, true, true} ->
-                       ForceNotify = get_option(Options, notify_retract),
-                       lists:foreach(
-                         fun(#pubsub_item{itemid = {ItemId, _}, modification = {_, Modification}}) ->
-                           case Modification of
-                             {User, Server, _} ->
-                               delete_item(Host, NodeId, LJID, ItemId, ForceNotify);
-                             _ ->
-                               true
-                           end;
-                            (_) ->
-                              true
-                         end,
-                           Items);
-                     _ ->
-                       true
-                   end;
-                 Error ->
-                   Error
-               end
-           end;
-           (_) ->
-              true
-        end, lists:usort(lists:flatten(Affiliations)));
-    {Error, _} ->
-      ?DEBUG("on_user_offline ~p", [Error])
-  end,
-  ok.
-
+    Host = host(element(2, LJID)),
+    Plugins = plugins(Host),
+    Result = lists:foldl(
+	fun(Type, {Status, Acc}) ->
+	    case lists:member("retrieve-affiliations", features(Type)) of
+		false ->
+		    {{error, extended_error('feature-not-implemented', unsupported, "retrieve-affiliations")}, Acc};
+		true ->
+		    {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, LJID]),
+		    {Status, [Affiliations|Acc]}
+	    end
+	end, {ok, []}, Plugins),
+    case Result of
+	{ok, Affiliations} ->
+	    lists:foreach(
+		fun({#pubsub_node{nodeid = {_, NodeId}, options = Options, type = Type, id = NodeIdx}, Affiliation})
+		    when Affiliation == 'owner' orelse Affiliation == 'publisher' ->
+			Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
+			    node_call(Type, get_items, [NodeId, service_jid(Host)])
+			end,
+			case transaction(Host, NodeId, Action, sync_dirty) of
+			    {result, {_, []}}    ->
+				true;
+			    {result, {_, Items}} ->
+				Features = features(Type),
+				case
+				    {lists:member("retract-items", Features),
+				    lists:member("persistent-items", Features),
+				    get_option(Options, persist_items),
+				    get_option(Options, purge_offline)}
+				of
+				    {true, true, true, true} ->
+					ForceNotify = get_option(Options, notify_retract),
+					lists:foreach(
+					    fun(#pubsub_item{itemid = {ItemId, _}, modification = {_, Modification}}) ->
+						case Modification of
+						    {User, Server, _} ->
+							delete_item(Host, NodeId, LJID, ItemId, ForceNotify);
+						    _ ->
+							true
+						end;
+					    (_) ->
+						true
+					end, Items);
+				    _ ->
+					true
+				end;
+			    Error ->
+				Error
+			end
+		    end;
+		   (_) ->
+		       true
+	    end, lists:usort(lists:flatten(Affiliations)));
+	{Error, _} ->
+	    ?DEBUG("on_user_offline ~p", [Error])
+    end.

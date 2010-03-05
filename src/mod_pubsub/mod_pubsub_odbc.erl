@@ -62,7 +62,9 @@
 -export([presence_probe/3,
 	 in_subscription/6,
 	 out_subscription/4,
+	 on_user_offline/3,
 	 remove_user/2,
+	 feature_check_packet/6,
 	 disco_local_identity/5,
 	 disco_local_features/5,
 	 disco_local_items/5,
@@ -196,6 +198,7 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {ignore_pep_from_offline, PepOffline}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {host, Host}),
+    ejabberd_hooks:add(sm_remove_connection_hook, ServerHost, ?MODULE, on_user_offline, 75),
     ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
@@ -208,6 +211,7 @@ init([ServerHost, Opts]) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
+	    ejabberd_hooks:add(feature_check_packet, ServerHost, ?MODULE, feature_check_packet, 75),
 	    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
 	    ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
 	    ejabberd_hooks:add(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
@@ -317,18 +321,13 @@ send_loop(State) ->
 	%% this makes that hack only work for local domain by now
 	if not State#state.ignore_pep_from_offline ->
 	    {User, Server, Resource} = jlib:jid_tolower(JID),
-	    case mod_caps:get_caps({User, Server, Resource}) of
-	    nothing ->
-		%% we don't have caps, no need to handle PEP items
-		ok;
-	    _ ->
 		case catch ejabberd_c2s:get_subscribed(Pid) of
 		Contacts when is_list(Contacts) ->
 		    lists:foreach(
 			fun({U, S, R}) ->
 			    case S of
 				ServerHost ->  %% local contacts
-				    case ejabberd_sm:get_user_resources(U, S) of
+				    case user_resources(U, S) of
 				    [] -> %% offline
 					PeerJID = jlib:make_jid(U, S, R),
 					self() ! {presence, User, Server, [Resource], PeerJID};
@@ -343,8 +342,7 @@ send_loop(State) ->
 			end, Contacts);
 		_ ->
 		    ok
-		end
-	    end;
+		end;
 	true ->
 	    ok
 	end,
@@ -352,54 +350,35 @@ send_loop(State) ->
     {presence, User, Server, Resources, JID} ->
 	%% get resources caps and check if processing is needed
 	spawn(fun() ->
-	    {HasCaps, ResourcesCaps} = lists:foldl(fun(Resource, {R, L}) ->
-			case mod_caps:get_caps({User, Server, Resource}) of
-			nothing -> {R, L};
-			Caps -> {true, [{Resource, Caps} | L]}
-			end
-		    end, {false, []}, Resources),
-	    case HasCaps of
-		true ->
-		    Host = State#state.host,
-		    ServerHost = State#state.server_host,
-		    Owner = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
-		    lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
+     Host = State#state.host,
+     ServerHost = State#state.server_host,
+     Owner = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
+     lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = NodeId, options = Options}) ->
 			case get_option(Options, send_last_published_item) of
 			    on_sub_and_presence ->
-				lists:foreach(fun({Resource, Caps}) ->
-				    CapsNotify = case catch mod_caps:get_features(ServerHost, Caps) of
-					    Features when is_list(Features) -> lists:member(node_to_string(Node) ++ "+notify", Features);
-					    _ -> false
-					end,
-				    case CapsNotify of
-					true ->
-					    LJID = {User, Server, Resource},
-					    Subscribed = case get_option(Options, access_model) of
-						    open -> true;
-						    presence -> true;
-						    whitelist -> false; % subscribers are added manually
-						    authorize -> false; % likewise
-						    roster ->
-							Grps = get_option(Options, roster_groups_allowed, []),
-							{OU, OS, _} = Owner,
-							element(2, get_roster_info(OU, OS, LJID, Grps))
-					    end,
-					    if Subscribed ->
-						send_items(Owner, Node, NodeId, Type, LJID, last);
-					    true ->
-						ok
-					    end;
-					false ->
-					    ok
-				    end
-				end, ResourcesCaps);
+				    lists:foreach(
+				      fun(Resource) ->
+			          LJID = {User, Server, Resource},
+			          Subscribed = case get_option(Options, access_model) of
+				          open -> true;
+				          presence -> true;
+				          whitelist -> false; % subscribers are added manually
+				          authorize -> false; % likewise
+				          roster ->
+					          Grps = get_option(Options, roster_groups_allowed, []),
+					          {OU, OS, _} = Owner,
+					          element(2, get_roster_info(OU, OS, LJID, Grps))
+			          end,
+			          if Subscribed ->
+				          send_items(Owner, Node, NodeId, Type, LJID, last);
+				          true ->
+						          ok
+			          end    
+				    end, Resources);
 			    _ ->
 				ok
 			end
-		    end, tree_action(Host, get_nodes, [Owner, JID]));
-		false ->
-		    ok
-	    end
+		    end, tree_action(Host, get_nodes, [Owner, JID]))
 	end),
 	send_loop(State);
     stop ->
@@ -681,6 +660,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_router:unregister_route(Host),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
+	    ejabberd_hooks:delete(feature_check_packet, ServerHost, ?MODULE, feature_check_packet, 75),
 	    ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
 	    ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
 	    ejabberd_hooks:delete(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
@@ -689,6 +669,7 @@ terminate(_Reason, #state{host = Host,
 	false ->
 	    ok
     end,
+    ejabberd_hooks:delete(sm_remove_connection_hook, ServerHost, ?MODULE, on_user_offline, 75),
     ejabberd_hooks:delete(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
@@ -831,14 +812,10 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
     end.
 
 command_disco_info(_Host, <<?NS_COMMANDS>>, _From) ->
-    IdentityEl = {xmlelement, "identity", [{"category", "automation"},
-                                        {"type", "command-list"}],
-                  []},
+    IdentityEl = {xmlelement, "identity", [{"category", "automation"}, {"type", "command-list"}], []},
     {result, [IdentityEl]};
 command_disco_info(_Host, <<?NS_PUBSUB_GET_PENDING>>, _From) ->
-    IdentityEl = {xmlelement, "identity", [{"category", "automation"},
-                                        {"type", "command-node"}],
-                  []},
+    IdentityEl = {xmlelement, "identity", [{"category", "automation"}, {"type", "command-node"}], []},
     FeaturesEl = {xmlelement, "feature", [{"var", ?NS_COMMANDS}], []},
     {result, [IdentityEl, FeaturesEl]}.
 
@@ -921,15 +898,20 @@ iq_disco_info(Host, SNode, From, Lang) ->
 
 iq_disco_items(Host, [], From, _RSM) ->
     case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
-        Nodes when is_list(Nodes) ->
-            {result, lists:map(
-                       fun(#pubsub_node{nodeid = {_, SubNode}, type = Type}) ->
-                               {result, Path} = node_call(Type, node_to_path, [SubNode]),
-                               [Name|_] = lists:reverse(Path),
-                               {xmlelement, "item", [{"jid", Host}, {"name", Name}|nodeAttr(SubNode)], []}
-                       end, Nodes)};
-        Other ->
-            Other
+	Nodes when is_list(Nodes) ->
+	    {result, lists:map(
+		fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+		    Attrs =
+			case get_option(Options, title) of
+			    false ->
+				[{"jid", Host} |nodeAttr(SubNode)];
+			    Title ->
+				[{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
+			end,
+		    {xmlelement, "item", Attrs, []}
+		end, Nodes)};
+	Other ->
+	    Other
     end;
 iq_disco_items(Host, ?NS_COMMANDS, _From, _RSM) ->
     %% TODO: support localization of this string
@@ -952,16 +934,21 @@ iq_disco_items(Host, Item, From, RSM) ->
 					_ -> {[], none}
 				    end,
 			Nodes = lists:map(
-				  fun(#pubsub_node{nodeid = {_, SubNode}}) ->
-                                      {result, Path} = node_call(Type, node_to_path, [SubNode]),
-                                      [Name|_] = lists:reverse(Path),
-				      {xmlelement, "item", [{"jid", Host}, {"name", Name}|nodeAttr(SubNode)], []}
-				  end, tree_call(Host, get_subnodes, [Host, Node, From])),
+				fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+				    Attrs =
+					case get_option(Options, title) of
+					    false ->
+						[{"jid", Host} |nodeAttr(SubNode)];
+					    Title ->
+						[{"jid", Host}, {"name", Title}|nodeAttr(SubNode)]
+					end,
+					{xmlelement, "item", Attrs, []}
+				end, tree_call(Host, get_subnodes, [Host, Node, From])),
 			Items = lists:map(
-				  fun(#pubsub_item{itemid = {RN, _}}) ->
-				      {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
-				      {xmlelement, "item", [{"jid", Host}, {"name", Name}], []}
-				  end, NodeItems),
+				fun(#pubsub_item{itemid = {RN, _}}) ->
+				    {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
+				    {xmlelement, "item", [{"jid", Host}, {"name", Name}], []}
+				end, NodeItems),
 			{result, Nodes ++ Items ++ jlib:rsm_encode(RsmOut)}
 		end,
 	    case transaction(Host, Node, Action, sync_dirty) of
@@ -1266,7 +1253,7 @@ send_pending_auth_events(Host, Node, Owner) ->
 		    true ->
 			case node_call(Type, get_affiliation, [NodeID, Owner]) of
 			    {result, owner} ->
-                                node_call(Type, get_node_subscriptions, [NodeID]);
+				node_call(Type, get_node_subscriptions, [NodeID]);
 			    _ ->
 				{error, ?ERR_FORBIDDEN}
 			end;
@@ -1276,10 +1263,10 @@ send_pending_auth_events(Host, Node, Owner) ->
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {N, Subscriptions}} ->
-            lists:foreach(fun({J, pending, _SubID}) -> send_authorization_request(N, jlib:make_jid(J));
-                             ({J, pending}) -> send_authorization_request(N, jlib:make_jid(J));
-                             (_) -> ok
-                          end, Subscriptions),
+	    lists:foreach(fun({J, pending, _SubID}) -> send_authorization_request(N, jlib:make_jid(J));
+			     ({J, pending}) -> send_authorization_request(N, jlib:make_jid(J));
+			     (_) -> ok
+			  end, Subscriptions),
 	    #adhoc_response{};
 	Err ->
 	    Err
@@ -2927,10 +2914,7 @@ broadcast_stanza(Host, Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTyp
 				spawn(fun() ->
 				    LJIDs = lists:foldl(fun(R, Acc) ->
 					LJID = {U, S, R}, 
-					case is_caps_notify(LServer, Node, LJID) of
-					    true -> [LJID | Acc];
-					    false -> Acc
-					end
+					[LJID | Acc]
 				    end, [], user_resources(U, S)),
 				    lists:foreach(fun(To) ->
 					ejabberd_router:route(Sender, jlib:make_jid(To), Stanza)
@@ -2995,24 +2979,8 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
     JIDSubs.
 
-%% If we don't know the resource, just pick first if any
-%% If no resource available, check if caps anyway (remote online)
 user_resources(User, Server) ->
-    case ejabberd_sm:get_user_resources(User, Server) of
-	[] -> mod_caps:get_user_resources(User, Server);
-	Rs -> Rs
-    end.
-
-is_caps_notify(Host, Node, LJID) ->
-    case mod_caps:get_caps(LJID) of
-	nothing -> 
-	    false;
-	Caps ->
-	    case catch mod_caps:get_features(Host, Caps) of
-		Features when is_list(Features) -> lists:member(node_to_string(Node) ++ "+notify", Features);
-		_ -> false
-	    end
-    end.
+    ejabberd_sm:get_user_resources(User, Server).
 
 %%%%%%% Configuration handling
 
@@ -3177,6 +3145,7 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
      ?LISTM_CONFIG_FIELD("Roster groups allowed to subscribe", roster_groups_allowed, Groups),
      ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
 			 [publishers, subscribers, open]),
+		 ?BOOL_CONFIG_FIELD("Purge all items when the relevant publisher goes offline", purge_offline),
      ?ALIST_CONFIG_FIELD("Specify the event message type", notification_type,
 			 [headline, normal]),
      ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
@@ -3320,6 +3289,8 @@ set_xoption(Host, [{"pubsub#send_last_published_item", [Val]} | Opts], NewOpts) 
     ?SET_ALIST_XOPT(send_last_published_item, Val, [never, on_sub, on_sub_and_presence]);
 set_xoption(Host, [{"pubsub#presence_based_delivery", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(presence_based_delivery, Val);
+set_xoption(Host, [{"pubsub#purge_offline", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(purge_offline, Val);
 set_xoption(Host, [{"pubsub#title", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(title, Value);
 set_xoption(Host, [{"pubsub#type", Value} | Opts], NewOpts) ->
@@ -3650,3 +3621,103 @@ subid_shim(SubIDs) ->
     [{xmlelement, "header", [{"name", "SubID"}],
       [{xmlcdata, SubID}]} || SubID <- SubIDs].
 
+feature_check_packet(allow, _User, Server, Pres, {#jid{lserver = LServer}, _To, {xmlelement, "message", _, _} = El}, in) ->
+    Host = host(Server),
+    case LServer of
+	%% If the sender Server equals Host, the message comes from the Pubsub server
+	Host ->
+	    allow;
+	%% Else, the message comes from PEP
+	_ ->
+	    case xml:get_subtag(El, "event") of
+		{xmlelement, _, Attrs, _} = EventEl ->
+		    case xml:get_attr_s("xmlns", Attrs) of
+			?NS_PUBSUB_EVENT ->
+			    Feature = xml:get_path_s(EventEl, [{elem, "items"}, {attr, "node"}]),
+			    case is_feature_supported(Pres, Feature) of
+				true ->
+				    allow;
+				false ->
+				    deny
+			    end;
+			_ ->
+			    allow
+		    end;
+		_ ->
+		    allow
+	    end
+    end;
+feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
+    Acc.
+
+is_feature_supported({xmlelement, "presence", _, Els}, Feature) ->
+    case mod_caps:read_caps(Els) of
+	nothing -> false;
+	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+    end.
+
+on_user_offline(_, JID, _) ->
+    {User, Server, Resource} = jlib:jid_tolower(JID),
+    case ejabberd_sm:get_user_resources(User, Server) of
+	[] -> purge_offline({User, Server, Resource});
+	_  -> true
+    end.
+
+purge_offline({User, Server, _} = LJID) ->
+    Host = host(element(2, LJID)),
+    Plugins = plugins(Host),
+    Result = lists:foldl(
+	fun(Type, {Status, Acc}) ->
+	    case lists:member("retrieve-affiliations", features(Type)) of
+		false ->
+		    {{error, extended_error('feature-not-implemented', unsupported, "retrieve-affiliations")}, Acc};
+		true ->
+		    {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, LJID]),
+		    {Status, [Affiliations|Acc]}
+	    end
+	end, {ok, []}, Plugins),
+    case Result of
+	{ok, Affiliations} ->
+	    lists:foreach(
+		fun({#pubsub_node{nodeid = {_, NodeId}, options = Options, type = Type, id = NodeIdx}, Affiliation})
+		    when Affiliation == 'owner' orelse Affiliation == 'publisher' ->
+			Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
+			    node_call(Type, get_items, [NodeId, service_jid(Host)])
+			end,
+			case transaction(Host, NodeId, Action, sync_dirty) of
+			    {result, {_, []}}    ->
+				true;
+			    {result, {_, Items}} ->
+				Features = features(Type),
+				case
+				    {lists:member("retract-items", Features),
+				    lists:member("persistent-items", Features),
+				    get_option(Options, persist_items),
+				    get_option(Options, purge_offline)}
+				of
+				    {true, true, true, true} ->
+					ForceNotify = get_option(Options, notify_retract),
+					lists:foreach(
+					    fun(#pubsub_item{itemid = {ItemId, _}, modification = {_, Modification}}) ->
+						case Modification of
+						    {User, Server, _} ->
+							delete_item(Host, NodeId, LJID, ItemId, ForceNotify);
+						    _ ->
+							true
+						end;
+					    (_) ->
+						true
+					end, Items);
+				    _ ->
+					true
+				end;
+			    Error ->
+				Error
+			end
+		    end;
+		   (_) ->
+		       true
+	    end, lists:usort(lists:flatten(Affiliations)));
+	{Error, _} ->
+	    ?DEBUG("on_user_offline ~p", [Error])
+    end.
