@@ -2963,7 +2963,7 @@ event_stanza_withmoreels(Els, MoreEls) ->
 
 %%%%%% broadcast functions
 
-broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, _From, Payload) ->
+broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, From, Payload) ->
     %broadcast(Host, Node, NodeId, Options, none, true, 'items', ItemEls)
     case get_collection_subscriptions(Host, Node) of
         [] ->	
@@ -2977,7 +2977,7 @@ broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, _From
 	    Stanza = event_stanza(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'item', attrs = itemAttr(ItemId), children = Content}]}]),
-	    broadcast_stanza(Host, Node, NodeId, Type, Options, SubsByDepth, items, Stanza, true),
+	    broadcast_stanza(Host, From, Node, NodeId, Type, Options, SubsByDepth, items, Stanza, true),
 	    case Removed of
 		[] ->
 		    ok;
@@ -3116,7 +3116,6 @@ get_options_for_subs(NodeID, Subs) ->
 		end, [], Subs).
 
 % TODO: merge broadcast code that way
-% TODO: pablo: Why is this commented? Seems to be present on trunk.
 %broadcast(Host, Node, NodeId, Type, NodeOptions, Feature, Force, ElName, SubEls) ->
 %    case (get_option(NodeOptions, Feature) or Force) of
 %	true ->
@@ -3153,56 +3152,60 @@ broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTy
 			[LJID]
 		end,
 	    %% Determine if the stanza should have SHIM ('SubID' and 'name') headers
-	    StanzaToSend = case SHIM of
-		    true ->
-			Headers = lists:append(collection_shim(NodeName), subid_shim(SubIDs)),
-			add_headers(Stanza, Headers);
-		    false ->
-			Stanza
+	    StanzaToSend = case {SHIM, SubIDs} of
+		{false, _} ->
+		    Stanza;
+		{true, [_]} ->
+		    add_shim_headers(Stanza, collection_shim(NodeName));
+		{true, SubIDs} ->
+		    add_shim_headers(Stanza, lists:append(collection_shim(NodeName), subid_shim(SubIDs)))
 		end,
-	    lists:foreach(fun({TU, TS, TR}) ->
-		    ejabberd_router:route(From, exmpp_jid:make(TU, TS, TR), StanzaToSend)
+	    lists:foreach(fun(To) ->
+		    ejabberd_router:route(From, exmpp_jid:make(To), StanzaToSend)
 		end, LJIDs)
-	end, SubIDsByJID),
+	end, SubIDsByJID).
+
+broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
+    broadcast_stanza({LUser, LServer, LResource}, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
+    SenderResource = case LResource of
+	undefined ->
+	    case user_resources(LUser, LServer) of
+		[Resource|_] -> Resource;
+		_ -> <<"">>
+	    end;
+	_ ->
+	    LResource
+    end,
     %% Handles implicit presence subscriptions
-    case Host of
-	{LUser, LServer, LResource} ->
-	    SenderResource = case LResource of
-		undefined ->
-		    case user_resources(LUser, LServer) of
-			[Resource|_] -> Resource;
-			_ -> <<"">>
-		    end;
+    case ejabberd_sm:get_session_pid({LUser, LServer, SenderResource}) of
+	C2SPid when is_pid(C2SPid) ->
+	    Stanza = case get_option(NodeOptions, notification_type, headline) of
+		normal -> BaseStanza;
+		MsgType -> add_message_type(BaseStanza, atom_to_list(MsgType))
+		end,
+	    %% set the from address on the notification to the bare JID of the account owner
+	    %% Also, add "replyto" if entity has presence subscription to the account owner
+	    %% See XEP-0163 1.1 section 4.3.1
+	    Sender = exmpp_jid:make(LUser, LServer),
+	    ReplyTo = exmpp_jid:to_binary(exmpp_jid:make(Publisher)),
+	    StanzaToSend = add_extended_headers(Stanza, extended_headers([ReplyTo])),
+	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
+		Contacts when is_list(Contacts) ->
+		    lists:foreach(fun({U, S, _}) ->
+			spawn(fun() ->
+			    lists:foreach(fun(R) ->
+				ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)
+			    end, user_resources(U, S))
+			end)
+		    end, Contacts);
 		_ ->
-		    LResource
-	    end,
-	    case ejabberd_sm:get_session_pid({LUser, LServer, SenderResource}) of
-		C2SPid when is_pid(C2SPid) ->
-		    %% set the from address on the notification to the bare JID of the account owner
-		    %% Also, add "replyto" if entity has presence subscription to the account owner
-		    %% See XEP-0163 1.1 section 4.3.1
-		    Sender = exmpp_jid:make(LUser, LServer),
-		    %%ReplyTo = jlib:make_jid(LUser, LServer, SenderResource),  % This has to be used
-		    case catch ejabberd_c2s:get_subscribed(C2SPid) of
-			Contacts when is_list(Contacts) ->
-			    lists:foreach(fun({U, S, _}) ->
-				spawn(fun() ->
-				    lists:foreach(fun(R) ->
-					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), Stanza)
-				    end, user_resources(U, S))
-				end)
-			    end, Contacts);
-			_ ->
-			    ok
-		    end,
-		    ok;
-		_ ->
-		    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, Stanza]),
 		    ok
 	    end;
 	_ ->
-	    ok
-    end.
+	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
+    end;
+broadcast_stanza(Host, _Publisher, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
+    broadcast_stanza(Host, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun(Depth, Node, Subs, Acc) ->
@@ -3811,9 +3814,16 @@ add_message_type(El, _Type)  -> El.
 %%
 %% "[SHIM Headers] SHOULD be included after the event notification information
 %% (i.e., as the last child of the <message/> stanza)".
-add_headers(#xmlel{} = El, HeaderEls) ->
-     HeaderEl = #xmlel{ns = ?NS_SHIM, name = 'headers', children = HeaderEls},
-     exmpp_xml:append_child(El, HeaderEl).
+
+add_shim_headers(Stanza, HeaderEls) ->
+    add_headers(Stanza, "headers", ?NS_SHIM, HeaderEls).
+
+add_extended_headers(Stanza, HeaderEls) ->
+    add_headers(Stanza, "addresses", ?NS_ADDRESS, HeaderEls).
+
+add_headers(#xmlel{children = Els} = Stanza, HeaderName, HeaderNS, HeaderEls) ->
+    HeaderEl = #xmlel{name = HeaderName, ns = HeaderNS, children = HeaderEls},
+    Stanza#xmlel{children = lists:append(Els, [HeaderEl])}.
 
 %% Removed multiple <header name=Collection>Foo</header/> elements
 %% Didn't seem compliant, but not sure. Confirmation required.
@@ -3837,6 +3847,12 @@ subid_shim(SubIDs) ->
 	    attrs = [?XMLATTR('name', <<"SubID">>)],
 	    children = [?XMLCDATA(SubID)]}
 	|| SubID <- SubIDs].
+
+
+extended_headers(Jids) ->
+    [#xmlel{ns = ?NS_ADDRESS, name = 'address',
+	    attrs = [?XMLATTR('type', <<"replyto">>), ?XMLATTR('jid', Jid)]}
+	|| Jid <- Jids].
 
 feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
     Host = host(Server),

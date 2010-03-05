@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2010-03-05 16:08:38.000000000 +0100
-+++ mod_pubsub_odbc.erl	2010-03-05 16:08:56.000000000 +0100
+--- mod_pubsub.erl	2010-03-05 18:31:50.000000000 +0100
++++ mod_pubsub_odbc.erl	2010-03-05 18:32:08.000000000 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -707,16 +707,15 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3116,7 +2927,7 @@
+@@ -3116,6 +2927,7 @@
  		end, [], Subs).
  
  % TODO: merge broadcast code that way
--% TODO: pablo: Why is this commented? Seems to be present on trunk.
 +% TODO: pablo: why is this commented?
  %broadcast(Host, Node, NodeId, Type, NodeOptions, Feature, Force, ElName, SubEls) ->
  %    case (get_option(NodeOptions, Feature) or Force) of
  %	true ->
-@@ -3315,6 +3126,30 @@
+@@ -3318,6 +3130,30 @@
  	    Result
      end.
  
@@ -747,7 +746,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3713,7 +3548,13 @@
+@@ -3716,7 +3552,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -762,7 +761,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3733,13 +3574,13 @@
+@@ -3736,13 +3578,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -778,7 +777,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3752,8 +3593,15 @@
+@@ -3755,8 +3597,15 @@
  			end
  		end, Trans).
  
@@ -796,7 +795,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3761,6 +3609,15 @@
+@@ -3764,6 +3613,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, 'internal-server-error'};
@@ -812,7 +811,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, 'internal-server-error'};
-@@ -3769,6 +3626,16 @@
+@@ -3772,6 +3630,16 @@
  	    {error, 'internal-server-error'}
      end.
  
