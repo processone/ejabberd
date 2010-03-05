@@ -63,6 +63,7 @@
 -export([presence_probe/3,
 	 in_subscription/6,
 	 out_subscription/4,
+	 on_user_offline/3,
 	 remove_user/2,
 	 feature_check_packet/6,
 	 disco_local_identity/5,
@@ -200,6 +201,7 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {ignore_pep_from_offline, PepOffline}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {host, Host}),
+    ejabberd_hooks:add(sm_remove_connection_hook, ServerHostB, ?MODULE, on_user_offline, 75),
     ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
     ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
     ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
@@ -876,6 +878,7 @@ terminate(_Reason, #state{host = Host,
     false ->
 	ok
     end,
+    ejabberd_hooks:delete(sm_remove_connection_hook, ServerHostB, ?MODULE, on_user_offline, 75),
     ejabberd_hooks:delete(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
     ejabberd_hooks:delete(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
     ejabberd_hooks:delete(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
@@ -3390,6 +3393,7 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
      ?LISTM_CONFIG_FIELD("Roster groups allowed to subscribe", roster_groups_allowed, Groups),
      ?ALIST_CONFIG_FIELD("Specify the publisher model", publish_model,
 			 [publishers, subscribers, open]),
+		 ?BOOL_CONFIG_FIELD("Purge all items when the relevant publisher goes offline", purge_offline),
      ?ALIST_CONFIG_FIELD("Specify the event message type", notification_type,
 			 [headline, normal]),
      ?INTEGER_CONFIG_FIELD("Max payload size in bytes", max_payload_size),
@@ -3533,6 +3537,8 @@ set_xoption(Host, [{"pubsub#send_last_published_item", [Val]} | Opts], NewOpts) 
     ?SET_ALIST_XOPT(send_last_published_item, Val, [never, on_sub, on_sub_and_presence]);
 set_xoption(Host, [{"pubsub#presence_based_delivery", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(presence_based_delivery, Val);
+set_xoption(Host, [{"pubsub#purge_offline", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(purge_offline, Val);
 set_xoption(Host, [{"pubsub#title", Value} | Opts], NewOpts) ->
     ?SET_STRING_XOPT(title, Value);
 set_xoption(Host, [{"pubsub#type", Value} | Opts], NewOpts) ->
@@ -3865,4 +3871,69 @@ is_feature_supported({xmlelement, "presence", _, Els}, Feature) ->
     case mod_caps:read_caps(Els) of
 	nothing -> false;
 	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+    end.
+
+on_user_offline(_, JID, _) ->
+    {User, Server, Resource} = jlib:short_prepd_jid(JID),
+    case ejabberd_sm:get_user_resources(User, Server) of
+	[] -> purge_offline({User, Server, Resource});
+	_  -> true
+    end.
+
+purge_offline({User, Server, _} = LJID) ->
+    Host = host(Server),
+    Plugins = plugins(Host),
+    Result = lists:foldl(
+	fun(Type, {Status, Acc}) ->
+	    case lists:member("retrieve-affiliations", features(Type)) of
+		false ->
+		    {{error, extended_error('feature-not-implemented', unsupported, "retrieve-affiliations")}, Acc};
+		true ->
+		    {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, LJID]),
+		    {Status, [Affiliations|Acc]}
+	    end
+	end, {ok, []}, Plugins),
+    case Result of
+	{ok, Affiliations} ->
+	    lists:foreach(
+		fun({#pubsub_node{nodeid = {_, NodeId}, options = Options, type = Type}, Affiliation})
+		    when Affiliation == 'owner' orelse Affiliation == 'publisher' ->
+			Action = fun(#pubsub_node{type = NType, id = NodeIdx}) ->
+			    node_call(NType, get_items, [NodeIdx, service_jid(Host)])
+			end,
+			case transaction(Host, NodeId, Action, sync_dirty) of
+			    {result, {_, []}}    ->
+				true;
+			    {result, {_, Items}} ->
+				Features = features(Type),
+				case
+				    {lists:member("retract-items", Features),
+				    lists:member("persistent-items", Features),
+				    get_option(Options, persist_items),
+				    get_option(Options, purge_offline)}
+				of
+				    {true, true, true, true} ->
+					ForceNotify = get_option(Options, notify_retract),
+					lists:foreach(
+					    fun(#pubsub_item{itemid = {ItemId, _}, modification = {_, Modification}}) ->
+						case Modification of
+						    {User, Server, _} ->
+							delete_item(Host, NodeId, LJID, ItemId, ForceNotify);
+						    _ ->
+							true
+						end;
+					     (_) ->
+						true
+					    end, Items);
+				    _ ->
+					true
+				end;
+			    Error ->
+				Error
+			end;
+		    (_) ->
+			true
+		end, lists:usort(lists:flatten(Affiliations)));
+	{Error, _} ->
+	    ?DEBUG("on_user_offline ~p", [Error])
     end.

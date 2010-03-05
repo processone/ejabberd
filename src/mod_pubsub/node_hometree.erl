@@ -139,6 +139,7 @@ options() ->
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
+     {purge_offline, false},
      {persist_items, true},
      {max_items, ?MAXITEMS},
      {subscribe, true},
@@ -350,9 +351,9 @@ subscribe_node(NodeId, Sender, {U,S,R} = Subscriber, AccessModel,
 %%	 SubId = mod_pubsub:subid()
 %%	 Reason = mod_pubsub:stanzaError()
 %% @doc <p>Unsubscribe the <tt>Subscriber</tt> from the <tt>Node</tt>.</p>
-unsubscribe_node(NodeId, Sender, {User, Server, Resource} = Subscriber, SubId) ->
-    SubKey = {User, Server, Resource},
-    GenKey = {User, Server, undefined},
+unsubscribe_node(NodeId, Sender, {U, S, R} = Subscriber, SubId) ->
+    SubKey = {U, S, R},
+    GenKey = {U, S, undefined},
     Authorized = (jlib:short_prepd_bare_jid(Sender) == GenKey),
     GenState = get_state(NodeId, GenKey),
     SubState = case SubKey of
@@ -382,15 +383,12 @@ unsubscribe_node(NodeId, Sender, {User, Server, Resource} = Subscriber, SubId) -
 	    {error, ?ERR_EXTENDED('unexpected-request', "not-subscribed")};
 	%% Subid supplied, so use that.
 	SubIdExists ->
-	    Sub = first_in_list(fun(S) ->
-					case S of
-					    {_Sub, SubId} -> true;
-					    _	     -> false
-					end
-				end, SubState#pubsub_state.subscriptions),
+	    Sub = first_in_list(fun({_, Id}) when Id == SubId -> true;
+				   (_) -> false
+				end, Subscriptions),
 	    case Sub of
 		{value, S} ->
-		    delete_subscriptions(SubKey, NodeId, [S], SubState),
+		    delete_subscriptions(Subscriber, NodeId, [S], SubState),
 		    {result, default};
 		false ->
 		    {error, ?ERR_EXTENDED('unexpected-request', "not-subscribed")}
