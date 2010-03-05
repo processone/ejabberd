@@ -137,6 +137,7 @@
 		nodetree = ?STDTREE,
 		plugins = [?STDNODE]}).
 
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -540,6 +541,8 @@ presence_probe(Peer, JID, Pid) ->
 		    presence(Host, {presence, User, Server, [Resource], JID})
 	    end
     end.
+presence(ServerHost, Presence) when is_binary(ServerHost) ->
+    presence(binary_to_list(ServerHost), Presence);
 presence(ServerHost, Presence) ->
     SendLoop = case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
 	undefined ->
@@ -779,6 +782,8 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			    lang = Lang, payload = SubEl} ->
 			    Res =
 				case iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) of
+				    {result, []} ->
+				    	exmpp_iq:result(Packet);
 				    {result, IQRes} ->
 					exmpp_iq:result(Packet, IQRes);
 				    {error, Error} ->
@@ -1731,7 +1736,6 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	_:_ ->
 	    {undefined, undefined, undefined}
     end,
-    SubId = uniqid(),
     Action = fun(#pubsub_node{options = Options, type = Type, id = NodeId}) ->
 		    Features = features(Type),
 		    SubscribeFeature = lists:member("subscribe", Features),
@@ -1785,13 +1789,13 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 		    %% TODO, this is subscription-notification, should depends on node features
 		    SubAttrs = case Subscription of
 				   {subscribed, SubId} ->
-				       [{"subscription", subscription_to_string(subscribed)},
-					{"subid", SubId}];
+				       [?XMLATTR("subscription", subscription_to_string(subscribed)),
+					?XMLATTR("subid", SubId)];
 				   Other ->
-				       [{"subscription", subscription_to_string(Other)}]
+				       [?XMLATTR("subscription", subscription_to_string(Other))]
 			       end,
 		    Fields =
-			[ ?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)) | SubAttrs],
+			[ ?XMLATTR('jid', JID) | SubAttrs],
 		    #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 			[#xmlel{ns = ?NS_PUBSUB, name = 'subscription', attrs = Fields}]}
 	    end,
@@ -2215,7 +2219,8 @@ send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
     end,
     Stanza = case ToSend of
 	[LastItem] ->
-	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    {ModifNow, {U, S, R}} = LastItem#pubsub_item.modification,
+	    ModifLjid = exmpp_jid:make(U, S, R),
 	    event_stanza_with_delay(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 		  itemsEls(ToSend)}], ModifNow, ModifLjid);

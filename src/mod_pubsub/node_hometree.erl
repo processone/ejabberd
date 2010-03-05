@@ -280,10 +280,10 @@ delete_node(Removed) ->
 %%   to completly disable persistance.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
-subscribe_node(NodeId, Sender, Subscriber, AccessModel,
+subscribe_node(NodeId, Sender, {U,S,R} = Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup, Options) ->
-    SubKey = jlib:short_prepd_jid(Subscriber),
-    GenKey = jlib:short_prepd_bare_jid(SubKey),
+    SubKey = {U, S, R},
+    GenKey = {U, S, undefined},
     Authorized = (jlib:short_prepd_bare_jid(Sender) == GenKey),
     GenState = get_state(NodeId, GenKey),
     SubState = case SubKey of
@@ -350,9 +350,9 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 %%	 SubId = mod_pubsub:subid()
 %%	 Reason = mod_pubsub:stanzaError()
 %% @doc <p>Unsubscribe the <tt>Subscriber</tt> from the <tt>Node</tt>.</p>
-unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
-    SubKey = jlib:short_prepd_jid(Subscriber),
-    GenKey = jlib:short_prepd_bare_jid(SubKey),
+unsubscribe_node(NodeId, Sender, {User, Server, Resource} = Subscriber, SubId) ->
+    SubKey = {User, Server, Resource},
+    GenKey = {User, Server, undefined},
     Authorized = (jlib:short_prepd_bare_jid(Sender) == GenKey),
     GenState = get_state(NodeId, GenKey),
     SubState = case SubKey of
