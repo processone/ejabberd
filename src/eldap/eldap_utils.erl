@@ -53,15 +53,17 @@ subfilter({UIDAttr}) ->
 
 %% Not tail-recursive, but it is not very terribly.
 %% It stops finding on the first not empty value.
+find_ldap_attrs([{Attr} | Rest], Attributes) ->
+    find_ldap_attrs([{Attr, "%u"} | Rest], Attributes);
 find_ldap_attrs([{Attr, Format} | Rest], Attributes) ->
-	case get_ldap_attr(Attr, Attributes) of
+    case get_ldap_attr(Attr, Attributes) of
 	Value when is_list(Value), Value /= "" ->
-		{Value, Format};
+	    {Value, Format};
 	_ ->
-		find_ldap_attrs(Rest, Attributes)
-	end;
+	    find_ldap_attrs(Rest, Attributes)
+    end;
 find_ldap_attrs([], _) ->
-	"".
+    "".
 
 get_ldap_attr(LDAPAttr, Attributes) ->
     Res = lists:filter(
