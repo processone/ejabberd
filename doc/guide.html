@@ -1669,7 +1669,29 @@ default Filter value is: <TT>undefined</TT>. Example:
 <TT>"(&amp;(objectClass=shadowAccount)(memberOf=Jabber Users))"</TT>. Please, do
 not forget to close brackets and do not use superfluous whitespaces. Also you
 <EM>must not</EM> use <TT>ldap_uidattr</TT> attribute in filter because this
-attribute will be substituted in LDAP filter automatically.</DD><DT CLASS="dt-description"><B><TT>{ldap_local_filter, Filter}</TT></B></DT><DD CLASS="dd-description">
+attribute will be substituted in LDAP filter automatically.
+</DD><DT CLASS="dt-description"><B><TT>{ldap_filter, Filter}</TT></B></DT><DD CLASS="dd-description">
+<A HREF="http://tools.ietf.org/html/rfc4515">RFC 4515</A> LDAP filter. The
+default Filter value is: <TT>undefined</TT>. Example:
+<TT>"(&amp;(objectClass=shadowAccount)(memberOf=Jabber Users))"</TT>. Please, do
+not forget to close brackets and do not use superfluous whitespaces. Also you
+<EM>must not</EM> use <TT>ldap_uidattr</TT> attribute in filter because this
+attribute will be substituted in LDAP filter automatically.
+</DD><DT CLASS="dt-description"><B><TT>{ldap_dn_filter, { Filter, FilterAttrs }}</TT></B></DT><DD CLASS="dd-description">
+This filter is applied on the results returned by the main filter. This filter
+performs additional LDAP lookup to make the complete result. This is useful
+when you are unable to define all filter rules in <TT>ldap_filter</TT>. You
+can define <TT>"%u"</TT>, <TT>"%d"</TT>, <TT>"%s"</TT> and <TT>"%D"</TT> pattern
+variables in Filter: <TT>"%u"</TT> is replaced by a user&#X2019;s part of a JID,
+<TT>"%d"</TT> is replaced by the corresponding domain (virtual host),
+all <TT>"%s"</TT> variables are consecutively replaced by values of FilterAttrs
+attributes and <TT>"%D"</TT> is replaced by Distinguished Name. By default
+<TT>ldap_dn_filter</TT> is undefined.
+Example:
+<PRE CLASS="verbatim">{ldap_dn_filter, {"(&amp;(name=%s)(owner=%D)(user=%u@%d))", ["sn"]}}.
+</PRE>Since this filter makes additional LDAP lookups, use it only in the
+last resort: try to define all filter rules in <TT>ldap_filter</TT> if possible.
+</DD><DT CLASS="dt-description"><B><TT>{ldap_local_filter, Filter}</TT></B></DT><DD CLASS="dd-description">
 If you can&#X2019;t use <TT>ldap_filter</TT> due to performance reasons
 (the LDAP server has many users registered),
 you can use this local filter.
