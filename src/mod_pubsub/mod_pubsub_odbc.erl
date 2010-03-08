@@ -2921,6 +2921,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 				    end, [{U, S, R} || R <- user_resources(U, S)]);
 				false ->
 				    ejabberd_router:route(Sender, jlib:make_jid(U, S, ""), StanzaToSend)
+			    end
 			end)
 		    end, Contacts);
 		_ ->
