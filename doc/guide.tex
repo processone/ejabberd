@@ -91,6 +91,7 @@
 \newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
+\newcommand{\modsic}{\module{mod\_sic}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
@@ -2462,6 +2463,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\
     \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} or \\
     & & \modrosterodbc\\
+    \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
     \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) &  \\
     \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0202}) &  \\
     \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) &  \\
@@ -3868,6 +3870,17 @@ Examples:
   \end{tabular}
 \end{table}
 \end{itemize}
+
+\makesubsection{modsic}{\modsic{}}
+\ind{modules!\modstats{}}\ind{protocols!XEP-0279: Server IP Check}
+
+This module adds support for Server IP Check (\xepref{0279}). This protocol
+enables a client to discover its external IP address.
+
+Options:
+\begin{description}
+\iqdiscitem{\ns{urn:xmpp:sic:0}}
+\end{description}
 
 \makesubsection{modstats}{\modstats{}}
 \ind{modules!\modstats{}}\ind{protocols!XEP-0039: Statistics Gathering}\ind{statistics}
