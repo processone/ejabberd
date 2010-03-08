@@ -217,13 +217,13 @@ get_vh_registered_users_ldap(Server) ->
     UIDs = State#state.uids,
     Eldap_ID = State#state.eldap_id,
     Server = State#state.host,
-    SortedDNAttrs = eldap_utils:usort_attrs(State#state.dn_filter_attrs),
+    ResAttrs = result_attrs(State),
     case eldap_filter:parse(State#state.sfilter) of
 		{ok, EldapFilter} ->
 		    case eldap_pool:search(Eldap_ID, [{base, State#state.base},
 						 {filter, EldapFilter},
 						 {timeout, ?LDAP_SEARCH_TIMEOUT},
-						 {attributes, SortedDNAttrs}]) of
+						 {attributes, ResAttrs}]) of
 			#eldap_search_result{entries = Entries} ->
 			    lists:flatmap(
 			      fun(#eldap_entry{attributes = Attrs,
@@ -269,15 +269,16 @@ handle_call(_Request, _From, State) ->
     {reply, bad_request, State}.
 
 find_user_dn(User, State) ->
-    DNAttrs = eldap_utils:usort_attrs(State#state.dn_filter_attrs),
+    ResAttrs = result_attrs(State),
     case eldap_filter:parse(State#state.ufilter, [{"%u", User}]) of
 	{ok, Filter} ->
-	    case eldap_pool:search(State#state.eldap_id, [{base, State#state.base},
-						     {filter, Filter},
-						     {attributes, DNAttrs}]) of
+	    case eldap_pool:search(State#state.eldap_id,
+				   [{base, State#state.base},
+				    {filter, Filter},
+				    {attributes, ResAttrs}]) of
 		#eldap_search_result{entries = [#eldap_entry{attributes = Attrs,
 							     object_name = DN} | _]} ->
-			dn_filter(DN, Attrs, State);
+		    dn_filter(DN, Attrs, State);
 		_ ->
 		    false
 	    end;
@@ -346,6 +347,14 @@ local_filter(equal, Attrs, FilterMatch) ->
 local_filter(notequal, Attrs, FilterMatch) ->
     not local_filter(equal, Attrs, FilterMatch).
 
+result_attrs(#state{uids = UIDs, dn_filter_attrs = DNFilterAttrs}) ->
+    lists:foldl(
+      fun({UID}, Acc) ->
+	      [UID | Acc];
+	 ({UID, _}, Acc) ->
+	      [UID | Acc]
+      end, DNFilterAttrs, UIDs).
+
 %%%----------------------------------------------------------------------
 %%% Auxiliary functions
 %%%----------------------------------------------------------------------
@@ -388,8 +397,12 @@ parse_options(Host) ->
     LDAPBase = ejabberd_config:get_local_option({ldap_base, Host}),
     {DNFilter, DNFilterAttrs} =
 	case ejabberd_config:get_local_option({ldap_dn_filter, Host}) of
-	    undefined -> {undefined, undefined};
-	    {DNF, DNFA} -> {DNF, DNFA}
+	    undefined ->
+		{undefined, []};
+	    {DNF, undefined} ->
+		{DNF, []};
+	    {DNF, DNFA} ->
+		{DNF, DNFA}
 	end,
 	LocalFilter = ejabberd_config:get_local_option({ldap_local_filter, Host}),
     #state{host = Host,
