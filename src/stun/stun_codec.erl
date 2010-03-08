@@ -118,7 +118,7 @@ dec_attrs(<<>>, Msg) ->
     Msg.
 
 enc_attrs(Msg) ->
-    concat_binary(
+    list_to_binary(
       [enc_attr(?STUN_ATTR_SOFTWARE, Msg#stun.'SOFTWARE'),
        enc_addr(?STUN_ATTR_MAPPED_ADDRESS, Msg#stun.'MAPPED-ADDRESS'),
        enc_xor_addr(?STUN_ATTR_XOR_MAPPED_ADDRESS,
@@ -230,7 +230,7 @@ enc_unknown_attrs([]) ->
     <<>>;
 enc_unknown_attrs(Attrs) ->
     enc_attr(?STUN_ATTR_UNKNOWN_ATTRIBUTES,
-	     concat_binary([<<Attr:16>> || Attr <- Attrs])).
+	     list_to_binary([<<Attr:16>> || Attr <- Attrs])).
 
 %%====================================================================
 %% Auxiliary functions

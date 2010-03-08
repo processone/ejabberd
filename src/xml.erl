@@ -99,12 +99,12 @@ make_text_node(CData) ->
 	cdata ->
 	    CDATA1 = <<"<![CDATA[">>,
 	    CDATA2 = <<"]]>">>,
-	    concat_binary([CDATA1, CData, CDATA2]);
+	    list_to_binary([CDATA1, CData, CDATA2]);
 	none ->
 	    CData;
 	{cdata, EndTokens} ->
 	    EscapedCData = escape_cdata(CData, EndTokens),
-	    concat_binary(EscapedCData)
+	    list_to_binary(EscapedCData)
     end.
 
 %% Returns escape type needed for the text node

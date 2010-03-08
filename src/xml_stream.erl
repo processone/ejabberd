@@ -83,7 +83,7 @@ process_data(CallbackPid, Stack, Data) ->
 		[{xmlelement, Name, Attrs,
 		  [{xmlcdata, PreviousCData}|Els]} | Tail] ->
 		    [{xmlelement, Name, Attrs,
-		      [{xmlcdata, concat_binary([PreviousCData, CData])} | Els]} | Tail];
+		      [{xmlcdata, list_to_binary([PreviousCData, CData])} | Els]} | Tail];
 		%% No previous CDATA
 		[{xmlelement, Name, Attrs, Els} | Tail] ->
 		    [{xmlelement, Name, Attrs, [{xmlcdata, CData} | Els]} |
