@@ -3116,7 +3116,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	_ ->
 	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
     end;
-broadcast_stanza(Host, Publisher, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
+broadcast_stanza(Host, _Publisher, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
