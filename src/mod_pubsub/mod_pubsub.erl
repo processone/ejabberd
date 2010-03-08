@@ -3193,9 +3193,14 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 		Contacts when is_list(Contacts) ->
 		    lists:foreach(fun({U, S, _}) ->
 			spawn(fun() ->
-			    lists:foreach(fun(R) ->
-				ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)
-			    end, user_resources(U, S))
+			    case lists:member(S, ?MYHOSTS) of
+				true ->
+				    lists:foreach(fun(R) ->
+					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)
+				    end, user_resources(U, S));
+				false ->
+				    ejabberd_router:route(Sender, jlib:make_jid(U, S, ""), StanzaToSend)
+			    end
 			end)
 		    end, Contacts);
 		_ ->
