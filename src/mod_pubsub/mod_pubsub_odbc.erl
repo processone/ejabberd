@@ -3634,7 +3634,9 @@ extended_headers(Jids) ->
     [{xmlelement, "address", [{"type", "replyto"}, {"jid", Jid}], []} || Jid <- Jids].
 
 
-feature_check_packet(allow, _User, Server, Pres, {#jid{lserver = LServer}, _To, {xmlelement, "message", _, _} = El}, in) ->
+feature_check_packet(allow, _User, Server, Pres,
+		     {#jid{lserver = LServer}, _To,
+		      {xmlelement, "message", MsgAttrs, _} = El}, in) ->
     Host = host(Server),
     case LServer of
 	%% If the sender Server equals Host, the message comes from the Pubsub server
@@ -3646,12 +3648,27 @@ feature_check_packet(allow, _User, Server, Pres, {#jid{lserver = LServer}, _To, 
 		{xmlelement, _, Attrs, _} = EventEl ->
 		    case xml:get_attr_s("xmlns", Attrs) of
 			?NS_PUBSUB_EVENT ->
-			    Feature = xml:get_path_s(EventEl, [{elem, "items"}, {attr, "node"}]),
-			    case is_feature_supported(Pres, Feature) of
-				true ->
-				    allow;
-				false ->
-				    deny
+			    case xml:get_attr_s("type", MsgAttrs) of
+				"error" ->
+				    %% Filter error-repsonse of PEP message
+				    %% to avoid routing it to client
+				    deny;
+				_ when Pres /= undefined ->
+				    %% Yes, sometimes Pres = undefined,
+				    %% very rare though.
+				    %% Seems like this is a bug: should
+				    %% be fixed in ejabberd_s2s.erl
+				    Feature = xml:get_path_s(
+						EventEl, [{elem, "items"},
+							  {attr, "node"}]),
+				    case is_feature_supported(Pres, Feature) of
+					true ->
+					    allow;
+					false ->
+					    deny
+				    end;
+				_ ->
+				    allow
 			    end;
 			_ ->
 			    allow
