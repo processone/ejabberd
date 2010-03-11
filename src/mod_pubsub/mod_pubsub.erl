@@ -775,17 +775,19 @@ remove_user(User, Server) ->
     LServer = jlib:nameprep(Server),
     Entity = jlib:make_jid(LUser, LServer, ""),
     Host = host(LServer),
+    HomeTreeBase = string_to_node("/home/"++LServer++"/"++LUser),
     spawn(fun() ->
 	lists:foreach(fun(PType) ->
 	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Entity]),
 	    lists:foreach(fun
-		({#pubsub_node{id = NodeId}, subscribed, _, JID}) -> node_action(Host, PType, unsubscribe_node, [NodeId, Entity, JID, all]);
-		(_) -> ok
+		({#pubsub_node{id = NodeId}, _, _, JID}) -> node_action(Host, PType, unsubscribe_node, [NodeId, Entity, JID, all])
 	    end, Subscriptions),
 	    {result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Entity]),
 	    lists:foreach(fun
-		({#pubsub_node{nodeid = {H, N}}, owner}) -> delete_node(H, N, Entity);
-		({#pubsub_node{id = NodeId}, _}) -> node_action(Host, PType, set_affiliation, [NodeId, Entity, none])
+		({#pubsub_node{nodeid = {H, N}, parents = []}, owner}) -> delete_node(H, N, Entity);
+		({#pubsub_node{nodeid = {H, N}, type = "hometree"}, owner}) when N == HomeTreeBase -> delete_node(H, N, Entity);
+		({#pubsub_node{id = NodeId}, publisher}) -> node_action(Host, PType, set_affiliation, [NodeId, Entity, none]);
+		(_) -> ok
 	    end, Affiliations)
 	end, plugins(Host))
     end).
