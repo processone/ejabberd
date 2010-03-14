@@ -479,7 +479,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% We reached the max_inactivity timeout:
 handle_info({timeout, Timer, _}, _StateName,
 	    #state{id=SID, timer = Timer} = StateData) ->
-    ?WARNING_MSG("Session timeout. Closing the HTTP bind session: ~p", [SID]),
+    ?INFO_MSG("Session timeout. Closing the HTTP bind session: ~p", [SID]),
     {stop, normal, StateData};
 
 handle_info({timeout, WaitTimer, _}, StateName,
