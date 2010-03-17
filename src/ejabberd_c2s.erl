@@ -1276,7 +1276,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			case ejabberd_hooks:run_fold(
 			       feature_check_packet, StateData#state.server,
 			       allow,
-			       [StateData#state.user,
+			       [StateData#state.jid,
 				StateData#state.server,
 				StateData#state.pres_last,
 				{From, To, Packet},
@@ -1392,7 +1392,8 @@ terminate(_Reason, StateName, StateData) ->
 			    presence_broadcast(
 			      StateData, From, StateData#state.pres_i, Packet)
 		    end
-	    end;
+	    end,
+	    bounce_messages();
 	_ ->
 	    ok
     end,
@@ -2183,6 +2184,15 @@ fsm_limit_opts(Opts) ->
 		_ ->
 		    []
 	    end
+    end.
+
+bounce_messages() ->
+    receive
+	{route, From, To, El} ->
+	    ejabberd_router:route(From, To, El),
+	    bounce_messages()
+    after 0 ->
+	    ok
     end.
 
 %%%----------------------------------------------------------------------
