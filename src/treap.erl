@@ -33,7 +33,9 @@
 	 get_root/1,
 	 lookup/2,
 	 is_empty/1,
-	 fold/3]).
+	 fold/3,
+	 from_list/1,
+	 to_list/1]).
 
 empty() ->
     nil.
@@ -173,3 +175,20 @@ fold(F, Acc, {{_Hash, Key}, Priority, Value, Left, Right}) ->
     Acc1 = F({Key, Priority, Value}, Acc),
     Acc2 = fold(F, Acc1, Left),
     fold(F, Acc2, Right).
+
+to_list(Tree) ->
+    to_list(Tree, []).
+
+to_list(nil, Acc) ->
+    Acc;
+to_list(Tree, Acc) ->
+    Root = get_root(Tree),
+    to_list(delete_root(Tree), [Root|Acc]).
+
+from_list(List) ->
+    from_list(List, nil).
+
+from_list([{Key, Priority, Value}|Tail], Tree) ->
+    from_list(Tail, insert(Key, Priority, Value, Tree));
+from_list([], Tree) ->
+    Tree.
