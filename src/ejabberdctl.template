@@ -114,6 +114,10 @@ HOME=$SPOOLDIR
 # create the home dir with the proper user if doesn't exist, because it stores cookie file
 [ -d $HOME ] || $EXEC_CMD "mkdir -p $HOME"
 
+# Change to a directory readable by INSTALLUSER to
+# prevent "File operation error: eacces." messages
+cd $HOME
+
 # export global variables
 export EJABBERD_CONFIG_PATH
 export EJABBERD_MSGS_PATH
