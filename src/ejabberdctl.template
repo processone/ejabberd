@@ -389,6 +389,10 @@ wait_for_status()
     return $status
 }
 
+# We need to cd to directory readable by INSTALLUSER in order to
+# prevent "File operation error: eacces." messages
+cd $HOME
+
 case $ARGS in
     ' start') start;;
     ' debug') debug;;
