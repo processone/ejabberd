@@ -1231,7 +1231,8 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
     case exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children) of
 	[#xmlel{name = Name, attrs = Attrs, children = Els} | Rest] ->
-	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false)),
+	    %% Fix bug when owner retrieves his affiliations
+	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', "")),
 	    case {IQType, Name} of
 		{set, 'create'} ->
 		    Config = case Rest of
@@ -2443,8 +2444,9 @@ get_affiliations(Host, Node, JID) ->
 		    end
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, []}} ->
-	    {error, 'item-not-found'};
+  %% Fix bug when user retrieves his affiliations
+	%{result, {_, []}} ->
+	%    {error, 'item-not-found'};
 	{result, {_, Affiliations}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
@@ -2478,7 +2480,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 				      _:_ -> error
 				  end,
 				  Affiliation = string_to_affiliation(
-						  exmpp_xml:get_attribute_from_list_as_list(Attrs, 'affiliation', false)),
+						  exmpp_xml:get_attribute_from_list_as_list(Attrs, 'affiliation', "")),
 				  if
 				      (JID == error) or
 				      (Affiliation == false) ->
@@ -2733,8 +2735,9 @@ get_subscriptions(Host, Node, JID) ->
 		    end
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, []}} ->
-	    {error, 'item-not-found'};
+%% Fix bug when node owner retrieve an empty subscriptions list 
+%	{result, {_, []}} ->
+%	    {error, 'item-not-found'};
 	{result, {_, Subscriptions}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
@@ -3201,7 +3204,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)
 				    end, user_resources(U, S));
 				false ->
-				    ejabberd_router:route(Sender, jlib:make_jid(U, S, ""), StanzaToSend)
+				    ejabberd_router:route(Sender, exmpp_jid:make(U, S), StanzaToSend)
 			    end
 			end)
 		    end, Contacts);
@@ -3862,38 +3865,31 @@ extended_headers(Jids) ->
 	|| Jid <- Jids].
 
 feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
-    Host = host(Server),
-	case exmpp_jid:prep_domain_as_list(From) of
-	%% If the sender Server equals Host, the message comes from the Pubsub server
-	Host ->
-	    allow;
+    Host = list_to_binary(host(Server)),
+	  case exmpp_jid:prep_domain(From) of
+	  %% If the sender Server equals Host, the message comes from the Pubsub server
+	Host -> allow;
 	%% Else, the message comes from PEP
-	_ ->
-	    case xml:get_subtag(El, "event") of
-		{xmlelement, _, Attrs, _} = EventEl ->
-		    case xml:get_attr_s("xmlns", Attrs) of
-			?NS_PUBSUB_EVENT ->
-			    Feature = xml:get_path_s(EventEl, [{elem, "items"}, {attr, "node"}]),
-			    case is_feature_supported(Pres, Feature) of
-				true ->
-				    allow;
-				false ->
-				    deny
-			    end;
-			_ ->
-			    allow
-		    end;
-		_ ->
-		    allow
+	_    ->
+	    case exmpp_xml:get_element(El, 'event') of
+	  #xmlel{name = 'event', ns = ?NS_PUBSUB_EVENT} = Event ->
+	      Items = exmpp_xml:get_element(Event, ?NS_PUBSUB_EVENT, 'items'),
+	      Feature = exmpp_xml:get_attribute_as_list(Items, "node", ""),
+	      case is_feature_supported(Pres, Feature) of
+	    true -> allow;
+	    false -> deny
+	      end;
+	  _ ->
+	      allow
 	    end
     end;
 feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
     Acc.
 
-is_feature_supported({xmlelement, "presence", _, Els}, Feature) ->
+is_feature_supported(#xmlel{name = 'presence', children = Els}, Feature) ->
     case mod_caps:read_caps(Els) of
-	nothing -> false;
-	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+  nothing -> false;
+  Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
     end.
 
 on_user_offline(_, JID, _) ->
@@ -3904,6 +3900,7 @@ on_user_offline(_, JID, _) ->
     end.
 
 purge_offline({User, Server, _} = LJID) ->
+    JID = exmpp_jid:make(User, Server),
     Host = host(Server),
     Plugins = plugins(Host),
     Result = lists:foldl(
@@ -3912,7 +3909,7 @@ purge_offline({User, Server, _} = LJID) ->
 		false ->
 		    {{error, extended_error('feature-not-implemented', unsupported, "retrieve-affiliations")}, Acc};
 		true ->
-		    {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, LJID]),
+		    {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, JID]),
 		    {Status, [Affiliations|Acc]}
 	    end
 	end, {ok, []}, Plugins),
