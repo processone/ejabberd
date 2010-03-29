@@ -616,36 +616,21 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
-    FAffiliation = get_affiliation(JID, StateData),
-    FRole = get_role(JID, StateData),
-    Tail =
-	case ((StateData#state.config)#config.public_list == true) orelse
-	    (FRole /= none) orelse
-	    (FAffiliation == admin) orelse
-	    (FAffiliation == owner) of
-	    true ->
-		Desc = case (StateData#state.config)#config.public of
-			   true ->
-			       "";
-			   _ ->
-			       translate:translate(Lang, "private, ")
-		       end,
-		Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0,
-				 StateData#state.users),
-		" (" ++ Desc ++ integer_to_list(Len) ++ ")";
-	    _ ->
-		" (n/a)"
-	end,
-	Reply = case ((StateData#state.config)#config.public == true) orelse
-		(FRole /= none) orelse
-		(FAffiliation == admin) orelse
-		(FAffiliation == owner) of
+    case (StateData#state.config)#config.public_list of
+	true ->
+	    Reply = get_roomdesc_reply(StateData,
+				       get_roomdesc_tail(StateData, Lang)),
+	    {reply, Reply, StateName, StateData};
+	_ ->
+	    case is_occupant_or_admin(JID, StateData) of
 		true ->
-		    {item, list_to_binary([get_title(StateData), Tail])};
+		    Reply = get_roomdesc_reply(StateData, get_roomdesc_tail(
+							    StateData, Lang)),
+		    {reply, Reply, StateName, StateData};
 		_ ->
-		    false
-	    end,
-    {reply, Reply, StateName, StateData};
+		    {reply, false, StateName, StateData}
+	    end
+    end;
 handle_sync_event(get_config, _From, StateName, StateData) ->
     {reply, {ok, StateData#state.config}, StateName, StateData};
 handle_sync_event(get_state, _From, StateName, StateData) ->
@@ -921,6 +906,18 @@ get_participant_data(From, StateData) ->
 	    {<<>>, moderator}
     end.
 
+%% Check if the user is occupant of the room, or at least is an admin or owner.
+is_occupant_or_admin(JID, StateData) ->
+    FAffiliation = get_affiliation(JID, StateData),
+    FRole = get_role(JID, StateData),
+    case (FRole /= none) orelse
+	(FAffiliation == admin) orelse
+	(FAffiliation == owner) of
+        true ->
+	    true;
+        _ ->
+	    false
+    end.
 
 process_presence(From, Nick, #xmlel{name = 'presence'} = Packet,
 		 StateData) ->
@@ -3434,29 +3431,16 @@ process_iq_disco_items(_From, set, _Lang, _StateData) ->
     {error, 'not-allowed'};
 
 process_iq_disco_items(From, get, _Lang, StateData) ->
-    FAffiliation = get_affiliation(From, StateData),
-    FRole = get_role(From, StateData),
-    case ((StateData#state.config)#config.public_list == true) orelse
-	(FRole /= none) orelse
-	(FAffiliation == admin) orelse
-	(FAffiliation == owner) of
+    case (StateData#state.config)#config.public_list of
 	true ->
-	    UList =
-		lists:map(
-		  fun({_LJID, Info}) ->
-			  Nick = Info#user.nick,
-              #xmlel{name = 'item', attrs = [?XMLATTR('jid', 
-                                            exmpp_jid:to_binary(
-                                                    StateData#state.room,
-                              				        StateData#state.host,
-                            				        Nick)),
-                                            ?XMLATTR('name', 
-                                                     Nick)]}
-		  end,
-		  ?DICT:to_list(StateData#state.users)),
-	    {result, UList, StateData};
+	    {result, get_mucroom_disco_items(StateData), StateData};
 	_ ->
-	    {error, 'forbidden'}
+	    case is_occupant_or_admin(From, StateData) of
+		true ->
+		    {result, get_mucroom_disco_items(StateData), StateData};
+		_ ->
+		    {error, 'forbidden'}
+	    end
     end.
 
 process_iq_captcha(_From, get, _Lang, _SubEl, _StateData) ->
@@ -3477,6 +3461,38 @@ get_title(StateData) ->
 	Name ->
 	    Name
     end.
+
+get_roomdesc_reply(StateData, Tail) ->
+    case ((StateData#state.config)#config.public == true) of
+	true ->
+	    {item, get_title(StateData) ++ Tail};
+	_ ->
+	    false
+    end.
+
+get_roomdesc_tail(StateData, Lang) ->
+    Desc = case (StateData#state.config)#config.public of
+	       true ->
+		   "";
+	       _ ->
+		   translate:translate(Lang, "private, ")
+	   end,
+    Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0, StateData#state.users),
+    " (" ++ Desc ++ integer_to_list(Len) ++ ")".
+
+get_mucroom_disco_items(StateData) ->
+    lists:map(
+      fun({_LJID, Info}) ->
+	      Nick = Info#user.nick,
+              #xmlel{name = 'item', attrs = [?XMLATTR('jid', 
+                                            exmpp_jid:to_binary(
+                                                    StateData#state.room,
+                              				        StateData#state.host,
+                            				        Nick)),
+                                            ?XMLATTR('name', 
+                                                     Nick)]}
+      end,
+      ?DICT:to_list(StateData#state.users)).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
