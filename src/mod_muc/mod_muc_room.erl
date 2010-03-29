@@ -593,19 +593,21 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
-  case (StateData#state.config)#config.public_list of
-    true ->
-      Reply = get_roomdesc_reply(StateData, get_roomdesc_tail(StateData, Lang)),
-      {reply, Reply, StateName, StateData};
-    _ ->
-      case is_occupant_or_admin(JID, StateData) of
-        true ->
-	    Reply = get_roomdesc_reply(StateData, get_roomdesc_tail(StateData, Lang)),
+    case (StateData#state.config)#config.public_list of
+	true ->
+	    Reply = get_roomdesc_reply(StateData,
+				       get_roomdesc_tail(StateData, Lang)),
 	    {reply, Reply, StateName, StateData};
-        _ ->
-          {reply, false, StateName, StateData}
-      end
-  end;
+	_ ->
+	    case is_occupant_or_admin(JID, StateData) of
+		true ->
+		    Reply = get_roomdesc_reply(StateData, get_roomdesc_tail(
+							    StateData, Lang)),
+		    {reply, Reply, StateName, StateData};
+		_ ->
+		    {reply, false, StateName, StateData}
+	    end
+    end;
 handle_sync_event(get_config, _From, StateName, StateData) ->
     {reply, {ok, StateData#state.config}, StateName, StateData};
 handle_sync_event(get_state, _From, StateName, StateData) ->
@@ -985,16 +987,16 @@ is_user_online(JID, StateData) ->
 
 %% Check if the user is occupant of the room, or at least is an admin or owner.
 is_occupant_or_admin(JID, StateData) ->
-      FAffiliation = get_affiliation(JID, StateData),
-      FRole = get_role(JID, StateData),
-      case (FRole /= none) orelse
-           (FAffiliation == admin) orelse
-           (FAffiliation == owner) of
+    FAffiliation = get_affiliation(JID, StateData),
+    FRole = get_role(JID, StateData),
+    case (FRole /= none) orelse
+	(FAffiliation == admin) orelse
+	(FAffiliation == owner) of
         true ->
-          true;
+	    true;
         _ ->
-          false
-      end.
+	    false
+    end.
 
 %%%
 %%% Handle IQ queries of vCard
@@ -3324,17 +3326,17 @@ process_iq_disco_items(_From, set, _Lang, _StateData) ->
     {error, ?ERR_NOT_ALLOWED};
 
 process_iq_disco_items(From, get, _Lang, StateData) ->
-  case (StateData#state.config)#config.public_list of
-    true ->
-      {result, get_mucroom_disco_items(StateData), StateData};
-    _ ->
-      case is_occupant_or_admin(From, StateData) of
-        true ->
-          {result, get_mucroom_disco_items(StateData), StateData};
-        _ ->
-          {error, ?ERR_FORBIDDEN}
-      end
-  end.
+    case (StateData#state.config)#config.public_list of
+	true ->
+	    {result, get_mucroom_disco_items(StateData), StateData};
+	_ ->
+	    case is_occupant_or_admin(From, StateData) of
+		true ->
+		    {result, get_mucroom_disco_items(StateData), StateData};
+		_ ->
+		    {error, ?ERR_FORBIDDEN}
+	    end
+    end.
 
 process_iq_captcha(_From, get, _Lang, _SubEl, _StateData) ->
     {error, ?ERR_NOT_ALLOWED};
@@ -3356,33 +3358,33 @@ get_title(StateData) ->
     end.
 
 get_roomdesc_reply(StateData, Tail) ->
-  case ((StateData#state.config)#config.public == true) of
-    true ->
-      {item, get_title(StateData) ++ Tail};
-    _ ->
-      false
-  end.
+    case ((StateData#state.config)#config.public == true) of
+	true ->
+	    {item, get_title(StateData) ++ Tail};
+	_ ->
+	    false
+    end.
 
 get_roomdesc_tail(StateData, Lang) ->
-  Desc =
-  case (StateData#state.config)#config.public of
-    true ->
-      "";
-    _ ->
-      translate:translate(Lang, "private, ")
-  end,
-  Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0, StateData#state.users),
-  " (" ++ Desc ++ integer_to_list(Len) ++ ")".
+    Desc = case (StateData#state.config)#config.public of
+	       true ->
+		   "";
+	       _ ->
+		   translate:translate(Lang, "private, ")
+	   end,
+    Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0, StateData#state.users),
+    " (" ++ Desc ++ integer_to_list(Len) ++ ")".
 
 get_mucroom_disco_items(StateData) ->
-  lists:map(
-    fun({_LJID, Info}) ->
-      Nick = Info#user.nick,
-      {xmlelement, "item",
-      [{"jid", jlib:jid_to_string({StateData#state.room, StateData#state.host,Nick})},
-      {"name", Nick}], []}
-    end,
-    ?DICT:to_list(StateData#state.users)).
+    lists:map(
+      fun({_LJID, Info}) ->
+	      Nick = Info#user.nick,
+	      {xmlelement, "item",
+	       [{"jid", jlib:jid_to_string({StateData#state.room,
+					    StateData#state.host, Nick})},
+		{"name", Nick}], []}
+      end,
+      ?DICT:to_list(StateData#state.users)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
