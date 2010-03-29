@@ -593,17 +593,15 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
-  case ((StateData#state.config)#config.public_list == true) of
+  case (StateData#state.config)#config.public_list of
     true ->
-      get_roomdesc_reply(StateData, StateName, get_roomdesc_tail(StateData, Lang));
+      Reply = get_roomdesc_reply(StateData, get_roomdesc_tail(StateData, Lang)),
+      {reply, Reply, StateName, StateData};
     _ ->
-      Affiliation = get_affiliation(JID, StateData),
-      Role = get_role(JID, StateData),
-      case (Role /= none) orelse
-           (Affiliation == admin) orelse
-           (Affiliation == owner) of
+      case is_occupant_or_admin(JID, StateData) of
         true ->
-          get_roomdesc_reply(StateData, StateName, get_roomdesc_tail(StateData, Lang));
+	    Reply = get_roomdesc_reply(StateData, get_roomdesc_tail(StateData, Lang)),
+	    {reply, Reply, StateName, StateData};
         _ ->
           {reply, false, StateName, StateData}
       end
@@ -985,6 +983,18 @@ is_user_online(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
     ?DICT:is_key(LJID, StateData#state.users).
 
+%% Check if the user is occupant of the room, or at least is an admin or owner.
+is_occupant_or_admin(JID, StateData) ->
+      FAffiliation = get_affiliation(JID, StateData),
+      FRole = get_role(JID, StateData),
+      case (FRole /= none) orelse
+           (FAffiliation == admin) orelse
+           (FAffiliation == owner) of
+        true ->
+          true;
+        _ ->
+          false
+      end.
 
 %%%
 %%% Handle IQ queries of vCard
@@ -3314,15 +3324,11 @@ process_iq_disco_items(_From, set, _Lang, _StateData) ->
     {error, ?ERR_NOT_ALLOWED};
 
 process_iq_disco_items(From, get, _Lang, StateData) ->
-  case ((StateData#state.config)#config.public_list == true) of
+  case (StateData#state.config)#config.public_list of
     true ->
       {result, get_mucroom_disco_items(StateData), StateData};
     _ ->
-      FAffiliation = get_affiliation(From, StateData),
-      FRole = get_role(From, StateData),
-      case (FRole /= none) orelse
-           (FAffiliation == admin) orelse
-           (FAffiliation == owner) of
+      case is_occupant_or_admin(From, StateData) of
         true ->
           {result, get_mucroom_disco_items(StateData), StateData};
         _ ->
@@ -3349,15 +3355,13 @@ get_title(StateData) ->
 	    Name
     end.
 
-get_roomdesc_reply(StateData, StateName, Tail) ->
-  Reply =
+get_roomdesc_reply(StateData, Tail) ->
   case ((StateData#state.config)#config.public == true) of
     true ->
       {item, get_title(StateData) ++ Tail};
     _ ->
       false
-  end,
-  {reply, Reply, StateName, StateData}.
+  end.
 
 get_roomdesc_tail(StateData, Lang) ->
   Desc =
@@ -3367,8 +3371,8 @@ get_roomdesc_tail(StateData, Lang) ->
     _ ->
       translate:translate(Lang, "private, ")
   end,
-  Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0, StateData#state.users)," (" ++ Desc ++ integer_to_list(Len) ++ ")",
-	Len.
+  Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0, StateData#state.users),
+  " (" ++ Desc ++ integer_to_list(Len) ++ ")".
 
 get_mucroom_disco_items(StateData) ->
   lists:map(
