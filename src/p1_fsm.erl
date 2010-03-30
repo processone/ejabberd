@@ -25,7 +25,8 @@
 %%   - You can limit the time processing a message (TODO): If the
 %%   message processing does not return in a given period of time, the
 %%   process will be terminated.
-%% 
+%%   - You might customize the State data before sending it to error_logger
+%%   in case of a crash (just export the function print_state/1)
 %%     $Id$
 %%
 -module(p1_fsm).
@@ -146,7 +147,7 @@
 
 behaviour_info(callbacks) ->
     [{init,1},{handle_event,3},{handle_sync_event,4},{handle_info,3},
-     {terminate,3},{code_change,4}];
+     {terminate,3},{code_change,4}, {print_state,1}];
 behaviour_info(_Other) ->
     undefined.
 
@@ -376,7 +377,7 @@ loop(Parent, Name, StateName, StateData, Mod, hibernate, Debug,
 		       Debug, Limits, Queue1, QueueLen - 1, false);
 	{empty, _} ->
 	    Reason = internal_queue_error,
-	    error_info(Reason, Name, hibernate, StateName, StateData, Debug),
+	    error_info(Mod, Reason, Name, hibernate, StateName, StateData, Debug),
 	    exit(Reason)
     end;
 loop(Parent, Name, StateName, StateData, Mod, hibernate, Debug,
@@ -620,7 +621,7 @@ reply(Name, {To, Tag}, Reply, Debug, StateName) ->
 terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
     case catch Mod:terminate(Reason, StateName, StateData) of
 	{'EXIT', R} ->
-	    error_info(R, Name, Msg, StateName, StateData, Debug),
+	    error_info(Mod, R, Name, Msg, StateName, StateData, Debug),
 	    exit(R);
 	_ ->
 	    case Reason of
@@ -639,12 +640,12 @@ terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
 					   [self(), Limit]),
 		    exit(shutdown);
 		_ ->
-		    error_info(Reason, Name, Msg, StateName, StateData, Debug),
+		    error_info(Mod, Reason, Name, Msg, StateName, StateData, Debug),
 		    exit(Reason)
 	    end
     end.
 
-error_info(Reason, Name, Msg, StateName, StateData, Debug) ->
+error_info(Mod, Reason, Name, Msg, StateName, StateData, Debug) ->
     Reason1 = 
 	case Reason of
 	    {undef,[{M,F,A}|MFAs]} ->
@@ -662,12 +663,16 @@ error_info(Reason, Name, Msg, StateName, StateData, Debug) ->
 	    _ ->
 		Reason
 	end,
+    StateToPrint = case erlang:function_exported(Mod, print_state, 1) of
+      true -> (catch Mod:print_state(StateData));
+      false -> StateData
+    end,
     Str = "** State machine ~p terminating \n" ++
 	get_msg_str(Msg) ++
 	"** When State == ~p~n"
         "**      Data  == ~p~n"
         "** Reason for termination = ~n** ~p~n",
-    format(Str, [Name, get_msg(Msg), StateName, StateData, Reason1]),
+    format(Str, [Name, get_msg(Msg), StateName, StateToPrint, Reason1]),
     sys:print_log(Debug),
     ok.
 
