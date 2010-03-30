@@ -55,7 +55,9 @@
 	 handle_sync_event/4,
 	 code_change/4,
 	 handle_info/3,
-	 terminate/3]).
+	 terminate/3,
+     print_state/1
+     ]).
 
 
 -export([get_state/1]).
@@ -1289,6 +1291,19 @@ handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
 
+
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State = #state{pres_t = T, pres_f = F, pres_a = A, pres_i = I}) ->
+   State#state{pres_t = {pres_t, ?SETS:size(T)},
+               pres_f = {pres_f, ?SETS:size(F)},
+               pres_a = {pres_a, ?SETS:size(A)},
+               pres_i = {pres_i, ?SETS:size(I)}
+               }.
+    
 %%----------------------------------------------------------------------
 %% Func: terminate/3
 %% Purpose: Shutdown the fsm
