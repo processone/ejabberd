@@ -77,6 +77,8 @@
 	 del_privacy_lists/3,
 	 set_vcard/26,
 	 get_vcard/2,
+ 	 del_vcard/2,
+ 	 search_vcard/3,
 	 escape/1,
 	 count_records_where/3,
 	 get_roster_version/2,
@@ -435,6 +437,21 @@ get_vcard(LServer, Username) ->
       LServer,
       ["select vcard from vcard "
        "where username='", Username, "';"]).
+
+del_vcard(LServer, Username) ->
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      [["delete from vcard where username='", Username, "';"],
+       ["delete from vcard_search where lusername='", Username, "';"]]).
+
+search_vcard(LServer, MatchSpec, Limit) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["select username, fn, family, given, middle, "
+       "       nickname, bday, ctry, locality, "
+       "       email, orgname, orgunit from vcard_search ",
+       MatchSpec, Limit, ";"]).
+
 
 get_default_privacy_list(LServer, Username) ->
     ejabberd_odbc:sql_query(

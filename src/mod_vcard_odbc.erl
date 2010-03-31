@@ -474,12 +474,7 @@ search(LServer, Data) ->
 				       [{matches, Val}, ?JUD_MATCHES]),
 			    [" LIMIT ", integer_to_list(?JUD_MATCHES)]
 		    end,
-	    case catch ejabberd_odbc:sql_query(
-			 LServer,
-			 ["select username, fn, family, given, middle, "
-			  "       nickname, bday, ctry, locality, "
-			  "       email, orgname, orgunit from vcard_search ",
-			  MatchSpec, Limit, ";"]) of
+ 	    case catch odbc_queries:search_vcard(LServer, MatchSpec, Limit) of
 		{selected, ["username", "fn", "family", "given", "middle",
 			    "nickname", "bday", "ctry", "locality",
 			    "email", "orgname", "orgunit"],
@@ -620,7 +615,4 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
     LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
     Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_transaction(
-      LServer,
-      [["delete from vcard where username='", Username, "';"],
-       ["delete from vcard_search where lusername='", Username, "';"]]).
+    odbc_queries:del_vcard(LServer, Username).   
