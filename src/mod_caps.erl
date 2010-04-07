@@ -188,9 +188,9 @@ feature_request(Host, From, Caps, [SubNode | Tail] = SubNodes) ->
     case mnesia:dirty_read({caps_features, BinaryNode}) of
 	[] ->
 	    IQ = #iq{type = get,
-		     ns = ?NS_DISCO_INFO,
-		     payload = [#xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-				 attrs = [?XMLATTR('node', Node ++ "#" ++ SubNode)]}]},
+		     iq_ns = ?NS_JABBER_CLIENT,
+		     payload = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
+				 attrs = [?XMLATTR('node', Node ++ "#" ++ SubNode)]}},
 	    F = fun(IQReply) ->
 			feature_response(
 			  IQReply, Host, From, Caps, SubNodes)
