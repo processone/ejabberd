@@ -1286,7 +1286,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		    end;
 		{set, 'subscribe'} ->
 		    Config = case Rest of
-			[#xmlel{name = 'configure', children = C}] -> C;
+			[#xmlel{name = 'options', children = C}] -> C;
 			_ -> []
 		    end,
 		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
@@ -1312,11 +1312,11 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		    get_subscriptions(Host, Node, From, Plugins);
 		{get, 'affiliations'} ->
 		    get_affiliations(Host, From, Plugins);
-		{get, "options"} ->
+		{get, 'options'} ->
 		    SubID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'subid', ""),
 		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
 		    get_options(Host, Node, JID, SubID, Lang);
-		{set, "options"} ->
+		{set, 'options'} ->
 		    SubID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'subid', ""),
 		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
 		    set_options(Host, Node, JID, SubID, Els);
@@ -2542,16 +2542,16 @@ get_options(Host, Node, JID, SubID, Lang) ->
 		     end
 	     end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_Node, XForm}} -> {result, [XForm]};
+	{result, {_Node, XForm}} -> {result, XForm};
 	Error		    -> Error
     end.
 
 get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
     Subscriber = try exmpp_jid:parse(JID) of
-    		    J -> jlib:short_jid(J)
+    		    J -> J
 		  catch
 		      _ ->
-		         {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
+		         exmpp_jid:make("", "", "")
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
@@ -2579,7 +2579,7 @@ read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
             {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
             OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
 			       attrs = [ ?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
-					?XMLATTR('Subid', SubID) | nodeAttr(Node)],
+					?XMLATTR('subid', SubID) | nodeAttr(Node)],
 			       children = [XdataEl]},
             PubsubEl = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children = [OptionsEl]},
             {result, PubsubEl}
@@ -2608,9 +2608,9 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 	_ -> invalid
     end,
     Subscriber = try exmpp_jid:parse(JID) of
-		     J -> jlib:short_jid(J)
+		     J -> J
 		  catch
-		     _ -> {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
+		     _ -> exmpp_jid:make("", "", "")
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),

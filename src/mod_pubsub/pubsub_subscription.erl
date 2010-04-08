@@ -129,7 +129,7 @@ get_options_xform(Lang, Options) ->
     Keys = [deliver, show_values, subscription_type, subscription_depth],
     XFields = [get_option_xfield(Lang, Key, Options) || Key <- Keys],
 
-     {result, #xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
+     {result, #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
      		[#xmlel{ns = ?NS_DATA_FORMS, 
 			name = 'field', 
 			attrs = [?XMLATTR('var', <<"FORM_TYPE">>), ?XMLATTR('type', <<"hidden">>)],
@@ -140,7 +140,7 @@ get_options_xform(Lang, Options) ->
 parse_options_xform(XFields) ->
     case XFields of
   [] ->  {result, []};
-  _  ->  case exmpp_xml:get_child_elements(XFields) of
+  _  ->  case exmpp_xml:remove_cdata_from_list(XFields) of
 	    [] -> {result, []};
 	    [#xmlel{name = 'x'} = XEl] ->
 	        case jlib:parse_xdata_submit(XEl) of
@@ -271,7 +271,7 @@ type_and_options(Type, _Lang) ->
 tr_xfield_options({Value, Label}, Lang) ->
     #xmlel{ns = ?NS_DATA_FORMS, 
           name = 'option',
-	  attrs = [?XMLATTR('label', transalte:translate(Lang, Label))],
+	  attrs = [?XMLATTR('label', translate:translate(Lang, Label))],
 	  children = [#xmlel{ns = ?NS_DATA_FORMS,
 	  		     name = 'value',
 			     children = [?XMLCDATA(Value)]}]}.
