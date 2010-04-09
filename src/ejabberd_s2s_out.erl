@@ -51,6 +51,7 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
+     print_state/1,
 	 code_change/4,
 	 test_get_addr_port/1,
 	 get_addr_port/1]).
@@ -874,6 +875,14 @@ terminate(Reason, StateName, StateData) ->
 	    ejabberd_socket:close(StateData#state.socket)
     end,
     ok.
+
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State) ->
+    State.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions

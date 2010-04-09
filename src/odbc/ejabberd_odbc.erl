@@ -47,6 +47,7 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
+     print_state/1,
 	 code_change/4]).
 
 %% gen_fsm states
@@ -285,6 +286,13 @@ terminate(_Reason, _StateName, State) ->
     end,
     ok.
 
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State) ->
+    State.
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
