@@ -328,7 +328,7 @@ get_prog_name() ->
 	FileName when is_list(FileName) ->
 	    FileName;
 	_ ->
-	    ?CRITICAL_MSG("The option captcha_cmd is not configured, but some "
+	    ?DEBUG("The option captcha_cmd is not configured, but some "
 			  "module wants to use the CAPTCHA feature.", []),
 	    throw({error, option_not_configured_captcha_cmd})
     end.
