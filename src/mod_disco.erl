@@ -67,13 +67,13 @@ start(Host, Opts) ->
 				  ?MODULE, process_sm_iq_info, IQDisc),
 
     catch ets:new(disco_features, [named_table, ordered_set, public]),
-    register_feature(Host, "iq"),
-    register_feature(Host, "presence"),
-    register_feature(Host, "presence-invisible"),
+    register_feature(HostB, "iq"),
+    register_feature(HostB, "presence"),
+    register_feature(HostB, "presence-invisible"),
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
-    lists:foreach(fun(Domain) -> register_extra_domain(Host, Domain) end,
+    lists:foreach(fun(Domain) -> register_extra_domain(list_to_binary(Host), Domain) end,
 		  ExtraDomains),
     catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
     catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
@@ -99,26 +99,26 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_DISCO_INFO),
-    catch ets:match_delete(disco_features, {{'_', Host}}),
-    catch ets:match_delete(disco_extra_domains, {{'_', Host}}),
+    catch ets:match_delete(disco_features, {{'_', HostB}}),
+    catch ets:match_delete(disco_extra_domains, {{'_', HostB}}),
     ok.
 
 
-register_feature(Host, Feature) ->
+register_feature(HostB, Feature) when is_binary(HostB) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
-    ets:insert(disco_features, {{Feature, Host}}).
+    ets:insert(disco_features, {{Feature, HostB}}).
 
-unregister_feature(Host, Feature) ->
+unregister_feature(HostB, Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
-    ets:delete(disco_features, {Feature, Host}).
+    ets:delete(disco_features, {Feature, HostB}).
 
-register_extra_domain(Host, Domain) ->
+register_extra_domain(HostB, Domain) when is_binary(HostB) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
-    ets:insert(disco_extra_domains, {{Domain, Host}}).
+    ets:insert(disco_extra_domains, {{Domain, HostB}}).
 
-unregister_extra_domain(Host, Domain) ->
+unregister_extra_domain(HostB, Domain) when is_binary(HostB) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
-    ets:delete(disco_extra_domains, {Domain, Host}).
+    ets:delete(disco_extra_domains, {Domain, HostB}).
 
 process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
@@ -192,9 +192,9 @@ get_local_features(Acc, _From, To, <<>>, _Lang) ->
 		{result, Features} -> Features;
 		empty -> []
 	    end,
-    Host = exmpp_jid:prep_domain_as_list(To),
+    HostB = exmpp_jid:prep_domain(To),
     {result,
-     ets:select(disco_features, [{{{'_', Host}}, [], ['$_']}]) ++ Feats};
+     ets:select(disco_features, [{{{'_', HostB}}, [], ['$_']}]) ++ Feats};
 
 get_local_features(Acc, _From, _To, _Node, _Lang) ->
     case Acc of
@@ -235,13 +235,14 @@ get_local_services(Acc, _From, To, <<>>, _Lang) ->
 		{result, Its} -> Its;
 		empty -> []
 	    end,
-    Host = exmpp_jid:prep_domain_as_list(To),
+    HostB = exmpp_jid:prep_domain(To),
+    Host = binary_to_list(HostB),
     {result,
      lists:usort(
        lists:map(fun domain_to_xml/1,
 		 get_vh_services(Host) ++
 		 ets:select(disco_extra_domains,
-			    [{{{'$1', Host}}, [], ['$1']}]))
+			    [{{{'$1', HostB}}, [], ['$1']}]))
        ) ++ Items};
 
 get_local_services({result, _} = Acc, _From, _To, _Node, _Lang) ->
