@@ -189,7 +189,7 @@ init([ServerHost, Opts]) ->
     ets:new(gen_mod:get_module_proc(Host, last_items), [set, named_table]),
     ets:new(gen_mod:get_module_proc(ServerHost, last_items), [set, named_table]),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
-    mod_disco:register_feature(ServerHost, ?NS_PUBSUB_s),
+    mod_disco:register_feature(ServerHostB, ?NS_PUBSUB_s),
     ets:insert(gen_mod:get_module_proc(Host, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(Host, config), {plugins, Plugins}),
     ets:insert(gen_mod:get_module_proc(Host, config), {last_item_cache, LastItemCache}),
@@ -699,7 +699,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(anonymous_purge_hook, ServerHostB, ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB_OWNER),
-    mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB_s),
+    mod_disco:unregister_feature(ServerHostB, ?NS_PUBSUB_s),
     gen_mod:get_module_proc(ServerHost, ?LOOPNAME) ! stop,
     terminate_plugins(Host, ServerHost, Plugins, TreePlugin).
 

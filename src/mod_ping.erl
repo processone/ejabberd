@@ -96,7 +96,7 @@ init([Host, Opts]) ->
     PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
     TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mod_disco:register_feature(Host, ?NS_PING),
+    mod_disco:register_feature(HostB, ?NS_PING),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PING,
                                   ?MODULE, iq_ping, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_PING,
@@ -128,7 +128,7 @@ terminate(_Reason, #state{host = Host}) ->
 			  ?MODULE, user_send, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_PING),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_PING),
-    mod_disco:unregister_feature(Host, ?NS_PING).
+    mod_disco:unregister_feature(HostB, ?NS_PING).
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};

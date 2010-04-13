@@ -41,7 +41,7 @@
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mod_disco:register_feature(Host, ?NS_SIC_0_s),
+    mod_disco:register_feature(HostB, ?NS_SIC_0_s),
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_SIC_0_s,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_SIC_0_s,
@@ -49,7 +49,7 @@ start(Host, Opts) ->
 
 stop(Host) ->
     HostB = list_to_binary(Host),
-    mod_disco:unregister_feature(Host, ?NS_SIC_0_s),
+    mod_disco:unregister_feature(HostB, ?NS_SIC_0_s),
     gen_iq_handler:remove_iq_handler(ejabberd_local, HostB, ?NS_SIC_0_s),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_SIC_0_s).
 
