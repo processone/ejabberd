@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_muc.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : MUC support (JEP-0045)
+%%% Purpose : MUC support (XEP-0045)
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

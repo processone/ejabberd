@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : adhoc.erl
 %%% Author  : Magnus Henoch <henoch@dtek.chalmers.se>
-%%% Purpose : Provide helper functions for ad-hoc commands (JEP-0050)
+%%% Purpose : Provide helper functions for ad-hoc commands (XEP-0050)
 %%% Created : 31 Oct 2005 by Magnus Henoch <henoch@dtek.chalmers.se>
 %%%
 %%%

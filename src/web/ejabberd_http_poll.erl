@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_http_poll.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : HTTP Polling support (JEP-0025)
+%%% Purpose : HTTP Polling support (XEP-0025)
 %%% Created :  4 Mar 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_disco.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Service Discovery (JEP-0030) support
+%%% Purpose : Service Discovery (XEP-0030) support
 %%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
