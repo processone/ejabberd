@@ -1092,7 +1092,7 @@ user_roster(User, Server, Query, Lang) ->
 					Groups =
 					    lists:flatmap(
 					      fun(Group) ->
-						      [?C(Group), ?BR]
+						      [?C(binary_to_list(Group)), ?BR]
 					      end, R#roster.groups),
 					Pending = ask_to_pending(R#roster.ask),
 					TDJID = build_contact_jid_td(R#roster.jid),
