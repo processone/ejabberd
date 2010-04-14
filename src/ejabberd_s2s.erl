@@ -532,7 +532,7 @@ allow_host1(MyHost, S2SHost) ->
 	    case ejabberd_config:get_local_option({s2s_default_policy, MyHost}) of
 		deny -> false;
 		_ ->
-		    case ejabberd_hooks:run_fold(s2s_allow_host, MyHost,
+		    case ejabberd_hooks:run_fold(s2s_allow_host, list_to_binary(MyHost),
 						 allow, [MyHost, S2SHost]) of
 			deny -> false;
 			allow -> true;
