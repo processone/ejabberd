@@ -262,10 +262,11 @@ open_socket2(Type, Addr, Port) ->
 	true -> [{send_timeout_close, true}];
 	false -> []
     end,
+    IpOpts = get_outgoing_local_address_opts(Type),
     case (catch ejabberd_socket:connect(Addr, Port,
 					[binary, {packet, 0},
 					 {send_timeout, ?TCP_SEND_TIMEOUT},
-					 {active, false}, Type | SockOpts],
+					 {active, false}, Type | SockOpts]++IpOpts,
 					Timeout)) of
 	{ok, _Socket} = R -> R;
 	{error, Reason} = R ->
@@ -274,6 +275,40 @@ open_socket2(Type, Addr, Port) ->
 	{'EXIT', Reason} ->
 	    ?DEBUG("s2s_out: connect crashed ~p~n", [Reason]),
 	    {error, Reason}
+    end.
+
+get_outgoing_local_address_opts(DestType) ->
+    ListenerIp = get_incoming_local_address(),
+    OutLocalIp = case ejabberd_config:get_local_option(
+			outgoing_s2s_local_address) of
+		     undefined -> undefined;
+		     T when is_tuple(T) ->
+			 T;
+		     S when is_list(S) ->
+			 [S2 | _] = string:tokens(S, "/"),
+			 {ok, T} = inet_parse:address(S2),
+			 T
+		 end,
+    case {OutLocalIp, ListenerIp, DestType} of
+	{{_, _, _, _}, _, inet} ->
+	    [{ip, OutLocalIp}];
+	{{_, _, _, _, _, _, _, _}, _, inet6} ->
+	    [{ip, OutLocalIp}];
+	{undefined, any, _} ->
+	    [];
+	{undefined, _, _} ->
+	    [{ip, ListenerIp}];
+	_ ->
+	    []
+    end.
+
+get_incoming_local_address() ->
+    Ports = ejabberd_config:get_local_option(listen),
+    case [IP || {{_Port, IP, _Prot}, ejabberd_s2s_in, _Opts} <- Ports] of
+	[{0, 0, 0, 0}] -> any;
+	[{0, 0, 0, 0, 0, 0, 0, 0}] -> any;
+	[IP] -> IP;
+	_ -> any
     end.
 
 %%----------------------------------------------------------------------

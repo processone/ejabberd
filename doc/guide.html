@@ -803,6 +803,12 @@ Full path to the file containing the SSL certificate for a specific domain.
 Specify which address families to try, in what order, and connect timeout in milliseconds.
 By default it first tries connecting with IPv4, if that fails it tries using IPv6,
 with a timeout of 10000 milliseconds.
+</DD><DT CLASS="dt-description"><B><TT>{outgoing_s2s_local_address, IPaddress}</TT></B></DT><DD CLASS="dd-description"> 
+Specify which local IP address is desired for the outgoing S2S connections.
+This option is used only if the local and remote addresses
+are of the same IP version (either 4 or 6).
+If this option is not defined, and the <TT>ejabberd_s2s_in</TT>
+listener address is defined, then that one is used.
 </DD><DT CLASS="dt-description"><B><TT>{s2s_dns_options, [ {Property, Value}, ...]}</TT></B></DT><DD CLASS="dd-description">
 Define properties to use for DNS resolving.
 Allowed Properties are: <TT>timeout</TT> in seconds which default value is <TT>10</TT>
