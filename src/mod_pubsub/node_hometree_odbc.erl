@@ -1360,9 +1360,9 @@ raw_to_item(NodeId, {ItemId, SJID, Creation, Modification, XML}) ->
 		     [T1,T2,T3] = string:tokens(Str, ":"),
 		     {l2i(T1), l2i(T2), l2i(T3)}
 	     end,
-    Payload = case xml_stream:parse_element(XML) of
+    Payload = case exmpp_xmlstream:parse_element(XML) of
 		  {error, _Reason} -> [];
-		  El -> [El]
+		  [El] -> [El]
 	      end,
     #pubsub_item{itemid = {ItemId, NodeId},
 		 creation={ToTime(Creation), JID},

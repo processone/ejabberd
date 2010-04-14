@@ -120,7 +120,6 @@
 	     tls,
 	     translate,
 	     xml,
-	     xml_stream,
 	     'XmppAddr'
 	    ]},
   {registered, [ejabberd,
