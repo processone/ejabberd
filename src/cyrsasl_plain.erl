@@ -50,7 +50,7 @@ start(_Opts) ->
 stop() ->
     ok.
 
-mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
+mech_new(#sasl_params{check_password = CheckPassword}) ->
     {ok, #state{check_password = CheckPassword}}.
 
 %% @spec (State, ClientIn) -> Ok | Error

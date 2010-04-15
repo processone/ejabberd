@@ -383,7 +383,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				      exmpp_stream:features(
 					TLSFeature ++
 					CompressFeature ++
-					SASL_Mechs ++
+					Mechs ++
 					Other_Feats)),
 				    fsm_next_state(wait_for_feature_request,
 					       StateData#state{

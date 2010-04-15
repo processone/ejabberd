@@ -240,10 +240,10 @@ gethostname(#socket_state{socket = Socket} = State) ->
 		    ?DEBUG("gethostname result ~p~n",
 			   [HostEnt#hostent.h_name]),
 		    {ok, HostEnt#hostent.h_name};
-		{error, Reason} = E ->
+		{error, _Reason} = E ->
 		    E
 	    end;
-	{error, Reason} = E ->
+	{error, _Reason} = E ->
 	    E
     end.
 

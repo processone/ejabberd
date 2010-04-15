@@ -52,7 +52,6 @@
 -behaviour(cyrsasl).
 
 -define(SERVER, ?MODULE).
--define(MSG, ?DEBUG).
 -define(SERVICE, "xmpp").
 
 -record(state, {sasl,
@@ -91,35 +90,35 @@ stop() ->
 mech_new(#sasl_params{host=Host, realm=Realm, socket=Socket}) ->
     case ejabberd_socket:gethostname(Socket) of
 	{ok, FQDN} ->
-	    ?MSG("mech_new ~p ~p ~p~n", [Host, Realm, FQDN]),
+	    ?DEBUG("mech_new ~p ~p ~p~n", [Host, Realm, FQDN]),
 	    case esasl:server_start(?SERVER, "GSSAPI", ?SERVICE, FQDN) of
 		{ok, Sasl} ->
 		    {ok, #state{sasl=Sasl,host=Host,realm=Realm}};
 		{error, {gsasl_error, Error}} ->
 		    {ok, Str} = esasl:str_error(?SERVER, Error),
-		    ?MSG("esasl error: ~p", [Str]),
+		    ?DEBUG("esasl error: ~p", [Str]),
 		    {ok, #state{needsmore=error,error="internal-server-error"}};
 		{error, Error} ->
-		    ?MSG("esasl error: ~p", [Error]),
+		    ?DEBUG("esasl error: ~p", [Error]),
 		    {ok, #state{needsmore=error,error="internal-server-error"}}
 	    end;
 	{error, Error} ->
-	    ?MSG("gethostname error: ~p", [Error]),
+	    ?DEBUG("gethostname error: ~p", [Error]),
 	    {ok, #state{needsmore=error,error="internal-server-error"}}
     end.
 
 mech_step(State, ClientIn) when is_list(ClientIn) ->
     catch do_step(State, ClientIn).
 
-do_step(#state{needsmore=error,error=Error}=State, _) ->
+do_step(#state{needsmore=error,error=Error}=_State, _) ->
     {error, Error};
 do_step(#state{needsmore=false}=State, _) ->
     check_user(State);
 do_step(#state{needsmore=true,sasl=Sasl,step=Step}=State, ClientIn) ->
-    ?MSG("mech_step~n", []),
+    ?DEBUG("mech_step~n", []),
     case esasl:step(Sasl, list_to_binary(ClientIn)) of
 	{ok, RspAuth} ->
-	    ?MSG("ok~n", []),
+	    ?DEBUG("ok~n", []),
 	    {ok, Display_name} = esasl:property_get(Sasl, gssapi_display_name),
 	    {ok, Authzid} = esasl:property_get(Sasl, authzid),
 	    {Authid, [$@ | Auth_realm]} =
@@ -129,7 +128,7 @@ do_step(#state{needsmore=true,sasl=Sasl,step=Step}=State, ClientIn) ->
 				 authrealm=Auth_realm},
 	    handle_step_ok(State1, binary_to_list(RspAuth));
 	{needsmore, RspAuth} ->
-	    ?MSG("needsmore~n", []),
+	    ?DEBUG("needsmore~n", []),
 	    if (Step > 0) and (ClientIn =:= []) and (RspAuth =:= <<>>) ->
 		    {error, "not-authorized"};
 		true ->
@@ -143,13 +142,13 @@ do_step(#state{needsmore=true,sasl=Sasl,step=Step}=State, ClientIn) ->
 handle_step_ok(State, []) ->
     check_user(State);
 handle_step_ok(#state{step=Step}=State, RspAuth) ->
-    ?MSG("continue~n", []),
+    ?DEBUG("continue~n", []),
     {continue, RspAuth, State#state{needsmore=false,step=Step+1}}.
 
 check_user(#state{authid=Authid,authzid=Authzid,
 		  authrealm=Auth_realm,host=Host,realm=Realm}) ->
     if Realm =/= Auth_realm ->
-	    ?MSG("bad realm ~p (expected ~p)~n",[Auth_realm, Realm]),
+	    ?DEBUG("bad realm ~p (expected ~p)~n",[Auth_realm, Realm]),
 	    throw({error, "not-authorized"});
        true ->
 	    ok
@@ -157,11 +156,11 @@ check_user(#state{authid=Authid,authzid=Authzid,
 
     case ejabberd_auth:is_user_exists(Authid, Host) of
 	false ->
-	    ?MSG("bad user ~p~n",[Authid]),
+	    ?DEBUG("bad user ~p~n",[Authid]),
 	    throw({error, "not-authorized"});
 	true ->
 	    ok
     end,
 
-    ?MSG("GSSAPI authenticated ~p ~p~n", [Authid, Authzid]),
+    ?DEBUG("GSSAPI authenticated ~p ~p~n", [Authid, Authzid]),
     {ok, [{username, Authid}, {authzid, Authzid}]}.
