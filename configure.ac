@@ -101,7 +101,7 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-esasl --enable-iconv --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
   yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true tools=true ;;
   no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false tools=false ;;
@@ -196,6 +196,14 @@ AC_ARG_ENABLE(iconv,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-iconv) ;;
 esac],[if test "x$iconv" = "x"; then iconv=true; fi])
 
+AC_ARG_ENABLE(esasl,
+[AC_HELP_STRING([--enable-esasl], [enable esasl support (default: yes)])],
+[case "${enableval}" in
+  yes) esasl=true ;;
+  no)  esasl=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-esasl) ;;
+esac],[if test "x$esasl" = "x"; then esasl=true; fi])
+
 AC_ARG_ENABLE(debug,
 [AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],
 [case "${enableval}" in
@@ -253,6 +261,7 @@ AC_SUBST(riak)
 AC_SUBST(redis)
 AC_SUBST(elixir)
 AC_SUBST(iconv)
+AC_SUBST(esasl)
 AC_SUBST(debug)
 AC_SUBST(tools)
 AC_SUBST(latest_deps)

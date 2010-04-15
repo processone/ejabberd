@@ -97,6 +97,7 @@ init([]) ->
     cyrsasl_scram:start([]),
     cyrsasl_anonymous:start([]),
     cyrsasl_oauth:start([]),
+    try_start_gssapi(),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -145,6 +146,14 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 	  ets:insert(sasl_mechanism,
 		     #sasl_mechanism{mechanism = Mechanism, module = Module,
 			       password_type = PasswordType}).
+
+try_start_gssapi() ->
+    case code:load_file(esasl) of
+	{module, _Module} ->
+	    cyrsasl_gssapi:start([]);
+	{error, What} ->
+	    ?ERROR_MSG("Support for GSSAPI not started because esasl.beam was not found: ~p", [What])
+    end.
 
 check_credentials(_State, Props) ->
     User = proplists:get_value(authzid, Props, <<>>),
