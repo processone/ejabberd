@@ -29,10 +29,11 @@
 
 -export([start/1,
 	 stop/0,
-	 mech_new/4,
+	 mech_new/1,
 	 mech_step/2]).
 
 -include("ejabberd.hrl").
+-include("cyrsasl.hrl").
 
 -behaviour(cyrsasl).
 
@@ -59,13 +60,8 @@ start(_Opts) ->
 stop() ->
     ok.
 
-%% @spec (Host, GetPassword, CheckPassword, CheckPasswordDigest) -> {ok, State}
-%%     Host = string()
-%%     GetPassword = function()
-%%     CheckPassword = function()
-%%     State = mechstate()
-
-mech_new(Host, GetPassword, _CheckPassword, CheckPasswordDigest) ->
+mech_new(#sasl_params{host=Host, get_password=GetPassword,
+		      check_password_digest=CheckPasswordDigest}) ->
     {ok, #state{step = 1,
 		nonce = randoms:get_string(),
 		host = Host,
