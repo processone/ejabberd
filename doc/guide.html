@@ -350,6 +350,7 @@ GNU Make
 </LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
 </LI><LI CLASS="li-itemize">Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section <A HREF="#compilepgsql">3.2.3</A>.
 </LI><LI CLASS="li-itemize">PAM library. Optional. For Pluggable Authentication Modules (PAM). See section <A HREF="#pam">3.1.4</A>.
+</LI><LI CLASS="li-itemize">ESASL library. Optional. For SASL GSSAPI authentication. See section <A HREF="#gssapi">3.1.4</A>.
 </LI><LI CLASS="li-itemize">ImageMagick&#X2019;s Convert program. Optional. For CAPTCHA challenges. See section <A HREF="#captcha">3.1.8</A>.
 </LI></UL><P> <A NAME="download"></A> </P><!--TOC subsection Download Source Code-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc10">2.4.2</A>&#XA0;&#XA0;<A HREF="#download">Download Source Code</A></H3><!--SEC END --><P> <A NAME="download"></A> 
@@ -1027,6 +1028,7 @@ database storage in internal Mnesia or ODBC &#X2014; See section&#XA0;<A HREF="#
 </LI><LI CLASS="li-itemize">ldap &#X2014; See section&#XA0;<A HREF="#ldap">3.2.5</A>.
 </LI><LI CLASS="li-itemize">anonymous &#X2014; See section&#XA0;<A HREF="#saslanonymous">3.1.4</A>.
 </LI><LI CLASS="li-itemize">pam &#X2014; See section&#XA0;<A HREF="#pam">3.1.4</A>.
+</LI><LI CLASS="li-itemize">a method with SASL GSSAPI &#X2014; See section&#XA0;<A HREF="#gssapi">3.1.4</A>.
 </LI></UL><P>Account creation is only supported by the methods:
 internal Mnesia storage, ODBC storage, and external.</P><P> <A NAME="authstorage"></A> </P><!--TOC subsubsection Database Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#authstorage">Database Storage</A></H4><!--SEC END --><P> <A NAME="authstorage"></A> 
@@ -1178,7 +1180,40 @@ attacks.
 module provides such functionality.
 </LI><LI CLASS="li-itemize">If you use <TT>pam_winbind</TT> to authorise against a Windows Active Directory,
 then <TT>/etc/nssswitch.conf</TT> must be configured to use <TT>winbind</TT> as well.
-</LI></UL><P> <A NAME="accessrules"></A> </P><!--TOC subsection Access Rules-->
+</LI></UL><P> <A NAME="gssapi"></A> </P><!--TOC subsubsection SASL GSSAPI Authentication-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#gssapi">SASL GSSAPI Authentication</A></H4><!--SEC END --><P> <A NAME="gssapi"></A> 
+</P><P><TT>ejabberd</TT> supports SASL GSSAPI authentication.
+It is compatible with SSO as implemented in Spark 2.5.3.</P><P>To use this feature, you have to download the <TT>esasl</TT> library
+source code from 
+<A HREF="http://github.com/mikma/esasl">http://github.com/mikma/esasl</A>,
+compile and install it. Example instructions:
+</P><PRE CLASS="verbatim">git clone git://github.com/mikma/esasl.git
+cd esasl
+./configure --prefix=/usr
+make
+sudo make install
+</PRE><P>After doing this, check that esasl was installed in the <TT>/usr/lib/erlang/lib/</TT> directory.
+For compiling esasl, maybe you need to get some development files;
+(for example, in Debian, the package <TT>libgsasl7-dev</TT>).</P><P>The SASL GSSAPI mechanism uses a authentication backend only to check for a
+valid user name when authorizing the user.
+The authentication is done by esasl against a Kerberos key server (KDC).
+Often Kerberos authentication is combined with LDAP to store user account information.
+To do that, edit <TT>ejabberd.cfg</TT> and modify the <TT>auth_mehtod</TT> depending
+on what you want to allow. For example:
+</P><PRE CLASS="verbatim">{auth_method, [ldap]}.
+</PRE><P>Now define the Kerberos realm:
+</P><PRE CLASS="verbatim">{sasl_realm, "Kerberos realm"}.
+</PRE><P>and manually set the FQDN.
+<TT>ejabberd</TT> does a reverse lookup on the connecting IP and uses
+that FQDN for locating its keytab entry in the keytab file.
+</P><PRE CLASS="verbatim">{sasl_fqdn, "dbs.example.com"}.
+</PRE><P>The environment variable <TT>KRB5_KTNAME</TT> is the location of the keytab file,
+and needs to be set before starting ejabberd.
+The keytab referenced by <TT>KRB5_KTNAME</TT> should contain the principal xmpp/FQDN,
+where FQDN is the fully qualified host name of the ejabberd server.
+For example, in Debian, add to the file <TT>/etc/ejabberd/default</TT> the line:
+</P><PRE CLASS="verbatim">export KRB5_KTNAME="/etc/keytabs/xmpp-dbs.example.com-EXAMPLE.COM.keytab
+</PRE><P> <A NAME="accessrules"></A> </P><!--TOC subsection Access Rules-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc25">3.1.5</A>&#XA0;&#XA0;<A HREF="#accessrules">Access Rules</A></H3><!--SEC END --><P> <A NAME="accessrules"></A> 
 </P><P> <A NAME="ACLDefinition"></A> </P><!--TOC subsubsection ACL Definition-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ACLDefinition">ACL Definition</A></H4><!--SEC END --><P> <A NAME="ACLDefinition"></A> 

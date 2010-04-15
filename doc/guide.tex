@@ -316,6 +316,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
 \item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
+\item ESASL library. Optional. For SASL GSSAPI authentication. See section \ref{gssapi}.
 \item ImageMagick's Convert program. Optional. For CAPTCHA challenges. See section \ref{captcha}.
 \end{itemize}
 
@@ -1178,6 +1179,7 @@ The following authentication methods are supported by \ejabberd{}:
 \item ldap --- See section~\ref{ldap}.
 \item anonymous --- See section~\ref{saslanonymous}.
 \item pam --- See section~\ref{pam}.
+\item a method with SASL GSSAPI --- See section~\ref{gssapi}.
 \end{itemize}
 
 Account creation is only supported by the methods:
@@ -1399,6 +1401,59 @@ module provides such functionality.
 \item If you use \term{pam\_winbind} to authorise against a Windows Active Directory,
 then \term{/etc/nssswitch.conf} must be configured to use \term{winbind} as well.
 \end{itemize}
+
+
+\makesubsubsection{gssapi}{SASL GSSAPI Authentication}
+\ind{SASL GSSAPI authentication}
+
+\ejabberd{} supports SASL GSSAPI authentication.
+It is compatible with SSO as implemented in Spark 2.5.3.
+
+To use this feature, you have to download the \term{esasl} library
+source code from 
+\footahref{http://github.com/mikma/esasl}{http://github.com/mikma/esasl},
+compile and install it. Example instructions:
+\begin{verbatim}
+git clone git://github.com/mikma/esasl.git
+cd esasl
+./configure --prefix=/usr
+make
+sudo make install
+\end{verbatim}
+After doing this, check that esasl was installed in the \term{/usr/lib/erlang/lib/} directory.
+For compiling esasl, maybe you need to get some development files;
+(for example, in Debian, the package \term{libgsasl7-dev}).
+
+The SASL GSSAPI mechanism uses a authentication backend only to check for a
+valid user name when authorizing the user.
+The authentication is done by esasl against a Kerberos key server (KDC).
+Often Kerberos authentication is combined with LDAP to store user account information.
+To do that, edit \term{ejabberd.cfg} and modify the \term{auth\_mehtod} depending
+on what you want to allow. For example:
+\begin{verbatim}
+{auth_method, [ldap]}.
+\end{verbatim}
+
+Now define the Kerberos realm:
+\begin{verbatim}
+{sasl_realm, "Kerberos realm"}.
+\end{verbatim}
+and manually set the FQDN.
+\ejabberd{} does a reverse lookup on the connecting IP and uses
+that FQDN for locating its keytab entry in the keytab file.
+\begin{verbatim}
+{sasl_fqdn, "dbs.example.com"}.
+\end{verbatim}
+
+The environment variable \term{KRB5\_KTNAME} is the location of the keytab file,
+and needs to be set before starting ejabberd.
+The keytab referenced by \term{KRB5\_KTNAME} should contain the principal xmpp/FQDN,
+where FQDN is the fully qualified host name of the ejabberd server.
+For example, in Debian, add to the file \term{/etc/ejabberd/default} the line:
+\begin{verbatim}
+export KRB5_KTNAME="/etc/keytabs/xmpp-dbs.example.com-EXAMPLE.COM.keytab
+\end{verbatim}
+
 
 \makesubsection{accessrules}{Access Rules}
 \ind{access rules}\ind{ACL}\ind{Access Control List}
