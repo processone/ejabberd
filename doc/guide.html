@@ -657,12 +657,12 @@ Handles c2s connections.<BR>
 <TT>zlib</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_s2s_in</TT></B></DT><DD CLASS="dd-description">
 Handles incoming s2s connections.<BR>
- Options: <TT>max_stanza_size</TT>
+ Options: <TT>max_stanza_size</TT>, <TT>shaper</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_service</TT></B></DT><DD CLASS="dd-description">
 Interacts with an <A HREF="http://www.ejabberd.im/tutorials-transports">external component</A>
 (as defined in the Jabber Component Protocol (<A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A>).<BR>
  Options: <TT>access</TT>, <TT>hosts</TT>, <TT>max_fsm_queue</TT>,
-<TT>shaper</TT>, <TT>service_check_from</TT>
+<TT>service_check_from</TT>, <TT>shaper</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_stun</TT></B></DT><DD CLASS="dd-description">
 Handles STUN Binding requests as defined in
 <A HREF="http://tools.ietf.org/html/rfc5389">RFC 5389</A>.<BR>
@@ -682,13 +682,10 @@ grow to. This should be increased if the server is going to handle
 lots of new incoming connections as they may be dropped if there is
 no space in the queue (and ejabberd was not able to accept them
 immediately). Default value is 5.
+</DD><DT CLASS="dt-description"><B><TT>captcha</TT></B></DT><DD CLASS="dd-description"> 
+Simple web page that allows a user to fill a CAPTCHA challenge (see section <A HREF="#captcha">3.1.8</A>).
 </DD><DT CLASS="dt-description"><B><TT>{certfile, Path}</TT></B></DT><DD CLASS="dd-description"> Full path to a file containing the default SSL certificate.
 To define a certificate file specific for a given domain, use the global option <TT>domain_certfile</TT>.
-</DD><DT CLASS="dt-description"><B><TT>{service_check_from, true|false}</TT></B></DT><DD CLASS="dd-description"> 
-This option can be used with <TT>ejabberd_service</TT> only. It is
-used to disable control on the from field on packets send by an
-external components. The option can be either <TT>true</TT> or
-<TT>false</TT>. The default value is <TT>true</TT> which conforms to <A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A>.
 </DD><DT CLASS="dt-description"><B><TT>{hosts, [Hostname, ...], [HostOption, ...]}</TT></B></DT><DD CLASS="dd-description"> 
 The external Jabber component that connects to this <TT>ejabberd_service</TT>
 can serve one or more hostnames.
@@ -698,8 +695,6 @@ when attempt to connect to ejabberd: <TT>{password, Secret}</TT>.
 Note that you cannot define in a single <TT>ejabberd_service</TT> components of
 different services: add an <TT>ejabberd_service</TT> for each service,
 as seen in an example below.
-</DD><DT CLASS="dt-description"><B><TT>captcha</TT></B></DT><DD CLASS="dd-description"> 
-Simple web page that allows a user to fill a CAPTCHA challenge (see section <A HREF="#captcha">3.1.8</A>).
 </DD><DT CLASS="dt-description"><B><TT>http_bind</TT></B></DT><DD CLASS="dd-description"> 
 This option enables HTTP Binding (<A HREF="http://xmpp.org/extensions/xep-0124.html">XEP-0124</A> and <A HREF="http://xmpp.org/extensions/xep-0206.html">XEP-0206</A>) support. HTTP Bind
 enables access via HTTP requests to <TT>ejabberd</TT> from behind firewalls which
@@ -744,7 +739,7 @@ Default value: &#X2019;undefined&#X2019;.
 </DD><DT CLASS="dt-description"><B><TT>{max_stanza_size, Size}</TT></B></DT><DD CLASS="dd-description">
 This option specifies an
 approximate maximum size in bytes of XML stanzas. Approximate,
-because it is calculated with the precision of one block of readed
+because it is calculated with the precision of one block of read
 data. For example <CODE>{max_stanza_size, 65536}</CODE>. The default
 value is <TT>infinity</TT>. Recommended values are 65536 for c2s
 connections and 131072 for s2s connections. s2s max stanza size
@@ -756,10 +751,13 @@ For example, if you want <TT>mod_foo</TT> to serve the URIs that start with <TT>
 and you also want <TT>mod_http_bind</TT> to serve the URIs <TT>/http-bind/</TT>,
 use this option: <TT>{request_handlers, [{["a", "b"], mod_foo}, {["http-bind"], mod_http_bind}]}</TT>
 </DD><DT CLASS="dt-description"><B><TT>{service_check_from, true|false}</TT></B></DT><DD CLASS="dd-description">
-By enabling this option, <TT>ejabberd</TT> allows the component to send packets with any arbitrary domain in the &#X2019;from&#X2019; attribute.
-Note that <A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A> requires that the domain must match the hostname of the component.
-Only enable this option if you are completely sure you need to enable it.
-Default value: false.
+
+This option can be used with <TT>ejabberd_service</TT> only.
+<A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A> requires that the domain must match the hostname of the component.
+If this option is set to <TT>false</TT>, <TT>ejabberd</TT> will allow the component
+to send stanzas with any arbitrary domain in the &#X2019;from&#X2019; attribute.
+Only use this option if you are completely sure about it.
+The default value is <TT>true</TT>, to be compliant with <A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A>.
 </DD><DT CLASS="dt-description"><B><TT>{shaper, none|ShaperName}</TT></B></DT><DD CLASS="dd-description"> This option defines a
 shaper for the port (see section&#XA0;<A HREF="#shapers">3.1.6</A>). The default value
 is <TT>none</TT>.

@@ -778,12 +778,12 @@ The available modules, their purpose and the options allowed by each one are:
     \texttt{zlib}
   \titem{\texttt{ejabberd\_s2s\_in}}
     Handles incoming s2s connections.\\
-    Options: \texttt{max\_stanza\_size}
+    Options: \texttt{max\_stanza\_size}, \texttt{shaper}
   \titem{\texttt{ejabberd\_service}}
     Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component}
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts}, \texttt{max\_fsm\_queue},
-    \texttt{shaper}, \texttt{service\_check\_from}
+    \texttt{service\_check\_from}, \texttt{shaper}
   \titem{\texttt{ejabberd\_stun}}
     Handles STUN Binding requests as defined in
     \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}.\\
@@ -807,13 +807,10 @@ This is a detailed description of each option allowed by the listening modules:
     lots of new incoming connections as they may be dropped if there is
     no space in the queue (and ejabberd was not able to accept them
     immediately). Default value is 5.
+  \titem{captcha} \ind{options!http-captcha}
+    Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
   \titem{\{certfile, Path\}} Full path to a file containing the default SSL certificate.
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
-  \titem{\{service\_check\_from, true|false\}} \ind{options!service\_check\_from}
-    This option can be used with \term{ejabberd\_service} only. It is
-    used to disable control on the from field on packets send by an
-    external components. The option can be either \term{true} or
-    \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
   \titem{\{hosts, [Hostname, ...], [HostOption, ...]\}} \ind{options!hosts}
     The external Jabber component that connects to this \term{ejabberd\_service}
     can serve one or more hostnames.
@@ -823,8 +820,6 @@ This is a detailed description of each option allowed by the listening modules:
     Note that you cannot define in a single \term{ejabberd\_service} components of
     different services: add an \term{ejabberd\_service} for each service,
     as seen in an example below.
-  \titem{captcha} \ind{options!http-captcha}
-    Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
   \titem{http\_bind} \ind{options!http\_bind}\ind{protocols!XEP-0206: HTTP Binding}\ind{JWChat}\ind{web-based XMPP client}
     This option enables HTTP Binding (\xepref{0124} and \xepref{0206}) support. HTTP Bind
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
@@ -877,7 +872,7 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{\{max\_stanza\_size, Size\}}
     \ind{options!max\_stanza\_size}This option specifies an
     approximate maximum size in bytes of XML stanzas.  Approximate,
-    because it is calculated with the precision of one block of readed
+    because it is calculated with the precision of one block of read
     data. For example \verb|{max_stanza_size, 65536}|.  The default
     value is \term{infinity}. Recommended values are 65536 for c2s
     connections and 131072 for s2s connections. s2s max stanza size
@@ -889,10 +884,13 @@ This is a detailed description of each option allowed by the listening modules:
     and you also want \term{mod\_http\_bind} to serve the URIs \term{/http-bind/},
     use this option: \term{\{request\_handlers, [\{["a", "b"], mod\_foo\}, \{["http-bind"], mod\_http\_bind\}]\}}
   \titem{\{service\_check\_from, true|false\}}
-    By enabling this option, \ejabberd{} allows the component to send packets with any arbitrary domain in the 'from' attribute.
-    Note that \xepref{0114} requires that the domain must match the hostname of the component.
-    Only enable this option if you are completely sure you need to enable it.
-    Default value: false.
+    \ind{options!service\_check\_from}
+    This option can be used with \term{ejabberd\_service} only.
+    \xepref{0114} requires that the domain must match the hostname of the component.
+    If this option is set to \term{false}, \ejabberd{} will allow the component
+    to send stanzas with any arbitrary domain in the 'from' attribute.
+    Only use this option if you are completely sure about it.
+    The default value is \term{true}, to be compliant with \xepref{0114}.
   \titem{\{shaper, none|ShaperName\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.
