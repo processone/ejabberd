@@ -182,13 +182,20 @@ check_password(User, Server, Password) ->
 check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
-%% @spec (User, Server, Password) -> {error, not_allowed}
+%% @spec (User, Server, Password) -> {error, Reason} | ok
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
+%%     Reason = term()
 
-set_password(_User, _Server, _Password) ->
-    {error, not_allowed}.
+set_password(User, Server, Password) ->
+    {ok, State} = eldap_utils:get_state(Server, ?MODULE),
+    case find_user_dn(User, State) of
+	false ->
+	    {error, user_not_found};
+	DN ->
+	    eldap_pool:modify_passwd(State#state.eldap_id, DN, Password)
+    end.
 
 %% @spec (User, Server, Password) -> {error, not_allowed}
 %%     User = string()
