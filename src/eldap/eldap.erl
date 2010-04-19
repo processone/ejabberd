@@ -35,6 +35,7 @@
 
 %%% Modified by Evgeniy Khramtsov <xram@jabber.ru>
 %%% Implemented queue for bind() requests to prevent pending binds.
+%%% Implemented extensibleMatch/2 function.
 
 %%% Modified by Christophe Romain <christophe.romain@process-one.net>
 %%% Improve error case handling
@@ -71,7 +72,7 @@
 
 -export([baseObject/0,singleLevel/0,wholeSubtree/0,close/1,
 	 equalityMatch/2,greaterOrEqual/2,lessOrEqual/2,
-	 approxMatch/2,search/2,substrings/2,present/1,
+	 approxMatch/2,search/2,substrings/2,present/1,extensibleMatch/2,
 	 'and'/1,'or'/1,'not'/1,modify/3, mod_add/2, mod_delete/2,
 	 mod_replace/2, add/3, delete/2, modify_dn/5, bind/3]).
 -export([get_status/1]).
@@ -374,6 +375,29 @@ substrings(Type, SubStr) when is_list(Type), is_list(SubStr) ->
     {substrings,#'SubstringFilter'{type = Type,
 				   substrings = Ss}}.
 
+%%%
+%%% extensibleMatch filter.
+%%% FIXME: Describe the purpose of this filter.
+%%%
+%%% Value   ::= string( <attribute> )
+%%% Opts    ::= listof( {matchingRule, Str} | {type, Str} | {dnAttributes, true} )
+%%%
+%%% Example: extensibleMatch("Fred", [{matchingRule, "1.2.3.4.5"}, {type, "cn"}]).
+%%%
+extensibleMatch(Value, Opts) when is_list(Value), is_list(Opts) ->
+	MRA = #'MatchingRuleAssertion'{matchValue=Value},
+	{extensibleMatch, extensibleMatch_opts(Opts, MRA)}.
+
+extensibleMatch_opts([{matchingRule, Rule} | Opts], MRA) when is_list(Rule) ->
+	extensibleMatch_opts(Opts, MRA#'MatchingRuleAssertion'{matchingRule=Rule});
+extensibleMatch_opts([{type, Desc} | Opts], MRA) when is_list(Desc) ->
+	extensibleMatch_opts(Opts, MRA#'MatchingRuleAssertion'{type=Desc});
+extensibleMatch_opts([{dnAttributes, true} | Opts], MRA) ->
+	extensibleMatch_opts(Opts, MRA#'MatchingRuleAssertion'{dnAttributes=true});
+extensibleMatch_opts([_ | Opts], MRA) ->
+	extensibleMatch_opts(Opts, MRA);
+extensibleMatch_opts([], MRA) ->
+	MRA.
 
 get_handle(Pid) when is_pid(Pid)    -> Pid;
 get_handle(Atom) when is_atom(Atom) -> Atom;
@@ -973,6 +997,8 @@ v_filter({lessOrEqual,AV})    -> {lessOrEqual,AV};
 v_filter({approxMatch,AV})    -> {approxMatch,AV};
 v_filter({present,A})         -> {present,A};
 v_filter({substrings,S}) when is_record(S,'SubstringFilter') -> {substrings,S};
+v_filter({extensibleMatch, S}) when is_record(S, 'MatchingRuleAssertion') ->
+    {extensibleMatch, S};
 v_filter(_Filter) -> throw({error,concat(["unknown filter: ",_Filter])}).
 
 v_modifications(Mods) ->

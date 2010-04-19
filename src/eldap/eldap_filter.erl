@@ -3,7 +3,7 @@
 %%% Purpose: Converts String Representation of
 %%%            LDAP Search Filter (RFC 2254)
 %%%            to eldap's representation of filter
-%%% Author:  Evgeniy Khramtsov <xramtsov@gmail.com>
+%%% Author:  Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2010   ProcessOne
@@ -24,19 +24,17 @@
 %%% 02111-1307 USA
 %%%
 %%%----------------------------------------------------------------------
-
 -module(eldap_filter).
 
-%%%======================
-%%% Export functions
-%%%======================
+%% TODO: remove this when new regexp module will be used
+-compile({nowarn_deprecated_function, {regexp, sub, 3}}).
 
--export([parse/1,
-	 parse/2,
-	 do_sub/2
-	]).
+-export([parse/1, parse/2, do_sub/2]).
 
-%%%-------------------------------------------------------------------------
+%%====================================================================
+%% API
+%%====================================================================
+%%%-------------------------------------------------------------------
 %%% Arity: parse/1
 %%% Function: parse(RFC2254_Filter) -> {ok, EldapFilter}   |
 %%%                                    {error, bad_filter}
@@ -47,15 +45,15 @@
 %%%              to eldap's representation of filter.
 %%%
 %%% Example:
-%%%    > eldap_filter:parse("(&(!(uid<=100))(mail=*))").
+%%%   > eldap_filter:parse("(&(!(uid<=100))(mail=*))").
 %%%
-%%%    {ok,{'and',[{'not',{lessOrEqual,{'AttributeValueAssertion',"uid","100"}}},
-%%%            {present,"mail"}]}}
-%%%-------------------------------------------------------------------------
-parse(RFC2254_Filter) ->
-    parse(RFC2254_Filter, []).
+%%%   {ok,{'and',[{'not',{lessOrEqual,{'AttributeValueAssertion',"uid","100"}}},
+%%%           {present,"mail"}]}}
+%%%-------------------------------------------------------------------
+parse(L) when is_list(L) ->
+    parse(L, []).
 
-%%%-------------------------------------------------------------------------
+%%%-------------------------------------------------------------------
 %%% Arity: parse/2
 %%% Function: parse(RFC2254_Filter, [SubstValue |...]) ->
 %%%                                  {ok, EldapFilter}                 |
@@ -81,135 +79,53 @@ parse(RFC2254_Filter) ->
 %%%           {equalityMatch,{'AttributeValueAssertion',
 %%%                              "jid",
 %%%                              "xramtsov@gmail.com"}}]}}
-%%%--------------------------------------------------------------------------
-parse(RFC2254_Filter, ListOfSubValues) ->
-    case catch convert_filter(parse_filter(RFC2254_Filter), ListOfSubValues) of
-	[EldapFilter] when is_tuple(EldapFilter) ->
-	    {ok, EldapFilter};
-	{regexp, Error} ->
-	    {error, Error};
-	_ ->
-	    {error, bad_filter}
+%%%-------------------------------------------------------------------
+parse(L, SList) when is_list(L), is_list(SList) ->
+    case catch eldap_filter_yecc:parse(scan(L, SList)) of
+	{error, {_, _, Msg}} ->
+	    {error, Msg};
+	{ok, Result} ->
+	    {ok, Result};
+	{regexp, Err} ->
+	    {error, Err}
     end.
 
-%%%==========================
-%%% Internal functions
-%%%==========================
+%%====================================================================
+%% Internal functions
+%%====================================================================
+-define(do_scan(L), scan(Rest, [], [{L, 1} | check(Buf, S) ++ Result], L, S)).
 
-%%%----------------------
-%%% split/1,4
-%%%----------------------
-split(Filter) ->
-    split(Filter, 0, [], []).
+scan(L, SList) ->
+    scan(L, "", [], undefined, SList).
 
-split([], _, _, Result) ->
-    Result;
+scan("=*)" ++ Rest, Buf, Result, '(', S) ->
+    scan(Rest, [], [{')', 1}, {'=*', 1} | check(Buf, S) ++ Result], ')', S);
+scan(":dn" ++ Rest, Buf, Result, '(', S) -> ?do_scan(':dn');
+scan(":=" ++ Rest, Buf, Result, '(', S) -> ?do_scan(':=');
+scan(":=" ++ Rest, Buf, Result, ':dn', S) -> ?do_scan(':=');
+scan(":=" ++ Rest, Buf, Result, ':', S) -> ?do_scan(':=');
+scan("~=" ++ Rest, Buf, Result, '(', S) -> ?do_scan('~=');
+scan(">=" ++ Rest, Buf, Result, '(', S) -> ?do_scan('>=');
+scan("<=" ++ Rest, Buf, Result, '(', S) -> ?do_scan('<=');
+scan("="  ++ Rest, Buf, Result, '(', S) -> ?do_scan('=');
+scan(":"  ++ Rest, Buf, Result, '(', S) -> ?do_scan(':');
+scan(":"  ++ Rest, Buf, Result, ':dn', S) -> ?do_scan(':');
+scan("&"  ++ Rest, Buf, Result, '(', S) when Buf=="" -> ?do_scan('&');
+scan("|"  ++ Rest, Buf, Result, '(', S) when Buf=="" -> ?do_scan('|');
+scan("!"  ++ Rest, Buf, Result, '(', S) when Buf=="" -> ?do_scan('!');
+scan("*"  ++ Rest, Buf, Result, '*', S) -> ?do_scan('*');
+scan("*"  ++ Rest, Buf, Result, '=', S) -> ?do_scan('*');
+scan("("  ++ Rest, Buf, Result, _, S) -> ?do_scan('(');
+scan(")"  ++ Rest, Buf, Result, _, S) -> ?do_scan(')');
+scan([Letter | Rest], Buf, Result, PreviosAtom, S) ->
+    scan(Rest, [Letter|Buf], Result, PreviosAtom, S);
+scan([], Buf, Result, _, S) ->
+    lists:reverse(check(Buf, S) ++ Result).
 
-split([H|T], Num, Rest, Result) ->
-    NewNum = case H of
-		 $( -> Num + 1;
-		    $) -> Num - 1;
-		 _ -> Num
-	     end,
-    if
-	NewNum == 0 ->
-	    X = Rest++[H],
-	    LenX = length(X),
-	    if
-		LenX > 2 ->
-		    split(T, 0, [], Result ++ [lists:sublist(X, 2, LenX-2)]);
-		true ->
-		    split(T, 0, Rest, Result)
-	    end;
-	true ->
-	    split(T, NewNum, Rest++[H], Result)
-    end.
-
-%%%-----------------------
-%%% parse_filter/1
-%%%-----------------------
-parse_filter(Filter) ->
-    case Filter of
-	[$! | T] ->
-	    {'not', parse_filter(T)};
-	[$| | T] ->
-	    {'or', parse_filter(T)};
-	[$& | T] ->
-	    {'and', parse_filter(T)};
-	[$( | _] ->
-		parse_filter(split(Filter));
-	[List | _] when is_list(List) ->
-	    [parse_filter(X) || X <- Filter];
-	_ ->
-	    Filter
-    end.
-
-%%%--------------------
-%%% convert_filter/2
-%%%--------------------
-convert_filter({'not', [Val | _]}, Replace) ->
-    eldap:'not'(convert_filter(Val, Replace));
-
-convert_filter({'or', Vals}, Replace) ->
-    eldap:'or'([convert_filter(X, Replace) || X <- Vals]);
-
-convert_filter({'and', Vals}, Replace) ->
-    eldap:'and'([convert_filter(X, Replace) || X <- Vals]);
-
-convert_filter([H|_] = Filter, Replace) when is_integer(H) ->
-    parse_attr(Filter, Replace);
-
-convert_filter(Filter, Replace) when is_list(Filter) ->
-    [convert_filter(X, Replace) || X <- Filter].
-
-%%%-----------------
-%%% parse_attr/2,3
-%%%-----------------
-parse_attr(Attr, ListOfSubValues) ->
-    {Action, [_|_] = Name, [_|_] = Value} = split_attribute(Attr),
-    parse_attr(Action, {Name, Value}, ListOfSubValues).
-
-parse_attr(approx, {Name, Value}, ListOfSubValues) ->
-    NewValue = do_sub(Value, ListOfSubValues),
-    eldap:approxMatch(Name, NewValue);
-
-parse_attr(greater, {Name, Value}, ListOfSubValues) ->
-    NewValue = do_sub(Value, ListOfSubValues),
-    eldap:greaterOrEqual(Name, NewValue);
-
-parse_attr(less, {Name, Value}, ListOfSubValues) ->
-    NewValue = do_sub(Value, ListOfSubValues),
-    eldap:lessOrEqual(Name, NewValue);
-
-parse_attr(equal, {Name, Value}, ListOfSubValues) ->
-    {ok, RegSList} = regexp:split(remove_extra_asterisks(Value), "[*]"),
-    Pattern = case [do_sub(X, ListOfSubValues) || X <- RegSList] of
-		  [Head | Tail] when Tail /= [] ->
-		      {Head, lists:sublist(Tail, length(Tail)-1), lists:last(Tail)};
-		  R ->
-		      R
-	      end,
-    case Pattern of
-	[V] ->
-	    eldap:equalityMatch(Name, V);
-	{[], [], []} ->
-	    eldap:present(Name);
-	{"", Any, ""} ->
-	    eldap:substrings(Name, [{any, X} || X<-Any]);
-	{H, Any, ""} ->
-	    eldap:substrings(Name, [{initial, H}]++[{any, X} || X<-Any]);
-	{"", Any, T} ->
-	    eldap:substrings(Name, [{any, X} || X<-Any]++[{final, T}]);
-	{H, Any, T} ->
-	    eldap:substrings(Name, [{initial, H}]++[{any, X} || X<-Any]++[{final, T}])
-    end;
-
-parse_attr(_, _, _) ->
-    false.
-
-%%%--------------------
-%%% do_sub/2,3
-%%%--------------------
+check([], _) ->
+    [];
+check(Buf, S) ->
+    [{str, 1, do_sub(lists:reverse(Buf), S)}].
 
 -define(MAX_RECURSION, 100).
 
@@ -234,9 +150,9 @@ do_sub(S, {RegExp, New}, Iter) ->
 	{ok, NewS, _} when Iter =< ?MAX_RECURSION ->
 	    do_sub(NewS, {RegExp, New}, Iter+1);
 	{ok, _, _} when Iter > ?MAX_RECURSION ->
-	    throw({regexp, max_substitute_recursion});
+	    erlang:error(max_substitute_recursion);
 	_ ->
-	    throw({regexp, bad_regexp})
+	    erlang:error(bad_regexp)
     end;
 
 do_sub(S, {_, _, N}, _) when N<1 ->
@@ -251,52 +167,11 @@ do_sub(S, {RegExp, New, Times}, Iter) ->
 	{ok, NewS, _} ->
 	    NewS;
 	_ ->
-	    throw({regexp, bad_regexp})
+	    erlang:error(bad_regexp)
     end.
-
-remove_extra_asterisks(String) ->
-    {Res, _} = lists:foldl(
-		 fun(X, {Acc, Last}) ->
-			 case X of
-			     $* when Last==$* ->
-				 {Acc, X};
-			     _ ->
-				 {Acc ++ [X], X}
-			 end
-		 end,
-		 {"", ""}, String),
-    Res.
 
 replace_amps(String) ->
-	lists:foldl(
-		fun(X, Acc) ->
-			if
-				X == $& ->
-					Acc ++ "\\&";
-				true ->
-					Acc ++ [X]
-			end
-		end,
-	"", String).
-
-split_attribute(String) ->
-    split_attribute(String, "", $0).
-
-split_attribute([], _, _) ->
-    {error, "", ""};
-
-split_attribute([H|Tail], Acc, Last) ->
-    case H of
-	$= when Last==$> ->
-	    {greater, lists:sublist(Acc, 1, length(Acc)-1), Tail};
-	$= when Last==$< ->
-	    {less, lists:sublist(Acc, 1, length(Acc)-1), Tail};
-	$= when Last==$~ ->
-	    {approx, lists:sublist(Acc, 1, length(Acc)-1), Tail};
-	$= when Last==$: ->
-	    {equal, lists:sublist(Acc, 1, length(Acc)-1), Tail};
-	$= ->
-	    {equal, Acc, Tail};
-	_ ->
-	    split_attribute(Tail, Acc++[H], H)
-    end.
+    lists:map(
+      fun($&) -> "\\&";
+	 (Chr) -> Chr
+      end, String).
