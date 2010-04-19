@@ -33,9 +33,11 @@
 
 %%% Modified by Alexey Shchepin <alexey@sevcom.net>
 
-%%% Modified by Evgeniy Khramtsov <xram@jabber.ru>
+%%% Modified by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%% Implemented queue for bind() requests to prevent pending binds.
 %%% Implemented extensibleMatch/2 function.
+%%% Implemented LDAP Extended Operations (currently only Password Modify
+%%%   is supported - RFC 3062).
 
 %%% Modified by Christophe Romain <christophe.romain@process-one.net>
 %%% Improve error case handling
@@ -74,7 +76,7 @@
 	 equalityMatch/2,greaterOrEqual/2,lessOrEqual/2,
 	 approxMatch/2,search/2,substrings/2,present/1,extensibleMatch/2,
 	 'and'/1,'or'/1,'not'/1,modify/3, mod_add/2, mod_delete/2,
-	 mod_replace/2, add/3, delete/2, modify_dn/5, bind/3]).
+	 mod_replace/2, add/3, delete/2, modify_dn/5, modify_passwd/3, bind/3]).
 -export([get_status/1]).
 
 %% gen_fsm callbacks
@@ -240,6 +242,10 @@ modify_dn(Handle, Entry, NewRDN, DelOldRDN, NewSup)
       {modify_dn, Entry, NewRDN, bool_p(DelOldRDN), optional(NewSup)},
       ?CALL_TIMEOUT).
 
+modify_passwd(Handle, DN, Passwd) when is_list(DN), is_list(Passwd) ->
+    Handle1 = get_handle(Handle),
+    gen_fsm:sync_send_event(
+      Handle1, {modify_passwd, DN, Passwd}, ?CALL_TIMEOUT).
 
 %%% --------------------------------------------------------------------
 %%% Bind.
@@ -695,6 +701,16 @@ gen_req({modify_dn, Entry, NewRDN, DelOldRDN, NewSup}) ->
 			deleteoldrdn = DelOldRDN,
 			newSuperior  = NewSup}};
 
+gen_req({modify_passwd, DN, Passwd}) ->
+    {ok, ReqVal} = asn1rt:encode(
+		     'ELDAPv3', 'PasswdModifyRequestValue',
+		     #'PasswdModifyRequestValue'{
+				  userIdentity = DN,
+				  newPasswd = Passwd}),
+    {extendedReq,
+     #'ExtendedRequest'{requestName = ?passwdModifyOID,
+			requestValue = list_to_binary(ReqVal)}};
+
 gen_req({bind, RootDN, Passwd}) ->
     {bindRequest,
      #'BindRequest'{version        = ?LDAP_VERSION,
@@ -769,6 +785,11 @@ recvd_packet(Pkt, S) ->
 		    cancel_timer(Timer),
 		    Reply = check_bind_reply(Result, From),
 		    {reply, Reply, From, S#eldap{dict = New_dict}};
+		{extendedReq, {extendedResp, Result}} ->
+		    New_dict = dict:erase(Id, Dict),
+		    cancel_timer(Timer),
+		    Reply = check_extended_reply(Result, From),
+		    {reply, Reply, From, S#eldap{dict = New_dict}};
 		{OtherName, OtherResult} ->
 		    New_dict = dict:erase(Id, Dict),
 		    cancel_timer(Timer),
@@ -791,6 +812,15 @@ check_bind_reply(#'BindResponse'{resultCode = success}, _From) ->
 check_bind_reply(#'BindResponse'{resultCode = Reason}, _From) ->
     {error, Reason};
 check_bind_reply(Other, _From) ->
+    {error, Other}.
+
+%% TODO: process reply depending on requestName:
+%% this requires BER-decoding of #'ExtendedResponse'.response
+check_extended_reply(#'ExtendedResponse'{resultCode = success}, _From) ->
+    ok;
+check_extended_reply(#'ExtendedResponse'{resultCode = Reason}, _From) ->
+    {error, Reason};
+check_extended_reply(Other, _From) ->
     {error, Other}.
 
 get_op_rec(Id, Dict) ->
