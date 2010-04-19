@@ -289,8 +289,8 @@ send_registration_notifications(UJID, Source) ->
     end.
 
 check_from(JID, Server) ->
-    case {exmpp_jid:node_as_list(JID), exmpp_jid:prep_domain_as_list(JID)} of
-	{"", ""} ->
+    case {exmpp_jid:node(JID), exmpp_jid:prep_domain(JID)} of
+	{undefined, undefined} ->
 	    allow;
 	_ ->
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access_from, none),
