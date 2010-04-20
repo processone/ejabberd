@@ -336,7 +336,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	    ErrText = "Access denied by service policy",
 	    Err = jlib:make_error_reply(Packet,
 					?ERRT_FORBIDDEN(Lang, ErrText)),
-	    ejabberd_router:route(To, From, Err)
+	    ejabberd_router:route_error(To, From, Err, Packet)
     end.
 
 

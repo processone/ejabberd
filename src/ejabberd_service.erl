@@ -351,7 +351,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    send_text(StateData, Text);
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
-	    ejabberd_router:route(To, From, Err)
+	    ejabberd_router:route_error(To, From, Err, Packet)
     end,
     {next_state, StateName, StateData}.
 
