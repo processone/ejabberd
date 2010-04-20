@@ -347,7 +347,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    send_element(StateData, El2);
 	deny ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'not-allowed'),
-	    ejabberd_router:route(To, From, Err)
+	    ejabberd_router:route_error(To, From, Err, Packet)
     end,
     {next_state, StateName, StateData}.
 

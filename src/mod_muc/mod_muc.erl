@@ -338,7 +338,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
         Err = exmpp_iq:error(Packet,exmpp_stanza:error(Packet#xmlel.ns,
                                                        'forbidden',
                                                        {Lang,ErrText})),
-	    ejabberd_router:route(To, From, Err)
+	    ejabberd_router:route_error(To, From, Err, Packet)
     end.
 
 
