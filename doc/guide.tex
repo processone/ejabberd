@@ -3255,10 +3255,10 @@ Options:
   This option sets the full path to the directory in which the HTML files should
   be stored. Make sure the \ejabberd{} daemon user has write access on that
   directory. The default value is \term{"www/muc"}.
-\titem{\{spam\_prevention true|false\}}\ind{options!spam\_prevention}
-  To prevent spam, the \term{spam\_prevention} option adds a special attribute
+\titem{\{link\_nofollow true|false\}}\ind{options!link\_nofollow}
+  The option \term{link\_nofollow} adds a special attribute
   to links that prevent their indexation by search engines. The default value
-  is \term{true}, which mean that nofollow attributes will be added to user
+  is \term{true}, which means that \term{nofollow} attributes will be added to user
   submitted links.
 \titem{\{timezone, local|universal\}}\ind{options!timezone}
   The time zone for the logs is configurable with this option. Allowed values
@@ -3291,7 +3291,7 @@ Examples:
                  {dirname, room_jid},
                  {outdir, "/var/www/muclogs"},
                  {timezone, universal},
-                 {spam_prevention, true},
+                 {link_nofollow, true},
                  {top_link, {"http://www.jabber.ru/", "Jabber.ru"}}
                 ]},
   ...

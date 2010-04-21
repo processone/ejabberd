@@ -63,7 +63,7 @@
 		access,
 		lang,
 		timezone,
-		spam_prevention,
+		link_nofollow,
 		top_link}).
 
 %%====================================================================
@@ -126,7 +126,7 @@ init([Host, Opts]) ->
     AccessLog = gen_mod:get_opt(access_log, Opts, muc_admin),
     Timezone = gen_mod:get_opt(timezone, Opts, local),
     Top_link = gen_mod:get_opt(top_link, Opts, {"/", "Home"}),
-    NoFollow = gen_mod:get_opt(spam_prevention, Opts, true),
+    NoFollow = gen_mod:get_opt(link_nofollow, Opts, true),
     Lang = case ejabberd_config:get_local_option({language, Host}) of
 	       undefined ->
 		   case ejabberd_config:get_global_option(language) of
@@ -144,7 +144,7 @@ init([Host, Opts]) ->
 		access = AccessLog,
 		lang = list_to_binary(Lang),
 		timezone = Timezone,
-		spam_prevention = NoFollow,
+		link_nofollow = NoFollow,
 		top_link = Top_link}}.
 
 %%--------------------------------------------------------------------
@@ -321,7 +321,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	   css_file = CSSFile,
 	   lang = Lang,
 	   timezone = Timezone,
-	   spam_prevention = NoFollow,
+	   link_nofollow = NoFollow,
 	   top_link = TopLink} = State,
     Room = get_room_info(RoomJID, Opts),
     Nick = htmlize(Nick1, FileFormat),
@@ -773,11 +773,6 @@ put_room_occupants(F, RoomOccupants, Lang, _FileFormat) ->
     fw(F,   "<div class=\"rcos\" id=\"o~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomOccupants]),
     fw(F, "</div>").
 
-%% htmlize
-%% The default behaviour is to ignore the nofollow spam prevention on links
-%% (NoFollow=false)
-
-
 htmlize(S1) ->
     htmlize(S1, html).
 
@@ -786,7 +781,7 @@ htmlize(S1, plaintext) ->
 htmlize(S1, FileFormat) ->
     htmlize(S1, false, FileFormat).
 
-%% The NoFollow parameter tell if the spam prevention should be applied to the link found
+%% The NoFollow parameter tell if the 'nofollow' attribute must be added to the link.
 %% true means 'apply nofollow on links'.
 htmlize(S1, _NoFollow, plaintext) ->
     S1;

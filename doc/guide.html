@@ -2535,10 +2535,10 @@ The default value is <TT>html</TT>.
 This option sets the full path to the directory in which the HTML files should
 be stored. Make sure the <TT>ejabberd</TT> daemon user has write access on that
 directory. The default value is <TT>"www/muc"</TT>.
-</DD><DT CLASS="dt-description"><B><TT>{spam_prevention true|false}</TT></B></DT><DD CLASS="dd-description">
-To prevent spam, the <TT>spam_prevention</TT> option adds a special attribute
+</DD><DT CLASS="dt-description"><B><TT>{link_nofollow true|false}</TT></B></DT><DD CLASS="dd-description">
+The option <TT>link_nofollow</TT> adds a special attribute
 to links that prevent their indexation by search engines. The default value
-is <TT>true</TT>, which mean that nofollow attributes will be added to user
+is <TT>true</TT>, which means that <TT>nofollow</TT> attributes will be added to user
 submitted links.
 </DD><DT CLASS="dt-description"><B><TT>{timezone, local|universal}</TT></B></DT><DD CLASS="dd-description">
 The time zone for the logs is configurable with this option. Allowed values
@@ -2568,7 +2568,7 @@ time zone will be GMT/UTC. Finally, the top link will be
                  {dirname, room_jid},
                  {outdir, "/var/www/muclogs"},
                  {timezone, universal},
-                 {spam_prevention, true},
+                 {link_nofollow, true},
                  {top_link, {"http://www.jabber.ru/", "Jabber.ru"}}
                 ]},
   ...
