@@ -731,18 +731,20 @@ favicon() ->
 logo() ->
     jlib:decode_base64(
       "iVBORw0KGgoAAAANSUhEUgAAAVcAAAA3CAMAAACPbPnEAAAAAXNSR0IArs4c"
-      "6QAAAEtQTFRFcTIA1XcE/YsA/40E/pIH/JYc/5kg/54i/KIu/6U6/apE/61H"
-      "/61P/bFX/7Vh/bda/rpq/L5s/8J2/cJ8/8qI/86Y/9aj/9mt/+bJ7EGiPwAA"
-      "AZRJREFUeNrt28lug0AQhGHajrPv+/s/aVwpDlgE0gQ3tqO/DhxihMg33VJ7"
-      "JmmCVKSJlVJ4bZQ93Jl/zjJv+8tzcMUVV1xxLXIlRfPAZptYrbf5YeW618PW"
-      "yvG8w/g9ZwquuJ6Y6+bbdY0rrifhSmrmgUulVXbVDq3H39Zy6Cf9+8c7JNM/"
-      "mXeY8+SMRmuIK6644oprkSupmQdulLhQdup1qJKmrmWmVpb5NN9LUyddu7nn"
-      "LYkrrrjiimuVK6mZB+6VuFbiXJk8v/bnv0PVa+Yd5tdr/x7vCfqbgPsfV1xx"
-      "xRXXKldSMw+8KPGgxJWyU7WZE538p0vOr/lOm/q7dPf+bOVKvVXiUcEVV1xx"
-      "xbXMldTMA29KPCtxp7T6XpvxE6/9nm/l987mnG9l5u/8jO4Ot9uTEq8Krrji"
-      "iiuuZa6kZh74UFpli3sO61btMfyHyWGv/RMs7wB67ne32/BdwRVXXHHFtcyV"
-      "1MwDn0qrbHHvyPT/Dsarla/R/1GpQydYPhf0bqC/A7jz7YkrrrjiimuVK6nI"
-      "F5dWoNvcLcs/AAAAAElFTkSuQmCC").
+      "6QAAAFFQTFRFcjICrFMI1nYO/ooC/o4G/o4O/pIS/pYa/pom/p4q/qIz/qY+"
+      "/qpG/q5K/q5S/rJW/rZe/rZi/rpq/r5u/sJ2/sJ+/sqM/s6W/tam/tqu/ubG"
+      "ry/SlQAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAAHdElN"
+      "RQfaBBUNLS4ZElD3AAABoklEQVR42u2bSW7DMBAEHdqJszv79v+Hxp3WQQFD"
+      "YSJ5JAioOvBgEQRdbAIj0t4UyGBTtiK93YgT9IyPM89smyPgFa94xStek7xC"
+      "Uj2wP1K2uyN/rFndLpuVZecQsXEh8IrXlXnd/3jd4RWvq/AKOfXAtegsn4vm"
+      "SpyJUJ7qPq1P6v7DmYgkJjKHcSNHbHQO8YpXvOIVr0leIaceuBPlSvzKa726"
+      "w3mN52Nckk71NL6X4nl19e89b5N4xSte8YrXLK+QUw88inIryqVoJiCS1+Gq"
+      "dM5EDs9hSl7rkX0m6DcB73+84hWveMVrllfIqQdeRXkQ5UaMPM+K30vNWb/G"
+      "b63i38V1at+Gk3ovypPAK17xile8pnmFnHrgXZQXUQ6is98/qYnf+ky/3xoe"
+      "Z8rTeFXa6unzPrf9vNrbsyhvAq94xSte8ZrmFXLqgU/RWbZx12H9O63IL12y"
+      "/2GybFvvW7eu+73b7fBD4BWveMUrXtO8Qk498CU6yzbuE5nunqa3Nj7H+W9G"
+      "157U1g2W7wV9Guh3AO98+8QrXvGKV7xmeYUMvgHvddyrncu7lwAAAABJRU5E"
+      "rkJggg==").
 
 logo_fill() ->
     jlib:decode_base64(
