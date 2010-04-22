@@ -263,42 +263,48 @@ process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Host = To#jid.lserver,
-	    Node = xml:get_tag_attr_s("node", SubEl),
-	    case ejabberd_hooks:run_fold(disco_sm_items,
-					 Host,
-					 empty,
-					 [From, To, Node, Lang]) of
-		{result, Items} ->
-		    ANode = case Node of
-				"" -> [];
-				_ -> [{"node", Node}]
-			    end,
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", ?NS_DISCO_ITEMS} | ANode],
-				     Items
-				    }]};
-		{error, Error} ->
-		    IQ#iq{type = error, sub_el = [SubEl, Error]}
-	    end
+            case is_presence_subscribed(From, To) of
+                true ->
+                    Host = To#jid.lserver,
+                    Node = xml:get_tag_attr_s("node", SubEl),
+                    case ejabberd_hooks:run_fold(disco_sm_items,
+                                                 Host,
+                                                 empty,
+                                                 [From, To, Node, Lang]) of
+                        {result, Items} ->
+                            ANode = case Node of
+                                        "" -> [];
+                                        _ -> [{"node", Node}]
+                                    end,
+                            IQ#iq{type = result,
+                                  sub_el = [{xmlelement, "query",
+                                             [{"xmlns", ?NS_DISCO_ITEMS} | ANode],
+                                             Items
+                                            }]};
+                        {error, Error} ->
+                            IQ#iq{type = error, sub_el = [SubEl, Error]}
+                    end;
+                false ->
+                    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]}
+            end
     end.
 
 get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_sm_items(Acc,
-	    #jid{luser = LFrom, lserver = LSFrom},
-	    #jid{user = User, server = Server, luser = LTo, lserver = LSTo} = _To,
+get_sm_items(Acc, From,
+	    #jid{user = User, server = Server} = To,
 	    [], _Lang) ->
     Items = case Acc of
 		{result, Its} -> Its;
 		empty -> []
 	    end,
-    Items1 = case {LFrom, LSFrom} of
-		 {LTo, LSTo} -> get_user_resources(User, Server);
-		 _ -> []
-	     end,
+    Items1 = case is_presence_subscribed(From, To) of
+                   true ->
+                       get_user_resources(User, Server);
+                   _ -> 
+                       []
+                end,
     {result, Items ++ Items1};
  
 get_sm_items({result, _} = Acc, _From, _To, _Node, _Lang) ->
@@ -314,39 +320,63 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
 	    {error, ?ERR_NOT_ALLOWED}
     end.
 
+is_presence_subscribed(#jid{luser=User, lserver=Server}, #jid{luser=LUser, lserver=LServer}) ->
+    lists:any(fun({roster, _, _, {TUser, TServer, _}, _, S, _, _, _, _}) -> 
+                            if 
+                                LUser == TUser, LServer == TServer, S/=none ->
+                                    true;
+                                true ->
+                                    false
+                            end
+                    end,
+                    ejabberd_hooks:run_fold(roster_get, Server, [], [{User, Server}]))
+                orelse User == LUser andalso Server == LServer.
+
 process_sm_iq_info(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Host = To#jid.lserver,
-	    Node = xml:get_tag_attr_s("node", SubEl),
-	    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
-					       Host,
-					       [],
-					       [From, To, Node, Lang]),
-	    case ejabberd_hooks:run_fold(disco_sm_features,
-					 Host,
-					 empty,
-					 [From, To, Node, Lang]) of
-		{result, Features} ->
-		    ANode = case Node of
-				"" -> [];
-				_ -> [{"node", Node}]
-			    end,
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", ?NS_DISCO_INFO} | ANode],
-				     Identity ++
-				     lists:map(fun feature_to_xml/1, Features)
-				    }]};
-		{error, Error} ->
-		    IQ#iq{type = error, sub_el = [SubEl, Error]}
-	    end
+            case is_presence_subscribed(From, To) of
+                true ->
+                    Host = To#jid.lserver,
+                    Node = xml:get_tag_attr_s("node", SubEl),
+                    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
+                                                       Host,
+                                                       [],
+                                                       [From, To, Node, Lang]),
+                    case ejabberd_hooks:run_fold(disco_sm_features,
+                                                 Host,
+                                                 empty,
+                                                 [From, To, Node, Lang]) of
+                        {result, Features} ->
+                            ANode = case Node of
+                                        "" -> [];
+                                        _ -> [{"node", Node}]
+                                    end,
+                            IQ#iq{type = result,
+                                  sub_el = [{xmlelement, "query",
+                                             [{"xmlns", ?NS_DISCO_INFO} | ANode],
+                                             Identity ++
+                                             lists:map(fun feature_to_xml/1, Features)
+                                            }]};
+                        {error, Error} ->
+                            IQ#iq{type = error, sub_el = [SubEl, Error]}
+                    end;
+                false ->
+                    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]}
+            end
     end.
 
-get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
+get_sm_identity(Acc, _From, #jid{luser = LUser, lserver=LServer}, _Node, _Lang) ->
+    Acc ++  case ejabberd_auth:is_user_exists(LUser, LServer) of
+        true ->
+            [{xmlelement, "identity", [{"category", "account"},
+            {"type", "registered"}], []}];
+        _ ->
+            []
+    end.
+
 
 get_sm_features(empty, From, To, _Node, _Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
