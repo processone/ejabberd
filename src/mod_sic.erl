@@ -58,10 +58,7 @@ process_local_iq(From, _To, #iq{type = 'get'} = IQ) ->
     get_ip(From, IQ);
 
 process_local_iq(_From, _To, #iq{type = 'set'} = IQ) ->
-    exmpp_iq:error(IQ, 'not-allowed');
-
-process_local_iq(_From, _To, #iq{} = IQ) ->
-    exmpp_iq:error(IQ, 'unexpected-request').
+    exmpp_iq:error(IQ, 'not-allowed').
 
 
 process_sm_iq(
@@ -74,10 +71,7 @@ process_sm_iq(_From, _To, #iq{type = 'get'} = IQ) ->
     exmpp_iq:error(IQ, 'forbidden');
 
 process_sm_iq(_From, _To, #iq{type = 'set'} = IQ) ->
-    exmpp_iq:error(IQ, 'not-allowed');
-
-process_sm_iq(_From, _To, #iq{} = IQ) ->
-    exmpp_iq:error(IQ, 'unexpected-request').
+    exmpp_iq:error(IQ, 'not-allowed').
 
 get_ip(From, IQ) ->
     case ejabberd_sm:get_user_ip(From) of
