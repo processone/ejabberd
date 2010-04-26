@@ -264,7 +264,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 	end,
     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
     ?DEBUG("Create session: ~p", [Sid]),
-    mnesia:transaction(
+    mnesia:async_dirty(
       fun() ->
 	      mnesia:write(
 		#http_bind{id = Sid,
@@ -528,7 +528,7 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
     ?DEBUG("terminate: Deleting session ~s", [StateData#state.id]),
-    mnesia:transaction(
+    mnesia:async_dirty(
       fun() ->
 	      mnesia:delete({http_bind, StateData#state.id})
       end),
