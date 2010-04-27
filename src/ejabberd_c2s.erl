@@ -1332,6 +1332,25 @@ handle_info(system_shutdown, StateName, StateData) ->
            ok
     end,
     {stop, normal, StateData};
+handle_info({force_update_presence, LUser}, StateName,
+            #state{user = LUser, server = LServer} = StateData) ->
+    NewStateData =
+	case StateData#state.pres_last of
+	    {xmlelement, "presence", _Attrs, _Els} ->
+		PresenceEl = ejabberd_hooks:run_fold(
+			       c2s_update_presence,
+			       LServer,
+			       StateData#state.pres_last,
+			       [LUser, LServer]),
+		StateData2 = StateData#state{pres_last = PresenceEl},
+		presence_update(StateData2#state.jid,
+				PresenceEl,
+				StateData2),
+		StateData2;
+	    _ ->
+		StateData
+	end,
+    {next_state, StateName, NewStateData};
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).

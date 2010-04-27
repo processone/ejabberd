@@ -267,7 +267,8 @@ set_vcard(User, LServer, VCARD) ->
 				orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
 			       })
 		end,
-		mnesia:transaction(F)
+	    mnesia:transaction(F),
+	    ejabberd_hooks:run(vcard_set, LServer, [LUser, LServer, VCARD])
     end.
 
 -define(TLFIELD(Type, Label, Var),
