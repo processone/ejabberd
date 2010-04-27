@@ -4675,7 +4675,10 @@ Here you can edit access restrictions, manage users, create backups,
 manage the database, enable/disable ports listened for, view server
 statistics,\ldots
 
-Examples:
+The access rule \term{configure} determines what accounts can access the Web Admin and modify it.
+The access rule \term{webadmin\_view} is to grant only view access: those accounts can browse the Web Admin with read-only access.
+
+Example configurations:
 \begin{itemize}
 \item You can serve the Web Admin on the same port as the
   \ind{protocols!XEP-0025: HTTP Polling}HTTP Polling interface. In this example
@@ -4689,10 +4692,14 @@ Examples:
   URL). If you log in with `\jid{admin@example.com}' on \\
   \verb|http://example.org:5280/admin/server/example.com/| you can only
   administer the virtual host \jid{example.com}.
+  The account `\jid{reviewer@example.com}' can browse that vhost in read-only mode.
 \begin{verbatim}
 {acl, admins, {user, "admin", "example.net"}}.
 {host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+{host_config, "example.com", [{acl, viewers, {user, "reviewer", "example.com"}}]}.
+
 {access, configure, [{allow, admins}]}.
+{access, webadmin_view, [{allow, viewers}]}.
 
 {hosts, ["example.org"]}.
 

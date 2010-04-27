@@ -3681,7 +3681,8 @@ you will see a page similar to figure&#XA0;<A HREF="#fig:webadmmain">4.1</A>.</P
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><P>
 Here you can edit access restrictions, manage users, create backups,
 manage the database, enable/disable ports listened for, view server
-statistics,&#X2026;</P><P>Examples:
+statistics,&#X2026;</P><P>The access rule <TT>configure</TT> determines what accounts can access the Web Admin and modify it.
+The access rule <TT>webadmin_view</TT> is to grant only view access: those accounts can browse the Web Admin with read-only access.</P><P>Example configurations:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 You can serve the Web Admin on the same port as the
 HTTP Polling interface. In this example
@@ -3695,9 +3696,13 @@ username &#X2018;<TT>admin@example.net</TT>&#X2019; to administer all virtual ho
 URL). If you log in with &#X2018;<TT>admin@example.com</TT>&#X2019; on<BR>
  <CODE>http://example.org:5280/admin/server/example.com/</CODE> you can only
 administer the virtual host <TT>example.com</TT>.
+The account &#X2018;<TT>reviewer@example.com</TT>&#X2019; can browse that vhost in read-only mode.
 <PRE CLASS="verbatim">{acl, admins, {user, "admin", "example.net"}}.
 {host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+{host_config, "example.com", [{acl, viewers, {user, "reviewer", "example.com"}}]}.
+
 {access, configure, [{allow, admins}]}.
+{access, webadmin_view, [{allow, viewers}]}.
 
 {hosts, ["example.org"]}.
 
