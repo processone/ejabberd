@@ -267,7 +267,9 @@ set_vcard(User, LServer, VCARD) ->
 			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
 			   })
 	    end,
-	    mnesia:transaction(F)
+	    mnesia:transaction(F),
+	    LServerB = list_to_binary(LServer),
+	    ejabberd_hooks:run(vcard_set, LServerB, [list_to_binary(LUser), LServerB, VCARD])
     catch
 	_ ->
 	    {error, badarg}
