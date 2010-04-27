@@ -66,8 +66,8 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-     node_to_path/1,
-     path_to_node/1
+	 node_to_path/1,
+	 path_to_node/1
 	]).
 
 init(Host, ServerHost, Opts) ->

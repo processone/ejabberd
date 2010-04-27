@@ -239,7 +239,7 @@ create_node(NodeId, Owner) ->
 %%	 Removed = [mod_pubsub:pubsubNode()]
 %% @doc <p>purge items of deleted nodes after effective deletion.</p>
 delete_node(Removed) ->
-%% pablo: TODO, this is present on trunk/node_home_tree but not on trunk/node_home_tree_odbc. 
+%% pablo: TODO, this is present on trunk/node_hometree but not on trunk/node_hometree_odbc. 
 %%              check what is the desired behaviour
 %%    Tr = fun(#pubsub_state{stateid = {J, _}, subscriptions = Ss}) ->
 %%		 lists:map(fun(S) ->
@@ -1382,9 +1382,7 @@ i2l(L, N) when is_list(L) ->
     end.
 
 node_to_path(Node) ->
-    string:tokens(binary_to_list(Node), "/").
+    node_hometree:node_to_path(Node).
 
-path_to_node([]) ->
-    <<>>;
 path_to_node(Path) ->
-    list_to_binary(string:join([""|Path], "/")).
+    node_hometree:path_to_node(Path).

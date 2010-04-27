@@ -288,7 +288,7 @@ init_nodes(Host, ServerHost, _NodeTree, Plugins) ->
     case lists:member("hometree", Plugins) of
     true ->
 	create_node(Host, ServerHost, string_to_node("/home"), service_jid(Host), "hometree"),
-	create_node(Host, ServerHost, string_to_node("/home" ++ ServerHost), service_jid(Host), "hometree");
+	create_node(Host, ServerHost, string_to_node("/home/" ++ ServerHost), service_jid(Host), "hometree");
     false ->
 	ok
     end.

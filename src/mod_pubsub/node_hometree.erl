@@ -76,8 +76,8 @@
 	 get_item/2,
 	 set_item/1,
 	 get_item_name/3,
-     node_to_path/1,
-     path_to_node/1
+	 node_to_path/1,
+	 path_to_node/1
 	]).
 
 %% ================
@@ -208,7 +208,7 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
 	    case acl:match_rule(ServerHost, Access, exmpp_jid:make(LU, LS, LR)) of
 		allow ->
 		    case node_to_path(Node) of
-			["home", Server, User | _] -> true;
+			[<<"home">>, Server, User | _] -> true;
 			_ -> false
 		    end;
 		_ ->
@@ -986,12 +986,12 @@ get_item_name(_Host, _Node, Id) ->
     Id.
 
 node_to_path(Node) ->
-    string:tokens(binary_to_list(Node), "/").
-    
+    [list_to_binary(Item) || Item <- string:tokens(binary_to_list(Node), "/")].
+
 path_to_node([]) ->
     <<>>;
 path_to_node(Path) ->
-    list_to_binary(string:join([""|Path], "/")).
+    list_to_binary(string:join([""|[binary_to_list(Item) || Item <- Path]], "/")).
 
 %% @spec (Affiliation, Subscription) -> true | false
 %%       Affiliation = owner | member | publisher | outcast | none

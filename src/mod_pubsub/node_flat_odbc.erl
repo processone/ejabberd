@@ -61,8 +61,8 @@
 	 set_item/1,
 	 get_item_name/3,
 	 get_last_items/3,
-     node_to_path/1,
-     path_to_node/1
+	 node_to_path/1,
+	 path_to_node/1
 	]).
 
 
@@ -191,14 +191,7 @@ get_last_items(NodeId, From, Count) ->
     node_hometree_odbc:get_last_items(NodeId, From, Count).
 
 node_to_path(Node) ->
-    [binary_to_list(Node)].
+    node_flat:node_to_path(Node).
 
 path_to_node(Path) ->
-    case Path of  
-    % default slot
-    [Node] -> list_to_binary(Node);
-    % handle old possible entries, used when migrating database content to new format
-    [Node|_] when is_list(Node) -> list_to_binary(string:join([""|Path], "/"));
-    % default case (used by PEP for example)
-    _ -> list_to_binary(Path)
-    end. 
+    node_flat:path_to_node(Path).
