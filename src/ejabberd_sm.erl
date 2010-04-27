@@ -618,9 +618,10 @@ route_message(From, To, Packet) ->
 		    case ejabberd_auth:is_user_exists(exmpp_jid:prep_node_as_list(To), 
                                               exmpp_jid:prep_domain_as_list(To)) of
 			true ->
-			    ejabberd_hooks:run(offline_message_hook,
-					       exmpp_jid:prep_domain(To),
-					       [From, To, Packet]);
+			    is_privacy_allow(From, To, Packet) andalso
+				ejabberd_hooks:run(offline_message_hook,
+						   exmpp_jid:prep_domain(To),
+						   [From, To, Packet]);
 			_ ->
 			    Err = exmpp_stanza:reply_with_error(
 				    Packet, 'service-unaivailable'),
