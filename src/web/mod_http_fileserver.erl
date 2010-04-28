@@ -91,6 +91,7 @@
                                 {".js",   "text/javascript"},
                                 {".png",  "image/png"},
                                 {".txt",  "text/plain"},
+                                {".xml",  "application/xml"},
                                 {".xpi",  "application/x-xpinstall"},
                                 {".xul",  "application/vnd.mozilla.xul+xml"}]).
 
