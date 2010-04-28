@@ -50,7 +50,8 @@
 %%%==================================
 %%%% get_acl_access
 
-%% @spec (Path::[string()]) -> {HostOfRule, [AccessRule]}
+%% @spec (Path::[string()], HttpMethod) -> {HostOfRule, [AccessRule]}
+%% HttpMethod = 'GET' | 'POST'
 
 %% All accounts can access those URLs
 get_acl_rule([],_) -> {"localhost", [all]};
