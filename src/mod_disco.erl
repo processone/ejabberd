@@ -279,8 +279,17 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
 			<<>> -> [];
 			_ -> [?XMLATTR('node', Node)]
 		    end,
+            AItems = case Node of
+                        <<>> ->
+                            case is_presence_subscribed(From, To) of
+                                true -> Items;
+                                false -> []
+                            end;
+                        _ -> 
+                            []
+                    end,
 	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
-	      attrs = ANode, children = Items},
+	      attrs = ANode, children = AItems},
 	    exmpp_iq:result(IQ_Rec, Result);
 	{error, Error} ->
 	    exmpp_iq:error(IQ_Rec, Error)
@@ -288,23 +297,37 @@ process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
 process_sm_iq_items(_From, _To, #iq{type = set, payload = _SubEl} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
+is_presence_subscribed(From, To) ->
+    User = exmpp_jid:prep_node(From),
+    Server = exmpp_jid:prep_domain(From),
+    LUser = exmpp_jid:prep_node(To),
+    LServer = exmpp_jid:prep_domain(To),
+    lists:any(fun({roster, _, _, {TUser, TServer, _}, _, S, _, _, _, _}) -> 
+                            if 
+                                LUser == TUser, LServer == TServer, S/=none ->
+                                    true;
+                                true ->
+                                    false
+                            end
+                    end,
+                    ejabberd_hooks:run_fold(roster_get, Server, [], [{User, Server}]))
+                orelse User == LUser andalso Server == LServer.
+
+
 get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
 get_sm_items(Acc, From, To, <<>>, _Lang) ->
-    LFrom = exmpp_jid:prep_node_as_list(From),
-    LSFrom = exmpp_jid:prep_domain_as_list(From),
-    LTo = exmpp_jid:prep_node_as_list(To),
-    LSTo = exmpp_jid:prep_domain_as_list(To),
-
     Items = case Acc of
 		{result, Its} -> Its;
 		empty -> []
 	    end,
-    Items1 = case {LFrom, LSFrom} of
-		 {LTo, LSTo} -> get_user_resources(To);
-		 _ -> []
-	     end,
+    Items1 = case is_presence_subscribed(From, To) of
+                   true ->
+                       get_user_resources(To);
+                   _ -> 
+                       []
+                end,
     {result, Items ++ Items1};
  
 get_sm_items({result, _} = Acc, _From, _To, _Node, _Lang) ->
@@ -324,35 +347,50 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
 
 process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
-    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
-				       exmpp_jid:prep_domain(To),
-				       [],
-				       [From, To, Node, Lang]),
-    case ejabberd_hooks:run_fold(disco_sm_features,
-				 exmpp_jid:prep_domain(To),
-				 empty,
-				 [From, To, Node, Lang]) of
-	{result, Features} ->
-	    ANode = case Node of
-			<<>> -> [];
-			_ -> [?XMLATTR('node', Node)]
-		    end,
-	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-	      attrs = ANode,
-	      children = Identity ++ lists:map(fun feature_to_xml/1,
-		Features)},
-	    exmpp_iq:result(IQ_Rec, Result);
-	{error, Error} ->
-	    exmpp_iq:error(IQ_Rec, Error)
+    case is_presence_subscribed(From, To) of
+        true ->
+            Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
+            Identity = ejabberd_hooks:run_fold(disco_sm_identity,
+                                               exmpp_jid:prep_domain(To),
+                                               [],
+                                               [From, To, Node, Lang]),
+            case ejabberd_hooks:run_fold(disco_sm_features,
+                                         exmpp_jid:prep_domain(To),
+                                         empty,
+                                         [From, To, Node, Lang]) of
+                {result, Features} ->
+                    ANode = case Node of
+                                <<>> -> [];
+                                _ -> [?XMLATTR('node', Node)]
+                            end,
+                    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
+                      attrs = ANode,
+                      children = Identity ++ lists:map(fun feature_to_xml/1,
+                        Features)},
+                    exmpp_iq:result(IQ_Rec, Result);
+                {error, Error} ->
+                    exmpp_iq:error(IQ_Rec, Error)
+            end;
+        false ->
+            exmpp_iq:error(IQ_Rec, 'service-unavailable')
     end;
+
 process_sm_iq_info(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
-get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
+get_sm_identity(Acc, _From, To, _Node, _Lang) ->
+    LUser = exmpp_jid:prep_node_as_list(To),
+    LServer = exmpp_jid:prep_domain_as_list(To),
+    Acc ++  case ejabberd_auth:is_user_exists(LUser, LServer) of
+        true ->
+            [{xmlelement, "identity", [{"category", "account"},
+            {"type", "registered"}], []}];
+        _ ->
+            []
+     end.
 
 get_sm_features(empty, From, To, _Node, _Lang) ->
+    ?DEBUG("DISCO: ~p~n", [empty]),
     LFrom = exmpp_jid:prep_node_as_list(From),
     LSFrom = exmpp_jid:prep_domain_as_list(From),
     LTo = exmpp_jid:prep_node_as_list(To),
@@ -365,6 +403,7 @@ get_sm_features(empty, From, To, _Node, _Lang) ->
     end;
  
 get_sm_features(Acc, _From, _To, _Node, _Lang) ->
+    ?DEBUG("DISCO: ~p~n", [Acc]),
     Acc.
 
 get_user_resources(JID) ->

@@ -140,7 +140,7 @@ get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
  
 get_sm_features(Acc, _From, _To, Node, _Lang) ->
     case Node of
-	[] ->
+	<<>> ->
 	    case Acc of
 		{result, Features} ->
 		    {result, [?NS_DISCO_INFO_s, ?NS_VCARD_s | Features]};
