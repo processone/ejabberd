@@ -310,8 +310,13 @@ send_loop(State) ->
 	    lists:foreach(
 		fun({Node, subscribed, _, SubJID}) -> 
 		    if (SubJID == LJID) or (SubJID == BJID) ->
-			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId} = Node,
-			send_items(H, N, NodeId, Type, LJID, last);
+			#pubsub_node{nodeid = {H, N}, type = Type, id = NodeId, options = Options} = Node,
+			case get_option(Options, send_last_published_item) of
+			    on_sub_and_presence ->
+				send_items(H, N, NodeId, Type, LJID, last);
+			    _ ->
+				ok
+			end;
 		    true ->
 			% resource not concerned about that subscription
 			ok
@@ -463,7 +468,8 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
     end;
 
 disco_sm_items(Acc, From, To, NodeB, _Lang) ->
-    Node = string_to_node(binary_to_list(NodeB)),
+    SNode = binary_to_list(NodeB),
+    Node = string_to_node(SNode),
     %% TODO, use iq_disco_items(Host, Node, From)
     Host = exmpp_jid:prep_domain_as_list(To),
     LJID = jlib:short_prepd_bare_jid(To),
@@ -497,7 +503,6 @@ disco_sm_items(Acc, From, To, NodeB, _Lang) ->
 %% -------
 %% presence hooks handling functions
 %%
-
 presence_probe(Peer, JID, Pid) ->
     case exmpp_jid:full_compare(Peer, JID) of
 	true -> %% JID are equals
@@ -1094,7 +1099,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		    end;
 		{set, 'subscribe'} ->
 		    Config = case Rest of
-			[#xmlel{name = 'configure', children = C}] -> C;
+			[#xmlel{name = 'options', children = C}] -> C;
 			_ -> []
 		    end,
 		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
@@ -1121,11 +1126,11 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		    get_subscriptions(Host, Node, From, Plugins);
 		{get, 'affiliations'} ->
 		    get_affiliations(Host, From, Plugins);
-		{get, "options"} ->
+		{get, 'options'} ->
 		    SubID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'subid', ""),
 		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
 		    get_options(Host, Node, JID, SubID, Lang);
-		{set, "options"} ->
+		{set, 'options'} ->
 		    SubID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'subid', ""),
 		    JID = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'jid', ""),
 		    set_options(Host, Node, JID, SubID, Els);
@@ -1138,9 +1143,8 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
     end.
 
 iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
-    Action = lists:filter(fun(#xmlel{name = 'set'}) -> false;
-			     (_) -> true
-			end, exmpp_xml:get_child_elements(SubEl)),
+    SubEls = SubEl#xmlel.children,
+    Action = exmpp_xml:remove_cdata_from_list(SubEls),
     case Action of
 	[#xmlel{name = Name, attrs = Attrs, children = Els}] ->
 	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', "")),
@@ -1402,7 +1406,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 	{{value, {_, [SNode]}}, {value, {_, [SSubscriber]}},
 	 {value, {_, [SAllow]}}} ->
 	    Node = string_to_node(SNode),
-        Subscriber = exmpp_jid:parse(SSubscriber),
+	    Subscriber = exmpp_jid:parse(SSubscriber),
 	    Allow = case SAllow of
 			"1" -> true;
 			"true" -> true;
@@ -2326,6 +2330,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 			    true ->
 				lists:foreach(
 				    fun({JID, Affiliation}) ->
+					    % TODO, check if nothing missing here about new owners
 					    node_call(Type, set_affiliation, [NodeId, JID, Affiliation])
 				    end, Entities),
 				    {result, []};
@@ -2351,16 +2356,16 @@ get_options(Host, Node, JID, SubID, Lang) ->
 		     end
 	     end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_Node, XForm}} -> {result, [XForm]};
+	{result, {_Node, XForm}} -> {result, XForm};
 	Error		    -> Error
     end.
 
 get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
     Subscriber = try exmpp_jid:parse(JID) of
-    		    J -> jlib:short_jid(J)
+		    J -> jlib:short_jid(J)
 		  catch
 		      _ ->
-		         {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
+		         {"", "", ""} %% TODO, check if use <<>> instead of ""
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
@@ -2741,13 +2746,19 @@ node_to_deliver(LJID, NodeOptions) ->
     presence_can_deliver(LJID, PresenceDelivery).
 
 presence_can_deliver(_, false) -> true;
-presence_can_deliver({User, Server, _}, true) ->
+presence_can_deliver({User, Server, Resource}, true) ->
     case mnesia:dirty_match_object({session, '_', '_', {User, Server}, '_', '_'}) of
-    [] -> false;
-    Ss ->
-	lists:foldl(fun({session, _, _, _, undefined, _}, Acc) -> Acc;
-		       ({session, _, _, _, _Priority, _}, _Acc) -> true
-	end, false, Ss)
+  [] -> false;
+  Sessions ->
+    lists:foldl(fun(_, true) -> true;
+                   ({session, _, _, _, undefined, _}, _Acc) -> false;
+                   ({session, _, {_, _, R}, _, _Priority, _}, _Acc) ->
+                     case Resource of
+                   undefined -> true;
+                   R         -> true;
+                   _         -> false
+                     end
+                end, false, Sessions)
     end.
 
 %% @spec (Payload) -> int()
@@ -2929,7 +2940,6 @@ get_options_for_subs(NodeID, Subs) ->
 		end, [], Subs).
 
 % TODO: merge broadcast code that way
-% TODO: pablo: why is this commented?
 %broadcast(Host, Node, NodeId, Type, NodeOptions, Feature, Force, ElName, SubEls) ->
 %    case (get_option(NodeOptions, Feature) or Force) of
 %	true ->
@@ -3013,7 +3023,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)
 				    end, user_resources(U, S));
 				false ->
-				    ejabberd_router:route(Sender, jlib:make_jid(U, S, ""), StanzaToSend)
+				    ejabberd_router:route(Sender, exmpp_jid:make(U, S), StanzaToSend)
 			    end
 			end)
 		    end, Contacts);
@@ -3730,35 +3740,28 @@ extended_headers(Jids) ->
 	|| Jid <- Jids].
 
 feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
-    Host = host(Server),
-	case exmpp_jid:prep_domain_as_list(From) of
+    Host = list_to_binary(host(Server)),
+    case exmpp_jid:prep_domain(From) of
 	%% If the sender Server equals Host, the message comes from the Pubsub server
-	Host ->
-	    allow;
+	Host -> allow;
 	%% Else, the message comes from PEP
 	_ ->
-	    case xml:get_subtag(El, "event") of
-		{xmlelement, _, Attrs, _} = EventEl ->
-		    case xml:get_attr_s("xmlns", Attrs) of
-			?NS_PUBSUB_EVENT ->
-			    Feature = xml:get_path_s(EventEl, [{elem, "items"}, {attr, "node"}]),
-			    case is_feature_supported(Pres, Feature) of
-				true ->
-				    allow;
-				false ->
-				    deny
-			    end;
-			_ ->
-			    allow
-		    end;
-		_ ->
-		    allow
+	    case exmpp_xml:get_element(El, 'event') of
+	  #xmlel{name = 'event', ns = ?NS_PUBSUB_EVENT} = Event ->
+	      Items = exmpp_xml:get_element(Event, ?NS_PUBSUB_EVENT, 'items'),
+	      Feature = exmpp_xml:get_attribute_as_list(Items, "node", ""),
+	      case is_feature_supported(Pres, Feature) of
+	    true -> allow;
+	    false -> deny
+	      end;
+	  _ ->
+	      allow
 	    end
     end;
 feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
     Acc.
 
-is_feature_supported({xmlelement, "presence", _, Els}, Feature) ->
+is_feature_supported(#xmlel{name = 'presence', children = Els}, Feature) ->
     case mod_caps:read_caps(Els) of
 	nothing -> false;
 	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
@@ -3772,6 +3775,7 @@ on_user_offline(_, JID, _) ->
     end.
 
 purge_offline({User, Server, _} = LJID) ->
+    JID = exmpp_jid:make(User, Server),
     Host = host(Server),
     Plugins = plugins(Host),
     Result = lists:foldl(
@@ -3780,7 +3784,7 @@ purge_offline({User, Server, _} = LJID) ->
 		false ->
 		    {{error, extended_error('feature-not-implemented', unsupported, "retrieve-affiliations")}, Acc};
 		true ->
-		    {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, LJID]),
+		    {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, JID]),
 		    {Status, [Affiliations|Acc]}
 	    end
 	end, {ok, []}, Plugins),

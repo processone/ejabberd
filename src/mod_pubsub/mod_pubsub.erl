@@ -2548,10 +2548,10 @@ get_options(Host, Node, JID, SubID, Lang) ->
 
 get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
     Subscriber = try exmpp_jid:parse(JID) of
-    		    J -> J
+		    J -> jlib:short_jid(J)
 		  catch
 		      _ ->
-		         exmpp_jid:make("", "", "")
+		         exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
@@ -2608,9 +2608,9 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 	_ -> invalid
     end,
     Subscriber = try exmpp_jid:parse(JID) of
-		     J -> J
+		     J -> jlib:short_jid(J)
 		  catch
-		     _ -> exmpp_jid:make("", "", "")
+		     _ -> exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
@@ -2735,9 +2735,8 @@ get_subscriptions(Host, Node, JID) ->
 		    end
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
-%% Fix bug when node owner retrieve an empty subscriptions list 
-%	{result, {_, []}} ->
-%	    {error, 'item-not-found'};
+	{result, {_, []}} ->
+	    {error, 'item-not-found'};
 	{result, {_, Subscriptions}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
@@ -2933,13 +2932,19 @@ node_to_deliver(LJID, NodeOptions) ->
     presence_can_deliver(LJID, PresenceDelivery).
 
 presence_can_deliver(_, false) -> true;
-presence_can_deliver({User, Server, _}, true) ->
+presence_can_deliver({User, Server, Resource}, true) ->
     case mnesia:dirty_match_object({session, '_', '_', {User, Server}, '_', '_'}) of
-    [] -> false;
-    Ss ->
-	lists:foldl(fun({session, _, _, _, undefined, _}, Acc) -> Acc;
-		       ({session, _, _, _, _Priority, _}, _Acc) -> true
-	end, false, Ss)
+  [] -> false;
+  Sessions ->
+    lists:foldl(fun(_, true) -> true;
+                   ({session, _, _, _, undefined, _}, _Acc) -> false;
+                   ({session, _, {_, _, R}, _, _Priority, _}, _Acc) ->
+                     case Resource of
+                   undefined -> true;
+                   R         -> true;
+                   _         -> false
+                     end
+                end, false, Sessions)
     end.
 
 %% @spec (Payload) -> int()
@@ -3866,8 +3871,8 @@ extended_headers(Jids) ->
 
 feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
     Host = list_to_binary(host(Server)),
-	  case exmpp_jid:prep_domain(From) of
-	  %% If the sender Server equals Host, the message comes from the Pubsub server
+    case exmpp_jid:prep_domain(From) of
+	%% If the sender Server equals Host, the message comes from the Pubsub server
 	Host -> allow;
 	%% Else, the message comes from PEP
 	_    ->
@@ -3888,8 +3893,8 @@ feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
 
 is_feature_supported(#xmlel{name = 'presence', children = Els}, Feature) ->
     case mod_caps:read_caps(Els) of
-  nothing -> false;
-  Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+	nothing -> false;
+	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
     end.
 
 on_user_offline(_, JID, _) ->
