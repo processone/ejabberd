@@ -1109,6 +1109,23 @@ process_admin(Host,
     Res = get_stats(Host, Lang),
     make_xhtml([?XCT('h1', "Statistics")] ++ Res, Host, Lang, AJID);
 
+process_admin(global = Host,
+	      #request{path = ["misc"],
+		       auth = {_, _Auth, AJID},
+	               method = Method,
+		       q = Query,
+		       lang = Lang}) ->
+    Res = get_miscopts(Lang, Method, Query),
+    make_xhtml(Res, Host, Lang, AJID);
+
+process_admin(global = Host,
+	      #request{path = ["misc", Type, SName],
+		       q = Query,
+		       auth = {_, _Auth, AJID},
+		       lang = Lang}) ->
+    Res = get_miscopt(Lang, Query, Type, SName),
+    make_xhtml(Res, Host, Lang, AJID);
+
 process_admin(Host,
 	      #request{path = ["user", U],
 		       auth = {_, _Auth, AJID},
@@ -1256,6 +1273,9 @@ term_to_paragraph(T, Cols) ->
 
 term_to_id(T) ->
     jlib:encode_base64(binary_to_list(term_to_binary(T))).
+
+id_to_term(I) ->
+    binary_to_term(list_to_binary(jlib:decode_base64(I))).
 
 
 acl_parse_query(Host, Query) ->
@@ -1890,6 +1910,194 @@ histogram([], _Integral, _Current, Count, Hist) ->
 	    lists:reverse([Count | Hist]);
 	true ->
 	    lists:reverse(Hist)
+    end.
+
+%%%==================================
+%%%% get_miscopts
+
+get_miscopts(Lang, Method, Query) ->
+    ?DEBUG("query: ~p", [Query]),
+    Res = case Method of
+	      'POST' ->
+		  case catch miscopts_parse_query(Query) of
+		      {'EXIT', _} ->
+			  error;
+		      ok ->
+			  ok
+		  end;
+	      _ ->
+		  nothing
+	  end,
+    GlobalOptions = get_miscopts_list(config),
+    LocalOptions = get_miscopts_list(local_config),
+    ?H1GL(?T("Miscelanea Options"), "toc", "Configuring ejabberd") ++
+	case Res of
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
+	    nothing -> []
+	end ++
+	[
+	 ?XCT("h2", "Global"),
+	 ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	      [options_to_xhtml("global", GlobalOptions, Lang),
+	       ?BR,
+	       ?INPUTT("submit", "deleteglobal", "Delete Selected")
+	      ]),
+	 ?XCT("h2", "Local"),
+	 ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	      [options_to_xhtml("local", LocalOptions, Lang),
+	       ?BR,
+	       ?INPUTT("submit", "deletelocal", "Delete Selected")
+	      ])
+	].
+
+filter_is_miscopts(AllOpts) ->
+    lists:filter(fun({Table, Key, _Value}) ->
+			 is_miscopts(Table, Key)
+	 end, AllOpts).
+
+is_miscopts(config, {access, _, _}) -> false;
+is_miscopts(local_config, listen) -> false;
+is_miscopts(local_config, node_start) -> false;
+is_miscopts(local_config, {modules, _}) -> false;
+is_miscopts(_, _) -> true.
+
+is_needrestart(hosts) -> true;
+is_needrestart(_Key) -> false.
+
+get_miscopts_list(Table) ->
+    AllOpts = ets:tab2list(Table),
+    Filtered = filter_is_miscopts(AllOpts),
+    GetPrefix = fun(Tuple) when is_tuple(Tuple) -> element(1, Tuple);
+		   (Other) -> Other
+		end,
+    Prefixed = [{GetPrefix(Key), Op} || {_, Key, _} = Op <- Filtered],
+    PrefixedSorted = lists:keysort(1, Prefixed),
+    [Opt || {_Prefix, Opt} <- PrefixedSorted].
+
+miscopts_parse_query(Query) ->
+    case {lists:keysearch("addnewglobal", 1, Query),
+	  lists:keysearch("addnewlocal", 1, Query)} of
+	{{value, _}, _} ->
+	    miscopts_parse_addnew(global, Query);
+	{_, {value, _}} ->
+	    miscopts_parse_addnew(local, Query);
+	_ ->
+	    case {lists:keysearch("deleteglobal", 1, Query),
+		  lists:keysearch("deletelocal", 1, Query)} of
+		{{value, _}, _} ->
+		    miscopts_parse_delete(global, Query);
+		{_, {value, _}} ->
+		    miscopts_parse_delete(local, Query)
+	    end
+    end.
+
+miscopts_parse_addnew(Type, Query) ->
+    case lists:keysearch("namenew", 1, Query) of
+	{value, {_, String}} when String /= "" ->
+	    Key = string_to_term(String++"."),
+	    miscopt_operation(add, Type, {Key, []}),
+	    ok
+    end.
+
+string_to_term(String) ->
+    {ok, Tokens, _} = erl_scan:string(String),
+    {ok, Term} = erl_parse:parse_term(Tokens),
+    Term.
+
+miscopt_operation(get, global, Key) ->
+    ejabberd_config:get_global_option(Key);
+miscopt_operation(get, local, Key) ->
+    ejabberd_config:get_local_option(Key);
+miscopt_operation(add, global, {Key, Value}) ->
+    ejabberd_config:add_global_option(Key, Value);
+miscopt_operation(add, local, {Key, Value}) ->
+    ejabberd_config:add_local_option(Key, Value);
+miscopt_operation(del, global, Key) ->
+    ejabberd_config:del_global_option(Key);
+miscopt_operation(del, local, Key) ->
+    ejabberd_config:del_local_option(Key).
+
+miscopts_parse_delete(Type, Query) ->
+    lists:foreach(
+      fun({"selected", ID}) ->
+	      Term = id_to_term(ID),
+	      miscopt_operation(del, Type, Term);
+	 (_ )->
+	      ok
+      end,
+      Query),
+    ok.
+
+options_to_xhtml(SType, AccessRules, Lang) ->
+    ?XAE("table", [],
+	 [?XE("tbody",
+	      lists:map(
+		fun({_, Key, Value}) ->
+			SKey = term_to_string(Key),
+			SValue = term_to_string(Value),
+			ID = term_to_id(Key),
+			?XE("tr",
+			    [?XE("td", [?INPUT("checkbox", "selected", ID)]),
+			     ?XE("td", [?AC(SType ++"/"++ SKey ++ "/", SKey)]),
+			     ?XC("td", SValue)
+			    ]
+			   )
+		end, AccessRules) ++
+		  [?XE("tr",
+		       [?X("td"),
+			?XE("td", [?INPUT("text", "namenew", "")]),
+			?XE("td", [?INPUTT("submit","addnew"++SType,"Add New")])
+		       ]
+		      )]
+	     )]).
+
+get_miscopt(Lang, Query, SType, OldSKey) ->
+    ?DEBUG("query: ~p", [Query]),
+    Type = list_to_atom(SType),
+    UpSType = get_miscopt_type_upstring(SType),
+    OldKey = string_to_term(OldSKey++"."),
+    OldValue = miscopt_operation(get, Type, OldKey),
+    {Res, Key, Value} = case lists:keysearch("miscopt", 1, Query) of
+			    {value, {_, String}} ->
+				case string_to_term(String) of
+				    {NewKey, NewValue} ->
+					miscopt_operation(del, Type, OldKey),
+					miscopt_operation(add, Type, {NewKey, NewValue}),
+					{ok, NewKey, NewValue};
+				    _ ->
+					{error, OldKey, OldValue}
+				end;
+			    _ ->
+				{nothing, OldKey, OldValue}
+			end,
+    Opt = {Key, Value},
+    {NumLines, SOpt} = term_to_paragraph(Opt, 40),
+    ?H1GL(?T("Miscelanea Options"), "toc", "Configuring ejabberd") ++
+	case Res of
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
+	    nothing -> []
+	end ++
+	[?XCT("h2", UpSType),
+	 ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	      [?TEXTAREA("miscopt", integer_to_list(lists:max([16, NumLines])),
+			 "80", SOpt++"."),
+	       ?BR,
+	       maybe_needrestart(OldKey, Lang),
+	       ?INPUTT("submit", "submit", "Submit")
+	      ])
+	].
+
+get_miscopt_type_upstring("global") -> "Global";
+get_miscopt_type_upstring("local") -> "Local".
+
+maybe_needrestart(Key, Lang) ->
+    case is_needrestart(Key) of
+	true ->
+	    ?XCT("p", "Please note: any change in this option only takes effect after ejabberd restart.");
+	false ->
+	    ?BR
     end.
 
 %%%==================================
@@ -2757,6 +2965,7 @@ make_host_menu(Host, HostNodeMenu, Lang, JID) ->
 		 {"online-users", "Online Users"}]
 		++ get_lastactivity_menuitem_list(Host) ++
 		[{"nodes", "Nodes", HostNodeMenu},
+		 {"misc", "Miscelanea Options"},
 		 {"stats", "Statistics"}]
 	++ get_menu_items_hook({host, Host}, Lang),
     HostBasePath = url_to_path(HostBase),
@@ -2783,6 +2992,7 @@ make_server_menu(HostMenu, NodeMenu, Lang, JID) ->
 	     {"access", "Access Rules"},
 	     {"vhosts", "Virtual Hosts", HostMenu},
 	     {"nodes", "Nodes", NodeMenu},
+	     {"misc", "Miscelanea Options"},
 	     {"stats", "Statistics"}]
 	++ get_menu_items_hook(server, Lang),
     BasePath = url_to_path(Base),

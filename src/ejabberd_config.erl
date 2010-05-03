@@ -29,6 +29,7 @@
 
 -export([start/0, load_file/1,
 	 add_global_option/2, add_local_option/2,
+	 del_global_option/1, del_local_option/1,
 	 get_global_option/1, get_local_option/1]).
 -export([get_vh_by_auth_method/1]).
 -export([is_file_readable/1]).
@@ -571,6 +572,16 @@ add_local_option(Opt, Val) ->
     mnesia:transaction(fun() ->
 			       mnesia:write(#local_config{key = Opt,
 							  value = Val})
+		       end).
+
+del_global_option(Opt) ->
+    mnesia:transaction(fun() ->
+			       mnesia:delete({config, Opt})
+		       end).
+
+del_local_option(Opt) ->
+    mnesia:transaction(fun() ->
+			       mnesia:delete({local_config, Opt})
 		       end).
 
 
