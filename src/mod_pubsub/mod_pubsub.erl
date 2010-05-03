@@ -2058,9 +2058,13 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    MaxItems = max_items(Host, Options),
 		    DeliverPayloads = get_option(Options, deliver_payloads),
 		    PersistItems = get_option(Options, persist_items),
-		    PayloadCount = payload_xmlelements(Payload),
+		    {PayloadCount, PayloadNS} = payload_els_ns(Payload),
 		    PayloadSize = size(term_to_binary(Payload)),
 		    PayloadMaxSize = get_option(Options, max_payload_size),
+		    InvalidNS = case get_option(Options, type) of
+			false -> false;
+			ConfiguredNS -> ConfiguredNS =/= PayloadNS
+			end,
 		    % pubsub#deliver_payloads true 
 		    % pubsub#persist_items true -> 1 item; false -> 0 item
 		    if
@@ -2073,7 +2077,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			(PayloadCount == 0) and (Payload == []) ->
 			    %% Publisher attempts to publish to payload node with no payload
 			    {error, extended_error('bad-request', "payload-required")};
-			(PayloadCount > 1) or (PayloadCount == 0) ->
+			(PayloadCount > 1) or (PayloadCount == 0) or InvalidNS ->
 			    %% Entity attempts to publish item with multiple payload elements
 			    {error, extended_error('bad-request', "invalid-payload")};
 			(DeliverPayloads == 0) and (PersistItems == 0) and (PayloadSize > 0) ->
@@ -2950,10 +2954,11 @@ presence_can_deliver({User, Server, Resource}, true) ->
 %% @spec (Payload) -> int()
 %%	Payload = term()
 %% @doc <p>Count occurence of XML elements in payload.</p>
-payload_xmlelements(Payload) -> payload_xmlelements(Payload, 0).
-payload_xmlelements([], Count) -> Count;
-payload_xmlelements([#xmlel{}|Tail], Count) -> payload_xmlelements(Tail, Count+1);
-payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
+payload_els_ns(Payload) -> payload_els_ns(Payload, 0, undefined).
+payload_els_ns([], Count, NS) -> {Count, NS};
+payload_els_ns([#xmlel{ns=NS}|Tail], Count, undefined) -> payload_els_ns(Tail, Count+1, NS);
+payload_els_ns([#xmlel{}|Tail], Count, NS) -> payload_els_ns(Tail, Count+1, NS);
+payload_els_ns([_|Tail], Count, NS) -> payload_els_ns(Tail, Count, NS).
 
 %% @spec (Els) -> stanza()
 %%    Els = [xmlelement()]
