@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_last.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : jabber:iq:last support (JEP-0012)
+%%% Purpose : jabber:iq:last support (XEP-0012)
 %%% Created : 24 Oct 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

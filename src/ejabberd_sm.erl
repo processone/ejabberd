@@ -47,6 +47,7 @@
 	 register_iq_handler/4,
 	 register_iq_handler/5,
 	 unregister_iq_handler/2,
+	 force_update_presence/1,
 	 connected_users/0,
 	 connected_users_number/0,
 	 user_resources/2,
@@ -572,9 +573,10 @@ route_message(From, To, Packet) ->
 		_ ->
 		    case ejabberd_auth:is_user_exists(LUser, LServer) of
 			true ->
-			    ejabberd_hooks:run(offline_message_hook,
-					       LServer,
-					       [From, To, Packet]);
+			    is_privacy_allow(From, To, Packet) andalso
+				ejabberd_hooks:run(offline_message_hook,
+						   LServer,
+						   [From, To, Packet]);
 			_ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -709,6 +711,16 @@ process_iq(From, To, Packet) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
 	    ejabberd_router:route(To, From, Err),
 	    ok
+    end.
+
+force_update_presence({LUser, _LServer} = US) ->
+    case catch mnesia:dirty_index_read(session, US, #session.us) of
+        {'EXIT', _Reason} ->
+            ok;
+        Ss ->
+            lists:foreach(fun(#session{sid = {_, Pid}}) ->
+                                  Pid ! {force_update_presence, LUser}
+                          end, Ss)
     end.
 
 

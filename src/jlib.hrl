@@ -22,6 +22,7 @@
 -define(NS_DISCO_ITEMS,  "http://jabber.org/protocol/disco#items").
 -define(NS_DISCO_INFO,   "http://jabber.org/protocol/disco#info").
 -define(NS_VCARD,        "vcard-temp").
+-define(NS_VCARD_UPDATE, "vcard-temp:x:update").
 -define(NS_AUTH,         "jabber:iq:auth").
 -define(NS_AUTH_ERROR,   "jabber:iq:auth:error").
 -define(NS_REGISTER,     "jabber:iq:register").

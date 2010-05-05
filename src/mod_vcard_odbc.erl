@@ -247,7 +247,9 @@ set_vcard(User, LServer, VCARD) ->
 				   SLLocality, SLMiddle, SLNickname,
 				   SLOrgName, SLOrgUnit, SLocality,
 				   SMiddle, SNickname, SOrgName,
-				   SOrgUnit, SVCARD, Username)
+				   SOrgUnit, SVCARD, Username),
+
+	    ejabberd_hooks:run(vcard_set, LServer, [LUser, LServer, VCARD])
     end.
 
 -define(TLFIELD(Type, Label, Var),

@@ -2868,12 +2868,18 @@ node_to_deliver(LJID, NodeOptions) ->
     presence_can_deliver(LJID, PresenceDelivery).
 
 presence_can_deliver(_, false) -> true;
-presence_can_deliver({User, Server, _}, true) ->
+presence_can_deliver({User, Server, Resource}, true) ->
     case mnesia:dirty_match_object({session, '_', '_', {User, Server}, '_', '_'}) of
     [] -> false;
     Ss ->
-	lists:foldl(fun({session, _, _, _, undefined, _}, Acc) -> Acc;
-		       ({session, _, _, _, _Priority, _}, _Acc) -> true
+	lists:foldl(fun(_, true) -> true;
+		       ({session, _, _ , _, undefined, _}, _Acc) -> false;
+		       ({session, _, {_, _, R}, _, _Priority, _}, _Acc) ->
+			   case Resource of
+			       [] -> true;
+			       R -> true;
+			       _ -> false
+			   end
 	end, false, Ss)
     end.
 
