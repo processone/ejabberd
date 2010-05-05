@@ -521,10 +521,7 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
     ?DEBUG("terminate: Deleting session ~s", [StateData#state.id]),
-    mnesia:transaction(
-      fun() ->
-	      mnesia:delete({http_bind, StateData#state.id})
-      end),
+    mnesia:dirty_delete({http_bind, StateData#state.id}),
     send_receiver_reply(StateData#state.http_receiver, {ok, terminate}),
     case StateData#state.waiting_input of
 	false ->
