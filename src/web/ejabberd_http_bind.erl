@@ -96,7 +96,7 @@
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
                                % shoot you (time in microsec)
 -define(MAX_WAIT, 3600). % max num of secs to keep a request on hold
--define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
+-define(MAX_INACTIVITY, 120000). % msecs to wait before terminating
                                 % idle sessions
 -define(MAX_PAUSE, 120). % may num of sec a client is allowed to pause
                          % the session
