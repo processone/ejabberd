@@ -34,7 +34,7 @@
 	 close/1,
 	 start/4,
 	 handle_session_start/8,
-	 handle_http_put/4,
+	 handle_http_put/7,
 	 http_put/7,
 	 http_get/2,
 	 prepare_response/4,
