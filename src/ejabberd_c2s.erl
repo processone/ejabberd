@@ -265,8 +265,8 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		  end,
     Header = exmpp_stream:opening_reply(Opening,
       StateData#state.streamid, DefaultLang),
-    case NS of
-	?NS_XMPP ->
+    case exmpp_xml:get_attribute_as_binary(Opening, 'xmlns:stream', undefined_stream_namespace) of
+	?NS_XMPP_b ->
 	    ServerB = exmpp_stringprep:nameprep(
 	      exmpp_stream:get_receiving_entity(Opening)),
         Server = binary_to_list(ServerB),

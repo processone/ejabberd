@@ -194,7 +194,7 @@ process_request(Data, IP) ->
 	%% Existing session
         {ok, {Sid, Rid, Attrs, Payload1}} ->
             StreamStart =
-                case exmpp_xml:get_attribute_from_list_as_list(Attrs, "xmpp:restart", "") of
+                case exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, restart, "") of
                     "true" ->
                         true;
                     _ ->
@@ -255,7 +255,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 	    {'EXIT', _} -> 0.0;
 	    V -> V
 	end,
-    XmppVersion = exmpp_xml:get_attribute_from_list_as_list(Attrs, "xmpp:version", ""),
+    XmppVersion = exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, version, ""),
     ?DEBUG("Create session: ~p", [Sid]),
     mnesia:transaction(
       fun() ->
@@ -688,18 +688,16 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 			    case StreamTo of
 				{To, ""} ->
 				    StreamAttrs = [#xmlattr{name = 'to', value = list_to_binary(To)},
-						   #xmlattr{name = 'xmlns', value = ?NS_JABBER_CLIENT_b},
 						   #xmlattr{name = 'xmlns:stream', value = ?NS_XMPP_b}],
-				    StreamEl = #xmlel{ns = 'stream:stream', attrs = StreamAttrs},
+				    StreamEl = #xmlel{name = 'stream:stream', ns = ?NS_JABBER_CLIENT_b, attrs = StreamAttrs},
 				    gen_fsm:send_event(
 				      C2SPid,
 				      {xmlstreamstart, StreamEl});
 				{To, Version} ->
 				    StreamAttrs = [#xmlattr{name = 'to', value = list_to_binary(To)},
-						   #xmlattr{name = 'xmlns', value = ?NS_JABBER_CLIENT_b},
 						   #xmlattr{name = 'version', value = list_to_binary(Version)},
 						   #xmlattr{name = 'xmlns:stream', value = ?NS_XMPP_b}],
-				    StreamEl = #xmlel{ns = 'stream:stream', attrs = StreamAttrs},
+				    StreamEl = #xmlel{name = 'stream:stream', ns = ?NS_JABBER_CLIENT_b, attrs = StreamAttrs},
 				    gen_fsm:send_event(
 				      C2SPid,
 				      {xmlstreamstart, StreamEl});
