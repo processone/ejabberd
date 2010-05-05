@@ -32,11 +32,6 @@
 	 change_shaper/2,
 	 monitor/1,
 	 close/1,
-	 start/4,
-	 handle_session_start/8,
-	 handle_http_put/7,
-	 http_put/7,
-	 prepare_response/4,
 	 process_request/2]).
 
 -include("ejabberd.hrl").
@@ -101,7 +96,7 @@
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
                                % shoot you (time in microsec)
 -define(MAX_WAIT, 3600). % max num of secs to keep a request on hold
--define(MAX_INACTIVITY, 120000). % msecs to wait before terminating
+-define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
                                 % idle sessions
 -define(MAX_PAUSE, 120). % may num of sec a client is allowed to pause
                          % the session
