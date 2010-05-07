@@ -60,7 +60,11 @@ check_password(User, Server, Password, _Digest, _DigestGen) ->
 
 check_password(User, Host, Password) ->
     Service = get_pam_service(Host),
-    case catch epam:authenticate(Service, User, Password) of
+    UserInfo = case get_pam_userinfotype(Host) of
+	username -> User;
+	jid -> User++"@"++Host
+    end,
+    case catch epam:authenticate(Service, UserInfo, Password) of
 	true -> true;
 	_    -> false
     end.
@@ -84,7 +88,11 @@ get_password_s(_User, _Server) ->
 %% TODO: Improve this function to return an error instead of 'false' when connection to PAM failed
 is_user_exists(User, Host) ->
     Service = get_pam_service(Host),
-    case catch epam:acct_mgmt(Service, User) of
+    UserInfo = case get_pam_userinfotype(Host) of
+	username -> User;
+	jid -> User++"@"++Host
+    end,
+    case catch epam:acct_mgmt(Service, UserInfo) of
 	true -> true;
 	_    -> false
     end.
@@ -105,4 +113,9 @@ get_pam_service(Host) ->
     case ejabberd_config:get_local_option({pam_service, Host}) of
 	undefined -> "ejabberd";
 	Service   -> Service
+    end.
+get_pam_userinfotype(Host) ->
+    case ejabberd_config:get_local_option({pam_userinfotype, Host}) of
+	undefined -> username;
+	Type -> Type
     end.

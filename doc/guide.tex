@@ -1298,6 +1298,10 @@ Options:
 \titem{\{pam\_service, Name\}}\ind{options!pam\_service}This option defines the PAM service name.
 Default is \term{"ejabberd"}. Refer to the PAM documentation of your operation system
 for more information.
+\titem{\{pam\_userinfotype, username|jid\}}\ind{options!pam\_userinfotype}
+This option defines what type of information about the user ejabberd
+provides to the PAM service: only the username, or the user JID.
+Default is \term{username}.
 \end{description}
 
 Example:

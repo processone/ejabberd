@@ -1100,6 +1100,10 @@ PAM authentication is disabled by default, so you have to configure and compile
 <B><TT>{pam_service, Name}</TT></B></DT><DD CLASS="dd-description">This option defines the PAM service name.
 Default is <TT>"ejabberd"</TT>. Refer to the PAM documentation of your operation system
 for more information.
+</DD><DT CLASS="dt-description"><B><TT>{pam_userinfotype, username|jid}</TT></B></DT><DD CLASS="dd-description">
+This option defines what type of information about the user ejabberd
+provides to the PAM service: only the username, or the user JID.
+Default is <TT>username</TT>.
 </DD></DL><P>Example:
 </P><PRE CLASS="verbatim">{auth_method, [pam]}.
 {pam_service, "ejabberd"}.
