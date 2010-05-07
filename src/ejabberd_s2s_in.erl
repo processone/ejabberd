@@ -177,8 +177,9 @@ init([{SockMod, Socket}, Opts]) ->
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case {xml:get_attr_s("xmlns", Attrs),
 	  xml:get_attr_s("xmlns:db", Attrs),
+	  xml:get_attr_s("to", Attrs),
 	  xml:get_attr_s("version", Attrs) == "1.0"} of
-	{"jabber:server", _, true} when
+	{"jabber:server", _, Server, true} when
 	      StateData#state.tls and (not StateData#state.authenticated) ->
 	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
 	    SASL =
@@ -212,15 +213,23 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		       end,
 	    send_element(StateData,
 			 {xmlelement, "stream:features", [],
-			  SASL ++ StartTLS}),
+			  SASL ++ StartTLS ++
+			  ejabberd_hooks:run_fold(
+			    s2s_stream_features,
+			    Server,
+			    [], [Server])}),
 	    {next_state, wait_for_feature_request, StateData};
-	{"jabber:server", _, true} when
+	{"jabber:server", _, Server, true} when
 	      StateData#state.authenticated ->
 	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
 	    send_element(StateData,
-			 {xmlelement, "stream:features", [], []}),
+			 {xmlelement, "stream:features", [],
+			  ejabberd_hooks:run_fold(
+			    s2s_stream_features,
+			    Server,
+			    [], [Server])}),
 	    {next_state, stream_established, StateData};
-	{"jabber:server", "jabber:server:dialback", _} ->
+	{"jabber:server", "jabber:server:dialback", _Server, _} ->
 	    send_text(StateData, ?STREAM_HEADER("")),
 	    {next_state, stream_established, StateData};
 	_ ->

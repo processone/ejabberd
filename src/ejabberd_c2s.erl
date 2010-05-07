@@ -317,10 +317,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						  [{xmlelement, "mechanisms",
 						    [{"xmlns", ?NS_SASL}],
 						    Mechs}] ++
-						   ejabberd_hooks:run_fold(
-						     c2s_stream_features,
-						     Server,
-						     [], [])}),
+						  ejabberd_hooks:run_fold(
+						    c2s_stream_features,
+						    Server,
+						    [], [Server])}),
 				    fsm_next_state(wait_for_feature_request,
 					       StateData#state{
 						 server = Server,
@@ -329,11 +329,20 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				_ ->
 				    case StateData#state.resource of
 					"" ->
-					    RosterVersioningFeature = ejabberd_hooks:run_fold(roster_get_versioning_feature, Server, [], [Server]),
-				            StreamFeatures = [{xmlelement, "bind",
-						 [{"xmlns", ?NS_BIND}], []},
-						{xmlelement, "session",
-						 [{"xmlns", ?NS_SESSION}], []} | RosterVersioningFeature],
+					    RosterVersioningFeature =
+						ejabberd_hooks:run_fold(
+						  roster_get_versioning_feature,
+						  Server, [], [Server]),
+				            StreamFeatures =
+						[{xmlelement, "bind",
+						  [{"xmlns", ?NS_BIND}], []},
+						 {xmlelement, "session",
+						  [{"xmlns", ?NS_SESSION}], []}]
+						++ RosterVersioningFeature
+						++ ejabberd_hooks:run_fold(
+						     c2s_stream_features,
+						     Server,
+						     [], [Server]),
 					    send_element(
 					      StateData,
 					      {xmlelement, "stream:features", [],
