@@ -1030,14 +1030,13 @@ for user authentication. The syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{auth_method, [Method, ...]}.</TT></B></DT></DL><P>The following authentication methods are supported by <TT>ejabberd</TT>:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 internal (default) &#X2014; See section&#XA0;<A HREF="#internalauth">3.1.4</A>.
-</LI><LI CLASS="li-itemize">external &#X2014; There are <A HREF="http://www.ejabberd.im/extauth">some
-example authentication scripts</A>.
+</LI><LI CLASS="li-itemize">external &#X2014; See section&#XA0;<A HREF="#extauth">3.1.4</A>.
 </LI><LI CLASS="li-itemize">ldap &#X2014; See section&#XA0;<A HREF="#ldap">3.2.5</A>.
 </LI><LI CLASS="li-itemize">odbc &#X2014; See section&#XA0;<A HREF="#mysql">3.2.1</A>, <A HREF="#pgsql">3.2.3</A>,
 <A HREF="#mssql">3.2.2</A> and <A HREF="#odbc">3.2.4</A>.
 </LI><LI CLASS="li-itemize">anonymous &#X2014; See section&#XA0;<A HREF="#saslanonymous">3.1.4</A>.
 </LI><LI CLASS="li-itemize">pam &#X2014; See section&#XA0;<A HREF="#pam">3.1.4</A>.
-</LI></UL><P>Account creation is only supported by internal and odbc methods.</P><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
+</LI></UL><P>Account creation is only supported by internal, external and odbc methods.</P><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#internalauth">Internal</A></H4><!--SEC END --><P> <A NAME="internalauth"></A> 
 </P><P><TT>ejabberd</TT> uses its internal Mnesia database as the default authentication method.
 The value <TT>internal</TT> will enable the internal authentication method.</P><P>Examples:
@@ -1048,7 +1047,31 @@ authentication on <TT>example.net</TT>:
 {host_config, "example.net", [{auth_method, [ldap]}]}.
 </PRE></LI><LI CLASS="li-itemize">To use internal authentication on all virtual hosts:
 <PRE CLASS="verbatim">{auth_method, internal}.
-</PRE></LI></UL><P> <A NAME="saslanonymous"></A> </P><!--TOC subsubsection SASL Anonymous and Anonymous Login-->
+</PRE></LI></UL><P> <A NAME="extauth"></A> </P><!--TOC subsubsection External Script-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#extauth">External Script</A></H4><!--SEC END --><P> <A NAME="extauth"></A> 
+</P><P>In this authentication method, when <TT>ejabberd</TT> starts,
+it start a script, and calls it to perform authentication tasks.</P><P>The server administrator can write the external authentication script
+in any language.
+The details on the interface between ejabberd and the script are described
+in the <TT>ejabberd Developers Guide</TT>.
+There are also <A HREF="http://www.ejabberd.im/extauth">several example authentication scripts</A>.</P><P>These are the specific options:
+</P><DL CLASS="description"><DT CLASS="dt-description">
+<B><TT>{extauth_program, PathToScript}</TT></B></DT><DD CLASS="dd-description"> 
+Indicate in this option the full path to the external authentication script.
+The script must be executable by ejabberd.</DD><DT CLASS="dt-description"><B><TT>{extauth_cache, false|CacheTimeInteger}</TT></B></DT><DD CLASS="dd-description"> 
+The value <TT>false</TT> disables the caching feature, this is the default.
+The integer <TT>0</TT> (zero) enables caching for statistics, but doesn&#X2019;t use that cached information to authenticate users.
+If another integer value is set, caching is enabled both for statistics and for authentication:
+the CacheTimeInteger indicates the number of seconds that ejabberd can reuse
+the authentication information since the user last disconnected,
+to verify again the user authentication without querying again the extauth script.
+Note: caching should not be enabled in a host if internal auth is also enabled.
+If caching is enabled, <TT>mod_last</TT> or <TT>mod_last_odbc</TT> must be enabled also in that vhost.
+</DD></DL><P>This example sets external authentication, the extauth script, and enables caching for 10 minutes:
+</P><PRE CLASS="verbatim">{auth_method, [external]}.
+{extauth_program, "/etc/ejabberd/JabberAuth.class.php"}.
+{extauth_cache, 600}.
+</PRE><P> <A NAME="saslanonymous"></A> </P><!--TOC subsubsection SASL Anonymous and Anonymous Login-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#saslanonymous">SASL Anonymous and Anonymous Login</A></H4><!--SEC END --><P> <A NAME="saslanonymous"></A> 
 </P><P>The value <TT>anonymous</TT> will enable the internal authentication method.</P><P>The anonymous authentication method can be configured with the following
 options. Remember that you can use the <TT>host_config</TT> option to set virtual
