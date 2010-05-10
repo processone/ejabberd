@@ -684,17 +684,21 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 			C2SPid ->
 			    case StreamTo of
 				{To, ""} ->
-				    StreamAttrs = [#xmlattr{name = 'to', value = list_to_binary(To)},
-						   #xmlattr{name = 'xmlns:stream', value = ?NS_XMPP_b}],
-				    StreamEl = #xmlel{name = 'stream:stream', ns = ?NS_JABBER_CLIENT_b, attrs = StreamAttrs},
+				    DecNs = [{?NS_XMPP, "stream"},
+					     {?NS_JABBER_CLIENT, none}],
+				    StreamAttrs = [#xmlattr{name = 'to', value = list_to_binary(To)}],
+				    StreamEl = #xmlel{name = stream, ns = ?NS_XMPP, declared_ns = DecNs,
+						      attrs = StreamAttrs},
 				    gen_fsm:send_event(
 				      C2SPid,
 				      {xmlstreamstart, StreamEl});
 				{To, Version} ->
+				    DecNs = [{?NS_XMPP, "stream"},
+					     {?NS_JABBER_CLIENT, none}],
 				    StreamAttrs = [#xmlattr{name = 'to', value = list_to_binary(To)},
-						   #xmlattr{name = 'version', value = list_to_binary(Version)},
-						   #xmlattr{name = 'xmlns:stream', value = ?NS_XMPP_b}],
-				    StreamEl = #xmlel{name = 'stream:stream', ns = ?NS_JABBER_CLIENT_b, attrs = StreamAttrs},
+						   #xmlattr{name = 'version', value = list_to_binary(Version)}],
+				    StreamEl = #xmlel{name = stream, ns = ?NS_XMPP, declared_ns = DecNs,
+						      attrs = StreamAttrs},
 				    gen_fsm:send_event(
 				      C2SPid,
 				      {xmlstreamstart, StreamEl});
