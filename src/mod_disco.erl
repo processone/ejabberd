@@ -164,9 +164,8 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
 			_ -> [?XMLATTR('node', Node)]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-	      attrs = ANode,
-	      children = Identity ++ Info ++ lists:map(fun feature_to_xml/1,
-		Features)},
+			    attrs = ANode,
+			    children = Identity ++ Info ++ features_to_xml(Features)},
 	    exmpp_iq:result(IQ_Rec, Result);
 	{error, Error} ->
 	    exmpp_iq:error(IQ_Rec, Error)
@@ -204,19 +203,24 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
 	    {error, 'item-not-found'}
     end.
 
-
-feature_to_xml({{Feature, _Host}}) ->
-    feature_to_xml(Feature);
-
-feature_to_xml(Feature) when is_binary(Feature) ->
-    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = [
-	?XMLATTR('var', Feature)
-      ]};
+features_to_xml(FeatureList) ->
+    %% Avoid duplicating features
+    [#xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
+	    attrs = [?XMLATTR('var', Feat)]} ||
+	Feat <- lists:usort(
+		  lists:map(
+		    fun({{Feature, _Host}}) ->
+			    feature_to_xml(Feature);
+		       (Feature) ->
+			    feature_to_xml(Feature)
+		    end, FeatureList))].
 
 feature_to_xml(Feature) when is_list(Feature) ->
     feature_to_xml(list_to_binary(Feature));
 feature_to_xml(Feature) when is_atom(Feature) ->
-    feature_to_xml(atom_to_list(Feature)).
+    feature_to_xml(atom_to_list(Feature));
+feature_to_xml(Feature) when is_binary(Feature) ->
+    Feature.
 
 domain_to_xml({Domain}) ->
     domain_to_xml(Domain);
@@ -364,9 +368,8 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
                                 _ -> [?XMLATTR('node', Node)]
                             end,
                     Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-                      attrs = ANode,
-                      children = Identity ++ lists:map(fun feature_to_xml/1,
-                        Features)},
+				    attrs = ANode,
+				    children = Identity ++ features_to_xml(Features)},
                     exmpp_iq:result(IQ_Rec, Result);
                 {error, Error} ->
                     exmpp_iq:error(IQ_Rec, Error)
@@ -421,7 +424,11 @@ get_user_resources(JID) ->
 
 %%% Support for: XEP-0157 Contact Addresses for XMPP Services
  
-get_info(Acc, Host, Module, Node, _Lang) when Node == <<>> ->
+get_info(Acc, Host, Mod, Node, _Lang) when Node == <<>> ->
+    Module = case Mod of
+		 undefined -> ?MODULE;
+		 _ -> Mod
+	     end,
     Serverinfo_fields = get_fields_xml(Host, Module),
     CData1 = #xmlcdata{cdata = list_to_binary(?NS_SERVERINFO_s)},
     Value1 = #xmlel{name = 'value', children = [CData1]},
@@ -437,8 +444,8 @@ get_info(Acc, Host, Module, Node, _Lang) when Node == <<>> ->
 	      },
     [X | Acc];
 
-get_info(_, _, _, _Node, _) ->
-    [].
+get_info(Acc, _, _, _Node, _) ->
+    Acc.
 
 get_fields_xml(Host, Module) ->
     Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),

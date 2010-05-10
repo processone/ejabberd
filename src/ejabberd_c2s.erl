@@ -323,9 +323,9 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 						[]
 					end,
                                     Other_Feats = ejabberd_hooks:run_fold(
-				      c2s_stream_features,
-				      ServerB,
-				      [], []),
+						    c2s_stream_features,
+						    ServerB,
+						    [], [ServerB]),
 				    send_element(StateData,
 				      exmpp_stream:features(
 					TLSFeature ++
@@ -340,17 +340,26 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 				_ ->
 				    case StateData#state.resource of
 					undefined ->
-					    RosterVersioningFeature = ejabberd_hooks:run_fold(roster_get_versioning_feature, ServerB, [], [ServerB]),
+					    RosterVersioningFeature =
+						ejabberd_hooks:run_fold(
+						  roster_get_versioning_feature,
+						  ServerB,
+						  [], [ServerB]),
+					    Other_Feats = ejabberd_hooks:run_fold(
+							    c2s_stream_features,
+							    ServerB,
+							    [], [ServerB]),
 					    send_element(
 					      StateData,
-					      exmpp_stream:features([
-						  exmpp_server_binding:feature(),
-						  exmpp_server_session:feature()
-						| RosterVersioningFeature])),
+					      exmpp_stream:features(
+						[exmpp_server_binding:feature(),
+						 exmpp_server_session:feature()]
+						++ RosterVersioningFeature
+						++ Other_Feats)),
 					    fsm_next_state(wait_for_bind,
-						       StateData#state{
-							 server = ServerB,
-							 lang = Lang});
+							   StateData#state{
+							     server = ServerB,
+							     lang = Lang});
 					_ ->
 					    send_element(
 					      StateData,

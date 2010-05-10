@@ -155,8 +155,9 @@ init([{SockMod, Socket}, Opts]) ->
 wait_for_stream({xmlstreamstart, Opening}, StateData) ->
     case {exmpp_stream:get_default_ns(Opening),
 	  exmpp_xml:is_ns_declared_here(Opening, ?NS_DIALBACK),
+	  exmpp_stream:get_receiving_entity(Opening),
 	  exmpp_stream:get_version(Opening) == {1, 0}} of
-	{?NS_JABBER_SERVER, _, true} when
+	{?NS_JABBER_SERVER, _, Server, true} when
 	      StateData#state.tls and (not StateData#state.authenticated) ->
 	    Opening_Reply = exmpp_stream:opening_reply(Opening,
 	      StateData#state.streamid),
@@ -188,17 +189,25 @@ wait_for_stream({xmlstreamstart, Opening}, StateData) ->
 			   true ->
 			       [exmpp_server_tls:feature()]
 		       end,
-	    send_element(StateData, exmpp_stream:features(SASL ++ StartTLS)),
+	    Features = SASL ++ StartTLS ++ ejabberd_hooks:run_fold(
+					     c2s_stream_features,
+					     Server,
+					     [], [Server]),
+	    send_element(StateData, exmpp_stream:features(Features)),
 	    {next_state, wait_for_feature_request, StateData};
-	{?NS_JABBER_SERVER, _, true} when
+	{?NS_JABBER_SERVER, _, Server, true} when
 	      StateData#state.authenticated ->
 	    Opening_Reply = exmpp_stream:opening_reply(Opening,
 	      StateData#state.streamid),
 	    send_element(StateData,
 	      exmpp_stream:set_dialback_support(Opening_Reply)),
-	    send_element(StateData, exmpp_stream:features([])),
+	    Features = ejabberd_hooks:run_fold(
+			 c2s_stream_features,
+			 Server,
+			 [], [Server]),
+	    send_element(StateData, exmpp_stream:features(Features)),
 	    {next_state, stream_established, StateData};
-	{?NS_JABBER_SERVER, true, _} ->
+	{?NS_JABBER_SERVER, true, _Server, _} ->
 	    Opening_Reply = exmpp_stream:opening_reply(Opening,
 	      StateData#state.streamid),
 	    send_element(StateData,

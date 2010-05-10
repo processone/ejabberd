@@ -33,6 +33,10 @@
 -behaviour(gen_mod).
 
 -export([read_caps/1,
+	 caps_stream_features/2,
+	 disco_features/5,
+	 disco_identity/5,
+	 disco_info/5,
 	 get_features/1]).
 
 %% gen_mod callbacks
@@ -146,6 +150,42 @@ user_send_packet(From, To, #xmlel{name = 'presence', attrs = Attrs, children = E
 user_send_packet(_From, _To, _Packet) ->
     ok.
 
+caps_stream_features(Acc, MyHost) ->
+    case make_my_disco_hash(MyHost) of
+	"" ->
+	    Acc;
+	Hash ->
+	    [#xmlel{name = c,
+		    ns = ?NS_CAPS,
+		    attrs = [?XMLATTR(hash, "sha-1"),
+			     ?XMLATTR(node, ?EJABBERD_URI),
+			     ?XMLATTR(ver, Hash)]} | Acc]
+    end.
+
+disco_features(_Acc, From, To, <<?EJABBERD_URI, $#, _/binary>>, Lang) ->
+    ejabberd_hooks:run_fold(disco_local_features,
+			    exmpp_jid:domain(To),
+			    empty,
+			    [From, To, <<>>, Lang]);
+disco_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
+disco_identity(_Acc, From, To, <<?EJABBERD_URI, $#, _/binary>>, Lang) ->
+    ejabberd_hooks:run_fold(disco_local_identity,
+			    exmpp_jid:domain(To),
+			    [],
+			    [From, To, <<>>, Lang]);
+disco_identity(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
+disco_info(_Acc, Host, Module, <<?EJABBERD_URI, $#, _/binary>>, Lang) ->
+    ejabberd_hooks:run_fold(disco_info,
+			    list_to_binary(Host),
+			    [],
+			    [Host, Module, <<>>, Lang]);
+disco_info(Acc, _Host, _Module, _Node, _Lang) ->
+    Acc.
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -158,6 +198,16 @@ init([Host, _Opts]) ->
     mnesia:add_table_copy(caps_features, node(), disc_copies),
     HostB = list_to_binary(Host),
     ejabberd_hooks:add(user_send_packet, HostB, ?MODULE, user_send_packet, 75),
+    ejabberd_hooks:add(c2s_stream_features, HostB,
+		       ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:add(s2s_stream_features, HostB,
+		       ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:add(disco_local_features, HostB,
+		       ?MODULE, disco_features, 75),
+    ejabberd_hooks:add(disco_local_identity, HostB,
+		       ?MODULE, disco_identity, 75),
+    ejabberd_hooks:add(disco_info, HostB,
+		       ?MODULE, disco_info, 75),
     {ok, #state{host = Host}}.
 
 handle_call(stop, _From, State) ->
@@ -174,6 +224,16 @@ handle_info(_Info, State) ->
 terminate(_Reason, State) ->
     HostB = list_to_binary(State#state.host),
     ejabberd_hooks:delete(user_send_packet, HostB, ?MODULE, user_send_packet, 75),
+    ejabberd_hooks:delete(c2s_stream_features, HostB,
+			  ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:delete(s2s_stream_features, HostB,
+			  ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:delete(disco_local_features, HostB,
+			  ?MODULE, disco_features, 75),
+    ejabberd_hooks:delete(disco_local_identity, HostB,
+			  ?MODULE, disco_identity, 75),
+    ejabberd_hooks:delete(disco_info, HostB,
+			  ?MODULE, disco_info, 75),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -229,3 +289,104 @@ node_to_binary(Node, SubNode) ->
 
 features_to_binary(L) -> [list_to_binary(I) || I <- L].
 binary_to_features(L) -> [binary_to_list(I) || I <- L].
+
+make_my_disco_hash(Host) ->
+    JID = exmpp_jid:make(Host),
+    case {ejabberd_hooks:run_fold(disco_local_features,
+				  Host,
+				  empty,
+				  [JID, JID, <<>>, <<>>]),
+	  ejabberd_hooks:run_fold(disco_local_identity,
+				  Host,
+				  [],
+				  [JID, JID, <<>>, <<>>]),
+	  ejabberd_hooks:run_fold(disco_info,
+				  Host,
+				  [],
+				  [Host, undefined, <<>>, <<>>])} of
+	{{result, Features}, Identities, Info} ->
+	    Feats = lists:map(
+		      fun({{Feat, _Host}}) ->
+			      #xmlel{name = feature,
+				     attrs = [?XMLATTR(var, Feat)]};
+			 (Feat) ->
+			      #xmlel{name = feature,
+				     attrs = [?XMLATTR(var, Feat)]}
+		      end, Features),
+	    make_disco_hash(Identities ++ Info ++ Feats, sha1);
+	_Err ->
+	    ""
+    end.
+
+make_disco_hash(DiscoEls, Algo) when Algo == sha1; Algo == md5 ->
+    Concat = [concat_identities(DiscoEls),
+	      concat_features(DiscoEls),
+	      concat_info(DiscoEls)],
+    base64:encode_to_string(
+      if Algo == sha1 ->
+	      crypto:sha(Concat);
+	 Algo == md5 ->
+	      crypto:md5(Concat)
+      end).
+
+concat_features(Els) ->
+    lists:usort(
+      lists:flatmap(
+	fun(#xmlel{name = feature} = El) ->
+		[[exmpp_xml:get_attribute(El, var, <<>>), $<]];
+	   (_) ->
+		[]
+	end, Els)).
+
+concat_identities(Els) ->
+    lists:sort(
+      lists:flatmap(
+	fun(#xmlel{name = identity} = El) ->
+		[[exmpp_xml:get_attribute_as_binary(El, category, <<>>), $/,
+		  exmpp_xml:get_attribute_as_binary(El, type, <<>>), $/,
+		  exmpp_xml:get_attribute_as_binary(El, lang, <<>>), $/,
+		  exmpp_xml:get_attribute_as_binary(El, name, <<>>), $<]];
+	   (_) ->
+		[]
+	end, Els)).
+
+concat_info(Els) ->
+    lists:sort(
+      lists:flatmap(
+	fun(#xmlel{name = x, ns = ?NS_DATA_FORMS, children = Fields} = El) ->
+		case exmpp_xml:get_attribute_as_list(El, 'type', "") of
+		    "result" ->
+			[concat_xdata_fields(Fields)];
+		    _ ->
+			[]
+		end;
+	   (_) ->
+		[]
+	end, Els)).
+
+concat_xdata_fields(Fields) ->
+    [Form, Res] =
+	lists:foldl(
+	  fun(#xmlel{name = field, children = Els} = El,
+	      [FormType, VarFields] = Acc) ->
+		  case exmpp_xml:get_attribute_as_binary(El, var, <<>>) of
+		      <<>> ->
+			  Acc;
+		      <<"FORM_TYPE">> ->
+			  [exmpp_xml:get_path(
+			     El, [{element, value}, cdata]), VarFields];
+		      Var ->
+			  [FormType,
+			   [[[Var, $<],
+			     lists:sort(
+			       lists:flatmap(
+				 fun(#xmlel{name = value} = VEl) ->
+					 [[exmpp_xml:get_cdata(VEl), $<]];
+				    (_) ->
+					 []
+				 end, Els))] | VarFields]]
+		  end;
+	     (_, Acc) ->
+		  Acc
+	  end, [<<>>, []], Fields),
+    [Form, $<, lists:sort(Res)].

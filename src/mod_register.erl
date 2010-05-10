@@ -31,7 +31,7 @@
 
 -export([start/2,
 	 stop/1,
-	 stream_feature_register/1,
+	 stream_feature_register/2,
 	 unauthenticated_iq_register/4,
 	 try_register/5,
 	 process_iq/3]).
@@ -68,7 +68,7 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB, ?NS_INBAND_REGISTER).
 
 
-stream_feature_register(Acc) ->
+stream_feature_register(Acc, _Host) ->
     [#xmlel{ns = ?NS_INBAND_REGISTER_FEAT, name = 'register'} | Acc].
 
 unauthenticated_iq_register(_Acc,
