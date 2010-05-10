@@ -219,8 +219,8 @@ process_request(Data, IP) ->
 		     "condition='undefined-condition' "
 		     "xmlns='" ++ ?NS_HTTP_BIND_s ++ "'>Request Too Large</body>"}
             end;
-        _ ->
-	    ?DEBUG("Received bad request: ~p", [Data]),
+        Error ->
+	    ?DEBUG("Received bad request: ~p~nParsing error: ~p", [Data, Error]),
             {400, ?HEADER, ""}
     end.
 
