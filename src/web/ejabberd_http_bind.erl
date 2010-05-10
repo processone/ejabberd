@@ -811,11 +811,11 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
                       attrs = [
                         #xmlattr{name = 'type',
                                  ns = ?NS_HTTP_BIND_s,
-                                 value = 'terminate'
+                                 value = <<"terminate">>
                         },
                         #xmlattr{name = 'type',
                                  ns = ?NS_HTTP_BIND_s,
-                                 value = 'item-not-found'
+                                 value = <<"item-not-found">>
                         }
                       ]
                })};
@@ -827,11 +827,11 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
                       attrs = [
                         #xmlattr{name = 'type',
                                  ns = ?NS_HTTP_BIND_s,
-                                 value = 'terminate'
+                                 value = <<"terminate">>
                         },
                         #xmlattr{name = 'type',
                                  ns = ?NS_HTTP_BIND_s,
-                                 value = 'item-not-found'
+                                 value = <<"item-not-found">>
                         }
                       ]
                })};
@@ -843,11 +843,11 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
                       attrs = [
                         #xmlattr{name = 'type',
                                  ns = ?NS_HTTP_BIND_s,
-                                 value = 'terminate'
+                                 value = <<"terminate">>
                         },
                         #xmlattr{name = 'type',
                                  ns = ?NS_HTTP_BIND_s,
-                                 value = 'policy-violation'
+                                 value = <<"policy-violation">>
                         }
                       ]
                })}
@@ -971,13 +971,12 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess,
 				end,
 			    BOSH_attribs =
 				[#xmlattr{name = 'authid', value = list_to_binary(AuthID)},
-				 #xmlattr{name = 'xmlns:xmpp', value = ?NS_BOSH_b},
 				 #xmlattr{name = 'xmlns:stream', value = ?NS_XMPP_b}] ++
 				case OutEls of
 				    [] ->
 					[];
 				    _ ->
-					[#xmlattr{name = 'xmpp:version', value = list_to_binary(Version)}]
+					[#xmlattr{name = 'version', ns = ?NS_BOSH_s, value = list_to_binary(Version)}]
 				end,
 			    MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 			    MaxPause = get_max_pause(To),
@@ -985,41 +984,33 @@ prepare_response(#http_bind{id=Sid, wait=Wait, hold=Hold, to=To}=Sess,
 			     exmpp_xml:document_to_list(
 			       #xmlel{name = 'body',
 			              ns = ?NS_HTTP_BIND_s,
+			              declared_ns = [{?NS_XBOSH_s, ?NS_XBOSH_pfx}],
 			              attrs = [
 			                #xmlattr{name = 'sid',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = list_to_binary(Sid)
 			                },
 			                #xmlattr{name = 'wait',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = list_to_binary(integer_to_list(Wait))
 			                },
 			                #xmlattr{name = 'requests',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = list_to_binary(integer_to_list(Hold+1))
 			                },
 			                #xmlattr{name = 'inactivity',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = list_to_binary(integer_to_list(trunc(MaxInactivity/1000)))
 			                },
 			                #xmlattr{name = 'maxpause',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = list_to_binary(integer_to_list(MaxPause))
 			                },
 			                #xmlattr{name = 'polling',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = list_to_binary(integer_to_list(trunc(?MIN_POLLING/1000000)))
 			                },
 			                #xmlattr{name = 'ver',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = ?BOSH_VERSION_b
 			                },
 			                #xmlattr{name = 'from',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = FromB
 			                },
 			                #xmlattr{name = 'secure',
-			                         ns = ?NS_HTTP_BIND_s,
 			                         value = <<"true">>
 			                }
 			              ] ++ BOSH_attribs,
