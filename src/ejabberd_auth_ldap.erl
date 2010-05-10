@@ -66,7 +66,7 @@
 		servers,
 		backups,
 		port,
-		encrypt,
+		tls_options,
 		dn,
 		password,
 		base,
@@ -139,14 +139,14 @@ init(Host) ->
 		     State#state.port,
 		     State#state.dn,
 		     State#state.password,
-		     State#state.encrypt),
+		     State#state.tls_options),
     eldap_pool:start_link(State#state.bind_eldap_id,
 		     State#state.servers,
 		     State#state.backups,
 		     State#state.port,
 		     State#state.dn,
 		     State#state.password,
-		     State#state.encrypt),
+		     State#state.tls_options),
     {ok, State}.
 
 %% @spec () -> true
@@ -461,6 +461,7 @@ parse_options(Host) ->
 		   Backups -> Backups
 		   end,
     LDAPEncrypt = ejabberd_config:get_local_option({ldap_encrypt, Host}),
+    LDAPTLSVerify = ejabberd_config:get_local_option({ldap_tls_verify, Host}),
     LDAPPort = case ejabberd_config:get_local_option({ldap_port, Host}) of
 		   undefined -> case LDAPEncrypt of
 				    tls -> ?LDAPS_PORT;
@@ -505,7 +506,8 @@ parse_options(Host) ->
 	   servers = LDAPServers,
 	   backups = LDAPBackups,
 	   port = LDAPPort,
-	   encrypt = LDAPEncrypt,
+	   tls_options = [{encrypt, LDAPEncrypt},
+			  {tls_verify, LDAPTLSVerify}],
 	   dn = RootDN,
 	   password = Password,
 	   base = LDAPBase,

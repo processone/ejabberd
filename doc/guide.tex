@@ -2168,6 +2168,11 @@ Allowed values are: \term{none}, \term{tls}.
 The value \term{tls} enables encryption by using LDAP over SSL.
 Note that STARTTLS encryption is not supported.
 The default value is: \term{none}.
+\titem{\{ldap\_tls\_verify, false|soft|hard\}} \ind{options!ldap\_tls\_verify}
+This option specifies whether to verify LDAP server certificate or not when TLS is enabled.
+When \term{hard} is enabled \ejabberd{} doesn't proceed if a certificate is invalid.
+When \term{soft} is enabled \ejabberd{} proceeds even if check fails.
+The default is \term{false} which means no checks are performed.
 \titem{\{ldap\_port, Number\}} \ind{options!ldap\_port}Port to connect to your LDAP server.
 The default port is~389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in \ejabberd{}'s database.

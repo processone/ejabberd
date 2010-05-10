@@ -130,9 +130,10 @@ start_link(Name) ->
     Reg_name = list_to_atom("eldap_" ++ Name),
     gen_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
 
-start_link(Name, Hosts, Port, Rootdn, Passwd, Encrypt) ->
+start_link(Name, Hosts, Port, Rootdn, Passwd, Opts) ->
     Reg_name = list_to_atom("eldap_" ++ Name),
-    gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd, Encrypt}, []).
+    gen_fsm:start_link({local, Reg_name}, ?MODULE,
+		       {Hosts, Port, Rootdn, Passwd, Opts}, []).
 
 %%% --------------------------------------------------------------------
 %%% Get status of connection.
@@ -423,15 +424,19 @@ get_handle(Name) when is_list(Name) -> list_to_atom("eldap_" ++ Name).
 %%----------------------------------------------------------------------
 init([]) ->
     case get_config() of
-	{ok, Hosts, Rootdn, Passwd, Encrypt} ->
-	    init({Hosts, Rootdn, Passwd, Encrypt});
+	{ok, Hosts, Rootdn, Passwd, Opts} ->
+	    init({Hosts, Rootdn, Passwd, Opts});
 	{error, Reason} ->
 	    {stop, Reason}
     end;
-init({Hosts, Port, Rootdn, Passwd, Encrypt}) ->
+init({Hosts, Port, Rootdn, Passwd, Opts}) ->
     catch ssl:start(),
     {X1,X2,X3} = erlang:now(),
     ssl:seed(integer_to_list(X1) ++ integer_to_list(X2) ++ integer_to_list(X3)),
+    Encrypt = case proplists:get_value(encrypt, Opts) of
+		  tls -> tls;
+		  _ -> none
+	      end,
     PortTemp = case Port of
 		   undefined ->
 		       case Encrypt of
@@ -444,7 +449,14 @@ init({Hosts, Port, Rootdn, Passwd, Encrypt}) ->
 		       end;
 		   PT -> PT
 	       end,
-    TLSOpts = [verify_none],
+    TLSOpts = case proplists:get_value(tls_verify, Opts) of
+		  soft ->
+		      [{verify, 1}];
+		  hard ->
+		      [{verify, 2}];
+		  _ ->
+		      [{verify, 0}]
+	      end,
     {ok, connecting, #eldap{hosts = Hosts,
 			    port = PortTemp,
 			    rootdn = Rootdn,
@@ -958,7 +970,7 @@ connect_bind(S) ->
 		     tls ->
 			 SockMod = ssl,
 			 SslOpts = [{packet, asn1}, {active, true}, {keepalive, true},
-				    binary],
+				    binary | S#eldap.tls_options],
 			 ssl:connect(Host, S#eldap.port, SslOpts);
 		     %% starttls -> %% TODO: Implement STARTTLS;
 		     _ ->
@@ -1074,8 +1086,8 @@ get_config() ->
     case file:consult(File) of
 	{ok, Entries} ->
 	    case catch parse(Entries) of
-		{ok, Hosts, Port, Rootdn, Passwd, Encrypt} ->
-		    {ok, Hosts, Port, Rootdn, Passwd, Encrypt};
+		{ok, Hosts, Port, Rootdn, Passwd, Opts} ->
+		    {ok, Hosts, Port, Rootdn, Passwd, Opts};
 		{error, Reason} ->
 		    {error, Reason};
 		{'EXIT', Reason} ->
@@ -1091,7 +1103,7 @@ parse(Entries) ->
      get_integer(port, Entries),
      get_list(rootdn, Entries),
      get_list(passwd, Entries),
-     get_atom(encrypt, Entries)}.
+     get_list(options, Entries)}.
 
 get_integer(Key, List) ->
     case lists:keysearch(Key, 1, List) of
@@ -1113,15 +1125,15 @@ get_list(Key, List) ->
 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
     end.
 
-get_atom(Key, List) ->
-    case lists:keysearch(Key, 1, List) of
-	{value, {Key, Value}} when is_atom(Value) ->
-	    Value;
-	{value, {Key, _Value}} ->
-	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
-	false ->
-	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
-    end.
+%% get_atom(Key, List) ->
+%%     case lists:keysearch(Key, 1, List) of
+%% 	{value, {Key, Value}} when is_atom(Value) ->
+%% 	    Value;
+%% 	{value, {Key, _Value}} ->
+%% 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
+%% 	false ->
+%% 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
+%%     end.
 
 get_hosts(Key, List) ->
     lists:map(fun({Key1, {A,B,C,D}}) when is_integer(A),
