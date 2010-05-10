@@ -243,7 +243,7 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
     end.
 
 get_auth_account(HostOfRule, AccessRule, User, Server, Pass) ->
-    case ejabberd_auth:check_password(User, Server, Pass) of
+    case catch ejabberd_auth:check_password(User, Server, Pass) of
 	true ->
 	    case is_acl_match(HostOfRule, AccessRule,
 				exmpp_jid:make(User, Server)) of
@@ -258,7 +258,9 @@ get_auth_account(HostOfRule, AccessRule, User, Server, Pass) ->
 		    {unauthorized, "bad-password"};
 		false ->
 		    {unauthorized, "inexistent-account"}
-	    end
+	    end;
+	_ ->
+            {unauthorized, "badformed-jid"}
     end.
 
 %%%==================================
