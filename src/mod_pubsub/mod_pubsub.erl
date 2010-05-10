@@ -781,7 +781,10 @@ unsubscribe_user(Entity, Owner) ->
 %% user remove hook handling function
 %%
 
-remove_user(User, Server) ->
+%% @spec(User::binary(), Server::binary()) -> any()
+remove_user(UserB, ServerB) ->
+    User = binary_to_list(UserB),
+    Server = binary_to_list(ServerB),
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
     Entity = exmpp_jid:make(LUser, LServer),
