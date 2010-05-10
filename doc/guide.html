@@ -1649,6 +1649,11 @@ Allowed values are: <TT>none</TT>, <TT>tls</TT>.
 The value <TT>tls</TT> enables encryption by using LDAP over SSL.
 Note that STARTTLS encryption is not supported.
 The default value is: <TT>none</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{ldap_tls_verify, false|soft|hard}</TT></B></DT><DD CLASS="dd-description"> 
+This option specifies whether to verify LDAP server certificate or not when TLS is enabled.
+When <TT>hard</TT> is enabled <TT>ejabberd</TT> doesn&#X2019;t proceed if a certificate is invalid.
+When <TT>soft</TT> is enabled <TT>ejabberd</TT> proceeds even if check fails.
+The default is <TT>false</TT> which means no checks are performed.
 </DD><DT CLASS="dt-description"><B><TT>{ldap_port, Number}</TT></B></DT><DD CLASS="dd-description"> Port to connect to your LDAP server.
 The default port is&#XA0;389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in <TT>ejabberd</TT>&#X2019;s database.
