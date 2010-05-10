@@ -181,7 +181,7 @@ get_sm_features(_Acc, _From, _To, ?NS_MSGOFFLINE, _Lang) ->
     %% override all lesser features...
     {result, []};
 
-get_sm_features(Acc, _From, _To, Node, _Lang) ->
+get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 
