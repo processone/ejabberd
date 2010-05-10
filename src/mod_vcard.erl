@@ -657,8 +657,8 @@ reindex_vcards() ->
 
 
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
+    LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
+    LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:delete({vcard, US}),
