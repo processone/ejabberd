@@ -431,8 +431,7 @@ init([]) ->
     end;
 init({Hosts, Port, Rootdn, Passwd, Opts}) ->
     catch ssl:start(),
-    {X1,X2,X3} = erlang:now(),
-    ssl:seed(integer_to_list(X1) ++ integer_to_list(X2) ++ integer_to_list(X3)),
+    ssl:seed(randoms:get_string()),
     Encrypt = case proplists:get_value(encrypt, Opts) of
 		  tls -> tls;
 		  _ -> none
