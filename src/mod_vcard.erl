@@ -34,11 +34,16 @@
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 reindex_vcards/0,
+	 webadmin_page/3,
+	 webadmin_user/4,
+	 webadmin_user_parse_query/5,
 	 remove_user/2]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
+-include("web/ejabberd_http.hrl").
+-include("web/ejabberd_web_admin.hrl").
 
 
 -define(JUD_MATCHES, 30).
@@ -84,6 +89,12 @@ start(Host, Opts) ->
 
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
+    ejabberd_hooks:add(webadmin_page_host, HostB,
+		       ?MODULE, webadmin_page, 50),
+    ejabberd_hooks:add(webadmin_user, HostB,
+		       ?MODULE, webadmin_user, 50),
+    ejabberd_hooks:add(webadmin_user_parse_query, HostB,
+                       ?MODULE, webadmin_user_parse_query, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
@@ -126,6 +137,12 @@ stop(Host) ->
     HostB = list_to_binary(Host),
     ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(webadmin_page_host, HostB,
+			  ?MODULE, webadmin_page, 50),
+    ejabberd_hooks:delete(webadmin_user, HostB,
+			  ?MODULE, webadmin_user, 50),
+    ejabberd_hooks:delete(webadmin_user_parse_query, HostB,
+                          ?MODULE, webadmin_user_parse_query, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, HostB,
       ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, HostB,
@@ -835,3 +852,129 @@ update_vcard_search_table() ->
 	    mnesia:transform_table(vcard_search, ignore, Fields)
     end.
 
+%%%
+%%% WebAdmin
+%%%
+
+webadmin_page(_, Host,
+	      #request{us = _US,
+		       path = ["user", U, "vcard"],
+		       q = Query,
+		       lang = Lang} = _Request) ->
+    Res = user_vcard(U, Host, Query, Lang),
+    {stop, Res};
+
+webadmin_page(_, Host,
+	      #request{us = _US,
+		       path = ["user", U, "vcard", "photo"],
+		       lang = _Lang} = _Request) ->
+    Res = get_user_photo(U, Host),
+    {stop, Res};
+
+webadmin_page(Acc, _, _) -> Acc.
+
+user_vcard(User, Server, Query, Lang) ->
+    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
+    Res = user_queue_parse_query(US, Query),
+    VcardString = case mnesia:dirty_read({vcard, US}) of
+	[Vcard] -> 
+	    Xml = Vcard#vcard.vcard,
+	    XmlString = lists:flatten(exmpp_xml:document_to_list(Xml)),
+	    Reduced = re:replace(XmlString, "<BINVAL>[^<]*", "<BINVAL>...", [global, {return, list}]),
+	    try_indent(Reduced);
+	[] -> "no vcard";
+	_ -> "error getting vcard"
+    end,
+    [?XE('h1', [?CT("vCard")]),
+     ?XE('h2', [?AC("../", us_to_list(US))])
+    ] ++
+	case Res of
+	    {ok, M} -> [?XREST(M)];
+	    {error, M} -> [?XREST(M)];
+	    nothing -> []
+	end ++
+	[?XAE('form', [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	        [?XCT('h3', "vCard Photo:"),
+		    ?XAE('img', [?XMLATTR('src', <<"photo">>), ?XMLATTR('border', <<"1px">>)], []),
+	         ?XCT('h3', "vCard:"),
+		 ?XE('pre', [?C(VcardString)]),
+	       ?INPUTT("submit", "removevcard", "Remove vCard")
+	      ])].
+
+%% TODO: Is there a nice way to indent XML in Erlang/OTP or exmpp?
+try_indent(String) ->
+    try
+	Indented = os:cmd("echo \""++String++"\" | xmlindent"),
+	[$< | _] = Indented,
+	Indented
+    catch
+	_:_ ->
+	    String
+    end.
+
+get_user_photo(User, Host) ->
+    US = {User, Host},
+    case mnesia:dirty_read({vcard, US}) of
+	[VCard] -> 
+	    case exmpp_xml:get_path(VCard#vcard.vcard, [{element, "PHOTO"}, {element, "BINVAL"}, cdata_as_list]) of
+                [] -> "no avatar";
+                BinVal -> case catch jlib:decode_base64(BinVal) of
+                               {'EXIT', _} -> "error";
+                               Decoded -> Decoded
+                          end
+           end;
+	[] -> "no vcard";
+	_ -> "error getting vcard"
+    end.
+
+user_queue_parse_query(US, Query) ->
+    {User, Server} = US,
+    case lists:keysearch("removevcard", 1, Query) of
+	{value, _} ->
+	    case remove_user(list_to_binary(User), list_to_binary(Server)) of
+		 {aborted, Reason} ->
+		    ?ERROR_MSG("Failed to remove user's vCard: ~p", [Reason]),
+		    {error, io_lib:format("Failed to remove user's vCard: ~p", [Reason])};
+		 {atomic, ok} ->
+		    ?INFO_MSG("Removed vCard of ~s@~s", [User, Server]),
+		    {ok, io_lib:format("Removed vCard of ~s@~s", [User, Server])}
+	    end;
+	false ->
+	    nothing
+    end.
+
+us_to_list({User, Server}) ->
+    exmpp_jid:to_list(User, Server).
+
+webadmin_user(Acc, User, Server, Lang) ->
+    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
+    VcardSize = case mnesia:dirty_read({vcard, US}) of
+	[Vcard] -> get_vcard_size(Vcard);
+	[] -> 0;
+	_ -> -1
+    end,
+    FVcardSize = case VcardSize > 0 of
+	true -> [?AC("vcard/", integer_to_list(VcardSize))];
+	false -> [?C(integer_to_list(VcardSize))]
+    end,
+    RemoveEl = case VcardSize > 0 of
+	true -> [?INPUTT("submit", "removevcard", "Remove vCard")];
+	false -> []
+    end,
+    Acc ++ [?XCT('h3', "vCard size:")] ++ FVcardSize ++ [?CT(" characters. ")] ++ RemoveEl.
+
+get_vcard_size(Vcard) ->
+    String = lists:flatten(exmpp_xml:document_to_list(Vcard#vcard.vcard)),
+    length(String).
+
+webadmin_user_parse_query(_, "removevcard", User, Server, _Query) ->
+    case remove_user(list_to_binary(User), list_to_binary(Server)) of
+         {aborted, Reason} ->
+            ?ERROR_MSG("Failed to remove user's vCard: ~p", [Reason]),
+            {stop, error};
+         {atomic, ok} ->
+            ?INFO_MSG("Removed vCard of ~s@~s", [User, Server]),
+            {stop, ok}
+    end;
+webadmin_user_parse_query(Acc, _Action, _User, _Server, _Query) ->
+    Acc.

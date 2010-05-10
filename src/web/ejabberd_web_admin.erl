@@ -1172,9 +1172,13 @@ process_admin(Host, #request{lang = Lang,
 		       Host -> {webadmin_page_host, [Host, Request]}
 		   end,
     case ejabberd_hooks:run_fold(Hook, list_to_binary(Host), [], Opts) of
-	[] -> setelement(1, make_xhtml([?XC('h1', "Not Found")], Host, Lang, AJID), 404);
-	Res -> make_xhtml(Res, Host, Lang, AJID)
-    end.
+	[] ->
+	    setelement(1, make_xhtml([?XC('h1', "Not Found")], Host, Lang, AJID), 404);
+	[{xmlel, _, _, _, _, _} | _] = Res ->
+	    make_xhtml(Res, Host, Lang, AJID);
+	[X | _] = Res when not is_tuple(X) ->
+	    {200, [{"Content-Type", "image/png"}, last_modified(), cache_control_public()], Res}
+     end.
 
 %%%==================================
 %%%% acl
