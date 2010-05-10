@@ -81,7 +81,11 @@ check_password(User, Server, Password, _StreamID, _Digest) ->
 
 check_password(User, Server, Password) ->
     Service = get_pam_service(Server),
-    case catch epam:authenticate(Service, User, Password) of
+    UserInfo = case get_pam_userinfotype(Server) of
+	username -> User;
+	jid -> User++"@"++Server
+    end,
+    case catch epam:authenticate(Service, UserInfo, Password) of
 	true -> true;
 	_    -> false
     end.
@@ -133,7 +137,11 @@ get_password_s(_User, _Server) ->
 
 is_user_exists(User, Server) ->
     Service = get_pam_service(Server),
-    case catch epam:acct_mgmt(Service, User) of
+    UserInfo = case get_pam_userinfotype(Server) of
+	username -> User;
+	jid -> User++"@"++Server
+    end,
+    case catch epam:acct_mgmt(Service, UserInfo) of
 	true -> true;
 	_    -> false
     end.
@@ -169,4 +177,9 @@ get_pam_service(Server) ->
     case ejabberd_config:get_local_option({pam_service, Server}) of
 	undefined -> "ejabberd";
 	Service   -> Service
+    end.
+get_pam_userinfotype(Host) ->
+    case ejabberd_config:get_local_option({pam_userinfotype, Host}) of
+	undefined -> username;
+	Type -> Type
     end.
