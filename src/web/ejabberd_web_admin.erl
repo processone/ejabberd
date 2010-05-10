@@ -188,8 +188,8 @@ process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, hos
 		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 		     ejabberd_web:make_xhtml([?XCT('h1', "Unauthorized")])};
 		{unauthorized, Error} ->
-		    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
-				 [Auth, Error, Request]),
+		    ?WARNING_MSG("Access ~p failed with error: ~p",
+				 [Auth, Error]),
 		    {401,
 		     [{"WWW-Authenticate",
 		       "basic realm=\"auth error, retry login to ejabberd\""}],
@@ -211,8 +211,8 @@ process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP, method = Meth
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 	     ejabberd_web:make_xhtml([?XCT('h1', "Unauthorized")])};
 	{unauthorized, Error} ->
-	    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
-			 [Auth, Error, Request]),
+	    ?WARNING_MSG("Access ~p failed with error: ~p",
+			 [Auth, Error]),
 	    {401,
 	     [{"WWW-Authenticate",
 	       "basic realm=\"auth error, retry login to ejabberd\""}],
