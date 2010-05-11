@@ -153,6 +153,7 @@ get_vh_registered_users_number(Server, Data) ->
 %% @spec (User, Server) -> bool()
 %%     User = string()
 %%     Server = string()
+%% @doc Get the user cached password, if possible.
 %% The password can only be returned if cache is enabled, cached info exists and is fresh enough.
 
 get_password(User, Server) ->
@@ -263,7 +264,7 @@ check_password_cache(User, Server, Password, CacheTime) ->
 get_password_internal(User, Server) ->
     ejabberd_auth_internal:get_password(User, Server).
 
-%% @spec (User, Server, CacheTime) -> false | Password::string()
+%% @spec (User, Server, CacheTime) -> Password::string() | false
 get_password_cache(User, Server, CacheTime) ->
     case get_last_access(User, Server) of
 	online ->
@@ -321,11 +322,11 @@ is_fresh_enough(TimeStampLast, CacheTime) ->
     Now = MegaSecs * 1000000 + Secs,
     (TimeStampLast + CacheTime > Now).
 
-%% @spec (User, Server) -> online | never | mod_last_required | TimeStamp::integer()
-%% Code copied from mod_configure.erl
-%% Code copied from web/ejabberd_web_admin.erl
-%% TODO: Update time format to XEP-0202: Entity Time
+%% @spec (User, Server) -> TimeStamp::integer() | online | never | mod_last_required
 get_last_access(UserS, ServerS) ->
+    %% Code copied from mod_configure.erl
+    %% Code copied from web/ejabberd_web_admin.erl
+    %% TODO: Update time format to XEP-0202: Entity Time
     User = list_to_binary(UserS),
     Server = list_to_binary(ServerS),
     case ejabberd_sm:get_user_resources(User, Server) of
