@@ -2775,6 +2775,51 @@ presence_can_deliver({User, Server, Resource}, true) ->
                 end, false, Sessions)
     end.
 
+state_can_deliver({U, S, R}, []) -> [{U, S, R}];
+state_can_deliver({U, S, R}, SubOptions) ->
+    %% Check SubOptions for 'show_values'
+    case lists:keysearch('show_values', 1, SubOptions) of
+  %% If not in suboptions, item can be delivered, case doesn't apply
+  false -> [{U, S, R}];
+  %% If in a suboptions ...
+  {_, {_, ShowValues}} ->
+      %% Get subscriber resources
+      Resources = case R of
+    %% If the subscriber JID is a bare one, get all its resources
+    [] -> user_resources(U, S);
+    %% If the subscriber JID is a full one, use its resource
+    R  -> [R]
+      end,
+      %% For each resource, test if the item is allowed to be delivered
+      %% based on resource state
+      lists:foldl(
+        fun(Resource, Acc) ->
+          get_resource_state({U, S, Resource}, ShowValues, Acc)
+        end, [], Resources)
+    end.
+
+get_resource_state({U, S, R}, ShowValues, JIDs) ->
+    %% Get user session PID
+    case ejabberd_sm:get_session_pid(U, S, R) of
+  %% If no PID, item can be delivered
+  none -> lists:append([{U, S, R}], JIDs);
+  %% If PID ...
+  Pid ->
+      %% Get user resource state
+      %% TODO : add a catch clause
+      Show = case ejabberd_c2s:get_presence(Pid) of
+    {_, _, "available", _} -> "online";
+    {_, _, State, _}       -> State
+      end,
+      %% Is current resource state listed in 'show-values' suboption ?
+      case lists:member(Show, ShowValues) of %andalso Show =/= "online" of
+    %% If yes, item can be delivered
+    true  -> lists:append([{U, S, R}], JIDs);
+    %% If no, item can't be delivered
+    false -> JIDs
+      end
+    end.
+
 %% @spec (Payload) -> int()
 %%	Payload = term()
 %% @doc <p>Count occurence of XML elements in payload.</p>
@@ -3060,20 +3105,25 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 	    NodeOptions = Node#pubsub_node.options,
 	    lists:foldl(fun({LJID, SubID, SubOptions}, {JIDs, Recipients}) ->
 		case is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) of
-		true  ->
-		    %% If is to deliver :
-		    case lists:member(LJID, JIDs) of
+	true  ->
+		  %% If is to deliver :
+		  case state_can_deliver(LJID, SubOptions) of
+		[]            -> {JIDs, Recipients};
+		JIDsToDeliver ->
+		    lists:foldl(
+		      fun(JIDToDeliver, {JIDsAcc, RecipientsAcc}) ->
+		    case lists:member(JIDToDeliver, JIDs) of
 		    %% check if the JIDs co-accumulator contains the Subscription Jid,
-		    false ->
+		  false ->
 			%%  - if not,
 			%%  - add the Jid to JIDs list co-accumulator ;
 			%%  - create a tuple of the Jid, NodeId, and SubID (as list),
 			%%    and add the tuple to the Recipients list co-accumulator
-			{[LJID | JIDs], [{LJID, NodeName, [SubID]} | Recipients]};
-		    true ->
+			    {[JIDToDeliver | JIDsAcc], [{JIDToDeliver, NodeName, [SubID]} | RecipientsAcc]};
+		  true ->
 			%% - if the JIDs co-accumulator contains the Jid
 			%%   get the tuple containing the Jid from the Recipient list co-accumulator
-			{_, {LJID, NodeName1, SubIDs}} = lists:keysearch(LJID, 1, Recipients),
+			    {_, {JIDToDeliver, NodeName1, SubIDs}} = lists:keysearch(JIDToDeliver, 1, RecipientsAcc),
 			%%   delete the tuple from the Recipients list
 			% v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
 			% v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, NodeId1, [SubID | SubIDs]}),
@@ -3082,17 +3132,19 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 			% v1.1 : {JIDs, lists:append(Recipients1, [{LJID, NodeId1, lists:append(SubIDs, [SubID])}])}
 			% v1.2 : {JIDs, [{LJID, NodeId1, [SubID | SubIDs]} | Recipients1]}
 			% v2: {JIDs, Recipients1}
-			{JIDs, lists:keyreplace(LJID, 1, Recipients, {LJID, NodeName1, [SubID | SubIDs]})}
-		    end;
+			    {JIDsAcc, lists:keyreplace(JIDToDeliver, 1, RecipientsAcc, {JIDToDeliver, NodeName1, [SubID | SubIDs]})}
+		    end
+		      end, {JIDs, Recipients}, JIDsToDeliver)
+		  end;
 		false ->
 		    {JIDs, Recipients}
 		end
 	    end, Acc, Subs)
 	end,
-    DepthsToDeliver = fun({Depth, SubsByNode}, Acc) ->
+    DepthsToDeliver = fun({Depth, SubsByNode}, Acc1) ->
 	    lists:foldl(fun({Node, Subs}, Acc2) ->
 		    NodesToDeliver(Depth, Node, Subs, Acc2)
-	    end, Acc, SubsByNode)
+	    end, Acc1, SubsByNode)
 	end,
     {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
     JIDSubs.

@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2010-05-12 12:00:56.000000000 +0200
-+++ mod_pubsub_odbc.erl	2010-05-12 12:01:12.000000000 +0200
+--- mod_pubsub.erl	2010-05-12 13:53:23.000000000 +0200
++++ mod_pubsub_odbc.erl	2010-05-12 13:53:48.000000000 +0200
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -690,7 +690,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3117,7 +2931,7 @@
+@@ -3162,7 +2976,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -699,7 +699,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -3131,9 +2945,9 @@
+@@ -3176,9 +2990,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -711,7 +711,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3348,6 +3162,30 @@
+@@ -3400,6 +3214,30 @@
  	    Result
      end.
  
@@ -742,7 +742,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3749,7 +3587,13 @@
+@@ -3801,7 +3639,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -757,7 +757,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3769,13 +3613,13 @@
+@@ -3821,13 +3665,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -773,7 +773,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3788,8 +3632,15 @@
+@@ -3840,8 +3684,15 @@
  			end
  		end, Trans).
  
@@ -791,7 +791,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3797,6 +3648,15 @@
+@@ -3849,6 +3700,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, 'internal-server-error'};
@@ -807,7 +807,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, 'internal-server-error'};
-@@ -3805,6 +3665,16 @@
+@@ -3857,6 +3717,16 @@
  	    {error, 'internal-server-error'}
      end.
  
@@ -824,7 +824,7 @@
  %%%% helpers
  
  %% Add pubsub-specific error element
-@@ -3893,7 +3763,7 @@
+@@ -3945,7 +3815,7 @@
  	%% If the sender Server equals Host, the message comes from the Pubsub server
  	Host -> allow;
  	%% Else, the message comes from PEP
