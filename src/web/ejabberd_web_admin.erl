@@ -188,8 +188,11 @@ process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, hos
 		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 		     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])};
 		{unauthorized, Error} ->
-		    ?WARNING_MSG("Access ~p failed with error: ~p",
-				 [Auth, Error]),
+		    {BadUser, _BadPass} = Auth,
+		    {IPT, _Port} = Request#request.ip,
+		    IPS = inet_parse:ntoa(IPT),
+		    ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
+				 [BadUser, IPS, Error]),
 		    {401,
 		     [{"WWW-Authenticate",
 		       "basic realm=\"auth error, retry login to ejabberd\""}],
@@ -211,8 +214,11 @@ process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP, method = Meth
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 	     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])};
 	{unauthorized, Error} ->
-	    ?WARNING_MSG("Access ~p failed with error: ~p",
-			 [Auth, Error]),
+	    {BadUser, _BadPass} = Auth,
+	    {IPT, _Port} = Request#request.ip,
+	    IPS = inet_parse:ntoa(IPT),
+	    ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
+			 [BadUser, IPS, Error]),
 	    {401,
 	     [{"WWW-Authenticate",
 	       "basic realm=\"auth error, retry login to ejabberd\""}],
