@@ -387,8 +387,8 @@ unsubscribe_node(NodeId, Sender, {U, S, R} = Subscriber, SubId) ->
 				   (_) -> false
 				end, Subscriptions),
 	    case Sub of
-		{value, S} ->
-		    delete_subscriptions(Subscriber, NodeId, [S], SubState),
+		{value, Subscribed} ->
+		    delete_subscriptions(Subscriber, NodeId, [Subscribed], SubState),
 		    {result, default};
 		false ->
 		    {error, ?ERR_EXTENDED('unexpected-request', "not-subscribed")}
