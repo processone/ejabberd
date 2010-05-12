@@ -89,6 +89,7 @@ options() ->
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, false},
+     {notify_sub, false},
      {purge_offline, false},
      {persist_items, true},
      {max_items, ?MAXITEMS},

@@ -1979,19 +1979,24 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	    NodeId = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    send_items(Host, Node, NodeId, Type, Subscriber, last),
+	    notify_owners(get_option(TNode#pubsub_node.options, notify_sub), Subscriber, Host, Node, TNode#pubsub_node.owners, "subscribed"),
 	    case Result of
 		default -> {result, Reply({subscribed, SubId})};
 		_ -> {result, Result}
 	    end;
-	{result, {_TNode, {default, subscribed, SubId}}} ->
+	{result, {TNode, {default, subscribed, SubId}}} ->
+	    notify_owners(get_option(TNode#pubsub_node.options, notify_sub), Subscriber, Host, Node, TNode#pubsub_node.owners, "subscribed"),
 	    {result, Reply({subscribed, SubId})};
-	{result, {_TNode, {Result, subscribed, _SubId}}} ->
+	{result, {TNode, {Result, subscribed, _SubId}}} ->
+	    notify_owners(get_option(TNode#pubsub_node.options, notify_sub), Subscriber, Host, Node, TNode#pubsub_node.owners, "subscribed"),
 	    {result, Result};
 	{result, {TNode, {default, pending, _SubId}}} ->
 	    send_authorization_request(TNode, Subscriber),
+	    notify_owners(get_option(TNode#pubsub_node.options, notify_sub), Subscriber, Host, Node, TNode#pubsub_node.owners, "pending"),
 	    {result, Reply(pending)};
 	{result, {TNode, {Result, pending}}} ->
 	    send_authorization_request(TNode, Subscriber),
+	    notify_owners(get_option(TNode#pubsub_node.options, notify_sub), Subscriber, Host, Node, TNode#pubsub_node.owners, "pending"),
 	    {result, Result};
 	{result, {_, Result}} ->
 	    %% this case should never occure anyway
@@ -2028,9 +2033,11 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
 		    node_call(Type, unsubscribe_node, [NodeId, From, Subscriber, SubId])
     end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, default}} ->
+	{result, {TNode, default}} ->
+	    notify_owners(get_option(TNode#pubsub_node.options, notify_sub), Subscriber, Host, Node, TNode#pubsub_node.owners, "none"),
 	    {result, []};
-	{result, {_, Result}} ->
+	{result, {TNode, Result}} ->
+	    notify_owners(get_option(TNode#pubsub_node.options, notify_sub), Subscriber, Host, Node, TNode#pubsub_node.owners, "none"),
 	    {result, Result};
 	Error ->
 	    Error
@@ -3409,6 +3416,7 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
      ?BOOL_CONFIG_FIELD("Notify subscribers when the node configuration changes", notify_config),
      ?BOOL_CONFIG_FIELD("Notify subscribers when the node is deleted", notify_delete),
      ?BOOL_CONFIG_FIELD("Notify subscribers when items are removed from the node", notify_retract),
+     ?BOOL_CONFIG_FIELD("Notify owners about new subscribers and unsubscribes", notify_sub),
      ?BOOL_CONFIG_FIELD("Persist items to storage", persist_items),
      ?STRING_CONFIG_FIELD("A friendly name for the node", title),
      ?INTEGER_CONFIG_FIELD("Max # of items to persist", max_items),
@@ -3542,6 +3550,8 @@ set_xoption(Host, [{"pubsub#notify_delete", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_delete, Val);
 set_xoption(Host, [{"pubsub#notify_retract", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(notify_retract, Val);
+set_xoption(Host, [{"pubsub#notify_sub", [Val]} | Opts], NewOpts) ->
+    ?SET_BOOL_XOPT(notify_sub, Val);
 set_xoption(Host, [{"pubsub#persist_items", [Val]} | Opts], NewOpts) ->
     ?SET_BOOL_XOPT(persist_items, Val);
 set_xoption(Host, [{"pubsub#max_items", [Val]} | Opts], NewOpts) ->
@@ -3970,3 +3980,16 @@ purge_offline({User, Server, _} = LJID) ->
 	{Error, _} ->
 	    ?DEBUG("on_user_offline ~p", [Error])
     end.
+
+notify_owners(false, _, _, _, _, _) -> true;
+notify_owners(true, JID, Host, Node, Owners, State) ->
+    Message = #xmlel{name = 'message', ns = ?NS_JABBER_CLIENT,
+      children = [#xmlel{name = 'pubsub', ns = ?NS_PUBSUB,
+        children = [#xmlel{name = 'subscription', ns = ?NS_PUBSUB,
+            attrs = [?XMLATTR('node', Node),
+              ?XMLATTR('jid', exmpp_jid:prep_to_binary(exmpp_jid:make(JID))),
+              ?XMLATTR('subscription', State)]}]}]},
+    lists:foreach(
+      fun(Owner) ->
+        ejabberd_router:route(exmpp_jid:make(Host), exmpp_jid:make(Owner), Message)
+      end, Owners).
