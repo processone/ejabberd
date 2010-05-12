@@ -1892,7 +1892,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    PayloadMaxSize = get_option(Options, max_payload_size),
 		    InvalidNS = case get_option(Options, type) of
 			false -> false;
-			ConfiguredNS -> ConfiguredNS =/= PayloadNS
+			[[]] -> false;
+			[ConfiguredNS] -> ConfiguredNS =/= PayloadNS
 			end,
 		    % pubsub#deliver_payloads true 
 		    % pubsub#persist_items true -> 1 item; false -> 0 item
@@ -1908,6 +1909,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			    {error, extended_error('bad-request', "payload-required")};
 			(PayloadCount > 1) or (PayloadCount == 0) or InvalidNS ->
 			    %% Entity attempts to publish item with multiple payload elements
+			    %% or with wrong payload NS
 			    {error, extended_error('bad-request', "invalid-payload")};
 			(DeliverPayloads == 0) and (PersistItems == 0) and (PayloadSize > 0) ->
 			    %% Publisher attempts to publish to transient notification node with item
@@ -3324,7 +3326,8 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
      ?ALIST_CONFIG_FIELD("When to send the last published item", send_last_published_item,
 			 [never, on_sub, on_sub_and_presence]),
      ?BOOL_CONFIG_FIELD("Only deliver notifications to available users", presence_based_delivery),
-     ?NLIST_CONFIG_FIELD("The collections with which a node is affiliated", collection)
+     ?NLIST_CONFIG_FIELD("The collections with which a node is affiliated", collection),
+     ?STRING_CONFIG_FIELD("The type of node data, usually specified by the namespace of the payload (if any)", type)
     ].
 
 %%<p>There are several reasons why the node configuration request might fail:</p>
