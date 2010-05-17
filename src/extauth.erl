@@ -27,8 +27,15 @@
 -module(extauth).
 -author('leifj@it.su.se').
 
--export([start/2, stop/1, init/2,
-	 check_password/3, set_password/3, is_user_exists/2]).
+-export([start/2,
+	 stop/1,
+	 init/2,
+	 check_password/3,
+	 set_password/3,
+	 try_register/3,
+	 remove_user/2,
+	 remove_user/3,
+	 is_user_exists/2]).
 
 -include("ejabberd.hrl").
 
@@ -55,6 +62,18 @@ is_user_exists(User, Server) ->
 
 set_password(User, Server, Password) ->
     call_port(Server, ["setpass", User, Server, Password]).
+
+try_register(User, Server, Password) ->
+    case call_port(Server, ["tryregister", User, Server, Password]) of
+	true -> {atomic, ok};
+	false -> {error, not_allowed}
+    end.
+
+remove_user(User, Server) ->
+    call_port(Server, ["removeuser", User, Server]).
+
+remove_user(User, Server, Password) ->
+    call_port(Server, ["removeuser3", User, Server, Password]).
 
 call_port(Server, Msg) ->
     LServer = jlib:nameprep(Server),

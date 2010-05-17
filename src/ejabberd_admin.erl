@@ -150,7 +150,7 @@ commands() ->
 
      #ejabberd_commands{name = set_master, tags = [mnesia],
 			desc = "Set master node of the clustered Mnesia tables",
-			longdesc = "If you provie as nodename \"self\", this "
+			longdesc = "If you provide as nodename \"self\", this "
 			"node will be set as its own master.",
 			module = ?MODULE, function = set_master,
 			args = [{nodename, string}], result = {res, restuple}},
@@ -283,7 +283,7 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
 register(User, Host, Password) ->
     case ejabberd_auth:try_register(User, Host, Password) of
 	{atomic, ok} ->
-	    {ok, io_lib:format("User ~s@~s succesfully registered", [User, Host])};
+	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
 	{atomic, exists} ->
 	    String = io_lib:format("User ~s@~s already registered at node ~p",
 				   [User, Host, node()]),

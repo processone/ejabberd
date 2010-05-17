@@ -172,7 +172,7 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 				     [{"xmlns", ?NS_DISCO_INFO} | ANode],
 				     Identity ++ 
 				     Info ++
-				     lists:map(fun feature_to_xml/1, Features)
+				     features_to_xml(Features)
 				    }]};
 		{error, Error} ->
 		    IQ#iq{type = error, sub_el = [SubEl, Error]}
@@ -209,10 +209,16 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
     end.
 
 
-feature_to_xml({{Feature, _Host}}) ->
-    feature_to_xml(Feature);
-feature_to_xml(Feature) when is_list(Feature) ->
-    {xmlelement, "feature", [{"var", Feature}], []}.
+features_to_xml(FeatureList) ->
+    %% Avoid duplicating features
+    [{xmlelement, "feature", [{"var", Feat}], []} ||
+	Feat <- lists:usort(
+		  lists:map(
+		    fun({{Feature, _Host}}) ->
+			Feature;
+		       (Feature) when is_list(Feature) ->
+			    Feature
+		    end, FeatureList))].
 
 domain_to_xml({Domain}) ->
     {xmlelement, "item", [{"jid", Domain}], []};
@@ -358,7 +364,7 @@ process_sm_iq_info(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
                                   sub_el = [{xmlelement, "query",
                                              [{"xmlns", ?NS_DISCO_INFO} | ANode],
                                              Identity ++
-                                             lists:map(fun feature_to_xml/1, Features)
+					     features_to_xml(Features)
                                             }]};
                         {error, Error} ->
                             IQ#iq{type = error, sub_el = [SubEl, Error]}
@@ -403,7 +409,13 @@ get_user_resources(User, Server) ->
 
 %%% Support for: XEP-0157 Contact Addresses for XMPP Services
 
-get_info(_A, Host, Module, Node, _Lang) when Node == [] ->
+get_info(_A, Host, Mod, Node, _Lang) when Node == [] ->
+    Module = case Mod of
+		 undefined ->
+		     ?MODULE;
+		 _ ->
+		     Mod
+	     end,
     Serverinfo_fields = get_fields_xml(Host, Module),
     [{xmlelement, "x",
       [{"xmlns", ?NS_XDATA}, {"type", "result"}],
@@ -417,8 +429,8 @@ get_info(_A, Host, Module, Node, _Lang) when Node == [] ->
       ++ Serverinfo_fields
      }];
 
-get_info(_, _, _, _Node, _) ->
-    [].
+get_info(Acc, _, _, _Node, _) ->
+    Acc.
 
 get_fields_xml(Host, Module) ->
     Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),

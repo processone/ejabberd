@@ -33,6 +33,10 @@
 -behaviour(gen_mod).
 
 -export([read_caps/1,
+	 caps_stream_features/2,
+	 disco_features/5,
+	 disco_identity/5,
+	 disco_info/5,
 	 get_features/1]).
 
 %% gen_mod callbacks
@@ -56,7 +60,7 @@
 
 -define(PROCNAME, ejabberd_mod_caps).
 
--record(caps, {node, version, exts}).
+-record(caps, {node, version, hash, exts}).
 -record(caps_features, {node_pair, features = []}).
 
 -record(state, {host}).
@@ -115,8 +119,10 @@ read_caps([{xmlelement, "c", Attrs, _Els} | Tail], Result) ->
 	?NS_CAPS ->
 	    Node = xml:get_attr_s("node", Attrs),
 	    Version = xml:get_attr_s("ver", Attrs),
+	    Hash = xml:get_attr_s("hash", Attrs),
 	    Exts = string:tokens(xml:get_attr_s("ext", Attrs), " "),
-	    read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
+	    read_caps(Tail, #caps{node = Node, hash = Hash,
+				  version = Version, exts = Exts});
 	_ ->
 	    read_caps(Tail, Result)
     end;
@@ -152,6 +158,41 @@ user_send_packet(#jid{luser = User, lserver = Server} = From,
 user_send_packet(_From, _To, _Packet) ->
     ok.
 
+caps_stream_features(Acc, MyHost) ->
+    case make_my_disco_hash(MyHost) of
+	"" ->
+	    Acc;
+	Hash ->
+	    [{xmlelement, "c", [{"xmlns", ?NS_CAPS},
+				{"hash", "sha-1"},
+				{"node", ?EJABBERD_URI},
+				{"ver", Hash}], []} | Acc]
+    end.
+
+disco_features(_Acc, From, To, ?EJABBERD_URI ++ "#" ++ [_|_], Lang) ->
+    ejabberd_hooks:run_fold(disco_local_features,
+			    To#jid.lserver,
+			    empty,
+			    [From, To, "", Lang]);
+disco_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
+disco_identity(_Acc, From, To, ?EJABBERD_URI ++ "#" ++ [_|_], Lang) ->
+    ejabberd_hooks:run_fold(disco_local_identity,
+			    To#jid.lserver,
+			    [],
+			    [From, To, "", Lang]);
+disco_identity(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
+disco_info(_Acc, Host, Module, ?EJABBERD_URI ++ "#" ++ [_|_], Lang) ->
+    ejabberd_hooks:run_fold(disco_info,
+			    Host,
+			    [],
+			    [Host, Module, "", Lang]);
+disco_info(Acc, _Host, _Module, _Node, _Lang) ->
+    Acc.
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -163,6 +204,16 @@ init([Host, _Opts]) ->
     mnesia:add_table_copy(caps_features, node(), disc_copies),
     ejabberd_hooks:add(user_send_packet, Host,
 		       ?MODULE, user_send_packet, 75),
+    ejabberd_hooks:add(c2s_stream_features, Host,
+		       ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:add(s2s_stream_features, Host,
+		       ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:add(disco_local_features, Host,
+		       ?MODULE, disco_features, 75),
+    ejabberd_hooks:add(disco_local_identity, Host,
+		       ?MODULE, disco_identity, 75),
+    ejabberd_hooks:add(disco_info, Host,
+		       ?MODULE, disco_info, 75),
     {ok, #state{host = Host}}.
 
 handle_call(stop, _From, State) ->
@@ -180,6 +231,16 @@ terminate(_Reason, State) ->
     Host = State#state.host,
     ejabberd_hooks:delete(user_send_packet, Host,
 			  ?MODULE, user_send_packet, 75),
+    ejabberd_hooks:delete(c2s_stream_features, Host,
+			  ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:delete(s2s_stream_features, Host,
+			  ?MODULE, caps_stream_features, 75),
+    ejabberd_hooks:delete(disco_local_features, Host,
+			  ?MODULE, disco_features, 75),
+    ejabberd_hooks:delete(disco_local_identity, Host,
+			  ?MODULE, disco_identity, 75),
+    ejabberd_hooks:delete(disco_info, Host,
+			  ?MODULE, disco_info, 75),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -214,16 +275,28 @@ feature_request(_Host, _From, _Caps, []) ->
 feature_response(#iq{type = result,
 		     sub_el = [{xmlelement, _, _, Els}]},
 		 Host, From, Caps, [SubNode | SubNodes]) ->
-    Features = lists:flatmap(
-		 fun({xmlelement, "feature", FAttrs, _}) ->
-			 [xml:get_attr_s("var", FAttrs)];
-		    (_) ->
-			 []
-		 end, Els),
     BinaryNode = node_to_binary(Caps#caps.node, SubNode),
-    mnesia:dirty_write(
-      #caps_features{node_pair = BinaryNode,
-		     features = features_to_binary(Features)}),
+    IsValid = case Caps#caps.hash of
+		  "sha-1" ->
+		      Caps#caps.version == make_disco_hash(Els, sha1);
+		  "md5" ->
+		      Caps#caps.version == make_disco_hash(Els, md5);
+		  _ ->
+		      true
+	      end,
+    if IsValid ->
+	    Features = lists:flatmap(
+			 fun({xmlelement, "feature", FAttrs, _}) ->
+				 [xml:get_attr_s("var", FAttrs)];
+			    (_) ->
+				 []
+			 end, Els),
+	    mnesia:dirty_write(
+	      #caps_features{node_pair = BinaryNode,
+			     features = features_to_binary(Features)});
+       true ->
+	    mnesia:dirty_write(#caps_features{node_pair = BinaryNode})
+    end,
     feature_request(Host, From, Caps, SubNodes);
 feature_response(timeout, _Host, _From, _Caps, _SubNodes) ->
     ok;
@@ -239,3 +312,102 @@ node_to_binary(Node, SubNode) ->
 
 features_to_binary(L) -> [list_to_binary(I) || I <- L].
 binary_to_features(L) -> [binary_to_list(I) || I <- L].
+
+make_my_disco_hash(Host) ->
+    JID = jlib:make_jid("", Host, ""),
+    case {ejabberd_hooks:run_fold(disco_local_features,
+				  Host,
+				  empty,
+				  [JID, JID, "", ""]),
+	  ejabberd_hooks:run_fold(disco_local_identity,
+				  Host,
+				  [],
+				  [JID, JID, "", ""]),
+	  ejabberd_hooks:run_fold(disco_info,
+				  Host,
+				  [],
+				  [Host, undefined, "", ""])} of
+	{{result, Features}, Identities, Info} ->
+	    Feats = lists:map(
+		      fun({{Feat, _Host}}) ->
+			      {xmlelement, "feature", [{"var", Feat}], []};
+			 (Feat) ->
+			      {xmlelement, "feature", [{"var", Feat}], []}
+		      end, Features),
+	    make_disco_hash(Identities ++ Info ++ Feats, sha1);
+	_Err ->
+	    ""
+    end.
+
+make_disco_hash(DiscoEls, Algo) when Algo == sha1; Algo == md5 ->
+    Concat = [concat_identities(DiscoEls),
+	      concat_features(DiscoEls),
+	      concat_info(DiscoEls)],
+    base64:encode_to_string(
+      if Algo == sha1 ->
+	      crypto:sha(Concat);
+	 Algo == md5 ->
+	      crypto:md5(Concat)
+      end).
+
+concat_features(Els) ->
+    lists:usort(
+      lists:flatmap(
+	fun({xmlelement, "feature", Attrs, _}) ->
+		[[xml:get_attr_s("var", Attrs), $<]];
+	   (_) ->
+		[]
+	end, Els)).
+
+concat_identities(Els) ->
+    lists:sort(
+      lists:flatmap(
+	fun({xmlelement, "identity", Attrs, _}) ->
+		[[xml:get_attr_s("category", Attrs), $/,
+		  xml:get_attr_s("type", Attrs), $/,
+		  xml:get_attr_s("xml:lang", Attrs), $/,
+		  xml:get_attr_s("name", Attrs), $<]];
+	   (_) ->
+		[]
+	end, Els)).
+
+concat_info(Els) ->
+    lists:sort(
+      lists:flatmap(
+	fun({xmlelement, "x", Attrs, Fields}) ->
+		case {xml:get_attr_s("xmlns", Attrs),
+		      xml:get_attr_s("type", Attrs)} of
+		    {?NS_XDATA, "result"} ->
+			[concat_xdata_fields(Fields)];
+		    _ ->
+			[]
+		end;
+	   (_) ->
+		[]
+	end, Els)).
+
+concat_xdata_fields(Fields) ->
+    [Form, Res] =
+	lists:foldl(
+	  fun({xmlelement, "field", Attrs, Els} = El,
+	      [FormType, VarFields] = Acc) ->
+		  case xml:get_attr_s("var", Attrs) of
+		      "" ->
+			  Acc;
+		      "FORM_TYPE" ->
+			  [xml:get_subtag_cdata(El, "value"), VarFields];
+		      Var ->
+			  [FormType,
+			   [[[Var, $<],
+			     lists:sort(
+			       lists:flatmap(
+				 fun({xmlelement, "value", _, VEls}) ->
+					 [[xml:get_cdata(VEls), $<]];
+				    (_) ->
+					 []
+				 end, Els))] | VarFields]]
+		  end;
+	     (_, Acc) ->
+		  Acc
+	  end, ["", []], Fields),
+    [Form, $<, lists:sort(Res)].

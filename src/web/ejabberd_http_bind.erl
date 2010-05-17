@@ -96,7 +96,7 @@
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
                                % shoot you (time in microsec)
 -define(MAX_WAIT, 3600). % max num of secs to keep a request on hold
--define(MAX_INACTIVITY, 30000). % msecs to wait before terminating
+-define(MAX_INACTIVITY, 120000). % msecs to wait before terminating
                                 % idle sessions
 -define(MAX_PAUSE, 120). % may num of sec a client is allowed to pause
                          % the session
@@ -523,10 +523,7 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
     ?DEBUG("terminate: Deleting session ~s", [StateData#state.id]),
-    mnesia:transaction(
-      fun() ->
-	      mnesia:delete({http_bind, StateData#state.id})
-      end),
+    mnesia:dirty_delete({http_bind, StateData#state.id}),
     send_receiver_reply(StateData#state.http_receiver, {ok, terminate}),
     case StateData#state.waiting_input of
 	false ->

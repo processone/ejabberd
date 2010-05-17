@@ -62,7 +62,7 @@
 		servers,
 		backups,
 		port,
-		encrypt,
+		tls_options,
 		dn,
 		base,
 		password,
@@ -181,7 +181,7 @@ init([Host, Opts]) ->
 		     State#state.port,
 		     State#state.dn,
 		     State#state.password,
-		     State#state.encrypt),
+		     State#state.tls_options),
     case State#state.search of
 	true ->
 	    ejabberd_router:register_route(State#state.myhost);
@@ -686,6 +686,11 @@ parse_options(Host, Opts) ->
 			  ejabberd_config:get_local_option({ldap_encrypt, Host});
 		      E -> E
 	          end,
+    LDAPTLSVerify = case gen_mod:get_opt(ldap_tls_verify, Opts, undefined) of
+			undefined ->
+			    ejabberd_config:get_local_option({ldap_tls_verify, Host});
+			Verify -> Verify
+		    end,
     LDAPPortTemp = case gen_mod:get_opt(ldap_port, Opts, undefined) of
 		       undefined ->
 			   ejabberd_config:get_local_option({ldap_port, Host});
@@ -766,7 +771,8 @@ parse_options(Host, Opts) ->
 	   servers = LDAPServers,
 	   backups = LDAPBackups,
 	   port = LDAPPort,
-	   encrypt = LDAPEncrypt,
+	   tls_options = [{encrypt, LDAPEncrypt},
+			  {tls_verify, LDAPTLSVerify}],
 	   dn = RootDN,
 	   base = LDAPBase,
 	   password = Password,
