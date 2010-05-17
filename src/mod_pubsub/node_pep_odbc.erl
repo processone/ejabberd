@@ -76,12 +76,12 @@
 	]).
 
 init(Host, ServerHost, Opts) ->
-    node_hometree_odbc:init(Host, ServerHost, Opts),
+    node_flat_odbc:init(Host, ServerHost, Opts),
     complain_if_modcaps_disabled(ServerHost),
     ok.
 
 terminate(Host, ServerHost) ->
-    node_hometree_odbc:terminate(Host, ServerHost),
+    node_flat_odbc:terminate(Host, ServerHost),
     ok.
 
 options() ->
@@ -146,60 +146,60 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
     {result, Allowed}.
 
 create_node(NodeId, Owner) ->
-    case node_hometree_odbc:create_node(NodeId, Owner) of
+    case node_flat_odbc:create_node(NodeId, Owner) of
 	{result, _} -> {result, []};
 	Error -> Error
     end.
 
 delete_node(Removed) ->
-    case node_hometree_odbc:delete_node(Removed) of
+    case node_flat_odbc:delete_node(Removed) of
 	{result, {_, _, Removed}} -> {result, {[], Removed}};
 	Error -> Error
     end.
 
 subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup, Options) ->
-    node_hometree_odbc:subscribe_node(
+    node_flat_odbc:subscribe_node(
       NodeId, Sender, Subscriber, AccessModel, SendLast,
       PresenceSubscription, RosterGroup, Options).
 
 unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
-    case node_hometree_odbc:unsubscribe_node(NodeId, Sender, Subscriber, SubID) of
+    case node_flat_odbc:unsubscribe_node(NodeId, Sender, Subscriber, SubID) of
 	{error, Error} -> {error, Error};
 	{result, _} -> {result, []}
     end.
 
 publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
-    node_hometree_odbc:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).
+    node_flat_odbc:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).
 
 remove_extra_items(NodeId, MaxItems, ItemIds) ->
-    node_hometree_odbc:remove_extra_items(NodeId, MaxItems, ItemIds).
+    node_flat_odbc:remove_extra_items(NodeId, MaxItems, ItemIds).
 
 delete_item(NodeId, Publisher, PublishModel, ItemId) ->
-    node_hometree_odbc:delete_item(NodeId, Publisher, PublishModel, ItemId).
+    node_flat_odbc:delete_item(NodeId, Publisher, PublishModel, ItemId).
 
 purge_node(NodeId, Owner) ->
-    node_hometree_odbc:purge_node(NodeId, Owner).
+    node_flat_odbc:purge_node(NodeId, Owner).
 
 get_entity_affiliations(_Host, Owner) ->
     OwnerKey = jlib:short_prepd_bare_jid(Owner),
-    node_hometree_odbc:get_entity_affiliations(OwnerKey, Owner).
+    node_flat_odbc:get_entity_affiliations(OwnerKey, Owner).
 
 get_node_affiliations(NodeId) ->
-    node_hometree_odbc:get_node_affiliations(NodeId).
+    node_flat_odbc:get_node_affiliations(NodeId).
 
 get_affiliation(NodeId, Owner) ->
-    node_hometree_odbc:get_affiliation(NodeId, Owner).
+    node_flat_odbc:get_affiliation(NodeId, Owner).
 
 set_affiliation(NodeId, Owner, Affiliation) ->
-    node_hometree_odbc:set_affiliation(NodeId, Owner, Affiliation).
+    node_flat_odbc:set_affiliation(NodeId, Owner, Affiliation).
 
 get_entity_subscriptions(_Host, Owner) ->
     SubKey = jlib:short_prepd_jid(Owner),
     GenKey = jlib:short_prepd_bare_jid(SubKey),
     Host = ?PUBSUB:escape(element(2, SubKey)),
-    SJ = node_hometree_odbc:encode_jid(SubKey),
-    GJ = node_hometree_odbc:encode_jid(GenKey),
+    SJ = node_flat_odbc:encode_jid(SubKey),
+    GJ = node_flat_odbc:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    ["select host, node, type, i.nodeid, jid, subscription "
@@ -217,9 +217,9 @@ get_entity_subscriptions(_Host, Owner) ->
     Reply = case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected, ["host", "node", "type", "nodeid", "jid", "subscription"], RItems} ->
 	    lists:map(fun({H, N, T, I, J, S}) ->
-		O = node_hometree_odbc:decode_jid(H),
+		O = node_flat_odbc:decode_jid(H),
 		Node = nodetree_odbc:raw_to_node(O, {N, "", T, I}),
-		{Node, node_hometree_odbc:decode_subscription(S), node_hometree_odbc:decode_jid(J)}
+		{Node, node_flat_odbc:decode_subscription(S), node_flat_odbc:decode_jid(J)}
 	    end, RItems);
 	_ ->
 	    []
@@ -229,8 +229,8 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
     SubKey = jlib:short_prepd_jid(Owner),
     GenKey = jlib:short_prepd_bare_jid(SubKey),
     Host = ?PUBSUB:escape(element(2, SubKey)),
-    SJ = node_hometree_odbc:encode_jid(SubKey),
-    GJ = node_hometree_odbc:encode_jid(GenKey),
+    SJ = node_flat_odbc:encode_jid(SubKey),
+    GJ = node_flat_odbc:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    ["select host, node, type, i.nodeid, jid, subscription "
@@ -250,9 +250,9 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
     Reply = case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected, ["host", "node", "type", "nodeid", "jid", "subscription"], RItems} ->
 	    lists:map(fun({H, N, T, I, J, S}) ->
-		O = node_hometree_odbc:decode_jid(H),
+		O = node_flat_odbc:decode_jid(H),
 		Node = nodetree_odbc:raw_to_node(O, {N, "", T, I}),
-		{Node, node_hometree_odbc:decode_subscription(S), node_hometree_odbc:decode_jid(J)}
+		{Node, node_flat_odbc:decode_subscription(S), node_flat_odbc:decode_jid(J)}
 	    end, RItems);
 	_ ->
 	    []
@@ -266,49 +266,49 @@ get_node_subscriptions(NodeId) ->
     %% but that call returns also all subscription to none
     %% and this is required for broadcast to occurs
     %% DO NOT REMOVE
-    node_hometree_odbc:get_node_subscriptions(NodeId).
+    node_flat_odbc:get_node_subscriptions(NodeId).
 
 get_subscriptions(NodeId, Owner) ->
-    node_hometree_odbc:get_subscriptions(NodeId, Owner).
+    node_flat_odbc:get_subscriptions(NodeId, Owner).
 
 set_subscriptions(NodeId, Owner, Subscription, SubId) ->
-    node_hometree_odbc:set_subscriptions(NodeId, Owner, Subscription, SubId).
+    node_flat_odbc:set_subscriptions(NodeId, Owner, Subscription, SubId).
 
 get_pending_nodes(Host, Owner) ->
-    node_hometree_odbc:get_pending_nodes(Host, Owner).
+    node_flat_odbc:get_pending_nodes(Host, Owner).
 
 get_states(NodeId) ->
-    node_hometree_odbc:get_states(NodeId).
+    node_flat_odbc:get_states(NodeId).
 
 get_state(NodeId, JID) ->
-    node_hometree_odbc:get_state(NodeId, JID).
+    node_flat_odbc:get_state(NodeId, JID).
 
 set_state(State) ->
-    node_hometree_odbc:set_state(State).
+    node_flat_odbc:set_state(State).
 
 get_items(NodeId, From) ->
-    node_hometree_odbc:get_items(NodeId, From).
+    node_flat_odbc:get_items(NodeId, From).
 get_items(NodeId, From, RSM) ->
-    node_hometree_odbc:get_items(NodeId, From, RSM).
+    node_flat_odbc:get_items(NodeId, From, RSM).
 get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
     get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, none).
 get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM) ->
-    node_hometree_odbc:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM).
+    node_flat_odbc:get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM).
 
 get_last_items(NodeId, JID, Count) ->
-    node_hometree_odbc:get_last_items(NodeId, JID, Count).
+    node_flat_odbc:get_last_items(NodeId, JID, Count).
 
 get_item(NodeId, ItemId) ->
-    node_hometree_odbc:get_item(NodeId, ItemId).
+    node_flat_odbc:get_item(NodeId, ItemId).
 
 get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    node_hometree_odbc:get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
+    node_flat_odbc:get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId).
 
 set_item(Item) ->
-    node_hometree_odbc:set_item(Item).
+    node_flat_odbc:set_item(Item).
 
 get_item_name(Host, Node, Id) ->
-    node_hometree_odbc:get_item_name(Host, Node, Id).
+    node_flat_odbc:get_item_name(Host, Node, Id).
 
 node_to_path(Node) ->
     node_flat_odbc:node_to_path(Node).

@@ -366,7 +366,7 @@ nodeid(Host, Node) ->
     end.
 
 nodeowners(NodeId) ->
-    {result, Res} = node_hometree_odbc:get_node_affiliations(NodeId),
+    {result, Res} = node_flat_odbc:get_node_affiliations(NodeId),
     lists:foldl(fun({LJID, owner}, Acc) -> [LJID|Acc];
 		   (_, Acc) -> Acc
 		end, [], Res).

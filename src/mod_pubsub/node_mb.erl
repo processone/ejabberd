@@ -177,7 +177,7 @@ set_subscriptions(NodeId, Owner, Subscription, SubId) ->
     node_pep:set_subscriptions(NodeId, Owner, Subscription, SubId).
 
 get_pending_nodes(Host, Owner) ->
-    node_hometree:get_pending_nodes(Host, Owner).
+    node_flat:get_pending_nodes(Host, Owner).
 
 get_states(NodeId) ->
     node_pep:get_states(NodeId).

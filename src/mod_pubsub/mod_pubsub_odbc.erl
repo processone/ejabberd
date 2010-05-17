@@ -256,7 +256,7 @@ init_send_loop(ServerHost, State) ->
 %% <em>node_plugin</em>. The 'node_' prefix is mandatory.</p>
 %% <p>The modules are initialized in alphetical order and the list is checked
 %% and sorted to ensure that each module is initialized only once.</p>
-%% <p>See {@link node_hometree:init/1} for an example implementation.</p>
+%% <p>See {@link node_flat:init/1} for an example implementation.</p>
 init_plugins(Host, ServerHost, Opts) ->
     TreePlugin = list_to_atom(?TREE_PREFIX ++
 			      gen_mod:get_opt(nodetree, Opts, ?STDTREE)),
@@ -1727,7 +1727,7 @@ delete_node(Host, Node, Owner) ->
 %%	 Node = pubsubNode()
 %%	 From = jid()
 %%	 JID = jid()
-%% @see node_hometree:subscribe_node/5
+%% @see node_flat:subscribe_node/5
 %% @doc <p>Accepts or rejects subcription requests on a PubSub node.</p>
 %%<p>There are several reasons why the subscription request might fail:</p>
 %%<ul>
@@ -2213,7 +2213,7 @@ get_item(Host, Node, ItemId) ->
 send_items(Host, Node, NodeId, Type, LJID, last) ->
     Stanza = case get_cached_item(Host, NodeId) of
 	undefined ->
-	    % special ODBC optimization, works only with node_hometree_odbc, node_flat_odbc and node_pep_odbc
+	    % special ODBC optimization, works only with node_flat_odbc, node_flat_odbc and node_pep_odbc
 	    case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
 		{result, [LastItem]} ->
 		    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
@@ -3589,7 +3589,7 @@ select_type(ServerHost, Host, Node) ->
 features() ->
 	[
 	 % see plugin "access-authorize",   % OPTIONAL
-	 "access-open",   % OPTIONAL this relates to access_model option in node_hometree
+	 "access-open",   % OPTIONAL this relates to access_model option in node_flat
 	 "access-presence",   % OPTIONAL this relates to access_model option in node_pep
 	 %TODO "access-roster",   % OPTIONAL
 	 "access-whitelist",   % OPTIONAL

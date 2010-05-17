@@ -58,35 +58,35 @@
 
 
 init(Host, ServerHost, Opts) ->
-    node_hometree:init(Host, ServerHost, Opts).
+    node_flat:init(Host, ServerHost, Opts).
 
 terminate(Host, ServerHost) ->
-    node_hometree:terminate(Host, ServerHost).
+    node_flat:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, leaf} | node_hometree:options()].
+    [{node_type, leaf} | node_flat:options()].
 
 features() ->
-    ["multi-collection" | node_hometree:features()].
+    ["multi-collection" | node_flat:features()].
 
 create_node_permission(_Host, _ServerHost, _Node, _ParentNode,
 		       _Owner, _Access) ->
     {result, true}.
 
 create_node(NodeID, Owner) ->
-    node_hometree:create_node(NodeID, Owner).
+    node_flat:create_node(NodeID, Owner).
 
 delete_node(Removed) ->
-    node_hometree:delete_node(Removed).
+    node_flat:delete_node(Removed).
 
 subscribe_node(NodeID, Sender, Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup, Options) ->
-    node_hometree:subscribe_node(NodeID, Sender, Subscriber, AccessModel,
+    node_flat:subscribe_node(NodeID, Sender, Subscriber, AccessModel,
 				SendLast, PresenceSubscription, RosterGroup,
 				Options).
 
 unsubscribe_node(NodeID, Sender, Subscriber, SubID) ->
-    node_hometree:unsubscribe_node(NodeID, Sender, Subscriber, SubID).
+    node_flat:unsubscribe_node(NodeID, Sender, Subscriber, SubID).
 
 publish_item(NodeID, Publisher, Model, MaxItems, ItemID, Payload) ->
     %% TODO: should look up the NodeTree plugin here. There's no
@@ -98,7 +98,7 @@ publish_item(NodeID, Publisher, Model, MaxItems, ItemID, Payload) ->
                 collection ->
                     {error, mod_pubsub:extended_error('not-allowed', "publish")};
                 _ ->
-                    node_hometree:publish_item(NodeID, Publisher, Model,
+                    node_flat:publish_item(NodeID, Publisher, Model,
                                                MaxItems, ItemID, Payload)
             end;
         Err ->
@@ -110,74 +110,74 @@ find_opt(Option, [{Option, Value} | _]) -> Value;
 find_opt(Option, [_ | T])               -> find_opt(Option, T).
 
 remove_extra_items(NodeID, MaxItems, ItemIDs) ->
-    node_hometree:remove_extra_items(NodeID, MaxItems, ItemIDs).
+    node_flat:remove_extra_items(NodeID, MaxItems, ItemIDs).
 
 delete_item(NodeID, Publisher, PublishModel, ItemID) ->
-    node_hometree:delete_item(NodeID, Publisher, PublishModel, ItemID).
+    node_flat:delete_item(NodeID, Publisher, PublishModel, ItemID).
 
 purge_node(NodeID, Owner) ->
-    node_hometree:purge_node(NodeID, Owner).
+    node_flat:purge_node(NodeID, Owner).
 
 get_entity_affiliations(Host, Owner) ->
-    node_hometree:get_entity_affiliations(Host, Owner).
+    node_flat:get_entity_affiliations(Host, Owner).
 
 get_node_affiliations(NodeID) ->
-    node_hometree:get_node_affiliations(NodeID).
+    node_flat:get_node_affiliations(NodeID).
 
 get_affiliation(NodeID, Owner) ->
-    node_hometree:get_affiliation(NodeID, Owner).
+    node_flat:get_affiliation(NodeID, Owner).
 
 set_affiliation(NodeID, Owner, Affiliation) ->
-    node_hometree:set_affiliation(NodeID, Owner, Affiliation).
+    node_flat:set_affiliation(NodeID, Owner, Affiliation).
 
 get_entity_subscriptions(Host, Owner) ->
-    node_hometree:get_entity_subscriptions(Host, Owner).
+    node_flat:get_entity_subscriptions(Host, Owner).
 
 get_node_subscriptions(NodeID) ->
-    node_hometree:get_node_subscriptions(NodeID).
+    node_flat:get_node_subscriptions(NodeID).
 
 get_subscriptions(NodeID, Owner) ->
-    node_hometree:get_subscriptions(NodeID, Owner).
+    node_flat:get_subscriptions(NodeID, Owner).
 
 set_subscriptions(NodeID, Owner, Subscription, SubID) ->
-    node_hometree:set_subscriptions(NodeID, Owner, Subscription, SubID).
+    node_flat:set_subscriptions(NodeID, Owner, Subscription, SubID).
 
 get_pending_nodes(Host, Owner) ->
-    node_hometree:get_pending_nodes(Host, Owner).
+    node_flat:get_pending_nodes(Host, Owner).
 
 get_states(NodeID) ->
-    node_hometree:get_states(NodeID).
+    node_flat:get_states(NodeID).
 
 get_state(NodeID, JID) ->
-    node_hometree:get_state(NodeID, JID).
+    node_flat:get_state(NodeID, JID).
 
 set_state(State) ->
-    node_hometree:set_state(State).
+    node_flat:set_state(State).
 
 get_items(NodeID, From) ->
-    node_hometree:get_items(NodeID, From).
+    node_flat:get_items(NodeID, From).
 
 get_items(NodeID, JID, AccessModel, PresenceSubscription,
 	  RosterGroup, SubID) ->
-    node_hometree:get_items(NodeID, JID, AccessModel, PresenceSubscription,
+    node_flat:get_items(NodeID, JID, AccessModel, PresenceSubscription,
 			   RosterGroup, SubID).
 
 get_item(NodeID, ItemID) ->
-    node_hometree:get_item(NodeID, ItemID).
+    node_flat:get_item(NodeID, ItemID).
 
 get_item(NodeID, ItemID, JID, AccessModel, PresenceSubscription,
 	 RosterGroup, SubID) ->
-    node_hometree:get_item(NodeID, ItemID, JID, AccessModel,
+    node_flat:get_item(NodeID, ItemID, JID, AccessModel,
 			  PresenceSubscription, RosterGroup, SubID).
 
 set_item(Item) ->
-    node_hometree:set_item(Item).
+    node_flat:set_item(Item).
 
 get_item_name(Host, Node, ID) ->
-    node_hometree:get_item_name(Host, Node, ID).
+    node_flat:get_item_name(Host, Node, ID).
 
 node_to_path(Node) ->
-    node_hometree:node_to_path(Node).
+    node_flat:node_to_path(Node).
 
 path_to_node(Path) ->
-    node_hometree:path_to_node(Path).
+    node_flat:path_to_node(Path).
