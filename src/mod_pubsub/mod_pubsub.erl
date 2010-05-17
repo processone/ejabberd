@@ -1004,14 +1004,37 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			true ->
 			    ok;
 			false ->
-			    case find_authorization_response(Packet) of
-				none ->
-				    ok;
-				invalid ->
-				    ejabberd_router:route(To, From,
-							  exmpp_message:error(Packet, 'bad-request'));
-				XFields ->
-				    handle_authorization_response(Host, From, To, Packet, XFields)
+			    case exmpp_xml:remove_cdata_from_list(Packet#xmlel.children) of
+				[#xmlel{name = 'x', ns = ?NS_DATA_FORMS}] ->
+				    case find_authorization_response(Packet) of
+					none ->
+					    ok;
+					invalid ->
+					    ejabberd_router:route(To, From, exmpp_message:error(Packet, 'bad-request'));
+					XFields ->
+					    handle_authorization_response(Host, From, To, Packet, XFields)
+				    end;
+				[#xmlel{name = 'pubsub', ns = ?NS_PUBSUB} = Pubsub] ->
+				    case exmpp_xml:get_element(Pubsub, 'publish') of
+					undefined ->
+					    ok;
+					Publish ->
+					    Node = exmpp_xml:get_attribute(Publish, 'node', <<>>),
+					    case exmpp_xml:get_element(Publish, 'item') of
+						undefined ->
+						    ok;
+						Item ->
+						    ItemId = exmpp_xml:get_attribute_as_list(Item, 'id', ""),
+						    case publish_item(Host, ServerHost, Node, From, ItemId, Item#xmlel.children) of
+							{result, _} ->
+							    ok;
+							{error, Reason} ->
+							    ejabberd_router:route(To, From, exmpp_message:error(Packet, Reason))
+						    end
+					    end
+				    end;
+				_ ->
+				    ok
 			    end
 		    end;
 		_ ->
