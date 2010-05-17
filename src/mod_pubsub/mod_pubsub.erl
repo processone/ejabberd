@@ -1606,7 +1606,7 @@ send_authorization_approval(Host, JID, SNode, Subscription) ->
 	       end,
     Stanza = event_stanza(
 		[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'subscription', attrs =
-		    [ ?XMLATTR('jid', exmpp_jid:to_binary(JID)) | nodeAttr(SNode)] ++ SubAttrs
+		    [?XMLATTR('jid', exmpp_jid:to_binary(JID)) | nodeAttr(SNode)] ++ SubAttrs
 		     }]),
     ejabberd_router:route(service_jid(Host), JID, Stanza).
  
@@ -2483,9 +2483,6 @@ get_affiliations(Host, Node, JID) ->
 		    end
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
-  %% Fix bug when user retrieves his affiliations
-	%{result, {_, []}} ->
-	%    {error, 'item-not-found'};
 	{result, {_, Affiliations}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
@@ -3971,7 +3968,7 @@ feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
 	%% If the sender Server equals Host, the message comes from the Pubsub server
 	Host -> allow;
 	%% Else, the message comes from PEP
-	_    ->
+	_ ->
 	    case exmpp_xml:get_element(El, 'event') of
 	  #xmlel{name = 'event', ns = ?NS_PUBSUB_EVENT} = Event ->
 	      Items = exmpp_xml:get_element(Event, ?NS_PUBSUB_EVENT, 'items'),

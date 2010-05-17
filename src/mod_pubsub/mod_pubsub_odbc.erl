@@ -993,7 +993,7 @@ iq_disco_items(Host, Item, From, RSM) ->
 	    Node = string_to_node(SNode),
 	    Action =
 		fun(#pubsub_node{type = Type, id = NodeId}) ->
-			%% TODO call get_items/6 instead for access control (EJAB-1033)
+			% TODO call get_items/6 instead for access control (EJAB-1033)
 			{NodeItems, RsmOut} = case node_call(Type, get_items, [NodeId, From, RSM]) of
 					{result, I} -> I;
 					_ -> {[], none}
@@ -1012,8 +1012,7 @@ iq_disco_items(Host, Item, From, RSM) ->
 			Items = lists:map(
 				  fun(#pubsub_item{itemid = {RN, _}}) ->
 					  {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
-					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host),
-                            ?XMLATTR('name', Name)]}
+					  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [?XMLATTR('jid', Host), ?XMLATTR('name', Name)]}
 				  end, NodeItems),
 			{result, Nodes ++ Items ++ jlib:rsm_encode(RsmOut)}
 		end,
@@ -1071,7 +1070,8 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
     case exmpp_xml:remove_cdata_from_list(SubEl#xmlel.children) of
 	[#xmlel{name = Name, attrs = Attrs, children = Els} | Rest] ->
-	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', false)),
+	    %% Fix bug when owner retrieves his affiliations
+	    Node = string_to_node(exmpp_xml:get_attribute_from_list_as_list(Attrs, 'node', "")),
 	    case {IQType, Name} of
 		{set, 'create'} ->
 		    Config = case Rest of
@@ -1772,13 +1772,12 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 				    {"", "", ""} ->
 					{false, false};
 				    _ ->
-                    case node_owners_call(Type, NodeId) of
-                        [{OU, OS, _} | _] ->
-                            get_roster_info(OU, OS,
-							    Subscriber, AllowedGroups);
-                        _ ->
-                            {false, false}
-                    end
+					case node_owners_call(Type, NodeId) of
+					    [{OU, OS, _} | _] ->
+						get_roster_info(OU, OS, Subscriber, AllowedGroups);
+					    _ ->
+						{false, false}
+					end
 				end
 			end,
 		    if
@@ -2314,8 +2313,6 @@ get_affiliations(Host, Node, JID) ->
 		    end
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, []}} ->
-	    {error, 'item-not-found'};
 	{result, {_, Affiliations}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
@@ -2349,7 +2346,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 				      _:_ -> error
 				  end,
 				  Affiliation = string_to_affiliation(
-						  exmpp_xml:get_attribute_from_list_as_list(Attrs, 'affiliation', false)),
+						  exmpp_xml:get_attribute_from_list_as_list(Attrs, 'affiliation', "")),
 				  if
 				      (JID == error) or
 				      (Affiliation == false) ->
@@ -2404,7 +2401,7 @@ get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
 		    J -> jlib:short_jid(J)
 		  catch
 		      _ ->
-		         {"", "", ""} %% TODO, check if use <<>> instead of ""
+		         exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
@@ -2432,7 +2429,7 @@ read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
             {result, XdataEl} = pubsub_subscription_odbc:get_options_xform(Lang, Options),
             OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
 			       attrs = [ ?XMLATTR('jid', exmpp_jid:to_binary(Subscriber)),
-					?XMLATTR('Subid', SubID) | nodeAttr(Node)],
+					?XMLATTR('subid', SubID) | nodeAttr(Node)],
 			       children = [XdataEl]},
             PubsubEl = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children = [OptionsEl]},
             {result, PubsubEl}
@@ -2463,7 +2460,7 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
     Subscriber = try exmpp_jid:parse(JID) of
 		     J -> jlib:short_jid(J)
 		  catch
-		     _ -> {"", "", ""} %%pablo TODO: "" or <<>> ?. short_jid uses exmpp_jid:node/1, etc. that returns binaries
+		     _ -> exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
 			       [NodeID, Subscriber]),
