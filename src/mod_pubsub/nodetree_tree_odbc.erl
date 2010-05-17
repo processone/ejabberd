@@ -212,28 +212,30 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
     BJID = jlib:short_prepd_bare_jid(Owner),
     case nodeid(Host, Node) of
 	{error, 'item_not_found'} ->
-        ParentExists = case Host of
-            {_, _, _} ->
+	    ParentExists = case Host of
+		{_, _, _} ->
 		    %% This is special case for PEP handling
 		    %% PEP does not uses hierarchy
 		    true;
 		_ ->
-            case Parents of
-                [] ->  true;
-                [Parent | _] ->
-                    case nodeid(Host, Parent) of
-                        {result, PNodeId} -> 
-                            case nodeowners(PNodeId) of
-                                [{[], Host, []}] -> true;
-                                Owners -> lists:member(BJID, Owners)
-                            end;
-                        _ ->
-                            false
-                    end;
-               _ -> 
-                  false
+		    case Parents of
+			[] ->
+			    true;
+			[Parent | _] ->
+			    case nodeid(Host, Parent) of
+				{result, PNodeId} -> 
+				    BHost = list_to_binary(Host),
+				    case nodeowners(PNodeId) of
+					[{undefined, BHost, undefined}] -> true;
+					Owners -> lists:member(BJID, Owners)
+				    end;
+				_ ->
+				    false
+			    end;
+			_ ->
+			    false
 		    end
-		end,
+	    end,
 	    case ParentExists of
 		true -> 
 		    case set_node(#pubsub_node{

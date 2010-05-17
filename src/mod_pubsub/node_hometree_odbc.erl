@@ -205,16 +205,15 @@ features() ->
 %%	   node_default:check_create_user_permission(Host, ServerHost, Node, ParentNode, Owner, Access).'''</p>
 create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
     LOwner = jlib:short_prepd_jid(Owner),
-    {User, Server, _Resource} = LOwner,
     Allowed = case LOwner of
-	{undefined, Host, undefined} ->
-	    true; % pubsub service always allowed
+	{undefined, BHost, undefined} ->
+	    list_to_binary(Host) == BHost; % pubsub service always allowed
 	_ ->
 	    {LU, LS, LR} = LOwner,
 	    case acl:match_rule(ServerHost, Access, exmpp_jid:make(LU, LS, LR)) of
 		allow ->
 		    case node_to_path(Node) of
-			["home", Server, User | _] -> true;
+			[<<"home">>, LS, LU | _] -> true;
 			_ -> false
 		    end;
 		_ ->

@@ -214,8 +214,9 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 			case Parents of
 			    [] -> true;
 			    [Parent | _] ->
+				BHost = list_to_binary(Host),
 				case mnesia:read({pubsub_node, {Host, Parent}}) of
-				    [#pubsub_node{owners = [{undefined, Host, undefined}]}] -> true;
+				    [#pubsub_node{owners = [{undefined, BHost, undefined}]}] -> true;
 				    [#pubsub_node{owners = Owners}] -> lists:member(BJID, Owners);
 				    _ -> false
 				end;
