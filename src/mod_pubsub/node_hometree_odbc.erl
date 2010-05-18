@@ -694,8 +694,8 @@ get_entity_subscriptions(Host, Owner) ->
 %% nodes having send_last_published_item=on_sub_and_presence
 %% as this call avoid seeking node, it must return node and type as well
 get_entity_subscriptions_for_send_last(Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jlib:short_prepd_jid(Owner),
+    GenKey = jlib:short_prepd_bare_jid(Owner),
     H = ?PUBSUB:escape(Host),
     SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
@@ -830,8 +830,7 @@ unsub_with_subid(NodeId, SubId, SubState) ->
 %% @doc <p>Returns a list of Owner's nodes on Host with pending
 %% subscriptions.</p>
 get_pending_nodes(Host, Owner) ->
-    %% pablo TODO,  need to port those jlib:* calls to exmpp. Mnesia?
-    GenKey = jlib:jid_remove_resource(jlib:jid_tolower(Owner)),
+    KenKey = jlib:short_prepd_bare_jid(Owner),
     States = mnesia:match_object(#pubsub_state{stateid     = {GenKey, '_'},
 					       affiliation = owner,
 					       _           = '_'}),
@@ -1306,7 +1305,7 @@ update_subscription(NodeId, JID, Subscription) ->
 		     "values('", NodeId, "', '", J, "', 'n', '", S, "');"])
     end.
 
-decode_jid(SJID) -> jlib:jid_tolower(jlib:string_to_jid(SJID)).
+decode_jid(SJID) -> jlib:short_prepd_jid(jlib:string_to_jid(SJID)).
 
 decode_node(N) -> ?PUBSUB:string_to_node(N).
 

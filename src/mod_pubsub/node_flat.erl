@@ -750,7 +750,7 @@ unsub_with_subid(NodeId, SubId, SubState) ->
 %% @doc <p>Returns a list of Owner's nodes on Host with pending
 %% subscriptions.</p>
 get_pending_nodes(Host, Owner) ->
-    GenKey = jlib:jid_remove_resource(jlib:jid_tolower(Owner)),
+    GenKey = jlib:short_prepd_bare_jid(Owner),
     States = mnesia:match_object(#pubsub_state{stateid     = {GenKey, '_'},
 					       affiliation = owner,
 					       _           = '_'}),

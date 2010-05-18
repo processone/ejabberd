@@ -59,7 +59,7 @@ terminate(Host, ServerHost) ->
     nodetree_tree:terminate(Host, ServerHost).
 
 create_node(Key, NodeID, Type, Owner, Options, Parents) ->
-    OwnerJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerJID = jlib:short_prepd_bare_jid(Owner),
     case find_node(Key, NodeID) of
 	false ->
 	    ID = pubsub_index:new(node),
