@@ -2213,7 +2213,7 @@ get_item(Host, Node, ItemId) ->
 send_items(Host, Node, NodeId, Type, LJID, last) ->
     Stanza = case get_cached_item(Host, NodeId) of
 	undefined ->
-	    % special ODBC optimization, works only with node_flat_odbc, node_flat_odbc and node_pep_odbc
+	    % special ODBC optimization, works only with node_hometree_odbc, node_flat_odbc and node_pep_odbc
 	    case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
 		{result, [LastItem]} ->
 		    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,

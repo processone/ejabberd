@@ -962,12 +962,19 @@ get_item_name(_Host, _Node, Id) ->
     Id.
 
 node_to_path(Node) ->
-    [list_to_binary(Item) || Item <- string:tokens(binary_to_list(Node), "/")].
+    [Node].
 
 path_to_node([]) ->
     <<>>;
 path_to_node(Path) ->
-    list_to_binary(string:join([""|[binary_to_list(Item) || Item <- Path]], "/")).
+    case Path of
+    % default slot
+    [Node] -> Node;
+    % handle old possible entries, used when migrating database content to new format
+    [Node|_] when is_list(Node) -> list_to_binary(string:join([""|Path], "/"));
+    % default case (used by PEP for example)
+    _ -> list_to_binary(Path)
+    end.
 
 %% @spec (Affiliation, Subscription) -> true | false
 %%       Affiliation = owner | member | publisher | outcast | none
