@@ -567,14 +567,11 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
       attrs = [?XMLATTR('type', <<"groupchat">>)],
       children = [#xmlel{name = 'body',
 	  children = [#xmlcdata{cdata = Msg}]}]},
-    lists:foreach(
-      fun({_LJID, Info}) ->
-	      ejabberd_router:route(
-		StateData#state.jid,
-		Info#user.jid,
-		MessagePkt)
-      end,
-      ?DICT:to_list(StateData#state.users)),
+    send_multiple(
+      StateData#state.jid,
+      StateData#state.server_host,
+      StateData#state.users,
+      MessagePkt),
     NSD = add_message_to_history("",
 				 StateData#state.jid,
 				 MessagePkt,
@@ -822,16 +819,11 @@ process_groupchat_message(From, #xmlel{name = 'message'} = Packet,
 			end,
 		    case IsAllowed of
 			true ->
-			    lists:foreach(
-			      fun({_LJID, Info}) ->
-				      ejabberd_router:route(
-					jid_replace_resource(
-					  StateData#state.jid,
-					  FromNick),
-					Info#user.jid,
-					Packet)
-			      end,
-			      ?DICT:to_list(StateData#state.users)),
+			    send_multiple(
+			      jid_replace_resource(StateData#state.jid, FromNick),
+			      StateData#state.server_host,
+			      StateData#state.users,
+			      Packet),
 			    NewStateData2 =
 				add_message_to_history(FromNick,
 						       From,
@@ -3710,9 +3702,12 @@ tab_count_user(JID) ->
 	    0
     end.
     
-    
 jid_replace_resource(JID, Resource) ->
     exmpp_jid:full(JID, Resource).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Multicast
 
-
+send_multiple(From, Server, Users, Packet) ->
+    JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
+    ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).
