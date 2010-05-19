@@ -2270,10 +2270,15 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 	    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
 			case lists:member(Owner, node_owners_call(Type, NodeId)) of
 			    true ->
+				OwnerJID = exmpp_jid:make(Owner),
+				FilteredEntities = case Owners of
+					[Owner] -> [E || E <- Entities, element(1, E) =/= OwnerJID];
+					_ -> Entities
+				    end,
 				lists:foreach(
 				    fun({JID, Affiliation}) ->
 					node_call(Type, set_affiliation, [NodeId, JID, Affiliation])
-				    end, Entities),
+				    end, FilteredEntities),
 				{result, []};
 			    _ ->
 				{error, ?ERR_FORBIDDEN}
