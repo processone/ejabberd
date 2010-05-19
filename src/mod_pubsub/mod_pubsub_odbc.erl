@@ -2362,7 +2362,8 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 	    {error, 'bad-request'};
 	_ ->
 	    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-			case lists:member(Owner, node_owners_call(Type, NodeId)) of
+			Owners = node_owners_call(Type, NodeId),
+			case lists:member(Owner, Owners) of
 			    true ->
 				OwnerJID = exmpp_jid:make(Owner),
 				FilteredEntities = case Owners of
