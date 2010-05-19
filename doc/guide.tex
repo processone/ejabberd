@@ -76,6 +76,7 @@
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
 \newcommand{\modmuclog}{\module{mod\_muc\_log}}
+\newcommand{\modmulticast}{\module{mod\_multicast}}
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modping}{\module{mod\_ping}}
@@ -2499,6 +2500,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
     \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} \\
+    \hline \ahrefloc{modmulticast}{\modmulticast{}} & Multicast Service (\xepref{0033}) &  \\
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
@@ -3370,6 +3372,62 @@ Examples:
  ]}.
 \end{verbatim}
 \end{itemize}
+
+\makesubsection{modmulticast}{\modmulticast{}}
+\ind{modules!\modmulticast{}}
+
+This module implements a service for Extended Stanza Addressing (\xepref{0033})
+that can be used by local or remote XMPP entities (users, components or servers).
+If this service is enabled, it will be used by \ejabberd{} to send
+C2S presence broadcasts, and MUC groupchat messages.
+
+Options:
+\begin{description}
+ \hostitem{multicast}
+ \titem{\{access, AccessName\}} \ind{options!access}
+  Specify who can send packets to the multicast service.
+  By default everyone is allowed to use it.
+ \titem{\{limits, [ \{Sender, Stanza, Number\} ] \}}\ind{options!limits}
+    Specify a list of custom limits which override the default ones.
+    \term{Sender} can be \term{local} or \term{remote}.
+    \term{Stanza} can be \term{message} or \term{presence}.
+    \term{Number} can be a positive integer or the key word \term{infinite}.
+    The default value of this option is:
+\begin{verbatim}
+[{local,  message,  100},
+ {local,  presence, 100},
+ {remote, message,   20},
+ {remote, presence,  20}]
+\end{verbatim}
+\end{description}
+
+Example configuration:
+\begin{verbatim}
+% Only admins can send packets to multicast service
+{access, multicast, [{allow, admin}, {deny, all}]}.
+
+% If you want to allow all your users:
+%{access, multicast, [{allow, all}]}.
+
+% This allows both admins and remote users to send packets,
+% but does not allow local users:
+%{acl, allservers, {server_glob, "*"}}.
+%{access, multicast, [{allow, admin}, {deny, local}, {allow, allservers}]}.
+
+{modules, [
+  ...
+  {mod_multicast, [
+     {host, "multicast.example.org"},
+     {access, multicast},
+     {limits, [
+       {local, message, 40},
+       {local, presence, infinite},
+       {remote, message, 150}
+     ]}
+  ]},
+  ...
+]}.
+\end{verbatim}
 
 \makesubsection{modoffline}{\modoffline{}}
 \ind{modules!\modoffline{}}
