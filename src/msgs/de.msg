@@ -36,6 +36,10 @@
 {"Change Password","Passwort ändern"}.
 {"Change User Password","Benutzer-Passwort ändern"}.
 {"Chatroom configuration modified","Chatraum-Konfiguration geändert"}.
+{"Chatroom is created","Chatraum wurde erstellt"}.
+{"Chatroom is destroyed","Chatraum wurde entfernt"}.
+{"Chatroom is started","Chatraum wurde gestartet"}.
+{"Chatroom is stopped","Chatraum wurde beendet"}.
 {"Chatrooms","Chaträume"}.
 {"Choose a username and password to register with this server","Wählen sie zum Registrieren einen Benutzernamen und ein Passwort"}.
 {"Choose modules to stop","Wähle zu stoppende Module"}.
@@ -51,8 +55,8 @@
 {"Country","Land"}.
 {"CPU Time:","CPU-Zeit:"}.
 {"Database","Datenbank"}.
-{"Database Tables at ","Datenbank-Tabellen bei "}.
-{"Database Tables Configuration at ","Datenbank-Tabellen-Konfiguration bei "}.
+{"Database Tables at ","Datenbanktabellen auf "}.
+{"Database Tables Configuration at ","Datenbanktabellen-Konfiguration auf "}.
 {"December","Dezember"}.
 {"Default users as participants","Standardbenutzer als Teilnehmer"}.
 {"Delete","Löschen"}.
@@ -77,7 +81,7 @@
 {"ejabberd Web Admin","ejabberd Web-Admin"}.
 {"Elements","Elemente"}.
 {"Email","E-Mail"}.
-{"Enable logging","Log-Funktion aktivieren"}.
+{"Enable logging","Protokollierung aktivieren"}.
 {"Encoding for server ~b","Kodierung für Server ~b"}.
 {"End User Session","Benutzer-Sitzung beenden"}.
 {"Enter list of {Module, [Options]}","Geben sie eine Liste bestehend aus {Modul, [Optionen]} ein"}.
@@ -106,7 +110,7 @@
 {"Get Number of Registered Users","Anzahl der registrierten Benutzer abrufen"}.
 {"Get User Last Login Time","letzte Anmeldezeit abrufen"}.
 {"Get User Password","Benutzer-Passwort abrufen"}.
-{"Get User Statistics","Benutzer-Statistik abrufen"}.
+{"Get User Statistics","Benutzer-Statistiken abrufen"}.
 {"Group ","Gruppe "}.
 {"Groups","Gruppen"}.
 {"has been banned","wurde gebannt"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protokoll"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub-Abonnenten-Anfrage"}.
+{"Purge all items when the relevant publisher goes offline","Alle Einträge entfernen, wenn der relevante Veröffentlicher offline geht"}.
 {"Queries to the conference members are not allowed in this room","Anfragen an die Teilnehmer sind in diesem Raum nicht erlaubt"}.
 {"RAM and disc copy","RAM und Festplatte"}.
 {"RAM copy","Nur RAM"}.
@@ -298,15 +303,15 @@
 {"Shut Down Service","Dienst herunterfahren"}.
 {"~s invites you to the room ~s","~s lädt Sie in den Raum ~s ein"}.
 {"Specify the access model","Geben sie das Zugangsmodell an"}.
-{"Specify the event message type","Geben sie das Zugangsmodell an"}.
+{"Specify the event message type","Geben sie den Ereignis-Nachrichtentyp an"}.
 {"Specify the publisher model","Geben sie das Publikationsmodell an"}.
 {"~s's Offline Messages Queue","~s's Offline-Nachrichten-Warteschlange"}.
-{"Start Modules at ","Starte Module bei "}.
+{"Start Modules at ","Starte Module auf "}.
 {"Start Modules","Module starten"}.
 {"Start","Starten"}.
 {"Statistics of ~p","Statistiken von ~p"}.
 {"Statistics","Statistik"}.
-{"Stop Modules at ","Stoppe Module bei "}.
+{"Stop Modules at ","Stoppe Module auf "}.
 {"Stop Modules","Module stoppen"}.
 {"Stopped Nodes","Inaktive Knoten"}.
 {"Stop","Stoppen"}.
@@ -324,8 +329,8 @@
 {"The captcha is valid.","Die Verifizierung ist gültig."}.
 {"The collections with which a node is affiliated","Sammlungen, mit denen ein Knoten verknüpft ist"}.
 {"the password is","das Passwort lautet"}.
-{"This participant is kicked from the room because he sent an error message","Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht gesendet hat"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht an einen anderen Teilnehmer gesendet hat"}.
+{"This participant is kicked from the room because he sent an error message","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht gesendet hat"}.
+{"This participant is kicked from the room because he sent an error message to another participant","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht an einen anderen Teilnehmer gesendet hat"}.
 {"This participant is kicked from the room because he sent an error presence","Dieser Teilnehmer wurde aus dem Raum gekickt, da er einen fehlerhaften Status gesendet hat"}.
 {"This room is not anonymous","Dieser Raum ist nicht anonym"}.
 {"Thursday","Donnerstag"}.
@@ -335,11 +340,11 @@
 {"To ~s","An ~s"}.
 {"Traffic rate limit is exceeded","Datenratenlimit wurde überschritten"}.
 {"Transactions Aborted:","Abgebrochene Transaktionen:"}.
-{"Transactions Committed:","Committete Transaktionen:"}.
-{"Transactions Logged:","Geloggte Transaktionen:"}.
+{"Transactions Committed:","Durchgeführte Transaktionen:"}.
+{"Transactions Logged:","Protokollierte Transaktionen:"}.
 {"Transactions Restarted:","Neugestartete Transaktionen:"}.
 {"Tuesday","Dienstag"}.
-{"Unable to generate a captcha","Konnte Verifizierung nicht erstellen"}.
+{"Unable to generate a captcha","Konnte Verifizierung (Captcha) nicht erstellen"}.
 {"Unauthorized","Nicht berechtigt"}.
 {"Update","Aktualisieren"}.
 {"Update ","Aktualisierung "}.

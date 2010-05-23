@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: Nikolaus Polak <nik [at] linuxlovers [dot] at>\n"
+"Last-Translator: Nikolaus Polak <nik@linuxlovers.at>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -188,7 +188,7 @@ msgstr "letzte Anmeldezeit abrufen"
 
 #: mod_configure.erl:157 mod_configure.erl:524 mod_configure.erl:1284
 msgid "Get User Statistics"
-msgstr "Benutzer-Statistik abrufen"
+msgstr "Benutzer-Statistiken abrufen"
 
 #: mod_configure.erl:159 mod_configure.erl:525
 msgid "Get Number of Registered Users"
@@ -255,7 +255,7 @@ msgstr "Von ~s"
 
 #: mod_configure.erl:913
 msgid "Database Tables Configuration at "
-msgstr "Datenbank-Tabellen-Konfiguration bei "
+msgstr "Datenbanktabellen-Konfiguration auf "
 
 #: mod_configure.erl:918
 msgid "Choose storage type of tables"
@@ -279,7 +279,7 @@ msgstr "Fernkopie"
 
 #: mod_configure.erl:950
 msgid "Stop Modules at "
-msgstr "Stoppe Module bei "
+msgstr "Stoppe Module auf "
 
 #: mod_configure.erl:954
 msgid "Choose modules to stop"
@@ -287,7 +287,7 @@ msgstr "Wähle zu stoppende Module"
 
 #: mod_configure.erl:969
 msgid "Start Modules at "
-msgstr "Starte Module bei "
+msgstr "Starte Module auf "
 
 #: mod_configure.erl:973
 msgid "Enter list of {Module, [Options]}"
@@ -634,24 +634,20 @@ msgid " has set the subject to: "
 msgstr " hat das Thema geändert auf: "
 
 #: mod_muc/mod_muc_log.erl:452
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Chaträume"
+msgstr "Chatraum wurde erstellt"
 
 #: mod_muc/mod_muc_log.erl:453
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Chaträume"
+msgstr "Chatraum wurde entfernt"
 
 #: mod_muc/mod_muc_log.erl:454
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Chaträume"
+msgstr "Chatraum wurde gestartet"
 
 #: mod_muc/mod_muc_log.erl:455
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Chaträume"
+msgstr "Chatraum wurde beendet"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -749,7 +745,7 @@ msgstr "Datenratenlimit wurde überschritten"
 msgid ""
 "This participant is kicked from the room because he sent an error message"
 msgstr ""
-"Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht "
+"Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht "
 "gesendet hat"
 
 #: mod_muc/mod_muc_room.erl:251
@@ -765,7 +761,7 @@ msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
 msgstr ""
-"Dieser Teilnehmer wurde aus dem Raum gekickt, da er eine Fehlernachricht an "
+"Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht an "
 "einen anderen Teilnehmer gesendet hat"
 
 #: mod_muc/mod_muc_room.erl:419
@@ -841,7 +837,7 @@ msgstr "Sie brauchen ein Passwort um diesen Raum zu betreten"
 
 #: mod_muc/mod_muc_room.erl:1653
 msgid "Unable to generate a captcha"
-msgstr "Konnte Verifizierung nicht erstellen"
+msgstr "Konnte Verifizierung (Captcha) nicht erstellen"
 
 #: mod_muc/mod_muc_room.erl:1663
 msgid "Incorrect password"
@@ -961,7 +957,7 @@ msgstr "Raum mit Verifizierung (Captcha) versehen"
 
 #: mod_muc/mod_muc_room.erl:2999
 msgid "Enable logging"
-msgstr "Log-Funktion aktivieren"
+msgstr "Protokollierung aktivieren"
 
 #: mod_muc/mod_muc_room.erl:3007
 msgid "You need an x:data capable client to configure room"
@@ -1120,10 +1116,11 @@ msgstr "Geben sie das Publikationsmodell an"
 #: mod_pubsub/mod_pubsub.erl:3380 mod_pubsub/mod_pubsub_odbc.erl:3214
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
+"Alle Einträge entfernen, wenn der relevante Veröffentlicher offline geht"
 
 #: mod_pubsub/mod_pubsub.erl:3381 mod_pubsub/mod_pubsub_odbc.erl:3215
 msgid "Specify the event message type"
-msgstr "Geben sie das Zugangsmodell an"
+msgstr "Geben sie den Ereignis-Nachrichtentyp an"
 
 #: mod_pubsub/mod_pubsub.erl:3383 mod_pubsub/mod_pubsub_odbc.erl:3217
 msgid "Max payload size in bytes"
@@ -1479,7 +1476,7 @@ msgstr "Fehler bei RPC-Aufruf"
 
 #: web/ejabberd_web_admin.erl:1994
 msgid "Database Tables at "
-msgstr "Datenbank-Tabellen bei "
+msgstr "Datenbanktabellen auf "
 
 #: web/ejabberd_web_admin.erl:2001
 msgid "Storage Type"
@@ -1586,7 +1583,7 @@ msgstr "CPU-Zeit:"
 
 #: web/ejabberd_web_admin.erl:2190
 msgid "Transactions Committed:"
-msgstr "Committete Transaktionen:"
+msgstr "Durchgeführte Transaktionen:"
 
 #: web/ejabberd_web_admin.erl:2193
 msgid "Transactions Aborted:"
@@ -1598,7 +1595,7 @@ msgstr "Neugestartete Transaktionen:"
 
 #: web/ejabberd_web_admin.erl:2199
 msgid "Transactions Logged:"
-msgstr "Geloggte Transaktionen:"
+msgstr "Protokollierte Transaktionen:"
 
 #: web/ejabberd_web_admin.erl:2241
 msgid "Update "
