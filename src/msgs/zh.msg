@@ -36,6 +36,10 @@
 {"Change Password","更改密码"}.
 {"Change User Password","更改用户密码"}.
 {"Chatroom configuration modified","聊天室配置已修改"}.
+{"Chatroom is created","聊天室已被创建"}.
+{"Chatroom is destroyed","聊天室已被销毁"}.
+{"Chatroom is started","聊天室已被启动"}.
+{"Chatroom is stopped","聊天室已被停用"}.
 {"Chatrooms","聊天室"}.
 {"Choose a username and password to register with this server","请选择在此服务器上注册所需的用户名和密码"}.
 {"Choose modules to stop","请选择要停止的模块"}.
@@ -45,7 +49,7 @@
 {"Commands","命令"}.
 {"Conference room does not exist","会议室不存在"}.
 {"Configuration of room ~s","房间~s的配置 "}.
-{"Configuration","配 置"}.
+{"Configuration","配置"}.
 {"Connected Resources:","已连接资源:"}.
 {"Connections parameters","连接参数"}.
 {"Country","国家"}.
@@ -246,6 +250,7 @@
 {"Protocol","协议"}.
 {"Publish-Subscribe","发行-订阅"}.
 {"PubSub subscriber request","PubSub 订阅人请求"}.
+{"Purge all items when the relevant publisher goes offline","相关发布人离线后清除所有选项"}.
 {"Queries to the conference members are not allowed in this room","本房间不允许发出成员查询请求"}.
 {"RAM and disc copy","内存与磁盘复制"}.
 {"RAM copy","内存(RAM)复制"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","关闭服务"}.
 {"~s invites you to the room ~s","~s邀请你到~s房间"}.
 {"Specify the access model","指定访问模式"}.
+{"Specify the event message type","指定事件消息类型"}.
 {"Specify the publisher model","指定发布人样式"}.
 {"~s's Offline Messages Queue","~s 的离线消息队列"}.
 {"Start Modules at ","要启动的模块位于 "}.
