@@ -634,6 +634,7 @@ msgstr "チャットルームが開始しました。"
 #: mod_muc/mod_muc_log.erl:455
 msgid "Chatroom is stopped"
 msgstr "チャットルームが停止しました。"
+
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
 msgstr "月曜日"
