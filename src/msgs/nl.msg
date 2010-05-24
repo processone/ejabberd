@@ -25,8 +25,8 @@
 {"Announcements","Mededelingen"}.
 {"anyone","iedereen"}.
 {"A password is required to enter this room","U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"}.
-{"April","april"}.
-{"August","augustus"}.
+{"April","April"}.
+{"August","Augustus"}.
 {"Backup","Backup"}.
 {"Backup Management","Backup"}.
 {"Backup of ","Backup maken van "}.
@@ -36,6 +36,10 @@
 {"Change Password","Wachtwoord wijzigen"}.
 {"Change User Password","Verander Gebruikerswachtwoord"}.
 {"Chatroom configuration modified","De instellingen van de chatruimte werden veranderd"}.
+{"Chatroom is created","Gespreksruimte gecreëerd"}.
+{"Chatroom is destroyed","Gespreksruimte vernietigd"}.
+{"Chatroom is started","Gespreksruimte gestart"}.
+{"Chatroom is stopped","Gespreksruimte gestopt"}.
 {"Chatrooms","Groepsgesprekken"}.
 {"Choose a username and password to register with this server","Kies een gebruikersnaam en een wachtwoord om u te registreren op deze server"}.
 {"Choose modules to stop","Selecteer de modules die u wilt stoppen"}.
@@ -53,7 +57,7 @@
 {"Database","Database"}.
 {"Database Tables at ","Databasetabellen van "}.
 {"Database Tables Configuration at ","Instellingen van databasetabellen op "}.
-{"December","december"}.
+{"December","December"}.
 {"Default users as participants","Gebruikers standaard instellen als deelnemers"}.
 {"Delete message of the day","Bericht van de dag verwijderen"}.
 {"Delete message of the day on all hosts","Verwijder bericht-van-de-dag op alle hosts"}.
@@ -95,10 +99,10 @@
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exporteer data van alle gebruikers in de server naar PIEFXIS-bestanden (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exporteer data van alle gebruikers van een host naar PIEXFIS-bestanden (XEP-0227):"}.
 {"Family Name","Achternaam"}.
-{"February","februari"}.
+{"February","Februari"}.
 {"Fill in fields to search for any matching Jabber User","Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Gebruik de velden om te zoeken (Voeg achteraan het teken * toe om te zoeken naar alles wat met het eerste deel begint.)."}.
-{"Friday","vrijdag"}.
+{"Friday","Vrijdag"}.
 {"From ~s","Van ~s"}.
 {"From","Van"}.
 {"Full Name","Volledige naam"}.
@@ -143,13 +147,13 @@
 {"It is not allowed to send private messages to the conference","Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","De Jabber ID ~s is ongeldig"}.
-{"January","januari"}.
+{"January","Januari"}.
 {"Join IRC channel","Ga IRC kanaal binnen"}.
 {"joins the room","betrad de chatruimte"}.
 {"Join the IRC channel here.","Ga het IRC kanaal binnen"}.
 {"Join the IRC channel in this Jabber ID: ~s","Ga het IRC kanaal van deze Jabber ID binnen: ~s"}.
-{"July","juli"}.
-{"June","juni"}.
+{"July","Juli"}.
+{"June","Juni"}.
 {"Last Activity","Laatste activiteit"}.
 {"Last login","Laatste Aanmelding"}.
 {"Last month","Afgelopen maand"}.
@@ -166,11 +170,11 @@
 {"Make room password protected","Chatruimte beveiligen met een wachtwoord"}.
 {"Make room persistent","Chatruimte blijvend maken"}.
 {"Make room public searchable","Chatruimte doorzoekbaar maken"}.
-{"March","maart"}.
+{"March","Maart"}.
 {"Maximum Number of Occupants","Maximum aantal aanwezigen"}.
 {"Max # of items to persist","Maximum aantal in het geheugen te bewaren items"}.
 {"Max payload size in bytes","Maximumgrootte van bericht in bytes"}.
-{"May","mei"}.
+{"May","Mei"}.
 {"Members:","Groepsleden:"}.
 {"Membership is required to enter this room","U moet lid zijn om deze chatruimte te kunnen betreden"}.
 {"Memory","Geheugen"}.
@@ -182,7 +186,7 @@
 {"Module","Module"}.
 {"Modules at ","Modules op "}.
 {"Modules","Modules"}.
-{"Monday","maandag"}.
+{"Monday","Maandag"}.
 {"Name:","Naam:"}.
 {"Name","Naam"}.
 {"Never","Nooit"}.
@@ -202,11 +206,11 @@
 {"Notify subscribers when items are removed from the node","Abonnees informeren wanneer items verwijderd worden uit de node"}.
 {"Notify subscribers when the node configuration changes","Abonnees informeren wanneer de instellingen van de node veranderen"}.
 {"Notify subscribers when the node is deleted","Abonnees informeren wanneer de node verwijderd word"}.
-{"November","november"}.
+{"November","November"}.
 {"Number of occupants","Aantal aanwezigen"}.
 {"Number of online users","Aantal Aanwezige Gebruikers"}.
 {"Number of registered users","Aantal Geregistreerde Gebruikers"}.
-{"October","oktober"}.
+{"October","Oktober"}.
 {"Offline Messages:","Offline berichten:"}.
 {"Offline Messages","Offline berichten"}.
 {"OK","OK"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protocol"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub abonnee verzoek"}.
+{"Purge all items when the relevant publisher goes offline","Verwijder alle items wanneer de gerelateerde publiceerder offline gaat"}.
 {"Queries to the conference members are not allowed in this room","Er mogen geen verzoeken verzenden worden naar deelnemers in deze chatruimte"}.
 {"RAM and disc copy","RAM en harde schijf"}.
 {"RAM copy","RAM"}.
@@ -280,7 +285,7 @@
 {"RPC Call Error","RPC-oproepfout"}.
 {"Running Nodes","Draaiende nodes"}.
 {"~s access rule configuration","Access rules op ~s"}.
-{"Saturday","zaterdag"}.
+{"Saturday","Zaterdag"}.
 {"Script check","Controle van script"}.
 {"Search Results for ","Zoekresultaten voor "}.
 {"Search users in ","Gebruikers zoeken in "}.
@@ -288,7 +293,7 @@
 {"Send announcement to all online users on all hosts","Mededeling verzenden naar alle online gebruikers op alle virtuele hosts"}.
 {"Send announcement to all users","Mededeling verzenden naar alle gebruikers"}.
 {"Send announcement to all users on all hosts","Stuur aankondiging aan alle gebruikers op alle hosts"}.
-{"September","september"}.
+{"September","September"}.
 {"Server ~b","Server ~b"}.
 {"Set message of the day and send to online users","Bericht van de dag instellen en verzenden naar online gebruikers"}.
 {"Set message of the day on all hosts and send to online users","Stel bericht-van-de-dag in op alle hosts en stuur naar aanwezige gebruikers"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Stop Service"}.
 {"~s invites you to the room ~s","~s nodigt je uit voor het groepsgesprek ~s"}.
 {"Specify the access model","Geef toegangsmodel"}.
+{"Specify the event message type","Geef type van eventbericht"}.
 {"Specify the publisher model","Publicatietype opgeven"}.
 {"~s's Offline Messages Queue","offline berichten van ~s"}.
 {"Start Modules at ","Modules starten op "}.
@@ -317,17 +323,17 @@
 {"Submit","Verzenden"}.
 {"Subscriber Address","Abonnee Adres"}.
 {"Subscription","Inschrijving"}.
-{"Sunday","zondag"}.
+{"Sunday","Zondag"}.
 {"That nickname is already in use by another occupant","Deze bijnaam is al in gebruik door een andere aanwezige"}.
 {"That nickname is registered by another person","Deze bijnaam is al geregistreerd door iemand anders"}.
-{"The captcha is valid.","De geautomatiseerde Turing test is geslaagd."}.
+{"The captcha is valid.","De geautomatiseerde Turing-test is geslaagd."}.
 {"The collections with which a node is affiliated","De collecties waar een node mee is gerelateerd"}.
 {"the password is","het wachtwoord is"}.
 {"This participant is kicked from the room because he sent an error message","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht aan een andere deelnemer"}.
 {"This participant is kicked from the room because he sent an error presence","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmelding-aanwezigheid"}.
 {"This room is not anonymous","Deze chatruimte is niet anoniem"}.
-{"Thursday","donderdag"}.
+{"Thursday","Donderdag"}.
 {"Time delay","Vertraging"}.
 {"Time","Tijd"}.
 {"To","Aan"}.
@@ -337,7 +343,7 @@
 {"Transactions Committed:","Bevestigde transacties:"}.
 {"Transactions Logged:","Gelogde transacties:"}.
 {"Transactions Restarted:","Herstarte transacties:"}.
-{"Tuesday","dinsdag"}.
+{"Tuesday","Dinsdag"}.
 {"Unable to generate a captcha","Het generen van een gautomatiseerde Turing test is mislukt"}.
 {"Unauthorized","Niet geautoriseerd"}.
 {"Update","Bijwerken"}.
@@ -358,7 +364,7 @@
 {"vCard User Search","Gebruikers zoeken"}.
 {"Visitors are not allowed to change their nicknames in this room","Het is bezoekers niet toegestaan hun naam te veranderen in dit kanaal"}.
 {"Visitors are not allowed to send messages to all occupants","Bezoekers mogen geen berichten verzenden naar alle aanwezigen"}.
-{"Wednesday","woensdag"}.
+{"Wednesday","Woensdag"}.
 {"When to send the last published item","Wanneer het laatst gepubliceerde item verzonden moet worden"}.
 {"Whether to allow subscriptions","Abonnementsaanvraag toestaan"}.
 {"You have been banned from this room","U werd verbannen uit deze chatruimte"}.
