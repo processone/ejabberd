@@ -84,7 +84,7 @@ update_info() ->
 update_info(Dir, Files) ->
     Beams = lists:sort(get_beams(Files)),
     UpdatedBeams = get_updated_beams(Beams),
-    ?INFO_MSG("beam files: ~p~n", [UpdatedBeams]),
+    ?DEBUG("beam files: ~p~n", [UpdatedBeams]),
     {Script, LowLevelScript, Check} = build_script(Dir, UpdatedBeams),
     {ok, Dir, UpdatedBeams, Script, LowLevelScript, Check}.
 
@@ -124,14 +124,21 @@ get_current_version(Module) ->
 %% @spec(Dir::string(), UpdatedBeams::[atom()]) -> {Script,LowLevelScript,Check}
 build_script(Dir, UpdatedBeams) ->
     Script = make_script(UpdatedBeams),
-    ?INFO_MSG("script: ~p~n", [Script]),
     LowLevelScript = make_low_level_script(UpdatedBeams, Script),
-    ?INFO_MSG("low level script: ~p~n", [LowLevelScript]),
     Check =
 	release_handler_1:check_script(
 	  LowLevelScript,
 	  [{ejabberd, "", filename:join(Dir, "..")}]),
-    ?INFO_MSG("check: ~p~n", [Check]),
+    case Check of
+	ok -> 
+	    ?DEBUG("script: ~p~n", [Script]),
+	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
+	    ?DEBUG("check: ~p~n", [Check]);
+	_ ->
+	    ?ERROR_MSG("script: ~p~n", [Script]),
+	    ?ERROR_MSG("low level script: ~p~n", [LowLevelScript]),
+	    ?ERROR_MSG("check: ~p~n", [Check])
+    end,
     {Script, LowLevelScript, Check}.
 
 %% Copied from Erlang/OTP file: lib/sasl/src/systools.hrl
