@@ -621,24 +621,20 @@ msgid " has set the subject to: "
 msgstr " ŝanĝis la temon al: "
 
 #: mod_muc/mod_muc_log.erl:452
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Babilejoj"
+msgstr "Babilejo kreita"
 
 #: mod_muc/mod_muc_log.erl:453
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Babilejoj"
+msgstr "Babilejo neniigita"
 
 #: mod_muc/mod_muc_log.erl:454
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Babilejoj"
+msgstr "Babilejo lanĉita"
 
 #: mod_muc/mod_muc_log.erl:455
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Babilejoj"
+msgstr "Babilejo haltita"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -1104,12 +1100,11 @@ msgstr "Enmetu publikadan modelon"
 
 #: mod_pubsub/mod_pubsub.erl:3380 mod_pubsub/mod_pubsub_odbc.erl:3214
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr ""
+msgstr "Forigu ĉiujn erojn kiam la rilata publikanto malkonektiĝas"
 
 #: mod_pubsub/mod_pubsub.erl:3381 mod_pubsub/mod_pubsub_odbc.erl:3215
-#, fuzzy
 msgid "Specify the event message type"
-msgstr "Specifu atingo-modelon"
+msgstr "Specifu tipo de event-mesaĝo"
 
 #: mod_pubsub/mod_pubsub.erl:3383 mod_pubsub/mod_pubsub_odbc.erl:3217
 msgid "Max payload size in bytes"
