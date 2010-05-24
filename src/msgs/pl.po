@@ -628,24 +628,20 @@ msgid " has set the subject to: "
 msgstr " zmienił temat na: "
 
 #: mod_muc/mod_muc_log.erl:452
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Pokoje rozmów"
+msgstr "Pokój został stworzony"
 
 #: mod_muc/mod_muc_log.erl:453
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Pokoje rozmów"
+msgstr "Pokój został usunięty"
 
 #: mod_muc/mod_muc_log.erl:454
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Pokoje rozmów"
+msgstr "Pokój został uruchomiony"
 
 #: mod_muc/mod_muc_log.erl:455
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Pokoje rozmów"
+msgstr "Pokój został zatrzymany"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -1108,7 +1104,7 @@ msgstr "Określ model publikującego"
 
 #: mod_pubsub/mod_pubsub.erl:3380 mod_pubsub/mod_pubsub_odbc.erl:3214
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr ""
+msgstr "Usuń wszystkie elementy w momencie kiedy publikujący rozłączy się"
 
 #: mod_pubsub/mod_pubsub.erl:3381 mod_pubsub/mod_pubsub_odbc.erl:3215
 msgid "Specify the event message type"

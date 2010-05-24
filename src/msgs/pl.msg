@@ -36,6 +36,10 @@
 {"Change Password","Zmień hasło"}.
 {"Change User Password","Zmień hasło użytkownika"}.
 {"Chatroom configuration modified","Konfiguracja pokoju zmodyfikowana"}.
+{"Chatroom is created","Pokój został stworzony"}.
+{"Chatroom is destroyed","Pokój został usunięty"}.
+{"Chatroom is started","Pokój został uruchomiony"}.
+{"Chatroom is stopped","Pokój został zatrzymany"}.
 {"Chatrooms","Pokoje rozmów"}.
 {"Choose a username and password to register with this server","Wybierz nazwę użytkownika i hasło aby zarejestrować się na tym serwerze"}.
 {"Choose modules to stop","Wybierz moduły do zatrzymania"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protokół"}.
 {"Publish-Subscribe","PubSub"}.
 {"PubSub subscriber request","Żądanie subskrybcji PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Usuń wszystkie elementy w momencie kiedy publikujący rozłączy się"}.
 {"Queries to the conference members are not allowed in this room","Informacje o członkach konferencji nie są dostępne w tym pokoju"}.
 {"RAM and disc copy","Kopia na dysku i w pamięci RAM"}.
 {"RAM copy","Kopia w pamięci RAM"}.
