@@ -31,6 +31,8 @@
 	 %% Server
 	 status/0, reopen_log/0,
 	 stop_kindly/2, send_service_message_all_mucs/2,
+	 %% Erlang
+	 update_list/0, update_all/0, update_module/1,
 	 %% Accounts
 	 register/3, unregister/2,
 	 registered_users/1,
@@ -94,6 +96,22 @@ commands() ->
                                                        {levelatom, atom},
                                                        {leveldesc, string}
                                                       ]}}},
+
+     #ejabberd_commands{name = update_list, tags = [server],
+			desc = "List modified modules that can be updated",
+			module = ?MODULE, function = update_list_modified,
+			args = [],
+			result = {modules, {list, {module, string}}}},
+     #ejabberd_commands{name = update_all, tags = [server],
+			desc = "Update all the modified modules",
+			module = ?MODULE, function = update_all,
+			args = [],
+			result = {res, rescode}},
+     #ejabberd_commands{name = update_module, tags = [server],
+			desc = "Update the given module",
+			module = ?MODULE, function = update_module,
+			args = [{module, string}],
+			result = {res, rescode}},
 
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
@@ -271,6 +289,22 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
 	      mod_muc:broadcast_service_message(MUCHostB, Message)
       end,
       ?MYHOSTS).
+
+%%%
+%%% ejabberd_update
+%%%
+
+update_list() ->
+    {ok, _Dir, UpdatedBeams, _Script, _LowLevelScript, _Check} =
+	ejabberd_update:update_info(),
+    [atom_to_list(Beam) || Beam <- UpdatedBeams].
+
+update_all() ->
+    [update_module(ModStr) || ModStr <- update_list()].
+
+update_module(ModuleNameString) ->
+    ModuleName = list_to_atom(ModuleNameString),
+    ejabberd_update:update([ModuleName]).
 
 %%%
 %%% Account management
