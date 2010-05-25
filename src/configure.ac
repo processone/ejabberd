@@ -67,6 +67,15 @@ AC_ARG_ENABLE(roster_gateway_workaround,
 esac],[roster_gateway_workaround=false])
 AC_SUBST(roster_gateway_workaround)
 
+AC_ARG_ENABLE(flash_hack,
+[AC_HELP_STRING([--enable-flash-hack], [support Adobe Flash client XML (default: no)])],
+[case "${enableval}" in
+  yes) flash_hack=true ;;
+  no)  flash_hack=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-flash-hack) ;;
+esac],[flash_hack=false])
+AC_SUBST(flash_hack)
+
 AC_ARG_ENABLE(mssql,
 [AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
 [case "${enableval}" in

@@ -67,6 +67,7 @@
 -define(NS_EJABBERD_CONFIG, "ejabberd:config").
 
 -define(NS_STREAM,       "http://etherx.jabber.org/streams").
+-define(NS_FLASH_STREAM, "http://www.jabber.com/streams/flash").
 
 -define(NS_STANZAS,      "urn:ietf:params:xml:ns:xmpp-stanzas").
 -define(NS_STREAMS,      "urn:ietf:params:xml:ns:xmpp-streams").
