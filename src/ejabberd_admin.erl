@@ -32,7 +32,7 @@
 	 status/0, reopen_log/0,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 %% Erlang
-	 update_list/0, update_all/0, update_module/1,
+	 update_list/0, update/1,
 	 %% Accounts
 	 register/3, unregister/2,
 	 registered_users/1,
@@ -102,14 +102,9 @@ commands() ->
 			module = ?MODULE, function = update_list_modified,
 			args = [],
 			result = {modules, {list, {module, string}}}},
-     #ejabberd_commands{name = update_all, tags = [server],
-			desc = "Update all the modified modules",
-			module = ?MODULE, function = update_all,
-			args = [],
-			result = {res, rescode}},
-     #ejabberd_commands{name = update_module, tags = [server],
-			desc = "Update the given module",
-			module = ?MODULE, function = update_module,
+     #ejabberd_commands{name = update, tags = [server],
+			desc = "Update the given module, or use the keyword: all",
+			module = ?MODULE, function = update,
 			args = [{module, string}],
 			result = {res, rescode}},
 
@@ -303,8 +298,10 @@ update_list() ->
 	ejabberd_update:update_info(),
     [atom_to_list(Beam) || Beam <- UpdatedBeams].
 
-update_all() ->
-    [update_module(ModStr) || ModStr <- update_list()].
+update("all") ->
+    [update_module(ModStr) || ModStr <- update_list()];
+update(ModStr) ->
+    update_module(ModStr).
 
 update_module(ModuleNameString) ->
     ModuleName = list_to_atom(ModuleNameString),
