@@ -36,6 +36,10 @@
 {"Change Password","Змінити пароль"}.
 {"Change User Password","Змінити Пароль Користувача"}.
 {"Chatroom configuration modified","Конфігурація кімнати змінилась"}.
+{"Chatroom is created","Створено кімнату"}.
+{"Chatroom is destroyed","Знищено кімнату"}.
+{"Chatroom is started","Запущено кімнату"}.
+{"Chatroom is stopped","Зупинено кімнату"}.
 {"Chatrooms","Кімнати"}.
 {"Choose a username and password to register with this server","Виберіть назву користувача та пароль для реєстрації на цьому сервері"}.
 {"Choose modules to stop","Виберіть модулі, які необхідно зупинити"}.
@@ -246,6 +250,7 @@
 {"Protocol","Протокол"}.
 {"Publish-Subscribe","Опублікувати-Абонувати"}.
 {"PubSub subscriber request","Запит на абонування PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Видалити всі елементи, коли особа, що їх опублікувала, вимикається від мережі"}.
 {"Queries to the conference members are not allowed in this room","Запити до користувачів в цій конференції зоборонені"}.
 {"RAM and disc copy","ОЗП та диск"}.
 {"RAM copy","ОЗП"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Вимкнути Сервіс"}.
 {"~s invites you to the room ~s","~s запрошує вас до кімнати ~s"}.
 {"Specify the access model","Визначити модель доступу"}.
+{"Specify the event message type","Вкажіть тип повідомлень зі сповіщеннями про події"}.
 {"Specify the publisher model","Умови публікації"}.
 {"~s's Offline Messages Queue","Черга офлайнових повідомлень ~s"}.
 {"Start Modules at ","Запуск модулів на "}.
