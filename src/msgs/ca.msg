@@ -36,6 +36,10 @@
 {"Change Password","Canviar password"}.
 {"Change User Password","Canviar Password d'Usuari"}.
 {"Chatroom configuration modified","Configuració de la sala de xat modificada"}.
+{"Chatroom is created","La sala s'ha creat"}.
+{"Chatroom is destroyed","La sala s'ha destruït"}.
+{"Chatroom is started","La sala s'ha iniciat"}.
+{"Chatroom is stopped","La sala s'ha aturat"}.
 {"Chatrooms","Sales de xat"}.
 {"Choose a username and password to register with this server","Tria nom d'usuari i password per a registrar-te en aquest servidor"}.
 {"Choose modules to stop","Selecciona mòduls a detindre"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protocol"}.
 {"Publish-Subscribe","Publicar-subscriure't"}.
 {"PubSub subscriber request","Petició de subscriptor PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Eliminar tots els elements quan el publicant relevant es desconnecti"}.
 {"Queries to the conference members are not allowed in this room"," En aquesta sala no es permeten solicituts als membres de la sala"}.
 {"RAM and disc copy","Còpia en RAM i disc"}.
 {"RAM copy","Còpia en RAM"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Apager el Servei"}.
 {"~s invites you to the room ~s","~s et convida a la sala ~s"}.
 {"Specify the access model","Especificar el model d'accés"}.
+{"Specify the event message type","Especifica el tipus de missatge d'event"}.
 {"Specify the publisher model","Especificar el model del publicant"}.
 {"~s's Offline Messages Queue","~s's cua de missatges offline"}.
 {"Start","Iniciar"}.

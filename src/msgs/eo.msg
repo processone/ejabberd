@@ -36,6 +36,10 @@
 {"Change Password","Ŝanĝu pasvorton"}.
 {"Change User Password","Ŝanĝu pasvorton de uzanto"}.
 {"Chatroom configuration modified","Agordo de babilejo ŝanĝita"}.
+{"Chatroom is created","Babilejo kreita"}.
+{"Chatroom is destroyed","Babilejo neniigita"}.
+{"Chatroom is started","Babilejo lanĉita"}.
+{"Chatroom is stopped","Babilejo haltita"}.
 {"Chatrooms","Babilejoj"}.
 {"Choose a username and password to register with this server","Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"}.
 {"Choose modules to stop","Elektu modulojn por fini"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protokolo"}.
 {"Publish-Subscribe","Public-Abonado"}.
 {"PubSub subscriber request","PubAbo abonpeto"}.
+{"Purge all items when the relevant publisher goes offline","Forigu ĉiujn erojn kiam la rilata publikanto malkonektiĝas"}.
 {"Queries to the conference members are not allowed in this room","Malpermesas informmendoj al partoprenantoj en ĉi tiu babilejo"}.
 {"RAM and disc copy","RAM- kaj disk-kopio"}.
 {"RAM copy","RAM-kopio"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Haltigu Servon"}.
 {"~s invites you to the room ~s","~s invitas vin al la babilejo ~s"}.
 {"Specify the access model","Specifu atingo-modelon"}.
+{"Specify the event message type","Specifu tipo de event-mesaĝo"}.
 {"Specify the publisher model","Enmetu publikadan modelon"}.
 {"~s's Offline Messages Queue","Mesaĝo-atendovico de ~s"}.
 {"Start Modules at ","Startu modulojn je "}.

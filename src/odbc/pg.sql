@@ -19,7 +19,8 @@
 
 CREATE TABLE users (
     username text PRIMARY KEY,
-    "password" text NOT NULL
+    "password" text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 
@@ -39,7 +40,8 @@ CREATE TABLE rosterusers (
     askmessage text NOT NULL,
     server character(1) NOT NULL,
     subscribe text,
-    "type" text
+    "type" text,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers USING btree (username, jid);
@@ -59,7 +61,8 @@ CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
 CREATE TABLE spool (
     username text NOT NULL,
     xml text NOT NULL,
-    seq SERIAL
+    seq SERIAL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE INDEX i_despool ON spool USING btree (username);
@@ -67,7 +70,8 @@ CREATE INDEX i_despool ON spool USING btree (username);
 
 CREATE TABLE vcard (
     username text PRIMARY KEY,
-    vcard text NOT NULL
+    vcard text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE TABLE vcard_search (
@@ -117,7 +121,8 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username text NOT NULL,
     name text NOT NULL,
-    id SERIAL UNIQUE
+    id SERIAL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE INDEX i_privacy_list_username ON privacy_list USING btree (username);
@@ -139,7 +144,8 @@ CREATE TABLE privacy_list_data (
 CREATE TABLE private_storage (
     username text NOT NULL,
     namespace text NOT NULL,
-    data text NOT NULL
+    data text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 CREATE INDEX i_private_storage_username ON private_storage USING btree (username);

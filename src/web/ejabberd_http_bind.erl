@@ -32,6 +32,12 @@
 	 change_shaper/2,
 	 monitor/1,
 	 close/1,
+	 start/4,
+	 handle_session_start/8,
+	 handle_http_put/7,
+	 http_put/7,
+	 http_get/2,
+	 prepare_response/4,
 	 process_request/2]).
 
 -include("ejabberd.hrl").
