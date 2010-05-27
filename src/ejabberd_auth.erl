@@ -340,7 +340,16 @@ get_password_with_authmodule(User, Server)
 is_user_exists(User, Server) when is_list(User), is_list(Server) ->
     lists:any(
       fun(M) ->
-	      M:is_user_exists(User, Server)
+	      case M:is_user_exists(User, Server) of
+		  {error, Error} ->
+		      ?ERROR_MSG("The authentication module ~p returned an "
+				 "error~nwhen checking user ~p in server ~p~n"
+				 "Error message: ~p",
+				 [M, User, Server, Error]),
+		      false;
+		  Else ->
+		      Else
+	      end
       end, auth_modules(Server)).
 
 %% @spec (Module, User, Server) -> true | false | maybe
