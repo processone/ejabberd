@@ -36,6 +36,10 @@
 {"Change Password","Změnit heslo"}.
 {"Change User Password","Změnit heslo uživatele"}.
 {"Chatroom configuration modified","Nastavení diskuzní místnosti bylo změněno"}.
+{"Chatroom is created","Konference vytvořena"}.
+{"Chatroom is destroyed","Konference zrušena"}.
+{"Chatroom is started","Konference spuštěna"}.
+{"Chatroom is stopped","Konference zastavena"}.
 {"Chatrooms","Konference"}.
 {"Choose a username and password to register with this server","Zadejte jméno uživatele a heslo pro registraci na tomto serveru"}.
 {"Choose modules to stop","Vyberte moduly, které mají být zastaveny"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protokol"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","Žádost odběratele PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Smazat všechny položky, pokud se příslušný poskytovatel odpojí"}.
 {"Queries to the conference members are not allowed in this room","Požadavky (queries) na členy konference nejsou v této místnosti povolené"}.
 {"RAM and disc copy","Kopie RAM a disku"}.
 {"RAM copy","Kopie RAM"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Vypnout službu"}.
 {"~s invites you to the room ~s","~s vás zve do místnosti ~s"}.
 {"Specify the access model","Uveďte přístupový model"}.
+{"Specify the event message type","Zvolte typ zpráv pro události"}.
 {"Specify the publisher model","Specifikovat model pro publikování"}.
 {"~s's Offline Messages Queue","Fronta offline zpráv uživatele ~s"}.
 {"Start Modules at ","Spustit moduly na "}.
