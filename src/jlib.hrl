@@ -141,6 +141,8 @@
 	?STANZA_ERROR("407", "auth",   "subscription-required")).
 -define(ERR_UNEXPECTED_REQUEST,
 	?STANZA_ERROR("400", "wait",   "unexpected-request")).
+-define(ERR_UNEXPECTED_REQUEST_CANCEL,
+  ?STANZA_ERROR("401", "cancel", "unexpected-request")).
 %-define(ERR_,
 %	?STANZA_ERROR("", "", "")).
 
