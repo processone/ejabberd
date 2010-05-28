@@ -1,11 +1,15 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Ruslan Rakhmanin\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Konstantin Khomoutov <flatworm@users.sourceforge.net>\n"
+"Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Ukrainian (українська)\n"
+"X-Additional-Translator: Ruslan Rakhmanin\n"
 "X-Additional-Translator: Stoune\n"
 "X-Additional-Translator: Sergei Golovan\n"
 
@@ -626,24 +630,20 @@ msgid " has set the subject to: "
 msgstr " встановив(ла) тему: "
 
 #: mod_muc/mod_muc_log.erl:452
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Кімнати"
+msgstr "Створено кімнату"
 
 #: mod_muc/mod_muc_log.erl:453
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Кімнати"
+msgstr "Знищено кімнату"
 
 #: mod_muc/mod_muc_log.erl:454
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Кімнати"
+msgstr "Запущено кімнату"
 
 #: mod_muc/mod_muc_log.erl:455
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Кімнати"
+msgstr "Зупинено кімнату"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -1112,11 +1112,11 @@ msgstr "Умови публікації"
 #: mod_pubsub/mod_pubsub.erl:3380 mod_pubsub/mod_pubsub_odbc.erl:3214
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
+"Видалити всі елементи, коли особа, що їх опублікувала, вимикається від мережі"
 
 #: mod_pubsub/mod_pubsub.erl:3381 mod_pubsub/mod_pubsub_odbc.erl:3215
-#, fuzzy
 msgid "Specify the event message type"
-msgstr "Визначити модель доступу"
+msgstr "Вкажіть тип повідомлень зі сповіщеннями про події"
 
 #: mod_pubsub/mod_pubsub.erl:3383 mod_pubsub/mod_pubsub_odbc.erl:3217
 msgid "Max payload size in bytes"

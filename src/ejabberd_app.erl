@@ -85,7 +85,7 @@ prep_stop(State) ->
 stop(_State) ->
     ?INFO_MSG("ejabberd ~s is stopped in the node ~p", [?VERSION, node()]),
     delete_pid_file(),
-    ejabberd_debug:stop(),
+    %%ejabberd_debug:stop(),
     ok.
 
 
