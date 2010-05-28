@@ -3519,7 +3519,7 @@ get_max_items_node(Host) ->
 %%%% last item cache handling
 
 is_last_item_cache_enabled({_, ServerHost, _}) ->
-    is_last_item_cache_enabled(ServerHost);
+    is_last_item_cache_enabled(binary_to_list(ServerHost));
 is_last_item_cache_enabled(Host) ->
     case catch ets:lookup(gen_mod:get_module_proc(Host, config), last_item_cache) of
     [{last_item_cache, true}] -> true;
@@ -3527,21 +3527,21 @@ is_last_item_cache_enabled(Host) ->
     end.
 
 set_cached_item({_, ServerHost, _}, NodeId, ItemId, Publisher, Payload) ->
-    set_cached_item(ServerHost, NodeId, ItemId, Publisher, Payload);
+    set_cached_item(binary_to_list(ServerHost), NodeId, ItemId, Publisher, Payload);
 set_cached_item(Host, NodeId, ItemId, Publisher, Payload) ->
     case is_last_item_cache_enabled(Host) of
     true -> mnesia:dirty_write({pubsub_last_item, NodeId, ItemId, {now(), jlib:short_prepd_bare_jid(Publisher)}, Payload});
     _ -> ok
     end.
 unset_cached_item({_, ServerHost, _}, NodeId) ->
-    unset_cached_item(ServerHost, NodeId);
+    unset_cached_item(binary_to_list(ServerHost), NodeId);
 unset_cached_item(Host, NodeId) ->
     case is_last_item_cache_enabled(Host) of
     true -> mnesia:dirty_delete({pubsub_last_item, NodeId});
     _ -> ok
     end.
 get_cached_item({_, ServerHost, _}, NodeId) ->
-    get_cached_item(ServerHost, NodeId);
+    get_cached_item(binary_to_list(ServerHost), NodeId);
 get_cached_item(Host, NodeId) ->
     case is_last_item_cache_enabled(Host) of
     true ->
