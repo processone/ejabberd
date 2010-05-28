@@ -36,6 +36,10 @@
 {"Change Password","Сменить пароль"}.
 {"Change User Password","Изменить пароль пользователя"}.
 {"Chatroom configuration modified","Конфигурация комнаты изменилась"}.
+{"Chatroom is created","Комната создана"}.
+{"Chatroom is destroyed","Комната уничтожена"}.
+{"Chatroom is started","Комната запущена"}.
+{"Chatroom is stopped","Комната остановлена"}.
 {"Chatrooms","Комнаты"}.
 {"Choose a username and password to register with this server","Выберите имя пользователя и пароль для регистрации на этом сервере"}.
 {"Choose modules to stop","Выберите модули, которые следует остановить"}.
@@ -246,6 +250,7 @@
 {"Protocol","Протокол"}.
 {"Publish-Subscribe","Публикация-Подписка"}.
 {"PubSub subscriber request","Запрос подписчика PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Очищать все записи автора публикации когда он отключается"}.
 {"Queries to the conference members are not allowed in this room","Запросы к пользователям в этой конференции запрещены"}.
 {"RAM and disc copy","ОЗУ и диск"}.
 {"RAM copy","ОЗУ"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Остановить службу"}.
 {"~s invites you to the room ~s","~s приглашает вас в комнату ~s"}.
 {"Specify the access model","Укажите механизм управления доступом"}.
+{"Specify the event message type","Укажите тип сообщения о событии"}.
 {"Specify the publisher model","Условия публикации"}.
 {"~s's Offline Messages Queue","Oчередь офлайновых сообщений ~s"}.
 {"Start Modules at ","Запуск модулей на "}.

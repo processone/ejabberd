@@ -624,24 +624,20 @@ msgid " has set the subject to: "
 msgstr " установил(а) тему: "
 
 #: mod_muc/mod_muc_log.erl:452
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Комнаты"
+msgstr "Комната создана"
 
 #: mod_muc/mod_muc_log.erl:453
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Комнаты"
+msgstr "Комната уничтожена"
 
 #: mod_muc/mod_muc_log.erl:454
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Комнаты"
+msgstr "Комната запущена"
 
 #: mod_muc/mod_muc_log.erl:455
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Комнаты"
+msgstr "Комната остановлена"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -1105,12 +1101,11 @@ msgstr "Условия публикации"
 
 #: mod_pubsub/mod_pubsub.erl:3380 mod_pubsub/mod_pubsub_odbc.erl:3214
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr ""
+msgstr "Очищать все записи автора публикации когда он отключается"
 
 #: mod_pubsub/mod_pubsub.erl:3381 mod_pubsub/mod_pubsub_odbc.erl:3215
-#, fuzzy
 msgid "Specify the event message type"
-msgstr "Укажите механизм управления доступом"
+msgstr "Укажите тип сообщения о событии"
 
 #: mod_pubsub/mod_pubsub.erl:3383 mod_pubsub/mod_pubsub_odbc.erl:3217
 msgid "Max payload size in bytes"
