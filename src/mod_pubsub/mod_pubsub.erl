@@ -2443,7 +2443,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 	    Action = fun(#pubsub_node{owners = Owners, type = Type, id = NodeId}=N) ->
 			case lists:member(Owner, Owners) of
 			    true ->
-				OwnerJID = exmpp_jid:make(Owner),
+				OwnerJID = jlib:make_jid(Owner),
 				FilteredEntities = case Owners of
 					[Owner] -> [E || E <- Entities, element(1, E) =/= OwnerJID];
 					_ -> Entities
@@ -3560,7 +3560,7 @@ set_cached_item({_, ServerHost, _}, NodeId, ItemId, Publisher, Payload) ->
     set_cached_item(ServerHost, NodeId, ItemId, Publisher, Payload);
 set_cached_item(Host, NodeId, ItemId, Publisher, Payload) ->
     case is_last_item_cache_enabled(Host) of
-    true -> mnesia:dirty_write({pubsub_last_item, NodeId, ItemId, {now(), jlib:short_prepd_bare_jid(Publisher)}, Payload});
+    true -> mnesia:dirty_write({pubsub_last_item, NodeId, ItemId, {now(), jlib:jid_tolower(jlib:jid_remove_resource(Publisher))}, Payload});
     _ -> ok
     end.
 unset_cached_item({_, ServerHost, _}, NodeId) ->

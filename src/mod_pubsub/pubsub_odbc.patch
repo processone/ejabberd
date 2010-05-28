@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2010-05-28 11:46:24.000000000 +0200
-+++ mod_pubsub_odbc.erl	2010-05-28 11:55:17.000000000 +0200
+--- mod_pubsub.erl	2010-05-28 12:30:32.000000000 +0200
++++ mod_pubsub_odbc.erl	2010-05-28 12:32:45.000000000 +0200
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -570,7 +570,7 @@
 +			Owners = node_owners_call(Type, NodeId),
  			case lists:member(Owner, Owners) of
  			    true ->
- 				OwnerJID = exmpp_jid:make(Owner),
+ 				OwnerJID = jlib:make_jid(Owner),
 @@ -2450,24 +2277,7 @@
  				    end,
  				lists:foreach(
