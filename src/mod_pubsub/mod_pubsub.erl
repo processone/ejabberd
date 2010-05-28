@@ -1804,11 +1804,19 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			end,
 			case node_call(Type, create_node_permission, [Host, ServerHost, Node, Parent, Owner, Access]) of
 			    {result, true} ->
+				ParentTree = tree_call(Host, get_parentnodes_tree, [Host, Node, Owner]),
+				SubsByDepth = [{Depth, [{N, get_node_subs(N)} || N <- Nodes]} || {Depth, Nodes} <- ParentTree],
 				case tree_call(Host, create_node, [Host, Node, Type, Owner, NodeOptions, Parents]) of
 				    {ok, NodeId} ->
-					node_call(Type, create_node, [NodeId, Owner]);
+					case node_call(Type, create_node, [NodeId, Owner]) of
+					    {result, Result} -> {result, {NodeId, SubsByDepth, Result}};
+					    Error -> Error
+					end;
 				    {error, {virtual, NodeId}} ->
-					node_call(Type, create_node, [NodeId, Owner]);
+					case node_call(Type, create_node, [NodeId, Owner]) of
+					    {result, Result} -> {result, {NodeId, SubsByDepth, Result}};
+					    Error -> Error
+					end;
 				    Error ->
 					Error
 				end;
@@ -1819,20 +1827,15 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 	    Reply = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 		      [#xmlel{ns = ?NS_PUBSUB, name = 'create', attrs = nodeAttr(Node)}]},
 	    case transaction(CreateNode, transaction) of
-		{result, {Result, broadcast}} ->
-		    %%Lang = "en", %% TODO: fix
-		    %%OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-		    %%broadcast_publish_item(Host, Node, uniqid(), Owner,
-		    %%	[{xmlelement, "x", [{"xmlns", ?NS_DATA_FORMS}, {"type", "result"}],
-		    %%		[?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NMI),
-		    %%		?XFIELD("jid-single", "Node Creator", "creator", jlib:jid_to_string(OwnerKey))]}]),
+		{result, {NodeId, SubsByDepth, {Result, broadcast}}} ->
+		    broadcast_created_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth),
 		    case Result of
 			default -> {result, Reply};
 			_ -> {result, Result}
 		    end;
-		{result, default} ->
+		{result, {_NodeId, _SubsByDepth, default}} ->
 		    {result, Reply};
-		{result, Result} ->
+		{result, {_NodeId, _SubsByDepth, Result}} ->
 		    {result, Result};
 		Error ->
 		    %% in case we change transaction to sync_dirty...
@@ -3060,9 +3063,8 @@ event_stanza_withmoreels(Els, MoreEls) ->
 broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, From, Payload) ->
     %broadcast(Host, Node, NodeId, Options, none, true, 'items', ItemEls)
     case get_collection_subscriptions(Host, Node) of
-        [] ->	
+        [] ->
 	    {result, false};
-
 	SubsByDepth when is_list(SubsByDepth) -> 
 	    Content = case get_option(Options, deliver_payloads) of
 		true -> Payload;
@@ -3100,9 +3102,8 @@ broadcast_retract_items(Host, Node, NodeId, Type, NodeOptions, ItemIds, ForceNot
     case (get_option(NodeOptions, notify_retract) or ForceNotify) of
 	true ->
 	    case get_collection_subscriptions(Host, Node) of
-		 [] -> 
+		[] ->
 		    {result, false};
-
 		SubsByDepth when is_list(SubsByDepth)->
 		    Stanza = event_stanza(
 			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children = 
@@ -3121,14 +3122,14 @@ broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
     case get_option(NodeOptions, notify_retract) of
 	true ->
 	    case get_collection_subscriptions(Host, Node) of
-		[] -> 
+		[] ->
 		    {result, false};
 		SubsByDepth when is_list(SubsByDepth) ->
 		    Stanza = event_stanza(
 			[#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'purge', attrs = nodeAttr(Node)}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true};
-		_ -> 
+		_ ->
 		    {result, false}
 	    end;
 	_ ->
@@ -3140,7 +3141,7 @@ broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
     case get_option(NodeOptions, notify_delete) of
 	true ->
 	    case SubsByDepth of
-		[] -> 
+		[] ->
 		    {result, false};
 		_ ->
 		    Stanza = event_stanza(
@@ -3152,12 +3153,19 @@ broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
 	    {result, false}
     end.
 
+broadcast_created_node(_, _, _, _, _, []) ->
+    {result, false};
+broadcast_created_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
+    Stanza = event_stanza([#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'create', attrs = nodeAttr(Node)}]),
+    broadcast_stanza(Host, Node, NodeId, Type, NodeOptions, SubsByDepth, nodes, Stanza, true),
+    {result, true}.
+
 broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
     %broadcast(Host, Node, NodeId, NodeOptions, notify_config, false, 'items', ConfigEls)
     case get_option(NodeOptions, notify_config) of
 	true ->
 	    case get_collection_subscriptions(Host, Node) of
-		[] -> 
+		[] ->
 		    {result, false};
 		SubsByDepth when is_list(SubsByDepth) ->
 		    Content = case get_option(NodeOptions, deliver_payloads) of
@@ -3173,7 +3181,7 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
 			    Content}]}]),
 		    broadcast_stanza(Host, Node, NodeId, Type, NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true};
-		_ -> 
+		_ ->
 		    {result, false}
 	    end;
 	_ ->
