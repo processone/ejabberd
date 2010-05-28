@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2010-05-19 11:03:27.000000000 +0200
-+++ mod_pubsub_odbc.erl	2010-05-19 11:04:11.000000000 +0200
+--- mod_pubsub.erl	2010-05-28 11:46:24.000000000 +0200
++++ mod_pubsub_odbc.erl	2010-05-28 11:55:17.000000000 +0200
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -40,7 +40,7 @@
  -define(LOOPNAME, ejabberd_mod_pubsub_loop).
  -define(PLUGIN_PREFIX, "node_").
  -define(TREE_PREFIX, "nodetree_").
-@@ -221,8 +221,6 @@
+@@ -220,8 +220,6 @@
  	    ok
      end,
      ejabberd_router:register_route(Host),
@@ -49,7 +49,7 @@
      init_nodes(Host, ServerHost, NodeTree, Plugins),
      State = #state{host = Host,
  		server_host = ServerHost,
-@@ -281,207 +279,14 @@
+@@ -280,207 +278,14 @@
  
  init_nodes(Host, ServerHost, _NodeTree, Plugins) ->
      %% TODO, this call should be done plugin side
@@ -260,7 +260,7 @@
  send_loop(State) ->
      receive
      {presence, JID, Pid} ->
-@@ -492,17 +297,15 @@
+@@ -491,17 +296,15 @@
  	%% for each node From is subscribed to
  	%% and if the node is so configured, send the last published item to From
  	lists:foreach(fun(PType) ->
@@ -284,7 +284,7 @@
  		    true ->
  			% resource not concerned about that subscription
  			ok
-@@ -748,10 +551,10 @@
+@@ -747,10 +550,10 @@
  	lists:foreach(fun(PType) ->
  	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Entity]),
  	    lists:foreach(fun
@@ -297,7 +297,7 @@
  				true ->
  				    node_action(Host, PType, unsubscribe_node, [NodeId, Entity, JID, all]);
  				false ->
-@@ -921,7 +724,8 @@
+@@ -920,7 +723,8 @@
  			    sub_el = SubEl} = IQ ->
  			    {xmlelement, _, QAttrs, _} = SubEl,
  			    Node = xml:get_attr_s("node", QAttrs),
@@ -307,7 +307,7 @@
  				      {result, IQRes} ->
  					  jlib:iq_to_xml(
  					    IQ#iq{type = result,
-@@ -1034,7 +838,7 @@
+@@ -1033,7 +837,7 @@
  				    [] ->
  					["leaf"]; %% No sub-nodes: it's a leaf node
  				    _ ->
@@ -316,7 +316,7 @@
  					    {result, []} -> ["collection"];
  					    {result, _} -> ["leaf", "collection"];
  					    _ -> []
-@@ -1050,8 +854,9 @@
+@@ -1049,8 +853,9 @@
  			    [];
  			true ->
  			    [{xmlelement, "feature", [{"var", ?NS_PUBSUB}], []} |
@@ -328,7 +328,7 @@
  				       end, features(Type))]
  		    end,
  		%% TODO: add meta-data info (spec section 5.4)
-@@ -1080,8 +885,9 @@
+@@ -1079,8 +884,9 @@
  		{xmlelement, "feature", [{"var", ?NS_PUBSUB}], []},
  		{xmlelement, "feature", [{"var", ?NS_COMMANDS}], []},
  		{xmlelement, "feature", [{"var", ?NS_VCARD}], []}] ++
@@ -340,7 +340,7 @@
  	     end, features(Host, Node))};
          <<?NS_COMMANDS>> ->
              command_disco_info(Host, Node, From);
-@@ -1091,7 +897,7 @@
+@@ -1090,7 +896,7 @@
  	    node_disco_info(Host, Node, From)
      end.
  
@@ -349,7 +349,7 @@
      case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
  	Nodes when is_list(Nodes) ->
  	    {result, lists:map(
-@@ -1108,14 +914,14 @@
+@@ -1107,14 +913,14 @@
  	Other ->
  	    Other
      end;
@@ -367,7 +367,7 @@
      case string:tokens(Item, "!") of
  	[_SNode, _ItemID] ->
  	    {result, []};
-@@ -1123,10 +929,10 @@
+@@ -1122,10 +928,10 @@
  	    Node = string_to_node(SNode),
  	    Action =
  		fun(#pubsub_node{type = Type, id = NodeId}) ->
@@ -381,7 +381,7 @@
  				    end,
  			Nodes = lists:map(
  				fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
-@@ -1144,7 +950,7 @@
+@@ -1143,7 +949,7 @@
  				    {result, Name} = node_call(Type, get_item_name, [Host, Node, RN]),
  				    {xmlelement, "item", [{"jid", Host}, {"name", Name}], []}
  				end, NodeItems),
@@ -390,7 +390,7 @@
  		end,
  	    case transaction(Host, Node, Action, sync_dirty) of
  		{result, {_, Result}} -> {result, Result};
-@@ -1273,7 +1079,8 @@
+@@ -1272,7 +1078,8 @@
  			(_, Acc) ->
  			    Acc
  			end, [], xml:remove_cdata(Els)),
@@ -400,7 +400,7 @@
  		{get, "subscriptions"} ->
  		    get_subscriptions(Host, Node, From, Plugins);
  		{get, "affiliations"} ->
-@@ -1296,7 +1103,9 @@
+@@ -1295,7 +1102,9 @@
  
  iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
      {xmlelement, _, _, SubEls} = SubEl,
@@ -411,7 +411,7 @@
      case Action of
  	[{xmlelement, Name, Attrs, Els}] ->
  	    Node = string_to_node(xml:get_attr_s("node", Attrs)),
-@@ -1426,7 +1235,8 @@
+@@ -1425,7 +1234,8 @@
  		    _	       -> []
  		end
  	end,
@@ -421,7 +421,7 @@
  		     sync_dirty) of
  	{result, Res} -> Res;
  	Err	   -> Err
-@@ -1465,7 +1275,7 @@
+@@ -1464,7 +1274,7 @@
  
  %%% authorization handling
  
@@ -430,7 +430,7 @@
      Lang = "en", %% TODO fix
      Stanza = {xmlelement, "message",
  	      [],
-@@ -1494,7 +1304,7 @@
+@@ -1493,7 +1303,7 @@
  		  [{xmlelement, "value", [], [{xmlcdata, "false"}]}]}]}]},
      lists:foreach(fun(Owner) ->
  	ejabberd_router:route(service_jid(Host), jlib:make_jid(Owner), Stanza)
@@ -439,7 +439,7 @@
  
  find_authorization_response(Packet) ->
      {xmlelement, _Name, _Attrs, Els} = Packet,
-@@ -1558,8 +1368,8 @@
+@@ -1557,8 +1367,8 @@
  			"true" -> true;
  			_ -> false
  		    end,
@@ -450,7 +450,7 @@
  			     {result, Subscriptions} = node_call(Type, get_subscriptions, [NodeId, Subscriber]),
  			     if
  				 not IsApprover ->
-@@ -1750,7 +1560,7 @@
+@@ -1749,7 +1559,7 @@
  	    Reply = [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
  		      [{xmlelement, "create", nodeAttr(Node),
  			[]}]}],
@@ -459,7 +459,7 @@
  		{result, {Result, broadcast}} ->
  		    %%Lang = "en", %% TODO: fix
  		    %%OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-@@ -1858,7 +1668,7 @@
+@@ -1857,7 +1667,7 @@
  %%<li>The node does not exist.</li>
  %%</ul>
  subscribe_node(Host, Node, From, JID, Configuration) ->
@@ -468,7 +468,7 @@
  	{result, GoodSubOpts} -> GoodSubOpts;
  	_ -> invalid
      end,
-@@ -1866,7 +1676,7 @@
+@@ -1865,7 +1675,7 @@
  		     error -> {"", "", ""};
  		     J -> jlib:jid_tolower(J)
  		 end,
@@ -477,7 +477,7 @@
  		    Features = features(Type),
  		    SubscribeFeature = lists:member("subscribe", Features),
  		    OptionsFeature = lists:member("subscription-options", Features),
-@@ -1885,9 +1695,13 @@
+@@ -1884,9 +1694,13 @@
  				    {"", "", ""} ->
  					{false, false};
  				    _ ->
@@ -494,7 +494,7 @@
  				end
  			end,
  		    if
-@@ -2218,7 +2032,7 @@
+@@ -2217,7 +2031,7 @@
  %% <p>The permission are not checked in this function.</p>
  %% @todo We probably need to check that the user doing the query has the right
  %% to read the items.
@@ -503,7 +503,7 @@
      MaxItems =
  	if
  	    SMaxItems == "" -> get_max_items_node(Host);
-@@ -2257,11 +2071,11 @@
+@@ -2256,11 +2070,11 @@
  			     node_call(Type, get_items,
  				       [NodeId, From,
  					AccessModel, PresenceSubscription, RosterGroup,
@@ -517,7 +517,7 @@
  		    SendItems = case ItemIDs of
  			[] -> 
  			    Items;
-@@ -2274,7 +2088,8 @@
+@@ -2273,7 +2087,8 @@
  		    %% number of items sent to MaxItems:
  		    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
  				[{xmlelement, "items", nodeAttr(Node),
@@ -527,7 +527,7 @@
  		Error ->
  		    Error
  	    end
-@@ -2306,16 +2121,27 @@
+@@ -2305,16 +2120,27 @@
  %% @doc <p>Resend the items of a node to the user.</p>
  %% @todo use cache-last-item feature
  send_items(Host, Node, NodeId, Type, LJID, last) ->
@@ -538,30 +538,30 @@
 +	    % special ODBC optimization, works only with node_hometree_odbc, node_flat_odbc and node_pep_odbc
 +	    case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
 +		{result, [LastItem]} ->
-+		    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
++		    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 +		    event_stanza_with_delay(
 +			[{xmlelement, "items", nodeAttr(Node),
-+			  itemsEls([LastItem])}], ModifNow, ModifLjid);
++			  itemsEls([LastItem])}], ModifNow, ModifUSR);
 +		_ ->
 +		    event_stanza(
 +			[{xmlelement, "items", nodeAttr(Node),
 +			  itemsEls([])}])
 +	    end;
  	LastItem ->
- 	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+ 	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 -	    Stanza = event_stanza_with_delay(
 +	    event_stanza_with_delay(
  		[{xmlelement, "items", nodeAttr(Node),
--		  itemsEls([LastItem])}], ModifNow, ModifLjid),
+-		  itemsEls([LastItem])}], ModifNow, ModifUSR),
 -	    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza)
 -    end;
-+		  itemsEls([LastItem])}], ModifNow, ModifLjid)
++		  itemsEls([LastItem])}], ModifNow, ModifUSR)
 +    end,
 +    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
  send_items(Host, Node, NodeId, Type, LJID, Number) ->
      ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
  	{result, []} -> 
-@@ -2441,7 +2267,8 @@
+@@ -2440,7 +2266,8 @@
  	error ->
  	    {error, ?ERR_BAD_REQUEST};
  	_ ->
@@ -571,7 +571,7 @@
  			case lists:member(Owner, Owners) of
  			    true ->
  				OwnerJID = exmpp_jid:make(Owner),
-@@ -2451,24 +2278,7 @@
+@@ -2450,24 +2277,7 @@
  				    end,
  				lists:foreach(
  				    fun({JID, Affiliation}) ->
@@ -597,7 +597,7 @@
  				    end, FilteredEntities),
  				{result, []};
  			    _ ->
-@@ -2521,11 +2331,11 @@
+@@ -2520,11 +2330,11 @@
      end.
  
  read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
@@ -611,7 +611,7 @@
  	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_string(Subscriber)},
  						 {"subid", SubID}|nodeAttr(Node)],
  			 [XdataEl]},
-@@ -2551,7 +2361,7 @@
+@@ -2550,7 +2360,7 @@
      end.
  
  set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
@@ -620,7 +620,7 @@
  	{result, GoodSubOpts} -> GoodSubOpts;
  	_ -> invalid
      end,
-@@ -2580,7 +2390,7 @@
+@@ -2579,7 +2389,7 @@
  write_sub(_Subscriber, _NodeID, _SubID, invalid) ->
      {error, extended_error(?ERR_BAD_REQUEST, "invalid-options")};
  write_sub(Subscriber, NodeID, SubID, Options) ->
@@ -629,7 +629,7 @@
  	{error, notfound} ->
  	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
  	{result, _} ->
-@@ -2748,8 +2558,8 @@
+@@ -2747,8 +2557,8 @@
  				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
  		ejabberd_router:route(service_jid(Host), jlib:make_jid(JID), Stanza)
  	    end,
@@ -640,7 +640,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3079,7 +2889,7 @@
+@@ -3078,7 +2888,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -649,7 +649,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -3093,9 +2903,9 @@
+@@ -3092,9 +2902,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -661,7 +661,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3299,6 +3109,30 @@
+@@ -3298,6 +3108,30 @@
  	    Result
      end.
  

@@ -183,9 +183,8 @@ init([ServerHost, Opts]) ->
     pubsub_index:init(Host, ServerHost, Opts),
     ets:new(gen_mod:get_module_proc(Host, config), [set, named_table]),
     ets:new(gen_mod:get_module_proc(ServerHost, config), [set, named_table]),
-    ets:new(gen_mod:get_module_proc(Host, last_items), [set, named_table]),
-    ets:new(gen_mod:get_module_proc(ServerHost, last_items), [set, named_table]),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+    mnesia:create_table(pubsub_last_item, [{ram_copies, [node()]}, {attributes, record_info(fields, pubsub_last_item)}]),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     ets:insert(gen_mod:get_module_proc(Host, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(Host, config), {plugins, Plugins}),
@@ -1868,7 +1867,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		PluginPayload -> PluginPayload
 	    end,
 	    broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, jlib:jid_tolower(Publisher), BroadcastPayload),
-	    set_cached_item(Host, NodeId, ItemId, Payload),
+	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -1878,14 +1877,14 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, NodeId, Type, Options, Removed),
-	    set_cached_item(Host, NodeId, ItemId, Payload),
+	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    {result, Reply};
 	{result, {TNode, {Result, Removed}}} ->
 	    NodeId = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, NodeId, Type, Options, Removed),
-	    set_cached_item(Host, NodeId, ItemId, Payload),
+	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    {result, Result};
 	{result, {_, default}} ->
 	    {result, Reply};
@@ -2126,20 +2125,20 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 	    % special ODBC optimization, works only with node_hometree_odbc, node_flat_odbc and node_pep_odbc
 	    case node_action(Host, Type, get_last_items, [NodeId, LJID, 1]) of
 		{result, [LastItem]} ->
-		    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+		    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 		    event_stanza_with_delay(
 			[{xmlelement, "items", nodeAttr(Node),
-			  itemsEls([LastItem])}], ModifNow, ModifLjid);
+			  itemsEls([LastItem])}], ModifNow, ModifUSR);
 		_ ->
 		    event_stanza(
 			[{xmlelement, "items", nodeAttr(Node),
 			  itemsEls([])}])
 	    end;
 	LastItem ->
-	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 	    event_stanza_with_delay(
 		[{xmlelement, "items", nodeAttr(Node),
-		  itemsEls([LastItem])}], ModifNow, ModifLjid)
+		  itemsEls([LastItem])}], ModifNow, ModifUSR)
     end,
     ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
 send_items(Host, Node, NodeId, Type, LJID, Number) ->
@@ -2156,10 +2155,10 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
     end,
     Stanza = case ToSend of
 	[LastItem] ->
-	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 	    event_stanza_with_delay(
 		[{xmlelement, "items", nodeAttr(Node),
-		  itemsEls(ToSend)}], ModifNow, ModifLjid);
+		  itemsEls(ToSend)}], ModifNow, ModifUSR);
 	_ ->
 	    event_stanza(
 		[{xmlelement, "items", nodeAttr(Node),
@@ -2757,9 +2756,9 @@ payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
 event_stanza(Els) ->
     event_stanza_withmoreels(Els, []).
 
-event_stanza_with_delay(Els, ModifNow, ModifLjid) ->
+event_stanza_with_delay(Els, ModifNow, ModifUSR) ->
     DateTime = calendar:now_to_datetime(ModifNow),
-    MoreEls = [jlib:timestamp_to_xml(DateTime, utc, ModifLjid, "")],
+    MoreEls = [jlib:timestamp_to_xml(DateTime, utc, ModifUSR, "")],
     event_stanza_withmoreels(Els, MoreEls).
 
 event_stanza_withmoreels(Els, MoreEls) ->
@@ -3391,18 +3390,18 @@ is_last_item_cache_enabled(Host) ->
     _ -> false
     end.
 
-set_cached_item({_, ServerHost, _}, NodeId, ItemId, Payload) ->
-    set_cached_item(ServerHost, NodeId, ItemId, Payload);
-set_cached_item(Host, NodeId, ItemId, Payload) ->
+set_cached_item({_, ServerHost, _}, NodeId, ItemId, Publisher, Payload) ->
+    set_cached_item(ServerHost, NodeId, ItemId, Publisher, Payload);
+set_cached_item(Host, NodeId, ItemId, Publisher, Payload) ->
     case is_last_item_cache_enabled(Host) of
-    true -> ets:insert(gen_mod:get_module_proc(Host, last_items), {NodeId, {ItemId, Payload}});
+    true -> mnesia:dirty_write({pubsub_last_item, NodeId, ItemId, {now(), jlib:short_prepd_bare_jid(Publisher)}, Payload});
     _ -> ok
     end.
 unset_cached_item({_, ServerHost, _}, NodeId) ->
     unset_cached_item(ServerHost, NodeId);
 unset_cached_item(Host, NodeId) ->
     case is_last_item_cache_enabled(Host) of
-    true -> ets:delete(gen_mod:get_module_proc(Host, last_items), NodeId);
+    true -> mnesia:dirty_delete({pubsub_last_item, NodeId});
     _ -> ok
     end.
 get_cached_item({_, ServerHost, _}, NodeId) ->
@@ -3410,9 +3409,10 @@ get_cached_item({_, ServerHost, _}, NodeId) ->
 get_cached_item(Host, NodeId) ->
     case is_last_item_cache_enabled(Host) of
     true ->
-	case catch ets:lookup(gen_mod:get_module_proc(Host, last_items), NodeId) of
-	[{NodeId, {ItemId, Payload}}] ->
-	    #pubsub_item{itemid = {ItemId, NodeId}, payload = Payload};
+	case mnesia:dirty_read({pubsub_last_item, NodeId}) of
+	[{pubsub_last_item, NodeId, ItemId, Creation, Payload}] ->
+	    #pubsub_item{itemid = {ItemId, NodeId}, payload = Payload,
+			    creation = Creation, modification = Creation};
 	_ ->
 	    undefined
 	end;
