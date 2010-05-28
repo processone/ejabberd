@@ -150,3 +150,12 @@
 %% <p>This is the format of the <tt>subscriptions</tt> table. The type of the
 %% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 -record(pubsub_subscription, {subid, options}).
+
+%% @type pubsubLastItem() = #pubsub_last_item{
+%%    nodeid    = nodeidx(),
+%%    itemid    = string(),
+%%    creation  = {now(), ljid()},
+%%    payload   = XMLContent::string()}.
+%% <p>This is the format of the <tt>last items</tt> table. it stores last item payload
+%% for every node</p>
+-record(pubsub_last_item, {nodeid, itemid, creation, payload}).
