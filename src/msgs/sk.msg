@@ -36,6 +36,10 @@
 {"Change Password","Zmeniť heslo"}.
 {"Change User Password","Zmeniť heslo užívateľa"}.
 {"Chatroom configuration modified","Nastavenie diskusnej miestnosti bolo zmenené"}.
+{"Chatroom is created","Diskusná miestnosť je vytvorená"}.
+{"Chatroom is destroyed","Diskusná miestnosť je zrušená"}.
+{"Chatroom is started","Diskusná miestnosť je obnovená"}.
+{"Chatroom is stopped","Diskusná miestnosť je pozastavená"}.
 {"Chatrooms","Diskusné miestnosti"}.
 {"Choose a username and password to register with this server","Zvolte meno užívateľa a heslo pre registráciu na tomto servere"}.
 {"Choose modules to stop","Vyberte moduly, ktoré majú byť zastavené"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protokol"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","Žiadosť odberateľa PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Odstrániť všetky relevantné položky, keď užívateľ prejde do módu offline"}.
 {"Queries to the conference members are not allowed in this room","Dotazovať sa o členoch nie je v tejto miestnosti povolené"}.
 {"RAM and disc copy","Kópia RAM a disku"}.
 {"RAM copy","Kópia RAM"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Vypnúť službu"}.
 {"~s invites you to the room ~s","~s Vás pozýva do miestnosti ~s"}.
 {"Specify the access model","Uveďte model prístupu"}.
+{"Specify the event message type","Uveďte typ pre správu o udalosti"}.
 {"Specify the publisher model","Špecifikovať model publikovania"}.
 {"~s's Offline Messages Queue","~s Offline správy"}.
 {"Start Modules at ","Spustiť moduly na "}.
