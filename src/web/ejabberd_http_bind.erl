@@ -992,6 +992,7 @@ prepare_response(Sess, Rid, OutputEls, StreamStart) ->
 prepare_outpacket_response(Sess, _Rid, OutPacket, false) ->
     case catch send_outpacket(Sess, OutPacket) of
 	{'EXIT', _Reason} ->
+	    ?DEBUG("Error in sending packet ~p ", [_Reason]),
 	    {200, ?HEADER,
 	     "<body type='terminate' xmlns='"++
 	     ?NS_HTTP_BIND_s++"'/>"};
@@ -1135,20 +1136,25 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 		               declared_ns =  [{undefined, ?NS_XMPP_pfx}]}}) -> false;
 %			       {xmlelement, "stream:error", _, _}}) -> false;
 			     ({xmlstreamelement, _}) -> true;
+			     ({xmlstreamraw, _}) -> true;
 			     (_) -> false
 			  end, OutPacket),
 	    case AllElements of
 		true ->
-		    TypedEls = [check_default_xmlns(OEl) ||
-				   {xmlstreamelement, OEl} <- OutPacket],
-		    Body = exmpp_xml:document_to_list(
-		      #xmlel{name = 'body',
-		             ns = ?NS_HTTP_BIND_s,
-		             children = TypedEls}),
-%			     {xmlelement,"body",
-%			      [{"xmlns",
-%				?NS_HTTP_BIND_s}],
-%			      TypedEls}),
+		    TypedEls = lists:foldr(fun({xmlstreamelement, El}, Acc) ->
+						   Acc ++ 
+						       [exmpp_xml:document_to_list(
+							  check_default_xmlns(El)
+							 )];
+					      ({xmlstreamraw, R}, Acc)  ->
+						   Acc ++ [R]
+					   end,
+					   [],
+					   OutPacket),
+		    
+		    Body = "<body xmlns='"++?NS_HTTP_BIND_s++"'>" 
+			++ TypedEls ++
+			"</body>",
 		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
 			   [Body]),
 		    {200, ?HEADER, Body};
@@ -1345,7 +1351,9 @@ check_default_xmlns(#xmlel{name = Name, ns = Xmlns, attrs = Attrs, children = El
   "" -> #xmlel{name = Name, ns = ?NS_JABBER_CLIENT_s, attrs = Attrs, children = Els};
 %	"" -> {xmlelement, Name, [{"xmlns", ?NS_JABBER_CLIENT_s} | Attrs], Els};
 	_  -> El
-    end.
+    end;
+check_default_xmlns(El) ->
+    El.
 
 %% Check that mod_http_bind has been defined in config file.
 %% Print a warning in log file if this is not the case.
