@@ -1972,19 +1972,9 @@ enabled. This can be done, by using next commands:
 \makesubsubsection{configuremssql}{Database Connection}
 \ind{Microsoft SQL Server!Database Connection}
 
-By default \ejabberd{} opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-\begin{verbatim}
-{odbc_pool_size, 10}.
-\end{verbatim}
-
-You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is 'undefined', so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-\begin{verbatim}
-{odbc_keepalive_interval, undefined}.
-\end{verbatim}
+The configuration of Database Connection for a Microsoft SQL Server
+is the same as the configuration for
+ODBC compatible servers (see section~\ref{configureodbc}).
 
 
 \makesubsubsection{mssqlauth}{Authentication}
@@ -1992,7 +1982,8 @@ Specify in seconds: for example 28800 means 8 hours.
 
 %TODO: not sure if this section is right!!!!!!
 
-The configuration of Microsoft SQL Server is the same as the configuration of
+The configuration of Authentication for a Microsoft SQL Server
+is the same as the configuration for
 ODBC compatible servers (see section~\ref{odbcauth}).
 
 \makesubsubsection{mssqlstorage}{Storage}
