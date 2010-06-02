@@ -1535,17 +1535,12 @@ enabled. This can be done, by using next commands:
 </P><PRE CLASS="verbatim">./configure --enable-odbc --enable-mssql &amp;&amp; make install
 </PRE><P> <A NAME="configuremssql"></A> </P><!--TOC subsubsection Database Connection-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configuremssql">Database Connection</A></H4><!--SEC END --><P> <A NAME="configuremssql"></A> 
-</P><P>By default <TT>ejabberd</TT> opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-</P><PRE CLASS="verbatim">{odbc_pool_size, 10}.
-</PRE><P>You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is &#X2019;undefined&#X2019;, so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-</P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
-</PRE><P> <A NAME="mssqlauth"></A> </P><!--TOC subsubsection Authentication-->
+</P><P>The configuration of Database Connection for a Microsoft SQL Server
+is the same as the configuration for
+ODBC compatible servers (see section&#XA0;<A HREF="#configureodbc">3.2.4</A>).</P><P> <A NAME="mssqlauth"></A> </P><!--TOC subsubsection Authentication-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mssqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="mssqlauth"></A> 
-</P><P>The configuration of Microsoft SQL Server is the same as the configuration of
+</P><P>The configuration of Authentication for a Microsoft SQL Server
+is the same as the configuration for
 ODBC compatible servers (see section&#XA0;<A HREF="#odbcauth">3.2.4</A>).</P><P> <A NAME="mssqlstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mssqlstorage">Storage</A></H4><!--SEC END --><P> <A NAME="mssqlstorage"></A> 
 </P><P>Microsoft SQL Server also can be used to store information into from several
