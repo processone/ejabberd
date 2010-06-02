@@ -50,7 +50,6 @@
 - Don't send error stanza as reply to error stanza (EJAB-930)
 - Don't store blocked messages in offline queue
 - Reduce verbosity of log when captcha_cmd is checked but not configured
-- Translations for most languages are updated
 - Use a standard method to get a random seed (EJAB-1229)
 - Commands: new update_list and update to update modified modules (EJAB-1237)
 - Localization: Updated most translations
