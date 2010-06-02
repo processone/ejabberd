@@ -1619,17 +1619,17 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			end,
 			case node_call(Type, create_node_permission, [Host, ServerHost, Node, Parent, Owner, Access]) of
 			    {result, true} ->
-				ParentTree = tree_call(Host, get_parentnodes_tree, [Host, Node, Owner]),
-				SubsByDepth = [{Depth, [{N, get_node_subs(N)} || N <- Nodes]} || {Depth, Nodes} <- ParentTree],
 				case tree_call(Host, create_node, [Host, Node, Type, Owner, NodeOptions, Parents]) of
 				    {ok, NodeId} ->
+					ParentTree = tree_call(Host, get_parentnodes_tree, [Host, Node, Owner]),
+					SubsByDepth = [{Depth, [{N, get_node_subs(N)} || N <- Nodes]} || {Depth, Nodes} <- ParentTree],
 					case node_call(Type, create_node, [NodeId, Owner]) of
 					    {result, Result} -> {result, {NodeId, SubsByDepth, Result}};
 					    Error -> Error
 					end;
 				    {error, {virtual, NodeId}} ->
 					case node_call(Type, create_node, [NodeId, Owner]) of
-					    {result, Result} -> {result, {NodeId, SubsByDepth, Result}};
+					    {result, Result} -> {result, {NodeId, [], Result}};
 					    Error -> Error
 					end;
 				    Error ->
