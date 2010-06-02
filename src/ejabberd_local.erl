@@ -142,7 +142,7 @@ route(From, To, Packet) ->
 
 route_iq(From, To, #iq{type = Type} = IQ, F) when is_function(F) ->
     Packet = if Type == set; Type == get ->
-		     ID = list_to_binary(randoms:get_string()),
+		     ID = list_to_binary(ejabberd_router:make_id()),
 		     Host = exmpp_jid:prep_domain(From),
 		     register_iq_response_handler(Host, ID, undefined, F),
 		     exmpp_iq:iq_to_xmlel(IQ#iq{id = ID});
@@ -153,10 +153,10 @@ route_iq(From, To, #iq{type = Type} = IQ, F) when is_function(F) ->
 
 register_iq_response_handler(_Host, ID, Module, Function) ->
     TRef = erlang:start_timer(?IQ_TIMEOUT, ejabberd_local, ID),
-    mnesia:dirty_write(#iq_response{id = ID,
-				    module = Module,
-				    function = Function,
-				    timer = TRef}).
+    ets:insert(iq_response, #iq_response{id = ID,
+					 module = Module,
+					 function = Function,
+					 timer = TRef}).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.
@@ -198,11 +198,9 @@ init([]) ->
 				 ?MODULE, bounce_resource_packet, 100)
       end, ?MYHOSTS),
     catch ets:new(?IQTABLE, [named_table, public]),
-    update_table(),
-    mnesia:create_table(iq_response,
-			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, iq_response)}]),
-    mnesia:add_table_copy(iq_response, node(), ram_copies),
+    mnesia:delete_table(iq_response),
+    catch ets:new(iq_response, [named_table, public,
+				{keypos, #iq_response.id}]),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -286,7 +284,7 @@ handle_info(refresh_iq_handlers, State) ->
       end, ets:tab2list(?IQTABLE)),
     {noreply, State};
 handle_info({timeout, _TRef, ID}, State) ->
-    process_iq_timeout(ID),
+    spawn(fun() -> process_iq_timeout(ID) end),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -342,40 +340,22 @@ do_route(From, To, Packet) ->
 	    end
 	end.
 
-update_table() ->
-    case catch mnesia:table_info(iq_response, attributes) of
-	[id, module, function] ->
-	    mnesia:delete_table(iq_response);
-	[id, module, function, timer] ->
-	    ok;
-	{'EXIT', _} ->
-	    ok
-    end.
-
 get_iq_callback(ID) ->
-    case mnesia:dirty_read(iq_response, ID) of
+    case ets:lookup(iq_response, ID) of
 	[#iq_response{module = Module, timer = TRef,
 		      function = Function}] ->
 	    cancel_timer(TRef),
-	    mnesia:dirty_delete(iq_response, ID),
+	    ets:delete(iq_response, ID),
 	    {ok, Module, Function};
 	_ ->
 	    error
     end.
 
 process_iq_timeout(ID) ->
-    spawn(fun process_iq_timeout/0) ! ID.
-
-process_iq_timeout() ->
-    receive
-	ID ->
-	    case get_iq_callback(ID) of
-		{ok, undefined, Function} ->
-		    Function(timeout);
-		_ ->
-		    ok
-	    end
-    after 5000 ->
+    case get_iq_callback(ID) of
+	{ok, undefined, Function} ->
+	    Function(timeout);
+	_ ->
 	    ok
     end.
 

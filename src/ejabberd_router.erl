@@ -38,7 +38,8 @@
 	 unregister_route/1,
 	 unregister_routes/1,
 	 dirty_get_all_routes/0,
-	 dirty_get_all_domains/0
+	 dirty_get_all_domains/0,
+	 make_id/0
 	]).
 
 -export([start_link/0]).
@@ -53,6 +54,9 @@
 
 -record(route, {domain, pid, local_hint}).
 -record(state, {}).
+
+%% "rr" stands for Record-Route.
+-define(ROUTE_PREFIX, "rr-").
 
 %%====================================================================
 %% API
@@ -76,7 +80,7 @@ route(FromOld, ToOld, #xmlelement{} = PacketOld) ->
       [{?NS_XMPP, ?NS_XMPP_pfx}]),
     route(From, To, Packet);
 route(From, To, Packet) ->
-    case catch do_route(From, To, Packet) of
+    case catch route_check_id(From, To, Packet) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
@@ -210,6 +214,8 @@ dirty_get_all_domains() ->
         lists:map(fun erlang:binary_to_list/1, 
                   mnesia:dirty_all_keys(route))).
 
+make_id() ->
+    ?ROUTE_PREFIX ++ randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id().
 
 %%====================================================================
 %% gen_server callbacks
@@ -338,6 +344,32 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+route_check_id(From, To, #xmlel{name = iq} = Packet) ->
+    case exmpp_xml:get_attribute_as_list(Packet, 'id', "") of
+	?ROUTE_PREFIX ++ Rest ->
+	    Type = exmpp_xml:get_attribute_as_list(Packet, 'type', ""),
+	    if Type == "error"; Type == "result" ->
+		    case string:tokens(Rest, "-") of
+			[_, NodeID] ->
+			    case ejabberd_cluster:get_node_by_id(NodeID) of
+				Node when Node == node() ->
+				    do_route(From, To, Packet);
+				Node ->
+				    {ejabberd_router, Node} !
+					{route, From, To, Packet}
+			    end;
+			_ ->
+			    do_route(From, To, Packet)
+		    end;
+	       true ->
+		    do_route(From, To, Packet)
+	    end;
+	_ ->
+	    do_route(From, To, Packet)
+    end;
+route_check_id(From, To, Packet) ->
+    do_route(From, To, Packet).
+
 do_route(OrigFrom, OrigTo, OrigPacket) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
 	   [OrigFrom, OrigTo, OrigPacket]),

@@ -35,7 +35,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--export([create_captcha/6, build_captcha_html/2, check_captcha/2,
+-export([create_captcha/5, build_captcha_html/2, check_captcha/2,
 	 process_reply/1, process/2, is_feature_available/0]).
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -65,18 +65,10 @@
 
 -define(CAPTCHA_TEXT(Lang), translate:translate(Lang, "Enter the text you see")).
 -define(CAPTCHA_LIFETIME, 120000). % two minutes
+-define(RPC_TIMEOUT, 5000).
 
 -record(state, {}).
 -record(captcha, {id, pid, key, tref, args}).
-
--define(T(S),
-	case catch mnesia:transaction(fun() -> S end) of
-	    {atomic, Res} ->
-		Res;
-	    {_, Reason} ->
-		?ERROR_MSG("mnesia transaction failed: ~p", [Reason]),
-		{error, Reason}
-	end).
 
 %%====================================================================
 %% API
@@ -88,10 +80,11 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-create_captcha(Id, SID, From, To, Lang, Args)
-  when is_list(Id), is_list(SID) ->
+create_captcha(SID, From, To, Lang, Args)
+  when is_binary(Lang), is_list(SID) ->
     case create_image() of
 	{ok, Type, Key, Image} ->
+	    Id = randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id(),
 	    B64Image = jlib:encode_base64(binary_to_list(Image)),
 	    JID = exmpp_jid:to_list(From),
 	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
@@ -216,13 +209,9 @@ create_captcha(Id, SID, From, To, Lang, Args)
 	    %OOB = {xmlelement, "x", [{"xmlns", ?NS_OOBD_X_s}],
 		  % [{xmlelement, "url", [], [{xmlcdata, get_url(Id)}]}]},
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
-	    case ?T(mnesia:write(#captcha{id=Id, pid=self(), key=Key,
-					  tref=Tref, args=Args})) of
-		ok ->
-		    {ok, [Body, OOB, Captcha, Data]};
-		_Err ->
-		    error
-	    end;
+	    ets:insert(captcha, #captcha{id=Id, pid=self(), key=Key,
+					 tref=Tref, args=Args}),
+	    {ok, Id, [Body, OOB, Captcha, Data]};
 	_Err ->
 	    error
     end.
@@ -234,8 +223,8 @@ create_captcha(Id, SID, From, To, Lang, Args)
 %%       IdEl = xmlelement()
 %%       KeyEl = xmlelement()
 build_captcha_html(Id, Lang) ->
-    case mnesia:dirty_read(captcha, Id) of
-	[#captcha{}] ->
+    case lookup_captcha(Id) of
+	{ok, _} ->
 	    %ImgEl = {xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
 	    ImgEl =
 	      #xmlel{
@@ -362,20 +351,25 @@ build_captcha_html(Id, Lang) ->
 
 %% @spec (Id::string(), ProvidedKey::string()) -> captcha_valid | captcha_non_valid | captcha_not_found
 check_captcha(Id, ProvidedKey) ->
-    ?T(case mnesia:read(captcha, Id, write) of
-	   [#captcha{pid=Pid, args=Args, key=StoredKey, tref=Tref}] ->
-	       mnesia:delete({captcha, Id}),
-	       erlang:cancel_timer(Tref),
-	       if StoredKey == ProvidedKey ->
-		       Pid ! {captcha_succeed, Args},
-		       captcha_valid;
-		  true ->
-		       Pid ! {captcha_failed, Args},
-		       captcha_non_valid
-	       end;
-	   _ ->
-	       captcha_not_found
-       end).
+    case string:tokens(Id, "-") of
+	[_, NodeID] ->
+	    case ejabberd_cluster:get_node_by_id(NodeID) of
+		Node when Node == node() ->
+		    do_check_captcha(Id, ProvidedKey);
+		Node ->
+		    case catch rpc:call(Node, ?MODULE, check_captcha,
+					[Id, ProvidedKey], ?RPC_TIMEOUT) of
+			{'EXIT', _} ->
+			    captcha_not_found;
+			{badrpc, _} ->
+			    captcha_not_found;
+			Res ->
+			    Res
+		    end
+	    end;
+	_ ->
+	    captcha_not_found
+    end.
 
 process_reply(El) ->
     case {exmpp_xml:element_matches(El, captcha),
@@ -389,20 +383,14 @@ process_reply(El) ->
 	    case {proplists:get_value("challenge", Fields),
 		  proplists:get_value("ocr", Fields)} of
 		{[Id|_], [OCR|_]} ->
-		    ?T(case mnesia:read(captcha, Id, write) of
-			   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
-			       mnesia:delete({captcha, Id}),
-			       erlang:cancel_timer(Tref),
-			       if OCR == Key ->
-				       Pid ! {captcha_succeed, Args},
-				       ok;
-				  true ->
-				       Pid ! {captcha_failed, Args},
-				       {error, bad_match}
-			       end;
-			   _ ->
-			       {error, not_found}
-		       end);
+		    case check_captcha(Id, OCR) of
+			captcha_valid ->
+			    ok;
+			captcha_non_valid ->
+			    {error, bad_match};
+			captcha_not_found ->
+			    {error, not_found}
+		    end;
 		_ ->
 		    {error, malformed}
 	    end
@@ -431,8 +419,8 @@ process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
     end;
 
 process(_Handlers, #request{method='GET', path=[_, Id, "image"]}) ->
-    case mnesia:dirty_read(captcha, Id) of
-	[#captcha{key=Key}] ->
+    case lookup_captcha(Id) of
+	{ok, #captcha{key=Key}} ->
 	    case create_image(Key) of
 		{ok, Type, _, Img} ->
 		    {200,
@@ -477,10 +465,8 @@ process(_Handlers, _Request) ->
 %% gen_server callbacks
 %%====================================================================
 init([]) ->
-    mnesia:create_table(captcha,
-			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, captcha)}]),
-    mnesia:add_table_copy(captcha, node(), ram_copies),
+    mnesia:delete_table(captcha),
+    ets:new(captcha, [named_table, public, {keypos, #captcha.id}]),
     check_captcha_setup(),
     {ok, #state{}}.
 
@@ -492,13 +478,13 @@ handle_cast(_Msg, State) ->
 
 handle_info({remove_id, Id}, State) ->
     ?DEBUG("captcha ~p timed out", [Id]),
-    _ = ?T(case mnesia:read(captcha, Id, write) of
-	       [#captcha{args=Args, pid=Pid}] ->
-		   Pid ! {captcha_failed, Args},
-		   mnesia:delete({captcha, Id});
-	       _ ->
-		   ok
-	   end),
+    case ets:lookup(captcha, Id) of
+	[#captcha{args=Args, pid=Pid}] ->
+	    Pid ! {captcha_failed, Args},
+	    ets:delete(captcha, Id);
+	_ ->
+	    ok
+    end,
     {noreply, State};
 
 handle_info(_Info, State) ->
@@ -641,4 +627,44 @@ check_captcha_setup() ->
 			  "but it can't generate images.", []);
 	false ->
 	    ok
+    end.
+
+lookup_captcha(Id) ->
+    case string:tokens(Id, "-") of
+	[_, NodeID] ->
+	    case ejabberd_cluster:get_node_by_id(NodeID) of
+		Node when Node == node() ->
+		    case ets:lookup(captcha, Id) of
+			[C] ->
+			    {ok, C};
+			_ ->
+			    {error, enoent}
+		    end;
+		Node ->
+		    case catch rpc:call(Node, ets, lookup,
+					[captcha, Id], ?RPC_TIMEOUT) of
+			[C] ->
+			    {ok, C};
+			_ ->
+			    {error, enoent}
+		    end
+	    end;
+	_ ->
+	    {error, enoent}
+    end.
+
+do_check_captcha(Id, ProvidedKey) ->
+    case ets:lookup(captcha, Id) of
+	[#captcha{pid = Pid, args = Args, key = ValidKey, tref = Tref}] ->
+	    ets:delete(captcha, Id),
+	    erlang:cancel_timer(Tref),
+	    if ValidKey == ProvidedKey ->
+		    Pid ! {captcha_succeed, Args},
+		    captcha_valid;
+	       true ->
+		    Pid ! {captcha_failed, Args},
+		    captcha_non_valid
+	    end;
+	_ ->
+	    captcha_not_found
     end.

@@ -74,11 +74,11 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
+    Proc = get_proc_name(Host),
+    gen_server:start_link(Proc, ?MODULE, [Host, Opts], []).
 
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc = get_proc_name(Host),
     ChildSpec =
 	{Proc,
 	 {?MODULE, start_link, [Host, Opts]},
@@ -89,7 +89,7 @@ start(Host, Opts) ->
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc = get_proc_name(Host),
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc).
 
@@ -955,7 +955,8 @@ get_room_state(RoomPid) ->
     {ok, R} = gen_fsm:sync_send_all_state_event(RoomPid, get_state),
     R.
 
-get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?PROCNAME).
+get_proc_name(Host) ->
+    {global, gen_mod:get_module_proc(Host, ?PROCNAME)}.
 
 calc_hour_offset(TimeHere) ->
     TimeZero = calendar:now_to_universal_time(now()),

@@ -83,9 +83,12 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(ID, Key, IP) ->
+    update_tables(),
     mnesia:create_table(http_poll,
         		[{ram_copies, [node()]},
+			 {local_content, true},
         		 {attributes, record_info(fields, http_poll)}]),
+    mnesia:add_table_copy(http_poll, node(), ram_copies),
     supervisor:start_child(ejabberd_http_poll_sup, [ID, Key, IP]).
 
 start_link(ID, Key, IP) ->
@@ -121,9 +124,9 @@ process([], #request{data = Data,
 	{ok, ID1, Key, NewKey, Packet} ->
 	    ID = if
 		     (ID1 == "0") or (ID1 == "mobile") ->
-			 NewID = sha:sha(term_to_binary({now(), make_ref()})),
+			 NewID = make_sid(),
 			 {ok, Pid} = start(NewID, "", IP),
-			 mnesia:transaction(
+			 mnesia:async_dirty(
 			   fun() ->
 				   mnesia:write(#http_poll{id = NewID,
 							   pid = Pid})
@@ -358,7 +361,7 @@ handle_info(_, StateName, StateData) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
-    mnesia:transaction(
+    mnesia:async_dirty(
       fun() ->
 	      mnesia:delete({http_poll, StateData#state.id})
       end),
@@ -383,19 +386,19 @@ terminate(_Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 http_put(ID, Key, NewKey, Packet) ->
-    case mnesia:dirty_read({http_poll, ID}) of
-	[] ->
+    case get_session(ID) of
+	{error, _} ->
 	    {error, not_exists};
-	[#http_poll{pid = FsmRef}] ->
+	{ok, #http_poll{pid = FsmRef}} ->
 	    gen_fsm:sync_send_all_state_event(
 	      FsmRef, {http_put, Key, NewKey, Packet})
     end.
 
 http_get(ID) ->
-    case mnesia:dirty_read({http_poll, ID}) of
-	[] ->
+    case get_session(ID) of
+	{error, _} ->
 	    {error, not_exists};
-	[#http_poll{pid = FsmRef}] ->
+	{ok, #http_poll{pid = FsmRef}} ->
 	    gen_fsm:sync_send_all_state_event(FsmRef, http_get)
     end.
 
@@ -460,4 +463,40 @@ get_jid("to", ParsedPacket) ->
             exmpp_jid:make();
 	From ->
 	    exmpp_jid:parse(From)
+    end.
+
+update_tables() ->
+    case catch mnesia:table_info(http_poll, local_content) of
+	false ->
+	    mnesia:delete_table(http_poll);
+	_ ->
+	    ok
+    end.
+
+make_sid() ->
+    sha:sha(term_to_binary({now(), make_ref()}))
+	++ "-" ++ ejabberd_cluster:node_id().
+
+get_session(SID) ->
+    case string:tokens(SID, "-") of
+	[_, NodeID] ->
+	    case ejabberd_cluster:get_node_by_id(NodeID) of
+		Node when Node == node() ->
+		    case mnesia:dirty_read({http_poll, SID}) of
+			[] ->
+			    {error, enoent};
+			[Session] ->
+			    {ok, Session}
+		    end;
+		Node ->
+		    case catch rpc:call(Node, mnesia, dirty_read,
+					[{http_poll, SID}], 5000) of
+			[Session] ->
+			    {ok, Session};
+			_ ->
+			    {error, enoent}
+		    end
+	    end;
+	_ ->
+	    {error, enoent}
     end.

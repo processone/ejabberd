@@ -40,7 +40,8 @@
 	 dirty_get_connections/0,
 	 allow_host/2,
 	 incoming_s2s_number/0,
-	 outgoing_s2s_number/0
+	 outgoing_s2s_number/0,
+	 migrate/1
 	]).
 
 %% gen_server callbacks
@@ -113,30 +114,63 @@ remove_connection(FromTo, Pid, Key) ->
     end.
 
 have_connection(FromTo) ->
-    case catch mnesia:dirty_read(s2s, FromTo) of
-        [_] ->
-            true;
-        _ ->
-            false
+    case ejabberd_cluster:get_node(FromTo) of
+	Node when Node == node() ->
+	    case mnesia:dirty_read(s2s, FromTo) of
+		[_] ->
+		    true;
+		_ ->
+		    false
+	    end;
+	Node ->
+	    case catch rpc:call(Node, mnesia, dirty_read,
+				[s2s, FromTo], 5000) of
+		[_] ->
+		    true;
+		_ ->
+		    false
+	    end
     end.
 
 has_key(FromTo, Key) ->
-    case mnesia:dirty_select(s2s,
-			     [{#s2s{fromto = FromTo, key = Key, _ = '_'},
-			       [],
-			       ['$_']}]) of
-	[] ->
-	    false;
-	_ ->
-	    true
+    Query = [{#s2s{fromto = FromTo, key = Key, _ = '_'},
+	      [],
+	      ['$_']}],
+    case ejabberd_cluster:get_node(FromTo) of
+	Node when Node == node() ->
+	    case mnesia:dirty_select(s2s, Query) of
+		[] ->
+		    false;
+		_ ->
+		    true
+	    end;
+	Node ->
+	    case catch rpc:call(Node, mnesia, dirty_select,
+				[s2s, Query], 5000) of
+		[_|_] ->
+		    true;
+		_ ->
+		    false
+	    end
     end.
 
 get_connections_pids(FromTo) ->
-    case catch mnesia:dirty_read(s2s, FromTo) of
-	L when is_list(L) ->
-	    [Connection#s2s.pid || Connection <- L];
-	_ ->
-	    []
+    case ejabberd_cluster:get_node(FromTo) of
+	Node when Node == node() ->
+	    case catch mnesia:dirty_read(s2s, FromTo) of
+		L when is_list(L) ->
+		    [Connection#s2s.pid || Connection <- L];
+		_ ->
+		    []
+	    end;
+	Node ->
+	    case catch rpc:call(Node, mnesia, dirty_read,
+				[s2s, FromTo], 5000) of
+		L when is_list(L) ->
+		    [Connection#s2s.pid || Connection <- L];
+		_ ->
+		    []
+	    end
     end.
 
 try_register(FromTo) ->
@@ -167,7 +201,33 @@ try_register(FromTo) ->
     end.
 
 dirty_get_connections() ->
-    mnesia:dirty_all_keys(s2s).
+    lists:flatmap(
+      fun(Node) when Node == node() ->
+	      mnesia:dirty_all_keys(s2s);
+	 (Node) ->
+	      case catch rpc:call(Node, mnesia, dirty_all_keys, [s2s], 5000) of
+		  L when is_list(L) ->
+		      L;
+		  _ ->
+		      []
+	      end
+      end, ejabberd_cluster:get_nodes()).
+
+migrate(After) ->
+    Ss = mnesia:dirty_select(
+	   s2s,
+	   [{#s2s{fromto = '$1', pid = '$2', _ = '_'},
+	     [],
+	     ['$$']}]),
+    lists:foreach(
+      fun([FromTo, Pid]) ->
+	      case ejabberd_cluster:get_node_new(FromTo) of
+		  Node when Node /= node() ->
+		      ejabberd_s2s_out:stop_connection(Pid, After * 2);
+		  _ ->
+		      ok
+	      end
+      end, Ss).
 
 %%====================================================================
 %% gen_server callbacks
@@ -182,10 +242,11 @@ dirty_get_connections() ->
 %%--------------------------------------------------------------------
 init([]) ->
     update_tables(),
-    mnesia:create_table(s2s, [{ram_copies, [node()]}, {type, bag},
+    mnesia:create_table(s2s, [{ram_copies, [node()]},
+			      {type, bag}, {local_content, true},
 			      {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
-    mnesia:subscribe(system),
+    ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_commands:register_commands(commands()),
     {ok, #state{}}.
 
@@ -217,9 +278,6 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
-    clean_table_from_bad_node(Node),
-    {noreply, State};
 %% #xmlelement{} used for retro-compatibility
 handle_info({route, FromOld, ToOld, #xmlelement{} = PacketOld}, State) ->
     catch throw(for_stacktrace), % To have a stacktrace.
@@ -251,6 +309,7 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_commands:unregister_commands(commands()),
     ok.
 
@@ -264,22 +323,19 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-clean_table_from_bad_node(Node) ->
-    F = fun() ->
-		Es = mnesia:select(
-		       s2s,
-		       [{#s2s{pid = '$1', _ = '_'},
-			 [{'==', {node, '$1'}, Node}],
-			 ['$_']}]),
-		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
-			      end, Es)
-	end,
-    mnesia:async_dirty(F).
-
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
+    FromTo = {exmpp_jid:prep_domain_as_list(From),
+	      exmpp_jid:prep_domain_as_list(To)},
+    case ejabberd_cluster:get_node(FromTo) of
+	Node when Node == node() ->
+	    do_route1(From, To, Packet);
+	Node ->
+	    {?MODULE, Node} ! {route, From, To, Packet}
+    end.
+
+do_route1(From, To, Packet) ->
     case find_connection(From, To) of
 	{atomic, Pid} when is_pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
@@ -510,6 +566,12 @@ update_tables() ->
             mnesia:delete_table(local_s2s);
         false ->
             ok
+    end,
+    case catch mnesia:table_info(s2s, local_content) of
+	false ->
+	    mnesia:delete_table(s2s);
+	_ ->
+	    ok
     end.
 
 %% Check if host is in blacklist or white list

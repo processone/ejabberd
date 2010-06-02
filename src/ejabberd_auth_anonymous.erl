@@ -67,9 +67,12 @@
 start(Host) when is_list(Host) ->
     HostB = list_to_binary(Host),
     %% TODO: Check cluster mode
+    update_tables(),
     mnesia:create_table(anonymous, [{ram_copies, [node()]},
 				    {type, bag},
-				    {attributes, record_info(fields, anonymous)}]),
+				    {type, bag}, {local_content, true},
+                                    {attributes, record_info(fields, anonymous)}]),
+    mnesia:add_table_copy(anonymous, node(), ram_copies),
     %% The hooks are needed to add / remove users from the anonymous tables
     ejabberd_hooks:add(sm_register_connection_hook, HostB,
 		       ?MODULE, register_connection, 100),
@@ -168,7 +171,7 @@ remove_connection(SID, LUser, LServer) when is_list(LUser), is_list(LServer) ->
     F = fun() ->
 		mnesia:delete_object({anonymous, US, SID})
         end,
-    mnesia:transaction(F).
+    mnesia:async_dirty(F).
 
 %% @spec (SID, JID, Info) -> term()
 %%     SID = term()
@@ -184,7 +187,7 @@ register_connection(SID, JID, Info) when ?IS_JID(JID) ->
             ok;
         ?MODULE ->
 	    US = {LUser, LServer},
-	    mnesia:sync_dirty(
+	    mnesia:async_dirty(
 	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
 	      end);
         _ ->
@@ -345,3 +348,11 @@ remove_user(_User, _Server, _Password) ->
 
 plain_password_required() ->
     false.
+
+update_tables() ->
+    case catch mnesia:table_info(anonymous, local_content) of
+	false ->
+	    mnesia:delete_table(anonymous);
+	_ ->
+	    ok
+    end.

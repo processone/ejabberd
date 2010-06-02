@@ -31,6 +31,7 @@
 
 %% API
 -export([start_link/0,
+	 start/0,
 	 join/1,
 	 leave/1,
 	 get_members/1,
@@ -40,7 +41,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {groups = []}).
 
 %%====================================================================
 %% API
@@ -49,6 +50,15 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
+start() ->
+    ChildSpec = {?MODULE,
+		 {?MODULE, start_link, []},
+		 permanent,
+		 brutal_kill,
+		 worker,
+		 [?MODULE]},
+    supervisor:start_child(ejabberd_sup, ChildSpec).
+
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -81,30 +91,19 @@ get_closest_node(Name) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-    {FE, BE} =
+    Groups =
 	case ejabberd_config:get_local_option(node_type) of
 	    frontend ->
-		{true, false};
+		[frontend];
 	    backend ->
-		{false, true};
+		[backend];
 	    generic ->
-		{true, true};
+		[frontend, backend];
 	    undefined ->
-		{true, true}
+		[frontend, backend]
 	end,
-    if
-	FE ->
-	    join(frontend);
-	true ->
-	    ok
-    end,
-    if
-	BE ->
-	    join(backend);
-	true ->
-	    ok
-    end,
-    {ok, #state{}}.
+    lists:foreach(fun join/1, Groups),
+    {ok, #state{groups = Groups}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -144,7 +143,8 @@ handle_info(_Info, State) ->
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
+terminate(_Reason, #state{groups = Groups}) ->
+    lists:foreach(fun leave/1, Groups),
     ok.
 
 %%--------------------------------------------------------------------

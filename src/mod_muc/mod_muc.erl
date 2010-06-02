@@ -41,6 +41,9 @@
 	 create_room/5,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
+	 register_room/3,
+	 migrate/1,
+	 get_vh_rooms/1,
 	 can_use_nick/3]).
 
 %% gen_server callbacks
@@ -112,7 +115,9 @@ room_destroyed(Host, Room, Pid, ServerHost) when is_binary(Host),
 %% Else use the passed options as defined in mod_muc_room.
 create_room(Host, Name, From, Nick, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, {create, Name, From, Nick, Opts}).
+    RoomHost = gen_mod:get_module_opt_host(Host, ?MODULE, "conference.@HOST@"),
+    Node = ejabberd_cluster:get_node({Name, RoomHost}),
+    gen_server:call({Proc, Node}, {create, Name, From, Nick, Opts}).
 
 store_room(Host, Name, Opts) when is_binary(Host), is_binary(Name) ->
     F = fun() ->
@@ -163,6 +168,22 @@ can_use_nick(Host, JID, Nick) when is_binary(Host), is_binary(Nick) ->
 	    U == LUS
     end.
 
+migrate(After) ->
+    Rs = mnesia:dirty_select(
+	   muc_online_room,
+	   [{#muc_online_room{name_host = '$1', pid = '$2', _ = '_'},
+	     [],
+	     ['$$']}]),
+    lists:foreach(
+      fun([NameHost, Pid]) ->
+	      case ejabberd_cluster:get_node_new(NameHost) of
+		  Node when Node /= node() ->
+		      mod_muc_room:migrate(Pid, Node, After);
+		  _ ->
+		      ok
+	      end
+      end, Rs).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -175,6 +196,7 @@ can_use_nick(Host, JID, Nick) when is_binary(Host), is_binary(Nick) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
+    update_muc_online_table(),
     mnesia:create_table(muc_room,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, muc_room)}]),
@@ -183,15 +205,14 @@ init([Host, Opts]) ->
 			 {attributes, record_info(fields, muc_registered)}]),
     mnesia:create_table(muc_online_room,
 			[{ram_copies, [node()]},
+			 {local_content, true},
 			 {attributes, record_info(fields, muc_online_room)}]),
     mnesia:add_table_copy(muc_online_room, node(), ram_copies),
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
     MyHost_L = gen_mod:get_opt_host(Host, Opts, "conference.@HOST@"),
     MyHost = list_to_binary(MyHost_L),
     update_tables(MyHost),
-    clean_table_from_bad_node(node(), MyHost),
     mnesia:add_table_index(muc_registered, nick),
-    mnesia:subscribe(system),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
@@ -200,6 +221,7 @@ init([Host, Opts]) ->
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     ejabberd_router:register_route(MyHost_L),
+    ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize,
@@ -266,12 +288,19 @@ handle_info({route, From, To, Packet},
  		   default_room_opts = DefRoomOpts,
 		   history_size = HistorySize,
 		   room_shaper = RoomShaper} = State) ->
-    case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-			From, To, Packet, DefRoomOpts) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p", [Reason]);
-	_ ->
-	    ok
+    US = {exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To)},
+    case ejabberd_cluster:get_node(US) of
+	Node when Node == node() ->
+	    case catch do_route(Host, ServerHost, Access, HistorySize,
+				RoomShaper, From, To, Packet, DefRoomOpts) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("~p", [Reason]);
+		_ ->
+		    ok
+	    end;
+	Node ->
+	    Proc = gen_mod:get_module_proc(ServerHost, ?PROCNAME),
+	    {Proc, Node} ! {route, From, To, Packet}
     end,
     {noreply, State};
 handle_info({room_destroyed, RoomHost, Pid}, State) ->
@@ -279,10 +308,7 @@ handle_info({room_destroyed, RoomHost, Pid}, State) ->
 		mnesia:delete_object(#muc_online_room{name_host = RoomHost,
 						      pid = Pid})
 	end,
-    mnesia:transaction(F),
-    {noreply, State};
-handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
-    clean_table_from_bad_node(Node),
+    mnesia:async_dirty(F),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -295,6 +321,7 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
+    ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_router:unregister_route(binary_to_list(State#state.host)),
     ok.
 
@@ -516,17 +543,22 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 	    lists:foreach(
 	      fun(R) ->
 		      {Room, Host} = R#muc_room.name_host,
-		      case mnesia:dirty_read(muc_online_room, {Room, Host}) of
-			  [] ->
-			      {ok, Pid} = mod_muc_room:start(
-					    Host,
-					    ServerHost,
-					    Access,
-					    Room,
-					    HistorySize,
-					    RoomShaper,
-					    R#muc_room.opts),
-			      register_room(Host, Room, Pid);
+		      case ejabberd_cluster:get_node({Room, Host}) of
+			  Node when Node == node() ->
+			      case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+				  [] ->
+				      {ok, Pid} = mod_muc_room:start(
+						    Host,
+						    ServerHost,
+						    Access,
+						    Room,
+						    HistorySize,
+						    RoomShaper,
+						    R#muc_room.opts),
+				      register_room(Host, Room, Pid);
+				  _ ->
+				      ok
+			      end;
 			  _ ->
 			      ok
 		      end
@@ -555,7 +587,7 @@ register_room(Host, Room, Pid) when is_binary(Host), is_binary(Room) ->
 		mnesia:write(#muc_online_room{name_host = {Room, Host},
 					      pid = Pid})
 	end,
-    mnesia:transaction(F).
+    mnesia:async_dirty(F).
 
 
 iq_disco_info(Lang) ->
@@ -605,7 +637,7 @@ iq_disco_items(Host, From, Lang, none) when is_binary(Host) ->
 			 _ ->
 			     false
 		     end
-	     end, get_vh_rooms(Host));
+	     end, get_vh_rooms_all_nodes(Host));
 
 iq_disco_items(Host, From, Lang, Rsm) ->
     {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
@@ -639,19 +671,9 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 	     end, Rooms) ++ RsmOut.
 
 get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
-    AllRooms = lists:sort(get_vh_rooms(Host)),
+    AllRooms = get_vh_rooms_all_nodes(Host),
     Count = erlang:length(AllRooms),
-    Guard = case Direction of
-		_ when Index =/= undefined -> [{'==', {element, 2, '$1'}, Host}];
-		aft -> [{'==', {element, 2, '$1'}, Host}, {'>=',{element, 1, '$1'} ,I}];
-		before when I =/= []-> [{'==', {element, 2, '$1'}, Host}, {'=<',{element, 1, '$1'} ,I}];
-		_ -> [{'==', {element, 2, '$1'}, Host}]
-	    end,
-    L = lists:sort(
-	  mnesia:dirty_select(muc_online_room,
-			      [{#muc_online_room{name_host = '$1', _ = '_'},
-				Guard,
-				['$_']}])),
+    L = get_vh_rooms_direction(Direction, I, Index, AllRooms),
     L2 = if
 	     Index == undefined andalso Direction == before ->
 		 lists:reverse(lists:sublist(lists:reverse(L), 1, M));
@@ -673,6 +695,27 @@ get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
 	    {Last, _}=T#muc_online_room.name_host,
 	    {L2, #rsm_out{first=F, last=Last, count=Count, index=NewIndex}}
     end.
+
+get_vh_rooms_direction(_Direction, _I, Index, AllRooms) when Index =/= undefined ->
+		AllRooms;
+get_vh_rooms_direction(aft, I, _Index, AllRooms) ->
+    {_Before, After} =
+	lists:splitwith(
+	  fun(#muc_online_room{name_host = {Na, _}}) ->
+		  Na < I end, AllRooms),
+    case After of
+	[] -> [];
+	[#muc_online_room{name_host = {I, _Host}} | AfterTail] -> AfterTail;
+	_ -> After
+    end;
+get_vh_rooms_direction(before, I, _Index, AllRooms) when I =/= []->
+    {Before, _} =
+	lists:splitwith(
+	  fun(#muc_online_room{name_host = {Na, _}}) ->
+		  Na < I end, AllRooms),
+    Before;
+get_vh_rooms_direction(_Direction, _I, _Index, AllRooms) ->
+    AllRooms.
 
 %% @doc Return the position of desired room in the list of rooms.
 %% The room must exist in the list. The count starts in 0.
@@ -847,7 +890,22 @@ broadcast_service_message(Host, Msg) ->
       fun(#muc_online_room{pid = Pid}) ->
 	      gen_fsm:send_all_state_event(
 		Pid, {service_message, Msg})
-      end, get_vh_rooms(Host)).
+      end, get_vh_rooms_all_nodes(Host)).
+
+get_vh_rooms_all_nodes(Host) ->
+    Rooms = lists:foldl(
+	      fun(Node, Acc) when Node == node() ->
+		      get_vh_rooms(Host) ++ Acc;
+		 (Node, Acc) ->
+		      case catch rpc:call(Node, ?MODULE, get_vh_rooms,
+					  [Host], 5000) of
+			  Res when is_list(Res) ->
+			      Res ++ Acc;
+			  _ ->
+			      Acc
+		      end
+	      end, [], ejabberd_cluster:get_nodes()),
+    lists:ukeysort(#muc_online_room.name_host, Rooms).
 
 get_vh_rooms(Host) when is_binary(Host) ->
     mnesia:dirty_select(muc_online_room,
@@ -855,38 +913,17 @@ get_vh_rooms(Host) when is_binary(Host) ->
 			  [{'==', {element, 2, '$1'}, Host}],
 			  ['$_']}]).
 
-
-clean_table_from_bad_node(Node) ->
-    F = fun() ->
-		Es = mnesia:select(
-		       muc_online_room,
-		       [{#muc_online_room{pid = '$1', _ = '_'},
-			 [{'==', {node, '$1'}, Node}],
-			 ['$_']}]),
-		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
-			      end, Es)
-        end,
-    mnesia:async_dirty(F).
-
-clean_table_from_bad_node(Node, Host) ->
-    F = fun() ->
-		Es = mnesia:select(
-		       muc_online_room,
-		       [{#muc_online_room{pid = '$1',
-					  name_host = {'_', Host},
-					  _ = '_'},
-			 [{'==', {node, '$1'}, Node}],
-			 ['$_']}]),
-		lists:foreach(fun(E) ->
-				      mnesia:delete_object(E)
-			      end, Es)
-        end,
-    mnesia:async_dirty(F).
-
 update_tables(Host) ->
     update_muc_room_table(Host),
     update_muc_registered_table(Host).
+
+update_muc_online_table() ->
+    case catch mnesia:table_info(muc_online_room, local_content) of
+	false ->
+	    mnesia:delete_table(muc_online_room);
+	_ ->
+	    ok
+    end.
 
 update_muc_room_table(Host) ->
     Fields = record_info(fields, muc_room),
