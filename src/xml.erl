@@ -28,6 +28,7 @@
 -author('alexey@process-one.net').
 
 -export([element_to_string/1,
+	 element_to_binary/1,
 	 crypt/1, make_text_node/1,
 	 remove_cdata/1,
 	 get_cdata/1, get_tag_cdata/1,
@@ -46,6 +47,9 @@
 -else.
 -define(ESCAPE_BINARY(CData), crypt(CData)).
 -endif.
+
+element_to_binary(El) ->
+    iolist_to_binary(element_to_string(El)).
 
 element_to_string(El) ->
     case catch element_to_string_nocatch(El) of

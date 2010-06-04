@@ -162,7 +162,7 @@ normal_state({route, From, "",
 			trunc(gen_mod:get_module_opt(
 				StateData#state.server_host,
 				mod_muc, min_message_interval, 0) * 1000000),
-		    Size = lists:flatlength(xml:element_to_string(Packet)),
+		    Size = iolist_size(xml:element_to_string(Packet)),
 		    {MessageShaper, MessageShaperInterval} =
 			shaper:update(Activity#activity.message_shaper, Size),
 		    if
@@ -1406,7 +1406,7 @@ prepare_room_queue(StateData) ->
 	{{value, {message, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    Packet = Activity#activity.message,
-	    Size = lists:flatlength(xml:element_to_string(Packet)),
+	    Size = iolist_size(xml:element_to_string(Packet)),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1417,7 +1417,7 @@ prepare_room_queue(StateData) ->
 	{{value, {presence, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    {_Nick, Packet} = Activity#activity.presence,
-	    Size = lists:flatlength(xml:element_to_string(Packet)),
+	    Size = iolist_size(xml:element_to_string(Packet)),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -2080,7 +2080,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		StateData#state.jid,
 		TSPacket),
-    Size = lists:flatlength(xml:element_to_string(SPacket)),
+    Size = iolist_size(xml:element_to_string(SPacket)),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),

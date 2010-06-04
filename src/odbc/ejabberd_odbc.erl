@@ -148,7 +148,9 @@ sql_query_t(Query) ->
 
 %% Escape character that will confuse an SQL engine
 escape(S) when is_list(S) ->
-    [odbc_queries:escape(C) || C <- S].
+    [odbc_queries:escape(C) || C <- S];
+escape(S) when is_binary(S) ->
+    escape(binary_to_list(S)).
 
 %% Escape character that will confuse an SQL engine
 %% Percent and underscore only need to be escaped for pattern matching like

@@ -141,8 +141,7 @@ export_offline(Server, Output) ->
 				TimeStamp))]},
 	      XML =
 		  ejabberd_odbc:escape(
-		    lists:flatten(
-		      xml:element_to_string(NewPacket))),
+		    xml:element_to_binary(NewPacket)),
 	      ["insert into spool(username, xml) "
 	       "values ('", Username, "', '",
 	       XML,
@@ -176,7 +175,7 @@ export_vcard(Server, Output) ->
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      SVCARD = ejabberd_odbc:escape(
-			 lists:flatten(xml:element_to_string(VCARD))),
+			 xml:element_to_binary(VCARD)),
 	      ["delete from vcard where username='", Username, "';"
 	       "insert into vcard(username, vcard) "
 	       "values ('", Username, "', '", SVCARD, "');"];
@@ -260,7 +259,7 @@ export_private_storage(Server, Output) ->
 	      Username = ejabberd_odbc:escape(LUser),
       	      LXMLNS = ejabberd_odbc:escape(XMLNS),
 	      SData = ejabberd_odbc:escape(
-			lists:flatten(xml:element_to_string(Data))),
+			xml:element_to_binary(Data)),
       	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
 	 (_Host, _R) ->
       	      []
