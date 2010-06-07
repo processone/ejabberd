@@ -27,6 +27,7 @@ while [ $# -ne 0 ] ; do
         --ctl-config) EJABBERDCTL_CONFIG_PATH=$1 ; shift ;;
         --logs) LOGS_DIR=$1 ; shift ;;
         --spool) SPOOLDIR=$1 ; shift ;;
+        --erlargs) ERL_ARGS=$1 ; shift ;;
         *) ARGS="$ARGS $PARAM" ;;
     esac
 done
@@ -143,7 +144,7 @@ start ()
       -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
       -s ejabberd \
       -sasl sasl_error_logger \\{file,\\\"$SASL_LOG_PATH\\\"\\} \
-      $ERLANG_OPTS $ARGS \"$@\""
+      $ERLANG_OPTS $ARGS \"$@\" $ERL_ARGS"
 }
 
 # attach to server
@@ -174,7 +175,7 @@ debug ()
       $NAME debug-${TTY}-${ERLANG_NODE} \
       -remsh $ERLANG_NODE \
       -hidden \
-      $ERLANG_OPTS $ARGS \"$@\""
+      $ERLANG_OPTS $ARGS \"$@\" $ERL_ARGS"
 }
 
 # start interactive server
@@ -204,7 +205,7 @@ live ()
       -pa $EJABBERD_EBIN_PATH \
       -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
       -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
+      $ERLANG_OPTS $ARGS \"$@\" $ERL_ARGS"
 }
 
 help ()
@@ -222,6 +223,7 @@ help ()
     echo "  --logs dir         Directory for logs: $LOGS_DIR"
     echo "  --spool dir        Database spool dir: $SPOOLDIR"
     echo "  --node nodename    ejabberd node name: $ERLANG_NODE"
+    echo "  --erlargs \"\"       erl arguments:      $ERL_ARGS"
     echo ""
 }
 
