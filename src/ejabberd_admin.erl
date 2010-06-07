@@ -99,7 +99,7 @@ commands() ->
 
      #ejabberd_commands{name = update_list, tags = [server],
 			desc = "List modified modules that can be updated",
-			module = ?MODULE, function = update_list_modified,
+			module = ?MODULE, function = update_list,
 			args = [],
 			result = {modules, {list, {module, string}}}},
      #ejabberd_commands{name = update, tags = [server],
