@@ -47,7 +47,7 @@
 -include("http_bind.hrl").
 -include_lib("exmpp/include/exmpp.hrl").
 
--record(http_bind, {id, pid, to, hold, wait, version}).
+-record(http_bind, {id, pid, to, hold, wait, process_delay, version}).
 
 -define(NULL_PEER, {{0, 0, 0, 0}, 0}).
 
@@ -105,6 +105,11 @@
                                 % idle sessions
 -define(MAX_PAUSE, 120). % may num of sec a client is allowed to pause
                          % the session
+
+%% Wait 100ms before continue processing, to allow the client provide more related stanzas.
+-define(PROCESS_DELAY_DEFAULT, 100).
+-define(PROCESS_DELAY_MIN, 0).
+-define(PROCESS_DELAY_MAX, 1000).
 
 
 %%%----------------------------------------------------------------------
@@ -276,6 +281,18 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 			   CHold
 		   end
 	   end,
+    Pdelay = case string:to_integer(xml:get_attr_s("process-delay",Attrs)) of
+		 {error, _} ->
+		     ?PROCESS_DELAY_DEFAULT;
+		 {CPdelay, _} when
+		       (?PROCESS_DELAY_MIN =< CPdelay) and
+		       (CPdelay =< ?PROCESS_DELAY_MAX) ->
+		     CPdelay;
+		 {CPdelay, _} ->
+		     erlang:max(
+		       erlang:min(CPdelay,?PROCESS_DELAY_MAX),
+		       ?PROCESS_DELAY_MIN)
+	     end,
     Version =
 	case catch list_to_float(
 		     exmpp_xml:get_attribute_from_list_as_list(Attrs, "ver", "")) of
@@ -293,6 +310,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 				 XmppVersion},
 			   hold = Hold,
 			   wait = Wait,
+			   process_delay = Pdelay,
 			   version = Version
 			  })
       end),
@@ -946,6 +964,7 @@ update_shaper(ShaperState, PayloadSize) ->
     end.
 
 prepare_response(Sess, Rid, OutputEls, StreamStart) ->
+    receive after Sess#http_bind.process_delay -> ok end,
     case catch http_get(Sess, Rid) of
 	{ok, cancel} ->
 	    %% actually it would be better if we could completely

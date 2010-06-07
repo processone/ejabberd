@@ -53,7 +53,7 @@
 
 %% Duplicated from ejabberd_http_bind.
 %% TODO: move to hrl file.
--record(http_bind, {id, pid, to, hold, wait, version}).
+-record(http_bind, {id, pid, to, hold, wait, process_delay, version}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -143,7 +143,7 @@ setup_database() ->
 
 migrate_database() ->
     case catch mnesia:table_info(http_bind, attributes) of
-        [id, pid, to, hold, wait, version] ->
+        [id, pid, to, hold, wait, process_delay, version] ->
 	    ok;
         _ ->
 	    %% Since the stored information is not important, instead
