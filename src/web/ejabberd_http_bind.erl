@@ -281,7 +281,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 			   CHold
 		   end
 	   end,
-    Pdelay = case string:to_integer(xml:get_attr_s("process-delay",Attrs)) of
+    Pdelay = case string:to_integer(exmpp_xml:get_attribute_from_list_as_list(Attrs, "process-delay", "")) of
 		 {error, _} ->
 		     ?PROCESS_DELAY_DEFAULT;
 		 {CPdelay, _} when
