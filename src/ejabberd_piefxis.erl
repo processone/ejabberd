@@ -270,7 +270,7 @@ populate_user(User,Domain,El=#xmlel{name='vCard', ns='vcard-temp'}) ->
     io:format("Trying to add/update vCards...",[]),
     case loaded_module(Domain,[mod_vcard,mod_vcard_odbc]) of
 	{ok, M}  ->  FullUser = exmpp_jid:make(User, Domain),
-		     IQ = #iq{type = set, payload = El},
+		     IQ = #iq{kind=request, type = set, payload = El},
 		     case M:process_sm_iq(FullUser, FullUser , IQ) of
 			 {error,_Err} ->
 			     io:format(" ERROR.~n",[]),
@@ -486,7 +486,7 @@ extract_user_info(roster, Username, Host) ->
 	{ok, M} ->
 	    From = To = exmpp_jid:make(Username, Host, ""),
 	    SubelGet = exmpp_xml:element(?NS_ROSTER, 'query', [], []),
-	    IQGet = #iq{type=get, ns=?NS_ROSTER, payload=[SubelGet]},
+	    IQGet = #iq{kind=request, type=get, ns=?NS_ROSTER, payload=SubelGet},
 	    Res = M:process_local_iq(From, To, IQGet),
 	    case Res#iq.payload of
 		undefined -> "";
@@ -529,7 +529,7 @@ extract_user_info(vcard, Username, Host) ->
 	{ok, M} ->
 	    From = To = exmpp_jid:make(Username, Host, ""),
 	    SubelGet = exmpp_xml:element(?NS_VCARD, 'vCard', [], []),
-	    IQGet = #iq{type=get, ns=?NS_VCARD, payload=[SubelGet]},
+	    IQGet = #iq{kind=request, type=get, ns=?NS_VCARD, payload=SubelGet},
 	    Res = M:process_sm_iq(From, To, IQGet),
 	    case Res#iq.payload of
 		undefined -> "";
