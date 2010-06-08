@@ -95,7 +95,7 @@
     decode_subscriptions/1,
     encode_jid/1,
     encode_affiliation/1,
-    encode_subscription/1
+    encode_subscription/1,
     encode_subscriptions/1
     ]).
 %% ================
