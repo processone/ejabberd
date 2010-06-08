@@ -86,7 +86,8 @@ export_passwd(Server, Output) ->
 	      []
       end).
 
-export_roster(Server, Output) ->
+export_roster(ServerS, Output) ->
+    Server = list_to_binary(ServerS),
     export_common(
       Server, roster, Output,
       fun(Host, #roster{usj = {LUser, LServer, {N, D, Res} = _LJID}} = R)
@@ -148,7 +149,8 @@ export_offline(Server, Output) ->
 	      []
       end).
 
-export_last(Server, Output) ->
+export_last(ServerS, Output) ->
+    Server = list_to_binary(ServerS),
     export_common(
       Server, last_activity, Output,
       fun(Host, #last_activity{us = {LUser, LServer},
@@ -248,14 +250,15 @@ export_vcard_search(Server, Output) ->
 	      []
       end).
 
-export_private_storage(Server, Output) ->
+export_private_storage(ServerS, Output) ->
+    Server = list_to_binary(ServerS),
     export_common(
       Server, private_storage, Output,
       fun(Host, #private_storage{usns = {LUser, LServer, XMLNS},
 				 xml = Data})
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
-      	      LXMLNS = ejabberd_odbc:escape(XMLNS),
+      	      LXMLNS = ejabberd_odbc:escape(atom_to_list(XMLNS)),
 	      SData = ejabberd_odbc:escape(
 			exmpp_xml:document_to_list(Data)),
       	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
