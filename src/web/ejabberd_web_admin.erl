@@ -1628,7 +1628,7 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
                ServerB = list_to_binary(Server),
                UserB = list_to_binary(User),
                US = {UserB, ServerB},
-	       QueueLenStr = get_offlinemsg_length(ModOffline, UserB, ServerB),
+	       QueueLenStr = get_offlinemsg_length(ModOffline, User, Server),
                FQueueLen = [?AC(URLFunc({users_queue, Prefix,
     				          		 User, Server}),
 				        	    QueueLenStr)],
