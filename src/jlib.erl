@@ -397,10 +397,10 @@ ip_to_list({A,B,C,D}) ->
 %% Empty fields are set to `undefined', not the empty string.
 
 %%TODO: this doesn't make sence!, it is still used?.
-from_old_jid(JID) ->
- Node = exmpp_jid:node(JID),
-    Resource = exmpp_jid:resource(JID),
-    Domain = exmpp_jid:domain(JID),
+from_old_jid({jid, NodeRaw, DomainRaw, ResourceRaw, _, _, _}) ->
+    Node = exmpp_stringprep:nodeprep(NodeRaw),
+    Domain = exmpp_stringprep:resourceprep(DomainRaw),
+    Resource = exmpp_stringprep:nameprep(ResourceRaw),
     exmpp_jid:make(Node,Domain,Resource).
 
 
