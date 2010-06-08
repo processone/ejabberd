@@ -655,15 +655,15 @@ is_ptype_match(Item, PType) ->
 
 
 %% TODO: Investigate this: sometimes Value has binaries, other times has strings
-is_type_match(jid, Value, JIDtuple, Subscription, Groups) ->
+is_type_match(jid, Value, JIDtuple, _Subscription, _Groups) ->
     {User, Server, Resource} = Value,
     JID = exmpp_jid:make(JIDtuple),
     ((User == undefined) orelse (User == []) orelse (User == exmpp_jid:prep_node(JID)))
     andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:prep_domain(JID)))
     andalso ((Resource == undefined) orelse (Resource == []) orelse (Resource == exmpp_jid:prep_resource(JID)));
-is_type_match(subscription, Value, JID, Subscription, Groups) ->
+is_type_match(subscription, Value, _JID, Subscription, _Groups) ->
     Value == Subscription;
-is_type_match(group, Value, JID, Subscription, Groups) ->
+is_type_match(group, Value, _JID, _Subscription, Groups) ->
     lists:member(Value, Groups).
 
 
