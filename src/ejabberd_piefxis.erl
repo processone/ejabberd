@@ -551,7 +551,7 @@ mnesia_pop_offline_messages(Ls, User, Server) ->
 	US = {LUser, LServer},
 	F = fun() ->
 		    Rs = mnesia:wread({offline_msg, US}),
-		    mnesia:delete({offline_msg, US}),
+		    %% mnesia:delete({offline_msg, US}),
 		    Rs
 	    end,
 	case mnesia:transaction(F) of
