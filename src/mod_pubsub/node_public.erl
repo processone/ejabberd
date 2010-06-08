@@ -167,7 +167,7 @@ get_subscriptions(NodeId, Owner) ->
     node_flat:get_subscriptions(NodeId, Owner).
 
 set_subscriptions(NodeId, Owner, Subscription, SubId) ->
-    node_flat:set_subscription(NodeId, Owner, Subscription, SubId).
+    node_flat:set_subscriptions(NodeId, Owner, Subscription, SubId).
 
 get_pending_nodes(Host, Owner) ->
     node_flat:get_pending_nodes(Host, Owner).

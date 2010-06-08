@@ -74,7 +74,9 @@
 	 get_states/1,
 	 get_state/2,
 	 set_state/1,
+	 get_items/7,
 	 get_items/6,
+	 get_items/3,
 	 get_items/2,
 	 get_item/7,
 	 get_item/2,
@@ -89,9 +91,11 @@
     decode_jid/1,
     decode_node/1,
     decode_affiliation/1,
+    decode_subscription/1,
     decode_subscriptions/1,
     encode_jid/1,
     encode_affiliation/1,
+    encode_subscription/1
     encode_subscriptions/1
     ]).
 %% ================
@@ -1289,7 +1293,7 @@ update_subscription(NodeId, JID, Subscription) ->
 		     "values('", NodeId, "', '", J, "', 'n', '", S, "');"])
     end.
 
-decode_jid(SJID) -> jlib:short_prepd_jid(jlib:string_to_jid(SJID)).
+decode_jid(SJID) -> jlib:short_prepd_jid(jlib:string_to_jid(SJID)). %% TODO rewrite using exmpp
 
 decode_node(N) -> ?PUBSUB:string_to_node(N).
 
@@ -1311,7 +1315,7 @@ decode_subscriptions(Subscriptions) ->
 	end
     end, [], string:tokens(Subscriptions, ",")).
 
-encode_jid(JID) -> ?PUBSUB:escape(jlib:jid_to_string(JID)).
+encode_jid(JID) -> ?PUBSUB:escape(jlib:jid_to_string(JID)). %% TODO rewrite using exmpp
 
 encode_affiliation(owner) -> "o";
 encode_affiliation(publisher) -> "p";
