@@ -133,13 +133,14 @@ check_password(User, Server, Password, Digest, DigestGen) ->
 %%     Password = string()
 
 set_password(User, Server, Password) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    if
-	(LUser == error) or (LServer == error) ->
+    LUser = (catch exmpp_stringprep:nodeprep(User)),
+    LServer = (catch exmpp_stringprep:nameprep(Server)),
+    case {LUser, LServer} of
+	{{stringprep, _, invalid_string, _}, _} ->
 	    {error, invalid_jid};
-	true ->
+	{_, {stringprep, _, invalid_string, _}} ->
+	    {error, invalid_jid};
+	US ->
 	    F = fun() ->
 			mnesia:write(#passwd{us = US,
 					     password = Password})
@@ -154,13 +155,14 @@ set_password(User, Server, Password) ->
 %%     Password = string()
 
 try_register(User, Server, Password) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
-    US = {LUser, LServer},
-    if
-	(LUser == error) or (LServer == error) ->
+    LUser = (catch exmpp_stringprep:nodeprep(User)),
+    LServer = (catch exmpp_stringprep:nameprep(Server)),
+    case {LUser, LServer} of
+	{{stringprep, _, invalid_string, _}, _} ->
 	    {error, invalid_jid};
-	true ->
+	{_, {stringprep, _, invalid_string, _}} ->
+	    {error, invalid_jid};
+	US ->
 	    F = fun() ->
 			case mnesia:read({passwd, US}) of
 			    [] ->

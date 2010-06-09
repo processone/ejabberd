@@ -393,11 +393,8 @@ remove_user(User, Server) when is_list(User), is_list(Server) ->
 	  fun(M) ->
 		  M:remove_user(User, Server)
 	  end, auth_modules(Server)),
-    case R of
-	ok -> ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)),
-				 [list_to_binary(User), list_to_binary(Server)]);
-	_ -> none
-    end,
+    ejabberd_hooks:run(remove_user, list_to_binary(exmpp_stringprep:nameprep(Server)),
+				 [list_to_binary(User), list_to_binary(Server)]),
     R.
 
 %% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error

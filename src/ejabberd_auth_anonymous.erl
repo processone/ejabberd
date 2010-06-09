@@ -201,8 +201,8 @@ register_connection(SID, JID, Info) when ?IS_JID(JID) ->
 %% @doc Remove an anonymous user from the anonymous users table.
 
 unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
-    LUser = exmpp_jid:prep_node(JID),
-    LServer = exmpp_jid:prep_domain(JID),
+    LUser = exmpp_jid:prep_node_as_list(JID),
+    LServer = exmpp_jid:prep_domain_as_list(JID),
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),
     remove_connection(SID, LUser, LServer).
@@ -215,7 +215,7 @@ unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
 purge_hook(false, _LUser, _LServer) ->
     ok;
 purge_hook(true, LUser, LServer) when is_list(LUser), is_list(LServer) ->
-    ejabberd_hooks:run(anonymous_purge_hook, LServer, [LUser, LServer]).
+    ejabberd_hooks:run(anonymous_purge_hook, list_to_binary(LServer), [LUser, LServer]).
 
 %% ---------------------------------
 %% Specific anonymous auth functions
