@@ -268,10 +268,8 @@ try_run_ctp(Args, Auth, AccessCommands) ->
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
 try_call_command(Args, Auth, AccessCommands) ->
     try call_command(Args, Auth, AccessCommands) of
-	{error, command_unknown} ->
-	    {io_lib:format("Error: command ~p not known.", [hd(Args)]), ?STATUS_ERROR};
-	{error, wrong_number_parameters} ->
-	    {"Error: wrong number of parameters", ?STATUS_ERROR};
+	{error, String} ->
+	    {String, ?STATUS_ERROR};
 	Res ->
 	    Res
     catch
@@ -280,13 +278,13 @@ try_call_command(Args, Auth, AccessCommands) ->
 	    {io_lib:format("Problem '~p ~p' occurred executing the command.~nStacktrace: ~p", [A, Why, Stack]), ?STATUS_ERROR}
     end.
 
-%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, ErrorType}
+%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, string()}
 call_command([CmdString | Args], Auth, AccessCommands) ->
     CmdStringU = re:replace(CmdString, "-", "_", [global,{return,list}]),
     Command = list_to_atom(CmdStringU),
     case ejabberd_commands:get_command_format(Command) of
 	{error, command_unknown} ->
-	    {error, command_unknown};
+	    {error, io_lib:format("Error: command ~p not known.", [hd(Args)])};
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->
@@ -299,9 +297,8 @@ call_command([CmdString | Args], Auth, AccessCommands) ->
 			    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
 			    {L1, L2} when L1 > L2 -> {L1-L2, "more argument"}
 			end,
-		    {io_lib:format("Error: the command ~p requires ~p ~s.",
-				   [CmdString, NumCompa, TextCompa]),
-		     wrong_command_arguments}
+		    {error, io_lib:format("Error: the command ~p requires ~p ~s.",
+				   [CmdString, NumCompa, TextCompa])}
 	    end
     end.
 
@@ -615,26 +612,26 @@ print_usage_tags(Tag, MaxC, ShCode) ->
 
 print_usage_help(MaxC, ShCode) ->
     LongDesc =
-	["The special 'help' ejabberdctl command provides help of ejabberd commands.\n\n"
-	 "The format is:\n  ", ?B("ejabberdctl"), " ", ?B("help"), " [", ?B("--tags"), " ", ?U("[tag]"), " | ", ?U("com?*"), "]\n\n"
+	 "The special 'help' ejabberdctl command provides help of ejabberd commands.\n\n"
+	 "The format is:\n  "++?B("ejabberdctl")++" "++?B("help")++" ["++?B("--tags")++" "++?U("[tag]")++" | "++?U("com?*")++"]\n\n"
 	 "The optional arguments:\n"
-	 "  ",?B("--tags"),"      Show all tags and the names of commands in each tag\n"
-	 "  ",?B("--tags"), " ", ?U("tag"),"  Show description of commands in this tag\n"
-	 "  ",?U("command"),"     Show detailed description of the command\n"
-	 "  ",?U("com?*"),"       Show detailed description of commands that match this glob.\n"
+	 "  "++?B("--tags")++"      Show all tags and the names of commands in each tag\n"
+	 "  "++?B("--tags")++" "++?U("tag")++"  Show description of commands in this tag\n"
+	 "  "++?U("command")++"     Show detailed description of the command\n"
+	 "  "++?U("com?*")++"       Show detailed description of commands that match this glob.\n"
 	 "              You can use ? to match a simple character,\n"
 	 "              and * to match several characters.\n"
-	 "\n",
-	 "Some example usages:\n",
-	 "  ejabberdctl help\n",
-	 "  ejabberdctl help --tags\n",
-	 "  ejabberdctl help --tags accounts\n",
-	 "  ejabberdctl help register\n",
-	 "  ejabberdctl help regist*\n",
-	 "\n",
-	 "Please note that 'ejabberdctl help' shows all ejabberd commands,\n",
-	 "even those that cannot be used in the shell with ejabberdctl.\n",
-	 "Those commands can be identified because the description starts with: *"],
+	 "\n"
+	 "Some example usages:\n"
+	 "  ejabberdctl help\n"
+	 "  ejabberdctl help --tags\n"
+	 "  ejabberdctl help --tags accounts\n"
+	 "  ejabberdctl help register\n"
+	 "  ejabberdctl help regist*\n"
+	 "\n"
+	 "Please note that 'ejabberdctl help' shows all ejabberd commands,\n"
+	 "even those that cannot be used in the shell with ejabberdctl.\n"
+	 "Those commands can be identified because the description starts with: *",
     ArgsDef = [],
     C = #ejabberd_commands{
       desc = "Show help of ejabberd commands",
@@ -701,6 +698,7 @@ print_usage_command(Cmd, MaxC, ShCode) ->
 	    print_usage_command(Cmd, C, MaxC, ShCode)
     end.
 
+%% @spec (Cmd::string(), C::ejabberd_commands(), MaxC::integer(), ShCode::boolean()) -> ok
 print_usage_command(Cmd, C, MaxC, ShCode) ->
     #ejabberd_commands{
 		     tags = TagsAtoms,
