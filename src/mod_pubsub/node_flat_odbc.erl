@@ -1161,7 +1161,9 @@ set_item(Item) ->
     {M, JID} = Item#pubsub_item.modification,
     P = encode_jid(JID),
     Payload = Item#pubsub_item.payload,
-    XML = ?PUBSUB:escape(lists:flatten(lists:map(fun(X) -> xml:element_to_string(X) end, Payload))),
+    XML = ?PUBSUB:escape(lists:flatten(
+			   lists:map(fun(X) -> exmpp_xml:document_to_list(X) end,
+				     Payload))),
     S = fun({T1, T2, T3}) -> 
 		lists:flatten([i2l(T1, 6), ":", i2l(T2, 6), ":", i2l(T3, 6)])
 	end,
@@ -1293,7 +1295,7 @@ update_subscription(NodeId, JID, Subscription) ->
 		     "values('", NodeId, "', '", J, "', 'n', '", S, "');"])
     end.
 
-decode_jid(SJID) -> jlib:short_prepd_jid(jlib:string_to_jid(SJID)). %% TODO rewrite using exmpp
+decode_jid(SJID) -> jlib:short_prepd_jid(exmpp_jid:parse(SJID)). %% TODO rewrite using exmpp
 
 decode_node(N) -> ?PUBSUB:string_to_node(N).
 
@@ -1315,7 +1317,7 @@ decode_subscriptions(Subscriptions) ->
 	end
     end, [], string:tokens(Subscriptions, ",")).
 
-encode_jid(JID) -> ?PUBSUB:escape(jlib:jid_to_string(JID)). %% TODO rewrite using exmpp
+encode_jid(JID) -> ?PUBSUB:escape(exmpp_jid:to_list(JID)). %% TODO rewrite using exmpp
 
 encode_affiliation(owner) -> "o";
 encode_affiliation(publisher) -> "p";

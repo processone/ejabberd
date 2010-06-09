@@ -238,7 +238,7 @@ type_and_options(Type, _Lang) ->
 tr_xfield_options({Value, Label}, Lang) ->
     #xmlel{ns = ?NS_DATA_FORMS, 
           name = 'option',
-	  attrs = [?XMLATTR('label', transalte:translate(Lang, Label))],
+	  attrs = [?XMLATTR('label', translate:translate(Lang, Label))],
 	  children = [#xmlel{ns = ?NS_DATA_FORMS,
 	  		     name = 'value',
 			     children = [?XMLCDATA(Value)]}]}.

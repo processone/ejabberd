@@ -439,7 +439,7 @@ normal_state({route, From, ToNick,
 		is_user_online(From, StateData)} of
 		{true, true} ->
 		    case Type of
-			"groupchat" ->
+			'groupchat' ->
 			    ErrText = "It is not allowed to send private "
 				"messages of type \"groupchat\"",
 			    Err = exmpp_stanza:reply_with_error(Packet,
@@ -1849,7 +1849,7 @@ count_maxstanzas_shift(MaxStanzas, HistoryList) ->
     end.
 
 count_maxchars_shift(Nick, MaxSize, HistoryList) ->
-    NLen = string:len(Nick) + 1,
+    NLen = size(Nick) + 1,
     Sizes = lists:map(
 	      fun({_Nick, _Packet, _HaveSubject, _TimeStamp, Size}) ->
 		  Size + NLen
@@ -2762,7 +2762,7 @@ send_kickban_presence1(UJID, Reason, Code, StateData) ->
 	      ItemAttrs = [?XMLATTR('affiliation', SAffiliation),
 			           ?XMLATTR('role', <<"none">>)],
 	      ItemEls = case Reason of
-			    <<>> ->
+			    "" ->
 				[];
 			    _ ->
 				[#xmlel{name = 'reason',

@@ -773,7 +773,7 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
 %% Both or To, send a "unsubscribe" presence stanza.
 send_unsubscription_to_rosteritems(LUser, LServer) ->
     RosterItems = get_user_roster([], {LUser, LServer}),
-    From = jlib:make_jid({LUser, LServer, ""}),
+    From = exmpp_jid:make(LUser, LServer),
     lists:foreach(fun(RosterItem) ->
 			  send_unsubscribing_presence(From, RosterItem)
 		  end,

@@ -652,7 +652,7 @@ iq_disco_items(Host, From, Lang, Rsm) ->
                    attrs = [
                      #xmlattr{
                        name = 'jid',
-                       value = jlib:jid_to_string({Name, Host, ""})
+                       value = exmpp_jid:to_binary(exmpp_jid:make(Name, Host))
                      },
                      #xmlattr{
                        name = 'name',

@@ -602,7 +602,7 @@ check_packet(_, User, Server,
 		    LJID = jlib:short_prepd_jid(To),
 		    {Subscription, Groups} =
 			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
+			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, exmpp_stringprep:nameprep(Server), {none, []}, [User, Server, LJID]);
 			    false -> {[], []}
 			end,
 		    check_packet_aux(List, presence_out,

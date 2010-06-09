@@ -1500,7 +1500,7 @@ get_pending_nodes(Host, Owner, Plugins) ->
 %% subscriptions on Host and Node.</p>
 send_pending_auth_events(Host, Node, Owner) ->
     ?DEBUG("Sending pending auth events for ~s on ~s:~s",
-	   [exmpp_jid:jid_to_string(Owner), Host, node_to_string(Node)]),
+	   [exmpp_jid:to_list(Owner), Host, node_to_string(Node)]),
     Action =
 	fun(#pubsub_node{id = NodeID, type = Type}) ->
 		case lists:member("get-pending", features(Type)) of
@@ -2727,12 +2727,12 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				case Node of
 				<<>> ->
 				 [#xmlel{ns = ?NS_PUBSUB, name='subscription',
-				 	 attrs = [?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
+				 	 attrs = [?XMLATTR('jid', exmpp_jid:to_binary(SubJID)),
 					 	 ?XMLATTR('subid', SubID),
 						 ?XMLATTR('subscription', subscription_to_string(Subscription)) | nodeAttr(SubsNode)]}];
 				SubsNode ->
 				 [#xmlel{ns = ?NS_PUBSUB, name = 'subscription', 
-				 	 attrs = [?XMLATTR('jid', exmpp_jid:jid_to_binary(SubJID)),
+				 	 attrs = [?XMLATTR('jid', exmpp_jid:to_binary(SubJID)),
 					 	  ?XMLATTR('subid', SubID),
 						  ?XMLATTR('subscription', subscription_to_string(Subscription))]}];
 				_ ->
@@ -3013,7 +3013,7 @@ state_can_deliver({U, S, R}, SubOptions) ->
 
 get_resource_state({U, S, R}, ShowValues, JIDs) ->
     %% Get user session PID
-    case ejabberd_sm:get_session_pid(U, S, R) of
+    case ejabberd_sm:get_session_pid(exmpp_jid:make(U, S, R)) of
   %% If no PID, item can be delivered
   none -> lists:append([{U, S, R}], JIDs);
   %% If PID ...
