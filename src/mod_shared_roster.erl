@@ -93,6 +93,8 @@ start(Host, _Opts) ->
 		       ?MODULE, unset_presence, 50),
     ejabberd_hooks:add(register_user, Host,
 		       ?MODULE, register_user, 50),
+    ejabberd_hooks:add(anonymous_purge_hook, Host,
+		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50).
 %%ejabberd_hooks:add(remove_user, Host,
@@ -121,6 +123,8 @@ stop(Host) ->
 			  ?MODULE, unset_presence, 50),
     ejabberd_hooks:delete(register_user, Host,
 			  ?MODULE, register_user, 50),
+    ejabberd_hooks:delete(anonymous_purge_hook, Host,
+			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(remove_user, Host,
 			  ?MODULE, remove_user, 50).
 %%ejabberd_hooks:delete(remove_user, Host,
