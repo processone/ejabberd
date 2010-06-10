@@ -128,6 +128,7 @@ get_user_roster(Items, {U, S}) when is_binary(U) ->
     get_user_roster(Items, {binary_to_list(U), binary_to_list(S)});
 get_user_roster(Items, US) ->
     {U, S} = US,
+    USB = {list_to_binary(U), list_to_binary(S)},
     DisplayedGroups = get_user_displayed_groups(US),
     %% Get shared roster users in all groups and remove self: 
     SRUsers = 
@@ -135,9 +136,9 @@ get_user_roster(Items, US) ->
 	  fun(Group, Acc1) ->
 		  GroupName = get_group_name(S, Group),
 		  lists:foldl(
-		    fun(User, Acc2) ->
-			    if User == US -> Acc2;
-			       true -> dict:append(User, 
+		    fun(UserServerB, Acc2) ->
+			    if UserServerB == USB -> Acc2;
+			       true -> dict:append(UserServerB, 
 						   GroupName,
 						   Acc2)
 			    end
@@ -498,6 +499,7 @@ get_group_opt(Host, Group, Opt, Default) ->
 	    Default
     end.
 
+%% @spec(Host::string(), Group::string()) -> [{Username::binary(), Server::binary()}]
 get_group_users(Host, Group) ->
     case get_group_opt(Host, Group, all_users, false) of
 	true ->
