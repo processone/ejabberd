@@ -185,6 +185,7 @@ register_connection(SID, JID, Info) when ?IS_JID(JID) ->
         undefined ->
             ok;
         ?MODULE ->
+	    ejabberd_hooks:run(register_user, LServer, [LUser, LServer]),
 	    US = {LUser, LServer},
 	    mnesia:async_dirty(
 	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
@@ -292,8 +293,8 @@ dirty_get_registered_users() ->
 %% @spec (Server) -> nil()
 %%     Server = string()
 
-get_vh_registered_users(_Server) ->
-    [].
+get_vh_registered_users(Server) ->
+    [{U, S} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(list_to_binary(Server))].
 
 %% @spec (User, Server) -> Password | false
 %%     User = string()
