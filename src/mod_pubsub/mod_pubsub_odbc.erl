@@ -550,7 +550,7 @@ out_subscription(User, Server, JID, subscribed) ->
     Owner = exmpp_jid:make(User, Server, ""),
     {U, S, R} = jlib:short_prepd_jid(JID),
     Rs = case R of
-	[] -> user_resources(U, S);
+	undefined -> user_resources(U, S);
 	_ -> [R]
     end,
     presence(Server, {presence, U, S, Rs, Owner});
