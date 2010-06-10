@@ -414,6 +414,7 @@ process_subscription(Direction, User, Server, JID, _Type, Acc) ->
 	    Acc
     end.
 
+%% @spec(Host::string) -> [Group::string()]
 list_groups(Host) ->
     mnesia:dirty_select(
       sr_group,
@@ -422,6 +423,9 @@ list_groups(Host) ->
 	[{'==', '$2', Host}],
 	['$1']}]).
 
+%% @spec(Host::string) -> [Group::string()]
+groups_with_opts(HostB) when is_binary(HostB) ->
+    groups_with_opts(binary_to_list(HostB));
 groups_with_opts(Host) ->
     Gs = mnesia:dirty_select(
 	   sr_group,
@@ -500,6 +504,8 @@ get_group_opt(Host, Group, Opt, Default) ->
     end.
 
 %% @spec(Host::string(), Group::string()) -> [{Username::binary(), Server::binary()}]
+get_group_users(HostB, Group) when is_binary(HostB) ->
+    get_group_users(binary_to_list(HostB), Group);
 get_group_users(Host, Group) ->
     case get_group_opt(Host, Group, all_users, false) of
 	true ->
@@ -532,7 +538,10 @@ get_group_explicit_users(Host, Group) ->
 get_group_name(Host, Group) ->
     get_group_opt(Host, Group, name, Group).
 
-%% Get list of names of groups that have @all@ in the memberlist
+%% @spec(Host::string)
+%% @doc Get list of names of groups that have @all@ in the memberlist
+get_special_users_groups(HostB) when is_binary(HostB)->
+    get_special_users_groups(binary_to_list(HostB));
 get_special_users_groups(Host) ->
     lists:filter(
       fun(Group) ->
@@ -739,7 +748,7 @@ push_item(User, Server, From, Item) ->
       fun(Resource) ->
 	      JID = exmpp_jid:make(User, Server, Resource),
 	      ejabberd_router:route(JID, JID, Stanza)
-      end, ejabberd_sm:get_user_resources(list_to_binary(User), list_to_binary(Server))).
+      end, ejabberd_sm:get_user_resources(User, Server)).
 
 push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
     Item = #roster{usj = {User, Server, {ContactU, ContactS, ""}},
