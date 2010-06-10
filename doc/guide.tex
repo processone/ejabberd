@@ -2297,6 +2297,9 @@ and LDAP server supports
 
 \makesubsubsection{ldapconnection}{Connection}
 
+Two connections are established to the LDAP server per vhost,
+one for authentication and other for regular calls.
+
 Parameters:
 \begin{description}
 \titem{\{ldap\_servers, [Servers, ...]\}} \ind{options!ldap\_server}List of IP addresses or DNS names of your
