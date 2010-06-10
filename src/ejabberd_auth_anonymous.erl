@@ -69,7 +69,6 @@ start(Host) when is_list(Host) ->
     %% TODO: Check cluster mode
     update_tables(),
     mnesia:create_table(anonymous, [{ram_copies, [node()]},
-				    {type, bag},
 				    {type, bag}, {local_content, true},
                                     {attributes, record_info(fields, anonymous)}]),
     mnesia:add_table_copy(anonymous, node(), ram_copies),
