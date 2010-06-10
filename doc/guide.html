@@ -1662,7 +1662,8 @@ create accounts or edit vCard that is stored in LDAP.
 However, it is possible to change passwords if <TT>mod_register</TT> module is enabled
 and LDAP server supports
 <A HREF="http://tools.ietf.org/html/rfc3062">RFC 3062</A>.</P><P> <A NAME="ldapconnection"></A> </P><!--TOC subsubsection Connection-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ldapconnection">Connection</A></H4><!--SEC END --><P> <A NAME="ldapconnection"></A> </P><P>Parameters:
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ldapconnection">Connection</A></H4><!--SEC END --><P> <A NAME="ldapconnection"></A> </P><P>Two connections are established to the LDAP server per vhost,
+one for authentication and other for regular calls.</P><P>Parameters:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{ldap_servers, [Servers, ...]}</TT></B></DT><DD CLASS="dd-description"> List of IP addresses or DNS names of your
 LDAP servers. This option is required.
@@ -1691,8 +1692,9 @@ value is <TT>""</TT>.
 {ldap_port, 389}.
 {ldap_rootdn, "cn=Manager,dc=domain,dc=org"}.
 {ldap_password, "secret"}.
-</PRE><P>Note that current LDAP implementation does not support SASL authentication.</P><P> <A NAME="ldapauth"></A> </P><!--TOC subsubsection Authentication-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ldapauth">Authentication</A></H4><!--SEC END --><P> <A NAME="ldapauth"></A> </P><P>You can authenticate users against an LDAP directory. Available options are:</P><DL CLASS="description"><DT CLASS="dt-description">
+</PRE><P> <A NAME="ldapauth"></A> </P><!--TOC subsubsection Authentication-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#ldapauth">Authentication</A></H4><!--SEC END --><P> <A NAME="ldapauth"></A> </P><P>You can authenticate users against an LDAP directory. 
+Note that current LDAP implementation does not support SASL authentication.</P><P>Available options are:</P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{ldap_base, Base}</TT></B></DT><DD CLASS="dd-description">LDAP base directory which stores
 users accounts. This option is required.
 </DD><DT CLASS="dt-description"><B><TT>{ldap_uids, [ {ldap_uidattr} | {ldap_uidattr, ldap_uidattr_format}, ...]}</TT></B></DT><DD CLASS="dd-description">

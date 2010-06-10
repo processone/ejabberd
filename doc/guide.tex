@@ -2208,6 +2208,9 @@ and LDAP server supports
 
 \makesubsubsection{ldapconnection}{Connection}
 
+Two connections are established to the LDAP server per vhost,
+one for authentication and other for regular calls.
+
 Parameters:
 \begin{description}
 \titem{\{ldap\_servers, [Servers, ...]\}} \ind{options!ldap\_server}List of IP addresses or DNS names of your
@@ -2242,11 +2245,12 @@ Example:
 {ldap_password, "secret"}.
 \end{verbatim}
 
-Note that current LDAP implementation does not support SASL authentication.
-
 \makesubsubsection{ldapauth}{Authentication}
 
-You can authenticate users against an LDAP directory. Available options are:
+You can authenticate users against an LDAP directory. 
+Note that current LDAP implementation does not support SASL authentication.
+
+Available options are:
 
 \begin{description}
 \titem{\{ldap\_base, Base\}}\ind{options!ldap\_base}LDAP base directory which stores
