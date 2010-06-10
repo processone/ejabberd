@@ -3981,20 +3981,22 @@ feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
 	%% Else, the message comes from PEP
 	_ ->
 	    case exmpp_xml:get_element(El, 'event') of
-	  #xmlel{name = 'event', ns = ?NS_PUBSUB_EVENT} = Event ->
-	      Items = exmpp_xml:get_element(Event, ?NS_PUBSUB_EVENT, 'items'),
-	      Feature = exmpp_xml:get_attribute_as_list(Items, "node", ""),
-	      case is_feature_supported(Pres, Feature) of
-	    true -> allow;
-	    false -> deny
-	      end;
-	  _ ->
-	      allow
+		#xmlel{name = 'event', ns = ?NS_PUBSUB_EVENT} = Event ->
+		    Items = exmpp_xml:get_element(Event, ?NS_PUBSUB_EVENT, 'items'),
+		    Feature = exmpp_xml:get_attribute_as_list(Items, "node", ""),
+		    case is_feature_supported(Pres, Feature) of
+			true -> allow;
+			false -> deny
+		    end;
+		_ ->
+		    allow
 	    end
     end;
 feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
     Acc.
 
+is_feature_supported(_, []) ->
+    true;
 is_feature_supported(#xmlel{name = 'presence', children = Els}, Feature) ->
     case mod_caps:read_caps(Els) of
 	nothing -> false;
