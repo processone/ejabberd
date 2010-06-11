@@ -37,6 +37,7 @@
 	 get_connections_pids/1,
 	 try_register/1,
 	 remove_connection/3,
+	 find_connection/2,
 	 dirty_get_connections/0,
 	 allow_host/2,
 	 incoming_s2s_number/0,
