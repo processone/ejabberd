@@ -246,9 +246,13 @@ install: all
 	#
 	# Documentation
 	install -d $(DOCDIR)
+	install -m 644 ../doc/dev.html $(DOCDIR)
 	install -m 644 ../doc/guide.html $(DOCDIR)
 	install -m 644 ../doc/*.png $(DOCDIR)
 	install -m 644 ../doc/*.txt $(DOCDIR)
+	[ -f ../doc/guide.pdf ] \
+		&& install -m 644 ../doc/guide.pdf $(DOCDIR) \
+		|| echo "No ../doc/guide.pdf was built"
 
 uninstall: uninstall-binary
 
