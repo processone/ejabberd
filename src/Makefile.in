@@ -253,6 +253,7 @@ install: all
 	[ -f ../doc/guide.pdf ] \
 		&& install -m 644 ../doc/guide.pdf $(DOCDIR) \
 		|| echo "No ../doc/guide.pdf was built"
+	install -m 644 ../COPYING $(DOCDIR)
 
 uninstall: uninstall-binary
 
