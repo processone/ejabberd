@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(ejabberd.erl, version, [ejabberd@process-one.net], [ejabberd])
+AC_INIT(ejabberd, m4_esyscmd([grep -o -E "\{vsn,.\".*\"\}" ejabberd.app | cut -d \" -f 2 | tr -d '\n']), [ejabberd@process-one.net], [ejabberd])
 
 # Checks for programs.
 AC_PROG_CC
