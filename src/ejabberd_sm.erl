@@ -573,10 +573,14 @@ route_message(From, To, Packet) ->
 		_ ->
 		    case ejabberd_auth:is_user_exists(LUser, LServer) of
 			true ->
-			    is_privacy_allow(From, To, Packet) andalso
-				ejabberd_hooks:run(offline_message_hook,
-						   LServer,
-						   [From, To, Packet]);
+			    case is_privacy_allow(From, To, Packet) of
+				true ->
+				    ejabberd_hooks:run(offline_message_hook,
+						       LServer,
+						       [From, To, Packet]);
+				false ->
+				    ok
+			    end;
 			_ ->
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERR_SERVICE_UNAVAILABLE),
