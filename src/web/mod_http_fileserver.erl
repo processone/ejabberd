@@ -294,6 +294,8 @@ process(LocalPath, Request) ->
 	    {Code, Headers, Contents}
     catch
 	exit:{noproc, _} -> 
+	    ?ERROR_MSG("Received an HTTP request with Host ~p, but couldn't find the related "
+		       "ejabberd virtual host", [Request#request.host]),
 	    ejabberd_web:error(not_found)
     end.
 
