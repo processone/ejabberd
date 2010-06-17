@@ -1142,10 +1142,6 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			NewA = remove_element(LFrom,
 					      StateData#state.pres_a),
 			{true, Attrs, StateData#state{pres_a = NewA}};
-		    'invisible' ->
-			Attrs1 = exmpp_stanza:set_type_in_attrs(Attrs,
-			  'unavailable'),
-			{true, Attrs1, StateData};
 		    'subscribe' ->
 			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
 			{SRes, Attrs, StateData};
@@ -1653,32 +1649,6 @@ presence_update(From, Packet, StateData) ->
 			    pres_a = ?SETS:new(),
 			    pres_i = ?SETS:new(),
 			    pres_invis = false};
-	'invisible' ->
-	    NewPriority = try
-		exmpp_presence:get_priority(Packet)
-	    catch
-		_Exception -> 0
-	    end,
-	    update_priority(NewPriority, Packet, StateData),
-	    NewState =
-		if
-		    not StateData#state.pres_invis ->
-			presence_broadcast(StateData, From,
-					   StateData#state.pres_a,
-					   Packet),
-			presence_broadcast(StateData, From,
-					   StateData#state.pres_i,
-					   Packet),
-			S1 = StateData#state{pres_last = undefined,
-					     pres_timestamp = undefined,
-					     pres_a = ?SETS:new(),
-					     pres_i = ?SETS:new(),
-					     pres_invis = true},
-			presence_broadcast_first(From, S1, Packet);
-		    true ->
-			StateData
-		end,
-	    NewState;
 	'error' ->
 	    StateData;
 	'probe' ->
@@ -1755,13 +1725,6 @@ presence_track(From, To, Packet, StateData) ->
 	'unavailable' ->
 	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
-	    A = remove_element(LTo, StateData#state.pres_a),
-	    StateData#state{pres_i = I,
-			    pres_a = A};
-	'invisible' ->
-	    ejabberd_router:route(From, To, Packet),
-	    check_privacy_route(From, StateData, From, To, Packet),
-	    I = ?SETS:add_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
