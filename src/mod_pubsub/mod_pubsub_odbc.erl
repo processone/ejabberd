@@ -3759,8 +3759,8 @@ odbc_conn(Host) ->
     lists:dropwhile(fun(A) -> A/=$. end, Host) -- ".".
 
 %% escape value for database storage
-escape({_U, _H, _R}=JID)->
-    ejabberd_odbc:escape(exmpp_jid:to_list(JID));
+escape({U, H, R}=JID)->
+    ejabberd_odbc:escape(exmpp_jid:to_list(U, H, R));
 escape(Value)->
     ejabberd_odbc:escape(Value).
 %%%% helpers
