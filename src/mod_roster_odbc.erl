@@ -1068,9 +1068,11 @@ user_roster(User, Server, Query, Lang) ->
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
-	Items1 = get_roster(LUser, LServer),
+	LUserB = list_to_binary(LUser),
+	LServerB = list_to_binary(LServer),
+	Items1 = get_roster(LUserB, LServerB),
 	Res = user_roster_parse_query(User, Server, Items1, Query),
-	Items = get_roster(LUser, LServer),
+	Items = get_roster(LUserB, LServerB),
 	SItems = lists:sort(Items),
 	FItems =
 	    case SItems of
