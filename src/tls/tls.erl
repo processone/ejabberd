@@ -141,7 +141,7 @@ tcp_to_tls(TCPSocket, Options) ->
 		    {error, binary_to_list(Error)}
 	    end;
 	false ->
-	    {error, no_certfile}
+	    throw(no_certfile)
     end.
     
 tls_to_tcp(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
