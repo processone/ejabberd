@@ -117,18 +117,20 @@ xdb_data(_User, _Server, #xmlcdata{}) ->
 xdb_data(User, Server, #xmlel{ns = NS} = El) ->
     From = exmpp_jid:make(User, Server),
     LServer = exmpp_stringprep:nameprep(Server),
+    UserB = list_to_binary(User),
+    ServerB = list_to_binary(Server),
     case NS of
 	?NS_LEGACY_AUTH ->
-	    Password = exmpp_xml:get_cdata(El),
-	    ejabberd_auth:set_password(User, Server, Password),
+	    Password = exmpp_xml:get_cdata_as_list(El),
+	    ejabberd_auth:set_password(UserB, ServerB, Password),
 	    ok;
 	?NS_ROSTER ->
 	    case lists:member(mod_roster_odbc,
 			      gen_mod:loaded_modules(LServer)) of
 		true ->
-		    catch mod_roster_odbc:set_items(User, Server, El);
+		    catch mod_roster_odbc:set_items(UserB, ServerB, El);
 		false ->
-		    catch mod_roster:set_items(User, Server, El)
+		    catch mod_roster:set_items(UserB, ServerB, El)
 	    end,
 	    ok;
 	?NS_LAST_ACTIVITY ->
@@ -138,14 +140,14 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 			      gen_mod:loaded_modules(LServer)) of
 		true ->
 		    catch mod_last_odbc:store_last_info(
-			    User,
-			    Server,
+			    UserB,
+			    ServerB,
 			    list_to_integer(TimeStamp),
 			    Status);
 		false ->
 		    catch mod_last:store_last_info(
-			    User,
-			    Server,
+			    UserB,
+			    ServerB,
 			    list_to_integer(TimeStamp),
 			    Status)
 	    end,
@@ -206,7 +208,7 @@ process_offline(Server, To, #xmlel{children = Els}) ->
 				  ok;
 			      _ ->
 				  ejabberd_hooks:run(offline_message_hook,
-						     LServer,
+						     list_to_binary(LServer),
 						     [From, To, El])
 			  end
 		  end, Els).
