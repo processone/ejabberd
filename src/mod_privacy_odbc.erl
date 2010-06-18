@@ -362,13 +362,13 @@ process_list_set(LUser, LServer, Name, Els) ->
 		{atomic, {error, _} = Error} ->
 		    Error;
 		{atomic, {result, _} = Res} ->
+		    ListString = lists:flatten(io_lib:format("~p.", [#userlist{name = Name, list = []}])),
 		    ejabberd_router:route(
 		      exmpp_jid:make(LUser, LServer),
 		      exmpp_jid:make(LUser, LServer),
-		      #xmlel{name = 'broadcast', 
-			children=[{privacy_list,
-				   #userlist{name = Name, list = []},
-					     Name}]}),
+		      #xmlel{name = 'broadcast', ns = privacy_list,
+			attrs = [exmpp_xml:attribute(list_name, Name)],
+			children = [exmpp_xml:cdata(ListString)]}),
 		    Res;
 		_ ->
 		    {error, 'internal-server-error'}
@@ -394,13 +394,13 @@ process_list_set(LUser, LServer, Name, Els) ->
 		{atomic, {error, _} = Error} ->
 		    Error;
 		{atomic, {result, _} = Res} ->
+		    ListString = lists:flatten(io_lib:format("~p.", [#userlist{name = Name, list = List}])),
 		    ejabberd_router:route(
 		      exmpp_jid:make(LUser, LServer),
 		      exmpp_jid:make(LUser, LServer),
-		      #xmlel{name = 'broadcast', 
-			children=[{privacy_list,
-				   #userlist{name = Name, list = List},
-					     Name}]}),
+		      #xmlel{name = 'broadcast', ns = privacy_list,
+			attrs = [exmpp_xml:attribute(list_name, Name)],
+			children = [exmpp_xml:cdata(ListString)]}),
 		    Res;
 		_ ->
 		    {error, 'internal_server_error'}

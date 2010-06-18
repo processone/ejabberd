@@ -490,12 +490,14 @@ process_item_els(Item, []) ->
 
 push_item(User, Server, From, Item)
   when is_binary(User), is_binary(Server), ?IS_JID(From) ->
+    {U, S, R} = Item#roster.jid,
     ejabberd_sm:route(exmpp_jid:make(),
 		      exmpp_jid:make(User, Server),
-		      #xmlel{name = 'broadcast', children =
-		       [{item,
-			 Item#roster.jid,
-			 Item#roster.subscription}]}),
+		      #xmlel{name = 'broadcast', ns = roster_item, attrs =
+		       [exmpp_xml:attribute(u, U),
+		        exmpp_xml:attribute(s, S),
+		        exmpp_xml:attribute(r, R),
+		        exmpp_xml:attribute(subs, Item#roster.subscription)]}),
 
     case roster_versioning_enabled(Server) of
     	true ->

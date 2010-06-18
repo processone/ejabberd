@@ -735,11 +735,13 @@ push_item(User, Server, From, Item) ->
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
     %%                    jlib:make_jid(User, Server, "")
     %% why?
+    {U, S, R} = Item#roster.jid,
     ejabberd_sm:route(From, exmpp_jid:make(User, Server),
-		      #xmlel{name = 'broadcast', children =
-                       [{item,
-                         Item#roster.jid,
-			 Item#roster.subscription}]}),
+		      #xmlel{name = 'broadcast', ns = roster_item, attrs =
+		       [exmpp_xml:attribute(u, U),
+		        exmpp_xml:attribute(s, S),
+		        exmpp_xml:attribute(r, R),
+		        exmpp_xml:attribute(subs, Item#roster.subscription)]}),
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [item_to_xml(Item)]},
     Stanza = exmpp_iq:set(?NS_JABBER_CLIENT, Request,

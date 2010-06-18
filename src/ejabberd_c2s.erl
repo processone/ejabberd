@@ -1198,19 +1198,25 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				{false, Attrs, StateData}
 			end
 		end;
-	    #xmlel{name = 'broadcast', attrs = Attrs} ->
+	    #xmlel{name = broadcast, attrs = Attrs} ->
 		?DEBUG("broadcast~n~p~n", [Packet#xmlel.children]),
-		case Packet#xmlel.children of
-		    [{item, {U, S, R} = _IJIDShort, ISubscription}] ->
-			IJID = exmpp_jid:make(U, 
-                                      S, 
-                                      R),
+		case Packet#xmlel.ns of
+		    roster_item ->
+			IJID = exmpp_jid:make(exmpp_xml:get_attribute(Packet, u, <<"">>),
+                                      exmpp_xml:get_attribute(Packet, s, <<"">>),
+                                      exmpp_xml:get_attribute(Packet, r, <<"">>)),
+                        ISubscription = exmpp_xml:get_attribute(Packet, subs, <<"none">>),
 			{false, Attrs,
-			 roster_change(IJID, ISubscription,
-				       StateData)};
-		    [{exit, Reason}] ->
+			 roster_change(IJID, ISubscription, StateData)};
+		    exit ->
+			Reason = exmpp_xml:get_attribute_as_list(Packet, reason, "Unknown reason"),
 			{exit, Attrs, Reason};
-		    [{privacy_list, PrivList, PrivListName}] ->
+		    privacy_list ->
+		        PrivListName = exmpp_xml:get_attribute_as_list(Packet, list_name, "Unknown list name"),
+			CDataString = exmpp_xml:get_cdata_as_list(Packet),
+			{ok, A2, _} = erl_scan:string(CDataString),
+			{_, W} = erl_parse:parse_exprs(A2),
+			{value, PrivList, []} = erl_eval:exprs(W, []),
 			case ejabberd_hooks:run_fold(
 			       privacy_updated_list, StateData#state.server,
 			       false,

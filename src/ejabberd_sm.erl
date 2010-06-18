@@ -155,8 +155,8 @@ disconnect_removed_user(User, Server) ->
     ejabberd_sm:route(exmpp_jid:make(),
 		      exmpp_jid:make(User, 
                                       Server),
-                      #xmlel{name = 'broadcast',
-                        children = [{exit, "User removed"}]}).
+                      #xmlel{name = 'broadcast', ns = exit,
+                        attrs = [exmpp_xml:attribute(reason, "User removed")]}).
 
 get_user_resources(User, Server) 
   when is_binary(User), is_binary(Server) ->
