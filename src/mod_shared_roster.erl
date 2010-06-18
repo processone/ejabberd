@@ -743,7 +743,7 @@ push_item(User, Server, From, Item) ->
 		        exmpp_xml:attribute(r, R),
 		        exmpp_xml:attribute(subs, Item#roster.subscription)]}),
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
-      children = [item_to_xml(Item)]},
+      children = [mod_roster:item_to_xml(Item)]},
     Stanza = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
       "push" ++ randoms:get_string()),
     lists:foreach(
@@ -761,40 +761,6 @@ push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
 		   ask = none,
 		   groups = [GroupName]},
     push_item(User, Server, exmpp_jid:make(Server), Item).
-
-item_to_xml(Item) ->
-    {U, S, R} = Item#roster.jid,
-    Attrs1 = exmpp_xml:set_attribute_in_list([],
-      'jid', exmpp_jid:to_list(U, S, R)),
-    Attrs2 = case Item#roster.name of
-		 "" ->
-		     Attrs1;
-		 Name ->
-		     exmpp_xml:set_attribute_in_list(Attrs1, 'name', Name)
-	     end,
-    Attrs3 = exmpp_xml:set_attribute_in_list(Attrs2,
-      'subscription', Item#roster.subscription),
-    Attrs4 = case ask_to_pending(Item#roster.ask) of
-		 out ->
-		     exmpp_xml:set_attribute_in_list(Attrs3,
-		       'ask', "subscribe");
-		 both ->
-		     exmpp_xml:set_attribute_in_list(Attrs3,
-		       'ask', "subscribe");
-		 _ ->
-		     Attrs3
-	     end,
-    SubEls1 = lists:map(fun(G) ->
-				exmpp_xml:set_cdata(
-				  #xmlel{ns = ?NS_ROSTER, name = 'group'}, G)
-			end, Item#roster.groups),
-    SubEls = SubEls1 ++ Item#roster.xs,
-    #xmlel{ns = ?NS_ROSTER, name = 'item', attrs = Attrs4, children = SubEls}.
-
-ask_to_pending(subscribe) -> out;
-ask_to_pending(unsubscribe) -> none;
-ask_to_pending(Ask) -> Ask.
-
 
 %%---------------------
 %% Web Admin
