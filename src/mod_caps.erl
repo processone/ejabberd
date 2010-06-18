@@ -318,16 +318,11 @@ make_my_disco_hash(Host) ->
 	    ""
     end.
 
-make_disco_hash(DiscoEls, Algo) when Algo == sha1; Algo == md5 ->
+make_disco_hash(DiscoEls, Algo) when Algo == sha1 ->
     Concat = [concat_identities(DiscoEls),
 	      concat_features(DiscoEls),
 	      concat_info(DiscoEls)],
-    base64:encode_to_string(
-      if Algo == sha1 ->
-	      crypto:sha(Concat);
-	 Algo == md5 ->
-	      crypto:md5(Concat)
-      end).
+    base64:encode_to_string(crypto:sha(Concat)).
 
 concat_features(Els) ->
     lists:usort(
