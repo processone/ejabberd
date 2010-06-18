@@ -261,8 +261,8 @@ process_vcard_ldap(To, IQ_Rec, Server) ->
 		    VCardMap = State#state.vcard_map,
 		    case find_ldap_user(LUser, State) of
 			#eldap_entry{attributes = Attributes} ->
-			    Vcard = ldap_attributes_to_vcard(Attributes, VCardMap, {LUser, LServer}),
-                            exmpp_iq:result(IQ_Rec, Vcard);
+			    VcardEl = ldap_attributes_to_vcard(Attributes, VCardMap, {LUser, LServer}),
+                            exmpp_iq:result(IQ_Rec, VcardEl);
 			_ ->
                             exmpp_iq:result(IQ_Rec)
 		    end;
@@ -307,12 +307,12 @@ ldap_attributes_to_vcard(Attributes, VCardMap, UD) ->
     NElts = [ldap_attribute_to_vcard(vCardN, Attr) || Attr <- Attrs],
     OElts = [ldap_attribute_to_vcard(vCardO, Attr) || Attr <- Attrs],
     AElts = [ldap_attribute_to_vcard(vCardA, Attr) || Attr <- Attrs],
-    [#xmlel{ns = ?NS_VCARD, name = 'vCard', children =
+    #xmlel{ns = ?NS_VCARD, name = 'vCard', children =
       lists:append([X || X <- Elts, X /= none],
 		   [#xmlel{ns = ?NS_VCARD, name = 'N', children = [X || X <- NElts, X /= none]},
                     #xmlel{ns = ?NS_VCARD, name = 'ORG', children = [X || X <- OElts, X /= none]},
 		    #xmlel{ns = ?NS_VCARD, name = 'ADR', children = [X || X <- AElts, X /= none]}])
-     }].
+     }.
 
 ldap_attribute_to_vcard(vCard, {"fn", Value}) ->
     exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'FN'}, Value);
