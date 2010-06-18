@@ -96,7 +96,6 @@
 		pres_i = ?SETS:new(),
 		pres_last, pres_pri,
 		pres_timestamp,
-		pres_invis = false,
 		privacy_list = #userlist{},
 		conn = unknown,
 		auth_module = unknown,
@@ -1416,8 +1415,7 @@ terminate(_Reason, StateName, StateData) ->
 		    case StateData of
 			#state{pres_last = undefined,
 			       pres_a = EmptySet,
-			       pres_i = EmptySet,
-			       pres_invis = false} ->
+			       pres_i = EmptySet} ->
 			    ejabberd_sm:close_session(StateData#state.sid,
                       StateData#state.jid);
 			_ ->
@@ -1577,8 +1575,7 @@ process_presence_probe(From, To, StateData) ->
 	undefined ->
 	    ok;
 	_ ->
-	    Cond1 = (not StateData#state.pres_invis)
-		andalso (?SETS:is_element(LFrom, StateData#state.pres_f)
+	    Cond1 = (?SETS:is_element(LFrom, StateData#state.pres_f)
 			 orelse
 			 ((LFrom /= LBFrom) andalso
 			  ?SETS:is_element(LBFrom, StateData#state.pres_f)))
@@ -1587,9 +1584,6 @@ process_presence_probe(From, To, StateData) ->
 			  orelse
 			  ((LFrom /= LBFrom) andalso
 			   ?SETS:is_element(LBFrom, StateData#state.pres_i)))),
-	    Cond2 = StateData#state.pres_invis
-		andalso ?SETS:is_element(LFrom, StateData#state.pres_f)
-		andalso ?SETS:is_element(LFrom, StateData#state.pres_a),
 	    if
 		Cond1 ->
 		    Timestamp = StateData#state.pres_timestamp,
@@ -1620,9 +1614,6 @@ process_presence_probe(From, To, StateData) ->
 				    ok
 			    end
 		    end;
-		Cond2 ->
-		    Packet = exmpp_presence:available(),
-		    ejabberd_router:route(To, From, Packet);
 		true ->
 		    ok
 	    end
@@ -1647,8 +1638,7 @@ presence_update(From, Packet, StateData) ->
 	    StateData#state{pres_last = undefined,
 			    pres_timestamp = undefined,
 			    pres_a = ?SETS:new(),
-			    pres_i = ?SETS:new(),
-			    pres_invis = false};
+			    pres_i = ?SETS:new()};
 	'error' ->
 	    StateData;
 	'probe' ->
@@ -1679,8 +1669,7 @@ presence_update(From, Packet, StateData) ->
 	    end,
 	    Timestamp = calendar:now_to_universal_time(now()),
 	    update_priority(NewPriority, Packet, StateData),
-	    FromUnavail = (StateData#state.pres_last == undefined) or
-		StateData#state.pres_invis,
+	    FromUnavail = (StateData#state.pres_last == undefined),
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	    NewState =
 		if
@@ -1696,7 +1685,6 @@ presence_update(From, Packet, StateData) ->
 			end,
 			presence_broadcast_first(
 			  From, StateData#state{pres_last = Packet,
-						pres_invis = false,
 						pres_timestamp = Timestamp
 					       }, Packet);
 		    true ->
@@ -1711,7 +1699,6 @@ presence_update(From, Packet, StateData) ->
 				ok
 			end,
 			StateData#state{pres_last = Packet,
-					pres_invis = false,
 					pres_timestamp = Timestamp
 				       }
 		end,
@@ -1824,10 +1811,6 @@ presence_broadcast_first(From, StateData, Packet) ->
     JIDs2Probe = format_and_check_privacy(From, StateData, Packet, JIDsProbe),
     Server = StateData#state.server,
     send_multiple(From, Server, JIDs2Probe, PacketProbe),
-    if
-	StateData#state.pres_invis ->
-	    StateData;
-	true ->
 	    {As, JIDs} = 
 		?SETS:fold(
 		   fun(JID, {A, JID_list}) ->
@@ -1838,8 +1821,7 @@ presence_broadcast_first(From, StateData, Packet) ->
 	    JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs),
 	    Server = StateData#state.server,
 	    send_multiple(From, Server, JIDs2, Packet),
-	    StateData#state{pres_a = As}
-    end.
+	    StateData#state{pres_a = As}.
  
 format_and_check_privacy(From, StateData, Packet, JIDs) ->
     FJIDs = [exmpp_jid:make(JID) || JID <- JIDs],
@@ -1896,8 +1878,7 @@ roster_change(IJID, ISubscription, StateData) ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
 	    From = StateData#state.jid,
 	    To = IJID,
-	    Cond1 = (not StateData#state.pres_invis) and IsFrom
-		and (not OldIsFrom),
+	    Cond1 = IsFrom and (not OldIsFrom),
 	    Cond2 = (not IsFrom) and OldIsFrom
 		and (?SETS:is_element(LIJID, StateData#state.pres_a) or
 		     ?SETS:is_element(LIJID, StateData#state.pres_i)),
