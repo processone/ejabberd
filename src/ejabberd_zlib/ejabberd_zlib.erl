@@ -63,7 +63,7 @@ init([]) ->
 	ok -> ok;
 	{error, already_loaded} -> ok
     end,
-    Port = open_port({spawn, ejabberd_zlib_drv}, [binary]),
+    Port = open_port({spawn, "ejabberd_zlib_drv"}, [binary]),
     {ok, Port}.
 
 
@@ -99,7 +99,7 @@ enable_zlib(SockMod, Socket) ->
 	ok -> ok;
 	{error, already_loaded} -> ok
     end,
-    Port = open_port({spawn, ejabberd_zlib_drv}, [binary]),
+    Port = open_port({spawn, "ejabberd_zlib_drv"}, [binary]),
     {ok, #zlibsock{sockmod = SockMod, socket = Socket, zlibport = Port}}.
 
 disable_zlib(#zlibsock{sockmod = SockMod, socket = Socket, zlibport = Port}) ->
