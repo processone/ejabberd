@@ -1233,7 +1233,7 @@ iq_disco_info_extras2(SenderT, SLimits) ->
 	      %% Report only custom limits
 	      case get_limit_number(Type_of_stanza, Limits) of
 		  {custom, Number} ->
-		      [?RFIELDV(to_string(Type_of_stanza), to_string(Number)) | R];
+		      [?RFIELDV(to_string(Type_of_stanza), list_to_binary(to_string(Number))) | R];
 		  {default, _} -> R
 	      end
       end,
