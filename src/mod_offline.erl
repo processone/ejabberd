@@ -586,7 +586,7 @@ discard_warn_sender(Msgs) ->
     lists:foreach(
       fun(#offline_msg{from=From, to=To, packet=Packet}) ->
 	      ErrText = "Your contact offline message queue is full. The message has been discarded.",
-	      Error = exmpp_stanza:error('resource-constraint',
+	      Error = exmpp_stanza:error(Packet#xmlel.ns, 'resource-constraint',
 		{"en", ErrText}),
 	      Err = exmpp_stanza:reply_with_error(Packet, Error),
 	      ejabberd_router:route(
