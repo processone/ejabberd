@@ -1018,10 +1018,7 @@ get_addr_port(Server) ->
 	{ok, HEnt} ->
 	    ?DEBUG("srv lookup of '~s': ~p~n",
 		   [Server, HEnt#hostent.h_addr_list]),
-	    case HEnt#hostent.h_addr_list of
-		[] ->
-		    [{Server, outgoing_s2s_port()}];
-		AddrList ->
+	    AddrList = HEnt#hostent.h_addr_list,
 		    %% Probabilities are not exactly proportional to weights
 		    %% for simplicity (higher weigths are overvalued)
 		    {A1, A2, A3} = now(),
@@ -1043,7 +1040,6 @@ get_addr_port(Server) ->
 				     end, lists:keysort(1, SortedList)),
 			    ?DEBUG("srv lookup of '~s': ~p~n", [Server, List]),
 			    List
-		    end
 	    end
     end.
 
