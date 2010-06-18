@@ -1402,9 +1402,7 @@ set_form(_From, Host, ["running nodes", ENode, "modules", "start"], _Lang, XData
 			    end;
 			_ ->
 			    {error, 'bad-request'}
-		    end;
-		_ ->
-		    {error, 'bad-request'}
+		    end
 	    end
     end;
 
@@ -1663,17 +1661,15 @@ set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
 set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
-    User = [_|_] = exmpp_jid:prep_node_as_list(JID),
-    Server = exmpp_jid:prep_domain_as_list(JID), 
+    User = [_|_] = exmpp_jid:prep_node(JID),
+    Server = exmpp_jid:prep_domain(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
     %% Code copied from web/ejabberd_web_admin.erl
     %% TODO: Update time format to XEP-0202: Entity Time
     FLast =
-	case ejabberd_sm:get_user_resources(exmpp_jid:prep_node(User), 
-                                       exmpp_jid:prep_domain(Server)) of
+	case ejabberd_sm:get_user_resources(User, Server) of
 	    [] ->
-		_US = {User, Server},
 		case get_last_info(User, Server) of
 		    not_found ->
 			?T(Lang, "Never");
@@ -1715,7 +1711,7 @@ set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
                                     exmpp_jid:prep_domain(JID), 
                                     [], 
                                     [{list_to_binary(User), list_to_binary(Server)}]),
-    Rostersize = integer_to_list(erlang:length(Items)),
+    Rostersize = list_to_binary(integer_to_list(erlang:length(Items))),
 
     {result, [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
 	       [?HFIELD(),
