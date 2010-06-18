@@ -81,7 +81,7 @@ process(_Path, _Request) ->
 			  [#xmlcdata{cdata = <<"400 Bad Request">>}]}}.
 
 get_human_html_xmlel() ->
-    Heading = "ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
+    Heading = list_to_binary("ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION),
     H = #xmlel{name = h1, children = [#xmlcdata{cdata = Heading}]},
     Par1 = #xmlel{name = p, children =
 		  [#xmlcdata{cdata = <<"An implementation of ">>},
