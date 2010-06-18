@@ -82,7 +82,7 @@ unauthenticated_iq_register(_Acc,
  		       BareJID,
  		       IQ_Rec,
 		       Address),
-    exmpp_iq:iq_to_xmlel(ResIQ, BareJID, undefined);
+    exmpp_iq:iq_to_xmlel(ResIQ, BareJID, exmpp_jid:make());
 
 unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
     Acc.
