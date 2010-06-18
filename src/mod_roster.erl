@@ -1421,7 +1421,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 				children = [Item]},
 			      process_iq(
 				UJID, UJID,
-				exmpp_iq:set(?NS_JABBER_CLIENT, Request)),
+				#iq{type = set, ns = ?NS_JABBER_CLIENT, payload = Request}),
 			      throw(submitted);
 			  false ->
 			      ok
