@@ -728,8 +728,6 @@ displayed_to_groups(GroupName, LServer) ->
 	      lists:member(GroupName, proplists:get_value(displayed_groups, Opts, []))
       end, GroupsOpts).
 
-push_item(_User, _Server, _From, none) ->
-    ok;
 push_item(User, Server, From, Item) ->
     %% It was
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
