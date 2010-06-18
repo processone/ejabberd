@@ -760,10 +760,11 @@ in_auto_reply(_,    _,    _)  ->           none.
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
+	LServer = exmpp_stringprep:nameprep(Server),
+	LServerStr = binary_to_list(LServer),
 	Username = ejabberd_odbc:escape(LUser),
         send_unsubscription_to_rosteritems(LUser, LServer),
-	odbc_queries:del_user_roster_t(LServer, Username),
+	odbc_queries:del_user_roster_t(LServerStr, Username),
 	ok
     catch
 	_ ->
@@ -1213,8 +1214,8 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 	      case lists:keysearch(
 		     "validate" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 		  {value, _} ->
-		      {U, S, R} = JID,
-		      JID1 = exmpp_jid:make(U, S, R),
+		      {U, S, Resource} = JID,
+		      JID1 = exmpp_jid:make(U, S, Resource),
 		      out_subscription(
 			User, Server, JID1, subscribed),
 		      UJID = exmpp_jid:make(User, Server),
