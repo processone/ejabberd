@@ -41,7 +41,7 @@
 
 -include("ejabberd.hrl").
 
--record(state, {host}).
+-record(state, {host, client_version}).
 
 -define(PROCNAME, ejabberd_mod_echo).
 
@@ -87,8 +87,9 @@ stop(Host) ->
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts, "echo.@HOST@"),
+    ClientVersion = gen_mod:get_opt(client_version, Opts, false),
     ejabberd_router:register_route(MyHost),
-    {ok, #state{host = MyHost}}.
+    {ok, #state{host = MyHost, client_version = ClientVersion}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -122,7 +123,7 @@ handle_info({route, From, To, Packet}, State) ->
 		undefined -> exmpp_stanza:reply_with_error(Packet, 'bad-request');
 		_ -> Packet
 	end,
-    do_client_version(disabled, To, From), % Put 'enabled' to enable it
+    do_client_version(State#state.client_version, To, From),
     ejabberd_router:route(To, From, Packet2),
     {noreply, State};
 handle_info(_Info, State) ->
@@ -150,9 +151,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% Example of routing XMPP packets using Erlang's message passing
 %%--------------------------------------------------------------------
 
-%% To enable this educational example, edit the function handle_info:
-%% replace the argument 'disabled' with 'enabled' in the call to the
-%% function do_client_version.
+%% To enable this educational example, configure the module option
+%% client_version like this:
+%% {modules, [
+%%   {mod_echo, [{client_version, true}]},
+%%   ...
+%% ]}.
 
 %% ejabberd provides a method to receive XMPP packets using Erlang's 
 %% message passing mechanism. 
@@ -169,9 +173,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% using exactly the same JID. We add a (mostly) random resource to
 %% try to guarantee that the received response matches the request sent.
 %% Finally, the received response is printed in the ejabberd log file.
-do_client_version(disabled, _From, _To) ->
+do_client_version(false, _From, _To) ->
     ok;
-do_client_version(enabled, From, To) ->
+do_client_version(true, From, To) ->
     %% It is important to identify this process and packet
     Random_resource = integer_to_list(random:uniform(100000)),
     From2 = exmpp_jid:full(From,Random_resource),
