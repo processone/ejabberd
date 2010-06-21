@@ -482,8 +482,8 @@ get_dateweek(Date, Lang) ->
 		12 -> ?T("December")
 	    end,
     case Lang of
-	"en" -> io_lib:format("~s, ~s ~w, ~w", [Weekday, Month, D, Y]);
-	"es" -> io_lib:format("~s ~w de ~s de ~w", [Weekday, D, Month, Y]);
+	<<"en">> -> io_lib:format("~s, ~s ~w, ~w", [Weekday, Month, D, Y]);
+	<<"es">> -> io_lib:format("~s ~w de ~s de ~w", [Weekday, D, Month, Y]);
 	_    -> io_lib:format("~s, ~w ~s ~w", [Weekday, D, Month, Y])
     end.
 
