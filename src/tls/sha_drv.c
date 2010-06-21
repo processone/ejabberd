@@ -20,6 +20,7 @@
 
 #include <erl_driver.h>
 #include <openssl/sha.h>
+#include <openssl/md2.h>
 
 static ErlDrvData sha_drv_start(ErlDrvPort port, char *buf)
 {
@@ -35,6 +36,11 @@ static int sha_drv_control(ErlDrvData handle,
   ErlDrvBinary *b = NULL;
 
   switch (command) {
+  case 2:
+    rlen = MD2_DIGEST_LENGTH;
+    b = driver_alloc_binary(rlen);
+    if (b) MD2((unsigned char*)buf, len, (unsigned char*)b->orig_bytes);
+    break;
   case 224:
     rlen = SHA224_DIGEST_LENGTH;
     b = driver_alloc_binary(rlen);
