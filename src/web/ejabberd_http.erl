@@ -350,8 +350,8 @@ process_request(#state{request_method = Method,
 		       socket = Socket} = State)
   when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' orelse Method=:='OPTIONS' ->
     case (catch url_decode_q_split(Path)) of
-	{'EXIT', _} ->
-	    process_request(false);
+	{'EXIT', Error} ->
+	    throw({error_decoding_url, Path, Error});
 	{NPath, Query} ->
 	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Query)) of
@@ -422,8 +422,8 @@ process_request(#state{request_method = Method,
     Data = recv_data(State, Len),
     ?DEBUG("client data: ~p~n", [Data]),
     case (catch url_decode_q_split(Path)) of
-	{'EXIT', _} ->
-	    process_request(false);
+	{'EXIT', Error} ->
+	    throw({error_decoding_url, Path, Error});
 	{NPath, _Query} ->
 	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Data)) of
