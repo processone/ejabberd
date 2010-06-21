@@ -105,7 +105,7 @@ init({SockMod, Socket}, Opts) ->
 	end,
     case SockMod1 of
 	gen_tcp ->
-	    inet:setopts(Socket1, [{packet, http}, {recbuf, 8192}]);
+	    inet:setopts(Socket1, [list, {packet, http}, {recbuf, 8192}]);
 	_ ->
 	    ok
     end,
@@ -473,7 +473,7 @@ recv_data(State, Len, Acc) ->
 	[] ->
 	    case (State#state.sockmod):recv(State#state.socket,   Len, 300000) of
 		{ok, Data} ->
-		    recv_data(State, Len - size(Data), [Acc | Data]);
+		    recv_data(State, Len - length(Data), [Acc | Data]);
 		_ ->
 		    ""
 	    end;
@@ -1010,8 +1010,8 @@ is_space(_) ->
 strip_spaces(String) ->
     strip_spaces(String, both).
 
-strip_spaces(String, left) ->
-    drop_spaces(String);
+%%strip_spaces(String, left) ->
+%%    drop_spaces(String);
 strip_spaces(String, right) ->
     lists:reverse(drop_spaces(lists:reverse(String)));
 strip_spaces(String, both) ->
