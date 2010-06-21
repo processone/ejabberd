@@ -170,7 +170,7 @@ process(_, _Request) ->
 
 %% Code copied from mod_http_bind.erl and customized
 get_human_html_xmlel() ->
-    Heading = "ejabberd " ++ atom_to_list(?MODULE),
+    Heading = list_to_binary("ejabberd " ++ atom_to_list(?MODULE)),
     H = #xmlel{name = h1, children = [#xmlcdata{cdata = Heading}]},
     Par1 = #xmlel{name = p, children =
 		  [#xmlcdata{cdata = <<"An implementation of ">>},
