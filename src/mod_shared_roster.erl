@@ -610,8 +610,9 @@ is_user_in_group({_U, S} = US, Group, Host) ->
 
 
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
-add_user_to_group(Host, US, Group) ->
-    {LUser, LServer} = US,
+add_user_to_group(Host, {undefined, LServer}, Group) ->
+    add_user_to_group(Host, {"", LServer}, Group);
+add_user_to_group(Host, {LUser, LServer} = US, Group) ->
     case re:run(LUser, "^@.+@$", [{capture, none}]) of
 	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
@@ -641,9 +642,10 @@ push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
     DisplayedGroups = proplists:get_value(displayed_groups, GroupOpts, []),
     [push_members_to_user(LUser, LServer, DGroup, Host, Subscription) || DGroup <- DisplayedGroups].
 
-remove_user_from_group(Host, US, Group) ->
+remove_user_from_group(Host, {undefined, LServer}, Group) ->
+    remove_user_from_group(Host, {"", LServer}, Group);
+remove_user_from_group(Host, {LUser, LServer} = US, Group) ->
     GroupHost = {Group, Host},
-    {LUser, LServer} = US,
     case re:run(LUser, "^@.+@$", [{capture, none}]) of
 	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
