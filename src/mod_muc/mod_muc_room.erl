@@ -343,7 +343,7 @@ normal_state({route, From, undefined,
 	      #xmlel{name = 'iq'} = Packet},
 	     StateData) ->
     case exmpp_iq:xmlel_to_iq(Packet) of
-	#iq{type = Type, ns = XMLNS, lang = Lang, payload = SubEl} = IQ when
+	#iq{kind = request, type = Type, ns = XMLNS, lang = Lang, payload = SubEl} = IQ when
 	      (XMLNS == ?NS_MUC_ADMIN) or
 	      (XMLNS == ?NS_MUC_OWNER) or
 	      (XMLNS == ?NS_DISCO_INFO) or
@@ -381,7 +381,7 @@ normal_state({route, From, undefined,
 		_ ->
 		    {next_state, normal_state, NewStateData}
 	    end;
-	reply ->
+	#iq{kind = response} ->
 	    {next_state, normal_state, StateData};
 	_ ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'feature-not-implemented'),
@@ -1592,7 +1592,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		       StateData#state.server_host,
 		       mod_muc, max_user_conferences, 10),
     case {(ServiceAffiliation == owner orelse
-	   MaxUsers == none orelse
+	   MaxUsers < 0 orelse
 	   ((Affiliation == admin orelse Affiliation == owner) andalso
 	    NUsers < MaxAdminUsers) orelse
 	   NUsers < MaxUsers) andalso
