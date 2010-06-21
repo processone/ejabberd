@@ -1046,12 +1046,7 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 		    BOSH_attribs =
 			[#xmlattr{name = 'authid', value = list_to_binary(AuthID)},
 			 #xmlattr{name = 'xmlns:stream', value = ?NS_XMPP_b}] ++
-			case OutEls of
-			    [] ->
-				prepare_response(Sess, Rid, OutPacket, true);
-			    _ ->
-				[#xmlattr{name = 'version', ns = ?NS_BOSH_s, value = list_to_binary(Version)}]
-			end,
+		    [#xmlattr{name = 'version', ns = ?NS_BOSH_s, value = list_to_binary(Version)}],
 		    MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 		    MaxPause = get_max_pause(To),
 		    {200, ?HEADER,
@@ -1284,8 +1279,6 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
 	    end;
   [#xmlel{}] ->
 %	{xmlelement, _Name, _Attrs, _Els} ->
-	    {error, bad_request};
-	{error, _} ->
 	    {error, bad_request}
     end.
 
