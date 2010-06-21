@@ -74,9 +74,7 @@
 -define(BAD_REQUEST, [?CT, {"Set-Cookie", "ID=-3:0; expires=-1"}]).
 
 -define(PARSER_OPTIONS, [
-  {namespace, true},
-  {name_as_atom, true},
-  {autoload_known, true}
+  {names_as_atom, true}
 ]).
 
 %%%----------------------------------------------------------------------
