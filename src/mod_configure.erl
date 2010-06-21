@@ -1661,7 +1661,7 @@ set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
 set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = exmpp_jid:parse(AccountString),
-    User = [_|_] = exmpp_jid:prep_node(JID),
+    User = exmpp_jid:prep_node(JID),
     Server = exmpp_jid:prep_domain(JID), 
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
