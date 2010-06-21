@@ -6,9 +6,9 @@ EFLAGS = -I .. -pz ..
 OUTDIR = ..
 BEAMS = ..\tls.beam
 
-SOURCE = tls_drv.c
-OBJECT = tls_drv.o
-DLL    = $(OUTDIR)\tls_drv.dll
+SOURCE = tls_drv.c sha_drv.c
+OBJECT = tls_drv.o sha_drv.o
+DLL    = $(OUTDIR)\tls_drv.dll $(OUTPUT)\sha_drv.dll
 
 ALL : $(DLL) $(BEAMS)
 
@@ -16,6 +16,8 @@ CLEAN :
 	-@erase $(DLL)
 	-@erase $(OUTDIR)\tls_drv.exp
 	-@erase $(OUTDIR)\tls_drv.lib
+	-@erase $(OUTDIR)\sha_drv.exp
+	-@erase $(OUTDIR)\sha_drv.lib
 	-@erase $(OBJECT)
 	-@erase $(BEAMS)
 

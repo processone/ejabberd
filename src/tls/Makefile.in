@@ -29,7 +29,7 @@ ifdef debug
 	EFLAGS+=+debug_info +export_all
 endif
 
-ERLSHLIBS = ../tls_drv.so
+ERLSHLIBS = ../tls_drv.so ../sha_drv.so
 OUTDIR = ..
 SOURCES = $(wildcard *.erl)
 BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
