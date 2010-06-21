@@ -27,7 +27,8 @@
 -module(sha).
 -author('alexey@process-one.net').
 
--export([start/0, sha/1, sha1/1, sha224/1, sha256/1, sha384/1, sha512/1]).
+-export([start/0, sha/1, sha1/1, sha224/1, sha256/1, sha384/1,
+	 sha512/1, md2/1]).
 
 -include("ejabberd.hrl").
 
@@ -78,6 +79,9 @@ sha384(Text) ->
 
 sha512(Text) ->
     erlang:port_control(?DRIVER, 512, Text).
+
+md2(Text) ->
+    erlang:port_control(?DRIVER, 2, Text).
 
 driver_path() ->
     Suffix = case os:type() of
