@@ -438,10 +438,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				   			 From,
 							  exmpp_iq:iq_to_xmlel(Res));
 				#iq{} = IQ ->
-                    Err = exmpp_iq:error(IQ,'feature-not-implemented'),
-				    ejabberd_router:route(To, From, Err);
-				_ ->
-				    ok
+				    Err = exmpp_iq:error(IQ,'feature-not-implemented'),
+				    ejabberd_router:route(To, From, Err)
 			    end;
 			'message' ->
 			    case exmpp_xml:get_attribute_as_list(Packet,type, "chat") of
@@ -762,13 +760,13 @@ iq_get_register_info(Host, From, Lang)  ->
     Registered ++
     [#xmlel{name = 'instructions' ,
         children = [#xmlcdata{cdata = 
-              	    translate:translate(Lang,
-	            "You need an x:data capable client to register nickname")}]},
+              	    list_to_binary(translate:translate(Lang,
+	            "You need an x:data capable client to register nickname"))}]},
     #xmlel{ns = ?NS_DATA_FORMS, name = 'x',
         children = [
             #xmlel{ns = ?NS_DATA_FORMS, name = 'title',
                         children = [#xmlcdata{cdata = 
-	       [translate:translate(Lang, "Nickname Registration at "), Host]}]},
+	       list_to_binary(translate:translate(Lang, "Nickname Registration at ") ++ Host)}]},
            #xmlel{ns = ?NS_DATA_FORMS, name = 'instructions',
                  children = [#xmlcdata{cdata = 
 	       translate:translate(Lang, "Enter nickname you want to register")}]},
@@ -865,15 +863,15 @@ iq_get_vcard(Lang) ->
         [#xmlel{ns = ?NS_VCARD, name = 'FN',
             children = [#xmlcdata{cdata = <<"ejabberd/mod_muc">>}]},
          #xmlel{ns = ?NS_VCARD, name = 'URL',
-            children = [#xmlcdata{cdata = ?EJABBERD_URI}]},
+            children = [#xmlcdata{cdata = list_to_binary(?EJABBERD_URI)}]},
          #xmlel{ns = ?NS_VCARD, name = 'DESC',
             children = [#xmlcdata{cdata = 
-                    translate:translate(Lang, "ejabberd MUC module") ++
-                	  "\nCopyright (c) 2003-2010 Alexey Shchepin"}]}]}.
+                    list_to_binary(translate:translate(Lang, "ejabberd MUC module") ++
+                	  "\nCopyright (c) 2003-2010 Alexey Shchepin")}]}]}.
 
 iq_get_unique_el(From) ->
     #xmlel{ns = ?NS_MUC_UNIQUE, name = 'unique',
-            children = [#xmlcdata{cdata = iq_get_unique_name(From)}]}.
+            children = [#xmlcdata{cdata = list_to_binary(iq_get_unique_name(From))}]}.
 
 %% @doc Get a pseudo unique Room Name. The Room Name is generated as a hash of 
 %%      the requester JID, the local time and a random salt.
