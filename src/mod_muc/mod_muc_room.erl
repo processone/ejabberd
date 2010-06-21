@@ -764,9 +764,9 @@ terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("Stopping MUC room ~s@~s",
 	      [StateData#state.room, StateData#state.host]),
     ReasonT = case Reason of
-		  shutdown -> "You are being removed from the room because"
-				  " of a system shutdown";
-		  _ -> "Room terminates"
+		  shutdown -> <<"You are being removed from the room because"
+				  " of a system shutdown">>;
+		  _ -> <<"Room terminates">>
 	      end,
     ReasonEl = #xmlel{name = 'reason', children = [#xmlcdata{cdata = ReasonT}]},
     ItemAttrs = [?XMLATTR('affiliation', <<"none">>),
@@ -2959,8 +2959,8 @@ is_password_settings_correct(XEl, StateData) ->
 -define(BOOLXFIELD(Label, Var, Val),
 	?XFIELD("boolean", Label, Var,
 		case Val of
-		    true -> "1";
-		    _ -> "0"
+		    true -> <<"1">>;
+		    _ -> <<"0">>
 		end)).
 
 -define(STRINGXFIELD(Label, Var, Val),
@@ -2988,8 +2988,8 @@ get_config(Lang, StateData, From) ->
 	end,
     Res =
 	[#xmlel{name = 'title', children = [ #xmlcdata{cdata =
-	        io_lib:format(translate:translate(Lang, "Configuration of room ~s"),
-		    [exmpp_jid:to_list(StateData#state.jid)])
+	        list_to_binary(io_lib:format(translate:translate(Lang, "Configuration of room ~s"),
+		    [exmpp_jid:to_list(StateData#state.jid)]))
          }]},
     #xmlel{name = 'field', attrs = [?XMLATTR('type', <<"hidden">>),
                                   ?XMLATTR('var', <<"FORM_TYPE">>)],
@@ -3033,7 +3033,7 @@ get_config(Lang, StateData, From) ->
                 ?XMLATTR('var', <<"muc#roomconfig_maxusers">>)],
             children = [#xmlel{name = 'value',
                                children = [#xmlcdata{cdata = 
-                                MaxUsersRoomString}]}] ++
+                                list_to_binary(MaxUsersRoomString)}]}] ++
 	  if
 	      is_integer(ServiceMaxUsers) -> [];
 	      true ->
@@ -3044,7 +3044,7 @@ get_config(Lang, StateData, From) ->
 	  end ++
       [#xmlel{name = 'option', attrs = [?XMLATTR('label', N)],
               children = [#xmlel{name = 'value', children = [
-                #xmlcdata{cdata = erlang:integer_to_list(N)}]}]} ||
+                #xmlcdata{cdata = list_to_binary(erlang:integer_to_list(N))}]}]} ||
               N <- lists:usort([ServiceMaxUsers, DefaultRoomMaxUsers, MaxUsersRoomInteger |
                                ?MAX_USERS_DEFAULT_LIST]), N =< ServiceMaxUsers]}, 
     #xmlel{name = 'field', attrs = [
@@ -3425,14 +3425,14 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
     #xmlel{name = 'field', attrs = [?XMLATTR('type', Type),
                                     ?XMLATTR('var', Var)],
            children = [#xmlel{name = 'value', 
-                             children = [#xmlcdata{cdata = Val}]}]}).
+                             children = [#xmlcdata{cdata = list_to_binary(Val)}]}]}).
 
 -define(RFIELD(Label, Var, Val),
     #xmlel{name = 'field', attrs = [?XMLATTR('label',
                                         translate:translate(Lang, Label)),
                                     ?XMLATTR('var', Var)],
             children = [#xmlel{name = 'value', children = [
-                            #xmlcdata{cdata = Val}]}]}).
+                            #xmlcdata{cdata = list_to_binary(Val)}]}]}).
 
 iq_disco_info_extras(Lang, StateData) ->
     Len = length(?DICT:to_list(StateData#state.users)),
