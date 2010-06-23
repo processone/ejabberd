@@ -630,21 +630,9 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
-    case (StateData#state.config)#config.public_list of
-	true ->
-	    Reply = get_roomdesc_reply(StateData,
-				       get_roomdesc_tail(StateData, Lang)),
-	    {reply, Reply, StateName, StateData};
-	_ ->
-	    case is_occupant_or_admin(JID, StateData) of
-		true ->
-		    Reply = get_roomdesc_reply(StateData, get_roomdesc_tail(
-							    StateData, Lang)),
-		    {reply, Reply, StateName, StateData};
-		_ ->
-		    {reply, false, StateName, StateData}
-	    end
-    end;
+    Reply = get_roomdesc_reply(JID, StateData,
+			       get_roomdesc_tail(StateData, Lang)),
+    {reply, Reply, StateName, StateData};
 handle_sync_event(get_config, _From, StateName, StateData) ->
     {reply, {ok, StateData#state.config}, StateName, StateData};
 handle_sync_event(get_state, _From, StateName, StateData) ->
@@ -3483,11 +3471,15 @@ get_title(StateData) ->
 	    Name
     end.
 
-get_roomdesc_reply(StateData, Tail) ->
-    case ((StateData#state.config)#config.public == true) of
-	true ->
-	    {item, get_title(StateData) ++ Tail};
-	_ ->
+get_roomdesc_reply(JID, StateData, Tail) ->
+    IsOccupantOrAdmin = is_occupant_or_admin(JID, StateData),
+    if (StateData#state.config)#config.public or IsOccupantOrAdmin ->
+	    if (StateData#state.config)#config.public_list or IsOccupantOrAdmin ->
+		    {item, get_title(StateData) ++ Tail};
+	       true ->
+		    {item, get_title(StateData)}
+	    end;
+       true ->
 	    false
     end.
 
