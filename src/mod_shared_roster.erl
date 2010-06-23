@@ -575,6 +575,7 @@ get_special_displayed_groups(GroupsOpts) ->
 %% Given a username and server, and a list of group names with options,
 %% for the list of groups of that server that user is member
 %% get the list of groups displayed
+%% @spec (LUser::string(), LServer::string(), GroupOpts::[{GroupName::string(), [Opts]]) -> [{GroupName::string(), Opts}]
 get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
     Groups = case catch mnesia:dirty_read(sr_user, {LUser, LServer}) of
 		 Rs when is_list(Rs) ->
@@ -694,10 +695,12 @@ push_user_to_members(User, Server, Subscription) ->
 	LServer = exmpp_stringprep:nameprep(Server),
 	GroupsOpts = groups_with_opts(LServer),
 	SpecialGroups = get_special_displayed_groups(GroupsOpts),
-	UserGroups = get_user_displayed_groups(LUser, LServer, GroupsOpts),
+	LUserS = binary_to_list(LUser),
+	LServerS = binary_to_list(LServer),
+	UserGroups = get_user_displayed_groups(LUserS, LServerS, GroupsOpts),
 	lists:foreach(
 	  fun(Group) ->
-		  remove_user_from_group(LServer, {LUser, LServer}, Group),
+		  remove_user_from_group(LServerS, {LUserS, LServerS}, Group),
 		  GroupOpts = proplists:get_value(Group, GroupsOpts, []),
 		  GroupName = proplists:get_value(name, GroupOpts, Group),
 		  lists:foreach(
@@ -751,7 +754,7 @@ push_item(User, Server, From, Item) ->
       fun(Resource) ->
 	      JID = exmpp_jid:make(User, Server, Resource),
 	      ejabberd_router:route(JID, JID, Stanza)
-      end, ejabberd_sm:get_user_resources(User, Server)).
+      end, ejabberd_sm:get_user_resources(list_to_binary(User), list_to_binary(Server))).
 
 push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
     Item = #roster{usj = {User, Server, {ContactU, ContactS, ""}},
