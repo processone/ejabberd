@@ -655,6 +655,7 @@ push_user_to_members(User, Server, Subscription) ->
     UserGroups = get_user_displayed_groups(LUser, LServer, GroupsOpts),
     lists:foreach(
       fun(Group) ->
+	      remove_user_from_group(LServer, {LUser, LServer}, Group),
 	      GroupOpts = proplists:get_value(Group, GroupsOpts, []),
 	      GroupName = proplists:get_value(name, GroupOpts, Group),
 	      lists:foreach(
