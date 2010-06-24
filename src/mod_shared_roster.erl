@@ -575,7 +575,7 @@ get_special_displayed_groups(GroupsOpts) ->
 %% Given a username and server, and a list of group names with options,
 %% for the list of groups of that server that user is member
 %% get the list of groups displayed
-%% @spec (LUser::string(), LServer::string(), GroupOpts::[{GroupName::string(), [Opts]]) -> [{GroupName::string(), Opts}]
+%% @spec (LUser::string(), LServer::string(), GroupOpts::[{GroupName::string(), [Opt]}]) -> [{GroupName::string(), [Opt]}]
 get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
     Groups = case catch mnesia:dirty_read(sr_user, {LUser, LServer}) of
 		 Rs when is_list(Rs) ->
