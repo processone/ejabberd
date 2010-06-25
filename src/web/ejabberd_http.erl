@@ -87,9 +87,10 @@ start_link(SockData, Opts) ->
 
 init({SockMod, Socket}, Opts) ->
     TLSEnabled = lists:member(tls, Opts),
-    TLSOpts = lists:filter(fun({certfile, _}) -> true;
+    TLSOpts1 = lists:filter(fun({certfile, _}) -> true;
 			      (_) -> false
 			   end, Opts),
+    TLSOpts = [verify_none | TLSOpts1],
     {SockMod1, Socket1} =
 	if
 	    TLSEnabled ->
