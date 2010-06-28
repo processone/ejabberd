@@ -514,6 +514,9 @@ get_group_users(Host, Group) ->
 	    []
     end ++ get_group_explicit_users(Host, Group).
 
+%% @spec(User::any(), Host::string(), Group::string(), GroupOpts) -> [{Username::binary(), Server::binary()}]
+get_group_users(User, HostB, Group, GroupOpts) when is_binary(HostB) ->
+    get_group_users(User, binary_to_list(HostB), Group, GroupOpts);
 get_group_users(_User, Host, Group, GroupOpts) ->
     case proplists:get_value(all_users, GroupOpts, false) of
 	true ->
