@@ -61,7 +61,7 @@
              name = 'value',
              children = [Value]
            }
-         ]}.
+         ]}).
 
 -define(CAPTCHA_TEXT(Lang), translate:translate(Lang, "Enter the text you see")).
 -define(CAPTCHA_LIFETIME, 120000). % two minutes
