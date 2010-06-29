@@ -119,7 +119,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			   [User, Server, UserListRecord,
 			    {From, To,
 			     {xmlelement, "presence", [], []}},
-			    out]) of
+			    in]) of
 			allow ->
 			    get_last(IQ, SubEl, User, Server);
 			deny ->
