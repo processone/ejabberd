@@ -119,7 +119,7 @@ process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
 		   [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), UserListRecord,
 		    {From, To,
 		     exmpp_presence:available()},
-		    out]) of
+		    in]) of
 		allow ->
 		    get_last(IQ_Rec, exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To));
 		deny ->
