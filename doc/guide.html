@@ -346,7 +346,7 @@ GNU Make
 </LI><LI CLASS="li-itemize">GCC
 </LI><LI CLASS="li-itemize">Libexpat 1.95 or higher
 </LI><LI CLASS="li-itemize">Erlang/OTP R10B-9 or higher. The recommended versions are R12B-5 and R13B04.
-</LI><LI CLASS="li-itemize">OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption.
+</LI><LI CLASS="li-itemize">OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
 </LI><LI CLASS="li-itemize">Zlib 1.2.3 or higher, for Stream Compression support (<A HREF="http://xmpp.org/extensions/xep-0138.html">XEP-0138</A>). Optional.
 </LI><LI CLASS="li-itemize">Erlang mysql library. Optional. For MySQL authentication or storage. See section <A HREF="#compilemysql">3.2.1</A>.
 </LI><LI CLASS="li-itemize">Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section <A HREF="#compilepgsql">3.2.3</A>.
@@ -390,7 +390,9 @@ To get the full list run the command:
 	Enable the use of XML based optimisations.
 	It will for example use CDATA to escape characters in the XMPP stream.
 	Use this option only if you are sure your XMPP clients include a fully compliant XML parser.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--disable-transient-supervisors</TT></B></DT><DD CLASS="dd-description">
-	Disable the use of Erlang/OTP supervision for transient processes.
+	Disable the use of Erlang/OTP supervision for transient processes.<P>	</P></DD><DT CLASS="dt-description"><B><TT>--enable-nif</TT></B></DT><DD CLASS="dd-description">
+Replaces some critical Erlang functions with equivalents written in C to improve performance.
+This feature requires Erlang/OTP R13B04 or higher.
 </DD></DL><P> <A NAME="install"></A> </P><!--TOC subsection Install-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc12">2.4.4</A>&#XA0;&#XA0;<A HREF="#install">Install</A></H3><!--SEC END --><P> <A NAME="install"></A> 
 </P><P>To install <TT>ejabberd</TT> in the destination directories, run the command:
