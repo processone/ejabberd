@@ -453,7 +453,7 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
 	[] ->
 	    Acc;
 	Nodes ->
-	    SBJID = jlib:short_prepd_bare_jid(To),
+	    SBJID = exmpp_jid:to_binary(exmpp_jid:bare(To)),
 	    Items = case Acc of
 			{result, I} -> I;
 			_ -> []
@@ -461,7 +461,7 @@ disco_sm_items(Acc, From, To, <<>>, _Lang) ->
 	    NodeItems = lists:map(
 			  fun(#pubsub_node{nodeid = {_, Node}}) ->
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [?XMLATTR('jid', exmpp_jid:to_binary(SBJID)) | nodeAttr(Node)]}
+				   [?XMLATTR('jid', SBJID) | nodeAttr(Node)]}
 			  end, Nodes),
 	    {result, NodeItems ++ Items}
     end;
@@ -471,7 +471,7 @@ disco_sm_items(Acc, From, To, NodeB, _Lang) ->
     Node = string_to_node(SNode),
     %% TODO, use iq_disco_items(Host, Node, From)
     Host = exmpp_jid:prep_domain_as_list(To),
-    LJID = jlib:short_prepd_bare_jid(To),
+    SBJID = exmpp_jid:to_binary(exmpp_jid:bare(To)),
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
 	% TODO call get_items/6 instead for access control (EJAB-1033)
 	case node_call(Type, get_items, [NodeId, From]) of
@@ -486,7 +486,7 @@ disco_sm_items(Acc, From, To, NodeB, _Lang) ->
 			  fun(#pubsub_item{itemid = {Id, _}}) ->
 				  {result, Name} = node_call(Type, get_item_name, [Host, Node, Id]),
 				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [?XMLATTR('jid', exmpp_jid:to_binary(LJID)),
+				   [?XMLATTR('jid', SBJID),
 				    ?XMLATTR('name', Name)]}
 			  end, AllItems),
 		{result, NodeItems ++ Items};
@@ -805,9 +805,7 @@ do_route(ServerHost, Access, Plugins, Host, From, To, Packet) ->
 			#iq{} ->
 			    Err = exmpp_iq:error(Packet,
 			      'feature-not-implemented'),
-			    ejabberd_router:route(To, From, Err);
-			_ ->
-			    ok
+			    ejabberd_router:route(To, From, Err)
 		    end;
 		'message' ->
 		    case exmpp_stanza:is_stanza_error(Packet) of
@@ -1349,7 +1347,7 @@ send_pending_auth_events(Host, Node, Owner) ->
 %%% authorization handling
 
 send_authorization_request(#pubsub_node{nodeid = {Host, Node}, type = Type, id = NodeId}, Subscriber) ->
-    Lang = "en", %% TODO fix
+    Lang = <<"en">>, %% TODO fix
     {U, S, R} = Subscriber,
     Stanza = #xmlel{ns = ?NS_JABBER_CLIENT, name = 'message', children =
 	      [#xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
@@ -1364,7 +1362,7 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node}, type = Type, id =
 		  [?XMLATTR('var', <<"pubsub#node">>), ?XMLATTR('type', <<"text-single">>),
 		   ?XMLATTR('label', translate:translate(Lang, "Node ID"))], children =
 		  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
-		    [#xmlcdata{cdata = node_to_string(Node)}]}]},
+		    [#xmlcdata{cdata = Node}]}]},
 		 #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs = [?XMLATTR('var', <<"pubsub#subscriber_jid">>),
 					?XMLATTR('type', <<"jid-single">>),
 					?XMLATTR('label', translate:translate(Lang, "Subscriber Address"))], children =
@@ -1391,7 +1389,7 @@ find_authorization_response(Packet) ->
 			       end;
 			  (_) ->
 			       none
-		       end, exmpp_xml:remove_cdata(Els)),
+		       end, exmpp_xml:remove_cdata_from_list(Els)),
     XData = lists:filter(fun(E) -> E /= none end, XData1),
     case XData of
 	[invalid] -> invalid;
@@ -1456,11 +1454,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 		     exmpp_stanza:reply_with_error(Packet, Error));
 		{result, _} ->
 		    %% XXX: notify about subscription state change, section 12.11
-		    ok;
-		_ ->
-		    ejabberd_router:route(
-		      To, From,
-		      exmpp_stanza:reply_with_error(Packet, 'internal-server-error'))
+		    ok
 	    end;
 	_ ->
 	    ejabberd_router:route(
@@ -1771,7 +1765,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 						Subscriber, AllowedGroups);
 			    _ ->
 				case Subscriber of
-				    {"", "", ""} ->
+				    {undefined, undefined, undefined} ->
 					{false, false};
 				    _ ->
 					case node_owners_call(Type, NodeId) of
@@ -3759,8 +3753,8 @@ odbc_conn(Host) ->
     lists:dropwhile(fun(A) -> A/=$. end, Host) -- ".".
 
 %% escape value for database storage
-escape({U, H, R}=JID)->
-    ejabberd_odbc:escape(exmpp_jid:to_list(U, H, R));
+escape({_U, _H, _R}=JID)->
+    ejabberd_odbc:escape(exmpp_jid:to_list(JID));
 escape(Value)->
     ejabberd_odbc:escape(Value).
 %%%% helpers

@@ -126,7 +126,7 @@ set_subscription(JID, NodeID, SubID, Options) ->
     end.
 
 get_options_xform(Lang, Options) ->
-    Keys = [deliver, show_values, subscription_type, subscription_depth],
+    Keys = [deliver, digest, digest_frequency, expire, include_body, show_values, subscription_type, subscription_depth],
     XFields = [get_option_xfield(Lang, Key, Options) || Key <- Keys],
 
      {result, #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
