@@ -95,7 +95,7 @@ esac],[full_xml=false])
 AC_SUBST(full_xml)
 
 AC_ARG_ENABLE(nif,
-[AC_HELP_STRING([--enable-nif], [replace some functions with C equivalents. You should have Erlang R13B04 or higher (default: no)])],
+[AC_HELP_STRING([--enable-nif], [replace some functions with C equivalents. Requires Erlang R13B04 or higher (default: no)])],
 [case "${enableval}" in
   yes) nif=true ;;
   no)  nif=false ;;
