@@ -4363,7 +4363,7 @@ if test "${enable_transient_supervisors+set}" = set; then :
   enableval=$enable_transient_supervisors; case "${enableval}" in
   yes) transient_supervisors=true ;;
   no)  transient_supervisors=false ;;
-  *) as_fn_error "bad value ${enableval} for --enable-full-xml" "$LINENO" 5 ;;
+  *) as_fn_error "bad value ${enableval} for --enable-transient_supervisors" "$LINENO" 5 ;;
 esac
 else
   transient_supervisors=true
