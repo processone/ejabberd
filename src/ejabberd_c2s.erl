@@ -627,7 +627,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    Socket = StateData#state.socket,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  xml:element_to_string(
+			  xml:element_to_binary(
 			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
 	    fsm_next_state(wait_for_stream,
 			   StateData#state{socket = TLSSocket,
@@ -650,7 +650,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    Socket = StateData#state.socket,
 			    ZlibSocket = (StateData#state.sockmod):compress(
 					   Socket,
-					   xml:element_to_string(
+					   xml:element_to_binary(
 					     {xmlelement, "compressed",
 					      [{"xmlns", ?NS_COMPRESS}], []})),
 			    fsm_next_state(wait_for_stream,
@@ -1453,14 +1453,14 @@ change_shaper(StateData, JID) ->
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
-    ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
+    ?DEBUG("Send XML on stream = ~p", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) when StateData#state.xml_socket ->
     (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 send_header(StateData, Server, Version, Lang)
   when StateData#state.xml_socket ->

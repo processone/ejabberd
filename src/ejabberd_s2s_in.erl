@@ -263,7 +263,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    TLSOpts = StateData#state.tls_options,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  xml:element_to_string(
+			  xml:element_to_binary(
 			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
@@ -618,7 +618,7 @@ send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 
 change_shaper(StateData, Host, JID) ->

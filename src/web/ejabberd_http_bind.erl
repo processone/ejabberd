@@ -790,7 +790,7 @@ handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
 	    ?DEBUG("Trafic Shaper: Delaying request ~p", [Rid]),
 	    timer:sleep(Pause),
             %{200, ?HEADER,
-            % xml:element_to_string(
+            % xml:element_to_binary(
             %   {xmlelement, "body",
             %    [{"xmlns", ?NS_HTTP_BIND},
             %     {"type", "error"}], []})};
@@ -827,21 +827,21 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
     case Reason of
         not_exists ->
             {200, ?HEADER,
-             xml:element_to_string(
+             xml:element_to_binary(
                {xmlelement, "body",
                 [{"xmlns", ?NS_HTTP_BIND},
                  {"type", "terminate"},
                  {"condition", "item-not-found"}], []})};
         bad_key ->
             {200, ?HEADER,
-             xml:element_to_string(
+             xml:element_to_binary(
                {xmlelement, "body",
                 [{"xmlns", ?NS_HTTP_BIND},
                  {"type", "terminate"},
                  {"condition", "item-not-found"}], []})};
         polling_too_frequently ->
             {200, ?HEADER,
-             xml:element_to_string(
+             xml:element_to_binary(
                {xmlelement, "body",
                 [{"xmlns", ?NS_HTTP_BIND},
                  {"type", "terminate"},
@@ -986,7 +986,7 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 		    MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 		    MaxPause = get_max_pause(To),
 		    {200, ?HEADER,
-		     xml:element_to_string(
+		     xml:element_to_binary(
 		       {xmlelement,"body",
 			[{"xmlns",
 			  ?NS_HTTP_BIND},
@@ -1041,7 +1041,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 		true ->
 		    TypedEls = [check_default_xmlns(OEl) ||
 				   {xmlstreamelement, OEl} <- OutPacket],
-		    Body = xml:element_to_string(
+		    Body = xml:element_to_binary(
 			     {xmlelement,"body",
 			      [{"xmlns",
 				?NS_HTTP_BIND}],
@@ -1075,7 +1075,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 						StreamTail]
 				end,
                             {200, ?HEADER,
-                             xml:element_to_string(
+                             xml:element_to_binary(
                                {xmlelement,"body",
                                 [{"xmlns",
                                   ?NS_HTTP_BIND}],
@@ -1191,7 +1191,7 @@ set_inactivity_timer(_Pause, MaxInactivity) ->
 elements_to_string([]) ->
     [];
 elements_to_string([El | Els]) ->
-    xml:element_to_string(El) ++ elements_to_string(Els).
+    [xml:element_to_binary(El)|elements_to_string(Els)].
 
 %% @spec (To, Default::integer()) -> integer()
 %% where To = [] | {Host::string(), Version::string()}

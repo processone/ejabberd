@@ -162,7 +162,7 @@ normal_state({route, From, "",
 			trunc(gen_mod:get_module_opt(
 				StateData#state.server_host,
 				mod_muc, min_message_interval, 0) * 1000000),
-		    Size = iolist_size(xml:element_to_string(Packet)),
+		    Size = element_size(Packet),
 		    {MessageShaper, MessageShaperInterval} =
 			shaper:update(Activity#activity.message_shaper, Size),
 		    if
@@ -1394,7 +1394,7 @@ prepare_room_queue(StateData) ->
 	{{value, {message, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    Packet = Activity#activity.message,
-	    Size = iolist_size(xml:element_to_string(Packet)),
+	    Size = element_size(Packet),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1405,7 +1405,7 @@ prepare_room_queue(StateData) ->
 	{{value, {presence, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    {_Nick, Packet} = Activity#activity.presence,
-	    Size = iolist_size(xml:element_to_string(Packet)),
+	    Size = element_size(Packet),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -2068,7 +2068,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		StateData#state.jid,
 		TSPacket),
-    Size = iolist_size(xml:element_to_string(SPacket)),
+    Size = element_size(SPacket),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),
@@ -3582,3 +3582,6 @@ tab_count_user(JID) ->
 	_ ->
 	    0
     end.
+
+element_size(El) ->
+    size(xml:element_to_binary(El)).

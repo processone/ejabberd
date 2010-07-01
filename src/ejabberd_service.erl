@@ -347,7 +347,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						jlib:jid_to_string(To),
 						Attrs),
-	    Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
+	    Text = xml:element_to_binary({xmlelement, Name, Attrs2, Els}),
 	    send_text(StateData, Text);
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
@@ -391,7 +391,7 @@ send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 new_id() ->
     randoms:get_string().

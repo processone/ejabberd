@@ -37,7 +37,10 @@
 	 get_subtag/2, get_subtag_cdata/2,
 	 append_subtags/2,
 	 get_path_s/2,
+	 start/0,
 	 replace_tag_attr/3]).
+
+-include("ejabberd.hrl").
 
 %% Select at compile time how to escape characters in binary text
 %% nodes.
@@ -46,6 +49,22 @@
 -define(ESCAPE_BINARY(CData), make_text_node(CData)).
 -else.
 -define(ESCAPE_BINARY(CData), crypt(CData)).
+-endif.
+
+%% Replace element_to_binary/1 with NIF
+%% Can be choosen with ./configure --enable-nif
+-ifdef(NIF).
+start() ->
+    SOPath = filename:join(ejabberd:get_so_path(), "xml"),
+    case catch erlang:load_nif(SOPath, 0) of
+	ok ->
+	    ok;
+	Err ->
+	    ?WARNING_MSG("unable to load xml NIF: ~p", [Err])
+    end.
+-else.
+start() ->
+    ok.
 -endif.
 
 element_to_binary(El) ->

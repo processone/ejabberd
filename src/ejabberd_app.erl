@@ -46,6 +46,7 @@ start(normal, _Args) ->
     db_init(),
     sha:start(),
     stringprep_sup:start_link(),
+    xml:start(),
     start(),
     translate:start(),
     acl:start(),

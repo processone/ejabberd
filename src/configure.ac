@@ -94,6 +94,15 @@ AC_ARG_ENABLE(full_xml,
 esac],[full_xml=false])
 AC_SUBST(full_xml)
 
+AC_ARG_ENABLE(nif,
+[AC_HELP_STRING([--enable-nif], [replace some functions with C equivalents. You should have Erlang R13B04 or higher (default: no)])],
+[case "${enableval}" in
+  yes) nif=true ;;
+  no)  nif=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-nif) ;;
+esac],[nif=false])
+AC_SUBST(nif)
+
 AC_CONFIG_FILES([Makefile
                  $make_mod_irc
                  $make_mod_muc
