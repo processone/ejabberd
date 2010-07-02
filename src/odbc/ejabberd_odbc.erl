@@ -179,6 +179,7 @@ init([Host, StartInterval]) ->
     end,
     [DBType | _] = db_opts(Host),
     ?GEN_FSM:send_event(self(), connect),
+    ejabberd_odbc_sup:add_pid(Host, self()),
     {ok, connecting, #state{db_type = DBType,
 			    host = Host,
 			    max_pending_requests_len = max_fsm_queue(),
@@ -275,6 +276,7 @@ handle_info(Info, StateName, State) ->
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, State) ->
+    ejabberd_odbc_sup:remove_pid(State#state.host, self()),
     case State#state.db_type of
 	mysql ->
 	    %% old versions of mysql driver don't have the stop function
