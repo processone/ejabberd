@@ -3145,12 +3145,15 @@ set_config(XEl, StateData) ->
 	    end
     end.
 
+-define(SET_BOOL_XOPT_FALSE(Opt), set_xoption(Opts, Config#config{Opt = false})).
+-define(SET_BOOL_XOPT_TRUE (Opt), set_xoption(Opts, Config#config{Opt = true})).
+
 -define(SET_BOOL_XOPT(Opt, Val),
 	case Val of
-	    "0" -> set_xoption(Opts, Config#config{Opt = false});
-	    "false" -> set_xoption(Opts, Config#config{Opt = false});
-	    "1" -> set_xoption(Opts, Config#config{Opt = true});
-	    "true" -> set_xoption(Opts, Config#config{Opt = true});
+	    "0" -> ?SET_BOOL_XOPT_FALSE(Opt);
+	    "false" -> ?SET_BOOL_XOPT_FALSE(Opt);
+	    "1" -> ?SET_BOOL_XOPT_TRUE(Opt);
+	    "true" -> ?SET_BOOL_XOPT_TRUE(Opt);
 	    _ -> {error, 'bad-request'}
 	end).
 
@@ -3208,9 +3211,9 @@ set_xoption([{"anonymous", [Val]} | Opts], Config) ->
 set_xoption([{"muc#roomconfig_whois", [Val]} | Opts], Config) ->
     case Val of
 	"moderators" ->
-	    ?SET_BOOL_XOPT(anonymous, "1");
+	    ?SET_BOOL_XOPT_TRUE(anonymous);
 	"anyone" ->
-	    ?SET_BOOL_XOPT(anonymous, "0");
+	    ?SET_BOOL_XOPT_FALSE(anonymous);
 	_ ->
 	    {error, 'bad-request'}
     end;
