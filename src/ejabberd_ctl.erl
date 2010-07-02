@@ -201,8 +201,7 @@ process(Args) ->
     case String of
 	[] -> ok;
 	_ ->
-	    io:format(String),
-	    io:format("\n")
+	    io:format("~s~n", [String])
     end,
     Code.
 
