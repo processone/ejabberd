@@ -1202,17 +1202,11 @@ set_affiliation(JID, Affiliation, StateData) ->
 		   end,
     StateData#state{affiliations = Affiliations}.
 
-set_affiliation_and_reason(JID, Affiliation, Reason, StateData) ->
+set_affiliation_and_reason(JID, Affiliation, Reason, StateData)
+  when Affiliation /= none ->
     LJID = jlib:short_prepd_bare_jid(JID),
-    Affiliations = case Affiliation of
-		       none ->
-			   ?DICT:erase(LJID,
-				       StateData#state.affiliations);
-		       _ ->
-			   ?DICT:store(LJID,
-				       {Affiliation, Reason},
-				       StateData#state.affiliations)
-		   end,
+    Affiliations = ?DICT:store(LJID, {Affiliation, Reason},
+			       StateData#state.affiliations),
     StateData#state{affiliations = Affiliations}.
 
 get_affiliation(JID, StateData) ->
