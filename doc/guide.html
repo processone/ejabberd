@@ -2409,6 +2409,10 @@ the room occupants.
 </DD><DT CLASS="dt-description"><B><TT>{anonymous, true|false}</TT></B></DT><DD CLASS="dd-description"> The room is anonymous:
 occupants don&#X2019;t see the real JIDs of other occupants.
 Note that the room moderators can always see the real JIDs of the occupants.
+</DD><DT CLASS="dt-description"><B><TT>{captcha_protected, false}</TT></B></DT><DD CLASS="dd-description"> 
+When a user tries to join a room where he has no affiliation (not owner, admin or member),
+the room requires him to fill a CAPTCHA challenge (see section <A HREF="#captcha">3.1.8</A>)
+in order to accept her join in the room.
 </DD><DT CLASS="dt-description"><B><TT>{logging, false|true}</TT></B></DT><DD CLASS="dd-description"> The public messages are logged using <TT>mod_muc_log</TT>.
 </DD><DT CLASS="dt-description"><B><TT>{max_users, 200}</TT></B></DT><DD CLASS="dd-description"> Maximum number of occupants in the room.
 </DD><DT CLASS="dt-description"><B><TT>{members_by_default, true|false}</TT></B></DT><DD CLASS="dd-description"> The occupants that enter the room are participants by default, so they have &#X2019;voice&#X2019;.
