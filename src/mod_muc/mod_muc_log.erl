@@ -860,7 +860,9 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 			       T -> 
 				   case Opt of
 				       password -> "<div class=\"rcoe\">" ++ OptText ++ "</div>";
-				       title -> "<div class=\"rcot\">" ++ ?T("Room title") ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
+				       max_users -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(integer_to_list(T), FileFormat) ++ "\"</div>";
+				       title -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
+				       description -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
 				       _ -> "\"" ++ T ++ "\""
 				   end
 			   end,
@@ -876,7 +878,7 @@ get_roomconfig_text(public) -> "Make room public searchable";
 get_roomconfig_text(public_list) -> "Make participants list public";
 get_roomconfig_text(password_protected) -> "Make room password protected";
 get_roomconfig_text(password) -> "Password";
-get_roomconfig_text(anonymous) -> "Make room semianonymous";
+get_roomconfig_text(anonymous) -> "This room is not anonymous";
 get_roomconfig_text(members_only) -> "Make room members-only";
 get_roomconfig_text(moderated) -> "Make room moderated";
 get_roomconfig_text(members_by_default) -> "Default users as participants";
@@ -885,6 +887,13 @@ get_roomconfig_text(allow_private_messages) -> "Allow users to send private mess
 get_roomconfig_text(allow_query_users) -> "Allow users to query other users";
 get_roomconfig_text(allow_user_invites) -> "Allow users to send invites";
 get_roomconfig_text(logging) ->  "Enable logging";
+get_roomconfig_text(allow_visitor_nickchange) ->  "Allow visitors to change nickname";
+get_roomconfig_text(allow_visitor_status) ->  "Allow visitors to send status text in presence updates";
+get_roomconfig_text(captcha_protected) ->  "Make room captcha protected";
+get_roomconfig_text(description) ->  "Room description";
+%% get_roomconfig_text(subject) ->  "Subject";
+%% get_roomconfig_text(subject_author) ->  "Subject author";
+get_roomconfig_text(max_users) -> "Maximum Number of Occupants";
 get_roomconfig_text(_) -> undefined.
 
 %% Users = [{JID, Nick, Role}]
