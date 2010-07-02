@@ -1548,6 +1548,7 @@ is_nick_exists(Nick, StateData) ->
 		       B orelse (N == Nick)
 	       end, false, StateData#state.users).
 
+%% @spec(Nick::binary(), StateData) -> JID::jid() | false
 find_jid_by_nick(Nick, StateData) ->
     ?DICT:fold(fun(_, #user{jid = JID, nick = N}, R) ->
 		       case Nick of
@@ -1919,6 +1920,10 @@ send_update_presence(JID, Reason, StateData) ->
 send_new_presence(NJID, StateData) ->
     send_new_presence(NJID, <<>>, StateData).
 
+
+%% @spec(NJID::jid(), Reason::binary(), StateData) ->
+send_new_presence({U, S, R}, Reason, StateData) ->
+    send_new_presence(exmpp_jid:make(U, S, R), Reason, StateData);
 send_new_presence(NJID, Reason, StateData) ->
     {ok, #user{jid = RealJID,
 	       nick = Nick,
@@ -2316,71 +2321,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	    NSD =
 		lists:foldl(
 		  fun(E, SD) ->
-			  case catch (
-				 case E of
-				     {JID, affiliation, owner, _} ->
-                        case exmpp_jid:prep_node(JID) of
-                            <<>> ->
-					            SD;
-                     %% TODO: <<>> or 'undefined' ?
-                     %% TODO: double case on the E var, because 
-                     %%       exmpp_jid:prep_node/1 can't be used in guards
-					 %% If the provided JID does not have username,
-					 %% forget the affiliation completely
-                            _ -> case E of 
-				     {JID, role, none, Reason} ->
-					 catch send_kickban_presence(
-						 JID, Reason, "307", SD),
-					 set_role(JID, none, SD);
-				     {JID, affiliation, none, Reason} ->
-					 case (SD#state.config)#config.members_only of
-					     true ->
-						 catch send_kickban_presence(
-							 JID, Reason, "321", SD),
-						 SD1 = set_affiliation(JID, none, SD),
-						 set_role(JID, none, SD1);
-					     _ ->
-						 SD1 = set_affiliation(JID, none, SD),
-						 send_update_presence(JID, SD1),
-						 SD1
-					 end;
-				     {JID, affiliation, outcast, Reason} ->
-					 catch send_kickban_presence(
-						 JID, Reason, "301", SD),
-					 set_affiliation_and_reason(
-					   JID, outcast, Reason,
-					   set_role(JID, none, SD));
-				     {JID, affiliation, A, Reason} when
-					   (A == admin) or (A == owner) ->
-					 SD1 = set_affiliation_and_reason(JID, A, Reason, SD),
-					 SD2 = set_role(JID, moderator, SD1),
-					 send_update_presence(JID, Reason, SD2),
-					 SD2;
-				     {JID, affiliation, member, Reason} ->
-					 SD1 = set_affiliation_and_reason(
-						 JID, member, Reason, SD),
-					 SD2 = set_role(JID, participant, SD1),
-					 send_update_presence(JID, Reason, SD2),
-					 SD2;
-				     {JID, role, Role, Reason} ->
-					 SD1 = set_role(JID, Role, SD),
-					 catch send_new_presence(JID, Reason, SD1),
-					 SD1;
-				     {JID, affiliation, A, _Reason} ->
-					 SD1 = set_affiliation(JID, A, SD),
-					 send_update_presence(JID, SD1),
-					 SD1
-				       end
-                  end
-                end
-				) of
-			      {'EXIT', ErrReason} ->
-				  ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n",
-					     [ErrReason]),
-				  SD;
-			      NSD ->
-				  NSD
-			  end
+			process_admin_items_set(E, SD)
 		  end, StateData, Res),
 	    case (NSD#state.config)#config.persistent of
 		true ->
@@ -2394,6 +2335,77 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	    Err
     end.
 
+process_admin_items_set({JID, affiliation, owner, _} = E, SD) ->
+    case exmpp_jid:prep_node(JID) of
+	%% TODO: <<>> or 'undefined' ?
+	%% TODO: double case on the E var, because
+	%%       exmpp_jid:prep_node/1 can't be used in guards
+	%% If the provided JID does not have username,
+	%% forget the affiliation completely
+	<<>> ->
+	    SD;
+	_ ->
+	    process_admin_items_set2(E, SD)
+    end;
+process_admin_items_set(E, SD) ->
+    process_admin_items_set2(E, SD).
+
+process_admin_items_set2(E, SD) ->
+    try process_admin_items_set3(E, SD)
+    catch
+	'EXIT':ErrReason ->
+	    ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n",
+		       [E, ErrReason]),
+	    SD
+    end.
+
+process_admin_items_set3({JID, role, none, Reason}, SD) ->
+    catch send_kickban_presence(
+	    JID, Reason, "307", SD),
+    set_role(JID, none, SD);
+
+process_admin_items_set3({JID, affiliation, none, Reason}, SD) ->
+    case (SD#state.config)#config.members_only of
+	true ->
+    catch send_kickban_presence(
+	    JID, Reason, "321", SD),
+	    SD1 = set_affiliation(JID, none, SD),
+	    set_role(JID, none, SD1);
+	_ ->
+	    SD1 = set_affiliation(JID, none, SD),
+	    send_update_presence(JID, SD1),
+	    SD1
+    end;
+
+process_admin_items_set3({JID, affiliation, outcast, Reason}, SD) ->
+    catch send_kickban_presence(
+	    JID, Reason, "301", SD),
+    set_affiliation_and_reason(
+      JID, outcast, Reason,
+      set_role(JID, none, SD));
+
+process_admin_items_set3({JID, affiliation, A, Reason}, SD)
+  when (A == admin) or (A == owner) ->
+    SD1 = set_affiliation_and_reason(JID, A, Reason, SD),
+    SD2 = set_role(JID, moderator, SD1),
+    send_update_presence(JID, Reason, SD2),
+    SD2;
+
+process_admin_items_set3({JID, affiliation, member, Reason}, SD) ->
+    SD1 = set_affiliation_and_reason( JID, member, Reason, SD),
+    SD2 = set_role(JID, participant, SD1),
+    send_update_presence(JID, Reason, SD2),
+    SD2;
+
+process_admin_items_set3({JID, role, Role, Reason}, SD) ->
+    SD1 = set_role(JID, Role, SD),
+    catch send_new_presence(JID, Reason, SD1),
+    SD1;
+
+process_admin_items_set3({JID, affiliation, A, _Reason}, SD) ->
+    SD1 = set_affiliation(JID, A, SD),
+    send_update_presence(JID, SD1),
+    SD1.
 
 find_changed_items(_UJID, _UAffiliation, _URole, [], _Lang, _StateData, Res) ->
     {result, Res};
@@ -2417,7 +2429,7 @@ find_changed_items(UJID, UAffiliation, URole,
 			   {error, ?ERR(Item, 'not-acceptable', Lang, ErrText)}
 		   end;
 	       _ ->
-		   case exmpp_xml:get_attribute_as_list(Item, 'nick', false) of
+		   case exmpp_xml:get_attribute(Item, 'nick', false) of
 		       N when N =/= false ->
 			   case find_jid_by_nick(N, StateData) of
 			       false ->
@@ -2426,7 +2438,7 @@ find_changed_items(UJID, UAffiliation, URole,
 					 translate:translate(
 					   Lang,
 					   "Nickname ~s does not exist in the room"),
-					 [N]),
+					 [binary_to_list(N)]),
 				   {error, ?ERR(Item, 'not-acceptable', Lang, ErrText)};
 			       J ->
 				   {value, J}
