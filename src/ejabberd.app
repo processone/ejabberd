@@ -113,6 +113,7 @@
 	     nodetree_virtual,
 	     p1_fsm,
 	     p1_mnesia,
+	     p1_prof,
 	     randoms,
 	     sha,
 	     shaper,
