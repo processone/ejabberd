@@ -240,7 +240,7 @@ ctl ()
     MAXCONNID=100
     CONNLOCKDIR=@LOCALSTATEDIR@/lock/ejabberdctl
     FLOCK='/usr/bin/flock'
-    if [ ! -x "$FLOCK" ] ; then
+    if [ ! -x "$FLOCK" || ! -d "$CONNLOCKDIR" ] ; then
 	JOT='/usr/bin/jot'
 	if [ ! -x "$JOT" ] ; then
 	    # no flock or jot, simply invoke ctlexec()
