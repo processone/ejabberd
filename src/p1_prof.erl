@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : p1_prof.erl
 %%% Author  : Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% Description : Handly wrapper around eprof and fprof
+%%% Description : Handy wrapper around eprof and fprof
 %%%
 %%% Created : 23 Jan 2010 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
@@ -29,7 +29,10 @@
 %% API
 -export([eprof_start/0, eprof_stop/0,
 	 fprof_start/0, fprof_start/1,
-	 fprof_stop/0]).
+	 fprof_stop/0, fprof_analyze/0,
+	 queue/0, queue/1, memory/0, memory/1,
+	 reds/0, reds/1, trace/1, help/0,
+	 q/0, m/0, r/0, q/1, m/1, r/1]).
 
 -define(APPS, [ejabberd, mnesia]).
 
@@ -61,9 +64,11 @@ fprof_start(Duration) ->
 		    {error, no_procs_found};
 		Procs ->
 		    fprof:trace([start, {procs, Procs}]),
+		    io:format("Profiling started~n"),
 		    if Duration > 0 ->
 			    timer:sleep(Duration*1000),
-			    fprof:trace([stop]);
+			    fprof:trace([stop]),
+			    fprof:stop();
 		       true->
 			    ok
 		    end
@@ -80,9 +85,92 @@ fprof_stop() ->
     fprof:stop(),
     format_fprof_analyze().
 
+fprof_analyze() ->
+    fprof_stop().
+
 eprof_stop() ->
     eprof:stop_profiling(),
-    eprof:analyse().
+    case erlang:function_exported(eprof, analyse, 0) of
+	true ->
+	    eprof:analyse();
+	false ->
+	    eprof:analyze()
+    end.
+
+help() ->
+    M = ?MODULE,
+    io:format("Brief help:~n"
+	      "~p:queue(N) - show top N pids sorted by queue length~n"
+	      "~p:queue() - shorthand for ~p:queue(10)~n"
+	      "~p:memory(N) - show top N pids sorted by memory usage~n"
+	      "~p:memory() - shorthand for ~p:memory(10)~n"
+	      "~p:reds(N) - show top N pids sorted by reductions~n"
+	      "~p:reds() - shorthand for ~p:reds(10)~n"
+	      "~p:q(N)|~p:q() - same as ~p:queue(N)|~p:queue()~n"
+	      "~p:m(N)|~p:m() - same as ~p:memory(N)|~p:memory()~n"
+	      "~p:r(N)|~p:r() - same as ~p:reds(N)|~p:reds()~n"
+	      "~p:trace(Pid) - trace Pid; to stop tracing close "
+	      "Erlang shell with Ctrl+C~n"
+	      "~p:eprof_start() - start eprof on all available pids; "
+	      "DO NOT use on production system!~n"
+	      "~p:eprof_stop() - stop eprof and print result~n"
+	      "~p:fprof_start() - start fprof on all available pids; "
+	      "DO NOT use on production system!~n"
+	      "~p:fprof_stop() - stop eprof and print formatted result~n"
+	      "~p:fprof_start(N) - start and run fprof for N seconds; "
+	      "use ~p:fprof_analyze() to analyze collected statistics and "
+	      "print formatted result; use on production system with CARE~n"
+	      "~p:fprof_analyze() - analyze previously collected statistics "
+	      "using ~p:fprof_start(N) and print formatted result~n"
+	      "~p:help() - print this help~n",
+	      lists:duplicate(31, M)).
+
+q() ->
+    queue().
+
+q(N) ->
+    queue(N).
+
+m() ->
+    memory().
+
+m(N) ->
+    memory(N).
+
+r() ->
+    reds().
+
+r(N) ->
+    reds(N).
+
+queue() ->
+    queue(10).
+
+memory() ->
+    memory(10).
+
+reds() ->
+    reds(10).
+
+queue(N) ->
+    dump(N, lists:reverse(lists:ukeysort(1, all_pids(queue)))).
+
+memory(N) ->
+    dump(N, lists:reverse(lists:ukeysort(2, all_pids(memory)))).
+
+reds(N) ->
+    dump(N, lists:reverse(lists:ukeysort(3, all_pids(reductions)))).
+
+trace(Pid) ->
+    erlang:trace(Pid, true, [send, 'receive']),
+    trace_loop().
+
+trace_loop() ->
+    receive
+	M ->
+	    io:format("~p~n", [M]),
+	    trace_loop()
+    end.
 
 %%====================================================================
 %% Internal functions
@@ -194,3 +282,56 @@ collect_accs(List) ->
 		      [{mfa_to_list(MFA), Percent}]
 	      end
       end, List1).
+
+all_pids(Type) ->
+    lists:foldl(
+      fun(P, Acc) when P == self() ->
+	      %% exclude ourself from statistics
+	      Acc;
+	 (P, Acc) ->
+	      case catch process_info(
+			   P,
+			   [message_queue_len,
+			    memory,
+			    reductions,
+			    dictionary,
+			    current_function,
+			    registered_name]) of
+		  [{_, Len}, {_, Memory}, {_, Reds},
+		   {_, Dict}, {_, CurFun}, {_, RegName}] ->
+		      if Type == queue andalso Len == 0 ->
+			      Acc;
+			 true ->
+			      [{Len, Memory, Reds, Dict, CurFun, P, RegName}|Acc]
+		      end;
+		  _ ->
+		      Acc
+	      end
+      end, [], processes()).
+
+dump(N, Rs) ->
+    lists:foreach(
+      fun({MsgQLen, Memory, Reds, Dict, CurFun, Pid, RegName}) ->
+	      PidStr = pid_to_list(Pid),
+	      [_, Maj, Min] = string:tokens(
+				string:substr(
+				  PidStr, 2, length(PidStr) - 2), "."),
+              io:format("** pid(0,~s,~s)~n"
+			"** registered name: ~p~n"
+			"** memory: ~p~n"
+			"** reductions: ~p~n"
+                        "** message queue len: ~p~n"
+			"** current_function: ~p~n"
+                        "** dictionary: ~p~n~n",
+                        [Maj, Min, RegName, Memory, Reds, MsgQLen, CurFun, Dict])
+      end, nthhead(N, Rs)).
+
+nthhead(N, L) ->
+    lists:reverse(nthhead(N, L, [])).
+
+nthhead(0, _L, Acc) ->
+    Acc;
+nthhead(N, [H|T], Acc) ->
+    nthhead(N-1, T, [H|Acc]);
+nthhead(_N, [], Acc) ->
+    Acc.
