@@ -61,6 +61,8 @@
 -define(GET_VERIFY_RESULT,    8).
 -define(VERIFY_NONE, 16#10000).
 
+
+
 -record(tlssock, {tcpsock, tlsport}).
 
 start() ->
@@ -232,7 +234,7 @@ close(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
 get_peer_certificate(#tlssock{tlsport = Port}) ->
     case port_control(Port, ?GET_PEER_CERTIFICATE, []) of
 	<<0, BCert/binary>> ->
-	    case catch ssl_pkix:decode_cert(BCert, [pkix]) of
+	    case catch public_key:pkix_decode_cert(BCert, plain) of
 		{ok, Cert} ->
 		    {ok, Cert};
 		_ ->

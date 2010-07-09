@@ -50,9 +50,9 @@
 
 -include("ejabberd.hrl").
 -include("XmppAddr.hrl").
--include_lib("ssl/include/ssl_pkix.hrl").
--define(PKIXEXPLICIT, 'OTP-PKIX').
--define(PKIXIMPLICIT, 'OTP-PKIX').
+-include_lib("public_key/include/public_key.hrl"). 
+-define(PKIXEXPLICIT, 'OTP-PUB-KEY').
+-define(PKIXIMPLICIT, 'OTP-PUB-KEY').
 
 -define(DICT, dict).
 
