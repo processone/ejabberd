@@ -48,6 +48,11 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-ifdef(SSL40).
+-include_lib("public_key/include/public_key.hrl"). 
+-define(PKIXEXPLICIT, 'OTP-PUB-KEY').
+-define(PKIXIMPLICIT, 'OTP-PUB-KEY').
+-else.
 -ifdef(SSL39).
 -include_lib("ssl/include/ssl_pkix.hrl").
 -define(PKIXEXPLICIT, 'OTP-PKIX').
@@ -57,6 +62,7 @@
 -include_lib("ssl/include/PKIX1Implicit88.hrl").
 -define(PKIXEXPLICIT, 'PKIX1Explicit88').
 -define(PKIXIMPLICIT, 'PKIX1Implicit88').
+-endif.
 -endif.
 -include("XmppAddr.hrl").
 

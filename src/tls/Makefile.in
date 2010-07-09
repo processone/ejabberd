@@ -21,6 +21,7 @@ ifeq ($(shell uname),SunOs)
     DYNAMIC_LIB_CFLAGS = -KPIC -G -z text
 endif
 
+EFLAGS += @ERLANG_SSLVER@
 EFLAGS += -I ..
 EFLAGS += -pz ..
 
