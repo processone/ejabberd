@@ -35,9 +35,8 @@ ifdef debug
   EFLAGS+=+debug_info +export_all
 endif
 
-DEBUGTOOLS = ejabberd_debug.erl
-ifdef ejabberd_debug
-  EFLAGS+=-Dejabberd_debug
+DEBUGTOOLS = p1_prof.erl
+ifdef debugtools
   SOURCES+=$(DEBUGTOOLS)
 endif
 
