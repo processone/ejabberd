@@ -39,7 +39,8 @@
 	 sql_bloc/2,
 	 escape/1,
 	 escape_like/1,
-	 keep_alive/1]).
+	 keep_alive/1,
+	 sql_query_on_all_connections/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -96,6 +97,13 @@ start_link(Host, StartInterval) ->
 
 sql_query(Host, Query) ->
     sql_call(Host, {sql_query, Query}).
+
+%% Issue an SQL query on all the connections
+sql_query_on_all_connections(Host, Query) ->
+    F = fun(Pid) -> ?GEN_FSM:sync_send_event(Pid, {sql_cmd,
+						   {sql_query, Query},
+						   erlang:now()}, ?TRANSACTION_TIMEOUT) end,
+    lists:map(F, ejabberd_odbc_sup:get_pids(Host)).
 
 %% SQL transaction based on a list of queries
 %% This function automatically
@@ -422,13 +430,15 @@ sql_query_internal(Query) ->
     State = get(?STATE_KEY),
     Res = case State#state.db_type of
               odbc ->
-                  odbc:sql_query(State#state.db_ref, Query);
+                  odbc:sql_query(State#state.db_ref, Query, ?TRANSACTION_TIMEOUT - 1000);
               pgsql ->
+                  %% TODO: We need to propagate the TRANSACTION_TIMEOUT to pgsql driver, but no yet supported in driver.
+                  %% See EJAB-1266
                   pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
               mysql ->
                   ?DEBUG("MySQL, Send query~n~p~n", [Query]),
                   R = mysql_to_odbc(mysql_conn:fetch(State#state.db_ref,
-						     Query, self())),
+						     Query, self(), ?TRANSACTION_TIMEOUT - 1000)),
                   %% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
                   R
           end,
@@ -502,6 +512,7 @@ mysql_connect(Server, Port, DB, Username, Password) ->
     case mysql_conn:start(Server, Port, Username, Password, DB, fun log/3) of
 	{ok, Ref} ->
             mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
+            mysql_conn:fetch(Ref, ["SET SESSION query_cache_type=1;"], self()),
 	    {ok, Ref};
 	Err ->
 	    Err
