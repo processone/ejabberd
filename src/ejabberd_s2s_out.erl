@@ -52,7 +52,6 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
-     print_state/1,
 	 code_change/4,
 	 test_get_addr_port/1,
 	 print_state/1,
@@ -758,9 +757,6 @@ handle_event({closed, Timeout}, StateName, StateData) ->
     {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData, get_timeout_interval(StateName)}.
-
-print_state(StateData) ->
-    StateData.
 
 %%----------------------------------------------------------------------
 %% Func: handle_sync_event/4
