@@ -63,42 +63,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_privacy.hrl").
-
--define(SETS, gb_sets).
--define(DICT, dict).
-
-%% pres_a contains all the presence available send (either through roster mechanism or directed).
-%% Directed presence unavailable remove user from pres_a.
--record(state, {socket,
-		sockmod,
-		socket_monitor,
-		xml_socket,
-		streamid,
-		sasl_state,
-		access,
-		shaper,
-		zlib = false,
-		tls = false,
-		tls_required = false,
-		tls_enabled = false,
-		tls_options = [],
-		authenticated = false,
-		jid,
-		user = "", server = ?MYNAME, resource = "",
-		sid,
-		pres_t = ?SETS:new(),
-		pres_f = ?SETS:new(),
-		pres_a = ?SETS:new(),
-		pres_i = ?SETS:new(),
-		pres_last, pres_pri,
-		pres_timestamp,
-		pres_invis = false,
-		privacy_list = #userlist{},
-		conn = unknown,
-		auth_module = unknown,
-		ip,
-		fsm_limit_opts,
-		lang}).
+-include("ejabberd_c2s.hrl").
 
 %-define(DBGFSM, true).
 
@@ -224,21 +189,21 @@ init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
 			Socket
 		end,
 	    SocketMonitor = SockMod:monitor(Socket1),
-	    {ok, wait_for_stream, #state{socket         = Socket1,
-					 sockmod        = SockMod,
-					 socket_monitor = SocketMonitor,
-					 xml_socket     = XMLSocket,
-					 zlib           = Zlib,
-					 tls            = TLS,
-					 tls_required   = StartTLSRequired,
-					 tls_enabled    = TLSEnabled,
-					 tls_options    = TLSOpts,
-					 streamid       = new_id(),
-					 access         = Access,
-					 shaper         = Shaper,
-					 ip             = IP,
-					 fsm_limit_opts = FSMLimitOpts},
-	     ?C2S_OPEN_TIMEOUT}
+	    StateData = #state{socket         = Socket1,
+			       sockmod        = SockMod,
+			       socket_monitor = SocketMonitor,
+			       xml_socket     = XMLSocket,
+			       zlib           = Zlib,
+			       tls            = TLS,
+			       tls_required   = StartTLSRequired,
+			       tls_enabled    = TLSEnabled,
+			       tls_options    = TLSOpts,
+			       streamid       = new_id(),
+			       access         = Access,
+			       shaper         = Shaper,
+			       ip             = IP,
+			       fsm_limit_opts = FSMLimitOpts},
+	    {ok, wait_for_stream, StateData, ?C2S_OPEN_TIMEOUT}
     end;
 init([StateName, StateData, _FSMLimitOpts]) ->
     MRef = (StateData#state.sockmod):monitor(StateData#state.socket),
@@ -534,8 +499,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  privacy_get_user_list, StateData#state.server,
 				  #userlist{},
 				  [U, StateData#state.server]),
-                            NewStateData =
-                                StateData#state{
+				    NewStateData = StateData#state{
 					     user = U,
 					     resource = R,
 					     jid = JID,
@@ -545,7 +509,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList},
-			    maybe_migrate(session_established, NewStateData);
+			    DebugFlag = ejabberd_hooks:run_fold(c2s_debug_start_hook,
+								NewStateData#state.server,
+								false,
+								[self(), NewStateData]),
+			    maybe_migrate(session_established, NewStateData#state{debug=DebugFlag});
 			_ ->
 			    ?INFO_MSG(
 			       "(~w) Failed legacy authentication for ~s",
@@ -910,7 +878,11 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				     pres_f = ?SETS:from_list(Fs1),
 				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList},
-		    maybe_migrate(session_established, NewStateData);
+		    DebugFlag = ejabberd_hooks:run_fold(c2s_debug_start_hook,
+							NewStateData#state.server,
+							false,
+							[self(), NewStateData]),
+		    maybe_migrate(session_established, NewStateData#state{debug=DebugFlag});
 		_ ->
 		    ejabberd_hooks:run(forbidden_session_hook,
 				       StateData#state.server, [JID]),
@@ -1026,7 +998,7 @@ session_established2(El, StateData) ->
 			ejabberd_hooks:run(
 			  user_send_packet,
 			  Server,
-			  [FromJID, ToJID, PresenceEl]),
+			  [StateData#state.debug, FromJID, ToJID, PresenceEl]),
 			case ToJID of
 			    #jid{user = User,
 				 server = Server,
@@ -1042,13 +1014,17 @@ session_established2(El, StateData) ->
 		    "iq" ->
 			case jlib:iq_query_info(NewEl) of
 			    #iq{xmlns = ?NS_PRIVACY} = IQ ->
+				ejabberd_hooks:run(
+				  user_send_packet,
+				  Server,
+				  [StateData#state.debug, FromJID, ToJID, NewEl]),
 				process_privacy_iq(
 				  FromJID, ToJID, IQ, StateData);
 			    _ ->
 				ejabberd_hooks:run(
 				  user_send_packet,
 				  Server,
-				  [FromJID, ToJID, NewEl]),
+				  [StateData#state.debug, FromJID, ToJID, NewEl]),
 				ejabberd_router:route(
 				  FromJID, ToJID, NewEl),
 				StateData
@@ -1056,7 +1032,7 @@ session_established2(El, StateData) ->
 		    "message" ->
 			ejabberd_hooks:run(user_send_packet,
 					   Server,
-					   [FromJID, ToJID, NewEl]),
+					   [StateData#state.debug, FromJID, ToJID, NewEl]),
 			check_privacy_route(FromJID, StateData, FromJID,
 					    ToJID, NewEl),
 			StateData;
@@ -1361,7 +1337,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    send_element(StateData, FixedPacket),
 	    ejabberd_hooks:run(user_receive_packet,
 			       StateData#state.server,
-			       [StateData#state.jid, From, To, FixedPacket]),
+			       [StateData#state.debug, StateData#state.jid, From, To, FixedPacket]),
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState);
 	true ->
@@ -1419,13 +1395,16 @@ print_state(State = #state{pres_t = T, pres_f = F, pres_a = A, pres_i = I}) ->
                pres_a = {pres_a, ?SETS:size(A)},
                pres_i = {pres_i, ?SETS:size(I)}
                }.
-    
+
 %%----------------------------------------------------------------------
 %% Func: terminate/3
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
 terminate({migrated, ClonePid}, StateName, StateData) ->
+    ejabberd_hooks:run(c2s_debug_stop_hook,
+		       StateData#state.server,
+		       [self(), StateData]),
     if StateName == session_established ->
 	    ?INFO_MSG("(~w) Migrating ~s to ~p on node ~p",
 		      [StateData#state.socket,
@@ -2149,7 +2128,7 @@ resend_offline_messages(#state{user = User,
 			      send_element(StateData, FixedPacket),
 			      ejabberd_hooks:run(user_receive_packet,
 						 StateData#state.server,
-						 [StateData#state.jid,
+						 [StateData#state.debug, StateData#state.jid,
 						  From, To, FixedPacket]);
 			  true ->
 			      ok

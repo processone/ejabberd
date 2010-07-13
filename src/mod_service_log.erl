@@ -31,8 +31,8 @@
 
 -export([start/2,
 	 stop/1,
-	 log_user_send/3,
-	 log_user_receive/4]).
+	 log_user_send/4,
+	 log_user_receive/5]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -51,10 +51,10 @@ stop(Host) ->
 			  ?MODULE, log_user_receive, 50),
     ok.
 
-log_user_send(From, To, Packet) ->
+log_user_send(_DebugFlag, From, To, Packet) ->
     log_packet(From, To, Packet, From#jid.lserver).
 
-log_user_receive(_JID, From, To, Packet) ->
+log_user_receive(_DebugFlag, _JID, From, To, Packet) ->
     log_packet(From, To, Packet, To#jid.lserver).
 
 
@@ -74,4 +74,3 @@ log_packet(From, To, {xmlelement, Name, Attrs, Els}, Host) ->
 		     luser = "", lserver = Logger, lresource = ""},
 		{xmlelement, "route", [], [FixedPacket]})
       end, Loggers).
-    

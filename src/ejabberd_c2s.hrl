@@ -19,21 +19,44 @@
 %%%
 %%%----------------------------------------------------------------------
 
--define(mod_privacy_hrl, true).
 
--record(privacy, {us,
-		  default = none,
-		  lists = []}).
+-ifndef(mod_privacy_hrl).
+-include("mod_privacy.hrl").
+-endif.
 
--record(listitem, {type = none,
-		   value = none,
-		   action,
-		   order,
-		   match_all = false,
-		   match_iq = false,
-		   match_message = false,
-		   match_presence_in = false,
-		   match_presence_out = false
-		  }).
+-define(SETS, gb_sets).
+-define(DICT, dict).
 
--record(userlist, {name = none, list = [], needdb = false }).
+%% pres_a contains all the presence available send (either through roster mechanism or directed).
+%% Directed presence unavailable remove user from pres_a.
+-record(state, {socket,
+		sockmod,
+		socket_monitor,
+		xml_socket,
+		streamid,
+		sasl_state,
+		access,
+		shaper,
+		zlib = false,
+		tls = false,
+		tls_required = false,
+		tls_enabled = false,
+		tls_options = [],
+		authenticated = false,
+		jid,
+		user = "", server = ?MYNAME, resource = "",
+		sid,
+		pres_t = ?SETS:new(),
+		pres_f = ?SETS:new(),
+		pres_a = ?SETS:new(),
+		pres_i = ?SETS:new(),
+		pres_last, pres_pri,
+		pres_timestamp,
+		pres_invis = false,
+		privacy_list = #userlist{},
+		conn = unknown,
+		auth_module = unknown,
+		ip,
+		fsm_limit_opts,
+		lang,
+		debug=false}).

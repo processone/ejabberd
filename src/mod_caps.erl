@@ -53,7 +53,7 @@
 	]).
 
 %% hook handlers
--export([user_send_packet/3]).
+-export([user_send_packet/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -141,7 +141,8 @@ read_caps([], Result) ->
 %%====================================================================
 %% Hooks
 %%====================================================================
-user_send_packet(#jid{luser = User, lserver = Server} = From,
+user_send_packet(_DebugFlag,
+		 #jid{luser = User, lserver = Server} = From,
 		 #jid{luser = User, lserver = Server, lresource = ""},
 		 {xmlelement, "presence", Attrs, Els}) ->
     Type = xml:get_attr_s("type", Attrs),
@@ -155,7 +156,7 @@ user_send_packet(#jid{luser = User, lserver = Server} = From,
        true ->
 	    ok
     end;
-user_send_packet(_From, _To, _Packet) ->
+user_send_packet(_DebugFlag, _From, _To, _Packet) ->
     ok.
 
 caps_stream_features(Acc, MyHost) ->
