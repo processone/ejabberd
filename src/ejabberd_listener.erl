@@ -35,7 +35,8 @@
 	 stop_listener/2,
 	 parse_listener_portip/2,
 	 add_listener/3,
-	 delete_listener/2
+	 delete_listener/2,
+	 rate_limit/2
 	]).
 
 -include("ejabberd.hrl").
@@ -223,6 +224,9 @@ get_ip_tuple(IPOpt, _IPVOpt) ->
     IPOpt.
 
 accept(ListenSocket, Module, Opts) ->
+    accept(ListenSocket, Module, Opts, 0).
+accept(ListenSocket, Module, Opts, Interval) ->
+    NewInterval = check_rate_limit(Interval),
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
@@ -237,11 +241,11 @@ accept(ListenSocket, Module, Opts) ->
 			  false -> ejabberd_socket
 		      end,
 	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
-	    accept(ListenSocket, Module, Opts);
+	    accept(ListenSocket, Module, Opts, NewInterval);
 	{error, Reason} ->
 	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
 		      [ListenSocket, Reason]),
-	    accept(ListenSocket, Module, Opts)
+	    accept(ListenSocket, Module, Opts, NewInterval)
     end.
 
 udp_recv(Socket, Module, Opts) ->
@@ -469,3 +473,39 @@ format_error(Reason) ->
 	ReasonStr ->
 	    ReasonStr
     end.
+
+%% Set interval between two accepts on given port
+rate_limit([], _Interval) ->
+    ok;
+rate_limit([Port|Ports], Interval) ->
+    rate_limit(Port, Interval),
+    rate_limit(Ports, Interval);
+rate_limit(Port, Interval) ->
+    case get_listener_pid_by_port(Port) of
+	undefined -> no_listener;
+	Pid -> Pid ! {rate_limit, Interval}, ok
+    end.
+
+get_listener_pid_by_port(Port) ->
+    ListenerPids = [Pid || {{P,_,_},Pid,_,_} <-
+			       supervisor:which_children(erlang:whereis(ejabberd_listeners)),
+			   P == Port],
+    ListenerPid = case ListenerPids of
+		      [] -> undefined;
+		      [LPid|_] -> LPid
+		  end,
+    ListenerPid.
+
+check_rate_limit(Interval) ->
+    NewInterval = receive
+		      {rate_limit, AcceptInterval} ->
+			  AcceptInterval
+		  after 0 ->
+			  Interval
+		  end,
+    case NewInterval of
+	0  -> ok;
+	Ms ->
+	    timer:sleep(Ms)
+    end,
+    NewInterval.
