@@ -1,5 +1,0 @@
-% List of ejabberd-modules to add for ejabberd packaging (source archive and installer)
-%
-% HTTP-binding:
-%https://svn.process-one.net/ejabberd-modules/http_bind/trunk
-%https://svn.process-one.net/ejabberd-modules/mod_http_fileserver/trunk

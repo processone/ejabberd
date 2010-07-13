@@ -30,6 +30,8 @@
 %% API
 -export([start_link/1,
 	 init/1,
+	 add_pid/2,
+	 remove_pid/2,
 	 get_pids/1,
 	 get_random_pid/1
 	]).
@@ -44,7 +46,19 @@
 -define(CONNECT_TIMEOUT, 500). % milliseconds
 
 
+-record(sql_pool, {host, pid}).
+
 start_link(Host) ->
+    mnesia:create_table(sql_pool,
+			[{ram_copies, [node()]},
+			 {type, bag},
+			 {local_content, true},
+			 {attributes, record_info(fields, sql_pool)}]),
+    mnesia:add_table_copy(local_config, node(), ram_copies),
+    F = fun() ->
+		mnesia:delete({sql_pool, Host})
+	end,
+    mnesia:ets(F),
     supervisor:start_link({local, gen_mod:get_module_proc(Host, ?MODULE)},
 			  ?MODULE, [Host]).
 
@@ -86,16 +100,25 @@ init([Host]) ->
 	    end, lists:seq(1, PoolSize))}}.
 
 get_pids(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-
-    % throw an exception if supervisor is not ready (i.e. if it cannot
-    % start its children, if the database is down for example)
-    sys:get_status(Proc, ?CONNECT_TIMEOUT),
-
-    [Child ||
-	{_Id, Child, _Type, _Modules} <- supervisor:which_children(Proc),
-	Child /= undefined].
+    Rs = mnesia:dirty_read(sql_pool, Host),
+    [R#sql_pool.pid || R <- Rs].
 
 get_random_pid(Host) ->
     Pids = get_pids(Host),
     lists:nth(erlang:phash(now(), length(Pids)), Pids).
+
+add_pid(Host, Pid) ->
+    F = fun() ->
+		mnesia:write(
+		  #sql_pool{host = Host,
+			    pid = Pid})
+	end,
+    mnesia:ets(F).
+
+remove_pid(Host, Pid) ->
+    F = fun() ->
+		mnesia:delete_object(
+		  #sql_pool{host = Host,
+			    pid = Pid})
+	end,
+    mnesia:ets(F).

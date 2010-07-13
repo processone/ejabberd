@@ -123,8 +123,7 @@ loop(Host, AccessMaxOfflineMsgs) ->
 						     M#offline_msg.timestamp))]},
 				      XML =
 					  ejabberd_odbc:escape(
-					    lists:flatten(
-					      xml:element_to_string(Packet))),
+					    xml:element_to_binary(Packet)),
 				      odbc_queries:add_spool_sql(Username, XML)
 			      end, Msgs),
 		    case catch odbc_queries:add_spool(Host, Query) of

@@ -36,8 +36,12 @@
 	 change_shaper/2,
 	 reset_stream/1,
 	 starttls/2,
+	 starttls/3,
 	 compress/2,
+	 send/2,
 	 become_controller/2,
+	 change_controller/2,
+	 setopts/2,
 	 close/1]).
 
 %% gen_server callbacks
@@ -52,6 +56,7 @@
 		c2s_pid,
 		max_stanza_size,
 		xml_stream_state,
+		tref,
 		timeout}).
 
 -define(HIBERNATE_TIMEOUT, 90000).
@@ -86,14 +91,31 @@ change_shaper(Pid, Shaper) ->
 reset_stream(Pid) ->
     gen_server:call(Pid, reset_stream).
 
-starttls(Pid, TLSSocket) ->
-    gen_server:call(Pid, {starttls, TLSSocket}).
+starttls(Pid, TLSOpts) ->
+    starttls(Pid, TLSOpts, undefined).
 
-compress(Pid, ZlibSocket) ->
-    gen_server:call(Pid, {compress, ZlibSocket}).
+starttls(Pid, TLSOpts, Data) ->
+    gen_server:call(Pid, {starttls, TLSOpts, Data}).
+
+compress(Pid, Data) ->
+    gen_server:call(Pid, {compress, Data}).
 
 become_controller(Pid, C2SPid) ->
     gen_server:call(Pid, {become_controller, C2SPid}).
+
+change_controller(Pid, C2SPid) ->
+    gen_server:call(Pid, {change_controller, C2SPid}).
+
+setopts(Pid, Opts) ->
+    case lists:member({active, false}, Opts) of
+	true ->
+	    gen_server:call(Pid, deactivate_socket);
+	false ->
+	    ok
+    end.
+
+send(Pid, Data) ->
+    gen_server:call(Pid, {send, Data}).
 
 close(Pid) ->
     gen_server:cast(Pid, close).
@@ -132,10 +154,17 @@ init([Socket, SockMod, Shaper, MaxStanzaSize]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({starttls, TLSSocket}, _From,
+handle_call({starttls, TLSOpts, Data}, _From,
 	    #state{xml_stream_state = XMLStreamState,
 		   c2s_pid = C2SPid,
+		   socket = Socket,
 		   max_stanza_size = MaxStanzaSize} = State) ->
+    {ok, TLSSocket} = tls:tcp_to_tls(Socket, TLSOpts),
+    if Data /= undefined ->
+	    do_send(State, Data);
+       true ->
+	    ok
+    end,
     close_stream(XMLStreamState),
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     NewState = State#state{socket = TLSSocket,
@@ -143,14 +172,23 @@ handle_call({starttls, TLSSocket}, _From,
 			   xml_stream_state = NewXMLStreamState},
     case tls:recv_data(TLSSocket, "") of
 	{ok, TLSData} ->
-	    {reply, ok, process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
+	    {reply, {ok, TLSSocket},
+	     process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
-handle_call({compress, ZlibSocket}, _From,
+handle_call({compress, Data}, _From,
 	    #state{xml_stream_state = XMLStreamState,
 		   c2s_pid = C2SPid,
+		   socket = Socket,
+		   sock_mod = SockMod,
 		   max_stanza_size = MaxStanzaSize} = State) ->
+    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(SockMod, Socket),
+    if Data /= undefined ->
+	    do_send(State, Data);
+       true ->
+	    ok
+    end,
     close_stream(XMLStreamState),
     NewXMLStreamState = xml_stream:new(C2SPid, MaxStanzaSize),
     NewState = State#state{socket = ZlibSocket,
@@ -158,7 +196,8 @@ handle_call({compress, ZlibSocket}, _From,
 			   xml_stream_state = NewXMLStreamState},
     case ejabberd_zlib:recv_data(ZlibSocket, "") of
 	{ok, ZlibData} ->
-	    {reply, ok, process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
+	    {reply, {ok, ZlibSocket},
+	     process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
@@ -172,12 +211,31 @@ handle_call(reset_stream, _From,
     {reply, Reply, State#state{xml_stream_state = NewXMLStreamState},
      ?HIBERNATE_TIMEOUT};
 handle_call({become_controller, C2SPid}, _From, State) ->
+    erlang:monitor(process, C2SPid),
     XMLStreamState = xml_stream:new(C2SPid, State#state.max_stanza_size),
     NewState = State#state{c2s_pid = C2SPid,
 			   xml_stream_state = XMLStreamState},
     activate_socket(NewState),
     Reply = ok,
     {reply, Reply, NewState, ?HIBERNATE_TIMEOUT};
+handle_call({change_controller, C2SPid}, _From, State) ->
+    erlang:monitor(process, C2SPid),
+    NewXMLStreamState = xml_stream:change_callback_pid(
+			  State#state.xml_stream_state, C2SPid),
+    NewState = State#state{c2s_pid = C2SPid,
+			   xml_stream_state = NewXMLStreamState},
+    activate_socket(NewState),
+    {reply, ok, NewState, ?HIBERNATE_TIMEOUT};
+handle_call({send, Data}, _From, State) ->
+    case do_send(State, Data) of
+	ok ->
+	    {reply, ok, State, ?HIBERNATE_TIMEOUT};
+	{error, _Reason} = Err ->
+	    {stop, normal, Err, State}
+    end;
+handle_call(deactivate_socket, _From, State) ->
+    deactivate_socket(State),
+    {reply, ok, State, ?HIBERNATE_TIMEOUT};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT}.
@@ -237,6 +295,9 @@ handle_info({Tag, _TCPSocket, Reason}, State)
 	_ ->
 	    {stop, normal, State}
     end;
+handle_info({'DOWN', _MRef, process, C2SPid, _},
+	    #state{c2s_pid = C2SPid} = State) ->
+    {stop, normal, State};
 handle_info({timeout, _Ref, activate}, State) ->
     activate_socket(State),
     {noreply, State, ?HIBERNATE_TIMEOUT};
@@ -294,6 +355,17 @@ activate_socket(#state{socket = Socket,
 	    ok
     end.
 
+deactivate_socket(#state{socket = Socket,
+			 tref = TRef,
+			 sock_mod = SockMod}) ->
+    cancel_timer(TRef),
+    case SockMod of
+	gen_tcp ->
+	    inet:setopts(Socket, [{active, false}]);
+	_ ->
+	    SockMod:setopts(Socket, [{active, false}])
+    end.
+
 %% Data processing for connectors directly generating xmlelement in
 %% Erlang data structure.
 %% WARNING: Shaper does not work with Erlang data structure.
@@ -315,20 +387,23 @@ process_data([Element|Els], #state{c2s_pid = C2SPid} = State)
 %% Data processing for connectors receivind data as string.
 process_data(Data,
 	     #state{xml_stream_state = XMLStreamState,
+		    tref = TRef,
 		    shaper_state = ShaperState,
 		    c2s_pid = C2SPid} = State) ->
     ?DEBUG("Received XML on stream = ~p", [binary_to_list(Data)]),
     XMLStreamState1 = xml_stream:parse(XMLStreamState, Data),
     {NewShaperState, Pause} = shaper:update(ShaperState, size(Data)),
-    if
-	C2SPid == undefined ->
-	    ok;
-	Pause > 0 ->
-	    erlang:start_timer(Pause, self(), activate);
-	true ->
-	    activate_socket(State)
-    end,
+    NewTRef = if
+		  C2SPid == undefined ->
+		      TRef;
+		  Pause > 0 ->
+		      erlang:start_timer(Pause, self(), activate);
+		  true ->
+		      activate_socket(State),
+		      TRef
+	      end,
     State#state{xml_stream_state = XMLStreamState1,
+		tref = NewTRef,
 		shaper_state = NewShaperState}.
 
 %% Element coming from XML parser are wrapped inside xmlstreamelement
@@ -345,3 +420,21 @@ close_stream(undefined) ->
     ok;
 close_stream(XMLStreamState) ->
     xml_stream:close(XMLStreamState).
+
+do_send(State, Data) ->
+    (State#state.sock_mod):send(State#state.socket, Data).
+
+cancel_timer(TRef) when is_reference(TRef) ->
+    case erlang:cancel_timer(TRef) of
+	false ->
+	    receive
+		{timeout, TRef, _} ->
+		    ok
+	    after 0 ->
+		    ok
+	    end;
+	_ ->
+	    ok
+    end;
+cancel_timer(_) ->
+    ok.

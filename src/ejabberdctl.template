@@ -82,7 +82,7 @@ else
     KERNEL_OPTS="-kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
 fi
 
-ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS $KERNEL_OPTS"
+ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 
 # define additional environment variables
 if [ "$EJABBERDDIR" = "" ]; then
@@ -141,6 +141,7 @@ start ()
       -noinput -detached \
       -pa $EJABBERD_EBIN_PATH \
       -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
+      $KERNEL_OPTS \
       -s ejabberd \
       -sasl sasl_error_logger \\{file,\\\"$SASL_LOG_PATH\\\"\\} \
       $ERLANG_OPTS $ARGS \"$@\""
@@ -174,6 +175,7 @@ debug ()
       $NAME debug-${TTY}-${ERLANG_NODE} \
       -remsh $ERLANG_NODE \
       -hidden \
+      $KERNEL_OPTS \
       $ERLANG_OPTS $ARGS \"$@\""
 }
 
@@ -203,6 +205,7 @@ live ()
       $NAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
       -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
+      $KERNEL_OPTS \
       -s ejabberd \
       $ERLANG_OPTS $ARGS \"$@\""
 }
@@ -236,7 +239,7 @@ ctl ()
     MAXCONNID=100
     CONNLOCKDIR=@LOCALSTATEDIR@/lock/ejabberdctl
     FLOCK='/usr/bin/flock'
-    if [ ! -x "$FLOCK" ] ; then
+    if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
 	JOT='/usr/bin/jot'
 	if [ ! -x "$JOT" ] ; then
 	    # no flock or jot, simply invoke ctlexec()
@@ -310,6 +313,7 @@ ctlexec ()
       -noinput \
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
+      $KERNEL_OPTS \
       -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
 }
 

@@ -611,6 +611,7 @@ build
 INSTALLUSER
 SSL_CFLAGS
 SSL_LIBS
+nif
 full_xml
 transient_supervisors
 db_type
@@ -647,7 +648,7 @@ EGREP
 GREP
 CPP
 LIBICONV
-ERLANG_SSL39
+ERLANG_SSLVER
 ERLANG_LIBS
 ERLANG_CFLAGS
 ERL
@@ -721,6 +722,7 @@ enable_roster_gateway_workaround
 enable_mssql
 enable_transient_supervisors
 enable_full_xml
+enable_nif
 with_openssl
 enable_user
 '
@@ -1372,6 +1374,8 @@ Optional Features:
                           (default: yes)
   --enable-full-xml       use XML features in XMPP stream (ex: CDATA)
                           (default: no, requires XML compliant clients)
+  --enable-nif            replace some functions with C equivalents. Requires
+                          Erlang R13B04 or higher (default: no)
   --enable-user[[[=USER]]]
                           allow this system user to start ejabberd (default:
                           no)
@@ -3207,7 +3211,6 @@ fi
 -author('alexey@sevcom.net').
 
 -export([start/0]).
--include_lib("ssl/include/ssl_pkix.hrl").
 
 start() ->
     EIDirS = code:lib_dir("erl_interface") ++ "\n",
@@ -3216,11 +3219,13 @@ start() ->
     file:write_file("conftest.out", list_to_binary(EIDirS ++ EILibS ++ ssldef() ++ RootDirS)),
     halt().
 
--ifdef('id-pkix').
-ssldef() -> "-DSSL39\n".
--else.
-ssldef() -> "\n".
--endif.
+ssldef() ->
+   OTP = (catch erlang:system_info(otp_release)),
+   if
+	OTP >= "R14" -> "-DSSL40\n";
+	OTP >= "R12" -> "-DSSL39\n";
+        true -> ""
+   end.
 
 %% return physical architecture based on OS/Processor
 archname() ->
@@ -3270,7 +3275,7 @@ _EOF
    # Second line
    ERLANG_EI_LIB=`cat conftest.out | head -n 2 | tail -n 1`
    # Third line
-   ERLANG_SSL39=`cat conftest.out | head -n 3 | tail -n 1`
+   ERLANG_SSLVER=`cat conftest.out | head -n 3 | tail -n 1`
    # End line
    ERLANG_DIR=`cat conftest.out | tail -n 1`
 
@@ -4650,7 +4655,7 @@ if test "${enable_transient_supervisors+set}" = set; then :
   enableval=$enable_transient_supervisors; case "${enableval}" in
   yes) transient_supervisors=true ;;
   no)  transient_supervisors=false ;;
-  *) as_fn_error "bad value ${enableval} for --enable-full-xml" "$LINENO" 5 ;;
+  *) as_fn_error "bad value ${enableval} for --enable-transient_supervisors" "$LINENO" 5 ;;
 esac
 else
   transient_supervisors=true
@@ -4667,6 +4672,19 @@ if test "${enable_full_xml+set}" = set; then :
 esac
 else
   full_xml=false
+fi
+
+
+
+# Check whether --enable-nif was given.
+if test "${enable_nif+set}" = set; then :
+  enableval=$enable_nif; case "${enableval}" in
+  yes) nif=true ;;
+  no)  nif=false ;;
+  *) as_fn_error "bad value ${enableval} for --enable-nif" "$LINENO" 5 ;;
+esac
+else
+  nif=false
 fi
 
 

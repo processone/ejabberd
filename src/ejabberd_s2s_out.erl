@@ -34,7 +34,8 @@
 	 start_link/3,
 	 start_connection/1,
 	 terminate_if_waiting_delay/2,
-	 stop_connection/1]).
+	 stop_connection/1,
+	 stop_connection/2]).
 
 %% p1_fsm callbacks (same as gen_fsm)
 -export([init/1,
@@ -54,6 +55,7 @@
      print_state/1,
 	 code_change/4,
 	 test_get_addr_port/1,
+	 print_state/1,
 	 get_addr_port/1]).
 
 -include("ejabberd.hrl").
@@ -84,10 +86,11 @@
 
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, p1_fsm:start(ejabberd_s2s_out, [From, Host, Type],
-				       fsm_limit_opts() ++ ?FSMOPTS)).
+-define(SUPERVISOR_START, rpc:call(Node, p1_fsm, start,
+				   [ejabberd_s2s_out, [From, Host, Type],
+				    fsm_limit_opts() ++ ?FSMOPTS])).
 -else.
--define(SUPERVISOR_START, supervisor:start_child(ejabberd_s2s_out_sup,
+-define(SUPERVISOR_START, supervisor:start_child({ejabberd_s2s_out_sup, Node},
 						 [From, Host, Type])).
 -endif.
 
@@ -126,6 +129,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(From, Host, Type) ->
+    Node = ejabberd_cluster:get_node({From, Host}),
     ?SUPERVISOR_START.
 
 start_link(From, Host, Type) ->
@@ -136,7 +140,10 @@ start_connection(Pid) ->
     p1_fsm:send_event(Pid, init).
 
 stop_connection(Pid) ->
-    p1_fsm:send_event(Pid, stop).
+    p1_fsm:send_event(Pid, closed).
+
+stop_connection(Pid, Timeout) ->
+    p1_fsm:send_all_state_event(Pid, {closed, Timeout}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from p1_fsm
@@ -746,8 +753,14 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
+handle_event({closed, Timeout}, StateName, StateData) ->
+    p1_fsm:send_event_after(Timeout, closed),
+    {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData, get_timeout_interval(StateName)}.
+
+print_state(StateData) ->
+    StateData.
 
 %%----------------------------------------------------------------------
 %% Func: handle_sync_event/4
@@ -892,7 +905,7 @@ send_text(StateData, Text) ->
     ejabberd_socket:send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 send_queue(StateData, Q) ->
     case queue:out(Q) of

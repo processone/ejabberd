@@ -27,14 +27,19 @@
 -module(mod_muc_room).
 -author('alexey@process-one.net').
 
--behaviour(gen_fsm).
+-define(GEN_FSM, p1_fsm).
+
+-behaviour(?GEN_FSM).
 
 
 %% External exports
 -export([start_link/9,
 	 start_link/7,
+	 start_link/2,
 	 start/9,
 	 start/7,
+	 start/2,
+	 migrate/3,
 	 route/4]).
 
 %% gen_fsm callbacks
@@ -44,6 +49,7 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
+	 print_state/1,
 	 code_change/4]).
 
 -include("ejabberd.hrl").
@@ -63,16 +69,12 @@
 
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, 
-	gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-				RoomShaper, Creator, Nick, DefRoomOpts],
-		      ?FSMOPTS)).
+-define(SUPERVISOR_START(Args), 
+	?GEN_FSM:start(?MODULE, Args, ?FSMOPTS)).
 -else.
--define(SUPERVISOR_START, 
+-define(SUPERVISOR_START(Args), 
 	Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
-	supervisor:start_child(
-	  Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-		       Creator, Nick, DefRoomOpts])).
+	supervisor:start_child(Supervisor, Args)).
 -endif.
 
 %%%----------------------------------------------------------------------
@@ -80,7 +82,8 @@
 %%%----------------------------------------------------------------------
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
       Creator, Nick, DefRoomOpts) ->
-    ?SUPERVISOR_START.
+    ?SUPERVISOR_START([Host, ServerHost, Access, Room, HistorySize,
+		       RoomShaper, Creator, Nick, DefRoomOpts]).
 
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
@@ -88,16 +91,26 @@ start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
       Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
 		   Opts]).
 
+start(StateName, StateData) ->
+    ServerHost = StateData#state.server_host,
+    ?SUPERVISOR_START([StateName, StateData]).
+
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
 	   Creator, Nick, DefRoomOpts) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-				 RoomShaper, Creator, Nick, DefRoomOpts],
-		       ?FSMOPTS).
+    ?GEN_FSM:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+				  RoomShaper, Creator, Nick, DefRoomOpts],
+			?FSMOPTS).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-				 RoomShaper, Opts],
-		       ?FSMOPTS).
+    ?GEN_FSM:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+				  RoomShaper, Opts],
+			?FSMOPTS).
+
+start_link(StateName, StateData) ->
+    ?GEN_FSM:start_link(?MODULE, [StateName, StateData], ?FSMOPTS).
+
+migrate(FsmRef, Node, After) ->
+    ?GEN_FSM:send_all_state_event(FsmRef, {migrate, Node, After}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -139,7 +152,11 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 				  jid = jlib:make_jid(Room, Host, ""),
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
-    {ok, normal_state, State}.
+    {ok, normal_state, State};
+init([StateName, #state{room = Room, host = Host} = StateData]) ->
+    process_flag(trap_exit, true),
+    mod_muc:register_room(Host, Room, self()),
+    {ok, StateName, StateData}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -162,7 +179,7 @@ normal_state({route, From, "",
 			trunc(gen_mod:get_module_opt(
 				StateData#state.server_host,
 				mod_muc, min_message_interval, 0) * 1000000),
-		    Size = iolist_size(xml:element_to_string(Packet)),
+		    Size = element_size(Packet),
 		    {MessageShaper, MessageShaperInterval} =
 			shaper:update(Activity#activity.message_shaper, Size),
 		    if
@@ -580,6 +597,9 @@ handle_event(destroy, StateName, StateData) ->
 handle_event({set_affiliations, Affiliations}, StateName, StateData) ->
     {next_state, StateName, StateData#state{affiliations = Affiliations}};
 
+handle_event({migrate, Node, After}, StateName, StateData) when Node /= node() ->
+    {migrate, StateData,
+     {Node, ?MODULE, start, [StateName, StateData]}, After * 2};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -611,6 +631,9 @@ handle_sync_event(_Event, _From, StateName, StateData) ->
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
+
+print_state(StateData) ->
+    StateData.
 
 %%----------------------------------------------------------------------
 %% Func: handle_info/3
@@ -701,6 +724,13 @@ handle_info(_Info, StateName, StateData) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
+terminate({migrated, Clone}, _StateName, StateData) ->
+    ?INFO_MSG("Migrating room ~s@~s to ~p on node ~p",
+	      [StateData#state.room, StateData#state.host,
+	       Clone, node(Clone)]),
+    mod_muc:room_destroyed(StateData#state.host, StateData#state.room,
+			   self(), StateData#state.server_host),
+    ok;
 terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("Stopping MUC room ~s@~s",
 	      [StateData#state.room, StateData#state.host]),
@@ -739,7 +769,7 @@ terminate(Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 route(Pid, From, ToNick, Packet) ->
-    gen_fsm:send_event(Pid, {route, From, ToNick, Packet}).
+    ?GEN_FSM:send_event(Pid, {route, From, ToNick, Packet}).
 
 process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 			  StateData) ->
@@ -1394,7 +1424,7 @@ prepare_room_queue(StateData) ->
 	{{value, {message, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    Packet = Activity#activity.message,
-	    Size = iolist_size(xml:element_to_string(Packet)),
+	    Size = element_size(Packet),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1405,7 +1435,7 @@ prepare_room_queue(StateData) ->
 	{{value, {presence, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    {_Nick, Packet} = Activity#activity.presence,
-	    Size = iolist_size(xml:element_to_string(Packet)),
+	    Size = element_size(Packet),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1625,13 +1655,12 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		      From, Err),
 		    StateData;
 		captcha_required ->
-		    ID = randoms:get_string(),
 		    SID = xml:get_attr_s("id", Attrs),
 		    RoomJID = StateData#state.jid,
 		    To = jlib:jid_replace_resource(RoomJID, Nick),
 		    case ejabberd_captcha:create_captcha(
-			   ID, SID, RoomJID, To, Lang, From) of
-			{ok, CaptchaEls} ->
+			   SID, RoomJID, To, Lang, From) of
+			{ok, ID, CaptchaEls} ->
 			    MsgPkt = {xmlelement, "message", [{"id", ID}], CaptchaEls},
 			    Robots = ?DICT:store(From,
 						 {Nick, Packet}, StateData#state.robots),
@@ -2068,7 +2097,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		StateData#state.jid,
 		TSPacket),
-    Size = iolist_size(xml:element_to_string(SPacket)),
+    Size = element_size(SPacket),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),
@@ -3582,3 +3611,6 @@ tab_count_user(JID) ->
 	_ ->
 	    0
     end.
+
+element_size(El) ->
+    size(xml:element_to_binary(El)).

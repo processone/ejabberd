@@ -48,6 +48,11 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-ifdef(SSL40).
+-include_lib("public_key/include/public_key.hrl"). 
+-define(PKIXEXPLICIT, 'OTP-PUB-KEY').
+-define(PKIXIMPLICIT, 'OTP-PUB-KEY').
+-else.
 -ifdef(SSL39).
 -include_lib("ssl/include/ssl_pkix.hrl").
 -define(PKIXEXPLICIT, 'OTP-PKIX').
@@ -57,6 +62,7 @@
 -include_lib("ssl/include/PKIX1Implicit88.hrl").
 -define(PKIXEXPLICIT, 'PKIX1Explicit88').
 -define(PKIXIMPLICIT, 'PKIX1Implicit88').
+-endif.
 -endif.
 -include("XmppAddr.hrl").
 
@@ -263,7 +269,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    TLSOpts = StateData#state.tls_options,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  xml:element_to_string(
+			  xml:element_to_binary(
 			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
@@ -618,7 +624,7 @@ send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 
 change_shaper(StateData, Host, JID) ->

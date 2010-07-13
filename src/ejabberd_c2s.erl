@@ -35,7 +35,7 @@
 %% External exports
 -export([start/2,
 	 stop/1,
-	 start_link/2,
+	 start_link/3,
 	 send_text/2,
 	 send_element/2,
 	 socket_type/0,
@@ -56,8 +56,9 @@
 	 code_change/4,
 	 handle_info/3,
 	 terminate/3,
-     print_state/1
-     ]).
+	 print_state/1,
+	 migrate/3
+	]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -96,6 +97,7 @@
 		conn = unknown,
 		auth_module = unknown,
 		ip,
+		fsm_limit_opts,
 		lang}).
 
 %-define(DBGFSM, true).
@@ -108,11 +110,12 @@
 
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, ?GEN_FSM:start(ejabberd_c2s, [SockData, Opts],
-					 fsm_limit_opts(Opts) ++ ?FSMOPTS)).
+-define(SUPERVISOR_START, ?GEN_FSM:start(ejabberd_c2s,
+					 [SockData, Opts, FSMLimitOpts],
+					 FSMLimitOpts ++ ?FSMOPTS)).
 -else.
 -define(SUPERVISOR_START, supervisor:start_child(ejabberd_c2s_sup,
-						 [SockData, Opts])).
+						 [SockData, Opts, FSMLimitOpts])).
 -endif.
 
 %% This is the timeout to apply between event when starting a new
@@ -140,12 +143,17 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+start(StateName, #state{fsm_limit_opts = Opts} = State) ->
+    start(StateName, State, Opts);
 start(SockData, Opts) ->
+    start(SockData, Opts, fsm_limit_opts(Opts)).
+
+start(SockData, Opts, FSMLimitOpts) ->
     ?SUPERVISOR_START.
 
-start_link(SockData, Opts) ->
-    ?GEN_FSM:start_link(ejabberd_c2s, [SockData, Opts],
-			fsm_limit_opts(Opts) ++ ?FSMOPTS).
+start_link(SockData, Opts, FSMLimitOpts) ->
+    ?GEN_FSM:start_link(ejabberd_c2s, [SockData, Opts, FSMLimitOpts],
+			FSMLimitOpts ++ ?FSMOPTS).
 
 socket_type() ->
     xml_stream.
@@ -156,6 +164,9 @@ get_presence(FsmRef) ->
 
 stop(FsmRef) ->
     ?GEN_FSM:send_event(FsmRef, closed).
+
+migrate(FsmRef, Node, After) ->
+    ?GEN_FSM:send_all_state_event(FsmRef, {migrate, Node, After}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -168,7 +179,7 @@ stop(FsmRef) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([{SockMod, Socket}, Opts]) ->
+init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
     Access = case lists:keysearch(access, 1, Opts) of
 		 {value, {_, A}} -> A;
 		 _ -> all
@@ -192,7 +203,12 @@ init([{SockMod, Socket}, Opts]) ->
 			(_) -> false
 		     end, Opts),
     TLSOpts = [verify_none | TLSOpts1],
-    IP = peerip(SockMod, Socket),
+    IP = case lists:keysearch(frontend_ip, 1, Opts) of
+	     {value, {_, IP1}} ->
+		 IP1;
+	     _ ->
+		 peerip(SockMod, Socket)
+	 end,
     %% Check if IP is blacklisted:
     case is_ip_blacklisted(IP) of
 	true ->
@@ -220,8 +236,35 @@ init([{SockMod, Socket}, Opts]) ->
 					 streamid       = new_id(),
 					 access         = Access,
 					 shaper         = Shaper,
-					 ip             = IP},
+					 ip             = IP,
+					 fsm_limit_opts = FSMLimitOpts},
 	     ?C2S_OPEN_TIMEOUT}
+    end;
+init([StateName, StateData, _FSMLimitOpts]) ->
+    MRef = (StateData#state.sockmod):monitor(StateData#state.socket),
+    if StateName == session_established ->
+	    Conn = get_conn_type(StateData),
+	    Info = [{ip, StateData#state.ip}, {conn, Conn},
+		    {auth_module, StateData#state.auth_module}],
+	    {Time, _} = StateData#state.sid,
+	    SID = {Time, self()},
+	    Priority = case StateData#state.pres_last of
+			   undefined ->
+			       undefined;
+			   El ->
+			       get_priority_from_presence(El)
+		       end,
+	    ejabberd_sm:open_session(
+	      SID,
+	      StateData#state.user,
+	      StateData#state.server,
+	      StateData#state.resource,
+	      Priority,
+	      Info),
+	    NewStateData = StateData#state{sid = SID, socket_monitor = MRef},
+	    {ok, StateName, NewStateData};
+       true ->
+	    {ok, StateName, StateData#state{socket_monitor = MRef}}
     end.
 
 %% Return list of all available resources of contacts,
@@ -469,13 +512,13 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				jlib:jid_to_string(JID), AuthModule]),
 			    SID = {now(), self()},
 			    Conn = get_conn_type(StateData),
-			    Info = [{ip, StateData#state.ip}, {conn, Conn},
-				    {auth_module, AuthModule}],
+			    %% Info = [{ip, StateData#state.ip}, {conn, Conn},
+			    %% 	    {auth_module, AuthModule}],
 			    Res1 = jlib:make_result_iq_reply(El),
 			    Res = setelement(4, Res1, []),
 			    send_element(StateData, Res),
-			    ejabberd_sm:open_session(
-			      SID, U, StateData#state.server, R, Info),
+			    %% ejabberd_sm:open_session(
+			    %%   SID, U, StateData#state.server, R, Info),
 			    change_shaper(StateData, JID),
 			    {Fs, Ts} = ejabberd_hooks:run_fold(
 					 roster_get_subscription_lists,
@@ -502,8 +545,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList},
-			    fsm_next_state_pack(session_established,
-                                                NewStateData);
+			    maybe_migrate(session_established, NewStateData);
 			_ ->
 			    ?INFO_MSG(
 			       "(~w) Failed legacy authentication for ~s",
@@ -627,7 +669,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    Socket = StateData#state.socket,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  xml:element_to_string(
+			  xml:element_to_binary(
 			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
 	    fsm_next_state(wait_for_stream,
 			   StateData#state{socket = TLSSocket,
@@ -650,7 +692,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    Socket = StateData#state.socket,
 			    ZlibSocket = (StateData#state.sockmod):compress(
 					   Socket,
-					   xml:element_to_string(
+					   xml:element_to_binary(
 					     {xmlelement, "compressed",
 					      [{"xmlns", ?NS_COMPRESS}], []})),
 			    fsm_next_state(wait_for_stream,
@@ -831,7 +873,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
     case jlib:iq_query_info(El) of
 	#iq{type = set, xmlns = ?NS_SESSION} ->
 	    U = StateData#state.user,
-	    R = StateData#state.resource,
+	    %%R = StateData#state.resource,
 	    JID = StateData#state.jid,
 	    case acl:match_rule(StateData#state.server,
 				StateData#state.access, JID) of
@@ -857,10 +899,10 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			  [U, StateData#state.server]),
 		    SID = {now(), self()},
 		    Conn = get_conn_type(StateData),
-		    Info = [{ip, StateData#state.ip}, {conn, Conn},
-			    {auth_module, StateData#state.auth_module}],
-		    ejabberd_sm:open_session(
-		      SID, U, StateData#state.server, R, Info),
+		    %% Info = [{ip, StateData#state.ip}, {conn, Conn},
+		    %% 	    {auth_module, StateData#state.auth_module}],
+		    %% ejabberd_sm:open_session(
+		    %%   SID, U, StateData#state.server, R, Info),
                     NewStateData =
                         StateData#state{
 				     sid = SID,
@@ -868,8 +910,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				     pres_f = ?SETS:from_list(Fs1),
 				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList},
-		    fsm_next_state_pack(session_established,
-                                        NewStateData);
+		    maybe_migrate(session_established, NewStateData);
 		_ ->
 		    ejabberd_hooks:run(forbidden_session_hook,
 				       StateData#state.server, [JID]),
@@ -1047,6 +1088,8 @@ session_established2(El, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
+handle_event({migrate, Node, After}, StateName, StateData) when Node /= node() ->
+    fsm_migrate(StateName, StateData, Node, After * 2);
 handle_event(_Event, StateName, StateData) ->
     fsm_next_state(StateName, StateData).
 
@@ -1382,6 +1425,22 @@ print_state(State = #state{pres_t = T, pres_f = F, pres_a = A, pres_i = I}) ->
 %% Purpose: Shutdown the fsm
 %% Returns: any
 %%----------------------------------------------------------------------
+terminate({migrated, ClonePid}, StateName, StateData) ->
+    if StateName == session_established ->
+	    ?INFO_MSG("(~w) Migrating ~s to ~p on node ~p",
+		      [StateData#state.socket,
+		       jlib:jid_to_string(StateData#state.jid),
+		       ClonePid, node(ClonePid)]),
+	    ejabberd_sm:close_session(StateData#state.sid,
+				      StateData#state.user,
+				      StateData#state.server,
+				      StateData#state.resource);
+       true ->
+	    ok
+    end,
+    (StateData#state.sockmod):change_controller(
+      StateData#state.socket, ClonePid),
+    ok;
 terminate(_Reason, StateName, StateData) ->
     case StateName of
 	session_established ->
@@ -1453,14 +1512,14 @@ change_shaper(StateData, JID) ->
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
-    ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
+    ?DEBUG("Send XML on stream = ~p", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) when StateData#state.xml_socket ->
     (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 send_header(StateData, Server, Version, Lang)
   when StateData#state.xml_socket ->
@@ -1550,16 +1609,21 @@ get_auth_tags([], U, P, D, R) ->
 
 get_conn_type(StateData) ->
     case (StateData#state.sockmod):get_sockmod(StateData#state.socket) of
-    gen_tcp -> c2s;
-    tls -> c2s_tls;
-    ejabberd_zlib ->
-	case ejabberd_zlib:get_sockmod((StateData#state.socket)#socket_state.socket) of
-	    gen_tcp -> c2s_compressed;
-	    tls -> c2s_compressed_tls
-	end;
-    ejabberd_http_poll -> http_poll;
-    ejabberd_http_bind -> http_bind;
-    _ -> unknown
+	gen_tcp -> c2s;
+	tls -> c2s_tls;
+	ejabberd_zlib ->
+	    if is_pid(StateData#state.socket) ->
+		    unknown;
+	       true ->
+		    case ejabberd_zlib:get_sockmod(
+			   (StateData#state.socket)#socket_state.socket) of
+			gen_tcp -> c2s_compressed;
+			tls -> c2s_compressed_tls
+		    end
+	    end;
+	ejabberd_http_poll -> http_poll;
+	ejabberd_http_bind -> http_bind;
+	_ -> unknown
     end.
 
 process_presence_probe(From, To, StateData) ->
@@ -2158,16 +2222,28 @@ peerip(SockMod, Socket) ->
 	_ -> undefined
     end.
 
-%% fsm_next_state_pack: Pack the StateData structure to improve
-%% sharing.
-fsm_next_state_pack(StateName, StateData) ->
-    fsm_next_state_gc(StateName, pack(StateData)).
-
-%% fsm_next_state_gc: Garbage collect the process heap to make use of
-%% the newly packed StateData structure.
-fsm_next_state_gc(StateName, PackedStateData) ->
-    erlang:garbage_collect(),
-    fsm_next_state(StateName, PackedStateData).
+maybe_migrate(StateName, StateData) ->
+    PackedStateData = pack(StateData),
+    case ejabberd_cluster:get_node({StateData#state.user,
+				    StateData#state.server}) of
+	Node when Node == node() ->
+	    Conn = get_conn_type(StateData),
+	    Info = [{ip, StateData#state.ip}, {conn, Conn},
+		    {auth_module, StateData#state.auth_module}],
+	    #state{user = U, server = S, resource = R, sid = SID} = StateData,
+	    ejabberd_sm:open_session(SID, U, S, R, Info),
+	    erlang:garbage_collect(),
+	    case ejabberd_cluster:get_node_new({U, S}) of
+		Node ->
+		    ok;
+		NewNode ->
+		    After = ejabberd_cluster:rehash_timeout(),
+		    migrate(self(), NewNode, After)
+	    end,
+	    fsm_next_state(StateName, PackedStateData);
+	Node ->
+	    fsm_migrate(StateName, PackedStateData, Node, 0)
+    end.
 
 %% fsm_next_state: Generate the next_state FSM tuple with different
 %% timeout, depending on the future state
@@ -2175,6 +2251,10 @@ fsm_next_state(session_established, StateData) ->
     {next_state, session_established, StateData, ?C2S_HIBERNATE_TIMEOUT};
 fsm_next_state(StateName, StateData) ->
     {next_state, StateName, StateData, ?C2S_OPEN_TIMEOUT}.
+
+fsm_migrate(StateName, StateData, Node, Timeout) ->
+    {migrate, StateData,
+     {Node, ?MODULE, start, [StateName, StateData]}, Timeout}.
 
 %% fsm_reply: Generate the reply FSM tuple with different timeout,
 %% depending on the future state

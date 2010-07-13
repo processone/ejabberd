@@ -27,6 +27,7 @@
 	 setopts/2,
 	 controlling_process/2,
 	 become_controller/2,
+	 change_controller/2,
 	 custom_receiver/1,
 	 reset_stream/1,
 	 change_shaper/2,
@@ -121,9 +122,19 @@
 start(XMPPDomain, Sid, Key, IP) ->
     ?DEBUG("Starting session", []),
     case catch supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key, IP]) of
-    	{ok, Pid} -> {ok, Pid};
-	_ -> check_bind_module(XMPPDomain),
-             {error, "Cannot start HTTP bind session"}
+    	{ok, Pid} ->
+	    {ok, Pid};
+	{error, _} = Err ->
+	    case check_bind_module(XMPPDomain) of
+		false ->
+		    {error, "Cannot start HTTP bind session"};
+		true ->
+		    ?ERROR_MSG("Cannot start HTTP bind session: ~p", [Err]),
+		    Err
+	    end;
+	Exit ->
+	    ?ERROR_MSG("Cannot start HTTP bind session: ~p", [Exit]),
+	    {error, Exit}
     end.
 
 start_link(Sid, Key, IP) ->
@@ -140,7 +151,13 @@ setopts({http_bind, FsmRef, _IP}, Opts) ->
 	true ->
 	    gen_fsm:send_all_state_event(FsmRef, {activate, self()});
 	_ ->
-	    ok
+	    case lists:member({active, false}, Opts) of
+		true ->
+		    gen_fsm:sync_send_all_state_event(
+		      FsmRef, deactivate_socket);
+		_ ->
+		    ok
+	    end
     end.
 
 controlling_process(_Socket, _Pid) ->
@@ -151,6 +168,9 @@ custom_receiver({http_bind, FsmRef, _IP}) ->
 
 become_controller(FsmRef, C2SPid) ->
     gen_fsm:send_all_state_event(FsmRef, {become_controller, C2SPid}).
+
+change_controller({http_bind, FsmRef, _IP}, C2SPid) ->
+    become_controller(FsmRef, C2SPid).
 
 reset_stream({http_bind, _FsmRef, _IP}) ->
     ok.
@@ -169,7 +189,6 @@ sockname(_Socket) ->
 
 peername({http_bind, _FsmRef, IP}) ->
     {ok, IP}.
-
 
 %% Entry point for data coming from client through ejabberd HTTP server:
 process_request(Data, IP) ->
@@ -192,12 +211,12 @@ process_request(Data, IP) ->
 		     "xmlns='" ++ ?NS_HTTP_BIND ++ "'/>"};
                 XmppDomain ->
                     %% create new session
-                    Sid = sha:sha(term_to_binary({now(), make_ref()})),
+                    Sid = make_sid(),
                     case start(XmppDomain, Sid, "", IP) of
 			{error, _} ->
-			    {200, ?HEADER, "<body type='terminate' "
+			    {500, ?HEADER, "<body type='terminate' "
 			     "condition='internal-server-error' "
-			     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>BOSH module not started</body>"};
+			     "xmlns='" ++ ?NS_HTTP_BIND ++ "'>Internal Server Error</body>"};
 			{ok, Pid} ->
 			    handle_session_start(
 			      Pid, XmppDomain, Sid, Rid, Attrs,
@@ -223,10 +242,10 @@ process_request(Data, IP) ->
             handle_http_put(Sid, Rid, Attrs, Payload2, PayloadSize,
 			    StreamStart, IP);
         {size_limit, Sid} ->
-	    case mnesia:dirty_read({http_bind, Sid}) of
-		[] ->
+	    case get_session(Sid) of
+		{error, _} ->
 		    {404, ?HEADER, ""};
-		[#http_bind{pid = FsmRef}] ->
+		{ok, #http_bind{pid = FsmRef}} ->
 		    gen_fsm:sync_send_all_state_event(FsmRef, {stop, close}),
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='undefined-condition' "
@@ -282,7 +301,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 	end,
     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
     ?DEBUG("Create session: ~p", [Sid]),
-    mnesia:transaction(
+    mnesia:async_dirty(
       fun() ->
 	      mnesia:write(
 		#http_bind{id = Sid,
@@ -340,6 +359,7 @@ init([Sid, Key, IP]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event({become_controller, C2SPid}, StateName, StateData) ->
+    erlang:monitor(process, C2SPid),
     case StateData#state.input of
 	cancel ->
 	    {next_state, StateName, StateData#state{
@@ -404,6 +424,14 @@ handle_sync_event({stop,close}, _From, _StateName, StateData) ->
 handle_sync_event({stop,stream_closed}, _From, _StateName, StateData) ->
     Reply = ok,
     {stop, normal, Reply, StateData};
+handle_sync_event(deactivate_socket, _From, StateName, StateData) ->
+    %% Input = case StateData#state.input of
+    %% 		cancel ->
+    %% 		    queue:new();
+    %% 		Q ->
+    %% 		    Q
+    %% 	    end,
+    {reply, ok, StateName, StateData#state{waiting_input = false}};
 handle_sync_event({stop,Reason}, _From, _StateName, StateData) ->
     ?DEBUG("Closing bind session ~p - Reason: ~p", [StateData#state.id, Reason]),
     Reply = ok,
@@ -537,6 +565,9 @@ handle_info({timeout, ShaperTimer, _}, StateName,
 	    #state{shaper_timer = ShaperTimer} = StateData) ->
     {next_state, StateName, StateData#state{shaper_timer = undefined}};
 
+handle_info({'DOWN', _MRef, process, C2SPid, _}, _StateName,
+	    #state{waiting_input = C2SPid} = StateData) ->
+    {stop, normal, StateData};
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -790,7 +821,7 @@ handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
 	    ?DEBUG("Trafic Shaper: Delaying request ~p", [Rid]),
 	    timer:sleep(Pause),
             %{200, ?HEADER,
-            % xml:element_to_string(
+            % xml:element_to_binary(
             %   {xmlelement, "body",
             %    [{"xmlns", ?NS_HTTP_BIND},
             %     {"type", "error"}], []})};
@@ -804,10 +835,10 @@ handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
 
 http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
     ?DEBUG("Looking for session: ~p", [Sid]),
-    case mnesia:dirty_read({http_bind, Sid}) of
-	[] ->
+    case get_session(Sid) of
+	{error, _} ->
             {error, not_exists};
-	[#http_bind{pid = FsmRef, hold=Hold, to={To, StreamVersion}}=Sess] ->
+	{ok, #http_bind{pid = FsmRef, hold=Hold, to={To, StreamVersion}}=Sess}->
             NewStream =
                 case StreamStart of
                     true ->
@@ -827,21 +858,21 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
     case Reason of
         not_exists ->
             {200, ?HEADER,
-             xml:element_to_string(
+             xml:element_to_binary(
                {xmlelement, "body",
                 [{"xmlns", ?NS_HTTP_BIND},
                  {"type", "terminate"},
                  {"condition", "item-not-found"}], []})};
         bad_key ->
             {200, ?HEADER,
-             xml:element_to_string(
+             xml:element_to_binary(
                {xmlelement, "body",
                 [{"xmlns", ?NS_HTTP_BIND},
                  {"type", "terminate"},
                  {"condition", "item-not-found"}], []})};
         polling_too_frequently ->
             {200, ?HEADER,
-             xml:element_to_string(
+             xml:element_to_binary(
                {xmlelement, "body",
                 [{"xmlns", ?NS_HTTP_BIND},
                  {"type", "terminate"},
@@ -986,7 +1017,7 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 		    MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 		    MaxPause = get_max_pause(To),
 		    {200, ?HEADER,
-		     xml:element_to_string(
+		     xml:element_to_binary(
 		       {xmlelement,"body",
 			[{"xmlns",
 			  ?NS_HTTP_BIND},
@@ -1041,7 +1072,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 		true ->
 		    TypedEls = [check_default_xmlns(OEl) ||
 				   {xmlstreamelement, OEl} <- OutPacket],
-		    Body = xml:element_to_string(
+		    Body = xml:element_to_binary(
 			     {xmlelement,"body",
 			      [{"xmlns",
 				?NS_HTTP_BIND}],
@@ -1075,7 +1106,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 						StreamTail]
 				end,
                             {200, ?HEADER,
-                             xml:element_to_string(
+                             xml:element_to_binary(
                                {xmlelement,"body",
                                 [{"xmlns",
                                   ?NS_HTTP_BIND}],
@@ -1191,7 +1222,7 @@ set_inactivity_timer(_Pause, MaxInactivity) ->
 elements_to_string([]) ->
     [];
 elements_to_string([El | Els]) ->
-    xml:element_to_string(El) ++ elements_to_string(Els).
+    [xml:element_to_binary(El)|elements_to_string(Els)].
 
 %% @spec (To, Default::integer()) -> integer()
 %% where To = [] | {Host::string(), Version::string()}
@@ -1225,7 +1256,36 @@ check_default_xmlns({xmlelement, Name, Attrs, Els} = El) ->
 %% Print a warning in log file if this is not the case.
 check_bind_module(XmppDomain) ->
     case gen_mod:is_loaded(XmppDomain, mod_http_bind) of
-	true -> ok;
+	true -> true;
 	false -> ?ERROR_MSG("You are trying to use BOSH (HTTP Bind), but the module mod_http_bind is not started.~n"
-			    "Check your 'modules' section in your ejabberd configuration file.",[])
+			    "Check your 'modules' section in your ejabberd configuration file.",[]),
+		 false
+    end.
+
+make_sid() ->
+    sha:sha(term_to_binary({now(), make_ref()}))
+	++ "-" ++ ejabberd_cluster:node_id().
+
+get_session(SID) ->
+    case string:tokens(SID, "-") of
+	[_, NodeID] ->
+	    case ejabberd_cluster:get_node_by_id(NodeID) of
+		Node when Node == node() ->
+		    case mnesia:dirty_read({http_bind, SID}) of
+			[] ->
+			    {error, enoent};
+			[Session] ->
+			    {ok, Session}
+		    end;
+		Node ->
+		    case catch rpc:call(Node, mnesia, dirty_read,
+					[{http_bind, SID}], 5000) of
+			[Session] ->
+			    {ok, Session};
+			_ ->
+			    {error, enoent}
+		    end
+	    end;
+	_ ->
+	    {error, enoent}
     end.
