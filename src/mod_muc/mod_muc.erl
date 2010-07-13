@@ -308,7 +308,7 @@ handle_info({room_destroyed, RoomHost, Pid}, State) ->
 		mnesia:delete_object(#muc_online_room{name_host = RoomHost,
 						      pid = Pid})
 	end,
-    mnesia:async_dirty(F),
+    mnesia:sync_dirty(F),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -585,7 +585,7 @@ register_room(Host, Room, Pid) when is_binary(Host), is_binary(Room) ->
 		mnesia:write(#muc_online_room{name_host = {Room, Host},
 					      pid = Pid})
 	end,
-    mnesia:async_dirty(F).
+    mnesia:sync_dirty(F).
 
 
 iq_disco_info(Lang) ->
