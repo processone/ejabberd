@@ -41,6 +41,8 @@ typedef struct {
       XML_Parser parser;
 } expat_data;
 
+static XML_Memory_Handling_Suite ms = {driver_alloc, driver_realloc, driver_free};
+
 void *erlXML_StartElementHandler(expat_data *d,
 				 const XML_Char *name,
 				 const XML_Char **atts)
@@ -98,7 +100,7 @@ static ErlDrvData expat_erl_start(ErlDrvPort port, char *buff)
 {
    expat_data* d = (expat_data*)driver_alloc(sizeof(expat_data));
    d->port = port;
-   d->parser = XML_ParserCreate("UTF-8");
+   d->parser = XML_ParserCreate_MM("UTF-8", &ms, NULL);
    XML_SetUserData(d->parser, d);
 
    set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
