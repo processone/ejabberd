@@ -39,6 +39,7 @@
 	 sql_bloc/2,
 	 escape/1,
 	 escape_like/1,
+	 to_bool/1,
 	 keep_alive/1]).
 
 %% gen_fsm callbacks
@@ -161,6 +162,12 @@ escape_like($%) -> "\\%";
 escape_like($_) -> "\\_";
 escape_like(C)  -> odbc_queries:escape(C).
 
+to_bool("t") -> true;
+to_bool("true") -> true;
+to_bool("1") -> true;
+to_bool(true) -> true;
+to_bool(1) -> true;
+to_bool(_) -> false.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
