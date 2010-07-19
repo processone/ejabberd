@@ -2944,9 +2944,11 @@ the processing discipline for In-Band Registration (<TT>jabber:iq:register</TT>)
 </DD></DL><P>This module reads also another option defined globally for the server:
 <TT>{registration_timeout, Timeout}</TT>. 
 This option limits the frequency of registration from a given IP or username.
-So, a user can&#X2019;t register a new account from the same IP address or JID during
-this number of seconds after previous registration.
-Timeout is expressed in seconds, and must be an integer.
+So, a user that tries to register a new account from the same IP address or JID during
+this number of seconds after his previous registration
+will receive an error <TT>resource-constraint</TT> with the explanation:
+&#X201C;Users are not allowed to register accounts so quickly&#X201D;.
+The timeout is expressed in seconds, and it must be an integer.
 To disable this limitation,
 instead of an integer put a word like: <TT>infinity</TT>.
 Default value: 600 seconds.</P><P>Examples:
