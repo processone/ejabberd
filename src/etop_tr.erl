@@ -88,7 +88,7 @@ handle_data(_W, {drop, D}, _) ->  %% Error case we are missing data here!
 handle_data(nopid, {_, _, out, _, _}, _Store) ->
     %% ignore - there was probably just a 'drop'
     nopid;
-handle_data(_, G, _) ->
+handle_data(_, _G, _) ->
     %% io:format("Erlang top got garbage ~p~n", [G]),
     nopid.
 
