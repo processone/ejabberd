@@ -3779,9 +3779,11 @@ from s2s leads to uncontrolled massive accounts creation by rogue users.
 This module reads also another option defined globally for the server:
 \term{\{registration\_timeout, Timeout\}}. \ind{options!registratimeout}
 This option limits the frequency of registration from a given IP or username.
-So, a user can't register a new account from the same IP address or JID during
-this number of seconds after previous registration.
-Timeout is expressed in seconds, and must be an integer.
+So, a user that tries to register a new account from the same IP address or JID during
+this number of seconds after his previous registration
+will receive an error \term{resource-constraint} with the explanation:
+``Users are not allowed to register accounts so quickly''.
+The timeout is expressed in seconds, and it must be an integer.
 To disable this limitation,
 instead of an integer put a word like: \term{infinity}.
 Default value: 600 seconds.
