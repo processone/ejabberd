@@ -64,15 +64,15 @@ static int iconv_erl_control(ErlDrvData drv_data,
    ei_decode_version(buf, &index, &i);
    ei_decode_tuple_header(buf, &index, &i);
    ei_get_type(buf, &index, &i, &size);
-   from = malloc(size + 1); 
+   from = driver_alloc(size + 1); 
    ei_decode_string(buf, &index, from);
 
    ei_get_type(buf, &index, &i, &size);
-   to = malloc(size + 1); 
+   to = driver_alloc(size + 1); 
    ei_decode_string(buf, &index, to);
   
    ei_get_type(buf, &index, &i, &size);
-   stmp = string = malloc(size + 1); 
+   stmp = string = driver_alloc(size + 1); 
    ei_decode_string(buf, &index, string);
 
    /* Special mode: parse as UTF-8 if possible; otherwise assume it's
@@ -92,9 +92,9 @@ static int iconv_erl_control(ErlDrvData drv_data,
 	 *rbuf = (char*)(b = driver_alloc_binary(size));
 	 memcpy(b->orig_bytes, string, size);
 
-	 free(from);
-	 free(to);
-	 free(string);
+	 driver_free(from);
+	 driver_free(to);
+	 driver_free(string);
 
 	 return size;
       }
@@ -102,7 +102,7 @@ static int iconv_erl_control(ErlDrvData drv_data,
    
    outleft = avail = 4*size;
    inleft = size;
-   rtmp = rstring = malloc(avail);
+   rtmp = rstring = driver_alloc(avail);
    while (inleft > 0) {
       if (iconv(cd, &stmp, &inleft, &rtmp, &outleft) == (size_t) -1) {
 	 if (invalid_utf8_as_latin1 && (*stmp & 0x80) && outleft >= 2) {
@@ -121,10 +121,10 @@ static int iconv_erl_control(ErlDrvData drv_data,
    *rbuf = (char*)(b = driver_alloc_binary(size));
    memcpy(b->orig_bytes, rstring, size);
 
-   free(from);
-   free(to);
-   free(string);
-   free(rstring);
+   driver_free(from);
+   driver_free(to);
+   driver_free(string);
+   driver_free(rstring);
    iconv_close(cd);
    
    return size;
