@@ -36,6 +36,9 @@
 	 %% Accounts
 	 register/3, unregister/2,
 	 registered_users/1,
+	 %% For debugging gen_storage 
+	 get_last_info/0,
+	 get_last_info/2,
 	 %% Migration jabberd1.4
 	 import_file/1, import_dir/1,
 	 %% Purge DB
@@ -123,6 +126,21 @@ commands() ->
 			module = ?MODULE, function = registered_users,
 			args = [{host, string}],
 			result = {users, {list, {username, string}}}},
+
+     #ejabberd_commands{name = gli, tags = [accounts],
+			desc = "Get information about last access of an account",
+			module = ?MODULE, function = get_last_info,
+			args = [],
+                        result = {lastinfo, {tuple, [{timestamp, integer},
+                                                       {status, string}
+                                                      ]}}},
+     #ejabberd_commands{name = get_last_info, tags = [accounts],
+			desc = "Get information about last access of an account",
+			module = ?MODULE, function = get_last_info,
+			args = [{user, string}, {host, string}],
+                        result = {lastinfo, {tuple, [{timestamp, integer},
+                                                       {status, string}
+                                                      ]}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
 			desc = "Import user data from jabberd14 spool file",
@@ -333,6 +351,12 @@ registered_users(Host) ->
     SUsers = lists:sort(Users),
     lists:map(fun({U, _S}) -> U end, SUsers).
 
+get_last_info() -> get_last_info("badlop", "localhost").
+get_last_info(User, Server) ->
+    case mod_last:get_last_info(User, Server) of
+	{ok, TimeStamp, Status} -> {TimeStamp, Status};
+	not_found -> {"never", ""}
+    end.
 
 %%%
 %%% Migration management

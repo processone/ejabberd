@@ -214,7 +214,7 @@ now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
 		    [Year, Month, Day, Hour, Minute, Second, MicroSecs, Sign, H, M])).
 
 
-% yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {MegaSecs, Secs, MicroSecs}
+% {yyyy-mm-dd|yyyymmdd}Thh:mm:ss[.sss]{|Z|{+|-}hh:mm} -> {MegaSecs, Secs, MicroSecs} | undefined
 datetime_string_to_timestamp(TimeStr) ->
     case catch parse_datetime(TimeStr) of
 	{'EXIT', _Err} ->
@@ -232,9 +232,13 @@ parse_datetime(TimeStr) ->
     Seconds = (S - S1) - TZH * 60 * 60 - TZM * 60,
     {Seconds div 1000000, Seconds rem 1000000, MS}.
 
-% yyyy-mm-dd
+% yyyy-mm-dd | yyyymmdd
 parse_date(Date) ->
-    [Y, M, D] = string:tokens(Date, "-"),
+    {Y, M, D} =
+	case string:tokens(Date, "-") of
+	    [Y1, M1, D1] -> {Y1, M1, D1};
+	    [[Y1, Y2, Y3, Y4, M1, M2, D1, D2]] -> {[Y1, Y2, Y3, Y4], [M1, M2], [D1, D2]}
+	end,
     Date1 = {list_to_integer(Y), list_to_integer(M), list_to_integer(D)},
     case calendar:valid_date(Date1) of
 	true ->
@@ -259,7 +263,8 @@ parse_time_with_timezone(Time) ->
 	0 ->
 	    case string:str(Time, "-") of
 		0 ->
-		    false;
+		    {TT, MS} = parse_time1(Time),
+		    {TT, MS, 0, 0};
 		_ ->
 		    parse_time_with_timezone(Time, "-")
 	    end;

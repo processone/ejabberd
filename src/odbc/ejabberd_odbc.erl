@@ -38,6 +38,7 @@
 	 sql_query_t/1,
 	 sql_transaction/2,
 	 sql_bloc/2,
+	 db_type/1,
 	 escape/1,
 	 escape_like/1,
 	 to_bool/1,
@@ -164,6 +165,10 @@ sql_query_t(Query) ->
 	    QRes
     end.
 
+db_type(Host) ->
+    ?GEN_FSM:sync_send_event(ejabberd_odbc_sup:get_random_pid(Host),
+		    db_type, 60000).
+
 %% Escape character that will confuse an SQL engine
 escape(S) when is_list(S) ->
     [odbc_queries:escape(C) || C <- S];
@@ -277,6 +282,9 @@ session_established(Request, {Who, _Ref}, State) ->
 
 session_established({sql_cmd, Command, From, Timestamp}, State) ->
     run_sql_cmd(Command, From, State, Timestamp);
+session_established(db_type, State) ->
+    Reply = State#state.db_type,
+    {reply, Reply, session_established, State};
 session_established(Event, State) ->
     ?WARNING_MSG("unexpected event in 'session_established': ~p", [Event]),
     {next_state, session_established, State}.
