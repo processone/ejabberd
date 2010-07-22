@@ -34,8 +34,8 @@
 	 process_iq_set/4,
 	 process_iq_get/5,
 	 get_user_list/3,
-	 check_packet/6,
 	 remove_user/2,
+	 check_packet/6,
 	 updated_list/3]).
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -43,13 +43,47 @@
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
 
+-record(privacy_list, {username_server, name}).
+-record(privacy_default_list, {username_server, name}).
+-record(privacy_list_data, {username_server, name,
+			    type, value, action, order,
+			    match_all, match_iq, match_message,
+			    match_presence_in, match_presence_out}).
 
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mnesia:create_table(privacy, [{disc_copies, [node()]},
-				  {attributes, record_info(fields, privacy)}]),
-    update_table(),
+    Backend = gen_mod:get_opt(backend, Opts, mnesia),
+    gen_storage:create_table(Backend, HostB, privacy_list,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {type, bag},
+			      {attributes, record_info(fields, privacy_list)},
+			      {types, [{username_server, {text, text}}]}]),
+    gen_storage:create_table(Backend, HostB, privacy_default_list,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, privacy_default_list)},
+			      {types, [{username_server, {text, text}}]}]),
+    gen_storage:create_table(Backend, HostB, privacy_list_data,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {type, bag},
+			      {attributes, record_info(fields, privacy_list_data)},
+			      {types, [{username_server, {text, text}},
+				       {action, atom},
+				       {type, atom},
+				       {value, atom},
+				       {order, int},
+				       {match_all, atom},
+				       {match_iq, atom},
+				       {match_message, atom},
+				       {match_presence_in, atom},
+				       {match_presence_out, atom}
+				      ]}]),
+    update_tables(Host),
+    gen_storage:add_table_index(Host, privacy_list, name),
+    gen_storage:add_table_index(Host, privacy_list_data, name),
     ejabberd_hooks:add(privacy_iq_get, HostB,
 		       ?MODULE, process_iq_get, 50),
     ejabberd_hooks:add(privacy_iq_set, HostB,
@@ -106,12 +140,22 @@ process_iq_get(_, From, _To, #iq{payload = SubEl},
 
 
 process_lists_get(LUser, LServer, Active) ->
-    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
+    F = fun() ->
+		Default =
+		    case gen_storage:read(LServer, {privacy_default_list, {LUser, LServer}}) of
+			[#privacy_default_list{name = Name}] ->
+			    Name;
+			_ ->
+			    none
+		    end,
+		Lists = [List#privacy_list.name
+			 || List <- gen_storage:read(LServer, {privacy_list, {LUser, LServer}})],
+		{Default, Lists}
+	end,
+    case gen_storage:transaction(LServer, privacy_list, F) of
 	{'EXIT', _Reason} ->
 	    {error, 'internal-server-error'};
-	[] ->
-	    {result, #xmlel{ns = ?NS_PRIVACY, name = 'query'}};
-	[#privacy{default = Default, lists = Lists}] ->
+	{atomic, {Default, Lists}} ->
 	    case Lists of
 		[] ->
 		    {result, #xmlel{ns = ?NS_PRIVACY, name = 'query'}};
@@ -142,58 +186,64 @@ process_list_get(_LUser, _LServer, false) ->
     {error, 'bad-request'};
 
 process_list_get(LUser, LServer, Name) ->
-    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
-	{'EXIT', _Reason} ->
+    F = fun() ->
+		case gen_storage:select(LServer, privacy_list,
+					[{'=', username_server, {LUser, LServer}},
+					 {'=', name, Name}]) of
+		    [] ->
+			none;
+		    [#privacy_list{}] ->
+			gen_storage:select(LServer, privacy_list_data,
+					   [{'=', username_server, {LUser, LServer}},
+					    {'=', name, Name}])
+		end
+	end,
+    case gen_storage:transaction(LServer, privacy_list, F) of
+	{aborted, _Reason} ->
 	    {error, 'internal-server-error'};
-	[] ->
+	{atomic, none} ->
 	    {error, 'item-not-found'};
-	    %{result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
-	[#privacy{lists = Lists}] ->
-	    case lists:keysearch(Name, 1, Lists) of
-		{value, {_, List}} ->
-		    LItems = lists:map(fun item_to_xml/1, List),
-		    ListEl = exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = list, children = LItems}, name, Name),
-		    {result,#xmlel{ns = ?NS_PRIVACY, name = 'query', children = [ListEl]}};
-		_ ->
-		    {error, 'item-not-found'}
-	    end
+	{atomic, List} ->
+	    LItems = lists:map(fun item_to_xml/1, List),
+	    ListEl = exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = list, children = LItems}, name, Name),
+	    {result,#xmlel{ns = ?NS_PRIVACY, name = 'query', children = [ListEl]}}
     end.
 
 
 item_to_xml(Item) ->
-    Attrs1 = [?XMLATTR('action', action_to_binary(Item#listitem.action)),
-	      ?XMLATTR('order', order_to_binary(Item#listitem.order))],
-    Attrs2 = case Item#listitem.type of
+    Attrs1 = [?XMLATTR('action', action_to_binary(Item#privacy_list_data.action)),
+	      ?XMLATTR('order', order_to_binary(Item#privacy_list_data.order))],
+    Attrs2 = case Item#privacy_list_data.type of
 		 none ->
 		     Attrs1;
 		 Type ->
-		     [?XMLATTR('type', type_to_binary(Item#listitem.type)),
-		      ?XMLATTR('value', value_to_binary(Type, Item#listitem.value)) |
+		     [?XMLATTR('type', type_to_binary(Item#privacy_list_data.type)),
+		      ?XMLATTR('value', value_to_binary(Type, Item#privacy_list_data.value)) |
 		      Attrs1]
 	     end,
-    SubEls = case Item#listitem.match_all of
+    SubEls = case Item#privacy_list_data.match_all of
 		 true ->
 		     [];
 		 false ->
-		     SE1 = case Item#listitem.match_iq of
+		     SE1 = case Item#privacy_list_data.match_iq of
 			       true ->
 				   [#xmlel{ns = ?NS_PRIVACY, name = iq}];
 			       false ->
 				   []
 			   end,
-		     SE2 = case Item#listitem.match_message of
+		     SE2 = case Item#privacy_list_data.match_message of
 			       true ->
 				   [#xmlel{ns = ?NS_PRIVACY, name = message} | SE1];
 			       false ->
 				   SE1
 			   end,
-		     SE3 = case Item#listitem.match_presence_in of
+		     SE3 = case Item#privacy_list_data.match_presence_in of
 			       true ->
 				   [#xmlel{ns = ?NS_PRIVACY, name = 'presence-in'} | SE2];
 			       false ->
 				   SE2
 			   end,
-		     SE4 = case Item#listitem.match_presence_out of
+		     SE4 = case Item#privacy_list_data.match_presence_out of
 			       true ->
 				   [#xmlel{ns = ?NS_PRIVACY, name = 'presence-out'} | SE3];
 			       false ->
@@ -269,40 +319,30 @@ process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
 
 process_default_set(LUser, LServer, false) ->
     F = fun() ->
-		case mnesia:read({privacy, {LUser, LServer}}) of
-		    [] ->
-			{result, []};
-		    [R] ->
-			mnesia:write(R#privacy{default = none}),
-			{result, []}
-		end
+		gen_storage:delete(LServer, {privacy_default_list, {LUser, LServer}})
 	end,
-    case mnesia:transaction(F) of
-	{atomic, {error, _} = Error} ->
-	    Error;
-	{atomic, {result, _} = Res} ->
-	    Res;
+    case gen_storage:transaction(LServer, privacy_default_list, F) of
+	{atomic, _} ->
+	    {result, []};
 	_ ->
 	    {error, 'internal-server-error'}
     end;
 
 process_default_set(LUser, LServer, Name) ->
     F = fun() ->
-		case mnesia:read({privacy, {LUser, LServer}}) of
+		case gen_storage:select(LServer, privacy_list,
+					[{'=', username_server, {LUser, LServer}},
+					 {'=', name, Name}]) of
 		    [] ->
 			{error, 'item-not-found'};
-		    [#privacy{lists = Lists} = P] ->
-			case lists:keymember(Name, 1, Lists) of
-			    true ->
-				mnesia:write(P#privacy{default = Name,
-						       lists = Lists}),
-				{result, []};
-			    false ->
-				{error, 'item-not-found'}
-			end
+		    [#privacy_list{}] ->
+			gen_storage:write(LServer,
+					  #privacy_default_list{username_server = {LUser, LServer},
+								name = Name}),
+			{result, []}
 		end
 	end,
-    case mnesia:transaction(F) of
+    case gen_storage:transaction(LServer, privacy_list, F) of
 	{atomic, {error, _} = Error} ->
 	    Error;
 	{atomic, {result, _} = Res} ->
@@ -316,17 +356,25 @@ process_active_set(_LUser, _LServer, false) ->
     {result, [], #userlist{}};
 
 process_active_set(LUser, LServer, Name) ->
-    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
-	[] ->
-	    {error, 'item-not-found'};
-	[#privacy{lists = Lists}] ->
-	    case lists:keysearch(Name, 1, Lists) of
-		{value, {_, List}} ->
-		    NeedDb = is_list_needdb(List),
-		    {result, [], #userlist{name = Name, list = List, needdb = NeedDb}};
-		false ->
-		    {error, 'item-not-found'}
-	    end
+    F = fun() ->
+		case gen_storage:select(LServer, privacy_list,
+					[{'=', username_server, {LUser, LServer}},
+					 {'=', name, Name}]) of
+		    [#privacy_list{}] ->
+			List = gen_storage:select(LServer, privacy_list_data,
+						  [{'=', username_server, {LUser, LServer}},
+						   {'=', name, Name}]),
+			{result, [], #userlist{name = Name,
+					       list = list_data_to_items(List)}};
+		    [] ->
+			{error, 'item-not-found'}
+		end
+	end,
+    case gen_storage:transaction(LServer, privacy_list, F) of
+	{atomic, Res} ->
+	    Res;
+	_ ->
+	    {error, 'internal-server-error'}
     end.
 
 
@@ -339,26 +387,22 @@ process_list_set(LUser, LServer, Name, Els) ->
 	false ->
 	    {error, 'bad-request'};
 	remove ->
-	    F =
-		fun() ->
-			case mnesia:read({privacy, {LUser, LServer}}) of
-			    [] ->
-				{result, []};
-			    [#privacy{default = Default, lists = Lists} = P] ->
-				% TODO: check active
-				if
-				    Name == Default ->
-					{error, 'conflict'};
-				    true ->
-					NewLists =
-					    lists:keydelete(Name, 1, Lists),
-					mnesia:write(
-					  P#privacy{lists = NewLists}),
-					{result, []}
-				end
+	    F = fun() ->
+			case gen_storage:read(LServer,
+					      {privacy_default_list, {LUser, LServer}}) of
+			    [#privacy_default_list{name = Default}] when Name == Default ->
+				{error, 'conflict'};
+			    _ ->
+				gen_storage:delete_where(LServer, privacy_list,
+							 [{'=', username_server, {LUser, LServer}},
+							  {'=', name, Name}]),
+				gen_storage:delete_where(LServer, privacy_list_data,
+							 [{'=', username_server, {LUser, LServer}},
+							  {'=', name, Name}]),
+				{result, []}
 			end
 		end,
-	    case mnesia:transaction(F) of
+	    case gen_storage:transaction(LServer, privacy_list, F) of
 		{atomic, {error, _} = Error} ->
 		    Error;
 		{atomic, {result, _} = Res} ->
@@ -374,22 +418,26 @@ process_list_set(LUser, LServer, Name, Els) ->
 		    {error, 'internal-server-error'}
 	    end;
 	List ->
-	    F =
-		fun() ->
-			case mnesia:wread({privacy, {LUser, LServer}}) of
-			    [] ->
-				NewLists = [{Name, List}],
-				mnesia:write(#privacy{us = {LUser, LServer},
-						      lists = NewLists}),
-				{result, []};
-			    [#privacy{lists = Lists} = P] ->
-				NewLists1 = lists:keydelete(Name, 1, Lists),
-				NewLists = [{Name, List} | NewLists1],
-				mnesia:write(P#privacy{lists = NewLists}),
-				{result, []}
-			end
+	    F = fun() ->
+			OldData =
+			    gen_storage:select(LServer, privacy_list_data,
+					       [{'=', username_server, {LUser, LServer}},
+						{'=', name, Name}]),
+			lists:foreach(
+			  fun(Data1) ->
+				  gen_storage:delete_object(LServer, Data1)
+			  end, OldData),
+
+			gen_storage:write(LServer, #privacy_list{username_server = {LUser, LServer},
+								 name = Name}),
+			NewData = list_items_to_data(LUser, LServer, Name, List),
+			lists:foreach(
+			  fun(Data1) ->
+				  gen_storage:write(LServer, Data1)
+			  end, NewData),
+			{result, []}
 		end,
-	    case mnesia:transaction(F) of
+	    case gen_storage:transaction(LServer, privacy_list, F) of
 		{atomic, {error, _} = Error} ->
 		    Error;
 		{atomic, {result, _} = Res} ->
@@ -415,7 +463,8 @@ parse_items(Els) ->
 
 parse_items([], Res) ->
     %% Sort the items by their 'order' attribute
-    lists:keysort(#listitem.order, Res);
+    %% lists:keysort(#listitem.order, Res);
+    lists:reverse(Res);
 parse_items([El = #xmlel{name = item} | Els], Res) ->
     Type   = exmpp_xml:get_attribute_as_list(El, type, false),
     Value  = exmpp_xml:get_attribute_as_list(El, value, false),
@@ -521,6 +570,41 @@ parse_matches1(_Item, [#xmlel{} | _Els]) ->
 
 
 
+%% storage representation to ejabberd representation
+list_data_to_items(Data) ->
+    List =
+	lists:map(
+	  fun(Data1) ->
+		  #listitem{type = Data1#privacy_list_data.type,
+			    value = Data1#privacy_list_data.value,
+			    action = Data1#privacy_list_data.action,
+			    order = Data1#privacy_list_data.order,
+			    match_all = Data1#privacy_list_data.match_all,
+			    match_iq = Data1#privacy_list_data.match_iq,
+			    match_message = Data1#privacy_list_data.match_message,
+			    match_presence_in = Data1#privacy_list_data.match_presence_in,
+			    match_presence_out = Data1#privacy_list_data.match_presence_out}
+	  end, Data),
+    SortedList = lists:keysort(#listitem.order, List),
+    SortedList.
+
+%% ejabberd representation to storage representation
+list_items_to_data(LUser, LServer, Name, List) ->
+    lists:map(
+      fun(Item) ->
+	      #privacy_list_data{username_server = {LUser, LServer},
+				 name = Name,
+				 type = Item#listitem.type,
+				 value = Item#listitem.value,
+				 action = Item#listitem.action,
+				 order = Item#listitem.order,
+				 match_all = Item#listitem.match_all,
+				 match_iq = Item#listitem.match_iq,
+				 match_message = Item#listitem.match_message,
+				 match_presence_in = Item#listitem.match_presence_in,
+				 match_presence_out = Item#listitem.match_presence_out}
+      end, List).
+
 is_list_needdb(Items) ->
     lists:any(
       fun(X) ->
@@ -533,32 +617,26 @@ is_list_needdb(Items) ->
 
 get_user_list(_, User, Server) 
         when is_binary(User), is_binary(Server) ->
-    try
-	LUser = binary_to_list(User),
-	LServer = binary_to_list(Server),
-	case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
-	    [] ->
-		#userlist{};
-	    [#privacy{default = Default, lists = Lists}] ->
-		case Default of
-		    none ->
+    LUser = binary_to_list(User),
+    LServer = binary_to_list(Server),
+    F = fun() ->
+		case gen_storage:read(LServer,
+				      {privacy_default_list, {LUser, LServer}}) of
+		    [] ->
 			#userlist{};
-		    _ ->
-			case lists:keysearch(Default, 1, Lists) of
-			    {value, {_, List}} ->
-				SortedList = lists:keysort(#listitem.order, List),
-				#userlist{name = Default, list = SortedList};
-			    _ ->
-				#userlist{}
-			end
-		end;
-	    _ ->
-		#userlist{}
-	end
-    catch
-	_ ->
-	    #userlist{}
-    end.
+		    [#privacy_default_list{name = Default}] ->
+			Data = gen_storage:select(LServer, privacy_list_data,
+						  [{'=', username_server, {LUser, LServer}},
+						   {'=', name, Default}]),
+			List = list_data_to_items(Data),
+			NeedDb = is_list_needdb(List),
+			#userlist{name = Default,
+			          needdb = NeedDb,
+				  list = List}
+		end
+	end,
+    {atomic, Res} = gen_storage:transaction(LServer, privacy_default_list, F),
+    Res.
 
 
 %% From is the sender, To is the destination.
@@ -674,10 +752,14 @@ remove_user(User, Server) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
     F = fun() ->
-		mnesia:delete({privacy,
-			       {LUser, LServer}})
-        end,
-    mnesia:transaction(F).
+		gen_storage:delete(LServer, {privacy_list, {LUser, LServer}})
+	end,
+    case gen_storage:transaction(LServer, privacy_list, F) of
+	{atomic, _} ->
+	    {result, []};
+	_ ->
+	    {error, 'internal-server-error'}
+    end.
 
 
 updated_list(_,
@@ -691,50 +773,130 @@ updated_list(_,
     end.
 
 
-update_table() ->
-    Fields = record_info(fields, privacy),
-    case mnesia:table_info(privacy, attributes) of
+update_tables(Host) ->
+    Fields = record_info(fields, privacy_list),
+    case mnesia:table_info(privacy_list, attributes) of
 	Fields ->
 	    convert_to_exmpp();
-	[user, default, lists] ->
-	    ?INFO_MSG("Converting privacy table from "
-		      "{user, default, lists} format", []),
-	    Host = ?MYNAME,
-	    {atomic, ok} = mnesia:create_table(
-			     mod_privacy_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, privacy},
-			      {attributes, record_info(fields, privacy)}]),
-	    mnesia:transform_table(privacy, ignore, Fields),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_privacy_tmp_table),
-			 mnesia:foldl(
-			   fun(#privacy{us = U, lists = L} = R, _) ->
-				   U1 = convert_jid_to_exmpp(U),
-				   L1 = convert_lists_to_exmpp(L),
-				   mnesia:dirty_write(
-				     mod_privacy_tmp_table,
-				     R#privacy{us = {U1, Host}, lists = L1})
-			   end, ok, privacy)
-		 end,
-	    mnesia:transaction(F1),
-	    mnesia:clear_table(privacy),
-	    F2 = fun() ->
-			 mnesia:write_lock_table(privacy),
-			 mnesia:foldl(
-			   fun(R, _) ->
-				   mnesia:dirty_write(R)
-			   end, ok, mod_privacy_tmp_table)
-		 end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_privacy_tmp_table);
-	_ ->
-	    ?INFO_MSG("Recreating privacy table", []),
-	    mnesia:transform_table(privacy, ignore, Fields)
-    end.
-
+	_ -> ok
+    end,
+    gen_storage_migration:migrate_mnesia(
+      Host, privacy_default_list,
+      [{privacy, [us, default, lists],
+	fun({privacy, US, Default, Lists}) ->
+		lists:foreach(
+		  fun({Name, List}) ->
+			  lists:foreach(
+			    fun(#listitem{type = Type,
+					  value = Value,
+					  action = Action,
+					  order = Order,
+					  match_all = MatchAll,
+					  match_iq = MatchIq,
+					  match_message = MatchMessage,
+					  match_presence_in = MatchPresenceIn,
+					  match_presence_out = MatchPresenceOut}) ->
+				    gen_storage:write(Host,
+						      #privacy_list_data{username_server = US,
+									 name = Name,
+									 type = Type,
+									 value = Value,
+									 action = Action,
+									 order = Order,
+									 match_all = MatchAll,
+									 match_iq = MatchIq,
+									 match_message = MatchMessage,
+									 match_presence_in = MatchPresenceIn,
+									 match_presence_out = MatchPresenceOut})
+			    end, List),
+			  gen_storage:write(Host,
+					    #privacy_list{username_server = US,
+							  name = Name})
+		  end, Lists),
+		if
+		    is_list(Default) ->
+			#privacy_default_list{username_server = US,
+					      name = Default};
+		    true -> null
+		end
+	end}]),
+    gen_storage_migration:migrate_odbc(
+      Host, [privacy_default_list, privacy_list, privacy_list_data],
+      [{[{"privacy_list", ["username", "name", "id"]},
+	 {"privacy_list_data", []}],
+	fun(SELECT, Username, Name, Id) ->
+		US = {Username, Host},
+		DefaultLists = [#privacy_default_list{username_server = US,
+						      name = Name}
+				|| [_, _] <- SELECT(["username", "name"],
+						    "privacy_default_list",
+						    [{"username", Username},
+						     {"name", Name}])],
+		ListData = lists:map(
+			     fun([SType, SValue, SAction, SOrder, SMatchAll,
+				  SMatchIQ, SMatchMessage, SMatchPresenceIn,
+				  SMatchPresenceOut]) ->
+				     {Type, Value} =
+					 case SType of
+					     "n" ->
+						 {none, none};
+					     "j" ->
+						 case exmpp_jid:parse(SValue) of
+						     JID ->
+							 {jid, jlib:short_prepd_jid(JID)}
+						 end;
+					     "g" ->
+						 {group, SValue};
+					     "s" ->
+						 case SValue of
+						     "none" ->
+							 {subscription, none};
+						     "both" ->
+							 {subscription, both};
+						     "from" ->
+							 {subscription, from};
+						     "to" ->
+							 {subscription, to}
+						 end
+					 end,
+				     Action =
+					 case SAction of
+					     "a" -> allow;
+					     "d" -> deny
+					 end,
+				     Order = list_to_integer(SOrder),
+				     MatchAll = SMatchAll == "1" orelse SMatchAll == "t",
+				     MatchIQ = SMatchIQ == "1" orelse SMatchIQ == "t" ,
+				     MatchMessage =  SMatchMessage == "1" orelse SMatchMessage == "t",
+				     MatchPresenceIn =  SMatchPresenceIn == "1" orelse SMatchPresenceIn == "t",
+				     MatchPresenceOut =  SMatchPresenceOut == "1" orelse SMatchPresenceOut == "t",
+				     
+				     #privacy_list_data{username_server = US,
+							name = Name,
+							type = Type,
+							value = Value,
+							action = Action,
+							order = Order,
+							match_all = MatchAll,
+							match_iq = MatchIQ,
+							match_message = MatchMessage,
+							match_presence_in = MatchPresenceIn,
+							match_presence_out = MatchPresenceOut}
+			     end, SELECT(["t", "value", "action", "ord", "match_all",
+					  "match_iq", "match_message", "match_presence_in",
+					  "match_presence_out"],
+					 "privacy_list_data",
+					 [{"id", Id}])),
+		[#privacy_list{username_server = US,
+			       name = Name} | DefaultLists ++ ListData]
+	end},
+       {"privacy_default_list", ["username", "name"],
+	fun(_, Username, Name) ->
+		US = {Username, Host},
+		[#privacy_default_list{username_server = US,
+				       name = Name}]
+	end}
+      ]).
 
 convert_to_exmpp() ->
     Fun = fun() ->

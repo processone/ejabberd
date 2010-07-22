@@ -48,7 +48,7 @@
 
 -define(JUD_MATCHES, 30).
 
--record(vcard_search, {us,
+-record(vcard_search, {user_server,
 		       user,     luser,
 		       fn,	 lfn,
 		       family,	 lfamily,
@@ -62,30 +62,37 @@
 		       orgname,	 lorgname,
 		       orgunit,	 lorgunit
 		      }).
--record(vcard, {us, vcard}).
+-record(vcard, {user_server, vcard}).
 
 -define(PROCNAME, ejabberd_mod_vcard).
 
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
-    mnesia:create_table(vcard, [{disc_only_copies, [node()]},
-				{attributes, record_info(fields, vcard)}]),
-    mnesia:create_table(vcard_search,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, vcard_search)}]),
-    update_tables(),
-    mnesia:add_table_index(vcard_search, luser),
-    mnesia:add_table_index(vcard_search, lfn),
-    mnesia:add_table_index(vcard_search, lfamily),
-    mnesia:add_table_index(vcard_search, lgiven),
-    mnesia:add_table_index(vcard_search, lmiddle),
-    mnesia:add_table_index(vcard_search, lnickname),
-    mnesia:add_table_index(vcard_search, lbday),
-    mnesia:add_table_index(vcard_search, lctry),
-    mnesia:add_table_index(vcard_search, llocality),
-    mnesia:add_table_index(vcard_search, lemail),
-    mnesia:add_table_index(vcard_search, lorgname),
-    mnesia:add_table_index(vcard_search, lorgunit),
+    Backend = gen_mod:get_opt(backend, Opts, mnesia),
+    gen_storage:create_table(Backend, HostB, vcard,
+			     [{disc_only_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, vcard)},
+			      {types, [{user_server, {text, text}}]}]),
+    gen_storage:create_table(Backend, HostB, vcard_search,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, vcard_search)},
+			      {types, [{user_server, {text, text}},
+				       {user, {text, text}}]}]),
+    update_tables(Host),
+    gen_storage:add_table_index(Host, vcard_search, luser),
+    gen_storage:add_table_index(Host, vcard_search, lfn),
+    gen_storage:add_table_index(Host, vcard_search, lfamily),
+    gen_storage:add_table_index(Host, vcard_search, lgiven),
+    gen_storage:add_table_index(Host, vcard_search, lmiddle),
+    gen_storage:add_table_index(Host, vcard_search, lnickname),
+    gen_storage:add_table_index(Host, vcard_search, lbday),
+    gen_storage:add_table_index(Host, vcard_search, lctry),
+    gen_storage:add_table_index(Host, vcard_search, llocality),
+    gen_storage:add_table_index(Host, vcard_search, lemail),
+    gen_storage:add_table_index(Host, vcard_search, lorgname),
+    gen_storage:add_table_index(Host, vcard_search, lorgunit),
 
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
@@ -190,20 +197,25 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     LServer = exmpp_jid:prep_domain_as_list(To),
     US = {LUser, LServer},
     F = fun() ->
-		mnesia:read({vcard, US})
+		gen_storage:read(LServer, {vcard, US})
 	end,
-    Els = case mnesia:transaction(F) of
-	      {atomic, Rs} ->
-		  lists:map(fun(R) ->
-				    R#vcard.vcard
-			    end, Rs);
-	      {aborted, _Reason} ->
-		  []
-	  end,
+    Els = case gen_storage:transaction(LServer, vcard, F) of
+		{atomic, [#vcard{vcard = SVCARD} | _]} ->
+		    case xml_stream:parse_element(SVCARD) of
+			{error, _Reason} ->
+			    novcard;
+			VCARD ->
+			    {vcard, VCARD}
+		    end;
+		{atomic, []} ->
+		    novcard;
+		{aborted, _Reason} ->
+		    novcard
+	    end,
     case Els of
-	[VCard | _] ->
+	{vcard, VCard} ->
 	    exmpp_iq:result(IQ_Rec, VCard);
-	_ ->
+	novcard ->
 	    exmpp_iq:result(IQ_Rec)
     end;
 process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
@@ -266,9 +278,9 @@ set_vcard(User, LServer, VCARD) ->
 	US = {LUser, LServer},
 
 	F = fun() ->
-	    mnesia:write(#vcard{us = US, vcard = VCARD}),
-	    mnesia:write(
-	      #vcard_search{us        = US,
+		gen_storage:write(LServer, #vcard{user_server = US, vcard = VCARD}),
+		gen_storage:write(
+	      #vcard_search{user_server=US,
 			    user      = {User, LServer},
 			    luser     = LUser,
 			    fn        = FN,       lfn        = LFN,       
@@ -284,7 +296,7 @@ set_vcard(User, LServer, VCARD) ->
 			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
 			   })
 	    end,
-	    mnesia:transaction(F),
+	    gen_storage:transaction(LServer, vcard, F),
 	    LServerB = list_to_binary(LServer),
 	    ejabberd_hooks:run(vcard_set, LServerB, [list_to_binary(LUser), LServerB, VCARD])
     catch
@@ -509,15 +521,16 @@ record_to_item(R) ->
 
 
 search(LServer, Data) ->
-    MatchSpec = make_matchspec(LServer, Data),
+    MatchRules = make_matchrules(LServer, Data),
     AllowReturnAll = gen_mod:get_module_opt(LServer, ?MODULE,
 					    allow_return_all, false),
     if
-	(MatchSpec == #vcard_search{_ = '_'}) and (not AllowReturnAll) ->
+	(MatchRules =:= []) and (not AllowReturnAll) ->
 	    [];
 	true ->
-	    case catch mnesia:dirty_select(vcard_search,
-					   [{MatchSpec, [], ['$_']}]) of
+	    %% TODO: pass ?JUD_MATCHES for smaller result sets
+	    case catch gen_storage:dirty_select(LServer, vcard_search,
+						MatchRules) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]),
 		    [];
@@ -538,47 +551,55 @@ search(LServer, Data) ->
     end.
 
 
-make_matchspec(LServer, Data) ->
-    GlobMatch = #vcard_search{_ = '_'},
-    Match = filter_fields(Data, GlobMatch, LServer),
+make_matchrules(LServer, Data) ->
+    Match = filter_fields(Data, [], LServer),
     Match.
 
-filter_fields([], Match, _LServer) ->
-    Match;
-filter_fields([{SVar, [Val]} | Ds], Match, LServer)
+
+
+
+filter_fields([], Rules, _LServer) ->
+    Rules;
+filter_fields([{SVar, [Val]} | Ds], Rules, LServer)
   when is_list(Val) and (Val /= "") ->
     LVal = exmpp_stringprep:to_lower(Val),
-    NewMatch = case SVar of
-                   "user" ->
-		       case gen_mod:get_module_opt(LServer, ?MODULE,
-						   search_all_hosts, true) of
-			   true ->
-			       Match#vcard_search{luser = make_val(LVal)};
-			   false ->
-			       Host = find_my_host(LServer),
-			       Match#vcard_search{us = {make_val(LVal), Host}}
-		       end;
-                   "fn"       -> Match#vcard_search{lfn       = make_val(LVal)};
-                   "last"     -> Match#vcard_search{lfamily   = make_val(LVal)};
-                   "first"    -> Match#vcard_search{lgiven    = make_val(LVal)};
-                   "middle"   -> Match#vcard_search{lmiddle   = make_val(LVal)};
-                   "nick"     -> Match#vcard_search{lnickname = make_val(LVal)};
-                   "bday"     -> Match#vcard_search{lbday     = make_val(LVal)};
-                   "ctry"     -> Match#vcard_search{lctry     = make_val(LVal)};
-                   "locality" -> Match#vcard_search{llocality = make_val(LVal)};
-                   "email"    -> Match#vcard_search{lemail    = make_val(LVal)};
-                   "orgname"  -> Match#vcard_search{lorgname  = make_val(LVal)};
-                   "orgunit"  -> Match#vcard_search{lorgunit  = make_val(LVal)};
-		   _          -> Match
-	       end,
-    filter_fields(Ds, NewMatch, LServer);
-filter_fields([_ | Ds], Match, LServer) ->
-    filter_fields(Ds, Match, LServer).
+    Rule = case SVar of
+              "user" ->
+                  case gen_mod:get_module_opt(LServer, ?MODULE,
+                                              search_all_hosts, true) of
+                      true ->
+                          {like, luser, make_val(LVal)};
+                      false ->
+                          Host = find_my_host(LServer),
+                          {like, user_server, {make_val(LVal), Host}}
+                  end;
+              "fn"       -> {like, lfn, make_val(LVal)};
+              "last"     -> {like, lfamily, make_val(LVal)};
+              "first"    -> {like, lgiven, make_val(LVal)};
+              "middle"   -> {like, lmiddle, make_val(LVal)};
+              "nick"     -> {like, lnickname, make_val(LVal)};
+              "bday"     -> {like, lbday, make_val(LVal)};
+              "ctry"     -> {like, lctry, make_val(LVal)};
+              "locality" -> {like, llocality, make_val(LVal)};
+              "email"    -> {like, lemail, make_val(LVal)};
+              "orgname"  -> {like, lorgname, make_val(LVal)};
+              "orgunit"  -> {like, lorgunit, make_val(LVal)};
+              _          -> false
+          end,
+    if
+       Rule =/= false ->
+           filter_fields(Ds, [Rule | Rules], LServer);
+       true ->
+           filter_fields(Ds, Rules, LServer)
+    end;
+filter_fields([_ | Ds], Rules, LServer) ->
+    filter_fields(Ds, Rules, LServer).
+
 
 make_val(Val) ->
     case lists:suffix("*", Val) of
 	true ->
-	    lists:sublist(Val, length(Val) - 1) ++ '_';
+	    lists:sublist(Val, length(Val) - 1) ++ ['_'];
 	_ ->
 	    Val
     end.
@@ -607,7 +628,7 @@ parts_to_string(Parts) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 set_vcard_t(R, _) ->
-    US = R#vcard.us,
+    US = R#vcard.user_server,
     User  = US,
     VCARD = R#vcard.vcard,
 
@@ -648,7 +669,7 @@ set_vcard_t(R, _) ->
 	LOrgName  = exmpp_stringprep:to_lower(OrgName),
 	LOrgUnit  = exmpp_stringprep:to_lower(OrgUnit),
 	mnesia:write(
-	  #vcard_search{us        = US,
+	  #vcard_search{user_server= US,
 			user      = User,     luser      = LUser,     
 			fn        = FN,       lfn        = LFN,       
 			family    = Family,   lfamily    = LFamily,   
@@ -680,15 +701,16 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
     US = {LUser, LServer},
     F = fun() ->
-		mnesia:delete({vcard, US}),
-		mnesia:delete({vcard_search, US})
+		gen_storage:delete(LServer, {vcard, US}),
+		gen_storage:delete(LServer, {vcard_search, US})
 	end,
-    mnesia:transaction(F).
+    gen_storage:transaction(LServer, vcard, F).
 
 
-update_tables() ->
+update_tables(Host) ->
     update_vcard_table(),
-    update_vcard_search_table().
+    update_vcard_search_table(),
+    update_vcard_storage(Host).
 
 update_vcard_table() ->
     Fields = record_info(fields, vcard),
@@ -710,10 +732,10 @@ update_vcard_table() ->
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_vcard_tmp_table),
 			 mnesia:foldl(
-			   fun(#vcard{us = U} = R, _) ->
+			   fun(#vcard{user_server = U} = R, _) ->
 				   mnesia:dirty_write(
 				     mod_vcard_tmp_table,
-				     R#vcard{us = {U, Host}})
+				     R#vcard{user_server = {U, Host}})
 			   end, ok, vcard)
 		 end,
 	    mnesia:transaction(F1),
@@ -803,7 +825,7 @@ update_vcard_search_table() ->
 				   mnesia:dirty_write(
 				     mod_vcard_tmp_table,
 				     #vcard_search{
-				       us        = {LUser, Host},
+				       user_server= {LUser, Host},
 				       user      = {User, Host},
 				       luser     = LUser,
 				       fn        = FN,       lfn        = LFN,
@@ -980,3 +1002,86 @@ webadmin_user_parse_query(_, "removevcard", User, Server, _Query) ->
     end;
 webadmin_user_parse_query(Acc, _Action, _User, _Server, _Query) ->
     Acc.
+
+
+
+update_vcard_storage(Host) ->
+    %% TODO: vcard_search
+    gen_storage_migration:migrate_mnesia(
+      Host, vcard,
+      [{vcard, [user, vcard],
+	fun({vcard, U, Vcard}) ->
+		#vcard{user_server = {U, Host},
+		       vcard = lists:flatten(xml:element_to_string(Vcard))}
+	end},
+       {vcard, [us, vcard],
+	fun({vcard, US, Vcard}) ->
+		#vcard{user_server = US,
+		       vcard = lists:flatten(xml:element_to_string(Vcard))}
+	end}]),
+    gen_storage_migration:migrate_mnesia(
+      Host, vcard_search,
+      [{vcard_search, [us,
+		       user,     luser,
+		       fn,	 lfn,
+		       family,	 lfamily,
+		       given,	 lgiven,
+		       middle,	 lmiddle,
+		       nickname, lnickname,
+		       bday,	 lbday,
+		       ctry,	 lctry,
+		       locality, llocality,
+		       email,	 lemail,
+		       orgname,	 lorgname,
+		       orgunit,	 lorgunit],
+	fun(Record) ->
+		Record
+	end}]),
+    gen_storage_migration:migrate_odbc(
+      Host, [vcard],
+      [{"vcard", ["username", "vcard"],
+	fun(_, Username, Vcard) ->
+		[#vcard{user_server = {Username, Host},
+			vcard = Vcard}]
+	end}]),
+    gen_storage_migration:migrate_odbc(
+      Host, [vcard_search],
+      [{"vcard_search", ["username", "lusername",
+			 "fn", "lfn",
+			 "family", "lfamily",
+			 "given", "lgiven",
+			 "middle", "lmiddle",
+			 "nickname", "lnickname",
+			 "bday", "lbday",
+			 "ctry", "lctry",
+			 "locality", "llocality",
+			 "email", "lemail",
+			 "orgname", "lorgname",
+			 "orgunit", "lorgunit"],
+	fun(_, User, LUser,
+	    FN, LFN,
+	    Family, LFamily,
+	    Given, LGiven,
+	    Middle, LMiddle,
+	    Nickname, LNickname,
+	    BDay, LBDay,
+	    CTRY, LCTRY,
+	    Locality, LLocality,
+	    EMail, LEMail,
+	    OrgName, LOrgName,
+	    OrgUnit, LOrgUnit) ->
+		[#vcard_search{user_server = {LUser, Host},
+			       user      = {User, Host},
+			       luser     = LUser,
+			       fn        = FN,       lfn        = LFN,       
+			       family    = Family,   lfamily    = LFamily,   
+			       given     = Given,    lgiven     = LGiven,    
+			       middle    = Middle,   lmiddle    = LMiddle,   
+			       nickname  = Nickname, lnickname  = LNickname, 
+			       bday      = BDay,     lbday      = LBDay,     
+			       ctry      = CTRY,     lctry      = LCTRY,     
+			       locality  = Locality, llocality  = LLocality, 
+			       email     = EMail,    lemail     = LEMail,    
+			       orgname   = OrgName,  lorgname   = LOrgName,  
+			       orgunit   = OrgUnit,  lorgunit   = LOrgUnit}]
+	end}]).

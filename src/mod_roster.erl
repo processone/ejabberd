@@ -76,6 +76,15 @@
 %%     Askmessage = binary()
 %%     Xs = [exmpp_xml:xmlel()]
 
+%% TODO: keep a non-prepped jid like in mnesia mod_roster?
+-record(rosteritem, {user_server_jid,
+		     name = "",
+		     subscription = none,
+		     ask = none,
+		     askmessage = ""}).
+-record(rostergroup, {user_server_jid,
+		      grp}).
+  
 %% @spec (Host, Opts) -> term()
 %%     Host = string()
 %%     Opts = list()
@@ -83,11 +92,24 @@
 start(Host, Opts) when is_list(Host) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mnesia:create_table(roster,[{disc_copies, [node()]},
-				{attributes, record_info(fields, roster)}]),
+
+    Backend = gen_mod:get_opt(backend, Opts, mnesia),
+    gen_storage:create_table(Backend, HostB,
+			     rosteritem, [{disc_copies, [node()]},
+					  {odbc_host, Host},
+					  {attributes, record_info(fields, rosteritem)},
+					  {types, [{user_server_jid, {text, text, ljid}},
+						   {subscription, atom},
+						   {ask, atom}]}]),
+    gen_storage:create_table(Backend, HostB,
+			     rostergroup, [{disc_copies, [node()]},
+					   {odbc_host, Host},
+					   {type, bag},
+					   {attributes, record_info(fields, rostergroup)},
+					   {types, [{user_server_jid, {text, text, ljid}}]}]),
     mnesia:create_table(roster_version, [{disc_copies, [node()]},
 				{attributes, record_info(fields, roster_version)}]),
-    update_table(),
+    update_tables(Host),
     mnesia:add_table_index(roster, us),
     mnesia:add_table_index(roster_version, us),
     ejabberd_hooks:add(roster_get, HostB,
@@ -276,7 +298,6 @@ process_iq_get(From, To, IQ_Rec) ->
 
 
 
-
 %% @spec (Acc, US) -> New_Acc
 %%     Acc = [rosteritem()]
 %%     US = {User, Server}
@@ -284,17 +305,51 @@ process_iq_get(From, To, IQ_Rec) ->
 %%         Server = binary()
 %%     New_Acc = [rosteritem()]
 
-get_user_roster(Acc, {U, S} = US) when is_binary(U), is_binary(S) ->
-    case catch mnesia:dirty_index_read(roster, US, #roster.us) of
-	Items when is_list(Items) ->
-	    lists:filter(fun(#roster{subscription = none, ask = in}) ->
-				 false;
-			    (_) ->
-				 true
-			 end, Items) ++ Acc;
-	_ ->
-	    Acc
-    end.
+get_user_roster(Acc, {U, S}) when is_binary(U), is_binary(S) ->
+	LUser = exmpp_stringprep:nodeprep(U),
+	LServer = exmpp_stringprep:nameprep(S),
+    Items = get_roster(LUser, LServer),
+    lists:filter(fun(#roster{subscription = none, ask = in}) ->
+			 false;
+		    (_) ->
+			 true
+		 end, Items) ++ Acc.
+
+get_roster(LUser, LServer) ->
+    F = fun() ->
+		U = gen_storage:select(LServer, rosteritem,
+				       [{'=', user_server_jid, {LUser, LServer, '_'}}]),
+		G = gen_storage:select(LServer, rostergroup,
+				       [{'=', user_server_jid, {LUser, LServer, '_'}}]),
+		[storageroster_to_roster(Rosteritem, G) ||
+		    Rosteritem <- U]
+	end,
+    {atomic, Rs} = gen_storage:transaction(LServer, rosteritem, F),
+    Rs.
+
+storageroster_to_roster(#rosteritem{user_server_jid = {U, S, JID} = USJ,
+				    name = Name,
+				    subscription = Subscription,
+				    ask = Ask,
+				    askmessage = AskMessage},
+			Rostergroups) ->
+    US = {U, S},
+    Groups =
+	lists:foldl(
+	  fun(#rostergroup{user_server_jid = USJ1, grp = G}, R)
+	     when USJ =:= USJ1 ->
+		  [G | R];
+	     (_, R) ->
+		  R
+	  end, [], Rostergroups),
+    #roster{usj = {US, JID},
+	    us = US,
+	    jid = JID,
+	    name = Name,
+	    subscription = Subscription,
+	    ask = Ask,
+	    askmessage = AskMessage,
+	    groups = Groups}.
 
 %% @spec (Item) -> XML
 %%     Item = rosteritem()
@@ -358,25 +413,47 @@ process_item_set(From, To, #xmlel{} = El) ->
 	JID = jlib:short_jid(JID1),
 	LJID = jlib:short_prepd_jid(JID1),
 	F = fun() ->
-		    Res = mnesia:read({roster, {LUser, LServer, LJID}}),
+			Res = gen_storage:read(LServer,
+					       {rosteritem, {LUser, LServer, LJID}}),
 		    Item = case Res of
 			       [] ->
 				   #roster{usj = {LUser, LServer, LJID},
 					   us = {LUser, LServer},
 					   jid = JID};
-			       [I] ->
-				   I#roster{jid = JID,
-					    name = <<>>,
-					    groups = [],
-					    xs = []}
+				   [#rosteritem{subscription = Subscription,
+						ask = Ask,
+						askmessage = AskMessage}] ->
+				       #roster{usj = {LUser, LServer, LJID},
+					       us = {LUser, LServer},
+					       jid = JID,
+					       subscription = Subscription,
+					       ask = Ask,
+					       askmessage = AskMessage}
 			   end,
 		    Item1 = process_item_attrs(Item, El#xmlel.attrs),
 		    Item2 = process_item_els(Item1, El#xmlel.children),
-		    case Item2#roster.subscription of
-			remove ->
-			    mnesia:delete({roster, {LUser, LServer, LJID}});
-			_ ->
-			    mnesia:write(Item2)
+			case Item2 of
+			    #roster{subscription = remove} ->
+				gen_storage:delete(LServer, {rosteritem, {LUser, LServer, LJID}}),
+				gen_storage:delete(LServer, {rostergroup, {LUser, LServer, LJID}});
+			    #roster{name = Name,
+				    subscription = Subscription2,
+				    ask = Ask2,
+				    askmessage = AskMessage2,
+				    groups = Groups} ->
+				I2 = #rosteritem{user_server_jid = {LUser, LServer, LJID},
+						 name = Name,
+						 subscription = Subscription2,
+						 ask = Ask2,
+						 askmessage = AskMessage2},
+				gen_storage:write(LServer, I2),
+				gen_storage:delete(LServer, {rostergroup, {LUser, LServer, LJID}}),
+				lists:foreach(
+				  fun(Group) ->
+					  gen_storage:write(LServer,
+							    #rostergroup{user_server_jid = {LUser, LServer, LJID},
+									 grp = Group})
+				  end, Groups)
 		    end,
 		    %% If the item exist in shared roster, take the
 		    %% subscription information from there:
@@ -388,7 +465,7 @@ process_item_set(From, To, #xmlel{} = El) ->
 		    end,
 		    {Item, Item3}
 	    end,
-	case mnesia:transaction(F) of
+        case gen_storage:transaction(LServer, rosteritem, F) of
 	    {atomic, {OldItem, Item}} ->
 		push_item(User, LServer, To, Item),
 		case Item#roster.subscription of
@@ -556,8 +633,9 @@ push_item_version(User, Server, Resource, From, Item, RosterVersion) ->
 get_subscription_lists(_, User, Server) 
   when is_binary(User), is_binary(Server) ->
     try
-	US = {User,Server},
-	case mnesia:dirty_index_read(roster, US, #roster.us) of
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+	case gen_storage:dirty_select(LServer, rosteritem, [{'=', user_server_jid, {LUser, LServer, '_'}}]) of
 	    Items when is_list(Items) ->
 		fill_subscription_lists(Items, [], []);
 	    _ ->
@@ -575,15 +653,16 @@ get_subscription_lists(_, User, Server)
 %%     New_F = [jlib:shortjid()]
 %%     New_T = [jlib:shortjid()]
 
-fill_subscription_lists([I | Is], F, T) ->
-    J = element(3, I#roster.usj),
-    case I#roster.subscription of
+fill_subscription_lists([#rosteritem{user_server_jid = {_, _, LJ},
+				     subscription = Subscription} | Is],
+			 F, T) ->
+    case Subscription of
 	both ->
-	    fill_subscription_lists(Is, [J | F], [J | T]);
+	    fill_subscription_lists(Is, [LJ | F], [LJ | T]);
 	from ->
-	    fill_subscription_lists(Is, [J | F], T);
+	    fill_subscription_lists(Is, [LJ | F], T);
 	to ->
-	    fill_subscription_lists(Is, F, [J | T]);
+	    fill_subscription_lists(Is, F, [LJ | T]);
 	_ ->
 	    fill_subscription_lists(Is, F, T)
     end;
@@ -629,34 +708,33 @@ out_subscription(User, Server, JID, Type)
 process_subscription(Direction, User, Server, JID1, Type, Reason) 
   when is_binary(User), is_binary(Server) ->
     try
-	US = {User, Server},
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
 	LJID = jlib:short_prepd_jid(JID1),
 	F = fun() ->
-		    Item = case mnesia:read({roster, {User, Server, LJID}}) of
+		    Item = case gen_storage:read(LServer, {rosteritem, {LUser, LServer, LJID}}) of
 			       [] ->
-				   JID = jlib:short_jid(JID1),
-				   #roster{usj = {User, Server, LJID},
-					   us = US,
-					   jid = JID};
+				   #rosteritem{user_server_jid = {LUser, LServer, LJID}
+					   };
 			       [I] ->
 				   I
 			   end,
 		    NewState = case Direction of
 				   out ->
-				       out_state_change(Item#roster.subscription,
-							Item#roster.ask,
+				       out_state_change(Item#rosteritem.subscription,
+							Item#rosteritem.ask,
 							Type);
 				   in ->
-				       in_state_change(Item#roster.subscription,
-						       Item#roster.ask,
+				       in_state_change(Item#rosteritem.subscription,
+						       Item#rosteritem.ask,
 						       Type)
 			       end,
 		    AutoReply = case Direction of
 				    out ->
 					none;
 				    in ->
-					in_auto_reply(Item#roster.subscription,
-						      Item#roster.ask,
+					in_auto_reply(Item#rosteritem.subscription,
+						      Item#rosteritem.ask,
 						      Type)
 				end,
 		    AskMessage = case NewState of
@@ -667,27 +745,31 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 		    case NewState of
 			none ->
 			    {none, AutoReply};
-			{none, none} when Item#roster.subscription == none,
-					  Item#roster.ask == in ->
-			    mnesia:delete({roster, {User, Server, LJID}}),
+			{none, none} when Item#rosteritem.subscription == none,
+					  Item#rosteritem.ask == in ->
+			    gen_storage:delete(LServer, {rosteritem, {LUser, LServer, LJID}}),
+			    gen_storage:delete(LServer, {rostergroup, {LUser, LServer, LJID}}),
 			    {none, AutoReply};
 			{Subscription, Pending} ->
-			    AskBinary = case AskMessage of
-					    undefined -> <<>>;
-					    B  -> B
-					end,
-			    NewItem = Item#roster{subscription = Subscription,
-						  ask = Pending,
-						  askmessage = AskBinary},
-			    mnesia:write(NewItem),
-			    case roster_version_on_db(Server) of
-				true -> mnesia:write(#roster_version{us = {User, Server}, version = sha:sha(term_to_binary(now()))});
-				false -> ok
+			    Groups = gen_storage:read(LServer,
+						      {rostergroup, {LUser, LServer, LJID}}),
+                            AskBinary = case AskMessage of
+                                            undefined -> <<>>;
+                                            B  -> B
+                                        end,
+			    NewItem = Item#rosteritem{subscription = Subscription,
+						      ask = Pending,
+						      askmessage = AskBinary},
+			    gen_storage:write(LServer, NewItem),
+			    NewItem1 = storageroster_to_roster(NewItem, Groups),
+			    case roster_version_on_db(LServer) of
+				    true -> mnesia:write(#roster_version{us = {LUser, LServer}, version = sha:sha(term_to_binary(now()))});
+				    false -> ok
 			    end,
-			    {{push, NewItem}, AutoReply}
+			    {{push, NewItem1}, AutoReply}
 		    end
 	    end,
-	case mnesia:transaction(F) of
+	case gen_storage:transaction(LServer, rosteritem, F) of
 	    {atomic, {Push, AutoReply}} ->
 		case AutoReply of
 		    none ->
@@ -700,8 +782,8 @@ process_subscription(Direction, User, Server, JID1, Type, Reason)
 		case Push of
 		    {push, Item} ->
 			if
-			    Item#roster.subscription == none,
-			    Item#roster.ask == in ->
+			    Item#rosteritem.subscription == none,
+			    Item#rosteritem.ask == in ->
 				ok;
 			    true ->
 				push_item(User, Server,
@@ -823,15 +905,20 @@ remove_user(User, Server)
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
-	US = {LUser, LServer},
         send_unsubscription_to_rosteritems(LUser, LServer),
 	F = fun() ->
-		    lists:foreach(fun(R) ->
-					  mnesia:delete_object(R)
-				  end,
-				  mnesia:index_read(roster, US, #roster.us))
+		    lists:foreach(
+		      fun(R) ->
+			      gen_storage:delete_object(LServer, R)
+		      end,
+		      gen_storage:select(LServer, rosteritem, [{'=', user_server_jid, {LUser, LServer, '_'}}])),
+		    lists:foreach(
+		      fun(R) ->
+			      gen_storage:delete_object(LServer, R)
+		      end,
+		      gen_storage:select(LServer, rostergroup, [{'=', user_server_jid, {LUser, LServer, '_'}}]))
 	    end,
-	mnesia:transaction(F)
+	gen_storage:transaction(LServer, rosteritem, F)
     catch
 	_ ->
 	    ok
@@ -897,7 +984,7 @@ set_items(User, Server, #xmlel{children = Els})
 					  process_item_set_t(LUser, LServer, El)
 				  end, Els)
 	    end,
-	mnesia:transaction(F)
+	gen_storage:transaction(LServer, rosteritem, F)
     catch
 	_ ->
 	    ok
@@ -918,11 +1005,27 @@ process_item_set_t(LUser, LServer, #xmlel{} = El) ->
 		       jid = JID},
 	Item1 = process_item_attrs_ws(Item, El#xmlel.attrs),
 	Item2 = process_item_els(Item1, El#xmlel.children),
-	case Item2#roster.subscription of
-	    remove ->
-		mnesia:delete({roster, {LUser, LServer, LJID}});
-	    _ ->
-		mnesia:write(Item2)
+	    case Item2 of
+		#roster{subscription = remove} ->
+		    gen_storage:delete(LServer, {rosteritem, {LUser, LServer, LJID}}),
+		    gen_storage:delete(LServer, {rostergroup, {LUser, LServer, LJID}});
+		#roster{name = Name,
+			subscription = Subscription,
+			ask = Ask,
+			askmessage = AskMessage,
+			groups = Groups} ->
+		    gen_storage:write(LServer, #rosteritem{user_server_jid = {LUser, LServer, LJID},
+							   name = Name,
+							   subscription = Subscription,
+							   ask = Ask,
+							   askmessage = AskMessage}),
+		    gen_storage:delete(LServer, {rostergroup, {LUser, LServer, LJID}}),
+		    lists:foreach(
+		      fun(Group) ->
+			      gen_storage:write(LServer,
+						#rostergroup{user_server_jid = {LUser, LServer, LJID},
+							     grp = Group})
+		      end, Groups)
 	end
     catch
 	_ ->
@@ -977,22 +1080,30 @@ process_item_attrs_ws(Item, []) ->
 get_in_pending_subscriptions(Ls, User, Server)
   when is_binary(User), is_binary(Server) ->
     JID = exmpp_jid:make(User, Server),
-    US = {exmpp_jid:prep_node(JID), exmpp_jid:prep_domain(JID)},
-    case mnesia:dirty_index_read(roster, US, #roster.us) of
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
+    case gen_storage:dirty_select(LServer, rosteritem, [{'=', user_server_jid, {LUser, LServer, '_'}}]) of
 	Result when is_list(Result) ->
 	    Ls ++ lists:map(
-		    fun(R) ->
-			    Message = R#roster.askmessage,
-			    {U0, S0, R0} = R#roster.jid,
+		    fun(#rosteritem{user_server_jid = {_, _, RJID},
+				    askmessage = Message}) ->
+			    Status  = if is_binary(Message) ->
+					      binary_to_list(Message);
+					 is_list(Message) ->
+					      Message;
+					 true ->
+					      ""
+				      end,
+			    {U0, S0, R0} = RJID,
 			    Pres1 = exmpp_presence:subscribe(),
 			    Pres2 = exmpp_stanza:set_jids(Pres1,
 			      exmpp_jid:to_binary(U0, S0, R0),
 			      exmpp_jid:to_binary(JID)),
-			    exmpp_presence:set_status(Pres2, Message)
+			    exmpp_presence:set_status(Pres2, Status)
 		    end,
 		    lists:filter(
 		      fun(R) ->
-			      case R#roster.ask of
+			      case R#rosteritem.ask of
 				  in   -> true;
 				  both -> true;
 				  _ -> false
@@ -1016,27 +1127,39 @@ get_in_pending_subscriptions(Ls, User, Server)
 
 get_jid_info(_, User, Server, JID)
   when is_binary(User), is_binary(Server), ?IS_JID(JID) ->
+	LUser = exmpp_stringprep:nodeprep(User),
+	LServer = exmpp_stringprep:nameprep(Server),
     try
-	LJID = jlib:short_prepd_jid(JID),
-	case catch mnesia:dirty_read(roster, {User, Server, LJID}) of
-	    [#roster{subscription = Subscription, groups = Groups}] ->
-		{Subscription, Groups};
-	    _ ->
-		LRJID = jlib:short_prepd_bare_jid(JID),
-		if
-		    LRJID == LJID ->
-			{none, []};
-		    true ->
-			case catch mnesia:dirty_read(
-				     roster, {User, Server, LRJID}) of
-			    [#roster{subscription = Subscription,
-				     groups = Groups}] ->
-				{Subscription, Groups};
-			    _ ->
-				{none, []}
-			end
-		end
-	end
+	F = fun() -> 
+		    LJID = jlib:short_prepd_jid(JID),
+	    case catch gen_storage:read(LServer, {rosteritem, {LUser, LServer, LJID}}) of
+		[#rosteritem{subscription = Subscription}] ->
+		    Groups =
+			[Group || #rostergroup{grp = Group} <-
+				      gen_storage:read(LServer, {rostergroup, {LUser, LServer, LJID}})],
+		    {Subscription, Groups};
+		_ ->
+		    LRJID = jlib:short_prepd_bare_jid(JID),
+		    if
+			LRJID == LJID ->
+			    {none, []};
+			true ->
+				    case catch gen_storage:dirty_read(
+						 LServer, rosteritem,
+						 {LUser, LServer, LRJID}) of
+					[#rosteritem{subscription = Subscription}] ->
+					    Groups =
+						[Group || #rostergroup{grp = Group} <-
+							      gen_storage:read(LServer, {rostergroup, {LUser, LServer, LJID}})],
+					    {Subscription, Groups};
+					_ ->
+					    {none, []}
+				    end
+		    end
+	    end
+    end,
+	{atomic, Result} = gen_storage:transaction(LServer, rosteritem, F),
+	Result
     catch
 	_ ->
 	    {none, []}
@@ -1234,9 +1357,9 @@ user_roster(User, Server, Query, Lang) ->
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
-	Items1 = mnesia:dirty_index_read(roster, US, #roster.us),
+	Items1 = get_roster(User, Server),
 	Res = user_roster_parse_query(User, Server, Items1, Query),
-	Items = mnesia:dirty_index_read(roster, US, #roster.us),
+	Items = get_roster(User, Server),
 	SItems = lists:sort(Items),
 	FItems =
 	    case SItems of
@@ -1448,4 +1571,83 @@ us_to_list({User, Server}) ->
 webadmin_user(Acc, _User, _Server, Lang) ->
     % `Lang' is used by the `T' macro, called from the `ACT' macro.
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].
+
+
+update_tables(Host) ->
+    gen_storage_migration:migrate_mnesia(
+      Host, rosteritem,
+      [{roster, [uj, user, jid, name, subscription, ask, groups, xattrs, xs],
+	fun({roster, {User, JID}, _, _, Name, Subscription, Ask, Groups, _Xattrs, _Xs}) ->
+		USJ = {User, Host, JID},
+		lists:foreach(
+		  fun(Group) ->
+			  gen_storage:write(Host,
+					    #rostergroup{user_server_jid = USJ,
+							 grp = Group})
+		  end, Groups),
+		#rosteritem{user_server_jid = USJ,
+			    name = Name,
+			    subscription = Subscription,
+			    ask = Ask}
+	end},
+       {roster, [usj, us, jid, name, subscription, ask, groups, xattrs, xs],
+	fun({roster, USJ, _, _, Name, Subscription, Ask, Groups, _Xattrs, _Xs}) ->
+		lists:foreach(
+		  fun(Group) ->
+			  gen_storage:write(Host,
+					    #rostergroup{user_server_jid = USJ,
+							 grp = Group})
+		  end, Groups),
+		#rosteritem{user_server_jid = USJ,
+			    name = Name,
+			    subscription = Subscription,
+			    ask = Ask}
+	end},
+       {roster, [usj, us, jid, name, subscription, ask, groups, askmessage, xs],
+	fun({roster, USJ, _, _, Name, Subscription, Ask, Groups, AskMessage, _Xs}) ->
+		lists:foreach(
+		  fun(Group) ->
+			  gen_storage:write(Host,
+					    #rostergroup{user_server_jid = USJ,
+							 grp = Group})
+		  end, Groups),
+		#rosteritem{user_server_jid = USJ,
+			    name = Name,
+			    subscription = Subscription,
+			    ask = Ask,
+			    askmessage = AskMessage}
+	end}
+      ]),
+    gen_storage_migration:migrate_odbc(
+      Host, [rosteritem, rostergroup],
+      [{"rosterusers", ["username", "jid", "nick",
+			"subscription", "ask", "askmessage",
+			"server", "subscribe", "type"],
+	fun(SELECT,
+	    Username, JID, Nick,
+	    Subscription, Ask, AskMessage,
+	    Server, Subscribe, Type) ->
+		USJ = {Username, Host, JID},
+		[#rosteritem{user_server_jid = USJ,
+			     name = Nick,
+			     subscription = case Subscription of
+						"B" -> both;
+						"T" -> to;
+						"F" -> from;
+						_ -> none
+					    end,
+			     ask = case Ask of
+				       "S" -> subscribe;
+				       "U" -> unsubscribe;
+				       "B" -> both;
+				       "O" -> out;
+				       "I" -> in;
+				       _ -> none
+				   end,
+			     askmessage = AskMessage}
+		 | [#rostergroup{user_server_jid = USJ,
+				 grp = Group}
+		    || [Group] <- SELECT(["grp"], "rostergroups", [{"username", Username},
+								   {"jid", JID}])]]
+	end}]).
 

@@ -50,7 +50,8 @@
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
--record(offline_msg, {us, timestamp, expire, from, to, packet}).
+%% TODO: packet always handled serialized?
+-record(offline_msg, {user_server, timestamp, expire, from, to, packet}).
 
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
@@ -65,10 +66,17 @@
 
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
-    mnesia:create_table(offline_msg,
-			[{disc_only_copies, [node()]},
-			 {type, bag},
-			 {attributes, record_info(fields, offline_msg)}]),
+    Backend = gen_mod:get_opt(backend, Opts, mnesia),
+    gen_storage:create_table(Backend, HostB, offline_msg,
+			     [{disc_only_copies, [node()]},
+			      {odbc_host, Host},
+			      {type, bag},
+			      {attributes, record_info(fields, offline_msg)},
+			      {types, [{user_server, {text, text}},
+				       {timestamp, bigint},
+				       {expire, bigint},
+				       {from, ljid},
+				       {to, ljid}]}]),
     update_table(),
     ejabberd_hooks:add(offline_message_hook, HostB,
 		       ?MODULE, store_packet, 50),
@@ -94,18 +102,21 @@ start(Host, Opts) ->
 
 loop(AccessMaxOfflineMsgs) ->
     receive
-	#offline_msg{us=US} = Msg ->
+	#offline_msg{user_server=US} = Msg ->
 	    Msgs = receive_all(US, [Msg]),
 	    Len = length(Msgs),
+	    %% TODO: is lower?
 	    {User, Host} = US,
+	    MsgsSerialized = [M#offline_msg{packet = xml:element_to_string(P)}
+			      || #offline_msg{packet = P} = M <- Msgs],
 	    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
 						   User, Host),
 	    F = fun() ->
 			%% Only count messages if needed:
-			Count = if MaxOfflineMsgs =/= infinity ->
-					Len + p1_mnesia:count_records(
-						offline_msg, 
-						#offline_msg{us=US, _='_'});
+			Count =
+			    if MaxOfflineMsgs =/= infinity ->
+				    Len + gen_storage:count_records(Host, offline_msg,
+								    [{'=', user_server, US}]);
 				   true -> 
 					0
 				end,
@@ -115,16 +126,16 @@ loop(AccessMaxOfflineMsgs) ->
 			    true ->
 				if
 				    Len >= ?OFFLINE_TABLE_LOCK_THRESHOLD ->
-					mnesia:write_lock_table(offline_msg);
+					gen_storage:write_lock_table(Host, offline_msg);
 				    true ->
 					ok
 				end,
 				lists:foreach(fun(M) ->
-						      mnesia:write(M)
-					      end, Msgs)
+						      gen_storage:write(Host, M)
+					      end, MsgsSerialized)
 			end
 		end,
-	    mnesia:transaction(F),
+	    gen_storage:transaction(Host, offline_msg, F),
 	    loop(AccessMaxOfflineMsgs);
 	_ ->
 	    loop(AccessMaxOfflineMsgs)
@@ -141,7 +152,7 @@ get_max_user_messages(AccessRule, LUser, Host) ->
 
 receive_all(US, Msgs) ->
     receive
-	#offline_msg{us=US} = Msg ->
+	#offline_msg{user_server=US} = Msg ->
 	    receive_all(US, [Msg | Msgs])
     after 0 ->
 	    Msgs
@@ -194,10 +205,10 @@ store_packet(From, To, Packet) ->
 		true ->
             LUser = exmpp_jid:prep_node_as_list(To),
             LServer = exmpp_jid:prep_domain_as_list(To),
-		    TimeStamp = now(),
+		    TimeStamp = make_timestamp(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
 		    gen_mod:get_module_proc(LServer, ?PROCNAME) !
-			#offline_msg{us = {LUser, LServer},
+			#offline_msg{user_server = {LUser, LServer},
 				     timestamp = TimeStamp,
 				     expire = Expire,
 				     from = From,
@@ -289,11 +300,11 @@ resend_offline_messages(User, Server) ->
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
 	F = fun() ->
-		    Rs = mnesia:wread({offline_msg, US}),
-		    mnesia:delete({offline_msg, US}),
-		    Rs
+		Rs = gen_storage:read(LServer, offline_msg, US, write),
+		gen_storage:delete(LServer, {offline_msg, US}),
+		Rs
 	    end,
-	case mnesia:transaction(F) of
+    case gen_storage:transaction(LServer, offline_msg, F) of
 	    {atomic, Rs} ->
 		lists:foreach(
 		  fun(R) ->
@@ -332,13 +343,13 @@ pop_offline_messages(Ls, User, Server)
 	LServer = binary_to_list(Server),
 	US = {LUser, LServer},
 	F = fun() ->
-		    Rs = mnesia:wread({offline_msg, US}),
-		    mnesia:delete({offline_msg, US}),
-		    Rs
+		Rs = gen_storage:read(Server, offline_msg, US, write),
+		gen_storage:delete(Server, {offline_msg, US}),
+		Rs
 	    end,
-	case mnesia:transaction(F) of
+    case gen_storage:transaction(Server, offline_msg, F) of
 	    {atomic, Rs} ->
-		TS = now(),
+	    TS = make_timestamp(),
 		Ls ++ lists:map(
 			fun(R) ->
 				Packet = R#offline_msg.packet,
@@ -349,7 +360,7 @@ pop_offline_messages(Ls, User, Server)
 				 Packet,
 				 [jlib:timestamp_to_xml(
 				    calendar:now_to_universal_time(
-				      R#offline_msg.timestamp),
+					timestamp_to_now(R#offline_msg.timestamp)),
 				    utc,
 				    exmpp_jid:make("", Server, ""),
 				    "Offline Storage"),
@@ -379,42 +390,29 @@ pop_offline_messages(Ls, User, Server)
 
 
 remove_expired_messages() ->
-    TimeStamp = now(),
-    F = fun() ->
-		mnesia:write_lock_table(offline_msg),
-		mnesia:foldl(
-		  fun(Rec, _Acc) ->
-			  case Rec#offline_msg.expire of
-			      never ->
-				  ok;
-			      TS ->
-				  if
-				      TS < TimeStamp ->
-					  mnesia:delete_object(Rec);
-				      true ->
-					  ok
-				  end
-			  end
-		  end, ok, offline_msg)
-	end,
-    mnesia:transaction(F).
+    TimeStamp = make_timestamp(),
+    lists:foreach(
+      fun(Host) ->
+	      F = fun() ->
+			  gen_storage:delete_where(
+			    Host, offline_msg,
+			    [{'andalso',
+			      {'=/=', expire, 0},
+			      {'<', expire, TimeStamp}}])
+		  end,
+	      gen_storage:transaction(Host, offline_msg, F)
+      end, gen_storage:all_table_hosts(offline_msg)).
 
 remove_old_messages(Days) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    S = MegaSecs * 1000000 + Secs - 60 * 60 * 24 * Days,
-    MegaSecs1 = S div 1000000,
-    Secs1 = S rem 1000000,
-    TimeStamp = {MegaSecs1, Secs1, 0},
-    F = fun() ->
-		mnesia:write_lock_table(offline_msg),
-		mnesia:foldl(
-		  fun(#offline_msg{timestamp = TS} = Rec, _Acc)
-		     when TS < TimeStamp ->
-			  mnesia:delete_object(Rec);
-		     (_Rec, _Acc) -> ok
-		  end, ok, offline_msg)
-	end,
-    mnesia:transaction(F).
+    Timestamp = make_timestamp() - 60 * 60 * 24 * Days,
+    lists:foreach(
+      fun(Host) ->
+	      F = fun() ->
+			  gen_storage:delete_where(Host, offline_msg,
+						   [{'<', timestamp, Timestamp}])
+		  end,
+	      {atomic, _} = gen_storage:transaction(Host, offline_msg, F)
+      end, gen_storage:all_table_hosts(offline_msg)).
 
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     try
@@ -422,9 +420,9 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
 	F = fun() ->
-		    mnesia:delete({offline_msg, US})
+		    gen_storage:delete(LServer, {offline_msg, US})
 	    end,
-	mnesia:transaction(F)
+	gen_storage:transaction(LServer, offline_msg, F)
     catch
 	_ ->
 	    ok
@@ -450,7 +448,7 @@ update_table() ->
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_offline_tmp_table),
 			 mnesia:foldl(
-			   fun(#offline_msg{us = U, from = F, to = T, packet = P} = R, _) ->
+			   fun(#offline_msg{user_server = U, from = F, to = T, packet = P} = R, _) ->
 				   U1 = convert_jid_to_exmpp(U),
 				   F1 = jlib:from_old_jid(F),
 				   T1 = jlib:from_old_jid(T),
@@ -459,7 +457,7 @@ update_table() ->
 				     [?DEFAULT_NS],
 				     ?PREFIXED_NS),
 				   New_R = R#offline_msg{
-				     us = {U1, Host},
+				     user_server = {U1, Host},
 				     from = F1,
 				     to = T1,
 				     packet = P1
@@ -502,7 +500,7 @@ update_table() ->
 			P,
 			[?DEFAULT_NS],
 			?PREFIXED_NS),
-		      #offline_msg{us = U1,
+		      #offline_msg{user_server = U1,
 				   timestamp = TS,
 				   expire = Expire,
 				   from = F1,
@@ -512,10 +510,10 @@ update_table() ->
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_offline_tmp_table),
 			 mnesia:foldl(
-			   fun(#offline_msg{us = U} = R, _) ->
+			   fun(#offline_msg{user_server = U} = R, _) ->
 				   mnesia:dirty_write(
 				     mod_offline_tmp_table,
-				     R#offline_msg{us = {U, Host}})
+				     R#offline_msg{user_server = {U, Host}})
 			   end, ok, offline_msg)
 		 end,
 	    mnesia:transaction(F1),
@@ -552,7 +550,7 @@ convert_to_exmpp() ->
     mnesia:transaction(Fun).
 
 convert_to_exmpp2(#offline_msg{
-  us = {US_U, US_S},
+  user_server = {US_U, US_S},
   from = From,
   to = To,
   packet = Packet} = R, Acc) ->
@@ -568,7 +566,7 @@ convert_to_exmpp2(#offline_msg{
       [?DEFAULT_NS], ?PREFIXED_NS),
     % Prepare the new record.
     New_R = R#offline_msg{
-      us = {US_U1, US_S1},
+      user_server = {US_U1, US_S1},
       from = From1,
       to = To1,
       packet = Packet1},
@@ -580,6 +578,14 @@ convert_jid_to_exmpp("") -> undefined;
 convert_jid_to_exmpp(V)  -> V.
 
 %% Helper functions:
+make_timestamp() ->
+    {MegaSecs, Secs, _MicroSecs} = now(),
+    MegaSecs * 1000000 + Secs.
+
+timestamp_to_now(Timestamp) ->
+    MegaSecs = Timestamp div 1000000,
+    Secs = Timestamp rem 1000000,
+    {MegaSecs, Secs, 0}.
 
 %% Warn senders that their messages have been discarded:
 discard_warn_sender(Msgs) ->
@@ -606,15 +612,15 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
-    {US, MsgsAll, Res} = try
 	US0 = {
 	  exmpp_stringprep:nodeprep(User),
 	  exmpp_stringprep:nameprep(Server)
 	},
+    {user_server, MsgsAll, Res} = try
 	{
 	  US0,
-	  lists:keysort(#offline_msg.timestamp,
-			mnesia:dirty_read({offline_msg, US0})),
+	    lists:keysort(#offline_msg.timestamp,
+			 gen_storage:dirty_read(Server, {offline_msg, US0})),
 	  user_queue_parse_query(US0, Query)
 	}
     catch
@@ -628,7 +634,7 @@ user_queue(User, Server, Query, Lang) ->
 			   packet = Packet} = Msg) ->
 		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
 		  {{Year, Month, Day}, {Hour, Minute, Second}} =
-		      calendar:now_to_local_time(TimeStamp),
+		      calendar:now_to_local_time(timestamp_to_now(TimeStamp)),
 		  Time = lists:flatten(
 			   io_lib:format(
 			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
@@ -648,9 +654,9 @@ user_queue(User, Server, Query, Lang) ->
 		     )
 	  end, Msgs),
     [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
-			     [us_to_list(US)]))] ++
+			     [us_to_list(US0)]))] ++
 	case Res of
-	    ok -> [?XREST("Submitted")];
+	    ok -> [?CT("Submitted"), ?P];
 	    nothing -> []
 	end ++
 	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
@@ -680,8 +686,9 @@ user_queue(User, Server, Query, Lang) ->
 user_queue_parse_query(US, Query) ->
     case lists:keysearch("delete", 1, Query) of
 	{value, _} ->
+	    {_, LServer} = US,
 	    Msgs = lists:keysort(#offline_msg.timestamp,
-				 mnesia:dirty_read({offline_msg, US})),
+				 gen_storage:dirty_read(LServer, {offline_msg, US})),
 	    F = fun() ->
 			lists:foreach(
 			  fun(Msg) ->
@@ -689,13 +696,13 @@ user_queue_parse_query(US, Query) ->
 					 binary_to_list(term_to_binary(Msg))),
 				  case lists:member({"selected", ID}, Query) of
 				      true ->
-					  mnesia:delete_object(Msg);
+					  gen_storage:delete_object(LServer, Msg);
 				      false ->
 					  ok
 				  end
 			  end, Msgs)
 		end,
-	    mnesia:transaction(F),
+	    gen_storage:transaction(LServer, offline_msg, F),
 	    ok;
 	false ->
 	    nothing
@@ -729,20 +736,21 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
-    QueueLen = get_queue_length(exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)),
+    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
+    QueueLen = length(gen_storage:dirty_read(Server, {offline_msg, US})),
     FQueueLen = [?AC("queue/", integer_to_list(QueueLen))],
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
 
 webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->
     US = {User, Server},
     F = fun() ->
-            mnesia:write_lock_table(offline_msg),
+            gen_storage:write_lock_table(Server, offline_msg),
             lists:foreach(
               fun(Msg) ->
-                      mnesia:delete_object(Msg)
-              end, mnesia:dirty_read({offline_msg, US}))
+                      gen_storage:delete_object(Server, Msg)
+              end, gen_storage:read(Server, {offline_msg, US}))
         end,
-    case mnesia:transaction(F) of
+    case gen_storage:transaction(Server, offline_msg, F) of
          {aborted, Reason} ->
             ?ERROR_MSG("Failed to remove offline messages: ~p", [Reason]),
             {stop, error};
@@ -752,3 +760,52 @@ webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->
     end;
 webadmin_user_parse_query(Acc, _Action, _User, _Server, _Query) ->
     Acc.
+
+
+update_table(Host) ->
+    gen_storage_migration:migrate_mnesia(
+      Host, offline_msg,
+      [{offline_msg, [us, timestamp, expire, from, to, packet],
+	fun(#offline_msg{expire = never,
+			 packet = Packet} = OM) ->
+		OM#offline_msg{expire = 0,
+			       packet = xml:element_to_string(Packet)};
+	   (#offline_msg{expire = {MegaSecs, Secs, _MicroSecs},
+			 packet = Packet} = OM) ->
+		OM#offline_msg{expire = MegaSecs * 1000000 + Secs,
+			       packet = xml:element_to_string(Packet)}
+	end}]),
+    gen_storage_migration:migrate_odbc(
+      Host, [offline_msg],
+      [{"spool", ["username", "xml", "seq"],
+	fun(_, Username, XmlS, _Seq) ->
+		{xmlelement, _, Attrs, Els} = xml_stream:parse_element(XmlS),
+		From = jlib:jid_tolower(
+			 jlib:string_to_jid(
+			   xml:get_attr_s("from", Attrs))),
+		Expire = find_x_expire(0, Els),
+		Timestamp = find_x_timestamp(Els),
+		[#offline_msg{user_server = {Username, Host},
+			      timestamp = Timestamp,
+			      expire = Expire,
+			      from = From,
+			      to = {Username, Host, ""},
+			      packet = XmlS}]
+	end}]).
+
+find_x_timestamp([]) ->
+    make_timestamp();
+find_x_timestamp([{xmlcdata, _} | Els]) ->
+    find_x_timestamp(Els);
+find_x_timestamp([El | Els]) ->
+    case xml:get_tag_attr_s("xmlns", El) of
+	?NS_DELAY ->
+	    Stamp = xml:get_tag_attr_s("stamp", El),
+	    case jlib:datetime_string_to_timestamp(Stamp) of
+		undefined -> find_x_timestamp(Els);
+		{MegaSecs, Secs, _MicroSecs} -> MegaSecs * 1000000 + Secs
+	    end;
+	_ ->
+	    find_x_timestamp(Els)
+    end.
+

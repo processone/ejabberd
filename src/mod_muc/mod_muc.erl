@@ -36,7 +36,6 @@
 	 stop/1,
 	 room_destroyed/4,
 	 store_room/3,
-	 restore_room/2,
 	 forget_room/2,
 	 create_room/5,
 	 process_iq_disco_items/4,
@@ -56,7 +55,8 @@
 -include("jlib.hrl").
 
 
--record(muc_room, {name_host, opts}).
+-record(muc_room_opt, {name_host, opt, val}).
+-record(muc_room_affiliation, {name_host, jid, affiliation, reason}).
 -record(muc_online_room, {name_host, pid}).
 -record(muc_registered, {us_host, nick}).
 
@@ -121,24 +121,89 @@ create_room(Host, Name, From, Nick, Opts) ->
 
 store_room(Host, Name, Opts) when is_binary(Host), is_binary(Name) ->
     F = fun() ->
-		mnesia:write(#muc_room{name_host = {Name, Host},
-				       opts = Opts})
-	end,
-    mnesia:transaction(F).
+		gen_storage:delete(Host, {muc_room_opt, {Name, Host}}),
+		gen_storage:delete(Host, {muc_room_affiliation, {Name, Host}}),
 
-restore_room(Host, Name) when is_binary(Host), is_binary(Name) ->
-    case catch mnesia:dirty_read(muc_room, {Name, Host}) of
-	[#muc_room{opts = Opts}] ->
-	    Opts;
-	_ ->
-	    error
-    end.
+		lists:foreach(
+		  fun({affiliations, Affiliations}) ->
+			  lists:foreach(
+			    fun({JID, Affiliation1}) ->
+				    {Affiliation, Reason} =
+					case Affiliation1 of
+					    {_, _} = A -> A;
+					    A when is_atom(A) -> {A, ""}
+					end,
+				    gen_storage:write(
+				      Host,
+				      #muc_room_affiliation{name_host = {Name, Host},
+							    jid = jlib:make_jid(JID),
+							    affiliation = Affiliation,
+							    reason = Reason})
+			    end, Affiliations);
+		     ({Opt, Val}) ->
+			  ValS = if
+				     is_integer(Val) -> integer_to_list(Val);
+				     is_list(Val);
+				     is_atom(Val) -> Val
+				 end,
+			  gen_storage:write(Host,
+					    #muc_room_opt{name_host = {Name, Host},
+							  opt = Opt, val = ValS})
+		  end, Opts)
+	end,
+    {atomic, ok} = gen_storage:transaction(Host, muc_room_opt, F).
+
+restore_room_internal(Host, Name) ->
+    RoomOpts = gen_storage:read(Host, {muc_room_opt, {Name, Host}}),
+    Opts = 
+	lists:map(
+	  fun(#muc_room_opt{opt = Opt, val = Val}) ->
+		  Val2 = if
+			     is_list(Val) andalso
+			     (Opt =:= allow_change_subj orelse
+			      Opt =:= allow_query_users orelse
+			      Opt =:= allow_private_messages orelse
+			      Opt =:= allow_visitor_status orelse
+			      Opt =:= allow_visitor_nickchange orelse
+			      Opt =:= public orelse
+			      Opt =:= public_list orelse
+			      Opt =:= persistent orelse
+			      Opt =:= moderated orelse
+			      Opt =:= members_by_default orelse
+			      Opt =:= members_only orelse
+			      Opt =:= allow_user_invites orelse
+			      Opt =:= password_protected orelse
+			      Opt =:= anonymous orelse
+			      Opt =:= logging) ->
+				 list_to_atom(Val);
+			     is_list(Val) andalso
+			     Opt =:= max_users ->
+				 list_to_integer(Val);
+			     true ->
+				 Val
+			 end,
+		  {Opt, Val2}
+	  end, RoomOpts),
+    RoomAffiliations = gen_storage:read(Host, {muc_room_affiliation,
+					       {Name, Host}}),
+    Affiliations =
+	lists:map(fun(#muc_room_affiliation{jid = JID,
+					    affiliation = Affiliation,
+					    reason = Reason}) ->
+			  A = case Reason of
+				  "" -> Affiliation;
+				  _ -> {Affiliation, Reason}
+			      end,
+			  {jlib:jid_tolower(JID), A}
+		  end, RoomAffiliations),
+    [{affiliations, Affiliations} | Opts].
 
 forget_room(Host, Name) when is_binary(Host), is_binary(Name) ->
     F = fun() ->
-		mnesia:delete({muc_room, {Name, Host}})
+		gen_storage:delete(Host, {muc_room_opt, {Name, Host}}),
+		gen_storage:delete(Host, {muc_room_affiliation, {Name, Host}})
 	end,
-    mnesia:transaction(F).
+    gen_storage:transaction(Host, muc_room_opt, F).
 
 process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) when is_binary(Host) ->
     Rsm = jlib:rsm_decode(IQ),
@@ -153,13 +218,11 @@ can_use_nick(_Host, _JID, <<>>)  ->
     false;
 can_use_nick(Host, JID, Nick) when is_binary(Host), is_binary(Nick) ->
     LUS = {exmpp_jid:prep_node(JID), exmpp_jid:prep_domain(JID)},
-    case catch mnesia:dirty_select(
+    case catch gen_storage:dirty_select(
+		 Host,
 		 muc_registered,
-		 [{#muc_registered{us_host = '$1',
-				   nick = Nick,
-				   _ = '_'},
-		   [{'==', {element, 2, '$1'}, Host}],
-		   ['$_']}]) of
+		 [{'=', us_host, {'_', Host}},
+		  {'=', nick, Nick}]) of
 	{'EXIT', _Reason} ->
 	    true;
 	[] ->
@@ -197,22 +260,38 @@ migrate(After) ->
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     update_muc_online_table(),
-    mnesia:create_table(muc_room,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, muc_room)}]),
-    mnesia:create_table(muc_registered,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, muc_registered)}]),
-    mnesia:create_table(muc_online_room,
-			[{ram_copies, [node()]},
-			 {local_content, true},
-			 {attributes, record_info(fields, muc_online_room)}]),
-    mnesia:add_table_copy(muc_online_room, node(), ram_copies),
-    catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
     MyHost_L = gen_mod:expand_host_name(Host, Opts, "conference"),
     MyHost = list_to_binary(MyHost_L),
-    update_tables(MyHost),
-    mnesia:add_table_index(muc_registered, nick),
+    Backend = gen_mod:get_opt(backend, Opts, mnesia),
+    gen_storage:create_table(Backend, MyHost, muc_room_opt,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, muc_room_opt)},
+			      {type, bag},
+			      {types, [{name_host, {text, text}},
+				       {opt, atom}]}]),
+    gen_storage:create_table(Backend, MyHost, muc_room_affiliation,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, muc_room_affiliation)},
+			      {type, bag},
+			      {types, [{name_host, {text, text}},
+				       {affiliation, atom},
+				       {jid, jid}]}]),
+    gen_storage:create_table(Backend, MyHost, muc_registered,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, muc_registered)},
+			      {types, [{us_host, {text, text}}]}]),
+    gen_storage:create_table(Backend, MyHost, muc_online_room,
+			     [{ram_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, muc_online_room)},
+			      {types, [{name_host, {text, text}},
+				       {pid, pid}]}]),
+    gen_storage:add_table_copy(MyHost, muc_online_room, node(), ram_copies),
+    catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
+    gen_storage:add_table_index(MyHost, muc_registered, nick),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
@@ -303,12 +382,13 @@ handle_info({route, From, To, Packet},
 	    {Proc, Node} ! {route, From, To, Packet}
     end,
     {noreply, State};
-handle_info({room_destroyed, RoomHost, Pid}, State) ->
+handle_info({room_destroyed, {_, Host} = RoomHost, Pid}, State) ->
     F = fun() ->
-		mnesia:delete_object(#muc_online_room{name_host = RoomHost,
-						      pid = Pid})
+		gen_storage:delete_object(Host,
+					  #muc_online_room{name_host = RoomHost,
+							   pid = Pid})
 	end,
-    mnesia:sync_dirty(F),
+    gen_storage:sync_dirty(Host, muc_online_room, F),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -477,7 +557,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		    end
 	    end;
 	_ ->
-	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+	    case gen_storage:dirty_read(Host, muc_online_room, {Room, Host}) of
 		[] ->
 		    Type = exmpp_stanza:get_type(Packet),
 		    case {Name, Type} of
@@ -530,21 +610,20 @@ check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
 
 
 load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
-    case catch mnesia:dirty_select(
-		 muc_room, [{#muc_room{name_host = {'_', Host}, _ = '_'},
-			     [],
-			     ['$_']}]) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p", [Reason]),
-	    ok;
-	Rs ->
-	    lists:foreach(
-	      fun(R) ->
-		      {Room, Host} = R#muc_room.name_host,
+     F = fun() ->
+ 		Rs = gen_storage:select(Host, muc_room_opt,
+ 					[{'=', name_host, {'_', Host}}]),
+ 		Names = lists:foldl(
+ 			  fun(#muc_room_opt{name_host = {Room, _}}, Names) ->
+ 				  sets:add_element(Room, Names)
+ 			  end, sets:new(), Rs),
+ 		lists:foreach(
+ 		  fun(Room) ->
 		      case ejabberd_cluster:get_node({Room, Host}) of
 			  Node when Node == node() ->
-			      case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+ 			      case gen_storage:read(Host, {muc_online_room, {Room, Host}}) of
 				  [] ->
+				      Opts = restore_room_internal(Host, Room),
 				      {ok, Pid} = mod_muc_room:start(
 						    Host,
 						    ServerHost,
@@ -552,40 +631,45 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 						    Room,
 						    HistorySize,
 						    RoomShaper,
-						    R#muc_room.opts),
-				      register_room(Host, Room, Pid);
+						    Opts),
+ 				      register_room_internal(Host, Room, Pid);
 				  _ ->
 				      ok
 			      end;
 			  _ ->
 			      ok
 		      end
-	      end, Rs)
-    end.
+ 		  end, sets:to_list(Names))
+ 	end,
+    {atomic, ok} = gen_storage:transaction(Host, muc_room_opt, F).
 
 start_new_room(Host, ServerHost, Access, Room,
 	       HistorySize, RoomShaper, From,
 	       Nick, DefRoomOpts) ->
-    case mnesia:dirty_read(muc_room, {Room, Host}) of
+    case gen_storage:read(Host, {muc_room_opt, {Room, Host}}) of
 	[] ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access,
 			       Room, HistorySize,
 			       RoomShaper, From,
 			       Nick, DefRoomOpts);
-	[#muc_room{opts = Opts}|_] ->
+	Opts when is_list(Opts) ->
 	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access,
 			       Room, HistorySize,
 			       RoomShaper, Opts)
     end.
 
-register_room(Host, Room, Pid) when is_binary(Host), is_binary(Room) ->
+register_room_internal(Host, Room, Pid) ->
+    gen_storage:write(Host,
+		      #muc_online_room{name_host = {Room, Host},
+				       pid = Pid}).
+
+register_room(Host, Room, Pid) ->
     F = fun() ->
-		mnesia:write(#muc_online_room{name_host = {Room, Host},
-					      pid = Pid})
+		register_room_internal(Host, Room, Pid)
 	end,
-    mnesia:sync_dirty(F).
+    gen_storage:sync_dirty(Host, muc_online_room, F).
 
 
 iq_disco_info(Lang) ->
@@ -626,16 +710,13 @@ iq_disco_items(Host, From, Lang, none) when is_binary(Host) ->
 			 {item, Desc} ->
 			     flush(),
 			     {true,
-                  #xmlel{name = 'item',
-                         attrs = [?XMLATTR('jid', 
-                                          exmpp_jid:to_binary(Name,
-                                                                        Host)),
-                                 ?XMLATTR('name',
-                                          Desc)]}};
+			      {xmlelement, "item",
+			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
+				{"name", Desc}], []}};
 			 _ ->
 			     false
 		     end
-	     end, get_vh_rooms_all_nodes(Host));
+	     end, get_vh_rooms(Host));
 
 iq_disco_items(Host, From, Lang, Rsm) ->
     {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
@@ -646,27 +727,15 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			 {item, Desc} ->
 			     flush(),
 			     {true,
-            #xmlel{name = 'item',
-                   attrs = [
-                     #xmlattr{
-                       name = 'jid',
-                       value = exmpp_jid:to_binary(exmpp_jid:make(Name, Host))
-                     },
-                     #xmlattr{
-                       name = 'name',
-                       value = Desc
-                     }
-                   ]
-                  }
-           };
-			      %{xmlelement, "item",
-			       %[{"jid", jlib:jid_to_string({Name, Host, ""})},
-				%{"name", Desc}], []}};
-
+                  #xmlel{name = 'item',
+                         attrs = [?XMLATTR('jid', 
+				 exmpp_jid:to_binary(exmpp_jid:make(Name, Host))),
+                                 ?XMLATTR('name',
+                                          Desc)]}};
 			 _ ->
 			     false
 		     end
-	     end, Rooms) ++ RsmOut.
+	     end, get_vh_rooms_all_nodes(Host)).
 
 get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
     AllRooms = get_vh_rooms_all_nodes(Host),
@@ -749,7 +818,7 @@ iq_get_register_info(Host, From, Lang)  ->
     LServer = exmpp_jid:prep_domain(From),
     LUS = {LUser, LServer},
     {Nick, Registered} =
-	case catch mnesia:dirty_read(muc_registered, {LUS, Host}) of
+	case catch gen_storage:dirty_read(Host, muc_registered, {LUS, Host}) of
 	    {'EXIT', _Reason} ->
 		{"", []};
 	    [] ->
@@ -781,17 +850,15 @@ iq_set_register_info(Host, From, Nick, Lang) when is_binary(Host), is_binary(Nic
     F = fun() ->
 		case Nick of
 		    <<>> ->
-			mnesia:delete({muc_registered, {LUS, Host}}),
+			gen_storage:delete(Host, {muc_registered, {LUS, Host}}),
 			ok;
 		    _ ->
 			Allow =
-			    case mnesia:select(
+			    case gen_storage:select(
+				   Host,
 				   muc_registered,
-				   [{#muc_registered{us_host = '$1',
-						     nick = Nick,
-						     _ = '_'},
-				     [{'==', {element, 2, '$1'}, Host}],
-				     ['$_']}]) of
+				   [{'=', us_host, {'_', Host}},
+				    {'=', nick, Nick}]) of
 				[] ->
 				    true;
 				[#muc_registered{us_host = {U, _Host}}] ->
@@ -799,7 +866,8 @@ iq_set_register_info(Host, From, Nick, Lang) when is_binary(Host), is_binary(Nic
 			    end,
 			if
 			    Allow ->
-				mnesia:write(
+				gen_storage:write(
+				  Host,
 				  #muc_registered{us_host = {LUS, Host},
 						  nick = Nick}),
 				ok;
@@ -808,7 +876,7 @@ iq_set_register_info(Host, From, Nick, Lang) when is_binary(Host), is_binary(Nic
 			end
 		end
 	end,
-    case mnesia:transaction(F) of
+    case gen_storage:transaction(Host, muc_registered, F) of
 	{atomic, ok} ->
 	    ok;
 	{atomic, false} ->
@@ -906,10 +974,8 @@ get_vh_rooms_all_nodes(Host) ->
     lists:ukeysort(#muc_online_room.name_host, Rooms).
 
 get_vh_rooms(Host) when is_binary(Host) ->
-    mnesia:dirty_select(muc_online_room,
-			[{#muc_online_room{name_host = '$1', _ = '_'},
-			  [{'==', {element, 2, '$1'}, Host}],
-			  ['$_']}]).
+    gen_storage:dirty_select(Host, muc_online_room,
+			     [{'=', name_host, {'_', Host}}]).
 
 update_tables(Host) ->
     update_muc_room_table(Host),
@@ -924,8 +990,8 @@ update_muc_online_table() ->
     end.
 
 update_muc_room_table(Host) ->
-    Fields = record_info(fields, muc_room),
-    case mnesia:table_info(muc_room, attributes) of
+    Fields = record_info(fields, muc_room_opt),
+    case mnesia:table_info(muc_room_opt, attributes) of
 	Fields ->
 	    ok;
 	[name, opts] ->
@@ -937,15 +1003,15 @@ update_muc_room_table(Host) ->
 			      {type, bag},
 			      {local_content, true},
 			      {record_name, muc_room},
-			      {attributes, record_info(fields, muc_room)}]),
+			      {attributes, record_info(fields, muc_room_opt)}]),
 	    mnesia:transform_table(muc_room, ignore, Fields),
 	    F1 = fun() ->
 			 mnesia:write_lock_table(mod_muc_tmp_table),
 			 mnesia:foldl(
-			   fun(#muc_room{name_host = Name} = R, _) ->
+			   fun(#muc_room_opt{name_host = Name} = R, _) ->
 				   mnesia:dirty_write(
 				     mod_muc_tmp_table,
-				     R#muc_room{name_host = {Name, Host}})
+				     R#muc_room_opt{name_host = {Name, Host}})
 			   end, ok, muc_room)
 		 end,
 	    mnesia:transaction(F1),

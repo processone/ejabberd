@@ -43,16 +43,20 @@
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
 
--record(last_activity, {us, timestamp, status}).
+-record(last_activity, {user_server, timestamp, status}).
 
 
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mnesia:create_table(last_activity,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, last_activity)}]),
-    update_table(),
+    Backend = gen_mod:get_opt(backend, Opts, mnesia),
+    gen_storage:create_table(Backend, HostB, last_activity,
+			     [{disc_copies, [node()]},
+			      {odbc_host, Host},
+			      {attributes, record_info(fields, last_activity)},
+			      {types, [{user_server, {text, text}},
+				       {timestamp, bigint}]}]),
+    update_table(Host),
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_LAST_ACTIVITY,
@@ -88,10 +92,10 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 %% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
 get_node_uptime() ->
     case ejabberd_config:get_local_option(node_start) of
-	{_, _, _} = StartNow ->
-	    now_to_seconds(now()) - now_to_seconds(StartNow);
-	_undefined ->
-	    trunc(element(1, erlang:statistics(wall_clock))/1000)
+ {_, _, _} = StartNow ->
+     now_to_seconds(now()) - now_to_seconds(StartNow);
+ _undefined ->
+     trunc(element(1, erlang:statistics(wall_clock))/1000)
     end.
 
 now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
@@ -133,13 +137,14 @@ process_sm_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 %% TODO: This function could use get_last_info/2
 get_last(IQ_Rec, LUser, LServer) ->
-    case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
+    case catch gen_storage:dirty_read(LServer, last_activity, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
 	    exmpp_iq:error(IQ_Rec, 'internal-server-error');
 	[] ->
 	    exmpp_iq:error(IQ_Rec, 'service-unavailable');
 	[#last_activity{timestamp = TimeStamp, status = Status}] ->
-	    TimeStamp2 = now_to_seconds(now()),
+	    {MegaSecs, Secs, _MicroSecs} = now(),
+	    TimeStamp2 = MegaSecs * 1000000 + Secs,
 	    Sec = TimeStamp2 - TimeStamp,
 	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
 	      attrs = [?XMLATTR('seconds', Sec)],
@@ -150,7 +155,8 @@ get_last(IQ_Rec, LUser, LServer) ->
 
 
 on_presence_update(User, Server, _Resource, Status) ->
-    TimeStamp = now_to_seconds(now()),
+    {MegaSecs, Secs, _MicroSecs} = now(),
+    TimeStamp = MegaSecs * 1000000 + Secs,
     store_last_info(User, Server, TimeStamp, Status).
 
 store_last_info(User, Server, TimeStamp, Status) 
@@ -158,11 +164,12 @@ store_last_info(User, Server, TimeStamp, Status)
     try
 	US = {User, Server},
 	F = fun() ->
-		    mnesia:write(#last_activity{us = US,
+ 		gen_storage:write(Server,
+ 				  #last_activity{user_server = US,
 						timestamp = TimeStamp,
 						status = Status})
 	    end,
-	mnesia:transaction(F)
+        gen_storage:transaction(Server, last_activity, F)
     catch
 	_ ->
 	    ok
@@ -173,7 +180,7 @@ store_last_info(User, Server, TimeStamp, Status)
 get_last_info(LUser, LServer) when is_list(LUser), is_list(LServer) ->
     get_last_info(list_to_binary(LUser), list_to_binary(LServer));
 get_last_info(LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
-    case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
+    case catch gen_storage:dirty_read(LServer, last_activity, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
 	    not_found;
 	[] ->
@@ -188,62 +195,41 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
 	F = fun() ->
-		    mnesia:delete({last_activity, US})
+		gen_storage:delete(LServer, {last_activity, US})
 	    end,
-	mnesia:transaction(F)
+	gen_storage:transaction(LServer, last_activity, F)
     catch
 	_ ->
 	    ok
     end.
 
 
-update_table() ->
+update_table(Host) ->
     Fields = record_info(fields, last_activity),
     case mnesia:table_info(last_activity, attributes) of
 	Fields ->
             convert_to_exmpp();
-	[user, timestamp, status] ->
-	    ?INFO_MSG("Converting last_activity table from {user, timestamp, status} format", []),
-	    Host = ?MYNAME,
-	    mnesia:transform_table(last_activity, ignore, Fields),
-	    F = fun() ->
-			mnesia:write_lock_table(last_activity),
-			mnesia:foldl(
-			  fun({_, U, T, S} = R, _) ->
-				  U1 = convert_jid_to_exmpp(U),
-				  mnesia:delete_object(R),
-				  mnesia:write(
-				    #last_activity{us = {U1, Host},
-						   timestamp = T,
-						   status = list_to_binary(S)})
-			  end, ok, last_activity)
-		end,
-	    mnesia:transaction(F);
-	[user, timestamp] ->
-	    ?INFO_MSG("Converting last_activity table from {user, timestamp} format", []),
-	    Host = ?MYNAME,
-	    mnesia:transform_table(
-	      last_activity,
-	      fun({_, U, T}) ->
-		      #last_activity{us = U,
-				     timestamp = T,
-				     status = <<>>}
-	      end, Fields),
-	    F = fun() ->
-			mnesia:write_lock_table(last_activity),
-			mnesia:foldl(
-			  fun({_, U, T, S} = R, _) ->
-				  mnesia:delete_object(R),
-				  mnesia:write(
-				    #last_activity{us = {U, Host},
-						   timestamp = T,
-						   status = S})
-			  end, ok, last_activity)
-		end,
-	    mnesia:transaction(F);
 	_ ->
-	    ?INFO_MSG("Recreating last_activity table", []),
-	    mnesia:transform_table(last_activity, ignore, Fields)
+    gen_storage_migration:migrate_mnesia(
+      Host, last_activity,
+      [{last_activity, [us, timestamp, status],
+	fun(#last_activity{} = LA) ->
+		LA
+	end}]),
+    gen_storage_migration:migrate_odbc(
+      Host, [last_activity],
+      [{"last", ["username", "seconds", "state"],
+	fun(_, Username, STimeStamp, Status) ->
+		case catch list_to_integer(STimeStamp) of
+		    TimeStamp when is_integer(TimeStamp) ->
+			[#last_activity{user_server = {Username, Host},
+					timestamp = TimeStamp,
+					status = Status}];
+		    _ ->
+			?WARNING_MSG("Omitting last_activity migration item with timestamp=~p",
+				     [STimeStamp])
+		end
+	end}])
     end.
 
 convert_to_exmpp() ->
@@ -263,7 +249,7 @@ convert_to_exmpp() ->
     end,
     mnesia:transaction(Fun).
 
-convert_to_exmpp2(#last_activity{us = {U, S} = Key, status = Status} = LA,
+convert_to_exmpp2(#last_activity{user_server = {U, S} = Key, status = Status} = LA,
   Acc) ->
     % Remove old entry.
     mnesia:delete({last_activity, Key}),
@@ -272,7 +258,7 @@ convert_to_exmpp2(#last_activity{us = {U, S} = Key, status = Status} = LA,
     % Convert status.
     Status1 = list_to_binary(Status),
     % Prepare the new record.
-    New_LA = LA#last_activity{us = {list_to_binary(U1), list_to_binary(S)}, 
+    New_LA = LA#last_activity{user_server = {list_to_binary(U1), list_to_binary(S)}, 
                               status = Status1},
     % Write the new record.
     mnesia:write(New_LA),
