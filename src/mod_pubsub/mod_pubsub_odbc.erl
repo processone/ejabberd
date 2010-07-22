@@ -176,7 +176,7 @@ stop(Host) ->
 %%--------------------------------------------------------------------
 init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p",[ServerHost,Opts]),
-    Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
+    Host = gen_mod:expand_host_name(ServerHost, Opts, "pubsub"),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
     PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -3105,7 +3105,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 		Contacts when is_list(Contacts) ->
 		    lists:foreach(fun({U, S, _}) ->
 			spawn(fun() ->
-			    case lists:member(S, ?MYHOSTS) of
+			    case ?IS_MY_HOST(S) of
 				true ->
 				    lists:foreach(fun(R) ->
 					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)

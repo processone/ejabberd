@@ -285,13 +285,13 @@ process_default_set(LUser, LServer, false) ->
 
 process_default_set(LUser, LServer, Name) ->
     F = fun() ->
-		case sql_get_privacy_list_names_t(LUser) of
+		case sql_get_privacy_list_names_t(LUser, LServer) of
 		    {selected, ["name"], []} ->
 			  {error, 'item-not-found'};
 		    {selected, ["name"], Names} ->
 			  case lists:member({Name}, Names) of
 			    true ->
-				sql_set_default_privacy_list(LUser, Name),
+				sql_set_default_privacy_list(LUser, LServer, Name),
 				{result, []};
 			    false ->
 				{error, 'item-not-found'}
@@ -337,15 +337,17 @@ process_list_set(_LUser, _LServer, false, _Els) ->
     {error, 'bad-request'};
 
 process_list_set(LUser, LServer, Name, Els) ->
+    ?DEBUG("~p@~p: name ~p, els: ~p", [LUser, LServer, Name, Els]),
     case parse_items(Els) of
 	false ->
 	    {error, 'bad-request'};
 	remove ->
 	    F =
 		fun() ->
-			case sql_get_default_privacy_list_t(LUser) of
+			case sql_get_default_privacy_list_t(LUser, LServer) of
 			    {selected, ["name"], []} ->
-				sql_remove_privacy_list(LUser, Name),
+				?DEBUG("Going to delete privacy list ~p", [Name]),
+				sql_remove_privacy_list(LUser, LServer, Name),
 				{result, []};
 			    {selected, ["name"], [{Default}]} ->
 				% TODO: check active
@@ -353,7 +355,8 @@ process_list_set(LUser, LServer, Name, Els) ->
 				    Name == Default ->
 					{error, 'conflict'};
 				    true ->
-					sql_remove_privacy_list(LUser, Name),
+					?DEBUG("Going to delete default list named ~p", [Name]),
+					sql_remove_privacy_list(LUser, LServer, Name),
 					{result, []}
 				end
 			end
@@ -375,14 +378,19 @@ process_list_set(LUser, LServer, Name, Els) ->
 	    end;
 	List ->
 	    RItems = lists:map(fun item_to_raw/1, List),
+            ?DEBUG("Got a list of items: ~p", [RItems]),
 	    F =
 		fun() ->
+                        ?DEBUG("About to grab the id...", []),
 			ID =
-			    case sql_get_privacy_list_id_t(LUser, Name) of
+			    case sql_get_privacy_list_id_t(LUser, LServer, Name) of
 				{selected, ["id"], []} ->
-				    sql_add_privacy_list(LUser, Name),
+                                    ?DEBUG("No privacy list called  ~p",[Name]),
+				    sql_add_privacy_list(LUser, LServer, Name),
+                                    ?DEBUG("Added the privacy list called  ~p",[Name]),
 				    {selected, ["id"], [{I}]} =
-					sql_get_privacy_list_id_t(LUser, Name),
+					sql_get_privacy_list_id_t(LUser, LServer, Name),
+                                    ?DEBUG("Privacy list called  ~p added, now id ~p",[Name, I]),
 				    I;
 				{selected, ["id"], [{I}]} ->
 				    I
@@ -778,54 +786,60 @@ sql_get_default_privacy_list(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     odbc_queries:get_default_privacy_list(LServer, Username).
 
-sql_get_default_privacy_list_t(LUser) ->
+sql_get_default_privacy_list_t(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:get_default_privacy_list_t(Username).
+    odbc_queries:get_default_privacy_list_t(LServer, Username).
 
 sql_get_privacy_list_names(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     odbc_queries:get_privacy_list_names(LServer, Username).
 
-sql_get_privacy_list_names_t(LUser) ->
+sql_get_privacy_list_names_t(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:get_privacy_list_names_t(Username).
+    odbc_queries:get_privacy_list_names_t(LServer, Username).
 
 sql_get_privacy_list_id(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
+    Host = ejabberd_odbc:escape(LServer),
     SName = ejabberd_odbc:escape(Name),
-    odbc_queries:get_privacy_list_id(LServer, Username, SName).
+    odbc_queries:get_privacy_list_id(Host, Username, SName).
 
-sql_get_privacy_list_id_t(LUser, Name) ->
+sql_get_privacy_list_id_t(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
+    Host = ejabberd_odbc:escape(LServer),
     SName = ejabberd_odbc:escape(Name),
-    odbc_queries:get_privacy_list_id_t(Username, SName).
+    odbc_queries:get_privacy_list_id_t(Host, Username, SName).
 
 sql_get_privacy_list_data(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
+    Host = ejabberd_odbc:escape(LServer),
     SName = ejabberd_odbc:escape(Name),
-    odbc_queries:get_privacy_list_data(LServer, Username, SName).
+    odbc_queries:get_privacy_list_data(Host, Username, SName).
 
 sql_get_privacy_list_data_by_id(ID, LServer) ->
     odbc_queries:get_privacy_list_data_by_id(LServer, ID).
 
-sql_set_default_privacy_list(LUser, Name) ->
+sql_set_default_privacy_list(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
+    Host = ejabberd_odbc:escape(LServer),
     SName = ejabberd_odbc:escape(Name),
-    odbc_queries:set_default_privacy_list(Username, SName).
+    odbc_queries:set_default_privacy_list(Host, Username, SName).
 
 sql_unset_default_privacy_list(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     odbc_queries:unset_default_privacy_list(LServer, Username).
 
-sql_remove_privacy_list(LUser, Name) ->
+sql_remove_privacy_list(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
+    Host = ejabberd_odbc:escape(LServer),
     SName = ejabberd_odbc:escape(Name),
-    odbc_queries:remove_privacy_list(Username, SName).
+    odbc_queries:remove_privacy_list(Host, Username, SName).
 
-sql_add_privacy_list(LUser, Name) ->
+sql_add_privacy_list(LUser, LServer, Name) ->
     Username = ejabberd_odbc:escape(LUser),
+    Host = ejabberd_odbc:escape(LServer),
     SName = ejabberd_odbc:escape(Name),
-    odbc_queries:add_privacy_list(Username, SName).
+    odbc_queries:add_privacy_list(Host, Username, SName).
 
 sql_set_privacy_list(ID, RItems) ->
     odbc_queries:set_privacy_list(ID, RItems).

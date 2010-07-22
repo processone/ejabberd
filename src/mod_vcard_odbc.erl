@@ -54,7 +54,7 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
-    MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
+    MyHost = gen_mod:expand_host_name(Host, Opts, "vjud"),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, init, [MyHost, Host, Search])).
@@ -154,7 +154,7 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
 process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
     User = exmpp_jid:node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
-    case lists:member(LServer, ?MYHOSTS) of
+    case ?IS_MY_HOST(LServer) of
         true ->
             set_vcard(User, LServer, Request),
             exmpp_iq:result(IQ_Rec);
@@ -285,6 +285,10 @@ set_vcard(User, LServer, VCARD) ->
 	   ?TLFIELD(<<"text-single">>, "Organization Unit", <<"orgunit">>)
 	  ]}]).
 
+do_route(global, From, To, Packet) ->
+    Host = exmpp_jid:prep_domain_as_list(To),
+    ServerHost = ejabberd_global_router:server_host(Host, self()),
+    do_route(ServerHost, From, To, Packet);
 do_route(ServerHost, From, To, Packet) ->
     User = exmpp_jid:node(To),
     Resource = exmpp_jid:resource(To),
@@ -492,7 +496,8 @@ search(LServer, Data) ->
 
 
 make_matchspec(LServer, Data) ->
-    filter_fields(Data, "", LServer).
+    Host = ejabberd_odbc:escape(LServer),
+    filter_fields(Data, ["host = '", Host, "'"], LServer).
 
 filter_fields([], Match, _LServer) ->
     case Match of

@@ -49,7 +49,7 @@
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
--record(offline_msg, {user, timestamp, expire, from, to, packet}).
+-record(offline_msg, {user, server, timestamp, expire, from, to, packet}).
 
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
@@ -88,15 +88,15 @@ start(Host, Opts) ->
 
 loop(Host, AccessMaxOfflineMsgs) ->
     receive
-	#offline_msg{user = User} = Msg ->
-	    Msgs = receive_all(User, [Msg]),
+	#offline_msg{user = User, server = Server} = Msg ->
+	    Msgs = receive_all(User, Server, [Msg]),
 	    Len = length(Msgs),
 	    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
 						   User, Host),
 
 	    %% Only count existing messages if needed:
 	    Count = if MaxOfflineMsgs =/= infinity ->
-			    Len + count_offline_messages(User, Host);
+			    Len + count_offline_messages(User, Server);
 		       true -> 0
 		    end,
 	    if
@@ -129,9 +129,9 @@ loop(Host, AccessMaxOfflineMsgs) ->
 				      XML =
 					  ejabberd_odbc:escape(
 					    exmpp_xml:document_to_list(Packet1)),
-				      odbc_queries:add_spool_sql(Username, XML)
+				      odbc_queries:add_spool_sql(Server, Username, XML)
 			      end, Msgs),
-		    case catch odbc_queries:add_spool(Host, Query) of
+		    case catch odbc_queries:add_spool(Server, Query) of
 			{'EXIT', Reason} ->
 			    ?ERROR_MSG("~p~n", [Reason]);
 			{error, Reason} ->
@@ -154,10 +154,10 @@ get_max_user_messages(AccessRule, LUser, Host) ->
 	_ -> ?MAX_USER_MESSAGES
     end.
 
-receive_all(Username, Msgs) ->
+receive_all(Username, Server, Msgs) ->
     receive
-	#offline_msg{user=Username} = Msg ->
-	    receive_all(Username, [Msg | Msgs])
+	#offline_msg{user = Username, server = Server} = Msg ->
+	    receive_all(Username, Server, [Msg | Msgs])
     after 0 ->
 	    lists:reverse(Msgs)
     end.
@@ -207,11 +207,20 @@ store_packet(From, To, Packet) ->
 	(Type /= <<"headline">>) ->
 	    case check_event_chatstates(From, To, Packet) of
 		true ->
-            LUser = exmpp_jid:prep_node_as_list(To),
+		    LUser = exmpp_jid:prep_node_as_list(To),
+		    LServer = exmpp_jid:prep_domain_as_list(To),
 		    TimeStamp = now(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
-		    gen_mod:get_module_proc(exmpp_jid:prep_domain_as_list(To), ?PROCNAME) !
+		    Proc1 = gen_mod:get_module_proc(LServer, ?PROCNAME),
+		    Proc = case whereis(Proc1) of
+			       undefined ->
+				   gen_mod:get_module_proc(global, ?PROCNAME);
+			       _ ->
+				   Proc1
+			   end,
+		    Proc !
 			#offline_msg{user = LUser,
+				     server = LServer,
 				     timestamp = TimeStamp,
 				     expire = Expire,
 				     from = From,
@@ -377,12 +386,14 @@ user_queue(User, Server, Query, Lang) ->
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
 	Username = ejabberd_odbc:escape(LUser),
+	Host = ejabberd_odbc:escape(LServer),
 	US0 = {LUser, LServer},
 	R = user_queue_parse_query(Username, LServer, Query),
 	M = case catch ejabberd_odbc:sql_query(
 			    LServer,
 			    ["select username, xml from spool"
 			     "  where username='", Username, "'"
+			     "    and host='", Host, "'"
 			     "  order by seq;"]) of
 		   {selected, ["username", "xml"], Rs} ->
 		       lists:flatmap(
@@ -449,10 +460,12 @@ user_queue(User, Server, Query, Lang) ->
 user_queue_parse_query(Username, LServer, Query) ->
     case lists:keysearch("delete", 1, Query) of
 	{value, _} ->
+	    Host = ejabberd_odbc:escape(LServer),
 	    Msgs = case catch ejabberd_odbc:sql_query(
 				LServer,
 				["select xml, seq from spool"
-				 "  where username='", Username, "'"
+				 "  where username='", Username, "' and"
+				 "        host='", Host, "'"
 				 "  order by seq;"]) of
 		       {selected, ["xml", "seq"], Rs} ->
 			   lists:flatmap(
@@ -481,7 +494,7 @@ user_queue_parse_query(Username, LServer, Query) ->
 					  catch ejabberd_odbc:sql_query(
 						  LServer,
 						  ["delete from spool"
-						   "  where username='", Username, "'"
+						   "  where username='", Username, "' and host='", Host, "'"
 						   "  and seq='", SSeq, "';"]);
 				      false ->
 					  ok
@@ -498,10 +511,12 @@ us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server).
 
 get_queue_length(Username, LServer) ->
+    Host = ejabberd_odbc:escape(LServer),
     case catch ejabberd_odbc:sql_query(
 			    LServer,
 			    ["select count(*) from spool"
-			     "  where username='", Username, "';"]) of
+			     "  where username='", Username, "'"
+			     "    and host='", Host, "';"]) of
 		   {selected, [_], [{SCount}]} ->
 		       SCount;
 		   _ ->
@@ -528,9 +543,9 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
-	Username = ejabberd_odbc:escape(LUser),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
+    Username = ejabberd_odbc:escape(LUser),
     QueueLen = get_queue_length(Username, LServer),
     FQueueLen = [?AC("queue/", QueueLen)],
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
@@ -556,8 +571,10 @@ webadmin_user_parse_query(Acc, _Action, _User, _Server, _Query) ->
 %% Returns as integer the number of offline messages for a given user
 count_offline_messages(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
+    Host = ejabberd_odbc:escape(LServer),
     case catch odbc_queries:count_records_where(
-		 LServer, "spool", "where username='" ++ Username ++ "'") of
+		 LServer, "spool", "where username='" ++ Username ++
+		 "' and host='" ++ Host ++ "'") of
         {selected, [_], [{Res}]} ->
             list_to_integer(Res);
         _ ->

@@ -118,7 +118,7 @@ stop(Host) ->
 
 process_iq(From, To, IQ_Rec) ->
     LServer = exmpp_jid:prep_domain_as_list(From),
-    case lists:member(LServer, ?MYHOSTS) of
+    case ?IS_MY_HOST(LServer) of
 	true ->
 	    process_local_iq(From, To, IQ_Rec);
 	_ ->
@@ -838,11 +838,11 @@ process_item_set_t(LUser, LServer, #xmlel{} = El) ->
 	Item2 = process_item_els(Item1, El#xmlel.children),
 	case Item2#roster.subscription of
 	    remove ->
-		odbc_queries:del_roster_sql(Username, SJID);
+		odbc_queries:del_roster_sql(LServer, Username, SJID);
 	    _ ->
 		ItemVals = record_to_string(Item1),
 		ItemGroups = groups_to_string(Item2),
-		odbc_queries:update_roster_sql(Username, SJID, ItemVals, ItemGroups)
+		odbc_queries:update_roster_sql(LServer, Username, SJID, ItemVals, ItemGroups)
 	end
     catch
 	_ ->
@@ -1158,7 +1158,7 @@ build_contact_jid_td({U, S, R}) ->
 		 {CUser, CServer} ->
 		     CUser_S = binary_to_list(CUser),
 		     CServer_S = binary_to_list(CServer),
-		     case lists:member(CServer_S, ?MYHOSTS) of
+		     case ?IS_MY_HOST(CServer_S) of
 			 false -> "";
 			 true -> "/admin/server/" ++ CServer_S ++ "/user/" ++ CUser_S ++ "/"
 		     end
