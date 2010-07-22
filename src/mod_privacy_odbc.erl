@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_privacy_odbc.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : jabber:iq:privacy support
+%%% Purpose : jabber:iq:privacy support for ODBC database (obsolete)
 %%% Created :  5 Oct 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

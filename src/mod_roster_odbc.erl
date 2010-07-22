@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_roster_odbc.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Roster management
+%%% Purpose : Roster management for ODBC (obsolete)
 %%% Created : 15 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

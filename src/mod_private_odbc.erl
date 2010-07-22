@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_private_odbc.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Private storage support
+%%% Purpose : Private storage support in ODBC (obsolete)
 %%% Created :  5 Oct 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_auth_internal.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Authentification via mnesia
+%%% Purpose : Authentification via mnesia (obsolete)
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

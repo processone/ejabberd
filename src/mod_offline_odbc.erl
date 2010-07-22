@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_offline_odbc.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Store and manage offline messages in relational database.
+%%% Purpose : Store and manage offline messages in relational database (obsolete)
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
