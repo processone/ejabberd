@@ -73,23 +73,18 @@
 \newcommand{\modhttpbind}{\module{mod\_http\_bind}}
 \newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
 \newcommand{\modlast}{\module{mod\_last}}
-\newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
 \newcommand{\modmuclog}{\module{mod\_muc\_log}}
 \newcommand{\modmulticast}{\module{mod\_multicast}}
 \newcommand{\modoffline}{\module{mod\_offline}}
-\newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modping}{\module{mod\_ping}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
-\newcommand{\modprivacyodbc}{\module{mod\_privacy\_odbc}}
 \newcommand{\modprivate}{\module{mod\_private}}
-\newcommand{\modprivateodbc}{\module{mod\_private\_odbc}}
 \newcommand{\modproxy}{\module{mod\_proxy65}}
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
 \newcommand{\modpubsubodbc}{\module{mod\_pubsub\_odbc}}
 \newcommand{\modregister}{\module{mod\_register}}
 \newcommand{\modroster}{\module{mod\_roster}}
-\newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
 \newcommand{\modsic}{\module{mod\_sic}}
@@ -97,7 +92,6 @@
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
 \newcommand{\modvcardldap}{\module{mod\_vcard\_ldap}}
-\newcommand{\modvcardodbc}{\module{mod\_vcard\_odbc}}
 \newcommand{\modvcardxupdate}{\module{mod\_vcard\_xupdate}}
 \newcommand{\modversion}{\module{mod\_version}}
 
@@ -118,6 +112,12 @@ the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).
   service. If the \texttt{host} option is not specified, the Jabber ID will be the
   hostname of the virtual host with the prefix `\jid{#1.}'. The keyword "@HOST@"
   is replaced at start time with the real virtual host name.
+}
+\newcommand{\backend}[1]{\titem{\{backend, mnesia|odbc\}} \ind{options!backend}
+Specify the backend used to store the tables: #1.
+The default value is \term{mnesia}.
+If configured to \term{odbc}, then you must also configure in ejabberd
+the database connection (see the subsections of \ref{database}).
 }
 
 %% Title page
@@ -646,9 +646,10 @@ Examples:
   domain \jid{example.com} is using the \ind{LDAP}LDAP server running on the
   domain \jid{localhost} to perform authentication:
 \begin{verbatim}
-{host_config, "example.net", [{auth_method,   internal}]}.
+{host_config, "example.net", [{auth_method,   storage},
+                              {auth_storage,  mnesia}]}.
 
-{host_config, "example.com", [{auth_method,   ldap},
+{host_config, "example.com", [{auth_method,   ldap],
                               {ldap_servers,  ["localhost"]},
                               {ldap_uids,     [{"uid"}]},
                               {ldap_rootdn,   "dc=localdomain"},
@@ -659,7 +660,8 @@ Examples:
   while domain \jid{example.com} is using the LDAP servers running on the domains
   \jid{localhost} and \jid{otherhost}:
 \begin{verbatim}
-{host_config, "example.net", [{auth_method, odbc},
+{host_config, "example.net", [{auth_method, storage},
+                              {auth_storage, odbc},
                               {odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}]}.
 
 {host_config, "example.com", [{auth_method,   ldap},
@@ -1163,39 +1165,72 @@ you have to make the transports log and do \ind{XDB}XDB by themselves:
 \ind{authentication}\ind{options!auth\_method}
 
 The option \option{auth\_method} defines the authentication methods that are used
-for user authentication. The syntax is:
-\esyntax{\{auth\_method, [Method, ...]\}.}
+for user authentication.
+Usually only one method is defined, with this syntax:
+\esyntax{\{auth\_method, Method\}.}
+This full syntax can be used to specify one or more methods:
+\esyntax{\{auth\_method, [Method1, Method2, ...]\}.}
 
 The following authentication methods are supported by \ejabberd{}:
 \begin{itemize}
-\item internal (default) --- See section~\ref{internalauth}.
+\item database storage in internal Mnesia or ODBC --- See section~\ref{authstorage}.
 \item external --- See section~\ref{extauth}.
 \item ldap --- See section~\ref{ldap}.
-\item odbc --- See section~\ref{mysql}, \ref{pgsql},
-  \ref{mssql} and \ref{odbc}.
 \item anonymous --- See section~\ref{saslanonymous}.
 \item pam --- See section~\ref{pam}.
 \end{itemize}
 
-Account creation is only supported by internal, external and odbc methods.
+Account creation is only supported by the methods:
+internal Mnesia storage, ODBC storage, and external.
 
-\makesubsubsection{internalauth}{Internal}
-\ind{internal authentication}\ind{Mnesia}
+\makesubsubsection{authstorage}{Database Storage}
+\ind{storage authentication}\ind{Mnesia}
 
-\ejabberd{} uses its internal Mnesia database as the default authentication method.
-The value \term{internal} will enable the internal authentication method.
+You can configure \ejabberd{} to use the database storage authentication method,
+and store either in the internal Mnesia database or in an ODBC database.
+The specific storage is configured with the option:
+\begin{verbatim}
+{auth_storage, mnesia|odbc}
+\end{verbatim}
+
+When the storage is configured for ODBC, the ODBC server is
+configured with the \term{odbc\_server} option, see
+\ref{mysql} for MySQL, \ref{pgsql} for PostgreSQL, \ref{mssql} for MSSQL, and \ref{odbc} for generic ODBC.
 
 Examples:
 \begin{itemize}
-\item To use internal authentication on \jid{example.org} and LDAP
-  authentication on \jid{example.net}:
+\item To use internal Mnesia storage on all virtual hosts:
 \begin{verbatim}
-{host_config, "example.org", [{auth_method, [internal]}]}.
-{host_config, "example.net", [{auth_method, [ldap]}]}.
+{auth_method, storage}.
+{auth_storage, mnesia}.
 \end{verbatim}
-\item To use internal authentication on all virtual hosts:
+\item To use ODBC storage on all virtual hosts:
 \begin{verbatim}
-{auth_method, internal}.
+{auth_method, storage}.
+{auth_storage, odbc}.
+\end{verbatim}
+\item To use Mnesia storage on \jid{example.org},
+ ODBC storage in a MySQL database on \jid{example.com},
+ ODBC storage in a PostgreSQL database on \jid{example2.com},
+ and LDAP on \jid{example.net}:
+\begin{verbatim}
+{host_config, "example.org", [
+    {auth_method, storage}, 
+    {auth_storage, mnesia}
+]}.
+{host_config, "example.com", [
+    {auth_method, storage}, 
+    {auth_storage, odbc}, 
+    {odbc_server, {mysql, "localhost", "test", "root", "password"}}
+]}.
+{host_config, "example2.com", [
+    {auth_method, storage},
+    {auth_storage, odbc}, 
+    {odbc_server, "DSN=database;UID=ejabberd;PWD=password"}
+]}.
+{host_config, "example.net", [
+    {auth_method, ldap}
+]}.
 \end{verbatim}
 \end{itemize}
 
@@ -1225,12 +1260,12 @@ These are the specific options:
   the authentication information since the user last disconnected,
   to verify again the user authentication without querying again the extauth script.
   Note: caching should not be enabled in a host if internal auth is also enabled.
-  If caching is enabled, \term{mod\_last} or \term{mod\_last\_odbc} must be enabled also in that vhost.
+  If caching is enabled, \term{mod\_last} must be enabled also in that vhost.
 \end{description}
 
 This example sets external authentication, the extauth script, and enables caching for 10 minutes:
 \begin{verbatim}
-{auth_method, [external]}.
+{auth_method, external}.
 {extauth_program, "/etc/ejabberd/JabberAuth.class.php"}.
 {extauth_cache, 600}.
 \end{verbatim}
@@ -1268,33 +1303,33 @@ Examples:
 \begin{itemize}
 \item To enable anonymous login on all virtual hosts:
 \begin{verbatim}
-{auth_method, [anonymous]}.
+{auth_method, anonymous}.
 {anonymous_protocol, login_anon}.
 \end{verbatim}
 \item Similar as previous example, but limited to \jid{public.example.org}:
 \begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous]},
+{host_config, "public.example.org", [{auth_method, anonymous},
                                      {anonymous_protocol, login_anon}]}.
 \end{verbatim}
 \item To enable anonymous login and internal authentication on a virtual host:
 \begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
+{host_config, "public.example.org", [{auth_method, [internal, anonymous]},
                                      {anonymous_protocol, login_anon}]}.
 \end{verbatim}
 \item To enable SASL Anonymous on a virtual host:
 \begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous]},
+{host_config, "public.example.org", [{auth_method, anonymous},
                                      {anonymous_protocol, sasl_anon}]}.
 \end{verbatim}
 \item To enable SASL Anonymous and anonymous login on a virtual host:
 \begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [anonymous]},
+{host_config, "public.example.org", [{auth_method, anonymous},
                                      {anonymous_protocol, both}]}.
 \end{verbatim}
 \item To enable SASL Anonymous, anonymous login, and internal authentication on
 a virtual host:
 \begin{verbatim}
-{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
+{host_config, "public.example.org", [{auth_method, [internal, anonymous]},
                                      {anonymous_protocol, both}]}.
 \end{verbatim}
 \end{itemize}
@@ -1323,7 +1358,7 @@ Default is \term{username}.
 
 Example:
 \begin{verbatim}
-{auth_method, [pam]}.
+{auth_method, pam}.
 {pam_service, "ejabberd"}.
 \end{verbatim}
 
@@ -1835,7 +1870,8 @@ For example:
 \begin{verbatim}
 {host_config, "public.example.org", [
   {odbc_server, {pgsql, "localhost", "database-public-example-org", "ejabberd", "password"}},
-  {auth_method, [odbc]}
+  {auth_method, storage},
+  {auth_storage, odbc}
 ]}.
 \end{verbatim}
 
@@ -1920,25 +1956,17 @@ You can modify this interval with this option:
 \makesubsubsection{mysqlauth}{Authentication}
 \ind{MySQL!authentication}
 
-The option value name may be misleading, as the \term{auth\_method} name is used
-for access to a relational database through ODBC, as well as through the native
-MySQL interface. Anyway, the first configuration step is to define the odbc
-\term{auth\_method}. For example:
-\begin{verbatim}
-{auth_method, [odbc]}.
-\end{verbatim}
+See section~\ref{authstorage}.
 
 
 \makesubsubsection{mysqlstorage}{Storage}
 \ind{MySQL!storage}
 
 MySQL also can be used to store information into from several \ejabberd{}
-modules. See section~\ref{modoverview} to see which modules have a version
-with the `\_odbc'. This suffix indicates that the module can be used with
-relational databases like MySQL. To enable storage to your database, just make
-sure that your database is running well (see previous sections), and replace the
-suffix-less or ldap module variant with the odbc module variant. Keep in mind
-that you cannot have several variants of the same module loaded!
+modules.
+See section~\ref{modoverview} to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+\term{\{backend, odbc\}} to the module.
 
 \makesubsection{mssql}{Microsoft SQL Server}
 \ind{Microsoft SQL Server}\ind{Microsoft SQL Server!schema}
@@ -1972,9 +2000,7 @@ enabled. This can be done, by using next commands:
 \makesubsubsection{configuremssql}{Database Connection}
 \ind{Microsoft SQL Server!Database Connection}
 
-The configuration of Database Connection for a Microsoft SQL Server
-is the same as the configuration for
-ODBC compatible servers (see section~\ref{configureodbc}).
+See section~\ref{authstorage}.
 
 
 \makesubsubsection{mssqlauth}{Authentication}
@@ -1990,13 +2016,10 @@ ODBC compatible servers (see section~\ref{odbcauth}).
 \ind{Microsoft SQL Server!storage}
 
 Microsoft SQL Server also can be used to store information into from several
-\ejabberd{} modules. See section~\ref{modoverview} to see which modules have
-a version with the `\_odbc'. This suffix indicates that the module can be used
-with relational databases like Microsoft SQL Server. To enable storage to your
-database, just make sure that your database is running well (see previous
-sections), and replace the suffix-less or ldap module variant with the odbc
-module variant. Keep in mind that you cannot have several variants of the same
-module loaded!
+\ejabberd{} modules.
+See section~\ref{modoverview} to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+\term{\{backend, odbc\}} to the module.
 
 \makesubsection{pgsql}{PostgreSQL}
 \ind{PostgreSQL}\ind{PostgreSQL!schema}
@@ -2075,25 +2098,17 @@ Specify in seconds: for example 28800 means 8 hours.
 \makesubsubsection{pgsqlauth}{Authentication}
 \ind{PostgreSQL!authentication}
 
-The option value name may be misleading, as the \term{auth\_method} name is used
-for access to a relational database through ODBC, as well as through the native
-PostgreSQL interface. Anyway, the first configuration step is to define the odbc
-\term{auth\_method}. For example:
-\begin{verbatim}
-{auth_method, [odbc]}.
-\end{verbatim}
+See section~\ref{authstorage}.
 
 
 \makesubsubsection{pgsqlstorage}{Storage}
 \ind{PostgreSQL!storage}
 
 PostgreSQL also can be used to store information into from several \ejabberd{}
-modules. See section~\ref{modoverview} to see which modules have a version
-with the `\_odbc'. This suffix indicates that the module can be used with
-relational databases like PostgreSQL. To enable storage to your database, just
-make sure that your database is running well (see previous sections), and
-replace the suffix-less or ldap module variant with the odbc module variant.
-Keep in mind that you cannot have several variants of the same module loaded!
+modules.
+See section~\ref{modoverview} to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+\term{\{backend, odbc\}} to the module.
 
 \makesubsection{odbc}{ODBC Compatible}
 \ind{databases!ODBC}
@@ -2154,24 +2169,17 @@ Specify in seconds: for example 28800 means 8 hours.
 \makesubsubsection{odbcauth}{Authentication}
 \ind{ODBC!authentication}
 
-The first configuration step is to define the odbc \term{auth\_method}. For
-example:
-\begin{verbatim}
-{auth_method, [odbc]}.
-\end{verbatim}
+See section~\ref{authstorage}.
 
 
 \makesubsubsection{odbcstorage}{Storage}
 \ind{ODBC!storage}
 
 An ODBC compatible database also can be used to store information into from
-several \ejabberd{} modules. See section~\ref{modoverview} to see which
-modules have a version with the `\_odbc'. This suffix indicates that the module
-can be used with ODBC compatible relational databases. To enable storage to your
-database, just make sure that your database is running well (see previous
-sections), and replace the suffix-less or ldap module variant with the odbc
-module variant. Keep in mind that you cannot have several variants of the same
-module loaded!
+several \ejabberd{} modules.
+See section~\ref{modoverview} to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+\term{\{backend, odbc\}} to the module.
 
 \makesubsection{ldap}{LDAP}
 \ind{databases!LDAP}
@@ -2494,33 +2502,26 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) &  \\
     \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server &  \\
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
-    \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
     \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} \\
     \hline \ahrefloc{modmulticast}{\modmulticast{}} & Multicast Service (\xepref{0033}) &  \\
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
-    \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
     \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (XMPP IM) &  \\
-    \hline \ahrefloc{modprivacy}{\modprivacyodbc{}} & Blocking Communication (XMPP IM) & supported DB (*) \\
     \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) &  \\
-    \hline \ahrefloc{modprivate}{\modprivateodbc{}} & Private XML Storage (\xepref{0049}) & supported DB (*) \\
     \hline \ahrefloc{modproxy}{\modproxy{}} & SOCKS5 Bytestreams (\xepref{0065}) &  \\
     \hline \ahrefloc{modpubsub}{\modpubsub{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & \modcaps{} \\
     \hline \ahrefloc{modpubsub}{\modpubsubodbc{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & supported DB (*) and \modcaps{} \\
     \hline \ahrefloc{modregister}{\modregister{}} & In-Band Registration (\xepref{0077}) &  \\
     \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) &  \\
-    \hline \ahrefloc{modroster}{\modrosterodbc{}} & Roster management (XMPP IM) & supported DB (*) \\
     \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\
-    \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} or \\
-    & & \modrosterodbc\\
+    \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} \\
     \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
     \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) &  \\
     \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0202}) &  \\
     \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) &  \\
     \hline \ahrefloc{modvcardldap}{\modvcardldap{}} & vcard-temp (\xepref{0054}) & LDAP server \\
-    \hline \ahrefloc{modvcard}{\modvcardodbc{}} & vcard-temp (\xepref{0054}) & supported DB (*) \\
-    \hline \ahrefloc{modvcardxupdate}{\modvcardxupdate{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} or \modvcardodbc{} \\
+    \hline \ahrefloc{modvcardxupdate}{\modvcardxupdate{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} \\
     \hline \ahrefloc{modversion}{\modversion{}} & Software Version (\xepref{0092}) &  \\
     \hline
   \end{tabular}
@@ -2533,27 +2534,22 @@ The following table lists all modules included in \ejabberd{}.
 You can see which database backend each module needs by looking at the suffix:
 \begin{itemize}
 \item No suffix, this means that the modules uses Erlang's built-in database
-  Mnesia as backend.
+  Mnesia as backend, or in some cases it can be configured to use ODBC.
 \item `\_odbc', this means that the module needs a supported database
   (see~\ref{database}) as backend.
 \item `\_ldap', this means that the module needs an LDAP server as backend.
 \end{itemize}
 
-If you want to,
-it is possible to use a relational database to store pieces of
-information. You can do this by changing the module name to a name with an
-\term{\_odbc} suffix in \ejabberd{} config file. You can use a relational
-database for the following data:
+Those modules accept the option \term{\{backend, mnesia|odbc\}},
+and can store the tables in the configured backend:
 
 \begin{itemize}
-\item Last connection date and time: Use \term{mod\_last\_odbc} instead of
-  \term{mod\_last}.
-\item Offline messages: Use \term{mod\_offline\_odbc} instead of
-  \term{mod\_offline}.
-\item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
-\item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
-\item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
-\item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
+\item \ahrefloc{modlast}{\modlast{}}: Last connection date and time
+\item \ahrefloc{modoffline}{\modoffline{}}: Offline messages
+\item \ahrefloc{modprivacy}{\modprivacy{}}: User rules for blocking communications
+\item \ahrefloc{modprivate}{\modprivate{}}: Private XML storage
+\item \ahrefloc{modroster}{\modroster{}}: Rosters
+\item \ahrefloc{modvcard}{\modvcard{}}: Users' vCard
 \end{itemize}
 
 You can find more
@@ -2992,6 +2988,7 @@ connected user was last active on the server, or to query the uptime of the
 
 Options:
 \begin{description}
+\backend{\term{last\_activity}}
 \iqdiscitem{Last activity (\ns{jabber:iq:last})}
 \end{description}
 
@@ -3448,6 +3445,7 @@ online again. Thus it is very similar to how email works. Note that
   and a resource-constraint error is returned to the sender.
   The default value is \term{max\_user\_offline\_messages}.
   Then you can define an access rule with a syntax similar to 
+  \backend{\term{offline\_msg}}
   \term{max\_user\_sessions} (see \ref{configmaxsessions}).
 \end{description}
 
@@ -3537,6 +3535,7 @@ their \XMPP{} client, they will be able to:
 
 Options:
 \begin{description}
+\backend{\term{privacy\_default\_list}, \term{privacy\_list} and \term{privacy\_list\_data}}
 \iqdiscitem{Blocking Communication (\ns{jabber:iq:privacy})}
 \end{description}
 
@@ -3553,6 +3552,7 @@ of client-specific preferences; another is Bookmark Storage (\xepref{0048}).
 
 Options:
 \begin{description}
+\backend{\term{private\_storage}}
 \iqdiscitem{Private XML Storage (\ns{jabber:iq:private})}
 \end{description}
 
@@ -3812,6 +3812,7 @@ It also supports Roster Versioning (\xepref{0237}).
 
 Options:
 \begin{description}
+\backend{\term{rosteritem} and \term{rostergroup}}
 \iqdiscitem{Roster Management (\ns{jabber:iq:roster})}
   \titem{\{versioning, false|true\}} \ind{options!versioning}Enables
   Roster Versioning.
@@ -4059,6 +4060,7 @@ these users. Moreover, it enables the server to send its vCard when queried.
 
 Options:
 \begin{description}
+\backend{\term{vcard}}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
 \titem{\{search, true|false\}}\ind{options!search}This option specifies whether the search
@@ -4076,7 +4078,6 @@ Options:
 \titem{\{search\_all\_hosts, true|false\}}\ind{options!search\_all\_hosts}If this option is set
   to \term{true}, search operations will apply to all virtual hosts. Otherwise
   only the current host will be searched. The default value is \term{true}.
-  This option is available in \modvcard, but not available in \modvcardodbc.
 \end{description}
 
 Examples:
