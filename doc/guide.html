@@ -6,7 +6,7 @@
  
  
 
- ejabberd 3.0.0-prealpha 
+ ejabberd 3.0.0-alpha-x 
  
  Installation and Operation Guide
  
@@ -76,7 +76,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <HR SIZE=2><BR>
 <BR>
 
-<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 3.0.0-prealpha </B></FONT></TD></TR>
+<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 3.0.0-alpha-x </B></FONT></TD></TR>
 <TR><TD ALIGN=right NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=right NOWRAP> <FONT SIZE=6>Installation and Operation Guide</FONT></TD></TR>
 </TABLE><BR>
@@ -557,9 +557,10 @@ Serving one domain:
 Domain <TT>example.net</TT> is using the internal authentication method while
 domain <TT>example.com</TT> is using the LDAP server running on the
 domain <TT>localhost</TT> to perform authentication:
-<PRE CLASS="verbatim">{host_config, "example.net", [{auth_method,   internal}]}.
+<PRE CLASS="verbatim">{host_config, "example.net", [{auth_method,   storage},
+                              {auth_storage,  mnesia}]}.
 
-{host_config, "example.com", [{auth_method,   ldap},
+{host_config, "example.com", [{auth_method,   ldap],
                               {ldap_servers,  ["localhost"]},
                               {ldap_uids,     [{"uid"}]},
                               {ldap_rootdn,   "dc=localdomain"},
@@ -568,7 +569,8 @@ domain <TT>localhost</TT> to perform authentication:
 </PRE></LI><LI CLASS="li-itemize">Domain <TT>example.net</TT> is using ODBC to perform authentication
 while domain <TT>example.com</TT> is using the LDAP servers running on the domains
 <TT>localhost</TT> and <TT>otherhost</TT>:
-<PRE CLASS="verbatim">{host_config, "example.net", [{auth_method, odbc},
+<PRE CLASS="verbatim">{host_config, "example.net", [{auth_method, storage},
+                              {auth_storage, odbc},
                               {odbc_server, "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"}]}.
 
 {host_config, "example.com", [{auth_method,   ldap},
@@ -1014,27 +1016,55 @@ you have to make the transports log and do XDB by themselves:
 </PRE><P> <A NAME="auth"></A> </P><!--TOC subsection Authentication-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc24">3.1.4</A>&#XA0;&#XA0;<A HREF="#auth">Authentication</A></H3><!--SEC END --><P> <A NAME="auth"></A> 
 </P><P>The option <TT>auth_method</TT> defines the authentication methods that are used
-for user authentication. The syntax is:
-</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{auth_method, [Method, ...]}.</TT></B></DT></DL><P>The following authentication methods are supported by <TT>ejabberd</TT>:
+for user authentication.
+Usually only one method is defined, with this syntax:
+</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{auth_method, Method}.</TT></B></DT></DL><P>
+This full syntax can be used to specify one or more methods:
+</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{auth_method, [Method1, Method2, ...]}.</TT></B></DT></DL><P>The following authentication methods are supported by <TT>ejabberd</TT>:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-internal (default) &#X2014; See section&#XA0;<A HREF="#internalauth">3.1.4</A>.
+database storage in internal Mnesia or ODBC &#X2014; See section&#XA0;<A HREF="#authstorage">3.1.4</A>.
 </LI><LI CLASS="li-itemize">external &#X2014; See section&#XA0;<A HREF="#extauth">3.1.4</A>.
 </LI><LI CLASS="li-itemize">ldap &#X2014; See section&#XA0;<A HREF="#ldap">3.2.5</A>.
-</LI><LI CLASS="li-itemize">odbc &#X2014; See section&#XA0;<A HREF="#mysql">3.2.1</A>, <A HREF="#pgsql">3.2.3</A>,
-<A HREF="#mssql">3.2.2</A> and <A HREF="#odbc">3.2.4</A>.
 </LI><LI CLASS="li-itemize">anonymous &#X2014; See section&#XA0;<A HREF="#saslanonymous">3.1.4</A>.
 </LI><LI CLASS="li-itemize">pam &#X2014; See section&#XA0;<A HREF="#pam">3.1.4</A>.
-</LI></UL><P>Account creation is only supported by internal, external and odbc methods.</P><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#internalauth">Internal</A></H4><!--SEC END --><P> <A NAME="internalauth"></A> 
-</P><P><TT>ejabberd</TT> uses its internal Mnesia database as the default authentication method.
-The value <TT>internal</TT> will enable the internal authentication method.</P><P>Examples:
+</LI></UL><P>Account creation is only supported by the methods:
+internal Mnesia storage, ODBC storage, and external.</P><P> <A NAME="authstorage"></A> </P><!--TOC subsubsection Database Storage-->
+<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#authstorage">Database Storage</A></H4><!--SEC END --><P> <A NAME="authstorage"></A> 
+</P><P>You can configure <TT>ejabberd</TT> to use the database storage authentication method,
+and store either in the internal Mnesia database or in an ODBC database.
+The specific storage is configured with the option:
+</P><PRE CLASS="verbatim">{auth_storage, mnesia|odbc}
+</PRE><P>When the storage is configured for ODBC, the ODBC server is
+configured with the <TT>odbc_server</TT> option, see
+<A HREF="#mysql">3.2.1</A> for MySQL, <A HREF="#pgsql">3.2.3</A> for PostgreSQL, <A HREF="#mssql">3.2.2</A> for MSSQL, and <A HREF="#odbc">3.2.4</A> for generic ODBC.</P><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
-To use internal authentication on <TT>example.org</TT> and LDAP
-authentication on <TT>example.net</TT>:
-<PRE CLASS="verbatim">{host_config, "example.org", [{auth_method, [internal]}]}.
-{host_config, "example.net", [{auth_method, [ldap]}]}.
-</PRE></LI><LI CLASS="li-itemize">To use internal authentication on all virtual hosts:
-<PRE CLASS="verbatim">{auth_method, internal}.
+To use internal Mnesia storage on all virtual hosts:
+<PRE CLASS="verbatim">{auth_method, storage}.
+{auth_storage, mnesia}.
+</PRE></LI><LI CLASS="li-itemize">To use ODBC storage on all virtual hosts:
+<PRE CLASS="verbatim">{auth_method, storage}.
+{auth_storage, odbc}.
+</PRE></LI><LI CLASS="li-itemize">To use Mnesia storage on <TT>example.org</TT>,
+ODBC storage in a MySQL database on <TT>example.com</TT>,
+ODBC storage in a PostgreSQL database on <TT>example2.com</TT>,
+and LDAP on <TT>example.net</TT>:
+<PRE CLASS="verbatim">{host_config, "example.org", [
+    {auth_method, storage}, 
+    {auth_storage, mnesia}
+]}.
+{host_config, "example.com", [
+    {auth_method, storage}, 
+    {auth_storage, odbc}, 
+    {odbc_server, {mysql, "localhost", "test", "root", "password"}}
+]}.
+{host_config, "example2.com", [
+    {auth_method, storage},
+    {auth_storage, odbc}, 
+    {odbc_server, "DSN=database;UID=ejabberd;PWD=password"}
+]}.
+{host_config, "example.net", [
+    {auth_method, ldap}
+]}.
 </PRE></LI></UL><P> <A NAME="extauth"></A> </P><!--TOC subsubsection External Script-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#extauth">External Script</A></H4><!--SEC END --><P> <A NAME="extauth"></A> 
 </P><P>In this authentication method, when <TT>ejabberd</TT> starts,
@@ -1054,9 +1084,9 @@ the CacheTimeInteger indicates the number of seconds that ejabberd can reuse
 the authentication information since the user last disconnected,
 to verify again the user authentication without querying again the extauth script.
 Note: caching should not be enabled in a host if internal auth is also enabled.
-If caching is enabled, <TT>mod_last</TT> or <TT>mod_last_odbc</TT> must be enabled also in that vhost.
+If caching is enabled, <TT>mod_last</TT> must be enabled also in that vhost.
 </DD></DL><P>This example sets external authentication, the extauth script, and enables caching for 10 minutes:
-</P><PRE CLASS="verbatim">{auth_method, [external]}.
+</P><PRE CLASS="verbatim">{auth_method, external}.
 {extauth_program, "/etc/ejabberd/JabberAuth.class.php"}.
 {extauth_cache, 600}.
 </PRE><P> <A NAME="saslanonymous"></A> </P><!--TOC subsubsection SASL Anonymous and Anonymous Login-->
@@ -1081,23 +1111,23 @@ login anonymous are both enabled.
 parameter (see section&#XA0;<A HREF="#virtualhost">3.1.2</A>).</P><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To enable anonymous login on all virtual hosts:
-<PRE CLASS="verbatim">{auth_method, [anonymous]}.
+<PRE CLASS="verbatim">{auth_method, anonymous}.
 {anonymous_protocol, login_anon}.
 </PRE></LI><LI CLASS="li-itemize">Similar as previous example, but limited to <TT>public.example.org</TT>:
-<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [anonymous]},
+<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, anonymous},
                                      {anonymous_protocol, login_anon}]}.
 </PRE></LI><LI CLASS="li-itemize">To enable anonymous login and internal authentication on a virtual host:
-<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
+<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [internal, anonymous]},
                                      {anonymous_protocol, login_anon}]}.
 </PRE></LI><LI CLASS="li-itemize">To enable SASL Anonymous on a virtual host:
-<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [anonymous]},
+<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, anonymous},
                                      {anonymous_protocol, sasl_anon}]}.
 </PRE></LI><LI CLASS="li-itemize">To enable SASL Anonymous and anonymous login on a virtual host:
-<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [anonymous]},
+<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, anonymous},
                                      {anonymous_protocol, both}]}.
 </PRE></LI><LI CLASS="li-itemize">To enable SASL Anonymous, anonymous login, and internal authentication on
 a virtual host:
-<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [internal,anonymous]},
+<PRE CLASS="verbatim">{host_config, "public.example.org", [{auth_method, [internal, anonymous]},
                                      {anonymous_protocol, both}]}.
 </PRE></LI></UL><P> <A NAME="pam"></A> </P><!--TOC subsubsection PAM Authentication-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#pam">PAM Authentication</A></H4><!--SEC END --><P> <A NAME="pam"></A> 
@@ -1116,7 +1146,7 @@ This option defines what type of information about the user ejabberd
 provides to the PAM service: only the username, or the user JID.
 Default is <TT>username</TT>.
 </DD></DL><P>Example:
-</P><PRE CLASS="verbatim">{auth_method, [pam]}.
+</P><PRE CLASS="verbatim">{auth_method, pam}.
 {pam_service, "ejabberd"}.
 </PRE><P>Though it is quite easy to set up PAM support in <TT>ejabberd</TT>, PAM itself introduces some
 security issues:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -1446,7 +1476,8 @@ must be set inside a <TT>host_config</TT> for each vhost (see section <A HREF="#
 For example:
 </P><PRE CLASS="verbatim">{host_config, "public.example.org", [
   {odbc_server, {pgsql, "localhost", "database-public-example-org", "ejabberd", "password"}},
-  {auth_method, [odbc]}
+  {auth_method, storage},
+  {auth_storage, odbc}
 ]}.
 </PRE><P> <A NAME="mysql"></A> </P><!--TOC subsection MySQL-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc33">3.2.1</A>&#XA0;&#XA0;<A HREF="#mysql">MySQL</A></H3><!--SEC END --><P> <A NAME="mysql"></A> 
@@ -1492,20 +1523,13 @@ You can modify this interval with this option:
 </P><PRE CLASS="verbatim">{odbc_start_interval, 30}.
 </PRE><P> <A NAME="mysqlauth"></A> </P><!--TOC subsubsection Authentication-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mysqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="mysqlauth"></A> 
-</P><P>The option value name may be misleading, as the <TT>auth_method</TT> name is used
-for access to a relational database through ODBC, as well as through the native
-MySQL interface. Anyway, the first configuration step is to define the odbc
-<TT>auth_method</TT>. For example:
-</P><PRE CLASS="verbatim">{auth_method, [odbc]}.
-</PRE><P> <A NAME="mysqlstorage"></A> </P><!--TOC subsubsection Storage-->
+</P><P>See section&#XA0;<A HREF="#authstorage">3.1.4</A>.</P><P> <A NAME="mysqlstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mysqlstorage">Storage</A></H4><!--SEC END --><P> <A NAME="mysqlstorage"></A> 
 </P><P>MySQL also can be used to store information into from several <TT>ejabberd</TT>
-modules. See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which modules have a version
-with the &#X2018;_odbc&#X2019;. This suffix indicates that the module can be used with
-relational databases like MySQL. To enable storage to your database, just make
-sure that your database is running well (see previous sections), and replace the
-suffix-less or ldap module variant with the odbc module variant. Keep in mind
-that you cannot have several variants of the same module loaded!</P><P> <A NAME="mssql"></A> </P><!--TOC subsection Microsoft SQL Server-->
+modules.
+See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+<TT>{backend, odbc}</TT> to the module.</P><P> <A NAME="mssql"></A> </P><!--TOC subsection Microsoft SQL Server-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc34">3.2.2</A>&#XA0;&#XA0;<A HREF="#mssql">Microsoft SQL Server</A></H3><!--SEC END --><P> <A NAME="mssql"></A> 
 </P><P>Although this section will describe <TT>ejabberd</TT>&#X2019;s configuration when you want to
 use Microsoft SQL Server, it does not describe Microsoft SQL Server&#X2019;s
@@ -1523,22 +1547,17 @@ enabled. This can be done, by using next commands:
 </P><PRE CLASS="verbatim">./configure --enable-odbc --enable-mssql &amp;&amp; make install
 </PRE><P> <A NAME="configuremssql"></A> </P><!--TOC subsubsection Database Connection-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#configuremssql">Database Connection</A></H4><!--SEC END --><P> <A NAME="configuremssql"></A> 
-</P><P>The configuration of Database Connection for a Microsoft SQL Server
-is the same as the configuration for
-ODBC compatible servers (see section&#XA0;<A HREF="#configureodbc">3.2.4</A>).</P><P> <A NAME="mssqlauth"></A> </P><!--TOC subsubsection Authentication-->
+</P><P>See section&#XA0;<A HREF="#authstorage">3.1.4</A>.</P><P> <A NAME="mssqlauth"></A> </P><!--TOC subsubsection Authentication-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mssqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="mssqlauth"></A> 
 </P><P>The configuration of Authentication for a Microsoft SQL Server
 is the same as the configuration for
 ODBC compatible servers (see section&#XA0;<A HREF="#odbcauth">3.2.4</A>).</P><P> <A NAME="mssqlstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#mssqlstorage">Storage</A></H4><!--SEC END --><P> <A NAME="mssqlstorage"></A> 
 </P><P>Microsoft SQL Server also can be used to store information into from several
-<TT>ejabberd</TT> modules. See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which modules have
-a version with the &#X2018;_odbc&#X2019;. This suffix indicates that the module can be used
-with relational databases like Microsoft SQL Server. To enable storage to your
-database, just make sure that your database is running well (see previous
-sections), and replace the suffix-less or ldap module variant with the odbc
-module variant. Keep in mind that you cannot have several variants of the same
-module loaded!</P><P> <A NAME="pgsql"></A> </P><!--TOC subsection PostgreSQL-->
+<TT>ejabberd</TT> modules.
+See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+<TT>{backend, odbc}</TT> to the module.</P><P> <A NAME="pgsql"></A> </P><!--TOC subsection PostgreSQL-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc35">3.2.3</A>&#XA0;&#XA0;<A HREF="#pgsql">PostgreSQL</A></H3><!--SEC END --><P> <A NAME="pgsql"></A> 
 </P><P>Although this section will describe <TT>ejabberd</TT>&#X2019;s configuration when you want to
 use the native PostgreSQL driver, it does not describe PostgreSQL&#X2019;s installation
@@ -1582,20 +1601,13 @@ Specify in seconds: for example 28800 means 8 hours.
 </P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
 </PRE><P> <A NAME="pgsqlauth"></A> </P><!--TOC subsubsection Authentication-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#pgsqlauth">Authentication</A></H4><!--SEC END --><P> <A NAME="pgsqlauth"></A> 
-</P><P>The option value name may be misleading, as the <TT>auth_method</TT> name is used
-for access to a relational database through ODBC, as well as through the native
-PostgreSQL interface. Anyway, the first configuration step is to define the odbc
-<TT>auth_method</TT>. For example:
-</P><PRE CLASS="verbatim">{auth_method, [odbc]}.
-</PRE><P> <A NAME="pgsqlstorage"></A> </P><!--TOC subsubsection Storage-->
+</P><P>See section&#XA0;<A HREF="#authstorage">3.1.4</A>.</P><P> <A NAME="pgsqlstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#pgsqlstorage">Storage</A></H4><!--SEC END --><P> <A NAME="pgsqlstorage"></A> 
 </P><P>PostgreSQL also can be used to store information into from several <TT>ejabberd</TT>
-modules. See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which modules have a version
-with the &#X2018;_odbc&#X2019;. This suffix indicates that the module can be used with
-relational databases like PostgreSQL. To enable storage to your database, just
-make sure that your database is running well (see previous sections), and
-replace the suffix-less or ldap module variant with the odbc module variant.
-Keep in mind that you cannot have several variants of the same module loaded!</P><P> <A NAME="odbc"></A> </P><!--TOC subsection ODBC Compatible-->
+modules.
+See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+<TT>{backend, odbc}</TT> to the module.</P><P> <A NAME="odbc"></A> </P><!--TOC subsection ODBC Compatible-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc36">3.2.4</A>&#XA0;&#XA0;<A HREF="#odbc">ODBC Compatible</A></H3><!--SEC END --><P> <A NAME="odbc"></A> 
 </P><P>Although this section will describe <TT>ejabberd</TT>&#X2019;s configuration when you want to
 use the ODBC driver, it does not describe the installation and database creation
@@ -1628,19 +1640,13 @@ Specify in seconds: for example 28800 means 8 hours.
 </P><PRE CLASS="verbatim">{odbc_keepalive_interval, undefined}.
 </PRE><P> <A NAME="odbcauth"></A> </P><!--TOC subsubsection Authentication-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#odbcauth">Authentication</A></H4><!--SEC END --><P> <A NAME="odbcauth"></A> 
-</P><P>The first configuration step is to define the odbc <TT>auth_method</TT>. For
-example:
-</P><PRE CLASS="verbatim">{auth_method, [odbc]}.
-</PRE><P> <A NAME="odbcstorage"></A> </P><!--TOC subsubsection Storage-->
+</P><P>See section&#XA0;<A HREF="#authstorage">3.1.4</A>.</P><P> <A NAME="odbcstorage"></A> </P><!--TOC subsubsection Storage-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#odbcstorage">Storage</A></H4><!--SEC END --><P> <A NAME="odbcstorage"></A> 
 </P><P>An ODBC compatible database also can be used to store information into from
-several <TT>ejabberd</TT> modules. See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which
-modules have a version with the &#X2018;_odbc&#X2019;. This suffix indicates that the module
-can be used with ODBC compatible relational databases. To enable storage to your
-database, just make sure that your database is running well (see previous
-sections), and replace the suffix-less or ldap module variant with the odbc
-module variant. Keep in mind that you cannot have several variants of the same
-module loaded!</P><P> <A NAME="ldap"></A> </P><!--TOC subsection LDAP-->
+several <TT>ejabberd</TT> modules.
+See section&#XA0;<A HREF="#modoverview">3.3.1</A> to see which modules support an ODBC storage backend.
+To configure the module to use ODBC as storage backend, add the option
+<TT>{backend, odbc}</TT> to the module.</P><P> <A NAME="ldap"></A> </P><!--TOC subsection LDAP-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc37">3.2.5</A>&#XA0;&#XA0;<A HREF="#ldap">LDAP</A></H3><!--SEC END --><P> <A NAME="ldap"></A> 
 </P><P><TT>ejabberd</TT> has built-in LDAP support. You can authenticate users against LDAP
 server and use LDAP directory as vCard storage. Shared rosters are not supported
@@ -1894,33 +1900,26 @@ all entries end with a comma:
 <TR><TD ALIGN=left NOWRAP><A HREF="#modhttpbind"><TT>mod_http_bind</TT></A></TD><TD ALIGN=left NOWRAP>XMPP over Bosh service (HTTP Binding)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modhttpfileserver"><TT>mod_http_fileserver</TT></A></TD><TD ALIGN=left NOWRAP>Small HTTP file server</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modlast"><TT>mod_last</TT></A></TD><TD ALIGN=left NOWRAP>Last Activity (<A HREF="http://xmpp.org/extensions/xep-0012.html">XEP-0012</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modlast"><TT>mod_last_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Last Activity (<A HREF="http://xmpp.org/extensions/xep-0012.html">XEP-0012</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modmuc"><TT>mod_muc</TT></A></TD><TD ALIGN=left NOWRAP>Multi-User Chat (<A HREF="http://xmpp.org/extensions/xep-0045.html">XEP-0045</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modmuclog"><TT>mod_muc_log</TT></A></TD><TD ALIGN=left NOWRAP>Multi-User Chat room logging</TD><TD ALIGN=left NOWRAP><TT>mod_muc</TT></TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modmulticast"><TT>mod_multicast</TT></A></TD><TD ALIGN=left NOWRAP>Multicast Service (<A HREF="http://xmpp.org/extensions/xep-0033.html">XEP-0033</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modping"><TT>mod_ping</TT></A></TD><TD ALIGN=left NOWRAP>XMPP Ping and periodic keepalives (<A HREF="http://xmpp.org/extensions/xep-0199.html">XEP-0199</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivacy"><TT>mod_privacy</TT></A></TD><TD ALIGN=left NOWRAP>Blocking Communication (XMPP IM)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modprivacy"><TT>mod_privacy_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Blocking Communication (XMPP IM)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modproxy"><TT>mod_proxy65</TT></A></TD><TD ALIGN=left NOWRAP>SOCKS5 Bytestreams (<A HREF="http://xmpp.org/extensions/xep-0065.html">XEP-0065</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modpubsub"><TT>mod_pubsub</TT></A></TD><TD ALIGN=left NOWRAP>Pub-Sub (<A HREF="http://xmpp.org/extensions/xep-0060.html">XEP-0060</A>), PEP (<A HREF="http://xmpp.org/extensions/xep-0163.html">XEP-0163</A>)</TD><TD ALIGN=left NOWRAP><TT>mod_caps</TT></TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modpubsub"><TT>mod_pubsub_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Pub-Sub (<A HREF="http://xmpp.org/extensions/xep-0060.html">XEP-0060</A>), PEP (<A HREF="http://xmpp.org/extensions/xep-0163.html">XEP-0163</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*) and <TT>mod_caps</TT></TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modregister"><TT>mod_register</TT></A></TD><TD ALIGN=left NOWRAP>In-Band Registration (<A HREF="http://xmpp.org/extensions/xep-0077.html">XEP-0077</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modroster"><TT>mod_roster</TT></A></TD><TD ALIGN=left NOWRAP>Roster management (XMPP IM)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modroster"><TT>mod_roster_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Roster management (XMPP IM)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modservicelog"><TT>mod_service_log</TT></A></TD><TD ALIGN=left NOWRAP>Copy user messages to logger service</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modsharedroster"><TT>mod_shared_roster</TT></A></TD><TD ALIGN=left NOWRAP>Shared roster management</TD><TD ALIGN=left NOWRAP><TT>mod_roster</TT> or</TD></TR>
-<TR><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP>&nbsp;</TD><TD ALIGN=left NOWRAP><TT>mod_roster_odbc</TT></TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modsharedroster"><TT>mod_shared_roster</TT></A></TD><TD ALIGN=left NOWRAP>Shared roster management</TD><TD ALIGN=left NOWRAP><TT>mod_roster</TT></TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modsic"><TT>mod_sic</TT></A></TD><TD ALIGN=left NOWRAP>Server IP Check (<A HREF="http://xmpp.org/extensions/xep-0279.html">XEP-0279</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modstats"><TT>mod_stats</TT></A></TD><TD ALIGN=left NOWRAP>Statistics Gathering (<A HREF="http://xmpp.org/extensions/xep-0039.html">XEP-0039</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modtime"><TT>mod_time</TT></A></TD><TD ALIGN=left NOWRAP>Entity Time (<A HREF="http://xmpp.org/extensions/xep-0202.html">XEP-0202</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modvcard"><TT>mod_vcard</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modvcardldap"><TT>mod_vcard_ldap</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>LDAP server</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modvcard"><TT>mod_vcard_odbc</TT></A></TD><TD ALIGN=left NOWRAP>vcard-temp (<A HREF="http://xmpp.org/extensions/xep-0054.html">XEP-0054</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modvcardxupdate"><TT>mod_vcard_xupdate</TT></A></TD><TD ALIGN=left NOWRAP>vCard-Based Avatars (<A HREF="http://xmpp.org/extensions/xep-0153.html">XEP-0153</A>)</TD><TD ALIGN=left NOWRAP><TT>mod_vcard</TT> or <TT>mod_vcard_odbc</TT></TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modvcardxupdate"><TT>mod_vcard_xupdate</TT></A></TD><TD ALIGN=left NOWRAP>vCard-Based Avatars (<A HREF="http://xmpp.org/extensions/xep-0153.html">XEP-0153</A>)</TD><TD ALIGN=left NOWRAP><TT>mod_vcard</TT></TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modversion"><TT>mod_version</TT></A></TD><TD ALIGN=left NOWRAP>Software Version (<A HREF="http://xmpp.org/extensions/xep-0092.html">XEP-0092</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 </TABLE>
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -1928,23 +1927,18 @@ all entries end with a comma:
 </LI></UL><P>You can see which database backend each module needs by looking at the suffix:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 No suffix, this means that the modules uses Erlang&#X2019;s built-in database
-Mnesia as backend.
+Mnesia as backend, or in some cases it can be configured to use ODBC.
 </LI><LI CLASS="li-itemize">&#X2018;_odbc&#X2019;, this means that the module needs a supported database
 (see&#XA0;<A HREF="#database">3.2</A>) as backend.
 </LI><LI CLASS="li-itemize">&#X2018;_ldap&#X2019;, this means that the module needs an LDAP server as backend.
-</LI></UL><P>If you want to,
-it is possible to use a relational database to store pieces of
-information. You can do this by changing the module name to a name with an
-<TT>_odbc</TT> suffix in <TT>ejabberd</TT> config file. You can use a relational
-database for the following data:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Last connection date and time: Use <TT>mod_last_odbc</TT> instead of
-<TT>mod_last</TT>.
-</LI><LI CLASS="li-itemize">Offline messages: Use <TT>mod_offline_odbc</TT> instead of
-<TT>mod_offline</TT>.
-</LI><LI CLASS="li-itemize">Rosters: Use <TT>mod_roster_odbc</TT> instead of <TT>mod_roster</TT>.
-</LI><LI CLASS="li-itemize">Users&#X2019; VCARD: Use <TT>mod_vcard_odbc</TT> instead of <TT>mod_vcard</TT>.
-</LI><LI CLASS="li-itemize">Private XML storage: Use <TT>mod_private_odbc</TT> instead of <TT>mod_private</TT>.
-</LI><LI CLASS="li-itemize">User rules for blocking communications: Use <TT>mod_privacy_odbc</TT> instead of <TT>mod_privacy</TT>.
+</LI></UL><P>Those modules accept the option <TT>{backend, mnesia|odbc}</TT>,
+and can store the tables in the configured backend:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+<A HREF="#modlast"><TT>mod_last</TT></A>: Last connection date and time
+</LI><LI CLASS="li-itemize"><A HREF="#modoffline"><TT>mod_offline</TT></A>: Offline messages
+</LI><LI CLASS="li-itemize"><A HREF="#modprivacy"><TT>mod_privacy</TT></A>: User rules for blocking communications
+</LI><LI CLASS="li-itemize"><A HREF="#modprivate"><TT>mod_private</TT></A>: Private XML storage
+</LI><LI CLASS="li-itemize"><A HREF="#modroster"><TT>mod_roster</TT></A>: Rosters
+</LI><LI CLASS="li-itemize"><A HREF="#modvcard"><TT>mod_vcard</TT></A>: Users&#X2019; vCard
 </LI></UL><P>You can find more
 <A HREF="http://www.ejabberd.im/contributions">contributed modules</A> on the
 <TT>ejabberd</TT> website. Please remember that these contributions might not work or
@@ -2288,7 +2282,13 @@ discover when a disconnected user last accessed the server, to know when a
 connected user was last active on the server, or to query the uptime of the
 <TT>ejabberd</TT> server.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
+<B><TT>{backend, mnesia|odbc}</TT></B></DT><DD CLASS="dd-description"> 
+Specify the backend used to store the tables: <TT>last_activity</TT>.
+The default value is <TT>mnesia</TT>.
+If configured to <TT>odbc</TT>, then you must also configure in ejabberd
+the database connection (see the subsections of <A HREF="#database">3.2</A>).
+
+</DD><DT CLASS="dt-description"><B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Last activity (<TT>jabber:iq:last</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modmuc"></A> </P><!--TOC subsection <TT>mod_muc</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc47">3.3.9</A>&#XA0;&#XA0;<A HREF="#modmuc"><TT>mod_muc</TT></A></H3><!--SEC END --><P> <A NAME="modmuc"></A> 
@@ -2702,6 +2702,12 @@ When a user has too many offline messages, any new messages that he receive are 
 and a resource-constraint error is returned to the sender.
 The default value is <TT>max_user_offline_messages</TT>.
 Then you can define an access rule with a syntax similar to 
+</DD><DT CLASS="dt-description"><B><TT>{backend, mnesia|odbc}</TT></B></DT><DD CLASS="dd-description"> 
+Specify the backend used to store the tables: <TT>offline_msg</TT>.
+The default value is <TT>mnesia</TT>.
+If configured to <TT>odbc</TT>, then you must also configure in ejabberd
+the database connection (see the subsections of <A HREF="#database">3.2</A>).
+
 <TT>max_user_sessions</TT> (see <A HREF="#configmaxsessions">3.1.5</A>).
 </DD></DL><P>This example allows power users to have as much as 5000 offline messages,
 administrators up to 2000,
@@ -2773,7 +2779,13 @@ subscription type (or globally).
 (from <A HREF="http://xmpp.org/rfcs/rfc3921.html#privacy"><TT>http://xmpp.org/rfcs/rfc3921.html#privacy</TT></A>)
 </BLOCKQUOTE><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
+<B><TT>{backend, mnesia|odbc}</TT></B></DT><DD CLASS="dd-description"> 
+Specify the backend used to store the tables: <TT>privacy_default_list</TT>, <TT>privacy_list</TT> and <TT>privacy_list_data</TT>.
+The default value is <TT>mnesia</TT>.
+If configured to <TT>odbc</TT>, then you must also configure in ejabberd
+the database connection (see the subsections of <A HREF="#database">3.2</A>).
+
+</DD><DT CLASS="dt-description"><B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Blocking Communication (<TT>jabber:iq:privacy</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modprivate"></A> </P><!--TOC subsection <TT>mod_private</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc53">3.3.15</A>&#XA0;&#XA0;<A HREF="#modprivate"><TT>mod_private</TT></A></H3><!--SEC END --><P> <A NAME="modprivate"></A> 
@@ -2785,7 +2797,13 @@ it is valid XML. One typical usage for this namespace is the server-side storage
 of client-specific preferences; another is Bookmark Storage (<A HREF="http://xmpp.org/extensions/xep-0048.html">XEP-0048</A>).
 </BLOCKQUOTE><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
+<B><TT>{backend, mnesia|odbc}</TT></B></DT><DD CLASS="dd-description"> 
+Specify the backend used to store the tables: <TT>private_storage</TT>.
+The default value is <TT>mnesia</TT>.
+If configured to <TT>odbc</TT>, then you must also configure in ejabberd
+the database connection (see the subsections of <A HREF="#database">3.2</A>).
+
+</DD><DT CLASS="dt-description"><B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Private XML Storage (<TT>jabber:iq:private</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD></DL><P> <A NAME="modproxy"></A> </P><!--TOC subsection <TT>mod_proxy65</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc54">3.3.16</A>&#XA0;&#XA0;<A HREF="#modproxy"><TT>mod_proxy65</TT></A></H3><!--SEC END --><P> <A NAME="modproxy"></A> 
@@ -3006,7 +3024,13 @@ Also define a registration timeout of one hour:
 <A HREF="http://xmpp.org/rfcs/rfc3921.html#roster">RFC 3921: XMPP IM</A>.
 It also supports Roster Versioning (<A HREF="http://xmpp.org/extensions/xep-0237.html">XEP-0237</A>).</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
-<B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
+<B><TT>{backend, mnesia|odbc}</TT></B></DT><DD CLASS="dd-description"> 
+Specify the backend used to store the tables: <TT>rosteritem</TT> and <TT>rostergroup</TT>.
+The default value is <TT>mnesia</TT>.
+If configured to <TT>odbc</TT>, then you must also configure in ejabberd
+the database connection (see the subsections of <A HREF="#database">3.2</A>).
+
+</DD><DT CLASS="dt-description"><B><TT>{iqdisc, Discipline}</TT></B></DT><DD CLASS="dd-description"> This specifies
 the processing discipline for Roster Management (<TT>jabber:iq:roster</TT>) IQ queries (see section&#XA0;<A HREF="#modiqdiscoption">3.3.2</A>).
 </DD><DT CLASS="dt-description"><B><TT>{versioning, false|true}</TT></B></DT><DD CLASS="dd-description"> Enables
 Roster Versioning.
@@ -3184,8 +3208,14 @@ other users vCards, as defined in vcard-temp (<A HREF="http://xmpp.org/extension
 implements an uncomplicated Jabber User Directory based on the vCards of
 these users. Moreover, it enables the server to send its vCard when queried.</P><P>Options:
 </P><DL CLASS="description"><DT CLASS="dt-description">
+<B><TT>{backend, mnesia|odbc}</TT></B></DT><DD CLASS="dd-description"> 
+Specify the backend used to store the tables: <TT>vcard</TT>.
+The default value is <TT>mnesia</TT>.
+If configured to <TT>odbc</TT>, then you must also configure in ejabberd
+the database connection (see the subsections of <A HREF="#database">3.2</A>).
 
-<B><TT>{host, HostName}</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
+
+</DD><DT CLASS="dt-description"><B><TT>{host, HostName}</TT></B></DT><DD CLASS="dd-description">  This option defines the Jabber ID of the
 service. If the <TT>host</TT> option is not specified, the Jabber ID will be the
 hostname of the virtual host with the prefix &#X2018;<TT>vjud.</TT>&#X2019;. The keyword "@HOST@"
 is replaced at start time with the real virtual host name.
@@ -3207,7 +3237,6 @@ users who added some information to their vCard. The default value is
 </DD><DT CLASS="dt-description"><B><TT>{search_all_hosts, true|false}</TT></B></DT><DD CLASS="dd-description">If this option is set
 to <TT>true</TT>, search operations will apply to all virtual hosts. Otherwise
 only the current host will be searched. The default value is <TT>true</TT>.
-This option is available in <TT>mod_vcard</TT>, but not available in <TT>mod_vcard_odbc</TT>.
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 In this first situation, search results are limited to twenty items,
