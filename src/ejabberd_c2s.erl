@@ -42,6 +42,9 @@
 	 get_presence/1,
 	 get_subscribed/1]).
 
+%% API:
+-export([add_rosteritem/3, del_rosteritem/2]).
+
 %% gen_fsm callbacks
 -export([init/1,
 	 wait_for_stream/2,
@@ -180,6 +183,12 @@ get_presence(FsmRef) ->
 %%TODO: for debug only
 get_state(FsmRef) ->
     ?GEN_FSM:sync_send_all_state_event(FsmRef, get_state, 1000).
+
+add_rosteritem(FsmRef, IJID, ISubscription) ->
+    ?GEN_FSM:send_all_state_event(FsmRef, {add_rosteritem, IJID, ISubscription}).
+
+del_rosteritem(FsmRef, IJID) ->
+    ?GEN_FSM:send_all_state_event(FsmRef, {del_rosteritem, IJID}).
 
 stop(FsmRef) ->
     ?GEN_FSM:send_event(FsmRef, closed).
@@ -1035,6 +1044,15 @@ session_established2(El, StateData) ->
 %%----------------------------------------------------------------------
 handle_event({migrate, Node, After}, StateName, StateData) when Node /= node() ->
     fsm_migrate(StateName, StateData, Node, After * 2);
+
+handle_event({add_rosteritem, IJID, ISubscription}, StateName, StateData) ->
+    NewStateData = roster_change(IJID, ISubscription, StateData),
+    fsm_next_state(StateName, NewStateData);
+
+handle_event({del_rosteritem, IJID}, StateName, StateData) ->
+    NewStateData = roster_change(IJID, none, StateData),
+    fsm_next_state(StateName, NewStateData);
+
 handle_event(_Event, StateName, StateData) ->
     fsm_next_state(StateName, StateData).
 
