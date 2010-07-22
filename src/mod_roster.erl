@@ -154,7 +154,7 @@ stop(Host) when is_list(Host) ->
 process_iq(From, To, IQ_Rec)
   when ?IS_JID(From), ?IS_JID(To), ?IS_IQ_RECORD(IQ_Rec) ->
     LServer = exmpp_jid:prep_domain_as_list(From),
-    case lists:member(LServer, ?MYHOSTS) of
+    case ?IS_MY_HOST(LServer) of
 	true ->
 	    process_local_iq(From, To, IQ_Rec);
 	_ ->
@@ -1323,7 +1323,7 @@ build_contact_jid_td({U, S, R}) ->
 		 {CUser, CServer} ->
 		     CUser_S = binary_to_list(CUser),
 		     CServer_S = binary_to_list(CServer),
-		     case lists:member(CServer_S, ?MYHOSTS) of
+		     case ?IS_MY_HOST(CServer_S) of
 			 false -> "";
 			 true -> "/admin/server/" ++ CServer_S ++ "/user/" ++ CUser_S ++ "/"
 		     end

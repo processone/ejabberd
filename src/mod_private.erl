@@ -114,7 +114,7 @@ check_packet(From, To, IQ_Rec, [F | R]) ->
 
 check_domain(From, _To, _IQ_Rec) ->
     LServer = exmpp_jid:prep_domain_as_list(From),
-    case lists:member(LServer, ?MYHOSTS) of
+    case ?IS_MY_HOST(LServer) of
 	true -> ok;
 	false -> {error, 'not-allowed'}
     end.

@@ -176,7 +176,7 @@ stop(Host) ->
 %%--------------------------------------------------------------------
 init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p",[ServerHost,Opts]),
-    Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
+    Host = gen_mod:expand_host_name(ServerHost, Opts, "pubsub"),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
     PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -2643,7 +2643,7 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 	_ -> invalid
     end,
     Subscriber = try exmpp_jid:parse(JID) of
-		     J -> jlib:short_jid(J)
+		     J -> J
 		  catch
 		     _ -> exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
@@ -2770,8 +2770,9 @@ get_subscriptions(Host, Node, JID) ->
 		    end
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, []}} ->
-	    {error, 'item-not-found'};
+%% Fix bug when node owner retrieve an empty subscriptions list 
+%	{result, {_, []}} ->
+%	    {error, 'item-not-found'};
 	{result, {_, Subscriptions}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
@@ -3289,7 +3290,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 		Contacts when is_list(Contacts) ->
 		    lists:foreach(fun({U, S, _}) ->
 			spawn(fun() ->
-			    case lists:member(S, ?MYHOSTS) of
+			    case ?IS_MY_HOST(S) of
 				true ->
 				    lists:foreach(fun(R) ->
 					ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)
@@ -3993,8 +3994,8 @@ is_feature_supported(_, []) ->
     true;
 is_feature_supported(#xmlel{name = 'presence', children = Els}, Feature) ->
     case mod_caps:read_caps(Els) of
-	nothing -> false;
-	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+  nothing -> false;
+  Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
     end.
 
 on_user_offline(_, JID, _) ->

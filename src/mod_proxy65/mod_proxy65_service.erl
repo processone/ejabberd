@@ -222,7 +222,7 @@ iq_vcard(Lang) ->
        "\nCopyright (c) 2003-2010 Alexey Shchepin")}]}].
 
 parse_options(ServerHost, Opts) ->
-    MyHost = gen_mod:get_opt_host(ServerHost, Opts, "proxy.@HOST@"),
+    MyHost = gen_mod:expand_host_name(ServerHost, Opts, "proxy"),
     Port = gen_mod:get_opt(port, Opts, 7777),
     ACL = gen_mod:get_opt(access, Opts, all),
     Name = gen_mod:get_opt(name, Opts, "SOCKS5 Bytestreams"),

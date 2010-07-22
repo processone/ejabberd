@@ -1593,7 +1593,7 @@ set_form(From, Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     AccountJID = exmpp_jid:parse(AccountString),
     User = exmpp_jid:prep_node_as_list(AccountJID),
     Server = exmpp_jid:prep_domain_as_list(AccountJID),
-    true = lists:member(Server, ?MYHOSTS),
+    true = ?IS_MY_HOST(Server),
     true = (Server == Host) orelse (get_permission_level(From) == global),
     ejabberd_auth:try_register(User, Server, Password),
     {result, []};

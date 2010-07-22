@@ -45,11 +45,13 @@
 	 register_feature/2,
 	 unregister_feature/2,
 	 register_extra_domain/2,
-	 unregister_extra_domain/2]).
+	 unregister_extra_domain/2,
+	 get_vh_services/1]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
@@ -192,8 +194,13 @@ get_local_features(Acc, _From, To, <<>>, _Lang) ->
 		empty -> []
 	    end,
     HostB = exmpp_jid:prep_domain(To),
+    NHostB = ejabberd:normalize_host(HostB),
     {result,
-     ets:select(disco_features, [{{{'_', HostB}}, [], ['$_']}]) ++ Feats};
+     ets:select(disco_features, [{{{'_', NHostB}}, [],
+				  ['$_']}]) ++
+     ets:select(disco_features, [{{{'_', global}}, [],
+				  ['$_']}]) ++
+     Feats};
 
 get_local_features(Acc, _From, _To, _Node, _Lang) ->
     case Acc of
@@ -239,14 +246,18 @@ get_local_services(Acc, _From, To, <<>>, _Lang) ->
 		{result, Its} -> Its;
 		empty -> []
 	    end,
-    HostB = exmpp_jid:prep_domain(To),
-    Host = binary_to_list(HostB),
+    Host = exmpp_jid:prep_domain_as_list(To),
+    NHost = ejabberd:normalize_host(Host),
     {result,
      lists:usort(
        lists:map(fun domain_to_xml/1,
 		 get_vh_services(Host) ++
 		 ets:select(disco_extra_domains,
-			    [{{{'$1', HostB}}, [], ['$1']}]))
+			ets:fun2ms(fun ({{Service, H}})
+				    when H =:= NHost;
+				         H =:= global ->
+					     Service
+				end)))
        ) ++ Items};
 
 get_local_services({result, _} = Acc, _From, _To, _Node, _Lang) ->
@@ -255,19 +266,24 @@ get_local_services({result, _} = Acc, _From, _To, _Node, _Lang) ->
 get_local_services(empty, _From, _To, _Node, _Lang) ->
     {error, 'item-not-found'}.
 
+%% Note: only first-order subdomains are returned.
+%% For example, if Host = "a",
+%% and Routes = ["muc.a", "vjud.a", "private.muc.a", "muc.b"]
+%% only returns ["muc.a", "vjud.a"]
 get_vh_services(Host) ->
-    Hosts = lists:sort(fun(H1, H2) -> length(H1) >= length(H2) end, ?MYHOSTS),
-    lists:filter(fun(H) ->
-			 case lists:dropwhile(
-				fun(VH) ->
-					not lists:suffix("." ++ VH, H)
-				end, Hosts) of
-			     [] ->
-				 false;
-			     [VH | _] ->
-				 VH == Host
-			 end
-		 end, ejabberd_router:dirty_get_all_routes()).
+    Routes = ejabberd_router:dirty_get_all_routes(),
+    HostTokenized = string:tokens(Host, "."),
+    VhServices =
+	lists:filter(fun(H) ->
+			     case string:tokens(H, ".") of
+				 [_ | HostTokenized] ->
+				     true;
+				 _ ->
+				     false
+			     end
+		     end, Routes),
+    GlobalServices = ejabberd_global_router:expand_routes(Host),
+    VhServices ++ GlobalServices.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

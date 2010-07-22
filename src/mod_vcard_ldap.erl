@@ -646,7 +646,7 @@ find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
 parse_options(Host, Opts) ->
-    MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
+    MyHost = gen_mod:expand_host_name(Host, Opts, "vjud"),
     Search = gen_mod:get_opt(search, Opts, true),
     Matches = case gen_mod:get_opt(matches, Opts, 30) of
 		infinity  -> 0;
