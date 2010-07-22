@@ -31,3 +31,26 @@
 
 -record(roster_version, {us,
 			version}).
+
+%% @type rosteritem() = {roster, USJ, US, Contact_JID, Name, Subscription, Ask, Groups, Askmessage, Xs}
+%%     USJ = {LUser, LServer, Prepd_Contact_JID}
+%%         LUser = binary()
+%%         LServer = binary()
+%%         Prepd_Contact_JID = jlib:shortjid()
+%%     US = {LUser, LServer}
+%%     Contact_JID = jlib:shortjid()
+%%     Name = binary()
+%%     Subscription = none | to | from | both
+%%     Ask = none | out | in | both
+%%     Groups = [binary()]
+%%     Askmessage = binary()
+%%     Xs = [exmpp_xml:xmlel()]
+
+%% TODO: keep a non-prepped jid like in mnesia mod_roster?
+-record(rosteritem, {user_host_jid,
+		     name = <<"">>,
+		     subscription = none,
+		     ask = none,
+		     askmessage = <<"">>}).
+-record(rostergroup, {user_host_jid,
+		      grp}).

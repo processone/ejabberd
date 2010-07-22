@@ -24,6 +24,32 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%% Database schema (version / storage / table)
+%%%
+%%% 2.1.x / mnesia / vcard
+%%%  us = {Username::string(), Host::string()}
+%%%  vcard = xmlelement()
+%%%
+%%% 2.1.x / odbc / vcard
+%%%  username = varchar250
+%%%  vcard = text
+%%%
+%%% 3.0.0-prealpha / mnesia / vcard
+%%%  us = {Username::string(), Host::string()}
+%%%  vcard = xmlel()
+%%%
+%%% 3.0.0-prealpha / odbc / vcard
+%%%  Same as 2.1.x
+%%%
+%%% 3.0.0-alpha / mnesia / vcard
+%%%  user_host = {Username::string(), Host::string()}
+%%%  vcard = xmlel()
+%%%
+%%% 3.0.0-alpha / odbc / vcard
+%%%  user = varchar150
+%%%  host = varchar150
+%%%  vcard = text
+
 -module(mod_vcard).
 -author('alexey@process-one.net').
 
@@ -48,8 +74,8 @@
 
 -define(JUD_MATCHES, 30).
 
--record(vcard_search, {user_server,
-		       user,     luser,
+-record(vcard_search, {user_host,
+		       username, lusername,
 		       fn,	 lfn,
 		       family,	 lfamily,
 		       given,	 lgiven,
@@ -62,7 +88,7 @@
 		       orgname,	 lorgname,
 		       orgunit,	 lorgunit
 		      }).
--record(vcard, {user_server, vcard}).
+-record(vcard, {user_host, vcard}).
 
 -define(PROCNAME, ejabberd_mod_vcard).
 
@@ -73,15 +99,14 @@ start(Host, Opts) ->
 			     [{disc_only_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, vcard)},
-			      {types, [{user_server, {text, text}}]}]),
+			      {types, [{user_host, {text, text}}]}]),
     gen_storage:create_table(Backend, HostB, vcard_search,
 			     [{disc_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, vcard_search)},
-			      {types, [{user_server, {text, text}},
-				       {user, {text, text}}]}]),
-    update_tables(Host),
-    gen_storage:add_table_index(Host, vcard_search, luser),
+			      {types, [{user_host, {text, text}}]}]),
+    update_tables(Host, Backend),
+    gen_storage:add_table_index(Host, vcard_search, lusername),
     gen_storage:add_table_index(Host, vcard_search, lfn),
     gen_storage:add_table_index(Host, vcard_search, lfamily),
     gen_storage:add_table_index(Host, vcard_search, lgiven),
@@ -195,24 +220,7 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
     LUser = exmpp_jid:prep_node_as_list(To),
     LServer = exmpp_jid:prep_domain_as_list(To),
-    US = {LUser, LServer},
-    F = fun() ->
-		gen_storage:read(LServer, {vcard, US})
-	end,
-    Els = case gen_storage:transaction(LServer, vcard, F) of
-		{atomic, [#vcard{vcard = SVCARD} | _]} ->
-		    case xml_stream:parse_element(SVCARD) of
-			{error, _Reason} ->
-			    novcard;
-			VCARD ->
-			    {vcard, VCARD}
-		    end;
-		{atomic, []} ->
-		    novcard;
-		{aborted, _Reason} ->
-		    novcard
-	    end,
-    case Els of
+    case get_vcard(LUser, LServer) of
 	{vcard, VCard} ->
 	    exmpp_iq:result(IQ_Rec, VCard);
 	novcard ->
@@ -228,6 +236,22 @@ process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
 	false ->
 	    exmpp_iq:error(IQ_Rec, 'not-allowed')
     end.
+
+%% @spec (User::string(), Host::string()) -> {vcard, xmlel()} | novcard
+get_vcard(User, Host) ->
+    US = {User, Host},
+    case gen_storage:dirty_read(Host, {vcard, US}) of
+		%% The vcard is stored as xmlel() in Mnesia:
+		[#vcard{vcard = VCARD}] when is_tuple(VCARD) ->
+		    {vcard, VCARD};
+		%% The vcard is stored as a text string in ODBC:
+		[#vcard{vcard = SVCARD}] when is_list(SVCARD) ->
+		    [VCARD] = exmpp_xml:parse_document(SVCARD, [names_as_atom]),
+		    {vcard, VCARD};
+		[] ->
+		    novcard
+    end.
+
 
 set_vcard(User, LServer, VCARD) ->
     FN       = exmpp_xml:get_path(VCARD,
@@ -277,12 +301,16 @@ set_vcard(User, LServer, VCARD) ->
 
 	US = {LUser, LServer},
 
+	VcardToStore = case gen_storage:table_info(LServer, vcard, backend) of
+	    mnesia -> VCARD;
+	    odbc -> lists:flatten(exmpp_xml:document_to_list(VCARD))
+	end,
+
 	F = fun() ->
-		gen_storage:write(LServer, #vcard{user_server = US, vcard = VCARD}),
-		gen_storage:write(
-	      #vcard_search{user_server=US,
-			    user      = {User, LServer},
-			    luser     = LUser,
+		gen_storage:write(LServer, #vcard{user_host = US, vcard = VcardToStore}),
+		gen_storage:write(LServer,
+	      #vcard_search{user_host=US,
+			    username  = User,     lusername  = LUser,
 			    fn        = FN,       lfn        = LFN,       
 			    family    = Family,   lfamily    = LFamily,   
 			    given     = Given,    lgiven     = LGiven,    
@@ -501,7 +529,7 @@ search_result(Lang, JID, ServerHost, Data) ->
 	      [#xmlcdata{cdata = Val}]}]}).
 
 record_to_item(R) ->
-    {User, Server} = R#vcard_search.user,
+    {User, Server} = R#vcard_search.user_host,
     #xmlel{ns = ?NS_DATA_FORMS, name = 'item', children =
      [
        ?FIELD(<<"jid">>,      list_to_binary(User ++ "@" ++ Server)),
@@ -568,10 +596,10 @@ filter_fields([{SVar, [Val]} | Ds], Rules, LServer)
                   case gen_mod:get_module_opt(LServer, ?MODULE,
                                               search_all_hosts, true) of
                       true ->
-                          {like, luser, make_val(LVal)};
+                          {like, lusername, make_val(LVal)};
                       false ->
                           Host = find_my_host(LServer),
-                          {like, user_server, {make_val(LVal), Host}}
+                          {like, user_host, {make_val(LVal), Host}}
                   end;
               "fn"       -> {like, lfn, make_val(LVal)};
               "last"     -> {like, lfamily, make_val(LVal)};
@@ -628,7 +656,7 @@ parts_to_string(Parts) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 set_vcard_t(R, _) ->
-    US = R#vcard.user_server,
+    US = R#vcard.user_host,
     User  = US,
     VCARD = R#vcard.vcard,
 
@@ -669,8 +697,8 @@ set_vcard_t(R, _) ->
 	LOrgName  = exmpp_stringprep:to_lower(OrgName),
 	LOrgUnit  = exmpp_stringprep:to_lower(OrgUnit),
 	mnesia:write(
-	  #vcard_search{user_server= US,
-			user      = User,     luser      = LUser,     
+	  #vcard_search{user_host= US,
+			username  = User,     lusername  = LUser,     
 			fn        = FN,       lfn        = LFN,       
 			family    = Family,   lfamily    = LFamily,   
 			given     = Given,    lgiven     = LGiven,    
@@ -707,174 +735,89 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     gen_storage:transaction(LServer, vcard, F).
 
 
-update_tables(Host) ->
-    update_vcard_table(),
-    update_vcard_search_table(),
-    update_vcard_storage(Host).
+%%%
+%%% Update tables
+%%%
 
-update_vcard_table() ->
-    Fields = record_info(fields, vcard),
-    case mnesia:table_info(vcard, attributes) of
-	Fields ->
-	    convert_to_exmpp();
-	[user, vcard] ->
-	    ?INFO_MSG("Converting vcard table from "
-		      "{user, vcard} format", []),
-	    Host = ?MYNAME,
-	    {atomic, ok} = mnesia:create_table(
-			     mod_vcard_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, vcard},
-			      {attributes, record_info(fields, vcard)}]),
-	    mnesia:transform_table(vcard, ignore, Fields),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_vcard_tmp_table),
-			 mnesia:foldl(
-			   fun(#vcard{user_server = U} = R, _) ->
-				   mnesia:dirty_write(
-				     mod_vcard_tmp_table,
-				     R#vcard{user_server = {U, Host}})
-			   end, ok, vcard)
-		 end,
-	    mnesia:transaction(F1),
-	    mnesia:clear_table(vcard),
-	    F2 = fun() ->
-			 mnesia:write_lock_table(vcard),
-			 mnesia:foldl(
-			   fun(R, _) ->
-				   mnesia:dirty_write(R)
-			   end, ok, mod_vcard_tmp_table)
-		 end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_vcard_tmp_table);
-	_ ->
-	    ?INFO_MSG("Recreating vcard table", []),
-	    mnesia:transform_table(vcard, ignore, Fields)
-    end.
+update_tables(Host, mnesia) ->
+    gen_storage_migration:migrate_mnesia(
+      Host, vcard,
+      [{vcard, [us, vcard],
+	fun({vcard, US, Vcard}) ->
+		#vcard{user_host = US,
+		       vcard = convert_vcard_element(Vcard)}
+	end}]),
+    gen_storage_migration:migrate_mnesia(
+      Host, vcard_search,
+      [{vcard_search, [us,
+		       username, lusername,
+		       fn,	 lfn,
+		       family,	 lfamily,
+		       given,	 lgiven,
+		       middle,	 lmiddle,
+		       nickname, lnickname,
+		       bday,	 lbday,
+		       ctry,	 lctry,
+		       locality, llocality,
+		       email,	 lemail,
+		       orgname,	 lorgname,
+		       orgunit,	 lorgunit],
+	fun(Record) ->
+		Record
+	end}]);
 
+update_tables(Host, odbc) ->
+    gen_storage_migration:migrate_odbc(
+      Host, [vcard],
+      [{"vcard", ["username", "vcard"],
+	fun(_, Username, Vcard) ->
+		[#vcard{user_host = {Username, Host},
+			vcard = Vcard}]
+	end}]),
+    gen_storage_migration:migrate_odbc(
+      Host, [vcard_search],
+      [{"vcard_search", ["username", "lusername",
+			 "fn", "lfn",
+			 "family", "lfamily",
+			 "given", "lgiven",
+			 "middle", "lmiddle",
+			 "nickname", "lnickname",
+			 "bday", "lbday",
+			 "ctry", "lctry",
+			 "locality", "llocality",
+			 "email", "lemail",
+			 "orgname", "lorgname",
+			 "orgunit", "lorgunit"],
+	fun(_, User, LUser,
+	    FN, LFN,
+	    Family, LFamily,
+	    Given, LGiven,
+	    Middle, LMiddle,
+	    Nickname, LNickname,
+	    BDay, LBDay,
+	    CTRY, LCTRY,
+	    Locality, LLocality,
+	    EMail, LEMail,
+	    OrgName, LOrgName,
+	    OrgUnit, LOrgUnit) ->
+		[#vcard_search{user_host = {LUser, Host},
+			       username  = User,     lusername  = LUser,
+			       fn        = FN,       lfn        = LFN,       
+			       family    = Family,   lfamily    = LFamily,   
+			       given     = Given,    lgiven     = LGiven,    
+			       middle    = Middle,   lmiddle    = LMiddle,   
+			       nickname  = Nickname, lnickname  = LNickname, 
+			       bday      = BDay,     lbday      = LBDay,     
+			       ctry      = CTRY,     lctry      = LCTRY,     
+			       locality  = Locality, llocality  = LLocality, 
+			       email     = EMail,    lemail     = LEMail,    
+			       orgname   = OrgName,  lorgname   = LOrgName,  
+			       orgunit   = OrgUnit,  lorgunit   = LOrgUnit}]
+	end}]).
 
-convert_to_exmpp() ->
-    Fun = fun() ->
-	case mnesia:first(vcard) of
-	    '$end_of_table' ->
-		none;
-	    Key ->
-		case mnesia:read({vcard, Key}) of
-		    [#vcard{vcard = #xmlel{}}] ->
-			none;
-		    [#vcard{vcard = #xmlelement{}}] ->
-			mnesia:foldl(fun convert_to_exmpp2/2,
-			  done, vcard, write)
-		end
-	end
-    end,
-    mnesia:transaction(Fun).
-
-convert_to_exmpp2(#vcard{vcard = ElOld} = VCard, Acc) ->
-    El0 = exmpp_xml:xmlelement_to_xmlel(ElOld, [?NS_VCARD], []),
-    El = exmpp_xml:remove_whitespaces_deeply(El0),
-    mnesia:write(VCard#vcard{vcard = El}),
-    Acc.
-
-update_vcard_search_table() ->
-    Fields = record_info(fields, vcard_search),
-    case mnesia:table_info(vcard_search, attributes) of
-	Fields ->
-	    ok;
-	[user,     luser,
-	 fn,       lfn,
-	 family,   lfamily,
-	 given,    lgiven,
-	 middle,   lmiddle,
-	 nickname, lnickname,
-	 bday,	   lbday,
-	 ctry,	   lctry,
-	 locality, llocality,
-	 email,	   lemail,
-	 orgname,  lorgname,
-	 orgunit,  lorgunit] ->
-	    ?INFO_MSG("Converting vcard_search table from "
-		      "{user, luser, fn, lfn, family, lfamily, given, lgiven, middle, lmiddle, nickname, lnickname, bday, lbday, ctry, lctry, locality, llocality, email, lemail, orgname, lorgname, orgunit, lorgunit} format", []),
-	    Host = ?MYNAME,
-	    {atomic, ok} = mnesia:create_table(
-			     mod_vcard_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, vcard_search},
-			      {attributes, record_info(fields, vcard_search)}]),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_vcard_tmp_table),
-			 mnesia:foldl(
-			   fun({vcard_search,
-				User,     LUser,     
-				FN,       LFN,       
-				Family,   LFamily,   
-				Given,    LGiven,    
-				Middle,   LMiddle,   
-				Nickname, LNickname, 
-				BDay,     LBDay,     
-				CTRY,     LCTRY,     
-				Locality, LLocality, 
-				EMail,    LEMail,    
-				OrgName,  LOrgName,  
-				OrgUnit,  LOrgUnit   
-			       }, _) ->
-				   mnesia:dirty_write(
-				     mod_vcard_tmp_table,
-				     #vcard_search{
-				       user_server= {LUser, Host},
-				       user      = {User, Host},
-				       luser     = LUser,
-				       fn        = FN,       lfn        = LFN,
-				       family    = Family,   lfamily    = LFamily,
-				       given     = Given,    lgiven     = LGiven,
-				       middle    = Middle,   lmiddle    = LMiddle,
-				       nickname  = Nickname, lnickname  = LNickname,
-				       bday      = BDay,     lbday      = LBDay,
-				       ctry      = CTRY,     lctry      = LCTRY,
-				       locality  = Locality, llocality  = LLocality,
-				       email     = EMail,    lemail     = LEMail,
-				       orgname   = OrgName,  lorgname   = LOrgName,
-				       orgunit   = OrgUnit,  lorgunit   = LOrgUnit
-				      })
-			   end, ok, vcard_search)
-		 end,
-	    mnesia:transaction(F1),
-	    lists:foreach(fun(I) ->
-				  mnesia:del_table_index(
-				    vcard_search,
-				    element(I, {vcard_search,
-						user,     luser,
-						fn,       lfn,
-						family,   lfamily,
-						given,    lgiven,
-						middle,   lmiddle,
-						nickname, lnickname,
-						bday,	   lbday,
-						ctry,	   lctry,
-						locality, llocality,
-						email,	   lemail,
-						orgname,  lorgname,
-						orgunit,  lorgunit}))
-			  end, mnesia:table_info(vcard_search, index)),
-	    mnesia:clear_table(vcard_search),
-	    mnesia:transform_table(vcard_search, ignore, Fields),
-	    F2 = fun() ->
-	        	 mnesia:write_lock_table(vcard_search),
-	        	 mnesia:foldl(
-	        	   fun(R, _) ->
-	        		   mnesia:dirty_write(R)
-	        	   end, ok, mod_vcard_tmp_table)
-	         end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_vcard_tmp_table);
-	_ ->
-	    ?INFO_MSG("Recreating vcard_search table", []),
-	    mnesia:transform_table(vcard_search, ignore, Fields)
-    end.
+convert_vcard_element(Xmlelement) ->
+    Xmlel = exmpp_xml:xmlelement_to_xmlel(Xmlelement, [?NS_VCARD], []),
+    exmpp_xml:remove_whitespaces_deeply(Xmlel).
 
 %%%
 %%% WebAdmin
@@ -898,16 +841,14 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_vcard(User, Server, Query, Lang) ->
-    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
+    US = {LUser, LServer} = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
     Res = user_queue_parse_query(US, Query),
-    VcardString = case mnesia:dirty_read({vcard, US}) of
-	[Vcard] -> 
-	    Xml = Vcard#vcard.vcard,
+    VcardString = case get_vcard(LUser, LServer) of
+	{vcard, Xml} -> 
 	    XmlString = lists:flatten(exmpp_xml:document_to_list(Xml)),
 	    Reduced = re:replace(XmlString, "<BINVAL>[^<]*", "<BINVAL>...", [global, {return, list}]),
 	    try_indent(Reduced);
-	[] -> "no vcard";
-	_ -> "error getting vcard"
+	novcard -> "no vcard"
     end,
     [?XE('h1', [?CT("vCard")]),
      ?XE('h2', [?AC("../", us_to_list(US))])
@@ -937,18 +878,16 @@ try_indent(String) ->
     end.
 
 get_user_photo(User, Host) ->
-    US = {User, Host},
-    case mnesia:dirty_read({vcard, US}) of
-	[VCard] -> 
-	    case exmpp_xml:get_path(VCard#vcard.vcard, [{element, "PHOTO"}, {element, "BINVAL"}, cdata_as_list]) of
+    case get_vcard(User, Host) of
+	{vcard, VCard} -> 
+	    case exmpp_xml:get_path(VCard, [{element, "PHOTO"}, {element, "BINVAL"}, cdata_as_list]) of
                 [] -> "no avatar";
                 BinVal -> case catch jlib:decode_base64(BinVal) of
                                {'EXIT', _} -> "error";
                                Decoded -> Decoded
                           end
            end;
-	[] -> "no vcard";
-	_ -> "error getting vcard"
+	novcard -> "no vcard"
     end.
 
 user_queue_parse_query(US, Query) ->
@@ -971,11 +910,11 @@ us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server).
 
 webadmin_user(Acc, User, Server, Lang) ->
-    US = {exmpp_stringprep:nodeprep(User), exmpp_stringprep:nameprep(Server)},
-    VcardSize = case mnesia:dirty_read({vcard, US}) of
-	[Vcard] -> get_vcard_size(Vcard);
-	[] -> 0;
-	_ -> -1
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
+    VcardSize = case get_vcard(LUser, LServer) of
+	{vcard, Vcard} -> get_vcard_size(Vcard);
+	novcard -> 0
     end,
     FVcardSize = case VcardSize > 0 of
 	true -> [?AC("vcard/", integer_to_list(VcardSize))];
@@ -988,7 +927,7 @@ webadmin_user(Acc, User, Server, Lang) ->
     Acc ++ [?XCT('h3', "vCard size:")] ++ FVcardSize ++ [?CT(" characters. ")] ++ RemoveEl.
 
 get_vcard_size(Vcard) ->
-    String = lists:flatten(exmpp_xml:document_to_list(Vcard#vcard.vcard)),
+    String = lists:flatten(exmpp_xml:document_to_list(Vcard)),
     length(String).
 
 webadmin_user_parse_query(_, "removevcard", User, Server, _Query) ->
@@ -1002,86 +941,3 @@ webadmin_user_parse_query(_, "removevcard", User, Server, _Query) ->
     end;
 webadmin_user_parse_query(Acc, _Action, _User, _Server, _Query) ->
     Acc.
-
-
-
-update_vcard_storage(Host) ->
-    %% TODO: vcard_search
-    gen_storage_migration:migrate_mnesia(
-      Host, vcard,
-      [{vcard, [user, vcard],
-	fun({vcard, U, Vcard}) ->
-		#vcard{user_server = {U, Host},
-		       vcard = lists:flatten(xml:element_to_string(Vcard))}
-	end},
-       {vcard, [us, vcard],
-	fun({vcard, US, Vcard}) ->
-		#vcard{user_server = US,
-		       vcard = lists:flatten(xml:element_to_string(Vcard))}
-	end}]),
-    gen_storage_migration:migrate_mnesia(
-      Host, vcard_search,
-      [{vcard_search, [us,
-		       user,     luser,
-		       fn,	 lfn,
-		       family,	 lfamily,
-		       given,	 lgiven,
-		       middle,	 lmiddle,
-		       nickname, lnickname,
-		       bday,	 lbday,
-		       ctry,	 lctry,
-		       locality, llocality,
-		       email,	 lemail,
-		       orgname,	 lorgname,
-		       orgunit,	 lorgunit],
-	fun(Record) ->
-		Record
-	end}]),
-    gen_storage_migration:migrate_odbc(
-      Host, [vcard],
-      [{"vcard", ["username", "vcard"],
-	fun(_, Username, Vcard) ->
-		[#vcard{user_server = {Username, Host},
-			vcard = Vcard}]
-	end}]),
-    gen_storage_migration:migrate_odbc(
-      Host, [vcard_search],
-      [{"vcard_search", ["username", "lusername",
-			 "fn", "lfn",
-			 "family", "lfamily",
-			 "given", "lgiven",
-			 "middle", "lmiddle",
-			 "nickname", "lnickname",
-			 "bday", "lbday",
-			 "ctry", "lctry",
-			 "locality", "llocality",
-			 "email", "lemail",
-			 "orgname", "lorgname",
-			 "orgunit", "lorgunit"],
-	fun(_, User, LUser,
-	    FN, LFN,
-	    Family, LFamily,
-	    Given, LGiven,
-	    Middle, LMiddle,
-	    Nickname, LNickname,
-	    BDay, LBDay,
-	    CTRY, LCTRY,
-	    Locality, LLocality,
-	    EMail, LEMail,
-	    OrgName, LOrgName,
-	    OrgUnit, LOrgUnit) ->
-		[#vcard_search{user_server = {LUser, Host},
-			       user      = {User, Host},
-			       luser     = LUser,
-			       fn        = FN,       lfn        = LFN,       
-			       family    = Family,   lfamily    = LFamily,   
-			       given     = Given,    lgiven     = LGiven,    
-			       middle    = Middle,   lmiddle    = LMiddle,   
-			       nickname  = Nickname, lnickname  = LNickname, 
-			       bday      = BDay,     lbday      = LBDay,     
-			       ctry      = CTRY,     lctry      = LCTRY,     
-			       locality  = Locality, llocality  = LLocality, 
-			       email     = EMail,    lemail     = LEMail,    
-			       orgname   = OrgName,  lorgname   = LOrgName,  
-			       orgunit   = OrgUnit,  lorgunit   = LOrgUnit}]
-	end}]).

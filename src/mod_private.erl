@@ -24,6 +24,34 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%% Database schema (version / storage / table)
+%%%
+%%% 2.1.x / mnesia / private_storage
+%%%  usns = {Username::string(), Host::string(), Namespace::string()}
+%%%  xml = xmlelement()
+%%%
+%%% 2.1.x / odbc / private_storage
+%%%  username = varchar250
+%%%  namespace = varchar250
+%%%  data = text
+%%%
+%%% 3.0.0-prealpha / mnesia / private_storage
+%%%  usns = {Username::binary(), Host::binary(), Namespace::atom()}
+%%%  xml = xmlel()
+%%%
+%%% 3.0.0-prealpha / odbc / private_storage
+%%%  Same as 2.1.x
+%%%
+%%% 3.0.0-alpha / mnesia / private_storage
+%%%  user_host_ns = {Username::binary(), Host::binary(), Namespace::atom()}
+%%%  xml = xmlel()
+%%%
+%%% 3.0.0-alpha / odbc / private_storage
+%%%  user = varchar
+%%%  host = varchar
+%%%  ns = varchar250
+%%%  xml = text
+
 -module(mod_private).
 -author('alexey@process-one.net').
 
@@ -38,8 +66,8 @@
 
 -include("ejabberd.hrl").
 
-%% TODO: usns instead of user_server_ns requires no migration
--record(private_storage, {user_server_ns, xml}).
+%% TODO: usns instead of user_host_ns requires no migration
+-record(private_storage, {user_host_ns, xml}).
 
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
@@ -49,8 +77,8 @@ start(Host, Opts) ->
 			     [{disc_only_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, private_storage)},
-			      {types, [{user_server_ns, {text, text, text}}]}]),
-    update_table(Host),
+			      {types, [{user_host_ns, {binary, binary, atom}}, {xml, xmlel}]}]),
+    update_table(Host, Backend),
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE,
@@ -146,10 +174,11 @@ check_ns(_From, _To, #iq{payload = SubEl}) ->
 	    end
     end.
 
+%% The xml is stored as xmlel() in mnesia, but as text in odbc
 set_data(LUser, LServer, El) ->
     XMLNS = exmpp_xml:get_ns_as_atom(El),
     gen_storage:write(LServer,
-		      #private_storage{user_server_ns = {LUser, LServer, XMLNS},
+		      #private_storage{user_host_ns = {LUser, LServer, XMLNS},
 				       xml = El}).
 
 get_data(LUser, LServer, Els) ->
@@ -175,9 +204,9 @@ remove_user(User, Server)
 	LServer = exmpp_stringprep:nameprep(Server),
 	F = fun() ->
 		Records = gen_storage:select(LServer, private_storage,
-					     [{'=', user_server_ns, {LUser, LServer, '_'}}]),
+					     [{'=', user_host_ns, {LUser, LServer, '_'}}]),
 		lists:foreach(
-		  fun(#private_storage{user_server_ns = USNS}) ->
+		  fun(#private_storage{user_host_ns = USNS}) ->
 			  gen_storage:delete(LServer, {private_storage, USNS})
 		     end, Records)
 	    end,
@@ -187,97 +216,27 @@ remove_user(User, Server)
 	    ok
     end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-update_table(Host) ->
-    Fields = record_info(fields, private_storage),
-    case mnesia:table_info(private_storage, attributes) of
-	Fields ->
-            convert_to_exmpp(),
-	    gen_storage_migration:migrate_mnesia(
-	      Host, private_storage,
-	      [{private_storage, [userns, xml],
-		fun({private_storage, {User, NS}, Xml}) ->
-			#private_storage{user_server_ns = {User, Host, NS},
-					 xml = lists:flatten(xml:element_to_string(Xml))}
-		end},
-	       {private_storage, [user_server_ns, xml],
-		fun({private_storage, {User, Server, NS}, Xml}) ->
-			#private_storage{user_server_ns = {User, Server, NS},
-					 xml = lists:flatten(xml:element_to_string(Xml))}
-		end}]),
-	    gen_storage_migration:migrate_odbc(
-	      Host, [private_storage],
-	      [{"private_storage", ["username", "namespace", "data"],
-		fun(_, Username, Namespace, Data) ->
-			[#private_storage{user_server_ns = {Username, Host, Namespace},
-					  xml = Data}]
-		end}]);
-	[userns, xml] ->
-	    ?INFO_MSG("Converting private_storage table from "
-		      "{user, default, lists} format", []),
-	    Host = ?MYNAME,
-	    {atomic, ok} = mnesia:create_table(
-			     mod_private_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, private_storage},
-			      {attributes, record_info(fields, private_storage)}]),
-	    mnesia:transform_table(private_storage, ignore, Fields),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_private_tmp_table),
-			 mnesia:foldl(
-			   fun(#private_storage{user_server_ns = {U, NS}, xml = El} = R, _) ->
-				   NS1 = list_to_atom(NS),
-				   El0 = exmpp_xml:xmlelement_to_xmlel(El,
-				     [?NS_PRIVATE], [{?NS_XMPP, ?NS_XMPP_pfx}]),
-				   El1 = exmpp_xml:remove_whitespaces_deeply(El0),
-				   mnesia:dirty_write(
-				     mod_private_tmp_table,
-				     R#private_storage{user_server_ns = {U, Host, NS1}, xml = El1})
-			   end, ok, private_storage)
-		 end,
-	    mnesia:transaction(F1),
-	    mnesia:clear_table(private_storage),
-	    F2 = fun() ->
-			 mnesia:write_lock_table(private_storage),
-			 mnesia:foldl(
-			   fun(R, _) ->
-				   mnesia:dirty_write(R)
-			   end, ok, mod_private_tmp_table)
-		 end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_private_tmp_table);
-	_ ->
-	    ?INFO_MSG("Recreating private_storage table", []),
-	    mnesia:transform_table(private_storage, ignore, Fields)
-    end.
+update_table(Host, mnesia) ->
+    gen_storage_migration:migrate_mnesia(
+      Host, private_storage,
+      [{private_storage, [usns, xml],
+	fun({private_storage, {User, Server, NS}, Xml}) ->
+		U1 = list_to_binary(User),
+		S1 = list_to_binary(Server),
+		NS1 = list_to_atom(NS),
+		El1 = exmpp_xml:xmlelement_to_xmlel(Xml, [?NS_PRIVATE],
+						    [{?NS_XMPP, ?NS_XMPP_pfx}]),
+		#private_storage{user_host_ns = {U1, S1, NS1},
+				 xml = El1}
+	end}]);
 
-
-convert_to_exmpp() ->
-    Fun = fun() ->
-	    case mnesia:first(private_storage) of
-		'$end_of_table' ->
-		    none;
-                {U, _S, _NS} when is_binary(U) ->
-                    none;
-                {U, _S, _NS} when is_list(U) ->
-                    mnesia:foldl(fun convert_to_exmpp2/2,
-                      done, private_storage, write)
-	    end
-    end,
-    mnesia:transaction(Fun).
-
-convert_to_exmpp2(#private_storage{user_server_ns = {U, S, NS} = Key, xml = El} = R,
-  Acc) ->
-    mnesia:delete({private_storage, Key}),
-    U1 = list_to_binary(U),
-    S1 = list_to_binary(S),
-    NS1 = list_to_atom(NS),
-    El1 = exmpp_xml:xmlelement_to_xmlel(El,
-      [?NS_PRIVATE], [{?NS_XMPP, ?NS_XMPP_pfx}]),
-    New_R = R#private_storage{
-      user_server_ns = {U1, S1, NS1},
-      xml = El1},
-    mnesia:write(New_R),
-    Acc.
+update_table(Host, odbc) ->
+    gen_storage_migration:migrate_odbc(
+      Host, [private_storage],
+      [{"private_storage", ["username", "namespace", "data"],
+	fun(_, Username, Namespace, Data) ->
+		[#private_storage{user_host_ns = {Username, Host, Namespace},
+				  xml = Data}]
+	end}]).

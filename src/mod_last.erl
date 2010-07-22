@@ -24,6 +24,37 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%% Database schema (version / storage / table)
+%%%
+%%% 2.1.x / mnesia / last_activity
+%%%  us = {Username::string(), Host::string()}
+%%%  timestamp = now()
+%%%  status = string()
+%%%
+%%% 2.1.x / odbc / last
+%%%  username = varchar250
+%%%  seconds = text
+%%%  state = text
+%%%
+%%% 3.0.0-prealpha / mnesia / last_activity
+%%%  us = {Username::binary(), Host::binary()}
+%%%  timestamp = now()
+%%%  status = binary()
+%%%
+%%% 3.0.0-prealpha / odbc / last
+%%%  Same as 2.1.x
+%%%
+%%% 3.0.0-alpha / mnesia / last_activity
+%%%  user_host = {Username::binary(), Host::binary()}
+%%%  timestamp = now()
+%%%  status = binary()
+%%%
+%%% 3.0.0-alpha / odbc / last_activity
+%%%  user = varchar150
+%%%  host = varchar150
+%%%  timestamp = bigint
+%%%  status = text
+
 -module(mod_last).
 -author('alexey@process-one.net').
 
@@ -43,7 +74,7 @@
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
 
--record(last_activity, {user_server, timestamp, status}).
+-record(last_activity, {user_host, timestamp, status}).
 
 
 start(Host, Opts) ->
@@ -54,9 +85,9 @@ start(Host, Opts) ->
 			     [{disc_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, last_activity)},
-			      {types, [{user_server, {text, text}},
+			      {types, [{user_host, {text, text}},
 				       {timestamp, bigint}]}]),
-    update_table(Host),
+    update_table(Host, Backend),
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_LAST_ACTIVITY,
@@ -165,7 +196,7 @@ store_last_info(User, Server, TimeStamp, Status)
 	US = {User, Server},
 	F = fun() ->
  		gen_storage:write(Server,
- 				  #last_activity{user_server = US,
+ 				  #last_activity{user_host = US,
 						timestamp = TimeStamp,
 						status = Status})
 	    end,
@@ -203,66 +234,33 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
 	    ok
     end.
 
-
-update_table(Host) ->
-    Fields = record_info(fields, last_activity),
-    case mnesia:table_info(last_activity, attributes) of
-	Fields ->
-            convert_to_exmpp();
-	_ ->
+update_table(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(
       Host, last_activity,
       [{last_activity, [us, timestamp, status],
-	fun(#last_activity{} = LA) ->
-		LA
-	end}]),
+	fun({last_activity, {U, S}, Timestamp, Status}) ->
+		U1 = case U of
+			 "" -> undefined;
+			 V  -> V
+		     end,
+		#last_activity{user_host = {list_to_binary(U1),
+					    list_to_binary(S)},
+			       timestamp = Timestamp,
+			       status = list_to_binary(Status)}
+	end}]);
+update_table(Host, odbc) ->
     gen_storage_migration:migrate_odbc(
       Host, [last_activity],
       [{"last", ["username", "seconds", "state"],
 	fun(_, Username, STimeStamp, Status) ->
 		case catch list_to_integer(STimeStamp) of
 		    TimeStamp when is_integer(TimeStamp) ->
-			[#last_activity{user_server = {Username, Host},
+			[#last_activity{user_host = {Username, Host},
 					timestamp = TimeStamp,
 					status = Status}];
 		    _ ->
-			?WARNING_MSG("Omitting last_activity migration item with timestamp=~p",
+			?WARNING_MSG("Omitting last_activity migration item"
+				     " with timestamp=~p",
 				     [STimeStamp])
 		end
-	end}])
-    end.
-
-convert_to_exmpp() ->
-    Fun = fun() ->
-	case mnesia:first(last_activity) of
-	    '$end_of_table' ->
-		none;
-	    Key ->
-		case mnesia:read({last_activity, Key}) of
-		    [#last_activity{status = Status}] when is_binary(Status) ->
-			none;
-		    [#last_activity{}] ->
-			mnesia:foldl(fun convert_to_exmpp2/2,
-			  done, last_activity, write)
-		end
-	end
-    end,
-    mnesia:transaction(Fun).
-
-convert_to_exmpp2(#last_activity{user_server = {U, S} = Key, status = Status} = LA,
-  Acc) ->
-    % Remove old entry.
-    mnesia:delete({last_activity, Key}),
-    % Convert "" to undefined in JIDs.
-    U1 = convert_jid_to_exmpp(U),
-    % Convert status.
-    Status1 = list_to_binary(Status),
-    % Prepare the new record.
-    New_LA = LA#last_activity{user_server = {list_to_binary(U1), list_to_binary(S)}, 
-                              status = Status1},
-    % Write the new record.
-    mnesia:write(New_LA),
-    Acc.
-
-convert_jid_to_exmpp("") -> undefined;
-convert_jid_to_exmpp(V)  -> V.
+	end}]).

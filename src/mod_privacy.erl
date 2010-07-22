@@ -24,6 +24,81 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%% Database schema (version / storage / table)
+%%%
+%%% 2.1.x / mnesia / privacy
+%%%  us = {Username::string(), Host::string()}
+%%%  default = none | ListName::string()
+%%%  lists = [ {ListName::string(), [listitem()]} ]
+%%%
+%%% 2.1.x / odbc / privacy_default_list
+%%%  username = varchar250
+%%%  name = varchar250
+%%% 2.1.x / odbc / privacy_list
+%%%  username = varchar250
+%%%  name = varchar250
+%%%  id = bigint-unsigned
+%%% 2.1.x / odbc / privacy_list_data
+%%%  id = bigint
+%%%  t = character(1)
+%%%  value = text
+%%%  action = character(1)
+%%%  ord = NUMERIC
+%%%  match_all = boolean
+%%%  match_iq = boolean
+%%%  match_message = boolean
+%%%  match_presence_in = boolean
+%%%  match_presence_out = boolean
+%%%
+%%% 3.0.0-prealpha / mnesia / privacy
+%%%  us = {Username::string(), Host::string()}
+%%%  default = none | ListName::string()
+%%%  lists = [ {ListName::string(), [listitem()]} ]
+%%%
+%%% 3.0.0-prealpha / odbc / privacy
+%%%  Same as 2.1.x
+%%%
+%%% 3.0.0-alpha / mnesia / privacy_default_list
+%%%  user_host = {Username::string(), Server::string()}
+%%%  name = string()
+%%% 3.0.0-alpha / mnesia / privacy_list
+%%%  user_host = {Username::string(), Server::string()}
+%%%  name = string()
+%%% 3.0.0-alpha / mnesia / privacy_list_data
+%%%  user_host = {Username::string(), Server::string()}
+%%%  name = string()
+%%%  type = jid | group | subscription | none
+%%%  value = JID::binary() | Group::binary() | <<"none">> | <<"both">> | <<"from">> | <<"to">>
+%%%  action = allow | deny
+%%%  order = integer()
+%%%  match_all = boolean()
+%%%  match_iq = boolean()
+%%%  match_message = boolean()
+%%%  match_presence_in = boolean()
+%%%  match_presence_out = boolean()
+%%%
+%%% 3.0.0-alpha / odbc / privacy_default_list
+%%%  user =  varchar150
+%%%  host =  varchar150
+%%%  name = text
+%%% 3.0.0-alpha / odbc / privacy_list
+%%%  user =  varchar150
+%%%  host =  varchar150
+%%%  name =  varchar150
+%%% 3.0.0-alpha / odbc / privacy_list_data
+%%%  user =  varchar150
+%%%  host =  varchar150
+%%%  name =  varchar150
+%%%  type = varchar150
+%%%  value = varchar150
+%%%  action = varchar150
+%%%  order = int 11
+%%%  match_all = varchar150
+%%%  match_iq = varchar150
+%%%  match_message = varchar150
+%%%  match_presence_in = varchar150
+%%%  match_presence_out = varchar150
+
 -module(mod_privacy).
 -author('alexey@process-one.net').
 
@@ -43,9 +118,9 @@
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
 
--record(privacy_list, {username_server, name}).
--record(privacy_default_list, {username_server, name}).
--record(privacy_list_data, {username_server, name,
+-record(privacy_list, {user_host, name}).
+-record(privacy_default_list, {user_host, name}).
+-record(privacy_list_data, {user_host, name,
 			    type, value, action, order,
 			    match_all, match_iq, match_message,
 			    match_presence_in, match_presence_out}).
@@ -59,21 +134,21 @@ start(Host, Opts) ->
 			      {odbc_host, Host},
 			      {type, bag},
 			      {attributes, record_info(fields, privacy_list)},
-			      {types, [{username_server, {text, text}}]}]),
+			      {types, [{user_host, {text, text}}]}]),
     gen_storage:create_table(Backend, HostB, privacy_default_list,
 			     [{disc_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, privacy_default_list)},
-			      {types, [{username_server, {text, text}}]}]),
+			      {types, [{user_host, {text, text}}]}]),
     gen_storage:create_table(Backend, HostB, privacy_list_data,
 			     [{disc_copies, [node()]},
 			      {odbc_host, Host},
 			      {type, bag},
 			      {attributes, record_info(fields, privacy_list_data)},
-			      {types, [{username_server, {text, text}},
-				       {action, atom},
+			      {types, [{user_host, {text, text}},
 				       {type, atom},
-				       {value, atom},
+				       {value, binary},
+				       {action, atom},
 				       {order, int},
 				       {match_all, atom},
 				       {match_iq, atom},
@@ -81,7 +156,7 @@ start(Host, Opts) ->
 				       {match_presence_in, atom},
 				       {match_presence_out, atom}
 				      ]}]),
-    update_tables(Host),
+    update_tables(Host, Backend),
     gen_storage:add_table_index(Host, privacy_list, name),
     gen_storage:add_table_index(Host, privacy_list_data, name),
     ejabberd_hooks:add(privacy_iq_get, HostB,
@@ -160,10 +235,7 @@ process_lists_get(LUser, LServer, Active) ->
 		[] ->
 		    {result, #xmlel{ns = ?NS_PRIVACY, name = 'query'}};
 		_ ->
-		    LItems = lists:map(
-			       fun({N, _}) ->
-			       exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = list}, name, N)
-			       end, Lists),
+		    LItems = [exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = list}, name, N) || N <- Lists],
 		    DItems =
 			case Default of
 			    none ->
@@ -188,13 +260,13 @@ process_list_get(_LUser, _LServer, false) ->
 process_list_get(LUser, LServer, Name) ->
     F = fun() ->
 		case gen_storage:select(LServer, privacy_list,
-					[{'=', username_server, {LUser, LServer}},
+					[{'=', user_host, {LUser, LServer}},
 					 {'=', name, Name}]) of
 		    [] ->
 			none;
 		    [#privacy_list{}] ->
 			gen_storage:select(LServer, privacy_list_data,
-					   [{'=', username_server, {LUser, LServer}},
+					   [{'=', user_host, {LUser, LServer}},
 					    {'=', name, Name}])
 		end
 	end,
@@ -217,8 +289,8 @@ item_to_xml(Item) ->
 		 none ->
 		     Attrs1;
 		 Type ->
-		     [?XMLATTR('type', type_to_binary(Item#privacy_list_data.type)),
-		      ?XMLATTR('value', value_to_binary(Type, Item#privacy_list_data.value)) |
+		     [?XMLATTR('type', type_to_binary(Type)),
+		      ?XMLATTR('value', Item#privacy_list_data.value) |
 		      Attrs1]
 	     end,
     SubEls = case Item#privacy_list_data.match_all of
@@ -270,21 +342,6 @@ type_to_binary(Type) ->
 	subscription -> <<"subscription">>
     end.
 
-value_to_binary(Type, Val) ->
-    case Type of
-	jid ->
-	    {N, D, R} = Val,
-	    exmpp_jid:to_binary(N, D, R);
-	group -> Val;
-	subscription ->
-	    case Val of
-		both -> <<"both">>;
-		to -> <<"to">>;
-		from -> <<"from">>;
-		none -> <<"none">>
-	    end
-    end.
-
 
 
 list_to_action(S) ->
@@ -331,13 +388,13 @@ process_default_set(LUser, LServer, false) ->
 process_default_set(LUser, LServer, Name) ->
     F = fun() ->
 		case gen_storage:select(LServer, privacy_list,
-					[{'=', username_server, {LUser, LServer}},
+					[{'=', user_host, {LUser, LServer}},
 					 {'=', name, Name}]) of
 		    [] ->
 			{error, 'item-not-found'};
 		    [#privacy_list{}] ->
 			gen_storage:write(LServer,
-					  #privacy_default_list{username_server = {LUser, LServer},
+					  #privacy_default_list{user_host = {LUser, LServer},
 								name = Name}),
 			{result, []}
 		end
@@ -358,11 +415,11 @@ process_active_set(_LUser, _LServer, false) ->
 process_active_set(LUser, LServer, Name) ->
     F = fun() ->
 		case gen_storage:select(LServer, privacy_list,
-					[{'=', username_server, {LUser, LServer}},
+					[{'=', user_host, {LUser, LServer}},
 					 {'=', name, Name}]) of
 		    [#privacy_list{}] ->
 			List = gen_storage:select(LServer, privacy_list_data,
-						  [{'=', username_server, {LUser, LServer}},
+						  [{'=', user_host, {LUser, LServer}},
 						   {'=', name, Name}]),
 			{result, [], #userlist{name = Name,
 					       list = list_data_to_items(List)}};
@@ -394,10 +451,10 @@ process_list_set(LUser, LServer, Name, Els) ->
 				{error, 'conflict'};
 			    _ ->
 				gen_storage:delete_where(LServer, privacy_list,
-							 [{'=', username_server, {LUser, LServer}},
+							 [{'=', user_host, {LUser, LServer}},
 							  {'=', name, Name}]),
 				gen_storage:delete_where(LServer, privacy_list_data,
-							 [{'=', username_server, {LUser, LServer}},
+							 [{'=', user_host, {LUser, LServer}},
 							  {'=', name, Name}]),
 				{result, []}
 			end
@@ -421,14 +478,14 @@ process_list_set(LUser, LServer, Name, Els) ->
 	    F = fun() ->
 			OldData =
 			    gen_storage:select(LServer, privacy_list_data,
-					       [{'=', username_server, {LUser, LServer}},
+					       [{'=', user_host, {LUser, LServer}},
 						{'=', name, Name}]),
 			lists:foreach(
 			  fun(Data1) ->
 				  gen_storage:delete_object(LServer, Data1)
 			  end, OldData),
 
-			gen_storage:write(LServer, #privacy_list{username_server = {LUser, LServer},
+			gen_storage:write(LServer, #privacy_list{user_host = {LUser, LServer},
 								 name = Name}),
 			NewData = list_items_to_data(LUser, LServer, Name, List),
 			lists:foreach(
@@ -467,7 +524,7 @@ parse_items([], Res) ->
     lists:reverse(Res);
 parse_items([El = #xmlel{name = item} | Els], Res) ->
     Type   = exmpp_xml:get_attribute_as_list(El, type, false),
-    Value  = exmpp_xml:get_attribute_as_list(El, value, false),
+    Value  = exmpp_xml:get_attribute_as_binary(El, value, false),
     SAction =exmpp_xml:get_attribute_as_list(El, action, false),
     SOrder = exmpp_xml:get_attribute_as_list(El, order, false),
     Action = case catch list_to_action(SAction) of
@@ -489,38 +546,17 @@ parse_items([El = #xmlel{name = item} | Els], Res) ->
 	(Action /= false) and (Order /= false) ->
 	    I1 = #listitem{action = Action, order = Order},
 	    I2 = case {Type, Value} of
-		     {T,  V} when is_list(T), is_list(V) ->
+		     {T,  V} when is_list(T), is_binary(V) ->
 			 case T of
 			     "jid" ->
-				 try
-				     JID = exmpp_jid:parse(V),
-				     I1#listitem{
-				       type = jid,
-				       value = jlib:short_prepd_jid(JID)}
-				 catch
-				     _ ->
-					 false
-				 end;
+				 I1#listitem{type = jid,
+					     value = V};
 			     "group" ->
 				 I1#listitem{type = group,
 					     value = V};
 			     "subscription" ->
-				 case V of
-				     "none" ->
-					 I1#listitem{type = subscription,
-						     value = none};
-				     "both" ->
-					 I1#listitem{type = subscription,
-						     value = both};
-				     "from" ->
-					 I1#listitem{type = subscription,
-						     value = from};
-				     "to" ->
-					 I1#listitem{type = subscription,
-						     value = to};
-				     _ ->
-					 false
-				 end
+				 I1#listitem{type = subscription,
+					     value = V}
 			 end;
 		     {T, false} when is_list(T) ->
 			 false;
@@ -566,10 +602,6 @@ parse_matches1(_Item, [#xmlel{} | _Els]) ->
 
 
 
-
-
-
-
 %% storage representation to ejabberd representation
 list_data_to_items(Data) ->
     List =
@@ -592,7 +624,7 @@ list_data_to_items(Data) ->
 list_items_to_data(LUser, LServer, Name, List) ->
     lists:map(
       fun(Item) ->
-	      #privacy_list_data{username_server = {LUser, LServer},
+	      #privacy_list_data{user_host = {LUser, LServer},
 				 name = Name,
 				 type = Item#listitem.type,
 				 value = Item#listitem.value,
@@ -626,7 +658,7 @@ get_user_list(_, User, Server)
 			#userlist{};
 		    [#privacy_default_list{name = Default}] ->
 			Data = gen_storage:select(LServer, privacy_list_data,
-						  [{'=', username_server, {LUser, LServer}},
+						  [{'=', user_host, {LUser, LServer}},
 						   {'=', name, Default}]),
 			List = list_data_to_items(Data),
 			NeedDb = is_list_needdb(List),
@@ -734,18 +766,15 @@ is_ptype_match(Item, PType) ->
 
 
 %% TODO: Investigate this: sometimes Value has binaries, other times has strings
-is_type_match(Type, Value, JID, Subscription, Groups) ->
-    case Type of
-	jid ->
-		{User, Server, Resource} = Value,
-		    ((User == undefined) orelse (User == []) orelse (User == exmpp_jid:prep_node(JID)))
-		    andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:prep_domain(JID)))
-		    andalso ((Resource == undefined) orelse (Resource == []) orelse (Resource == exmpp_jid:prep_resource(JID)));
-	subscription ->
-	    Value == Subscription;
-	group ->
-	    lists:member(Value, Groups)
-    end.
+is_type_match(jid, Value, JID, _Subscription, _Groups) ->
+    {User, Server, Resource} = exmpp_jid:to_lower(exmpp_jid:parse(Value)),
+    ((User == undefined) orelse (User == []) orelse (User == exmpp_jid:prep_node(JID)))
+	andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:prep_domain(JID)))
+        andalso ((Resource == undefined) orelse (Resource == []) orelse (Resource == exmpp_jid:prep_resource(JID)));
+is_type_match(subscription, Value, _JID, Subscription, _Groups) ->
+    Value == Subscription;
+is_type_match(group, Value, _JID, _Subscription, Groups) ->
+    lists:member(Value, Groups).
 
 
 remove_user(User, Server) ->
@@ -772,14 +801,9 @@ updated_list(_,
 	    Old
     end.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-update_tables(Host) ->
-    Fields = record_info(fields, privacy_list),
-    case mnesia:table_info(privacy_list, attributes) of
-	Fields ->
-	    convert_to_exmpp();
-	_ -> ok
-    end,
+update_tables(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(
       Host, privacy_default_list,
       [{privacy, [us, default, lists],
@@ -796,11 +820,12 @@ update_tables(Host) ->
 					  match_message = MatchMessage,
 					  match_presence_in = MatchPresenceIn,
 					  match_presence_out = MatchPresenceOut}) ->
+				    ValueBin = convert_value_to_binary(Value),
 				    gen_storage:write(Host,
-						      #privacy_list_data{username_server = US,
+						      #privacy_list_data{user_host = US,
 									 name = Name,
 									 type = Type,
-									 value = Value,
+									 value = ValueBin,
 									 action = Action,
 									 order = Order,
 									 match_all = MatchAll,
@@ -810,23 +835,26 @@ update_tables(Host) ->
 									 match_presence_out = MatchPresenceOut})
 			    end, List),
 			  gen_storage:write(Host,
-					    #privacy_list{username_server = US,
+					    #privacy_list{user_host = US,
 							  name = Name})
 		  end, Lists),
 		if
 		    is_list(Default) ->
-			#privacy_default_list{username_server = US,
+			#privacy_default_list{user_host = US,
 					      name = Default};
 		    true -> null
 		end
-	end}]),
+	end}]);
+
+update_tables(Host, odbc) ->
     gen_storage_migration:migrate_odbc(
       Host, [privacy_default_list, privacy_list, privacy_list_data],
       [{[{"privacy_list", ["username", "name", "id"]},
-	 {"privacy_list_data", []}],
+	 {"privacy_list_data", ["id","t","value","action","ord","match_all","match_iq","match_message",
+     "match_presence_in","match_presence_out"]}],
 	fun(SELECT, Username, Name, Id) ->
 		US = {Username, Host},
-		DefaultLists = [#privacy_default_list{username_server = US,
+		DefaultLists = [#privacy_default_list{user_host = US,
 						      name = Name}
 				|| [_, _] <- SELECT(["username", "name"],
 						    "privacy_default_list",
@@ -859,22 +887,22 @@ update_tables(Host) ->
 							 {subscription, to}
 						 end
 					 end,
+				     ValueBin = convert_value_to_binary(Value),
 				     Action =
 					 case SAction of
 					     "a" -> allow;
 					     "d" -> deny
 					 end,
 				     Order = list_to_integer(SOrder),
-				     MatchAll = SMatchAll == "1" orelse SMatchAll == "t",
-				     MatchIQ = SMatchIQ == "1" orelse SMatchIQ == "t" ,
-				     MatchMessage =  SMatchMessage == "1" orelse SMatchMessage == "t",
-				     MatchPresenceIn =  SMatchPresenceIn == "1" orelse SMatchPresenceIn == "t",
-				     MatchPresenceOut =  SMatchPresenceOut == "1" orelse SMatchPresenceOut == "t",
-				     
-				     #privacy_list_data{username_server = US,
+				     MatchAll = ejabberd_odbc:to_bool(SMatchAll),
+				     MatchIQ = ejabberd_odbc:to_bool(SMatchIQ),
+				     MatchMessage = ejabberd_odbc:to_bool(SMatchMessage),
+				     MatchPresenceIn = ejabberd_odbc:to_bool(SMatchPresenceIn),
+				     MatchPresenceOut = ejabberd_odbc:to_bool(SMatchPresenceOut),
+				     #privacy_list_data{user_host = US,
 							name = Name,
 							type = Type,
-							value = Value,
+							value = ValueBin,
 							action = Action,
 							order = Order,
 							match_all = MatchAll,
@@ -887,53 +915,26 @@ update_tables(Host) ->
 					  "match_presence_out"],
 					 "privacy_list_data",
 					 [{"id", Id}])),
-		[#privacy_list{username_server = US,
+		[#privacy_list{user_host = US,
 			       name = Name} | DefaultLists ++ ListData]
-	end},
+       end},
        {"privacy_default_list", ["username", "name"],
-	fun(_, Username, Name) ->
-		US = {Username, Host},
-		[#privacy_default_list{username_server = US,
-				       name = Name}]
+       fun(_, Username, Name) ->
+               US = {Username, Host},
+               [#privacy_default_list{user_host = US,
+                                      name = Name}]
 	end}
       ]).
 
-convert_to_exmpp() ->
-    Fun = fun() ->
-	mnesia:foldl(fun convert_to_exmpp2/2, done, privacy, write)
-    end,
-    mnesia:transaction(Fun).
-
-convert_to_exmpp2(#privacy{us = {U, S} = Key, lists = L} = P, Acc) ->
-    U1 = convert_jid_to_exmpp(U),
-    L1 = convert_lists_to_exmpp(L),
-    New_P = P#privacy{
-      us = {U1, S},
-      lists = L1
-    },
-    if
-	New_P /= P -> mnesia:delete({privacy, Key}), mnesia:write(New_P);
-	true       -> ok
-    end,
-    Acc.
-
-convert_jid_to_exmpp("") -> undefined;
-convert_jid_to_exmpp(V)  -> V.
-
-convert_lists_to_exmpp(L) ->
-    convert_lists_to_exmpp2(L, []).
-
-convert_lists_to_exmpp2([{Name, List} | Rest], Result) ->
-    convert_lists_to_exmpp2(Rest,
-      [{Name, convert_list_to_exmpp(List, [])} | Result]);
-convert_lists_to_exmpp2([], Result) ->
-    lists:reverse(Result).
-
-convert_list_to_exmpp([#listitem{type = jid, value = {U, S, R}} = I | Rest],
-  Result) ->
-    U1 = convert_jid_to_exmpp(U),
-    R1 = convert_jid_to_exmpp(R),
-    New_I = I#listitem{value = {U1, S, R1}},
-    convert_list_to_exmpp(Rest, [New_I | Result]);
-convert_list_to_exmpp([], Result) ->
-    lists:reverse(Result).
+convert_value_to_binary({U, H, R}) ->
+    exmpp_jid:to_binary(U, H, R);
+convert_value_to_binary(Value) when is_list(Value) ->
+    list_to_binary(Value);
+convert_value_to_binary(none) ->
+    <<"none">>;
+convert_value_to_binary(both) ->
+    <<"both">>;
+convert_value_to_binary(from) ->
+    <<"from">>;
+convert_value_to_binary(to) ->
+    <<"to">>.

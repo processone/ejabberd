@@ -19,7 +19,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(privacy, {us,
+-record(privacy, {user_host,
 		  default = none,
 		  lists = []}).
 
