@@ -11,7 +11,7 @@
 	 dirty_read/2, dirty_select/2, dirty_count_records/2, dirty_write/2,
 	 dirty_delete/2, dirty_delete_object/2,
 	 delete_where/2, dirty_delete_where/2,
-	 async_dirty/2,
+	 async_dirty/2, sync_dirty/2,
 	 transaction/2]).
 
 %% TODO: append 's' to table names in SQL?
@@ -27,7 +27,8 @@
 			 }).
 -record(odbc_cont, {tabdef, sql, offset = 0, limit}).
 
--include_lib("exmpp/include/exmpp.hrl").  % for #jid{}
+-include("ejabberd.hrl"). % for ?DEBUG macro
+-include_lib("exmpp/include/exmpp.hrl").  % for #jid{} and #xmlel{}
 
 
 table_info(#tabdef{record_name = RecordName,
@@ -121,8 +122,11 @@ create_table(#tabdef{name = Tab,
 	  fun(Attribute, {Q, K}) ->
 		  IsKey = TableType =:= bag orelse
 		      Attribute =:= KeyName,
-		  NoTextKeys = IsKey andalso
-		      ejabberd_odbc:db_type(Host) =:= mysql,
+		  %% The "packet" column in the table offline_msg,
+		  %% must be "text" in order to be large enough to
+		  %% contain a full stanza, not limited to a small VARCHAR():
+		  NoTextKeys = IsKey andalso ejabberd_odbc:db_type(Host) =:= mysql
+		      andalso Attribute /= "packet",
 		  KN = tabdef_column_names(TabDef, Attribute),
 		  case lists:keysearch(Attribute, 1, Types) of
 		      {value, {_, Tuple}} when is_tuple(Tuple) ->
@@ -158,7 +162,12 @@ create_table(#tabdef{name = Tab,
 	  end, {"", []}, Attributes),
     TabS = atom_to_list(Tab),
     PKey = case TableType of
-	       set -> [", PRIMARY KEY (", string:join(K, ", "), ")"];
+	       %% This 105 limits the size of fields in the primary key.
+	       %% That prevents MySQL from complaining when setting the
+	       %% last_activity key (text, text) with this error:
+	       %% #42000Specified key was too long; max key length is 1000bytes"
+	       %% Similarly for rosteritem and other tables, maybe also PgSQL.
+	       set -> [", PRIMARY KEY (", string:join(K, "(105), "), "(105))"];
 	       bag -> []
 	   end,
     case odbc_command(Host,
@@ -169,7 +178,7 @@ create_table(#tabdef{name = Tab,
 		bag ->
 		    KeyColumns = tabdef_column_names(TabDef, KeyName),
 		    Q = ["CREATE INDEX ", TabS, "_bag ON ",
-			 TabS, " USING (", string:join(KeyColumns, ", "), $)],
+			 TabS, " (", string:join(KeyColumns, "(75), "), "(75))"],
 		    case odbc_command(Host, Q) of
 			ok ->
 			    {atomic, ok};
@@ -193,9 +202,11 @@ type_to_sql_type(Type, true = _NoTextKeys) ->
     end.
 
 type_to_sql_type(pid) -> "TEXT";
+type_to_sql_type(xmlel) -> "TEXT";
 type_to_sql_type(jid) -> "TEXT";
 type_to_sql_type(ljid) -> "TEXT";
 type_to_sql_type(atom) -> "TEXT";
+type_to_sql_type(binary) -> "TEXT";
 type_to_sql_type(A) when is_atom(A) -> atom_to_list(A).
 
 
@@ -215,7 +226,7 @@ add_table_index(#tabdef{name = Tab, host = Host} = TabDef, Attribute) ->
     AttributeS = atom_to_list(Attribute),
     A = tabdef_column_names(TabDef, AttributeS),
     Q = ["CREATE INDEX ", TabS, $_, AttributeS,
-	 " ON ", TabS, " USING (", string:join(A, ", "), ")"],
+	 " ON ", TabS, " (", string:join(A, "(75), "), "(75))"],
     case odbc_command(Host, Q) of
 	ok ->
 	    {atomic, ok};
@@ -365,8 +376,9 @@ prepare_match_op(Tab, Op, Column, Value) ->
     io_lib:format("~s.~s ~s ~s", [Tab, Column, Op, format(Value)]).
 
 make_pattern(S) ->
-    R = make_pattern(S, []),
-    lists:reverse(R).
+    make_pattern(S, []).
+make_pattern([], R) ->
+    lists:reverse(R);
 make_pattern(['_' | S], R) ->
     make_pattern(S, [$% | R]);
 make_pattern([C | S], R) ->
@@ -411,15 +423,21 @@ row_to_result([Field | Row], [Type | Types], Result) ->
 	text ->
 	    Row2 = Row,
 	    R = Field;
+	binary ->
+	    Row2 = Row,
+	    R = list_to_binary(Field);
 	pid ->
 	    Row2 = Row,
 	    R = list_to_pid(Field);
+	xmlel ->
+	    Row2 = Row,
+	    [R] = exmpp_xml:parse_document(Field, [names_as_atom]);
 	jid ->
 	    Row2 = Row,
-	    R = jlib:string_to_jid(Field);
+	    R = exmpp_jid:parse(Field);
 	ljid ->
 	    Row2 = Row,
-	    R = jlib:jid_tolower(jlib:string_to_jid(Field));
+	    R = jlib:short_prepd_jid(exmpp_jid:parse(Field));
 	atom ->
 	    Row2 = Row,
 	    R = list_to_atom(Field);
@@ -437,7 +455,7 @@ dirty_count_records(#tabdef{host = Host,
     [Column | _] = tabdef_column_names(TabDef, KeyAttr),
     Q = ["SELECT count(", Column, ") FROM ", atom_to_list(Tab),
 	 WherePart],
-    {selected, [_], [{Count}]} = odbc_query(Host, Q),
+    [{Count}] = odbc_query(Host, Q),
     list_to_integer(Count).
 
 
@@ -447,7 +465,7 @@ count_records(#tabdef{attributes = [KeyAttr | _],
     [Column | _] = tabdef_column_names(TabDef, KeyAttr),
     Q = ["SELECT count(", Column, ") FROM ", atom_to_list(Tab),
 	 WherePart],
-    {selected, [_], [{Count}]} = odbc_query_t(Q),
+    [{Count}] = odbc_query_t(Q),
     list_to_integer(Count).
 
 
@@ -570,7 +588,7 @@ prepare_insert_command(#tabdef{name = Tab,
 	  fun(Attribute, {V, [Value | Values1]}) ->
 		  case lists:keysearch(Attribute, 1, Types) of
 		      {value, {_, Type}} when is_tuple(Type) ->
-			  io:format("Type for ~p: ~p = ~p~n",[Attribute, Type, Value]),
+			  ?DEBUG("Type for ~p: ~p = ~p~n",[Attribute, Type, Value]),
 			  ValueL = tuple_to_list(Value),
 			  if
 			      length(ValueL) == size(Type) ->
@@ -601,6 +619,14 @@ transaction(#tabdef{host = Host}, Fun) ->
 async_dirty(Tab, Fun) ->
     transaction(Tab, Fun).
 
+%% Mnesia has sync_dirty, maybe ODBC has something similar: 
+%% "Call the Fun in a context which is not protected by a transaction."
+%% "The difference [with async_dirty] is that the operations are performed
+%%  synchronously. The caller waits for the updates to be performed on all
+%%  active replicas before the Fun returns."
+sync_dirty(Tab, Fun) ->
+    transaction(Tab, Fun).
+
 tabdef_column_names(TabDef, Attribute) when is_atom(Attribute) ->
     tabdef_column_names(TabDef, atom_to_list(Attribute));
 tabdef_column_names(#tabdef{column_names = ColumnNames}, Attribute) ->
@@ -623,8 +649,11 @@ format(P) when is_pid(P) ->
 format({jid, _, _, _, _} = JID) ->
     format(exmpp_jid:to_list(JID));
 
-format({_, _, _} = LJID) ->
-    format(exmpp_jid:to_list(LJID));
+format({N, D, R}) when (R==undefined) or (not is_atom(R)) ->
+    format(exmpp_jid:to_list(N, D, R));
+
+format(Xmlel) when is_record(Xmlel, xmlel) ->
+    format(exmpp_xml:document_to_list(Xmlel));
 
 format(B) when is_binary(B) ->
     format(binary_to_list(B));

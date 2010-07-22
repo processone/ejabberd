@@ -98,7 +98,7 @@ migrate_mnesia1(Host, Table, {OldTable, OldAttributes, MigrateFun}) ->
 					   end
 				   end, ok, OldTable)
 			 end,
-		    {atomic, ok} = mnesia:transaction(F1),
+		    {atomic, _} = mnesia:transaction(F1),
 		    mnesia:delete_table(OldTable),
 		    ?INFO_MSG("Migration of mnesia table ~p successfully finished", [Table]),
 		    ok
@@ -135,84 +135,97 @@ migrate_odbc1(Host, Tables, {OldTablesColumns, MigrateFun}) ->
     {[OldTable | _] = OldTables,
      [OldColumns | _] = OldColumnsAll} = lists:unzip(OldTablesColumns),
     OldTablesA = [list_to_atom(Table) || Table <- OldTables],
-    case [odbc_table_columns_t(OldTable1)
-	  || OldTable1 <- OldTables] of
-	OldColumnsAll ->
-	    ?INFO_MSG("Migrating ODBC table ~p to gen_storage tables ~p", [OldTable, Tables]),
+    ColumnsT = [odbc_table_columns_t(OldTable1) || OldTable1 <- OldTables],
+    migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun).
 
-	    %% rename old tables to *_old
-	    lists:foreach(fun(OldTable1) ->
-				  {updated, _} =
-				      ejabberd_odbc:sql_query_t("alter table " ++ OldTable1 ++
-								" rename to " ++ OldTable1 ++ "_old")
-			  end, OldTables),
-	    %% recreate new tables
-	    lists:foreach(fun(NewTable) ->
-				  case lists:member(NewTable, OldTablesA) of
-				      true ->
-					  TableInfo =
-					      gen_storage:table_info(Host, NewTable, all),
-					  {value, {_, Backend}} =
-					      lists:keysearch(backend, 1, TableInfo),
-					  gen_storage:create_table(Backend, Host,
-								   NewTable, TableInfo);
-				      false -> ignored
-				  end
-			  end, Tables),
+migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun)
+  when ColumnsT == OldColumnsAll ->
+    ?INFO_MSG("Migrating ODBC table ~p to gen_storage tables ~p", [OldTable, Tables]),
 
-	    SELECT =
-		fun(Columns, Table, Keys) ->
-			Table1 = case lists:member(Table, OldTables) of
-				     true -> Table ++ "_old";
-				     false -> Table
-				 end,
-			WherePart = case Keys of
-					[] -> "";
-					_ -> " WHERE " ++
-						 string:join([K ++ "=" ++
-							      if
-								  is_list(V) ->
-								      "\"" ++ ejabberd_odbc:escape(V) ++ "\"";
-								  is_integer(V) ->
-								      integer_to_list(V)
-							      end
-							      || {K, V} <- Keys],
-							     " AND ")
-				    end,
-			{selected, _, Rows} =
-			    ejabberd_odbc:sql_query_t("SELECT " ++ string:join(Columns, ", ") ++
-						      " FROM " ++ Table1 ++
-						      WherePart),
-			[tuple_to_list(Row) || Row <- Rows]
-		end,
+    %% rename old tables to *_old
+    lists:foreach(fun(OldTable1) ->
+			  {updated, _} =
+			      ejabberd_odbc:sql_query_t("alter table " ++ OldTable1 ++
+							    " rename to " ++ OldTable1 ++ "_old")
+		  end, OldTables),
+    HostB = list_to_binary(Host),
+    %% recreate new tables
+    lists:foreach(fun(NewTable) ->
+			  case lists:member(NewTable, OldTablesA) of
+			      true ->
+				  TableInfo =
+				      gen_storage:table_info(Host, NewTable, all),
+				  {value, {_, Backend}} =
+				      lists:keysearch(backend, 1, TableInfo),
+				  gen_storage:create_table(Backend, HostB,
+							   NewTable, TableInfo);
+			      false -> ignored
+			  end
+		  end, Tables),
 
-	    %% TODO: this will need lots of RAM, make it batched
-	    OldRows = SELECT(OldColumns, OldTable, []),
-	    NRows =
-		lists:foldl(fun(OldRow, NRow) ->
-				    NewRecords = apply(MigrateFun, [SELECT | OldRow]),
-				    if
-					is_list(NewRecords) ->
-					    lists:foreach(
-					      fun(NewRecord) ->
-						      %% TODO: gen_storage transaction?
-						      gen_storage:dirty_write(Host, NewRecord)
-					      end, NewRecords);
-					is_tuple(NewRecords) ->
-					    gen_storage:dirty_write(Host, NewRecords)
-				    end,
-				    NRow + 1
-			    end, 0, OldRows),
+    SELECT =
+	fun(Columns, Table, Keys) ->
+		Table1 = case lists:member(Table, OldTables) of
+			     true -> Table ++ "_old";
+			     false -> Table
+			 end,
+		WherePart = case Keys of
+				[] -> "";
+				_ -> " WHERE " ++
+					 string:join([K ++ "=" ++
+							  if
+							      is_list(V) ->
+								  "\"" ++ ejabberd_odbc:escape(V) ++ "\"";
+							      is_integer(V) ->
+								  integer_to_list(V)
+							  end
+						      || {K, V} <- Keys],
+						     " AND ")
+			    end,
+		{selected, _, Rows} =
+		    ejabberd_odbc:sql_query_t("SELECT " ++ string:join(Columns, ", ") ++
+						  " FROM " ++ Table1 ++
+						  WherePart),
+		[tuple_to_list(Row) || Row <- Rows]
+	end,
 
-	    lists:foreach(fun(OldTable1) ->
-				  {updated, _} = ejabberd_odbc:sql_query_t("drop table " ++ OldTable1 ++ "_old")
-			  end, OldTables),
+    %% TODO: this will need lots of RAM, make it batched
+    OldRows = SELECT(OldColumns, OldTable, []),
+    NRows =
+	lists:foldl(fun(OldRow, NRow) ->
+			    NewRecords = apply(MigrateFun, [SELECT | OldRow]),
+			    if
+				is_list(NewRecords) ->
+				    lists:foreach(
+				      fun(NewRecord) ->
+					      %% TODO: gen_storage transaction?
+					      gen_storage:dirty_write(HostB, NewRecord)
+				      end, NewRecords);
+				is_tuple(NewRecords) ->
+				    gen_storage:dirty_write(HostB, NewRecords)
+			    end,
+			    NRow + 1
+		    end, 0, OldRows),
 
-	    ?INFO_MSG("Migrated ODBC table ~p to gen_storage tables ~p (~p rows)", [OldTable, Tables, NRows]);
-	_ ->
+    lists:foreach(fun(OldTable1) ->
+			  {updated, _} = ejabberd_odbc:sql_query_t("drop table " ++ OldTable1 ++ "_old")
+		  end, OldTables),
+
+    ?INFO_MSG("Migrated ODBC table ~p to gen_storage tables ~p (~p rows)", [OldTable, Tables, NRows]),
+    ok;
+
+migrate_odbc2(_Host, _Tables, _OldTable, _OldTables, _OldColumns, _OldColumnsAll, _OldTablesA, [[]], _MigrateFun) ->
+    ignored;
+
+migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, [ColumnsTAndCreatedat | MoreCTAC], MigrateFun)
+  when ColumnsTAndCreatedat /= OldColumnsAll ->
+    case lists:last(ColumnsTAndCreatedat) of
+	"created_at" ->
+	    ColumnsT = ColumnsTAndCreatedat -- ["created_at"],
+	    migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, [ColumnsT | MoreCTAC], MigrateFun);
+        _ ->
 	    ignored
     end.
-
 
 odbc_table_columns_t(Table) ->
     case ejabberd_odbc:sql_query_t("select column_name from information_schema.columns where table_name='" ++ Table ++ "'") of

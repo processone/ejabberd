@@ -15,7 +15,7 @@
 	 dirty_read/3, dirty_write/3, dirty_delete/3, dirty_delete_object/3,
 	 dirty_select/3,
 	 dirty_count_records/2, dirty_count_records/3, dirty_delete_where/3,
-	 async_dirty/3,
+	 async_dirty/3, sync_dirty/3,
 	 transaction/3,
 	 write_lock_table/2]).
 
@@ -41,11 +41,12 @@ behaviour_info(callbacks) ->
      {delete_where, 2},
      {dirty_delete_where, 2},
      {async_dirty, 2},
+     {sync_dirty, 2},
      {transaction, 2}];
 behaviour_info(_) ->
     undefined.
 
--type storage_host() :: string().
+-type storage_host() :: binary().
 -type storage_table() :: atom().
 -type lock_kind() :: read | write | sticky_write.
 -record(table, {host_name :: {storage_host(), storage_table()},
@@ -54,6 +55,7 @@ behaviour_info(_) ->
 -record(mnesia_def, {table :: atom(),
 		     tabdef :: list()}).
 
+-include("ejabberd.hrl"). % This is used for ERROR_MSG
 
 %% Returns all hosts where the table Tab is defined
 -spec all_table_hosts(atom()) ->
@@ -92,7 +94,7 @@ table_info(Host, Tab, InfoKey) ->
     end.
 
 
-%% @spec create_table(backend(), Host::string(), Name::atom(), options()) -> {atomic, ok} | {aborted, Reason}
+%% @spec create_table(backend(), Host::binary(), Name::atom(), options()) -> {atomic, ok} | {aborted, Reason}
 %% @type options() = [option()]
 %% @type option() = {odbc_host, string()}
 %%                | {Table::atom(), [tabdef()]}
@@ -532,6 +534,15 @@ write_lock_table(Host, Tab) ->
 %% Warning: all tabs touched by the transaction must use the same
 %% storage backend!
 transaction(Host, Tab, Fun) ->
+    %% This is just to ensure an error is logged when error appears:
+    case transaction2(Host, Tab, Fun) of
+	{atomic, _} = Good ->
+	    Good;
+	{aborted, Reason} = Bad ->
+	    ?ERROR_MSG("Transaction failed for host ~p in tab ~p with fun ~p:~n~p", [Host, Tab, Fun, Reason]),
+	    Bad
+    end.
+transaction2(Host, Tab, Fun) ->
     case get_table(Host, Tab) of
 	#table{backend = mnesia} ->
 	    mnesia:transaction(Fun);
@@ -540,6 +551,18 @@ transaction(Host, Tab, Fun) ->
 	    Backend:transaction(Def, Fun)
     end.
 
+-spec sync_dirty(storage_host(), storage_table(), fun()) ->
+    {atomic, any()}.
+%% Warning: all tabs touched by the sync_dirty must use the same
+%% storage backend!
+sync_dirty(Host, Tab, Fun) ->
+    case get_table(Host, Tab) of
+	#table{backend = mnesia} ->
+	    mnesia:sync_dirty(Fun);
+	#table{backend = Backend,
+	       def = Def} ->
+	    Backend:sync_dirty(Def, Fun)
+    end.
 
 -spec async_dirty(storage_host(), storage_table(), fun()) ->
     {atomic, any()}.
@@ -555,12 +578,17 @@ async_dirty(Host, Tab, Fun) ->
     end.
 
 
+%% TODO: fix the calling code so this function clause isn't needed
+get_table(Host, Tab) when is_list(Host) ->
+    get_table(list_to_binary(Host), Tab);
 get_table(Host, Tab) ->
     case mnesia:dirty_read(table, {Host, Tab}) of
 	[T] ->
 	    T;
 	_ ->
-	    error_logger:error_msg("gen_storage: Table ~p not found on ~p~n", [Tab, Host]),
+	    catch throw(error123),
+	    Stacktrace = erlang:get_stacktrace(),
+	    error_logger:error_msg("gen_storage: Table ~p not found on ~p~nStacktrace: ~p", [Tab, Host, Stacktrace]),
 	    exit(table_not_found)
     end.
 
