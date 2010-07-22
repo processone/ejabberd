@@ -165,7 +165,7 @@ echo
 echo "********************** WARNING ! ************************"
 echo "*  ejabberd master is NOT ready for real usage yet,     *"
 echo "*  because it is still in heavy development.            *"
-echo "*  Don't use ejabberd master yet, it is prealpha!       *"
+echo "*  Don't use ejabberd master, it is still alpha code!   *"
 echo "*  Please use ejabberd 2.1.x branch instead.            *"
 echo "*********************************************************"
 echo
