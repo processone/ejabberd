@@ -311,7 +311,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GCC
 \item Libexpat 1.95 or higher
 \item Erlang/OTP R10B-9 or higher. The recommended versions are R12B-5 and R13B04.
-\item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption.
+\item OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
@@ -382,6 +382,10 @@ Some options that you may be interested in modifying:
 
 	\titem{--disable-transient-supervisors}
 	Disable the use of Erlang/OTP supervision for transient processes.
+
+	\titem{--enable-nif}
+        Replaces some critical Erlang functions with equivalents written in C to improve performance.
+        This feature requires Erlang/OTP R13B04 or higher.
 \end{description}
 
 \makesubsection{install}{Install}
@@ -2501,6 +2505,8 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
     \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas &  \\
+    \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) &  \\
+    \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server &  \\
     \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
@@ -3197,6 +3203,10 @@ Module options:
   \titem{\{anonymous, true|false\}} The room is anonymous:
   occupants don't see the real JIDs of other occupants.
   Note that the room moderators can always see the real JIDs of the occupants.
+  \titem{\{captcha\_protected, false\}} 
+  When a user tries to join a room where he has no affiliation (not owner, admin or member),
+  the room requires him to fill a CAPTCHA challenge (see section \ref{captcha})
+  in order to accept her join in the room.
   \titem{\{logging, false|true\}} The public messages are logged using \term{mod\_muc\_log}.
   \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
   \titem{\{members\_by\_default, true|false\}} The occupants that enter the room are participants by default, so they have 'voice'.
@@ -3769,9 +3779,11 @@ from s2s leads to uncontrolled massive accounts creation by rogue users.
 This module reads also another option defined globally for the server:
 \term{\{registration\_timeout, Timeout\}}. \ind{options!registratimeout}
 This option limits the frequency of registration from a given IP or username.
-So, a user can't register a new account from the same IP address or JID during
-this number of seconds after previous registration.
-Timeout is expressed in seconds, and must be an integer.
+So, a user that tries to register a new account from the same IP address or JID during
+this number of seconds after his previous registration
+will receive an error \term{resource-constraint} with the explanation:
+``Users are not allowed to register accounts so quickly''.
+The timeout is expressed in seconds, and it must be an integer.
 To disable this limitation,
 instead of an integer put a word like: \term{infinity}.
 Default value: 600 seconds.
