@@ -187,7 +187,8 @@ init([From, Server, Type]) ->
 open_socket(init, StateData) ->
     log_s2s_out(StateData#state.new,
 		StateData#state.myname,
-		StateData#state.server),
+		StateData#state.server,
+		StateData#state.tls),
     ?DEBUG("open_socket: ~p", [{StateData#state.myname,
 				StateData#state.server,
 				StateData#state.new,
@@ -371,8 +372,8 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	    case Type of
 		"valid" ->
 		    send_queue(StateData, StateData#state.queue),
-		    ?INFO_MSG("Connection established: ~s -> ~s",
-			      [StateData#state.myname, StateData#state.server]),
+		    ?INFO_MSG("Connection established: ~s -> ~s with TLS=~p",
+			      [StateData#state.myname, StateData#state.server, StateData#state.tls_enabled]),
 		    ejabberd_hooks:run(s2s_connect_hook,
 				       [StateData#state.myname,
 					StateData#state.server]),
@@ -1142,10 +1143,10 @@ outgoing_s2s_timeout() ->
 
 %% Human readable S2S logging: Log only new outgoing connections as INFO
 %% Do not log dialback
-log_s2s_out(false, _, _) -> ok;
+log_s2s_out(false, _, _, _) -> ok;
 %% Log new outgoing connections:
-log_s2s_out(_, Myname, Server) ->
-    ?INFO_MSG("Trying to open s2s connection: ~s -> ~s",[Myname, Server]).
+log_s2s_out(_, Myname, Server, Tls) ->
+    ?INFO_MSG("Trying to open s2s connection: ~s -> ~s with TLS=~p", [Myname, Server, Tls]).
 
 %% Calculate timeout depending on which state we are in:
 %% Can return integer > 0 | infinity
