@@ -166,8 +166,7 @@ sql_query_t(Query) ->
     end.
 
 db_type(Host) ->
-    ?GEN_FSM:sync_send_event(ejabberd_odbc_sup:get_random_pid(Host),
-		    db_type, 60000).
+    ejabberd_odbc_sup:get_dbtype(Host).
 
 %% Escape character that will confuse an SQL engine
 escape(S) when is_list(S) ->
@@ -208,7 +207,7 @@ init([Host, StartInterval]) ->
     end,
     [DBType | _] = db_opts(Host),
     ?GEN_FSM:send_event(self(), connect),
-    ejabberd_odbc_sup:add_pid(Host, self()),
+    ejabberd_odbc_sup:add_pid(Host, self(), DBType),
     {ok, connecting, #state{db_type = DBType,
 			    host = Host,
 			    max_pending_requests_len = max_fsm_queue(),
@@ -282,9 +281,6 @@ session_established(Request, {Who, _Ref}, State) ->
 
 session_established({sql_cmd, Command, From, Timestamp}, State) ->
     run_sql_cmd(Command, From, State, Timestamp);
-session_established(db_type, State) ->
-    Reply = State#state.db_type,
-    {reply, Reply, session_established, State};
 session_established(Event, State) ->
     ?WARNING_MSG("unexpected event in 'session_established': ~p", [Event]),
     {next_state, session_established, State}.
@@ -308,8 +304,9 @@ handle_info(Info, StateName, State) ->
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, State) ->
-    ejabberd_odbc_sup:remove_pid(State#state.host, self()),
-    case State#state.db_type of
+    DBType = State#state.db_type,
+    ejabberd_odbc_sup:remove_pid(State#state.host, self(), DBType),
+    case DBType of
 	mysql ->
 	    %% old versions of mysql driver don't have the stop function
 	    %% so the catch

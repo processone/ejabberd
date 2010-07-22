@@ -30,8 +30,9 @@
 %% API
 -export([start_link/1,
 	 init/1,
-	 add_pid/2,
-	 remove_pid/2,
+	 add_pid/3,
+	 remove_pid/3,
+	 get_dbtype/1,
 	 get_pids/1,
 	 get_random_pid/1
 	]).
@@ -46,7 +47,7 @@
 -define(CONNECT_TIMEOUT, 500). % milliseconds
 
 
--record(sql_pool, {host, pid}).
+-record(sql_pool, {host, pid, dbtype}).
 
 start_link(Host) ->
     mnesia:create_table(sql_pool,
@@ -112,18 +113,29 @@ get_random_pid(Host) ->
     Pids = get_pids(ejabberd:normalize_host(Host)),
     lists:nth(erlang:phash(now(), length(Pids)), Pids).
 
-add_pid(Host, Pid) ->
+get_dbtype(Host) ->
+    case ejabberd_config:get_local_option({odbc_server, Host}) of
+       {host, Host1} ->
+           get_dbtype(Host1);
+       _ ->
+           [#sql_pool{dbtype = Dbtype}|_] = mnesia:dirty_read(sql_pool, Host),
+           Dbtype
+    end.
+
+add_pid(Host, Pid, Dbtype) ->
     F = fun() ->
 		mnesia:write(
 		  #sql_pool{host = Host,
-			    pid = Pid})
+			    pid = Pid,
+			    dbtype = Dbtype})
 	end,
     mnesia:ets(F).
 
-remove_pid(Host, Pid) ->
+remove_pid(Host, Pid, Dbtype) ->
     F = fun() ->
 		mnesia:delete_object(
 		  #sql_pool{host = Host,
-			    pid = Pid})
+			    pid = Pid,
+			    dbtype = Dbtype})
 	end,
     mnesia:ets(F).
