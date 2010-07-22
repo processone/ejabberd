@@ -23,7 +23,8 @@
 %% If the ejabberd application description isn't loaded, returns atom: undefined
 -define(VERSION, element(2, application:get_key(ejabberd,vsn))).
 
--define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
+-define(IS_MY_HOST(Host), ejabberd:is_my_host(Host)).
+-define(MYHOSTS, ejabberd_config:get_global_option(hosts)). %% Deprecated
 -define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
 -define(MYLANG, ejabberd_config:get_global_option(language)).
 
@@ -34,6 +35,8 @@
 -define(EJABBERD_URI, "http://www.process-one.net/en/ejabberd/").
 
 -define(S2STIMEOUT, 600000).
+
+-define(PRIVACY_SUPPORT, true).
 
 %%-define(DBGFSM, true).
 
@@ -58,4 +61,3 @@
 
 -define(CRITICAL_MSG(Format, Args),
     ejabberd_logger:critical_msg(?MODULE,?LINE,Format, Args)).
-

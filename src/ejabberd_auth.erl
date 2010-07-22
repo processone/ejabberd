@@ -52,6 +52,15 @@
 	 plain_password_required/1
 	]).
 
+-export([start/1
+         ,start_module/2
+         ,stop_module/2
+         ,start_modules/2
+         ,start_method/2
+         ,stop_method/2
+         ,start_methods/2
+        ]).
+
 -export([auth_modules/1]).
 
 -include("ejabberd.hrl").
@@ -67,13 +76,26 @@
 %% @spec () -> term()
 
 start() ->
-    lists:foreach(
-      fun(Host) ->
-	      lists:foreach(
-		fun(M) ->
-			M:start(Host)
-		end, auth_modules(Host))
-      end, ?MYHOSTS).
+    ?DEBUG("About to start auth modules. Hosts: ~p", ?MYHOSTS),
+    lists:foreach(fun start/1, ?MYHOSTS).
+
+start(Host) ->
+    start_modules(Host, auth_modules(Host)).
+
+start_modules(Host, Modules) when is_list(Modules) ->
+    lists:foreach(fun (M) -> start_module(Host, M) end, Modules).
+start_module(Host, Module) when is_atom(Module) ->
+    Module:start(Host).
+stop_module(Host, Module) when is_atom(Module) ->
+    Module:stop(Host).
+
+start_methods(Host, Methods) when is_list(Methods) ->
+    lists:foreach(fun (M) -> start_method(Host, M) end, Methods).
+start_method(Host, Method) when is_atom(Method) ->
+    start_module(Host, module_name(Method)).
+stop_method(Host, Method) when is_atom(Method) ->
+    stop_module(Host, module_name(Method)).
+
 
 %% @spec (Server) -> bool()
 %%     Server = string()
@@ -186,7 +208,7 @@ try_register(User, Server, Password)
 	true ->
 	    {atomic, exists};
 	false ->
-	    case lists:member(exmpp_stringprep:nameprep(Server), ?MYHOSTS) of
+	    case ?IS_MY_HOST(exmpp_stringprep:nameprep(Server)) of
 		true ->
 		    Res = lists:foldl(
 			    fun (_M, {atomic, ok} = Res) ->
@@ -443,10 +465,13 @@ auth_modules() ->
 
 auth_modules(Server) when is_list(Server) ->
     LServer = exmpp_stringprep:nameprep(Server),
-    Method = ejabberd_config:get_local_option({auth_method, LServer}),
+    Method = ejabberd_config:get_local_option({auth_method, ejabberd:normalize_host(LServer)}),
     Methods = if
 		  Method == undefined -> [];
 		  is_list(Method) -> Method;
 		  is_atom(Method) -> [Method]
 	      end,
-    [list_to_atom("ejabberd_auth_" ++ atom_to_list(M)) || M <- Methods].
+    [module_name(M) || M <- Methods].
+
+module_name(Method) when is_atom(Method) ->
+    list_to_atom("ejabberd_auth_" ++ atom_to_list(Method)).

@@ -82,7 +82,7 @@ process_iq(From, To, Packet) ->
     case exmpp_iq:xmlel_to_iq(Packet) of
 	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
 	    Host = exmpp_jid:prep_domain(To),
-	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
+	    case ets:lookup(?IQTABLE, {XMLNS, ejabberd:normalize_host(Host)}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ_Rec),
 		    if
@@ -96,8 +96,15 @@ process_iq(From, To, Packet) ->
 		    gen_iq_handler:handle(Host, Module, Function, Opts,
 					  From, To, IQ_Rec);
 		[] ->
-		    Err = exmpp_iq:error(Packet, 'feature-not-implemented'),
-		    ejabberd_router:route(To, From, Err)
+		    case ets:lookup(?IQTABLE, {XMLNS, global}) of
+			[{_, Module, Function, Opts}] ->
+			    gen_iq_handler:handle(
+			      global, Module, Function, Opts,
+			      From, To, IQ_Rec);
+			[] ->
+			    Err = exmpp_iq:error(Packet, 'feature-not-implemented'),
+			    ejabberd_router:route(To, From, Err)
+		    end
 	    end;
         #iq{kind = response} = IQReply ->
  	    %%IQReply = jlib:iq_query_or_response_info(IQ_Rec),
@@ -193,10 +200,10 @@ bounce_resource_packet(From, To, Packet) ->
 init([]) ->
     lists:foreach(
       fun(Host) ->
-	      ejabberd_router:register_route(Host, {apply, ?MODULE, route}),
-	      ejabberd_hooks:add(local_send_to_resource_hook, list_to_binary(Host),
-				 ?MODULE, bounce_resource_packet, 100)
+	      ejabberd_router:register_route(Host, {apply, ?MODULE, route})
       end, ?MYHOSTS),
+    ejabberd_hooks:add(local_send_to_resource_hook, global,
+			?MODULE, bounce_resource_packet, 100),
     catch ets:new(?IQTABLE, [named_table, public]),
     mnesia:delete_table(iq_response),
     catch ets:new(iq_response, [named_table, public,
@@ -253,21 +260,21 @@ handle_info({route, From, To, Packet}, State) ->
     end,
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
-    ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
+    ets:insert(?IQTABLE, {{XMLNS, ejabberd:normalize_host(Host)}, Module, Function}),
     catch mod_disco:register_feature(Host, XMLNS),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function, Opts}, State) ->
-    ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function, Opts}),
+    ets:insert(?IQTABLE, {{XMLNS, ejabberd:normalize_host(Host)}, Module, Function, Opts}),
     catch mod_disco:register_feature(Host, XMLNS),
     {noreply, State};
 handle_info({unregister_iq_handler, Host, XMLNS}, State) ->
-    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
+    case ets:lookup(?IQTABLE, {XMLNS, ejabberd:normalize_host(Host)}) of
 	[{_, Module, Function, Opts}] ->
 	    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
 	_ ->
 	    ok
     end,
-    ets:delete(?IQTABLE, {XMLNS, Host}),
+    ets:delete(?IQTABLE, {XMLNS, ejabberd:normalize_host(Host)}),
     catch mod_disco:unregister_feature(Host, XMLNS),
     {noreply, State};
 handle_info(refresh_iq_handlers, State) ->

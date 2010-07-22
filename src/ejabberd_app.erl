@@ -119,6 +119,15 @@ db_init() ->
 
 %% Start all the modules in all the hosts
 start_modules() ->
+    case ejabberd_config:get_local_option({static_modules, global}) of
+	undefined ->
+	    ok;
+	StaticModules ->
+	    lists:foreach(
+	      fun({Module, Args}) ->
+		      gen_mod:start_module(global, Module, Args)
+	      end, StaticModules)
+    end,
     lists:foreach(
       fun(Host) ->
 	      case ejabberd_config:get_local_option({modules, Host}) of

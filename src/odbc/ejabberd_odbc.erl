@@ -33,6 +33,7 @@
 
 %% External exports
 -export([start/1, start_link/2,
+         running/1,
 	 sql_query/2,
 	 sql_query_t/1,
 	 sql_transaction/2,
@@ -105,6 +106,14 @@ sql_query_on_all_connections(Host, Query) ->
 						   {sql_query, Query},
 						   erlang:now()}, ?TRANSACTION_TIMEOUT) end,
     lists:map(F, ejabberd_odbc_sup:get_pids(Host)).
+
+%% Predicate returning true if there is an odbc process running for
+%% host Host, false otherwise.
+running(Host) ->
+    case catch ejabberd_odbc_sup:get_random_pid(Host) of
+        P when is_pid(P) -> true;
+        {'EXIT', {noproc, _}} -> false
+    end.
 
 %% SQL transaction based on a list of queries
 %% This function automatically
@@ -497,7 +506,11 @@ pgsql_to_odbc({ok, PGSQLResult}) ->
 
 pgsql_item_to_odbc({"SELECT", Rows, Recs}) ->
     {selected,
-     [element(1, Row) || Row <- Rows],
+     [case Row of 
+          {desc, _, Col, _, _, _, _, _} -> Col; % Recent pgsql driver API change.
+          _ -> element(1, Row)
+      end
+      || Row <- Rows],
      [list_to_tuple(Rec) || Rec <- Recs]};
 pgsql_item_to_odbc("INSERT " ++ OIDN) ->
     [_OID, N] = string:tokens(OIDN, " "),
@@ -555,6 +568,7 @@ log(Level, Format, Args) ->
 	    ?ERROR_MSG(Format, Args)
     end.
 
+%% TODO: update this function to handle the case clase {host, VhostName}
 db_opts(Host) ->
     case ejabberd_config:get_local_option({odbc_server, Host}) of
 	%% Default pgsql port

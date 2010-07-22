@@ -46,6 +46,8 @@ config() ->
 check_database_modules() ->
      [check_database_module(M)||M<-get_db_used()].
 
+check_database_module(host) ->
+    ok;
 check_database_module(odbc) ->
     check_modules(odbc, [odbc, odbc_app, odbc_sup, ejabberd_odbc, ejabberd_odbc_sup, odbc_queries]);
 check_database_module(mysql) ->

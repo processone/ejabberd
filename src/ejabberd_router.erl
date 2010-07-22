@@ -36,9 +36,11 @@
 	 register_route/2,
 	 register_routes/1,
 	 unregister_route/1,
+	 force_unregister_route/1,
 	 unregister_routes/1,
 	 dirty_get_all_routes/0,
 	 dirty_get_all_domains/0,
+	 read_route/1,
 	 make_id/0
 	]).
 
@@ -98,56 +100,24 @@ route_error(From, To, ErrPacket, OrigPacket) ->
 	    ok
     end.
 
-register_route(Domain) ->
+register_route({global, Prefix}) ->
+    ejabberd_global_router:register_route(Prefix);
+register_route(Domain) when is_list(Domain) ->
     register_route(Domain, undefined).
 
 register_route(Domain, LocalHint) ->
     try
-        LDomain = exmpp_stringprep:nameprep(Domain),
-        LDomainB = list_to_binary(LDomain),
-        Pid = self(),
-        case get_component_number(LDomain) of
-            undefined ->
-                F = fun() ->
-                            mnesia:write(#route{domain = LDomainB,
-                                                pid = Pid,
-                                                local_hint = LocalHint})
-                    end,
-                mnesia:transaction(F);
-            N ->
-                F = fun() ->
-                            case mnesia:wread({route, LDomainB}) of
-                                [] ->
-                                    mnesia:write(
-                                      #route{domain = LDomainB,
-                                             pid = Pid,
-                                             local_hint = 1}),
-                                    lists:foreach(
-                                      fun(I) ->
-                                              mnesia:write(
-                                                #route{domain = LDomainB,
-                                                       pid = undefined,
-                                                       local_hint = I})
-                                      end, lists:seq(2, N));
-                                Rs ->
-                                    lists:any(
-                                      fun(#route{pid = undefined,
-                                                 local_hint = I} = R) ->
-                                              mnesia:write(
-                                                #route{domain = LDomainB,
-                                                       pid = Pid,
-                                                       local_hint = I}),
-                                              mnesia:delete_object(R),
-                                              true;
-                                         (_) ->
-                                              false
-                                      end, Rs)
-                            end
-                    end,
-                mnesia:transaction(F)
-        end
+	LDomain = exmpp_stringprep:nameprep(Domain),
+	LDomainB = list_to_binary(LDomain),
+	Pid = self(),
+	case get_component_number(LDomain) of
+	    undefined ->
+		mnesia:transaction(fun register_simple_route/3, [LDomainB, Pid, LocalHint]);
+	    N ->
+		mnesia:transaction(fun register_balanced_route/3, [LDomainB, Pid, N])
+	end
     catch
-        _ ->
+	_ ->
 	    erlang:error({invalid_domain, Domain})
     end.
 
@@ -156,46 +126,102 @@ register_routes(Domains) ->
 			  register_route(Domain)
 		  end, Domains).
 
-unregister_route(Domain) ->
+register_simple_route(LDomain, Pid, LocalHint) ->
+    mnesia:write(#route{domain = LDomain,
+                        pid = Pid,
+                        local_hint = LocalHint}).
+
+register_balanced_route(LDomain, Pid, N) ->
+    case mnesia:read({route, LDomain}) of
+        [] ->
+            mnesia:write(
+              #route{domain = LDomain,
+                     pid = Pid,
+                     local_hint = 1}),
+            lists:foreach(
+              fun(I) ->
+                      mnesia:write(
+                        #route{domain = LDomain,
+                               pid = undefined,
+                               local_hint = I})
+              end, lists:seq(2, N));
+        Rs ->
+            lists:any(
+              fun(#route{pid = undefined,
+                         local_hint = I} = R) ->
+                      mnesia:write(
+                        #route{domain = LDomain,
+                               pid = Pid,
+                               local_hint = I}),
+                      mnesia:delete_object(R),
+                      true;
+                 (_) ->
+                      false
+              end, Rs)
+    end.
+
+unregister_route({global, Prefix}) ->
+    ejabberd_global_router:unregister_route(Prefix);
+unregister_route(Domain) when is_list(Domain) ->
     try
 	LDomain = exmpp_stringprep:nameprep(Domain),
 	LDomainB = list_to_binary(LDomain),
 	Pid = self(),
 	case get_component_number(LDomain) of
 	    undefined ->
-		F = fun() ->
-			    case mnesia:match_object(
-				   #route{domain = LDomainB,
-					  pid = Pid,
-					  _ = '_'}) of
-				[R] ->
-				    mnesia:delete_object(R);
-				_ ->
-				    ok
-			    end
-		    end,
-		mnesia:transaction(F);
+		    mnesia:transaction(fun delete_simple_route/2, [LDomainB, Pid]);
 	    _ ->
-		F = fun() ->
-			    case mnesia:match_object(#route{domain=LDomainB,
-							    pid = Pid,
-							    _ = '_'}) of
-				[R] ->
-				    I = R#route.local_hint,
-				    mnesia:write(
-				      #route{domain = LDomainB,
-					     pid = undefined,
-					     local_hint = I}),
-				    mnesia:delete_object(R);
-				_ ->
-				    ok
-			    end
-		    end,
-		mnesia:transaction(F)
+		    mnesia:transaction(fun delete_balanced_route/2, [LDomainB, Pid])
 	end
     catch
 	_ ->
 	    erlang:error({invalid_domain, Domain})
+    end.
+
+delete_simple_route(LDomain, Pid) ->
+    case mnesia:match_object(#route{domain = LDomain,
+                                    pid = Pid,
+                                    _ = '_'}) of
+        [R] ->
+            mnesia:delete_object(R);
+        _ ->
+            ok
+    end.
+
+delete_balanced_route(LDomain, Pid) ->
+    case mnesia:match_object(#route{domain=LDomain,
+                                    pid = Pid,
+                                    _ = '_'}) of
+        [R] ->
+            I = R#route.local_hint,
+            ok = mnesia:write(
+                   #route{domain = LDomain,
+                          pid = undefined,
+                          local_hint = I}),
+            mnesia:delete_object(R);
+        _ ->
+            ok
+    end.
+
+
+force_unregister_route(Domain) ->
+    case jlib:nameprep(Domain) of
+	error ->
+	    erlang:error({invalid_domain, Domain});
+	LDomain ->
+	    F = fun() ->
+			case mnesia:match_object(
+			       #route{domain = LDomain,
+				      _ = '_'}) of
+			    Rs when is_list(Rs) ->
+				lists:foreach(fun(R) ->
+						      mnesia:delete_object(R)
+					      end, Rs);
+			    _ ->
+				ok
+			end
+		end,
+	    mnesia:transaction(F)
     end.
 
 unregister_routes(Domains) ->
@@ -203,6 +229,9 @@ unregister_routes(Domains) ->
 			  unregister_route(Domain)
 		  end, Domains).
 
+read_route(Domain) ->
+    [{D,P,H}
+     || #route{domain=D, pid=P, local_hint=H} <- mnesia:dirty_read({route, Domain})].
 
 dirty_get_all_routes() ->
     lists:usort(
@@ -376,10 +405,16 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     case ejabberd_hooks:run_fold(filter_packet,
 				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
-	    LDomain = exmpp_jid:prep_domain(To),
-	    case mnesia:dirty_read(route, LDomain) of
+	    LDstDomain = exmpp_jid:prep_domain_as_list(To),
+	    Destination = ejabberd:normalize_host(LDstDomain),
+	    case mnesia:dirty_read(route, list_to_binary(Destination)) of
 		[] ->
-		    ejabberd_s2s:route(From, To, Packet);
+		    case ejabberd_global_router:find_route(Destination) of
+			no_route ->
+			    ejabberd_s2s:route(From, To, Packet);
+			Route ->
+			    ejabberd_global_router:route(Route, From, To, Packet)
+		    end;
 		[R] ->
 		    Pid = R#route.pid,
 		    if
@@ -396,7 +431,6 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			    drop
 		    end;
 		Rs ->
-            LDstDomain = exmpp_jid:prep_domain_as_list(To),
 		    Value = case ejabberd_config:get_local_option(
 				   {domain_balancing, LDstDomain}) of
 				undefined -> now();

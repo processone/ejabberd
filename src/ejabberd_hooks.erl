@@ -119,14 +119,27 @@ delete_dist(Hook, Host, Node, Module, Function, Seq) ->
 %% @doc Run the calls of this hook in order, don't care about function results.
 %% If a call returns stop, no more calls are performed.
 run(Hook, Args) ->
-    run(Hook, global, Args).
+    runx(Hook, global, Args).
 
-run(Hook, Host, Args) when is_binary(Host) orelse is_atom(Host) ->
-    case ets:lookup(hooks, {Hook, Host}) of
+run(Hook, Host, Args) when is_binary(Host) ->
+    case runx(Hook, Host, Args) of
+	stop -> stop;
+	_ -> runx(Hook, global, Args)
+    end;
+run(Hook, Host, Args) when Host == global ->
+    runx(Hook, Host, Args).
+
+runx(Hook, Host, Args) when is_binary(Host) orelse is_atom(Host) ->
+    case ets:lookup(hooks, {Hook, ejabberd:normalize_host(Host)}) of
 	[{_, Ls}] ->
 	    run1(Ls, Hook, Args);
 	[] ->
-	    ok
+	    case ets:lookup(hooks, {Hook, global}) of
+		[{_, Ls}] ->
+		    run1(Ls, Hook, Args);
+		[] ->
+		    ok
+	    end
     end.
 
 %% @spec (Hook::atom(), Val, Args) -> Val | stopped | NewVal
@@ -136,16 +149,29 @@ run(Hook, Host, Args) when is_binary(Host) orelse is_atom(Host) ->
 %% If a call returns 'stop', no more calls are performed and 'stopped' is returned.
 %% If a call returns {stopped, NewVal}, no more calls are performed and NewVal is returned.
 run_fold(Hook, Val, Args) ->
-    run_fold(Hook, global, Val, Args).
+    run_foldx(Hook, global, Val, Args).
 
 %% @spec (Hook::atom(), Host, Val, Args) -> Val | stopped | NewVal
 %% Host = global | binary()
-run_fold(Hook, Host, Val, Args) when is_binary(Host) orelse is_atom(Host) ->
-    case ets:lookup(hooks, {Hook, Host}) of
+run_fold(Hook, Host, Val, Args) when is_binary(Host) ->
+    case run_foldx(Hook, Host, Val, Args) of
+	stopped -> stopped;
+	Val2 -> run_foldx(Hook, global, Val2, Args)
+    end;
+run_fold(Hook, Host, Val, Args) when Host == global ->
+    run_foldx(Hook, Host, Val, Args).
+
+run_foldx(Hook, Host, Val, Args) ->
+    case ets:lookup(hooks, {Hook, ejabberd:normalize_host(Host)}) of
 	[{_, Ls}] ->
 	    run_fold1(Ls, Hook, Val, Args);
 	[] ->
-	    Val
+	    case ets:lookup(hooks, {Hook, global}) of
+		[{_, Ls}] ->
+		    run_fold1(Ls, Hook, Val, Args);
+		[] ->
+		    Val
+	    end
     end.
 
 %%%----------------------------------------------------------------------
@@ -173,7 +199,8 @@ init([]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
 handle_call({add, Hook, Host, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
+    NHost = ejabberd:normalize_host(Host),
+    Reply = case ets:lookup(hooks, {Hook, NHost}) of
 		[{_, Ls}] ->
 		    El = {Seq, Module, Function},
 		    case lists:member(El, Ls) of
@@ -181,12 +208,12 @@ handle_call({add, Hook, Host, Module, Function, Seq}, _From, State) ->
 			    ok;
 			false ->
 			    NewLs = lists:merge(Ls, [El]),
-			    ets:insert(hooks, {{Hook, Host}, NewLs}),
+			    ets:insert(hooks, {{Hook, NHost}, NewLs}),
 			    ok
 		    end;
 		[] ->
 		    NewLs = [{Seq, Module, Function}],
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
+		    ets:insert(hooks, {{Hook, NHost}, NewLs}),
 		    ok
 	    end,
     {reply, Reply, State};
@@ -209,10 +236,11 @@ handle_call({add, Hook, Host, Node, Module, Function, Seq}, _From, State) ->
 	    end,
     {reply, Reply, State};
 handle_call({delete, Hook, Host, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
+    NHost = ejabberd:normalize_host(Host),
+    Reply = case ets:lookup(hooks, {Hook, NHost}) of
 		[{_, Ls}] ->
 		    NewLs = lists:delete({Seq, Module, Function}, Ls),
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
+		    ets:insert(hooks, {{Hook, NHost}, NewLs}),
 		    ok;
 		[] ->
 		    ok

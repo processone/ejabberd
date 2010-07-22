@@ -100,11 +100,16 @@ init([Host]) ->
 	    end, lists:seq(1, PoolSize))}}.
 
 get_pids(Host) ->
-    Rs = mnesia:dirty_read(sql_pool, Host),
-    [R#sql_pool.pid || R <- Rs].
+    case ejabberd_config:get_local_option({odbc_server, Host}) of
+	{host, Host1} ->
+	    get_pids(Host1);
+	_ ->
+	    Rs = mnesia:dirty_read(sql_pool, Host),
+	    [R#sql_pool.pid || R <- Rs]
+    end.
 
 get_random_pid(Host) ->
-    Pids = get_pids(Host),
+    Pids = get_pids(ejabberd:normalize_host(Host)),
     lists:nth(erlang:phash(now(), length(Pids)), Pids).
 
 add_pid(Host, Pid) ->

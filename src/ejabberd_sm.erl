@@ -353,6 +353,12 @@ init([]) ->
     mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies),
     ets:new(sm_iqtable, [named_table]),
+    ejabberd_hooks:add(roster_in_subscription, global,
+			ejabberd_sm, check_in_subscription, 20),
+    ejabberd_hooks:add(offline_message_hook, global,
+			ejabberd_sm, bounce_offline_message, 100),
+    ejabberd_hooks:add(remove_user, global,
+			ejabberd_sm, disconnect_removed_user, 100),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     lists:foreach(
       fun(Host) ->
@@ -417,19 +423,19 @@ handle_info({route, From, To, Packet}, State) ->
     end,
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
-    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function}),
+    ets:insert(sm_iqtable, {{XMLNS, ejabberd:normalize_host(Host)}, Module, Function}),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function, Opts}, State) ->
-    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function, Opts}),
+    ets:insert(sm_iqtable, {{XMLNS, ejabberd:normalize_host(Host)}, Module, Function, Opts}),
     {noreply, State};
 handle_info({unregister_iq_handler, Host, XMLNS}, State) ->
-    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+    case ets:lookup(sm_iqtable, {XMLNS, ejabberd:normalize_host(Host)}) of
 	[{_, Module, Function, Opts}] ->
 	    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
 	_ ->
 	    ok
     end,
-    ets:delete(sm_iqtable, {XMLNS, Host}),
+    ets:delete(sm_iqtable, {XMLNS, ejabberd:normalize_host(Host)}),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -763,7 +769,7 @@ process_iq(From, To, Packet) ->
     case exmpp_iq:xmlel_to_iq(Packet) of
 	#iq{kind = request, ns = XMLNS} = IQ_Rec ->
         LServer = exmpp_jid:prep_domain(To),
-	    case ets:lookup(sm_iqtable, {XMLNS, LServer}) of
+	    case ets:lookup(sm_iqtable, {XMLNS, ejabberd:normalize_host(LServer)}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ_Rec),
 		    if
@@ -774,11 +780,17 @@ process_iq(From, To, Packet) ->
 			    ok
 		    end;
 		[{_, Module, Function, Opts}] ->
-		    gen_iq_handler:handle(LServer, 
-                      Module, Function, Opts, From, To, IQ_Rec);
+		    gen_iq_handler:handle(LServer,
+			Module, Function, Opts, From, To, IQ_Rec);
 		[] ->
-		    Err = exmpp_iq:error(Packet, 'service-unavailable'),
-		    ejabberd_router:route(To, From, Err)
+		    case ets:lookup(sm_iqtable, {XMLNS, global}) of
+			[{_, Module, Function, Opts}] ->
+			    gen_iq_handler:handle(global, Module, Function, Opts,
+						  From, To, IQ_Rec);
+			[] ->
+			    Err = exmpp_iq:error(Packet, 'service-unavailable'),
+			    ejabberd_router:route(To, From, Err)
+		    end
 	    end;
 	#iq{kind = response} ->
 	    ok;

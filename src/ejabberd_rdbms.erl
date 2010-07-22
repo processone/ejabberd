@@ -27,8 +27,15 @@
 -module(ejabberd_rdbms).
 -author('alexey@process-one.net').
 
--export([start/0]).
+-export([start/0
+         ,start_odbc/1
+         ,stop_odbc/1
+         ,running/1
+        ]).
 -include("ejabberd.hrl").
+-include("ejabberd_config.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
+-define(SUPERVISOR, ejabberd_sup).
 
 start() ->
     %% Check if ejabberd has been compiled with ODBC
@@ -52,20 +59,37 @@ start_hosts() ->
 
 %% Start the ODBC module on the given host
 start_odbc(Host) ->
-    Supervisor_name = gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
+    SupervisorName = sup_name(Host),
     ChildSpec =
-	{Supervisor_name,
+	{SupervisorName,
 	 {ejabberd_odbc_sup, start_link, [Host]},
 	 transient,
 	 infinity,
 	 supervisor,
 	 [ejabberd_odbc_sup]},
-    case supervisor:start_child(ejabberd_sup, ChildSpec) of
+    case supervisor:start_child(?SUPERVISOR, ChildSpec) of
 	{ok, _PID} ->
 	    ok;
 	_Error ->
-	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n", [Supervisor_name, _Error]),
+	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n", [SupervisorName, _Error]),
 	    start_odbc(Host)
+    end.
+
+stop_odbc(Host) ->
+    SupervisorName = sup_name(Host),
+    case running(Host) of
+	false -> ok;
+	true ->
+	    case [H || H <- dependent_hosts(Host), ejabberd_hosts:running(H)] of
+		[] ->
+		    ?INFO_MSG("About to terminate ~p", [SupervisorName]),
+		    ok = supervisor:terminate_child(?SUPERVISOR, SupervisorName),
+		    ok = supervisor:delete_child(?SUPERVISOR, SupervisorName);
+		RunningHosts ->
+		    ?WARNING_MSG("Not stopping ODBC for ~p because the virtual hosts ~p are still using it.",
+		    [Host, RunningHosts]),
+		    {error, still_in_use}
+	    end
     end.
 
 %% Returns true if we have configured odbc_server for the given host
@@ -75,9 +99,32 @@ needs_odbc(Host) ->
 	case ejabberd_config:get_local_option({odbc_server, LHost}) of
 	    undefined ->
 		false;
-	    _ -> true
+	    {host, _} ->
+		false;
+	    _ ->
+		true
 	end
     catch
 	_ ->
 	    false
     end.
+
+running(Host) ->
+    Supervisors = supervisor:which_children(?SUPERVISOR),
+    SupervisorName = gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
+    case lists:keysearch(SupervisorName, 1, Supervisors) of
+	false -> false;
+	{value, Cspec} when is_tuple(Cspec) -> true
+    end.
+
+
+dependent_hosts(Host) ->
+    MS = ets:fun2ms(fun (#local_config{key={odbc_server, DHost},
+                                       value={host, H}})
+                        when H =:= Host ->
+                            DHost
+                    end),
+    ejabberd_config:search(MS).
+
+sup_name(Host) ->
+    gen_mod:get_module_proc(Host, ejabberd_odbc_sup).

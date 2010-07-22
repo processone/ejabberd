@@ -57,8 +57,9 @@ if [ "$ERLANG_NODE_ARG" != "" ] ; then
 fi
 
 # check the proper system user is used
-ID=`id -g`
-GIDS=`id -G`
+if [ `uname -s` = "SunOS" ]; then IDCMD=/usr/xpg4/bin/id; else IDCMD=id; fi
+ID=`$IDCMD -g`
+EJID=`$IDCMD -g $INSTALLUSER`
 EJID=`id -g $INSTALLUSER`
 EXEC_CMD="false"
 for GID in $GIDS; do
@@ -77,10 +78,13 @@ fi
 NAME=-name
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && NAME=-sname
 
-if [ "$FIREWALL_WINDOW" = "" ] ; then
-    KERNEL_OPTS=""
-else
-    KERNEL_OPTS="-kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
+KERNEL_OPTS=""
+if [ "$FIREWALL_WINDOW" != "" ] ; then
+    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
+fi
+
+if [ "$DIST_INTERFACE" != "" ] ; then
+    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_use_interface \"${DIST_INTERFACE}\""
 fi
 
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
@@ -146,7 +150,7 @@ start ()
       $KERNEL_OPTS \
       -s ejabberd \
       -sasl sasl_error_logger \\{file,\\\"$SASL_LOG_PATH\\\"\\} \
-      $ERLANG_OPTS $ARGS \"$@\" $ERL_ARGS"
+      $ERLANG_OPTS -- $ARGS \"$@\" $ERL_ARGS"
 }
 
 # attach to server
@@ -177,7 +181,7 @@ debug ()
       $NAME debug-${TTY}-${ERLANG_NODE} \
       -remsh $ERLANG_NODE \
       $KERNEL_OPTS \
-      $ERLANG_OPTS $ARGS \"$@\" $ERL_ARGS"
+      $ERLANG_OPTS -- $ARGS \"$@\" $ERL_ARGS"
 }
 
 # start interactive server
@@ -209,7 +213,7 @@ live ()
       -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
       $KERNEL_OPTS \
       -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\" $ERL_ARGS"
+      $ERLANG_OPTS -- $ARGS \"$@\" $ERL_ARGS"
 }
 
 etop()

@@ -40,6 +40,7 @@
 	 loaded_modules_with_opts/1,
 	 get_hosts/2,
 	 get_module_proc/2,
+         expand_host_name/3,
 	 is_loaded/2]).
 
 -export([behaviour_info/1]).
@@ -192,6 +193,9 @@ loaded_modules_with_opts(Host) ->
 		 [],
 		 [{{'$1', '$2'}}]}]).
 
+set_module_opts_mnesia(global, _Module, _Opts) ->
+    %% Modules on the global host are usually static, so we shouldn't manipulate them.
+    ok;
 set_module_opts_mnesia(Host, Module, Opts) ->
     Modules = case ejabberd_config:get_local_option({modules, Host}) of
 		  undefined ->
@@ -203,6 +207,9 @@ set_module_opts_mnesia(Host, Module, Opts) ->
     Modules2 = [{Module, Opts} | Modules1],
     ejabberd_config:add_local_option({modules, Host}, Modules2).
 
+del_module_mnesia(global, _Module) ->
+    %% Modules on the global host are usually static, so we shouldn't manipulate them.
+    ok;
 del_module_mnesia(Host, Module) ->
     Modules = case ejabberd_config:get_local_option({modules, Host}) of
 		  undefined ->
@@ -226,6 +233,8 @@ get_hosts(Opts, Prefix) ->
 	    Hosts
     end.
 
+get_module_proc(global, Base) ->
+    list_to_atom(atom_to_list(Base) ++ "__global");
 get_module_proc(Host, {frontend, Base}) ->
     get_module_proc("frontend_" ++ Host, Base);
 get_module_proc(Host, Base) ->
@@ -233,4 +242,12 @@ get_module_proc(Host, Base) ->
 
 is_loaded(Host, Module) ->
     ets:member(ejabberd_modules, {Module, Host}).
+
+expand_host_name(Host, Opts, DefaultPrefix) ->
+    case Host of
+        global ->
+            {global, gen_mod:get_opt(prefix, Opts, DefaultPrefix)};
+        _ ->
+            gen_mod:get_opt_host(Host, Opts, DefaultPrefix ++ ".@HOST@")
+    end.
 

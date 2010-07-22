@@ -32,10 +32,12 @@
 	 add/3,
 	 add_list/3,
 	 match_rule/3,
+	 for_host/1,
 	 % for debugging only
 	 match_acl/3]).
 
 -include("ejabberd.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 %% @type aclspec() = all | JID_Exact | JID_Regexp | JID_Glob | Shared_Group
 %%     JID_Exact = {user, U} | {user, U, S} | {server, S} | {resource, R}
@@ -234,7 +236,7 @@ match_acl(ACLName, JID, Host) ->
 	    User = exmpp_jid:prep_node_as_list(JID),
 	    Server = exmpp_jid:prep_domain_as_list(JID),
 	    Resource = exmpp_jid:prep_resource_as_list(JID),
-	    lists:any(fun(#acl{aclspec = Spec}) ->
+	    lists:any(fun(#acl{aclname=Name, aclspec = Spec}) ->
 			      case Spec of
 				  all ->
 				      true;
@@ -243,17 +245,21 @@ match_acl(ACLName, JID, Host) ->
 					  andalso
 					    ((Host == Server) orelse
 					     ((Host == global) andalso
-					      lists:member(Server, ?MYHOSTS)));
+					      ?IS_MY_HOST(Server)));
 				  {user, U, S} ->
 				      (U == User) andalso (S == Server);
 				  {server, S} ->
 				      S == Server;
 				  {resource, R} ->
 				      R == Resource;
+                                  {user_regexp, UR} when is_tuple(Name),
+                                                         element(2, Name) =:= global ->
+                                      ?IS_MY_HOST(Server)
+					  andalso is_regexp_match(User, UR);
 				  {user_regexp, UR} ->
 				      ((Host == Server) orelse
 				       ((Host == global) andalso
-					lists:member(Server, ?MYHOSTS)))
+					?IS_MY_HOST(Server)))
 					  andalso is_regexp_match(User, UR);
 				  {shared_group, G} ->
 				      mod_shared_roster:is_user_in_group({User, Server}, G, Host);
@@ -272,7 +278,7 @@ match_acl(ACLName, JID, Host) ->
 				  {user_glob, UR} ->
 				      ((Host == Server) orelse
 				       ((Host == global) andalso
-					lists:member(Server, ?MYHOSTS)))
+					?IS_MY_HOST(Server)))
 					  andalso
 					  is_glob_match(User, UR);
 				  {user_glob, UR, S} ->
@@ -325,3 +331,9 @@ is_glob_match(String, Glob) ->
     is_regexp_match(String, xmerl_regexp:sh_to_awk(Glob)).
 
 
+for_host(Host) ->
+    mnesia:select(acl,
+		ets:fun2ms(fun (#acl{aclname = {_ACLName, H}}) 
+		                when H =:= Host ->
+				    object()
+		end)).

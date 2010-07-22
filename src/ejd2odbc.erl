@@ -261,7 +261,7 @@ export_private_storage(ServerS, Output) ->
       	      LXMLNS = ejabberd_odbc:escape(atom_to_list(XMLNS)),
 	      SData = ejabberd_odbc:escape(
 			exmpp_xml:document_to_list(Data)),
-      	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
+      	      odbc_queries:set_private_data_sql(LServer, Username, LXMLNS, SData);
 	 (_Host, _R) ->
       	      []
       end).

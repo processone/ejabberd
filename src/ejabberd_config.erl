@@ -27,17 +27,32 @@
 -module(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, load_file/1,
+-export([start/0, load_file/1, get_host_option/2,
 	 add_global_option/2, add_local_option/2,
+         mne_add_local_option/2, mne_del_local_option/1,
 	 del_global_option/1, del_local_option/1,
 	 get_global_option/1, get_local_option/1]).
+
+-export([for_host/1
+         ,configure_host/2
+         ,delete_host/1
+        ]).
+
+-export([search/1]).
+
 -export([get_vh_by_auth_method/1]).
 -export([is_file_readable/1]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("kernel/include/file.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
+-record(state, {opts = [],
+		hosts = [],
+		override_local = false,
+		override_global = false,
+		override_acls = false}).
 
 %% @type macro() = {macro_key(), macro_value()}
 
@@ -153,6 +168,14 @@ search_hosts(Term, State) ->
 
 add_hosts_to_option(Hosts, State) ->
     PrepHosts = normalize_hosts(Hosts),
+    mnesia:transaction(
+      fun() ->
+	      lists:foreach(
+		fun(H) ->
+			mnesia:write(#local_config{key = {H, host},
+						   value = []})
+		end, PrepHosts)
+      end),
     add_option(hosts, PrepHosts, State#state{hosts = PrepHosts}).
 
 normalize_hosts(Hosts) ->
@@ -379,6 +402,8 @@ process_term(Term, State) ->
 	{host_config, Host, Terms} ->
 	    lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
 			State, Terms);
+	{clusterid, ClusterID} ->
+	    add_option(clusterid, ClusterID, State);
 	{listen, Listeners} ->
 	    Listeners2 =
 		lists:map(
@@ -443,8 +468,7 @@ process_term(Term, State) ->
 	{max_fsm_queue, N} ->
 	    add_option(max_fsm_queue, N, State);
 	{_Opt, _Val} ->
-	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
-			State, State#state.hosts)
+	    process_host_term(Term, global, State)
     end.
 
 process_host_term(Term, Host, State) ->
@@ -569,10 +593,11 @@ add_global_option(Opt, Val) ->
 		       end).
 
 add_local_option(Opt, Val) ->
-    mnesia:transaction(fun() ->
-			       mnesia:write(#local_config{key = Opt,
-							  value = Val})
-		       end).
+    mnesia:transaction(fun mne_add_local_option/2, [Opt, Val]).
+
+mne_add_local_option(Opt, Val) ->
+    mnesia:write(#local_config{key = Opt,
+                               value = Val}).
 
 del_global_option(Opt) ->
     mnesia:transaction(fun() ->
@@ -585,6 +610,13 @@ del_local_option(Opt) ->
 		       end).
 
 
+get_global_option({Opt1, Host} = Opt) when is_list(Host) ->
+    case ets:lookup(config, Opt) of
+	[#config{value = Val}] ->
+	    Val;
+	_ ->
+	    get_global_option({Opt1, global})
+    end;
 get_global_option(Opt) ->
     case ets:lookup(config, Opt) of
 	[#config{value = Val}] ->
@@ -593,6 +625,13 @@ get_global_option(Opt) ->
 	    undefined
     end.
 
+get_local_option({Opt1, Host} = Opt) when is_list(Host) ->
+    case ets:lookup(local_config, Opt) of
+	[#local_config{value = Val}] ->
+	    Val;
+	_ ->
+	    get_local_option({Opt1, global})
+    end;
 get_local_option(Opt) ->
     case ets:lookup(local_config, Opt) of
 	[#local_config{value = Val}] ->
@@ -600,6 +639,17 @@ get_local_option(Opt) ->
 	_ ->
 	    undefined
     end.
+
+get_host_option(Host, Option) ->
+    case ets:lookup(local_config, {Option, Host}) of
+        [#local_config{value=V}] -> V;
+        _ -> undefined
+    end.
+
+mne_del_local_option({_OptName, Host} = Opt) when is_list(Host) ->
+    mnesia:delete({local_config, Opt});
+mne_del_local_option({Host, host} = Opt) when is_list(Host) ->
+    mnesia:delete({local_config, Opt}).
 
 %% Return the list of hosts handled by a given module
 get_vh_by_auth_method(AuthMethod) ->
@@ -619,3 +669,54 @@ is_file_readable(Path) ->
 	{error, _Reason} ->
 	    false
     end.
+
+search(Pattern) ->
+    {atomic, Res} = mnesia:transaction(fun mnesia:select/2, [local_config, Pattern]),
+    Res.
+
+for_host(Host) ->
+    mnesia:read({local_config, {Host, host}})
+        ++ mnesia:select(local_config,
+                  ets:fun2ms(fun (#local_config{key={_, H}})
+                                 when H =:= Host ->
+                                     object()
+                             end))
+        ++ acl:for_host(Host).
+
+delete_host(Host) ->
+    mnesia_delete_objects(for_host(Host)),
+    ok.
+
+configure_host(Host, Config) ->
+    HostExistenceTerm = {{Host, host}, []},
+    Records = host_terms_to_records(Host, [HostExistenceTerm | Config]),
+    mnesia_write_objects(Records),
+    ok.
+
+host_terms_to_records(Host, Terms) ->
+    lists:foldl(fun (Term, Acc) ->
+                        host_term_to_record(Term, Host, Acc)
+                end, [], Terms).
+
+host_term_to_record({acl, ACLName, ACLData}, Host, Acc) ->
+    [acl:to_record(Host, ACLName, ACLData) | Acc];
+host_term_to_record({access, RuleName, Rules}, Host, Acc) ->
+    [#config{key={access, RuleName, Host}, value=Rules} | Acc];
+host_term_to_record({shaper, Name, Data}, Host, Acc) ->
+    [#config{key={shaper, Name, Host}, value=Data} | Acc];
+host_term_to_record({host, _}, _Host, Acc) -> Acc;
+host_term_to_record({hosts, _}, _Host, Acc) -> Acc;
+host_term_to_record({{Host, host}, []}, Host, Acc) ->
+    [#local_config{key={Host, host}, value=[]} | Acc];
+host_term_to_record({Opt, Val}, Host, Acc) when is_atom(Opt) ->
+    [#local_config{key={Opt, Host}, value=Val} | Acc].
+
+    
+mnesia_delete_objects(List) when is_list(List) ->
+    true = lists:all(fun (I) ->
+                             ok =:= mnesia:delete_object(I)
+                     end, List).
+mnesia_write_objects(List) when is_list(List) ->
+    true = lists:all(fun (I) ->
+                             ok =:= mnesia:write(I)
+                     end, List).

@@ -165,7 +165,7 @@ process(["doc", LocalFile], _Request) ->
 
 process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, host = HostHTTP, method = Method} = Request) ->
     Host = exmpp_stringprep:nameprep(SHost),
-    case lists:member(Host, ?MYHOSTS) of
+    case ?IS_MY_HOST(Host) of
 	true ->
 	    case get_auth_admin(Auth, HostHTTP, Path, Method) of
 		{ok, {User, Server}} ->

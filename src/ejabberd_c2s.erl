@@ -315,7 +315,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 	    ServerB = exmpp_stringprep:nameprep(
 	      exmpp_stream:get_receiving_entity(Opening)),
         Server = binary_to_list(ServerB),
-	    case lists:member(Server, ?MYHOSTS) of
+	    case ?IS_MY_HOST(Server) of
 		true ->
 		    Lang = exmpp_stream:get_lang(Opening),
 		    change_shaper(StateData,

@@ -29,6 +29,7 @@
 
 %% External exports
 -export([start/1,
+	 stop/1,
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
@@ -55,8 +56,14 @@
 %% @spec (Host) -> ok
 %%     Host = string()
 
-start(_Host) ->
-    ok.
+start(Host) ->
+    case ejabberd_odbc:running(Host) of
+	true -> ok;
+	false -> ejabberd_rdbms:start_odbc(Host)
+    end.
+  
+stop(Host) ->
+    ejabberd_rdbms:stop_odbc(Host).
 
 %% @spec () -> bool()
 

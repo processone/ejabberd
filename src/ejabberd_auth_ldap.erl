@@ -72,7 +72,6 @@
 		base,
 		uids,
 		ufilter,
-		sfilter,
 		lfilter, %% Local filter (performed by ejabberd, not LDAP)
 		dn_filter,
 		dn_filter_attrs
@@ -99,21 +98,41 @@ handle_info(_Info, State) ->
 %%     Host = string()
 
 start(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    ChildSpec = {
-      Proc, {?MODULE, start_link, [Host]},
-      transient, 1000, worker, [?MODULE]
-     },
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    ?DEBUG("Starting ~p for ~p.", [?MODULE, Host]),
+    case ejabberd_config:get_host_option(Host, ldap_servers) of
+	undefined -> check_bad_config(Host);
+	{host, _Host} -> ok;
+	_ ->
+	    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+	    ChildSpec = {
+		Proc, {?MODULE, start_link, [Host]},
+		transient, 1000, worker, [?MODULE]
+	    },
+	    supervisor:start_child(ejabberd_sup, ChildSpec)
+    end.
+
+check_bad_config(Host) ->
+    case ejabberd_config:get_local_option({ldap_servers, Host}) of
+	undefined ->
+	    ?ERROR_MSG("Can't start ~p for host ~p: missing ldap_servers configuration",
+	               [?MODULE, Host]),
+	    {error, bad_config};
+	_ -> ok
+    end.
 
 %% @spec (Host) -> term()
 %%     Host = string()
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    case ejabberd_config:get_host_option(Host, ldap_servers) of
+	undefined -> ok;
+	{host, _Host} -> ok;
+	_ ->
+	    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+	    gen_server:call(Proc, stop),
+	    supervisor:terminate_child(ejabberd_sup, Proc),
+	    supervisor:delete_child(ejabberd_sup, Proc)
+    end.
 
 %% @spec (Host) -> term()
 %%     Host = string()
@@ -190,7 +209,7 @@ check_password(User, Server, Password, _Digest, _DigestGen) ->
 
 set_password(User, Server, Password) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
-    case find_user_dn(User, State) of
+    case find_user_dn(User, Server, State) of
 	false ->
 	    {error, user_not_found};
 	DN ->
@@ -285,8 +304,8 @@ remove_user(_User, _Server, _Password) ->
 %%     Password = string()
 
 check_password_ldap(User, Server, Password) ->
-	{ok, State} = eldap_utils:get_state(Server, ?MODULE),
-	case find_user_dn(User, State) of
+    {ok, State} = get_state(Server),
+    case find_user_dn(User, Server, State) of
 	false ->
 	    false;
 	DN ->
@@ -294,7 +313,21 @@ check_password_ldap(User, Server, Password) ->
 		ok -> true;
 		_ -> false
 	    end
-	end.
+    end.
+
+%% We need an ?MODULE server state to use for queries. This will
+%% either be Server if this is a statically configured host or the
+%% Server for a different host if this is a dynamically configured
+%% vhost.
+%% The {ldap_vhost, Server} -> Host. ejabberd config option specifies
+%% which actual ?MODULE server to use for a particular Host. The value
+%% of the option if it is defined or Server by default.
+get_state(Server) ->
+    Host = case ejabberd_config:get_local_option({ldap_servers, Server}) of
+	    {host, H} -> H;
+	    _ -> Server
+	end,
+    eldap_utils:get_state(Host, ?MODULE).
 
 %% @spec (Server) -> [{LUser, LServer}]
 %%     Server = string()
@@ -303,11 +336,11 @@ check_password_ldap(User, Server, Password) ->
 
 get_vh_registered_users_ldap(Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
-    UIDs = State#state.uids,
+    UIDs = eldap_utils:uids_domain_subst(Server, State#state.uids),
     Eldap_ID = State#state.eldap_id,
-    Server = State#state.host,
+    SearchFilter = build_sfilter(State, UIDs),
     ResAttrs = result_attrs(State),
-    case eldap_filter:parse(State#state.sfilter) of
+    case eldap_filter:parse(SearchFilter) of
 		{ok, EldapFilter} ->
 		    case eldap_pool:search(Eldap_ID, [{base, State#state.base},
 						 {filter, EldapFilter},
@@ -317,7 +350,7 @@ get_vh_registered_users_ldap(Server) ->
 			    lists:flatmap(
 			      fun(#eldap_entry{attributes = Attrs,
 					       object_name = DN}) ->
-				      case is_valid_dn(DN, Attrs, State) of
+				      case is_valid_dn(DN, Server, Attrs, State) of
 					  false -> [];
 					  _ ->
 					      case eldap_utils:find_ldap_attrs(UIDs, Attrs) of
@@ -349,7 +382,7 @@ get_vh_registered_users_ldap(Server) ->
 
 is_user_exists_ldap(User, Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
-    case find_user_dn(User, State) of
+    case find_user_dn(User, Server, State) of
 		false -> false;
 		_DN -> true
 	end.
@@ -363,16 +396,17 @@ handle_call(stop, _From, State) ->
 handle_call(_Request, _From, State) ->
     {reply, bad_request, State}.
 
-find_user_dn(User, State) ->
+find_user_dn(User, Server, State) ->
     ResAttrs = result_attrs(State),
-    case eldap_filter:parse(State#state.ufilter, [{"%u", User}]) of
+    UserFilter = build_ufilter(State, Server),
+    case eldap_filter:parse(UserFilter, [{"%u", User}]) of
 	{ok, Filter} ->
 	    case eldap_pool:search(State#state.eldap_id, [{base, State#state.base},
 						     {filter, Filter},
 						     {attributes, ResAttrs}]) of
 		#eldap_search_result{entries = [#eldap_entry{attributes = Attrs,
 							     object_name = DN} | _]} ->
-			dn_filter(DN, Attrs, State);
+			dn_filter(DN, Server, Attrs, State);
 		_ ->
 		    false
 	    end;
@@ -381,20 +415,20 @@ find_user_dn(User, State) ->
     end.
 
 %% apply the dn filter and the local filter:
-dn_filter(DN, Attrs, State) ->
+dn_filter(DN, Server, Attrs, State) ->
     %% Check if user is denied access by attribute value (local check)
     case check_local_filter(Attrs, State) of
         false -> false;
-        true -> is_valid_dn(DN, Attrs, State)
+        true -> is_valid_dn(DN, Server, Attrs, State)
     end.
 
 %% Check that the DN is valid, based on the dn filter
-is_valid_dn(DN, _, #state{dn_filter = undefined}) ->
+is_valid_dn(DN, _, _, #state{dn_filter = undefined}) ->
     DN;
 
-is_valid_dn(DN, Attrs, State) ->
+is_valid_dn(DN, Server, Attrs, State) ->
     DNAttrs = State#state.dn_filter_attrs,
-    UIDs = State#state.uids,
+    UIDs = eldap_utils:uids_domain_subst(Server, State#state.uids),
     Values = [{"%s", eldap_utils:get_ldap_attr(Attr, Attrs), 1} || Attr <- DNAttrs],
     SubstValues = case eldap_utils:find_ldap_attrs(UIDs, Attrs) of
 		      "" -> Values;
@@ -449,6 +483,22 @@ result_attrs(#state{uids = UIDs, dn_filter_attrs = DNFilterAttrs}) ->
 	      [UID | Acc]
       end, DNFilterAttrs, UIDs).
 
+build_ufilter(State, VHost) ->
+    UIDs = eldap_utils:uids_domain_subst(VHost, State#state.uids),
+    SubFilter = lists:flatten(eldap_utils:generate_subfilter(UIDs)),
+    case State#state.ufilter of
+	"" -> SubFilter;
+	F -> "(&" ++ SubFilter ++ F ++ ")"
+    end.
+
+build_sfilter(State, FormattedUIDs) ->
+    SubFilter = lists:flatten(eldap_utils:generate_subfilter(FormattedUIDs)),
+    UserFilter = case State#state.ufilter of
+		     "" -> SubFilter;
+		     F -> "(&" ++ SubFilter ++ F ++ ")"
+		 end,
+    eldap_filter:do_sub(UserFilter, [{"%u", "*"}]).
+
 %%%----------------------------------------------------------------------
 %%% Auxiliary functions
 %%%----------------------------------------------------------------------
@@ -480,15 +530,12 @@ parse_options(Host) ->
 	       end,
     UIDs = case ejabberd_config:get_local_option({ldap_uids, Host}) of
 	       undefined -> [{"uid", "%u"}];
-	       UI -> eldap_utils:uids_domain_subst(Host, UI)
+	       UI -> UI
 	   end,
-    SubFilter = lists:flatten(eldap_utils:generate_subfilter(UIDs)),
     UserFilter = case ejabberd_config:get_local_option({ldap_filter, Host}) of
-		     undefined -> SubFilter;
-		     "" -> SubFilter;
-		     F -> "(&" ++ SubFilter ++ F ++ ")"
+		     undefined -> "";
+		     F -> F
 		 end,
-    SearchFilter = eldap_filter:do_sub(UserFilter, [{"%u", "*"}]),
     LDAPBase = ejabberd_config:get_local_option({ldap_base, Host}),
     {DNFilter, DNFilterAttrs} =
 	case ejabberd_config:get_local_option({ldap_dn_filter, Host}) of
@@ -513,7 +560,6 @@ parse_options(Host) ->
 	   base = LDAPBase,
 	   uids = UIDs,
 	   ufilter = UserFilter,
-	   sfilter = SearchFilter,
 	   lfilter = LocalFilter,
 	   dn_filter = DNFilter,
 	   dn_filter_attrs = DNFilterAttrs
