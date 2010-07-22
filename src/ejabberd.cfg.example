@@ -80,14 +80,24 @@
 %%{watchdog_admins, ["bob@example.com"]}.
 
 
+%%%.   =====================
+%%%'   CLUSTER CONFIGURATION
+
+%% clusterid - the integer id of the cluster of nodes this node will
+%% belong to.
+{clusterid, 1}.
+
+
 %%%.   ================
 %%%'   SERVED HOSTNAMES
 
 %%
 %% hosts: Domains served by ejabberd.
 %% You can define one or several, for example:
-%% {hosts, ["example.net", "example.com", "example.org"]}.
+%% {hosts, ["localhost", "example.net", "example.com", "example.org"]}.
 %%
+%% Additional hosts will be discovered from the 'hosts' database table
+%% configured for the first host.
 {hosts, ["localhost"]}.
 
 %%
@@ -212,11 +222,19 @@
 
 %%
 %% auth_method: Method used to authenticate the users.
-%% The default method is the internal.
+%% The default method is the internal Mnesia database storage.
 %% If you want to use a different method,
-%% comment this line and enable the correct ones.
+%% comment those lines and enable the desired lines later.
 %%
-{auth_method, internal}.
+{auth_method, storage}.
+{auth_storage, mnesia}.
+
+%%
+%% Authentication using ODBC
+%% Remember to setup a database in the next section.
+%%
+%%{auth_method, storage}.
+%%{auth_storage, odbc}.
 
 %%
 %% Authentication using external script
@@ -224,12 +242,6 @@
 %%
 %%{auth_method, external}.
 %%{extauth_program, "/path/to/authentication/script"}.
-
-%%
-%% Authentication using ODBC
-%% Remember to setup a database in the next section.
-%%
-%%{auth_method, odbc}.
 
 %%
 %% Authentication using PAM
@@ -292,22 +304,32 @@
 %% you want to use other database backends.
 %% Please consult the ejabberd Guide for details on database creation.
 
+%% Template host ODBC configuration.
+%% The host specified here will be used by default for all discovered vhosts.
+%% The actual ODBC server configuration must be provided in a host_config directive.
+{odbc_server, {host, "localhost"}}.
+
+{host_config, "localhost",
+ [
 %%
 %% MySQL server:
 %%
-%%{odbc_server, {mysql, "server", "database", "username", "password"}}.
+%%{odbc_server, {mysql, "server", "database", "username", "password"}}
 %%
 %% If you want to specify the port:
-%%{odbc_server, {mysql, "server", 1234, "database", "username", "password"}}.
+%%{odbc_server, {mysql, "server", 1234, "database", "username", "password"}}
 
 %%
 %% PostgreSQL server:
 %%
-%%{odbc_server, {pgsql, "server", "database", "username", "password"}}.
+%%{odbc_server, {pgsql, "server", "database", "username", "password"}}
 %%
 %% If you want to specify the port:
-%%{odbc_server, {pgsql, "server", 1234, "database", "username", "password"}}.
+%%{odbc_server, {pgsql, "server", 1234, "database", "username", "password"}}
 %%
+ ]
+}.
+
 %% If you use PostgreSQL, have a large database, and need a
 %% faster but inexact replacement for "select count(*) from users"
 %%
@@ -479,17 +501,19 @@
 %%}.
 
 
-%%%.   =======
-%%%'   MODULES
+%%%.   ================
+%%%'   INSTANCE MODULES
 
 %%
-%% Modules enabled in all ejabberd virtual hosts.
+%% Modules to start for every virtual host.
+%%
+%% Note: One copy of each module will be started for each host.
 %%
 {modules,
  [
   {mod_adhoc,    []},
   {mod_announce, [{access, announce}]}, % recommends mod_adhoc
-  {mod_caps,     []},
+  {mod_caps,     []}, % 1 proc/host
   {mod_configure,[]}, % requires mod_adhoc
   {mod_disco,    []},
   %%{mod_echo,   [{host, "echo.localhost"}]},
@@ -499,13 +523,13 @@
   %%                       {accesslog, "/var/log/ejabberd/access.log"}
   %%                      ]},
   {mod_last,     []},
-  {mod_muc,      [
-		  %%{host, "conference.@HOST@"},
-		  {access, muc},
-		  {access_create, muc_create},
-		  {access_persistent, muc_create},
-		  {access_admin, muc_admin}
-		 ]},
+  {mod_muc,      [ % 1 proc/host
+  		  {host, "conference.@HOST@"},
+  		  {access, muc},
+  		  {access_create, muc_create},
+  		  {access_persistent, muc_create},
+  		  {access_admin, muc_admin}
+  		 ]},
   %%{mod_muc_log,[]},
   %%{mod_multicast,[]},
   {mod_offline,  [{access_max_user_messages, max_user_offline_messages}]},
@@ -513,13 +537,13 @@
   {mod_privacy,  []},
   {mod_private,  []},
   %%{mod_proxy65,[]},
-  {mod_pubsub,   [
-		  {access_createnode, pubsub_createnode},
-		  {ignore_pep_from_offline, true}, % reduces resource comsumption, but XEP incompliant
-		  %%{ignore_pep_from_offline, false},  % XEP compliant, but increases resource comsumption
-		  {last_item_cache, false},
-		  {plugins, ["flat", "pep"]}  % pep requires mod_caps
-		 ]},
+  %%{mod_pubsub, [ % 1 proc/host
+  %%		  {access_createnode, pubsub_createnode},
+  %%		  {ignore_pep_from_offline, true}, % reduces resource comsumption, but XEP incompliant
+  %%		  %%{ignore_pep_from_offline, false},  % XEP compliant, but increases resource comsumption
+  %%		  {last_item_cache, false},
+  %%		  {plugins, ["flat", "pep"]}  % pep requires mod_caps
+  %%		 ]},
   {mod_register, [
 		  %%
 		  %% After successful registration, the user receives
@@ -541,9 +565,27 @@
   {mod_shared_roster,[]},
   {mod_stats,    []},
   {mod_time,     []},
-  {mod_vcard,    []},
+  {mod_vcard,    []}, % 1 proc/host
   {mod_version,  []}
  ]}.
+
+
+%%%.
+%%%'   STATIC MODULES
+
+%%
+%% Modules to start for the global virtual host ("localhost").
+%%
+%% The functionality of these modules will be enabled in all ejabberd
+%% virtual hosts without consuming more resources.
+%%
+{static_modules,
+ [
+ ]}.
+
+
+%%%.
+%%%'   HOST SPECIFIC MODULES
 
 %%
 %% Enable modules with custom options in a specific virtual host
