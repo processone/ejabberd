@@ -133,17 +133,19 @@ store_room(Host, Name, Opts) when is_binary(Host), is_binary(Name) ->
 					    {_, _} = A -> A;
 					    A when is_atom(A) -> {A, ""}
 					end,
+				    {Username, Server, Resource} = JID,
 				    gen_storage:write(
 				      Host,
 				      #muc_room_affiliation{name_host = {Name, Host},
-							    jid = jlib:make_jid(JID),
+							    jid = exmpp_jid:make(Username, Server, Resource),
 							    affiliation = Affiliation,
 							    reason = Reason})
 			    end, Affiliations);
 		     ({Opt, Val}) ->
 			  ValS = if
 				     is_integer(Val) -> integer_to_list(Val);
-				     is_list(Val);
+				     is_binary(Val) -> binary_to_list(Val);
+				     is_list(Val) -> Val;
 				     is_atom(Val) -> Val
 				 end,
 			  gen_storage:write(Host,
@@ -194,7 +196,7 @@ restore_room_internal(Host, Name) ->
 				  "" -> Affiliation;
 				  _ -> {Affiliation, Reason}
 			      end,
-			  {jlib:jid_tolower(JID), A}
+			  {jlib:short_prepd_jid(JID), A}
 		  end, RoomAffiliations),
     [{affiliations, Affiliations} | Opts].
 
@@ -646,7 +648,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 start_new_room(Host, ServerHost, Access, Room,
 	       HistorySize, RoomShaper, From,
 	       Nick, DefRoomOpts) ->
-    case gen_storage:read(Host, {muc_room_opt, {Room, Host}}) of
+    case gen_storage:dirty_read(Host, {muc_room_opt, {Room, Host}}) of
 	[] ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access,
@@ -711,7 +713,7 @@ iq_disco_items(Host, From, Lang, none) when is_binary(Host) ->
 			     flush(),
 			     {true,
 			      {xmlelement, "item",
-			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
+			       [{"jid", exmpp_jid:to_list(Name, Host, "")},
 				{"name", Desc}], []}};
 			 _ ->
 			     false
@@ -735,7 +737,7 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			 _ ->
 			     false
 		     end
-	     end, get_vh_rooms_all_nodes(Host)).
+	     end, Rooms) ++ RsmOut.
 
 get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
     AllRooms = get_vh_rooms_all_nodes(Host),

@@ -44,7 +44,7 @@
 -include_lib("exmpp/include/exmpp_client.hrl").
 
 %% Copied from mod_private.erl
--record(private_storage, {usns, xml}).
+-record(private_storage, {user_host_ns, xml}).
 
 %%-define(ERROR_MSG(M,Args),io:format(M,Args)).
 %%-define(INFO_MSG(M,Args),ok).
@@ -465,7 +465,7 @@ make_xinclude(Fn) ->
 %% @doc Extract user information and print it.
 export_user(Fd, Username, Host) ->
     try extract_user(Username, Host) of
-	UserString ->
+	UserString when is_list(UserString) ->
 	    print(Fd, UserString)
     catch
 	E1:E2 ->
@@ -543,7 +543,7 @@ extract_user_info(vcard, Username, Host) ->
 %%%% Interface with ejabberd offline storage
 
 %% Copied from mod_offline.erl and customized
--record(offline_msg, {us, timestamp, expire, from, to, packet}).
+-record(offline_msg, {user_host, timestamp, expire, from, to, packet}).
 mnesia_pop_offline_messages(Ls, User, Server) ->
     try
 	LUser = User,
@@ -556,31 +556,31 @@ mnesia_pop_offline_messages(Ls, User, Server) ->
 	    end,
 	case mnesia:transaction(F) of
 	    {atomic, Rs} ->
-		TS = now(),
+		TS = make_timestamp(),
 		Ls ++ lists:map(
 			fun(R) ->
-				Packet = R#offline_msg.packet,
+				[Packet] = exmpp_xml:parse_document(R#offline_msg.packet, [names_as_atom]),
 				FromString = exmpp_jid:prep_to_list(R#offline_msg.from),
 				Packet2 = exmpp_xml:set_attribute(Packet, "from", FromString),
 				Packet3 = Packet2#xmlel{ns = ?NS_JABBER_CLIENT},
 				exmpp_xml:append_children(
 				  Packet3,
 				  [jlib:timestamp_to_xml(
-				     calendar:now_to_universal_time(
+				     calendar:gregorian_seconds_to_datetime(
 				       R#offline_msg.timestamp),
 				     utc,
 				     exmpp_jid:make("", Server, ""),
 				     "Offline Storage"),
 				   %% TODO: Delete the next three lines once XEP-0091 is Obsolete
 				   jlib:timestamp_to_xml(
-				     calendar:now_to_universal_time(
+				     calendar:gregorian_seconds_to_datetime(
 				       R#offline_msg.timestamp))]
 				 )
 			end,
 			lists:filter(
 			  fun(R) ->
 				  case R#offline_msg.expire of
-				      never ->
+				      0 ->
 					  true;
 				      TimeStamp ->
 					  TS < TimeStamp
@@ -595,15 +595,18 @@ mnesia_pop_offline_messages(Ls, User, Server) ->
 	    Ls
     end.
 
+make_timestamp() ->
+    {MegaSecs, Secs, _MicroSecs} = now(),
+    MegaSecs * 1000000 + Secs.
 
 %%%==================================
 %%%% Interface with ejabberd private storage
 
 get_user_private_mnesia(Username, Host) ->
     ListNsEl = mnesia:dirty_select(private_storage,
-				   [{#private_storage{usns={?LTB(Username), ?LTB(Host), '$1'}, xml = '$2'},
+				   [{#private_storage{user_host_ns={?LTB(Username), ?LTB(Host), '$1'}, xml = '$2'},
 				     [], ['$$']}]),
-    Els = [exmpp_xml:document_to_list(El) || [_Ns, El] <- ListNsEl],
+    Els = [lists:flatten(exmpp_xml:document_to_list(El)) || [_Ns, El] <- ListNsEl],
     case lists:flatten(Els) of
 	"" -> "";
 	ElsString ->

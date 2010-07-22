@@ -296,8 +296,8 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
     Message = io_lib:format("~s~n~s", [Subject, AnnouncementText]),
     lists:foreach(
       fun(ServerHost) ->
-	      MUCHost = gen_mod:expand_host_name(
-			  ServerHost, mod_muc, "conference"),
+	      MUCHost = gen_mod:get_module_opt_host(
+			  ServerHost, mod_muc, "conference.@HOST@"),
 	      MUCHostB = list_to_binary(MUCHost),
 	      mod_muc:broadcast_service_message(MUCHostB, Message)
       end,

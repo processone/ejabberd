@@ -327,7 +327,7 @@ run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
 		       [Reason, {Hook, Args}]),
 	    run1(Ls, Hook, Args);
 	stop ->
-	    ok;
+	    stop;
 	_ ->
 	    run1(Ls, Hook, Args)
     end.

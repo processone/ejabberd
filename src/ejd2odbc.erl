@@ -30,6 +30,7 @@
 %% External exports
 -export([export_passwd/2,
 	 export_roster/2,
+	 export_roster_group/2,
 	 export_offline/2,
 	 export_last/2,
 	 export_vcard/2,
@@ -41,10 +42,10 @@
 -include("ejabberd.hrl").
 -include("mod_roster.hrl").
 
--record(offline_msg, {us, timestamp, expire, from, to, packet}).
--record(last_activity, {us, timestamp, status}).
--record(vcard, {us, vcard}).
--record(vcard_search, {us,
+-record(offline_msg, {user_host, timestamp, expire, from, to, packet}).
+-record(last_activity, {user_host, timestamp, status}).
+-record(vcard, {user_host, vcard}).
+-record(vcard_search, {user_host,
 		       user,     luser,
 		       fn,	 lfn,
 		       family,	 lfamily,
@@ -58,7 +59,7 @@
 		       orgname,	 lorgname,
 		       orgunit,	 lorgunit
 		      }).
--record(private_storage, {usns, xml}).
+-record(private_storage, {user_host_ns, xml}).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 1000).
 
@@ -79,9 +80,9 @@ export_passwd(Server, Output) ->
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      Pass = ejabberd_odbc:escape(Password),
-	      ["delete from users where username='", Username ,"';"
-	       "insert into users(username, password) "
-	       "values ('", Username, "', '", Pass, "');"];
+	      ["delete from users where host='", Server, "' and username='", Username ,"';\n"
+	       "insert into users(host, username, password) "
+	       "values ('", Server, "', '", Username, "', '", Pass, "');\n"];
 	 (_Host, _R) ->
 	      []
       end).
@@ -89,28 +90,37 @@ export_passwd(Server, Output) ->
 export_roster(ServerS, Output) ->
     Server = list_to_binary(ServerS),
     export_common(
-      Server, roster, Output,
-      fun(Host, #roster{usj = {LUser, LServer, {N, D, Res} = _LJID}} = R)
+      Server, rosteritem, Output,
+      fun(Host, #rosteritem{user_host_jid = {LUser, LServer, {N, D, Res} = _LJID}} = R)
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, Res)),
-	      ItemVals = record_to_string(R),
-	      ItemGroups = groups_to_string(R),
+	      ItemVals = record_to_string(R, ServerS),
 	      ["delete from rosterusers "
 	       "      where username='", Username, "' "
-	       "        and jid='", SJID, "';"
+	       "        and jid='", SJID, "';\n"
 	       "insert into rosterusers("
-	       "              username, jid, nick, "
+	       "              host, username, jid, nick, "
 	       "              subscription, ask, askmessage, "
 	       "              server, subscribe, type) "
-	       " values ", ItemVals, ";"
-	       "delete from rostergroups "
-	       "      where username='", Username, "' "
-	       "        and jid='", SJID, "';",
-	       [["insert into rostergroups("
-		 "              username, jid, grp) "
-		 " values ", ItemGroup, ";"] ||
-		   ItemGroup <- ItemGroups]];
+	       " values ", ItemVals, ";\n"];
+	 (_Host, _R) ->
+	      []
+      end).
+
+export_roster_group(ServerS, Output) ->
+    Server = list_to_binary(ServerS),
+    export_common(
+      Server, rostergroup, Output,
+      fun(Host, #rostergroup{user_host_jid = {_LUser, LServer, _LJID}} = R)
+	 when LServer == Host ->
+	      ItemGroup = group_to_string(R, ServerS),
+	      [%%"delete from rostergroups"
+	       %%" where username='", Username, "'"
+	       %%" and host='", ServerS, "'"
+	       %%" and jid='", SJID, "';"
+	       "insert into rostergroups(host, username, jid, grp)"
+	       " values ", ItemGroup, ";\n"];
 	 (_Host, _R) ->
 	      []
       end).
@@ -118,33 +128,34 @@ export_roster(ServerS, Output) ->
 export_offline(Server, Output) ->
     export_common(
       Server, offline_msg, Output,
-      fun(Host, #offline_msg{us = {LUser, LServer},
+      fun(Host, #offline_msg{user_host = {LUser, LServer},
 			     timestamp = TimeStamp,
 			     from = From,
 			     to = To,
-			     packet = Packet})
+			     packet = PacketString})
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
+	      [Packet] = exmpp_xml:parse_document(PacketString, [names_as_atom]), 
 	      Packet0 = exmpp_stanza:set_jids(Packet,
 		exmpp_jid:to_list(From),
 		exmpp_jid:to_list(To)),
 	      Packet0b = exmpp_xml:append_child(Packet0,
 			   jlib:timestamp_to_xml(
-			      calendar:now_to_universal_time(TimeStamp), 
+			      calendar:gregorian_seconds_to_datetime(TimeStamp), 
 			      utc,
 			      exmpp_jid:make("", Server, ""),
 			      "Offline Storage")),
 	      %% TODO: Delete the next three lines once XEP-0091 is Obsolete
 	      Packet1 = exmpp_xml:append_child(Packet0b,
 		jlib:timestamp_to_xml(
-                  calendar:now_to_universal_time(TimeStamp))),
+                  calendar:gregorian_seconds_to_datetime(TimeStamp))),
 	      XML =
 		  ejabberd_odbc:escape(
 		    exmpp_xml:document_to_list(Packet1)),
-	      ["insert into spool(username, xml) "
-	       "values ('", Username, "', '",
+	      ["insert into spool(host, username, xml) "
+	       "values ('", Server, "', '", Username, "', '",
 	       XML,
-	       "');"];
+	       "');\n"];
 	 (_Host, _R) ->
 	      []
       end).
@@ -153,16 +164,16 @@ export_last(ServerS, Output) ->
     Server = list_to_binary(ServerS),
     export_common(
       Server, last_activity, Output,
-      fun(Host, #last_activity{us = {LUser, LServer},
+      fun(Host, #last_activity{user_host = {LUser, LServer},
 			       timestamp = TimeStamp,
 			       status = Status})
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
 	      State = ejabberd_odbc:escape(Status),
-	      ["delete from last where username='", Username, "';"
+	      ["delete from last where host='", ServerS, "' and username='", Username, "';\n"
 	       "insert into last(username, seconds, state) "
-	       "values ('", Username, "', '", Seconds, "', '", State, "');"];
+	       "values ('", Username, "', '", Seconds, "', '", State, "');\n"];
 	 (_Host, _R) ->
 	      []
       end).
@@ -170,15 +181,15 @@ export_last(ServerS, Output) ->
 export_vcard(Server, Output) ->
     export_common(
       Server, vcard, Output,
-      fun(Host, #vcard{us = {LUser, LServer},
+      fun(Host, #vcard{user_host = {LUser, LServer},
 		       vcard = VCARD})
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      SVCARD = ejabberd_odbc:escape(
 			 exmpp_xml:document_to_list(VCARD)),
-	      ["delete from vcard where username='", Username, "';"
-	       "insert into vcard(username, vcard) "
-	       "values ('", Username, "', '", SVCARD, "');"];
+	      ["delete from vcard where host='", Server,"' and username='", Username, "';\n"
+	       "insert into vcard(host, username, vcard) "
+	       "values ('", Server, "', '", Username, "', '", SVCARD, "');\n"];
 	 (_Host, _R) ->
 	      []
       end).
@@ -227,7 +238,7 @@ export_vcard_search(Server, Output) ->
 	      SOrgUnit = ejabberd_odbc:escape(OrgUnit),
 	      SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
 
-	      ["delete from vcard_search where lusername='", LUsername, "';"
+	      ["delete from vcard_search where host='", Server, "' and lusername='", LUsername, "';\n"
 	       "insert into vcard_search("
 	       "        username, lusername, fn, lfn, family, lfamily,"
 	       "        given, lgiven, middle, lmiddle, nickname, lnickname,"
@@ -245,7 +256,7 @@ export_vcard_search(Server, Output) ->
 	       "        '", SLocality, "', '", SLLocality, "',"
 	       "        '", SEMail,    "', '", SLEMail,	 "',"
 	       "        '", SOrgName,  "', '", SLOrgName,  "',"
-	       "        '", SOrgUnit,  "', '", SLOrgUnit,  "');"];
+	       "        '", SOrgUnit,  "', '", SLOrgUnit,  "');\n"];
 	 (_Host, _R) ->
 	      []
       end).
@@ -254,7 +265,7 @@ export_private_storage(ServerS, Output) ->
     Server = list_to_binary(ServerS),
     export_common(
       Server, private_storage, Output,
-      fun(Host, #private_storage{usns = {LUser, LServer, XMLNS},
+      fun(Host, #private_storage{user_host_ns = {LUser, LServer, XMLNS},
 				 xml = Data})
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
@@ -295,7 +306,7 @@ export_common(Server, Table, Output, ConvertFun) ->
 					true ->
 					    %% Execute full SQL transaction
 					    output(LServer, IO,
-						   ["begin;",
+						   ["begin;\n",
 						    lists:reverse([SQL | SQLs]),
 						    "commit"]),
 					    {0, []}
@@ -304,7 +315,7 @@ export_common(Server, Table, Output, ConvertFun) ->
 		    end, {0, []}, Table),
 		  %% Execute SQL transaction with remaining records
 	      output(LServer, IO,
-		     ["begin;",
+		     ["begin;\n",
 		      lists:reverse(SQLs),
 		      "commit"])
       end).
@@ -317,11 +328,11 @@ output(LServer, IO, SQL) ->
 	    file:write(IO, [SQL, $;, $\n])
     end.
 
-record_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
+record_to_string(#rosteritem{user_host_jid = {User, _Server, {N, D, R} = _JID},
 			 name = Name,
 			 subscription = Subscription,
 			 ask = Ask,
-			 askmessage = AskMessage}) ->
+			 askmessage = AskMessage}, ServerS) ->
     Username = ejabberd_odbc:escape(User),
     SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, R)),
     Nick = ejabberd_odbc:escape(Name),
@@ -348,6 +359,7 @@ record_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
 		SAM
 	end,
     ["("
+     "'", ServerS, "',"
      "'", Username, "',"
      "'", SJID, "',"
      "'", Nick, "',"
@@ -356,11 +368,12 @@ record_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
      "'", SAskMessage, "',"
      "'N', '', 'item')"].
 
-groups_to_string(#roster{usj = {User, _Server, {N, D, R} = _JID},
-			 groups = Groups}) ->
+group_to_string(#rostergroup{user_host_jid = {User, _Server, {N, D, R} = _JID},
+			 grp = Group}, ServerS) ->
     Username = ejabberd_odbc:escape(User),
     SJID = ejabberd_odbc:escape(exmpp_jid:to_list(N, D, R)),
-    [["("
+    ["("
+      "'", ServerS, "',"
       "'", Username, "',"
       "'", SJID, "',"
-      "'", ejabberd_odbc:escape(Group), "')"] || Group <- Groups].
+      "'", ejabberd_odbc:escape(Group), "')"].

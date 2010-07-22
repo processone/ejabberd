@@ -98,7 +98,7 @@ register_mechanism(Mechanism, Module, RequirePlainPassword) ->
 %	    {error, "invalid-authzid"};
 %	JID ->
 %	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
-%	    {U, S, R} = jlib:jid_tolower(JID),
+%	    {U, S, R} = jlib:short_prepd_jid(JID),
 %	    case R of
 %		"" ->
 %		    {error, "invalid-authzid"};

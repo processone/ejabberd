@@ -1,9 +1,22 @@
 %%%-------------------------------------------------------------------
 %%% File    : ejabberd_hosts.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Description : Synchronises running VHosts with the hosts table in the database.
+%%% Description : Synchronises running VHosts with the hosts table in the Mnesia database.
 %%% Created : 16 Nov 2007 by Alexey Shchepin <alexey@process-one.net>
 %%%-------------------------------------------------------------------
+
+%%% Database schema (version / storage / table)
+%%%
+%%% 3.0.0-alpha-x / mnesia / hosts
+%%%  host = string()
+%%%  clusterid = integer()
+%%%  config = string() 
+%%%
+%%% 3.0.0-alpha-x / odbc / hosts
+%%%  host = varchar150
+%%%  clusterid = integer
+%%%  config = text 
+
 -module(ejabberd_hosts).
 
 -behaviour(gen_server).
@@ -50,7 +63,9 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 
 -record(state, {state=wait_odbc,
+                backend=mnesia,
                 odbc_wait_time=120}).
+-record(hosts, {host, clusterid, config}).
 
 -define(RELOAD_INTERVAL, timer:seconds(60)).
 -define(ODBC_STARTUP_TIME, 120). % 2minute limit for ODBC startup.
@@ -65,32 +80,25 @@ reload() ->
 %% Creates a vhost in the system.
 register(Host) when is_list(Host) -> ?MODULE:register(Host, "").
 register(Host, Config) when is_list(Host), is_list(Config) ->
-    true = jlib:is_nodename(Host),
-    ID = ejabberd_config:get_local_option(clusterid),
-    case ejabberd_odbc:sql_query(?MYNAME,
-                                 ["INSERT INTO hosts (clusterid,host,config) VALUES (",
-                                  integer_to_list(ID), ", '",Host,"','",Config,"')"]) of
-        {updated, 1} ->
-            reload(),
-            ok;
-        {error, E} -> {error, E}
-    end.
+    true = exmpp_stringprep:is_node(Host),
+    ID = get_clusterid(),
+    H = #hosts{host = Host, clusterid = ID, config = Config},
+    ok = gen_storage:dirty_write(Host, H),
+    reload(),
+    ok.
 
 %% Removes a vhost from the system,
 %% XXX deleting all ODBC data.
 remove(Host) when is_list(Host) ->
-    true = jlib:is_nodename(Host),
-    ID = ejabberd_config:get_local_option(clusterid),
-    case ejabberd_odbc:sql_query(?MYNAME,
-                                 ["DELETE FROM hosts "
-                                  "WHERE clusterid=",
-                                  integer_to_list(ID), " AND host='",Host,"'"]) of
-        {updated, 1} ->
-            reload(),
-            ok;
-        {updated, 0} -> {error, no_such_host};
-        {error, E} -> {error, E}
-    end.
+    true = exmpp_stringprep:is_node(Host),
+    ID = get_clusterid(),
+    gen_storage:dirty_delete_where(
+	Host, hosts,
+	[{'andalso',
+	    {'==', clusterid, ID},
+	    {'==', host, Host}}]),
+    reload(),
+    ok.
 
 registered() ->
     mnesia:dirty_select(local_config,
@@ -136,9 +144,11 @@ start_link() ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
+    Backend = mnesia, %%+++ TODO: allow to configure this in ejabberd.cfg
     configure_static_hosts(),
+    get_clusterid(), %% this is to report an error if the option wasn't configured
     %% Wait up to 120 seconds for odbc to start
-    {ok, #state{state=wait_odbc,odbc_wait_time=?ODBC_STARTUP_TIME}, timer:seconds(1)}.
+    {ok, #state{state=wait_odbc,backend=Backend,odbc_wait_time=?ODBC_STARTUP_TIME}, timer:seconds(1)}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -169,10 +179,27 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 %% Wait for odbc to start.
-handle_info(timeout, State = #state{state=wait_odbc,odbc_wait_time=N}) when N > 0 ->
-    case ejabberd_odbc:running(?MYNAME) of
+handle_info(timeout, State = #state{state=wait_odbc,backend=Backend,odbc_wait_time=N}) when N > 0 ->
+    case (Backend /= odbc) orelse ejabberd_odbc:running(?MYNAME) of
         true ->
             ?DEBUG("ejabberd_hosts: odbc now running.",[]),
+
+	    %% The table 'hosts' is defined in gen_storage as being for the "localhost" vhost
+	    Host = ?MYNAME,
+	    HostB = list_to_binary(Host),
+	    gen_storage:create_table(Backend, HostB, hosts,
+				     [{disc_only_copies, [node()]},
+				      {odbc_host, Host},
+				      {attributes, record_info(fields, hosts)},
+				      {types, [{host, text},
+					       {clusterid, int},
+					       {config, text}]}]),
+
+	    %% Now let's add the default vhost: "localhost"
+	    gen_storage:dirty_write(Host, #hosts{host = Host,
+							clusterid = 1,
+							config = ""}),
+
             self() ! reload,
             timer:send_interval(?RELOAD_INTERVAL, reload),
             {noreply, State#state{state=running,odbc_wait_time=0}};
@@ -305,35 +332,29 @@ stop_host(Host) ->
 %% Get the current vhost list from a variety of sources (ODBC, internal)
 get_hosts(ejabberd) -> ?MYHOSTS;
 get_hosts(odbc) ->
-    ClusterID = ejabberd_config:get_local_option(clusterid),
-    case ejabberd_odbc:sql_query(
-           ?MYNAME,
-           ["select host from hosts where clusterid = ",
-            integer_to_list(ClusterID)]) of
-        {selected, ["host"], SHosts} ->
-            lists:map(fun ({Host}) ->
-                              case jlib:nameprep(Host) of
+    ClusterID = get_clusterid(),
+    case gen_storage:dirty_select(?MYNAME, hosts, [{'=', clusterid, ClusterID}]) of
+            Hosts when is_list(Hosts) ->
+		lists:map(fun (#hosts{host = Host}) ->
+                              case exmpp_stringprep:nameprep(Host) of
                                   error ->
                                       erlang:error({bad_vhost_name, Host});
                                   Name ->
                                       Name
                               end
-                      end, SHosts);
-	E ->
-            erlang:error({get_hosts_odbc_error, E})
+                      end, Hosts);
+            E ->
+		erlang:error({get_hosts_error, E})
     end.
 
 %% Retreive the text format config for host Host from ODBC and covert
 %% it into a {host, Host, Config} tuple.
 get_host_config(odbc, Host) ->
-    case ejabberd_odbc:sql_query(
-           ?MYNAME,
-           ["select config from hosts where host = '",
-            Host, "'"]) of
-        {selected, ["config"], [{Config}]} ->
-            config_from_string(Host, Config);
-        {selected, ["config"], []} ->
+    case gen_storage:dirty_read(?MYNAME, hosts, Host) of
+        [] ->
             erlang:error({no_such_host, Host});
+        [H] ->
+            config_from_string(Host, H#hosts.config);
         E ->
             erlang:error({host_config_error, E})
     end.
@@ -400,4 +421,13 @@ reconfigure_host_cert(Host) ->
             ok;
         false ->
             no_cert
+    end.
+
+get_clusterid() ->
+    case ejabberd_config:get_local_option(clusterid) of
+	ID when is_integer(ID) ->
+	    ID;
+	Other ->
+	    ?ERROR_MSG("The option {clusterid, INTEGER}. was configured to: ~p", [Other]),
+	    1
     end.

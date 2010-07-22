@@ -490,6 +490,15 @@ process_host_term(Term, Host, State) ->
 	    State;
 	{odbc_server, ODBC_server} ->
 	    add_option({odbc_server, Host}, ODBC_server, State);
+	{auth_method, Methods} ->
+	    {Methods2, StorageOption} = replace_storage_auth(Host, Methods),
+	    State2 = case StorageOption of
+		{auth_storage, Storage} ->
+		    add_option({auth_storage, Host}, Storage, State);
+		undefined -> 
+		    State
+	    end,
+	    add_option({auth_method, Host}, Methods2, State2);
 	{Opt, Val} ->
 	    add_option({Opt, Host}, Val, State)
     end.
@@ -720,3 +729,35 @@ mnesia_write_objects(List) when is_list(List) ->
     true = lists:all(fun (I) ->
                              ok =:= mnesia:write(I)
                      end, List).
+
+%% Replace internal and odbc auth_methods with storage.
+%% Only one storage type can be used, either internal or odbc.
+replace_storage_auth(Host, Val) when not is_list(Val) ->
+    replace_storage_auth(Host, [Val]);
+replace_storage_auth(Host, Val) ->
+    replace_storage_auth(Host, Val, [], undefined).
+
+replace_storage_auth(_Host, [], Val2, Storage) ->
+    {lists:reverse(Val2), Storage};
+
+replace_storage_auth(Host, [internal = Val | ValT], Val2, undefined) ->
+    Storage = {auth_storage, mnesia},
+    ?WARNING_MSG("The auth method '~p' is deprecated.~nReplace it with 'storage'"
+		 " and also add this option: ~n~p.", [Val, Storage]),
+    replace_storage_auth(Host, ValT, [storage | Val2], Storage);
+
+replace_storage_auth(Host, [odbc = Val | ValT], Val2, undefined) ->
+    Storage = {auth_storage, odbc},
+    ?WARNING_MSG("The auth method '~p' is deprecated.~nReplace it with 'storage'"
+		 " and also add this option: ~n~p.", [Val, Storage]),
+    replace_storage_auth(Host, ValT, [storage | Val2], Storage);
+
+replace_storage_auth(Host, [Val | ValT], Val2, Storage)
+  when (Val /= internal) and (Val /= odbc) ->
+    replace_storage_auth(Host, ValT, [Val | Val2], Storage);
+
+replace_storage_auth(Host, [Val | _ValT], _Val2, Storage) ->
+    ?CRITICAL_MSG("The auth method '~p' conflicts with~n~p in the host \"~p\"."
+		  "~nOnly one of them can be used in each host.",
+		  [Val, Storage, Host]),
+    throw({unacceptable_auth_conflict, Host, Val, Storage}).
