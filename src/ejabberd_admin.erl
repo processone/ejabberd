@@ -106,7 +106,7 @@ commands() ->
 			desc = "Update the given module, or use the keyword: all",
 			module = ?MODULE, function = update,
 			args = [{module, string}],
-			result = {res, rescode}},
+			result = {res, restuple}},
 
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
@@ -301,7 +301,10 @@ update(ModStr) ->
 
 update_module(ModuleNameString) ->
     ModuleName = list_to_atom(ModuleNameString),
-    ejabberd_update:update([ModuleName]).
+    case ejabberd_update:update([ModuleName]) of
+          {ok, Res} -> {ok, io_lib:format("Updated: ~p", [Res])};
+          {error, Reason} -> {error, Reason}
+    end.
 
 %%%
 %%% Account management
