@@ -4,7 +4,8 @@
 
 -include("ejabberd.hrl").
 
-%% @type Migrations = [{OldTable, OldAttributes, MigrateFun}]
+%% @spec (Host, Table, Migrations) -> any()
+%% Migrations = [{OldTable, OldAttributes, MigrateFun}]
 migrate_mnesia(Host, Table, Migrations) ->
     SameTableName = [Migration
 		     || {OldTable, _, _} = Migration <- Migrations,

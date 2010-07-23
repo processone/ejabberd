@@ -93,7 +93,6 @@ table_info(Host, Tab, InfoKey) ->
 	    end
     end.
 
-
 %% @spec create_table(backend(), Host::binary(), Name::atom(), options()) -> {atomic, ok} | {aborted, Reason}
 %% @type options() = [option()]
 %% @type option() = {odbc_host, string()}
@@ -104,7 +103,9 @@ table_info(Host, Tab, InfoKey) ->
 %% @type attributedef() = [{Column::atom(), columndef()}]
 %% @type columndef() = text
 %%                   | int
-%%                   | tuple() with an arbitrary number of columndef()
+%%                   | tuple()
+
+%% With an arbitrary number of columndef()
 %% option() is any mnesia option
 %% columndef() defaults to text for all unspecified attributes
 

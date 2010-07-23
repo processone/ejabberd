@@ -457,8 +457,6 @@ remove_user(User, Server, Password) ->
 	    bad_request
     end.
 
-%% @spec () -> term()
-
 update_table(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(
       Host, passwd,

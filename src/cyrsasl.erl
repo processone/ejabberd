@@ -151,7 +151,7 @@ listmech(Host) ->
 			 ['$1']}]),
     filter_anonymous(Host, Mechs).
 
-%% @spec (Service, ServerFQDN, UserRealm, SecFlags, GetPassword, CheckPassword, CheckPasswordDigest) -> saslstate()
+%% @spec (Service, ServerFQDN, UserRealm, SecFlags, GetPassword, CheckPassword, CheckPasswordDigest, Socket) -> saslstate()
 %%     Service = string()
 %%     ServerFQDN = string()
 %%     UserRealm = string()
