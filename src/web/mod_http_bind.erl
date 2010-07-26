@@ -33,8 +33,6 @@
 -module(mod_http_bind).
 -author('steve@zeank.in-berlin.de').
 
--define(MOD_HTTP_BIND_VERSION, "1.2").
-
 %%-define(ejabberd_debug, true).
 
 -behaviour(gen_mod).
@@ -80,7 +78,7 @@ process(_Path, _Request) ->
                     [{xmlcdata, "400 Bad Request"}]}}.
 
 get_human_html_xmlel() ->
-    Heading = "ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
+    Heading = "ejabberd " ++ atom_to_list(?MODULE),
     {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"}],
      [{xmlelement, "head", [],
        [{xmlelement, "title", [], [{xmlcdata, Heading}]}]},
