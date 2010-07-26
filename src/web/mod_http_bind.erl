@@ -33,8 +33,6 @@
 -module(mod_http_bind).
 -author('steve@zeank.in-berlin.de').
 
--define(MOD_HTTP_BIND_VERSION, "1.2").
-
 %%-define(ejabberd_debug, true).
 
 -behaviour(gen_mod).
@@ -81,7 +79,7 @@ process(_Path, _Request) ->
 			  [#xmlcdata{cdata = <<"400 Bad Request">>}]}}.
 
 get_human_html_xmlel() ->
-    Heading = list_to_binary("ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION),
+    Heading = list_to_binary("ejabberd " ++ atom_to_list(?MODULE)),
     H = #xmlel{name = h1, children = [#xmlcdata{cdata = Heading}]},
     Par1 = #xmlel{name = p, children =
 		  [#xmlcdata{cdata = <<"An implementation of ">>},
