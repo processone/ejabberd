@@ -180,13 +180,28 @@ process_iq(From, To,
                     exmpp_iq:error(IQ_Rec, 'bad-request')
 	    end;
 	get ->
+	    {UsernameSubels, QuerySubels} =
+		case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
+		    {User, Server} when is_list(User) and is_list(Server) ->
+			case ejabberd_auth:is_user_exists(User,Server) of
+			    true ->
+				{[#xmlcdata{cdata = list_to_binary(User)}],
+				 [#xmlel{ns = ?NS_INBAND_REGISTER, name = 'registered'}]};
+			    false ->
+				{[#xmlcdata{cdata = list_to_binary(User)}], []}
+			end;
+		    _ ->
+			{[], []}
+		end,
             Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children =
-              [#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions', children =
-                  [#xmlcdata{cdata = list_to_binary(translate:translate(Lang,
-                          "Choose a username and password "
-                          "to register with this server"))}]},
-                #xmlel{ns = ?NS_INBAND_REGISTER, name = 'username'},
-                #xmlel{ns = ?NS_INBAND_REGISTER, name = 'password'}]},
+				[#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions', children =
+					    [#xmlcdata{cdata = list_to_binary(
+								 translate:translate(Lang,
+										     "Choose a username and password "
+										     "to register with this server"))}]},
+				 #xmlel{ns = ?NS_INBAND_REGISTER, name = 'username', children = UsernameSubels},
+				 #xmlel{ns = ?NS_INBAND_REGISTER, name = 'password'}
+				 | QuerySubels]},
             exmpp_iq:result(IQ_Rec, Result)
     end.
 
