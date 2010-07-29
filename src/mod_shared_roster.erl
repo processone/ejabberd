@@ -61,7 +61,6 @@
 -record(sr_group, {group_host, opts}).
 -record(sr_user, {us, group_host}).
 
-start(_, _) -> ok; %% TODO: This module doesn't yet support genstorage
 start(Host, _Opts) ->
     HostB = list_to_binary(Host),
     mnesia:create_table(sr_group,
