@@ -373,14 +373,14 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
 		   put_room_config(F, RoomConfig, Lang, FileFormat),
 		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
-				 [?T("Chatroom configuration modified")]);
+				 [?T("Room configuration modified")]);
 	       {roomconfig_change, Occupants} ->
 		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
 		   put_room_config(F, RoomConfig, Lang, FileFormat),
 		   RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
 		   put_room_occupants(F, RoomOccupants, Lang, FileFormat),
 		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
-				 [?T("Chatroom configuration modified")]);
+				 [?T("Room configuration modified")]);
 	       join ->  
 		   io_lib:format("<font class=\"mj\">~s ~s</font><br/>", 
 				 [Nick, ?T("joins the room")]);
@@ -451,10 +451,10 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 %%----------------------------------------------------------------------
 %% Utilities
 
-get_room_existence_string(created, Lang) -> ?T("Chatroom is created");
-get_room_existence_string(destroyed, Lang) -> ?T("Chatroom is destroyed");
-get_room_existence_string(started, Lang) -> ?T("Chatroom is started");
-get_room_existence_string(stopped, Lang) -> ?T("Chatroom is stopped").
+get_room_existence_string(created, Lang) -> ?T("Room is created");
+get_room_existence_string(destroyed, Lang) -> ?T("Room is destroyed");
+get_room_existence_string(started, Lang) -> ?T("Room is started");
+get_room_existence_string(stopped, Lang) -> ?T("Room is stopped").
 
 get_dateweek(Date, Lang) ->
     Weekday = case calendar:day_of_the_week(Date) of

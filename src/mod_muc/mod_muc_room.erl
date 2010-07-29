@@ -271,7 +271,7 @@ normal_state({route, From, undefined,
 			    {next_state, normal_state, StateData}
 		    end;
 		chat ->
-		    ErrText = "It is not allowed to send private messages to the conference",
+		    ErrText = "It is not allowed to send private messages to the room",
 		    Err = exmpp_stanza:error(Packet#xmlel.ns,
 		      'not-acceptable',
 		      {Lang, translate:translate(Lang, ErrText)}),
@@ -453,7 +453,7 @@ normal_state({route, From, ToNick,
 			_ ->
 			    case find_jid_by_nick(ToNick, StateData) of
 				false ->
-				    ErrText = "Recipient is not in the conference room",
+				    ErrText = "Recipient is not in the room",
 				    Err = exmpp_stanza:reply_with_error(Packet,
 				      exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
 					{Lang, translate:translate(Lang, ErrText)})),
@@ -474,7 +474,7 @@ normal_state({route, From, ToNick,
 			    end
 		    end;
 		{true, false} ->
-		    ErrText = "Only occupants are allowed to send messages to the conference",
+		    ErrText = "Only occupants are allowed to send messages to the room",
 		    Err = exmpp_stanza:reply_with_error(Packet,
 		      exmpp_stanza:error(Packet#xmlel.ns, 'not-acceptable',
 			{Lang, translate:translate(Lang, ErrText)})),
@@ -513,7 +513,7 @@ normal_state({route, From, ToNick,
 			error ->
 			    ok;
 			_ ->
-			    ErrText = "Recipient is not in the conference room",
+			    ErrText = "Recipient is not in the room",
 			    Err = exmpp_stanza:reply_with_error(Packet,
 			      exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
 				{Lang, translate:translate(Lang, ErrText)})),
@@ -539,7 +539,7 @@ normal_state({route, From, ToNick,
 		error ->
 		    ok;
 		_ ->
-		    ErrText = "Only occupants are allowed to send queries to the conference",
+		    ErrText = "Only occupants are allowed to send queries to the room",
 		    Err = exmpp_stanza:reply_with_error(Packet,
 		      exmpp_stanza:error(Packet#xmlel.ns, 'not-acceptable',
 			{Lang, translate:translate(Lang, ErrText)})),
@@ -554,7 +554,7 @@ normal_state({route, From, ToNick,
 		error ->
 		    ok;
 		_ ->
-		    ErrText = "Queries to the conference members are not allowed in this room",
+		    ErrText = "Queries to the room members are not allowed in this room",
 		    Err = exmpp_stanza:reply_with_error(Packet,
 		      exmpp_stanza:error(Packet#xmlel.ns, 'not-allowed',
 			{Lang, translate:translate(Lang, ErrText)})),
@@ -878,7 +878,7 @@ process_groupchat_message(From, #xmlel{name = 'message'} = Packet,
 		    {next_state, normal_state, StateData}
 	    end;
 	false ->
-	    ErrText = "Only occupants are allowed to send messages to the conference",
+	    ErrText = "Only occupants are allowed to send messages to the room",
 	    Err = exmpp_stanza:reply_with_error(Packet,
 	      exmpp_stanza:error(Packet#xmlel.ns, 'not-acceptable',
 		{Lang, translate:translate(Lang, ErrText)})),
@@ -3666,7 +3666,7 @@ replace_subelement(#xmlel{children = Els} = El, #xmlel{name = Name} = NewSubEl) 
     exmpp_xml:set_children(El, Els2).
 
 send_error_only_occupants(Packet, Lang, RoomJID, From) ->
-    ErrText = "Only occupants are allowed to send messages to the conference",
+    ErrText = "Only occupants are allowed to send messages to the room",
     Err = exmpp_stanza:reply_with_error(
 			    Packet, ?ERR(Packet, 'not-acceptable', Lang, ErrText)),
     ejabberd_router:route(RoomJID, From, Err).

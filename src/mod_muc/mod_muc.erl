@@ -586,7 +586,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			    end;
 			_ ->
                 Lang = exmpp_stanza:get_lang(Packet),
-			    ErrText = "Conference room does not exist",
+		ErrText = "Room does not exist",
                 Err = exmpp_stanza:reply_with_error(Packet,
                                         exmpp_stanza:error(Packet#xmlel.ns,
                                                           'item-not-found',
@@ -681,7 +681,7 @@ iq_disco_info(Lang) ->
                     ?XMLATTR('type', 
                              <<"text">>),
                     ?XMLATTR('name', 
-                             translate:translate(Lang, "Chatrooms"))]},
+                             translate:translate(Lang, "Rooms"))]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
                               [?XMLATTR('var', 
                                        ?NS_DISCO_INFO_s)]},
