@@ -238,7 +238,7 @@ process_local_iq(From, To, #iq{type = get} = IQ_Rec)
     process_iq_get(From, To, IQ_Rec);
 process_local_iq(From, To, #iq{type = set} = IQ_Rec)
   when ?IS_JID(From), ?IS_JID(To), ?IS_IQ_RECORD(IQ_Rec) ->
-    process_iq_set(From, To, IQ_Rec).
+    try_process_iq_set(From, To, IQ_Rec).
 
 roster_hash(Items) ->
 	sha:sha(term_to_binary(
@@ -448,6 +448,16 @@ process_iq_set(From, To, #iq{payload = Request} = IQ_Rec) ->
 	    ok
     end,
     exmpp_iq:result(IQ_Rec).
+
+try_process_iq_set(From, To, IQ) ->
+    LServer = exmpp_jid:prep_domain_as_list(From),
+    Access = gen_mod:get_module_opt(LServer, ?MODULE, access, all),
+    case acl:match_rule(LServer, Access, From) of
+	deny ->
+	    exmpp_iq:error(IQ, 'not-allowed');
+	allow ->
+	    process_iq_set(From, To, IQ)
+    end.
 
 %% @spec (From, To, El) -> ok
 %%    From = exmpp_jid:jid()

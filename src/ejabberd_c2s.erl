@@ -1764,23 +1764,17 @@ presence_track(From, To, Packet, StateData) ->
 	    StateData#state{pres_i = I,
 			    pres_a = A};
 	'subscribe' ->
-	    ejabberd_hooks:run(roster_out_subscription,
-			     StateData#state.server,
-			     [StateData#state.user, StateData#state.server, To, subscribe]),
-	    check_privacy_route(From, StateData, exmpp_jid:bare(From),
-				To, Packet),
+	    try_check_privacy_route(subscribe, StateData#state.user, StateData#state.server,
+		From, StateData, exmpp_jid:bare(From), To, Packet),
+	    StateData;
+	'unsubscribe' ->
+	    try_check_privacy_route(subscribe, StateData#state.user, StateData#state.server,
+		From, StateData, exmpp_jid:bare(From), To, Packet),
 	    StateData;
 	'subscribed' ->
 	    ejabberd_hooks:run(roster_out_subscription,
 	             StateData#state.server,
 			     [StateData#state.user, StateData#state.server, To, subscribed]),
-	    check_privacy_route(From, StateData, exmpp_jid:bare(From),
-				To, Packet),
-	    StateData;
-	'unsubscribe' ->
-	    ejabberd_hooks:run(roster_out_subscription,
-			     StateData#state.server,
-			     [StateData#state.user, StateData#state.server, To, unsubscribe]),
 	    check_privacy_route(From, StateData, exmpp_jid:bare(From),
 				To, Packet),
 	    StateData;
@@ -1803,6 +1797,22 @@ presence_track(From, To, Packet, StateData) ->
 	    A = ?SETS:add_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A}
+    end.
+
+%%% Check ACL before allowing to send a subscription stanza
+try_check_privacy_route(Type, User, Server, From, StateData, FromRoute, To, Packet) ->
+    JID1 = exmpp_jid:make(User, Server, undefined),
+    Access = gen_mod:get_module_opt(Server, mod_roster, access, all),
+    case acl:match_rule(Server, Access, JID1) of
+	deny ->
+	    %% Silently drop this (un)subscription request
+	    ok;
+	allow ->
+	    ejabberd_hooks:run(roster_out_subscription,
+			       Server,
+			       [User, Server, To, Type]),
+	    check_privacy_route(From, StateData, FromRoute,
+				To, Packet)
     end.
 
 check_privacy_route(From, StateData, FromRoute, To, Packet) ->

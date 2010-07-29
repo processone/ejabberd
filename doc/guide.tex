@@ -3869,6 +3869,13 @@ Options:
 \begin{description}
 \backend{\term{rosteritem} and \term{rostergroup}}
 \iqdiscitem{Roster Management (\ns{jabber:iq:roster})}
+ \titem{access} \ind{options!access}
+  This option can be configured to specify rules to restrict roster management.
+  If a rule returns `deny' on the requested user name,
+  that user cannot modify his personal roster:
+  not add/remove/modify contacts,
+  or subscribe/unsubscribe presence.
+  By default there aren't restrictions.
   \titem{\{versioning, false|true\}} \ind{options!versioning}Enables
   Roster Versioning.
   This option is disabled by default.
@@ -3888,6 +3895,23 @@ This example configuration enables Roster Versioning with storage of current id:
  [
   ...
   {mod_roster, [{versioning, true}, {store_current_id, true}]},
+  ...
+ ]}.
+\end{verbatim}
+
+With this example configuration only admins can manage their rosters;
+everybody else cannot modify the roster:
+\begin{verbatim}
+{acl, admin, {user, "bob", "example.org"}}.
+{acl, admin, {user, "sarah", "example.org"}}.
+
+{access, roster, [{allow, admin},
+                  {deny, all}]}.
+
+{modules,
+ [
+  ...
+  {mod_roster, [{access, roster}]},
   ...
  ]}.
 \end{verbatim}
