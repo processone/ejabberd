@@ -348,8 +348,24 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 						    U, Server, P, D, DG)
 					  end,
 					  StateData#state.socket),
-				    Mechs = [exmpp_server_sasl:feature(
+				    MechsPrepared = [exmpp_server_sasl:feature(
 					cyrsasl:listmech(Server))],
+				    SockMod =
+					(StateData#state.sockmod):get_sockmod(
+					  StateData#state.socket),
+				    TLSRequired = StateData#state.tls_required,
+				    Mechs =
+					case TLSRequired of
+					    true ->
+						case (SockMod == gen_tcp) of
+						    true ->
+							[];
+						    false ->
+							MechsPrepared
+						end;
+					    false ->
+						MechsPrepared
+					end,
 				    SockMod =
 					(StateData#state.sockmod):get_sockmod(
 					  StateData#state.socket),
