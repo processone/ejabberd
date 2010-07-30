@@ -2,7 +2,6 @@
 {"Access Control List Configuration","Agordo de atingokontrolo"}.
 {"Access control lists","Atingokontrol-listoj"}.
 {"Access Control Lists","Atingokontrol-listoj"}.
-{"Access denied by service policy","Atingo rifuzita de serv-politiko"}.
 {"Access rules","Atingo-reguloj"}.
 {"Access Rules","Atingo-reguloj"}.
 {"Action on user","Ago je uzanto"}.
@@ -14,8 +13,8 @@
 {"Administrator privileges required","Administrantaj rajtoj bezonata"}.
 {"A friendly name for the node","Kromnomo por ĉi tiu nodo"}.
 {"All activity","Ĉiu aktiveco"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun JID aboni al la jena PubAbo-nodo"}.
-{"Allow users to change subject","Permesu uzantojn ŝanĝi la temon"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"}.
+{"Allow users to change the subject","Permesu uzantojn ŝanĝi la temon"}.
 {"Allow users to query other users","Permesu uzantojn informpeti aliajn uzantojn"}.
 {"Allow users to send invites","Permesu uzantojn sendi invitojn"}.
 {"Allow users to send private messages","Permesu uzantojn sendi privatajn mesaĝojn"}.
@@ -24,6 +23,7 @@
 {"All Users","Ĉiuj Uzantoj"}.
 {"Announcements","Anoncoj"}.
 {"anyone","iu ajn"}.
+{"A password is required to enter this room","Pasvorto estas bezonata por eniri ĉi tiun babilejon"}.
 {"April","Aprilo"}.
 {"August","Aŭgusto"}.
 {"Backup","Faru Sekurkopion"}.
@@ -34,17 +34,14 @@
 {"Birthday","Naskiĝtago"}.
 {"Change Password","Ŝanĝu pasvorton"}.
 {"Change User Password","Ŝanĝu pasvorton de uzanto"}.
-{"Chatroom configuration modified","Agordo de babilejo ŝanĝita"}.
-{"Chatrooms","Babilejoj"}.
 {"Choose a username and password to register with this server","Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"}.
 {"Choose modules to stop","Elektu modulojn por fini"}.
 {"Choose storage type of tables","Elektu konserv-tipon de tabeloj"}.
 {"Choose whether to approve this entity's subscription.","Elektu ĉu permesi la abonon de ĉi tiu ento"}.
 {"City","Urbo"}.
 {"Commands","Ordonoj"}.
-{"Conference room does not exist","Babilejo ne ekzistas"}.
 {"Configuration","Agordo"}.
-{"Configuration for ","Agordo de "}.
+{"Configuration of room ~s","Agordo de babilejo ~s"}.
 {"Connected Resources:","Konektataj risurcoj:"}.
 {"Country","Lando"}.
 {"CPU Time:","CPU-tempo"}.
@@ -62,20 +59,18 @@
 {"Deliver payloads with event notifications","Liveru aĵojn de event-sciigoj"}.
 {"Description:","Priskribo:"}.
 {"Disc only copy","Nur disk-kopio"}.
-{"Displayed Groups:","Montrataj grupoj:"}.
 {"Dump Backup to Text File at ","Skribu sekurkopion en plata teksto al "}.
 {"Dump to Text File","Skribu en plata tekst-dosiero"}.
 {"Edit Properties","Redaktu atributojn"}.
-{"ejabberd IRC module","ejabberd IRC-modulo"}.
 {"ejabberd MUC module","ejabberd MUC-modulo"}.
 {"ejabberd Publish-Subscribe module","ejabberd Public-Abonada modulo"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bajtfluo modulo"}.
 {"ejabberd vCard module","ejabberd vCard-modulo"}.
 {"ejabberd virtual hosts","ejabberd virtual-gastigoj"}.
 {"ejabberd Web Admin","ejabberd Teksaĵa Administro"}.
+{"Elements","Eroj"}.
 {"Email","Retpoŝto"}.
 {"Enable logging","Ŝaltu protokoladon"}.
-{"Encodings","Enkodigoj"}.
 {"End User Session","Haltigu Uzant-seancon"}.
 {"Enter list of {Module, [Options]}","Enmetu liston de {Modulo, [Elektebloj]}"}.
 {"Enter nickname you want to register","Enmetu kaŝnomon kiun vi volas registri"}.
@@ -83,9 +78,11 @@
 {"Enter path to jabberd14 spool dir","Enmetu vojon al jabberd14-uzantdosierujo"}.
 {"Enter path to jabberd14 spool file","Enmetu vojon al jabberd14-uzantdosiero"}.
 {"Enter path to text file","Enmetu vojon al plata teksto"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-serviloj"}.
+{"Enter the text you see","Enmetu montrita teksto"}.
 {"Erlang Jabber Server","Erlang-a Jabber-Servilo"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Ekzemplo: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
+{"Error","Eraro"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0227):"}.
 {"Family Name","Lasta Nomo"}.
 {"February","Februaro"}.
 {"Fill in fields to search for any matching Jabber User","Kompletigu la formon por serĉi rekonata Jabber-uzanto"}.
@@ -108,10 +105,12 @@
 {"has been kicked","estas forpelita"}.
 {" has set the subject to: "," ŝanĝis la temon al: "}.
 {"Host","Gastigo"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Se vi volas specifi diversajn enkodigojn por IRC-serviloj, kompletigu la jenan liston kun la formo '{\"irc-servilo\", \"enkodigo\"}'. Se ne specifita, ĉi tiu servilo uzas la enkodigo \"~s\""}.
 {"Import Directory","Importu dosierujo"}.
 {"Import File","Importu dosieron"}.
+{"Import user data from jabberd14 spool file:","Importu uzantojn de jabberd14-uzantdosieroj"}.
 {"Import User from File at ","Importu uzanton de dosiero el "}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Importu uzanto-datumojn de PIEFXIS dosiero (XEP-0227):"}.
+{"Import users data from jabberd14 spool directory:","Importu uzantojn de jabberd14-uzantdosieroj"}.
 {"Import Users from Dir at ","Importu uzantojn de dosierujo ĉe "}.
 {"Import Users From jabberd14 Spool Files","Importu uzantojn de jabberd14-uzantdosieroj"}.
 {"Improper message type","Malĝusta mesaĝo-tipo"}.
@@ -119,15 +118,13 @@
 {"Invalid affiliation: ~s","Nevalida aparteneco: ~s"}.
 {"Invalid role: ~s","Nevalida rolo: ~s"}.
 {"IP addresses","IP-adresoj"}.
-{"IRC Transport","IRC-transportilo"}.
-{"IRC Username","IRC-kaŝnomo"}.
+{"IP","IP"}.
 {"is now known as","nun nomiĝas"}.
 {"It is not allowed to send private messages","Ne estas permesata sendi privatajn mesaĝojn"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Malpermesas sendi mesaĝojn de tipo \"groupchat\""}.
-{"It is not allowed to send private messages to the conference","Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s estas nevalida"}.
 {"January","Januaro"}.
-{"Jabber ID ~s is invalid","JID ~s estas nevalida"}.
 {"joins the room","eniras la babilejo"}.
 {"July","Julio"}.
 {"June","Junio"}.
@@ -141,6 +138,7 @@
 {"List of modules to start","Listo de moduloj por starti"}.
 {"Low level update script","Bazanivela ĝisdatigo-skripto"}.
 {"Make participants list public","Farigu partoprento-liston publika"}.
+{"Make room captcha protected","Farigu babilejon protektata per aŭtomata Turingtesto"}.
 {"Make room members-only","Farigu babilejon sole por membroj"}.
 {"Make room moderated","Farigu babilejon moderigata"}.
 {"Make room password protected","Farigu babilejon protektata per pasvorto"}.
@@ -151,13 +149,14 @@
 {"Max # of items to persist","Maksimuma kiomo de eroj en konservado"}.
 {"Max payload size in bytes","Maksimuma aĵo-grando je bajtoj"}.
 {"May","Majo"}.
-{"Membership required to enter this room","Membreco estas bezonata por eniri ĉi tiun babilejon"}.
+{"Membership is required to enter this room","Membreco estas bezonata por eniri ĉi tiun babilejon"}.
 {"Members:","Membroj:"}.
 {"Memory","Memoro"}.
 {"Message body","Teksto de mesaĝo"}.
 {"Middle Name","Meza Nomo"}.
 {"Moderator privileges required","Moderantaj rajtoj bezonata"}.
 {"moderators only","moderantoj sole"}.
+{"Modified modules","Ĝisdatigitaj moduloj"}.
 {"Module","Modulo"}.
 {"Modules at ","Moduloj je "}.
 {"Modules","Moduloj"}.
@@ -165,12 +164,9 @@
 {"Name:","Nomo:"}.
 {"Name","Nomo"}.
 {"Never","Neniam"}.
-{"Nickname is already in use by another occupant","Kaŝnomo estas jam uzata de alia partoprenanto"}.
-{"Nickname is registered by another person","Kaŝnomo estas registrita de alia persono"}.
 {"Nickname","Kaŝnomo"}.
 {"Nickname Registration at ","Kaŝnomo-registrado je "}.
 {"Nickname ~s does not exist in the room","Kaŝnomo ~s ne ekzistas en la babilejo"}.
-{"No body provided for announce message","Neniu teksto donita por anonc-mesaĝo"}.
 {"No Data","Neniu datumo"}.
 {"Node ID","Nodo ID"}.
 {"Node ","Nodo "}.
@@ -178,7 +174,7 @@
 {"Nodes","Nodoj"}.
 {"No limit","Neniu limigo"}.
 {"None","Nenio"}.
-{"No resource provided","Neniu risurco donita"}.
+{"Not Found","Ne trovita"}.
 {"Notify subscribers when items are removed from the node","Sciigu abonantoj kiam eroj estas forigita de la nodo"}.
 {"Notify subscribers when the node configuration changes","Sciigu abonantoj kiam la agordo de la nodo ŝanĝas"}.
 {"Notify subscribers when the node is deleted","Sciigu abonantoj kiam la nodo estas forigita"}.
@@ -194,11 +190,8 @@
 {"Online Users:","Konektataj uzantoj:"}.
 {"Online Users","Konektataj Uzantoj"}.
 {"Only deliver notifications to available users","Nur liveru sciigojn al konektataj uzantoj"}.
-{"Only moderators and participants are allowed to change subject in this room","Nur moderigantoj kaj partoprenantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
-{"Only moderators are allowed to change subject in this room","Nur moderigantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
-{"Only occupants are allowed to send messages to the conference","Nur partoprenantoj rajtas sendi mesaĝojn al la babilejo"}.
-{"Only occupants are allowed to send queries to the conference","Nur partoprenantoj rajtas sendi informmendojn al la babilejoj"}.
-{"Only service administrators are allowed to send service messages","Nur servo-administrantoj rajtas sendi serv-mesaĝojn"}.
+{"Only moderators and participants are allowed to change the subject in this room","Nur moderigantoj kaj partoprenantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
+{"Only moderators are allowed to change the subject in this room","Nur moderigantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
 {"Options","Elektebloj"}.
 {"Organization Name","Organiz-nomo"}.
 {"Organization Unit","Organiz-parto"}.
@@ -209,7 +202,6 @@
 {"Packet","Pakaĵo"}.
 {"Password:","Pasvorto:"}.
 {"Password","Pasvorto"}.
-{"Password required to enter this room","Pasvorto estas bezonata por eniri ĉi tiun babilejon"}.
 {"Password Verification","Pasvortkontrolo"}.
 {"Path to Dir","Vojo al dosierujo"}.
 {"Path to File","Voje de dosiero"}.
@@ -217,27 +209,25 @@
 {"Period: ","Periodo: "}.
 {"Persist items to storage","Savu erojn en konservado"}.
 {"Ping","Sondaĵo"}.
+{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Rimarku ke ĉi tiuj elektebloj nur sekurkopias la propran Mnesia-datumbazon. Se vi uzas la ODBC-modulon, vi ankaŭ devas sekurkopii tiujn SQL-datumbazoj aparte."}.
 {"Pong","Resondaĵo"}.
 {"Port","Pordo"}.
-{"Present real Jabber IDs to","Montru verajn JID-ojn al"}.
+{"Present real Jabber IDs to","Montru verajn Jabber ID-ojn al"}.
 {"private, ","privata, "}.
+{"Protocol","Protokolo"}.
 {"Publish-Subscribe","Public-Abonado"}.
 {"PubSub subscriber request","PubAbo abonpeto"}.
-{"Queries to the conference members are not allowed in this room","Malpermesas informmendoj al partoprenantoj en ĉi tiu babilejo"}.
+{"Purge all items when the relevant publisher goes offline","Forigu ĉiujn erojn kiam la rilata publikanto malkonektiĝas"}.
 {"RAM and disc copy","RAM- kaj disk-kopio"}.
 {"RAM copy","RAM-kopio"}.
-{"(Raw)","(Kruda)"}.
 {"Raw","Kruda"}.
 {"Really delete message of the day?","Ĉu vere forigi mesaĝon de la tago?"}.
-{"Recipient is not in the conference room","Ricevanto ne ĉeestas en la babilejo "}.
 {"Registered Users:","Registritaj uzantoj:"}.
 {"Registered Users","Registritaj uzantoj"}.
-{"Registration in mod_irc for ","Registraĵo en mod_irc de "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Rimarku ke ĉi tiuj elektebloj nur sekurkopias la propran Mnesia-datumbazon. Se vi uzas la ODBC-modulon, vi ankaŭ devas sekurkopii tiujn SQL-datumbazoj aparte."}.
 {"Remote copy","Fora kopio"}.
+{"Remove All Offline Messages","Forigu ĉiujn liverontajn mesaĝojn"}.
 {"Remove","Forigu"}.
 {"Remove User","Forigu uzanton"}.
-{"Replaced by new connection","Anstataŭigita je nova konekto"}.
 {"Resources","Risurcoj"}.
 {"Restart","Restartu"}.
 {"Restart Service","Restartu Servon"}.
@@ -247,7 +237,8 @@
 {"Restore plain text backup immediately:","Restaŭrigu sekurkopion el plata tekstdosiero tuj"}.
 {"Restore","Restaŭru"}.
 {"Room Configuration","Babilejo-agordo"}.
-{"Room creation is denied by service policy","Ĉi tiu serv-politiko ne permesas babilejo-kreadon"}.
+{"Room description","Babilejo-priskribo"}.
+{"Room Occupants","Nombro de ĉeestantoj"}.
 {"Room title","Babilejo-nomo"}.
 {"Roster groups allowed to subscribe","Kontaktlist-grupoj kiuj rajtas aboni"}.
 {"Roster","Kontaktlisto"}.
@@ -272,9 +263,8 @@
 {"Show Ordinary Table","Montru ordinaran tabelon"}.
 {"Shut Down Service","Haltigu Servon"}.
 {"~s invites you to the room ~s","~s invitas vin al la babilejo ~s"}.
-{"Size","Grando"}.
-{"Specified nickname is already registered","Donita kaŝnomo jam estas registrita"}.
 {"Specify the access model","Specifu atingo-modelon"}.
+{"Specify the event message type","Specifu tipo de event-mesaĝo"}.
 {"Specify the publisher model","Enmetu publikadan modelon"}.
 {"~s's Offline Messages Queue","Mesaĝo-atendovico de ~s"}.
 {"Start Modules at ","Startu modulojn je "}.
@@ -295,6 +285,10 @@
 {"Subscriber Address","Abonanta adreso"}.
 {"Subscription","Abono"}.
 {"Sunday","Dimanĉo"}.
+{"That nickname is already in use by another occupant","Tiu kaŝnomo jam estas uzata de alia partoprenanto"}.
+{"That nickname is registered by another person","Kaŝnomo estas registrita de alia persono"}.
+{"The captcha is valid.","La aŭtomata Turingtesto estas ĝusta"}.
+{"The collections with which a node is affiliated","Aro kun kiu nodo estas filigita"}.
 {"the password is","la pasvorto estas"}.
 {"This participant is kicked from the room because he sent an error message","Ĉi tiu partoprenanta estas forpelata de la babilejo pro sendado de erar-mesaĝo"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-mesaĝo al alia partoprenanto"}.
@@ -311,7 +305,8 @@
 {"Transactions Logged:","Transakcioj protokolitaj"}.
 {"Transactions Restarted:","Transakcioj restartitaj"}.
 {"Tuesday","Mardo"}.
-{"Updated modules","Ĝisdatigitaj moduloj"}.
+{"Unable to generate a captcha","Ne eblis krei aŭtomatas turingteston"}.
+{"Unauthorized","Nepermesita"}.
 {"Update ","Ĝisdatigu "}.
 {"Update","Ĝisdatigu"}.
 {"Update message of the day (don't send)","Ŝanĝu mesaĝon de la tago (ne sendu)"}.
@@ -319,16 +314,13 @@
 {"Update plan","Ĝisdatigo-plano"}.
 {"Update script","Ĝisdatigo-skripto"}.
 {"Uptime:","Daŭro de funkciado"}.
-{"Use of STARTTLS required","Uzo de STARTTLS bezonata"}.
 {"User Management","Uzanto-administrado"}.
-{"Users are not allowed to register accounts so fast","Ne estas permesata al uzantoj registri tiel rapide"}.
 {"Users Last Activity","Lasta aktiveco de uzanto"}.
 {"Users","Uzantoj"}.
 {"User ","Uzanto "}.
 {"User","Uzanto"}.
 {"Validate","Validigu"}.
 {"vCard User Search","Serĉado de vizitkartoj"}.
-{"Virtual Hosts","Virtual-gastigoj"}.
 {"Visitors are not allowed to change their nicknames in this room","Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"}.
 {"Visitors are not allowed to send messages to all occupants","Vizitantoj ne rajtas sendi mesaĝojn al ĉiuj partoprenantoj"}.
 {"Wednesday","Merkredo"}.
@@ -336,8 +328,7 @@
 {"Whether to allow subscriptions","Ĉu permesi aboni"}.
 {"You have been banned from this room","Vi estas malpermesata en ĉi tiu babilejo"}.
 {"You must fill in field \"Nickname\" in the form","Vi devas kompletigi la \"Kaŝnomo\" kampon"}.
-{"You need an x:data capable client to configure mod_irc settings","Vi bezonas klienton kun x:data-funkcio por agordi mod_irc"}.
 {"You need an x:data capable client to configure room","Vi bezonas klienton kun x:data-funkcio por agordi la babilejon"}.
 {"You need an x:data capable client to register nickname","Vi bezonas klienton kun x:data-funkcio por registri kaŝnomon"}.
 {"You need an x:data capable client to search","Vi bezonas klienton kun x:data-funkcio por serĉado"}.
-{"Your contact offline message queue is full. The message has been discarded.","Mesaĝo-atendovico de la senkonekta kontakto estas plena. La mesaĝo estas forĵetita"}.
+{"Your messages to ~s are being blocked. To unblock them, visit ~s","Viaj mesaĝoj al ~s estas blokata. Por malbloki ilin, iru al ~s"}.

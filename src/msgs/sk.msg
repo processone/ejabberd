@@ -2,7 +2,6 @@
 {"Access Control List Configuration","Konfigurácia zoznamu prístupových oprávnení (ACL)"}.
 {"Access control lists","Zoznamy prístupových oprávnení (ACL)"}.
 {"Access Control Lists","Zoznamy prístupových oprávnení (ACL)"}.
-{"Access denied by service policy","Prístup bol zamietnutý nastavením služby"}.
 {"Access rules","Prístupové pravidlá"}.
 {"Access Rules","Prístupové pravidlá"}.
 {"Action on user","Operácia aplikovaná na užívateľa"}.
@@ -14,8 +13,8 @@
 {"Administrator privileges required","Sú potrebné práva administrátora"}.
 {"A friendly name for the node","Prístupný názov pre uzol"}.
 {"All activity","Všetky aktivity"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Dovoliť tomuto JID odoberať PubSub uzol?"}.
-{"Allow users to change subject","Povoliť užívateľom zmeniť tému tejto miestnosti"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Dovoliť tomuto Jabber ID odoberať PubSub uzol?"}.
+{"Allow users to change the subject","Povoliť užívateľom meniť tému"}.
 {"Allow users to query other users","Povoliť užívateľom dotazovať sa informácie o iných užívateľoch"}.
 {"Allow users to send invites","Povoliť používateľom posielanie pozvánok"}.
 {"Allow users to send private messages","Povoliť užívateľom odosielať súkromné správy"}.
@@ -24,29 +23,27 @@
 {"All Users","Všetci užívatelia"}.
 {"Announcements","Oznámenia"}.
 {"anyone","všetkým"}.
+{"A password is required to enter this room","Pre vstup do miestnosti je potrebné heslo"}.
 {"April","Apríl"}.
 {"August","August"}.
 {"Backup Management","Správa zálohovania"}.
-{"Backup of ","Záloha na "}.
+{"Backup of ","Záloha "}.
 {"Backup to File at ","Záloha do súboru na "}.
 {"Backup","Zálohovať"}.
 {"Bad format","Zlý formát"}.
-{"Birthday","Dátum narodenia: "}.
+{"Birthday","Dátum narodenia"}.
 {"Change Password","Zmeniť heslo"}.
 {"Change User Password","Zmeniť heslo užívateľa"}.
-{"Chatroom configuration modified","Nastavenie diskusnej miestnosti bolo zmenené"}.
-{"Chatrooms","Diskusné miestnosti"}.
 {"Choose a username and password to register with this server","Zvolte meno užívateľa a heslo pre registráciu na tomto servere"}.
 {"Choose modules to stop","Vyberte moduly, ktoré majú byť zastavené"}.
 {"Choose storage type of tables","Vyberte typ úložiska pre tabuľky"}.
 {"Choose whether to approve this entity's subscription.","Zvolte, či chcete povoliť toto odoberanie"}.
-{"City","Mesto: "}.
+{"City","Mesto"}.
 {"Commands","Príkazy"}.
-{"Conference room does not exist","Diskusná miestnosť neexistuje"}.
-{"Configuration for ","Konfigurácia pre "}.
 {"Configuration","Konfigurácia"}.
+{"Configuration of room ~s","Konfigurácia miestnosti ~s"}.
 {"Connected Resources:","Pripojené zdroje:"}.
-{"Country","Krajina: "}.
+{"Country","Krajina"}.
 {"CPU Time:","Čas procesoru"}.
 {"Database","Databáza"}.
 {"Database Tables at ","Databázové tabuľky na "}.
@@ -62,20 +59,18 @@
 {"Deliver payloads with event notifications","Doručiť náklad s upozornením na udalosť"}.
 {"Description:","Popis:"}.
 {"Disc only copy","Len kópia disku"}.
-{"Displayed Groups:","Zobrazené skupiny:"}.
 {"Dump Backup to Text File at ","Uložiť zálohu do textového súboru na "}.
 {"Dump to Text File","Uložiť do textového súboru"}.
 {"Edit Properties","Editovať vlastnosti"}.
-{"ejabberd IRC module","ejabberd IRC modul"}.
 {"ejabberd MUC module","ejabberd MUC modul"}.
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe modul"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams modul"}.
 {"ejabberd vCard module","ejabberd vCard modul"}.
 {"ejabberd virtual hosts","ejabberd virtuálne servery"}.
 {"ejabberd Web Admin","ejabberd Web Admin"}.
+{"Elements","Prvky"}.
 {"Email","E-mail"}.
 {"Enable logging","Zapnúť zaznamenávanie histórie"}.
-{"Encodings","Kódovania"}.
 {"End User Session","Ukončiť reláciu užívateľa"}.
 {"Enter list of {Module, [Options]}","Vložte zoznam modulov {Modul, [Parametre]}"}.
 {"Enter nickname you want to register","Zadajte prezývku, ktorú chcete registrovať"}.
@@ -83,10 +78,12 @@
 {"Enter path to jabberd14 spool dir","Zadajte cestu k jabberd14 spool adresáru"}.
 {"Enter path to jabberd14 spool file","Zadajte cestu k spool súboru jabberd14"}.
 {"Enter path to text file","Zadajte cestu k textovému súboru"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","Vložte meno používateľa a kódovanie, ktoré chcete používať pri pripojení na IRC server"}.
+{"Enter the text you see","Zadajte zobrazený text"}.
 {"Erlang Jabber Server","Erlang Jabber Server"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Príklad: [{\"irc.freenode.net\",\"utf-8\"}, {\"irc.freenode.net\", \"iso8859-2\"}]."}.
-{"Family Name","Priezvisko: "}.
+{"Error","Chyba"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportovať dáta všetkých uživateľov na serveri do súborov PIEFXIS (XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportovať dáta uživateľov na hostitelovi do súborov PIEFXIS (XEP-0227):"}.
+{"Family Name","Priezvisko"}.
 {"February","Február"}.
 {"Fill in fields to search for any matching Jabber User","Vyplnte políčka pre vyhľadávanie Jabber užívateľa"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Pre vyhľadanie Jabber používateľa vyplňte formulár (pridajte znak * na koniec, pre vyhľadanie podreťazca)"}.
@@ -108,10 +105,12 @@
 {"has been kicked","bol(a) vyhodený(á) z miestnosti"}.
 {" has set the subject to: ","zmenil(a) tému na: "}.
 {"Host","Server"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","Ak chcete zadať iné kódovania pre IRC servery, vyplnte zoznam s hodnotami vo formáte '{\"irc server\",\"encoding\"}'. Predvolené kódovanie pre túto službu je \"~s\"."}.
 {"Import Directory","Import adresára"}.
 {"Import File","Import súboru"}.
+{"Import user data from jabberd14 spool file:","Importovať dáta užívateľov z jabberd14 spool súboru:"}.
 {"Import User from File at ","Importovať užívateľa zo súboru na "}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Importovat dáta užívateľov zo súboru PIEFXIS (XEP-0227):"}.
+{"Import users data from jabberd14 spool directory:","Importovať dáta užívateľov z jabberd14 spool adresára:"}.
 {"Import Users from Dir at ","Importovať užívateľov z adresára na "}.
 {"Import Users From jabberd14 Spool Files","Importovať užívateľov z jabberd14 spool súborov"}.
 {"Improper message type","Nesprávny typ správy"}.
@@ -119,15 +118,13 @@
 {"Invalid affiliation: ~s","Neplatné priradenie: ~s"}.
 {"Invalid role: ~s","Neplatná rola: ~s"}.
 {"IP addresses","IP adresa"}.
-{"IRC Transport","IRC Transport"}.
-{"IRC Username","IRC prezývka"}.
+{"IP","IP"}.
 {"is now known as","sa premenoval(a) na"}.
 {"It is not allowed to send private messages","Nieje povolené posielať súkromné správy"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Nie je dovolené odoslanie súkromnej správy typu \"Skupinová správa\" "}.
-{"It is not allowed to send private messages to the conference","Nie je povolené odosielať súkromné správy do konferencie"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s je neplatné"}.
 {"January","Január"}.
-{"Jabber ID ~s is invalid","JID ~s je neplatné"}.
 {"joins the room","vstúpil(a) do miestnosti"}.
 {"July","Júl"}.
 {"June","Jún"}.
@@ -141,6 +138,7 @@
 {"List of modules to start","Zoznam modulov, ktoré majú byť spustené"}.
 {"Low level update script","Nízkoúrovňový aktualizačný skript"}.
 {"Make participants list public","Nastaviť zoznam zúčastnených ako verejný"}.
+{"Make room captcha protected","Chrániť miestnosť systémom captcha"}.
 {"Make room members-only","Nastaviť miestnosť len pre členov"}.
 {"Make room moderated","Nastaviť miestnosť ako moderovanú"}.
 {"Make room password protected","Chrániť miestnosť heslom"}.
@@ -152,12 +150,13 @@
 {"Max payload size in bytes","Maximálny náklad v bajtoch"}.
 {"May","Máj"}.
 {"Members:","Členovia:"}.
-{"Membership required to enter this room","Pre vstup do miestnosti je potrebné byť členom"}.
+{"Membership is required to enter this room","Pre vstup do miestnosti je potrebné byť členom"}.
 {"Memory","Pamäť"}.
 {"Message body","Telo správy"}.
 {"Middle Name","Prostredné meno: "}.
 {"Moderator privileges required","Sú potrebné práva moderátora"}.
 {"moderators only","moderátorom"}.
+{"Modified modules","Modifikované moduly"}.
 {"Module","Modul"}.
 {"Modules at ","Moduly na "}.
 {"Modules","Moduly"}.
@@ -165,12 +164,9 @@
 {"Name:","Meno:"}.
 {"Name","Meno"}.
 {"Never","Nikdy"}.
-{"Nickname is already in use by another occupant","Prezývka je už používaná iným členom"}.
-{"Nickname is registered by another person","Prezývka je registrovaná inou osobou"}.
 {"Nickname","Prezývka"}.
 {"Nickname Registration at ","Registrácia prezývky na "}.
 {"Nickname ~s does not exist in the room","Prezývka ~s v miestnosti neexistuje"}.
-{"No body provided for announce message","Správa neobsahuje text"}.
 {"No Data","Žiadne dáta"}.
 {"Node ID","ID uzlu"}.
 {"Node not found","Uzol nenájdený"}.
@@ -178,7 +174,7 @@
 {"Node ","Uzol "}.
 {"No limit","Bez limitu"}.
 {"None","Nič"}.
-{"No resource provided","Nebol poskytnutý žiadny zdroj"}.
+{"Not Found","Nebol nájdený"}.
 {"Notify subscribers when items are removed from the node","Upozorniť prihlásených používateľov na odstránenie položiek z uzlu"}.
 {"Notify subscribers when the node configuration changes","Upozorniť prihlásených používateľov na zmenu nastavenia uzlu"}.
 {"Notify subscribers when the node is deleted","Upozorniť prihlásených používateľov na zmazanie uzlu"}.
@@ -194,11 +190,8 @@
 {"Online Users:","Online používatelia:"}.
 {"Online Users","Online užívatelia"}.
 {"Only deliver notifications to available users","Doručovať upozornenia len aktuálne prihláseným používateľom"}.
-{"Only moderators and participants are allowed to change subject in this room","Len moderátori a zúčastnený majú povolené meniť tému tejto miestnosti"}.
-{"Only moderators are allowed to change subject in this room","Len moderátori majú povolené meniť tému miestnosti"}.
-{"Only occupants are allowed to send messages to the conference","Len členovia majú povolené zasielať správy do konferencie"}.
-{"Only occupants are allowed to send queries to the conference","Len členovia majú povolené dotazovať sa o konferencii"}.
-{"Only service administrators are allowed to send service messages","Iba správcovia služby majú povolené odosielanie servisných správ"}.
+{"Only moderators and participants are allowed to change the subject in this room","Len moderátori a zúčastnený majú povolené meniť tému tejto miestnosti"}.
+{"Only moderators are allowed to change the subject in this room","Len moderátori majú povolené meniť tému miestnosti"}.
 {"Options","Nastavenia"}.
 {"Organization Name","Meno organizácie: "}.
 {"Organization Unit","Organizačná jednotka: "}.
@@ -209,7 +202,6 @@
 {"Packet","Paket"}.
 {"Password:","Heslo:"}.
 {"Password","Heslo"}.
-{"Password required to enter this room","Pre vstup do miestnosti je potrebné heslo"}.
 {"Password Verification","Overenie hesla"}.
 {"Path to Dir","Cesta k adresáru"}.
 {"Path to File","Cesta k súboru"}.
@@ -217,27 +209,25 @@
 {"Period: ","Čas:"}.
 {"Persist items to storage","Uložiť položky natrvalo do úložiska"}.
 {"Ping","Ping"}.
+{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Prosím, berte na vedomie, že tieto nastavenia zázálohujú iba zabudovnú Mnesia databázu. Ak používate ODBC modul, musíte zálohovať vašu SQL databázu separátne."}.
 {"Pong","Pong"}.
 {"Port","Port"}.
-{"Present real Jabber IDs to","Zobrazovať skutočné JID"}.
+{"Present real Jabber IDs to","Zobrazovať skutočné Jabber ID"}.
 {"private, ","súkromná, "}.
+{"Protocol","Protokol"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","Žiadosť odberateľa PubSub"}.
-{"Queries to the conference members are not allowed in this room","Dotazovať sa o členoch nie je v tejto miestnosti povolené"}.
+{"Purge all items when the relevant publisher goes offline","Odstrániť všetky relevantné položky, keď užívateľ prejde do módu offline"}.
 {"RAM and disc copy","Kópia RAM a disku"}.
 {"RAM copy","Kópia RAM"}.
-{"(Raw)","(Raw)"}.
 {"Raw","Raw"}.
 {"Really delete message of the day?","Skutočne zmazať správu dňa?"}.
-{"Recipient is not in the conference room","Príjemca sa nenachádza v konferenčnej miestnosti"}.
 {"Registered Users:","Registrovaní používatelia:"}.
 {"Registered Users","Registrovaní používatelia"}.
-{"Registration in mod_irc for ","Registrácia do mod_irc na "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Podotýkame, že tieto nastavenia budú zálohované do zabudovanej Mnesia databázy. Ak používate ODBC modul, musíte zálohovať vašu SQL databázu separátne."}.
 {"Remote copy","Vzdialená kópia"}.
+{"Remove All Offline Messages","Odstrániť všetky offline správy"}.
 {"Remove","Odstrániť"}.
 {"Remove User","Odstrániť užívateľa"}.
-{"Replaced by new connection","Nahradené novým spojením"}.
 {"Resources","Zdroje"}.
 {"Restart","Reštart"}.
 {"Restart Service","Reštartovať službu"}.
@@ -247,7 +237,8 @@
 {"Restore","Obnoviť"}.
 {"Restore plain text backup immediately:","Okamžite obnoviť zálohu z textového súboru:"}.
 {"Room Configuration","Nastavenia miestnosti"}.
-{"Room creation is denied by service policy","Vytváranie miestnosti nie je povolené"}.
+{"Room description","Popis miestnosti"}.
+{"Room Occupants","Ľudí v miestnosti"}.
 {"Room title","Názov miestnosti"}.
 {"Roster groups allowed to subscribe","Skupiny kontaktov, ktoré môžu odoberať"}.
 {"Roster of ","Zoznam kontaktov "}.
@@ -272,9 +263,8 @@
 {"Show Ordinary Table","Zobraziť bežnú tabuľku"}.
 {"Shut Down Service","Vypnúť službu"}.
 {"~s invites you to the room ~s","~s Vás pozýva do miestnosti ~s"}.
-{"Size","Veľkosť"}.
-{"Specified nickname is already registered","Zadaná prezývka je už registrovaná"}.
 {"Specify the access model","Uveďte model prístupu"}.
+{"Specify the event message type","Uveďte typ pre správu o udalosti"}.
 {"Specify the publisher model","Špecifikovať model publikovania"}.
 {"~s's Offline Messages Queue","~s Offline správy"}.
 {"Start Modules at ","Spustiť moduly na "}.
@@ -285,7 +275,7 @@
 {"Stop Modules at ","Zastaviť moduly na "}.
 {"Stop Modules","Zastaviť moduly"}.
 {"Stopped Nodes","Zastavené uzly"}.
-{"Stop","Stop"}.
+{"Stop","Zastaviť"}.
 {"Storage Type","Typ úložiska"}.
 {"Store binary backup:","Uložiť binárnu zálohu:"}.
 {"Store plain text backup:","Uložiť zálohu do textového súboru:"}.
@@ -295,6 +285,10 @@
 {"Subscriber Address","Adresa odberateľa"}.
 {"Subscription","Prihlásenie"}.
 {"Sunday","Nedeľa"}.
+{"That nickname is already in use by another occupant","Prezývka je už používaná iným členom"}.
+{"That nickname is registered by another person","Prezývka je už zaregistrovaná inou osobou"}.
+{"The captcha is valid.","Platná captcha."}.
+{"The collections with which a node is affiliated","Kolekcie asociované s uzlom"}.
 {"the password is","heslo je"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu inému účastníkovi"}.
 {"This participant is kicked from the room because he sent an error message","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu"}.
@@ -311,24 +305,22 @@
 {"Transactions Logged:","Transakcie zaznamenaná"}.
 {"Transactions Restarted:","Transakcie reštartovaná"}.
 {"Tuesday","Utorok"}.
+{"Unable to generate a captcha","Nepodarilo sa vygenerovat captcha"}.
+{"Unauthorized","Neautorizovaný"}.
 {"Update ","Aktualizovať "}.
 {"Update","Aktualizovať"}.
-{"Updated modules","Aktualizované moduly"}.
 {"Update message of the day (don't send)","Aktualizovať správu dňa (neodosielať)"}.
 {"Update message of the day on all hosts (don't send)","Upraviť správu dňa na všetkých serveroch"}.
 {"Update plan","Aktualizovať plán"}.
 {"Update script","Aktualizované skripty"}.
 {"Uptime:","Uptime:"}.
-{"Use of STARTTLS required","Použitie STARTTLS je vyžadované"}.
 {"User Management","Správa užívateľov"}.
 {"User ","Používateľ "}.
-{"Users are not allowed to register accounts so fast","Nieje možné vytvárať účty tak rýchlo po sebe"}.
 {"Users Last Activity","Posledná aktivita používateľa"}.
 {"Users","Používatelia"}.
-{"User","Užívateľ: "}.
+{"User","Užívateľ"}.
 {"Validate","Overiť"}.
 {"vCard User Search","Hľadať užívateľov vo vCard"}.
-{"Virtual Hosts","Virtuálne servery"}.
 {"Visitors are not allowed to change their nicknames in this room","V tejto miestnosti nieje povolené meniť prezývky"}.
 {"Visitors are not allowed to send messages to all occupants","Návštevníci nemajú povolené zasielať správy všetkým prihláseným do konferencie"}.
 {"Wednesday","Streda"}.
@@ -336,8 +328,7 @@
 {"Whether to allow subscriptions","Povoliť prihlasovanie"}.
 {"You have been banned from this room","Boli ste vylúčený z tejto miestnosti"}.
 {"You must fill in field \"Nickname\" in the form","Musíte vyplniť políčko \"Prezývka\" vo formulári"}.
-{"You need an x:data capable client to configure mod_irc settings","Pre konfiguráciu mod_irc potrebujete klienta podporujúceho x:data"}.
 {"You need an x:data capable client to configure room","Na konfiguráciu miestnosti potrebujete klienta podporujúceho x:data"}.
 {"You need an x:data capable client to register nickname","Na registráciu prezývky potrebujete klienta podporujúceho z x:data"}.
 {"You need an x:data capable client to search","Na vyhľadávanie potrebujete klienta podporujúceho x:data"}.
-{"Your contact offline message queue is full. The message has been discarded.","Fronta offline správ tohoto kontaktu je plná. Správa bola zahodená."}.
+{"Your messages to ~s are being blocked. To unblock them, visit ~s","Správa určená pre ~s bola zablokovaná. Oblokovať ju môžete na ~s"}.

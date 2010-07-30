@@ -2,7 +2,6 @@
 {"Access Control List Configuration","Erişim Kontrol Listelerinin Ayarlanması (ACL)"}.
 {"Access control lists","Erişim kontrol listeleri (ACL)"}.
 {"Access Control Lists","Erişim Kontrol Listeleri (ACL)"}.
-{"Access denied by service policy","Servis politikası gereği erişim engellendi"}.
 {"Access rules","Erişim kuralları"}.
 {"Access Rules","Erişim Kuralları"}.
 {"Action on user","Kullanıcıya uygulanacak eylem"}.
@@ -14,8 +13,8 @@
 {"Administrator privileges required","Yönetim yetkileri gerekli"}.
 {"A friendly name for the node","Düğüm için dostane bir isim"}.
 {"All activity","Tüm aktivite"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Bu JID bu pubsub düğümüne üye olmasına izin verilsin mi?"}.
-{"Allow users to change subject","Kullanıcıların konu değiştirmesine izin ver"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Bu Jabber ID bu pubsub düğümüne üye olmasına izin verilsin mi?"}.
+{"Allow users to change the subject","Kullanıcıların konu değiştirmesine izin ver"}.
 {"Allow users to query other users","Kullanıcıların diğer kullanıcıları sorgulamalarına izin ver"}.
 {"Allow users to send invites","Kullanıcıların davetiye göndermelerine izin ver"}.
 {"Allow users to send private messages","Kullanıcıların özel mesaj göndermelerine izin ver"}.
@@ -24,6 +23,7 @@
 {"All Users","Tüm Kullanıcılar"}.
 {"Announcements","Duyurular"}.
 {"anyone","herkes"}.
+{"A password is required to enter this room","Bu odaya girmek için parola gerekiyor"}.
 {"April","Nisan"}.
 {"August","Ağustos"}.
 {"Backup Management","Yedek Yönetimi"}.
@@ -34,17 +34,14 @@
 {"Birthday","Doğumgünü"}.
 {"Change Password","Parola Değiştir"}.
 {"Change User Password","Kullanıcı Parolasını Değiştir"}.
-{"Chatroom configuration modified","Sohbet odası ayarı değiştirildi"}.
-{"Chatrooms","Sohbet Odaları"}.
 {"Choose a username and password to register with this server","Bu sunucuya kayıt olmak için bir kullanıcı ismi ve parola seçiniz"}.
 {"Choose modules to stop","Durdurulacak modülleri seçiniz"}.
 {"Choose storage type of tables","Tabloların veri depolama tipini seçiniz"}.
 {"Choose whether to approve this entity's subscription.","Bu varlığın üyeliğini onaylayıp onaylamamayı seçiniz."}.
 {"City","İl"}.
 {"Commands","Komutlar"}.
-{"Conference room does not exist","Konferans odası bulunamadı"}.
 {"Configuration","Ayarlar"}.
-{"Configuration for ","Ayarlar : "}.
+{"Configuration of room ~s","~s odasının ayarları"}.
 {"Connected Resources:","Bağlı Kaynaklar:"}.
 {"Country","Ülke"}.
 {"CPU Time:","İşlemci Zamanı:"}.
@@ -62,20 +59,18 @@
 {"Deliver payloads with event notifications","Yükleri (payload) olay uyarıları ile beraber gönder"}.
 {"Description:","Tanım:"}.
 {"Disc only copy","Sadece disk kopyala"}.
-{"Displayed Groups:","Gösterilen Gruplar:"}.
 {"Dump Backup to Text File at ","Metin Dosyasına Döküm Alarak Yedekle : "}.
 {"Dump to Text File","Metin Dosyasına Döküm Al"}.
 {"Edit Properties","Özellikleri Düzenle"}.
-{"ejabberd IRC module","ejabberd IRC modülü"}.
 {"ejabberd MUC module","ejabberd MUC modülü"}.
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe modülü"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams modülü"}.
 {"ejabberd vCard module","ejabberd vCard modülü"}.
 {"ejabberd virtual hosts","ejabberd sanal sunucuları"}.
 {"ejabberd Web Admin","ejabberd Web Yöneticisi"}.
+{"Elements","Elementler"}.
 {"Email","E-posta"}.
 {"Enable logging","Kayıt tutma özelliğini aç"}.
-{"Encodings","Kodlamalar"}.
 {"End User Session","Kullanıcı Oturumunu Kapat"}.
 {"Enter list of {Module, [Options]}","{Module, [Options]} listesi giriniz"}.
 {"Enter nickname you want to register","Kaydettirmek istediğiniz takma ismi giriniz"}.
@@ -83,9 +78,11 @@
 {"Enter path to jabberd14 spool dir","jabberd14 spool dosyası için yol giriniz"}.
 {"Enter path to jabberd14 spool file","jabberd14 spool dosyası için yol giriniz"}.
 {"Enter path to text file","Metin dosyasının yolunu giriniz"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers","IRC sunuculara bağlanmak için kullanmak istediğiniz kullanıcı isimleri ve kodlamaları giriniz"}.
+{"Enter the text you see","Gördüğünüz metni giriniz"}.
 {"Erlang Jabber Server","Erlang Jabber Sunucusu"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}].","Örnek: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1\"}]."}.
+{"Error","Hata"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa aktar:"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Bir sunucudaki kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa aktar:"}.
 {"Family Name","Soyisim"}.
 {"February","Şubat"}.
 {"Fill in fields to search for any matching Jabber User","Eşleşen jabber kullanıcılarını aramak için alanları doldurunuz"}.
@@ -108,10 +105,12 @@
 {"has been kicked","odadan atıldı"}.
 {" has set the subject to: "," konuyu değiştirdi: "}.
 {"Host","Sunucu"}.
-{"If you want to specify different encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\"}'.  By default this service use \"~s\" encoding.","IRC sunucuları için farklı kodlamalar belirtmek istiyorsanız, '{\"irc sunucusu\", \"kodlama\"}' biçeminde değerlerle bu listeyi doldurunuz. Öntanımlı olarak bu servis \"~s\" kodlamasını kullanıyor."}.
 {"Import Directory","Dizini İçe Aktar"}.
 {"Import File","Dosyayı İçe Aktar"}.
+{"Import user data from jabberd14 spool file:","Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçe Aktar:"}.
 {"Import User from File at ","Dosyadan Kullanıcıları İçe Aktar : "}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Kullanıcıları bir PIEFXIS dosyasından (XEP-0227) içe aktar:"}.
+{"Import users data from jabberd14 spool directory:","Jabberd 1.4 Spool Dizininden Kullanıcıları İçe Aktar:"}.
 {"Import Users from Dir at ","Dizinden Kullanıcıları İçe Aktar : "}.
 {"Import Users From jabberd14 Spool Files","Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçeri Aktar"}.
 {"Improper message type","Uygunsuz mesaj tipi"}.
@@ -119,15 +118,13 @@
 {"Invalid affiliation: ~s","Geçersiz ilişki: ~s"}.
 {"Invalid role: ~s","Geçersiz rol: ~s"}.
 {"IP addresses","IP adresleri"}.
-{"IRC Transport","IRC Nakli (Transport)"}.
-{"IRC Username","IRC Kullanıcı İsmi"}.
+{"IP","IP"}.
 {"is now known as","isim değiştirdi :"}.
 {"It is not allowed to send private messages of type \"groupchat\"","\"groupchat\" tipinde özel mesajlar gönderilmesine izin verilmiyor"}.
 {"It is not allowed to send private messages","Özel mesaj gönderilmesine izin verilmiyor"}.
-{"It is not allowed to send private messages to the conference","Konferansa özel mesajlar gönderilmesine izin verilmiyor"}.
 {"Jabber ID","Jabber ID"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s geçersiz"}.
 {"January","Ocak"}.
-{"Jabber ID ~s is invalid","JID ~s geçersiz"}.
 {"joins the room","odaya katıldı"}.
 {"July","Temmuz"}.
 {"June","Haziran"}.
@@ -141,6 +138,7 @@
 {"List of modules to start","Başlatılacak modüllerin listesi"}.
 {"Low level update script","Düşük seviye güncelleme betiği"}.
 {"Make participants list public","Katılımcı listesini herkese açık hale getir"}.
+{"Make room captcha protected","Odayı insan doğrulaması (captcha) korumalı hale getir"}.
 {"Make room members-only","Odayı sadece üyelere açık hale getir"}.
 {"Make room moderated","Odayı moderasyonlu hale getir"}.
 {"Make room password protected","Odayı parola korumalı hale getir"}.
@@ -151,13 +149,14 @@
 {"Max # of items to persist","Kalıcı hale getirilecek en fazla öğe sayısı"}.
 {"Max payload size in bytes","En fazla yük (payload) boyutu (bayt olarak)"}.
 {"May","Mayıs"}.
-{"Membership required to enter this room","Bu odaya girmek için üyelik gerekiyor"}.
+{"Membership is required to enter this room","Bu odaya girmek için üyelik gerekiyor"}.
 {"Members:","Üyeler:"}.
 {"Memory","Bellek"}.
 {"Message body","Mesajın gövdesi"}.
 {"Middle Name","Ortanca İsim"}.
 {"Moderator privileges required","Moderatör yetkileri gerekli"}.
 {"moderators only","sadece moderatörler"}.
+{"Modified modules","Değişen modüller"}.
 {"Module","Modül"}.
 {"Modules at ","Modüller : "}.
 {"Modules","Modüller"}.
@@ -165,12 +164,9 @@
 {"Name:","İsim:"}.
 {"Name","İsim"}.
 {"Never","Asla"}.
-{"Nickname is already in use by another occupant","Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
-{"Nickname is registered by another person","Takma isim başka biri tarafından kaydettirilmiş"}.
 {"Nickname Registration at ","Takma İsim Kaydı : "}.
 {"Nickname ~s does not exist in the room","~s takma ismi odada yok"}.
 {"Nickname","Takma isim"}.
-{"No body provided for announce message","Duyuru mesajının gövdesi yok"}.
 {"No Data","Veri Yok"}.
 {"Node ","Düğüm "}.
 {"Node ID","Düğüm ID"}.
@@ -178,7 +174,7 @@
 {"Nodes","Düğümler"}.
 {"No limit","Sınırsız"}.
 {"None","Hiçbiri"}.
-{"No resource provided","Hiç kaynak sağlanmadı"}.
+{"Not Found","Bulunamadı"}.
 {"Notify subscribers when items are removed from the node","Düğümden öğeler kaldırıldığında üyeleri uyar"}.
 {"Notify subscribers when the node configuration changes","Düğüm ayarları değiştiğinde üyeleri uyar"}.
 {"Notify subscribers when the node is deleted","Bir düğüm silindiğinde üyeleri uyar"}.
@@ -194,11 +190,8 @@
 {"Online Users:","Bağlı Kullanıcılar:"}.
 {"Online Users","Bağlı Kullanıcılar"}.
 {"Only deliver notifications to available users","Uyarıları sadece durumu uygun kullanıcılara ulaştır"}.
-{"Only moderators and participants are allowed to change subject in this room","Sadece moderatörlerin ve katılımcıların bu odanın konusunu değiştirmesine izin veriliyor"}.
-{"Only moderators are allowed to change subject in this room","Sadece moderatörlerin bu odanın konusunu değiştirmesine izin veriliyor"}.
-{"Only occupants are allowed to send messages to the conference","Sadece oda sakinlerinin konferansa mesaj göndermesine izin veriliyor"}.
-{"Only occupants are allowed to send queries to the conference","Sadece oda sakinlerinin konferansa sorgu göndermesine izin veriliyor"}.
-{"Only service administrators are allowed to send service messages","Sadece servis yöneticileri servis mesajı gönderebilirler"}.
+{"Only moderators and participants are allowed to change the subject in this room","Sadece moderatörlerin ve katılımcıların bu odanın konusunu değiştirmesine izin veriliyor"}.
+{"Only moderators are allowed to change the subject in this room","Sadece moderatörlerin bu odanın konusunu değiştirmesine izin veriliyor"}.
 {"Options","Seçenekler"}.
 {"Organization Name","Kurum İsmi"}.
 {"Organization Unit","Kurumun İlgili Birimi"}.
@@ -209,7 +202,6 @@
 {"Packet","Paket"}.
 {"Password:","Parola:"}.
 {"Password","Parola"}.
-{"Password required to enter this room","Bu odaya girmek için parola gerekiyor"}.
 {"Password Verification","Parola Doğrulaması"}.
 {"Path to Dir","Dizinin Yolu"}.
 {"Path to File","Dosyanın Yolu"}.
@@ -217,27 +209,24 @@
 {"Period: ","Periyot:"}.
 {"Persist items to storage","Öğeleri depoda kalıcı hale getir"}.
 {"Ping","Ping"}.
+{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Bu seçeneklerin sadece gömülü Mnesia veritabanını yedekleyeceğine dikkat edin. Eğer ODBC modülünü kullanıyorsanız, SQL veritabanınızı da ayrıca yedeklemeniz gerekiyor."}.
 {"Pong","Pong"}.
 {"Port","Kapı (Port)"}.
-{"Present real Jabber IDs to","Gerçek JID'lerini göster :"}.
+{"Present real Jabber IDs to","Gerçek Jabber ID'lerini göster :"}.
 {"private, ","özel"}.
+{"Protocol","Protokol"}.
 {"Publish-Subscribe","Yayınla-Üye Ol"}.
 {"PubSub subscriber request","PubSub üye isteği"}.
-{"Queries to the conference members are not allowed in this room","Bu odada konferans üyelerine sorgu yapılmasına izin verilmiyor"}.
 {"RAM and disc copy","RAM ve disk kopyala"}.
 {"RAM copy","RAM kopyala"}.
-{"(Raw)","(Ham)"}.
 {"Raw","Ham"}.
 {"Really delete message of the day?","Günün mesajını silmek istediğinize emin misiniz?"}.
-{"Recipient is not in the conference room","Alıcı konferans odasında değil"}.
 {"Registered Users:","Kayıtlı Kullanıcılar:"}.
 {"Registered Users","Kayıtlı Kullanıcılar"}.
-{"Registration in mod_irc for ","mod_irc'ye kayıt : "}.
-{"Remark that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Bu seçeneklerin sadece gömülü Mnesia veritabanını yedekleyeceğine dikkat edin. Eğer ODBC modülünü kullanıyorsanız, SQL veritabanınızı da ayrıca yedeklemeniz gerekiyor."}.
 {"Remote copy","Uzak kopyala"}.
+{"Remove All Offline Messages","Tüm Çevirim-dışı Mesajları Kaldır"}.
 {"Remove","Kaldır"}.
 {"Remove User","Kullanıcıyı Kaldır"}.
-{"Replaced by new connection","Eski bağlantı yenisi ile değiştirildi"}.
 {"Resources","Kaynaklar"}.
 {"Restart Service","Servisi Tekrar Başlat"}.
 {"Restart","Tekrar Başlat"}.
@@ -247,7 +236,8 @@
 {"Restore plain text backup immediately:","Hemen düz metin yedekten geri al"}.
 {"Restore","Yedekten Geri Al"}.
 {"Room Configuration","Oda Ayarları"}.
-{"Room creation is denied by service policy","Odanın oluşturulması servis politikası gereği reddedildi"}.
+{"Room description","Oda tanımı"}.
+{"Room Occupants","Oda Sakini Sayısı"}.
 {"Room title","Oda başlığı"}.
 {"Roster groups allowed to subscribe","Üye olunmasına izin verilen kontak listesi grupları"}.
 {"Roster","Kontak Listesi"}.
@@ -272,8 +262,6 @@
 {"Show Ordinary Table","Sıradan Tabloyu Göster"}.
 {"Shut Down Service","Servisi Kapat"}.
 {"~s invites you to the room ~s","~s sizi ~s odasına davet ediyor"}.
-{"Size","Boyut"}.
-{"Specified nickname is already registered","Belirtilen takma isim daha önce bir başkası tarafından kaydettirilmiş"}.
 {"Specify the access model","Erişim modelini belirtiniz"}.
 {"Specify the publisher model","Yayıncı modelini belirtiniz"}.
 {"~s's Offline Messages Queue","~s Kullanıcısının Mesaj Kuyruğu"}.
@@ -295,6 +283,10 @@
 {"Subscriber Address","Üye Olanın Adresi"}.
 {"Subscription","Üyelik"}.
 {"Sunday","Pazar"}.
+{"That nickname is already in use by another occupant","Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
+{"That nickname is registered by another person","O takma isim başka biri tarafından kaydettirilmiş"}.
+{"The captcha is valid.","İnsan doğrulaması (captcha) geçerli."}.
+{"The collections with which a node is affiliated","Bir düğüm ile bağlantılı koleksiyonlar"}.
 {"the password is","parola :"}.
 {"This participant is kicked from the room because he sent an error message","Bu katılımcı bir hata mesajı gönderdiği için odadan atıldı"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Bu katılımcı başka bir katılımcıya bir hata mesajı gönderdiği için odadan atıldı"}.
@@ -311,7 +303,8 @@
 {"Transactions Logged:","Kaydı Tutulan Hareketler (Transactions):"}.
 {"Transactions Restarted:","Tekrar Başlatılan Hareketler (Transactions):"}.
 {"Tuesday","Salı"}.
-{"Updated modules","Güncellenen modüller"}.
+{"Unable to generate a captcha","İnsan doğrulaması (captcha) oluşturulamadı"}.
+{"Unauthorized","Yetkisiz"}.
 {"Update ","Güncelle "}.
 {"Update","GÜncelle"}.
 {"Update message of the day (don't send)","Günün mesajını güncelle (gönderme)"}.
@@ -319,16 +312,13 @@
 {"Update plan","Planı güncelle"}.
 {"Update script","Betiği Güncelle"}.
 {"Uptime:","Hizmet Süresi:"}.
-{"Use of STARTTLS required","STARTTLS kullanımı gereklidir"}.
 {"User ","Kullanıcı "}.
 {"User","Kullanıcı"}.
 {"User Management","Kullanıcı Yönetimi"}.
-{"Users are not allowed to register accounts so fast","Kullanıcıların bu kadar hızlı hesap açmalarına izin verilmiyor"}.
 {"Users","Kullanıcılar"}.
 {"Users Last Activity","Kullanıcıların Son Aktiviteleri"}.
 {"Validate","Geçerli"}.
 {"vCard User Search","vCard Kullanıcı Araması"}.
-{"Virtual Hosts","Sanal Sunucular"}.
 {"Visitors are not allowed to change their nicknames in this room","Bu odada ziyaretçilerin takma isimlerini değiştirmesine izin verilmiyor"}.
 {"Visitors are not allowed to send messages to all occupants","Ziyaretçilerin odadaki tüm sakinlere mesaj göndermesine izin verilmiyor"}.
 {"Wednesday","Çarşamba"}.
@@ -336,8 +326,7 @@
 {"Whether to allow subscriptions","Üyeliklere izin verilsin mi"}.
 {"You have been banned from this room","Bu odaya girmeniz yasaklandı"}.
 {"You must fill in field \"Nickname\" in the form","Formda \"Takma isim\" alanını doldurmanız gerekiyor"}.
-{"You need an x:data capable client to configure mod_irc settings","mod_irc ayarlarını düzenlemek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"You need an x:data capable client to configure room","Odayı ayarlamak için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"You need an x:data capable client to register nickname","Takma isminizi kaydettirmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"You need an x:data capable client to search","Arama yapabilmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
-{"Your contact offline message queue is full. The message has been discarded.","Çevirim-dışı mesaj kuyruğunuz dolu. Mesajını dikkate alınmadı."}.
+{"Your messages to ~s are being blocked. To unblock them, visit ~s","~s kullanıcısına mesajlarınız engelleniyor. Durumu düzeltmek için ~s adresini ziyaret ediniz."}.
