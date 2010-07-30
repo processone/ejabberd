@@ -66,8 +66,8 @@
 -include("ejabberd.hrl").
 
 %% @type authmodule() = ejabberd_auth_anonymous | ejabberd_auth_external |
-%%                      ejabberd_auth_internal | ejabberd_auth_ldap |
-%%                      ejabberd_auth_odbc | ejabberd_auth_pam | atom().
+%%                      ejabberd_auth_ldap | ejabberd_auth_pam |
+%%                      ejabberd_auth_storage | atom().
 
 %%%----------------------------------------------------------------------
 %%% API

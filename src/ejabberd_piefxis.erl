@@ -227,7 +227,7 @@ create_user(User,Password,Domain) ->
 
 populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
     io:format("Trying to add/update roster list...",[]),
-    case loaded_module(Domain,[mod_roster_odbc,mod_roster]) of
+    case loaded_module(Domain,[mod_roster]) of
 	{ok, M} ->
 	    case M:set_items(User, Domain, El) of
 		{atomic, ok} ->
@@ -240,7 +240,7 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
 		    {error, not_found}
 	    end;
 	E -> io:format(" ERROR: ~p~n",[E]),
-	     ?ERROR_MSG("No modules loaded [mod_roster, mod_roster_odbc] ~s ~n",
+	     ?ERROR_MSG("Module not loaded: mod_roster ~s ~n",
 			[exmpp_xml:document_to_list(El)]),
 	     {error, not_found}
     end;
@@ -268,7 +268,7 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:roster'}) ->
 
 populate_user(User,Domain,El=#xmlel{name='vCard', ns='vcard-temp'}) ->
     io:format("Trying to add/update vCards...",[]),
-    case loaded_module(Domain,[mod_vcard,mod_vcard_odbc]) of
+    case loaded_module(Domain,[mod_vcard]) of
 	{ok, M}  ->  FullUser = exmpp_jid:make(User, Domain),
 		     IQ = #iq{kind=request, type = set, payload = El},
 		     case M:process_sm_iq(FullUser, FullUser , IQ) of
@@ -281,7 +281,7 @@ populate_user(User,Domain,El=#xmlel{name='vCard', ns='vcard-temp'}) ->
 		     end;
 	_ ->
 	    io:format(" ERROR.~n",[]),
-	    ?ERROR_MSG("No modules loaded [mod_vcard, mod_vcard_odbc] ~s ~n",
+	    ?ERROR_MSG("Module not loaded: mod_vcard ~s ~n",
 		       [exmpp_xml:document_to_list(El)]),
 	    {error, not_found}
     end;
@@ -294,7 +294,7 @@ populate_user(User,Domain,El=#xmlel{name='vCard', ns='vcard-temp'}) ->
 
 populate_user(User,Domain,El=#xmlel{name='offline-messages'}) ->
     io:format("Trying to add/update offline-messages...",[]),
-    case loaded_module(Domain, [mod_offline, mod_offline_odbc]) of
+    case loaded_module(Domain, [mod_offline]) of
 	{ok, M} ->
 	    ok = exmpp_xml:foreach(
 		   fun (_Element, {xmlcdata, _}) ->
@@ -307,7 +307,7 @@ populate_user(User,Domain,El=#xmlel{name='offline-messages'}) ->
 		   end, El), io:format(" DONE.~n",[]);
 	_ ->
 	    io:format(" ERROR.~n",[]),
-	    ?ERROR_MSG("No modules loaded [mod_offline, mod_offline_odbc] ~s ~n",
+	    ?ERROR_MSG("Module not loaded: mod_offline ~s ~n",
 		       [exmpp_xml:document_to_list(El)]),
 	    {error, not_found}
     end;
@@ -320,7 +320,7 @@ populate_user(User,Domain,El=#xmlel{name='offline-messages'}) ->
 
 populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:private'}) ->
     io:format("Trying to add/update private storage...",[]),
-    case loaded_module(Domain,[mod_private_odbc,mod_private]) of
+    case loaded_module(Domain,[mod_private]) of
 	{ok, M} ->
 	    FullUser = exmpp_jid:make(User, Domain),
 	    IQ = #iq{type = set,
@@ -337,7 +337,7 @@ populate_user(User,Domain,El=#xmlel{name='query', ns='jabber:iq:private'}) ->
 	    end;
 	_ ->
 	    io:format(" ERROR.~n",[]),
-	    ?ERROR_MSG("No modules loaded [mod_private, mod_private_odbc] ~s~n",
+	    ?ERROR_MSG("Module not loaded: mod_private ~s~n",
 		       [exmpp_xml:document_to_list(El)]),
 	    {error, not_found}
     end;
@@ -482,7 +482,7 @@ extract_user(Username, Host) ->
 
 %% @spec (InfoName::atom(), Username::string(), Host::string()) -> string()
 extract_user_info(roster, Username, Host) ->
-    case loaded_module(Host,[mod_roster_odbc,mod_roster]) of
+    case loaded_module(Host,[mod_roster]) of
 	{ok, M} ->
 	    From = To = exmpp_jid:make(Username, Host, ""),
 	    SubelGet = exmpp_xml:element(?NS_ROSTER, 'query', [], []),
@@ -497,7 +497,7 @@ extract_user_info(roster, Username, Host) ->
     end;
 
 extract_user_info(offline, Username, Host) ->
-    case loaded_module(Host,[mod_offline,mod_offline_odbc]) of
+    case loaded_module(Host,[mod_offline]) of
 	{ok, mod_offline} ->
 	    Els = mnesia_pop_offline_messages([], Username, Host),
 	    case Els of
@@ -508,24 +508,20 @@ extract_user_info(offline, Username, Host) ->
 		    %OfEl = {xmlelement, "offline-messages", [], Els},
 		    exmpp_xml:document_to_list(OfEl)
 	    end;
-	{ok, mod_offline_odbc} ->
-	    "";
 	_E ->
 	    ""
     end;
 
 extract_user_info(private, Username, Host) ->
-    case loaded_module(Host,[mod_private,mod_private_odbc]) of
+    case loaded_module(Host,[mod_private]) of
 	{ok, mod_private} ->
 	    get_user_private_mnesia(Username, Host);
-	{ok, mod_private_odbc} ->
-	    "";
 	_E ->
 	    ""
     end;
 
 extract_user_info(vcard, Username, Host) ->
-    case loaded_module(Host,[mod_vcard, mod_vcard_odbc, mod_vcard_odbc]) of
+    case loaded_module(Host,[mod_vcard]) of
 	{ok, M} ->
 	    From = To = exmpp_jid:make(Username, Host, ""),
 	    SubelGet = exmpp_xml:element(?NS_VCARD, 'vCard', [], []),

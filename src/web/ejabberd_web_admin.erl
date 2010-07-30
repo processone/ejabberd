@@ -1604,7 +1604,6 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     [list_given_users(Host, Sub, "../../", Lang, URLFunc)].
 
 list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
-    ModLast = get_lastactivity_module(Host),
     ModOffline = get_offlinemsg_module(Host),
     ?XE('table',
 	[?XE('thead',
@@ -1625,7 +1624,7 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 		       FLast =
 			   case ejabberd_sm:get_user_resources(UserB, ServerB) of
 			       [] ->
-				   case ModLast:get_last_info(User, Server) of
+				   case mod_last:get_last_info(User, Server) of
 				       not_found ->
 					   ?T("Never");
 				       {ok, Shift, _Status} ->
@@ -1660,22 +1659,9 @@ get_offlinemsg_length(ModOffline, User, Server) ->
     end.
 
 get_offlinemsg_module(Server) ->
-    case [mod_offline, mod_offline_odbc] -- gen_mod:loaded_modules(Server) of
-        [mod_offline, mod_offline_odbc] -> none;
-        [mod_offline_odbc] -> mod_offline;
-        [mod_offline] -> mod_offline_odbc
-    end.
-
-get_lastactivity_module(Server) ->
-    case lists:member(mod_last, gen_mod:loaded_modules(Server)) of
-        true -> mod_last;
-        _ -> mod_last_odbc
-    end.
-
-get_lastactivity_menuitem_list(Server) ->
-    case get_lastactivity_module(Server) of
-        mod_last -> [{"last-activity", "Last Activity"}];
-        mod_last_odbc -> []
+    case [mod_offline] -- gen_mod:loaded_modules(Server) of
+        [mod_offline] -> none;
+        [] -> mod_offline
     end.
 
 us_to_list({User, Server}) ->
@@ -1776,10 +1762,9 @@ user_info(User, Server, Query, Lang) ->
     UserItems = ejabberd_hooks:run_fold(webadmin_user, list_to_binary(LServer), [],
 					[User, Server, Lang]),
     %% Code copied from list_given_users/5:
-    ModLast = get_lastactivity_module(Server),
     LastActivity = case ejabberd_sm:get_user_resources(UserB, ServerB) of
 		       [] ->
-			   case ModLast:get_last_info(UserB, ServerB) of
+			   case mod_last:get_last_info(UserB, ServerB) of
 			       not_found ->
 				   ?T("Never");
 			       {ok, Shift, _Status} ->
@@ -2963,9 +2948,9 @@ make_host_menu(Host, HostNodeMenu, Lang, JID) ->
     HostFixed = [{"acls", "Access Control Lists"},
 		 {"access", "Access Rules"},
 		 {"users", "Users"},
-		 {"online-users", "Online Users"}]
-		++ get_lastactivity_menuitem_list(Host) ++
-		[{"nodes", "Nodes", HostNodeMenu},
+		 {"online-users", "Online Users"},
+		 {"last-activity", "Last Activity"},
+		 {"nodes", "Nodes", HostNodeMenu},
 		 {"misc", "Miscelanea Options"},
 		 {"stats", "Statistics"}]
 	++ get_menu_items_hook({host, Host}, Lang),

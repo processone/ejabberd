@@ -116,7 +116,6 @@ xdb_data(_User, _Server, #xmlcdata{}) ->
     ok;
 xdb_data(User, Server, #xmlel{ns = NS} = El) ->
     From = exmpp_jid:make(User, Server),
-    LServer = exmpp_stringprep:nameprep(Server),
     UserB = list_to_binary(User),
     ServerB = list_to_binary(Server),
     case NS of
@@ -125,47 +124,22 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 	    ejabberd_auth:set_password(UserB, ServerB, Password),
 	    ok;
 	?NS_ROSTER ->
-	    case lists:member(mod_roster_odbc,
-			      gen_mod:loaded_modules(LServer)) of
-		true ->
-		    catch mod_roster_odbc:set_items(UserB, ServerB, El);
-		false ->
-		    catch mod_roster:set_items(UserB, ServerB, El)
-	    end,
+	    catch mod_roster:set_items(UserB, ServerB, El),
 	    ok;
 	?NS_LAST_ACTIVITY ->
 	    TimeStamp = exmpp_xml:get_attribute_as_list(El, 'last', ""),
 	    Status = exmpp_xml:get_cdata(El),
-	    case lists:member(mod_last_odbc,
-			      gen_mod:loaded_modules(LServer)) of
-		true ->
-		    catch mod_last_odbc:store_last_info(
-			    UserB,
-			    ServerB,
-			    list_to_integer(TimeStamp),
-			    Status);
-		false ->
 		    catch mod_last:store_last_info(
 			    UserB,
 			    ServerB,
 			    list_to_integer(TimeStamp),
-			    Status)
-	    end,
+			    Status),
 	    ok;
 	?NS_VCARD ->
-	    case lists:member(mod_vcard_odbc,
-			      gen_mod:loaded_modules(LServer)) of
-		true ->
-		    catch mod_vcard_odbc:process_sm_iq(
-			    From,
-			    exmpp_jid:make(Server),
-			    #iq{kind = request, type = set, ns = ?NS_VCARD, payload = El, iq_ns = ?NS_JABBER_CLIENT});
-		false ->
 		    catch mod_vcard:process_sm_iq(
 			    From,
 			    exmpp_jid:make(Server),
-			    #iq{kind = request, type = set, ns = ?NS_VCARD, payload = El, iq_ns = ?NS_JABBER_CLIENT})
-	    end,
+			    #iq{kind = request, type = set, ns = ?NS_VCARD, payload = El, iq_ns = ?NS_JABBER_CLIENT}),
 	    ok;
 	"jabber:x:offline" ->
 	    process_offline(Server, From, El),

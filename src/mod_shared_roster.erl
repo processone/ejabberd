@@ -176,7 +176,7 @@ get_user_roster(Items, US) ->
 get_vcard_module(Server) ->
     Modules = gen_mod:loaded_modules(Server),
     [M || M <- Modules,
-	  (M == mod_vcard) or (M == mod_vcard_odbc) or (M == mod_vcard_ldap)].
+	  (M == mod_vcard) or (M == mod_vcard_ldap)].
 
 get_rosteritem_name([], _, _) ->
     <<>>;
@@ -235,15 +235,14 @@ process_item(RosterItem, Host) ->
 		[] ->
                     %% Remove pending subscription by setting it
                     %% unsubscribed.
-                    Mod = get_roster_mod(ServerFrom),
 
                     %% Remove pending out subscription
-                    Mod:out_subscription(UserTo, ServerTo,
+                    mod_roster:out_subscription(UserTo, ServerTo,
                                          exmpp_jid:make(UserFrom, ServerFrom),
                                          unsubscribe),
 
                     %% Remove pending in subscription
-                    Mod:in_subscription(aaaa, UserFrom, ServerFrom,
+                    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom,
                                         exmpp_jid:make(UserTo, ServerTo),
                                         unsubscribe, ""),
 
@@ -272,8 +271,6 @@ build_roster_record(User1, Server1, User2, Server2, Name2, Groups) ->
 
 set_new_rosteritems(UserFrom, ServerFrom,
 		    UserTo, ServerTo, ResourceTo, NameTo, GroupsFrom) ->
-    Mod = get_roster_mod(ServerFrom),
-
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
@@ -285,20 +282,20 @@ set_new_rosteritems(UserFrom, ServerFrom,
     set_item(UserTo, ServerTo, undefined, RITo),
 
     %% From requests
-    Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribe),
-    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribe, ""),
+    mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo, subscribe),
+    mod_roster:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribe, ""),
 
     %% To accepts
-    Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribed),
-    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribed, ""),
+    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, subscribed),
+    mod_roster:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribed, ""),
 
     %% To requests
-    Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribe),
-    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribe, ""),
+    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, subscribe),
+    mod_roster:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribe, ""),
 
     %% From accepts
-    Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribed),
-    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribed, ""),
+    mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo, subscribed),
+    mod_roster:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribed, ""),
 
     RIFrom.
 
@@ -370,15 +367,13 @@ in_subscription(Acc, User, Server, JID, Type, _Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).
 
 out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
-    Mod = get_roster_mod(ServerFrom),
-
     %% Remove pending out subscription
     {UserTo, ServerTo, _} = jlib:short_prepd_bare_jid(JIDTo),
     JIDFrom = exmpp_jid:make(UserFrom, UserTo),
-    Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
+    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
 
     %% Remove pending in subscription
-    Mod:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, ""),
+    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, ""),
 
     process_subscription(out, UserFrom, ServerFrom, JIDTo, unsubscribed, false);
 out_subscription(User, Server, JID, Type) ->
@@ -1008,14 +1003,6 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	    end;
 	_ ->
 	    nothing
-    end.
-
-%% Get the roster module for Server.
-get_roster_mod(Server) ->
-    case lists:member(mod_roster_odbc,
-                      gen_mod:loaded_modules(Server)) of
-        true -> mod_roster_odbc;
-        false -> mod_roster
     end.
 
 get_opt(Opts, Opt, Default) ->
