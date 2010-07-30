@@ -882,7 +882,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	?XAE("table", [?XMLATTR('class', <<"withtextareas">>)],
 	     [?XE("tbody",
 		  [?XE("tr",
-		       [?XCT("td", "ID:"),
+		       [?XCT("td", "Group ID:"),
 			?XE("td", [?C(Group)])
 		       ]
 		      ),

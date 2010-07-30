@@ -861,7 +861,7 @@ user_vcard(User, Server, Query, Lang) ->
 	[?XAE('form', [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
 	        [?XCT('h3', "vCard Photo:"),
 		    ?XAE('img', [?XMLATTR('src', <<"photo">>), ?XMLATTR('border', <<"1px">>)], []),
-	         ?XCT('h3', "vCard:"),
+                 ?XC('h3', ?T("vCard")++":"),
 		 ?XE('pre', [?C(VcardString)]),
 	       ?INPUTT("submit", "removevcard", "Remove vCard")
 	      ])].
@@ -924,7 +924,7 @@ webadmin_user(Acc, User, Server, Lang) ->
 	true -> [?INPUTT("submit", "removevcard", "Remove vCard")];
 	false -> []
     end,
-    Acc ++ [?XCT('h3', "vCard size:")] ++ FVcardSize ++ [?CT(" characters. ")] ++ RemoveEl.
+    Acc ++ [?XCT('h3', "vCard size (characters):")] ++ FVcardSize ++ RemoveEl.
 
 get_vcard_size(Vcard) ->
     String = lists:flatten(exmpp_xml:document_to_list(Vcard)),

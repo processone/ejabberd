@@ -3495,7 +3495,7 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
      ?BOOL_CONFIG_FIELD("Notify subscribers when the node configuration changes", notify_config),
      ?BOOL_CONFIG_FIELD("Notify subscribers when the node is deleted", notify_delete),
      ?BOOL_CONFIG_FIELD("Notify subscribers when items are removed from the node", notify_retract),
-     ?BOOL_CONFIG_FIELD("Notify owners about new subscribers and unsubscribes", notify_sub),
+     ?BOOL_CONFIG_FIELD("Notify owners about new subscribers and unsubscribers", notify_sub),
      ?BOOL_CONFIG_FIELD("Persist items to storage", persist_items),
      ?STRING_CONFIG_FIELD("A friendly name for the node", title),
      ?INTEGER_CONFIG_FIELD("Max # of items to persist", max_items),
