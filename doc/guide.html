@@ -1060,7 +1060,9 @@ There are also <A HREF="http://www.ejabberd.im/extauth">several example authenti
 </P><DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{extauth_program, PathToScript}</TT></B></DT><DD CLASS="dd-description"> 
 Indicate in this option the full path to the external authentication script.
-The script must be executable by ejabberd.</DD><DT CLASS="dt-description"><B><TT>{extauth_cache, false|CacheTimeInteger}</TT></B></DT><DD CLASS="dd-description"> 
+The script must be executable by ejabberd.</DD><DT CLASS="dt-description"><B><TT>{extauth_instances, Integer}</TT></B></DT><DD CLASS="dd-description"> 
+Indicate how many instances of the script to run simultaneously to serve authentication in the virtual host.
+The default value is the minimum number: 1.</DD><DT CLASS="dt-description"><B><TT>{extauth_cache, false|CacheTimeInteger}</TT></B></DT><DD CLASS="dd-description"> 
 The value <TT>false</TT> disables the caching feature, this is the default.
 The integer <TT>0</TT> (zero) enables caching for statistics, but doesn&#X2019;t use that cached information to authenticate users.
 If another integer value is set, caching is enabled both for statistics and for authentication:
@@ -1069,10 +1071,12 @@ the authentication information since the user last disconnected,
 to verify again the user authentication without querying again the extauth script.
 Note: caching should not be enabled in a host if internal auth is also enabled.
 If caching is enabled, <TT>mod_last</TT> or <TT>mod_last_odbc</TT> must be enabled also in that vhost.
-</DD></DL><P>This example sets external authentication, the extauth script, and enables caching for 10 minutes:
+</DD></DL><P>This example sets external authentication, the extauth script, enables caching for 10 minutes,
+and starts three instances of the script for each virtual host defined in ejabberd:
 </P><PRE CLASS="verbatim">{auth_method, [external]}.
 {extauth_program, "/etc/ejabberd/JabberAuth.class.php"}.
 {extauth_cache, 600}.
+{extauth_instances, 3}. 
 </PRE><P> <A NAME="saslanonymous"></A> </P><!--TOC subsubsection SASL Anonymous and Anonymous Login-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#saslanonymous">SASL Anonymous and Anonymous Login</A></H4><!--SEC END --><P> <A NAME="saslanonymous"></A> 
 </P><P>The value <TT>anonymous</TT> will enable the internal authentication method.</P><P>The anonymous authentication method can be configured with the following
