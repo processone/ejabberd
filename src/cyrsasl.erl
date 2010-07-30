@@ -35,6 +35,7 @@
 	 server_step/2]).
 
 -include("cyrsasl.hrl").
+-include("ejabberd.hrl").
 
 %% @type saslmechanism() = {sasl_mechanism, Mechanism, Module, Require_Plain}
 %%     Mechanism = string()
@@ -73,11 +74,27 @@ start() ->
     ets:new(sasl_mechanism, [named_table,
 			     public,
 			     {keypos, #sasl_mechanism.mechanism}]),
-    cyrsasl_gssapi:start([]),
     cyrsasl_plain:start([]),
     cyrsasl_digest:start([]),
     cyrsasl_anonymous:start([]),
+    maybe_try_start_gssapi(),
     ok.
+
+maybe_try_start_gssapi() ->
+    case os:getenv("KRB5_KTNAME") of
+        false ->
+	    ok;
+        _String ->
+	    try_start_gssapi()
+    end.
+
+try_start_gssapi() ->
+    case code:load_file(esasl) of
+	{module, _Module} ->
+	    cyrsasl_gssapi:start([]);
+	{error, What} ->
+	    ?ERROR_MSG("Support for GSSAPI not started because esasl.beam was not found: ~p", [What])
+    end.
 
 %% @spec (Mechanism, Module, Require_Plain) -> true
 %%     Mechanism = string()
