@@ -46,9 +46,9 @@ behaviour_info(callbacks) ->
 behaviour_info(_) ->
     undefined.
 
--type storage_host() :: binary().
--type storage_table() :: atom().
--type lock_kind() :: read | write | sticky_write.
+-type(storage_host() :: binary()).
+-type(storage_table() :: atom()).
+-type(lock_kind() :: read | write | sticky_write).
 -record(table, {host_name :: {storage_host(), storage_table()},
 		backend :: atom(),
 		def :: any()}).
@@ -192,17 +192,17 @@ dirty_read(Host, Tab, Key) ->
 
 %% select/3
 
--type matchvalue() :: '_'
+-type(matchvalue() :: '_'
 		      | integer()
-		      | string().
+		      | string()).
 %%                    | {matchvalue(), matchrule()}.
--type matchrule() :: {'and', matchrule(), matchrule()}
+-type(matchrule() :: {'and', matchrule(), matchrule()}
 		     | {'andalso', matchrule(), matchrule()}
 		     | {'or', matchrule(), matchrule()}
 		     | {'orelse', matchrule(), matchrule()}
 		     | {'=', Attribute::atom(), matchvalue()}
 		     | {'=/=', Attribute::atom(), matchvalue()}
-		     | {like, Attribute::atom(), matchvalue()}.
+		     | {like, Attribute::atom(), matchvalue()}).
 
 %% For the like operator the last element (not the tail as in
 %% matchspecs) may be '_'.
