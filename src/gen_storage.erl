@@ -207,12 +207,12 @@ dirty_read(Host, Tab, Key) ->
 %% For the like operator the last element (not the tail as in
 %% matchspecs) may be '_'.
 -spec select(storage_host(), storage_table(), [matchrule()]) ->
-		    [record()].
+		    [tuple()].
 select(Host, Tab, MatchRules) ->
     select(Host, Tab, MatchRules, read).
 
 -spec select(storage_host(), storage_table(), [matchrule()], lock_kind()) ->
-		    [record()].
+		    [tuple()].
 select(Host, Tab, MatchRules, Lock) ->
     case get_table(Host, Tab) of
 	#table{backend = mnesia}->
@@ -224,7 +224,7 @@ select(Host, Tab, MatchRules, Lock) ->
     end.
 
 -spec select(storage_host(), storage_table(), [matchrule()], integer(), lock_kind()) ->
-		    {[record()], any()} | '$end_of_table'.
+		    {[tuple()], any()} | '$end_of_table'.
 select(Host, Tab, MatchRules, N, Lock) ->
     case get_table(Host, Tab) of
 	#table{backend = mnesia} ->
@@ -236,7 +236,7 @@ select(Host, Tab, MatchRules, N, Lock) ->
     end.
 
 -spec select({storage_host(), storage_table()}, any()) ->
-		    {[record()], any()} | '$end_of_table'.
+		    {[tuple()], any()} | '$end_of_table'.
 select({Host, Tab}, Cont) ->
     case get_table(Host, Tab) of
 	#table{backend = mnesia} ->
@@ -246,7 +246,7 @@ select({Host, Tab}, Cont) ->
     end.
 
 -spec dirty_select(storage_host(), storage_table(), [matchrule()]) ->
-			  [record()].
+			  [tuple()].
 dirty_select(Host, Tab, MatchRules) ->
     case get_table(Host, Tab) of
 	#table{backend = mnesia}->
