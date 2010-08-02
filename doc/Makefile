@@ -1,5 +1,3 @@
-# $Id$
-
 SHELL = /bin/bash
 
 CONTRIBUTED_MODULES = ""

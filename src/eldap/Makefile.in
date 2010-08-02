@@ -1,5 +1,3 @@
-# $Id: Makefile.in 2842 2009-12-29 19:10:52Z badlop $
-
 CC = @CC@
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@

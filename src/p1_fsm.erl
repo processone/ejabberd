@@ -27,7 +27,6 @@
 %%   process will be terminated.
 %%   - You might customize the State data before sending it to error_logger
 %%   in case of a crash (just export the function print_state/1)
-%%     $Id$
 %%
 -module(p1_fsm).
 

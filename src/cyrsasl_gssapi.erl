@@ -3,7 +3,6 @@
 %%% Author  : Mikael Magnusson <mikma@users.sourceforge.net>
 %%% Purpose : GSSAPI SASL mechanism
 %%% Created : 1 June 2007 by Mikael Magnusson <mikma@users.sourceforge.net>
-%%% Id      : $Id: $
 %%%----------------------------------------------------------------------
 %%%
 %%% Copyright (C) 2007-2009  Mikael Magnusson <mikma@users.sourceforge.net>
@@ -39,7 +38,6 @@
 
 -module(cyrsasl_gssapi).
 -author('mikma@users.sourceforge.net').
--vsn('$Revision: $ ').
 
 -export([start/1,
 	 stop/0,

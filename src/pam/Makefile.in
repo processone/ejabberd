@@ -1,5 +1,3 @@
-# $Id: Makefile.in 775 2007-05-29 14:31:12Z mremond $
-
 CC = @CC@
 CFLAGS = @CFLAGS@ @PAM_CFLAGS@
 CPPFLAGS = @CPPFLAGS@

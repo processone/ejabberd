@@ -602,8 +602,6 @@
 %%%.
 %%%'
 
-%%% $Id$
-
 %%% Local Variables:
 %%% mode: erlang
 %%% End:

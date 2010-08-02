@@ -1,5 +1,3 @@
-%% $Id$
-
 {application, ejabberd,
  [{description, "ejabberd"},
   {vsn, "3.0.0-alpha-x"},

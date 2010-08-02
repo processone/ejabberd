@@ -5,7 +5,6 @@
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Modified: may 2009 by Mickael Remond, Alexey Schepin
-%%% Id      : $Id: ejabberd_http_bind.erl 953 2009-05-07 10:40:40Z alexey $
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
