@@ -83,7 +83,7 @@
 %%%.   =====================
 %%%'   CLUSTER CONFIGURATION
 
-%% clusterid - the integer id of the cluster of nodes this node will
+%% clusterid: the integer id of the cluster of nodes this node will
 %% belong to.
 {clusterid, 1}.
 
