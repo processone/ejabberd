@@ -74,8 +74,7 @@
 	 disco_sm_items/5
 	]).
 %% exported iq handlers
--export([iq_local/3,
-	 iq_sm/3
+-export([iq_sm/3
 	]).
 
 %% exports for console debug manual use
@@ -201,25 +200,22 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {ignore_pep_from_offline, PepOffline}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {host, Host}),
     ejabberd_hooks:add(sm_remove_connection_hook, ServerHostB, ?MODULE, on_user_offline, 75),
-    ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
-    ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
-    ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
+    ejabberd_hooks:add(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
+    ejabberd_hooks:add(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
+    ejabberd_hooks:add(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
     ejabberd_hooks:add(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 80),
     ejabberd_hooks:add(roster_in_subscription, ServerHostB, ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(roster_out_subscription, ServerHostB, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHostB, ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, ServerHostB, ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc),
-    ejabberd_router:register_route(Host),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:add(feature_check_packet, ServerHostB, ?MODULE, feature_check_packet, 75),
-	    ejabberd_hooks:add(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
-	    ejabberd_hooks:add(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
-	    ejabberd_hooks:add(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
-	    gen_iq_handler:add_iq_handler(ejabberd_local, ServerHostB, ?NS_PUBSUB, ?MODULE, iq_local, IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_local, ServerHostB, ?NS_PUBSUB_OWNER, ?MODULE, iq_local, IQDisc);
+	    ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
+	    ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
+	    ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc);
 	false ->
 	    ok
     end,
@@ -395,15 +391,14 @@ send_loop(State) ->
 %% disco hooks handling functions
 %%
 
-identity(Host) ->
-    Identity = case lists:member(?PEPNODE, plugins(Host)) of
-    true -> [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"pep">>)];
-    false -> [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"service">>)]
-    end,
-    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = Identity}.
-
 disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
-    Acc ++ [identity(exmpp_jid:prep_domain_as_list(To))];
+    case lists:member(?PEPNODE, plugins(exmpp_jid:prep_domain_as_list(To))) of
+	true ->
+	    [#xmlel{name = 'identity', ns = ?NS_DISCO_INFO,
+		    attrs = [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"pep">>)]}
+		| Acc];
+	false -> Acc
+    end;
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -424,81 +419,103 @@ disco_local_items(Acc, _From, _To, <<>>, _Lang) ->
 disco_local_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_sm_identity(Acc, _From, To, <<>>, _Lang) ->
-    Acc ++ [identity(exmpp_jid:prep_domain_as_list(To))];
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
-    LOwner = jlib:short_prepd_bare_jid(To),
-    Acc ++ case node_disco_identity(LOwner, From, Node) of
-	       {result, I} -> I;
-	       _ -> []
-	   end.
+    disco_identity(To, Node, From) ++ Acc.
 
-disco_sm_features(Acc, _From, _To, [], _Lang) ->
-    Acc;
-disco_sm_features(Acc, From, To, Node, _Lang) ->
-    LOwner = jlib:short_prepd_bare_jid(To),
-    Features = node_disco_features(LOwner, From, Node),
-    case {Acc, Features} of
-	{{result, AccFeatures}, {result, AddFeatures}} ->
-	    {result, AccFeatures++AddFeatures};
-	{_, {result, AddFeatures}} ->
-	    {result, AddFeatures};
-	{_, _} ->
-	    Acc
+disco_identity(_Host, <<>>, _From) ->
+    [#xmlel{name = 'identity', ns = ?NS_DISCO_INFO,
+     attrs = [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"pep">>)]}];
+disco_identity(Host, Node, From) ->
+    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options}) ->
+	    Owners = node_owners_call(Type, Idx),
+	    case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		{result, _} ->
+		    {result,
+			[#xmlel{name = 'identity', ns = ?NS_DISCO_INFO,
+				attrs = [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"pep">>)]},
+			    #xmlel{name = 'identity', ns = ?NS_DISCO_INFO,
+				attrs = [?XMLATTR('category', <<"pubsub">>), ?XMLATTR('type', <<"leaf">>)
+				    | case get_option(Options, title) of
+					false -> [];
+					Title -> [?XMLATTR('name', Title)]
+				    end
+				]}]};
+		{error, _} -> {result, []}
+	    end
+    end,
+    case transaction(exmpp_jid:to_lower(Host), Node, Action, sync_dirty) of
+	{result, {_, Result}} -> Result;
+	_ -> []
     end.
 
-disco_sm_items(Acc, From, To, <<>>, _Lang) ->
-    Host = exmpp_jid:prep_domain_as_list(To),
-    case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
-	[] ->
-	    Acc;
-	Nodes ->
-	    SBJID = exmpp_jid:to_binary(exmpp_jid:bare(To)),
-	    Items = case Acc of
-			{result, I} -> I;
-			_ -> []
-		    end,
-	    NodeItems = lists:map(
-			  fun(#pubsub_node{nodeid = {_, Node}}) ->
-				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [?XMLATTR('jid', SBJID) | nodeAttr(Node)]}
-			  end, Nodes),
-	    {result, NodeItems ++ Items}
+
+disco_sm_features(empty, From, To, Node, Lang) ->
+    disco_sm_features({result, []}, From, To, Node, Lang);
+disco_sm_features({result, OtherFeatures}, From, To, Node, _Lang) ->
+    {result, disco_features(To, Node, From) ++ OtherFeatures}.
+
+disco_features(_Host, <<>>, _From) ->
+    [?NS_PUBSUB_s
+    | [?NS_PUBSUB_s++"#"++Feature || Feature <- features("pep")]];
+disco_features(Host, Node, From) ->
+    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options}) ->
+	    Owners = node_owners_call(Type, Idx),
+	    case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		{result, _} ->
+		    {result, [?NS_PUBSUB_s
+			    | [?NS_PUBSUB_s ++ "#" ++ Feature || Feature <- features("pep")]]};
+		_ -> {result, []}
+	    end
+	end,
+    case transaction(exmpp_jid:to_lower(Host), Node, Action, sync_dirty) of
+	{result, {_, Result}} -> Result;
+	_ -> []
+     end.
+
+disco_sm_items(empty, From, To, Node, Lang) ->
+    disco_sm_items({result, []}, From, To, Node, Lang);
+disco_sm_items({result, OtherItems}, From, To, Node, _Lang) ->
+    {result, disco_items(To, Node, From) ++ OtherItems}.
+
+disco_items(Host, <<>>, From) ->
+    Action = fun(#pubsub_node{nodeid ={_, NodeID}, options = Options, type = Type, id = Idx}, Acc) ->
+	    Owners = node_owners_call(Type, Idx),
+	    case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		{result, _} ->
+		    [#xmlel{name = 'item', ns = ?NS_DISCO_INFO,
+			    attrs = [?XMLATTR('jid', exmpp_jid:to_binary(Host)),
+				?XMLATTR('node', NodeID) |
+				case get_option(Options, title) of
+				    false   -> [];
+				    [Title] -> [?XMLATTR('title', Title)]
+				end]}
+			| Acc];
+		_ -> Acc
+	    end
+    end,
+    case transaction_on_nodes(exmpp_jid:to_lower(Host), Action, sync_dirty) of
+	{result, Result} -> Result;
+	_ -> []
     end;
 
-disco_sm_items(Acc, From, To, NodeB, _Lang) ->
-    SNode = binary_to_list(NodeB),
-    Node = string_to_node(SNode),
-    %% TODO, use iq_disco_items(Host, Node, From)
-    Host = exmpp_jid:prep_domain_as_list(To),
-    SBJID = exmpp_jid:to_binary(exmpp_jid:bare(To)),
-    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-	% TODO call get_items/6 instead for access control (EJAB-1033)
-	case node_call(Type, get_items, [NodeId, From]) of
-	    {result, []} ->
-		none;
-	    {result, AllItems} ->
-		Items = case Acc of
-			{result, I} -> I;
-			_ -> []
-		    end,
-		NodeItems = lists:map(
-			  fun(#pubsub_item{itemid = {Id, _}}) ->
-				  {result, Name} = node_call(Type, get_item_name, [Host, Node, Id]),
-				  #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs =
-				   [?XMLATTR('jid', SBJID),
-				    ?XMLATTR('name', Name)]}
-			  end, AllItems),
-		{result, NodeItems ++ Items};
-	    _ ->
-		none
-	end
-    end,
-    case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, Items}} -> {result, Items};
-	_ -> Acc
-    end.
-
+disco_items(Host, Node, From) ->
+    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options}) ->
+	    Owners = node_owners_call(Type, Idx),
+	    case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		{result, Items} ->
+		    {result,
+		      [#xmlel{name = 'item', ns = ?NS_DISCO_INFO,
+		          attrs = [?XMLATTR('jid', exmpp_jid:to_binary(Host)),
+		                   ?XMLATTR('name', ItemID)]}
+			|| #pubsub_item{itemid = {ItemID,_}} <- Items]};
+		_ -> {result, []}
+	    end
+	end,
+     case transaction(exmpp_jid:to_lower(Host), Node, Action, sync_dirty) of
+	{result, {_, Result}} -> Result;
+	_ -> []
+     end.
+ 
 %% -------
 %% presence hooks handling functions
 %%
@@ -684,11 +701,11 @@ terminate(_Reason, #state{host = Host,
     case lists:member(?PEPNODE, Plugins) of
     true ->
 	ejabberd_hooks:delete(feature_check_packet, ServerHostB, ?MODULE, feature_check_packet, 75),
-	ejabberd_hooks:delete(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
-	ejabberd_hooks:delete(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
-	ejabberd_hooks:delete(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
-	gen_iq_handler:remove_iq_handler(ejabberd_local, ServerHostB, ?NS_PUBSUB),
-	gen_iq_handler:remove_iq_handler(ejabberd_local, ServerHostB, ?NS_PUBSUB_OWNER);
+	ejabberd_hooks:delete(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
+	ejabberd_hooks:delete(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
+	ejabberd_hooks:delete(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
+	gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB),
+	gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHostB, ?NS_PUBSUB_OWNER);
     false ->
 	ok
     end,
@@ -696,9 +713,6 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_local_identity, ServerHostB, ?MODULE, disco_local_identity, 75),
     ejabberd_hooks:delete(disco_local_features, ServerHostB, ?MODULE, disco_local_features, 75),
     ejabberd_hooks:delete(disco_local_items, ServerHostB, ?MODULE, disco_local_items, 75),
-    ejabberd_hooks:delete(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
-    ejabberd_hooks:delete(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
-    ejabberd_hooks:delete(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
     ejabberd_hooks:delete(presence_probe_hook, ServerHostB, ?MODULE, presence_probe, 80),
     ejabberd_hooks:delete(roster_in_subscription, ServerHostB, ?MODULE, in_subscription, 50),
     ejabberd_hooks:delete(roster_out_subscription, ServerHostB, ?MODULE, out_subscription, 50),
@@ -878,10 +892,6 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING_b, _From) ->
 
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
-node_disco_identity(Host, Node, From) ->
-    node_disco_info(Host, Node, From, true, false).
-node_disco_features(Host, Node, From) ->
-    node_disco_info(Host, Node, From, false, true).
 node_disco_info(Host, Node, From, Identity, Features) ->
     Action =
 	fun(#pubsub_node{type = Type, id = NodeId}) ->
@@ -988,17 +998,16 @@ iq_disco_items(Host, Item, From, RSM) ->
 	    {result, []};
 	[SNode] ->
 	    Node = string_to_node(SNode),
-	    Action =
-		fun(#pubsub_node{type = Type, id = NodeId}) ->
-			% TODO call get_items/6 instead for access control (EJAB-1033)
-			{NodeItems, RsmOut} = case node_call(Type, get_items, [NodeId, From, RSM]) of
-					{result, I} -> I;
-					_ -> {[], none}
-				    end,
+	    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options}) ->
+			Owners = node_owners_call(Type, Idx),
+			{NodeItems, RsmOut} = case get_allowed_items_call(Host, Idx, From, Type, Options, Owners, RSM) of
+			    {result, R} -> R;
+			    _ -> {[], none}
+			    end,
 			Nodes = lists:map(
-				  fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+				  fun(#pubsub_node{nodeid = {_, SubNode}, options = SubOptions}) ->
 		        Attrs =
-		          case get_option(Options, title) of
+		          case get_option(SubOptions, title) of
 		            false ->
 		              [?XMLATTR('jid', Host) | nodeAttr(SubNode)];
 		            Title ->
@@ -1019,24 +1028,17 @@ iq_disco_items(Host, Item, From, RSM) ->
 	    end
     end.
 
-iq_local(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = IQ_Rec) ->
-    ServerHost = exmpp_jid:prep_domain_as_list(To),
-    FromHost = exmpp_jid:prep_domain_as_list(To),
-    %% Accept IQs to server only from our own users.
-    if
-	FromHost /= ServerHost ->
-	    exmpp_iq:error(IQ_Rec, 'forbidden');
-	true ->
-	    LOwner = jlib:short_prepd_bare_jid(From),
-	    Res = case XMLNS of
-		      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
-		      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, ServerHost, From, Type, SubEl, Lang)
-		  end,
-	    case Res of
-		{result, []}      -> exmpp_iq:result(IQ_Rec);
-		{result, [IQRes]} -> exmpp_iq:result(IQ_Rec, IQRes);
-		{error, Error}    -> exmpp_iq:error(IQ_Rec, Error)
-	    end
+get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups) ->
+    if (AccessModel == presence) or (AccessModel == roster) ->
+	case Host of
+	    {User, Server, _} ->
+		get_roster_info(User, Server, From, AllowedGroups);
+	    _ ->
+		[{OUser, OServer, _}|_] = Owners,
+		get_roster_info(OUser, OServer, From, AllowedGroups)
+	end;
+    true ->
+	{true, true}
     end.
 
 iq_sm(From, To, #iq{type = Type, payload = SubEl, ns = XMLNS, lang = Lang} = IQ_Rec) ->
@@ -1758,24 +1760,8 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 		    AccessModel = get_option(Options, access_model),
 		    SendLast = get_option(Options, send_last_published_item),
 		    AllowedGroups = get_option(Options, roster_groups_allowed, []),
-		    {PresenceSubscription, RosterGroup} =
-			case Host of
-			    {OUser, OServer, _} ->
-				get_roster_info(OUser, OServer,
-						Subscriber, AllowedGroups);
-			    _ ->
-				case Subscriber of
-				    {undefined, undefined, undefined} ->
-					{false, false};
-				    _ ->
-					case node_owners_call(Type, NodeId) of
-					    [{OU, OS, _} | _] ->
-						get_roster_info(OU, OS, Subscriber, AllowedGroups);
-					    _ ->
-						{false, false}
-					end
-				end
-			end,
+		    Owners = node_owners_call(Type, NodeId),
+		    {PresenceSubscription, RosterGroup} = get_presence_and_roster_permissions(Host, Subscriber, Owners, AccessModel, AllowedGroups),
 		    if
 			not SubscribeFeature ->
 			    %% Node does not support subscriptions
@@ -2139,14 +2125,8 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs, RSM) ->
 		     PersistentFeature = lists:member("persistent-items", Features),
 		     AccessModel = get_option(Options, access_model),
 		     AllowedGroups = get_option(Options, roster_groups_allowed, []),
-		     {PresenceSubscription, RosterGroup} =
-			 case Host of
-			     {OUser, OServer, _} ->
-				 get_roster_info(OUser, OServer,
-						 jlib:short_prepd_jid(From), AllowedGroups);
-			     _ ->
-				 {true, true}
-			 end,
+		     Owners = node_owners_call(Type, NodeId),
+		     {PresenceSubscription, RosterGroup} = get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups),
 		     if
 			 not RetreiveFeature ->
 			     %% Item Retrieval Not Supported
@@ -2196,6 +2176,17 @@ get_item(Host, Node, ItemId) ->
 	{result, {_, Items}} -> Items;
 	Error -> Error
     end.
+get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) ->
+    case get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners, none) of
+	{result, {I, _}} -> {result, I};
+	Error -> Error
+    end.
+get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners, RSM) ->
+    AccessModel = get_option(Options, access_model),
+    AllowedGroups = get_option(Options, roster_groups_allowed, []),
+    {PresenceSubscription, RosterGroup} = get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups),
+    node_call(Type, get_items, [NodeIdx, From, AccessModel, PresenceSubscription, RosterGroup, undefined, RSM]).
+
 
 %% @spec (Host, Node, NodeId, Type, LJID, Number) -> any()
 %%	 Host = pubsubHost()
@@ -2459,7 +2450,7 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 	_ -> invalid
     end,
     Subscriber = try exmpp_jid:parse(JID) of
-		     J -> jlib:short_jid(J)
+		     J -> J
 		  catch
 		     _ -> exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
@@ -2586,8 +2577,9 @@ get_subscriptions(Host, Node, JID) ->
 		    end
 	    end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, []}} ->
-	    {error, 'item-not-found'};
+%% Fix bug when node owner retrieve an empty subscriptions list 
+%	{result, {_, []}} ->
+%	    {error, 'item-not-found'};
 	{result, {_, Subscriptions}} ->
 	    Entities = lists:flatmap(
 			 fun({_, none}) -> [];
@@ -2681,7 +2673,8 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    end
     end.
 
-
+get_roster_info(_, _, {undefined, undefined, _}, _) ->
+    {false, false};
 %% @spec (OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, SubscriberResource}, AllowedGroups)
 %%    -> {PresenceSubscription, RosterGroup}
 get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, AllowedGroups) ->
@@ -2695,7 +2688,9 @@ get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, A
     RosterGroup = lists:any(fun(Group) ->
 				    lists:member(Group, AllowedGroups)
 			    end, Groups),
-    {PresenceSubscription, RosterGroup}.
+    {PresenceSubscription, RosterGroup};
+get_roster_info(OwnerUser, OwnerServer, JID, AllowedGroups) ->
+    get_roster_info(OwnerUser, OwnerServer, exmpp_jid:to_lower(JID), AllowedGroups).
 
 %% @spec (AffiliationStr) -> Affiliation
 %%	 AffiliationStr = string()
@@ -3714,6 +3709,11 @@ transaction(Host, Node, Action, Trans) ->
 			end
 		end, Trans).
 
+transaction_on_nodes(Host, Action, Trans) ->
+    transaction(Host, fun() ->
+			{result, lists:foldl(Action, [], tree_call(Host, get_nodes, [Host]))}
+		end, Trans).
+
 transaction(Host, Fun, Trans) ->
     transaction_retry(Host, Fun, Trans, 2).
 
@@ -3865,8 +3865,8 @@ is_feature_supported(_, []) ->
     true;
 is_feature_supported(#xmlel{name = 'presence', children = Els}, Feature) ->
     case mod_caps:read_caps(Els) of
-	nothing -> false;
-	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
+  nothing -> false;
+  Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
     end.
 
 on_user_offline(_, JID, _) ->
