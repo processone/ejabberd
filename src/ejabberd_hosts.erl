@@ -427,7 +427,10 @@ get_clusterid() ->
     case ejabberd_config:get_local_option(clusterid) of
 	ID when is_integer(ID) ->
 	    ID;
+	undefined ->
+	    ?ERROR_MSG("Please add to your ejabberd.cfg the line: ~n  {clusterid, 1}.", []),
+	    1;
 	Other ->
-	    ?ERROR_MSG("The option {clusterid, INTEGER}. was configured to: ~p", [Other]),
+	    ?ERROR_MSG("Change your misconfigured {clusterid, ~p} to the value: ~p", [Other, 1]),
 	    1
     end.
