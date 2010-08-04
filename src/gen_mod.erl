@@ -63,6 +63,19 @@ start() ->
 
 
 start_module(Host, Module, Opts) ->
+    MTokens = string:tokens(atom_to_list(Module), "_"),
+    case lists:split(length(MTokens) - 1, MTokens) of
+	{ModulePlainList, ["odbc"]} ->
+	    Module2 = list_to_atom(string:join(ModulePlainList, "_")),
+	    ?WARNING_MSG("The module ~p is obsolete. Replace it with ~p and "
+			 "add the option {backend, odbc}",
+			 [Module, Module2]),
+	    start_module2(Host, Module2, [{backend, odbc} | Opts]);
+	_ ->
+	    start_module2(Host, Module, Opts)
+    end.
+
+start_module2(Host, Module, Opts) ->
     set_module_opts_mnesia(Host, Module, Opts),
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
