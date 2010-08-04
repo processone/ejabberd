@@ -57,6 +57,8 @@ start(normal, _Args) ->
     ejabberd_config:start(),
     ejabberd_check:config(),
     connect_nodes(),
+    %% Loading ASN.1 driver explicitly to avoid races in LDAP
+    catch asn1rt:load_driver(),
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
     ejabberd_auth:start(),
