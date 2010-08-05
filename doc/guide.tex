@@ -1239,6 +1239,10 @@ These are the specific options:
   Indicate in this option the full path to the external authentication script.
   The script must be executable by ejabberd.
 
+  \titem{\{extauth\_instances, Integer\}} 
+  Indicate how many instances of the script to run simultaneously to serve authentication in the virtual host.
+  The default value is the minimum number: 1.
+
   \titem{\{extauth\_cache, false|CacheTimeInteger\}} 
   The value \term{false} disables the caching feature, this is the default.
   The integer \term{0} (zero) enables caching for statistics, but doesn't use that cached information to authenticate users.
@@ -1250,11 +1254,13 @@ These are the specific options:
   If caching is enabled, \term{mod\_last} or \term{mod\_last\_odbc} must be enabled also in that vhost.
 \end{description}
 
-This example sets external authentication, the extauth script, and enables caching for 10 minutes:
+This example sets external authentication, the extauth script, enables caching for 10 minutes,
+and starts three instances of the script for each virtual host defined in ejabberd:
 \begin{verbatim}
 {auth_method, [external]}.
 {extauth_program, "/etc/ejabberd/JabberAuth.class.php"}.
 {extauth_cache, 600}.
+{extauth_instances, 3}. 
 \end{verbatim}
 
 \makesubsubsection{saslanonymous}{SASL Anonymous and Anonymous Login}

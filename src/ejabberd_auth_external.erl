@@ -290,7 +290,7 @@ get_last_info(User, Server) ->
     case get_mod_last_enabled(Server) of
 	mod_last -> mod_last:get_last_info(User, Server);
 	mod_last_odbc -> mod_last_odbc:get_last_info(User, Server);
-	mod_mod_last -> mod_last_required
+	no_mod_last -> mod_last_required
     end.
 
 %% @spec (Server) -> mod_last | mod_last_odbc | no_mod_last

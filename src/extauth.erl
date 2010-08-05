@@ -43,16 +43,29 @@
 -define(CALL_TIMEOUT, 10000). % Timeout is in milliseconds: 10 seconds == 10000
 
 start(Host, ExtPrg) ->
-    spawn(?MODULE, init, [Host, ExtPrg]).
+    lists:foreach(
+	fun(This) ->
+	    spawn(?MODULE, init, [get_process_name(Host, This), ExtPrg])
+	end,
+	lists:seq(0, get_instances(Host)-1)
+    ).
 
-init(Host, ExtPrg) ->
-    register(gen_mod:get_module_proc(Host, eauth), self()),
+init(ProcessName, ExtPrg) ->
+    register(ProcessName, self()),
     process_flag(trap_exit,true),
     Port = open_port({spawn, ExtPrg}, [{packet,2}]),
     loop(Port, ?INIT_TIMEOUT).
 
 stop(Host) ->
-    gen_mod:get_module_proc(Host, eauth) ! stop.
+    lists:foreach(
+	fun(This) ->
+	    get_process_name(Host, This) ! stop
+	end,
+	lists:seq(0, get_instances(Host)-1)
+    ).
+
+get_process_name(Host, Integer) ->
+    gen_mod:get_module_proc(lists:append([Host, integer_to_list(Integer)]), eauth).
 
 check_password(User, Server, Password) ->
     call_port(Server, ["auth", User, Server, Password]).
@@ -77,10 +90,22 @@ remove_user(User, Server, Password) ->
 
 call_port(Server, Msg) ->
     LServer = jlib:nameprep(Server),
-    gen_mod:get_module_proc(LServer, eauth) ! {call, self(), Msg},
+    ProcessName = get_process_name(LServer, random_instance(get_instances(LServer))),
+    ProcessName ! {call, self(), Msg},
     receive
 	{eauth,Result} ->
 	    Result
+    end.
+
+random_instance(MaxNum) ->
+    {A1,A2,A3} = now(),
+    random:seed(A1, A2, A3),
+    random:uniform(MaxNum) - 1.
+
+get_instances(Server) ->
+    case ejabberd_config:get_local_option({extauth_instances, Server}) of
+	Num when is_integer(Num) -> Num;
+	_ -> 1
     end.
 
 loop(Port, Timeout) ->
