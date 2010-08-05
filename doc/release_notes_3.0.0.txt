@@ -1,0 +1,104 @@
+
+******************************************************************************
+* These are the preliminary release notes of ejabberd 3.0.0.
+*
+* The download page for preliminary releases is:
+*   http://download.process-one.net/ejabberd/
+*
+*     WARNING!!!  PRELIMINARY DATABASE SCHEMA !!!
+* The database schema may change before ejabberd 3.0.0 is released,
+*   and no migration code will be developed for this preliminary schema.
+* The only supported migrations are
+*   from any ejabberd 0.9.0 ... 2.1.5 to the final 3.0.0.
+* Don't use this preliminary ejabberd release for a production server.
+* You can test this release with a blank database or with a copy of your
+*   production database, but don't let your users connect to this copy
+*   because their changes may get lost when you upgrade to the final 3.0.0.
+******************************************************************************
+
+
+                              Release Notes
+                             ejabberd 3.0.0
+
+  ejabberd 3.0.0 is the first release in the brand new 3.x.x branch,
+  and includes several minor bugfixes and a few improvements.
+
+  Read more details about the changes in:
+    http://redir.process-one.net/ejabberd-3.0.0
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+ejabberd 3.0.0 includes three major changes:
+
+* exmpp is now extensively used in ejabberd for parsing stanzas, and many more.
+
+* gen_storage (abbreviated GS) provides a database abstraction layer,
+  which supports storage in Mnesia and in ODBC databases.
+  Several ejabberd modules use GS, like mod_roster and ejabberd_auth_storage.
+  The schema of the tables stored by those modules have changed,
+  and ejabberd migrates automatically your mnesia and ODBC
+  tables from previous ejabberd releases.
+
+* Massive Hosting (abbreviated MH) is preliminary implemented in ejabberd,
+  but it is still incomplete, untested and undocumented.
+
+
+This is a more detailed list of changes since ejabberd 2.1.5:
+
+* Requirements
+- Erlang/OTP R12B-5 or higher is required
+- exmpp 0.9.5 or higher is required, not optional
+- ESASL library is optional, for SASL GSSAPI authentication
+- Libexpat not required by ejabberd, it uses exmpp now (EJAB-1111)
+- GNU Iconv not required, because mod_irc isn't included anymore (EJAB-954)
+- Only database migration from ejabberd 0.9.0 up to 2.1.5 is supported
+- ejabberd modules developed for previous releases need to be upgraded to exmpp
+
+* Configuration
+- New option clusterid
+- New option that can't be used yet: static_modules
+- ejabberd_auth_storage: new option auth_storage
+- mod_muc_log: option spam_prevention is now link_nofollow (EJAB-1141)
+- mod_roster: new access option (EJAB-72)
+- S2S: allow definition of local address for outgoing connections (EJAB-418)
+
+* Database
+- New gen_storage that provides a database storage abstraction layer (EJAB-1102)
+- mod_*_odbc are obsolete, use the normal ones with the option {backend, odbc}
+- New ejabberd_auth_storage that supports internal and odbc databases
+
+* XEP support
+- Removed support for the deprecated XEP-0018 Invisible Presence (EJAB-810)
+- mod_multicast: service for XEP-0033: Extended Stanza Addressing (EJAB-265)
+- New ejabberd router for multicast packets (XEP-0033) (EJAB-329)
+- ejabberd_c2s uses XEP-0033 if mod_multicast is enabled (EJAB-267)
+- mod_muc uses XEP-0033 if mod_multicast is enabled (EJAB-266)
+
+* Pubsub/PEP/Caps
+- Allow distinguish between leafs and items (EJAB-1027)
+- Enforce disco features results (EJAB-1033, EJAB-1228, EJAB-1238)
+- Enforce pubsub#presence_based_delivery (EJAB-1221)
+- Improve get_caps while still waiting for initial presence (EJAB-934)
+- Make nodetree_tree implicitly create parent node if required (EJAB-944)
+- Only use binary() instead of string() in Host and ServerHost (EJAB-1244)
+- Rename NodeId (pubsub_node.id) bindings to Nidx (EJAB-1000)
+- node_flat becomes default; it has the code instead of hometree (EJAB-1077)
+- pubsub#notify_sub node option (EJAB-1230)
+- pubsub#type node config and payload namespace (EJAB-1083)
+
+* Miscellanea
+- Bugfix handling Service Discovery to contacts (EJAB-1207)
+- Bugfix: external contacts were offline after unavailable presence (EJAB-943)
+- Don't offer SASL auth before doing TLS if TLS is required
+- Experimental support for GSSAPI auth, requires esasl library (EJAB-831)
+- Use binaries instead of lists where possible (EJAB-17)
+- Windows ejabberdctl.cmd only handles up to 4 arguments (EJAB-1216)
+- ejabberdctl: when starting, check it isn't already running
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/
