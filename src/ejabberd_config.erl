@@ -167,7 +167,8 @@ search_hosts(Term, State) ->
     end.
 
 add_hosts_to_option(Hosts, State) ->
-    PrepHosts = normalize_hosts(Hosts),
+    PrepHosts1 = normalize_hosts(Hosts),
+    PrepHosts = ensure_localhost_is_first(PrepHosts1),
     mnesia:transaction(
       fun() ->
 	      lists:foreach(
@@ -193,6 +194,17 @@ normalize_hosts([Host|Hosts], PrepHosts) ->
 	    exit("invalid hostname")
     end.
 
+ensure_localhost_is_first(["localhost" | _] = Hosts) ->
+    Hosts;
+ensure_localhost_is_first(Hosts) ->
+    case lists:member("localhost", Hosts) of
+	true ->
+	    ["localhost" | lists:delete("localhost", Hosts)];
+	false ->
+	    ?INFO_MSG("ejabberd added the default virtual host \"localhost\""
+		      "to the list of hosts.", []),
+	    ["localhost" | Hosts]
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Errors reading the config file
@@ -628,6 +640,8 @@ get_global_option({Opt1, Host} = Opt) when is_list(Host) ->
     end;
 get_global_option(Opt) ->
     case ets:lookup(config, Opt) of
+	[#config{value = Val}] when Opt == hosts ->
+	    ensure_localhost_is_first(Val);
 	[#config{value = Val}] ->
 	    Val;
 	_ ->
