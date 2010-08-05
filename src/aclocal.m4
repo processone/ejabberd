@@ -134,7 +134,7 @@ ssldef() ->
    if
 	OTP >= "R14" -> "-DSSL40\n";
 	OTP >= "R12" -> "-DSSL39\n";
-        true -> ""
+        true -> "\n"
    end.
 
 %% return physical architecture based on OS/Processor
