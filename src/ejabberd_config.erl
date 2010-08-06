@@ -202,7 +202,7 @@ ensure_localhost_is_first(Hosts) ->
 	    ["localhost" | lists:delete("localhost", Hosts)];
 	false ->
 	    ?INFO_MSG("ejabberd added the default virtual host \"localhost\""
-		      "to the list of hosts.", []),
+		      " to the list of hosts.", []),
 	    ["localhost" | Hosts]
     end.
 
