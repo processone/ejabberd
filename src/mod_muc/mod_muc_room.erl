@@ -1954,11 +1954,20 @@ send_new_presence(NJID, Reason, StateData) ->
 			   false ->
 			       []
 		       end,
+	      Status2 = case ((StateData#state.config)#config.anonymous==false)
+			    andalso (NJID == Info#user.jid) of
+			    true ->
+				[#xmlel{name = 'status',
+					attrs = [?XMLATTR('code', <<"100">>)]}
+				 | Status];
+			    false ->
+				Status
+			end,
           Packet = exmpp_xml:append_child(Presence,
              #xmlel{ns = ?NS_MUC_USER, name = 'x',
                    children = [#xmlel{ns = ?NS_MUC_USER, name ='item',
                                       attrs = ItemAttrs,
-                                      children = ItemEls} | Status]}),
+                                      children = ItemEls} | Status2]}),
 	      ejabberd_router:route(
 		jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
