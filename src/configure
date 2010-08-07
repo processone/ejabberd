@@ -608,6 +608,7 @@ build_os
 build_vendor
 build_cpu
 build
+md2
 INSTALLUSER
 SSL_CFLAGS
 SSL_LIBS
@@ -4516,6 +4517,16 @@ if test "$ENABLEUSER" != ""; then
   INSTALLUSER=$ENABLEUSER
 
 fi
+
+ac_fn_c_check_header_mongrel "$LINENO" "openssl/md2.h" "ac_cv_header_openssl_md2_h" "$ac_includes_default"
+if test "x$ac_cv_header_openssl_md2_h" = x""yes; then :
+  md2=true
+else
+  md2=false
+fi
+
+
+
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
