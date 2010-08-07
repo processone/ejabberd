@@ -31,6 +31,7 @@ else
 endif
 
 EFLAGS += @ERLANG_SSLVER@ -pa .
+ERLANG_CFLAGS += @ERLANG_SSLVER@
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug

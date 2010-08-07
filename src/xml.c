@@ -2,6 +2,23 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef SSL40
+#define ENIF_ALLOC(SIZE) enif_alloc(SIZE)
+#define ENIF_FREE(PTR) enif_free(PTR)
+#define ENIF_REALLOC(PTR, SIZE) enif_realloc(PTR, SIZE)
+#define ENIF_ALLOC_BINARY(SIZE, BIN) enif_alloc_binary(SIZE, BIN)
+#define ENIF_COMPARE(TERM1, TERM2) enif_compare(TERM1, TERM2)
+#else
+#define ENIF_ALLOC(SIZE) enif_alloc(env, SIZE)
+#define ENIF_FREE(PTR) enif_free(env, PTR)
+#define ENIF_REALLOC(PTR, SIZE) enif_realloc(env, PTR, SIZE)
+#define ENIF_ALLOC_BINARY(SIZE, BIN) enif_alloc_binary(env, SIZE, BIN)
+#define ENIF_COMPARE(TERM1, TERM2) enif_compare(env, TERM1, TERM2)
+#endif
+
+static ERL_NIF_TERM atom_xmlelement;
+static ERL_NIF_TERM atom_xmlcdata;
+
 struct buf {
   int limit;
   int len;
@@ -10,12 +27,19 @@ struct buf {
 
 static int make_element(ErlNifEnv* env, struct buf *rbuf, ERL_NIF_TERM el);
 
+static int load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
+{
+  atom_xmlelement = enif_make_atom(env, "xmlelement");
+  atom_xmlcdata = enif_make_atom(env, "xmlcdata");
+  return 0;
+}
+
 static struct buf *init_buf(ErlNifEnv* env)
 {
-  struct buf *rbuf = enif_alloc(env, sizeof(struct buf));
+  struct buf *rbuf = ENIF_ALLOC(sizeof(struct buf));
   rbuf->limit = 1024;
   rbuf->len = 0;
-  rbuf->b = enif_alloc(env, rbuf->limit);
+  rbuf->b = ENIF_ALLOC(rbuf->limit);
   return rbuf;
 }
 
@@ -23,9 +47,9 @@ static void destroy_buf(ErlNifEnv* env, struct buf *rbuf)
 {
   if (rbuf) {
     if (rbuf->b) {
-      enif_free(env, rbuf->b);
+      ENIF_FREE(rbuf->b);
     };
-    enif_free(env, rbuf);
+    ENIF_FREE(rbuf);
   };
 }
 
@@ -35,7 +59,7 @@ inline void resize_buf(ErlNifEnv* env, struct buf *rbuf, int len_to_add)
   
   if (new_len >= rbuf->limit) {
     rbuf->limit = ((new_len / 1024) + 1) * 1024;
-    rbuf->b = enif_realloc(env, rbuf->b, rbuf->limit);
+    rbuf->b = ENIF_REALLOC(rbuf->b, rbuf->limit);
   };
 }
 
@@ -141,7 +165,7 @@ static int make_element(ErlNifEnv* env, struct buf *rbuf, ERL_NIF_TERM el)
 
   if (enif_get_tuple(env, el, &arity, &tuple)) {
     if (arity == 2) {
-      if (!enif_compare(env, tuple[0], enif_make_atom(env, "xmlcdata"))) {
+      if (!ENIF_COMPARE(tuple[0], atom_xmlcdata)) {
 	if (enif_inspect_iolist_as_binary(env, tuple[1], &cdata)) {
 	  crypt(env, rbuf, cdata.data, cdata.size);
 	  ret = 1;
@@ -149,7 +173,7 @@ static int make_element(ErlNifEnv* env, struct buf *rbuf, ERL_NIF_TERM el)
       };
     };
     if (arity == 4) {
-      if (!enif_compare(env, tuple[0], enif_make_atom(env, "xmlelement"))) {
+      if (!ENIF_COMPARE(tuple[0], atom_xmlelement)) {
 	if (enif_inspect_iolist_as_binary(env, tuple[1], &name)) {
 	  buf_add_char(env, rbuf, '<');
 	  buf_add_str(env, rbuf, (char *)name.data, name.size);
@@ -192,7 +216,7 @@ static ERL_NIF_TERM element_to(ErlNifEnv* env, int argc,
 	destroy_buf(env, rbuf);
 	return result;
       }	else {
-	if (enif_alloc_binary(env, rbuf->len, &output)) {
+	if (ENIF_ALLOC_BINARY(rbuf->len, &output)) {
 	  memcpy(output.data, rbuf->b, rbuf->len);
 	  result = enif_make_binary(env, &output);
 	  destroy_buf(env, rbuf);
@@ -206,11 +230,13 @@ static ERL_NIF_TERM element_to(ErlNifEnv* env, int argc,
   return enif_make_badarg(env);
 }
 
-/* static ERL_NIF_TERM element_to_string(ErlNifEnv* env, int argc, */
-/* 				      const ERL_NIF_TERM argv[]) */
-/* { */
-/*   return element_to(env, argc, argv, 1); */
-/* } */
+#ifdef SSL40
+static ERL_NIF_TERM element_to_string(ErlNifEnv* env, int argc,
+				      const ERL_NIF_TERM argv[])
+{
+  return element_to(env, argc, argv, 1);
+}
+#endif
 
 static ERL_NIF_TERM element_to_binary(ErlNifEnv* env, int argc,
 				      const ERL_NIF_TERM argv[])
@@ -222,9 +248,11 @@ static ErlNifFunc nif_funcs[] =
   {
     /* Stupid Erlang bug with enif_make_string() is fixed
        in R14A only (OTP-8685), so we can't use
-       element_to_string yet.*/
-    /* {"element_to_string", 1, element_to_string}, */
+       element_to_string in Erlang < R14A.*/
+#ifdef SSL40
+    {"element_to_string", 1, element_to_string},
+#endif
     {"element_to_binary", 1, element_to_binary}
   };
 
-ERL_NIF_INIT(xml, nif_funcs, NULL, NULL, NULL, NULL)
+ERL_NIF_INIT(xml, nif_funcs, load, NULL, NULL, NULL)
