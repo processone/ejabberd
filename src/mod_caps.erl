@@ -276,25 +276,8 @@ feature_response(#iq{type = result,
 		     sub_el = [{xmlelement, _, _, Els}]},
 		 Host, From, Caps, [SubNode | SubNodes]) ->
     BinaryNode = node_to_binary(Caps#caps.node, SubNode),
-    IsValid = case Caps#caps.hash of
-		  "md2" ->
-		      Caps#caps.version == make_disco_hash(Els, md2);
-		  "md5" ->
-		      Caps#caps.version == make_disco_hash(Els, md5);
-		  "sha-1" ->
-		      Caps#caps.version == make_disco_hash(Els, sha1);
-		  "sha-224" ->
-		      Caps#caps.version == make_disco_hash(Els, sha224);
-		  "sha-256" ->
-		      Caps#caps.version == make_disco_hash(Els, sha256);
-		  "sha-384" ->
-		      Caps#caps.version == make_disco_hash(Els, sha384);
-		  "sha-512" ->
-		      Caps#caps.version == make_disco_hash(Els, sha512);
-		  _ ->
-		      true
-	      end,
-    if IsValid ->
+    case check_hash(Caps, Els) of
+	true ->
 	    Features = lists:flatmap(
 			 fun({xmlelement, "feature", FAttrs, _}) ->
 				 [xml:get_attr_s("var", FAttrs)];
@@ -304,7 +287,7 @@ feature_response(#iq{type = result,
 	    mnesia:dirty_write(
 	      #caps_features{node_pair = BinaryNode,
 			     features = features_to_binary(Features)});
-       true ->
+	false ->
 	    mnesia:dirty_write(#caps_features{node_pair = BinaryNode})
     end,
     feature_request(Host, From, Caps, SubNodes);
@@ -349,6 +332,7 @@ make_my_disco_hash(Host) ->
 	    ""
     end.
 
+-ifdef(HAVE_MD2).
 make_disco_hash(DiscoEls, Algo) ->
     Concat = [concat_identities(DiscoEls),
 	      concat_features(DiscoEls),
@@ -369,6 +353,64 @@ make_disco_hash(DiscoEls, Algo) ->
 	 Algo == sha512 ->
 	      sha:sha512(Concat)
       end).
+
+check_hash(Caps, Els) ->
+    case Caps#caps.hash of
+	"md2" ->
+	    Caps#caps.version == make_disco_hash(Els, md2);
+	"md5" ->
+	    Caps#caps.version == make_disco_hash(Els, md5);
+	"sha-1" ->
+	    Caps#caps.version == make_disco_hash(Els, sha1);
+	"sha-224" ->
+	    Caps#caps.version == make_disco_hash(Els, sha224);
+	"sha-256" ->
+	    Caps#caps.version == make_disco_hash(Els, sha256);
+	"sha-384" ->
+	    Caps#caps.version == make_disco_hash(Els, sha384);
+	"sha-512" ->
+	    Caps#caps.version == make_disco_hash(Els, sha512);
+	_ ->
+	    true
+    end.
+-else.
+make_disco_hash(DiscoEls, Algo) ->
+    Concat = [concat_identities(DiscoEls),
+	      concat_features(DiscoEls),
+	      concat_info(DiscoEls)],
+    base64:encode_to_string(
+      if Algo == md5 ->
+	      crypto:md5(Concat);
+	 Algo == sha1 ->
+	      crypto:sha(Concat);
+	 Algo == sha224 ->
+	      sha:sha224(Concat);
+	 Algo == sha256 ->
+	      sha:sha256(Concat);
+	 Algo == sha384 ->
+	      sha:sha384(Concat);
+	 Algo == sha512 ->
+	      sha:sha512(Concat)
+      end).
+
+check_hash(Caps, Els) ->
+    case Caps#caps.hash of
+	"md5" ->
+	    Caps#caps.version == make_disco_hash(Els, md5);
+	"sha-1" ->
+	    Caps#caps.version == make_disco_hash(Els, sha1);
+	"sha-224" ->
+	    Caps#caps.version == make_disco_hash(Els, sha224);
+	"sha-256" ->
+	    Caps#caps.version == make_disco_hash(Els, sha256);
+	"sha-384" ->
+	    Caps#caps.version == make_disco_hash(Els, sha384);
+	"sha-512" ->
+	    Caps#caps.version == make_disco_hash(Els, sha512);
+	_ ->
+	    true
+    end.
+-endif.
 
 concat_features(Els) ->
     lists:usort(
