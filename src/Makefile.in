@@ -31,6 +31,7 @@ else
 endif
 
 EFLAGS += @ERLANG_SSLVER@ -pa .
+ERLANG_CFLAGS += @ERLANG_SSLVER@
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
@@ -61,6 +62,11 @@ endif
 
 ifeq (@transient_supervisors@, false)
   EFLAGS+=-DNO_TRANSIENT_SUPERVISORS
+endif
+
+ifeq (@md2@, true)
+  EFLAGS+=-DHAVE_MD2
+  ERLANG_CFLAGS += -DHAVE_MD2
 endif
 
 INSTALL_EPAM=

@@ -30,6 +30,11 @@ ifdef debug
 	EFLAGS+=+debug_info +export_all
 endif
 
+ifeq (@md2@, true)
+  EFLAGS+=-DHAVE_MD2
+  ERLANG_CFLAGS += -DHAVE_MD2
+endif
+
 ERLSHLIBS = ../tls_drv.so ../sha_drv.so
 OUTDIR = ..
 SOURCES = $(wildcard *.erl)

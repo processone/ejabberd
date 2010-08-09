@@ -148,6 +148,9 @@ if test "$ENABLEUSER" != ""; then
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
 
+AC_CHECK_HEADER(openssl/md2.h, md2=true, md2=false)
+AC_SUBST(md2)
+
 AC_CANONICAL_SYSTEM
 #AC_DEFINE_UNQUOTED(CPU_VENDOR_OS, "$target")
 #AC_SUBST(target_os)
