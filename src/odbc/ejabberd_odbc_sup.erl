@@ -54,7 +54,7 @@ start_link(Host) ->
 			 {type, bag},
 			 {local_content, true},
 			 {attributes, record_info(fields, sql_pool)}]),
-    mnesia:add_table_copy(local_config, node(), ram_copies),
+    mnesia:add_table_copy(sql_pool, node(), ram_copies),
     F = fun() ->
 		mnesia:delete({sql_pool, Host})
 	end,
