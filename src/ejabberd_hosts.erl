@@ -33,6 +33,7 @@
          ,running/1
          ,registered/0
          ,remove/1
+         ,update_host_conf/2
         ]).
 
 %% Host control API
@@ -87,6 +88,16 @@ register(Host, Config) when is_list(Host), is_list(Config) ->
     reload(),
     ok.
 
+%% Updates host configuration
+update_host_conf(Host, Config) when is_list(Host), is_list(Config) ->
+    true = jlib:is_nodename(Host),
+    case registered(Host) of
+	false -> {error, host_process_not_registered};
+	true ->
+	    remove(Host),
+	    ?MODULE:register(Host, Config)
+    end.
+   
 %% Removes a vhost from the system,
 %% XXX deleting all ODBC data.
 remove(Host) when is_list(Host) ->
@@ -222,6 +233,18 @@ handle_info(reload, State = #state{state=wait_odbc}) ->
     ?ERROR_MSG("Tried to reload vhosts while waiting for odbc startup.", []),
     handle_info(timeout, State);
 
+handle_info({reload, Host}, State = #state{state=running}) ->
+    try reload_host(Host)
+    catch
+        Class:Error ->
+            StackTrace = erlang:get_stacktrace(),
+            ?ERROR_MSG("~p while synchonising running ~p with database: ~p~n~p", [Host, Class, Error, StackTrace])
+    end,
+    {noreply, State};
+handle_info({reload, Host}, State = #state{state=wait_odbc}) ->
+    ?ERROR_MSG("Tried to reload ~p while waiting for odbc startup.", [Host]),
+    handle_info(timeout, State);
+
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -263,6 +286,21 @@ reload_hosts(NewHosts) ->
     start_hosts(AddedHosts),
     ejabberd_local:refresh_iq_handlers(),
     {DeletedHosts, AddedHosts}.
+
+%% updates the configuration of an existing virtual host
+reload_host(Host) ->
+    Config = get_host_config(odbc,Host),
+    F = fun() ->
+		mnesia:write_lock_table(local_config),
+		ejabberd_config:configure_host(Host, Config),
+		ok
+        end,
+    {atomic, ok} = mnesia:transaction(F),
+    % restart host
+    stop_host(Host),
+    start_host(Host),
+    ejabberd_local:refresh_iq_handlers(),
+    ok.
 
 %% Apply the vhost changes (new, removed vhosts, configuration) to mnesia
 update_config(AddHostConfig, RemoveHosts) ->
@@ -321,7 +359,7 @@ stop_host(Host) ->
     ?DEBUG("Stopping host ~p", [Host]),
     ejabberd_router:force_unregister_route(Host),
     lists:foreach(fun(Module) ->
-                          gen_mod:stop_module(Host, Module)
+                          gen_mod:stop_module_keep_config(Host, Module)
                   end, gen_mod:loaded_modules(Host)),
     case auth_method(Host) of
         use_global_auth_method -> ok;

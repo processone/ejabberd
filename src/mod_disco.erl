@@ -126,10 +126,8 @@ process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
 
-    case ejabberd_hooks:run_fold(disco_local_items,
-				 exmpp_jid:prep_domain(To),
-				 empty,
-				 [From, To, Node, Lang]) of
+    Host = exmpp_jid:prep_domain(To),
+    case find_items(disco_local_items, Host, From, To, Node, Lang) of
 	{result, Items} ->
 	    ANode = case Node of
 			<<>> -> [];
@@ -156,10 +154,7 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
     Host = exmpp_jid:prep_domain_as_list(To),
     Info = ejabberd_hooks:run_fold(disco_info, HostB, [],
 				   [Host, ?MODULE, Node, Lang]),
-    case ejabberd_hooks:run_fold(disco_local_features,
-				 exmpp_jid:prep_domain(To),
-				 empty,
-				 [From, To, Node, Lang]) of
+    case find_items(disco_local_features, HostB, From, To, Node, Lang) of
 	{result, Features} ->
 	    ANode = case Node of
 			<<>> -> [];
@@ -290,10 +285,8 @@ get_vh_services(Host) ->
 process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
-    case ejabberd_hooks:run_fold(disco_sm_items,
-				 exmpp_jid:prep_domain(To),
-				 empty,
-				 [From, To, Node, Lang]) of
+    Host = exmpp_jid:prep_domain(To),
+    case find_items(disco_sm_items, Host, From, To, Node, Lang) of
 	{result, Items} ->
 	    ANode = case Node of
 			<<>> -> [];
@@ -374,10 +367,8 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
                                                exmpp_jid:prep_domain(To),
                                                [],
                                                [From, To, Node, Lang]),
-            case ejabberd_hooks:run_fold(disco_sm_features,
-                                         exmpp_jid:prep_domain(To),
-                                         empty,
-                                         [From, To, Node, Lang]) of
+            Host = exmpp_jid:prep_domain(To),
+            case find_items(disco_sm_features, Host, From, To, Node, Lang) of
                 {result, Features} ->
                     ANode = case Node of
                                 <<>> -> [];
@@ -496,3 +487,13 @@ values_to_xml(Values) ->
       end,
       Values
      ).
+
+%%%%%% private functions 
+find_items(Hook, global, From, To, Node, Lang) ->
+    ejabberd_hooks:run_fold(Hook, global, empty, [From, To, Node, Lang]);
+find_items(Hook, Host, From, To, Node, Lang) ->
+    case ejabberd_hooks:run_fold(Hook, Host, empty, [From, To, Node, Lang]) of
+	empty ->
+	    find_items(Hook, global, From, To, Node, Lang);
+	Items -> Items
+    end.
