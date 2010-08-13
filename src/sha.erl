@@ -47,7 +47,7 @@ start() ->
 	  end,
     case Res of
 	ok ->
-	    Port = open_port({spawn, ?DRIVER}, [binary]),
+	    Port = open_port({spawn, atom_to_list(?DRIVER)}, [binary]),
 	    register(?DRIVER, Port);
 	{error, Reason} ->
 	    ?CRITICAL_MSG("unable to load driver '~s': ~s",

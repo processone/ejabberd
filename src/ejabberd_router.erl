@@ -205,24 +205,20 @@ delete_balanced_route(LDomain, Pid) ->
 
 
 force_unregister_route(Domain) ->
-    case jlib:nameprep(Domain) of
-	error ->
-	    erlang:error({invalid_domain, Domain});
-	LDomain ->
-	    F = fun() ->
-			case mnesia:match_object(
-			       #route{domain = LDomain,
-				      _ = '_'}) of
-			    Rs when is_list(Rs) ->
-				lists:foreach(fun(R) ->
-						      mnesia:delete_object(R)
-					      end, Rs);
-			    _ ->
-				ok
-			end
-		end,
-	    mnesia:transaction(F)
-    end.
+    LDomain = exmpp_stringprep:nameprep(Domain),
+    F = fun() ->
+		case mnesia:match_object(
+		       #route{domain = LDomain,
+			      _ = '_'}) of
+		    Rs when is_list(Rs) ->
+			lists:foreach(fun(R) ->
+					      mnesia:delete_object(R)
+				      end, Rs);
+		    _ ->
+			ok
+		end
+	end,
+    mnesia:transaction(F).
 
 unregister_routes(Domains) ->
     lists:foreach(fun(Domain) ->

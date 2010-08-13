@@ -448,9 +448,7 @@ remove_user(User, Server, Password) ->
 	    {atomic, ok} ->
 		ok;
 	    {atomic, Res} ->
-		Res;
-	    _ ->
-		bad_request
+		Res
 	end
     catch
 	_ ->

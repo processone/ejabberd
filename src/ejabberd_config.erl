@@ -194,9 +194,19 @@ normalize_hosts([Host|Hosts], PrepHosts) ->
 	    exit("invalid hostname")
     end.
 
-ensure_localhost_is_first(["localhost" | _] = Hosts) ->
-    Hosts;
+%% @spec (Hosts::[string()]) -> ["localhost" | string()]
 ensure_localhost_is_first(Hosts) ->
+    case lists:all(fun is_list/1, Hosts) of
+	true ->
+	    ensure_localhost_is_first1(Hosts);
+	false -> 
+	    ?ERROR_MSG("This list of hosts is bad formed:~n~p", [Hosts]),
+	    ensure_localhost_is_first1([])
+    end.
+
+ensure_localhost_is_first1(["localhost" | _] = Hosts) ->
+    Hosts;
+ensure_localhost_is_first1(Hosts) ->
     case lists:member("localhost", Hosts) of
 	true ->
 	    ["localhost" | lists:delete("localhost", Hosts)];

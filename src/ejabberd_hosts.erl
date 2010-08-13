@@ -84,13 +84,14 @@ register(Host, Config) when is_list(Host), is_list(Config) ->
     true = exmpp_stringprep:is_node(Host),
     ID = get_clusterid(),
     H = #hosts{host = Host, clusterid = ID, config = Config},
-    ok = gen_storage:dirty_write(Host, H),
+    HostB = list_to_binary(Host),
+    ok = gen_storage:dirty_write(HostB, H),
     reload(),
     ok.
 
 %% Updates host configuration
 update_host_conf(Host, Config) when is_list(Host), is_list(Config) ->
-    true = jlib:is_nodename(Host),
+    true = exmpp_stringprep:is_node(Host),
     case registered(Host) of
 	false -> {error, host_process_not_registered};
 	true ->
@@ -103,8 +104,9 @@ update_host_conf(Host, Config) when is_list(Host), is_list(Config) ->
 remove(Host) when is_list(Host) ->
     true = exmpp_stringprep:is_node(Host),
     ID = get_clusterid(),
+    HostB = list_to_binary(Host),
     gen_storage:dirty_delete_where(
-	Host, hosts,
+	HostB, hosts,
 	[{'andalso',
 	    {'==', clusterid, ID},
 	    {'==', host, Host}}]),
@@ -207,7 +209,7 @@ handle_info(timeout, State = #state{state=wait_odbc,backend=Backend,odbc_wait_ti
 					       {config, text}]}]),
 
 	    %% Now let's add the default vhost: "localhost"
-	    gen_storage:dirty_write(Host, #hosts{host = Host,
+	    gen_storage:dirty_write(HostB, #hosts{host = Host,
 							clusterid = 1,
 							config = ""}),
 
@@ -371,19 +373,10 @@ stop_host(Host) ->
 get_hosts(ejabberd) -> ?MYHOSTS;
 get_hosts(odbc) ->
     ClusterID = get_clusterid(),
-    case gen_storage:dirty_select(?MYNAME, hosts, [{'=', clusterid, ClusterID}]) of
-            Hosts when is_list(Hosts) ->
-		lists:map(fun (#hosts{host = Host}) ->
-                              case exmpp_stringprep:nameprep(Host) of
-                                  error ->
-                                      erlang:error({bad_vhost_name, Host});
-                                  Name ->
-                                      Name
-                              end
-                      end, Hosts);
-            E ->
-		erlang:error({get_hosts_error, E})
-    end.
+    Hosts = gen_storage:dirty_select(?MYNAME, hosts, [{'=', clusterid, ClusterID}]),
+    lists:map(fun (#hosts{host = Host}) ->
+	exmpp_stringprep:nameprep(Host)
+    end, Hosts).
 
 %% Retreive the text format config for host Host from ODBC and covert
 %% it into a {host, Host, Config} tuple.

@@ -4,7 +4,7 @@
 
 -include("ejabberd.hrl").
 
-%% @spec (Host, Table, Migrations) -> any()
+%% @spec (Host::storage_host(), Table::atom(), Migrations) -> any()
 %% Migrations = [{OldTable, OldAttributes, MigrateFun}]
 migrate_mnesia(Host, Table, Migrations) ->
     SameTableName = [Migration
@@ -33,14 +33,15 @@ migrate_mnesia(Host, Table, Migrations) ->
 		  end, DifferentTableName).
 
 migrate_mnesia1(Host, Table, {OldTable, OldAttributes, MigrateFun}) ->
+    HostB = list_to_binary(Host),
     case (catch mnesia:table_info(OldTable, attributes)) of
 	OldAttributes ->
 	    if
 		Table =:= OldTable ->
 		    %% TODO: move into transaction
 		    TmpTable = list_to_atom(atom_to_list(Table) ++ "_tmp"),
-		    NewRecordName = gen_storage:table_info(Host, Table, record_name),
-		    NewAttributes = gen_storage:table_info(Host, Table, attributes),
+		    NewRecordName = gen_storage:table_info(HostB, Table, record_name),
+		    NewAttributes = gen_storage:table_info(HostB, Table, attributes),
 		    ?INFO_MSG("Migrating mnesia table ~p via ~p~nfrom ~p~nto ~p",
 			      [Table, TmpTable, OldAttributes, NewAttributes]),
 
@@ -67,15 +68,15 @@ migrate_mnesia1(Host, Table, {OldTable, OldAttributes, MigrateFun}) ->
 			 end,
 		    {atomic, ok} = mnesia:transaction(F1),
 		    mnesia:delete_table(OldTable),
-		    TableInfo = gen_storage:table_info(Host, Table, all),
+		    TableInfo = gen_storage:table_info(HostB, Table, all),
 		    {value, {_, Backend}} = lists:keysearch(backend, 1, TableInfo),
-		    gen_storage:create_table(Backend, Host, Table, TableInfo),
+		    gen_storage:create_table(Backend, HostB, Table, TableInfo),
 		    F2 = fun() ->
 				 mnesia:write_lock_table(Table),
 				 mnesia:foldl(
 				   fun(NewRecord, _) ->
 					   ?DEBUG("~p-~p: ~p~n",[OldTable, Table, NewRecord]),
-					   gen_storage:write(Host, Table, NewRecord, write)
+					   gen_storage:write(HostB, Table, NewRecord, write)
 				   end, ok, TmpTable)
 			 end,
 		    {atomic, ok} = mnesia:transaction(F2),
@@ -93,7 +94,7 @@ migrate_mnesia1(Host, Table, {OldTable, OldAttributes, MigrateFun}) ->
 					   ?DEBUG("~p-~p: ~p -> ~p~n",[OldTable, Table, OldRecord, NewRecord]),
 					   if
 					       is_tuple(NewRecord) ->
-						   gen_storage:write(Host, Table, NewRecord, write);
+						   gen_storage:write(HostB, Table, NewRecord, write);
 					       true ->
 						   ignored
 					   end
@@ -142,6 +143,7 @@ migrate_odbc1(Host, Tables, {OldTablesColumns, MigrateFun}) ->
 migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun)
   when ColumnsT == OldColumnsAll ->
     ?INFO_MSG("Migrating ODBC table ~p to gen_storage tables ~p", [OldTable, Tables]),
+    HostB = list_to_binary(Host),
 
     %% rename old tables to *_old
     lists:foreach(fun(OldTable1) ->
@@ -149,13 +151,12 @@ migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldT
 			      ejabberd_odbc:sql_query_t("alter table " ++ OldTable1 ++
 							    " rename to " ++ OldTable1 ++ "_old")
 		  end, OldTables),
-    HostB = list_to_binary(Host),
     %% recreate new tables
     lists:foreach(fun(NewTable) ->
 			  case lists:member(NewTable, OldTablesA) of
 			      true ->
 				  TableInfo =
-				      gen_storage:table_info(Host, NewTable, all),
+				      gen_storage:table_info(HostB, NewTable, all),
 				  {value, {_, Backend}} =
 				      lists:keysearch(backend, 1, TableInfo),
 				  gen_storage:create_table(Backend, HostB,

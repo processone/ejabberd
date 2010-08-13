@@ -325,11 +325,7 @@ find_x_expire(TimeStamp, [#xmlel{ns = ?NS_MESSAGE_EXPIRE} = El | _Els]) ->
 	{'EXIT', _} ->
 	    0;
 	Int when Int > 0 ->
-	    {MegaSecs, Secs, MicroSecs} = TimeStamp,
-	    S = MegaSecs * 1000000 + Secs + Int,
-	    MegaSecs1 = S div 1000000,
-	    Secs1 = S rem 1000000,
-	    {MegaSecs1, Secs1, MicroSecs};
+	    TimeStamp + Int;
 	_ ->
 	    0
     end;
@@ -450,11 +446,12 @@ remove_old_messages(Days) ->
     Timestamp = make_timestamp() - 60 * 60 * 24 * Days,
     lists:foreach(
       fun(Host) ->
+	      HostB = list_to_binary(Host),
 	      F = fun() ->
-			  gen_storage:delete_where(Host, offline_msg,
+			  gen_storage:delete_where(HostB, offline_msg,
 						   [{'<', timestamp, Timestamp}])
 		  end,
-	      {atomic, _} = gen_storage:transaction(Host, offline_msg, F)
+	      {atomic, _} = gen_storage:transaction(HostB, offline_msg, F)
       end, gen_storage:all_table_hosts(offline_msg)).
 
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
@@ -494,8 +491,8 @@ update_table(Host, mnesia) ->
 		Expire1 = case Expire of
 			      never ->
 				  0;
-			      {MegaSecs, Secs, _MicroSecs} ->
-				  MegaSecs * 1000000 + Secs
+			      Ts ->
+				  Ts
 			  end,
 		PacketXmlel = exmpp_xml:xmlelement_to_xmlel(
 				Packet, [?DEFAULT_NS], ?PREFIXED_NS),
@@ -680,8 +677,10 @@ user_queue_parse_query(US, Query) ->
 us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server).
 
+%% @spec (User::string(), Host::string()) -> integer()
 get_queue_length(User, Host) ->
-    gen_storage:dirty_count_records(Host, offline_msg, [{'=', user_host, {User, Host}}]).
+    HostB = list_to_binary(Host),
+    gen_storage:dirty_count_records(HostB, offline_msg, [{'=', user_host, {User, Host}}]).
 
 get_messages_subset(User, Host, MsgsAll) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,

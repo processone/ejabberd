@@ -804,6 +804,7 @@ updated_list(_,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 update_tables(Host, mnesia) ->
+    HostB = list_to_binary(Host),
     gen_storage_migration:migrate_mnesia(
       Host, privacy_default_list,
       [{privacy, [us, default, lists],
@@ -821,7 +822,7 @@ update_tables(Host, mnesia) ->
 					  match_presence_in = MatchPresenceIn,
 					  match_presence_out = MatchPresenceOut}) ->
 				    ValueBin = convert_value_to_binary(Value),
-				    gen_storage:write(Host,
+				    gen_storage:write(HostB,
 						      #privacy_list_data{user_host = US,
 									 name = Name,
 									 type = Type,
@@ -834,7 +835,7 @@ update_tables(Host, mnesia) ->
 									 match_presence_in = MatchPresenceIn,
 									 match_presence_out = MatchPresenceOut})
 			    end, List),
-			  gen_storage:write(Host,
+			  gen_storage:write(HostB,
 					    #privacy_list{user_host = US,
 							  name = Name})
 		  end, Lists),

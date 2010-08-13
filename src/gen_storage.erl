@@ -61,10 +61,9 @@ behaviour_info(_) ->
 -spec all_table_hosts(atom()) ->
 			     [storage_host()].
 all_table_hosts(Tab) ->
-    mnesia:dirty_select(table, [{#table{host_name = '$1',
-					_ = '_'},
-				 [{'=:=', {element, 2, '$1'}, {const, Tab}}],
-				 [{element, 1, '$1'}]}]).
+    mnesia:dirty_select(table, [{{table, {'$1', '$2'}, '_', '_'},
+				 [{'=:=', '$2', {const, Tab}}],
+				 ['$1']}]).
 
 -spec table_info(storage_host, storage_table, atom()) ->
 			any().
@@ -110,7 +109,7 @@ table_info(Host, Tab, InfoKey) ->
 %% columndef() defaults to text for all unspecified attributes
 
 -spec create_table(atom(), storage_host(), storage_table(), #table{}) ->
-			  {atomic, ok}.
+			  tuple().
 
 create_table(mnesia, Host, Tab, Def) ->
     MDef = filter_mnesia_tabdef(Def),
@@ -123,7 +122,7 @@ create_table(odbc, Host, Tab, Def) ->
     define_table(gen_storage_odbc, Host, Tab, ODef),
     gen_storage_odbc:create_table(ODef).
 
--spec define_table(atom(), storage_host(), storage_table(), #table{}) ->
+-spec define_table(atom(), storage_host(), storage_table(), #mnesia_def{} | tuple()) ->
 			  ok.
 define_table(Backend, Host, Name, Def) ->
     mnesia:create_table(table, [{attributes, record_info(fields, table)}]),
@@ -131,8 +130,10 @@ define_table(Backend, Host, Name, Def) ->
 			      backend = Backend,
 			      def = Def}).
 
+%% @spec (#table{}) -> [{atom(), any()}]
+
 -spec filter_mnesia_tabdef(#table{}) ->
-				  [{atom(), any()}].
+				  [any()].
 
 filter_mnesia_tabdef(TabDef) ->
     lists:filter(fun filter_mnesia_tabdef_/1, TabDef).
@@ -531,7 +532,7 @@ write_lock_table(Host, Tab) ->
 
 
 -spec transaction(storage_host(), storage_table(), fun()) ->
-    {atomic, any()}.
+    {atomic, any()} | {aborted, string()}.
 %% Warning: all tabs touched by the transaction must use the same
 %% storage backend!
 transaction(Host, Tab, Fun) ->

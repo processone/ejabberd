@@ -389,7 +389,7 @@ storageroster_to_roster(#rosteritem{user_host_jid = {U, S, JID} = USJ,
 	     (_, R) ->
 		  R
 	  end, [], Rostergroups),
-    #roster{usj = {US, JID},
+    #roster{usj = {U, S, JID},
 	    us = US,
 	    jid = JID,
 	    name = convert_to_string(Name),
@@ -695,12 +695,8 @@ get_subscription_lists(_, User, Server)
     try
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
-	case gen_storage:dirty_select(LServer, rosteritem, [{'=', user_host_jid, {LUser, LServer, '_'}}]) of
-	    Items when is_list(Items) ->
-		fill_subscription_lists(Items, [], []);
-	    _ ->
-		{[], []}
-	end
+	Items = gen_storage:dirty_select(LServer, rosteritem, [{'=', user_host_jid, {LUser, LServer, '_'}}]),
+		fill_subscription_lists(Items, [], [])
     catch
 	_ ->
 	    {[], []}
@@ -1142,8 +1138,7 @@ get_in_pending_subscriptions(Ls, User, Server)
     JID = exmpp_jid:make(User, Server),
 	LUser = exmpp_stringprep:nodeprep(User),
 	LServer = exmpp_stringprep:nameprep(Server),
-    case gen_storage:dirty_select(LServer, rosteritem, [{'=', user_host_jid, {LUser, LServer, '_'}}]) of
-	Result when is_list(Result) ->
+    Result = gen_storage:dirty_select(LServer, rosteritem, [{'=', user_host_jid, {LUser, LServer, '_'}}]),
 	    Ls ++ lists:map(
 		    fun(#rosteritem{user_host_jid = {_, _, RJID},
 				    askmessage = Message}) ->
@@ -1169,10 +1164,7 @@ get_in_pending_subscriptions(Ls, User, Server)
 				  _ -> false
 			      end
 		      end,
-		      Result));
-	_ ->
-	    Ls
-    end.
+		      Result)).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1235,6 +1227,7 @@ get_jid_info(_, User, Server, JID)
 %% Only supports migration from ejabberd 1.1.2 or higher.
 
 update_table(Host, mnesia) ->
+    HostB = list_to_binary(Host),
     gen_storage_migration:migrate_mnesia(
       Host, rosteritem,
       [{roster, [usj, us, jid, name, subscription, ask, groups, askmessage, xs],
@@ -1250,7 +1243,7 @@ update_table(Host, mnesia) ->
 		lists:foreach(
 		  fun(Group) ->
 			  Group2 = list_to_binary(Group),
-			  gen_storage:write(Host,
+			  gen_storage:write(HostB,
 					    #rostergroup{user_host_jid = USJ1,
 							 grp = Group2})
 		  end, Groups),
