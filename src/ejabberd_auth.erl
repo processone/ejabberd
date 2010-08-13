@@ -76,7 +76,7 @@
 %% @spec () -> term()
 
 start() ->
-    ?DEBUG("About to start auth modules. Hosts: ~p", ?MYHOSTS),
+    ?DEBUG("About to start auth modules. Hosts: ~p", [?MYHOSTS]),
     lists:foreach(fun start/1, ?MYHOSTS).
 
 start(Host) ->
