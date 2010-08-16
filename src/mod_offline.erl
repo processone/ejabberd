@@ -431,22 +431,21 @@ pop_offline_messages(Ls, User, Server)
 remove_expired_messages() ->
     TimeStamp = make_timestamp(),
     lists:foreach(
-      fun(Host) ->
+      fun(HostB) ->
 	      F = fun() ->
 			  gen_storage:delete_where(
-			    Host, offline_msg,
+			    HostB, offline_msg,
 			    [{'andalso',
 			      {'=/=', expire, 0},
 			      {'<', expire, TimeStamp}}])
 		  end,
-	      gen_storage:transaction(Host, offline_msg, F)
+	      gen_storage:transaction(HostB, offline_msg, F)
       end, gen_storage:all_table_hosts(offline_msg)).
 
 remove_old_messages(Days) ->
     Timestamp = make_timestamp() - 60 * 60 * 24 * Days,
     lists:foreach(
-      fun(Host) ->
-	      HostB = list_to_binary(Host),
+      fun(HostB) ->
 	      F = fun() ->
 			  gen_storage:delete_where(HostB, offline_msg,
 						   [{'<', timestamp, Timestamp}])
