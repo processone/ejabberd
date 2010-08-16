@@ -194,7 +194,8 @@ normalize_hosts([Host|Hosts], PrepHosts) ->
 	    exit("invalid hostname")
     end.
 
-%% @spec (Hosts::[string()]) -> ["localhost" | string()]
+%% @spec (Hosts::[string()]) -> [Localhost::string() | [string()]]
+%% @doc Return the list where the first is surely "localhost".
 ensure_localhost_is_first(Hosts) ->
     case lists:all(fun is_list/1, Hosts) of
 	true ->
