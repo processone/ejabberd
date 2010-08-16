@@ -287,7 +287,7 @@ matchrules_to_mnesia_matchspec(Tab, MatchRules) ->
 %% TODO: special handling for '=='?
 matchrules_transform_conditions(Attributes, {Op, Attribute, Value})
   when Op =:= '='; Op =:= '=='; Op =:= '=:='; Op =:= like;
-       Op =:= '<'; Op =:= '>'; Op =:= '>='; Op =:= '=<' ->
+       Op =:= '=/='; Op =:= '<'; Op =:= '>'; Op =:= '>='; Op =:= '=<' ->
     Var = case list_find(Attribute, Attributes) of
 	      false -> exit(unknown_attribute);
 	      N -> list_to_atom([$$ | integer_to_list(N)])
@@ -311,9 +311,9 @@ matchrules_transform_conditions(Attributes, {Op, Attribute, Value})
     end;
 
 matchrules_transform_conditions(Attributes, T) when is_tuple(T) ->
-    L = tuple_to_list(T),
+    L = tl(tuple_to_list(T)),
     L2 = [matchrules_transform_conditions(Attributes, E) || E <- L],
-    list_to_tuple(L2).
+    list_to_tuple([element(1, T) | L2]).
 
 
 matchrules_transform_column_op(like, Expression, Pattern) ->
