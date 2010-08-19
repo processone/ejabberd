@@ -2741,8 +2741,9 @@ enqueue(StateData, From, To, Packet) ->
 	            StateData#state{pres_queue = NewQueue}
             end;
 	true ->
+	    CleanPacket = xml:remove_subtags(Packet, "x", {"xmlns", ?NS_P1_PUSHED}),
 	    Packet2 =
-		case Packet of
+		case CleanPacket of
 		    {xmlelement, "message" = Name, Attrs, Els} ->
 			{xmlelement, Name, Attrs,
 			 Els ++
