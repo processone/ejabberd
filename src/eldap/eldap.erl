@@ -33,8 +33,11 @@
 
 %%% Modified by Alexey Shchepin <alexey@sevcom.net>
 
-%%% Modified by Evgeniy Khramtsov <xram@jabber.ru>
+%%% Modified by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%% Implemented queue for bind() requests to prevent pending binds.
+%%% Implemented extensibleMatch/2 function.
+%%% Implemented LDAP Extended Operations (currently only Password Modify
+%%%   is supported - RFC 3062).
 
 %%% Modified by Christophe Romain <christophe.romain@process-one.net>
 %%% Improve error case handling
@@ -71,9 +74,9 @@
 
 -export([baseObject/0,singleLevel/0,wholeSubtree/0,close/1,
 	 equalityMatch/2,greaterOrEqual/2,lessOrEqual/2,
-	 approxMatch/2,search/2,substrings/2,present/1,
+	 approxMatch/2,search/2,substrings/2,present/1,extensibleMatch/2,
 	 'and'/1,'or'/1,'not'/1,modify/3, mod_add/2, mod_delete/2,
-	 mod_replace/2, add/3, delete/2, modify_dn/5, bind/3]).
+	 mod_replace/2, add/3, delete/2, modify_dn/5, modify_passwd/3, bind/3]).
 -export([get_status/1]).
 
 %% gen_fsm callbacks
@@ -127,9 +130,10 @@ start_link(Name) ->
     Reg_name = list_to_atom("eldap_" ++ Name),
     gen_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
 
-start_link(Name, Hosts, Port, Rootdn, Passwd, Encrypt) ->
+start_link(Name, Hosts, Port, Rootdn, Passwd, Opts) ->
     Reg_name = list_to_atom("eldap_" ++ Name),
-    gen_fsm:start_link({local, Reg_name}, ?MODULE, {Hosts, Port, Rootdn, Passwd, Encrypt}, []).
+    gen_fsm:start_link({local, Reg_name}, ?MODULE,
+		       {Hosts, Port, Rootdn, Passwd, Opts}, []).
 
 %%% --------------------------------------------------------------------
 %%% Get status of connection.
@@ -239,6 +243,10 @@ modify_dn(Handle, Entry, NewRDN, DelOldRDN, NewSup)
       {modify_dn, Entry, NewRDN, bool_p(DelOldRDN), optional(NewSup)},
       ?CALL_TIMEOUT).
 
+modify_passwd(Handle, DN, Passwd) when is_list(DN), is_list(Passwd) ->
+    Handle1 = get_handle(Handle),
+    gen_fsm:sync_send_event(
+      Handle1, {modify_passwd, DN, Passwd}, ?CALL_TIMEOUT).
 
 %%% --------------------------------------------------------------------
 %%% Bind.
@@ -374,6 +382,29 @@ substrings(Type, SubStr) when is_list(Type), is_list(SubStr) ->
     {substrings,#'SubstringFilter'{type = Type,
 				   substrings = Ss}}.
 
+%%%
+%%% extensibleMatch filter.
+%%% FIXME: Describe the purpose of this filter.
+%%%
+%%% Value   ::= string( <attribute> )
+%%% Opts    ::= listof( {matchingRule, Str} | {type, Str} | {dnAttributes, true} )
+%%%
+%%% Example: extensibleMatch("Fred", [{matchingRule, "1.2.3.4.5"}, {type, "cn"}]).
+%%%
+extensibleMatch(Value, Opts) when is_list(Value), is_list(Opts) ->
+	MRA = #'MatchingRuleAssertion'{matchValue=Value},
+	{extensibleMatch, extensibleMatch_opts(Opts, MRA)}.
+
+extensibleMatch_opts([{matchingRule, Rule} | Opts], MRA) when is_list(Rule) ->
+	extensibleMatch_opts(Opts, MRA#'MatchingRuleAssertion'{matchingRule=Rule});
+extensibleMatch_opts([{type, Desc} | Opts], MRA) when is_list(Desc) ->
+	extensibleMatch_opts(Opts, MRA#'MatchingRuleAssertion'{type=Desc});
+extensibleMatch_opts([{dnAttributes, true} | Opts], MRA) ->
+	extensibleMatch_opts(Opts, MRA#'MatchingRuleAssertion'{dnAttributes=true});
+extensibleMatch_opts([_ | Opts], MRA) ->
+	extensibleMatch_opts(Opts, MRA);
+extensibleMatch_opts([], MRA) ->
+	MRA.
 
 get_handle(Pid) when is_pid(Pid)    -> Pid;
 get_handle(Atom) when is_atom(Atom) -> Atom;
@@ -393,15 +424,18 @@ get_handle(Name) when is_list(Name) -> list_to_atom("eldap_" ++ Name).
 %%----------------------------------------------------------------------
 init([]) ->
     case get_config() of
-	{ok, Hosts, Rootdn, Passwd, Encrypt} ->
-	    init({Hosts, Rootdn, Passwd, Encrypt});
+	{ok, Hosts, Rootdn, Passwd, Opts} ->
+	    init({Hosts, Rootdn, Passwd, Opts});
 	{error, Reason} ->
 	    {stop, Reason}
     end;
-init({Hosts, Port, Rootdn, Passwd, Encrypt}) ->
+init({Hosts, Port, Rootdn, Passwd, Opts}) ->
     catch ssl:start(),
-    {X1,X2,X3} = erlang:now(),
-    ssl:seed(integer_to_list(X1) ++ integer_to_list(X2) ++ integer_to_list(X3)),
+    ssl:seed(randoms:get_string()),
+    Encrypt = case proplists:get_value(encrypt, Opts) of
+		  tls -> tls;
+		  _ -> none
+	      end,
     PortTemp = case Port of
 		   undefined ->
 		       case Encrypt of
@@ -414,7 +448,14 @@ init({Hosts, Port, Rootdn, Passwd, Encrypt}) ->
 		       end;
 		   PT -> PT
 	       end,
-    TLSOpts = [verify_none],
+    TLSOpts = case proplists:get_value(tls_verify, Opts) of
+		  soft ->
+		      [{verify, 1}];
+		  hard ->
+		      [{verify, 2}];
+		  _ ->
+		      [{verify, 0}]
+	      end,
     {ok, connecting, #eldap{hosts = Hosts,
 			    port = PortTemp,
 			    rootdn = Rootdn,
@@ -671,6 +712,16 @@ gen_req({modify_dn, Entry, NewRDN, DelOldRDN, NewSup}) ->
 			deleteoldrdn = DelOldRDN,
 			newSuperior  = NewSup}};
 
+gen_req({modify_passwd, DN, Passwd}) ->
+    {ok, ReqVal} = asn1rt:encode(
+		     'ELDAPv3', 'PasswdModifyRequestValue',
+		     #'PasswdModifyRequestValue'{
+				  userIdentity = DN,
+				  newPasswd = Passwd}),
+    {extendedReq,
+     #'ExtendedRequest'{requestName = ?passwdModifyOID,
+			requestValue = list_to_binary(ReqVal)}};
+
 gen_req({bind, RootDN, Passwd}) ->
     {bindRequest,
      #'BindRequest'{version        = ?LDAP_VERSION,
@@ -745,6 +796,11 @@ recvd_packet(Pkt, S) ->
 		    cancel_timer(Timer),
 		    Reply = check_bind_reply(Result, From),
 		    {reply, Reply, From, S#eldap{dict = New_dict}};
+		{extendedReq, {extendedResp, Result}} ->
+		    New_dict = dict:erase(Id, Dict),
+		    cancel_timer(Timer),
+		    Reply = check_extended_reply(Result, From),
+		    {reply, Reply, From, S#eldap{dict = New_dict}};
 		{OtherName, OtherResult} ->
 		    New_dict = dict:erase(Id, Dict),
 		    cancel_timer(Timer),
@@ -767,6 +823,15 @@ check_bind_reply(#'BindResponse'{resultCode = success}, _From) ->
 check_bind_reply(#'BindResponse'{resultCode = Reason}, _From) ->
     {error, Reason};
 check_bind_reply(Other, _From) ->
+    {error, Other}.
+
+%% TODO: process reply depending on requestName:
+%% this requires BER-decoding of #'ExtendedResponse'.response
+check_extended_reply(#'ExtendedResponse'{resultCode = success}, _From) ->
+    ok;
+check_extended_reply(#'ExtendedResponse'{resultCode = Reason}, _From) ->
+    {error, Reason};
+check_extended_reply(Other, _From) ->
     {error, Other}.
 
 get_op_rec(Id, Dict) ->
@@ -904,7 +969,7 @@ connect_bind(S) ->
 		     tls ->
 			 SockMod = ssl,
 			 SslOpts = [{packet, asn1}, {active, true}, {keepalive, true},
-				    binary],
+				    binary | S#eldap.tls_options],
 			 ssl:connect(Host, S#eldap.port, SslOpts);
 		     %% starttls -> %% TODO: Implement STARTTLS;
 		     _ ->
@@ -973,6 +1038,8 @@ v_filter({lessOrEqual,AV})    -> {lessOrEqual,AV};
 v_filter({approxMatch,AV})    -> {approxMatch,AV};
 v_filter({present,A})         -> {present,A};
 v_filter({substrings,S}) when is_record(S,'SubstringFilter') -> {substrings,S};
+v_filter({extensibleMatch, S}) when is_record(S, 'MatchingRuleAssertion') ->
+    {extensibleMatch, S};
 v_filter(_Filter) -> throw({error,concat(["unknown filter: ",_Filter])}).
 
 v_modifications(Mods) ->
@@ -1018,8 +1085,8 @@ get_config() ->
     case file:consult(File) of
 	{ok, Entries} ->
 	    case catch parse(Entries) of
-		{ok, Hosts, Port, Rootdn, Passwd, Encrypt} ->
-		    {ok, Hosts, Port, Rootdn, Passwd, Encrypt};
+		{ok, Hosts, Port, Rootdn, Passwd, Opts} ->
+		    {ok, Hosts, Port, Rootdn, Passwd, Opts};
 		{error, Reason} ->
 		    {error, Reason};
 		{'EXIT', Reason} ->
@@ -1035,7 +1102,7 @@ parse(Entries) ->
      get_integer(port, Entries),
      get_list(rootdn, Entries),
      get_list(passwd, Entries),
-     get_atom(encrypt, Entries)}.
+     get_list(options, Entries)}.
 
 get_integer(Key, List) ->
     case lists:keysearch(Key, 1, List) of
@@ -1057,15 +1124,15 @@ get_list(Key, List) ->
 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
     end.
 
-get_atom(Key, List) ->
-    case lists:keysearch(Key, 1, List) of
-	{value, {Key, Value}} when is_atom(Value) ->
-	    Value;
-	{value, {Key, _Value}} ->
-	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
-	false ->
-	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
-    end.
+%% get_atom(Key, List) ->
+%%     case lists:keysearch(Key, 1, List) of
+%% 	{value, {Key, Value}} when is_atom(Value) ->
+%% 	    Value;
+%% 	{value, {Key, _Value}} ->
+%% 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
+%% 	false ->
+%% 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
+%%     end.
 
 get_hosts(Key, List) ->
     lists:map(fun({Key1, {A,B,C,D}}) when is_integer(A),

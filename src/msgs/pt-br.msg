@@ -36,6 +36,10 @@
 {"Change Password","Mudar senha"}.
 {"Change User Password","Alterar Senha do Usuário"}.
 {"Chatroom configuration modified","Configuração da sala de bate-papo modificada"}.
+{"Chatroom is created","A sala de chat está criada"}.
+{"Chatroom is destroyed","A sala de chat está destruída"}.
+{"Chatroom is started","A sala de chat está inciada"}.
+{"Chatroom is stopped","A sala de chat está parada"}.
 {"Chatrooms","Salas de Chat"}.
 {"Choose a username and password to register with this server","Escolha um nome de usuário e senha para registrar-se neste servidor"}.
 {"Choose modules to stop","Selecione módulos a parar"}.
@@ -246,6 +250,7 @@
 {"Protocol","Porta"}.
 {"Publish-Subscribe","Publicação de Tópico"}.
 {"PubSub subscriber request","PubSub requisição de assinante"}.
+{"Purge all items when the relevant publisher goes offline","Descartar todos os itens quando o publicante principal estiver offline"}.
 {"Queries to the conference members are not allowed in this room","Nesta sala não se permite consultas aos membros da sala"}.
 {"RAM and disc copy","Copia em RAM y disco"}.
 {"RAM copy","Copia em RAM"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Parar Serviço"}.
 {"~s invites you to the room ~s","~s convidou você para a sala ~s"}.
 {"Specify the access model","Especificar os modelos de acesso"}.
+{"Specify the event message type","Especificar o tipo de mensagem para o evento"}.
 {"Specify the publisher model","Especificar o modelo do publicante"}.
 {"~s's Offline Messages Queue","~s's Fila de Mensagens Offline"}.
 {"Start","Iniciar"}.

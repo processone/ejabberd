@@ -25,7 +25,8 @@
 %%   - You can limit the time processing a message (TODO): If the
 %%   message processing does not return in a given period of time, the
 %%   process will be terminated.
-%% 
+%%   - You might customize the State data before sending it to error_logger
+%%   in case of a crash (just export the function print_state/1)
 %%     $Id$
 %%
 -module(p1_fsm).
@@ -146,7 +147,7 @@
 
 behaviour_info(callbacks) ->
     [{init,1},{handle_event,3},{handle_sync_event,4},{handle_info,3},
-     {terminate,3},{code_change,4}];
+     {terminate,3},{code_change,4}, {print_state,1}];
 behaviour_info(_Other) ->
     undefined.
 
@@ -376,7 +377,7 @@ loop(Parent, Name, StateName, StateData, Mod, hibernate, Debug,
 		       Debug, Limits, Queue1, QueueLen - 1, false);
 	{empty, _} ->
 	    Reason = internal_queue_error,
-	    error_info(Reason, Name, hibernate, StateName, StateData, Debug),
+	    error_info(Mod, Reason, Name, hibernate, StateName, StateData, Debug),
 	    exit(Reason)
     end;
 loop(Parent, Name, StateName, StateData, Mod, hibernate, Debug,
@@ -516,6 +517,25 @@ print_event(Dev, return, {Name, StateName}) ->
     io:format(Dev, "*DBG* ~p switched to state ~w~n",
 	      [Name, StateName]).
 
+relay_messages(MRef, TRef, Clone, Queue) ->
+    lists:foreach(
+      fun(Msg) -> Clone ! Msg end,
+      queue:to_list(Queue)),
+    relay_messages(MRef, TRef, Clone).
+
+relay_messages(MRef, TRef, Clone) ->
+    receive
+	{'DOWN', MRef, process, Clone, Reason} ->
+	    Reason;
+	{'EXIT', _Parent, _Reason} ->
+	    {migrated, Clone};
+	{timeout, TRef, timeout} ->
+	    {migrated, Clone};
+	Msg ->
+	    Clone ! Msg,
+	    relay_messages(MRef, TRef, Clone)
+    end.
+
 handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 	   Limits, Queue, QueueLen) -> %No debug here
     From = from(Msg),
@@ -534,6 +554,23 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 	    reply(From, Reply),
 	    loop(Parent, Name, NStateName, NStateData, Mod, Time1, [],
 		 Limits, Queue, QueueLen);
+	{migrate, NStateData, {Node, M, F, A}, Time1} ->
+	    Reason = case catch rpc:call(Node, M, F, A, 5000) of
+			 {badrpc, _} = Err ->
+			     {migration_error, Err};
+			 {'EXIT', _} = Err ->
+			     {migration_error, Err};
+			 {error, _} = Err ->
+			     {migration_error, Err};
+			 {ok, Clone} ->
+			     process_flag(trap_exit, true),
+			     MRef = erlang:monitor(process, Clone),
+			     TRef = erlang:start_timer(Time1, self(), timeout),
+			     relay_messages(MRef, TRef, Clone, Queue);
+			 Reply ->
+			     {migration_error, {bad_reply, Reply}}
+		     end,
+	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, []);
 	{stop, Reason, NStateData} ->
 	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, []);
 	{stop, Reason, Reply, NStateData} when From =/= undefined ->
@@ -570,6 +607,23 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 	    Debug1 = reply(Name, From, Reply, Debug, NStateName),
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, Time1, Debug1, Limits, Queue, QueueLen);
+	{migrate, NStateData, {Node, M, F, A}, Time1} ->
+	    Reason = case catch rpc:call(Node, M, F, A, Time1) of
+			 {badrpc, R} ->
+			     {migration_error, R};
+			 {'EXIT', R} ->
+			     {migration_error, R};
+			 {error, R} ->
+			     {migration_error, R};
+			 {ok, Clone} ->
+			     process_flag(trap_exit, true),
+			     MRef = erlang:monitor(process, Clone),
+			     TRef = erlang:start_timer(Time1, self(), timeout),
+			     relay_messages(MRef, TRef, Clone, Queue);
+			 Reply ->
+			     {migration_error, {bad_reply, Reply}}
+		     end,
+	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, Debug);
 	{stop, Reason, NStateData} ->
 	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, Debug);
 	{stop, Reason, Reply, NStateData} when From =/= undefined ->
@@ -620,7 +674,7 @@ reply(Name, {To, Tag}, Reply, Debug, StateName) ->
 terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
     case catch Mod:terminate(Reason, StateName, StateData) of
 	{'EXIT', R} ->
-	    error_info(R, Name, Msg, StateName, StateData, Debug),
+	    error_info(Mod, R, Name, Msg, StateName, StateData, Debug),
 	    exit(R);
 	_ ->
 	    case Reason of
@@ -632,19 +686,17 @@ terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
 		    %% Priority shutdown should be considered as
 		    %% shutdown by SASL
 		    exit(shutdown);
-		{process_limit, Limit} ->
-		    %% Priority shutdown should be considered as
-		    %% shutdown by SASL
-		    error_logger:error_msg("FSM limit reached (~p): ~p~n",
-					   [self(), Limit]),
-		    exit(shutdown);
+		{process_limit, _Limit} ->
+		    exit(Reason);
+		{migrated, _Clone} ->
+		    exit(normal);
 		_ ->
-		    error_info(Reason, Name, Msg, StateName, StateData, Debug),
+		    error_info(Mod, Reason, Name, Msg, StateName, StateData, Debug),
 		    exit(Reason)
 	    end
     end.
 
-error_info(Reason, Name, Msg, StateName, StateData, Debug) ->
+error_info(Mod, Reason, Name, Msg, StateName, StateData, Debug) ->
     Reason1 = 
 	case Reason of
 	    {undef,[{M,F,A}|MFAs]} ->
@@ -662,12 +714,16 @@ error_info(Reason, Name, Msg, StateName, StateData, Debug) ->
 	    _ ->
 		Reason
 	end,
+    StateToPrint = case erlang:function_exported(Mod, print_state, 1) of
+      true -> (catch Mod:print_state(StateData));
+      false -> StateData
+    end,
     Str = "** State machine ~p terminating \n" ++
 	get_msg_str(Msg) ++
 	"** When State == ~p~n"
         "**      Data  == ~p~n"
         "** Reason for termination = ~n** ~p~n",
-    format(Str, [Name, get_msg(Msg), StateName, StateData, Reason1]),
+    format(Str, [Name, get_msg(Msg), StateName, StateToPrint, Reason1]),
     sys:print_log(Debug),
     ok.
 
@@ -700,7 +756,12 @@ get_msg(Msg) -> Msg.
 format_status(Opt, StatusData) ->
     [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time]] =
 	StatusData,
-    Header = lists:concat(["Status for state machine ", Name]),
+    NameTag = if is_pid(Name) ->
+		      pid_to_list(Name);
+		 is_atom(Name) ->
+		      Name
+	      end,
+    Header = lists:concat(["Status for state machine ", NameTag]),
     Log = sys:get_debug(log, Debug, []),
     Specfic = 
 	case erlang:function_exported(Mod, format_status, 2) of

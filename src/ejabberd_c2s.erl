@@ -55,7 +55,9 @@
 	 handle_sync_event/4,
 	 code_change/4,
 	 handle_info/3,
-	 terminate/3]).
+	 terminate/3,
+     print_state/1
+     ]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -359,10 +361,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						  [{xmlelement, "mechanisms",
 						    [{"xmlns", ?NS_SASL}],
 						    Mechs}] ++
-						   ejabberd_hooks:run_fold(
-						     c2s_stream_features,
-						     Server,
-						     [], [])}),
+						  ejabberd_hooks:run_fold(
+						    c2s_stream_features,
+						    Server,
+						    [], [Server])}),
 				    fsm_next_state(wait_for_feature_request,
 					       StateData#state{
 						 server = Server,
@@ -371,13 +373,22 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				_ ->
 				    case StateData#state.resource of
 					"" ->
-					    RosterVersioningFeature = ejabberd_hooks:run_fold(roster_get_versioning_feature, Server, [], [Server]),
-				            StreamFeatures = [{xmlelement, "push",
+					    RosterVersioningFeature =
+						ejabberd_hooks:run_fold(
+						  roster_get_versioning_feature,
+						  Server, [], [Server]),
+				            StreamFeatures =
+						[{xmlelement, "push",
 						  [{"xmlns", ?NS_P1_PUSH}], []},
-						{xmlelement, "bind",
-						 [{"xmlns", ?NS_BIND}], []},
-						{xmlelement, "session",
-						 [{"xmlns", ?NS_SESSION}], []} | RosterVersioningFeature],
+						 {xmlelement, "bind",
+						  [{"xmlns", ?NS_BIND}], []},
+						 {xmlelement, "session",
+						  [{"xmlns", ?NS_SESSION}], []}]
+						++ RosterVersioningFeature
+						++ ejabberd_hooks:run_fold(
+						     c2s_stream_features,
+						     Server,
+						     [], [Server]),
 					    send_element(
 					      StateData,
 					      {xmlelement, "stream:features", [],
@@ -687,7 +698,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    Socket = StateData#state.socket,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  xml:element_to_string(
+			  xml:element_to_binary(
 			    {xmlelement, "proceed", [{"xmlns", ?NS_TLS}], []})),
 	    fsm_next_state(wait_for_stream,
 			   StateData#state{socket = TLSSocket,
@@ -710,7 +721,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    Socket = StateData#state.socket,
 			    ZlibSocket = (StateData#state.sockmod):compress(
 					   Socket,
-					   xml:element_to_string(
+					   xml:element_to_binary(
 					     {xmlelement, "compressed",
 					      [{"xmlns", ?NS_COMPRESS}], []})),
 			    fsm_next_state(wait_for_stream,
@@ -1514,10 +1525,42 @@ handle_info(system_shutdown, StateName, StateData) ->
            ok
     end,
     {stop, normal, StateData};
+handle_info({force_update_presence, LUser}, StateName,
+            #state{user = LUser, server = LServer} = StateData) ->
+    NewStateData =
+	case StateData#state.pres_last of
+	    {xmlelement, "presence", _Attrs, _Els} ->
+		PresenceEl = ejabberd_hooks:run_fold(
+			       c2s_update_presence,
+			       LServer,
+			       StateData#state.pres_last,
+			       [LUser, LServer]),
+		StateData2 = StateData#state{pres_last = PresenceEl},
+		presence_update(StateData2#state.jid,
+				PresenceEl,
+				StateData2),
+		StateData2;
+	    _ ->
+		StateData
+	end,
+    {next_state, StateName, NewStateData};
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
 
+
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State = #state{pres_t = T, pres_f = F, pres_a = A, pres_i = I}) ->
+   State#state{pres_t = {pres_t, ?SETS:size(T)},
+               pres_f = {pres_f, ?SETS:size(F)},
+               pres_a = {pres_a, ?SETS:size(A)},
+               pres_i = {pres_i, ?SETS:size(I)}
+               }.
+    
 %%----------------------------------------------------------------------
 %% Func: terminate/3
 %% Purpose: Shutdown the fsm
@@ -1631,14 +1674,14 @@ change_shaper(StateData, JID) ->
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
-    ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
+    ?DEBUG("Send XML on stream = ~p", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) when StateData#state.xml_socket ->
     (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 send_header(StateData, Server, Version, Lang)
   when StateData#state.xml_socket ->

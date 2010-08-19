@@ -39,6 +39,7 @@
 	 sql_bloc/2,
 	 escape/1,
 	 escape_like/1,
+	 to_bool/1,
 	 keep_alive/1]).
 
 %% gen_fsm callbacks
@@ -47,6 +48,7 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
+	 print_state/1,
 	 code_change/4]).
 
 %% gen_fsm states
@@ -118,14 +120,14 @@ sql_call(Host, Msg) ->
     case get(?STATE_KEY) of
         undefined ->
             ?GEN_FSM:sync_send_event(ejabberd_odbc_sup:get_random_pid(Host),
-				     {sql_cmd, Msg}, ?TRANSACTION_TIMEOUT);
+				     {sql_cmd, Msg, now()}, ?TRANSACTION_TIMEOUT);
         _State ->
             nested_op(Msg)
     end.
 
 % perform a harmless query on all opened connexions to avoid connexion close.
 keep_alive(PID) ->
-    ?GEN_FSM:sync_send_event(PID, {sql_cmd, {sql_query, ?KEEPALIVE_QUERY}},
+    ?GEN_FSM:sync_send_event(PID, {sql_cmd, {sql_query, ?KEEPALIVE_QUERY}, now()},
 			     ?KEEPALIVE_TIMEOUT).
 
 %% This function is intended to be used from inside an sql_transaction:
@@ -147,7 +149,9 @@ sql_query_t(Query) ->
 
 %% Escape character that will confuse an SQL engine
 escape(S) when is_list(S) ->
-    [odbc_queries:escape(C) || C <- S].
+    [odbc_queries:escape(C) || C <- S];
+escape(S) when is_binary(S) ->
+    escape(binary_to_list(S)).
 
 %% Escape character that will confuse an SQL engine
 %% Percent and underscore only need to be escaped for pattern matching like
@@ -158,6 +162,12 @@ escape_like($%) -> "\\%";
 escape_like($_) -> "\\_";
 escape_like(C)  -> odbc_queries:escape(C).
 
+to_bool("t") -> true;
+to_bool("true") -> true;
+to_bool("1") -> true;
+to_bool(true) -> true;
+to_bool(1) -> true;
+to_bool(_) -> false.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -175,6 +185,7 @@ init([Host, StartInterval]) ->
     end,
     [DBType | _] = db_opts(Host),
     ?GEN_FSM:send_event(self(), connect),
+    ejabberd_odbc_sup:add_pid(Host, self()),
     {ok, connecting, #state{db_type = DBType,
 			    host = Host,
 			    max_pending_requests_len = max_fsm_queue(),
@@ -215,22 +226,22 @@ connecting(Event, State) ->
     ?WARNING_MSG("unexpected event in 'connecting': ~p", [Event]),
     {next_state, connecting, State}.
 
-connecting({sql_cmd, {sql_query, ?KEEPALIVE_QUERY}}, From, State) ->
+connecting({sql_cmd, {sql_query, ?KEEPALIVE_QUERY}, _Timestamp}, From, State) ->
     ?GEN_FSM:reply(From, {error, "SQL connection failed"}),
     {next_state, connecting, State};
-connecting({sql_cmd, Command} = Req, From, State) ->
-    ?DEBUG("queueing pending request while connecting:~n\t~p", [Req]),
+connecting({sql_cmd, Command, Timestamp} = Req, From, State) ->
+    ?DEBUG("queuing pending request while connecting:~n\t~p", [Req]),
     {Len, PendingRequests} = State#state.pending_requests,
     NewPendingRequests =
 	if Len < State#state.max_pending_requests_len ->
-		{Len + 1, queue:in({sql_cmd, Command, From}, PendingRequests)};
+		{Len + 1, queue:in({sql_cmd, Command, From, Timestamp}, PendingRequests)};
 	   true ->
 		lists:foreach(
-		  fun({sql_cmd, _, To}) ->
+		  fun({sql_cmd, _, To, _Timestamp}) ->
 			  ?GEN_FSM:reply(
 			     To, {error, "SQL connection failed"})
 		  end, queue:to_list(PendingRequests)),
-		{1, queue:from_list([{sql_cmd, Command, From}])}
+		{1, queue:from_list([{sql_cmd, Command, From, Timestamp}])}
 	end,
     {next_state, connecting,
      State#state{pending_requests = NewPendingRequests}};
@@ -239,19 +250,15 @@ connecting(Request, {Who, _Ref}, State) ->
 		 [Request, Who]),
     {reply, {error, badarg}, connecting, State}.
 
-session_established({sql_cmd, Command}, From, State) ->
-    put(?NESTING_KEY, ?TOP_LEVEL_TXN),
-    put(?STATE_KEY, State),
-    abort_on_driver_error(outer_op(Command), From);
+session_established({sql_cmd, Command, Timestamp}, From, State) ->
+    run_sql_cmd(Command, From, State, Timestamp);
 session_established(Request, {Who, _Ref}, State) ->
     ?WARNING_MSG("unexpected call ~p from ~p in 'session_established'",
 		 [Request, Who]),
     {reply, {error, badarg}, session_established, State}.
 
-session_established({sql_cmd, Command, From}, State) ->
-    put(?NESTING_KEY, ?TOP_LEVEL_TXN),
-    put(?STATE_KEY, State),
-    abort_on_driver_error(outer_op(Command), From);
+session_established({sql_cmd, Command, From, Timestamp}, State) ->
+    run_sql_cmd(Command, From, State, Timestamp);
 session_established(Event, State) ->
     ?WARNING_MSG("unexpected event in 'session_established': ~p", [Event]),
     {next_state, session_established, State}.
@@ -275,6 +282,7 @@ handle_info(Info, StateName, State) ->
     {next_state, StateName, State}.
 
 terminate(_Reason, _StateName, State) ->
+    ejabberd_odbc_sup:remove_pid(State#state.host, self()),
     case State#state.db_type of
 	mysql ->
 	    %% old versions of mysql driver don't have the stop function
@@ -285,9 +293,29 @@ terminate(_Reason, _StateName, State) ->
     end,
     ok.
 
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State) ->
+    State.
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
+
+run_sql_cmd(Command, From, State, Timestamp) ->
+    case timer:now_diff(now(), Timestamp) div 1000 of
+	Age when Age  < ?TRANSACTION_TIMEOUT ->
+	    put(?NESTING_KEY, ?TOP_LEVEL_TXN),
+	    put(?STATE_KEY, State),
+	    abort_on_driver_error(outer_op(Command), From);
+	Age ->
+	    ?ERROR_MSG("Database was not available or too slow,"
+		       " discarding ~p milliseconds old request~n~p~n",
+		       [Age, Command]),
+	    {next_state, session_established, State}
+    end.
 
 %% Only called by handle_call, only handles top level operations.
 %% @spec outer_op(Op) -> {error, Reason} | {aborted, Reason} | {atomic, Result}
@@ -537,7 +565,7 @@ max_fsm_queue() ->
 	_ ->
 	    undefined
     end.
-	    
+
 fsm_limit_opts() ->
     case max_fsm_queue() of
 	N when is_integer(N) ->

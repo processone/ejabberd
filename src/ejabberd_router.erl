@@ -31,6 +31,7 @@
 
 %% API
 -export([route/3,
+	 route_error/4,
 	 register_route/1,
 	 register_route/2,
 	 register_routes/1,
@@ -69,6 +70,17 @@ route(From, To, Packet) ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
 	_ ->
+	    ok
+    end.
+
+%% Route the error packet only if the originating packet is not an error itself.
+%% RFC3920 9.3.1
+route_error(From, To, ErrPacket, OrigPacket) ->
+    {xmlelement, _Name, Attrs, _Els} = OrigPacket,
+    case "error" == xml:get_attr_s("type", Attrs) of
+	false ->
+	    route(From, To, ErrPacket);
+	true ->
 	    ok
     end.
 

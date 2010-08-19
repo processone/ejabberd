@@ -31,7 +31,8 @@
 -export([
 	 start_link/7,
 	 bind/3,
-	 search/2
+	 search/2,
+	 modify_passwd/3
 	]).
 
 -include("ejabberd.hrl").
@@ -45,18 +46,23 @@ bind(PoolName, DN, Passwd) ->
 search(PoolName, Opts) ->
     do_request(PoolName, {search, [Opts]}).
 
-start_link(Name, Hosts, Backups, Port, Rootdn, Passwd, Encrypt) ->
+modify_passwd(PoolName, DN, Passwd) ->
+    do_request(PoolName, {modify_passwd, [DN, Passwd]}).
+
+start_link(Name, Hosts, Backups, Port, Rootdn, Passwd, Opts) ->
     PoolName = make_id(Name),
     pg2:create(PoolName),
-    lists:foreach(fun(Host) ->
-			  ID = erlang:ref_to_list(make_ref()),
-			  case catch eldap:start_link(ID, [Host|Backups], Port, Rootdn, Passwd, Encrypt) of
-			      {ok, Pid} ->
-				  pg2:join(PoolName, Pid);
-			      _ ->
-				  error
-			  end
-		  end, Hosts).
+    lists:foreach(
+      fun(Host) ->
+	      ID = erlang:ref_to_list(make_ref()),
+	      case catch eldap:start_link(ID, [Host|Backups], Port,
+					  Rootdn, Passwd, Opts) of
+		  {ok, Pid} ->
+		      pg2:join(PoolName, Pid);
+		  _ ->
+		      error
+	      end
+      end, Hosts).
 
 %%====================================================================
 %% Internal functions

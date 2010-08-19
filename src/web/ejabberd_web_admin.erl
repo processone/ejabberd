@@ -50,29 +50,39 @@
 %%%==================================
 %%%% get_acl_access
 
-%% @spec (Path::[string()]) -> {HostOfRule, AccessRule}
+%% @spec (Path::[string()], Method) -> {HostOfRule, [AccessRule]}
+%% where Method = 'GET' | 'POST'
 
 %% All accounts can access those URLs
-get_acl_rule([]) -> {"localhost", all};
-get_acl_rule(["style.css"]) -> {"localhost", all};
-get_acl_rule(["logo.png"]) -> {"localhost", all};
-get_acl_rule(["logo-fill.png"]) -> {"localhost", all};
-get_acl_rule(["favicon.ico"]) -> {"localhost", all};
-get_acl_rule(["additions.js"]) -> {"localhost", all};
+get_acl_rule([],_) -> {"localhost", [all]};
+get_acl_rule(["style.css"],_) -> {"localhost", [all]};
+get_acl_rule(["logo.png"],_) -> {"localhost", [all]};
+get_acl_rule(["logo-fill.png"],_) -> {"localhost", [all]};
+get_acl_rule(["favicon.ico"],_) -> {"localhost", [all]};
+get_acl_rule(["additions.js"],_) -> {"localhost", [all]};
 %% This page only displays vhosts that the user is admin:
-get_acl_rule(["vhosts"]) -> {"localhost", all};
+get_acl_rule(["vhosts"],_) -> {"localhost", [all]};
 
 %% The pages of a vhost are only accesible if the user is admin of that vhost:
-get_acl_rule(["server", VHost | _RPath]) -> {VHost, configure};
+get_acl_rule(["server", VHost | _RPath], 'GET') -> {VHost, [configure, webadmin_view]};
+get_acl_rule(["server", VHost | _RPath], 'POST') -> {VHost, [configure]};
 
 %% Default rule: only global admins can access any other random page
-get_acl_rule(_RPath) -> {global, configure}.
+get_acl_rule(_RPath, 'GET') -> {global, [configure, webadmin_view]};
+get_acl_rule(_RPath, 'POST') -> {global, [configure]}.
+
+is_acl_match(Host, Rules, Jid) ->
+    lists:any(
+      fun(Rule) ->
+	      allow == acl:match_rule(Host, Rule, Jid)
+      end,
+      Rules).
 
 %%%==================================
 %%%% Menu Items Access
 
-get_jid(Auth, HostHTTP) ->
-    case get_auth_admin(Auth, HostHTTP, []) of
+get_jid(Auth, HostHTTP, Method) ->
+    case get_auth_admin(Auth, HostHTTP, [], Method) of
         {ok, {User, Server}} ->
 	    jlib:make_jid(User, Server, "");
 	{unauthorized, Error} ->
@@ -119,8 +129,8 @@ is_allowed_path(BasePath, {Path, _, _}, JID) ->
 is_allowed_path(["admin" | Path], JID) ->
     is_allowed_path(Path, JID);
 is_allowed_path(Path, JID) ->
-    {HostOfRule, AccessRule} = get_acl_rule(Path),
-    allow == acl:match_rule(HostOfRule, AccessRule, JID).
+    {HostOfRule, AccessRule} = get_acl_rule(Path, 'GET'),
+    is_acl_match(HostOfRule, AccessRule, JID).
 
 %% @spec(Path) -> URL
 %% where Path = [string()]
@@ -163,13 +173,13 @@ process(["doc", LocalFile], _Request) ->
             end
     end;
 
-process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
+process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, host = HostHTTP, method = Method} = Request) ->
     Host = jlib:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
 	true ->
-	    case get_auth_admin(Auth, HostHTTP, Path) of
+	    case get_auth_admin(Auth, HostHTTP, Path, Method) of
 		{ok, {User, Server}} ->
-		    AJID = get_jid(Auth, HostHTTP),
+		    AJID = get_jid(Auth, HostHTTP, Method),
 		    process_admin(Host, Request#request{path = RPath,
 							auth = {auth_jid, Auth, AJID},
 							us = {User, Server}});
@@ -178,8 +188,11 @@ process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, hos
 		     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 		     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])};
 		{unauthorized, Error} ->
-		    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
-				 [Auth, Error, Request]),
+		    {BadUser, _BadPass} = Auth,
+		    {IPT, _Port} = Request#request.ip,
+		    IPS = inet_parse:ntoa(IPT),
+		    ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
+				 [BadUser, IPS, Error]),
 		    {401,
 		     [{"WWW-Authenticate",
 		       "basic realm=\"auth error, retry login to ejabberd\""}],
@@ -189,10 +202,10 @@ process(["server", SHost | RPath] = Path, #request{auth = Auth, lang = Lang, hos
             ejabberd_web:error(not_found)
     end;
 
-process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
-    case get_auth_admin(Auth, HostHTTP, RPath) of
+process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP, method = Method} = Request) ->
+    case get_auth_admin(Auth, HostHTTP, RPath, Method) of
 	{ok, {User, Server}} ->
-	    AJID = get_jid(Auth, HostHTTP),
+	    AJID = get_jid(Auth, HostHTTP, Method),
 	    process_admin(global, Request#request{path = RPath,
 						  auth = {auth_jid, Auth, AJID},
 						  us = {User, Server}});
@@ -201,18 +214,21 @@ process(RPath, #request{auth = Auth, lang = Lang, host = HostHTTP} = Request) ->
 	     [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],
 	     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])};
 	{unauthorized, Error} ->
-	    ?WARNING_MSG("Access ~p failed with error: ~p~n~p",
-			 [Auth, Error, Request]),
+	    {BadUser, _BadPass} = Auth,
+	    {IPT, _Port} = Request#request.ip,
+	    IPS = inet_parse:ntoa(IPT),
+	    ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
+			 [BadUser, IPS, Error]),
 	    {401,
 	     [{"WWW-Authenticate",
 	       "basic realm=\"auth error, retry login to ejabberd\""}],
 	     ejabberd_web:make_xhtml([?XCT("h1", "Unauthorized")])}
     end.
 
-get_auth_admin(Auth, HostHTTP, RPath) ->
+get_auth_admin(Auth, HostHTTP, RPath, Method) ->
     case Auth of
         {SJID, Pass} ->
-	    {HostOfRule, AccessRule} = get_acl_rule(RPath),
+	    {HostOfRule, AccessRule} = get_acl_rule(RPath, Method),
             case jlib:string_to_jid(SJID) of
                 error ->
                     {unauthorized, "badformed-jid"};
@@ -229,11 +245,11 @@ get_auth_admin(Auth, HostHTTP, RPath) ->
 get_auth_account(HostOfRule, AccessRule, User, Server, Pass) ->
     case ejabberd_auth:check_password(User, Server, Pass) of
 	true ->
-	    case acl:match_rule(HostOfRule, AccessRule,
+	    case is_acl_match(HostOfRule, AccessRule,
 				jlib:make_jid(User, Server, "")) of
-		deny ->
+		false ->
 		    {unauthorized, "unprivileged-account"};
-		allow ->
+		true ->
 		    {ok, {User, Server}}
 	    end;
 	false ->
@@ -1427,7 +1443,7 @@ list_vhosts(Lang, JID) ->
     Hosts = ?MYHOSTS,
     HostsAllowed = lists:filter(
 		     fun(Host) ->
-			     allow == acl:match_rule(Host, configure, JID)
+			     is_acl_match(Host, [configure, webadmin_view], JID)
 		     end,
 		     Hosts
 		    ),

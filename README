@@ -9,10 +9,8 @@ To compile ejabberd you need:
  - GNU Make
  - GCC
  - Libexpat 1.95 or higher
- - Erlang/OTP R10B-9 or higher. The recommended version is R12B-5.
-   Support for R13 is experimental.
- - OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL
-   encryption. Optional, highly recommended.
+ - Erlang/OTP R10B-9 or higher. Recommended versions: R12B-5 and R13B04
+ - OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
  - Zlib 1.2.3 or higher, for Stream Compression support
    (XEP-0138). Optional.
  - Erlang mysql library. Optional. MySQL authentication/storage.

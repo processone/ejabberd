@@ -216,7 +216,7 @@ set_vcard(User, LServer, VCARD) ->
 	    Username = ejabberd_odbc:escape(User),
 	    LUsername = ejabberd_odbc:escape(LUser),
 	    SVCARD = ejabberd_odbc:escape(
-		       lists:flatten(xml:element_to_string(VCARD))),
+		       xml:element_to_binary(VCARD)),
 
 	    SFN = ejabberd_odbc:escape(FN),
 	    SLFN = ejabberd_odbc:escape(LFN),
@@ -247,7 +247,9 @@ set_vcard(User, LServer, VCARD) ->
 				   SLLocality, SLMiddle, SLNickname,
 				   SLOrgName, SLOrgUnit, SLocality,
 				   SMiddle, SNickname, SOrgName,
-				   SOrgUnit, SVCARD, Username)
+				   SOrgUnit, SVCARD, Username),
+
+	    ejabberd_hooks:run(vcard_set, LServer, [LUser, LServer, VCARD])
     end.
 
 -define(TLFIELD(Type, Label, Var),

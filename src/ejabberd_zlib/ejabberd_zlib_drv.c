@@ -32,6 +32,15 @@ typedef struct {
       z_stream *i_stream;
 } ejabberd_zlib_data;
 
+static void* zlib_alloc(void* data, unsigned int items, unsigned int size)
+{
+    return (void*) driver_alloc(items*size);
+}
+
+static void zlib_free(void* data, void* addr)
+{
+    driver_free(addr);
+}
 
 static ErlDrvData ejabberd_zlib_drv_start(ErlDrvPort port, char *buff)
 {
@@ -39,18 +48,18 @@ static ErlDrvData ejabberd_zlib_drv_start(ErlDrvPort port, char *buff)
       (ejabberd_zlib_data *)driver_alloc(sizeof(ejabberd_zlib_data));
    d->port = port;
 
-   d->d_stream = (z_stream *)malloc(sizeof(z_stream));
+   d->d_stream = (z_stream *)driver_alloc(sizeof(z_stream));
 
-   d->d_stream->zalloc = (alloc_func)0;
-   d->d_stream->zfree = (free_func)0;
+   d->d_stream->zalloc = zlib_alloc;
+   d->d_stream->zfree = zlib_free;
    d->d_stream->opaque = (voidpf)0;
 
    deflateInit(d->d_stream, Z_DEFAULT_COMPRESSION);
 
-   d->i_stream = (z_stream *)malloc(sizeof(z_stream));
+   d->i_stream = (z_stream *)driver_alloc(sizeof(z_stream));
 
-   d->i_stream->zalloc = (alloc_func)0;
-   d->i_stream->zfree = (free_func)0;
+   d->i_stream->zalloc = zlib_alloc;
+   d->i_stream->zfree = zlib_free;
    d->i_stream->opaque = (voidpf)0;
 
    inflateInit(d->i_stream);
@@ -65,10 +74,10 @@ static void ejabberd_zlib_drv_stop(ErlDrvData handle)
    ejabberd_zlib_data *d = (ejabberd_zlib_data *)handle;
 
    deflateEnd(d->d_stream);
-   free(d->d_stream);
+   driver_free(d->d_stream);
 
    inflateEnd(d->i_stream);
-   free(d->i_stream);
+   driver_free(d->i_stream);
 
    driver_free((char *)handle);
 }

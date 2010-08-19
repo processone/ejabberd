@@ -73,8 +73,7 @@
 	 disco_sm_items/5
 	]).
 %% exported iq handlers
--export([iq_local/3,
-	 iq_sm/3
+-export([iq_sm/3
 	]).
 
 %% exports for console debug manual use
@@ -183,9 +182,8 @@ init([ServerHost, Opts]) ->
     pubsub_index:init(Host, ServerHost, Opts),
     ets:new(gen_mod:get_module_proc(Host, config), [set, named_table]),
     ets:new(gen_mod:get_module_proc(ServerHost, config), [set, named_table]),
-    ets:new(gen_mod:get_module_proc(Host, last_items), [set, named_table]),
-    ets:new(gen_mod:get_module_proc(ServerHost, last_items), [set, named_table]),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+    mnesia:create_table(pubsub_last_item, [{ram_copies, [node()]}, {attributes, record_info(fields, pubsub_last_item)}]),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     ets:insert(gen_mod:get_module_proc(Host, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(Host, config), {plugins, Plugins}),
@@ -199,24 +197,22 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {ignore_pep_from_offline, PepOffline}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {host, Host}),
     ejabberd_hooks:add(sm_remove_connection_hook, ServerHost, ?MODULE, on_user_offline, 75),
-    ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
-    ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
-    ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
+    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
+    ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
+    ejabberd_hooks:add(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
     ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 80),
     ejabberd_hooks:add(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, ServerHost, ?MODULE, remove_user, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:add(feature_check_packet, ServerHost, ?MODULE, feature_check_packet, 75),
-	    ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
-	    ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
-	    ejabberd_hooks:add(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
-	    gen_iq_handler:add_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB, ?MODULE, iq_local, IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_local, IQDisc);
+	    ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
+	    ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
+	    ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc);
 	false ->
 	    ok
     end,
@@ -585,15 +581,12 @@ send_loop(State) ->
 %% disco hooks handling functions
 %%
 
-identity(Host) ->
-    Identity = case lists:member(?PEPNODE, plugins(Host)) of
-    true -> [{"category", "pubsub"}, {"type", "pep"}];
-    false -> [{"category", "pubsub"}, {"type", "service"}]
-    end,
-    {xmlelement, "identity", Identity, []}.
-
 disco_local_identity(Acc, _From, To, [], _Lang) ->
-    Acc ++ [identity(To#jid.lserver)];
+    case lists:member(?PEPNODE, plugins(To#jid.lserver)) of
+  true  ->
+      [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []} | Acc];
+  false -> Acc
+    end;
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -614,76 +607,116 @@ disco_local_items(Acc, _From, _To, [], _Lang) ->
 disco_local_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_sm_identity(Acc, _From, To, [], _Lang) ->
-    Acc ++ [identity(To#jid.lserver)];
+disco_sm_identity(Acc, From, To, Node, Lang) when is_list(Node) ->
+    disco_sm_identity(Acc, From, To, list_to_binary(Node), Lang);
+disco_sm_identity(empty, From, To, Node, Lang) ->
+    disco_sm_identity([], From, To, Node, Lang);
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
-    LOwner = jlib:jid_tolower(jlib:jid_remove_resource(To)),
-    Acc ++ case node_disco_identity(LOwner, From, Node) of
-	       {result, I} -> I;
-	       _ -> []
-	   end.
+    disco_identity(jlib:jid_tolower(jlib:jid_remove_resource(To)), Node, From) ++ Acc.
 
-disco_sm_features(Acc, _From, _To, [], _Lang) ->
-    Acc;
-disco_sm_features(Acc, From, To, Node, _Lang) ->
-    LOwner = jlib:jid_tolower(jlib:jid_remove_resource(To)),
-    Features = node_disco_features(LOwner, From, Node),
-    case {Acc, Features} of
-	{{result, AccFeatures}, {result, AddFeatures}} ->
-	    {result, AccFeatures++AddFeatures};
-	{_, {result, AddFeatures}} ->
-	    {result, AddFeatures};
-	{_, _} ->
-	    Acc
+disco_identity(_Host, <<>>, _From) ->
+    [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []}];
+disco_identity(Host, Node, From) ->
+    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options, owners = Owners}) ->
+	    case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		{result, _} ->
+		    {result, [{xmlelement, "identity", [{"category", "pubsub"}, {"type", "pep"}], []},
+			{xmlelement, "identity",
+			    [{"category", "pubsub"},
+				{"type", "leaf"}
+				| case get_option(Options, title) of
+				    false   -> [];
+				    [Title] -> [{"name", Title}]
+				end],
+			    []}]};
+		_ -> {result, []}
+	    end
+	end,
+    case transaction(Host, Node, Action, sync_dirty) of
+	{result, {_, Result}} -> Result;
+	_ -> []
     end.
 
-disco_sm_items(Acc, From, To, [], _Lang) ->
-    Host = To#jid.lserver,
-    case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
-	[] ->
-	    Acc;
-	Nodes ->
-	    SBJID = jlib:jid_to_string(jlib:jid_remove_resource(To)),
-	    Items = case Acc of
-			{result, I} -> I;
-			_ -> []
-		    end,
-	    NodeItems = lists:map(
-			  fun(#pubsub_node{nodeid = {_, Node}}) ->
-				  {xmlelement, "item",
-				   [{"jid", SBJID}|nodeAttr(Node)],
-				   []}
-			  end, Nodes),
-	    {result, NodeItems ++ Items}
+disco_sm_features(Acc, From, To, Node, Lang) when is_list(Node) ->
+    disco_sm_features(Acc, From, To, list_to_binary(Node), Lang);
+disco_sm_features(empty, From, To, Node, Lang) ->
+    disco_sm_features({result, []}, From, To, Node, Lang);
+disco_sm_features({result, OtherFeatures} = _Acc, From, To, Node, _Lang) ->
+    {result,
+     OtherFeatures ++
+       disco_features(jlib:jid_tolower(jlib:jid_remove_resource(To)), Node, From)};
+disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
+disco_features(_Host, <<>>, _From) ->
+    [?NS_PUBSUB
+    | [?NS_PUBSUB++"#"++Feature || Feature <- features("pep")]];
+disco_features(Host, Node, From) ->
+    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options, owners = Owners}) ->
+	    case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		{result, _} ->
+		    {result, [?NS_PUBSUB
+			    | [?NS_PUBSUB ++ "#" ++ Feature || Feature <- features("pep")]]};
+		_ -> {result, []}
+	    end
+	end,
+    case transaction(Host, Node, Action, sync_dirty) of
+	{result, {_, Result}} -> Result;
+	_ -> []
+    end.
+
+disco_sm_items(Acc, From, To, Node, Lang) when is_list(Node) ->
+    disco_sm_items(Acc, From, To, list_to_binary(Node), Lang);
+disco_sm_items(empty, From, To, Node, Lang) ->
+    disco_sm_items({result, []}, From, To, Node, Lang);
+disco_sm_items({result, OtherItems}, From, To, Node, _Lang) ->
+    {result,
+     lists:usort(OtherItems ++
+       disco_items(jlib:jid_tolower(jlib:jid_remove_resource(To)), Node, From))};
+disco_sm_items(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
+disco_items(Host, <<>>, From) ->
+    Action = fun(#pubsub_node{nodeid ={_, NodeID}, options = Options, type = Type, id = Idx, owners = Owners}, Acc) ->
+		case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		    {result, _} ->
+			[{xmlelement, "item",
+				[{"node", binary_to_list(NodeID)},
+				    {"jid",  case Host of
+					    {_,_,_} -> jlib:jid_to_string(Host);
+					    _Host   -> Host
+					end}
+				    | case get_option(Options, title) of
+					false   -> [];
+					[Title] -> [{"name", Title}]
+				    end],
+				[]}
+			    | Acc];
+		    _ -> Acc
+		end
+	    end,
+    case transaction(Host, Action, sync_dirty) of
+	{result, Items} -> Items;
+	_ -> []
     end;
 
-disco_sm_items(Acc, From, To, SNode, _Lang) ->
-    Host = To#jid.lserver,
-    Node = string_to_node(SNode),
-    Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
-	% TODO call get_items/6 instead for access control (EJAB-1033)
-	case node_call(Type, get_items, [NodeId, From]) of
-	    {result, []} ->
-		none;
-	    {result, AllItems} ->
-		SBJID = jlib:jid_to_string(jlib:jid_remove_resource(To)),
-		Items = case Acc of
-			{result, I} -> I;
-			_ -> []
-		    end,
-		NodeItems = lists:map(
-			  fun(#pubsub_item{itemid = {Id, _}}) ->
-				  {result, Name} = node_call(Type, get_item_name, [Host, Node, Id]),
-				  {xmlelement, "item", [{"jid", SBJID}, {"name", Name}], []}
-			  end, AllItems),
-		{result, NodeItems ++ Items};
-	    _ ->
-		none
-	end
-    end,
+disco_items(Host, Node, From) ->
+    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options, owners = Owners}) ->
+	    case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+		{result, Items} ->
+		    {result, [{xmlelement, "item",
+			    [{"jid", case Host of
+					{_,_,_} -> jlib:jid_to_string(Host);
+					_Host   -> Host
+				    end},
+				{"name", ItemID}], []}
+			|| #pubsub_item{itemid = {ItemID,_}} <- Items]};
+		_ -> {result, []}
+	    end
+	end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, Items}} -> {result, Items};
-	_ -> Acc
+	{result, {_, Result}} -> Result;
+	_ -> []
     end.
 
 %% -------
@@ -859,25 +892,23 @@ terminate(_Reason, #state{host = Host,
     case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:delete(feature_check_packet, ServerHost, ?MODULE, feature_check_packet, 75),
-	    ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
-	    ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
-	    ejabberd_hooks:delete(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
-	    gen_iq_handler:remove_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB),
-	    gen_iq_handler:remove_iq_handler(ejabberd_local, ServerHost, ?NS_PUBSUB_OWNER);
+	    ejabberd_hooks:delete(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
+	    ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
+	    ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
+	    gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB),
+	    gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER);
 	false ->
 	    ok
     end,
     ejabberd_hooks:delete(sm_remove_connection_hook, ServerHost, ?MODULE, on_user_offline, 75),
-    ejabberd_hooks:delete(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
-    ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
-    ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
+    ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
+    ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
+    ejabberd_hooks:delete(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
     ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 80),
     ejabberd_hooks:delete(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
     ejabberd_hooks:delete(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, ServerHost, ?MODULE, remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, ServerHost, ?NS_PUBSUB_OWNER),
     mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB),
     gen_mod:get_module_proc(ServerHost, ?LOOPNAME) ! stop,
     terminate_plugins(Host, ServerHost, Plugins, TreePlugin).
@@ -1018,10 +1049,10 @@ command_disco_info(_Host, <<?NS_PUBSUB_GET_PENDING>>, _From) ->
 
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
-node_disco_identity(Host, Node, From) ->
-    node_disco_info(Host, Node, From, true, false).
-node_disco_features(Host, Node, From) ->
-    node_disco_info(Host, Node, From, false, true).
+%node_disco_identity(Host, Node, From) ->
+%    node_disco_info(Host, Node, From, true, false).
+%node_disco_features(Host, Node, From) ->
+%    node_disco_info(Host, Node, From, false, true).
 node_disco_info(Host, Node, From, Identity, Features) ->
     Action =
 	fun(#pubsub_node{type = Type, id = NodeId}) ->
@@ -1121,17 +1152,15 @@ iq_disco_items(Host, Item, From) ->
 	    {result, []};
 	[SNode] ->
 	    Node = string_to_node(SNode),
-	    Action =
-		fun(#pubsub_node{type = Type, id = NodeId}) ->
-			% TODO call get_items/6 instead for access control (EJAB-1033)
-			NodeItems = case node_call(Type, get_items, [NodeId, From]) of
-					{result, I} -> I;
-					_ -> []
-				    end,
+	    Action = fun(#pubsub_node{id = Idx, type = Type, options = Options, owners = Owners}) ->
+			NodeItems = case get_allowed_items_call(Host, Idx, From, Type, Options, Owners) of
+			    {result, R} -> R;
+			    _ -> []
+			    end,
 			Nodes = lists:map(
-				fun(#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
+				fun(#pubsub_node{nodeid = {_, SubNode}, options = SubOptions}) ->
 				    Attrs =
-					case get_option(Options, title) of
+					case get_option(SubOptions, title) of
 					    false ->
 						[{"jid", Host} |nodeAttr(SubNode)];
 					    Title ->
@@ -1149,24 +1178,6 @@ iq_disco_items(Host, Item, From) ->
 	    case transaction(Host, Node, Action, sync_dirty) of
 		{result, {_, Result}} -> {result, Result};
 		Other -> Other
-	    end
-    end.
-
-iq_local(From, To, #iq{type = Type, sub_el = SubEl, xmlns = XMLNS, lang = Lang} = IQ) ->
-    ServerHost = To#jid.lserver,
-    %% Accept IQs to server only from our own users.
-    if
-	From#jid.lserver /= ServerHost ->
-	    IQ#iq{type = error, sub_el = [?ERR_FORBIDDEN, SubEl]};
-	true ->
-	    LOwner = jlib:jid_tolower(jlib:jid_remove_resource(From)),
-	    Res = case XMLNS of
-		      ?NS_PUBSUB -> iq_pubsub(LOwner, ServerHost, From, Type, SubEl, Lang);
-		      ?NS_PUBSUB_OWNER -> iq_pubsub_owner(LOwner, ServerHost, From, Type, SubEl, Lang)
-		  end,
-	    case Res of
-		{result, IQRes} -> IQ#iq{type = result, sub_el = IQRes};
-		{error, Error} -> IQ#iq{type = error, sub_el = [Error, SubEl]}
 	    end
     end.
 
@@ -1737,9 +1748,17 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			    {result, true} ->
 				case tree_call(Host, create_node, [Host, Node, Type, Owner, NodeOptions, Parents]) of
 				    {ok, NodeId} ->
-					node_call(Type, create_node, [NodeId, Owner]);
+					ParentTree = tree_call(Host, get_parentnodes_tree, [Host, Node, Owner]),
+					SubsByDepth = [{Depth, [{N, get_node_subs(N)} || N <- Nodes]} || {Depth, Nodes} <- ParentTree],
+					case node_call(Type, create_node, [NodeId, Owner]) of
+					    {result, Result} -> {result, {NodeId, SubsByDepth, Result}};
+					    Error -> Error
+					end;
 				    {error, {virtual, NodeId}} ->
-					node_call(Type, create_node, [NodeId, Owner]);
+					case node_call(Type, create_node, [NodeId, Owner]) of
+					    {result, Result} -> {result, {NodeId, [], Result}};
+					    Error -> Error
+					end;
 				    Error ->
 					Error
 				end;
@@ -1751,20 +1770,15 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 		      [{xmlelement, "create", nodeAttr(Node),
 			[]}]}],
 	    case transaction(CreateNode, transaction) of
-		{result, {Result, broadcast}} ->
-		    %%Lang = "en", %% TODO: fix
-		    %%OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-		    %%broadcast_publish_item(Host, Node, uniqid(), Owner,
-		    %%	[{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "result"}],
-		    %%		[?XFIELD("hidden", "", "FORM_TYPE", ?NS_PUBSUB_NMI),
-		    %%		?XFIELD("jid-single", "Node Creator", "creator", jlib:jid_to_string(OwnerKey))]}]),
+		{result, {NodeId, SubsByDepth, {Result, broadcast}}} ->
+		    broadcast_created_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth),
 		    case Result of
 			default -> {result, Reply};
 			_ -> {result, Result}
 		    end;
-		{result, default} ->
+		{result, {_NodeId, _SubsByDepth, default}} ->
 		    {result, Reply};
-		{result, Result} ->
+		{result, {_NodeId, _SubsByDepth, Result}} ->
 		    {result, Result};
 		Error ->
 		    %% in case we change transaction to sync_dirty...
@@ -1866,7 +1880,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
 		 end,
-    Action = fun(#pubsub_node{options = Options, owners = [Owner|_], type = Type, id = NodeId}) ->
+    Action = fun(#pubsub_node{options = Options, owners = Owners, type = Type, id = NodeId}) ->
 		    Features = features(Type),
 		    SubscribeFeature = lists:member("subscribe", Features),
 		    OptionsFeature = lists:member("subscription-options", Features),
@@ -1875,21 +1889,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 		    AccessModel = get_option(Options, access_model),
 		    SendLast = get_option(Options, send_last_published_item),
 		    AllowedGroups = get_option(Options, roster_groups_allowed, []),
-		    {PresenceSubscription, RosterGroup} =
-			case Host of
-			    {OUser, OServer, _} ->
-				get_roster_info(OUser, OServer,
-						Subscriber, AllowedGroups);
-			    _ ->
-				case Subscriber of
-				    {"", "", ""} ->
-					{false, false};
-				    _ ->
-					{OU, OS, _} = Owner,
-					get_roster_info(OU, OS,
-							Subscriber, AllowedGroups)
-				end
-			end,
+		    {PresenceSubscription, RosterGroup} = get_presence_and_roster_permissions(Host, Subscriber, Owners, AccessModel, AllowedGroups),
 		    if
 			not SubscribeFeature ->
 			    %% Node does not support subscriptions
@@ -2054,7 +2054,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		PluginPayload -> PluginPayload
 	    end,
 	    broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, jlib:jid_tolower(Publisher), BroadcastPayload),
-	    set_cached_item(Host, NodeId, ItemId, Payload),
+	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -2064,14 +2064,14 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, NodeId, Type, Options, Removed),
-	    set_cached_item(Host, NodeId, ItemId, Payload),
+	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    {result, Reply};
 	{result, {TNode, {Result, Removed}}} ->
 	    NodeId = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, NodeId, Type, Options, Removed),
-	    set_cached_item(Host, NodeId, ItemId, Payload),
+	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    {result, Result};
 	{result, {_, default}} ->
 	    {result, Reply};
@@ -2232,20 +2232,13 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIDs) ->
 	{error, Error} ->
 	    {error, Error};
 	_ ->
-	    Action = fun(#pubsub_node{options = Options, type = Type, id = NodeId}) ->
+	    Action = fun(#pubsub_node{options = Options, type = Type, id = NodeId, owners = Owners}) ->
 		     Features = features(Type),
 		     RetreiveFeature = lists:member("retrieve-items", Features),
 		     PersistentFeature = lists:member("persistent-items", Features),
 		     AccessModel = get_option(Options, access_model),
 		     AllowedGroups = get_option(Options, roster_groups_allowed, []),
-		     {PresenceSubscription, RosterGroup} =
-			 case Host of
-			     {OUser, OServer, _} ->
-				 get_roster_info(OUser, OServer,
-						 jlib:jid_tolower(From), AllowedGroups);
-			     _ ->
-				 {true, true}
-			 end,
+		     {PresenceSubscription, RosterGroup} = get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups),
 		     if
 			 not RetreiveFeature ->
 			     %% Item Retrieval Not Supported
@@ -2295,6 +2288,12 @@ get_item(Host, Node, ItemId) ->
 	{result, {_, Items}} -> Items;
 	Error -> Error
     end.
+get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) ->
+    AccessModel = get_option(Options, access_model),
+    AllowedGroups = get_option(Options, roster_groups_allowed, []),
+    {PresenceSubscription, RosterGroup} = get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups),
+    node_call(Type, get_items, [NodeIdx, From, AccessModel, PresenceSubscription, RosterGroup, undefined]).
+
 
 %% @spec (Host, Node, NodeId, Type, LJID, Number) -> any()
 %%	 Host = pubsubHost()
@@ -2310,10 +2309,10 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 	undefined ->
 	    send_items(Host, Node, NodeId, Type, LJID, 1);
 	LastItem ->
-	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 	    Stanza = event_stanza_with_delay(
 		[{xmlelement, "items", nodeAttr(Node),
-		  itemsEls([LastItem])}], ModifNow, ModifLjid),
+		  itemsEls([LastItem])}], ModifNow, ModifUSR),
 	    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza)
     end;
 send_items(Host, Node, NodeId, Type, LJID, Number) ->
@@ -2330,10 +2329,10 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
     end,
     Stanza = case ToSend of
 	[LastItem] ->
-	    {ModifNow, ModifLjid} = LastItem#pubsub_item.modification,
+	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 	    event_stanza_with_delay(
 		[{xmlelement, "items", nodeAttr(Node),
-		  itemsEls(ToSend)}], ModifNow, ModifLjid);
+		  itemsEls(ToSend)}], ModifNow, ModifUSR);
 	_ ->
 	    event_stanza(
 		[{xmlelement, "items", nodeAttr(Node),
@@ -2444,6 +2443,11 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 	    Action = fun(#pubsub_node{owners = Owners, type = Type, id = NodeId}=N) ->
 			case lists:member(Owner, Owners) of
 			    true ->
+				OwnerJID = jlib:make_jid(Owner),
+				FilteredEntities = case Owners of
+					[Owner] -> [E || E <- Entities, element(1, E) =/= OwnerJID];
+					_ -> Entities
+				    end,
 				lists:foreach(
 				    fun({JID, Affiliation}) ->
 					node_call(Type, set_affiliation, [NodeId, JID, Affiliation]),
@@ -2464,7 +2468,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 					    _ ->
 						ok
 					end
-				    end, Entities),
+				    end, FilteredEntities),
 				{result, []};
 			    _ ->
 				{error, ?ERR_FORBIDDEN}
@@ -2767,8 +2771,24 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    end
     end.
 
+
+get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups) ->
+    if (AccessModel == presence) or (AccessModel == roster) ->
+	case Host of
+	    {User, Server, _} ->
+		get_roster_info(User, Server, From, AllowedGroups);
+	    _ ->
+		[{OUser, OServer, _}|_] = Owners,
+		get_roster_info(OUser, OServer, From, AllowedGroups)
+	end;
+    true ->
+	{true, true}
+    end.
+
 %% @spec (OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, SubscriberResource}, AllowedGroups)
 %%    -> {PresenceSubscription, RosterGroup}
+get_roster_info(_, _, {"", "", _}, _) ->
+    {false, false};
 get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, AllowedGroups) ->
     {Subscription, Groups} =
 	ejabberd_hooks:run_fold(
@@ -2780,7 +2800,9 @@ get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, A
     RosterGroup = lists:any(fun(Group) ->
 				    lists:member(Group, AllowedGroups)
 			    end, Groups),
-    {PresenceSubscription, RosterGroup}.
+    {PresenceSubscription, RosterGroup};
+get_roster_info(OwnerUser, OwnerServer, JID, AllowedGroups) ->
+    get_roster_info(OwnerUser, OwnerServer, jlib:jid_tolower(JID), AllowedGroups).
 
 %% @spec (AffiliationStr) -> Affiliation
 %%	 AffiliationStr = string()
@@ -2868,13 +2890,64 @@ node_to_deliver(LJID, NodeOptions) ->
     presence_can_deliver(LJID, PresenceDelivery).
 
 presence_can_deliver(_, false) -> true;
-presence_can_deliver({User, Server, _}, true) ->
+presence_can_deliver({User, Server, Resource}, true) ->
     case mnesia:dirty_match_object({session, '_', '_', {User, Server}, '_', '_'}) of
     [] -> false;
     Ss ->
-	lists:foldl(fun({session, _, _, _, undefined, _}, Acc) -> Acc;
-		       ({session, _, _, _, _Priority, _}, _Acc) -> true
+	lists:foldl(fun(_, true) -> true;
+		       ({session, _, _ , _, undefined, _}, _Acc) -> false;
+		       ({session, _, {_, _, R}, _, _Priority, _}, _Acc) ->
+			   case Resource of
+			       [] -> true;
+			       R -> true;
+			       _ -> false
+			   end
 	end, false, Ss)
+    end.
+
+state_can_deliver({U, S, R}, []) -> [{U, S, R}];
+state_can_deliver({U, S, R}, SubOptions) ->
+    %% Check SubOptions for 'show_values'
+    case lists:keysearch('show_values', 1, SubOptions) of
+  %% If not in suboptions, item can be delivered, case doesn't apply
+  false -> [{U, S, R}];
+  %% If in a suboptions ...
+  {_, {_, ShowValues}} ->
+      %% Get subscriber resources
+      Resources = case R of
+    %% If the subscriber JID is a bare one, get all its resources
+    [] -> user_resources(U, S);
+    %% If the subscriber JID is a full one, use its resource
+    R  -> [R]
+      end,
+      %% For each resource, test if the item is allowed to be delivered
+      %% based on resource state
+      lists:foldl(
+        fun(Resource, Acc) ->
+          get_resource_state({U, S, Resource}, ShowValues, Acc)
+        end, [], Resources)
+    end.
+
+get_resource_state({U, S, R}, ShowValues, JIDs) ->
+    %% Get user session PID
+    case ejabberd_sm:get_session_pid(U, S, R) of
+  %% If no PID, item can be delivered
+  none -> lists:append([{U, S, R}], JIDs);
+  %% If PID ...
+  Pid ->
+      %% Get user resource state
+      %% TODO : add a catch clause
+      Show = case ejabberd_c2s:get_presence(Pid) of
+    {_, _, "available", _} -> "online";
+    {_, _, State, _}       -> State
+      end,
+      %% Is current resource state listed in 'show-values' suboption ?
+      case lists:member(Show, ShowValues) of %andalso Show =/= "online" of
+    %% If yes, item can be delivered
+    true  -> lists:append([{U, S, R}], JIDs);
+    %% If no, item can't be delivered
+    false -> JIDs
+      end
     end.
 
 %% @spec (Payload) -> int()
@@ -2891,9 +2964,9 @@ payload_xmlelements([_|Tail], Count) -> payload_xmlelements(Tail, Count).
 event_stanza(Els) ->
     event_stanza_withmoreels(Els, []).
 
-event_stanza_with_delay(Els, ModifNow, ModifLjid) ->
+event_stanza_with_delay(Els, ModifNow, ModifUSR) ->
     DateTime = calendar:now_to_datetime(ModifNow),
-    MoreEls = [jlib:timestamp_to_xml(DateTime, utc, ModifLjid, "")],
+    MoreEls = [jlib:timestamp_to_xml(DateTime, utc, ModifUSR, "")],
     event_stanza_withmoreels(Els, MoreEls).
 
 event_stanza_withmoreels(Els, MoreEls) ->
@@ -2979,7 +3052,7 @@ broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
     case get_option(NodeOptions, notify_delete) of
 	true ->
 	    case SubsByDepth of
-		[] -> 
+		[] ->
 		    {result, false};
 		_ ->
 		    Stanza = event_stanza(
@@ -2992,6 +3065,13 @@ broadcast_removed_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
 	_ ->
 	    {result, false}
     end.
+
+broadcast_created_node(_, _, _, _, _, []) ->
+    {result, false};
+broadcast_created_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth) ->
+    Stanza = event_stanza([{xmlelement, "create", nodeAttr(Node), []}]),
+    broadcast_stanza(Host, Node, NodeId, Type, NodeOptions, SubsByDepth, nodes, Stanza, true),
+    {result, true}.
 
 broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
     case get_option(NodeOptions, notify_config) of
@@ -3010,7 +3090,7 @@ broadcast_config_notification(Host, Node, NodeId, Type, NodeOptions, Lang) ->
 		    broadcast_stanza(Host, Node, NodeId, Type,
 				     NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true};
-		_ -> 
+		_ ->
 		    {result, false}
 	    end;
 	_ ->
@@ -3135,20 +3215,25 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 	    NodeOptions = Node#pubsub_node.options,
 	    lists:foldl(fun({LJID, SubID, SubOptions}, {JIDs, Recipients}) ->
 		case is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) of
-		true  ->
-		    %% If is to deliver :
-		    case lists:member(LJID, JIDs) of
+	true  ->
+		  %% If is to deliver :
+		  case state_can_deliver(LJID, SubOptions) of
+		[]            -> {JIDs, Recipients};
+		JIDsToDeliver ->
+		    lists:foldl(
+		      fun(JIDToDeliver, {JIDsAcc, RecipientsAcc}) ->
+		    case lists:member(JIDToDeliver, JIDs) of
 		    %% check if the JIDs co-accumulator contains the Subscription Jid,
-		    false ->
+		  false ->
 			%%  - if not,
 			%%  - add the Jid to JIDs list co-accumulator ;
 			%%  - create a tuple of the Jid, NodeId, and SubID (as list),
 			%%    and add the tuple to the Recipients list co-accumulator
-			{[LJID | JIDs], [{LJID, NodeName, [SubID]} | Recipients]};
-		    true ->
+			    {[JIDToDeliver | JIDsAcc], [{JIDToDeliver, NodeName, [SubID]} | RecipientsAcc]};
+		  true ->
 			%% - if the JIDs co-accumulator contains the Jid
 			%%   get the tuple containing the Jid from the Recipient list co-accumulator
-			{_, {LJID, NodeName1, SubIDs}} = lists:keysearch(LJID, 1, Recipients),
+			    {_, {JIDToDeliver, NodeName1, SubIDs}} = lists:keysearch(JIDToDeliver, 1, RecipientsAcc),
 			%%   delete the tuple from the Recipients list
 			% v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
 			% v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, NodeId1, [SubID | SubIDs]}),
@@ -3157,17 +3242,19 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 			% v1.1 : {JIDs, lists:append(Recipients1, [{LJID, NodeId1, lists:append(SubIDs, [SubID])}])}
 			% v1.2 : {JIDs, [{LJID, NodeId1, [SubID | SubIDs]} | Recipients1]}
 			% v2: {JIDs, Recipients1}
-			{JIDs, lists:keyreplace(LJID, 1, Recipients, {LJID, NodeName1, [SubID | SubIDs]})}
-		    end;
+			    {JIDsAcc, lists:keyreplace(JIDToDeliver, 1, RecipientsAcc, {JIDToDeliver, NodeName1, [SubID | SubIDs]})}
+		    end
+		      end, {JIDs, Recipients}, JIDsToDeliver)
+		  end;
 		false ->
 		    {JIDs, Recipients}
 		end
 	    end, Acc, Subs)
 	end,
-    DepthsToDeliver = fun({Depth, SubsByNode}, Acc) ->
+    DepthsToDeliver = fun({Depth, SubsByNode}, Acc1) ->
 	    lists:foldl(fun({Node, Subs}, Acc2) ->
 		    NodesToDeliver(Depth, Node, Subs, Acc2)
-	    end, Acc, SubsByNode)
+	    end, Acc1, SubsByNode)
 	end,
     {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
     JIDSubs.
@@ -3494,18 +3581,18 @@ is_last_item_cache_enabled(Host) ->
     _ -> false
     end.
 
-set_cached_item({_, ServerHost, _}, NodeId, ItemId, Payload) ->
-    set_cached_item(ServerHost, NodeId, ItemId, Payload);
-set_cached_item(Host, NodeId, ItemId, Payload) ->
+set_cached_item({_, ServerHost, _}, NodeId, ItemId, Publisher, Payload) ->
+    set_cached_item(ServerHost, NodeId, ItemId, Publisher, Payload);
+set_cached_item(Host, NodeId, ItemId, Publisher, Payload) ->
     case is_last_item_cache_enabled(Host) of
-    true -> ets:insert(gen_mod:get_module_proc(Host, last_items), {NodeId, {ItemId, Payload}});
+    true -> mnesia:dirty_write({pubsub_last_item, NodeId, ItemId, {now(), jlib:jid_tolower(jlib:jid_remove_resource(Publisher))}, Payload});
     _ -> ok
     end.
 unset_cached_item({_, ServerHost, _}, NodeId) ->
     unset_cached_item(ServerHost, NodeId);
 unset_cached_item(Host, NodeId) ->
     case is_last_item_cache_enabled(Host) of
-    true -> ets:delete(gen_mod:get_module_proc(Host, last_items), NodeId);
+    true -> mnesia:dirty_delete({pubsub_last_item, NodeId});
     _ -> ok
     end.
 get_cached_item({_, ServerHost, _}, NodeId) ->
@@ -3513,9 +3600,10 @@ get_cached_item({_, ServerHost, _}, NodeId) ->
 get_cached_item(Host, NodeId) ->
     case is_last_item_cache_enabled(Host) of
     true ->
-	case catch ets:lookup(gen_mod:get_module_proc(Host, last_items), NodeId) of
-	[{NodeId, {ItemId, Payload}}] ->
-	    #pubsub_item{itemid = {ItemId, NodeId}, payload = Payload};
+	case mnesia:dirty_read({pubsub_last_item, NodeId}) of
+	[{pubsub_last_item, NodeId, ItemId, Creation, Payload}] ->
+	    #pubsub_item{itemid = {ItemId, NodeId}, payload = Payload,
+			    creation = Creation, modification = Creation};
 	_ ->
 	    undefined
 	end;
@@ -3668,6 +3756,10 @@ transaction(Host, Node, Action, Trans) ->
 			    Error ->
 				Error
 			end
+		end, Trans).
+transaction(Host, Action, Trans) ->
+    transaction(fun() ->
+			{result, lists:foldl(Action, [], tree_call(Host, get_nodes, [Host]))}
 		end, Trans).
 
 transaction(Fun, Trans) ->

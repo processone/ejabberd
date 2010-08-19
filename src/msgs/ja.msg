@@ -36,6 +36,10 @@
 {"Change Password","パスワードの変更"}.
 {"Change User Password","パスワードを変更"}.
 {"Chatroom configuration modified","チャットルームの設定を変更しました"}.
+{"Chatroom is created","チャットルームは作られました。"}.
+{"Chatroom is destroyed","チャットルームは削除されました。"}.
+{"Chatroom is started","チャットルームが開始しました。"}.
+{"Chatroom is stopped","チャットルームが停止しました。"}.
 {"Chatrooms","チャットルーム"}.
 {"Choose a username and password to register with this server","サーバーに登録するユーザー名とパスワードを選択して下さい"}.
 {"Choose modules to stop","停止するモジュールの選択"}.
@@ -246,6 +250,7 @@
 {"Protocol","プロトコル"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub 購読リクエスト"}.
+{"Purge all items when the relevant publisher goes offline","公開者がオフラインになる時に、全てののアイテムを削除"}.
 {"Queries to the conference members are not allowed in this room","このチャットルームではカンファレンスメンバーへのクエリーは禁止されています"}.
 {"RAM and disc copy","RAM, ディスクコピー"}.
 {"RAM copy","RAMコピー"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","サービスを停止"}.
 {"~s invites you to the room ~s","~s はあなたをチャットルーム ~s に招待しています"}.
 {"Specify the access model","アクセスモデルを設定する"}.
+{"Specify the event message type","イベントメッセージ種別を設定"}.
 {"Specify the publisher model","公開モデルを指定する"}.
 {"~s's Offline Messages Queue","~s's オフラインメッセージキュー"}.
 {"Start Modules at ","モジュールの開始"}.

@@ -31,7 +31,7 @@
 
 -export([start/2,
 	 stop/1,
-	 stream_feature_register/1,
+	 stream_feature_register/2,
 	 unauthenticated_iq_register/4,
 	 try_register/5,
 	 process_iq/3]).
@@ -65,7 +65,7 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_REGISTER).
 
 
-stream_feature_register(Acc) ->
+stream_feature_register(Acc, _Host) ->
     [{xmlelement, "register",
       [{"xmlns", ?NS_FEATURE_IQREGISTER}], []} | Acc].
 
@@ -187,6 +187,18 @@ process_iq(From, To,
 			  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
 	    end;
 	get ->
+	    {UsernameSubels, QuerySubels} =
+		case From of
+		    #jid{user = User, lserver = Server} ->
+			case ejabberd_auth:is_user_exists(User,Server) of
+			    true ->
+				{[{xmlcdata, User}], [{xmlelement, "registered", [], []}]};
+			    false ->
+				{[{xmlcdata, User}], []}
+			end;
+		    _ ->
+			{[], []}
+		end,
 	    IQ#iq{type = result,
 		  sub_el = [{xmlelement,
 			     "query",
@@ -197,8 +209,9 @@ process_iq(From, To,
 				   Lang,
 				   "Choose a username and password "
 				   "to register with this server")}]},
-			      {xmlelement, "username", [], []},
-			      {xmlelement, "password", [], []}]}]}
+			      {xmlelement, "username", [], UsernameSubels},
+			      {xmlelement, "password", [], []}
+			      | QuerySubels]}]}
     end.
 
 %% @doc Try to change password and return IQ response

@@ -66,10 +66,14 @@
 		  headers
 		 }).
 
+-ifdef(SSL40).
+-define(STRING2LOWER, string).
+-else.
 -ifdef(SSL39).
 -define(STRING2LOWER, string).
 -else.
 -define(STRING2LOWER, httpd_util).
+-endif.
 -endif.
 
 -record(state, {host, docroot, accesslog, accesslogfd, directory_indices,
@@ -91,6 +95,7 @@
                                 {".js",   "text/javascript"},
                                 {".png",  "image/png"},
                                 {".txt",  "text/plain"},
+                                {".xml",  "application/xml"},
                                 {".xpi",  "application/x-xpinstall"},
                                 {".xul",  "application/vnd.mozilla.xul+xml"}]).
 
@@ -298,6 +303,8 @@ process(LocalPath, Request) ->
 	    {Code, Headers, Contents}
     catch
 	exit:{noproc, _} -> 
+	    ?ERROR_MSG("Received an HTTP request with Host ~p, but couldn't find the related "
+		       "ejabberd virtual host", [Request#request.host]),
 	    ejabberd_web:error(not_found)
     end.
 

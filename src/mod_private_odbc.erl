@@ -92,7 +92,7 @@ set_data(LUser, LServer, El) ->
 		    Username = ejabberd_odbc:escape(LUser),
 		    LXMLNS = ejabberd_odbc:escape(XMLNS),
 		    SData = ejabberd_odbc:escape(
-			       lists:flatten(xml:element_to_string(El))),
+			      xml:element_to_binary(El)),
 			odbc_queries:set_private_data(LServer, Username, LXMLNS, SData)
 	    end;
 	_ ->

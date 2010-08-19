@@ -2,7 +2,7 @@
 
 {application, ejabberd,
  [{description, "ejabberd"},
-  {vsn, "2.1.3"},
+  {vsn, "2.1.x"},
   {modules, [acl,
 	     adhoc,
 	     configure,
@@ -115,6 +115,7 @@
 	     nodetree_virtual,
 	     p1_fsm,
 	     p1_mnesia,
+	     p1_prof,
 	     randoms,
 	     sha,
 	     shaper,

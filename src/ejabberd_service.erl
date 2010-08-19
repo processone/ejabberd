@@ -47,7 +47,8 @@
 	 handle_sync_event/4,
 	 code_change/4,
 	 handle_info/3,
-	 terminate/3]).
+	 terminate/3,
+     print_state/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -346,11 +347,11 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						jlib:jid_to_string(To),
 						Attrs),
-	    Text = xml:element_to_string({xmlelement, Name, Attrs2, Els}),
+	    Text = xml:element_to_binary({xmlelement, Name, Attrs2, Els}),
 	    send_text(StateData, Text);
 	deny ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
-	    ejabberd_router:route(To, From, Err)
+	    ejabberd_router:route_error(To, From, Err, Packet)
     end,
     {next_state, StateName, StateData}.
 
@@ -374,6 +375,14 @@ terminate(Reason, StateName, StateData) ->
     (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State) ->
+    State.
+
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
@@ -382,7 +391,7 @@ send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 new_id() ->
     randoms:get_string().

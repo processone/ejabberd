@@ -162,7 +162,7 @@ normal_state({route, From, "",
 			trunc(gen_mod:get_module_opt(
 				StateData#state.server_host,
 				mod_muc, min_message_interval, 0) * 1000000),
-		    Size = lists:flatlength(xml:element_to_string(Packet)),
+		    Size = element_size(Packet),
 		    {MessageShaper, MessageShaperInterval} =
 			shaper:update(Activity#activity.message_shaper, Size),
 		    if
@@ -593,35 +593,8 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
-    FAffiliation = get_affiliation(JID, StateData),
-    FRole = get_role(JID, StateData),
-    Tail =
-	case ((StateData#state.config)#config.public_list == true) orelse
-	    (FRole /= none) orelse
-	    (FAffiliation == admin) orelse
-	    (FAffiliation == owner) of
-	    true ->
-		Desc = case (StateData#state.config)#config.public of
-			   true ->
-			       "";
-			   _ ->
-			       translate:translate(Lang, "private, ")
-		       end,
-		Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0,
-				 StateData#state.users),
-		" (" ++ Desc ++ integer_to_list(Len) ++ ")";
-	    _ ->
-		" (n/a)"
-	end,
-    Reply = case ((StateData#state.config)#config.public == true) orelse
-		(FRole /= none) orelse
-		(FAffiliation == admin) orelse
-		(FAffiliation == owner) of
-		true ->
-		    {item, get_title(StateData) ++ Tail};
-		_ ->
-		    false
-	    end,
+    Reply = get_roomdesc_reply(JID, StateData,
+			       get_roomdesc_tail(StateData, Lang)),
     {reply, Reply, StateName, StateData};
 handle_sync_event(get_config, _From, StateName, StateData) ->
     {reply, {ok, StateData#state.config}, StateName, StateData};
@@ -1000,6 +973,18 @@ is_user_online(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
     ?DICT:is_key(LJID, StateData#state.users).
 
+%% Check if the user is occupant of the room, or at least is an admin or owner.
+is_occupant_or_admin(JID, StateData) ->
+    FAffiliation = get_affiliation(JID, StateData),
+    FRole = get_role(JID, StateData),
+    case (FRole /= none) orelse
+	(FAffiliation == admin) orelse
+	(FAffiliation == owner) of
+        true ->
+	    true;
+        _ ->
+	    false
+    end.
 
 %%%
 %%% Handle IQ queries of vCard
@@ -1409,7 +1394,7 @@ prepare_room_queue(StateData) ->
 	{{value, {message, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    Packet = Activity#activity.message,
-	    Size = lists:flatlength(xml:element_to_string(Packet)),
+	    Size = element_size(Packet),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1420,7 +1405,7 @@ prepare_room_queue(StateData) ->
 	{{value, {presence, From}}, _RoomQueue} ->
 	    Activity = get_user_activity(From, StateData),
 	    {_Nick, Packet} = Activity#activity.presence,
-	    Size = lists:flatlength(xml:element_to_string(Packet)),
+	    Size = element_size(Packet),
 	    {RoomShaper, RoomShaperInterval} =
 		shaper:update(StateData#state.room_shaper, Size),
 	    erlang:send_after(
@@ -1902,10 +1887,18 @@ send_new_presence(NJID, Reason, StateData) ->
 			   false ->
 			       []
 		       end,
+	      Status2 = case ((StateData#state.config)#config.anonymous==false)
+			    andalso (NJID == Info#user.jid) of
+			    true ->
+				[{xmlelement, "status", [{"code", "100"}], []}
+				 | Status];
+			    false ->
+				Status
+			end,
 	      Packet = xml:append_subtags(
 			 Presence,
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status]}]),
+			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status2]}]),
 	      ejabberd_router:route(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
@@ -2083,7 +2076,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		StateData#state.jid,
 		TSPacket),
-    Size = lists:flatlength(xml:element_to_string(SPacket)),
+    Size = element_size(SPacket),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject, TimeStamp, Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),
@@ -3329,28 +3322,16 @@ process_iq_disco_items(_From, set, _Lang, _StateData) ->
     {error, ?ERR_NOT_ALLOWED};
 
 process_iq_disco_items(From, get, _Lang, StateData) ->
-    FAffiliation = get_affiliation(From, StateData),
-    FRole = get_role(From, StateData),
-    case ((StateData#state.config)#config.public_list == true) orelse
-	(FRole /= none) orelse
-	(FAffiliation == admin) orelse
-	(FAffiliation == owner) of
+    case (StateData#state.config)#config.public_list of
 	true ->
-	    UList =
-		lists:map(
-		  fun({_LJID, Info}) ->
-			  Nick = Info#user.nick,
-			  {xmlelement, "item",
-			   [{"jid", jlib:jid_to_string(
-				      {StateData#state.room,
-				       StateData#state.host,
-				       Nick})},
-			    {"name", Nick}], []}
-		  end,
-		  ?DICT:to_list(StateData#state.users)),
-	    {result, UList, StateData};
+	    {result, get_mucroom_disco_items(StateData), StateData};
 	_ ->
-	    {error, ?ERR_FORBIDDEN}
+	    case is_occupant_or_admin(From, StateData) of
+		true ->
+		    {result, get_mucroom_disco_items(StateData), StateData};
+		_ ->
+		    {error, ?ERR_FORBIDDEN}
+	    end
     end.
 
 process_iq_captcha(_From, get, _Lang, _SubEl, _StateData) ->
@@ -3372,6 +3353,38 @@ get_title(StateData) ->
 	    Name
     end.
 
+get_roomdesc_reply(JID, StateData, Tail) ->
+    IsOccupantOrAdmin = is_occupant_or_admin(JID, StateData),
+    if (StateData#state.config)#config.public or IsOccupantOrAdmin ->
+	    if (StateData#state.config)#config.public_list or IsOccupantOrAdmin ->
+		    {item, get_title(StateData) ++ Tail};
+	       true ->
+		    {item, get_title(StateData)}
+	    end;
+       true ->
+	    false
+    end.
+
+get_roomdesc_tail(StateData, Lang) ->
+    Desc = case (StateData#state.config)#config.public of
+	       true ->
+		   "";
+	       _ ->
+		   translate:translate(Lang, "private, ")
+	   end,
+    Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0, StateData#state.users),
+    " (" ++ Desc ++ integer_to_list(Len) ++ ")".
+
+get_mucroom_disco_items(StateData) ->
+    lists:map(
+      fun({_LJID, Info}) ->
+	      Nick = Info#user.nick,
+	      {xmlelement, "item",
+	       [{"jid", jlib:jid_to_string({StateData#state.room,
+					    StateData#state.host, Nick})},
+		{"name", Nick}], []}
+      end,
+      ?DICT:to_list(StateData#state.users)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
@@ -3577,3 +3590,6 @@ tab_count_user(JID) ->
 	_ ->
 	    0
     end.
+
+element_size(El) ->
+    size(xml:element_to_binary(El)).

@@ -379,7 +379,7 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
 	%%	{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	%% Requesting entity is not a subscriber
 	Subscriptions == [] ->
-	    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST, "not-subscribed")};
+	    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST_CANCEL, "not-subscribed")};
 	%% Subid supplied, so use that.
 	SubIdExists ->
 	    Sub = first_in_list(fun(S) ->
@@ -393,7 +393,7 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
 		    delete_subscription(SubKey, NodeId, S, Affiliation, Subscriptions),
 		    {result, default};
 		false ->
-		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST, "not-subscribed")}
+		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST_CANCEL, "not-subscribed")}
 	    end;
 	%% Asking to remove all subscriptions to the given node
 	SubId == all ->

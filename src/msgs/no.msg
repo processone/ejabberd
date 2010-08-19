@@ -36,6 +36,10 @@
 {"Change Password","Endre Passord"}.
 {"Change User Password","Endre Brukers Passord"}.
 {"Chatroom configuration modified","Samtalerommets konfigurasjon er endret"}.
+{"Chatroom is created","Samtalerom er opprettet"}.
+{"Chatroom is destroyed","Samtalerom er fjernet"}.
+{"Chatroom is started","Samtalerom er startet"}.
+{"Chatroom is stopped","Samtalerom er stoppet"}.
 {"Chatrooms","Samtalerom"}.
 {"Choose a username and password to register with this server","Velg et brukernavn og passord for å registrere på "}.
 {"Choose modules to stop","Velg hvilke moduler som skal stoppes"}.
@@ -246,6 +250,7 @@
 {"Protocol","Protokoll"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub abonements forespørsel"}.
+{"Purge all items when the relevant publisher goes offline","Rydd alle elementer når den aktuelle utgiveren logger av"}.
 {"Queries to the conference members are not allowed in this room","Forespørsler til konferanse medlemmene er ikke tillat i dette rommet"}.
 {"RAM and disc copy","RAM og diskkopi"}.
 {"RAM copy","RAM kopi"}.
@@ -298,6 +303,7 @@
 {"Shut Down Service","Avslutt Tjeneste"}.
 {"~s invites you to the room ~s","~s inviterer deg til rommet ~s"}.
 {"Specify the access model","Spesifiser aksess modellen"}.
+{"Specify the event message type","Spesifiser hendelsesbeskjed type"}.
 {"Specify the publisher model","Angi publiserings modell"}.
 {"~s's Offline Messages Queue","~ss kø for Frakoblede Meldinger"}.
 {"Start Modules at ","Start Moduler på "}.

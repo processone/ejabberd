@@ -172,7 +172,7 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 				     [{"xmlns", ?NS_DISCO_INFO} | ANode],
 				     Identity ++ 
 				     Info ++
-				     lists:map(fun feature_to_xml/1, Features)
+				     features_to_xml(Features)
 				    }]};
 		{error, Error} ->
 		    IQ#iq{type = error, sub_el = [SubEl, Error]}
@@ -209,10 +209,16 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
     end.
 
 
-feature_to_xml({{Feature, _Host}}) ->
-    feature_to_xml(Feature);
-feature_to_xml(Feature) when is_list(Feature) ->
-    {xmlelement, "feature", [{"var", Feature}], []}.
+features_to_xml(FeatureList) ->
+    %% Avoid duplicating features
+    [{xmlelement, "feature", [{"var", Feat}], []} ||
+	Feat <- lists:usort(
+		  lists:map(
+		    fun({{Feature, _Host}}) ->
+			Feature;
+		       (Feature) when is_list(Feature) ->
+			    Feature
+		    end, FeatureList))].
 
 domain_to_xml({Domain}) ->
     {xmlelement, "item", [{"jid", Domain}], []};
@@ -263,42 +269,48 @@ process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Host = To#jid.lserver,
-	    Node = xml:get_tag_attr_s("node", SubEl),
-	    case ejabberd_hooks:run_fold(disco_sm_items,
-					 Host,
-					 empty,
-					 [From, To, Node, Lang]) of
-		{result, Items} ->
-		    ANode = case Node of
-				"" -> [];
-				_ -> [{"node", Node}]
-			    end,
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", ?NS_DISCO_ITEMS} | ANode],
-				     Items
-				    }]};
-		{error, Error} ->
-		    IQ#iq{type = error, sub_el = [SubEl, Error]}
-	    end
+            case is_presence_subscribed(From, To) of
+                true ->
+                    Host = To#jid.lserver,
+                    Node = xml:get_tag_attr_s("node", SubEl),
+                    case ejabberd_hooks:run_fold(disco_sm_items,
+                                                 Host,
+                                                 empty,
+                                                 [From, To, Node, Lang]) of
+                        {result, Items} ->
+                            ANode = case Node of
+                                        "" -> [];
+                                        _ -> [{"node", Node}]
+                                    end,
+                            IQ#iq{type = result,
+                                  sub_el = [{xmlelement, "query",
+                                             [{"xmlns", ?NS_DISCO_ITEMS} | ANode],
+                                             Items
+                                            }]};
+                        {error, Error} ->
+                            IQ#iq{type = error, sub_el = [SubEl, Error]}
+                    end;
+                false ->
+                    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]}
+            end
     end.
 
 get_sm_items({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_sm_items(Acc,
-	    #jid{luser = LFrom, lserver = LSFrom},
-	    #jid{user = User, server = Server, luser = LTo, lserver = LSTo} = _To,
+get_sm_items(Acc, From,
+	    #jid{user = User, server = Server} = To,
 	    [], _Lang) ->
     Items = case Acc of
 		{result, Its} -> Its;
 		empty -> []
 	    end,
-    Items1 = case {LFrom, LSFrom} of
-		 {LTo, LSTo} -> get_user_resources(User, Server);
-		 _ -> []
-	     end,
+    Items1 = case is_presence_subscribed(From, To) of
+                   true ->
+                       get_user_resources(User, Server);
+                   _ -> 
+                       []
+                end,
     {result, Items ++ Items1};
  
 get_sm_items({result, _} = Acc, _From, _To, _Node, _Lang) ->
@@ -314,39 +326,63 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
 	    {error, ?ERR_NOT_ALLOWED}
     end.
 
+is_presence_subscribed(#jid{luser=User, lserver=Server}, #jid{luser=LUser, lserver=LServer}) ->
+    lists:any(fun({roster, _, _, {TUser, TServer, _}, _, S, _, _, _, _}) -> 
+                            if 
+                                LUser == TUser, LServer == TServer, S/=none ->
+                                    true;
+                                true ->
+                                    false
+                            end
+                    end,
+                    ejabberd_hooks:run_fold(roster_get, Server, [], [{User, Server}]))
+                orelse User == LUser andalso Server == LServer.
+
 process_sm_iq_info(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Host = To#jid.lserver,
-	    Node = xml:get_tag_attr_s("node", SubEl),
-	    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
-					       Host,
-					       [],
-					       [From, To, Node, Lang]),
-	    case ejabberd_hooks:run_fold(disco_sm_features,
-					 Host,
-					 empty,
-					 [From, To, Node, Lang]) of
-		{result, Features} ->
-		    ANode = case Node of
-				"" -> [];
-				_ -> [{"node", Node}]
-			    end,
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, "query",
-				     [{"xmlns", ?NS_DISCO_INFO} | ANode],
-				     Identity ++
-				     lists:map(fun feature_to_xml/1, Features)
-				    }]};
-		{error, Error} ->
-		    IQ#iq{type = error, sub_el = [SubEl, Error]}
-	    end
+            case is_presence_subscribed(From, To) of
+                true ->
+                    Host = To#jid.lserver,
+                    Node = xml:get_tag_attr_s("node", SubEl),
+                    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
+                                                       Host,
+                                                       [],
+                                                       [From, To, Node, Lang]),
+                    case ejabberd_hooks:run_fold(disco_sm_features,
+                                                 Host,
+                                                 empty,
+                                                 [From, To, Node, Lang]) of
+                        {result, Features} ->
+                            ANode = case Node of
+                                        "" -> [];
+                                        _ -> [{"node", Node}]
+                                    end,
+                            IQ#iq{type = result,
+                                  sub_el = [{xmlelement, "query",
+                                             [{"xmlns", ?NS_DISCO_INFO} | ANode],
+                                             Identity ++
+					     features_to_xml(Features)
+                                            }]};
+                        {error, Error} ->
+                            IQ#iq{type = error, sub_el = [SubEl, Error]}
+                    end;
+                false ->
+                    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]}
+            end
     end.
 
-get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
+get_sm_identity(Acc, _From, #jid{luser = LUser, lserver=LServer}, _Node, _Lang) ->
+    Acc ++  case ejabberd_auth:is_user_exists(LUser, LServer) of
+        true ->
+            [{xmlelement, "identity", [{"category", "account"},
+            {"type", "registered"}], []}];
+        _ ->
+            []
+    end.
+
 
 get_sm_features(empty, From, To, _Node, _Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
@@ -373,7 +409,13 @@ get_user_resources(User, Server) ->
 
 %%% Support for: XEP-0157 Contact Addresses for XMPP Services
 
-get_info(_A, Host, Module, Node, _Lang) when Node == [] ->
+get_info(_A, Host, Mod, Node, _Lang) when Node == [] ->
+    Module = case Mod of
+		 undefined ->
+		     ?MODULE;
+		 _ ->
+		     Mod
+	     end,
     Serverinfo_fields = get_fields_xml(Host, Module),
     [{xmlelement, "x",
       [{"xmlns", ?NS_XDATA}, {"type", "result"}],
@@ -387,8 +429,8 @@ get_info(_A, Host, Module, Node, _Lang) when Node == [] ->
       ++ Serverinfo_fields
      }];
 
-get_info(_, _, _, _Node, _) ->
-    [].
+get_info(Acc, _, _, _Node, _) ->
+    Acc.
 
 get_fields_xml(Host, Module) ->
     Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),

@@ -51,6 +51,7 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
+     print_state/1,
 	 code_change/4,
 	 test_get_addr_port/1,
 	 get_addr_port/1]).
@@ -191,7 +192,8 @@ init([From, Server, Type]) ->
 open_socket(init, StateData) ->
     log_s2s_out(StateData#state.new,
 		StateData#state.myname,
-		StateData#state.server),
+		StateData#state.server,
+		StateData#state.tls),
     ?DEBUG("open_socket: ~p", [{StateData#state.myname,
 				StateData#state.server,
 				StateData#state.new,
@@ -339,8 +341,8 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 	    case Type of
 		"valid" ->
 		    send_queue(StateData, StateData#state.queue),
-		    ?INFO_MSG("Connection established: ~s -> ~s",
-			      [StateData#state.myname, StateData#state.server]),
+		    ?INFO_MSG("Connection established: ~s -> ~s with TLS=~p",
+			      [StateData#state.myname, StateData#state.server, StateData#state.tls_enabled]),
 		    ejabberd_hooks:run(s2s_connect_hook,
 				       [StateData#state.myname,
 					StateData#state.server]),
@@ -875,6 +877,14 @@ terminate(Reason, StateName, StateData) ->
     end,
     ok.
 
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State) ->
+    State.
+
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
@@ -883,7 +893,7 @@ send_text(StateData, Text) ->
     ejabberd_socket:send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_string(El)).
+    send_text(StateData, xml:element_to_binary(El)).
 
 send_queue(StateData, Q) ->
     case queue:out(Q) of
@@ -1142,10 +1152,10 @@ outgoing_s2s_timeout() ->
 
 %% Human readable S2S logging: Log only new outgoing connections as INFO
 %% Do not log dialback
-log_s2s_out(false, _, _) -> ok;
+log_s2s_out(false, _, _, _) -> ok;
 %% Log new outgoing connections:
-log_s2s_out(_, Myname, Server) ->
-    ?INFO_MSG("Trying to open s2s connection: ~s -> ~s",[Myname, Server]).
+log_s2s_out(_, Myname, Server, Tls) ->
+    ?INFO_MSG("Trying to open s2s connection: ~s -> ~s with TLS=~p", [Myname, Server, Tls]).
 
 %% Calculate timeout depending on which state we are in:
 %% Can return integer > 0 | infinity

@@ -30,15 +30,17 @@ else
   INIT_USER=$(INSTALLUSER)
 endif
 
-EFLAGS += @ERLANG_SSL39@ -pa .
+EFLAGS += @ERLANG_SSLVER@ -pa .
+ERLANG_CFLAGS += @ERLANG_SSLVER@
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
   EFLAGS+=+debug_info +export_all
 endif
 
-ifdef ejabberd_debug
-  EFLAGS+=-Dejabberd_debug
+DEBUGTOOLS = p1_prof.erl
+ifdef debugtools
+  SOURCES+=$(DEBUGTOOLS)
 endif
 
 ifeq (@hipe@, true)
@@ -53,8 +55,18 @@ ifeq (@full_xml@, true)
   EFLAGS+=-DFULL_XML_SUPPORT
 endif
 
+ifeq (@nif@, true)
+  EFLAGS+=-DNIF
+  ERLSHLIBS=xml.so
+endif
+
 ifeq (@transient_supervisors@, false)
   EFLAGS+=-DNO_TRANSIENT_SUPERVISORS
+endif
+
+ifeq (@md2@, true)
+  EFLAGS+=-DHAVE_MD2
+  ERLANG_CFLAGS += -DHAVE_MD2
 endif
 
 INSTALL_EPAM=
@@ -66,10 +78,11 @@ prefix = @prefix@
 exec_prefix = @exec_prefix@
 
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ stringprep stun @tls@ @odbc@ @ejabberd_zlib@
-ERLSHLIBS = expat_erl.so
+ERLSHLIBS += expat_erl.so
 ERLBEHAVS = cyrsasl.erl gen_mod.erl p1_fsm.erl
 SOURCES_ALL = $(wildcard *.erl)
-SOURCES = $(filter-out $(ERLBEHAVS),$(SOURCES_ALL))
+SOURCES_MISC = $(ERLBEHAVS) $(DEBUGTOOLS)
+SOURCES += $(filter-out $(SOURCES_MISC),$(SOURCES_ALL))
 ERLBEHAVBEAMS = $(ERLBEHAVS:.erl=.beam)
 BEAMS = $(SOURCES:.erl=.beam)
 
@@ -247,9 +260,14 @@ install: all
 	#
 	# Documentation
 	install -d $(DOCDIR)
+	install -m 644 ../doc/dev.html $(DOCDIR)
 	install -m 644 ../doc/guide.html $(DOCDIR)
 	install -m 644 ../doc/*.png $(DOCDIR)
 	install -m 644 ../doc/*.txt $(DOCDIR)
+	[ -f ../doc/guide.pdf ] \
+		&& install -m 644 ../doc/guide.pdf $(DOCDIR) \
+		|| echo "No ../doc/guide.pdf was built"
+	install -m 644 ../COPYING $(DOCDIR)
 
 uninstall: uninstall-binary
 

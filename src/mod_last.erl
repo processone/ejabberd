@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_last.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : jabber:iq:last support (JEP-0012)
+%%% Purpose : jabber:iq:last support (XEP-0012)
 %%% Created : 24 Oct 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -127,7 +127,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			   [User, Server, UserListRecord,
 			    {From, To,
 			     {xmlelement, "presence", [], []}},
-			    out]) of
+			    in]) of
 			allow ->
 			    get_last(IQ, SubEl, User, Server);
 			deny ->

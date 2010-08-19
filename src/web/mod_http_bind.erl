@@ -33,8 +33,6 @@
 -module(mod_http_bind).
 -author('steve@zeank.in-berlin.de').
 
--define(MOD_HTTP_BIND_VERSION, "1.2").
-
 %%-define(ejabberd_debug, true).
 
 -behaviour(gen_mod).
@@ -52,7 +50,7 @@
 
 %% Duplicated from ejabberd_http_bind.
 %% TODO: move to hrl file.
--record(http_bind, {id, pid, to, hold, wait, version}).
+-record(http_bind, {id, pid, to, hold, wait, process_delay, version}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -80,7 +78,7 @@ process(_Path, _Request) ->
                     [{xmlcdata, "400 Bad Request"}]}}.
 
 get_human_html_xmlel() ->
-    Heading = "ejabberd " ++ atom_to_list(?MODULE) ++ " v" ++ ?MOD_HTTP_BIND_VERSION,
+    Heading = "ejabberd " ++ atom_to_list(?MODULE),
     {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"}],
      [{xmlelement, "head", [],
        [{xmlelement, "title", [], [{xmlcdata, Heading}]}]},
@@ -138,7 +136,7 @@ setup_database() ->
 
 migrate_database() ->
     case catch mnesia:table_info(http_bind, attributes) of
-        [id, pid, to, hold, wait, version] ->
+        [id, pid, to, hold, wait, process_delay, version] ->
 	    ok;
         _ ->
 	    %% Since the stored information is not important, instead

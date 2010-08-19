@@ -57,10 +57,7 @@ process_local_iq(#jid{user = User, server = Server, resource = Resource}, _To,
     get_ip({User, Server, Resource}, IQ);
 
 process_local_iq(_From, _To, #iq{type = 'set', sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-
-process_local_iq(_From, _To, #iq{sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_UNEXPECTED_REQUEST]}.
+    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
 
 process_sm_iq(#jid{user = User, server = Server, resource = Resource},
@@ -72,11 +69,7 @@ process_sm_iq(_From, _To, #iq{type = 'get', sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]};
 
 process_sm_iq(_From, _To, #iq{type = 'set', sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-
-process_sm_iq(_From, _To, #iq{sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_UNEXPECTED_REQUEST]}.
-
+    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
 get_ip({User, Server, Resource},
        #iq{sub_el = {xmlelement, Name, Attrs, _} = SubEl} = IQ) ->

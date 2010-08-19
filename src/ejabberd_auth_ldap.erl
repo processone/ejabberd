@@ -66,7 +66,7 @@
 		servers,
 		backups,
 		port,
-		encrypt,
+		tls_options,
 		dn,
 		password,
 		base,
@@ -119,19 +119,19 @@ terminate(_Reason, _State) ->
 init(Host) ->
     State = parse_options(Host),
     eldap_pool:start_link(State#state.eldap_id,
-		     State#state.servers,
-		     State#state.backups,
-		     State#state.port,
-		     State#state.dn,
-		     State#state.password,
-		     State#state.encrypt),
+			  State#state.servers,
+			  State#state.backups,
+			  State#state.port,
+			  State#state.dn,
+			  State#state.password,
+			  State#state.tls_options),
     eldap_pool:start_link(State#state.bind_eldap_id,
-		     State#state.servers,
-		     State#state.backups,
-		     State#state.port,
-		     State#state.dn,
-		     State#state.password,
-		     State#state.encrypt),
+			  State#state.servers,
+			  State#state.backups,
+			  State#state.port,
+			  State#state.dn,
+			  State#state.password,
+			  State#state.tls_options),
     {ok, State}.
 
 plain_password_required() ->
@@ -153,8 +153,14 @@ check_password(User, Server, Password) ->
 check_password(User, Server, Password, _Digest, _DigestGen) ->
     check_password(User, Server, Password).
 
-set_password(_User, _Server, _Password) ->
-    {error, not_allowed}.
+set_password(User, Server, Password) ->
+    {ok, State} = eldap_utils:get_state(Server, ?MODULE),
+    case find_user_dn(User, State) of
+	false ->
+	    {error, user_not_found};
+	DN ->
+	    eldap_pool:modify_passwd(State#state.eldap_id, DN, Password)
+    end.
 
 %% @spec (User, Server, Password) -> {error, not_allowed}
 try_register(_User, _Server, _Password) ->
@@ -367,6 +373,7 @@ parse_options(Host) ->
 		   Backups -> Backups
 		   end,
     LDAPEncrypt = ejabberd_config:get_local_option({ldap_encrypt, Host}),
+    LDAPTLSVerify = ejabberd_config:get_local_option({ldap_tls_verify, Host}),
     LDAPPort = case ejabberd_config:get_local_option({ldap_port, Host}) of
 		   undefined -> case LDAPEncrypt of
 				    tls -> ?LDAPS_PORT;
@@ -411,7 +418,8 @@ parse_options(Host) ->
 	   servers = LDAPServers,
 	   backups = LDAPBackups,
 	   port = LDAPPort,
-	   encrypt = LDAPEncrypt,
+	   tls_options = [{encrypt, LDAPEncrypt},
+			  {tls_verify, LDAPTLSVerify}],
 	   dn = RootDN,
 	   password = Password,
 	   base = LDAPBase,

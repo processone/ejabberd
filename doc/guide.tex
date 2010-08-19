@@ -98,6 +98,7 @@
 \newcommand{\modvcard}{\module{mod\_vcard}}
 \newcommand{\modvcardldap}{\module{mod\_vcard\_ldap}}
 \newcommand{\modvcardodbc}{\module{mod\_vcard\_odbc}}
+\newcommand{\modvcardxupdate}{\module{mod\_vcard\_xupdate}}
 \newcommand{\modversion}{\module{mod\_version}}
 
 %% Contributed modules
@@ -309,8 +310,8 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GNU Make
 \item GCC
 \item Libexpat 1.95 or higher
-\item Erlang/OTP R10B-9 or higher. The recommended version is R12B-5. Support for R13 is experimental.
-\item OpenSSL 0.9.6 or higher, for STARTTLS, SASL and SSL encryption. Optional, highly recommended.
+\item Erlang/OTP R10B-9 or higher. The recommended versions are R12B-5 and R13B04.
+\item OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
@@ -381,6 +382,10 @@ Some options that you may be interested in modifying:
 
 	\titem{--disable-transient-supervisors}
 	Disable the use of Erlang/OTP supervision for transient processes.
+
+	\titem{--enable-nif}
+        Replaces some critical Erlang functions with equivalents written in C to improve performance.
+        This feature requires Erlang/OTP R13B04 or higher.
 \end{description}
 
 \makesubsection{install}{Install}
@@ -803,12 +808,12 @@ The available modules, their purpose and the options allowed by each one are:
     \texttt{zlib}
   \titem{\texttt{ejabberd\_s2s\_in}}
     Handles incoming s2s connections.\\
-    Options: \texttt{max\_stanza\_size}
+    Options: \texttt{max\_stanza\_size}, \texttt{shaper}
   \titem{\texttt{ejabberd\_service}}
     Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component}
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts}, \texttt{max\_fsm\_queue},
-    \texttt{shaper}, \texttt{service\_check\_from}
+    \texttt{service\_check\_from}, \texttt{shaper}
   \titem{\texttt{ejabberd\_stun}}
     Handles STUN Binding requests as defined in
     \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}.\\
@@ -832,13 +837,10 @@ This is a detailed description of each option allowed by the listening modules:
     lots of new incoming connections as they may be dropped if there is
     no space in the queue (and ejabberd was not able to accept them
     immediately). Default value is 5.
+  \titem{captcha} \ind{options!http-captcha}
+    Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
   \titem{\{certfile, Path\}} Full path to a file containing the default SSL certificate.
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
-  \titem{\{service\_check\_from, true|false\}} \ind{options!service\_check\_from}
-    This option can be used with \term{ejabberd\_service} only. It is
-    used to disable control on the from field on packets send by an
-    external components. The option can be either \term{true} or
-    \term{false}. The default value is \term{true} which conforms to \xepref{0114}.
   \titem{\{hosts, [Hostname, ...], [HostOption, ...]\}} \ind{options!hosts}
     The external Jabber component that connects to this \term{ejabberd\_service}
     can serve one or more hostnames.
@@ -848,8 +850,6 @@ This is a detailed description of each option allowed by the listening modules:
     Note that you cannot define in a single \term{ejabberd\_service} components of
     different services: add an \term{ejabberd\_service} for each service,
     as seen in an example below.
-  \titem{captcha} \ind{options!http-captcha}
-    Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
   \titem{http\_bind} \ind{options!http\_bind}\ind{protocols!XEP-0206: HTTP Binding}\ind{JWChat}\ind{web-based XMPP client}
     This option enables HTTP Binding (\xepref{0124} and \xepref{0206}) support. HTTP Bind
     enables access via HTTP requests to \ejabberd{} from behind firewalls which
@@ -902,7 +902,7 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{\{max\_stanza\_size, Size\}}
     \ind{options!max\_stanza\_size}This option specifies an
     approximate maximum size in bytes of XML stanzas.  Approximate,
-    because it is calculated with the precision of one block of readed
+    because it is calculated with the precision of one block of read
     data. For example \verb|{max_stanza_size, 65536}|.  The default
     value is \term{infinity}. Recommended values are 65536 for c2s
     connections and 131072 for s2s connections. s2s max stanza size
@@ -914,10 +914,13 @@ This is a detailed description of each option allowed by the listening modules:
     and you also want \term{mod\_http\_bind} to serve the URIs \term{/http-bind/},
     use this option: \term{\{request\_handlers, [\{["a", "b"], mod\_foo\}, \{["http-bind"], mod\_http\_bind\}]\}}
   \titem{\{service\_check\_from, true|false\}}
-    By enabling this option, \ejabberd{} allows the component to send packets with any arbitrary domain in the 'from' attribute.
-    Note that \xepref{0114} requires that the domain must match the hostname of the component.
-    Only enable this option if you are completely sure you need to enable it.
-    Default value: false.
+    \ind{options!service\_check\_from}
+    This option can be used with \term{ejabberd\_service} only.
+    \xepref{0114} requires that the domain must match the hostname of the component.
+    If this option is set to \term{false}, \ejabberd{} will allow the component
+    to send stanzas with any arbitrary domain in the 'from' attribute.
+    Only use this option if you are completely sure about it.
+    The default value is \term{true}, to be compliant with \xepref{0114}.
   \titem{\{shaper, none|ShaperName\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.
@@ -1188,8 +1191,7 @@ for user authentication. The syntax is:
 The following authentication methods are supported by \ejabberd{}:
 \begin{itemize}
 \item internal (default) --- See section~\ref{internalauth}.
-\item external --- There are \footahref{http://www.ejabberd.im/extauth}{some
- example authentication scripts}.
+\item external --- See section~\ref{extauth}.
 \item ldap --- See section~\ref{ldap}.
 \item odbc --- See section~\ref{mysql}, \ref{pgsql},
   \ref{mssql} and \ref{odbc}.
@@ -1197,7 +1199,7 @@ The following authentication methods are supported by \ejabberd{}:
 \item pam --- See section~\ref{pam}.
 \end{itemize}
 
-Account creation is only supported by internal and odbc methods.
+Account creation is only supported by internal, external and odbc methods.
 
 \makesubsubsection{internalauth}{Internal}
 \ind{internal authentication}\ind{Mnesia}
@@ -1218,6 +1220,48 @@ Examples:
 {auth_method, internal}.
 \end{verbatim}
 \end{itemize}
+
+\makesubsubsection{extauth}{External Script}
+\ind{external authentication}
+
+In this authentication method, when \ejabberd{} starts,
+it start a script, and calls it to perform authentication tasks.
+
+The server administrator can write the external authentication script
+in any language.
+The details on the interface between ejabberd and the script are described
+in the \term{ejabberd Developers Guide}.
+There are also \footahref{http://www.ejabberd.im/extauth}{several example authentication scripts}.
+
+These are the specific options:
+\begin{description}
+  \titem{\{extauth\_program, PathToScript\}} 
+  Indicate in this option the full path to the external authentication script.
+  The script must be executable by ejabberd.
+
+  \titem{\{extauth\_instances, Integer\}} 
+  Indicate how many instances of the script to run simultaneously to serve authentication in the virtual host.
+  The default value is the minimum number: 1.
+
+  \titem{\{extauth\_cache, false|CacheTimeInteger\}} 
+  The value \term{false} disables the caching feature, this is the default.
+  The integer \term{0} (zero) enables caching for statistics, but doesn't use that cached information to authenticate users.
+  If another integer value is set, caching is enabled both for statistics and for authentication:
+  the CacheTimeInteger indicates the number of seconds that ejabberd can reuse
+  the authentication information since the user last disconnected,
+  to verify again the user authentication without querying again the extauth script.
+  Note: caching should not be enabled in a host if internal auth is also enabled.
+  If caching is enabled, \term{mod\_last} or \term{mod\_last\_odbc} must be enabled also in that vhost.
+\end{description}
+
+This example sets external authentication, the extauth script, enables caching for 10 minutes,
+and starts three instances of the script for each virtual host defined in ejabberd:
+\begin{verbatim}
+{auth_method, [external]}.
+{extauth_program, "/etc/ejabberd/JabberAuth.class.php"}.
+{extauth_cache, 600}.
+{extauth_instances, 3}. 
+\end{verbatim}
 
 \makesubsubsection{saslanonymous}{SASL Anonymous and Anonymous Login}
 \ind{sasl anonymous}\ind{anonymous login}
@@ -1299,6 +1343,10 @@ Options:
 \titem{\{pam\_service, Name\}}\ind{options!pam\_service}This option defines the PAM service name.
 Default is \term{"ejabberd"}. Refer to the PAM documentation of your operation system
 for more information.
+\titem{\{pam\_userinfotype, username|jid\}}\ind{options!pam\_userinfotype}
+This option defines what type of information about the user ejabberd
+provides to the PAM service: only the username, or the user JID.
+Default is \term{username}.
 \end{description}
 
 Example:
@@ -1952,19 +2000,9 @@ enabled. This can be done, by using next commands:
 \makesubsubsection{configuremssql}{Database Connection}
 \ind{Microsoft SQL Server!Database Connection}
 
-By default \ejabberd{} opens 10 connections to the database for each virtual host.
-Use this option to modify the value:
-\begin{verbatim}
-{odbc_pool_size, 10}.
-\end{verbatim}
-
-You can configure an interval to make a dummy SQL request
-to keep alive the connections to the database.
-The default value is 'undefined', so no keepalive requests are made.
-Specify in seconds: for example 28800 means 8 hours.
-\begin{verbatim}
-{odbc_keepalive_interval, undefined}.
-\end{verbatim}
+The configuration of Database Connection for a Microsoft SQL Server
+is the same as the configuration for
+ODBC compatible servers (see section~\ref{configureodbc}).
 
 
 \makesubsubsection{mssqlauth}{Authentication}
@@ -1972,7 +2010,8 @@ Specify in seconds: for example 28800 means 8 hours.
 
 %TODO: not sure if this section is right!!!!!!
 
-The configuration of Microsoft SQL Server is the same as the configuration of
+The configuration of Authentication for a Microsoft SQL Server
+is the same as the configuration for
 ODBC compatible servers (see section~\ref{odbcauth}).
 
 \makesubsubsection{mssqlstorage}{Storage}
@@ -2169,12 +2208,18 @@ module loaded!
 server and use LDAP directory as vCard storage. Shared rosters are not supported
 yet.
 
-Note that \ejabberd{} treats LDAP as a read-only storage:
+Usually \ejabberd{} treats LDAP as a read-only storage:
 it is possible to consult data, but not possible to
-create accounts, change password or edit vCard that is stored in LDAP.
+create accounts or edit vCard that is stored in LDAP.
+However, it is possible to change passwords if \module{mod\_register} module is enabled
+and LDAP server supports
+\footahref{http://tools.ietf.org/html/rfc3062}{RFC 3062}.
 
 
 \makesubsubsection{ldapconnection}{Connection}
+
+Two connections are established to the LDAP server per vhost,
+one for authentication and other for regular calls.
 
 Parameters:
 \begin{description}
@@ -2185,6 +2230,11 @@ Allowed values are: \term{none}, \term{tls}.
 The value \term{tls} enables encryption by using LDAP over SSL.
 Note that STARTTLS encryption is not supported.
 The default value is: \term{none}.
+\titem{\{ldap\_tls\_verify, false|soft|hard\}} \ind{options!ldap\_tls\_verify}
+This option specifies whether to verify LDAP server certificate or not when TLS is enabled.
+When \term{hard} is enabled \ejabberd{} doesn't proceed if a certificate is invalid.
+When \term{soft} is enabled \ejabberd{} proceeds even if check fails.
+The default is \term{false} which means no checks are performed.
 \titem{\{ldap\_port, Number\}} \ind{options!ldap\_port}Port to connect to your LDAP server.
 The default port is~389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in \ejabberd{}'s database.
@@ -2205,11 +2255,12 @@ Example:
 {ldap_password, "secret"}.
 \end{verbatim}
 
-Note that current LDAP implementation does not support SASL authentication.
-
 \makesubsubsection{ldapauth}{Authentication}
 
-You can authenticate users against an LDAP directory. Available options are:
+You can authenticate users against an LDAP directory. 
+Note that current LDAP implementation does not support SASL authentication.
+
+Available options are:
 
 \begin{description}
 \titem{\{ldap\_base, Base\}}\ind{options!ldap\_base}LDAP base directory which stores
@@ -2460,6 +2511,8 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
     \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas &  \\
+    \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) &  \\
+    \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server &  \\
     \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
@@ -2487,6 +2540,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) &  \\
     \hline \ahrefloc{modvcardldap}{\modvcardldap{}} & vcard-temp (\xepref{0054}) & LDAP server \\
     \hline \ahrefloc{modvcard}{\modvcardodbc{}} & vcard-temp (\xepref{0054}) & supported DB (*) \\
+    \hline \ahrefloc{modvcardxupdate}{\modvcardxupdate{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} or \modvcardodbc{} \\
     \hline \ahrefloc{modversion}{\modversion{}} & Software Version (\xepref{0092}) &  \\
     \hline
   \end{tabular}
@@ -3155,6 +3209,10 @@ Module options:
   \titem{\{anonymous, true|false\}} The room is anonymous:
   occupants don't see the real JIDs of other occupants.
   Note that the room moderators can always see the real JIDs of the occupants.
+  \titem{\{captcha\_protected, false\}} 
+  When a user tries to join a room where he has no affiliation (not owner, admin or member),
+  the room requires him to fill a CAPTCHA challenge (see section \ref{captcha})
+  in order to accept her join in the room.
   \titem{\{logging, false|true\}} The public messages are logged using \term{mod\_muc\_log}.
   \titem{\{max\_users, 200\}} Maximum number of occupants in the room.
   \titem{\{members\_by\_default, true|false\}} The occupants that enter the room are participants by default, so they have 'voice'.
@@ -3727,9 +3785,11 @@ from s2s leads to uncontrolled massive accounts creation by rogue users.
 This module reads also another option defined globally for the server:
 \term{\{registration\_timeout, Timeout\}}. \ind{options!registratimeout}
 This option limits the frequency of registration from a given IP or username.
-So, a user can't register a new account from the same IP address or JID during
-this number of seconds after previous registration.
-Timeout is expressed in seconds, and must be an integer.
+So, a user that tries to register a new account from the same IP address or JID during
+this number of seconds after his previous registration
+will receive an error \term{resource-constraint} with the explanation:
+``Users are not allowed to register accounts so quickly''.
+The timeout is expressed in seconds, and it must be an integer.
 To disable this limitation,
 instead of an integer put a word like: \term{infinity}.
 Default value: 600 seconds.
@@ -4109,9 +4169,12 @@ Examples:
 implemented in the \modvcardldap{} module. This module does not depend on the
 authentication method (see~\ref{ldapauth}).
 
-Note that \ejabberd{} treats LDAP as a read-only storage:
+Usually \ejabberd{} treats LDAP as a read-only storage:
 it is possible to consult data, but not possible to
-create accounts, change password or edit vCard that is stored in LDAP.
+create accounts or edit vCard that is stored in LDAP.
+However, it is possible to change passwords if \module{mod\_register} module is enabled
+and LDAP server supports
+\footahref{http://tools.ietf.org/html/rfc3062}{RFC 3062}.
 
 The \modvcardldap{} module has
 its own optional parameters. The first group of parameters has the same
@@ -4314,6 +4377,27 @@ searching his info in LDAP.
  ]},
 \end{verbatim}
 \end{itemize}
+
+\makesubsection{modvcardxupdate}{\modvcardxupdate{}}
+\ind{modules!\modvcardxupdate{}}\ind{protocols!XEP-0153: vCard-Based Avatars}
+
+The user's client can store an avatar in the user vCard.
+The vCard-Based Avatars protocol (\xepref{0153})
+provides a method for clients to inform the contacts what is the avatar hash value.
+However, simple or small clients may not implement that protocol.
+
+If this module is enabled, all the outgoing client presence stanzas get automatically
+the avatar hash on behalf of the client.
+So, the contacts receive the presence stanzas with the Update Data described
+in \xepref{0153} as if the client would had inserted it itself.
+If the client had already included such element in the presence stanza,
+it is replaced with the element generated by ejabberd.
+
+By enabling this module, each vCard modification produces a hash recalculation,
+and each presence sent by a client produces hash retrieval and a
+presence stanza rewrite.
+For this reason, enabling this module will introduce a computational overhead
+in servers with clients that change frequently their presence.
 
 \makesubsection{modversion}{\modversion{}}
 \ind{modules!\modversion{}}\ind{protocols!XEP-0092: Software Version}
@@ -4646,7 +4730,10 @@ Here you can edit access restrictions, manage users, create backups,
 manage the database, enable/disable ports listened for, view server
 statistics,\ldots
 
-Examples:
+The access rule \term{configure} determines what accounts can access the Web Admin and modify it.
+The access rule \term{webadmin\_view} is to grant only view access: those accounts can browse the Web Admin with read-only access.
+
+Example configurations:
 \begin{itemize}
 \item You can serve the Web Admin on the same port as the
   \ind{protocols!XEP-0025: HTTP Polling}HTTP Polling interface. In this example
@@ -4660,10 +4747,14 @@ Examples:
   URL). If you log in with `\jid{admin@example.com}' on \\
   \verb|http://example.org:5280/admin/server/example.com/| you can only
   administer the virtual host \jid{example.com}.
+  The account `\jid{reviewer@example.com}' can browse that vhost in read-only mode.
 \begin{verbatim}
 {acl, admins, {user, "admin", "example.net"}}.
 {host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+{host_config, "example.com", [{acl, viewers, {user, "reviewer", "example.com"}}]}.
+
 {access, configure, [{allow, admins}]}.
+{access, webadmin_view, [{allow, viewers}]}.
 
 {hosts, ["example.org"]}.
 

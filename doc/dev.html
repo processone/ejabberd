@@ -2,7 +2,7 @@
             "http://www.w3.org/TR/REC-html40/loose.dtd">
 <HTML>
 <HEAD>
-<TITLE>Ejabberd 2.1.3 Developers Guide
+<TITLE>Ejabberd 2.1.x Developers Guide
 </TITLE>
 
 <META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
@@ -49,7 +49,7 @@ TD P{margin:0px;}
 <!--HEVEA command line is: /usr/bin/hevea -fix -pedantic dev.tex -->
 <!--CUT DEF section 1 --><P><A NAME="titlepage"></A>
 
-</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.3 Developers Guide</H1><H3 CLASS="titlerest">Alexey Shchepin<BR>
+</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.x Developers Guide</H1><H3 CLASS="titlerest">Alexey Shchepin<BR>
  <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
  <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3></TD></TR>
 </TABLE><DIV CLASS="center">
@@ -194,6 +194,9 @@ operation are as follows:
 auth:User:Server:Password (check if a username/password pair is correct)
 </LI><LI CLASS="li-itemize">isuser:User:Server (check if it&#X2019;s a valid user)
 </LI><LI CLASS="li-itemize">setpass:User:Server:Password (set user&#X2019;s password)
+</LI><LI CLASS="li-itemize">tryregister:User:Server:Password (try to register an account)
+</LI><LI CLASS="li-itemize">removeuser:User:Server (remove this account)
+</LI><LI CLASS="li-itemize">removeuser3:User:Server:Password (remove this account if the password is correct)
 </LI></UL>
 </LI></UL>
 </LI><LI CLASS="li-itemize">write to stdout: AABB

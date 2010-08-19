@@ -27,10 +27,32 @@
 -module(sha).
 -author('alexey@process-one.net').
 
--export([start/0, sha/1]).
+-export([start/0, sha/1, sha1/1, sha224/1, sha256/1, sha384/1,
+	 sha512/1]).
+
+-ifdef(HAVE_MD2).
+-export([md2/1]).
+-endif.
+
+-include("ejabberd.hrl").
+
+-define(DRIVER, sha_drv).
 
 start() ->
-    crypto:start().
+    crypto:start(),
+    Res = case erl_ddll:load_driver(ejabberd:get_so_path(), ?DRIVER) of
+	      ok -> ok;
+	      {error, already_loaded} -> ok;
+	      Err -> Err
+	  end,
+    case Res of
+	ok ->
+	    Port = open_port({spawn, ?DRIVER}, [binary]),
+	    register(?DRIVER, Port);
+	{error, Reason} ->
+	    ?CRITICAL_MSG("unable to load driver '~s': ~s",
+			  [driver_path(), erl_ddll:format_error(Reason)])
+    end.
 
 digit_to_xchar(D) when (D >= 0) and (D < 10) ->
     D + 48;
@@ -47,3 +69,29 @@ ints_to_rxstr([N | Ns], Res) ->
     ints_to_rxstr(Ns, [digit_to_xchar(N rem 16),
 		       digit_to_xchar(N div 16) | Res]).
 
+sha1(Text) ->
+    crypto:sha(Text).
+
+sha224(Text) ->
+    erlang:port_control(?DRIVER, 224, Text).
+
+sha256(Text) ->
+    erlang:port_control(?DRIVER, 256, Text).
+
+sha384(Text) ->
+    erlang:port_control(?DRIVER, 384, Text).
+
+sha512(Text) ->
+    erlang:port_control(?DRIVER, 512, Text).
+
+-ifdef(HAVE_MD2).
+md2(Text) ->
+    erlang:port_control(?DRIVER, 2, Text).
+-endif.
+
+driver_path() ->
+    Suffix = case os:type() of
+		 {win32, _} -> ".dll";
+		 _ -> ".so"
+	     end,
+    filename:join(ejabberd:get_so_path(), atom_to_list(?DRIVER) ++ Suffix).
