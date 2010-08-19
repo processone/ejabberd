@@ -42,7 +42,8 @@
 	 get_queue_length/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
-	 webadmin_user_parse_query/5]).
+	 webadmin_user_parse_query/5,
+	 count_offline_messages/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -81,6 +82,8 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_user, 50),
     ejabberd_hooks:add(webadmin_user_parse_query, Host,
                        ?MODULE, webadmin_user_parse_query, 50),
+    ejabberd_hooks:add(count_offline_messages, Host,
+		       ?MODULE, count_offline_messages, 50),
     AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, max_user_offline_messages),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, loop, [AccessMaxOfflineMsgs])).
@@ -663,3 +666,23 @@ webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->
     end;
 webadmin_user_parse_query(Acc, _Action, _User, _Server, _Query) ->
     Acc.
+
+
+%% ------------------------------------------------
+%% mod_offline: number of messages quota management
+
+count_offline_messages(_Acc, User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
+    F = fun () ->
+		p1_mnesia:count_records(
+		  offline_msg, 
+		  #offline_msg{us=US, _='_'})
+	end,
+    N = case catch mnesia:async_dirty(F) of
+	    I when is_integer(I) -> I;
+	    _ -> 0
+	end,
+    {stop, N}.
+

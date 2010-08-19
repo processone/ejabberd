@@ -41,7 +41,8 @@
 	 get_queue_length/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
-	 webadmin_user_parse_query/5]).
+	 webadmin_user_parse_query/5,
+	 count_offline_messages/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -75,6 +76,8 @@ start(Host, Opts) ->
 		       ?MODULE, webadmin_user, 50),
     ejabberd_hooks:add(webadmin_user_parse_query, Host,
                        ?MODULE, webadmin_user_parse_query, 50),
+    ejabberd_hooks:add(count_offline_messages, Host,
+                       ?MODULE, count_offline_messages, 50),
     AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, max_user_offline_messages),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, loop, [Host, AccessMaxOfflineMsgs])).
@@ -547,3 +550,30 @@ count_offline_messages(LUser, LServer) ->
         _ ->
             0
     end.
+
+count_offline_messages(_Acc, User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    Num = case catch ejabberd_odbc:sql_query(
+		       LServer,
+		       ["select xml from spool"
+			"  where username='", LUser, "';"]) of
+	      {selected, ["xml"], Rs} ->
+		  lists:foldl(
+		    fun({XML}, Acc) ->
+			    case xml_stream:parse_element(XML) of
+				{error, _Reason} ->
+				    Acc;
+				El ->
+				    case xml:get_subtag(El, "body") of
+					false ->
+					    Acc;
+					_ ->
+					    Acc + 1
+				    end
+			    end
+		    end, 0, Rs);
+	      _ ->
+		  0
+	  end,
+    {stop, Num}.
