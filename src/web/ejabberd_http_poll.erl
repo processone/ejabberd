@@ -272,7 +272,13 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}                    
 %%----------------------------------------------------------------------
 handle_sync_event({send, Packet}, _From, StateName, StateData) ->
-    Output = StateData#state.output ++ [lists:flatten(Packet)],
+    Packet2 = if
+		  is_binary(Packet) ->
+		      binary_to_list(Packet);
+		  true ->
+		      Packet
+	      end,
+    Output = StateData#state.output ++ [lists:flatten(Packet2)],
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
 
