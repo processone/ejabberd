@@ -171,7 +171,7 @@ do_sub(S, {RegExp, New, Times}, Iter) ->
     end.
 
 replace_amps(String) ->
-    lists:map(
+    lists:flatmap(
       fun($&) -> "\\&";
-	 (Chr) -> Chr
+	 (Chr) -> [Chr]
       end, String).
