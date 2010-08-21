@@ -1944,8 +1944,8 @@ Mnesia as backend.
 (see&#XA0;<A HREF="#database">3.2</A>) as backend.
 </LI><LI CLASS="li-itemize">&#X2018;_ldap&#X2019;, this means that the module needs an LDAP server as backend.
 </LI></UL><P>If you want to,
-it is possible to use a relational database to store pieces of
-information. You can do this by changing the module name to a name with an
+it is possible to use a relational database to store the tables created by some ejabberd modules.
+You can do this by changing the module name to a name with an
 <TT>_odbc</TT> suffix in <TT>ejabberd</TT> config file. You can use a relational
 database for the following data:</P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Last connection date and time: Use <TT>mod_last_odbc</TT> instead of
@@ -1956,6 +1956,7 @@ Last connection date and time: Use <TT>mod_last_odbc</TT> instead of
 </LI><LI CLASS="li-itemize">Users&#X2019; VCARD: Use <TT>mod_vcard_odbc</TT> instead of <TT>mod_vcard</TT>.
 </LI><LI CLASS="li-itemize">Private XML storage: Use <TT>mod_private_odbc</TT> instead of <TT>mod_private</TT>.
 </LI><LI CLASS="li-itemize">User rules for blocking communications: Use <TT>mod_privacy_odbc</TT> instead of <TT>mod_privacy</TT>.
+</LI><LI CLASS="li-itemize">Pub-Sub nodes, items and subscriptions: Use <TT>mod_pubsub_odbc</TT> instead of <TT>mod_pubsub</TT>.
 </LI></UL><P>You can find more
 <A HREF="http://www.ejabberd.im/contributions">contributed modules</A> on the
 <TT>ejabberd</TT> website. Please remember that these contributions might not work or
