@@ -35,7 +35,7 @@
 	 process_sm_iq/3]).
 
 -include_lib("exmpp/include/exmpp.hrl").
--include_lib("exmpp/include/internal/exmpp_xmpp.hrl").
+-include_lib("exmpp/include/exmpp_jid.hrl").
 -include("ejabberd.hrl").
 
 start(Host, Opts) ->
