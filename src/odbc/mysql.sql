@@ -47,25 +47,22 @@ CREATE TABLE last (
 ) CHARACTER SET utf8;
 
 
-CREATE TABLE rosterusers (
+CREATE TABLE rosteritem (
     host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
+    user varchar(250) NOT NULL,
     jid varchar(250) NOT NULL,
-    nick text NOT NULL,
-    subscription character(1) NOT NULL,
-    ask character(1) NOT NULL,
+    name text,
+    subscription text NOT NULL,
+    ask text NOT NULL,
     askmessage text NOT NULL,
-    server character(1) NOT NULL,
-    subscribe text NOT NULL,
-    type text,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (host(75), username(75), jid(75))
 ) CHARACTER SET utf8;
 
-CREATE INDEX i_rosteru_username ON rosterusers(username);
-CREATE INDEX i_rosteru_jid ON rosterusers(jid);
+CREATE INDEX i_rosteru_username ON rosteritem(username);
+CREATE INDEX i_rosteru_jid ON rosteritem(jid);
 
-CREATE TABLE rostergroups (
+CREATE TABLE rostergroup (
     host varchar(250) NOT NULL,
     username varchar(250) NOT NULL,
     jid varchar(250) NOT NULL,
