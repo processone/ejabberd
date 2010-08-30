@@ -105,8 +105,16 @@ init([From, Host, Server, Username, Encoding, Port, Password]) ->
 open_socket(init, StateData) ->
     Addr = StateData#state.server,
     Port = StateData#state.port,
-    ?DEBUG("connecting to ~s:~p~n", [Addr, Port]),
-    case gen_tcp:connect(Addr, Port, [binary, {packet, 0}]) of
+    ?DEBUG("Connecting with IPv6 to ~s:~p", [Addr, Port]),
+    Connect6 = gen_tcp:connect(Addr, Port, [inet6, binary, {packet, 0}]),
+    Connect = case Connect6 of
+		  {error, _} ->
+		      ?DEBUG("Connection with IPv6 to ~s:~p failed. Now using IPv4.", [Addr, Port]),
+		      gen_tcp:connect(Addr, Port, [inet, binary, {packet, 0}]);
+		  _ ->
+		      Connect6
+	      end,
+    case Connect of
 	{ok, Socket} ->
 	    NewStateData = StateData#state{socket = Socket},
 	    if
