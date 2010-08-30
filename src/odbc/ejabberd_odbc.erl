@@ -39,13 +39,9 @@
 	 sql_bloc/2,
 	 escape/1,
 	 escape_like/1,
-<<<<<<< HEAD
+	 to_bool/1,
 	 keep_alive/1,
 	 sql_query_on_all_connections/2]).
-=======
-	 to_bool/1,
-	 keep_alive/1]).
->>>>>>> mainline/2.1.x
 
 %% gen_fsm callbacks
 -export([init/1,
