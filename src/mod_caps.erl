@@ -99,11 +99,12 @@ get_features(#caps{node = Node, version = Version, exts = Exts}) ->
     SubNodes = [Version | Exts],
     lists:foldl(
       fun(SubNode, Acc) ->
-	      case mnesia:dirty_read({caps_features,
-				      node_to_binary(Node, SubNode)}) of
-		  [] ->
+	      BinaryNode = node_to_binary(Node, SubNode),
+	      case cache_tab:lookup(caps_features, BinaryNode,
+				    caps_read_fun(BinaryNode)) of
+		  error ->
 		      Acc;
-		  [#caps_features{features = Features}] ->
+		  {ok, Features} ->
 		      binary_to_features(Features) ++ Acc
 	      end
       end, [], SubNodes).
@@ -189,13 +190,23 @@ disco_info(Acc, _Host, _Module, _Node, _Lang) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-
-init([Host, _Opts]) ->
+init([Host, Opts]) ->
+    case catch mnesia:table_info(caps_features, storage_type) of
+	{'EXIT', _} ->
+	    ok;
+	disc_only_copies ->
+	    ok;
+	_ ->
+	    mnesia:delete_table(caps_features)
+    end,
     mnesia:create_table(caps_features,
-			[{disc_copies, [node()]},
+			[{disc_only_copies, [node()]},
 			 {local_content, true},
 			 {attributes, record_info(fields, caps_features)}]),
-    mnesia:add_table_copy(caps_features, node(), disc_copies),
+    mnesia:add_table_copy(caps_features, node(), disc_only_copies),
+    MaxSize = gen_mod:get_opt(cache_size, Opts, 1000),
+    LifeTime = gen_mod:get_opt(cache_life_time, Opts, timer:hours(24)),
+    cache_tab:new(caps_features, [{max_size, MaxSize}, {life_time, LifeTime}]),
     HostB = list_to_binary(Host),
     ejabberd_hooks:add(user_send_packet, HostB, ?MODULE, user_send_packet, 75),
     ejabberd_hooks:add(c2s_stream_features, HostB,
@@ -245,8 +256,9 @@ code_change(_OldVsn, State, _Extra) ->
 feature_request(Host, From, Caps, [SubNode | Tail] = SubNodes) ->
     Node = Caps#caps.node,
     BinaryNode = node_to_binary(Node, SubNode),
-    case mnesia:dirty_read({caps_features, BinaryNode}) of
-	[] ->
+    case cache_tab:lookup(caps_features, BinaryNode,
+			  caps_read_fun(BinaryNode)) of
+	error ->
 	    IQ = #iq{type = get,
 		     iq_ns = ?NS_JABBER_CLIENT,
 		     payload = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
@@ -272,8 +284,10 @@ feature_response(#iq{type = result, payload = El},
 			[]
 		end, El#xmlel.children),
     BinaryNode = node_to_binary(Caps#caps.node, SubNode),
-    mnesia:dirty_write(#caps_features{node_pair = BinaryNode,
-			    features = features_to_binary(Features)}),
+    BinaryFeatures = features_to_binary(Features),
+    cache_tab:insert(
+      caps_features, BinaryNode, BinaryFeatures,
+      caps_write_fun(BinaryNode, BinaryFeatures)),
     feature_request(Host, From, Caps, SubNodes);
 feature_response(timeout, _Host, _From, _Caps, _SubNodes) ->
     ok;
@@ -281,7 +295,8 @@ feature_response(_IQResult, Host, From, Caps, [SubNode | SubNodes]) ->
     %% We got type=error or invalid type=result stanza, so
     %% we cache empty feature not to probe the client permanently
     BinaryNode = node_to_binary(Caps#caps.node, SubNode),
-    mnesia:dirty_write(#caps_features{node_pair = BinaryNode}),
+    cache_tab:insert(caps_features, BinaryNode, [],
+		     caps_write_fun(BinaryNode, [])),
     feature_request(Host, From, Caps, SubNodes).
 
 node_to_binary(Node, SubNode) ->
@@ -289,6 +304,23 @@ node_to_binary(Node, SubNode) ->
 
 features_to_binary(L) -> [list_to_binary(I) || I <- L].
 binary_to_features(L) -> [binary_to_list(I) || I <- L].
+
+caps_read_fun(Node) ->
+    fun() ->
+	    case mnesia:dirty_read({caps_features, Node}) of
+		[#caps_features{features = Features}] ->
+		    {ok, Features};
+		_ ->
+		    error
+	    end
+    end.
+
+caps_write_fun(Node, Features) ->
+    fun() ->
+	    mnesia:dirty_write(
+	      #caps_features{node_pair = Node,
+			     features = Features})
+    end.
 
 make_my_disco_hash(Host) ->
     JID = exmpp_jid:make(Host),
