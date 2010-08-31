@@ -4,6 +4,25 @@
 %%% Description : Caching key-value table
 %%%
 %%% Created : 29 Aug 2010 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License
+%%% along with this program; if not, write to the Free Software
+%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+%%% 02111-1307 USA
+%%%
 %%%-------------------------------------------------------------------
 -module(cache_tab).
 
@@ -13,7 +32,9 @@
 
 %% API
 -export([start_link/4, new/2, delete/1, delete/3, lookup/3,
-	 insert/4, info/2, tab2list/1, setopts/2, all/0, test/0]).
+	 insert/4, info/2, tab2list/1, setopts/2,
+	 dirty_lookup/3, dirty_insert/4, dirty_delete/3,
+	 all/0, test/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -83,15 +104,43 @@ delete(Tab) ->
 
 delete(Tab, Key, F) ->
     ?GEN_SERVER:call(
-      get_proc_by_hash(Tab, Key), {delete, Key, F}, ?CALL_TIMEOUT).
+       get_proc_by_hash(Tab, Key), {delete, Key, F}, ?CALL_TIMEOUT).
+
+dirty_delete(Tab, Key, F) ->
+    F(),
+    ?GEN_SERVER:call(
+       get_proc_by_hash(Tab, Key), {dirty_delete, Key}, ?CALL_TIMEOUT).
 
 lookup(Tab, Key, F) ->
     ?GEN_SERVER:call(
-      get_proc_by_hash(Tab, Key), {lookup, Key, F}, ?CALL_TIMEOUT).
+       get_proc_by_hash(Tab, Key), {lookup, Key, F}, ?CALL_TIMEOUT).
+
+dirty_lookup(Tab, Key, F) ->
+    Proc = get_proc_by_hash(Tab, Key),
+    case ?GEN_SERVER:call(Proc, {dirty_lookup, Key}, ?CALL_TIMEOUT) of
+	{ok, '$cached_mismatch'} ->
+	    error;
+	{ok, Val} ->
+	    {ok, Val};
+	_ ->
+	    case F() of
+		{ok, Val} ->
+		    ?GEN_SERVER:call(
+		       Proc, {dirty_insert, Key, Val}, ?CALL_TIMEOUT),
+		    {ok, Val};
+		_ ->
+		    error
+	    end
+    end.
 
 insert(Tab, Key, Val, F) ->
     ?GEN_SERVER:call(
-      get_proc_by_hash(Tab, Key), {insert, Key, Val, F}, ?CALL_TIMEOUT).
+       get_proc_by_hash(Tab, Key), {insert, Key, Val, F}, ?CALL_TIMEOUT).
+
+dirty_insert(Tab, Key, Val, F) ->
+    F(),
+    ?GEN_SERVER:call(
+       get_proc_by_hash(Tab, Key), {dirty_insert, Key, Val}, ?CALL_TIMEOUT).
 
 info(Tab, Info) ->
     case lists:map(
@@ -168,6 +217,22 @@ handle_call({lookup, Key, F}, _From, #state{tab = T} = State) ->
 		    end
 	    end
     end;
+handle_call({dirty_lookup, Key}, _From, #state{tab = T} = State) ->
+    case treap:lookup(Key, T) of
+	{ok, _Prio, Val} ->
+	    Hits = State#state.hits,
+	    NewState = treap_update(Key, Val, State#state{hits = Hits + 1}),
+	    {reply, {ok, Val}, NewState};
+	_ ->
+	    Miss = State#state.miss,
+	    NewState = State#state{miss = Miss + 1},
+	    if State#state.cache_missed ->
+		    {reply, error,
+		     treap_insert(Key, '$cached_mismatch', NewState)};
+	       true ->
+		    {reply, error, NewState}
+	    end
+    end;
 handle_call({insert, Key, Val, F}, _From, #state{tab = T} = State) ->
     case treap:lookup(Key, T) of
 	{ok, _Prio, Val} ->
@@ -187,6 +252,15 @@ handle_call({insert, Key, Val, F}, _From, #state{tab = T} = State) ->
 		    {reply, ok, NewState}
 	    end
     end;
+handle_call({dirty_insert, Key, Val}, _From, #state{tab = T} = State) ->
+    case treap:lookup(Key, T) of
+	{ok, _Prio, Val} ->
+	    {reply, ok, State};
+	{ok, _, _} ->
+	    {reply, ok, treap_update(Key, Val, State)};
+	_ ->
+	    {reply, ok, treap_insert(Key, Val, State)}
+    end;
 handle_call({delete, Key, F}, _From, State) ->
     NewState = treap_delete(Key, State),
     case catch F() of
@@ -195,6 +269,9 @@ handle_call({delete, Key, F}, _From, State) ->
 	_ ->
 	    ok
     end,
+    {reply, ok, NewState};
+handle_call({dirty_delete, Key}, _From, State) ->
+    NewState = treap_delete(Key, State),
     {reply, ok, NewState};
 handle_call({info, Info}, _From, State) ->
     Res = case Info of
@@ -412,23 +489,30 @@ print_error(Operation, Args, Reason, State) ->
 %%--------------------------------------------------------------------
 %%% Tests
 %%--------------------------------------------------------------------
+-define(lookup, dirty_lookup).
+-define(delete, dirty_delete).
+-define(insert, dirty_insert).
+%% -define(lookup, lookup).
+%% -define(delete, delete).
+%% -define(insert, insert).
+
 test() ->
     LifeTime = 2,
     ok = new(test_tbl, [{life_time, LifeTime}, {max_size, unlimited}]),
     check([]),
-    ok = insert(test_tbl, "key", "value", fun() -> ok end),
+    ok = ?insert(test_tbl, "key", "value", fun() -> ok end),
     check([{"key", "value"}]),
-    {ok, "value"} = lookup(test_tbl, "key", fun() -> error end),
+    {ok, "value"} = ?lookup(test_tbl, "key", fun() -> error end),
     check([{"key", "value"}]),
     io:format("** waiting for ~p seconds to check if cleaner works fine...~n",
 	      [LifeTime+1]),
     timer:sleep(timer:seconds(LifeTime+1)),
-    ok = insert(test_tbl, "key1", "value1", fun() -> ok end),
+    ok = ?insert(test_tbl, "key1", "value1", fun() -> ok end),
     check([{"key1", "value1"}]),
-    ok = delete(test_tbl, "key1", fun() -> ok end),
-    {ok, "value"} = lookup(test_tbl, "key", fun() -> {ok, "value"} end),
+    ok = ?delete(test_tbl, "key1", fun() -> ok end),
+    {ok, "value"} = ?lookup(test_tbl, "key", fun() -> {ok, "value"} end),
     check([{"key", "value"}]),
-    ok = delete(test_tbl, "key", fun() -> ok end),
+    ok = ?delete(test_tbl, "key", fun() -> ok end),
     check([]),
     %% io:format("** testing buggy callbacks...~n"),
     %% delete(test_tbl, "key", fun() -> erlang:error(badarg) end),
@@ -443,36 +527,35 @@ test1() ->
     ok = new(test_tbl, [{max_size, MaxSize}, {shrink_size, 1}, {warn, false}]),
     lists:foreach(
       fun(N) ->
-	      ok = insert(test_tbl, N, N, fun() -> ok end)
+	      ok = ?insert(test_tbl, N, N, fun() -> ok end)
       end, lists:seq(1, MaxSize*get_proc_num())),
     {ok, MaxSize} = info(test_tbl, size),
     delete(test_tbl),
-    success.
-%%     io:format("** testing speed, this may take a while...~n"),
-%%     test2(1000),
-%%     test2(10000),
-%%     test2(100000),
-%%     test2(1000000).
+    io:format("** testing speed, this may take a while...~n"),
+    test2(1000),
+    test2(10000),
+    test2(100000),
+    test2(1000000).
 
-%% test2(Iter) ->
-%%     ok = new(test_tbl, [{max_size, unlimited}, {life_time, unlimited}]),
-%%     L = lists:seq(1, Iter),
-%%     T1 = now(),
-%%     lists:foreach(
-%%       fun(N) ->
-%% 	      ok = insert(test_tbl, N, N, fun() -> ok end)
-%%       end, L),
-%%     io:format("** average insert (size = ~p): ~p usec~n",
-%% 	      [Iter, round(timer:now_diff(now(), T1)/Iter)]),
-%%     T2 = now(),
-%%     lists:foreach(
-%%       fun(N) ->
-%% 	      {ok, N} = lookup(test_tbl, N, fun() -> ok end)
-%%       end, L),
-%%     io:format("** average lookup (size = ~p): ~p usec~n",
-%% 	      [Iter, round(timer:now_diff(now(), T2)/Iter)]),
-%%     {ok, Iter} = info(test_tbl, size),
-%%     delete(test_tbl).
+test2(Iter) ->
+    ok = new(test_tbl, [{max_size, unlimited}, {life_time, unlimited}]),
+    L = lists:seq(1, Iter),
+    T1 = now(),
+    lists:foreach(
+      fun(N) ->
+	      ok = ?insert(test_tbl, N, N, fun() -> ok end)
+      end, L),
+    io:format("** average insert (size = ~p): ~p usec~n",
+	      [Iter, round(timer:now_diff(now(), T1)/Iter)]),
+    T2 = now(),
+    lists:foreach(
+      fun(N) ->
+	      {ok, N} = ?lookup(test_tbl, N, fun() -> ok end)
+      end, L),
+    io:format("** average lookup (size = ~p): ~p usec~n",
+	      [Iter, round(timer:now_diff(now(), T2)/Iter)]),
+    {ok, Iter} = info(test_tbl, size),
+    delete(test_tbl).
 
 check(List) ->
     Size = length(List),
