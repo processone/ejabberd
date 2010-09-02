@@ -43,6 +43,7 @@
 -define(FEEDBACK_RECONNECT_TIMEOUT, 30000).
 -define(MAX_QUEUE_SIZE, 1000).
 -define(CACHE_SIZE, 4096).
+-define(MAX_PAYLOAD_SIZE, 255).
 
 -define(NS_P1_PUSH, "p1:push").
 
@@ -335,30 +336,7 @@ handle_message(From, To, Packet, State) ->
     Receiver =
 	xml:get_path_s(Packet,
 		       [{elem, "push"}, {elem, "to"}, cdata]),
-    Msg2 = json_escape(Msg),
-    AlertPayload =
-	case Msg2 of
-	    "" -> "";
-	    _ -> "\"alert\":\"" ++ Msg2 ++ "\""
-	end,
-    BadgePayload =
-	case catch list_to_integer(Badge) of
-	    B when is_integer(B) ->
-		"\"badge\":" ++ Badge;
-	    _ -> ""
-	end,
-    SoundPayload = 
-    	case Sound of
-	    "true" ->
-		SoundFile = State#state.soundfile,
-		"\"sound\":\"" ++ json_escape(SoundFile) ++ "\"";
-	    _ -> ""
-	end,
-    Payloads = lists:filter(fun(S) -> S /= "" end,
-			    [AlertPayload, BadgePayload, SoundPayload]),
-    Payload =
-	"{\"aps\":{" ++ join(Payloads, ",") ++ "},"
-	"\"from\":\"" ++ json_escape(Sender) ++ "\"}",
+    Payload = make_payload(State, Msg, Badge, Sound, Sender),
     ID =
 	case catch erlang:list_to_integer(DeviceID, 16) of
 	    ID1 when is_integer(ID1) ->
@@ -405,6 +383,56 @@ handle_message(From, To, Packet, State) ->
 	    end;
 	true ->
 	    State
+    end.
+
+make_payload(State, Msg, Badge, Sound, Sender) ->
+    Msg2 = json_escape(Msg),
+    AlertPayload =
+	case Msg2 of
+	    "" -> "";
+	    _ -> "\"alert\":\"" ++ Msg2 ++ "\""
+	end,
+    BadgePayload =
+	case catch list_to_integer(Badge) of
+	    B when is_integer(B) ->
+		"\"badge\":" ++ Badge;
+	    _ -> ""
+	end,
+    SoundPayload = 
+    	case Sound of
+	    "true" ->
+		SoundFile = State#state.soundfile,
+		"\"sound\":\"" ++ json_escape(SoundFile) ++ "\"";
+	    _ -> ""
+	end,
+    Payloads = lists:filter(fun(S) -> S /= "" end,
+			    [AlertPayload, BadgePayload, SoundPayload]),
+    Payload =
+	"{\"aps\":{" ++ join(Payloads, ",") ++ "},"
+	"\"from\":\"" ++ json_escape(Sender) ++ "\"}",
+    PayloadLen = length(Payload),
+    if
+	PayloadLen > ?MAX_PAYLOAD_SIZE ->
+	    Delta = PayloadLen - ?MAX_PAYLOAD_SIZE,
+	    MsgLen = length(Msg),
+	    if
+		MsgLen /= 0 ->
+		    CutMsg =
+			if
+			    MsgLen > Delta ->
+				lists:sublist(Msg, MsgLen - Delta);
+			    true ->
+				""
+			end,
+		    make_payload(State, CutMsg, Badge, Sound, Sender);
+		true ->
+		    Payload2 =
+			"{\"aps\":{" ++ join(Payloads, ",") ++ "}}",
+		    %PayloadLen2 = length(Payload2),
+		    Payload2
+	    end;
+	true ->
+	    Payload
     end.
 
 connect(#state{socket = undefined} = State) ->
