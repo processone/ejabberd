@@ -46,7 +46,7 @@
 
 -export([process/2]).
  
-process([Domain, _Node|_Rest]=LocalPath,  #request{auth = Auth} = Request)->
+process([_Domain, _Node|_Rest]=LocalPath,  #request{auth = Auth} = Request)->
 	case get_auth(Auth) of
 	%%make sure user belongs to pubsub domain
 	{User, Domain} ->
@@ -75,6 +75,41 @@ get_auth(Auth) ->
          _ ->
             unauthorized
     end.
+
+out(Args, 'GET', [Domain,Node]=Uri, _User) -> 
+    case mod_pubsub:tree_action(get_host(Uri), get_node, [get_host(Uri),get_collection(Uri)]) of
+	{error, _} -> error(404);
+	_ ->
+		Items = lists:sort(fun(X,Y)->
+				{DateX, _} = X#pubsub_item.modification,
+				{DateY, _} = Y#pubsub_item.modification,
+				DateX > DateY
+			end, mod_pubsub:get_items(
+					get_host(Uri),
+					get_collection(Uri))),
+		case Items of
+			[] -> ?DEBUG("Items : ~p ~n", [collection(get_collection(Uri), 
+				collection_uri(Args,Domain,Node), calendar:now_to_universal_time(erlang:now()), "", [])]),
+				{200, [{"Content-Type", "application/atom+xml"}],
+					collection(get_collection(Uri), 
+						collection_uri(Args,Domain,Node), calendar:now_to_universal_time(erlang:now()), "", [])};
+			_ ->
+				#pubsub_item{modification = {LastDate, _JID}} = LastItem = hd(Items),
+				Etag =generate_etag(LastItem),
+				IfNoneMatch=proplists:get_value('If-None-Match', Args#request.headers),
+				if IfNoneMatch==Etag
+					-> 
+						success(304);
+					true ->
+						XMLEntries= [item_to_entry(Args,Domain, Node,Entry)||Entry <-  Items], 
+						{200, [{"Content-Type", "application/atom+xml"},{"Etag", Etag}], 
+						"<?xml version=\"1.0\" encoding=\"utf-8\"?>" 
+						++	xml:element_to_string(
+						collection(get_collection(Uri), collection_uri(Args,Domain,Node),
+							calendar:now_to_universal_time(LastDate), "", XMLEntries))}
+			end
+		end
+	end;
 
 out(Args, 'POST', [Domain, Node]=Uri, {User, _Domain}) -> 
 	Slug =  uniqid(false),
@@ -119,18 +154,19 @@ out(_,Method,Uri,undefined) ->
   error(403).
 
 get_item(Uri, Failure, Success)->
-  case mod_pubsub:get_item(get_host(Uri), get_collection(Uri), tl(get_member(Uri))) of
+  ?DEBUG(" mod_pubsub:get_item(~p, ~p,~p)", [get_host(Uri), get_collection(Uri), get_member(Uri)]),
+  case mod_pubsub:get_item(get_host(Uri), get_collection(Uri), get_member(Uri)) of
     {error, Reason} ->
 			Failure(Reason);
-		{result, Item} ->
+		#pubsub_item{}=Item  ->
 			Success(Item)
   end.
 		
-generate_etag(#pubsub_item{modification={_JID, {_, D2, D3}}})->integer_to_list(D3+D2).
+generate_etag(#pubsub_item{modification={{_, D2, D3}, _JID}})->integer_to_list(D3+D2).
 get_host([Domain|_Rest])-> "pubsub."++Domain.
 get_collection([_Domain, Node|_Rest])->list_to_binary(Node).
-get_member([Domain, _Node, Member]=Uri)-> 
-	[get_host(Uri), get_collection(Uri), Member].
+get_member([_Domain, _Node, Member])-> 
+	Member.
 
 collection_uri(R, Domain, Node) ->
   base_uri(R, Domain)++ "/" ++Node.
@@ -146,7 +182,7 @@ item_to_entry(Args,Domain, Node,#pubsub_item{itemid={Id,_}, payload=Entry}=Item)
 	item_to_entry(Args, Domain, Node, Id, R, Item).
 
 item_to_entry(Args,Domain, Node,  Id,{xmlelement, "entry", Attrs, SubEl}, 
-		#pubsub_item{modification={JID, Secs} }) ->	
+		#pubsub_item{modification={ Secs, JID} }) ->	
 	Date = calendar:now_to_local_time(Secs),
 	{_User, Domain, _}=jlib:jid_tolower(JID),
 	SubEl2=[{xmlelement, "app:edited", [], [{xmlcdata, w3cdtf(Date)}]},
@@ -163,7 +199,16 @@ item_to_entry(_Args,_Domain, Node,  _Id, {xmlelement, Name, Attrs, Subels}=Eleme
 		false -> {xmlelement, Name, [{"xmlns", Node}|Attrs], Subels}
 	end.
 
-	
+collection(Title, Link, Updated, _Id, Entries)->
+	{xmlelement, "feed", [{"xmlns", "http://www.w3.org/2005/Atom"}, 
+						 {"xmlns:app", "http://www.w3.org/2007/app"}], [
+		{xmlelement, "title", [],[{xmlcdata, Title}]},
+		{xmlelement, "updated", [],[{xmlcdata, w3cdtf(Updated)}]},
+		{xmlelement, "link", [{"href", Link}], []},
+		{xmlelement, "title", [],[{xmlcdata, Title}]} | 
+		Entries
+	]}.
+
 %% simple output functions
 error(404)->
 	{404, [], "Not Found"};
