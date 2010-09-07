@@ -44,19 +44,17 @@
 
 -include("mod_pubsub/pubsub.hrl").
 
--export([process/2]).
+-export([process/2]).  
  
-process([_Domain, _Node|_Rest]=LocalPath,  #request{auth = Auth} = Request)->
+process(LocalPath,  #request{auth = Auth} = Request)->
+  ?DEBUG("LocalPath = ~p", [LocalPath]),
 	case get_auth(Auth) of
 	%%make sure user belongs to pubsub domain
 	{User, Domain} ->
 	    out(Request, Request#request.method, LocalPath,{User, Domain});
 	_ ->
-	    out(Request, Request#request.method, LocalPath,undefined)
-    end;
-    
-process(_LocalPath, _Request)->
-	 error(404).  
+	    out(Request, Request#request.method, LocalPath, undefined)
+    end.  
 	
 get_auth(Auth) ->
     case Auth of
@@ -128,13 +126,42 @@ out(Args, 'POST', [Domain, Node]=Uri, {User, _Domain}) ->
 				?DEBUG("Publishing to ~p~n",[entry_uri(Args, Domain, Node,Slug)]),
 			{201, [{"location", entry_uri(Args, Domain,Node,Slug)}], Payload};
 		{error, Error} ->
-			error(400, Error)
+			error(Error)
 		end;
 		
+out(Args, 'GET', [Domain]=Uri, From)->
+  Host = get_host(Uri),
+  ?DEBUG("Host = ~p", [Host]),
+  case mod_pubsub:tree_action(Host, get_subnodes, [Host, <<>>, From ]) of
+		[] -> 
+		  ?DEBUG("Error getting URI ~p : ~p",[Uri, From]),
+		  error(404);
+		Collections ->
+			{200, [{"Content-Type", "application/atomsvc+xml"}], "<?xml version=\"1.0\" encoding=\"utf-8\"?>" 
+				++	xml:element_to_string(service(Args,Domain,  Collections))}
+	end;
+	
+out(Args, 'POST', [Domain]=Uri, {User, UDomain})->
+  Host = get_host(Uri),
+  case mod_pubsub:create_node(Host, Domain, <<>>, {User, UDomain}, "default") of
+    {error, Error} ->
+      ?ERROR_MSG("Error create node via HTTP : ~p",[Error]),
+      
+      error(Error); % will probably detail more
+    {result, [Node]} ->
+      {200, [{"Content-Type", "application/xml"}], "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        ++ xml:element_to_string(Node)}
+  end;
+      
+out(Args, 'POST', [Domain]=Uri, undefined) ->
+  error(403);
+  
+
+	
 out(Args, 'GET', [Domain, Node, _Item]=URI, _) -> 
   Failure = fun(Error)->
     ?DEBUG("Error getting URI ~p : ~p",[URI, Error]),
-    error(404)
+    error(Error)
   end,
 	Success = fun(Item)->
 		Etag =generate_etag(Item),
@@ -169,10 +196,10 @@ get_member([_Domain, _Node, Member])->
 	Member.
 
 collection_uri(R, Domain, Node) ->
-  base_uri(R, Domain)++ "/" ++Node.
+  base_uri(R, Domain)++ "/" ++ b2l(Node).
  
 entry_uri(R,Domain, Node, Id)->
-	collection_uri(R,Domain, Node)++"/"++Id.
+	collection_uri(R,Domain, Node)++"/"++b2l(Id).
 	
 base_uri(#request{host=Host, port=Port}, Domain)->
 	"http://"++Host++":"++i2l(Port)++"/pshb/" ++ Domain.
@@ -208,8 +235,25 @@ collection(Title, Link, Updated, _Id, Entries)->
 		{xmlelement, "title", [],[{xmlcdata, Title}]} | 
 		Entries
 	]}.
+	
+service(Args, Domain,Collections)->
+	{xmlelement, "service", [{"xmlns", "http://www.w3.org/2007/app"},
+							{"xmlns:atom", "http://www.w3.org/2005/Atom"},
+							{"xmlns:app", "http://www.w3.org/2007/app"}],[
+		{xmlelement, "workspace", [],[
+			{xmlelement, "atom:title", [],[{xmlcdata,"Pubsub node Feed for " ++Domain}]} | 
+			lists:map(fun(#pubsub_node{nodeid={_Server, Id}, type=_Type})->
+				{xmlelement, "collection", [{"href", collection_uri(Args,Domain, Id)}], [
+					{xmlelement, "atom:title", [], [{xmlcdata, Id}]}
+				]}
+				end, Collections)
+		]}
+	]}.
 
 %% simple output functions
+error({xmlelement, "error", Attrs, _}=Error) ->
+  Value = list_to_integer(xml:get_attr_s("code", Attrs)),
+  {Value, [{"Content-type", "application/xml"}], xml:element_to_string(Error)};
 error(404)->
 	{404, [], "Not Found"};
 error(403)->
@@ -221,7 +265,6 @@ error(401)->
 error(Code)->
 	{Code, [], ""}.
 error(Code, Error) when is_list(Error) -> {Code, [], Error};
-error(Code, {xmlelement, "error",_,_}=Error) -> {Code, [], xml:element_to_string(Error)};
 error(Code, _Error) -> {Code, [], "Bad request"}.
 success(200)->
 	{200, [], ""};
@@ -296,3 +339,6 @@ add_zero(L) when is_list(L)    -> L.
 
 i2l(I) when is_integer(I) -> integer_to_list(I);
 i2l(L) when is_list(L)    -> L.
+
+b2l(B) when is_binary(B) -> binary_to_list(B);
+b2l(L) when is_list(L) -> L.
