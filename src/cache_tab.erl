@@ -335,11 +335,11 @@ do_setopts(#state{procs_num = N} = State, Opts) ->
     LifeTime = case {proplists:get_value(life_time, Opts),
 		     State#state.life_time} of
 		   {LT, _} when is_integer(LT), LT > 0 ->
-		       LT*1000;
+		       LT*1000*1000;
 		   {unlimited, _} ->
 		       unlimited;
 		   {_, undefined} ->
-		       ?LIFETIME*1000;
+		       ?LIFETIME*1000*1000;
 		   {_, LT} ->
 		       LT
 	       end,
