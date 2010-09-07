@@ -70,6 +70,12 @@ User ability to post is based on node configuration.
 	
 User ability to post is based on node configuration.
 
+### Deleting an item ###
+
+	$ curl -u jid:password -i -X DELETE http://post:port/pshb/domain/node/itemid 
+	
+User ability to post is based on node configuration.
+
 
 ### Creating a new node ###
 

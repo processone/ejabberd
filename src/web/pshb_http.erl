@@ -116,6 +116,14 @@ out(Args, 'POST', [_D, _Node]=Uri, {_User, _Domain} = UD) ->
 out(Args, 'PUT', [_D, _Node, Slug]=Uri, {_User, _Domain} = UD) ->
   publish_item(Args, Uri, Slug, UD);
 	
+out(Args, 'DELETE', [_D, Node, Id]= Uri, {User, UDomain}) ->
+  Host = get_host(Uri),
+  Jid = jlib:make_jid({User, UDomain, ""}),
+  case mod_pubsub:delete_item(get_host(Uri), list_to_binary(Node), Jid, Id) of
+    {error, Error} -> error(Error);
+    {result, Res} -> success(200)
+  end;
+
 
 out(Args, 'PUT', [_Domain, Node]= Uri, {User, UDomain}) ->
   Host = get_host(Uri),
