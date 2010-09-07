@@ -13,13 +13,16 @@ Also, in the ejabberd_http handler configuration, add the identified line.
 		 {request_handlers, [{["pshb"], pshb_http}]} % this should be added
 	]}
 
+It will automatically detect the version of mod_pubsub (odbc or mnesia) and call the appropriate module.
+
 ## Important notice ##
 
 In the current version of the code, some security checks are not done :
 
- * read operations can all be done without authentication
-
  * node creation uses the default `all` access_createnode acl, not checking for the actual configuration.
+
+ * most read operations are successfully executed without authentication. HOWEVER listing items can only be done when the node access_model is "open". In all other cases, the service returns 403. A finer grained authentication will be implemented.
+
 
 ## Usage example with cURL ##
 

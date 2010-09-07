@@ -46,10 +46,10 @@
 
 -export([process/2]).  
  
-process(LocalPath,  #request{auth = Auth} = Request)->
-  ?DEBUG("LocalPath = ~p", [LocalPath]),
+process([Domain | _Rest] = LocalPath,  #request{auth = Auth} = Request)->
   UD =  get_auth(Auth),
-  case   out(Request, Request#request.method, LocalPath,UD) of
+  Module = backend(Domain),
+  case   out(Module, Request, Request#request.method, LocalPath,UD) of
     {'EXIT', Error} ->
       ?ERROR_MSG("Error while processing ~p : ~n~p", [LocalPath, Error]),
       error(500);
@@ -75,57 +75,66 @@ get_auth(Auth) ->
             undefined
     end.
 
-out(Args, 'GET', [Domain,Node]=Uri, _User) -> 
-    case mod_pubsub:tree_action(get_host(Uri), get_node, [get_host(Uri),get_collection(Uri)]) of
-	{error, Error} -> error(Error);
-	_ ->
-		Items = lists:sort(fun(X,Y)->
-				{DateX, _} = X#pubsub_item.modification,
-				{DateY, _} = Y#pubsub_item.modification,
-				DateX > DateY
-			end, mod_pubsub:get_items(
-					get_host(Uri),
-					get_collection(Uri))),
-		case Items of
-			[] -> ?DEBUG("Items : ~p ~n", [collection(get_collection(Uri), 
-				collection_uri(Args,Domain,Node), calendar:now_to_universal_time(erlang:now()), "", [])]),
-				{200, [{"Content-Type", "application/atom+xml"}],
-					collection(get_collection(Uri), 
-						collection_uri(Args,Domain,Node), calendar:now_to_universal_time(erlang:now()), "", [])};
-			_ ->
-				#pubsub_item{modification = {LastDate, _JID}} = LastItem = hd(Items),
-				Etag =generate_etag(LastItem),
-				IfNoneMatch=proplists:get_value('If-None-Match', Args#request.headers),
-				if IfNoneMatch==Etag
-					-> 
-						success(304);
-					true ->
-						XMLEntries= [item_to_entry(Args,Domain, Node,Entry)||Entry <-  Items], 
-						{200, [{"Content-Type", "application/atom+xml"},{"Etag", Etag}], 
-						"<?xml version=\"1.0\" encoding=\"utf-8\"?>" 
-						++	xml:element_to_string(
-						collection(get_collection(Uri), collection_uri(Args,Domain,Node),
-							calendar:now_to_universal_time(LastDate), "", XMLEntries))}
-			end
-		end
+out(Module, Args, 'GET', [Domain,Node]=Uri, _User) -> 
+  case Module:tree_action(get_host(Uri), get_node, [get_host(Uri),get_collection(Uri)]) of
+	{error, Error} -> 
+	    error(Error);
+	#pubsub_node{options = Options}->
+	  AccessModel = lists:keyfind(access_model, 1, Options),
+	  ?INFO_MSG("Uri ~p requested. access_model is ~p. HTTP access denied unless access_model =:= open",[Uri, AccessModel]),
+	  case AccessModel of
+	    {access_model, open} ->
+		    Items = lists:sort(fun(X,Y)->
+		    		{DateX, _} = X#pubsub_item.modification,
+		    		{DateY, _} = Y#pubsub_item.modification,
+		    		DateX > DateY
+		    	end, Module:get_items(
+		    			get_host(Uri),
+		    			get_collection(Uri))),
+		    case Items of
+		    	[] -> ?DEBUG("Items : ~p ~n", [collection(get_collection(Uri), 
+		    		collection_uri(Args,Domain,Node), calendar:now_to_universal_time(erlang:now()), "", [])]),
+		    		{200, [{"Content-Type", "application/atom+xml"}],
+		    			collection(get_collection(Uri), 
+		    				collection_uri(Args,Domain,Node), calendar:now_to_universal_time(erlang:now()), "", [])};
+		    	_ ->
+		    		#pubsub_item{modification = {LastDate, _JID}} = LastItem = hd(Items),
+		    		Etag =generate_etag(LastItem),
+		    		IfNoneMatch=proplists:get_value('If-None-Match', Args#request.headers),
+		    		if IfNoneMatch==Etag
+		    			-> 
+		    				success(304);
+		    			true ->
+		    				XMLEntries= [item_to_entry(Args,Domain, Node,Entry)||Entry <-  Items], 
+		    				{200, [{"Content-Type", "application/atom+xml"},{"Etag", Etag}], 
+		    				"<?xml version=\"1.0\" encoding=\"utf-8\"?>" 
+		    				++	xml:element_to_string(
+		    				collection(get_collection(Uri), collection_uri(Args,Domain,Node),
+		    					calendar:now_to_universal_time(LastDate), "", XMLEntries))}
+		    	    end
+		    	  end;
+		  	{access_model, Access} ->
+		  	  ?INFO_MSG("Uri ~p requested. access_model is ~p. HTTP access denied unless access_model =:= open",
+		  	    [Uri, Access]),
+		  	  error(?ERR_FORBIDDEN)
+		  end
 	end;
 
-out(Args, 'POST', [_D, _Node]=Uri, {_User, _Domain} = UD) ->
-  publish_item(Args, Uri, uniqid(false), UD);
+out(Module, Args, 'POST', [_D, _Node]=Uri, {_User, _Domain} = UD) ->
+  publish_item(Module, Args, Uri, uniqid(false), UD);
 
-out(Args, 'PUT', [_D, _Node, Slug]=Uri, {_User, _Domain} = UD) ->
-  publish_item(Args, Uri, Slug, UD);
+out(Module, Args, 'PUT', [_D, _Node, Slug]=Uri, {_User, _Domain} = UD) ->
+  publish_item(Module, Args, Uri, Slug, UD);
 	
-out(Args, 'DELETE', [_D, Node, Id]= Uri, {User, UDomain}) ->
-  Host = get_host(Uri),
+out(Module, _Args, 'DELETE', [_D, Node, Id]= Uri, {User, UDomain}) ->
   Jid = jlib:make_jid({User, UDomain, ""}),
-  case mod_pubsub:delete_item(get_host(Uri), list_to_binary(Node), Jid, Id) of
+  case Module:delete_item(get_host(Uri), list_to_binary(Node), Jid, Id) of
     {error, Error} -> error(Error);
-    {result, Res} -> success(200)
+    {result, _Res} -> success(200)
   end;
 
 
-out(Args, 'PUT', [_Domain, Node]= Uri, {User, UDomain}) ->
+out(Module, Args, 'PUT', [_Domain, Node]= Uri, {User, UDomain}) ->
   Host = get_host(Uri),
   Jid = jlib:make_jid({User, UDomain, ""}),
   Payload = xml_stream:parse_element(Args#request.data),
@@ -133,15 +142,15 @@ out(Args, 'PUT', [_Domain, Node]= Uri, {User, UDomain}) ->
     false ->[];
     {xmlelement, _, _, SubEls}->SubEls
   end,
-  case mod_pubsub:set_configure(Host, list_to_binary(Node), Jid, ConfigureElement, Args#request.lang) of
+  case Module:set_configure(Host, list_to_binary(Node), Jid, ConfigureElement, Args#request.lang) of
     {result, []} -> success(200);
     {error, Error} -> error(Error)
   end;
   
-out(Args, 'GET', [Domain]=Uri, From)->
+out(Module, Args, 'GET', [Domain]=Uri, From)->
   Host = get_host(Uri),
   ?DEBUG("Host = ~p", [Host]),
-  case mod_pubsub:tree_action(Host, get_subnodes, [Host, <<>>, From ]) of
+  case Module:tree_action(Host, get_subnodes, [Host, <<>>, From ]) of
 		[] -> 
 		  ?DEBUG("Error getting URI ~p : ~p",[Uri, From]),
 		  error(?ERR_ITEM_NOT_FOUND);
@@ -150,7 +159,7 @@ out(Args, 'GET', [Domain]=Uri, From)->
 				++	xml:element_to_string(service(Args,Domain,  Collections))}
 	end;
 	
-out(Args, 'POST', [Domain]=Uri, {User, UDomain})->
+out(Module, Args, 'POST', [Domain]=Uri, {User, UDomain})->
   Host = get_host(Uri),
   Payload = xml_stream:parse_element(Args#request.data),
   {Node, Type} = case xml:get_subtag(Payload, "create") of
@@ -164,7 +173,7 @@ out(Args, 'POST', [Domain]=Uri, {User, UDomain})->
     {xmlelement, _, _, SubEls}->SubEls
   end,
   Jid = jlib:make_jid({User, UDomain, ""}),
-  case mod_pubsub:create_node(Host, Domain, Node, Jid, Type, all, ConfigureElement) of
+  case Module:create_node(Host, Domain, Node, Jid, Type, all, ConfigureElement) of
     {error, Error} ->
       ?ERROR_MSG("Error create node via HTTP : ~p",[Error]),
       error(Error); % will probably detail more
@@ -173,11 +182,11 @@ out(Args, 'POST', [Domain]=Uri, {User, UDomain})->
         ++ xml:element_to_string(Result)}
   end;
 
-out(_Args, 'DELETE', [_Domain, Node] = Uri, {User, UDomain})->
+out(Module,_Args, 'DELETE', [_Domain, Node] = Uri, {User, UDomain})->
   Host = get_host(Uri),
   Jid = jlib:make_jid({User, UDomain, ""}),
   BinNode = list_to_binary(Node),
-  case mod_pubsub:delete_node(Host, BinNode, Jid) of
+  case Module:delete_node(Host, BinNode, Jid) of
     {error, Error} -> error(Error);
     {result, []} ->
       {200, [],[]}
@@ -185,7 +194,7 @@ out(_Args, 'DELETE', [_Domain, Node] = Uri, {User, UDomain})->
   
 
 	
-out(Args, 'GET', [Domain, Node, _Item]=URI, _) -> 
+out(Module, Args, 'GET', [Domain, Node, _Item]=URI, _) -> 
   Failure = fun(Error)->
     ?DEBUG("Error getting URI ~p : ~p",[URI, Error]),
     error(Error)
@@ -201,29 +210,29 @@ out(Args, 'GET', [Domain, Node, _Item]=URI, _) ->
 				++ xml:element_to_string(item_to_entry(Args, Domain,Node, Item))}
 		end
 	end,
-	get_item(URI, Failure, Success);
+	get_item(Module, URI, Failure, Success);
 	
-out(_,Method,Uri,undefined) ->
+out(_Module,_,Method,Uri,undefined) ->
   ?DEBUG("Error, ~p  not authorized for ~p : ~p",[ Method,Uri]),
   error(?ERR_FORBIDDEN).
 
-get_item(Uri, Failure, Success)->
-  ?DEBUG(" mod_pubsub:get_item(~p, ~p,~p)", [get_host(Uri), get_collection(Uri), get_member(Uri)]),
-  case mod_pubsub:get_item(get_host(Uri), get_collection(Uri), get_member(Uri)) of
+get_item(Module, Uri, Failure, Success)->
+  ?DEBUG(" Module:get_item(~p, ~p,~p)", [get_host(Uri), get_collection(Uri), get_member(Uri)]),
+  case Module:get_item(get_host(Uri), get_collection(Uri), get_member(Uri)) of
     {error, Reason} ->
 			Failure(Reason);
 		#pubsub_item{}=Item  ->
 			Success(Item)
   end.
   
-publish_item(Args, [Domain, Node | _R] = Uri, Slug,  {User, Domain})->
+publish_item(Module, Args, [Domain, Node | _R] = Uri, Slug,  {User, Domain})->
   
 	Payload = xml_stream:parse_element(Args#request.data),
 	[FilteredPayload]=xml:remove_cdata([Payload]),
 
 	%FilteredPayload2 = case xml:get_subtag(FilteredPayload, "app:edited") ->
 	%	{xmlelement, Name, Attrs, [{cdata, }]}
-	case mod_pubsub:publish_item(get_host(Uri),
+	case Module:publish_item(get_host(Uri),
 								 Domain,
 								 get_collection(Uri),
 								 jlib:make_jid(User,Domain, ""), 
@@ -315,6 +324,13 @@ success(200)->
 	{200, [], ""};
 success(Code)->
 	{Code, [], ""}.
+
+backend(Domain)->
+  Modules = gen_mod:loaded_modules(Domain),
+  case lists:member(mod_pubsub_odbc, Modules) of
+    true -> mod_pubsub_odbc;
+    _ -> mod_pubsub
+  end.
 
 
 % Code below is taken (with some modifications) from the yaws webserver, which
