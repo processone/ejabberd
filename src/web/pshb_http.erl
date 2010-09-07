@@ -48,35 +48,36 @@
  
 process(LocalPath,  #request{auth = Auth} = Request)->
   ?DEBUG("LocalPath = ~p", [LocalPath]),
-	case get_auth(Auth) of
-	%%make sure user belongs to pubsub domain
-	{User, Domain} ->
-	    out(Request, Request#request.method, LocalPath,{User, Domain});
-	_ ->
-	    out(Request, Request#request.method, LocalPath, undefined)
-    end.  
+  UD =  get_auth(Auth),
+  case catch  out(Request, Request#request.method, LocalPath,UD) of
+    {'EXIT', Error} ->
+      ?ERROR_MSG("Error while processing ~p : ~n~p", [LocalPath, Error]),
+      error(500);
+    Result ->
+      Result
+  end.
 	
 get_auth(Auth) ->
     case Auth of
         {SJID, P} ->
             case jlib:string_to_jid(SJID) of
                 error ->
-                    unauthorized;
+                    undefined;
                 #jid{user = U, server = S} ->
                     case ejabberd_auth:check_password(U, S, P) of
                         true ->
                             {U, S};
                         false ->
-                            unauthorized
+                            undefined
                     end
             end;
          _ ->
-            unauthorized
+            undefined
     end.
 
 out(Args, 'GET', [Domain,Node]=Uri, _User) -> 
     case mod_pubsub:tree_action(get_host(Uri), get_node, [get_host(Uri),get_collection(Uri)]) of
-	{error, _} -> error(404);
+	{error, Error} -> error(Error);
 	_ ->
 		Items = lists:sort(fun(X,Y)->
 				{DateX, _} = X#pubsub_item.modification,
@@ -135,7 +136,7 @@ out(Args, 'GET', [Domain]=Uri, From)->
   case mod_pubsub:tree_action(Host, get_subnodes, [Host, <<>>, From ]) of
 		[] -> 
 		  ?DEBUG("Error getting URI ~p : ~p",[Uri, From]),
-		  error(404);
+		  error(?ERR_ITEM_NOT_FOUND);
 		Collections ->
 			{200, [{"Content-Type", "application/atomsvc+xml"}], "<?xml version=\"1.0\" encoding=\"utf-8\"?>" 
 				++	xml:element_to_string(service(Args,Domain,  Collections))}
@@ -143,18 +144,37 @@ out(Args, 'GET', [Domain]=Uri, From)->
 	
 out(Args, 'POST', [Domain]=Uri, {User, UDomain})->
   Host = get_host(Uri),
-  case mod_pubsub:create_node(Host, Domain, <<>>, {User, UDomain}, "default") of
+  Payload = xml_stream:parse_element(Args#request.data),
+  {Node, Type} = case xml:get_subtag(Payload, "create") of
+    false -> {<<>>,"flat"};
+    E -> 
+      {list_to_binary(get_tag_attr_or_default("node", E,"")),
+       get_tag_attr_or_default("type", E,"flat")}
+      
+  end,
+  ConfigureElement = case xml:get_subtag(Payload, "configure") of
+    false ->[];
+    {xmlelement, _, _, SubEls}->SubEls
+  end,
+  Jid = jlib:make_jid({User, UDomain, ""}),
+  case mod_pubsub:create_node(Host, Domain, Node, Jid, Type, all, ConfigureElement) of
     {error, Error} ->
       ?ERROR_MSG("Error create node via HTTP : ~p",[Error]),
-      
       error(Error); % will probably detail more
-    {result, [Node]} ->
+    {result, [Result]} ->
       {200, [{"Content-Type", "application/xml"}], "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-        ++ xml:element_to_string(Node)}
+        ++ xml:element_to_string(Result)}
   end;
-      
-out(Args, 'POST', [Domain]=Uri, undefined) ->
-  error(403);
+
+out(Args, 'DELETE', [Domain, Node] = Uri, {User, UDomain})->
+  Host = get_host(Uri),
+  Jid = jlib:make_jid({User, UDomain, ""}),
+  BinNode = list_to_binary(Node),
+  case mod_pubsub:delete_node(Host, BinNode, Jid) of
+    {error, Error} -> error(Error);
+    {result, []} ->
+      {200, [],[]}
+  end;
   
 
 	
@@ -178,7 +198,7 @@ out(Args, 'GET', [Domain, Node, _Item]=URI, _) ->
 	
 out(_,Method,Uri,undefined) ->
   ?DEBUG("Error, ~p  not authorized for ~p : ~p",[ Method,Uri]),
-  error(403).
+  error(?ERR_FORBIDDEN).
 
 get_item(Uri, Failure, Success)->
   ?DEBUG(" mod_pubsub:get_item(~p, ~p,~p)", [get_host(Uri), get_collection(Uri), get_member(Uri)]),
@@ -342,3 +362,9 @@ i2l(L) when is_list(L)    -> L.
 
 b2l(B) when is_binary(B) -> binary_to_list(B);
 b2l(L) when is_list(L) -> L.
+
+get_tag_attr_or_default(AttrName, Element, Default)->
+  case xml:get_tag_attr_s(AttrName, Element) of
+    "" -> Default;
+    Val -> Val
+  end.

@@ -78,6 +78,7 @@
 
 %% exports for console debug manual use
 -export([create_node/5,
+   create_node/7,
 	 delete_node/3,
 	 subscribe_node/5,
 	 unsubscribe_node/5,
