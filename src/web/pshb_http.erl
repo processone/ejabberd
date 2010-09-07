@@ -49,7 +49,7 @@
 process(LocalPath,  #request{auth = Auth} = Request)->
   ?DEBUG("LocalPath = ~p", [LocalPath]),
   UD =  get_auth(Auth),
-  case catch  out(Request, Request#request.method, LocalPath,UD) of
+  case   out(Request, Request#request.method, LocalPath,UD) of
     {'EXIT', Error} ->
       ?ERROR_MSG("Error while processing ~p : ~n~p", [LocalPath, Error]),
       error(500);
@@ -110,26 +110,26 @@ out(Args, 'GET', [Domain,Node]=Uri, _User) ->
 		end
 	end;
 
-out(Args, 'POST', [Domain, Node]=Uri, {User, _Domain}) -> 
-	Slug =  uniqid(false),
-	Payload = xml_stream:parse_element(Args#request.data),
-	[FilteredPayload]=xml:remove_cdata([Payload]),
+out(Args, 'POST', [_D, _Node]=Uri, {_User, _Domain} = UD) ->
+  publish_item(Args, Uri, uniqid(false), UD);
 
-	%FilteredPayload2 = case xml:get_subtag(FilteredPayload, "app:edited") ->
-	%	{xmlelement, Name, Attrs, [{cdata, }]}
-	case mod_pubsub:publish_item(get_host(Uri),
-								 Domain,
-								 get_collection(Uri),
-								 jlib:make_jid(User,Domain, ""), 
-								 Slug, 
-								 [FilteredPayload]) of
-		{result, [_]} ->
-				?DEBUG("Publishing to ~p~n",[entry_uri(Args, Domain, Node,Slug)]),
-			{201, [{"location", entry_uri(Args, Domain,Node,Slug)}], Payload};
-		{error, Error} ->
-			error(Error)
-		end;
-		
+out(Args, 'PUT', [_D, _Node, Slug]=Uri, {_User, _Domain} = UD) ->
+  publish_item(Args, Uri, Slug, UD);
+	
+
+out(Args, 'PUT', [_Domain, Node]= Uri, {User, UDomain}) ->
+  Host = get_host(Uri),
+  Jid = jlib:make_jid({User, UDomain, ""}),
+  Payload = xml_stream:parse_element(Args#request.data),
+	ConfigureElement = case xml:get_subtag(Payload, "configure") of
+    false ->[];
+    {xmlelement, _, _, SubEls}->SubEls
+  end,
+  case mod_pubsub:set_configure(Host, list_to_binary(Node), Jid, ConfigureElement, Args#request.lang) of
+    {result, []} -> success(200);
+    {error, Error} -> error(Error)
+  end;
+  
 out(Args, 'GET', [Domain]=Uri, From)->
   Host = get_host(Uri),
   ?DEBUG("Host = ~p", [Host]),
@@ -150,7 +150,6 @@ out(Args, 'POST', [Domain]=Uri, {User, UDomain})->
     E -> 
       {list_to_binary(get_tag_attr_or_default("node", E,"")),
        get_tag_attr_or_default("type", E,"flat")}
-      
   end,
   ConfigureElement = case xml:get_subtag(Payload, "configure") of
     false ->[];
@@ -166,7 +165,7 @@ out(Args, 'POST', [Domain]=Uri, {User, UDomain})->
         ++ xml:element_to_string(Result)}
   end;
 
-out(Args, 'DELETE', [Domain, Node] = Uri, {User, UDomain})->
+out(_Args, 'DELETE', [_Domain, Node] = Uri, {User, UDomain})->
   Host = get_host(Uri),
   Jid = jlib:make_jid({User, UDomain, ""}),
   BinNode = list_to_binary(Node),
@@ -208,6 +207,26 @@ get_item(Uri, Failure, Success)->
 		#pubsub_item{}=Item  ->
 			Success(Item)
   end.
+  
+publish_item(Args, [Domain, Node | _R] = Uri, Slug,  {User, Domain})->
+  
+	Payload = xml_stream:parse_element(Args#request.data),
+	[FilteredPayload]=xml:remove_cdata([Payload]),
+
+	%FilteredPayload2 = case xml:get_subtag(FilteredPayload, "app:edited") ->
+	%	{xmlelement, Name, Attrs, [{cdata, }]}
+	case mod_pubsub:publish_item(get_host(Uri),
+								 Domain,
+								 get_collection(Uri),
+								 jlib:make_jid(User,Domain, ""), 
+								 Slug, 
+								 [FilteredPayload]) of
+		{result, [_]} ->
+				?DEBUG("Publishing to ~p~n",[entry_uri(Args, Domain, Node,Slug)]),
+			{201, [{"location", entry_uri(Args, Domain,Node,Slug)}], Payload};
+		{error, Error} ->
+			error(Error)
+		end.
 		
 generate_etag(#pubsub_item{modification={{_, D2, D3}, _JID}})->integer_to_list(D3+D2).
 get_host([Domain|_Rest])-> "pubsub."++Domain.
@@ -284,8 +303,6 @@ error(401)->
 	{401, [{"WWW-Authenticate", "basic realm=\"ejabberd\""}],"Unauthorized"};
 error(Code)->
 	{Code, [], ""}.
-error(Code, Error) when is_list(Error) -> {Code, [], Error};
-error(Code, _Error) -> {Code, [], "Bad request"}.
 success(200)->
 	{200, [], ""};
 success(Code)->

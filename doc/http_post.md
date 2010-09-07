@@ -23,22 +23,50 @@ In the current version of the code, some security checks are not done :
 
 ## Usage example with cURL ##
 
+### Errors ###
+
+HTTP status codes are used as intended. Additionally, the XMPP error stanza can also be set in the body :
+
+	$ curl -i -X POST -u cstar@localhost:encore -d @createnode.xml http://localhost:5280/pshb/localhost
+	HTTP/1.1 409 Conflict
+	Content-Type: text/html; charset=utf-8
+	Content-Length: 95
+	Content-type: application/xml
+	
+	<error code='409' type='cancel'><conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error>
+
+or
+
+	$ curl -i -X DELETE -u cstar@localhost:encore http://localhost:5280/pshb/localhost/princely_musings
+	HTTP/1.1 404 Not Found
+	Content-Type: text/html; charset=utf-8
+	Content-Length: 101
+	Content-type: application/xml
+
+	<error code='404' type='cancel'><item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error>
+
 ### Getting the service document ###
 
 No authentication necessary. All nodes are listed.
 
- curl -i http://host:port/pshb/domain/
+ $ curl -i http://host:port/pshb/domain/
 	
 ### Getting items from a node ###
 
 No authentication done, and all nodes are accessible.
 
- curl -i http://host:port/pshb/domain/node/
+ $ curl -i http://host:port/pshb/domain/node/
 
 
 ### Posting a new item ###
 
-	curl -u jid:password -i -X POST -d @entry.atom http://post:port/pshb/domain/node 
+	$ curl -u jid:password -i -X POST -d @entry.atom http://post:port/pshb/domain/node 
+	
+User ability to post is based on node configuration.
+
+### Editing a new item ###
+
+	$ curl -u jid:password -i -X POST -d @entry.atom http://post:port/pshb/domain/node/itemid 
 	
 User ability to post is based on node configuration.
 
@@ -47,11 +75,11 @@ User ability to post is based on node configuration.
 
 An instant node can be created if server configuration allows:
 
-	curl -X POST -u cstar@localhost:encore -d "" http://localhost:5280/pshb/localhost
+	$ curl -X POST -u cstar@localhost:encore -d "" http://localhost:5280/pshb/localhost
 	
 or
 
-	curl -X POST -u cstar@localhost:encore -d "<pubsub><create node='princely_musings'/></pubsub>" http://localhost:5280/pshb/localhost
+	$ curl -X POST -u cstar@localhost:encore -d "<pubsub><create node='princely_musings'/></pubsub>" http://localhost:5280/pshb/localhost
 	
 configure element (as per XEP-60) can be passed in the pubsub body.
 	
@@ -67,13 +95,43 @@ configure element (as per XEP-60) can be passed in the pubsub body.
 	</x>
 	</pubsub>
 	
-	$ curl -X POST -u cstar@localhost:encore -d @createnode.xml http://localhost:5280/pshb/localhost
+	$ curl -i -X POST -u cstar@localhost:encore -d @createnode.xml http://localhost:5280/pshb/localhost
+	HTTP/1.1 200 OK
+	Content-Length: 130
+	Content-Type: application/xml
+
+	<?xml version="1.0" encoding="utf-8"?><pubsub xmlns='http://jabber.org/protocol/pubsub'><create node='princely_musings'/></pubsub>
+	
+### Editing a node configuration ###
+
+	$ cat editnode.xml
+	<pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
+	    <configure node='princely_musings'>
+	      <x xmlns='jabber:x:data' type='submit'>
+	        <field var='FORM_TYPE' type='hidden'>
+	          <value>http://jabber.org/protocol/pubsub#node_config</value>
+	        </field>
+	        <field var='pubsub#title'><value>Princely Musings (Atom)</value></field>
+	        <field var='pubsub#deliver_notifications'><value>1</value></field>
+	        <field var='pubsub#deliver_payloads'><value>1</value></field>
+	        <field var='pubsub#persist_items'><value>1</value></field>
+	        <field var='pubsub#max_items'><value>10</value></field>
+	        <field var='pubsub#item_expire'><value>604800</value></field>
+	        <field var='pubsub#access_model'><value>roster</value></field>
+				</x>
+			</configure>
+		</pubsub>
+		
+
+	$ curl -i -X PUT -u cstar@localhost:encore -d @createnode.xml http://localhost:5280/pshb/localhost/princely_musings
+	
+	
 	
 ### Deleting a node ###
 
 A node is deleted by: 
 
-	curl -X DELETE -u cstar@localhost:encore http://localhost:5280/pshb/localhost/princely_musings
+	$ curl -X DELETE -u cstar@localhost:encore http://localhost:5280/pshb/localhost/princely_musings
 
 
 
