@@ -68,6 +68,42 @@
 -include("mod_privacy.hrl").
 -include("ejabberd_c2s.hrl").
 
+-define(SETS, gb_sets).
+-define(DICT, dict).
+
+%% pres_a contains all the presence available send (either through roster mechanism or directed).
+%% Directed presence unavailable remove user from pres_a.
+-record(state, {socket,
+		sockmod,
+		socket_monitor,
+		xml_socket,
+		streamid,
+		sasl_state,
+		access,
+		shaper,
+		zlib = false,
+		tls = false,
+		tls_required = false,
+		tls_enabled = false,
+		tls_options = [],
+		authenticated = false,
+		jid,
+		user = "", server = ?MYNAME, resource = "",
+		sid,
+		pres_t = ?SETS:new(),
+		pres_f = ?SETS:new(),
+		pres_a = ?SETS:new(),
+		pres_i = ?SETS:new(),
+		pres_last, pres_pri,
+		pres_timestamp,
+		pres_invis = false,
+		privacy_list = #userlist{},
+		conn = unknown,
+		auth_module = unknown,
+		ip,
+		lang,
+		flash_connection = false}).
+
 %-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
@@ -96,6 +132,13 @@
 	"<stream:stream xmlns='jabber:client' "
 	"xmlns:stream='http://etherx.jabber.org/streams' "
 	"id='~s' from='~s'~s~s>"
+       ).
+
+-define(FLASH_STREAM_HEADER,
+       "<?xml version='1.0'?>"
+       "<flash:stream xmlns='jabber:client' "
+       "xmlns:stream='http://etherx.jabber.org/streams' "
+       "id='~s' from='~s'~s~s>"
        ).
 
 -define(STREAM_TRAILER, "</stream:stream>").
@@ -252,15 +295,25 @@ get_subscribed(FsmRef) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
+wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     DefaultLang = case ?MYLANG of
 		      undefined ->
 			  "en";
 		      DL ->
 			  DL
 		  end,
-    case xml:get_attr_s("xmlns:stream", Attrs) of
-	?NS_STREAM ->
+
+    case {xml:get_attr_s("xmlns:stream", Attrs),
+	  xml:get_attr_s("xmlns:flash", Attrs),
+	  ?FLASH_HACK,
+	  StateData#state.flash_connection} of
+	{_, ?NS_FLASH_STREAM, true, false} ->
+	    %% Flash client connecting - attention!
+	    %% Some of them don't provide an xmlns:stream attribute -
+	    %% compensate for that.
+	    wait_for_stream({xmlstreamstart, Name, [{"xmlns:stream", ?NS_STREAM}|Attrs]},
+			    StateData#state{flash_connection = true});
+	{?NS_STREAM, _, _, _} ->
 	    Server = jlib:nameprep(xml:get_attr_s("to", Attrs)),
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
@@ -403,11 +456,17 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		    send_trailer(StateData),
 		    {stop, normal, StateData}
 	    end;
-	_ ->
-	    send_header(StateData, ?MYNAME, "", DefaultLang),
-	    send_element(StateData, ?INVALID_NS_ERR),
-	    send_trailer(StateData),
-	    {stop, normal, StateData}
+        _ ->
+	    case Name of
+		"policy-file-request" ->
+		    send_text(StateData, flash_policy_string()),
+		    {stop, normal, StateData};
+		_ ->
+		    send_header(StateData, ?MYNAME, "", DefaultLang),
+		    send_element(StateData, ?INVALID_NS_ERR),
+		    send_trailer(StateData),
+		    {stop, normal, StateData}
+	    end
     end;
 
 wait_for_stream(timeout, StateData) ->
@@ -1509,14 +1568,30 @@ change_shaper(StateData, JID) ->
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
-    ?DEBUG("Send XML on stream = ~p", [Text]),
-    (StateData#state.sockmod):send(StateData#state.socket, Text).
+    ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
+    Text1 =
+	if ?FLASH_HACK and StateData#state.flash_connection ->
+		%% send a null byte after each stanza to Flash clients
+		[Text, 0];
+	   true ->
+		Text
+	end,
+    (StateData#state.sockmod):send(StateData#state.socket, Text1).
 
 send_element(StateData, El) when StateData#state.xml_socket ->
     (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_binary(El)).
+
+send_header(StateData,Server, Version, Lang)
+  when StateData#state.flash_connection ->
+    Header = io_lib:format(?FLASH_STREAM_HEADER,
+			   [StateData#state.streamid,
+			    Server,
+			    Version,
+			    Lang]),
+    send_text(StateData, Header);
 
 send_header(StateData, Server, Version, Lang)
   when StateData#state.xml_socket ->
@@ -2364,3 +2439,28 @@ pack_string(String, Pack) ->
         none ->
             {String, gb_trees:insert(String, String, Pack)}
     end.
+
+
+%% @spec () -> string()
+%% @doc Build the content of a Flash policy file.
+%% It specifies as domain "*".
+%% It specifies as to-ports the ports that serve ejabberd_c2s.
+flash_policy_string() ->
+    Listen = ejabberd_config:get_local_option(listen),
+    ClientPortsDeep = ["," ++ integer_to_list(Port)
+		       || {{Port,_,_}, ejabberd_c2s, _Opts} <- Listen],
+    %% NOTE: The function string:join/2 was introduced in Erlang/OTP R12B-0
+    %% so it can't be used yet in ejabberd.
+    ToPortsString = case lists:flatten(ClientPortsDeep) of
+			[$, | Tail] -> Tail;
+			_ -> []
+		    end,
+
+    "<?xml version=\"1.0\"?>\n"
+	"<!DOCTYPE cross-domain-policy SYSTEM "
+        "\"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\n"
+	"<cross-domain-policy>\n"
+	"  <allow-access-from domain=\"*\" to-ports=\""
+	++ ToPortsString ++
+	"\"/>\n"
+	"</cross-domain-policy>\n\0".

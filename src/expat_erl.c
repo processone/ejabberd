@@ -138,6 +138,35 @@ static int expat_erl_control(ErlDrvData drv_data,
       case PARSE_COMMAND:
       case PARSE_FINAL_COMMAND:
 	 ei_x_new_with_version(&event_buf);
+#ifdef ENABLE_FLASH_HACK
+        /* Flash hack - Flash clients send a null byte after the stanza.  Remove that... */
+        {
+           int i;
+           int found_null = 0;
+
+           /* Maybe the Flash client sent many stanzas in one packet.
+              If so, there is a null byte between every stanza. */
+           for (i = 0; i < len; i++) {
+              if (buf[i] == '\0') {
+                 buf[i] = ' ';
+                 found_null = 1;
+              }
+           }
+
+           /* And also remove the closing slash if this is a
+              flash:stream element.  Assume that flash:stream is the
+              last element in the packet, and entirely contained in
+              it.  This requires that a null byte has been found. */
+           if (found_null && strstr(buf, "<flash:stream"))
+              /* buf[len - 1] is an erased null byte.
+                 buf[len - 2] is >
+                 buf[len - 3] is / (maybe)
+              */
+              if (buf[len - 3] == '/')
+                 buf[len - 3] = ' ';
+        }
+#endif /* ENABLE_FLASH_HACK */
+
 	 res = XML_Parse(d->parser, buf, len, command == PARSE_FINAL_COMMAND);
 
 	 if(!res)
