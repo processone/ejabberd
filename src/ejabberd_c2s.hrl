@@ -59,4 +59,5 @@
 		ip,
 		fsm_limit_opts,
 		lang,
-		debug=false}).
+		debug=false,
+		flash_connection = false}).
