@@ -1,6 +1,7 @@
 Makefile
 archives
 .gitignore
+*.so
 contrib/extract_translations/extract_translations.beam
 doc/contributed_modules.tex
 doc/features.aux
