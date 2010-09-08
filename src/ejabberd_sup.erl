@@ -177,6 +177,13 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_cluster]},
+    CacheTabSupervisor =
+	{cache_tab_sup,
+	 {cache_tab_sup, start_link, []},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [cache_tab_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
 	   Cluster,
@@ -196,6 +203,7 @@ init([]) ->
 	   IQSupervisor,
 	   STUNSupervisor,
 	   FrontendSocketSupervisor,
+	   CacheTabSupervisor,
 	   Listener]}}.
 
 

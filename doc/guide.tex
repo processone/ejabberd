@@ -2560,8 +2560,8 @@ You can see which database backend each module needs by looking at the suffix:
 \end{itemize}
 
 If you want to,
-it is possible to use a relational database to store pieces of
-information. You can do this by changing the module name to a name with an
+it is possible to use a relational database to store the tables created by some ejabberd modules.
+You can do this by changing the module name to a name with an
 \term{\_odbc} suffix in \ejabberd{} config file. You can use a relational
 database for the following data:
 
@@ -2574,6 +2574,7 @@ database for the following data:
 \item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
 \item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
+\item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
 \end{itemize}
 
 You can find more
