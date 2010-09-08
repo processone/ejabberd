@@ -81,7 +81,6 @@ out(Module, Args, 'GET', [Domain,Node]=Uri, _User) ->
 	    error(Error);
 	#pubsub_node{options = Options}->
 	  AccessModel = lists:keyfind(access_model, 1, Options),
-	  ?INFO_MSG("Uri ~p requested. access_model is ~p. HTTP access denied unless access_model =:= open",[Uri, AccessModel]),
 	  case AccessModel of
 	    {access_model, open} ->
 		    Items = lists:sort(fun(X,Y)->
@@ -107,7 +106,7 @@ out(Module, Args, 'GET', [Domain,Node]=Uri, _User) ->
 		    			true ->
 		    				XMLEntries= [item_to_entry(Args,Domain, Node,Entry)||Entry <-  Items], 
 		    				{200, [{"Content-Type", "application/atom+xml"},{"Etag", Etag}], 
-		    				"<?xml version=\"1.0\" encoding=\"utf-8\"?>" 
+		    				"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" 
 		    				++	xml:element_to_string(
 		    				collection(get_collection(Uri), collection_uri(Args,Domain,Node),
 		    					calendar:now_to_universal_time(LastDate), "", XMLEntries))}
@@ -269,9 +268,11 @@ item_to_entry(Args,Domain, Node,  Id,{xmlelement, "entry", Attrs, SubEl},
 	Date = calendar:now_to_local_time(Secs),
 	{_User, Domain, _}=jlib:jid_tolower(JID),
 	SubEl2=[{xmlelement, "app:edited", [], [{xmlcdata, w3cdtf(Date)}]},
+	    {xmlelement, "updated", [],[{xmlcdata, w3cdtf(Date)}]},
+	    {xmlelement, "author", [],[{xmlelement, "name", [], [{xmlcdata, list_to_binary(jlib:jid_to_string(JID))}]}]},
 			{xmlelement, "link",[{"rel", "edit"}, 
-			{"href", entry_uri(Args,Domain,Node, Id)}],[] }, 
-			{xmlelement, "id", [],[{xmlcdata, Id}]}
+			                     {"href", entry_uri(Args,Domain,Node, Id)}],[] }, 
+			{xmlelement, "id", [],[{xmlcdata, entry_uri(Args, Domain, Node, Id)}]}
 			| SubEl],
 	{xmlelement, "entry", [{"xmlns:app","http://www.w3.org/2007/app"}|Attrs], SubEl2};
    
@@ -286,8 +287,10 @@ collection(Title, Link, Updated, _Id, Entries)->
 	{xmlelement, "feed", [{"xmlns", "http://www.w3.org/2005/Atom"}, 
 						 {"xmlns:app", "http://www.w3.org/2007/app"}], [
 		{xmlelement, "title", [],[{xmlcdata, Title}]},
+		{xmlelement, "generator", [],[{xmlcdata, <<"ejabberd">>}]},
 		{xmlelement, "updated", [],[{xmlcdata, w3cdtf(Updated)}]},
-		{xmlelement, "link", [{"href", Link}], []},
+		{xmlelement, "link", [{"href", Link}, {"rel", "self"}], []},
+		{xmlelement, "id", [], [{xmlcdata, list_to_binary(Link)}]},
 		{xmlelement, "title", [],[{xmlcdata, Title}]} | 
 		Entries
 	]}.
