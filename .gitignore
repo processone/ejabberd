@@ -1,5 +1,7 @@
 Makefile
 archives
+build/
+*.dSYM/
 .gitignore
 contrib/extract_translations/extract_translations.beam
 doc/contributed_modules.tex
@@ -29,3 +31,5 @@ src/eldap/ELDAPv3.beam
 src/eldap/ELDAPv3.erl
 src/eldap/ELDAPv3.hrl
 src/epam
+src/ejabberdctl.example
+src/ejabberd.init
