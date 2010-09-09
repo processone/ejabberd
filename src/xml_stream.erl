@@ -76,6 +76,9 @@ process_data(CallbackPid, Stack, Data) ->
 	{?XML_CDATA, CData} ->
 	    case Stack of
 		[El] ->
+		    catch gen_fsm:send_all_state_event(
+			    CallbackPid,
+			    {xmlstreamcdata, CData}),
 		    [El];
 		%% Merge CDATA nodes if they are contiguous
 		%% This does not change the semantic: the split in

@@ -32,16 +32,15 @@
 -export([count_offline_messages/2]).
 
 -export([start/2,
-	 loop/2,
+	 init/2,
 	 stop/1,
 	 store_packet/3,
 	 pop_offline_messages/3,
-	 get_sm_features/5,
 	 remove_user/2,
-	 get_queue_length/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
-	 webadmin_user_parse_query/5]).
+	 webadmin_user_parse_query/5,
+	 count_offline_messages/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -53,9 +52,6 @@
 -define(PROCNAME, ejabberd_offline).
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
-%% default value for the maximum number of user messages
--define(MAX_USER_MESSAGES, infinity).
-
 start(Host, Opts) ->
     ejabberd_hooks:add(offline_message_hook, Host,
 		       ?MODULE, store_packet, 50),
@@ -65,27 +61,30 @@ start(Host, Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(disco_sm_features, Host,
-		       ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:add(disco_local_features, Host,
-		       ?MODULE, get_sm_features, 50),
     ejabberd_hooks:add(webadmin_page_host, Host,
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, Host,
 		       ?MODULE, webadmin_user, 50),
     ejabberd_hooks:add(webadmin_user_parse_query, Host,
                        ?MODULE, webadmin_user_parse_query, 50),
-    AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, max_user_offline_messages),
+    ejabberd_hooks:add(count_offline_messages, Host,
+                       ?MODULE, count_offline_messages, 50),
+    MaxOfflineMsgs = gen_mod:get_opt(user_max_messages, Opts, infinity),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, loop, [Host, AccessMaxOfflineMsgs])).
+	     spawn(?MODULE, init, [Host, MaxOfflineMsgs])).
 
-loop(Host, AccessMaxOfflineMsgs) ->
+%% MaxOfflineMsgs is either infinity of integer > 0
+init(Host, infinity) ->
+    loop(Host, infinity);
+init(Host, MaxOfflineMsgs) 
+  when is_integer(MaxOfflineMsgs), MaxOfflineMsgs > 0 ->
+    loop(Host, MaxOfflineMsgs).
+
+loop(Host, MaxOfflineMsgs) ->
     receive
 	#offline_msg{user = User} = Msg ->
 	    Msgs = receive_all(User, [Msg]),
 	    Len = length(Msgs),
-	    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
-						   User, Host),
 
 	    %% Only count existing messages if needed:
 	    Count = if MaxOfflineMsgs =/= infinity ->
@@ -113,17 +112,11 @@ loop(Host, AccessMaxOfflineMsgs) ->
 						Els ++
 						[jlib:timestamp_to_xml(
 						   calendar:now_to_universal_time(
-					     M#offline_msg.timestamp),
-					   utc,
-					   jlib:make_jid("", Host, ""),
-					   "Offline Storage"),
-					 %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-					 jlib:timestamp_to_xml( 
-					   calendar:now_to_universal_time(
 						     M#offline_msg.timestamp))]},
 				      XML =
 					  ejabberd_odbc:escape(
-					    xml:element_to_binary(Packet)),
+					    lists:flatten(
+					      xml:element_to_string(Packet))),
 				      odbc_queries:add_spool_sql(Username, XML)
 			      end, Msgs),
 		    case catch odbc_queries:add_spool(Host, Query) of
@@ -135,18 +128,9 @@ loop(Host, AccessMaxOfflineMsgs) ->
 			    ok
 		    end
 	    end,
-	    loop(Host, AccessMaxOfflineMsgs);
+	    loop(Host, MaxOfflineMsgs);
 	_ ->
-	    loop(Host, AccessMaxOfflineMsgs)
-    end.
-
-%% Function copied from ejabberd_sm.erl:
-get_max_user_messages(AccessRule, LUser, Host) ->
-    case acl:match_rule(
-	   Host, AccessRule, jlib:make_jid(LUser, Host, "")) of
-	Max when is_integer(Max) -> Max;
-	infinity -> infinity;
-	_ -> ?MAX_USER_MESSAGES
+	    loop(Host, MaxOfflineMsgs)
     end.
 
 receive_all(Username, Msgs) ->
@@ -167,8 +151,6 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host,
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, Host,
@@ -179,27 +161,12 @@ stop(Host) ->
     exit(whereis(Proc), stop),
     ok.
 
-get_sm_features(Acc, _From, _To, "", _Lang) ->
-    Feats = case Acc of
-		{result, I} -> I;
-		_ -> []
-	    end,
-    {result, Feats ++ [?NS_FEATURE_MSGOFFLINE]};
-
-get_sm_features(_Acc, _From, _To, ?NS_FEATURE_MSGOFFLINE, _Lang) ->
-    %% override all lesser features...
-    {result, []};
-
-get_sm_features(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
-
-
 store_packet(From, To, Packet) ->
     Type = xml:get_tag_attr_s("type", Packet),
     if
 	(Type /= "error") and (Type /= "groupchat") and
 	(Type /= "headline") ->
-	    case check_event_chatstates(From, To, Packet) of
+	    case check_event(From, To, Packet) of
 		true ->
 		    #jid{luser = LUser} = To,
 		    TimeStamp = now(),
@@ -220,22 +187,12 @@ store_packet(From, To, Packet) ->
 	    ok
     end.
 
-%% Check if the packet has any content about XEP-0022 or XEP-0085
-check_event_chatstates(From, To, Packet) ->
+check_event(From, To, Packet) ->
     {xmlelement, Name, Attrs, Els} = Packet,
-    case find_x_event_chatstates(Els, {false, false, false}) of
-	%% There wasn't any x:event or chatstates subelements
-	{false, false, _} ->
+    case find_x_event(Els) of
+	false ->
 	    true;
-	%% There a chatstates subelement and other stuff, but no x:event
-	{false, CEl, true} when CEl /= false ->
-	    true;
-	%% There was only a subelement: a chatstates
-	{false, CEl, false} when CEl /= false ->
-	    %% Don't allow offline storage
-	    false;
-	%% There was an x:event element, and maybe also other stuff
-	{El, _, _} when El /= false ->
+	El ->
 	    case xml:get_subtag(El, "id") of
 		false ->
 		    case xml:get_subtag(El, "offline") of
@@ -257,25 +214,22 @@ check_event_chatstates(From, To, Packet) ->
 					    {xmlelement, "offline", [], []}]}]
 					}),
 			    true
-		    end;
+			end;
 		_ ->
 		    false
 	    end
     end.
 
-%% Check if the packet has subelements about XEP-0022, XEP-0085 or other
-find_x_event_chatstates([], Res) ->
-    Res;
-find_x_event_chatstates([{xmlcdata, _} | Els], Res) ->
-    find_x_event_chatstates(Els, Res);
-find_x_event_chatstates([El | Els], {A, B, C}) ->
+find_x_event([]) ->
+    false;
+find_x_event([{xmlcdata, _} | Els]) ->
+    find_x_event(Els);
+find_x_event([El | Els]) ->
     case xml:get_tag_attr_s("xmlns", El) of
 	?NS_EVENT ->
-	    find_x_event_chatstates(Els, {El, B, C});
-	?NS_CHATSTATES ->
-	    find_x_event_chatstates(Els, {A, El, C});
+	    El;
 	_ ->
-	    find_x_event_chatstates(Els, {A, B, true})
+	    find_x_event(Els)
     end.
 
 find_x_expire(_, []) ->
@@ -375,7 +329,7 @@ user_queue(User, Server, Query, Lang) ->
     Username = ejabberd_odbc:escape(LUser),
     US = {LUser, LServer},
     Res = user_queue_parse_query(Username, LServer, Query),
-    MsgsAll = case catch ejabberd_odbc:sql_query(
+    Msgs = case catch ejabberd_odbc:sql_query(
 			LServer,
 			["select username, xml from spool"
 			 "  where username='", Username, "'"
@@ -393,7 +347,6 @@ user_queue(User, Server, Query, Lang) ->
 	       _ ->
 		   []
 	   end,
-    Msgs = get_messages_subset(User, Server, MsgsAll),
     FMsgs =
 	lists:map(
 	  fun({xmlelement, _Name, _Attrs, _Els} = Msg) ->
@@ -480,8 +433,11 @@ user_queue_parse_query(Username, LServer, Query) ->
 us_to_list({User, Server}) ->
     jlib:jid_to_string({User, Server, ""}).
 
-get_queue_length(Username, LServer) ->
-    case catch ejabberd_odbc:sql_query(
+webadmin_user(Acc, User, Server, Lang) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    Username = ejabberd_odbc:escape(LUser),
+    QueueLen = case catch ejabberd_odbc:sql_query(
 			    LServer,
 			    ["select count(*) from spool"
 			     "  where username='", Username, "';"]) of
@@ -489,32 +445,7 @@ get_queue_length(Username, LServer) ->
 		       SCount;
 		   _ ->
 		       0
-	       end.
-
-get_messages_subset(User, Host, MsgsAll) ->
-    Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
-				    max_user_offline_messages),
-    MaxOfflineMsgs = case get_max_user_messages(Access, User, Host) of
-			 Number when is_integer(Number) -> Number;
-			 _ -> 100
-		     end,
-    Length = length(MsgsAll),
-    get_messages_subset2(MaxOfflineMsgs, Length, MsgsAll).
-
-get_messages_subset2(Max, Length, MsgsAll) when Length =< Max*2 ->
-    MsgsAll;
-get_messages_subset2(Max, Length, MsgsAll) ->
-    FirstN = Max,
-    {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
-    MsgsLastN = lists:nthtail(Length - FirstN - FirstN, Msgs2),
-    IntermediateMsg = {xmlelement, "...", [], []},
-    MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
-
-webadmin_user(Acc, User, Server, Lang) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    Username = ejabberd_odbc:escape(LUser),
-    QueueLen = get_queue_length(Username, LServer),
+	       end,
     FQueueLen = [?AC("queue/", QueueLen)],
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
 
@@ -546,3 +477,30 @@ count_offline_messages(LUser, LServer) ->
         _ ->
             0
     end.
+
+count_offline_messages(_Acc, User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    Num = case catch ejabberd_odbc:sql_query(
+		       LServer,
+		       ["select xml from spool"
+			"  where username='", LUser, "';"]) of
+	      {selected, ["xml"], Rs} ->
+		  lists:foldl(
+		    fun({XML}, Acc) ->
+			    case xml_stream:parse_element(XML) of
+				{error, _Reason} ->
+				    Acc;
+				El ->
+				    case xml:get_subtag(El, "body") of
+					false ->
+					    Acc;
+					_ ->
+					    Acc + 1
+				    end
+			    end
+		    end, 0, Rs);
+	      _ ->
+		  0
+	  end,
+    {stop, Num}.
