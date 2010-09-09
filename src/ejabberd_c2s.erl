@@ -1532,7 +1532,7 @@ change_shaper(StateData, JID) ->
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
 send_text(StateData, Text) ->
-    ?DEBUG("Send XML on stream = ~p", [lists:flatten(Text)]),
+    ?DEBUG("Send XML on stream = ~p", [Text]),
     Text1 =
 	if ?FLASH_HACK and StateData#state.flash_connection ->
 		%% send a null byte after each stanza to Flash clients
