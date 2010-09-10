@@ -378,17 +378,24 @@ process_request(#state{request_method = Method,
 	    %% ejabberd_web:process_get, now passes it to a local
 	    %% procedure (process) that handles dispatching based on
 	    %% URL path prefix.
-	    case process(RequestHandlers, Request) of
-		El when element(1, El) == xmlelement ->
-		    make_xhtml_output(State, 200, [], El);
-		{Status, Headers, El} when
-		element(1, El) == xmlelement ->
-		    make_xhtml_output(State, Status, Headers, El);
-		Output when is_list(Output) or is_binary(Output) ->
-		    make_text_output(State, 200, [], Output);
-		{Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
-		    make_text_output(State, Status, Headers, Output)
-	    end
+	    case ejabberd_websocket:check(Path, RequestHeaders) of
+	      {true, _VSN} ->
+	        ?DEBUG("It is a websocket version : ~p",[_VSN]);
+	        
+	      false ->
+	        ?DEBUG("It is not a websocket.",[]),
+	        case process(RequestHandlers, Request) of
+		        El when element(1, El) == xmlelement ->
+		          make_xhtml_output(State, 200, [], El);
+		        {Status, Headers, El} when
+		        element(1, El) == xmlelement ->
+		          make_xhtml_output(State, Status, Headers, El);
+		        Output when is_list(Output) or is_binary(Output) ->
+		          make_text_output(State, 200, [], Output);
+		        {Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
+		          make_text_output(State, Status, Headers, Output)
+	        end
+	      end
     end;
 
 process_request(#state{request_method = Method,

@@ -39,11 +39,11 @@
 -module (ejabberd_websocket).
 -author('ecestari@process-one.net').
 -compile(export_all).
-
+-include("ejabberd.hrl").
+-include("jlib.hrl").
 -include ("ejabberd_http.hrl").
--include ("ejabberd.hrl").
 
-check(Headers)->
+check(_Path, Headers)->
   ?DEBUG("testing for a websocket request path: ~p headers: ~p", [_Path, Headers]),
 	% set supported websocket protocols, order does matter
 	VsnSupported = [{'draft-hixie', 76}, {'draft-hixie', 68}],	
@@ -63,8 +63,8 @@ check_websocket({'draft-hixie', 76} = Vsn, Headers) ->
 	?DEBUG("testing for websocket protocol ~p", [Vsn]),
 	% set required headers
 	RequiredHeaders = [
-		{'Upgrade', "WebSocket"}, {'Connection', "Upgrade"}, {'Host', ignore}, {'Origin', ignore},
-		{'Sec-WebSocket-Key1', ignore}, {'Sec-WebSocket-Key2', ignore}
+		{'Upgrade', "WebSocket"}, {'Connection', "Upgrade"}, {'Host', ignore}, {"Origin", ignore},
+		{"Sec-WebSocket-Key1", ignore}, {"Sec-WebSocket-Key2", ignore}
 	],
 	% check for headers existance
 	case check_headers(Headers, RequiredHeaders) of
@@ -72,20 +72,20 @@ check_websocket({'draft-hixie', 76} = Vsn, Headers) ->
 			% return
 			{true, Vsn};
 		_RemainingHeaders ->
-			?LOG_DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
+			?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
 			false
 	end;
 check_websocket({'draft-hixie', 68} = Vsn, Headers) ->
 	?DEBUG("testing for websocket protocol ~p", [Vsn]),
 	% set required headers
 	RequiredHeaders = [
-		{'Upgrade', "WebSocket"}, {'Connection', "Upgrade"}, {'Host', ignore}, {'Origin', ignore}
+		{'Upgrade', "WebSocket"}, {'Connection', "Upgrade"}, {'Host', ignore}, {"Origin", ignore}
 	],
 	% check for headers existance
 	case check_headers(Headers, RequiredHeaders) of
 		true -> {true, Vsn};
 		_RemainingHeaders ->
-			?LOG_DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
+			?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
 			false
 	end;
 check_websocket(_Vsn, _Headers) -> false. % not implemented
@@ -97,7 +97,7 @@ check_headers(Headers, RequiredHeaders) ->
 		% see if the required Tag is in the Headers
 		case lists:keysearch(Tag, 1, Headers) of
 			false -> true; % header not found, keep in list
-			HVal ->
+			{value, {Tag, HVal}} ->
 				case Val of
 					ignore -> false; % ignore value -> ok, remove from list
 					HVal -> false;	 % expected val -> ok, remove from list
@@ -112,13 +112,13 @@ check_headers(Headers, RequiredHeaders) ->
 
 % Function: List
 % Description: Builds the server handshake response.
-handshake({'draft-hixie', 76}, #req{socket = Sock, socket_mode = SocketMode}, Headers, {Path, Origin, Host}) ->
+handshake({'draft-hixie', 76}, Sock,SocketMod, Headers, {Path, Origin, Host}) ->
 	% build data
-	Key1 = lists:keysearch('Sec-WebSocket-Key1',1, Headers),
-	Key2 = lists:keysearch('Sec-WebSocket-Key2',1, Headers),
+	Key1 = lists:keysearch("Sec-WebSocket-Key1",1, Headers),
+	Key2 = lists:keysearch("Sec-WebSocket-Key2",1, Headers),
 	% handshake needs body of the request, still need to read it [TODO: default recv timeout hard set, will be exported when WS protocol is final]
-	misultin_socket:setopts(Sock, [{packet, raw}, {active, false}], SocketMode),
-	Body = case misultin_socket:recv(Sock, 8, 30*1000, SocketMode) of
+	SocketMod:setopts(Sock, [{packet, raw}, {active, false}]),
+	Body = case SocketMod:recv(Sock, 8, 30*1000) of
 		{ok, Bin} -> Bin;
 		{error, timeout} ->
 			?WARNING_MSG("timeout in reading websocket body", []),
@@ -136,7 +136,7 @@ handshake({'draft-hixie', 76}, #req{socket = Sock, socket_mode = SocketMode}, He
 		"Sec-WebSocket-Location: ws://", lists:concat([Host, Path]), "\r\n\r\n",
 		build_challenge({'draft-hixie', 76}, {Key1, Key2, Body})
 	];
-handshake({'draft-hixie', 68}, _Req, _Headers, {Path, Origin, Host}) ->
+handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host}) ->
 	% prepare handhsake response
 	["HTTP/1.1 101 Web Socket Protocol Handshake\r\n",
 		"Upgrade: WebSocket\r\n",
