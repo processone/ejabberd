@@ -86,18 +86,19 @@ set_node(_NodeRecord) ->
 
 %% @spec (Host, Node, From) -> pubsubNode()
 %%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
+%%     Node = node()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Node record contains default values.</p>
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
 get_node(Host, Node) ->
-    #pubsub_node{nodeid = {Host, Node}, id = {Host, Node}, owners = [{undefined, list_to_binary(Host), undefined}]}.
+    %% TODO : to fix idx
+    #pubsub_node{id = {Host, Node}, idx = {Host, Node}, owners = [{undefined, list_to_binary(Host), undefined}]}.
 get_node({Host, _} = NodeId) ->
-    #pubsub_node{nodeid = NodeId, id = NodeId, owners = [{undefined, list_to_binary(Host), undefined}]}.
+    #pubsub_node{id = NodeId, idx = NodeId, owners = [{undefined, list_to_binary(Host), undefined}]}.
 
 %% @spec (Host, From) -> [pubsubNode()]
-%%     Host = mod_pubsub:host() | mod_pubsub:jid()
+%%     Host = mod_pubsub:host() | ljid()
 %% @doc <p>Virtual node tree does not handle a node database. Any node is considered
 %% as existing. Nodes list can not be determined.</p>
 get_nodes(Host, _From) ->
@@ -107,8 +108,8 @@ get_nodes(_Host) ->
 
 %% @spec (Host, Node, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
-%%     From = mod_pubsub:jid()
+%%     Node = node()
+%%     From = ljid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
@@ -117,7 +118,7 @@ get_subnodes(_Host, _Node) ->
 
 %% @spec (Host, Index, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
+%%     Node = node()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
@@ -126,9 +127,9 @@ get_subnodes_tree(_Host, _Node) ->
 
 %% @spec (Host, Node, Type, Owner, Options, Parents) -> ok
 %%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
-%%     Type = mod_pubsub:nodeType()
-%%     Owner = mod_pubsub:jid()
+%%     Node = node()
+%%     Type = nodeType()
+%%     Owner = ljid()
 %%     Options = list()
 %% @doc <p>No node record is stored on database. Any valid node
 %% is considered as already created.</p>
@@ -143,7 +144,7 @@ create_node(Host, Node, _Type, Owner, _Options, _Parents) ->
 
 %% @spec (Host, Node) -> [mod_pubsub:node()]
 %%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
+%%     Node = node()
 %% @doc <p>Virtual node tree does not handle parent/child.
 %% node deletion just affects the corresponding node.</p>
 delete_node(Host, Node) ->

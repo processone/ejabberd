@@ -35,14 +35,25 @@
 %% -------------------------------
 %% Pubsub types
 
-%%% @type host() = string().
+%%% @type host() = binary().
 %%% <p><tt>host</tt> is the name of the PubSub service. For example, it can be
-%%% <tt>"pubsub.localhost"</tt>.</p>
+%%% <tt>pubsub.localhost</tt>.</p>
 
-%%% @type pubsubNode() = [string()]. 
-%%% <p>A node is defined by a list of its ancestors. The last element is the name
-%%% of the current node. For example: 
-%%% ```["home", "localhost", "cromain", "node1"]'''</p>
+%%% @type node() = binary().
+%%% <p>A <tt>node</tt> is the name of a Node. It can be anything and may represent
+%%% some hierarchical tree depending of the node type.
+%%% For example:
+%%%   /home/localhost/user/node
+%%%   princely_musings
+%%%   http://jabber.org/protocol/tune
+%%%   My-Own_Node</p>
+
+%%% @type item() = binary().
+%%% <p>An <tt>item</tt> is the name of an Item. It can be anything.
+%%% For example:
+%%%   38964
+%%%   my-tune
+%%%   FD6SBE6a27d</p>
 
 %%% @type stanzaError() = #xmlel{}.
 %%% Example: 
@@ -82,34 +93,29 @@
 %%% plugin to use to manage a given node. For example, it can be
 %%% <tt>"flat"</tt>, <tt>"hometree"</tt> or <tt>"blog"</tt>.</p>
 
-%%% @type jid() = #jid{
-%%%    user = string(),
-%%%    server = string(),
-%%%    resource = string(),
-%%%    luser = string(),
-%%%    lserver = string(),
-%%%    lresource = string()}.
+%%% @type ljid() = {User::binary(), Server::binary(), Resource::binary()}.
 
-%%% @type ljid() = {User::string(), Server::string(), Resource::string()}.
+%%% @type nodeidx() = int()
 
-%%% @type affiliation() = none | owner | publisher | outcast.
+%%% @type affiliation() = none | owner | publisher | member | outcast.
 %%% @type subscription() = none | pending | unconfigured | subscribed.
 
 %%% internal pubsub index table
 -record(pubsub_index, {index, last, free}).
 
 %%% @type pubsubNode() = #pubsub_node{
-%%%    nodeid = {Host::host(), Node::pubsubNode()},
-%%%    parentid = Node::pubsubNode(),
-%%%    nodeidx = int(),
+%%%    id = {host(), node()},
+%%%    idx = nodeidx(),
+%%%    parents = [Node::pubsubNode()],
 %%%    type = nodeType(),
+%%%    owners = [ljid()],
 %%%    options = [nodeOption()]}.
 %%% <p>This is the format of the <tt>nodes</tt> table. The type of the table
 %%% is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
-%%% <p>The <tt>parentid</tt> and <tt>type</tt> fields are indexed.</p>
-%%% <p><tt>nodeidx</tt> can be anything you want.</p>
--record(pubsub_node, {nodeid,
-		      id,
+%%% <p>The <tt>parents</tt> and <tt>type</tt> fields are indexed.</p>
+%%% <p><tt>nodeidx</tt> is an integer.</p>
+-record(pubsub_node, {id,
+		      idx,
 		      parents = [],
 		      type = "flat",
 		      owners = [],
@@ -117,26 +123,26 @@
 		     }).
 
 %%% @type pubsubState() = #pubsub_state{
-%%%    stateid = {ljid(), nodeidx()},
-%%%    items = [ItemId::string()],
+%%%    id = {ljid(), nodeidx()},
+%%%    items = [item()],
 %%%    affiliation = affiliation(),
 %%%    subscriptions = [subscription()]}.
 %%% <p>This is the format of the <tt>affiliations</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
--record(pubsub_state, {stateid,
+-record(pubsub_state, {id,
 		       items = [],
 		       affiliation = none,
 		       subscriptions = []
 }).
 
 %%% @type pubsubItem() = #pubsub_item{
-%%%    itemid = {ItemId::string(), nodeidx()},
+%%%    id = {item(), nodeidx()},
 %%%    creation = {now(), ljid()},
 %%%    modification = {now(), ljid()},
 %%%    payload = XMLContent::string()}.
 %%% <p>This is the format of the <tt>published items</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>disc</tt>,<tt>fragmented</tt>.</p>
--record(pubsub_item, {itemid,
+-record(pubsub_item, {id,
 		      creation = {unknown,unknown},
 		      modification = {unknown,unknown},
 		      payload = []
@@ -144,7 +150,7 @@
 
 %% @type pubsubSubscription() = #pubsub_subscription{
 %%     subid     = string(),
-%%     state_key = {ljid(), pubsubNodeId()},
+%%     state_key = {ljid(), nodeidx()},
 %%     options   = [{atom(), term()}]
 %% }.
 %% <p>This is the format of the <tt>subscriptions</tt> table. The type of the
@@ -153,7 +159,7 @@
 
 %% @type pubsubLastItem() = #pubsub_last_item{
 %%    nodeid    = nodeidx(),
-%%    itemid    = string(),
+%%    itemid    = item(),
 %%    creation  = {now(), ljid()},
 %%    payload   = XMLContent::string()}.
 %% <p>This is the format of the <tt>last items</tt> table. it stores last item payload

@@ -89,36 +89,36 @@
 init() ->
     ok = create_table().
 
-subscribe_node(JID, NodeID, Options) ->
+subscribe_node(JID, NodeId, Options) ->
     try mnesia:sync_dirty(fun add_subscription/3,
-			    [JID, NodeID, Options]) of
+			    [JID, NodeId, Options]) of
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
     catch
         Error -> Error
     end.
 
-unsubscribe_node(JID, NodeID, SubID) ->
+unsubscribe_node(JID, NodeId, SubId) ->
     try mnesia:sync_dirty(fun delete_subscription/3,
-			    [JID, NodeID, SubID]) of
+			    [JID, NodeId, SubId]) of
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
     catch
 	Error -> Error
     end.
 
-get_subscription(JID, NodeID, SubID) ->
+get_subscription(JID, NodeId, SubId) ->
     try mnesia:sync_dirty(fun read_subscription/3,
-			    [JID, NodeID, SubID]) of
+			    [JID, NodeId, SubId]) of
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
     catch
 	Error -> Error
     end.
 
-set_subscription(JID, NodeID, SubID, Options) ->
+set_subscription(JID, NodeId, SubId, Options) ->
     try mnesia:sync_dirty(fun write_subscription/4,
-			    [JID, NodeID, SubID, Options]) of
+			    [JID, NodeId, SubId, Options]) of
 	{error, Error} -> {error, Error};
 	Result -> {result, Result}
     catch
@@ -170,22 +170,22 @@ create_table() ->
 	Other			  -> Other
     end.
 
-add_subscription(_JID, _NodeID, Options) ->
-    SubID = make_subid(),
-    mnesia:write(#pubsub_subscription{subid = SubID, options = Options}),
-    SubID.
+add_subscription(_JID, _NodeId, Options) ->
+    SubId = make_subid(),
+    mnesia:write(#pubsub_subscription{subid = SubId, options = Options}),
+    SubId.
 
-delete_subscription(_JID, _NodeID, SubID) ->
-    mnesia:delete({pubsub_subscription, SubID}).
+delete_subscription(_JID, _NodeId, SubId) ->
+    mnesia:delete({pubsub_subscription, SubId}).
 
-read_subscription(_JID, _NodeID, SubID) ->
-    case mnesia:read({pubsub_subscription, SubID}) of
+read_subscription(_JID, _NodeId, SubId) ->
+    case mnesia:read({pubsub_subscription, SubId}) of
     [Sub] -> Sub;
     _ -> {error, notfound}
     end.
 
-write_subscription(JID, NodeID, SubID, Options) ->
-    case read_subscription(JID, NodeID, SubID) of
+write_subscription(JID, NodeId, SubId, Options) ->
+    case read_subscription(JID, NodeId, SubId) of
     {error, notfound} -> {error, notfound};
     Sub -> mnesia:write(Sub#pubsub_subscription{options = Options})
     end.

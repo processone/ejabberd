@@ -37,7 +37,7 @@
 %%% development is still a work in progress. However, the system is already
 %%% useable and useful as is. Please, send us comments, feedback and
 %%% improvements.</p>
-
+%%TODO : fix SQL requests with nodeid/id and id/idx changes
 -module(node_flat_odbc).
 -author('christophe.romain@process-one.net').
 
@@ -191,9 +191,9 @@ features() ->
 %% @spec (Host, ServerHost, Node, ParentNode, Owner, Access) -> bool()
 %%	 Host = mod_pubsub:host()
 %%	 ServerHost = mod_pubsub:host()
-%%	 Node = mod_pubsub:pubsubNode()
-%%	 ParentNode = mod_pubsub:pubsubNode()
-%%	 Owner = mod_pubsub:jid()
+%%	 Node = mod_pubsub:node()
+%%	 ParentNode = mod_pubsub:node()
+%%	 Owner = ljid()
 %%	 Access = all | atom()
 %% @doc Checks if the current user has the permission to create the requested node
 %% <p>In {@link node_default}, the permission is decided by the place in the
@@ -212,34 +212,27 @@ create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
 
 %% @spec (NodeId, Owner) ->
 %%		  {result, Result} | exit
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Owner = mod_pubsub:jid()
+%%	 NodeId = nodeidx()
+%%	 Owner = ljid()
 %% @doc <p></p>
 create_node(NodeId, Owner) ->
     OwnerKey = jlib:short_prepd_bare_jid(Owner),
-    State =  #pubsub_state{stateid = {OwnerKey, NodeId}, affiliation = owner},
+    State =  #pubsub_state{id = {OwnerKey, NodeId}, affiliation = owner},
     catch ejabberd_odbc:sql_query_t(
         ["insert into pubsub_state(nodeid, jid, affiliation, subscriptions) "
          "values(", state_to_raw(NodeId, State), ");"]),
     {result, {default, broadcast}}.
 
 %% @spec (Removed) -> ok
-%%	 Removed = [mod_pubsub:pubsubNode()]
+%%	 Removed = [mod_pubsub:node()]
 %% @doc <p>purge items of deleted nodes after effective deletion.</p>
 delete_node(Removed) ->
-%% pablo: TODO, this is present on trunk/node_flat but not on trunk/node_flat_odbc. 
-%%              check what is the desired behaviour
-%%    Tr = fun(#pubsub_state{stateid = {J, _}, subscriptions = Ss}) ->
-%%		 lists:map(fun(S) ->
-%%				   {J, S}
-%%			   end, Ss)
-%%	 end,
     Reply = lists:map(
-	fun(#pubsub_node{id = NodeId} = PubsubNode) ->
+	fun(#pubsub_node{idx = Nidx} = PubsubNode) ->
         Subscriptions = case catch ejabberd_odbc:sql_query_t(
             ["select jid, subscriptions "
              "from pubsub_state "
-             "where nodeid='", NodeId, ";"]) of
+             "where nodeid='", Nidx, ";"]) of
                  {selected, ["jid", "subscriptions"], RItems} ->
                     lists:map(fun({SJID, Subscriptions}) ->
                         {decode_jid(SJID), decode_subscriptions(Subscriptions)}
@@ -345,9 +338,9 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 
 %% @spec (NodeId, Sender, Subscriber, SubId) ->
 %%			{error, Reason} | {result, []}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Sender = mod_pubsub:jid()
-%%	 Subscriber = mod_pubsub:jid()
+%%	 NodeId = nodeidx()
+%%	 Sender = ljid()
+%%	 Subscriber = ljid()
 %%	 SubId = mod_pubsub:subid()
 %%	 Reason = mod_pubsub:stanzaError()
 %% @doc <p>Unsubscribe the <tt>Subscriber</tt> from the <tt>Node</tt>.</p>
@@ -417,11 +410,11 @@ delete_subscription(SubKey, NodeId, {Subscription, SubId}, Affiliation, Subscrip
 
 %% @spec (NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 %%		 {true, PubsubItem} | {result, Reply}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Publisher = mod_pubsub:jid()
+%%	 NodeId = nodeidx()
+%%	 Publisher = ljid()
 %%	 PublishModel = atom()
 %%	 MaxItems = integer()
-%%	 ItemId = string()
+%%	 ItemId = item()
 %%	 Payload = term()
 %% @doc <p>Publishes the item passed as parameter.</p>
 %% <p>The mechanism works as follow:
@@ -474,7 +467,7 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
       	    %% Note: this works cause set_item tries an update before
 		    %% the insert, and the update just ignore creation field.
 		    PubId = {now(), SubKey},
-    		set_item(#pubsub_item{itemid = {ItemId, NodeId},
+    		set_item(#pubsub_item{id = {ItemId, NodeId},
 					creation = {now(), GenKey},
 					modification = PubId,
 					payload = Payload}),
@@ -488,10 +481,10 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
     end.
 
 %% @spec (NodeId, MaxItems, ItemIds) -> {NewItemIds,OldItemIds}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
+%%	 NodeId = nodeidx()
 %%	 MaxItems = integer() | unlimited
-%%	 ItemIds = [ItemId::string()]
-%%	 NewItemIds = [ItemId::string()]
+%%	 ItemIds = [item()]
+%%	 NewItemIds = [item()]
 %% @doc <p>This function is used to remove extra items, most notably when the
 %% maximum number of items has been reached.</p>
 %% <p>This function is used internally by the core PubSub module, as no
@@ -515,10 +508,10 @@ remove_extra_items(NodeId, MaxItems, ItemIds) ->
 %% @spec (NodeId, Publisher, PublishModel, ItemId) ->
 %%		  {error, Reason::stanzaError()} |
 %%		  {result, []}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Publisher = mod_pubsub:jid()
+%%	 NodeId = nodeidx()
+%%	 Publisher = ljid()
 %%	 PublishModel = atom()
-%%	 ItemId = string()
+%%	 ItemId = item()
 %% @doc <p>Triggers item deletion.</p>
 %% <p>Default plugin: The user performing the deletion must be the node owner
 %% or a publisher, or PublishModel being open.</p>
@@ -549,8 +542,8 @@ delete_item(NodeId, Publisher, PublishModel, ItemId) ->
 %% @spec (NodeId, Owner) ->
 %%		  {error, Reason::stanzaError()} |
 %%		  {result, {default, broadcast}}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Owner = mod_pubsub:jid()
+%%	 NodeId = nodeidx()
+%%	 Owner = ljid()
 purge_node(NodeId, Owner) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
     GenState = get_state(NodeId, GenKey),
@@ -569,7 +562,7 @@ purge_node(NodeId, Owner) ->
 
 %% @spec (Host, JID) -> [{Node,Affiliation}]
 %%	 Host = host()
-%%	 JID = mod_pubsub:jid()
+%%	 JID = ljid()
 %% @doc <p>Return the current affiliations for the given user</p>
 %% <p>The default module reads affiliations in the main Mnesia
 %% <tt>pubsub_state</tt> table. If a plugin stores its data in the same
@@ -632,7 +625,7 @@ set_affiliation(NodeId, Owner, Affiliation) when ?IS_JID(Owner)->
 
 %% @spec (Host, Owner) -> [{Node,Subscription}]
 %%	 Host = host()
-%%	 Owner = mod_pubsub:jid()
+%%	 Owner = ljid()
 %% @doc <p>Return the current subscriptions for the given user</p>
 %% <p>The default module reads subscriptions in the main Mnesia
 %% <tt>pubsub_state</tt> table. If a plugin stores its data in the same
@@ -664,13 +657,13 @@ get_entity_subscriptions(Host, Owner) ->
 	{selected, ["node", "type", "nodeid", "jid", "subscriptions"], RItems} ->
 	    lists:foldl(fun({N, T, I, J, S}, Acc) ->
 		Node = nodetree_tree_odbc:raw_to_node(Host, {N, "", T, I}),
-		Jid = decode_jid(J),
+		JID = decode_jid(J),
 		case decode_subscriptions(S) of
 		    [] ->
-			[{Node, none, Jid}|Acc];
+			[{Node, none, JID}|Acc];
 		    Subs ->
-			lists:foldl(fun({Sub, SubId}, Acc2) -> [{Node, Sub, SubId, Jid}|Acc2];
-				       (Sub, Acc2) -> [{Node, Sub, Jid}|Acc2]
+			lists:foldl(fun({Sub, SubId}, Acc2) -> [{Node, Sub, SubId, JID}|Acc2];
+				       (Sub, Acc2) -> [{Node, Sub, JID}|Acc2]
 			end, Acc, Subs)
 		end
 	    end, [], RItems);
@@ -707,13 +700,13 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
 	{selected, ["node", "type", "nodeid", "jid", "subscriptions"], RItems} ->
 	    lists:foldl(fun({N, T, I, J, S}, Acc) ->
 		Node = nodetree_tree_odbc:raw_to_node(Host, {N, "", T, I}),
-		Jid = decode_jid(J),
+		JID = decode_jid(J),
 		case decode_subscriptions(S) of
 		    [] ->
-			[{Node, none, Jid}|Acc];
+			[{Node, none, JID}|Acc];
 		    Subs ->
-			lists:foldl(fun({Sub, SubId}, Acc2) -> [{Node, Sub, SubId, Jid}|Acc2];
-				       (Sub, Acc2) -> [{Node, Sub, Jid}|Acc2]
+			lists:foldl(fun({Sub, SubId}, Acc2) -> [{Node, Sub, SubId, JID}|Acc2];
+				       (Sub, Acc2) -> [{Node, Sub, JID}|Acc2]
 			end, Acc, Subs)
 		end
 	    end, [], RItems);
@@ -729,13 +722,13 @@ get_node_subscriptions(NodeId) ->
 		  "where nodeid='", NodeId, "';"]) of
 	    {selected, ["jid", "subscriptions"], RItems} ->
 		lists:foldl(fun({J, S}, Acc) ->
-		    Jid = decode_jid(J),
+		    JID = decode_jid(J),
 		    case decode_subscriptions(S) of
 			[] ->
-			    [{Jid, none}|Acc];
+			    [{JID, none}|Acc];
 			Subs ->
-			    lists:foldl(fun({Sub, SubId}, Acc2) -> [{Jid, Sub, SubId}|Acc2];
-					   (Sub, Acc2) -> [{Jid, Sub}|Acc2]
+			    lists:foldl(fun({Sub, SubId}, Acc2) -> [{JID, Sub, SubId}|Acc2];
+					   (Sub, Acc2) -> [{JID, Sub}|Acc2]
 			    end, Acc, Subs)
 		    end
 		end, [], RItems);
@@ -786,8 +779,8 @@ replace_subscription(NewSub, SubState) ->
 
 replace_subscription(_, [], Acc) ->
     Acc;
-replace_subscription({Sub, SubId}, [{_, SubID} | T], Acc) ->
-    replace_subscription({Sub, SubId}, T, [{Sub, SubID} | Acc]).
+replace_subscription({Sub, SubId}, [{_, SubId} | T], Acc) ->
+    replace_subscription({Sub, SubId}, T, [{Sub, SubId} | Acc]).
 
 new_subscription(NodeId, Owner, Subscription, SubState) ->
     case pubsub_subscription_odbc:subscribe_node(Owner, NodeId, []) of
@@ -800,13 +793,13 @@ new_subscription(NodeId, Owner, Subscription, SubState) ->
     end.
 
 unsub_with_subid(NodeId, SubId, SubState) ->
-    pubsub_subscription_odbc:unsubscribe_node(SubState#pubsub_state.stateid,
+    pubsub_subscription_odbc:unsubscribe_node(SubState#pubsub_state.id,
 					 NodeId, SubId),
     NewSubs = lists:filter(fun ({_, SID}) -> SubId =/= SID end,
 			   SubState#pubsub_state.subscriptions),
     case {NewSubs, SubState#pubsub_state.affiliation} of
 	{[], none} ->
-	    del_state(NodeId, element(1, SubState#pubsub_state.stateid));
+	    del_state(NodeId, element(1, SubState#pubsub_state.id));
 	_ ->
 	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
@@ -814,21 +807,21 @@ unsub_with_subid(NodeId, SubId, SubState) ->
 %% @spec (Host, Owner) -> {result, [Node]} | {error, Reason}
 %%       Host = host()
 %%       Owner = jid()
-%%       Node = pubsubNode()
+%%       Node = node()
 %% @doc <p>Returns a list of Owner's nodes on Host with pending
 %% subscriptions.</p>
 get_pending_nodes(Host, Owner) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
-    States = mnesia:match_object(#pubsub_state{stateid     = {GenKey, '_'},
+    States = mnesia:match_object(#pubsub_state{id = {GenKey, '_'},
 					       affiliation = owner,
 					       _           = '_'}),
-    NodeIDs = [ID || #pubsub_state{stateid = {_, ID}} <- States],
+    Nidxs = [Nidx || #pubsub_state{id = {_, Nidx}} <- States],
     NodeTree = case catch ets:lookup(gen_mod:get_module_proc(Host, config), nodetree) of
 		    [{nodetree, N}] -> N;
 		    _               -> nodetree_tree_odbc
 	       end,
-    Reply = mnesia:foldl(fun(#pubsub_state{stateid = {_, NID}} = S, Acc) ->
-		case lists:member(NID, NodeIDs) of
+    Reply = mnesia:foldl(fun(#pubsub_state{id = {_, Nidx}} = S, Acc) ->
+		case lists:member(Nidx, Nidxs) of
 		    true ->
 			case get_nodes_helper(NodeTree, S) of
 			    {value, Node} -> [Node | Acc];
@@ -841,7 +834,7 @@ get_pending_nodes(Host, Owner) ->
     {result, Reply}.
 
 get_nodes_helper(NodeTree,
-		 #pubsub_state{stateid = {_, N}, subscriptions = Subs}) ->
+		 #pubsub_state{id = {_, N}, subscriptions = Subs}) ->
     HasPending = fun ({pending, _}) -> true;
 		     (pending)      -> true;
 		     (_)            -> false
@@ -849,7 +842,7 @@ get_nodes_helper(NodeTree,
     case lists:any(HasPending, Subs) of
 	true ->
 	    case NodeTree:get_node(N) of
-		#pubsub_node{nodeid = {_, Node}} ->
+		#pubsub_node{id = {_, Node}} ->
 		    {value, Node};
 		_ ->
 		    false
@@ -859,7 +852,7 @@ get_nodes_helper(NodeTree,
     end.
 
 %% @spec (NodeId) -> {result, [State] | []}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
+%%	 NodeId = nodeidx()
 %%	 State = mod_pubsub:pubsubState()
 %% @doc Returns the list of stored states for a given node.
 %% <p>For the default PubSub module, states are stored in Mnesia database.</p>
@@ -878,7 +871,7 @@ get_states(NodeId) ->
 		  "where nodeid='", NodeId, "';"]) of
 	{selected, ["jid", "affiliation", "subscriptions"], RItems} ->
 	    {result, lists:map(fun({SJID, Affiliation, Subscriptions}) ->
-			#pubsub_state{stateid = {decode_jid(SJID), NodeId},
+			#pubsub_state{id = {decode_jid(SJID), NodeId},
 				  items = itemids(NodeId, SJID),
 				  affiliation = decode_affiliation(Affiliation),
 				  subscriptions = decode_subscriptions(Subscriptions)}
@@ -889,13 +882,13 @@ get_states(NodeId) ->
 
 
 %% @spec (NodeId, JID) -> [State] | []
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 JID = mod_pubsub:jid()
-%%	 State = mod_pubsub:pubsubItems()
+%%	 NodeId = nodeidx()
+%%	 JID = ljid()
+%%	 State = mod_pubsub:pubsub_state()
 %% @doc <p>Returns a state (one state list), given its reference.</p>
 get_state(NodeId, JID) ->
     State = get_state_without_itemids(NodeId, JID),
-    {SJID, _} = State#pubsub_state.stateid,
+    {SJID, _} = State#pubsub_state.id,
     State#pubsub_state{items = itemids(NodeId, SJID)}.
 get_state_without_itemids(NodeId, JID) ->
     J = encode_jid(JID),
@@ -905,25 +898,25 @@ get_state_without_itemids(NodeId, JID) ->
 		  "where jid='", J, "' "
 		  "and nodeid='", NodeId, "';"]) of
 	{selected, ["jid", "affiliation", "subscriptions"], [{SJID, Affiliation, Subscriptions}]} ->
-	    #pubsub_state{stateid = {decode_jid(SJID), NodeId},
+	    #pubsub_state{id = {decode_jid(SJID), NodeId},
 		  affiliation = decode_affiliation(Affiliation),
 		  subscriptions = decode_subscriptions(Subscriptions)};
 	_ ->
-	    #pubsub_state{stateid={JID, NodeId}}
+	    #pubsub_state{id={JID, NodeId}}
     end.
 
 %% @spec (State) -> ok | {error, Reason::stanzaError()}
 %%	 State = mod_pubsub:pubsubStates()
 %% @doc <p>Write a state into database.</p>
 set_state(State) when is_record(State, pubsub_state) ->
-    {_, NodeId} = State#pubsub_state.stateid,
+    {_, NodeId} = State#pubsub_state.id,
     set_state(NodeId, State).
 set_state(NodeId, State) ->
     %% NOTE: in odbc version, as we do not handle item list,
     %%       we just need to update affiliation and subscription
     %%       cause {JID,NodeId} is the key. if it does not exists, then we insert it.
     %%       MySQL can be optimized using INSERT ... ON DUPLICATE KEY as well
-    {JID, _} = State#pubsub_state.stateid,
+    {JID, _} = State#pubsub_state.id,
     J = encode_jid(JID),
     S = encode_subscriptions(State#pubsub_state.subscriptions),
     A = encode_affiliation(State#pubsub_state.affiliation),
@@ -941,7 +934,7 @@ set_state(NodeId, State) ->
     {result, []}.
 
 %% @spec (NodeId, JID) -> ok | {error, Reason::stanzaError()}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
+%%	 NodeId = nodeidx()
 %% @doc <p>Delete a state from database.</p>
 del_state(NodeId, JID) ->
     J = encode_jid(JID),
@@ -952,8 +945,8 @@ del_state(NodeId, JID) ->
     ok.
 
 %% @spec (NodeId, From) -> {[Items], RsmOut} | []
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Items = mod_pubsub:pubsubItems()
+%%	 NodeId = nodeidx()
+%%	 Items = mod_pubsub:pubsub_item()
 %% @doc Returns the list of stored items for a given node.
 %% <p>For the default PubSub module, items are stored in Mnesia database.</p>
 %% <p>We can consider that the pubsub_item table have been created by the main
@@ -1100,9 +1093,9 @@ get_last_items(NodeId, _From, Count) ->
     end.
 
 %% @spec (NodeId, ItemId) -> [Item] | []
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 ItemId = string()
-%%	 Item = mod_pubsub:pubsubItems()
+%%	 NodeId = nodeidx()
+%%	 ItemId = item()
+%%	 Item = mod_pubsub:pubsub_item()
 %% @doc <p>Returns an item (one item list), given its reference.</p>
 get_item(NodeId, ItemId) ->
     I = ?PUBSUB:escape(ItemId),
@@ -1126,7 +1119,7 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _S
 	%%SubId == "", ?? ->
 	    %% Entity has multiple subscriptions to the node but does not specify a subscription ID
 	    %{error, ?ERR_EXTENDED('bad-request', "subid-required")};
-	%%InvalidSubID ->
+	%%InvalidSubId ->
 	    %% Entity is subscribed but specifies an invalid subscription ID
 	    %{error, ?ERR_EXTENDED('not-acceptable', "invalid-subid")};
 	Affiliation == outcast ->
@@ -1152,10 +1145,10 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _S
     end.
 
 %% @spec (Item) -> ok | {error, Reason::stanzaError()}
-%%	 Item = mod_pubsub:pubsubItems()
+%%	 Item = mod_pubsub:pubsub_item()
 %% @doc <p>Write an item into database.</p>
 set_item(Item) ->
-    {ItemId, NodeId} = Item#pubsub_item.itemid,
+    {ItemId, NodeId} = Item#pubsub_item.id,
     I = ?PUBSUB:escape(ItemId),
     {C, _} = Item#pubsub_item.creation,
     {M, JID} = Item#pubsub_item.modification,
@@ -1182,8 +1175,8 @@ set_item(Item) ->
     {result, []}.
 
 %% @spec (NodeId, ItemId) -> ok | {error, Reason::stanzaError()}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 ItemId = string()
+%%	 NodeId = nodeidx()
+%%	 ItemId = item()
 %% @doc <p>Delete an item from database.</p>
 del_item(NodeId, ItemId) ->
     I = ?PUBSUB:escape(ItemId),
@@ -1337,7 +1330,7 @@ encode_subscriptions(Subscriptions) ->
 %%% record getter/setter
 
 state_to_raw(NodeId, State) ->
-    {JID, _} = State#pubsub_state.stateid,
+    {JID, _} = State#pubsub_state.id,
     J = encode_jid(JID),
     A = encode_affiliation(State#pubsub_state.affiliation),
     S = encode_subscriptions(State#pubsub_state.subscriptions),
@@ -1353,7 +1346,7 @@ raw_to_item(NodeId, {ItemId, SJID, Creation, Modification, XML}) ->
 		  {error, _Reason} -> [];
 		  [El] -> [El]
 	      end,
-    #pubsub_item{itemid = {ItemId, NodeId},
+    #pubsub_item{id = {ItemId, NodeId},
 		 creation={ToTime(Creation), JID},
 		 modification={ToTime(Modification), JID},
 		 payload = Payload}.

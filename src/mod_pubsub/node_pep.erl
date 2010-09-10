@@ -156,8 +156,8 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
       NodeId, Sender, Subscriber, AccessModel, SendLast,
       PresenceSubscription, RosterGroup, Options).
 
-unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
-    case node_flat:unsubscribe_node(NodeId, Sender, Subscriber, SubID) of
+unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
+    case node_flat:unsubscribe_node(NodeId, Sender, Subscriber, SubId) of
 	{error, Error} -> {error, Error};
 	{result, _} -> {result, []}
     end.
@@ -177,14 +177,14 @@ purge_node(NodeId, Owner) ->
 get_entity_affiliations(_Host, Owner) ->
     {_, D, _} = jlib:short_prepd_jid(Owner),
     GenKey = jlib:short_prepd_bare_jid(Owner),
-    States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'}, _ = '_'}),
+    States = mnesia:match_object(#pubsub_state{id = {GenKey, '_'}, _ = '_'}),
     NodeTree = case catch ets:lookup(gen_mod:get_module_proc(D, config), nodetree) of
 	    [{nodetree, N}] -> N;
 	    _ -> nodetree_tree
 	end,
-    Reply = lists:foldl(fun(#pubsub_state{stateid = {_, N}, affiliation = A}, Acc) ->
+    Reply = lists:foldl(fun(#pubsub_state{id = {_, N}, affiliation = A}, Acc) ->
 	case NodeTree:get_node(N) of
-	    #pubsub_node{nodeid = {{_, D, _}, _}} = Node -> [{Node, A}|Acc];
+	    #pubsub_node{id = {{_, D, _}, _}} = Node -> [{Node, A}|Acc];
 	    _ -> Acc
 	end
     end, [], States),
@@ -204,22 +204,22 @@ get_entity_subscriptions(_Host, Owner) ->
     GenKey = jlib:short_prepd_bare_jid(Owner),
     States = case SubKey of
 	GenKey -> mnesia:match_object(
-	       #pubsub_state{stateid = {{U, D, '_'}, '_'}, _ = '_'});
+	       #pubsub_state{id = {{U, D, '_'}, '_'}, _ = '_'});
 	_ -> mnesia:match_object(
-	       #pubsub_state{stateid = {GenKey, '_'}, _ = '_'})
+	       #pubsub_state{id = {GenKey, '_'}, _ = '_'})
 	    ++ mnesia:match_object(
-	       #pubsub_state{stateid = {SubKey, '_'}, _ = '_'})
+	       #pubsub_state{id = {SubKey, '_'}, _ = '_'})
     end,
     NodeTree = case catch ets:lookup(gen_mod:get_module_proc(D, config), nodetree) of
 	    [{nodetree, N}] -> N;
 	    _ -> nodetree_tree
 	end,
-    Reply = lists:foldl(fun(#pubsub_state{stateid = {J, N}, subscriptions = Ss}, Acc) ->
+    Reply = lists:foldl(fun(#pubsub_state{id = {J, N}, subscriptions = Ss}, Acc) ->
 	case NodeTree:get_node(N) of
-	    #pubsub_node{nodeid = {{_, D, _}, _}} = Node ->
-			lists:foldl(fun({subscribed, SubID}, Acc2) ->
-					   [{Node, subscribed, SubID, J} | Acc2];
-					({pending, _SubID}, Acc2) ->
+	    #pubsub_node{id = {{_, D, _}, _}} = Node ->
+			lists:foldl(fun({subscribed, SubId}, Acc2) ->
+					   [{Node, subscribed, SubId, J} | Acc2];
+					({pending, _SubId}, Acc2) ->
 					    [{Node, pending, J} | Acc2];
 					(S, Acc2) ->
 					    [{Node, S, J} | Acc2]

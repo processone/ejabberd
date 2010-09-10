@@ -58,26 +58,26 @@ init(Host, ServerHost, Opts) ->
 terminate(Host, ServerHost) ->
     nodetree_tree:terminate(Host, ServerHost).
 
-create_node(Key, NodeID, Type, Owner, Options, Parents) ->
+create_node(Key, Node, Type, Owner, Options, Parents) ->
     OwnerJID = jlib:short_prepd_bare_jid(Owner),
-    case find_node(Key, NodeID) of
+    case find_node(Key, Node) of
 	false ->
-	    ID = pubsub_index:new(node),
-	    N = #pubsub_node{nodeid = oid(Key, NodeID),
-			     id = ID,
+	    Nidx = pubsub_index:new(node),
+	    N = #pubsub_node{id = oid(Key, Node),
+			     idx = Nidx,
 			     type = Type,
-                 parents = Parents,
+			     parents = Parents,
 			     owners = [OwnerJID],
 			     options = Options},
 	    case set_node(N) of
-		ok    -> {ok, ID};
+		ok    -> {ok, Nidx};
 		Other -> Other
 	    end;
 	_ ->
 	    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'conflict')}
     end.
 
-set_node(#pubsub_node{nodeid  = {Key, _},
+set_node(#pubsub_node{id = {Key, _},
 		      owners  = Owners,
 		      options = Options} = Node) ->
     Parents = find_opt(collection, ?DEFAULT_PARENTS,  Options),
@@ -89,43 +89,43 @@ set_node(#pubsub_node{nodeid  = {Key, _},
 	    Other
     end.
 
-delete_node(Key, NodeID) ->
-    case find_node(Key, NodeID) of
+delete_node(Key, Node) ->
+    case find_node(Key, Node) of
 	false ->
 	    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
-	Node ->
+	Record ->
 	    %% Find all of N's children, update their configs to
 	    %% remove N from the collection setting.
 	    lists:foreach(fun (#pubsub_node{options = Opts} = Child) ->
-				  NewOpts = remove_config_parent(NodeID, Opts),
+				  NewOpts = remove_config_parent(Node, Opts),
 				  Parents = find_opt(collection, ?DEFAULT_PARENTS, NewOpts),
 				  ok = mnesia:write(pubsub_node,
 						    Child#pubsub_node{
 						      parents = Parents,
 						      options = NewOpts},
 						    write)
-			  end, get_subnodes(Key, NodeID)),
+			  end, get_subnodes(Key, Node)),
 
 	    %% Remove and return the requested node.
-	    pubsub_index:free(node, Node#pubsub_node.id),
-	    mnesia:delete_object(pubsub_node, Node, write),
-	    [Node]
+	    pubsub_index:free(node, Record#pubsub_node.idx),
+	    mnesia:delete_object(pubsub_node, Record, write),
+	    [Record]
     end.
 
 options() ->
     nodetree_tree:options().
 
-get_node(Host, NodeID, _From) ->
-    get_node(Host, NodeID).
+get_node(Host, Node, _From) ->
+    get_node(Host, Node).
 
-get_node(Host, NodeID) ->
-    case find_node(Host, NodeID) of
+get_node(Host, Node) ->
+    case find_node(Host, Node) of
 	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
-	Node  -> Node
+	Record -> Record
     end.
 
-get_node(NodeId) ->
-    nodetree_tree:get_node(NodeId).
+get_node(Node) ->
+    nodetree_tree:get_node(Node).
 
 get_nodes(Key, From) ->
     nodetree_tree:get_nodes(Key, From).
@@ -133,49 +133,47 @@ get_nodes(Key, From) ->
 get_nodes(Key) ->
     nodetree_tree:get_nodes(Key).
 
-get_parentnodes(Host, NodeID, _From) ->
-    case find_node(Host, NodeID) of
+get_parentnodes(Host, Node, _From) ->
+    case find_node(Host, Node) of
 	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
 	#pubsub_node{parents = Parents} ->
-	    Q = qlc:q([N || #pubsub_node{nodeid = {NHost, NNode}} = N <- mnesia:table(pubsub_node),
+	    Q = qlc:q([N || #pubsub_node{id = {NHost, NNode}} = N <- mnesia:table(pubsub_node),
 			    Parent <- Parents,
 			    Host == NHost,
 			    Parent == NNode]),
 	    qlc:e(Q)
     end.
 
-get_parentnodes_tree(Host, NodeID, _From) ->
-    Pred = fun (NID, #pubsub_node{nodeid = {_, NNodeID}}) ->
-		   NID == NNodeID
-	   end,
+get_parentnodes_tree(Host, Node, _From) ->
+    Pred = fun (Name, #pubsub_node{id = {_, NodeName}}) -> Name == NodeName end,
     Tr = fun (#pubsub_node{parents = Parents}) -> Parents end,
-    traversal_helper(Pred, Tr, Host, [NodeID]).
+    traversal_helper(Pred, Tr, Host, [Node]).
 
-get_subnodes(Host, NodeID, _From) ->
-    get_subnodes(Host, NodeID).
+get_subnodes(Host, Node, _From) ->
+    get_subnodes(Host, Node).
 
 get_subnodes(Host, <<>>) ->
     get_subnodes_helper(Host, <<>>);
-get_subnodes(Host, NodeID) ->
-    case find_node(Host, NodeID) of
+get_subnodes(Host, Node) ->
+    case find_node(Host, Node) of
 	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item-not-found')};
-	_ -> get_subnodes_helper(Host, NodeID)
+	_ -> get_subnodes_helper(Host, Node)
     end.
 
-get_subnodes_helper(Host, NodeID) ->
-    Q = qlc:q([Node || #pubsub_node{nodeid  = {NHost, _},
-		parents = Parents} = Node <- mnesia:table(pubsub_node),
+get_subnodes_helper(Host, Node) ->
+    Q = qlc:q([Record || #pubsub_node{id = {NHost, _},
+		parents = Parents} = Record <- mnesia:table(pubsub_node),
 		Host == NHost,
-		lists:member(NodeID, Parents)]),
+		lists:member(Node, Parents)]),
     qlc:e(Q).
 
-get_subnodes_tree(Host, NodeID, From) ->
-    Pred = fun (NID, #pubsub_node{parents = Parents}) ->
-		   lists:member(NID, Parents)
+get_subnodes_tree(Host, Node, From) ->
+    Pred = fun (N, #pubsub_node{parents = Parents}) ->
+		   lists:member(N, Parents)
 	   end,
-    Tr = fun (#pubsub_node{nodeid = {_, N}}) -> [N] end,
-    traversal_helper(Pred, Tr, 1, Host, [NodeID],
-                     [{0, [get_node(Host, NodeID, From)]}]).
+    Tr = fun (#pubsub_node{id = {_, N}}) -> [N] end,
+    traversal_helper(Pred, Tr, 1, Host, [Node],
+                     [{0, [get_node(Host, Node, From)]}]).
 
 %%====================================================================
 %% Internal functions
@@ -183,9 +181,9 @@ get_subnodes_tree(Host, NodeID, From) ->
 oid(Key, Name) -> {Key, Name}.
 
 %% Key    = jlib:jid() | host()
-%% NodeID = string()
-find_node(Key, NodeID) ->
-    case mnesia:read(pubsub_node, oid(Key, NodeID), read) of
+%% Node = string()
+find_node(Key, Node) ->
+    case mnesia:read(pubsub_node, oid(Key, Node), read) of
 	[]     -> false;
 	[Node] -> Node
     end.
@@ -199,30 +197,30 @@ find_opt(Key, Default, Options) ->
 	_		   -> Default
     end.
 
-traversal_helper(Pred, Tr, Host, NodeIDs) ->
-    traversal_helper(Pred, Tr, 0, Host, NodeIDs, []).
+traversal_helper(Pred, Tr, Host, Nodes) ->
+    traversal_helper(Pred, Tr, 0, Host, Nodes, []).
 
 traversal_helper(_Pred, _Tr, _Depth, _Host, [], Acc) ->
     Acc;
-traversal_helper(Pred, Tr, Depth, Host, NodeIDs, Acc) ->
-    Q = qlc:q([Node || #pubsub_node{nodeid = {NHost, _}} = Node <- mnesia:table(pubsub_node),
-		       NodeID <- NodeIDs,
+traversal_helper(Pred, Tr, Depth, Host, Nodes, Acc) ->
+    Q = qlc:q([Record || #pubsub_node{id = {NHost, _}} = Record <- mnesia:table(pubsub_node),
+		       Node <- Nodes,
 		       Host   == NHost,
-		       Pred(NodeID, Node)]),
+		       Pred(Node, Node)]),
     Nodes = qlc:e(Q),
-    IDs = lists:flatmap(Tr, Nodes),
-    traversal_helper(Pred, Tr, Depth + 1, Host, IDs, [{Depth, Nodes} | Acc]).
+    Names = lists:flatmap(Tr, Nodes),
+    traversal_helper(Pred, Tr, Depth + 1, Host, Names, [{Depth, Nodes} | Acc]).
 
-remove_config_parent(NodeID, Options) ->
-    remove_config_parent(NodeID, Options, []).
+remove_config_parent(Node, Options) ->
+    remove_config_parent(Node, Options, []).
 
-remove_config_parent(_NodeID, [], Acc) ->
+remove_config_parent(_Node, [], Acc) ->
     lists:reverse(Acc);
-remove_config_parent(NodeID, [{collection, Parents} | T], Acc) ->
-    remove_config_parent(NodeID, T,
-			 [{collection, lists:delete(NodeID, Parents)} | Acc]);
-remove_config_parent(NodeID, [H | T], Acc) ->
-    remove_config_parent(NodeID, T, [H | Acc]).
+remove_config_parent(Node, [{collection, Parents} | T], Acc) ->
+    remove_config_parent(Node, T,
+			 [{collection, lists:delete(Node, Parents)} | Acc]);
+remove_config_parent(Node, [H | T], Acc) ->
+    remove_config_parent(Node, T, [H | Acc]).
 
 validate_parentage(_Key, _Owners, []) ->
     true;
@@ -230,8 +228,8 @@ validate_parentage(Key, Owners, [[] | T]) ->
     validate_parentage(Key, Owners, T);
 validate_parentage(Key, Owners, [<<>> | T]) ->
     validate_parentage(Key, Owners, T);
-validate_parentage(Key, Owners, [ParentID | T]) ->
-    case find_node(Key, ParentID) of
+validate_parentage(Key, Owners, [ParentId | T]) ->
+    case find_node(Key, ParentId) of
 	false -> {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'item_not_found')};
 	#pubsub_node{owners = POwners, options = POptions} ->
 	    NodeType = find_opt(node_type, ?DEFAULT_NODETYPE, POptions),

@@ -32,27 +32,27 @@
 
 %% Those -spec lines produce errors in old Erlang versions.
 %% They can be enabled again in ejabberd 3.0 because it uses R12B or higher.
--spec read_subscription(SubID :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
-read_subscription(SubID) ->
+-spec read_subscription(SubId :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
+read_subscription(SubId) ->
 	case ejabberd_odbc:sql_query_t(
 		["select opt_name, opt_value "
 		"from pubsub_subscription_opt "
-		"where subid = '", ejabberd_odbc:escape(SubID), "'"]) of
+		"where subid = '", ejabberd_odbc:escape(SubId), "'"]) of
 		{selected, ["opt_name", "opt_value"], []} -> 
 			notfound;
 			
 		{selected, ["opt_name", "opt_value"], Options} ->
 
-			{ok, #pubsub_subscription{subid = SubID,
+			{ok, #pubsub_subscription{subid = SubId,
 					options = lists:map(fun subscription_opt_from_odbc/1, Options)}}
 	end.
 
 
 
--spec delete_subscription(SubID :: string()) -> ok.
-delete_subscription(SubID) ->
+-spec delete_subscription(SubId :: string()) -> ok.
+delete_subscription(SubId) ->
 	ejabberd_odbc:sql_query_t(["delete from pubsub_subscription_opt "
-	"where subid = '", ejabberd_odbc:escape(SubID), "'"]),
+	"where subid = '", ejabberd_odbc:escape(SubId), "'"]),
 	ok.
 
 

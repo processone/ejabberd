@@ -73,33 +73,33 @@ create_node_permission(_Host, _ServerHost, _Node, _ParentNode,
 		       _Owner, _Access) ->
     {result, true}.
 
-create_node(NodeID, Owner) ->
-    node_flat:create_node(NodeID, Owner).
+create_node(NodeId, Owner) ->
+    node_flat:create_node(NodeId, Owner).
 
 delete_node(Removed) ->
     node_flat:delete_node(Removed).
 
-subscribe_node(NodeID, Sender, Subscriber, AccessModel,
+subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup, Options) ->
-    node_flat:subscribe_node(NodeID, Sender, Subscriber, AccessModel,
+    node_flat:subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 				SendLast, PresenceSubscription, RosterGroup,
 				Options).
 
-unsubscribe_node(NodeID, Sender, Subscriber, SubID) ->
-    node_flat:unsubscribe_node(NodeID, Sender, Subscriber, SubID).
+unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
+    node_flat:unsubscribe_node(NodeId, Sender, Subscriber, SubId).
 
-publish_item(NodeID, Publisher, Model, MaxItems, ItemID, Payload) ->
+publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
     %% TODO: should look up the NodeTree plugin here. There's no
     %% access to the Host of the request at this level, so for now we
     %% just use nodetree_dag.
-    case nodetree_dag:get_node(NodeID) of
+    case nodetree_dag:get_node(NodeId) of
         #pubsub_node{options = Options} ->
             case find_opt(node_type, Options) of
                 collection ->
                     {error, mod_pubsub:extended_error('not-allowed', "publish")};
                 _ ->
-                    node_flat:publish_item(NodeID, Publisher, Model,
-                                               MaxItems, ItemID, Payload)
+                    node_flat:publish_item(NodeId, Publisher, Model,
+                                               MaxItems, ItemId, Payload)
             end;
         Err ->
             Err
@@ -109,72 +109,72 @@ find_opt(_,      [])                    -> false;
 find_opt(Option, [{Option, Value} | _]) -> Value;
 find_opt(Option, [_ | T])               -> find_opt(Option, T).
 
-remove_extra_items(NodeID, MaxItems, ItemIDs) ->
-    node_flat:remove_extra_items(NodeID, MaxItems, ItemIDs).
+remove_extra_items(NodeId, MaxItems, ItemIds) ->
+    node_flat:remove_extra_items(NodeId, MaxItems, ItemIds).
 
-delete_item(NodeID, Publisher, PublishModel, ItemID) ->
-    node_flat:delete_item(NodeID, Publisher, PublishModel, ItemID).
+delete_item(NodeId, Publisher, PublishModel, ItemId) ->
+    node_flat:delete_item(NodeId, Publisher, PublishModel, ItemId).
 
-purge_node(NodeID, Owner) ->
-    node_flat:purge_node(NodeID, Owner).
+purge_node(NodeId, Owner) ->
+    node_flat:purge_node(NodeId, Owner).
 
 get_entity_affiliations(Host, Owner) ->
     node_flat:get_entity_affiliations(Host, Owner).
 
-get_node_affiliations(NodeID) ->
-    node_flat:get_node_affiliations(NodeID).
+get_node_affiliations(NodeId) ->
+    node_flat:get_node_affiliations(NodeId).
 
-get_affiliation(NodeID, Owner) ->
-    node_flat:get_affiliation(NodeID, Owner).
+get_affiliation(NodeId, Owner) ->
+    node_flat:get_affiliation(NodeId, Owner).
 
-set_affiliation(NodeID, Owner, Affiliation) ->
-    node_flat:set_affiliation(NodeID, Owner, Affiliation).
+set_affiliation(NodeId, Owner, Affiliation) ->
+    node_flat:set_affiliation(NodeId, Owner, Affiliation).
 
 get_entity_subscriptions(Host, Owner) ->
     node_flat:get_entity_subscriptions(Host, Owner).
 
-get_node_subscriptions(NodeID) ->
-    node_flat:get_node_subscriptions(NodeID).
+get_node_subscriptions(NodeId) ->
+    node_flat:get_node_subscriptions(NodeId).
 
-get_subscriptions(NodeID, Owner) ->
-    node_flat:get_subscriptions(NodeID, Owner).
+get_subscriptions(NodeId, Owner) ->
+    node_flat:get_subscriptions(NodeId, Owner).
 
-set_subscriptions(NodeID, Owner, Subscription, SubID) ->
-    node_flat:set_subscriptions(NodeID, Owner, Subscription, SubID).
+set_subscriptions(NodeId, Owner, Subscription, SubId) ->
+    node_flat:set_subscriptions(NodeId, Owner, Subscription, SubId).
 
 get_pending_nodes(Host, Owner) ->
     node_flat:get_pending_nodes(Host, Owner).
 
-get_states(NodeID) ->
-    node_flat:get_states(NodeID).
+get_states(NodeId) ->
+    node_flat:get_states(NodeId).
 
-get_state(NodeID, JID) ->
-    node_flat:get_state(NodeID, JID).
+get_state(NodeId, JID) ->
+    node_flat:get_state(NodeId, JID).
 
 set_state(State) ->
     node_flat:set_state(State).
 
-get_items(NodeID, From) ->
-    node_flat:get_items(NodeID, From).
+get_items(NodeId, From) ->
+    node_flat:get_items(NodeId, From).
 
-get_items(NodeID, JID, AccessModel, PresenceSubscription,
-	  RosterGroup, SubID) ->
-    node_flat:get_items(NodeID, JID, AccessModel, PresenceSubscription,
-			   RosterGroup, SubID).
+get_items(NodeId, JID, AccessModel, PresenceSubscription,
+	  RosterGroup, SubId) ->
+    node_flat:get_items(NodeId, JID, AccessModel, PresenceSubscription,
+			   RosterGroup, SubId).
 
-get_item(NodeID, ItemID) ->
-    node_flat:get_item(NodeID, ItemID).
+get_item(NodeId, ItemId) ->
+    node_flat:get_item(NodeId, ItemId).
 
-get_item(NodeID, ItemID, JID, AccessModel, PresenceSubscription,
-	 RosterGroup, SubID) ->
-    node_flat:get_item(NodeID, ItemID, JID, AccessModel,
-			  PresenceSubscription, RosterGroup, SubID).
+get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription,
+	 RosterGroup, SubId) ->
+    node_flat:get_item(NodeId, ItemId, JID, AccessModel,
+			  PresenceSubscription, RosterGroup, SubId).
 
 set_item(Item) ->
     node_flat:set_item(Item).
 
-get_item_name(Host, Node, ID) ->
-    node_flat:get_item_name(Host, Node, ID).
+get_item_name(Host, Node, ItemId) ->
+    node_flat:get_item_name(Host, Node, ItemId).
 
 node_to_path(Node) ->
     node_flat:node_to_path(Node).

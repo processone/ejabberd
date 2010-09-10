@@ -32,7 +32,6 @@
 %%% development is still a work in progress. However, the system is already
 %%% useable and useful as is. Please, send us comments, feedback and
 %%% improvements.</p>
-
 -module(nodetree_tree_odbc).
 -author('christophe.romain@process-one.net').
 
@@ -84,16 +83,16 @@ terminate(_Host, _ServerHost) ->
     ok.
 
 %% @spec () -> [Option]
-%%     Option = mod_pubsub:nodetreeOption()
+%%     Option = nodetreeOption()
 %% @doc Returns the default pubsub node tree options.
 options() ->
     [{virtual_tree, false},
      {odbc, true}].
 
 
-%% @spec (Host, Node, From) -> pubsubNode() | {error, Reason}
+%% @spec (Host, Node, From) -> node() | {error, Reason}
 %%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
+%%     Node = node()
 get_node(Host, Node, _From) ->
     get_node(Host, Node).
 get_node(Host, Node) ->
@@ -111,22 +110,22 @@ get_node(Host, Node) ->
 	_ ->
 	    {error, 'item_not_found'}
     end.
-get_node(NodeId) ->
+get_node(Nidx) ->
     case catch ejabberd_odbc:sql_query_t(
 		 ["select host, node, parent, type "
 		  "from pubsub_node "
-		  "where nodeid='", NodeId, "';"])
+		  "where nodeid='", Nidx, "';"])
 	of
 	{selected, ["host", "node", "parent", "type"], [{Host, Node, Parent, Type}]} ->
-	    raw_to_node(Host, {Node, Parent, Type, NodeId});
+	    raw_to_node(Host, {Node, Parent, Type, Nidx});
 	{'EXIT', _Reason} ->
 	    {error, 'internal_server_error'};
 	_ ->
 	    {error, 'item_not_found'}
     end.
 
-%% @spec (Host, From) -> [pubsubNode()] | {error, Reason}
-%%     Host = mod_pubsub:host() | mod_pubsub:jid()
+%% @spec (Host, From) -> [node()] | {error, Reason}
+%%     Host = mod_pubsub:host() | ljid()
 get_nodes(Host, _From) ->
     get_nodes(Host).
 get_nodes(Host) ->
@@ -143,21 +142,21 @@ get_nodes(Host) ->
     end.
 
 %% @spec (Host, Node, From) -> [{Depth, Record}] | {error, Reason}
-%%     Host   = mod_pubsub:host() | mod_pubsub:jid()
-%%     Node   = mod_pubsub:pubsubNode()
-%%     From   = mod_pubsub:jid()
-%%     Depth  = integer()
-%%     Record = pubsubNode()
+%%     Host   = mod_pubsub:host() | ljid()
+%%     Node   = node()
+%%     From   = ljid()
+%%     Depth  = int()
+%%     Record = mod_pubsub:pubsub_node()
 %% @doc <p>Default node tree does not handle parents, return empty list.</p>
 get_parentnodes(_Host, _Node, _From) ->
     [].
 
 %% @spec (Host, Node, From) -> [{Depth, Record}] | {error, Reason}
-%%     Host   = mod_pubsub:host() | mod_pubsub:jid()
-%%     Node   = mod_pubsub:pubsubNode()
-%%     From   = mod_pubsub:jid()
-%%     Depth  = integer()
-%%     Record = pubsubNode()
+%%     Host   = mod_pubsub:host() | ljid()
+%%     Node   = node()
+%%     From   = ljid()
+%%     Depth  = int()
+%%     Record = mod_pubsub:pubsub_node()
 %% @doc <p>Default node tree does not handle parents, return a list
 %% containing just this node.</p>
 get_parentnodes_tree(Host, Node, From) ->
@@ -182,10 +181,10 @@ get_subnodes(Host, Node) ->
 	    []
     end.
 
-%% @spec (Host, Index, From) -> [pubsubNodeIdx()] | {error, Reason}
+%% @spec (Host, Index, From) -> [nodeidx()] | {error, Reason}
 %%     Host = mod_pubsub:host()
-%%     Node = mod_pubsub:pubsubNode()
-%%     From = mod_pubsub:jid()
+%%     Node = node()
+%%     From = ljid()
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
 get_subnodes_tree(Host, Node) ->
@@ -203,10 +202,10 @@ get_subnodes_tree(Host, Node) ->
     end.
 
 %% @spec (Host, Node, Type, Owner, Options, Parents) -> ok | {error, Reason}
-%%     Host = mod_pubsub:host() | mod_pubsub:jid()
-%%     Node = mod_pubsub:pubsubNode()
-%%     NodeType = mod_pubsub:nodeType()
-%%     Owner = mod_pubsub:jid()
+%%     Host = mod_pubsub:host() | ljid()
+%%     Node = node()
+%%     NodeType = nodeType()
+%%     Owner = ljid()
 %%     Options = list()
 create_node(Host, Node, Type, Owner, Options, Parents) ->
     BJID = jlib:short_prepd_bare_jid(Owner),
@@ -223,9 +222,9 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 			    true;
 			[Parent | _] ->
 			    case nodeid(Host, Parent) of
-				{result, PNodeId} -> 
+				{result, Pidx} -> 
 				    BHost = list_to_binary(Host),
-				    case nodeowners(PNodeId) of
+				    case nodeowners(Pidx) of
 					[{undefined, BHost, undefined}] -> true;
 					Owners -> lists:member(BJID, Owners)
 				    end;
@@ -239,11 +238,11 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 	    case ParentExists of
 		true -> 
 		    case set_node(#pubsub_node{
-				nodeid={Host, Node},
+				id={Host, Node},
 				parents=Parents,
 				type=Type,
 				options=Options}) of
-			{result, NodeId} -> {ok, NodeId};
+			{result, Nidx} -> {ok, Nidx};
 			Other -> Other
 		    end;
 		false -> 
@@ -251,16 +250,16 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    {error, 'forbidden'}
 	    end;
 	{result, _} -> 
-	    %% NodeID already exists
+	    %% Node already exists
 	    {error, 'conflict'};
 	Error -> 
 	    Error
     end.
 
 
-%% @spec (Host, Node) -> [mod_pubsub:node()]
-%%     Host = mod_pubsub:host() | mod_pubsub:jid()
-%%     Node = mod_pubsub:pubsubNode()
+%% @spec (Host, Node) -> [node()]
+%%     Host = mod_pubsub:host() | ljid()
+%%     Node = node()
 delete_node(Host, Node) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
@@ -273,11 +272,11 @@ delete_node(Host, Node) ->
 
 %% helpers
 
-raw_to_node(Host, {Node, Parent, Type, NodeId}) ->
+raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
     Options = case catch ejabberd_odbc:sql_query_t(
 			   ["select name,val "
 			    "from pubsub_node_option "
-			    "where nodeid='", NodeId, "';"])
+			    "where nodeid='", Nidx, "';"])
 		  of
 		  {selected, ["name", "val"], ROptions} ->
 		    	DbOpts = lists:map(fun({Key, Value}) -> 
@@ -295,16 +294,16 @@ raw_to_node(Host, {Node, Parent, Type, NodeId}) ->
 		      []
 	      end,
     #pubsub_node{
-		nodeid = {Host, ?PUBSUB:string_to_node(Node)}, 
+		id = {Host, ?PUBSUB:string_to_node(Node)},
 		parents = [?PUBSUB:string_to_node(Parent)],
-		id = NodeId,
+		idx = Nidx,
 		type = Type, 
 		options = Options}.
 
 %% @spec (NodeRecord) -> ok | {error, Reason}
 %%	 Record = mod_pubsub:pubsub_node()
 set_node(Record) ->
-    {Host, Node} = Record#pubsub_node.nodeid,
+    {Host, Node} = Record#pubsub_node.id,
     Parent = case Record#pubsub_node.parents of
                 [] -> <<>>;
                 [First | _] -> First
@@ -313,29 +312,29 @@ set_node(Record) ->
     H = ?PUBSUB:escape(Host),
     N = ?PUBSUB:escape(?PUBSUB:node_to_string(Node)),
     P = ?PUBSUB:escape(?PUBSUB:node_to_string(Parent)),
-    NodeId = case nodeid(Host, Node) of
-		 {result, OldNodeId} ->
+    Nidx = case nodeid(Host, Node) of
+		 {result, OldNidx} ->
 		     catch ejabberd_odbc:sql_query_t(
 			     ["delete from pubsub_node_option "
-			      "where nodeid='", OldNodeId, "';"]),
+			      "where nodeid='", OldNidx, "';"]),
 		     catch ejabberd_odbc:sql_query_t(
 			     ["update pubsub_node "
 			      "set host='", H, "' "
 			      "node='", N, "' "
 			      "parent='", P, "' "
 			      "type='", Type, "' "
-			      "where nodeid='", OldNodeId, "';"]),
-		     OldNodeId;
+			      "where nodeid='", OldNidx, "';"]),
+		     OldNidx;
 		 _ ->
 		     catch ejabberd_odbc:sql_query_t(
 			     ["insert into pubsub_node(host, node, parent, type) "
 			      "values('", H, "', '", N, "', '", P, "', '", Type, "');"]),
 		     case nodeid(Host, Node) of
-			 {result, NewNodeId} -> NewNodeId;
-			 _ -> none  % this should not happen
+			 {result, NewNidx} -> NewNidx;
+			 _ -> none  % this should not happe
 		     end
 	     end,
-    case NodeId of
+    case Nidx of
 	none ->
 	    {error, 'internal_server_error'};
 	_ ->
@@ -344,9 +343,9 @@ set_node(Record) ->
 				  SValue = ?PUBSUB:escape(lists:flatten(io_lib:fwrite("~p",[Value]))),
 				  catch ejabberd_odbc:sql_query_t(
 					  ["insert into pubsub_node_option(nodeid, name, val) "
-					   "values('", NodeId, "', '", SKey, "', '", SValue, "');"]) 
+					   "values('", Nidx, "', '", SKey, "', '", SValue, "');"]) 
 			  end, Record#pubsub_node.options),
-	    {result, NodeId}
+	    {result, Nidx}
     end.
 
 nodeid(Host, Node) ->
@@ -357,16 +356,16 @@ nodeid(Host, Node) ->
 		  "from pubsub_node "
 		  "where host='", H, "' and node='", N, "';"])
 	of
-	{selected, ["nodeid"], [{NodeId}]} ->
-	    {result, NodeId};
+	{selected, ["nodeid"], [{Nidx}]} ->
+	    {result, Nidx};
 	{'EXIT', _Reason} ->
 	    {error, 'internal_server_error'};
 	_ ->
 	    {error, 'item_not_found'}
     end.
 
-nodeowners(NodeId) ->
-    {result, Res} = node_flat_odbc:get_node_affiliations(NodeId),
+nodeowners(Nidx) ->
+    {result, Res} = node_flat_odbc:get_node_affiliations(Nidx),
     lists:foldl(fun({LJID, owner}, Acc) -> [LJID|Acc];
 		   (_, Acc) -> Acc
 		end, [], Res).

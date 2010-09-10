@@ -89,33 +89,33 @@
 init() ->
     ok = create_table().
 
-subscribe_node(_JID, _NodeID, Options) ->
-    SubID = make_subid(),
-    ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubID, options = Options}),
-    {result, SubID}.
+subscribe_node(_JID, _Nidx, Options) ->
+    SubId = make_subid(),
+    ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubId, options = Options}),
+    {result, SubId}.
 
-unsubscribe_node(_JID, _NodeID, SubID) ->
-    case ?DB_MOD:read_subscription(SubID) of
+unsubscribe_node(_JID, _Nidx, SubId) ->
+    case ?DB_MOD:read_subscription(SubId) of
 	{ok, Sub} ->
-	    ?DB_MOD:delete_subscription(SubID),
+	    ?DB_MOD:delete_subscription(SubId),
 	    {result, Sub};
 	notfound ->
 	    {error, notfound}
     end.
 
-get_subscription(_JID, _NodeID, SubID) ->
-    case ?DB_MOD:read_subscription(SubID) of
+get_subscription(_JID, _Nidx, SubId) ->
+    case ?DB_MOD:read_subscription(SubId) of
 	{ok, Sub} -> {result, Sub};
 	notfound -> {error, notfound}
     end.
 
-set_subscription(_JID, _NodeID, SubID, Options) ->
-    case ?DB_MOD:read_subscription(SubID) of
+set_subscription(_JID, _Nidx, SubId, Options) ->
+    case ?DB_MOD:read_subscription(SubId) of
 	{ok, _} ->
-	    ?DB_MOD:update_subscription(#pubsub_subscription{subid = SubID, options = Options}),
+	    ?DB_MOD:update_subscription(#pubsub_subscription{subid = SubId, options = Options}),
 	    {result, ok};
 	notfound ->
-	    ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubID, options = Options}),
+	    ?DB_MOD:add_subscription(#pubsub_subscription{subid = SubId, options = Options}),
 	    {result, ok}
     end.
 
