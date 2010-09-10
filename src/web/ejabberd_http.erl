@@ -364,25 +364,39 @@ process_request(#state{request_method = Method,
 		    _ ->
 			SockMod:peername(Socket)
 		end,
-	    Request = #request{method = Method,
-			       path = LPath,
-			       q = LQuery,
-			       auth = Auth,
-			       lang = Lang,
-			       host = Host,
-			       port = Port,
-			       tp = TP,
-			       headers = RequestHeaders,
-			       ip = IP},
+	    
 	    %% XXX bard: This previously passed control to
 	    %% ejabberd_web:process_get, now passes it to a local
 	    %% procedure (process) that handles dispatching based on
 	    %% URL path prefix.
 	    case ejabberd_websocket:check(Path, RequestHeaders) of
-	      {true, _VSN} ->
-	        ?DEBUG("It is a websocket version : ~p",[_VSN]);
-	        
+	      {true, VSN} ->
+	        {_, Origin} = lists:keyfind("Origin", 1, RequestHeaders),
+	        Ws = #ws{socket = Socket,
+    			       sockmod = SockMod,
+    			       ws_autoexit = true,
+    			       path = Path,
+    			       vsn = VSN,
+    			       host = Host,
+    			       origin = Origin,
+    			       headers = RequestHeaders
+    			       },
+    			
+    		
+        	
+	        ?DEBUG("It is a websocket version : ~p",[VSN]),
+	        ejabberd_websocket:connect(Ws, websocket_test);
 	      false ->
+	        Request = #request{method = Method,
+    			       path = LPath,
+    			       q = LQuery,
+    			       auth = Auth,
+    			       lang = Lang,
+    			       host = Host,
+    			       port = Port,
+    			       tp = TP,
+    			       headers = RequestHeaders,
+    			       ip = IP},
 	        ?DEBUG("It is not a websocket.",[]),
 	        case process(RequestHandlers, Request) of
 		        El when element(1, El) == xmlelement ->
