@@ -75,7 +75,7 @@ update_reg_users_counter_table(Server) ->
     mnesia:sync_dirty(F).
 
 plain_password_required() ->
-    false.
+    true.
 
 check_password(User, Server, Password) ->
     LUser = jlib:nodeprep(User),

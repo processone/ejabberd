@@ -146,6 +146,14 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
+	 WSLoopSupervisor =
+	 {ejabberd_wsloop_sup,
+ 	 {ejabberd_tmp_sup, start_link,
+ 	  [ejabberd_wsloop_sup, ejabberd_wsloop]},
+ 	 permanent,
+ 	 infinity,
+ 	 supervisor,
+ 	 [ejabberd_tmp_sup]},
     FrontendSocketSupervisor =
 	{ejabberd_frontend_socket_sup,
 	 {ejabberd_tmp_sup, start_link,

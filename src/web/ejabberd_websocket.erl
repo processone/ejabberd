@@ -44,7 +44,7 @@
 -include("ejabberd_http.hrl").
 
 check(_Path, Headers)->
-  ?DEBUG("testing for a websocket request path: ~p headers: ~p", [_Path, Headers]),
+  %?DEBUG("testing for a websocket request path: ~p headers: ~p", [_Path, Headers]),
 	% set supported websocket protocols, order does matter
 	VsnSupported = [{'draft-hixie', 76}, {'draft-hixie', 68}],	
 	% checks
@@ -55,12 +55,12 @@ connect(#ws{vsn = Vsn, socket = Socket, origin=Origin, host=Host, port=Port, soc
   	% build handshake
   	HandshakeServer = handshake(Vsn, Socket,SockMod, Headers, {Path, Origin, Host, Port}),
   	% send handshake back
-  	?DEBUG("building handshake response : ~p", [HandshakeServer]),
+  	%?DEBUG("building handshake response : ~p", [HandshakeServer]),
   	SockMod:send(Socket, HandshakeServer),
   	Ws0 = ejabberd_ws:new(Ws#ws{origin = Origin, host = Host}, self()),
-  	?DEBUG("Ws0 : ~p",[Ws0]),
+  	%?DEBUG("Ws0 : ~p",[Ws0]),
   	% add data to ws record and spawn controlling process
-  	WsHandleLoopPid = WsLoop:start(Ws0),
+  	{ok, WsHandleLoopPid} = WsLoop:start_link(Ws0),
   	erlang:monitor(process, WsHandleLoopPid),
   	% set opts
   	case SockMod of
@@ -83,7 +83,7 @@ check_websockets([Vsn|T], Headers) ->
 % Function: {true, Vsn} | false
 % Description: Check if the incoming request is a websocket request.
 check_websocket({'draft-hixie', 76} = Vsn, Headers) ->
-	?DEBUG("testing for websocket protocol ~p", [Vsn]),
+	%?DEBUG("testing for websocket protocol ~p", [Vsn]),
 	% set required headers
 	RequiredHeaders = [
 		{'Upgrade', "WebSocket"}, {'Connection', "Upgrade"}, {'Host', ignore}, {"Origin", ignore},
@@ -95,11 +95,11 @@ check_websocket({'draft-hixie', 76} = Vsn, Headers) ->
 			% return
 			{true, Vsn};
 		_RemainingHeaders ->
-			?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
+			%?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
 			false
 	end;
 check_websocket({'draft-hixie', 68} = Vsn, Headers) ->
-	?DEBUG("testing for websocket protocol ~p", [Vsn]),
+	%?DEBUG("testing for websocket protocol ~p", [Vsn]),
 	% set required headers
 	RequiredHeaders = [
 		{'Upgrade', "WebSocket"}, {'Connection', "Upgrade"}, {'Host', ignore}, {"Origin", ignore}
@@ -108,7 +108,7 @@ check_websocket({'draft-hixie', 68} = Vsn, Headers) ->
 	case check_headers(Headers, RequiredHeaders) of
 		true -> {true, Vsn};
 		_RemainingHeaders ->
-			?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
+			%?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
 			false
 	end;
 check_websocket(_Vsn, _Headers) -> false. % not implemented
@@ -121,7 +121,7 @@ check_headers(Headers, RequiredHeaders) ->
 		case lists:keyfind(Tag, 1, Headers) of
 			false -> true; % header not found, keep in list
 			{Tag, HVal} ->
-			  ?DEBUG("check: ~p", [{Tag, HVal,Val }]),
+			  %?DEBUG("check: ~p", [{Tag, HVal,Val }]),
 				case Val of
 					ignore -> false; % ignore value -> ok, remove from list
 					HVal -> false;	 % expected val -> ok, remove from list
@@ -156,7 +156,7 @@ handshake({'draft-hixie', 76}, Sock,SocketMod, Headers, {Path, Origin, Host, Por
 			?ERROR_MSG("tcp error treating data: ~p", [_Other]),
 			<<>>
 	end,
-	?DEBUG("got content in body of websocket request: ~p, ~p", [Body,string:join([Host, Path],"/")]),	
+	%?DEBUG("got content in body of websocket request: ~p, ~p", [Body,string:join([Host, Path],"/")]),	
 	% prepare handhsake response
 	["HTTP/1.1 101 WebSocket Protocol Handshake\r\n",
 		"Upgrade: WebSocket\r\n",
@@ -193,18 +193,19 @@ build_challenge({'draft-hixie', 76}, {Key1, Key2, Key3}) ->
 	
 	
 ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	?DEBUG("websocket loop", []),
+	%?DEBUG("websocket loop", []),
 	receive
 		{tcp, Socket, Data} ->
 			handle_data(Buffer, binary_to_list(Data), Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{tcp_closed, Socket} ->
-			?DEBUG("tcp connection was closed, exit", []),
+			%?DEBUG("tcp connection was closed, exit", []),
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{'DOWN', Ref, process, WsHandleLoopPid, Reason} ->
 			case Reason of
 				normal ->
-					?DEBUG("linked websocket controlling loop stopped.", []);
+					%?DEBUG("linked websocket controlling loop stopped.", []);
+					ok;
 				_ ->
 					?ERROR_MSG("linked websocket controlling loop crashed with reason: ~p", [Reason])
 			end,
@@ -213,11 +214,11 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{send, Data} ->
-			?DEBUG("sending data to websocket: ~p", [Data]),
+			%?DEBUG("sending data to websocket: ~p", [Data]),
 			SocketMode:send(Socket, [0, Data, 255]),
 			ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit);
 		shutdown ->
-			?DEBUG("shutdown request received, closing websocket with pid ~p", [self()]),
+			%?DEBUG("shutdown request received, closing websocket with pid ~p", [self()]),
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		_Ignored ->
@@ -227,24 +228,24 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 
 % Buffering and data handling
 handle_data(none, [0|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  ?DEBUG("handle_data 1", []),
+  %?DEBUG("handle_data 1", []),
 	handle_data([], T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data(none, [], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  ?DEBUG("handle_data 2", []),
+  %?DEBUG("handle_data 2", []),
 	ws_loop(Socket, none, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data(L, [255|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  ?DEBUG("handle_data 3", []),
+  %?DEBUG("handle_data 3", []),
 	WsHandleLoopPid ! {browser, lists:reverse(L)},
 	handle_data(none, T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data(L, [H|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  ?DEBUG("handle_data 4, Buffer = ~p", [L]),
+  %?DEBUG("handle_data 4, Buffer = ~p", [L]),
 	handle_data([H|L], T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data([], L, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  ?DEBUG("handle_data 5", []),
+  %?DEBUG("handle_data 5", []),
 	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit).
 
 % Close socket and custom handling loop dependency

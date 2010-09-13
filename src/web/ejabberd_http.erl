@@ -409,9 +409,7 @@ process_request(#state{request_method = Method,
     			       origin = Origin,
     			       headers = RequestHeaders
     			       },
-    			?DEBUG("WS: ~p/~p~n", [WebSocketHandlers, Path]),
-	        ?DEBUG("It is a websocket version : ~p",[VSN]),
-	        process(WebSocketHandlers, Ws),
+    			process(WebSocketHandlers, Ws),
 	        none;
 	      false ->
 	        Request = #request{method = Method,
