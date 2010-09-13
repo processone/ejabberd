@@ -45,6 +45,8 @@
 	    vsn,						% {Maj,Min} | {'draft-hixie', Ver}
 	    origin,						% the originator
 	    host,						% the host
+	    port,
 	    path,						% the websocket GET request path
-	    headers						% [{Tag, Val}]
+	    headers,						% [{Tag, Val}]
+	    local_path
     }).

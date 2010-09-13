@@ -65,7 +65,8 @@
 		request_tp,
 		request_headers = [],
 		end_of_request = false,
-		trail = ""
+		trail = "",
+		websocket_handlers = []
 	       }).
 
 
@@ -134,11 +135,16 @@ init({SockMod, Socket}, Opts) ->
             false -> []
         end,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
-
+    WebSocketHandlers = case lists:keysearch(websocket_handlers, 1, Opts) of
+  	    {value, {websocket_handlers, WH}} -> WH;
+  	    false -> []
+    end,
+    ?DEBUG("WS: ~p~n", [WebSocketHandlers]),
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
-                   request_handlers = RequestHandlers},
+                   request_handlers = RequestHandlers,
+                   websocket_handlers = WebSocketHandlers},
     receive_headers(State).
 
 
@@ -148,6 +154,9 @@ become_controller(_Pid) ->
 socket_type() ->
     raw.
 
+
+send_text(State, none) ->
+  exit(normal);
 send_text(State, Text) ->
     case catch (State#state.sockmod):send(State#state.socket, Text) of
         ok -> ok;
@@ -315,6 +324,23 @@ get_transfer_protocol(SockMod, HostPort) ->
 %% found, answer with HTTP 404.
 process([], _) ->
     ejabberd_web:error(not_found);
+process(Handlers, #ws{} = Ws)->
+  [{HandlerPathPrefix, HandlerModule} | HandlersLeft] = Handlers,
+  case (lists:prefix(HandlerPathPrefix, Ws#ws.path) or
+         (HandlerPathPrefix==Ws#ws.path)) of
+	true ->
+      ?DEBUG("~p matches ~p", [Ws#ws.path, HandlerPathPrefix]),
+      %% LocalPath is the path "local to the handler", i.e. if
+      %% the handler was registered to handle "/test/" and the
+      %% requested path is "/test/foo/bar", the local path is
+      %% ["foo", "bar"]
+      LocalPath = lists:nthtail(length(HandlerPathPrefix), Ws#ws.path),
+      ejabberd_hooks:run(ws_debug, [{LocalPath, Ws}]),
+      ejabberd_websocket:connect(Ws#ws{local_path = LocalPath}, HandlerModule);
+	false ->
+	    ?DEBUG("HandlersLeft : ~p ", [HandlersLeft]),
+	    process(HandlersLeft, Ws)
+    end;
 process(Handlers, Request) ->
     [{HandlerPathPrefix, HandlerModule} | HandlersLeft] = Handlers,
 
@@ -344,6 +370,7 @@ process_request(#state{request_method = Method,
 		       request_tp = TP,
 		       request_headers = RequestHeaders,
 		       sockmod = SockMod,
+		       websocket_handlers = WebSocketHandlers,
 		       socket = Socket} = State)
   when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' orelse Method=:='OPTIONS' ->
     case (catch url_decode_q_split(Path)) of
@@ -375,17 +402,17 @@ process_request(#state{request_method = Method,
 	        Ws = #ws{socket = Socket,
     			       sockmod = SockMod,
     			       ws_autoexit = true,
-    			       path = Path,
+    			       path = LPath,
     			       vsn = VSN,
     			       host = Host,
+    			       port = Port,
     			       origin = Origin,
     			       headers = RequestHeaders
     			       },
-    			
-    		
-        	
+    			?DEBUG("WS: ~p/~p~n", [WebSocketHandlers, Path]),
 	        ?DEBUG("It is a websocket version : ~p",[VSN]),
-	        ejabberd_websocket:connect(Ws, websocket_test);
+	        process(WebSocketHandlers, Ws),
+	        none;
 	      false ->
 	        Request = #request{method = Method,
     			       path = LPath,

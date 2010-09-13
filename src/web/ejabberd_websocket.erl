@@ -41,7 +41,7 @@
 -compile(export_all).
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include ("ejabberd_http.hrl").
+-include("ejabberd_http.hrl").
 
 check(_Path, Headers)->
   ?DEBUG("testing for a websocket request path: ~p headers: ~p", [_Path, Headers]),
@@ -51,9 +51,9 @@ check(_Path, Headers)->
 	check_websockets(VsnSupported, Headers).
 
 % Connect and handshake with Websocket.
-connect(#ws{vsn = Vsn, socket = Socket, origin=Origin, host=Host,sockmod = SockMod, path = Path, headers = Headers, ws_autoexit = WsAutoExit} = Ws, WsLoop) ->
+connect(#ws{vsn = Vsn, socket = Socket, origin=Origin, host=Host, port=Port, sockmod = SockMod, path = Path, headers = Headers, ws_autoexit = WsAutoExit} = Ws, WsLoop) ->
   	% build handshake
-  	HandshakeServer = handshake(Vsn, Socket,SockMod, Headers, {Path, Origin, Host}),
+  	HandshakeServer = handshake(Vsn, Socket,SockMod, Headers, {Path, Origin, Host, Port}),
   	% send handshake back
   	?DEBUG("building handshake response : ~p", [HandshakeServer]),
   	SockMod:send(Socket, HandshakeServer),
@@ -136,7 +136,7 @@ check_headers(Headers, RequiredHeaders) ->
 
 % Function: List
 % Description: Builds the server handshake response.
-handshake({'draft-hixie', 76}, Sock,SocketMod, Headers, {Path, Origin, Host}) ->
+handshake({'draft-hixie', 76}, Sock,SocketMod, Headers, {Path, Origin, Host, Port}) ->
 	% build data
 	{_, Key1} = lists:keyfind("Sec-Websocket-Key1",1, Headers),
 	{_, Key2} = lists:keyfind("Sec-Websocket-Key2",1, Headers),
@@ -156,22 +156,26 @@ handshake({'draft-hixie', 76}, Sock,SocketMod, Headers, {Path, Origin, Host}) ->
 			?ERROR_MSG("tcp error treating data: ~p", [_Other]),
 			<<>>
 	end,
-	?DEBUG("got content in body of websocket request: ~p", [Body]),	
+	?DEBUG("got content in body of websocket request: ~p, ~p", [Body,string:join([Host, Path],"/")]),	
 	% prepare handhsake response
 	["HTTP/1.1 101 WebSocket Protocol Handshake\r\n",
 		"Upgrade: WebSocket\r\n",
 		"Connection: Upgrade\r\n",
 		"Sec-WebSocket-Origin: ", Origin, "\r\n",
-		"Sec-WebSocket-Location: ws://", Host, ":5280",Path, "\r\n\r\n",
+		"Sec-WebSocket-Location: ws://",
+		string:join([Host, integer_to_list(Port)],":"),
+		"/",string:join(Path,"/") , "\r\n\r\n",
 		build_challenge({'draft-hixie', 76}, {Key1, Key2, Body})
 	];
-handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host}) ->
+handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host, Port}) ->
 	% prepare handhsake response
 	["HTTP/1.1 101 Web Socket Protocol Handshake\r\n",
 		"Upgrade: WebSocket\r\n",
 		"Connection: Upgrade\r\n",
 		"WebSocket-Origin: ", Origin , "\r\n",
-		"WebSocket-Location: ws://", lists:concat([Host, Path]), "\r\n\r\n"
+		"WebSocket-Location: ws://", 
+		lists:concat([Host, integer_to_list(Port)]),
+		"/",string:join(Path,"/"),  "\r\n\r\n"
 	].
 
 % Function: List
