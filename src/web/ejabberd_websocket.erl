@@ -60,7 +60,7 @@ connect(#ws{vsn = Vsn, socket = Socket, origin=Origin, host=Host, port=Port, soc
   	Ws0 = ejabberd_ws:new(Ws#ws{origin = Origin, host = Host}, self()),
   	?DEBUG("Ws0 : ~p",[Ws0]),
   	% add data to ws record and spawn controlling process
-  	WsHandleLoopPid = WsLoop:start(Ws0),
+  	{ok, WsHandleLoopPid} = WsLoop:start_link(Ws0),
   	erlang:monitor(process, WsHandleLoopPid),
   	% set opts
   	case SockMod of

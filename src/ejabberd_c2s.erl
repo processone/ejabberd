@@ -1851,6 +1851,7 @@ get_conn_type(StateData) ->
 		    end
 	    end;
 	ejabberd_http_poll -> http_poll;
+	ejabberd_http_ws   -> http_ws;
 	ejabberd_http_bind -> http_bind;
 	_ -> unknown
     end.
