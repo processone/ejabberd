@@ -408,8 +408,13 @@ make_payload(State, Msg, Badge, Sound, Sender) ->
     Payloads = lists:filter(fun(S) -> S /= "" end,
 			    [AlertPayload, BadgePayload, SoundPayload]),
     Payload =
-	"{\"aps\":{" ++ join(Payloads, ",") ++ "},"
-	"\"from\":\"" ++ json_escape(Sender) ++ "\"}",
+	case Sender of
+	    "" ->
+		"{\"aps\":{" ++ join(Payloads, ",") ++ "}}";
+	    _ ->
+		"{\"aps\":{" ++ join(Payloads, ",") ++ "},"
+		    "\"from\":\"" ++ json_escape(Sender) ++ "\"}"
+	end,
     PayloadLen = length(Payload),
     if
 	PayloadLen > ?MAX_PAYLOAD_SIZE ->
