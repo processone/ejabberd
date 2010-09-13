@@ -251,16 +251,21 @@ resend_badge(To) ->
 				Host,
 				0,
 				[To#jid.luser, Host]),
-		    Badge = integer_to_list(Offline + 1),
-		    DeviceID = erlang:integer_to_list(ID, 16),
-		    Packet1 =
-			{xmlelement, "message", [],
-			 [{xmlelement, "push", [{"xmlns", ?NS_P1_PUSH}],
-			   [{xmlelement, "id", [],
-			     [{xmlcdata, DeviceID}]},
-			    {xmlelement, "badge", [],
-			     [{xmlcdata, Badge}]}]}]},
-		    ejabberd_router:route(To, ServiceJID, Packet1)
+		    if
+			Offline == 0 ->
+			    ok;
+			true ->
+			    Badge = integer_to_list(Offline),
+			    DeviceID = erlang:integer_to_list(ID, 16),
+			    Packet1 =
+				{xmlelement, "message", [],
+				 [{xmlelement, "push", [{"xmlns", ?NS_P1_PUSH}],
+				   [{xmlelement, "id", [],
+				     [{xmlcdata, DeviceID}]},
+				    {xmlelement, "badge", [],
+				     [{xmlcdata, Badge}]}]}]},
+			    ejabberd_router:route(To, ServiceJID, Packet1)
+		    end
 	    end;
 	false ->
 	    {error, "mod_applepush is not loaded"}
