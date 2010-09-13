@@ -71,6 +71,9 @@
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
 
+%% Copied from ejabberd_socket.erl
+-record(socket_state, {sockmod, socket, receiver}).
+
 -define(SETS, gb_sets).
 -define(DICT, dict).
 
@@ -527,6 +530,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  "(~w) Accepted legacy authentication for ~s by ~s",
 				  [StateData#state.socket,
 				    exmpp_jid:to_binary(JID), AuthModule]),
+			    erlang:link((StateData#state.socket)#socket_state.receiver),
 				SID = {now(), self()},
 				Conn = get_conn_type(StateData),
 				%% Info = [{ip, StateData#state.ip}, {conn, Conn},
@@ -1593,9 +1597,6 @@ get_auth_tags([_ | L], U, P, D, R) ->
     get_auth_tags(L, U, P, D, R);
 get_auth_tags([], U, P, D, R) ->
     {U, P, D, R}.
-
-%% Copied from ejabberd_socket.erl
--record(socket_state, {sockmod, socket, receiver}).
 
 get_conn_type(StateData) ->
     case (StateData#state.sockmod):get_sockmod(StateData#state.socket) of

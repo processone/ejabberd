@@ -214,7 +214,10 @@ get_user_info(User, Server, Resource)
 	    N = node(element(2, Session#session.sid)),
 	    Conn = proplists:get_value(conn, Session#session.info),
 	    IP = proplists:get_value(ip, Session#session.info),
-	    [{node, N}, {conn, Conn}, {ip, IP}];
+	    Priority = Session#session.priority, %% integer()
+	    {CreationNow, Pid} = Session#session.sid,
+	    CreationString = jlib:now_to_utc_string(CreationNow),
+	    [{node, Node}, {conn, Conn}, {ip, IP}, {priority, Priority}, {pid, Pid}, {creation, CreationString}];
        true ->
 	    offline
     end.
