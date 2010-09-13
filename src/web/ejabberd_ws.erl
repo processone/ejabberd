@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_websocket.erl
 %%% Author  : Eric Cestari <ecestari@process-one.net>
-%%% Purpose : XMPP Websocket support
+%%% Purpose : Websocket support
 %%% Created : 09-10-2010 by Eric Cestari <ecestari@process-one.net>
 %%% Slightly adapted from :
 % ==========================================================================================================

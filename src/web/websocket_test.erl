@@ -1,15 +1,18 @@
 -module (websocket_test).
--export([handle/1]).
+-export([start/1, loop/1]).
 
 % callback on received websockets data
-handle(Ws) ->
+start(Ws) ->
+  spawn(?MODULE, loop, [Ws]).
+
+loop(Ws) ->
 	receive
 		{browser, Data} ->
 			Ws:send(["received '", Data, "'"]),
-			handle(Ws);
+			loop(Ws);
 		_Ignore ->
-			handle(Ws)
+			loop(Ws)
 	after 5000 ->
 		Ws:send("pushing!"),
-		handle(Ws)
+		loop(Ws)
 	end.
