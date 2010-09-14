@@ -370,7 +370,7 @@ handle_message(From, To, Packet, State) ->
 		      "Device ID: ~s~n",
 		      [State#state.host, erlang:integer_to_list(ID, 16),
 		       Notification, Payload,
-		       jlib:jid_to_string(From),
+		       Sender,
 		       Receiver, DeviceID]),
 	    case ssl:send(State#state.socket, Notification) of
 		ok ->
