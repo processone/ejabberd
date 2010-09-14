@@ -215,6 +215,7 @@ receive_offline_packet(From, To, Packet) ->
 				end,
 			    Badge = integer_to_list(Offline + 1),
 			    DeviceID = erlang:integer_to_list(ID, 16),
+			    STo = jlib:jid_to_string(To),
 			    Packet1 =
 				{xmlelement, "message", [],
 				 [{xmlelement, "push", [{"xmlns", ?NS_P1_PUSH}],
@@ -227,7 +228,9 @@ receive_offline_packet(From, To, Packet) ->
 				    {xmlelement, "sound", [],
 				     [{xmlcdata, SSound}]},
 				    {xmlelement, "from", [],
-				     [{xmlcdata, SFrom}]}]}]},
+				     [{xmlcdata, SFrom}]},
+				    {xmlelement, "to", [],
+				     [{xmlcdata, STo}]}]}]},
 			    ejabberd_router:route(To, ServiceJID, Packet1)
 		    end
 	    end;
