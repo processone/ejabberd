@@ -81,13 +81,13 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 create_captcha(SID, From, To, Lang, Args)
-  when is_binary(Lang), is_list(SID) ->
+  when is_binary(Lang), is_binary(SID) ->
     case create_image() of
 	{ok, Type, Key, Image} ->
-	    Id = randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id(),
-	    B64Image = jlib:encode_base64(binary_to_list(Image)),
+	    Id = list_to_binary(randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id()),
+	    B64Image = list_to_binary(jlib:encode_base64(binary_to_list(Image))),
 	    JID = exmpp_jid:to_list(From),
-	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
+	    CID = list_to_binary(["sha1+", sha:sha(Image), "@bob.xmpp.org"]),
 %	    Data = {xmlelement, "data",
 %		    [{"xmlns", ?NS_BOB}, {"cid", CID},
 %		     {"max-age", "0"}, {"type", Type}],
@@ -103,7 +103,7 @@ create_captcha(SID, From, To, Lang, Args)
 	          },
 	          #xmlattr{
 	            name = 'max-age',
-	            value = "0"
+	            value = <<"0">>
 	          },
 	          #xmlattr{
 	            name = 'type',
@@ -134,20 +134,20 @@ create_captcha(SID, From, To, Lang, Args)
 	        attrs = [
 	          #xmlattr{
 	            name = 'type',
-	            value = "form"	                      
+	            value = <<"form">>
 	          }
 	        ],
 	        children = [
-	          ?VFIELD("hidden", "FORM_TYPE", #xmlcdata{cdata = ?NS_CAPTCHA}),
-	          ?VFIELD("hidden", "from", #xmlcdata{cdata = exmpp_jid:to_list(To)}),
-	          ?VFIELD("hidden", "challenge", #xmlcdata{cdata = Id}),
-	          ?VFIELD("hidden", "sid", #xmlcdata{cdata = SID}),
+	          ?VFIELD(<<"hidden">>, <<"FORM_TYPE">>, #xmlcdata{cdata = ?NS_CAPTCHA}),
+	          ?VFIELD(<<"hidden">>, <<"from">>, #xmlcdata{cdata = exmpp_jid:to_binary(To)}),
+	          ?VFIELD(<<"hidden">>, <<"challenge">>, #xmlcdata{cdata = Id}),
+	          ?VFIELD(<<"hidden">>, <<"sid">>, #xmlcdata{cdata = SID}),
 	          #xmlel{
 	            name = 'field',
 	            attrs = [
 	              #xmlattr{
 	                name = 'var',
-	                value = "ocr"
+	                value = <<"ocr">>
 	              },
 	              #xmlattr{
 	                name = 'label',
@@ -168,7 +168,7 @@ create_captcha(SID, From, To, Lang, Args)
 	                      }
 	                    ],
 	                    children = [
-	                      #xmlcdata{cdata = "cid:" ++ CID}
+	                      #xmlcdata{cdata = list_to_binary(["cid:", CID])}
 	                    ]
 	                  }
 	                ]
@@ -199,7 +199,7 @@ create_captcha(SID, From, To, Lang, Args)
               name = 'url',
               children = [
                 #xmlcdata{
-                  cdata = get_url(Id)}
+                  cdata = list_to_binary(get_url(Id))}
               ]
             }
           ]
@@ -232,7 +232,7 @@ build_captcha_html(Id, Lang) ->
           attrs = [
             #xmlattr{
               name = 'src',
-              value = get_url(Id ++ "/image")
+              value = list_to_binary(get_url(Id ++ "/image"))
             }
           ]
         },
@@ -247,15 +247,15 @@ build_captcha_html(Id, Lang) ->
 	        attrs = [
 	          #xmlattr{
 	            name = 'type',
-	            value = "hidden"
+	            value = <<"hidden">>
 	          },
 	          #xmlattr{
 	            name = 'name',
-	            value = "id"
+	            value = <<"id">>
 	          },
 	          #xmlattr{
 	            name = 'value',
-	            value = Id
+	            value = list_to_binary(Id)
 	          }
 	        ]
 	      },
@@ -300,7 +300,7 @@ build_captcha_html(Id, Lang) ->
 			    attrs = [
 			      #xmlattr{
 			        name = 'action',
-			        value = get_url(Id)
+			        value = list_to_binary(get_url(Id))
 			      },
 			      #xmlattr{
 			        name = 'name',
@@ -399,7 +399,7 @@ process_reply(El) ->
 
 process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
     case build_captcha_html(Id, Lang) of
-	{FormEl, _} when is_tuple(FormEl) ->
+	{FormEl, CaptchaTuple} when is_tuple(CaptchaTuple) ->
 	    Form =
 		%{xmlelement, "div", [{"align", "center"}],
 		 %[FormEl]},
@@ -502,25 +502,25 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %% Function: create_image() -> {ok, Type, Key, Image} | {error, Reason}
 %% Type = "image/png" | "image/jpeg" | "image/gif"
-%% Key = string()
+%% Key = binary()
 %% Image = binary()
 %% Reason = atom()
 %%--------------------------------------------------------------------
 create_image() ->
     %% Six numbers from 1 to 9.
-    Key = string:substr(randoms:get_string(), 1, 6),
+    Key = list_to_binary(string:substr(randoms:get_string(), 1, 6)),
     create_image(Key).
 
 create_image(Key) ->
     FileName = get_prog_name(),
-    Cmd = lists:flatten(io_lib:format("~s ~s", [FileName, Key])),
+    Cmd = lists:flatten(io_lib:format("~s ~p", [FileName, Key])),
     case cmd(Cmd) of
 	{ok, <<16#89, $P, $N, $G, $\r, $\n, 16#1a, $\n, _/binary>> = Img} ->
-	    {ok, "image/png", Key, Img};
+	    {ok, <<"image/png">>, Key, Img};
 	{ok, <<16#ff, 16#d8, _/binary>> = Img} ->
-	    {ok, "image/jpeg", Key, Img};
+	    {ok, <<"image/jpeg">>, Key, Img};
 	{ok, <<$G, $I, $F, $8, X, $a, _/binary>> = Img} when X==$7; X==$9 ->
-	    {ok, "image/gif", Key, Img};
+	    {ok, <<"image/gif">>, Key, Img};
 	{error, enodata = Reason} ->
 	    ?ERROR_MSG("Failed to process output from \"~s\". "
 		       "Maybe ImageMagick's Convert program is not installed.",
