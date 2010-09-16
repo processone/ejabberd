@@ -198,14 +198,16 @@ handle_info({ssl, Socket, Packet}, State)
 	<<8, Status, CmdID:32>> when Status /= 0 ->
 	    case dict:find(CmdID, State#state.cmd_cache) of
 		{ok, {JID, _DeviceID}} ->
-		    From = jlib:make_jid("", State#state.host, ""),
-		    ejabberd_router:route(
-		      From, JID,
-		      {xmlelement, "message", [],
-		       [{xmlelement, "disable",
-			 [{"xmlns", ?NS_P1_PUSH},
-			  {"status", integer_to_list(Status)}],
-			 []}]});
+                    ?ERROR_MSG("PUSH ERROR for ~p: ~p", [JID, Status]),
+                    %From = jlib:make_jid("", State#state.host, ""),
+		    %ejabberd_router:route(
+		    %  From, JID,
+		    %  {xmlelement, "message", [],
+		    %   [{xmlelement, "disable",
+		    %	 [{"xmlns", ?NS_P1_PUSH},
+		    %	  {"status", integer_to_list(Status)}],
+		    %	  []}]});
+                    ok;
 		error ->
 		    ?ERROR_MSG("Unknown cmd ID ~p~n", [CmdID]),
 		    ok
@@ -408,8 +410,13 @@ make_payload(State, Msg, Badge, Sound, Sender) ->
     Payloads = lists:filter(fun(S) -> S /= "" end,
 			    [AlertPayload, BadgePayload, SoundPayload]),
     Payload =
-	"{\"aps\":{" ++ join(Payloads, ",") ++ "},"
-	"\"from\":\"" ++ json_escape(Sender) ++ "\"}",
+	case Sender of
+	    "" ->
+		"{\"aps\":{" ++ join(Payloads, ",") ++ "}}";
+	    _ ->
+		"{\"aps\":{" ++ join(Payloads, ",") ++ "},"
+		    "\"from\":\"" ++ json_escape(Sender) ++ "\"}"
+	end,
     PayloadLen = length(Payload),
     if
 	PayloadLen > ?MAX_PAYLOAD_SIZE ->
