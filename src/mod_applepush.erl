@@ -17,7 +17,10 @@
 	 push_notification/8,
 	 enable_offline_notification/5,
 	 disable_notification/3,
-	 receive_offline_packet/3]).
+	 receive_offline_packet/3,
+	 resend_badge/1,
+	 multi_resend_badge/1,
+	 offline_resend_badge/0]).
 
 %% Debug commands
 -export([get_token_by_jid/1]).
@@ -231,6 +234,50 @@ receive_offline_packet(From, To, Packet) ->
 	false ->
 	    ok
     end.
+
+resend_badge(To) ->
+    Host = To#jid.lserver,
+    case gen_mod:is_loaded(Host, mod_applepush) of
+	true ->
+	    case lookup_cache(To) of
+		false ->
+		    {error, "no cached data for the user"};
+		{ID, AppID, SendBody, SendFrom} ->
+		    ?DEBUG("lookup: ~p~n", [{ID, AppID, SendBody, SendFrom}]),
+		    PushService = get_push_service(Host, To, AppID),
+		    ServiceJID = jlib:make_jid("", PushService, ""),
+		    Offline = ejabberd_hooks:run_fold(
+				count_offline_messages,
+				Host,
+				0,
+				[To#jid.luser, Host]),
+		    if
+			Offline == 0 ->
+			    ok;
+			true ->
+			    Badge = integer_to_list(Offline),
+			    DeviceID = erlang:integer_to_list(ID, 16),
+			    Packet1 =
+				{xmlelement, "message", [],
+				 [{xmlelement, "push", [{"xmlns", ?NS_P1_PUSH}],
+				   [{xmlelement, "id", [],
+				     [{xmlcdata, DeviceID}]},
+				    {xmlelement, "badge", [],
+				     [{xmlcdata, Badge}]}]}]},
+			    ejabberd_router:route(To, ServiceJID, Packet1)
+		    end
+	    end;
+	false ->
+	    {error, "mod_applepush is not loaded"}
+    end.
+
+multi_resend_badge(JIDs) ->
+    lists:foreach(fun resend_badge/1, JIDs).
+
+offline_resend_badge() ->
+    USs = mnesia:dirty_all_keys(applepush_cache),
+    JIDs = lists:map(fun({U, S}) -> jlib:make_jid(U, S, "") end, USs),
+    multi_resend_badge(JIDs).
 
 lookup_cache(JID) ->
     #jid{luser = LUser, lserver = LServer} = JID,
