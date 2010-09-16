@@ -49,7 +49,7 @@
 process([Domain | _Rest] = LocalPath,  #request{auth = Auth} = Request)->
   UD =  get_auth(Auth),
   Module = backend(Domain),
-  case   out(Module, Request, Request#request.method, LocalPath,UD) of
+  case catch  out(Module, Request, Request#request.method, LocalPath,UD) of
     {'EXIT', Error} ->
       ?ERROR_MSG("Error while processing ~p : ~n~p", [LocalPath, Error]),
       error(500);
