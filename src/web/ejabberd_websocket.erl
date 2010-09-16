@@ -44,7 +44,6 @@
 -include("ejabberd_http.hrl").
 
 check(_Path, Headers)->
-  %?DEBUG("testing for a websocket request path: ~p headers: ~p", [_Path, Headers]),
 	% set supported websocket protocols, order does matter
 	VsnSupported = [{'draft-hixie', 76}, {'draft-hixie', 68}],	
 	% checks
@@ -198,7 +197,7 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 		{tcp, Socket, Data} ->
 			handle_data(Buffer, binary_to_list(Data), Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{tcp_closed, Socket} ->
-			%?DEBUG("tcp connection was closed, exit", []),
+			?DEBUG("tcp connection was closed, exit", []),
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{'DOWN', Ref, process, WsHandleLoopPid, Reason} ->
@@ -218,7 +217,7 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 			SocketMode:send(Socket, [0, Data, 255]),
 			ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit);
 		shutdown ->
-			%?DEBUG("shutdown request received, closing websocket with pid ~p", [self()]),
+			?DEBUG("shutdown request received, closing websocket with pid ~p", [self()]),
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		_Ignored ->
@@ -228,24 +227,19 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 
 % Buffering and data handling
 handle_data(none, [0|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  %?DEBUG("handle_data 1", []),
 	handle_data([], T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data(none, [], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  %?DEBUG("handle_data 2", []),
 	ws_loop(Socket, none, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data(L, [255|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  %?DEBUG("handle_data 3", []),
 	WsHandleLoopPid ! {browser, lists:reverse(L)},
 	handle_data(none, T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data(L, [H|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  %?DEBUG("handle_data 4, Buffer = ~p", [L]),
 	handle_data([H|L], T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
 handle_data([], L, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-  %?DEBUG("handle_data 5", []),
 	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit).
 
 % Close socket and custom handling loop dependency

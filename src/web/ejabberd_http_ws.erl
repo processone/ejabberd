@@ -76,7 +76,7 @@ start(WS) ->
     supervisor:start_child(ejabberd_wsloop_sup, [WS]).
 
 start_link(WS) ->
-    gen_fsm:start_link(?MODULE, [WS],[{debug, [trace]}]).
+    gen_fsm:start_link(?MODULE, [WS],?FSMOPTS).
 
 send({http_ws, FsmRef, _IP}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).

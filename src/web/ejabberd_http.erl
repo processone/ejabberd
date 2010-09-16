@@ -330,10 +330,6 @@ process(Handlers, #ws{} = Ws)->
          (HandlerPathPrefix==Ws#ws.path)) of
 	true ->
       ?DEBUG("~p matches ~p", [Ws#ws.path, HandlerPathPrefix]),
-      %% LocalPath is the path "local to the handler", i.e. if
-      %% the handler was registered to handle "/test/" and the
-      %% requested path is "/test/foo/bar", the local path is
-      %% ["foo", "bar"]
       LocalPath = lists:nthtail(length(HandlerPathPrefix), Ws#ws.path),
       ejabberd_hooks:run(ws_debug, [{LocalPath, Ws}]),
       ejabberd_websocket:connect(Ws#ws{local_path = LocalPath}, HandlerModule);
@@ -410,6 +406,7 @@ process_request(#state{request_method = Method,
     			       headers = RequestHeaders
     			       },
     			process(WebSocketHandlers, Ws),
+    			?DEBUG("It is a websocket.",[]),
 	        none;
 	      false ->
 	        Request = #request{method = Method,
@@ -422,7 +419,6 @@ process_request(#state{request_method = Method,
     			       tp = TP,
     			       headers = RequestHeaders,
     			       ip = IP},
-	        ?DEBUG("It is not a websocket.",[]),
 	        case process(RequestHandlers, Request) of
 		        El when element(1, El) == xmlelement ->
 		          make_xhtml_output(State, 200, [], El);
