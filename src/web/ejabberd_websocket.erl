@@ -212,10 +212,9 @@ build_challenge({'draft-hixie', 0}, {Key1, Key2, Key3}) ->
 	
 	
 ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	%?DEBUG("websocket loop", []),
 	receive
 		{tcp, Socket, Data} ->
-			handle_data(Buffer, binary_to_list(Data), Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
+			handle_data(Buffer, Data, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{tcp_closed, Socket} ->
 			?DEBUG("tcp connection was closed, exit", []),
 			% close websocket and custom controlling loop
@@ -233,8 +232,8 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{send, Data} ->
-			%?DEBUG("sending data to websocket: ~p", [Data]),
-			SocketMode:send(Socket, [0, Data, 255]),
+			?DEBUG("sending data to websocket: ~p", [Data]),
+			SocketMode:send(Socket, iolist_to_binary([0,Data,255])),
 			ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit);
 		shutdown ->
 			?DEBUG("shutdown request received, closing websocket with pid ~p", [self()]),
@@ -246,20 +245,20 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	end.
 
 % Buffering and data handling
-handle_data(none, [0|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	handle_data([], T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
+handle_data(none,<<0,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+	handle_data(<<>>, T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
-handle_data(none, [], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+handle_data(none, <<>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	ws_loop(Socket, none, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
-handle_data(L, [255|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	WsHandleLoopPid ! {browser, lists:reverse(L)},
+handle_data(L, <<255,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+	WsHandleLoopPid ! {browser, iolist_to_binary(L)},
 	handle_data(none, T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
-handle_data(L, [H|T], Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	handle_data([H|L], T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
+handle_data(L, <<H/utf8,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+	handle_data(iolist_to_binary([L, H]), T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 	
-handle_data([], L, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+handle_data(<<>>, L, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit).
 
 % Close socket and custom handling loop dependency

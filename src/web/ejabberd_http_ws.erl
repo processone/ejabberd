@@ -151,12 +151,12 @@ handle_event({activate, From}, StateName, StateData) ->
 handle_sync_event({send, Packet}, _From, StateName, #state{ws = WS} = StateData) ->
     Packet2 = if
 	    is_binary(Packet) ->
-	        binary_to_list(Packet);
+	        Packet;
 	    true ->
-	        Packet
+	        list_to_binary(Packet)
         end,
     ?DEBUG("sending on websocket : ~p ", [Packet2]),
-    WS:send(lists:flatten(Packet2)),
+    WS:send(Packet2),
     {reply, ok, StateName, StateData};
     
 handle_sync_event(close, _From, _StateName, StateData) ->
@@ -169,8 +169,7 @@ handle_info({browser, Packet}, StateName, StateData)->
 		    Input = [StateData#state.input|Packet],
 		    StateData#state{input = Input};
 		{Receiver, _Tag} ->
-		    Receiver ! {tcp, StateData#state.socket,
-				list_to_binary(Packet)},
+		    Receiver ! {tcp, StateData#state.socket,Packet},
 		    cancel_timer(StateData#state.timer),
 		    Timer = erlang:start_timer(StateData#state.timeout, self(), []),
         StateData#state{waiting_input = false,
