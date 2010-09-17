@@ -2,7 +2,7 @@
 
 -define(TIMEOUT, 1000*600). % 1 minute
 
--export([start/0, loop/0, subscribed/1, offline/1]).
+-export([start/0, loop/0, offline/1]).
 
 start() ->
     Pid = spawn(?MODULE, loop, []),
@@ -24,16 +24,11 @@ purge() ->
             I=element(3,N),
             lists:foreach(fun(JID) ->
                 mnesia:dirty_delete({pubsub_state, {JID, I}})
-            end, offline(subscribed(I)))
+            end, offline(pubsub_debug:subscribed(I)))
         end, mnesia:dirty_all_keys(pubsub_node));
     true ->
         ok
     end.
-
-subscribed(NodeId) ->
-    lists:map(fun(S) ->
-        element(1,element(2,S))
-    end, mnesia:dirty_match_object({pubsub_state, {'_',NodeId},'_',none,subscribed})).
 
 offline(Jids) ->
     lists:filter(fun({U,S,""}) -> ejabberd_sm:get_user_resources(U,S) == [];
