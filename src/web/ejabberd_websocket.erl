@@ -45,7 +45,7 @@
 
 check(_Path, Headers)->
 	% set supported websocket protocols, order does matter
-	VsnSupported = [{'draft-hixie', 76}, {'draft-hixie', 68}],	
+	VsnSupported = [{'draft-hixie', 0}, {'draft-hixie', 68}],	
 	% checks
 	check_websockets(VsnSupported, Headers).
 
@@ -101,7 +101,7 @@ check_websockets([Vsn|T], Headers) ->
 
 % Function: {true, Vsn} | false
 % Description: Check if the incoming request is a websocket request.
-check_websocket({'draft-hixie', 76} = Vsn, Headers) ->
+check_websocket({'draft-hixie', 0} = Vsn, Headers) ->
 	%?DEBUG("testing for websocket protocol ~p", [Vsn]),
 	% set required headers
 	RequiredHeaders = [
@@ -155,7 +155,7 @@ check_headers(Headers, RequiredHeaders) ->
 
 % Function: List
 % Description: Builds the server handshake response.
-handshake({'draft-hixie', 76}, Sock,SocketMod, Headers, {Path, Origin, Host, Port}) ->
+handshake({'draft-hixie', 0}, Sock,SocketMod, Headers, {Path, Origin, Host, Port}) ->
 	% build data
 	{_, Key1} = lists:keyfind("Sec-Websocket-Key1",1, Headers),
 	{_, Key2} = lists:keyfind("Sec-Websocket-Key2",1, Headers),
@@ -184,7 +184,7 @@ handshake({'draft-hixie', 76}, Sock,SocketMod, Headers, {Path, Origin, Host, Por
 		"Sec-WebSocket-Location: ws://",
 		string:join([Host, integer_to_list(Port)],":"),
 		"/",string:join(Path,"/") , "\r\n\r\n",
-		build_challenge({'draft-hixie', 76}, {Key1, Key2, Body})
+		build_challenge({'draft-hixie', 0}, {Key1, Key2, Body})
 	];
 handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host, Port}) ->
 	% prepare handhsake response
@@ -200,7 +200,7 @@ handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host, 
 % Function: List
 % Description: Builds the challenge for a handshake response.
 % Code portions from Sergio Veiga <http://sergioveiga.com/index.php/2010/06/17/websocket-handshake-76-in-erlang/>
-build_challenge({'draft-hixie', 76}, {Key1, Key2, Key3}) ->
+build_challenge({'draft-hixie', 0}, {Key1, Key2, Key3}) ->
 	Ikey1 = [D || D <- Key1, $0 =< D, D =< $9],
 	Ikey2 = [D || D <- Key2, $0 =< D, D =< $9],
 	Blank1 = length([D || D <- Key1, D =:= 32]),
