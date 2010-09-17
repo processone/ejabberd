@@ -155,7 +155,7 @@ socket_type() ->
     raw.
 
 
-send_text(State, none) ->
+send_text(_State, none) ->
   exit(normal);
 send_text(State, Text) ->
     case catch (State#state.sockmod):send(State#state.socket, Text) of
@@ -298,6 +298,11 @@ process_header(State, Data) ->
 add_header(Name, Value, State) ->
     [{Name, Value} | State#state.request_headers].
 
+-define(GETOPT(Param, Opts), 
+ case lists:keysearch(Param, 1, Opts) of
+   {value, {Param, V}} -> V;
+   false -> undefined
+ end).
 %% @spec (SockMod, HostPort) -> {Host::string(), Port::integer(), TP}
 %% where
 %%       SockMod = gen_tcp | tls
@@ -322,17 +327,34 @@ get_transfer_protocol(SockMod, HostPort) ->
 %% XXX bard: search through request handlers looking for one that
 %% matches the requested URL path, and pass control to it.  If none is
 %% found, answer with HTTP 404.
+
 process([], _) ->
     ejabberd_web:error(not_found);
 process(Handlers, #ws{} = Ws)->
-  [{HandlerPathPrefix, HandlerModule} | HandlersLeft] = Handlers,
+  [{HandlerPathPrefix, HandlerModule, HandlerOpts} | HandlersLeft] = Handlers,
   case (lists:prefix(HandlerPathPrefix, Ws#ws.path) or
          (HandlerPathPrefix==Ws#ws.path)) of
 	true ->
       ?DEBUG("~p matches ~p", [Ws#ws.path, HandlerPathPrefix]),
       LocalPath = lists:nthtail(length(HandlerPathPrefix), Ws#ws.path),
       ejabberd_hooks:run(ws_debug, [{LocalPath, Ws}]),
-      ejabberd_websocket:connect(Ws#ws{local_path = LocalPath}, HandlerModule);
+      Protocol = case lists:keysearch(protocol, 1, HandlerOpts) of
+         {value, {protocol, P}} -> P;
+         false -> undefined
+       end,
+      Origins =  case lists:keysearch(origins, 1, HandlerOpts) of
+          {value, {origins, O}} -> O;
+          false -> []
+        end,
+      WS2 = Ws#ws{local_path = LocalPath, 
+                  protocol=Protocol,
+                  acceptable_origins=Origins},
+      case ejabberd_websocket:is_acceptable(WS2) of 
+        true ->
+          ejabberd_websocket:connect(WS2, HandlerModule);
+        false ->
+          process(HandlersLeft, Ws)
+      end;
 	false ->
 	    ?DEBUG("HandlersLeft : ~p ", [HandlersLeft]),
 	    process(HandlersLeft, Ws)

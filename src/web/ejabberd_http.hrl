@@ -48,5 +48,7 @@
 	    port,
 	    path,						% the websocket GET request path
 	    headers,						% [{Tag, Val}]
-	    local_path
+	    local_path,
+	    protocol,
+	    acceptable_origins
     }).

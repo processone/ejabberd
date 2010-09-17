@@ -38,7 +38,7 @@
 
 -module (ejabberd_websocket).
 -author('ecestari@process-one.net').
--compile(export_all).
+-export([connect/2, check/2, is_acceptable/1]).
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
@@ -48,6 +48,26 @@ check(_Path, Headers)->
 	VsnSupported = [{'draft-hixie', 76}, {'draft-hixie', 68}],	
 	% checks
 	check_websockets(VsnSupported, Headers).
+
+% Checks if websocket can be access by client
+% If origins are set in configuration, check if it belongs
+% If origins not set, access is open.
+is_acceptable(#ws{origin=Origin, protocol=Protocol, 
+                  headers = Headers, acceptable_origins = Origins})->
+  ClientProtocol = lists:keyfind("Sec-WebSocket-Protocol",1, Headers),
+  case {Origin == [] or lists:member(Origin, Origins), ClientProtocol, Protocol } of
+    {false, _, _} -> 
+      ?DEBUG("client does not come from authorized origin", []),
+      false;
+    {_, false, _} -> 
+      ?DEBUG("Client did not ask for protocol", []),
+      true;
+    {_, {_, P}, P} -> 
+      ?DEBUG("Protocoles are matching", []),
+      true;
+    _ -> false
+  end.
+    
 
 % Connect and handshake with Websocket.
 connect(#ws{vsn = Vsn, socket = Socket, origin=Origin, host=Host, port=Port, sockmod = SockMod, path = Path, headers = Headers, ws_autoexit = WsAutoExit} = Ws, WsLoop) ->
