@@ -88,7 +88,7 @@ init([Host]) ->
 					?DEFAULT_ODBC_START_INTERVAL]),
 			    ?DEFAULT_ODBC_START_INTERVAL
 		    end,
-    {ok, {{one_for_one, PoolSize+1, StartInterval},
+    {ok, {{one_for_one, PoolSize*2, 1},
 	  lists:map(
 	    fun(I) ->
 		    {I,
