@@ -54,12 +54,8 @@ get(socket) ->
 	Ws#ws.socket;
 get(socket_mode) ->
 	Ws#ws.sockmod;
-get(peer_addr) ->
-	Ws#ws.peer_addr;
-get(peer_port) ->
-	Ws#ws.peer_port;
-get(peer_cert) ->
-	Ws#ws.peer_cert;
+get(ip) ->
+	Ws#ws.ip;
 get(vsn) ->
 	Ws#ws.vsn;
 get(origin) ->

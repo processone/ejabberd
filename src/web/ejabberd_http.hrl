@@ -39,9 +39,7 @@
 	    socket,						% the socket handling the request
 	    sockmod,				% gen_tcp | tls
 	    ws_autoexit,				% websocket process is automatically killed: true | false
-	    peer_addr,					% peer IP | undefined
-	    peer_port,					% peer port | undefined
-	    peer_cert,					% undefined | the DER encoded peer certificate that can be decoded with public_key:pkix_decode_cert/2
+	    ip,					% peer IP | undefined
 	    vsn,						% {Maj,Min} | {'draft-hixie', Ver}
 	    origin,						% the originator
 	    host,						% the host

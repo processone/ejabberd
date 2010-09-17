@@ -55,7 +55,7 @@ check(_Path, Headers)->
 is_acceptable(#ws{origin=Origin, protocol=Protocol, 
                   headers = Headers, acceptable_origins = Origins})->
   ClientProtocol = lists:keyfind("Sec-WebSocket-Protocol",1, Headers),
-  case {Origin == [] or lists:member(Origin, Origins), ClientProtocol, Protocol } of
+  case {(Origin == []) or lists:member(Origin, Origins), ClientProtocol, Protocol } of
     {false, _, _} -> 
       ?DEBUG("client does not come from authorized origin", []),
       false;

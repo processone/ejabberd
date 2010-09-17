@@ -43,6 +43,7 @@
 	 setopts/2,
 	 sockname/1, peername/1,
 	 controlling_process/2,
+	 become_controller/2,
 	 close/1]).
 
 -include("ejabberd.hrl").
@@ -108,8 +109,6 @@ close({http_ws, FsmRef, _IP}) ->
 
 
 init([WS]) ->
-    ?INFO_MSG("started: ~p", [WS]),
-
     %% Read c2s options from the first ejabberd_c2s configuration in
     %% the config file listen section
     %% TODO: We should have different access and shaper values for
@@ -125,7 +124,8 @@ init([WS]) ->
 			  undefined -> ?WEBSOCKET_TIMEOUT
 		      end,
     
-    Socket = {http_ws, self(), {{127,0,0,1}, 5280}}, %FIXME
+    Socket = {http_ws, self(), WS:get(ip)},
+    ?DEBUG("Client connected through websocket ~p", [Socket]),
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     Timer = erlang:start_timer(WSTimeout, self(), []),
     {ok, loop, #state{
@@ -164,23 +164,20 @@ handle_sync_event(close, _From, _StateName, StateData) ->
     {stop, normal, Reply, StateData}.
     
 handle_info({browser, Packet}, StateName, StateData)->
-    case StateData#state.waiting_input of
+    NewState = case StateData#state.waiting_input of
 		false ->
 		    Input = [StateData#state.input|Packet],
-		    Reply = ok,
-		    {reply, Reply, StateName, StateData#state{input = Input}};
+		    StateData#state{input = Input};
 		{Receiver, _Tag} ->
 		    Receiver ! {tcp, StateData#state.socket,
 				list_to_binary(Packet)},
 		    cancel_timer(StateData#state.timer),
 		    Timer = erlang:start_timer(StateData#state.timeout, self(), []),
-		    Reply = ok,
-		    {reply, Reply, StateName,
-		     StateData#state{waiting_input = false,
+        StateData#state{waiting_input = false,
 				     last_receiver = Receiver,
-				     timer = Timer}}
+				     timer = Timer}
 	    end,
-	   {next_state, StateName, StateData};
+	   {next_state, StateName, NewState};
   
 
 handle_info({timeout, Timer, _}, _StateName,
