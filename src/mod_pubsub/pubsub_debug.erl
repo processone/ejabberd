@@ -16,6 +16,7 @@ nodeids_by_type(Type) -> [nodeid(N) || N <- mnesia:dirty_match_object(#pubsub_no
 nodeids_by_option(Key, Value) -> [nodeid(N) || N <- mnesia:dirty_match_object(#pubsub_node{_='_'}), lists:member({Key, Value}, N#pubsub_node.options)].
 nodeids_by_owner(JID) -> [nodeid(N) || N <- mnesia:dirty_match_object(#pubsub_node{_='_'}), lists:member(JID, N#pubsub_node.owners)].
 nodes_by_id(I) -> mnesia:dirty_match_object(#pubsub_node{id=I, _='_'}).
+nodes() -> [element(2, element(2, N)) || N <- mnesia:dirty_match_object(#pubsub_node{_='_'})].
 
 state(JID, NodeId) ->
     case mnesia:dirty_read({pubsub_state, {JID, NodeId}}) of
