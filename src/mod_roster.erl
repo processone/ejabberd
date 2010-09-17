@@ -1183,15 +1183,15 @@ get_jid_info(_, User, Server, JID)
 	LServer = exmpp_stringprep:nameprep(Server),
     try
 	F = fun() -> 
-		    LJID = jlib:short_prepd_jid(JID),
-	    case catch gen_storage:read(LServer, {rosteritem, {LUser, LServer, LJID}}) of
+	    LJID = jlib:short_prepd_jid(JID),
+	    LRJID = jlib:short_prepd_bare_jid(JID),
+	    case catch gen_storage:read(LServer, {rosteritem, {LUser, LServer, LRJID}}) of
 		[#rosteritem{subscription = Subscription}] ->
 		    Groups =
 			[Group || #rostergroup{grp = Group} <-
-				      gen_storage:read(LServer, {rostergroup, {LUser, LServer, LJID}})],
+				      gen_storage:read(LServer, {rostergroup, {LUser, LServer, LRJID}})],
 		    {Subscription, Groups};
 		_ ->
-		    LRJID = jlib:short_prepd_bare_jid(JID),
 		    if
 			LRJID == LJID ->
 			    {none, []};
@@ -1202,7 +1202,7 @@ get_jid_info(_, User, Server, JID)
 					[#rosteritem{subscription = Subscription}] ->
 					    Groups =
 						[Group || #rostergroup{grp = Group} <-
-							      gen_storage:read(LServer, {rostergroup, {LUser, LServer, LJID}})],
+							      gen_storage:read(LServer, {rostergroup, {LUser, LServer, LRJID}})],
 					    {Subscription, Groups};
 					_ ->
 					    {none, []}

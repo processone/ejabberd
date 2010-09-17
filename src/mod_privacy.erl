@@ -418,11 +418,14 @@ process_active_set(LUser, LServer, Name) ->
 					[{'=', user_host, {LUser, LServer}},
 					 {'=', name, Name}]) of
 		    [#privacy_list{}] ->
-			List = gen_storage:select(LServer, privacy_list_data,
+			Data = gen_storage:select(LServer, privacy_list_data,
 						  [{'=', user_host, {LUser, LServer}},
 						   {'=', name, Name}]),
+		        List = list_data_to_items(Data),
+			NeedDb = is_list_needdb(List),
 			{result, [], #userlist{name = Name,
-					       list = list_data_to_items(List)}};
+					       needdb = NeedDb,
+					       list = List}};
 		    [] ->
 			{error, 'item-not-found'}
 		end
