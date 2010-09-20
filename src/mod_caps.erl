@@ -205,7 +205,7 @@ init([Host, Opts]) ->
 			 {attributes, record_info(fields, caps_features)}]),
     mnesia:add_table_copy(caps_features, node(), disc_only_copies),
     MaxSize = gen_mod:get_opt(cache_size, Opts, 1000),
-    LifeTime = gen_mod:get_opt(cache_life_time, Opts, timer:hours(24)),
+    LifeTime = gen_mod:get_opt(cache_life_time, Opts, timer:hours(24) div 1000),
     cache_tab:new(caps_features, [{max_size, MaxSize}, {life_time, LifeTime}]),
     HostB = list_to_binary(Host),
     ejabberd_hooks:add(user_send_packet, HostB, ?MODULE, user_send_packet, 75),
