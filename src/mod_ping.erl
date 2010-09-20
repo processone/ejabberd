@@ -107,6 +107,8 @@ init([Host, Opts]) ->
                                ?MODULE, user_online, 100),
             ejabberd_hooks:add(sm_remove_connection_hook, Host,
                                ?MODULE, user_offline, 100),
+	    ejabberd_hooks:add(sm_remove_migrated_connection_hook, Host,
+                               ?MODULE, user_offline, 100),
 	    ejabberd_hooks:add(user_send_packet, Host,
 			       ?MODULE, user_send, 100);
         _ ->
@@ -120,6 +122,8 @@ init([Host, Opts]) ->
 
 terminate(_Reason, #state{host = Host}) ->
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
+			  ?MODULE, user_offline, 100),
+    ejabberd_hooks:delete(sm_remove_migrated_connection_hook, Host,
 			  ?MODULE, user_offline, 100),
     ejabberd_hooks:delete(sm_register_connection_hook, Host,
 			  ?MODULE, user_online, 100),

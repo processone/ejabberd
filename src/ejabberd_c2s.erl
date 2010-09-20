@@ -1613,10 +1613,10 @@ terminate({migrated, ClonePid}, StateName, StateData) ->
 		      [StateData#state.socket,
 		       jlib:jid_to_string(StateData#state.jid),
 		       ClonePid, node(ClonePid)]),
-	    ejabberd_sm:close_session(StateData#state.sid,
-				      StateData#state.user,
-				      StateData#state.server,
-				      StateData#state.resource);
+	    ejabberd_sm:close_migrated_session(StateData#state.sid,
+					       StateData#state.user,
+					       StateData#state.server,
+					       StateData#state.resource);
        true ->
 	    ok
     end,

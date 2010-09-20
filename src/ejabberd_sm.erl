@@ -36,6 +36,7 @@
 	 open_session/5,
 	 open_session/6,
 	 close_session/4,
+	 close_migrated_session/4,
 	 check_in_subscription/6,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
@@ -106,6 +107,18 @@ open_session(SID, User, Server, Resource, Priority, Info) ->
 		       [SID, JID, Info]).
 
 close_session(SID, User, Server, Resource) ->
+    Info = do_close_session(SID, User, Server, Resource),
+    JID = jlib:make_jid(User, Server, Resource),
+    ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
+		       [SID, JID, Info]).
+
+close_migrated_session(SID, User, Server, Resource) ->
+    Info = do_close_session(SID, User, Server, Resource),
+    JID = jlib:make_jid(User, Server, Resource),
+    ejabberd_hooks:run(sm_remove_migrated_connection_hook, JID#jid.lserver,
+		       [SID, JID, Info]).
+
+do_close_session(SID, User, Server, Resource) ->
     Info = case mnesia:dirty_read({session, SID}) of
 	[] -> [];
 	[#session{info=I}] -> I
@@ -114,9 +127,7 @@ close_session(SID, User, Server, Resource) ->
 		mnesia:delete({session, SID})
 	end,
     mnesia:sync_dirty(F),
-    JID = jlib:make_jid(User, Server, Resource),
-    ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
-		       [SID, JID, Info]).
+    Info.
 
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     case ejabberd_auth:is_user_exists(User, Server) of

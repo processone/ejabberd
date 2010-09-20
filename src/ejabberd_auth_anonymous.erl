@@ -34,6 +34,7 @@
 	 anonymous_user_exist/2,
 	 allow_multiple_connections/1,
 	 register_connection/3,
+	 unregister_migrated_connection/3,
 	 unregister_connection/3
 	]).
 
@@ -69,6 +70,8 @@ start(Host) ->
     %% The hooks are needed to add / remove users from the anonymous tables
     ejabberd_hooks:add(sm_register_connection_hook, Host,
 		       ?MODULE, register_connection, 100),
+    ejabberd_hooks:add(sm_remove_migrated_connection_hook, Host,
+		       ?MODULE, unregister_migrated_connection, 100),
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
 		       ?MODULE, unregister_connection, 100),
     ok.
@@ -157,6 +160,10 @@ register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
 unregister_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),
+    remove_connection(SID, LUser, LServer).
+
+%% Remove an anonymous user from the anonymous users table
+unregister_migrated_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
     remove_connection(SID, LUser, LServer).
 
 %% Launch the hook to purge user data only for anonymous users
