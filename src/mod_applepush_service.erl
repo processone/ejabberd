@@ -199,14 +199,19 @@ handle_info({ssl, Socket, Packet}, State)
 	    case dict:find(CmdID, State#state.cmd_cache) of
 		{ok, {JID, _DeviceID}} ->
                     ?ERROR_MSG("PUSH ERROR for ~p: ~p", [JID, Status]),
-                    %From = jlib:make_jid("", State#state.host, ""),
-		    %ejabberd_router:route(
-		    %  From, JID,
-		    %  {xmlelement, "message", [],
-		    %   [{xmlelement, "disable",
-		    %	 [{"xmlns", ?NS_P1_PUSH},
-		    %	  {"status", integer_to_list(Status)}],
-		    %	  []}]});
+		    if
+			Status == 8 ->
+			    From = jlib:make_jid("", State#state.host, ""),
+			    ejabberd_router:route(
+			      From, JID,
+			      {xmlelement, "message", [],
+			       [{xmlelement, "disable",
+				 [{"xmlns", ?NS_P1_PUSH},
+				  {"status", integer_to_list(Status)}],
+				 []}]});
+			true ->
+			    ok
+		    end,
                     ok;
 		error ->
 		    ?ERROR_MSG("Unknown cmd ID ~p~n", [CmdID]),
