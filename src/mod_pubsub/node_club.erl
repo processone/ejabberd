@@ -27,7 +27,6 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_node).
 

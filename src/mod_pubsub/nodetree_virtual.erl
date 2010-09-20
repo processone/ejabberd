@@ -33,8 +33,6 @@
 -module(nodetree_virtual).
 -author('christophe.romain@process-one.net').
 
--include_lib("exmpp/include/exmpp.hrl").
-
 -include("pubsub.hrl").
 
 -behaviour(gen_pubsub_nodetree).

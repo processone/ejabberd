@@ -39,7 +39,6 @@
 
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
--include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_nodetree).
 

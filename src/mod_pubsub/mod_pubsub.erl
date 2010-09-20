@@ -49,8 +49,6 @@
 -behaviour(gen_server).
 -behaviour(gen_mod).
 
--include_lib("exmpp/include/exmpp.hrl").
-
 -include("ejabberd.hrl").
 -include("adhoc.hrl").
 -include("pubsub.hrl").
@@ -2219,7 +2217,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 	    Options = TNode#pubsub_node.options,
 	    broadcast_retract_items(Host, Node, Nidx, Type, Options, [ItemId], ForceNotify),
 	    case get_cached_item(Host, Nidx) of
-	    #pubsub_item{id = {ItemId, Nidx}, _ = '_'} -> unset_cached_item(Host, Nidx);
+	    #pubsub_item{id = {ItemId, Nidx}} -> unset_cached_item(Host, Nidx);
 	    _ -> ok
 	    end,
 	    case Result of

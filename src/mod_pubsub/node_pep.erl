@@ -29,8 +29,6 @@
 -module(node_pep).
 -author('christophe.romain@process-one.net').
 
--include_lib("exmpp/include/exmpp.hrl").
-
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
 

@@ -42,7 +42,6 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include_lib("exmpp/include/exmpp.hrl").
 -include("jlib.hrl"). %% for rsm_in and rsm_out records definitions
 
 -define(PUBSUB, mod_pubsub_odbc).

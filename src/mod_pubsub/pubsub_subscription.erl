@@ -39,7 +39,6 @@
 	 write_subscription/4]).
 
 -include("pubsub.hrl").
--include_lib("exmpp/include/exmpp.hrl").
 
 -define(PUBSUB_DELIVER,	    "pubsub#deliver").
 -define(PUBSUB_DIGEST,	     "pubsub#digest").

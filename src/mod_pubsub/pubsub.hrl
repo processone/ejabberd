@@ -21,6 +21,11 @@
 %%% This file contains pubsub types definition.
 %%% ====================================================================
 
+
+-include_lib("exmpp/include/exmpp.hrl").
+-include_lib("exmpp/include/exmpp_jid.hrl").
+
+
 %% -------------------------------
 %% Pubsub constants
 -define(ERR_EXTENDED(E,C), mod_pubsub:extended_error(E,C)).
@@ -32,15 +37,22 @@
 %% Would be nice to have it configurable. 
 -define(MAX_PAYLOAD_SIZE, 60000).
 
-%% -------------------------------
+
+%% ------------
 %% Pubsub types
+%% ------------
 
 %%% @type host() = binary().
+%%%
 %%% <p><tt>host</tt> is the name of the PubSub service. For example, it can be
 %%% <tt>pubsub.localhost</tt>.</p>
 
-%%% @type node() = binary().
-%%% <p>A <tt>node</tt> is the name of a Node. It can be anything and may represent
+-type(host() :: binary()).
+
+
+%%% @type nodeId() = binary().
+%%%
+%%% <p>A <tt>nodeId</tt> is the name of a Node. It can be anything and may represent
 %%% some hierarchical tree depending of the node type.
 %%% For example:
 %%%   /home/localhost/user/node
@@ -48,14 +60,66 @@
 %%%   http://jabber.org/protocol/tune
 %%%   My-Own_Node</p>
 
-%%% @type item() = binary().
-%%% <p>An <tt>item</tt> is the name of an Item. It can be anything.
+-type(nodeId() :: binary()).
+
+
+%%% @type itemId() = binary().
+%%%
+%%% <p>An <tt>itemId</tt> is the name of an Item. It can be anything.
 %%% For example:
 %%%   38964
 %%%   my-tune
 %%%   FD6SBE6a27d</p>
 
+-type(itemId() :: binary()).
+
+
+%%% @type subId() = binary().
+
+-type(subId() :: binary()).
+
+
+%%% @type nodeType() = string().
+%%%
+%%% <p>The <tt>nodeType</tt> is a string containing the name of the PubSub
+%%% plugin to use to manage a given node. For example, it can be
+%%% <tt>"flat"</tt>, <tt>"hometree"</tt> or <tt>"blog"</tt>.</p>
+
+-type(nodeType() :: string()).
+
+
+%%% @type ljid() = {User::binary(), Server::binary(), Resource::binary()}.
+
+-type(ljid() :: {User::binary(), Server::binary(), Resource::binary()}).
+
+
+%%% @type nodeIdx() = integer().
+
+-type(nodeIdx() :: integer()).
+
+
+%%% @type now() = {Megaseconds::integer(), Seconds::integer(), Microseconds::integer()}.
+
+-type(now() :: {Megaseconds::integer(), Seconds::integer(), Microseconds::integer()}).
+
+
+%%% @type affiliation() = none | owner | publisher | member | outcast.
+
+-type(affiliation() :: none | owner | publisher | member | outcast).
+
+
+%%% @type subscription() = none | pending | unconfigured | subscribed.
+
+-type(subscription() ::  none | pending | unconfigured | subscribed).
+
+
+%%% @type payload() = string().
+
+-type(payload() :: string()).
+
+
 %%% @type stanzaError() = #xmlel{}.
+%%%
 %%% Example: 
 %%%    ```#xmlel{name = 'error'
 %%%              ns = ?NS_STANZAS,
@@ -73,7 +137,11 @@
 %%%                }
 %%%              ]}'''
 
+-type(stanzaError() :: #xmlel{}).
+
+
 %%% @type pubsubIQResponse() = #xmlel{}.
+%%%
 %%% Example:
 %%%    ```#xmlel{name = 'pubsub',
 %%%              ns = ?NS_PUBSUB,
@@ -84,84 +152,139 @@
 %%%              ]
 %%%             }'''
 
-%%% @type nodeOption() = {Option::atom(), Value::term()}.
+-type(pubsubIQResponse() :: #xmlel{}).
+
+
+%%% @type nodeOption() = {Option, Value}.
+%%%    Option = atom()
+%%%    Value = term().
+%%%
 %%% Example:
 %%% ```{deliver_payloads, true}'''
 
-%%% @type nodeType() = string().
-%%% <p>The <tt>nodeType</tt> is a string containing the name of the PubSub
-%%% plugin to use to manage a given node. For example, it can be
-%%% <tt>"flat"</tt>, <tt>"hometree"</tt> or <tt>"blog"</tt>.</p>
+-type(nodeOption() :: {Option::atom(), Value::term()}).
 
-%%% @type ljid() = {User::binary(), Server::binary(), Resource::binary()}.
+%%% @type subOption() = {Option, Value}.
+%%%    Option = atom()
+%%%    Value = term().
 
-%%% @type nodeidx() = int()
+-type(subOption() :: {Option::atom(), Value::term()}).
 
-%%% @type affiliation() = none | owner | publisher | member | outcast.
-%%% @type subscription() = none | pending | unconfigured | subscribed.
 
-%%% internal pubsub index table
--record(pubsub_index, {index, last, free}).
+%%% @type pubsubIndex() = {pubsub_index, Index, Last, Free}.
+%%%    Index = atom()
+%%%    Last  = nodeIdx()
+%%%    Free  = [nodeIdx()].
+%%%
+%%% Internal pubsub index table.
 
-%%% @type pubsubNode() = #pubsub_node{
-%%%    id = {host(), node()},
-%%%    idx = nodeidx(),
-%%%    parents = [Node::pubsubNode()],
-%%%    type = nodeType(),
-%%%    owners = [ljid()],
-%%%    options = [nodeOption()]}.
+-record(pubsub_index,
+{
+  index :: atom(),
+  last  :: integer(),
+  free  :: [integer()]
+}).
+
+-type(pubsubIndex() :: #pubsub_index{}).
+
+
+%%% @type pubsubNode() = {pubsub_node, Id, Idx, Parents, Type, Owners, Options}
+%%%    Id      = {host(), nodeId()}
+%%%    Idx     = nodeIdx()
+%%%    Parents = [nodeId()]
+%%%    Type    = nodeType()
+%%%    Owners  = [ljid()]
+%%%    Options = [nodeOption()].
+%%%
 %%% <p>This is the format of the <tt>nodes</tt> table. The type of the table
 %%% is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 %%% <p>The <tt>parents</tt> and <tt>type</tt> fields are indexed.</p>
-%%% <p><tt>nodeidx</tt> is an integer.</p>
--record(pubsub_node, {id,
-		      idx,
-		      parents = [],
-		      type = "flat",
-		      owners = [],
-		      options = []
-		     }).
+%%% <p><tt>idx</tt> is an integer.</p>
 
-%%% @type pubsubState() = #pubsub_state{
-%%%    id = {ljid(), nodeidx()},
-%%%    items = [item()],
-%%%    affiliation = affiliation(),
-%%%    subscriptions = [subscription()]}.
-%%% <p>This is the format of the <tt>affiliations</tt> table. The type of the
-%%% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
--record(pubsub_state, {id,
-		       items = [],
-		       affiliation = none,
-		       subscriptions = []
+-record(pubsub_node,
+{
+  id               :: {host(), nodeId()},
+  idx              :: nodeIdx(),
+  parents = []     :: [nodeId()],
+  type    = "flat" :: nodeType(),
+  owners  = []     :: [ljid()],
+  options = []     :: [nodeOption()]
 }).
 
-%%% @type pubsubItem() = #pubsub_item{
-%%%    id = {item(), nodeidx()},
-%%%    creation = {now(), ljid()},
-%%%    modification = {now(), ljid()},
-%%%    payload = XMLContent::string()}.
+-type(pubsubNode() :: #pubsub_node{}).
+
+
+%%% @type pubsubState() = {pubsub_state, Id, Items, Affiliation, Subscriptions}
+%%%    Id            = {ljid(), nodeIdx()}
+%%%    Items         = [itemId()]
+%%%    Affiliation   = affiliation()
+%%%    Subscriptions = [subscription()].
+%%%
+%%% <p>This is the format of the <tt>affiliations</tt> table. The type of the
+%%% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
+
+-record(pubsub_state,
+{
+  id                   :: {ljid(), nodeIdx()},
+  items         = []   :: [itemId()],
+  affiliation   = none :: affiliation(),
+  subscriptions = []   :: [subscription()]
+}).
+
+-type(pubsubState() :: #pubsub_state{}).
+
+
+%%% @type pubsubItem() = {pubsub_item, Id, Creation, Modification, Payload}
+%%%    Id           = {itemId(), nodeIdx()}
+%%%    Creation     = {now(), ljid()}
+%%%    Modification = {now(), ljid()}
+%%%    Payload      = payload().
+%%%
 %%% <p>This is the format of the <tt>published items</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>disc</tt>,<tt>fragmented</tt>.</p>
--record(pubsub_item, {id,
-		      creation = {unknown,unknown},
-		      modification = {unknown,unknown},
-		      payload = []
-		     }).
 
-%% @type pubsubSubscription() = #pubsub_subscription{
-%%     subid     = string(),
-%%     state_key = {ljid(), nodeidx()},
-%%     options   = [{atom(), term()}]
-%% }.
+-record(pubsub_item,
+{
+  id                               :: {itemId(), nodeIdx()},
+  creation     = {unknown,unknown} :: {now(), ljid()},
+  modification = {unknown,unknown} :: {now(), ljid()},
+  payload      = []                :: payload()
+}).
+
+-type(pubsubItem() :: #pubsub_item{}).
+
+
+%%% @type pubsubSubscription() = {pubsub_subscription, SubId, Options}
+%%%    SubId   = subId()
+%%%    Options = [nodeOption()].
+%%%
 %% <p>This is the format of the <tt>subscriptions</tt> table. The type of the
 %% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
--record(pubsub_subscription, {subid, options}).
 
-%% @type pubsubLastItem() = #pubsub_last_item{
-%%    nodeid    = nodeidx(),
-%%    itemid    = item(),
-%%    creation  = {now(), ljid()},
-%%    payload   = XMLContent::string()}.
+-record(pubsub_subscription,
+{
+  subid   :: subId(),
+  options :: [subOption()]
+}).
+
+-type(pubsubSubscription() :: #pubsub_subscription{}).
+
+
+%%% @type pubsubLastItem() = {pubsub_last_item, NodeId, ItemId, Creation, Payload}
+%%%    NodeId   = nodeIdx()
+%%%    ItemId   = itemId()
+%%%    Creation = {now(), ljid()}()
+%%%    Payload   = payload().
+%%%
 %% <p>This is the format of the <tt>last items</tt> table. it stores last item payload
 %% for every node</p>
--record(pubsub_last_item, {nodeid, itemid, creation, payload}).
+
+-record(pubsub_last_item,
+{
+  nodeid   :: nodeIdx(),
+  itemid   :: itemId(),
+  creation :: {now(), ljid()},
+  payload  :: payload()
+}).
+
+-type(pubsubLastItem() :: #pubsub_last_item{}).
