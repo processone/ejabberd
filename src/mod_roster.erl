@@ -1518,7 +1518,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 				ns = ?NS_ROSTER,
 				name = 'query',
 				children = [Item]},
-			      process_iq(
+			      process_iq_set(
 				UJID, UJID,
 				#iq{type = set, ns = ?NS_JABBER_CLIENT, payload = Request}),
 			      throw(submitted);
