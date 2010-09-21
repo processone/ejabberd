@@ -273,7 +273,7 @@
 %%% @type pubsubLastItem() = {pubsub_last_item, NodeId, ItemId, Creation, Payload}
 %%%    NodeId   = nodeIdx()
 %%%    ItemId   = itemId()
-%%%    Creation = {now(), ljid()}()
+%%%    Creation = {now(), ljid()}
 %%%    Payload   = payload().
 %%%
 %% <p>This is the format of the <tt>last items</tt> table. it stores last item payload
