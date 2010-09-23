@@ -2245,8 +2245,15 @@ roster_change(IJID, ISubscription, StateData) ->
 
 
 update_priority(Priority, Packet, StateData) ->
-    Info = [{ip, StateData#state.ip}, {conn, StateData#state.conn},
-	    {auth_module, StateData#state.auth_module}],
+    Info1 = [{ip, StateData#state.ip}, {conn, StateData#state.conn},
+	     {auth_module, StateData#state.auth_module}],
+    Info =
+	case StateData#state.reception of
+	    false ->
+		[{oor, true} | Info1];
+	    _ ->
+		Info1
+	end,
     ejabberd_sm:set_presence(StateData#state.sid,
 			     StateData#state.user,
 			     StateData#state.server,
@@ -2502,7 +2509,7 @@ change_reception(#state{reception = true} = StateData, false) ->
 		   [{xmlcdata, StateData#state.oor_show}]},
 		  {xmlelement, "status", [],
 		   [{xmlcdata, StateData#state.oor_status}]}]},
-	    update_priority(0, Packet, StateData),
+	    update_priority(0, Packet, StateData#state{reception = false}),
 	    presence_broadcast_to_trusted(
 	      StateData,
 	      StateData#state.jid,
@@ -2534,7 +2541,8 @@ change_reception(#state{reception = false} = StateData, true) ->
 	_ ->
 	    Packet = StateData#state.pres_last,
 	    NewPriority = get_priority_from_presence(Packet),
-	    update_priority(NewPriority, Packet, StateData),
+	    update_priority(NewPriority, Packet,
+			    StateData#state{reception = true}),
 	    presence_broadcast_to_trusted(
 	      StateData,
 	      StateData#state.jid,
