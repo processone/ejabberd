@@ -2597,7 +2597,9 @@ change_reception(#state{reception = true} = StateData, false) ->
 		 [{xmlelement, "show", [],
 		   [{xmlcdata, StateData#state.oor_show}]},
 		  {xmlelement, "status", [],
-		   [{xmlcdata, StateData#state.oor_status}]}]},
+		   [{xmlcdata, StateData#state.oor_status}]},
+		  {xmlelement, "priority", [],
+		   [{xmlcdata, "0"}]}]},
 	    update_priority(0, Packet, StateData),
 	    presence_broadcast_to_trusted(
 	      StateData,
