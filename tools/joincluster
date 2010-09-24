@@ -117,6 +117,10 @@ set_tables([]) ->
     ok;
 set_tables([schema | Tables]) ->
     set_tables(Tables);
+set_tables([s2s | Tables]) ->
+    set_tables(Tables);
+set_tables([session | Tables]) ->
+    set_tables(Tables);
 set_tables([Table | Tables]) ->
     set_table_copy(Table, node(),
                    rpc:call('$REMOTE', mnesia, table_info, [Table, storage_type])),
