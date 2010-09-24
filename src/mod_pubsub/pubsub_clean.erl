@@ -2,7 +2,7 @@
 
 -define(TIMEOUT, 1000*600). % 1 minute
 
--export([start/0, loop/0, offline/1]).
+-export([start/0, loop/0, purge/0, offline/1]).
 
 start() ->
     Pid = spawn(?MODULE, loop, []),
@@ -17,7 +17,8 @@ loop() ->
     loop().
 
 purge() ->
-    {Sessions, Subscriptions} = {mnesia:table_info(session,size),mnesia:table_info(pubsub_state,size)},
+    Sessions = lists:sum([mnesia:table_info(session,size)|[rpc:call(N,mnesia,table_info,[session,size]) || N <- nodes()]]),
+    Subscriptions = mnesia:table_info(pubsub_state,size),
     if Subscriptions > Sessions + 500 ->
         lists:foreach(fun(K) ->
             [N]=mnesia:dirty_read({pubsub_node, K}),
@@ -34,3 +35,4 @@ offline(Jids) ->
     lists:filter(fun({U,S,""}) -> ejabberd_sm:get_user_resources(U,S) == [];
                     ({U,S,R}) -> not lists:member(R,ejabberd_sm:get_user_resources(U,S))
     end, Jids).
+%%ejabberd_cluster:get_node({LUser, LServer})
