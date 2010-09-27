@@ -16,7 +16,7 @@ prepare_dirs ()
 
 	EJA_SRC_DIR=$EJA_DIR/src/
 	EJA_MSGS_DIR=$EJA_SRC_DIR/msgs/
-	EXTRACT_DIR=$EJA_DIR/contrib/extract_translations/
+	EXTRACT_DIR=$EJA_DIR/tools/extract_translations/
 	EXTRACT_ERL=$EXTRACT_DIR/extract_translations.erl
 	EXTRACT_BEAM=$EXTRACT_DIR/extract_translations.beam
 
