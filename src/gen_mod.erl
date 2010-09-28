@@ -246,6 +246,8 @@ get_hosts(Opts, Prefix) ->
 	    Hosts
     end.
 
+get_module_proc(Host, Base) when is_binary(Host) ->
+    get_module_proc(binary_to_list(Host), Base);
 get_module_proc(global, Base) ->
     list_to_atom(atom_to_list(Base) ++ "__global");
 get_module_proc(Host, {frontend, Base}) ->
