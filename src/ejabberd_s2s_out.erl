@@ -136,7 +136,7 @@ start_connection(Pid) ->
     p1_fsm:send_event(Pid, init).
 
 stop_connection(Pid) ->
-    p1_fsm:send_event(Pid, stop).
+    p1_fsm:send_event(Pid, closed).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from p1_fsm
