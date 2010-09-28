@@ -218,8 +218,8 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 
 process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
-    LUser = exmpp_jid:prep_node_as_list(To),
-    LServer = exmpp_jid:prep_domain_as_list(To),
+    LUser = exmpp_jid:prep_node(To),
+    LServer = exmpp_jid:prep_domain(To),
     case get_vcard(LUser, LServer) of
 	{vcard, VCard} ->
 	    exmpp_iq:result(IQ_Rec, VCard);
@@ -229,15 +229,16 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
 process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
     User = exmpp_jid:node_as_list(From),
     LServer = exmpp_jid:prep_domain_as_list(From),
+    LServerB = exmpp_jid:prep_domain(From),
     case ?IS_MY_HOST(LServer) of
 	true ->
-	    set_vcard(User, LServer, Request),
+	    set_vcard(User, LServer, LServerB, Request),
 	    exmpp_iq:result(IQ_Rec);
 	false ->
 	    exmpp_iq:error(IQ_Rec, 'not-allowed')
     end.
 
-%% @spec (User::string(), Host::string()) -> {vcard, xmlel()} | novcard
+%% @spec (User::binary(), Host::binary()) -> {vcard, xmlel()} | novcard
 get_vcard(User, Host) ->
     US = {User, Host},
     case gen_storage:dirty_read(Host, {vcard, US}) of
@@ -253,7 +254,7 @@ get_vcard(User, Host) ->
     end.
 
 
-set_vcard(User, LServer, VCARD) ->
+set_vcard(User, LServer, LServerB, VCARD) ->
     FN       = exmpp_xml:get_path(VCARD,
       [{element, 'FN'},                         cdata_as_list]),
     Family   = exmpp_xml:get_path(VCARD,
@@ -301,14 +302,14 @@ set_vcard(User, LServer, VCARD) ->
 
 	US = {LUser, LServer},
 
-	VcardToStore = case gen_storage:table_info(LServer, vcard, backend) of
+	VcardToStore = case gen_storage:table_info(LServerB, vcard, backend) of
 	    mnesia -> VCARD;
 	    odbc -> lists:flatten(exmpp_xml:document_to_list(VCARD))
 	end,
 
 	F = fun() ->
-		gen_storage:write(LServer, #vcard{user_host = US, vcard = VcardToStore}),
-		gen_storage:write(LServer,
+		gen_storage:write(LServerB, #vcard{user_host = US, vcard = VcardToStore}),
+		gen_storage:write(LServerB,
 	      #vcard_search{user_host=US,
 			    username  = User,     lusername  = LUser,
 			    fn        = FN,       lfn        = LFN,       
@@ -324,8 +325,8 @@ set_vcard(User, LServer, VCARD) ->
 			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
 			   })
 	    end,
-	    gen_storage:transaction(LServer, vcard, F),
 	    LServerB = list_to_binary(LServer),
+	    gen_storage:transaction(LServerB, vcard, F),
 	    ejabberd_hooks:run(vcard_set, LServerB, [list_to_binary(LUser), LServerB, VCARD])
     catch
 	_ ->
@@ -729,10 +730,10 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
     US = {LUser, LServer},
     F = fun() ->
-		gen_storage:delete(LServer, {vcard, US}),
-		gen_storage:delete(LServer, {vcard_search, US})
+		gen_storage:delete(Server, {vcard, US}),
+		gen_storage:delete(Server, {vcard_search, US})
 	end,
-    gen_storage:transaction(LServer, vcard, F).
+    gen_storage:transaction(Server, vcard, F).
 
 
 %%%
@@ -892,6 +893,7 @@ get_user_photo(User, Host) ->
 
 user_queue_parse_query(US, Query) ->
     {User, Server} = US,
+	?INFO_MSG("Query vcard: ~p", [Query]), %+++
     case lists:keysearch("removevcard", 1, Query) of
 	{value, _} ->
 	    case remove_user(list_to_binary(User), list_to_binary(Server)) of
