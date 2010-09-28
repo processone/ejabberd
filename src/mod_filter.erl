@@ -1,5 +1,5 @@
 %%% ====================================================================
-%%% This software is copyright 2006-2009, ProcessOne.
+%%% This software is copyright 2006-2010, ProcessOne.
 %%%
 %%% mod_filter
 %%% allow message filtering using regexp on message body
@@ -9,7 +9,7 @@
 %%% BUT, if patch is not available, mod_filter uses re.beam module
 %%% instead, with speed degradation.
 %%%
-%%% @copyright 2006-2009 ProcessOne
+%%% @copyright 2006-2010 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -18,7 +18,6 @@
 
 -module(mod_filter).
 -author('christophe.romain@process-one.net').
--vsn('$Id: mod_filter.erl 767 2009-04-20 16:31:40Z cromain $').
 
 -behaviour(gen_mod).
 

@@ -1,10 +1,10 @@
 %%% ====================================================================
-%%% This software is copyright 2006-2009, ProcessOne.
+%%% This software is copyright 2006-2010, ProcessOne.
 %%%
 %%% mod_support
 %%% allow automatic build of support archive to be sent to Process-One
 %%%
-%%% @copyright 2006-2009 ProcessOne
+%%% @copyright 2006-2010 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -14,7 +14,6 @@
 
 -module(mod_support).
 -author('christophe.romain@process-one.net').
--vsn('$Id: mod_support.erl 856 2009-09-21 18:46:38Z jpcarlino $').
 
 -behaviour(gen_mod).
 %-behaviour(gen_server). 
