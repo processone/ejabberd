@@ -58,14 +58,21 @@ behaviour_info(_) ->
 -include("ejabberd.hrl"). % This is used for ERROR_MSG
 
 %% Returns all hosts where the table Tab is defined
--spec all_table_hosts(atom()) ->
+-spec all_table_hosts(storage_table()) ->
 			     [storage_host()].
 all_table_hosts(Tab) ->
-    mnesia:dirty_select(table, [{{table, {'$1', '$2'}, '_', '_'},
+    TT = setelement(2, {table, {<<"hidding_from_dialyzer">>, '$2'}, '_', '_'}, {'$1', '$2'}),
+    Res = (catch mnesia:dirty_select(table, [{TT,
 				 [{'=:=', '$2', {const, Tab}}],
-				 ['$1']}]).
+				 ['$1']}])),
+    case Res of
+	Res when is_list(Res) ->
+	    [HostB || HostB <- Res, is_binary(HostB)];
+	_ ->
+	    []
+    end.
 
--spec table_info(storage_host, storage_table, atom()) ->
+-spec table_info(storage_host(), storage_table(), atom()) ->
 			any().
 table_info(Host, Tab, InfoKey) ->
     Info =
@@ -108,7 +115,7 @@ table_info(Host, Tab, InfoKey) ->
 %% option() is any mnesia option
 %% columndef() defaults to text for all unspecified attributes
 
--spec create_table(atom(), storage_host(), storage_table(), #table{}) ->
+-spec create_table(atom(), storage_host(), storage_table(), list()) ->
 			  tuple().
 
 create_table(mnesia, Host, Tab, Def) ->
@@ -130,9 +137,9 @@ define_table(Backend, Host, Name, Def) ->
 			      backend = Backend,
 			      def = Def}).
 
-%% @spec (#table{}) -> [{atom(), any()}]
+%% @spec (list()) -> [{atom(), any()}]
 
--spec filter_mnesia_tabdef(#table{}) ->
+-spec filter_mnesia_tabdef(list()) ->
 				  [any()].
 
 filter_mnesia_tabdef(TabDef) ->
@@ -202,6 +209,7 @@ dirty_read(Host, Tab, Key) ->
 		     | {'or', matchrule(), matchrule()}
 		     | {'orelse', matchrule(), matchrule()}
 		     | {'=', Attribute::atom(), matchvalue()}
+		     | {'<', Attribute::atom(), matchvalue()}
 		     | {'=/=', Attribute::atom(), matchvalue()}
 		     | {like, Attribute::atom(), matchvalue()}).
 
