@@ -42,14 +42,25 @@
 %% Pubsub types
 %% ------------
 
-%%% @type host() = binary().
+%%% @type hostPubsub() = binary().
 %%%
-%%% <p><tt>host</tt> is the name of the PubSub service. For example, it can be
+%%% <p><tt>hostPubsub</tt> is the name of the PubSub service. For example, it can be
 %%% <tt>pubsub.localhost</tt>.</p>
 
--type(host() :: binary()).
+-type(hostPubsub() :: binary()).
 
 
+%%% @type hostPEP() = {User::binary(), Server::binary, Resource::undefined}.
+
+-type(hostPEP() :: {User::binary(), Server::binary, Resource::undefined}).
+
+
+%%% @type host() = hostPubsub() | hostPEP().
+
+-type(host() :: hostPubsub() | hostPEP()).
+
+
+%% TODO : move upper in exmpp
 %%% @type nodeId() = binary().
 %%%
 %%% <p>A <tt>nodeId</tt> is the name of a Node. It can be anything and may represent
@@ -93,6 +104,58 @@
 -type(ljid() :: {User::binary(), Server::binary(), Resource::binary()}).
 
 
+%% TODO : move upper in exmpp
+%%% @type jidComponent() =
+%%     #jid{raw::binary(), node::undefined, domain::binary(), resource::undefined}.
+
+-type(jidComponent() ::
+      #jid{raw::binary(), node::undefined, domain::binary(), resource::undefined}).
+
+
+%% TODO : move upper in exmpp
+%%% @type jidContact() =
+%%     #jid{raw::binary(), node::binary(), domain::binary(), resource::undefined}.
+
+-type(jidContact() ::
+      #jid{raw::binary(), node::binary(), domain::binary(), resource::undefined}).
+
+
+%% TODO : move upper in exmpp
+%%% @type jidEntity() =
+%%%    #jid{raw::binary(), node::binary(),  domain::binary(), resource::undefined}
+%%%    #jid{raw::binary(), node::binary(),  domain::binary(), resource::binary()}
+%%%    #jid{raw::binary(), node::undefined, domain::binary(), resource::undefined}
+%%%    #jid{raw::binary(), node::undefined, domain::binary(), resource::binary()}.
+
+-type(jidEntity() ::
+      %% Contact bare JID
+      #jid{raw::binary(), node::binary(),  domain::binary(), resource::undefined} |
+      %% Contact full JID
+      #jid{raw::binary(), node::binary(),  domain::binary(), resource::binary()}  |
+      %% Component bare JID
+      #jid{raw::binary(), node::undefined, domain::binary(), resource::undefined} |
+      %% Component full JID
+      #jid{raw::binary(), node::undefined, domain::binary(), resource::binary()}).
+
+
+%%% @type bareUsr() = {User::binary(),  Server::binary(), Resource::undefined}
+%%%                   | {User::undefined, Server::binary(), Resource::undefined}.
+
+-type(bareUsr() :: {User::binary(),  Server::binary(), Resource::undefined}
+      | {User::undefined, Server::binary(), Resource::undefined}).
+
+
+%%% @type fullUsr() = {User::binary(),  Server::binary(), Resource::undefined}
+%%%                    | {User::binary(),  Server::binary(), Resource::binary()}
+%%%                    | {User::undefined, Server::binary(), Resource::undefined}
+%%%                    | {User::undefined, Server::binary(), Resource::binary()}.
+
+-type(fullUsr() :: {User::binary(),  Server::binary(), Resource::undefined}
+      | {User::binary(),  Server::binary(), Resource::binary()}
+      | {User::undefined, Server::binary(), Resource::undefined}
+      | {User::undefined, Server::binary(), Resource::binary()}).
+
+
 %%% @type nodeIdx() = integer().
 
 -type(nodeIdx() :: integer()).
@@ -103,19 +166,24 @@
 -type(now() :: {Megaseconds::integer(), Seconds::integer(), Microseconds::integer()}).
 
 
-%%% @type affiliation() = none | owner | publisher | member | outcast.
+%%% @type affiliation() = 'none' | 'owner' | 'publisher' |'publish-only' | 'member' | 'outcast'.
 
--type(affiliation() :: none | owner | publisher | member | outcast).
-
-
-%%% @type subscription() = none | pending | unconfigured | subscribed.
-
--type(subscription() ::  none | pending | unconfigured | subscribed).
+-type(affiliation() :: 'none' | 'owner' | 'publisher' |'publish-only' | 'member' | 'outcast').
 
 
-%%% @type payload() = string().
+%%% @type subscription() = 'none' | 'pending' | 'unconfigured' | 'subscribed'.
 
--type(payload() :: string()).
+-type(subscription() ::  'none' | 'pending' | 'unconfigured' | 'subscribed').
+
+
+%%% @type accessModel() = 'open' | 'presence' | 'roster' | 'authorize' | 'whitelist'.
+
+-type(accessModel() ::  'open' | 'presence' | 'roster' | 'authorize' | 'whitelist').
+
+
+%%% @type payload() = [] | [#xmlel{}].
+
+-type(payload() :: [] | [#xmlel{}]).
 
 
 %%% @type stanzaError() = #xmlel{}.
@@ -155,6 +223,10 @@
 -type(pubsubIQResponse() :: #xmlel{}).
 
 
+%%% @type features() = [Feature::string()].
+
+-type(features() :: [Feature::string()]).
+
 %%% @type nodeOption() = {Option, Value}.
 %%%    Option = atom()
 %%%    Value = term().
@@ -163,6 +235,7 @@
 %%% ```{deliver_payloads, true}'''
 
 -type(nodeOption() :: {Option::atom(), Value::term()}).
+
 
 %%% @type subOption() = {Option, Value}.
 %%%    Option = atom()
@@ -179,11 +252,11 @@
 %%% Internal pubsub index table.
 
 -record(pubsub_index,
-{
-  index :: atom(),
-  last  :: integer(),
-  free  :: [integer()]
-}).
+	{
+	  index :: atom(),
+	  last  :: integer(),
+	  free  :: [integer()]
+	 }).
 
 -type(pubsubIndex() :: #pubsub_index{}).
 
@@ -193,7 +266,7 @@
 %%%    Idx     = nodeIdx()
 %%%    Parents = [nodeId()]
 %%%    Type    = nodeType()
-%%%    Owners  = [ljid()]
+%%%    Owners  = [bareUsr()]
 %%%    Options = [nodeOption()].
 %%%
 %%% <p>This is the format of the <tt>nodes</tt> table. The type of the table
@@ -202,54 +275,54 @@
 %%% <p><tt>idx</tt> is an integer.</p>
 
 -record(pubsub_node,
-{
-  id               :: {host(), nodeId()},
-  idx              :: nodeIdx(),
-  parents = []     :: [nodeId()],
-  type    = "flat" :: nodeType(),
-  owners  = []     :: [ljid()],
-  options = []     :: [nodeOption()]
-}).
+	{
+	  id               :: {host(), nodeId()},
+	  idx              :: nodeIdx(),
+	  parents = []     :: [nodeId()],
+	  type    = "flat" :: nodeType(),
+	  owners  = []     :: [bareUsr()],
+	  options = []     :: [nodeOption()]
+	 }).
 
 -type(pubsubNode() :: #pubsub_node{}).
 
 
 %%% @type pubsubState() = {pubsub_state, Id, Items, Affiliation, Subscriptions}
-%%%    Id            = {ljid(), nodeIdx()}
+%%%    Id            = {fullUsr(), nodeIdx()}
 %%%    Items         = [itemId()]
 %%%    Affiliation   = affiliation()
-%%%    Subscriptions = [subscription()].
+%%%    Subscriptions = [{subscription(), subId()}].
 %%%
 %%% <p>This is the format of the <tt>affiliations</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 
 -record(pubsub_state,
-{
-  id                   :: {ljid(), nodeIdx()},
-  items         = []   :: [itemId()],
-  affiliation   = none :: affiliation(),
-  subscriptions = []   :: [subscription()]
-}).
+	{
+	  id                     :: {fullUsr(), nodeIdx()},
+	  items         = []     :: [itemId()],
+	  affiliation   = 'none' :: affiliation(),
+	  subscriptions = []     :: [{subscription(), subId()}]
+	 }).
 
 -type(pubsubState() :: #pubsub_state{}).
 
 
 %%% @type pubsubItem() = {pubsub_item, Id, Creation, Modification, Payload}
 %%%    Id           = {itemId(), nodeIdx()}
-%%%    Creation     = {now(), ljid()}
-%%%    Modification = {now(), ljid()}
+%%%    Creation     = {now(), bareUsr()}
+%%%    Modification = {now(), fullUsr()}
 %%%    Payload      = payload().
 %%%
 %%% <p>This is the format of the <tt>published items</tt> table. The type of the
 %%% table is: <tt>set</tt>,<tt>disc</tt>,<tt>fragmented</tt>.</p>
 
 -record(pubsub_item,
-{
-  id                               :: {itemId(), nodeIdx()},
-  creation     = {unknown,unknown} :: {now(), ljid()},
-  modification = {unknown,unknown} :: {now(), ljid()},
-  payload      = []                :: payload()
-}).
+	{
+	  id                               :: {itemId(), nodeIdx()},
+	  creation     = {unknown,unknown} :: {now(), bareUsr()},
+	  modification = {unknown,unknown} :: {now(), fullUsr()},
+	  payload      = []                :: payload()
+	 }).
 
 -type(pubsubItem() :: #pubsub_item{}).
 
@@ -262,10 +335,10 @@
 %% table is: <tt>set</tt>,<tt>ram/disc</tt>.</p>
 
 -record(pubsub_subscription,
-{
-  subid   :: subId(),
-  options :: [subOption()]
-}).
+	{
+	  subid   :: subId(),
+	  options :: [subOption()]
+	 }).
 
 -type(pubsubSubscription() :: #pubsub_subscription{}).
 
@@ -273,18 +346,18 @@
 %%% @type pubsubLastItem() = {pubsub_last_item, NodeId, ItemId, Creation, Payload}
 %%%    NodeId   = nodeIdx()
 %%%    ItemId   = itemId()
-%%%    Creation = {now(), ljid()}
+%%%    Creation = {now(), bareUsr()}
 %%%    Payload   = payload().
 %%%
 %% <p>This is the format of the <tt>last items</tt> table. it stores last item payload
 %% for every node</p>
 
 -record(pubsub_last_item,
-{
-  nodeid   :: nodeIdx(),
-  itemid   :: itemId(),
-  creation :: {now(), ljid()},
-  payload  :: payload()
-}).
+	{
+	  nodeid   :: nodeIdx(),
+	  itemid   :: itemId(),
+	  creation :: {now(), bareUsr()},
+	  payload  :: payload()
+	 }).
 
 -type(pubsubLastItem() :: #pubsub_last_item{}).
