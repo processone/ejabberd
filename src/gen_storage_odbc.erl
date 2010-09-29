@@ -22,7 +22,7 @@
 		 attributes :: [string()], % Columns
 		 columns :: string(), % "\"col1\", \"col2\" ,..."
 		 column_names :: [{string(), [string()]}], % [{string(), [string()]}] (already quoted)
-		 types :: [{string(), atom()}],
+		 types :: [{string(), atom() | tuple()}],
 		 host :: string()
 			 }).
 -record(odbc_cont, {tabdef, sql, offset = 0, limit}).

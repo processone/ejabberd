@@ -388,11 +388,11 @@ import_dir(Path) ->
 %%%
 
 delete_expired_messages() ->
-    {atomic, ok} = mod_offline:remove_expired_messages(),
+    mod_offline:remove_expired_messages(),
     ok.
 
 delete_old_messages(Days) ->
-    {atomic, _} = mod_offline:remove_old_messages(Days),
+    mod_offline:remove_old_messages(Days),
     ok.
 
 

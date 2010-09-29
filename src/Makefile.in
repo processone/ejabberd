@@ -248,9 +248,11 @@ install: all
 	#
 	# Documentation
 	install -d $(DOCDIR)
-	install -m 644 ../doc/dev.html $(DOCDIR)
-	install -m 644 ../doc/guide.html $(DOCDIR)
-	install -m 644 ../doc/*.png $(DOCDIR)
+	[ -f ../doc/guide.html ] \
+		&& install -m 644 ../doc/dev.html $(DOCDIR) \
+		&& install -m 644 ../doc/guide.html $(DOCDIR) \
+		&& install -m 644 ../doc/*.png $(DOCDIR) \
+		|| echo "No ../doc/guide.html was built"
 	install -m 644 ../doc/*.txt $(DOCDIR)
 	[ -f ../doc/guide.pdf ] \
 		&& install -m 644 ../doc/guide.pdf $(DOCDIR) \
