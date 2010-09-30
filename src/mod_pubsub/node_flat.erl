@@ -214,11 +214,11 @@ features() ->
       -> {'result', IsAllowed::boolean()}
 	    ).
 
-create_node_permission(Host, ServerHost, _NodeId, _ParentNodeId, #jid{node = U, domain = S, resource = R} = _JID, Access) ->
+create_node_permission(Host, ServerHost, _NodeId, _ParentNodeId, #jid{node = U, domain = S, resource = R} = JID, Access) ->
     Owner = {U,S,R},
     IsAllowed = case Owner of
 		    {undefined, Host, undefined} -> true; % pubsub service always allowed
-		    _ -> acl:match_rule(ServerHost, Access, exmpp_jid:make(Owner)) =:= 'allow'
+		    _ -> acl:match_rule(ServerHost, Access, JID) =:= 'allow'
 		end,
     {result, IsAllowed}.
 
