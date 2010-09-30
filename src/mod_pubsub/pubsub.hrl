@@ -50,7 +50,10 @@
 -type(hostPubsub() :: binary()).
 
 
-%%% @type hostPEP() = {User::binary(), Server::binary, Resource::undefined}.
+%%% @type hostPEP() = {User, Server, Resource}
+%%%    User     = binary()
+%%%    Server   = binary()
+%%%    Resource = undefined.
 
 -type(hostPEP() :: {User::binary(), Server::binary, Resource::undefined}).
 
@@ -99,33 +102,43 @@
 -type(nodeType() :: string()).
 
 
-%%% @type ljid() = {User::binary(), Server::binary(), Resource::binary()}.
+%%% @type ljid() = {User, Server, Resource}
+%%%    User     = undefined | binary()
+%%%    Server   = binary()
+%%%    Resource = undefined | binary().
 
 -type(ljid() :: {User::binary(), Server::binary(), Resource::binary()}).
 
 
 %% TODO : move upper in exmpp
-%%% @type jidComponent() =
-%%     #jid{raw::binary(), node::undefined, domain::binary(), resource::undefined}.
+%%% @type jidComponent() = {jid, Raw, Node, Domain, Resource}
+%%%    Raw      = binary()
+%%%    Node     = undefined
+%%%    Domain   = binary()
+%%%    Resource = undefined.
 
 -type(jidComponent() ::
       #jid{raw::binary(), node::undefined, domain::binary(), resource::undefined}).
 
 
 %% TODO : move upper in exmpp
-%%% @type jidContact() =
-%%     #jid{raw::binary(), node::binary(), domain::binary(), resource::undefined}.
+%%% @type jidContact() = {jid, Raw, Node, Domain, Resource}
+%%%    Raw      = binary()
+%%%    Node     = binary()
+%%%    Domain   = binary()
+%%%    Resource = undefined.
 
 -type(jidContact() ::
       #jid{raw::binary(), node::binary(), domain::binary(), resource::undefined}).
 
 
 %% TODO : move upper in exmpp
-%%% @type jidEntity() =
-%%%    #jid{raw::binary(), node::binary(),  domain::binary(), resource::undefined}
-%%%    #jid{raw::binary(), node::binary(),  domain::binary(), resource::binary()}
-%%%    #jid{raw::binary(), node::undefined, domain::binary(), resource::undefined}
-%%%    #jid{raw::binary(), node::undefined, domain::binary(), resource::binary()}.
+%%% @type jidEntity() = {jid, Raw, Node, Domain, Resource}
+%%%    Raw      = binary()
+%%%    Node     = undefined | binary()
+%%%    Domain   = binary()
+%%%    Resource = undefined | binary().
+
 
 -type(jidEntity() ::
       %% Contact bare JID
@@ -138,17 +151,20 @@
       #jid{raw::binary(), node::undefined, domain::binary(), resource::binary()}).
 
 
-%%% @type bareUsr() = {User::binary(),  Server::binary(), Resource::undefined}
-%%%                   | {User::undefined, Server::binary(), Resource::undefined}.
+%%% @type bareUsr() = {User,  Server, Resource}
+%%%    User     = undefined | binary()
+%%%    Server   = binary()
+%%%    Resource = undefined.
 
 -type(bareUsr() :: {User::binary(),  Server::binary(), Resource::undefined}
       | {User::undefined, Server::binary(), Resource::undefined}).
 
 
-%%% @type fullUsr() = {User::binary(),  Server::binary(), Resource::undefined}
-%%%                    | {User::binary(),  Server::binary(), Resource::binary()}
-%%%                    | {User::undefined, Server::binary(), Resource::undefined}
-%%%                    | {User::undefined, Server::binary(), Resource::binary()}.
+%%% @type fullUsr() = {User,  Server, Resource}
+%%%    User     = undefined | binary()
+%%%    Server   = binary()
+%%%    Resource = undefined | binary().
+
 
 -type(fullUsr() :: {User::binary(),  Server::binary(), Resource::undefined}
       | {User::binary(),  Server::binary(), Resource::binary()}
@@ -161,7 +177,10 @@
 -type(nodeIdx() :: integer()).
 
 
-%%% @type now() = {Megaseconds::integer(), Seconds::integer(), Microseconds::integer()}.
+%%% @type now() = {Megaseconds, Seconds, Microseconds}
+%%%    Megaseconds  = integer()
+%%%    Seconds      = integer()
+%%%    Microseconds = integer().
 
 -type(now() :: {Megaseconds::integer(), Seconds::integer(), Microseconds::integer()}).
 
@@ -223,7 +242,8 @@
 -type(pubsubIQResponse() :: #xmlel{}).
 
 
-%%% @type features() = [Feature::string()].
+%%% @type features() = [Feature]
+%%%    Feature = string().
 
 -type(features() :: [Feature::string()]).
 
