@@ -228,22 +228,24 @@ c2s_presence_in(C2SState, {From, To, {_, _, Attrs, Els}}) ->
 			 gb_trees:empty()
 		 end,
 	    Caps = read_caps(Els),
-	    {FromUnavail, NewRs} =
+	    {CapsUpdated, NewRs} =
 		case Caps of
 		    nothing when Insert == true ->
 			{false, Rs};
 		    _ when Insert == true ->
 			case gb_trees:lookup(LFrom, Rs) of
+			    {value, Caps} ->
+				{false, Rs};
 			    none ->
 				{true, gb_trees:insert(LFrom, Caps, Rs)};
 			    _ ->
-				{false, gb_trees:update(LFrom, Caps, Rs)}
+				{true, gb_trees:update(LFrom, Caps, Rs)}
 			end;
 		    _ ->
 			{false, gb_trees:delete_any(LFrom, Rs)}
 		end,
-	    if FromUnavail ->
-		    ejabberd_hooks:run(caps_user_available, To#jid.lserver,
+	    if CapsUpdated ->
+		    ejabberd_hooks:run(caps_user_update, To#jid.lserver,
 				       [From, To, get_features(Caps)]);
 	       true ->
 		    ok
