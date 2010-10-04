@@ -157,7 +157,7 @@ get_node(Host, NodeId) ->
 -spec(get_node/1 ::
       (
 		 NodeIdx :: nodeIdx())
-      -> pubsubNode() | {error, 'item-not-found'} | any()
+      -> pubsubNode() | {'error', 'item-not-found'}
 	    ).
 
 get_node(NodeIdx) ->
