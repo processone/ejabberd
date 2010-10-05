@@ -211,7 +211,6 @@ get_user_info(User, Server, Resource)
 	 end,
     if is_list(Ss), Ss /= [] ->
 	    Session = lists:max(Ss),
-	    N = node(element(2, Session#session.sid)),
 	    Conn = proplists:get_value(conn, Session#session.info),
 	    IP = proplists:get_value(ip, Session#session.info),
 	    Priority = Session#session.priority, %% integer()

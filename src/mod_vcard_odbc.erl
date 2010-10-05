@@ -464,8 +464,6 @@ record_to_item(LServer, {Username, FN, Family, Given, Middle,
 
 search(LServer, Data) ->
     MatchSpec = make_matchspec(LServer, Data),
-    AllowReturnAll = gen_mod:get_module_opt(LServer, ?MODULE,
-					    allow_return_all, false),
 	    Limit = case gen_mod:get_module_opt(LServer, ?MODULE,
 						matches, ?JUD_MATCHES) of
 			infinity ->
