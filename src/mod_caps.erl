@@ -62,6 +62,7 @@
 -include("jlib.hrl").
 
 -define(PROCNAME, ejabberd_mod_caps).
+-define(BAD_HASH_LIFETIME, 600). %% in seconds
 
 -record(caps, {node, version, hash, exts}).
 -record(caps_features, {node_pair, features = []}).
@@ -104,10 +105,10 @@ get_features(#caps{node = Node, version = Version, exts = Exts}) ->
 	      BinaryNode = node_to_binary(Node, SubNode),
 	      case cache_tab:lookup(caps_features, BinaryNode,
 				    caps_read_fun(BinaryNode)) of
-		  error ->
-		      Acc;
-		  {ok, Features} ->
-		      binary_to_features(Features) ++ Acc
+		  {ok, Features} when is_list(Features) ->
+		      binary_to_features(Features) ++ Acc;
+		  _ ->
+		      Acc
 	      end
       end, [], SubNodes).
 
@@ -358,21 +359,31 @@ feature_request(Host, From, Caps, [SubNode | Tail] = SubNodes) ->
     BinaryNode = node_to_binary(Node, SubNode),
     case cache_tab:lookup(caps_features, BinaryNode,
 			  caps_read_fun(BinaryNode)) of
-	error ->
-	    IQ = #iq{type = get,
-		     xmlns = ?NS_DISCO_INFO,
-		     sub_el = [{xmlelement, "query",
-				[{"xmlns", ?NS_DISCO_INFO},
-				 {"node", Node ++ "#" ++ SubNode}],
-				[]}]},
-	    F = fun(IQReply) ->
-			feature_response(
-			  IQReply, Host, From, Caps, SubNodes)
-		end,
-	    ejabberd_local:route_iq(
-	      jlib:make_jid("", Host, ""), From, IQ, F);
-	_ ->
-	    feature_request(Host, From, Caps, Tail)
+	{ok, Fs} when is_list(Fs) ->
+	    feature_request(Host, From, Caps, Tail);
+	Other ->
+	    NeedRequest = case Other of
+			      {ok, TS} ->
+				  now_ts() >= TS + ?BAD_HASH_LIFETIME;
+			      _ ->
+				  true
+			  end,
+	    if NeedRequest ->
+		    IQ = #iq{type = get,
+			     xmlns = ?NS_DISCO_INFO,
+			     sub_el = [{xmlelement, "query",
+					[{"xmlns", ?NS_DISCO_INFO},
+					 {"node", Node ++ "#" ++ SubNode}],
+					[]}]},
+		    F = fun(IQReply) ->
+				feature_response(
+				  IQReply, Host, From, Caps, SubNodes)
+			end,
+		    ejabberd_local:route_iq(
+		      jlib:make_jid("", Host, ""), From, IQ, F);
+	       true ->
+		    feature_request(Host, From, Caps, Tail)
+	    end
     end;
 feature_request(_Host, _From, _Caps, []) ->
     ok.
@@ -394,18 +405,19 @@ feature_response(#iq{type = result,
 	      caps_features, BinaryNode, BinaryFeatures,
 	      caps_write_fun(BinaryNode, BinaryFeatures));
 	false ->
-	    cache_tab:insert(caps_features, BinaryNode, [],
-			     caps_write_fun(BinaryNode, []))
+	    %% We cache current timestamp and will probe the client
+	    %% after BAD_HASH_LIFETIME seconds.
+	    cache_tab:insert(caps_features, BinaryNode, now_ts(),
+			     caps_write_fun(BinaryNode, now_ts()))
     end,
     feature_request(Host, From, Caps, SubNodes);
-feature_response(timeout, _Host, _From, _Caps, _SubNodes) ->
-    ok;
 feature_response(_IQResult, Host, From, Caps, [SubNode | SubNodes]) ->
-    %% We got type=error or invalid type=result stanza, so
-    %% we cache empty feature not to probe the client permanently
+    %% We got type=error or invalid type=result stanza or timeout,
+    %% so we cache current timestamp and will probe the client
+    %% after BAD_HASH_LIFETIME seconds.
     BinaryNode = node_to_binary(Caps#caps.node, SubNode),
-    cache_tab:insert(caps_features, BinaryNode, [],
-		     caps_write_fun(BinaryNode, [])),
+    cache_tab:insert(caps_features, BinaryNode, now_ts(),
+		     caps_write_fun(BinaryNode, now_ts())),
     feature_request(Host, From, Caps, SubNodes).
 
 node_to_binary(Node, SubNode) ->
@@ -611,3 +623,7 @@ gb_trees_fold_iter(F, Acc, Iter) ->
 	_ ->
 	    Acc
     end.
+
+now_ts() ->
+    {MegaSecs, Secs, _} = now(),
+    MegaSecs*1000000 + Secs.
