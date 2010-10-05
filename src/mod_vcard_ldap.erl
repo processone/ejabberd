@@ -169,7 +169,7 @@ start_link(Host, Opts) ->
 
 init([Host, Opts]) ->
     State = parse_options(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, parallel),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
