@@ -24,6 +24,22 @@
 %%%
 %%%-------------------------------------------------------------------
 
+%%% Database schema (version / storage / table)
+%%%
+%%% 2.1.x / mnesia / captcha
+%%%  id = string()
+%%%  pid = pid()
+%%%  key = string()
+%%%  tref = any()
+%%%  args = any()
+%%%
+%%% 3.0.0-alpha / ets / captcha
+%%%  id = string()
+%%%  pid = pid()
+%%%  key = string()
+%%%  tref = any()
+%%%  args = any()
+
 -module(ejabberd_captcha).
 
 -behaviour(gen_server).
@@ -63,7 +79,7 @@
            }
          ]}).
 
--define(CAPTCHA_TEXT(Lang), translate:translate(Lang, "Enter the text you see")).
+-define(CAPTCHA_TEXT(Lang), list_to_binary(translate:translate(Lang, "Enter the text you see"))).
 -define(CAPTCHA_LIFETIME, 120000). % two minutes
 -define(RPC_TIMEOUT, 5000).
 
@@ -84,7 +100,7 @@ create_captcha(SID, From, To, Lang, Args)
   when is_binary(Lang), is_binary(SID) ->
     case create_image() of
 	{ok, Type, Key, Image} ->
-	    Id = list_to_binary(randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id()),
+	    Id = randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id(),
 	    B64Image = list_to_binary(jlib:encode_base64(binary_to_list(Image))),
 	    JID = exmpp_jid:to_list(From),
 	    CID = list_to_binary(["sha1+", sha:sha(Image), "@bob.xmpp.org"]),
@@ -138,9 +154,9 @@ create_captcha(SID, From, To, Lang, Args)
 	          }
 	        ],
 	        children = [
-	          ?VFIELD(<<"hidden">>, <<"FORM_TYPE">>, #xmlcdata{cdata = ?NS_CAPTCHA}),
+	          ?VFIELD(<<"hidden">>, <<"FORM_TYPE">>, #xmlcdata{cdata = ?NS_CAPTCHA_b}),
 	          ?VFIELD(<<"hidden">>, <<"from">>, #xmlcdata{cdata = exmpp_jid:to_binary(To)}),
-	          ?VFIELD(<<"hidden">>, <<"challenge">>, #xmlcdata{cdata = Id}),
+	          ?VFIELD(<<"hidden">>, <<"challenge">>, #xmlcdata{cdata = list_to_binary(Id)}),
 	          ?VFIELD(<<"hidden">>, <<"sid">>, #xmlcdata{cdata = SID}),
 	          #xmlel{
 	            name = 'field',
@@ -186,7 +202,7 @@ create_captcha(SID, From, To, Lang, Args)
           name = 'body',
           children = [
             #xmlcdata{
-              cdata = BodyString
+              cdata = list_to_binary(BodyString)
             }
           ]
         },
@@ -268,15 +284,15 @@ build_captcha_html(Id, Lang) ->
 			    attrs = [
 			      #xmlattr{
 			        name = 'type',
-			        value = "text"
+			        value = <<"text">>
 			      },
 			      #xmlattr{
 			        name = 'name',
-			        value = "key"
+			        value = <<"key">>
 			      },
 			      #xmlattr{
 			        name = 'size',
-			        value = "10"
+			        value = <<"10">>
 			      }
 			    ]
 			  },
@@ -304,11 +320,11 @@ build_captcha_html(Id, Lang) ->
 			      },
 			      #xmlattr{
 			        name = 'name',
-			        value = "captcha"
+			        value = <<"captcha">>
 			      },
 			      #xmlattr{
 			        name = 'method',
-			        value = "POST"
+			        value = <<"POST">>
 			      }
 			    ],
 			    children = [
@@ -330,15 +346,15 @@ build_captcha_html(Id, Lang) ->
 			        attrs = [
 			          #xmlattr{
 			            name = 'type',
-			            value = "submit"
+			            value = <<"submit">>
 			          },
 			          #xmlattr{
 			            name = 'name',
-			            value = "enter"
+			            value = <<"enter">>
 			          },
 			          #xmlattr{
 			            name = 'value',
-			            value = "OK"
+			            value = <<"OK">>
 			          }
 			        ]
 			      }
@@ -408,7 +424,7 @@ process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
 	    attrs = [
 	      #xmlattr{
 	        name = 'align',
-	        value = "center"
+	        value = <<"center">>
 	      }
 	    ],
 	    children = [FormEl]
@@ -508,12 +524,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 create_image() ->
     %% Six numbers from 1 to 9.
-    Key = list_to_binary(string:substr(randoms:get_string(), 1, 6)),
+    Key = string:substr(randoms:get_string(), 1, 6),
     create_image(Key).
 
 create_image(Key) ->
     FileName = get_prog_name(),
-    Cmd = lists:flatten(io_lib:format("~s ~p", [FileName, Key])),
+    Cmd = lists:flatten(io_lib:format("~s ~s", [FileName, Key])),
     case cmd(Cmd) of
 	{ok, <<16#89, $P, $N, $G, $\r, $\n, 16#1a, $\n, _/binary>> = Img} ->
 	    {ok, <<"image/png">>, Key, Img};
@@ -547,6 +563,7 @@ get_prog_name() ->
 	    throw({error, option_not_configured_captcha_cmd})
     end.
 
+%% @doc (Str::string()) -> string()
 get_url(Str) ->
     case ejabberd_config:get_local_option(captcha_host) of
 	Host when is_list(Host) ->

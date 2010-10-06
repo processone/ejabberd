@@ -1684,7 +1684,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		    StateData;
 		captcha_required ->
 		    SID = case exmpp_stanza:get_id(Packet) of
-			      undefined -> "";
+			      undefined -> <<"">>;
 			      SID1 -> SID1
 			  end,
 		    RoomJID = StateData#state.jid,
@@ -1693,7 +1693,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			   SID, RoomJID, To, Lang, From) of
 			{ok, ID, CaptchaEls} ->
                             MsgPkt = #xmlel{name = 'message',
-                                attrs = [#xmlattr{name = 'id', value = ID}],
+                                attrs = [#xmlattr{name = 'id', value = list_to_binary(ID)}],
                                 children = CaptchaEls},
 			    Robots = ?DICT:store(From,
 						 {Nick, Packet}, StateData#state.robots),
