@@ -59,7 +59,7 @@
 		rid = none,
 		key,
 		socket,
-		output = "",
+		output = [],
 		input = queue:new(),
 		waiting_input = false,
 		shaper_state,
@@ -1157,7 +1157,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 				case SEls of
 				    [{xmlstreamelement,
 				      #xmlel{name = 'features',
-				             declared_ns = [{undefined, 'stream'}],
+				             declared_ns = [{undefined, "stream"}],
 				             attrs = StreamAttribs,
 				             children = StreamEls}} |
 %				      {xmlelement,
