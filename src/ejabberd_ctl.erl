@@ -438,8 +438,7 @@ print_usage() ->
     print_usage(dual, MaxC, ShCode).
 print_usage(HelpMode, MaxC, ShCode) ->
     AllCommands =
-	[
-	 {"status", [], "Get ejabberd status"},
+	[{"status", [], "Get ejabberd status"},
 	 {"stop", [], "Stop ejabberd"},
 	 {"restart", [], "Restart ejabberd"},
 	 {"help", ["[--tags [tag] | com?*]"], "Show help (try: ejabberdctl help help)"},

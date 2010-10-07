@@ -73,9 +73,7 @@
 -define(CT, {"Content-Type", "text/xml; charset=utf-8"}).
 -define(BAD_REQUEST, [?CT, {"Set-Cookie", "ID=-3:0; expires=-1"}]).
 
--define(PARSER_OPTIONS, [
-  {names_as_atom, true}
-]).
+-define(PARSER_OPTIONS, [{names_as_atom, true}]).
 
 %%%----------------------------------------------------------------------
 %%% API

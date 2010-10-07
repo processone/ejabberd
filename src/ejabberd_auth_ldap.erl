@@ -440,10 +440,10 @@ is_valid_dn(DN, Server, Attrs, State) ->
 		  end ++ [{"%d", State#state.host}, {"%D", DN}],
     case eldap_filter:parse(State#state.dn_filter, SubstValues) of
 	{ok, EldapFilter} ->
-	    case eldap_pool:search(State#state.eldap_id, [
-						     {base, State#state.base},
-						     {filter, EldapFilter},
-						     {attributes, ["dn"]}]) of
+	    case eldap_pool:search(State#state.eldap_id,
+                                   [{base, State#state.base},
+                                    {filter, EldapFilter},
+                                    {attributes, ["dn"]}]) of
 		#eldap_search_result{entries = [_|_]} ->
 		    DN;
 		_ ->

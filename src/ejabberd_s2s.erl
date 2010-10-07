@@ -61,9 +61,8 @@
 % These are the namespace already declared by the stream opening. This is
 % used at serialization time.
 -define(DEFAULT_NS, ?NS_JABBER_CLIENT).
--define(PREFIXED_NS, [
-  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
-]).
+-define(PREFIXED_NS,
+        [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]).
 
 -record(s2s, {fromto, pid, key}).
 -record(state, {}).

@@ -403,9 +403,8 @@ do_route(ServerHost, From, To, Packet) ->
 					Result = #xmlel{
 					  ns = ?NS_SEARCH,
 					  name = 'query',
-					  children = [
-					    #xmlel{
-					      ns = ?NS_DATA_FORMS,
+					  children =
+					    [#xmlel{ns = ?NS_DATA_FORMS,
 					      name = 'x',
 					      attrs = [?XMLATTR('type',
 						  <<"result">>)],

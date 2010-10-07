@@ -667,8 +667,8 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 				   TLSEnabled == false,
 				   SockMod == gen_tcp ->
         ServerString = binary_to_list(StateData#state.server),
-	    TLSOpts = case ejabberd_config:get_local_option(
-			     {domain_certfile, ServerString}) of
+	    TLSOpts = case ejabberd_config:get_local_option
+                          ({domain_certfile, ServerString}) of
 			  undefined ->
 			      StateData#state.tls_options;
 			  CertFile ->
@@ -1606,8 +1606,8 @@ get_conn_type(StateData) ->
 	    if is_pid(StateData#state.socket) ->
 		    unknown;
 	       true ->
-		    case ejabberd_zlib:get_sockmod(
-			   (StateData#state.socket)#socket_state.socket) of
+		    case ejabberd_zlib:get_sockmod
+                        ((StateData#state.socket)#socket_state.socket) of
 			gen_tcp -> c2s_compressed;
 			tls -> c2s_compressed_tls
 		    end

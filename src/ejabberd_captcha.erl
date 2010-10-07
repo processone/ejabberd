@@ -63,18 +63,15 @@
 -define(VFIELD(Type, Var, Value),
   #xmlel{name = 'field',
          attrs = [
-           #xmlattr{
-             name = 'type',
+           #xmlattr{name = 'type',
              value = Type
            },
-           #xmlattr{
-             name = 'var',
+           #xmlattr{name = 'var',
              value = Var
            }
          ],
          children = [
-           #xmlel{
-             name = 'value',
+           #xmlel{name = 'value',
              children = [Value]
            }
          ]}).
@@ -113,16 +110,13 @@ create_captcha(SID, From, To, Lang, Args)
 	        name = 'data',
 	        ns = ?NS_BOB,
 	        attrs = [
-	          #xmlattr{
-	            name = 'cid',
+	          #xmlattr{name = 'cid',
 	            value = CID
 	          },
-	          #xmlattr{
-	            name = 'max-age',
+	          #xmlattr{name = 'max-age',
 	            value = <<"0">>
 	          },
-	          #xmlattr{
-	            name = 'type',
+	          #xmlattr{name = 'type',
 	            value = Type	                    
 	          }
 	        ],
@@ -144,12 +138,10 @@ create_captcha(SID, From, To, Lang, Args)
 	    name = 'captcha',
 	    ns = ?NS_CAPTCHA,
 	    children = [
-	      #xmlel{
-	        name = 'x',
+	      #xmlel{name = 'x',
 	        ns = ?NS_DATA_FORMS_s,
 	        attrs = [
-	          #xmlattr{
-	            name = 'type',
+	          #xmlattr{name = 'type',
 	            value = <<"form">>
 	          }
 	        ],
@@ -158,28 +150,22 @@ create_captcha(SID, From, To, Lang, Args)
 	          ?VFIELD(<<"hidden">>, <<"from">>, #xmlcdata{cdata = exmpp_jid:to_binary(To)}),
 	          ?VFIELD(<<"hidden">>, <<"challenge">>, #xmlcdata{cdata = list_to_binary(Id)}),
 	          ?VFIELD(<<"hidden">>, <<"sid">>, #xmlcdata{cdata = SID}),
-	          #xmlel{
-	            name = 'field',
+	          #xmlel{name = 'field',
 	            attrs = [
-	              #xmlattr{
-	                name = 'var',
+	              #xmlattr{name = 'var',
 	                value = <<"ocr">>
 	              },
-	              #xmlattr{
-	                name = 'label',
+	              #xmlattr{name = 'label',
 	                value = ?CAPTCHA_TEXT(Lang)
 	              }	                      
 	            ],
 	            children = [
-	              #xmlel{
-	                name = 'media',
+	              #xmlel{name = 'media',
 	                ns = ?NS_DATA_FORMS_MEDIA_s,
 	                children = [
-	                  #xmlel{
-	                    name = 'uri',
+	                  #xmlel{name = 'uri',
 	                    attrs = [
-	                      #xmlattr{
-	                        name = 'type',
+	                      #xmlattr{name = 'type',
 	                        value = Type
 	                      }
 	                    ],
@@ -198,24 +184,19 @@ create_captcha(SID, From, To, Lang, Args)
 	    BodyString1 = translate:translate(Lang, "Your messages to ~s are being blocked. To unblock them, visit ~s"),
 	    BodyString = io_lib:format(BodyString1, [JID, get_url(Id)]),
       Body =
-        #xmlel{
-          name = 'body',
+        #xmlel{name = 'body',
           children = [
-            #xmlcdata{
-              cdata = list_to_binary(BodyString)
+            #xmlcdata{cdata = list_to_binary(BodyString)
             }
           ]
         },
       OOB =
-        #xmlel{
-          name = 'x',
+        #xmlel{name = 'x',
           ns = ?NS_OOBD_X_s,
           children = [
-            #xmlel{
-              name = 'url',
+            #xmlel{name = 'url',
               children = [
-                #xmlcdata{
-                  cdata = list_to_binary(get_url(Id))}
+                #xmlcdata{cdata = list_to_binary(get_url(Id))}
               ]
             }
           ]
@@ -243,11 +224,9 @@ build_captcha_html(Id, Lang) ->
 	{ok, _} ->
 	    %ImgEl = {xmlelement, "img", [{"src", get_url(Id ++ "/image")}], []},
 	    ImgEl =
-	      #xmlel{
-	        name = 'img',
+	      #xmlel{name = 'img',
           attrs = [
-            #xmlattr{
-              name = 'src',
+            #xmlattr{name = 'src',
               value = list_to_binary(get_url(Id ++ "/image"))
             }
           ]
@@ -258,19 +237,15 @@ build_captcha_html(Id, Lang) ->
 			%		  {"name", "id"},
 			%		  {"value", Id}], []},
 	    IdEl = 
-	      #xmlel{
-	        name = 'input',
+	      #xmlel{name = 'input',
 	        attrs = [
-	          #xmlattr{
-	            name = 'type',
+	          #xmlattr{name = 'type',
 	            value = <<"hidden">>
 	          },
-	          #xmlattr{
-	            name = 'name',
+	          #xmlattr{name = 'name',
 	            value = <<"id">>
 	          },
-	          #xmlattr{
-	            name = 'value',
+	          #xmlattr{name = 'value',
 	            value = list_to_binary(Id)
 	          }
 	        ]
@@ -279,19 +254,15 @@ build_captcha_html(Id, Lang) ->
 			%		   {"name", "key"},
 			%		   {"size", "10"}], []},
 			KeyEl =
-			  #xmlel{
-			    name = 'input',
+			  #xmlel{name = 'input',
 			    attrs = [
-			      #xmlattr{
-			        name = 'type',
+			      #xmlattr{name = 'type',
 			        value = <<"text">>
 			      },
-			      #xmlattr{
-			        name = 'name',
+			      #xmlattr{name = 'name',
 			        value = <<"key">>
 			      },
-			      #xmlattr{
-			        name = 'size',
+			      #xmlattr{name = 'size',
 			        value = <<"10">>
 			      }
 			    ]
@@ -311,49 +282,38 @@ build_captcha_html(Id, Lang) ->
 			%		      {"value", "OK"}], []}
 		  %    ]},
 			FormEl = 
-			  #xmlel{
-			    name = 'form',
+			  #xmlel{name = 'form',
 			    attrs = [
-			      #xmlattr{
-			        name = 'action',
+			      #xmlattr{name = 'action',
 			        value = list_to_binary(get_url(Id))
 			      },
-			      #xmlattr{
-			        name = 'name',
+			      #xmlattr{name = 'name',
 			        value = <<"captcha">>
 			      },
-			      #xmlattr{
-			        name = 'method',
+			      #xmlattr{name = 'method',
 			        value = <<"POST">>
 			      }
 			    ],
 			    children = [
 			      ImgEl,
-			      #xmlel{
-			        name = 'br'
+			      #xmlel{name = 'br'
 			      },
 			      TextEl,
-			      #xmlel{
-			        name = 'br'
+			      #xmlel{name = 'br'
 			      },
 			      IdEl,
 			      KeyEl,
-			      #xmlel{
-			        name = 'br'
+			      #xmlel{name = 'br'
 			      },
-			      #xmlel{
-			        name = 'input',
+			      #xmlel{name = 'input',
 			        attrs = [
-			          #xmlattr{
-			            name = 'type',
+			          #xmlattr{name = 'type',
 			            value = <<"submit">>
 			          },
-			          #xmlattr{
-			            name = 'name',
+			          #xmlattr{name = 'name',
 			            value = <<"enter">>
 			          },
-			          #xmlattr{
-			            name = 'value',
+			          #xmlattr{name = 'value',
 			            value = <<"OK">>
 			          }
 			        ]
@@ -419,11 +379,9 @@ process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
 	    Form =
 		%{xmlelement, "div", [{"align", "center"}],
 		 %[FormEl]},
-	  #xmlel{
-	    name = 'div',
+	  #xmlel{name = 'div',
 	    attrs = [
-	      #xmlattr{
-	        name = 'align',
+	      #xmlattr{name = 'align',
 	        value = <<"center">>
 	      }
 	    ],
@@ -460,11 +418,9 @@ process(_Handlers, #request{method='POST', q=Q, lang=Lang, path=[_, Id]}) ->
 		% [{xmlcdata,
 		%   translate:translate(Lang, "The captcha is valid.")
 		%  }]},
-	  #xmlel{
-	    name = 'p',
+	  #xmlel{name = 'p',
 	    children = [
-	      #xmlcdata{
-	        cdata = translate:translate(Lang, "The captcha is valid.")}
+	      #xmlcdata{cdata = translate:translate(Lang, "The captcha is valid.")}
 	    ]
 	  },
 	    ejabberd_web:make_xhtml([Form]);

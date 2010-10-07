@@ -350,14 +350,13 @@ create_node(Host, NodeId, Type, #jid{node = U, domain = S} = _JID, Options, Pare
 		true ->
 		    NodeIdx = pubsub_index:new(node),
 		    mnesia:write(
-		      #pubsub_node{
-             id = {Host, NodeId},
-             idx = NodeIdx,
-             parents = ParentNodeIds,
-             type = Type,
-             owners = [Owner],
-             options = Options}),
-        {ok, NodeIdx};
+		      #pubsub_node{id = {Host, NodeId},
+                                   idx = NodeIdx,
+                                   parents = ParentNodeIds,
+                                   type = Type,
+                                   owners = [Owner],
+                                   options = Options}),
+                    {ok, NodeIdx};
     false -> %% Requesting entity is prohibited from creating nodes
         {error, 'forbidden'}
       end;

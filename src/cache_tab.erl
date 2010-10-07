@@ -68,8 +68,8 @@
 %% API
 %%====================================================================
 start_link(Proc, Tab, Opts, Owner) ->
-    ?GEN_SERVER:start_link(
-      {local, Proc}, ?MODULE, [Tab, Opts, get_proc_num(), Owner], []).
+    ?GEN_SERVER:start_link({local, Proc}, ?MODULE,
+                           [Tab, Opts, get_proc_num(), Owner], []).
 
 new(Tab, Opts) ->
     Res = lists:flatmap(

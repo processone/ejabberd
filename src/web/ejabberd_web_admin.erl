@@ -1001,8 +1001,8 @@ process_admin(Host,
 	      {value, {_, String}} ->
 		  case parse_access_rule(String) of
 		      {ok, Rs} ->
-			  ejabberd_config:add_global_option(
-			    {access, Name, Host}, Rs),
+			  ejabberd_config:add_global_option
+                            ({access, Name, Host}, Rs),
 			  ok;
 		      _ ->
 			  error

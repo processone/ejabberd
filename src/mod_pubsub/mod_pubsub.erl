@@ -336,8 +336,8 @@ update_node_database(Host, ServerHost) ->
 						options = Options} |
 				   RecList], Nidx + 1}
 			  end, {[], 1},
-			  mnesia:match_object(
-			    {pubsub_node, {Host, '_'}, '_', '_'})),
+			  mnesia:match_object
+                            ({pubsub_node, {Host, '_'}, '_', '_'})),
 			mnesia:write(#pubsub_index{index = node, last = LastIdx, free = []}),
 			Result
 		end,
@@ -386,10 +386,10 @@ update_node_database(Host, ServerHost) ->
 						    creation = {C2, C1}})
 		    end, mnesia:match_object(#pubsub_item{id = {'_', NodeId}, _ = '_'})),
 		    Nidx + 1
-		end, 1, mnesia:match_object(
-			{pubsub_node, {Host, '_'}, '_', '_', '_', '_', '_'})
-		    ++  mnesia:match_object(
-			{pubsub_node, {{'_', ServerHost, '_'}, '_'}, '_', '_', '_', '_', '_'})),
+		end, 1, mnesia:match_object
+                          ({pubsub_node, {Host, '_'}, '_', '_', '_', '_', '_'})
+		    ++  mnesia:match_object
+                          ({pubsub_node, {{'_', ServerHost, '_'}, '_'}, '_', '_', '_', '_', '_'})),
 		mnesia:write(#pubsub_index{index = node, last = LastIdx, free = []})
 		end,
 	    case mnesia:transaction(FNew) of

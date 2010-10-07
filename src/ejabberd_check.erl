@@ -88,8 +88,8 @@ get_db_used() ->
     DBs = lists:foldr(
 	    fun([Domain, DB], Acc) ->
 		    case check_odbc_option(
-			   ejabberd_config:get_local_option(
-			     {auth_method, Domain})) of
+			   ejabberd_config:get_local_option
+                             ({auth_method, Domain})) of
 			true -> [get_db_type(DB)|Acc];
 			_ -> Acc
 		    end

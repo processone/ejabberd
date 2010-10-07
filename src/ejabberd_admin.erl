@@ -261,8 +261,7 @@ get_sasl_error_logger_type () ->
 stop_kindly(DelaySeconds, AnnouncementText) ->
     Subject = io_lib:format("Server stop in ~p seconds!", [DelaySeconds]),
     WaitingDesc = io_lib:format("Waiting ~p seconds", [DelaySeconds]),
-    Steps = [
-	     {"Stopping ejabberd port listeners",
+    Steps = [{"Stopping ejabberd port listeners",
 	      ejabberd_listener, stop_listeners, []},
 	     {"Sending announcement to connected users",
 	      mod_announce, send_announcement_to_all,

@@ -236,11 +236,10 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 	    end,
 	    case ParentExists of
 		true -> 
-		    case set_node(#pubsub_node{
-				id={Host, Node},
-				parents=Parents,
-				type=Type,
-				options=Options}) of
+		    case set_node(#pubsub_node{id={Host, Node},
+                                               parents=Parents,
+                                               type=Type,
+                                               options=Options}) of
 			{result, Nidx} -> {ok, Nidx};
 			Other -> Other
 		    end;
