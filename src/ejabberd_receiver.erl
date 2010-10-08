@@ -104,12 +104,22 @@ become_controller(Pid, C2SPid) ->
     gen_server:call(Pid, {become_controller, C2SPid}).
 
 change_controller(Pid, C2SPid) ->
-    gen_server:call(Pid, {change_controller, C2SPid}).
+    case catch gen_server:call(Pid, {change_controller, C2SPid}) of
+	{'EXIT', _} ->
+	    {error, einval};
+	Res ->
+	    Res
+    end.
 
 setopts(Pid, Opts) ->
     case lists:member({active, false}, Opts) of
 	true ->
-	    gen_server:call(Pid, deactivate_socket);
+	    case catch gen_server:call(Pid, deactivate_socket) of
+		{'EXIT', _} ->
+		    {error, einval};
+		Res ->
+		    Res
+	    end;
 	false ->
 	    ok
     end.

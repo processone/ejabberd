@@ -153,8 +153,13 @@ setopts({http_bind, FsmRef, _IP}, Opts) ->
 	_ ->
 	    case lists:member({active, false}, Opts) of
 		true ->
-		    gen_fsm:sync_send_all_state_event(
-		      FsmRef, deactivate_socket);
+		    case catch gen_fsm:sync_send_all_state_event(
+				 FsmRef, deactivate_socket) of
+			{'EXIT', _} ->
+			    {error, einval};
+			Res ->
+			    Res
+		    end;
 		_ ->
 		    ok
 	    end
