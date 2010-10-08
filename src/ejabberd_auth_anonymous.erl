@@ -128,11 +128,18 @@ anonymous_user_exist(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
-    case catch mnesia:dirty_read({anonymous, US}) of
-	[] ->
-	    false;
+    Ss = case ejabberd_cluster:get_node(US) of
+             Node when Node == node() ->
+                 catch mnesia:dirty_read({anonymous, US});
+             Node ->
+                 catch rpc:call(Node, mnesia, dirty_read,
+                                [{anonymous, US}], 5000)
+         end,
+    case Ss of
 	[_H|_T] ->
-	    true
+	    true;
+	_ ->
+	    false
     end.
 
 %% Remove connection from Mnesia tables
