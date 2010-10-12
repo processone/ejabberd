@@ -52,7 +52,7 @@
 	 #loglevel{ordinal = 2, name = error, description = "Error",
 		   function = error_msg, event_type = error, msg_prefix = "E"},
 	 #loglevel{ordinal = 3, name = warning, description = "Warning",
-		   function = warning_msg, event_type = error, msg_prefix = "W"},
+		   function = warning_msg, event_type = warning_msg, msg_prefix = "W"},
 	 #loglevel{ordinal = 4, name = info, description = "Info",
 		   function = info_msg, event_type = info_msg, msg_prefix = "I"},
 	 #loglevel{ordinal = 5, name = debug, description = "Debug",
