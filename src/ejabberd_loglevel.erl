@@ -40,15 +40,23 @@
 %% Error levels:
 -record(loglevel, {ordinal,
 		   name,
-		   description}).
+		   description,
+		   function = no_log,
+		   event_type = no_log,
+		   msg_prefix = no_log}).
 
 -define(LOG_LEVELS,
 	[#loglevel{ordinal = 0, name = no_log, description = "No log"},
-	 #loglevel{ordinal = 1, name = critical, description = "Critical"},
-	 #loglevel{ordinal = 2, name = error, description = "Error"},
-	 #loglevel{ordinal = 3, name = warning, description = "Warning"},
-	 #loglevel{ordinal = 4, name = info, description = "Info"},
-	 #loglevel{ordinal = 5, name = debug, description = "Debug"}]).
+	 #loglevel{ordinal = 1, name = critical, description = "Critical",
+		   function = critical_msg, event_type = error, msg_prefix = "C"},
+	 #loglevel{ordinal = 2, name = error, description = "Error",
+		   function = error_msg, event_type = error, msg_prefix = "E"},
+	 #loglevel{ordinal = 3, name = warning, description = "Warning",
+		   function = warning_msg, event_type = error, msg_prefix = "W"},
+	 #loglevel{ordinal = 4, name = info, description = "Info",
+		   function = info_msg, event_type = info_msg, msg_prefix = "I"},
+	 #loglevel{ordinal = 5, name = debug, description = "Debug",
+		   function = debug_msg, event_type = info_msg, msg_prefix = "D"}]).
 
 get() ->
     Level = ejabberd_logger:get(),
@@ -83,7 +91,12 @@ level_to_integer(Level) ->
 %% This allows to dynamically change log level while keeping a
 %% very efficient code.
 ejabberd_logger_src(Loglevel) ->
-    L = integer_to_list(Loglevel),
+    lists:flatten([header_src(),
+		   get_src(Loglevel),
+		   [log_src(Loglevel, LevelSpec) || LevelSpec <- ?LOG_LEVELS],
+		   notify_src()]).
+
+header_src() ->
     "-module(ejabberd_logger).
     -author('mickael.remond@process-one.net').
 
@@ -93,42 +106,28 @@ ejabberd_logger_src(Loglevel) ->
              error_msg/4,
              critical_msg/4,
              get/0]).
+    ".
 
-   get() -> "++ L ++".
+get_src(Loglevel) ->
+    ["get() -> ", integer_to_list(Loglevel), ".
+     "].
 
-    %% Helper functions
-    debug_msg(Module, Line, Format, Args) when " ++ L ++ " >= 5 ->
-            notify(info_msg,
-                   \"D(~p:~p:~p) : \"++Format++\"~n\",
-                   [self(), Module, Line]++Args);
-    debug_msg(_,_,_,_) -> ok.
+log_src(_Loglevel, #loglevel{function = no_log}) ->
+    [];
+log_src(Loglevel, Spec = #loglevel{ordinal = MinLevel})
+  when Loglevel < MinLevel ->
+    [atom_to_list(Spec#loglevel.function), "(_, _, _, _) -> ok.
+     "];
+log_src(_Loglevel, Spec = #loglevel{}) ->
+    [atom_to_list(Spec#loglevel.function), "(Module, Line, Format, Args) ->
+        notify(", atom_to_list(Spec#loglevel.event_type), ",
+               \"", Spec#loglevel.msg_prefix, "(~p:~p:~p) : \"++Format++\"~n\",
+               [self(), Module, Line | Args]).
+        "].
 
-    info_msg(Module, Line, Format, Args) when " ++ L ++ " >= 4 ->
-            notify(info_msg,
-                   \"I(~p:~p:~p) : \"++Format++\"~n\",
-                   [self(), Module, Line]++Args);
-    info_msg(_,_,_,_) -> ok.
-
-    warning_msg(Module, Line, Format, Args) when " ++ L ++ " >= 3 ->
-            notify(error,
-                   \"W(~p:~p:~p) : \"++Format++\"~n\",
-                   [self(), Module, Line]++Args);
-    warning_msg(_,_,_,_) -> ok.
-
-    error_msg(Module, Line, Format, Args) when " ++ L ++ " >= 2 ->
-            notify(error,
-                   \"E(~p:~p:~p) : \"++Format++\"~n\",
-                   [self(), Module, Line]++Args);
-    error_msg(_,_,_,_) -> ok.
-
-    critical_msg(Module, Line, Format, Args) when " ++ L ++ " >= 1 ->
-            notify(error,
-                   \"C(~p:~p:~p) : \"++Format++\"~n\",
-                   [self(), Module, Line]++Args);
-    critical_msg(_,_,_,_) -> ok.
-
+notify_src() ->
     %% Distribute the message to the Erlang error logger
-    notify(Type, Format, Args) ->
+    "notify(Type, Format, Args) ->
             LoggerMsg = {Type, group_leader(), {self(), Format, Args}},
             gen_event:notify(error_logger, LoggerMsg).
     ".
