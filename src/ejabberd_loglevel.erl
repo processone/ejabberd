@@ -38,19 +38,25 @@
 -define(LOGMODULE, "error_logger").
 
 %% Error levels:
--define(LOG_LEVELS,[ {0, no_log, "No log"}
-                    ,{1, critical, "Critical"}
-                    ,{2, error, "Error"}
-                    ,{3, warning, "Warning"}
-                    ,{4, info, "Info"}
-                    ,{5, debug, "Debug"}
-                    ]).
+-record(loglevel, {ordinal,
+		   name,
+		   description}).
+
+-define(LOG_LEVELS,
+	[#loglevel{ordinal = 0, name = no_log, description = "No log"},
+	 #loglevel{ordinal = 1, name = critical, description = "Critical"},
+	 #loglevel{ordinal = 2, name = error, description = "Error"},
+	 #loglevel{ordinal = 3, name = warning, description = "Warning"},
+	 #loglevel{ordinal = 4, name = info, description = "Info"},
+	 #loglevel{ordinal = 5, name = debug, description = "Debug"}]).
 
 get() ->
     Level = ejabberd_logger:get(),
-    case lists:keysearch(Level, 1, ?LOG_LEVELS) of
-        {value, Result} -> Result;
-        _ -> erlang:error({no_such_loglevel, Level})
+    case lists:keysearch(Level, #loglevel.ordinal, ?LOG_LEVELS) of
+        {value, Result = #loglevel{}} ->
+	    {Result#loglevel.ordinal, Result#loglevel.name, Result#loglevel.description};
+        _ ->
+	    erlang:error({no_such_loglevel, Level})
     end.
 
 
@@ -67,8 +73,8 @@ set(_) ->
     exit("Loglevel must be an integer").
 
 level_to_integer(Level) ->
-    case lists:keysearch(Level, 2, ?LOG_LEVELS) of
-        {value, {Int, Level, _Desc}} -> Int;
+    case lists:keysearch(Level, #loglevel.name, ?LOG_LEVELS) of
+        {value, #loglevel{ordinal = Int}} -> Int;
         _ -> erlang:error({no_such_loglevel, Level})
     end.
 
