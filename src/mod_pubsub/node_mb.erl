@@ -36,8 +36,6 @@
 -module(node_mb).
 -author('eric@ohmforce.com').
 
--include_lib("exmpp/include/exmpp.hrl").
-
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
 
@@ -137,8 +135,8 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
       NodeId, Sender, Subscriber, AccessModel, SendLast,
       PresenceSubscription, RosterGroup, Options).
 
-unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
-    node_pep:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
+unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
+    node_pep:unsubscribe_node(NodeId, Sender, Subscriber, SubId).
 
 publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
     node_pep:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).

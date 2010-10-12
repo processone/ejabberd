@@ -157,8 +157,8 @@ start(Host, Opts) ->
 				       {match_presence_out, atom}
 				      ]}]),
     update_tables(Host, Backend),
-    gen_storage:add_table_index(Host, privacy_list, name),
-    gen_storage:add_table_index(Host, privacy_list_data, name),
+    gen_storage:add_table_index(HostB, privacy_list, name),
+    gen_storage:add_table_index(HostB, privacy_list_data, name),
     ejabberd_hooks:add(privacy_iq_get, HostB,
 		       ?MODULE, process_iq_get, 50),
     ejabberd_hooks:add(privacy_iq_set, HostB,
@@ -215,20 +215,21 @@ process_iq_get(_, From, _To, #iq{payload = SubEl},
 
 
 process_lists_get(LUser, LServer, Active) ->
+    LServerB = list_to_binary(LServer),
     F = fun() ->
 		Default =
-		    case gen_storage:read(LServer, {privacy_default_list, {LUser, LServer}}) of
+		    case gen_storage:read(LServerB, {privacy_default_list, {LUser, LServer}}) of
 			[#privacy_default_list{name = Name}] ->
 			    Name;
 			_ ->
 			    none
 		    end,
 		Lists = [List#privacy_list.name
-			 || List <- gen_storage:read(LServer, {privacy_list, {LUser, LServer}})],
+			 || List <- gen_storage:read(LServerB, {privacy_list, {LUser, LServer}})],
 		{Default, Lists}
 	end,
-    case gen_storage:transaction(LServer, privacy_list, F) of
-	{'EXIT', _Reason} ->
+    case gen_storage:transaction(LServerB, privacy_list, F) of
+	{aborted, _Reason} ->
 	    {error, 'internal-server-error'};
 	{atomic, {Default, Lists}} ->
 	    case Lists of
@@ -258,19 +259,20 @@ process_list_get(_LUser, _LServer, false) ->
     {error, 'bad-request'};
 
 process_list_get(LUser, LServer, Name) ->
+    LServerB = list_to_binary(LServer),
     F = fun() ->
-		case gen_storage:select(LServer, privacy_list,
+		case gen_storage:select(LServerB, privacy_list,
 					[{'=', user_host, {LUser, LServer}},
 					 {'=', name, Name}]) of
 		    [] ->
 			none;
 		    [#privacy_list{}] ->
-			gen_storage:select(LServer, privacy_list_data,
+			gen_storage:select(LServerB, privacy_list_data,
 					   [{'=', user_host, {LUser, LServer}},
 					    {'=', name, Name}])
 		end
 	end,
-    case gen_storage:transaction(LServer, privacy_list, F) of
+    case gen_storage:transaction(LServerB, privacy_list, F) of
 	{aborted, _Reason} ->
 	    {error, 'internal-server-error'};
 	{atomic, none} ->
@@ -375,10 +377,11 @@ process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
 
 
 process_default_set(LUser, LServer, false) ->
+    LServerB = list_to_binary(LServer),
     F = fun() ->
-		gen_storage:delete(LServer, {privacy_default_list, {LUser, LServer}})
+		gen_storage:delete(LServerB, {privacy_default_list, {LUser, LServer}})
 	end,
-    case gen_storage:transaction(LServer, privacy_default_list, F) of
+    case gen_storage:transaction(LServerB, privacy_default_list, F) of
 	{atomic, _} ->
 	    {result, []};
 	_ ->
@@ -386,20 +389,21 @@ process_default_set(LUser, LServer, false) ->
     end;
 
 process_default_set(LUser, LServer, Name) ->
+    LServerB = list_to_binary(LServer),
     F = fun() ->
-		case gen_storage:select(LServer, privacy_list,
+		case gen_storage:select(LServerB, privacy_list,
 					[{'=', user_host, {LUser, LServer}},
 					 {'=', name, Name}]) of
 		    [] ->
 			{error, 'item-not-found'};
 		    [#privacy_list{}] ->
-			gen_storage:write(LServer,
+			gen_storage:write(LServerB,
 					  #privacy_default_list{user_host = {LUser, LServer},
 								name = Name}),
 			{result, []}
 		end
 	end,
-    case gen_storage:transaction(LServer, privacy_list, F) of
+    case gen_storage:transaction(LServerB, privacy_list, F) of
 	{atomic, {error, _} = Error} ->
 	    Error;
 	{atomic, {result, _} = Res} ->
@@ -413,21 +417,25 @@ process_active_set(_LUser, _LServer, false) ->
     {result, [], #userlist{}};
 
 process_active_set(LUser, LServer, Name) ->
+    LServerB = list_to_binary(LServer),
     F = fun() ->
-		case gen_storage:select(LServer, privacy_list,
+		case gen_storage:select(LServerB, privacy_list,
 					[{'=', user_host, {LUser, LServer}},
 					 {'=', name, Name}]) of
 		    [#privacy_list{}] ->
-			List = gen_storage:select(LServer, privacy_list_data,
+			Data = gen_storage:select(LServerB, privacy_list_data,
 						  [{'=', user_host, {LUser, LServer}},
 						   {'=', name, Name}]),
+		        List = list_data_to_items(Data),
+			NeedDb = is_list_needdb(List),
 			{result, [], #userlist{name = Name,
-					       list = list_data_to_items(List)}};
+					       needdb = NeedDb,
+					       list = List}};
 		    [] ->
 			{error, 'item-not-found'}
 		end
 	end,
-    case gen_storage:transaction(LServer, privacy_list, F) of
+    case gen_storage:transaction(LServerB, privacy_list, F) of
 	{atomic, Res} ->
 	    Res;
 	_ ->
@@ -440,26 +448,27 @@ process_list_set(_LUser, _LServer, false, _Els) ->
     {error, 'bad-request'};
 
 process_list_set(LUser, LServer, Name, Els) ->
+    LServerB = list_to_binary(LServer),
     case parse_items(Els) of
 	false ->
 	    {error, 'bad-request'};
 	remove ->
 	    F = fun() ->
-			case gen_storage:read(LServer,
+			case gen_storage:read(LServerB,
 					      {privacy_default_list, {LUser, LServer}}) of
 			    [#privacy_default_list{name = Default}] when Name == Default ->
 				{error, 'conflict'};
 			    _ ->
-				gen_storage:delete_where(LServer, privacy_list,
+				gen_storage:delete_where(LServerB, privacy_list,
 							 [{'=', user_host, {LUser, LServer}},
 							  {'=', name, Name}]),
-				gen_storage:delete_where(LServer, privacy_list_data,
+				gen_storage:delete_where(LServerB, privacy_list_data,
 							 [{'=', user_host, {LUser, LServer}},
 							  {'=', name, Name}]),
 				{result, []}
 			end
 		end,
-	    case gen_storage:transaction(LServer, privacy_list, F) of
+	    case gen_storage:transaction(LServerB, privacy_list, F) of
 		{atomic, {error, _} = Error} ->
 		    Error;
 		{atomic, {result, _} = Res} ->
@@ -477,24 +486,24 @@ process_list_set(LUser, LServer, Name, Els) ->
 	List ->
 	    F = fun() ->
 			OldData =
-			    gen_storage:select(LServer, privacy_list_data,
+			    gen_storage:select(LServerB, privacy_list_data,
 					       [{'=', user_host, {LUser, LServer}},
 						{'=', name, Name}]),
 			lists:foreach(
 			  fun(Data1) ->
-				  gen_storage:delete_object(LServer, Data1)
+				  gen_storage:delete_object(LServerB, Data1)
 			  end, OldData),
 
-			gen_storage:write(LServer, #privacy_list{user_host = {LUser, LServer},
+			gen_storage:write(LServerB, #privacy_list{user_host = {LUser, LServer},
 								 name = Name}),
 			NewData = list_items_to_data(LUser, LServer, Name, List),
 			lists:foreach(
 			  fun(Data1) ->
-				  gen_storage:write(LServer, Data1)
+				  gen_storage:write(LServerB, Data1)
 			  end, NewData),
 			{result, []}
 		end,
-	    case gen_storage:transaction(LServer, privacy_list, F) of
+	    case gen_storage:transaction(LServerB, privacy_list, F) of
 		{atomic, {error, _} = Error} ->
 		    Error;
 		{atomic, {result, _} = Res} ->
@@ -647,17 +656,17 @@ is_list_needdb(Items) ->
 	      end
       end, Items).
 
-get_user_list(_, User, Server) 
-        when is_binary(User), is_binary(Server) ->
+get_user_list(_, User, LServerB) 
+        when is_binary(User), is_binary(LServerB) ->
     LUser = binary_to_list(User),
-    LServer = binary_to_list(Server),
+    LServer = binary_to_list(LServerB),
     F = fun() ->
-		case gen_storage:read(LServer,
+		case gen_storage:read(LServerB,
 				      {privacy_default_list, {LUser, LServer}}) of
 		    [] ->
 			#userlist{};
 		    [#privacy_default_list{name = Default}] ->
-			Data = gen_storage:select(LServer, privacy_list_data,
+			Data = gen_storage:select(LServerB, privacy_list_data,
 						  [{'=', user_host, {LUser, LServer}},
 						   {'=', name, Default}]),
 			List = list_data_to_items(Data),
@@ -667,7 +676,7 @@ get_user_list(_, User, Server)
 				  list = List}
 		end
 	end,
-    {atomic, Res} = gen_storage:transaction(LServer, privacy_default_list, F),
+    {atomic, Res} = gen_storage:transaction(LServerB, privacy_default_list, F),
     Res.
 
 
@@ -768,9 +777,9 @@ is_ptype_match(Item, PType) ->
 %% TODO: Investigate this: sometimes Value has binaries, other times has strings
 is_type_match(jid, Value, JID, _Subscription, _Groups) ->
     {User, Server, Resource} = exmpp_jid:to_lower(exmpp_jid:parse(Value)),
-    ((User == undefined) orelse (User == []) orelse (User == exmpp_jid:prep_node(JID)))
-	andalso ((Server == undefined) orelse (Server == []) orelse (Server == exmpp_jid:prep_domain(JID)))
-        andalso ((Resource == undefined) orelse (Resource == []) orelse (Resource == exmpp_jid:prep_resource(JID)));
+    ((User == undefined) orelse (User == exmpp_jid:prep_node(JID)))
+	andalso ((Server == undefined) orelse (Server == exmpp_jid:prep_domain(JID)))
+        andalso ((Resource == undefined) orelse (Resource == exmpp_jid:prep_resource(JID)));
 is_type_match(subscription, Value, _JID, Subscription, _Groups) ->
     Value == Subscription;
 is_type_match(group, Value, _JID, _Subscription, Groups) ->
@@ -780,10 +789,11 @@ is_type_match(group, Value, _JID, _Subscription, Groups) ->
 remove_user(User, Server) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
+    LServerB = list_to_binary(LServer),
     F = fun() ->
-		gen_storage:delete(LServer, {privacy_list, {LUser, LServer}})
+		gen_storage:delete(LServerB, {privacy_list, {LUser, LServer}})
 	end,
-    case gen_storage:transaction(LServer, privacy_list, F) of
+    case gen_storage:transaction(LServerB, privacy_list, F) of
 	{atomic, _} ->
 	    {result, []};
 	_ ->

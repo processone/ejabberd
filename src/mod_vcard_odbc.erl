@@ -464,12 +464,6 @@ record_to_item(LServer, {Username, FN, Family, Given, Middle,
 
 search(LServer, Data) ->
     MatchSpec = make_matchspec(LServer, Data),
-    AllowReturnAll = gen_mod:get_module_opt(LServer, ?MODULE,
-					    allow_return_all, false),
-    if
-	(MatchSpec == "") and (not AllowReturnAll) ->
-	    [];
-	true ->
 	    Limit = case gen_mod:get_module_opt(LServer, ?MODULE,
 						matches, ?JUD_MATCHES) of
 			infinity ->
@@ -491,7 +485,6 @@ search(LServer, Data) ->
 		Error ->
 		    ?ERROR_MSG("~p", [Error]),
 		    []
-	    end
     end.
 
 
@@ -500,12 +493,7 @@ make_matchspec(LServer, Data) ->
     filter_fields(Data, ["host = '", Host, "'"], LServer).
 
 filter_fields([], Match, _LServer) ->
-    case Match of
-	"" ->
-	    "";
-	_ ->
-	    [" where ", Match]
-    end;
+    [" where ", Match];
 filter_fields([{SVar, [Val]} | Ds], Match, LServer)
   when is_list(Val) and (Val /= "") ->
     LVal = exmpp_stringprep:to_lower(Val),
@@ -539,12 +527,7 @@ make_val(Match, Field, Val) ->
 		SVal = ejabberd_odbc:escape(Val),
 		[Field, " = '", SVal, "'"]
 	end,
-    case Match of
-	"" ->
-	    Condition;
-	_ ->
-	    [Match, " and ", Condition]
-    end.
+    [Match, " and ", Condition].
 
 
 

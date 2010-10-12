@@ -62,8 +62,8 @@ process_local_iq(_From, _To, #iq{type = 'set'} = IQ) ->
 
 
 process_sm_iq(
-  #jid{prep_node = Node, prep_domain = Domain} = From,
-  #jid{prep_node = Node, prep_domain = Domain} = _To,
+  #jid{node = Node, domain = Domain} = From,
+  #jid{node = Node, domain = Domain} = _To,
   #iq{type = 'get'} = IQ) ->
     get_ip(From, IQ);
 

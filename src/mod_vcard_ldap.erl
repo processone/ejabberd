@@ -172,7 +172,7 @@ start_link(Host, Opts) ->
 init([Host, Opts]) ->
     HostB = list_to_binary(Host),
     State = parse_options(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, parallel),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_VCARD,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_VCARD,
@@ -439,9 +439,8 @@ route(State, From, To, Packet) ->
 					Result = #xmlel{
 					  ns = ?NS_SEARCH,
 					  name = 'query',
-					  children = [
-					    #xmlel{
-					      ns = ?NS_DATA_FORMS,
+					  children =
+                                             [#xmlel{ns = ?NS_DATA_FORMS,
 					      name = 'x',
 					      attrs = [?XMLATTR('type',
 						  <<"result">>)],

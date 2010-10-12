@@ -89,9 +89,8 @@
 % These are the namespace already declared by the stream opening. This is
 % used at serialization time.
 -define(DEFAULT_NS, ?NS_JABBER_SERVER).
--define(PREFIXED_NS, [
-  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
-]).
+-define(PREFIXED_NS,
+        [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -524,8 +523,7 @@ handle_sync_event(get_state_infos, _From, StateName, StateData) ->
 			[D || {{D, _}, established} <- 
 			    dict:to_list(Connections)]
 		end,
-    Infos = [
-	     {direction, in},
+    Infos = [{direction, in},
 	     {statename, StateName},
 	     {addr, Addr},
 	     {port, Port},

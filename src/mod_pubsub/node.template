@@ -75,8 +75,7 @@ terminate(Host, ServerHost) ->
     node_flat:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, __TO_BE_DEFINED__},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
@@ -123,8 +122,8 @@ delete_node(Removed) ->
 subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup) ->
     node_flat:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup).
 
-unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
-    node_flat:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
+unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
+    node_flat:unsubscribe_node(NodeId, Sender, Subscriber, SubId).
 
 publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
     node_flat:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).

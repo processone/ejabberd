@@ -427,8 +427,8 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			    drop
 		    end;
 		Rs ->
-		    Value = case ejabberd_config:get_local_option(
-				   {domain_balancing, LDstDomain}) of
+		    Value = case ejabberd_config:get_local_option
+                                ({domain_balancing, LDstDomain}) of
 				undefined -> now();
 				random -> now();
 				source -> jlib:short_prepd_jid(From);
@@ -477,8 +477,8 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     end.
 
 get_component_number(LDomain) ->
-    case ejabberd_config:get_local_option(
-	   {domain_balancing_component_number, LDomain}) of
+    case ejabberd_config:get_local_option
+        ({domain_balancing_component_number, LDomain}) of
 	N when is_integer(N),
 	       N > 1 ->
 	    N;

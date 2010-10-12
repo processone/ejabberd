@@ -232,9 +232,9 @@ normal_state({route, From, undefined,
 						    message_time = Now,
 						    message_shaper = MessageShaper,
 						    message = Packet},
-				    RoomQueue = queue:in(
-						  {message, From},
-						  StateData#state.room_queue),
+				    RoomQueue =
+                                        queue:in({message, From},
+                                                 StateData#state.room_queue),
 				    StateData2 =
 					store_user_activity(
 					  From, NewActivity, StateData1),
@@ -1684,7 +1684,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		    StateData;
 		captcha_required ->
 		    SID = case exmpp_stanza:get_id(Packet) of
-			      undefined -> "";
+			      undefined -> <<"">>;
 			      SID1 -> SID1
 			  end,
 		    RoomJID = StateData#state.jid,
@@ -1693,7 +1693,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			   SID, RoomJID, To, Lang, From) of
 			{ok, ID, CaptchaEls} ->
                             MsgPkt = #xmlel{name = 'message',
-                                attrs = [#xmlattr{name = 'id', value = ID}],
+                                attrs = [#xmlattr{name = 'id', value = list_to_binary(ID)}],
                                 children = CaptchaEls},
 			    Robots = ?DICT:store(From,
 						 {Nick, Packet}, StateData#state.robots),
@@ -3042,8 +3042,8 @@ get_config(Lang, StateData, From) ->
 	      true ->
           [#xmlel{name = 'option', attrs = [?XMLATTR('label', 
                         translate:translate(Lang, "No limit"))],
-                  children = [#xmlel{name = 'value', children = [#xmlcdata{
-                                cdata = <<"none">>}]}]}]
+                  children = [#xmlel{name = 'value',
+                                     children = [#xmlcdata{cdata = <<"none">>}]}]}]
 	  end ++
       [#xmlel{name = 'option', attrs = [?XMLATTR('label', N)],
               children = [#xmlel{name = 'value', children = [

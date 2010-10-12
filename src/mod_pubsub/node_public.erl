@@ -26,8 +26,6 @@
 -module(node_public).
 -author('christophe.romain@process-one.net').
 
--include_lib("exmpp/include/exmpp.hrl").
-
 -include("pubsub.hrl").
 
 -behaviour(gen_pubsub_node).
@@ -82,8 +80,7 @@ terminate(Host, ServerHost) ->
     node_flat:terminate(Host, ServerHost).
 
 options() ->
-    [{node_type, public},
-     {deliver_payloads, true},
+    [{deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
      {notify_retract, true},
@@ -130,8 +127,8 @@ delete_node(Removed) ->
 subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
     node_flat:subscribe_node(NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options).
 
-unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
-    node_flat:unsubscribe_node(NodeId, Sender, Subscriber, SubID).
+unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
+    node_flat:unsubscribe_node(NodeId, Sender, Subscriber, SubId).
 
 publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
     node_flat:publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload).

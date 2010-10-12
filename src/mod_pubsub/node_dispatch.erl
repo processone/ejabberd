@@ -27,7 +27,6 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include_lib("exmpp/include/exmpp.hrl").
 
 -behaviour(gen_pubsub_node).
 
@@ -126,13 +125,13 @@ subscribe_node(_NodeId, _Sender, _Subscriber, _AccessModel,
 	       _SendLast, _PresenceSubscription, _RosterGroup, _Options) ->
     {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')}.
 
-unsubscribe_node(_NodeId, _Sender, _Subscriber, _SubID) ->
+unsubscribe_node(_NodeId, _Sender, _Subscriber, _SubId) ->
     {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'forbidden')}.
 
 publish_item(NodeId, Publisher, Model, MaxItems, ItemId, Payload) ->
     lists:foreach(fun(SubNode) ->
 			  node_flat:publish_item(
-			    SubNode#pubsub_node.id, Publisher, Model,
+			    SubNode#pubsub_node.idx, Publisher, Model,
 			    MaxItems, ItemId, Payload)
 		  end, nodetree_tree:get_subnodes(NodeId, Publisher, Publisher)).
 

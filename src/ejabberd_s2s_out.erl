@@ -106,9 +106,8 @@
 % These are the namespace already declared by the stream opening. This is
 % used at serialization time.
 -define(DEFAULT_NS, ?NS_JABBER_SERVER).
--define(PREFIXED_NS, [
-  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
-]).
+-define(PREFIXED_NS,
+        [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]).
 
 
 -define(SOCKET_DEFAULT_RESULT, {error, badarg}).
@@ -606,9 +605,8 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 	    ?DEBUG("starttls: ~p", [{StateData#state.myname,
 				     StateData#state.server}]),
 	    Socket = StateData#state.socket,
-	    TLSOpts = case ejabberd_config:get_local_option(
-			     {domain_certfile,
-			      StateData#state.server}) of
+	    TLSOpts = case ejabberd_config:get_local_option
+                          ({domain_certfile, StateData#state.server}) of
 			  undefined ->
 			      StateData#state.tls_options;
 			  CertFile ->
@@ -763,8 +761,7 @@ handle_sync_event(get_state_infos, _From, StateName, StateData) ->
 		      _:_ ->
 			  {unknown,unknown}
 		  end,
-    Infos = [
-	     {direction, out},
+    Infos = [{direction, out},
 	     {statename, StateName},
 	     {addr, Addr},
 	     {port, Port},
@@ -862,8 +859,8 @@ terminate(Reason, StateName, StateData) ->
 	false ->
 	    ok;
 	Key ->
-	    ejabberd_s2s:remove_connection(
-	      {StateData#state.myname, StateData#state.server}, self(), Key)
+	    ejabberd_s2s:remove_connectio
+              ({StateData#state.myname, StateData#state.server}, self(), Key)
     end,
     %% bounce queue manage by process and Erlang message queue
     bounce_queue(StateData#state.queue, 'remote-server-not-found'),
@@ -953,8 +950,8 @@ send_db_request(StateData) ->
     Server = StateData#state.server,
     New = case StateData#state.new of
 	      false ->
-		  case ejabberd_s2s:try_register(
-			 {StateData#state.myname, Server}) of
+		  case ejabberd_s2s:try_register
+                      ({StateData#state.myname, Server}) of
 		      {key, Key} ->
 			  Key;
 		      false ->

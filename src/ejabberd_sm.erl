@@ -80,9 +80,8 @@
 % These are the namespace already declared by the stream opening. This is
 % used at serialization time.
 -define(DEFAULT_NS, ?NS_JABBER_CLIENT).
--define(PREFIXED_NS, [
-  {?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}
-]).
+-define(PREFIXED_NS,
+        [{?NS_XMPP, ?NS_XMPP_pfx}, {?NS_DIALBACK, ?NS_DIALBACK_pfx}]).
 
 
 -define(IS_BINARY_OR_UNDEF(X),
@@ -211,10 +210,12 @@ get_user_info(User, Server, Resource)
 	 end,
     if is_list(Ss), Ss /= [] ->
 	    Session = lists:max(Ss),
-	    N = node(element(2, Session#session.sid)),
 	    Conn = proplists:get_value(conn, Session#session.info),
 	    IP = proplists:get_value(ip, Session#session.info),
-	    [{node, N}, {conn, Conn}, {ip, IP}];
+	    Priority = Session#session.priority, %% integer()
+	    {CreationNow, Pid} = Session#session.sid,
+	    CreationString = jlib:now_to_utc_string(CreationNow),
+	    [{node, Node}, {conn, Conn}, {ip, IP}, {priority, Priority}, {pid, Pid}, {creation, CreationString}];
        true ->
 	    offline
     end.

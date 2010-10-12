@@ -349,6 +349,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Err = exmpp_stanza:reply_with_error(Packet, 'not-allowed'),
 	    ejabberd_router:route_error(To, From, Err, Packet)
     end,
+    {next_state, StateName, StateData};
+handle_info(Info, StateName, StateData) ->
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {next_state, StateName, StateData}.
 
 

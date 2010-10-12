@@ -440,14 +440,12 @@ do_reset_stream(#state{xml_stream_state = XMLStreamState}) ->
 
 
 new_xmlstream(C2SPid, MaxStanzaSize) ->
-    Parser = exmpp_xml:start_parser([
-      {names_as_atom, true},
-      {check_nss, xmpp},
-      {check_elems, xmpp},
-      {check_attrs, xmpp},
-      {max_size, MaxStanzaSize}
-    ]),
-    exmpp_xmlstream:start(
-      {gen_fsm, C2SPid}, Parser,
-      [{xmlstreamstart, new}]
-    ).
+    Parser = exmpp_xml:start_parser([{names_as_atom, true},
+                                     {check_nss, xmpp},
+                                     {check_elems, xmpp},
+                                     {check_attrs, xmpp},
+                                     {max_size, MaxStanzaSize}
+                                    ]),
+    exmpp_xmlstream:start({gen_fsm, C2SPid}, Parser,
+                          [{xmlstreamstart, new}]
+                         ).

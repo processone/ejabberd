@@ -1001,8 +1001,8 @@ process_admin(Host,
 	      {value, {_, String}} ->
 		  case parse_access_rule(String) of
 		      {ok, Rs} ->
-			  ejabberd_config:add_global_option(
-			    {access, Name, Host}, Rs),
+			  ejabberd_config:add_global_option
+                            ({access, Name, Host}, Rs),
 			  ok;
 		      _ ->
 			  error
@@ -1732,10 +1732,17 @@ user_info(User, Server, Query, Lang) ->
 				       FIP = case ejabberd_sm:get_user_info(
 						    UserB, ServerB, R) of
 						 offline ->
+						     NodePidS = "",
 						     "";
 						 Info when is_list(Info) ->
 						     Node = proplists:get_value(node, Info),
+						     NodeS = atom_to_list(Node),
 						     Conn = proplists:get_value(conn, Info),
+						     Priority = proplists:get_value(priority, Info),
+						     Creation = proplists:get_value(creation, Info),
+						     Pid = proplists:get_value(pid, Info),
+						     PidS = pid_to_list(Pid),
+						     NodePidS = NodeS ++ "/pid/" ++ PidS,
 						     {IP, Port} = proplists:get_value(ip, Info),
 						     ConnS = case Conn of
 								 c2s -> "plain";
@@ -1746,14 +1753,16 @@ user_info(User, Server, Query, Lang) ->
 								 http_poll -> "http-poll"
 							     end,
 						     " (" ++
+						         " #" ++ integer_to_list(Priority) ++ " " ++
 						         ConnS ++ "://" ++
 							 inet_parse:ntoa(IP) ++
 							 ":" ++
-							 integer_to_list(Port)
-						         ++ "#" ++ atom_to_list(Node)
-							 ++ ")"
+							 integer_to_list(Port) ++
+						         "#" ++ NodeS ++
+						         " " ++ Creation ++
+							 ") "
 					     end,
-				       ?LI([?C(binary_to_list(R) ++ FIP)])
+				       ?LI([?C(binary_to_list(R) ++ FIP), ?AC("/admin/node/" ++ NodePidS ++ "/", "View Process")])
 			       end, lists:sort(Resources)))]
 	end,
     Password = ejabberd_auth:get_password_s(User, Server),
@@ -2149,6 +2158,7 @@ get_node(global, Node, [], Query, Lang) ->
 	[?XE('ul',
 	     [?LI([?ACT(Base ++ "db/", "Database")]),
 	      ?LI([?ACT(Base ++ "backup/", "Backup")]),
+	      ?LI([?ACT(Base ++ "pid/", "Erlang Processes")]),
 	      ?LI([?ACT(Base ++ "ports/", "Listened Ports")]),
 	      ?LI([?ACT(Base ++ "stats/", "Statistics")]),
 	      ?LI([?ACT(Base ++ "update/", "Update")])
@@ -2325,6 +2335,71 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 			  ])
 		     ])
 		])])];
+
+get_node(global, Node, ["pid"], _Query, Lang) ->
+    NodeS = atom_to_list(Node),
+    Processes = rpc:call(Node, erlang, processes, []),
+    ProcessesNumber = length(Processes),
+    ProcessesList = lists:map(
+		      fun(P) ->
+			      PS = pid_to_list(P),
+			      NodePidS = NodeS ++ "/pid/" ++ PS,
+			      ?AC("/admin/node/" ++ NodePidS ++ "/", PS)
+		      end,
+		      Processes),
+    [?XC('h1', io_lib:format(?T("Erlang Processes at node ~p"), [Node])),
+     ?XAE('table', [],
+	  [?XE('tbody',
+	       [?XE('tr', [?XCT('td', "Number of processes:"),
+			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+				pretty_string_int(ProcessesNumber))])
+	       ])
+	  ]),
+     ?XAE('p', [],
+	  [?CT("Processes: ")] ++ ProcessesList
+	 )];
+
+get_node(global, Node, ["pid", PidS], _Query, Lang) ->
+    NodeS = atom_to_list(Node),
+    ProcessInfo = rpc:call(Node, erlang, process_info, [list_to_pid(PidS)]),
+    ProcessInfoS = io_lib:format("~p", [ProcessInfo]),
+    ProcLinkList = case re:run(ProcessInfoS, "<[0-9]+\\.[0-9]+\\.[0-9]+>",
+			       [global, {capture, all, list}]) of
+		       {match, PidsRareList} ->
+			   lists:map(
+			     fun([PS]) ->
+				     NodePidS = NodeS ++ "/pid/" ++ PS,
+				     ?AC("/admin/node/" ++ NodePidS ++ "/", PS)
+			     end,
+			     PidsRareList);
+		       _ ->
+			   []
+		   end,
+    PortLinkList =
+	case proplists:get_value(links, ProcessInfo) of
+	    Links when is_list(Links) ->
+		lists:foldl(
+		  fun(Link, LinkRes) when is_port(Link) ->
+			  PortInfo = rpc:call(Node, erlang, port_info, [Link]),
+			  PortInfoString = io_lib:format("~p", [PortInfo]),
+			  LinkRes ++ [{erlang:port_to_list(Link), PortInfoString}];
+		     (_Link, LinkRes) -> LinkRes
+		  end,
+		  [],
+		  Links);
+	    _ ->
+		[]
+	end,
+    [?XC('h1', io_lib:format(?T("Erlang Process ~s at node ~p"), [PidS, Node])),
+     ?XC('h3', ?T("Process Information:")),
+     ?XAE('pre', [], [?C(ProcessInfoS)]),
+     ?XC('h3', ?T("Related Processes:")),
+     ?XAE('p', [], ProcLinkList),
+     ?XC('h3', ?T("Linked Ports:")),
+     ?XE('ul',
+	 [ ?XE('li', [ ?C(PortName), ?BR, ?C(PortDescr) ])
+	   || {PortName, PortDescr} <- PortLinkList])
+    ];
 
 get_node(global, Node, ["ports"], Query, Lang) ->
     Ports = rpc:call(Node, ejabberd_config, get_local_option, [listen]),
@@ -2964,6 +3039,7 @@ make_node_menu(global, Node, Lang) ->
     NodeBase = get_base_path(global, Node),
     NodeFixed = [{"db/", "Database"},
 		 {"backup/", "Backup"},
+		 {"pid/", "Erlang Processes"},
 		 {"ports/", "Listened Ports"},
 		 {"stats/", "Statistics"},
 		 {"update/", "Update"}]

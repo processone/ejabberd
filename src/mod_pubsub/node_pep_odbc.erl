@@ -25,11 +25,9 @@
 
 %%% @doc The module <strong>{@module}</strong> is the pep PubSub plugin.
 %%% <p>PubSub plugin nodes are using the {@link gen_pubsub_node} behaviour.</p>
-
+%%TODO : fix SQL requests with nodeid/id and id/idx changes
 -module(node_pep_odbc).
 -author('christophe.romain@process-one.net').
-
--include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
 -include("pubsub.hrl").
@@ -86,7 +84,6 @@ terminate(Host, ServerHost) ->
 
 options() ->
     [{odbc, true},
-     {node_type, pep},
      {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},
@@ -163,8 +160,8 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
       NodeId, Sender, Subscriber, AccessModel, SendLast,
       PresenceSubscription, RosterGroup, Options).
 
-unsubscribe_node(NodeId, Sender, Subscriber, SubID) ->
-    case node_flat_odbc:unsubscribe_node(NodeId, Sender, Subscriber, SubID) of
+unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
+    case node_flat_odbc:unsubscribe_node(NodeId, Sender, Subscriber, SubId) of
 	{error, Error} -> {error, Error};
 	{result, _} -> {result, []}
     end.

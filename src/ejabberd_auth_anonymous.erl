@@ -140,8 +140,8 @@ anonymous_protocol(Host) when is_list(Host) ->
 %% defaults to false
 
 allow_multiple_connections(Host) when is_list(Host) ->
-    ejabberd_config:get_local_option(
-      {allow_multiple_connections, Host}) =:= true.
+    ejabberd_config:get_local_option({allow_multiple_connections, Host})
+        =:= true.
 
 %% @spec (User, Server) -> bool()
 %%     User = string()
