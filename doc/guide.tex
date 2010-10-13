@@ -5247,8 +5247,11 @@ An \ejabberd{} node writes two log files:
 	\titem{erlang.log} is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 \end{description}
 
-The option \term{loglevel} modifies the verbosity of the file ejabberd.log. The syntax is:
-\esyntax{\{loglevel, Level\}.}
+The option \term{loglevel} modifies the verbosity of the file ejabberd.log. The syntax is one of:
+\begin{description}
+    \titem{\{loglevel, Level\}.} The standard form to set a global log level.
+    \titem{\{loglevel, \{Level, [\{Module, Level\}, ...]\}\}.} The given Erlang modules will be logged with specific log levels, all others will use the default log level.
+\end{description}
 
 The possible \term{Level} are:
 \begin{description}
