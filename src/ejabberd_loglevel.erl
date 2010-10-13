@@ -59,18 +59,20 @@
 		   function = debug_msg, event_type = info_msg, msg_prefix = "D"}]).
 
 get() ->
-    Level = ejabberd_logger:get(),
-    case lists:keysearch(Level, #loglevel.ordinal, ?LOG_LEVELS) of
+    {DefaultLevel, _CustomLevels} = ejabberd_logger:get(),
+    case lists:keysearch(DefaultLevel, #loglevel.ordinal, ?LOG_LEVELS) of
         {value, Result = #loglevel{}} ->
 	    {Result#loglevel.ordinal, Result#loglevel.name, Result#loglevel.description};
         _ ->
-	    erlang:error({no_such_loglevel, Level})
+	    erlang:error({no_such_loglevel, DefaultLevel})
     end.
 
-
-set(LogLevel) when is_atom(LogLevel) ->
-    set(level_to_integer(LogLevel));
-set(Loglevel) when is_integer(Loglevel) ->
+set(DefaultLevel) when is_atom(DefaultLevel) orelse is_integer(DefaultLevel) ->
+    set({DefaultLevel, []});
+set({DefaultLevel, CustomLevels}) when is_list(CustomLevels) ->
+    DefaultInt = level_to_integer(DefaultLevel),
+    CustomInts = [level_to_integer(C) || C <- CustomLevels],
+    Loglevel = {DefaultInt, CustomInts},
     try
         {Mod,Code} = dynamic_compile:from_string(ejabberd_logger_src(Loglevel)),
         code:load_binary(Mod, ?LOGMODULE ++ ".erl", Code)
@@ -78,8 +80,12 @@ set(Loglevel) when is_integer(Loglevel) ->
         Type:Error -> ?CRITICAL_MSG("Error compiling logger (~p): ~p~n", [Type, Error])
     end;
 set(_) ->
-    exit("Loglevel must be an integer").
+    exit("Invalid loglevel format").
 
+level_to_integer(Level) when is_integer(Level) ->
+    Level;
+level_to_integer({Module, Level}) ->
+    {Module, level_to_integer(Level)};
 level_to_integer(Level) ->
     case lists:keysearch(Level, #loglevel.name, ?LOG_LEVELS) of
         {value, #loglevel{ordinal = Int}} -> Int;
@@ -109,21 +115,35 @@ header_src() ->
     ".
 
 get_src(Loglevel) ->
-    ["get() -> ", integer_to_list(Loglevel), ".
-     "].
+    io_lib:format("get() -> ~w.
+                  ", [Loglevel]).
 
 log_src(_Loglevel, #loglevel{function = no_log}) ->
     [];
-log_src(Loglevel, Spec = #loglevel{ordinal = MinLevel})
-  when Loglevel < MinLevel ->
+log_src({DefaultLevel, [{Module, Level} | Tail]}, Spec = #loglevel{ordinal = MinLevel})
+  when Level < MinLevel andalso MinLevel =< DefaultLevel ->
+    [atom_to_list(Spec#loglevel.function), "(", atom_to_list(Module), ", _, _, _) -> ok;
+     ", log_src({DefaultLevel, Tail}, Spec)];
+log_src({DefaultLevel, [{Module, Level} | Tail]}, Spec = #loglevel{ordinal = MinLevel})
+  when DefaultLevel < MinLevel andalso MinLevel =< Level ->
+    [atom_to_list(Spec#loglevel.function), "(", atom_to_list(Module), " = Module, Line, Format, Args) ->",
+     log_notify_src(Spec), ";
+     ", log_src({DefaultLevel, Tail}, Spec)];
+log_src({DefaultLevel, [_Head | Tail]}, Spec = #loglevel{}) ->
+    log_src({DefaultLevel, Tail}, Spec);
+log_src({DefaultLevel, []}, Spec = #loglevel{ordinal = MinLevel})
+  when DefaultLevel < MinLevel ->
     [atom_to_list(Spec#loglevel.function), "(_, _, _, _) -> ok.
      "];
-log_src(_Loglevel, Spec = #loglevel{}) ->
-    [atom_to_list(Spec#loglevel.function), "(Module, Line, Format, Args) ->
-        notify(", atom_to_list(Spec#loglevel.event_type), ",
-               \"", Spec#loglevel.msg_prefix, "(~p:~p:~p) : \"++Format++\"~n\",
-               [self(), Module, Line | Args]).
-        "].
+log_src({_DefaultLevel, []}, Spec = #loglevel{}) ->
+    [atom_to_list(Spec#loglevel.function), "(Module, Line, Format, Args) ->",
+     log_notify_src(Spec), ".
+     "].
+
+log_notify_src(Spec = #loglevel{}) ->
+    ["notify(", atom_to_list(Spec#loglevel.event_type), ",
+        \"", Spec#loglevel.msg_prefix, "(~p:~p:~p) : \"++Format++\"~n\",
+        [self(), Module, Line | Args])"].
 
 notify_src() ->
     %% Distribute the message to the Erlang error logger
