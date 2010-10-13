@@ -353,6 +353,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
 	    ejabberd_router:route_error(To, From, Err, Packet)
     end,
+    {next_state, StateName, StateData};
+handle_info(Info, StateName, StateData) ->
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {next_state, StateName, StateData}.
 
 
