@@ -31,7 +31,11 @@
 -module(ejabberd_loglevel).
 -author('mickael.remond@process-one.net').
 
--export([set/1, get/0]).
+-export([set/1,
+	 get/0,
+	 set_custom/2,
+	 clear_custom/0,
+	 clear_custom/1]).
 
 -include("ejabberd.hrl").
 
@@ -81,6 +85,30 @@ set({DefaultLevel, CustomLevels}) when is_list(CustomLevels) ->
     end;
 set(_) ->
     exit("Invalid loglevel format").
+
+set_custom(Module, Level) ->
+    {DefaultLevel, CustomLevels} = ejabberd_logger:get(),
+    case lists:keysearch(Module, 1, CustomLevels) of
+	{value, {Module, Level}} ->
+	    ok;
+	{value, _} ->
+	    set({DefaultLevel, lists:keyreplace(Module, 1, CustomLevels, {Module, Level})});
+	_ ->
+	    set({DefaultLevel, [{Module, Level} | CustomLevels]})
+    end.
+
+clear_custom() ->
+    {DefaultLevel, CustomLevels} = ejabberd_logger:get(),
+    set({DefaultLevel, []}).
+
+clear_custom(Module) ->
+    {DefaultLevel, CustomLevels} = ejabberd_logger:get(),
+    case lists:keysearch(Module, 1, CustomLevels) of
+	{value, _} ->
+	    set({DefaultLevel, lists:keydelete(Module, 1, CustomLevels)});
+	_ ->
+	    ok
+    end.
 
 level_to_integer(Level) when is_integer(Level) ->
     Level;
