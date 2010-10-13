@@ -21,8 +21,8 @@
 
 -define(HASHTBL, nodes_hash).
 -define(HASHTBL_NEW, nodes_hash_new).
--define(POINTS, 16).
--define(REHASH_TIMEOUT, 5000).
+-define(POINTS, 64).
+-define(REHASH_TIMEOUT, 30000).
 
 -record(state, {}).
 
