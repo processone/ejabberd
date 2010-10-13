@@ -67,7 +67,8 @@
 
 -export([start/2,
     handler/2,
-    link_contacts/5, unlink_contacts/3, %% used by Nimbuzz
+    link_contacts/5,
+    unlink_contacts/3,
     loop/1,
     stop/1]).
 
