@@ -4011,8 +4011,11 @@ domain.</P><P> <A NAME="servicelb"></A> </P><!--TOC section Service Load-Balanci
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> is the ejabberd service log, with the messages reported by <TT>ejabberd</TT> code
 	</DD><DT CLASS="dt-description"><B><TT>erlang.log</TT></B></DT><DD CLASS="dd-description"> is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
-</DD></DL><P>The option <TT>loglevel</TT> modifies the verbosity of the file ejabberd.log. The syntax is:
-</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{loglevel, Level}.</TT></B></DT></DL><P>The possible <TT>Level</TT> are:
+</DD></DL><P>The option <TT>loglevel</TT> modifies the verbosity of the file ejabberd.log. The syntax is one of:
+</P><DL CLASS="description"><DT CLASS="dt-description">
+<B><TT>{loglevel, Level}.</TT></B></DT><DD CLASS="dd-description"> The standard form to set a global log level.
+</DD><DT CLASS="dt-description"><B><TT>{loglevel, {Level, [{Module, Level}, ...]}}.</TT></B></DT><DD CLASS="dd-description"> The given Erlang modules will be logged with specific log levels, all others will use the default log level.
+</DD></DL><P>The possible <TT>Level</TT> are:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>0</TT></B></DT><DD CLASS="dd-description"> No ejabberd log at all (not recommended)
 	</DD><DT CLASS="dt-description"><B><TT>1</TT></B></DT><DD CLASS="dd-description"> Critical
