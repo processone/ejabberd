@@ -120,7 +120,7 @@ start(_Host, _Opts) ->
             % mod_http_bind is already started so it will not be started again
             ok;
         {error, Error} ->
-            {'EXIT', {start_child_error, Error}}
+            exit({start_child_error, Error})
     end.
 
 stop(_Host) ->
@@ -128,7 +128,13 @@ stop(_Host) ->
         ok ->
             ok;
         {error, Error} ->
-            {'EXIT', {terminate_child_error, Error}}
+            exit({terminate_child_error, Error})
+    end,
+    case supervisor:delete_child(ejabberd_sup, ejabberd_http_bind_sup) of
+        ok ->
+            ok;
+        {error, Error2} ->
+            exit({delete_child_error, Error2})
     end.
 
 setup_database() ->
