@@ -564,6 +564,8 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 			 end,
 	    Now = now(),
 	    Reason = case catch rpc:call(Node, M, F, A, RPCTimeout) of
+			 {badrpc, timeout} ->
+			     normal;
 			 {badrpc, _} = Err ->
 			     {migration_error, Err};
 			 {'EXIT', _} = Err ->
@@ -627,6 +629,8 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 			 end,
 	    Now = now(),
 	    Reason = case catch rpc:call(Node, M, F, A, RPCTimeout) of
+			 {badrpc, timeout} ->
+			     normal;
 			 {badrpc, R} ->
 			     {migration_error, R};
 			 {'EXIT', R} ->
