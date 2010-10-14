@@ -573,8 +573,8 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 			 {ok, Clone} ->
 			     process_flag(trap_exit, true),
 			     MRef = erlang:monitor(process, Clone),
-			     NowDiff = timer:now_diff(now(), Now),
-			     TimeLeft = lists:max([Time1 - NowDiff, 0]) div 1000,
+			     NowDiff = timer:now_diff(now(), Now) div 1000,
+			     TimeLeft = lists:max([Time1 - NowDiff, 0]),
 			     TRef = erlang:start_timer(TimeLeft, self(), timeout),
 			     relay_messages(MRef, TRef, Clone, Queue);
 			 Reply ->
@@ -636,8 +636,8 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 			 {ok, Clone} ->
 			     process_flag(trap_exit, true),
 			     MRef = erlang:monitor(process, Clone),
-			     NowDiff = timer:now_diff(now(), Now),
-			     TimeLeft = lists:max([Time1 - NowDiff, 0]) div 1000,
+			     NowDiff = timer:now_diff(now(), Now) div 1000,
+			     TimeLeft = lists:max([Time1 - NowDiff, 0]),
 			     TRef = erlang:start_timer(TimeLeft, self(), timeout),
 			     relay_messages(MRef, TRef, Clone, Queue);
 			 Reply ->
