@@ -18,6 +18,7 @@
 
 -module(mod_filter).
 -author('christophe.romain@process-one.net').
+-vsn('$Id: mod_filter.erl 972 2010-10-14 21:53:56Z jpcarlino $').
 
 -behaviour(gen_mod).
 
@@ -129,18 +130,38 @@ update(Host, Opts) ->
 loop(Host, Opts, Rules, Scope, Pattern) ->
 	receive
 	{add, Id, RegExp} ->
-		[BinRegExp] = tlre:compile([RegExp]),
-		mnesia:dirty_write(#filter_rule{id={Id, Host}, regexp=RegExp, binre=BinRegExp}),
-		?MODULE:update(Host, Opts);
+		try
+		    [BinRegExp] = tlre:compile([RegExp]),
+		    ?INFO_MSG("Adding new filter rule with regexp=~p", [RegExp]),
+		    mnesia:dirty_write(#filter_rule{id={Id, Host}, regexp=RegExp, binre=BinRegExp}),
+		    ?MODULE:update(Host, Opts)
+		catch
+		    Class:Reason ->
+			?INFO_MSG("~p can't add filter rule with regexp=~p for id=~p. Reason: ~p", [Class, RegExp, Id, Reason]),
+			loop(Host, Opts, Rules, Scope, Pattern)
+		end;
 	{add, Id, RegExp, Type} ->
-		[BinRegExp] = tlre:compile([RegExp]),
-		mnesia:dirty_write(#filter_rule{id={Id, Host}, regexp=RegExp, binre=BinRegExp, type=Type}),
-		?MODULE:update(Host, Opts);
+		try
+		    [BinRegExp] = tlre:compile([RegExp]),
+		    ?INFO_MSG("Adding new filter rule with regexp=~p", [RegExp]),
+		    mnesia:dirty_write(#filter_rule{id={Id, Host}, regexp=RegExp, binre=BinRegExp, type=Type}),
+		    ?MODULE:update(Host, Opts)
+		catch
+		    Class:Reason ->
+			?INFO_MSG("~p can't add filter rule with regexp=~p for id=~p with type=~p. Reason: ~p", [Class, RegExp, Id, Type, Reason]),
+			loop(Host, Opts, Rules, Scope, Pattern)
+		end;
 	{del, Id} ->
-		mnesia:dirty_delete_object(#filter_rule{id={Id, Host}, _='_'}),
+		RulesToRemove = mnesia:dirty_match_object(#filter_rule{id={Id, Host}, _='_'}),
+		lists:foreach(fun(Rule) ->
+                      mnesia:dirty_delete_object(Rule)
+		end, RulesToRemove),
 		?MODULE:update(Host, Opts);
 	{del, Id, RegExp} ->
-		mnesia:dirty_delete_object(#filter_rule{id={Id, Host}, regexp=RegExp, _='_'}),
+		RulesToRemove = mnesia:dirty_match_object(#filter_rule{id={Id, Host}, regexp=RegExp, _='_'}),
+		lists:foreach(fun(Rule) ->
+                      mnesia:dirty_delete_object(Rule)
+		end, RulesToRemove),
 		?MODULE:update(Host, Opts);
 	{match, From, String} ->
 		From ! {match, string_filter(String, Rules, Scope, Pattern)},
@@ -261,7 +282,7 @@ filter_packet({From, To, Packet}) ->
 					receive
 					{match, {"pass", _}} ->
 						[{xmlcdata, CData}|DataAcc];
-					{match, {"log", FinalString}} ->
+					{match, {"log", _}} ->
 						mnesia:dirty_write(#filter_log{
 							date=erlang:localtime(),
 							from=From, to=To, message=Msg}),
