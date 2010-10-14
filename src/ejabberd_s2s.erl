@@ -491,22 +491,22 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 is_service(From, To) ->
     LFromDomain = exmpp_jid:prep_domain_as_list(From),
     case ejabberd_config:get_local_option({route_subdomains, LFromDomain}) of
-        s2s -> % bypass RFC 3920 10.3
-            false;
-        _ ->
-            LDstDomain = exmpp_jid:prep_domain_as_list(To),
-            P = fun(Domain) -> is_subdomain(LDstDomain, Domain) end,
-            lists:any(P, ?MYHOSTS)
+	s2s -> % bypass RFC 3920 10.3
+	    false;
+	_ ->
+	    LDstDomain = exmpp_jid:prep_domain_as_list(To),
+	    Hosts = ?MYHOSTS,
+	    P = fun(ParentDomain) -> lists:member(ParentDomain, Hosts) end,
+	    lists:any(P, parent_domains(LDstDomain))
     end.
 
-%%--------------------------------------------------------------------
-%% Function: is_subdomain(Domain1, Domain2) -> true | false
-%% Description: Return true if Domain1 (a string representing an
-%% internet domain name) is a subdomain (or the same domain) of
-%% Domain2
-%% --------------------------------------------------------------------
-is_subdomain(Domain1, Domain2) ->
-    lists:suffix(string:tokens(Domain2, "."), string:tokens(Domain1, ".")).
+parent_domains(Domain) ->
+    lists:foldl(
+      fun(Label, []) ->
+	      [Label];
+	 (Label, [Head | Tail]) ->
+	      [Label ++ "." ++ Head, Head | Tail]
+      end, [], lists:reverse(string:tokens(Domain, "."))).
 
 send_element(Pid, El) ->
     Pid ! {send_element, El}.
@@ -575,10 +575,11 @@ update_tables() ->
 
 %% Check if host is in blacklist or white list
 allow_host(MyServer, S2SHost) ->
-    case lists:filter(
-	   fun(Host) ->
-		   is_subdomain(MyServer, Host)
-	   end, ?MYHOSTS) of
+    Hosts = ?MYHOSTS,
+    case lists:dropwhile(
+	   fun(ParentDomain) ->
+		   not lists:member(ParentDomain, Hosts)
+	   end, parent_domains(MyServer)) of
 	[MyHost|_] ->
 	    allow_host1(MyHost, S2SHost);
 	[] ->
