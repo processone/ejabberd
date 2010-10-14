@@ -22,6 +22,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include_lib("kernel/include/file.hrl").
 
 -record(state, {host,
 		socket,
@@ -32,6 +33,8 @@
 		feedback_port,
 		feedback_buf = <<>>,
 		certfile,
+		certfile_mtime,
+		failure_script,
 		queue,
 		soundfile,
 		cmd_id = 0,
@@ -41,6 +44,7 @@
 -define(PROCNAME, ejabberd_mod_applepush_service).
 -define(RECONNECT_TIMEOUT, 5000).
 -define(FEEDBACK_RECONNECT_TIMEOUT, 30000).
+-define(HANDSHAKE_TIMEOUT, 60000).
 -define(MAX_QUEUE_SIZE, 1000).
 -define(CACHE_SIZE, 4096).
 -define(MAX_PAYLOAD_SIZE, 255).
@@ -116,6 +120,7 @@ init([MyHost, Opts]) ->
     Feedback = gen_mod:get_opt(feedback, Opts, undefined),
     Port = gen_mod:get_opt(port, Opts, 2195),
     FeedbackPort = gen_mod:get_opt(feedback_port, Opts, 2196),
+    FailureScript = gen_mod:get_opt(failure_script, Opts, undefined),
     %MyHost = gen_mod:get_opt_host(Host, Opts, "applepush.@HOST@"),
     self() ! connect,
     case Feedback of
@@ -131,6 +136,7 @@ init([MyHost, Opts]) ->
 		feedback = Feedback,
 		feedback_port = FeedbackPort,
 		certfile = CertFile,
+		failure_script = FailureScript,
 		queue = {0, queue:new()},
 		soundfile = SoundFile}}.
 
@@ -171,6 +177,11 @@ handle_info({route, From, To, Packet}, State) ->
     end;
 handle_info(connect, State) ->
     connect(State);
+handle_info(connect_feedback, #state{certfile_mtime = MTime} = State)
+  when MTime /= undefined ->
+    erlang:send_after(?FEEDBACK_RECONNECT_TIMEOUT, self(),
+		      connect_feedback),
+    {noreply, State};
 handle_info(connect_feedback, State)
   when State#state.feedback /= undefined,
        State#state.feedback_socket == undefined ->
@@ -447,7 +458,7 @@ make_payload(State, Msg, Badge, Sound, Sender) ->
 	    Payload
     end.
 
-connect(#state{socket = undefined} = State) ->
+connect(#state{socket = undefined, certfile_mtime = undefined} = State) ->
     Gateway = State#state.gateway,
     Port = State#state.port,
     CertFile = State#state.certfile,
@@ -457,15 +468,55 @@ connect(#state{socket = undefined} = State) ->
 	{ok, Socket} ->
 	    {noreply, resend_messages(State#state{socket = Socket})};
 	{error, Reason} ->
+	    {Timeout, State2} =
+		case Reason of
+		    esslconnect ->
+			MTime = get_mtime(CertFile),
+			case State#state.failure_script of
+			    undefined ->
+				ok;
+			    FailureScript ->
+				os:cmd(FailureScript ++ " " ++ Gateway)
+			end,
+			{?HANDSHAKE_TIMEOUT,
+			 State#state{certfile_mtime = MTime}};
+		    _ ->
+			{?RECONNECT_TIMEOUT, State}
+		end,
 	    ?ERROR_MSG("(~p) Connection to ~p:~p failed: ~p, "
 		       "retrying after ~p seconds",
+		       [State2#state.host, Gateway, Port,
+			Reason, Timeout div 1000]),
+	    erlang:send_after(Timeout, self(), connect),
+	    {noreply, State2}
+    end;
+connect(#state{socket = undefined, certfile_mtime = MTime} = State) ->
+    CertFile = State#state.certfile,
+    case get_mtime(CertFile) of
+	MTime ->
+	    Gateway = State#state.gateway,
+	    Port = State#state.port,
+	    Timeout = ?HANDSHAKE_TIMEOUT,
+	    ?ERROR_MSG("(~p) Connection to ~p:~p postponed: "
+		       "waiting for ~p update, "
+		       "retrying after ~p seconds",
 		       [State#state.host, Gateway, Port,
-			Reason, ?RECONNECT_TIMEOUT div 1000]),
-	    erlang:send_after(?RECONNECT_TIMEOUT, self(), connect),
-	    {noreply, State}
+			CertFile, Timeout div 1000]),
+	    erlang:send_after(Timeout, self(), connect),
+	    {noreply, State};
+	_ ->
+	    connect(State#state{certfile_mtime = undefined})
     end;
 connect(State) ->
     {noreply, State}.
+
+get_mtime(File) ->
+    case file:read_file_info(File) of
+	{ok, FileInfo} ->
+	    FileInfo#file_info.mtime;
+	{error, _} ->
+	    no_certfile
+    end.
 
 bounce_message(From, To, Packet, Reason) ->
     {xmlelement, _, Attrs, _} = Packet,
