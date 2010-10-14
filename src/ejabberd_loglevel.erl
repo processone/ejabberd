@@ -98,7 +98,7 @@ set_custom(Module, Level) ->
     end.
 
 clear_custom() ->
-    {DefaultLevel, CustomLevels} = ejabberd_logger:get(),
+    {DefaultLevel, _CustomLevels} = ejabberd_logger:get(),
     set({DefaultLevel, []}).
 
 clear_custom(Module) ->
