@@ -117,8 +117,8 @@ process_elements(Elements,State) ->
 process_element(El=#xmlel{name=user, ns=_XMLNS},
 		State=#parsing_state{host=Host}) ->
     case add_user(El,Host) of
-	{error, _Other} -> error;
-	_ -> ok
+	ok -> ok;
+	{error, _Other} -> error
     end,
     State;
 
@@ -163,7 +163,7 @@ add_user(El, Domain) ->
     add_user(El, Domain, User, Password).
 
 %% @spec (El::xmlel(), Domain::string(), User::string(), Password::string())
-%%       -> ok | {atomic, exists} | {error, not_allowed}
+%%       -> ok | {error, ErrorText::string()}
 %% @doc Add a new user to the database.
 %% If user already exists, it will be only updated.
 add_user(El, Domain, User, Password) ->
@@ -185,7 +185,8 @@ add_user(El, Domain, User, Password) ->
 		   end,
 		   El);
 	{error, Other} ->
-	    ?ERROR_MSG("Error adding user ~s@~s: ~p~n", [User, Domain, Other])
+	    ?ERROR_MSG("Error adding user ~s@~s: ~p~n", [User, Domain, Other]),
+	    {error, Other}
     end.
 
 %% @spec (User::string(), Password::string(), Domain::string())

@@ -859,7 +859,7 @@ terminate(Reason, StateName, StateData) ->
 	false ->
 	    ok;
 	Key ->
-	    ejabberd_s2s:remove_connectio
+	    ejabberd_s2s:remove_connection
               ({StateData#state.myname, StateData#state.server}, self(), Key)
     end,
     %% bounce queue manage by process and Erlang message queue
