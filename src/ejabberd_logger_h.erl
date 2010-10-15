@@ -162,7 +162,7 @@ write_event(Fd, {Time, {warning_msg, _GL, {Pid, Format, Args}}}) ->
 	    file:write(Fd, io_lib:format(T ++ S, []));
 	_ ->
 	    F = add_node("ERROR: ~p - ~p~n", Pid),
-	    file:write(Fd, io:format(T ++ F, [Format,Args]))
+	    file:write(Fd, io_lib:format(T ++ F, [Format,Args]))
     end;
 write_event(_, _) ->
     ok.
