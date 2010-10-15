@@ -23,6 +23,7 @@
 /src/XmppAddr.asn1db
 /src/XmppAddr.erl
 /src/XmppAddr.hrl
+/src/aclocal.m4
 /src/autom4te.cache
 /src/config.log
 /src/config.status
