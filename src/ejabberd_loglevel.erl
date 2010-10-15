@@ -33,6 +33,7 @@
 
 -export([set/1,
 	 get/0,
+	 get_default/0,
 	 set_custom/2,
 	 clear_custom/0,
 	 clear_custom/1]).
@@ -63,6 +64,9 @@
 		   function = debug_msg, event_type = info_msg, msg_prefix = "D"}]).
 
 get() ->
+    ejabberd_logger:get().
+
+get_default() ->
     {DefaultLevel, _CustomLevels} = ejabberd_logger:get(),
     case lists:keysearch(DefaultLevel, #loglevel.ordinal, ?LOG_LEVELS) of
         {value, Result = #loglevel{}} ->
