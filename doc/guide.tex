@@ -343,6 +343,14 @@ To compile \ejabberd{} execute the commands:
 make
 \end{verbatim}
 
+If you get an error like:
+\term{``./configure: No such file or directory''}
+the solution is to first execute:
+\begin{verbatim}
+aclocal
+autoconf
+\end{verbatim}
+
 The build configuration script allows several options.
 To get the full list run the command:
 \begin{verbatim}

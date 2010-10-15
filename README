@@ -26,6 +26,12 @@ To compile ejabberd, go to the directory src/ and execute the commands:
   ./configure
   make
 
+If you get an error like:
+  ./configure: No such file or directory
+the solution is to first execute:
+  aclocal
+  autoconf
+
 To install ejabberd, run this command with system administrator rights
 (root user):
 
