@@ -1008,8 +1008,7 @@ session_established2(El, StateData) ->
 				  user_send_packet,
 				  Server,
 				  [FromJID, ToJID, NewEl]),
-				ejabberd_router:route(
-				  FromJID, ToJID, NewEl),
+				check_privacy_route(FromJID, StateData, FromJID, ToJID, NewEl),
 				StateData
 			end;
 		    "message" ->
