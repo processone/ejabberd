@@ -510,9 +510,10 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	      exmpp_server_legacy_auth:fields(El, Fields)),
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {_U, _P, _D, undefined}} ->
-	    Err = exmpp_stanza:error(El#xmlel.ns, 'not-acceptable',
-	      {"en", "No resource provided"}),
-	    send_element(StateData, exmpp_iq:error(El, Err)),
+            Err = exmpp_stanza:reply_with_error(El,
+	          exmpp_stanza:error(El#xmlel.ns, 'not-acceptable',
+	      {"en", "No resource provided"})),
+	    send_element(StateData, Err),
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {U, P, D, R}} ->
 	    try
