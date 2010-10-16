@@ -1254,7 +1254,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				ejabberd_router:route(To, From, Err)
 			end,
 			{false, Attrs, StateData};
-		    #iq{} ->
+		    IQ when (is_record(IQ, iq)) or (IQ == reply) ->
 			case ejabberd_hooks:run_fold(
 			       privacy_check_packet, StateData#state.server,
 			       allow,
@@ -1265,14 +1265,16 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				in]) of
 			    allow ->
 				{true, Attrs, StateData};
-			    deny ->
+			    deny when is_record(IQ, iq) ->
 				Err = jlib:make_error_reply(
-					Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+					Packet, ?ERR_SERVICE_UNAVAILABLE),
 				ejabberd_router:route(To, From, Err),
+				{false, Attrs, StateData};
+			    deny when IQ == reply ->
 				{false, Attrs, StateData}
 			end;
-		    _ ->
-			{true, Attrs, StateData}
+		    IQ when (IQ == invalid) or (IQ == not_iq) ->
+			{false, Attrs, StateData}
 		end;
 	    "message" ->
 		case ejabberd_hooks:run_fold(

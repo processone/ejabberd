@@ -364,6 +364,8 @@ get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == "iq" ->
 get_iq_namespace(_) ->
     "".
 
+%% @spec (xmlelement()) -> iq() | reply | invalid | not_iq
+
 iq_query_info(El) ->
     iq_info_internal(El, request).
 
