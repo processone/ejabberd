@@ -1828,6 +1828,12 @@ check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 	    {From, To, Packet},
 	    out]) of
 	deny ->
+	    Lang = StateData#state.lang,
+	    ErrText = "Routing of this stanza was denied by your active privacy list",
+            Err = exmpp_stanza:reply_with_error(Packet,
+	       exmpp_stanza:error(Packet#xmlel.ns, 'not-acceptable',
+	      {Lang, ErrText})),
+	    send_element(StateData, Err),
 	    ok;
 	allow ->
 	    ejabberd_router:route(FromRoute, To, Packet)
