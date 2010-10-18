@@ -757,13 +757,15 @@ out_subscription(User, Server, JID, subscribed) ->
 	undefined -> user_resources(U, S);
 	_ -> [R]
     end,
-    presence(Server, {presence, U, S, Rs, Owner});
+    presence(Server, {presence, U, S, Rs, Owner}),
+    true;
 out_subscription(_, _, _, _) ->
-    ok.
+    true.
 in_subscription(_, User, Server, Owner, unsubscribed, _) ->
-    unsubscribe_user(exmpp_jid:make(User, Server, ""), Owner);
+    unsubscribe_user(exmpp_jid:make(User, Server, ""), Owner),
+    true;
 in_subscription(_, _, _, _, _, _) ->
-    ok.
+    true.
 
 unsubscribe_user(Entity, Owner) ->
     BJID = jlib:short_prepd_bare_jid(Owner),
