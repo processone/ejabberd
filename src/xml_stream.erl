@@ -92,8 +92,7 @@ process_data(CallbackPid, Stack, Data) ->
 		[{xmlelement, Name, Attrs, Els} | Tail] ->
 		    [{xmlelement, Name, Attrs, [{xmlcdata, CData} | Els]} |
 		     Tail];
-		[] ->
-		    []
+		[] -> []
 	    end;
 	{?XML_ERROR, Err} ->
 	    catch gen_fsm:send_event(CallbackPid, {xmlstreamerror, Err})

@@ -555,7 +555,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				  privacy_get_user_list, StateData#state.server,
 				  #userlist{},
 				  [U, StateData#state.server]),
-			    NewStateData = StateData#state{
+				    NewStateData = StateData#state{
 					     user = U,
 					     resource = R,
 					     jid = JID,
