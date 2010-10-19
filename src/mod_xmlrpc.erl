@@ -73,6 +73,9 @@
     stop/1]).
 
 -export([add_rosteritem/6]).
+-export([add_rosteritem_groups/5,
+	 del_rosteritem_groups/5,
+	 modify_rosteritem_groups/7]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -224,12 +227,12 @@ handler(_State, {call, add_rosteritem, [{struct, Struct}]}) ->
 
 %% link_contacts  struct[{jid1, String}, {nick1, String}, {jid2, String}, {nick2, String}]		Integer
 handler(_State, {call, link_contacts, [{struct, Struct}]}) ->
-    [{jid1, JID1}, {jid2, JID2}, {nick1, Nick1}, {nick2, Nick2}] = lists:sort(Struct),
+    [{group1, G1}, {group2, G2}, {jid1, JID1}, {jid2, JID2}, {nick1, Nick1}, {nick2, Nick2}] = lists:sort(Struct),
     {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID1)),
     {U2, S2, _} = jlib:jid_tolower(jlib:string_to_jid(JID2)),
     case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(U2, S2)} of
     {true, true} ->
-	case link_contacts(JID1, Nick1, JID2, Nick2) of
+	case link_contacts(JID1, Nick1, G1, JID2, Nick2, G2) of
 	{atomic, ok} ->
 	    {false, {response, [0]}};
 	_ ->
@@ -262,8 +265,64 @@ handler(_State, {call, unlink_contacts, [{struct, Struct}]}) ->
 	{false, {response, [404]}}
     end;
 
+handler(_State, {call, add_rosteritem_groups, [{struct, Struct}]}) ->
+    [{jid, JID}, {newgroups, NewGroupsString}, {push, PushString}, {server, Server}, {user, User}] = lists:sort(Struct),
+    {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    NewGroups = string:tokens(NewGroupsString, ";"),
+    Push = list_to_atom(PushString),
+    case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(User, Server)} of
+    {true, true} ->
+	case add_rosteritem_groups(User, Server, JID, NewGroups, Push) of
+	ok ->
+	    {false, {response, [0]}};
+	Error ->
+	    ?INFO_MSG("Error found: ~n~p", [Error]),
+	    {false, {response, [1]}}
+	end;
+    _ ->
+	{false, {response, [404]}}
+    end;
+
+handler(_State, {call, del_rosteritem_groups, [{struct, Struct}]}) ->
+    [{jid, JID}, {newgroups, NewGroupsString}, {push, PushString}, {server, Server}, {user, User}] = lists:sort(Struct),
+    {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    NewGroups = string:tokens(NewGroupsString, ";"),
+    Push = list_to_atom(PushString),
+    case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(User, Server)} of
+    {true, true} ->
+	case del_rosteritem_groups(User, Server, JID, NewGroups, Push) of
+	ok ->
+	    {false, {response, [0]}};
+	Error ->
+	    ?INFO_MSG("Error found: ~n~p", [Error]),
+	    {false, {response, [1]}}
+	end;
+    _ ->
+	{false, {response, [404]}}
+    end;
+
+handler(_State, {call, modify_rosteritem_groups, [{struct, Struct}]}) ->
+    [{jid, JID}, {newgroups, NewGroupsString}, {nick, Nick}, {push, PushString},
+     {server, Server}, {subscription, SubsString}, {user, User}] = lists:sort(Struct),
+    Subs = list_to_atom(SubsString),
+    {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    NewGroups = string:tokens(NewGroupsString, ";"),
+    Push = list_to_atom(PushString),
+    case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(User, Server)} of
+    {true, true} ->
+	case modify_rosteritem_groups(User, Server, JID, NewGroups, Push, Nick, Subs) of
+	ok ->
+	    {false, {response, [0]}};
+	Error ->
+	    ?INFO_MSG("Error found: ~n~p", [Error]),
+	    {false, {response, [1]}}
+	end;
+    _ ->
+	{false, {response, [404]}}
+    end;
+
 %% get_roster  struct[{user, String}, {server, String}]
-%%		array[struct[{jid, String}, {group, String}, {nick, String},
+%%		array[struct[{jid, String}, {groups, array[String]}, {nick, String},
 %%			   {subscription, String}, {pending, String}]]
 handler(_State, {call, get_roster, [{struct, Struct}]}) ->
     [{server, S}, {user, U}] = lists:sort(Struct),
@@ -576,9 +635,9 @@ add_rosteritem(User, Server, JID, Nick, Group, Subscription, Push) ->
 							       {selected, ["username"],[]} ->
 								   ItemVals = record_to_string(Roster),
 								   ItemGroups = groups_to_string(Roster),
-								   ejabberd_odbc:sql_query_t(
-									odbc_queries:update_roster_sql(
-									    Username, SJID, ItemVals, ItemGroups));
+								   odbc_queries:update_roster(Server, Username,
+											      SJID, ItemVals,
+											      ItemGroups);
 							       _ ->
 								   already_added
 							   end
@@ -588,7 +647,8 @@ add_rosteritem(User, Server, JID, Nick, Group, Subscription, Push) ->
 		    Error -> Error
 		end;
 	    none ->
-		{error, no_roster}
+		%% Apollo change: force roster push anyway with success
+		{atomic, ok}
 	end,
     case {Result, Push} of
 	{{atomic, already_added}, _} -> ok;  %% No need for roster push
@@ -619,11 +679,12 @@ del_rosteritem(User, Server, JID, Push) ->
 	    Error -> Error
 	    end;
 	none ->
-	    {error, no_roster}
+	    %% Apollo change: force roster push anyway with success
+	    {atomic, ok}
 	end,
     case {Result, Push} of
     {{atomic, ok}, true} -> roster_push(User, Server, JID, "", "remove");
-    {{error, no_roster}, true} -> roster_push(User, Server, JID, "", "remove");
+    %{{error, no_roster}, true} -> roster_push(User, Server, JID, "", "remove");
     {{atomic, ok}, false} -> ok;
     _ -> error
     end,
@@ -654,7 +715,126 @@ unlink_contacts(JID1, JID2, Push) ->
     Error -> Error
     end.
 
+add_rosteritem_groups(User, Server, JID, NewGroups, Push) ->
+    GroupsFun =
+	fun(Groups) ->
+		lists:usort(NewGroups ++ Groups)
+	end,
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push).
+
+del_rosteritem_groups(User, Server, JID, NewGroups, Push) ->
+    GroupsFun =
+	fun(Groups) ->
+		Groups -- NewGroups
+	end,
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push).
+
+modify_rosteritem_groups(User, Server, JID2, NewGroups, Push, Nick, Subs) when NewGroups == [] ->
+    JID1 = jlib:jid_to_string(jlib:make_jid(User, Server, "")),
+    case unlink_contacts(JID1, JID2) of
+	{atomic, ok} ->
+	    ok;
+	Error ->
+	    Error
+    end;
+modify_rosteritem_groups(User, Server, JID, NewGroups, Push, Nick, Subs) ->
+    GroupsFun =
+	fun(_Groups) ->
+		NewGroups
+	end,
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push, NewGroups, Nick, Subs).
+
+change_rosteritem_group(User, Server, JID, GroupsFun, Push) ->
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push, [], "unknownnickname", "both").
+
+change_rosteritem_group(User, Server, JID, GroupsFun, Push, NewGroups, Nick, Subs) ->
+    {RU, RS, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    LJID = {RU,RS,[]},
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    Result =
+	case roster_backend(LServer) of
+	    mnesia ->
+		mnesia:transaction(
+		  fun() ->
+			  case mnesia:read({roster, {LUser, LServer, LJID}}) of
+			      [#roster{} = Roster] ->
+				  NewGroups = GroupsFun(Roster#roster.groups),
+				  NewRoster = Roster#roster{groups = NewGroups},
+				  mnesia:write(NewRoster),
+				  {ok, NewRoster#roster.name,
+				   NewRoster#roster.subscription,
+				   NewGroups};
+			      _ ->
+				  not_in_roster
+			  end
+		  end);
+	    odbc ->
+		ejabberd_odbc:sql_transaction(
+		  LServer,
+		  fun() ->
+			  Username = ejabberd_odbc:escape(User),
+			  SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+			  case ejabberd_odbc:sql_query_t(
+				 ["select nick, subscription from rosterusers "
+				  "      where username='", Username, "' "
+				  "        and jid='", SJID, "';"]) of
+			      {selected, ["nick", "subscription"],
+			       [{Name, SSubscription}]} ->
+				  Subscription =
+				      case SSubscription of
+					  "B" -> both;
+					  "T" -> to;
+					  "F" -> from;
+					  _ -> none
+				      end,
+				  Groups =
+				      case odbc_queries:get_roster_groups(
+					     LServer, Username, SJID) of
+					  {selected, ["grp"], JGrps}
+					  when is_list(JGrps) ->
+					      [JGrp || {JGrp} <- JGrps];
+					  _ ->
+					      []
+				      end,
+				  NewGroups = GroupsFun(Groups),
+				  ejabberd_odbc:sql_query_t(
+				    ["delete from rostergroups "
+				     "      where username='", Username, "' "
+				     "        and jid='", SJID, "';"]),
+				  lists:foreach(
+				    fun(Group) ->
+					    ejabberd_odbc:sql_query_t(
+					      ["insert into rostergroups("
+					       "              username, jid, grp) "
+					       " values ('", Username, "',"
+					       "'", SJID, "',"
+					       "'", ejabberd_odbc:escape(Group), "');"])
+				    end,
+				    NewGroups),
+				  {ok, Name, Subscription, NewGroups};
+			      _ ->
+				  not_in_roster
+			  end
+		  end);
+	    none ->
+		%% Apollo change: force roster push anyway with success
+		{atomic, {ok, Nick, Subs, NewGroups}}
+	end,
+    case {Result, Push} of
+	{{atomic, {ok, Name, Subscription, NewGroups}}, true} ->
+	    roster_push(User, Server, JID,
+			Name, atom_to_list(Subscription), NewGroups),
+	    ok;
+	{{atomic, {ok, _Name, _Subscription, _NewGroups}}, false} -> ok;
+	{{atomic, not_in_roster}, _} -> not_in_roster;
+	Error -> {error, Error}
+    end.
+
 roster_push(User, Server, JID, Nick, Subscription) ->
+    roster_push(User, Server, JID, Nick, Subscription, []).
+
+roster_push(User, Server, JID, Nick, Subscription, Groups) ->
     LJID = jlib:make_jid(User, Server, ""),
     TJID = jlib:string_to_jid(JID),
     {TU, TS, _} = jlib:jid_tolower(TJID),
@@ -665,28 +845,37 @@ roster_push(User, Server, JID, Nick, Subscription) ->
 	    "both" -> "subscribed";
 	    _ -> "subscribe"
 	    end}], []},
-    Item = case Nick of
+    ItemAttrs = case Nick of
     "" -> [{"jid", JID}, {"subscription", Subscription}];
     _ -> [{"jid", JID}, {"name", Nick}, {"subscription", Subscription}]
     end,
-    Result = jlib:iq_to_xml(#iq{type = set, xmlns = ?NS_ROSTER, id = "push",
-    sub_el = [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}],
-    [{xmlelement, "item", Item, []}]}]}),
-    ejabberd_router:route(TJID, LJID, Presence),
-    ejabberd_router:route(LJID, LJID, Result),
-    lists:foreach(fun(Resource) ->
-	UJID = jlib:make_jid(User, Server, Resource),
-	ejabberd_router:route(TJID, UJID, Presence),
-	ejabberd_router:route(UJID, UJID, Result),
-	case Subscription of
-	"remove" -> none;
-	_ ->
-	    lists:foreach(fun(TR) ->
-		ejabberd_router:route(jlib:make_jid(TU, TS, TR), UJID,
-		{xmlelement, "presence", [], []})
-	    end, get_resources(TU, TS))
-	end
-    end, [R || R <- get_resources(User, Server), Subscription =/= "remove"]).
+    ItemGroups =
+	lists:map(fun(G) ->
+			  {xmlelement, "group", [], [{xmlcdata, G}]}
+		  end, Groups),
+    Result =
+	jlib:iq_to_xml(
+	  #iq{type = set, xmlns = ?NS_ROSTER, id = "push",
+	      sub_el = [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}],
+			 [{xmlelement, "item", ItemAttrs, ItemGroups}]}]}),
+    %% ejabberd_router:route(TJID, LJID, Presence),
+    %% ejabberd_router:route(LJID, LJID, Result),
+    lists:foreach(
+      fun(Resource) ->
+	      UJID = jlib:make_jid(User, Server, Resource),
+	      ejabberd_router:route(TJID, UJID, Presence),
+	      ejabberd_router:route(UJID, UJID, Result),
+	      case Subscription of
+		  "remove" -> none;
+		  _ ->
+		      lists:foreach(
+			fun(TR) ->
+				ejabberd_router:route(
+				  jlib:make_jid(TU, TS, TR), UJID,
+				  {xmlelement, "presence", [], []})
+			end, get_resources(TU, TS))
+	      end
+      end, [R || R <- get_resources(User, Server)]).
 
 roster_backend(Server) ->
     Modules = gen_mod:loaded_modules(Server),
@@ -758,7 +947,7 @@ format_roster([#roster{jid=JID, name=Nick, groups=Group,
 			subscription=Subs, ask=Ask}|Items], Structs) ->
     {User,Server,_Resource} = JID,
     Struct = {struct, [{jid,lists:flatten([User,"@",Server])},
-			{group, extract_group(Group)},
+			{groups, extract_groups(Group)},
 			{nick, Nick},
 			{subscription, atom_to_list(Subs)},
 			{pending, atom_to_list(Ask)}
@@ -801,7 +990,12 @@ format_roster_with_presence([#roster{jid=JID, name=Nick, groups=Group,
     format_roster_with_presence(Items, [Struct|Structs]).
 
 extract_group([]) -> [];
-extract_group([Group|_Groups]) -> Group.
+%extract_group([Group|_Groups]) -> Group.
+extract_group(Groups) -> string:join(Groups, ";").
+
+extract_groups([]) -> [];
+%extract_groups([Group|_Groups]) -> Group.
+extract_groups(Groups) -> {array, Groups}.
 
 %% -----------------------------
 %% Internal session handling
