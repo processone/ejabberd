@@ -114,15 +114,6 @@
 	?SERRT_POLICY_VIOLATION(Lang, Text)).
 -define(INVALID_FROM, ?SERR_INVALID_FROM).
 
--define(NS_P1_REBIND, "p1:rebind").
--define(NS_P1_PUSH, "p1:push").
--define(NS_P1_ACK, "p1:ack").
--define(NS_P1_PUSHED, "p1:pushed").
--define(NS_P1_ATTACHMENT, "http://process-one.net/attachement").
-
--define(C2S_P1_ACK_TIMEOUT, 10000).
--define(MAX_OOR_TIMEOUT, 1440). %% Max allowed session duration 24h (24*60)
--define(MAX_OOR_MESSAGES, 1000).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -354,22 +345,9 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 					    false ->
 						[]
 					end,
-				    P1PushFeature =
-					[{xmlelement, "push",
-					  [{"xmlns", ?NS_P1_PUSH}], []}],
-				    P1RebindFeature =
-					[{xmlelement, "rebind",
-					  [{"xmlns", ?NS_P1_REBIND}], []}],
-				    P1AckFeature =
-					[{xmlelement, "ack",
-					  [{"xmlns", ?NS_P1_ACK}], []}],
 				    send_element(StateData,
 						 {xmlelement, "stream:features", [],
-						  TLSFeature ++
-						  CompressFeature ++
-						  P1PushFeature ++
-						  P1RebindFeature ++
-						  P1AckFeature ++
+						  TLSFeature ++ CompressFeature ++
 						  [{xmlelement, "mechanisms",
 						    [{"xmlns", ?NS_SASL}],
 						    Mechs}] ++
@@ -390,9 +368,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 						  roster_get_versioning_feature,
 						  Server, [], [Server]),
 				            StreamFeatures =
-						[{xmlelement, "push",
-						  [{"xmlns", ?NS_P1_PUSH}], []},
-						 {xmlelement, "bind",
+						[{xmlelement, "bind",
 						  [{"xmlns", ?NS_BIND}], []},
 						 {xmlelement, "session",
 						  [{"xmlns", ?NS_SESSION}], []}]
@@ -601,33 +577,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		    end
 	    end;
 	_ ->
-	    {xmlelement, Name, Attrs, _Els} = El,
-	    case {xml:get_attr_s("xmlns", Attrs), Name} of
-		{?NS_P1_REBIND, "rebind"} ->
-		    SJID = xml:get_path_s(El, [{elem, "jid"}, cdata]),
-		    SID = xml:get_path_s(El, [{elem, "sid"}, cdata]),
-		    case jlib:string_to_jid(SJID) of
-			error ->
-			    send_element(StateData,
-					 {xmlelement, "failure",
-					  [{"xmlns", ?NS_P1_REBIND}],
-					  [{xmlcdata, "Invalid JID"}]}),
-			    fsm_next_state(wait_for_auth,
-					   StateData);
-			JID ->
-			    case rebind(StateData, JID, SID) of
-				{next_state, wait_for_feature_request,
-				 NewStateData, Timeout} ->
-				    {next_state, wait_for_auth,
-				     NewStateData, Timeout};
-				Res ->
-				    Res
-			    end
-		    end;
-		_ ->
-		    process_unauthenticated_stanza(StateData, El),
-		    fsm_next_state(wait_for_auth, StateData)
-	    end
+	    process_unauthenticated_stanza(StateData, El),
+	    fsm_next_state(wait_for_auth, StateData)
     end;
 
 wait_for_auth(timeout, StateData) ->
@@ -758,23 +709,6 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					   StateData)
 		    end
 	    end;
-	{?NS_P1_REBIND, "rebind"} ->
-	    SJID = xml:get_path_s(El, [{elem, "jid"}, cdata]),
-	    SID = xml:get_path_s(El, [{elem, "sid"}, cdata]),
-	    case jlib:string_to_jid(SJID) of
-		error ->
-		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_P1_REBIND}],
-				  [{xmlcdata, "Invalid JID"}]}),
-		    fsm_next_state(wait_for_feature_request,
-				   StateData);
-		JID ->
-		    rebind(StateData, JID, SID)
-	    end;
-	{?NS_P1_ACK, "ack"} ->
-	    fsm_next_state(wait_for_feature_request,
-			   StateData#state{ack_enabled = true});
 	_ ->
 	    if
 		(SockMod == gen_tcp) and TLSRequired ->
@@ -1020,9 +954,7 @@ session_established({xmlstreamelement, El}, StateData) ->
 	    send_trailer(StateData),
 	    {stop, normal, StateData};
 	_NewEl ->
-	    NSD1 = change_reception(StateData, true),
-	    NSD2 = start_keepalive_timer(NSD1),
-	    session_established2(El, NSD2)
+	    session_established2(El, StateData)
     end;
 
 %% We hibernate the process to reduce memory consumption after a
@@ -1049,16 +981,7 @@ session_established({xmlstreamerror, _}, StateData) ->
     {stop, normal, StateData};
 
 session_established(closed, StateData) ->
-    if
-	not StateData#state.reception ->
-	    fsm_next_state(session_established, StateData);
-	(StateData#state.keepalive_timer /= undefined) ->
-	    NewState1 = change_reception(StateData, false),
-	    NewState = start_keepalive_timer(NewState1),
-	    fsm_next_state(session_established, NewState);
-	true ->
-	    {stop, normal, StateData}
-    end.
+    {stop, normal, StateData}.
 
 %% Process packets sent by user (coming from user on c2s XMPP
 %% connection)
@@ -1129,8 +1052,6 @@ session_established2(El, StateData) ->
 				  [StateData#state.debug, FromJID, ToJID, NewEl]),
 				process_privacy_iq(
 				  FromJID, ToJID, IQ, StateData);
-			    #iq{xmlns = ?NS_P1_PUSH} = IQ ->
-				process_push_iq(FromJID, ToJID, IQ, StateData);
 			    _ ->
 				ejabberd_hooks:run(
 				  user_send_packet,
@@ -1147,12 +1068,6 @@ session_established2(El, StateData) ->
 			check_privacy_route(FromJID, StateData, FromJID,
 					    ToJID, NewEl),
 			StateData;
-		    "standby" ->
-			StandBy = xml:get_tag_cdata(NewEl) == "true",
-			change_standby(StateData, StandBy);
-		    "a" ->
-			SCounter = xml:get_tag_attr_s("h", NewEl),
-			receive_ack(StateData, SCounter);
 		    _ ->
 			StateData
 		end
@@ -1384,17 +1299,6 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    _ ->
 			{false, Attrs, StateData}
 		end;
-	    rebind ->
-		{Pid2, StreamID2} = Els,
-		if
-		    StreamID2 == StateData#state.streamid ->
-			Pid2 ! {rebind, prepare_acks_for_rebind(StateData)},
-			receive after 1000 -> ok end,
-			{exit, Attrs, rebind};
-		    true ->
-			Pid2 ! {rebind, false},
-			{false, Attrs, StateData}
-		end;
 	    "iq" ->
 		IQ = jlib:iq_query_info(Packet),
 		case IQ of
@@ -1440,22 +1344,18 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			{From, To, Packet},
 			in]) of
 		    allow ->
-			if StateData#state.reception ->
-				case ejabberd_hooks:run_fold(
-				       feature_check_packet, StateData#state.server,
-				       allow,
-				       [StateData#state.jid,
-					StateData#state.server,
-					StateData#state.pres_last,
-					{From, To, Packet},
-					in]) of
-				    allow ->
-					{true, Attrs, StateData};
-				    deny ->
-					{false, Attrs, StateData}
-				end;
-			   true ->
-				{true, Attrs, StateData}
+			case ejabberd_hooks:run_fold(
+			       feature_check_packet, StateData#state.server,
+			       allow,
+			       [StateData#state.jid,
+				StateData#state.server,
+				StateData#state.pres_last,
+				{From, To, Packet},
+				in]) of
+			    allow ->
+				{true, Attrs, StateData};
+			    deny ->
+				{false, Attrs, StateData}
 			end;
 		    deny ->
 			{false, Attrs, StateData}
@@ -1465,85 +1365,29 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	end,
     if
 	Pass == exit ->
-	    catch send_trailer(StateData),
-	    case NewState of
-		rebind ->
-		    {stop, normal, StateData#state{authenticated = rebinded}};
-		_ ->
-		    {stop, normal, StateData}
-	    end;
+	    %% When Pass==exit, NewState contains a string instead of a #state{}
+	    Lang = StateData#state.lang,
+	    send_element(StateData, ?SERRT_CONFLICT(Lang, NewState)),
+	    send_trailer(StateData),
+	    {stop, normal, StateData};
 	Pass ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						jlib:jid_to_string(To),
 						NewAttrs),
 	    FixedPacket = {xmlelement, Name, Attrs2, Els},
-	    NewState2 =
-		if
-		    NewState#state.reception and
-		    not (NewState#state.standby and (Name /= "message")) ->
-			send_element(NewState, FixedPacket),
-			ack(NewState, From, To, FixedPacket);
-		    true ->
-			NewState1 = send_out_of_reception_message(
-				      NewState, From, To, Packet),
-			enqueue(NewState1, From, To, FixedPacket)
-		end,
+	    send_element(StateData, FixedPacket),
 	    ejabberd_hooks:run(user_receive_packet,
 			       StateData#state.server,
 			       [StateData#state.debug, StateData#state.jid, From, To, FixedPacket]),
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
-	    fsm_next_state(StateName, NewState2);
+	    fsm_next_state(StateName, NewState);
 	true ->
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState)
     end;
-handle_info({timeout, Timer, _}, StateName,
-	    #state{keepalive_timer = Timer, reception = true} = StateData) ->
-    NewState1 = change_reception(StateData, false),
-    NewState = start_keepalive_timer(NewState1),
-    fsm_next_state(StateName, NewState);
-handle_info({timeout, Timer, _}, _StateName,
-	    #state{keepalive_timer = Timer, reception = false} = StateData) ->
-    {stop, normal, StateData};
-handle_info({timeout, Timer, PrevCounter}, StateName,
-	    #state{ack_timer = Timer} = StateData) ->
-    AckCounter = StateData#state.ack_counter,
-    NewState =
-	if
-	    PrevCounter >= AckCounter ->
-		StateData#state{ack_timer = undefined};
-	    true ->
-		send_ack_request(StateData#state{ack_timer = undefined})
-	end,
-    fsm_next_state(StateName, NewState);
-handle_info({ack_timeout, Counter}, StateName, StateData) ->
-    AckQueue = StateData#state.ack_queue,
-    case queue:is_empty(AckQueue) of
-	true ->
-	    fsm_next_state(StateName, StateData);
-	false ->
-	    C = element(1, queue:head(AckQueue)),
-	    if
-		C =< Counter ->
-		    {stop, normal, StateData};
-		true ->
-		    fsm_next_state(StateName, StateData)
-	    end
-    end;
-handle_info({'DOWN', Monitor, _Type, _Object, _Info}, StateName, StateData)
+handle_info({'DOWN', Monitor, _Type, _Object, _Info}, _StateName, StateData)
   when Monitor == StateData#state.socket_monitor ->
-    if
-	(StateName == session_established) and
-	(not StateData#state.reception) ->
-	    fsm_next_state(StateName, StateData);
-	(StateName == session_established) and
-	(StateData#state.keepalive_timer /= undefined) ->
-	    NewState1 = change_reception(StateData, false),
-	    NewState = start_keepalive_timer(NewState1),
-	    fsm_next_state(StateName, NewState);
-	true ->
-	    {stop, normal, StateData}
-    end;
+    {stop, normal, StateData};
 handle_info(system_shutdown, StateName, StateData) ->
     case StateName of
        wait_for_stream ->
@@ -1640,13 +1484,6 @@ terminate(_Reason, StateName, StateData) ->
 		      StateData, From, StateData#state.pres_a, Packet),
 		    presence_broadcast(
 		      StateData, From, StateData#state.pres_i, Packet);
-		rebinded ->
-		    ejabberd_sm:close_session(
-		      StateData#state.sid,
-		      StateData#state.user,
-		      StateData#state.server,
-		      StateData#state.resource),
-		    ok;
 		_ ->
 		    ?INFO_MSG("(~w) Close session for ~s",
 			      [StateData#state.socket,
@@ -1677,36 +1514,6 @@ terminate(_Reason, StateName, StateData) ->
 			    presence_broadcast(
 			      StateData, From, StateData#state.pres_i, Packet)
 		    end
-	    end,
-	    case StateData#state.authenticated of
-		rebinded ->
-		    ok;
-		_ ->
-		    if
-			not StateData#state.reception, not StateData#state.oor_offline ->
-			    SFrom = jlib:jid_to_string(StateData#state.jid),
-			    ejabberd_hooks:run(
-			      p1_push_notification,
-			      StateData#state.server,
-			      [StateData#state.server,
-			       StateData#state.jid,
-			       StateData#state.oor_notification,
-			       "Instant messaging session expired",
-			       0,
-			       false,
-			       StateData#state.oor_appid,
-			       SFrom]);
-			true ->
-			    ok
-		    end,
-		    lists:foreach(
-		      fun({_Counter, From, To, FixedPacket}) ->
-			      ejabberd_router:route(From, To, FixedPacket)
-		      end, queue:to_list(StateData#state.ack_queue)),
-		    lists:foreach(
-		      fun({From, To, FixedPacket}) ->
-			      ejabberd_router:route(From, To, FixedPacket)
-		      end, queue:to_list(StateData#state.queue))
 	    end,
 	    bounce_messages();
 	_ ->
@@ -1878,39 +1685,9 @@ process_presence_probe(From, To, StateData) ->
 		andalso ?SETS:is_element(LFrom, StateData#state.pres_a),
 	    if
 		Cond1 ->
-		    Packet =
-			case StateData#state.reception of
-			    true ->
-				StateData#state.pres_last;
-			    false ->
-				case StateData#state.oor_show of
-				    "" ->
-					StateData#state.pres_last;
-				    _ ->
-					{xmlelement, _, PresAttrs, PresEls} =
-					    StateData#state.pres_last,
-					PresEls1 =
-					    lists:flatmap(
-					      fun({xmlelement, Name, _, _})
-						 when Name == "show";
-						      Name == "status" ->
-						      [];
-						 (E) ->
-						      [E]
-					      end, PresEls),
-					{xmlelement, "presence", PresAttrs,
-					 [{xmlelement, "show", [],
-					   [{xmlcdata,
-					     StateData#state.oor_show}]},
-					  {xmlelement, "status", [],
-					   [{xmlcdata,
-					     StateData#state.oor_status}]}]
-					 ++ PresEls1}
-				end
-			end,
 		    Timestamp = StateData#state.pres_timestamp,
-		    Packet1 = xml:append_subtags(
-			       Packet,
+		    Packet = xml:append_subtags(
+			       StateData#state.pres_last,
 			       %% To is the one sending the presence (the target of the probe)
 			       [jlib:timestamp_to_xml(Timestamp, utc, To, ""),
 				%% TODO: Delete the next line once XEP-0091 is Obsolete
@@ -1921,7 +1698,7 @@ process_presence_probe(From, To, StateData) ->
 			   [StateData#state.user,
 			    StateData#state.server,
 			    StateData#state.privacy_list,
-			    {To, From, Packet1},
+			    {To, From, Packet},
 			    out]) of
 			deny ->
 			    ok;
@@ -1931,7 +1708,7 @@ process_presence_probe(From, To, StateData) ->
 			    %% Don't route a presence probe to oneself
 			    case From == To of
 				false ->
-				    ejabberd_router:route(To, From, Packet1);
+				    ejabberd_router:route(To, From, Packet);
 			    	true ->
 				    ok
 			    end
@@ -2259,8 +2036,8 @@ roster_change(IJID, ISubscription, StateData) ->
 	P ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
 	    From = StateData#state.jid,
-	    To = jlib:make_jid(IJID),
-%	    To = IJID,
+%	    To = jlib:make_jid(IJID)
+	    To = IJID,
 	    Cond1 = (not StateData#state.pres_invis) and IsFrom
 		and (not OldIsFrom),
 	    Cond2 = (not IsFrom) and OldIsFrom
@@ -2555,631 +2332,6 @@ check_from(El, FromJID) ->
 			    'invalid-from'
 		    end
 	    end
-    end.
-
-start_keepalive_timer(StateData) ->
-    if
-	is_reference(StateData#state.keepalive_timer) ->
-	    cancel_timer(StateData#state.keepalive_timer);
-	true ->
-	    ok
-    end,
-    Timeout =
-	if
-	    StateData#state.reception -> StateData#state.keepalive_timeout;
-	    true -> StateData#state.oor_timeout
-	end,
-    Timer =
-	if
-	    is_integer(Timeout) ->
-		erlang:start_timer(Timeout * 1000, self(), []);
-	    true ->
-		undefined
-	end,
-    StateData#state{keepalive_timer = Timer}.
-
-change_reception(#state{reception = Reception} = StateData, Reception) ->
-    StateData;
-change_reception(#state{reception = true} = StateData, false) ->
-    ?DEBUG("reception -> false", []),
-    case StateData#state.oor_show of
-	"" ->
-	    ok;
-	_ ->
-	    Packet =
-		{xmlelement, "presence", [],
-		 [{xmlelement, "show", [],
-		   [{xmlcdata, StateData#state.oor_show}]},
-		  {xmlelement, "status", [],
-		   [{xmlcdata, StateData#state.oor_status}]}]},
-	    update_priority(0, Packet, StateData),
-	    presence_broadcast_to_trusted(
-	      StateData,
-	      StateData#state.jid,
-	      StateData#state.pres_f,
-	      StateData#state.pres_a,
-	      Packet)
-    end,
-    StateData#state{reception = false};
-change_reception(#state{reception = false, standby = true} = StateData, true) ->
-    ?DEBUG("reception -> standby", []),
-    NewQueue =
-	lists:foldl(
-	  fun({_From, _To, {xmlelement, "message", _, _} = FixedPacket}, Q) ->
-		  send_element(StateData, FixedPacket),
-		  Q;
-	     (Item, Q) ->
-		  queue:in(Item, Q)
-	  end, queue:new(), queue:to_list(StateData#state.queue)),
-    StateData#state{queue = NewQueue,
-		    queue_len = queue:len(NewQueue),
-		    reception = true,
-		    oor_unread = 0,
-		    oor_unread_users = ?SETS:new()};
-change_reception(#state{reception = false} = StateData, true) ->
-    ?DEBUG("reception -> true", []),
-    case StateData#state.oor_show of
-	"" ->
-	    ok;
-	_ ->
-	    Packet = StateData#state.pres_last,
-	    NewPriority = get_priority_from_presence(Packet),
-	    update_priority(NewPriority, Packet, StateData),
-	    presence_broadcast_to_trusted(
-	      StateData,
-	      StateData#state.jid,
-	      StateData#state.pres_f,
-	      StateData#state.pres_a,
-	      Packet)
-    end,
-    lists:foreach(
-      fun({_From, _To, FixedPacket}) ->
-	      send_element(StateData, FixedPacket)
-      end, queue:to_list(StateData#state.queue)),
-    lists:foreach(
-      fun(FixedPacket) ->
-	      send_element(StateData, FixedPacket)
-      end, gb_trees:values(StateData#state.pres_queue)),
-    StateData#state{queue = queue:new(),
-		    queue_len = 0,
-		    pres_queue = gb_trees:empty(),
-		    reception = true,
-		    oor_unread = 0,
-		    oor_unread_users = ?SETS:new()}.
-
-change_standby(#state{standby = StandBy} = StateData, StandBy) ->
-    StateData;
-change_standby(#state{standby = false} = StateData, true) ->
-    ?DEBUG("standby -> true", []),
-    StateData#state{standby = true};
-change_standby(#state{standby = true} = StateData, false) ->
-    ?DEBUG("standby -> false", []),
-    lists:foreach(
-      fun({_From, _To, FixedPacket}) ->
-	      send_element(StateData, FixedPacket)
-      end, queue:to_list(StateData#state.queue)),
-    lists:foreach(
-      fun(FixedPacket) ->
-	      send_element(StateData, FixedPacket)
-      end, gb_trees:values(StateData#state.pres_queue)),
-    StateData#state{queue = queue:new(),
-		    queue_len = 0,
-		    pres_queue = gb_trees:empty(),
-		    standby = false}.
-
-send_out_of_reception_message(StateData, From, To,
-			      {xmlelement, "message", _, _} = Packet) ->
-    Type = xml:get_tag_attr_s("type", Packet),
-    if
-	(Type == "normal") or
-	(Type == "") or
-	(Type == "chat") or
-	(StateData#state.oor_send_groupchat and (Type == "groupchat"))->
-	    %Lang = case xml:get_tag_attr_s("xml:lang", Packet) of
-	    %           "" ->
-	    %    	   StateData#state.lang;
-	    %           L ->
-	    %    	   L
-	    %       end,
-	    %Text = translate:translate(
-	    %         Lang, "User is temporarily out of reception"),
-	    %MsgType = "error",
-	    %Message = {xmlelement, "message",
-	    %           [{"type", MsgType}],
-	    %           [{xmlelement, "body", [],
-	    %    	 [{xmlcdata, Text}]}]},
-	    %ejabberd_router:route(To, From, Message),
-	    Body1 = xml:get_path_s(Packet, [{elem, "body"}, cdata]),
-	    Body =
-		case check_x_attachment(Packet) of
-		    true ->
-			case Body1 of
-			    "" -> [238, 128, 136];
-			    _ ->
-				[238, 128, 136, 32 | Body1]
-			end;
-		    false ->
-			Body1
-		end,
-	    Pushed = check_x_pushed(Packet),
-	    if
-		Body == "";
-		Pushed ->
-		    StateData;
-		true ->
-		    BFrom = jlib:jid_remove_resource(From),
-		    LBFrom = jlib:jid_tolower(BFrom),
-		    UnreadUsers = ?SETS:add_element(
-				     LBFrom,
-				     StateData#state.oor_unread_users),
-		    IncludeBody =
-			case StateData#state.oor_send_body of
-			    all ->
-				true;
-			    first_per_user ->
-				not ?SETS:is_element(
-				       LBFrom,
-				       StateData#state.oor_unread_users);
-			    first ->
-				StateData#state.oor_unread == 0;
-			    none ->
-				false
-			end,
-		    Unread = StateData#state.oor_unread + 1,
-		    SFrom = jlib:jid_to_string(BFrom),
-		    Msg =
-			if
-			    IncludeBody ->
-				CBody = utf8_cut(Body, 100),
-                                case StateData#state.oor_send_from of
-                                    jid -> SFrom ++ ": " ++ CBody;
-                                    username -> BFrom#jid.user ++ ": " ++ CBody;
-				    _ -> CBody
-                                end;
-			    true ->
-				""
-			end,
-		    Sound = IncludeBody,
-		    AppID = StateData#state.oor_appid,
-		    ejabberd_hooks:run(
-		      p1_push_notification,
-		      StateData#state.server,
-		      [StateData#state.server,
-		       StateData#state.jid,
-		       StateData#state.oor_notification,
-		       Msg,
-		       Unread,
-		       Sound,
-		       AppID,
-		       SFrom]),
-		    %% This hook is intended to give other module a
-		    %% chance to notify the sender that the message is
-		    %% not directly delivered to the client (almost
-		    %% equivalent to offline).
-		    ejabberd_hooks:run(delayed_message_hook,
-				       StateData#state.server,
-				       [From, To, Packet]),
-		    StateData#state{oor_unread = Unread,
-				    oor_unread_users = UnreadUsers}
-	    end;
-	true ->
-	    StateData
-    end;
-send_out_of_reception_message(StateData, _From, _To, _Packet) ->
-    StateData.
-
-utf8_cut(S, Bytes) ->
-    utf8_cut(S, [], [], Bytes + 1).
-
-utf8_cut(_S, _Cur, Prev, 0) ->
-    lists:reverse(Prev);
-utf8_cut([], Cur, _Prev, _Bytes) ->
-    lists:reverse(Cur);
-utf8_cut([C | S], Cur, Prev, Bytes) ->
-    if
-	C bsr 6 == 2 ->
-	    utf8_cut(S, [C | Cur], Prev, Bytes - 1);
-        true ->
-	    utf8_cut(S, [C | Cur], Cur, Bytes - 1)
-    end.
-
-
-cancel_timer(Timer) ->
-    erlang:cancel_timer(Timer),
-    receive
-	{timeout, Timer, _} ->
-	    ok
-    after 0 ->
-	    ok
-    end.
-
-enqueue(StateData, From, To, Packet) ->
-    IsPresence =
-	case Packet of
-	    {xmlelement, "presence", _, _} ->
-		case xml:get_tag_attr_s("type", Packet) of
-		    "subscribe" ->
-			false;
-		    "subscribed" ->
-			false;
-		    "unsubscribe" ->
-			false;
-		    "unsubscribed" ->
-			false;
-		    _ ->
-			true
-		end;
-	    _ ->
-		false
-	end,
-    Messages =
-	StateData#state.queue_len + gb_trees:size(StateData#state.pres_queue),
-    if
-	Messages >= ?MAX_OOR_MESSAGES ->
-	    self() ! {timeout, StateData#state.keepalive_timer, []};
-	true ->
-	    ok
-    end,
-    if
-	IsPresence ->
-	    LFrom = jlib:jid_tolower(From),
-            case is_own_presence(StateData#state.jid, LFrom) of
-                 true -> StateData;
-                 false ->
-	            NewQueue = gb_trees:enter(LFrom, Packet,
-		         		      StateData#state.pres_queue),
-	            StateData#state{pres_queue = NewQueue}
-            end;
-	true ->
-	    CleanPacket = xml:remove_subtags(Packet, "x", {"xmlns", ?NS_P1_PUSHED}),
-	    Packet2 =
-		case CleanPacket of
-		    {xmlelement, "message" = Name, Attrs, Els} ->
-			{xmlelement, Name, Attrs,
-			 Els ++
-			 [jlib:timestamp_to_xml(
-			    calendar:now_to_universal_time(now())),
-			  {xmlelement, "x", [{"xmlns", ?NS_P1_PUSHED}], []}]};
-		    _ ->
-			Packet
-		end,
-	    NewQueue = queue:in({From, To, Packet2},
-				StateData#state.queue),
-	    NewQueueLen = StateData#state.queue_len + 1,
-	    StateData#state{queue = NewQueue,
-			    queue_len = NewQueueLen}
-    end.
-
-%% Is my own presence packet ?
-is_own_presence(MyFullJID, MyFullJID) ->
-    true;
-is_own_presence(_MyFullJID, _LFrom) ->
-    false.
-
-ack(StateData, From, To, Packet) ->
-    if
-	StateData#state.ack_enabled ->
-	    NeedsAck =
-		case Packet of
-		    {xmlelement, "presence", _, _} ->
-			case xml:get_tag_attr_s("type", Packet) of
-			    "subscribe" ->
-				true;
-			    "subscribed" ->
-				true;
-			    "unsubscribe" ->
-				true;
-			    "unsubscribed" ->
-				true;
-			    _ ->
-				false
-			end;
-		    {xmlelement, "message", _, _} ->
-			true;
-		    _ ->
-			false
-		end,
-	    if
-		NeedsAck ->
-		    Counter = StateData#state.ack_counter + 1,
-		    NewAckQueue = queue:in({Counter, From, To, Packet},
-					   StateData#state.ack_queue),
-		    send_ack_request(StateData#state{ack_queue = NewAckQueue,
-						     ack_counter = Counter});
-		true ->
-		    StateData
-	    end;
-	true ->
-	    StateData
-    end.
-
-send_ack_request(StateData) ->
-    case StateData#state.ack_timer of
-	undefined ->
-	    AckCounter = StateData#state.ack_counter,
-	    AckTimer =
-		erlang:start_timer(?C2S_P1_ACK_TIMEOUT, self(), AckCounter),
-	    AckTimeout = StateData#state.keepalive_timeout +
-		StateData#state.oor_timeout,
-	    erlang:send_after(AckTimeout * 1000, self(),
-			      {ack_timeout, AckTimeout}),
-	    send_element(
-	      StateData,
-	      {xmlelement, "r",
-	       [{"h", integer_to_list(AckCounter)}], []}),
-	    StateData#state{ack_timer = AckTimer};
-	_ ->
-	    StateData
-    end.
-
-receive_ack(StateData, SCounter) ->
-    case catch list_to_integer(SCounter) of
-	Counter when is_integer(Counter) ->
-	    NewQueue = clean_queue(StateData#state.ack_queue, Counter),
-	    StateData#state{ack_queue = NewQueue};
-	_ ->
-	    StateData
-    end.
-
-clean_queue(Queue, Counter) ->
-    case queue:is_empty(Queue) of
-	true ->
-	    Queue;
-	false ->
-	    C = element(1, queue:head(Queue)),
-	    if
-		C =< Counter ->
-		    clean_queue(queue:tail(Queue), Counter);
-		true ->
-		    Queue
-	    end
-    end.
-
-prepare_acks_for_rebind(StateData) ->
-    AckQueue = StateData#state.ack_queue,
-    case queue:is_empty(AckQueue) of
-        true ->
-	    StateData;
-	false ->
-	    Unsent =
-		lists:map(
-		  fun({_Counter, From, To, FixedPacket}) ->
-			  {From, To, FixedPacket}
-		  end, queue:to_list(AckQueue)),
-	    NewQueue = queue:join(queue:from_list(Unsent),
-				  StateData#state.queue),
-	    StateData#state{queue = NewQueue,
-			    queue_len = queue:len(NewQueue),
-			    ack_queue = queue:new(),
-			    reception = false}
-    end.
-
-
-rebind(StateData, JID, StreamID) ->
-    case JID#jid.lresource of
-	"" ->
-	    send_element(StateData,
-			 {xmlelement, "failure",
-			  [{"xmlns", ?NS_P1_REBIND}],
-			  [{xmlcdata, "Invalid JID"}]}),
-	    fsm_next_state(wait_for_feature_request,
-			   StateData);
-	_ ->
-	    ejabberd_sm:route(
-	      ?MODULE, JID,
-	      {xmlelement, rebind, [], {self(), StreamID}}),
-	    receive
-		{rebind, false} ->
-		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_P1_REBIND}],
-				  [{xmlcdata, "Session not found"}]}),
-		    fsm_next_state(wait_for_feature_request,
-				   StateData);
-		{rebind, NewStateData} ->
-		    ?INFO_MSG("(~w) Reopened session for ~s",
-			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
-		    SID = {now(), self()},
-		    Conn = get_conn_type(NewStateData),
-		    Info = [{ip, StateData#state.ip}, {conn, Conn},
-			    {auth_module, NewStateData#state.auth_module}],
-		    ejabberd_sm:open_session(
-		      SID,
-		      NewStateData#state.user,
-		      NewStateData#state.server,
-		      NewStateData#state.resource,
-		      Info),
-		    StateData2 =
-			NewStateData#state{
-			  socket = StateData#state.socket,
-			  sockmod = StateData#state.sockmod,
-			  socket_monitor = StateData#state.socket_monitor,
-			  sid = SID,
-			  ip = StateData#state.ip,
-			  keepalive_timer = StateData#state.keepalive_timer,
-			  ack_timer = undefined
-			 },
-		    Presence = StateData2#state.pres_last,
-		    case Presence of
-			undefined ->
-			    ok;
-			_ ->
-			    NewPriority = get_priority_from_presence(Presence),
-			    update_priority(NewPriority, Presence, StateData2)
-		    end,
-		    send_element(StateData2,
-				 {xmlelement, "rebind",
-				  [{"xmlns", ?NS_P1_REBIND}],
-				  []}),
-		    StateData3 = change_reception(StateData2, true),
-		    StateData4 = start_keepalive_timer(StateData3),
-		    fsm_next_state(session_established,
-				   StateData4)
-	    after 1000 ->
-		    send_element(StateData,
-				 {xmlelement, "failure",
-				  [{"xmlns", ?NS_P1_REBIND}],
-				  [{xmlcdata, "Session not found"}]}),
-		    fsm_next_state(wait_for_feature_request,
-				   StateData)
-	    end
-    end.
-
-process_push_iq(From, To,
-		#iq{type = _Type, sub_el = El} = IQ,
-		StateData) ->
-    {Res, NewStateData} =
-	case El of
-	    {xmlelement, "push", _, _} ->
-		SKeepAlive =
-		    xml:get_path_s(El, [{elem, "keepalive"}, {attr, "max"}]),
-		SOORTimeout =
-		    xml:get_path_s(El, [{elem, "session"}, {attr, "duration"}]),
-		Status = xml:get_path_s(El, [{elem, "status"}, cdata]),
-		Show = xml:get_path_s(El, [{elem, "status"}, {attr, "type"}]),
-		SSendBody = xml:get_path_s(El, [{elem, "body"}, {attr, "send"}]),
-		SendBody =
-		    case SSendBody of
-			"all" -> all;
-			"first-per-user" -> first_per_user;
-			"first" -> first;
-			"none" -> none;
-			_ -> none
-		    end,
-		SendGroupchat =
-		    xml:get_path_s(El, [{elem, "body"},
-					{attr, "groupchat"}]) == "true",
-		SendFrom = send_from(El),
-		AppID = xml:get_path_s(El, [{elem, "appid"}, cdata]),
-		{Offline, Keep} =
-		    case xml:get_path_s(El, [{elem, "offline"}, cdata]) of
-			"true" -> {true, false};
-			"keep" -> {false, true};
-			_ -> {false, false}
-		    end,
-		Notification1 = xml:get_path_s(El, [{elem, "notification"}]),
-		Notification =
-		    case Notification1 of
-			{xmlelement, _, _, _} ->
-			    Notification1;
-			_ ->
-			    {xmlelement, "notification", [],
-			     [{xmlelement, "type", [],
-			       [{xmlcdata, "none"}]}]}
-		    end,
-		case catch {list_to_integer(SKeepAlive),
-			    list_to_integer(SOORTimeout)} of
-		    {KeepAlive, OORTimeout}
-		    when OORTimeout =< ?MAX_OOR_TIMEOUT ->
-			if
-			    Offline ->
-				ejabberd_hooks:run(
-				  p1_push_enable_offline,
-				  StateData#state.server,
-				  [StateData#state.jid,
-				   Notification, SendBody, SendFrom, AppID]);
-			    Keep ->
-				ok;
-			    true ->
-				ejabberd_hooks:run(
-				  p1_push_disable,
-				  StateData#state.server,
-				  [StateData#state.jid,
-				   Notification,
-				   AppID])
-			end,
-			NSD1 =
-			    StateData#state{keepalive_timeout = KeepAlive,
-					    oor_timeout = OORTimeout * 60,
-					    oor_status = Status,
-					    oor_show = Show,
-					    oor_notification = Notification,
-					    oor_send_body = SendBody,
-					    oor_send_groupchat = SendGroupchat,
-					    oor_send_from = SendFrom,
-					    oor_appid = AppID,
-                                            oor_offline = Offline},
-			NSD2 = start_keepalive_timer(NSD1),
-			{{result, []}, NSD2};
-		    _ ->
-			{{error, ?ERR_BAD_REQUEST}, StateData}
-		end;
-	    {xmlelement, "disable", _, _} ->
-		ejabberd_hooks:run(
-		  p1_push_disable,
-		  StateData#state.server,
-		  [StateData#state.jid,
-		   StateData#state.oor_notification,
-		   StateData#state.oor_appid]),
-		NSD1 =
-		    StateData#state{keepalive_timeout = undefined,
-				    oor_timeout = undefined,
-				    oor_status = "",
-				    oor_show = "",
-				    oor_notification = undefined,
-				    oor_send_body = all},
-		NSD2 = start_keepalive_timer(NSD1),
-		{{result, []}, NSD2};
-	    _ ->
-		{{error, ?ERR_BAD_REQUEST}, StateData}
-	end,
-    IQRes =
-	case Res of
-	    {result, Result} ->
-		IQ#iq{type = result, sub_el = Result};
-	    {error, Error} ->
-		IQ#iq{type = error, sub_el = [El, Error]}
-	end,
-    ejabberd_router:route(
-      To, From, jlib:iq_to_xml(IQRes)),
-    NewStateData.
-
-check_x_pushed({xmlelement, _Name, _Attrs, Els}) ->
-    check_x_pushed1(Els).
-
-check_x_pushed1([]) ->
-    false;
-check_x_pushed1([{xmlcdata, _} | Els]) ->
-    check_x_pushed1(Els);
-check_x_pushed1([El | Els]) ->
-    case xml:get_tag_attr_s("xmlns", El) of
-	?NS_P1_PUSHED ->
-	    true;
-	_ ->
-	    check_x_pushed1(Els)
-    end.
-
-check_x_attachment({xmlelement, _Name, _Attrs, Els}) ->
-    check_x_attachment1(Els).
-
-check_x_attachment1([]) ->
-    false;
-check_x_attachment1([{xmlcdata, _} | Els]) ->
-    check_x_attachment1(Els);
-check_x_attachment1([El | Els]) ->
-    case xml:get_tag_attr_s("xmlns", El) of
-	?NS_P1_ATTACHMENT ->
-	    true;
-	_ ->
-	    check_x_attachment1(Els)
-    end.
-
-
-send_from(El) ->
-    %% First test previous version attribute:
-    case xml:get_path_s(El, [{elem, "body"}, {attr, "jid"}]) of
-        "false" ->
-             none;
-        "true" ->
-             jid;
-        "" ->
-             case xml:get_path_s(El, [{elem, "body"}, {attr, "from"}]) of
-                  "jid" -> jid;
-                  "username" -> username;
-                  "none" -> none;
-                  _ -> jid
-             end
     end.
 
 fsm_limit_opts(Opts) ->
