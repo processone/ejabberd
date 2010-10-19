@@ -107,7 +107,6 @@
 	 %% Stanza
 	 send_chat/3,
 	 send_message/4,
-	 send_notification/6, %% ON
 	 send_stanza/3
 	]).
 
@@ -431,14 +430,6 @@ commands() ->
 			module = ?MODULE, function = send_message,
 			args = [{from, string}, {to, string},
 				{subject, string}, {body, string}],
-			result = {res, integer}},
-
-     #ejabberd_commands{name = send_notification, tags = [stanza],
-			desc = "Send ON notification to XMPP client sessions",
-			module = ?MODULE, function = send_notification,
-			args = [{send_from, string}, {send_to, string}, {host, string},
-				{unread_items, string}, {message, string},
-				{type, string}],
 			result = {res, integer}},
 
      #ejabberd_commands{name = send_stanza, tags = [stanza],
@@ -775,35 +766,6 @@ send_message(FromJID, ToJID, Sub, Msg) ->
 	       {xmlelement, "body", [], [{xmlcdata, Msg}]}]},
     ejabberd_router:route(From, To, Stanza),
     0.
-
-send_notification(SendFromUsername, SendToUsername, Host, UnreadItemsInteger, MessageBody, Type) ->
-    case get_resources(SendToUsername, Host) of
-	404 ->
-	    -1;
-	[] ->
-	    -2;
-	[A|_] when is_list(A) ->
-	    send_notification_really(SendFromUsername, SendToUsername, Host, UnreadItemsInteger, MessageBody, Type),
-	    0
-    end.
-
-send_notification_really(SendFromUsername, SendToUsername, Host, UnreadItemsInteger, MessageBody, Type) ->
-    FromString = Host ++ "/voicemail-notifier",
-    ToString = SendToUsername ++ "@" ++ Host,
-
-    XAttrs = [{"type", Type},
-	{"send_from", SendFromUsername},
-	{"unread_items", UnreadItemsInteger}],
-    XChildren = [{xmlelement, "text", [], [{xmlcdata, MessageBody}]}],
-    XEl = {xmlelement, "x", XAttrs, XChildren},
-
-    Attrs = [{"from", FromString}, {"to", ToString}, {"type", "chat"}],
-    Children = [XEl],
-    Stanza = {xmlelement, "message", Attrs, Children},
-
-    From = jlib:string_to_jid(FromString),
-    To = jlib:string_to_jid(ToString),
-    ejabberd_router:route(From, To, Stanza).
 
 send_stanza(FromJID, ToJID, StanzaStr) ->
     case xml_stream:parse_element(StanzaStr) of
