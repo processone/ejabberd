@@ -576,9 +576,9 @@ add_rosteritem(User, Server, JID, Nick, Group, Subscription, Push) ->
 							       {selected, ["username"],[]} ->
 								   ItemVals = record_to_string(Roster),
 								   ItemGroups = groups_to_string(Roster),
-								   odbc_queries:update_roster(Server, Username,
-											      SJID, ItemVals,
-											      ItemGroups);
+								   ejabberd_odbc:sql_query_t(
+									odbc_queries:update_roster_sql(
+									    Username, SJID, ItemVals, ItemGroups));
 							       _ ->
 								   already_added
 							   end
