@@ -31,6 +31,7 @@
 	 new/2,
 	 parse/2,
 	 close/1,
+	 change_callback_pid/2,
 	 parse_element/1]).
 
 -define(XML_START, 0).
@@ -110,6 +111,8 @@ new(CallbackPid, MaxSize) ->
 		      size = 0,
 		      maxsize = MaxSize}.
 
+change_callback_pid(State, CallbackPid) ->
+    State#xml_stream_state{callback_pid = CallbackPid}.
 
 parse(#xml_stream_state{callback_pid = CallbackPid,
 			port = Port,

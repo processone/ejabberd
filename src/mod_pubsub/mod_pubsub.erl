@@ -78,6 +78,7 @@
 
 %% exports for console debug manual use
 -export([create_node/5,
+   create_node/7,
 	 delete_node/3,
 	 subscribe_node/5,
 	 unsubscribe_node/5,
@@ -766,13 +767,15 @@ out_subscription(User, Server, JID, subscribed) ->
 	[] -> user_resources(PUser, PServer);
 	_ -> [PResource]
     end,
-    presence(Server, {presence, PUser, PServer, PResources, Owner});
+    presence(Server, {presence, PUser, PServer, PResources, Owner}),
+    true;
 out_subscription(_,_,_,_) ->
-    ok.
+    true.
 in_subscription(_, User, Server, Owner, unsubscribed, _) ->
-    unsubscribe_user(jlib:make_jid(User, Server, ""), Owner);
+    unsubscribe_user(jlib:make_jid(User, Server, ""), Owner),
+    true;
 in_subscription(_, _, _, _, _, _) ->
-    ok.
+    true.
 
 unsubscribe_user(Entity, Owner) ->
     BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),

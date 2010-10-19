@@ -555,7 +555,17 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 	    loop(Parent, Name, NStateName, NStateData, Mod, Time1, [],
 		 Limits, Queue, QueueLen);
 	{migrate, NStateData, {Node, M, F, A}, Time1} ->
-	    Reason = case catch rpc:call(Node, M, F, A, 5000) of
+	    RPCTimeout = if Time1 == 0 ->
+				 %% We don't care about a delay,
+				 %% so we set it one minute
+				 60000;
+			    true ->
+				 Time1
+			 end,
+	    Now = now(),
+	    Reason = case catch rpc:call(Node, M, F, A, RPCTimeout) of
+			 {badrpc, timeout} ->
+			     normal;
 			 {badrpc, _} = Err ->
 			     {migration_error, Err};
 			 {'EXIT', _} = Err ->
@@ -565,7 +575,9 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 			 {ok, Clone} ->
 			     process_flag(trap_exit, true),
 			     MRef = erlang:monitor(process, Clone),
-			     TRef = erlang:start_timer(Time1, self(), timeout),
+			     NowDiff = timer:now_diff(now(), Now) div 1000,
+			     TimeLeft = lists:max([Time1 - NowDiff, 0]),
+			     TRef = erlang:start_timer(TimeLeft, self(), timeout),
 			     relay_messages(MRef, TRef, Clone, Queue);
 			 Reply ->
 			     {migration_error, {bad_reply, Reply}}
@@ -608,7 +620,17 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, Time1, Debug1, Limits, Queue, QueueLen);
 	{migrate, NStateData, {Node, M, F, A}, Time1} ->
-	    Reason = case catch rpc:call(Node, M, F, A, Time1) of
+	    RPCTimeout = if Time1 == 0 ->
+				 %% We don't care about a delay,
+				 %% so we set it one minute
+				 60000;
+			    true ->
+				 Time1
+			 end,
+	    Now = now(),
+	    Reason = case catch rpc:call(Node, M, F, A, RPCTimeout) of
+			 {badrpc, timeout} ->
+			     normal;
 			 {badrpc, R} ->
 			     {migration_error, R};
 			 {'EXIT', R} ->
@@ -618,7 +640,9 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 			 {ok, Clone} ->
 			     process_flag(trap_exit, true),
 			     MRef = erlang:monitor(process, Clone),
-			     TRef = erlang:start_timer(Time1, self(), timeout),
+			     NowDiff = timer:now_diff(now(), Now) div 1000,
+			     TimeLeft = lists:max([Time1 - NowDiff, 0]),
+			     TRef = erlang:start_timer(TimeLeft, self(), timeout),
 			     relay_messages(MRef, TRef, Clone, Queue);
 			 Reply ->
 			     {migration_error, {bad_reply, Reply}}

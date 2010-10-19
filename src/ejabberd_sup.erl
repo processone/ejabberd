@@ -42,13 +42,6 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_hooks]},
-    NodeGroups =
-	{ejabberd_node_groups,
-	 {ejabberd_node_groups, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [ejabberd_node_groups]},
     SystemMonitor =
 	{ejabberd_system_monitor,
 	 {ejabberd_system_monitor, start_link, []},
@@ -153,6 +146,14 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
+	 WSLoopSupervisor =
+	 {ejabberd_wsloop_sup,
+ 	 {ejabberd_tmp_sup, start_link,
+ 	  [ejabberd_wsloop_sup, ejabberd_wsloop]},
+ 	 permanent,
+ 	 infinity,
+ 	 supervisor,
+ 	 [ejabberd_tmp_sup]},
     FrontendSocketSupervisor =
 	{ejabberd_frontend_socket_sup,
 	 {ejabberd_tmp_sup, start_link,
@@ -177,9 +178,23 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
+    Cluster =
+	{ejabberd_cluster,
+	 {ejabberd_cluster, start_link, []},
+	 permanent,
+	 brutal_kill,
+	 worker,
+	 [ejabberd_cluster]},
+    CacheTabSupervisor =
+	{cache_tab_sup,
+	 {cache_tab_sup, start_link, []},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [cache_tab_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
-	   NodeGroups,
+	   Cluster,
 	   SystemMonitor,
 	   Router,
 	   SM,
@@ -196,6 +211,7 @@ init([]) ->
 	   IQSupervisor,
 	   STUNSupervisor,
 	   FrontendSocketSupervisor,
+	   CacheTabSupervisor,
 	   Listener]}}.
 
 

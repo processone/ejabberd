@@ -44,6 +44,7 @@
 	 get_peer_certificate/1,
 	 get_verify_result/1,
 	 close/1,
+	 change_controller/2,
 	 sockname/1, peername/1]).
 
 -include("ejabberd.hrl").
@@ -129,29 +130,19 @@ connect(Addr, Port, Opts, Timeout) ->
     end.
 
 starttls(SocketData, TLSOpts) ->
-    {ok, TLSSocket} = tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
-    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    SocketData#socket_state{socket = TLSSocket, sockmod = tls}.
+    starttls(SocketData, TLSOpts, undefined).
 
 starttls(SocketData, TLSOpts, Data) ->
-    {ok, TLSSocket} = tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
-    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    send(SocketData, Data),
+    {ok, TLSSocket} = ejabberd_receiver:starttls(
+			SocketData#socket_state.receiver, TLSOpts, Data),
     SocketData#socket_state{socket = TLSSocket, sockmod = tls}.
 
 compress(SocketData) ->
-    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
-			 SocketData#socket_state.sockmod,
-			 SocketData#socket_state.socket),
-    ejabberd_receiver:compress(SocketData#socket_state.receiver, ZlibSocket),
-    SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
+    compress(SocketData, undefined).
 
 compress(SocketData, Data) ->
-    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
-			 SocketData#socket_state.sockmod,
-			 SocketData#socket_state.socket),
-    ejabberd_receiver:compress(SocketData#socket_state.receiver, ZlibSocket),
-    send(SocketData, Data),
+    {ok, ZlibSocket} = ejabberd_receiver:compress(
+			 SocketData#socket_state.receiver, Data),
     SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
 
 reset_stream(SocketData) when is_pid(SocketData#socket_state.receiver) ->
@@ -160,10 +151,25 @@ reset_stream(SocketData) when is_atom(SocketData#socket_state.receiver) ->
     (SocketData#socket_state.receiver):reset_stream(
       SocketData#socket_state.socket).
 
+change_controller(#socket_state{receiver = Recv}, Pid) when is_pid(Recv) ->
+    ejabberd_receiver:setopts(Recv, [{active, false}]),
+    sync_events(Pid),
+    ejabberd_receiver:change_controller(Recv, Pid);
+change_controller(#socket_state{socket = Socket, receiver = Mod}, Pid) ->
+    Mod:setopts(Socket, [{active, false}]),
+    sync_events(Pid),
+    Mod:change_controller(Socket, Pid).
+
 %% sockmod=gen_tcp|tls|ejabberd_zlib
 send(SocketData, Data) ->
-    case catch (SocketData#socket_state.sockmod):send(
-	     SocketData#socket_state.socket, Data) of
+    Res = if node(SocketData#socket_state.receiver) == node() ->
+		  catch (SocketData#socket_state.sockmod):send(
+			  SocketData#socket_state.socket, Data);
+	     true ->
+		  catch ejabberd_receiver:send(
+			  SocketData#socket_state.receiver, Data)
+		  end,
+    case Res of
         ok -> ok;
 	{error, timeout} ->
 	    ?INFO_MSG("Timeout on ~p:send",[SocketData#socket_state.sockmod]),
@@ -225,3 +231,21 @@ peername(#socket_state{sockmod = SockMod, socket = Socket}) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+%% dirty hack to relay queued messages from
+%% old owner to new owner. The idea is based
+%% on code of gen_tcp:controlling_process/2.
+sync_events(C2SPid) ->
+    receive
+	{'$gen_event', El} = Event when element(1, El) == xmlelement;
+					element(1, El) == xmlstreamstart;
+					element(1, El) == xmlstreamelement;
+					element(1, El) == xmlstreamend;
+					element(1, El) == xmlstreamerror ->
+	    C2SPid ! Event,
+	    sync_events(C2SPid);
+	closed ->
+	    C2SPid ! closed,
+	    sync_events(C2SPid)
+    after 0 ->
+	    ok
+    end.

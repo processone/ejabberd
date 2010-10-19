@@ -32,3 +32,21 @@
 		  tp, % transfer protocol = http | https
 		  headers
 		 }).
+
+
+% Websocket Request
+-record(ws, {
+	    socket,						% the socket handling the request
+	    sockmod,				% gen_tcp | tls
+	    ws_autoexit,				% websocket process is automatically killed: true | false
+	    ip,					% peer IP | undefined
+	    vsn,						% {Maj,Min} | {'draft-hixie', Ver}
+	    origin,						% the originator
+	    host,						% the host
+	    port,
+	    path,						% the websocket GET request path
+	    headers,						% [{Tag, Val}]
+	    local_path,
+	    protocol,
+	    acceptable_origins
+    }).

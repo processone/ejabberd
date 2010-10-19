@@ -19,6 +19,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-define(mod_privacy_hrl, true).
+
 -record(privacy, {us,
 		  default = none,
 		  lists = []}).

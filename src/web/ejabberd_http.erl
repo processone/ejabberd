@@ -65,7 +65,8 @@
 		request_tp,
 		request_headers = [],
 		end_of_request = false,
-		trail = ""
+		trail = "",
+		websocket_handlers = []
 	       }).
 
 
@@ -134,11 +135,16 @@ init({SockMod, Socket}, Opts) ->
             false -> []
         end,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
-
+    WebSocketHandlers = case lists:keysearch(websocket_handlers, 1, Opts) of
+  	    {value, {websocket_handlers, WH}} -> WH;
+  	    false -> []
+    end,
+    ?DEBUG("WS: ~p~n", [WebSocketHandlers]),
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
-                   request_handlers = RequestHandlers},
+                   request_handlers = RequestHandlers,
+                   websocket_handlers = WebSocketHandlers},
     receive_headers(State).
 
 
@@ -148,6 +154,9 @@ become_controller(_Pid) ->
 socket_type() ->
     raw.
 
+
+send_text(_State, none) ->
+  exit(normal);
 send_text(State, Text) ->
     case catch (State#state.sockmod):send(State#state.socket, Text) of
         ok -> ok;
@@ -289,6 +298,11 @@ process_header(State, Data) ->
 add_header(Name, Value, State) ->
     [{Name, Value} | State#state.request_headers].
 
+-define(GETOPT(Param, Opts), 
+ case lists:keysearch(Param, 1, Opts) of
+   {value, {Param, V}} -> V;
+   false -> undefined
+ end).
 %% @spec (SockMod, HostPort) -> {Host::string(), Port::integer(), TP}
 %% where
 %%       SockMod = gen_tcp | tls
@@ -313,8 +327,38 @@ get_transfer_protocol(SockMod, HostPort) ->
 %% XXX bard: search through request handlers looking for one that
 %% matches the requested URL path, and pass control to it.  If none is
 %% found, answer with HTTP 404.
+
 process([], _) ->
     ejabberd_web:error(not_found);
+process(Handlers, #ws{} = Ws)->
+  [{HandlerPathPrefix, HandlerModule, HandlerOpts} | HandlersLeft] = Handlers,
+  case (lists:prefix(HandlerPathPrefix, Ws#ws.path) or
+         (HandlerPathPrefix==Ws#ws.path)) of
+	true ->
+      ?DEBUG("~p matches ~p", [Ws#ws.path, HandlerPathPrefix]),
+      LocalPath = lists:nthtail(length(HandlerPathPrefix), Ws#ws.path),
+      ejabberd_hooks:run(ws_debug, [{LocalPath, Ws}]),
+      Protocol = case lists:keysearch(protocol, 1, HandlerOpts) of
+         {value, {protocol, P}} -> P;
+         false -> undefined
+       end,
+      Origins =  case lists:keysearch(origins, 1, HandlerOpts) of
+          {value, {origins, O}} -> O;
+          false -> []
+        end,
+      WS2 = Ws#ws{local_path = LocalPath, 
+                  protocol=Protocol,
+                  acceptable_origins=Origins},
+      case ejabberd_websocket:is_acceptable(WS2) of 
+        true ->
+          ejabberd_websocket:connect(WS2, HandlerModule);
+        false ->
+          process(HandlersLeft, Ws)
+      end;
+	false ->
+	    ?DEBUG("HandlersLeft : ~p ", [HandlersLeft]),
+	    process(HandlersLeft, Ws)
+    end;
 process(Handlers, Request) ->
     [{HandlerPathPrefix, HandlerModule} | HandlersLeft] = Handlers,
 
@@ -344,6 +388,7 @@ process_request(#state{request_method = Method,
 		       request_tp = TP,
 		       request_headers = RequestHeaders,
 		       sockmod = SockMod,
+		       websocket_handlers = WebSocketHandlers,
 		       socket = Socket} = State)
   when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' orelse Method=:='OPTIONS' ->
     case (catch url_decode_q_split(Path)) of
@@ -364,31 +409,51 @@ process_request(#state{request_method = Method,
 		    _ ->
 			SockMod:peername(Socket)
 		end,
-	    Request = #request{method = Method,
-			       path = LPath,
-			       q = LQuery,
-			       auth = Auth,
-			       lang = Lang,
-			       host = Host,
-			       port = Port,
-			       tp = TP,
-			       headers = RequestHeaders,
-			       ip = IP},
+	    
 	    %% XXX bard: This previously passed control to
 	    %% ejabberd_web:process_get, now passes it to a local
 	    %% procedure (process) that handles dispatching based on
 	    %% URL path prefix.
-	    case process(RequestHandlers, Request) of
-		El when element(1, El) == xmlelement ->
-		    make_xhtml_output(State, 200, [], El);
-		{Status, Headers, El} when
-		element(1, El) == xmlelement ->
-		    make_xhtml_output(State, Status, Headers, El);
-		Output when is_list(Output) or is_binary(Output) ->
-		    make_text_output(State, 200, [], Output);
-		{Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
-		    make_text_output(State, Status, Headers, Output)
-	    end
+	    case ejabberd_websocket:check(Path, RequestHeaders) of
+	      {true, VSN} ->
+	        {_, Origin} = lists:keyfind("Origin", 1, RequestHeaders),
+	        Ws = #ws{socket = Socket,
+    			       sockmod = SockMod,
+    			       ws_autoexit = true,
+    			       ip = IP,
+    			       path = LPath,
+    			       vsn = VSN,
+    			       host = Host,
+    			       port = Port,
+    			       origin = Origin,
+    			       headers = RequestHeaders
+    			       },
+    			process(WebSocketHandlers, Ws),
+    			?DEBUG("It is a websocket.",[]),
+	        none;
+	      false ->
+	        Request = #request{method = Method,
+    			       path = LPath,
+    			       q = LQuery,
+    			       auth = Auth,
+    			       lang = Lang,
+    			       host = Host,
+    			       port = Port,
+    			       tp = TP,
+    			       headers = RequestHeaders,
+    			       ip = IP},
+	        case process(RequestHandlers, Request) of
+		        El when element(1, El) == xmlelement ->
+		          make_xhtml_output(State, 200, [], El);
+		        {Status, Headers, El} when
+		        element(1, El) == xmlelement ->
+		          make_xhtml_output(State, Status, Headers, El);
+		        Output when is_list(Output) or is_binary(Output) ->
+		          make_text_output(State, 200, [], Output);
+		        {Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
+		          make_text_output(State, Status, Headers, Output)
+	        end
+	      end
     end;
 
 process_request(#state{request_method = Method,

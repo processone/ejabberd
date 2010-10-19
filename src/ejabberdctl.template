@@ -136,6 +136,7 @@ export EXEC_CMD
 # start server
 start ()
 {
+    check_start
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -noinput -detached \
@@ -182,6 +183,7 @@ debug ()
 # start interactive server
 live ()
 {
+    check_start
     echo "--------------------------------------------------------------------"
     echo ""
     echo "IMPORTANT: ejabberd is going to start in LIVE (interactive) mode."
@@ -208,6 +210,13 @@ live ()
       $KERNEL_OPTS \
       -s ejabberd \
       $ERLANG_OPTS $ARGS \"$@\""
+}
+
+etop()
+{
+    $EXEC_CMD "$ERL \
+      $NAME debug-${TTY}-${ERLANG_NODE} \
+      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
 }
 
 help ()
@@ -330,6 +339,26 @@ stop_epmd()
     epmd -names | grep -q name || epmd -kill
 }
 
+# make sure node not already running and node name unregistered
+check_start()
+{
+    epmd -names | grep -q $NODE && {
+        ps ux | grep -q $ERLANG_NODE && {
+            echo "ejabberd is already running."
+            exit 4
+        } || {
+            ps ux | grep beam | grep -v "grep beam" && {
+                echo "ejabberd node is registered, but no ejabberd process has been found."
+                echo "can not kill epmd as other erlang nodes are running."
+                echo "please stop all erlang nodes, and call 'epmd -kill'."
+                exit 5
+            } || {
+                epmd -kill
+            }
+        }
+    }
+}
+
 # allow sync calls
 wait_for_status()
 {
@@ -359,6 +388,7 @@ case $ARGS in
     ' start') start;;
     ' debug') debug;;
     ' live') live;;
+    ' etop') etop;;
     ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
     ' stopped') wait_for_status 3 15 2; stop_epmd;; # wait 15x2s before timeout
     *) ctl $ARGS;;

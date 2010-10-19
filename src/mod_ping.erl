@@ -51,7 +51,7 @@
          handle_info/2, code_change/3]).
 
 %% Hook callbacks
--export([iq_ping/3, user_online/3, user_offline/3, user_send/3]).
+-export([iq_ping/3, user_online/3, user_offline/3, user_send/4]).
 
 -record(state, {host = "",
                 send_pings = ?DEFAULT_SEND_PINGS,
@@ -107,6 +107,8 @@ init([Host, Opts]) ->
                                ?MODULE, user_online, 100),
             ejabberd_hooks:add(sm_remove_connection_hook, Host,
                                ?MODULE, user_offline, 100),
+	    ejabberd_hooks:add(sm_remove_migrated_connection_hook, Host,
+                               ?MODULE, user_offline, 100),
 	    ejabberd_hooks:add(user_send_packet, Host,
 			       ?MODULE, user_send, 100);
         _ ->
@@ -120,6 +122,8 @@ init([Host, Opts]) ->
 
 terminate(_Reason, #state{host = Host}) ->
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
+			  ?MODULE, user_offline, 100),
+    ejabberd_hooks:delete(sm_remove_migrated_connection_hook, Host,
 			  ?MODULE, user_offline, 100),
     ejabberd_hooks:delete(sm_register_connection_hook, Host,
 			  ?MODULE, user_online, 100),
@@ -193,7 +197,7 @@ user_online(_SID, JID, _Info) ->
 user_offline(_SID, JID, _Info) ->
     stop_ping(JID#jid.lserver, JID).
 
-user_send(JID, _From, _Packet) ->
+user_send(_DebugFlag, JID, _From, _Packet) ->
     start_ping(JID#jid.lserver, JID).
 
 %%====================================================================

@@ -86,7 +86,6 @@ terminate(Host, ServerHost) ->
 
 options() ->
     [{odbc, true},
-     {node_type, pep},
      {deliver_payloads, true},
      {notify_config, false},
      {notify_delete, false},

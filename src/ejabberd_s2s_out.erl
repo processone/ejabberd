@@ -34,7 +34,8 @@
 	 start_link/3,
 	 start_connection/1,
 	 terminate_if_waiting_delay/2,
-	 stop_connection/1]).
+	 stop_connection/1,
+	 stop_connection/2]).
 
 %% p1_fsm callbacks (same as gen_fsm)
 -export([init/1,
@@ -44,6 +45,7 @@
 	 wait_for_features/2,
 	 wait_for_auth_result/2,
 	 wait_for_starttls_proceed/2,
+	 relay_to_bridge/2,
 	 reopen_socket/2,
 	 wait_before_retry/2,
 	 stream_established/2,
@@ -51,9 +53,9 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
-     print_state/1,
 	 code_change/4,
 	 test_get_addr_port/1,
+	 print_state/1,
 	 get_addr_port/1]).
 
 -include("ejabberd.hrl").
@@ -72,6 +74,7 @@
 		myname, server, queue,
 		delay_to_retry = undefined_delay,
 		new = false, verify = false,
+		bridge,
 		timer}).
 
 %%-define(DBGFSM, true).
@@ -84,10 +87,11 @@
 
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, p1_fsm:start(ejabberd_s2s_out, [From, Host, Type],
-				       fsm_limit_opts() ++ ?FSMOPTS)).
+-define(SUPERVISOR_START, rpc:call(Node, p1_fsm, start,
+				   [ejabberd_s2s_out, [From, Host, Type],
+				    fsm_limit_opts() ++ ?FSMOPTS])).
 -else.
--define(SUPERVISOR_START, supervisor:start_child(ejabberd_s2s_out_sup,
+-define(SUPERVISOR_START, supervisor:start_child({ejabberd_s2s_out_sup, Node},
 						 [From, Host, Type])).
 -endif.
 
@@ -126,6 +130,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(From, Host, Type) ->
+    Node = ejabberd_cluster:get_node({From, Host}),
     ?SUPERVISOR_START.
 
 start_link(From, Host, Type) ->
@@ -136,7 +141,10 @@ start_connection(Pid) ->
     p1_fsm:send_event(Pid, init).
 
 stop_connection(Pid) ->
-    p1_fsm:send_event(Pid, stop).
+    p1_fsm:send_event(Pid, closed).
+
+stop_connection(Pid, Timeout) ->
+    p1_fsm:send_all_state_event(Pid, {closed, Timeout}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from p1_fsm
@@ -228,8 +236,19 @@ open_socket(init, StateData) ->
 	{error, _Reason} ->
 	    ?INFO_MSG("s2s connection: ~s -> ~s (remote server not found)",
 		      [StateData#state.myname, StateData#state.server]),
-	    wait_before_reconnect(StateData)
-	    %%{stop, normal, StateData}
+	    case ejabberd_hooks:run_fold(find_s2s_bridge,
+					 undefined,
+					 [StateData#state.myname,
+					  StateData#state.server]) of
+		{Mod, Fun, Type} ->
+		    ?INFO_MSG("found a bridge to ~s for: ~s -> ~s",
+			      [Type, StateData#state.myname,
+			       StateData#state.server]),
+		    NewStateData = StateData#state{bridge={Mod, Fun}},
+		    {next_state, relay_to_bridge, NewStateData};
+		_ ->
+		    wait_before_reconnect(StateData)
+	    end
     end;
 open_socket(stop, StateData) ->
     ?INFO_MSG("s2s connection: ~s -> ~s (stopped in open socket)",
@@ -677,6 +696,15 @@ reopen_socket(closed, StateData) ->
 wait_before_retry(_Event, StateData) ->
     {next_state, wait_before_retry, StateData, ?FSMTIMEOUT}.
 
+relay_to_bridge(stop, StateData) ->
+    wait_before_reconnect(StateData);
+relay_to_bridge(closed, StateData) ->
+    ?INFO_MSG("relay to bridge: ~s -> ~s (closed)",
+	      [StateData#state.myname, StateData#state.server]),
+    {stop, normal, StateData};
+relay_to_bridge(_Event, StateData) ->
+    {next_state, relay_to_bridge, StateData}.
+
 stream_established({xmlstreamelement, El}, StateData) ->
     ?DEBUG("s2S stream established", []),
     case is_verify_res(El) of
@@ -747,6 +775,9 @@ stream_established(closed, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
+handle_event({closed, Timeout}, StateName, StateData) ->
+    p1_fsm:send_event_after(Timeout, closed),
+    {next_state, StateName, StateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData, get_timeout_interval(StateName)}.
 
@@ -827,6 +858,19 @@ handle_info({send_element, El}, StateName, StateData) ->
 	wait_before_retry ->
 	    bounce_element(El, ?ERR_REMOTE_SERVER_NOT_FOUND),
 	    {next_state, StateName, StateData};
+	relay_to_bridge ->
+	    %% In this state we relay all outbound messages
+	    %% to a foreign protocol bridge such as SMTP, SIP, etc.
+	    {Mod, Fun} = StateData#state.bridge,
+	    ?DEBUG("relaying stanza via ~p:~p/1", [Mod, Fun]),
+	    case catch Mod:Fun(El) of
+		{'EXIT', Reason} ->
+		    ?ERROR_MSG("Error while relaying to bridge: ~p", [Reason]),
+		    bounce_element(El, ?ERR_INTERNAL_SERVER_ERROR),
+		    wait_before_reconnect(StateData);
+		_ ->
+		    {next_state, StateName, StateData}
+	    end;
 	_ ->
 	    Q = queue:in(El, StateData#state.queue),
 	    {next_state, StateName, StateData#state{queue = Q},

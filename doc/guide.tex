@@ -386,6 +386,9 @@ Some options that you may be interested in modifying:
 	\titem{--enable-nif}
         Replaces some critical Erlang functions with equivalents written in C to improve performance.
         This feature requires Erlang/OTP R13B04 or higher.
+
+	\titem{--enable-flash-hack}
+	Enable support for non-standard XML socket clients of Adobe Flash 8 and lower.
 \end{description}
 
 \makesubsection{install}{Install}
@@ -2000,9 +2003,19 @@ enabled. This can be done, by using next commands:
 \makesubsubsection{configuremssql}{Database Connection}
 \ind{Microsoft SQL Server!Database Connection}
 
-The configuration of Database Connection for a Microsoft SQL Server
-is the same as the configuration for
-ODBC compatible servers (see section~\ref{configureodbc}).
+By default \ejabberd{} opens 10 connections to the database for each virtual host.
+Use this option to modify the value:
+\begin{verbatim}
+{odbc_pool_size, 10}.
+\end{verbatim}
+
+You can configure an interval to make a dummy SQL request
+to keep alive the connections to the database.
+The default value is 'undefined', so no keepalive requests are made.
+Specify in seconds: for example 28800 means 8 hours.
+\begin{verbatim}
+{odbc_keepalive_interval, undefined}.
+\end{verbatim}
 
 
 \makesubsubsection{mssqlauth}{Authentication}
@@ -2010,8 +2023,7 @@ ODBC compatible servers (see section~\ref{configureodbc}).
 
 %TODO: not sure if this section is right!!!!!!
 
-The configuration of Authentication for a Microsoft SQL Server
-is the same as the configuration for
+The configuration of Microsoft SQL Server is the same as the configuration of
 ODBC compatible servers (see section~\ref{odbcauth}).
 
 \makesubsubsection{mssqlstorage}{Storage}
@@ -2217,9 +2229,6 @@ and LDAP server supports
 
 
 \makesubsubsection{ldapconnection}{Connection}
-
-Two connections are established to the LDAP server per vhost,
-one for authentication and other for regular calls.
 
 Parameters:
 \begin{description}
@@ -2560,8 +2569,8 @@ You can see which database backend each module needs by looking at the suffix:
 \end{itemize}
 
 If you want to,
-it is possible to use a relational database to store pieces of
-information. You can do this by changing the module name to a name with an
+it is possible to use a relational database to store the tables created by some ejabberd modules.
+You can do this by changing the module name to a name with an
 \term{\_odbc} suffix in \ejabberd{} config file. You can use a relational
 database for the following data:
 
@@ -2574,6 +2583,7 @@ database for the following data:
 \item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
 \item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
+\item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
 \end{itemize}
 
 You can find more
