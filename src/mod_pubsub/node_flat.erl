@@ -824,7 +824,7 @@ get_entity_subscriptions(Host, #jid{node = U, domain = S, resource = R} = _JID) 
       (
 			       NodeIdx :: nodeIdx())
       -> {'result', []
-	  | [{Entity::fullUsr(), 'none'}]
+	  %| [{Entity::fullUsr(), 'none'}]
 						%| [{Entity::fullUsr(), Subscription::subscription()}] %% still useful case ?
 	  | [{Entity::fullUsr(), Subscription::subscription(), SubId::subId()}]}
 	    ).

@@ -55,7 +55,7 @@
 %%%    Server   = binary()
 %%%    Resource = undefined.
 
--type(hostPEP() :: {User::binary(), Server::binary, Resource::undefined}).
+-type(hostPEP() :: {User::binary(), Server::binary(), Resource::undefined}).
 
 
 %%% @type host() = hostPubsub() | hostPEP().

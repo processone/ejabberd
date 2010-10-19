@@ -319,7 +319,7 @@ get_entity_subscriptions(Host, JID) ->
       (
 			       NodeIdx :: nodeIdx())
       -> {'result', []
-	  | [{Entity::fullUsr(), 'none'}]
+	  %| [{Entity::fullUsr(), 'none'}]
 	  | [{Entity::fullUsr(), Subscription::subscription(), SubId::subId()}]}
 	    ).
 
