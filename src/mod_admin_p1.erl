@@ -223,15 +223,15 @@ commands() ->
 
      #ejabberd_commands{name = add_rosteritem_groups, tags = [roster],
 			desc = "Add new groups in an existing roster item",
-			longdesc = "The argument newgroups must be a string with group names separated by the character ;",
+			longdesc = "The argument Groups must be a string with group names separated by the character ;",
 			module = ?MODULE, function = add_rosteritem_groups,
 			args = [{user, string}, {server, string}, {jid, string},
-				{newgroups, string}, {push, string}],
+				{groups, string}, {push, string}],
 			result = {res, integer}},
 
      #ejabberd_commands{name = del_rosteritem_groups, tags = [roster],
 			desc = "Delete groups in an existing roster item",
-			longdesc = "The argument groups must be a string with group names separated by the character ;",
+			longdesc = "The argument Groups must be a string with group names separated by the character ;",
 			module = ?MODULE, function = del_rosteritem_groups,
 			args = [{user, string}, {server, string}, {jid, string},
 				{groups, string}, {push, string}],
@@ -239,7 +239,7 @@ commands() ->
 
      #ejabberd_commands{name = modify_rosteritem_groups, tags = [roster],
 			desc = "Modify the groups of an existing roster item",
-			longdesc = "The argument groups must be a string with group names separated by the character ;",
+			longdesc = "The argument Groups must be a string with group names separated by the character ;",
 			module = ?MODULE, function = modify_rosteritem_groups,
 			args = [{user, string}, {server, string}, {jid, string},
 				{groups, string}, {subs, string}, {push, string}],
@@ -730,13 +730,13 @@ add_rosteritem_groups(User, Server, JID, NewGroupsString, PushString) ->
     {true, true} ->
 	case add_rosteritem_groups2(User, Server, JID, NewGroups, Push) of
 	ok ->
-	    {false, {response, [0]}};
+	    0;
 	Error ->
 	    ?INFO_MSG("Error found: ~n~p", [Error]),
-	    {false, {response, [1]}}
+	    1
 	end;
     _ ->
-	{false, {response, [404]}}
+	404
     end.
 
 del_rosteritem_groups(User, Server, JID, NewGroupsString, PushString) ->
@@ -747,13 +747,13 @@ del_rosteritem_groups(User, Server, JID, NewGroupsString, PushString) ->
     {true, true} ->
 	case del_rosteritem_groups2(User, Server, JID, NewGroups, Push) of
 	ok ->
-	    {false, {response, [0]}};
+	    0;
 	Error ->
 	    ?INFO_MSG("Error found: ~n~p", [Error]),
-	    {false, {response, [1]}}
+	    1
 	end;
     _ ->
-	{false, {response, [404]}}
+	404
     end.
 
 modify_rosteritem_groups(User, Server, JID, NewGroupsString, SubsString, PushString) ->
@@ -766,13 +766,13 @@ modify_rosteritem_groups(User, Server, JID, NewGroupsString, SubsString, PushStr
     {true, true} ->
 	case modify_rosteritem_groups2(User, Server, JID, NewGroups, Push, Nick, Subs) of
 	ok ->
-	    {false, {response, [0]}};
+	    0;
 	Error ->
 	    ?INFO_MSG("Error found: ~n~p", [Error]),
-	    {false, {response, [1]}}
+	    1
 	end;
     _ ->
-	{false, {response, [404]}}
+	404
     end.
 
 add_rosteritem_groups2(User, Server, JID, NewGroups, Push) ->
