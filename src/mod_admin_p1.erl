@@ -92,9 +92,12 @@
 	 %% Roster
 	 add_rosteritem/6,
 	 delete_rosteritem/3,
-	 link_contacts/4,
+	 add_rosteritem_groups/5,
+  	 del_rosteritem_groups/5,
+  	 modify_rosteritem_groups/6,
+	 link_contacts/6,
 	 unlink_contacts/2,
-	 link_contacts/5, unlink_contacts/3, % Versions with Push parameter
+	 link_contacts/7, unlink_contacts/3, % Versions with Push parameter
 	 get_roster/2,
 	 get_roster_with_presence/2,
 	 add_contacts/3,
@@ -159,7 +162,7 @@ commands() ->
      #ejabberd_commands{name = rename_account, tags = [accounts],
 			desc = "Change an acount name",
 			longdesc = "Creates a new account "
-			"and copies the roster from the old one. "
+			"and copies the roster from the old one, and updates the rosters of his contacts. "
 			"Offline messages and private storage are lost.",
 			module = ?MODULE, function = rename_account,
 			args = [{user, string}, {server, string},
@@ -195,6 +198,7 @@ commands() ->
 			" - both: presence packets are sent in both direction.\n"
 			" - to: the user sees the presence of the given JID.\n"
 			" - from: the JID specified sees the user presence.\n\n"
+			"ejabberd sends to the user's connected client both the roster item and the presence."
 			"Don't forget that roster items should keep symmetric: "
 			"when adding a roster item for a user, "
 			"you have to do the symmetric roster item addition.\n\n",
@@ -205,10 +209,11 @@ commands() ->
 
      %% This command is also implemented in mod_admin_contrib
      #ejabberd_commands{name = delete_rosteritem, tags = [roster],
-			desc = "Remove an entry for a user roster",
+			desc = "Remove a roster item from the user's roster",
 			longdesc = "Roster items should be kept symmetric: "
 			"when removing a roster item for a user you have to do "
 			"the symmetric roster item removal. \n\n"
+			"ejabberd sends to the user's connected client both the roster item removel and the presence unsubscription."
 			"This mechanism bypass the standard roster approval "
 			"addition mechanism and should only be used for server "
 			"administration or server integration purpose.",
@@ -216,20 +221,46 @@ commands() ->
 			args = [{user, string}, {server, string}, {jid, string}],
 			result = {res, integer}},
 
+     #ejabberd_commands{name = add_rosteritem_groups, tags = [roster],
+			desc = "Add new groups in an existing roster item",
+			longdesc = "The argument newgroups must be a string with group names separated by the character ;",
+			module = ?MODULE, function = add_rosteritem_groups,
+			args = [{user, string}, {server, string}, {jid, string},
+				{newgroups, string}, {push, string}],
+			result = {res, integer}},
+
+     #ejabberd_commands{name = del_rosteritem_groups, tags = [roster],
+			desc = "Delete groups in an existing roster item",
+			longdesc = "The argument groups must be a string with group names separated by the character ;",
+			module = ?MODULE, function = del_rosteritem_groups,
+			args = [{user, string}, {server, string}, {jid, string},
+				{groups, string}, {push, string}],
+			result = {res, integer}},
+
+     #ejabberd_commands{name = modify_rosteritem_groups, tags = [roster],
+			desc = "Modify the groups of an existing roster item",
+			longdesc = "The argument groups must be a string with group names separated by the character ;",
+			module = ?MODULE, function = modify_rosteritem_groups,
+			args = [{user, string}, {server, string}, {jid, string},
+				{groups, string}, {subs, string}, {push, string}],
+			result = {res, integer}},
+
      #ejabberd_commands{name = link_contacts, tags = [roster],
 			desc = "Add a symmetrical entry in two users roster",
 			longdesc = "jid1 is the JabberID of the user1 you would "
 			"like to add in user2 roster on the server.\n"
 			"nick1 is the nick of user1.\n"
+			"group1 is the group name when adding user1 to user2 roster.\n"
 			"jid2 is the JabberID of the user2 you would like to "
 			"add in user1 roster on the server.\n"
-			"nick2 is the nick of user2.\n\n"
-			"This mechanism bypass the standard roster approval "
+			"nick2 is the nick of user2.\n"
+			"group2 is the group name when adding user2 to user1 roster.\n\n"
+			"This mechanism bypasses the standard roster approval "
 			"addition mechanism "
 			"and should only be userd for server administration or "
 			"server integration purpose.",
 			module = ?MODULE, function = link_contacts,
-			args = [{jid1, string}, {nick1, string}, {jid2, string}, {nick2, string}],
+			args = [{jid1, string}, {nick1, string}, {group1, string}, {jid2, string}, {nick2, string}, {group2, string}],
 			result = {res, integer}},
 
      #ejabberd_commands{name = unlink_contacts, tags = [roster],
@@ -238,7 +269,7 @@ commands() ->
 			"jid2 is the JabberID of the user2.\n\n"
 			"This mechanism bypass the standard roster approval "
 			"addition mechanism "
-			"and should only be userd for server administration or "
+			"and should only be used for server administration or "
 			"server integration purpose.",
 			module = ?MODULE, function = unlink_contacts,
 			args = [{jid1, string}, {jid2, string}],
@@ -334,7 +365,7 @@ commands() ->
 			"Pending can be \"in\", \"out\" or \"none\".",
 			module = ?MODULE, function = get_roster,
 			args = [{user, string}, {server, string}],
-			result = {contacts, {list, {contact, {tuple, [{jid, string}, {group, string},
+			result = {contacts, {list, {contact, {tuple, [{jid, string}, {groups, {list, {group, string}}},
 								      {nick, string}, {subscription, string}, {pending, string}]}}}}},
 
      #ejabberd_commands{name = get_roster_with_presence, tags = [roster],
@@ -582,15 +613,15 @@ add_rosteritem(U, S, JID, G, N, Subs, Push) ->
     Fun = fun() -> add_rosteritem2(U, S, JID, N, G, Subs, Push) end,
     user_action(U, S, Fun, {atomic, ok}).
 
-link_contacts(JID1, Nick1, JID2, Nick2) ->
-    link_contacts(JID1, Nick1, JID2, Nick2, true).
+link_contacts(JID1, Nick1, Group1, JID2, Nick2, Group2) ->
+    link_contacts(JID1, Nick1, Group1, JID2, Nick2, Group2, true).
 
-link_contacts(JID1, Nick1, JID2, Nick2, Push) ->
+link_contacts(JID1, Nick1, Group1, JID2, Nick2, Group2, Push) ->
     {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID1)),
     {U2, S2, _} = jlib:jid_tolower(jlib:string_to_jid(JID2)),
     case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(U2, S2)} of
 	{true, true} ->
-	    case link_contacts2(JID1, Nick1, JID2, Nick2, Push) of
+	    case link_contacts2(JID1, Nick1, Group1, JID2, Nick2, Group2, Push) of
 		{atomic, ok} ->
 		    0;
 		_ ->
@@ -687,6 +718,178 @@ check_users_registration(Users) ->
 		      {U, S, Registered}
 	      end, Users).
 
+%%%
+%%% Groups of Roster Item
+%%%
+
+add_rosteritem_groups(User, Server, JID, NewGroupsString, PushString) ->
+    {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    NewGroups = string:tokens(NewGroupsString, ";"),
+    Push = list_to_atom(PushString),
+    case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(User, Server)} of
+    {true, true} ->
+	case add_rosteritem_groups2(User, Server, JID, NewGroups, Push) of
+	ok ->
+	    {false, {response, [0]}};
+	Error ->
+	    ?INFO_MSG("Error found: ~n~p", [Error]),
+	    {false, {response, [1]}}
+	end;
+    _ ->
+	{false, {response, [404]}}
+    end.
+
+del_rosteritem_groups(User, Server, JID, NewGroupsString, PushString) ->
+    {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    NewGroups = string:tokens(NewGroupsString, ";"),
+    Push = list_to_atom(PushString),
+    case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(User, Server)} of
+    {true, true} ->
+	case del_rosteritem_groups2(User, Server, JID, NewGroups, Push) of
+	ok ->
+	    {false, {response, [0]}};
+	Error ->
+	    ?INFO_MSG("Error found: ~n~p", [Error]),
+	    {false, {response, [1]}}
+	end;
+    _ ->
+	{false, {response, [404]}}
+    end.
+
+modify_rosteritem_groups(User, Server, JID, NewGroupsString, SubsString, PushString) ->
+    Nick = "", %% That information will not be used, anyway
+    Subs = list_to_atom(SubsString),
+    {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    NewGroups = string:tokens(NewGroupsString, ";"),
+    Push = list_to_atom(PushString),
+    case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(User, Server)} of
+    {true, true} ->
+	case modify_rosteritem_groups2(User, Server, JID, NewGroups, Push, Nick, Subs) of
+	ok ->
+	    {false, {response, [0]}};
+	Error ->
+	    ?INFO_MSG("Error found: ~n~p", [Error]),
+	    {false, {response, [1]}}
+	end;
+    _ ->
+	{false, {response, [404]}}
+    end.
+
+add_rosteritem_groups2(User, Server, JID, NewGroups, Push) ->
+    GroupsFun =
+	fun(Groups) ->
+		lists:usort(NewGroups ++ Groups)
+	end,
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push).
+
+del_rosteritem_groups2(User, Server, JID, NewGroups, Push) ->
+    GroupsFun =
+	fun(Groups) ->
+		Groups -- NewGroups
+	end,
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push).
+
+modify_rosteritem_groups2(User, Server, JID2, NewGroups, Push, Nick, Subs) when NewGroups == [] ->
+    JID1 = jlib:jid_to_string(jlib:make_jid(User, Server, "")),
+    case unlink_contacts(JID1, JID2) of
+	{atomic, ok} ->
+	    ok;
+	Error ->
+	    Error
+    end;
+modify_rosteritem_groups2(User, Server, JID, NewGroups, Push, Nick, Subs) ->
+    GroupsFun =
+	fun(_Groups) ->
+		NewGroups
+	end,
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push, NewGroups, Nick, Subs).
+
+change_rosteritem_group(User, Server, JID, GroupsFun, Push) ->
+    change_rosteritem_group(User, Server, JID, GroupsFun, Push, [], "", "both").
+
+change_rosteritem_group(User, Server, JID, GroupsFun, Push, NewGroups, Nick, Subs) ->
+    {RU, RS, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
+    LJID = {RU,RS,[]},
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    Result =
+	case roster_backend(LServer) of
+	    mnesia ->
+		mnesia:transaction(
+		  fun() ->
+			  case mnesia:read({roster, {LUser, LServer, LJID}}) of
+			      [#roster{} = Roster] ->
+				  NewGroups2 = GroupsFun(Roster#roster.groups),
+				  NewRoster = Roster#roster{groups = NewGroups2},
+				  mnesia:write(NewRoster),
+				  {ok, NewRoster#roster.name,
+				   NewRoster#roster.subscription,
+				   NewGroups2};
+			      _ ->
+				  not_in_roster
+			  end
+		  end);
+	    odbc ->
+		ejabberd_odbc:sql_transaction(
+		  LServer,
+		  fun() ->
+			  Username = ejabberd_odbc:escape(User),
+			  SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+			  case ejabberd_odbc:sql_query_t(
+				 ["select nick, subscription from rosterusers "
+				  "      where username='", Username, "' "
+				  "        and jid='", SJID, "';"]) of
+			      {selected, ["nick", "subscription"],
+			       [{Name, SSubscription}]} ->
+				  Subscription =
+				      case SSubscription of
+					  "B" -> both;
+					  "T" -> to;
+					  "F" -> from;
+					  _ -> none
+				      end,
+				  Groups =
+				      case odbc_queries:get_roster_groups(
+					     LServer, Username, SJID) of
+					  {selected, ["grp"], JGrps}
+					  when is_list(JGrps) ->
+					      [JGrp || {JGrp} <- JGrps];
+					  _ ->
+					      []
+				      end,
+				  NewGroups2 = GroupsFun(Groups),
+				  ejabberd_odbc:sql_query_t(
+				    ["delete from rostergroups "
+				     "      where username='", Username, "' "
+				     "        and jid='", SJID, "';"]),
+				  lists:foreach(
+				    fun(Group) ->
+					    ejabberd_odbc:sql_query_t(
+					      ["insert into rostergroups("
+					       "              username, jid, grp) "
+					       " values ('", Username, "',"
+					       "'", SJID, "',"
+					       "'", ejabberd_odbc:escape(Group), "');"])
+				    end,
+				    NewGroups2),
+				  {ok, Name, Subscription, NewGroups2};
+			      _ ->
+				  not_in_roster
+			  end
+		  end);
+	    none ->
+		%% Apollo change: force roster push anyway with success
+		{atomic, {ok, Nick, Subs, NewGroups}}
+	end,
+    case {Result, Push} of
+	{{atomic, {ok, Name, Subscription, NewGroups3}}, true} ->
+	    roster_push(User, Server, JID,
+			Name, atom_to_list(Subscription), NewGroups3),
+	    ok;
+	{{atomic, {ok, _Name, _Subscription, _NewGroups3}}, false} -> ok;
+	{{atomic, not_in_roster}, _} -> not_in_roster;
+	Error -> {error, Error}
+    end.
 
 %%%
 %%% PubSub
@@ -835,9 +1038,9 @@ add_rosteritem2(User, Server, JID, Nick, Group, Subscription, Push) ->
 							       {selected, ["username"],[]} ->
 								   ItemVals = record_to_string(Roster),
 								   ItemGroups = groups_to_string(Roster),
-								   odbc_queries:update_roster(Server, Username,
-											      SJID, ItemVals,
-											      ItemGroups);
+                                                                  ejabberd_odbc:sql_query_t(
+                                                                       odbc_queries:update_roster_sql(
+                                                                           Username, SJID, ItemVals, ItemGroups));
 							       _ ->
 								   already_added
 							   end
@@ -883,9 +1086,6 @@ del_rosteritem(User, Server, JID, Push) ->
     end,
     Result.
 
-link_contacts2(JID1, Nick1, JID2, Nick2, Push) ->
-    link_contacts2(JID1, Nick1, [], JID2, Nick2, [], Push).
-
 link_contacts2(JID1, Nick1, Group1, JID2, Nick2, Group2, Push) ->
     {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID1)),
     {U2, S2, _} = jlib:jid_tolower(jlib:string_to_jid(JID2)),
@@ -906,52 +1106,58 @@ roster_push(User, Server, JID, Nick, Subscription, Groups) ->
     LJID = jlib:make_jid(User, Server, ""),
     TJID = jlib:string_to_jid(JID),
     {TU, TS, _} = jlib:jid_tolower(TJID),
-
-    %% TODO: Problem: We assume that both user are local. More test
-    %% are needed to check if the JID is remote or not:
-
-    %% TODO: We need to probe user2 especially, if it is not local.
-    %% As a quick fix, I do not go for the probe solution however, because all users
-    %% are local
-    case Subscription of
-	"to" -> %% Probe second user to route his presence to modified user
-	    %% TODO: For now we assume both user are local so we do not, but we need to move to probe.
-	    set_roster(User, Server, TJID, Nick, Subscription, Groups);
-	"from" ->
-	    %% Send roster updates
-	    set_roster(User, Server, TJID, Nick, Subscription, Groups);
-	"both" ->
-	    %% Update both presence
-	    set_roster(User, Server, TJID, Nick, Subscription, Groups),
-	    UJID = jlib:make_jid(User, Server, ""),
-	    set_roster(TU, TS, UJID, Nick, Subscription, Groups);
-	_ ->
-	    %% Remove subscription
-	    set_roster(User, Server, TJID, Nick, "none", Groups)
-    end.
-
-
-set_roster(User, Server, TJID, Nick, Subscription, Groups) ->
-    GroupsXML = [{xmlelement, "group", [], [{xmlcdata, GroupString}]} || GroupString <- Groups],
-    Item = case Nick of
-	       "" -> [{"jid", jlib:jid_to_string(TJID)}, {"subscription", Subscription}];
-	       _ -> [{"jid", jlib:jid_to_string(TJID)}, {"name", Nick}, {"subscription", Subscription}]
-	   end,
-    Result = jlib:iq_to_xml(#iq{type = set, xmlns = ?NS_ROSTER, id = "push",
-				sub_el = [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}],
-					   [{xmlelement, "item", Item, GroupsXML}]}]}),
-    lists:foreach(fun(Session) ->
-			  JID = jlib:make_jid(Session#session.usr),
-			  ejabberd_router:route(JID, JID, Result),
-			  PID = element(2, Session#session.sid),
-			  ejabberd_c2s:add_rosteritem(PID, TJID, list_to_atom(Subscription)) %% TODO: Better error management
- 		  end, get_sessions(User, Server)).
-
+    Presence =
+        {xmlelement, "presence",
+         [{"type",
+           case Subscription of
+               "remove" -> "unsubscribed";
+               "none" -> "unsubscribe";
+               "both" -> "subscribed";
+               _ -> "subscribe"
+           end}], []},
+    ItemAttrs =
+        case Nick of
+            "" -> [{"jid", JID}, {"subscription", Subscription}];
+            _ -> [{"jid", JID}, {"name", Nick}, {"subscription", Subscription}]
+        end,
+    ItemGroups =
+        lists:map(fun(G) ->
+                          {xmlelement, "group", [], [{xmlcdata, G}]}
+                  end, Groups),
+    Result =
+        jlib:iq_to_xml(
+          #iq{type = set, xmlns = ?NS_ROSTER, id = "push",
+              lang = "langxmlrpc-en",
+              sub_el = [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}],
+                       [{xmlelement, "item", ItemAttrs, ItemGroups}]}]}),
+   %% ejabberd_router:route(TJID, LJID, Presence),
+   %% ejabberd_router:route(LJID, LJID, Result),
+   lists:foreach(
+     fun(Resource) ->
+            UJID = jlib:make_jid(User, Server, Resource),
+            ejabberd_router:route(TJID, UJID, Presence),
+            ejabberd_router:route(UJID, UJID, Result),
+            case Subscription of
+                "remove" -> none;
+                _ ->
+                    lists:foreach(
+                      fun(TR) ->
+                              ejabberd_router:route(
+                                jlib:make_jid(TU, TS, TR), UJID,
+                                {xmlelement, "presence", [], []})
+                      end, get_resources(TU, TS))
+            end
+     end, [R || R <- get_resources(User, Server)]).
 
 roster_backend(Server) ->
-    case lists:member(mod_roster, gen_mod:loaded_modules(Server)) of
-	true -> mnesia;
-	_ -> odbc % we assume that
+    Modules = gen_mod:loaded_modules(Server),
+    Mnesia = lists:member(mod_roster, Modules),
+    Odbc = lists:member(mod_roster_odbc, Modules),
+    if Mnesia -> mnesia;
+    true ->
+        if Odbc -> odbc;
+        true -> none
+        end
     end.
 
 record_to_string(#roster{us = {User, _Server},
@@ -1013,7 +1219,7 @@ format_roster([#roster{jid=JID, name=Nick, groups=Group,
 		       subscription=Subs, ask=Ask}|Items], Structs) ->
     {User,Server,_Resource} = JID,
     Struct = {lists:flatten([User,"@",Server]),
-	      extract_group(Group),
+	      Group,
 	      Nick,
 	      atom_to_list(Subs),
 	      atom_to_list(Ask)
@@ -1053,7 +1259,12 @@ format_roster_with_presence([#roster{jid=JID, name=Nick, groups=Group,
     format_roster_with_presence(Items, [Struct|Structs]).
 
 extract_group([]) -> [];
-extract_group([Group|_Groups]) -> Group.
+%extract_group([Group|_Groups]) -> Group.
+extract_group(Groups) -> string:join(Groups, ";").
+
+extract_groups([]) -> [];
+%extract_groups([Group|_Groups]) -> Group.
+extract_groups(Groups) -> {list, Groups}.
 
 %% -----------------------------
 %% Internal session handling
