@@ -525,8 +525,8 @@ relay_messages(MRef, TRef, Clone, Queue) ->
 
 relay_messages(MRef, TRef, Clone) ->
     receive
-	{'DOWN', MRef, process, Clone, Reason} ->
-	    Reason;
+	{'DOWN', MRef, process, Clone, _Reason} ->
+	    normal;
 	{'EXIT', _Parent, _Reason} ->
 	    {migrated, Clone};
 	{timeout, TRef, timeout} ->
@@ -563,15 +563,7 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 				 Time1
 			 end,
 	    Now = now(),
-	    Reason = case catch rpc:call(Node, M, F, A, RPCTimeout) of
-			 {badrpc, timeout} ->
-			     normal;
-			 {badrpc, _} = Err ->
-			     {migration_error, Err};
-			 {'EXIT', _} = Err ->
-			     {migration_error, Err};
-			 {error, _} = Err ->
-			     {migration_error, Err};
+	    Reason = case catch rpc_call(Node, M, F, A, RPCTimeout) of
 			 {ok, Clone} ->
 			     process_flag(trap_exit, true),
 			     MRef = erlang:monitor(process, Clone),
@@ -579,8 +571,8 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 			     TimeLeft = lists:max([Time1 - NowDiff, 0]),
 			     TRef = erlang:start_timer(TimeLeft, self(), timeout),
 			     relay_messages(MRef, TRef, Clone, Queue);
-			 Reply ->
-			     {migration_error, {bad_reply, Reply}}
+			 _ ->
+			     normal
 		     end,
 	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, []);
 	{stop, Reason, NStateData} ->
@@ -628,15 +620,7 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 				 Time1
 			 end,
 	    Now = now(),
-	    Reason = case catch rpc:call(Node, M, F, A, RPCTimeout) of
-			 {badrpc, timeout} ->
-			     normal;
-			 {badrpc, R} ->
-			     {migration_error, R};
-			 {'EXIT', R} ->
-			     {migration_error, R};
-			 {error, R} ->
-			     {migration_error, R};
+	    Reason = case catch rpc_call(Node, M, F, A, RPCTimeout) of
 			 {ok, Clone} ->
 			     process_flag(trap_exit, true),
 			     MRef = erlang:monitor(process, Clone),
@@ -644,8 +628,8 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 			     TimeLeft = lists:max([Time1 - NowDiff, 0]),
 			     TRef = erlang:start_timer(TimeLeft, self(), timeout),
 			     relay_messages(MRef, TRef, Clone, Queue);
-			 Reply ->
-			     {migration_error, {bad_reply, Reply}}
+			 _ ->
+			     normal
 		     end,
 	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, Debug);
 	{stop, Reason, NStateData} ->
@@ -831,4 +815,35 @@ message_queue_len(#limits{max_queue = MaxQueue}, QueueLen) ->
 	    throw({process_limit, {max_queue, N + QueueLen}});
 	_ ->
 	    ok
+    end.
+
+rpc_call(Node, Mod, Fun, Args, Timeout) ->
+    Ref = make_ref(),
+    Caller = self(),
+    F = fun() ->
+		group_leader(whereis(user), self()),
+		case catch apply(Mod, Fun, Args) of
+		    {'EXIT', _} = Err ->
+			Caller ! {Ref, {badrpc, Err}};
+		    Result ->
+			Caller ! {Ref, Result}
+		end
+	end,
+    Pid = spawn(Node, F),
+    MRef = erlang:monitor(process, Pid),
+    receive
+	{Ref, Result} ->
+	    erlang:demonitor(MRef, [flush]),
+	    Result;
+	{'DOWN', MRef, _, _, Reason} ->
+	    {badrpc, Reason}
+    after Timeout ->
+	    erlang:demonitor(MRef, [flush]),
+	    catch exit(Pid, kill),
+	    receive
+		{Ref, Result} ->
+		    Result
+	    after 0 ->
+		    {badrpc, timeout}
+	    end
     end.

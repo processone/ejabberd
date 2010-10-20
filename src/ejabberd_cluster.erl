@@ -10,7 +10,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, get_node/1, get_node_new/1, announce/0,
+-export([start_link/0, get_node/1, get_node_new/1, announce/0, shutdown/0,
 	 node_id/0, get_node_by_id/1, get_nodes/0, rehash_timeout/0]).
 
 %% gen_server callbacks
@@ -68,6 +68,14 @@ get_node_by_id(NodeID) ->
 	    node()
     end.
 
+shutdown() ->
+    lists:foreach(
+      fun(Node) when Node /= node() ->
+	      {ejabberd_cluster, Node} ! {node_down, node()};
+	 (_) ->
+	      ok
+      end, get_nodes()).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -117,6 +125,10 @@ handle_info({node_ready, Node}, State) ->
     timer:sleep(?REHASH_TIMEOUT),
     ?INFO_MSG("adding node ~p to hash", [Node]),
     append_node(?HASHTBL, Node),
+    {noreply, State};
+handle_info({node_down, Node}, State) ->
+    delete_node(?HASHTBL, Node),
+    delete_node(?HASHTBL_NEW, Node),
     {noreply, State};
 handle_info({nodedown, Node, _}, State) ->
     ?INFO_MSG("node ~p goes down", [Node]),
