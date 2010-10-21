@@ -1048,7 +1048,10 @@ add_rosteritem2(User, Server, JID, Nick, Group, Subscription, Push) ->
 		    {atomic, already_added} -> {atomic, already_added};
 		    {atomic, _} -> {atomic, ok};
 		    Error -> Error
-		end
+		end;
+	    none ->
+		%% If no known mod_roster is enabled, still let the code to proceed
+		{atomic, ok}
 	end,
     case {Result, Push} of
 	{{atomic, already_added}, _} -> ok;  %% No need for roster push
@@ -1077,7 +1080,10 @@ del_rosteritem(User, Server, JID, Push) ->
 								end) of
 			 {atomic, _} -> {atomic, ok};
 			 Error -> Error
-		     end
+		     end;
+		none ->
+		    %% If no known mod_roster is enabled, still let the code to proceed
+		    {atomic, ok}
 	     end,
     case {Result, Push} of
 	{{atomic, ok}, true} -> roster_push(User, Server, JID, "", "remove", []);
