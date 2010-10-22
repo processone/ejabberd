@@ -158,8 +158,10 @@ tls_to_tcp(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
 recv(Socket, Length) ->
     recv(Socket, Length, infinity).
 recv(#tlssock{tcpsock = TCPSocket} = TLSSock,
-     Length, Timeout) ->
-    case gen_tcp:recv(TCPSocket, Length, Timeout) of
+     _Length, Timeout) ->
+    %% The Length argument cannot be used for gen_tcp:recv/3, because the
+    %% compressed size does not equal the desired uncompressed one.
+    case gen_tcp:recv(TCPSocket, 0, Timeout) of
 	{ok, Packet} ->
 	    recv_data(TLSSock, Packet);
 	{error, _Reason} = Error ->
