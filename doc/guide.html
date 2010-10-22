@@ -819,11 +819,12 @@ use STARTTLS for s2s connections.
 file containing a SSL certificate.
 </DD><DT CLASS="dt-description"><B><TT>{domain_certfile, Domain, Path}</TT></B></DT><DD CLASS="dd-description"> 
 Full path to the file containing the SSL certificate for a specific domain.
-</DD><DT CLASS="dt-description"><B><TT>{outgoing_s2s_options, Methods, Timeout}</TT></B></DT><DD CLASS="dd-description"> 
+</DD><DT CLASS="dt-description"><B><TT>{outgoing_s2s_options, [Family, ...], Timeout}</TT></B></DT><DD CLASS="dd-description"> 
 Specify which address families to try, in what order, and connect timeout in milliseconds.
 By default it first tries connecting with IPv4, if that fails it tries using IPv6,
-with a timeout of 10000 milliseconds.
-</DD><DT CLASS="dt-description"><B><TT>{s2s_dns_options, [ {Property, Value}, ...]}</TT></B></DT><DD CLASS="dd-description">
+with a timeout of 10000 milliseconds:
+<PRE CLASS="verbatim">{outgoing_s2s_options, [ipv4, ipv6], 10000}.
+</PRE></DD><DT CLASS="dt-description"><B><TT>{s2s_dns_options, [ {Property, Value}, ...]}</TT></B></DT><DD CLASS="dd-description">
 Define properties to use for DNS resolving.
 Allowed Properties are: <TT>timeout</TT> in seconds which default value is <TT>10</TT>
 and <TT>retries</TT> which default value is <TT>2</TT>.
