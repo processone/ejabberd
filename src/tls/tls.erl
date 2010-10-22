@@ -193,7 +193,7 @@ recv_data1(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 	    {error, binary_to_list(Error)}
     end.
 
-send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
+send(#tlssock{tcpsock = TCPSocket, tlsport = Port} = TLSSock, Packet) ->
     case port_control(Port, ?SET_DECRYPTED_OUTPUT, Packet) of
 	<<0>> ->
 	    %?PRINT("OUT: ~p~n", [{TCPSocket, lists:flatten(Packet)}]),
@@ -210,7 +210,7 @@ send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
 		{timeout, _Timer, _} ->
 		    {error, timeout}
 	    after 100 ->
-		    send(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet)
+		    send(TLSSock, Packet)
 	    end
     end.
 
