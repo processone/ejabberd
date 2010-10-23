@@ -762,8 +762,8 @@ modify_rosteritem_groups(User, Server, JID, NewGroupsString, SubsString, PushStr
     {U1, S1, _} = jlib:jid_tolower(jlib:string_to_jid(JID)),
     NewGroups = string:tokens(NewGroupsString, ";"),
     Push = list_to_atom(PushString),
-    case {ejabberd_auth:is_user_exists(U1, S1), ejabberd_auth:is_user_exists(User, Server)} of
-    {true, true} ->
+    case ejabberd_auth:is_user_exists(User, Server) of
+    true ->
 	case modify_rosteritem_groups2(User, Server, JID, NewGroups, Push, Nick, Subs) of
 	ok ->
 	    0;
