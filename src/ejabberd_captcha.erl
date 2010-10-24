@@ -36,7 +36,8 @@
 	 terminate/2, code_change/3]).
 
 -export([create_captcha/6, build_captcha_html/2, check_captcha/2,
-	 process_reply/1, process/2, is_feature_available/0]).
+	 process_reply/1, process/2, is_feature_available/0,
+	 create_captcha_x/4, create_captcha_x/5]).
 
 -include("jlib.hrl").
 -include("ejabberd.hrl").
@@ -112,6 +113,40 @@ create_captcha(Id, SID, From, To, Lang, Args)
 	    error
     end.
 
+create_captcha_x(SID, To, Lang, HeadEls) ->
+    create_captcha_x(SID, To, Lang, HeadEls, []).
+
+create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
+    case create_image() of
+	{ok, Type, Key, Image} ->
+	    Id = randoms:get_string(),
+	    B64Image = jlib:encode_base64(binary_to_list(Image)),
+	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
+	    Data = {xmlelement, "data",
+		    [{"xmlns", ?NS_BOB}, {"cid", CID},
+		     {"max-age", "0"}, {"type", Type}],
+		    [{xmlcdata, B64Image}]},
+	    Captcha =
+		{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+		 [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}) | HeadEls] ++
+		 [?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
+		  ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
+		  ?VFIELD("hidden", "sid", {xmlcdata, SID}),
+		  {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
+		   [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
+		     [{xmlelement, "uri", [{"type", Type}],
+		       [{xmlcdata, "cid:" ++ CID}]}]}]}] ++ TailEls},
+	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
+	    case ?T(mnesia:write(#captcha{id=Id, key=Key, tref=Tref})) of
+		ok ->
+		    {ok, [Captcha, Data]};
+		_Err ->
+		    error
+	    end;
+	_ ->
+	    error
+    end.
+
 %% @spec (Id::string(), Lang::string()) -> {FormEl, {ImgEl, TextEl, IdEl, KeyEl}} | captcha_not_found
 %% where FormEl = xmlelement()
 %%       ImgEl = xmlelement()
@@ -155,10 +190,18 @@ check_captcha(Id, ProvidedKey) ->
 	       mnesia:delete({captcha, Id}),
 	       erlang:cancel_timer(Tref),
 	       if StoredKey == ProvidedKey ->
-		       Pid ! {captcha_succeed, Args},
+		       if is_pid(Pid) ->
+			       Pid ! {captcha_succeed, Args};
+			  true ->
+			       ok
+		       end,
 		       captcha_valid;
 		  true ->
-		       Pid ! {captcha_failed, Args},
+		       if is_pid(Pid) ->
+			       Pid ! {captcha_failed, Args};
+			  true ->
+			       ok
+		       end,
 		       captcha_non_valid
 	       end;
 	   _ ->
@@ -166,24 +209,32 @@ check_captcha(Id, ProvidedKey) ->
        end).
 
 
-process_reply({xmlelement, "captcha", _, _} = El) ->
+process_reply({xmlelement, _, _, _} = El) ->
     case xml:get_subtag(El, "x") of
 	false ->
 	    {error, malformed};
 	Xdata ->
 	    Fields = jlib:parse_xdata_submit(Xdata),
-	    case {proplists:get_value("challenge", Fields),
-		  proplists:get_value("ocr", Fields)} of
+	    case catch {proplists:get_value("challenge", Fields),
+			proplists:get_value("ocr", Fields)} of
 		{[Id|_], [OCR|_]} ->
 		    ?T(case mnesia:read(captcha, Id, write) of
 			   [#captcha{pid=Pid, args=Args, key=Key, tref=Tref}] ->
 			       mnesia:delete({captcha, Id}),
 			       erlang:cancel_timer(Tref),
 			       if OCR == Key ->
-				       Pid ! {captcha_succeed, Args},
+				       if is_pid(Pid) ->
+					       Pid ! {captcha_succeed, Args};
+					  true ->
+					       ok
+				       end,
 				       ok;
 				  true ->
-				       Pid ! {captcha_failed, Args},
+				       if is_pid(Pid) ->
+					       Pid ! {captcha_failed, Args};
+					  true ->
+					       ok
+				       end,
 				       {error, bad_match}
 			       end;
 			   _ ->
@@ -266,7 +317,11 @@ handle_info({remove_id, Id}, State) ->
     ?DEBUG("captcha ~p timed out", [Id]),
     _ = ?T(case mnesia:read(captcha, Id, write) of
 	       [#captcha{args=Args, pid=Pid}] ->
-		   Pid ! {captcha_failed, Args},
+		   if is_pid(Pid) ->
+			   Pid ! {captcha_failed, Args};
+		      true ->
+			   ok
+		   end,
 		   mnesia:delete({captcha, Id});
 	       _ ->
 		   ok

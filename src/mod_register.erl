@@ -93,6 +93,13 @@ process_iq(From, To, IQ) ->
 process_iq(From, To,
 	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ,
 	   Source) ->
+    IsCaptchaEnabled = case gen_mod:get_module_opt(
+			      To#jid.lserver, ?MODULE, captcha, false) of
+			   true ->
+			       true;
+			   _ ->
+			       false
+		       end,
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, "username"),
@@ -162,56 +169,119 @@ process_iq(From, To,
 		(UTag /= false) and (PTag /= false) ->
 		    User = xml:get_tag_cdata(UTag),
 		    Password = xml:get_tag_cdata(PTag),
-		    case From of
-			#jid{user = User, lserver = Server} ->
-			    try_set_password(User, Server, Password, IQ, SubEl);
-			_ ->
-			    case check_from(From, Server) of
-				allow ->
-				    case try_register(User, Server, Password,
-						      Source, Lang) of
-					ok ->
-					    IQ#iq{type = result,
-						  sub_el = [SubEl]};
-					{error, Error} ->
-					    IQ#iq{type = error,
-						  sub_el = [SubEl, Error]}
-				    end;
-				deny ->
+		    try_register_or_set_password(
+		      User, Server, Password, From,
+		      IQ, SubEl, Source, Lang, not IsCaptchaEnabled);
+		IsCaptchaEnabled ->
+		    case ejabberd_captcha:process_reply(SubEl) of
+			ok ->
+			    case process_xdata_submit(SubEl) of
+				{ok, User, Password} ->
+				    try_register_or_set_password(
+				      User, Server, Password, From,
+				      IQ, SubEl, Source, Lang, true);
+				_ ->
 				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_FORBIDDEN]}
-			    end
+					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+			    end;
+			{error, malformed} ->
+			    IQ#iq{type = error,
+				  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+			_ ->
+			    ErrText = "Captcha test failed",
+			    IQ#iq{type = error,
+				  sub_el = [SubEl,
+					    ?ERRT_NOT_ALLOWED(Lang, ErrText)]}
 		    end;
 		true ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
 	    end;
 	get ->
-	    {UsernameSubels, QuerySubels} =
+	    {IsRegistered, UsernameSubels, QuerySubels} =
 		case From of
 		    #jid{user = User, lserver = Server} ->
 			case ejabberd_auth:is_user_exists(User,Server) of
 			    true ->
-				{[{xmlcdata, User}], [{xmlelement, "registered", [], []}]};
+				{true, [{xmlcdata, User}],
+				 [{xmlelement, "registered", [], []}]};
 			    false ->
-				{[{xmlcdata, User}], []}
+				{false, [{xmlcdata, User}], []}
 			end;
 		    _ ->
-			{[], []}
+			{false, [], []}
 		end,
-	    IQ#iq{type = result,
-		  sub_el = [{xmlelement,
-			     "query",
-			     [{"xmlns", "jabber:iq:register"}],
-			     [{xmlelement, "instructions", [],
+	    if IsCaptchaEnabled and not IsRegistered ->
+		    InstrEl = {xmlelement, "instructions", [],
 			       [{xmlcdata,
 				 translate:translate(
 				   Lang,
 				   "Choose a username and password "
 				   "to register with this server")}]},
-			      {xmlelement, "username", [], UsernameSubels},
-			      {xmlelement, "password", [], []}
-			      | QuerySubels]}]}
+		    UField = {xmlelement, "field",
+			      [{"type", "text-single"},
+			       {"label", translate:translate(Lang, "User")},
+			       {"var", "username"}],
+			      [{xmlelement, "required", [], []}]},
+		    PField = {xmlelement, "field",
+			      [{"type", "text-private"},
+			       {"label", translate:translate(Lang, "Password")},
+			       {"var", "password"}],
+			      [{xmlelement, "required", [], []}]},
+		    case ejabberd_captcha:create_captcha_x(
+			   ID, To, Lang, [InstrEl, UField, PField]) of
+			{ok, CaptchaEls} ->
+			    IQ#iq{type = result,
+				  sub_el = [{xmlelement, "query",
+					     [{"xmlns", "jabber:iq:register"}],
+					     CaptchaEls}]};
+			error ->
+			    ErrText = "Unable to generate a captcha",
+			    IQ#iq{type = error,
+				  sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(
+						      Lang, ErrText)]}
+		    end;
+	       true ->
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement,
+				     "query",
+				     [{"xmlns", "jabber:iq:register"}],
+				     [{xmlelement, "instructions", [],
+				       [{xmlcdata,
+					 translate:translate(
+					   Lang,
+					   "Choose a username and password "
+					   "to register with this server")}]},
+				      {xmlelement, "username", [], UsernameSubels},
+				      {xmlelement, "password", [], []}
+				      | QuerySubels]}]}
+	    end
+    end.
+
+try_register_or_set_password(User, Server, Password, From, IQ,
+			     SubEl, Source, Lang, CaptchaSucceed) ->
+    case From of
+	#jid{user = User, lserver = Server} ->
+	    try_set_password(User, Server, Password, IQ, SubEl);
+	_ when CaptchaSucceed ->
+	    case check_from(From, Server) of
+		allow ->
+		    case try_register(User, Server, Password,
+				      Source, Lang) of
+			ok ->
+			    IQ#iq{type = result,
+				  sub_el = [SubEl]};
+			{error, Error} ->
+			    IQ#iq{type = error,
+				  sub_el = [SubEl, Error]}
+		    end;
+		deny ->
+		    IQ#iq{type = error,
+			  sub_el = [SubEl, ?ERR_FORBIDDEN]}
+	    end;
+	_ ->
+	    IQ#iq{type = error,
+		  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
     end.
 
 %% @doc Try to change password and return IQ response
@@ -417,3 +487,18 @@ get_time_string() -> write_time(erlang:localtime()).
 write_time({{Y,Mo,D},{H,Mi,S}}) ->
     io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 		  [Y, Mo, D, H, Mi, S]).
+
+process_xdata_submit(El) ->
+    case xml:get_subtag(El, "x") of
+        false ->
+	    error;
+        Xdata ->
+            Fields = jlib:parse_xdata_submit(Xdata),
+            case catch {proplists:get_value("username", Fields),
+			proplists:get_value("password", Fields)} of
+                {[User|_], [Pass|_]} ->
+		    {ok, User, Pass};
+		_ ->
+		    error
+	    end
+    end.
