@@ -49,7 +49,8 @@
 	 is_user_exists_in_other_modules/3,
 	 remove_user/2,
 	 remove_user/3,
-	 plain_password_required/1
+	 plain_password_required/1,
+	 entropy/1
 	]).
 
 -export([auth_modules/1]).
@@ -318,6 +319,29 @@ remove_user(User, Server, Password) ->
     end,
     R.
 
+%% @spec (IOList) -> non_negative_float()
+%% @doc Calculate informational entropy.
+entropy(IOList) ->
+    case binary_to_list(iolist_to_binary(IOList)) of
+	"" ->
+	    0.0;
+	S ->
+	    Set = lists:foldl(
+		    fun(C, [Digit, Printable, LowLetter, HiLetter, Other]) ->
+			    if C >= $a, C =< $z ->
+				    [Digit, Printable, 26, HiLetter, Other];
+			       C >= $0, C =< $9 ->
+				    [9, Printable, LowLetter, HiLetter, Other];
+			       C >= $A, C =< $Z ->
+				    [Digit, Printable, LowLetter, 26, Other];
+			       C >= 16#21, C =< 16#7e ->
+				    [Digit, 33, LowLetter, HiLetter, Other];
+			       true ->
+				    [Digit, Printable, LowLetter, HiLetter, 128]
+			    end
+		    end, [0, 0, 0, 0, 0], S),
+	    length(S) * math:log(lists:sum(Set))/math:log(2)
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions

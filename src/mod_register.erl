@@ -262,7 +262,7 @@ try_register_or_set_password(User, Server, Password, From, IQ,
 			     SubEl, Source, Lang, CaptchaSucceed) ->
     case From of
 	#jid{user = User, lserver = Server} ->
-	    try_set_password(User, Server, Password, IQ, SubEl);
+	    try_set_password(User, Server, Password, IQ, SubEl, Lang);
 	_ when CaptchaSucceed ->
 	    case check_from(From, Server) of
 		allow ->
@@ -285,18 +285,25 @@ try_register_or_set_password(User, Server, Password, From, IQ,
     end.
 
 %% @doc Try to change password and return IQ response
-try_set_password(User, Server, Password, IQ, SubEl) ->
-    case ejabberd_auth:set_password(User, Server, Password) of
-	ok ->
-            IQ#iq{type = result, sub_el = [SubEl]};
-	{error, empty_password} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-	{error, not_allowed} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-	{error, invalid_jid} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
-	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+try_set_password(User, Server, Password, IQ, SubEl, Lang) ->
+    case is_strong_password(Server, Password) of
+	true ->
+	    case ejabberd_auth:set_password(User, Server, Password) of
+		ok ->
+		    IQ#iq{type = result, sub_el = [SubEl]};
+		{error, empty_password} ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+		{error, not_allowed} ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+		{error, invalid_jid} ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
+		_ ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+	    end;
+	false ->
+	    ErrText = "The password is too weak",
+	    IQ#iq{type = error,
+		  sub_el = [SubEl, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)]}
     end.
 
 try_register(User, Server, Password, Source, Lang) ->
@@ -312,23 +319,30 @@ try_register(User, Server, Password, Source, Lang) ->
 		allow ->
 		    case check_timeout(Source) of
 			true ->
-			    case ejabberd_auth:try_register(User, Server, Password) of
-				{atomic, ok} ->
-				    send_welcome_message(JID),
-				    send_registration_notifications(JID, Source),
-				    ok;
-				Error ->
-				    remove_timeout(Source),
-				    case Error of
-					{atomic, exists} ->
-					    {error, ?ERR_CONFLICT};
-					{error, invalid_jid} ->
-					    {error, ?ERR_JID_MALFORMED};
-					{error, not_allowed} ->
-					    {error, ?ERR_NOT_ALLOWED};
-					{error, _Reason} ->
-					    {error, ?ERR_INTERNAL_SERVER_ERROR}
-				    end
+			    case is_strong_password(Server, Password) of
+				true ->
+				    case ejabberd_auth:try_register(
+					   User, Server, Password) of
+					{atomic, ok} ->
+					    send_welcome_message(JID),
+					    send_registration_notifications(JID, Source),
+					    ok;
+					Error ->
+					    remove_timeout(Source),
+					    case Error of
+						{atomic, exists} ->
+						    {error, ?ERR_CONFLICT};
+						{error, invalid_jid} ->
+						    {error, ?ERR_JID_MALFORMED};
+						{error, not_allowed} ->
+						    {error, ?ERR_NOT_ALLOWED};
+						{error, _Reason} ->
+						    {error, ?ERR_INTERNAL_SERVER_ERROR}
+					    end
+				    end;
+				false ->
+				    ErrText = "The password is too weak",
+				    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
 			    end;
 			false ->
 			    ErrText = "Users are not allowed to register "
@@ -501,4 +515,19 @@ process_xdata_submit(El) ->
 		_ ->
 		    error
 	    end
+    end.
+
+is_strong_password(Server, Password) ->
+    LServer = jlib:nameprep(Server),
+    case gen_mod:get_module_opt(LServer, ?MODULE, password_strength, 0) of
+	Entropy when is_number(Entropy), Entropy >= 0 ->
+	    if Entropy == 0 ->
+		    true;
+	       true ->
+		    ejabberd_auth:entropy(Password) >= Entropy
+	    end;
+	Wrong ->
+	    ?WARNING_MSG("Wrong value for password_strength option: ~p",
+			 [Wrong]),
+	    true
     end.
