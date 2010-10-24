@@ -96,7 +96,7 @@ process_iq(From, To,
 	   #iq{type = Type, lang = Lang, payload = SubEl, id = ID} = IQ_Rec,
 	   Source) ->
     IsCaptchaEnabled = case gen_mod:get_module_opt(
-			      exmpp_jid:domain(To), ?MODULE, captcha, false) of
+			      exmpp_jid:domain(To), ?MODULE, captcha_protected, false) of
 			   true ->
 			       true;
 			   _ ->
