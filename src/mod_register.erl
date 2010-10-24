@@ -94,7 +94,7 @@ process_iq(From, To,
 	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ,
 	   Source) ->
     IsCaptchaEnabled = case gen_mod:get_module_opt(
-			      To#jid.lserver, ?MODULE, captcha, false) of
+			      To#jid.lserver, ?MODULE, captcha_protected, false) of
 			   true ->
 			       true;
 			   _ ->
