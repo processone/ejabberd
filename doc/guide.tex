@@ -3794,6 +3794,10 @@ Options:
   from s2s leads to uncontrolled massive accounts creation by rogue users.
 \titem{\{captcha\_protected, false|true\}} \ind{options!captcha\_protected}
   Protect registrations with CAPTCHA (see section \ref{captcha}). The default is \term{false}.
+\titem{\{password\_strength, Entropy\}} \ind{options!password\_strength}
+  This option sets the minimum informational entropy for passwords. The value \term{Entropy}
+  is a number of bits of entropy. The recommended minimum is 32 bits.
+  The default is 0, i.e. no checks are performed.
 \titem{\{welcome\_message, Message\}} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and
   the second string is the message body.

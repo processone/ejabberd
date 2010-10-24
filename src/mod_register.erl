@@ -254,7 +254,7 @@ try_register_or_set_password(User, Server, Password, From, IQ_Rec,
 			     SubEl, Source, Lang, CaptchaSucceed) ->
     case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
 	{User, Server} ->
-	    try_set_password(User, Server, Password, IQ_Rec, SubEl);
+	    try_set_password(User, Server, Password, IQ_Rec, SubEl, Lang);
 	_ when CaptchaSucceed ->
 	    case check_from(From, Server) of
 		allow ->
@@ -273,7 +273,16 @@ try_register_or_set_password(User, Server, Password, From, IQ_Rec,
     end.
 
 %% @doc Try to change password and return IQ response
-try_set_password(User, Server, Password, IQ_Rec, SubEl) ->
+try_set_password(User, Server, Password, IQ_Rec, SubEl, Lang) ->
+    case is_strong_password(Server, Password) of
+	true ->
+		try_set_password_strong(User, Server, Password, IQ_Rec, SubEl, Lang);
+	false ->
+	    %% ErrText = "The password is too weak",
+        exmpp_iq:error(IQ_Rec, 'not-acceptable')
+    end.
+
+try_set_password_strong(User, Server, Password, IQ_Rec, SubEl, _Lang) ->
     case ejabberd_auth:set_password(User, Server, Password) of
 	ok ->
             exmpp_iq:result(IQ_Rec, SubEl);
@@ -287,20 +296,7 @@ try_set_password(User, Server, Password, IQ_Rec, SubEl) ->
             exmpp_iq:error(IQ_Rec, 'internal-server-error')
     end.
 
-try_register(User, Server, Password, Source, Lang) ->
-    case exmpp_stringprep:is_node(User) of
-	false ->
-	    {error, 'bad-request'};
-	_ ->
-	    JID = exmpp_jid:make(User, 
-                                      Server),
-	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
-	    case acl:match_rule(Server, Access, JID) of
-		deny ->
-		    {error, 'forbidden'};
-		allow ->
-		    case check_timeout(Source) of
-			true ->
+try_register_strong(User, Server, Password, Source, _Lang, JID) ->
 			    case ejabberd_auth:try_register(User, Server, Password) of
 				{atomic, ok} ->
 				    send_welcome_message(JID),
@@ -318,6 +314,27 @@ try_register(User, Server, Password, Source, Lang) ->
 					{error, _Reason} ->
 					    {error, 'internal-server-error'}
 				    end
+				    end.
+
+try_register(User, Server, Password, Source, Lang) ->
+    case exmpp_stringprep:is_node(User) of
+	false ->
+	    {error, 'bad-request'};
+	_ ->
+	    JID = exmpp_jid:make(User, Server),
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    case acl:match_rule(Server, Access, JID) of
+		deny ->
+		    {error, 'forbidden'};
+		allow ->
+		    case check_timeout(Source) of
+			true ->
+			    case is_strong_password(Server, Password) of
+				true ->
+					try_register_strong(User, Server, Password, Source, Lang, JID);
+				false ->
+				    %%ErrText = "The password is too weak",
+				    {error, 'not-acceptable'}
 			    end;
 			false ->
 			    ErrText = "Users are not allowed to register "
@@ -491,4 +508,19 @@ process_xdata_submit(El) ->
 		_ ->
 		    error
 	    end
+    end.
+
+is_strong_password(Server, Password) ->
+    LServer = jlib:nameprep(Server),
+    case gen_mod:get_module_opt(LServer, ?MODULE, password_strength, 0) of
+	Entropy when is_number(Entropy), Entropy >= 0 ->
+	    if Entropy == 0 ->
+		    true;
+	       true ->
+		    ejabberd_auth:entropy(Password) >= Entropy
+	    end;
+	Wrong ->
+	    ?WARNING_MSG("Wrong value for password_strength option: ~p",
+			 [Wrong]),
+	    true
     end.
