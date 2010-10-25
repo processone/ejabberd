@@ -212,12 +212,17 @@ process_iq(From, To,
 			{false, [], []}
 		end,
 	    if IsCaptchaEnabled and not IsRegistered ->
+		    TopInstrEl = {xmlelement, "instructions", [],
+				  [{xmlcdata,
+				    translate:translate(
+				      Lang, "You need an x:data capable client "
+				      "with CAPTCHA support to register")}]},
 		    InstrEl = {xmlelement, "instructions", [],
 			       [{xmlcdata,
 				 translate:translate(
 				   Lang,
 				   "Choose a username and password "
-				   "to register with this server.")}]},
+				   "to register with this server")}]},
 		    UField = {xmlelement, "field",
 			      [{"type", "text-single"},
 			       {"label", translate:translate(Lang, "User")},
@@ -234,7 +239,7 @@ process_iq(From, To,
 			    IQ#iq{type = result,
 				  sub_el = [{xmlelement, "query",
 					     [{"xmlns", "jabber:iq:register"}],
-					     CaptchaEls}]};
+					     [TopInstrEl | CaptchaEls]}]};
 			error ->
 			    ErrText = "Unable to generate a captcha",
 			    IQ#iq{type = error,
