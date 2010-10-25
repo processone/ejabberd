@@ -522,6 +522,16 @@
 		 ]},
   {mod_register, [
 		  %%
+		  %% Protect In-Band account registrations with CAPTCHA.
+		  %%
+		  %%{captcha_protected, true}.
+
+		  %%
+		  %% Set the minimum informational entropy for passwords.
+		  %%
+		  %%{password_strength, 32}.
+
+		  %%
 		  %% After successful registration, the user receives
 		  %% a message with this subject and body.
 		  %%
