@@ -457,6 +457,8 @@ parse_xdata_submit(El) ->
     case xml:get_attr_s("type", Attrs) of
 	"submit" ->
 	    lists:reverse(parse_xdata_fields(Els, []));
+	"form" -> %% This is a workaround to accept Psi's wrong forms
+	    lists:reverse(parse_xdata_fields(Els, []));
 	_ ->
 	    invalid
     end.
