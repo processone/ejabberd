@@ -239,6 +239,10 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 	          }
 	        ],
 	        children = [#xmlcdata{cdata = B64Image}]},
+	    HelpTxt = io_lib:format(
+			translate:translate(
+			  Lang, "Visit ~s if you don't see the image"),
+			[get_url(Id ++ "/image")]),
 	    Captcha =
 	      #xmlel{name = 'x',
 	        ns = ?NS_DATA_FORMS_s,
@@ -249,6 +253,8 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 	        ],
 	        children = [
 				?VFIELD(<<"hidden">>, <<"FORM_TYPE">>, #xmlcdata{cdata = ?NS_CAPTCHA_b}) | HeadEls] ++ [
+            #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
+             [?XMLATTR('type', <<"fixed">>), ?XMLATTR('label', HelpTxt)]},
 	          ?VFIELD(<<"hidden">>, <<"from">>, #xmlcdata{cdata = exmpp_jid:to_binary(To)}),
 	          ?VFIELD(<<"hidden">>, <<"challenge">>, #xmlcdata{cdata = list_to_binary(Id)}),
 	          ?VFIELD(<<"hidden">>, <<"sid">>, #xmlcdata{cdata = SID}),
