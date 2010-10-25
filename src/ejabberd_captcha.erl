@@ -126,10 +126,16 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 		    [{"xmlns", ?NS_BOB}, {"cid", CID},
 		     {"max-age", "0"}, {"type", Type}],
 		    [{xmlcdata, B64Image}]},
+	    HelpTxt = io_lib:format(
+			translate:translate(
+			  Lang, "Visit ~s if you don't see the image"),
+			[get_url(Id ++ "/image")]),
 	    Captcha =
 		{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
 		 [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}) | HeadEls] ++
-		 [?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
+		 [{xmlelement, "field", [{"type", "fixed"}],
+		   [{xmlelement, "value", [], [{xmlcdata, HelpTxt}]}]},
+		  ?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
 		  ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
 		  ?VFIELD("hidden", "sid", {xmlcdata, SID}),
 		  {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
