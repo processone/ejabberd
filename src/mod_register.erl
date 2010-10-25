@@ -204,6 +204,14 @@ process_iq(From, To,
 			{false, [], []}
 		end,
 	    if IsCaptchaEnabled and not IsRegistered ->
+		    TopInstrEl =
+			#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions',
+			       children =
+				   [#xmlcdata{cdata =
+						  list_to_binary(
+						    translate:translate(Lang,
+				      "You need an x:data capable client "
+				      "with CAPTCHA support to register"))}]},
 		    InstrEl =
 			#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions',
 			       children =
@@ -230,7 +238,7 @@ process_iq(From, To,
 		    case ejabberd_captcha:create_captcha_x(
 			   ID, To, Lang, [InstrEl, UField, PField]) of
 			{ok, CaptchaEls} ->
-				Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children = CaptchaEls},
+				Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children = [TopInstrEl | CaptchaEls]},
 				exmpp_iq:result(IQ_Rec, Result);
 			error ->
 			    %% ErrText = "Unable to generate a captcha",
