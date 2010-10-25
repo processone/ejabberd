@@ -217,7 +217,7 @@ process_iq(From, To,
 				 translate:translate(
 				   Lang,
 				   "Choose a username and password "
-				   "to register with this server")}]},
+				   "to register with this server.")}]},
 		    UField = {xmlelement, "field",
 			      [{"type", "text-single"},
 			       {"label", translate:translate(Lang, "User")},
