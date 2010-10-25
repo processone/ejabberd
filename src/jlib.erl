@@ -60,6 +60,8 @@ parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
     case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of
 	"submit" ->
 	    lists:reverse(parse_xdata_fields(Els, []));
+	"form" -> %% This is a workaround to accept Psi's wrong forms
+	    lists:reverse(parse_xdata_fields(Els, []));
 	_ ->
 	    invalid
     end.
