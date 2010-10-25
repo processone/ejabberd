@@ -78,6 +78,7 @@
 		oor_appid = "",
 		oor_unread = 0,
 		oor_unread_users = ?SETS:new(),
+		oor_unread_client = 0,
                 oor_offline = false,
 		ack_enabled = false,
 		ack_counter = 0,

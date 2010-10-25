@@ -2772,7 +2772,7 @@ send_out_of_reception_message(StateData, From, To,
 		       StateData#state.jid,
 		       StateData#state.oor_notification,
 		       Msg,
-		       Unread,
+		       Unread + StateData#state.oor_unread_client,
 		       Sound,
 		       AppID,
 		       SFrom]),
@@ -3145,6 +3145,18 @@ process_push_iq(From, To,
 				    oor_send_body = all},
 		NSD2 = start_keepalive_timer(NSD1),
 		{{result, []}, NSD2};
+	    {xmlelement, "badge", _, _} ->
+		SBadge = xml:get_path_s(El, [{attr, "unread"}]),
+		Badge =
+		    case catch list_to_integer(SBadge) of
+			B when is_integer(B) ->
+			    B;
+			_ ->
+			    0
+		    end,
+		NSD1 =
+		    StateData#state{oor_unread_client = Badge},
+		{{result, []}, NSD1};
 	    _ ->
 		{{error, ?ERR_BAD_REQUEST}, StateData}
 	end,
