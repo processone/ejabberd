@@ -822,9 +822,8 @@ Full path to the file containing the SSL certificate for a specific domain.
 </DD><DT CLASS="dt-description"><B><TT>{outgoing_s2s_options, [Family, ...], Timeout}</TT></B></DT><DD CLASS="dd-description"> 
 Specify which address families to try, in what order, and connect timeout in milliseconds.
 By default it first tries connecting with IPv4, if that fails it tries using IPv6,
-with a timeout of 10000 milliseconds:
-<PRE CLASS="verbatim">{outgoing_s2s_options, [ipv4, ipv6], 10000}.
-</PRE></DD><DT CLASS="dt-description"><B><TT>{s2s_dns_options, [ {Property, Value}, ...]}</TT></B></DT><DD CLASS="dd-description">
+with a timeout of 10000 milliseconds.
+</DD><DT CLASS="dt-description"><B><TT>{s2s_dns_options, [ {Property, Value}, ...]}</TT></B></DT><DD CLASS="dd-description">
 Define properties to use for DNS resolving.
 Allowed Properties are: <TT>timeout</TT> in seconds which default value is <TT>10</TT>
 and <TT>retries</TT> which default value is <TT>2</TT>.
@@ -906,6 +905,7 @@ section&#XA0;<A HREF="#webadmin">4.3</A>. The socket only listens connections to
 {s2s_use_starttls, true}.
 {s2s_certfile, "/etc/ejabberd/server.pem"}.
 {domain_certfile, "example.com", "/etc/ejabberd/example_com.pem"}.
+{outgoing_s2s_options, [ipv4, ipv6], 10000}.
 </PRE><P>In this example, the following configuration defines that:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 c2s connections are listened for on port 5222 (all IPv4 addresses) and
@@ -2970,6 +2970,12 @@ restrictions by default).
 doesn&#X2019;t allow to register new accounts from s2s or existing c2s sessions. You can
 change it by defining access rule in this option. Use with care: allowing registration
 from s2s leads to uncontrolled massive accounts creation by rogue users.
+</DD><DT CLASS="dt-description"><B><TT>{captcha_protected, false|true}</TT></B></DT><DD CLASS="dd-description"> 
+Protect registrations with CAPTCHA (see section <A HREF="#captcha">3.1.8</A>). The default is <TT>false</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{password_strength, Entropy}</TT></B></DT><DD CLASS="dd-description"> 
+This option sets the minimum informational entropy for passwords. The value <TT>Entropy</TT>
+is a number of bits of entropy. The recommended minimum is 32 bits.
+The default is 0, i.e. no checks are performed.
 </DD><DT CLASS="dt-description"><B><TT>{welcome_message, Message}</TT></B></DT><DD CLASS="dd-description"> Set a welcome message that
 is sent to each newly registered account. The first string is the subject, and
 the second string is the message body.
