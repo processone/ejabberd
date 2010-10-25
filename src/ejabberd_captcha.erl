@@ -239,10 +239,11 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 	          }
 	        ],
 	        children = [#xmlcdata{cdata = B64Image}]},
-	    HelpTxt = io_lib:format(
-			translate:translate(
-			  Lang, "Visit ~s if you don't see the image"),
-			[get_url(Id ++ "/image")]),
+            HelpTxt = translate:translate(
+                                Lang,
+                                 "If you don't see the CAPTCHA image here, "
+                                 "visit the web page."),
+           Imageurl = list_to_binary(get_url(Id ++ "/image")),
 	    Captcha =
 	      #xmlel{name = 'x',
 	        ns = ?NS_DATA_FORMS_s,
@@ -255,6 +256,25 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 				?VFIELD(<<"hidden">>, <<"FORM_TYPE">>, #xmlcdata{cdata = ?NS_CAPTCHA_b}) | HeadEls] ++ [
             #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
              [?XMLATTR('type', <<"fixed">>), ?XMLATTR('label', HelpTxt)]},
+	          ?VFIELD(<<"hidden">>, <<"captchahidden">>, #xmlcdata{cdata = <<"workaround-for-psi">>}),
+
+  #xmlel{name = 'field',
+         attrs = [
+           #xmlattr{name = 'type',
+             value = <<"text-single">>
+           },
+           #xmlattr{name = 'label',
+             value = translate:translate(Lang, "CAPTCHA web page")
+           },
+           #xmlattr{name = 'var',
+             value = <<"url">>
+           }
+         ],
+         children = [
+           #xmlel{name = 'value',
+			   children = [#xmlcdata{cdata = Imageurl}]
+           }
+         ]},
 	          ?VFIELD(<<"hidden">>, <<"from">>, #xmlcdata{cdata = exmpp_jid:to_binary(To)}),
 	          ?VFIELD(<<"hidden">>, <<"challenge">>, #xmlcdata{cdata = list_to_binary(Id)}),
 	          ?VFIELD(<<"hidden">>, <<"sid">>, #xmlcdata{cdata = SID}),
