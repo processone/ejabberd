@@ -161,6 +161,7 @@ create_captcha(SID, From, To, Lang, Args)
 	              }	                      
 	            ],
 	            children = [
+					#xmlel{ns = ?NS_DATA_FORMS, name = 'required'},
 	              #xmlel{name = 'media',
 	                ns = ?NS_DATA_FORMS_MEDIA_s,
 	                children = [
@@ -288,6 +289,7 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 	              }
 	            ],
 	            children = [
+					#xmlel{ns = ?NS_DATA_FORMS, name = 'required'},
 	              #xmlel{name = 'media',
 	                ns = ?NS_DATA_FORMS_MEDIA_s,
 	                children = [
