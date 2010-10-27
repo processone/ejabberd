@@ -1926,7 +1926,8 @@ process_presence_probe(From, To, StateData) ->
 			end,
 		    Timestamp = StateData#state.pres_timestamp,
 		    Packet1 = xml:append_subtags(
-			       Packet,
+				xml:remove_subtags(
+				  Packet, "x", {"xmlns", ?NS_DELAY91}),
 			       %% To is the one sending the presence (the target of the probe)
 			       [jlib:timestamp_to_xml(Timestamp, utc, To, ""),
 				%% TODO: Delete the next line once XEP-0091 is Obsolete
@@ -2855,7 +2856,9 @@ enqueue(StateData, From, To, Packet) ->
 	            StateData#state{pres_queue = NewQueue}
             end;
 	true ->
-	    CleanPacket = xml:remove_subtags(Packet, "x", {"xmlns", ?NS_P1_PUSHED}),
+	    CleanPacket = xml:remove_subtags(
+			    xml:remove_subtags(Packet, "x", {"xmlns", ?NS_P1_PUSHED}),
+			    "x", {"xmlns", ?NS_DELAY91}),
 	    Packet2 =
 		case CleanPacket of
 		    {xmlelement, "message" = Name, Attrs, Els} ->
