@@ -473,14 +473,17 @@ recv_data(State, Len, Acc) ->
     case State#state.trail of
 	[] ->
 	    case (State#state.sockmod):recv(State#state.socket,   Len, 300000) of
+		{ok, Binary} when is_binary(Binary) ->
+		    Data = binary_to_list(Binary),
+		    recv_data(State, Len - length(Data), Acc ++ Data);
 		{ok, Data} ->
-		    recv_data(State, Len - length(Data), [Acc | Data]);
+		    recv_data(State, Len - length(Data), Acc ++ Data);
 		_ ->
 		    ""
 	    end;
 	_ ->
 	    Trail = State#state.trail,
-	    recv_data(State#state{trail = ""}, Len - length(Trail), [Acc | Trail])
+	    recv_data(State#state{trail = ""}, Len - length(Trail), Acc ++ Trail)
     end.
 
 
