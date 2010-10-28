@@ -64,7 +64,7 @@
 
 %% @type level() = integer() | atom().
 
-%% @spec () -> [LevelOrdinal::integer(), [{Module::atom(), LevelOrdinal::integer()}]]
+%% @spec () -> {DefaultLevelOrdinal::integer(), [{Module::atom(), LevelOrdinal::integer()}]}
 %% @doc Get the default and all custom levels
 get() ->
     {DefaultLevel, _CustomLevels} = ejabberd_logger:get(),
@@ -75,7 +75,7 @@ get() ->
 	    erlang:error({no_such_loglevel, DefaultLevel})
     end.
 
-%% @spec (DefaultLevel::level() | {DefaultLevel::level(), [{Module::atom(), Level::level()]}) ->
+%% @spec (DefaultLevel::level() | {DefaultLevel::level(), [{Module::atom(), Level::level()}]}) ->
 %%       {module, ejabberd_logger}
 %% @doc Set the default and all custom levels
 set(DefaultLevel) when is_atom(DefaultLevel) orelse is_integer(DefaultLevel) ->
@@ -93,7 +93,7 @@ set({DefaultLevel, CustomLevels}) when is_list(CustomLevels) ->
 set(_) ->
     exit("Invalid loglevel format").
 
-%% @spec (Module::atom()::atom(), CustomLevel::level()) -> ok
+%% @spec (Module::atom(), CustomLevel::level()) -> ok
 %% @doc Set a custom level
 set_custom(Module, Level) ->
     {DefaultLevel, CustomLevels} = ejabberd_logger:get(),
