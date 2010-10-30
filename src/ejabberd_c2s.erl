@@ -196,8 +196,7 @@ init([{SockMod, Socket}, Opts]) ->
     %% Check if IP is blacklisted:
     case is_ip_blacklisted(IP) of
 	true ->
-	    ?INFO_MSG("Connection attempt from blacklisted IP: ~s",
-		      [jlib:ip_to_list(IP)]),
+	    ?INFO_MSG("Connection attempt from blacklisted IP: ~w", [IP]),
 	    {stop, normal};
 	false ->
 	    Socket1 =
