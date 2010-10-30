@@ -87,7 +87,13 @@ start(Module, SockMod, Socket, Opts) ->
 		    end,
 		    ReceiverMod:become_controller(Receiver, Pid);
 		{error, _Reason} ->
-		    SockMod:close(Socket)
+		    SockMod:close(Socket),
+		    case ReceiverMod of
+			ejabberd_receiver ->
+			    ReceiverMod:close(Receiver);
+			_ ->
+			    ok
+		    end
 	    end;
 	independent ->
 	    ok;
