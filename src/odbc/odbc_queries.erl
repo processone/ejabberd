@@ -121,6 +121,23 @@ update_t(Table, Fields, Vals, Where) ->
 	       ") values ('", join(Vals, "', '"), "');"])
     end.
 
+update(LServer, Table, Fields, Vals, Where) ->
+    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
+			   Fields, Vals),
+    case ejabberd_odbc:sql_query(
+	   LServer,
+	   ["update ", Table, " set ",
+	    join(UPairs, ", "),
+	    " where ", Where, ";"]) of
+	{updated, 1} ->
+	    ok;
+	_ ->
+	    ejabberd_odbc:sql_query(
+	      LServer,
+	      ["insert into ", Table, "(", join(Fields, ", "),
+	       ") values ('", join(Vals, "', '"), "');"])
+    end.
+
 %% F can be either a fun or a list of queries
 %% TODO: We should probably move the list of queries transaction
 %% wrapper from the ejabberd_odbc module to this one (odbc_queries)
@@ -134,14 +151,9 @@ get_last(LServer, Username) ->
        "where username='", Username, "'"]).
 
 set_last_t(LServer, Username, Seconds, State) ->
-    %% MREMOND: I think this should be turn into a non transactional behaviour
-    ejabberd_odbc:sql_transaction(
-      LServer,
-      fun() ->
-	      update_t("last", ["username", "seconds", "state"],
-		       [Username, Seconds, State],
-		       ["username='", Username, "'"])
-      end).
+    update(LServer, "last", ["username", "seconds", "state"],
+	   [Username, Seconds, State],
+	   ["username='", Username, "'"]).
 
 del_last(LServer, Username) ->
     ejabberd_odbc:sql_query(
