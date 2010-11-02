@@ -797,5 +797,8 @@ e(X) ->                     exit({bad_encode_base64_token, X}).
 %% Convert Erlang inet IP to list
 ip_to_list({IP, _Port}) ->
     ip_to_list(IP);
+ip_to_list({_,_,_,_,_,_,_,_} = Ipv6Address) ->
+    inet_parse:ntoa(Ipv6Address);
+%% This function clause could use inet_parse too:
 ip_to_list({A,B,C,D}) ->
     lists:flatten(io_lib:format("~w.~w.~w.~w",[A,B,C,D])).
