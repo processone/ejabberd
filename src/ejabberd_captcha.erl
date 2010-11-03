@@ -310,8 +310,7 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 	        ] ++ TailEls
 	      },
 	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
-	    case ets:insert(captcha, #captcha{id=Id, pid=self(), key=Key,
-					 tref=Tref}) of
+	    case ets:insert(captcha, #captcha{id=Id, key=Key, tref=Tref}) of
 		true ->
 		    {ok, [Captcha, Data]};
 		_Err ->
