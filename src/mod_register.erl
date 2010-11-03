@@ -96,7 +96,7 @@ process_iq(From, To,
 	   #iq{type = Type, lang = Lang, payload = SubEl, id = ID} = IQ_Rec,
 	   Source) ->
     IsCaptchaEnabled = case gen_mod:get_module_opt(
-			      exmpp_jid:domain(To), ?MODULE, captcha_protected, false) of
+			      exmpp_jid:domain_as_list(To), ?MODULE, captcha_protected, false) of
 			   true ->
 			       true;
 			   _ ->
@@ -504,7 +504,7 @@ write_time({{Y,Mo,D},{H,Mi,S}}) ->
 		  [Y, Mo, D, H, Mi, S]).
 
 process_xdata_submit(El) ->
-    case xml:get_subtag(El, "x") of
+    case exmpp_xml:get_element(El, x) of
         false ->
 	    error;
         Xdata ->
@@ -519,7 +519,7 @@ process_xdata_submit(El) ->
     end.
 
 is_strong_password(Server, Password) ->
-    LServer = jlib:nameprep(Server),
+    LServer = exmpp_stringprep:nameprep(Server),
     case gen_mod:get_module_opt(LServer, ?MODULE, password_strength, 0) of
 	Entropy when is_number(Entropy), Entropy >= 0 ->
 	    if Entropy == 0 ->

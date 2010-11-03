@@ -48,6 +48,7 @@
 -include("ejabberd.hrl").
 
 -record(ejabberd_module, {module_host, opts}).
+%% module_host = {Module::atom(), Host::string()}
 
 behaviour_info(callbacks) ->
     [{start, 2},

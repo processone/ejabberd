@@ -265,7 +265,7 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
              value = <<"text-single">>
            },
            #xmlattr{name = 'label',
-             value = translate:translate(Lang, "CAPTCHA web page")
+			   value = list_to_binary(translate:translate(Lang, "CAPTCHA web page"))
            },
            #xmlattr{name = 'var',
              value = <<"url">>
@@ -525,7 +525,7 @@ process(_Handlers, #request{method='POST', q=Q, lang=Lang, path=[_, Id]}) ->
 		%  }]},
 	  #xmlel{name = 'p',
 	    children = [
-	      #xmlcdata{cdata = translate:translate(Lang, "The captcha is valid.")}
+			#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "The captcha is valid."))}
 	    ]
 	  },
 	    ejabberd_web:make_xhtml([Form]);
