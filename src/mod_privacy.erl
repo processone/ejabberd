@@ -786,7 +786,12 @@ is_type_match(group, Value, _JID, _Subscription, Groups) ->
     lists:member(Value, Groups).
 
 
-remove_user(User, Server) ->
+%% The ejabberd hook provides the arguments as binaries, 
+%% but the mod_privacy internal functions provide them as strings.
+%% Once this module stores information as binaries, this incoherence will be solved.
+remove_user(User, Server) when is_binary(User) and is_binary(Server) ->
+	remove_user(binary_to_list(User), binary_to_list(Server));
+remove_user(User, Server) when is_list(User) and is_list(Server) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
     LServerB = list_to_binary(LServer),
