@@ -93,8 +93,15 @@ process_iq(From, To, IQ) ->
                               exmpp_jid:prep_resource_as_list(From)}).
 
 process_iq(From, To,
-	   #iq{type = Type, lang = Lang, payload = SubEl} = IQ_Rec,
+	   #iq{type = Type, lang = Lang, payload = SubEl, id = ID} = IQ_Rec,
 	   Source) ->
+    IsCaptchaEnabled = case gen_mod:get_module_opt(
+			      exmpp_jid:domain(To), ?MODULE, captcha, false) of
+			   true ->
+			       true;
+			   _ ->
+			       false
+		       end,
     case Type of
 	set ->
 	    UTag = exmpp_xml:get_element(SubEl, 'username'),
@@ -159,40 +166,77 @@ process_iq(From, To,
 		(UTag /= undefined) and (PTag /= undefined) ->
 		    User = exmpp_xml:get_cdata_as_list(UTag),
 		    Password = exmpp_xml:get_cdata_as_list(PTag),
-		    case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
-			{User, Server} ->
-			    try_set_password(User, Server, Password, IQ_Rec, SubEl);
+		    try_register_or_set_password(
+		      User, Server, Password, From,
+		      IQ_Rec, SubEl, Source, Lang, not IsCaptchaEnabled);
+		IsCaptchaEnabled ->
+		    case ejabberd_captcha:process_reply(SubEl) of
+			ok ->
+			    case process_xdata_submit(SubEl) of
+				{ok, User, Password} ->
+				    try_register_or_set_password(
+				      User, Server, Password, From,
+				      IQ_Rec, SubEl, Source, Lang, true);
+				_ ->
+				    exmpp_iq:error(IQ_Rec, 'bad-request')
+			    end;
+			{error, malformed} ->
+			    exmpp_iq:error(IQ_Rec, 'bad-request');
 			_ ->
-			    case check_from(From, Server) of
-				allow ->
-				    case try_register(User, Server, Password,
-						      Source, Lang) of
-					ok ->
-					    exmpp_iq:result(IQ_Rec, SubEl);
-					{error, Error} ->
-					    exmpp_iq:error(IQ_Rec, Error)
-				    end;
-				deny ->
-				    exmpp_iq:error(IQ_Rec, 'forbidden')
-			    end
-		    end;
+			    %% ErrText = "Captcha test failed",
+			    exmpp_iq:error(IQ_Rec, 'not-allowed')
+			end;
 		true ->
                     exmpp_iq:error(IQ_Rec, 'bad-request')
 	    end;
 	get ->
-	    {UsernameSubels, QuerySubels} =
+	    {IsRegistered, UsernameSubels, QuerySubels} =
 		case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
 		    {User, Server} when is_list(User) and is_list(Server) ->
 			case ejabberd_auth:is_user_exists(User,Server) of
 			    true ->
-				{[#xmlcdata{cdata = list_to_binary(User)}],
+				{true, [#xmlcdata{cdata = list_to_binary(User)}],
 				 [#xmlel{ns = ?NS_INBAND_REGISTER, name = 'registered'}]};
 			    false ->
-				{[#xmlcdata{cdata = list_to_binary(User)}], []}
+				{false, [#xmlcdata{cdata = list_to_binary(User)}], []}
 			end;
 		    _ ->
-			{[], []}
+			{false, [], []}
 		end,
+	    if IsCaptchaEnabled and not IsRegistered ->
+		    InstrEl =
+			#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions',
+			       children =
+				   [#xmlcdata{cdata =
+						  list_to_binary(
+						    translate:translate(Lang,
+									"Choose a username and password "
+									"to register with this server"))}]},
+		    UField = #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
+					[?XMLATTR('var', <<"username">>),
+					 ?XMLATTR('type', <<"text-single">>),
+					 ?XMLATTR('label', translate:translate(Lang, "User"))],
+				    children =
+					[#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]},
+		    PField =
+			#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
+				   [?XMLATTR('var', <<"password">>),
+				    ?XMLATTR('type', <<"text-private">>),
+				    ?XMLATTR('label', translate:translate(Lang, "Password"))],
+			       children = [
+					   #xmlel{ns = ?NS_DATA_FORMS, name = 'required'}
+					  ]
+			      },
+		    case ejabberd_captcha:create_captcha_x(
+			   ID, To, Lang, [InstrEl, UField, PField]) of
+			{ok, CaptchaEls} ->
+				Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children = CaptchaEls},
+				exmpp_iq:result(IQ_Rec, Result);
+			error ->
+			    %% ErrText = "Unable to generate a captcha",
+                    exmpp_iq:error(IQ_Rec, 'internal-server-error')
+		    end;
+	       true ->
             Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children =
 				[#xmlel{ns = ?NS_INBAND_REGISTER, name = 'instructions', children =
 					    [#xmlcdata{cdata = list_to_binary(
@@ -203,6 +247,29 @@ process_iq(From, To,
 				 #xmlel{ns = ?NS_INBAND_REGISTER, name = 'password'}
 				 | QuerySubels]},
             exmpp_iq:result(IQ_Rec, Result)
+	    end
+    end.
+
+try_register_or_set_password(User, Server, Password, From, IQ_Rec,
+			     SubEl, Source, Lang, CaptchaSucceed) ->
+    case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
+	{User, Server} ->
+	    try_set_password(User, Server, Password, IQ_Rec, SubEl);
+	_ when CaptchaSucceed ->
+	    case check_from(From, Server) of
+		allow ->
+		    case try_register(User, Server, Password,
+				      Source, Lang) of
+			ok ->
+			    exmpp_iq:result(IQ_Rec, SubEl);
+			{error, Error} ->
+			    exmpp_iq:error(IQ_Rec, Error)
+		    end;
+		deny ->
+		    exmpp_iq:error(IQ_Rec, 'forbidden')
+	    end;
+	_ ->
+	    exmpp_iq:error(IQ_Rec, 'not-allowed')
     end.
 
 %% @doc Try to change password and return IQ response
@@ -410,3 +477,18 @@ get_time_string() -> write_time(erlang:localtime()).
 write_time({{Y,Mo,D},{H,Mi,S}}) ->
     io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 		  [Y, Mo, D, H, Mi, S]).
+
+process_xdata_submit(El) ->
+    case xml:get_subtag(El, "x") of
+        false ->
+	    error;
+        Xdata ->
+            Fields = jlib:parse_xdata_submit(Xdata),
+            case catch {proplists:get_value("username", Fields),
+			proplists:get_value("password", Fields)} of
+                {[User|_], [Pass|_]} ->
+		    {ok, User, Pass};
+		_ ->
+		    error
+	    end
+    end.

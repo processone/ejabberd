@@ -52,7 +52,8 @@
 	 terminate/2, code_change/3]).
 
 -export([create_captcha/5, build_captcha_html/2, check_captcha/2,
-	 process_reply/1, process/2, is_feature_available/0]).
+	 process_reply/1, process/2, is_feature_available/0,
+	 create_captcha_x/4, create_captcha_x/5]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
@@ -213,6 +214,85 @@ create_captcha(SID, From, To, Lang, Args)
 	    error
     end.
 
+create_captcha_x(SID, To, Lang, HeadEls) ->
+    create_captcha_x(SID, To, Lang, HeadEls, []).
+
+create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
+    case create_image() of
+	{ok, Type, Key, Image} ->
+	    Id = randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id(),
+	    B64Image = list_to_binary(jlib:encode_base64(binary_to_list(Image))),
+	    CID = list_to_binary(["sha1+", sha:sha(Image), "@bob.xmpp.org"]),
+	    Data =
+	      #xmlel{
+	        name = 'data',
+	        ns = ?NS_BOB,
+	        attrs = [
+	          #xmlattr{name = 'cid',
+	            value = CID
+	          },
+	          #xmlattr{name = 'max-age',
+	            value = <<"0">>
+	          },
+	          #xmlattr{name = 'type',
+	            value = Type
+	          }
+	        ],
+	        children = [#xmlcdata{cdata = B64Image}]},
+	    Captcha =
+	      #xmlel{name = 'x',
+	        ns = ?NS_DATA_FORMS_s,
+	        attrs = [
+	          #xmlattr{name = 'type',
+	            value = <<"form">>
+	          }
+	        ],
+	        children = [
+				?VFIELD(<<"hidden">>, <<"FORM_TYPE">>, #xmlcdata{cdata = ?NS_CAPTCHA_b}) | HeadEls] ++ [
+	          ?VFIELD(<<"hidden">>, <<"from">>, #xmlcdata{cdata = exmpp_jid:to_binary(To)}),
+	          ?VFIELD(<<"hidden">>, <<"challenge">>, #xmlcdata{cdata = list_to_binary(Id)}),
+	          ?VFIELD(<<"hidden">>, <<"sid">>, #xmlcdata{cdata = SID}),
+	          #xmlel{name = 'field',
+	            attrs = [
+	              #xmlattr{name = 'var',
+	                value = <<"ocr">>
+	              },
+	              #xmlattr{name = 'label',
+	                value = ?CAPTCHA_TEXT(Lang)
+	              }
+	            ],
+	            children = [
+	              #xmlel{name = 'media',
+	                ns = ?NS_DATA_FORMS_MEDIA_s,
+	                children = [
+	                  #xmlel{name = 'uri',
+	                    attrs = [
+	                      #xmlattr{name = 'type',
+	                        value = Type
+	                      }
+	                    ],
+	                    children = [
+	                      #xmlcdata{cdata = list_to_binary(["cid:", CID])}
+	                    ]
+	                  }
+	                ]
+	              }
+	            ]
+	          }
+	        ] ++ TailEls
+	      },
+	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
+	    case ets:insert(captcha, #captcha{id=Id, pid=self(), key=Key,
+					 tref=Tref}) of
+		true ->
+		    {ok, [Captcha, Data]};
+		_Err ->
+		    error
+	    end;
+	_ ->
+	    error
+    end.
+
 %% @spec (Id::string(), Lang::string()) -> {FormEl, {ImgEl, TextEl, IdEl, KeyEl}} | captcha_not_found
 %% where FormEl = xmlelement()
 %%       ImgEl = xmlelement()
@@ -348,16 +428,13 @@ check_captcha(Id, ProvidedKey) ->
     end.
 
 process_reply(El) ->
-    case {exmpp_xml:element_matches(El, captcha),
-	  exmpp_xml:get_element(El, x)} of
-	{false, _} ->
+    case exmpp_xml:get_element(El, x) of
+	undefined ->
 	    {error, malformed};
-	{_, undefined} ->
-	    {error, malformed};
-	{true, Xdata} ->
+	Xdata ->
 	    Fields = jlib:parse_xdata_submit(Xdata),
-	    case {proplists:get_value("challenge", Fields),
-		  proplists:get_value("ocr", Fields)} of
+	    case catch {proplists:get_value("challenge", Fields),
+			proplists:get_value("ocr", Fields)} of
 		{[Id|_], [OCR|_]} ->
 		    case check_captcha(Id, OCR) of
 			captcha_valid ->
@@ -452,7 +529,11 @@ handle_info({remove_id, Id}, State) ->
     ?DEBUG("captcha ~p timed out", [Id]),
     case ets:lookup(captcha, Id) of
 	[#captcha{args=Args, pid=Pid}] ->
-	    Pid ! {captcha_failed, Args},
+	    if is_pid(Pid) ->
+		    Pid ! {captcha_failed, Args};
+	       true ->
+		    ok
+	    end,
 	    ets:delete(captcha, Id);
 	_ ->
 	    ok
@@ -632,10 +713,18 @@ do_check_captcha(Id, ProvidedKey) ->
 	    ets:delete(captcha, Id),
 	    erlang:cancel_timer(Tref),
 	    if ValidKey == ProvidedKey ->
-		    Pid ! {captcha_succeed, Args},
+		    if is_pid(Pid) ->
+			    Pid ! {captcha_succeed, Args};
+		       true ->
+			    ok
+		    end,
 		    captcha_valid;
 	       true ->
-		    Pid ! {captcha_failed, Args},
+		    if is_pid(Pid) ->
+			    Pid ! {captcha_failed, Args};
+		       true ->
+			    ok
+		    end,
 		    captcha_non_valid
 	    end;
 	_ ->
