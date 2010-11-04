@@ -84,6 +84,7 @@
 \newcommand{\modpubsub}{\module{mod\_pubsub}}
 \newcommand{\modpubsubodbc}{\module{mod\_pubsub\_odbc}}
 \newcommand{\modregister}{\module{mod\_register}}
+\newcommand{\modregisterweb}{\module{mod\_register\_web}}
 \newcommand{\modroster}{\module{mod\_roster}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
@@ -2583,6 +2584,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modpubsub}{\modpubsub{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & \modcaps{} \\
     \hline \ahrefloc{modpubsub}{\modpubsubodbc{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & supported DB (*) and \modcaps{} \\
     \hline \ahrefloc{modregister}{\modregister{}} & In-Band Registration (\xepref{0077}) &  \\
+    \hline \ahrefloc{modregisterweb}{\modregisterweb{}} & Web for Account Registrations &  \\
     \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) &  \\
     \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\
     \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} \\
@@ -3878,6 +3880,49 @@ Also define a registration timeout of one hour:
  ]}.
 \end{verbatim}
 \end{itemize}
+
+\makesubsection{modregisterweb}{\modregisterweb{}}
+\ind{modules!\modregisterweb{}}
+
+This module provides a web page where people can:
+\begin{itemize}
+\item Register a new account on the server.
+\item Change the password from an existing account on the server.
+\item Delete an existing account on the server.
+\end{itemize}
+
+This module supports CAPTCHA image to register a new account.
+To enable this feature, configure the options captcha\_cmd and captcha\_host.
+
+Options:
+\begin{description}
+\titem{\{registration\_watchers, [ JID, ...]\}} \ind{options!rwatchers}This option defines a
+  list of JIDs which will be notified each time a new account is registered.
+\end{description}
+
+This example configuration shows how to enable the module and the web handler:
+\begin{verbatim}
+{listen, [
+  ...
+  {5281, ejabberd_http, [
+    tls,
+    {certfile, "/etc/ejabberd/certificate.pem"},
+    register
+  ]},
+  ...
+]}.
+
+{modules,
+ [
+  ...
+  {mod_register_web, []},
+  ...
+ ]}.
+\end{verbatim}
+
+The users can visit this page: https://localhost:5281/register/
+It is important to include the last / character in the URL,
+otherwise the subpages URL will be incorrect.
 
 \makesubsection{modroster}{\modroster{}}
 \ind{modules!\modroster{}}\ind{roster management}\ind{protocols!RFC 3921: XMPP IM}
