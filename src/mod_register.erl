@@ -505,9 +505,7 @@ write_time({{Y,Mo,D},{H,Mi,S}}) ->
 
 process_xdata_submit(El) ->
     case exmpp_xml:get_element(El, x) of
-        false ->
-	    error;
-        Xdata ->
+        #xmlel{} = Xdata ->
             Fields = jlib:parse_xdata_submit(Xdata),
             case catch {proplists:get_value("username", Fields),
 			proplists:get_value("password", Fields)} of
@@ -515,7 +513,9 @@ process_xdata_submit(El) ->
 		    {ok, User, Pass};
 		_ ->
 		    error
-	    end
+	    end;
+        _ ->
+	    error
     end.
 
 is_strong_password(Server, Password) ->
