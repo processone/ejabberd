@@ -24,6 +24,10 @@ purge() ->
             [N]=mnesia:dirty_read({pubsub_node, K}),
             I=element(3,N),
             lists:foreach(fun(JID) ->
+                case mnesia:dirty_read({pubsub_state, {JID, I}}) of
+                    [{pubsub_state, K, _, _, [{subscribed,S}]}] -> mnesia:dirty_delete({pubsub_subscription, S});
+                    _ -> ok
+                end,
                 mnesia:dirty_delete({pubsub_state, {JID, I}})
             end, offline(pubsub_debug:subscribed(I)))
         end, mnesia:dirty_all_keys(pubsub_node));
