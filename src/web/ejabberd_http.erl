@@ -111,6 +111,7 @@ init({SockMod, Socket}, Opts) ->
     %%  web_admin -> {["admin"], ejabberd_web_admin}
     %%  http_bind -> {["http-bind"], mod_http_bind}
     %%  http_poll -> {["http-poll"], ejabberd_http_poll}
+    %%  register -> {["register"], mod_register_web}
 
     RequestHandlers =
 	case lists:keysearch(request_handlers, 1, Opts) of
@@ -119,6 +120,10 @@ init({SockMod, Socket}, Opts) ->
         end ++
 	case lists:member(captcha, Opts) of
             true -> [{["captcha"], ejabberd_captcha}];
+            false -> []
+        end ++
+        case lists:member(register, Opts) of
+            true -> [{["register"], mod_register_web}];
             false -> []
         end ++
         case lists:member(web_admin, Opts) of

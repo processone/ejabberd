@@ -162,6 +162,7 @@
 			 captcha,
 			 http_bind,
 			 http_poll,
+			 register,
 			 web_admin
 			]}
 
@@ -545,6 +546,13 @@
 		  %%{registration_watchers, ["admin1@example.org"]},
 
 		  {access, register}
+		 ]},
+  {mod_register_web, [
+		  %%
+		  %% When a user registers, send a notification to
+		  %% these XMPP accounts.
+		  %%
+		  %%{registration_watchers, ["admin1@example.org"]}
 		 ]},
   {mod_roster,   []},
   %%{mod_service_log,[]},
