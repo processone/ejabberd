@@ -247,7 +247,19 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    Server = jlib:nameprep(xml:get_attr_s("to", Attrs)),
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
-		    Lang = xml:get_attr_s("xml:lang", Attrs),
+		    Lang = case xml:get_attr_s("xml:lang", Attrs) of
+			       Lang1 when length(Lang1) =< 35 ->
+				   %% As stated in BCP47, 4.4.1:
+				   %% Protocols or specifications that
+				   %% specify limited buffer sizes for
+				   %% language tags MUST allow for
+				   %% language tags of at least 35 characters.
+				   Lang1;
+			       _ ->
+				   %% Do not store long language tag to
+				   %% avoid possible DoS/flood attacks
+				   ""
+			   end,
 		    change_shaper(StateData, jlib:make_jid("", Server, "")),
 		    case xml:get_attr_s("version", Attrs) of
 			"1.0" ->
