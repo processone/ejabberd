@@ -321,7 +321,19 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
         Server = binary_to_list(ServerB),
 	    case ?IS_MY_HOST(Server) of
 		true ->
-		    Lang = exmpp_stream:get_lang(Opening),
+		    Lang = case exmpp_stream:get_lang(Opening) of
+			       Lang1 when is_binary(Lang1) andalso size(Lang1) =< 35 ->
+				   %% As stated in BCP47, 4.4.1:
+				   %% Protocols or specifications that
+				   %% specify limited buffer sizes for
+				   %% language tags MUST allow for
+				   %% language tags of at least 35 characters.
+				   Lang1;
+			       _ ->
+				   %% Do not store long language tag to
+				   %% avoid possible DoS/flood attacks
+				   undefined
+			   end,
 		    change_shaper(StateData,
 		      exmpp_jid:make(ServerB)),
 		    case exmpp_stream:get_version(Opening) of
