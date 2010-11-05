@@ -1291,6 +1291,25 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		case exmpp_iq:is_request(Packet) of
 		    true ->
 			case exmpp_iq:get_request(Packet) of
+			    #xmlel{ns = ?NS_LAST_ACTIVITY} ->
+				LFrom = jlib:short_prepd_jid(From),
+				LBFrom = jlib:short_prepd_bare_jid(From),
+				DummyPresence = exmpp_presence:presence(available, ""),
+			       HasFromSub = (?SETS:is_element(LFrom, StateData#state.pres_f) orelse ?SETS:is_element(LBFrom, StateData#state.pres_f))
+				   andalso is_privacy_allow(StateData, To, From, DummyPresence, out),
+			       case HasFromSub of
+				   true ->
+				       case privacy_check_packet(StateData, From, To, Packet, in) of
+					   allow ->
+					       {true, Attrs, StateData};
+					   deny ->
+					       {false, Attrs, StateData}
+				       end;
+				   _ ->
+					Err = exmpp_server_session:error(Packet, 'forbidden'),
+					send_element(StateData, Err),
+				       {false, Attrs, StateData}
+			       end;
 			    _ ->
 				case privacy_check_packet(StateData, From, To, Packet, in) of
 				    allow ->
