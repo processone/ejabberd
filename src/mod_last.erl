@@ -156,7 +156,7 @@ process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
 		     exmpp_presence:available()},
 		    out]) of
 		allow ->
-		    get_last(IQ_Rec, exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To));
+		    get_last_iq(IQ_Rec, exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To));
 		deny ->
 		    exmpp_iq:error(IQ_Rec, 'forbidden')
 	    end;
@@ -167,23 +167,32 @@ process_sm_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 %% TODO: This function could use get_last_info/2
-get_last(IQ_Rec, LUser, LServer) ->
+%% @spec (LUser::string(), LServer::string()) ->
+%%      {ok, TimeStamp::integer(), Status::string()} | not_found | {error, Reason}
+get_last(LUser, LServer) ->
     case catch gen_storage:dirty_read(LServer, last_activity, {LUser, LServer}) of
-	{'EXIT', _Reason} ->
-	    exmpp_iq:error(IQ_Rec, 'internal-server-error');
+	{'EXIT', Reason} ->
+	    {error, Reason};
 	[] ->
-	    exmpp_iq:error(IQ_Rec, 'service-unavailable');
+	    not_found;
 	[#last_activity{timestamp = TimeStamp, status = Status}] ->
-	    {MegaSecs, Secs, _MicroSecs} = now(),
-	    TimeStamp2 = MegaSecs * 1000000 + Secs,
+	    {ok, TimeStamp, Status}
+    end.
+
+get_last_iq(IQ_Rec, LUser, LServer) ->
+    case get_last(LUser, LServer) of
+	{error, _Reason} ->
+	    exmpp_iq:error(IQ_Rec, 'internal-server-error');
+	not_found ->
+	    exmpp_iq:error(IQ_Rec, 'service-unavailable');
+	{ok, TimeStamp, Status} ->
+	    TimeStamp2 = now_to_seconds(now()),
 	    Sec = TimeStamp2 - TimeStamp,
 	    Response = #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
 	      attrs = [?XMLATTR('seconds', Sec)],
 	      children = [#xmlcdata{cdata = Status}]},
 	    exmpp_iq:result(IQ_Rec, Response)
     end.
-
-
 
 on_presence_update(User, Server, _Resource, Status) ->
     {MegaSecs, Secs, _MicroSecs} = now(),
@@ -211,13 +220,11 @@ store_last_info(User, Server, TimeStamp, Status)
 get_last_info(LUser, LServer) when is_list(LUser), is_list(LServer) ->
     get_last_info(list_to_binary(LUser), list_to_binary(LServer));
 get_last_info(LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
-    case catch gen_storage:dirty_read(LServer, last_activity, {LUser, LServer}) of
-	{'EXIT', _Reason} ->
+    case get_last(LUser, LServer) of
+	{error, _Reason} ->
 	    not_found;
-	[] ->
-	    not_found;
-	[#last_activity{timestamp = TimeStamp, status = Status}] ->
-	    {ok, TimeStamp, Status}
+	Res ->
+	    Res
     end.
 
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
