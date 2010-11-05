@@ -88,7 +88,7 @@ unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
     Acc.
 
 process_iq(From, To, IQ) ->
-    process_iq(From, To, IQ, jlib:jid_tolower(jlib:jid_remove_resource(From))).
+    process_iq(From, To, IQ, jlib:jid_tolower(From)).
 
 process_iq(From, To,
 	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ,
@@ -311,17 +311,22 @@ try_set_password(User, Server, Password, IQ, SubEl, Lang) ->
 		  sub_el = [SubEl, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)]}
     end.
 
-try_register(User, Server, Password, Source, Lang) ->
+try_register(User, Server, Password, SourceRaw, Lang) ->
     case jlib:is_nodename(User) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    JID = jlib:make_jid(User, Server, ""),
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
-	    case acl:match_rule(Server, Access, JID) of
-		deny ->
+	    IPAccess = get_ip_access(Server),
+	    case {acl:match_rule(Server, Access, JID),
+		  check_ip_access(SourceRaw, IPAccess)} of
+		{deny, _} ->
 		    {error, ?ERR_FORBIDDEN};
-		allow ->
+		{_, deny} ->
+		    {error, ?ERR_FORBIDDEN};
+		{allow, allow} ->
+		    Source = may_remove_resource(SourceRaw),
 		    case check_timeout(Source) of
 			true ->
 			    case is_strong_password(Server, Password) of
@@ -536,3 +541,95 @@ is_strong_password(Server, Password) ->
 			 [Wrong]),
 	    true
     end.
+
+%%%
+%%% ip_access management
+%%%
+
+may_remove_resource({_, _, _} = From) ->
+    jlib:jid_remove_resource(From);
+may_remove_resource(From) ->
+    From.
+
+get_ip_access(Host) ->
+    IPAccess = gen_mod:get_module_opt(Host, ?MODULE, ip_access, []),
+    lists:flatmap(
+      fun({Access, S}) ->
+	      case parse_ip_netmask(S) of
+		  {ok, IP, Mask} ->
+		      [{Access, IP, Mask}];
+		  error ->
+		      ?ERROR_MSG("mod_register: invalid "
+				 "network specification: ~p",
+				 [S]),
+		      []
+	      end
+      end, IPAccess).
+
+parse_ip_netmask(S) ->
+    case string:tokens(S, "/") of
+	[IPStr] ->
+	    case inet_parse:address(IPStr) of
+		{ok, {_, _, _, _} = IP} ->
+		    {ok, IP, 32};
+		{ok, {_, _, _, _, _, _, _, _} = IP} ->
+		    {ok, IP, 128};
+		_ ->
+		    error
+	    end;
+	[IPStr, MaskStr] ->
+	    case catch list_to_integer(MaskStr) of
+		Mask when is_integer(Mask),
+			  Mask >= 0 ->
+		    case inet_parse:address(IPStr) of
+			{ok, {_, _, _, _} = IP} when Mask =< 32 ->
+			    {ok, IP, Mask};
+			{ok, {_, _, _, _, _, _, _, _} = IP} when Mask =< 128 ->
+			    {ok, IP, Mask};
+			_ ->
+			    error
+		    end;
+		_ ->
+		    error
+	    end;
+	_ ->
+	    error
+    end.
+
+check_ip_access(_Source, []) ->
+    allow;
+check_ip_access({User, Server, Resource}, IPAccess) ->
+    case ejabberd_sm:get_user_ip(User, Server, Resource) of
+	{IPAddress, _PortNumber} -> check_ip_access(IPAddress, IPAccess);
+	_ -> true
+    end;
+check_ip_access({_, _, _, _} = IP,
+		[{Access, {_, _, _, _} = Net, Mask} | IPAccess]) ->
+    IPInt = ip_to_integer(IP),
+    NetInt = ip_to_integer(Net),
+    M = bnot ((1 bsl (32 - Mask)) - 1),
+    if
+	IPInt band M =:= NetInt band M ->
+	    Access;
+	true ->
+	    check_ip_access(IP, IPAccess)
+    end;
+check_ip_access({_, _, _, _, _, _, _, _} = IP,
+		[{Access, {_, _, _, _, _, _, _, _} = Net, Mask} | IPAccess]) ->
+    IPInt = ip_to_integer(IP),
+    NetInt = ip_to_integer(Net),
+    M = bnot ((1 bsl (128 - Mask)) - 1),
+    if
+	IPInt band M =:= NetInt band M ->
+	    Access;
+	true ->
+	    check_ip_access(IP, IPAccess)
+    end;
+check_ip_access(IP, [_ | IPAccess]) ->
+    check_ip_access(IP, IPAccess).
+
+ip_to_integer({IP1, IP2, IP3, IP4}) ->
+    (((((IP1 bsl 8) bor IP2) bsl 8) bor IP3) bsl 8) bor IP4;
+ip_to_integer({IP1, IP2, IP3, IP4, IP5, IP6, IP7, IP8}) ->
+    (((((((((((((IP1 bsl 16) bor IP2) bsl 16) bor IP3) bsl 16) bor IP4)
+	   bsl 16) bor IP5) bsl 16) bor IP6) bsl 16) bor IP7) bsl 16) bor IP8.
