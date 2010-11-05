@@ -1215,14 +1215,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			SRes = is_privacy_allow(StateData, From, To, Packet, in),
 			{SRes, Attrs, StateData};
 		    _ ->
-			case ejabberd_hooks:run_fold(
-			       privacy_check_packet, StateData#state.server,
-			       allow,
-			       [StateData#state.user,
-				StateData#state.server,
-				StateData#state.privacy_list,
-				{From, To, Packet},
-				in]) of
+			case privacy_check_packet(StateData, From, To, Packet, in) of
 			    allow ->
 				LFrom = jlib:short_prepd_jid(From),
 				LBFrom = jlib:short_prepd_bare_jid(From),
@@ -1312,14 +1305,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				end,
 				{false, Attrs, StateData};
 			    _ ->
-				case ejabberd_hooks:run_fold(
-				       privacy_check_packet, StateData#state.server,
-				       allow,
-				       [StateData#state.user,
-					StateData#state.server,
-					StateData#state.privacy_list,
-					{From, To, Packet},
-					in]) of
+				case privacy_check_packet(StateData, From, To, Packet, in) of
 				    allow ->
 					{true, Attrs, StateData};
 				    deny ->
@@ -1332,14 +1318,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			{true, Attrs, StateData}
 		end;
 	    #xmlel{attrs = Attrs} when ?IS_MESSAGE(Packet) ->
-		case ejabberd_hooks:run_fold(
-		       privacy_check_packet, StateData#state.server,
-		       allow,
-		       [StateData#state.user,
-			StateData#state.server,
-			StateData#state.privacy_list,
-			{From, To, Packet},
-			in]) of
+		case privacy_check_packet(StateData, From, To, Packet, in) of
 		    allow ->
 			case ejabberd_hooks:run_fold(
 			       feature_check_packet, StateData#state.server,
@@ -1657,14 +1636,7 @@ process_presence_probe(From, To, StateData) ->
 			       [jlib:timestamp_to_xml(Timestamp, utc, To, ""),
 				%% TODO: Delete the next line once XEP-0091 is Obsolete
 				jlib:timestamp_to_xml(Timestamp)]),
-		    case ejabberd_hooks:run_fold(
-			   privacy_check_packet, StateData#state.server,
-			   allow,
-			   [StateData#state.user,
-			    StateData#state.server,
-			    StateData#state.privacy_list,
-			    {To, From, Packet},
-			    out]) of
+		    case privacy_check_packet(StateData, To, From, Packet, out) of
 			deny ->
 			    ok;
 			allow ->
@@ -1832,14 +1804,7 @@ try_check_privacy_route(Type, User, Server, From, StateData, FromRoute, To, Pack
     end.
 
 check_privacy_route(From, StateData, FromRoute, To, Packet) ->
-    case ejabberd_hooks:run_fold(
-	   privacy_check_packet, StateData#state.server,
-	   allow,
-	   [StateData#state.user,
-	    StateData#state.server,
-	    StateData#state.privacy_list,
-	    {From, To, Packet},
-	    out]) of
+    case privacy_check_packet(StateData, From, To, Packet, out) of
 	deny ->
 	    Lang = StateData#state.lang,
 	    ErrText = "Routing of this stanza was denied by your active privacy list",
@@ -1908,14 +1873,7 @@ format_and_check_privacy(From, StateData, Packet, JIDs) ->
     FJIDs = [exmpp_jid:make(JID) || JID <- JIDs],
     lists:filter(
       fun(FJID) ->
-	      case ejabberd_hooks:run_fold(
-		     privacy_check_packet, StateData#state.server,
-		     allow,
-		     [StateData#state.user,
-		      StateData#state.server,
-		      StateData#state.privacy_list,
-		      {From, FJID, Packet},
-		      out]) of
+	      case privacy_check_packet(StateData, From, FJID, Packet, out) of
 		  deny -> false;
 		  allow -> true
 	      end
@@ -1966,14 +1924,7 @@ roster_change(IJID, ISubscription, StateData) ->
 	    if
 		Cond1 ->
 		    ?DEBUG("C1: ~p~n", [LIJID]),
-		    case ejabberd_hooks:run_fold(
-			   privacy_check_packet, StateData#state.server,
-			   allow,
-			   [StateData#state.user,
-			    StateData#state.server,
-			    StateData#state.privacy_list,
-			    {From, To, P},
-			    out]) of
+		    case privacy_check_packet(StateData, From, To, P, out) of
 			deny ->
 			    ok;
 			allow ->
@@ -1987,14 +1938,7 @@ roster_change(IJID, ISubscription, StateData) ->
 		Cond2 ->
 		    ?DEBUG("C2: ~p~n", [LIJID]),
 		    PU = exmpp_presence:unavailable(),
-		    case ejabberd_hooks:run_fold(
-			   privacy_check_packet, StateData#state.server,
-			   allow,
-			   [StateData#state.user,
-			    StateData#state.server,
-			    StateData#state.privacy_list,
-			    {From, To, PU},
-			    out]) of
+		    case privacy_check_packet(StateData, From, To, PU, out) of
 			deny ->
 			    ok;
 			allow ->
@@ -2060,9 +2004,7 @@ process_privacy_iq(From, To,
 
 
 resend_offline_messages(#state{user = UserB,
-			       server = ServerB,
-			       privacy_list = PrivList} = StateData) ->
-
+			       server = ServerB} = StateData) ->
     case ejabberd_hooks:run_fold(resend_offline_messages_hook,
 				 StateData#state.server,
 				 [],
@@ -2071,14 +2013,7 @@ resend_offline_messages(#state{user = UserB,
 	    lists:foreach(
 	      fun({route,
 		   From, To, Packet}) ->
-		      Pass = case ejabberd_hooks:run_fold(
-				    privacy_check_packet, StateData#state.server,
-				    allow,
-				    [StateData#state.user,
-				     StateData#state.server,
-				     PrivList,
-				     {From, To, Packet},
-				     in]) of
+		      Pass = case privacy_check_packet(StateData, From, To, Packet, in) of
 				 allow ->
 				     true;
 				 deny ->
