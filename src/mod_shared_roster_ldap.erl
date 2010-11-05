@@ -239,9 +239,11 @@ init([Host, Opts]) ->
     State = parse_options(Host, Opts),
     cache_tab:new(shared_roster_ldap_user,
 		  [{max_size, State#state.user_cache_size},
+		   {lru, false}, % We don't need LRU algorithm
 		   {life_time, State#state.user_cache_validity}]),
     cache_tab:new(shared_roster_ldap_group,
 		  [{max_size, State#state.group_cache_size},
+		   {lru, false}, % We don't need LRU algorithm
 		   {life_time, State#state.group_cache_validity}]),
     ejabberd_hooks:add(roster_get, Host,
 		       ?MODULE, get_user_roster, 70),
