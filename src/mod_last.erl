@@ -153,19 +153,28 @@ get_last(LUser, LServer) ->
     end.
 
 get_last_iq(IQ, SubEl, LUser, LServer) ->
-    case get_last(LUser, LServer) of
-	{error, _Reason} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
-	not_found ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
-	{ok, TimeStamp, Status} ->
-	    TimeStamp2 = now_to_seconds(now()),
-	    Sec = TimeStamp2 - TimeStamp,
+    case ejabberd_sm:get_user_resources(LUser, LServer) of
+	[] ->
+	    case get_last(LUser, LServer) of
+		{error, _Reason} ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+		not_found ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+		{ok, TimeStamp, Status} ->
+		    TimeStamp2 = now_to_seconds(now()),
+		    Sec = TimeStamp2 - TimeStamp,
+		    IQ#iq{type = result,
+			  sub_el = [{xmlelement, "query",
+				     [{"xmlns", ?NS_LAST},
+				      {"seconds", integer_to_list(Sec)}],
+				     [{xmlcdata, Status}]}]}
+	    end;
+	_ ->
 	    IQ#iq{type = result,
 		  sub_el = [{xmlelement, "query",
 			     [{"xmlns", ?NS_LAST},
-			      {"seconds", integer_to_list(Sec)}],
-			     [{xmlcdata, Status}]}]}
+			      {"seconds", "0"}],
+			     []}]}
     end.
 
 on_presence_update(User, Server, _Resource, Status) ->
