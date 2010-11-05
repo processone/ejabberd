@@ -158,10 +158,10 @@ process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
 		allow ->
 		    get_last(IQ_Rec, exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To));
 		deny ->
-		    exmpp_iq:error(IQ_Rec, 'not-allowed')
+		    exmpp_iq:error(IQ_Rec, 'forbidden')
 	    end;
 	true ->
-	    exmpp_iq:error(IQ_Rec, 'not-allowed')
+	    exmpp_iq:error(IQ_Rec, 'forbidden')
     end;
 process_sm_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
