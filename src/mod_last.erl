@@ -125,9 +125,9 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			   privacy_check_packet, Server,
 			   allow,
 			   [User, Server, UserListRecord,
-			    {From, To,
+			    {To, From,
 			     {xmlelement, "presence", [], []}},
-			    in]) of
+			    out]) of
 			allow ->
 			    get_last(IQ, SubEl, User, Server);
 			deny ->
