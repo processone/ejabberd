@@ -53,6 +53,7 @@
 		miss = 0,
 		procs_num,
 		cache_missed,
+		lru,
 		shrink_size}).
 
 -define(PROCNAME, ?MODULE).
@@ -62,6 +63,7 @@
 -define(MAX_SIZE, 1000).
 -define(WARN, true).
 -define(CACHE_MISSED, true).
+-define(LRU, true).
 -define(LIFETIME, 600). %% 10 minutes
 
 %%====================================================================
@@ -109,7 +111,7 @@ delete(Tab, Key, F) ->
 dirty_delete(Tab, Key, F) ->
     F(),
     ?GEN_SERVER:call(
-       get_proc_by_hash(Tab, Key), {dirty_delete, Key}, ?CALL_TIMEOUT).
+       get_proc_by_hash(Tab, Key), {cache_delete, Key}, ?CALL_TIMEOUT).
 
 lookup(Tab, Key, F) ->
     ?GEN_SERVER:call(
@@ -117,20 +119,21 @@ lookup(Tab, Key, F) ->
 
 dirty_lookup(Tab, Key, F) ->
     Proc = get_proc_by_hash(Tab, Key),
-    case ?GEN_SERVER:call(Proc, {dirty_lookup, Key}, ?CALL_TIMEOUT) of
+    case ?GEN_SERVER:call(Proc, {cache_lookup, Key}, ?CALL_TIMEOUT) of
 	{ok, '$cached_mismatch'} ->
 	    error;
 	{ok, Val} ->
 	    {ok, Val};
 	_ ->
-	    case F() of
-		{ok, Val} ->
-		    ?GEN_SERVER:call(
-		       Proc, {dirty_insert, Key, Val}, ?CALL_TIMEOUT),
-		    {ok, Val};
-		_ ->
-		    error
-	    end
+	    {Result, NewVal} = case F() of
+				   {ok, Val} ->
+				       {{ok, Val}, Val};
+				   _ ->
+				       {error, '$cached_mismatch'}
+			       end,
+	    ?GEN_SERVER:call(
+	       Proc, {cache_insert, Key, NewVal}, ?CALL_TIMEOUT),
+	    Result
     end.
 
 insert(Tab, Key, Val, F) ->
@@ -140,7 +143,7 @@ insert(Tab, Key, Val, F) ->
 dirty_insert(Tab, Key, Val, F) ->
     F(),
     ?GEN_SERVER:call(
-       get_proc_by_hash(Tab, Key), {dirty_insert, Key, Val}, ?CALL_TIMEOUT).
+       get_proc_by_hash(Tab, Key), {cache_insert, Key, Val}, ?CALL_TIMEOUT).
 
 info(Tab, Info) ->
     case lists:map(
@@ -187,8 +190,9 @@ init([Tab, Opts, N, Pid]) ->
     {ok, do_setopts(State, Opts)}.
 
 handle_call({lookup, Key, F}, _From, #state{tab = T} = State) ->
+    CleanPrio = clean_priority(State#state.life_time),
     case treap:lookup(Key, T) of
-	{ok, _Prio, Val} ->
+	{ok, Prio, Val} when (State#state.lru == true) or (Prio =< CleanPrio) ->
 	    Hits = State#state.hits,
 	    NewState = treap_update(Key, Val, State#state{hits = Hits + 1}),
 	    case Val of
@@ -217,50 +221,36 @@ handle_call({lookup, Key, F}, _From, #state{tab = T} = State) ->
 		    end
 	    end
     end;
-handle_call({dirty_lookup, Key}, _From, #state{tab = T} = State) ->
+handle_call({cache_lookup, Key}, _From, #state{tab = T} = State) ->
+    CleanPrio = clean_priority(State#state.life_time),
     case treap:lookup(Key, T) of
-	{ok, _Prio, Val} ->
+	{ok, Prio, Val} when (State#state.lru == true) or (Prio =< CleanPrio) ->
 	    Hits = State#state.hits,
 	    NewState = treap_update(Key, Val, State#state{hits = Hits + 1}),
 	    {reply, {ok, Val}, NewState};
 	_ ->
 	    Miss = State#state.miss,
 	    NewState = State#state{miss = Miss + 1},
-	    if State#state.cache_missed ->
-		    {reply, error,
-		     treap_insert(Key, '$cached_mismatch', NewState)};
-	       true ->
-		    {reply, error, NewState}
-	    end
+	    {reply, error, NewState}
     end;
 handle_call({insert, Key, Val, F}, _From, #state{tab = T} = State) ->
     case treap:lookup(Key, T) of
 	{ok, _Prio, Val} ->
-	    {reply, ok, State};
-	Res ->
+	    {reply, ok, treap_update(Key, Val, State)};
+	_ ->
 	    case catch F() of
 		{'EXIT', Reason} ->
 		    print_error(insert, [Key, Val], Reason, State),
 		    {reply, ok, State};
 		_ ->
-		    NewState = case Res of
-				   {ok, _, _} ->
-				       treap_update(Key, Val, State);
-				   _ ->
-				       treap_insert(Key, Val, State)
-			       end,
-		    {reply, ok, NewState}
+		    {reply, ok, treap_insert(Key, Val, State)}
 	    end
     end;
-handle_call({dirty_insert, Key, Val}, _From, #state{tab = T} = State) ->
-    case treap:lookup(Key, T) of
-	{ok, _Prio, Val} ->
-	    {reply, ok, State};
-	{ok, _, _} ->
-	    {reply, ok, treap_update(Key, Val, State)};
-	_ ->
-	    {reply, ok, treap_insert(Key, Val, State)}
-    end;
+handle_call({cache_insert, _, '$cached_mismatch'}, _From,
+	    #state{cache_missed = false} = State) ->
+    {reply, ok, State};
+handle_call({cache_insert, Key, Val}, _From, State) ->
+    {reply, ok, treap_insert(Key, Val, State)};
 handle_call({delete, Key, F}, _From, State) ->
     NewState = treap_delete(Key, State),
     case catch F() of
@@ -270,7 +260,7 @@ handle_call({delete, Key, F}, _From, State) ->
 	    ok
     end,
     {reply, ok, NewState};
-handle_call({dirty_delete, Key}, _From, State) ->
+handle_call({cache_delete, Key}, _From, State) ->
     NewState = treap_delete(Key, State),
     {reply, ok, NewState};
 handle_call({info, Info}, _From, State) ->
@@ -288,6 +278,7 @@ handle_call({info, Info}, _From, State) ->
 		   {hits, State#state.hits},
 		   {miss, State#state.miss},
 		   {cache_missed, State#state.cache_missed},
+		   {lru, State#state.lru},
 		   {warn, State#state.warn}];
 	      _ ->
 		  badarg
@@ -372,10 +363,20 @@ do_setopts(#state{procs_num = N} = State, Opts) ->
 		      _ ->
 			  ?CACHE_MISSED
 		  end,
+    LRU = case proplists:get_value(
+		 lru, Opts, State#state.lru) of
+	      false ->
+		  false;
+	      true ->
+		  true;
+	      _ ->
+		  ?LRU
+	  end,
     State#state{max_size = MaxSize,
 		warn = Warn,
 		life_time = LifeTime,
 		cache_missed = CacheMissed,
+		lru = LRU,
 		shrink_size = ShrinkSize}.
 
 get_proc_num() ->
@@ -396,15 +397,36 @@ now_priority() ->
     {MSec, Sec, USec} = now(),
     -((MSec*1000000 + Sec)*1000000 + USec).
 
-treap_update(Key, Val, #state{tab = T} = State) ->
-    Priority = now_priority(),
-    NewT = treap:insert(Key, Priority, Val, T),
-    State#state{tab = NewT}.
+clean_priority(LifeTime) ->
+    if is_integer(LifeTime) ->
+	    now_priority() + LifeTime;
+       true ->
+	    unlimited
+    end.
+
+treap_update(Key, Val, #state{tab = T, lru = LRU} = State) ->
+    if LRU ->
+	    Priority = now_priority(),
+	    NewT = treap:insert(Key, Priority, Val, T),
+	    State#state{tab = NewT};
+       true ->
+	    State
+    end.
 
 treap_insert(Key, Val, State) ->
     State1 = clean_treap(State),
     #state{size = Size} = State2 = shrink_treap(State1),
-    treap_update(Key, Val, State2#state{size = Size+1}).
+    T = State2#state.tab,
+    case treap:lookup(Key, T) of
+	{ok, _, Val} ->
+	    treap_update(Key, Val, State2);
+	{ok, _, _} ->
+	    NewT = treap:insert(Key, now_priority(), Val, T),
+	    State2#state{tab = NewT};
+	_ ->
+	    NewT = treap:insert(Key, now_priority(), Val, T),
+	    State2#state{tab = NewT, size = Size+1}
+    end.
 
 treap_delete(Key, #state{tab = T, size = Size} = State) ->
     case treap:lookup(Key, T) of
@@ -492,9 +514,9 @@ print_error(Operation, Args, Reason, State) ->
 -define(lookup, dirty_lookup).
 -define(delete, dirty_delete).
 -define(insert, dirty_insert).
-%% -define(lookup, lookup).
-%% -define(delete, delete).
-%% -define(insert, insert).
+%%-define(lookup, lookup).
+%%-define(delete, delete).
+%%-define(insert, insert).
 
 test() ->
     LifeTime = 2,
@@ -504,7 +526,7 @@ test() ->
     check([{"key", "value"}]),
     {ok, "value"} = ?lookup(test_tbl, "key", fun() -> error end),
     check([{"key", "value"}]),
-    io:format("** waiting for ~p seconds to check if cleaner works fine...~n",
+    io:format("** waiting for ~p seconds to check if LRU works fine...~n",
 	      [LifeTime+1]),
     timer:sleep(timer:seconds(LifeTime+1)),
     ok = ?insert(test_tbl, "key1", "value1", fun() -> ok end),
@@ -531,13 +553,32 @@ test1() ->
       end, lists:seq(1, MaxSize*get_proc_num())),
     {ok, MaxSize} = info(test_tbl, size),
     delete(test_tbl),
-    io:format("** testing speed, this may take a while...~n"),
-    test2(1000),
-    test2(10000),
-    test2(100000),
-    test2(1000000).
+    test2().
 
-test2(Iter) ->
+test2() ->
+    LifeTime = 2,
+    ok = new(test_tbl, [{life_time, LifeTime},
+			{max_size, unlimited},
+			{lru, false}]),
+    check([]),
+    ok = ?insert(test_tbl, "key", "value", fun() -> ok end),
+    {ok, "value"} = ?lookup(test_tbl, "key", fun() -> error end),
+    check([{"key", "value"}]),
+    io:format("** waiting for ~p seconds to check if non-LRU works fine...~n",
+	      [LifeTime+1]),
+    timer:sleep(timer:seconds(LifeTime+1)),
+    error = ?lookup(test_tbl, "key", fun() -> error end),
+    check([{"key", '$cached_mismatch'}]),
+    ok = ?insert(test_tbl, "key", "value1", fun() -> ok end),
+    check([{"key", "value1"}]),
+    delete(test_tbl),
+    io:format("** testing speed, this may take a while...~n"),
+    test3(1000),
+    test3(10000),
+    test3(100000),
+    test3(1000000).
+
+test3(Iter) ->
     ok = new(test_tbl, [{max_size, unlimited}, {life_time, unlimited}]),
     L = lists:seq(1, Iter),
     T1 = now(),
