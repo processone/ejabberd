@@ -180,6 +180,16 @@ get_last(LUser, LServer) ->
     end.
 
 get_last_iq(IQ_Rec, LUser, LServer) ->
+    case ejabberd_sm:get_user_resources(LUser, LServer) of
+	[] ->
+		get_last_iq_disconnected(IQ_Rec, LUser, LServer);
+	_ ->
+		Sec = 0,
+	    #xmlel{ns = ?NS_LAST_ACTIVITY, name = 'query',
+	      attrs = [?XMLATTR('seconds', Sec)]}
+    end.
+
+get_last_iq_disconnected(IQ_Rec, LUser, LServer) ->
     case get_last(LUser, LServer) of
 	{error, _Reason} ->
 	    exmpp_iq:error(IQ_Rec, 'internal-server-error');
