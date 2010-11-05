@@ -1246,18 +1246,6 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    "iq" ->
 		IQ = jlib:iq_query_info(Packet),
 		case IQ of
-		    #iq{xmlns = ?NS_VCARD} when (To#jid.luser == "") or (To#jid.lresource == "") ->
-			Host = StateData#state.server,
-			case ets:lookup(sm_iqtable, {?NS_VCARD, Host}) of
-			    [{_, Module, Function, Opts}] ->
-				gen_iq_handler:handle(Host, Module, Function, Opts,
-						      From, To, IQ);
-			    [] ->
-				Err = jlib:make_error_reply(
-					Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-				ejabberd_router:route(To, From, Err)
-			end,
-			{false, Attrs, StateData};
 		    IQ when (is_record(IQ, iq)) or (IQ == reply) ->
 			case privacy_check_packet(StateData, From, To, Packet, in) of
 			    allow ->
