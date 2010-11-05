@@ -129,7 +129,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			     {xmlelement, "presence", [], []}},
 			    out]) of
 			allow ->
-			    get_last(IQ, SubEl, User, Server);
+			    get_last_iq(IQ, SubEl, User, Server);
 			deny ->
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERR_FORBIDDEN]}
@@ -140,14 +140,25 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    end
     end.
 
-%% TODO: This function could use get_last_info/2
-get_last(IQ, SubEl, LUser, LServer) ->
+%% @spec (LUser::string(), LServer::string()) ->
+%%      {ok, TimeStamp::integer(), Status::string()} | not_found | {error, Reason}
+get_last(LUser, LServer) ->
     case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
-	{'EXIT', _Reason} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+	{'EXIT', Reason} ->
+	    {error, Reason};
 	[] ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+	    not_found;
 	[#last_activity{timestamp = TimeStamp, status = Status}] ->
+	    {ok, TimeStamp, Status}
+    end.
+
+get_last_iq(IQ, SubEl, LUser, LServer) ->
+    case get_last(LUser, LServer) of
+	{error, _Reason} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+	not_found ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+	{ok, TimeStamp, Status} ->
 	    TimeStamp2 = now_to_seconds(now()),
 	    Sec = TimeStamp2 - TimeStamp,
 	    IQ#iq{type = result,
@@ -156,8 +167,6 @@ get_last(IQ, SubEl, LUser, LServer) ->
 			      {"seconds", integer_to_list(Sec)}],
 			     [{xmlcdata, Status}]}]}
     end.
-
-
 
 on_presence_update(User, Server, _Resource, Status) ->
     TimeStamp = now_to_seconds(now()),
@@ -177,13 +186,11 @@ store_last_info(User, Server, TimeStamp, Status) ->
 %% @spec (LUser::string(), LServer::string()) ->
 %%      {ok, TimeStamp::integer(), Status::string()} | not_found
 get_last_info(LUser, LServer) ->
-    case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
-	{'EXIT', _Reason} ->
+    case get_last(LUser, LServer) of
+	{error, _Reason} ->
 	    not_found;
-	[] ->
-	    not_found;
-	[#last_activity{timestamp = TimeStamp, status = Status}] ->
-	    {ok, TimeStamp, Status}
+	Res ->
+	    Res
     end.
 
 remove_user(User, Server) ->
