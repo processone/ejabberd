@@ -1246,6 +1246,24 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    "iq" ->
 		IQ = jlib:iq_query_info(Packet),
 		case IQ of
+		    #iq{xmlns = ?NS_LAST} ->
+			LFrom = jlib:jid_tolower(From),
+			LBFrom = jlib:jid_remove_resource(LFrom),
+			HasFromSub = (?SETS:is_element(LFrom, StateData#state.pres_f) orelse ?SETS:is_element(LBFrom, StateData#state.pres_f))
+			    andalso is_privacy_allow(StateData, To, From, {xmlelement, "presence", [], []}, out),
+			case HasFromSub of
+			    true ->
+				case privacy_check_packet(StateData, From, To, Packet, in) of
+				    allow ->
+					{true, Attrs, StateData};
+				    deny ->
+					{false, Attrs, StateData}
+				end;
+			    _ ->
+				Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+				ejabberd_router:route(To, From, Err),
+				{false, Attrs, StateData}
+			end;
 		    IQ when (is_record(IQ, iq)) or (IQ == reply) ->
 			case privacy_check_packet(StateData, From, To, Packet, in) of
 			    allow ->
