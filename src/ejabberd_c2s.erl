@@ -1156,16 +1156,16 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
 			{true, [{"type", "unavailable"} | Attrs1], StateData};
 		    "subscribe" ->
-			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
+			SRes = is_privacy_allow(StateData, From, To, Packet, in),
 			{SRes, Attrs, StateData};
 		    "subscribed" ->
-			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
+			SRes = is_privacy_allow(StateData, From, To, Packet, in),
 			{SRes, Attrs, StateData};
 		    "unsubscribe" ->
-			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
+			SRes = is_privacy_allow(StateData, From, To, Packet, in),
 			{SRes, Attrs, StateData};
 		    "unsubscribed" ->
-			SRes = is_privacy_allow(From, To, Packet, StateData#state.privacy_list),
+			SRes = is_privacy_allow(StateData, From, To, Packet, in),
 			{SRes, Attrs, StateData};
 		    _ ->
 			case ejabberd_hooks:run_fold(
@@ -1824,18 +1824,19 @@ check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 	    ejabberd_router:route(FromRoute, To, Packet)
     end.
 
+privacy_check_packet(StateData, From, To, Packet, Dir) ->
+    ejabberd_hooks:run_fold(
+      privacy_check_packet, StateData#state.server,
+      allow,
+      [StateData#state.user,
+       StateData#state.server,
+       StateData#state.privacy_list,
+       {From, To, Packet},
+       Dir]).
+
 %% Check if privacy rules allow this delivery
-is_privacy_allow(From, To, Packet, PrivacyList) ->
-    User = To#jid.user,
-    Server = To#jid.server,
-    allow == ejabberd_hooks:run_fold(
-	       privacy_check_packet, Server,
-	       allow,
-	       [User,
-		Server,
-		PrivacyList,
-		{From, To, Packet},
-		in]).
+is_privacy_allow(StateData, From, To, Packet, Dir) ->
+    allow == privacy_check_packet(StateData, From, To, Packet, Dir).
 
 presence_broadcast(StateData, From, JIDSet, Packet) ->
     lists:foreach(fun(JID) ->
