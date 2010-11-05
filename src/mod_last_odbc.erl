@@ -124,11 +124,11 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			    get_last(IQ, SubEl, User, Server);
 			deny ->
 			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+				  sub_el = [SubEl, ?ERR_FORBIDDEN]}
 		    end;
 		true ->
 		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+			  sub_el = [SubEl, ?ERR_FORBIDDEN]}
 	    end
     end.
 
