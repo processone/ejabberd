@@ -3796,6 +3796,12 @@ Options:
   from s2s leads to uncontrolled massive accounts creation by rogue users.
 \titem{\{captcha\_protected, false|true\}} \ind{options!captcha\_protected}
   Protect registrations with CAPTCHA (see section \ref{captcha}). The default is \term{false}.
+\titem{\{ip\_access, [ \{allow|deny, IPaddress\}, ...]\}} \ind{options!ip\_access}
+  Define rules to allow or deny account registration depending
+  in the IP address of the XMPP client.
+  If there is no matching IP mask, the default rule is ``allow''.
+  IPv6 addresses are supported, but not tested.
+  The default option value is an empty list: \term{[]}.
 \titem{\{password\_strength, Entropy\}} \ind{options!password\_strength}
   This option sets the minimum informational entropy for passwords. The value \term{Entropy}
   is a number of bits of entropy. The recommended minimum is 32 bits.
@@ -3823,7 +3829,8 @@ Default value: 600 seconds.
 
 Examples:
 \begin{itemize}
-\item Next example prohibits the registration of too short account names:
+\item Next example prohibits the registration of too short account names,
+and allows to create accounts only to clients of the local network:
 \begin{verbatim}
 {acl, shortname, {user_glob, "?"}}.
 {acl, shortname, {user_glob, "??"}}.
@@ -3836,7 +3843,10 @@ Examples:
 {modules,
  [
   ...
-  {mod_register, [{access, register}]},
+  {mod_register, [{access, register},
+                  {ip_access, [{allow, "127.0.0.0/8"},
+                               {deny, "0.0.0.0/0"}]}
+  ]},
   ...
  ]}.
 \end{verbatim}
