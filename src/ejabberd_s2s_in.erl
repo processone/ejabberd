@@ -75,6 +75,7 @@
 		tls = false,
 		tls_enabled = false,
 		tls_options = [],
+		server,
 		authenticated = false,
 		auth_domain,
 	        connections = ?DICT:new(),
@@ -224,7 +225,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			    s2s_stream_features,
 			    Server,
 			    [], [Server])}),
-	    {next_state, wait_for_feature_request, StateData};
+	    {next_state, wait_for_feature_request, StateData#state{server = Server}};
 	{"jabber:server", _, Server, true} when
 	      StateData#state.authenticated ->
 	    send_text(StateData, ?STREAM_HEADER(" version='1.0'")),
@@ -266,7 +267,17 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				   SockMod == gen_tcp ->
 	    ?DEBUG("starttls", []),
 	    Socket = StateData#state.socket,
-	    TLSOpts = StateData#state.tls_options,
+	    TLSOpts = case ejabberd_config:get_local_option(
+			     {domain_certfile,
+			      StateData#state.server}) of
+			  undefined ->
+			      StateData#state.tls_options;
+			  CertFile ->
+			      [{certfile, CertFile} |
+			       lists:keydelete(
+				 certfile, 1,
+				 StateData#state.tls_options)]
+		      end,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
 			  xml:element_to_binary(
@@ -274,7 +285,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
-			     tls_enabled = true
+			     tls_enabled = true,
+			     tls_options = TLSOpts
 			    }};
 	{?NS_SASL, "auth"} when TLSEnabled ->
 	    Mech = xml:get_attr_s("mechanism", Attrs),

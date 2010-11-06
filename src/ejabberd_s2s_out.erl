@@ -66,7 +66,7 @@
 		tls = false,
 		tls_required = false,
 		tls_enabled = false,
-		tls_options = [],
+		tls_options = [connect],
 		authenticated = false,
 		db_enabled = true,
 		try_auth = true,
@@ -163,7 +163,7 @@ init([From, Server, Type]) ->
     UseV10 = TLS,
     TLSOpts = case ejabberd_config:get_local_option(s2s_certfile) of
 		  undefined ->
-		      [];
+		      [connect];
 		  CertFile ->
 		      [{certfile, CertFile}, connect]
 	      end,
@@ -621,7 +621,7 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 		    Socket = StateData#state.socket,
 		    TLSOpts = case ejabberd_config:get_local_option(
 				     {domain_certfile,
-				      StateData#state.server}) of
+				      StateData#state.myname}) of
 				  undefined ->
 				      StateData#state.tls_options;
 				  CertFile ->
@@ -633,7 +633,8 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 		    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
 		    NewStateData = StateData#state{socket = TLSSocket,
 						   streamid = new_id(),
-						   tls_enabled = true
+						   tls_enabled = true,
+						   tls_options = TLSOpts
 						  },
 		    send_text(NewStateData,
 			      io_lib:format(?STREAM_HEADER,
