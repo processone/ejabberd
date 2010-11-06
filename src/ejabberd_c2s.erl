@@ -2115,7 +2115,17 @@ resend_subscription_requests(#state{user = UserB,
 		  PendingSubscriptions).
 
 process_unauthenticated_stanza(StateData, El) when ?IS_IQ(El) ->
-    case exmpp_iq:get_kind(El) of
+    NewEl = case exmpp_stream:get_lang(El) of
+		undefined ->
+		    case StateData#state.lang of
+			undefined -> El;
+			Lang ->
+			    exmpp_stanza:set_lang(El, Lang)
+		    end;
+		_ ->
+		    El
+	    end,
+    case exmpp_iq:get_kind(NewEl) of
 	request ->
             IQ_Rec = exmpp_iq:xmlel_to_iq(El),
 	    Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
