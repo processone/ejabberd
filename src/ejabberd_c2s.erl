@@ -2139,7 +2139,17 @@ get_statustag(Presence) ->
     end.
 
 process_unauthenticated_stanza(StateData, El) ->
-    case jlib:iq_query_info(El) of
+    NewEl = case xml:get_tag_attr_s("xml:lang", El) of
+		"" ->
+		    case StateData#state.lang of
+			"" -> El;
+			Lang ->
+			    xml:replace_tag_attr("xml:lang", Lang, El)
+		    end;
+		_ ->
+		    El
+	    end,
+    case jlib:iq_query_info(NewEl) of
 	#iq{} = IQ ->
 	    Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
 					  StateData#state.server,
