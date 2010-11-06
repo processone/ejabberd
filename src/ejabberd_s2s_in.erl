@@ -63,6 +63,7 @@
 		tls = false,
 		tls_enabled = false,
 		tls_options = [],
+		server,
 		authenticated = false,
 		auth_domain,
 	        connections = ?DICT:new(),
@@ -193,7 +194,7 @@ wait_for_stream({xmlstreamstart, Opening}, StateData) ->
 					     Server,
 					     [], [Server]),
 	    send_element(StateData, exmpp_stream:features(Features)),
-	    {next_state, wait_for_feature_request, StateData};
+	    {next_state, wait_for_feature_request, StateData#state{server = Server}};
 	{?NS_JABBER_SERVER, _, Server, true} when
 	      StateData#state.authenticated ->
 	    Opening_Reply = exmpp_stream:opening_reply(Opening,
@@ -244,14 +245,25 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    Socket = StateData#state.socket,
 	    Proceed = exmpp_xml:node_to_list(
 	      exmpp_server_tls:proceed(), [?DEFAULT_NS], ?PREFIXED_NS),
-	    TLSOpts = StateData#state.tls_options,
+	    TLSOpts = case ejabberd_config:get_local_option(
+			     {domain_certfile,
+			      StateData#state.server}) of
+			  undefined ->
+			      StateData#state.tls_options;
+			  CertFile ->
+			      [{certfile, CertFile} |
+			       lists:keydelete(
+				 certfile, 1,
+				 StateData#state.tls_options)]
+		      end,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
 			  Proceed),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
-			     tls_enabled = true
+			     tls_enabled = true,
+			     tls_options = TLSOpts
 			    }};
 	#xmlel{ns = ?NS_SASL, name = 'auth'} when TLSEnabled ->
 	    case exmpp_server_sasl:next_step(El) of
