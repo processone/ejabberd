@@ -542,7 +542,7 @@ is_strong_password(Server, Password) ->
 %%% ip_access management
 %%%
 
-may_remove_resource({U, S, _} = From) ->
+may_remove_resource({U, S, _}) ->
 	{U, S, ""};
 may_remove_resource(From) ->
     From.
@@ -595,7 +595,8 @@ parse_ip_netmask(S) ->
 check_ip_access(_Source, []) ->
     allow;
 check_ip_access({User, Server, Resource}, IPAccess) ->
-    case ejabberd_sm:get_user_ip(User, Server, Resource) of
+    JID = exmpp_jid:make(User, Server, Resource),
+    case ejabberd_sm:get_user_ip(JID) of
 	{IPAddress, _PortNumber} -> check_ip_access(IPAddress, IPAccess);
 	_ -> true
     end;
