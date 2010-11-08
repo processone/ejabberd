@@ -364,11 +364,11 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    LFrom = jlib:nameprep(From),
 	    %% Checks if the from domain is allowed and if the to
             %% domain is handled by this server:
-            case {ejabberd_s2s:allow_host(To, From),
+            case {ejabberd_s2s:allow_host(LTo, LFrom),
                   lists:member(LTo, ejabberd_router:dirty_get_all_domains())} of
                 {true, true} ->
-		    ejabberd_s2s_out:terminate_if_waiting_delay(To, From),
-		    ejabberd_s2s_out:start(To, From,
+		    ejabberd_s2s_out:terminate_if_waiting_delay(LTo, LFrom),
+		    ejabberd_s2s_out:start(LTo, LFrom,
 					   {verify, self(),
 					    Key, StateData#state.streamid}),
 		    Conns = ?DICT:store({LFrom, LTo}, wait_for_verification,
