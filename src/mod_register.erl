@@ -183,8 +183,8 @@ process_iq(From, To,
 			{error, malformed} ->
 			    exmpp_iq:error(IQ_Rec, 'bad-request');
 			_ ->
-			    %% ErrText = "Captcha test failed",
-			    exmpp_iq:error(IQ_Rec, 'not-allowed')
+			    ErrText = translate:translate(Lang, "Captcha test failed"),
+			    exmpp_iq:error(IQ_Rec, 'not-allowed', ErrText)
 			end;
 		true ->
                     exmpp_iq:error(IQ_Rec, 'bad-request')
@@ -241,8 +241,8 @@ process_iq(From, To,
 				Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children = [TopInstrEl | CaptchaEls]},
 				exmpp_iq:result(IQ_Rec, Result);
 			error ->
-			    %% ErrText = "Unable to generate a captcha",
-                    exmpp_iq:error(IQ_Rec, 'internal-server-error')
+			    ErrText = translate:translate(Lang, "Unable to generate a captcha"),
+			    exmpp_iq:error(IQ_Rec, 'internal-server-error', ErrText)
 		    end;
 	       true ->
             Result = #xmlel{ns = ?NS_INBAND_REGISTER, name = 'query', children =
@@ -286,8 +286,8 @@ try_set_password(User, Server, Password, IQ_Rec, SubEl, Lang) ->
 	true ->
 		try_set_password_strong(User, Server, Password, IQ_Rec, SubEl, Lang);
 	false ->
-	    %% ErrText = "The password is too weak",
-        exmpp_iq:error(IQ_Rec, 'not-acceptable')
+		ErrText = translate:translate(Lang, "The password is too weak"),
+		exmpp_iq:error(IQ_Rec, 'not-acceptable', ErrText)
     end.
 
 try_set_password_strong(User, Server, Password, IQ_Rec, SubEl, _Lang) ->
@@ -346,8 +346,8 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 				true ->
 					try_register_strong(User, Server, Password, Source, Lang, JID);
 				false ->
-				    %%ErrText = "The password is too weak",
-				    {error, 'not-acceptable'}
+				    ErrText = "The password is too weak",
+				    {error, exmpp_stanza:error(?NS_JABBER_CLIENT, 'not-acceptable', {Lang, ErrText})}
 			    end;
 			false ->
 			    ErrText = "Users are not allowed to register "
