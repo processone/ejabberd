@@ -308,12 +308,17 @@ init_plugins(Host, ServerHost, Opts) ->
     Plugins = gen_mod:get_opt(plugins, Opts, [?STDNODE]),
     PepMapping = gen_mod:get_opt(pep_mapping, Opts, []),
     ?DEBUG("** PEP Mapping : ~p~n",[PepMapping]),
-    lists:foreach(fun(Name) ->
-			  ?DEBUG("** init ~s plugin",[Name]),
-			  Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
-			  Plugin:init(Host, ServerHost, Opts)
-		  end, Plugins),
-    {Plugins, TreePlugin, PepMapping}.
+    Plugins_OK = lists:foldl(fun(Name, Acc) ->
+        Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
+			  case catch apply(Plugin, init, [Host, ServerHost, Opts]) of
+			{'EXIT', _Error} ->
+			    Acc;
+			_ ->
+			    ?DEBUG("** init ~s plugin",[Name]),
+			    [Name | Acc]
+			  end
+		  end, [], Plugins),
+    {Plugins_OK, TreePlugin, PepMapping}.
 
 
 -spec(terminate_plugins/4 ::
@@ -4362,7 +4367,7 @@ tree_action(Host, Function, Args) ->
 node_call(Type, Function, Args) ->
     ?DEBUG("node_call ~p ~p ~p",[Type, Function, Args]),
     Module = list_to_atom(?PLUGIN_PREFIX++Type),
-    case catch apply(Module, Function, Args) of
+    case apply(Module, Function, Args) of
 	{result, Result} -> {result, Result};
 	{error, Error} -> {error, Error};
 	{'EXIT', {undef, Undefined}} ->
