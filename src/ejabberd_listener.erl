@@ -59,18 +59,29 @@ bind_tcp_ports() ->
 	Ls ->
 	    lists:foreach(
 	      fun({Port, Module, Opts}) ->
-		      bind_tcp_port(Port, Module, Opts)
+		      ModuleRaw = strip_frontend(Module),
+		      case ModuleRaw:socket_type() of
+			  independent -> ok;
+			  _ ->
+			      bind_tcp_port(Port, Module, Opts)
+		      end
 	      end, Ls)
     end.
 
 bind_tcp_port(PortIP, Module, RawOpts) ->
-    {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
-    {_Opts, SockOpts} = prepare_opts(IPT, IPV, OptsClean),
-    case Proto of
-	udp -> ok;
-	_ ->
-	    ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
-	    ets:insert(listen_sockets, {PortIP, ListenSocket})
+    try check_listener_options(RawOpts) of
+	ok ->
+	    {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
+	    {_Opts, SockOpts} = prepare_opts(IPT, IPV, OptsClean),
+	    case Proto of
+		udp -> ok;
+		_ ->
+		    ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
+		    ets:insert(listen_sockets, {PortIP, ListenSocket})
+	    end
+    catch
+	throw:{error, Error} ->
+	    ?ERROR_MSG(Error, [])
     end.
 
 start_listeners() ->
