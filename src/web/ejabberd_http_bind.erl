@@ -288,9 +288,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 		       (CPdelay =< ?PROCESS_DELAY_MAX) ->
 		     CPdelay;
 		 {CPdelay, _} ->
-		     erlang:max(
-		       erlang:min(CPdelay,?PROCESS_DELAY_MAX),
-		       ?PROCESS_DELAY_MIN)
+		     lists:max([lists:min([CPdelay, ?PROCESS_DELAY_MAX]), ?PROCESS_DELAY_MIN])
 	     end,
     Version =
 	case catch list_to_float(
