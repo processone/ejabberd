@@ -308,7 +308,7 @@ init_plugins(Host, ServerHost, Opts) ->
     Plugins = gen_mod:get_opt(plugins, Opts, [?STDNODE]),
     PepMapping = gen_mod:get_opt(pep_mapping, Opts, []),
     ?DEBUG("** PEP Mapping : ~p~n",[PepMapping]),
-    Plugins_OK = lists:foldl(fun(Name, Acc) ->
+    PluginsOK = lists:foldl(fun(Name, Acc) ->
         Plugin = list_to_atom(?PLUGIN_PREFIX ++ Name),
 			  case catch apply(Plugin, init, [Host, ServerHost, Opts]) of
 			{'EXIT', _Error} ->
@@ -318,7 +318,7 @@ init_plugins(Host, ServerHost, Opts) ->
 			    [Name | Acc]
 			  end
 		  end, [], Plugins),
-    {Plugins_OK, TreePlugin, PepMapping}.
+    {lists:reverse(PluginsOK), TreePlugin, PepMapping}.
 
 
 -spec(terminate_plugins/4 ::
