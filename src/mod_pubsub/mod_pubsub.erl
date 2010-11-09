@@ -269,7 +269,7 @@ init_plugins(Host, ServerHost, Opts) ->
 			    [Name | Acc]
 			  end
 		end, [], Plugins),
-    {PluginsOK, TreePlugin, PepMapping}.
+    {lists:reverse(PluginsOK), TreePlugin, PepMapping}.
 
 terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     lists:foreach(fun(Name) ->
