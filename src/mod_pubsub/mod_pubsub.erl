@@ -52,6 +52,7 @@
 -include("ejabberd.hrl").
 -include("adhoc.hrl").
 -include("pubsub.hrl").
+-include("mod_roster.hrl").
 
 -define(STDTREE, "tree").
 -define(STDNODE, "flat").
@@ -3750,13 +3751,25 @@ user_resources(User, Server) ->
 %%<li>The service does not support node configuration.</li>
 %%<li>The service does not support retrieval of default node configuration.</li>
 %%</ul>
-get_configure(Host, ServerHost, Node, From, Lang) ->
-    ServerHostB = list_to_binary(ServerHost),
+get_configure(Host, ServerHost, Node, #jid{node = User, domain = Server} = From, Lang) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type, idx = Nidx}) ->
 		case node_call(Type, get_affiliation, [Nidx, From]) of
 		    {result, owner} ->
-			Groups = ejabberd_hooks:run_fold(roster_groups, ServerHostB, [], [ServerHostB]),
+		  Groups = case lists:member(binary_to_list(Server), ?MYHOSTS) of
+		true ->
+		    %Roster_Items = ejabberd_hooks:run_fold(roster_get, ServerHost, [], [{User,Server}]),
+		    Roster_Groups = lists:foldl(fun
+		      (#roster{groups = []}, Acc) ->          Acc;
+		      (#roster{groups = Item_Groups}, Acc) -> [Item_Groups | Acc]
+		    end, [], ejabberd_hooks:run_fold(roster_get, ServerHost, [], [{User,Server}])),
+		    case Roster_Groups of
+		  [[[]]] -> [];
+		  _      -> lists:usort(Roster_Groups)
+		    end;
+		false ->
+		    []
+		  end,
 			{result,
 			 #xmlel{ns = ?NS_PUBSUB_OWNER, name = 'pubsub', children =
 				[#xmlel{ns = ?NS_PUBSUB_OWNER, name = 'configure', attrs =
