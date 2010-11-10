@@ -680,12 +680,12 @@ send_loop(State) ->
 %%
 -spec(disco_local_identity/5 ::
       (
-			     Acc    :: [] | [Identity::#xmlel{name::'identity',ns::?NS_DISCO_INFO}],
+			     Acc    :: [] | [Identity::#xmlel{}],
 			     From   :: jidEntity(),
 			     To     :: jidComponent(),
 			     NodeId :: nodeId(),
 			     Lang   :: binary())
-      -> Identities :: [] | [Identity::#xmlel{name::'identity',ns::?NS_DISCO_INFO}]
+      -> Identities :: [] | [Identity::#xmlel{}]
 	    ).
 
 disco_local_identity(Acc, _From, #jid{domain = Host} = _To, <<>> = _NodeId, _Lang) ->
@@ -723,12 +723,12 @@ disco_local_features(Acc, _From, _To, _NodeId, _Lang) ->
 
 -spec(disco_local_items/5 ::
       (
-			  Acc    :: {'result', Items :: [] | [Item::#xmlel{name::'item',ns::?NS_DISCO_INFO}]},
+			  Acc    :: {'result', Items :: [] | [Item::#xmlel{}]},
 			  From   :: jidEntity(),
 			  To     :: jidComponent(),
 			  NodeId :: nodeId(),
 			  Lang   :: binary())
-      -> {'result', Items :: [] | [Item::#xmlel{name::'item',ns::?NS_DISCO_INFO}]}
+      -> {'result', Items :: [] | [Item::#xmlel{}]}
 	     | {'error', _} %% TODO
 	    ).
 
@@ -740,12 +740,12 @@ disco_local_items(Acc, _From, _To, _Node, _Lang) ->
 
 -spec(disco_sm_identity/5 ::
       (
-			  Acc    :: [] | [Identity::#xmlel{name::'identity',ns::?NS_DISCO_INFO}],
+			  Acc    :: [] | [Identity::#xmlel{}],
 			  From   :: jidEntity(),
 			  To     :: jidContact(),
 			  NodeId :: nodeId(),
 			  Lang   :: binary())
-      -> Identities :: [] | [Identity::#xmlel{name::'identity',ns::?NS_DISCO_INFO}]
+      -> Identities :: [] | [Identity::#xmlel{}]
 	    ).
 
 disco_sm_identity(Acc, From, To, NodeId, _Lang) ->
@@ -757,7 +757,7 @@ disco_sm_identity(Acc, From, To, NodeId, _Lang) ->
 		       Host   :: jidContact(),
 		       NodeId :: nodeId(),
 		       From   :: jidEntity())
-      -> Identities :: [] | [Identity::#xmlel{name::'identity',ns::?NS_DISCO_INFO}]
+      -> Identities :: [] | [Identity::#xmlel{}]
 	    ).
 
 disco_identity(_Host, <<>> = _NodeId, _From) ->
@@ -831,12 +831,12 @@ disco_features(#jid{node = U, domain = S, resource = R} = Host, NodeId, From) ->
 -spec(disco_sm_items/5 ::
       (
 		       Acc    :: 'empty'
-		       | {'result', Items :: [] | [Item::#xmlel{name::'item',ns::?NS_DISCO_INFO}]},
+		       | {'result', Items :: [] | [Item::#xmlel{}]},
 		       From   :: jidEntity(),
 		       To     :: jidContact(),
 		       NodeId :: nodeId(),
 		       Lang   :: binary())
-      -> {'result', Items :: [] | [Item::#xmlel{name::'item',ns::?NS_DISCO_INFO}]}
+      -> {'result', Items :: [] | [Item::#xmlel{}]}
 	    ).
 
 disco_sm_items('empty' = _Acc, From, To, NodeId, Lang) ->
@@ -850,7 +850,7 @@ disco_sm_items({result, OtherItems} = _Acc, From, To, NodeId, _Lang) ->
 		    Host   :: jidContact(),
 		    NodeId :: nodeId(),
 		    From   :: jidEntity())
-      -> Items :: [] | [Item::#xmlel{name::'item',ns::?NS_DISCO_INFO}]
+      -> Items :: [] | [Item::#xmlel{}]
 	    ).
 
 disco_items(#jid{raw = JID, node = U, domain = S, resource = R} = Host, <<>>, From) ->
@@ -1071,7 +1071,7 @@ handle_cast(_Msg, State) ->
 		    Info  :: {'route',
 			      From   :: jidEntity(),
 			      To     :: jidComponent(),
-			      Packet :: #xmlel{name :: 'iq' | 'message' | 'presence'}},
+			      Packet :: #xmlel{}},
 		    State :: #state{})
       -> {'noreply', State::#state{}}
 	    ).
@@ -1155,7 +1155,7 @@ code_change(_OldVsn, State, _Extra) ->
 		 Host       :: hostPubsub(),
 		 From       :: jidEntity(),
 		 To         :: jidComponent(),
-		 Packet     :: #xmlel{name :: 'iq' | 'message' | 'presence'})
+		 Packet     :: #xmlel{})
       -> any()
 	    ).
 
@@ -1293,9 +1293,9 @@ do_route(_ServerHost, _Access, _Plugins, _Host, _From, _To, _Packet) ->
 			   Host   :: hostPubsub(), %% Host::host() TODO : implement ad hoc commands for PEP
 			   NodeId :: nodeId(),
 			   From   :: jidEntity())
-      -> {result, Info::[#xmlel{name::'identity',ns::?NS_DISCO_INFO}]}
-	     | {result, Info::[#xmlel{name::'identity',ns::?NS_DISCO_INFO}
-			       |#xmlel{name::'feature',ns::?NS_DISCO_INFO}]}
+      -> {result, Info::[#xmlel{}]}
+	     | {result, Info::[#xmlel{}
+			       |#xmlel{}]}
 	    ).
 
 command_disco_info(_Host, ?NS_ADHOC_b = _NodeId, _From) ->
@@ -1322,8 +1322,8 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING_b = _NodeId, _From) ->
 			Host   :: hostPubsub(),
 			NodeId :: nodeId(),
 			From   :: jidEntity())
-      -> {'result', [#xmlel{name::'identity',ns::?NS_DISCO_INFO}
-		     |#xmlel{name::'feature',ns::?NS_DISCO_INFO}]}
+      -> {'result', [#xmlel{}
+		     |#xmlel{}]}
 	     | {'error', _}
 	    ).
 
@@ -1367,8 +1367,8 @@ node_disco_info(Host, NodeId, From) ->
 		      NodeId :: nodeId(),
 		      From   :: jidEntity(),
 		      Lang   :: binary())
-      -> {'result', [#xmlel{name::'identity',ns::?NS_DISCO_INFO}
-		     |#xmlel{name::'feature',ns::?NS_DISCO_INFO}]}
+      -> {'result', [#xmlel{}
+		     |#xmlel{}]}
 	     | {'error', _}
 	    ).
 
@@ -1413,7 +1413,7 @@ iq_disco_info(Host, NodeId, From, _Lang) ->
 		       Host   :: hostPubsub(),
 		       NodeId :: nodeId(),
 		       From   :: jidEntity())
-      -> {'result', [] | [#xmlel{name::'item',ns::?NS_DISCO_ITEMS}]}
+      -> {'result', [] | [#xmlel{}]}
 	     | {'error', _}
 	    ).
 
@@ -1505,8 +1505,8 @@ get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGrou
       (
 	      From :: jidEntity(),
 	      To   :: jidContact(),
-	      IQ   :: #iq{type::'get'|'set',ns::?NS_PUBSUB|?NS_PUBSUB_OWNER})
-      -> #iq{type::'result'|'error',ns::?NS_PUBSUB|?NS_PUBSUB_OWNER}
+	      IQ   :: #iq{type::'get'|'set'})
+      -> #iq{type::'result'|'error'}
 	    ).
 
 iq_sm(From, #jid{node = U, domain = S, resource = undefined = R} = _To,
@@ -1547,7 +1547,7 @@ iq_get_vcard(Lang) ->
 		  ServerHost :: binary(),
 		  From       :: jidEntity(),
 		  IQType     :: 'get' | 'set',
-		  SubEl      :: #xmlel{name::'pubsub',ns::?NS_PUBSUB},
+		  SubEl      :: #xmlel{},
 		  Lang       :: binary())
       -> {'result', Result::[] | #xmlel{}} | {'error', _}
 	    ).
@@ -1562,7 +1562,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
 		  ServerHost :: binary(),
 		  From       :: jidEntity(),
 		  IQType     :: 'get' | 'set',
-		  SubEl      :: #xmlel{name::'pubsub',ns::?NS_PUBSUB},
+		  SubEl      :: #xmlel{},
 		  Lang       :: binary(),
 		  Access     :: atom(),
 		  Plugins    :: [Plugin::nodeType()])
@@ -1670,7 +1670,7 @@ iq_pubsub(Host, ServerHost, From, IQType, #xmlel{children = Els}, Lang, Access, 
 			ServerHost :: binary(),
 			From       :: jidEntity(),
 			IQType     :: 'get' | 'set',
-			SubEl      :: #xmlel{name::'pubsub',ns::?NS_PUBSUB_OWNER},
+			SubEl      :: #xmlel{},
 			Lang       :: binary())
       -> {'result', Result::[] | #xmlel{}} | {'error', _}
 	    ).
@@ -1712,12 +1712,10 @@ iq_pubsub_owner(Host, ServerHost, From, IQType, #xmlel{children = Els}, Lang) ->
 		   Host       :: hostPubsub(), %% TODO : ad hoc commands for PEP
 		   ServerHost :: binary(),
 		   From       :: jidEntity(),
-		   IQ         :: #iq{
-		     type :: 'set',
-		     ns   :: ?NS_ADHOC},
+		   IQ         :: #iq{type :: 'set'},
 		   Access     :: atom(),
 		   Plugins    :: [Plugin::nodeType()])
-      -> {'result', [Result::#xmlel{ns::?NS_ADHOC,name::'command'}]}
+      -> {'result', [Result::#xmlel{}]}
 	     | {'error', Error::_}
 	    ).
 
@@ -4506,7 +4504,7 @@ itemAttr(ItemId) -> [?XMLATTR('id', ItemId)].
 -spec(itemsEls/1 ::
       (
 		 PubsubItems::[PubsubItem::pubsubItem()])
-      -> Items::[Item::#xmlel{name::'item',ns::?NS_PUBSUB}]
+      -> Items::[Item::#xmlel{}]
 	    ).
 
 itemsEls(PubsubItems) ->
