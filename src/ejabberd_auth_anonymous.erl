@@ -149,6 +149,8 @@ allow_multiple_connections(Host) when is_list(Host) ->
 %% @doc Check if user exist in the anonymous database.
 
 anonymous_user_exist(User, Server) when is_list(User), is_list(Server) ->
+    anonymous_user_exist(list_to_binary(User), list_to_binary(Server));
+anonymous_user_exist(User, Server) when is_binary(User), is_binary(Server) ->
     LUser = exmpp_stringprep:nodeprep(User),
     LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
@@ -165,7 +167,7 @@ anonymous_user_exist(User, Server) when is_list(User), is_list(Server) ->
 %%     LServer = string()
 %% @doc Remove connection from Mnesia tables.
 
-remove_connection(SID, LUser, LServer) when is_list(LUser), is_list(LServer) ->
+remove_connection(SID, LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:delete_object({anonymous, US, SID})
@@ -201,8 +203,8 @@ register_connection(SID, JID, Info) when ?IS_JID(JID) ->
 %% @doc Remove an anonymous user from the anonymous users table.
 
 unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
-    LUser = exmpp_jid:prep_node_as_list(JID),
-    LServer = exmpp_jid:prep_domain_as_list(JID),
+    LUser = exmpp_jid:prep_node(JID),
+    LServer = exmpp_jid:prep_domain(JID),
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),
     remove_connection(SID, LUser, LServer).
@@ -214,8 +216,8 @@ unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
 
 purge_hook(false, _LUser, _LServer) ->
     ok;
-purge_hook(true, LUser, LServer) when is_list(LUser), is_list(LServer) ->
-    ejabberd_hooks:run(anonymous_purge_hook, list_to_binary(LServer), [LUser, LServer]).
+purge_hook(true, LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
+    ejabberd_hooks:run(anonymous_purge_hook, LServer, [LUser, LServer]).
 
 %% ---------------------------------
 %% Specific anonymous auth functions

@@ -121,6 +121,8 @@ start(Host, Opts) ->
 
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
+    ejabberd_hooks:add(anonymous_purge_hook, HostB,
+		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(webadmin_page_host, HostB,
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, HostB,
@@ -168,6 +170,8 @@ loop(Host, ServerHost) ->
 stop(Host) ->
     HostB = list_to_binary(Host),
     ejabberd_hooks:delete(remove_user, HostB,
+			  ?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(anonymous_purge_hook, HostB,
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(webadmin_page_host, HostB,
 			  ?MODULE, webadmin_page, 50),
