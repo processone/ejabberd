@@ -549,12 +549,12 @@
 		  %%
 		  %% Protect In-Band account registrations with CAPTCHA.
 		  %%
-		  %%{captcha_protected, true}.
+		  %%{captcha_protected, true},
 
 		  %%
 		  %% Set the minimum informational entropy for passwords.
 		  %%
-		  %%{password_strength, 32}.
+		  %%{password_strength, 32},
 
 		  %%
 		  %% After successful registration, the user receives
