@@ -110,7 +110,7 @@ start_link(StateName, StateData) ->
     ?GEN_FSM:start_link(?MODULE, [StateName, StateData], ?FSMOPTS).
 
 migrate(FsmRef, Node, After) ->
-    ?GEN_FSM:send_all_state_event(FsmRef, {migrate, Node, After}).
+    erlang:send_after(After, FsmRef, {migrate, Node}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -597,9 +597,6 @@ handle_event(destroy, StateName, StateData) ->
 handle_event({set_affiliations, Affiliations}, StateName, StateData) ->
     {next_state, StateName, StateData#state{affiliations = Affiliations}};
 
-handle_event({migrate, Node, After}, StateName, StateData) when Node /= node() ->
-    {migrate, StateData,
-     {Node, ?MODULE, start, [StateName, StateData]}, After * 2};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -716,6 +713,13 @@ handle_info({captcha_failed, From}, normal_state, StateData) ->
 		       StateData
 	       end,
     {next_state, normal_state, NewState};
+handle_info({migrate, Node}, StateName, StateData) ->
+    if Node /= node() ->
+	    {migrate, StateData,
+	     {Node, ?MODULE, start, [StateName, StateData]}, 0};
+       true ->
+	    {next_state, StateName, StateData}
+    end;
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 

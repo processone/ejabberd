@@ -22,7 +22,11 @@
 -define(HASHTBL, nodes_hash).
 -define(HASHTBL_NEW, nodes_hash_new).
 -define(POINTS, 64).
--define(REHASH_TIMEOUT, 30000).
+-define(REHASH_TIMEOUT, timer:seconds(30)).
+-define(MIGRATE_TIMEOUT, timer:minutes(2)).
+%%-define(REHASH_TIMEOUT, timer:seconds(10)).
+%%-define(MIGRATE_TIMEOUT, timer:seconds(5)).
+-define(LOCK, {migrate, node()}).
 
 -record(state, {}).
 
@@ -80,13 +84,16 @@ shutdown() ->
 %% gen_server callbacks
 %%====================================================================
 init([]) ->
+    {A, B, C} = now(),
+    random:seed(A, B, C),
     net_kernel:monitor_nodes(true, [{node_type, visible}]),
     ets:new(?HASHTBL, [named_table, public, ordered_set]),
     ets:new(?HASHTBL_NEW, [named_table, public, ordered_set]),
     register_node(),
-    AllNodes = mnesia:system_info(running_db_nodes),
+    pg2:create(?MODULE),
+    AllNodes = cluster_group(),
     OtherNodes = case AllNodes of
-		     [_] ->
+		     [_MyNode] ->
 			 AllNodes;
 		     _ ->
 			 AllNodes -- [node()]
@@ -96,35 +103,55 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call(announce, _From, State) ->
-    case mnesia:system_info(running_db_nodes) of
+    case global:set_lock(?LOCK, cluster_group(), 0) of
+	false ->
+	    ?INFO_MSG("Another node is recently attached to "
+		      "the cluster and is being rebalanced. "
+		      "Waiting for the rebalancing to be completed "
+		      "before starting this node. "
+		      "This may take serveral minutes. "
+		      "Please, be patient.", []),
+	    global:set_lock(?LOCK, cluster_group(), infinity);
+	true ->
+	    ok
+    end,
+    case cluster_group() of
 	[_MyNode] ->
-	    ok;
+	    join_cluster_group(),
+	    global:del_lock(?LOCK);
 	Nodes ->
 	    OtherNodes = Nodes -- [node()],
-	    lists:foreach(
-	      fun(Node) ->
-		      {?MODULE, Node} ! {node_ready, node()}
-	      end, OtherNodes),
 	    ?INFO_MSG("waiting for migration from nodes: ~w",
 		      [OtherNodes]),
-	    timer:sleep(?REHASH_TIMEOUT),
-	    append_node(?HASHTBL, node())
+	    {_Res, BadNodes} = gen_server:multi_call(
+				 OtherNodes, ?MODULE,
+				 {node_ready, node()}, ?REHASH_TIMEOUT),
+	    append_node(?HASHTBL, node()),
+	    join_cluster_group(),
+	    gen_server:abcast(OtherNodes -- BadNodes,
+			      ?MODULE, {node_ready, node()}),
+	    erlang:send_after(?MIGRATE_TIMEOUT, self(), del_lock)
     end,
+    {reply, ok, State};
+handle_call({node_ready, Node}, _From, State) ->
+    ?INFO_MSG("node ~p is ready, preparing migration", [Node]),
+    append_node(?HASHTBL_NEW, Node),
+    ejabberd_hooks:run(node_up, [Node]),
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
+handle_cast({node_ready, Node}, State) ->
+    ?INFO_MSG("adding node ~p to hash and starting migration", [Node]),
+    append_node(?HASHTBL, Node),
+    ejabberd_hooks:run(node_hash_update, [?MIGRATE_TIMEOUT]),
+    {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({node_ready, Node}, State) ->
-    ?INFO_MSG("node ~p is ready, starting migration", [Node]),
-    append_node(?HASHTBL_NEW, Node),
-    ejabberd_hooks:run(node_hash_update, [?REHASH_TIMEOUT]),
-    timer:sleep(?REHASH_TIMEOUT),
-    ?INFO_MSG("adding node ~p to hash", [Node]),
-    append_node(?HASHTBL, Node),
+handle_info(del_lock, State) ->
+    global:del_lock(?LOCK),
     {noreply, State};
 handle_info({node_down, Node}, State) ->
     delete_node(?HASHTBL, Node),
@@ -187,3 +214,9 @@ get_node_by_hash(Tab, Hash) ->
 
 register_node() ->
     global:register_name(list_to_atom(node_id()), self()).
+
+cluster_group() ->
+    [node() | [node(P) || P <- pg2:get_members(?MODULE)]].
+
+join_cluster_group() ->
+    pg2:join(?MODULE, whereis(?MODULE)).

@@ -203,9 +203,9 @@ migrate(After) ->
 	     ['$$']}]),
     lists:foreach(
       fun([FromTo, Pid]) ->
-	      case ejabberd_cluster:get_node_new(FromTo) of
+	      case ejabberd_cluster:get_node(FromTo) of
 		  Node when Node /= node() ->
-		      ejabberd_s2s_out:stop_connection(Pid, After * 2);
+		      ejabberd_s2s_out:stop_connection(Pid, After);
 		  _ ->
 		      ok
 	      end

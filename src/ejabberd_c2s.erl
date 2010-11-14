@@ -194,7 +194,7 @@ stop(FsmRef) ->
     ?GEN_FSM:send_event(FsmRef, closed).
 
 migrate(FsmRef, Node, After) ->
-    ?GEN_FSM:send_all_state_event(FsmRef, {migrate, Node, After}).
+    erlang:send_after(After, FsmRef, {migrate, Node}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -282,6 +282,7 @@ init([StateName, StateData, _FSMLimitOpts]) ->
 			   El ->
 			       get_priority_from_presence(El)
 		       end,
+	    ejabberd_sm:drop_session(StateData#state.sid),
 	    ejabberd_sm:open_session(
 	      SID,
 	      StateData#state.user,
@@ -289,6 +290,7 @@ init([StateName, StateData, _FSMLimitOpts]) ->
 	      StateData#state.resource,
 	      Priority,
 	      Info),
+	    %%ejabberd_sm:drop_session(StateData#state.sid),
 	    NewStateData = StateData#state{sid = SID, socket_monitor = MRef},
             StateData2 = change_reception(NewStateData, true),
             StateData3 = start_keepalive_timer(StateData2),
@@ -1232,9 +1234,6 @@ session_established2(El, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
-handle_event({migrate, Node, After}, StateName, StateData) when Node /= node() ->
-    fsm_migrate(StateName, StateData, Node, After * 2);
-
 handle_event({add_rosteritem, IJID, ISubscription}, StateName, StateData) ->
     NewStateData = roster_change(IJID, ISubscription, StateData),
     fsm_next_state(StateName, NewStateData);
@@ -1624,6 +1623,12 @@ handle_info({force_update_presence, LUser}, StateName,
 		StateData
 	end,
     {next_state, StateName, NewStateData};
+handle_info({migrate, Node}, StateName, StateData) ->
+    if Node /= node() ->
+	    fsm_migrate(StateName, StateData, Node, 0);
+       true ->
+	    fsm_next_state(StateName, StateData)
+    end;
 handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     Recipients = ejabberd_hooks:run_fold(
 		   c2s_broadcast_recipients, StateData#state.server,
@@ -2535,13 +2540,6 @@ maybe_migrate(StateName, StateData) ->
             StateData2 = change_reception(PackedStateData, true),
             StateData3 = start_keepalive_timer(StateData2),
 	    erlang:garbage_collect(),
-	    case ejabberd_cluster:get_node_new({U, S}) of
-		Node ->
-		    ok;
-		NewNode ->
-		    After = ejabberd_cluster:rehash_timeout(),
-		    migrate(self(), NewNode, After)
-	    end,
 	    fsm_next_state(StateName, StateData3);
 	Node ->
 	    fsm_migrate(StateName, PackedStateData, Node, 0)
