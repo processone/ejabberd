@@ -184,7 +184,7 @@ migrate(After) ->
 	      end
       end, Rs).
 
-node_up(Node) ->
+node_up(_Node) ->
     copy_rooms(mnesia:dirty_first(muc_online_room)).
 
 copy_rooms('$end_of_table') ->
