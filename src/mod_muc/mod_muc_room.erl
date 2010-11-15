@@ -870,10 +870,17 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 	    "unavailable" ->
 		case is_user_online(From, StateData) of
 		    true ->
+			NewPacket = case {(StateData#state.config)#config.allow_visitor_status,
+					  is_visitor(From, StateData)} of
+					{false, true} ->
+					    strip_status(Packet);
+					_ ->
+					    Packet
+				    end,
 			NewState =
-			    add_user_presence_un(From, Packet, StateData),
+			    add_user_presence_un(From, NewPacket, StateData),
 			send_new_presence(From, NewState),
-			Reason = case xml:get_subtag(Packet, "status") of
+			Reason = case xml:get_subtag(NewPacket, "status") of
 				false -> "";
 				Status_el -> xml:get_tag_cdata(Status_el)
 			end,
