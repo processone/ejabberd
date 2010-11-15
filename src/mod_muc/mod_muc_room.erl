@@ -2371,7 +2371,7 @@ process_admin_items_set3({JID, affiliation, none, Reason}, SD) ->
     case (SD#state.config)#config.members_only of
 	true ->
     catch send_kickban_presence(
-	    JID, Reason, "321", SD),
+	    JID, Reason, "321", none, SD),
 	    SD1 = set_affiliation(JID, none, SD),
 	    set_role(JID, none, SD1);
 	_ ->
@@ -2382,7 +2382,7 @@ process_admin_items_set3({JID, affiliation, none, Reason}, SD) ->
 
 process_admin_items_set3({JID, affiliation, outcast, Reason}, SD) ->
     catch send_kickban_presence(
-	    JID, Reason, "301", SD),
+	    JID, Reason, "301", outcast, SD),
     set_affiliation_and_reason(
       JID, outcast, Reason,
       set_role(JID, none, SD));
@@ -2726,6 +2726,11 @@ can_change_ra(_FAffiliation, _FRole,
 
 
 send_kickban_presence(JID, Reason, Code, StateData) ->
+    {N,D,R} = JID,
+    NewAffiliation = get_affiliation(exmpp_jid:make(N,D,R), StateData),
+	send_kickban_presence(JID, Reason, Code, NewAffiliation, StateData).
+
+send_kickban_presence(JID, Reason, Code, NewAffiliation, StateData) ->
     LJID = jlib:short_prepd_jid(JID),
     LJIDs = case LJID of
 		{U, S, undefined} ->
@@ -2751,14 +2756,12 @@ send_kickban_presence(JID, Reason, Code, StateData) ->
 			      ?DICT:find(J, StateData#state.users),
 			  add_to_log(kickban, {Nick, Reason, Code}, StateData),
 			  tab_remove_online_user(J, StateData),
-			  send_kickban_presence1(J, Reason, Code, StateData)
+			  send_kickban_presence1(J, Reason, Code, NewAffiliation, StateData)
 		  end, LJIDs).
 
-send_kickban_presence1(UJID, Reason, Code, StateData) ->
+send_kickban_presence1(UJID, Reason, Code, Affiliation, StateData) ->
     {ok, #user{jid = _RealJID,
 	       nick = Nick}} = ?DICT:find(UJID, StateData#state.users),
-    {N,D,R} = UJID,
-    Affiliation = get_affiliation(exmpp_jid:make(N,D,R), StateData),
     SAffiliation = affiliation_to_binary(Affiliation),
     lists:foreach(
       fun({_LJID, Info}) ->
