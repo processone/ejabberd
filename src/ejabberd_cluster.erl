@@ -10,8 +10,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, get_node/1, get_node_new/1, announce/0, shutdown/0,
-	 node_id/0, get_node_by_id/1, get_nodes/0, rehash_timeout/0]).
+-export([start_link/0, get_node/1, get_node_new/1, announce/1, shutdown/0,
+	 node_id/0, get_node_by_id/1, get_nodes/0, rehash_timeout/0, start/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -33,8 +33,17 @@
 %%====================================================================
 %% API
 %%====================================================================
+start() ->
+    ChildSpec = {?MODULE,
+                 {?MODULE, start_link, []},
+                 permanent,
+                 brutal_kill,
+                 worker,
+                 [?MODULE]},
+    supervisor:start_child(ejabberd_sup, ChildSpec).
+
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+    gen_server:start_link(?MODULE, [], []).
 
 get_node(Key) ->
     Hash = erlang:phash2(Key),
@@ -48,8 +57,8 @@ get_nodes() ->
     %% TODO
     mnesia:system_info(running_db_nodes).
 
-announce() ->
-    gen_server:call(?MODULE, announce, infinity).
+announce(Pid) ->
+    gen_server:call(Pid, announce, infinity).
 
 node_id() ->
     integer_to_list(erlang:phash2(node())).
@@ -90,8 +99,7 @@ init([]) ->
     ets:new(?HASHTBL, [named_table, public, ordered_set]),
     ets:new(?HASHTBL_NEW, [named_table, public, ordered_set]),
     register_node(),
-    pg2:create(?MODULE),
-    AllNodes = cluster_group(),
+    AllNodes = get_nodes(),
     OtherNodes = case AllNodes of
 		     [_MyNode] ->
 			 AllNodes;
@@ -103,7 +111,7 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call(announce, _From, State) ->
-    case global:set_lock(?LOCK, cluster_group(), 0) of
+    case global:set_lock(?LOCK, get_nodes(), 0) of
 	false ->
 	    ?INFO_MSG("Another node is recently attached to "
 		      "the cluster and is being rebalanced. "
@@ -111,13 +119,13 @@ handle_call(announce, _From, State) ->
 		      "before starting this node. "
 		      "This may take serveral minutes. "
 		      "Please, be patient.", []),
-	    global:set_lock(?LOCK, cluster_group(), infinity);
+	    global:set_lock(?LOCK, get_nodes(), infinity);
 	true ->
 	    ok
     end,
-    case cluster_group() of
+    case get_nodes() of
 	[_MyNode] ->
-	    join_cluster_group(),
+	    register(?MODULE, self()),
 	    global:del_lock(?LOCK);
 	Nodes ->
 	    OtherNodes = Nodes -- [node()],
@@ -127,7 +135,7 @@ handle_call(announce, _From, State) ->
 				 OtherNodes, ?MODULE,
 				 {node_ready, node()}, ?REHASH_TIMEOUT),
 	    append_node(?HASHTBL, node()),
-	    join_cluster_group(),
+	    register(?MODULE, self()),
 	    gen_server:abcast(OtherNodes -- BadNodes,
 			      ?MODULE, {node_ready, node()}),
 	    erlang:send_after(?MIGRATE_TIMEOUT, self(), del_lock)
@@ -214,9 +222,3 @@ get_node_by_hash(Tab, Hash) ->
 
 register_node() ->
     global:register_name(list_to_atom(node_id()), self()).
-
-cluster_group() ->
-    [node() | [node(P) || P <- pg2:get_members(?MODULE)]].
-
-join_cluster_group() ->
-    pg2:join(?MODULE, whereis(?MODULE)).

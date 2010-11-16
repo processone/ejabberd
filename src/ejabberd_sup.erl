@@ -178,13 +178,6 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
-    Cluster =
-	{ejabberd_cluster,
-	 {ejabberd_cluster, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [ejabberd_cluster]},
     CacheTabSupervisor =
 	{cache_tab_sup,
 	 {cache_tab_sup, start_link, []},
@@ -194,7 +187,6 @@ init([]) ->
 	 [cache_tab_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
-	   Cluster,
 	   SystemMonitor,
 	   Router,
 	   SM,
