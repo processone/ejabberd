@@ -3286,6 +3286,9 @@ remove_nonmembers(StateData) ->
 
 set_opts([], StateData) ->
     StateData;
+%% TODO: fix the calls to this function, so this clause isn't needed
+set_opts([#muc_room_opt{opt = Opt, val = Val} | Opts], StateData) ->
+    set_opts([{Opt, Val} | Opts], StateData);
 set_opts([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
 	      title -> StateData#state{config = (StateData#state.config)#config{title = Val}};

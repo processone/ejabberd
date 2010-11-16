@@ -80,3 +80,6 @@
 -record(muc_online_users, {us,
 			   room,
 			   host}).
+
+%% Copied from mod_muc.erl
+-record(muc_room_opt, {name_host, opt, val}).
