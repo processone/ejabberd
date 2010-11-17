@@ -1665,41 +1665,41 @@ msgstr "Запустить"
 
 #: web/mod_register_web.erl:103
 msgid "Your Jabber account was succesfully created."
-msgstr ""
+msgstr "Ваш Jabber-аккаунт был успешно создан."
 
 #: web/mod_register_web.erl:106
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Ошибка при создании аккаунта:"
 
 #: web/mod_register_web.erl:114
 msgid "Your Jabber account was succesfully deleted."
-msgstr ""
+msgstr "Ваш Jabber-аккаунт был успешно удален."
 
 #: web/mod_register_web.erl:117
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Ошибка при удалении аккаунта:"
 
 #: web/mod_register_web.erl:127
 msgid "The password of your Jabber account was succesfully changed."
-msgstr ""
+msgstr "Пароль Вашего Jabber-аккаунта был успешно изменен."
 
 #: web/mod_register_web.erl:130
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Ошибка при смене пароля:"
 
 #: web/mod_register_web.erl:162 web/mod_register_web.erl:171
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Регистрация Jabber-аккаунта"
 
 #: web/mod_register_web.erl:173 web/mod_register_web.erl:191
 #: web/mod_register_web.erl:200
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Зарегистрировать Jabber-аккаунт"
 
 #: web/mod_register_web.erl:175 web/mod_register_web.erl:488
 #: web/mod_register_web.erl:497
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Удалить Jabber-аккаунт"
 
 #: web/mod_register_web.erl:202
 msgid ""
@@ -1707,6 +1707,9 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID "
+"(Jabber-идентификатор) будет в виде: \"пользователь@сервер\". Пожалуйста, "
+"внимательно читайте инструкции для правильного заполнения полей."
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
@@ -1717,10 +1720,12 @@ msgstr "Имя пользователя IRC"
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем "
+"же именем."
 
 #: web/mod_register_web.erl:217
 msgid "Characters not allowed: @ : ' \" < > &"
-msgstr ""
+msgstr "Недопустимые символы: @ : ' \" < > &"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
@@ -1732,17 +1737,19 @@ msgstr "Сервер ~b"
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
-msgstr ""
+msgstr "Не говорите никому свой пароль, даже администраторам сервера."
 
 #: web/mod_register_web.erl:233
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Позже Вы можете изменить пароль через Jabber-клиент."
 
 #: web/mod_register_web.erl:234
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. "
+"Используйте эту функцию только в том случае, если считаете это безопасным."
 
 #: web/mod_register_web.erl:236
 msgid ""
@@ -1750,6 +1757,9 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Запомните пароль или запишите его на бумаге, которую сохраните в безопасном "
+"месте. В Jabber'е нет автоматизированного средства восстановления пароля в "
+"том случае, если Вы его забудете."
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
 #, fuzzy
@@ -1773,8 +1783,8 @@ msgstr "Пароль:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Здесь Вы можете удалить Jabber-аккаунт с этого сервера."
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
-msgstr ""
+msgstr "Удалить"

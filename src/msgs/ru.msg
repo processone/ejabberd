@@ -35,6 +35,7 @@
 {"Birthday","День рождения"}.
 {"Change Password","Сменить пароль"}.
 {"Change User Password","Изменить пароль пользователя"}.
+{"Characters not allowed: @ : ' \" < > &","Недопустимые символы: @ : ' \" < > &"}.
 {"Chatroom configuration modified","Конфигурация комнаты изменилась"}.
 {"Chatroom is created","Комната создана"}.
 {"Chatroom is destroyed","Комната уничтожена"}.
@@ -69,6 +70,7 @@
 {"Description:","Описание:"}.
 {"Disc only copy","только диск"}.
 {"Displayed Groups:","Видимые группы:"}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Не говорите никому свой пароль, даже администраторам сервера."}.
 {"Dump Backup to Text File at ","Копирование в текстовый файл на "}.
 {"Dump to Text File","Копирование в текстовый файл"}.
 {"Edit Properties","Изменить параметры"}.
@@ -145,6 +147,7 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Нельзя посылать частные сообщения типа \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Не разрешается посылать частные сообщения прямо в конференцию"}.
 {"It is not allowed to send private messages","Запрещено посылать приватные сообщения"}.
+{"Jabber Account Registration","Регистрация Jabber-аккаунта"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s недопустимый"}.
 {"January","января"}.
@@ -177,6 +180,7 @@
 {"May","мая"}.
 {"Membership is required to enter this room","В эту конференцию могут входить только её члены"}.
 {"Members:","Члены:"}.
+{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Запомните пароль или запишите его на бумаге, которую сохраните в безопасном месте. В Jabber'е нет автоматизированного средства восстановления пароля в том случае, если Вы его забудете."}.
 {"Memory","Память"}.
 {"Message body","Тело сообщения"}.
 {"Middle Name","Отчество"}.
@@ -257,6 +261,7 @@
 {"Raw","Необработанный формат"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
 {"Recipient is not in the conference room","Адресата нет в конференции"}.
+{"Register a Jabber account","Зарегистрировать Jabber-аккаунт"}.
 {"Registered Users:","Зарегистрированные пользователи:"}.
 {"Registered Users","Зарегистрированные пользователи"}.
 {"Registration in mod_irc for ","Регистрация в mod_irc для "}.
@@ -302,6 +307,7 @@
 {"Show Ordinary Table","Показать обычную таблицу"}.
 {"Shut Down Service","Остановить службу"}.
 {"~s invites you to the room ~s","~s приглашает вас в комнату ~s"}.
+{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. Используйте эту функцию только в том случае, если считаете это безопасным."}.
 {"Specify the access model","Укажите механизм управления доступом"}.
 {"Specify the event message type","Укажите тип сообщения о событии"}.
 {"Specify the publisher model","Условия публикации"}.
@@ -329,6 +335,13 @@
 {"The captcha is valid.","Проверка капчи прошла успешно."}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
 {"the password is","пароль:"}.
+{"The password of your Jabber account was succesfully changed.","Пароль Вашего Jabber-аккаунта был успешно изменен."}.
+{"There was an error changing the password: ","Ошибка при смене пароля:"}.
+{"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
+{"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."}.
+{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID (Jabber-идентификатор) будет в виде: \"пользователь@сервер\". Пожалуйста, внимательно читайте инструкции для правильного заполнения полей."}.
+{"This page allows to unregister a Jabber account in this Jabber server.","Здесь Вы можете удалить Jabber-аккаунт с этого сервера."}.
 {"This participant is kicked from the room because he sent an error message to another participant","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
 {"This participant is kicked from the room because he sent an error message","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
 {"This participant is kicked from the room because he sent an error presence","Этого участника выгнали из комнаты за то, что он послал присутствие с ошибкой"}.
@@ -346,6 +359,8 @@
 {"Tuesday","Вторник"}.
 {"Unable to generate a captcha","Не получилось создать капчу"}.
 {"Unauthorized","Не авторизован"}.
+{"Unregister a Jabber account","Удалить Jabber-аккаунт"}.
+{"Unregister","Удалить"}.
 {"Update message of the day (don't send)","Обновить сообщение дня (не рассылать)"}.
 {"Update message of the day on all hosts (don't send)","Обновить сообщение дня на всех виртуальных серверах (не рассылать)"}.
 {"Update plan","План обновления"}.
@@ -367,6 +382,7 @@
 {"Wednesday","Среда"}.
 {"When to send the last published item","Когда посылать последний опубликованный элемент"}.
 {"Whether to allow subscriptions","Разрешить подписку"}.
+{"You can later change your password using a Jabber client.","Позже Вы можете изменить пароль через Jabber-клиент."}.
 {"You have been banned from this room","Вам запрещено входить в эту конференцию"}.
 {"You must fill in field \"Nickname\" in the form","Вы должны заполнить поле \"Псевдоним\" в форме"}.
 {"You need an x:data capable client to configure mod_irc settings","Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
@@ -374,4 +390,6 @@
 {"You need an x:data capable client to register nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
+{"Your Jabber account was succesfully created.","Ваш Jabber-аккаунт был успешно создан."}.
+{"Your Jabber account was succesfully deleted.","Ваш Jabber-аккаунт был успешно удален."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"}.
