@@ -346,6 +346,9 @@ static int tls_drv_control(ErlDrvData handle,
 
 	    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 	    SSL_CTX_set_default_verify_paths(ctx);
+#ifdef SSL_MODE_RELEASE_BUFFERS
+	    SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+#endif
 
 	    if (command == SET_CERTIFICATE_FILE_ACCEPT)
 	    {
