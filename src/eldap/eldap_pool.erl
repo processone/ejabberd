@@ -71,6 +71,8 @@ do_request(Name, {F, Args}) ->
     case pg2:get_closest_pid(make_id(Name)) of
 	Pid when is_pid(Pid) ->
 	    case catch apply(eldap, F, [Pid | Args]) of
+		{'EXIT', {timeout, _}} ->
+		    ?ERROR_MSG("LDAP request failed: timed out", []);
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
 			       [F, Args, Reason]),
