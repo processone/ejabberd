@@ -83,7 +83,7 @@ CREATE TABLE spool (
 CREATE TABLE vcard (
     host varchar(250) NOT NULL,
     username varchar(250) NOT NULL,
-    vcard text NOT NULL,
+    vcard mediumtext NOT NULL,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (host, username)
 ) CHARACTER SET utf8;
