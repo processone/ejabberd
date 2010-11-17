@@ -112,6 +112,8 @@
 -define(PROCESS_DELAY_MIN, 0).
 -define(PROCESS_DELAY_MAX, 1000).
 
+%% Line copied from mod_http_bind.erl
+-define(PROCNAME_MHB, ejabberd_mod_http_bind).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -120,7 +122,8 @@
 %%       supervisor
 start(XMPPDomain, Sid, Key, IP) ->
     ?DEBUG("Starting session", []),
-    case catch supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key, IP]) of
+    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
+    case catch supervisor:start_child(SupervisorProc, [Sid, Key, IP]) of
     	{ok, Pid} -> {ok, Pid};
 	_ -> check_bind_module(XMPPDomain),
              {error, "Cannot start HTTP bind session"}
