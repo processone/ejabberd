@@ -42,13 +42,17 @@
 -define(PROCNAME, ejabberd_mod_proxy65).
 
 start(Host, Opts) ->
-    mod_proxy65_service:add_listener(Host, Opts),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {
-      Proc, {?MODULE, start_link, [Host, Opts]},
-      transient, infinity, supervisor, [?MODULE]
-     },
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    case mod_proxy65_service:add_listener(Host, Opts) of
+	{error, _} = Err ->
+	    erlang:error(Err);
+	_ ->
+	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+	    ChildSpec = {
+	      Proc, {?MODULE, start_link, [Host, Opts]},
+	      transient, infinity, supervisor, [?MODULE]
+	     },
+	    supervisor:start_child(ejabberd_sup, ChildSpec)
+    end.
 
 stop(Host) ->
     mod_proxy65_service:delete_listener(Host),
