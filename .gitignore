@@ -2,6 +2,7 @@
 # You can add personal rules in your file .git/info/exclude
 *.swp
 *~
+/contrib/extract_translations/extract_translations.beam
 /doc/*.aux
 /doc/*.haux
 /doc/*.html
