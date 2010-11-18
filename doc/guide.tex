@@ -88,6 +88,7 @@
 \newcommand{\modroster}{\module{mod\_roster}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
+\newcommand{\modsharedrosterldap}{\module{mod\_shared\_roster\_ldap}}
 \newcommand{\modsic}{\module{mod\_sic}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
@@ -2256,8 +2257,7 @@ To configure the module to use ODBC as storage backend, add the option
 \ind{databases!LDAP}
 
 \ejabberd{} has built-in LDAP support. You can authenticate users against LDAP
-server and use LDAP directory as vCard storage. Shared rosters are not supported
-yet.
+server and use LDAP directory as vCard storage.
 
 Usually \ejabberd{} treats LDAP as a read-only storage:
 it is possible to consult data, but not possible to
@@ -2587,7 +2587,10 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modregisterweb}{\modregisterweb{}} & Web for Account Registrations &  \\
     \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) &  \\
     \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\
-    \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} \\
+    \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} or \\
+    & & \modrosterodbc\\
+    \hline \ahrefloc{modsharedrosterldap}{\modsharedrosterldap{}} & LDAP Shared roster management & \modroster{} or \\
+    & & \modrosterodbc\\
     \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
     \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) &  \\
     \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0202}) &  \\
@@ -3962,7 +3965,8 @@ Options:
   This option does not affect the client in any way.
   This option is only useful if Roster Versioning is enabled.
   This option is disabled by default.
-  Important: if you use \modsharedroster, you must disable this option.
+  Important: if you use \modsharedroster{} or \modsharedrosterldap{},
+  you must disable this option.
 \end{description}
 
 This example configuration enables Roster Versioning with storage of current id:
@@ -4140,6 +4144,349 @@ Examples:
   \end{tabular}
 \end{table}
 \end{itemize}
+
+\makesubsection{modsharedrosterldap}{\modsharedrosterldap{}}
+\ind{modules!\modsharedrosterldap{}}\ind{shared roster groups ldap}
+
+This module lets the server administrator
+automatically populate users' rosters (contact lists) with entries based on
+users and groups defined in an LDAP-based directory.
+
+\makesubsubsection{msrlconfigparams}{Configuration parameters}
+
+The module accepts the following configuration parameters. Some of them, if
+unspecified, default to the values specified for the top level of
+configuration. This lets you avoid specifying, for example, the bind password,
+in multiple places.
+
+\makeparagraph{msrlfilters}{Filters}
+
+These parameters specify LDAP filters used to query for shared roster information.
+All of them are run against the \verb|ldap_base|.
+
+\begin{description}
+
+ \titem{{\tt ldap\_rfilter}}
+ So called ``Roster Filter''. Used to find names of all ``shared roster'' groups.
+ See also the \verb|ldap_groupattr| parameter.
+ If unspecified, defaults to the top-level parameter of the same name.
+ You {\em must} specify it in some place in the configuration, there is no default.
+
+ \titem{{\tt ldap\_ufilter}}
+ ``User Filter'' -- used for retrieving the human-readable name of roster
+ entries (usually full names of people in the roster).
+ See also the parameters \verb|ldap_userdesc| and \verb|ldap_useruid|.
+ If unspecified, defaults to the top-level parameter of the same name.
+ If that one also is unspecified, then the filter is assembled from values of
+ other parameters as follows (\verb|[ldap_SOMETHING]| is used to mean ``the
+ value of the configuration parameter {\tt ldap\_SOMETHING}''):
+
+\begin{verbatim}
+(&(&([ldap_memberattr]=[ldap_memberattr_format])([ldap_groupattr]=%g))[ldap_filter])
+\end{verbatim}
+
+ Subsequently {\tt \%u} and {\tt \%g} are replaced with a {\tt *}. This means
+ that given the defaults, the filter sent to the LDAP server is would be
+ \verb|(&(memberUid=*)(cn=*))|.  If however the {\tt ldap\_memberattr\_format}
+ is something like \verb|uid=%u,ou=People,o=org|, then the filter will be
+ \verb|(&(memberUid=uid=*,ou=People,o=org)(cn=*))|.
+
+ \titem{{\tt ldap\_gfilter}}
+ ``Group Filter'' -- used when retrieving human-readable name (a.k.a.
+ ``Display Name'') and the members of a group.
+ See also the parameters \verb|ldap_groupattr|, \verb|ldap_groupdesc| and \verb|ldap_memberattr|.
+ If unspecified, defaults to the top-level parameter of the same name.
+ If that one also is unspecified, then the filter is constructed exactly in the
+ same way as {\tt User Filter}.
+
+ \titem{{\tt ldap\_filter}}
+ Additional filter which is AND-ed together with {\tt User Filter} and {\tt
+ Group Filter}.
+ If unspecified, defaults to the top-level parameter of the same name. If that
+ one is also unspecified, then no additional filter is merged with the other
+ filters.
+\end{description}
+
+Note that you will probably need to manually define the {\tt User} and {\tt
+Group Filter}s (since the auto-assembled ones will not work) if:
+\begin{itemize}
+\item your {\tt ldap\_memberattr\_format} is anything other than a simple {\tt \%u},
+\item {\bf and} the attribute specified with {\tt ldap\_memberattr} does not support substring matches.
+\end{itemize}
+An example where it is the case is OpenLDAP and {\tt (unique)MemberName} attribute from the {\tt groupOf(Unique)Names} objectClass.
+A symptom of this problem is that you will see messages such as the following in your {\tt slapd.log}:
+\begin{verbatim}
+get_filter: unknown filter type=130
+filter="(&(?=undefined)(?=undefined)(something=else))"
+\end{verbatim}
+
+\makesubsubsection{msrlattrs}{Attributes}
+
+These parameters specify the names of the attributes which hold interesting data
+in the entries returned by running filters specified in
+section~\ref{msrlfilters}.
+
+\begin{description}
+ \titem{{\tt ldap\_groupattr}}
+ The name of the attribute that holds the group name, and that is used to differentiate between them.
+ Retrieved from results of the ``Roster Filter'' and ``Group Filter''.
+ Defaults to {\tt cn}.
+
+ \titem{{\tt ldap\_groupdesc}}
+ The name of the attribute which holds the human-readable group name in the
+ objects you use to represent groups.
+ Retrieved from results of the ``Group Filter''.
+ Defaults to whatever {\tt ldap\_groupattr} is set.
+
+ \titem{{\tt ldap\_memberattr}}
+ The name of the attribute which holds the IDs of the members of a group.
+ Retrieved from results of the ``Group Filter''.
+ Defaults to {\tt memberUid}.
+
+ The name of the attribute differs depending on the {\tt objectClass} you use
+ for your group objects, for example:
+ \begin{description}
+ \item{{\tt posixGroup}} $\rightarrow{}$ {\tt memberUid}
+ \item{{\tt groupOfNames}} $\rightarrow{}$ {\tt member}
+ \item{{\tt groupOfUniqueNames}} $\rightarrow{}$ {\tt uniqueMember}
+ \end{description}
+
+ \titem{{\tt ldap\_userdesc}}
+ The name of the attribute which holds the human-readable user name.
+ Retrieved from results of the ``User Filter''.
+ Defaults to {\tt cn}.
+
+ \titem{{\tt ldap\_useruid}}
+ The name of the attribute which holds the ID of a roster item. Value of this
+ attribute in the roster item objects needs to match the ID retrieved from the
+ {\tt ldap\_memberattr} attribute of a group object.
+ Retrieved from results of the ``User Filter''.
+ Defaults to {\tt cn}.
+\end{description}
+
+\makesubsubsection{msrlcontrolparams}{Control parameters}
+
+These paramters control the behaviour of the module.
+
+\begin{description}
+
+ \titem{{\tt ldap\_memberattr\_format}}
+ A globbing format for extracting user ID from the value of the attribute named by
+ \verb|ldap_memberattr|.
+ Defaults to {\tt \%u}, which means that the whole value is the member ID. If
+ you change it to something different, you may also need to specify the User
+ and Group Filters manually --- see section~\ref{msrlfilters}.
+
+ \titem{{\tt ldap\_memberattr\_format\_re}}
+ A regex for extracting user ID from the value of the attribute named by
+ \verb|ldap_memberattr|.
+
+ An example value {\tt "CN=($\backslash{}\backslash{}$w*),(OU=.*,)*DC=company,DC=com"} works for user IDs such as the following:
+ \begin{itemize}
+ \item \texttt{CN=Romeo,OU=Montague,DC=company,DC=com}
+ \item \texttt{CN=Abram,OU=Servants,OU=Montague,DC=company,DC=com}
+ \item \texttt{CN=Juliet,OU=Capulet,DC=company,DC=com}
+ \item \texttt{CN=Peter,OU=Servants,OU=Capulet,DC=company,DC=com}
+ \end{itemize}
+
+ In case:
+ \begin{itemize}
+ \item the option is unset,
+ \item or the {\tt re} module in unavailable in the current Erlang environment,
+ \item or the regular expression does not compile,
+ \end{itemize}
+ then instead of a regular expression, a simple format specified by {\tt
+ ldap\_memberattr\_format} is used. Also, in the last two cases an error
+ message is logged during the module initialization.
+
+ Also, note that in all cases {\tt ldap\_memberattr\_format} (and {\em not} the
+ regex version) is used for constructing the default ``User/Group Filter'' ---
+ see section~\ref{msrlfilters}.
+
+ \titem{{\tt ldap\_auth\_check}}
+ Whether the module should check (via the ejabberd authentication subsystem)
+ for existence of each user in the shared LDAP roster. See
+ section~\ref{msrlconfigroster} form more information. Set to {\tt off} if you
+ want to disable the check.
+ Defaults to {\tt on}.
+
+ \titem{{\tt ldap\_user\_cache\_validity}}
+ Number of seconds for which the cache for roster item full names is considered
+ fresh after retrieval. 300 by default. See section~\ref{msrlconfigroster} on
+ how it is used during roster retrieval.
+
+ \titem{{\tt ldap\_group\_cache\_validity}}
+ Number of seconds for which the cache for group membership is considered
+ fresh after retrieval. 300 by default. See section~\ref{msrlconfigroster} on
+ how it is used during roster retrieval.
+\end{description}
+
+\makesubsubsection{msrlconnparams}{Connection parameters}
+
+The module also accepts the connection parameters, all of which default to the
+top-level parameter of the same name, if unspecified. See~\ref{ldapconnection}
+for more information about them.
+
+\makesubsubsection{msrlconfigroster}{Retrieving the roster}
+
+When the module is called to retrieve the shared roster for a user, the
+following algorithm is used:
+
+\begin{enumerate}
+\item \label{step:rfilter} A list of names of groups to display is created: the {\tt Roster Filter}
+is run against the base DN, retrieving the values of the attribute named by
+{\tt ldap\_groupattr}.
+
+\item Unless the group cache is fresh (see the {\tt
+ldap\_group\_cache\_validity} option), it is refreshed:
+
+  \begin{enumerate}
+  \item Information for all groups is retrieved using a single query: the {\tt
+  Group Filter} is run against the Base DN, retrieving the values of attributes
+  named by {\tt ldap\_groupattr} (group ID), {\tt ldap\_groupdesc} (group
+  ``Display Name'') and {\tt ldap\_memberattr} (IDs of group members).
+
+  \item group ``Display Name'', read from the attribute named by {\tt
+  ldap\_groupdesc}, is stored in the cache for the given group
+
+  \item the following processing takes place for each retrieved value of
+  attribute named by {\tt ldap\_memberattr}:
+    \begin{enumerate}
+    \item the user ID part of it is extracted using {\tt
+    ldap\_memberattr\_format(\_re)},
+
+    \item then (unless {\tt ldap\_auth\_check} is set to {\tt off}) for each
+    found user ID, the module checks (using the \ejabberd{} authentication
+    subsystem) whether such user exists in the given virtual host. It is
+    skipped if the check is enabled and fails.
+
+    This step is here for historical reasons. If you have a tidy DIT and
+    properly defined ``Roster Filter'' and ``Group Filter'', it is safe to
+    disable it by setting {\tt ldap\_auth\_check} to {\tt off} --- it will
+    speed up the roster retrieval.
+
+    \item the user ID is stored in the list of members in the cache for the
+    given group
+    \end{enumerate}
+  \end{enumerate}
+
+\item For each item (group name) in the list of groups retrieved in step~\ref{step:rfilter}:
+
+  \begin{enumerate}
+  \item the display name of a shared roster group is retrieved from the group
+  cache
+
+  \item for each IDs of users which belong to the group, retrieved from the
+  group cache:
+
+    \begin{enumerate}
+    \item the ID is skipped if it's the same as the one for which we are
+    retrieving the roster. This is so that the user does not have himself in
+    the roster.
+
+    \item the display name of a shared roster user is retrieved:
+      \begin{enumerate}
+      \item first, unless the user name cache is fresh (see the {\tt
+      ldap\_user\_cache\_validity} option), it is refreshed by running the
+      {\tt User Filter}, against the Base DN, retrieving the values of
+      attributes named by {\tt ldap\_useruid} and {\tt ldap\_userdesc}.
+      \item then, the display name for the given user ID is retrieved from the
+      user name cache.
+      \end{enumerate}
+    \end{enumerate}
+
+  \end{enumerate}
+
+\end{enumerate}
+
+\makesubsubsection{msrlconfigexample}{Configuration examples}
+
+Since there are many possible
+\footahref{http://en.wikipedia.org/wiki/Directory\_Information\_Tree}{DIT}
+layouts, it will probably be easiest to understand how to configure the module
+by looking at an example for a given DIT (or one resembling it).
+
+\makeparagraph{msrlconfigexampleflat}{Flat DIT}
+
+This seems to be the kind of DIT for which this module was initially designed.
+Basically there are just user objects, and group membership is stored in an
+attribute individually for each user. For example in a layout shown in
+figure~\ref{fig:msrl-dit-flat}, the group of each  user is stored in its {\tt
+ou} attribute.
+
+\begin{figure}[htbp]
+  \centering
+  \insscaleimg{0.4}{msrl-dit-flat.png}
+  \caption{Flat DIT graph}
+  \label{fig:msrl-dit-flat}
+\end{figure}
+
+Such layout has a few downsides, including:
+\begin{itemize}
+\item information duplication -- the group name is repeated in every member object
+\item difficult group management -- information about group members is not
+      centralized, but distributed between member objects
+\item inefficiency -- the list of unique group names has to be computed by iterating over all users
+\end{itemize}
+
+This however seems to be a common DIT layout, so the module keeps supporting it.
+You can use the following configuration\ldots
+\begin{verbatim}
+  {mod_shared_roster_ldap,[
+    {ldap_base, "ou=flat,dc=nodomain"},
+    {ldap_rfilter, "(objectClass=inetOrgPerson)"},
+    {ldap_groupattr, "ou"},
+    {ldap_memberattr, "cn"},
+    {ldap_filter,  "(objectClass=inetOrgPerson)"},
+    {ldap_userdesc, "displayName"}
+  ]},
+\end{verbatim}
+
+\ldots to be provided with a roster as shown in figure~\ref{fig:msrl-roster-flat} upon connecting as user {\tt czesio}.
+
+\begin{figure}[htbp]
+  \centering
+  \insscaleimg{1}{msrl-roster-flat.png}
+  \caption{Roster from flat DIT}
+  \label{fig:msrl-roster-flat}
+\end{figure}
+
+\makeparagraph{msrlconfigexampledeep}{Deep DIT}
+
+This type of DIT contains distinctly typed objects for users and groups -- see figure~\ref{fig:msrl-dit-deep}.
+They are shown separated into different subtrees, but it's not a requirement.
+
+\begin{figure}[htbp]
+  \centering
+  \insscaleimg{0.35}{msrl-dit-deep.png}
+  \caption{Example ``deep'' DIT graph}
+  \label{fig:msrl-dit-deep}
+\end{figure}
+
+If you use the following example module configuration with it:
+\begin{verbatim}
+  {mod_shared_roster_ldap,[
+    {ldap_base, "ou=deep,dc=nodomain"},
+    {ldap_rfilter, "(objectClass=groupOfUniqueNames)"},
+    {ldap_filter, ""},
+    {ldap_gfilter, "(&(objectClass=groupOfUniqueNames)(cn=%g))"},
+    {ldap_groupdesc, "description"},
+    {ldap_memberattr, "uniqueMember"},
+    {ldap_memberattr_format, "cn=%u,ou=people,ou=deep,dc=nodomain"},
+    {ldap_ufilter, "(&(objectClass=inetOrgPerson)(cn=%u))"},
+    {ldap_userdesc, "displayName"}
+  ]},
+\end{verbatim}
+
+\ldots and connect as user {\tt czesio}, then \ejabberd{} will provide you with
+the roster shown in figure~\ref{fig:msrl-roster-deep}.
+
+\begin{figure}[htbp]
+  \centering
+  \insscaleimg{1}{msrl-roster-deep.png}
+  \caption{Example roster from ``deep'' DIT}
+  \label{fig:msrl-roster-deep}
+\end{figure}
 
 \makesubsection{modsic}{\modsic{}}
 \ind{modules!\modstats{}}\ind{protocols!XEP-0279: Server IP Check}
@@ -5456,6 +5803,7 @@ Thanks to all people who contributed to this guide:
 \item Badlop (\ahrefurl{xmpp:badlop@jabberes.org})
 \item Evgeniy Khramtsov (\ahrefurl{xmpp:xram@jabber.ru})
 \item Florian Zumbiehl (\ahrefurl{xmpp:florz@florz.de})
+\item Marcin Owsiany (\ahrefurl{xmpp:marcin.owsiany@gmail.com})
 \item Michael Grigutsch (\ahrefurl{xmpp:migri@jabber.i-pobox.net})
 \item Mickael Remond (\ahrefurl{xmpp:mremond@process-one.net})
 \item Sander Devrieze (\ahrefurl{xmpp:s.devrieze@gmail.com})
