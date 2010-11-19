@@ -708,7 +708,7 @@ iq_get_register_info(Host, From, Lang) ->
 	[{xmlelement, "instructions", [],
 	  [{xmlcdata,
 	    translate:translate(
-	      Lang, "You need an x:data capable client to register nickname")}]},
+	      Lang, "You need a client that supports x:data to register the nickname")}]},
 	 {xmlelement, "x",
 	  [{"xmlns", ?NS_XDATA}],
 	  [{xmlelement, "title", [],

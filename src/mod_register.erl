@@ -188,7 +188,7 @@ process_iq(From, To,
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
 			_ ->
-			    ErrText = "Captcha test failed",
+			    ErrText = "The CAPTCHA verification has failed",
 			    IQ#iq{type = error,
 				  sub_el = [SubEl,
 					    ?ERRT_NOT_ALLOWED(Lang, ErrText)]}
@@ -215,8 +215,8 @@ process_iq(From, To,
 		    TopInstrEl = {xmlelement, "instructions", [],
 				  [{xmlcdata,
 				    translate:translate(
-				      Lang, "You need an x:data capable client "
-				      "with CAPTCHA support to register")}]},
+				      Lang, "You need a client that supports x:data "
+				      "and CAPTCHA to register")}]},
 		    InstrEl = {xmlelement, "instructions", [],
 			       [{xmlcdata,
 				 translate:translate(
@@ -241,7 +241,7 @@ process_iq(From, To,
 					     [{"xmlns", "jabber:iq:register"}],
 					     [TopInstrEl | CaptchaEls]}]};
 			error ->
-			    ErrText = "Unable to generate a captcha",
+			    ErrText = "Unable to generate a CAPTCHA",
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(
 						      Lang, ErrText)]}

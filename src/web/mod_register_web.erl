@@ -100,7 +100,7 @@ process(["new"], #request{method = 'POST', q = Q, ip = {Ip,_Port}, lang = Lang, 
     	{success, ok, {Username, Host, _Password}} ->
 	    Jid = jlib:make_jid(Username, Host, ""),
 	    send_registration_notifications(Jid, Ip),
-	    Text = ?T("Your Jabber account was succesfully created."),
+	    Text = ?T("Your Jabber account was successfully created."),
 	    {200, [], Text};
 	Error ->
 	    ErrorText = ?T("There was an error creating the account: ") ++
@@ -111,7 +111,7 @@ process(["new"], #request{method = 'POST', q = Q, ip = {Ip,_Port}, lang = Lang, 
 process(["delete"], #request{method = 'POST', q = Q, lang = Lang, host = Host}) ->
     case form_del_post(Q, Host) of
     	{atomic, ok} ->
-	    Text = ?T("Your Jabber account was succesfully deleted."),
+	    Text = ?T("Your Jabber account was successfully deleted."),
 	    {200, [], Text};
 	Error ->
 	    ErrorText = ?T("There was an error deleting the account: ") ++
@@ -124,7 +124,7 @@ process(["delete"], #request{method = 'POST', q = Q, lang = Lang, host = Host}) 
 process(["change_password"], #request{method = 'POST', q = Q, lang = Lang, host = Host}) ->
     case form_changepass_post(Q, Host) of
     	{atomic, ok} ->
-	    Text = ?T("The password of your Jabber account was succesfully changed."),
+	    Text = ?T("The password of your Jabber account was successfully changed."),
 	    {200, [], Text};
 	Error ->
 	    ErrorText = ?T("There was an error changing the password: ") ++
