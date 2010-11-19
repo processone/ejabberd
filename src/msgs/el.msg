@@ -371,7 +371,6 @@
 {"You must fill in field \"Nickname\" in the form","Θα πρέπει να συμπληρώσετε το πεδίο \"Ψευδώνυμο\" στη φόρμα"}.
 {"You need an x:data capable client to configure mod_irc settings","Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε το mod_irc"}.
 {"You need an x:data capable client to configure room","Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε την αίθουσα "}.
-{"You need an x:data capable client to register nickname","Χρειάζεστε ένα x:data ικανό πελάτη για να εγγράφή με ψευδώνυμο"}.
 {"You need an x:data capable client to search","Χρειάζεστε ένα  x:data ικανό πελάτη για αναζήτηση"}.
 {"Your contact offline message queue is full. The message has been discarded.","Η μνήμη χωρίς σύνδεση μήνυματών είναι πλήρης. Το μήνυμα έχει απορριφθεί."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Τα μηνύματά σας πρως ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"}.

@@ -371,7 +371,6 @@
 {"You must fill in field \"Nickname\" in the form","U moet het veld \"bijnaam\" invullen"}.
 {"You need an x:data capable client to configure mod_irc settings","U hebt een client nodig die x:data ondersteunt om dit IRC-transport in te stellen"}.
 {"You need an x:data capable client to configure room","U hebt een client nodig die x:data ondersteunt om deze chatruimte in te stellen"}.
-{"You need an x:data capable client to register nickname","U hebt een client nodig die x:data ondersteunt om een bijnaam te registreren"}.
 {"You need an x:data capable client to search","U hebt een client nodig die x:data ondersteunt om te zoeken"}.
 {"Your contact offline message queue is full. The message has been discarded.","Te veel offline berichten voor dit contactpersoon. Het bericht is niet opgeslagen."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Uw berichten aan ~s worden geblokkeerd. Om ze te deblokkeren, ga naar ~s"}.

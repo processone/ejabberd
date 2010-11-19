@@ -305,6 +305,5 @@
 {"You must fill in field \"Nickname\" in the form","Bạn phải điền thông tin vào ô \"Nickname\" trong biểu mẫu này"}.
 {"You need an x:data capable client to configure mod_irc settings","Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định các thiết lập mod_irc"}.
 {"You need an x:data capable client to configure room","Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định cấu hình phòng họp"}.
-{"You need an x:data capable client to register nickname","Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để đăng ký bí danh"}.
 {"You need an x:data capable client to search","Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để tìm kiếm"}.
 {"Your contact offline message queue is full. The message has been discarded.","Danh sách chờ thư liên lạc ngoại tuyến của bạn đã đầy. Thư này đã bị loại bỏ."}.

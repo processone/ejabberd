@@ -20,7 +20,7 @@ msgid "Replaced by new connection"
 msgstr "Substituído por unha nova conexión"
 
 #: ejabberd_c2s.erl:1790
-msgid "Routing of this stanza was denied by your active privacy list"
+msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
@@ -563,7 +563,8 @@ msgid "Chatrooms"
 msgstr "Salas de charla"
 
 #: mod_muc/mod_muc.erl:711
-msgid "You need an x:data capable client to register nickname"
+#, fuzzy
+msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Necesitas un cliente con soporte de x:data para poder rexistrar o alcume"
 
@@ -837,7 +838,7 @@ msgstr "Sala non anónima"
 msgid "A password is required to enter this room"
 msgstr "Necesítase contrasinal para entrar nesta sala"
 
-#: mod_muc/mod_muc_room.erl:1648 mod_register.erl:244
+#: mod_muc/mod_muc_room.erl:1648
 msgid "Unable to generate a captcha"
 msgstr "Non se pode xerar un Captcha"
 
@@ -1144,13 +1145,12 @@ msgid "The collections with which a node is affiliated"
 msgstr "As coleccións coas que un nodo está afiliado"
 
 #: mod_register.erl:191
-#, fuzzy
-msgid "Captcha test failed"
-msgstr "O Captcha é válido."
+msgid "The CAPTCHA verification has failed"
+msgstr ""
 
 #: mod_register.erl:218
 #, fuzzy
-msgid "You need an x:data capable client with CAPTCHA support to register"
+msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
 "Necesitas un cliente con soporte de x:data para poder rexistrar o alcume"
 
@@ -1163,6 +1163,11 @@ msgstr ""
 #: web/ejabberd_web_admin.erl:1512 web/ejabberd_web_admin.erl:1569
 msgid "User"
 msgstr "Usuario"
+
+#: mod_register.erl:244
+#, fuzzy
+msgid "Unable to generate a CAPTCHA"
+msgstr "Non se pode xerar un Captcha"
 
 #: mod_register.erl:309 mod_register.erl:354
 #, fuzzy
@@ -1675,7 +1680,7 @@ msgid "Start"
 msgstr "Iniciar"
 
 #: web/mod_register_web.erl:103
-msgid "Your Jabber account was succesfully created."
+msgid "Your Jabber account was successfully created."
 msgstr ""
 
 #: web/mod_register_web.erl:106
@@ -1683,7 +1688,7 @@ msgid "There was an error creating the account: "
 msgstr ""
 
 #: web/mod_register_web.erl:114
-msgid "Your Jabber account was succesfully deleted."
+msgid "Your Jabber account was successfully deleted."
 msgstr ""
 
 #: web/mod_register_web.erl:117
@@ -1691,7 +1696,7 @@ msgid "There was an error deleting the account: "
 msgstr ""
 
 #: web/mod_register_web.erl:127
-msgid "The password of your Jabber account was succesfully changed."
+msgid "The password of your Jabber account was successfully changed."
 msgstr ""
 
 #: web/mod_register_web.erl:130
@@ -1789,6 +1794,10 @@ msgstr ""
 #: web/mod_register_web.erl:519
 msgid "Unregister"
 msgstr ""
+
+#, fuzzy
+#~ msgid "Captcha test failed"
+#~ msgstr "O Captcha é válido."
 
 #~ msgid "Encodings"
 #~ msgstr "Codificaciones"

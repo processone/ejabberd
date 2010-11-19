@@ -365,7 +365,6 @@
 {"You must fill in field \"Nickname\" in the form","Formda \"Takma isim\" alanını doldurmanız gerekiyor"}.
 {"You need an x:data capable client to configure mod_irc settings","mod_irc ayarlarını düzenlemek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"You need an x:data capable client to configure room","Odayı ayarlamak için x:data becerisine sahip bir istemciye gereksinimiz var"}.
-{"You need an x:data capable client to register nickname","Takma isminizi kaydettirmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"You need an x:data capable client to search","Arama yapabilmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"Your contact offline message queue is full. The message has been discarded.","Çevirim-dışı mesaj kuyruğunuz dolu. Mesajını dikkate alınmadı."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","~s kullanıcısına mesajlarınız engelleniyor. Durumu düzeltmek için ~s adresini ziyaret ediniz."}.

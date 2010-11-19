@@ -371,7 +371,6 @@
 {"You must fill in field \"Nickname\" in the form","Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
 {"You need an x:data capable client to configure mod_irc settings","Pro konfiguraci mod_irc potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to configure room","Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.
-{"You need an x:data capable client to register nickname","K registraci přezdívky potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to search","K vyhledávání potřebujete klienta podporujícího x:data"}.
 {"Your contact offline message queue is full. The message has been discarded.","Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"}.

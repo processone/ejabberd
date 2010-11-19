@@ -357,7 +357,6 @@
 {"You must fill in field \"Nickname\" in the form","Du måste fylla i fält \"smeknamn\" i formen"}.
 {"You need an x:data capable client to configure mod_irc settings","Du behöer en klient som stöjer x:data för att konfigurera mod_irc"}.
 {"You need an x:data capable client to configure room","Du behöver en klient som stödjer x:data för att konfiguera detta rum"}.
-{"You need an x:data capable client to register nickname","Du behöver en klient som stödjer x:data för att registrera smeknamn"}.
 {"You need an x:data capable client to search","Du behöver en klient som stödjer x:data, för att kunna söka"}.
 {"Your contact offline message queue is full. The message has been discarded.","Din kontaktkö for offlinekontakter ar full"}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Dina meddelanden till ~s är blockerade. För att avblockera dem, gå till ~s"}.

@@ -371,7 +371,6 @@
 {"You must fill in field \"Nickname\" in the form","您必须填充表单中\"昵称\"项"}.
 {"You need an x:data capable client to configure mod_irc settings","您需要一个兼容 x:data 的客户端来配置 mod_irc 设置"}.
 {"You need an x:data capable client to configure room","您需要一个兼容 x:data 的客户端来配置房间"}.
-{"You need an x:data capable client to register nickname","您需要一个兼容 x:data 的客户端来注册昵称"}.
 {"You need an x:data capable client to search","您需要一个兼容 x:data 的客户端来搜索"}.
 {"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满. 消息已被丢弃"}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","您发送给 ~s 的消息已被阻止. 要解除阻止, 请访问 ~s"}.

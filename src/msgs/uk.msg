@@ -335,7 +335,7 @@
 {"The captcha is valid.","Перевірку капчею закінчено успішно"}.
 {"The collections with which a node is affiliated","Колекція, до якої входить вузел"}.
 {"the password is","пароль:"}.
-{"The password of your Jabber account was succesfully changed.","Пароль вашого Jabber-акаунту був успішно змінений."}.
+{"The password of your Jabber account was successfully changed.","Пароль вашого Jabber-акаунту був успішно змінений."}.
 {"There was an error changing the password: ","Помилка при зміні пароля: "}.
 {"There was an error creating the account: ","Помилка при створенні акаунту:"}.
 {"There was an error deleting the account: ","Помилка при видаленні акаунту: "}.
@@ -387,9 +387,8 @@
 {"You must fill in field \"Nickname\" in the form","Вам необхідно заповнити поле \"Псевдонім\" у формі"}.
 {"You need an x:data capable client to configure mod_irc settings","Для налагодження параметрів mod_irc необхідно використовувати клієнт, що має підтримку x:data"}.
 {"You need an x:data capable client to configure room","Для конфігурування кімнати потрібно використовувати клієнт з підтримкою x:data"}.
-{"You need an x:data capable client to register nickname","Для реєстрації псевдоніму необхідно використовувати клієнт з ідтримкою x:data"}.
 {"You need an x:data capable client to search","Для пошуку необхідний x:data-придатний клієнт"}.
 {"Your contact offline message queue is full. The message has been discarded.","Черга повідомлень, що не були доставлені, переповнена. Повідомлення не було збережено."}.
-{"Your Jabber account was succesfully created.","Ваш Jabber-акаунт було успішно створено."}.
-{"Your Jabber account was succesfully deleted.","Ваш Jabber-акаунт було успішно видалено."}.
+{"Your Jabber account was successfully created.","Ваш Jabber-акаунт було успішно створено."}.
+{"Your Jabber account was successfully deleted.","Ваш Jabber-акаунт було успішно видалено."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Ваші повідомлення до ~s блокуються. Для розблокування відвідайте ~s"}.

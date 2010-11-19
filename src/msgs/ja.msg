@@ -371,7 +371,6 @@
 {"You must fill in field \"Nickname\" in the form","フォームの\"ニックネーム\"フィールドを入力する必要があります"}.
 {"You need an x:data capable client to configure mod_irc settings","mod_irc の設定にはクライアントが x:data をサポートする必要があります"}.
 {"You need an x:data capable client to configure room","チャットルームを設定するにはにはクライアントが x:data をサポートする必要があります"}.
-{"You need an x:data capable client to register nickname","ニックネームを登録するにはクライアントが x:data をサポートする必要があります"}.
 {"You need an x:data capable client to search","検索を行うためにはクライアントが x:data をサポートする必要があります"}.
 {"Your contact offline message queue is full. The message has been discarded.","宛先のオフラインメッセージキューが一杯です。このメッセージは破棄されます。"}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","~s 宛のメッセージはブロックされています、解除するためにはこちらを見てください ~s"}.
