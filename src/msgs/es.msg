@@ -33,6 +33,7 @@
 {"Backup to File at ","Guardar copia de seguridad en fichero en "}.
 {"Bad format","Mal formato"}.
 {"Birthday","Cumpleaños"}.
+{"CAPTCHA web page","Página web de CAPTCHA"}.
 {"Change Password","Cambiar contraseña"}.
 {"Change User Password","Cambiar contraseña de usuario"}.
 {"Characters not allowed: @ : ' \" < > &","Caracteres no permitidos: @ : ' \" < > &"}.
@@ -122,6 +123,7 @@
 {"has been kicked","ha sido expulsado"}.
 {" has set the subject to: "," ha puesto el asunto: "}.
 {"Host","Dominio"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","Si no ves la imagen CAPTCHA aquí, visita la página web."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Si quieres especificar distintos codificaciones de carácteres, contraseñas o puertos para cada servidor IRC rellena esta lista con valores en el formato '{\"servidor irc\", \"codificación\", \"puerto\", \"contrasela\"}'.  Este servicio usa por defecto la codificación \"~s\", puerto ~p, sin contraseña."}.
 {"Import Directory","Importar directorio"}.
 {"Import File","Importar fichero"}.
@@ -194,6 +196,7 @@
 {"Name:","Nombre:"}.
 {"Name","Nombre"}.
 {"Never","Nunca"}.
+{"New Password:","Nueva contraseña:"}.
 {"Nickname","Apodo"}.
 {"Nickname Registration at ","Registro del apodo en "}.
 {"Nickname ~s does not exist in the room","El apodo ~s no existe en la sala"}.
@@ -218,6 +221,7 @@
 {"Offline Messages:","Mensajes diferidos:"}.
 {"Offline Messages","Mensajes diferidos"}.
 {"OK","Aceptar"}.
+{"Old Password:","Contraseña antigua:"}.
 {"Online","Conectado"}.
 {"Online Users:","Usuarios conectados:"}.
 {"Online Users","Usuarios conectados"}.
@@ -238,6 +242,7 @@
 {"Password ~b","Contraseña ~b"}.
 {"Password:","Contraseña:"}.
 {"Password","Contraseña"}.
+{"Password Verification:","Verificación de la contraseña:"}.
 {"Password Verification","Verificación de la contraseña"}.
 {"Path to Dir","Ruta al directorio"}.
 {"Path to File","Ruta al fichero"}.
@@ -264,6 +269,7 @@
 {"Register a Jabber account","Registrar una cuenta Jabber"}.
 {"Registered Users:","Usuarios registrados:"}.
 {"Registered Users","Usuarios registrados"}.
+{"Register","Registrar"}.
 {"Registration in mod_irc for ","Registro en mod_irc para"}.
 {"Remote copy","Copia remota"}.
 {"Remove All Offline Messages","Borrar todos los mensajes diferidos"}.
@@ -300,6 +306,7 @@
 {"Send announcement to all users on all hosts","Enviar anuncio a todos los usuarios en todos los dominios"}.
 {"September","septiembre"}.
 {"Server ~b","Servidor ~b"}.
+{"Server:","Servidor:"}.
 {"Set message of the day and send to online users","Poner mensaje del dia y enviar a todos los usuarios conectados"}.
 {"Set message of the day on all hosts and send to online users","Poner mensaje del día en todos los dominios y enviar a los usuarios conectados"}.
 {"Shared Roster Groups","Grupos Compartidos"}.
@@ -333,9 +340,11 @@
 {"That nickname is already in use by another occupant","Ese apodo ya está siendo usado por otro ocupante"}.
 {"That nickname is registered by another person","El apodo ya está registrado por otra persona"}.
 {"The captcha is valid.","El captcha es válido."}.
+{"The CAPTCHA verification has failed","La verificación de CAPTCHA ha fallado"}.
 {"The collections with which a node is affiliated","Las colecciones a las que un nodo está afiliado"}.
 {"the password is","la contraseña es"}.
-{"The password of your Jabber account was succesfully changed.","La contraseña de tu cuenta Jabber se ha cambiado correctamente."}.
+{"The password is too weak","La contraseña es demasiado débil"}.
+{"The password of your Jabber account was successfully changed.","La contraseña de tu cuenta Jabber se ha cambiado correctamente."}.
 {"There was an error changing the password: ","Hubo un error cambiando la contraseña."}.
 {"There was an error creating the account: ","Hubo uno error al crear la cuenta:"}.
 {"There was an error deleting the account: ","Hubo un error borrando la cuenta."}.
@@ -358,6 +367,7 @@
 {"Transactions Restarted:","Transacciones reiniciadas:"}.
 {"Tuesday","martes"}.
 {"Unable to generate a captcha","No se pudo generar un captcha."}.
+{"Unable to generate a CAPTCHA","No se pudo generar un CAPTCHA"}.
 {"Unauthorized","No autorizado"}.
 {"Unregister a Jabber account","Borrar una cuenta Jabber"}.
 {"Unregister","Borrar"}.
@@ -370,6 +380,7 @@
 {"Uptime:","Tiempo desde el inicio:"}.
 {"Use of STARTTLS required","Es obligatorio usar STARTTLS"}.
 {"User Management","Administración de usuarios"}.
+{"Username:","Nombre de usuario:"}.
 {"Users are not allowed to register accounts so quickly","Los usuarios no tienen permitido crear cuentas con tanta rapidez"}.
 {"Users Last Activity","Última actividad de los usuarios"}.
 {"Users","Usuarios"}.
@@ -385,11 +396,13 @@
 {"You can later change your password using a Jabber client.","Puedes cambiar tu contraseña después, usando un cliente Jabber."}.
 {"You have been banned from this room","Has sido bloqueado en esta sala"}.
 {"You must fill in field \"Nickname\" in the form","Debes rellenar el campo \"Apodo\" en el formulario"}.
+{"You need a client that supports x:data and CAPTCHA to register","Necesitas un cliente con soporte de x:data y CAPTCHA para registrarte"}.
+{"You need a client that supports x:data to register the nickname","Necesitas un cliente con soporte de x:data para poder registrar el apodo"}.
 {"You need an x:data capable client to configure mod_irc settings","Necesitas un cliente con soporte de x:data para configurar las opciones de mod_irc"}.
 {"You need an x:data capable client to configure room","Necesitas un cliente con soporte de x:data para configurar la sala"}.
-{"You need an x:data capable client to register nickname","Necesitas un cliente con soporte de x:data para poder registrar el apodo"}.
 {"You need an x:data capable client to search","Necesitas un cliente con soporte de x:data para poder buscar"}.
+{"Your active privacy list has denied the routing of this stanza.","Tu lista de privacidad activa ha denegado el encío de este paquete."}.
 {"Your contact offline message queue is full. The message has been discarded.","Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha descartado."}.
-{"Your Jabber account was succesfully created.","Tu cuenta Jabber se ha creado correctamente."}.
-{"Your Jabber account was succesfully deleted.","Tu cuenta Jabber se ha borrado correctamente."}.
+{"Your Jabber account was successfully created.","Tu cuenta Jabber se ha creado correctamente."}.
+{"Your Jabber account was successfully deleted.","Tu cuenta Jabber se ha borrado correctamente."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Tus mensajes a ~s están siendo bloqueados. Para desbloquearlos, visita ~s"}.
