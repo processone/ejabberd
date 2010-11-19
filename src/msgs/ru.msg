@@ -33,6 +33,7 @@
 {"Backup","Резервное копирование"}.
 {"Bad format","Неправильный формат"}.
 {"Birthday","День рождения"}.
+{"CAPTCHA web page","Ссылка на капчу"}.
 {"Change Password","Сменить пароль"}.
 {"Change User Password","Изменить пароль пользователя"}.
 {"Characters not allowed: @ : ' \" < > &","Недопустимые символы: @ : ' \" < > &"}.
@@ -122,6 +123,7 @@
 {"has been kicked","выгнали из комнаты"}.
 {" has set the subject to: "," установил(а) тему: "}.
 {"Host","Хост"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","Если вы не видите изображение капчи, перейдите по ссылке."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Чтобы указать различные порты, пароли, кодировки для разных серверов IRC, заполните список значениями в формате '{\"сервер IRC\", \"кодировка\", порт, \"пароль\"}'. По умолчанию сервис использует кодировку \"~s\", порт ~p, пустой пароль."}.
 {"Import Directory","Импорт из директории"}.
 {"Import File","Импорт из файла"}.
@@ -194,6 +196,7 @@
 {"Name:","Название:"}.
 {"Name","Название"}.
 {"Never","Никогда"}.
+{"New Password:","Новый пароль:"}.
 {"Nickname Registration at ","Регистрация псевдонима на "}.
 {"Nickname ~s does not exist in the room","Псевдоним ~s в комнате отсутствует"}.
 {"Nickname","Псевдоним"}.
@@ -218,6 +221,7 @@
 {"Offline Messages:","Офлайновые сообщения:"}.
 {"Offline Messages","Офлайновые сообщения"}.
 {"OK","Продолжить"}.
+{"Old Password:","Старый пароль:"}.
 {"Online Users:","Подключённые пользователи:"}.
 {"Online Users","Подключённые пользователи"}.
 {"Online","Подключён"}.
@@ -236,6 +240,7 @@
 {"Owner privileges required","Требуются права владельца"}.
 {"Packet","Пакет"}.
 {"Password ~b","Пароль ~b"}.
+{"Password Verification:","Проверка пароля:"}.
 {"Password Verification","Проверка пароля"}.
 {"Password:","Пароль:"}.
 {"Password","Пароль"}.
@@ -264,6 +269,7 @@
 {"Register a Jabber account","Зарегистрировать Jabber-аккаунт"}.
 {"Registered Users:","Зарегистрированные пользователи:"}.
 {"Registered Users","Зарегистрированные пользователи"}.
+{"Register","Зарегистрировать"}.
 {"Registration in mod_irc for ","Регистрация в mod_irc для "}.
 {"Remote copy","не хранится локально"}.
 {"Remove All Offline Messages","Удалить все офлайновые сообщения"}.
@@ -300,6 +306,7 @@
 {"Send announcement to all users","Разослать объявление всем пользователям"}.
 {"September","сентября"}.
 {"Server ~b","Сервер ~b"}.
+{"Server:","Сервер:"}.
 {"Set message of the day and send to online users","Установить сообщение дня и разослать его подключённым пользователям"}.
 {"Set message of the day on all hosts and send to online users","Установить сообщение дня на всех виртуальных серверах и разослать его подключённым пользователям"}.
 {"Shared Roster Groups","Группы общих контактов"}.
@@ -333,7 +340,9 @@
 {"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
 {"The captcha is valid.","Проверка капчи прошла успешно."}.
+{"The CAPTCHA verification has failed","Проверка капчи не пройдена"}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
+{"The password is too weak","Слишком слабый пароль"}.
 {"the password is","пароль:"}.
 {"The password of your Jabber account was successfully changed.","Пароль Вашего Jabber-аккаунта был успешно изменен."}.
 {"There was an error changing the password: ","Ошибка при смене пароля:"}.
@@ -358,6 +367,7 @@
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
 {"Unable to generate a captcha","Не получилось создать капчу"}.
+{"Unable to generate a CAPTCHA","Не получилось создать капчу"}.
 {"Unauthorized","Не авторизован"}.
 {"Unregister a Jabber account","Удалить Jabber-аккаунт"}.
 {"Unregister","Удалить"}.
@@ -370,6 +380,7 @@
 {"Uptime:","Время работы:"}.
 {"Use of STARTTLS required","Вы обязаны использовать STARTTLS"}.
 {"User Management","Управление пользователями"}.
+{"Username:","Имя пользователя:"}.
 {"Users are not allowed to register accounts so quickly","Пользователи не могут регистрировать учётные записи так быстро"}.
 {"Users Last Activity","Статистика последнего подключения пользователей"}.
 {"Users","Пользователи"}.
@@ -385,9 +396,12 @@
 {"You can later change your password using a Jabber client.","Позже Вы можете изменить пароль через Jabber-клиент."}.
 {"You have been banned from this room","Вам запрещено входить в эту конференцию"}.
 {"You must fill in field \"Nickname\" in the form","Вы должны заполнить поле \"Псевдоним\" в форме"}.
+{"You need a client that supports x:data and CAPTCHA to register","Чтобы зарегистрироваться, требуется x:data-совместимый клиент"}.
+{"You need a client that supports x:data to register the nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure mod_irc settings","Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure room","Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
+{"Your active privacy list has denied the routing of this stanza.","Маршрутизация этой строфы запрещена вашим активным списком приватности."}.
 {"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
 {"Your Jabber account was successfully created.","Ваш Jabber-аккаунт был успешно создан."}.
 {"Your Jabber account was successfully deleted.","Ваш Jabber-аккаунт был успешно удален."}.
