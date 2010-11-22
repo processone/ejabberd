@@ -2726,8 +2726,7 @@ can_change_ra(_FAffiliation, _FRole,
 
 
 send_kickban_presence(JID, Reason, Code, StateData) ->
-    {N,D,R} = JID,
-    NewAffiliation = get_affiliation(exmpp_jid:make(N,D,R), StateData),
+    NewAffiliation = get_affiliation(JID, StateData),
 	send_kickban_presence(JID, Reason, Code, NewAffiliation, StateData).
 
 send_kickban_presence(JID, Reason, Code, NewAffiliation, StateData) ->
