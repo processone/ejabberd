@@ -184,7 +184,7 @@ msgstr "Listas de Controle de Acesso"
 #: mod_configure.erl:169 mod_configure.erl:522 web/ejabberd_web_admin.erl:943
 #: web/ejabberd_web_admin.erl:979
 msgid "Access Rules"
-msgstr "Regras de Aceso"
+msgstr "Regras de Acesso"
 
 #: mod_configure.erl:303 mod_configure.erl:511
 msgid "User Management"
@@ -410,7 +410,7 @@ msgstr "Remover usuário"
 
 #: mod_muc/mod_muc.erl:684
 msgid "Rooms"
-msgstr ""
+msgstr "Salas"
 
 #: mod_muc/mod_muc.erl:835
 msgid "You need an x:data capable client to register nickname"
@@ -844,11 +844,11 @@ msgstr "a senha é"
 
 #: mod_multicast.erl:309
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:320
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "Serviço de Multicast ejabberd"
 
 #: mod_offline.erl:625 mod_offline_odbc.erl:433
 msgid "~s's Offline Messages Queue"
@@ -923,7 +923,7 @@ msgstr "ID do Tópico"
 
 #: mod_pubsub/mod_pubsub.erl:1553 mod_pubsub/mod_pubsub_odbc.erl:1368
 msgid "Subscriber Address"
-msgstr "Enderço dos Assinantes"
+msgstr "Endereço dos Assinantes"
 
 #: mod_pubsub/mod_pubsub.erl:1559 mod_pubsub/mod_pubsub_odbc.erl:1374
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
@@ -991,7 +991,7 @@ msgstr "Especificar o tipo de mensagem para o evento"
 
 #: mod_pubsub/mod_pubsub.erl:3512 mod_pubsub/mod_pubsub_odbc.erl:3351
 msgid "Max payload size in bytes"
-msgstr "Máximo tamanho do payload em bytes"
+msgstr "Tamanho máximo do payload em bytes"
 
 #: mod_pubsub/mod_pubsub.erl:3513 mod_pubsub/mod_pubsub_odbc.erl:3352
 msgid "When to send the last published item"
@@ -1010,6 +1010,8 @@ msgid ""
 "The type of node data, usually specified by the namespace of the payload (if "
 "any)"
 msgstr ""
+"O tipo de dados do Nó, é geralmente especificado pelo namespace do "
+"payload (se houver algum)"
 
 #: mod_register.erl:200
 msgid "Choose a username and password to register with this server"
@@ -1080,7 +1082,7 @@ msgstr "Adicionar novo"
 #: mod_shared_roster.erl:885
 #, fuzzy
 msgid "Group ID:"
-msgstr "Grupo "
+msgstr "Grupo: "
 
 #: mod_shared_roster.erl:890
 msgid "Name:"
@@ -1097,7 +1099,7 @@ msgstr "Miembros:"
 #: mod_shared_roster.erl:911
 #, fuzzy
 msgid "IDs of Displayed Groups:"
-msgstr "Grupos Indicados"
+msgstr "Grupos Indicados:"
 
 #: mod_shared_roster.erl:920
 msgid "Group "
@@ -1132,12 +1134,12 @@ msgstr "País"
 #: mod_vcard.erl:421 mod_vcard.erl:520 mod_vcard_odbc.erl:335
 #: mod_vcard_odbc.erl:431
 msgid "Email"
-msgstr "e-mail"
+msgstr "Email"
 
 #: mod_vcard.erl:421 mod_vcard.erl:515 mod_vcard_odbc.erl:335
 #: mod_vcard_odbc.erl:426
 msgid "Family Name"
-msgstr "Nome de família"
+msgstr "Sobrenome"
 
 #: mod_vcard.erl:421 mod_vcard_odbc.erl:335
 msgid ""
@@ -1199,11 +1201,11 @@ msgstr "Resultados de pesquisa para"
 
 #: mod_vcard.erl:853 mod_vcard.erl:864
 msgid "vCard"
-msgstr ""
+msgstr "vCard"
 
 #: mod_vcard.erl:862
 msgid "vCard Photo:"
-msgstr ""
+msgstr "vCard Foto:"
 
 #: mod_vcard.erl:866 mod_vcard.erl:924
 #, fuzzy
@@ -1212,7 +1214,7 @@ msgstr "Remover usuário"
 
 #: mod_vcard.erl:927
 msgid "vCard size (characters):"
-msgstr ""
+msgstr "Tamanho do vCard (caracteres):"
 
 #: mod_vcard_ldap.erl:458
 msgid "Fill in fields to search for any matching Jabber User"
@@ -1265,7 +1267,7 @@ msgstr "Último ano"
 
 #: web/ejabberd_web_admin.erl:1095
 msgid "All activity"
-msgstr "Toda la atividade"
+msgstr "Todas atividades"
 
 #: web/ejabberd_web_admin.erl:1097
 msgid "Show Ordinary Table"
@@ -1281,7 +1283,7 @@ msgstr "Estatísticas"
 
 #: web/ejabberd_web_admin.erl:1137
 msgid "Not Found"
-msgstr "Nào encontrado"
+msgstr "Não encontrado"
 
 #: web/ejabberd_web_admin.erl:1154
 msgid "Node not found"
@@ -1326,7 +1328,7 @@ msgstr "Mudar senha"
 
 #: web/ejabberd_web_admin.erl:1784
 msgid "User "
-msgstr "Usuário"
+msgstr "Usuário "
 
 #: web/ejabberd_web_admin.erl:1791
 msgid "Connected Resources:"
@@ -1342,21 +1344,23 @@ msgstr "Nenhum dado"
 
 #: web/ejabberd_web_admin.erl:1920 web/ejabberd_web_admin.erl:2063
 msgid "Miscelanea Options"
-msgstr ""
+msgstr "Opções Gerais"
 
 #: web/ejabberd_web_admin.erl:1927
 msgid "Global"
-msgstr ""
+msgstr "Global"
 
 #: web/ejabberd_web_admin.erl:1933
 msgid "Local"
-msgstr ""
+msgstr "Local"
 
 #: web/ejabberd_web_admin.erl:2085
 msgid ""
 "Please note: any change in this option only takes effect after ejabberd "
 "restart."
 msgstr ""
+"Atenção: qualquer mudança nesta opção somente entrará em vigor após o "
+"reinicio do ejabberd."
 
 #: web/ejabberd_web_admin.erl:2120
 msgid "Nodes"
@@ -1513,7 +1517,7 @@ msgstr "Transações de log:"
 
 #: web/ejabberd_web_admin.erl:2464
 msgid "Update "
-msgstr "Atualizar"
+msgstr "Atualizar "
 
 #: web/ejabberd_web_admin.erl:2472
 msgid "Update plan"
