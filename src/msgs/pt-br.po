@@ -212,7 +212,7 @@ msgstr "Listas de Controle de Acesso"
 #: mod_configure.erl:165 mod_configure.erl:510 web/ejabberd_web_admin.erl:936
 #: web/ejabberd_web_admin.erl:972
 msgid "Access Rules"
-msgstr "Regras de Aceso"
+msgstr "Regras de Acesso"
 
 #: mod_configure.erl:297 mod_configure.erl:499
 msgid "User Management"
@@ -1246,8 +1246,9 @@ msgid "Members:"
 msgstr "Miembros:"
 
 #: mod_shared_roster.erl:900
+#, fuzzy
 msgid "Displayed Groups:"
-msgstr "Grupos Indicados"
+msgstr "Grupos Indicados:"
 
 #: mod_shared_roster.erl:909
 msgid "Group "
@@ -1281,12 +1282,12 @@ msgstr "País"
 #: mod_vcard.erl:358 mod_vcard.erl:475 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:451
 msgid "Email"
-msgstr "e-mail"
+msgstr "Email"
 
 #: mod_vcard.erl:358 mod_vcard.erl:470 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:446
 msgid "Family Name"
-msgstr "Nome de família"
+msgstr "Sobrenome"
 
 #: mod_vcard.erl:358 mod_vcard_odbc.erl:336
 msgid ""
@@ -1392,7 +1393,7 @@ msgstr "Último ano"
 
 #: web/ejabberd_web_admin.erl:1088
 msgid "All activity"
-msgstr "Toda la atividade"
+msgstr "Todas atividades"
 
 #: web/ejabberd_web_admin.erl:1090
 msgid "Show Ordinary Table"
@@ -1408,7 +1409,7 @@ msgstr "Estatísticas"
 
 #: web/ejabberd_web_admin.erl:1113
 msgid "Not Found"
-msgstr "Nào encontrado"
+msgstr "Não encontrado"
 
 #: web/ejabberd_web_admin.erl:1130
 msgid "Node not found"
@@ -1455,7 +1456,7 @@ msgstr "Mudar senha"
 
 #: web/ejabberd_web_admin.erl:1752
 msgid "User "
-msgstr "Usuário"
+msgstr "Usuário "
 
 #: web/ejabberd_web_admin.erl:1759
 msgid "Connected Resources:"
@@ -1625,7 +1626,7 @@ msgstr "Transações de log:"
 
 #: web/ejabberd_web_admin.erl:2241
 msgid "Update "
-msgstr "Atualizar"
+msgstr "Atualizar "
 
 #: web/ejabberd_web_admin.erl:2249
 msgid "Update plan"
