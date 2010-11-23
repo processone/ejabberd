@@ -28,7 +28,7 @@ msgstr "Zastąpione przez nowe połączenie"
 
 #: ejabberd_c2s.erl:1790
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Twoja aktywna lista prywatności zabrania"
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 msgid "Enter the text you see"
@@ -40,11 +40,11 @@ msgstr "Twoje wiadomości do ~s są blokowane. Aby je odblokować, odwiedź ~s"
 
 #: ejabberd_captcha.erl:132
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Jeśli nie widzisz obrazka CAPTCHA, odwiedź stronę internetową."
 
 #: ejabberd_captcha.erl:144
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "Strona internetowa CAPTCHA"
 
 #: ejabberd_captcha.erl:302
 msgid "The captcha is valid."
@@ -363,7 +363,7 @@ msgstr "Konfiguracja listy dostępowej"
 
 #: mod_configure.erl:1147
 msgid "Access control lists"
-msgstr "Lista dostępowa"
+msgstr "Listy dostępowe"
 
 #: mod_configure.erl:1171
 msgid "Access Configuration"
@@ -568,7 +568,6 @@ msgid "Chatrooms"
 msgstr "Pokoje rozmów"
 
 #: mod_muc/mod_muc.erl:711
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr "Potrzebujesz klienta obsługującego x:data aby zarejestrować nick"
 
@@ -1141,10 +1140,9 @@ msgstr "Grupy, do których należy węzeł"
 
 #: mod_register.erl:191
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "Weryfikacja CAPTCHA nie powiodła się."
 
 #: mod_register.erl:218
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr "Potrzebujesz klienta obsługującego x:data aby zarejestrować nick"
 
@@ -1159,14 +1157,12 @@ msgid "User"
 msgstr "Użytkownik"
 
 #: mod_register.erl:244
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "Nie można wygenerować captcha"
+msgstr "Nie można wygenerować CAPTCHA"
 
 #: mod_register.erl:309 mod_register.erl:354
-#, fuzzy
 msgid "The password is too weak"
-msgstr "hasło to:"
+msgstr "Hasło nie jest wystarczająco trudne"
 
 #: mod_register.erl:358
 msgid "Users are not allowed to register accounts so quickly"
@@ -1674,41 +1670,41 @@ msgstr "Uruchom"
 
 #: web/mod_register_web.erl:103
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Twoje konto zostało stworzone."
 
 #: web/mod_register_web.erl:106
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Wystąpił błąd podczas tworzenia konta:"
 
 #: web/mod_register_web.erl:114
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Twoje konto zostało usunięte."
 
 #: web/mod_register_web.erl:117
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Podczas usuwania konta wystąpił błąd:"
 
 #: web/mod_register_web.erl:127
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Hasło do Twojego konta zostało zmienione."
 
 #: web/mod_register_web.erl:130
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Podczas próby zmiany hasła wystąpił błąd:"
 
 #: web/mod_register_web.erl:162 web/mod_register_web.erl:171
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Zakładanie konta Jabber"
 
 #: web/mod_register_web.erl:173 web/mod_register_web.erl:191
 #: web/mod_register_web.erl:200
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Załóż konto Jabber"
 
 #: web/mod_register_web.erl:175 web/mod_register_web.erl:488
 #: web/mod_register_web.erl:497
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Usuń konto Jabber"
 
 #: web/mod_register_web.erl:202
 msgid ""
@@ -1716,42 +1712,48 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Niniejsza strona pozwala na założenie konta Jabber na tym serwerze. Twój JID "
+"(Jabber IDentyfikator) będzie miał postać: nazwa_użytkownika@serwer. "
+"Przeczytaj dokładnie instrukcję i wypełnij pola."
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
-#, fuzzy
 msgid "Username:"
-msgstr "Nazwa użytkownika IRC"
+msgstr "Nazwa użytkownika:"
 
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Pole nie rozróżnia wielkości liter: słowo Hanna jest takie samo jak hAnna "
+"lub haNNa."
 
 #: web/mod_register_web.erl:217
 msgid "Characters not allowed: @ : ' \" < > &"
-msgstr ""
+msgstr "Te znaki są niedozwolone: @ : ' \" < > &"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Server:"
-msgstr "Serwer ~b"
+msgstr "Serwer:"
 
 #: web/mod_register_web.erl:231
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Nie podawaj swojego hasła nikomu, nawet administratorowi serwera Jabber."
 
 #: web/mod_register_web.erl:233
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Możesz później zmienić swoje hasło za pomocą dowolnego klienta Jabber."
 
 #: web/mod_register_web.erl:234
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Niektóre klienty Jabber mogą zapisywać Twoje hasło na komputerze. Używaj tej "
+"opcji tylko jeśli ufasz komputerowi na którym pracujesz."
 
 #: web/mod_register_web.erl:236
 msgid ""
@@ -1759,34 +1761,32 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Zapamiętaj swoje hasło lub zapisz je na kartce i zachowaj w bezpiecznym "
+"miejscu. Na Jabberze nie ma zautomatyzowanego systemu odzyskiwania haseł."
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Weryfikacja hasła"
+msgstr "Weryfikacja hasła:"
 
 #: web/mod_register_web.erl:249
-#, fuzzy
 msgid "Register"
-msgstr "Lista kontaktów"
+msgstr "Zarejestruj"
 
 #: web/mod_register_web.erl:391
-#, fuzzy
 msgid "Old Password:"
-msgstr "Hasło:"
+msgstr "Stare hasło:"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "New Password:"
-msgstr "Hasło:"
+msgstr "Nowe hasło:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Ta strona pozwala usunąć konto Jabber z tego serwera."
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
-msgstr ""
+msgstr "Wyrejestruj"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
