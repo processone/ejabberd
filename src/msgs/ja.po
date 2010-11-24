@@ -7,21 +7,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Japanese (日本語)\n"
 
-#: ejabberd_c2s.erl:385 ejabberd_c2s.erl:688
+#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
 msgstr "STARTTLS を使用"
 
-#: ejabberd_c2s.erl:464
+#: ejabberd_c2s.erl:503
 msgid "No resource provided"
 msgstr "リソースが提供されませんでした"
 
-#: ejabberd_c2s.erl:1108
+#: ejabberd_c2s.erl:1147
 msgid "Replaced by new connection"
 msgstr "新しいコネクションによって置き換えられました"
 
-#: ejabberd_c2s.erl:1790
+#: ejabberd_c2s.erl:1844
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 msgid "Enter the text you see"
@@ -30,16 +30,15 @@ msgstr "見えているテキストを入力してください"
 #: ejabberd_captcha.erl:99
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
-"~s 宛のメッセージはブロックされています、解除するためにはこちらを見てくださ"
-"い ~s"
+"~s 宛のメッセージはブロックされています、解除するにはこちらを見てください ~s"
 
 #: ejabberd_captcha.erl:132
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "ここにキャプチャ画像が表示されない場合、WEBページを参照してください。"
 
 #: ejabberd_captcha.erl:144
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "キャプチャWEBページ"
 
 #: ejabberd_captcha.erl:302
 msgid "The captcha is valid."
@@ -548,7 +547,7 @@ msgstr "カービス管理者のみがサービスメッセージを送信出来
 
 #: mod_muc/mod_muc.erl:493
 msgid "Room creation is denied by service policy"
-msgstr "サービスポリシーにっよってチャットルームの作成が禁止されています"
+msgstr "サービスポリシーによってチャットルームの作成が禁止されています"
 
 #: mod_muc/mod_muc.erl:500
 msgid "Conference room does not exist"
@@ -559,7 +558,6 @@ msgid "Chatrooms"
 msgstr "チャットルーム"
 
 #: mod_muc/mod_muc.erl:711
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "ニックネームを登録するにはクライアントが x:data をサポートする必要があります"
@@ -829,7 +827,7 @@ msgstr "チャットルームに入るにはパスワードが必要です"
 
 #: mod_muc/mod_muc_room.erl:1648
 msgid "Unable to generate a captcha"
-msgstr "チャプタを生成することが出来ません。"
+msgstr "キャプチャを生成することが出来ません。"
 
 #: mod_muc/mod_muc_room.erl:1658
 msgid "Incorrect password"
@@ -1032,115 +1030,114 @@ msgstr "すべてのオフラインメッセージを削除します"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub/mod_pubsub.erl:1116 mod_pubsub/mod_pubsub_odbc.erl:917
+#: mod_pubsub/mod_pubsub.erl:1115 mod_pubsub/mod_pubsub_odbc.erl:917
 msgid "Publish-Subscribe"
 msgstr "Publish-Subscribe"
 
-#: mod_pubsub/mod_pubsub.erl:1210 mod_pubsub/mod_pubsub_odbc.erl:1013
+#: mod_pubsub/mod_pubsub.erl:1209 mod_pubsub/mod_pubsub_odbc.erl:1013
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe module"
 
-#: mod_pubsub/mod_pubsub.erl:1493 mod_pubsub/mod_pubsub_odbc.erl:1300
+#: mod_pubsub/mod_pubsub.erl:1492 mod_pubsub/mod_pubsub_odbc.erl:1300
 msgid "PubSub subscriber request"
 msgstr "PubSub 購読リクエスト"
 
-#: mod_pubsub/mod_pubsub.erl:1495 mod_pubsub/mod_pubsub_odbc.erl:1302
+#: mod_pubsub/mod_pubsub.erl:1494 mod_pubsub/mod_pubsub_odbc.erl:1302
 msgid "Choose whether to approve this entity's subscription."
 msgstr "このエントリを承認するかどうかを選択して下さい"
 
-#: mod_pubsub/mod_pubsub.erl:1501 mod_pubsub/mod_pubsub_odbc.erl:1308
+#: mod_pubsub/mod_pubsub.erl:1500 mod_pubsub/mod_pubsub_odbc.erl:1308
 msgid "Node ID"
 msgstr "ノードID"
 
-#: mod_pubsub/mod_pubsub.erl:1506 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Subscriber Address"
 msgstr "購読アドレス"
 
-#: mod_pubsub/mod_pubsub.erl:1512 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1511 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "この Jabber ID をこの pubsubノードへ購読することを許可しますか？"
 
-#: mod_pubsub/mod_pubsub.erl:3407 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Deliver payloads with event notifications"
 msgstr "イベント通知と同時にペイロードを配送します"
 
-#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3397 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Deliver event notifications"
 msgstr "イベント通知を配送します"
 
-#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3398 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when the node configuration changes"
 msgstr "ノード設定に変更があった時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3410 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Notify subscribers when the node is deleted"
 msgstr "ノードが削除された時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "Notify subscribers when items are removed from the node"
 msgstr "アイテムがノードから消された時に購読者へ通知します"
 
-#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3401 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Persist items to storage"
 msgstr "アイテムをストレージに保存する"
 
-#: mod_pubsub/mod_pubsub.erl:3413 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "A friendly name for the node"
 msgstr "ノードの為のフレンドリネーム"
 
-#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Max # of items to persist"
 msgstr "アイテムの最大保存数 #"
 
-#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3239
+#: mod_pubsub/mod_pubsub.erl:3404 mod_pubsub/mod_pubsub_odbc.erl:3239
 msgid "Whether to allow subscriptions"
 msgstr "購読を許可するかどうか"
 
-#: mod_pubsub/mod_pubsub.erl:3416 mod_pubsub/mod_pubsub_odbc.erl:3240
+#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3240
 msgid "Specify the access model"
 msgstr "アクセスモデルを設定する"
 
-#: mod_pubsub/mod_pubsub.erl:3419 mod_pubsub/mod_pubsub_odbc.erl:3243
+#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3243
 msgid "Roster groups allowed to subscribe"
 msgstr "名簿グループは購読を許可しました"
 
-#: mod_pubsub/mod_pubsub.erl:3420 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Specify the publisher model"
 msgstr "公開モデルを指定する"
 
-#: mod_pubsub/mod_pubsub.erl:3422 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3246
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr "公開者がオフラインになる時に、全てののアイテムを削除"
 
-#: mod_pubsub/mod_pubsub.erl:3423 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Specify the event message type"
 msgstr "イベントメッセージ種別を設定"
 
-#: mod_pubsub/mod_pubsub.erl:3425 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3249
 msgid "Max payload size in bytes"
 msgstr "最大ぺイロードサイズ(byte)"
 
-#: mod_pubsub/mod_pubsub.erl:3426 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "When to send the last published item"
 msgstr "最後の公開アイテムを送信するタイミングで"
 
-#: mod_pubsub/mod_pubsub.erl:3428 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3252
 msgid "Only deliver notifications to available users"
 msgstr "有効なユーザーにのみ告知を送信する"
 
-#: mod_pubsub/mod_pubsub.erl:3429 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3253
 msgid "The collections with which a node is affiliated"
 msgstr "提携されたノードの集合です"
 
 #: mod_register.erl:191
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "キャプチャ検証は失敗しました"
 
 #: mod_register.erl:218
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"ニックネームを登録するにはクライアントが x:data をサポートする必要があります"
+"登録を行うにはクライアントがx:dataとキャプチャをサポートする必要があります"
 
 #: mod_register.erl:224 mod_register.erl:258
 msgid "Choose a username and password to register with this server"
@@ -1152,14 +1149,12 @@ msgid "User"
 msgstr "ユーザー"
 
 #: mod_register.erl:244
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "チャプタを生成することが出来ません。"
+msgstr "キャプチャを生成出来ませんでした"
 
 #: mod_register.erl:309 mod_register.erl:354
-#, fuzzy
 msgid "The password is too weak"
-msgstr "パスワードは"
+msgstr "このパスワードは単純過ぎます"
 
 #: mod_register.erl:358
 msgid "Users are not allowed to register accounts so quickly"
@@ -1663,41 +1658,41 @@ msgstr "開始"
 
 #: web/mod_register_web.erl:103
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Jabberアカウントの作成に成功しました。"
 
 #: web/mod_register_web.erl:106
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "アカウントの作成中にエラーが発生しました: "
 
 #: web/mod_register_web.erl:114
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Jabberアカウントの削除に成功しました。"
 
 #: web/mod_register_web.erl:117
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "アカウントの削除中にエラーが発生しました: "
 
 #: web/mod_register_web.erl:127
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Jabberアカウントのパスワード変更に成功しました。"
 
 #: web/mod_register_web.erl:130
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "パスワードの変更中にエラーが発生しました: "
 
 #: web/mod_register_web.erl:162 web/mod_register_web.erl:171
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Jabberアカウント登録"
 
 #: web/mod_register_web.erl:173 web/mod_register_web.erl:191
 #: web/mod_register_web.erl:200
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Jabberアカウントを登録"
 
 #: web/mod_register_web.erl:175 web/mod_register_web.erl:488
 #: web/mod_register_web.erl:497
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Jabberアカウントの登録解除"
 
 #: web/mod_register_web.erl:202
 msgid ""
@@ -1705,42 +1700,49 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"ここはJabberサーバーにアカウント作成を行うページです。あなたのJID(JabberID)"
+"は username@server の様な形式に成ります。注意事項通り、正しく項目に記入して下"
+"さい。"
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
-#, fuzzy
 msgid "Username:"
-msgstr "IRCユーザー名"
+msgstr "ユーザー名:"
 
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"
 
 #: web/mod_register_web.erl:217
 msgid "Characters not allowed: @ : ' \" < > &"
-msgstr ""
+msgstr "許可されていない文字: @ : ' \" < > &"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Server:"
-msgstr "サーバー ~b"
+msgstr "サーバー:"
 
 #: web/mod_register_web.erl:231
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"パスワードは誰にも教えないようにして下さい。Jabberサーバーの管理者があなたに"
+"パスワードを尋ねることはありません。"
 
 #: web/mod_register_web.erl:233
 msgid "You can later change your password using a Jabber client."
 msgstr ""
+"あなたは後からJabberクライアントを使用してパスワードを変更する事が出来ます。"
 
 #: web/mod_register_web.erl:234
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Jabberクライアントはコンピューターにあなたのパスワード記憶出来ます。この機能"
+"を使用する場合コンピューターが安全であることを確認して下さい。"
 
 #: web/mod_register_web.erl:236
 msgid ""
@@ -1748,38 +1750,36 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"パスワードは記憶するか、紙に書いて安全な場所に保管して下さい。もしあなたがパ"
+"スワードを忘れてしまった場合、Jabberではパスワードのリカバリを自動的に行うこ"
+"とは出来ません。"
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
-#, fuzzy
 msgid "Password Verification:"
-msgstr "パスワード(確認)"
+msgstr "パスワード(確認):"
 
 #: web/mod_register_web.erl:249
-#, fuzzy
 msgid "Register"
-msgstr "名簿"
+msgstr "登録"
 
 #: web/mod_register_web.erl:391
-#, fuzzy
 msgid "Old Password:"
-msgstr "パスワード"
+msgstr "古いパスワード:"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "New Password:"
-msgstr "パスワード"
+msgstr "新しいパスワード:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "ここはサーバーのJabberアカウントの登録削除を行うページです。"
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
-msgstr ""
+msgstr "登録解除"
 
-#, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "キャプチャは有効です。"
+#~ msgstr "キャプチャのテストに失敗しました"
 
 #~ msgid "Encodings"
 #~ msgstr "エンコーディング"
