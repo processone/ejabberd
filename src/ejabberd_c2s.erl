@@ -40,6 +40,11 @@
 	 send_element/2,
 	 socket_type/0,
 	 get_presence/1,
+	 get_aux_field/2,
+	 set_aux_field/3,
+	 del_aux_field/2,
+	 get_subscription/2,
+	 broadcast/4,
 	 get_subscribed/1]).
 
 %% gen_fsm callbacks
@@ -96,6 +101,7 @@
 		conn = unknown,
 		auth_module = unknown,
 		ip,
+		aux_fields = [],
 		lang}).
 
 %-define(DBGFSM, true).
@@ -153,6 +159,39 @@ socket_type() ->
 %% Return Username, Resource and presence information
 get_presence(FsmRef) ->
     ?GEN_FSM:sync_send_all_state_event(FsmRef, {get_presence}, 1000).
+
+get_aux_field(Key, #state{aux_fields = Opts}) ->
+    case lists:keysearch(Key, 1, Opts) of
+	{value, {_, Val}} ->
+	    {ok, Val};
+	_ ->
+	    error
+    end.
+
+set_aux_field(Key, Val, #state{aux_fields = Opts} = State) ->
+    Opts1 = lists:keydelete(Key, 1, Opts),
+    State#state{aux_fields = [{Key, Val}|Opts1]}.
+
+del_aux_field(Key, #state{aux_fields = Opts} = State) ->
+    Opts1 = lists:keydelete(Key, 1, Opts),
+    State#state{aux_fields = Opts1}.
+
+get_subscription(From = #jid{}, StateData) ->
+    get_subscription(jlib:jid_tolower(From), StateData);
+get_subscription(LFrom, StateData) ->
+    LBFrom = setelement(3, LFrom, ""),
+    F = ?SETS:is_element(LFrom, StateData#state.pres_f) orelse
+	?SETS:is_element(LBFrom, StateData#state.pres_f),
+    T = ?SETS:is_element(LFrom, StateData#state.pres_t) orelse
+	?SETS:is_element(LBFrom, StateData#state.pres_t),
+    if F and T -> both;
+       F -> from;
+       T -> to;
+       true -> none
+    end.
+
+broadcast(FsmRef, Type, From, Packet) ->
+    FsmRef ! {broadcast, Type, From, Packet}.
 
 stop(FsmRef) ->
     ?GEN_FSM:send_event(FsmRef, closed).
@@ -1114,35 +1153,39 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
     {Pass, NewAttrs, NewState} =
 	case Name of
 	    "presence" ->
+		State = ejabberd_hooks:run_fold(
+			  c2s_presence_in, StateData#state.server,
+			  StateData,
+			  [{From, To, Packet}]),
 		case xml:get_attr_s("type", Attrs) of
 		    "probe" ->
 			LFrom = jlib:jid_tolower(From),
 			LBFrom = jlib:jid_remove_resource(LFrom),
 			NewStateData =
 			    case ?SETS:is_element(
-				    LFrom, StateData#state.pres_a) orelse
+				    LFrom, State#state.pres_a) orelse
 				?SETS:is_element(
-				   LBFrom, StateData#state.pres_a) of
+				   LBFrom, State#state.pres_a) of
 				true ->
-				    StateData;
+				    State;
 				false ->
 				    case ?SETS:is_element(
-					    LFrom, StateData#state.pres_f) of
+					    LFrom, State#state.pres_f) of
 					true ->
 					    A = ?SETS:add_element(
 						   LFrom,
-						   StateData#state.pres_a),
-					    StateData#state{pres_a = A};
+						   State#state.pres_a),
+					    State#state{pres_a = A};
 					false ->
 					    case ?SETS:is_element(
-						    LBFrom, StateData#state.pres_f) of
+						    LBFrom, State#state.pres_f) of
 						true ->
 						    A = ?SETS:add_element(
 							   LBFrom,
-							   StateData#state.pres_a),
-						    StateData#state{pres_a = A};
+							   State#state.pres_a),
+						    State#state{pres_a = A};
 						false ->
-						    StateData
+						    State
 					    end
 				    end
 			    end,
@@ -1150,59 +1193,59 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			{false, Attrs, NewStateData};
 		    "error" ->
 			NewA = remove_element(jlib:jid_tolower(From),
-					      StateData#state.pres_a),
-			{true, Attrs, StateData#state{pres_a = NewA}};
+					      State#state.pres_a),
+			{true, Attrs, State#state{pres_a = NewA}};
 		    "invisible" ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
-			{true, [{"type", "unavailable"} | Attrs1], StateData};
+			{true, [{"type", "unavailable"} | Attrs1], State};
 		    "subscribe" ->
-			SRes = is_privacy_allow(StateData, From, To, Packet, in),
-			{SRes, Attrs, StateData};
+			SRes = is_privacy_allow(State, From, To, Packet, in),
+			{SRes, Attrs, State};
 		    "subscribed" ->
-			SRes = is_privacy_allow(StateData, From, To, Packet, in),
-			{SRes, Attrs, StateData};
+			SRes = is_privacy_allow(State, From, To, Packet, in),
+			{SRes, Attrs, State};
 		    "unsubscribe" ->
-			SRes = is_privacy_allow(StateData, From, To, Packet, in),
-			{SRes, Attrs, StateData};
+			SRes = is_privacy_allow(State, From, To, Packet, in),
+			{SRes, Attrs, State};
 		    "unsubscribed" ->
-			SRes = is_privacy_allow(StateData, From, To, Packet, in),
-			{SRes, Attrs, StateData};
+			SRes = is_privacy_allow(State, From, To, Packet, in),
+			{SRes, Attrs, State};
 		    _ ->
-			case privacy_check_packet(StateData, From, To, Packet, in) of
+			case privacy_check_packet(State, From, To, Packet, in) of
 			    allow ->
 				LFrom = jlib:jid_tolower(From),
 				LBFrom = jlib:jid_remove_resource(LFrom),
 				case ?SETS:is_element(
-					LFrom, StateData#state.pres_a) orelse
+					LFrom, State#state.pres_a) orelse
 				    ?SETS:is_element(
-				       LBFrom, StateData#state.pres_a) of
+				       LBFrom, State#state.pres_a) of
 				    true ->
-					{true, Attrs, StateData};
+					{true, Attrs, State};
 				    false ->
 					case ?SETS:is_element(
-						LFrom, StateData#state.pres_f) of
+						LFrom, State#state.pres_f) of
 					    true ->
 						A = ?SETS:add_element(
 						       LFrom,
-						       StateData#state.pres_a),
+						       State#state.pres_a),
 						{true, Attrs,
-						 StateData#state{pres_a = A}};
+						 State#state{pres_a = A}};
 					    false ->
 						case ?SETS:is_element(
-							LBFrom, StateData#state.pres_f) of
+							LBFrom, State#state.pres_f) of
 						    true ->
 							A = ?SETS:add_element(
 							       LBFrom,
-							       StateData#state.pres_a),
+							       State#state.pres_a),
 							{true, Attrs,
-							 StateData#state{pres_a = A}};
+							 State#state{pres_a = A}};
 						    false ->
-							{true, Attrs, StateData}
+							{true, Attrs, State}
 						end
 					end
 				end;
 			    deny ->
-				{false, Attrs, StateData}
+				{false, Attrs, State}
 			end
 		end;
 	    "broadcast" ->
@@ -1358,6 +1401,17 @@ handle_info({force_update_presence, LUser}, StateName,
 		StateData
 	end,
     {next_state, StateName, NewStateData};
+handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
+    Recipients = ejabberd_hooks:run_fold(
+		   c2s_broadcast_recipients, StateData#state.server,
+		   [],
+		   [StateData, Type, From, Packet]),
+    lists:foreach(
+      fun(USR) ->
+	      ejabberd_router:route(
+		From, jlib:make_jid(USR), Packet)
+      end, lists:usort(Recipients)),
+    fsm_next_state(StateName, StateData);
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
