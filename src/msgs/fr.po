@@ -13,21 +13,21 @@ msgstr ""
 "X-Additional-Translator: Mickaël Rémond\n"
 "X-Additional-Translator: Vincent Ricard\n"
 
-#: ejabberd_c2s.erl:385 ejabberd_c2s.erl:688
+#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
 msgstr "L'utilisation de STARTTLS est impérative"
 
-#: ejabberd_c2s.erl:464
+#: ejabberd_c2s.erl:503
 msgid "No resource provided"
 msgstr "Aucune ressource fournie"
 
-#: ejabberd_c2s.erl:1108
+#: ejabberd_c2s.erl:1147
 msgid "Replaced by new connection"
 msgstr "Remplacé par une nouvelle connexion"
 
-#: ejabberd_c2s.erl:1790
+#: ejabberd_c2s.erl:1844
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Votre règle de flitrage active a empêché le routage de ce stanza."
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 msgid "Enter the text you see"
@@ -40,11 +40,11 @@ msgstr ""
 
 #: ejabberd_captcha.erl:132
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "SI vous ne voyez pas l'image CAPTCHA ici, visitez la page web."
 
 #: ejabberd_captcha.erl:144
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "Page web de CAPTCHA"
 
 #: ejabberd_captcha.erl:302
 msgid "The captcha is valid."
@@ -571,10 +571,10 @@ msgid "Chatrooms"
 msgstr "Salons de discussion"
 
 #: mod_muc/mod_muc.erl:711
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
-"Vous avez besoin d'un client supportant x:data pour enregistrer un pseudo"
+"Vous avez besoin d'un client prenant en charge x:data pour enregistrer un "
+"pseudo"
 
 #: mod_muc/mod_muc.erl:717
 msgid "Nickname Registration at "
@@ -1053,115 +1053,115 @@ msgstr "Effacer tous les messages hors ligne"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub/mod_pubsub.erl:1116 mod_pubsub/mod_pubsub_odbc.erl:917
+#: mod_pubsub/mod_pubsub.erl:1115 mod_pubsub/mod_pubsub_odbc.erl:917
 msgid "Publish-Subscribe"
 msgstr "Publication-Abonnement"
 
-#: mod_pubsub/mod_pubsub.erl:1210 mod_pubsub/mod_pubsub_odbc.erl:1013
+#: mod_pubsub/mod_pubsub.erl:1209 mod_pubsub/mod_pubsub_odbc.erl:1013
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Module Publish-Subscribe d'ejabberd"
 
-#: mod_pubsub/mod_pubsub.erl:1493 mod_pubsub/mod_pubsub_odbc.erl:1300
+#: mod_pubsub/mod_pubsub.erl:1492 mod_pubsub/mod_pubsub_odbc.erl:1300
 msgid "PubSub subscriber request"
 msgstr "Demande d'abonnement PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1495 mod_pubsub/mod_pubsub_odbc.erl:1302
+#: mod_pubsub/mod_pubsub.erl:1494 mod_pubsub/mod_pubsub_odbc.erl:1302
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Accepter cet abonnement ?"
 
-#: mod_pubsub/mod_pubsub.erl:1501 mod_pubsub/mod_pubsub_odbc.erl:1308
+#: mod_pubsub/mod_pubsub.erl:1500 mod_pubsub/mod_pubsub_odbc.erl:1308
 msgid "Node ID"
 msgstr "Identifiant du nœud"
 
-#: mod_pubsub/mod_pubsub.erl:1506 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Subscriber Address"
 msgstr "Adresse de l'abonné"
 
-#: mod_pubsub/mod_pubsub.erl:1512 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1511 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Autoriser ce Jabber ID à s'abonner à ce nœud PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:3407 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Deliver payloads with event notifications"
 msgstr "Inclure le contenu du message avec la notification"
 
-#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3397 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Deliver event notifications"
 msgstr "Envoyer les notifications d'événement"
 
-#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3398 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Avertir les abonnés lorsque la configuration du nœud change"
 
-#: mod_pubsub/mod_pubsub.erl:3410 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Notify subscribers when the node is deleted"
 msgstr "Avertir les abonnés lorsque le nœud est supprimé"
 
-#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Avertir les abonnés lorsque des éléments sont supprimés sur le nœud"
 
-#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3401 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Persist items to storage"
 msgstr "Stockage persistant des éléments"
 
-#: mod_pubsub/mod_pubsub.erl:3413 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "A friendly name for the node"
 msgstr "Un nom convivial pour le noeud"
 
-#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Max # of items to persist"
 msgstr "Nombre maximum d'éléments à stocker"
 
-#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3239
+#: mod_pubsub/mod_pubsub.erl:3404 mod_pubsub/mod_pubsub_odbc.erl:3239
 msgid "Whether to allow subscriptions"
 msgstr "Autoriser l'abonnement ?"
 
-#: mod_pubsub/mod_pubsub.erl:3416 mod_pubsub/mod_pubsub_odbc.erl:3240
+#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3240
 msgid "Specify the access model"
 msgstr "Définir le modèle d'accès"
 
-#: mod_pubsub/mod_pubsub.erl:3419 mod_pubsub/mod_pubsub_odbc.erl:3243
+#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3243
 msgid "Roster groups allowed to subscribe"
 msgstr "Groupes de liste de contact autorisés à s'abonner"
 
-#: mod_pubsub/mod_pubsub.erl:3420 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Specify the publisher model"
 msgstr "Définir le modèle de publication"
 
-#: mod_pubsub/mod_pubsub.erl:3422 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3246
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr "Purger tous les items lorsque publieur est hors-ligne"
 
-#: mod_pubsub/mod_pubsub.erl:3423 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Specify the event message type"
 msgstr "Définir le type de message d'événement"
 
-#: mod_pubsub/mod_pubsub.erl:3425 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3249
 msgid "Max payload size in bytes"
 msgstr "Taille maximum pour le contenu du message en octet"
 
-#: mod_pubsub/mod_pubsub.erl:3426 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "When to send the last published item"
 msgstr "A quel moment envoyer le dernier élément publié"
 
-#: mod_pubsub/mod_pubsub.erl:3428 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3252
 msgid "Only deliver notifications to available users"
 msgstr "Envoyer les notifications uniquement aux utilisateurs disponibles"
 
-#: mod_pubsub/mod_pubsub.erl:3429 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3253
 msgid "The collections with which a node is affiliated"
 msgstr "Les collections avec lesquelle un nœud est affilié"
 
 #: mod_register.erl:191
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "La vérification du CAPTCHA a échoué"
 
 #: mod_register.erl:218
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"Vous avez besoin d'un client supportant x:data pour enregistrer un pseudo"
+"Vous avez besoin d'un client prenant en charge x:data et CAPTCHA pour "
+"enregistrer un pseudo"
 
 #: mod_register.erl:224 mod_register.erl:258
 msgid "Choose a username and password to register with this server"
@@ -1175,14 +1175,12 @@ msgid "User"
 msgstr "Utilisateur"
 
 #: mod_register.erl:244
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "Impossible de générer le captcha"
+msgstr "Impossible de générer le CAPTCHA"
 
 #: mod_register.erl:309 mod_register.erl:354
-#, fuzzy
 msgid "The password is too weak"
-msgstr "le mot de passe est"
+msgstr "Le mot de passe est trop faible"
 
 #: mod_register.erl:358
 msgid "Users are not allowed to register accounts so quickly"
@@ -1694,41 +1692,41 @@ msgstr "Démarrer"
 
 #: web/mod_register_web.erl:103
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Votre compte Jabber a été créé avec succès."
 
 #: web/mod_register_web.erl:106
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Il y a eu une erreur en créant le compte :"
 
 #: web/mod_register_web.erl:114
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Votre compte Jabber a été effacé avec succès."
 
 #: web/mod_register_web.erl:117
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Il y a eu une erreur en effaçant le compte :"
 
 #: web/mod_register_web.erl:127
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Le mot de passe de votre compte Jabber a été changé avec succès."
 
 #: web/mod_register_web.erl:130
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Il y a eu une erreur en changeant le mot de passe :"
 
 #: web/mod_register_web.erl:162 web/mod_register_web.erl:171
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Enregistrement du Compte Jabber"
 
 #: web/mod_register_web.erl:173 web/mod_register_web.erl:191
 #: web/mod_register_web.erl:200
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Enregistrer un compte Jabber"
 
 #: web/mod_register_web.erl:175 web/mod_register_web.erl:488
 #: web/mod_register_web.erl:497
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Effacer un compte Jabber"
 
 #: web/mod_register_web.erl:202
 msgid ""
@@ -1736,42 +1734,52 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Cette page permet de créer un compte Jabber sur ce serveur Jabber. Votre JID "
+"(Jabber IDentifier, identifiant Jabber) sera de la forme : nom@serveur. "
+"Prière de lire avec attention les instructions pour remplir correctement ces "
+"champs."
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
-#, fuzzy
 msgid "Username:"
-msgstr "Nom d'utilisateur IRC"
+msgstr "Nom d'utilisateur :"
 
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"C'est insensible à la casse : macbeth est identique à MacBeth et Macbeth."
 
 #: web/mod_register_web.erl:217
 msgid "Characters not allowed: @ : ' \" < > &"
-msgstr ""
+msgstr "Caractères non-autorisés : @ : ' \" < > &"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Server:"
-msgstr "Serveur ~b"
+msgstr "Serveur :"
 
 #: web/mod_register_web.erl:231
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Ne révélez votre mot de passe à personne, pas même l'administrateur de ce "
+"serveur."
 
 #: web/mod_register_web.erl:233
 msgid "You can later change your password using a Jabber client."
 msgstr ""
+"Vous pouvez changer votre mot de passe plus tard en utilisant un client "
+"Jabber."
 
 #: web/mod_register_web.erl:234
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Certains clients Jabber peuvent stocker votre mot de passe sur votre "
+"ordinateur. N'utilisez cette fonctionnalité que si vous avez confiance en la "
+"sécurité de votre ordinateur."
 
 #: web/mod_register_web.erl:236
 msgid ""
@@ -1779,34 +1787,33 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Mémorisez votre mot de passe, ou écrivez-le sur un papier conservé dans un "
+"endroit secret. Dans Jabber il n'y a pas de mécanisme pour retrouver votre "
+"mot de passe si vous l'avez oublié."
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Vérification du mot de passe"
+msgstr "Vérification du mot de passe :"
 
 #: web/mod_register_web.erl:249
-#, fuzzy
 msgid "Register"
-msgstr "Liste de contacts"
+msgstr "Enregistrer"
 
 #: web/mod_register_web.erl:391
-#, fuzzy
 msgid "Old Password:"
-msgstr "Mot de passe:"
+msgstr "Ancien mot de passe:"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "New Password:"
-msgstr "Mot de passe:"
+msgstr "Nouveau mot de passe:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Cette page permet d'effacer un compte Jabber sur ce serveur Jabber."
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
-msgstr ""
+msgstr "Effacer"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
