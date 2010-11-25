@@ -1039,8 +1039,6 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 				StreamTail]
 		end,
 	    case OutEls of
-		[] ->
-		    prepare_response(Sess, Rid, OutPacket, true);
 		[#xmlel{name = 'stream:error'}] ->
 		    {200, ?HEADER, "<body type='terminate' "
 		     "condition='host-unknown' "
