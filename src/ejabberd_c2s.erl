@@ -1499,6 +1499,10 @@ change_shaper(StateData, JID) ->
 			    StateData#state.shaper, JID),
     (StateData#state.sockmod):change_shaper(StateData#state.socket, Shaper).
 
+send_text(StateData, Text) when StateData#state.xml_socket ->
+    ?DEBUG("Send Text on stream = ~p", [lists:flatten(Text)]),
+    (StateData#state.sockmod):send_xml(StateData#state.socket, 
+				       {xmlstreamraw, Text});
 send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~s", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).

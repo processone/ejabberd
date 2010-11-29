@@ -215,7 +215,7 @@ form_new_get(Host, Lang) ->
 				     ?BR,
 				     ?XE('ul', [
 						?XCT('li', "This is case insensitive: macbeth is the same that MacBeth and Macbeth."),
-						?XCT('li', "Characters not allowed: @ : ' \" < > &")
+						?XC('li', ?T("Characters not allowed:") ++ " \" & ' / : < > @ ")
 					       ])
 				    ]),
 			  ?XE('li', [
