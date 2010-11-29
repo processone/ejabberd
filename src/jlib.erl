@@ -57,7 +57,7 @@
 %%     R = binary().
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
-    case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', "") of
+    case exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"type">>, "") of
 	"submit" ->
 	    lists:reverse(parse_xdata_fields(Els, []));
 	"form" -> %% This is a workaround to accept Psi's wrong forms
@@ -70,7 +70,7 @@ parse_xdata_fields([], Res) ->
     Res;
 parse_xdata_fields([#xmlel{name = 'field', attrs = Attrs, children = SubEls} |
   Els], Res) ->
-    case exmpp_xml:get_attribute_from_list_as_list(Attrs, 'var', "") of
+    case exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"var">>, "") of
 	"" ->
 	    parse_xdata_fields(Els, Res);
 	Var ->
@@ -140,7 +140,7 @@ rsm_encode_first(undefined, undefined, Arr) ->
 rsm_encode_first(First, undefined, Arr) ->
     [#xmlel{ns = ?NS_RSM, name = 'first', children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr];
 rsm_encode_first(First, Index, Arr) ->
-    [#xmlel{ns = ?NS_RSM, name = 'first', attrs = [?XMLATTR('index', Index)], children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr].
+    [#xmlel{ns = ?NS_RSM, name = 'first', attrs = [?XMLATTR(<<"index">>, Index)], children = [#xmlcdata{cdata = list_to_binary(First)}]}|Arr].
 
 rsm_encode_last(undefined, Arr) -> Arr;
 rsm_encode_last(Last, Arr) ->
@@ -182,8 +182,8 @@ timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
     {T_string, Tz_string} = timestamp_to_iso(DateTime, Timezone),
     From = exmpp_jid:to_list(FromJID),
     P1 = exmpp_xml:set_attributes(#xmlel{ns = ?NS_DELAY, name = 'delay'},
-      [{'from', From},
-       {'stamp', T_string ++ Tz_string}]),
+      [{<<"from">>, From},
+       {<<"stamp">>, T_string ++ Tz_string}]),
     exmpp_xml:set_cdata(P1, Desc).
 
 %% TODO: Remove this function once XEP-0091 is Obsolete
@@ -192,7 +192,7 @@ timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
       io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
 	[Year, Month, Day, Hour, Minute, Second])),
     exmpp_xml:set_attribute(#xmlel{ns = ?NS_DELAY_OLD, name = 'x'},
-      'stamp', Timestamp).
+      <<"stamp">>, Timestamp).
 
 now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =

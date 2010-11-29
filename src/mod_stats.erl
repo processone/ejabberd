@@ -46,7 +46,7 @@ stop(Host) ->
 
 process_local_iq(_From, To, #iq{type = get,
 				ns = XMLNS, payload = SubEl} = IQ_Rec) ->
-    Node = string:tokens(exmpp_xml:get_attribute_as_list(SubEl, 'node', ""), "/"),
+    Node = string:tokens(exmpp_xml:get_attribute_as_list(SubEl, <<"node">>, ""), "/"),
     Names = get_names(exmpp_xml:get_child_elements(SubEl), []),
 
     case get_local_stats(exmpp_jid:domain(To), Node, Names) of
@@ -63,7 +63,7 @@ process_local_iq(_From, _To, #iq{type = set} = IQ_Rec) ->
 get_names([], Res) ->
     Res;
 get_names([#xmlel{name = "stat", attrs = Attrs} | Els], Res) ->
-    Name = exmpp_xml:get_attribute_from_list_as_binary(Attrs, 'name', <<>>),
+    Name = exmpp_xml:get_attribute_from_list_as_binary(Attrs, <<"name">>, <<>>),
     case Name of
 	<<>> ->
 	    get_names(Els, Res);
@@ -74,7 +74,7 @@ get_names([_ | Els], Res) ->
     get_names(Els, Res).
 
 
--define(STAT(Name), #xmlel{ns = ?NS_STATS_s, name = 'stat', attrs = [?XMLATTR('name', Name)]}).
+-define(STAT(Name), #xmlel{ns = ?NS_STATS_s, name = 'stat', attrs = [?XMLATTR(<<"name">>, Name)]}).
 
 get_local_stats(_Server, [], []) ->
     {result,
@@ -116,16 +116,16 @@ get_local_stats(_Server, _, _) ->
 
 -define(STATVAL(Val, Unit),
 	#xmlel{ns = ?NS_STATS_s, name = 'stat', attrs =
-	 [?XMLATTR('name', Name),
-	  ?XMLATTR('units', Unit),
-	  ?XMLATTR('value', Val)
+	 [?XMLATTR(<<"name">>, Name),
+	  ?XMLATTR(<<"units">>, Unit),
+	  ?XMLATTR(<<"value">>, Val)
 	 ]}).
 
 -define(STATERR(Code, Desc),
 	#xmlel{ns = ?NS_STATS_s, name = 'stat', attrs=
-	 [?XMLATTR('name', Name)], children =
+	 [?XMLATTR(<<"name">>, Name)], children =
 	 [#xmlel{ns = ?NS_STATS_s, name = 'error', attrs =
-	   [?XMLATTR('code', Code)], children =
+	   [?XMLATTR(<<"code">>, Code)], children =
 	   [#xmlcdata{cdata = Desc}]}]}).
 
 

@@ -387,15 +387,15 @@ ldap_attribute_to_vcard(_, _) ->
 
 -define(TLFIELD(Type, Label, Var),
 	#xmlel{ns = ?NS_VCARD, name = 'field', attrs = [
-	    ?XMLATTR('type', Type),
-	    ?XMLATTR('label', translate:translate(Lang, Label)),
-	    ?XMLATTR('var', Var)]}).
+	    ?XMLATTR(<<"type">>, Type),
+	    ?XMLATTR(<<"label">>, translate:translate(Lang, Label)),
+	    ?XMLATTR(<<"var">>, Var)]}).
 
 -define(FORM(JID, SearchFields),
 	[#xmlel{ns = ?NS_SEARCH, name = 'instructions', children =
 	  [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "You need an x:data capable client to search"))}]},
 	 #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs =
-           [?XMLATTR('type', <<"form">>)], children =
+           [?XMLATTR(<<"type">>, <<"form">>)], children =
 	  [#xmlel{ns = ?NS_DATA_FORMS, name = 'title', children =
 	    [#xmlcdata{cdata = list_to_binary(translate:translate(Lang, "Search users in ") ++
 	      exmpp_jid:to_list(JID))}]},
@@ -442,7 +442,7 @@ route(State, From, To, Packet) ->
 					  children =
                                              [#xmlel{ns = ?NS_DATA_FORMS,
 					      name = 'x',
-					      attrs = [?XMLATTR('type',
+					      attrs = [?XMLATTR(<<"type">>,
 						  <<"result">>)],
 					      children = search_result(Lang, To, State, XData)}]},
 					ResIQ = exmpp_iq:result(Packet,
@@ -471,16 +471,16 @@ route(State, From, To, Packet) ->
 			  children = Info ++ [
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
 			      attrs = [
-				?XMLATTR('category', <<"directory">>),
-				?XMLATTR('type', <<"user">>),
-				?XMLATTR('name', translate:translate(Lang,
+				?XMLATTR(<<"category">>, <<"directory">>),
+				?XMLATTR(<<"type">>, <<"user">>),
+				?XMLATTR(<<"name">>, translate:translate(Lang,
 				    "vCard User Search"))]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
-				?XMLATTR('var', ?NS_SEARCH_s)]},
+				?XMLATTR(<<"var">>, ?NS_SEARCH_s)]},
 			    #xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
 			      attrs = [
-				?XMLATTR('var', ?NS_VCARD_s)]}
+				?XMLATTR(<<"var">>, ?NS_VCARD_s)]}
 			  ]},
 			ResIQ = exmpp_iq:result(Packet, Result),
                         ejabberd_router:route(To,
@@ -545,7 +545,7 @@ search_result(Lang, JID, State, Data) ->
 
 -define(FIELD(Var, Val),
 	#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-	  [?XMLATTR('var', Var)], children =
+	  [?XMLATTR(<<"var">>, Var)], children =
 	  [#xmlel{ns = ?NS_DATA_FORMS, name = 'value', children =
 	      [#xmlcdata{cdata = Val}]}]}).
 

@@ -95,9 +95,9 @@ get_local_commands(Acc, _From, To, <<>>, Lang) ->
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
 		      name = 'item', attrs =
-		      [?XMLATTR('jid', Server),
-		       ?XMLATTR('node', ?NS_ADHOC_s),
-                       ?XMLATTR('name', translate:translate(Lang, "Commands"))]
+		      [?XMLATTR(<<"jid">>, Server),
+		       ?XMLATTR(<<"node">>, ?NS_ADHOC_s),
+                       ?XMLATTR(<<"name">>, translate:translate(Lang, "Commands"))]
 		      }],
 	    {result, Items ++ Nodes}
     end;
@@ -126,9 +126,9 @@ get_sm_commands(Acc, _From, To, <<>>, Lang) ->
 		    end,
 	    Nodes = [#xmlel{ns = ?NS_DISCO_ITEMS,
 		      name = 'item', attrs =
-		      [?XMLATTR('jid', exmpp_jid:to_binary(To)),
-		       ?XMLATTR('node', ?NS_ADHOC_s),
-		       ?XMLATTR('name', translate:translate(Lang, "Commands"))]
+		      [?XMLATTR(<<"jid">>, exmpp_jid:to_binary(To)),
+		       ?XMLATTR(<<"node">>, ?NS_ADHOC_s),
+		       ?XMLATTR(<<"name">>, translate:translate(Lang, "Commands"))]
 		      }],
 	    {result, Items ++ Nodes}
     end;
@@ -144,15 +144,15 @@ get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_local_identity(Acc, _From, _To, ?NS_ADHOC_b, Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [?XMLATTR('category', <<"automation">>),
-       ?XMLATTR('type', <<"command-list">>),
-       ?XMLATTR('name', translate:translate(Lang, "Commands"))]} | Acc];
+      [?XMLATTR(<<"category">>, <<"automation">>),
+       ?XMLATTR(<<"type">>, <<"command-list">>),
+       ?XMLATTR(<<"name">>, translate:translate(Lang, "Commands"))]} | Acc];
 
 get_local_identity(Acc, _From, _To, <<"ping">>, Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [?XMLATTR('category', <<"automation">>),
-       ?XMLATTR('type', <<"command-node">>),
-       ?XMLATTR('name', translate:translate(Lang, "Ping"))]} | Acc];
+      [?XMLATTR(<<"category">>, <<"automation">>),
+       ?XMLATTR(<<"type">>, <<"command-node">>),
+       ?XMLATTR(<<"name">>, translate:translate(Lang, "Ping"))]} | Acc];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -162,9 +162,9 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_sm_identity(Acc, _From, _To, ?NS_ADHOC_s, Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs =
-      [?XMLATTR('category', <<"automation">>),
-       ?XMLATTR('type', <<"command-list">>),
-       ?XMLATTR('name', translate:translate(Lang, "Commands"))]} | Acc];
+      [?XMLATTR(<<"category">>, <<"automation">>),
+       ?XMLATTR(<<"type">>, <<"command-list">>),
+       ?XMLATTR(<<"name">>, translate:translate(Lang, "Commands"))]} | Acc];
 
 get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -244,9 +244,9 @@ ping_item(Acc, _From, To, Lang) ->
 		    []
 	    end,
     Nodes = [#xmlel{ns = ?NS_DISCO_INFO, name = 'item', attrs =
-	      [?XMLATTR('jid', Server),
-	       ?XMLATTR('node', <<"ping">>),
-	       ?XMLATTR('name', translate:translate(Lang, "Ping"))]}],
+	      [?XMLATTR(<<"jid">>, Server),
+	       ?XMLATTR(<<"node">>, <<"ping">>),
+	       ?XMLATTR(<<"name">>, translate:translate(Lang, "Ping"))]}],
     {result, Items ++ Nodes}.
 
 

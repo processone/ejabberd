@@ -155,7 +155,7 @@ disconnect_removed_user(User, Server) ->
 		      exmpp_jid:make(User, 
                                       Server),
                       #xmlel{name = 'broadcast', ns = exit,
-                        attrs = [exmpp_xml:attribute(reason, "User removed")]}).
+                        attrs = [?XMLATTR(<<"reason">>, <<"User removed">>)]}).
 
 get_user_resources(User, Server) 
   when is_binary(User), is_binary(Server) ->

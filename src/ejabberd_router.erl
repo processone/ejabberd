@@ -370,9 +370,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 route_check_id(From, To, #xmlel{name = iq} = Packet) ->
-    case exmpp_xml:get_attribute_as_list(Packet, 'id', "") of
+    case exmpp_xml:get_attribute_as_list(Packet, <<"id">>, "") of
 	?ROUTE_PREFIX ++ Rest ->
-	    Type = exmpp_xml:get_attribute_as_list(Packet, 'type', ""),
+	    Type = exmpp_xml:get_attribute_as_list(Packet, <<"type">>, ""),
 	    if Type == "error"; Type == "result" ->
 		    case string:tokens(Rest, "-") of
 			[_, NodeID] ->

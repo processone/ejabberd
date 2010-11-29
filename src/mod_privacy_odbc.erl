@@ -91,7 +91,7 @@ process_iq_get(_, From, _To, #iq{payload = SubEl},
 	[#xmlel{name = Name} = Child] ->
 	    case Name of
 		list ->
-		    ListName = exmpp_xml:get_attribute_as_list(Child, name, false),
+		    ListName = exmpp_xml:get_attribute_as_list(Child, <<"name">>, false),
 		    process_list_get(LUser, LServer, ListName);
 		_ ->
 		    {error, 'bad-request'}
@@ -116,21 +116,21 @@ process_lists_get(LUser, LServer, Active) ->
 	{selected, ["name"], Names} ->
 	    LItems = lists:map(
 		       fun({N}) ->
-			       exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = list}, name, N)
+			       exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = list}, <<"name">>, N)
 		       end, Names),
 	    DItems =
 		case Default of
 		    none ->
 			LItems;
 		    _ ->
-			[exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = default}, name, Default) | LItems]
+			[exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = default}, <<"name">>, Default) | LItems]
 		end,
 	    ADItems =
 		case Active of
 		    none ->
 			DItems;
 		    _ ->
-			[exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = active}, name, Active) | DItems]
+			[exmpp_xml:set_attribute(#xmlel{ns = ?NS_PRIVACY, name = active}, <<"name">>, Active) | DItems]
 		end,
 		{result, #xmlel{ns = ?NS_PRIVACY, name = 'query', children = ADItems}};
 	_ ->
@@ -155,7 +155,7 @@ process_list_get(LUser, LServer, Name) ->
             ListEl = exmpp_xml:set_attribute(#xmlel{name = list,
                                                   ns = ?NS_PRIVACY,
                                                   children = LItems},
-                                           name,
+                                           <<"name">>,
                                            Name),
             {result, #xmlel{ns = ?NS_PRIVACY, name = 'query', children = [ListEl]}};
         _ ->
@@ -167,14 +167,14 @@ process_list_get(LUser, LServer, Name) ->
 
 
 item_to_xml(Item) ->
-    Attrs1 = [?XMLATTR('action', action_to_binary(Item#listitem.action)),
-	      ?XMLATTR('order', order_to_binary(Item#listitem.order))],
+    Attrs1 = [?XMLATTR(<<"action">>, action_to_binary(Item#listitem.action)),
+	      ?XMLATTR(<<"order">>, order_to_binary(Item#listitem.order))],
     Attrs2 = case Item#listitem.type of
 		 none ->
 		     Attrs1;
 		 Type ->
-		     [?XMLATTR('type', type_to_binary(Item#listitem.type)),
-		      ?XMLATTR('value', value_to_binary(Type, Item#listitem.value)) |
+		     [?XMLATTR(<<"type">>, type_to_binary(Item#listitem.type)),
+		      ?XMLATTR(<<"value">>, value_to_binary(Type, Item#listitem.value)) |
 		      Attrs1]
 	     end,
     SubEls = case Item#listitem.match_all of
@@ -256,7 +256,7 @@ process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
     LServer = exmpp_jid:prep_domain_as_list(From),
     case exmpp_xml:get_child_elements(SubEl) of
 	[#xmlel{name = Name} = Child] ->
-	    ListName = exmpp_xml:get_attribute_as_list(Child, 'name', false),
+	    ListName = exmpp_xml:get_attribute_as_list(Child, <<"name">>, false),
 	    case Name of
 		list ->
 		    process_list_set(LUser, LServer, ListName,
@@ -370,7 +370,7 @@ process_list_set(LUser, LServer, Name, Els) ->
 		      exmpp_jid:make(LUser, LServer),
 		      exmpp_jid:make(LUser, LServer),
 		      #xmlel{name = 'broadcast', ns = privacy_list,
-			attrs = [exmpp_xml:attribute(list_name, Name)],
+			attrs = [?XMLATTR(<<"list_name">>, Name)],
 			children = [exmpp_xml:cdata(ListString)]}),
 		    Res;
 		_ ->
@@ -407,7 +407,7 @@ process_list_set(LUser, LServer, Name, Els) ->
 		      exmpp_jid:make(LUser, LServer),
 		      exmpp_jid:make(LUser, LServer),
 		      #xmlel{name = 'broadcast', ns = privacy_list,
-			attrs = [exmpp_xml:attribute(list_name, Name)],
+			attrs = [?XMLATTR(<<"list_name">>, Name)],
 			children = [exmpp_xml:cdata(ListString)]}),
 		    Res;
 		_ ->
@@ -426,10 +426,10 @@ parse_items([], Res) ->
     %% Sort the items by their 'order' attribute
     lists:keysort(#listitem.order, Res);
 parse_items([El = #xmlel{name = item} | Els], Res) ->
-    Type   = exmpp_xml:get_attribute_as_list(El, type, false),
-    Value  = exmpp_xml:get_attribute_as_list(El, value, false),
-    SAction =exmpp_xml:get_attribute_as_list(El, action, false),
-    SOrder = exmpp_xml:get_attribute_as_list(El, order, false),
+    Type   = exmpp_xml:get_attribute_as_list(El, <<"type">>, false),
+    Value  = exmpp_xml:get_attribute_as_list(El, <<"value">>, false),
+    SAction =exmpp_xml:get_attribute_as_list(El, <<"action">>, false),
+    SOrder = exmpp_xml:get_attribute_as_list(El, <<"order">>, false),
     Action = case catch list_to_action(SAction) of
 		 {'EXIT', _} -> false;
 		 Val -> Val

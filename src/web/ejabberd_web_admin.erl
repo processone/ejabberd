@@ -43,9 +43,9 @@
 
 -define(INPUTATTRS(Type, Name, Value, Attrs),
 	?XA("input", Attrs ++
-            [?XMLATTR('type', Type),
-             ?XMLATTR('name', Name),
-             ?XMLATTR('value', Value)])).
+            [?XMLATTR(<<"type">>, Type),
+             ?XMLATTR(<<"name">>, Name),
+             ?XMLATTR(<<"value">>, Value)])).
 
 %%%==================================
 %%%% get_acl_access
@@ -274,50 +274,50 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
     MenuItems = make_navigation(Host, Node, Lang, JID),
     {200, [html],
      #xmlel{ns = ?NS_XHTML, name = 'html', attrs = [
-			   exmpp_xml:attribute(?NS_XML, 'lang', Lang),
-			   ?XMLATTR('lang', Lang)], children =
+			   exmpp_xml:attribute(?NS_XML, <<"lang">>, Lang),
+			   ?XMLATTR(<<"lang">>, Lang)], children =
       [#xmlel{ns = ?NS_XHTML, name = 'head', children =
 	[?XCT('title', "ejabberd Web Admin"),
 	 #xmlel{ns = ?NS_XHTML, name = 'meta', attrs = [
-             ?XMLATTR('http-equiv', <<"Content-Type">>),
-             ?XMLATTR('content', <<"text/html; charset=utf-8">>)]},
+             ?XMLATTR(<<"http-equiv">>, <<"Content-Type">>),
+             ?XMLATTR(<<"content">>, <<"text/html; charset=utf-8">>)]},
 	 #xmlel{ns = ?NS_XHTML, name = 'script',
 	     %% This children is to ensure exmpp puts: <script ...></script>
 	     children = [?C(".")],
 	     attrs = [
-             ?XMLATTR('src', Base ++ "additions.js"),
-	     ?XMLATTR('type', <<"text/javascript">>)]},
+             ?XMLATTR(<<"src">>, Base ++ "additions.js"),
+	     ?XMLATTR(<<"type">>, <<"text/javascript">>)]},
 	 #xmlel{ns = ?NS_XHTML, name = 'link', attrs = [
-	     ?XMLATTR('href', Base ++ "favicon.ico"),
-	     ?XMLATTR('type', <<"image/x-icon">>),
-	     ?XMLATTR('rel', <<"shortcut icon">>)]},
+	     ?XMLATTR(<<"href">>, Base ++ "favicon.ico"),
+	     ?XMLATTR(<<"type">>, <<"image/x-icon">>),
+	     ?XMLATTR(<<"rel">>, <<"shortcut icon">>)]},
 	 #xmlel{ns = ?NS_XHTML, name = 'link', attrs = [
-             ?XMLATTR('href', Base ++ "style.css"),
-	     ?XMLATTR('type', <<"text/css">>),
-	     ?XMLATTR('rel', <<"stylesheet">>)]}]},
+             ?XMLATTR(<<"href">>, Base ++ "style.css"),
+	     ?XMLATTR(<<"type">>, <<"text/css">>),
+	     ?XMLATTR(<<"rel">>, <<"stylesheet">>)]}]},
        ?XE('body',
 	   [?XAE('div',
-		 [?XMLATTR('id', <<"container">>)],
+		 [?XMLATTR(<<"id">>, <<"container">>)],
 		 [?XAE('div',
-		       [?XMLATTR('id', <<"header">>)],
+		       [?XMLATTR(<<"id">>, <<"header">>)],
 		       [?XE('h1',
 			    [?ACT("/admin/", "ejabberd Web Admin")]
 			   )]),
 		  ?XAE('div',
-		       [?XMLATTR('id', <<"navigation">>)],
+		       [?XMLATTR(<<"id">>, <<"navigation">>)],
 		       [?XE('ul',
 			    MenuItems
 			   )]),
 		  ?XAE('div',
-		       [?XMLATTR('id', <<"content">>)],
+		       [?XMLATTR(<<"id">>, <<"content">>)],
 		       Els),
 		  ?XAE('div',
-		       [?XMLATTR('id', <<"clearcopyright">>)],
+		       [?XMLATTR(<<"id">>, <<"clearcopyright">>)],
 		       [#xmlcdata{cdata = <<>>}])]),
 	    ?XAE('div',
-		 [?XMLATTR('id', <<"copyrightouter">>)],
+		 [?XMLATTR(<<"id">>, <<"copyrightouter">>)],
 		 [?XAE('div',
-		       [?XMLATTR('id', <<"copyright">>)],
+		       [?XMLATTR(<<"id">>, <<"copyright">>)],
 		       [?XC('p',
 			     "ejabberd (c) 2002-2010 ProcessOne")
 		       ])])])
@@ -837,7 +837,7 @@ process_admin(Host,
 		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
-	       [?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	       [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 		     [?TEXTAREA("acls", integer_to_list(lists:max([16, NumLines])), "80", ACLsP++"."),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
@@ -879,7 +879,7 @@ process_admin(Host,
 		   nothing -> []
 	       end ++
 	       [?XE('p', [?ACT("../acls-raw/", "Raw")])] ++
-	       [?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	       [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 		     [acls_to_xhtml(ACLs),
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected"),
@@ -946,7 +946,7 @@ process_admin(Host,
 		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
-	       [?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	       [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 		     [?TEXTAREA("access", integer_to_list(lists:max([16, NumLines])), "80", AccessP++"."),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
@@ -983,7 +983,7 @@ process_admin(Host,
 		   nothing -> []
 	       end ++
 	       [?XE('p', [?ACT("../access-raw/", "Raw")])] ++
-	       [?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	       [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 		     [access_rules_to_xhtml(AccessRules, Lang),
 		      ?BR,
 		      ?INPUTT("submit", "delete", "Delete Selected")
@@ -1023,7 +1023,7 @@ process_admin(Host,
 		   error -> [?XREST("Bad format")];
 		   nothing -> []
 	       end ++
-	       [?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	       [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 		     [access_rule_to_xhtml(Rules),
 		      ?BR,
 		      ?INPUTT("submit", "submit", "Submit")
@@ -1079,17 +1079,17 @@ process_admin(Host,
 		  list_last_activity(Host, Lang, true, Month)
 	  end,
     make_xhtml([?XCT('h1', "Users Last Activity")] ++
-	       [?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	       [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 		     [?CT("Period: "),
-		      ?XAE('select', [?XMLATTR('name', <<"period">>)],
+		      ?XAE('select', [?XMLATTR(<<"name">>, <<"period">>)],
 			   lists:map(
 			     fun({O, V}) ->
 				    Sel = if
-					      O == Month -> [?XMLATTR('selected', <<"selected">>)];
+					      O == Month -> [?XMLATTR(<<"selected">>, <<"selected">>)];
 					      true -> []
 					  end,
 				    ?XAC('option',
-					 Sel ++ [?XMLATTR('value', O)], V)
+					 Sel ++ [?XMLATTR(<<"value">>, O)], V)
 			     end, [{"month", ?T("Last month")},
 				   {"year", ?T("Last year")},
 				   {"all", ?T("All activity")}])),
@@ -1245,15 +1245,15 @@ acl_spec_to_xhtml(ID, Spec) ->
 
 acl_spec_select(ID, Opt) ->
     ?XE('td',
-	[?XAE('select', [?XMLATTR('name', "type" ++ ID)],
+	[?XAE('select', [?XMLATTR(<<"name">>, "type" ++ ID)],
 	      lists:map(
 		fun(O) ->
 			Sel = if
-				  O == Opt -> [?XMLATTR('selected', <<"selected">>)];
+				  O == Opt -> [?XMLATTR(<<"selected">>, <<"selected">>)];
 				  true -> []
 			      end,
 			?XAC('option',
-			     Sel ++ [?XMLATTR('value', O)],
+			     Sel ++ [?XMLATTR(<<"value">>, O)],
 			     atom_to_list(O))
 		end, [user, server, user_regexp, server_regexp, 
 		      node_regexp, user_glob, server_glob, node_glob, all, raw]))]).
@@ -1454,9 +1454,9 @@ access_rule_to_xhtml(Rules) ->
 		     SACL = atom_to_list(ACL),
 		     SAccess ++ "\s\t" ++ SACL ++ "\n"
 	     end, Rules),
-    ?XAC('textarea', [?XMLATTR('name', <<"rules">>),
-    ?XMLATTR('rows', <<"16">>),
-    ?XMLATTR('cols', <<"80">>)],
+    ?XAC('textarea', [?XMLATTR(<<"name">>, <<"rules">>),
+    ?XMLATTR(<<"rows">>, <<"16">>),
+    ?XMLATTR(<<"cols">>, <<"80">>)],
 	 Text).
 
 parse_access_rule(Text) ->
@@ -1546,7 +1546,7 @@ list_users(Host, Query, Lang, URLFunc) ->
 	error -> [?XREST("Bad format")];
 	nothing -> []
     end ++
-	[?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	[?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?XE('table',
 		   [?XE('tr',
 			[?XC('td', ?T("User") ++ ":"),
@@ -1560,7 +1560,7 @@ list_users(Host, Query, Lang, URLFunc) ->
 			]),
 		    ?XE('tr',
 			[?X('td'),
-			 ?XAE('td', [?XMLATTR('class', <<"alignright">>)],
+			 ?XAE('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 			      [?INPUTT("submit", "addnewuser", "Add User")]),
 			 ?X('td')
 			])]),
@@ -1796,7 +1796,7 @@ user_info(User, Server, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	[?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?XCT('h3', "Connected Resources:")] ++ FResources ++
 	      [?XCT('h3', "Password:")] ++ FPassword ++
 	      [?XCT('h3', "Last Activity")] ++ [?C(LastActivity)] ++
@@ -1876,9 +1876,9 @@ list_last_activity(Host, Lang, Integral, Period) ->
 			   end,
 		    Max = lists:max(Hist),
 		    [?XAE('ol',
-			  [?XMLATTR('id', <<"lastactivity">>), ?XMLATTR('start', <<"0">>)],
+			  [?XMLATTR(<<"id">>, <<"lastactivity">>), ?XMLATTR(<<"start">>, <<"0">>)],
 			  [?XAE('li',
-				[?XMLATTR('style',
+				[?XMLATTR(<<"style">>,
 				  "width:" ++ integer_to_list(
 						trunc(90 * V / Max)) ++ "%;")],
 				[#xmlcdata{cdata = list_to_binary(pretty_string_int(V))}])
@@ -1934,13 +1934,13 @@ get_miscopts(Lang, Method, Query) ->
 	end ++
 	[
 	 ?XCT("h2", "Global"),
-	 ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	 ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [options_to_xhtml("global", GlobalOptions, Lang),
 	       ?BR,
 	       ?INPUTT("submit", "deleteglobal", "Delete Selected")
 	      ]),
 	 ?XCT("h2", "Local"),
-	 ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	 ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [options_to_xhtml("local", LocalOptions, Lang),
 	       ?BR,
 	       ?INPUTT("submit", "deletelocal", "Delete Selected")
@@ -2076,7 +2076,7 @@ get_miscopt(Lang, Query, SType, OldSKey) ->
 	    nothing -> []
 	end ++
 	[?XCT("h2", UpSType),
-	 ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	 ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?TEXTAREA("miscopt", integer_to_list(lists:max([16, NumLines])),
 			 "80", SOpt++"."),
 	       ?BR,
@@ -2163,7 +2163,7 @@ get_node(global, Node, [], Query, Lang) ->
 	      ?LI([?ACT(Base ++ "stats/", "Statistics")]),
 	      ?LI([?ACT(Base ++ "update/", "Update")])
 	     ] ++ MenuItems2),
-	 ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	 ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?INPUTT('submit', "restart", "Restart"),
 	       ?C(" "),
 	       ?INPUTT('submit', "stop", "Stop")])
@@ -2215,15 +2215,15 @@ get_node(global, Node, ["db"], Query, Lang) ->
 				 [?XC('td', STable),
 				  ?XE('td', [db_storage_select(
 					       STable, Type, Lang)]),
-				  ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+				  ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				       pretty_string_int(Size)),
-				  ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+				  ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				       pretty_string_int(Memory))
 				 ])
 		     end, STables),
 	    [?XC('h1', ?T("Database Tables at ") ++ atom_to_list(Node))] ++
 		ResS ++
-		[?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+		[?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 		      [?XAE('table', [],
 			    [?XE('thead',
 				 [?XE('tr',
@@ -2235,8 +2235,8 @@ get_node(global, Node, ["db"], Query, Lang) ->
 			     ?XE('tbody',
 				 Rows ++
 				 [?XE('tr',
-				      [?XAE('td', [?XMLATTR('colspan', <<"4">>),
-						   ?XMLATTR('class', <<"alignright">>)],
+				      [?XAE('td', [?XMLATTR(<<"colspan">>, <<"4">>),
+						   ?XMLATTR(<<"class">>, <<"alignright">>)],
 					    [?INPUTT("submit", "submit",
 						     "Submit")])
 				      ])]
@@ -2258,7 +2258,7 @@ get_node(global, Node, ["backup"], Query, Lang) ->
     [?XC('h1', ?T("Backup of ") ++ atom_to_list(Node))] ++
 	ResS ++
 	[?XCT('p', "Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
-     ?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+     ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	  [?XAE('table', [],
 		[?XE('tbody',
 		     [?XE('tr',
@@ -2351,7 +2351,7 @@ get_node(global, Node, ["pid"], _Query, Lang) ->
      ?XAE('table', [],
 	  [?XE('tbody',
 	       [?XE('tr', [?XCT('td', "Number of processes:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				pretty_string_int(ProcessesNumber))])
 	       ])
 	  ]),
@@ -2426,7 +2426,7 @@ get_node(global, Node, ["ports"], Query, Lang) ->
 	    {error, ReasonT} -> [?XRES(?T("Error") ++ ": " ++ ReasonT)];
 	    nothing -> []
 	end ++
-	[?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	[?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [node_ports_to_xhtml(NewPorts, Lang)])
 	];
 
@@ -2450,7 +2450,7 @@ get_node(Host, Node, ["modules"], Query, Lang) when is_list(Host) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	[?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [node_modules_to_xhtml(NewModules, Lang)])
 	];
 
@@ -2473,25 +2473,25 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
      ?XAE('table', [],
 	  [?XE('tbody',
 	       [?XE('tr', [?XCT('td', "Uptime:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				UpTimeS)]),
 		?XE('tr', [?XCT('td', "CPU Time:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				CPUTimeS)]),
 		?XE('tr', [?XCT('td', "Online Users:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				pretty_string_int(OnlineUsers))]),
 		?XE('tr', [?XCT('td', "Transactions Committed:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				pretty_string_int(TransactionsCommitted))]),
 		?XE('tr', [?XCT('td', "Transactions Aborted:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				pretty_string_int(TransactionsAborted))]),
 		?XE('tr', [?XCT('td', "Transactions Restarted:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				pretty_string_int(TransactionsRestarted))]),
 		?XE('tr', [?XCT('td', "Transactions Logged:"),
-			   ?XAC('td', [?XMLATTR('class', <<"alignright">>)],
+			   ?XAC('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
 				pretty_string_int(TransactionsLogged))])
 	       ])
 	  ])];
@@ -2525,13 +2525,13 @@ get_node(global, Node, ["update"], Query, Lang) ->
 		    [?BR,
 		     ?INPUTATTRS(<<"button">>, <<"selectall">>,
 				 <<"Select All">>,
-                                 [?XMLATTR('onClick', <<"selectAll()">>)]),
+                                 [?XMLATTR(<<"onClick">>, <<"selectAll()">>)]),
 		     ?C(" "),
 		     ?INPUTATTRS(<<"button">>, <<"unselectall">>,
 				 <<"Unselect All">>,
-                                 [?XMLATTR('onClick', <<"unSelectAll()">>)])],
+                                 [?XMLATTR(<<"onClick">>, <<"unSelectAll()">>)])],
 		%%?XE("ul", BeamsLis)
-		?XAE('ul', [?XMLATTR('class', <<"noliststyle">>)],
+		?XAE('ul', [?XMLATTR(<<"class">>, <<"noliststyle">>)],
 		     BeamsLis ++ SelectButtons)
 	end,
     FmtScript = ?XC('pre', io_lib:format("~p", [Script])),
@@ -2542,7 +2542,7 @@ get_node(global, Node, ["update"], Query, Lang) ->
 	    {error, ErrorText} -> [?XREST("Error: " ++ ErrorText)];
 	    nothing -> []
 	end ++
-	[?XAE('form', [?XMLATTR('action', <<>>), ?XMLATTR('method', <<"post">>)],
+	[?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [
 	       ?XCT('h2', "Update plan"),
 	       ?XCT('h3', "Modified modules"), Mods,
@@ -2592,15 +2592,15 @@ node_parse_query(Node, Query) ->
 
 
 db_storage_select(ID, Opt, Lang) ->
-    ?XAE('select', [?XMLATTR('name', "table" ++ ID)],
+    ?XAE('select', [?XMLATTR(<<"name">>, "table" ++ ID)],
 	 lists:map(
 	   fun({O, Desc}) ->
 		   Sel = if
-			     O == Opt -> [?XMLATTR('selected', <<"selected">>)];
+			     O == Opt -> [?XMLATTR(<<"selected">>, <<"selected">>)];
 			     true -> []
 			 end,
 		   ?XACT('option',
-			 Sel ++ [?XMLATTR('value', O)],
+			 Sel ++ [?XMLATTR(<<"value">>, O)],
 			 Desc)
 	   end, [{ram_copies, "RAM copy"},
 		 {disc_copies, "RAM and disc copy"},
@@ -2713,7 +2713,7 @@ node_backup_parse_query(Node, Query) ->
 	     "import_piefxis_file", "export_piefxis_dir", "export_piefxis_host_dir"]).
 
 node_ports_to_xhtml(Ports, Lang) ->
-    ?XAE('table', [?XMLATTR('class', <<"withtextareas">>)],
+    ?XAE('table', [?XMLATTR(<<"class">>, <<"withtextareas">>)],
 	 [?XE('thead',
 	      [?XE('tr',
 		   [?XCT('td', "Port"),
@@ -2731,9 +2731,9 @@ node_ports_to_xhtml(Ports, Lang) ->
 			{NumLines, SOptsClean} = term_to_paragraph(OptsClean, 40),
 			%%ID = term_to_id(E),
 			?XE('tr',
-			    [?XAE('td', [?XMLATTR('size', <<"6">>)], [?C(SPort)]),
-			     ?XAE('td', [?XMLATTR('size', <<"15">>)], [?C(SIP)]),
-			     ?XAE('td', [?XMLATTR('size', <<"4">>)], [?C(atom_to_list(NetProt))]),
+			    [?XAE('td', [?XMLATTR(<<"size">>, <<"6">>)], [?C(SPort)]),
+			     ?XAE('td', [?XMLATTR(<<"size">>, <<"15">>)], [?C(SIP)]),
+			     ?XAE('td', [?XMLATTR(<<"size">>, <<"4">>)], [?C(atom_to_list(NetProt))]),
 			     ?XE('td', [?INPUTS("text", "module" ++ SSPort,
 						SModule, "15")]),
 			     ?XE('td', [?TEXTAREA("opts" ++ SSPort, integer_to_list(NumLines), "35", SOptsClean)]),
@@ -2750,22 +2750,22 @@ node_ports_to_xhtml(Ports, Lang) ->
 		    ?XE("td", [make_netprot_html("tcp")]),
 		    ?XE('td', [?INPUTS("text", "modulenew", "", "15")]),
 		    ?XE('td', [?TEXTAREA("optsnew", "2", "35", "[]")]),
-		    ?XAE('td', [?XMLATTR("colspan", "2")],
+		    ?XAE('td', [?XMLATTR(<<"colspan">>, "2")],
 			 [?INPUTT("submit", "addnew", "Add New")])
 		   ]
 		  )]
 	     )]).
 
 make_netprot_html(NetProt) ->
-    ?XAE('select', [?XMLATTR('name', "netprotnew")],
+    ?XAE('select', [?XMLATTR(<<"name">>, "netprotnew")],
 	 lists:map(
 	   fun(O) ->
 		   Sel = if
-			     O == NetProt -> [?XMLATTR('selected', <<"selected">>)];
+			     O == NetProt -> [?XMLATTR(<<"selected">>, <<"selected">>)];
 			     true -> []
 			 end,
 		   ?XAC('option',
-			Sel ++ [?XMLATTR('value', O)],
+			Sel ++ [?XMLATTR(<<"value">>, O)],
 			O)
 	   end, ["tcp", "udp"])).
 
@@ -2843,7 +2843,7 @@ node_ports_parse_query(Node, Ports, Query) ->
     end.
 
 node_modules_to_xhtml(Modules, Lang) ->
-    ?XAE('table', [?XMLATTR('class', <<"withtextareas">>)],
+    ?XAE('table', [?XMLATTR(<<"class">>, <<"withtextareas">>)],
 	 [?XE('thead',
 	      [?XE('tr',
 		   [?XCT('td', "Module"),
@@ -2868,7 +2868,7 @@ node_modules_to_xhtml(Modules, Lang) ->
 	      [?XE('tr',
 		   [?XE('td', [?INPUT("text", "modulenew", "")]),
 		    ?XE('td', [?TEXTAREA("optsnew", "2", "40", "[]")]),
-		    ?XAE('td', [?XMLATTR("colspan", "2")],
+		    ?XAE('td', [?XMLATTR(<<"colspan">>, "2")],
 			 [?INPUTT("submit", "start", "Start")])
 		   ]
 		  )]
@@ -3103,17 +3103,17 @@ make_menu_items2(Lang, Deep, {MURI, MName, [Item | Items]}, Res) ->
     make_menu_items2(Lang, Deep, {MURI, MName, Items}, Res2).
 
 make_menu_item(header, 1, URI, Name, _Lang) ->
-    ?LI([?XAE('div', [?XMLATTR('id', <<"navhead">>)], [?AC(URI, Name)] )]);
+    ?LI([?XAE('div', [?XMLATTR(<<"id">>, <<"navhead">>)], [?AC(URI, Name)] )]);
 make_menu_item(header, 2, URI, Name, _Lang) ->
-    ?LI([?XAE('div', [?XMLATTR('id', <<"navheadsub">>)], [?AC(URI, Name)] )]);
+    ?LI([?XAE('div', [?XMLATTR(<<"id">>, <<"navheadsub">>)], [?AC(URI, Name)] )]);
 make_menu_item(header, 3, URI, Name, _Lang) ->
-    ?LI([?XAE('div', [?XMLATTR('id', <<"navheadsubsub">>)], [?AC(URI, Name)] )]);
+    ?LI([?XAE('div', [?XMLATTR(<<"id">>, <<"navheadsubsub">>)], [?AC(URI, Name)] )]);
 make_menu_item(item, 1, URI, Name, Lang) ->
-    ?LI([?XAE('div', [?XMLATTR('id', <<"navitem">>)], [?ACT(URI, Name)] )]);
+    ?LI([?XAE('div', [?XMLATTR(<<"id">>, <<"navitem">>)], [?ACT(URI, Name)] )]);
 make_menu_item(item, 2, URI, Name, Lang) ->
-    ?LI([?XAE('div', [?XMLATTR('id', <<"navitemsub">>)], [?ACT(URI, Name)] )]);
+    ?LI([?XAE('div', [?XMLATTR(<<"id">>, <<"navitemsub">>)], [?ACT(URI, Name)] )]);
 make_menu_item(item, 3, URI, Name, Lang) ->
-    ?LI([?XAE('div', [?XMLATTR('id', <<"navitemsubsub">>)], [?ACT(URI, Name)] )]).
+    ?LI([?XAE('div', [?XMLATTR(<<"id">>, <<"navitemsubsub">>)], [?ACT(URI, Name)] )]).
 
 %%%==================================
 

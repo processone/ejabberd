@@ -170,10 +170,10 @@ get_options_xform(Lang, Options) ->
     Keys = [deliver, digest, digest_frequency, expire, include_body, show_values, subscription_type, subscription_depth],
     XFields = [get_option_xfield(Lang, Key, Options) || Key <- Keys],
 
-    {result, #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR('type', <<"form">>)], children =
+    {result, #xmlel{ns = ?NS_DATA_FORMS, name = 'x', attrs = [?XMLATTR(<<"type">>, <<"form">>)], children =
 		    [#xmlel{ns = ?NS_DATA_FORMS, 
 			    name = 'field', 
-			    attrs = [?XMLATTR('var', <<"FORM_TYPE">>), ?XMLATTR('type', <<"hidden">>)],
+			    attrs = [?XMLATTR(<<"var">>, <<"FORM_TYPE">>), ?XMLATTR(<<"type">>, <<"hidden">>)],
 			    children = [#xmlel{ns = ?NS_DATA_FORMS, 
 					       name = 'value',
 					       children = [?XMLCDATA(?NS_PUBSUB_SUBSCRIBE_OPTIONS_s)]}]}] ++ XFields}}.
@@ -349,7 +349,7 @@ get_option_xfield(Lang, Key, Options) ->
 	   end,
     #xmlel{ns = ?NS_DATA_FORMS, 
     	   name = 'field',
-	   attrs = [?XMLATTR('var', Var), ?XMLATTR('type', Type), ?XMLATTR('label', translate:translate(Lang, Label))],
+	   attrs = [?XMLATTR(<<"var">>, Var), ?XMLATTR(<<"type">>, Type), ?XMLATTR(<<"label">>, translate:translate(Lang, Label))],
 	   children = OptEls ++ Vals}.
 
 %% TODO : check input type data
@@ -362,7 +362,7 @@ type_and_options(Type, _Lang) ->
 tr_xfield_options({Value, Label}, Lang) ->
     #xmlel{ns = ?NS_DATA_FORMS, 
 	   name = 'option',
-	   attrs = [?XMLATTR('label', translate:translate(Lang, Label))],
+	   attrs = [?XMLATTR(<<"label">>, translate:translate(Lang, Label))],
 	   children = [#xmlel{ns = ?NS_DATA_FORMS,
 			      name = 'value',
 			      children = [?XMLCDATA(Value)]}]}.

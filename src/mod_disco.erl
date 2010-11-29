@@ -124,14 +124,14 @@ unregister_extra_domain(HostB, Domain) when is_binary(HostB) ->
 
 process_local_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
+    Node = exmpp_xml:get_attribute_as_binary(SubEl, <<"node">>, <<>>),
 
     Host = exmpp_jid:prep_domain(To),
     case find_items(disco_local_items, Host, From, To, Node, Lang) of
 	{result, Items} ->
 	    ANode = case Node of
 			<<>> -> [];
-			_ -> [?XMLATTR('node', Node)]
+			_ -> [?XMLATTR(<<"node">>, Node)]
 	    end,
 	    Result = #xmlel{ns = ?NS_DISCO_ITEMS, name = 'query',
 	      attrs = ANode, children = Items},
@@ -145,7 +145,7 @@ process_local_iq_items(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
+    Node = exmpp_xml:get_attribute_as_binary(SubEl, <<"node">>, <<>>),
     HostB = exmpp_jid:prep_domain(To),
     Identity = ejabberd_hooks:run_fold(disco_local_identity,
 				       HostB,
@@ -158,7 +158,7 @@ process_local_iq_info(From, To, #iq{type = get, payload = SubEl,
 	{result, Features} ->
 	    ANode = case Node of
 			<<>> -> [];
-			_ -> [?XMLATTR('node', Node)]
+			_ -> [?XMLATTR(<<"node">>, Node)]
 		    end,
 	    Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
 			    attrs = ANode,
@@ -172,9 +172,9 @@ process_local_iq_info(_From, _To, #iq{type = set} = IQ_Rec) ->
 
 get_local_identity(Acc, _From, _To, <<>>, _Lang) ->
     Acc ++ [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity', attrs = [
-	  ?XMLATTR('category', <<"server">>),
-	  ?XMLATTR('type', <<"im">>),
-	  ?XMLATTR('name', <<"ejabberd">>)
+	  ?XMLATTR(<<"category">>, <<"server">>),
+	  ?XMLATTR(<<"type">>, <<"im">>),
+	  ?XMLATTR(<<"name">>, <<"ejabberd">>)
 	]}];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
@@ -208,7 +208,7 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
 features_to_xml(FeatureList) ->
     %% Avoid duplicating features
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'feature',
-	    attrs = [?XMLATTR('var', Feat)]} ||
+	    attrs = [?XMLATTR(<<"var">>, Feat)]} ||
 	Feat <- lists:usort(
 		  lists:map(
 		    fun({{Feature, _Host}}) ->
@@ -228,7 +228,7 @@ domain_to_xml({Domain}) ->
     domain_to_xml(Domain);
 domain_to_xml(Domain) when is_binary(Domain)->
     #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
-	?XMLATTR('jid', Domain)
+	?XMLATTR(<<"jid">>, Domain)
       ]};
 domain_to_xml(Domain) when is_list(Domain) ->
     domain_to_xml(list_to_binary(Domain)).
@@ -284,13 +284,13 @@ get_vh_services(Host) ->
 
 process_sm_iq_items(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
-    Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
+    Node = exmpp_xml:get_attribute_as_binary(SubEl, <<"node">>, <<>>),
     Host = exmpp_jid:prep_domain(To),
     case find_items(disco_sm_items, Host, From, To, Node, Lang) of
 	{result, Items} ->
 	    ANode = case Node of
 			<<>> -> [];
-			_ -> [?XMLATTR('node', Node)]
+			_ -> [?XMLATTR(<<"node">>, Node)]
 		    end,
             AItems = case Node of
                         <<>> ->
@@ -362,7 +362,7 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
   lang = Lang} = IQ_Rec) ->
     case is_presence_subscribed(From, To) of
         true ->
-            Node = exmpp_xml:get_attribute_as_binary(SubEl, 'node', <<>>),
+            Node = exmpp_xml:get_attribute_as_binary(SubEl, <<"node">>, <<>>),
             Identity = ejabberd_hooks:run_fold(disco_sm_identity,
                                                exmpp_jid:prep_domain(To),
                                                [],
@@ -372,7 +372,7 @@ process_sm_iq_info(From, To, #iq{type = get, payload = SubEl,
                 {result, Features} ->
                     ANode = case Node of
                                 <<>> -> [];
-                                _ -> [?XMLATTR('node', Node)]
+                                _ -> [?XMLATTR(<<"node">>, Node)]
                             end,
                     Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
 				    attrs = ANode,
@@ -421,9 +421,9 @@ get_user_resources(JID) ->
                                         exmpp_jid:prep_domain(JID)),
     lists:map(fun(R) ->
 		      #xmlel{ns = ?NS_DISCO_ITEMS, name = 'item', attrs = [
-			  ?XMLATTR('jid',
+			  ?XMLATTR(<<"jid">>,
 			    exmpp_jid:to_binary(exmpp_jid:full(JID, R))),
-			  ?XMLATTR('name', exmpp_jid:prep_node(JID))
+			  ?XMLATTR(<<"name">>, exmpp_jid:prep_node(JID))
 			]}
 	      end, lists:sort(Rs)).
 
@@ -440,13 +440,13 @@ get_info(Acc, Host, Mod, Node, _Lang) when Node == <<>> ->
     CData1 = #xmlcdata{cdata = list_to_binary(?NS_SERVERINFO_s)},
     Value1 = #xmlel{name = 'value', children = [CData1]},
     Field1 = #xmlel{name = 'field',
-		    attrs = [?XMLATTR('type', <<"hidden">>),
-			     ?XMLATTR('var', <<"FORM_TYPE">>)],
+		    attrs = [?XMLATTR(<<"type">>, <<"hidden">>),
+			     ?XMLATTR(<<"var">>, <<"FORM_TYPE">>)],
 		    children = [Value1]
 		   },
     X = #xmlel{name = 'x',
 	       ns = ?NS_DATA_FORMS,
-	       attrs = [?XMLATTR('type', <<"result">>)],
+	       attrs = [?XMLATTR(<<"type">>, <<"result">>)],
 	       children = [Field1 | Serverinfo_fields]
 	      },
     [X | Acc];
@@ -475,7 +475,7 @@ fields_to_xml(Fields) ->
 field_to_xml({_, Var, Values}) ->
     Values_xml = values_to_xml(Values),
     #xmlel{name = 'field',
-	   attrs = [?XMLATTR('var', list_to_binary(Var))],
+	   attrs = [?XMLATTR(<<"var">>, list_to_binary(Var))],
 	   children = Values_xml
 	  }.
 

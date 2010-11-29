@@ -320,7 +320,7 @@ find_x_event_chatstates([_ | Els], {A, B, _}) ->
 find_x_expire(_, []) ->
     0;
 find_x_expire(TimeStamp, [#xmlel{ns = ?NS_MESSAGE_EXPIRE} = El | _Els]) ->
-    Val = exmpp_xml:get_attribute_as_list(El, 'seconds', ""),
+    Val = exmpp_xml:get_attribute_as_list(El, <<"seconds">>, ""),
     case catch list_to_integer(Val) of
 	{'EXIT', _} ->
 	    0;
@@ -541,7 +541,7 @@ find_x_timestamp([{xmlcdata, _} | Els]) ->
     find_x_timestamp(Els);
 
 find_x_timestamp([#xmlel{ns = ?NS_DELAY} = El | Els]) ->
-    Stamp = exmpp_xml:get_attribute_as_list(El, 'stamp', ""),
+    Stamp = exmpp_xml:get_attribute_as_list(El, <<"stamp">>, ""),
     case jlib:datetime_string_to_timestamp(Stamp) of
 	undefined -> find_x_timestamp(Els);
 	{MegaSecs, Secs, _MicroSecs} -> MegaSecs * 1000000 + Secs
@@ -611,11 +611,11 @@ user_queue(User, Server, Query, Lang) ->
 		    exmpp_xml:indent_document(Packet1, <<"  ">>),
 		    [?DEFAULT_NS], ?PREFIXED_NS),
 		  ?XE("tr",
-		      [?XAE("td", [?XMLATTR('class', <<"valign">>)], [?INPUT("checkbox", "selected", ID)]),
-		       ?XAC("td", [?XMLATTR('class', <<"valign">>)], Time),
-		       ?XAC("td", [?XMLATTR('class', <<"valign">>)], SFrom),
-		       ?XAC("td", [?XMLATTR('class', <<"valign">>)], STo),
-		       ?XAE("td", [?XMLATTR('class', <<"valign">>)], [?XC("pre", FPacket)])]
+		      [?XAE("td", [?XMLATTR(<<"class">>, <<"valign">>)], [?INPUT("checkbox", "selected", ID)]),
+		       ?XAC("td", [?XMLATTR(<<"class">>, <<"valign">>)], Time),
+		       ?XAC("td", [?XMLATTR(<<"class">>, <<"valign">>)], SFrom),
+		       ?XAC("td", [?XMLATTR(<<"class">>, <<"valign">>)], STo),
+		       ?XAE("td", [?XMLATTR(<<"class">>, <<"valign">>)], [?XC("pre", FPacket)])]
 		     )
 	  end, Msgs),
     [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
@@ -624,7 +624,7 @@ user_queue(User, Server, Query, Lang) ->
 	    ok -> [?CT("Submitted"), ?P];
 	    nothing -> []
 	end ++
-	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	[?XAE("form", [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?XE("table",
 		   [?XE("thead",
 			[?XE("tr",
@@ -638,7 +638,7 @@ user_queue(User, Server, Query, Lang) ->
 			if
 			    FMsgs == [] ->
 				[?XE("tr",
-				     [?XAC("td", [?XMLATTR('colspan', <<"4">>)], " ")]
+				     [?XAC("td", [?XMLATTR(<<"colspan">>, <<"4">>)], " ")]
 				    )];
 			    true ->
 				FMsgs

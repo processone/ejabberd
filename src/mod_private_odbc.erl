@@ -158,7 +158,7 @@ get_data(LUser, LServer, [El | Els], Res) ->
     {selected, ["data"], [{SData}]} ->
 	[Data] = exmpp_xml:parse_document(SData,
                          [names_as_atom, {check_elems, xmpp}, 
-                          {check_nss,xmpp}, {check_attrs,xmpp}]),
+                          {check_nss,xmpp} ]),
 	get_data(LUser, LServer, Els, [Data | Res]);
     %% MREMOND: I wonder when the query could return a vcard ?
     {selected, ["vcard"], []} ->

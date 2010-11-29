@@ -221,16 +221,16 @@ process_iq(From, To,
 									"Choose a username and password "
 									"to register with this server"))}]},
 		    UField = #xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-					[?XMLATTR('var', <<"username">>),
-					 ?XMLATTR('type', <<"text-single">>),
-					 ?XMLATTR('label', translate:translate(Lang, "User"))],
+					[?XMLATTR(<<"var">>, <<"username">>),
+					 ?XMLATTR(<<"type">>, <<"text-single">>),
+					 ?XMLATTR(<<"label">>, translate:translate(Lang, "User"))],
 				    children =
 					[#xmlel{ns = ?NS_DATA_FORMS, name = 'required'}]},
 		    PField =
 			#xmlel{ns = ?NS_DATA_FORMS, name = 'field', attrs =
-				   [?XMLATTR('var', <<"password">>),
-				    ?XMLATTR('type', <<"text-private">>),
-				    ?XMLATTR('label', translate:translate(Lang, "Password"))],
+				   [?XMLATTR(<<"var">>, <<"password">>),
+				    ?XMLATTR(<<"type">>, <<"text-private">>),
+				    ?XMLATTR(<<"label">>, translate:translate(Lang, "Password"))],
 			       children = [
 					   #xmlel{ns = ?NS_DATA_FORMS, name = 'required'}
 					  ]

@@ -206,7 +206,7 @@ handle_info({route, From, To, #xmlel{name=iq} = Packet}, State) ->
 	    ejabberd_router:route(To, From, Err);
 	reply ->
 	    LServiceS = jts(To),
-	    case exmpp_xml:get_attribute_as_list(Packet, type, "error") of
+	    case exmpp_xml:get_attribute_as_list(Packet, <<"type">>, "error") of
 		"result" -> process_iqreply_result(From, LServiceS, Packet, State);
 		"error" -> process_iqreply_error(From, LServiceS, Packet)
 	    end
@@ -299,13 +299,13 @@ process_iq(_, #iq{type=Type}, _) when Type==result; Type==error ->
 process_iq(_, _IQ, _) ->
     unknown_iq.
 
--define(FEATURE(Feat), #xmlel{name = feature, attrs = [#xmlattr{name = var, value = Feat}]}).
+-define(FEATURE(Feat), #xmlel{name = feature, attrs = [#xmlattr{name = <<"var">>, value = Feat}]}).
 
 iq_disco_info(From, Lang, State) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
-	    attrs = [?XMLATTR('category', <<"service">>),
-		     ?XMLATTR('type', <<"multicast">>),
-		     ?XMLATTR('name', translate:translate(Lang,
+	    attrs = [?XMLATTR(<<"category">>, <<"service">>),
+		     ?XMLATTR(<<"type">>, <<"multicast">>),
+		     ?XMLATTR(<<"name">>, translate:translate(Lang,
 							  "Multicast"))]},
      ?FEATURE(?NS_DISCO_INFO_b),
      ?FEATURE(?NS_DISCO_ITEMS_b),
@@ -342,8 +342,8 @@ route_trusted(LServiceS, LServerS, FromJID, Destinations, Packet) ->
 		       DS = jts(D),
 		       XML = #xmlel{name = address,
 				    ns = ?NS_ADDRESS,
-				    attrs = [#xmlattr{name = type, value = <<"bcc">>},
-					     #xmlattr{name = jid, value = list_to_binary(DS)}] },
+				    attrs = [#xmlattr{name = <<"type">>, value = <<"bcc">>},
+					     #xmlattr{name = <<"jid">>, value = list_to_binary(DS)}] },
 		       #dest{jid_string = DS,
 			     jid_jid = D,
 			     type = "bcc",
@@ -479,10 +479,10 @@ split_addresses_todeliver(Addresses) ->
       fun(XML) ->
 	      case XML of
 		  #xmlel{name = address} = Packet ->
-		      case exmpp_xml:get_attribute_as_binary(Packet, "delivered", no_delivered) of
+		      case exmpp_xml:get_attribute_as_binary(Packet, <<"delivered">>, no_delivered) of
 			  <<"true">> -> false;
 			  _ ->
-			      Type = exmpp_xml:get_attribute_as_binary(Packet, "type", no_type),
+			      Type = exmpp_xml:get_attribute_as_binary(Packet, <<"type">>, no_type),
 			      case Type of
 				  <<"to">> -> true;
 				  <<"cc">> -> true;
@@ -516,11 +516,11 @@ check_limit_dests(SLimits, FromJID, Packet, Addresses) ->
 convert_dest_record(XMLs) ->
     lists:map(
       fun(XML) ->
-	      case exmpp_xml:get_attribute_as_list(XML, jid, "") of
+	      case exmpp_xml:get_attribute_as_list(XML, <<"jid">>, "") of
 		  [] ->
 		      #dest{jid_string = none, full_xml = XML};
 		  JIDS ->
-		      Type = exmpp_xml:get_attribute_as_list(XML, type, ""),
+		      Type = exmpp_xml:get_attribute_as_list(XML, <<"type">>, ""),
 		      JIDJ = stj(JIDS),
 		      #dest{jid_string = JIDS,
 			    jid_jid = JIDJ,
@@ -603,7 +603,7 @@ build_other_xml(Dests) ->
       Dests).
 
 add_delivered(Stanza) ->
-    exmpp_xml:set_attribute(Stanza, delivered, 'true').
+    exmpp_xml:set_attribute(Stanza, <<"delivered">>, <<"true">>).
 
 %%%==================================
 %%%% Add preliminary packets
@@ -782,7 +782,7 @@ process_discoinfo_result2(From, FromS, LServiceS, Els, Waiter) ->
 	  fun(XML) ->
 		  case XML of
 		      #xmlel{name = feature, attrs = Attrs} ->
-			  ?NS_ADDRESS_b == exmpp_xml:get_attribute_from_list_as_binary(Attrs, var, "");
+			  ?NS_ADDRESS_b == exmpp_xml:get_attribute_from_list_as_binary(Attrs, <<"var">>, "");
 		      _ -> false
 		  end
 	  end,
@@ -850,8 +850,9 @@ get_limits_els(Els) ->
       fun(XML, R) ->
 	      case XML of
 		  #xmlel{name = x, attrs = Attrs, children = SubEls} ->
-		      case (?NS_DATA_FORMS_b == exmpp_xml:get_attribute_from_list_as_binary(Attrs, xmlns, "")) and
-			  (<<"result">> == exmpp_xml:get_attribute_from_list_as_binary(Attrs, type, "")) of
+                %%TODO: do ask for "xmlns" works here?. Seems it should ask for namespace?
+		      case (?NS_DATA_FORMS_b == exmpp_xml:get_attribute_from_list_as_binary(Attrs, <<"xmlns">>, "")) and
+			  (<<"result">> == exmpp_xml:get_attribute_from_list_as_binary(Attrs, <<"type">>, "")) of
 			  true -> get_limits_fields(SubEls) ++ R;
 			  false -> R
 		      end;
@@ -867,8 +868,8 @@ get_limits_fields(Fields) ->
 		     fun(Field) ->
 			     case Field of
 				 #xmlel{name = field, attrs = Attrs} ->
-				     (<<"FORM_TYPE">> == exmpp_xml:get_attribute_from_list_as_binary(Attrs, var, ""))
-					 and (<<"hidden">> == exmpp_xml:get_attribute_from_list_as_binary(Attrs, type, ""));
+				     (<<"FORM_TYPE">> == exmpp_xml:get_attribute_from_list_as_binary(Attrs, <<"var">>, ""))
+					 and (<<"hidden">> == exmpp_xml:get_attribute_from_list_as_binary(Attrs, <<"type">>, ""));
 				 _ -> false
 			     end
 		     end,
@@ -887,7 +888,7 @@ get_limits_values(Values) ->
 		      %% TODO: Only one subel is expected here, but there may be several
 		      #xmlel{children = SubElsV} = exmpp_xml:get_element(SubEls, value),
 		      Number = exmpp_xml:get_cdata_from_list_as_list(SubElsV),
-		      Name = exmpp_xml:get_attribute_from_list_as_list(Attrs, var, ""),
+		      Name = exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"var">>, ""),
 		      [{list_to_atom(Name), list_to_integer(Number)} | R];
 		  _ -> R
 	      end
@@ -906,7 +907,7 @@ process_discoitems_result(From, LServiceS, Els) ->
 		     %% For each one, if it's "item", look for jid
 		     case XML of
 			 #xmlel{name = item, attrs = Attrs} ->
-			     Res ++ [exmpp_xml:get_attribute_from_list_as_list(Attrs, jid, "")];
+			     Res ++ [exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"jid">>, "")];
 			 _ -> Res
 		     end
 	     end,
@@ -1197,13 +1198,13 @@ fragment_dests(Dests, Limit_number) ->
 %% Some parts of code are borrowed from mod_muc_room.erl
 
 -define(RFIELDT(Type, Var, Val),
-	#xmlel{name = 'field', attrs = [?XMLATTR('type', Type),
-					?XMLATTR('var', Var)],
+	#xmlel{name = 'field', attrs = [?XMLATTR(<<"type">>, Type),
+					?XMLATTR(<<"var">>, Var)],
 	       children = [#xmlel{name = 'value',
 				  children = [#xmlcdata{cdata = Val}]}]}).
 
 -define(RFIELDV(Var, Val),
-	#xmlel{name = 'field', attrs = [?XMLATTR('var', Var)],
+	#xmlel{name = 'field', attrs = [?XMLATTR(<<"var">>, Var)],
 	       children = [#xmlel{name = 'value',
 				  children = [#xmlcdata{cdata = Val}]}]}).
 
@@ -1214,7 +1215,7 @@ iq_disco_info_extras(From, State) ->
 	[] -> [];
 	List_limits_xmpp ->
 	    Children = [?RFIELDT("hidden", "FORM_TYPE", ?NS_ADDRESS)] ++ List_limits_xmpp,
-	    [#xmlel{name = x, ns = ?NS_DATA_FORMS, attrs = [#xmlattr{name = type, value = <<"result">>}], children = Children}]
+	    [#xmlel{name = x, ns = ?NS_DATA_FORMS, attrs = [#xmlattr{name = <<"type">>, value = <<"result">>}], children = Children}]
     end.
 
 sender_type(From) ->

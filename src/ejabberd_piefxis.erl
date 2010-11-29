@@ -123,13 +123,13 @@ process_element(El=#xmlel{name=user, ns=_XMLNS},
     State;
 
 process_element(H=#xmlel{name=host},State) ->
-    State#parsing_state{host=exmpp_xml:get_attribute(H,"jid",none)};
+    State#parsing_state{host=exmpp_xml:get_attribute(H,<<"jid">>,none)};
 
 process_element(#xmlel{name='server-data'},State) ->
     State;
 
 process_element(El=#xmlel{name=include, ns=?NS_XINCLUDE}, State=#parsing_state{dir=Dir}) ->
-    case exmpp_xml:get_attribute(El, href, none) of
+    case exmpp_xml:get_attribute(El, <<"href">>, none) of
 	none ->
 	    ok;
 	HrefB ->
@@ -158,8 +158,8 @@ process_element(El,State) ->
 %%%% Add user
 
 add_user(El, Domain) ->
-    User = exmpp_xml:get_attribute(El,name,none),
-    Password = exmpp_xml:get_attribute(El,password,none),
+    User = exmpp_xml:get_attribute(El,<<"name">>,none),
+    Password = exmpp_xml:get_attribute(El,<<"password">>,none),
     add_user(El, Domain, User, Password).
 
 %% @spec (El::xmlel(), Domain::string(), User::string(), Password::string())
@@ -301,7 +301,7 @@ populate_user(User,Domain,El=#xmlel{name='offline-messages'}) ->
 		   fun (_Element, {xmlcdata, _}) ->
 			   ok;
 		       (_Element, Child) ->
-			   From  = exmpp_xml:get_attribute(Child,from,none),
+			   From  = exmpp_xml:get_attribute(Child,<<"from">>,none),
 			   FullFrom = exmpp_jid:parse(From),
 			   FullUser = exmpp_jid:make(User, Domain),
 			   _R = M:store_packet(FullFrom, FullUser, Child)
@@ -558,7 +558,7 @@ mnesia_pop_offline_messages(Ls, User, Server) ->
 			fun(R) ->
 				[Packet] = exmpp_xml:parse_document(R#offline_msg.packet, [names_as_atom]),
 				FromString = exmpp_jid:prep_to_list(R#offline_msg.from),
-				Packet2 = exmpp_xml:set_attribute(Packet, "from", FromString),
+				Packet2 = exmpp_xml:set_attribute(Packet, <<"from">>, FromString),
 				Packet3 = Packet2#xmlel{ns = ?NS_JABBER_CLIENT},
 				exmpp_xml:append_children(
 				  Packet3,

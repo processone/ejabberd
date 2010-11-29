@@ -127,7 +127,7 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 	    catch mod_roster:set_items(UserB, ServerB, El),
 	    ok;
 	?NS_LAST_ACTIVITY ->
-	    TimeStamp = exmpp_xml:get_attribute_as_list(El, 'last', ""),
+	    TimeStamp = exmpp_xml:get_attribute_as_list(El, <<"last">>, ""),
 	    Status = exmpp_xml:get_cdata(El),
 		    catch mod_last:store_last_info(
 			    UserB,
@@ -145,7 +145,7 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 	    process_offline(Server, From, El),
 	    ok;
 	XMLNS ->
-	    case exmpp_xml:get_attribute_as_list(El, "j_private_flag", "") of
+	    case exmpp_xml:get_attribute_as_list(El, <<"j_private_flag">>, "") of
 		"1" ->
 		    catch mod_private:process_sm_iq(
 			    From,

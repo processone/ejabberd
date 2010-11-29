@@ -124,15 +124,15 @@ process_local_iq(From, To, #iq{type = Type, payload = Request} = IQ_Rec) ->
 process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'info'}) ->
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     TConns = lists:usort([element(2, C) || C <- S2SConns]),
-    Attrs = [?XMLATTR('registered-users', mnesia:table_info(passwd, size)),
-	     ?XMLATTR('online-users', mnesia:table_info(presence, size)),
-	     ?XMLATTR('running-nodes',
+    Attrs = [?XMLATTR(<<"registered-users">>, mnesia:table_info(passwd, size)),
+	     ?XMLATTR(<<"online-users">>, mnesia:table_info(presence, size)),
+	     ?XMLATTR(<<"running-nodes">>,
 	      length(mnesia:system_info(running_db_nodes))),
-	     ?XMLATTR('stopped-nodes',
+	     ?XMLATTR(<<"stopped-nodes">>,
               length(lists:usort(mnesia:system_info(db_nodes) ++
                                  mnesia:system_info(extra_db_nodes)) --
                      mnesia:system_info(running_db_nodes))),
-	     ?XMLATTR('outgoing-s2s-servers',
+	     ?XMLATTR(<<"outgoing-s2s-servers">>,
 	      length(TConns))],
     {result, #xmlel{ns = ?NS_ECONFIGURE, name = 'info', attrs = Attrs}};
 process_get(#xmlel{ns = ?NS_ECONFIGURE, name = 'welcome-message', attrs = Attrs}) ->

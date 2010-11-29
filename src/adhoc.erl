@@ -43,9 +43,9 @@ parse_request(#iq{type = Type, ns = NS, payload = SubEl, lang = Lang}) ->
 	case {Type, NS} of
 	    {set, ?NS_ADHOC} ->
 		?DEBUG("entering parse_request...", []),
-		Node = exmpp_xml:get_attribute_as_list(SubEl, 'node', ""),
-		SessionID = exmpp_xml:get_attribute_as_list(SubEl, 'sessionid', ""),
-		Action = exmpp_xml:get_attribute_as_list(SubEl, 'action', ""),
+		Node = exmpp_xml:get_attribute_as_list(SubEl, <<"node">>, ""),
+		SessionID = exmpp_xml:get_attribute_as_list(SubEl, <<"sessionid">>, ""),
+		Action = exmpp_xml:get_attribute_as_list(SubEl, <<"action">>, ""),
 		XData = find_xdata_el(SubEl),
 		AllEls = exmpp_xml:get_child_elements(SubEl),
 		Others = case XData of
@@ -114,7 +114,7 @@ produce_response(#adhoc_response{lang = _Lang,
 		"" ->
 		    ActionsElAttrs = [];
 		_ ->
-		    ActionsElAttrs = [?XMLATTR('execute', DefaultAction)]
+		    ActionsElAttrs = [?XMLATTR(<<"execute">>, DefaultAction)]
 	    end,
 	    ActionsEls = [#xmlel{ns = ?NS_ADHOC, name = 'actions', attrs =
 			   ActionsElAttrs, children =
@@ -122,11 +122,11 @@ produce_response(#adhoc_response{lang = _Lang,
     end,
     NotesEls = lists:map(fun({Type, Text}) ->
 				 #xmlel{ns = ?NS_ADHOC, name = 'note', attrs =
-				  [?XMLATTR('type', Type)],
+				  [?XMLATTR(<<"type">>, Type)],
 				  children = [#xmlcdata{cdata = list_to_binary(Text)}]}
 			 end, Notes),
     #xmlel{ns = ?NS_ADHOC, name = 'command', attrs =
-     [?XMLATTR('sessionid', SessionID),
-      ?XMLATTR('node', Node),
-      ?XMLATTR('status', Status)], children =
+     [?XMLATTR(<<"sessionid">>, SessionID),
+      ?XMLATTR(<<"node">>, Node),
+      ?XMLATTR(<<"status">>, Status)], children =
      ActionsEls ++ NotesEls ++ Elements}.

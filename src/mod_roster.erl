@@ -291,7 +291,7 @@ process_iq_get(From, To, IQ_Rec) ->
     US = {_, LServer} = {exmpp_jid:prep_node(From), exmpp_jid:prep_domain(From)},
     try
 	    {ItemsToSend, VersionToSend} = 
-		case {exmpp_xml:get_attribute_as_list(exmpp_iq:get_request(IQ_Rec), ver,  not_found), 
+		case {exmpp_xml:get_attribute_as_list(exmpp_iq:get_request(IQ_Rec), <<"ver">>,  not_found), 
 		      roster_versioning_enabled(LServer),
 		      roster_version_on_db(LServer)} of
 		{not_found, _ , _} ->
@@ -332,7 +332,7 @@ process_iq_get(From, To, IQ_Rec) ->
 			{Items, false} -> 
 				exmpp_iq:result(IQ_Rec, exmpp_xml:element(?NS_ROSTER, 'query', [] , Items));
 			{Items, Version} -> 
-				exmpp_iq:result(IQ_Rec, exmpp_xml:element(?NS_ROSTER, 'query', [?XMLATTR('ver', Version)], Items))
+				exmpp_iq:result(IQ_Rec, exmpp_xml:element(?NS_ROSTER, 'query', [?XMLATTR(<<"ver">>, Version)], Items))
 		end
     catch 
     	_:_ ->  
@@ -408,22 +408,22 @@ convert_to_string(A) when is_list(A) -> A.
 item_to_xml(Item) ->
     {U, S, R} = Item#roster.jid,
     Attrs1 = exmpp_xml:set_attribute_in_list([],
-      'jid', exmpp_jid:to_binary(U, S, R)),
+      <<"jid">>, exmpp_jid:to_binary(U, S, R)),
     Attrs2 = case Item#roster.name of
 		 <<>> ->
 		     Attrs1;
 		 Name ->
-		     exmpp_xml:set_attribute_in_list(Attrs1, 'name', Name)
+		     exmpp_xml:set_attribute_in_list(Attrs1, <<"name">>, Name)
 	     end,
     Attrs3 = exmpp_xml:set_attribute_in_list(Attrs2,
-      'subscription', Item#roster.subscription),
+      <<"subscription">>, Item#roster.subscription),
     Attrs4 = case ask_to_pending(Item#roster.ask) of
 		 out ->
 		     exmpp_xml:set_attribute_in_list(Attrs3,
-		       'ask', <<"subscribe">>);
+		       <<"ask">>, <<"subscribe">>);
 		 both ->
 		     exmpp_xml:set_attribute_in_list(Attrs3,
-		       'ask', <<"subscribe">>);
+		       <<"ask">>, <<"subscribe">>);
 		 _ ->
 		     Attrs3
 	     end,
@@ -466,7 +466,7 @@ try_process_iq_set(From, To, IQ) ->
 
 process_item_set(From, To, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(El, 'jid', <<>>)),
+	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_binary(El, <<"jid">>, <<>>)),
 	User = exmpp_jid:node(From),
 	LUser = exmpp_jid:prep_node(From),
 	LServer = exmpp_jid:prep_domain(From),
@@ -577,9 +577,9 @@ process_item_set(_From, _To, _) ->
 
 process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
-	'name' ->
+	<<"name">> ->
 	    process_item_attrs(Item#roster{name = Val}, Attrs);
-	'subscription' ->
+	<<"subscription">> ->
 	    case Val of
 		<<"remove">> ->
 		    process_item_attrs(Item#roster{subscription = remove},
@@ -587,7 +587,7 @@ process_item_attrs(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 		_ ->
 		    process_item_attrs(Item, Attrs)
 	    end;
-	'ask' ->
+	<<"ask">> ->
 	    process_item_attrs(Item, Attrs);
 	_ ->
 	    process_item_attrs(Item, Attrs)
@@ -631,10 +631,10 @@ push_item(User, Server, From, Item)
     ejabberd_sm:route(exmpp_jid:make(),
 		      exmpp_jid:make(User, Server),
 		      #xmlel{name = 'broadcast', ns = roster_item, attrs =
-		       [exmpp_xml:attribute(u, U),
-		        exmpp_xml:attribute(s, S),
-		        exmpp_xml:attribute(r, R),
-		        exmpp_xml:attribute(subs, Item#roster.subscription)]}),
+		       [?XMLATTR(<<"u">>, U),
+		        ?XMLATTR(<<"s">>, S),
+		        ?XMLATTR(<<"r">>, R),
+		        ?XMLATTR(<<"subs">>, Item#roster.subscription)]}),
 
     case roster_versioning_enabled(Server) of
     	true ->
@@ -673,7 +673,7 @@ push_item_version(Server, User, From, Item, RosterVersion)  ->
 		end, ejabberd_sm:get_user_resources(User, Server)).
 
 push_item_version(User, Server, Resource, From, Item, RosterVersion) ->
-    Request = #xmlel{ns = ?NS_ROSTER, name = 'query', attrs = [?XMLATTR('ver', RosterVersion)],
+    Request = #xmlel{ns = ?NS_ROSTER, name = 'query', attrs = [?XMLATTR(<<"ver">>, RosterVersion)],
       children = [mod_roster:item_to_xml(Item)]},
     ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
       "push" ++ randoms:get_string()),
@@ -1053,7 +1053,7 @@ set_items(User, Server, #xmlel{children = Els})
 
 process_item_set_t(LUser, LServer, #xmlel{} = El) ->
     try
-	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_list(El, 'jid', <<>>)),
+	JID1 = exmpp_jid:parse(exmpp_xml:get_attribute_as_list(El, <<"jid">>, <<>>)),
 	JID = jlib:short_jid(JID1),
 	LJID = jlib:short_prepd_jid(JID1),
 	Item = #roster{usj = {LUser, LServer, LJID},
@@ -1097,9 +1097,9 @@ process_item_set_t(_LUser, _LServer, _) ->
 
 process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
     case Attr of
-	'name' ->
+	<<"name">> ->
 	    process_item_attrs_ws(Item#roster{name = Val}, Attrs);
-	'subscription' ->
+	<<"subscription">> ->
 	    case Val of
 		<<"remove">> ->
 		    process_item_attrs_ws(Item#roster{subscription = remove},
@@ -1119,7 +1119,7 @@ process_item_attrs_ws(Item, [#xmlattr{name = Attr, value = Val} | Attrs]) ->
 		_ ->
 		    process_item_attrs_ws(Item, Attrs)
 	    end;
-	'ask' ->
+	<<"ask">> ->
 	    process_item_attrs_ws(Item, Attrs);
 	_ ->
 	    process_item_attrs_ws(Item, Attrs)
@@ -1363,16 +1363,16 @@ user_roster(User, Server, Query, Lang) ->
 					TDJID = build_contact_jid_td(R#roster.jid),
 					?XE("tr",
 					    [TDJID,
-					     ?XAC("td", [?XMLATTR('class', <<"valign">>)],
+					     ?XAC("td", [?XMLATTR(<<"class">>, <<"valign">>)],
 						  R#roster.name),
-					     ?XAC("td", [?XMLATTR('class', <<"valign">>)],
+					     ?XAC("td", [?XMLATTR(<<"class">>, <<"valign">>)],
 						  atom_to_list(R#roster.subscription)),
-					     ?XAC("td", [?XMLATTR('class', <<"valign">>)],
+					     ?XAC("td", [?XMLATTR(<<"class">>, <<"valign">>)],
 						  atom_to_list(Pending)),
-					     ?XAE("td", [?XMLATTR('class', <<"valign">>)], Groups),
+					     ?XAE("td", [?XMLATTR(<<"class">>, <<"valign">>)], Groups),
 					     if
 						 Pending == in ->
-						     ?XAE("td", [?XMLATTR('class', <<"valign">>)],
+						     ?XAE("td", [?XMLATTR(<<"class">>, <<"valign">>)],
 							  [?INPUTT("submit",
 								   "validate" ++
 								   ejabberd_web_admin:term_to_id(R#roster.jid),
@@ -1380,7 +1380,7 @@ user_roster(User, Server, Query, Lang) ->
 						 true ->
 						     ?X("td")
 					     end,
-					     ?XAE("td", [?XMLATTR('class', <<"valign">>)],
+					     ?XAE("td", [?XMLATTR(<<"class">>, <<"valign">>)],
 						  [?INPUTT("submit",
 							   "remove" ++
 							   ejabberd_web_admin:term_to_id(R#roster.jid),
@@ -1393,7 +1393,7 @@ user_roster(User, Server, Query, Lang) ->
 		error -> [?XREST("Bad format")];
 		nothing -> []
 	    end ++
-	    [?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	    [?XAE("form", [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 		  FItems ++
 		  [?P,
 		   ?INPUT("text", "newjid", ""), ?C(" "),
@@ -1403,7 +1403,7 @@ user_roster(User, Server, Query, Lang) ->
 	  _ ->
 	      [?XC("h1", ?T("Roster of ") ++ us_to_list({User, Server}))] ++
 	      [?CT("Bad format"), ?P] ++
-	      [?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	      [?XAE("form", [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 		    [?P,
 		     ?INPUT("text", "newjid", ""), ?C(" "),
 		     ?INPUTT("submit", "addjid", "Add Jabber ID")
@@ -1429,9 +1429,9 @@ build_contact_jid_td({U, S, R}) ->
 	     end,
     case JIDURI of
 	[] ->
-	    ?XAC('td', [?XMLATTR('class', <<"valign">>)], exmpp_jid:to_list(ContactJID));
+	    ?XAC('td', [?XMLATTR(<<"class">>, <<"valign">>)], exmpp_jid:to_list(ContactJID));
 	URI when is_list(URI) ->
-	    ?XAE('td', [?XMLATTR('class', <<"valign">>)], [?AC(JIDURI, exmpp_jid:to_list(ContactJID))])
+	    ?XAE('td', [?XMLATTR(<<"class">>, <<"valign">>)], [?AC(JIDURI, exmpp_jid:to_list(ContactJID))])
     end.
 
 %% @spec (User, Server, Items, Query) -> ok | nothing | error
@@ -1509,9 +1509,9 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 			      {U, S, R} = JID,
 			      UJID = exmpp_jid:make(User, Server),
 			      Attrs1 = exmpp_xml:set_attribute_in_list([],
-				'jid', exmpp_jid:to_list(U, S, R)),
+				<<"jid">>, exmpp_jid:to_list(U, S, R)),
 			      Attrs2 = exmpp_xml:set_attribute_in_list(Attrs1,
-				'subscription', "remove"),
+				<<"subscription">>, "remove"),
 			      Item = #xmlel{ns = ?NS_ROSTER, name = 'item',
 				attrs = Attrs2},
 			      Request = #xmlel{

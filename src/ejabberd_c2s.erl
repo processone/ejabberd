@@ -1256,17 +1256,17 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		?DEBUG("broadcast~n~p~n", [Packet#xmlel.children]),
 		case Packet#xmlel.ns of
 		    roster_item ->
-			IJID = exmpp_jid:make(exmpp_xml:get_attribute(Packet, u, <<"">>),
-                                      exmpp_xml:get_attribute(Packet, s, <<"">>),
-                                      exmpp_xml:get_attribute(Packet, r, <<"">>)),
-                        ISubscription = exmpp_xml:get_attribute(Packet, subs, <<"none">>),
+			IJID = exmpp_jid:make(exmpp_xml:get_attribute(Packet, <<"u">>, <<"">>),
+                                      exmpp_xml:get_attribute(Packet, <<"s">>, <<"">>),
+                                      exmpp_xml:get_attribute(Packet, <<"r">>, <<"">>)),
+                        ISubscription = exmpp_xml:get_attribute(Packet, <<"subs">>, <<"none">>),
 			{false, Attrs,
 			 roster_change(IJID, ISubscription, StateData)};
 		    exit ->
-			Reason = exmpp_xml:get_attribute_as_list(Packet, reason, "Unknown reason"),
+			Reason = exmpp_xml:get_attribute_as_list(Packet, <<"reason">>, "Unknown reason"),
 			{exit, Attrs, Reason};
 		    privacy_list ->
-		        PrivListName = exmpp_xml:get_attribute_as_list(Packet, list_name, "Unknown list name"),
+		        PrivListName = exmpp_xml:get_attribute_as_list(Packet, <<"list_name">>, "Unknown list name"),
 			CDataString = exmpp_xml:get_cdata_as_list(Packet),
 			{ok, A2, _} = erl_scan:string(CDataString),
 			{_, W} = erl_parse:parse_exprs(A2),
@@ -1516,22 +1516,22 @@ send_header(StateData, Server, Version, Lang)
     VersionAttr =
 	case Version of
 	    "" -> [];
-	    _ -> [{"version", Version}]
+	    _ -> [?XMLATTR(<<"version">>, Version)]
 	end,
     LangAttr =
 	case Lang of
 	    "" -> [];
-	    _ -> [{"xml:lang", Lang}]
+	    _ -> [?XMLATTR(<<"xml:lang">>, Lang)]
 	end,
     Header =
 	{xmlstreamstart,
 	 "stream:stream",
 	 VersionAttr ++
 	 LangAttr ++
-	 [{"xmlns", "jabber:client"},
-	  {"xmlns:stream", "http://etherx.jabber.org/streams"},
-	  {"id", StateData#state.streamid},
-	  {"from", Server}]},
+	 [?XMLATTR(<<"xmlns">>, "jabber:client"),
+	  ?XMLATTR(<<"xmlns:stream">>, "http://etherx.jabber.org/streams"),
+	  ?XMLATTR(<<"id">>, StateData#state.streamid),
+	  ?XMLATTR(<<"from">>, Server)]},
     (StateData#state.sockmod):send_xml(
       StateData#state.socket, Header);
 send_header(StateData, Server, Version, Lang) ->

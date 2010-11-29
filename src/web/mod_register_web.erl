@@ -159,13 +159,13 @@ css() ->
 %%%----------------------------------------------------------------------
 
 make_xa_link_css() ->
-    ?XA('link', [?XMLATTR('href', <<"/register/register.css">>),
-		 ?XMLATTR('type', <<"text/css">>),
-		 ?XMLATTR('rel', <<"stylesheet">>)]).
+    ?XA('link', [?XMLATTR(<<"href">>, <<"/register/register.css">>),
+		 ?XMLATTR(<<"type">>, <<"text/css">>),
+		 ?XMLATTR(<<"rel">>, <<"stylesheet">>)]).
 
 make_h1_title(TextString, Lang) ->
     ?XACT('h1',
-	  [?XMLATTR('class', <<"title">>), ?XMLATTR('style', <<"text-align:center;">>)],
+	  [?XMLATTR(<<"class">>, <<"title">>), ?XMLATTR(<<"style">>, <<"text-align:center;">>)],
 	  TextString).
 
 index_page(Lang) ->
@@ -205,7 +205,7 @@ form_new_get(Host, Lang) ->
 	      "Please read carefully the instructions to fill correctly the fields."),
 	 %% <!-- JID's take the form of 'username@server.com'. For example, my JID is 'kirjava@jabber.org'.
 	 %% The maximum length for a JID is 255 characters. -->
-	 ?XAE('form', [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	 ?XAE('form', [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [
 	       ?XE('ol', [
 			  ?XE('li', [
@@ -364,7 +364,7 @@ form_changepass_get(Host, Lang) ->
 	      ],
     Els=[
 	 make_h1_title("Change Password", Lang),
-	 ?XAE('form', [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	 ?XAE('form', [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [
 	       ?XE('ol', [
 			  ?XE('li', [
@@ -482,7 +482,7 @@ form_del_get(Host, Lang) ->
 	 make_h1_title("Unregister a Jabber account", Lang),
 	 ?XCT('p',
 	      "This page allows to unregister a Jabber account in this Jabber server."),
-	 ?XAE('form', [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	 ?XAE('form', [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [
 	       ?XE('ol', [
 			  ?XE('li', [

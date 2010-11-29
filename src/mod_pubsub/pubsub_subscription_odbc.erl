@@ -125,7 +125,7 @@ get_options_xform(Lang, Options) ->
      {result, #xmlel{ns = ?NS_DATA_FORMS, name = 'x', children =
      		[#xmlel{ns = ?NS_DATA_FORMS, 
 			name = 'field', 
-			attrs = [?XMLATTR('var', <<"FORM_TYPE">>), ?XMLATTR('type', <<"hidden">>)],
+			attrs = [?XMLATTR(<<"var">>, <<"FORM_TYPE">>), ?XMLATTR(<<"type">>, <<"hidden">>)],
 			children = [#xmlel{ns = ?NS_DATA_FORMS, 
 					   name = 'value',
 					   children = [?XMLCDATA(?NS_PUBSUB_SUBSCRIBE_OPTIONS_s)]}]}] ++ XFields}}.
@@ -226,7 +226,7 @@ get_option_xfield(Lang, Key, Options) ->
 	   end,
     #xmlel{ns = ?NS_DATA_FORMS, 
     	   name = 'field',
-	   attrs = [?XMLATTR('var', Var), ?XMLATTR('type', Type), ?XMLATTR('label', translate:translate(Lang, Label))],
+	   attrs = [?XMLATTR(<<"var">>, Var), ?XMLATTR(<<"type">>, Type), ?XMLATTR('label', translate:translate(Lang, Label))],
 	   children = OptEls ++ Vals}.
 
 type_and_options({Type, Options}, Lang) ->
@@ -237,7 +237,7 @@ type_and_options(Type, _Lang) ->
 tr_xfield_options({Value, Label}, Lang) ->
     #xmlel{ns = ?NS_DATA_FORMS, 
           name = 'option',
-	  attrs = [?XMLATTR('label', translate:translate(Lang, Label))],
+	  attrs = [?XMLATTR(<<"label">>, translate:translate(Lang, Label))],
 	  children = [#xmlel{ns = ?NS_DATA_FORMS,
 	  		     name = 'value',
 			     children = [?XMLCDATA(Value)]}]}.

@@ -51,7 +51,7 @@ stop(Host) ->
 
 update_presence(Packet, User, Host) ->
     case exmpp_presence:is_presence(Packet) andalso
-	exmpp_xml:get_attribute_as_binary(Packet, type, undefined)
+	exmpp_xml:get_attribute_as_binary(Packet, <<"type">>, undefined)
 	== undefined of
         true ->
 	    presence_with_xupdate(Packet, User, Host);

@@ -443,7 +443,6 @@ new_xmlstream(C2SPid, MaxStanzaSize) ->
     Parser = exmpp_xml:start_parser([{names_as_atom, true},
                                      {check_nss, xmpp},
                                      {check_elems, xmpp},
-                                     {check_attrs, xmpp},
                                      {max_size, MaxStanzaSize}
                                     ]),
     exmpp_xmlstream:start({gen_fsm, C2SPid}, Parser,

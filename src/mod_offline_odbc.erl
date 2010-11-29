@@ -289,7 +289,7 @@ find_x_event_chatstates([_ | Els], {A, B, _}) ->
 find_x_expire(_, []) ->
     never;
 find_x_expire(TimeStamp, [#xmlel{ns = ?NS_MESSAGE_EXPIRE} = El | _Els]) ->
-    Val = exmpp_xml:get_attribute_as_list(El, 'seconds', ""),
+    Val = exmpp_xml:get_attribute_as_list(El, <<"seconds">>, ""),
     case catch list_to_integer(Val) of
 	{'EXIT', _} ->
 	    never;
@@ -319,7 +319,7 @@ pop_offline_messages(Ls, User, Server)
 				try
 				    [El] = exmpp_xml:parse_document(XML,
                          [names_as_atom, {check_elems, xmpp},
-                          {check_nss,xmpp}, {check_attrs,xmpp}]),
+                          {check_nss,xmpp} ]),
 				    To = exmpp_jid:parse(
 				      exmpp_stanza:get_recipient(El)),
 				    From = exmpp_jid:parse(
@@ -400,7 +400,7 @@ user_queue(User, Server, Query, Lang) ->
 			 fun({_, XML}) ->
 				 try exmpp_xml:parse_document(XML,
                          [names_as_atom, {check_elems, xmpp},
-                          {check_nss,xmpp}, {check_attrs,xmpp}]) of
+                          {check_nss,xmpp}]) of
 				     [El] ->
 					 [El]
 				 catch
@@ -426,8 +426,8 @@ user_queue(User, Server, Query, Lang) ->
 		    exmpp_xml:indent_document(Packet, <<"  ">>),
 		    [?DEFAULT_NS], ?PREFIXED_NS),
 		  ?XE("tr",
-		      [?XAE("td", [?XMLATTR('class', <<"valign">>)], [?INPUT("checkbox", "selected", ID)]),
-		       ?XAE("td", [?XMLATTR('class', <<"valign">>)], [?XC("pre", FPacket)])]
+		      [?XAE("td", [?XMLATTR(<<"class">>, <<"valign">>)], [?INPUT("checkbox", "selected", ID)]),
+		       ?XAE("td", [?XMLATTR(<<"class">>, <<"valign">>)], [?XC("pre", FPacket)])]
 		     )
 	  end, Msgs),
     [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
@@ -436,7 +436,7 @@ user_queue(User, Server, Query, Lang) ->
 	    ok -> [?XREST("Submitted")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	[?XAE("form", [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?XE("table",
 		   [?XE("thead",
 			[?XE("tr",
@@ -447,7 +447,7 @@ user_queue(User, Server, Query, Lang) ->
 			if
 			    FMsgs == [] ->
 				[?XE("tr",
-				     [?XAC("td", [?XMLATTR('colspan', <<"4">>)], " ")]
+				     [?XAC("td", [?XMLATTR(<<"colspan">>, <<"4">>)], " ")]
 				    )];
 			    true ->
 				FMsgs
@@ -472,7 +472,7 @@ user_queue_parse_query(Username, LServer, Query) ->
 			     fun({XML, Seq}) ->
 				     try exmpp_xml:parse_document(XML,
                          [names_as_atom, {check_elems, xmpp},
-                          {check_nss,xmpp}, {check_attrs,xmpp}]) of
+                          {check_nss,xmpp} ]) of
 					 [El] ->
 					     [{El, Seq}]
 				     catch

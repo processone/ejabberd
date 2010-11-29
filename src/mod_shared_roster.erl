@@ -740,10 +740,10 @@ push_item(User, Server, From, Item) ->
     {U, S, R} = Item#roster.jid,
     ejabberd_sm:route(From, exmpp_jid:make(User, Server),
 		      #xmlel{name = 'broadcast', ns = roster_item, attrs =
-		       [exmpp_xml:attribute(u, U),
-		        exmpp_xml:attribute(s, S),
-		        exmpp_xml:attribute(r, R),
-		        exmpp_xml:attribute(subs, Item#roster.subscription)]}),
+		       [?XMLATTR(<<"u">>, U),
+		        ?XMLATTR(<<"s">>, S),
+		        ?XMLATTR(<<"r">>, R),
+		        ?XMLATTR(<<"subs">>, Item#roster.subscription)]}),
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
       children = [mod_roster:item_to_xml(Item)]},
     Stanza = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
@@ -817,7 +817,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	[?XAE("form", [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [FGroups,
 	       ?BR,
 	       ?INPUTT("submit", "delete", "Delete Selected")
@@ -879,7 +879,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
     DescNL = length(re:split(Description, "\n", [{return, list}])),
     FGroup =
-	?XAE("table", [?XMLATTR('class', <<"withtextareas">>)],
+	?XAE("table", [?XMLATTR(<<"class">>, <<"withtextareas">>)],
 	     [?XE("tbody",
 		  [?XE("tr",
 		       [?XCT("td", "Group ID:"),
@@ -923,7 +923,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE("form", [?XMLATTR('action', <<"">>), ?XMLATTR('method', <<"post">>)],
+	[?XAE("form", [?XMLATTR(<<"action">>, <<"">>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [FGroup,
 	       ?BR,
 	       ?INPUTT("submit", "submit", "Submit")

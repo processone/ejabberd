@@ -524,7 +524,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    ejabberd_router:route(To, From, Err)
 			    end;
 			'message' ->
-			    case exmpp_xml:get_attribute_as_list(Packet,type, "chat") of
+			    case exmpp_xml:get_attribute_as_list(Packet,<<"type">>, "chat") of
 				"error" ->
 				    ok;
 				_ ->
@@ -676,32 +676,32 @@ register_room(Host, Room, Pid) ->
 
 iq_disco_info(Lang) ->
     [#xmlel{ns = ?NS_DISCO_INFO, name = 'identity',
-           attrs = [?XMLATTR('category', 
+           attrs = [?XMLATTR(<<"category">>, 
                              <<"conference">>),
-                    ?XMLATTR('type', 
+                    ?XMLATTR(<<"type">>, 
                              <<"text">>),
-                    ?XMLATTR('name', 
+                    ?XMLATTR(<<"name">>, 
                              translate:translate(Lang, "Rooms"))]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [?XMLATTR('var', 
+                              [?XMLATTR(<<"var">>, 
                                        ?NS_DISCO_INFO_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [?XMLATTR('var', 
+                              [?XMLATTR(<<"var">>, 
                                        ?NS_DISCO_ITEMS_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [?XMLATTR('var', 
+                              [?XMLATTR(<<"var">>, 
                                        ?NS_MUC_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [?XMLATTR('var', 
+                              [?XMLATTR(<<"var">>, 
                                        ?NS_MUC_UNIQUE_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [?XMLATTR('var', 
+                              [?XMLATTR(<<"var">>, 
                                         ?NS_INBAND_REGISTER_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [?XMLATTR('var', 
+                              [?XMLATTR(<<"var">>, 
                                         ?NS_RSM_s)]},
      #xmlel{ns = ?NS_DISCO_INFO, name = 'feature', attrs = 
-                              [?XMLATTR('var', 
+                              [?XMLATTR(<<"var">>, 
                                         ?NS_VCARD_s)]}].
 
 
@@ -730,9 +730,9 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			     flush(),
 			     {true,
                   #xmlel{name = 'item',
-                         attrs = [?XMLATTR('jid', 
+                         attrs = [?XMLATTR(<<"jid">>, 
 				 exmpp_jid:to_binary(exmpp_jid:make(Name, Host))),
-                                 ?XMLATTR('name',
+                                 ?XMLATTR(<<"name">>,
                                           Desc)]}};
 			 _ ->
 			     false
@@ -808,10 +808,10 @@ flush() ->
 
 -define(XFIELD(Type, Label, Var, Val),
 	#xmlel{name = "field",
-          attrs = [?XMLATTR('type', Type),
-			       ?XMLATTR('label', 
+          attrs = [?XMLATTR(<<"type">>, Type),
+			       ?XMLATTR(<<"label">>, 
                             translate:translate(Lang, Label)),
-			       ?XMLATTR('var', Var)],
+			       ?XMLATTR(<<"var">>, Var)],
           children = [#xmlel{name = 'value',
                              children = [#xmlcdata{cdata = Val}]}]}).
 

@@ -116,9 +116,9 @@ get_features(#caps{node = Node, version = Version, exts = Exts}) ->
 read_caps(Els) ->
     read_caps(Els, nothing).
 read_caps([#xmlel{ns = ?NS_CAPS, name = 'c'} = El | Tail], _Result) ->
-    Node = exmpp_xml:get_attribute_as_list(El, 'node', ""),
-    Version = exmpp_xml:get_attribute_as_list(El, 'ver', ""),
-    Exts = string:tokens(exmpp_xml:get_attribute_as_list(El, 'ext', ""), " "),
+    Node = exmpp_xml:get_attribute_as_list(El, <<"node">>, ""),
+    Version = exmpp_xml:get_attribute_as_list(El, <<"ver">>, ""),
+    Exts = string:tokens(exmpp_xml:get_attribute_as_list(El, <<"ext">>, ""), " "),
     read_caps(Tail, #caps{node = Node, version = Version, exts = Exts});
 read_caps([#xmlel{ns = ?NS_MUC_USER, name = 'x'} | _Tail], _Result) ->
     nothing;
@@ -133,7 +133,7 @@ read_caps([], Result) ->
 user_send_packet(From, To, #xmlel{name = 'presence', attrs = Attrs, children = Els}) ->
     case exmpp_jid:bare_compare(From, To) of
 	true ->
-	    Type = exmpp_xml:get_attribute_from_list_as_list(Attrs, 'type', ""),
+	    Type = exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"type">>, ""),
 	    if Type == ""; Type == "available" ->
 		    case read_caps(Els) of
 			nothing ->
@@ -158,9 +158,9 @@ caps_stream_features(Acc, MyHost) ->
 	Hash ->
 	    [#xmlel{name = c,
 		    ns = ?NS_CAPS,
-		    attrs = [?XMLATTR(hash, "sha-1"),
-			     ?XMLATTR(node, ?EJABBERD_URI),
-			     ?XMLATTR(ver, Hash)]} | Acc]
+		    attrs = [?XMLATTR(<<"hash">>, "sha-1"),
+			     ?XMLATTR(<<"node">>, ?EJABBERD_URI),
+			     ?XMLATTR(<<"ver">>, Hash)]} | Acc]
     end.
 
 disco_features(_Acc, From, To, <<?EJABBERD_URI, $#, _/binary>>, Lang) ->
@@ -262,7 +262,7 @@ feature_request(Host, From, Caps, [SubNode | Tail] = SubNodes) ->
 	    IQ = #iq{type = get,
 		     iq_ns = ?NS_JABBER_CLIENT,
 		     payload = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
-				 attrs = [?XMLATTR('node', Node ++ "#" ++ SubNode)]}},
+				 attrs = [?XMLATTR(<<"node">>, Node ++ "#" ++ SubNode)]}},
 	    F = fun(IQReply) ->
 			feature_response(
 			  IQReply, Host, From, Caps, SubNodes)
@@ -279,7 +279,7 @@ feature_response(#iq{type = result, payload = El},
 		 Host, From, Caps, [SubNode | SubNodes]) ->
     Features = lists:flatmap(
 		fun(#xmlel{name = 'feature', attrs = FAttrs}) ->
-			[exmpp_xml:get_attribute_from_list_as_list(FAttrs, 'var', "")];
+			[exmpp_xml:get_attribute_from_list_as_list(FAttrs, <<"var">>, "")];
 		   (_) ->
 			[]
 		end, El#xmlel.children),
@@ -340,10 +340,10 @@ make_my_disco_hash(Host) ->
 	    Feats = lists:map(
 		      fun({{Feat, _Host}}) ->
 			      #xmlel{name = feature,
-				     attrs = [?XMLATTR(var, Feat)]};
+				     attrs = [?XMLATTR(<<"var">>, Feat)]};
 			 (Feat) ->
 			      #xmlel{name = feature,
-				     attrs = [?XMLATTR(var, Feat)]}
+				     attrs = [?XMLATTR(<<"var">>, Feat)]}
 		      end, Features),
 	    make_disco_hash(Identities ++ Info ++ Feats, sha1);
 	_Err ->
@@ -360,7 +360,7 @@ concat_features(Els) ->
     lists:usort(
       lists:flatmap(
 	fun(#xmlel{name = feature} = El) ->
-		[[exmpp_xml:get_attribute(El, var, <<>>), $<]];
+		[[exmpp_xml:get_attribute(El, <<"var">>, <<>>), $<]];
 	   (_) ->
 		[]
 	end, Els)).
@@ -369,10 +369,10 @@ concat_identities(Els) ->
     lists:sort(
       lists:flatmap(
 	fun(#xmlel{name = identity} = El) ->
-		[[exmpp_xml:get_attribute_as_binary(El, category, <<>>), $/,
-		  exmpp_xml:get_attribute_as_binary(El, type, <<>>), $/,
-		  exmpp_xml:get_attribute_as_binary(El, lang, <<>>), $/,
-		  exmpp_xml:get_attribute_as_binary(El, name, <<>>), $<]];
+		[[exmpp_xml:get_attribute_as_binary(El, <<"category">>, <<>>), $/,
+		  exmpp_xml:get_attribute_as_binary(El, <<"type">>, <<>>), $/,
+		  exmpp_xml:get_attribute_as_binary(El, <<"lang">>, <<>>), $/,
+		  exmpp_xml:get_attribute_as_binary(El, <<"name">>, <<>>), $<]];
 	   (_) ->
 		[]
 	end, Els)).
@@ -381,7 +381,7 @@ concat_info(Els) ->
     lists:sort(
       lists:flatmap(
 	fun(#xmlel{name = x, ns = ?NS_DATA_FORMS, children = Fields} = El) ->
-		case exmpp_xml:get_attribute_as_list(El, 'type', "") of
+		case exmpp_xml:get_attribute_as_list(El, <<"type">>, "") of
 		    "result" ->
 			[concat_xdata_fields(Fields)];
 		    _ ->
@@ -396,7 +396,7 @@ concat_xdata_fields(Fields) ->
 	lists:foldl(
 	  fun(#xmlel{name = field, children = Els} = El,
 	      [FormType, VarFields] = Acc) ->
-		  case exmpp_xml:get_attribute_as_binary(El, var, <<>>) of
+		  case exmpp_xml:get_attribute_as_binary(El, <<"var">>, <<>>) of
 		      <<>> ->
 			  Acc;
 		      <<"FORM_TYPE">> ->

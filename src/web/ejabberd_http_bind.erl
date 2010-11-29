@@ -207,7 +207,7 @@ process_request(Data, IP) ->
     case catch parse_request(Data, PayloadSize, MaxStanzaSize) of
 	%% No existing session:
 	{ok, {"", Rid, Attrs, Payload}} ->
-	    case exmpp_xml:get_attribute_from_list_as_list(Attrs, "to", "") of
+	    case exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"to">>, "") of
                 "" ->
 		    ?DEBUG("Session not created (Improper addressing)", []),
 		    {200, ?HEADER, "<body type='terminate' "
@@ -231,13 +231,13 @@ process_request(Data, IP) ->
 	%% Existing session
         {ok, {Sid, Rid, Attrs, Payload1}} ->
             StreamStart =
-                case exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, restart, "") of
+                case exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, <<"restart">>, "") of
                     "true" ->
                         true;
                     _ ->
                         false
                 end,
-            Payload2 = case exmpp_xml:get_attribute_from_list_as_list(Attrs, "type", "") of
+            Payload2 = case exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"type">>, "") of
                            "terminate" ->
                                %% close stream
                                Payload1 ++ [{xmlstreamend, "stream:stream"}];
@@ -264,7 +264,7 @@ process_request(Data, IP) ->
 handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 		     Payload, PayloadSize, IP) ->
     ?DEBUG("got pid: ~p", [Pid]),
-    Wait = case string:to_integer(exmpp_xml:get_attribute_from_list_as_list(Attrs, "wait", "")) of
+    Wait = case string:to_integer(exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"wait">>, "")) of
 	       {error, _} ->
 		   ?MAX_WAIT;
 	       {CWait, _} ->
@@ -275,7 +275,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 			   CWait
 		   end
 	   end,
-    Hold = case string:to_integer(exmpp_xml:get_attribute_from_list_as_list(Attrs, "hold", "")) of
+    Hold = case string:to_integer(exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"hold">>, "")) of
 	       {error, _} ->
 		   (?MAX_REQUESTS - 1);
 	       {CHold, _} ->
@@ -286,7 +286,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 			   CHold
 		   end
 	   end,
-    Pdelay = case string:to_integer(exmpp_xml:get_attribute_from_list_as_list(Attrs, "process-delay", "")) of
+    Pdelay = case string:to_integer(exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"process-delay">>, "")) of
 		 {error, _} ->
 		     ?PROCESS_DELAY_DEFAULT;
 		 {CPdelay, _} when
@@ -298,11 +298,11 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 	     end,
     Version =
 	case catch list_to_float(
-		     exmpp_xml:get_attribute_from_list_as_list(Attrs, "ver", "")) of
+		     exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"ver">>, "")) of
 	    {'EXIT', _} -> 0.0;
 	    V -> V
 	end,
-    XmppVersion = exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, version, ""),
+    XmppVersion = exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, <<"version">>, ""),
     ?DEBUG("Create session: ~p", [Sid]),
     mnesia:async_dirty(
       fun() ->
@@ -638,8 +638,8 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 		 StateName, StateData, RidAllow) ->
     ?DEBUG("Actually processing request: ~p", [Request]),
     %% Check if key valid
-    Key = exmpp_xml:get_attribute_from_list_as_list(Attrs, "key", ""),
-    NewKey = exmpp_xml:get_attribute_from_list_as_list(Attrs, "newkey", ""),
+    Key = exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"key">>, ""),
+    NewKey = exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"newkey">>, ""),
     KeyAllow =
 	case RidAllow of
 	    repeat ->
@@ -746,7 +746,7 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 				{To, ""} ->
 				    DecNs = [{?NS_XMPP, "stream"},
 					     {?NS_JABBER_CLIENT, none}],
-				    StreamAttrs = [#xmlattr{name = 'to', value = list_to_binary(To)}],
+				    StreamAttrs = [#xmlattr{name = <<"to">>, value = list_to_binary(To)}],
 				    StreamEl = #xmlel{name = stream, ns = ?NS_XMPP, declared_ns = DecNs,
 						      attrs = StreamAttrs},
 				    gen_fsm:send_event(
@@ -755,8 +755,8 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 				{To, Version} ->
 				    DecNs = [{?NS_XMPP, "stream"},
 					     {?NS_JABBER_CLIENT, none}],
-				    StreamAttrs = [#xmlattr{name = 'to', value = list_to_binary(To)},
-						   #xmlattr{name = 'version', value = list_to_binary(Version)}],
+				    StreamAttrs = [?XMLATTR(<<"to">>, list_to_binary(To)),
+						           ?XMLATTR(<<"version">>, list_to_binary(Version))],
 				    StreamEl = #xmlel{name = stream, ns = ?NS_XMPP, declared_ns = DecNs,
 						      attrs = StreamAttrs},
 				    gen_fsm:send_event(
@@ -869,11 +869,11 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
                #xmlel{name = 'body',
                       ns = ?NS_HTTP_BIND_s,
                       attrs = [
-                        #xmlattr{name = 'type',
+                        #xmlattr{name = <<"type">>,
                                  ns = ?NS_HTTP_BIND_s,
                                  value = <<"terminate">>
                         },
-                        #xmlattr{name = 'type',
+                        #xmlattr{name = <<"type">>,
                                  ns = ?NS_HTTP_BIND_s,
                                  value = <<"item-not-found">>
                         }
@@ -885,11 +885,11 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
                #xmlel{name = 'body',
                       ns = ?NS_HTTP_BIND_s,
                       attrs = [
-                        #xmlattr{name = 'type',
+                        #xmlattr{name = <<"type">>,
                                  ns = ?NS_HTTP_BIND_s,
                                  value = <<"terminate">>
                         },
-                        #xmlattr{name = 'type',
+                        #xmlattr{name = <<"type">>,
                                  ns = ?NS_HTTP_BIND_s,
                                  value = <<"item-not-found">>
                         }
@@ -901,11 +901,11 @@ handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
                #xmlel{name = 'body',
                       ns = ?NS_HTTP_BIND_s,
                       attrs = [
-                        #xmlattr{name = 'type',
+                        #xmlattr{name = <<"type">>,
                                  ns = ?NS_HTTP_BIND_s,
                                  value = <<"terminate">>
                         },
-                        #xmlattr{name = 'type',
+                        #xmlattr{name = <<"type">>,
                                  ns = ?NS_HTTP_BIND_s,
                                  value = <<"policy-violation">>
                         }
@@ -936,7 +936,7 @@ rid_allow(OldRid, NewRid, Attrs, Hold, MaxPause) ->
 	%% We did not miss any packet, we can process it immediately:
 	NewRid == OldRid + 1 ->
 	    case catch list_to_integer(
-			 exmpp_xml:get_attribute_from_list_as_list(Attrs, "pause", "")) of
+			 exmpp_xml:get_attribute_from_list_as_list(Attrs, <<"pause">>, "")) of
 		{'EXIT', _} ->
 		    {true, 0};
 		Pause1 when Pause1 =< MaxPause ->
@@ -1004,9 +1004,9 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 			   Rid, OutPacket, true) ->
     case OutPacket of
 	[{xmlstreamstart, _, OutAttrs} | Els] ->
-	    AuthID = exmpp_xml:get_attribute_from_list_as_list(OutAttrs, "id", ""),
-	    FromB = exmpp_xml:get_attribute_from_list_as_binary(OutAttrs, "from", ""),
-	    Version = exmpp_xml:get_attribute_from_list_as_list(OutAttrs, "version", ""),
+	    AuthID = exmpp_xml:get_attribute_from_list_as_list(OutAttrs, <<"id">>, ""),
+	    FromB = exmpp_xml:get_attribute_from_list_as_binary(OutAttrs, <<"from">>, <<>>),
+	    Version = exmpp_xml:get_attribute_from_list_as_list(OutAttrs, <<"version">>, ""),
 	    OutEls =
 		case Els of
 		    [] ->
@@ -1045,9 +1045,9 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 		     "xmlns='"++?NS_HTTP_BIND_s++"'/>"};
 		_ ->
 		    BOSH_attribs =
-			[#xmlattr{name = 'authid', value = list_to_binary(AuthID)},
-			 #xmlattr{name = 'xmlns:stream', value = ?NS_XMPP_b}] ++
-		    [#xmlattr{name = 'version', ns = ?NS_BOSH_s, value = list_to_binary(Version)}],
+			[#xmlattr{name = <<"authid">>, value = list_to_binary(AuthID)},
+			 #xmlattr{name = <<"xmlns:stream">>, value = ?NS_XMPP_b}] ++
+		    [#xmlattr{name = <<"version">>, ns = ?NS_BOSH_s, value = list_to_binary(Version)}],
 		    MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 		    MaxPause = get_max_pause(To),
 		    {200, ?HEADER,
@@ -1056,31 +1056,31 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 			      ns = ?NS_HTTP_BIND_s,
 		              declared_ns = [{?NS_XBOSH_s, ?NS_XBOSH_pfx}],
 			      attrs = [
-			       #xmlattr{name = 'sid',
+			       #xmlattr{name = <<"sid">>,
 					value = list_to_binary(Sid)
 				       },
-			       #xmlattr{name = 'wait',
+			       #xmlattr{name = <<"wait">>,
 					value = list_to_binary(integer_to_list(Wait))
 				       },
-			       #xmlattr{name = 'requests',
+			       #xmlattr{name = <<"requests">>,
 					value = list_to_binary(integer_to_list(Hold+1))
 				       },
-			       #xmlattr{name = 'inactivity',
+			       #xmlattr{name = <<"inactivity">>,
 					value = list_to_binary(integer_to_list(trunc(MaxInactivity/1000)))
 				       },
-			       #xmlattr{name = 'maxpause',
+			       #xmlattr{name = <<"maxpause">>,
 					value = list_to_binary(integer_to_list(MaxPause))
 				       },
-			       #xmlattr{name = 'polling',
+			       #xmlattr{name = <<"polling">>,
 					value = list_to_binary(integer_to_list(trunc(?MIN_POLLING/1000000)))
 				       },
-			       #xmlattr{name = 'ver',
+			       #xmlattr{name = <<"ver">>,
 					value = ?BOSH_VERSION_b
 				       },
-			       #xmlattr{name = 'from',
+			       #xmlattr{name = <<"from">>,
 					value = FromB
 				       },
-			       #xmlattr{name = 'secure',
+			       #xmlattr{name = <<"secure">>,
 					value = <<"true">>
 				       }
 			      ] ++ BOSH_attribs,
@@ -1252,7 +1252,7 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
 		    {error, bad_request};
 		true ->
                     %case catch list_to_integer(xml:get_attr_s("rid", Attrs)) of
-                    case catch list_to_integer(exmpp_xml:get_attribute_as_list(Xml, "rid", "")) of
+                    case catch list_to_integer(exmpp_xml:get_attribute_as_list(Xml, <<"rid">>, "")) of
 
                         {'EXIT', _} ->
                             {error, bad_request};
@@ -1269,7 +1269,7 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
                                                   false
                                           end
                                   end, Els),
-                            Sid = exmpp_xml:get_attribute_as_list(Xml, "sid", ""),
+                            Sid = exmpp_xml:get_attribute_as_list(Xml, <<"sid">>, ""),
 			    if
 				PayloadSize =< MaxStanzaSize ->
 				    {ok, {Sid, Rid, Attrs, FixedEls}};
