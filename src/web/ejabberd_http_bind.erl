@@ -947,8 +947,7 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 				StreamTail]
 		end,
 	    case OutEls of 
-		[] ->
-		    prepare_response(Sess, Rid, OutPacket, true);
+		[] when Wait > 0 -> prepare_response(Sess, Rid, OutPacket, true);
 		[{xmlelement,
 		  "stream:error",_,_}] ->
 		    {200, ?HEADER, "<body type='terminate' "
