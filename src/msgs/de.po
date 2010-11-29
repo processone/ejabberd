@@ -1746,8 +1746,8 @@ msgstr ""
 "und Macbeth."
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
-msgstr "Nicht erlaubte Zeichen: @ : ' \" < > &"
+msgid "Characters not allowed:"
+msgstr "Nicht erlaubte Zeichen:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509

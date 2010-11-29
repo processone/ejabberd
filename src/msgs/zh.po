@@ -1697,8 +1697,8 @@ msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr "此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
-msgstr "禁用字符: @ : ' \" < > &"
+msgid "Characters not allowed:"
+msgstr "禁用字符:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509

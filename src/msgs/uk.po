@@ -1739,8 +1739,8 @@ msgstr ""
 "саме ім'я."
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
-msgstr "Заборонені символи: @ : ' \" < > &"
+msgid "Characters not allowed:"
+msgstr "Заборонені символи:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509

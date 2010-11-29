@@ -1731,8 +1731,8 @@ msgstr ""
 "же именем."
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
-msgstr "Недопустимые символы: @ : ' \" < > &"
+msgid "Characters not allowed:"
+msgstr "Недопустимые символы:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509

@@ -1750,8 +1750,8 @@ msgstr ""
 "C'est insensible à la casse : macbeth est identique à MacBeth et Macbeth."
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
-msgstr "Caractères non-autorisés : @ : ' \" < > &"
+msgid "Characters not allowed:"
+msgstr "Caractères non-autorisés :"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509

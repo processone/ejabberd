@@ -1718,7 +1718,7 @@ msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
+msgid "Characters not allowed:"
 msgstr ""
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386

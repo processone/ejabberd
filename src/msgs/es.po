@@ -1734,8 +1734,8 @@ msgstr ""
 "No importa si usas mayúsculas: macbeth es lo mismo que MacBeth y Macbeth."
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
-msgstr "Caracteres no permitidos: @ : ' \" < > &"
+msgid "Characters not allowed:"
+msgstr "Caracteres no permitidos:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509

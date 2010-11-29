@@ -1715,8 +1715,8 @@ msgstr ""
 "大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"
 
 #: web/mod_register_web.erl:217
-msgid "Characters not allowed: @ : ' \" < > &"
-msgstr "許可されていない文字: @ : ' \" < > &"
+msgid "Characters not allowed:"
+msgstr "許可されていない文字:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
