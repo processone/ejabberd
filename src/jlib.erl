@@ -153,7 +153,7 @@ rsm_encode_count(Count, Arr)->
 i2b(I) when is_integer(I) -> list_to_binary(integer_to_list(I));
 i2b(L) when is_list(L)    -> list_to_binary(L).
 
-%% Timezone = utc | {Hours, Minutes}
+%% Timezone = utc | {Sign::string(), {Hours, Minutes}} | {Hours, Minutes}
 %% Hours = integer()
 %% Minutes = integer()
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
@@ -162,6 +162,8 @@ timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
         [Year, Month, Day, Hour, Minute, Second])),
     Timezone_string = case Timezone of
 	utc -> "Z";
+	{Sign, {TZh, TZm}} ->
+		io_lib:format("~s~2..0w:~2..0w", [Sign, TZh, TZm]);
 	{TZh, TZm} -> 
 		Sign = case TZh >= 0 of
 			true -> "+";

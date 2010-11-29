@@ -59,14 +59,8 @@ process_local_iq(_From, _To, #iq{type = get} = IQ_Rec) ->
 	    {UTC, UTC_diff} = jlib:timestamp_to_iso(Now_universal, utc),
 	    Seconds_diff = calendar:datetime_to_gregorian_seconds(Now_local)
 	     - calendar:datetime_to_gregorian_seconds(Now_universal),
-            {Hd, Md, _} = case Seconds_diff >= 0 of
-			      true ->
-				  calendar:seconds_to_time(Seconds_diff);
-			      false ->
-				  {Hd0, Md0, Sd0} = calendar:seconds_to_time(-Seconds_diff),
-				  {-Hd0, Md0, Sd0}
-			  end,
-	    {_, TZO_diff} = jlib:timestamp_to_iso({{0, 0, 0}, {0, 0, 0}}, {Hd, Md}),
+    {Hd, Md, _} = calendar:seconds_to_time(abs(Seconds_diff)),
+    {_, TZO_diff} = jlib:timestamp_to_iso({{0, 0, 0}, {0, 0, 0}}, {sign(Seconds_diff), {Hd, Md}}),
     Result = #xmlel{ns = ?NS_TIME, name = 'time', children = [
 	    	#xmlel{ns = ?NS_TIME, name = 'tzo', children = [
 		    #xmlcdata{cdata = list_to_binary(TZO_diff)}]},
@@ -89,3 +83,6 @@ process_local_iq90(_From, _To, #iq{type = get} = IQ_Rec) ->
     exmpp_iq:result(IQ_Rec, Result);
 process_local_iq90(_From, _To, #iq{type = set} = IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
+
+sign(N) when N < 0 -> "-";
+sign(_)            -> "+".
