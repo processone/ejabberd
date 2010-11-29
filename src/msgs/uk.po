@@ -13,21 +13,21 @@ msgstr ""
 "X-Additional-Translator: Stoune\n"
 "X-Additional-Translator: Sergei Golovan\n"
 
-#: ejabberd_c2s.erl:385 ejabberd_c2s.erl:688
+#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
 msgstr "Ви мусите використовувати STARTTLS"
 
-#: ejabberd_c2s.erl:464
+#: ejabberd_c2s.erl:503
 msgid "No resource provided"
 msgstr "Не вказаний ресурс"
 
-#: ejabberd_c2s.erl:1108
+#: ejabberd_c2s.erl:1147
 msgid "Replaced by new connection"
 msgstr "Замінено новим з'єднанням"
 
-#: ejabberd_c2s.erl:1790
+#: ejabberd_c2s.erl:1844
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Маршрутизація цієї строфи була відмінена активним списком приватності."
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 msgid "Enter the text you see"
@@ -39,11 +39,11 @@ msgstr "Ваші повідомлення до ~s блокуються. Для �
 
 #: ejabberd_captcha.erl:132
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Якщо ви не бачите зображення капчі, перейдіть за за цією адресою."
 
 #: ejabberd_captcha.erl:144
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "Адреса капчі"
 
 #: ejabberd_captcha.erl:302
 msgid "The captcha is valid."
@@ -111,7 +111,7 @@ msgstr ""
 
 #: mod_announce.erl:648
 msgid "Update message of the day (don't send)"
-msgstr "Поновити повідомлення дня (не надсилати)"
+msgstr "Оновити повідомлення дня (не надсилати)"
 
 #: mod_announce.erl:650
 msgid "Update message of the day on all hosts (don't send)"
@@ -569,7 +569,6 @@ msgid "Chatrooms"
 msgstr "Кімнати"
 
 #: mod_muc/mod_muc.erl:711
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Для реєстрації псевдоніму необхідно використовувати клієнт з ідтримкою x:data"
@@ -1046,113 +1045,112 @@ msgstr "Видалити всі офлайнові повідомлення"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams модуль"
 
-#: mod_pubsub/mod_pubsub.erl:1116 mod_pubsub/mod_pubsub_odbc.erl:917
+#: mod_pubsub/mod_pubsub.erl:1115 mod_pubsub/mod_pubsub_odbc.erl:917
 msgid "Publish-Subscribe"
 msgstr "Опублікувати-Абонувати"
 
-#: mod_pubsub/mod_pubsub.erl:1210 mod_pubsub/mod_pubsub_odbc.erl:1013
+#: mod_pubsub/mod_pubsub.erl:1209 mod_pubsub/mod_pubsub_odbc.erl:1013
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Модуль ejabberd Публікації-Абонування"
 
-#: mod_pubsub/mod_pubsub.erl:1493 mod_pubsub/mod_pubsub_odbc.erl:1300
+#: mod_pubsub/mod_pubsub.erl:1492 mod_pubsub/mod_pubsub_odbc.erl:1300
 msgid "PubSub subscriber request"
 msgstr "Запит на абонування PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1495 mod_pubsub/mod_pubsub_odbc.erl:1302
+#: mod_pubsub/mod_pubsub.erl:1494 mod_pubsub/mod_pubsub_odbc.erl:1302
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Вирішіть, чи задовольнити запит цього об'єкту на підписку"
 
-#: mod_pubsub/mod_pubsub.erl:1501 mod_pubsub/mod_pubsub_odbc.erl:1308
+#: mod_pubsub/mod_pubsub.erl:1500 mod_pubsub/mod_pubsub_odbc.erl:1308
 msgid "Node ID"
 msgstr "ID вузла"
 
-#: mod_pubsub/mod_pubsub.erl:1506 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Subscriber Address"
 msgstr "Адреса абонента"
 
-#: mod_pubsub/mod_pubsub.erl:1512 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1511 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Чи дозволити цьому Jabber ID абонувати новини наданого вузла"
 
-#: mod_pubsub/mod_pubsub.erl:3407 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Deliver payloads with event notifications"
 msgstr "Доставляти разом з повідомленнями про публікації самі публікації"
 
-#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3397 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Deliver event notifications"
 msgstr "Доставляти сповіщення про події"
 
-#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3398 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Повідомляти абонентів про зміни в конфігурації збірника"
 
-#: mod_pubsub/mod_pubsub.erl:3410 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Notify subscribers when the node is deleted"
 msgstr "Повідомляти абонентів про видалення збірника"
 
-#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Повідомляти абонентів про видалення публікацій із збірника"
 
-#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3401 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Persist items to storage"
 msgstr "Зберегати публікації до сховища"
 
-#: mod_pubsub/mod_pubsub.erl:3413 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "A friendly name for the node"
 msgstr "Псевдонім для вузла"
 
-#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Max # of items to persist"
 msgstr "Максимальне число збережених публікацій"
 
-#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3239
+#: mod_pubsub/mod_pubsub.erl:3404 mod_pubsub/mod_pubsub_odbc.erl:3239
 msgid "Whether to allow subscriptions"
 msgstr "Дозволити передплату"
 
-#: mod_pubsub/mod_pubsub.erl:3416 mod_pubsub/mod_pubsub_odbc.erl:3240
+#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3240
 msgid "Specify the access model"
 msgstr "Визначити модель доступу"
 
-#: mod_pubsub/mod_pubsub.erl:3419 mod_pubsub/mod_pubsub_odbc.erl:3243
+#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3243
 msgid "Roster groups allowed to subscribe"
 msgstr "Дозволені для абонування групи ростера"
 
-#: mod_pubsub/mod_pubsub.erl:3420 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Specify the publisher model"
 msgstr "Умови публікації"
 
-#: mod_pubsub/mod_pubsub.erl:3422 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3246
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
 "Видалити всі елементи, коли особа, що їх опублікувала, вимикається від мережі"
 
-#: mod_pubsub/mod_pubsub.erl:3423 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Specify the event message type"
 msgstr "Вкажіть тип повідомлень зі сповіщеннями про події"
 
-#: mod_pubsub/mod_pubsub.erl:3425 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3249
 msgid "Max payload size in bytes"
 msgstr "Максимальний розмір корисного навантаження в байтах"
 
-#: mod_pubsub/mod_pubsub.erl:3426 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "When to send the last published item"
 msgstr "Коли надсилати останній опублікований елемент"
 
-#: mod_pubsub/mod_pubsub.erl:3428 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3252
 msgid "Only deliver notifications to available users"
 msgstr "Доставляти повідомленнями тільки доступним користувачам"
 
-#: mod_pubsub/mod_pubsub.erl:3429 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3253
 msgid "The collections with which a node is affiliated"
 msgstr "Колекція, до якої входить вузел"
 
 #: mod_register.erl:191
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "Перевірку капчею не пройдено"
 
 #: mod_register.erl:218
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
 "Для реєстрації псевдоніму необхідно використовувати клієнт з ідтримкою x:data"
@@ -1167,14 +1165,12 @@ msgid "User"
 msgstr "Користувач"
 
 #: mod_register.erl:244
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "Не має можливості сгенерувати капчу"
+msgstr "Нема можливості сгенерувати капчу"
 
 #: mod_register.erl:309 mod_register.erl:354
-#, fuzzy
 msgid "The password is too weak"
-msgstr "пароль:"
+msgstr "Пароль дуже простий"
 
 #: mod_register.erl:358
 msgid "Users are not allowed to register accounts so quickly"
@@ -1728,9 +1724,8 @@ msgstr ""
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
-#, fuzzy
 msgid "Username:"
-msgstr "Ім'я користувача IRC"
+msgstr "Ім'я користувача:"
 
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
@@ -1744,9 +1739,8 @@ msgstr "Заборонені символи:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Server:"
-msgstr "Сервер ~b"
+msgstr "Сервер:"
 
 #: web/mod_register_web.erl:231
 msgid ""
@@ -1777,33 +1771,28 @@ msgstr ""
 "пароля на той випадок, якщо ви його забудете."
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Перевірка Пароля"
+msgstr "Перевірка Пароля:"
 
 #: web/mod_register_web.erl:249
-#, fuzzy
 msgid "Register"
-msgstr "Ростер"
+msgstr "Реєстрація"
 
 #: web/mod_register_web.erl:391
-#, fuzzy
 msgid "Old Password:"
-msgstr "Пароль:"
+msgstr "Старий пароль:"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "New Password:"
-msgstr "Пароль:"
+msgstr "Новий Пароль:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr "Тут ви можете видалити свій акаунт з цього Jabber-сервера."
+msgstr "Ця сторінка дозволяє видалити свій акаунт з Jabber-сервера."
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
 msgstr "Видалити"
 
-#, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "Перевірку капчею закінчено успішно"
+#~ msgstr "Перевірка капчею закінчилась невдало"

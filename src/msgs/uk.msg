@@ -33,6 +33,7 @@
 {"Backup","Резервне копіювання"}.
 {"Bad format","Неправильний формат"}.
 {"Birthday","День народження"}.
+{"CAPTCHA web page","Адреса капчі"}.
 {"Change Password","Змінити пароль"}.
 {"Change User Password","Змінити Пароль Користувача"}.
 {"Characters not allowed: @ : ' \" < > &","Заборонені символи: @ : ' \" < > &"}.
@@ -122,6 +123,7 @@
 {"has been kicked","вигнали з кімнати"}.
 {" has set the subject to: "," встановив(ла) тему: "}.
 {"Host","Хост"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","Якщо ви не бачите зображення капчі, перейдіть за за цією адресою."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Щоб вказати різні порти, паролі та кодування для різних серверів IRC, заповніть список значеннями в форматі '{\"irc server\", \"encoding\", port, \"password\"}'. За замовчуванням ця служба використовує \"~s\" кодування, порт ~p, пустий пароль."}.
 {"Import Directory","Імпорт з директорії"}.
 {"Import File","Імпорт з файла"}.
@@ -194,6 +196,7 @@
 {"Name:","Назва:"}.
 {"Name","Назва"}.
 {"Never","Ніколи"}.
+{"New Password:","Новий Пароль:"}.
 {"Nickname Registration at ","Реєстрація псевдоніма на "}.
 {"Nickname ~s does not exist in the room","Псевдонім ~s в кімнаті відсутній"}.
 {"Nickname","Псевдонім"}.
@@ -218,6 +221,7 @@
 {"Offline Messages:","Офлайнові повідомлення:"}.
 {"Offline Messages","Офлайнові повідомлення"}.
 {"OK","Продовжити"}.
+{"Old Password:","Старий пароль:"}.
 {"Online Users:","Підключені користувачі:"}.
 {"Online Users","Підключені користувачі"}.
 {"Online","Підключений"}.
@@ -236,6 +240,7 @@
 {"Owner privileges required","Необхідні права власника"}.
 {"Packet","Пакет"}.
 {"Password ~b","Пароль ~b"}.
+{"Password Verification:","Перевірка Пароля:"}.
 {"Password Verification","Перевірка Пароля"}.
 {"Password:","Пароль:"}.
 {"Password","Пароль"}.
@@ -264,6 +269,7 @@
 {"Register a Jabber account","Зареєструвати Jabber-акаунт"}.
 {"Registered Users:","Зареєстровані користувачі:"}.
 {"Registered Users","Зареєстровані користувачі"}.
+{"Register","Реєстрація"}.
 {"Registration in mod_irc for ","Реєстрація в mod_irc для "}.
 {"Remote copy","не зберігаеться локально"}.
 {"Remove All Offline Messages","Видалити всі офлайнові повідомлення"}.
@@ -300,6 +306,7 @@
 {"Send announcement to all users","Надіслати сповіщення всім користувачам"}.
 {"September","вересня"}.
 {"Server ~b","Сервер ~b"}.
+{"Server:","Сервер:"}.
 {"Set message of the day and send to online users","Встановити повідомлення дня та надіслати його підключеним користувачам"}.
 {"Set message of the day on all hosts and send to online users","Встановити повідомлення дня на всіх хостах та надійслати його підключеним користувачам"}.
 {"Shared Roster Groups","Спільні групи контактів"}.
@@ -333,7 +340,9 @@
 {"That nickname is already in use by another occupant","Псевдонім зайнято кимось з присутніх"}.
 {"That nickname is registered by another person","Псевдонім зареєстровано кимось іншим"}.
 {"The captcha is valid.","Перевірку капчею закінчено успішно"}.
+{"The CAPTCHA verification has failed","Перевірку капчею не пройдено"}.
 {"The collections with which a node is affiliated","Колекція, до якої входить вузел"}.
+{"The password is too weak","Пароль дуже простий"}.
 {"the password is","пароль:"}.
 {"The password of your Jabber account was successfully changed.","Пароль вашого Jabber-акаунту був успішно змінений."}.
 {"There was an error changing the password: ","Помилка при зміні пароля: "}.
@@ -341,7 +350,7 @@
 {"There was an error deleting the account: ","Помилка при видаленні акаунту: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регістр не має значення: \"МАША\" та \"маша\" буде сприйматися як одне й те саме ім'я."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Тут ви можете зареєструвати обліковий запис Jabber на цьому сервері. Ваш JID (ідентифікатор Jabber) матиме вигляд \"користувач@сервер\". Щоб вірно заповнити поля нижче, будь ласка, уважно читайте інструкції до них."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Тут ви можете видалити свій акаунт з цього Jabber-сервера."}.
+{"This page allows to unregister a Jabber account in this Jabber server.","Ця сторінка дозволяє видалити свій акаунт з Jabber-сервера."}.
 {"This participant is kicked from the room because he sent an error message to another participant","Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення іншому учаснику"}.
 {"This participant is kicked from the room because he sent an error message","Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення"}.
 {"This participant is kicked from the room because he sent an error presence","Цього учасника було відключено від кімнати через те, що він надіслав помилковий статус присутності"}.
@@ -358,10 +367,11 @@
 {"Transactions Restarted:","Транзакції перезапущені:"}.
 {"Tuesday","Вівторок"}.
 {"Unable to generate a captcha","Не має можливості сгенерувати капчу"}.
+{"Unable to generate a CAPTCHA","Нема можливості сгенерувати капчу"}.
 {"Unauthorized","Не авторізован"}.
 {"Unregister a Jabber account","Видалити Jabber-акаунт"}.
 {"Unregister","Видалити"}.
-{"Update message of the day (don't send)","Поновити повідомлення дня (не надсилати)"}.
+{"Update message of the day (don't send)","Оновити повідомлення дня (не надсилати)"}.
 {"Update message of the day on all hosts (don't send)","Оновити повідомлення дня на всіх хостах (не надсилати)"}.
 {"Update plan","План поновлення"}.
 {"Update script","Сценарій поновлення"}.
@@ -370,6 +380,7 @@
 {"Uptime:","Час роботи:"}.
 {"Use of STARTTLS required","Ви мусите використовувати STARTTLS"}.
 {"User Management","Управління Користувачами"}.
+{"Username:","Ім'я користувача:"}.
 {"Users are not allowed to register accounts so quickly","Користувачам не дозволено так часто реєструвати облікові записи"}.
 {"Users Last Activity","Статистика останнього підключення користувачів"}.
 {"Users","Користувачі"}.
@@ -385,9 +396,12 @@
 {"You can later change your password using a Jabber client.","Пізніше можна змінити пароль через Jabber-клієнт."}.
 {"You have been banned from this room","Вам заборонено входити в цю конференцію"}.
 {"You must fill in field \"Nickname\" in the form","Вам необхідно заповнити поле \"Псевдонім\" у формі"}.
+{"You need a client that supports x:data and CAPTCHA to register","Для реєстрації псевдоніму необхідно використовувати клієнт з ідтримкою x:data"}.
+{"You need a client that supports x:data to register the nickname","Для реєстрації псевдоніму необхідно використовувати клієнт з ідтримкою x:data"}.
 {"You need an x:data capable client to configure mod_irc settings","Для налагодження параметрів mod_irc необхідно використовувати клієнт, що має підтримку x:data"}.
 {"You need an x:data capable client to configure room","Для конфігурування кімнати потрібно використовувати клієнт з підтримкою x:data"}.
 {"You need an x:data capable client to search","Для пошуку необхідний x:data-придатний клієнт"}.
+{"Your active privacy list has denied the routing of this stanza.","Маршрутизація цієї строфи була відмінена активним списком приватності."}.
 {"Your contact offline message queue is full. The message has been discarded.","Черга повідомлень, що не були доставлені, переповнена. Повідомлення не було збережено."}.
 {"Your Jabber account was successfully created.","Ваш Jabber-акаунт було успішно створено."}.
 {"Your Jabber account was successfully deleted.","Ваш Jabber-акаунт було успішно видалено."}.
