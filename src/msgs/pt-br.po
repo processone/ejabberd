@@ -25,7 +25,7 @@ msgstr "Substituído por nova conexão"
 
 #: ejabberd_c2s.erl:1790
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Sua lista de privacidade ativa negou o roteamento desta estada."
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 msgid "Enter the text you see"
@@ -245,7 +245,7 @@ msgstr "Módulos"
 
 #: mod_configure.erl:578
 msgid "Backup Management"
-msgstr "Gestão de copia de segurança"
+msgstr "Gestão de Backup"
 
 #: mod_configure.erl:579
 msgid "Import Users From jabberd14 Spool Files"
@@ -269,11 +269,11 @@ msgstr "Selecione o tipo de armazenamento das tabelas"
 
 #: mod_configure.erl:926 mod_configure.erl:928
 msgid "Disc only copy"
-msgstr "Copia em disco somente"
+msgstr "Somente copia em disco"
 
 #: mod_configure.erl:926 mod_configure.erl:928
 msgid "RAM and disc copy"
-msgstr "Copia em RAM y disco"
+msgstr "Copias na RAM e disco rígido"
 
 #: mod_configure.erl:926 mod_configure.erl:928
 msgid "RAM copy"
@@ -305,11 +305,11 @@ msgstr "Listas de módulos para inicializar"
 
 #: mod_configure.erl:983
 msgid "Backup to File at "
-msgstr "Salvar cópia de segurança para arquivo em "
+msgstr "Salvar backup para arquivo em "
 
 #: mod_configure.erl:987 mod_configure.erl:1001
 msgid "Enter path to backup file"
-msgstr "Introduza o caminho do arquivo de cópia de segurança"
+msgstr "Introduza o caminho do arquivo de backup"
 
 #: mod_configure.erl:988 mod_configure.erl:1002 mod_configure.erl:1016
 #: mod_configure.erl:1030
@@ -318,15 +318,15 @@ msgstr "Caminho do arquivo"
 
 #: mod_configure.erl:997
 msgid "Restore Backup from File at "
-msgstr "Restaura cópia de segurança a partir do arquivo em "
+msgstr "Restaurar backup a partir do arquivo em "
 
 #: mod_configure.erl:1011
 msgid "Dump Backup to Text File at "
-msgstr "Exporta cópia de segurança para arquivo de texto em "
+msgstr "Exportar backup para texto em "
 
 #: mod_configure.erl:1015
 msgid "Enter path to text file"
-msgstr "Introduza caminho para o arquivo de texto"
+msgstr "Introduza caminho para o arquivo texto"
 
 #: mod_configure.erl:1025
 msgid "Import User from File at "
@@ -334,7 +334,7 @@ msgstr "Importar usuário a partir do arquivo em "
 
 #: mod_configure.erl:1029
 msgid "Enter path to jabberd14 spool file"
-msgstr "Introduza o caminho para o arquivo de spool do jabberd14"
+msgstr "Insira o caminho para a fila (arquivo) do jabberd14"
 
 #: mod_configure.erl:1039
 msgid "Import Users from Dir at "
@@ -342,7 +342,7 @@ msgstr "Importar usuários a partir do diretório em "
 
 #: mod_configure.erl:1043
 msgid "Enter path to jabberd14 spool dir"
-msgstr "Introduza o caminho para o diretório de spools do jabberd14"
+msgstr "Introduza o caminho para o diretório de fila do jabberd14"
 
 #: mod_configure.erl:1044
 msgid "Path to Dir"
@@ -350,7 +350,7 @@ msgstr "Caminho para o diretório"
 
 #: mod_configure.erl:1060 mod_configure.erl:1105
 msgid "Time delay"
-msgstr "Intervalo de Tempo"
+msgstr "Intervalo (Tempo)"
 
 #: mod_configure.erl:1143
 msgid "Access Control List Configuration"
@@ -442,7 +442,7 @@ msgstr "Aceso denegado por la política do serviço"
 
 #: mod_irc/mod_irc.erl:400
 msgid "IRC Transport"
-msgstr "IRC Transport"
+msgstr "Transporte IRC"
 
 #: mod_irc/mod_irc.erl:427
 msgid "ejabberd IRC module"
@@ -456,7 +456,7 @@ msgstr ""
 
 #: mod_irc/mod_irc.erl:565
 msgid "Registration in mod_irc for "
-msgstr "Registro em mod_irc para"
+msgstr "Registro em mod_irc para "
 
 #: mod_irc/mod_irc.erl:570
 msgid ""
@@ -468,7 +468,7 @@ msgstr ""
 
 #: mod_irc/mod_irc.erl:575
 msgid "IRC Username"
-msgstr "Nome de usuário no IRC"
+msgstr "Usuário IRC"
 
 #: mod_irc/mod_irc.erl:585
 msgid ""
@@ -492,11 +492,11 @@ msgstr ""
 
 #: mod_irc/mod_irc.erl:602
 msgid "Connections parameters"
-msgstr "Parametros para as Conexões"
+msgstr "Parâmetros para as Conexões"
 
 #: mod_irc/mod_irc.erl:727
 msgid "Join IRC channel"
-msgstr "Entrar no canal IRC"
+msgstr "Juntar-se ao canal IRC"
 
 #: mod_irc/mod_irc.erl:731
 msgid "IRC channel (don't put the first #)"
@@ -508,7 +508,7 @@ msgstr "Servidor IRC"
 
 #: mod_irc/mod_irc.erl:769 mod_irc/mod_irc.erl:773
 msgid "Join the IRC channel here."
-msgstr "Entrar no canal IRC."
+msgstr "Aqui! Juntar-se ao canal IRC."
 
 #: mod_irc/mod_irc.erl:777
 msgid "Join the IRC channel in this Jabber ID: ~s"
@@ -531,7 +531,7 @@ msgstr ""
 
 #: mod_irc/mod_irc.erl:873
 msgid "IRC username"
-msgstr "Nome de usuário no IRC"
+msgstr "Usuário IRC"
 
 #: mod_irc/mod_irc.erl:922
 msgid "Password ~b"
@@ -1064,11 +1064,11 @@ msgstr "ID do Tópico"
 
 #: mod_pubsub/mod_pubsub.erl:1506 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Subscriber Address"
-msgstr "Enderço dos Assinantes"
+msgstr "Endereço dos Assinantes"
 
 #: mod_pubsub/mod_pubsub.erl:1512 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "Autorizar este Jabber ID para a inscrição neste tópico pubsub ?"
+msgstr "Autorizar este Jabber ID para a inscrição neste tópico pubsub?"
 
 #: mod_pubsub/mod_pubsub.erl:3407 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Deliver payloads with event notifications"
@@ -1164,7 +1164,7 @@ msgstr "Usuário"
 #: mod_register.erl:244
 #, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "Impossível gerar um captcha"
+msgstr "Impossível gerar um CAPTCHA"
 
 #: mod_register.erl:309 mod_register.erl:354
 #, fuzzy
@@ -1305,7 +1305,7 @@ msgstr "Nome completo"
 #: mod_vcard.erl:358 mod_vcard.erl:469 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:445
 msgid "Middle Name"
-msgstr "Apelido"
+msgstr "Nome do meio"
 
 #: mod_vcard.erl:358 mod_vcard.erl:468 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:444 web/ejabberd_web_admin.erl:2000
@@ -1320,7 +1320,7 @@ msgstr "Nome da organização"
 #: mod_vcard.erl:358 mod_vcard.erl:477 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:453
 msgid "Organization Unit"
-msgstr "Unidade da organização"
+msgstr "Departamento/Unidade"
 
 #: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
 msgid "Search users in "
@@ -1340,7 +1340,7 @@ msgstr "Módulo vCard para ejabberd"
 
 #: mod_vcard.erl:463 mod_vcard_ldap.erl:547 mod_vcard_odbc.erl:439
 msgid "Search Results for "
-msgstr "Resultados de pesquisa para"
+msgstr "Resultados de pesquisa para "
 
 #: mod_vcard_ldap.erl:458
 msgid "Fill in fields to search for any matching Jabber User"
@@ -1369,7 +1369,7 @@ msgstr "Configuração da Regra de Acesso ~s"
 
 #: web/ejabberd_web_admin.erl:1031
 msgid "ejabberd virtual hosts"
-msgstr "Maquinas virtuais de ejabberd"
+msgstr "Hosts virtuais de ejabberd"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
@@ -1502,7 +1502,7 @@ msgstr "Erro de chamada RPC"
 
 #: web/ejabberd_web_admin.erl:1994
 msgid "Database Tables at "
-msgstr "Tabelas de base de dados em"
+msgstr "Tabelas de base de dados em "
 
 #: web/ejabberd_web_admin.erl:2001
 msgid "Storage Type"
@@ -1522,7 +1522,7 @@ msgstr "Erro"
 
 #: web/ejabberd_web_admin.erl:2029
 msgid "Backup of "
-msgstr "Backup de"
+msgstr "Backup de "
 
 #: web/ejabberd_web_admin.erl:2031
 msgid ""
@@ -1559,11 +1559,11 @@ msgstr ""
 
 #: web/ejabberd_web_admin.erl:2058
 msgid "Store plain text backup:"
-msgstr "Armazenar backup plain text"
+msgstr "Armazenar backup em texto:"
 
 #: web/ejabberd_web_admin.erl:2065
 msgid "Restore plain text backup immediately:"
-msgstr "Restaurar backup plain text imediatamente:"
+msgstr "Restaurar backup formato texto imediatamente:"
 
 #: web/ejabberd_web_admin.erl:2072
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
@@ -1572,8 +1572,8 @@ msgstr "Importar usuários de um arquivo PIEFXIS (XEP-0227): "
 #: web/ejabberd_web_admin.erl:2079
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Exportar dados de todos os usuários no servidor para arquivos PIEFXIS files "
-"(XEP-0227):"
+"Exportar todos os dados de todos os usuários no servidor, para arquivos "
+"formato PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2086
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
@@ -1582,15 +1582,15 @@ msgstr ""
 
 #: web/ejabberd_web_admin.erl:2094
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Importar usuário de arquivo jabberd14:"
+msgstr "Importar dados dos usuários de uma fila jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2101
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importar dados dos usuários a partir da fila jabberd14"
+msgstr "Importar dados dos usuários de um diretório-fila jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2127
 msgid "Listened Ports at "
-msgstr "Portas de escuta em "
+msgstr "Portas ouvintes em "
 
 #: web/ejabberd_web_admin.erl:2152
 msgid "Modules at "
@@ -1610,7 +1610,7 @@ msgstr "Tempo de CPU"
 
 #: web/ejabberd_web_admin.erl:2190
 msgid "Transactions Committed:"
-msgstr "Transações:"
+msgstr "Transações salvas:"
 
 #: web/ejabberd_web_admin.erl:2193
 msgid "Transactions Aborted:"
@@ -1618,7 +1618,7 @@ msgstr "Transações abortadas:"
 
 #: web/ejabberd_web_admin.erl:2196
 msgid "Transactions Restarted:"
-msgstr "Transações restauradas:"
+msgstr "Transações reiniciadas:"
 
 #: web/ejabberd_web_admin.erl:2199
 msgid "Transactions Logged:"
@@ -1678,48 +1678,51 @@ msgstr "Iniciar"
 
 #: web/mod_register_web.erl:103
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Sua conta jabber foi criada corretamente."
 
 #: web/mod_register_web.erl:106
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Houveram erras ao criar esta conta: "
 
 #: web/mod_register_web.erl:114
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Sua conta Jabber foi deletada com sucesso."
 
 #: web/mod_register_web.erl:117
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Erro ao deletar esta conta: "
 
 #: web/mod_register_web.erl:127
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "A senha da sua conta Jabber foi mudada com sucesso."
 
 #: web/mod_register_web.erl:130
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Houveram erros ao mudar a senha: "
 
 #: web/mod_register_web.erl:162 web/mod_register_web.erl:171
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Registros de Contas Jabber"
 
 #: web/mod_register_web.erl:173 web/mod_register_web.erl:191
 #: web/mod_register_web.erl:200
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Registrar uma conta Jabber"
 
 #: web/mod_register_web.erl:175 web/mod_register_web.erl:488
 #: web/mod_register_web.erl:497
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Deletar conta Jabber"
 
 #: web/mod_register_web.erl:202
 msgid ""
 "This page allows to create a Jabber account in this Jabber server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
-msgstr ""
+msgstr "Esta pagina aceita criações de novas contas Jabber neste servidor. A "
+"sua JID (Identificador Jabber) será da seguinte forma: 'usuário@servidor'. "
+"Por favor, leia cuidadosamente as instruções para preencher corretamente os "
+"campos."
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
@@ -1729,11 +1732,11 @@ msgstr "Nome de usuário no IRC"
 
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
-msgstr ""
+msgstr "Não é 'case insensitive': macbeth é o mesmo que MacBeth e ainda Macbeth. "
 
 #: web/mod_register_web.erl:217
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Caracteres não aceitos:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
@@ -1746,16 +1749,20 @@ msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Não revele o seu computador a ninguém, mesmo para o administrador deste "
+"servidor Jabber."
 
 #: web/mod_register_web.erl:233
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Mais tarde você pode alterar a sua senha usando um cliente Jabber."
 
 #: web/mod_register_web.erl:234
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Alguns clientes jabber podem salvar a sua senha no seu computador. Use "
+"recurso somente se você considera este computador seguro o suficiente."
 
 #: web/mod_register_web.erl:236
 msgid ""
@@ -1763,6 +1770,9 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Memorize a sua senha, ou escreva-a em um papel e guarde-o em um lugar "
+"seguro. Jabber não é uma maneira automatizada para recuperar a sua senha, "
+"se você a esquecer eventualmente."
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
 #, fuzzy
@@ -1786,11 +1796,11 @@ msgstr "Senha:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Esta página aceita para deletar uma conta Jabber neste servidor."
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
-msgstr ""
+msgstr "Deletar registro"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
