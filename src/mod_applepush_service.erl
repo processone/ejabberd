@@ -45,6 +45,7 @@
 -define(RECONNECT_TIMEOUT, 5000).
 -define(FEEDBACK_RECONNECT_TIMEOUT, 30000).
 -define(HANDSHAKE_TIMEOUT, 60000).
+-define(SSL_TIMEOUT, 5000).
 -define(MAX_QUEUE_SIZE, 1000).
 -define(CACHE_SIZE, 4096).
 -define(MAX_PAYLOAD_SIZE, 255).
@@ -191,7 +192,7 @@ handle_info(connect_feedback, State)
     case ssl:connect(Feedback, FeedbackPort,
 		     [{certfile, CertFile},
 		      {active, true},
-		      binary]) of
+                      binary], ?SSL_TIMEOUT) of
 	{ok, Socket} ->
 	    {noreply, State#state{feedback_socket = Socket}};
 	{error, Reason} ->
@@ -464,7 +465,8 @@ connect(#state{socket = undefined, certfile_mtime = undefined} = State) ->
     CertFile = State#state.certfile,
     case ssl:connect(Gateway, Port, [{certfile, CertFile},
 				     {active, true},
-				     binary]) of
+				     binary],
+                     ?SSL_TIMEOUT) of
 	{ok, Socket} ->
 	    {noreply, resend_messages(State#state{socket = Socket})};
 	{error, Reason} ->
