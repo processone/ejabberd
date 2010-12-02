@@ -60,11 +60,11 @@
 
 %% exports for hooks
 -export([presence_probe/3,
+	 caps_update/3,
 	 in_subscription/6,
 	 out_subscription/4,
 	 on_user_offline/3,
 	 remove_user/2,
-	 feature_check_packet/6,
 	 disco_local_identity/5,
 	 disco_local_features/5,
 	 disco_local_items/5,
@@ -207,7 +207,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(anonymous_purge_hook, ServerHost, ?MODULE, remove_user, 50),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
-	    ejabberd_hooks:add(feature_check_packet, ServerHost, ?MODULE, feature_check_packet, 75),
+	    ejabberd_hooks:add(caps_update, ServerHost, ?MODULE, caps_update, 80),
 	    ejabberd_hooks:add(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
 	    ejabberd_hooks:add(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
 	    ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
@@ -728,6 +728,10 @@ disco_items(Host, Node, From) ->
 %% presence hooks handling functions
 %%
 
+caps_update(#jid{luser = U, lserver = S, lresource = R} = From, To, _Features) ->
+    Pid = ejabberd_sm:get_session_pid(U, S, R),
+    presence_probe(From, To, Pid).
+
 presence_probe(#jid{luser = User, lserver = Server, lresource = Resource} = JID, JID, Pid) ->
     %%?DEBUG("presence probe self ~s@~s/~s  ~s@~s/~s",[User,Server,Resource,element(2,JID),element(3,JID),element(4,JID)]),
     presence(Server, {presence, JID, Pid}),
@@ -898,7 +902,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_router:unregister_route(Host),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
-	    ejabberd_hooks:delete(feature_check_packet, ServerHost, ?MODULE, feature_check_packet, 75),
+	    ejabberd_hooks:delete(caps_update, ServerHost, ?MODULE, caps_update, 80),
 	    ejabberd_hooks:delete(disco_sm_identity, ServerHost, ?MODULE, disco_sm_identity, 75),
 	    ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE, disco_sm_features, 75),
 	    ejabberd_hooks:delete(disco_sm_items, ServerHost, ?MODULE, disco_sm_items, 75),
@@ -3187,26 +3191,11 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
-	    Sender = jlib:make_jid(LUser, LServer, ""),
-	    ReplyTo = jlib:jid_to_string(Publisher),
-	    StanzaToSend = add_extended_headers(Stanza, extended_headers([ReplyTo])),
-	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
-		Contacts when is_list(Contacts) ->
-		    lists:foreach(fun({U, S, _}) ->
-			spawn(fun() ->
-			    case lists:member(S, ?MYHOSTS) of
-				true ->
-				    lists:foreach(fun(To) ->
-					ejabberd_router:route(Sender, jlib:make_jid(To), StanzaToSend)
-				    end, [{U, S, R} || R <- user_resources(U, S)]);
-				false ->
-				    ejabberd_router:route(Sender, jlib:make_jid(U, S, ""), StanzaToSend)
-			    end
-			end)
-		    end, Contacts);
-		_ ->
-		    ok
-	    end;
+	    ejabberd_c2s:broadcast(C2SPid,
+	        {pep_message, binary_to_list(Node)++"+notify"},
+	        _Sender = jlib:make_jid(LUser, LServer, ""),
+	        _StanzaToSend = add_extended_headers(Stanza,
+	            _ReplyTo = extended_headers([jlib:jid_to_string(Publisher)])));
 	_ ->
 	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
     end;
@@ -3868,59 +3857,6 @@ subid_shim(SubIDs) ->
 
 extended_headers(Jids) ->
     [{xmlelement, "address", [{"type", "replyto"}, {"jid", Jid}], []} || Jid <- Jids].
-
-
-feature_check_packet(allow, _User, Server, Pres,
-		     {#jid{lserver = LServer}, _To,
-		      {xmlelement, "message", MsgAttrs, _} = El}, in) ->
-    Host = host(Server),
-    case LServer of
-	%% If the sender Server equals Host, the message comes from the Pubsub server
-	Host ->
-	    allow;
-	%% Else, the message comes from PEP
-	_ ->
-	    case xml:get_subtag(El, "event") of
-		{xmlelement, _, Attrs, _} = EventEl ->
-		    case xml:get_attr_s("xmlns", Attrs) of
-			?NS_PUBSUB_EVENT ->
-			    case xml:get_attr_s("type", MsgAttrs) of
-				"error" ->
-				    %% Filter error-repsonse of PEP message
-				    %% to avoid routing it to client
-				    deny;
-				_ when Pres /= undefined ->
-				    %% Yes, sometimes Pres = undefined,
-				    %% very rare though.
-				    %% Seems like this is a bug: should
-				    %% be fixed in ejabberd_s2s.erl
-				    Feature = xml:get_path_s(
-						EventEl, [{elem, "items"},
-							  {attr, "node"}]),
-				    case is_feature_supported(Pres, Feature) of
-					true ->
-					    allow;
-					false ->
-					    deny
-				    end;
-				_ ->
-				    allow
-			    end;
-			_ ->
-			    allow
-		    end;
-		_ ->
-		    allow
-	    end
-    end;
-feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
-    Acc.
-
-is_feature_supported({xmlelement, "presence", _, Els}, Feature) ->
-    case mod_caps:read_caps(Els) of
-	nothing -> false;
-	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
-    end.
 
 on_user_offline(_, JID, _) ->
     {User, Server, Resource} = jlib:jid_tolower(JID),
