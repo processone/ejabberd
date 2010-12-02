@@ -893,7 +893,7 @@ disco_items(#jid{raw = JID, node = U, domain = S, resource = R} = Host, NodeId, 
 %% -------
 %% presence hooks handling functions
 %%
-caps_update(#jid{luser = U, lserver = S, lresource = R} = From, To, _Features) ->
+caps_update(#jid{node = U, domain = S, resource = R} = From, To, _Features) ->
     Pid = ejabberd_sm:get_session_pid(U, S, R),
     presence_probe(From, To, Pid).
 
@@ -3666,9 +3666,10 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	    %% See XEP-0163 1.1 section 4.3.1
 	    ejabberd_c2s:broadcast(C2SPid,
 	        {pep_message, binary_to_list(Node)++"+notify"},
-	        _Sender = jlib:make_jid(LUser, LServer, ""),
+	        _Sender = exmpp_jid:make(LUser, LServer),
 	        _StanzaToSend = add_extended_headers(Stanza,
-	            _ReplyTo = extended_headers([jlib:jid_to_string(Publisher)])));
+	            _ReplyTo = extended_headers([exmpp_jid:make(Publisher)])));
+
 	_ ->
 	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
     end;
