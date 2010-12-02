@@ -72,6 +72,8 @@ mech_step(State, ClientIn) ->
 		{true, AuthModule} ->
 		    {ok, [{username, User}, {authzid, AuthzId},
 			  {auth_module, AuthModule}]};
+		{false, ReasonAuthFail} when is_list(ReasonAuthFail) ->
+		    {error, ReasonAuthFail, User};
 		_ ->
 		    {error, 'not-authorized', User}
 	    end;

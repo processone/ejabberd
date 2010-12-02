@@ -117,7 +117,7 @@ check_password(User, Server, Password)
   when is_list(User), is_list(Server), is_list(Password) ->
     case check_password_with_authmodule(User, Server, Password) of
 	{true, _AuthModule} -> true;
-	false -> false
+	{false, _Reason} -> false
     end.
 
 %% @spec (User, Server, Password, Digest, DigestGen) -> bool()
@@ -134,22 +134,22 @@ check_password(User, Server, Password, Digest, DigestGen)
     case check_password_with_authmodule(User, Server, Password,
 					Digest, DigestGen) of
 	{true, _AuthModule} -> true;
-	false -> false
+	{false, _Reason} -> false
     end.
 
-%% @spec (User, Server, Password) -> {true, AuthModule} | false
-%%     User = string()
-%%     Server = string()
-%%     Password = string()
-%%     AuthModule = authmodule()
+%% @spec (User::string(), Server::string(), Password::string()) ->
+%%     {true, AuthModule} | {false, Reason::string()}
+%% where
+%%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
+%%                 | ejabberd_auth_internal | ejabberd_auth_ldap
+%%                 | ejabberd_auth_odbc | ejabberd_auth_pam
 %% @doc Check if the user and password can login in server.
 %% The user can login if at least an authentication method accepts the user
 %% and the password.
 %% The first authentication method that accepts the credentials is returned.
-
 check_password_with_authmodule(User, Server, Password)
   when is_list(User), is_list(Server), is_list(Password) ->
-    check_password_loop(auth_modules(Server), [User, Server, Password]).
+    check_password_loop(auth_modules(Server), [User, Server, Password], "").
 
 %% @spec (User, Server, Password, Digest, DigestGen) -> {true, AuthModule} | false
 %%     User = string()
@@ -167,16 +167,20 @@ check_password_with_authmodule(User, Server, Password, Digest, DigestGen)
   when is_list(User), is_list(Server), (is_list(Password) orelse Password == 'undefined'),
   is_function(DigestGen), (is_list(Digest) orelse Digest == 'undefined')->
     check_password_loop(auth_modules(Server), [User, Server, Password,
-					       Digest, DigestGen]).
+					       Digest, DigestGen], "").
 
-check_password_loop([], _Args) ->
-    false;
-check_password_loop([AuthModule | AuthModules], Args) ->
+check_password_loop([], _Args, LastReason) ->
+    {false, LastReason};
+check_password_loop([AuthModule | AuthModules], Args, PreviousReason) ->
     case apply(AuthModule, check_password, Args) of
 	true ->
 	    {true, AuthModule};
+	{false, Reason} when Reason /= "" ->
+	    check_password_loop(AuthModules, Args, Reason);
+	{false, ""} ->
+	    check_password_loop(AuthModules, Args, PreviousReason);
 	false ->
-	    check_password_loop(AuthModules, Args)
+	    check_password_loop(AuthModules, Args, PreviousReason)
     end.
 
 %% @spec (User, Server, Password) -> ok | {error, ErrorType}

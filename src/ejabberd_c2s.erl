@@ -589,6 +589,20 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				send_element(StateData, Res),
 				fsm_next_state(wait_for_auth, StateData)
 			end;
+		    {false, ReasonAuthFail} when is_list(ReasonAuthFail) ->
+			?INFO_MSG(
+			  "(~w) Forbidden legacy authentication for ~s due to ~s",
+			  [StateData#state.socket,
+			    exmpp_jid:to_binary(JID), ReasonAuthFail]),
+			    ErrorType = case ReasonAuthFail of
+				"not-authorized" -> 'not-authorized';
+				"temporary-auth-failure" -> 'internal-server-error';
+				_ -> 'not-authorized'
+			    end,
+			Res = exmpp_iq:error_without_original(El,
+                          ErrorType),
+			send_element(StateData, Res),
+			fsm_next_state(wait_for_auth, StateData);
 		    _ ->
 			?INFO_MSG(
 			  "(~w) Forbidden legacy authentication for ~s",
@@ -663,11 +677,11 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		    fsm_next_state(wait_for_sasl_response,
 				   StateData#state{
 				     sasl_state = NewSASLState});
-		{error, Error, Username} ->
+		{error, Error, Username} when is_list(Error) ->
 		    ?INFO_MSG(
-		       "(~w) Failed authentication for ~s@~s",
+		       "(~w) Failed authentication for ~s@~s due to ~s",
 		       [StateData#state.socket,
-			Username, StateData#state.server]),
+			Username, StateData#state.server, Error]),
 		    send_element(StateData,
 		      exmpp_server_sasl:failure(Error)),
 		    {next_state, wait_for_feature_request, StateData,
