@@ -60,11 +60,11 @@
 
 %% exports for hooks
 -export([presence_probe/3,
+	 caps_update/3,
 	 in_subscription/6,
 	 out_subscription/4,
 	 on_user_offline/3,
 	 remove_user/2,
-	 feature_check_packet/6,
 	 disco_local_identity/5,
 	 disco_local_features/5,
 	 disco_local_items/5,
@@ -239,7 +239,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(anonymous_purge_hook, ServerHostB, ?MODULE, remove_user, 50),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
-	    ejabberd_hooks:add(feature_check_packet, ServerHostB, ?MODULE, feature_check_packet, 75),
+	    ejabberd_hooks:add(caps_update, ServerHostB, ?MODULE, caps_update, 80),
 	    ejabberd_hooks:add(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
 	    ejabberd_hooks:add(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
 	    ejabberd_hooks:add(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
@@ -893,6 +893,10 @@ disco_items(#jid{raw = JID, node = U, domain = S, resource = R} = Host, NodeId, 
 %% -------
 %% presence hooks handling functions
 %%
+caps_update(#jid{luser = U, lserver = S, lresource = R} = From, To, _Features) ->
+    Pid = ejabberd_sm:get_session_pid(U, S, R),
+    presence_probe(From, To, Pid).
+
 -spec(presence_probe/3 ::
       (
 		       Peer :: jidEntity(),
@@ -1112,7 +1116,7 @@ terminate(_Reason, #state{host = Host,
     ServerHostB = list_to_binary(ServerHost),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
-	    ejabberd_hooks:delete(feature_check_packet, ServerHostB, ?MODULE, feature_check_packet, 75),
+	    ejabberd_hooks:delete(caps_update, ServerHostB, ?MODULE, caps_update, 80),
 	    ejabberd_hooks:delete(disco_sm_identity, ServerHostB, ?MODULE, disco_sm_identity, 75),
 	    ejabberd_hooks:delete(disco_sm_features, ServerHostB, ?MODULE, disco_sm_features, 75),
 	    ejabberd_hooks:delete(disco_sm_items, ServerHostB, ?MODULE, disco_sm_items, 75),
@@ -3660,26 +3664,11 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
-	    Sender = exmpp_jid:make(LUser, LServer),
-	    ReplyTo = exmpp_jid:to_binary(exmpp_jid:make(Publisher)),
-	    StanzaToSend = add_extended_headers(Stanza, extended_headers([ReplyTo])),
-	    case catch ejabberd_c2s:get_subscribed(C2SPid) of
-		Contacts when is_list(Contacts) ->
-		    lists:foreach(fun({U, S, _}) ->
-					  spawn(fun() ->
-							case ?IS_MY_HOST(S) of
-							    true ->
-								lists:foreach(fun(R) ->
-										      ejabberd_router:route(Sender, exmpp_jid:make(U, S, R), StanzaToSend)
-									      end, user_resources(U, S));
-							    false ->
-								ejabberd_router:route(Sender, exmpp_jid:make(U, S), StanzaToSend)
-							end
-						end)
-				  end, Contacts);
-		_ ->
-		    ok
-	    end;
+	    ejabberd_c2s:broadcast(C2SPid,
+	        {pep_message, binary_to_list(Node)++"+notify"},
+	        _Sender = jlib:make_jid(LUser, LServer, ""),
+	        _StanzaToSend = add_extended_headers(Stanza,
+	            _ReplyTo = extended_headers([jlib:jid_to_string(Publisher)])));
 	_ ->
 	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
     end;
@@ -4559,36 +4548,6 @@ extended_headers(JIDs) ->
     [#xmlel{ns = ?NS_ADDRESS, name = 'address',
 	    attrs = [?XMLATTR(<<"type">>, <<"replyto">>), ?XMLATTR(<<"jid">>, JID)]}
      || JID <- JIDs].
-
-feature_check_packet(allow, _User, Server, Pres, {From, _To, El}, in) ->
-    Host = list_to_binary(host(Server)),
-    case exmpp_jid:prep_domain(From) of
-	%% If the sender Server equals Host, the message comes from the Pubsub server
-	Host -> allow;
-	%% Else, the message comes from PEP
-	_ ->
-	    case exmpp_xml:get_element(El, 'event') of
-		#xmlel{name = 'event', ns = ?NS_PUBSUB_EVENT} = Event ->
-		    Items = exmpp_xml:get_element(Event, ?NS_PUBSUB_EVENT, 'items'),
-		    Feature = exmpp_xml:get_attribute_as_list(Items, <<"node">>, ""),
-		    case is_feature_supported(Pres, Feature) of
-			true -> allow;
-			false -> deny
-		    end;
-		_ ->
-		    allow
-	    end
-    end;
-feature_check_packet(Acc, _User, _Server, _Pres, _Packet, _Direction) ->
-    Acc.
-
-is_feature_supported(_, []) ->
-    true;
-is_feature_supported(#xmlel{name = 'presence', children = Els}, Feature) ->
-    case mod_caps:read_caps(Els) of
-	nothing -> false;
-	Caps -> lists:member(Feature ++ "+notify", mod_caps:get_features(Caps))
-    end.
 
 on_user_offline(_, JID, _) ->
     {User, Server, Resource} = jlib:short_prepd_jid(JID),
