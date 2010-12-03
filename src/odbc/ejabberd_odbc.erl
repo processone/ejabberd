@@ -509,7 +509,7 @@ pgsql_to_odbc({ok, PGSQLResult}) ->
 	    [pgsql_item_to_odbc(Item) || Item <- Items]
     end.
 
-pgsql_item_to_odbc({"SELECT", Rows, Recs}) ->
+pgsql_item_to_odbc({"SELECT" ++ _, Rows, Recs}) ->
     {selected,
      [case Row of 
           {desc, _, Col, _, _, _, _, _} -> Col; % Recent pgsql driver API change.
