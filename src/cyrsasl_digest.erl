@@ -191,20 +191,14 @@ response(KeyVals, User, Passwd, Nonce, AuthzId, A2Prefix) ->
     DigestURI = xml:get_attr_s("digest-uri", KeyVals),
     NC = xml:get_attr_s("nc", KeyVals),
     QOP = xml:get_attr_s("qop", KeyVals),
-
-    %% handle non-fully latin-1 strings as specified 
-    %% on RFC 2831 Section 2.1.2.1 (EJAB-476)
-    SUser = sanitize(User),
-    SPasswd = sanitize(Passwd),
-    SRealm = sanitize(Realm),
     A1 = case AuthzId of
 	     "" ->
 		 binary_to_list(
-		   crypto:md5(SUser ++ ":" ++ SRealm ++ ":" ++ SPasswd)) ++
+		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
 		     ":" ++ Nonce ++ ":" ++ CNonce;
 	     _ ->
 		 binary_to_list(
-		   crypto:md5(SUser ++ ":" ++ SRealm ++ ":" ++ SPasswd)) ++
+		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
 		     ":" ++ Nonce ++ ":" ++ CNonce ++ ":" ++ AuthzId
 	 end,
     A2 = case QOP of
@@ -220,79 +214,4 @@ response(KeyVals, User, Passwd, Nonce, AuthzId, A2Prefix) ->
     hex(binary_to_list(crypto:md5(T))).
 
 
-sanitize(V) ->
-    L = from_utf8(V),
-    case lists:all(fun is_latin1/1, L) of
-    	true -> L;
-    	false -> V
-    end.
-
-%%%% copied from xmerl_ucs:from_utf8/1 and xmerl_ucs:is_latin1/1 , to not
-%%%% require xmerl as a dependency only for this.
-
-from_utf8(Bin) when is_binary(Bin) -> from_utf8(binary_to_list(Bin));
-from_utf8(List) ->
-    case expand_utf8(List) of
-    {Result,0} -> Result;
-    {_Res,_NumBadChar} ->
-        exit({ucs,{bad_utf8_character_code}})
-    end.
-
-
-
-%% expand_utf8([Byte]) -> {[UnicodeChar],NumberOfBadBytes}
-%%  Expand UTF8 byte sequences to ISO 10646/Unicode
-%%  charactes. Any illegal bytes are removed and the number of
-%%  bad bytes are returned.
-%%
-%%  Reference:
-%%     RFC 3629: "UTF-8, a transformation format of ISO 10646".
-
-expand_utf8(Str) ->
-    expand_utf8_1(Str, [], 0).
-
-expand_utf8_1([C|Cs], Acc, Bad) when C < 16#80 ->
-    %% Plain Ascii character.
-    expand_utf8_1(Cs, [C|Acc], Bad);
-expand_utf8_1([C1,C2|Cs], Acc, Bad) when C1 band 16#E0 =:= 16#C0,
-                     C2 band 16#C0 =:= 16#80 ->
-    case ((C1 band 16#1F) bsl 6) bor (C2 band 16#3F) of
-    C when 16#80 =< C ->
-        expand_utf8_1(Cs, [C|Acc], Bad);
-    _ ->
-        %% Bad range.
-        expand_utf8_1(Cs, Acc, Bad+1)
-    end;
-expand_utf8_1([C1,C2,C3|Cs], Acc, Bad) when C1 band 16#F0 =:= 16#E0,
-                        C2 band 16#C0 =:= 16#80,
-                        C3 band 16#C0 =:= 16#80 ->
-    case ((((C1 band 16#0F) bsl 6) bor (C2 band 16#3F)) bsl 6) bor
-    (C3 band 16#3F) of
-    C when 16#800 =< C ->
-        expand_utf8_1(Cs, [C|Acc], Bad);
-    _ ->
-        %% Bad range.
-        expand_utf8_1(Cs, Acc, Bad+1)
-    end;
-expand_utf8_1([C1,C2,C3,C4|Cs], Acc, Bad) when C1 band 16#F8 =:= 16#F0,
-                           C2 band 16#C0 =:= 16#80,
-                           C3 band 16#C0 =:= 16#80,
-                           C4 band 16#C0 =:= 16#80 ->
-    case ((((((C1 band 16#0F) bsl 6) bor (C2 band 16#3F)) bsl 6) bor
-    (C3 band 16#3F)) bsl 6) bor (C4 band 16#3F) of
-    C when 16#10000 =< C ->
-        expand_utf8_1(Cs, [C|Acc], Bad);
-    _ ->
-        %% Bad range.
-        expand_utf8_1(Cs, Acc, Bad+1)
-    end;
-expand_utf8_1([_|Cs], Acc, Bad) ->
-    %% Ignore bad character.
-    expand_utf8_1(Cs, Acc, Bad+1);
-expand_utf8_1([], Acc, Bad) -> {lists:reverse(Acc),Bad}.
-
-
-%%% Test for legitimate Latin-1 code
-is_latin1(Ch) when is_integer(Ch), Ch >= 0, Ch =< 255 -> true;
-is_latin1(_) -> false.
 
