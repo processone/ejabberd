@@ -17,6 +17,7 @@
 /doc/version.tex
 /src/*.beam
 /src/*.so
+/src/*.so.dSYM
 /src/*/*.beam
 /src/*/Makefile
 /src/Makefile
