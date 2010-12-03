@@ -38,6 +38,8 @@
 -module (pshb_http).
 -author('ecestari@process-one.net').
 
+-compile({no_auto_import,[error/1]}).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("ejabberd_http.hrl").
