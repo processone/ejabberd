@@ -483,7 +483,7 @@ pgsql_to_odbc({ok, PGSQLResult}) ->
 	    [pgsql_item_to_odbc(Item) || Item <- Items]
     end.
 
-pgsql_item_to_odbc({"SELECT", Rows, Recs}) ->
+pgsql_item_to_odbc({"SELECT" ++ _, Rows, Recs}) ->
     {selected,
      [element(1, Row) || Row <- Rows],
      [list_to_tuple(Rec) || Rec <- Recs]};
