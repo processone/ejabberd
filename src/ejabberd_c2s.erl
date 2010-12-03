@@ -2036,8 +2036,7 @@ roster_change(IJID, ISubscription, StateData) ->
 	P ->
 	    ?DEBUG("roster changed for ~p~n", [StateData#state.user]),
 	    From = StateData#state.jid,
-%	    To = jlib:make_jid(IJID)
-	    To = IJID,
+	    To = jlib:make_jid(IJID),
 	    Cond1 = (not StateData#state.pres_invis) and IsFrom
 		and (not OldIsFrom),
 	    Cond2 = (not IsFrom) and OldIsFrom
