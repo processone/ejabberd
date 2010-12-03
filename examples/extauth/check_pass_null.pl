@@ -42,6 +42,22 @@ while(1)
              # password is null. Return 1 if the user $user\@$domain exitst.
              $result = 1;
           },last SWITCH;
+
+        $op eq 'tryregister' and do
+          {
+             $result = 1;
+          },last SWITCH;
+
+        $op eq 'removeuser' and do
+          {
+             # password is null. Return 1 if the user $user\@$domain exitst.
+             $result = 1;
+          },last SWITCH;
+
+        $op eq 'removeuser3' and do
+          {
+             $result = 1;
+          },last SWITCH;
       };
     my $out = pack "nn",2,$result ? 1 : 0;
     syswrite STDOUT,$out;
