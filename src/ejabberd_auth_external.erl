@@ -70,7 +70,7 @@ check_cache_last_options(Server) ->
     case get_cache_option(Server) of
 	false -> no_cache;
 	{true, _CacheTime} ->
-	    case get_mod_last_enabled(Server) of
+	    case get_mod_last_configured(Server) of
 		no_mod_last ->
 		    ?ERROR_MSG("In host ~p extauth is used, extauth_cache is enabled but "
 			       "mod_last is not enabled.", [Server]),
@@ -355,7 +355,19 @@ get_mod_last_enabled(ServerB) when is_binary(ServerB)->
     Server = binary_to_list(ServerB),
     get_mod_last_enabled(Server);
 get_mod_last_enabled(Server) ->
-    case lists:member(mod_last, gen_mod:loaded_modules(Server)) of
+    case gen_mod:is_loaded(Server, mod_last) of
 	true -> mod_last;
 	false -> no_mod_last
     end.
+
+get_mod_last_configured(Server) ->
+    ML = is_configured(Server, mod_last),
+    MLO = is_configured(Server, mod_last_odbc),
+    case {ML, MLO} of
+	{true, _} -> mod_last;
+	{false, true} -> mod_last_odbc;
+	{false, false} -> no_mod_last
+    end.
+
+is_configured(Host, Module) ->
+    lists:keymember(Module, 1, ejabberd_config:get_local_option({modules, Host})).
