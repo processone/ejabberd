@@ -22,7 +22,7 @@ msgstr "Nahrazeno novým spojením"
 
 #: ejabberd_c2s.erl:1790
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Vaše nastavení soukromí znemožnilo směrování této stance."
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 msgid "Enter the text you see"
@@ -34,11 +34,11 @@ msgstr "Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"
 
 #: ejabberd_captcha.erl:132
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Pokud zde nevidíte obrázek CAPTCHE, přejděte na webovou stránku."
 
 #: ejabberd_captcha.erl:144
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "Webová stránka CAPTCHA"
 
 #: ejabberd_captcha.erl:302
 msgid "The captcha is valid."
@@ -557,9 +557,8 @@ msgid "Chatrooms"
 msgstr "Konference"
 
 #: mod_muc/mod_muc.erl:711
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
-msgstr "K registraci přezdívky potřebujete klienta s podporou x:data"
+msgstr "Pro registraci přezdívky potřebujete klienta s podporou x:data"
 
 #: mod_muc/mod_muc.erl:717
 msgid "Nickname Registration at "
@@ -1127,12 +1126,11 @@ msgstr "Kolekce, se kterými je uzel spřízněn"
 
 #: mod_register.erl:191
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "Ověření CAPTCHA se nezdařilo"
 
 #: mod_register.erl:218
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "K registraci přezdívky potřebujete klienta s podporou x:data"
+msgstr "Pro registraci potřebujete klienta s podporou x:data a CAPTCHA"
 
 #: mod_register.erl:224 mod_register.erl:258
 msgid "Choose a username and password to register with this server"
@@ -1144,14 +1142,12 @@ msgid "User"
 msgstr "Uživatel"
 
 #: mod_register.erl:244
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
 msgstr "Nebylo možné vygenerovat CAPTCHA"
 
 #: mod_register.erl:309 mod_register.erl:354
-#, fuzzy
 msgid "The password is too weak"
-msgstr "heslo je"
+msgstr "Heslo je příliš slabé"
 
 #: mod_register.erl:358
 msgid "Users are not allowed to register accounts so quickly"
@@ -1657,41 +1653,41 @@ msgstr "Start"
 
 #: web/mod_register_web.erl:103
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Váš účet Jabberu byl úspěšně vytvořen."
 
 #: web/mod_register_web.erl:106
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Při vytváření účtu došlo k chybě."
 
 #: web/mod_register_web.erl:114
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Váš účet Jabberu byl úspěšně smazán."
 
 #: web/mod_register_web.erl:117
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Při mazání účtu došlo k chybě: "
 
 #: web/mod_register_web.erl:127
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Heslo vašeho účtu Jabberu bylo úspěšně změněno."
 
 #: web/mod_register_web.erl:130
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Při změně hesla došlo k chybě: "
 
 #: web/mod_register_web.erl:162 web/mod_register_web.erl:171
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Registrace účtu Jabberu"
 
 #: web/mod_register_web.erl:173 web/mod_register_web.erl:191
 #: web/mod_register_web.erl:200
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Zaregistrujte si účet Jabberu"
 
 #: web/mod_register_web.erl:175 web/mod_register_web.erl:488
 #: web/mod_register_web.erl:497
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Zrušte registraci účtu Jabberu"
 
 #: web/mod_register_web.erl:202
 msgid ""
@@ -1699,42 +1695,47 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Na této stránce si můžete vytvořit účet na tomto serveru Jabberu. Vaše JID "
+"(Jabber IDentifikátor) bude mít tvar: uživatelskéjméno@server. Přečtěte si "
+"prosím pozorně instrukce pro vyplnění údajů."
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
-#, fuzzy
 msgid "Username:"
-msgstr "IRC přezdívka"
+msgstr "Uživatelské jméno:"
 
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."
 
 #: web/mod_register_web.erl:217
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Nepřípustné znaky:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Server:"
-msgstr "Server ~b"
+msgstr "Server:"
 
 #: web/mod_register_web.erl:231
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Nikdy nikomu nesdělujte své heslo, ani administrátorovi serveru Jabberu."
 
 #: web/mod_register_web.erl:233
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Později můžete své heslo změnit pomocí klienta Jabberu."
 
 #: web/mod_register_web.erl:234
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Někteří klienti umí uložit vaše heslo na disk počítače. Tuto funkci "
+"používejte, pouze pokud věříte zabezpečení svého počítače."
 
 #: web/mod_register_web.erl:236
 msgid ""
@@ -1742,35 +1743,33 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Svoje heslo si zapamatujte, nebo si jej poznamenejte na papírek a ten "
+"uschovejte v bezpečí. Jabber nemá žádný automatizovaný způsob obnovy hesla."
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Ověření hesla"
+msgstr "Ověření hesla:"
 
 #: web/mod_register_web.erl:249
-#, fuzzy
 msgid "Register"
-msgstr "Seznam kontaktů"
+msgstr "Zaregistrovat se"
 
 #: web/mod_register_web.erl:391
-#, fuzzy
 msgid "Old Password:"
-msgstr "Heslo:"
+msgstr "Současné heslo:"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "New Password:"
-msgstr "Heslo:"
+msgstr "Nové heslo:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Zde můžete zrušit registraci účtu na tomto serveru Jabberu."
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
-msgstr ""
+msgstr "Zrušit registraci"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "CAPTCHA souhlasí."
+#~ msgstr "Zkouška CAPTCHA neprošla."
