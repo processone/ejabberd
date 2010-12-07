@@ -2320,9 +2320,11 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 		    SubAttrs = case Subscription of
 				   {subscribed, SubId} ->
 				       [?XMLATTR(<<"subscription">>, subscription_to_string(subscribed)),
-					?XMLATTR(<<"subid">>, SubId)];
+					?XMLATTR(<<"subid">>, SubId),
+					?XMLATTR(<<"node">>, Node)];
 				   Other ->
-				       [?XMLATTR(<<"subscription">>, subscription_to_string(Other))]
+				       [?XMLATTR(<<"subscription">>, subscription_to_string(Other)),
+					?XMLATTR(<<"node">>, Node)]
 			       end,
 		    Fields =
 			[ ?XMLATTR(<<"jid">>, JID) | SubAttrs],
