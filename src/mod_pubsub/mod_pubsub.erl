@@ -1927,9 +1927,11 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 		    SubAttrs = case Subscription of
 				   {subscribed, SubId} ->
 				       [{"subscription", subscription_to_string(subscribed)},
-					{"subid", SubId}];
+					{"subid", SubId},
+					{"node",Node}];
 				   Other ->
-				       [{"subscription", subscription_to_string(Other)}]
+				       [{"subscription", subscription_to_string(Other)},
+				        {"node", Node}]
 			       end,
 		    Fields =
 			[{"jid", jlib:jid_to_string(Subscriber)} | SubAttrs],
