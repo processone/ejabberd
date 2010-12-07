@@ -1153,8 +1153,8 @@ node_disco_info(Host, NodeId, From) ->
 				     (T) ->  #xmlel{ns = ?NS_DISCO_INFO,
 						       name = 'feature',
 						       attrs = [?XMLATTR(<<"var">>, list_to_binary(?NS_PUBSUB_s++"#"++T))]}
-			    end, features(Plugin)]}
-                        || Type <- features(Plugin)]]}
+			    end, features(Plugin))]}
+                        %%|| Type <- features(Plugin)]]}
 	     end,
     case transaction(Host, NodeId, Action, sync_dirty) of
 	{result, {_, Result}} -> {result, Result};
@@ -1209,16 +1209,17 @@ iq_disco_info(Host, NodeId, From, _Lang) ->
     node_disco_info(Host, NodeId, From).
 
 
--spec(iq_disco_items/3 ::
+-spec(iq_disco_items/4 ::
       (
 		       Host   :: hostPubsub(),
 		       NodeId :: nodeId(),
-		       From   :: jidEntity())
+		       From   :: jidEntity(),
+		       Rsm :: _)
       -> {'result', [] | [#xmlel{}]}
 	     | {'error', _}
 	    ).
 
-iq_disco_items(Host, <<>> = _NodeId, Fromi, _Rsm) ->
+iq_disco_items(Host, <<>> = _NodeId, From, _Rsm) ->
     case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
 	Nodes when is_list(Nodes) ->
 	    {result, lists:map(
@@ -1438,7 +1439,7 @@ iq_pubsub(Host, ServerHost, From, IQType, #xmlel{children = Els}, Lang, Access, 
 						 end;
 					  (_, Acc) -> Acc
 					 end, [], exmpp_xml:remove_cdata_from_list(SubEls)),
-		    get_items(Host, NodeId, From, SubId, MaxItems, ItemIds, jlib:rsm_decode(SubEl));
+		    get_items(Host, NodeId, From, SubId, MaxItems, ItemIds, jlib:rsm_decode(SubEls));
 		{'get', 'subscriptions'} ->
 		    get_subscriptions(Host, NodeId, From, Plugins);
 		{'get', 'affiliations'} ->
@@ -4182,7 +4183,7 @@ tree_call(Host, Function, Args) ->
 
 tree_action(Host, Function, Args) ->
     ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
-    Fun = fun() -> tree_call(Host, Function, Args) end),
+    Fun = fun() -> tree_call(Host, Function, Args) end,
     case catch ejabberd_odbc:sql_bloc(odbc_conn(Host), Fun) of
     {atomic, Result} -> 
 	Result;
