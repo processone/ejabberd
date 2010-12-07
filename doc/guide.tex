@@ -824,7 +824,7 @@ The available modules, their purpose and the options allowed by each one are:
   \titem{\texttt{ejabberd\_http}}
     Handles incoming HTTP connections.\\
     Options: \texttt{captcha}, \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
-    \texttt{request\_handlers}, \texttt{tls}, \texttt{web\_admin}\\
+    \texttt{request\_handlers}, \texttt{tls}, \texttt{trusted\_proxies}, \texttt{web\_admin}\\
 \end{description}
 
 
@@ -946,6 +946,10 @@ This is a detailed description of each option allowed by the listening modules:
     which can be enabled in \ejabberd{} with the option \term{starttls}.
     If this option is set, you should also set the \option{certfile} option.
     The option \term{tls} can also be used in \term{ejabberd\_http} to support HTTPS.
+  \titem{\{trusted\_proxies, all | [IpString]\}} \ind{options!trusted\_proxies}
+    Specify what proxies are trusted when an HTTP request contains the header \term{X-Forwarded-For}
+    You can specify \term{all} to allow all proxies, or specify a list of IPs in string format.
+    The default value is: \term{["127.0.0.1"]}
   \titem{web\_admin} \ind{options!web\_admin}\ind{web admin}This option
     enables the Web Admin for \ejabberd{} administration which is available
     at \verb|http://server:port/admin/|. Login and password are the username and
