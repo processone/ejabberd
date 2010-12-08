@@ -945,9 +945,10 @@ This is a detailed description of each option allowed by the listening modules:
 
 There are some additional global options that can be specified in the ejabberd configuration file (outside \term{listen}):
 \begin{description}
-  \titem{\{s2s\_use\_starttls, true|false\}}
-  \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines whether to
-  use STARTTLS for s2s connections.
+  \titem{\{s2s\_use\_starttls, false|optional|required\}}
+  \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines if 
+  s2s connections can optionally use STARTTLS encryption, or if it must be required.
+  The default value is to not use STARTTLS: \term{false}.
   \titem{\{s2s\_certfile, Path\}} \ind{options!s2s\_certificate}Full path to a
   file containing a SSL certificate.
   \titem{\{domain\_certfile, Domain, Path\}} \ind{options!domain\_certfile}
@@ -1046,7 +1047,7 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
                                        ]}
  ]
 }.
-{s2s_use_starttls, true}.
+{s2s_use_starttls, optional}.
 {s2s_certfile, "/etc/ejabberd/server.pem"}.
 {domain_certfile, "example.com", "/etc/ejabberd/example_com.pem"}.
 {outgoing_s2s_options, [ipv4, ipv6], 10000}.
@@ -1058,7 +1059,7 @@ In this example, the following configuration defines that:
   on port 5223 (SSL, IP 192.168.0.1 and fdca:8ab6:a243:75ef::1) and denied
   for the user called `\term{bad}'.
 \item s2s connections are listened for on port 5269 (all IPv4 addresses) 
-  with STARTTLS for secured traffic enabled. 
+  with STARTTLS for secured traffic required. 
   Incoming and outgoing connections of remote XMPP servers are denied,
   only two servers can connect: "jabber.example.org" and "example.com".
 \item Port 5280 is serving the Web Admin and the HTTP Polling service
@@ -1139,7 +1140,7 @@ In this example, the following configuration defines that:
                             {service_check_from, false}]}
  ]
 }.
-{s2s_use_starttls, true}.
+{s2s_use_starttls, required}.
 {s2s_certfile, "/path/to/ssl.pem"}.
 {s2s_default_policy, deny}.
 {{s2s_host,"jabber.example.org"}, allow}.
