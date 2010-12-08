@@ -154,11 +154,13 @@ stop_connection(Pid) ->
 init([From, Server, Type]) ->
     process_flag(trap_exit, true),
     ?DEBUG("started: ~p", [{From, Server, Type}]),
-    TLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
-	      undefined ->
-		  false;
-	      UseStartTLS ->
-		  UseStartTLS
+    {TLS, TLSRequired} = case ejabberd_config:get_local_option(s2s_use_starttls) of
+	      UseTls when (UseTls==undefined) or (UseTls==false) ->
+		  {false, false};
+	      UseTls when (UseTls==true) or (UseTls==optional) ->
+		  {true, false};
+	      required ->
+		  {true, true}
 	  end,
     UseV10 = TLS,
     TLSOpts = case ejabberd_config:get_local_option(s2s_certfile) of
@@ -177,6 +179,7 @@ init([From, Server, Type]) ->
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, open_socket, #state{use_v10 = UseV10,
 			     tls = TLS,
+			     tls_required = TLSRequired,
 			     tls_options = TLSOpts,
 			     queue = queue:new(),
 			     myname = From,
@@ -351,8 +354,8 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
     case is_verify_res(El) of
 	{result, To, From, Id, Type} ->
 	    ?DEBUG("recv result: ~p", [{From, To, Id, Type}]),
-	    case Type of
-		"valid" ->
+	    case {Type, StateData#state.tls_enabled, StateData#state.tls_required} of
+		{"valid", Enabled, Required} when (Enabled==true) or (Required==false) ->
 		    send_queue(StateData, StateData#state.queue),
 		    ?INFO_MSG("Connection established: ~s -> ~s with TLS=~p",
 			      [StateData#state.myname, StateData#state.server, StateData#state.tls_enabled]),
@@ -361,6 +364,11 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 					StateData#state.server]),
 		    {next_state, stream_established,
 		     StateData#state{queue = queue:new()}};
+		{"valid", Enabled, Required} when (Enabled==false) and (Required==true) ->
+		    %% TODO: bounce packets
+		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (TLS is required but unavailable)",
+			      [StateData#state.myname, StateData#state.server]),
+		    {stop, normal, StateData};
 		_ ->
 		    %% TODO: bounce packets
 		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid dialback key)",
