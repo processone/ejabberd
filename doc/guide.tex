@@ -2623,6 +2623,7 @@ and can store the tables in the configured backend:
 
 \begin{itemize}
 \item \ahrefloc{modlast}{\modlast{}}: Last connection date and time
+\item \ahrefloc{modmuc}{\modmuc{}}: Online rooms, room options, affiliations and nick registrations.
 \item \ahrefloc{modoffline}{\modoffline{}}: Offline messages
 \item \ahrefloc{modprivacy}{\modprivacy{}}: User rules for blocking communications
 \item \ahrefloc{modprivate}{\modprivate{}}: Private XML storage
@@ -3102,6 +3103,7 @@ on an available node on first connection attempt.
 Module options:
 \begin{description}
 \hostitem{conference}
+\backend{\term{muc\_online\_room, muc\_registered, muc\_room\_affiliation, and muc\_room\_opt}}
 \titem{\{access, AccessName\}} \ind{options!access}You can specify who is allowed to use
   the Multi-User Chat service. By default everyone is allowed to use it.
 \titem{\{access\_create, AccessName\}} \ind{options!access\_create}To configure who is
