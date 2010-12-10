@@ -222,8 +222,9 @@ open_socket(init, StateData) ->
 	      StateData#state.server,
 	      ?NS_JABBER_SERVER,
 	      Version),
+	    OpeningWithFrom = exmpp_stream:set_initiating_entity(Opening, StateData#state.myname),
 	    send_element(NewStateData,
-	      exmpp_stream:set_dialback_support(Opening)),
+	      exmpp_stream:set_dialback_support(OpeningWithFrom)),
 	    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 	{error, _Reason} ->
 	    ?INFO_MSG("s2s connection: ~s -> ~s (remote server not found)",
@@ -568,8 +569,9 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 	      StateData#state.server,
 	      ?NS_JABBER_SERVER,
 	      "1.0"),
+	    OpeningWithFrom = exmpp_stream:set_initiating_entity(Opening, StateData#state.myname),
 	    send_element(StateData,
-	      exmpp_stream:set_dialback_support(Opening)),
+	      exmpp_stream:set_dialback_support(OpeningWithFrom)),
 	    {next_state, wait_for_stream,
 	     StateData#state{streamid = new_id(),
 			     authenticated = true
@@ -632,8 +634,9 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 	      StateData#state.server,
 	      ?NS_JABBER_SERVER,
 	      "1.0"),
+	    OpeningWithFrom = exmpp_stream:set_initiating_entity(Opening, StateData#state.myname),
 	    send_element(NewStateData,
-	      exmpp_stream:set_dialback_support(Opening)),
+	      exmpp_stream:set_dialback_support(OpeningWithFrom)),
 	    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 	_ ->
 	    send_element(StateData, exmpp_stream:error('bad-format')),
