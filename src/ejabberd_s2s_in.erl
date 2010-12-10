@@ -74,6 +74,7 @@
 		shaper,
 		tls = false,
 		tls_enabled = false,
+		tls_required = false,
 		tls_options = [],
 		server,
 		authenticated = false,
@@ -151,12 +152,14 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
-    StartTLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
-		   undefined ->
-		       false;
-		   UseStartTLS ->
-		       UseStartTLS
-	       end,
+    {StartTLS, TLSRequired} = case ejabberd_config:get_local_option(s2s_use_starttls) of
+             UseTls when (UseTls==undefined) or (UseTls==false) ->
+                 {false, false};
+             UseTls when (UseTls==true) or (UseTls==optional) ->
+                 {true, false};
+             required ->
+                 {true, true}
+         end,
     TLSOpts = case ejabberd_config:get_local_option(s2s_certfile) of
 		  undefined ->
 		      [];
@@ -171,6 +174,7 @@ init([{SockMod, Socket}, Opts]) ->
 	    shaper = Shaper,
 	    tls = StartTLS,
 	    tls_enabled = false,
+	    tls_required = TLSRequired,
 	    tls_options = TLSOpts,
 	    timer = Timer}}.
 
@@ -214,9 +218,12 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    StartTLS = if
 			   StateData#state.tls_enabled ->
 			       [];
-			   true ->
-			       [{xmlelement, "starttls",
-				 [{"xmlns", ?NS_TLS}], []}]
+			   (not StateData#state.tls_enabled) and (not StateData#state.tls_required) ->
+			       [{xmlelement, "starttls", [{"xmlns", ?NS_TLS}], []}];
+			   (not StateData#state.tls_enabled) and StateData#state.tls_required ->
+			       [{xmlelement, "starttls", [{"xmlns", ?NS_TLS}],
+						[{xmlelement, "required", [], []}]
+					   }]
 		       end,
 	    send_element(StateData,
 			 {xmlelement, "stream:features", [],
