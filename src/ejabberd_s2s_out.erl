@@ -108,6 +108,7 @@
 	"xmlns:stream='http://etherx.jabber.org/streams' "
 	"xmlns='jabber:server' "
 	"xmlns:db='jabber:server:dialback' "
+	"from='~s' "
 	"to='~s'~s>"
        ).
 
@@ -227,7 +228,7 @@ open_socket(init, StateData) ->
 					   tls_enabled = false,
 					   streamid = new_id()},
 	    send_text(NewStateData, io_lib:format(?STREAM_HEADER,
-						  [StateData#state.server,
+						  [StateData#state.myname, StateData#state.server,
 						   Version])),
 	    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 	{error, _Reason} ->
@@ -561,7 +562,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 		    ejabberd_socket:reset_stream(StateData#state.socket),
 		    send_text(StateData,
 			      io_lib:format(?STREAM_HEADER,
-					    [StateData#state.server,
+					    [StateData#state.myname, StateData#state.server,
 					     " version='1.0'"])),
 		    {next_state, wait_for_stream,
 		     StateData#state{streamid = new_id(),
@@ -646,7 +647,7 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 						  },
 		    send_text(NewStateData,
 			      io_lib:format(?STREAM_HEADER,
-					    [StateData#state.server,
+					    [StateData#state.myname, StateData#state.server,
 					     " version='1.0'"])),
 		    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 		_ ->
