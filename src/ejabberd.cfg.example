@@ -170,7 +170,7 @@
 
 %%
 %% s2s_use_starttls: Enable STARTTLS + Dialback for S2S connections.
-%% Allowed values are: false optional required
+%% Allowed values are: false optional required required_trusted
 %% You must specify a certificate file.
 %%
 %%{s2s_use_starttls, optional}.

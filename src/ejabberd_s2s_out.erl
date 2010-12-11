@@ -160,7 +160,7 @@ init([From, Server, Type]) ->
 		  {false, false};
 	      UseTls when (UseTls==true) or (UseTls==optional) ->
 		  {true, false};
-	      required ->
+	      UseTls when (UseTls==required) or (UseTls==required_trusted) ->
 		  {true, true}
 	  end,
     UseV10 = TLS,

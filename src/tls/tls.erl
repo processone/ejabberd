@@ -39,6 +39,7 @@
 	 close/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
+	 get_cert_verify_string/2,
 	 test/0]).
 
 %% Internal exports, call-back functions.
@@ -63,8 +64,10 @@
 
 -ifdef(SSL40).
 -define(CERT_DECODE, {public_key, pkix_decode_cert, plain}).
+-define(CERT_SELFSIGNED, {public_key, pkix_is_self_signed}).
 -else.
 -define(CERT_DECODE, {ssl_pkix, decode_cert, [pkix]}).
+-define(CERT_SELFSIGNED, {erlang, is_atom}). %% Dummy function for old OTPs
 -endif.
 
 
@@ -243,7 +246,9 @@ get_peer_certificate(#tlssock{tlsport = Port}) ->
 	<<0, BCert/binary>> ->
 	    {CertMod, CertFun, CertSecondArg} = ?CERT_DECODE,
 	    case catch apply(CertMod, CertFun, [BCert, CertSecondArg]) of
-		{ok, Cert} ->
+		{ok, Cert} -> %% returned by R13 and older
+		    {ok, Cert};
+		{'Certificate', _, _, _} = Cert ->
 		    {ok, Cert};
 		_ ->
 		    error
@@ -311,3 +316,47 @@ loop(Port, Socket) ->
     end.
 
 
+get_cert_verify_string(CertVerifyRes, Cert) ->
+    BCert = public_key:pkix_encode('Certificate', Cert, plain),
+    {CertMod, CertFun} = ?CERT_SELFSIGNED,
+    IsSelfsigned = apply(CertMod, CertFun, [BCert]),
+    case {CertVerifyRes, IsSelfsigned} of
+	{21, true} -> "self-signed certificate";
+	_ -> cert_verify_code(CertVerifyRes)
+    end.
+
+%% http://www.openssl.org/docs/apps/verify.html
+cert_verify_code(0) -> "ok";
+cert_verify_code(2) -> "unable to get issuer certificate";
+cert_verify_code(3) -> "unable to get certificate CRL";
+cert_verify_code(4) -> "unable to decrypt certificate's signature";
+cert_verify_code(5) -> "unable to decrypt CRL's signature";
+cert_verify_code(6) -> "unable to decode issuer public key";
+cert_verify_code(7) -> "certificate signature failure";
+cert_verify_code(8) -> "CRL signature failure";
+cert_verify_code(9) -> "certificate is not yet valid";
+cert_verify_code(10) -> "certificate has expired";
+cert_verify_code(11) -> "CRL is not yet valid";
+cert_verify_code(12) -> "CRL has expired";
+cert_verify_code(13) -> "format error in certificate's notBefore field";
+cert_verify_code(14) -> "format error in certificate's notAfter field";
+cert_verify_code(15) -> "format error in CRL's lastUpdate field";
+cert_verify_code(16) -> "format error in CRL's nextUpdate field";
+cert_verify_code(17) -> "out of memory";
+cert_verify_code(18) -> "self signed certificate";
+cert_verify_code(19) -> "self signed certificate in certificate chain";
+cert_verify_code(20) -> "unable to get local issuer certificate";
+cert_verify_code(21) -> "unable to verify the first certificate";
+cert_verify_code(22) -> "certificate chain too long";
+cert_verify_code(23) -> "certificate revoked";
+cert_verify_code(24) -> "invalid CA certificate";
+cert_verify_code(25) -> "path length constraint exceeded";
+cert_verify_code(26) -> "unsupported certificate purpose";
+cert_verify_code(27) -> "certificate not trusted";
+cert_verify_code(28) -> "certificate rejected";
+cert_verify_code(29) -> "subject issuer mismatch";
+cert_verify_code(30) -> "authority and subject key identifier mismatch";
+cert_verify_code(31) -> "authority and issuer serial number mismatch";
+cert_verify_code(32) -> "key usage does not include certificate signing";
+cert_verify_code(50) -> "application verification failure";
+cert_verify_code(X) -> "Unknown OpenSSL error code: " ++ integer_to_list(X).
