@@ -38,7 +38,8 @@
 	 http_put/7,
 	 http_get/2,
 	 prepare_response/4,
-	 process_request/2]).
+	 process_request/2,
+     make_sid/0]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
