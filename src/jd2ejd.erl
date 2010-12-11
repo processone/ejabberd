@@ -154,7 +154,7 @@ xdb_data(User, Server, #xmlel{ns = NS} = El) ->
 				iq_ns = ?NS_JABBER_CLIENT,
 				payload = #xmlel{name = 'query', children =
 					  [exmpp_xml:remove_attribute(
-					     exmpp_xml:remove_attribute(El, "xdbns"), "j_private_flag")]}});
+					     exmpp_xml:remove_attribute(El, <<"xdbns">>), <<"j_private_flag">>)]}});
 		_ ->
 		    ?DEBUG("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS])
 	    end,

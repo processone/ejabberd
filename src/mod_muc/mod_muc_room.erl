@@ -3665,7 +3665,7 @@ send_decline_invitation({Packet, XEl, DEl = #xmlel{name='decline'}, ToJID},
                             RoomJID, FromJID) ->
     FromString = exmpp_jid:to_binary(FromJID),
 
-    DEl1 = exmpp_xml:remove_attribute(DEl, 'to'),
+    DEl1 = exmpp_xml:remove_attribute(DEl, <<"to">>),
     DEl2 = exmpp_xml:set_attribute(DEl1, <<"from">>,FromString),
     XEl2 = replace_subelement(XEl,DEl2),
     Packet2 = replace_subelement(Packet,XEl2),
