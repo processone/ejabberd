@@ -937,8 +937,8 @@ prepare_outpacket_response(Sess, _Rid, OutPacket, false) ->
     end;
 %% Handle a new session along with its output payload
 prepare_outpacket_response(#http_bind{id=Sid, wait=Wait, 
-				      hold=Hold, to=To}=Sess,
-			   Rid, OutPacket, true) ->    
+				      hold=Hold, to=To}=_Sess,
+			   _Rid, OutPacket, true) ->    
     case OutPacket of
 	[{xmlstreamstart, _, OutAttrs} | Els] ->
 	    AuthID = xml:get_attr_s("id", OutAttrs),
