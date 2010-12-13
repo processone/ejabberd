@@ -33,8 +33,10 @@
 {"Backup to File at ","ファイルにバックアップ"}.
 {"Bad format","不正なフォーマット"}.
 {"Birthday","誕生日"}.
+{"CAPTCHA web page","キャプチャWEBページ"}.
 {"Change Password","パスワードの変更"}.
 {"Change User Password","パスワードを変更"}.
+{"Characters not allowed:","許可されていない文字:"}.
 {"Chatroom configuration modified","チャットルームの設定を変更しました"}.
 {"Chatroom is created","チャットルームは作られました。"}.
 {"Chatroom is destroyed","チャットルームは削除されました。"}.
@@ -69,6 +71,7 @@
 {"Description:","詳細:"}.
 {"Disc only copy","ディスクだけのコピー"}.
 {"Displayed Groups:","表示グループ"}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","パスワードは誰にも教えないようにして下さい。Jabberサーバーの管理者があなたにパスワードを尋ねることはありません。"}.
 {"Dump Backup to Text File at ","テキストファイルにバックアップ"}.
 {"Dump to Text File","テキストファイルに出力"}.
 {"Edit Properties","プロパティの編集"}.
@@ -120,6 +123,7 @@
 {"has been kicked because the room has been changed to members-only","はチャットルームのメンバー制限によりキックされました"}.
 {" has set the subject to: "," は件名を設定しました: "}.
 {"Host","ホスト"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","ここにキャプチャ画像が表示されない場合、WEBページを参照してください。"}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","別のポートやパスワード、文字エンコーディングを使用したい場合、'{\"irc server\", \"encoding\", port, \"password\"}' という形式のリストを入力して下さい。デフォルトでエンコーディングは \"~s\" を使用し、ポートは ~p、パスワードは空になっています。"}.
 {"Import Directory","ディレクトリインポート"}.
 {"Import File","ファイルかインポート"}.
@@ -145,6 +149,7 @@
 {"It is not allowed to send private messages of type \"groupchat\"","種別が\"groupchat\" であるプライベートメッセージは許可されていません"}.
 {"It is not allowed to send private messages to the conference","カンファレンスルームにプライベートメッセージを送信することは出来ません"}.
 {"It is not allowed to send private messages","プライベートメッセージを送信することは許可されませんでした"}.
+{"Jabber Account Registration","Jabberアカウント登録"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s は無効です"}.
 {"January","1月"}.
@@ -177,6 +182,7 @@
 {"May","5月"}.
 {"Members:","メンバー:"}.
 {"Membership is required to enter this room","チャットルームに入るにはメンバーでなければなりません"}.
+{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","パスワードは記憶するか、紙に書いて安全な場所に保管して下さい。もしあなたがパスワードを忘れてしまった場合、Jabberではパスワードのリカバリを自動的に行うことは出来ません。"}.
 {"Memory","メモリ"}.
 {"Message body","本文"}.
 {"Middle Name","ミドルネーム"}.
@@ -190,6 +196,7 @@
 {"Name","名"}.
 {"Name:","名前: "}.
 {"Never","無し"}.
+{"New Password:","新しいパスワード:"}.
 {"Nickname","ニックネーム"}.
 {"Nickname Registration at ","ニックネーム登録: "}.
 {"Nickname ~s does not exist in the room","ニックネーム ~s はこのチャットルームに居ません"}.
@@ -214,6 +221,7 @@
 {"Offline Messages:","オフラインメッセージ"}.
 {"Offline Messages","オフラインメッセージ"}.
 {"OK","OK"}.
+{"Old Password:","古いパスワード:"}.
 {"Online","オンライン"}.
 {"Online Users:","オンラインユーザー:"}.
 {"Online Users","オンラインユーザー"}.
@@ -234,6 +242,7 @@
 {"Password:","パスワード"}.
 {"Password","パスワード"}.
 {"Password ~b","パスワード ~b"}.
+{"Password Verification:","パスワード(確認):"}.
 {"Password Verification","パスワード(確認)"}.
 {"Path to Dir","ディレクトリのパス"}.
 {"Path to File","ファイルパス"}.
@@ -257,8 +266,10 @@
 {"Raw","Raw"}.
 {"Really delete message of the day?","本当にお知らせメッセージを削除しますか？"}.
 {"Recipient is not in the conference room","受信者がカンファレンスルームに居ません"}.
+{"Register a Jabber account","Jabberアカウントを登録"}.
 {"Registered Users:","登録ユーザー:"}.
 {"Registered Users","登録ユーザー"}.
+{"Register","登録"}.
 {"Registration in mod_irc for ","mod_irc での登録: "}.
 {"Remote copy","リモートコピー"}.
 {"Remove All Offline Messages","すべてのオフラインメッセージを削除します"}.
@@ -274,7 +285,7 @@
 {"Restore binary backup immediately:","直ちにバイナリバックアップからリストア"}.
 {"Restore plain text backup immediately:","直ちにプレーンテキストバックアップからリストア"}.
 {"Room Configuration","チャットルーム設定"}.
-{"Room creation is denied by service policy","サービスポリシーにっよってチャットルームの作成が禁止されています"}.
+{"Room creation is denied by service policy","サービスポリシーによってチャットルームの作成が禁止されています"}.
 {"Room description","チャットルームの詳細"}.
 {"Room Occupants","居住者の数"}.
 {"Room title","チャットルームタイトル"}.
@@ -294,6 +305,7 @@
 {"Send announcement to all users on all hosts","アナウンスを全ホストのユーザーに送信"}.
 {"Send announcement to all users","アナウンスを全てのユーザーに送信"}.
 {"September","9月"}.
+{"Server:","サーバー:"}.
 {"Server ~b","サーバー ~b"}.
 {"Set message of the day and send to online users","お知らせメッセージを設定し、オンラインユーザーに送信する"}.
 {"Set message of the day on all hosts and send to online users","全ホストのお知らせメッセージを設定し、オンラインユーザーに送信する"}.
@@ -302,6 +314,7 @@
 {"Show Ordinary Table","Ordinaryテーブルを表示"}.
 {"Shut Down Service","サービスを停止"}.
 {"~s invites you to the room ~s","~s はあなたをチャットルーム ~s に招待しています"}.
+{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Jabberクライアントはコンピューターにあなたのパスワード記憶出来ます。この機能を使用する場合コンピューターが安全であることを確認して下さい。"}.
 {"Specify the access model","アクセスモデルを設定する"}.
 {"Specify the event message type","イベントメッセージ種別を設定"}.
 {"Specify the publisher model","公開モデルを指定する"}.
@@ -327,8 +340,17 @@
 {"That nickname is already in use by another occupant","ニックネームは既に他の移住者によって使用されています"}.
 {"That nickname is registered by another person","ニックネームは他の人によって登録されています"}.
 {"The captcha is valid.","キャプチャは有効です。"}.
+{"The CAPTCHA verification has failed","キャプチャ検証は失敗しました"}.
 {"The collections with which a node is affiliated","提携されたノードの集合です"}.
 {"the password is","パスワードは"}.
+{"The password is too weak","このパスワードは単純過ぎます"}.
+{"The password of your Jabber account was successfully changed.","Jabberアカウントのパスワード変更に成功しました。"}.
+{"There was an error changing the password: ","パスワードの変更中にエラーが発生しました: "}.
+{"There was an error creating the account: ","アカウントの作成中にエラーが発生しました: "}.
+{"There was an error deleting the account: ","アカウントの削除中にエラーが発生しました: "}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"}.
+{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","ここはJabberサーバーにアカウント作成を行うページです。あなたのJID(JabberID)は username@server の様な形式に成ります。注意事項通り、正しく項目に記入して下さい。"}.
+{"This page allows to unregister a Jabber account in this Jabber server.","ここはサーバーのJabberアカウントの登録削除を行うページです。"}.
 {"This participant is kicked from the room because he sent an error message to another participant","他の参加者にエラーメッセージを送信したため、この参加者はキックされました"}.
 {"This participant is kicked from the room because he sent an error message","エラーメッセージを送信したため、この参加者はキックされました"}.
 {"This participant is kicked from the room because he sent an error presence","エラープレゼンスを送信したため、この参加者はキックされました"}.
@@ -344,8 +366,11 @@
 {"Transactions Logged:","トランザクションのログ: "}.
 {"Transactions Restarted:","トランザクションの再起動:"}.
 {"Tuesday","火曜日"}.
-{"Unable to generate a captcha","チャプタを生成することが出来ません。"}.
+{"Unable to generate a captcha","キャプチャを生成することが出来ません。"}.
+{"Unable to generate a CAPTCHA","キャプチャを生成出来ませんでした"}.
 {"Unauthorized","認証されていません"}.
+{"Unregister a Jabber account","Jabberアカウントの登録解除"}.
+{"Unregister","登録解除"}.
 {"Update message of the day (don't send)","お知らせメッセージを更新する(送信しない)"}.
 {"Update message of the day on all hosts (don't send)","全ホストのお知らせメッセージを更新する"}.
 {"Update plan","更新計画"}.
@@ -357,6 +382,7 @@
 {"User ","ユーザー "}.
 {"User","ユーザー"}.
 {"User Management","ユーザー管理"}.
+{"Username:","ユーザー名:"}.
 {"Users","ユーザー"}.
 {"Users are not allowed to register accounts so quickly","早すぎるユーザーアカウント登録は許可されていません"}.
 {"Users Last Activity","ユーザーの活動履歴"}.
@@ -367,11 +393,16 @@
 {"Wednesday","水曜日"}.
 {"When to send the last published item","最後の公開アイテムを送信するタイミングで"}.
 {"Whether to allow subscriptions","購読を許可するかどうか"}.
+{"You can later change your password using a Jabber client.","あなたは後からJabberクライアントを使用してパスワードを変更する事が出来ます。"}.
 {"You have been banned from this room","あなたはチャットルームからバンされています"}.
 {"You must fill in field \"Nickname\" in the form","フォームの\"ニックネーム\"フィールドを入力する必要があります"}.
+{"You need a client that supports x:data and CAPTCHA to register","登録を行うにはクライアントがx:dataとキャプチャをサポートする必要があります"}.
+{"You need a client that supports x:data to register the nickname","ニックネームを登録するにはクライアントが x:data をサポートする必要があります"}.
 {"You need an x:data capable client to configure mod_irc settings","mod_irc の設定にはクライアントが x:data をサポートする必要があります"}.
 {"You need an x:data capable client to configure room","チャットルームを設定するにはにはクライアントが x:data をサポートする必要があります"}.
-{"You need an x:data capable client to register nickname","ニックネームを登録するにはクライアントが x:data をサポートする必要があります"}.
 {"You need an x:data capable client to search","検索を行うためにはクライアントが x:data をサポートする必要があります"}.
+{"Your active privacy list has denied the routing of this stanza.","あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"}.
 {"Your contact offline message queue is full. The message has been discarded.","宛先のオフラインメッセージキューが一杯です。このメッセージは破棄されます。"}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","~s 宛のメッセージはブロックされています、解除するためにはこちらを見てください ~s"}.
+{"Your Jabber account was successfully created.","Jabberアカウントの作成に成功しました。"}.
+{"Your Jabber account was successfully deleted.","Jabberアカウントの削除に成功しました。"}.
+{"Your messages to ~s are being blocked. To unblock them, visit ~s","~s 宛のメッセージはブロックされています、解除するにはこちらを見てください ~s"}.

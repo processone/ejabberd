@@ -364,6 +364,8 @@ get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == "iq" ->
 get_iq_namespace(_) ->
     "".
 
+%% @spec (xmlelement()) -> iq() | reply | invalid | not_iq
+
 iq_query_info(El) ->
     iq_info_internal(El, request).
 
@@ -454,6 +456,8 @@ parse_xdata_submit(El) ->
     {xmlelement, _Name, Attrs, Els} = El,
     case xml:get_attr_s("type", Attrs) of
 	"submit" ->
+	    lists:reverse(parse_xdata_fields(Els, []));
+	"form" -> %% This is a workaround to accept Psi's wrong forms
 	    lists:reverse(parse_xdata_fields(Els, []));
 	_ ->
 	    invalid
@@ -557,7 +561,7 @@ rsm_encode_count(Count, Arr)->
 i2l(I) when is_integer(I) -> integer_to_list(I);
 i2l(L) when is_list(L)    -> L.
 
-%% Timezone = utc | {Hours, Minutes}
+%% Timezone = utc | {Sign::string(), {Hours, Minutes}} | {Hours, Minutes}
 %% Hours = integer()
 %% Minutes = integer()
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
@@ -568,6 +572,8 @@ timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
     Timezone_string =
 	case Timezone of
 	    utc -> "Z";
+	    {Sign, {TZh, TZm}} ->
+		io_lib:format("~s~2..0w:~2..0w", [Sign, TZh, TZm]);
 	    {TZh, TZm} ->
 		Sign = case TZh >= 0 of
 			   true -> "+";
@@ -793,5 +799,8 @@ e(X) ->                     exit({bad_encode_base64_token, X}).
 %% Convert Erlang inet IP to list
 ip_to_list({IP, _Port}) ->
     ip_to_list(IP);
+ip_to_list({_,_,_,_,_,_,_,_} = Ipv6Address) ->
+    inet_parse:ntoa(Ipv6Address);
+%% This function clause could use inet_parse too:
 ip_to_list({A,B,C,D}) ->
     lists:flatten(io_lib:format("~w.~w.~w.~w",[A,B,C,D])).

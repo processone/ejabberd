@@ -84,16 +84,16 @@
 %% API definition
 %% ================
 
-%% @spec (Host, ServerHost, Opts) -> any()
-%%	 Host = mod_pubsub:host()
-%%	 ServerHost = mod_pubsub:host()
-%%	 Opts = list()
+%% @spec (Host, ServerHost, Options) -> ok
+%%	 Host       = string()
+%%	 ServerHost = string()
+%%	 Options    = [{atom(), term()}]
 %% @doc <p>Called during pubsub modules initialisation. Any pubsub plugin must
 %% implement this function. It can return anything.</p>
 %% <p>This function is mainly used to trigger the setup task necessary for the
 %% plugin. It can be used for example by the developer to create the specific
 %% module database schema if it does not exists yet.</p>
-init(_Host, _ServerHost, _Opts) ->
+init(_Host, _ServerHost, _Options) ->
     pubsub_subscription:init(),
     mnesia:create_table(pubsub_state,
 			[{disc_copies, [node()]},
@@ -109,16 +109,16 @@ init(_Host, _ServerHost, _Opts) ->
     end,
     ok.
 
-%% @spec (Host, ServerHost) -> any()
-%%	 Host = mod_pubsub:host()
-%%	 ServerHost = host()
+%% @spec (Host, ServerHost) -> ok
+%%	 Host       = string()
+%%	 ServerHost = string()
 %% @doc <p>Called during pubsub modules termination. Any pubsub plugin must
 %% implement this function. It can return anything.</p>
 terminate(_Host, _ServerHost) ->
     ok.
 
-%% @spec () -> [Option]
-%%	 Option = mod_pubsub:nodeOption()
+%% @spec () -> Options
+%%	 Options = [mod_pubsub:nodeOption()]
 %% @doc Returns the default pubsub node options.
 %% <p>Example of function return value:</p>
 %%	```
@@ -152,7 +152,8 @@ options() ->
      {deliver_notifications, true},
      {presence_based_delivery, false}].
 
-%% @spec () -> []
+%% @spec () -> Features
+%%	 Features = [string()]
 %% @doc Returns the node features
 features() ->
     ["create-nodes",
@@ -178,13 +179,14 @@ features() ->
      "subscription-options"
     ].
 
-%% @spec (Host, ServerHost, Node, ParentNode, Owner, Access) -> bool()
-%%	 Host = mod_pubsub:host()
-%%	 ServerHost = mod_pubsub:host()
-%%	 Node = mod_pubsub:pubsubNode()
-%%	 ParentNode = mod_pubsub:pubsubNode()
-%%	 Owner = mod_pubsub:jid()
-%%	 Access = all | atom()
+%% @spec (Host, ServerHost, NodeId, ParentNodeId, Owner, Access) -> {result, Allowed}
+%%	 Host         = mod_pubsub:hostPubsub()
+%%	 ServerHost   = string()
+%%	 NodeId       = mod_pubsub:nodeId()
+%%	 ParentNodeId = mod_pubsub:nodeId()
+%%	 Owner        = mod_pubsub:jid()
+%%	 Access       = all | atom()
+%%   Allowed      = boolean()
 %% @doc Checks if the current user has the permission to create the requested node
 %% <p>In {@link node_default}, the permission is decided by the place in the
 %% hierarchy where the user is creating the node. The access parameter is also
@@ -195,9 +197,9 @@ features() ->
 %% <p>PubSub plugins can redefine the PubSub node creation rights as they
 %% which. They can simply delegate this check to the {@link node_default}
 %% module by implementing this function like this:
-%% ```check_create_user_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
-%%	   node_default:check_create_user_permission(Host, ServerHost, Node, ParentNode, Owner, Access).'''</p>
-create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
+%% ```check_create_user_permission(Host, ServerHost, NodeId, ParentNodeId, Owner, Access) ->
+%%	   node_default:check_create_user_permission(Host, ServerHost, NodeId, ParentNodeId, Owner, Access).'''</p>
+create_node_permission(Host, ServerHost, NodeId, _ParentNodeId, Owner, Access) ->
     LOwner = jlib:jid_tolower(Owner),
     {User, Server, _Resource} = LOwner,
     Allowed = case LOwner of
@@ -206,7 +208,7 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
 	_ ->
 	    case acl:match_rule(ServerHost, Access, LOwner) of
 		allow ->
-		    case node_to_path(Node) of
+		    case node_to_path(NodeId) of
 			["home", Server, User | _] -> true;
 			_ -> false
 		    end;
@@ -216,20 +218,21 @@ create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
     end,
     {result, Allowed}.
 
-%% @spec (NodeId, Owner) ->
-%%		  {result, Result} | exit
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Owner = mod_pubsub:jid()
+%% @spec (NodeIdx, Owner) -> {result, {default, broadcast}} 
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 Owner   = mod_pubsub:jid()
 %% @doc <p></p>
-create_node(NodeId, Owner) ->
+create_node(NodeIdx, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-    set_state(#pubsub_state{stateid = {OwnerKey, NodeId}, affiliation = owner}),
+    set_state(#pubsub_state{stateid = {OwnerKey, NodeIdx}, affiliation = owner}),
     {result, {default, broadcast}}.
 
-%% @spec (Removed) -> ok
-%%	 Removed = [mod_pubsub:pubsubNode()]
+%% @spec (Nodes) -> {result, {default, broadcast, Reply}}
+%%	 Nodes = [mod_pubsub:pubsubNode()]
+%%	 Reply = [{mod_pubsub:pubsubNode(),
+%%            [{mod_pubsub:ljid(), [{mod_pubsub:subscription(), mod_pubsub:subId()}]}]}]
 %% @doc <p>purge items of deleted nodes after effective deletion.</p>
-delete_node(Removed) ->
+delete_node(Nodes) ->
     Tr = fun(#pubsub_state{stateid = {J, _}, subscriptions = Ss}) ->
 		 lists:map(fun(S) ->
 				   {J, S}
@@ -244,11 +247,23 @@ delete_node(Removed) ->
 		    del_state(NodeId, LJID)
 	    end, States),
 	    {PubsubNode, lists:flatmap(Tr, States)}
-	end, Removed),
+	end, Nodes),
     {result, {default, broadcast, Reply}}.
 
-%% @spec (NodeId, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
-%%		 {error, Reason} | {result, Result}
+%% @spec (NodeIdx, Sender, Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) -> {error, Reason} | {result, Result}
+%%	 NodeIdx              = mod_pubsub:nodeIdx()
+%%	 Sender               = mod_pubsub:jid()
+%%	 Subscriber           = mod_pubsub:jid()
+%%	 AccessModel          = mod_pubsub:accessModel()
+%%	 SendLast             = atom()
+%%	 PresenceSubscription = boolean()
+%%	 RosterGroup          = boolean()
+%%	 Options              = [mod_pubsub:nodeOption()]
+%%	 Reason               = mod_pubsub:stanzaError()
+%%	 Result               = {result, {default, subscribed, mod_pubsub:subId()}}
+%%                        | {result, {default, subscribed, mod_pubsub:subId(), send_last}}
+%%                        | {result, {default, pending,    mod_pubsub:subId()}}
+%%
 %% @doc <p>Accepts or rejects subcription requests on a PubSub node.</p>
 %% <p>The mechanism works as follow:
 %% <ul>
@@ -280,15 +295,15 @@ delete_node(Removed) ->
 %%   to completly disable persistance.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
-subscribe_node(NodeId, Sender, Subscriber, AccessModel,
+subscribe_node(NodeIdx, Sender, Subscriber, AccessModel,
 	       SendLast, PresenceSubscription, RosterGroup, Options) ->
     SubKey = jlib:jid_tolower(Subscriber),
     GenKey = jlib:jid_remove_resource(SubKey),
     Authorized = (jlib:jid_tolower(jlib:jid_remove_resource(Sender)) == GenKey),
-    GenState = get_state(NodeId, GenKey),
+    GenState = get_state(NodeIdx, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
-	_ -> get_state(NodeId, SubKey)
+	_ -> get_state(NodeIdx, SubKey)
 	end,
     Affiliation = GenState#pubsub_state.affiliation,
     Subscriptions = SubState#pubsub_state.subscriptions,
@@ -322,7 +337,7 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 	%%	% Requesting entity is anonymous
 	%%	{error, ?ERR_FORBIDDEN};
 	true ->
-	    case pubsub_subscription:add_subscription(Subscriber, NodeId, Options) of
+	    case pubsub_subscription:add_subscription(Subscriber, NodeIdx, Options) of
 		SubId when is_list(SubId) ->
 		    NewSub = case AccessModel of
 				 authorize -> pending;
@@ -342,22 +357,21 @@ subscribe_node(NodeId, Sender, Subscriber, AccessModel,
 	    end
     end.
 
-%% @spec (NodeId, Sender, Subscriber, SubId) ->
-%%			{error, Reason} | {result, []}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Sender = mod_pubsub:jid()
+%% @spec (NodeIdx, Sender, Subscriber, SubId) ->	{error, Reason} | {result, default}
+%%	 NodeIdx    = mod_pubsub:nodeIdx()
+%%	 Sender     = mod_pubsub:jid()
 %%	 Subscriber = mod_pubsub:jid()
-%%	 SubId = mod_pubsub:subid()
-%%	 Reason = mod_pubsub:stanzaError()
+%%	 SubId      = mod_pubsub:subId()
+%%	 Reason     = mod_pubsub:stanzaError()
 %% @doc <p>Unsubscribe the <tt>Subscriber</tt> from the <tt>Node</tt>.</p>
-unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
+unsubscribe_node(NodeIdx, Sender, Subscriber, SubId) ->
     SubKey = jlib:jid_tolower(Subscriber),
     GenKey = jlib:jid_remove_resource(SubKey),
     Authorized = (jlib:jid_tolower(jlib:jid_remove_resource(Sender)) == GenKey),
-    GenState = get_state(NodeId, GenKey),
+    GenState = get_state(NodeIdx, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
-	_ -> get_state(NodeId, SubKey)
+	_ -> get_state(NodeIdx, SubKey)
 	end,
     Subscriptions = lists:filter(fun({_Sub, _SubId}) -> true;
 				     (_SubId)	 -> false
@@ -390,46 +404,48 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
 				end, SubState#pubsub_state.subscriptions),
 	    case Sub of
 		{value, S} ->
-		    delete_subscriptions(SubKey, NodeId, [S], SubState),
+		    delete_subscriptions(SubKey, NodeIdx, [S], SubState),
 		    {result, default};
 		false ->
 		    {error, ?ERR_EXTENDED(?ERR_UNEXPECTED_REQUEST_CANCEL, "not-subscribed")}
 	    end;
 	%% Asking to remove all subscriptions to the given node
 	SubId == all ->
-	    delete_subscriptions(SubKey, NodeId, Subscriptions, SubState),
+	    delete_subscriptions(SubKey, NodeIdx, Subscriptions, SubState),
 	    {result, default};
 	%% No subid supplied, but there's only one matching subscription
 	length(Subscriptions) == 1 ->
-	    delete_subscriptions(SubKey, NodeId, Subscriptions, SubState),
+	    delete_subscriptions(SubKey, NodeIdx, Subscriptions, SubState),
 	    {result, default};
 	%% No subid and more than one possible subscription match.
 	true ->
 	    {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")}
     end.
 
-delete_subscriptions(SubKey, NodeId, Subscriptions, SubState) ->
+delete_subscriptions(SubKey, NodeIdx, Subscriptions, SubState) ->
     NewSubs = lists:foldl(fun({Subscription, SubId}, Acc) ->
-	    pubsub_subscription:delete_subscription(SubKey, NodeId, SubId),
+	    pubsub_subscription:delete_subscription(SubKey, NodeIdx, SubId),
 	    Acc -- [{Subscription, SubId}]
 	end, SubState#pubsub_state.subscriptions, Subscriptions),
     case {SubState#pubsub_state.affiliation, NewSubs} of
 	{none, []} ->
 	    % Just a regular subscriber, and this is final item, so
 	    % delete the state.
-	    del_state(NodeId, SubKey);
+	    del_state(NodeIdx, SubKey);
 	_ ->
 	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
 
-%% @spec (NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
-%%		 {true, PubsubItem} | {result, Reply}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Publisher = mod_pubsub:jid()
+%% @spec (NodeIdx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
+%%		 {result, {default, broadcast, ItemIds}} | {error, Reason}
+%%	 NodeIdx      = mod_pubsub:nodeIdx()
+%%	 Publisher    = mod_pubsub:jid()
 %%	 PublishModel = atom()
-%%	 MaxItems = integer()
-%%	 ItemId = string()
-%%	 Payload = term()
+%%	 MaxItems     = integer()
+%%	 ItemId       = mod_pubsub:itemId()
+%%	 Payload      = mod_pubsub:payload()
+%%	 ItemIds      = [mod_pubsub:itemId()] | []
+%%	 Reason       = mod_pubsub:stanzaError()
 %% @doc <p>Publishes the item passed as parameter.</p>
 %% <p>The mechanism works as follow:
 %% <ul>
@@ -460,13 +476,13 @@ delete_subscriptions(SubKey, NodeId, Subscriptions, SubState) ->
 %%   to completly disable persistance.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
-publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
+publish_item(NodeIdx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
     SubKey = jlib:jid_tolower(Publisher),
     GenKey = jlib:jid_remove_resource(SubKey),
-    GenState = get_state(NodeId, GenKey),
+    GenState = get_state(NodeIdx, GenKey),
     SubState = case SubKey of
 	GenKey -> GenState;
-	_ -> get_state(NodeId, SubKey)
+	_ -> get_state(NodeIdx, SubKey)
 	end,
     Affiliation = GenState#pubsub_state.affiliation,
     Subscribed = case PublishModel of
@@ -485,18 +501,18 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	    if MaxItems > 0 ->
 		Now = now(),
 		PubId = {Now, SubKey},
-		Item = case get_item(NodeId, ItemId) of
+		Item = case get_item(NodeIdx, ItemId) of
 		       {result, OldItem} ->
 			   OldItem#pubsub_item{modification = PubId,
 					       payload = Payload};
 		       _ ->
-			   #pubsub_item{itemid = {ItemId, NodeId},
+			   #pubsub_item{itemid = {ItemId, NodeIdx},
 					creation = {Now, GenKey},
 					modification = PubId,
 					payload = Payload}
 		   end,
 		Items = [ItemId | GenState#pubsub_state.items--[ItemId]],
-		{result, {NI, OI}} = remove_extra_items(NodeId, MaxItems, Items),
+		{result, {NI, OI}} = remove_extra_items(NodeIdx, MaxItems, Items),
 		set_item(Item),
 		set_state(GenState#pubsub_state{items = NI}),
 		{result, {default, broadcast, OI}};
@@ -505,11 +521,12 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	    end
     end.
 
-%% @spec (NodeId, MaxItems, ItemIds) -> {NewItemIds,OldItemIds}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 MaxItems = integer() | unlimited
-%%	 ItemIds = [ItemId::string()]
-%%	 NewItemIds = [ItemId::string()]
+%% @spec (NodeIdx, MaxItems, ItemIds) -> {result, {NewItemIds,OldItemIds}}
+%%	 NodeIdx    = mod_pubsub:nodeIdx()
+%%	 MaxItems   = integer() | unlimited
+%%	 ItemIds    = [mod_pubsub:itemId()]
+%%	 NewItemIds = [mod_pubsub:itemId()]
+%%	 OldItemIds = [mod_pubsub:itemId()] | []
 %% @doc <p>This function is used to remove extra items, most notably when the
 %% maximum number of items has been reached.</p>
 %% <p>This function is used internally by the core PubSub module, as no
@@ -518,36 +535,36 @@ publish_item(NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 %% rules can be used.</p>
 %% <p>If another PubSub plugin wants to delegate the item removal (and if the
 %% plugin is using the default pubsub storage), it can implements this function like this:
-%% ```remove_extra_items(NodeId, MaxItems, ItemIds) ->
-%%	   node_default:remove_extra_items(NodeId, MaxItems, ItemIds).'''</p>
-remove_extra_items(_NodeId, unlimited, ItemIds) ->
+%% ```remove_extra_items(NodeIdx, MaxItems, ItemIds) ->
+%%	   node_default:remove_extra_items(NodeIdx, MaxItems, ItemIds).'''</p>
+remove_extra_items(_NodeIdx, unlimited, ItemIds) ->
     {result, {ItemIds, []}};
-remove_extra_items(NodeId, MaxItems, ItemIds) ->
+remove_extra_items(NodeIdx, MaxItems, ItemIds) ->
     NewItems = lists:sublist(ItemIds, MaxItems),
     OldItems = lists:nthtail(length(NewItems), ItemIds),
     %% Remove extra items:
-    del_items(NodeId, OldItems),
+    del_items(NodeIdx, OldItems),
     %% Return the new items list:
     {result, {NewItems, OldItems}}.
 
-%% @spec (NodeId, Publisher, PublishModel, ItemId) ->
-%%		  {error, Reason::stanzaError()} |
-%%		  {result, []}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Publisher = mod_pubsub:jid()
+%% @spec (NodeIdx, Publisher, PublishModel, ItemId) ->
+%%     {result, {default, broadcast}} | {error, Reason}
+%%	 NodeIdx      = mod_pubsub:nodeIdx()
+%%	 Publisher    = mod_pubsub:jid()
 %%	 PublishModel = atom()
-%%	 ItemId = string()
+%%	 ItemId       = mod_pubsub:itemId()
+%%   Reason       = mod_pubsub:stanzaError()
 %% @doc <p>Triggers item deletion.</p>
 %% <p>Default plugin: The user performing the deletion must be the node owner
 %% or a publisher, or PublishModel being open.</p>
-delete_item(NodeId, Publisher, PublishModel, ItemId) ->
+delete_item(NodeIdx, Publisher, PublishModel, ItemId) ->
     SubKey = jlib:jid_tolower(Publisher),
     GenKey = jlib:jid_remove_resource(SubKey),
-    GenState = get_state(NodeId, GenKey),
+    GenState = get_state(NodeIdx, GenKey),
     #pubsub_state{affiliation = Affiliation, items = Items} = GenState,
     Allowed = (Affiliation == publisher) orelse (Affiliation == owner)
 	orelse (PublishModel == open)
-	orelse case get_item(NodeId, ItemId) of
+	orelse case get_item(NodeIdx, ItemId) of
 		   {result, #pubsub_item{creation = {_, GenKey}}} -> true;
 		   _ -> false
 	       end,
@@ -558,19 +575,19 @@ delete_item(NodeId, Publisher, PublishModel, ItemId) ->
 	true ->
 	    case lists:member(ItemId, Items) of
 		true ->
-		    del_item(NodeId, ItemId),
+		    del_item(NodeIdx, ItemId),
 		    set_state(GenState#pubsub_state{items = lists:delete(ItemId, Items)}),
 		    {result, {default, broadcast}};
 		false ->
 		    case Affiliation of
 			owner ->
 			    %% Owner can delete other publishers items as well
-			    {result, States} = get_states(NodeId),
+			    {result, States} = get_states(NodeIdx),
 			    lists:foldl(
 				fun(#pubsub_state{items = PI, affiliation = publisher} = S, Res) ->
 				    case lists:member(ItemId, PI) of
 					true ->
-					    del_item(NodeId, ItemId),
+					    del_item(NodeIdx, ItemId),
 					    set_state(S#pubsub_state{items = lists:delete(ItemId, PI)}),
 					    {result, {default, broadcast}};
 					false ->
@@ -586,23 +603,22 @@ delete_item(NodeId, Publisher, PublishModel, ItemId) ->
 	    end
     end.
 
-%% @spec (NodeId, Owner) ->
-%%		  {error, Reason::stanzaError()} |
-%%		  {result, {default, broadcast}}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Owner = mod_pubsub:jid()
-purge_node(NodeId, Owner) ->
+%% @spec (NodeIdx, Owner) -> {error, Reason} | {result, {default, broadcast}}
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 Owner   = mod_pubsub:jid()
+%%   Reason  = mod_pubsub:stanzaError()
+purge_node(NodeIdx, Owner) ->
     SubKey = jlib:jid_tolower(Owner),
     GenKey = jlib:jid_remove_resource(SubKey),
-    GenState = get_state(NodeId, GenKey),
+    GenState = get_state(NodeIdx, GenKey),
     case GenState of
 	#pubsub_state{affiliation = owner} ->
-	    {result, States} = get_states(NodeId),
+	    {result, States} = get_states(NodeIdx),
 	    lists:foreach(
 		fun(#pubsub_state{items = []}) ->
 		    ok;
 		   (#pubsub_state{items = Items} = S) ->
-		    del_items(NodeId, Items),
+		    del_items(NodeIdx, Items),
 		    set_state(S#pubsub_state{items = []})
 	    end, States),
 	    {result, {default, broadcast}};
@@ -611,9 +627,10 @@ purge_node(NodeId, Owner) ->
 	    {error, ?ERR_FORBIDDEN}
     end.
 
-%% @spec (Host, JID) -> [{Node,Affiliation}]
-%%	 Host = host()
-%%	 JID = mod_pubsub:jid()
+%% @spec (Host, Owner) -> {result, Reply}
+%%	 Host  = mod_pubsub:hostPubsub()
+%%	 Owner = mod_pubsub:jid()
+%%	 Reply = [] | [{mod_pubsub:pubsubNode(), mod_pubsub:affiliation()}]
 %% @doc <p>Return the current affiliations for the given user</p>
 %% <p>The default module reads affiliations in the main Mnesia
 %% <tt>pubsub_state</tt> table. If a plugin stores its data in the same
@@ -661,9 +678,16 @@ set_affiliation(NodeId, Owner, Affiliation) ->
 	    set_state(GenState#pubsub_state{affiliation = Affiliation})
     end.
 
-%% @spec (Host, Owner) -> [{Node,Subscription}]
-%%	 Host = host()
-%%	 Owner = mod_pubsub:jid()
+%% @spec (Host, Owner) ->
+%%      {'result', []
+%%               | [{Node, Subscription, SubId, Entity}]
+%%               | [{Node, Subscription, Entity}]}
+%%	 Host         = mod_pubsub:hostPubsub()
+%%	 Owner        = mod_pubsub:jid()
+%%	 Node         = mod_pubsub:pubsubNode()
+%%	 Subscription = mod_pubsub:subscription()
+%%	 SubId        = mod_pubsub:subId()
+%%	 Entity       = mod_pubsub:ljid()
 %% @doc <p>Return the current subscriptions for the given user</p>
 %% <p>The default module reads subscriptions in the main Mnesia
 %% <tt>pubsub_state</tt> table. If a plugin stores its data in the same
@@ -774,10 +798,11 @@ unsub_with_subid(NodeId, SubId, SubState) ->
 	    set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
 
-%% @spec (Host, Owner) -> {result, [Node]} | {error, Reason}
-%%       Host = host()
-%%       Owner = jid()
-%%       Node = pubsubNode()
+%% TODO : doc
+%% @spec (Host, Owner) -> {result, Reply} | {error, Reason} 
+%%	 Host  = mod_pubsub:hostPubsub()
+%%   Owner = mod_pubsub:jid()
+%%   Reply = [] | [mod_pubsub:nodeId()]
 %% @doc <p>Returns a list of Owner's nodes on Host with pending
 %% subscriptions.</p>
 get_pending_nodes(Host, Owner) ->
@@ -821,8 +846,9 @@ get_nodes_helper(NodeTree,
 	    false
     end.
 
-%% @spec (NodeId) -> [States] | []
-%%	 NodeId = mod_pubsub:pubsubNodeId()
+%% @spec (NodeIdx) -> {result, States}
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 States  = [] | [mod_pubsub:pubsubState()]
 %% @doc Returns the list of stored states for a given node.
 %% <p>For the default PubSub module, states are stored in Mnesia database.</p>
 %% <p>We can consider that the pubsub_state table have been created by the main
@@ -831,46 +857,49 @@ get_nodes_helper(NodeTree,
 %% relational database).</p>
 %% <p>If a PubSub plugin wants to delegate the states storage to the default node,
 %% they can implement this function like this:
-%% ```get_states(NodeId) ->
-%%	   node_default:get_states(NodeId).'''</p>
-get_states(NodeId) ->
+%% ```get_states(NodeIdx) ->
+%%	   node_default:get_states(NodeIdx).'''</p>
+get_states(NodeIdx) ->
     States = case catch mnesia:match_object(
-	       #pubsub_state{stateid = {'_', NodeId}, _ = '_'}) of
+	       #pubsub_state{stateid = {'_', NodeIdx}, _ = '_'}) of
 	List when is_list(List) -> List;
 	_ -> []
     end,
     {result, States}.
 
-%% @spec (NodeId, JID) -> [State] | []
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 JID = mod_pubsub:jid()
-%%	 State = mod_pubsub:pubsubItems()
+%% @spec (NodeIdx, JID) -> State
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 JID     = mod_pubsub:jid()
+%%	 State   = mod_pubsub:pubsubState()
 %% @doc <p>Returns a state (one state list), given its reference.</p>
-get_state(NodeId, JID) ->
-    StateId = {JID, NodeId},
+get_state(NodeIdx, JID) ->
+    StateId = {JID, NodeIdx},
     case catch mnesia:read({pubsub_state, StateId}) of
 	[State] when is_record(State, pubsub_state) -> State;
 	_ -> #pubsub_state{stateid=StateId}
     end.
 
-%% @spec (State) -> ok | {error, Reason::stanzaError()}
-%%	 State = mod_pubsub:pubsubStates()
+%% @spec (State) -> ok | {error, Reason}
+%%	 State  = mod_pubsub:pubsubState()
+%%	 Reason = mod_pubsub:stanzaError()
 %% @doc <p>Write a state into database.</p>
 set_state(State) when is_record(State, pubsub_state) ->
     mnesia:write(State);
 set_state(_) ->
     {error, ?ERR_INTERNAL_SERVER_ERROR}.
 
-%% @spec (NodeId, JID) -> ok | {error, Reason::stanzaError()}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 JID = mod_pubsub:jid()
+%% @spec (NodeIdx, JID) -> ok | {error, Reason}
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 JID     = mod_pubsub:jid()
+%%	 Reason  = mod_pubsub:stanzaError()
 %% @doc <p>Delete a state from database.</p>
-del_state(NodeId, JID) ->
-    mnesia:delete({pubsub_state, {JID, NodeId}}).
+del_state(NodeIdx, JID) ->
+    mnesia:delete({pubsub_state, {JID, NodeIdx}}).
 
-%% @spec (NodeId, From) -> [Items] | []
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 Items = mod_pubsub:pubsubItems()
+%% @spec (NodeIdx, From) -> {result, Items}
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 From    = mod_pubsub:jid()
+%%	 Items   = [] | [mod_pubsub:pubsubItem()]
 %% @doc Returns the list of stored items for a given node.
 %% <p>For the default PubSub module, items are stored in Mnesia database.</p>
 %% <p>We can consider that the pubsub_item table have been created by the main
@@ -879,16 +908,17 @@ del_state(NodeId, JID) ->
 %% relational database), or they can even decide not to persist any items.</p>
 %% <p>If a PubSub plugin wants to delegate the item storage to the default node,
 %% they can implement this function like this:
-%% ```get_items(NodeId, From) ->
-%%	   node_default:get_items(NodeId, From).'''</p>
-get_items(NodeId, _From) ->
-    Items = mnesia:match_object(#pubsub_item{itemid = {'_', NodeId}, _ = '_'}),
+%% ```get_items(NodeIdx, From) ->
+%%	   node_default:get_items(NodeIdx, From).'''</p>
+get_items(NodeIdx, _From) ->
+    Items = mnesia:match_object(#pubsub_item{itemid = {'_', NodeIdx}, _ = '_'}),
     {result, lists:reverse(lists:keysort(#pubsub_item.modification, Items))}.
-get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
+
+get_items(NodeIdx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
     SubKey = jlib:jid_tolower(JID),
     GenKey = jlib:jid_remove_resource(SubKey),
-    GenState = get_state(NodeId, GenKey),
-    SubState = get_state(NodeId, SubKey),
+    GenState = get_state(NodeIdx, GenKey),
+    SubState = get_state(NodeIdx, SubKey),
     Affiliation = GenState#pubsub_state.affiliation,
     Subscriptions = SubState#pubsub_state.subscriptions,
     Whitelisted = can_fetch_item(Affiliation, Subscriptions),
@@ -918,25 +948,37 @@ get_items(NodeId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) -
 	%%	% Payment is required for a subscription
 	%%	{error, ?ERR_PAYMENT_REQUIRED};
 	true ->
-	    get_items(NodeId, JID)
+	    get_items(NodeIdx, JID)
     end.
 
-%% @spec (NodeId, ItemId) -> [Item] | []
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 ItemId = string()
-%%	 Item = mod_pubsub:pubsubItems()
+%% @spec (NodeIdx, ItemId) -> {result, Item} | {error, 'item-not-found'}
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 ItemId  = mod_pubsub:itemId()
+%%	 Item    = mod_pubsub:pubsubItem()
 %% @doc <p>Returns an item (one item list), given its reference.</p>
-get_item(NodeId, ItemId) ->
-    case mnesia:read({pubsub_item, {ItemId, NodeId}}) of
+get_item(NodeIdx, ItemId) ->
+    case mnesia:read({pubsub_item, {ItemId, NodeIdx}}) of
 	[Item] when is_record(Item, pubsub_item) ->
 	    {result, Item};
 	_ ->
 	    {error, ?ERR_ITEM_NOT_FOUND}
     end.
-get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
+
+%% @spec (NodeIdx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) -> {result, Item} | {error, Reason}
+%%	 NodeIdx              = mod_pubsub:nodeIdx()
+%%	 ItemId               = mod_pubsub:itemId()
+%%	 JID                  = mod_pubsub:jid()
+%%	 AccessModel          = mod_pubsub:accessModel()
+%%	 PresenceSubscription = boolean()
+%%	 RosterGroup          = boolean()
+%%	 SubId                = mod_pubsub:subId()
+%%	 Item                 = mod_pubsub:pubsubItem()
+%%	 Reason               = mod_pubsub:stanzaError() | 'item-not-found'
+
+get_item(NodeIdx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
     SubKey = jlib:jid_tolower(JID),
     GenKey = jlib:jid_remove_resource(SubKey),
-    GenState = get_state(NodeId, GenKey),
+    GenState = get_state(NodeIdx, GenKey),
     Affiliation = GenState#pubsub_state.affiliation,
     Subscriptions = GenState#pubsub_state.subscriptions,
     Whitelisted = can_fetch_item(Affiliation, Subscriptions),
@@ -966,26 +1008,29 @@ get_item(NodeId, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _S
 	%%	% Payment is required for a subscription
 	%%	{error, ?ERR_PAYMENT_REQUIRED};
 	true ->
-	    get_item(NodeId, ItemId)
+	    get_item(NodeIdx, ItemId)
     end.
 
-%% @spec (Item) -> ok | {error, Reason::stanzaError()}
-%%	 Item = mod_pubsub:pubsubItems()
+%% @spec (Item) -> ok | {error, Reason}
+%%	 Item   = mod_pubsub:pubsubItem()
+%%	 Reason = mod_pubsub:stanzaError()
 %% @doc <p>Write an item into database.</p>
 set_item(Item) when is_record(Item, pubsub_item) ->
     mnesia:write(Item);
 set_item(_) ->
     {error, ?ERR_INTERNAL_SERVER_ERROR}.
 
-%% @spec (NodeId, ItemId) -> ok | {error, Reason::stanzaError()}
-%%	 NodeId = mod_pubsub:pubsubNodeId()
-%%	 ItemId = string()
+%% @spec (NodeIdx, ItemId) -> ok | {error, Reason}
+%%	 NodeIdx = mod_pubsub:nodeIdx()
+%%	 ItemId  = mod_pubsub:itemId()
+%%	 Reason  = mod_pubsub:stanzaError()
 %% @doc <p>Delete an item from database.</p>
-del_item(NodeId, ItemId) ->
-    mnesia:delete({pubsub_item, {ItemId, NodeId}}).
-del_items(NodeId, ItemIds) ->
+del_item(NodeIdx, ItemId) ->
+    mnesia:delete({pubsub_item, {ItemId, NodeIdx}}).
+
+del_items(NodeIdx, ItemIds) ->
     lists:foreach(fun(ItemId) ->
-	del_item(NodeId, ItemId)
+	del_item(NodeIdx, ItemId)
     end, ItemIds).
 
 %% @doc <p>Return the name of the node if known: Default is to return

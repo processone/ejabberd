@@ -33,8 +33,10 @@
 {"Backup","Резервное копирование"}.
 {"Bad format","Неправильный формат"}.
 {"Birthday","День рождения"}.
+{"CAPTCHA web page","Ссылка на капчу"}.
 {"Change Password","Сменить пароль"}.
 {"Change User Password","Изменить пароль пользователя"}.
+{"Characters not allowed:","Недопустимые символы:"}.
 {"Chatroom configuration modified","Конфигурация комнаты изменилась"}.
 {"Chatroom is created","Комната создана"}.
 {"Chatroom is destroyed","Комната уничтожена"}.
@@ -69,6 +71,7 @@
 {"Description:","Описание:"}.
 {"Disc only copy","только диск"}.
 {"Displayed Groups:","Видимые группы:"}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Не говорите никому свой пароль, даже администраторам сервера."}.
 {"Dump Backup to Text File at ","Копирование в текстовый файл на "}.
 {"Dump to Text File","Копирование в текстовый файл"}.
 {"Edit Properties","Изменить параметры"}.
@@ -120,6 +123,7 @@
 {"has been kicked","выгнали из комнаты"}.
 {" has set the subject to: "," установил(а) тему: "}.
 {"Host","Хост"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","Если вы не видите изображение капчи, перейдите по ссылке."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Чтобы указать различные порты, пароли, кодировки для разных серверов IRC, заполните список значениями в формате '{\"сервер IRC\", \"кодировка\", порт, \"пароль\"}'. По умолчанию сервис использует кодировку \"~s\", порт ~p, пустой пароль."}.
 {"Import Directory","Импорт из директории"}.
 {"Import File","Импорт из файла"}.
@@ -145,6 +149,7 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Нельзя посылать частные сообщения типа \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Не разрешается посылать частные сообщения прямо в конференцию"}.
 {"It is not allowed to send private messages","Запрещено посылать приватные сообщения"}.
+{"Jabber Account Registration","Регистрация Jabber-аккаунта"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s недопустимый"}.
 {"January","января"}.
@@ -177,6 +182,7 @@
 {"May","мая"}.
 {"Membership is required to enter this room","В эту конференцию могут входить только её члены"}.
 {"Members:","Члены:"}.
+{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Запомните пароль или запишите его на бумаге, которую сохраните в безопасном месте. В Jabber'е нет автоматизированного средства восстановления пароля в том случае, если Вы его забудете."}.
 {"Memory","Память"}.
 {"Message body","Тело сообщения"}.
 {"Middle Name","Отчество"}.
@@ -190,6 +196,7 @@
 {"Name:","Название:"}.
 {"Name","Название"}.
 {"Never","Никогда"}.
+{"New Password:","Новый пароль:"}.
 {"Nickname Registration at ","Регистрация псевдонима на "}.
 {"Nickname ~s does not exist in the room","Псевдоним ~s в комнате отсутствует"}.
 {"Nickname","Псевдоним"}.
@@ -214,6 +221,7 @@
 {"Offline Messages:","Офлайновые сообщения:"}.
 {"Offline Messages","Офлайновые сообщения"}.
 {"OK","Продолжить"}.
+{"Old Password:","Старый пароль:"}.
 {"Online Users:","Подключённые пользователи:"}.
 {"Online Users","Подключённые пользователи"}.
 {"Online","Подключён"}.
@@ -232,6 +240,7 @@
 {"Owner privileges required","Требуются права владельца"}.
 {"Packet","Пакет"}.
 {"Password ~b","Пароль ~b"}.
+{"Password Verification:","Проверка пароля:"}.
 {"Password Verification","Проверка пароля"}.
 {"Password:","Пароль:"}.
 {"Password","Пароль"}.
@@ -257,8 +266,10 @@
 {"Raw","Необработанный формат"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
 {"Recipient is not in the conference room","Адресата нет в конференции"}.
+{"Register a Jabber account","Зарегистрировать Jabber-аккаунт"}.
 {"Registered Users:","Зарегистрированные пользователи:"}.
 {"Registered Users","Зарегистрированные пользователи"}.
+{"Register","Зарегистрировать"}.
 {"Registration in mod_irc for ","Регистрация в mod_irc для "}.
 {"Remote copy","не хранится локально"}.
 {"Remove All Offline Messages","Удалить все офлайновые сообщения"}.
@@ -295,6 +306,7 @@
 {"Send announcement to all users","Разослать объявление всем пользователям"}.
 {"September","сентября"}.
 {"Server ~b","Сервер ~b"}.
+{"Server:","Сервер:"}.
 {"Set message of the day and send to online users","Установить сообщение дня и разослать его подключённым пользователям"}.
 {"Set message of the day on all hosts and send to online users","Установить сообщение дня на всех виртуальных серверах и разослать его подключённым пользователям"}.
 {"Shared Roster Groups","Группы общих контактов"}.
@@ -302,6 +314,7 @@
 {"Show Ordinary Table","Показать обычную таблицу"}.
 {"Shut Down Service","Остановить службу"}.
 {"~s invites you to the room ~s","~s приглашает вас в комнату ~s"}.
+{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. Используйте эту функцию только в том случае, если считаете это безопасным."}.
 {"Specify the access model","Укажите механизм управления доступом"}.
 {"Specify the event message type","Укажите тип сообщения о событии"}.
 {"Specify the publisher model","Условия публикации"}.
@@ -327,8 +340,17 @@
 {"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
 {"The captcha is valid.","Проверка капчи прошла успешно."}.
+{"The CAPTCHA verification has failed","Проверка капчи не пройдена"}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
+{"The password is too weak","Слишком слабый пароль"}.
 {"the password is","пароль:"}.
+{"The password of your Jabber account was successfully changed.","Пароль Вашего Jabber-аккаунта был успешно изменен."}.
+{"There was an error changing the password: ","Ошибка при смене пароля:"}.
+{"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
+{"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."}.
+{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID (Jabber-идентификатор) будет в виде: \"пользователь@сервер\". Пожалуйста, внимательно читайте инструкции для правильного заполнения полей."}.
+{"This page allows to unregister a Jabber account in this Jabber server.","Здесь Вы можете удалить Jabber-аккаунт с этого сервера."}.
 {"This participant is kicked from the room because he sent an error message to another participant","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
 {"This participant is kicked from the room because he sent an error message","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
 {"This participant is kicked from the room because he sent an error presence","Этого участника выгнали из комнаты за то, что он послал присутствие с ошибкой"}.
@@ -345,7 +367,10 @@
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
 {"Unable to generate a captcha","Не получилось создать капчу"}.
+{"Unable to generate a CAPTCHA","Не получилось создать капчу"}.
 {"Unauthorized","Не авторизован"}.
+{"Unregister a Jabber account","Удалить Jabber-аккаунт"}.
+{"Unregister","Удалить"}.
 {"Update message of the day (don't send)","Обновить сообщение дня (не рассылать)"}.
 {"Update message of the day on all hosts (don't send)","Обновить сообщение дня на всех виртуальных серверах (не рассылать)"}.
 {"Update plan","План обновления"}.
@@ -355,6 +380,7 @@
 {"Uptime:","Время работы:"}.
 {"Use of STARTTLS required","Вы обязаны использовать STARTTLS"}.
 {"User Management","Управление пользователями"}.
+{"Username:","Имя пользователя:"}.
 {"Users are not allowed to register accounts so quickly","Пользователи не могут регистрировать учётные записи так быстро"}.
 {"Users Last Activity","Статистика последнего подключения пользователей"}.
 {"Users","Пользователи"}.
@@ -367,11 +393,16 @@
 {"Wednesday","Среда"}.
 {"When to send the last published item","Когда посылать последний опубликованный элемент"}.
 {"Whether to allow subscriptions","Разрешить подписку"}.
+{"You can later change your password using a Jabber client.","Позже Вы можете изменить пароль через Jabber-клиент."}.
 {"You have been banned from this room","Вам запрещено входить в эту конференцию"}.
 {"You must fill in field \"Nickname\" in the form","Вы должны заполнить поле \"Псевдоним\" в форме"}.
+{"You need a client that supports x:data and CAPTCHA to register","Чтобы зарегистрироваться, требуется x:data-совместимый клиент"}.
+{"You need a client that supports x:data to register the nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure mod_irc settings","Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure room","Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.
-{"You need an x:data capable client to register nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
+{"Your active privacy list has denied the routing of this stanza.","Маршрутизация этой строфы запрещена вашим активным списком приватности."}.
 {"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
+{"Your Jabber account was successfully created.","Ваш Jabber-аккаунт был успешно создан."}.
+{"Your Jabber account was successfully deleted.","Ваш Jabber-аккаунт был успешно удален."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"}.

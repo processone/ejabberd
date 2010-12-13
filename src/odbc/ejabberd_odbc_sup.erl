@@ -88,13 +88,13 @@ init([Host]) ->
 					?DEFAULT_ODBC_START_INTERVAL]),
 			    ?DEFAULT_ODBC_START_INTERVAL
 		    end,
-    {ok, {{one_for_one, PoolSize+1, StartInterval},
+    {ok, {{one_for_one, PoolSize*10, 1},
 	  lists:map(
 	    fun(I) ->
 		    {I,
 		     {ejabberd_odbc, start_link, [Host, StartInterval*1000]},
 		     transient,
-		     brutal_kill,
+                     2000,
 		     worker,
 		     [?MODULE]}
 	    end, lists:seq(1, PoolSize))}}.

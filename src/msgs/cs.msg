@@ -33,8 +33,10 @@
 {"Backup","Zálohovat"}.
 {"Bad format","Nesprávný formát"}.
 {"Birthday","Datum narození"}.
+{"CAPTCHA web page","Webová stránka CAPTCHA"}.
 {"Change Password","Změnit heslo"}.
 {"Change User Password","Změnit heslo uživatele"}.
+{"Characters not allowed:","Nepřípustné znaky:"}.
 {"Chatroom configuration modified","Nastavení diskuzní místnosti bylo změněno"}.
 {"Chatroom is created","Konference vytvořena"}.
 {"Chatroom is destroyed","Konference zrušena"}.
@@ -69,6 +71,7 @@
 {"Description:","Popis:"}.
 {"Disc only copy","Jen kopie disku"}.
 {"Displayed Groups:","Zobrazené skupiny:"}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Nikdy nikomu nesdělujte své heslo, ani administrátorovi serveru Jabberu."}.
 {"Dump Backup to Text File at ","Uložit zálohu do textového souboru na "}.
 {"Dump to Text File","Uložit do textového souboru"}.
 {"Edit Properties","Upravit vlastnosti"}.
@@ -120,6 +123,7 @@
 {"has been kicked","byl(a) vyhozen(a) z místnosti"}.
 {" has set the subject to: "," změnil(a) téma na: "}.
 {"Host","Hostitel"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","Pokud zde nevidíte obrázek CAPTCHE, přejděte na webovou stránku."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Pokud chcete zadat jiné kódování pro IRC servery, vyplňte seznam s hodnotami ve formátu '{\"irc server\",\"encoding\", port, \"password\"}'. Výchozí kódování pro tuto službu je \"~s\", port ~p, empty password."}.
 {"Import Directory","Import adresáře"}.
 {"Import File","Import souboru"}.
@@ -145,6 +149,7 @@
 {"It is not allowed to send private messages","Je zakázáno posílat soukromé zprávy"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
 {"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy do konference"}.
+{"Jabber Account Registration","Registrace účtu Jabberu"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s je neplatné"}.
 {"January",". ledna"}.
@@ -177,6 +182,7 @@
 {"May",". května"}.
 {"Members:","Členové:"}.
 {"Membership is required to enter this room","Pro vstup do místnosti musíte být členem"}.
+{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Svoje heslo si zapamatujte, nebo si jej poznamenejte na papírek a ten uschovejte v bezpečí. Jabber nemá žádný automatizovaný způsob obnovy hesla."}.
 {"Memory","Paměť"}.
 {"Message body","Tělo zprávy"}.
 {"Middle Name","Druhé jméno"}.
@@ -190,6 +196,7 @@
 {"Name:","Jméno:"}.
 {"Name","Jméno"}.
 {"Never","Nikdy"}.
+{"New Password:","Nové heslo:"}.
 {"Nickname","Přezdívka"}.
 {"Nickname Registration at ","Registrace přezdívky na "}.
 {"Nickname ~s does not exist in the room","Přezdívka ~s v místnosti neexistuje"}.
@@ -214,6 +221,7 @@
 {"Offline Messages:","Offline zprávy:"}.
 {"Offline Messages","Offline zprávy"}.
 {"OK","OK"}.
+{"Old Password:","Současné heslo:"}.
 {"Online","Online"}.
 {"Online Users:","Online uživatelé:"}.
 {"Online Users","Online uživatelé"}.
@@ -234,6 +242,7 @@
 {"Password ~b","Heslo ~b"}.
 {"Password:","Heslo:"}.
 {"Password","Heslo"}.
+{"Password Verification:","Ověření hesla:"}.
 {"Password Verification","Ověření hesla"}.
 {"Path to Dir","Cesta k adresáři"}.
 {"Path to File","Cesta k souboru"}.
@@ -257,8 +266,10 @@
 {"Raw","Zdroj"}.
 {"Really delete message of the day?","Skutečně smazat zprávu dne?"}.
 {"Recipient is not in the conference room","Příjemce se nenachází v konferenční místnosti"}.
+{"Register a Jabber account","Zaregistrujte si účet Jabberu"}.
 {"Registered Users","Registrovaní uživatelé"}.
 {"Registered Users:","Registrovaní živatelé:"}.
+{"Register","Zaregistrovat se"}.
 {"Registration in mod_irc for ","Registrace do mod_irc na "}.
 {"Remote copy","Vzdálená kopie"}.
 {"Remove All Offline Messages","Odstranit všechny offline zprávy"}.
@@ -295,6 +306,7 @@
 {"Send announcement to all users on all hosts","Odeslat oznámení všem uživatelům na všech hostitelích"}.
 {"September",". září"}.
 {"Server ~b","Server ~b"}.
+{"Server:","Server:"}.
 {"Set message of the day and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
 {"Set message of the day on all hosts and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
 {"Shared Roster Groups","Skupiny pro sdílený seznam kontaktů"}.
@@ -302,6 +314,7 @@
 {"Show Ordinary Table","Zobrazit běžnou tabulku"}.
 {"Shut Down Service","Vypnout službu"}.
 {"~s invites you to the room ~s","~s vás zve do místnosti ~s"}.
+{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Někteří klienti umí uložit vaše heslo na disk počítače. Tuto funkci používejte, pouze pokud věříte zabezpečení svého počítače."}.
 {"Specify the access model","Uveďte přístupový model"}.
 {"Specify the event message type","Zvolte typ zpráv pro události"}.
 {"Specify the publisher model","Specifikovat model pro publikování"}.
@@ -327,8 +340,17 @@
 {"That nickname is already in use by another occupant","Přezdívka je již používána jiným členem"}.
 {"That nickname is registered by another person","Přezdívka je zaregistrována jinou osobou"}.
 {"The captcha is valid.","CAPTCHA souhlasí."}.
+{"The CAPTCHA verification has failed","Ověření CAPTCHA se nezdařilo"}.
 {"The collections with which a node is affiliated","Kolekce, se kterými je uzel spřízněn"}.
 {"the password is","heslo je"}.
+{"The password is too weak","Heslo je příliš slabé"}.
+{"The password of your Jabber account was successfully changed.","Heslo vašeho účtu Jabberu bylo úspěšně změněno."}.
+{"There was an error changing the password: ","Při změně hesla došlo k chybě: "}.
+{"There was an error creating the account: ","Při vytváření účtu došlo k chybě."}.
+{"There was an error deleting the account: ","Při mazání účtu došlo k chybě: "}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."}.
+{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Na této stránce si můžete vytvořit účet na tomto serveru Jabberu. Vaše JID (Jabber IDentifikátor) bude mít tvar: uživatelskéjméno@server. Přečtěte si prosím pozorně instrukce pro vyplnění údajů."}.
+{"This page allows to unregister a Jabber account in this Jabber server.","Zde můžete zrušit registraci účtu na tomto serveru Jabberu."}.
 {"This participant is kicked from the room because he sent an error message","Tento účastník byl vyhozen, protože odeslal chybovou zprávu"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému účastníkovi"}.
 {"This participant is kicked from the room because he sent an error presence","Tento účastník byl vyhozen, protože odeslal chybový status"}.
@@ -345,7 +367,10 @@
 {"Transactions Restarted:","Transakce restartována"}.
 {"Tuesday","Úterý"}.
 {"Unable to generate a captcha","Nebylo možné vygenerovat CAPTCHA"}.
+{"Unable to generate a CAPTCHA","Nebylo možné vygenerovat CAPTCHA"}.
 {"Unauthorized","Nemáte oprávnění"}.
+{"Unregister a Jabber account","Zrušte registraci účtu Jabberu"}.
+{"Unregister","Zrušit registraci"}.
 {"Update ","Aktualizovat "}.
 {"Update","Aktualizovat"}.
 {"Update message of the day (don't send)","Aktualizovat zprávu dne (neodesílat)"}.
@@ -355,6 +380,7 @@
 {"Uptime:","Čas běhu:"}.
 {"Use of STARTTLS required","Je vyžadováno STARTTLS."}.
 {"User Management","Správa uživatelů"}.
+{"Username:","Uživatelské jméno:"}.
 {"Users are not allowed to register accounts so quickly","Je zakázáno registrovat účty v tak rychlém sledu"}.
 {"Users Last Activity","Poslední aktivita uživatele"}.
 {"Users","Uživatelé"}.
@@ -367,11 +393,16 @@
 {"Wednesday","Středa"}.
 {"When to send the last published item","Kdy odeslat poslední publikovanou položku"}.
 {"Whether to allow subscriptions","Povolit odebírání"}.
+{"You can later change your password using a Jabber client.","Později můžete své heslo změnit pomocí klienta Jabberu."}.
 {"You have been banned from this room","Byl jste vyloučen z této místnosti"}.
 {"You must fill in field \"Nickname\" in the form","Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
+{"You need a client that supports x:data and CAPTCHA to register","Pro registraci potřebujete klienta s podporou x:data a CAPTCHA"}.
+{"You need a client that supports x:data to register the nickname","Pro registraci přezdívky potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to configure mod_irc settings","Pro konfiguraci mod_irc potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to configure room","Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.
-{"You need an x:data capable client to register nickname","K registraci přezdívky potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to search","K vyhledávání potřebujete klienta podporujícího x:data"}.
+{"Your active privacy list has denied the routing of this stanza.","Vaše nastavení soukromí znemožnilo směrování této stance."}.
 {"Your contact offline message queue is full. The message has been discarded.","Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
+{"Your Jabber account was successfully created.","Váš účet Jabberu byl úspěšně vytvořen."}.
+{"Your Jabber account was successfully deleted.","Váš účet Jabberu byl úspěšně smazán."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"}.

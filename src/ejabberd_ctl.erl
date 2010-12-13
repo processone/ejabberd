@@ -741,6 +741,10 @@ print_usage_command(Cmd, C, MaxC, ShCode) ->
 
     ?PRINT(["\n", NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt, "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n", LongDescFmt, NoteEjabberdctl], []).
 
+format_usage_ctype(Type, _Indentation)
+  when (Type==atom) or (Type==integer) or (Type==string) or (Type==rescode) or (Type==restuple)->
+    io_lib:format("~p", [Type]);
+
 format_usage_ctype({Name, Type}, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==rescode) or (Type==restuple)->
     io_lib:format("~p::~p", [Name, Type]);

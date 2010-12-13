@@ -371,7 +371,6 @@
 {"You must fill in field \"Nickname\" in the form","Si deve riempire il campo \"Nickname\" nel modulo"}.
 {"You need an x:data capable client to configure mod_irc settings","Per la configurazione del modulo IRC è necessario un client che supporti x:data"}.
 {"You need an x:data capable client to configure room","Per la configurazione della stanza è necessario un client che supporti x:data"}.
-{"You need an x:data capable client to register nickname","Per registrare un nickname è necessario un client che supportix:data"}.
 {"You need an x:data capable client to search","Per effettuare ricerche è necessario un client che supporti x:data"}.
 {"Your contact offline message queue is full. The message has been discarded.","La coda dei messaggi offline del contatto è piena. Il messaggio è stato scartato"}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","I messaggi verso ~s sono bloccati. Per sbloccarli, visitare ~s"}.

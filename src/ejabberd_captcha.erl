@@ -36,7 +36,8 @@
 	 terminate/2, code_change/3]).
 
 -export([create_captcha/5, build_captcha_html/2, check_captcha/2,
-	 process_reply/1, process/2, is_feature_available/0]).
+	 process_reply/1, process/2, is_feature_available/0,
+	 create_captcha_x/4, create_captcha_x/5]).
 
 -include("jlib.hrl").
 -include("ejabberd.hrl").
@@ -84,7 +85,8 @@ create_captcha(SID, From, To, Lang, Args)
 		    ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
 		    ?VFIELD("hidden", "sid", {xmlcdata, SID}),
 		    {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
-		     [{xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
+                     [{xmlelement, "required", [], []},
+		      {xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
 		       [{xmlelement, "uri", [{"type", Type}],
 			 [{xmlcdata, "cid:" ++ CID}]}]}]}]}]},
 	    BodyString1 = translate:translate(Lang, "Your messages to ~s are being blocked. To unblock them, visit ~s"),
@@ -98,6 +100,55 @@ create_captcha(SID, From, To, Lang, Args)
 					 tref=Tref, args=Args}),
 	    {ok, Id, [Body, OOB, Captcha, Data]};
 	_Err ->
+	    error
+    end.
+
+create_captcha_x(SID, To, Lang, HeadEls) ->
+    create_captcha_x(SID, To, Lang, HeadEls, []).
+
+create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
+    case create_image() of
+	{ok, Type, Key, Image} ->
+	    Id = randoms:get_string(),
+	    B64Image = jlib:encode_base64(binary_to_list(Image)),
+	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
+	    Data = {xmlelement, "data",
+		    [{"xmlns", ?NS_BOB}, {"cid", CID},
+		     {"max-age", "0"}, {"type", Type}],
+		    [{xmlcdata, B64Image}]},
+            HelpTxt = translate:translate(
+                                Lang,
+                                 "If you don't see the CAPTCHA image here, "
+                                 "visit the web page."),
+	    Imageurl = get_url(Id ++ "/image"),
+	    Captcha =
+		{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+		 [?VFIELD("hidden", "FORM_TYPE", {xmlcdata, ?NS_CAPTCHA}) | HeadEls] ++
+		 [{xmlelement, "field", [{"type", "fixed"}],
+		   [{xmlelement, "value", [], [{xmlcdata, HelpTxt}]}]},
+		  {xmlelement, "field", [{"type", "hidden"}, {"var", "captchahidden"}],
+		   [{xmlelement, "value", [], [{xmlcdata, "workaround-for-psi"}]}]},
+		  {xmlelement, "field",
+		   [{"type", "text-single"},
+		    {"label", translate:translate(Lang, "CAPTCHA web page")},
+		    {"var", "url"}],
+		   [{xmlelement, "value", [], [{xmlcdata, Imageurl}]}]},
+		  ?VFIELD("hidden", "from", {xmlcdata, jlib:jid_to_string(To)}),
+		  ?VFIELD("hidden", "challenge", {xmlcdata, Id}),
+		  ?VFIELD("hidden", "sid", {xmlcdata, SID}),
+		  {xmlelement, "field", [{"var", "ocr"}, {"label", ?CAPTCHA_TEXT(Lang)}],
+                   [{xmlelement, "required", [], []},
+		    {xmlelement, "media", [{"xmlns", ?NS_MEDIA}],
+		     [{xmlelement, "uri", [{"type", Type}],
+		       [{xmlcdata, "cid:" ++ CID}]}]}]}] ++ TailEls},
+	    Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE, {remove_id, Id}),
+	    case ?T(mnesia:write(#captcha{id=Id, key=Key, tref=Tref})) of
+		ok ->
+		    {ok, [Captcha, Data]};
+		_Err ->
+		    error
+	    end;
+	_ ->
 	    error
     end.
 
@@ -159,14 +210,14 @@ check_captcha(Id, ProvidedKey) ->
 	    captcha_not_found
     end.
 
-process_reply({xmlelement, "captcha", _, _} = El) ->
+process_reply({xmlelement, _, _, _} = El) ->
     case xml:get_subtag(El, "x") of
 	false ->
 	    {error, malformed};
 	Xdata ->
 	    Fields = jlib:parse_xdata_submit(Xdata),
-	    case {proplists:get_value("challenge", Fields),
-		  proplists:get_value("ocr", Fields)} of
+	    case catch {proplists:get_value("challenge", Fields),
+			proplists:get_value("ocr", Fields)} of
 		{[Id|_], [OCR|_]} ->
 		    case check_captcha(Id, OCR) of
 			captcha_valid ->

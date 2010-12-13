@@ -162,6 +162,7 @@
 			 captcha,
 			 http_bind,
 			 http_poll,
+			 %%register,
 			 web_admin
 			]}
 
@@ -169,10 +170,10 @@
 
 %%
 %% s2s_use_starttls: Enable STARTTLS + Dialback for S2S connections.
-%% Allowed values are: true or false.
+%% Allowed values are: false optional required required_trusted
 %% You must specify a certificate file.
 %%
-%%{s2s_use_starttls, true}.
+%%{s2s_use_starttls, optional}.
 
 %%
 %% s2s_certfile: Specify a certificate file.
@@ -522,6 +523,16 @@
 		 ]},
   {mod_register, [
 		  %%
+		  %% Protect In-Band account registrations with CAPTCHA.
+		  %%
+		  %%{captcha_protected, true},
+
+		  %%
+		  %% Set the minimum informational entropy for passwords.
+		  %%
+		  %%{password_strength, 32},
+
+		  %%
 		  %% After successful registration, the user receives
 		  %% a message with this subject and body.
 		  %%
@@ -534,8 +545,18 @@
 		  %%
 		  %%{registration_watchers, ["admin1@example.org"]},
 
+		  {ip_access, [{allow, "127.0.0.0/8"},
+			       {deny, "0.0.0.0/0"}]},
+
 		  {access, register}
 		 ]},
+  %%{mod_register_web, [
+		  %%
+		  %% When a user registers, send a notification to
+		  %% these XMPP accounts.
+		  %%
+		  %%{registration_watchers, ["admin1@example.org"]}
+  %%		 ]},
   {mod_roster,   []},
   %%{mod_service_log,[]},
   {mod_shared_roster,[]},

@@ -7,28 +7,40 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Vietnamese (tiếng việt)\n"
 
-#: ejabberd_c2s.erl:373 ejabberd_c2s.erl:676
+#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
 msgstr "Yêu cầu sử dụng STARTTLS"
 
-#: ejabberd_c2s.erl:452
+#: ejabberd_c2s.erl:503
 msgid "No resource provided"
 msgstr "Không có nguồn lực cung cấp"
 
-#: ejabberd_c2s.erl:1097
+#: ejabberd_c2s.erl:1147
 msgid "Replaced by new connection"
 msgstr "Được thay thế bởi kết nối mới"
 
-#: ejabberd_captcha.erl:93 ejabberd_captcha.erl:125
+#: ejabberd_c2s.erl:1836
+msgid "Your active privacy list has denied the routing of this stanza."
+msgstr ""
+
+#: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 #, fuzzy
 msgid "Enter the text you see"
 msgstr "Nhập đường dẫn đến tập tin văn bản"
 
-#: ejabberd_captcha.erl:97
+#: ejabberd_captcha.erl:99
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
 
-#: ejabberd_captcha.erl:235
+#: ejabberd_captcha.erl:132
+msgid "If you don't see the CAPTCHA image here, visit the web page."
+msgstr ""
+
+#: ejabberd_captcha.erl:144
+msgid "CAPTCHA web page"
+msgstr ""
+
+#: ejabberd_captcha.erl:302
 msgid "The captcha is valid."
 msgstr ""
 
@@ -363,7 +375,7 @@ msgid "Jabber ID"
 msgstr "Jabber ID"
 
 #: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1653
-#: mod_configure.erl:1865 mod_muc/mod_muc_room.erl:2922
+#: mod_configure.erl:1865 mod_muc/mod_muc_room.erl:2928 mod_register.erl:233
 #: web/ejabberd_web_admin.erl:1517
 msgid "Password"
 msgstr "Mật Khẩu"
@@ -434,17 +446,17 @@ msgstr "Truyền tải IRC"
 msgid "ejabberd IRC module"
 msgstr "Môdun ejabberd IRC Bản quyền"
 
-#: mod_irc/mod_irc.erl:557
+#: mod_irc/mod_irc.erl:558
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr ""
 "Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định "
 "các thiết lập mod_irc"
 
-#: mod_irc/mod_irc.erl:564
+#: mod_irc/mod_irc.erl:565
 msgid "Registration in mod_irc for "
 msgstr "Đăng ký trong mod_irc cho "
 
-#: mod_irc/mod_irc.erl:569
+#: mod_irc/mod_irc.erl:570
 #, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
@@ -453,11 +465,11 @@ msgstr ""
 "Nhập tên truy cập và mã hóa mà bạn muốn sử dụng khi kết nối với các máy chủ "
 "IRC"
 
-#: mod_irc/mod_irc.erl:574
+#: mod_irc/mod_irc.erl:575
 msgid "IRC Username"
 msgstr "Tên truy cập IRC"
 
-#: mod_irc/mod_irc.erl:584
+#: mod_irc/mod_irc.erl:585
 #, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
@@ -469,7 +481,7 @@ msgstr ""
 "hãy điền vào danh sách này những giá trị theo định dạng '{\"máy chủ irc\", "
 "\"mã hóa\"}'. Dịch vụ này mặc định sử dụng định dạng mã hóa \"~s\"."
 
-#: mod_irc/mod_irc.erl:596
+#: mod_irc/mod_irc.erl:597
 #, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
@@ -478,36 +490,36 @@ msgstr ""
 "Ví dụ: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", \"iso8859-1"
 "\"}]"
 
-#: mod_irc/mod_irc.erl:601
+#: mod_irc/mod_irc.erl:602
 msgid "Connections parameters"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:711
+#: mod_irc/mod_irc.erl:727
 msgid "Join IRC channel"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:715
+#: mod_irc/mod_irc.erl:731
 msgid "IRC channel (don't put the first #)"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:720
+#: mod_irc/mod_irc.erl:736
 #, fuzzy
 msgid "IRC server"
 msgstr "Tên truy cập IRC"
 
-#: mod_irc/mod_irc.erl:753 mod_irc/mod_irc.erl:757
+#: mod_irc/mod_irc.erl:769 mod_irc/mod_irc.erl:773
 msgid "Join the IRC channel here."
 msgstr ""
 
-#: mod_irc/mod_irc.erl:761
+#: mod_irc/mod_irc.erl:777
 msgid "Join the IRC channel in this Jabber ID: ~s"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:846
+#: mod_irc/mod_irc.erl:862
 msgid "IRC settings"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:851
+#: mod_irc/mod_irc.erl:867
 #, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
@@ -517,26 +529,26 @@ msgstr ""
 "Nhập tên truy cập và mã hóa mà bạn muốn sử dụng khi kết nối với các máy chủ "
 "IRC"
 
-#: mod_irc/mod_irc.erl:857
+#: mod_irc/mod_irc.erl:873
 #, fuzzy
 msgid "IRC username"
 msgstr "Tên truy cập IRC"
 
-#: mod_irc/mod_irc.erl:906
+#: mod_irc/mod_irc.erl:922
 #, fuzzy
 msgid "Password ~b"
 msgstr "Mật Khẩu"
 
-#: mod_irc/mod_irc.erl:911
+#: mod_irc/mod_irc.erl:927
 #, fuzzy
 msgid "Port ~b"
 msgstr "Cổng"
 
-#: mod_irc/mod_irc.erl:916
+#: mod_irc/mod_irc.erl:932
 msgid "Encoding for server ~b"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:925
+#: mod_irc/mod_irc.erl:941
 msgid "Server ~b"
 msgstr ""
 
@@ -557,7 +569,8 @@ msgid "Chatrooms"
 msgstr "Phòng trò chuyện"
 
 #: mod_muc/mod_muc.erl:711
-msgid "You need an x:data capable client to register nickname"
+#, fuzzy
+msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để đăng ký "
 "bí danh"
@@ -576,8 +589,8 @@ msgstr "Nhập bí danh bạn muốn đăng ký"
 msgid "Nickname"
 msgstr "Bí danh"
 
-#: mod_muc/mod_muc.erl:761 mod_muc/mod_muc_room.erl:941
-#: mod_muc/mod_muc_room.erl:1585
+#: mod_muc/mod_muc.erl:761 mod_muc/mod_muc_room.erl:936
+#: mod_muc/mod_muc_room.erl:1580
 #, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "Một người khác đã đăng ký bí danh này rồi"
@@ -627,7 +640,7 @@ msgid "is now known as"
 msgstr "bây giờ được biết như"
 
 #: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:689
-#: mod_muc/mod_muc_room.erl:2112
+#: mod_muc/mod_muc_room.erl:2115
 msgid " has set the subject to: "
 msgstr " đã đặt chủ đề thành: "
 
@@ -736,10 +749,6 @@ msgstr "Cấu Hình Phòng"
 msgid "Room Occupants"
 msgstr "Số người tham dự"
 
-#: mod_muc/mod_muc_log.erl:863 mod_muc/mod_muc_room.erl:2898
-msgid "Room title"
-msgstr "Tên phòng"
-
 #: mod_muc/mod_muc_room.erl:170
 msgid "Traffic rate limit is exceeded"
 msgstr "Quá giới hạn tỷ lệ lưu lượng truyền tải"
@@ -771,8 +780,8 @@ msgstr "Không được phép gửi những thư riêng loại \"groupchat\""
 msgid "Recipient is not in the conference room"
 msgstr "Người nhận không có trong phòng họp"
 
-#: mod_muc/mod_muc_room.erl:451 mod_muc/mod_muc_room.erl:841
-#: mod_muc/mod_muc_room.erl:3536
+#: mod_muc/mod_muc_room.erl:451 mod_muc/mod_muc_room.erl:829
+#: mod_muc/mod_muc_room.erl:3546
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Chỉ có những đối tượng tham gia mới được phép gửi thư đến phòng họp"
 
@@ -791,7 +800,7 @@ msgid "Queries to the conference members are not allowed in this room"
 msgstr ""
 "Không được phép gửi các yêu cầu gửi đến các thành viên trong phòng họp này"
 
-#: mod_muc/mod_muc_room.erl:817
+#: mod_muc/mod_muc_room.erl:805
 #, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
@@ -800,214 +809,218 @@ msgstr ""
 "Chỉ có những người điều phối và những người tham gia được phép thay đổi chủ "
 "đề trong phòng này"
 
-#: mod_muc/mod_muc_room.erl:822
+#: mod_muc/mod_muc_room.erl:810
 #, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Chỉ có những người điều phối được phép thay đổi chủ đề trong phòng này"
 
-#: mod_muc/mod_muc_room.erl:832
+#: mod_muc/mod_muc_room.erl:820
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr "Người ghé thăm không được phép gửi thư đến tất cả các người tham dự"
 
-#: mod_muc/mod_muc_room.erl:899
+#: mod_muc/mod_muc_room.erl:894
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:917
+#: mod_muc/mod_muc_room.erl:912
 #, fuzzy
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "Chỉ có những người điều phối được phép thay đổi chủ đề trong phòng này"
 
-#: mod_muc/mod_muc_room.erl:930 mod_muc/mod_muc_room.erl:1577
+#: mod_muc/mod_muc_room.erl:925 mod_muc/mod_muc_room.erl:1572
 #, fuzzy
 msgid "That nickname is already in use by another occupant"
 msgstr "Bí danh đang do một người tham dự khác sử dụng"
 
-#: mod_muc/mod_muc_room.erl:1566
+#: mod_muc/mod_muc_room.erl:1561
 msgid "You have been banned from this room"
 msgstr "Bạn bị cấm tham gia phòng này"
 
-#: mod_muc/mod_muc_room.erl:1569
+#: mod_muc/mod_muc_room.erl:1564
 #, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "Yêu cầu tư cách thành viên khi tham gia vào phòng này"
 
-#: mod_muc/mod_muc_room.erl:1605
+#: mod_muc/mod_muc_room.erl:1600
 msgid "This room is not anonymous"
 msgstr "Phòng này không nặc danh"
 
-#: mod_muc/mod_muc_room.erl:1631
+#: mod_muc/mod_muc_room.erl:1626
 #, fuzzy
 msgid "A password is required to enter this room"
 msgstr "Yêu cầu nhập mật khẩu để vào phòng này"
 
-#: mod_muc/mod_muc_room.erl:1653
+#: mod_muc/mod_muc_room.erl:1648
 msgid "Unable to generate a captcha"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1663
+#: mod_muc/mod_muc_room.erl:1658
 msgid "Incorrect password"
 msgstr "Mật khẩu sai"
 
-#: mod_muc/mod_muc_room.erl:2167
+#: mod_muc/mod_muc_room.erl:2170
 msgid "Administrator privileges required"
 msgstr "Yêu cầu đặc quyền của nhà quản trị"
 
-#: mod_muc/mod_muc_room.erl:2182
+#: mod_muc/mod_muc_room.erl:2185
 msgid "Moderator privileges required"
 msgstr "Yêu cầu đặc quyền của nhà điều phối"
 
-#: mod_muc/mod_muc_room.erl:2337
+#: mod_muc/mod_muc_room.erl:2340
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s không hợp lệ"
 
-#: mod_muc/mod_muc_room.erl:2351
+#: mod_muc/mod_muc_room.erl:2354
 msgid "Nickname ~s does not exist in the room"
 msgstr "Bí danh ~s không tồn tại trong phòng này"
 
-#: mod_muc/mod_muc_room.erl:2377 mod_muc/mod_muc_room.erl:2756
+#: mod_muc/mod_muc_room.erl:2380 mod_muc/mod_muc_room.erl:2762
 msgid "Invalid affiliation: ~s"
 msgstr "Tư cách không hợp lệ: ~s"
 
-#: mod_muc/mod_muc_room.erl:2434
+#: mod_muc/mod_muc_room.erl:2437
 msgid "Invalid role: ~s"
 msgstr "Vai trò không hợp lệ: ~s"
 
-#: mod_muc/mod_muc_room.erl:2733 mod_muc/mod_muc_room.erl:2769
+#: mod_muc/mod_muc_room.erl:2739 mod_muc/mod_muc_room.erl:2775
 msgid "Owner privileges required"
 msgstr "Yêu cầu đặc quyền của người sở hữu"
 
-#: mod_muc/mod_muc_room.erl:2893
+#: mod_muc/mod_muc_room.erl:2899
 #, fuzzy
 msgid "Configuration of room ~s"
 msgstr "Cấu hình cho "
 
-#: mod_muc/mod_muc_room.erl:2901 mod_muc/mod_muc_room.erl:3319
+#: mod_muc/mod_muc_room.erl:2904
+msgid "Room title"
+msgstr "Tên phòng"
+
+#: mod_muc/mod_muc_room.erl:2907 mod_muc/mod_muc_room.erl:3325
 #, fuzzy
 msgid "Room description"
 msgstr "Miêu tả:"
 
-#: mod_muc/mod_muc_room.erl:2908
+#: mod_muc/mod_muc_room.erl:2914
 msgid "Make room persistent"
 msgstr "Tạo phòng bền vững"
 
-#: mod_muc/mod_muc_room.erl:2913
+#: mod_muc/mod_muc_room.erl:2919
 msgid "Make room public searchable"
 msgstr "Tạo phòng có thể tìm kiếm công khai"
 
-#: mod_muc/mod_muc_room.erl:2916
+#: mod_muc/mod_muc_room.erl:2922
 msgid "Make participants list public"
 msgstr "Tạo danh sách người tham dự công khai"
 
-#: mod_muc/mod_muc_room.erl:2919
+#: mod_muc/mod_muc_room.erl:2925
 msgid "Make room password protected"
 msgstr "Tạo phòng được bảo vệ bằng mật khẩu"
 
-#: mod_muc/mod_muc_room.erl:2930
+#: mod_muc/mod_muc_room.erl:2936
 msgid "Maximum Number of Occupants"
 msgstr "Số Lượng Người Tham Dự Tối Đa"
 
-#: mod_muc/mod_muc_room.erl:2937
+#: mod_muc/mod_muc_room.erl:2943
 msgid "No limit"
 msgstr "Không giới hạn"
 
-#: mod_muc/mod_muc_room.erl:2948
+#: mod_muc/mod_muc_room.erl:2954
 msgid "Present real Jabber IDs to"
 msgstr "Jabber ID thực tế hiện hành đến"
 
-#: mod_muc/mod_muc_room.erl:2956
+#: mod_muc/mod_muc_room.erl:2962
 msgid "moderators only"
 msgstr "nhà điều phối duy nhất"
 
-#: mod_muc/mod_muc_room.erl:2958
+#: mod_muc/mod_muc_room.erl:2964
 msgid "anyone"
 msgstr "bất kỳ ai"
 
-#: mod_muc/mod_muc_room.erl:2960
+#: mod_muc/mod_muc_room.erl:2966
 msgid "Make room members-only"
 msgstr "Tạo phòng chỉ cho phép tư cách thành viên tham gia"
 
-#: mod_muc/mod_muc_room.erl:2963
+#: mod_muc/mod_muc_room.erl:2969
 #, fuzzy
 msgid "Make room moderated"
 msgstr "Tạo phòng bền vững"
 
-#: mod_muc/mod_muc_room.erl:2966
+#: mod_muc/mod_muc_room.erl:2972
 msgid "Default users as participants"
 msgstr "Người sử dụng mặc định là người tham dự"
 
-#: mod_muc/mod_muc_room.erl:2969
+#: mod_muc/mod_muc_room.erl:2975
 #, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Cho phép người sử dụng thay đổi chủ đề"
 
-#: mod_muc/mod_muc_room.erl:2972
+#: mod_muc/mod_muc_room.erl:2978
 msgid "Allow users to send private messages"
 msgstr "Cho phép người sử dụng gửi thư riêng"
 
-#: mod_muc/mod_muc_room.erl:2975
+#: mod_muc/mod_muc_room.erl:2981
 msgid "Allow users to query other users"
 msgstr "Cho phép người sử dụng hỏi người sử dụng khác"
 
-#: mod_muc/mod_muc_room.erl:2978
+#: mod_muc/mod_muc_room.erl:2984
 msgid "Allow users to send invites"
 msgstr "Cho phép người sử dụng gửi lời mời"
 
-#: mod_muc/mod_muc_room.erl:2981
+#: mod_muc/mod_muc_room.erl:2987
 #, fuzzy
 msgid "Allow visitors to send status text in presence updates"
 msgstr "Cho phép người sử dụng gửi thư riêng"
 
-#: mod_muc/mod_muc_room.erl:2984
+#: mod_muc/mod_muc_room.erl:2990
 #, fuzzy
 msgid "Allow visitors to change nickname"
 msgstr "Cho phép người sử dụng thay đổi chủ đề"
 
-#: mod_muc/mod_muc_room.erl:2990
+#: mod_muc/mod_muc_room.erl:2996
 #, fuzzy
 msgid "Make room captcha protected"
 msgstr "Tạo phòng được bảo vệ bằng mật khẩu"
 
-#: mod_muc/mod_muc_room.erl:2999
+#: mod_muc/mod_muc_room.erl:3005
 msgid "Enable logging"
 msgstr "Cho phép ghi nhật ký"
 
-#: mod_muc/mod_muc_room.erl:3007
+#: mod_muc/mod_muc_room.erl:3013
 msgid "You need an x:data capable client to configure room"
 msgstr ""
 "Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định "
 "cấu hình phòng họp"
 
-#: mod_muc/mod_muc_room.erl:3321
+#: mod_muc/mod_muc_room.erl:3327
 msgid "Number of occupants"
 msgstr "Số người tham dự"
 
-#: mod_muc/mod_muc_room.erl:3373
+#: mod_muc/mod_muc_room.erl:3383
 msgid "private, "
 msgstr "riêng,"
 
-#: mod_muc/mod_muc_room.erl:3456
+#: mod_muc/mod_muc_room.erl:3466
 msgid "~s invites you to the room ~s"
 msgstr "~s mời bạn vào phòng ~s"
 
-#: mod_muc/mod_muc_room.erl:3465
+#: mod_muc/mod_muc_room.erl:3475
 msgid "the password is"
 msgstr "mật khẩu là"
 
-#: mod_offline.erl:510 mod_offline_odbc.erl:353
+#: mod_offline.erl:510 mod_offline_odbc.erl:352
 msgid ""
 "Your contact offline message queue is full. The message has been discarded."
 msgstr ""
 "Danh sách chờ thư liên lạc ngoại tuyến của bạn đã đầy. Thư này đã bị loại bỏ."
 
-#: mod_offline.erl:560 mod_offline_odbc.erl:409
+#: mod_offline.erl:560 mod_offline_odbc.erl:408
 msgid "~s's Offline Messages Queue"
 msgstr "~s's Danh Sách Chờ Thư Ngoại Tuyến"
 
-#: mod_offline.erl:563 mod_offline_odbc.erl:412 mod_roster.erl:992
-#: mod_roster_odbc.erl:1092 mod_shared_roster.erl:809
-#: mod_shared_roster.erl:910 web/ejabberd_web_admin.erl:829
+#: mod_offline.erl:563 mod_offline_odbc.erl:411 mod_roster.erl:992
+#: mod_roster_odbc.erl:1092 mod_shared_roster.erl:810
+#: mod_shared_roster.erl:911 web/ejabberd_web_admin.erl:829
 #: web/ejabberd_web_admin.erl:870 web/ejabberd_web_admin.erl:938
 #: web/ejabberd_web_admin.erl:974 web/ejabberd_web_admin.erl:1015
 #: web/ejabberd_web_admin.erl:1505 web/ejabberd_web_admin.erl:1754
@@ -1029,20 +1042,20 @@ msgstr "Từ"
 msgid "To"
 msgstr "Đến"
 
-#: mod_offline.erl:574 mod_offline_odbc.erl:420
+#: mod_offline.erl:574 mod_offline_odbc.erl:419
 msgid "Packet"
 msgstr "Gói thông tin"
 
-#: mod_offline.erl:587 mod_offline_odbc.erl:433 mod_shared_roster.erl:816
+#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:817
 #: web/ejabberd_web_admin.erl:878 web/ejabberd_web_admin.erl:982
 msgid "Delete Selected"
 msgstr "Tùy chọn Xóa được Chọn"
 
-#: mod_offline.erl:645 mod_offline_odbc.erl:520
+#: mod_offline.erl:645 mod_offline_odbc.erl:519
 msgid "Offline Messages:"
 msgstr "Thư Ngoại Tuyến:"
 
-#: mod_offline.erl:645 mod_offline_odbc.erl:520
+#: mod_offline.erl:645 mod_offline_odbc.erl:519
 #, fuzzy
 msgid "Remove All Offline Messages"
 msgstr "Thư Ngoại Tuyến"
@@ -1051,112 +1064,137 @@ msgstr "Thư Ngoại Tuyến"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "Môdun SOCKS5 Bytestreams Bản quyền"
 
-#: mod_pubsub/mod_pubsub.erl:1077 mod_pubsub/mod_pubsub_odbc.erl:882
+#: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
 msgid "Publish-Subscribe"
 msgstr "Xuất Bản-Đăng Ký"
 
-#: mod_pubsub/mod_pubsub.erl:1191 mod_pubsub/mod_pubsub_odbc.erl:997
+#: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Môdun ejabberd Xuất Bản-Đăng Ký Bản quyền"
 
-#: mod_pubsub/mod_pubsub.erl:1474 mod_pubsub/mod_pubsub_odbc.erl:1284
+#: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
 msgid "PubSub subscriber request"
 msgstr "Yêu cầu người đăng ký môđun Xuất Bản Đăng Ký"
 
-#: mod_pubsub/mod_pubsub.erl:1476 mod_pubsub/mod_pubsub_odbc.erl:1286
+#: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Chọn có nên chấp nhận sự đăng ký của đối tượng này không"
 
-#: mod_pubsub/mod_pubsub.erl:1482 mod_pubsub/mod_pubsub_odbc.erl:1292
+#: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Node ID"
 msgstr "ID Nút"
 
-#: mod_pubsub/mod_pubsub.erl:1487 mod_pubsub/mod_pubsub_odbc.erl:1297
+#: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
 msgid "Subscriber Address"
 msgstr "Địa Chỉ Người Đăng Ký"
 
-#: mod_pubsub/mod_pubsub.erl:1493 mod_pubsub/mod_pubsub_odbc.erl:1303
+#: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Cho phép Jabber ID đăng ký nút môđun xuất bản đăng ký này không?"
 
-#: mod_pubsub/mod_pubsub.erl:3365 mod_pubsub/mod_pubsub_odbc.erl:3199
+#: mod_pubsub/mod_pubsub.erl:3387 mod_pubsub/mod_pubsub_odbc.erl:3229
 msgid "Deliver payloads with event notifications"
 msgstr "Đưa ra thông tin dung lượng với các thông báo sự kiện"
 
-#: mod_pubsub/mod_pubsub.erl:3366 mod_pubsub/mod_pubsub_odbc.erl:3200
+#: mod_pubsub/mod_pubsub.erl:3388 mod_pubsub/mod_pubsub_odbc.erl:3230
 msgid "Deliver event notifications"
 msgstr "Đưa ra các thông báo sự kiện"
 
-#: mod_pubsub/mod_pubsub.erl:3367 mod_pubsub/mod_pubsub_odbc.erl:3201
+#: mod_pubsub/mod_pubsub.erl:3389 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Thông báo cho người đăng ký khi nào cấu hình nút thay đổi"
 
-#: mod_pubsub/mod_pubsub.erl:3368 mod_pubsub/mod_pubsub_odbc.erl:3202
+#: mod_pubsub/mod_pubsub.erl:3390 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Notify subscribers when the node is deleted"
 msgstr "Thông báo cho người đăng ký khi nào nút bị xóa bỏ"
 
-#: mod_pubsub/mod_pubsub.erl:3369 mod_pubsub/mod_pubsub_odbc.erl:3203
+#: mod_pubsub/mod_pubsub.erl:3391 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Thông báo cho người đăng ký khi nào các mục chọn bị gỡ bỏ khỏi nút"
 
-#: mod_pubsub/mod_pubsub.erl:3370 mod_pubsub/mod_pubsub_odbc.erl:3204
+#: mod_pubsub/mod_pubsub.erl:3392 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Persist items to storage"
 msgstr "Những mục cần để lưu trữ"
 
-#: mod_pubsub/mod_pubsub.erl:3371 mod_pubsub/mod_pubsub_odbc.erl:3205
+#: mod_pubsub/mod_pubsub.erl:3393 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "A friendly name for the node"
 msgstr ""
 
-#: mod_pubsub/mod_pubsub.erl:3372 mod_pubsub/mod_pubsub_odbc.erl:3206
+#: mod_pubsub/mod_pubsub.erl:3394 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Max # of items to persist"
 msgstr "Số mục tối đa để lưu trữ"
 
-#: mod_pubsub/mod_pubsub.erl:3373 mod_pubsub/mod_pubsub_odbc.erl:3207
+#: mod_pubsub/mod_pubsub.erl:3395 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "Whether to allow subscriptions"
 msgstr "Xác định nên cho phép đăng ký không"
 
-#: mod_pubsub/mod_pubsub.erl:3374 mod_pubsub/mod_pubsub_odbc.erl:3208
+#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Specify the access model"
 msgstr "Xác định mô hình truy cập"
 
-#: mod_pubsub/mod_pubsub.erl:3377 mod_pubsub/mod_pubsub_odbc.erl:3211
+#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3241
 msgid "Roster groups allowed to subscribe"
 msgstr ""
 
-#: mod_pubsub/mod_pubsub.erl:3378 mod_pubsub/mod_pubsub_odbc.erl:3212
+#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3242
 msgid "Specify the publisher model"
 msgstr "Xác định mô hình nhà xuất bản"
 
-#: mod_pubsub/mod_pubsub.erl:3380 mod_pubsub/mod_pubsub_odbc.erl:3214
+#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
 
-#: mod_pubsub/mod_pubsub.erl:3381 mod_pubsub/mod_pubsub_odbc.erl:3215
+#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3245
 #, fuzzy
 msgid "Specify the event message type"
 msgstr "Xác định mô hình truy cập"
 
-#: mod_pubsub/mod_pubsub.erl:3383 mod_pubsub/mod_pubsub_odbc.erl:3217
+#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Max payload size in bytes"
 msgstr "Kích thước dung lượng byte tối đa"
 
-#: mod_pubsub/mod_pubsub.erl:3384 mod_pubsub/mod_pubsub_odbc.erl:3218
+#: mod_pubsub/mod_pubsub.erl:3406 mod_pubsub/mod_pubsub_odbc.erl:3248
 msgid "When to send the last published item"
 msgstr "Khi cần gửi mục được xuất bản cuối cùng"
 
-#: mod_pubsub/mod_pubsub.erl:3386 mod_pubsub/mod_pubsub_odbc.erl:3220
+#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "Only deliver notifications to available users"
 msgstr "Chỉ gửi thông báo đến những người sử dụng hiện có"
 
-#: mod_pubsub/mod_pubsub.erl:3387 mod_pubsub/mod_pubsub_odbc.erl:3221
+#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3251
 msgid "The collections with which a node is affiliated"
 msgstr ""
 
-#: mod_register.erl:198
+#: mod_register.erl:191
+msgid "The CAPTCHA verification has failed"
+msgstr ""
+
+#: mod_register.erl:218
+#, fuzzy
+msgid "You need a client that supports x:data and CAPTCHA to register"
+msgstr ""
+"Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để đăng ký "
+"bí danh"
+
+#: mod_register.erl:224 mod_register.erl:258
 msgid "Choose a username and password to register with this server"
 msgstr "Chọn một tên truy cập và mật khẩu để đăng ký với máy chủ này"
 
-#: mod_register.erl:251
+#: mod_register.erl:228 mod_vcard.erl:358 mod_vcard_odbc.erl:336
+#: web/ejabberd_web_admin.erl:1512 web/ejabberd_web_admin.erl:1569
+msgid "User"
+msgstr "Người sử dụng"
+
+#: mod_register.erl:244
+msgid "Unable to generate a CAPTCHA"
+msgstr ""
+
+#: mod_register.erl:309 mod_register.erl:354
+#, fuzzy
+msgid "The password is too weak"
+msgstr "mật khẩu là"
+
+#: mod_register.erl:358
 #, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Người ghé thăm không được phép gửi thư đến tất cả các người tham dự"
@@ -1191,13 +1229,13 @@ msgstr "Gỡ bỏ"
 msgid "Roster of "
 msgstr "Bảng phân công của "
 
-#: mod_roster.erl:993 mod_roster_odbc.erl:1093 mod_shared_roster.erl:810
-#: mod_shared_roster.erl:911 web/ejabberd_web_admin.erl:830
+#: mod_roster.erl:993 mod_roster_odbc.erl:1093 mod_shared_roster.erl:811
+#: mod_shared_roster.erl:912 web/ejabberd_web_admin.erl:830
 #: web/ejabberd_web_admin.erl:871 web/ejabberd_web_admin.erl:939
 #: web/ejabberd_web_admin.erl:975 web/ejabberd_web_admin.erl:1016
 #: web/ejabberd_web_admin.erl:1506 web/ejabberd_web_admin.erl:1755
 #: web/ejabberd_web_admin.erl:1926 web/ejabberd_web_admin.erl:2131
-#: web/ejabberd_web_admin.erl:2156 web/ejabberd_web_admin.erl:2244
+#: web/ejabberd_web_admin.erl:2156
 msgid "Bad format"
 msgstr "Định dạng hỏng"
 
@@ -1209,37 +1247,37 @@ msgstr "Thêm Jabber ID"
 msgid "Roster"
 msgstr "Bảng phân công"
 
-#: mod_shared_roster.erl:765 mod_shared_roster.erl:807
-#: mod_shared_roster.erl:907
+#: mod_shared_roster.erl:766 mod_shared_roster.erl:808
+#: mod_shared_roster.erl:908
 msgid "Shared Roster Groups"
 msgstr "Nhóm Phân Công Chia Sẻ"
 
-#: mod_shared_roster.erl:803 web/ejabberd_web_admin.erl:1362
+#: mod_shared_roster.erl:804 web/ejabberd_web_admin.erl:1362
 #: web/ejabberd_web_admin.erl:2456
 msgid "Add New"
 msgstr "Thêm Mới"
 
-#: mod_shared_roster.erl:878
+#: mod_shared_roster.erl:879
 msgid "Name:"
 msgstr "Tên:"
 
-#: mod_shared_roster.erl:883
+#: mod_shared_roster.erl:884
 msgid "Description:"
 msgstr "Miêu tả:"
 
-#: mod_shared_roster.erl:891
+#: mod_shared_roster.erl:892
 msgid "Members:"
 msgstr "Thành viên:"
 
-#: mod_shared_roster.erl:899
+#: mod_shared_roster.erl:900
 msgid "Displayed Groups:"
 msgstr "Nhóm được hiển thị:"
 
-#: mod_shared_roster.erl:908
+#: mod_shared_roster.erl:909
 msgid "Group "
 msgstr "Nhóm "
 
-#: mod_shared_roster.erl:917 web/ejabberd_web_admin.erl:836
+#: mod_shared_roster.erl:918 web/ejabberd_web_admin.erl:836
 #: web/ejabberd_web_admin.erl:880 web/ejabberd_web_admin.erl:945
 #: web/ejabberd_web_admin.erl:1022 web/ejabberd_web_admin.erl:2011
 msgid "Submit"
@@ -1310,11 +1348,6 @@ msgstr "Bộ Phận"
 #: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
 msgid "Search users in "
 msgstr "Tìm kiếm người sử dụng trong"
-
-#: mod_vcard.erl:358 mod_vcard_odbc.erl:336 web/ejabberd_web_admin.erl:1512
-#: web/ejabberd_web_admin.erl:1569
-msgid "User"
-msgstr "Người sử dụng"
 
 #: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
 msgid "You need an x:data capable client to search"
@@ -1443,7 +1476,9 @@ msgstr "Kết Nối Bên Ngoài s2s:"
 msgid "Outgoing s2s Servers:"
 msgstr "Máy chủ Bên Ngoài s2s:"
 
-#: web/ejabberd_web_admin.erl:1728
+#: web/ejabberd_web_admin.erl:1728 web/mod_register_web.erl:174
+#: web/mod_register_web.erl:367 web/mod_register_web.erl:376
+#: web/mod_register_web.erl:406
 msgid "Change Password"
 msgstr "Thay Đổi Mật Khẩu"
 
@@ -1455,7 +1490,8 @@ msgstr "Người sử dụng "
 msgid "Connected Resources:"
 msgstr "Tài Nguyên Được Kết Nối:"
 
-#: web/ejabberd_web_admin.erl:1760
+#: web/ejabberd_web_admin.erl:1760 web/mod_register_web.erl:226
+#: web/mod_register_web.erl:514
 msgid "Password:"
 msgstr "Mật Khẩu:"
 
@@ -1669,6 +1705,122 @@ msgstr "Xóa"
 #: web/ejabberd_web_admin.erl:2574
 msgid "Start"
 msgstr "Khởi động"
+
+#: web/mod_register_web.erl:103
+msgid "Your Jabber account was successfully created."
+msgstr ""
+
+#: web/mod_register_web.erl:106
+msgid "There was an error creating the account: "
+msgstr ""
+
+#: web/mod_register_web.erl:114
+msgid "Your Jabber account was successfully deleted."
+msgstr ""
+
+#: web/mod_register_web.erl:117
+msgid "There was an error deleting the account: "
+msgstr ""
+
+#: web/mod_register_web.erl:127
+msgid "The password of your Jabber account was successfully changed."
+msgstr ""
+
+#: web/mod_register_web.erl:130
+msgid "There was an error changing the password: "
+msgstr ""
+
+#: web/mod_register_web.erl:162 web/mod_register_web.erl:171
+msgid "Jabber Account Registration"
+msgstr ""
+
+#: web/mod_register_web.erl:173 web/mod_register_web.erl:191
+#: web/mod_register_web.erl:200
+msgid "Register a Jabber account"
+msgstr ""
+
+#: web/mod_register_web.erl:175 web/mod_register_web.erl:488
+#: web/mod_register_web.erl:497
+msgid "Unregister a Jabber account"
+msgstr ""
+
+#: web/mod_register_web.erl:202
+msgid ""
+"This page allows to create a Jabber account in this Jabber server. Your JID "
+"(Jabber IDentifier) will be of the form: username@server. Please read "
+"carefully the instructions to fill correctly the fields."
+msgstr ""
+
+#: web/mod_register_web.erl:211 web/mod_register_web.erl:381
+#: web/mod_register_web.erl:504
+#, fuzzy
+msgid "Username:"
+msgstr "Tên truy cập IRC"
+
+#: web/mod_register_web.erl:216
+msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+msgstr ""
+
+#: web/mod_register_web.erl:217
+msgid "Characters not allowed:"
+msgstr ""
+
+#: web/mod_register_web.erl:221 web/mod_register_web.erl:386
+#: web/mod_register_web.erl:509
+#, fuzzy
+msgid "Server:"
+msgstr "Không bao giờ"
+
+#: web/mod_register_web.erl:231
+msgid ""
+"Don't tell your password to anybody, not even the administrators of the "
+"Jabber server."
+msgstr ""
+
+#: web/mod_register_web.erl:233
+msgid "You can later change your password using a Jabber client."
+msgstr ""
+
+#: web/mod_register_web.erl:234
+msgid ""
+"Some Jabber clients can store your password in your computer. Use that "
+"feature only if you trust your computer is safe."
+msgstr ""
+
+#: web/mod_register_web.erl:236
+msgid ""
+"Memorize your password, or write it in a paper placed in a safe place. In "
+"Jabber there isn't an automated way to recover your password if you forget "
+"it."
+msgstr ""
+
+#: web/mod_register_web.erl:241 web/mod_register_web.erl:401
+#, fuzzy
+msgid "Password Verification:"
+msgstr "Kiểm Tra Mật Khẩu"
+
+#: web/mod_register_web.erl:249
+#, fuzzy
+msgid "Register"
+msgstr "Bảng phân công"
+
+#: web/mod_register_web.erl:391
+#, fuzzy
+msgid "Old Password:"
+msgstr "Mật Khẩu:"
+
+#: web/mod_register_web.erl:396
+#, fuzzy
+msgid "New Password:"
+msgstr "Mật Khẩu:"
+
+#: web/mod_register_web.erl:499
+msgid "This page allows to unregister a Jabber account in this Jabber server."
+msgstr ""
+
+#: web/mod_register_web.erl:519
+msgid "Unregister"
+msgstr ""
 
 #~ msgid "Encodings"
 #~ msgstr "Mã hóa"
