@@ -36,7 +36,7 @@
 {"CAPTCHA web page","Strona internetowa CAPTCHA"}.
 {"Change Password","Zmień hasło"}.
 {"Change User Password","Zmień hasło użytkownika"}.
-{"Characters not allowed: @ : ' \" < > &","Te znaki są niedozwolone: @ : ' \" < > &"}.
+{"Characters not allowed:","Te znaki są niedozwolone:"}.
 {"Chatroom configuration modified","Konfiguracja pokoju zmodyfikowana"}.
 {"Chatroom is created","Pokój został stworzony"}.
 {"Chatroom is destroyed","Pokój został usunięty"}.

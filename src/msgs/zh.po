@@ -21,7 +21,7 @@ msgstr "无资源提供"
 msgid "Replaced by new connection"
 msgstr "被新的连接替换"
 
-#: ejabberd_c2s.erl:1844
+#: ejabberd_c2s.erl:1836
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "你的活跃私聊列表拒绝了在此房间进行路由分发."
 
@@ -1019,103 +1019,103 @@ msgstr "移除所有离线消息"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 字节流模块"
 
-#: mod_pubsub/mod_pubsub.erl:1115 mod_pubsub/mod_pubsub_odbc.erl:917
+#: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
 msgid "Publish-Subscribe"
 msgstr "发行-订阅"
 
-#: mod_pubsub/mod_pubsub.erl:1209 mod_pubsub/mod_pubsub_odbc.erl:1013
+#: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd 发行-订阅模块"
 
-#: mod_pubsub/mod_pubsub.erl:1492 mod_pubsub/mod_pubsub_odbc.erl:1300
+#: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
 msgid "PubSub subscriber request"
 msgstr "PubSub 订阅人请求"
 
-#: mod_pubsub/mod_pubsub.erl:1494 mod_pubsub/mod_pubsub_odbc.erl:1302
+#: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Choose whether to approve this entity's subscription."
 msgstr "选择是否允许该实体的订阅"
 
-#: mod_pubsub/mod_pubsub.erl:1500 mod_pubsub/mod_pubsub_odbc.erl:1308
+#: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Node ID"
 msgstr "节点 ID"
 
-#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
 msgid "Subscriber Address"
 msgstr "订阅人地址"
 
-#: mod_pubsub/mod_pubsub.erl:1511 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "允许该 Jabber ID 订阅该pubsub节点?"
 
-#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3387 mod_pubsub/mod_pubsub_odbc.erl:3229
 msgid "Deliver payloads with event notifications"
 msgstr "用事件通告传输有效负载"
 
-#: mod_pubsub/mod_pubsub.erl:3397 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3388 mod_pubsub/mod_pubsub_odbc.erl:3230
 msgid "Deliver event notifications"
 msgstr "传递事件通知"
 
-#: mod_pubsub/mod_pubsub.erl:3398 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3389 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Notify subscribers when the node configuration changes"
 msgstr "当节点设置改变时通知订阅人"
 
-#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3390 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Notify subscribers when the node is deleted"
 msgstr "当节点被删除时通知订阅人"
 
-#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3391 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when items are removed from the node"
 msgstr "当从节点删除内容条目时通知订阅人"
 
-#: mod_pubsub/mod_pubsub.erl:3401 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3392 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Persist items to storage"
 msgstr "持久化内容条目"
 
-#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3393 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "A friendly name for the node"
 msgstr "该节点的友好名称"
 
-#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3394 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Max # of items to persist"
 msgstr "允许持久化的最大内容条目数"
 
-#: mod_pubsub/mod_pubsub.erl:3404 mod_pubsub/mod_pubsub_odbc.erl:3239
+#: mod_pubsub/mod_pubsub.erl:3395 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "Whether to allow subscriptions"
 msgstr "是否允许订阅"
 
-#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3240
+#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Specify the access model"
 msgstr "指定访问模式"
 
-#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3243
+#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3241
 msgid "Roster groups allowed to subscribe"
 msgstr "允许订阅的花名册组"
 
-#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3242
 msgid "Specify the publisher model"
 msgstr "指定发布人样式"
 
-#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr "相关发布人离线后清除所有选项"
 
-#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3245
 msgid "Specify the event message type"
 msgstr "指定事件消息类型"
 
-#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Max payload size in bytes"
 msgstr "最大有效负载比特数"
 
-#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3406 mod_pubsub/mod_pubsub_odbc.erl:3248
 msgid "When to send the last published item"
 msgstr "何时发送最新发布的内容条目"
 
-#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "Only deliver notifications to available users"
 msgstr "仅将通知发送给可发送的用户"
 
-#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3251
 msgid "The collections with which a node is affiliated"
 msgstr "加入结点的集合"
 

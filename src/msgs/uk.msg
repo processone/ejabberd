@@ -36,7 +36,7 @@
 {"CAPTCHA web page","Адреса капчі"}.
 {"Change Password","Змінити пароль"}.
 {"Change User Password","Змінити Пароль Користувача"}.
-{"Characters not allowed: @ : ' \" < > &","Заборонені символи: @ : ' \" < > &"}.
+{"Characters not allowed:","Заборонені символи:"}.
 {"Chatroom configuration modified","Конфігурація кімнати змінилась"}.
 {"Chatroom is created","Створено кімнату"}.
 {"Chatroom is destroyed","Знищено кімнату"}.

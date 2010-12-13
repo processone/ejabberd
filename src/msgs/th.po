@@ -7,19 +7,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Thai (ภาษาไทย)\n"
 
-#: ejabberd_c2s.erl:385 ejabberd_c2s.erl:688
+#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
 msgstr "ต้องใช้ STARTTLS"
 
-#: ejabberd_c2s.erl:464
+#: ejabberd_c2s.erl:503
 msgid "No resource provided"
 msgstr "ไม่ได้ระบุข้อมูล"
 
-#: ejabberd_c2s.erl:1108
+#: ejabberd_c2s.erl:1147
 msgid "Replaced by new connection"
 msgstr "แทนที่ด้วยการเชื่อมต่อใหม่"
 
-#: ejabberd_c2s.erl:1790
+#: ejabberd_c2s.erl:1836
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 
@@ -1046,104 +1046,104 @@ msgstr "ข้อความออฟไลน์"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub/mod_pubsub.erl:1116 mod_pubsub/mod_pubsub_odbc.erl:917
+#: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
 msgid "Publish-Subscribe"
 msgstr "เผยแพร่-สมัครเข้าใช้งาน"
 
-#: mod_pubsub/mod_pubsub.erl:1210 mod_pubsub/mod_pubsub_odbc.erl:1013
+#: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe module"
 
-#: mod_pubsub/mod_pubsub.erl:1493 mod_pubsub/mod_pubsub_odbc.erl:1300
+#: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
 msgid "PubSub subscriber request"
 msgstr "คำร้องขอของผู้สมัครเข้าใช้งาน PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1495 mod_pubsub/mod_pubsub_odbc.erl:1302
+#: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Choose whether to approve this entity's subscription."
 msgstr "เลือกว่าจะอนุมัติการสมัครเข้าใช้งานของเอนทิตี้นี้หรือไม่"
 
-#: mod_pubsub/mod_pubsub.erl:1501 mod_pubsub/mod_pubsub_odbc.erl:1308
+#: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Node ID"
 msgstr "ID โหนด"
 
-#: mod_pubsub/mod_pubsub.erl:1506 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
 msgid "Subscriber Address"
 msgstr "ที่อยู่ของผู้สมัคร"
 
-#: mod_pubsub/mod_pubsub.erl:1512 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "อนุญาตให้ Jabber ID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"
 
-#: mod_pubsub/mod_pubsub.erl:3407 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3387 mod_pubsub/mod_pubsub_odbc.erl:3229
 msgid "Deliver payloads with event notifications"
 msgstr "ส่งส่วนของข้อมูล (payload) พร้อมกับการแจ้งเตือนเหตุการณ์"
 
-#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3388 mod_pubsub/mod_pubsub_odbc.erl:3230
 msgid "Deliver event notifications"
 msgstr "ส่งการแจ้งเตือนเหตุการณ์"
 
-#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3389 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Notify subscribers when the node configuration changes"
 msgstr "แจ้งเตือนผู้สมัครสมาชิกเมื่อการกำหนดค่าโหนดเปลี่ยนแปลง"
 
-#: mod_pubsub/mod_pubsub.erl:3410 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3390 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Notify subscribers when the node is deleted"
 msgstr "แจ้งเตือนผู้สมัครสมาชิกเมื่อโหนดถูกลบ"
 
-#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3391 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when items are removed from the node"
 msgstr "แจ้งเตือนผู้สมัครสมาชิกเมื่อรายการถูกลบออกจากโหนด"
 
-#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3392 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Persist items to storage"
 msgstr "ยืนยันรายการที่จะจัดเก็บ"
 
-#: mod_pubsub/mod_pubsub.erl:3413 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3393 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "A friendly name for the node"
 msgstr ""
 
-#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3394 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Max # of items to persist"
 msgstr "จำนวนสูงสุดของรายการที่ยืนยัน"
 
-#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3239
+#: mod_pubsub/mod_pubsub.erl:3395 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "Whether to allow subscriptions"
 msgstr "อนุญาตให้เข้าร่วมเป็นสมาชิกหรือไม่"
 
-#: mod_pubsub/mod_pubsub.erl:3416 mod_pubsub/mod_pubsub_odbc.erl:3240
+#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Specify the access model"
 msgstr "ระบุโมเดลการเข้าถึง"
 
-#: mod_pubsub/mod_pubsub.erl:3419 mod_pubsub/mod_pubsub_odbc.erl:3243
+#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3241
 msgid "Roster groups allowed to subscribe"
 msgstr ""
 
-#: mod_pubsub/mod_pubsub.erl:3420 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3242
 msgid "Specify the publisher model"
 msgstr "ระบุโมเดลผู้เผยแพร่"
 
-#: mod_pubsub/mod_pubsub.erl:3422 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
 
-#: mod_pubsub/mod_pubsub.erl:3423 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3245
 #, fuzzy
 msgid "Specify the event message type"
 msgstr "ระบุโมเดลการเข้าถึง"
 
-#: mod_pubsub/mod_pubsub.erl:3425 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Max payload size in bytes"
 msgstr "ขนาดสูงสุดของส่วนของข้อมูล (payload) มีหน่วยเป็นไบต์"
 
-#: mod_pubsub/mod_pubsub.erl:3426 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3406 mod_pubsub/mod_pubsub_odbc.erl:3248
 msgid "When to send the last published item"
 msgstr "เวลาที่ส่งรายการที่เผยแพร่ครั้งล่าสุด"
 
-#: mod_pubsub/mod_pubsub.erl:3428 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "Only deliver notifications to available users"
 msgstr "ส่งการแจ้งเตือนถึงผู้ใช้ที่สามารถติดต่อได้เท่านั้น"
 
-#: mod_pubsub/mod_pubsub.erl:3429 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3251
 msgid "The collections with which a node is affiliated"
 msgstr ""
 

@@ -36,7 +36,7 @@
 {"CAPTCHA web page","キャプチャWEBページ"}.
 {"Change Password","パスワードの変更"}.
 {"Change User Password","パスワードを変更"}.
-{"Characters not allowed: @ : ' \" < > &","許可されていない文字: @ : ' \" < > &"}.
+{"Characters not allowed:","許可されていない文字:"}.
 {"Chatroom configuration modified","チャットルームの設定を変更しました"}.
 {"Chatroom is created","チャットルームは作られました。"}.
 {"Chatroom is destroyed","チャットルームは削除されました。"}.

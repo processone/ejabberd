@@ -36,7 +36,7 @@
 {"CAPTCHA web page","验证码 Web 页面"}.
 {"Change Password","更改密码"}.
 {"Change User Password","更改用户密码"}.
-{"Characters not allowed: @ : ' \" < > &","禁用字符: @ : ' \" < > &"}.
+{"Characters not allowed:","禁用字符:"}.
 {"Chatroom configuration modified","聊天室配置已修改"}.
 {"Chatroom is created","聊天室已被创建"}.
 {"Chatroom is destroyed","聊天室已被销毁"}.

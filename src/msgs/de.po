@@ -28,7 +28,7 @@ msgstr "Keine Ressource angegeben"
 msgid "Replaced by new connection"
 msgstr "Durch neue Verbindung ersetzt"
 
-#: ejabberd_c2s.erl:1844
+#: ejabberd_c2s.erl:1836
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 "Ihre aktive Privacy Liste hat die Weiterleitung des Stanzas unterbunden."
@@ -1051,104 +1051,104 @@ msgstr "Alle Offline Nachrichten löschen"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5-Bytestreams-Modul"
 
-#: mod_pubsub/mod_pubsub.erl:1115 mod_pubsub/mod_pubsub_odbc.erl:917
+#: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
 msgid "Publish-Subscribe"
 msgstr "Publish-Subscribe"
 
-#: mod_pubsub/mod_pubsub.erl:1209 mod_pubsub/mod_pubsub_odbc.erl:1013
+#: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe-Modul"
 
-#: mod_pubsub/mod_pubsub.erl:1492 mod_pubsub/mod_pubsub_odbc.erl:1300
+#: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
 msgid "PubSub subscriber request"
 msgstr "PubSub-Abonnenten-Anfrage"
 
-#: mod_pubsub/mod_pubsub.erl:1494 mod_pubsub/mod_pubsub_odbc.erl:1302
+#: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Wähle Sie, ob dieses Abonnement akzeptiert werden soll."
 
-#: mod_pubsub/mod_pubsub.erl:1500 mod_pubsub/mod_pubsub_odbc.erl:1308
+#: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Node ID"
 msgstr "Knoten-ID"
 
-#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
 msgid "Subscriber Address"
 msgstr "Abonnenten-Adresse"
 
-#: mod_pubsub/mod_pubsub.erl:1511 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Dieser Jabber-ID das Abonnement dieses pubsub-Knotens erlauben?"
 
-#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3387 mod_pubsub/mod_pubsub_odbc.erl:3229
 msgid "Deliver payloads with event notifications"
 msgstr "Nachrichten mit mit Ereignis-Benachrichtigungen zustellen"
 
-#: mod_pubsub/mod_pubsub.erl:3397 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3388 mod_pubsub/mod_pubsub_odbc.erl:3230
 msgid "Deliver event notifications"
 msgstr "Ereignisbenachrichtigung zustellen"
 
-#: mod_pubsub/mod_pubsub.erl:3398 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3389 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Abonnenten benachrichtigen, wenn sich die Knotenkonfiguration ändert"
 
-#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3390 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Notify subscribers when the node is deleted"
 msgstr "Abonnenten benachrichtigen, wenn der Knoten gelöscht wird"
 
-#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3391 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Abonnenten benachrichtigen, wenn Einträge vom Knoten entfernt werden"
 
-#: mod_pubsub/mod_pubsub.erl:3401 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3392 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Persist items to storage"
 msgstr "Einträge dauerhaft speichern"
 
-#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3393 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "A friendly name for the node"
 msgstr "Ein merkbarer Name für den Knoten"
 
-#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3394 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Max # of items to persist"
 msgstr "Maximale Anzahl dauerhaft zu speichernder Einträge"
 
-#: mod_pubsub/mod_pubsub.erl:3404 mod_pubsub/mod_pubsub_odbc.erl:3239
+#: mod_pubsub/mod_pubsub.erl:3395 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "Whether to allow subscriptions"
 msgstr "Ob Abonnements erlaubt sind"
 
-#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3240
+#: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Specify the access model"
 msgstr "Geben sie das Zugangsmodell an"
 
-#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3243
+#: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3241
 msgid "Roster groups allowed to subscribe"
 msgstr "Kontaktlisten-Gruppen die abonnieren dürfen"
 
-#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3242
 msgid "Specify the publisher model"
 msgstr "Geben sie das Publikationsmodell an"
 
-#: mod_pubsub/mod_pubsub.erl:3411 mod_pubsub/mod_pubsub_odbc.erl:3246
+#: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
 "Alle Einträge entfernen, wenn der relevante Veröffentlicher offline geht"
 
-#: mod_pubsub/mod_pubsub.erl:3412 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3245
 msgid "Specify the event message type"
 msgstr "Geben sie den Ereignis-Nachrichtentyp an"
 
-#: mod_pubsub/mod_pubsub.erl:3414 mod_pubsub/mod_pubsub_odbc.erl:3249
+#: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Max payload size in bytes"
 msgstr "Maximale Nutzlastgrösse in Bytes"
 
-#: mod_pubsub/mod_pubsub.erl:3415 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3406 mod_pubsub/mod_pubsub_odbc.erl:3248
 msgid "When to send the last published item"
 msgstr "Wann soll das letzte veröffentlichte Objekt gesendet werden"
 
-#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3252
+#: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "Only deliver notifications to available users"
 msgstr "Benachrichtigungen nur an verfügbare Benutzer schicken"
 
-#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3253
+#: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3251
 msgid "The collections with which a node is affiliated"
 msgstr "Sammlungen, mit denen ein Knoten verknüpft ist"
 
