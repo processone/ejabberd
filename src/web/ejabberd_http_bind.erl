@@ -1001,8 +1001,8 @@ prepare_outpacket_response(Sess, _Rid, OutPacket, false) ->
     end;
 %% Handle a new session along with its output payload
 prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
-				      hold=Hold, to=To}=Sess,
-			   Rid, OutPacket, true) ->
+				      hold=Hold, to=To}=_Sess,
+			   _Rid, OutPacket, true) ->
     case OutPacket of
 	[{xmlstreamstart, _, OutAttrs} | Els] ->
 	    AuthID = exmpp_xml:get_attribute_from_list_as_list(OutAttrs, <<"id">>, ""),
