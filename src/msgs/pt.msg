@@ -134,5 +134,4 @@
 {"You have been banned from this room","Foi banido desta sala"}.
 {"You need an x:data capable client to configure mod_irc settings","É necessário um cliente com suporte de x:data para configurar as opções do mod_irc"}.
 {"You need an x:data capable client to configure room","É necessário um cliente com suporte de x:data para configurar a sala"}.
-{"You need an x:data capable client to register nickname","É necessário um cliente com suporte de x:data para poder registar a alcunha"}.
 {"You need an x:data capable client to search","É necessário um cliente com suporte de x:data para poder procurar"}.

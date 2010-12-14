@@ -72,7 +72,7 @@ CREATE INDEX i_despool USING BTREE ON spool(username);
 
 CREATE TABLE vcard (
     username varchar(250) PRIMARY KEY,
-    vcard text NOT NULL,
+    vcard mediumtext NOT NULL,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 

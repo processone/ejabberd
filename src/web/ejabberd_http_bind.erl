@@ -113,6 +113,8 @@
 -define(PROCESS_DELAY_MIN, 0).
 -define(PROCESS_DELAY_MAX, 1000).
 
+%% Line copied from mod_http_bind.erl
+-define(PROCNAME_MHB, ejabberd_mod_http_bind).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -121,7 +123,8 @@
 %%       supervisor
 start(XMPPDomain, Sid, Key, IP) ->
     ?DEBUG("Starting session", []),
-    case catch supervisor:start_child(ejabberd_http_bind_sup, [Sid, Key, IP]) of
+    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
+    case catch supervisor:start_child(SupervisorProc, [Sid, Key, IP]) of
     	{ok, Pid} ->
 	    {ok, Pid};
 	{error, _} = Err ->
@@ -294,9 +297,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 		       (CPdelay =< ?PROCESS_DELAY_MAX) ->
 		     CPdelay;
 		 {CPdelay, _} ->
-		     erlang:max(
-		       erlang:min(CPdelay,?PROCESS_DELAY_MAX),
-		       ?PROCESS_DELAY_MIN)
+		     lists:max([lists:min([CPdelay, ?PROCESS_DELAY_MAX]), ?PROCESS_DELAY_MIN])
 	     end,
     Version =
 	case catch list_to_float(
@@ -963,6 +964,7 @@ prepare_response(Sess, Rid, OutputEls, StreamStart) ->
 prepare_outpacket_response(Sess, _Rid, OutPacket, false) ->
     case catch send_outpacket(Sess, OutPacket) of
 	{'EXIT', _Reason} ->
+	    ?DEBUG("Error in sending packet ~p ", [_Reason]),
 	    {200, ?HEADER,
 	     "<body type='terminate' xmlns='"++
 	     ?NS_HTTP_BIND++"'/>"};
@@ -971,8 +973,8 @@ prepare_outpacket_response(Sess, _Rid, OutPacket, false) ->
     end;
 %% Handle a new session along with its output payload
 prepare_outpacket_response(#http_bind{id=Sid, wait=Wait, 
-				      hold=Hold, to=To}=Sess,
-			   Rid, OutPacket, true) ->    
+				      hold=Hold, to=To}=_Sess,
+			   _Rid, OutPacket, true) ->    
     case OutPacket of
 	[{xmlstreamstart, _, OutAttrs} | Els] ->
 	    AuthID = xml:get_attr_s("id", OutAttrs),
@@ -1069,17 +1071,25 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 		lists:all(fun({xmlstreamelement,
 			       {xmlelement, "stream:error", _, _}}) -> false;
 			     ({xmlstreamelement, _}) -> true;
+			     ({xmlstreamraw, _}) -> true;
 			     (_) -> false
 			  end, OutPacket),
 	    case AllElements of
 		true ->
-		    TypedEls = [check_default_xmlns(OEl) ||
-				   {xmlstreamelement, OEl} <- OutPacket],
-		    Body = xml:element_to_binary(
-			     {xmlelement,"body",
-			      [{"xmlns",
-				?NS_HTTP_BIND}],
-			      TypedEls}),
+		    TypedEls = lists:foldr(fun({xmlstreamelement, El}, Acc) ->
+						   Acc ++ 
+						       [xml:element_to_string(
+							  check_default_xmlns(El)
+							 )];
+					      ({xmlstreamraw, R}, Acc)  ->
+						   Acc ++ [R]
+					   end,
+					   [],
+					   OutPacket),
+		    
+		    Body = "<body xmlns='"++?NS_HTTP_BIND++"'>" 
+			++ TypedEls ++
+			"</body>",
 		    ?DEBUG(" --- outgoing data --- ~n~s~n --- END --- ~n",
 			   [Body]),
 		    {200, ?HEADER, Body};
@@ -1253,7 +1263,9 @@ check_default_xmlns({xmlelement, Name, Attrs, Els} = El) ->
     case xml:get_tag_attr_s("xmlns", El) of
 	"" -> {xmlelement, Name, [{"xmlns", ?NS_CLIENT} | Attrs], Els};
 	_  -> El
-    end.
+    end;
+check_default_xmlns(El) ->
+    El.
 
 %% Check that mod_http_bind has been defined in config file.
 %% Print a warning in log file if this is not the case.

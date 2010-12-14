@@ -48,6 +48,8 @@
 -include("ejabberd_http.hrl").
 -include("http_bind.hrl").
 
+-define(PROCNAME_MHB, ejabberd_mod_http_bind).
+
 %% Duplicated from ejabberd_http_bind.
 %% TODO: move to hrl file.
 -record(http_bind, {id, pid, to, hold, wait, process_delay, version}).
@@ -98,41 +100,23 @@ get_human_html_xmlel() ->
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
-start(_Host, _Opts) ->
+start(Host, _Opts) ->
     setup_database(),
-    HTTPBindSupervisor =
-        {ejabberd_http_bind_sup,
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME_MHB),
+    ChildSpec =
+        {Proc,
          {ejabberd_tmp_sup, start_link,
-          [ejabberd_http_bind_sup, ejabberd_http_bind]},
+          [Proc, ejabberd_http_bind]},
          permanent,
          infinity,
          supervisor,
          [ejabberd_tmp_sup]},
-    case supervisor:start_child(ejabberd_sup, HTTPBindSupervisor) of
-        {ok, _Pid} ->
-            ok;
-        {ok, _Pid, _Info} ->
-            ok;
-        {error, {already_started, _PidOther}} ->
-            % mod_http_bind is already started so it will not be started again
-            ok;
-        {error, Error} ->
-            exit({start_child_error, Error})
-    end.
+    supervisor:start_child(ejabberd_sup, ChildSpec).
 
-stop(_Host) ->
-    case supervisor:terminate_child(ejabberd_sup, ejabberd_http_bind_sup) of
-        ok ->
-            ok;
-        {error, Error} ->
-            exit({terminate_child_error, Error})
-    end,
-    case supervisor:delete_child(ejabberd_sup, ejabberd_http_bind_sup) of
-        ok ->
-            ok;
-        {error, Error2} ->
-            exit({delete_child_error, Error2})
-    end.
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME_MHB),
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc).
 
 setup_database() ->
     migrate_database(),

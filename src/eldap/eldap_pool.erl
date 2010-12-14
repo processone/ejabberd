@@ -37,6 +37,12 @@
 
 -include("ejabberd.hrl").
 
+-ifdef(SSL40).
+-define(PG2, pg2).
+-else.
+-define(PG2, pg2_backport).
+-endif.
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -51,14 +57,14 @@ modify_passwd(PoolName, DN, Passwd) ->
 
 start_link(Name, Hosts, Backups, Port, Rootdn, Passwd, Opts) ->
     PoolName = make_id(Name),
-    pg2:create(PoolName),
+    ?PG2:create(PoolName),
     lists:foreach(
       fun(Host) ->
 	      ID = erlang:ref_to_list(make_ref()),
 	      case catch eldap:start_link(ID, [Host|Backups], Port,
 					  Rootdn, Passwd, Opts) of
 		  {ok, Pid} ->
-		      pg2:join(PoolName, Pid);
+		      ?PG2:join(PoolName, Pid);
 		  _ ->
 		      error
 	      end
@@ -68,9 +74,11 @@ start_link(Name, Hosts, Backups, Port, Rootdn, Passwd, Opts) ->
 %% Internal functions
 %%====================================================================
 do_request(Name, {F, Args}) ->
-    case pg2:get_closest_pid(make_id(Name)) of
+    case ?PG2:get_closest_pid(make_id(Name)) of
 	Pid when is_pid(Pid) ->
 	    case catch apply(eldap, F, [Pid | Args]) of
+		{'EXIT', {timeout, _}} ->
+		    ?ERROR_MSG("LDAP request failed: timed out", []);
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
 			       [F, Args, Reason]),

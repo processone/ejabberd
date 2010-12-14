@@ -1,4 +1,4 @@
-AC_DEFUN(AM_WITH_EXPAT,
+AC_DEFUN([AM_WITH_EXPAT],
 [ AC_ARG_WITH(expat,
 	      [AC_HELP_STRING([--with-expat=PREFIX], [prefix where EXPAT is installed])])
 
@@ -32,7 +32,7 @@ AC_DEFUN(AM_WITH_EXPAT,
   AC_SUBST(EXPAT_LIBS)
 ])
 
-AC_DEFUN(AM_WITH_ZLIB,
+AC_DEFUN([AM_WITH_ZLIB],
 [ AC_ARG_WITH(zlib,
 	      [AC_HELP_STRING([--with-zlib=PREFIX], [prefix where zlib is installed])])
 
@@ -68,7 +68,7 @@ if test x"$ejabberd_zlib" != x; then
 fi
 ])
 
-AC_DEFUN(AM_WITH_PAM,
+AC_DEFUN([AM_WITH_PAM],
 [ AC_ARG_WITH(pam,
 	      [AC_HELP_STRING([--with-pam=PREFIX], [prefix where PAM is installed])])
 if test x"$pam" != x; then
@@ -103,7 +103,7 @@ if test x"$pam" != x; then
 fi
 ])
 
-AC_DEFUN(AM_WITH_ERLANG,
+AC_DEFUN([AM_WITH_ERLANG],
 [ AC_ARG_WITH(erlang,
 	      [AC_HELP_STRING([--with-erlang=PREFIX], [path to erlc and erl])])
 
@@ -199,7 +199,7 @@ _EOF
    AC_SUBST(ERL)
 ])
 
-AC_DEFUN(AC_MOD_ENABLE,
+AC_DEFUN([AC_MOD_ENABLE],
 [
 $1=
 make_$1=
@@ -309,7 +309,7 @@ size_t iconv();
 ])
 
 dnl <openssl>
-AC_DEFUN(AM_WITH_OPENSSL,
+AC_DEFUN([AM_WITH_OPENSSL],
 [ AC_ARG_WITH(openssl,
       [AC_HELP_STRING([--with-openssl=PREFIX], [prefix where OPENSSL is installed])])
 unset SSL_LIBS;

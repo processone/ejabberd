@@ -2241,7 +2241,7 @@ get_node(global, Node, ["update"], Query, Lang) ->
     [?XC("h1", ?T("Update ") ++ atom_to_list(Node))] ++
 	case Res of
 	    ok -> [?XREST("Submitted")];
-	    error -> [?XREST("Bad format")];
+	    {error, ErrorText} -> [?XREST("Error: " ++ ErrorText)];
 	    nothing -> []
 	end ++
 	[?XAE("form", [{"action", ""}, {"method", "post"}],
@@ -2624,9 +2624,11 @@ node_update_parse_query(Node, Query) ->
 		{ok, _} ->
 		    ok;
 		{error, Error} ->
-		    ?ERROR_MSG("~p~n", [Error]);
+		    ?ERROR_MSG("~p~n", [Error]),
+		    {error, io_lib:format("~p", [Error])};
 		{badrpc, Error} ->
-		    ?ERROR_MSG("~p~n", [Error])
+		    ?ERROR_MSG("Bad RPC: ~p~n", [Error]),
+		    {error, "Bad RPC: " ++ io_lib:format("~p", [Error])}
 	    end;
 	_ ->
 	    nothing

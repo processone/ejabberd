@@ -49,7 +49,41 @@ start_link() ->
 
 
 init(_) ->
+    ets:new(listen_sockets, [named_table, public]),
+    bind_tcp_ports(),
     {ok, {{one_for_one, 10, 1}, []}}.
+
+bind_tcp_ports() ->
+    case ejabberd_config:get_local_option(listen) of
+	undefined ->
+	    ignore;
+	Ls ->
+	    lists:foreach(
+	      fun({Port, Module, Opts}) ->
+		      ModuleRaw = strip_frontend(Module),
+		      case ModuleRaw:socket_type() of
+			  independent -> ok;
+			  _ ->
+			      bind_tcp_port(Port, Module, Opts)
+		      end
+	      end, Ls)
+    end.
+
+bind_tcp_port(PortIP, Module, RawOpts) ->
+    try check_listener_options(RawOpts) of
+	ok ->
+	    {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
+	    {_Opts, SockOpts} = prepare_opts(IPT, IPV, OptsClean),
+	    case Proto of
+		udp -> ok;
+		_ ->
+		    ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
+		    ets:insert(listen_sockets, {PortIP, ListenSocket})
+	    end
+    catch
+	throw:{error, Error} ->
+	    ?ERROR_MSG(Error, [])
+    end.
 
 start_listeners() ->
     case ejabberd_config:get_local_option(listen) of
@@ -100,15 +134,7 @@ start_dependent(Port, Module, Opts) ->
 
 init(PortIP, Module, RawOpts) ->
     {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
-    %% The first inet|inet6 and the last {ip, _} work,
-    %% so overriding those in Opts
-    Opts = [IPV | OptsClean] ++ [{ip, IPT}],
-    SockOpts = lists:filter(fun({ip, _}) -> true;
-			       (inet6) -> true;
-			       (inet) -> true;
-			       ({backlog, _}) -> true;
-			       (_) -> false
-			    end, Opts),
+    {Opts, SockOpts} = prepare_opts(IPT, IPV, OptsClean),
     if Proto == udp ->
 	    init_udp(PortIP, Module, Opts, SockOpts, Port, IPS);
        true ->
@@ -129,28 +155,39 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     end.
 
 init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
-    SockOpts2 = try erlang:system_info(otp_release) >= "R13B" of
-		    true -> [{send_timeout_close, true} | SockOpts];
-		    false -> SockOpts
-		catch
-		    _:_ -> []
-		end,
-    Res = gen_tcp:listen(Port, [binary,
-				{packet, 0},
-				{active, false},
-				{reuseaddr, true},
-				{nodelay, true},
-				{send_timeout, ?TCP_SEND_TIMEOUT},
-				{keepalive, true} |
-				SockOpts2]),
-    case Res of
-	{ok, ListenSocket} ->
-	    %% Inform my parent that this port was opened succesfully
-	    proc_lib:init_ack({ok, self()}),
-	    %% And now start accepting connection attempts
-	    accept(ListenSocket, Module, Opts);
-	{error, Reason} ->
-	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
+    ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
+    %% Inform my parent that this port was opened succesfully
+    proc_lib:init_ack({ok, self()}),
+    %% And now start accepting connection attempts
+    accept(ListenSocket, Module, Opts).
+
+listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
+    case ets:lookup(listen_sockets, PortIP) of
+	[{PortIP, ListenSocket}] ->
+	    ?INFO_MSG("Reusing listening port for ~p", [Port]),
+	    ets:delete(listen_sockets, Port),
+	    ListenSocket;
+	_ ->
+	    SockOpts2 = try erlang:system_info(otp_release) >= "R13B" of
+			    true -> [{send_timeout_close, true} | SockOpts];
+			    false -> SockOpts
+			catch
+			    _:_ -> []
+			end,
+	    Res = gen_tcp:listen(Port, [binary,
+					{packet, 0},
+					{active, false},
+					{reuseaddr, true},
+					{nodelay, true},
+					{send_timeout, ?TCP_SEND_TIMEOUT},
+					{keepalive, true} |
+					SockOpts2]),
+	    case Res of
+		{ok, ListenSocket} ->
+		    ListenSocket;
+		{error, Reason} ->
+		    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
+	    end
     end.
 
 %% @spec (PortIP, Opts) -> {Port, IPT, IPS, IPV, OptsClean}
@@ -194,6 +231,18 @@ parse_listener_portip(PortIP, Opts) ->
 	      8 -> inet6
 	  end,
     {Port, IPT, IPS, IPV, Proto, OptsClean}.
+
+prepare_opts(IPT, IPV, OptsClean) ->
+    %% The first inet|inet6 and the last {ip, _} work,
+    %% so overriding those in Opts
+    Opts = [IPV | OptsClean] ++ [{ip, IPT}],
+    SockOpts = lists:filter(fun({ip, _}) -> true;
+			       (inet6) -> true;
+			       (inet) -> true;
+			       ({backlog, _}) -> true;
+			       (_) -> false
+			    end, Opts),
+    {Opts, SockOpts}.
 
 add_proto(Port, Opts) when is_integer(Port) ->
     {Port, get_proto(Opts)};

@@ -66,13 +66,13 @@ start_module(Host, Module, Opts) ->
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts}),
-    case catch Module:start(Host, Opts) of
-	{'EXIT', Reason} ->
+    try Module:start(Host, Opts)
+    catch Class:Reason ->
 	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ?ERROR_MSG("~p", [Reason]);
-	_ ->
-	    ok
+	    ?ERROR_MSG("Problem starting the module ~p for host ~p with options:~n  ~p~n  ~p: ~p",
+		    [Module, Host, Opts, Class, Reason]),
+	    erlang:raise(Class, Reason, erlang:get_stacktrace())
     end.
 
 %% @doc Stop the module in a host, and forget its configuration.

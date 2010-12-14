@@ -330,7 +330,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 			[] ->
 			    ?DEBUG("open new connection~n", []),
 			    {Username, Encoding, Port, Password} = get_connection_params(
-						     Host, From, Server),
+						     Host, ServerHost, From, Server),
 			    ConnectionUsername =
 				case Packet of
 				    %% If the user tries to join a
@@ -535,6 +535,7 @@ get_form(Host, From, [], Lang) ->
     #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
+    DefaultEncoding = get_default_encoding(Host),
     Customs =
 	case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	    {'EXIT', _Reason} ->
@@ -587,7 +588,7 @@ get_form(Host, From, [], Lang) ->
 			   "'{\"irc server\", \"encoding\", port, \"password\"}'.  "
 			   "By default this service use \"~s\" encoding, port ~p, "
 			   "empty password."),
-		         [?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT]))}]}]},
+		         [DefaultEncoding, ?DEFAULT_IRC_PORT]))}]}]},
 	        {xmlelement, "field", [{"type", "fixed"}],
 	         [{xmlelement, "value", [],
 		   [{xmlcdata,
@@ -662,15 +663,30 @@ set_form(_Host, _, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
+%% Host = "irc.example.com"
+%% ServerHost = "example.com"
 get_connection_params(Host, From, IRCServer) ->
+    [_ | HostTail] = string:tokens(Host, "."),
+    ServerHost = string:join(HostTail, "."),
+    get_connection_params(Host, ServerHost, From, IRCServer).
+
+get_default_encoding(ServerHost) ->
+    Result = gen_mod:get_module_opt(
+		     ServerHost, ?MODULE, default_encoding,
+		     ?DEFAULT_IRC_ENCODING),
+    ?INFO_MSG("The default_encoding configured for host ~p is: ~p~n", [ServerHost, Result]),
+    Result.
+
+get_connection_params(Host, ServerHost, From, IRCServer) ->
     #jid{user = User, server = _Server,
 	 luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
+    DefaultEncoding = get_default_encoding(ServerHost),
     case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
 	{'EXIT', _Reason} ->
-	    {User, ?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT, ""};
+	    {User, DefaultEncoding, ?DEFAULT_IRC_PORT, ""};
 	[] ->
-	    {User, ?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT, ""};
+	    {User, DefaultEncoding, ?DEFAULT_IRC_PORT, ""};
 	[#irc_custom{data = Data}] ->
 	    Username = xml:get_attr_s(username, Data),
 	    {NewUsername, NewEncoding, NewPort, NewPassword} = 
@@ -682,7 +698,7 @@ get_connection_params(Host, From, IRCServer) ->
 		    {value, {_, Encoding}} ->
 			{Username, Encoding, ?DEFAULT_IRC_PORT, ""};
 		    _ ->
-			{Username, ?DEFAULT_IRC_ENCODING, ?DEFAULT_IRC_PORT, ""}
+			{Username, DefaultEncoding, ?DEFAULT_IRC_PORT, ""}
     		end,
 	    {NewUsername, 
 	     NewEncoding, 
@@ -881,7 +897,7 @@ generate_connection_params_fields(Lang, [ConnectionParams | ConnectionsParams], 
 generate_connection_params_field(Lang, Server, Encoding, Port, Password, Number) ->
     EncodingUsed = case Encoding of
 		       [] ->
-			   ?DEFAULT_IRC_ENCODING;
+			   get_default_encoding(Server);
 		       _ ->
 			   Encoding
 		   end,

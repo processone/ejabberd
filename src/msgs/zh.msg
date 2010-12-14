@@ -33,8 +33,10 @@
 {"Backup","备份"}.
 {"Bad format","格式错误"}.
 {"Birthday","出生日期"}.
+{"CAPTCHA web page","验证码 Web 页面"}.
 {"Change Password","更改密码"}.
 {"Change User Password","更改用户密码"}.
+{"Characters not allowed:","禁用字符:"}.
 {"Chatroom configuration modified","聊天室配置已修改"}.
 {"Chatroom is created","聊天室已被创建"}.
 {"Chatroom is destroyed","聊天室已被销毁"}.
@@ -69,6 +71,7 @@
 {"Description:","描述:"}.
 {"Disc only copy","仅磁盘复制"}.
 {"Displayed Groups:","已显示的组:"}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","不要将密码告诉任何人, 就算是 Jabber 服务器的管理员也不可以."}.
 {"Dump Backup to Text File at ","转储备份到文本文件于"}.
 {"Dump to Text File","转储到文本文件"}.
 {"Edit Properties","编辑属性"}.
@@ -120,6 +123,7 @@
 {"has been kicked","已被踢出"}.
 {" has set the subject to: ","已将标题设置为: "}.
 {"Host","主机"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","如果您在这里没有看到验证码图片, 请访问 Web 页面."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","如果您想为 IRC 服务器指定不同的端口, 密码, 编码, 请用 '{\"irc 服务器\", \"编码\", 端口, \"密码\"}' 格式的值填充此表单. 默认情况下此服务使用\"~s\"编码, ~p 端口, 密码为空."}.
 {"Import Directory","导入目录"}.
 {"Import File","导入文件"}.
@@ -144,7 +148,8 @@
 {"is now known as","现在称呼为"}.
 {"It is not allowed to send private messages of type \"groupchat\"","\"群组聊天\"类型不允许发送私聊消息"}.
 {"It is not allowed to send private messages to the conference","不允许向会议发送私聊消息"}.
-{"It is not allowed to send private messages","不允许发送私聊消息"}.
+{"It is not allowed to send private messages","不可以发送私聊消息"}.
+{"Jabber Account Registration","Jabber 帐户注册"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s无效"}.
 {"January","一月"}.
@@ -166,17 +171,18 @@
 {"Make participants list public","公开参与人列表"}.
 {"Make room captcha protected","保护房间验证码"}.
 {"Make room members-only","设置房间只接收会员"}.
-{"Make room moderated","只有有\"发言权\"的用户才可以发送消息给所有驻留者"}.
+{"Make room moderated","设置房间只接收主持人"}.
 {"Make room password protected","进入此房间需要密码"}.
 {"Make room persistent","永久保存该房间"}.
 {"Make room public searchable","使房间可被公开搜索"}.
 {"March","三月"}.
-{"Maximum Number of Occupants","允许的驻留者最大数"}.
+{"Maximum Number of Occupants","允许的与会人最大数"}.
 {"Max # of items to persist","允许持久化的最大内容条目数"}.
 {"Max payload size in bytes","最大有效负载比特数"}.
 {"May","五月"}.
 {"Membership is required to enter this room","进入此房间需要会员身份"}.
 {"Members:","会员:"}.
+{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","记住你的密码, 或将其记到纸上并放于安全位置. 如果你忘记了密码, Jabber 也没有自动恢复密码的方式."}.
 {"Memory","内存"}.
 {"Message body","消息主体"}.
 {"Middle Name","中间名"}.
@@ -190,6 +196,7 @@
 {"Name:","姓名:"}.
 {"Name","姓名"}.
 {"Never","从未"}.
+{"New Password:","新密码: "}.
 {"Nickname Registration at ","昵称注册于 "}.
 {"Nickname ~s does not exist in the room","昵称~s不在该房间"}.
 {"Nickname","昵称"}.
@@ -214,14 +221,15 @@
 {"Offline Messages:","离线消息:"}.
 {"Offline Messages","离线消息"}.
 {"OK","确定"}.
+{"Old Password:","旧密码: "}.
 {"Online Users:","在线用户:"}.
 {"Online Users","在线用户"}.
 {"Online","在线"}.
 {"Only deliver notifications to available users","仅将通知发送给可发送的用户"}.
-{"Only moderators and participants are allowed to change the subject in this room","只允许监管人和参与人在此房间里更改主题"}.
-{"Only moderators are allowed to change the subject in this room","只允许监管人更改此房间的主题"}.
-{"Only occupants are allowed to send messages to the conference","只允许驻留者向会议发送消息"}.
-{"Only occupants are allowed to send queries to the conference","只允许驻留者发出查询请求"}.
+{"Only moderators and participants are allowed to change the subject in this room","只有主持人和参与人可以在此房间里更改主题"}.
+{"Only moderators are allowed to change the subject in this room","只有主持人可以在此房间里更改主题"}.
+{"Only occupants are allowed to send messages to the conference","只有与会人可以向大会发送消息"}.
+{"Only occupants are allowed to send queries to the conference","只有与会人可以向大会发出查询请求"}.
 {"Only service administrators are allowed to send service messages","只有服务管理员可以发送服务消息"}.
 {"Options","选项"}.
 {"Organization Name","组织名称"}.
@@ -232,6 +240,7 @@
 {"Owner privileges required","需要持有人权限"}.
 {"Packet","数据包"}.
 {"Password ~b","~b 的密码"}.
+{"Password Verification:","密码确认:"}.
 {"Password Verification","确认密码"}.
 {"Password:","密码: "}.
 {"Password","密码"}.
@@ -251,14 +260,16 @@
 {"Publish-Subscribe","发行-订阅"}.
 {"PubSub subscriber request","PubSub 订阅人请求"}.
 {"Purge all items when the relevant publisher goes offline","相关发布人离线后清除所有选项"}.
-{"Queries to the conference members are not allowed in this room","本房间不允许发出成员查询请求"}.
+{"Queries to the conference members are not allowed in this room","本房间不可以查询会议成员信息"}.
 {"RAM and disc copy","内存与磁盘复制"}.
 {"RAM copy","内存(RAM)复制"}.
 {"Raw","原始格式"}.
 {"Really delete message of the day?","确实要删除每日消息吗?"}.
 {"Recipient is not in the conference room","接收人不在会议室"}.
+{"Register a Jabber account","注册 Jabber 帐户"}.
 {"Registered Users:","注册用户:"}.
 {"Registered Users","注册用户"}.
+{"Register","注册"}.
 {"Registration in mod_irc for ","mod_irc 中的注册是为 "}.
 {"Remote copy","远程复制"}.
 {"Remove All Offline Messages","移除所有离线消息"}.
@@ -295,6 +306,7 @@
 {"Send announcement to all users","发送通知给所有用户"}.
 {"September","九月"}.
 {"Server ~b","服务器 ~b"}.
+{"Server:","服务器:"}.
 {"Set message of the day and send to online users","设定每日消息并发送给所有在线用户"}.
 {"Set message of the day on all hosts and send to online users","设置所有主机上的每日消息并发送给在线用户"}.
 {"Shared Roster Groups","共享的花名册组群"}.
@@ -302,6 +314,7 @@
 {"Show Ordinary Table","显示普通列表"}.
 {"Shut Down Service","关闭服务"}.
 {"~s invites you to the room ~s","~s邀请你到~s房间"}.
+{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","某些 Jabber 客户端可以在你的计算机里存储密码. 请仅在你确认你的计算机安全的情况下使用该功能."}.
 {"Specify the access model","指定访问模式"}.
 {"Specify the event message type","指定事件消息类型"}.
 {"Specify the publisher model","指定发布人样式"}.
@@ -327,10 +340,19 @@
 {"That nickname is already in use by another occupant","该昵称已被另一用户使用"}.
 {"That nickname is registered by another person","该昵称已被另一个人注册了"}.
 {"The captcha is valid.","验证码有效."}.
+{"The CAPTCHA verification has failed","验证码检查失败"}.
 {"The collections with which a node is affiliated","加入结点的集合"}.
+{"The password is too weak","密码强度太弱"}.
 {"the password is","密码是"}.
-{"This participant is kicked from the room because he sent an error message to another participant","该用户由于给其他人发送了出错消息而被踢出了聊天室"}.
-{"This participant is kicked from the room because he sent an error message","该用户由于发送了错误消息而被踢出了聊天室"}.
+{"The password of your Jabber account was successfully changed.","你的 Jabber 帐户密码已成功更新."}.
+{"There was an error changing the password: ","修改密码出错: "}.
+{"There was an error creating the account: ","帐户创建出错: "}.
+{"There was an error deleting the account: ","帐户删除失败: "}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."}.
+{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","本页面允许在此服务器上创建 Jabber 帐户. 你的 JID (Jabber ID) 的形式如下: 用户名@服务器. 请仔细阅读说明并正确填写相应字段."}.
+{"This page allows to unregister a Jabber account in this Jabber server.","此页面允许在此 Jabber 服务器上注销 Jabber 帐户"}.
+{"This participant is kicked from the room because he sent an error message to another participant","该参与人由于给其他人发送了出错消息而被踢出了聊天室"}.
+{"This participant is kicked from the room because he sent an error message","该参与人由于发送了错误消息而被踢出了聊天室"}.
 {"This participant is kicked from the room because he sent an error presence","该用户由于发送了错误状态而被踢出了聊天室"}.
 {"This room is not anonymous","此房间不是匿名房间"}.
 {"Thursday","星期四"}.
@@ -345,7 +367,10 @@
 {"Transactions Restarted:","重启的事务:"}.
 {"Tuesday","星期二"}.
 {"Unable to generate a captcha","无法产生验证码"}.
+{"Unable to generate a CAPTCHA","无法生成验证码"}.
 {"Unauthorized","未认证的"}.
+{"Unregister a Jabber account","注销 Jabber 帐户"}.
+{"Unregister","取消注册"}.
 {"Update message of the day (don't send)","更新每日消息(不发送)"}.
 {"Update message of the day on all hosts (don't send)","更新所有主机上的每日消息(不发送)"}.
 {"Update plan","更新计划"}.
@@ -355,6 +380,7 @@
 {"Uptime:","正常运行时间:"}.
 {"Use of STARTTLS required","要求使用 STARTTLS"}.
 {"User Management","用户管理"}.
+{"Username:","用户名:"}.
 {"Users are not allowed to register accounts so quickly","不允许用户太频繁地注册帐户"}.
 {"Users Last Activity","用户上次活动"}.
 {"Users","用户"}.
@@ -367,11 +393,16 @@
 {"Wednesday","星期三"}.
 {"When to send the last published item","何时发送最新发布的内容条目"}.
 {"Whether to allow subscriptions","是否允许订阅"}.
+{"You can later change your password using a Jabber client.","你可以稍后用 Jabber 客户端修改你的密码."}.
 {"You have been banned from this room","您已被禁止进入该房间"}.
 {"You must fill in field \"Nickname\" in the form","您必须填充表单中\"昵称\"项"}.
+{"You need a client that supports x:data and CAPTCHA to register","您需要一个支持 x:data 和验证码的客户端进行注册"}.
+{"You need a client that supports x:data to register the nickname","您需要一个支持 x:data 的客户端来注册昵称"}.
 {"You need an x:data capable client to configure mod_irc settings","您需要一个兼容 x:data 的客户端来配置 mod_irc 设置"}.
 {"You need an x:data capable client to configure room","您需要一个兼容 x:data 的客户端来配置房间"}.
-{"You need an x:data capable client to register nickname","您需要一个兼容 x:data 的客户端来注册昵称"}.
 {"You need an x:data capable client to search","您需要一个兼容 x:data 的客户端来搜索"}.
+{"Your active privacy list has denied the routing of this stanza.","你的活跃私聊列表拒绝了在此房间进行路由分发."}.
 {"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满. 消息已被丢弃"}.
+{"Your Jabber account was successfully created.","你的 Jabber 帐户已成功创建."}.
+{"Your Jabber account was successfully deleted.","你的 Jabber 帐户已成功删除."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","您发送给 ~s 的消息已被阻止. 要解除阻止, 请访问 ~s"}.

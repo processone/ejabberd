@@ -33,8 +33,10 @@
 {"Backup","Αποθήκευση Αντιγράφου Ασφαλείας"}.
 {"Bad format","Ακατάλληλη μορφή"}.
 {"Birthday","Γενέθλια"}.
+{"CAPTCHA web page","Ιστοσελίδα CAPTCHA "}.
 {"Change Password","Αλλαγή κωδικού"}.
 {"Change User Password","Αλλαγή Κωδικού Πρόσβασης Χρήστη"}.
+{"Characters not allowed:","Χαρακτήρες δεν επιτρέπονται:"}.
 {"Chatroom configuration modified","Διαμόρφωση Αίθουσaς σύνεδριασης τροποποιηθηκε"}.
 {"Chatroom is created","Η αίθουσα σύνεδριασης  δημιουργήθηκε"}.
 {"Chatroom is destroyed","Η αίθουσα σύνεδριασης διαγράφηκε"}.
@@ -69,6 +71,7 @@
 {"Description:","Περιγραφή:"}.
 {"Disc only copy","Αντίγραφο μόνο σε δίσκο"}.
 {"Displayed Groups:","Εμφανίσμενες Ομάδες:"}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ακόμη και στους διαχειριστές του διακομιστή Jabber."}.
 {"Dump Backup to Text File at ","Αποθήκευση Αντιγράφου Ασφαλείας σε αρχείο κειμένου στο "}.
 {"Dump to Text File","Αποθήκευση σε αρχείο κειμένου"}.
 {"Edit Properties","Επεξεργασία ιδιοτήτων"}.
@@ -120,6 +123,7 @@
 {"has been kicked","αποβλήθηκε "}.
 {" has set the subject to: "," έχει θέσει το θέμα σε: "}.
 {"Host","Κεντρικός Υπολογιστής"}.
+{"If you don't see the CAPTCHA image here, visit the web page.","Εάν δεν βλέπετε την εικόνα CAPTCHA εδώ, επισκεφθείτε την ιστοσελίδα."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Εάν θέλετε να καθορίσετε διαφορετικές θύρες, κωδικούς πρόσβασης, κωδικοποιήσεις για IRC διακομιστές, εισάγετε πληροφορίες στη μορφή '{\"irc διακομιστής\", \"κωδικοποιήσεις\", θύρα, \"κωδικός πρόσβασης\"}'.  Προεπιλεγμενα αυτή η υπηρεσία χρησιμοποιεί \"~s\" κωδικοποιήση, θύρα ~p, κενό κωδικό πρόσβασης."}.
 {"Import Directory","Εισαγωγή κατάλογου αρχείων"}.
 {"Import File","Εισαγωγή αρχείων"}.
@@ -145,6 +149,7 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Δεν επιτρέπεται να στείλει προσωπικά μηνύματα του τύπου \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Δεν επιτρέπεται να στείλει προσωπικά μηνύματα για τη διάσκεψη"}.
 {"It is not allowed to send private messages","Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων"}.
+{"Jabber Account Registration","Εγγραφή λογαριασμού Jabber"}.
 {"Jabber ID ~s is invalid","Η Jabber Ταυτότητα ~s είναι άκυρη"}.
 {"Jabber ID","Ταυτότητα Jabber"}.
 {"January","Ιανουάριος"}.
@@ -177,6 +182,7 @@
 {"May","Μάιος"}.
 {"Membership is required to enter this room","Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"}.
 {"Members:","Μέλη:"}.
+{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Απομνημονεύστε τον κωδικό πρόσβασής σας, ή γράψετε τον σε ένα χαρτί που είχε τοποθετηθεί σε ασφαλές μέρος. Στο Jabber δεν υπάρχει αυτοματοποιημένος τρόπος για να ανακτήσετε τον κωδικό σας αν τον ξεχάσετε."}.
 {"Memory","Μνήμη"}.
 {"Message body","Περιεχόμενο μηνυμάτως"}.
 {"Middle Name","Πατρώνυμο"}.
@@ -190,6 +196,7 @@
 {"Name:","Όνομα:"}.
 {"Name","Όνομα"}.
 {"Never","Ποτέ"}.
+{"New Password:","Νέος κωδικός πρόσβασης:"}.
 {"Nickname Registration at ","Εγγραφή με Ψευδώνυμο στο "}.
 {"Nickname ~s does not exist in the room","Ψευδώνυμο ~s δεν υπάρχει σε αυτή την αίθουσα"}.
 {"Nickname","Ψευδώνυμο"}.
@@ -214,6 +221,7 @@
 {"Offline Messages:","Χωρίς Σύνδεση Μηνύματα:"}.
 {"Offline Messages","Χωρίς Σύνδεση Μηνύματα"}.
 {"OK","Όλλα Καλά"}.
+{"Old Password:","Παλαιός κωδικός πρόσβασης:"}.
 {"Online Users:","Online Χρήστες:"}.
 {"Online Users","Συνδεμένοι χρήστες"}.
 {"Online","Συνδεδεμένο"}.
@@ -232,6 +240,7 @@
 {"Owner privileges required","Aπαιτούνται προνόμια ιδιοκτήτη"}.
 {"Packet","Πακέτο"}.
 {"Password ~b","Κωδικός πρόσβασης ~b"}.
+{"Password Verification:","Επαλήθευση κωδικού πρόσβασης:"}.
 {"Password Verification","Επαλήθευση κωδικού πρόσβασης"}.
 {"Password","Κωδικός Πρόσβασης"}.
 {"Password:","Κωδικός πρόσβασης:"}.
@@ -257,8 +266,10 @@
 {"Raw","Ακατέργαστο"}.
 {"Really delete message of the day?","Πραγματικά να διαγράψετε το μήνυμα της ημέρας;"}.
 {"Recipient is not in the conference room","Παραλήπτης δεν είναι στην αίθουσα συνεδριάσεων"}.
+{"Register a Jabber account","Καταχωρήστε έναν λογαριασμό Jabber"}.
 {"Registered Users:","Εγγεγραμμένοι Χρήστες:"}.
 {"Registered Users","Εγγεγραμμένοι Χρήστες"}.
+{"Register","Καταχωρήστε"}.
 {"Registration in mod_irc for ","Εγγραφή στο mod_irc για "}.
 {"Remote copy","Απομεμακρυσμένο αντίγραφο"}.
 {"Remove All Offline Messages","Αφαίρεση Όλων των Χωρίς Σύνδεση Μηνύματων"}.
@@ -295,6 +306,7 @@
 {"Send announcement to all users","Αποστολή ανακοίνωσης σε όλους τους χρήστες"}.
 {"September","Σεπτέμβριος"}.
 {"Server ~b","Διακομιστής  ~b"}.
+{"Server:","Διακομιστής:"}.
 {"Set message of the day and send to online users","Ορίστε μήνυμα ημέρας και αποστολή στους συνδεδεμένους χρήστες"}.
 {"Set message of the day on all hosts and send to online users","Ορίστε μήνυμα ημέρας και άμεση αποστολή στους συνδεδεμένους χρήστες σε όλους τους κεντρικούς υπολογιστές"}.
 {"Shared Roster Groups","Κοινές Ομάδες Καταλόγων Επαφών"}.
@@ -302,6 +314,7 @@
 {"Show Ordinary Table","Δείτε Κοινό Πίνακα"}.
 {"Shut Down Service","Κλείσιμο Υπηρεσίας"}.
 {"~s invites you to the room ~s","~s σας προσκαλεί στην αίθουσα ~s"}.
+{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Μερικοί πελάτες Jabber μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον υπολογιστή σας. Χρησιμοποιήστε αυτό το χαρακτηριστικό μόνο εάν εμπιστεύεστε την ασφάλεια του υπολογιστή σας."}.
 {"Specify the access model","Καθορίστε το μοντέλο πρόσβασης"}.
 {"Specify the event message type","Καθορίστε τον τύπο μηνύματος συμβάντος"}.
 {"Specify the publisher model","Καθορίστε το μοντέλο εκδότη"}.
@@ -327,8 +340,17 @@
 {"That nickname is already in use by another occupant","Αυτό το ψευδώνυμο είναι ήδη σε χρήση από άλλον συμμετέχων"}.
 {"That nickname is registered by another person","Αυτό το ψευδώνυμο είναι καταχωρημένο από άλλο πρόσωπο"}.
 {"The captcha is valid.","Το captcha είναι έγκυρο."}.
+{"The CAPTCHA verification has failed","Η επαλήθευση της εικόνας CAPTCHA απέτυχε"}.
 {"The collections with which a node is affiliated","Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"}.
+{"The password is too weak","Ο κωδικός πρόσβασης είναι πολύ ασθενές"}.
 {"the password is","ο κωδικός πρόσβασης είναι"}.
+{"The password of your Jabber account was successfully changed.","Ο κωδικός  πρόσβασης του Jabber λογαριασμού σας έχει αλλάξει επιτυχώς."}.
+{"There was an error changing the password: ","Υπήρξε ένα σφάλμα κατά την αλλαγή του κωδικού πρόσβασης:"}.
+{"There was an error creating the account: ","Υπήρξε ένα σφάλμα κατά τη δημιουργία του λογαριασμού:"}.
+{"There was an error deleting the account: ","Υπήρξε ένα σφάλμα κατά τη διαγραφή του λογαριασμού:"}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Ανεξαρτήτως με πεζά ή κεφαλαία: 'μιαλεξη' είναι το ίδιο με 'ΜιαΛέξη' και 'Μιαλέξη'."}.
+{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Αυτή η σελίδα σας επιτρέπει να δημιουργήσετε ένα λογαριασμό Jabber σε αυτόν το διακομιστή Jabber. JID σας (Jabber Identifier) θα είναι της μορφής: όνομα_χρήστη@διακομιστής_Jabber. Παρακαλώ διαβάστε προσεκτικά τις οδηγίες για να συμπληρώσετε σωστά τα πεδία."}.
+{"This page allows to unregister a Jabber account in this Jabber server.","Η σελίδα αυτή δίνει τη δυνατότητα να καταργήσετε την καταχώρηση ενός λογαριασμό Jabber σε αυτόν το διακομιστή Jabber."}.
 {"This participant is kicked from the room because he sent an error message to another participant","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε ένα μήνυμα σφάλματος σε άλλον συμμετέχων"}.
 {"This participant is kicked from the room because he sent an error message","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε ένα μήνυμα σφάλματος"}.
 {"This participant is kicked from the room because he sent an error presence","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε σφάλμα παρουσίας "}.
@@ -345,7 +367,10 @@
 {"Transactions Restarted:","Επανειλημμένες συναλλαγές:"}.
 {"Tuesday","Τρίτη"}.
 {"Unable to generate a captcha","Αδήνατο να δημιουργηθεί CAPTCHA"}.
+{"Unable to generate a CAPTCHA","Αδήνατο να δημιουργηθεί εικόνα CAPTCHA"}.
 {"Unauthorized","Χορίς Εξουσιοδότηση"}.
+{"Unregister a Jabber account","Καταργήστε την εγγραφή ενός λογαριασμού Jabber"}.
+{"Unregister","Καταργήση εγγραφής"}.
 {"Update message of the day (don't send)","Ενημέρωση μηνύματως ημέρας (χωρίς άμεση αποστολή)"}.
 {"Update message of the day on all hosts (don't send)","Ενημέρωση μηνύματως ημέρας σε όλους τους κεντρικούς υπολογιστές (χωρίς άμεση αποστολή)"}.
 {"Update plan","Σχέδιο ενημέρωσης"}.
@@ -355,6 +380,7 @@
 {"Uptime:","Uptime:"}.
 {"Use of STARTTLS required","Απαιτείται χρήση STARTTLS "}.
 {"User Management","Διαχείριση χρηστών"}.
+{"Username:","Όνομα χρήστη"}.
 {"Users are not allowed to register accounts so quickly","Οι χρήστες δεν επιτρέπεται να εγγραφούν λογαριασμούς τόσο γρήγορα"}.
 {"Users Last Activity","Τελευταία Δραστηριότητα Χρήστη"}.
 {"Users","Χρήστες"}.
@@ -367,11 +393,16 @@
 {"Wednesday","Τετάρτη"}.
 {"When to send the last published item","Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"}.
 {"Whether to allow subscriptions","Εάν επιτρέποντε συνδρομές"}.
+{"You can later change your password using a Jabber client.","Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν πελάτη Jabber."}.
 {"You have been banned from this room","Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"}.
 {"You must fill in field \"Nickname\" in the form","Θα πρέπει να συμπληρώσετε το πεδίο \"Ψευδώνυμο\" στη φόρμα"}.
+{"You need a client that supports x:data and CAPTCHA to register","Χρειάζεστε ένα x:data και CAPTCHA ικανό πελάτη για εγγραφή"}.
+{"You need a client that supports x:data to register the nickname","Χρειάζεστε ένα x:data ικανό πελάτη για εγγραφή με ψευδώνυμο"}.
 {"You need an x:data capable client to configure mod_irc settings","Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε το mod_irc"}.
 {"You need an x:data capable client to configure room","Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε την αίθουσα "}.
-{"You need an x:data capable client to register nickname","Χρειάζεστε ένα x:data ικανό πελάτη για να εγγράφή με ψευδώνυμο"}.
 {"You need an x:data capable client to search","Χρειάζεστε ένα  x:data ικανό πελάτη για αναζήτηση"}.
+{"Your active privacy list has denied the routing of this stanza.","Ο ενεργός κατάλογος απορρήτου, έχει αρνηθεί τη δρομολόγηση αυτής της στροφής (stanza)."}.
 {"Your contact offline message queue is full. The message has been discarded.","Η μνήμη χωρίς σύνδεση μήνυματών είναι πλήρης. Το μήνυμα έχει απορριφθεί."}.
+{"Your Jabber account was successfully created.","Ο Jabber λογαριασμός σας δημιουργήθηκε με επιτυχία."}.
+{"Your Jabber account was successfully deleted.","Ο Jabber λογαριασμός σας διαγράφηκε με επιτυχία."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Τα μηνύματά σας πρως ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"}.

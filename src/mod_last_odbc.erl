@@ -117,43 +117,62 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 			   privacy_check_packet, Server,
 			                    allow,
 			   [User, Server, UserListRecord,
-			    {From, To,
+			    {To, From,
 			     {xmlelement, "presence", [], []}},
-			    in]) of
+			    out]) of
 			allow ->
-			    get_last(IQ, SubEl, User, Server);
+			    get_last_iq(IQ, SubEl, User, Server);
 			deny ->
 			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+				  sub_el = [SubEl, ?ERR_FORBIDDEN]}
 		    end;
 		true ->
 		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+			  sub_el = [SubEl, ?ERR_FORBIDDEN]}
 	    end
     end.
 
-%% TODO: This function could use get_last_info/2
-get_last(IQ, SubEl, LUser, LServer) ->
+%% @spec (LUser::string(), LServer::string()) ->
+%%      {ok, TimeStamp::integer(), Status::string()} | not_found | {error, Reason}
+get_last(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
 	{selected, ["seconds","state"], []} ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+	    not_found;
 	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
 	    case catch list_to_integer(STimeStamp) of
 		TimeStamp when is_integer(TimeStamp) ->
+		    {ok, TimeStamp, Status};
+		Reason ->
+		    {error, {invalid_timestamp, Reason}}
+	    end;
+	Reason ->
+	    {error, {invalid_result, Reason}}
+    end.
+
+get_last_iq(IQ, SubEl, LUser, LServer) ->
+    case ejabberd_sm:get_user_resources(LUser, LServer) of
+	[] ->
+	    case get_last(LUser, LServer) of
+		{error, _Reason} ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+		not_found ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+		{ok, TimeStamp, Status} ->
 		    TimeStamp2 = now_to_seconds(now()),
 		    Sec = TimeStamp2 - TimeStamp,
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
 				     [{"xmlns", ?NS_LAST},
 				      {"seconds", integer_to_list(Sec)}],
-				     [{xmlcdata, Status}]}]};
-		_ ->
-		    IQ#iq{type = error,
-			  sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+				     [{xmlcdata, Status}]}]}
 	    end;
 	_ ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+	    IQ#iq{type = result,
+		  sub_el = [{xmlelement, "query",
+			     [{"xmlns", ?NS_LAST},
+			      {"seconds", "0"}],
+			     []}]}
     end.
 
 on_presence_update(User, Server, _Resource, Status) ->
@@ -169,21 +188,13 @@ store_last_info(User, Server, TimeStamp, Status) ->
     odbc_queries:set_last_t(LServer, Username, Seconds, State).
 
 %% @spec (LUser::string(), LServer::string()) ->
-%%      {ok, Timestamp::integer(), Status::string()} | not_found
+%%      {ok, TimeStamp::integer(), Status::string()} | not_found
 get_last_info(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_last(LServer, Username) of
-	{selected, ["seconds","state"], []} ->
+    case get_last(LUser, LServer) of
+	{error, _Reason} ->
 	    not_found;
-	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
-	    case catch list_to_integer(STimeStamp) of
-		TimeStamp when is_integer(TimeStamp) ->
-		    {ok, TimeStamp, Status};
-		_ ->
-		    not_found
-	    end;
-	_ ->
-	    not_found
+	Res ->
+	    Res
     end.
 
 remove_user(User, Server) ->

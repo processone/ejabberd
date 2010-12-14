@@ -11,6 +11,7 @@ ASN_FLAGS = -bber_bin +optimize +driver
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
 
+EFLAGS += @ERLANG_SSLVER@
 EFLAGS += -I ..
 EFLAGS += -pz ..
 

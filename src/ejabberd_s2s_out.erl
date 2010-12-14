@@ -67,7 +67,7 @@
 		tls = false,
 		tls_required = false,
 		tls_enabled = false,
-		tls_options = [],
+		tls_options = [connect],
 		authenticated = false,
 		db_enabled = true,
 		try_auth = true,
@@ -110,6 +110,7 @@
 	"xmlns:stream='http://etherx.jabber.org/streams' "
 	"xmlns='jabber:server' "
 	"xmlns:db='jabber:server:dialback' "
+	"from='~s' "
 	"to='~s'~s>"
        ).
 
@@ -160,16 +161,18 @@ stop_connection(Pid, Timeout) ->
 init([From, Server, Type]) ->
     process_flag(trap_exit, true),
     ?DEBUG("started: ~p", [{From, Server, Type}]),
-    TLS = case ejabberd_config:get_local_option(s2s_use_starttls) of
-	      undefined ->
-		  false;
-	      UseStartTLS ->
-		  UseStartTLS
+    {TLS, TLSRequired} = case ejabberd_config:get_local_option(s2s_use_starttls) of
+	      UseTls when (UseTls==undefined) or (UseTls==false) ->
+		  {false, false};
+	      UseTls when (UseTls==true) or (UseTls==optional) ->
+		  {true, false};
+	      UseTls when (UseTls==required) or (UseTls==required_trusted) ->
+		  {true, true}
 	  end,
     UseV10 = TLS,
     TLSOpts = case ejabberd_config:get_local_option(s2s_certfile) of
 		  undefined ->
-		      [];
+		      [connect];
 		  CertFile ->
 		      [{certfile, CertFile}, connect]
 	      end,
@@ -183,6 +186,7 @@ init([From, Server, Type]) ->
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, open_socket, #state{use_v10 = UseV10,
 			     tls = TLS,
+			     tls_required = TLSRequired,
 			     tls_options = TLSOpts,
 			     queue = queue:new(),
 			     myname = From,
@@ -230,7 +234,7 @@ open_socket(init, StateData) ->
 					   tls_enabled = false,
 					   streamid = new_id()},
 	    send_text(NewStateData, io_lib:format(?STREAM_HEADER,
-						  [StateData#state.server,
+						  [StateData#state.myname, StateData#state.server,
 						   Version])),
 	    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 	{error, _Reason} ->
@@ -357,8 +361,8 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
     case is_verify_res(El) of
 	{result, To, From, Id, Type} ->
 	    ?DEBUG("recv result: ~p", [{From, To, Id, Type}]),
-	    case Type of
-		"valid" ->
+	    case {Type, StateData#state.tls_enabled, StateData#state.tls_required} of
+		{"valid", Enabled, Required} when (Enabled==true) or (Required==false) ->
 		    send_queue(StateData, StateData#state.queue),
 		    ?INFO_MSG("Connection established: ~s -> ~s with TLS=~p",
 			      [StateData#state.myname, StateData#state.server, StateData#state.tls_enabled]),
@@ -367,6 +371,11 @@ wait_for_validation({xmlstreamelement, El}, StateData) ->
 					StateData#state.server]),
 		    {next_state, stream_established,
 		     StateData#state{queue = queue:new()}};
+		{"valid", Enabled, Required} when (Enabled==false) and (Required==true) ->
+		    %% TODO: bounce packets
+		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (TLS is required but unavailable)",
+			      [StateData#state.myname, StateData#state.server]),
+		    {stop, normal, StateData};
 		_ ->
 		    %% TODO: bounce packets
 		    ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid dialback key)",
@@ -559,7 +568,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 		    ejabberd_socket:reset_stream(StateData#state.socket),
 		    send_text(StateData,
 			      io_lib:format(?STREAM_HEADER,
-					    [StateData#state.server,
+					    [StateData#state.myname, StateData#state.server,
 					     " version='1.0'"])),
 		    {next_state, wait_for_stream,
 		     StateData#state{streamid = new_id(),
@@ -627,7 +636,7 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 		    Socket = StateData#state.socket,
 		    TLSOpts = case ejabberd_config:get_local_option(
 				     {domain_certfile,
-				      StateData#state.server}) of
+				      StateData#state.myname}) of
 				  undefined ->
 				      StateData#state.tls_options;
 				  CertFile ->
@@ -639,11 +648,12 @@ wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
 		    TLSSocket = ejabberd_socket:starttls(Socket, TLSOpts),
 		    NewStateData = StateData#state{socket = TLSSocket,
 						   streamid = new_id(),
-						   tls_enabled = true
+						   tls_enabled = true,
+						   tls_options = TLSOpts
 						  },
 		    send_text(NewStateData,
 			      io_lib:format(?STREAM_HEADER,
-					    [StateData#state.server,
+					    [StateData#state.myname, StateData#state.server,
 					     " version='1.0'"])),
 		    {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 		_ ->

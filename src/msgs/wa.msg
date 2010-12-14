@@ -319,6 +319,5 @@
 {"You must fill in field \"Nickname\" in the form","Vos dvoz rimpli l' tchamp «Metou no» dins l' formiulaire"}.
 {"You need an x:data capable client to configure mod_irc settings","Vos avoz mezåjhe d' on cliyint ki sopoite x:data po candjî ls apontiaedjes di mod_irc"}.
 {"You need an x:data capable client to configure room","I vs fåt on cliyint ki sopoite x:data por vos poleur apontyî l' såle"}.
-{"You need an x:data capable client to register nickname","Vos avoz mezåjhe d' on cliyint ki sopoite x:data po-z edjîstrer on metou no"}.
 {"You need an x:data capable client to search","Vos avoz mezåjhe d' on cliyint ki sopoite x:data po fé on cweraedje"}.
 {"Your contact offline message queue is full. The message has been discarded.","Li cawêye di messaedjes e môde disraloyî di vosse soçon est plinne. Li messaedje a stî tapé å diale."}.
