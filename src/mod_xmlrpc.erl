@@ -1023,12 +1023,14 @@ get_resources(User, Server) ->
     end, get_sessions(User, Server)).
 
 get_sessions(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    case catch mnesia:dirty_index_read(session, {LUser, LServer}, #session.us) of
-    {'EXIT', _Reason} -> [];
-    [] -> [];
-    Result -> lists:reverse(lists:keysort(#session.priority, clean_session_list(Result)))
+    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
+    Node = ejabberd_cluster:get_node(US),
+    case catch rpc:call(Node, mnesia, dirty_index_read,
+                        [session, US, #session.us], 5000) of
+        Result when is_list(Result), Result /= [] ->
+            lists:reverse(lists:keysort(#session.priority, clean_session_list(Result)));
+        _ ->
+            []
     end.
 
 clean_session_list(Ss) ->
