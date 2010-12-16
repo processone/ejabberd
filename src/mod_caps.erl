@@ -54,7 +54,7 @@
 
 %% hook handlers
 -export([user_send_packet/4,
-	 user_receive_packet/4,
+	 user_receive_packet/5,
 	 c2s_presence_in/2,
 	 c2s_broadcast_recipients/5]).
 
@@ -164,7 +164,8 @@ user_send_packet(_DebugFlag,
 user_send_packet(_DebugFlag, _From, _To, _Packet) ->
     ok.
 
-user_receive_packet(#jid{lserver = Server}, From, _To,
+user_receive_packet(_DebugFlag,
+                    #jid{lserver = Server}, From, _To,
 		    {xmlelement, "presence", Attrs, Els}) ->
     Type = xml:get_attr_s("type", Attrs),
     if Type == ""; Type == "available" ->
@@ -177,7 +178,7 @@ user_receive_packet(#jid{lserver = Server}, From, _To,
        true ->
 	    ok
     end;
-user_receive_packet(_JID, _From, _To, _Packet) ->
+user_receive_packet(_DebugFlag, _JID, _From, _To, _Packet) ->
     ok.
 
 caps_stream_features(Acc, MyHost) ->
