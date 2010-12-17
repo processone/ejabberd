@@ -248,7 +248,7 @@ open_socket(init, StateData) ->
 		    wait_before_reconnect(StateData)
 	    end
     end;
-open_socket(stop, StateData) ->
+open_socket(closed, StateData) ->
     ?INFO_MSG("s2s connection: ~s -> ~s (stopped in open socket)",
 	      [StateData#state.myname, StateData#state.server]),
     {stop, normal, StateData};
