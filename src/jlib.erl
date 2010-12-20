@@ -392,7 +392,9 @@ e(X) ->                     exit({bad_encode_base64_token, X}).
 ip_to_list({IP, _Port}) ->
     ip_to_list(IP);
 ip_to_list(IpTuple) when is_tuple(IpTuple) ->
-    inet_parse:ntoa(IpTuple).
+    inet_parse:ntoa(IpTuple);
+ip_to_list(IP) ->
+    lists:flatten(io_lib:format("~w", [IP])).
 
 % --------------------------------------------------------------------
 % Compat layer.
