@@ -200,9 +200,11 @@ dirty_read(Host, Tab, Key) ->
 
 %% select/3
 
+%% If Matchvalue is a tuple, then its size must be == length(string:tokens(Matchrule, "_"))
 -type(matchvalue() :: '_'
 		      | integer()
-		      | string()).
+		      | string()
+		      | tuple()).
 %%                    | {matchvalue(), matchrule()}.
 -type(matchrule() :: {'and', matchrule(), matchrule()}
 		     | {'andalso', matchrule(), matchrule()}
