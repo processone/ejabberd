@@ -57,13 +57,6 @@ start(Host, Opts) ->
 	'subject',
 	'welcome-message'
       ]),
-    exmpp_xml:add_known_attrs(xmpp, [
-	'online-users',
-	'outgoing-s2s-servers',
-	'registered-users',
-	'running-nodes',
-	'stopped-nodes'
-      ]),
     ok.
 
 stop(Host) ->
