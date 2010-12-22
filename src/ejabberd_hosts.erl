@@ -71,6 +71,10 @@
 -define(RELOAD_INTERVAL, timer:seconds(60)).
 -define(ODBC_STARTUP_TIME, 120). % 2minute limit for ODBC startup.
 
+%% The vhost where the table 'hosts' is stored
+%% The table 'hosts' is defined in gen_storage as being for the "localhost" vhost
+-define(HOSTS_HOST, list_to_binary(?MYNAME)).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -84,8 +88,7 @@ register(Host, Config) when is_list(Host), is_list(Config) ->
     true = exmpp_stringprep:is_node(Host),
     ID = get_clusterid(),
     H = #hosts{host = Host, clusterid = ID, config = Config},
-    HostB = list_to_binary(Host),
-    ok = gen_storage:dirty_write(HostB, H),
+    ok = gen_storage:dirty_write(?HOSTS_HOST, H),
     reload(),
     ok.
 
@@ -104,9 +107,8 @@ update_host_conf(Host, Config) when is_list(Host), is_list(Config) ->
 remove(Host) when is_list(Host) ->
     true = exmpp_stringprep:is_node(Host),
     ID = get_clusterid(),
-    HostB = list_to_binary(Host),
     gen_storage:dirty_delete_where(
-	HostB, hosts,
+	?HOSTS_HOST, hosts,
 	[{'andalso',
 	    {'==', clusterid, ID},
 	    {'==', host, Host}}]),
@@ -126,7 +128,8 @@ registered(Host) when is_list(Host) ->
     end.
 
 running(global) -> true;
-running(Host) ->
+running(HostString) when is_list(HostString) ->
+    Host = list_to_binary(HostString),
     Routes = [H
               || {H, _, {apply, ejabberd_local, route}} <- ejabberd_router:read_route(Host),
                  H =:= Host],
@@ -283,7 +286,8 @@ reload_hosts(NewHosts) ->
                                       {Host, get_host_config(odbc,Host)}
                               end, AddedHosts),
     update_config(AddHostConfig,DeletedHosts),
-    ejabberd_config:add_global_option(hosts, NewHosts), % overwrite hosts list
+    RemovedNotDelete = RemovedHosts -- DeletedHosts,
+    ejabberd_config:add_global_option(hosts, NewHosts++RemovedNotDelete), % overwrite hosts list
     stop_hosts(DeletedHosts),
     start_hosts(AddedHosts),
     ejabberd_local:refresh_iq_handlers(),
@@ -331,7 +335,7 @@ start_hosts(AddHosts) when is_list(AddHosts) ->
     lists:foreach(fun start_host/1, AddHosts).
 
 %% Start a single vhost (route, modules)
-start_host(Host) ->
+start_host(Host) when is_list(Host) ->
     ?DEBUG("Starting host ~p", [Host]),
     ejabberd_router:register_route(Host, {apply, ejabberd_local, route}),
     case ejabberd_config:get_local_option({modules, Host}) of
@@ -344,8 +348,7 @@ start_host(Host) ->
     end,
     case auth_method(Host) of
         {host_method, HostMethod} ->
-            ejabberd_auth:start_method(Host, HostMethod);
-        _ -> ignore
+            ejabberd_auth:start_method(Host, HostMethod)
     end,
     ok.
 
@@ -357,14 +360,13 @@ stop_hosts(RemoveHosts) when is_list(RemoveHosts)->
     lists:foreach(fun stop_host/1, RemoveHosts).
 
 %% Shut down a single vhost. (Routes, modules)
-stop_host(Host) ->
+stop_host(Host) when is_list(Host) ->
     ?DEBUG("Stopping host ~p", [Host]),
-    ejabberd_router:force_unregister_route(Host),
+    ejabberd_router:force_unregister_route(list_to_binary(Host)),
     lists:foreach(fun(Module) ->
                           gen_mod:stop_module_keep_config(Host, Module)
                   end, gen_mod:loaded_modules(Host)),
     case auth_method(Host) of
-        use_global_auth_method -> ok;
         {host_method, Method} ->
             ejabberd_auth:stop_method(Host, Method)
     end.
@@ -373,7 +375,7 @@ stop_host(Host) ->
 get_hosts(ejabberd) -> ?MYHOSTS;
 get_hosts(odbc) ->
     ClusterID = get_clusterid(),
-    Hosts = gen_storage:dirty_select(?MYNAME, hosts, [{'=', clusterid, ClusterID}]),
+    Hosts = gen_storage:dirty_select(?HOSTS_HOST, hosts, [{'=', clusterid, ClusterID}]),
     lists:map(fun (#hosts{host = Host}) ->
 	exmpp_stringprep:nameprep(Host)
     end, Hosts).
@@ -381,7 +383,7 @@ get_hosts(odbc) ->
 %% Retreive the text format config for host Host from ODBC and covert
 %% it into a {host, Host, Config} tuple.
 get_host_config(odbc, Host) ->
-    case gen_storage:dirty_read(?MYNAME, hosts, Host) of
+    case gen_storage:dirty_read(?HOSTS_HOST, hosts, Host) of
         [] ->
             erlang:error({no_such_host, Host});
         [H] ->
@@ -419,7 +421,8 @@ diff_hosts(NewHosts, OldHosts) ->
 auth_method(Host) ->
     case ejabberd_config:get_host_option(Host, auth_method) of
         undefined ->
-            use_global_auth_method;
+	    [Default] = ejabberd_config:get_host_option(global, auth_method),
+            {host_method, Default};
         Other ->
             {host_method, Other}
     end.
