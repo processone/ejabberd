@@ -24,6 +24,44 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%%% Database schema (version / storage / table)
+%%%
+%%% 3.0.0-alpha / mnesia / muc_online_room
+%%%  name_host = {Name::binary(), Host::binary()}
+%%%  pid = pid()
+%%% 3.0.0-alpha / mnesia / muc_room_opt
+%%%  name_host = {Name::binary(), Host::binary()}
+%%%  opt = atom()
+%%%  val = atom() | string()
+%%% 3.0.0-alpha / mnesia / muc_room_affiliation
+%%%  name_host = {Name::binary(), Host::binary()}
+%%%  jid = jid()
+%%%  affiliation = owner | 
+%%%  reason = string()
+%%% 3.0.0-alpha / mnesia / muc_registered
+%%%  us_host = {{Username::binary(), Host::binary()}, MucHost::binary()}}
+%%%  nick = binary()
+%%%
+%%% 3.0.0-alpha / odbc / muc_online_room
+%%%  name = text
+%%%  host = text
+%%%  pid = text
+%%% 3.0.0-alpha / odbc / muc_room_opt
+%%%  name = text
+%%%  host = text
+%%%  opt = text
+%%% 3.0.0-alpha / mnesia / muc_room_affiliation
+%%%  name = text
+%%%  host = text
+%%%  jid = text
+%%%  affiliation = text
+%%%  reason = text
+%%% 3.0.0-alpha / mnesia / muc_registered
+%%%  us = text
+%%%  host = text
+%%%  nick = text
+%%%
+
 -module(mod_muc).
 -author('alexey@process-one.net').
 
