@@ -1032,10 +1032,20 @@ process_admin(Host,
 
 process_admin(global,
 	      #request{path = ["vhosts"],
+		       q = Query,
 		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
-    Res = list_vhosts(Lang, AJID),
-    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang, AJID);
+    Res = list_vhosts(Query, Lang, AJID),
+    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "hostnames", "Host Names") ++ Res, global, Lang, AJID);
+
+process_admin(Host,
+	      #request{
+		       path = ["host-management"],
+		       q = Query,
+		       auth = {_, _Auth, AJID},
+		       lang = Lang}) when is_list(Host) ->
+    Res = host_info(Host, Query, Lang),
+    make_xhtml([?XCT('h1', "Host Management")] ++ Res, Host, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["users"],
@@ -1479,7 +1489,8 @@ parse_access_rule(Text) ->
 %%%==================================
 %%%% list_vhosts
 
-list_vhosts(Lang, JID) ->
+list_vhosts(Query, Lang, JID) ->
+    Res = list_vhosts_parse_query(Query),
     Hosts = ?MYHOSTS,
     HostsAllowed = lists:filter(
 		     fun(Host) ->
@@ -1487,7 +1498,47 @@ list_vhosts(Lang, JID) ->
 		     end,
 		     Hosts
 		    ),
-    list_vhosts2(Lang, HostsAllowed).
+    HostsTable = list_vhosts2(Lang, HostsAllowed),
+    AddHostForm = 
+	[?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
+	      [?XE('table',
+		   [?XE('tr',
+			[?XC('td', ?T("Host") ++ ":"),
+			 ?XE('td', [?INPUT("text", "newhost", "")])
+			]),
+		    ?XE('tr',
+			[?X('td'),
+			 ?XAE('td', [?XMLATTR(<<"class">>, <<"alignright">>)],
+			      [?INPUTT("submit", "addnewhost", "Register Host")]),
+			 ?X('td')
+			])]),
+	       ?P])],
+    case Res of
+	ok -> [?XREST("Submitted")];
+	error -> [?XREST("Bad format")];
+	nothing -> []
+    end ++ AddHostForm ++ HostsTable.
+
+list_vhosts_parse_query(Query) ->
+    case lists:keysearch("addnewhost", 1, Query) of
+	{value, _} ->
+	    {value, {_, NewHostRaw}} =
+		lists:keysearch("newhost", 1, Query),
+	    try
+                NewHost = exmpp_jid:prep_domain_as_list(exmpp_jid:make(NewHostRaw)),
+		case ejabberd_hosts:register(NewHost) of
+		    _ ->
+			timer:sleep(1000), %% Give a second for the vhost registration
+			ok
+		end
+	    catch
+		_ ->
+		    error
+	    end;
+	false ->
+	    nothing
+    end.
+
 
 list_vhosts2(Lang, Hosts) ->
     SHosts = lists:sort(Hosts),
@@ -1703,6 +1754,56 @@ get_stats(Host, Lang) ->
 			   ?XC('td', pretty_string_int(OnlineUsers))])
 	       ])
 	  ])].
+
+host_info(Server, Query, Lang) ->
+    Res = host_parse_query(Server, Query),
+    IsRegistered = atom_to_list(ejabberd_hosts:registered(Server)),
+    [?XC('h2', Server)] ++
+	case Res of
+	    ok -> [?XREST("Submitted")];
+	    error -> [?XREST("Bad format")];
+	    nothing -> []
+	end ++
+	[?XAE('p', [], [?CT("Is registered: "), ?CT(IsRegistered)])
+	] ++ host_info_permanent(Server, Lang)
+	 ++ host_info_running(Server, Lang).
+
+host_info_permanent(Server, Lang) ->
+    {PermanentX, FormList} = case ejabberd_config:get_host_option(Server, permanent) of
+	true -> {?CT("true"), []};
+	_ -> {?CT("false"),
+	 [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
+	      [?P, ?INPUTT("submit", "removehost", "Remove Host")])]}
+    end,
+    [?XAE('p', [], [?CT("Is permanent: "), PermanentX])] ++ FormList.
+
+host_info_running(Server, Lang) ->
+    {RunningX, InputName,InputString} = case ejabberd_hosts:running(Server) of
+	true -> {?CT("true"), "stophost", "Stop Host"};
+	false -> {?CT("false"), "starthost", "Start Host"}
+    end,
+    [?XAE('p', [], [?CT("Is running: "), RunningX]),
+     ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
+	      [?P, ?INPUTT("submit", InputName, InputString)])].
+
+host_parse_query(Server, Query) ->
+    lists:foldl(fun({Action, _Value}, Acc) when Acc == nothing ->
+                      host_parse_query1(Action, Server, Query);
+                   ({_Action, _Value}, Acc) ->
+                      Acc
+                end, nothing, Query).
+
+host_parse_query1("starthost", Server, _Query) ->
+    ejabberd_hosts:start_host(Server);
+host_parse_query1("stophost", Server, _Query) ->
+    ejabberd_hosts:stop_host(Server);
+host_parse_query1("removehost", Server, _Query) ->
+    ejabberd_hosts:remove(Server);
+host_parse_query1(_Action, _Server, _Query) ->
+    nothing.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 list_online_users(Host, _Lang) ->
@@ -3022,7 +3123,8 @@ make_host_menu(global, _HostNodeMenu, _Lang, _JID) ->
     {"", "", []};
 make_host_menu(Host, HostNodeMenu, Lang, JID) ->
     HostBase = get_base_path(Host, cluster),
-    HostFixed = [{"acls", "Access Control Lists"},
+    HostFixed = [{"host-management", "Host Management"},
+		 {"acls", "Access Control Lists"},
 		 {"access", "Access Rules"},
 		 {"users", "Users"},
 		 {"online-users", "Online Users"},
