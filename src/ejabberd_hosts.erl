@@ -60,6 +60,7 @@
 	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+-include("ejabberd_commands.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
@@ -163,6 +164,7 @@ init([]) ->
     Backend = mnesia, %%+++ TODO: allow to configure this in ejabberd.cfg
     configure_static_hosts(),
     get_clusterid(), %% this is to report an error if the option wasn't configured
+    ejabberd_commands:register_commands(commands()),
     %% Wait up to 120 seconds for odbc to start
     {ok, #state{state=wait_odbc,backend=Backend,odbc_wait_time=?ODBC_STARTUP_TIME}, timer:seconds(1)}.
 
@@ -261,6 +263,7 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
+    ejabberd_commands:unregister_commands(commands()),
     ok.
 
 %%--------------------------------------------------------------------
@@ -468,3 +471,22 @@ get_clusterid() ->
 	    ?ERROR_MSG("Change your misconfigured {clusterid, ~p} to the value: ~p", [Other, 1]),
 	    1
     end.
+
+commands() ->
+    [
+     %% The commands status, stop and restart are implemented also in ejabberd_ctl
+     %% They are defined here so that other interfaces can use them too
+     #ejabberd_commands{name = host_list, tags = [hosts],
+			desc = "Get a list of registered virtual hosts",
+			module = ?MODULE, function = registered,
+			args = [],
+			result = {hosts, {list, {host, string}}}},
+     #ejabberd_commands{name = host_register, tags = [hosts],
+			desc = "Register and start a virtual host",
+			module = ?MODULE, function = register,
+			args = [{host, string}], result = {res, rescode}},
+     #ejabberd_commands{name = host_remove, tags = [hosts],
+			desc = "Stop and remove a virtual host",
+			module = ?MODULE, function = remove,
+			args = [{host, string}], result = {res, rescode}}
+	].
