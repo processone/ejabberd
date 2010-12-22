@@ -105,7 +105,7 @@ register_route({global, Prefix}) ->
 register_route(Domain) when is_list(Domain) ->
     register_route(Domain, undefined).
 
-register_route(Domain, LocalHint) ->
+register_route(Domain, LocalHint) when is_list(Domain) ->
     try
 	LDomain = exmpp_stringprep:nameprep(Domain),
 	LDomainB = list_to_binary(LDomain),
@@ -204,7 +204,7 @@ delete_balanced_route(LDomain, Pid) ->
     end.
 
 
-force_unregister_route(Domain) ->
+force_unregister_route(Domain) when is_binary(Domain) ->
     LDomain = exmpp_stringprep:nameprep(Domain),
     F = fun() ->
 		case mnesia:match_object(
