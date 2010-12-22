@@ -28,6 +28,7 @@
 
 %% External exports
 -export([start/1,
+	 stop/1,
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
@@ -55,6 +56,10 @@ start(_Host) ->
 	{error,{already_started, _}} -> ok;
 	Err -> Err
     end.
+
+%% TODO: Stop epam if no other auth_pam are running.
+stop(_Host) ->
+    ok.
 
 %% @spec (User, Server, Password) -> {error, not_allowed}
 %%     User = string()

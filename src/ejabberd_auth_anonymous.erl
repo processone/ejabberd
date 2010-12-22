@@ -28,6 +28,7 @@
 -author('mickael.remond@process-one.net').
 
 -export([start/1,
+	 stop/1,
 	 allow_anonymous/1,
 	 is_sasl_anonymous_enabled/1,
 	 is_login_anonymous_enabled/1,
@@ -76,6 +77,14 @@ start(Host) when is_list(Host) ->
     ejabberd_hooks:add(sm_register_connection_hook, HostB,
 		       ?MODULE, register_connection, 100),
     ejabberd_hooks:add(sm_remove_connection_hook, HostB,
+		       ?MODULE, unregister_connection, 100),
+    ok.
+
+stop(Host) when is_list(Host) ->
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:delete(sm_register_connection_hook, HostB,
+		       ?MODULE, register_connection, 100),
+    ejabberd_hooks:delete(sm_remove_connection_hook, HostB,
 		       ?MODULE, unregister_connection, 100),
     ok.
 

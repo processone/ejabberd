@@ -54,6 +54,7 @@
 
 %% External exports
 -export([start/1,
+	 stop/1,
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
@@ -101,6 +102,9 @@ start(Host) ->
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, reg_users_counter)}]),
     update_reg_users_counter_table(Host),
+    ok.
+
+stop(_Host) ->
     ok.
 
 update_reg_users_counter_table(Server) ->

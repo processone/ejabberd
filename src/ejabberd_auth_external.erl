@@ -29,6 +29,7 @@
 
 %% External exports
 -export([start/1,
+	 stop/1,
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
@@ -61,6 +62,15 @@ start(Host) ->
     case check_cache_last_options(Host) of
 	cache ->
 	    ok = ejabberd_auth_storage:start(Host);
+	no_cache ->
+	    ok
+    end.
+
+stop(Host) ->
+    extauth:stop(Host),
+    case check_cache_last_options(Host) of
+	cache ->
+	    ok = ejabberd_auth_storage:stop(Host);
 	no_cache ->
 	    ok
     end.
