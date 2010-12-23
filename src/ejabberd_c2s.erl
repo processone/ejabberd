@@ -1768,7 +1768,7 @@ presence_track(From, To, Packet, StateData) ->
 		From, StateData, exmpp_jid:bare(From), To, Packet),
 	    StateData;
 	'unsubscribe' ->
-	    try_check_privacy_route(subscribe, StateData#state.user, StateData#state.server,
+	    try_check_privacy_route(unsubscribe, StateData#state.user, StateData#state.server,
 		From, StateData, exmpp_jid:bare(From), To, Packet),
 	    StateData;
 	'subscribed' ->
