@@ -367,14 +367,22 @@ in_subscription(Acc, User, Server, JID, Type, _Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).
 
 out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
-    %% Remove pending out subscription
     {UserTo, ServerTo, _} = jlib:short_prepd_bare_jid(JIDTo),
-    JIDFrom = exmpp_jid:make(UserFrom, UserTo),
-    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
-
-    %% Remove pending in subscription
-    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, ""),
-
+    case ejabberd_hosts:registered(binary_to_list(ServerTo)) of
+	true ->
+	    %% Remove pending out subscription
+	    JIDFrom = exmpp_jid:make(UserFrom, ServerFrom),
+	    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe);
+	false ->
+	    ok
+    end,
+    case ejabberd_hosts:registered(binary_to_list(ServerFrom)) of
+	true ->
+	    %% Remove pending in subscription
+	    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, "");
+	false ->
+	    ok
+    end,
     process_subscription(out, UserFrom, ServerFrom, JIDTo, unsubscribed, false);
 out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, false).
