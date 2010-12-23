@@ -328,6 +328,9 @@ init([Host, Opts]) ->
 			      {attributes, record_info(fields, muc_online_room)},
 			      {types, [{name_host, {text, text}},
 				       {pid, pid}]}]),
+    %% If ejabberd stops abruptly, ODBC table keeps obsolete data. Let's clean:
+    gen_storage:dirty_delete_where(MyHost, muc_online_room,
+				   [{'=', name_host, {'_', MyHost}}]),
     gen_storage:add_table_copy(MyHost, muc_online_room, node(), ram_copies),
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
     gen_storage:add_table_index(MyHost, muc_registered, nick),
