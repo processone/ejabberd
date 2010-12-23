@@ -60,11 +60,11 @@
 		   message,
 		   presence}).
 
--record(state, {room,
-		host,
-		server_host,
+-record(state, {room, % string()
+		host, % binary()
+		server_host, % string()
 		access,
-		jid,
+		jid, % jid()
 		config = #config{},
 		users = ?DICT:new(),
 		robots = ?DICT:new(),
