@@ -208,8 +208,12 @@ wait_for_stream({xmlstreamstart, Opening}, StateData) ->
 	    send_element(StateData, exmpp_stream:features(Features)),
 	    {next_state, stream_established, StateData};
 	{?NS_JABBER_SERVER, true, _Server, _} ->
-	    Opening_Reply = exmpp_stream:opening_reply(Opening,
-	      StateData#state.streamid),
+            #xmlel{attrs = Attrs} = Opening,
+            New_Attrs = exmpp_xml:remove_attribute_from_list(
+                          Attrs, <<"version">>),
+            Opening_Reply = exmpp_stream:opening_reply(
+                              Opening#xmlel{attrs = New_Attrs},
+                              StateData#state.streamid),
 	    send_element(StateData,
 	      exmpp_stream:set_dialback_support(Opening_Reply)),
 	    {next_state, stream_established, StateData};
