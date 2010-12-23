@@ -371,12 +371,9 @@ get_mod_last_enabled(Server) ->
     end.
 
 get_mod_last_configured(Server) ->
-    ML = is_configured(Server, mod_last),
-    MLO = is_configured(Server, mod_last_odbc),
-    case {ML, MLO} of
-	{true, _} -> mod_last;
-	{false, true} -> mod_last_odbc;
-	{false, false} -> no_mod_last
+    case is_configured(Server, mod_last) of
+	true -> mod_last;
+	false -> no_mod_last
     end.
 
 is_configured(Host, Module) ->

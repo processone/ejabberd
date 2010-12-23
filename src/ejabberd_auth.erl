@@ -141,8 +141,7 @@ check_password(User, Server, Password, Digest, DigestGen)
 %%     {true, AuthModule} | {false, Reason::string()}
 %% where
 %%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
-%%                 | ejabberd_auth_internal | ejabberd_auth_ldap
-%%                 | ejabberd_auth_odbc | ejabberd_auth_pam
+%%           | ejabberd_auth_ldap | ejabberd_auth_pam | ejabberd_auth_storage
 %% @doc Check if the user and password can login in server.
 %% The user can login if at least an authentication method accepts the user
 %% and the password.
