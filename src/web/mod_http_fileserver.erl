@@ -163,7 +163,6 @@ initialize(Host, Opts) ->
     DefaultContentType = gen_mod:get_opt(default_content_type, Opts,
                                          ?DEFAULT_CONTENT_TYPE),
     ContentTypes = build_list_content_types(gen_mod:get_opt(content_types, Opts, []), ?DEFAULT_CONTENT_TYPES),
-    ?INFO_MSG("initialize: ~n ~p", [ContentTypes]),%+++
     {DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
      CustomHeaders, DefaultContentType, ContentTypes}.
 
