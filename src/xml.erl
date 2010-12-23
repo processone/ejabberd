@@ -31,6 +31,7 @@
 	 element_to_binary/1,
 	 crypt/1, make_text_node/1,
 	 remove_cdata/1,
+         remove_subtags/3,
 	 get_cdata/1, get_tag_cdata/1,
 	 get_attr/2, get_attr_s/2,
 	 get_tag_attr/2, get_tag_attr_s/2,
@@ -185,6 +186,31 @@ remove_cdata_p({xmlelement, _Name, _Attrs, _Els}) -> true;
 remove_cdata_p(_) -> false.
 
 remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
+
+%% TODO: Make more generic.
+%% For now only support all parameters:
+%% xml:remove_subtags({xmlelement,"message", [{"id","81be72"}],[{xmlelement,"on-sender-server",[{"xmlns","urn:xmpp:receipts"},{"server","text-one.com"}], []}]}, "on-sender-server", {"xmlns","urn:xmpp:receipts"}).
+remove_subtags({xmlelement, TagName, TagAttrs, Els}, Name, Attr) ->
+    {xmlelement, TagName, TagAttrs, remove_subtags1(Els, [], Name, Attr)}.
+
+remove_subtags1([], NewEls, _Name, _Attr) ->
+    lists:reverse(NewEls);
+remove_subtags1([El | Els], NewEls, Name, {AttrName, AttrValue} = Attr) ->
+    case El of
+        {xmlelement, Name, Attrs, _} ->
+            case get_attr(AttrName, Attrs) of
+     	         false -> 
+			remove_subtags1(Els, [El|NewEls], Name, Attr);
+                 {value, AttrValue} ->
+			remove_subtags1(Els, NewEls, Name, Attr);
+                 _ ->
+                        remove_subtags1(Els, [El|NewEls], Name, Attr)
+            end;
+        _ ->
+	    remove_subtags1(Els, [El|NewEls], Name, Attr)
+    end.
+
+
 
 get_cdata(L) ->
     binary_to_list(list_to_binary(get_cdata(L, ""))).
