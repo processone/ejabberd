@@ -39,7 +39,7 @@
 %%%  affiliation = owner | 
 %%%  reason = string()
 %%% 3.0.0-alpha / mnesia / muc_registered
-%%%  us_host = {{Username::binary(), Host::binary()}, MucHost::binary()}}
+%%%  user_host = {User::jid(), MucHost::binary()}}
 %%%  nick = binary()
 %%%
 %%% 3.0.0-alpha / odbc / muc_online_room
@@ -57,7 +57,7 @@
 %%%  affiliation = text
 %%%  reason = text
 %%% 3.0.0-alpha / mnesia / muc_registered
-%%%  us = text
+%%%  user = text
 %%%  host = text
 %%%  nick = text
 %%%
@@ -96,7 +96,7 @@
 -record(muc_room_opt, {name_host, opt, val}).
 -record(muc_room_affiliation, {name_host, jid, affiliation, reason}).
 -record(muc_online_room, {name_host, pid}).
--record(muc_registered, {us_host, nick}).
+-record(muc_registered, {user_host, nick}).
 
 -record(state, {host,
 		server_host,
@@ -257,18 +257,17 @@ process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) when is_binary(Hos
 can_use_nick(_Host, _JID, <<>>)  ->
     false;
 can_use_nick(Host, JID, Nick) when is_binary(Host), is_binary(Nick) ->
-    LUS = {exmpp_jid:prep_node(JID), exmpp_jid:prep_domain(JID)},
     case catch gen_storage:dirty_select(
 		 Host,
 		 muc_registered,
-		 [{'=', us_host, {'_', Host}},
+		 [{'=', user_host, {'_', Host}},
 		  {'=', nick, Nick}]) of
 	{'EXIT', _Reason} ->
 	    true;
 	[] ->
 	    true;
-	[#muc_registered{us_host = {U, _Host}}] ->
-	    U == LUS
+	[#muc_registered{user_host = {U, _Host}}] ->
+	    U == exmpp_jid:bare(JID)
     end.
 
 migrate(After) ->
@@ -322,7 +321,7 @@ init([Host, Opts]) ->
 			     [{disc_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, muc_registered)},
-			      {types, [{us_host, {text, text}}]}]),
+			      {types, [{user_host, {jid, text}}]}]),
     gen_storage:create_table(Backend, MyHost, muc_online_room,
 			     [{ram_copies, [node()]},
 			      {odbc_host, Host},
@@ -854,11 +853,9 @@ flush() ->
                              children = [#xmlcdata{cdata = Val}]}]}).
 
 iq_get_register_info(Host, From, Lang)  ->
-    LUser = exmpp_jid:prep_node(From),
-    LServer = exmpp_jid:prep_domain(From),
-    LUS = {LUser, LServer},
+    FromBare = exmpp_jid:bare(From),
     {Nick, Registered} =
-	case catch gen_storage:dirty_read(Host, muc_registered, {LUS, Host}) of
+	case catch gen_storage:dirty_read(Host, muc_registered, {FromBare, Host}) of
 	    {'EXIT', _Reason} ->
 		{"", []};
 	    [] ->
@@ -884,31 +881,29 @@ iq_get_register_info(Host, From, Lang)  ->
 
 
 iq_set_register_info(Host, From, Nick, Lang) when is_binary(Host), is_binary(Nick) ->
-    LUser = exmpp_jid:prep_node(From),
-    LServer = exmpp_jid:prep_domain(From),
-    LUS = {LUser, LServer},
+    FromBare = exmpp_jid:bare(From),
     F = fun() ->
 		case Nick of
 		    <<>> ->
-			gen_storage:delete(Host, {muc_registered, {LUS, Host}}),
+			gen_storage:delete(Host, {muc_registered, {FromBare, Host}}),
 			ok;
 		    _ ->
 			Allow =
 			    case gen_storage:select(
 				   Host,
 				   muc_registered,
-				   [{'=', us_host, {'_', Host}},
+				   [{'=', user_host, {'_', Host}},
 				    {'=', nick, Nick}]) of
 				[] ->
 				    true;
-				[#muc_registered{us_host = {U, _Host}}] ->
-				    U == LUS
+				[#muc_registered{user_host = {U, _Host}}] ->
+				    U == FromBare
 			    end,
 			if
 			    Allow ->
 				gen_storage:write(
 				  Host,
-				  #muc_registered{us_host = {LUS, Host},
+				  #muc_registered{user_host = {FromBare, Host},
 						  nick = Nick}),
 				ok;
 			    true ->
