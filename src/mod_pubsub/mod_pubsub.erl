@@ -893,8 +893,8 @@ disco_items(#jid{raw = JID, node = U, domain = S, resource = R} = Host, NodeId, 
 %% -------
 %% presence hooks handling functions
 %%
-caps_update(#jid{node = U, domain = S, resource = R} = From, To, _Features) ->
-    Pid = ejabberd_sm:get_session_pid(U, S, R),
+caps_update(From, To, _Features) ->
+    Pid = ejabberd_sm:get_session_pid(From),
     presence_probe(From, To, Pid).
 
 -spec(presence_probe/3 ::
@@ -2459,8 +2459,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			     node_call(Type, publish_item, [Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload])
 		     end
 	     end,
-    ServerHostB = list_to_binary(ServerHost),
-    ejabberd_hooks:run(pubsub_publish_item, ServerHostB, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
+    %%ServerHostS = binary_to_list(ServerHost),
+    ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
     Reply = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children =
 		   [#xmlel{ns = ?NS_PUBSUB, name = 'publish', attrs = nodeAttr(Node), children =
 			   [#xmlel{ns = ?NS_PUBSUB, name = 'item', attrs = itemAttr(ItemId)}]}]},
