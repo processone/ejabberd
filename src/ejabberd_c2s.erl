@@ -1733,37 +1733,33 @@ presence_update(From, Packet, StateData) ->
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	    NewState =
+                NewStateData = StateData#state{pres_last = Packet,
+                                               pres_invis = false,
+                                               pres_timestamp = Timestamp},
 		if
 		    FromUnavail ->
 			ejabberd_hooks:run(user_available_hook,
-					   StateData#state.server,
-					   [StateData#state.jid]),
+					   NewStateData#state.server,
+					   [NewStateData#state.jid]),
 			if NewPriority >= 0 ->
-				resend_offline_messages(StateData),
-				resend_subscription_requests(StateData);
+				resend_offline_messages(NewStateData),
+				resend_subscription_requests(NewStateData);
 			   true ->
 				ok
 			end,
-			presence_broadcast_first(
-			  From, StateData#state{pres_last = Packet,
-						pres_invis = false,
-						pres_timestamp = Timestamp
-					       }, Packet);
+			presence_broadcast_first(From, NewStateData, Packet);
 		    true ->
-			presence_broadcast_to_trusted(StateData,
+			presence_broadcast_to_trusted(NewStateData,
 						      From,
-						      StateData#state.pres_f,
-						      StateData#state.pres_a,
+						      NewStateData#state.pres_f,
+						      NewStateData#state.pres_a,
 						      Packet),
 			if OldPriority < 0, NewPriority >= 0 ->
-				resend_offline_messages(StateData);
+				resend_offline_messages(NewStateData);
 			   true ->
 				ok
 			end,
-			StateData#state{pres_last = Packet,
-					pres_invis = false,
-					pres_timestamp = Timestamp
-				       }
+                        NewStateData
 		end,
 	    NewState
     end.
