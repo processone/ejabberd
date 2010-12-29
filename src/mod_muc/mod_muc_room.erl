@@ -784,7 +784,7 @@ terminate(Reason, _StateName, StateData) ->
 	       tab_remove_online_user(LJID, StateData)
        end, [], StateData#state.users),
     add_to_log(room_existence, stopped, StateData),
-    mod_muc:room_destroyed(StateData#state.host, list_to_binary(StateData#state.room), self(),
+    mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
 			   StateData#state.server_host),
     ok.
 
