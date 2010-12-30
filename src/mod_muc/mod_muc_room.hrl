@@ -60,7 +60,7 @@
 		   message,
 		   presence}).
 
--record(state, {room, % string()
+-record(state, {room, % binary()
 		host, % binary()
 		server_host, % string()
 		access,
