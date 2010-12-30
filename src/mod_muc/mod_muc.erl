@@ -298,7 +298,6 @@ migrate(After) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    update_muc_online_table(),
     MyHost_L = gen_mod:expand_host_name(Host, Opts, "conference"),
     MyHost = list_to_binary(MyHost_L),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
@@ -1014,11 +1013,3 @@ get_vh_rooms_all_nodes(Host) ->
 get_vh_rooms(Host) when is_binary(Host) ->
     gen_storage:dirty_select(Host, muc_online_room,
 			     [{'=', name_host, {'_', Host}}]).
-
-update_muc_online_table() ->
-    case catch mnesia:table_info(muc_online_room, local_content) of
-	false ->
-	    mnesia:delete_table(muc_online_room);
-	_ ->
-	    ok
-    end.
