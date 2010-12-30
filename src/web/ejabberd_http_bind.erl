@@ -1040,7 +1040,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 			  end, OutPacket),
 	    case AllElements of
 		true ->
-		    TypedEls = lists:foldr(fun({xmlstreamelement, El}, Acc) ->
+		    TypedEls = lists:foldl(fun({xmlstreamelement, El}, Acc) ->
 						   Acc ++ 
 						       [xml:element_to_string(
 							  check_default_xmlns(El)
