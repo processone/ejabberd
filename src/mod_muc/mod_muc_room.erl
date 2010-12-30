@@ -2131,8 +2131,7 @@ lqueue_cut(Q, N) ->
     lqueue_cut(Q1, N - 1).
 
 lqueue_to_list(#lqueue{queue = Q1}) ->
-    List = queue:to_list(Q1),
-    lists:reverse(List).
+    queue:to_list(Q1).
 
 
 add_message_to_history(FromNick, FromJID, Packet, StateData) ->
