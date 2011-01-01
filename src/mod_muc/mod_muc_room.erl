@@ -745,7 +745,7 @@ terminate({migrated, Clone}, _StateName, StateData) ->
     ?INFO_MSG("Migrating room ~s@~s to ~p on node ~p",
 	      [StateData#state.room, StateData#state.host,
 	       Clone, node(Clone)]),
-    mod_muc:room_destroyed(StateData#state.host, list_to_binary(StateData#state.room),
+    mod_muc:room_destroyed(StateData#state.host, StateData#state.room,
 			   self(), StateData#state.server_host),
     ok;
 terminate(Reason, _StateName, StateData) ->

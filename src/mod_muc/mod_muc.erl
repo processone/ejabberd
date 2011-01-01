@@ -298,7 +298,6 @@ migrate(After) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    update_muc_online_table(),
     MyHost_L = gen_mod:expand_host_name(Host, Opts, "conference"),
     MyHost = list_to_binary(MyHost_L),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
@@ -307,26 +306,26 @@ init([Host, Opts]) ->
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, muc_room_opt)},
 			      {type, bag},
-			      {types, [{name_host, {text, text}},
+			      {types, [{name_host, {binary, binary}},
 				       {opt, atom}]}]),
     gen_storage:create_table(Backend, MyHost, muc_room_affiliation,
 			     [{disc_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, muc_room_affiliation)},
 			      {type, bag},
-			      {types, [{name_host, {text, text}},
+			      {types, [{name_host, {binary, binary}},
 				       {affiliation, atom},
 				       {jid, jid}]}]),
     gen_storage:create_table(Backend, MyHost, muc_registered,
 			     [{disc_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, muc_registered)},
-			      {types, [{user_host, {jid, text}}]}]),
+			      {types, [{user_host, {jid, text}}, {nick, binary}]}]),
     gen_storage:create_table(Backend, MyHost, muc_online_room,
 			     [{ram_copies, [node()]},
 			      {odbc_host, Host},
 			      {attributes, record_info(fields, muc_online_room)},
-			      {types, [{name_host, {text, text}},
+			      {types, [{name_host, {binary, binary}},
 				       {pid, pid}]}]),
     %% If ejabberd stops abruptly, ODBC table keeps obsolete data. Let's clean:
     gen_storage:dirty_delete_where(MyHost, muc_online_room,
@@ -1014,11 +1013,3 @@ get_vh_rooms_all_nodes(Host) ->
 get_vh_rooms(Host) when is_binary(Host) ->
     gen_storage:dirty_select(Host, muc_online_room,
 			     [{'=', name_host, {'_', Host}}]).
-
-update_muc_online_table() ->
-    case catch mnesia:table_info(muc_online_room, local_content) of
-	false ->
-	    mnesia:delete_table(muc_online_room);
-	_ ->
-	    ok
-    end.

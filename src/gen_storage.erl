@@ -551,7 +551,10 @@ transaction(Host, Tab, Fun) ->
 	{atomic, _} = Good ->
 	    Good;
 	{aborted, Reason} = Bad ->
-	    ?ERROR_MSG("Transaction failed for host ~p in tab ~p with fun ~p:~n~p", [Host, Tab, Fun, Reason]),
+	    Stacktrace = erlang:get_stacktrace(),
+	    ?ERROR_MSG("Transaction failed for host ~p in tab ~p with fun ~p:"
+		       "~nReason: ~p~nStacktrace: ~p",
+		       [Host, Tab, Fun, Reason, Stacktrace]),
 	    Bad
     end.
 transaction2(Host, Tab, Fun) ->
