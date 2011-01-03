@@ -350,7 +350,7 @@ out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
 
     %% Remove pending out subscription
     #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
-    JIDFrom = jlib:make_jid(UserFrom, UserTo, ""),
+    JIDFrom = jlib:make_jid(UserFrom, ServerFrom, ""),
     Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
 
     %% Remove pending in subscription
