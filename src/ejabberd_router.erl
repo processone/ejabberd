@@ -415,6 +415,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 		    end
 	    end;
 	drop ->
+	    ?DEBUG("packet dropped~n", []),
 	    ok
     end.
 
