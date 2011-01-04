@@ -1572,7 +1572,7 @@ change_shaper(StateData, JID) ->
 
 send_text(StateData, Text) when StateData#state.xml_socket ->
     ?DEBUG("Send Text on stream = ~p", [lists:flatten(Text)]),
-    (StateData#state.sockmod):send_xml(StateData#state.socket, 
+    (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamraw, Text});
 send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~p", [Text]),
@@ -2169,11 +2169,13 @@ resend_offline_messages(StateData) ->
 					 jlib:jid_to_string(To),
 					 Attrs),
 			      FixedPacket = {xmlelement, Name, Attrs2, Els},
-			      send_element(StateData, FixedPacket),
-			      ejabberd_hooks:run(user_receive_packet,
-						 StateData#state.server,
-						 [StateData#state.debug, StateData#state.jid,
-						  From, To, FixedPacket]);
+                              %% Use route instead of send_element to go through standard workflow
+                              ejabberd_router:route(From, To, Packet);
+			      %% send_element(StateData, FixedPacket),
+			      %% ejabberd_hooks:run(user_receive_packet,
+			      %%			 StateData#state.server,
+			      %%			 [StateData#state.jid,
+			      %%			  From, To, FixedPacket]);
 			  true ->
 			      ok
 		      end
