@@ -66,6 +66,7 @@ start(normal, _Args) ->
     %ejabberd_debug:eprof_start(),
     %ejabberd_debug:fprof_start(),
     maybe_add_nameservers(),
+    print_start_debug_info(),
     start_modules(),
     ejabberd_cluster:announce(),
     ejabberd_node_groups:start(),
@@ -237,3 +238,11 @@ delete_pid_file() ->
 	PidFilename ->
 	    file:delete(PidFilename)
     end.
+
+print_start_debug_info() ->
+    ?DEBUG("Inet DB RC:~n~p", [inet_db:get_rc()]),
+    ?DEBUG("Mnesia database:~n~p", [mnesia:system_info(all)]),
+    ?DEBUG("Mnesia tables:~n~p",
+	   [ [{Table, mnesia:table_info(Table, all)} ||
+		 Table <- lists:sort(mnesia:system_info(tables))] ]),
+    ok.
