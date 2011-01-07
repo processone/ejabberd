@@ -87,7 +87,7 @@ listed() ->
 
 offline_message({jid, [], _, [], [], _, []}, _To, _Packet) ->
     ok;
-offline_message(From, To, Packet) ->
+offline_message(From, _To, _Packet) ->
     {User, Server, _} = jlib:jid_tolower(From),
     Key = {User, Server},
     {T1, T2, _} = now(),
@@ -110,10 +110,10 @@ offline_message(From, To, Packet) ->
     mnesia:dirty_write(Record),
     ok.
 
-filter_packet({From, To, {xmlelement, "message", _, _}}) ->
+filter_packet({From, To, {xmlelement, "message", _, _}=Packet}) ->
     {User, Server, _} = jlib:jid_tolower(From),
     case mnesia:dirty_read({autofilter, {User, Server}}) of
-    [#autofilter{drop=true}] -> drop
+    [#autofilter{drop=true}] -> drop;
     _ -> {From, To, Packet}
     end;
 filter_packet(OK) ->
