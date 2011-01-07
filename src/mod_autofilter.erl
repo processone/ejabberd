@@ -110,12 +110,14 @@ offline_message(From, To, Packet) ->
     mnesia:dirty_write(Record),
     ok.
 
-filter_packet({From, To, Packet}) ->
+filter_packet({From, To, {xmlelement, "message", _, _}}) ->
     {User, Server, _} = jlib:jid_tolower(From),
     case mnesia:dirty_read({autofilter, {User, Server}}) of
-    [#autofilter{drop=true}] -> drop;
+    [#autofilter{drop=true}] -> drop
     _ -> {From, To, Packet}
-    end.
+    end;
+filter_packet(OK) ->
+    OK.
 
 close_session(SID, JID) ->
     close_session(SID, JID, []).

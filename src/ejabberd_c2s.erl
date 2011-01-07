@@ -1783,7 +1783,7 @@ change_shaper(StateData, JID) ->
 
 send_text(StateData, Text) when StateData#state.xml_socket ->
     ?DEBUG("Send Text on stream = ~p", [lists:flatten(Text)]),
-    (StateData#state.sockmod):send_xml(StateData#state.socket, 
+    (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamraw, Text});
 send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~p", [Text]),
@@ -2092,37 +2092,33 @@ presence_update(From, Packet, StateData) ->
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	    NewState =
+                NewStateData = StateData#state{pres_last = Packet,
+                                               pres_invis = false,
+                                               pres_timestamp = Timestamp},
 		if
 		    FromUnavail ->
 			ejabberd_hooks:run(user_available_hook,
-					   StateData#state.server,
-					   [StateData#state.jid]),
+					   NewStateData#state.server,
+					   [NewStateData#state.jid]),
 			if NewPriority >= 0 ->
-				resend_offline_messages(StateData),
-				resend_subscription_requests(StateData);
+				resend_offline_messages(NewStateData),
+				resend_subscription_requests(NewStateData);
 			   true ->
 				ok
 			end,
-			presence_broadcast_first(
-			  From, StateData#state{pres_last = Packet,
-						pres_invis = false,
-						pres_timestamp = Timestamp
-					       }, Packet);
+			presence_broadcast_first(From, NewStateData, Packet);
 		    true ->
-			presence_broadcast_to_trusted(StateData,
+			presence_broadcast_to_trusted(NewStateData,
 						      From,
-						      StateData#state.pres_f,
-						      StateData#state.pres_a,
+						      NewStateData#state.pres_f,
+						      NewStateData#state.pres_a,
 						      Packet),
 			if OldPriority < 0, NewPriority >= 0 ->
-				resend_offline_messages(StateData);
+				resend_offline_messages(NewStateData);
 			   true ->
 				ok
 			end,
-			StateData#state{pres_last = Packet,
-					pres_invis = false,
-					pres_timestamp = Timestamp
-				       }
+                        NewStateData
 		end,
 	    NewState
     end.
@@ -2440,11 +2436,13 @@ resend_offline_messages(StateData) ->
 					 jlib:jid_to_string(To),
 					 Attrs),
 			      FixedPacket = {xmlelement, Name, Attrs2, Els},
-			      send_element(StateData, FixedPacket),
-			      ejabberd_hooks:run(user_receive_packet,
-						 StateData#state.server,
-						 [StateData#state.debug, StateData#state.jid,
-						  From, To, FixedPacket]);
+                              %% Use route instead of send_element to go through standard workflow
+                              ejabberd_router:route(From, To, Packet);
+			      %% send_element(StateData, FixedPacket),
+			      %% ejabberd_hooks:run(user_receive_packet,
+			      %%			 StateData#state.server,
+			      %%			 [StateData#state.jid,
+			      %%			  From, To, FixedPacket]);
 			  true ->
 			      ok
 		      end
