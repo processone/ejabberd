@@ -199,7 +199,8 @@ process(LocalPath, Request) ->
     CustomHeaders = conf_get(Host, custom_headers, undefined),
     DefaultContentType = conf_get(Host, default_content_type, undefined),
     ContentTypes = conf_get(Host, content_types, undefined),
-    Static = conf_get(Host, serve_gzip, undefined),
+    Encoding = conf_get(Host, serve_gzip, undefined),
+    Static = select_encoding(ClientHeaders, Encoding),
     DocRoot = conf_get(Host, docroot, undefined),
     FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
     {FileSize, Code, Headers, Contents} = case file:read_file_info(FileName) of
@@ -246,7 +247,17 @@ modified(FileInfo, LastModified)->
     Mtime = calendar:datetime_to_gregorian_seconds(FileInfo#file_info.mtime),
     ?DEBUG("Modified : ~p > ~p (serving: ~p)", [Mtime, AfterDate,Mtime > AfterDate]),
     Mtime > AfterDate.
-        
+
+select_encoding(_Headers, false)->
+    false;
+select_encoding(Headers, Configuration)->
+    Value =  find_header('Accept-Encoding', Headers, ""),
+    Schemes = string:tokens(Value, ","),
+    case lists:member("gzip",Schemes) of
+        true -> Configuration;
+        false -> false
+    end.
+
 %% Troll through the directory indices attempting to find one which
 %% works, if none can be found, return a 404.
 serve_index(_FileName, [], _CH, _DefaultContentType, _ContentTypes, _Static) ->
