@@ -44,11 +44,8 @@ CREATE TABLE rosterusers (
     server character(1) NOT NULL,
     subscribe text,
     "type" text,
-<<<<<<< HEAD
     PRIMARY KEY (host, username, jid)
-=======
     created_at TIMESTAMP NOT NULL DEFAULT now()
->>>>>>> 30
 );
 
 CREATE TABLE rostergroups (
@@ -64,24 +61,16 @@ CREATE TABLE spool (
     host text NOT NULL,
     xml text NOT NULL,
     seq SERIAL,
-<<<<<<< HEAD
     PRIMARY KEY (host, username, seq)
-=======
     created_at TIMESTAMP NOT NULL DEFAULT now()
->>>>>>> 30
 );
 
 CREATE TABLE vcard (
-<<<<<<< HEAD
     username text NOT NULL,
     host text NOT NULL,
     vcard text NOT NULL,
     PRIMARY KEY (host, username)
-=======
-    username text PRIMARY KEY,
-    vcard text NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT now()
->>>>>>> 30
 );
 
 CREATE TABLE vcard_search (
@@ -138,11 +127,8 @@ CREATE TABLE privacy_list (
     host text NOT NULL,
     name text NOT NULL,
     id SERIAL UNIQUE,
-<<<<<<< HEAD
     PRIMARY KEY (host, username, name)
-=======
     created_at TIMESTAMP NOT NULL DEFAULT now()
->>>>>>> 30
 );
 
 CREATE TABLE privacy_list_data (
@@ -164,11 +150,8 @@ CREATE TABLE private_storage (
     host text NOT NULL,
     namespace text NOT NULL,
     data text NOT NULL,
-<<<<<<< HEAD
     PRIMARY KEY (host, username, namespace)
-=======
     created_at TIMESTAMP NOT NULL DEFAULT now()
->>>>>>> 30
 );
 
 CREATE TABLE hosts (
