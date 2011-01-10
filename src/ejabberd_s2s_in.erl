@@ -462,7 +462,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     end;
 
 stream_established({valid, From, To}, StateData) ->
-    send_element(StateData, exmpp_dialback:validate(From, To)),
+    send_element(StateData, exmpp_dialback:validate(To, From)),
     LFrom = exmpp_stringprep:nameprep(From),
     LTo = exmpp_stringprep:nameprep(To),
     NSD = StateData#state{
