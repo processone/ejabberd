@@ -349,13 +349,16 @@ static int tls_drv_control(ErlDrvData handle,
 #ifdef SSL_MODE_RELEASE_BUFFERS
 	    SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
+	    /* SSL_CTX_load_verify_locations(ctx, "/etc/ejabberd/ca_certificates.pem", NULL); */
+	    /* SSL_CTX_load_verify_locations(ctx, NULL, "/etc/ejabberd/ca_certs/"); */
 
-	    if (command == SET_CERTIFICATE_FILE_ACCEPT)
-	    {
+	    /* This IF is commented to allow verification in all cases: */
+	    /* if (command == SET_CERTIFICATE_FILE_ACCEPT) */
+	    /* { */
 	       SSL_CTX_set_verify(ctx,
 				  SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
 				  verify_callback);
-	    }
+	    /* } */
 
 	    ssl_ctx = ctx;
 	    hash_table_insert(buf, mtime, ssl_ctx);

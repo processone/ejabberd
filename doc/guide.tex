@@ -945,9 +945,11 @@ This is a detailed description of each option allowed by the listening modules:
 
 There are some additional global options that can be specified in the ejabberd configuration file (outside \term{listen}):
 \begin{description}
-  \titem{\{s2s\_use\_starttls, false|optional|required\}}
+  \titem{\{s2s\_use\_starttls, false|optional|required|required\_trusted\}}
   \ind{options!s2s\_use\_starttls}\ind{STARTTLS}This option defines if 
-  s2s connections can optionally use STARTTLS encryption, or if it must be required.
+  s2s connections don't use STARTTLS encryption; if STARTTLS can be used optionally;
+  if STARTTLS is required to establish the connection;
+  or if STARTTLS is required and the remote certificate must be valid and trusted.
   The default value is to not use STARTTLS: \term{false}.
   \titem{\{s2s\_certfile, Path\}} \ind{options!s2s\_certificate}Full path to a
   file containing a SSL certificate.
@@ -1059,7 +1061,7 @@ In this example, the following configuration defines that:
   on port 5223 (SSL, IP 192.168.0.1 and fdca:8ab6:a243:75ef::1) and denied
   for the user called `\term{bad}'.
 \item s2s connections are listened for on port 5269 (all IPv4 addresses) 
-  with STARTTLS for secured traffic required. 
+  with STARTTLS for secured traffic strictly required, and the certificates are verified. 
   Incoming and outgoing connections of remote XMPP servers are denied,
   only two servers can connect: "jabber.example.org" and "example.com".
 \item Port 5280 is serving the Web Admin and the HTTP Polling service
@@ -1140,7 +1142,7 @@ In this example, the following configuration defines that:
                             {service_check_from, false}]}
  ]
 }.
-{s2s_use_starttls, required}.
+{s2s_use_starttls, required_trusted}.
 {s2s_certfile, "/path/to/ssl.pem"}.
 {s2s_default_policy, deny}.
 {{s2s_host,"jabber.example.org"}, allow}.

@@ -63,6 +63,7 @@
 		tls = false,
 		tls_enabled = false,
 		tls_required = false,
+		tls_certverify = false,
 		tls_options = [],
 		server,
 		authenticated = false,
@@ -123,13 +124,15 @@ init([{SockMod, Socket}, Opts]) ->
 		 {value, {_, S}} -> S;
 		 _ -> none
 	     end,
-    {StartTLS, TLSRequired} = case ejabberd_config:get_local_option(s2s_use_starttls) of
+    {StartTLS, TLSRequired, TLSCertverify} = case ejabberd_config:get_local_option(s2s_use_starttls) of
              UseTls when (UseTls==undefined) or (UseTls==false) ->
-                 {false, false};
+                 {false, false, false};
              UseTls when (UseTls==true) or (UseTls==optional) ->
-                 {true, false};
+                 {true, false, false};
              required ->
-                 {true, true}
+                 {true, true, false};
+             required_trusted ->
+                 {true, true, true}
          end,
     TLSOpts = case ejabberd_config:get_local_option(s2s_certfile) of
 		  undefined ->
@@ -146,6 +149,7 @@ init([{SockMod, Socket}, Opts]) ->
 	    tls = StartTLS,
 	    tls_enabled = false,
 	    tls_required = TLSRequired,
+	    tls_certverify = TLSCertverify,
 	    tls_options = TLSOpts,
 	    timer = Timer}}.
 
@@ -172,14 +176,16 @@ wait_for_stream({xmlstreamstart, Opening}, StateData) ->
 		    StateData#state.tls_enabled ->
 			case (StateData#state.sockmod):get_peer_certificate(
 			       StateData#state.socket) of
-			    {ok, _Cert} ->
-				case (StateData#state.sockmod):get_verify_result(
-				       StateData#state.socket) of
+			    {ok, Cert} ->
+				case (StateData#state.sockmod):get_verify_result(StateData#state.socket) of
 				    0 ->
 					[exmpp_server_sasl:feature(
 					    ["EXTERNAL"])];
-				    _ ->
-					[]
+				    CertVerifyRes ->
+					case StateData#state.tls_certverify of
+					    true -> {error_cert_verif, CertVerifyRes, Cert};
+					    false -> []
+					end
 				end;
 			    error ->
 				[]
@@ -193,12 +199,23 @@ wait_for_stream({xmlstreamstart, Opening}, StateData) ->
 			   (not StateData#state.tls_enabled) ->
 			       [exmpp_server_tls:feature(StateData#state.tls_required)]
 		       end,
-	    Features = SASL ++ StartTLS ++ ejabberd_hooks:run_fold(
-					     c2s_stream_features,
-					     Server,
-					     [], [Server]),
-	    send_element(StateData, exmpp_stream:features(Features)),
-	    {next_state, wait_for_feature_request, StateData#state{server = Server}};
+	    case SASL of
+		{error_cert_verif, CertVerifyResult, Certificate} ->
+		    CertError = tls:get_cert_verify_string(CertVerifyResult, Certificate),
+		    RemoteServer = exmpp_stream:get_initiating_entity(Opening),
+		    ?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)", [StateData#state.server, RemoteServer, CertError]),
+		    send_element(StateData, exmpp_stream:error('policy-violation', {"en", CertError})),
+		    {atomic, Pid} = ejabberd_s2s:find_connection(exmpp_jid:make(Server), exmpp_jid:make(RemoteServer)),
+		    ejabberd_s2s_out:stop_connection(Pid),
+		    {stop, normal, StateData};
+		_ ->
+			Features = SASL ++ StartTLS ++ ejabberd_hooks:run_fold(
+							 c2s_stream_features,
+							 Server,
+							 [], [Server]),
+			send_element(StateData, exmpp_stream:features(Features)),
+			{next_state, wait_for_feature_request, StateData#state{server = Server}}
+	    end;
 	{?NS_JABBER_SERVER, _, Server, true} when
 	      StateData#state.authenticated ->
 	    Opening_Reply = exmpp_stream:opening_reply(Opening,
