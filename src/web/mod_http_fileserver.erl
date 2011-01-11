@@ -106,6 +106,13 @@ set_default_host(Host, _Opts)->
         _ ->
             ok
     end.
+% Returns current host if it exists or default host
+get_host(Host)->    
+    DCT = mochiglobal:get(default_content_type),
+    case lists:keymember(Host, 1, DCT) of
+        true -> Host;
+        false -> mochiglobal:get(http_default_host)
+    end.
     
 conf_store(Host, Key, Value)->
     R = case mochiglobal:get(Key) of
@@ -118,18 +125,18 @@ conf_store(Host, Key, Value)->
     end,
     mochiglobal:put(Key, R).
     
-conf_get(Host, Key, Default) ->
+conf_get(Host, Key) ->
     case mochiglobal:get(Key) of
-        undefined-> Default;
+        undefined-> undefined;
         A ->
             case lists:keyfind(Host, 1, A) of
                 {Host, Val} -> Val;
                 false -> 
                     case mochiglobal:get(http_default_host) of
                         Host -> % stop recursion here
-                            Default;
+                            undefined;
                         DefaultHost ->
-                            conf_get(DefaultHost, Key, Default)
+                            conf_get(DefaultHost, Key)
                     end
             end
     end.
@@ -193,15 +200,15 @@ stop(_Host) ->
 
 process(LocalPath, Request) ->
     ?DEBUG("Requested ~p", [LocalPath]),
-    Host = Request#request.host,
+    Host = get_host(Request#request.host),
     ClientHeaders = Request#request.headers,
-    DirectoryIndices = conf_get(Host, directory_indices, undefined),
-    CustomHeaders = conf_get(Host, custom_headers, undefined),
-    DefaultContentType = conf_get(Host, default_content_type, undefined),
-    ContentTypes = conf_get(Host, content_types, undefined),
-    Encoding = conf_get(Host, serve_gzip, undefined),
+    DirectoryIndices = conf_get(Host, directory_indices),
+    CustomHeaders = conf_get(Host, custom_headers),
+    DefaultContentType = conf_get(Host, default_content_type),
+    ContentTypes = conf_get(Host, content_types),
+    Encoding = conf_get(Host, serve_gzip),
     Static = select_encoding(ClientHeaders, Encoding),
-    DocRoot = conf_get(Host, docroot, undefined),
+    DocRoot = conf_get(Host, docroot),
     FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
     {FileSize, Code, Headers, Contents} = case file:read_file_info(FileName) of
         {error, enoent}                    -> ?HTTP_ERR_FILE_NOT_FOUND;
