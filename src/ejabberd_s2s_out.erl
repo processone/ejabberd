@@ -316,6 +316,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	{"jabber:server", "jabber:server:dialback", true} when
 	StateData#state.use_v10 ->
 	    {next_state, wait_for_features, StateData, ?FSMTIMEOUT};
+	%% Clause added to handle Tigase's workaround for an old ejabberd bug:
+	{"jabber:server", "jabber:server:dialback", true} when
+	not StateData#state.use_v10 ->
+	    send_db_request(StateData);
 	{"jabber:server", "", true} when StateData#state.use_v10 ->
 	    {next_state, wait_for_features, StateData#state{db_enabled = false}, ?FSMTIMEOUT};
 	{NSProvided, DB, _} ->
