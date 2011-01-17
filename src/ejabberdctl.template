@@ -352,7 +352,7 @@ stop_epmd()
 check_start()
 {
     epmd -names | grep -q $NODE && {
-        ps ux | grep -q $ERLANG_NODE && {
+        ps ux | grep -q $ERLANG_NODE | grep -v grep && {
             echo "ejabberd is already running."
             exit 4
         } || {
