@@ -1367,7 +1367,7 @@ check_bind_module(XmppDomain) ->
 			    " to the correct host, or add your desired host to"
 			    " the configuration, or check your 'modules'"
 			    " section in your ejabberd configuration file.",
-			    [XmppDomain])
+			    [XmppDomain]),
 		 false
     end.
 
