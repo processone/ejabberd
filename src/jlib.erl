@@ -157,9 +157,11 @@ i2b(L) when is_list(L)    -> list_to_binary(L).
 %% Hours = integer()
 %% Minutes = integer()
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
+    timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}, {milliseconds, 0}}, Timezone);
+timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}, {_SubsecondUnit, SubsecondValue}}, Timezone) ->
     Timestamp_string = lists:flatten(
-      io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-        [Year, Month, Day, Hour, Minute, Second])),
+      io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~3..0w",
+        [Year, Month, Day, Hour, Minute, Second, SubsecondValue])),
     Timezone_string = case Timezone of
 	utc -> "Z";
 	{Sign, {TZh, TZm}} ->
