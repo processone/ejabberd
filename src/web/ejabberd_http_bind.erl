@@ -1361,8 +1361,13 @@ check_default_xmlns(El) ->
 check_bind_module(XmppDomain) ->
     case gen_mod:is_loaded(XmppDomain, mod_http_bind) of
 	true -> true;
-	false -> ?ERROR_MSG("You are trying to use BOSH (HTTP Bind), but the module mod_http_bind is not started.~n"
-			    "Check your 'modules' section in your ejabberd configuration file.",[]),
+	false -> ?ERROR_MSG("You are trying to use BOSH (HTTP Bind) in host ~p,"
+			    " but the module mod_http_bind is not started in"
+			    " that host. Configure your BOSH client to connect"
+			    " to the correct host, or add your desired host to"
+			    " the configuration, or check your 'modules'"
+			    " section in your ejabberd configuration file.",
+			    [XmppDomain]),
 		 false
     end.
 

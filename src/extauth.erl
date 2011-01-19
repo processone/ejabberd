@@ -54,7 +54,7 @@ init(ProcessName, ExtPrg) ->
     register(ProcessName, self()),
     process_flag(trap_exit,true),
     Port = open_port({spawn, ExtPrg}, [{packet,2}]),
-    loop(Port, ?INIT_TIMEOUT).
+    loop(Port, ?INIT_TIMEOUT, ProcessName, ExtPrg).
 
 stop(Host) ->
     lists:foreach(
@@ -108,23 +108,27 @@ get_instances(Server) ->
 	_ -> 1
     end.
 
-loop(Port, Timeout) ->
+loop(Port, Timeout, ProcessName, ExtPrg) ->
     receive
 	{call, Caller, Msg} ->
-	    Port ! {self(), {command, encode(Msg)}},
+	    port_command(Port, encode(Msg)),
 	    receive
 		{Port, {data, Data}} ->
                     ?DEBUG("extauth call '~p' received data response:~n~p", [Msg, Data]),
-                    Caller ! {eauth, decode(Data)};
+		    Caller ! {eauth, decode(Data)},
+		    loop(Port, ?CALL_TIMEOUT, ProcessName, ExtPrg);
 		{Port, Other} ->
                     ?ERROR_MSG("extauth call '~p' received strange response:~n~p", [Msg, Other]),
-                    Caller ! {eauth, false}
+		    Caller ! {eauth, false},
+		    loop(Port, ?CALL_TIMEOUT, ProcessName, ExtPrg)
             after
                 Timeout ->
                     ?ERROR_MSG("extauth call '~p' didn't receive response", [Msg]),
-                    Caller ! {eauth, false}
-	    end,
-	    loop(Port, ?CALL_TIMEOUT);
+		    Caller ! {eauth, false},
+		    unregister(ProcessName),
+		    spawn(?MODULE, init, [ProcessName, ExtPrg]),
+		    exit(port_terminated)
+	    end;
 	stop ->
 	    Port ! {self(), close},
 	    receive

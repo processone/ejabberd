@@ -26,6 +26,11 @@
 
 %%% Database schema (version / storage / table)
 %%%
+%%% In this module, timestamp is the timestamp expressed in milliseconds.
+%%% in jlib.erl, the timestamp is a tuple {{Y,M,D},{H,M,S}} or {{Y,M,D},{H,M,S},{Unit,Value}
+%%% where Unit = milliseconds
+%%% and Value = integer() in the proper unit
+%%%
 %%% 2.1.x / mnesia / offline_msg
 %%%  us = {Username::string(), Host::string()}
 %%%  timestamp = now()
@@ -348,22 +353,15 @@ resend_offline_messages(User, Server) ->
 		lists:foreach(
 		  fun(R) ->
 			  Packet = R#offline_msg.packet,
+			  TimeXml = timestamp_to_xml(R#offline_msg.timestamp, Server),
+			  TimeXml91 = timestamp_to_xml(R#offline_msg.timestamp),
 			  ejabberd_sm !
 			      {route,
 			       R#offline_msg.from,
 			       R#offline_msg.to,
 			       exmpp_xml:append_children(
 				 Packet,
-				 [jlib:timestamp_to_xml(
-				    calendar:now_to_universal_time(R#offline_msg.timestamp),
-				    utc,
-				    exmpp_jid:make("", Server, ""),
-				    "Offline Storage"),
-				  %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-				  jlib:timestamp_to_xml(
-				    calendar:now_to_universal_time(
-				      R#offline_msg.timestamp))
-				 ]
+				 [TimeXml, TimeXml91]
 				)}
 		  end,
 		  lists:keysort(#offline_msg.timestamp, Rs));
@@ -392,21 +390,14 @@ pop_offline_messages(Ls, User, Server)
 		Ls ++ lists:map(
 			fun(R) ->
 				[Packet] = exmpp_xml:parse_document(R#offline_msg.packet),
+				TimeXml = timestamp_to_xml(R#offline_msg.timestamp, Server),
+				TimeXml91 = timestamp_to_xml(R#offline_msg.timestamp),
 				{route,
 				 R#offline_msg.from,
 				 R#offline_msg.to,
 			       exmpp_xml:append_children(
 				 Packet,
-				 [jlib:timestamp_to_xml(
-				    calendar:now_to_universal_time(
-					timestamp_to_now(R#offline_msg.timestamp)),
-				    utc,
-				    exmpp_jid:make("", Server, ""),
-				    "Offline Storage"),
-				  %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-				  jlib:timestamp_to_xml(
-				    calendar:now_to_universal_time(
-				      timestamp_to_now(R#offline_msg.timestamp)))]
+				 [TimeXml, TimeXml91]
 				)}
 			end,
 			lists:filter(
@@ -443,7 +434,7 @@ remove_expired_messages() ->
       end, gen_storage:all_table_hosts(offline_msg)).
 
 remove_old_messages(Days) ->
-    Timestamp = make_timestamp() - 60 * 60 * 24 * Days,
+    Timestamp = make_timestamp() - 1000 * 60 * 60 * 24 * Days,
     lists:foreach(
       fun(HostB) ->
 	      F = fun() ->
@@ -477,7 +468,7 @@ update_table(Host, mnesia) ->
 	%% but its position in the erlang record is the same,
 	%% so we can refer to it using the new field name 'user_host'.
 	fun(#offline_msg{user_host = {US_U, US_S},
-	                 timestamp = {TsMegaSecs, TsSecs, _TsMicroSecs},
+	                 timestamp = {TsMegaSecs, TsSecs, TsMicroSecs},
 		         expire = Expire,
 		         from = From,
 		         to = To,
@@ -497,7 +488,7 @@ update_table(Host, mnesia) ->
 				Packet, [?DEFAULT_NS], ?PREFIXED_NS),
 	        Packet1 = exmpp_xml:document_to_list(PacketXmlel),
 		OM#offline_msg{user_host = {US_U1, US_S1},
-		               timestamp = TsMegaSecs * 1000000 + TsSecs,
+		               timestamp = TsMegaSecs * 1000000000 + TsSecs * 1000 + TsMicroSecs div 1000,
 		               expire = Expire1,
 		               from = From1,
 		               to = To1,
@@ -526,14 +517,39 @@ update_table(Host, odbc) ->
 convert_jid_to_exmpp("") -> undefined;
 convert_jid_to_exmpp(V)  -> V.
 
+%% Return the current timestamp in milliseconds
 make_timestamp() ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    MegaSecs * 1000000 + Secs.
+    {MegaSecs, Secs, MicroSecs} = now(),
+    MegaSecs * 1000000000 + Secs * 1000 + MicroSecs div 1000.
 
 timestamp_to_now(Timestamp) ->
-    MegaSecs = Timestamp div 1000000,
-    Secs = Timestamp rem 1000000,
-    {MegaSecs, Secs, 0}.
+    MegaSecs = Timestamp div 1000000000,
+    Secs = (Timestamp rem 1000000000) div 1000,
+    MicroSecs = (Timestamp rem 1000) * 1000,
+    {MegaSecs, Secs, MicroSecs}.
+
+timestamp_to_isostring(Timestamp) ->
+    {Date, Time} = calendar:now_to_universal_time(timestamp_to_now(Timestamp)),
+    Milliseconds = (Timestamp rem 1000),
+    UniversalTimeSubsecond = {Date, Time, {milliseconds, Milliseconds}},
+    {TimeStr, ZoneStr} = jlib:timestamp_to_iso(UniversalTimeSubsecond, utc),
+    TimeStr ++ ZoneStr.
+
+timestamp_to_xml(Timestamp, Server) ->
+    {Date, Time} = calendar:now_to_universal_time(timestamp_to_now(Timestamp)),
+    Milliseconds = (Timestamp rem 1000),
+    UniversalTimeSubsecond = {Date, Time, {milliseconds, Milliseconds}},
+    jlib:timestamp_to_xml(
+	UniversalTimeSubsecond,
+	utc,
+	exmpp_jid:make("", Server, ""),
+	"Offline Storage").
+
+%% TODO: Delete once XEP-0091 is Obsolete
+timestamp_to_xml(Timestamp) ->
+    jlib:timestamp_to_xml(
+	calendar:now_to_universal_time(
+	    timestamp_to_now(Timestamp))).
 
 find_x_timestamp([]) ->
     make_timestamp();
@@ -544,7 +560,7 @@ find_x_timestamp([#xmlel{ns = ?NS_DELAY} = El | Els]) ->
     Stamp = exmpp_xml:get_attribute_as_list(El, <<"stamp">>, ""),
     case jlib:datetime_string_to_timestamp(Stamp) of
 	undefined -> find_x_timestamp(Els);
-	{MegaSecs, Secs, _MicroSecs} -> MegaSecs * 1000000 + Secs
+	{MegaSecs, Secs, _MicroSecs} -> MegaSecs * 1000000000 + Secs * 1000
     end;
 find_x_timestamp([_ | Els]) ->
     find_x_timestamp(Els).
@@ -597,12 +613,7 @@ user_queue(User, Server, Query, Lang) ->
 	  fun(#offline_msg{timestamp = TimeStamp, from = From, to = To,
 			   packet = PacketInitialString} = Msg) ->
 		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
-		  {{Year, Month, Day}, {Hour, Minute, Second}} =
-		      calendar:now_to_local_time(timestamp_to_now(TimeStamp)),
-		  Time = lists:flatten(
-			   io_lib:format(
-			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
-			     [Year, Month, Day, Hour, Minute, Second])),
+		  Time = timestamp_to_isostring(TimeStamp),
 		  SFrom = exmpp_jid:to_list(From),
 		  STo = exmpp_jid:to_list(To),
 		  [Packet] = exmpp_xmlstream:parse_element(PacketInitialString),
@@ -698,7 +709,8 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
     MsgsLastN = lists:nthtail(Length - FirstN - FirstN, Msgs2),
     NoJID = exmpp_jid:make("...", "...", ""),
-    IntermediateMsg = #offline_msg{timestamp = now(), from = NoJID, to = NoJID,
+    TimeStamp = make_timestamp(),
+    IntermediateMsg = #offline_msg{timestamp = TimeStamp, from = NoJID, to = NoJID,
 				   packet = exmpp_xml:element("...")},
     MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 

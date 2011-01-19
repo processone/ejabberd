@@ -77,6 +77,8 @@ fi
 
 NAME=-name
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && NAME=-sname
+NODE=${ERLANG_NODE%@*}
+HOST=${ERLANG_NODE#*@}
 
 KERNEL_OPTS=""
 if [ "$FIREWALL_WINDOW" != "" ] ; then
@@ -352,8 +354,8 @@ stop_epmd()
 check_start()
 {
     epmd -names | grep -q $NODE && {
-        ps ux | grep -q $ERLANG_NODE && {
-            echo "ejabberd is already running."
+        ps ux | grep -v grep | grep -q $ERLANG_NODE && {
+            echo "ejabberd in node $ERLANG_NODE is already running."
             exit 4
         } || {
             ps ux | grep beam | grep -v "grep beam" && {
