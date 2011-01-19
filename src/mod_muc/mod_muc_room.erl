@@ -2178,8 +2178,8 @@ send_subject(JID, Lang, StateData) ->
 	Nick ->
 	    Subject = StateData#state.subject,
         Packet = exmpp_message:groupchat(Subject,
-                    Nick ++ translate:translate(Lang,
-                              " has set the subject to: ") ++ Subject),
+                    binary_to_list(Nick) ++ translate:translate(Lang,
+                              " has set the subject to: ") ++ binary_to_list(Subject)),
 	    ejabberd_router:route(
 	      StateData#state.jid,
 	      JID,
