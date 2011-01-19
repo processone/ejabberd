@@ -1,9 +1,10 @@
 -module (websocket_test).
--export([start/1, loop/1]).
+-export([start_link/1, loop/1]).
 
 % callback on received websockets data
-start(Ws) ->
-  spawn(?MODULE, loop, [Ws]).
+start_link(Ws) ->
+  Pid = spawn_link(?MODULE, loop, [Ws]),
+  {ok, Pid}.
 
 loop(Ws) ->
 	receive

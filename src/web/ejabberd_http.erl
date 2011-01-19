@@ -340,7 +340,6 @@ process(Handlers, #ws{} = Ws)->
   case (lists:prefix(HandlerPathPrefix, Ws#ws.path) or
          (HandlerPathPrefix==Ws#ws.path)) of
 	true ->
-      ?DEBUG("~p matches ~p", [Ws#ws.path, HandlerPathPrefix]),
       LocalPath = lists:nthtail(length(HandlerPathPrefix), Ws#ws.path),
       ejabberd_hooks:run(ws_debug, [{LocalPath, Ws}]),
       Protocol = case lists:keysearch(protocol, 1, HandlerOpts) of
@@ -351,9 +350,14 @@ process(Handlers, #ws{} = Ws)->
           {value, {origins, O}} -> O;
           false -> []
         end,
+      Auth =  case lists:keysearch(auth, 1, HandlerOpts) of
+         {value, {auth, A}} -> A;
+         false -> undefined
+       end,
       WS2 = Ws#ws{local_path = LocalPath, 
                   protocol=Protocol,
-                  acceptable_origins=Origins},
+                  acceptable_origins=Origins,
+                  auth_module=Auth},
       case ejabberd_websocket:is_acceptable(WS2) of 
         true ->
           ejabberd_websocket:connect(WS2, HandlerModule);
@@ -361,7 +365,6 @@ process(Handlers, #ws{} = Ws)->
           process(HandlersLeft, Ws)
       end;
 	false ->
-	    ?DEBUG("HandlersLeft : ~p ", [HandlersLeft]),
 	    process(HandlersLeft, Ws)
     end;
 process(Handlers, Request) ->
@@ -425,9 +428,10 @@ process_request(#state{request_method = Method,
 	        {_, Origin} = lists:keyfind("Origin", 1, RequestHeaders),
 	        Ws = #ws{socket = Socket,
     			       sockmod = SockMod,
-    			       ws_autoexit = true,
+    			       ws_autoexit = false,
     			       ip = IP,
     			       path = LPath,
+    			       q = LQuery,
     			       vsn = VSN,
     			       host = Host,
     			       port = Port,
@@ -435,7 +439,6 @@ process_request(#state{request_method = Method,
     			       headers = RequestHeaders
     			       },
     			process(WebSocketHandlers, Ws),
-    			?DEBUG("It is a websocket.",[]),
 	        none;
 	      false ->
 	        Request = #request{method = Method,

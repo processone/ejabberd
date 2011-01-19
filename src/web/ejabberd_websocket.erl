@@ -53,29 +53,30 @@ check(_Path, Headers)->
 % If origins are set in configuration, check if it belongs
 % If origins not set, access is open.
 is_acceptable(#ws{origin=Origin, protocol=Protocol, 
-                  headers = Headers, acceptable_origins = Origins})->
+                  headers = Headers, acceptable_origins = Origins, auth_module=undefined})->
   ClientProtocol = lists:keyfind("Sec-WebSocket-Protocol",1, Headers),
-  case {(Origin == []) or lists:member(Origin, Origins), ClientProtocol, Protocol } of
+  case {(Origins == []) or lists:member(Origin, Origins), ClientProtocol, Protocol } of
     {false, _, _} -> 
-      ?DEBUG("client does not come from authorized origin", []),
+      ?INFO_MSG("client does not come from authorized origin", []),
       false;
     {_, false, _} -> 
-      ?DEBUG("Client did not ask for protocol", []),
       true;
     {_, {_, P}, P} -> 
-      ?DEBUG("Protocoles are matching", []),
       true;
-    _ -> false
-  end.
-    
+    _ = E-> 
+     ?INFO_MSG("Wrong protocol requested : ~p", [E]),
+    false
+  end;
+is_acceptable(#ws{local_path=LocalPath, origin=Origin, ip=IP, q=Q, protocol=Protocol, headers = Headers,auth_module=Module})->
+  Module:is_acceptable(LocalPath, Q, Origin, Protocol, IP, Headers).   
 
 % Connect and handshake with Websocket.
-connect(#ws{vsn = Vsn, socket = Socket, origin=Origin, host=Host, port=Port, sockmod = SockMod, path = Path, headers = Headers, ws_autoexit = WsAutoExit} = Ws, WsLoop) ->
+connect(#ws{vsn = Vsn, socket = Socket, q=Q,origin=Origin, host=Host, port=Port, sockmod = SockMod, path = Path, headers = Headers, ws_autoexit = WsAutoExit} = Ws, WsLoop) ->
   	% build handshake
-  	HandshakeServer = handshake(Vsn, Socket,SockMod, Headers, {Path, Origin, Host, Port}),
+  	HandshakeServer = handshake(Vsn, Socket,SockMod, Headers, {Path, Q, Origin, Host, Port}),
   	% send handshake back
-  	%?DEBUG("building handshake response : ~p", [HandshakeServer]),
   	SockMod:send(Socket, HandshakeServer),
+  	?DEBUG("Sent handshake response : ~p", [HandshakeServer]),
   	Ws0 = ejabberd_ws:new(Ws#ws{origin = Origin, host = Host}, self()),
   	%?DEBUG("Ws0 : ~p",[Ws0]),
   	% add data to ws record and spawn controlling process
@@ -155,7 +156,7 @@ check_headers(Headers, RequiredHeaders) ->
 
 % Function: List
 % Description: Builds the server handshake response.
-handshake({'draft-hixie', 0}, Sock,SocketMod, Headers, {Path, Origin, Host, Port}) ->
+handshake({'draft-hixie', 0}, Sock,SocketMod, Headers, {Path, Q,Origin, Host, Port}) ->
 	% build data
 	{_, Key1} = lists:keyfind("Sec-Websocket-Key1",1, Headers),
 	{_, Key2} = lists:keyfind("Sec-Websocket-Key2",1, Headers),
@@ -175,6 +176,16 @@ handshake({'draft-hixie', 0}, Sock,SocketMod, Headers, {Path, Origin, Host, Port
 			?ERROR_MSG("tcp error treating data: ~p", [_Other]),
 			<<>>
 	end,
+	QParams = lists:map(
+	        fun({nokey,[]})->
+	            none;
+	           ({K, V})->
+	              K ++ "=" ++ V
+	    end, Q),
+	QString = case QParams of
+	    [none]-> "";
+	    QParams-> "?" ++ string:join(QParams, "&")
+	end,       
 	%?DEBUG("got content in body of websocket request: ~p, ~p", [Body,string:join([Host, Path],"/")]),	
 	% prepare handhsake response
 	["HTTP/1.1 101 WebSocket Protocol Handshake\r\n",
@@ -183,7 +194,7 @@ handshake({'draft-hixie', 0}, Sock,SocketMod, Headers, {Path, Origin, Host, Port
 		"Sec-WebSocket-Origin: ", Origin, "\r\n",
 		"Sec-WebSocket-Location: ws://",
 		string:join([Host, integer_to_list(Port)],":"),
-		"/",string:join(Path,"/") , "\r\n\r\n",
+		"/",string:join(Path,"/"),QString, "\r\n\r\n",
 		build_challenge({'draft-hixie', 0}, {Key1, Key2, Body})
 	];
 handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host, Port}) ->
@@ -232,7 +243,7 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{send, Data} ->
-			?DEBUG("sending data to websocket: ~p", [Data]),
+			%?DEBUG("sending data to websocket: ~p", [Data]),
 			SocketMode:send(Socket, iolist_to_binary([0,Data,255])),
 			ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit);
 		shutdown ->

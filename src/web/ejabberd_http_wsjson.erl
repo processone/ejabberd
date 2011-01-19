@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_websocket.erl
 %%% Author  : Eric Cestari <ecestari@process-one.net>
-%%% Purpose : XMPP Websocket support
+%%% Purpose : JSON - XMPP Websocket module support
 %%% Created : 09-10-2010 by Eric Cestari <ecestari@process-one.net>
 %%%
 %%%
@@ -23,8 +23,8 @@
 %%% 02111-1307 USA
 %%%
 %%%----------------------------------------------------------------------
--module (ejabberd_http_ws).
 
+-module (ejabberd_http_wsjson).
 -author('ecestari@process-one.net').
 
 -behaviour(gen_fsm).
@@ -39,7 +39,7 @@
 	 code_change/4,
 	 handle_info/3,
 	 terminate/3,
-	 send/2,
+	 send_xml/2,
 	 setopts/2,
 	 sockname/1, peername/1,
 	 controlling_process/2,
@@ -54,7 +54,7 @@
 		socket,
 		timeout,
 		timer,
-		input = "",
+		input = [],
 		waiting_input = false, %% {ReceiverPid, Tag}
 		last_receiver,
 		ws}).
@@ -79,7 +79,7 @@ start(WS) ->
 start_link(WS) ->
     gen_fsm:start_link(?MODULE, [WS],?FSMOPTS).
 
-send({http_ws, FsmRef, _IP}, Packet) ->
+send_xml({http_ws, FsmRef, _IP}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
 
 setopts({http_ws, FsmRef, _IP}, Opts) ->
@@ -115,7 +115,7 @@ init([WS]) ->
     %% each connector. The default behaviour should be however to use
     %% the default c2s restrictions if not defined for the current
     %% connector.
-    Opts = ejabberd_c2s_config:get_c2s_limits(),
+    Opts = [{xml_socket, true}|ejabberd_c2s_config:get_c2s_limits()],
 
     WSTimeout = case ejabberd_config:get_local_option({websocket_timeout,
 							     ?MYNAME}) of
@@ -136,12 +136,14 @@ init([WS]) ->
 
 handle_event({activate, From}, StateName, StateData) ->
     case StateData#state.input of
-	"" ->
+	[] ->
 	    {next_state, StateName,
 	     StateData#state{waiting_input = {From, ok}}};
 	Input ->
-            Receiver = From,
-	    Receiver ! {tcp, StateData#state.socket, list_to_binary(Input)},
+      Receiver = From,
+      lists:reverse(lists:map(fun(Packet)->
+        Receiver ! {tcp, StateData#state.socket, [Packet]}
+      end, Input)),
 	    {next_state, StateName, StateData#state{input = "",
 						    waiting_input = false,
 						    last_receiver = Receiver
@@ -149,28 +151,42 @@ handle_event({activate, From}, StateName, StateData) ->
     end.
 
 handle_sync_event({send, Packet}, _From, StateName, #state{ws = WS} = StateData) ->
-    Packet2 = if
-	    is_binary(Packet) ->
-	        Packet;
-	    true ->
-	        list_to_binary(Packet)
-        end,
-    %?DEBUG("sending on websocket : ~p ", [Packet2]),
-    WS:send(Packet2),
-    {reply, ok, StateName, StateData}.
+    EJson = xmpp_json:to_json(Packet),
+    Json = mochijson2:encode(EJson),
+    WS:send(iolist_to_binary(Json)),
+    {reply, ok, StateName, StateData};
     
-handle_info(closed, _StateName, StateData) ->
-    {stop, normal,  StateData};
+handle_sync_event(close, _From, _StateName, StateData) ->
+    Reply = ok,
+    {stop, normal, Reply, StateData}.
     
-handle_info({browser, Packet}, StateName, StateData)->
-    %?DEBUG("Received on websocket : ~p ", [Packet]),
-    NPacket = unicode:characters_to_binary(Packet,latin1),
+handle_info({browser, <<"\n">>}, StateName, StateData)->    
     NewState = case StateData#state.waiting_input of
 		false ->
-		    Input = [StateData#state.input|NPacket],
+		    ok;
+		{Receiver, _Tag} ->
+		    Receiver ! {tcp, StateData#state.socket,<<"\n">>},
+		    cancel_timer(StateData#state.timer),
+		    Timer = erlang:start_timer(StateData#state.timeout, self(), []),
+        StateData#state{waiting_input = false,
+				     last_receiver = Receiver,
+				     timer = Timer}
+	    end,
+	   {next_state, StateName, NewState};
+handle_info({browser, JsonPacket}, StateName, StateData)->
+    NewState = case StateData#state.waiting_input of
+		false ->
+		    EJson = mochijson2:decode(JsonPacket),
+		    Packet = xmpp_json:from_json(EJson),
+		    Input = [Packet | StateData#state.input],
 		    StateData#state{input = Input};
 		{Receiver, _Tag} ->
-		    Receiver ! {tcp, StateData#state.socket,NPacket},
+		    %?DEBUG("Received from browser : ~p", [JsonPacket]),
+		    EJson = mochijson2:decode(JsonPacket),
+		    %?DEBUG("decoded : ~p", [EJson]),
+		    Packet = xmpp_json:from_json(EJson),
+		    %?DEBUG("sending to c2s : ~p", [Packet]),
+		    Receiver ! {tcp, StateData#state.socket,[Packet]},
 		    cancel_timer(StateData#state.timer),
 		    Timer = erlang:start_timer(StateData#state.timeout, self(), []),
         StateData#state{waiting_input = false,
@@ -191,15 +207,7 @@ handle_info(_, StateName, StateData) ->
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.    
     
-terminate(_Reason, _StateName, StateData) -> 
-    case StateData#state.waiting_input of
-	false ->
-	    ok;
-	{Receiver,_} ->
-	    ?DEBUG("C2S Pid : ~p", [Receiver]),
-	    Receiver ! {tcp_closed, StateData#state.socket }
-    end,
-    ok.
+terminate(_Reason, _StateName, _StateData) -> ok.
 
 cancel_timer(Timer) ->
     erlang:cancel_timer(Timer),
