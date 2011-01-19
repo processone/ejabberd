@@ -78,6 +78,7 @@
 \newcommand{\modmulticast}{\module{mod\_multicast}}
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modping}{\module{mod\_ping}}
+\newcommand{\modprescounter}{\module{mod\_pres\_counter}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
 \newcommand{\modprivate}{\module{mod\_private}}
 \newcommand{\modproxy}{\module{mod\_proxy65}}
@@ -2586,6 +2587,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modmulticast}{\modmulticast{}} & Multicast Service (\xepref{0033}) &  \\
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
+    \hline \ahrefloc{modprescounter}{\modprivacy{}} & Detect presence subscription flood &  \\
     \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (XMPP IM) &  \\
     \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) &  \\
     \hline \ahrefloc{modproxy}{\modproxy{}} & SOCKS5 Bytestreams (\xepref{0065}) &  \\
@@ -3585,6 +3587,39 @@ and if a client does not answer to the ping in less than 32 seconds, its connect
  [
   ...
   {mod_ping,  [{send_pings, true}, {ping_interval, 240}, {timeout_action, kill}]},
+  ...
+ ]}.
+\end{verbatim}
+
+\makesubsection{modprescounter}{\modprescounter{}}
+\ind{modules!\modprescounter{}}
+
+This module detects flood/spam in presence subscription stanza traffic.
+If a user sends or receives more of those stanzas in a time interval,
+the exceeding stanzas are silently dropped, and warning is logged.
+
+Configuration options:
+\begin{description}
+  \titem{\{count, StanzaNumber\}}\ind{options!count}
+  The number of subscription presence stanzas
+  (subscribe, unsubscribe, subscribed, unsubscribed)
+  allowed for any direction (input or output)
+  per time interval.
+  Please note that two users subscribing to each other usually generate
+  4 stanzas, so the recommended value is 4 or more.
+  The default value is: 5.
+  \titem{\{interval, Seconds\}}\ind{options!interval}
+  The time interval defined in seconds.
+  The default value is 60.
+\end{description}
+
+This example enables the module, and allows up to 5 presence subscription stanzas
+to be sent or received by the users in 60 seconds:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_pres_counter,  [{count, 5}, {interval, 60}]},
   ...
  ]}.
 \end{verbatim}
