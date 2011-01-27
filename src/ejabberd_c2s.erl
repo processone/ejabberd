@@ -226,7 +226,7 @@ broadcast(FsmRef, Type, From, Packet) ->
 get_state(FsmRef) ->
     ?GEN_FSM:sync_send_all_state_event(FsmRef, get_state, 1000).
 
-add_rosteritem(FsmRef, IJID, ISubscription) ->
+add_rosteritem(FsmRef, IJID, ISubscription) when is_binary(ISubscription) ->
     ?GEN_FSM:send_all_state_event(FsmRef, {add_rosteritem, IJID, ISubscription}).
 
 del_rosteritem(FsmRef, IJID) ->
@@ -1146,7 +1146,7 @@ handle_event({add_rosteritem, IJID, ISubscription}, StateName, StateData) ->
     fsm_next_state(StateName, NewStateData);
 
 handle_event({del_rosteritem, IJID}, StateName, StateData) ->
-    NewStateData = roster_change(IJID, none, StateData),
+    NewStateData = roster_change(IJID, <<"none">>, StateData),
     fsm_next_state(StateName, NewStateData);
 
 handle_event(_Event, StateName, StateData) ->
@@ -1956,8 +1956,8 @@ remove_element(E, Set) ->
 
 roster_change(IJID, ISubscription, StateData) ->
     LIJID = jlib:short_prepd_jid(IJID),
-    IsFrom = (ISubscription == both) or (ISubscription == from),
-    IsTo   = (ISubscription == both) or (ISubscription == to),
+    IsFrom = (ISubscription == <<"both">>) or (ISubscription == <<"from">>),
+    IsTo   = (ISubscription == <<"both">>) or (ISubscription == <<"to">>),
     OldIsFrom = ?SETS:is_element(LIJID, StateData#state.pres_f),
     FSet = if
 	       IsFrom ->

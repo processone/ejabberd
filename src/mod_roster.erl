@@ -627,7 +627,12 @@ process_item_els(Item, []) ->
 
 push_item(User, Server, From, Item)
   when is_binary(User), is_binary(Server), ?IS_JID(From) ->
-    {U, S, R} = Item#roster.jid,
+    {U, S, R2} = Item#roster.jid,
+    %% the ?XMLATTR macro will convert 'undefined' to <<"undefined">> .. so here we use <<>> for bare jids.
+    R = case R2 of 
+        undefined -> <<>>;
+        _ -> R2
+    end,
     ejabberd_sm:route(exmpp_jid:make(),
 		      exmpp_jid:make(User, Server),
 		      #xmlel{name = 'broadcast', ns = roster_item, attrs =
