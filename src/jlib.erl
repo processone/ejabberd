@@ -24,6 +24,28 @@
 %%%
 %%%----------------------------------------------------------------------
 
+%% Some replacements to make in ejabberd source code to work with exmpp:
+%% ```
+%% - JID#jid.user
+%% + exmpp_jid:prep_node(JID),
+%% '''
+%% ```
+%% - JID#jid.server
+%% + exmpp_jid:prep_domain(JID)
+%% '''
+%% ```
+%% - ?SERR_INVALID_NAMESPACE
+%% + exmpp_stream:error('invalid-namespace')
+%% '''
+%% ```
+%% - ?POLICY_VIOLATION_ERR(Lang, "Use of STARTTLS required")
+%% + exmpp_stream:error('policy-violation', {Lang, "Use of STARTTLS required"})
+%% '''
+%% ```
+%% - IQ#iq{type = result, sub_el = Result}
+%% + exmpp_iq:result(IQ, Result)
+%% '''
+
 -module(jlib).
 -author('alexey@process-one.net').
 
@@ -45,7 +67,35 @@
 	 short_jid/1,
 	 short_bare_jid/1,
 	 short_prepd_jid/1,
-	 short_prepd_bare_jid/1]).
+	 short_prepd_bare_jid/1,
+	 make_result_iq_reply/1, % TODO: still uses xmlelement
+	 make_error_reply/3, % TODO: still uses xmlelement
+	 make_error_reply/2, % TODO: still uses xmlelement
+	 make_error_element/2, % TODO: still uses xmlelement
+	 make_correct_from_to_attrs/3, % TODO: still uses xmlelement
+	 replace_from_to_attrs/3, % TODO: still uses xmlelement
+	 replace_from_to/3, % TODO: still uses xmlelement
+	 replace_from_attrs/2, % TODO: still uses xmlelement
+	 replace_from/2, % TODO: still uses xmlelement
+	 remove_attr/2, % TODO: still uses xmlelement
+	 make_jid/3,
+	 make_jid/1,
+	 string_to_jid/1,
+	 jid_to_string/1,
+	 is_nodename/1,
+	 tolower/1,
+	 nodeprep/1,
+	 nameprep/1,
+	 resourceprep/1,
+	 jid_tolower/1,
+	 jid_remove_resource/1,
+	 jid_replace_resource/2,
+	 get_iq_namespace/1, % TODO: still uses xmlelement
+	 iq_query_info/1,
+	 iq_query_or_response_info/1,
+	 is_iq_request_type/1,
+	 iq_to_xml/1
+ ]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
@@ -390,6 +440,11 @@ e(62) ->                    $+;
 e(63) ->                    $/;
 e(X) ->                     exit({bad_encode_base64_token, X}).
 
+%% @doc Deprecated for {@link inet_parse:ntoa/1}.
+%% ```
+%% - jlib:ip_to_list
+%% + inet_parse:ntoa(IpTuple)
+%% '''
 %% Convert Erlang inet IP to list
 ip_to_list({IP, _Port}) ->
     ip_to_list(IP);
@@ -432,3 +487,309 @@ short_prepd_bare_jid(JID) ->
     short_prepd_jid(exmpp_jid:bare(JID)).
 
 
+make_result_iq_reply({xmlelement, Name, Attrs, SubTags}) ->
+    NewAttrs = make_result_iq_reply_attrs(Attrs),
+    {xmlelement, Name, NewAttrs, SubTags}.
+
+make_result_iq_reply_attrs(Attrs) ->
+    To = xml:get_attr("to", Attrs),
+    From = xml:get_attr("from", Attrs),
+    Attrs1 = lists:keydelete("to", 1, Attrs),
+    Attrs2 = lists:keydelete("from", 1, Attrs1),
+    Attrs3 = case To of
+		 {value, ToVal} ->
+		     [{"from", ToVal} | Attrs2];
+		 _ ->
+		     Attrs2
+	     end,
+    Attrs4 = case From of
+		 {value, FromVal} ->
+		     [{"to", FromVal} | Attrs3];
+		 _ ->
+		     Attrs3
+	     end,
+    Attrs5 = lists:keydelete("type", 1, Attrs4),
+    Attrs6 = [{"type", "result"} | Attrs5],
+    Attrs6.
+
+make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
+    NewAttrs = make_error_reply_attrs(Attrs),
+    {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, "error",
+					      [{"code", Code}],
+					      [{xmlcdata, Desc}]}]}.
+
+%% @doc Deprecated for {@link exmpp_iq:error/2},
+%% {@link exmpp_iq:error_without_original/2}.
+%% ```
+%% - jlib:make_error_reply(Packet, ?ERR_FEATURE_NOT_IMPLEMENTED)
+%% + exmpp_iq:error(Packet, 'feature-not-implemented')
+%% '''
+%% ```
+%% - jlib:make_error_reply(El, ?ERR_JID_MALFORMED)
+%% + exmpp_iq:error_without_original(El, 'jid-malformed')
+%% '''
+%% ```
+%% - jlib:make_error_reply(El, ?ERR_AUTH_NO_RESOURCE_PROVIDED("en"))
+%% + exmpp_iq:error(El, exmpp_stanza:error(Namespace, 'not-acceptable', {"en", "No resource provided"}))
+%% '''
+
+make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
+    NewAttrs = make_error_reply_attrs(Attrs),
+    {xmlelement, Name, NewAttrs, SubTags ++ [Error]}.
+
+make_error_reply_attrs(Attrs) ->
+    To = xml:get_attr("to", Attrs),
+    From = xml:get_attr("from", Attrs),
+    Attrs1 = lists:keydelete("to", 1, Attrs),
+    Attrs2 = lists:keydelete("from", 1, Attrs1),
+    Attrs3 = case To of
+		 {value, ToVal} ->
+		     [{"from", ToVal} | Attrs2];
+		 _ ->
+		     Attrs2
+	     end,
+    Attrs4 = case From of
+		 {value, FromVal} ->
+		     [{"to", FromVal} | Attrs3];
+		 _ ->
+		     Attrs3
+	     end,
+    Attrs5 = lists:keydelete("type", 1, Attrs4),
+    Attrs6 = [{"type", "error"} | Attrs5],
+    Attrs6.
+
+make_error_element(Code, Desc) ->
+    {xmlelement, "error",
+     [{"code", Code}],
+     [{xmlcdata, Desc}]}.
+
+make_correct_from_to_attrs(From, To, Attrs) ->
+    Attrs1 = lists:keydelete("from", 1, Attrs),
+    Attrs2 = case xml:get_attr("to", Attrs) of
+		 {value, _} ->
+		     Attrs1;
+		 _ ->
+		     [{"to", To} | Attrs1]
+	     end,
+    Attrs3 = [{"from", From} | Attrs2],
+    Attrs3.
+
+%% @doc Deprecated for {@link exmpp_stanza:set_recipient_in_attrs/2}.
+%% ```
+%% - jlib:replace_from_to_attrs(String1, String2, Attrs)
+%% + exmpp_stanza:set_recipient_in_attrs(exmpp_stanza:set_sender_in_attrs(Attrs, String1), String2)
+%% '''
+
+replace_from_to_attrs(From, To, Attrs) ->
+    Attrs1 = lists:keydelete("to", 1, Attrs),
+    Attrs2 = lists:keydelete("from", 1, Attrs1),
+    Attrs3 = [{"to", To} | Attrs2],
+    Attrs4 = [{"from", From} | Attrs3],
+    Attrs4.
+
+%% @doc Deprecated for {@link exmpp_stanza:set_recipient/2}.
+%% ```
+%% - jlib:replace_from_to(JID1, JID2, Stanza)
+%% + exmpp_stanza:set_recipient(exmpp_stanza:set_sender(Stanza, JID1), JID2)
+%% '''
+
+replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
+    NewAttrs = replace_from_to_attrs(jlib:jid_to_string(From),
+				     jlib:jid_to_string(To),
+				     Attrs),
+    {xmlelement, Name, NewAttrs, Els}.
+
+replace_from_attrs(From, Attrs) ->
+    Attrs1 = lists:keydelete("from", 1, Attrs),
+    [{"from", From} | Attrs1].
+
+replace_from(From, {xmlelement, Name, Attrs, Els}) ->
+    NewAttrs = replace_from_attrs(jlib:jid_to_string(From), Attrs),
+    {xmlelement, Name, NewAttrs, Els}.
+
+%% @doc Deprecated for {@link exmpp_stanza:remove_recipient/1}.
+%% ```
+%% - jlib:remove_attr("to", Stanza)
+%% + exmpp_stanza:remove_recipient(Stanza)
+%% '''
+
+remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
+    NewAttrs = lists:keydelete(Attr, 1, Attrs),
+    {xmlelement, Name, NewAttrs, Els}.
+
+%% @doc Deprecated for {@link exmpp_jid:make/3}.
+%% ```
+%% - jlib:make_jid({Username, Server, Resource})
+%% + exmpp_jid:make(Username, Server, Resource)
+%% '''
+
+make_jid({U, S, R}) ->
+    make({U, S, R}).
+
+%% @doc Deprecated for {@link exmpp_jid:make/3}.
+%% ```
+%% - jlib:make_jid(Username, Server, Resource)
+%% + exmpp_jid:make(Username, Server, Resource)
+%% '''
+%% ```
+%% - jlib:make_jid(Username, Server, "")
+%% + exmpp_jid:bare(JID)
+%% '''
+
+make_jid(U, S, R) ->
+    make(U, S, R).
+
+make(User, Server, Resource) ->
+    try
+	exmpp_jid:make(User, Server, Resource)
+    catch
+	_Exception ->
+	    error
+    end.
+
+make({User, Server, Resource}) ->
+    make(User, Server, Resource).
+
+%% @doc Deprecated for {@link exmpp_jid:parse/1}.
+%% ```
+%% - jlib:string_to_jid(String)
+%% + exmpp_jid:parse(String)
+%% '''
+
+string_to_jid(String) ->
+    exmpp_jid:parse(String).
+
+%% @doc Deprecated for {@link exmpp_jid:to_list/1}.
+%% ```
+%% - jlib:jid_to_string({Node, Server, Resource}
+%% + exmpp_jid:to_list(exmpp_jid:make(Node, Server, Resource))
+%% '''
+%% ```
+%% - jlib:jid_to_string(JID)
+%% + exmpp_jid:to_list(JID)
+%% '''
+
+jid_to_string({Node, Server, Resource}) ->
+    Jid = exmpp_jid:make(Node, Server, Resource),
+    exmpp_jid:to_list(Jid);
+jid_to_string(Jid) ->
+    exmpp_jid:to_list(Jid).
+
+
+%% @doc Deprecated for {@link exmpp_stringprep:is_node/1}.
+%% ```
+%% - jlib:is_nodename(Username)
+%% + exmpp_stringprep:is_node(Username)
+%% '''
+
+is_nodename(Username) ->
+    exmpp_stringprep:is_node(Username).
+
+%% @doc Deprecated for {@link exmpp_stringprep:to_lower/1}.
+%% ```
+%% - jlib:tolower(String)
+%% + exmpp_stringprep:to_lower(String)
+%% '''
+
+%% Not tail-recursive but it seems works faster than variants above
+tolower(String) ->
+    exmpp_stringprep:to_lower(String).
+
+%% @doc Deprecated for {@link exmpp_stringprep:nodeprep/1}.
+%% ```
+%% - jlib:nodeprep(Username)
+%% + exmpp_stringprep:nodeprep(Username)
+%% '''
+
+nodeprep(Username) ->
+    exmpp_stringprep:nodeprep(Username).
+
+%% @doc Deprecated for {@link exmpp_stringprep:nameprep/1}.
+%% ```
+%% - jlib:nameprep(Server)
+%% + exmpp_stringprep:nameprep(Server)
+%% '''
+
+nameprep(Server) ->
+    exmpp_stringprep:nameprep(Server).
+
+%% @doc Deprecated for {@link exmpp_stringprep:resourceprep/1}.
+%% ```
+%% - jlib:resourceprep(Resource)
+%% + exmpp_stringprep:resourceprep(Resource)
+%% '''
+
+resourceprep(Resource) ->
+    exmpp_stringprep:resourceprep(Resource).
+
+%% @doc Deprecated for {@link jlib:short_prepd_jid/1}.
+%% ```
+%% - jlib:jid_tolower(JID)
+%% + jlib:short_prepd_jid(JID)
+%% '''
+%% ```
+%% - jlib:jid_tolower(JID)
+%% +  {exmpp_jid:prep_node_as_list(JID), exmpp_jid:prep_domain_as_list(JID), exmpp_jid:prep_resource_as_list(JID)}
+%% '''
+
+jid_tolower({U, S, R}) ->
+    jid_tolower(exmpp_jid:make(U, S, R));
+jid_tolower(JID) ->
+    jlib:short_prepd_jid(JID).
+
+%% @doc Deprecated for {@link jlib:short_prepd_bare_jid/1}.
+%% ```
+%% - jlib:jid_remove_resource(jlib:jid_tolower(String))
+%% + jlib:short_prepd_bare_jid(String)
+%% '''
+
+jid_remove_resource({U, S, R}) ->
+    short_prepd_bare_jid(exmpp_jid:make(U, S, R));
+jid_remove_resource(JID) ->
+    short_prepd_bare_jid(JID).
+
+%% @doc Deprecated for {@link exmpp_jid:full/2}.
+%% ```
+%% - jlib:jid_replace_resource(JID, R)
+%% + exmpp_jid:full(JID, R)
+%% '''
+
+jid_replace_resource(JID, Resource) ->
+    exmpp_jid:full(JID, Resource).
+
+
+%% @deprecated
+get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == "iq" ->
+    case xml:remove_cdata(Els) of
+	[{xmlelement, _Name2, Attrs2, _Els2}] ->
+	    xml:get_attr_s("xmlns", Attrs2);
+	_ ->
+	    ""
+    end;
+get_iq_namespace(_) ->
+    "".
+
+%% @doc Deprecated for {@link exmpp_iq:xmlel_to_iq/1}.
+%% ```
+%% - jlib:iq_query_info(Packet)
+%% + exmpp_iq:xmlel_to_iq(Packet)
+%% '''
+
+iq_query_info(El) ->
+    exmpp_iq:xmlel_to_iq(El).
+
+iq_query_or_response_info(El) ->
+    exmpp_iq:xmlel_to_iq(El).
+
+is_iq_request_type(set) -> true;
+is_iq_request_type(get) -> true;
+is_iq_request_type(_) -> false.
+
+%% @doc Deprecated for {@link exmpp_iq:iq_to_xmlel/1}.
+%% ```
+%% - jlib:iq_to_xml(IQ)
+%% + exmpp_iq:iq_to_xmlel(IQ)
+%% '''
+
+iq_to_xml(IQ) ->
+    exmpp_iq:iq_to_xmlel(IQ).
