@@ -2696,7 +2696,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 	error ->
 	    {error, 'bad-request'};
 	_ ->
-	    Action = fun(#pubsub_node{type = Type, idx = Nidx}=N) ->
+	    Action = fun(#pubsub_node{type = Type, idx = Nidx}) ->
 			     Owners = node_owners_call(Type, Nidx),
 			     case lists:member(Owner, Owners) of
 				 true ->
