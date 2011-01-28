@@ -570,8 +570,16 @@
 		  %%
 		  %%{registration_watchers, ["admin1@example.org"]},
 
+		  %%
+		  %% Only clients in the server machine can register accounts
+		  %%
 		  {ip_access, [{allow, "127.0.0.0/8"},
 			       {deny, "0.0.0.0/0"}]},
+
+		  %%
+		  %% Local c2s or remote s2s users cannot register accounts
+		  %%
+		  %%{access_from, deny},
 
 		  {access, register}
 		 ]},
