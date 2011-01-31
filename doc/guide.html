@@ -356,7 +356,7 @@ Don&#X2019;t use R14A or R14B because <A HREF="http://www.erlang.org/cgi-bin/ezm
 </LI><LI CLASS="li-itemize">PAM library. Optional. For Pluggable Authentication Modules (PAM). See section <A HREF="#pam">3.1.4</A>.
 </LI><LI CLASS="li-itemize">GNU Iconv 1.8 or higher, for the IRC Transport (mod_irc). Optional. Not needed on systems with GNU Libc. See section <A HREF="#modirc">3.3.8</A>.
 </LI><LI CLASS="li-itemize">ImageMagick&#X2019;s Convert program. Optional. For CAPTCHA challenges. See section <A HREF="#captcha">3.1.8</A>.
-</LI><LI CLASS="li-itemize">exmpp 0.9.2 or higher. Optional. For import/export user data with <A HREF="http://xmpp.org/extensions/xep-0227.html">XEP-0227</A> XML files.
+</LI><LI CLASS="li-itemize">exmpp 0.9.6 or higher. Optional. For import/export user data with <A HREF="http://xmpp.org/extensions/xep-0227.html">XEP-0227</A> XML files.
 </LI></UL><P> <A NAME="download"></A> </P><!--TOC subsection Download Source Code-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc10">2.4.2</A>&#XA0;&#XA0;<A HREF="#download">Download Source Code</A></H3><!--SEC END --><P> <A NAME="download"></A> 
 </P><P>Released versions of <TT>ejabberd</TT> are available in the ProcessOne <TT>ejabberd</TT> downloads page:
@@ -2994,7 +2994,7 @@ The default option value is an empty list: <TT>[]</TT>.
 This option sets the minimum informational entropy for passwords. The value <TT>Entropy</TT>
 is a number of bits of entropy. The recommended minimum is 32 bits.
 The default is 0, i.e. no checks are performed.
-</DD><DT CLASS="dt-description"><B><TT>{welcome_message, Message}</TT></B></DT><DD CLASS="dd-description"> Set a welcome message that
+</DD><DT CLASS="dt-description"><B><TT>{welcome_message, {Subject, Body}}</TT></B></DT><DD CLASS="dd-description"> Set a welcome message that
 is sent to each newly registered account. The first string is the subject, and
 the second string is the message body.
 In the body you can set a newline with the characters: <CODE>\n</CODE>
