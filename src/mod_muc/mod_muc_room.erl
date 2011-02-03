@@ -893,9 +893,6 @@ process_groupchat_message(From, #xmlel{name = 'message'} = Packet,
 %% an implementation MAY allow users with certain privileges
 %% (e.g., a room owner, room admin, or service-level admin)
 %% to send messages to the room even if those users are not occupants.
-%%
-%% Check the mod_muc option access_message_nonparticipant and wether this JID
-%% is allowed or denied
 is_user_allowed_message_nonparticipant(JID, StateData) ->
     case get_service_affiliation(JID, StateData) of
 	owner ->
