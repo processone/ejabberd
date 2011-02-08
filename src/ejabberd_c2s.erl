@@ -2422,7 +2422,7 @@ resend_offline_messages(StateData) ->
 	Rs when is_list(Rs) ->
 	    lists:foreach(
 	      fun({route,
-		   From, To, {xmlelement, Name, Attrs, Els} = Packet}) ->
+		   From, To, {xmlelement, _Name, _Attrs, _Els} = Packet}) ->
 		      Pass = case privacy_check_packet(StateData, From, To, Packet, in) of
 				 allow ->
 				     true;
@@ -2431,11 +2431,11 @@ resend_offline_messages(StateData) ->
 			     end,
 		      if
 			  Pass ->
-			      Attrs2 = jlib:replace_from_to_attrs(
-					 jlib:jid_to_string(From),
-					 jlib:jid_to_string(To),
-					 Attrs),
-			      FixedPacket = {xmlelement, Name, Attrs2, Els},
+			      %% Attrs2 = jlib:replace_from_to_attrs(
+			      %%		 jlib:jid_to_string(From),
+			      %%		 jlib:jid_to_string(To),
+			      %%		 Attrs),
+			      %% FixedPacket = {xmlelement, Name, Attrs2, Els},
                               %% Use route instead of send_element to go through standard workflow
                               ejabberd_router:route(From, To, Packet);
 			      %% send_element(StateData, FixedPacket),

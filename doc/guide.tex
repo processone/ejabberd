@@ -80,6 +80,7 @@
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modping}{\module{mod\_ping}}
+\newcommand{\modprescounter}{\module{mod\_pres\_counter}}
 \newcommand{\modprivacy}{\module{mod\_privacy}}
 \newcommand{\modprivacyodbc}{\module{mod\_privacy\_odbc}}
 \newcommand{\modprivate}{\module{mod\_private}}
@@ -321,7 +322,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
 \item GNU Iconv 1.8 or higher, for the IRC Transport (mod\_irc). Optional. Not needed on systems with GNU Libc. See section \ref{modirc}.
 \item ImageMagick's Convert program. Optional. For CAPTCHA challenges. See section \ref{captcha}.
-\item exmpp 0.9.2 or higher. Optional. For import/export user data with \xepref{0227} XML files.
+\item exmpp 0.9.6 or higher. Optional. For import/export user data with \xepref{0227} XML files.
 \end{itemize}
 
 \makesubsection{download}{Download Source Code}
@@ -2540,6 +2541,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
+    \hline \ahrefloc{modprescounter}{\modprivacy{}} & Detect presence subscription flood &  \\
     \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (XMPP IM) &  \\
     \hline \ahrefloc{modprivacy}{\modprivacyodbc{}} & Blocking Communication (XMPP IM) & supported DB (*) \\
     \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) &  \\
@@ -3564,6 +3566,39 @@ and if a client does not answer to the ping in less than 32 seconds, its connect
  ]}.
 \end{verbatim}
 
+\makesubsection{modprescounter}{\modprescounter{}}
+\ind{modules!\modprescounter{}}
+
+This module detects flood/spam in presence subscription stanza traffic.
+If a user sends or receives more of those stanzas in a time interval,
+the exceeding stanzas are silently dropped, and warning is logged.
+
+Configuration options:
+\begin{description}
+  \titem{\{count, StanzaNumber\}}\ind{options!count}
+  The number of subscription presence stanzas
+  (subscribe, unsubscribe, subscribed, unsubscribed)
+  allowed for any direction (input or output)
+  per time interval.
+  Please note that two users subscribing to each other usually generate
+  4 stanzas, so the recommended value is 4 or more.
+  The default value is: 5.
+  \titem{\{interval, Seconds\}}\ind{options!interval}
+  The time interval defined in seconds.
+  The default value is 60.
+\end{description}
+
+This example enables the module, and allows up to 5 presence subscription stanzas
+to be sent or received by the users in 60 seconds:
+\begin{verbatim}
+{modules,
+ [
+  ...
+  {mod_pres_counter,  [{count, 5}, {interval, 60}]},
+  ...
+ ]}.
+\end{verbatim}
+
 \makesubsection{modprivacy}{\modprivacy{}}
 \ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!RFC 3921: XMPP IM}
 
@@ -3808,7 +3843,7 @@ Protect registrations with CAPTCHA (see section \ref{captcha}). The default is \
 This option sets the minimum informational entropy for passwords. The value \term{Entropy}
 is a number of bits of entropy. The recommended minimum is 32 bits.
 The default is 0, i.e. no checks are performed.
-\titem{\{welcome\_message, Message\}} \ind{options!welcomem}Set a welcome message that
+\titem{\{welcome\_message, \{Subject, Body\}\}} \ind{options!welcomem}Set a welcome message that
   is sent to each newly registered account. The first string is the subject, and
   the second string is the message body.
   In the body you can set a newline with the characters: \verb|\n|
