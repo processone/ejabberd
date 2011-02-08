@@ -40,6 +40,7 @@
 	 check_in_subscription/6,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
+	 get_user_sessions/2,
 	 get_user_resources/2,
 	 set_presence/7,
 	 unset_presence/6,
@@ -147,6 +148,18 @@ disconnect_removed_user(User, Server) ->
 		      jlib:make_jid(User, Server, ""),
 		      {xmlelement, "broadcast", [],
 		       [{exit, "User removed"}]}).
+
+get_user_sessions(User, Server) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    US = {LUser, LServer},
+    case ejabberd_cluster:get_node({LUser, LServer}) of
+	Node when Node == node() ->
+	    catch mnesia:dirty_index_read(session, US, #session.us);
+	Node ->
+	    catch rpc:call(Node, mnesia, dirty_index_read,
+			    [session, US, #session.us], 5000)
+    end.
 
 get_user_resources(User, Server) ->
     LUser = jlib:nodeprep(User),
