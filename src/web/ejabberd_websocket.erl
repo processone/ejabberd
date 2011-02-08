@@ -225,6 +225,7 @@ build_challenge({'draft-hixie', 0}, {Key1, Key2, Key3}) ->
 ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	receive
 		{tcp, Socket, Data} ->
+		    %?ERROR_MSG("[WS recv] ~p~n[Buffer state] ~p", [Data, Buffer]),
 			handle_data(Buffer, Data, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{tcp_closed, Socket} ->
 			?DEBUG("tcp connection was closed, exit", []),
@@ -268,7 +269,10 @@ handle_data(L, <<255,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit
 	
 handle_data(L, <<H/utf8,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	handle_data(iolist_to_binary([L, H]), T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
-	
+
+handle_data(L, <<>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit);
+
 handle_data(<<>>, L, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit).
 
