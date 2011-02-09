@@ -315,21 +315,13 @@ ctlexec ()
 {
     CONN_NAME=$1; shift
     COMMAND=$@
-
-    CTLEXEC="$ERL \
+    $EXEC_CMD "$ERL \
       $NAME ${CONN_NAME} \
       -noinput \
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS \
-      -s ejabberd_ctl -extra $ERLANG_NODE"
-
-    # quote input from the command line
-    for i in $COMMAND; do
-	CTLEXEC="$CTLEXEC '$i'";
-    done
-
-    $EXEC_CMD "$CTLEXEC"
+      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
 }
 
 # display ctl usage
