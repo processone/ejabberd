@@ -3416,7 +3416,7 @@ sub_with_options(#pubsub_node{type = Type, id = NodeId}) ->
 	    []
     end.
 sub_with_options(JID, NodeId, SubId) ->
-	case pubsub_subscription_odbc:read_subscription(Entity, NodeId, SubId) of
+	case pubsub_subscription_odbc:read_subscription(JID, NodeId, SubId) of
 	{result, #pubsub_subscription{options = Options}} -> {JID, SubId, Options};
 	_ -> {JID, SubId, []}
     end.

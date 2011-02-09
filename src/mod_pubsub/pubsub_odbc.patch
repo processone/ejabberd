@@ -1,5 +1,5 @@
 --- mod_pubsub.erl	2011-02-09 14:26:03.000000000 +0100
-+++ mod_pubsub_odbc.erl	2011-02-09 14:26:41.000000000 +0100
++++ mod_pubsub_odbc.erl	2011-02-09 16:31:15.000000000 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -763,7 +763,7 @@
  sub_with_options(JID, NodeId, SubId) ->
 -    case pubsub_subscription:read_subscription(JID, NodeId, SubId) of
 -	#pubsub_subscription{options = Options} -> {JID, SubId, Options};
-+	case pubsub_subscription_odbc:read_subscription(Entity, NodeId, SubId) of
++	case pubsub_subscription_odbc:read_subscription(JID, NodeId, SubId) of
 +	{result, #pubsub_subscription{options = Options}} -> {JID, SubId, Options};
  	_ -> {JID, SubId, []}
      end.
