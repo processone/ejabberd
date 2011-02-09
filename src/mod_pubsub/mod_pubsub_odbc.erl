@@ -2263,7 +2263,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 				   broadcast -> Payload;
 				   PluginPayload -> PluginPayload
 			       end,
-	    broadcast_publish_item(Host, Node, Nidx, Type, Options, ItemId, jlib:short_prepd_jid(Publisher), BrPayloadi, Removed),
+	    broadcast_publish_item(Host, Node, Nidx, Type, Options, ItemId, jlib:short_prepd_jid(Publisher), BrPayload, Removed),
 	    set_cached_item(Host, Nidx, ItemId, Publisher, Payload),
 	    case Result of
 		default -> {result, Reply};
@@ -3351,6 +3351,59 @@ node_subscriptions_full(Host, Node, NotifyType) ->
 	{result, CollSubs} -> subscribed_nodes_by_jid(NotifyType, CollSubs);
 	_ -> []
      end.
+
+ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
+     NodesToDeliver = fun(Depth, Node, Subs, Acc) ->
+	     NodeName = case Node#pubsub_node.id of
+		 {_, N} -> N;
+		 Other -> Other
+	     end,
+	     NodeOptions = Node#pubsub_node.options,
+	     lists:foldl(fun({LJID, SubId, SubOptions}, {JIDs, Recipients}) ->
+			 case is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) of
+			     true  ->
+				 %% If is to deliver :
+				 case state_can_deliver(LJID, SubOptions) of
+				     []            -> {JIDs, Recipients};
+				     JIDsToDeliver ->
+					 lists:foldl(
+					     fun(JIDToDeliver, {JIDsAcc, RecipientsAcc}) ->
+						     case lists:member(JIDToDeliver, JIDs) of
+							 %% check if the JIDs co-accumulator contains the Subscription JID,
+							 false ->
+							     %%  - if not,
+							     %%  - add the JID to JIDs list co-accumulator ;
+							     %%  - create a tuple of the JID, NodeId, and SubId (as list),
+							     %%    and add the tuple to the Recipients list co-accumulator
+							     {[JIDToDeliver | JIDsAcc], [{JIDToDeliver, NodeName, [SubId]} | RecipientsAcc]};
+							 true ->
+							     %% - if the JIDs co-accumulator contains the JID
+							     %%   get the tuple containing the JID from the Recipient list co-accumulator
+							     {_, {JIDToDeliver, NodeName1, SubIds}} = lists:keysearch(JIDToDeliver, 1, RecipientsAcc),
+							     %%   delete the tuple from the Recipients list
+							     % v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
+							     % v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, NodeId1, [SubId | SubIds]}),
+							     %%   add the SubId to the SubIds list in the tuple,
+							     %%   and add the tuple back to the Recipients list co-accumulator
+							     % v1.1 : {JIDs, lists:append(Recipients1, [{LJID, NodeId1, lists:append(SubIds, [SubId])}])}
+							     % v1.2 : {JIDs, [{LJID, NodeId1, [SubId | SubIds]} | Recipients1]}
+							     % v2: {JIDs, Recipients1}
+							     {JIDsAcc, lists:keyreplace(JIDToDeliver, 1, RecipientsAcc, {JIDToDeliver, NodeName1, [SubId | SubIds]})}
+						     end
+					     end, {JIDs, Recipients}, JIDsToDeliver)
+				 end;
+			     false ->
+				 {JIDs, Recipients}
+			 end
+		 end, Acc, Subs)
+     end,
+     DepthsToDeliver = fun({Depth, SubsByNode}, Acc1) ->
+	     lists:foldl(fun({Node, Subs}, Acc2) ->
+			 NodesToDeliver(Depth, Node, Subs, Acc2)
+		 end, Acc1, SubsByNode)
+     end,
+     {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
+     JIDSubs.
 
 sub_with_options(#pubsub_node{type = Type, id = NodeId}) ->
     case node_call(Type, get_node_subscriptions, [NodeId]) of

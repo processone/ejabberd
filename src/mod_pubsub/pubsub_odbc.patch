@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2011-02-08 18:52:12.000000000 +0100
-+++ mod_pubsub_odbc.erl	2011-02-08 19:07:44.000000000 +0100
+--- mod_pubsub.erl	2011-02-09 14:26:03.000000000 +0100
++++ mod_pubsub_odbc.erl	2011-02-09 14:26:41.000000000 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -757,7 +757,7 @@
  	{result, CollSubs} -> subscribed_nodes_by_jid(NotifyType, CollSubs);
  	_ -> []
       end.
-@@ -3558,8 +3363,8 @@
+@@ -3611,8 +3416,8 @@
  	    []
      end.
  sub_with_options(JID, NodeId, SubId) ->
@@ -768,7 +768,7 @@
  	_ -> {JID, SubId, []}
      end.
  
-@@ -3671,6 +3476,30 @@
+@@ -3724,6 +3529,30 @@
  	    Result
      end.
  
@@ -799,7 +799,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -4194,9 +4023,14 @@
+@@ -4247,9 +4076,14 @@
  
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
@@ -817,7 +817,7 @@
  
  %% @doc <p>node plugin call.</p>
  -spec(node_call/3 ::
-@@ -4234,7 +4068,7 @@
+@@ -4287,7 +4121,7 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -826,7 +826,7 @@
  			node_call(Type, Function, Args)
  		end, sync_dirty).
  
-@@ -4249,7 +4083,7 @@
+@@ -4302,7 +4136,7 @@
  	    ).
  
  transaction(Host, NodeId, Action, Trans) ->
@@ -835,7 +835,7 @@
  			case tree_call(Host, get_node, [Host, NodeId]) of
  			    #pubsub_node{} = Node ->
  				case Action(Node) of
-@@ -4263,7 +4097,7 @@
+@@ -4316,7 +4150,7 @@
  		end, Trans).
  
  
@@ -844,7 +844,7 @@
        (
  		    Host   :: string() | host(),
  		    Action :: fun(),
-@@ -4271,21 +4105,28 @@
+@@ -4324,21 +4158,28 @@
        -> {'result', Nodes :: [] | [Node::pubsubNode()]}
  	    ).
  
@@ -878,7 +878,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -4293,6 +4134,15 @@
+@@ -4346,6 +4187,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, 'internal-server-error'};
@@ -894,7 +894,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, 'internal-server-error'};
-@@ -4301,6 +4151,16 @@
+@@ -4354,6 +4204,16 @@
  	    {error, 'internal-server-error'}
      end.
  
