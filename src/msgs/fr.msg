@@ -290,9 +290,9 @@
 {"The captcha is valid.","Le captcha est valide"}.
 {"The collections with which a node is affiliated","Les collections avec lesquelle un nœud est affilié"}.
 {"the password is","le mot de passe est"}.
-{"This participant is kicked from the room because he sent an error message","Ce participant est expulsé du salon pour avoir envoyé un message erroné"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Ce participant est expulsé du salon pour avoir envoyé un message erroné à un autre participant"}.
-{"This participant is kicked from the room because he sent an error presence","Ce participant est expulsé du salon pour avoir envoyé une présence erroné"}.
+{"This participant is kicked from the room because he sent an error message","Ce participant est expulsé du salon pour avoir envoyé un message erronée"}.
+{"This participant is kicked from the room because he sent an error message to another participant","Ce participant est expulsé du salon pour avoir envoyé un message erronée à un autre participant"}.
+{"This participant is kicked from the room because he sent an error presence","Ce participant est expulsé du salon pour avoir envoyé une présence erronée"}.
 {"This room is not anonymous","Ce salon n'est pas anonyme"}.
 {"Thursday","Jeudi"}.
 {"Time delay","Délais"}.
