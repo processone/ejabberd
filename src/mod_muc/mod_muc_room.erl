@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -870,9 +870,6 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 %% an implementation MAY allow users with certain privileges
 %% (e.g., a room owner, room admin, or service-level admin)
 %% to send messages to the room even if those users are not occupants.
-%%
-%% Check the mod_muc option access_message_nonparticipant and wether this JID
-%% is allowed or denied
 is_user_allowed_message_nonparticipant(JID, StateData) ->
     case get_service_affiliation(JID, StateData) of
 	owner ->
