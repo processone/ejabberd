@@ -2216,7 +2216,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		     DeliverPayloads = get_option(Options, deliver_payloads),
 		     PersistItems = get_option(Options, persist_items),
 		     {PayloadCount, PayloadNS} = payload_els_ns(Payload),
-		     PayloadSize = size(term_to_binary(Payload)),
+		     PayloadSize = size(term_to_binary(Payload))-2, % size(term_to_binary([])) == 2
 		     PayloadMaxSize = get_option(Options, max_payload_size),
 		     InvalidNS = case get_option(Options, type) of
 				     false -> false;
