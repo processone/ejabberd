@@ -157,8 +157,11 @@ handle_sync_event({send, Packet}, _From, StateName, #state{ws = WS} = StateData)
         end,
     %?DEBUG("sending on websocket : ~p ", [Packet2]),
     WS:send(Packet2),
-    {reply, ok, StateName, StateData}.
-    
+    {reply, ok, StateName, StateData};
+
+handle_sync_event(close, From, _StateName, StateData)->
+    {stop, normal, StateData}.
+
 handle_info(closed, _StateName, StateData) ->
     {stop, normal,  StateData};
     
