@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -805,7 +805,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(Lang, "ejabberd MUC module") ++
-	  "\nCopyright (c) 2003-2010 Alexey Shchepin"}]}].
+	  "\nCopyright (c) 2003-2011 ProcessOne"}]}].
 
 
 broadcast_service_message(Host, Msg) ->
