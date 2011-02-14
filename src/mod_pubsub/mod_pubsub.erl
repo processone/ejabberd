@@ -2025,7 +2025,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    DeliverPayloads = get_option(Options, deliver_payloads),
 		    PersistItems = get_option(Options, persist_items),
 		    PayloadCount = payload_xmlelements(Payload),
-		    PayloadSize = size(term_to_binary(Payload)),
+		    PayloadSize = size(term_to_binary(Payload))-2, % size(term_to_binary([])) == 2
 		    PayloadMaxSize = get_option(Options, max_payload_size),
 		    % pubsub#deliver_payloads true 
 		    % pubsub#persist_items true -> 1 item; false -> 0 item
