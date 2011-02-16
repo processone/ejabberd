@@ -51,6 +51,17 @@
 #FIREWALL_WINDOW=
 
 #.
+#' INET_DIST_INTERFACE: IP address where this Erlang node listens other nodes
+#
+# This communication is used by ejabberdctl command line tool,
+# and in a cluster of several ejabberd nodes.
+# Notice that the IP address must be specified in the Erlang syntax.
+#
+# Default: {127,0,0,1}
+#
+INET_DIST_INTERFACE={127,0,0,1}
+
+#.
 #' ERL_PROCESSES: Maximum number of Erlang processes
 #
 # Erlang consumes a lot of lightweight processes. If there is a lot of activity

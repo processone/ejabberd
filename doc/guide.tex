@@ -4990,6 +4990,9 @@ The command line parameters:
 	If using \term{-sname}, specify either this option or \term{ERL\_INETRC}.
   \titem{-kernel inet\_dist\_listen\_min 4200 inet\_dist\_listen\_min 4210}
 	Define the first and last ports that \term{epmd} (section \ref{epmd}) can listen to.
+  \titem{-kernel inet\_dist\_use\_interface "\{ 127,0,0,1 \}"}
+	Define the IP address where this Erlang node listens for other nodes
+        connections (see section \ref{epmd}).
   \titem{-detached}
         Starts the Erlang system detached from the system console.
 	Useful for running daemons and backgrounds processes.
@@ -5401,6 +5404,12 @@ but can be configured in the file \term{ejabberdctl.cfg}.
 The Erlang command-line parameter used internally is, for example:
 \begin{verbatim}
 erl ... -kernel inet_dist_listen_min 4370 inet_dist_listen_max 4375
+\end{verbatim}
+It is also possible to configure in \term{ejabberdctl.cfg}
+the network interface where the Erlang node will listen and accept connections.
+The Erlang command-line parameter used internally is, for example:
+\begin{verbatim}
+erl ... -kernel inet_dist_use_interface "{127,0,0,1}"
 \end{verbatim}
 
 
