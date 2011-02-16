@@ -46,6 +46,7 @@
 		 anonymous = true,
 		 max_users = ?MAX_USERS_DEFAULT,
 		 logging = false
+                 captcha_whitelist = ?SETS:empty()
 		}).
 
 -record(user, {jid,

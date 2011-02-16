@@ -1693,7 +1693,24 @@ check_captcha(Affiliation, From, StateData) ->
 		{ok, passed} ->
 		    true;
 		_ ->
-		    captcha_required
+                    WList = (StateData#state.config)#config.captcha_whitelist,
+                    #jid{luser = U, lserver = S, lresource = R} = From,
+                    case ?SETS:is_element({U, S, R}, WList) of
+                        true ->
+                            true;
+                        false ->
+                            case ?SETS:is_element({U, S, ""}, WList) of
+                                true ->
+                                    true;
+                                false ->
+                                    case ?SETS:is_element({"", S, ""}, WList) of
+                                        true ->
+                                            true;
+                                        false ->
+                                            captcha_required
+                                    end
+                            end
+                    end
 	    end;
 	_ ->
 	    true
@@ -2882,6 +2899,13 @@ is_password_settings_correct(XEl, StateData) ->
 -define(PRIVATEXFIELD(Label, Var, Val),
 	?XFIELD("text-private", Label, Var, Val)).
 
+-define(JIDMULTIXFIELD(Label, Var, JIDList),
+        {xmlelement, "field", [{"type", "jid-multi"},
+			       {"label", translate:translate(Lang, Label)},
+			       {"var", Var}],
+         [{xmlelement, "value", [], [{xmlcdata, jlib:jid_to_string(JID)}]}
+          || JID <- JIDList]}).
+
 get_default_room_maxusers(RoomState) ->
     DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, []),
     RoomState2 = set_opts(DefRoomOpts, RoomState),
@@ -3002,6 +3026,9 @@ get_config(Lang, StateData, From) ->
 			     Config#config.captcha_protected)];
 	    false -> []
 	end ++
+        [?JIDMULTIXFIELD("Exclude Jabber IDs from CAPTCHA challenge",
+                         "muc#roomconfig_captcha_whitelist",
+                         ?SETS:to_list(Config#config.captcha_whitelist))] ++
 	case mod_muc_log:check_access_log(
 	       StateData#state.server_host, From) of
 	    allow ->
@@ -3071,6 +3098,18 @@ set_config(XEl, StateData) ->
 -define(SET_STRING_XOPT(Opt, Val),
 	set_xoption(Opts, Config#config{Opt = Val})).
 
+-define(SET_JIDMULTI_XOPT(Opt, Vals),
+        begin
+            Set = lists:foldl(
+                    fun({U, S, R}, Set1) ->
+                            ?SETS:add_element({U, S, R}, Set1);
+                       (#jid{luser = U, lserver = S, lresource = R}, Set1) ->
+                            ?SETS:add_element({U, S, R}, Set1);
+                       (_, Set1) ->
+                            Set1
+                    end, ?SETS:empty(), Vals),
+            set_xoption(Opts, Config#config{Opt = Set})
+        end).
 
 set_xoption([], Config) ->
     Config;
@@ -3128,6 +3167,9 @@ set_xoption([{"muc#roomconfig_maxusers", [Val]} | Opts], Config) ->
     end;
 set_xoption([{"muc#roomconfig_enablelogging", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(logging, Val);
+set_xoption([{"muc#roomconfig_captcha_whitelist", Vals} | Opts], Config) ->
+    JIDs = [jlib:string_to_jid(Val) || Val <- Vals],
+    ?SET_JIDMULTI_XOPT(captcha_whitelist, JIDs);
 set_xoption([{"FORM_TYPE", _} | Opts], Config) ->
     %% Ignore our FORM_TYPE
     set_xoption(Opts, Config);
@@ -3197,6 +3239,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      password -> StateData#state{config = (StateData#state.config)#config{password = Val}};
 	      anonymous -> StateData#state{config = (StateData#state.config)#config{anonymous = Val}};
 	      logging -> StateData#state{config = (StateData#state.config)#config{logging = Val}};
+              captcha_whitelist -> StateData#state{config = (StateData#state.config)#config{captcha_whitelist = ?SETS:from_list(Val)}};
 	      max_users ->
 		  ServiceMaxUsers = get_service_max_users(StateData),
 		  MaxUsers = if
@@ -3241,6 +3284,8 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
      ?MAKE_CONFIG_OPT(max_users),
+     {captcha_whitelist,
+      ?SETS:to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author}
