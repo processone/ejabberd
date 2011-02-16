@@ -89,6 +89,10 @@ if [ "$DIST_INTERFACE" != "" ] ; then
     KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_use_interface \"${DIST_INTERFACE}\""
 fi
 
+if [ "$INET_DIST_INTERFACE" != "" ] ; then
+    KERNEL_OPTS+="-kernel inet_dist_use_interface \"${INET_DIST_INTERFACE}\""
+fi
+
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 
 # define additional environment variables
