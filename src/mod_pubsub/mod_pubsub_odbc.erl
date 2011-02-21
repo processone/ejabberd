@@ -2204,7 +2204,7 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
 %%<li>The item contains more than one payload element or the namespace of the root payload element does not match the configured namespace for the node.</li>
 %%<li>The request does not match the node configuration.</li>
 %%</ul>
-publish_item(Host, ServerHost, Node, Publisher, "", Payload) ->
+publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload) ->
     %% if publisher does not specify an ItemId, the service MUST generate the ItemId
     publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload);
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
