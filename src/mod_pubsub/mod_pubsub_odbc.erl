@@ -3166,7 +3166,7 @@ state_can_deliver({U, S, R}, SubOptions) ->
 
 get_resource_state({U, S, R}, ShowValues, JIDs) ->
     %% Get user session PID
-    case ejabberd_sm:get_session_pid(exmpp_jid:make(U, S, R)) of
+    case ejabberd_sm:get_session_pid({U, S, R}) of
 	%% If no PID, item can be delivered
 	none -> lists:append([{U, S, R}], JIDs);
 	%% If PID ...
@@ -3283,7 +3283,7 @@ broadcast(Host, Node, NodeId, Type, NodeOptions, Notify, Condition, Stanza, SHIM
 
 broadcast({U, S, R}, Node, NodeId, Type, NodeOptions, Subscriptions, Stanza, SHIM) ->
     broadcast(S, Node, NodeId, Type, NodeOptions, Subscriptions, Stanza, SHIM)
-    or case ejabberd_sm:get_session_pid(U, S, user_resource(U, S, R)) of
+	or case ejabberd_sm:get_session_pid({U, S, user_resource(U, S, R)}) of
 	C2SPid when is_pid(C2SPid) ->
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
@@ -3424,7 +3424,7 @@ sub_with_options(JID, NodeId, SubId) ->
 user_resources(User, Server) ->
     ejabberd_sm:get_user_resources(User, Server).
 
-user_resource(User, Server, []) ->
+user_resource(User, Server, undefined) ->
     case user_resources(User, Server) of
 	[R|_] -> R;
 	_ ->  []
