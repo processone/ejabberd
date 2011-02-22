@@ -253,9 +253,12 @@ terminate(_Reason, _S) ->
 store(List) ->
     _ = [(assure_group(Name)
           andalso
-          [join_group(Name, P) || P <- Members -- group_members(Name)]) ||
+          store2(Name, Members)) ||
             [Name, Members] <- List],
     ok.
+store2(Name, Members) ->
+    [join_group(Name, P) || P <- Members -- group_members(Name)],
+    true.
 
 assure_group(Name) ->
     Key = {group, Name},
