@@ -283,7 +283,7 @@ call_command([CmdString | Args], Auth, AccessCommands) ->
     Command = list_to_atom(CmdStringU),
     case ejabberd_commands:get_command_format(Command) of
 	{error, command_unknown} ->
-	    {error, io_lib:format("Error: command ~p not known.", [hd(Args)])};
+	    {error, io_lib:format("Error: command ~p not known.", [CmdString])};
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->
