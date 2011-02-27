@@ -92,6 +92,8 @@ normalize_spec({A, B}) ->
     {A, normalize(B)};
 normalize_spec({A, B, C}) ->
     {A, normalize(B), normalize(C)};
+normalize_spec(local) ->
+    local;
 normalize_spec(all) ->
     all;
 normalize_spec(none) ->
@@ -163,6 +165,10 @@ match_acl(ACL, JID, Host) ->
 			      case Spec of
 				  all ->
 				      true;
+				  local ->
+				      ((Host == Server) orelse
+				       ((Host == global) andalso
+					lists:member(Server, ?MYHOSTS)));
 				  {user, U} ->
 				      (U == User)
 					  andalso
