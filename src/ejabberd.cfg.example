@@ -480,8 +480,7 @@
 %%
 %%{captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
 
-%%
-%% Host part of the URL sent to the user.
+%% Host for the URL and port where ejabberd listens for CAPTCHA requests.
 %%
 %%{captcha_host, "example.org:5280"}.
 
