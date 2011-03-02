@@ -1633,11 +1633,11 @@ The configurable options are:
   \titem{\{captcha\_cmd, Path\}} 
   Full path to a script that generates the image.
   The default value is an empty string: \term{""}
-  \titem{\{captcha\_host, Host\}} 
-  Host part of the URL sent to the user.
-  You can include the port number.
-  The URL sent to the user is formed by: \term{http://Host/captcha/}
-  The default value is the first hostname configured.
+  \titem{\{captcha\_host, HostPort\}} 
+  Host part of the URL sent to the user,
+  and the port number where ejabberd listens for CAPTCHA requests.
+  The URL sent to the user is formed by: \term{http://Host:Port/captcha/}
+  The default value is: the first hostname configured, and port 5280.
 \end{description}
 
 Additionally, an \term{ejabberd\_http} listener must be enabled with the \term{captcha} option.

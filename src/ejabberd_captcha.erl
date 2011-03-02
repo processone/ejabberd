@@ -406,12 +406,12 @@ get_prog_name() ->
 
 get_url(Str) ->
     CaptchaHost = ejabberd_config:get_local_option(captcha_host),
-    TransferProt = atom_to_list(get_transfer_protocol(CaptchaHost)),
     case CaptchaHost of
 	Host when is_list(Host) ->
+	    TransferProt = atom_to_list(get_transfer_protocol(CaptchaHost)),
 	    TransferProt ++ "://" ++ Host ++ "/captcha/" ++ Str;
 	_ ->
-	    TransferProt ++ "://" ++ ?MYNAME ++ "/captcha/" ++ Str
+	    "http://" ++ ?MYNAME ++ ":5280/captcha/" ++ Str
     end.
 
 get_transfer_protocol(CaptchaHost) ->
