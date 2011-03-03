@@ -626,22 +626,20 @@ get_prog_name() ->
 %% @doc (Str::string()) -> string()
 get_url(Str) ->
     CaptchaHost = ejabberd_config:get_local_option(captcha_host),
-    case CaptchaHost of
-	Host when is_list(Host) ->
-	    TransferProt = atom_to_list(get_transfer_protocol(CaptchaHost)),
-	    TransferProt ++ "://" ++ Host ++ "/captcha/" ++ Str;
+    case string:tokens(CaptchaHost, ":") of
+	[TransferProt, Host, PortString] ->
+	    TransferProt ++ ":" ++ Host ++ ":" ++ PortString ++ "/captcha/" ++ Str;
+	[Host, PortString] ->
+	    TransferProt = atom_to_list(get_transfer_protocol(PortString)),
+	    TransferProt ++ "://" ++ Host ++ ":" ++ PortString ++ "/captcha/" ++ Str;
 	_ ->
 	    "http://" ++ ?MYNAME ++ ":5280/captcha/" ++ Str
     end.
 
-get_transfer_protocol(CaptchaHost) ->
-    PortNumber = get_port_number_from_captcha_host_option(CaptchaHost),
+get_transfer_protocol(PortString) ->
+    PortNumber = list_to_integer(PortString),
     PortListeners = get_port_listeners(PortNumber),
     get_captcha_transfer_protocol(PortListeners).
-
-get_port_number_from_captcha_host_option(CaptchaHost) ->
-    [_Host, PortString] = string:tokens(CaptchaHost, ":"),
-    list_to_integer(PortString).
 
 get_port_listeners(PortNumber) ->
     AllListeners = ejabberd_config:get_local_option(listen),
@@ -655,7 +653,8 @@ get_port_listeners(PortNumber) ->
 
 get_captcha_transfer_protocol([]) ->
     throw("The port number mentioned in captcha_host is not "
-	  "a ejabberd_http listener with 'captcha' option.");
+	  "a ejabberd_http listener with 'captcha' option. "
+	  "Change the port number or specify http:// in that option.");
 get_captcha_transfer_protocol([{{_Port, _Ip, tcp}, ejabberd_http, Opts}
 			       | Listeners]) ->
     case lists:member(captcha, Opts) of
