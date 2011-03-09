@@ -111,7 +111,7 @@ process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
 			LServer,
 			exmpp_xml:get_child_elements(SubEl)) of
 	{'EXIT', _Reason} ->
-	    {error, 'internal-server-error'};
+            exmpp_iq:error(IQ_Rec, 'internal-server-error');
 	Res ->
 	    exmpp_iq:result(IQ_Rec, #xmlel{ns = ?NS_PRIVATE,
 					   name = 'query',
