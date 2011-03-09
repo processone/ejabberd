@@ -376,6 +376,7 @@ feature_request(Host, From, Caps, [SubNode | Tail] = SubNodes) ->
 			  end,
 	    if NeedRequest ->
 		    IQ = #iq{type = 'get',
+                             iq_ns = ?NS_JABBER_CLIENT,
 			     ns = ?NS_DISCO_INFO,
 			     payload = #xmlel{ns = ?NS_DISCO_INFO,
 					      name = 'query',
