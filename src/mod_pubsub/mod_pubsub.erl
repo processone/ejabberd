@@ -3483,7 +3483,7 @@ broadcast({U, S, R}, Node, NodeId, Type, NodeOptions, Subscriptions, Stanza, SHI
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
-	    Event = {pep_message, binary_to_list(Node)++"+notify"},
+	    Event = {pep_message, << Node/binary, <<"+notify">>/binary >>},
 	    Message = case get_option(NodeOptions, notification_type, headline) of
 		normal -> Stanza;
 		MsgType -> add_message_type(Stanza, atom_to_list(MsgType))
