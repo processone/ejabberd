@@ -17,6 +17,11 @@
 -- 02111-1307 USA
 --
 
+--   WARNING !!!
+-- ejabberd creates the tables automatically.
+-- This file is obsolete.
+-- Read the ejabberd modules source code for up-to-date table schema.
+
 -- Needs MySQL (at least 4.0.x) with innodb back-end
 SET table_type=InnoDB;
 

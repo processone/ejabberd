@@ -1920,7 +1920,9 @@ produces this result after being interpreted:
 \ind{database}
 %TODO: this whole section is not yet 100% optimized
 
-\ejabberd{} uses its internal Mnesia database by default. However, it is
+\ejabberd{} uses the Erlang/OTP internal 
+\footahref{http://www.erlang.org/doc/apps/mnesia/index.html}{Mnesia}
+database by default. However, it is
 possible to use a relational database or an LDAP server to store persistent,
 long-living data. \ejabberd{} is very flexible: you can configure different
 authentication methods for different virtual hosts, you can configure different
@@ -1929,13 +1931,13 @@ different storage systems for modules, and so forth.
 
 The following databases are supported by \ejabberd{}:
 \begin{itemize}
-\item \footahref{http://www.microsoft.com/sql/}{Microsoft SQL Server}
-\item \footahref{http://www.erlang.org/doc/apps/mnesia/index.html}{Mnesia}
-\item \footahref{http://www.mysql.com/}{MySQL}
-\item \footahref{http://en.wikipedia.org/wiki/Open\_Database\_Connectivity}{Any ODBC compatible database}
-\item \footahref{http://www.postgresql.org/}{PostgreSQL}
+\item \footahref{http://www.mysql.com/}{MySQL}, see section~\ref{mysql}
+\item \footahref{http://www.postgresql.org/}{PostgreSQL}, see section~\ref{pgsql}
+\item \footahref{http://www.microsoft.com/sql/}{Microsoft SQL Server}, see section~\ref{mssql}
+\item \footahref{http://en.wikipedia.org/wiki/Open\_Database\_Connectivity}{Any ODBC compatible database}, see section~\ref{odbc}
 \end{itemize}
 
+For LDAP configuration details, see section~\ref{ldap}.
 The following LDAP servers are tested with \ejabberd{}:
 \begin{itemize}
 \item \footahref{http://www.microsoft.com/activedirectory/}{Active Directory}
@@ -1970,9 +1972,8 @@ database creation. Check the MySQL documentation and the tutorial \footahref{htt
 Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
-Moreover, the file mysql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for MySQL. At the end of the file
-you can find information to update your database schema.
+ejabberd automatically creates the tables and updates their schema if needed.
+The file mysql.sql in the directory src/odbc is provided only as reference.
 
 
 \makesubsubsection{compilemysql}{Driver Compilation}
@@ -2063,9 +2064,8 @@ tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+e
 Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
-Moreover, the file mssql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end
-of the file you can find information to update your database schema.
+ejabberd automatically creates the tables and updates their schema if needed.
+The file mssql.sql in the directory src/odbc is provided only as reference.
 
 
 \makesubsubsection{compilemssql}{Driver Compilation}
@@ -2115,9 +2115,8 @@ and database creation. Check the PostgreSQL documentation and the tutorial \foot
 Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
-Also the file pg.sql in the directory src/odbc might be interesting for you.
-This file contains the \ejabberd{} schema for PostgreSQL. At the end of the file
-you can find information to update your database schema.
+ejabberd automatically creates the tables and updates their schema if needed.
+The file pg.sql in the directory src/odbc is provided only as reference.
 
 
 \makesubsubsection{compilepgsql}{Driver Compilation}
@@ -2204,6 +2203,7 @@ of your database. Check the documentation of your database. The tutorial \footah
 contains information about \ejabberd{}'s configuration which is duplicate to
 this section.
 
+ejabberd automatically creates the tables and updates their schema if needed.
 
 \makesubsubsection{compileodbc}{Driver Compilation}
 

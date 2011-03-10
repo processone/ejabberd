@@ -17,6 +17,11 @@
 -- 02111-1307 USA
 --
 
+--   WARNING !!!
+-- ejabberd creates the tables automatically.
+-- This file is obsolete.
+-- Read the ejabberd modules source code for up-to-date table schema.
+
 CREATE TABLE users (
     username text NOT NULL,
     host text NOT NULL,

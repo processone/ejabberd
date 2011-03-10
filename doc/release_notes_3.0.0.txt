@@ -37,9 +37,9 @@ ejabberd 3.0.0 includes three major changes:
 * gen_storage (abbreviated GS) provides a database abstraction layer,
   which supports storage in Mnesia and in ODBC databases.
   Several ejabberd modules use GS, like mod_roster and ejabberd_auth_storage.
-  The schema of the tables stored by those modules have changed,
-  and ejabberd migrates automatically your mnesia and ODBC
-  tables from previous ejabberd releases.
+  The schema of the tables stored by those modules have changed.
+  ejabberd automatically creates mnesia and ODBC tables,
+  and migrates them from a previous ejabberd version.
 
 * Massive Hosting (abbreviated MH) is preliminary implemented in ejabberd,
   but it is still incomplete, untested and undocumented.
