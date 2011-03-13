@@ -1292,8 +1292,8 @@ msgstr "Configuração das Regra de Acesso ~s"
 
 #: web/ejabberd_web_admin.erl:1038
 #, fuzzy
-msgid "ejabberd virtual hosts"
-msgstr "Estatísticas do ejabberd"
+msgid "Virtual Hosts"
+msgstr "Servidores virtuales"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"

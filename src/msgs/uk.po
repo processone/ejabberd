@@ -1244,9 +1244,9 @@ msgstr "необроблений формат"
 msgid "~s access rule configuration"
 msgstr "Конфігурація правила доступу ~s"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "віртуальні хости ejabberd"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "віртуальні хости"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"

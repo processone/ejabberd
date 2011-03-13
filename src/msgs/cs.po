@@ -1227,9 +1227,9 @@ msgstr "Zdroj"
 msgid "~s access rule configuration"
 msgstr "~s konfigurace pravidla přístupu"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "Virtuální hostitelé ejabberd"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "Virtuální hostitelé"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"

@@ -1362,8 +1362,8 @@ msgid "~s access rule configuration"
 msgstr "~s aturan akses konfigurasi"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "ejabberd virtual hosts"
+msgid "Virtual Hosts"
+msgstr "Virtual Hosts"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
