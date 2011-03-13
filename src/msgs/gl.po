@@ -1370,8 +1370,8 @@ msgid "~s access rule configuration"
 msgstr "Configuración das Regra de Acceso ~s"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "Hosts virtuais de ejabberd"
+msgid "Virtual Hosts"
+msgstr "Hosts Virtuais"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
@@ -1804,9 +1804,6 @@ msgstr ""
 
 #~ msgid "(Raw)"
 #~ msgstr "(Cru)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Hosts Virtuais"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "O alcume especificado xa está rexistrado, terás que buscar outro"

@@ -73,7 +73,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe modülü"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams modülü"}.
 {"ejabberd vCard module","ejabberd vCard modülü"}.
-{"ejabberd virtual hosts","ejabberd sanal sunucuları"}.
 {"ejabberd Web Admin","ejabberd Web Yöneticisi"}.
 {"Elements","Elementler"}.
 {"Email","E-posta"}.
@@ -356,6 +355,7 @@
 {"Users Last Activity","Kullanıcıların Son Aktiviteleri"}.
 {"Validate","Geçerli"}.
 {"vCard User Search","vCard Kullanıcı Araması"}.
+{"Virtual Hosts","Sanal Sunucuları"}.
 {"Visitors are not allowed to change their nicknames in this room","Bu odada ziyaretçilerin takma isimlerini değiştirmesine izin verilmiyor"}.
 {"Visitors are not allowed to send messages to all occupants","Ziyaretçilerin odadaki tüm sakinlere mesaj göndermesine izin verilmiyor"}.
 {"Wednesday","Çarşamba"}.

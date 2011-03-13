@@ -1355,8 +1355,8 @@ msgid "~s access rule configuration"
 msgstr "~s konfigurácia prístupového pravidla"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "ejabberd virtuálne servery"
+msgid "Virtual Hosts"
+msgstr "Virtuálne servery"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
@@ -1787,9 +1787,6 @@ msgstr ""
 
 #~ msgid "(Raw)"
 #~ msgstr "(Raw)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Virtuálne servery"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "Zadaná prezývka je už registrovaná"

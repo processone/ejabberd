@@ -80,7 +80,6 @@
 {"ejabberd Publish-Subscribe module","Modul ejabberd Setujui-Pertemanan"}.
 {"ejabberd SOCKS5 Bytestreams module","modul ejabberd SOCKS5 Bytestreams"}.
 {"ejabberd vCard module","Modul ejabberd vCard"}.
-{"ejabberd virtual hosts","ejabberd virtual hosts"}.
 {"ejabberd Web Admin","Admin Web ejabberd"}.
 {"Elements","Elemen-elemen"}.
 {"Email","Email"}.
@@ -388,6 +387,7 @@
 {"Users","Pengguna"}.
 {"Validate","Mengesahkan"}.
 {"vCard User Search","vCard Pencarian Pengguna"}.
+{"Virtual Hosts","Virtual Hosts"}.
 {"Visitors are not allowed to change their nicknames in this room","Visitor tidak diperbolehkan untuk mengubah nama julukan di ruangan ini"}.
 {"Visitors are not allowed to send messages to all occupants","Visitor tidak diperbolehkan untuk mengirim pesan ke semua penghuni"}.
 {"Wednesday","Rabu"}.

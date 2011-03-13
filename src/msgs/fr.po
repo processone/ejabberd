@@ -1381,8 +1381,8 @@ msgid "~s access rule configuration"
 msgstr "Configuration des règles d'accès ~s"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "Serveurs virtuels d'ejabberd"
+msgid "Virtual Hosts"
+msgstr "Serveurs virtuels"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
@@ -1824,6 +1824,3 @@ msgstr "Effacer"
 
 #~ msgid "(Raw)"
 #~ msgstr "(Brut)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Serveurs virtuels"

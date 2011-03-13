@@ -1368,8 +1368,8 @@ msgid "~s access rule configuration"
 msgstr "Конфігурація правила доступу ~s"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "віртуальні хости ejabberd"
+msgid "Virtual Hosts"
+msgstr "віртуальні хости"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"

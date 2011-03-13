@@ -66,7 +66,6 @@
 {"ejabberd Publish-Subscribe module","Môdun ejabberd Xuất Bản-Đăng Ký Bản quyền"}.
 {"ejabberd SOCKS5 Bytestreams module","Môdun SOCKS5 Bytestreams Bản quyền"}.
 {"ejabberd vCard module","Môdun ejabberd vCard Bản quyền"}.
-{"ejabberd virtual hosts","Máy chủ ảo ejabberd"}.
 {"Email","Email"}.
 {"Enable logging","Cho phép ghi nhật ký"}.
 {"End User Session","Kết Thúc Phiên Giao Dịch Người Sử Dụng"}.
@@ -297,6 +296,7 @@
 {"Users","Người sử dụng"}.
 {"Validate","Xác nhận hợp lệ"}.
 {"vCard User Search","Tìm Kiếm Người Sử Dụng vCard"}.
+{"Virtual Hosts","Máy Chủ Ảo"}.
 {"Visitors are not allowed to send messages to all occupants","Người ghé thăm không được phép gửi thư đến tất cả các người tham dự"}.
 {"Wednesday","Thứ Tư"}.
 {"When to send the last published item","Khi cần gửi mục được xuất bản cuối cùng"}.

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "PO-Revision-Date: 2010-11-19 13:40+0100\n"
-"Last-Translator: \n"
+"Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1367,8 +1367,8 @@ msgid "~s access rule configuration"
 msgstr "Configuración de las Regla de Acceso ~s"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "Dominios de ejabberd"
+msgid "Virtual Hosts"
+msgstr "Dominios Virtuales"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"

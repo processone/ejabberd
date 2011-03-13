@@ -80,7 +80,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe-Modul"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5-Bytestreams-Modul"}.
 {"ejabberd vCard module","ejabberd vCard-Modul"}.
-{"ejabberd virtual hosts","ejabberd virtuelle Hosts"}.
 {"ejabberd Web Admin","ejabberd Web-Admin"}.
 {"Elements","Elemente"}.
 {"Email","E-Mail"}.
@@ -388,6 +387,7 @@
 {"Users Last Activity","Letzte Benutzeraktivität"}.
 {"Validate","Validieren"}.
 {"vCard User Search","vCard-Benutzer-Suche"}.
+{"Virtual Hosts","Virtuelle Hosts"}.
 {"Visitors are not allowed to change their nicknames in this room","Besucher dürfen in diesem Raum ihren Benutzernamen nicht ändern"}.
 {"Visitors are not allowed to send messages to all occupants","Besucher dürfen nicht an alle Teilnehmer Nachrichten verschicken"}.
 {"Wednesday","Mittwoch"}.
