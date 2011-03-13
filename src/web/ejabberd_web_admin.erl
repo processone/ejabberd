@@ -1036,7 +1036,7 @@ process_admin(global,
 		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     Res = list_vhosts(Query, Lang, AJID),
-    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "hostnames", "Host Names") ++ Res, global, Lang, AJID);
+    make_xhtml(?H1GL(?T("Virtual Hosts"), "hostnames", "Host Names") ++ Res, global, Lang, AJID);
 
 process_admin(Host,
 	      #request{
