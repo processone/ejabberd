@@ -391,6 +391,7 @@ static int tls_drv_control(ErlDrvData handle,
 	 break;
       case SET_DECRYPTED_OUTPUT:
 	 die_unless(d->ssl, "SSL not initialized");
+
 	 res = SSL_write(d->ssl, buf, len);
 	 if (res <= 0) 
 	 {
@@ -408,9 +409,8 @@ static int tls_drv_control(ErlDrvData handle,
 	 break;
       case GET_ENCRYPTED_OUTPUT:
 	 die_unless(d->ssl, "SSL not initialized");
-	 size = BUF_SIZE + 1;
 	 rlen = 1;
-	 b = driver_alloc_binary(size);
+	 b = driver_alloc_binary(rlen + BUF_SIZE);
 	 b->orig_bytes[0] = 0;
 	 while ((res = BIO_read(d->bio_write,
 				b->orig_bytes + rlen, BUF_SIZE)) > 0)
@@ -418,8 +418,7 @@ static int tls_drv_control(ErlDrvData handle,
 	    //printf("%d bytes of encrypted data read from state machine\r\n", res);
 
 	    rlen += res;
-	    size += BUF_SIZE;
-	    b = driver_realloc_binary(b, size);
+	    b = driver_realloc_binary(b, rlen + BUF_SIZE);
 	 }
 	 b = driver_realloc_binary(b, rlen);
 	 *rbuf = (char *)b;
@@ -431,37 +430,31 @@ static int tls_drv_control(ErlDrvData handle,
 	    if (res <= 0)
 	       die_unless(SSL_get_error(d->ssl, res) == SSL_ERROR_WANT_READ,
 			  "SSL_do_handshake failed");
-	 } else {
-	    size = BUF_SIZE + 1;
-	    rlen = 1;
-	    b = driver_alloc_binary(size);
-	    b->orig_bytes[0] = 0;
-
-	    while ((res = SSL_read(d->ssl,
-				   b->orig_bytes + rlen, BUF_SIZE)) > 0)
-	    {
-	       //printf("%d bytes of decrypted data read from state machine\r\n",res);
-	       rlen += res;
-	       size += BUF_SIZE;
-	       b = driver_realloc_binary(b, size);
-	    }
-
-	    if (res < 0)
-	    {
-	       int err = SSL_get_error(d->ssl, res);
-
-	       if (err == SSL_ERROR_WANT_READ)
-	       {
-		  //printf("SSL_read wants more data\r\n");
-		  //return 0;
-	       }
-	       // TODO
-	    }
-	    b = driver_realloc_binary(b, rlen);
-	    *rbuf = (char *)b;
-	    return rlen;
 	 }
-	 break;
+          rlen = 1;
+          b = driver_alloc_binary(rlen + BUF_SIZE);
+          b->orig_bytes[0] = 0;
+
+          while ((res = SSL_read(d->ssl,
+                                  b->orig_bytes + rlen, BUF_SIZE)) > 0)
+          {
+              //printf("%d bytes of decrypted data read from state machine\r\n",res);
+              rlen += res;
+              b = driver_realloc_binary(b, rlen + BUF_SIZE);
+          }
+
+          if (res < 0)
+          {
+              int err = SSL_get_error(d->ssl, res);
+
+              if (err != SSL_ERROR_WANT_READ)
+              {
+              // TODO
+              }
+          }
+          b = driver_realloc_binary(b, rlen);
+          *rbuf = (char *)b;
+          return rlen;
       case GET_PEER_CERTIFICATE:
 	 cert = SSL_get_peer_certificate(d->ssl);
 	 if (cert == NULL)
