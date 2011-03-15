@@ -189,28 +189,36 @@ receive_headers(State) ->
 	_ ->
 	    case Data of
 		{ok, Binary} ->
-		    {Request, Trail} = parse_request(
-					 State,
-					 State#state.trail ++ binary_to_list(Binary)),
-		    State1 = State#state{trail = Trail},
-		    NewState = lists:foldl(
-				 fun(D, S) ->
-					case S#state.end_of_request of
-					    true ->
-						S;
-					    _ ->
-						process_header(S, D)
-					end
-				 end, State1, Request),
-		    case NewState#state.end_of_request of
-			true ->
-			    ok;
-			_ ->
-			    receive_headers(NewState)
-		    end;
+            process_requests(State, binary_to_list(Binary));
 		_ ->
 		    ok
 	    end
+    end.
+
+process_requests(State, Data) ->
+    {Request, Trail} = parse_request(
+                State,
+                State#state.trail ++ Data),
+    State1 = State#state{trail = Trail},
+    NewState = lists:foldl(
+            fun(D, S) ->
+            case S#state.end_of_request of
+                true ->
+                S;
+                _ ->
+                process_header(S, D)
+            end
+            end, State1, Request),
+    case State1#state.trail of
+        [] ->
+            case NewState#state.end_of_request of
+            true ->
+                ok;
+            _ ->
+                receive_headers(NewState)
+            end;
+        _ ->
+            process_requests(State1, "")
     end.
 
 process_header(State, Data) ->
@@ -571,7 +579,11 @@ recv_data(_State, 0, Acc) ->
 recv_data(State, Len, Acc) ->
     case State#state.trail of
 	[] ->
-	    case (State#state.sockmod):recv(State#state.socket,   Len, 300000) of
+        Len2 = case State#state.sockmod of
+            gen_tcp -> Len;
+            _ -> 0
+        end,
+	    case (State#state.sockmod):recv(State#state.socket, Len2, 300000) of
 		{ok, Data} ->
 		    recv_data(State, Len - size(Data), [Acc | Data]);
 		_ ->
