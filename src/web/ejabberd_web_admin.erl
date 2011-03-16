@@ -5,7 +5,7 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -319,7 +319,7 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 		 [?XAE('div',
 		       [?XMLATTR(<<"id">>, <<"copyright">>)],
 		       [?XC('p',
-			     "ejabberd (c) 2002-2010 ProcessOne")
+			     "ejabberd (c) 2002-2011 ProcessOne")
 		       ])])])
       ]}}.
 
@@ -1036,7 +1036,7 @@ process_admin(global,
 		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     Res = list_vhosts(Query, Lang, AJID),
-    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "hostnames", "Host Names") ++ Res, global, Lang, AJID);
+    make_xhtml(?H1GL(?T("Virtual Hosts"), "hostnames", "Host Names") ++ Res, global, Lang, AJID);
 
 process_admin(Host,
 	      #request{

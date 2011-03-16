@@ -5,7 +5,7 @@
 %%% Created : 30 Jul 2004 by Leif Johansson <leifj@it.su.se>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -126,7 +126,8 @@ loop(Port, Timeout, ProcessName, ExtPrg) ->
                     ?ERROR_MSG("extauth call '~p' didn't receive response", [Msg]),
 		    Caller ! {eauth, false},
 		    unregister(ProcessName),
-		    spawn(?MODULE, init, [ProcessName, ExtPrg]),
+		    Pid = spawn(?MODULE, init, [ProcessName, ExtPrg]),
+		    flush_buffer_and_forward_messages(Pid),
 		    exit(port_terminated)
 	    end;
 	stop ->
@@ -138,6 +139,15 @@ loop(Port, Timeout, ProcessName, ExtPrg) ->
 	{'EXIT', Port, Reason} ->
 	    ?CRITICAL_MSG("~p ~n", [Reason]),
 	    exit(port_terminated)
+    end.
+
+flush_buffer_and_forward_messages(Pid) ->
+    receive
+	Message ->
+	    Pid ! Message,
+	    flush_buffer_and_forward_messages(Pid)
+    after 0 ->
+	    true
     end.
 
 join(List, Sep) ->

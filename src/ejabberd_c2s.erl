@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -226,7 +226,7 @@ broadcast(FsmRef, Type, From, Packet) ->
 get_state(FsmRef) ->
     ?GEN_FSM:sync_send_all_state_event(FsmRef, get_state, 1000).
 
-add_rosteritem(FsmRef, IJID, ISubscription) ->
+add_rosteritem(FsmRef, IJID, ISubscription) when is_binary(ISubscription) ->
     ?GEN_FSM:send_all_state_event(FsmRef, {add_rosteritem, IJID, ISubscription}).
 
 del_rosteritem(FsmRef, IJID) ->
@@ -716,13 +716,13 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		    fsm_next_state(wait_for_sasl_response,
 				   StateData#state{
 				     sasl_state = NewSASLState});
-		{error, Error, Username} when is_list(Error) ->
+		{error, Error, Text, Username} ->
 		    ?INFO_MSG(
-		       "(~w) Failed authentication for ~s@~s due to ~s",
+		       "(~w) Failed authentication for ~s@~s due to ~p ~s",
 		       [StateData#state.socket,
-			Username, StateData#state.server, Error]),
+			Username, StateData#state.server, Error, Text]),
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(Error)),
+		      exmpp_server_sasl:failure(Error, Text)),
 		    {next_state, wait_for_feature_request, StateData,
 		     ?C2S_OPEN_TIMEOUT};
 		{error, Error} ->
@@ -834,13 +834,13 @@ wait_for_sasl_response({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		      exmpp_server_sasl:challenge(ServerOut)),
 		    fsm_next_state(wait_for_sasl_response,
 		     StateData#state{sasl_state = NewSASLState});
-		{error, Error, Username} ->
+		{error, Error, Text, Username} ->
 		    ?INFO_MSG(
-		       "(~w) Failed authentication for ~s@~s",
+		       "(~w) Failed authentication for ~s@~s due to ~p ~s",
 		       [StateData#state.socket,
-			Username, StateData#state.server]),
+			Username, StateData#state.server, Error, Text]),
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(Error)),
+		      exmpp_server_sasl:failure(Error, Text)),
 		    fsm_next_state(wait_for_feature_request, StateData);
 		{error, Error} ->
 		    send_element(StateData,
@@ -1146,7 +1146,7 @@ handle_event({add_rosteritem, IJID, ISubscription}, StateName, StateData) ->
     fsm_next_state(StateName, NewStateData);
 
 handle_event({del_rosteritem, IJID}, StateName, StateData) ->
-    NewStateData = roster_change(IJID, none, StateData),
+    NewStateData = roster_change(IJID, <<"none">>, StateData),
     fsm_next_state(StateName, NewStateData);
 
 handle_event(_Event, StateName, StateData) ->
@@ -1956,8 +1956,8 @@ remove_element(E, Set) ->
 
 roster_change(IJID, ISubscription, StateData) ->
     LIJID = jlib:short_prepd_jid(IJID),
-    IsFrom = (ISubscription == both) or (ISubscription == from),
-    IsTo   = (ISubscription == both) or (ISubscription == to),
+    IsFrom = (ISubscription == <<"both">>) or (ISubscription == <<"from">>),
+    IsTo   = (ISubscription == <<"both">>) or (ISubscription == <<"to">>),
     OldIsFrom = ?SETS:is_element(LIJID, StateData#state.pres_f),
     FSet = if
 	       IsFrom ->

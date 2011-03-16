@@ -128,13 +128,13 @@ do_step(#state{needsmore=true,sasl=Sasl,step=Step}=State, ClientIn) ->
 	{needsmore, RspAuth} ->
 	    ?DEBUG("needsmore~n", []),
 	    if (Step > 0) and (ClientIn =:= []) and (RspAuth =:= <<>>) ->
-		    {error, "not-authorized"};
+		    {error, 'not-authorized'};
 		true ->
 		    {continue, binary_to_list(RspAuth),
 		     State#state{step=Step+1}}
 	    end;
 	{error, _} ->
-	    {error, "not-authorized"}
+	    {error, 'not-authorized'}
     end.
 
 handle_step_ok(State, []) ->
@@ -147,7 +147,7 @@ check_user(#state{authid=Authid,authzid=Authzid,
 		  authrealm=Auth_realm,host=Host,realm=Realm}) ->
     if Realm =/= Auth_realm ->
 	    ?DEBUG("bad realm ~p (expected ~p)~n",[Auth_realm, Realm]),
-	    throw({error, "not-authorized"});
+	    throw({error, 'not-authorized'});
        true ->
 	    ok
     end,
@@ -155,7 +155,7 @@ check_user(#state{authid=Authid,authzid=Authzid,
     case ejabberd_auth:is_user_exists(Authid, Host) of
 	false ->
 	    ?DEBUG("bad user ~p~n",[Authid]),
-	    throw({error, "not-authorized"});
+	    throw({error, 'not-authorized'});
 	true ->
 	    ok
     end,

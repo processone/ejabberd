@@ -5,7 +5,7 @@
 %%% Created : 24 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -39,6 +39,7 @@
 	 check_in_subscription/6,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
+	 get_user_sessions/2,
 	 get_user_resources/2,
 	 set_presence/5,
 	 unset_presence/4,
@@ -156,6 +157,17 @@ disconnect_removed_user(User, Server) ->
                                       Server),
                       #xmlel{name = 'broadcast', ns = exit,
                         attrs = [?XMLATTR(<<"reason">>, <<"User removed">>)]}).
+
+get_user_sessions(User, Server) 
+  when is_binary(User), is_binary(Server) ->
+    US = {User, Server},
+    case ejabberd_cluster:get_node({User, Server}) of
+	Node when Node == node() ->
+	    catch mnesia:dirty_index_read(session, US, #session.us);
+	Node ->
+	    catch rpc:call(Node, mnesia, dirty_index_read,
+			[session, US, #session.us], 5000)
+    end.
 
 get_user_resources(User, Server) 
   when is_binary(User), is_binary(Server) ->

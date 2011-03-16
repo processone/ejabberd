@@ -5,7 +5,7 @@
 %%% Created :  5 Mar 2005 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -37,6 +37,8 @@
 	 process_item/2,
 	 in_subscription/6,
 	 out_subscription/4,
+	 user_available/1,
+	 unset_presence/4,
 	 register_user/2,
 	 remove_user/2,
 	 list_groups/1,
@@ -87,6 +89,10 @@ start(Host, _Opts) ->
         	       ?MODULE, get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, HostB,
 		       ?MODULE, process_item, 50),
+    ejabberd_hooks:add(user_available_hook, HostB,
+		       ?MODULE, user_available, 50),
+    ejabberd_hooks:add(unset_presence_hook, HostB,
+		       ?MODULE, unset_presence, 50),
     ejabberd_hooks:add(register_user, HostB,
 		       ?MODULE, register_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, HostB,
@@ -114,6 +120,10 @@ stop(Host) ->
         		  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, HostB,
 			  ?MODULE, process_item, 50),
+    ejabberd_hooks:delete(user_available_hook, HostB,
+			  ?MODULE, user_available, 50),
+    ejabberd_hooks:delete(unset_presence_hook, HostB,
+			  ?MODULE, unset_presence, 50),
     ejabberd_hooks:delete(register_user, HostB,
 			  ?MODULE, register_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, HostB,
@@ -128,7 +138,6 @@ get_user_roster(Items, {U, S}) when is_binary(U) ->
     get_user_roster(Items, {binary_to_list(U), binary_to_list(S)});
 get_user_roster(Items, US) ->
     {U, S} = US,
-    USB = {list_to_binary(U), list_to_binary(S)},
     DisplayedGroups = get_user_displayed_groups(US),
     %% Get shared roster users in all groups and remove self: 
     SRUsers = 
@@ -136,9 +145,9 @@ get_user_roster(Items, US) ->
 	  fun(Group, Acc1) ->
 		  GroupName = get_group_name(S, Group),
 		  lists:foldl(
-		    fun(UserServerB, Acc2) ->
-			    if UserServerB == USB -> Acc2;
-			       true -> dict:append(UserServerB, 
+		    fun(UserServer, Acc2) ->
+			    if UserServer == US -> Acc2;
+			       true -> dict:append(UserServer,
 						   GroupName,
 						   Acc2)
 			    end
@@ -506,27 +515,47 @@ get_group_opt(Host, Group, Opt, Default) ->
 	    Default
     end.
 
-%% @spec(Host::string(), Group::string()) -> [{Username::binary(), Server::binary()}]
+get_online_users(Host) ->
+    lists:usort([{binary_to_list(U), binary_to_list(S)}
+		 || {U, S, _} <-
+			ejabberd_sm:get_vh_session_list(list_to_binary(Host))]).
+
+%% @spec(Host::string(), Group::string()) -> [{Username::string(), Server::string()}]
 get_group_users(HostB, Group) when is_binary(HostB) ->
     get_group_users(binary_to_list(HostB), Group);
+
 get_group_users(Host, Group) ->
     case get_group_opt(Host, Group, all_users, false) of
 	true ->
 	    ejabberd_auth:get_vh_registered_users(Host);
 	false ->
 	    []
-    end ++ get_group_explicit_users(Host, Group).
+    end ++
+    case get_group_opt(Host, Group, online_users, false) of
+	true ->
+	    get_online_users(Host);
+	false ->
+	    []
+    end ++
+    get_group_explicit_users(Host, Group).
 
-%% @spec(User::any(), Host::string(), Group::string(), GroupOpts) -> [{Username::binary(), Server::binary()}]
-get_group_users(User, HostB, Group, GroupOpts) when is_binary(HostB) ->
-    get_group_users(User, binary_to_list(HostB), Group, GroupOpts);
-get_group_users(_User, Host, Group, GroupOpts) ->
+%% @spec(Host::string(), Group::string(), GroupOpts) -> [{Username::binary(), Server::binary()}]
+get_group_users(HostB, Group, GroupOpts) when is_binary(HostB) ->
+    get_group_users(binary_to_list(HostB), Group, GroupOpts);
+get_group_users(Host, Group, GroupOpts) ->
     case proplists:get_value(all_users, GroupOpts, false) of
 	true ->
 	    ejabberd_auth:get_vh_registered_users(Host);
 	false ->
 	    []
-    end ++ get_group_explicit_users(Host, Group).
+    end ++
+    case proplists:get_value(online_users, GroupOpts, false) of
+	true ->
+	    get_online_users(Host);
+	false ->
+	    []
+    end ++
+    get_group_explicit_users(Host, Group).
 
 %% @spec (Host::string(), Group::string()) -> [{User::string(), Server::string()}]
 get_group_explicit_users(Host, Group) ->
@@ -545,13 +574,22 @@ get_group_name(Host, Group) ->
     get_group_opt(Host, Group, name, Group).
 
 %% @spec(Host::string)
-%% @doc Get list of names of groups that have @all@ in the memberlist
+%% @doc Get list of names of groups that have @all@ or @online@ in the memberlist
 get_special_users_groups(HostB) when is_binary(HostB)->
     get_special_users_groups(binary_to_list(HostB));
 get_special_users_groups(Host) ->
     lists:filter(
       fun(Group) ->
 	      get_group_opt(Host, Group, all_users, false)
+		  orelse get_group_opt(Host, Group, online_users, false)
+      end,
+      list_groups(Host)).
+
+%% Get list of names of groups that have @online@ in the memberlist
+get_special_users_groups_online(Host) ->
+    lists:filter(
+      fun(Group) ->
+	      get_group_opt(Host, Group, online_users, false)
       end,
       list_groups(Host)).
 
@@ -712,13 +750,17 @@ push_user_to_members(User, Server, Subscription) ->
 		  lists:foreach(
 		    fun({U, S}) ->
                             push_roster_item(U, S, LUser, LServer, GroupName, Subscription)
-		    end, get_group_users(LUser, LServer, Group, GroupOpts))
+		    end, get_group_users(LServer, Group, GroupOpts))
 	  end, lists:usort(SpecialGroups++UserGroups))
     catch
 	_ ->
 	    ok
     end.
 
+push_user_to_displayed(User, Server, Group, Subscription) when is_binary(User) ->
+    LUser = binary_to_list(User),
+    LServer = binary_to_list(Server),
+    push_user_to_displayed(LUser, LServer, Group, Subscription);
 push_user_to_displayed(LUser, LServer, Group, Subscription) ->
     GroupsOpts = groups_with_opts(LServer),
     GroupOpts = proplists:get_value(Group, GroupsOpts, []),
@@ -728,7 +770,8 @@ push_user_to_displayed(LUser, LServer, Group, Subscription) ->
 
 push_user_to_group(LUser, LServer, Group, GroupName, Subscription) ->
     lists:foreach(
-      fun({U, S}) ->
+      fun({U, S}) when (U == LUser) and (S == LServer) -> ok;
+         ({U, S}) ->
 	      push_roster_item(U, S, LUser, LServer, GroupName, Subscription)
       end, get_group_users(LServer, Group)).
 
@@ -771,6 +814,54 @@ push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
 		   ask = none,
 		   groups = [GroupName]},
     push_item(User, Server, exmpp_jid:make(Server), Item).
+
+user_available(New) ->
+    LUser = exmpp_jid:node(New),
+    LServer = exmpp_jid:domain(New),
+    Resources = ejabberd_sm:get_user_resources(LUser, LServer),
+    ?DEBUG("user_available for ~p @ ~p (~p resources)",
+	   [LUser, LServer, length(Resources)]),
+    case length(Resources) of
+	%% first session for this user
+	1 ->
+	    %% This is a simplification - we ignore he 'display'
+	    %% property - @online@ is always reflective.
+	    OnlineGroups = get_special_users_groups_online(binary_to_list(LServer)),
+	    lists:foreach(
+	      fun(OG) ->
+		      ?DEBUG("user_available: pushing  ~p @ ~p grp ~p",
+			     [LUser, LServer, OG ]),
+		      push_user_to_displayed(LUser, LServer, OG, both)
+	      end, OnlineGroups);
+	_ ->
+	    ok
+    end.
+
+unset_presence(User, Server, Resource, Status) ->
+    LUser = binary_to_list(User),
+    LServer = binary_to_list(Server),
+    Resources = ejabberd_sm:get_user_resources(User, Server),
+    ?DEBUG("unset_presence for ~p @ ~p / ~p -> ~p (~p resources)",
+	   [LUser, LServer, Resource, Status, length(Resources)]),
+    %% if user has no resources left...
+    case length(Resources) of
+	0 ->
+	    %% This is a simplification - we ignore he 'display'
+	    %% property - @online@ is always reflective.
+	    OnlineGroups = get_special_users_groups_online(LServer),
+	    %% for each of these groups...
+	    lists:foreach(
+	      fun(OG) ->
+		      %% Push removal of the old user to members of groups
+		      %% where the group that this uwas members was displayed
+		      push_user_to_displayed(LUser, LServer, OG, remove),
+		      %% Push removal of members of groups that where
+		      %% displayed to the group which thiuser has left
+		      push_displayed_to_user(LUser, LServer, OG, LServer,remove)
+	      end, OnlineGroups);
+	_ ->
+	    ok
+    end.
 
 %%---------------------
 %% Web Admin
@@ -874,6 +965,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
     Name = get_opt(GroupOpts, name, ""),
     Description = get_opt(GroupOpts, description, ""),
     AllUsers = get_opt(GroupOpts, all_users, false),
+    OnlineUsers = get_opt(GroupOpts, online_users, false),
     %%Disabled = false,
     DisplayedGroups = get_opt(GroupOpts, displayed_groups, []),
     Members = mod_shared_roster:get_group_explicit_users(Host, Group),
@@ -883,7 +975,14 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		"@all@\n";
 	    true ->
 		[]
-	end ++ [[us_to_list(Member), $\n] || Member <- Members],
+	end ++
+	if
+	    OnlineUsers ->
+		"@online@\n";
+	    true ->
+		[]
+	end ++
+	[[us_to_list(Member), $\n] || Member <- Members],
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
     DescNL = length(re:split(Description, "\n", [{return, list}])),
     FGroup =
@@ -972,6 +1071,8 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 			  case SJID of
 			      "@all@" ->
 				  USs;
+			      "@online@" ->
+				  USs;
 			      _ ->
 				  try
 				      JID = exmpp_jid:parse(SJID),
@@ -987,10 +1088,15 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 		    true -> [{all_users, true}];
 		    false -> []
 		end,
+	    OnlineUsersOpt =
+		case lists:member("@online@", SJIDs) of
+		    true -> [{online_users, true}];
+		    false -> []
+		end,
 
 	    mod_shared_roster:set_group_opts(
 	      Host, Group,
-	      NameOpt ++ DispGroupsOpt ++ DescriptionOpt ++ AllUsersOpt),
+	      NameOpt ++ DispGroupsOpt ++ DescriptionOpt ++ AllUsersOpt ++ OnlineUsersOpt),
 
 	    if
 		NewMembers == error -> error;

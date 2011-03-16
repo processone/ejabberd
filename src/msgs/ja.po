@@ -1232,9 +1232,9 @@ msgstr "Raw"
 msgid "~s access rule configuration"
 msgstr "~s アクセスルール設定"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "ejabberd ヴァーチャルホスト"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "ヴァーチャルホスト"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"
@@ -1679,9 +1679,6 @@ msgstr "開始"
 
 #~ msgid "(Raw)"
 #~ msgstr "(Raw)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "ヴァーチャルホスト"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "指定されたニックネームは既に登録されています"

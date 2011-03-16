@@ -1,4 +1,3 @@
-%%% ====================================================================
 %%% ``The contents of this file are subject to the Erlang Public License,
 %%% Version 1.1, (the "License"); you may not use this file except in
 %%% compliance with the License. You should have received a copy of the
@@ -11,12 +10,12 @@
 %%% under the License.
 %%% 
 %%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2010, ProcessOne
+%%% Portions created by ProcessOne are Copyright 2006-2011, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2010, ProcessOne.
+%%% This software is copyright 2006-2011, ProcessOne.
 %%%
 %%%
-%%% @copyright 2006-2010 ProcessOne
+%%% @copyright 2006-2011 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -321,6 +320,8 @@ delete_node(Nodes) ->
 	     | {'error', _} %% TODO add all error cases
 	    ).
 
+subscribe_node(NodeIdx, Sender, {U, S, R}, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
+    subscribe_node(NodeIdx, Sender, exmpp_jid:make({U, S, R}), AccessModel, SendLast, PresenceSubscription, RosterGroup, Options);
 subscribe_node(NodeIdx, #jid{node = Usender, domain = Ssender} = _Sender, #jid{node = U, domain = S, resource = R} = Subscriber, AccessModel, SendLast, PresenceSubscription, RosterGroup, Options) ->
     SubKey = {U, S, R},
     GenKey = {U, S, undefined},
@@ -395,6 +396,8 @@ subscribe_node(NodeIdx, #jid{node = Usender, domain = Ssender} = _Sender, #jid{n
       -> {'result', 'default'} | {'error', _} %% TODO : add all error cases
 	    ).
 
+unsubscribe_node(NodeIdx, Sender, {U, S, R}, SubId) ->
+    unsubscribe_node(NodeIdx, Sender, exmpp_jid:make({U, S, R}), SubId);
 unsubscribe_node(NodeIdx, #jid{node = Usender, domain = Ssender} = _Sender, #jid{node = U, domain = S, resource = R} = _Subscriber, SubId) ->
     SubKey = {U, S, R},
     GenKey = {U, S, undefined},

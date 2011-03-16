@@ -5,7 +5,7 @@
 %%% Created : 16 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -111,7 +111,7 @@ process_iq_get(From, _To, #iq{payload = SubEl} = IQ_Rec) ->
 			LServer,
 			exmpp_xml:get_child_elements(SubEl)) of
 	{'EXIT', _Reason} ->
-	    {error, 'internal-server-error'};
+            exmpp_iq:error(IQ_Rec, 'internal-server-error');
 	Res ->
 	    exmpp_iq:result(IQ_Rec, #xmlel{ns = ?NS_PRIVATE,
 					   name = 'query',

@@ -1234,9 +1234,9 @@ msgstr "Kruda"
 msgid "~s access rule configuration"
 msgstr "Agordo de atingo-reguloj de ~s"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "ejabberd virtual-gastigoj"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "Virtual-gastigoj"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"
@@ -1682,9 +1682,6 @@ msgstr "Startu"
 
 #~ msgid "(Raw)"
 #~ msgstr "(Kruda)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Virtual-gastigoj"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "Donita kaŝnomo jam estas registrita"

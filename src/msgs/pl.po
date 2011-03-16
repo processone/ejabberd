@@ -1240,9 +1240,9 @@ msgstr "Żródło"
 msgid "~s access rule configuration"
 msgstr "~s konfiguracja zasad dostępu"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "wirtualne hosty ejabberd"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "Wirtualne Hosty"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"

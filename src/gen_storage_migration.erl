@@ -137,8 +137,13 @@ migrate_odbc1(Host, Tables, {OldTablesColumns, MigrateFun}) ->
     {[OldTable | _] = OldTables,
      [OldColumns | _] = OldColumnsAll} = lists:unzip(OldTablesColumns),
     OldTablesA = [list_to_atom(Table) || Table <- OldTables],
-    ColumnsT = [odbc_table_columns_t(OldTable1) || OldTable1 <- OldTables],
-    migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun).
+    case is_table_exists(OldTable, odbc) of
+	true ->
+	    ColumnsT = [odbc_table_columns_t(OldTable1) || OldTable1 <- OldTables],
+	    migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun);
+	false ->
+	    ignored
+    end.
 
 migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun)
   when ColumnsT == OldColumnsAll ->
@@ -236,3 +241,10 @@ odbc_table_columns_t(Table) ->
 	    Columns2
     end.
 
+is_table_exists(Table, odbc) ->
+    case catch ejabberd_odbc:sql_query_t("SELECT COUNT(*) FROM " ++ Table) of
+	{selected, _, _} ->
+	    true;
+	_ ->
+	    false
+    end.

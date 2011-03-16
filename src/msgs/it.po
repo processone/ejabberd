@@ -1243,9 +1243,9 @@ msgstr "Grezzo"
 msgid "~s access rule configuration"
 msgstr "Configurazione delle regole di accesso per ~s"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "Host virtuali di ejabberd"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "Host Virtuali"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"

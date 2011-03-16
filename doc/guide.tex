@@ -312,7 +312,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \begin{itemize}
 \item GNU Make
 \item GCC
-\item Erlang/OTP R12B-5 or higher. The recommended versions are R12B-5 and R13B04.
+\item Erlang/OTP R12B-5 or higher. The recommended versions are R12B-5, R13B04 and R14B01.
   Don't use R14A or R14B because \footahref{http://www.erlang.org/cgi-bin/ezmlm-cgi/4/54598}{they have a bug}.
 \item exmpp 0.9.6 or higher
 \item OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
@@ -1709,11 +1709,14 @@ The configurable options are:
   \titem{\{captcha\_cmd, Path\}} 
   Full path to a script that generates the image.
   The default value is an empty string: \term{""}
-  \titem{\{captcha\_host, Host\}} 
-  Host part of the URL sent to the user.
-  You can include the port number.
-  The URL sent to the user is formed by: \term{http://Host/captcha/}
-  The default value is the first hostname configured.
+  \titem{\{captcha\_host, ProtocolHostPort\}} 
+  Host part of the URL sent to the user,
+  and the port number where ejabberd listens for CAPTCHA requests.
+  The URL sent to the user is formed by: \term{http://Host:Port/captcha/}
+  The default value is: the first hostname configured, and port 5280.
+  If the port number you specify does not match exactly an ejabberd listener
+  (because you are using a reverse proxy or other port-forwarding tool),
+  then specify also the transfer protocol, as seen in the example below.
 \end{description}
 
 Additionally, an \term{ejabberd\_http} listener must be enabled with the \term{captcha} option.
@@ -1725,6 +1728,7 @@ Example configuration:
 
 {captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
 {captcha_host, "example.org:5280"}.
+%% {captcha_host, "https://example.org:443"}.
 
 {listen,
  [
@@ -1916,7 +1920,9 @@ produces this result after being interpreted:
 \ind{database}
 %TODO: this whole section is not yet 100% optimized
 
-\ejabberd{} uses its internal Mnesia database by default. However, it is
+\ejabberd{} uses the Erlang/OTP internal 
+\footahref{http://www.erlang.org/doc/apps/mnesia/index.html}{Mnesia}
+database by default. However, it is
 possible to use a relational database or an LDAP server to store persistent,
 long-living data. \ejabberd{} is very flexible: you can configure different
 authentication methods for different virtual hosts, you can configure different
@@ -1925,13 +1931,13 @@ different storage systems for modules, and so forth.
 
 The following databases are supported by \ejabberd{}:
 \begin{itemize}
-\item \footahref{http://www.microsoft.com/sql/}{Microsoft SQL Server}
-\item \footahref{http://www.erlang.org/doc/apps/mnesia/index.html}{Mnesia}
-\item \footahref{http://www.mysql.com/}{MySQL}
-\item \footahref{http://en.wikipedia.org/wiki/Open\_Database\_Connectivity}{Any ODBC compatible database}
-\item \footahref{http://www.postgresql.org/}{PostgreSQL}
+\item \footahref{http://www.mysql.com/}{MySQL}, see section~\ref{mysql}
+\item \footahref{http://www.postgresql.org/}{PostgreSQL}, see section~\ref{pgsql}
+\item \footahref{http://www.microsoft.com/sql/}{Microsoft SQL Server}, see section~\ref{mssql}
+\item \footahref{http://en.wikipedia.org/wiki/Open\_Database\_Connectivity}{Any ODBC compatible database}, see section~\ref{odbc}
 \end{itemize}
 
+For LDAP configuration details, see section~\ref{ldap}.
 The following LDAP servers are tested with \ejabberd{}:
 \begin{itemize}
 \item \footahref{http://www.microsoft.com/activedirectory/}{Active Directory}
@@ -1966,9 +1972,8 @@ database creation. Check the MySQL documentation and the tutorial \footahref{htt
 Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
-Moreover, the file mysql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for MySQL. At the end of the file
-you can find information to update your database schema.
+ejabberd automatically creates the tables and updates their schema if needed.
+The file mysql.sql in the directory src/odbc is provided only as reference.
 
 
 \makesubsubsection{compilemysql}{Driver Compilation}
@@ -2059,9 +2064,8 @@ tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+e
 Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
-Moreover, the file mssql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end
-of the file you can find information to update your database schema.
+ejabberd automatically creates the tables and updates their schema if needed.
+The file mssql.sql in the directory src/odbc is provided only as reference.
 
 
 \makesubsubsection{compilemssql}{Driver Compilation}
@@ -2111,9 +2115,8 @@ and database creation. Check the PostgreSQL documentation and the tutorial \foot
 Note that the tutorial contains information about \ejabberd{}'s configuration
 which is duplicate to this section.
 
-Also the file pg.sql in the directory src/odbc might be interesting for you.
-This file contains the \ejabberd{} schema for PostgreSQL. At the end of the file
-you can find information to update your database schema.
+ejabberd automatically creates the tables and updates their schema if needed.
+The file pg.sql in the directory src/odbc is provided only as reference.
 
 
 \makesubsubsection{compilepgsql}{Driver Compilation}
@@ -2200,6 +2203,7 @@ of your database. Check the documentation of your database. The tutorial \footah
 contains information about \ejabberd{}'s configuration which is duplicate to
 this section.
 
+ejabberd automatically creates the tables and updates their schema if needed.
 
 \makesubsubsection{compileodbc}{Driver Compilation}
 
@@ -4098,11 +4102,13 @@ has a unique identification and the following parameters:
 \item[Name] The name of the group, which will be displayed in the roster.
 \item[Description] The description of the group. This parameter does not affect
   anything.
-\item[Members] A list of full JIDs of group members, entered one per line in
+\item[Members] A list of JIDs of group members, entered one per line in
   the Web Admin.
-  To put as members all the registered users in the virtual hosts,
-  you can use the special directive: @all@.
-  Note that this directive is designed for a small server with just a few hundred users.
+  The special member directive \term{@all@}
+  represents all the registered users in the virtual host;
+  which is only recommended for a small server with just a few hundred users.
+  The special member directive \term{@online@}
+  represents the online users in the virtual host.
 \item[Displayed groups] A list of groups that will be in the rosters of this
   group's members.
 \end{description}
@@ -5033,6 +5039,9 @@ The command line parameters:
 	If using \term{-sname}, specify either this option or \term{ERL\_INETRC}.
   \titem{-kernel inet\_dist\_listen\_min 4200 inet\_dist\_listen\_min 4210}
 	Define the first and last ports that \term{epmd} (section \ref{epmd}) can listen to.
+  \titem{-kernel inet\_dist\_use\_interface "\{ 127,0,0,1 \}"}
+	Define the IP address where this Erlang node listens for other nodes
+        connections (see section \ref{epmd}).
   \titem{-detached}
         Starts the Erlang system detached from the system console.
 	Useful for running daemons and backgrounds processes.
@@ -5444,6 +5453,12 @@ but can be configured in the file \term{ejabberdctl.cfg}.
 The Erlang command-line parameter used internally is, for example:
 \begin{verbatim}
 erl ... -kernel inet_dist_listen_min 4370 inet_dist_listen_max 4375
+\end{verbatim}
+It is also possible to configure in \term{ejabberdctl.cfg}
+the network interface where the Erlang node will listen and accept connections.
+The Erlang command-line parameter used internally is, for example:
+\begin{verbatim}
+erl ... -kernel inet_dist_use_interface "{127,0,0,1}"
 \end{verbatim}
 
 

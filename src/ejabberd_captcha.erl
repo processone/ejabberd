@@ -5,7 +5,7 @@
 %%% Created : 26 Apr 2008 by Evgeniy Khramtsov <xramtsov@gmail.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -625,12 +625,51 @@ get_prog_name() ->
 
 %% @doc (Str::string()) -> string()
 get_url(Str) ->
-    case ejabberd_config:get_local_option(captcha_host) of
-	Host when is_list(Host) ->
-	    "http://" ++ Host ++ "/captcha/" ++ Str;
+    CaptchaHost = ejabberd_config:get_local_option(captcha_host),
+    case string:tokens(CaptchaHost, ":") of
+	[TransferProt, Host, PortString] ->
+	    TransferProt ++ ":" ++ Host ++ ":" ++ PortString ++ "/captcha/" ++ Str;
+	[Host, PortString] ->
+	    TransferProt = atom_to_list(get_transfer_protocol(PortString)),
+	    TransferProt ++ "://" ++ Host ++ ":" ++ PortString ++ "/captcha/" ++ Str;
 	_ ->
-	    "http://" ++ ?MYNAME ++ "/captcha/" ++ Str
+	    "http://" ++ ?MYNAME ++ ":5280/captcha/" ++ Str
     end.
+
+get_transfer_protocol(PortString) ->
+    PortNumber = list_to_integer(PortString),
+    PortListeners = get_port_listeners(PortNumber),
+    get_captcha_transfer_protocol(PortListeners).
+
+get_port_listeners(PortNumber) ->
+    AllListeners = ejabberd_config:get_local_option(listen),
+    lists:filter(
+      fun({{Port, _Ip, _Netp}, _Module1, _Opts1}) when Port == PortNumber ->
+	      true;
+	 (_) ->
+	      false
+      end,
+      AllListeners).
+
+get_captcha_transfer_protocol([]) ->
+    throw("The port number mentioned in captcha_host is not "
+	  "a ejabberd_http listener with 'captcha' option. "
+	  "Change the port number or specify http:// in that option.");
+get_captcha_transfer_protocol([{{_Port, _Ip, tcp}, ejabberd_http, Opts}
+			       | Listeners]) ->
+    case lists:member(captcha, Opts) of
+	true ->
+	    case lists:member(tls, Opts) of
+		true ->
+		    https;
+		false ->
+		    http
+	    end;
+	false ->
+	    get_captcha_transfer_protocol(Listeners)
+    end;
+get_captcha_transfer_protocol([_ | Listeners]) ->
+    get_captcha_transfer_protocol(Listeners).
 
 %%--------------------------------------------------------------------
 %% Function: cmd(Cmd) -> Data | {error, Reason}

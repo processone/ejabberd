@@ -5,7 +5,7 @@
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -141,7 +141,8 @@ check_password(User, Server, Password, Digest, DigestGen)
 %%     {true, AuthModule} | {false, Reason::string()}
 %% where
 %%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
-%%           | ejabberd_auth_ldap | ejabberd_auth_pam | ejabberd_auth_storage
+%%                 | ejabberd_auth_internal | ejabberd_auth_ldap
+%%                 | ejabberd_auth_odbc | ejabberd_auth_pam
 %% @doc Check if the user and password can login in server.
 %% The user can login if at least an authentication method accepts the user
 %% and the password.

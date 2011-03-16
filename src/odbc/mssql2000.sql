@@ -1,5 +1,5 @@
 /*
- * ejabberd, Copyright (C) 2002-2010   ProcessOne
+ * ejabberd, Copyright (C) 2002-2011   ProcessOne
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,6 +17,11 @@
  * 02111-1307 USA
  *
  */
+
+/*   WARNING !!!
+ * ejabberd creates the tables automatically.
+ * This file is obsolete.
+ * Read the ejabberd modules source code for up-to-date table schema. */
 
 SET ANSI_NULLS ON
 GO

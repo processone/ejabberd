@@ -10,7 +10,7 @@
 %% under the License.
 %% 
 %% The Initial Developer of the Original Code is ProcessOne.
-%% Portions created by ProcessOne are Copyright 2006-2010, ProcessOne
+%% Portions created by ProcessOne are Copyright 2006-2011, ProcessOne
 %% All Rights Reserved.''
 
 -module(p1_mnesia).

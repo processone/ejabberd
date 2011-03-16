@@ -480,8 +480,7 @@
 %%
 %%{captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
 
-%%
-%% Host part of the URL sent to the user.
+%% Host for the URL and port where ejabberd listens for CAPTCHA requests.
 %%
 %%{captcha_host, "example.org:5280"}.
 
@@ -570,8 +569,16 @@
 		  %%
 		  %%{registration_watchers, ["admin1@example.org"]},
 
+		  %%
+		  %% Only clients in the server machine can register accounts
+		  %%
 		  {ip_access, [{allow, "127.0.0.0/8"},
 			       {deny, "0.0.0.0/0"}]},
+
+		  %%
+		  %% Local c2s or remote s2s users cannot register accounts
+		  %%
+		  %%{access_from, deny},
 
 		  {access, register}
 		 ]},

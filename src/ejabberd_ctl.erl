@@ -5,7 +5,7 @@
 %%% Created : 11 Jan 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -283,7 +283,7 @@ call_command([CmdString | Args], Auth, AccessCommands) ->
     Command = list_to_atom(CmdStringU),
     case ejabberd_commands:get_command_format(Command) of
 	{error, command_unknown} ->
-	    {error, io_lib:format("Error: command ~p not known.", [hd(Args)])};
+	    {error, io_lib:format("Error: command ~p not known.", [CmdString])};
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->

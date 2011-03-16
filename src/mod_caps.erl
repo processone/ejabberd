@@ -5,7 +5,7 @@
 %%% Created : 7 Oct 2006 by Magnus Henoch <henoch@dtek.chalmers.se>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -376,6 +376,7 @@ feature_request(Host, From, Caps, [SubNode | Tail] = SubNodes) ->
 			  end,
 	    if NeedRequest ->
 		    IQ = #iq{type = 'get',
+                             iq_ns = ?NS_JABBER_CLIENT,
 			     ns = ?NS_DISCO_INFO,
 			     payload = #xmlel{ns = ?NS_DISCO_INFO,
 					      name = 'query',

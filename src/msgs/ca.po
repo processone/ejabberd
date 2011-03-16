@@ -1237,9 +1237,9 @@ msgstr "en format text"
 msgid "~s access rule configuration"
 msgstr "Configuració de les Regles d'Accés ~s"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "Hosts virtuals del ejabberd"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "Hosts virtuals"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"

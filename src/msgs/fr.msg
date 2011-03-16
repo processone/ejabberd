@@ -66,7 +66,6 @@
 {"ejabberd Publish-Subscribe module","Module Publish-Subscribe d'ejabberd"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams module"}.
 {"ejabberd vCard module","Module vCard ejabberd"}.
-{"ejabberd virtual hosts","Serveurs virtuels d'ejabberd"}.
 {"ejabberd Web Admin","Console Web d'administration de ejabberd"}.
 {"Elements","Éléments"}.
 {"Email","Email"}.
@@ -290,9 +289,9 @@
 {"The captcha is valid.","Le captcha est valide"}.
 {"The collections with which a node is affiliated","Les collections avec lesquelle un nœud est affilié"}.
 {"the password is","le mot de passe est"}.
-{"This participant is kicked from the room because he sent an error message","Ce participant est expulsé du salon pour avoir envoyé un message erroné"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Ce participant est expulsé du salon pour avoir envoyé un message erroné à un autre participant"}.
-{"This participant is kicked from the room because he sent an error presence","Ce participant est expulsé du salon pour avoir envoyé une présence erroné"}.
+{"This participant is kicked from the room because he sent an error message","Ce participant est expulsé du salon pour avoir envoyé un message erronée"}.
+{"This participant is kicked from the room because he sent an error message to another participant","Ce participant est expulsé du salon pour avoir envoyé un message erronée à un autre participant"}.
+{"This participant is kicked from the room because he sent an error presence","Ce participant est expulsé du salon pour avoir envoyé une présence erronée"}.
 {"This room is not anonymous","Ce salon n'est pas anonyme"}.
 {"Thursday","Jeudi"}.
 {"Time delay","Délais"}.
@@ -321,6 +320,7 @@
 {"User","Utilisateur"}.
 {"Validate","Valider"}.
 {"vCard User Search","Recherche dans l'annnuaire"}.
+{"Virtual Hosts","Serveurs virtuels"}.
 {"Visitors are not allowed to change their nicknames in this room","Les visiteurs ne sont pas autorisés à changer de pseudo dans ce salon"}.
 {"Visitors are not allowed to send messages to all occupants","Les visiteurs ne sont pas autorisés à envoyer des messages à tout les occupants"}.
 {"Wednesday","Mercredi"}.

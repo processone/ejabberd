@@ -84,9 +84,8 @@ KERNEL_OPTS=""
 if [ "$FIREWALL_WINDOW" != "" ] ; then
     KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
 fi
-
-if [ "$DIST_INTERFACE" != "" ] ; then
-    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_use_interface \"${DIST_INTERFACE}\""
+if [ "$INET_DIST_INTERFACE" != "" ] ; then
+    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_use_interface \"${INET_DIST_INTERFACE}\""
 fi
 
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
@@ -328,13 +327,21 @@ ctlexec ()
 {
     CONN_NAME=$1; shift
     COMMAND=$@
-    $EXEC_CMD "$ERL \
+
+    CTLEXEC="$ERL \
       $NAME ${CONN_NAME} \
       -noinput \
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS \
-      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
+      -s ejabberd_ctl -extra $ERLANG_NODE"
+
+    # quote input from the command line
+    for i in $COMMAND; do
+	CTLEXEC="$CTLEXEC '$i'";
+    done
+
+    $EXEC_CMD "$CTLEXEC"
 }
 
 # display ctl usage

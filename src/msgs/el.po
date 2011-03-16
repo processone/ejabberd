@@ -1256,9 +1256,9 @@ msgstr "Ακατέργαστο"
 msgid "~s access rule configuration"
 msgstr "~s διαμόρφωση κανόνα πρόσβασης"
 
-#: web/ejabberd_web_admin.erl:1038
-msgid "ejabberd virtual hosts"
-msgstr "εικονικοί κεντρικοί υπολογιστές ejabberd"
+#: web/ejabberd_web_admin.erl:1031
+msgid "Virtual Hosts"
+msgstr "εικονικοί κεντρικοί υπολογιστές"
 
 #: web/ejabberd_web_admin.erl:1046 web/ejabberd_web_admin.erl:1053
 msgid "Users"
