@@ -80,7 +80,7 @@ mech_new(#sasl_params{host=Host, get_password=GetPassword,
 %%     Continue = {continue, ServerOut, New_State}
 %%         ServerOut = string()
 %%         New_State = mechstate()
-%%     Error = {error, Reason} | {error, Reason, Username}
+%%     Error = {error, Reason} | {error, Reason, Text, Username}
 %%         Reason = term()
 
 mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
@@ -99,12 +99,12 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 		false ->
 		    ?DEBUG("User login not authorized because digest-uri "
 			   "seems invalid: ~p", [DigestURI]),
-		    {error, 'not-authorized', UserName};
+		    {error, 'not-authorized', "", UserName};
 		true ->
 		    AuthzId = proplists:get_value("authzid", KeyVals, ""),
 		    case (State#state.get_password)(UserName) of
 			{false, _} ->
-			    {error, 'not-authorized', UserName};
+			    {error, 'not-authorized', "", UserName};
 			{Passwd, AuthModule} ->
 				case (State#state.check_password)(UserName, "",
 					proplists:get_value("response", KeyVals, ""),
@@ -121,9 +121,9 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 						 username = UserName,
 						 authzid = AuthzId}};
 				false ->
-				    {error, 'not-authorized', UserName};
+				    {error, 'not-authorized', "", UserName};
 				{false, _} ->
-				    {error, 'not-authorized', UserName}
+				    {error, 'not-authorized', "", UserName}
 			    end
 		    end
 	    end

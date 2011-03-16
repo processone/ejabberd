@@ -62,8 +62,7 @@ mech_new(#sasl_params{check_password = CheckPassword}) ->
 %%         Username = string()
 %%         AuthzId = string()
 %%         AuthModule = atom()
-%%     Error = {error, Reason} | {error, Reason, Username}
-%%         Reason = term()
+%%     Error = {error, Reason} | {error, Reason, Text, Username}
 
 mech_step(State, ClientIn) ->
     case prepare(ClientIn) of
@@ -73,9 +72,9 @@ mech_step(State, ClientIn) ->
 		    {ok, [{username, User}, {authzid, AuthzId},
 			  {auth_module, AuthModule}]};
 		{false, ReasonAuthFail} when is_list(ReasonAuthFail) ->
-		    {error, ReasonAuthFail, User};
+		    {error, 'not-authorized', ReasonAuthFail, User};
 		_ ->
-		    {error, 'not-authorized', User}
+		    {error, 'not-authorized', "", User}
 	    end;
 	_ ->
 	    {error, 'bad-protocol'}

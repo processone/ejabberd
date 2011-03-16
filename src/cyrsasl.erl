@@ -204,7 +204,7 @@ server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 %%     Continue = {continue, ServerOut, New_State}
 %%         ServerOut = string()
 %%         New_State = saslstate()
-%%     Error = {error, Reason} | {error, Username, Reason}
+%%     Error = {error, Reason} | {error, Reason, Username}
 %%         Reason = term()
 %%         Username = string()
 
@@ -236,8 +236,9 @@ server_start(State, Mech, ClientIn) ->
 %%     Continue = {continue, ServerOut, New_State}
 %%         ServerOut = string()
 %%         New_State = saslstate()
-%%     Error = {error, Reason} | {error, Username, Reason}
+%%     Error = {error, Reason} | {error, Reason, Text, Username}
 %%         Reason = term()
+%%         Text = string()
 %%         Username = string()
 
 server_step(State, ClientIn) ->
@@ -254,8 +255,8 @@ server_step(State, ClientIn) ->
 	{continue, ServerOut, NewMechState} ->
 	    {continue, ServerOut,
 	     State#sasl_state{mech_state = NewMechState}};
-	{error, Error, Username} ->
-	    {error, Error, Username};
+	{error, Error, Text, Username} ->
+	    {error, Error, Text, Username};
 	{error, Error} ->
 	    {error, Error}
     end.

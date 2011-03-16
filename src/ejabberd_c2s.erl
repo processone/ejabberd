@@ -716,13 +716,13 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		    fsm_next_state(wait_for_sasl_response,
 				   StateData#state{
 				     sasl_state = NewSASLState});
-		{error, Error, Username} when is_list(Error) ->
+		{error, Error, Text, Username} ->
 		    ?INFO_MSG(
-		       "(~w) Failed authentication for ~s@~s due to ~s",
+		       "(~w) Failed authentication for ~s@~s due to ~p ~s",
 		       [StateData#state.socket,
-			Username, StateData#state.server, Error]),
+			Username, StateData#state.server, Error, Text]),
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(Error)),
+		      exmpp_server_sasl:failure(Error, Text)),
 		    {next_state, wait_for_feature_request, StateData,
 		     ?C2S_OPEN_TIMEOUT};
 		{error, Error} ->
@@ -834,13 +834,13 @@ wait_for_sasl_response({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		      exmpp_server_sasl:challenge(ServerOut)),
 		    fsm_next_state(wait_for_sasl_response,
 		     StateData#state{sasl_state = NewSASLState});
-		{error, Error, Username} ->
+		{error, Error, Text, Username} ->
 		    ?INFO_MSG(
-		       "(~w) Failed authentication for ~s@~s",
+		       "(~w) Failed authentication for ~s@~s due to ~p ~s",
 		       [StateData#state.socket,
-			Username, StateData#state.server]),
+			Username, StateData#state.server, Error, Text]),
 		    send_element(StateData,
-		      exmpp_server_sasl:failure(Error)),
+		      exmpp_server_sasl:failure(Error, Text)),
 		    fsm_next_state(wait_for_feature_request, StateData);
 		{error, Error} ->
 		    send_element(StateData,
