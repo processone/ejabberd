@@ -878,7 +878,7 @@ get_state(NodeIdx, JID) ->
     StateId = {JID, NodeIdx},
     case catch mnesia:read({pubsub_state, StateId}) of
 	[State] when is_record(State, pubsub_state) -> State;
-	_ -> #pubsub_state{stateid=StateId}
+	_ -> #pubsub_state{stateid=StateId, nodeidx=NodeIdx}
     end.
 
 %% @spec (State) -> ok | {error, Reason}
