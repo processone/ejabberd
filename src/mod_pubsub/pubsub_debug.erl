@@ -33,7 +33,7 @@ item(ItemId, NodeId) ->
     [I] -> I;
     _ -> undefined
     end.
-items(NodeId) -> mnesia:dirty_index_read(pubsub_item, NodeIdi, #pubsub_item.nodeidx).
+items(NodeId) -> mnesia:dirty_index_read(pubsub_item, NodeId, #pubsub_item.nodeidx).
 itemid(I) -> element(1, I#pubsub_item.itemid).
 itemids(NodeId) -> [itemid(I) || I <- items(NodeId)].
 items_by_id(ItemId) -> mnesia:dirty_match_object(#pubsub_item{itemid={ItemId, '_'}, _='_'}).
