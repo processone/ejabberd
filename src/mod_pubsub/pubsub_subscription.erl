@@ -160,6 +160,8 @@ create_table() ->
 	Other			  -> Other
     end.
 
+add_subscription(_JID, _NodeID, []) ->
+    make_subid();
 add_subscription(_JID, _NodeID, Options) ->
     SubID = make_subid(),
     mnesia:write(#pubsub_subscription{subid = SubID, options = Options}),
@@ -174,11 +176,8 @@ read_subscription(_JID, _NodeID, SubID) ->
     _ -> {error, notfound}
     end.
 
-write_subscription(JID, NodeID, SubID, Options) ->
-    case read_subscription(JID, NodeID, SubID) of
-    {error, notfound} -> {error, notfound};
-    Sub -> mnesia:write(Sub#pubsub_subscription{options = Options})
-    end.
+write_subscription(_JID, _NodeID, SubID, Options) ->
+    mnesia:write(#pubsub_subscription{subid = SubID, options = Options}).
 
 make_subid() ->
     {T1, T2, T3} = now(),

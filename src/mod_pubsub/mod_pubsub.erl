@@ -2529,13 +2529,17 @@ get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
 
 read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
     case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
-	{error, notfound} ->
-	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, #pubsub_subscription{options = Options}} ->
 	    {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
 	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_string(Subscriber)},
 						 {"subid", SubID}|nodeAttr(Node)],
 			 [XdataEl]},
+            PubsubEl = {xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], [OptionsEl]},
+            {result, PubsubEl};
+	_ ->
+	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_string(Subscriber)},
+						 {"subid", SubID}|nodeAttr(Node)],
+			 []},
             PubsubEl = {xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], [OptionsEl]},
             {result, PubsubEl}
     end.
@@ -2586,12 +2590,14 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 
 write_sub(_Subscriber, _NodeID, _SubID, invalid) ->
     {error, extended_error(?ERR_BAD_REQUEST, "invalid-options")};
+write_sub(_Subscriber, _NodeID, _SubID, []) ->
+    {result, []};
 write_sub(Subscriber, NodeID, SubID, Options) ->
     case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
-	{error, notfound} ->
-	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, _} ->
-	    {result, []}
+	    {result, []};
+	{error, _} ->
+	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")}
     end.
 
 %% @spec (Host, Node, JID, Plugins) -> {error, Reason} | {result, Response}
