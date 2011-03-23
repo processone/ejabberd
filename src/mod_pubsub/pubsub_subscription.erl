@@ -223,6 +223,8 @@ create_table() ->
       -> SubId::subId()
 	    ).
 
+add_subscription(_JID, _NodeID, []) ->
+    make_subid();
 add_subscription(_Entity, _NodeIdx, Options) ->
     SubId = make_subid(),
     mnesia:write(#pubsub_subscription{subid = SubId, options = Options}),
@@ -262,14 +264,11 @@ read_subscription(_Entity, _NodeIdx, SubId) ->
 			   NodeIdx :: nodeIdx(),
 			   SubId   :: subId(),
 			   Options :: [nodeOption()])
-      -> 'ok' | {'error', 'notfound'}
-	    ).
+      -> 'ok'
+	).
 
-write_subscription(Entity, NodeIdx, SubId, Options) ->
-    case read_subscription(Entity, NodeIdx, SubId) of
-	{error, 'notfound'} -> {error, 'notfound'};
-	Subscription -> mnesia:write(Subscription#pubsub_subscription{options = Options})
-    end.
+write_subscription(_Entity, _NodeIdx, SubId, Options) ->
+    mnesia:write(#pubsub_subscription{subid = SubId, options = Options}).
 
 
 -spec(make_subid/0 :: () -> SubId::subId()).

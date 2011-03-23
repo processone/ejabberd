@@ -307,8 +307,9 @@
 -type(pubsubNode() :: #pubsub_node{}).
 
 
-%%% @type pubsubState() = {pubsub_state, Id, Items, Affiliation, Subscriptions}
+%%% @type pubsubState() = {pubsub_state, Id, NodeIdx, Items, Affiliation, Subscriptions}
 %%%    Id            = {fullUsr(), nodeIdx()}
+%%%    NodeIdx       = nodeIdx(),
 %%%    Items         = [itemId()]
 %%%    Affiliation   = affiliation()
 %%%    Subscriptions = [{subscription(), subId()}].
@@ -319,6 +320,7 @@
 -record(pubsub_state,
 	{
 	  id                     :: {fullUsr(), nodeIdx()},
+	  nodeidx                :: nodeIdx(),
 	  items         = []     :: [itemId()],
 	  affiliation   = 'none' :: affiliation(),
 	  subscriptions = []     :: [{subscription(), subId()}]
@@ -327,8 +329,9 @@
 -type(pubsubState() :: #pubsub_state{}).
 
 
-%%% @type pubsubItem() = {pubsub_item, Id, Creation, Modification, Payload}
+%%% @type pubsubItem() = {pubsub_item, Id, NodeIdx, Creation, Modification, Payload}
 %%%    Id           = {itemId(), nodeIdx()}
+%%%    NodeIdx      = nodeIdx()
 %%%    Creation     = {now(), bareUsr()}
 %%%    Modification = {now(), fullUsr()}
 %%%    Payload      = payload().
@@ -339,6 +342,7 @@
 -record(pubsub_item,
 	{
 	  id                               :: {itemId(), nodeIdx()},
+	  nodeidx                          :: nodeIdx(),
 	  creation     = {unknown,unknown} :: {now(), bareUsr()},
 	  modification = {unknown,unknown} :: {now(), fullUsr()},
 	  payload      = []                :: payload()

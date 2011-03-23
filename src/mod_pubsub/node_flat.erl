@@ -107,9 +107,11 @@ init(_Host, _ServerHost, _Opts) ->
     pubsub_subscription:init(),
     mnesia:create_table(pubsub_state,
 			[{disc_copies, [node()]},
+			 {index, [nodeidx]},
 			 {attributes, record_info(fields, pubsub_state)}]),
     mnesia:create_table(pubsub_item,
 			[{disc_only_copies, [node()]},
+			 {index, [nodeidx]},
 			 {attributes, record_info(fields, pubsub_item)}]),
     ItemsFields = record_info(fields, pubsub_item),
     case mnesia:table_info(pubsub_item, attributes) of
@@ -234,7 +236,7 @@ create_node_permission(Host, ServerHost, _NodeId, _ParentNodeId, #jid{node = U, 
 	    ).
 
 create_node(NodeIdx, #jid{node = U, domain = S} = _JID) ->
-    set_state(#pubsub_state{id = {{U,S,undefined}, NodeIdx}, affiliation = 'owner'}),
+    set_state(#pubsub_state{id = {{U,S,undefined}, NodeIdx}, nodeidx = NodeIdx, affiliation = 'owner'}),
     {'result', {'default', 'broadcast'}}.
 
 %% @spec (Removed) -> ok
@@ -557,6 +559,7 @@ publish_item(NodeIdx, #jid{node = U, domain = S, resource = R} = _JID, PublishMo
 			       _ ->
 				   #pubsub_item{
 				 id = {ItemId, NodeIdx},
+				 nodeidx = NodeIdx,
 				 creation = {Now, GenKey},  % TODO, better use {Now, SubKey} ?
 				 modification = Modification,
 				 payload = Payload}
@@ -1024,7 +1027,7 @@ end.
 
 get_states(NodeIdx) ->
     States = case
-	     catch mnesia:match_object(#pubsub_state{id = {'_', NodeIdx}, _ = '_'})
+	     catch mnesia:index_read(pubsub_state, NodeIdx, #pubsub_state.nodeidx)
 		 of
 		 PubsubStates when is_list(PubsubStates) -> PubsubStates; %% is_list(PubsubStates) useful ?
 		 _                                       -> []
@@ -1046,7 +1049,7 @@ get_states(NodeIdx) ->
 get_state(NodeIdx, Entity) ->
     case catch mnesia:read({pubsub_state, {Entity, NodeIdx}}) of
 	[#pubsub_state{} = State] -> State;
-	_                         -> #pubsub_state{id = {Entity, NodeIdx}}
+	_                         -> #pubsub_state{id = {Entity, NodeIdx}, nodeidx=NodeIdx}
     end.
 
 %% @spec (State) -> ok | {error, Reason::stanzaError()}
@@ -1094,7 +1097,7 @@ del_state(NodeIdx, Entity) ->
 	    ).
 
 get_items(NodeIdx, _Entity) ->
-    Items = mnesia:match_object(#pubsub_item{id = {'_', NodeIdx}, _ = '_'}),
+    Items = mnesia:index_read(pubsub_item, NodeIdx, #pubsub_item.nodeidx),
     {result, lists:reverse(lists:keysort(#pubsub_item.modification, Items))}.
 
 
