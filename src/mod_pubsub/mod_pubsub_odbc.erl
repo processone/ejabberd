@@ -2758,8 +2758,6 @@ get_options_helper(JID, Lang, Node, NodeId, SubId, Type) ->
 
 read_sub(Subscriber, Node, NodeId, SubId, Lang) ->
     case pubsub_subscription_odbc:get_subscription(Subscriber, NodeId, SubId) of
-	{error, notfound} ->
-	    {error, extended_error('not-acceptable', "invalid-subid")};
 	{result, #pubsub_subscription{options = Options}} ->
             {result, XdataEl} = pubsub_subscription_odbc:get_options_xform(Lang, Options),
             OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
@@ -2767,6 +2765,12 @@ read_sub(Subscriber, Node, NodeId, SubId, Lang) ->
 					 ?XMLATTR(<<"subid">>, SubId) | nodeAttr(Node)],
 			       children = [XdataEl]},
             PubsubEl = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children = [OptionsEl]},
+            {result, PubsubEl};
+	_ ->
+	    OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
+			       attrs = [?XMLATTR(<<"jid">>, exmpp_jid:to_binary(Subscriber)),
+					?XMLATTR(<<"subid">>, SubId) | nodeAttr(Node)]},
+	    PubsubEl = #xmlel{ns = ?NS_PUBSUB, name = 'pubsub', children = [OptionsEl]},
             {result, PubsubEl}
     end.
 
@@ -2817,12 +2821,14 @@ set_options_helper(Configuration, JID, NodeId, SubId, Type) ->
 
 write_sub(_Subscriber, _NodeId, _SubId, invalid) ->
     {error, extended_error('bad-request', "invalid-options")};
+write_sub(_Subscriber, _NodeID, _SubID, []) ->
+    {result, []};
 write_sub(Subscriber, NodeId, SubId, Options) ->
     case pubsub_subscription_odbc:set_subscription(Subscriber, NodeId, SubId, Options) of
-	{error, notfound} ->
-	    {error, extended_error('not-acceptable', "invalid-subid")};
 	{result, _} ->
-	    {result, []}
+	    {result, []};
+	{error, _} ->
+	    {error, extended_error('not-acceptable', "invalid-subid")}
     end.
 
 %% @spec (Host, Node, JID, Plugins) -> {error, Reason} | {result, Response}
@@ -3288,7 +3294,7 @@ broadcast({U, S, R}, Node, NodeId, Type, NodeOptions, Subscriptions, Stanza, SHI
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
-	    Event = {pep_message, binary_to_list(Node)++"+notify"},
+	    Event = {pep_message, << Node/binary, <<"+notify">>/binary >>},
 	    Message = case get_option(NodeOptions, notification_type, headline) of
 		normal -> Stanza;
 		MsgType -> add_message_type(Stanza, atom_to_list(MsgType))

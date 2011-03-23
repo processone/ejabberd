@@ -38,9 +38,6 @@ read_subscription(SubId) ->
 		["select opt_name, opt_value "
 		"from pubsub_subscription_opt "
 		"where subid = '", ejabberd_odbc:escape(SubId), "'"]) of
-		{selected, ["opt_name", "opt_value"], []} -> 
-			notfound;
-			
 		{selected, ["opt_name", "opt_value"], Options} ->
 
 			{ok, #pubsub_subscription{subid = SubId,
