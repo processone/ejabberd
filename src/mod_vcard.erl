@@ -29,6 +29,12 @@
 %%% 2.1.x / mnesia / vcard
 %%%  us = {Username::string(), Host::string()}
 %%%  vcard = xmlelement()
+%%% 2.1.x / mnesia / vcard_search
+%%%  us = {Username::string(), Host::string()}
+%%%  user = {Username::string(), Host::string()}
+%%%  luser = Username::string()
+%%%  fn = string()
+%%%  ... = string()
 %%%
 %%% 2.1.x / odbc / vcard
 %%%  username = varchar250
@@ -42,8 +48,14 @@
 %%%  Same as 2.1.x
 %%%
 %%% 3.0.0-alpha / mnesia / vcard
-%%%  user_host = {Username::string(), Host::string()}
+%%%  user_host = {Username::binary(), Host::binary()}
 %%%  vcard = xmlel()
+%%% 3.0.0-alpha / mnesia / vcard_search
+%%%  user_host = {Username::binary(), Host::binary()}
+%%%  username = string()
+%%%  lusername = string()
+%%%  fn = string()
+%%%  ... = string()
 %%%
 %%% 3.0.0-alpha / odbc / vcard
 %%%  user = varchar150
@@ -231,12 +243,12 @@ process_sm_iq(_From, To, #iq{type = get} = IQ_Rec) ->
 	    exmpp_iq:result(IQ_Rec)
     end;
 process_sm_iq(From, _To, #iq{type = set, payload = Request} = IQ_Rec) ->
-    User = exmpp_jid:node_as_list(From),
-    LServer = exmpp_jid:prep_domain_as_list(From),
-    LServerB = exmpp_jid:prep_domain(From),
-    case ?IS_MY_HOST(LServer) of
+    User = exmpp_jid:node(From),
+    Server = exmpp_jid:prep_domain(From),
+    ServerS = exmpp_jid:prep_domain_as_list(From),
+    case ?IS_MY_HOST(ServerS) of
 	true ->
-	    set_vcard(User, LServer, LServerB, Request),
+	    set_vcard(User, Server, Request),
 	    exmpp_iq:result(IQ_Rec);
 	false ->
 	    exmpp_iq:error(IQ_Rec, 'not-allowed')
@@ -258,7 +270,7 @@ get_vcard(User, Host) ->
     end.
 
 
-set_vcard(User, LServer, LServerB, VCARD) ->
+set_vcard(User, Server, VCARD) ->
     FN       = exmpp_xml:get_path(VCARD,
       [{element, 'FN'},                         cdata_as_list]),
     Family   = exmpp_xml:get_path(VCARD,
@@ -291,7 +303,8 @@ set_vcard(User, LServer, LServerB, VCARD) ->
 	    end,
 
     try
-	LUser     = exmpp_stringprep:nodeprep(User),
+	UserStr   = binary_to_list(User),
+	LUser     = binary_to_list(exmpp_stringprep:nodeprep(User)),
 	LFN       = exmpp_stringprep:to_lower(FN),
 	LFamily   = exmpp_stringprep:to_lower(Family),
 	LGiven    = exmpp_stringprep:to_lower(Given),
@@ -304,18 +317,18 @@ set_vcard(User, LServer, LServerB, VCARD) ->
 	LOrgName  = exmpp_stringprep:to_lower(OrgName),
 	LOrgUnit  = exmpp_stringprep:to_lower(OrgUnit),
 
-	US = {LUser, LServer},
+	US = {User, Server},
 
-	VcardToStore = case gen_storage:table_info(LServerB, vcard, backend) of
+	VcardToStore = case gen_storage:table_info(Server, vcard, backend) of
 	    mnesia -> VCARD;
 	    odbc -> lists:flatten(exmpp_xml:document_to_list(VCARD))
 	end,
 
 	F = fun() ->
-		gen_storage:write(LServerB, #vcard{user_host = US, vcard = VcardToStore}),
-		gen_storage:write(LServerB,
+		gen_storage:write(Server, #vcard{user_host = US, vcard = VcardToStore}),
+		gen_storage:write(Server,
 	      #vcard_search{user_host=US,
-			    username  = User,     lusername  = LUser,
+			    username  = UserStr,  lusername  = LUser,
 			    fn        = FN,       lfn        = LFN,       
 			    family    = Family,   lfamily    = LFamily,   
 			    given     = Given,    lgiven     = LGiven,    
@@ -329,9 +342,8 @@ set_vcard(User, LServer, LServerB, VCARD) ->
 			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
 			   })
 	    end,
-	    LServerB = list_to_binary(LServer),
-	    gen_storage:transaction(LServerB, vcard, F),
-	    ejabberd_hooks:run(vcard_set, LServerB, [list_to_binary(LUser), LServerB, VCARD])
+	    gen_storage:transaction(Server, vcard, F),
+	    ejabberd_hooks:run(vcard_set, Server, [LUser, Server, VCARD])
     catch
 	_ ->
 	    {error, badarg}
@@ -536,7 +548,7 @@ record_to_item(R) ->
     {User, Server} = R#vcard_search.user_host,
     #xmlel{ns = ?NS_DATA_FORMS, name = 'item', children =
      [
-       ?FIELD(<<"jid">>,      list_to_binary(User ++ "@" ++ Server)),
+       ?FIELD(<<"jid">>,      exmpp_jid:to_binary(User, Server)),
        ?FIELD(<<"fn">>,       list_to_binary(R#vcard_search.fn)),
        ?FIELD(<<"last">>,     list_to_binary(R#vcard_search.family)),
        ?FIELD(<<"first">>,    list_to_binary(R#vcard_search.given)),
@@ -729,8 +741,8 @@ reindex_vcards() ->
 
 
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
-    LUser = binary_to_list(exmpp_stringprep:nodeprep(User)),
-    LServer = binary_to_list(exmpp_stringprep:nameprep(Server)),
+    LUser = exmpp_stringprep:nodeprep(User),
+    LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     F = fun() ->
 		gen_storage:delete(Server, {vcard, US}),
@@ -747,14 +759,14 @@ update_tables(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(
       Host, vcard,
       [{vcard, [us, vcard],
-	fun({vcard, US, Vcard}) ->
-		#vcard{user_host = US,
+	fun({vcard, {UserS, ServerS}, Vcard}) ->
+		#vcard{user_host = {list_to_binary(UserS), list_to_binary(ServerS)},
 		       vcard = convert_vcard_element(Vcard)}
 	end}]),
     gen_storage_migration:migrate_mnesia(
       Host, vcard_search,
       [{vcard_search, [us,
-		       username, lusername,
+		       user,     luser,
 		       fn,	 lfn,
 		       family,	 lfamily,
 		       given,	 lgiven,
@@ -766,8 +778,9 @@ update_tables(Host, mnesia) ->
 		       email,	 lemail,
 		       orgname,	 lorgname,
 		       orgunit,	 lorgunit],
-	fun(Record) ->
-		Record
+	fun(#vcard_search{user_host = {UserS, ServerS}} = Record) ->
+		UserHost = {list_to_binary(UserS), list_to_binary(ServerS)},
+		Record#vcard_search{user_host = UserHost, username = UserS}
 	end}]);
 
 update_tables(Host, odbc) ->
@@ -896,7 +909,6 @@ get_user_photo(User, Host) ->
 
 user_queue_parse_query(US, Query) ->
     {User, Server} = US,
-	?INFO_MSG("Query vcard: ~p", [Query]), %+++
     case lists:keysearch("removevcard", 1, Query) of
 	{value, _} ->
 	    case remove_user(list_to_binary(User), list_to_binary(Server)) of
