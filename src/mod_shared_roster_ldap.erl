@@ -300,7 +300,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 %% For a given user, map all his shared roster contacts to groups they are
-%% members of. Skip the user himself iff SkipUS is true.
+%% members of. Skip the user himself if SkipUS is true.
 get_user_to_groups_map({_, Server} = US, SkipUS) ->
     DisplayedGroups = get_user_displayed_groups(US),
     lists:foldl(
