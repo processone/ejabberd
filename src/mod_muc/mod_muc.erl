@@ -26,6 +26,16 @@
 
 %%% Database schema (version / storage / table)
 %%%
+%%% 2.1.x / mnesia / muc_online_room
+%%%  name_host = {Name::string(), Host::string()}
+%%%  pid = pid()
+%%% 2.1.x / mnesia / muc_registered
+%%%  us_host = {{Username::string, Hostname::string()}, Host::string()}}
+%%%  nick = string()
+%%% 2.1.x / mnesia / muc_room
+%%%  name_host = {Name::string(), Host::string()}
+%%%  opts = [{Option::atom(), Value::any()}
+%%%
 %%% 3.0.0-alpha / mnesia / muc_online_room
 %%%  name_host = {Name::binary(), Host::binary()}
 %%%  pid = pid()
