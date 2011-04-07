@@ -95,7 +95,7 @@ init([Host, Opts]) ->
     SendPings = gen_mod:get_opt(send_pings, Opts, ?DEFAULT_SEND_PINGS),
     PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
     TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, no_queue),
     mod_disco:register_feature(HostB, ?NS_PING),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PING,
                                   ?MODULE, iq_ping, IQDisc),
