@@ -2622,15 +2622,16 @@ The syntax is:
 Possible \term{Value} are:
 \begin{description}
 \titem{no\_queue} All queries of a namespace with this processing discipline are
-  processed immediately. This also means that no other packets can be processed
+  processed directly. This means that the XMPP connection that sends this IQ query gets blocked:
+  no other packets can be processed
   until this one has been completely processed. Hence this discipline is not
   recommended if the processing of a query can take a relatively long time.
 \titem{one\_queue} In this case a separate queue is created for the processing
   of IQ queries of a namespace with this discipline. In addition, the processing
   of this queue is done in parallel with that of other packets. This discipline
   is most recommended.
-  \titem{\{queues, N\}} N separate queues are created to process the
-  queries. The queries are thus process in parallel, but in a
+\titem{\{queues, N\}} N separate queues are created to process the
+  queries. The queries are thus processed in parallel, but in a
   controlled way.
 \titem{parallel} For every packet with this discipline a separate Erlang process
   is spawned. Consequently, all these packets are processed in parallel.
