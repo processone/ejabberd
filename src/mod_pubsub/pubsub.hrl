@@ -146,6 +146,7 @@
 -record(pubsub_state,
 {
   stateid,
+  nodeidx,
   items         = [],
   affiliation   = 'none',
   subscriptions = []
@@ -161,6 +162,7 @@
 -record(pubsub_item,
 {
   itemid,
+  nodeidx,
   creation     = {'unknown','unknown'},
   modification = {'unknown','unknown'},
   payload      = []

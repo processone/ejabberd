@@ -25,7 +25,7 @@ purge() ->
             I=element(3,N),
             lists:foreach(fun(JID) ->
                 case mnesia:dirty_read({pubsub_state, {JID, I}}) of
-                    [{pubsub_state, K, _, _, [{subscribed,S}]}] -> mnesia:dirty_delete({pubsub_subscription, S});
+                    [{pubsub_state, K, _, _, _, [{subscribed,S}]}] -> mnesia:dirty_delete({pubsub_subscription, S});
                     _ -> ok
                 end,
                 mnesia:dirty_delete({pubsub_state, {JID, I}})

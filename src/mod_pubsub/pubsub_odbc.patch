@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2011-02-08 16:50:27.000000000 +0100
-+++ mod_pubsub_odbc.erl	2011-02-08 18:27:16.000000000 +0100
+--- mod_pubsub.erl	2011-03-18 15:07:54.000000000 +0100
++++ mod_pubsub_odbc.erl	2011-03-18 15:16:22.000000000 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -666,21 +666,19 @@
  				    end, FilteredEntities),
  				{result, []};
  			    _ ->
-@@ -2528,11 +2346,11 @@
+@@ -2528,9 +2346,9 @@
      end.
  
  read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
 -    case pubsub_subscription:get_subscription(Subscriber, NodeID, SubID) of
 +    case pubsub_subscription_odbc:get_subscription(Subscriber, NodeID, SubID) of
- 	{error, notfound} ->
- 	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
  	{result, #pubsub_subscription{options = Options}} ->
 -	    {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
 +	    {result, XdataEl} = pubsub_subscription_odbc:get_options_xform(Lang, Options),
  	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_string(Subscriber)},
  						 {"subid", SubID}|nodeAttr(Node)],
  			 [XdataEl]},
-@@ -2558,7 +2376,7 @@
+@@ -2562,7 +2380,7 @@
      end.
  
  set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
@@ -689,16 +687,7 @@
  	{result, GoodSubOpts} -> GoodSubOpts;
  	_ -> invalid
      end,
-@@ -2587,7 +2405,7 @@
- write_sub(_Subscriber, _NodeID, _SubID, invalid) ->
-     {error, extended_error(?ERR_BAD_REQUEST, "invalid-options")};
- write_sub(Subscriber, NodeID, SubID, Options) ->
--    case pubsub_subscription:set_subscription(Subscriber, NodeID, SubID, Options) of
-+    case pubsub_subscription_odbc:set_subscription(Subscriber, NodeID, SubID, Options) of
- 	{error, notfound} ->
- 	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
- 	{result, _} ->
-@@ -2755,8 +2573,8 @@
+@@ -2761,8 +2579,8 @@
  				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
  		ejabberd_router:route(service_jid(Host), jlib:make_jid(JID), Stanza)
  	    end,
@@ -709,7 +698,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3119,7 +2937,7 @@
+@@ -3125,7 +2943,7 @@
  	    Collection = tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]),
  	    {result, [{Depth, [{N, sub_with_options(N)} || N <- Nodes]} || {Depth, Nodes} <- Collection]}
  	end,
@@ -718,7 +707,7 @@
  	{result, CollSubs} -> subscribed_nodes_by_jid(NotifyType, CollSubs);
  	_ -> []
      end.
-@@ -3188,8 +3006,8 @@
+@@ -3194,8 +3012,8 @@
  	    []
      end.
  sub_with_options(JID, NodeId, SubId) ->
@@ -729,7 +718,7 @@
  	_ -> {JID, SubId, []}
      end.
  
-@@ -3265,6 +3083,30 @@
+@@ -3271,6 +3089,30 @@
  	    Result
      end.
  
@@ -760,7 +749,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3661,7 +3503,13 @@
+@@ -3667,7 +3509,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -775,7 +764,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3681,13 +3529,13 @@
+@@ -3687,13 +3535,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -791,7 +780,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3699,13 +3547,19 @@
+@@ -3705,13 +3553,19 @@
  				Error
  			end
  		end, Trans).
@@ -815,7 +804,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3713,6 +3567,15 @@
+@@ -3719,6 +3573,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -831,7 +820,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-@@ -3721,6 +3584,17 @@
+@@ -3727,6 +3590,17 @@
  	    {error, ?ERR_INTERNAL_SERVER_ERROR}
      end.
  

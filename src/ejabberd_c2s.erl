@@ -290,7 +290,9 @@ init([StateName, StateData, _FSMLimitOpts]) ->
 	      Priority,
 	      Info),
 	    NewStateData = StateData#state{sid = SID, socket_monitor = MRef},
-	    {ok, StateName, NewStateData};
+            StateData2 = change_reception(NewStateData, true),
+            StateData3 = start_keepalive_timer(StateData2),
+	    {ok, StateName, StateData3};
        true ->
 	    {ok, StateName, StateData#state{socket_monitor = MRef}}
     end.
@@ -1698,7 +1700,7 @@ terminate(_Reason, StateName, StateData) ->
 		    presence_broadcast(
 		      StateData, From, StateData#state.pres_i, Packet);
 		rebinded ->
-		    ejabberd_sm:close_session(
+		    ejabberd_sm:close_migrated_session(
 		      StateData#state.sid,
 		      StateData#state.user,
 		      StateData#state.server,
@@ -1969,24 +1971,12 @@ process_presence_probe(From, To, StateData) ->
 						 (E) ->
 						      [E]
 					      end, PresEls),
-					{xmlelement, "presence", PresAttrs,
-					 [{xmlelement, "show", [],
-					   [{xmlcdata,
-					     StateData#state.oor_show}]},
-					  {xmlelement, "status", [],
-					   [{xmlcdata,
-					     StateData#state.oor_status}]}]
-					 ++ PresEls1}
+                                        make_oor_presence(
+                                          StateData, PresAttrs, PresEls1)
 				end
 			end,
 		    Timestamp = StateData#state.pres_timestamp,
-		    Packet1 = xml:append_subtags(
-				xml:remove_subtags(
-				  Packet, "x", {"xmlns", ?NS_DELAY91}),
-			       %% To is the one sending the presence (the target of the probe)
-			       [jlib:timestamp_to_xml(Timestamp, utc, To, ""),
-				%% TODO: Delete the next line once XEP-0091 is Obsolete
-				jlib:timestamp_to_xml(Timestamp)]),
+		    Packet1 = maybe_add_delay(Packet, utc, To, "", Timestamp),
 		    case ejabberd_hooks:run_fold(
 			   privacy_check_packet, StateData#state.server,
 			   allow,
@@ -2533,7 +2523,17 @@ maybe_migrate(StateName, StateData) ->
 	    Info = [{ip, StateData#state.ip}, {conn, Conn},
 		    {auth_module, StateData#state.auth_module}],
 	    #state{user = U, server = S, resource = R, sid = SID} = StateData,
-	    ejabberd_sm:open_session(SID, U, S, R, Info),
+            Presence = StateData#state.pres_last,
+            Priority =
+                case Presence of
+                    undefined ->
+                        undefined;
+                    _ ->
+                        get_priority_from_presence(Presence)
+                end,
+	    ejabberd_sm:open_session(SID, U, S, R, Priority, Info),
+            StateData2 = change_reception(PackedStateData, true),
+            StateData3 = start_keepalive_timer(StateData2),
 	    erlang:garbage_collect(),
 	    case ejabberd_cluster:get_node_new({U, S}) of
 		Node ->
@@ -2542,7 +2542,7 @@ maybe_migrate(StateName, StateData) ->
 		    After = ejabberd_cluster:rehash_timeout(),
 		    migrate(self(), NewNode, After)
 	    end,
-	    fsm_next_state(StateName, PackedStateData);
+	    fsm_next_state(StateName, StateData3);
 	Node ->
 	    fsm_migrate(StateName, PackedStateData, Node, 0)
     end.
@@ -2627,12 +2627,7 @@ change_reception(#state{reception = true} = StateData, false) ->
 	"" ->
 	    ok;
 	_ ->
-	    Packet =
-		{xmlelement, "presence", [],
-		 [{xmlelement, "show", [],
-		   [{xmlcdata, StateData#state.oor_show}]},
-		  {xmlelement, "status", [],
-		   [{xmlcdata, StateData#state.oor_status}]}]},
+	    Packet = make_oor_presence(StateData),
 	    update_priority(0, Packet, StateData#state{reception = false}),
 	    presence_broadcast_to_trusted(
 	      StateData,
@@ -2775,7 +2770,14 @@ send_out_of_reception_message(StateData, From, To,
 				CBody = utf8_cut(Body, 100),
                                 case StateData#state.oor_send_from of
                                     jid -> SFrom ++ ": " ++ CBody;
-                                    username -> BFrom#jid.user ++ ": " ++ CBody;
+                                    username ->
+                                        UnescapedFrom =
+                                            unescape(BFrom#jid.user),
+                                        UnescapedFrom ++ ": " ++ CBody;
+                                    name ->
+                                        Name = get_roster_name(
+                                                 StateData, BFrom),
+                                        Name ++ ": " ++ CBody;
 				    _ -> CBody
                                 end;
 			    true ->
@@ -2810,6 +2812,23 @@ send_out_of_reception_message(StateData, From, To,
 send_out_of_reception_message(StateData, _From, _To, _Packet) ->
     StateData.
 
+make_oor_presence(StateData) ->
+    make_oor_presence(StateData, [], []).
+
+make_oor_presence(StateData, PresenceAttrs, PresenceEls) ->
+    ShowEl =
+        case StateData#state.oor_show of
+            "available" -> [];
+            _ ->
+                [{xmlelement, "show", [],
+                  [{xmlcdata, StateData#state.oor_show}]}]
+        end,
+    {xmlelement, "presence", PresenceAttrs,
+     ShowEl ++
+     [{xmlelement, "status", [],
+       [{xmlcdata, StateData#state.oor_status}]}]
+     ++ PresenceEls}.
+
 utf8_cut(S, Bytes) ->
     utf8_cut(S, [], [], Bytes + 1).
 
@@ -2824,6 +2843,47 @@ utf8_cut([C | S], Cur, Prev, Bytes) ->
         true ->
 	    utf8_cut(S, [C | Cur], Cur, Bytes - 1)
     end.
+
+-include("mod_roster.hrl").
+
+get_roster_name(StateData, JID) ->
+    User = StateData#state.user,
+    Server = StateData#state.server,
+    RosterItems = ejabberd_hooks:run_fold(
+                    roster_get, Server, [], [{User, Server}]),
+    JUser = JID#jid.luser,
+    JServer = JID#jid.lserver,
+    Item =
+        lists:foldl(
+          fun(_, Res = #roster{}) ->
+                  Res;
+             (I, false) ->
+                  case I#roster.jid of
+                      {JUser, JServer, _} ->
+                          I;
+                      _ ->
+                          false
+                  end
+          end, false, RosterItems),
+    case Item of
+        false ->
+            unescape(JID#jid.user);
+        #roster{} ->
+            Item#roster.name
+    end.
+
+unescape("") -> "";
+unescape("\\20" ++ S) -> [$\s | unescape(S)];
+unescape("\\22" ++ S) -> [$"  | unescape(S)];
+unescape("\\26" ++ S) -> [$&  | unescape(S)];
+unescape("\\27" ++ S) -> [$'  | unescape(S)];
+unescape("\\2f" ++ S) -> [$/  | unescape(S)];
+unescape("\\3a" ++ S) -> [$:  | unescape(S)];
+unescape("\\3c" ++ S) -> [$<  | unescape(S)];
+unescape("\\3e" ++ S) -> [$>  | unescape(S)];
+unescape("\\40" ++ S) -> [$@  | unescape(S)];
+unescape("\\5c" ++ S) -> [$\\ | unescape(S)];
+unescape([C | S]) -> [C | unescape(S)].
 
 
 cancel_timer(Timer) ->
@@ -2873,17 +2933,13 @@ enqueue(StateData, From, To, Packet) ->
 	            StateData#state{pres_queue = NewQueue}
             end;
 	true ->
-	    CleanPacket = xml:remove_subtags(
-			    xml:remove_subtags(Packet, "x", {"xmlns", ?NS_P1_PUSHED}),
-			    "x", {"xmlns", ?NS_DELAY91}),
+	    CleanPacket = xml:remove_subtags(Packet, "x", {"xmlns", ?NS_P1_PUSHED}),
 	    Packet2 =
 		case CleanPacket of
-		    {xmlelement, "message" = Name, Attrs, Els} ->
-			{xmlelement, Name, Attrs,
-			 Els ++
-			 [jlib:timestamp_to_xml(
-			    calendar:now_to_universal_time(now())),
-			  {xmlelement, "x", [{"xmlns", ?NS_P1_PUSHED}], []}]};
+		    {xmlelement, "message", _, _} ->
+                        xml:append_subtags(
+                          maybe_add_delay(CleanPacket, utc, To, ""),
+                          [{xmlelement, "x", [{"xmlns", ?NS_P1_PUSHED}], []}]);
 		    _ ->
 			Packet
 		end,
@@ -3025,15 +3081,6 @@ rebind(StateData, JID, StreamID) ->
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
 		    SID = {now(), self()},
-		    Conn = get_conn_type(NewStateData),
-		    Info = [{ip, StateData#state.ip}, {conn, Conn},
-			    {auth_module, NewStateData#state.auth_module}],
-		    ejabberd_sm:open_session(
-		      SID,
-		      NewStateData#state.user,
-		      NewStateData#state.server,
-		      NewStateData#state.resource,
-		      Info),
 		    StateData2 =
 			NewStateData#state{
 			  socket = StateData#state.socket,
@@ -3044,22 +3091,11 @@ rebind(StateData, JID, StreamID) ->
 			  keepalive_timer = StateData#state.keepalive_timer,
 			  ack_timer = undefined
 			 },
-		    Presence = StateData2#state.pres_last,
-		    case Presence of
-			undefined ->
-			    ok;
-			_ ->
-			    NewPriority = get_priority_from_presence(Presence),
-			    update_priority(NewPriority, Presence, StateData2)
-		    end,
 		    send_element(StateData2,
 				 {xmlelement, "rebind",
 				  [{"xmlns", ?NS_P1_REBIND}],
 				  []}),
-		    StateData3 = change_reception(StateData2, true),
-		    StateData4 = start_keepalive_timer(StateData3),
-		    fsm_next_state(session_established,
-				   StateData4)
+                    maybe_migrate(session_established, StateData2)
 	    after 1000 ->
 		    send_element(StateData,
 				 {xmlelement, "failure",
@@ -3221,6 +3257,33 @@ check_x_attachment1([El | Els]) ->
 	    check_x_attachment1(Els)
     end.
 
+%% TODO: Delete XEP-0091 stuff once it is Obsolete
+maybe_add_delay(El, TZ, From, Desc) ->
+    maybe_add_delay(El, TZ, From, Desc, calendar:now_to_universal_time(now())).
+maybe_add_delay({xmlelement, _, _, Els} = El, TZ, From, Desc, TimeStamp) ->
+    HasOldTS = lists:any(
+                 fun({xmlelement, "x", Attrs, _}) ->
+                         xml:get_attr_s("xmlns", Attrs) == ?NS_DELAY91;
+                    (_) ->
+                         false
+                 end, Els),
+    HasNewTS = lists:any(
+                 fun({xmlelement, "delay", Attrs, _}) ->
+                         xml:get_attr_s("xmlns", Attrs) == ?NS_DELAY;
+                    (_) ->
+                         false
+                 end, Els),
+    El1 = if not HasOldTS ->
+                  xml:append_subtags(El, [jlib:timestamp_to_xml(TimeStamp)]);
+             true ->
+                  El
+          end,
+    if not HasNewTS ->
+            xml:append_subtags(
+              El1, [jlib:timestamp_to_xml(TimeStamp, TZ, From, Desc)]);
+       true ->
+            El1
+    end.
 
 send_from(El) ->
     %% First test previous version attribute:
@@ -3233,6 +3296,7 @@ send_from(El) ->
              case xml:get_path_s(El, [{elem, "body"}, {attr, "from"}]) of
                   "jid" -> jid;
                   "username" -> username;
+                  "name" -> name;
                   "none" -> none;
                   _ -> jid
              end
