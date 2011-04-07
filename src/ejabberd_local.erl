@@ -150,10 +150,10 @@ register_iq_response_handler(_Host, ID, Module, Function, Timeout0) ->
 		      N
 	      end,
     TRef = erlang:start_timer(Timeout, ejabberd_local, ID),
-    mnesia:dirty_write(#iq_response{id = ID,
-				    module = Module,
-				    function = Function,
-				    timer = TRef}).
+    ets:insert(iq_response, #iq_response{id = ID,
+                                         module = Module,
+                                         function = Function,
+                                         timer = TRef}).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.
