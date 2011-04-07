@@ -2756,13 +2756,20 @@ send_kickban_presence(JID, Reason, Code, NewAffiliation, StateData) ->
 		  end, LJIDs).
 
 send_kickban_presence1(UJID, Reason, Code, Affiliation, StateData) ->
-    {ok, #user{jid = _RealJID,
+    {ok, #user{jid = RealJID,
 	       nick = Nick}} = ?DICT:find(UJID, StateData#state.users),
     SAffiliation = affiliation_to_binary(Affiliation),
+    BannedJID = exmpp_jid:to_binary(RealJID),
     lists:foreach(
       fun({_LJID, Info}) ->
+	      JidAttrList = case (Info#user.role == moderator) orelse
+				((StateData#state.config)#config.anonymous
+				 == false) of
+				true -> [?XMLATTR(<<"jid">>, BannedJID)];
+				false -> []
+			    end,
 	      ItemAttrs = [?XMLATTR(<<"affiliation">>, SAffiliation),
-			           ?XMLATTR(<<"role">>, <<"none">>)],
+			           ?XMLATTR(<<"role">>, <<"none">>)] ++ JidAttrList,
 	      ItemEls = case Reason of
 			    "" ->
 				[];
