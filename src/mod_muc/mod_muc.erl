@@ -343,6 +343,7 @@ init([Host, Opts]) ->
     gen_storage:add_table_copy(MyHost, muc_online_room, node(), ram_copies),
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
     gen_storage:add_table_index(MyHost, muc_registered, nick),
+    update_tables(MyHost_L, Backend),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
@@ -1023,3 +1024,46 @@ get_vh_rooms_all_nodes(Host) ->
 get_vh_rooms(Host) when is_binary(Host) ->
     gen_storage:dirty_select(Host, muc_online_room,
 			     [{'=', name_host, {'_', Host}}]).
+
+%%%%%
+%%%%% Database migration from ejabberd 2.1.x
+%%%%%
+
+update_tables(Host, mnesia) ->
+    HostB = list_to_binary(Host),
+    gen_storage_migration:migrate_mnesia(
+      Host, muc_registered,
+      [{muc_registered, [us_host, nick],
+	fun({muc_registered, {{UserS, ServerS}, HostS}, NickS}) ->
+		#muc_registered{user_host = {exmpp_jid:make(UserS, ServerS),
+					     list_to_binary(HostS)},
+				nick = list_to_binary(NickS)}
+	end}]),
+    gen_storage_migration:migrate_mnesia(
+      Host, muc_room_opt,
+      [{muc_room, [name_host, opts],
+	fun({muc_room, {NameString, HostString}, Options}) ->
+		NameHost = {list_to_binary(NameString),
+			    list_to_binary(HostString)},
+		lists:foreach(
+		  fun({affiliations, Affiliations}) ->
+			  lists:foreach(
+			    fun({{Username, Hostname, Resource}, AffiliationIni}) ->
+				    UserJid = exmpp_jid:make(Username, Hostname, Resource),
+				    {Affiliation, Reason} = case AffiliationIni of
+								Aff when is_atom(Aff) -> {Aff, ""};
+								{Aff, Reas} -> {Aff, Reas}
+							    end,
+				    gen_storage:write(HostB,
+						      #muc_room_affiliation{name_host = NameHost,
+									    jid = UserJid,
+									    affiliation = Affiliation,
+									    reason = Reason})
+			    end, Affiliations);
+		     ({Opt, Val}) ->
+			  gen_storage:write(HostB,
+					    #muc_room_opt{name_host = NameHost,
+							  opt = Opt,
+							  val = Val})
+		  end, Options)
+	end}]).
