@@ -80,7 +80,6 @@
 {"ejabberd Publish-Subscribe module","Модуль ejabberd Публікації-Абонування"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams модуль"}.
 {"ejabberd vCard module","ejabberd vCard модуль"}.
-{"ejabberd virtual hosts","віртуальні хости ejabberd"}.
 {"ejabberd Web Admin","Веб-інтерфейс Адміністрування ejabberd"}.
 {"Elements","Елементи"}.
 {"Email","Електронна пошта"}.
@@ -388,6 +387,7 @@
 {"User","Користувач"}.
 {"Validate","Затвердити"}.
 {"vCard User Search","Пошук користувачів по vCard"}.
+{"Virtual Hosts","віртуальні хости"}.
 {"Visitors are not allowed to change their nicknames in this room","Відвідувачам не дозволяється змінювати псевдонім в цій кімнаті"}.
 {"Visitors are not allowed to send messages to all occupants","Відвідувачам не дозволяється надсилати повідомлення всім присутнім"}.
 {"Wednesday","Середа"}.

@@ -2696,14 +2696,21 @@ send_kickban_presence(JID, Reason, Code, NewAffiliation, StateData) ->
 		  end, LJIDs).
 
 send_kickban_presence1(UJID, Reason, Code, Affiliation, StateData) ->
-    {ok, #user{jid = _RealJID,
+    {ok, #user{jid = RealJID,
 	       nick = Nick}} =
 	?DICT:find(jlib:jid_tolower(UJID), StateData#state.users),
     SAffiliation = affiliation_to_list(Affiliation),
+    BannedJIDString = jlib:jid_to_string(RealJID),
     lists:foreach(
       fun({_LJID, Info}) ->
+	      JidAttrList = case (Info#user.role == moderator) orelse
+				((StateData#state.config)#config.anonymous
+				 == false) of
+				true -> [{"jid", BannedJIDString}];
+				false -> []
+			    end,
 	      ItemAttrs = [{"affiliation", SAffiliation},
-			   {"role", "none"}],
+			   {"role", "none"}] ++ JidAttrList,
 	      ItemEls = case Reason of
 			    "" ->
 				[];

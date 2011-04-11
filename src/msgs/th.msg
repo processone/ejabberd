@@ -66,7 +66,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe module"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams module"}.
 {"ejabberd vCard module","ejabberd vCard module"}.
-{"ejabberd virtual hosts","โฮสต์เสมือน ejabberd"}.
 {"Email","อีเมล"}.
 {"Enable logging","เปิดใช้งานการบันทึก"}.
 {"End User Session","สิ้นสุดเซสชันของผู้ใช้"}.
@@ -297,6 +296,7 @@
 {"Users Last Activity","กิจกรรมล่าสุดของผู้ใช้"}.
 {"Validate","ตรวจสอบ"}.
 {"vCard User Search","ค้นหาผู้ใช้ vCard "}.
+{"Virtual Hosts","โฮสต์เสมือน"}.
 {"Visitors are not allowed to send messages to all occupants","ผู้เยี่ยมเยือนไม่ได้รับอนุญาตให้ส่งข้อความถึงผู้ครอบครองห้องทั้งหมด"}.
 {"Wednesday","วันพุธ"}.
 {"When to send the last published item","เวลาที่ส่งรายการที่เผยแพร่ครั้งล่าสุด"}.

@@ -1338,8 +1338,8 @@ msgid "~s access rule configuration"
 msgstr "~s 访问规则配置"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "ejabberd 虚拟主机"
+msgid "Virtual Hosts"
+msgstr "虚拟主机"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
@@ -1764,9 +1764,6 @@ msgstr "取消注册"
 
 #~ msgid "(Raw)"
 #~ msgstr "(原始格式)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "虚拟主机"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "指定的昵称已被注册"

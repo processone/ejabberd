@@ -77,7 +77,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe module"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams module"}.
 {"ejabberd vCard module","ejabberd's vCard-module"}.
-{"ejabberd virtual hosts","Virtuele hosts"}.
 {"ejabberd Web Admin","ejabberd Webbeheer"}.
 {"Elements","Elementen"}.
 {"Email","E-mail"}.
@@ -362,6 +361,7 @@
 {"Users Last Activity","Laatste activiteit van gebruikers"}.
 {"Validate","Bevestigen"}.
 {"vCard User Search","Gebruikers zoeken"}.
+{"Virtual Hosts","Virtuele hosts"}.
 {"Visitors are not allowed to change their nicknames in this room","Het is bezoekers niet toegestaan hun naam te veranderen in dit kanaal"}.
 {"Visitors are not allowed to send messages to all occupants","Bezoekers mogen geen berichten verzenden naar alle aanwezigen"}.
 {"Wednesday","Woensdag"}.

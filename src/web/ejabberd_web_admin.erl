@@ -1028,7 +1028,7 @@ process_admin(global,
 		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     Res = list_vhosts(Lang, AJID),
-    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang, AJID);
+    make_xhtml(?H1GL(?T("Virtual Hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["users"],

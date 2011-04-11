@@ -80,7 +80,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd module Δημοσίευσης-Εγγραφής"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams module"}.
 {"ejabberd vCard module","ejabberd vCard module"}.
-{"ejabberd virtual hosts","εικονικοί κεντρικοί υπολογιστές ejabberd"}.
 {"ejabberd Web Admin","ejabberd Web Admin"}.
 {"Elements","Στοιχεία"}.
 {"Email","Email"}.
@@ -388,6 +387,7 @@
 {"User","Χρήστης"}.
 {"Validate","Επαληθεύστε"}.
 {"vCard User Search","vCard Αναζήτηση χρηστών"}.
+{"Virtual Hosts","εικονικοί κεντρικοί υπολογιστές"}.
 {"Visitors are not allowed to change their nicknames in this room","Οι επισκέπτες δεν επιτρέπεται να αλλάξουν τα ψευδώνυμα τους σε αυτή την αίθουσα"}.
 {"Visitors are not allowed to send messages to all occupants","Οι επισκέπτες δεν επιτρέπεται να στείλουν μηνύματα σε όλους τους συμμετέχωντες"}.
 {"Wednesday","Τετάρτη"}.

@@ -80,7 +80,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd 发行-订阅模块"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 字节流模块"}.
 {"ejabberd vCard module","ejabberd vCard 模块"}.
-{"ejabberd virtual hosts","ejabberd 虚拟主机"}.
 {"ejabberd Web Admin","ejabberd 网页管理"}.
 {"Elements","元素"}.
 {"Email","电子邮件"}.
@@ -388,6 +387,7 @@
 {"User","用户"}.
 {"Validate","确认"}.
 {"vCard User Search","vCard 用户搜索"}.
+{"Virtual Hosts","虚拟主机"}.
 {"Visitors are not allowed to change their nicknames in this room","此房间不允许用户更改昵称"}.
 {"Visitors are not allowed to send messages to all occupants","不允许访客给所有占有者发送消息"}.
 {"Wednesday","星期三"}.

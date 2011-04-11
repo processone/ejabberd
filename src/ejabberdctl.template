@@ -76,10 +76,12 @@ fi
 NAME=-name
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && NAME=-sname
 
-if [ "$FIREWALL_WINDOW" = "" ] ; then
-    KERNEL_OPTS=""
-else
-    KERNEL_OPTS="-kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
+KERNEL_OPTS=""
+if [ "$FIREWALL_WINDOW" != "" ] ; then
+    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
+fi
+if [ "$INET_DIST_INTERFACE" != "" ] ; then
+    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_use_interface \"${INET_DIST_INTERFACE}\""
 fi
 
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"

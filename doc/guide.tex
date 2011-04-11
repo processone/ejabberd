@@ -1636,11 +1636,14 @@ The configurable options are:
   \titem{\{captcha\_cmd, Path\}} 
   Full path to a script that generates the image.
   The default value is an empty string: \term{""}
-  \titem{\{captcha\_host, Host\}} 
-  Host part of the URL sent to the user.
-  You can include the port number.
-  The URL sent to the user is formed by: \term{http://Host/captcha/}
-  The default value is the first hostname configured.
+  \titem{\{captcha\_host, ProtocolHostPort\}} 
+  Host part of the URL sent to the user,
+  and the port number where ejabberd listens for CAPTCHA requests.
+  The URL sent to the user is formed by: \term{http://Host:Port/captcha/}
+  The default value is: the first hostname configured, and port 5280.
+  If the port number you specify does not match exactly an ejabberd listener
+  (because you are using a reverse proxy or other port-forwarding tool),
+  then specify also the transfer protocol, as seen in the example below.
 \end{description}
 
 Additionally, an \term{ejabberd\_http} listener must be enabled with the \term{captcha} option.
@@ -1652,6 +1655,7 @@ Example configuration:
 
 {captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
 {captcha_host, "example.org:5280"}.
+%% {captcha_host, "https://example.org:443"}.
 
 {listen,
  [
@@ -2627,15 +2631,16 @@ The syntax is:
 Possible \term{Value} are:
 \begin{description}
 \titem{no\_queue} All queries of a namespace with this processing discipline are
-  processed immediately. This also means that no other packets can be processed
+  processed directly. This means that the XMPP connection that sends this IQ query gets blocked:
+  no other packets can be processed
   until this one has been completely processed. Hence this discipline is not
   recommended if the processing of a query can take a relatively long time.
 \titem{one\_queue} In this case a separate queue is created for the processing
   of IQ queries of a namespace with this discipline. In addition, the processing
   of this queue is done in parallel with that of other packets. This discipline
   is most recommended.
-  \titem{\{queues, N\}} N separate queues are created to process the
-  queries. The queries are thus process in parallel, but in a
+\titem{\{queues, N\}} N separate queues are created to process the
+  queries. The queries are thus processed in parallel, but in a
   controlled way.
 \titem{parallel} For every packet with this discipline a separate Erlang process
   is spawned. Consequently, all these packets are processed in parallel.
@@ -4064,11 +4069,13 @@ has a unique identification and the following parameters:
 \item[Name] The name of the group, which will be displayed in the roster.
 \item[Description] The description of the group. This parameter does not affect
   anything.
-\item[Members] A list of full JIDs of group members, entered one per line in
+\item[Members] A list of JIDs of group members, entered one per line in
   the Web Admin.
-  To put as members all the registered users in the virtual hosts,
-  you can use the special directive: @all@.
-  Note that this directive is designed for a small server with just a few hundred users.
+  The special member directive \term{@all@}
+  represents all the registered users in the virtual host;
+  which is only recommended for a small server with just a few hundred users.
+  The special member directive \term{@online@}
+  represents the online users in the virtual host.
 \item[Displayed groups] A list of groups that will be in the rosters of this
   group's members.
 \end{description}
@@ -4999,6 +5006,9 @@ The command line parameters:
 	If using \term{-sname}, specify either this option or \term{ERL\_INETRC}.
   \titem{-kernel inet\_dist\_listen\_min 4200 inet\_dist\_listen\_min 4210}
 	Define the first and last ports that \term{epmd} (section \ref{epmd}) can listen to.
+  \titem{-kernel inet\_dist\_use\_interface "\{ 127,0,0,1 \}"}
+	Define the IP address where this Erlang node listens for other nodes
+        connections (see section \ref{epmd}).
   \titem{-detached}
         Starts the Erlang system detached from the system console.
 	Useful for running daemons and backgrounds processes.
@@ -5410,6 +5420,12 @@ but can be configured in the file \term{ejabberdctl.cfg}.
 The Erlang command-line parameter used internally is, for example:
 \begin{verbatim}
 erl ... -kernel inet_dist_listen_min 4370 inet_dist_listen_max 4375
+\end{verbatim}
+It is also possible to configure in \term{ejabberdctl.cfg}
+the network interface where the Erlang node will listen and accept connections.
+The Erlang command-line parameter used internally is, for example:
+\begin{verbatim}
+erl ... -kernel inet_dist_use_interface "{127,0,0,1}"
 \end{verbatim}
 
 
