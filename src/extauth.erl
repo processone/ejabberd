@@ -45,10 +45,17 @@
 start(Host, ExtPrg) ->
     lists:foreach(
 	fun(This) ->
-	    spawn(?MODULE, init, [get_process_name(Host, This), ExtPrg])
+	    start_instance(get_process_name(Host, This), ExtPrg)
 	end,
 	lists:seq(0, get_instances(Host)-1)
     ).
+
+start_instance(ProcessName, ExtPrg) ->
+    spawn(?MODULE, init, [ProcessName, ExtPrg]).
+
+restart_instance(ProcessName, ExtPrg) ->
+    unregister(ProcessName),
+    start_instance(ProcessName, ExtPrg).
 
 init(ProcessName, ExtPrg) ->
     register(ProcessName, self()),
@@ -125,8 +132,7 @@ loop(Port, Timeout, ProcessName, ExtPrg) ->
                 Timeout ->
                     ?ERROR_MSG("extauth call '~p' didn't receive response", [Msg]),
 		    Caller ! {eauth, false},
-		    unregister(ProcessName),
-		    Pid = spawn(?MODULE, init, [ProcessName, ExtPrg]),
+		    Pid = restart_instance(ProcessName, ExtPrg),
 		    flush_buffer_and_forward_messages(Pid),
 		    exit(port_terminated)
 	    end;
@@ -137,7 +143,9 @@ loop(Port, Timeout, ProcessName, ExtPrg) ->
 		    exit(normal)
 	    end;
 	{'EXIT', Port, Reason} ->
-	    ?CRITICAL_MSG("~p ~n", [Reason]),
+	    ?CRITICAL_MSG("extauth script has exitted abruptly with reason '~p'", [Reason]),
+	    Pid = restart_instance(ProcessName, ExtPrg),
+	    flush_buffer_and_forward_messages(Pid),
 	    exit(port_terminated)
     end.
 
