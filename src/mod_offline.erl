@@ -597,12 +597,12 @@ user_queue(User, Server, Query, Lang) ->
 	  exmpp_stringprep:nodeprep(list_to_binary(User)),
 	  exmpp_stringprep:nameprep(list_to_binary(Server))
 	},
-    {US, MsgsAll, Res} = try
+    {US, Res, MsgsAll} = try
 	{
 	  US0,
-	    lists:keysort(#offline_msg.timestamp,
-			 gen_storage:dirty_read(Server, {offline_msg, US0})),
-	  user_queue_parse_query(US0, Query)
+	  user_queue_parse_query(US0, Query),
+	  lists:keysort(#offline_msg.timestamp,
+			 gen_storage:dirty_read(Server, {offline_msg, US0}))
 	}
     catch
 	_ ->
