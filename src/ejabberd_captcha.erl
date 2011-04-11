@@ -627,13 +627,17 @@ get_prog_name() ->
 get_url(Str) ->
     CaptchaHost = ejabberd_config:get_local_option(captcha_host),
     case string:tokens(CaptchaHost, ":") of
-	[TransferProt, Host, PortString] ->
-	    TransferProt ++ ":" ++ Host ++ ":" ++ PortString ++ "/captcha/" ++ Str;
+	[Host] ->
+	    "http://" ++ Host ++ "/captcha/" ++ Str;
+	["http"++_ = TransferProt, Host] ->
+	    TransferProt ++ ":" ++ Host ++ "/captcha/" ++ Str;
 	[Host, PortString] ->
 	    TransferProt = atom_to_list(get_transfer_protocol(PortString)),
 	    TransferProt ++ "://" ++ Host ++ ":" ++ PortString ++ "/captcha/" ++ Str;
+	[TransferProt, Host, PortString] ->
+	    TransferProt ++ ":" ++ Host ++ ":" ++ PortString ++ "/captcha/" ++ Str;
 	_ ->
-	    "http://" ++ ?MYNAME ++ ":5280/captcha/" ++ Str
+	    "http://" ++ ?MYNAME ++ "/captcha/" ++ Str
     end.
 
 get_transfer_protocol(PortString) ->
