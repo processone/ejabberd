@@ -56,7 +56,7 @@
 %%%  Same as 2.1.x
 %%%
 %%% 3.0.0-alpha / mnesia / offline_msg
-%%%  user_host = {Username::string(), Host::string()}
+%%%  user_host = {Username::binary(), Host::binary()}
 %%%  timestamp = integer()
 %%%  expire = 0 | integer()
 %%%  from = jid()
@@ -251,8 +251,8 @@ store_packet(From, To, Packet) ->
 	(Type /= <<"headline">>) ->
 	    case check_event_chatstates(From, To, Packet) of
 		true ->
-            LUser = exmpp_jid:prep_node_as_list(To),
-            LServer = exmpp_jid:prep_domain_as_list(To),
+            LUser = exmpp_jid:prep_node(To),
+            LServer = exmpp_jid:prep_domain(To),
 		    TimeStamp = make_timestamp(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
 		    gen_mod:get_module_proc(LServer, ?PROCNAME) !
@@ -338,10 +338,11 @@ find_x_expire(TimeStamp, [_ | Els]) ->
     find_x_expire(TimeStamp, Els).
 
 
+%% @spec(User::string(), Server::string()) -> ok
 resend_offline_messages(User, Server) ->
     try
-	LUser = exmpp_stringprep:nodeprep(User),
-	LServer = exmpp_stringprep:nameprep(Server),
+	LUser = exmpp_stringprep:nodeprep(list_to_binary(User)),
+	LServer = exmpp_stringprep:nameprep(list_to_binary(Server)),
 	US = {LUser, LServer},
 	F = fun() ->
 		Rs = gen_storage:read(LServer, offline_msg, US, write),
@@ -373,12 +374,11 @@ resend_offline_messages(User, Server) ->
 	    ok
     end.
 
+%% @spec(Ls::list(), User::binary(), Server::binary()) -> list()
 pop_offline_messages(Ls, User, Server)
         when is_binary(User), is_binary(Server) ->
     try
-	LUser = binary_to_list(User),
-	LServer = binary_to_list(Server),
-	US = {LUser, LServer},
+	US = {User, Server},
 	F = fun() ->
 		Rs = gen_storage:read(Server, offline_msg, US, write),
 		gen_storage:delete(Server, {offline_msg, US}),
@@ -444,6 +444,7 @@ remove_old_messages(Days) ->
 	      {atomic, _} = gen_storage:transaction(HostB, offline_msg, F)
       end, gen_storage:all_table_hosts(offline_msg)).
 
+%% @spec(User::binary(), Server::binary()) -> ok
 remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     try
 	LUser = exmpp_stringprep:nodeprep(User),
@@ -515,7 +516,7 @@ update_table(Host, odbc) ->
 	end}]).
 
 convert_jid_to_exmpp("") -> undefined;
-convert_jid_to_exmpp(V)  -> V.
+convert_jid_to_exmpp(V)  -> list_to_binary(V).
 
 %% Return the current timestamp in milliseconds
 make_timestamp() ->
@@ -593,8 +594,8 @@ webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
 	US0 = {
-	  exmpp_stringprep:nodeprep(User),
-	  exmpp_stringprep:nameprep(Server)
+	  exmpp_stringprep:nodeprep(list_to_binary(User)),
+	  exmpp_stringprep:nameprep(list_to_binary(Server))
 	},
     {US, MsgsAll, Res} = try
 	{
@@ -689,8 +690,9 @@ us_to_list({User, Server}) ->
 
 %% @spec (User::string(), Host::string()) -> integer()
 get_queue_length(User, Host) ->
+    UserB = list_to_binary(User),
     HostB = list_to_binary(Host),
-    gen_storage:dirty_count_records(HostB, offline_msg, [{'=', user_host, {User, Host}}]).
+    gen_storage:dirty_count_records(HostB, offline_msg, [{'=', user_host, {UserB, HostB}}]).
 
 get_messages_subset(User, Host, MsgsAll) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
@@ -722,15 +724,17 @@ webadmin_user(Acc, User, Server, Lang) ->
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].
 
 webadmin_user_parse_query(_, "removealloffline", User, Server, _Query) ->
-    US = {User, Server},
+    UserB = list_to_binary(User),
+    ServerB = list_to_binary(Server),
+    US = {UserB, ServerB},
     F = fun() ->
-            gen_storage:write_lock_table(Server, offline_msg),
+            gen_storage:write_lock_table(ServerB, offline_msg),
             lists:foreach(
               fun(Msg) ->
-                      gen_storage:delete_object(Server, Msg)
-              end, gen_storage:read(Server, {offline_msg, US}))
+                      gen_storage:delete_object(ServerB, Msg)
+              end, gen_storage:read(ServerB, {offline_msg, US}))
         end,
-    case gen_storage:transaction(Server, offline_msg, F) of
+    case gen_storage:transaction(ServerB, offline_msg, F) of
          {aborted, Reason} ->
             ?ERROR_MSG("Failed to remove offline messages: ~p", [Reason]),
             {stop, error};
