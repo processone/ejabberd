@@ -61,7 +61,7 @@
 %%%  expire = 0 | integer()
 %%%  from = jid()
 %%%  to = jid()
-%%%  packet = string()
+%%%  packet = binary()
 %%%
 %%% 3.0.0-alpha / odbc / offline_msg
 %%%  user = varchar150
@@ -98,8 +98,7 @@
 -include("web/ejabberd_http.hrl").
 -include("web/ejabberd_web_admin.hrl").
 
-%% The packet is stored serialized as a string
-%% TODO: packet always handled serialized?
+%% The packet is stored serialized as a binary
 -record(offline_msg, {user_host, timestamp, expire, from, to, packet}).
 
 -define(PROCNAME, ejabberd_offline).
@@ -149,6 +148,12 @@ start(Host, Opts) ->
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, loop, [AccessMaxOfflineMsgs])).
 
+stanza_to_store(Stanza) ->
+    exmpp_xml:document_to_binary(Stanza).
+store_to_stanza(StoreBinary) -> 
+    [Xml] = exmpp_xml:parse_document(StoreBinary),
+    Xml.
+
 loop(AccessMaxOfflineMsgs) ->
     receive
 	#offline_msg{user_host=US} = Msg ->
@@ -156,8 +161,6 @@ loop(AccessMaxOfflineMsgs) ->
 	    Len = length(Msgs),
 	    %% TODO: is lower?
 	    {User, Host} = US,
-	    MsgsSerialized = [M#offline_msg{packet = exmpp_xml:document_to_list(P)}
-			      || #offline_msg{packet = P} = M <- Msgs],
 	    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
 						   User, Host),
 	    F = fun() ->
@@ -180,7 +183,7 @@ loop(AccessMaxOfflineMsgs) ->
 				end,
 				lists:foreach(fun(M) ->
 						      gen_storage:write(Host, M)
-					      end, MsgsSerialized)
+					      end, Msgs)
 			end
 		end,
 	    gen_storage:transaction(Host, offline_msg, F),
@@ -261,7 +264,7 @@ store_packet(From, To, Packet) ->
 				     expire = Expire,
 				     from = From,
 				     to = To,
-				     packet = Packet},
+				     packet = stanza_to_store(Packet)},
 		    stop;
 		_ ->
 		    ok
@@ -353,7 +356,7 @@ resend_offline_messages(User, Server) ->
 	    {atomic, Rs} ->
 		lists:foreach(
 		  fun(R) ->
-			  Packet = R#offline_msg.packet,
+			  Packet = store_to_stanza(R#offline_msg.packet),
 			  TimeXml = timestamp_to_xml(R#offline_msg.timestamp, Server),
 			  TimeXml91 = timestamp_to_xml(R#offline_msg.timestamp),
 			  ejabberd_sm !
@@ -389,7 +392,7 @@ pop_offline_messages(Ls, User, Server)
 	    TS = make_timestamp(),
 		Ls ++ lists:map(
 			fun(R) ->
-				[Packet] = exmpp_xml:parse_document(R#offline_msg.packet),
+				Packet = store_to_stanza(R#offline_msg.packet),
 				TimeXml = timestamp_to_xml(R#offline_msg.timestamp, Server),
 				TimeXml91 = timestamp_to_xml(R#offline_msg.timestamp),
 				{route,
@@ -487,7 +490,7 @@ update_table(Host, mnesia) ->
 			  end,
 		PacketXmlel = exmpp_xml:xmlelement_to_xmlel(
 				Packet, [?DEFAULT_NS], ?PREFIXED_NS),
-	        Packet1 = exmpp_xml:document_to_list(PacketXmlel),
+	        Packet1 = stanza_to_store(PacketXmlel),
 		OM#offline_msg{user_host = {US_U1, US_S1},
 		               timestamp = TsMegaSecs * 1000000000 + TsSecs * 1000 + TsMicroSecs div 1000,
 		               expire = Expire1,
@@ -571,7 +574,8 @@ find_x_timestamp([_ | Els]) ->
 %% Warn senders that their messages have been discarded:
 discard_warn_sender(Msgs) ->
     lists:foreach(
-      fun(#offline_msg{from=From, to=To, packet=Packet}) ->
+      fun(#offline_msg{from=From, to=To, packet=PacketStored}) ->
+	      Packet = store_to_stanza(PacketStored),
 	      ErrText = "Your contact offline message queue is full. The message has been discarded.",
 	      Error = exmpp_stanza:error(Packet#xmlel.ns, 'resource-constraint',
 		{"en", ErrText}),
@@ -612,12 +616,12 @@ user_queue(User, Server, Query, Lang) ->
     FMsgs =
 	lists:map(
 	  fun(#offline_msg{timestamp = TimeStamp, from = From, to = To,
-			   packet = PacketInitialString} = Msg) ->
+			   packet = PacketStored} = Msg) ->
 		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
 		  Time = timestamp_to_isostring(TimeStamp),
 		  SFrom = exmpp_jid:to_list(From),
 		  STo = exmpp_jid:to_list(To),
-		  [Packet] = exmpp_xmlstream:parse_element(PacketInitialString),
+		  Packet = store_to_stanza(PacketStored),
 		  Packet1 = exmpp_stanza:set_jids(Packet, SFrom, STo),
 		  FPacket = exmpp_xml:node_to_list(
 		    exmpp_xml:indent_document(Packet1, <<"  ">>),
@@ -713,7 +717,7 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     NoJID = exmpp_jid:make("...", "...", ""),
     TimeStamp = make_timestamp(),
     IntermediateMsg = #offline_msg{timestamp = TimeStamp, from = NoJID, to = NoJID,
-				   packet = exmpp_xml:element("...")},
+				   packet = <<"...">>},
     MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
