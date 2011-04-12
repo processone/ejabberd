@@ -557,7 +557,13 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
 		  end, HeadersOut),
     SL = [Version, integer_to_list(Status), " ",
 	  code_to_phrase(Status), "\r\n"],
-    [SL, H, "\r\n", Data].
+
+    Data2 = case State#state.request_method of
+		  'HEAD' -> "";
+		  _ -> Data
+	      end,
+
+    [SL, H, "\r\n", Data2].
 
 make_text_output(State, Status, Headers, Text) when is_list(Text) ->
     make_text_output(State, Status, Headers, list_to_binary(Text));
@@ -594,7 +600,13 @@ make_text_output(State, Status, Headers, Data) when is_binary(Data) ->
 		  end, HeadersOut),
     SL = [Version, integer_to_list(Status), " ",
 	  code_to_phrase(Status), "\r\n"],
-    [SL, H, "\r\n", Data].
+
+    Data2 = case State#state.request_method of
+		  'HEAD' -> "";
+		  _ -> Data
+	      end,
+
+    [SL, H, "\r\n", Data2].
 
 
 parse_lang(Langs) ->
