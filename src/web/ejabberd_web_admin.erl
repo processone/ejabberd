@@ -64,11 +64,15 @@ get_acl_rule(["additions.js"],_) -> {"localhost", [all]};
 get_acl_rule(["vhosts"],_) -> {"localhost", [all]};
 
 %% The pages of a vhost are only accesible if the user is admin of that vhost:
-get_acl_rule(["server", VHost | _RPath], 'GET') -> {VHost, [configure, webadmin_view]};
+get_acl_rule(["server", VHost | _RPath], Method)
+    when Method=:='GET' orelse Method=:='HEAD' ->
+    {VHost, [configure, webadmin_view]};
 get_acl_rule(["server", VHost | _RPath], 'POST') -> {VHost, [configure]};
 
 %% Default rule: only global admins can access any other random page
-get_acl_rule(_RPath, 'GET') -> {global, [configure, webadmin_view]};
+get_acl_rule(_RPath, Method)
+    when Method=:='GET' orelse Method=:='HEAD' ->
+    {global, [configure, webadmin_view]};
 get_acl_rule(_RPath, 'POST') -> {global, [configure]}.
 
 is_acl_match(Host, Rules, Jid) ->
