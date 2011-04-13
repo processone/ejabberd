@@ -41,8 +41,7 @@
 	 dirty_get_connections/0,
 	 allow_host/2,
 	 incoming_s2s_number/0,
-	 outgoing_s2s_number/0,
-	 migrate/1
+	 outgoing_s2s_number/0
 	]).
 
 %% gen_server callbacks
@@ -96,29 +95,18 @@ remove_connection(FromTo, Pid, Key) ->
     end.
 
 have_connection(FromTo) ->
-    case ejabberd_cluster:get_node(FromTo) of
-	Node when Node == node() ->
-	    case mnesia:dirty_read(s2s, FromTo) of
-		[_] ->
-		    true;
-		_ ->
-		    false
-	    end;
-	Node ->
-	    case catch rpc:call(Node, mnesia, dirty_read,
-				[s2s, FromTo], 5000) of
-		[_] ->
-		    true;
-		_ ->
-		    false
-	    end
+    case mnesia:dirty_read(s2s, FromTo) of
+        [_] ->
+            true;
+        _ ->
+            false
     end.
 
 has_key(FromTo, Key) ->
     Query = [{#s2s{fromto = FromTo, key = Key, _ = '_'},
 	      [],
 	      ['$_']}],
-    case ejabberd_cluster:get_node(FromTo) of
+    case get_node_by_key(Key) of
 	Node when Node == node() ->
 	    case mnesia:dirty_select(s2s, Query) of
 		[] ->
@@ -137,26 +125,15 @@ has_key(FromTo, Key) ->
     end.
 
 get_connections_pids(FromTo) ->
-    case ejabberd_cluster:get_node(FromTo) of
-	Node when Node == node() ->
-	    case catch mnesia:dirty_read(s2s, FromTo) of
-		L when is_list(L) ->
-		    [Connection#s2s.pid || Connection <- L];
-		_ ->
-		    []
-	    end;
-	Node ->
-	    case catch rpc:call(Node, mnesia, dirty_read,
-				[s2s, FromTo], 5000) of
-		L when is_list(L) ->
-		    [Connection#s2s.pid || Connection <- L];
-		_ ->
-		    []
-	    end
+    case catch mnesia:dirty_read(s2s, FromTo) of
+        L when is_list(L) ->
+            [Connection#s2s.pid || Connection <- L];
+        _ ->
+            []
     end.
 
 try_register(FromTo) ->
-    Key = randoms:get_string(),
+    Key = new_key(),
     MaxS2SConnectionsNumber = max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
 	max_s2s_connections_number_per_node(FromTo),
@@ -195,22 +172,6 @@ dirty_get_connections() ->
 	      end
       end, ejabberd_cluster:get_nodes()).
 
-migrate(After) ->
-    Ss = mnesia:dirty_select(
-	   s2s,
-	   [{#s2s{fromto = '$1', pid = '$2', _ = '_'},
-	     [],
-	     ['$$']}]),
-    lists:foreach(
-      fun([FromTo, Pid]) ->
-	      case ejabberd_cluster:get_node(FromTo) of
-		  Node when Node /= node() ->
-		      ejabberd_s2s_out:stop_connection(Pid, After);
-		  _ ->
-		      ok
-	      end
-      end, Ss).
-
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -228,7 +189,6 @@ init([]) ->
 			      {type, bag}, {local_content, true},
 			      {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
-    ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_commands:register_commands(commands()),
     {ok, #state{}}.
 
@@ -280,7 +240,6 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
-    ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_commands:unregister_commands(commands()),
     ok.
 
@@ -297,15 +256,6 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
-    FromTo = {From#jid.lserver, To#jid.lserver},
-    case ejabberd_cluster:get_node(FromTo) of
-	Node when Node == node() ->
-	    do_route1(From, To, Packet);
-	Node ->
-	    {?MODULE, Node} ! {route, From, To, Packet}
-    end.
-
-do_route1(From, To, Packet) ->
     case find_connection(From, To) of
 	{atomic, Pid} when is_pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
@@ -408,7 +358,7 @@ open_several_connections(N, MyServer, Server, From, FromTo,
 
 new_connection(MyServer, Server, From, FromTo,
 	       MaxS2SConnectionsNumber, MaxS2SConnectionsNumberPerNode) ->
-    Key = randoms:get_string(),
+    Key = new_key(),
     {ok, Pid} = ejabberd_s2s_out:start(
 		  MyServer, Server, {new, Key}),
     F = fun() ->
@@ -455,6 +405,20 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
     LocalLs = [L || L <- Ls, node(L#s2s.pid) == node()],
     lists:min([MaxS2SConnectionsNumber - length(Ls),
 	       MaxS2SConnectionsNumberPerNode - length(LocalLs)]).
+
+%%%-------------------------------------------------------------------
+%%% Dialback keys stuff
+%%%-------------------------------------------------------------------
+new_key() ->
+    randoms:get_string() ++ "-" ++ ejabberd_cluster:node_id().
+
+get_node_by_key(Key) ->
+    case string:tokens(Key, "-") of
+        [_, NodeID] ->
+            ejabberd_cluster:get_node_by_id(NodeID);
+        _ ->
+            node()
+    end.
 
 %%--------------------------------------------------------------------
 %% Function: is_service(From, To) -> true | false

@@ -131,7 +131,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(From, Host, Type) ->
-    Node = ejabberd_cluster:get_node({From, Host}),
+    Node = node(),
     ?SUPERVISOR_START.
 
 start_link(From, Host, Type) ->
