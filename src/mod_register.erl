@@ -234,13 +234,18 @@ process_iq(From, To,
 			       {"var", "password"}],
 			      [{xmlelement, "required", [], []}]},
 		    case ejabberd_captcha:create_captcha_x(
-			   ID, To, Lang, [InstrEl, UField, PField]) of
+			   ID, To, Lang, Source, [InstrEl, UField, PField]) of
 			{ok, CaptchaEls} ->
 			    IQ#iq{type = result,
 				  sub_el = [{xmlelement, "query",
 					     [{"xmlns", "jabber:iq:register"}],
 					     [TopInstrEl | CaptchaEls]}]};
-			error ->
+                        {error, limit} ->
+                            ErrText = "Too many CAPTCHA requests",
+                            IQ#iq{type = error,
+				  sub_el = [SubEl, ?ERRT_RESOURCE_CONSTRAINT(
+                                                      Lang, ErrText)]};
+			_Err ->
 			    ErrText = "Unable to generate a CAPTCHA",
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(

@@ -27,7 +27,7 @@
 -module(ejabberd_captcha).
 
 -behaviour(gen_server).
-
+-compile(export_all).
 %% API
 -export([start_link/0]).
 
@@ -37,7 +37,7 @@
 
 -export([create_captcha/6, build_captcha_html/2, check_captcha/2,
 	 process_reply/1, process/2, is_feature_available/0,
-	 create_captcha_x/4, create_captcha_x/5]).
+	 create_captcha_x/5, create_captcha_x/6]).
 
 -include("jlib.hrl").
 -include("ejabberd.hrl").
@@ -49,8 +49,9 @@
 
 -define(CAPTCHA_TEXT(Lang), translate:translate(Lang, "Enter the text you see")).
 -define(CAPTCHA_LIFETIME, 120000). % two minutes
+-define(LIMIT_PERIOD, 60*1000*1000). % one minute
 
--record(state, {}).
+-record(state, {limits = treap:empty()}).
 -record(captcha, {id, pid, key, tref, args}).
 
 -define(T(S),
@@ -72,11 +73,12 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-create_captcha(Id, SID, From, To, Lang, Args)
-  when is_list(Id), is_list(Lang), is_list(SID),
+create_captcha(SID, From, To, Lang, Limiter, Args)
+  when is_list(Lang), is_list(SID),
        is_record(From, jid), is_record(To, jid) ->
-    case create_image() of
+    case create_image(Limiter) of
 	{ok, Type, Key, Image} ->
+            Id = randoms:get_string(),
 	    B64Image = jlib:encode_base64(binary_to_list(Image)),
 	    JID = jlib:jid_to_string(From),
 	    CID = "sha1+" ++ sha:sha(Image) ++ "@bob.xmpp.org",
@@ -106,19 +108,19 @@ create_captcha(Id, SID, From, To, Lang, Args)
 	    case ?T(mnesia:write(#captcha{id=Id, pid=self(), key=Key,
 					  tref=Tref, args=Args})) of
 		ok ->
-		    {ok, [Body, OOB, Captcha, Data]};
-		_Err ->
-		    error
+		    {ok, Id, [Body, OOB, Captcha, Data]};
+		Err ->
+		    {error, Err}
 	    end;
-	_Err ->
-	    error
+	Err ->
+	    Err
     end.
 
-create_captcha_x(SID, To, Lang, HeadEls) ->
-    create_captcha_x(SID, To, Lang, HeadEls, []).
+create_captcha_x(SID, To, Lang, Limiter, HeadEls) ->
+    create_captcha_x(SID, To, Lang, Limiter, HeadEls, []).
 
-create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
-    case create_image() of
+create_captcha_x(SID, To, Lang, Limiter, HeadEls, TailEls) ->
+    case create_image(Limiter) of
 	{ok, Type, Key, Image} ->
 	    Id = randoms:get_string(),
 	    B64Image = jlib:encode_base64(binary_to_list(Image)),
@@ -156,11 +158,11 @@ create_captcha_x(SID, To, Lang, HeadEls, TailEls) ->
 	    case ?T(mnesia:write(#captcha{id=Id, key=Key, tref=Tref})) of
 		ok ->
 		    {ok, [Captcha, Data]};
-		_Err ->
-		    error
+		Err ->
+		    {error, Err}
 	    end;
-	_ ->
-	    error
+        Err ->
+	    Err
     end.
 
 %% @spec (Id::string(), Lang::string()) -> {FormEl, {ImgEl, TextEl, IdEl, KeyEl}} | captcha_not_found
@@ -275,16 +277,19 @@ process(_Handlers, #request{method='GET', lang=Lang, path=[_, Id]}) ->
 	    ejabberd_web:error(not_found)
     end;
 
-process(_Handlers, #request{method='GET', path=[_, Id, "image"]}) ->
+process(_Handlers, #request{method='GET', path=[_, Id, "image"], ip = IP}) ->
+    {Addr, _Port} = IP,
     case mnesia:dirty_read(captcha, Id) of
 	[#captcha{key=Key}] ->
-	    case create_image(Key) of
+	    case create_image(Addr, Key) of
 		{ok, Type, _, Img} ->
 		    {200,
 		     [{"Content-Type", Type},
 		      {"Cache-Control", "no-cache"},
 		      {"Last-Modified", httpd_util:rfc1123_date()}],
 		     Img};
+                {error, limit} ->
+                    ejabberd_web:error(not_allowed);
 		_ ->
 		    ejabberd_web:error(not_found)
 	    end;
@@ -323,6 +328,20 @@ init([]) ->
     check_captcha_setup(),
     {ok, #state{}}.
 
+handle_call({is_limited, Limiter, RateLimit}, _From, State) ->
+    NowPriority = now_priority(),
+    CleanPriority = NowPriority + ?LIMIT_PERIOD,
+    Limits = clean_treap(State#state.limits, CleanPriority),
+    case treap:lookup(Limiter, Limits) of
+        {ok, _, Rate} when Rate >= RateLimit ->
+            {reply, true, State#state{limits = Limits}};
+        {ok, Priority, Rate} ->
+            NewLimits = treap:insert(Limiter, Priority, Rate+1, Limits),
+            {reply, false, State#state{limits = NewLimits}};
+        _ ->
+            NewLimits = treap:insert(Limiter, NowPriority, 1, Limits),
+            {reply, false, State#state{limits = NewLimits}}
+    end;
 handle_call(_Request, _From, State) ->
     {reply, bad_request, State}.
 
@@ -364,11 +383,22 @@ code_change(_OldVsn, State, _Extra) ->
 %% Reason = atom()
 %%--------------------------------------------------------------------
 create_image() ->
+    create_image(undefined).
+
+create_image(Limiter) ->
     %% Six numbers from 1 to 9.
     Key = string:substr(randoms:get_string(), 1, 6),
-    create_image(Key).
+    create_image(Limiter, Key).
 
-create_image(Key) ->
+create_image(Limiter, Key) ->
+    case is_limited(Limiter) of
+        true ->
+            {error, limit};
+        false ->
+            do_create_image(Key)
+    end.
+
+do_create_image(Key) ->
     FileName = get_prog_name(),
     Cmd = lists:flatten(io_lib:format("~s ~s", [FileName, Key])),
     case cmd(Cmd) of
@@ -455,6 +485,25 @@ get_captcha_transfer_protocol([{{_Port, _Ip, tcp}, ejabberd_http, Opts}
 get_captcha_transfer_protocol([_ | Listeners]) ->
     get_captcha_transfer_protocol(Listeners).
 
+is_limited(undefined) ->
+    false;
+is_limited(Limiter) ->
+    case ejabberd_config:get_local_option(captcha_limit) of
+        Int when is_integer(Int), Int > 0 ->
+            case catch gen_server:call(?MODULE, {is_limited, Limiter, Int},
+                                       5000) of
+                true ->
+                    true;
+                false ->
+                    false;
+                Err ->
+                    ?ERROR_MSG("Call failed: ~p", [Err]),
+                    false
+            end;
+        _ ->
+            false
+    end.
+
 %%--------------------------------------------------------------------
 %% Function: cmd(Cmd) -> Data | {error, Reason}
 %% Cmd = string()
@@ -514,17 +563,41 @@ is_feature_available() ->
     case is_feature_enabled() of
 	false -> false;
 	true ->
-	    case create_image() of
-		{ok, _, _, _} -> true;
-		_Error -> false
-	    end
+            %% Do not generate image in order to avoid CAPTCHA DoS
+	    %% case create_image() of
+	    %%     {ok, _, _, _} -> true;
+	    %%     _Error -> false
+	    %% end
+            true
     end.
 
 check_captcha_setup() ->
-    case is_feature_enabled() andalso not is_feature_available() of
+    AbleToGenerateCaptcha = case create_image() of
+                                {ok, _, _, _} -> true;
+                                _Error -> false
+                            end,
+    case is_feature_enabled() andalso not AbleToGenerateCaptcha of
 	true ->
 	    ?CRITICAL_MSG("Captcha is enabled in the option captcha_cmd, "
 			  "but it can't generate images.", []);
 	false ->
 	    ok
     end.
+
+clean_treap(Treap, CleanPriority) ->
+    case treap:is_empty(Treap) of
+        true ->
+            Treap;
+        false ->
+            {_Key, Priority, _Value} = treap:get_root(Treap),
+            if
+                Priority > CleanPriority ->
+                    clean_treap(treap:delete_root(Treap), CleanPriority);
+                true ->
+                    Treap
+            end
+    end.
+
+now_priority() ->
+    {MSec, Sec, USec} = now(),
+    -((MSec*1000000 + Sec)*1000000 + USec).

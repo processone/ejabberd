@@ -1629,19 +1629,28 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		      From, Err),
 		    StateData;
 		captcha_required ->
-		    ID = randoms:get_string(),
 		    SID = xml:get_attr_s("id", Attrs),
 		    RoomJID = StateData#state.jid,
 		    To = jlib:jid_replace_resource(RoomJID, Nick),
+                    Limiter = {From#jid.luser, From#jid.lserver},
 		    case ejabberd_captcha:create_captcha(
-			   ID, SID, RoomJID, To, Lang, From) of
-			{ok, CaptchaEls} ->
+			   SID, RoomJID, To, Lang, Limiter, From) of
+			{ok, ID, CaptchaEls} ->
 			    MsgPkt = {xmlelement, "message", [{"id", ID}], CaptchaEls},
 			    Robots = ?DICT:store(From,
 						 {Nick, Packet}, StateData#state.robots),
 			    ejabberd_router:route(RoomJID, From, MsgPkt),
 			    StateData#state{robots = Robots};
-			error ->
+                        {error, limit} ->
+                            ErrText = "Too many CAPTCHA requests",
+                            Err = jlib:make_error_reply(
+				    Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
+                            ejabberd_router:route( % TODO: s/Nick/""/
+                              jlib:jid_replace_resource(
+				StateData#state.jid, Nick),
+			      From, Err),
+			    StateData;
+                        _ ->
 			    ErrText = "Unable to generate a captcha",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERRT_INTERNAL_SERVER_ERROR(Lang, ErrText)),
