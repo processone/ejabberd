@@ -2520,6 +2520,11 @@ can_change_ra(_FAffiliation, _FRole,
     %% participant that is already owner because he is MUC admin
     true;
 can_change_ra(_FAffiliation, _FRole,
+              _TAffiliation, _TRole,
+              _RoleorAffiliation, _Value, owner) ->
+    %% Nobody can decrease MUC admin's role/affiliation
+    false;
+can_change_ra(_FAffiliation, _FRole,
 	      TAffiliation, _TRole,
 	      affiliation, Value, _ServiceAf)
   when (TAffiliation == Value) ->
