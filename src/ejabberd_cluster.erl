@@ -136,9 +136,13 @@ handle_call(announce, _From, State) ->
 				 {node_ready, node()}, ?REHASH_TIMEOUT),
 	    append_node(?HASHTBL, node()),
 	    register(?MODULE, self()),
-	    gen_server:abcast(OtherNodes -- BadNodes,
-			      ?MODULE, {node_ready, node()}),
-	    erlang:send_after(?MIGRATE_TIMEOUT, self(), del_lock)
+            case OtherNodes -- BadNodes of
+                [] ->
+                    global:del_lock(?LOCK);
+                WorkingNodes ->
+                    gen_server:abcast(WorkingNodes, ?MODULE, {node_ready, node()}),
+                    erlang:send_after(?MIGRATE_TIMEOUT, self(), del_lock)
+            end
     end,
     {reply, ok, State};
 handle_call({node_ready, Node}, _From, State) ->
