@@ -2521,13 +2521,12 @@ peerip(SockMod, Socket) ->
 
 maybe_migrate(StateName, StateData) ->
     PackedStateData = pack(StateData),
-    case ejabberd_cluster:get_node({StateData#state.user,
-				    StateData#state.server}) of
+    #state{user = U, server = S, resource = R, sid = SID} = StateData,
+    case ejabberd_cluster:get_node({jlib:nodeprep(U), jlib:nameprep(S)}) of
 	Node when Node == node() ->
 	    Conn = get_conn_type(StateData),
 	    Info = [{ip, StateData#state.ip}, {conn, Conn},
 		    {auth_module, StateData#state.auth_module}],
-	    #state{user = U, server = S, resource = R, sid = SID} = StateData,
             Presence = StateData#state.pres_last,
             Priority =
                 case Presence of
