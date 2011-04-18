@@ -45,7 +45,7 @@
 		 password = "",
 		 anonymous = true,
 		 max_users = ?MAX_USERS_DEFAULT,
-		 logging = false
+		 logging = false,
                  captcha_whitelist = ?SETS:empty()
 		}).
 
