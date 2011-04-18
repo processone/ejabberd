@@ -27,7 +27,7 @@
 -module(ejabberd_captcha).
 
 -behaviour(gen_server).
--compile(export_all).
+
 %% API
 -export([start_link/0]).
 
