@@ -428,10 +428,10 @@ get_prog_name() ->
     case ejabberd_config:get_local_option(captcha_cmd) of
 	FileName when is_list(FileName) ->
 	    FileName;
-	_ ->
+	Value when (Value == undefined) or (Value == "") ->
 	    ?DEBUG("The option captcha_cmd is not configured, but some "
 			  "module wants to use the CAPTCHA feature.", []),
-	    throw({error, option_not_configured_captcha_cmd})
+	    false
     end.
 
 get_url(Str) ->
@@ -552,23 +552,10 @@ return(Port, TRef, Result) ->
     catch port_close(Port),
     Result.
 
-is_feature_enabled() ->
-    try get_prog_name() of
-	Prog when is_list(Prog) -> true
-    catch 
-	_:_ -> false
-    end.
-
 is_feature_available() ->
-    case is_feature_enabled() of
-	false -> false;
-	true ->
-            %% Do not generate image in order to avoid CAPTCHA DoS
-	    %% case create_image() of
-	    %%     {ok, _, _, _} -> true;
-	    %%     _Error -> false
-	    %% end
-            true
+    case get_prog_name() of
+	Prog when is_list(Prog) -> true;
+	false -> false
     end.
 
 check_captcha_setup() ->
@@ -576,10 +563,11 @@ check_captcha_setup() ->
                                 {ok, _, _, _} -> true;
                                 _Error -> false
                             end,
-    case is_feature_enabled() andalso not AbleToGenerateCaptcha of
+    case is_feature_available() andalso not AbleToGenerateCaptcha of
 	true ->
 	    ?CRITICAL_MSG("Captcha is enabled in the option captcha_cmd, "
-			  "but it can't generate images.", []);
+			  "but it can't generate images.", []),
+	    throw({error, captcha_cmd_enabled_but_fails});
 	false ->
 	    ok
     end.
