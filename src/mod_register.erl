@@ -106,8 +106,10 @@ process_iq(From, To,
 	    PTag = xml:get_subtag(SubEl, "password"),
 	    RTag = xml:get_subtag(SubEl, "remove"),
 	    Server = To#jid.lserver,
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    AllowRemove = (allow == acl:match_rule(Server, Access, From)),
 	    if
-		(UTag /= false) and (RTag /= false) ->
+		(UTag /= false) and (RTag /= false) and AllowRemove ->
 		    User = xml:get_tag_cdata(UTag),
 		    case From of
 			#jid{user = User, lserver = Server} ->
@@ -148,7 +150,7 @@ process_iq(From, To,
 					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
 			    end
 		    end;
-		(UTag == false) and (RTag /= false) ->
+		(UTag == false) and (RTag /= false) and AllowRemove ->
 		    case From of
 			#jid{user = User,
 			     lserver = Server,
