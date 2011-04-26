@@ -108,8 +108,10 @@ process_iq(From, To,
 	    PTag = exmpp_xml:get_element(SubEl, 'password'),
 	    RTag = exmpp_xml:get_element(SubEl, 'remove'),
 	    Server = exmpp_jid:prep_domain_as_list(To),
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    AllowRemove = (allow == acl:match_rule(Server, Access, From)),
 	    if
-		(UTag /= undefined) and (RTag /= undefined) ->
+		(UTag /= undefined) and (RTag /= undefined) and AllowRemove ->
 		    User = exmpp_xml:get_cdata_as_list(UTag),
 		    case {exmpp_jid:node_as_list(From), exmpp_jid:prep_domain_as_list(From)} of
 		    {User, Server} ->
@@ -144,7 +146,7 @@ process_iq(From, To,
                                     exmpp_iq:error(IQ_Rec, 'bad-request')
 			    end
 		    end;
-		(UTag == undefined) and (RTag /= undefined) ->
+		(UTag == undefined) and (RTag /= undefined) and AllowRemove ->
 		    case {exmpp_jid:node_as_list(From),
                   exmpp_jid:prep_domain_as_list(From),
                   exmpp_jid:resource_as_list(From)}of
