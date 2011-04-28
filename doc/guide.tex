@@ -1028,7 +1028,7 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
 \item Port 5269 listens for s2s connections with STARTTLS. The socket is set for IPv6 instead of IPv4.
 \item Port 3478 listens for STUN requests over UDP.
 \item Port 5280 listens for HTTP requests, and serves the HTTP Poll service.
-\item Port 5281 listens for HTTP requests, and serves the Web Admin using HTTPS as explained in
+\item Port 5281 listens for HTTP requests, using HTTPS to serve HTTP-Bind (BOSH) and the Web Admin as explained in
   section~\ref{webadmin}. The socket only listens connections to the IP address 127.0.0.1.
 \end{itemize}
 \begin{verbatim}
@@ -1057,6 +1057,7 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
                         ]},
   {{5281, "127.0.0.1"}, ejabberd_http, [
                                         web_admin,
+                                        http_bind,
                                         tls, {certfile, "/etc/ejabberd/server.pem"},
                                        ]}
  ]
