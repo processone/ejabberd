@@ -161,7 +161,7 @@ get_versioning_feature(Acc, Host) ->
 	    Feature = {xmlelement,
 		       "ver",
 		       [{"xmlns", ?NS_ROSTER_VER}],
-		       [{xmlelement, "optional", [], []}]},
+		       []},
 	    [Feature | Acc];
 	false -> []
     end.
