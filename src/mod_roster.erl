@@ -258,8 +258,7 @@ roster_version_on_db(Host) ->
 get_versioning_feature(Acc, Host) ->
     case roster_versioning_enabled(Host) of
 	true ->
-	    Feature = exmpp_xml:element(?NS_ROSTER_VER_s, 'ver', [],
-		       [exmpp_xml:element(?NS_ROSTER_VER_s, 'optional')]),
+	    Feature = exmpp_xml:element(?NS_ROSTER_VER_s, 'ver'),
 	    [Feature | Acc];
 	false -> []
     end.
