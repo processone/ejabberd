@@ -657,10 +657,18 @@ push_item(User, Server, From, Item)
 %%     Item = rosteritem()
 
 % TODO: don't push to those who didn't load roster
-push_item(User, Server, Resource, From, Item)
+push_item(User, Server, Resource, From, Item) ->
+    push_item(User, Server, Resource, From, Item, not_found).
+
+push_item(User, Server, Resource, From, Item, RosterVersion)
   when is_binary(User), is_binary(Server), is_binary(Resource),
   ?IS_JID(From) ->
+    ExtraAttrs = case RosterVersion of
+	not_found -> [];
+	_ -> [?XMLATTR(<<"ver">>, RosterVersion)]
+    end,
     Request = #xmlel{ns = ?NS_ROSTER, name = 'query',
+      attrs = ExtraAttrs,
       children = [item_to_xml(Item)]},
     ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
       "push" ++ randoms:get_string()),
@@ -673,18 +681,8 @@ push_item(User, Server, Resource, From, Item)
 %% TODO: don't push to those who didn't load roster
 push_item_version(Server, User, From, Item, RosterVersion)  ->
     lists:foreach(fun(Resource) ->
-			  push_item_version(User, Server, Resource, From, Item, RosterVersion)
+			  push_item(User, Server, Resource, From, Item, RosterVersion)
 		end, ejabberd_sm:get_user_resources(User, Server)).
-
-push_item_version(User, Server, Resource, From, Item, RosterVersion) ->
-    Request = #xmlel{ns = ?NS_ROSTER, name = 'query', attrs = [?XMLATTR(<<"ver">>, RosterVersion)],
-      children = [mod_roster:item_to_xml(Item)]},
-    ResIQ = exmpp_iq:set(?NS_JABBER_CLIENT, Request,
-      "push" ++ randoms:get_string()),
-    ejabberd_router:route(
-      From,
-      exmpp_jid:make(User, Server, Resource),
-      ResIQ).
 
 %% @spec (Ignored, User, Server) -> Subscription_Lists
 %%     Ignored = term()
