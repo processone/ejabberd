@@ -479,6 +479,10 @@
 %%
 %%{captcha_host, "example.org:5280"}.
 
+%%
+%% Limit CAPTCHA calls per minute for JID/IP to avoid DoS.
+%%
+%%{captcha_limit, 5}.
 
 %%%.   =======
 %%%'   MODULES

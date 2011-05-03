@@ -918,6 +918,40 @@ BEGIN
 END
 GO
 
+/******************************************************************/
+/****** Object:  StoredProcedure [dbo].[set_roster_version]      **/
+/** Update users roster_version                                  **/
+/******************************************************************/
+CREATE PROCEDURE [dbo].[set_roster_version]
+  @Username varchar(200),
+  @Version varchar(8000)
+AS
+BEGIN
+  IF EXISTS (SELECT username FROM roster_version WITH (NOLOCK) WHERE username=@Username)
+    BEGIN
+      UPDATE roster_version SET username=@Username, version=@Version WHERE username=@Username;
+    END
+  ELSE
+    BEGIN
+      INSERT INTO roster_version (username, version) VALUES (@Username, @Version);
+    END
+END
+GO
+
+/******************************************************************/
+/****** Object:  StoredProcedure [dbo].[get_roster_version]      **/
+/** Retrive the user roster_version                              **/
+/******************************************************************/
+CREATE PROCEDURE [dbo].[get_roster_version]
+  @Username varchar(200)
+AS
+BEGIN
+  SELECT roster_version.version as version
+  FROM roster_version WITH (NOLOCK)
+  WHERE username=@Username;
+END
+GO
+
 /***************************************************************/
 /****** Object:  StoredProcedure [dbo].[clean_spool_msg]  ******/
 /** Delete messages older that 3 days from spool              **/
