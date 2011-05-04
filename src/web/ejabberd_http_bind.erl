@@ -1264,6 +1264,10 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
                         {'EXIT', _} ->
                             {error, bad_request};
                         Rid ->
+                            Els2 = case [E || E <- Els, E#xmlel.ns == ?NS_HTTP_BIND] of
+				[] -> Els;
+				_ -> force_ns(Data)
+			    end,
 			    %% I guess this is to remove XMLCDATA: Is it really needed ?
                             FixedEls =
                                 lists:filter(
@@ -1275,7 +1279,7 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
                                               _ ->
                                                   false
                                           end
-                                  end, Els),
+                                  end, Els2),
                             Sid = exmpp_xml:get_attribute_as_list(Xml, <<"sid">>, ""),
 			    if
 				PayloadSize =< MaxStanzaSize ->
@@ -1289,6 +1293,25 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
 %	{xmlelement, _Name, _Attrs, _Els} ->
 	    {error, bad_request}
     end.
+
+%% This BOSH stanza contains at least one XMPP stanza without namespace,
+%% and exmpp sets the ns of BOSH to it and its children, instead of assuming jabber:client.
+%% To avoid that, we set the jabber:client ns to the BOSH stanza, parse it,
+%% and the NS will be inherited to the ns-less XMPP stanza.
+force_ns(Data) ->
+    Data2 = change_ns(Data, ?NS_HTTP_BIND_s, ?NS_JABBER_CLIENT_s),
+    [#xmlel{children = Els}] = exmpp_xmlstream:parse_element(Data2),
+    Els.
+change_ns(String, ?NS_HTTP_BIND_s, ?NS_JABBER_CLIENT_s) ->
+    change_ns(String, ?NS_HTTP_BIND_s, ?NS_JABBER_CLIENT_s, "").
+change_ns([], _NSin, _NSout, Res) ->
+    lists:reverse(Res);
+%%change_ns(NSin ++ String, NSin, NSout, Res) when FirstString->
+change_ns(?NS_HTTP_BIND_s ++ String, NSin, NSout, Res) ->
+%%change_ns([$h,$t,$t,$p,$:,$/,$/,$j,$a,$b,$b,$e,$r,$.,$o,$r,$g,$/,$p,$r,$o,$t,$o,$c,$o,$l,$/,$h,$t,$t,$p,$b,$i,$n,$d|String], NSin, NSout, Res) ->
+    change_ns(String, NSin, NSout, lists:reverse(NSout) ++ Res);
+change_ns([Char | String], NSin, NSout, Res) ->
+    change_ns(String, NSin, NSout, [Char | Res]).
 
 send_receiver_reply(undefined, _Reply) ->
     ok;
