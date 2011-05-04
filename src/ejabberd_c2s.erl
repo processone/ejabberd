@@ -894,7 +894,8 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	    Err = exmpp_server_binding:error(El, 'bad-request'),
 	    send_element(StateData, Err),
 	    fsm_next_state(wait_for_bind, StateData);
-	throw:_Exception ->
+	throw:Exception ->
+	    ?DEBUG("When processing:~n  ~p~nThis exception was catched:~n  ~p", [El, Exception]),
 	    fsm_next_state(wait_for_bind, StateData)
     end;
 
