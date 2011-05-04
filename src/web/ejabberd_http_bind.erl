@@ -1294,24 +1294,20 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
 	    {error, bad_request}
     end.
 
-%% This BOSH stanza contains at least one XMPP stanza without namespace,
-%% and exmpp sets the ns of BOSH to it and its children, instead of assuming jabber:client.
-%% To avoid that, we set the jabber:client ns to the BOSH stanza, parse it,
-%% and the NS will be inherited to the ns-less XMPP stanza.
+%% This BOSH stanza contains at least one XMPP stanza without NS,
+%% and exmpp sets the NS of BOSH to it and its children, instead of assuming jabber:client.
+%% To avoid that, we set the jabber:client NS to the BOSH stanza, parse it,
+%% and the NS will be inherited to the NS-less XMPP stanza.
 force_ns(Data) ->
-    Data2 = change_ns(Data, ?NS_HTTP_BIND_s, ?NS_JABBER_CLIENT_s),
+    Data2 = change_ns(Data, ""),
     [#xmlel{children = Els}] = exmpp_xmlstream:parse_element(Data2),
     Els.
-change_ns(String, ?NS_HTTP_BIND_s, ?NS_JABBER_CLIENT_s) ->
-    change_ns(String, ?NS_HTTP_BIND_s, ?NS_JABBER_CLIENT_s, "").
-change_ns([], _NSin, _NSout, Res) ->
+change_ns([], Res) ->
     lists:reverse(Res);
-%%change_ns(NSin ++ String, NSin, NSout, Res) when FirstString->
-change_ns(?NS_HTTP_BIND_s ++ String, NSin, NSout, Res) ->
-%%change_ns([$h,$t,$t,$p,$:,$/,$/,$j,$a,$b,$b,$e,$r,$.,$o,$r,$g,$/,$p,$r,$o,$t,$o,$c,$o,$l,$/,$h,$t,$t,$p,$b,$i,$n,$d|String], NSin, NSout, Res) ->
-    change_ns(String, NSin, NSout, lists:reverse(NSout) ++ Res);
-change_ns([Char | String], NSin, NSout, Res) ->
-    change_ns(String, NSin, NSout, [Char | Res]).
+change_ns(?NS_HTTP_BIND_s ++ String, Res) ->
+    change_ns(String, lists:reverse(?NS_JABBER_CLIENT_s) ++ Res);
+change_ns([Char | String], Res) ->
+    change_ns(String, [Char | Res]).
 
 send_receiver_reply(undefined, _Reply) ->
     ok;
