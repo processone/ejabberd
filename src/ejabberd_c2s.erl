@@ -246,7 +246,7 @@ init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
 	false ->
 	    Socket1 =
 		if
-		    TLSEnabled ->
+		    TLSEnabled andalso SockMod /= ejabberd_frontend_socket ->
 			SockMod:starttls(Socket, TLSOpts);
 		    true ->
 			Socket
