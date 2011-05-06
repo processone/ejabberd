@@ -651,10 +651,10 @@ delete_item(NodeIdx, #jid{node = U, domain = S} = _JID, PublishModel, ItemId) ->
 		false ->
 		    case Affiliation of
 			'owner' ->
-			    %% Owner can delete other publishers items as well
+			    %% Owner can delete any items from its own node
 			    {'result', States} = get_states(NodeIdx),
 			    lists:foldl(fun
-					(#pubsub_state{items = ItemIds, affiliation = publisher} = State, Result) ->
+					(#pubsub_state{items = ItemIds} = State, Result) ->
 					       case lists:member(ItemId, ItemIds) of
 						   true ->
 						       del_item(NodeIdx, ItemId),
