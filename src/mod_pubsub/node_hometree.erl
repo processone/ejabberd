@@ -581,10 +581,10 @@ delete_item(NodeIdx, Publisher, PublishModel, ItemId) ->
 		false ->
 		    case Affiliation of
 			owner ->
-			    %% Owner can delete other publishers items as well
+			    %% Owner can delete any items from its own node
 			    {result, States} = get_states(NodeIdx),
 			    lists:foldl(
-				fun(#pubsub_state{items = PI, affiliation = publisher} = S, Res) ->
+				fun(#pubsub_state{items = PI} = S, Res) ->
 				    case lists:member(ItemId, PI) of
 					true ->
 					    del_item(NodeIdx, ItemId),
