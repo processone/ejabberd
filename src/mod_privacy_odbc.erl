@@ -751,9 +751,9 @@ item_to_raw(#listitem{type = Type,
 	    none ->
 		{"n", ""};
 	    jid ->
-		{"j", jlib:jid_to_string(Value)};
+		{"j", ejabberd_odbc:escape(jlib:jid_to_string(Value))};
 	    group ->
-		{"g", Value};
+		{"g", ejabberd_odbc:escape(Value)};
 	    subscription ->
 		case Value of
 		    none ->

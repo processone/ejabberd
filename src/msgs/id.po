@@ -1,57 +1,57 @@
-# translation of es.po to
-# Badlop <badlop@process-one.net>, 2009.
+# , 2010.
 msgid ""
 msgstr ""
-"Project-Id-Version: es\n"
-"PO-Revision-Date: 2010-11-19 13:40+0100\n"
-"Last-Translator: Badlop <badlop@process-one.net>\n"
-"Language-Team: \n"
+"Project-Id-Version: 2.1.0-alpha\n"
+"PO-Revision-Date: 2011-02-15 07:09+0800\n"
+"Last-Translator: Irfan Mahfudz Guntur <ayes.email@gmail.com>\n"
+"Language-Team: SmartCommunity <http://jsmart.web.id>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Language: Spanish (castellano)\n"
-"X-Generator: KBabel 1.11.4\n"
+"X-Language: Indonesian (Bahasa Indonesia)\n"
 
 #: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
-msgstr "Es obligatorio usar STARTTLS"
+msgstr "Penggunaan STARTTLS diperlukan"
 
 #: ejabberd_c2s.erl:503
 msgid "No resource provided"
-msgstr "No se ha proporcionado recurso"
+msgstr "Tidak ada sumber daya yang disediakan"
 
 #: ejabberd_c2s.erl:1147
 msgid "Replaced by new connection"
-msgstr "Reemplazado por una nueva conexión"
+msgstr "Diganti dengan koneksi baru"
 
-#: ejabberd_c2s.erl:1836
+#: ejabberd_c2s.erl:1832
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr "Tu lista de privacidad activa ha denegado el encío de este paquete."
+msgstr "Daftar privasi aktif Anda telah menolak routing ztanza ini"
 
 #: ejabberd_captcha.erl:94 ejabberd_captcha.erl:150 ejabberd_captcha.erl:176
 msgid "Enter the text you see"
-msgstr "Teclea el texto que ves"
+msgstr "Masukkan teks yang Anda lihat"
 
 #: ejabberd_captcha.erl:99
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
-"Tus mensajes a ~s están siendo bloqueados. Para desbloquearlos, visita ~s"
+"Pesan Anda untuk ~s sedang diblokir. Untuk membuka blokir tersebut, kunjungi "
+"~s"
 
 #: ejabberd_captcha.erl:132
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "Si no ves la imagen CAPTCHA aquí, visita la página web."
+msgstr ""
+"Jika Anda tidak melihat gambar CAPTCHA disini, silahkan kunjungi halaman web."
 
 #: ejabberd_captcha.erl:144
 msgid "CAPTCHA web page"
-msgstr "Página web de CAPTCHA"
+msgstr "CAPTCHA laman web"
 
 #: ejabberd_captcha.erl:302
 msgid "The captcha is valid."
-msgstr "El captcha es válido."
+msgstr "Captcha ini benar."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
-msgstr "Comandos"
+msgstr "Perintah"
 
 #: mod_adhoc.erl:149 mod_adhoc.erl:243
 msgid "Ping"
@@ -63,312 +63,311 @@ msgstr "Pong"
 
 #: mod_announce.erl:506
 msgid "Really delete message of the day?"
-msgstr "¿Está seguro de quere borrar el mensaje del dia?"
+msgstr "Benar-benar ingin menghapus pesan harian?"
 
 #: mod_announce.erl:514 mod_configure.erl:1083 mod_configure.erl:1128
 msgid "Subject"
-msgstr "Asunto"
+msgstr "Subyek"
 
 #: mod_announce.erl:519 mod_configure.erl:1088 mod_configure.erl:1133
 msgid "Message body"
-msgstr "Cuerpo del mensaje"
+msgstr "Isi Pesan"
 
 #: mod_announce.erl:599
 msgid "No body provided for announce message"
-msgstr "No se ha proporcionado cuerpo de mensaje para el anuncio"
+msgstr "Tidak ada isi pesan yang disediakan untuk mengirimkan pesan"
 
 #: mod_announce.erl:634
 msgid "Announcements"
-msgstr "Anuncios"
+msgstr "Pengumuman"
 
 #: mod_announce.erl:636
 msgid "Send announcement to all users"
-msgstr "Enviar anuncio a todos los usuarios"
+msgstr "Kirim pengumuman untuk semua pengguna"
 
 #: mod_announce.erl:638
 msgid "Send announcement to all users on all hosts"
-msgstr "Enviar anuncio a todos los usuarios en todos los dominios"
+msgstr "Kirim pengumuman untuk semua pengguna pada semua host"
 
 #: mod_announce.erl:640
 msgid "Send announcement to all online users"
-msgstr "Enviar anuncio a todos los usuarios conectados"
+msgstr "Kirim pengumuman untuk semua pengguna yang online"
 
 #: mod_announce.erl:642 mod_configure.erl:1078 mod_configure.erl:1123
 msgid "Send announcement to all online users on all hosts"
-msgstr "Enviar anuncio a todos los usuarios conectados en todos los dominios"
+msgstr "Kirim pengumuman untuk semua pengguna yang online pada semua host"
 
 #: mod_announce.erl:644
 msgid "Set message of the day and send to online users"
-msgstr "Poner mensaje del dia y enviar a todos los usuarios conectados"
+msgstr "Mengatur pesan harian dan mengirimkan ke pengguna yang online"
 
 #: mod_announce.erl:646
 msgid "Set message of the day on all hosts and send to online users"
 msgstr ""
-"Poner mensaje del día en todos los dominios y enviar a los usuarios "
-"conectados"
+"Mengatur pesan harian pada semua host dan kirimkan ke pengguna yang online"
 
 #: mod_announce.erl:648
 msgid "Update message of the day (don't send)"
-msgstr "Actualizar mensaje del dia, pero no enviarlo"
+msgstr "Rubah pesan harian (tidak dikirim)"
 
 #: mod_announce.erl:650
 msgid "Update message of the day on all hosts (don't send)"
-msgstr "Actualizar el mensaje del día en todos los dominos (pero no enviarlo)"
+msgstr "Rubah pesan harian pada semua host (tidak dikirim)"
 
 #: mod_announce.erl:652
 msgid "Delete message of the day"
-msgstr "Borrar mensaje del dia"
+msgstr "Hapus pesan harian"
 
 #: mod_announce.erl:654
 msgid "Delete message of the day on all hosts"
-msgstr "Borrar el mensaje del día en todos los dominios"
+msgstr "Hapus pesan harian pada semua host"
 
 #: mod_configure.erl:114 mod_configure.erl:274 mod_configure.erl:296
 #: mod_configure.erl:498
 msgid "Configuration"
-msgstr "Configuración"
+msgstr "Pengaturan"
 
 #: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1930
 msgid "Database"
-msgstr "Base de datos"
+msgstr "Database"
 
 #: mod_configure.erl:127 mod_configure.erl:595
 msgid "Start Modules"
-msgstr "Iniciar módulos"
+msgstr "Memulai Modul"
 
 #: mod_configure.erl:129 mod_configure.erl:596
 msgid "Stop Modules"
-msgstr "Detener módulos"
+msgstr "Hentikan Modul"
 
 #: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1931
 msgid "Backup"
-msgstr "Guardar copia de seguridad"
+msgstr "Backup"
 
 #: mod_configure.erl:133 mod_configure.erl:605
 msgid "Restore"
-msgstr "Restaurar"
+msgstr "Mengembalikan"
 
 #: mod_configure.erl:135 mod_configure.erl:606
 msgid "Dump to Text File"
-msgstr "Exportar a fichero de texto"
+msgstr "Dump menjadi File Teks"
 
 #: mod_configure.erl:137 mod_configure.erl:615
 msgid "Import File"
-msgstr "Importar fichero"
+msgstr "Impor File"
 
 #: mod_configure.erl:139 mod_configure.erl:616
 msgid "Import Directory"
-msgstr "Importar directorio"
+msgstr "Impor Direktori"
 
 #: mod_configure.erl:141 mod_configure.erl:581 mod_configure.erl:1057
 msgid "Restart Service"
-msgstr "Reiniciar el servicio"
+msgstr "Restart Layanan"
 
 #: mod_configure.erl:143 mod_configure.erl:582 mod_configure.erl:1102
 msgid "Shut Down Service"
-msgstr "Detener el servicio"
+msgstr "Shut Down Layanan"
 
 #: mod_configure.erl:145 mod_configure.erl:518 mod_configure.erl:1197
 #: web/ejabberd_web_admin.erl:1524
 msgid "Add User"
-msgstr "Añadir usuario"
+msgstr "Tambah Pengguna"
 
 #: mod_configure.erl:147 mod_configure.erl:519 mod_configure.erl:1219
 msgid "Delete User"
-msgstr "Borrar usuario"
+msgstr "Hapus Pengguna"
 
 #: mod_configure.erl:149 mod_configure.erl:520 mod_configure.erl:1231
 msgid "End User Session"
-msgstr "Cerrar sesión de usuario"
+msgstr "Akhir Sesi Pengguna"
 
 #: mod_configure.erl:151 mod_configure.erl:521 mod_configure.erl:1243
 #: mod_configure.erl:1255
 msgid "Get User Password"
-msgstr "Ver contraseña de usuario"
+msgstr "Dapatkan User Password"
 
 #: mod_configure.erl:153 mod_configure.erl:522
 msgid "Change User Password"
-msgstr "Cambiar contraseña de usuario"
+msgstr "Ubah User Password"
 
 #: mod_configure.erl:155 mod_configure.erl:523 mod_configure.erl:1272
 msgid "Get User Last Login Time"
-msgstr "Ver fecha de la última conexión de usuario"
+msgstr "Dapatkan Waktu Login Terakhir Pengguna "
 
 #: mod_configure.erl:157 mod_configure.erl:524 mod_configure.erl:1284
 msgid "Get User Statistics"
-msgstr "Ver estadísticas de usuario"
+msgstr "Dapatkan Statistik Pengguna"
 
 #: mod_configure.erl:159 mod_configure.erl:525
 msgid "Get Number of Registered Users"
-msgstr "Ver número de usuarios registrados"
+msgstr "Dapatkan Jumlah Pengguna Yang Terdaftar"
 
 #: mod_configure.erl:161 mod_configure.erl:526
 msgid "Get Number of Online Users"
-msgstr "Ver número de usuarios conectados"
+msgstr "Dapatkan Jumlah User Yang Online"
 
 #: mod_configure.erl:163 mod_configure.erl:509 web/ejabberd_web_admin.erl:827
 #: web/ejabberd_web_admin.erl:868
 msgid "Access Control Lists"
-msgstr "Listas de Control de Acceso"
+msgstr "Akses Daftar Pengendalian"
 
 #: mod_configure.erl:165 mod_configure.erl:510 web/ejabberd_web_admin.erl:936
 #: web/ejabberd_web_admin.erl:972
 msgid "Access Rules"
-msgstr "Reglas de Acceso"
+msgstr "Aturan Akses"
 
 #: mod_configure.erl:297 mod_configure.erl:499
 msgid "User Management"
-msgstr "Administración de usuarios"
+msgstr "Manajemen Pengguna"
 
 #: mod_configure.erl:500 web/ejabberd_web_admin.erl:1054
 #: web/ejabberd_web_admin.erl:1459
 msgid "Online Users"
-msgstr "Usuarios conectados"
+msgstr "Pengguna Yang Online"
 
 #: mod_configure.erl:501
 msgid "All Users"
-msgstr "Todos los usuarios"
+msgstr "Semua Pengguna"
 
 #: mod_configure.erl:502
 msgid "Outgoing s2s Connections"
-msgstr "Conexiones S2S salientes"
+msgstr "Koneksi Keluar s2s"
 
 #: mod_configure.erl:503 web/ejabberd_web_admin.erl:1901
 msgid "Running Nodes"
-msgstr "Nodos funcionando"
+msgstr "Menjalankan Node"
 
 #: mod_configure.erl:504 web/ejabberd_web_admin.erl:1903
 msgid "Stopped Nodes"
-msgstr "Nodos detenidos"
+msgstr "Menghentikan node"
 
 #: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1947
 msgid "Modules"
-msgstr "Módulos"
+msgstr "Modul"
 
 #: mod_configure.erl:578
 msgid "Backup Management"
-msgstr "Gestión de copia de seguridad"
+msgstr "Manajemen Backup"
 
 #: mod_configure.erl:579
 msgid "Import Users From jabberd14 Spool Files"
-msgstr "Importar usuarios de ficheros spool de jabberd-1.4"
+msgstr "Impor Pengguna Dari jabberd14 Spool File"
 
 #: mod_configure.erl:699
 msgid "To ~s"
-msgstr "A ~s"
+msgstr "Kepada ~s"
 
 #: mod_configure.erl:717
 msgid "From ~s"
-msgstr "De ~s"
+msgstr "Dari ~s"
 
 #: mod_configure.erl:913
 msgid "Database Tables Configuration at "
-msgstr "Configuración de tablas de la base de datos en "
+msgstr "Database Tabel Konfigurasi pada"
 
 #: mod_configure.erl:918
 msgid "Choose storage type of tables"
-msgstr "Selecciona tipo de almacenamiento de las tablas"
+msgstr "Pilih jenis penyimpanan tabel"
 
 #: mod_configure.erl:926 mod_configure.erl:928
 msgid "Disc only copy"
-msgstr "Copia en disco solamente"
+msgstr "Hanya salinan dari disc"
 
 #: mod_configure.erl:926 mod_configure.erl:928
 msgid "RAM and disc copy"
-msgstr "Copia en RAM y disco"
+msgstr "RAM dan disc salinan"
 
 #: mod_configure.erl:926 mod_configure.erl:928
 msgid "RAM copy"
-msgstr "Copia en RAM"
+msgstr "Salinan RAM"
 
 #: mod_configure.erl:926 mod_configure.erl:928
 msgid "Remote copy"
-msgstr "Copia remota"
+msgstr "Salinan Remote"
 
 #: mod_configure.erl:950
 msgid "Stop Modules at "
-msgstr "Detener módulos en "
+msgstr "Hentikan Modul pada"
 
 #: mod_configure.erl:954
 msgid "Choose modules to stop"
-msgstr "Selecciona módulos a detener"
+msgstr "Pilih Modul untuk berhenti"
 
 #: mod_configure.erl:969
 msgid "Start Modules at "
-msgstr "Iniciar módulos en "
+msgstr "Mulai Modul pada"
 
 #: mod_configure.erl:973
 msgid "Enter list of {Module, [Options]}"
-msgstr "Introduce lista de {módulo, [opciones]}"
+msgstr "Masukkan daftar {Modul, [Options]}"
 
 #: mod_configure.erl:974
 msgid "List of modules to start"
-msgstr "Lista de módulos a iniciar"
+msgstr "Daftar modul untuk memulai"
 
 #: mod_configure.erl:983
 msgid "Backup to File at "
-msgstr "Guardar copia de seguridad en fichero en "
+msgstr "Backup ke File pada"
 
 #: mod_configure.erl:987 mod_configure.erl:1001
 msgid "Enter path to backup file"
-msgstr "Introduce ruta al fichero de copia de seguridad"
+msgstr "Masukkan path untuk file cadangan"
 
 #: mod_configure.erl:988 mod_configure.erl:1002 mod_configure.erl:1016
 #: mod_configure.erl:1030
 msgid "Path to File"
-msgstr "Ruta al fichero"
+msgstr "Jalur ke File"
 
 #: mod_configure.erl:997
 msgid "Restore Backup from File at "
-msgstr "Restaura copia de seguridad desde el fichero en "
+msgstr "Kembalikan Backup dari File pada"
 
 #: mod_configure.erl:1011
 msgid "Dump Backup to Text File at "
-msgstr "Exporta copia de seguridad a fichero de texto en "
+msgstr "Dump Backup ke File Teks di"
 
 #: mod_configure.erl:1015
 msgid "Enter path to text file"
-msgstr "Introduce ruta al fichero de texto"
+msgstr "Masukkan path ke file teks"
 
 #: mod_configure.erl:1025
 msgid "Import User from File at "
-msgstr "Importa usuario desde fichero en "
+msgstr "Impor Pengguna dari File pada"
 
 #: mod_configure.erl:1029
 msgid "Enter path to jabberd14 spool file"
-msgstr "Introduce ruta al fichero jabberd14 spool"
+msgstr "Masukkan path ke file jabberd14 spool"
 
 #: mod_configure.erl:1039
 msgid "Import Users from Dir at "
-msgstr "Importar usuarios desde el directorio en "
+msgstr "Impor Pengguna dari Dir di"
 
 #: mod_configure.erl:1043
 msgid "Enter path to jabberd14 spool dir"
-msgstr "Introduce la ruta al directorio de jabberd14 spools"
+msgstr "Masukkan path ke direktori spool jabberd14"
 
 #: mod_configure.erl:1044
 msgid "Path to Dir"
-msgstr "Ruta al directorio"
+msgstr "Jalur ke Dir"
 
 #: mod_configure.erl:1060 mod_configure.erl:1105
 msgid "Time delay"
-msgstr "Retraso temporal"
+msgstr "Waktu tunda"
 
 #: mod_configure.erl:1143
 msgid "Access Control List Configuration"
-msgstr "Configuración de la Lista de Control de Acceso"
+msgstr "Konfigurasi Daftar Akses Pengendalian"
 
 #: mod_configure.erl:1147
 msgid "Access control lists"
-msgstr "Listas de Control de Acceso"
+msgstr "Daftar Pengendalian Akses"
 
 #: mod_configure.erl:1171
 msgid "Access Configuration"
-msgstr "Configuración de accesos"
+msgstr "Akses Konfigurasi"
 
 #: mod_configure.erl:1175
 msgid "Access rules"
-msgstr "Reglas de acceso"
+msgstr "Akses peraturan"
 
 #: mod_configure.erl:1200 mod_configure.erl:1222 mod_configure.erl:1234
 #: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
@@ -379,98 +378,97 @@ msgid "Jabber ID"
 msgstr "Jabber ID"
 
 #: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1653
-#: mod_configure.erl:1865 mod_muc/mod_muc_room.erl:2928 mod_register.erl:233
+#: mod_configure.erl:1865 mod_muc/mod_muc_room.erl:2925 mod_register.erl:233
 #: web/ejabberd_web_admin.erl:1517
 msgid "Password"
-msgstr "Contraseña"
+msgstr "Sandi"
 
 #: mod_configure.erl:1210
 msgid "Password Verification"
-msgstr "Verificación de la contraseña"
+msgstr "Verifikasi Sandi"
 
 #: mod_configure.erl:1301
 msgid "Number of registered users"
-msgstr "Número de usuarios registrados"
+msgstr "Jumlah pengguna terdaftar"
 
 #: mod_configure.erl:1315
 msgid "Number of online users"
-msgstr "Número de usuarios conectados"
+msgstr "Jumlah pengguna online"
 
 #: mod_configure.erl:1684 web/ejabberd_web_admin.erl:1585
 #: web/ejabberd_web_admin.erl:1737
 msgid "Never"
-msgstr "Nunca"
+msgstr "Tidak Pernah"
 
 #: mod_configure.erl:1698 web/ejabberd_web_admin.erl:1598
 #: web/ejabberd_web_admin.erl:1750
 msgid "Online"
-msgstr "Conectado"
+msgstr "Online"
 
 #: mod_configure.erl:1703
 msgid "Last login"
-msgstr "Última conexión"
+msgstr "Terakhir Login"
 
 #: mod_configure.erl:1724
 msgid "Roster size"
-msgstr "Tamaño de la lista de contactos"
+msgstr "Ukuran Daftar Kontak"
 
 #: mod_configure.erl:1725
 msgid "IP addresses"
-msgstr "Direcciones IP"
+msgstr "Alamat IP"
 
 #: mod_configure.erl:1726
 msgid "Resources"
-msgstr "Recursos"
+msgstr "Sumber daya"
 
 #: mod_configure.erl:1852
 msgid "Administration of "
-msgstr "Administración de "
+msgstr "Administrasi"
 
 #: mod_configure.erl:1855
 msgid "Action on user"
-msgstr "Acción en el usuario"
+msgstr "Tindakan pada pengguna"
 
 #: mod_configure.erl:1859
 msgid "Edit Properties"
-msgstr "Editar propiedades"
+msgstr "Ganti Properti"
 
 #: mod_configure.erl:1862 web/ejabberd_web_admin.erl:1763
 msgid "Remove User"
-msgstr "Eliminar usuario"
+msgstr "Hapus Pengguna"
 
 #: mod_irc/mod_irc.erl:201 mod_muc/mod_muc.erl:336
 msgid "Access denied by service policy"
-msgstr "Acceso denegado por la política del servicio"
+msgstr "Akses ditolak oleh kebijakan layanan"
 
 #: mod_irc/mod_irc.erl:400
 msgid "IRC Transport"
-msgstr "Transporte de IRC"
+msgstr "IRC Transport"
 
 #: mod_irc/mod_irc.erl:427
 msgid "ejabberd IRC module"
-msgstr "Módulo de IRC para ejabberd"
+msgstr "ejabberd IRC modul"
 
 #: mod_irc/mod_irc.erl:558
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr ""
-"Necesitas un cliente con soporte de x:data para configurar las opciones de "
-"mod_irc"
+"Anda memerlukan x:data klien untuk mampu mengkonfigurasi pengaturan mod_irc"
 
 #: mod_irc/mod_irc.erl:565
 msgid "Registration in mod_irc for "
-msgstr "Registro en mod_irc para"
+msgstr "Pendaftaran di mod_irc untuk"
 
 #: mod_irc/mod_irc.erl:570
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Introduce el nombre de usuario, codificaciones de carácteres, puertos y "
-"contraseñas que quieras usar al conectar en los servidores de IRC"
+"Masukkan username, pengkodean, port dan sandi yang ingin Anda gunakan untuk "
+"menghubungkan ke layanan IRC"
 
 #: mod_irc/mod_irc.erl:575
 msgid "IRC Username"
-msgstr "Nombre de usuario en IRC"
+msgstr "Nama Pengguna IRC"
 
 #: mod_irc/mod_irc.erl:585
 msgid ""
@@ -479,46 +477,46 @@ msgid ""
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"Si quieres especificar distintos codificaciones de carácteres, contraseñas o "
-"puertos para cada servidor IRC rellena esta lista con valores en el formato "
-"'{\"servidor irc\", \"codificación\", \"puerto\", \"contrasela\"}'.  Este "
-"servicio usa por defecto la codificación \"~s\", puerto ~p, sin contraseña."
+"Jika Anda ingin menentukan port yang berbeda, sandi, pengkodean untuk "
+"layanan IRC, isi daftar ini dengan nilai-nilai dalam format '{\"server irc "
+"\", \"encoding \", port, \"sandi \"}'. Secara default ini menggunakan "
+"layanan \"~s \" pengkodean, port ~p, kata sandi kosong."
 
 #: mod_irc/mod_irc.erl:597
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Ejemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"Contoh: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc/mod_irc.erl:602
 msgid "Connections parameters"
-msgstr "Parámetros de conexiones"
+msgstr "Parameter Koneksi"
 
 #: mod_irc/mod_irc.erl:727
 msgid "Join IRC channel"
-msgstr "Entrar en canal IRC"
+msgstr "Gabung channel IRC"
 
 #: mod_irc/mod_irc.erl:731
 msgid "IRC channel (don't put the first #)"
-msgstr "Canal IRC (no pongas el # del principio)"
+msgstr "Channel IRC (tidak perlu menempatkan # sebelumnya)"
 
 #: mod_irc/mod_irc.erl:736
 msgid "IRC server"
-msgstr "Servidor IRC"
+msgstr "Layanan IRC"
 
 #: mod_irc/mod_irc.erl:769 mod_irc/mod_irc.erl:773
 msgid "Join the IRC channel here."
-msgstr "Entrar en el canal de IRC aquí"
+msgstr "Gabung ke channel IRC disini"
 
 #: mod_irc/mod_irc.erl:777
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr "Entra en el canal de IRC en esta dirección Jabber: ~s"
+msgstr "Gabung ke channel IRC dengan Jabber ID: ~s"
 
 #: mod_irc/mod_irc.erl:862
 msgid "IRC settings"
-msgstr "Opciones de IRC"
+msgstr "Pengaturan IRC"
 
 #: mod_irc/mod_irc.erl:867
 msgid ""
@@ -526,479 +524,476 @@ msgid ""
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"Introduce el nombre de usuario y codificaciones de carácteres que quieras "
-"usar al conectar en los servidores de IRC. Pulsa Siguiente para conseguir "
-"más campos en el formulario. Pulsa Completar para guardar las opciones."
+"Masukkan username dan pengkodean yang ingin Anda gunakan untuk menghubungkan "
+"ke layanan IRC. Tekan 'Selanjutnya' untuk mendapatkan lagi formulir kemudian "
+"Tekan 'Lengkap' untuk menyimpan pengaturan."
 
 #: mod_irc/mod_irc.erl:873
 msgid "IRC username"
-msgstr "Nombre de usuario en IRC"
+msgstr "Nama Pengguna IRC"
 
 #: mod_irc/mod_irc.erl:922
 msgid "Password ~b"
-msgstr "Contraseña ~b"
+msgstr "Kata Sandi ~b"
 
 #: mod_irc/mod_irc.erl:927
 msgid "Port ~b"
-msgstr "Puerto ~b"
+msgstr "Port ~b"
 
 #: mod_irc/mod_irc.erl:932
 msgid "Encoding for server ~b"
-msgstr "Codificación del servidor ~b"
+msgstr "Pengkodean untuk layanan ~b"
 
 #: mod_irc/mod_irc.erl:941
 msgid "Server ~b"
-msgstr "Servidor ~b"
+msgstr "Layanan ~b"
 
 #: mod_muc/mod_muc.erl:449
 msgid "Only service administrators are allowed to send service messages"
 msgstr ""
-"Solo los administradores del servicio tienen permiso para enviar mensajes de "
-"servicio"
+"Layanan hanya diperuntukan kepada administrator yang diizinkan untuk "
+"mengirim layanan pesan"
 
 #: mod_muc/mod_muc.erl:493
 msgid "Room creation is denied by service policy"
-msgstr "Se te ha denegado crear la sala por política del servicio"
+msgstr "Pembuatan Ruangan ditolak oleh kebijakan layanan"
 
 #: mod_muc/mod_muc.erl:500
 msgid "Conference room does not exist"
-msgstr "La sala de conferencias no existe"
+msgstr "Ruang Konferensi tidak ada"
 
 #: mod_muc/mod_muc.erl:581
 msgid "Chatrooms"
-msgstr "Salas de charla"
+msgstr "Ruangan Chat"
 
 #: mod_muc/mod_muc.erl:711
 msgid "You need a client that supports x:data to register the nickname"
-msgstr ""
-"Necesitas un cliente con soporte de x:data para poder registrar el apodo"
+msgstr "Anda memerlukan klien yang mendukung x:data untuk mendaftar julukan"
 
 #: mod_muc/mod_muc.erl:717
 msgid "Nickname Registration at "
-msgstr "Registro del apodo en "
+msgstr "Pendaftaran Julukan pada"
 
 #: mod_muc/mod_muc.erl:721
 msgid "Enter nickname you want to register"
-msgstr "Introduce el apodo que quieras registrar"
+msgstr "Masukkan nama julukan Anda jika ingin mendaftar"
 
 #: mod_muc/mod_muc.erl:722 mod_roster.erl:949 mod_roster_odbc.erl:1049
 #: mod_vcard.erl:358 mod_vcard.erl:471 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:447
 msgid "Nickname"
-msgstr "Apodo"
+msgstr "Nama Julukan"
 
-#: mod_muc/mod_muc.erl:761 mod_muc/mod_muc_room.erl:936
-#: mod_muc/mod_muc_room.erl:1580
+#: mod_muc/mod_muc.erl:761 mod_muc/mod_muc_room.erl:933
+#: mod_muc/mod_muc_room.erl:1577
 msgid "That nickname is registered by another person"
-msgstr "El apodo ya está registrado por otra persona"
+msgstr "Julukan tersebut telah didaftarkan oleh orang lain"
 
 #: mod_muc/mod_muc.erl:787
 msgid "You must fill in field \"Nickname\" in the form"
-msgstr "Debes rellenar el campo \"Apodo\" en el formulario"
+msgstr "Anda harus mengisi kolom \"Julukan\" dalam formulir"
 
 #: mod_muc/mod_muc.erl:807
 msgid "ejabberd MUC module"
-msgstr "Módulo de MUC para ejabberd"
+msgstr "ejabberd MUC Module"
 
 #: mod_muc/mod_muc_log.erl:374 mod_muc/mod_muc_log.erl:381
 msgid "Chatroom configuration modified"
-msgstr "Configuración de la sala modificada"
+msgstr "Konfigurasi ruang chat diubah"
 
 #: mod_muc/mod_muc_log.erl:384
 msgid "joins the room"
-msgstr "entra en la sala"
+msgstr "bergabung ke ruangan"
 
 #: mod_muc/mod_muc_log.erl:387 mod_muc/mod_muc_log.erl:390
 msgid "leaves the room"
-msgstr "sale de la sala"
+msgstr "meninggalkan ruangan"
 
 #: mod_muc/mod_muc_log.erl:393 mod_muc/mod_muc_log.erl:396
 msgid "has been banned"
-msgstr "ha sido bloqueado"
+msgstr "telah dibanned"
 
 #: mod_muc/mod_muc_log.erl:399 mod_muc/mod_muc_log.erl:402
 msgid "has been kicked"
-msgstr "ha sido expulsado"
+msgstr "telah dikick"
 
 #: mod_muc/mod_muc_log.erl:405
 msgid "has been kicked because of an affiliation change"
-msgstr "ha sido expulsado por un cambio de su afiliación"
+msgstr "telah dikick karena perubahan afiliasi"
 
 #: mod_muc/mod_muc_log.erl:408
 msgid "has been kicked because the room has been changed to members-only"
-msgstr "ha sido expulsado porque la sala es ahora solo para miembros"
+msgstr "telah dikick karena ruangan telah diubah menjadi hanya untuk member"
 
 #: mod_muc/mod_muc_log.erl:411
 msgid "has been kicked because of a system shutdown"
-msgstr "ha sido expulsado porque el sistema se va a detener"
+msgstr "telah dikick karena sistem shutdown"
 
 #: mod_muc/mod_muc_log.erl:414
 msgid "is now known as"
-msgstr "se cambia el nombre a"
+msgstr "sekarang dikenal sebagai"
 
 #: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:689
-#: mod_muc/mod_muc_room.erl:2115
+#: mod_muc/mod_muc_room.erl:2112
 msgid " has set the subject to: "
-msgstr " ha puesto el asunto: "
+msgstr "telah menetapkan topik yaitu:"
 
 #: mod_muc/mod_muc_log.erl:452
 msgid "Chatroom is created"
-msgstr "Se ha creado la sala"
+msgstr "Ruang chat telah dibuat"
 
 #: mod_muc/mod_muc_log.erl:453
 msgid "Chatroom is destroyed"
-msgstr "Se ha destruido la sala"
+msgstr "Ruang chat dilenyapkan"
 
 #: mod_muc/mod_muc_log.erl:454
 msgid "Chatroom is started"
-msgstr "Se ha iniciado la sala"
+msgstr "Ruang chat dimulai"
 
 #: mod_muc/mod_muc_log.erl:455
 msgid "Chatroom is stopped"
-msgstr "Se ha detenido la sala"
+msgstr "Ruang chat dihentikan"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
-msgstr "lunes"
+msgstr "Senin"
 
 #: mod_muc/mod_muc_log.erl:460
 msgid "Tuesday"
-msgstr "martes"
+msgstr "Selasa"
 
 #: mod_muc/mod_muc_log.erl:461
 msgid "Wednesday"
-msgstr "miércoles"
+msgstr "Rabu"
 
 #: mod_muc/mod_muc_log.erl:462
 msgid "Thursday"
-msgstr "jueves"
+msgstr "Kamis"
 
 #: mod_muc/mod_muc_log.erl:463
 msgid "Friday"
-msgstr "viernes"
+msgstr "Jumat"
 
 #: mod_muc/mod_muc_log.erl:464
 msgid "Saturday"
-msgstr "sábado"
+msgstr "Sabtu"
 
 #: mod_muc/mod_muc_log.erl:465
 msgid "Sunday"
-msgstr "domingo"
+msgstr "Minggu"
 
 #: mod_muc/mod_muc_log.erl:469
 msgid "January"
-msgstr "enero"
+msgstr "Januari"
 
 #: mod_muc/mod_muc_log.erl:470
 msgid "February"
-msgstr "febrero"
+msgstr "Februari"
 
 #: mod_muc/mod_muc_log.erl:471
 msgid "March"
-msgstr "marzo"
+msgstr "Maret"
 
 #: mod_muc/mod_muc_log.erl:472
 msgid "April"
-msgstr "abril"
+msgstr "April"
 
 #: mod_muc/mod_muc_log.erl:473
 msgid "May"
-msgstr "mayo"
+msgstr "Mei"
 
 #: mod_muc/mod_muc_log.erl:474
 msgid "June"
-msgstr "junio"
+msgstr "Juni"
 
 #: mod_muc/mod_muc_log.erl:475
 msgid "July"
-msgstr "julio"
+msgstr "Juli"
 
 #: mod_muc/mod_muc_log.erl:476
 msgid "August"
-msgstr "agosto"
+msgstr "Agustus"
 
 #: mod_muc/mod_muc_log.erl:477
 msgid "September"
-msgstr "septiembre"
+msgstr "September"
 
 #: mod_muc/mod_muc_log.erl:478
 msgid "October"
-msgstr "octubre"
+msgstr "Oktober"
 
 #: mod_muc/mod_muc_log.erl:479
 msgid "November"
-msgstr "noviembre"
+msgstr "Nopember"
 
 #: mod_muc/mod_muc_log.erl:480
 msgid "December"
-msgstr "diciembre"
+msgstr "Desember"
 
 #: mod_muc/mod_muc_log.erl:751
 msgid "Room Configuration"
-msgstr "Configuración de la sala"
+msgstr "Konfigurasi Ruangan"
 
 #: mod_muc/mod_muc_log.erl:760
 msgid "Room Occupants"
-msgstr "Ocupantes de la sala"
+msgstr "Penghuni Ruangan"
 
 #: mod_muc/mod_muc_room.erl:170
 msgid "Traffic rate limit is exceeded"
-msgstr "Se ha exedido el límite de tráfico"
+msgstr "Lalu lintas melebihi batas"
 
 #: mod_muc/mod_muc_room.erl:242
 msgid ""
 "This participant is kicked from the room because he sent an error message"
-msgstr ""
-"Este participante ha sido expulsado de la sala porque envió un mensaje de "
-"error"
+msgstr "Peserta ini dikick dari ruangan karena dia mengirim pesan kesalahan"
 
 #: mod_muc/mod_muc_room.erl:251
 msgid "It is not allowed to send private messages to the conference"
-msgstr "Impedir el envio de mensajes privados a la sala"
+msgstr "Hal ini tidak diperbolehkan untuk mengirim pesan pribadi ke konferensi"
 
 #: mod_muc/mod_muc_room.erl:296
 msgid "Improper message type"
-msgstr "Tipo de mensaje incorrecto"
+msgstr "Jenis pesan yang tidak benar"
 
 #: mod_muc/mod_muc_room.erl:406
 msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
 msgstr ""
-"Este participante ha sido expulsado de la sala porque envió un mensaje de "
-"error a otro participante"
+"Participant ini dikick dari ruangan karena ia mengirim pesan kesalahan ke "
+"participant lain"
 
 #: mod_muc/mod_muc_room.erl:419
 msgid "It is not allowed to send private messages of type \"groupchat\""
-msgstr "No está permitido enviar mensajes privados del tipo \"groupchat\""
+msgstr ""
+"Hal ini tidak diperbolehkan untuk mengirim pesan pribadi jenis \"groupchat \""
 
 #: mod_muc/mod_muc_room.erl:431 mod_muc/mod_muc_room.erl:486
 msgid "Recipient is not in the conference room"
-msgstr "El receptor no está en la sala de conferencia"
+msgstr "Penerima tidak berada di ruangan konferensi"
 
 #: mod_muc/mod_muc_room.erl:451 mod_muc/mod_muc_room.erl:829
-#: mod_muc/mod_muc_room.erl:3546
+#: mod_muc/mod_muc_room.erl:3543
 msgid "Only occupants are allowed to send messages to the conference"
-msgstr "Solo los ocupantes pueden enviar mensajes a la sala"
+msgstr "Hanya penghuni yang diizinkan untuk mengirim pesan ke konferensi"
 
 #: mod_muc/mod_muc_room.erl:460
 msgid "It is not allowed to send private messages"
-msgstr "No está permitido enviar mensajes privados"
+msgstr "Hal ini tidak diperbolehkan untuk mengirim pesan pribadi"
 
 #: mod_muc/mod_muc_room.erl:509
 msgid "Only occupants are allowed to send queries to the conference"
-msgstr "Solo los ocupantes pueden enviar solicitudes a la sala"
+msgstr "Hanya penghuni diizinkan untuk mengirim permintaan ke konferensi"
 
 #: mod_muc/mod_muc_room.erl:521
 msgid "Queries to the conference members are not allowed in this room"
-msgstr "En esta sala no se permiten solicitudes a los miembros de la sala"
+msgstr ""
+"Permintaan untuk para anggota konferensi tidak diperbolehkan di ruangan ini"
 
 #: mod_muc/mod_muc_room.erl:805
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr ""
-"Solo los moderadores y participantes pueden cambiar el asunto de esta sala"
+"Hanya moderator dan peserta yang diizinkan untuk mengganti topik pembicaraan "
+"di ruangan ini"
 
 #: mod_muc/mod_muc_room.erl:810
 msgid "Only moderators are allowed to change the subject in this room"
-msgstr "Solo los moderadores pueden cambiar el asunto de esta sala"
+msgstr ""
+"Hanya moderator yang diperbolehkan untuk mengubah topik dalam ruangan ini"
 
 #: mod_muc/mod_muc_room.erl:820
 msgid "Visitors are not allowed to send messages to all occupants"
-msgstr "Los visitantes no pueden enviar mensajes a todos los ocupantes"
+msgstr "Visitor tidak diperbolehkan untuk mengirim pesan ke semua penghuni"
 
-#: mod_muc/mod_muc_room.erl:894
+#: mod_muc/mod_muc_room.erl:891
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
 msgstr ""
-"Este participante ha sido expulsado de la sala porque envió una presencia de "
-"error"
+"Participant ini dikick dari ruangan karena ia mengirim kehadiran kesalahan"
 
-#: mod_muc/mod_muc_room.erl:912
+#: mod_muc/mod_muc_room.erl:909
 msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr "Los visitantes no tienen permitido cambiar sus apodos en esta sala"
+msgstr "Visitor tidak diperbolehkan untuk mengubah nama julukan di ruangan ini"
 
-#: mod_muc/mod_muc_room.erl:925 mod_muc/mod_muc_room.erl:1572
+#: mod_muc/mod_muc_room.erl:922 mod_muc/mod_muc_room.erl:1569
 msgid "That nickname is already in use by another occupant"
-msgstr "Ese apodo ya está siendo usado por otro ocupante"
+msgstr "Julukan itu sudah digunakan oleh penghuni lain"
+
+#: mod_muc/mod_muc_room.erl:1558
+msgid "You have been banned from this room"
+msgstr "Anda telah diblokir dari ruangan ini"
 
 #: mod_muc/mod_muc_room.erl:1561
-msgid "You have been banned from this room"
-msgstr "Has sido bloqueado en esta sala"
-
-#: mod_muc/mod_muc_room.erl:1564
 msgid "Membership is required to enter this room"
-msgstr "Necesitas ser miembro de esta sala para poder entrar"
+msgstr "Hanya Member yang dapat masuk ruangan ini"
 
-#: mod_muc/mod_muc_room.erl:1600
+#: mod_muc/mod_muc_room.erl:1597
 msgid "This room is not anonymous"
-msgstr "Sala no anónima"
+msgstr "Ruangan ini tidak dikenal"
 
-#: mod_muc/mod_muc_room.erl:1626
+#: mod_muc/mod_muc_room.erl:1623
 msgid "A password is required to enter this room"
-msgstr "Se necesita contraseña para entrar en esta sala"
+msgstr "Diperlukan kata sandi untuk masuk ruangan ini"
 
-#: mod_muc/mod_muc_room.erl:1648
+#: mod_muc/mod_muc_room.erl:1645
 msgid "Unable to generate a captcha"
-msgstr "No se pudo generar un captcha."
+msgstr "Tidak dapat menghasilkan captcha"
 
-#: mod_muc/mod_muc_room.erl:1658
+#: mod_muc/mod_muc_room.erl:1655
 msgid "Incorrect password"
-msgstr "Contraseña incorrecta"
+msgstr "Kata sandi salah"
 
-#: mod_muc/mod_muc_room.erl:2170
+#: mod_muc/mod_muc_room.erl:2167
 msgid "Administrator privileges required"
-msgstr "Se necesita privilegios de administrador"
+msgstr "Hak istimewa Administrator dibutuhkan"
 
-#: mod_muc/mod_muc_room.erl:2185
+#: mod_muc/mod_muc_room.erl:2182
 msgid "Moderator privileges required"
-msgstr "Se necesita privilegios de moderador"
+msgstr "Hak istimewa moderator dibutuhkan"
 
-#: mod_muc/mod_muc_room.erl:2340
+#: mod_muc/mod_muc_room.erl:2337
 msgid "Jabber ID ~s is invalid"
-msgstr "El Jabber ID ~s no es válido"
+msgstr "Jabber ID ~s tidak valid"
 
-#: mod_muc/mod_muc_room.erl:2354
+#: mod_muc/mod_muc_room.erl:2351
 msgid "Nickname ~s does not exist in the room"
-msgstr "El apodo ~s no existe en la sala"
+msgstr "Nama Julukan ~s tidak berada di dalam ruangan"
 
-#: mod_muc/mod_muc_room.erl:2380 mod_muc/mod_muc_room.erl:2762
+#: mod_muc/mod_muc_room.erl:2377 mod_muc/mod_muc_room.erl:2759
 msgid "Invalid affiliation: ~s"
-msgstr "Afiliación no válida: ~s"
+msgstr "Afiliasi tidak valid: ~s"
 
-#: mod_muc/mod_muc_room.erl:2437
+#: mod_muc/mod_muc_room.erl:2434
 msgid "Invalid role: ~s"
-msgstr "Rol no válido: ~s"
+msgstr "Peran tidak valid: ~s"
 
-#: mod_muc/mod_muc_room.erl:2739 mod_muc/mod_muc_room.erl:2775
+#: mod_muc/mod_muc_room.erl:2736 mod_muc/mod_muc_room.erl:2772
 msgid "Owner privileges required"
-msgstr "Se requieren privilegios de propietario de la sala"
+msgstr "Hak istimewa owner dibutuhkan"
 
-#: mod_muc/mod_muc_room.erl:2899
+#: mod_muc/mod_muc_room.erl:2896
 msgid "Configuration of room ~s"
-msgstr "Configuración para la sala ~s"
+msgstr "Pengaturan ruangan ~s"
 
-#: mod_muc/mod_muc_room.erl:2904
+#: mod_muc/mod_muc_room.erl:2901
 msgid "Room title"
-msgstr "Título de la sala"
+msgstr "Nama Ruangan"
 
-#: mod_muc/mod_muc_room.erl:2907 mod_muc/mod_muc_room.erl:3325
+#: mod_muc/mod_muc_room.erl:2904 mod_muc/mod_muc_room.erl:3322
 msgid "Room description"
-msgstr "Descripción de la sala"
+msgstr "Keterangan ruangan"
 
-#: mod_muc/mod_muc_room.erl:2914
+#: mod_muc/mod_muc_room.erl:2911
 msgid "Make room persistent"
-msgstr "Sala permanente"
+msgstr "Buat ruangan menjadi permanent"
+
+#: mod_muc/mod_muc_room.erl:2916
+msgid "Make room public searchable"
+msgstr "Buat ruangan dapat dicari"
 
 #: mod_muc/mod_muc_room.erl:2919
-msgid "Make room public searchable"
-msgstr "Sala públicamente visible"
+msgid "Make participants list public"
+msgstr "Buat daftar participant diketahui oleh public"
 
 #: mod_muc/mod_muc_room.erl:2922
-msgid "Make participants list public"
-msgstr "La lista de participantes es pública"
-
-#: mod_muc/mod_muc_room.erl:2925
 msgid "Make room password protected"
-msgstr "Proteger la sala con contraseña"
+msgstr "Buat ruangan yang dilindungi dengan kata sandi"
 
-#: mod_muc/mod_muc_room.erl:2936
+#: mod_muc/mod_muc_room.erl:2933
 msgid "Maximum Number of Occupants"
-msgstr "Número máximo de ocupantes"
+msgstr "Maksimum Jumlah Penghuni"
 
-#: mod_muc/mod_muc_room.erl:2943
+#: mod_muc/mod_muc_room.erl:2940
 msgid "No limit"
-msgstr "Sin límite"
+msgstr "Tidak terbatas"
 
-#: mod_muc/mod_muc_room.erl:2954
+#: mod_muc/mod_muc_room.erl:2951
 msgid "Present real Jabber IDs to"
-msgstr "Los Jabber ID reales pueden verlos"
+msgstr "Tampilkan Jabber ID secara lengkap"
 
-#: mod_muc/mod_muc_room.erl:2962
+#: mod_muc/mod_muc_room.erl:2959
 msgid "moderators only"
-msgstr "solo moderadores"
+msgstr "Hanya moderator"
 
-#: mod_muc/mod_muc_room.erl:2964
+#: mod_muc/mod_muc_room.erl:2961
 msgid "anyone"
-msgstr "cualquiera"
+msgstr "Siapapun"
+
+#: mod_muc/mod_muc_room.erl:2963
+msgid "Make room members-only"
+msgstr "Buat ruangan hanya untuk member saja"
 
 #: mod_muc/mod_muc_room.erl:2966
-msgid "Make room members-only"
-msgstr "Sala sólo para miembros"
+msgid "Make room moderated"
+msgstr "Buat ruangan hanya untuk moderator saja"
 
 #: mod_muc/mod_muc_room.erl:2969
-msgid "Make room moderated"
-msgstr "Sala moderada"
+msgid "Default users as participants"
+msgstr "pengguna pertama kali masuk sebagai participant"
 
 #: mod_muc/mod_muc_room.erl:2972
-msgid "Default users as participants"
-msgstr "Los usuarios son participantes por defecto"
+msgid "Allow users to change the subject"
+msgstr "Perbolehkan pengguna untuk mengganti topik"
 
 #: mod_muc/mod_muc_room.erl:2975
-msgid "Allow users to change the subject"
-msgstr "Permitir a los usuarios cambiar el asunto"
+msgid "Allow users to send private messages"
+msgstr "perbolehkan pengguna mengirimkan pesan ke pengguna lain secara pribadi"
 
 #: mod_muc/mod_muc_room.erl:2978
-msgid "Allow users to send private messages"
-msgstr "Permitir a los usuarios enviar mensajes privados"
+msgid "Allow users to query other users"
+msgstr "Perbolehkan pengguna untuk mengetahui pengguna lain"
 
 #: mod_muc/mod_muc_room.erl:2981
-msgid "Allow users to query other users"
-msgstr "Permitir a los usuarios consultar a otros usuarios"
+msgid "Allow users to send invites"
+msgstr "Perbolehkan pengguna mengirimkan undangan"
 
 #: mod_muc/mod_muc_room.erl:2984
-msgid "Allow users to send invites"
-msgstr "Permitir a los usuarios enviar invitaciones"
+msgid "Allow visitors to send status text in presence updates"
+msgstr "Izinkan pengunjung untuk mengirim teks status terbaru"
 
 #: mod_muc/mod_muc_room.erl:2987
-msgid "Allow visitors to send status text in presence updates"
-msgstr ""
-"Permitir a los visitantes enviar texto de estado en las actualizaciones de "
-"presencia"
-
-#: mod_muc/mod_muc_room.erl:2990
 msgid "Allow visitors to change nickname"
-msgstr "Permitir a los visitantes cambiarse el apodo"
+msgstr "Perbolehkan visitor mengganti nama julukan"
 
-#: mod_muc/mod_muc_room.erl:2996
+#: mod_muc/mod_muc_room.erl:2993
 msgid "Make room captcha protected"
-msgstr "Proteger la sala con captcha"
+msgstr "Buat ruangan dilindungi dengan chapta"
 
-#: mod_muc/mod_muc_room.erl:3005
+#: mod_muc/mod_muc_room.erl:3002
 msgid "Enable logging"
-msgstr "Guardar históricos"
+msgstr "Aktifkan catatan"
 
-#: mod_muc/mod_muc_room.erl:3013
+#: mod_muc/mod_muc_room.erl:3010
 msgid "You need an x:data capable client to configure room"
-msgstr "Necesitas un cliente con soporte de x:data para configurar la sala"
+msgstr "Anda memerlukan x:data klien untuk dapat mengkonfigurasi ruangan"
 
-#: mod_muc/mod_muc_room.erl:3327
+#: mod_muc/mod_muc_room.erl:3324
 msgid "Number of occupants"
-msgstr "Número de ocupantes"
+msgstr "Jumlah Penghuni"
 
-#: mod_muc/mod_muc_room.erl:3383
+#: mod_muc/mod_muc_room.erl:3380
 msgid "private, "
-msgstr "privado"
+msgstr "pribadi, "
 
-#: mod_muc/mod_muc_room.erl:3466
+#: mod_muc/mod_muc_room.erl:3463
 msgid "~s invites you to the room ~s"
-msgstr "~s te invita a la sala ~s"
+msgstr "~s mengundang anda ke ruangan ~s"
 
-#: mod_muc/mod_muc_room.erl:3475
+#: mod_muc/mod_muc_room.erl:3472
 msgid "the password is"
-msgstr "la contraseña es"
+msgstr "kata sandi yaitu:"
 
 #: mod_offline.erl:510 mod_offline_odbc.erl:352
 msgid ""
 "Your contact offline message queue is full. The message has been discarded."
 msgstr ""
-"Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha "
-"descartado."
+"Kontak offline Anda pada antrian pesan sudah penuh. Pesan telah dibuang."
 
 #: mod_offline.erl:560 mod_offline_odbc.erl:408
 msgid "~s's Offline Messages Queue"
-msgstr "Cola de mensajes diferidos de ~s"
+msgstr "Antrian Pesan Offline ~s"
 
 #: mod_offline.erl:563 mod_offline_odbc.erl:411 mod_roster.erl:992
 #: mod_roster_odbc.erl:1092 mod_shared_roster.erl:810
@@ -1010,200 +1005,200 @@ msgstr "Cola de mensajes diferidos de ~s"
 #: web/ejabberd_web_admin.erl:2026 web/ejabberd_web_admin.erl:2130
 #: web/ejabberd_web_admin.erl:2155 web/ejabberd_web_admin.erl:2243
 msgid "Submitted"
-msgstr "Enviado"
+msgstr "Ulangi masukan"
 
 #: mod_offline.erl:571
 msgid "Time"
-msgstr "Fecha"
+msgstr "Waktu"
 
 #: mod_offline.erl:572
 msgid "From"
-msgstr "De"
+msgstr "Dari"
 
 #: mod_offline.erl:573
 msgid "To"
-msgstr "Para"
+msgstr "Kepada"
 
 #: mod_offline.erl:574 mod_offline_odbc.erl:419
 msgid "Packet"
-msgstr "Paquete"
+msgstr "Paket"
 
 #: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:817
 #: web/ejabberd_web_admin.erl:878 web/ejabberd_web_admin.erl:982
 msgid "Delete Selected"
-msgstr "Eliminar los seleccionados"
+msgstr "Hapus Yang Terpilih"
 
 #: mod_offline.erl:645 mod_offline_odbc.erl:519
 msgid "Offline Messages:"
-msgstr "Mensajes diferidos:"
+msgstr "Pesan Offline:"
 
 #: mod_offline.erl:645 mod_offline_odbc.erl:519
 msgid "Remove All Offline Messages"
-msgstr "Borrar todos los mensajes diferidos"
+msgstr "Hapus Semua Pesan Offline"
 
 #: mod_proxy65/mod_proxy65_service.erl:213
 msgid "ejabberd SOCKS5 Bytestreams module"
-msgstr "Módulo SOCKS5 Bytestreams para ejabberd"
+msgstr "modul ejabberd SOCKS5 Bytestreams"
 
 #: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
 msgid "Publish-Subscribe"
-msgstr "Servicio de Publicar-Subscribir"
+msgstr "Setujui-Pertemanan"
 
 #: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
 msgid "ejabberd Publish-Subscribe module"
-msgstr "Módulo de Publicar-Subscribir de ejabberd"
+msgstr "Modul ejabberd Setujui-Pertemanan"
 
 #: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
 msgid "PubSub subscriber request"
-msgstr "Petición de subscriptor de PubSub"
+msgstr "Permintaan pertemanan PubSub"
 
 #: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
 msgid "Choose whether to approve this entity's subscription."
-msgstr "Decidir si aprobar la subscripción de esta entidad."
+msgstr "Pilih apakah akan menyetujui hubungan pertemanan ini."
 
 #: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
 msgid "Node ID"
-msgstr "Nodo ID"
+msgstr "ID Node"
 
 #: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
 msgid "Subscriber Address"
-msgstr "Dirección del subscriptor"
+msgstr "Alamat Pertemanan"
 
 #: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "¿Deseas permitir a este JabberID que se subscriba a este nodo PubSub?"
+msgstr "Izinkan ID Jabber ini untuk berlangganan pada node pubsub ini?"
 
 #: mod_pubsub/mod_pubsub.erl:3387 mod_pubsub/mod_pubsub_odbc.erl:3229
 msgid "Deliver payloads with event notifications"
-msgstr "Enviar contenidos junto con las notificaciones de eventos"
+msgstr "Memberikan muatan dengan pemberitahuan acara"
 
 #: mod_pubsub/mod_pubsub.erl:3388 mod_pubsub/mod_pubsub_odbc.erl:3230
 msgid "Deliver event notifications"
-msgstr "Entregar notificaciones de eventos"
+msgstr "Memberikan pemberitahuan acara"
 
 #: mod_pubsub/mod_pubsub.erl:3389 mod_pubsub/mod_pubsub_odbc.erl:3231
 msgid "Notify subscribers when the node configuration changes"
-msgstr "Notificar subscriptores cuando cambia la configuración del nodo"
+msgstr "Beritahu pelanggan ketika ada perubahan konfigurasi node"
 
 #: mod_pubsub/mod_pubsub.erl:3390 mod_pubsub/mod_pubsub_odbc.erl:3232
 msgid "Notify subscribers when the node is deleted"
-msgstr "Notificar subscriptores cuando el nodo se borra"
+msgstr "Beritahu pelanggan ketika node dihapus"
 
 #: mod_pubsub/mod_pubsub.erl:3391 mod_pubsub/mod_pubsub_odbc.erl:3233
 msgid "Notify subscribers when items are removed from the node"
-msgstr "Notificar subscriptores cuando los elementos se borran del nodo"
+msgstr "Beritahu pelanggan ketika item tersebut dikeluarkan dari node"
 
 #: mod_pubsub/mod_pubsub.erl:3392 mod_pubsub/mod_pubsub_odbc.erl:3234
 msgid "Persist items to storage"
-msgstr "Persistir elementos al almacenar"
+msgstr "Pertahankan item ke penyimpanan"
 
 #: mod_pubsub/mod_pubsub.erl:3393 mod_pubsub/mod_pubsub_odbc.erl:3235
 msgid "A friendly name for the node"
-msgstr "Un nombre sencillo para el nodo"
+msgstr "Nama yang dikenal untuk node"
 
 #: mod_pubsub/mod_pubsub.erl:3394 mod_pubsub/mod_pubsub_odbc.erl:3236
 msgid "Max # of items to persist"
-msgstr "Máximo # de elementos que persisten"
+msgstr "Max item untuk bertahan"
 
 #: mod_pubsub/mod_pubsub.erl:3395 mod_pubsub/mod_pubsub_odbc.erl:3237
 msgid "Whether to allow subscriptions"
-msgstr "Permitir subscripciones"
+msgstr "Apakah diperbolehkan untuk berlangganan"
 
 #: mod_pubsub/mod_pubsub.erl:3396 mod_pubsub/mod_pubsub_odbc.erl:3238
 msgid "Specify the access model"
-msgstr "Especifica el modelo de acceso"
+msgstr "Tentukan model akses"
 
 #: mod_pubsub/mod_pubsub.erl:3399 mod_pubsub/mod_pubsub_odbc.erl:3241
 msgid "Roster groups allowed to subscribe"
-msgstr "Grupos de contactos que pueden suscribirse"
+msgstr "Kelompok kontak yang diizinkan untuk berlangganan"
 
 #: mod_pubsub/mod_pubsub.erl:3400 mod_pubsub/mod_pubsub_odbc.erl:3242
 msgid "Specify the publisher model"
-msgstr "Especificar el modelo del publicante"
+msgstr "Tentukan model penerbitan"
 
 #: mod_pubsub/mod_pubsub.erl:3402 mod_pubsub/mod_pubsub_odbc.erl:3244
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr "Borra todos los elementos cuando el publicador relevante se desconecta"
+msgstr "Bersihkan semua item ketika penerbit yang relevan telah offline"
 
 #: mod_pubsub/mod_pubsub.erl:3403 mod_pubsub/mod_pubsub_odbc.erl:3245
 msgid "Specify the event message type"
-msgstr "Especifica el tipo del mensaje de evento"
+msgstr "Tentukan jenis acara pesan"
 
 #: mod_pubsub/mod_pubsub.erl:3405 mod_pubsub/mod_pubsub_odbc.erl:3247
 msgid "Max payload size in bytes"
-msgstr "Máximo tamaño del contenido en bytes"
+msgstr "Max kapasitas ukuran dalam bytes"
 
 #: mod_pubsub/mod_pubsub.erl:3406 mod_pubsub/mod_pubsub_odbc.erl:3248
 msgid "When to send the last published item"
-msgstr "Cuando enviar el último elemento publicado"
+msgstr "Ketika untuk mengirim item terakhir yang dipublikasikan"
 
 #: mod_pubsub/mod_pubsub.erl:3408 mod_pubsub/mod_pubsub_odbc.erl:3250
 msgid "Only deliver notifications to available users"
-msgstr "Solo enviar notificaciones a los usuarios disponibles"
+msgstr "Hanya mengirimkan pemberitahuan kepada pengguna yang tersedia"
 
 #: mod_pubsub/mod_pubsub.erl:3409 mod_pubsub/mod_pubsub_odbc.erl:3251
 msgid "The collections with which a node is affiliated"
-msgstr "Las colecciones a las que un nodo está afiliado"
+msgstr "Koleksi dengan yang berafiliasi dengan sebuah node"
 
 #: mod_register.erl:191
 msgid "The CAPTCHA verification has failed"
-msgstr "La verificación de CAPTCHA ha fallado"
+msgstr "Verifikasi CAPTCHA telah gagal"
 
 #: mod_register.erl:218
 msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "Necesitas un cliente con soporte de x:data y CAPTCHA para registrarte"
+msgstr ""
+"Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"
 
 #: mod_register.erl:224 mod_register.erl:258
 msgid "Choose a username and password to register with this server"
-msgstr ""
-"Escoge un nombre de usuario y contraseña para registrarte en este servidor"
+msgstr "Pilih nama pengguna dan kata sandi untuk mendaftar dengan layanan ini"
 
 #: mod_register.erl:228 mod_vcard.erl:358 mod_vcard_odbc.erl:336
 #: web/ejabberd_web_admin.erl:1512 web/ejabberd_web_admin.erl:1569
 msgid "User"
-msgstr "Usuario"
+msgstr "Pengguna"
 
 #: mod_register.erl:244
 msgid "Unable to generate a CAPTCHA"
-msgstr "No se pudo generar un CAPTCHA"
+msgstr "Tidak dapat menghasilkan CAPTCHA"
 
 #: mod_register.erl:309 mod_register.erl:354
 msgid "The password is too weak"
-msgstr "La contraseña es demasiado débil"
+msgstr "Kata sandi terlalu lemah"
 
 #: mod_register.erl:358
 msgid "Users are not allowed to register accounts so quickly"
-msgstr "Los usuarios no tienen permitido crear cuentas con tanta rapidez"
+msgstr "Pengguna tidak diperkenankan untuk mendaftar akun begitu cepat"
 
 #: mod_roster.erl:943 mod_roster_odbc.erl:1043 web/ejabberd_web_admin.erl:1695
 #: web/ejabberd_web_admin.erl:1880 web/ejabberd_web_admin.erl:1891
 #: web/ejabberd_web_admin.erl:2214
 msgid "None"
-msgstr "Ninguno"
+msgstr "Tak satupun"
 
 #: mod_roster.erl:950 mod_roster_odbc.erl:1050
 msgid "Subscription"
-msgstr "Subscripción"
+msgstr "Berlangganan"
 
 #: mod_roster.erl:951 mod_roster_odbc.erl:1051
 msgid "Pending"
-msgstr "Pendiente"
+msgstr "Tertunda"
 
 #: mod_roster.erl:952 mod_roster_odbc.erl:1052
 msgid "Groups"
-msgstr "Grupos"
+msgstr "Grup"
 
 #: mod_roster.erl:979 mod_roster_odbc.erl:1079
 msgid "Validate"
-msgstr "Validar"
+msgstr "Mengesahkan"
 
 #: mod_roster.erl:987 mod_roster_odbc.erl:1087
 msgid "Remove"
-msgstr "Borrar"
+msgstr "Menghapus"
 
 #: mod_roster.erl:990 mod_roster_odbc.erl:1090
 msgid "Roster of "
-msgstr "Lista de contactos de "
+msgstr "Kontak dari"
 
 #: mod_roster.erl:993 mod_roster_odbc.erl:1093 mod_shared_roster.erl:811
 #: mod_shared_roster.erl:912 web/ejabberd_web_admin.erl:830
@@ -1213,315 +1208,315 @@ msgstr "Lista de contactos de "
 #: web/ejabberd_web_admin.erl:1926 web/ejabberd_web_admin.erl:2131
 #: web/ejabberd_web_admin.erl:2156
 msgid "Bad format"
-msgstr "Mal formato"
+msgstr "Format yang buruk"
 
 #: mod_roster.erl:1000 mod_roster_odbc.erl:1100
 msgid "Add Jabber ID"
-msgstr "Añadir Jabber ID"
+msgstr "Tambah Jabber ID"
 
 #: mod_roster.erl:1099 mod_roster_odbc.erl:1199
 msgid "Roster"
-msgstr "Lista de contactos"
+msgstr "Kontak"
 
 #: mod_shared_roster.erl:766 mod_shared_roster.erl:808
 #: mod_shared_roster.erl:908
 msgid "Shared Roster Groups"
-msgstr "Grupos Compartidos"
+msgstr "Berbagi grup kontak"
 
 #: mod_shared_roster.erl:804 web/ejabberd_web_admin.erl:1362
 #: web/ejabberd_web_admin.erl:2456
 msgid "Add New"
-msgstr "Añadir nuevo"
+msgstr "Tambah Baru"
 
 #: mod_shared_roster.erl:879
 msgid "Name:"
-msgstr "Nombre:"
+msgstr "Nama:"
 
 #: mod_shared_roster.erl:884
 msgid "Description:"
-msgstr "Descripción:"
+msgstr "Keterangan:"
 
 #: mod_shared_roster.erl:892
 msgid "Members:"
-msgstr "Miembros:"
+msgstr "Anggota:"
 
 #: mod_shared_roster.erl:900
 msgid "Displayed Groups:"
-msgstr "Mostrar grupos:"
+msgstr "Tampilkan Grup:"
 
 #: mod_shared_roster.erl:909
 msgid "Group "
-msgstr "Grupo "
+msgstr "Grup"
 
 #: mod_shared_roster.erl:918 web/ejabberd_web_admin.erl:836
 #: web/ejabberd_web_admin.erl:880 web/ejabberd_web_admin.erl:945
 #: web/ejabberd_web_admin.erl:1022 web/ejabberd_web_admin.erl:2011
 msgid "Submit"
-msgstr "Enviar"
+msgstr "Serahkan"
 
 #: mod_vcard.erl:165 mod_vcard_ldap.erl:237 mod_vcard_odbc.erl:129
 msgid "Erlang Jabber Server"
-msgstr "Servidor Jabber en Erlang"
+msgstr "Layanan Erlang Jabber"
 
 #: mod_vcard.erl:358 mod_vcard.erl:472 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:448
 msgid "Birthday"
-msgstr "Cumpleaños"
+msgstr "Hari Lahir"
 
 #: mod_vcard.erl:358 mod_vcard.erl:474 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:450
 msgid "City"
-msgstr "Ciudad"
+msgstr "Kota"
 
 #: mod_vcard.erl:358 mod_vcard.erl:473 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:449
 msgid "Country"
-msgstr "País"
+msgstr "Negara"
 
 #: mod_vcard.erl:358 mod_vcard.erl:475 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:451
 msgid "Email"
-msgstr "correo"
+msgstr "Email"
 
 #: mod_vcard.erl:358 mod_vcard.erl:470 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:446
 msgid "Family Name"
-msgstr "Apellido"
+msgstr "Nama Keluarga (marga)"
 
 #: mod_vcard.erl:358 mod_vcard_odbc.erl:336
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
 msgstr ""
-"Rellena el formulario para buscar usuarios Jabber. Añade * al final de un "
-"campo para buscar subcadenas."
+"Isi formulir untuk pencarian pengguna Jabber yang cocok (Tambahkan * ke "
+"mengakhiri pengisian untuk menyamakan kata)"
 
 #: mod_vcard.erl:358 mod_vcard.erl:467 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:443
 msgid "Full Name"
-msgstr "Nombre completo"
+msgstr "Nama Lengkap"
 
 #: mod_vcard.erl:358 mod_vcard.erl:469 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:445
 msgid "Middle Name"
-msgstr "Segundo nombre"
+msgstr "Nama Tengah"
 
 #: mod_vcard.erl:358 mod_vcard.erl:468 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:444 web/ejabberd_web_admin.erl:2000
 msgid "Name"
-msgstr "Nombre"
+msgstr "Nama"
 
 #: mod_vcard.erl:358 mod_vcard.erl:476 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:452
 msgid "Organization Name"
-msgstr "Nombre de la organización"
+msgstr "Nama Organisasi"
 
 #: mod_vcard.erl:358 mod_vcard.erl:477 mod_vcard_odbc.erl:336
 #: mod_vcard_odbc.erl:453
 msgid "Organization Unit"
-msgstr "Unidad de la organización"
+msgstr "Unit Organisasi"
 
 #: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
 msgid "Search users in "
-msgstr "Buscar usuarios en "
+msgstr "Pencarian pengguna dalam"
 
 #: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
 msgid "You need an x:data capable client to search"
-msgstr "Necesitas un cliente con soporte de x:data para poder buscar"
+msgstr "Anda memerlukan x:data klien untuk melakukan pencarian"
 
 #: mod_vcard.erl:383 mod_vcard_ldap.erl:483 mod_vcard_odbc.erl:361
 msgid "vCard User Search"
-msgstr "Buscar vCard de usuario"
+msgstr "vCard Pencarian Pengguna"
 
 #: mod_vcard.erl:439 mod_vcard_ldap.erl:537 mod_vcard_odbc.erl:415
 msgid "ejabberd vCard module"
-msgstr "Módulo vCard para ejabberd"
+msgstr "Modul ejabberd vCard"
 
 #: mod_vcard.erl:463 mod_vcard_ldap.erl:547 mod_vcard_odbc.erl:439
 msgid "Search Results for "
-msgstr "Buscar resultados por "
+msgstr "Hasil Pencarian untuk"
 
 #: mod_vcard_ldap.erl:458
 msgid "Fill in fields to search for any matching Jabber User"
-msgstr "Rellena campos para buscar usuarios Jabber que concuerden"
+msgstr "Isi kolom untuk mencari pengguna Jabber yang sama"
 
 #: web/ejabberd_web_admin.erl:189 web/ejabberd_web_admin.erl:199
 #: web/ejabberd_web_admin.erl:215 web/ejabberd_web_admin.erl:225
 msgid "Unauthorized"
-msgstr "No autorizado"
+msgstr "Ditolak"
 
 #: web/ejabberd_web_admin.erl:282 web/ejabberd_web_admin.erl:299
 msgid "ejabberd Web Admin"
-msgstr "ejabberd Web Admin"
+msgstr "Admin Web ejabberd"
 
 #: web/ejabberd_web_admin.erl:765 web/ejabberd_web_admin.erl:776
 msgid "Administration"
-msgstr "Administración"
+msgstr "Administrasi"
 
 #: web/ejabberd_web_admin.erl:874 web/ejabberd_web_admin.erl:978
 msgid "Raw"
-msgstr "Crudo"
+msgstr "mentah"
 
 #: web/ejabberd_web_admin.erl:1013
 msgid "~s access rule configuration"
-msgstr "Configuración de las Regla de Acceso ~s"
+msgstr "~s aturan akses konfigurasi"
 
 #: web/ejabberd_web_admin.erl:1031
 msgid "Virtual Hosts"
-msgstr "Dominios Virtuales"
+msgstr "Virtual Hosts"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
-msgstr "Usuarios"
+msgstr "Pengguna"
 
 #: web/ejabberd_web_admin.erl:1074
 msgid "Users Last Activity"
-msgstr "Última actividad de los usuarios"
+msgstr "Aktifitas terakhir para pengguna"
 
 #: web/ejabberd_web_admin.erl:1076
 msgid "Period: "
-msgstr "Periodo: "
+msgstr "Periode:"
 
 #: web/ejabberd_web_admin.erl:1086
 msgid "Last month"
-msgstr "Último mes"
+msgstr "Akhir bulan"
 
 #: web/ejabberd_web_admin.erl:1087
 msgid "Last year"
-msgstr "Último año"
+msgstr "Akhir tahun"
 
 #: web/ejabberd_web_admin.erl:1088
 msgid "All activity"
-msgstr "Toda la actividad"
+msgstr "Semua aktifitas"
 
 #: web/ejabberd_web_admin.erl:1090
 msgid "Show Ordinary Table"
-msgstr "Mostrar Tabla Ordinaria"
+msgstr "Tampilkan Tabel Normal"
 
 #: web/ejabberd_web_admin.erl:1092
 msgid "Show Integral Table"
-msgstr "Mostrar Tabla Integral"
+msgstr "Tampilkan Tabel Terpisah"
 
 #: web/ejabberd_web_admin.erl:1101 web/ejabberd_web_admin.erl:1933
 msgid "Statistics"
-msgstr "Estadísticas"
+msgstr "Statistik"
 
 #: web/ejabberd_web_admin.erl:1113
 msgid "Not Found"
-msgstr "No encontrado"
+msgstr "Tidak Ditemukan"
 
 #: web/ejabberd_web_admin.erl:1130
 msgid "Node not found"
-msgstr "Nodo no encontrado"
+msgstr "Node tidak ditemukan"
 
 #: web/ejabberd_web_admin.erl:1457
 msgid "Host"
-msgstr "Dominio"
+msgstr "Host"
 
 #: web/ejabberd_web_admin.erl:1458
 msgid "Registered Users"
-msgstr "Usuarios registrados"
+msgstr "Pengguna Terdaftar"
 
 #: web/ejabberd_web_admin.erl:1570
 msgid "Offline Messages"
-msgstr "Mensajes diferidos"
+msgstr "Pesan Offline"
 
 #: web/ejabberd_web_admin.erl:1571 web/ejabberd_web_admin.erl:1761
 msgid "Last Activity"
-msgstr "Última actividad"
+msgstr "Aktifitas Terakhir"
 
 #: web/ejabberd_web_admin.erl:1653 web/ejabberd_web_admin.erl:1669
 msgid "Registered Users:"
-msgstr "Usuarios registrados:"
+msgstr "Pengguna Terdaftar:"
 
 #: web/ejabberd_web_admin.erl:1655 web/ejabberd_web_admin.erl:1671
 #: web/ejabberd_web_admin.erl:2187
 msgid "Online Users:"
-msgstr "Usuarios conectados:"
+msgstr "Pengguna Online:"
 
 #: web/ejabberd_web_admin.erl:1657
 msgid "Outgoing s2s Connections:"
-msgstr "Conexiones S2S salientes:"
+msgstr "Koneksi s2s yang keluar:"
 
 #: web/ejabberd_web_admin.erl:1659
 msgid "Outgoing s2s Servers:"
-msgstr "Servidores S2S salientes:"
+msgstr "Layanan s2s yang keluar:"
 
 #: web/ejabberd_web_admin.erl:1728 web/mod_register_web.erl:174
 #: web/mod_register_web.erl:367 web/mod_register_web.erl:376
 #: web/mod_register_web.erl:406
 msgid "Change Password"
-msgstr "Cambiar contraseña"
+msgstr "Ubah Kata Sandi"
 
 #: web/ejabberd_web_admin.erl:1752
 msgid "User "
-msgstr "Usuario "
+msgstr "Pengguna"
 
 #: web/ejabberd_web_admin.erl:1759
 msgid "Connected Resources:"
-msgstr "Recursos conectados:"
+msgstr "Sumber Daya Terhubung:"
 
 #: web/ejabberd_web_admin.erl:1760 web/mod_register_web.erl:226
 #: web/mod_register_web.erl:514
 msgid "Password:"
-msgstr "Contraseña:"
+msgstr "Kata Sandi:"
 
 #: web/ejabberd_web_admin.erl:1822
 msgid "No Data"
-msgstr "Sin datos"
+msgstr "Tidak Ada Data"
 
 #: web/ejabberd_web_admin.erl:1900
 msgid "Nodes"
-msgstr "Nodos"
+msgstr "Node-node"
 
 #: web/ejabberd_web_admin.erl:1923 web/ejabberd_web_admin.erl:1945
 msgid "Node "
-msgstr "Nodo "
+msgstr "Node"
 
 #: web/ejabberd_web_admin.erl:1932
 msgid "Listened Ports"
-msgstr "Puertos de escucha"
+msgstr "Port Terdeteksi"
 
 #: web/ejabberd_web_admin.erl:1934 web/ejabberd_web_admin.erl:2255
 #: web/ejabberd_web_admin.erl:2443
 msgid "Update"
-msgstr "Actualizar"
+msgstr "Memperbarui"
 
 #: web/ejabberd_web_admin.erl:1937 web/ejabberd_web_admin.erl:2564
 msgid "Restart"
-msgstr "Reiniciar"
+msgstr "Jalankan Ulang"
 
 #: web/ejabberd_web_admin.erl:1939 web/ejabberd_web_admin.erl:2566
 msgid "Stop"
-msgstr "Detener"
+msgstr "Hentikan"
 
 #: web/ejabberd_web_admin.erl:1953
 msgid "RPC Call Error"
-msgstr "Error en la llamada RPC"
+msgstr "Panggilan Kesalahan RPC"
 
 #: web/ejabberd_web_admin.erl:1994
 msgid "Database Tables at "
-msgstr "Tablas de la base de datos en "
+msgstr "Tabel Database pada"
 
 #: web/ejabberd_web_admin.erl:2001
 msgid "Storage Type"
-msgstr "Tipo de almacenamiento"
+msgstr "Jenis Penyimpanan"
 
 #: web/ejabberd_web_admin.erl:2002
 msgid "Elements"
-msgstr "Elementos"
+msgstr "Elemen-elemen"
 
 #: web/ejabberd_web_admin.erl:2003
 msgid "Memory"
-msgstr "Memoria"
+msgstr "Memori"
 
 #: web/ejabberd_web_admin.erl:2027 web/ejabberd_web_admin.erl:2132
 msgid "Error"
-msgstr "Error"
+msgstr "Kesalahan"
 
 #: web/ejabberd_web_admin.erl:2029
 msgid "Backup of "
-msgstr "Copia de seguridad de "
+msgstr "Cadangan dari"
 
 #: web/ejabberd_web_admin.erl:2031
 msgid ""
@@ -1529,13 +1524,13 @@ msgid ""
 "If you are using the ODBC module, you also need to backup your SQL database "
 "separately."
 msgstr ""
-"Ten en cuenta que estas opciones solo harán copia de seguridad de la base de "
-"datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia "
-"de seguridad de tu base de datos SQL."
+"Harap dicatat bahwa pilihan ini hanya akan membuat cadangan builtin Mnesia "
+"database. Jika Anda menggunakan modul ODBC, anda juga perlu untuk membuat "
+"cadangan database SQL Anda secara terpisah."
 
 #: web/ejabberd_web_admin.erl:2036
 msgid "Store binary backup:"
-msgstr "Guardar copia de seguridad binaria:"
+msgstr "Penyimpanan cadangan yang berpasangan:"
 
 #: web/ejabberd_web_admin.erl:2040 web/ejabberd_web_admin.erl:2047
 #: web/ejabberd_web_admin.erl:2055 web/ejabberd_web_admin.erl:2062
@@ -1543,113 +1538,111 @@ msgstr "Guardar copia de seguridad binaria:"
 #: web/ejabberd_web_admin.erl:2083 web/ejabberd_web_admin.erl:2091
 #: web/ejabberd_web_admin.erl:2098 web/ejabberd_web_admin.erl:2105
 msgid "OK"
-msgstr "Aceptar"
+msgstr "YA"
 
 #: web/ejabberd_web_admin.erl:2043
 msgid "Restore binary backup immediately:"
-msgstr "Restaurar inmediatamente copia de seguridad binaria:"
+msgstr "Segera mengembalikan cadangan yang berpasangan:"
 
 #: web/ejabberd_web_admin.erl:2051
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
-"Restaurar copia de seguridad binaria en el siguiente reinicio de ejabberd "
-"(requiere menos memoria que si instantánea):"
+"Mengembalikan cadangan yang berpasanagn setelah ejabberd berikutnya "
+"dijalankan ulang (memerlukan memori lebih sedikit):"
 
 #: web/ejabberd_web_admin.erl:2058
 msgid "Store plain text backup:"
-msgstr "Guardar copia de seguridad en texto plano:"
+msgstr "Simpan cadangan teks biasa:"
 
 #: web/ejabberd_web_admin.erl:2065
 msgid "Restore plain text backup immediately:"
-msgstr "Restaurar copias de seguridad de texto plano inmediatamente:"
+msgstr "Segera mengembalikan cadangan teks biasa:"
 
 #: web/ejabberd_web_admin.erl:2072
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "Importar usuarios desde un fichero PIEFXIS (XEP-0227):"
+msgstr "impor data-data pengguna dari sebuah PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2079
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Exportar datos de todos los usuarios del servidor a ficheros PIEFXIS (XEP-"
-"0227):"
+"Ekspor data dari semua pengguna pada layanan ke berkas PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2086
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Exportar datos de los usuarios de un dominio a ficheros PIEFXIS (XEP-0227):"
+msgstr "Ekspor data pengguna pada sebuah host ke berkas PIEFXIS (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2094
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Importar usuario de fichero spool de jabberd14:"
+msgstr "Impor data pengguna dari sekumpulan berkas jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2101
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importar usuarios del directorio spool de jabberd14:"
+msgstr "Импорт пользовательских данных из буферной директории jabberd14:"
 
 #: web/ejabberd_web_admin.erl:2127
 msgid "Listened Ports at "
-msgstr "Puertos de escucha en "
+msgstr "Mendeteksi Port-port di"
 
 #: web/ejabberd_web_admin.erl:2152
 msgid "Modules at "
-msgstr "Módulos en "
+msgstr "modul-modul di"
 
 #: web/ejabberd_web_admin.erl:2178
 msgid "Statistics of ~p"
-msgstr "Estadísticas de ~p"
+msgstr "statistik dari ~p"
 
 #: web/ejabberd_web_admin.erl:2181
 msgid "Uptime:"
-msgstr "Tiempo desde el inicio:"
+msgstr "Sampai saat:"
 
 #: web/ejabberd_web_admin.erl:2184
 msgid "CPU Time:"
-msgstr "Tiempo consumido de CPU:"
+msgstr "Waktu CPU:"
 
 #: web/ejabberd_web_admin.erl:2190
 msgid "Transactions Committed:"
-msgstr "Transacciones finalizadas:"
+msgstr "Transaksi yang dilakukan:"
 
 #: web/ejabberd_web_admin.erl:2193
 msgid "Transactions Aborted:"
-msgstr "Transacciones abortadas:"
+msgstr "Transaksi yang dibatalkan:"
 
 #: web/ejabberd_web_admin.erl:2196
 msgid "Transactions Restarted:"
-msgstr "Transacciones reiniciadas:"
+msgstr "Transaksi yang dijalankan ulang:"
 
 #: web/ejabberd_web_admin.erl:2199
 msgid "Transactions Logged:"
-msgstr "Transacciones registradas:"
+msgstr "Transaksi yang ditempuh:"
 
 #: web/ejabberd_web_admin.erl:2241
 msgid "Update "
-msgstr "Actualizar "
+msgstr "Memperbarui "
 
 #: web/ejabberd_web_admin.erl:2249
 msgid "Update plan"
-msgstr "Plan de actualización"
+msgstr "Rencana Perubahan"
 
 #: web/ejabberd_web_admin.erl:2250
 msgid "Modified modules"
-msgstr "Módulos modificados"
+msgstr "Modifikasi modul-modul"
 
 #: web/ejabberd_web_admin.erl:2251
 msgid "Update script"
-msgstr "Script de actualización"
+msgstr "Perbarui naskah"
 
 #: web/ejabberd_web_admin.erl:2252
 msgid "Low level update script"
-msgstr "Script de actualización a bajo nivel"
+msgstr "Perbaruan naskah tingkat rendah"
 
 #: web/ejabberd_web_admin.erl:2253
 msgid "Script check"
-msgstr "Comprobación de script"
+msgstr "Periksa naskah"
 
 #: web/ejabberd_web_admin.erl:2421
 msgid "Port"
-msgstr "Puerto"
+msgstr "Port"
 
 #: web/ejabberd_web_admin.erl:2422
 msgid "IP"
@@ -1657,61 +1650,61 @@ msgstr "IP"
 
 #: web/ejabberd_web_admin.erl:2423
 msgid "Protocol"
-msgstr "Protocolo"
+msgstr "Protocol"
 
 #: web/ejabberd_web_admin.erl:2424 web/ejabberd_web_admin.erl:2551
 msgid "Module"
-msgstr "Módulo"
+msgstr "Modul"
 
 #: web/ejabberd_web_admin.erl:2425 web/ejabberd_web_admin.erl:2552
 msgid "Options"
-msgstr "Opciones"
+msgstr "Pilihan-pilihan"
 
 #: web/ejabberd_web_admin.erl:2445
 msgid "Delete"
-msgstr "Eliminar"
+msgstr "Hapus"
 
 #: web/ejabberd_web_admin.erl:2574
 msgid "Start"
-msgstr "Iniciar"
+msgstr "Mulai"
 
 #: web/mod_register_web.erl:103
 msgid "Your Jabber account was successfully created."
-msgstr "Tu cuenta Jabber se ha creado correctamente."
+msgstr "Jabber akun Anda telah sukses dibuat"
 
 #: web/mod_register_web.erl:106
 msgid "There was an error creating the account: "
-msgstr "Hubo uno error al crear la cuenta:"
+msgstr "Ada kesalahan saat membuat akun:"
 
 #: web/mod_register_web.erl:114
 msgid "Your Jabber account was successfully deleted."
-msgstr "Tu cuenta Jabber se ha borrado correctamente."
+msgstr "Jabber akun Anda berhasil dihapus."
 
 #: web/mod_register_web.erl:117
 msgid "There was an error deleting the account: "
-msgstr "Hubo un error borrando la cuenta."
+msgstr "Ada kesalahan saat menghapus akun:"
 
 #: web/mod_register_web.erl:127
 msgid "The password of your Jabber account was successfully changed."
-msgstr "La contraseña de tu cuenta Jabber se ha cambiado correctamente."
+msgstr "Kata sandi pada akun Jabber Anda telah berhasil diubah."
 
 #: web/mod_register_web.erl:130
 msgid "There was an error changing the password: "
-msgstr "Hubo un error cambiando la contraseña."
+msgstr "Ada kesalahan dalam mengubah password:"
 
 #: web/mod_register_web.erl:162 web/mod_register_web.erl:171
 msgid "Jabber Account Registration"
-msgstr "Registro de Cuenta Jabber"
+msgstr "Pendaftaran Akun Jabber"
 
 #: web/mod_register_web.erl:173 web/mod_register_web.erl:191
 #: web/mod_register_web.erl:200
 msgid "Register a Jabber account"
-msgstr "Registrar una cuenta Jabber"
+msgstr "Daftarkan sebuah akun jabber"
 
 #: web/mod_register_web.erl:175 web/mod_register_web.erl:488
 #: web/mod_register_web.erl:497
 msgid "Unregister a Jabber account"
-msgstr "Borrar una cuenta Jabber"
+msgstr "Nonaktifkan akun jabber"
 
 #: web/mod_register_web.erl:202
 msgid ""
@@ -1719,48 +1712,51 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Esta página te permite crear una cuenta Jabber este servidor Jabber. Tu JID "
-"(Jabber IDentificador) será de la forma: nombredeusuario@servidor. Por favor "
-"lee detenidamente las instrucciones para rellenar correctamente los campos."
+"Halaman ini memungkinkan untuk membuat akun Jabber di layanan Jabber ini. "
+"JID Anda (Jabber Pengenal) akan berbentuk: namapengguna@layanan. Harap baca "
+"dengan seksama petunjuk-petunjuk untuk mengisi kolom dengan benar."
 
 #: web/mod_register_web.erl:211 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:504
 msgid "Username:"
-msgstr "Nombre de usuario:"
+msgstr "Nama Pengguna:"
 
 #: web/mod_register_web.erl:216
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
-"No importa si usas mayúsculas: macbeth es lo mismo que MacBeth y Macbeth."
+"Pada bagian ini huruf besar dan kecil tidak dibedakan: Misalnya macbeth "
+"adalah sama dengan MacBeth juga Macbeth."
 
 #: web/mod_register_web.erl:217
 msgid "Characters not allowed:"
-msgstr "Caracteres no permitidos:"
+msgstr "Karakter tidak diperbolehkan:"
 
 #: web/mod_register_web.erl:221 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
 msgid "Server:"
-msgstr "Servidor:"
+msgstr "Layanan:"
 
 #: web/mod_register_web.erl:231
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
-"No le digas tu contraseña a nadie, ni siquiera a los administradores del "
-"servidor Jabber."
+"Jangan memberitahukan kata sandi Anda ke siapapun, bahkan para administrator "
+"dari layanan Jabber."
 
 #: web/mod_register_web.erl:233
 msgid "You can later change your password using a Jabber client."
-msgstr "Puedes cambiar tu contraseña después, usando un cliente Jabber."
+msgstr ""
+"Anda dapat mengubah kata sandi anda dilain waktu dengan menggunakan klien "
+"Jabber."
 
 #: web/mod_register_web.erl:234
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
-"Algunos clientes Jabber pueden recordar tu contraseña en la máquina. Usa esa "
-"opción solo si confías en que la máquina que usas es segura."
+"Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan "
+"fitur itu hanya jika Anda mempercayai komputer Anda aman."
 
 #: web/mod_register_web.erl:236
 msgid ""
@@ -1768,30 +1764,36 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
-"Memoriza tu contraseña, o apúntala en un papel en un lugar seguro. En Jabber "
-"no hay un método automatizado para recuperar la contraseña si la olvidas."
+"Hafalkan kata sandi Anda, atau dicatat dan letakkan di tempat yang aman. "
+"Didalam Jabber tidak ada cara otomatis untuk mendapatkan kembali password "
+"Anda jika Anda lupa."
 
 #: web/mod_register_web.erl:241 web/mod_register_web.erl:401
 msgid "Password Verification:"
-msgstr "Verificación de la contraseña:"
+msgstr "Verifikasi Kata Sandi:"
 
 #: web/mod_register_web.erl:249
 msgid "Register"
-msgstr "Registrar"
+msgstr "Mendaftar"
 
 #: web/mod_register_web.erl:391
 msgid "Old Password:"
-msgstr "Contraseña antigua:"
+msgstr "Password Lama:"
 
 #: web/mod_register_web.erl:396
 msgid "New Password:"
-msgstr "Nueva contraseña:"
+msgstr "Password Baru:"
 
 #: web/mod_register_web.erl:499
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
-"Esta página te permite borrar tu cuenta Jabber en este servidor Jabber."
+"Pada bagian ini memungkinkan Anda untuk membatalkan pendaftaran akun Jabber "
+"pada layanan Jabber ini."
 
 #: web/mod_register_web.erl:519
 msgid "Unregister"
-msgstr "Borrar"
+msgstr "Nonaktifkan"
+
+#, fuzzy
+#~ msgid "Captcha test failed"
+#~ msgstr "Проверка капчи прошла успешно."

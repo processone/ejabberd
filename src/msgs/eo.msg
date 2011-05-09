@@ -77,7 +77,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd Public-Abonada modulo"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bajtfluo modulo"}.
 {"ejabberd vCard module","ejabberd vCard-modulo"}.
-{"ejabberd virtual hosts","ejabberd virtual-gastigoj"}.
 {"ejabberd Web Admin","ejabberd Teksaĵa Administro"}.
 {"Elements","Eroj"}.
 {"Email","Retpoŝto"}.
@@ -362,6 +361,7 @@
 {"User","Uzanto"}.
 {"Validate","Validigu"}.
 {"vCard User Search","Serĉado de vizitkartoj"}.
+{"Virtual Hosts","Virtual-gastigoj"}.
 {"Visitors are not allowed to change their nicknames in this room","Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"}.
 {"Visitors are not allowed to send messages to all occupants","Vizitantoj ne rajtas sendi mesaĝojn al ĉiuj partoprenantoj"}.
 {"Wednesday","Merkredo"}.

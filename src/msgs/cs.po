@@ -1345,8 +1345,8 @@ msgid "~s access rule configuration"
 msgstr "~s konfigurace pravidla přístupu"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "Virtuální hostitelé ejabberd"
+msgid "Virtual Hosts"
+msgstr "Virtuální hostitelé"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"

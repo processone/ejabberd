@@ -1372,8 +1372,8 @@ msgid "~s access rule configuration"
 msgstr "~s การกำหนดค่ากฎการเข้าถึง"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "โฮสต์เสมือน ejabberd"
+msgid "Virtual Hosts"
+msgstr "โฮสต์เสมือน"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
@@ -1802,9 +1802,6 @@ msgstr ""
 
 #~ msgid "(Raw)"
 #~ msgstr "(ข้อมูลดิบ)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "โฮสต์เสมือน"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "ชื่อเล่นที่ระบุได้รับการลงได้ทะเบียนแล้ว"

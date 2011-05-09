@@ -34,10 +34,12 @@
 
 -export([route/3,
 	 route_iq/4,
+	 route_iq/5,
 	 process_iq_reply/3,
 	 register_iq_handler/4,
 	 register_iq_handler/5,
 	 register_iq_response_handler/4,
+	 register_iq_response_handler/5,
 	 unregister_iq_handler/2,
 	 unregister_iq_response_handler/2,
 	 refresh_iq_handlers/0,
@@ -123,23 +125,35 @@ route(From, To, Packet) ->
 	    ok
     end.
 
-route_iq(From, To, #iq{type = Type} = IQ, F) when is_function(F) ->
+route_iq(From, To, IQ, F) ->
+    route_iq(From, To, IQ, F, undefined).
+
+route_iq(From, To, #iq{type = Type} = IQ, F, Timeout) when is_function(F) ->
     Packet = if Type == set; Type == get ->
 		     ID = ejabberd_router:make_id(),
 		     Host = From#jid.lserver,
-		     register_iq_response_handler(Host, ID, undefined, F),
+		     register_iq_response_handler(Host, ID, undefined, F, Timeout),
 		     jlib:iq_to_xml(IQ#iq{id = ID});
 		true ->
 		     jlib:iq_to_xml(IQ)
 	     end,
     ejabberd_router:route(From, To, Packet).
 
-register_iq_response_handler(_Host, ID, Module, Function) ->
-    TRef = erlang:start_timer(?IQ_TIMEOUT, ejabberd_local, ID),
+register_iq_response_handler(Host, ID, Module, Function) ->
+    register_iq_response_handler(Host, ID, Module, Function, undefined).
+
+register_iq_response_handler(_Host, ID, Module, Function, Timeout0) ->
+    Timeout = case Timeout0 of
+		  undefined ->
+		      ?IQ_TIMEOUT;
+		  N when is_integer(N), N > 0 ->
+		      N
+	      end,
+    TRef = erlang:start_timer(Timeout, ejabberd_local, ID),
     ets:insert(iq_response, #iq_response{id = ID,
-					 module = Module,
-					 function = Function,
-					 timer = TRef}).
+                                         module = Module,
+                                         function = Function,
+                                         timer = TRef}).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_local ! {register_iq_handler, Host, XMLNS, Module, Fun}.

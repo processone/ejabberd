@@ -215,14 +215,15 @@ handle_cast({del, Pid}, State) ->
     lists:foreach(
       fun({_, _, {TRef, {From, To, El}}}) ->
 	      cancel_timer(TRef),
-	      El1 = xml:append_subtags(
-		      El, [{xmlelement, "x", [{"xmlns", ?NS_P1_PUSHED}], []}]),
+              El1 = xml:remove_subtags(El, "x", {"xmlns", ?NS_P1_PUSHED}),
+	      El2 = xml:append_subtags(
+		      El1, [{xmlelement, "x", [{"xmlns", ?NS_P1_PUSHED}], []}]),
 	      ?DEBUG("Resending message:~n"
 		     "** From: ~p~n"
 		     "** To: ~p~n"
 		     "** El: ~p",
-		     [From, To, El1]),
-	      ejabberd_router:route(From, To, El1)
+		     [From, To, El2]),
+	      ejabberd_router:route(From, To, El2)
       end, to_list(Pid, State#state.timers)),
     Timers = delete(Pid, State#state.timers),
     {noreply, State#state{timers = Timers}};

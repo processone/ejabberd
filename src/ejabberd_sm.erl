@@ -37,6 +37,7 @@
 	 open_session/6,
 	 close_session/4,
 	 close_migrated_session/4,
+	 drop_session/1,
 	 check_in_subscription/6,
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
@@ -60,6 +61,7 @@
 	 get_session_pid/3,
 	 get_user_info/3,
 	 get_user_ip/3,
+	 node_up/1,
 	 migrate/1
 	]).
 
@@ -108,27 +110,37 @@ open_session(SID, User, Server, Resource, Priority, Info) ->
 		       [SID, JID, Info]).
 
 close_session(SID, User, Server, Resource) ->
-    Info = do_close_session(SID, User, Server, Resource),
+    Info = do_close_session(SID),
+    US = {jlib:nodeprep(User), jlib:nameprep(Server)},
+    case ejabberd_cluster:get_node_new(US) of
+	Node when Node /= node() ->
+	    rpc:cast(Node, ?MODULE, drop_session, [SID]);
+	_ ->
+	    ok
+    end,
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
 		       [SID, JID, Info]).
 
 close_migrated_session(SID, User, Server, Resource) ->
-    Info = do_close_session(SID, User, Server, Resource),
+    Info = do_close_session(SID),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_migrated_connection_hook, JID#jid.lserver,
 		       [SID, JID, Info]).
 
-do_close_session(SID, User, Server, Resource) ->
+do_close_session(SID) ->
     Info = case mnesia:dirty_read({session, SID}) of
-	[] -> [];
-	[#session{info=I}] -> I
-    end,
+	       [] -> [];
+	       [#session{info=I}] -> I
+	   end,
+    drop_session(SID),
+    Info.
+
+drop_session(SID) ->
     F = fun() ->
 		mnesia:delete({session, SID})
 	end,
-    mnesia:sync_dirty(F),
-    Info.
+    mnesia:sync_dirty(F).
 
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     case ejabberd_auth:is_user_exists(User, Server) of
@@ -312,13 +324,32 @@ migrate(After) ->
 	     ['$$']}]),
     lists:foreach(
       fun([US, Pid]) ->
-	      case ejabberd_cluster:get_node_new(US) of
+	      case ejabberd_cluster:get_node(US) of
 		  Node when Node /= node() ->
-		      ejabberd_c2s:migrate(Pid, Node, After);
+		      ejabberd_c2s:migrate(Pid, Node, random:uniform(After));
 		  _ ->
 		      ok
 	      end
       end, Ss).
+
+node_up(_Node) ->
+    copy_sessions(mnesia:dirty_first(session)).
+
+copy_sessions('$end_of_table') ->
+    ok;
+copy_sessions(Key) ->
+    case mnesia:dirty_read(session, Key) of
+	[#session{us = US} = Session] ->
+	    case ejabberd_cluster:get_node_new(US) of
+		Node when node() /= Node ->
+		    rpc:cast(Node, mnesia, dirty_write, [Session]);
+		_ ->
+		    ok
+	    end;
+	_ ->
+	    ok
+    end,
+    copy_sessions(mnesia:dirty_next(session, Key)).
 
 %%====================================================================
 %% gen_server callbacks
@@ -341,6 +372,7 @@ init([]) ->
     mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies),
     ets:new(sm_iqtable, [named_table]),
+    ejabberd_hooks:add(node_up, ?MODULE, node_up, 100),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     lists:foreach(
       fun(Host) ->
@@ -352,7 +384,7 @@ init([]) ->
 				 ejabberd_sm, disconnect_removed_user, 100)
       end, ?MYHOSTS),
     ejabberd_commands:register_commands(commands()),
-
+    start_dispatchers(),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -383,13 +415,19 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(From, To, Packet) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, To, Packet}]);
-	_ ->
-	    ok
+handle_info({route, From, To, Packet} = Msg, State) ->
+    case get_proc_num() of
+        N when N > 1 ->
+            #jid{luser = U, lserver = S} = To,
+            get_proc_by_hash({U, S}) ! Msg;
+        _ ->
+            case catch do_route(From, To, Packet) of
+                {'EXIT', Reason} ->
+                    ?ERROR_MSG("~p~nwhen processing: ~p",
+                               [Reason, {From, To, Packet}]);
+                _ ->
+                    ok
+            end
     end,
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
@@ -418,8 +456,10 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(node_up, ?MODULE, node_up, 100),
     ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_commands:unregister_commands(commands()),
+    stop_dispatchers(),
     ok.
 
 %%--------------------------------------------------------------------
@@ -433,7 +473,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-set_session(SID, User, Server, Resource, Priority, Info) ->
+set_session({_, Pid} = SID, User, Server, Resource, Priority, Info) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
@@ -446,7 +486,31 @@ set_session(SID, User, Server, Resource, Priority, Info) ->
 				      priority = Priority,
 				      info = Info})
 	end,
-    mnesia:sync_dirty(F).
+    mnesia:sync_dirty(F),
+    case ejabberd_cluster:get_node_new(US) of
+	Node when node() /= Node ->
+	    %% New node has just been added. But we may miss session records
+	    %% copy procedure, so we copy the session record manually just
+	    %% to make sure
+	    rpc:cast(Node, mnesia, dirty_write,
+		     [#session{sid = SID,
+			       usr = USR,
+			       us = US,
+			       priority = Priority,
+			       info = Info}]),
+	    case ejabberd_cluster:get_node(US) of
+		Node when node() /= Node ->
+		    %% Migration to new node has completed, and seems like
+		    %% we missed it, so we migrate the session pid manually.
+		    %% It is not a problem if we have already got migration
+		    %% notification: dups are just ignored by the c2s pid.
+		    ejabberd_c2s:migrate(Pid, Node, 0);
+		_ ->
+		    ok
+	    end;
+	_ ->
+	    ok
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -818,6 +882,55 @@ user_resources(User, Server) ->
     Resources =  get_user_resources(User, Server),
     lists:sort(Resources).
 
+get_proc_num() ->
+    erlang:system_info(logical_processors).
+
+get_proc_by_hash(Term) ->
+    N = erlang:phash2(Term, get_proc_num()) + 1,
+    get_proc(N).
+
+get_proc(N) ->
+    list_to_atom(atom_to_list(?MODULE) ++ "_" ++ integer_to_list(N)).
+
+start_dispatchers() ->
+    case get_proc_num() of
+        N when N > 1 ->
+            lists:foreach(
+              fun(I) ->
+                      Pid = spawn(fun dispatch/0),
+                      erlang:register(get_proc(I), Pid)
+              end, lists:seq(1, N));
+        _ ->
+            ok
+    end.
+
+stop_dispatchers() ->
+    case get_proc_num() of
+        N when N > 1 ->
+            lists:foreach(
+              fun(I) ->
+                      get_proc(I) ! stop
+              end, lists:seq(1, N));
+        _ ->
+            ok
+    end.
+
+dispatch() ->
+    receive
+        {route, From, To, Packet} ->
+            case catch do_route(From, To, Packet) of
+                {'EXIT', Reason} ->
+                    ?ERROR_MSG("~p~nwhen processing: ~p",
+                               [Reason, {From, To, Packet}]);
+                _ ->
+                    ok
+            end,
+            dispatch();
+        stop ->
+            stopped;
+        _ ->
+            dispatch()
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Update Mnesia tables

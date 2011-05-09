@@ -1031,7 +1031,7 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
 \item Port 5269 listens for s2s connections with STARTTLS. The socket is set for IPv6 instead of IPv4.
 \item Port 3478 listens for STUN requests over UDP.
 \item Port 5280 listens for HTTP requests, and serves the HTTP Poll service.
-\item Port 5281 listens for HTTP requests, and serves the Web Admin using HTTPS as explained in
+\item Port 5281 listens for HTTP requests, using HTTPS to serve HTTP-Bind (BOSH) and the Web Admin as explained in
   section~\ref{webadmin}. The socket only listens connections to the IP address 127.0.0.1.
 \end{itemize}
 \begin{verbatim}
@@ -1060,6 +1060,7 @@ However, the c2s and s2s connections to the domain \term{example.com} use the fi
                         ]},
   {{5281, "127.0.0.1"}, ejabberd_http, [
                                         web_admin,
+                                        http_bind,
                                         tls, {certfile, "/etc/ejabberd/server.pem"},
                                        ]}
  ]
@@ -1636,11 +1637,14 @@ The configurable options are:
   \titem{\{captcha\_cmd, Path\}} 
   Full path to a script that generates the image.
   The default value is an empty string: \term{""}
-  \titem{\{captcha\_host, Host\}} 
-  Host part of the URL sent to the user.
-  You can include the port number.
-  The URL sent to the user is formed by: \term{http://Host/captcha/}
-  The default value is the first hostname configured.
+  \titem{\{captcha\_host, ProtocolHostPort\}} 
+  ProtocolHostPort is a string with the host, and optionally the Protocol and Port number.
+  It must identify where ejabberd listens for CAPTCHA requests.
+  The URL sent to the user is formed by: \term{Protocol://Host:Port/captcha/}
+  The default value is: protocol \term{http}, the first hostname configured, and port \term{80}.
+  If you specify a port number that does not match exactly an ejabberd listener
+  (because you are using a reverse proxy or other port-forwarding tool),
+  then you must specify the transfer protocol, as seen in the example below.
 \end{description}
 
 Additionally, an \term{ejabberd\_http} listener must be enabled with the \term{captcha} option.
@@ -1652,6 +1656,8 @@ Example configuration:
 
 {captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
 {captcha_host, "example.org:5280"}.
+%% {captcha_host, "https://example.org:443"}.
+%% {captcha_host, "http://example.com"}.
 
 {listen,
  [
@@ -2627,15 +2633,16 @@ The syntax is:
 Possible \term{Value} are:
 \begin{description}
 \titem{no\_queue} All queries of a namespace with this processing discipline are
-  processed immediately. This also means that no other packets can be processed
+  processed directly. This means that the XMPP connection that sends this IQ query gets blocked:
+  no other packets can be processed
   until this one has been completely processed. Hence this discipline is not
   recommended if the processing of a query can take a relatively long time.
 \titem{one\_queue} In this case a separate queue is created for the processing
   of IQ queries of a namespace with this discipline. In addition, the processing
   of this queue is done in parallel with that of other packets. This discipline
   is most recommended.
-  \titem{\{queues, N\}} N separate queues are created to process the
-  queries. The queries are thus process in parallel, but in a
+\titem{\{queues, N\}} N separate queues are created to process the
+  queries. The queries are thus processed in parallel, but in a
   controlled way.
 \titem{parallel} For every packet with this discipline a separate Erlang process
   is spawned. Consequently, all these packets are processed in parallel.
@@ -3823,10 +3830,11 @@ enables end users to use a \XMPP{} client to:
 
 Options:
 \begin{description}
-\titem{\{access, AccessName\}} \ind{options!access}This option can be configured to specify
-  rules to restrict registration. If a rule returns `deny' on the requested
-  user name, registration for that user name is denied. (there are no
-  restrictions by default).
+\titem{\{access, AccessName\}} \ind{options!access}
+  Specify rules to restrict what usernames can be registered and unregistered.
+  If a rule returns `deny' on the requested username,
+  registration and unregistration of that user name is denied.
+  There are no restrictions by default.
 \titem{\{access\_from, AccessName\}} \ind{options!access\_from}By default, \ejabberd{}
 doesn't allow to register new accounts from s2s or existing c2s sessions. You can
 change it by defining access rule in this option. Use with care: allowing registration
@@ -4064,11 +4072,13 @@ has a unique identification and the following parameters:
 \item[Name] The name of the group, which will be displayed in the roster.
 \item[Description] The description of the group. This parameter does not affect
   anything.
-\item[Members] A list of full JIDs of group members, entered one per line in
+\item[Members] A list of JIDs of group members, entered one per line in
   the Web Admin.
-  To put as members all the registered users in the virtual hosts,
-  you can use the special directive: @all@.
-  Note that this directive is designed for a small server with just a few hundred users.
+  The special member directive \term{@all@}
+  represents all the registered users in the virtual host;
+  which is only recommended for a small server with just a few hundred users.
+  The special member directive \term{@online@}
+  represents the online users in the virtual host.
 \item[Displayed groups] A list of groups that will be in the rosters of this
   group's members.
 \end{description}
@@ -4999,6 +5009,9 @@ The command line parameters:
 	If using \term{-sname}, specify either this option or \term{ERL\_INETRC}.
   \titem{-kernel inet\_dist\_listen\_min 4200 inet\_dist\_listen\_min 4210}
 	Define the first and last ports that \term{epmd} (section \ref{epmd}) can listen to.
+  \titem{-kernel inet\_dist\_use\_interface "\{ 127,0,0,1 \}"}
+	Define the IP address where this Erlang node listens for other nodes
+        connections (see section \ref{epmd}).
   \titem{-detached}
         Starts the Erlang system detached from the system console.
 	Useful for running daemons and backgrounds processes.
@@ -5410,6 +5423,12 @@ but can be configured in the file \term{ejabberdctl.cfg}.
 The Erlang command-line parameter used internally is, for example:
 \begin{verbatim}
 erl ... -kernel inet_dist_listen_min 4370 inet_dist_listen_max 4375
+\end{verbatim}
+It is also possible to configure in \term{ejabberdctl.cfg}
+the network interface where the Erlang node will listen and accept connections.
+The Erlang command-line parameter used internally is, for example:
+\begin{verbatim}
+erl ... -kernel inet_dist_use_interface "{127,0,0,1}"
 \end{verbatim}
 
 

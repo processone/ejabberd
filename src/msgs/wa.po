@@ -1393,8 +1393,8 @@ msgid "~s access rule configuration"
 msgstr "Apontiaedje des rîles d' accès a ~s"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "Forveyous sierveus da ejabberd"
+msgid "Virtual Hosts"
+msgstr "Forveyous sierveus"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"
@@ -1826,9 +1826,6 @@ msgstr ""
 
 #~ msgid "(Raw)"
 #~ msgstr "(Dinêyes brutes)"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Forveyous sierveus"
 
 #~ msgid "Specified nickname is already registered"
 #~ msgstr "Li no metou dné est ddja edjîstré"

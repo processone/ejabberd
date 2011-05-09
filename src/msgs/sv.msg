@@ -72,7 +72,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd publikprenumerations modul"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestrem modul"}.
 {"ejabberd vCard module","ejabberd vCard-modul"}.
-{"ejabberd virtual hosts","Virtuella ejabberd-servrar"}.
 {"ejabberd Web Admin","ejabberd Web Admin"}.
 {"Elements","Elements"}.
 {"Email","Email"}.
@@ -348,6 +347,7 @@
 {"Users Last Activity","Användarens senaste aktivitet"}.
 {"Validate","Validera"}.
 {"vCard User Search","vCard användare sök"}.
+{"Virtual Hosts","Virtuella servrar"}.
 {"Visitors are not allowed to change their nicknames in this room","Det är inte tillåtet for gäster att ändra sina smeknamn i detta rummet"}.
 {"Visitors are not allowed to send messages to all occupants","Besökare får inte skicka medelande till alla"}.
 {"Wednesday","Onsdag"}.

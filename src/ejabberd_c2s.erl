@@ -194,7 +194,7 @@ stop(FsmRef) ->
     ?GEN_FSM:send_event(FsmRef, closed).
 
 migrate(FsmRef, Node, After) ->
-    ?GEN_FSM:send_all_state_event(FsmRef, {migrate, Node, After}).
+    erlang:send_after(After, FsmRef, {migrate, Node}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -231,6 +231,12 @@ init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
 			(_) -> false
 		     end, Opts),
     TLSOpts = [verify_none | TLSOpts1],
+    Redirect = case lists:keysearch(redirect, 1, Opts) of
+                   {value, {_, true}} ->
+                       true;
+                   _ ->
+                       false
+               end,
     IP = case lists:keysearch(frontend_ip, 1, Opts) of
 	     {value, {_, IP1}} ->
 		 IP1;
@@ -246,7 +252,7 @@ init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
 	false ->
 	    Socket1 =
 		if
-		    TLSEnabled ->
+		    TLSEnabled andalso SockMod /= ejabberd_frontend_socket ->
 			SockMod:starttls(Socket, TLSOpts);
 		    true ->
 			Socket
@@ -265,6 +271,7 @@ init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
 			       access         = Access,
 			       shaper         = Shaper,
 			       ip             = IP,
+                               redirect       = Redirect,
 			       fsm_limit_opts = FSMLimitOpts},
 	    {ok, wait_for_stream, StateData, ?C2S_OPEN_TIMEOUT}
     end;
@@ -282,6 +289,7 @@ init([StateName, StateData, _FSMLimitOpts]) ->
 			   El ->
 			       get_priority_from_presence(El)
 		       end,
+	    ejabberd_sm:drop_session(StateData#state.sid),
 	    ejabberd_sm:open_session(
 	      SID,
 	      StateData#state.user,
@@ -289,6 +297,7 @@ init([StateName, StateData, _FSMLimitOpts]) ->
 	      StateData#state.resource,
 	      Priority,
 	      Info),
+	    %%ejabberd_sm:drop_session(StateData#state.sid),
 	    NewStateData = StateData#state{sid = SID, socket_monitor = MRef},
             StateData2 = change_reception(NewStateData, true),
             StateData3 = start_keepalive_timer(StateData2),
@@ -583,45 +592,55 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			       "(~w) Accepted legacy authentication for ~s by ~p",
 			       [StateData#state.socket,
 				jlib:jid_to_string(JID), AuthModule]),
-			    SID = {now(), self()},
-			    Conn = get_conn_type(StateData),
-			    %% Info = [{ip, StateData#state.ip}, {conn, Conn},
-			    %% 	    {auth_module, AuthModule}],
-			    Res1 = jlib:make_result_iq_reply(El),
-			    Res = setelement(4, Res1, []),
-			    send_element(StateData, Res),
-			    %% ejabberd_sm:open_session(
-			    %%   SID, U, StateData#state.server, R, Info),
-			    change_shaper(StateData, JID),
-			    {Fs, Ts} = ejabberd_hooks:run_fold(
-					 roster_get_subscription_lists,
-					 StateData#state.server,
-					 {[], []},
-					 [U, StateData#state.server]),
-			    LJID = jlib:jid_tolower(
-				     jlib:jid_remove_resource(JID)),
-			    Fs1 = [LJID | Fs],
-			    Ts1 = [LJID | Ts],
-			    PrivList =
-				ejabberd_hooks:run_fold(
-				  privacy_get_user_list, StateData#state.server,
-				  #userlist{},
-				  [U, StateData#state.server]),
-			    NewStateData = StateData#state{
-					     user = U,
-					     resource = R,
-					     jid = JID,
-					     sid = SID,
-					     conn = Conn,
-					     auth_module = AuthModule,
-					     pres_f = ?SETS:from_list(Fs1),
-					     pres_t = ?SETS:from_list(Ts1),
-					     privacy_list = PrivList},
-			    DebugFlag = ejabberd_hooks:run_fold(c2s_debug_start_hook,
-								NewStateData#state.server,
-								false,
-								[self(), NewStateData]),
-			    maybe_migrate(session_established, NewStateData#state{debug=DebugFlag});
+                            case need_redirect(StateData#state{user = U}) of
+                                {true, Host} ->
+                                    ?INFO_MSG("(~w) Redirecting ~s to ~s",
+                                              [StateData#state.socket,
+                                               jlib:jid_to_string(JID), Host]),
+                                    send_element(StateData, ?SERR_SEE_OTHER_HOST(Host)),
+                                    send_trailer(StateData),
+                                    {stop, normal, StateData};
+                                false ->
+                                    SID = {now(), self()},
+                                    Conn = get_conn_type(StateData),
+                                    Res1 = jlib:make_result_iq_reply(El),
+                                    Res = setelement(4, Res1, []),
+                                    send_element(StateData, Res),
+                                    change_shaper(StateData, JID),
+                                    {Fs, Ts} = ejabberd_hooks:run_fold(
+                                                 roster_get_subscription_lists,
+                                                 StateData#state.server,
+                                                 {[], []},
+                                                 [U, StateData#state.server]),
+                                    LJID = jlib:jid_tolower(
+                                             jlib:jid_remove_resource(JID)),
+                                    Fs1 = [LJID | Fs],
+                                    Ts1 = [LJID | Ts],
+                                    PrivList =
+                                        ejabberd_hooks:run_fold(
+                                          privacy_get_user_list,
+                                          StateData#state.server,
+                                          #userlist{},
+                                          [U, StateData#state.server]),
+                                    NewStateData =
+                                        StateData#state{
+                                          user = U,
+                                          resource = R,
+                                          jid = JID,
+                                          sid = SID,
+                                          conn = Conn,
+                                          auth_module = AuthModule,
+                                          pres_f = ?SETS:from_list(Fs1),
+                                          pres_t = ?SETS:from_list(Ts1),
+                                          privacy_list = PrivList},
+                                    DebugFlag = ejabberd_hooks:run_fold(
+                                                  c2s_debug_start_hook,
+                                                  NewStateData#state.server,
+                                                  false,
+                                                  [self(), NewStateData]),
+                                    maybe_migrate(session_established,
+                                                  NewStateData#state{debug=DebugFlag})
+                            end;
 			_ ->
 			    ?INFO_MSG(
 			       "(~w) Failed legacy authentication for ~s",
@@ -713,21 +732,30 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				      Mech,
 				      ClientIn) of
 		{ok, Props} ->
-		    catch (StateData#state.sockmod):reset_stream(
-			    StateData#state.socket),
-		    send_element(StateData,
-				 {xmlelement, "success",
-				  [{"xmlns", ?NS_SASL}], []}),
-		    U = xml:get_attr_s(username, Props),
-		    AuthModule = xml:get_attr_s(auth_module, Props),
-		    ?INFO_MSG("(~w) Accepted authentication for ~s by ~p",
-			      [StateData#state.socket, U, AuthModule]),
-		    fsm_next_state(wait_for_stream,
-				   StateData#state{
-				     streamid = new_id(),
-				     authenticated = true,
-				     auth_module = AuthModule,
-				     user = U });
+                    catch (StateData#state.sockmod):reset_stream(
+                            StateData#state.socket),
+                    U = xml:get_attr_s(username, Props),
+                    AuthModule = xml:get_attr_s(auth_module, Props),
+                    ?INFO_MSG("(~w) Accepted authentication for ~s by ~p",
+                              [StateData#state.socket, U, AuthModule]),
+                    case need_redirect(StateData#state{user = U}) of
+                        {true, Host} ->
+                            ?INFO_MSG("(~w) Redirecting ~s to ~s",
+                                      [StateData#state.socket, U, Host]),
+                            send_element(StateData, ?SERR_SEE_OTHER_HOST(Host)),
+                            send_trailer(StateData),
+                            {stop, normal, StateData};
+                        false ->
+                            send_element(StateData,
+                                         {xmlelement, "success",
+                                          [{"xmlns", ?NS_SASL}], []}),
+                            fsm_next_state(wait_for_stream,
+                                           StateData#state{
+                                             streamid = new_id(),
+                                             authenticated = true,
+                                             auth_module = AuthModule,
+                                             user = U })
+                    end;
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, "challenge",
@@ -867,20 +895,29 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				     ClientIn) of
 		{ok, Props} ->
 		    catch (StateData#state.sockmod):reset_stream(
-			    StateData#state.socket),
-		    send_element(StateData,
-				 {xmlelement, "success",
-				  [{"xmlns", ?NS_SASL}], []}),
+                            StateData#state.socket),
 		    U = xml:get_attr_s(username, Props),
 		    AuthModule = xml:get_attr_s(auth_module, Props),
 		    ?INFO_MSG("(~w) Accepted authentication for ~s by ~p",
 			      [StateData#state.socket, U, AuthModule]),
-		    fsm_next_state(wait_for_stream,
-				   StateData#state{
-				     streamid = new_id(),
-				     authenticated = true,
-				     auth_module = AuthModule,
-				     user = U});
+                    case need_redirect(StateData#state{user = U}) of
+                        {true, Host} ->
+                            ?INFO_MSG("(~w) Redirecting ~s to ~s",
+                                      [StateData#state.socket, U, Host]),
+                            send_element(StateData, ?SERR_SEE_OTHER_HOST(Host)),
+                            send_trailer(StateData),
+                            {stop, normal, StateData};
+                        false ->
+                            send_element(StateData,
+                                         {xmlelement, "success",
+                                          [{"xmlns", ?NS_SASL}], []}),
+                            fsm_next_state(wait_for_stream,
+                                           StateData#state{
+                                             streamid = new_id(),
+                                             authenticated = true,
+                                             auth_module = AuthModule,
+                                             user = U})
+                    end;
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, "challenge",
@@ -1232,9 +1269,6 @@ session_established2(El, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
-handle_event({migrate, Node, After}, StateName, StateData) when Node /= node() ->
-    fsm_migrate(StateName, StateData, Node, After * 2);
-
 handle_event({add_rosteritem, IJID, ISubscription}, StateName, StateData) ->
     NewStateData = roster_change(IJID, ISubscription, StateData),
     fsm_next_state(StateName, NewStateData);
@@ -1624,6 +1658,12 @@ handle_info({force_update_presence, LUser}, StateName,
 		StateData
 	end,
     {next_state, StateName, NewStateData};
+handle_info({migrate, Node}, StateName, StateData) ->
+    if Node /= node() ->
+	    fsm_migrate(StateName, StateData, Node, 0);
+       true ->
+	    fsm_next_state(StateName, StateData)
+    end;
 handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     Recipients = ejabberd_hooks:run_fold(
 		   c2s_broadcast_recipients, StateData#state.server,
@@ -2516,13 +2556,12 @@ peerip(SockMod, Socket) ->
 
 maybe_migrate(StateName, StateData) ->
     PackedStateData = pack(StateData),
-    case ejabberd_cluster:get_node({StateData#state.user,
-				    StateData#state.server}) of
+    #state{user = U, server = S, resource = R, sid = SID} = StateData,
+    case ejabberd_cluster:get_node({jlib:nodeprep(U), jlib:nameprep(S)}) of
 	Node when Node == node() ->
 	    Conn = get_conn_type(StateData),
 	    Info = [{ip, StateData#state.ip}, {conn, Conn},
 		    {auth_module, StateData#state.auth_module}],
-	    #state{user = U, server = S, resource = R, sid = SID} = StateData,
             Presence = StateData#state.pres_last,
             Priority =
                 case Presence of
@@ -2535,13 +2574,6 @@ maybe_migrate(StateName, StateData) ->
             StateData2 = change_reception(PackedStateData, true),
             StateData3 = start_keepalive_timer(StateData2),
 	    erlang:garbage_collect(),
-	    case ejabberd_cluster:get_node_new({U, S}) of
-		Node ->
-		    ok;
-		NewNode ->
-		    After = ejabberd_cluster:rehash_timeout(),
-		    migrate(self(), NewNode, After)
-	    end,
 	    fsm_next_state(StateName, StateData3);
 	Node ->
 	    fsm_migrate(StateName, PackedStateData, Node, 0)
@@ -3397,3 +3429,21 @@ flash_policy_string() ->
 	++ ToPortsString ++
 	"\"/>\n"
 	"</cross-domain-policy>\n\0".
+
+need_redirect(#state{redirect = true, user = User, server = Server}) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    case ejabberd_cluster:get_node({LUser, LServer}) of
+        Node when node() == Node ->
+            false;
+        Node ->
+            case rpc:call(Node, ejabberd_config,
+                          get_local_option, [hostname], 5000) of
+                Host when is_list(Host) ->
+                    {true, Host};
+                _ ->
+                    false
+            end
+    end;
+need_redirect(_) ->
+    false.
