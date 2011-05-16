@@ -856,7 +856,7 @@ rpc_call(Node, Mod, Fun, Args, Timeout) ->
 	{Ref, Result} ->
 	    erlang:demonitor(MRef, [flush]),
 	    Result;
-	{'DOWN', MRef, _, _, Reason} ->
+	{'DOWN', MRef, _, _, noconnection = Reason} ->
 	    {badrpc, Reason}
     after Timeout ->
 	    erlang:demonitor(MRef, [flush]),
