@@ -70,10 +70,23 @@ start_module(Host, Module, Opts) ->
     catch Class:Reason ->
 	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ?ERROR_MSG("Problem starting the module ~p for host ~p with options:~n  ~p~n  ~p: ~p",
+	    ErrorText = io_lib:format("Problem starting the module ~p for host ~p ~n options: ~p~n ~p: ~p",
 		    [Module, Host, Opts, Class, Reason]),
-	    erlang:raise(Class, Reason, erlang:get_stacktrace())
+	    ?CRITICAL_MSG(ErrorText, []),
+	    case is_app_running(ejabberd) of
+		true ->
+		    erlang:raise(Class, Reason, erlang:get_stacktrace());
+		false ->
+		    ?CRITICAL_MSG("ejabberd initialization was aborted because a module start failed.", []),
+		    timer:sleep(3000),
+		    erlang:halt(lists:flatten(ErrorText))
+	    end
     end.
+
+is_app_running(AppName) ->
+    %% Use a high timeout to prevent a false positive in a high load system
+    Timeout = 15000,
+    lists:keymember(AppName, 1, application:which_applications(Timeout)).
 
 %% @doc Stop the module in a host, and forget its configuration.
 stop_module(Host, Module) ->
