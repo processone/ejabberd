@@ -559,15 +559,16 @@ is_feature_available() ->
     end.
 
 check_captcha_setup() ->
-    AbleToGenerateCaptcha = case create_image() of
-                                {ok, _, _, _} -> true;
-                                _Error -> false
-                            end,
-    case is_feature_available() andalso not AbleToGenerateCaptcha of
+    case is_feature_available() of
 	true ->
-	    ?CRITICAL_MSG("Captcha is enabled in the option captcha_cmd, "
-			  "but it can't generate images.", []),
-	    throw({error, captcha_cmd_enabled_but_fails});
+            case create_image() of
+                {ok, _, _, _} ->
+                    ok;
+                _Err ->
+                    ?CRITICAL_MSG("Captcha is enabled in the option captcha_cmd, "
+                                  "but it can't generate images.", []),
+                    throw({error, captcha_cmd_enabled_but_fails})
+            end;
 	false ->
 	    ok
     end.
