@@ -186,7 +186,7 @@ user_receive_packet(_JID, _From, _To, _Packet) ->
 
 caps_stream_features(Acc, MyHost) ->
     case make_my_disco_hash(MyHost) of
-	"" ->
+	<<"">> ->
 	    Acc;
 	Hash ->
 	    [#xmlel{name = c,
@@ -470,7 +470,7 @@ make_my_disco_hash(Host) ->
 		      end, Features),
 	    make_disco_hash(Identities ++ Info ++ Feats, sha1);
 	_Err ->
-	    ""
+	    <<"">>
     end.
 
 -ifdef(HAVE_MD2).
@@ -478,7 +478,7 @@ make_disco_hash(DiscoEls, Algo) ->
     Concat = [concat_identities(DiscoEls),
 	      concat_features(DiscoEls),
 	      concat_info(DiscoEls)],
-    base64:encode_to_string(
+    base64:encode(
       if Algo == md2 ->
 	      sha:md2(Concat);
 	 Algo == md5 ->
@@ -519,7 +519,7 @@ make_disco_hash(DiscoEls, Algo) ->
     Concat = [concat_identities(DiscoEls),
 	      concat_features(DiscoEls),
 	      concat_info(DiscoEls)],
-    base64:encode_to_string(
+    base64:encode(
       if Algo == md5 ->
 	      crypto:md5(Concat);
 	 Algo == sha1 ->

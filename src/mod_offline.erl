@@ -597,6 +597,7 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 user_queue(User, Server, Query, Lang) ->
+    ServerB = list_to_binary(Server),
 	US0 = {
 	  exmpp_stringprep:nodeprep(list_to_binary(User)),
 	  exmpp_stringprep:nameprep(list_to_binary(Server))
@@ -606,11 +607,11 @@ user_queue(User, Server, Query, Lang) ->
 	  US0,
 	  user_queue_parse_query(US0, Query),
 	  lists:keysort(#offline_msg.timestamp,
-			 gen_storage:dirty_read(Server, {offline_msg, US0}))
+			 gen_storage:dirty_read(ServerB, {offline_msg, US0}))
 	}
     catch
 	_ ->
-	    {{"invalid", "invalid"}, [], nothing}
+	    {{"invalid", "invalid"}, [], []}
     end,
     Msgs = get_messages_subset(User, Server, MsgsAll),
     FMsgs =
