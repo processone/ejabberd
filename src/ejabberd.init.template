@@ -1,6 +1,20 @@
 #! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          ejabberd
+# Required-Start:    $remote_fs $network $named $time
+# Required-Stop:     $remote_fs $network $named $time
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Starts ejabberd jabber server
+# Description:       Starts ejabberd jabber server, an XMPP
+#                    compliant server written in Erlang.
+### END INIT INFO
+
+# chkconfig: 2345 90 10
+# description: ejabberd XMPP server
+
 set -o errexit
-set -o nounset
 
 DIR=@ctlscriptpath@
 CTL="$DIR"/ejabberdctl
@@ -32,14 +46,17 @@ case "$1" in
     su - $USER -c "$CTL stopped"
     echo "done."
     ;;
-
+  status)
+    test -x "$CTL" || exit 0
+    echo "Getting ejabberd status..."
+    su - $USER -c "$CTL status"
+    ;;
   force-reload|restart)
     "$0" stop
     "$0" start
     ;;
-
   *)
-    echo "Usage: $0 {start|stop|restart|force-reload}"
+    echo "Usage: $0 {start|stop|restart|force-reload|status}"
     exit 1
 esac
 
