@@ -179,6 +179,8 @@ static ErlDrvData expat_erl_start(ErlDrvPort port, char *buff)
       d->parser, (XML_StartNamespaceDeclHandler) erlXML_StartNamespaceDeclHandler);
    XML_SetReturnNSTriplet(d->parser, 1);
 
+   XML_SetDefaultHandler(d->parser, NULL);
+
    return (ErlDrvData)d;
 }
 
