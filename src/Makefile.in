@@ -208,6 +208,7 @@ install: all
 	sed -e "s*@ctlscriptpath@*$(SBINDIR)*" \
 		-e "s*@installuser@*$(INIT_USER)*" ejabberd.init.template \
 		> ejabberd.init
+	chmod 555 ejabberd.init
 	#
 	# Binary Erlang files
 	install -d $(BEAMDIR)
