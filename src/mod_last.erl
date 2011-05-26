@@ -142,8 +142,9 @@ process_sm_iq(From, To, #iq{type = get} = IQ_Rec) ->
 	ejabberd_hooks:run_fold(
 	  roster_get_jid_info, exmpp_jid:prep_domain(To),
 	  {none, []}, [exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To), From]),
+	SameUser = exmpp_jid:bare_compare(From, To),
     if
-	(Subscription == both) or (Subscription == from) ->
+		(Subscription == both) or (Subscription == from) or SameUser ->
 	    UserListRecord = ejabberd_hooks:run_fold(
 			       privacy_get_user_list, exmpp_jid:prep_domain(To),
 			       #userlist{},
