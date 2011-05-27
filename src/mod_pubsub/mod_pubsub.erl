@@ -479,6 +479,55 @@ update_state_database(_Host, _ServerHost) ->
 		    ?ERROR_MSG("Problem updating Pubsub state tables:~n~p",
 			       [Reason])
 	    end;
+	[stateid, items, affiliation, subscriptions] ->
+	    ?INFO_MSG("upgrade state pubsub table", []),
+	    F = fun ({pubsub_state, {JID, Nidx}, Items, Aff, Subs}, Acc) ->
+			NewState = #pubsub_state{stateid = {JID, Nidx},
+						 nodeidx = Nidx,
+						 items = Items,
+						 affiliation = Aff,
+						 subscriptions = Subs},
+			[NewState | Acc]
+		end,
+	    {atomic, NewRecs} = mnesia:transaction(fun mnesia:foldl/3,
+						   [F, [], pubsub_state]),
+	    {atomic, ok} = mnesia:delete_table(pubsub_state),
+	    {atomic, ok} = mnesia:create_table(pubsub_state,
+					       [{disc_copies, [node()]},
+						{attributes, record_info(fields, pubsub_state)}]),
+	    FNew = fun () ->
+			   lists:foreach(fun mnesia:write/1, NewRecs)
+		   end,
+	    case mnesia:transaction(FNew) of
+		{atomic, Res1} ->
+		    ?INFO_MSG("Pubsub state tables updated correctly: ~p", [Res1]);
+		{aborted, Rea1} ->
+		    ?ERROR_MSG("Problem updating Pubsub state table:~n~p", [Rea1])
+	    end,
+	    ?INFO_MSG("upgrade item pubsub table", []),
+	    F = fun ({pubsub_item, {ItemId, Nidx}, C, M, P}, Acc) ->
+			NewItem = #pubsub_item{itemid = {ItemId, Nidx},
+						 nodeidx = Nidx,
+						 creation = C,
+						 modification = M,
+						 payload = P},
+			[NewItem | Acc]
+		end,
+	    {atomic, NewRecs} = mnesia:transaction(fun mnesia:foldl/3,
+						   [F, [], pubsub_item]),
+	    {atomic, ok} = mnesia:delete_table(pubsub_item),
+	    {atomic, ok} = mnesia:create_table(pubsub_item,
+					       [{disc_copies, [node()]},
+						{attributes, record_info(fields, pubsub_item)}]),
+	    FNew = fun () ->
+			   lists:foreach(fun mnesia:write/1, NewRecs)
+		   end,
+	    case mnesia:transaction(FNew) of
+		{atomic, Res2} ->
+		    ?INFO_MSG("Pubsub item tables updated correctly: ~p", [Res2]);
+		{aborted, Rea2} ->
+		    ?ERROR_MSG("Problem updating Pubsub item table:~n~p", [Rea2])
+	    end;
 	_ ->
 	    ok
     end.
