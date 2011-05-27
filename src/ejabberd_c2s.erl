@@ -1077,7 +1077,9 @@ session_established2(El, StateData) ->
 		end;
 	    #xmlel{ns = ?NS_JABBER_CLIENT, name = 'iq'} ->
 		case exmpp_iq:xmlel_to_iq(El) of
-		    #iq{kind = request, ns = ?NS_PRIVACY} = IQ_Rec ->
+		    #iq{kind = request, ns = Xmlns} = IQ_Rec
+			    when Xmlns == ?NS_PRIVACY;
+				 Xmlns == ?NS_BLOCKING ->
 			process_privacy_iq(
 			  FromJID, ToJID, IQ_Rec, StateData);
 		    _ ->
@@ -1342,6 +1344,13 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				send_element(StateData, PrivPushEl),
 				{false, Attrs, StateData#state{privacy_list = NewPL}}
 			end;
+		    blocking ->
+			CDataString = exmpp_xml:get_cdata_as_list(Packet),
+			{ok, A2, _} = erl_scan:string(CDataString),
+			{_, W} = erl_parse:parse_exprs(A2),
+			{value, What, []} = erl_eval:exprs(W, []),
+			route_blocking(What, StateData),
+			{false, Attrs, StateData};
 		    _ ->
 			{false, Attrs, StateData}
 		end;
@@ -2274,6 +2283,35 @@ bounce_messages() ->
     end.
 
 
+%%%----------------------------------------------------------------------
+%%% XEP-0191
+%%%----------------------------------------------------------------------
+
+route_blocking(What, StateData) ->
+    SubEl =
+	case What of
+	    {Action, JIDs} when (Action == block) or (Action == unblock) ->
+		UnblockJids =
+		    lists:map(
+		      fun(JidString) ->
+			      exmpp_xml:set_attribute(#xmlel{ns = ?NS_BLOCKING,
+							     name = item},
+						      <<"jid">>,
+						      JidString)
+		      end, JIDs),
+		#xmlel{ns = ?NS_BLOCKING, name = Action,
+		       children = UnblockJids};
+	    unblock_all ->
+		#xmlel{ns = ?NS_BLOCKING, name = 'unblock'}
+	end,
+    El1 = exmpp_iq:set(?NS_BLOCKING, SubEl, random),
+    El2 = exmpp_stanza:set_sender(El1, exmpp_jid:bare(StateData#state.jid)),
+    El3 = exmpp_stanza:set_recipient(El2, StateData#state.jid),
+    send_element(StateData, El3),
+    %% No need to replace active privacy list here,
+    %% blocking pushes are always accompanied by
+    %% Privacy List pushes
+    ok.
 
 %%%----------------------------------------------------------------------
 %%% JID Set memory footprint reduction code

@@ -19,10 +19,19 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-record(privacy_list, {user_host, name}).
+-record(privacy_default_list, {user_host, name}).
+-record(privacy_list_data, {user_host, name,
+			    type, value, action, order,
+			    match_all, match_iq, match_message,
+			    match_presence_in, match_presence_out}).
+
+%% ejabberd 2 format:
 -record(privacy, {user_host,
 		  default = none,
 		  lists = []}).
 
+%% ejabberd 2 format:
 -record(listitem, {type = none,
 		   value = none,
 		   action,
@@ -35,3 +44,4 @@
 		  }).
 
 -record(userlist, {name = none, list = [], needdb = false }).
+

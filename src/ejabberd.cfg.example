@@ -513,6 +513,7 @@
  [
   {mod_adhoc,    []},
   {mod_announce, [{access, announce}]}, % recommends mod_adhoc
+  {mod_blocking,[]}, % requires mod_privacy
   {mod_caps,     []}, % 1 proc/host
   {mod_configure,[]}, % requires mod_adhoc
   {mod_disco,    []},

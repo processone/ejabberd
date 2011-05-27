@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_privacy.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : jabber:iq:privacy support
+%%% Purpose : XEP-0016: Privacy Lists
 %%% Created : 21 Jul 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -118,13 +118,6 @@
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
 
--record(privacy_list, {user_host, name}).
--record(privacy_default_list, {user_host, name}).
--record(privacy_list_data, {user_host, name,
-			    type, value, action, order,
-			    match_all, match_iq, match_message,
-			    match_presence_in, match_presence_out}).
-
 start(Host, Opts) ->
     HostB = list_to_binary(Host),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -194,7 +187,7 @@ process_iq(_From, _To, IQ_Rec) ->
     exmpp_iq:error(IQ_Rec, 'not-allowed').
 
 
-process_iq_get(_, From, _To, #iq{payload = SubEl},
+process_iq_get(_, From, _To, #iq{ns = ?NS_PRIVACY, payload = SubEl},
 	       #userlist{name = Active}) ->
     LUser = exmpp_jid:prep_node(From),
     LServer = exmpp_jid:prep_domain(From),
@@ -211,8 +204,10 @@ process_iq_get(_, From, _To, #iq{payload = SubEl},
 	    end;
 	_ ->
 	    {error, 'bad-request'}
-    end.
+    end;
 
+process_iq_get(Acc, _, _, _, _) ->
+    Acc.
 
 process_lists_get(LUser, LServer, Active) ->
     F = fun() ->
@@ -352,7 +347,7 @@ list_to_action(S) ->
 
 
 
-process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
+process_iq_set(_, From, _To, #iq{ns = ?NS_PRIVACY, payload = SubEl}) ->
     LUser = exmpp_jid:prep_node(From),
     LServer = exmpp_jid:prep_domain(From),
     case exmpp_xml:get_child_elements(SubEl) of
@@ -371,7 +366,10 @@ process_iq_set(_, From, _To, #iq{payload = SubEl}) ->
 	    end;
 	_ ->
 	    {error, 'bad-request'}
-    end.
+    end;
+
+process_iq_set(Acc, _, _, _) ->
+    Acc.
 
 
 process_default_set(LUser, LServer, false) ->
