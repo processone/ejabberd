@@ -1710,7 +1710,7 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 get_offlinemsg_length(ModOffline, User, Server) ->
     case ModOffline of
 	none -> "disabled";
-	_ -> pretty_string_int(ModOffline:get_queue_length(User, Server))
+	_ -> pretty_string_int(ModOffline:get_queue_length(list_to_binary(User), list_to_binary(Server)))
     end.
 
 get_offlinemsg_module(Server) ->

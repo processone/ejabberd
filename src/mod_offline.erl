@@ -693,11 +693,9 @@ user_queue_parse_query(US, Query) ->
 us_to_list({User, Server}) ->
     exmpp_jid:to_list(User, Server).
 
-%% @spec (User::string(), Host::string()) -> integer()
+%% @spec (User::binary(), Host::binary()) -> integer()
 get_queue_length(User, Host) ->
-    UserB = list_to_binary(User),
-    HostB = list_to_binary(Host),
-    gen_storage:dirty_count_records(HostB, offline_msg, [{'=', user_host, {UserB, HostB}}]).
+    gen_storage:dirty_count_records(Host, offline_msg, [{'=', user_host, {User, Host}}]).
 
 get_messages_subset(User, Host, MsgsAll) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
