@@ -2360,7 +2360,7 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 	       ok -> [?XREST("Submitted")];
 	       {error, Error} -> [?XRES(?T("Error") ++": " ++ io_lib:format("~p", [Error]))]
 	   end,
-    [?XC('h1', ?T("Backup of ") ++ atom_to_list(Node))] ++
+    ?H1GL(?T("Backup of ") ++ atom_to_list(Node), "list-eja-commands", "List of ejabberd Commands") ++
 	ResS ++
 	[?XCT('p', "Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
      ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
