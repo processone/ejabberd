@@ -594,10 +594,10 @@ send_loop(State) ->
 				  lists:foreach(
 				    fun({Node, subscribed, _, SubJID}) -> 
 					    if (SubJID == LJID) or (SubJID == BJID) ->
-						    #pubsub_node{id = {H, NodeId}, type = Type, idx = NodeIdx, options = Options} = Node,
+						    #pubsub_node{id = {H, NodeId}, type = Type, idx = Nidx, options = Options} = Node,
 						    case get_option(Options, 'send_last_published_item') of
 							'on_sub_and_presence' ->
-							    send_items(H, NodeId, NodeIdx, Type, LJID, 'last');
+							    send_items(H, NodeId, Nidx, Type, LJID, 'last');
 							_ ->
 							    ok
 						    end;
@@ -646,7 +646,7 @@ send_loop(State) ->
 	    spawn(fun() ->
 			  Host = State#state.host,
 			  Owner = {U,S,undefined},
-			  lists:foreach(fun(#pubsub_node{id = {_, NodeId}, type = Type, idx = NodeIdx, options = Options}) ->
+			  lists:foreach(fun(#pubsub_node{id = {_, NodeId}, type = Type, idx = Nidx, options = Options}) ->
 						case get_option(Options, 'send_last_published_item') of
 						    'on_sub_and_presence' ->
 							lists:foreach(fun(Resource) ->
@@ -660,7 +660,7 @@ send_loop(State) ->
 												   RosterGroups = get_option(Options, 'roster_groups_allowed', []),
 												   element(2, get_roster_info(U, S, LJID, RosterGroups))
 											   end,
-									      if Subscribed -> send_items(Owner, NodeId, NodeIdx, Type, LJID, 'last');
+									      if Subscribed -> send_items(Owner, NodeId, Nidx, Type, LJID, 'last');
 										 true -> ok
 									      end
 								      end, Resources);
@@ -763,8 +763,8 @@ disco_identity(_Host, <<>> = _NodeId, _From) ->
     [#xmlel{name = 'identity', ns = ?NS_DISCO_INFO,
 	    attrs = [?XMLATTR(<<"category">>, <<"pubsub">>), ?XMLATTR(<<"type">>, <<"pep">>)]}];
 disco_identity(#jid{node = U, domain = S, resource = R} = Host, NodeId, From) ->
-    Action = fun(#pubsub_node{idx = NodeIdx, type = Type, options = Options, owners = Owners}) ->
-		     case get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) of
+    Action = fun(#pubsub_node{idx = Nidx, type = Type, options = Options, owners = Owners}) ->
+		     case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners) of
 			 {result, _} ->
 			     {result,
 			      [#xmlel{name = 'identity', ns = ?NS_DISCO_INFO,
@@ -813,8 +813,8 @@ disco_features(_Host, <<>> = _NodeId, _From) ->
     [?NS_PUBSUB_s
      | [?NS_PUBSUB_s++"#"++Feature || Feature <- features("pep")]];
 disco_features(#jid{node = U, domain = S, resource = R} = Host, NodeId, From) ->
-    Action = fun(#pubsub_node{idx = NodeIdx, type = Type, options = Options, owners = Owners}) ->
-		     case get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) of
+    Action = fun(#pubsub_node{idx = Nidx, type = Type, options = Options, owners = Owners}) ->
+		     case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners) of
 			 {result, _} ->
 			     {result, [?NS_PUBSUB_s
 				       | [?NS_PUBSUB_s ++ "#" ++ Feature || Feature <- features("pep")]]};
@@ -853,8 +853,8 @@ disco_sm_items({result, OtherItems} = _Acc, From, To, NodeId, _Lang) ->
 	    ).
 
 disco_items(#jid{raw = JID, node = U, domain = S, resource = R} = Host, <<>>, From) ->
-    Action = fun(#pubsub_node{id ={_, NodeId}, options = Options, type = Type, idx = NodeIdx, owners = Owners}, Acc) ->
-		     case get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) of
+    Action = fun(#pubsub_node{id ={_, NodeId}, options = Options, type = Type, idx = Nidx, owners = Owners}, Acc) ->
+		     case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners) of
 			 {result, _} ->
 			     [#xmlel{name = 'item', ns = ?NS_DISCO_INFO,
 				     attrs = [?XMLATTR(<<"jid">>, JID),
@@ -873,8 +873,8 @@ disco_items(#jid{raw = JID, node = U, domain = S, resource = R} = Host, <<>>, Fr
     end;
 
 disco_items(#jid{raw = JID, node = U, domain = S, resource = R} = Host, NodeId, From) ->
-    Action = fun(#pubsub_node{idx = NodeIdx, type = Type, options = Options, owners = Owners}) ->
-		     case get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) of
+    Action = fun(#pubsub_node{idx = Nidx, type = Type, options = Options, owners = Owners}) ->
+		     case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners) of
 			 {result, Items} ->
 			     {result,
 			      [#xmlel{name = 'item', ns = ?NS_DISCO_INFO,
@@ -1331,11 +1331,11 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING_b = _NodeId, _From) ->
 	    ).
 
 node_disco_info(Host, NodeId, From) ->
-    Action = fun(#pubsub_node{type = Plugin, idx = NodeIdx}) ->
+    Action = fun(#pubsub_node{type = Plugin, idx = Nidx}) ->
 		     Types = case tree_call(Host, get_subnodes, [Host, NodeId, From]) of
 				 [] -> ["leaf"];
 				 _  ->
-				     case node_call(Plugin, get_items, [NodeIdx, From]) of
+				     case node_call(Plugin, get_items, [Nidx, From]) of
 					 {result, []} -> ["collection"];
 					 {result,  _} -> ["leaf", "collection"];
 					 _            -> []
@@ -1449,8 +1449,8 @@ iq_disco_items(_Host, ?NS_PUBSUB_GET_PENDING_b = _NodeId, _From) ->
     %% TODO
     {result, []};
 iq_disco_items(Host, NodeId, From) ->
-    Action = fun(#pubsub_node{idx = NodeIdx, type = Type, options = Options, owners = Owners}) ->
-		     NodeItems = case get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) of
+    Action = fun(#pubsub_node{idx = Nidx, type = Type, options = Options, owners = Owners}) ->
+		     NodeItems = case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners) of
 				     {result, R} -> R;
 				     _ -> []
 				 end,
@@ -2698,8 +2698,8 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds) ->
 	    ).
 
 get_items(Host, NodeId) ->
-    Action = fun(#pubsub_node{type = Type, idx = NodeIdx}) ->
-		     node_call(Type, get_items, [NodeIdx, service_jid(Host)])
+    Action = fun(#pubsub_node{type = Type, idx = Nidx}) ->
+		     node_call(Type, get_items, [Nidx, service_jid(Host)])
 	     end,
     case transaction(Host, NodeId, Action, sync_dirty) of
 	{result, {_, Items}} -> Items
@@ -2716,8 +2716,8 @@ get_items(Host, NodeId) ->
 	    ).
 
 get_item(Host, NodeId, ItemId) ->
-    Action = fun(#pubsub_node{type = Type, idx = NodeIdx}) ->
-		     node_call(Type, get_item, [NodeIdx, ItemId])
+    Action = fun(#pubsub_node{type = Type, idx = Nidx}) ->
+		     node_call(Type, get_item, [Nidx, ItemId])
 	     end,
     case transaction(Host, NodeId, Action, sync_dirty) of
 	{result, {_, Items}} -> Items;
@@ -2733,10 +2733,10 @@ get_item(Host, NodeId, ItemId) ->
 %%	 Number = last | integer()
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
-send_items(Host, Node, NodeId, Type, LJID, 'last') ->
-    case get_cached_item(Host, NodeId) of
+send_items(Host, Node, Nidx, Type, LJID, 'last') ->
+    case get_cached_item(Host, Nidx) of
 	undefined ->
-	    send_items(Host, Node, NodeId, Type, LJID, 1);
+	    send_items(Host, Node, Nidx, Type, LJID, 1);
 	LastItem ->
 	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
 	    Stanza = event_stanza_with_delay(
@@ -2744,8 +2744,8 @@ send_items(Host, Node, NodeId, Type, LJID, 'last') ->
 			       children = itemsEls([LastItem])}], ModifNow, ModifUSR),
 	    ejabberd_router:route(service_jid(Host), exmpp_jid:make(LJID), Stanza)
     end;
-send_items(Host, Node, NodeId, Type, {LU, LS, LR} = LJID, Number) ->
-    ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
+send_items(Host, Node, Nidx, Type, {LU, LS, LR} = LJID, Number) ->
+    ToSend = case node_action(Host, Type, get_items, [Nidx, LJID]) of
 		 {result, []} -> 
 		     [];
 		 {result, Items} ->
@@ -2926,7 +2926,7 @@ get_options(Host, Node, JID, SubId, Lang) ->
 	Error		    -> Error
     end.
 
-get_options_helper(JID, Lang, Node, NodeId, SubId, Type) ->
+get_options_helper(JID, Lang, Node, Nidx, SubId, Type) ->
     Subscriber = try exmpp_jid:parse(JID) of
 		     J -> jlib:short_jid(J)
 		 catch
@@ -2934,7 +2934,7 @@ get_options_helper(JID, Lang, Node, NodeId, SubId, Type) ->
 		         exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
-			       [NodeId, Subscriber]),
+			       [Nidx, Subscriber]),
     SubIds = lists:foldl(fun({subscribed, SID}, Acc) ->
 				 [SID | Acc];
 			    (_, Acc) ->
@@ -2944,15 +2944,15 @@ get_options_helper(JID, Lang, Node, NodeId, SubId, Type) ->
 	{_, []} ->
 	    {error, extended_error('not-acceptable', "not-subscribed")};
 	{[], [SID]} ->
-	    read_sub(Subscriber, Node, NodeId, SID, Lang);
+	    read_sub(Subscriber, Node, Nidx, SID, Lang);
 	{[], _} ->
 	    {error, extended_error('not-acceptable', "subid-required")};
 	{_, _} ->
-	    read_sub(Subscriber, Node, NodeId, SubId, Lang)
+	    read_sub(Subscriber, Node, Nidx, SubId, Lang)
     end.
 
-read_sub(Subscriber, Node, NodeId, SubId, Lang) ->
-    case pubsub_subscription:get_subscription(Subscriber, NodeId, SubId) of
+read_sub(Subscriber, Node, Nidx, SubId, Lang) ->
+    case pubsub_subscription:get_subscription(Subscriber, Nidx, SubId) of
 	{result, #pubsub_subscription{options = Options}} ->
             {result, XdataEl} = pubsub_subscription:get_options_xform(Lang, Options),
             OptionsEl = #xmlel{ns = ?NS_PUBSUB, name = 'options',
@@ -2986,7 +2986,7 @@ set_options(Host, Node, JID, SubId, Configuration) ->
 	Error		     -> Error
     end.
 
-set_options_helper(Configuration, JID, NodeId, SubId, Type) ->
+set_options_helper(Configuration, JID, Nidx, SubId, Type) ->
     SubOpts = case pubsub_subscription:parse_options_xform(Configuration) of
 		  {result, GoodSubOpts} -> GoodSubOpts;
 		  _ -> invalid
@@ -2997,7 +2997,7 @@ set_options_helper(Configuration, JID, NodeId, SubId, Type) ->
 		     _ -> exmpp_jid:make("", "", "") %% TODO, check if use <<>> instead of ""
 		 end,
     {result, Subs} = node_call(Type, get_subscriptions,
-			       [NodeId, Subscriber]),
+			       [Nidx, Subscriber]),
     SubIds = lists:foldl(fun({subscribed, SID}, Acc) ->
 				 [SID | Acc];
 			    (_, Acc) ->
@@ -3007,19 +3007,19 @@ set_options_helper(Configuration, JID, NodeId, SubId, Type) ->
 	{_, []} ->
 	    {error, extended_error('not-acceptable', "not-subscribed")};
 	{[], [SID]} ->
-	    write_sub(Subscriber, NodeId, SID, SubOpts);
+	    write_sub(Subscriber, Nidx, SID, SubOpts);
 	{[], _} ->
 	    {error, extended_error('not-acceptable', "subid-required")};
 	{_, _} ->
-	    write_sub(Subscriber, NodeId, SubId, SubOpts)
+	    write_sub(Subscriber, Nidx, SubId, SubOpts)
     end.
 
-write_sub(_Subscriber, _NodeId, _SubId, invalid) ->
+write_sub(_Subscriber, _Nidx, _SubId, invalid) ->
     {error, extended_error('bad-request', "invalid-options")};
-write_sub(_Subscriber, _NodeID, _SubID, []) ->
+write_sub(_Subscriber, _Nidx, _SubId, []) ->
     {result, []};
-write_sub(Subscriber, NodeId, SubId, Options) ->
-    case pubsub_subscription:set_subscription(Subscriber, NodeId, SubId, Options) of
+write_sub(Subscriber, Nidx, SubId, Options) ->
+    case pubsub_subscription:set_subscription(Subscriber, Nidx, SubId, Options) of
 	{result, _} ->
 	    {result, []};
 	{error, _} ->
@@ -3606,18 +3606,18 @@ node_subscriptions_full(Host, Node, NotifyType) ->
      {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
      JIDSubs.
 
-sub_with_options(#pubsub_node{type = Type, id = NodeId}) ->
-    case node_call(Type, get_node_subscriptions, [NodeId]) of
+sub_with_options(#pubsub_node{type = Type, idx = Nidx}) ->
+    case node_call(Type, get_node_subscriptions, [Nidx]) of
 	{result, Subs} ->
 	    lists:foldl(
-		fun({JID, subscribed, SubId}, Acc) -> [sub_with_options(JID, NodeId, SubId) | Acc];
+		fun({JID, subscribed, SubId}, Acc) -> [sub_with_options(JID, Nidx, SubId) | Acc];
 		    (_, Acc) -> Acc
 		end, [], Subs);
 	_ ->
 	    []
     end.
-sub_with_options(JID, NodeId, SubId) ->
-    case pubsub_subscription:read_subscription(JID, NodeId, SubId) of
+sub_with_options(JID, Nidx, SubId) ->
+    case pubsub_subscription:read_subscription(JID, Nidx, SubId) of
 	#pubsub_subscription{options = Options} -> {JID, SubId, Options};
 	_ -> {JID, SubId, []}
     end.
