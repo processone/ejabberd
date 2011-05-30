@@ -132,6 +132,16 @@ void *erlXML_StartNamespaceDeclHandler(expat_data *d,
   int prefix_len;
   char *buf;
 
+  /* From the expat documentation:
+     "For a default namespace declaration (xmlns='...'),
+     the prefix will be null ...
+     ... The URI will be null for the case where
+     the default namespace is being unset."
+
+     FIXME: I'm not quite sure what all that means */
+  if (uri == NULL)
+      return NULL;
+
   ei_x_encode_list_header(&xmlns_buf, 1);
   ei_x_encode_tuple_header(&xmlns_buf, 2);
   if (prefix) {

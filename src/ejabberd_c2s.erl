@@ -1211,7 +1211,9 @@ session_established2(El, StateData) ->
 			end;
 		    "iq" ->
 			case jlib:iq_query_info(NewEl) of
-			    #iq{xmlns = ?NS_PRIVACY} = IQ ->
+			    #iq{xmlns = Xmlns} = IQ
+			    when Xmlns == ?NS_PRIVACY;
+				 Xmlns == ?NS_BLOCKING ->
 				ejabberd_hooks:run(
 				  user_send_packet,
 				  Server,
@@ -1469,6 +1471,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				send_element(StateData, PrivPushEl),
 				{false, Attrs, StateData#state{privacy_list = NewPL}}
 			end;
+		    [{blocking, What}] ->
+			route_blocking(What, StateData),
+			{false, Attrs, StateData};
 		    _ ->
 			{false, Attrs, StateData}
 		end;
@@ -3355,6 +3360,51 @@ bounce_messages() ->
     after 0 ->
 	    ok
     end.
+
+%%%----------------------------------------------------------------------
+%%% XEP-0191
+%%%----------------------------------------------------------------------
+
+route_blocking(What, StateData) ->
+    SubEl =
+	case What of
+	    {block, JIDs} ->
+		{xmlelement, "block",
+		 [{"xmlns", ?NS_BLOCKING}],
+		 lists:map(
+		   fun(JID) ->
+			   {xmlelement, "item",
+			    [{"jid", jlib:jid_to_string(JID)}],
+			    []}
+				       end, JIDs)};
+	    {unblock, JIDs} ->
+		{xmlelement, "unblock",
+		 [{"xmlns", ?NS_BLOCKING}],
+		 lists:map(
+		   fun(JID) ->
+			   {xmlelement, "item",
+			    [{"jid", jlib:jid_to_string(JID)}],
+			    []}
+		   end, JIDs)};
+	    unblock_all ->
+		{xmlelement, "unblock",
+		 [{"xmlns", ?NS_BLOCKING}], []}
+	end,
+    PrivPushIQ =
+	#iq{type = set, xmlns = ?NS_BLOCKING,
+	    id = "push",
+	    sub_el = [SubEl]},
+    PrivPushEl =
+	jlib:replace_from_to(
+	  jlib:jid_remove_resource(
+	    StateData#state.jid),
+	  StateData#state.jid,
+	  jlib:iq_to_xml(PrivPushIQ)),
+    send_element(StateData, PrivPushEl),
+    %% No need to replace active privacy list here,
+    %% blocking pushes are always accompanied by
+    %% Privacy List pushes
+    ok.
 
 %%%----------------------------------------------------------------------
 %%% JID Set memory footprint reduction code
