@@ -5023,6 +5023,8 @@ The environment variables:
 	This path is used to read the file \term{.erlang.cookie}.
   \titem{ERL\_CRASH\_DUMP}
 	Path to the file where crash reports will be dumped.
+  \titem{ERL\_EPMD\_ADDRESS}
+	IP address where epmd listens for connections (see section \ref{epmd}).
   \titem{ERL\_INETRC}
 	Indicates which IP name resolution to use.
 	If using \term{-sname}, specify either this option or \term{-kernel inetrc filepath}.
@@ -5444,6 +5446,8 @@ In order for this communication to work,
 \term{epmd} must be running and listening for name requests in the port 4369.
 You should block the port 4369 in the firewall in such a way that
 only the programs in your machine can access it.
+or configure the option \term{ERL\_EPMD\_ADDRESS} in the file \term{ejabberdctl.cfg}
+(this option works only in Erlang/OTP R14B03 or higher).
 
 If you build a cluster of several \ejabberd{} instances,
 each \ejabberd{} instance is called an \ejabberd{} node.

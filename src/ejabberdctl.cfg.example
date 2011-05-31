@@ -62,6 +62,22 @@
 INET_DIST_INTERFACE={127,0,0,1}
 
 #.
+#' ERL_EPMD_ADDRESS: IP addresses where epmd listens for connections
+#
+# IMPORTANT: This option works only in Erlang/OTP R14B03 and newer.
+#
+# This environment variable may be set to a comma-separated
+# list of IP addresses, in which case the epmd daemon
+# will listen only on the specified address(es) and on the
+# loopback address (which is implicitly added to the list if it
+# has not been specified). The default behaviour is to listen on
+# all available IP addresses.
+#
+# Default: 0.0.0.0
+#
+#ERL_EPMD_ADDRESS=127.0.0.1
+
+#.
 #' ERL_PROCESSES: Maximum number of Erlang processes
 #
 # Erlang consumes a lot of lightweight processes. If there is a lot of activity
