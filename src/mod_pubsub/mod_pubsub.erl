@@ -2733,7 +2733,7 @@ get_item(Host, NodeId, ItemId) ->
 %%	 Number = last | integer()
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
-send_items(Host, Node, Nidx, Type, LJID, 'last') ->
+send_items(Host, Node, Nidx, Type, {U,S,R} = LJID, 'last') ->
     case get_cached_item(Host, Nidx) of
 	undefined ->
 	    send_items(Host, Node, Nidx, Type, LJID, 1);
@@ -2742,9 +2742,22 @@ send_items(Host, Node, Nidx, Type, LJID, 'last') ->
 	    Stanza = event_stanza_with_delay(
 		       [#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node),
 			       children = itemsEls([LastItem])}], ModifNow, ModifUSR),
-	    ejabberd_router:route(service_jid(Host), exmpp_jid:make(LJID), Stanza)
+	    case is_tuple(Host) of
+		false ->
+		    ejabberd_router:route(service_jid(Host), exmpp_jid:make(U, S, R), Stanza);
+		true ->
+		    case ejabberd_sm:get_session_pid(U,S,R) of
+			C2SPid when is_pid(C2SPid) ->
+			    ejabberd_c2s:broadcast(C2SPid,
+				{pep_message, << Node/binary, <<"+notify">>/binary >>},
+				_Sender = service_jid(Host),
+				Stanza);
+			_ ->
+			    ok
+		    end
+	    end
     end;
-send_items(Host, Node, Nidx, Type, {LU, LS, LR} = LJID, Number) ->
+send_items(Host, Node, Nidx, Type, {U,S,R} = LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items, [Nidx, LJID]) of
 		 {result, []} -> 
 		     [];
@@ -2767,7 +2780,20 @@ send_items(Host, Node, Nidx, Type, {LU, LS, LR} = LJID, Number) ->
 		       [#xmlel{ns = ?NS_PUBSUB_EVENT, name = 'items', attrs = nodeAttr(Node), children =
 			       itemsEls(ToSend)}])
 	     end,
-    ejabberd_router:route(service_jid(Host), exmpp_jid:make(LU, LS, LR), Stanza).
+    case is_tuple(Host) of
+	false ->
+	    ejabberd_router:route(service_jid(Host), exmpp_jid:make(U, S, R), Stanza);
+	true ->
+	    case ejabberd_sm:get_session_pid(U,S,R) of
+		C2SPid when is_pid(C2SPid) ->
+		    ejabberd_c2s:broadcast(C2SPid,
+			{pep_message, << Node/binary, <<"+notify">>/binary >>},
+			_Sender = service_jid(Host),
+			Stanza);
+		_ ->
+		    ok
+	    end
+    end.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()
