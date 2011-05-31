@@ -1552,7 +1552,7 @@ declarations of ACLs in the configuration file have the following syntax:
   with a name that matches \term{UserRegexp} at any server that matches
   \term{ServerRegexp}. Example:
 \begin{verbatim}
-{acl, yohzik, {node_regexp, "^yohzik$", "^example.(com|org)$"}}.
+{acl, yozhik, {node_regexp, "^yozhik$", "^example.(com|org)$"}}.
 \end{verbatim}
 \titem{\{user\_glob, Glob\}}
 \titem{\{user\_glob, Glob, Server\}}
@@ -4671,7 +4671,7 @@ Examples:
 \makesubsection{modvcardldap}{\modvcardldap{}}
 \ind{modules!\modvcardldap{}}\ind{JUD}\ind{Jabber User Directory}\ind{vCard}\ind{protocols!XEP-0054: vcard-temp}
 
-%TODO: verify if the referers to the LDAP section are still correct
+%TODO: verify if the referrers to the LDAP section are still correct
 
 \ejabberd{} can map LDAP attributes to vCard fields. This behaviour is
 implemented in the \modvcardldap{} module. This module does not depend on the
@@ -5854,10 +5854,6 @@ The Web Admin also supports the \verb|Accept-Language| HTTP header.
   \label{fig:webadmmainru}
 \end{figure}
 
-
-%\section{Ultra Complex Example}
-%\label{ultracomplexexample}
-%TODO: a very big example covering the whole guide, with a good explanation before the example: different authenticaton mechanisms, transports, ACLs, multple virtual hosts, virtual host specific settings and general settings, modules,...
 
 \makechapter{releasenotes}{Release Notes}
 \ind{release notes}
