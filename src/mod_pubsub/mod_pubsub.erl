@@ -2420,8 +2420,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		     DeliverPayloads = get_option(Options, deliver_payloads),
 		     PersistItems = get_option(Options, persist_items),
 		     MaxItems = case PersistItems of
-			0 -> 0;
-			1 -> max_items(Host, Options)
+			false -> 0;
+			true -> max_items(Host, Options)
 		     end,
 		     {PayloadCount, PayloadNS} = payload_els_ns(Payload),
 		     PayloadSize = size(term_to_binary(Payload))-2, % size(term_to_binary([])) == 2
