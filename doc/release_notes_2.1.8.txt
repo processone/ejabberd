@@ -1,0 +1,21 @@
+
+                              Release Notes
+                             ejabberd 2.1.8
+
+  ejabberd 2.1.8 is the ninth release in ejabberd 2.1.x branch,
+  and includes a PubSub regression bugfix.
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+  The change is:
+
+- Fix issue on PubSub preventing publication of items (EJAB-1457)
+
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/
