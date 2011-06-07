@@ -42,7 +42,7 @@ typedef struct {
       XML_Parser parser;
 } expat_data;
 
-static XML_Memory_Handling_Suite ms = {driver_alloc, driver_realloc, driver_free};
+static XML_Memory_Handling_Suite ms;
 
 void encode_name(const XML_Char *name)
 {
@@ -256,6 +256,9 @@ ErlDrvEntry expat_driver_entry = {
 
 DRIVER_INIT(expat_erl) /* must match name in driver_entry */
 {
+    ms.malloc_fcn = driver_alloc;
+    ms.realloc_fcn = driver_realloc;
+    ms.free_fcn = driver_free;
     return &expat_driver_entry;
 }
 
