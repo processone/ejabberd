@@ -3969,6 +3969,8 @@ Options:
 
 This example configuration shows how to enable the module and the web handler:
 \begin{verbatim}
+{hosts, ["localhost", "example.org", "example.com"]}.
+
 {listen, [
   ...
   {5281, ejabberd_http, [
@@ -3987,7 +3989,8 @@ This example configuration shows how to enable the module and the web handler:
  ]}.
 \end{verbatim}
 
-The users can visit this page: https://localhost:5281/register/
+For example, the users of the host \term{example.org} can visit the page:
+\ns{https://example.org:5281/register/}
 It is important to include the last / character in the URL,
 otherwise the subpages URL will be incorrect.
 
