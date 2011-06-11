@@ -111,6 +111,7 @@ crypt(S) when is_list(S) ->
 	 $> -> "&gt;";
 	 $" -> "&quot;";
 	 $' -> "&apos;";
+         _ when is_list(C); is_binary(C) -> crypt(C);
 	 _ -> C
      end || C <- S];
 crypt(S) when is_binary(S) ->
