@@ -619,7 +619,9 @@ parse_options(Host, Opts) ->
 		       RF ->
 			   RF
 		   end,
-
+    lists:foreach(fun eldap_utils:check_filter/1, 
+                  [ConfigFilter, ConfigUserFilter,
+                   ConfigGroupFilter, RosterFilter]),
     SubFilter = "(&("++UIDAttr++"="++UIDAttrFormat++")("++GroupAttr++"=%g))",
     UserSubFilter = case ConfigUserFilter of
                         undefined -> eldap_filter:do_sub(SubFilter, [{"%g", "*"}]);

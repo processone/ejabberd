@@ -398,7 +398,9 @@ parse_options(Host) ->
     UserFilter = case ejabberd_config:get_local_option({ldap_filter, Host}) of
 		     undefined -> SubFilter;
 		     "" -> SubFilter;
-		     F -> "(&" ++ SubFilter ++ F ++ ")"
+		     F ->
+                         eldap_utils:check_filter(F),
+                         "(&" ++ SubFilter ++ F ++ ")"
 		 end,
     SearchFilter = eldap_filter:do_sub(UserFilter, [{"%u", "*"}]),
     LDAPBase = ejabberd_config:get_local_option({ldap_base, Host}),
@@ -411,7 +413,8 @@ parse_options(Host) ->
 	    {DNF, DNFA} ->
 		{DNF, DNFA}
 	end,
-	LocalFilter = ejabberd_config:get_local_option({ldap_local_filter, Host}),
+    eldap_utils:check_filter(DNFilter),
+    LocalFilter = ejabberd_config:get_local_option({ldap_local_filter, Host}),
     #state{host = Host,
 	   eldap_id = Eldap_ID,
 	   bind_eldap_id = Bind_Eldap_ID,
