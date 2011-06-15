@@ -721,10 +721,14 @@ parse_options(Host, Opts) ->
 			 case ejabberd_config:get_local_option({ldap_filter, Host}) of
 			     undefined -> SubFilter;
 			     "" -> SubFilter;
-			     F -> "(&" ++ SubFilter ++ F ++ ")"
+			     F ->
+                                 eldap_utils:check_filter(F),
+                                 "(&" ++ SubFilter ++ F ++ ")"
 			 end;
 		     "" -> SubFilter;
-		     F -> "(&" ++ SubFilter ++ F ++ ")"
+		     F ->
+                         eldap_utils:check_filter(F),
+                         "(&" ++ SubFilter ++ F ++ ")"
 		 end,
     {ok, SearchFilter} = eldap_filter:parse(
 			   eldap_filter:do_sub(UserFilter, [{"%u","*"}])),
