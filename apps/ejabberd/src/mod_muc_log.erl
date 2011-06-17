@@ -370,58 +370,58 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	       roomconfig_change ->
 		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
 		   put_room_config(F, RoomConfig, Lang, FileFormat),
-		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
+		   io_lib:format("<font class=\"mrcm\">~s</font><br/>",
 				 [?T("Chatroom configuration modified")]);
 	       {roomconfig_change, Occupants} ->
 		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
 		   put_room_config(F, RoomConfig, Lang, FileFormat),
 		   RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
 		   put_room_occupants(F, RoomOccupants, Lang, FileFormat),
-		   io_lib:format("<font class=\"mrcm\">~s</font><br/>", 
+		   io_lib:format("<font class=\"mrcm\">~s</font><br/>",
 				 [?T("Chatroom configuration modified")]);
-	       join ->  
-		   io_lib:format("<font class=\"mj\">~s ~s</font><br/>", 
+	       join ->
+		   io_lib:format("<font class=\"mj\">~s ~s</font><br/>",
 				 [Nick, ?T("joins the room")]);
-	       leave ->  
-		   io_lib:format("<font class=\"ml\">~s ~s</font><br/>", 
+	       leave ->
+		   io_lib:format("<font class=\"ml\">~s ~s</font><br/>",
 				 [Nick, ?T("leaves the room")]);
-	       {leave, Reason} ->  
-		   io_lib:format("<font class=\"ml\">~s ~s: ~s</font><br/>", 
+	       {leave, Reason} ->
+		   io_lib:format("<font class=\"ml\">~s ~s: ~s</font><br/>",
 				 [Nick, ?T("leaves the room"), htmlize(Reason,NoFollow,FileFormat)]);
-	       {kickban, "301", ""} ->  
-		   io_lib:format("<font class=\"mb\">~s ~s</font><br/>", 
+	       {kickban, "301", ""} ->
+		   io_lib:format("<font class=\"mb\">~s ~s</font><br/>",
 				 [Nick, ?T("has been banned")]);
-	       {kickban, "301", Reason} ->  
-		   io_lib:format("<font class=\"mb\">~s ~s: ~s</font><br/>", 
+	       {kickban, "301", Reason} ->
+		   io_lib:format("<font class=\"mb\">~s ~s: ~s</font><br/>",
 				 [Nick, ?T("has been banned"), htmlize(Reason,FileFormat)]);
-	       {kickban, "307", ""} ->  
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+	       {kickban, "307", ""} ->
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
 				 [Nick, ?T("has been kicked")]);
-	       {kickban, "307", Reason} ->  
-		   io_lib:format("<font class=\"mk\">~s ~s: ~s</font><br/>", 
+	       {kickban, "307", Reason} ->
+		   io_lib:format("<font class=\"mk\">~s ~s: ~s</font><br/>",
 				 [Nick, ?T("has been kicked"), htmlize(Reason,FileFormat)]);
-	       {kickban, "321", ""} ->  
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+	       {kickban, "321", ""} ->
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
 				 [Nick, ?T("has been kicked because of an affiliation change")]);
-	       {kickban, "322", ""} ->  
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+	       {kickban, "322", ""} ->
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
 				 [Nick, ?T("has been kicked because the room has been changed to members-only")]);
-	       {kickban, "332", ""} ->  
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>", 
+	       {kickban, "332", ""} ->
+		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
 				 [Nick, ?T("has been kicked because of a system shutdown")]);
-	       {nickchange, OldNick} ->  
-		   io_lib:format("<font class=\"mnc\">~s ~s ~s</font><br/>", 
+	       {nickchange, OldNick} ->
+		   io_lib:format("<font class=\"mnc\">~s ~s ~s</font><br/>",
 				 [htmlize(OldNick,FileFormat), ?T("is now known as"), Nick]);
-	       {subject, T} ->  
-		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>", 
+	       {subject, T} ->
+		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>",
 				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow,FileFormat)]);
-	       {body, T} ->  
-		   case {regexp:first_match(T, "^/me\s"), Nick} of
+	       {body, T} ->
+		   case {re:run(T, "^/me\s", [{capture, none}]), Nick} of
 		       {_, ""} ->
 			   io_lib:format("<font class=\"msm\">~s</font><br/>",
 					 [htmlize(T,NoFollow,FileFormat)]);
-		       {{match, _, _}, _} ->
-			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>", 
+		       {match, _} ->
+			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>",
 					 [Nick, string:substr(htmlize(T,FileFormat), 5)]);
 		       {nomatch, _} ->
 			   io_lib:format("<font class=\"mn\">~s</font> ~s<br/>",
@@ -438,7 +438,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     STimeUnique = io_lib:format("~s.~w", [STime, Microsecs]),
 
     %% Write message
-    fw(F, io_lib:format("<a id=\"~s\" name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ", 
+    fw(F, io_lib:format("<a id=\"~s\" name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ",
 			[STimeUnique, STimeUnique, STimeUnique, STime]) ++ Text, FileFormat),
 
     %% Close file
@@ -662,8 +662,7 @@ fw(F, S, O, FileFormat) ->
 	     html ->
 		 S1;
 	     plaintext ->
-		 {ok, Res, _} = regexp:gsub(S1, "<[^>]*>", ""),
-		 Res
+                 re:replace(S1, "<[^>]*>", "", [global, {return, list}])
 	 end,
     io:format(F, S2, []).
 
@@ -779,26 +778,28 @@ htmlize(S1, _NoFollow, plaintext) ->
 htmlize(S1, NoFollow, _FileFormat) ->
     S2_list = string:tokens(S1, "\n"),
     lists:foldl(
-      fun(Si, Res) -> 
+      fun(Si, Res) ->
 	      Si2 = htmlize2(Si, NoFollow),
 	      case Res of
 		  "" -> Si2;
 		  _ -> Res ++ "<br/>" ++ Si2
 	      end
-      end, 
+      end,
       "",
       S2_list).
 
 htmlize2(S1, NoFollow) ->
-    S2 = element(2, regexp:gsub(S1, "\\&", "\\&amp;")),
-    S3 = element(2, regexp:gsub(S2, "<", "\\&lt;")),
-    S4 = element(2, regexp:gsub(S3, ">", "\\&gt;")),
-    S5 = element(2, regexp:gsub(S4, "((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+",
-				link_regexp(NoFollow))),
-    %% Remove 'right-to-left override' unicode character 0x202e
-    S6 = element(2, regexp:gsub(S5, "  ", "\\&nbsp;\\&nbsp;")),
-    S7 = element(2, regexp:gsub(S6, "\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;")),
-    element(2, regexp:gsub(S7, [226,128,174], "[RLO]")).
+    ReplacementRules =
+        [{"\\&", "\\&amp;"},
+         {"<", "\\&lt;"},
+         {">", "\\gt;"},
+         {"((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+", link_regexp(NoFollow)},
+         {"  ", "\\&nbsp;\\&nbsp;"},
+         {"\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;"},
+         {[226,128,174], "[RLO]"}],
+    lists:foldl(fun({RegExp, Replace}, Acc) ->
+                        re:replace(Acc, RegExp, Replace)
+                end, S1, ReplacementRules).
 
 %% Regexp link
 %% Add the nofollow rel attribute when required
@@ -847,7 +848,7 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
     Options2 = Title ++ Os2,
 
     lists:foldl(
-      fun({Opt, Val}, R) -> 
+      fun({Opt, Val}, R) ->
 	      case get_roomconfig_text(Opt) of
 		  undefined ->
 		      R;
@@ -857,7 +858,7 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 			       false -> "<div class=\"rcod\">" ++ OptText ++ "</div>";
 			       true -> "<div class=\"rcoe\">" ++ OptText ++ "</div>";
 			       "" -> "<div class=\"rcod\">" ++ OptText ++ "</div>";
-			       T -> 
+			       T ->
 				   case Opt of
 				       password -> "<div class=\"rcoe\">" ++ OptText ++ "</div>";
 				       max_users -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(integer_to_list(T), FileFormat) ++ "\"</div>";
