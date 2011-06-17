@@ -49,8 +49,14 @@ start_link() ->
 
 init([]) ->
     case erl_ddll:load_driver(ejabberd:get_so_path(), iconv_erl) of
-	ok -> ok;
-	{error, already_loaded} -> ok
+        ok ->
+            ok;
+        {error, already_loaded} ->
+            ok;
+        {error, Reason} ->
+            error_logger:error_msg("unable to load driver 'expat_erl': ~s",
+                                   [erl_ddll:format_error(Reason)]),
+            exit({driver_loading_failed, iconv_erl, Reason})
     end,
     Port = open_port({spawn, iconv_erl}, []),
     ets:new(iconv_table, [set, public, named_table]),
