@@ -505,11 +505,12 @@ pgsql_item_to_odbc(_) ->
 %% Open a database connection to MySQL
 mysql_connect(Server, Port, DB, Username, Password) ->
     case mysql_conn:start(Server, Port, Username, Password, DB, fun log/3) of
-	{ok, Ref} ->
+        {ok, Ref} ->
             mysql_conn:fetch(Ref, ["set names 'utf8';"], self()),
-	    {ok, Ref};
-	Err ->
-	    Err
+            mysql_conn:fetch(Ref, ["SET SESSION query_cache_type=1;"], self()),
+            {ok, Ref};
+        Err ->
+            Err
     end.
 
 %% Convert MySQL query result to Erlang ODBC result formalism

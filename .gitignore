@@ -39,3 +39,8 @@
 /ebin/*.beam
 /src/eldap_filter_yecc.erl
 erl_crash.dump
+/c_src/*.o
+/src/ELDAPv3.asn1db
+/src/ELDAPv3.erl
+/src/ELDAPv3.hrl
+/priv/lib

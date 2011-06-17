@@ -48,22 +48,9 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--ifdef(SSL40).
--include_lib("public_key/include/public_key.hrl"). 
+-include_lib("public_key/include/public_key.hrl").
 -define(PKIXEXPLICIT, 'OTP-PUB-KEY').
 -define(PKIXIMPLICIT, 'OTP-PUB-KEY').
--else.
--ifdef(SSL39).
--include_lib("ssl/include/ssl_pkix.hrl").
--define(PKIXEXPLICIT, 'OTP-PKIX').
--define(PKIXIMPLICIT, 'OTP-PKIX').
--else.
--include_lib("ssl/include/PKIX1Explicit88.hrl").
--include_lib("ssl/include/PKIX1Implicit88.hrl").
--define(PKIXEXPLICIT, 'PKIX1Explicit88').
--define(PKIXIMPLICIT, 'PKIX1Implicit88').
--endif.
--endif.
 -include("XmppAddr.hrl").
 
 -define(DICT, dict).
@@ -585,11 +572,11 @@ handle_sync_event(get_state_infos, _From, StateName, StateData) ->
 		      _:_ -> {unknown,unknown}
 		  end,
     Domains =	case StateData#state.authenticated of
-		    true -> 
+		    true ->
 			[StateData#state.auth_domain];
 		    false ->
 			Connections = StateData#state.connections,
-			[D || {{D, _}, established} <- 
+			[D || {{D, _}, established} <-
 			    dict:to_list(Connections)]
 		end,
     Infos = [
