@@ -29,7 +29,7 @@
 
 -behaviour(application).
 
--export([start_modules/0,start/2, get_log_path/0, prep_stop/1, stop/1, init/0]).
+-export([start_modules/0,start/2, get_log_path/0, prep_stop/1, stop/1]).
 
 -include("ejabberd.hrl").
 
@@ -41,12 +41,8 @@
 start(normal, _Args) ->
     ejabberd_loglevel:set(4),
     write_pid_file(),
-    %% FIXME: put it under ejabberd_sup
-    randoms:start_link(),
     db_init(),
     sha:start(),
-    %% FIXME: put it under ejabberd_sup
-    stringprep_sup:start_link(),
     xml:start(),
 
     LogPath = get_log_path(),
