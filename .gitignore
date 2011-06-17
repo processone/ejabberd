@@ -36,3 +36,4 @@
 /src/eldap/ELDAPv3.hrl
 /src/eldap/eldap_filter_yecc.erl
 /src/epam
+erl_crash.dump

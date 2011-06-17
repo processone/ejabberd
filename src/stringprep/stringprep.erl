@@ -30,18 +30,18 @@
 -behaviour(gen_server).
 
 -export([start/0, start_link/0,
-	 tolower/1,
-	 nameprep/1,
-	 nodeprep/1,
-	 resourceprep/1]).
+         tolower/1,
+         nameprep/1,
+         nodeprep/1,
+         resourceprep/1]).
 
 %% Internal exports, call-back functions.
 -export([init/1,
-	 handle_call/3,
-	 handle_cast/2,
-	 handle_info/2,
-	 code_change/3,
-	 terminate/2]).
+         handle_call/3,
+         handle_cast/2,
+         handle_info/2,
+         code_change/3,
+         terminate/2]).
 
 -define(STRINGPREP_PORT, stringprep_port).
 
@@ -57,8 +57,8 @@ start_link() ->
 
 init([]) ->
     case erl_ddll:load_driver(ejabberd:get_so_path(), stringprep_drv) of
-	ok -> ok;
-	{error, already_loaded} -> ok
+        ok -> ok;
+        {error, already_loaded} -> ok
     end,
     Port = open_port({spawn, stringprep_drv}, []),
     register(?STRINGPREP_PORT, Port),
@@ -105,8 +105,8 @@ resourceprep(String) ->
 
 control(Command, String) ->
     case port_control(?STRINGPREP_PORT, Command, String) of
-	[0 | _] -> error;
-	[1 | Res] -> Res
+        [0 | _] -> error;
+        [1 | Res] -> Res
     end.
 
 

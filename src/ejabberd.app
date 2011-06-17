@@ -148,7 +148,7 @@
                 ejabberd_offline,
                 random_generator
                ]},
-  {applications, [kernel, stdlib, sasl, mnesia, public_key, ssl]},
+  {applications, [kernel, stdlib, sasl, mnesia, public_key, ssl, crypto]},
   {env, []},
   {mod, {ejabberd_app, []}}]}.
 

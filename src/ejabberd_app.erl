@@ -41,13 +41,23 @@
 start(normal, _Args) ->
     ejabberd_loglevel:set(4),
     write_pid_file(),
-    %% FIXME:
+    %% FIXME: put it under ejabberd_sup
     randoms:start_link(),
     db_init(),
     sha:start(),
+    %% FIXME: put it under ejabberd_sup
     stringprep_sup:start_link(),
     xml:start(),
-    start(),
+
+    LogPath = get_log_path(),
+    error_logger:add_report_handler(ejabberd_logger_h, LogPath),
+
+    erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
+    case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
+        ok -> ok;
+        {error, already_loaded} -> ok
+    end,
+
     translate:start(),
     acl:start(),
     ejabberd_ctl:init(),
@@ -95,39 +105,16 @@ stop(_State) ->
 %%%
 %%% Internal functions
 %%%
-
-start() ->
-    spawn_link(?MODULE, init, []).
-
-init() ->
-    register(ejabberd, self()),
-    %%erlang:system_flag(fullsweep_after, 0),
-    %%error_logger:logfile({open, ?LOG_PATH}),
-    LogPath = get_log_path(),
-    error_logger:add_report_handler(ejabberd_logger_h, LogPath),
-    erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
-    case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
-        ok -> ok;
-        {error, already_loaded} -> ok
-    end,
-    Port = open_port({spawn, expat_erl}, [binary]),
-    loop(Port).
-
-
-loop(Port) ->
-    receive
-        _ ->
-            loop(Port)
-    end.
-
+-spec db_init() -> list().
 db_init() ->
     case mnesia:system_info(extra_db_nodes) of
         [] ->
-            mnesia:create_schema([node()]);
+            application:stop(mnesia),
+            mnesia:create_schema([node()]),
+            application:start(mnesia, permanent);
         _ ->
             ok
     end,
-    application:start(mnesia, permanent),
     mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
 
 %% Start all the modules in all the hosts
