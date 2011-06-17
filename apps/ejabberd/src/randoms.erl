@@ -34,7 +34,7 @@
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-    proc_lib:spawn_link(?MODULE, init, [self()]).
+    proc_lib:start_link(?MODULE, init, [self()]).
 
 -spec get_string() -> string().
 get_string() ->
