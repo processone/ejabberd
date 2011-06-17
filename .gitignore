@@ -53,3 +53,5 @@ apps/ejabberd/src/ejabberd.init
 apps/ejabberd/src/ejabberdctl.example
 apps/ejabberd/src/eldap_filter_yecc.erl
 rel/ejabberd/
+apps/stringprep/ebin
+apps/stringprep/priv

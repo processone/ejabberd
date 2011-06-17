@@ -154,8 +154,6 @@
              randoms,
              sha,
              shaper,
-             stringprep,
-             stringprep_sup,
              stun_codec,
              tls,
              translate,
@@ -186,7 +184,7 @@
                 ejabberd_offline,
                 random_generator
                ]},
-  {applications, [kernel, stdlib, sasl, mnesia, public_key, ssl, crypto]},
+  {applications, [kernel, stdlib, sasl, mnesia, public_key, ssl, crypto, stringprep]},
   {env, []},
   {mod, {ejabberd_app, []}}]}.
 

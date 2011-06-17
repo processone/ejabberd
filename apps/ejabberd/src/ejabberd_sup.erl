@@ -42,13 +42,6 @@ init([]) ->
          brutal_kill,
          worker,
          [randoms]},
-    StringprepSup =
-        {stringprep_sup,
-         {stringprep_sup, start_link, []},
-         permanent,
-         brutal_kill,
-         supervisor,
-         [stringprep_sup]},
     Hooks =
         {ejabberd_hooks,
          {ejabberd_hooks, start_link, []},
@@ -201,7 +194,6 @@ init([]) ->
 
     {ok, {{one_for_one, 10, 1},
           [Randoms,
-           StringprepSup,
            Hooks,
            NodeGroups,
            SystemMonitor,
