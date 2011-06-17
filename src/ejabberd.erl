@@ -33,7 +33,7 @@
 
 start() ->
     %%ejabberd_cover:start(),
-    application:start(ejabberd).
+    ok = application:start(ejabberd).
 
 stop() ->
     application:stop(ejabberd).
