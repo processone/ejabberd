@@ -222,20 +222,18 @@ match_acl(ACL, JID, Host) ->
 		      ets:lookup(acl, {ACL, Host}))
     end.
 
+is_regexp_match(undefined, _RegExp) ->
+    false;
 is_regexp_match(String, RegExp) ->
-    case regexp:first_match(String, RegExp) of
-	nomatch ->
-	    false;
-	{match, _, _} ->
-	    true;
-	{error, ErrDesc} ->
-	    ?ERROR_MSG(
-	       "Wrong regexp ~p in ACL: ~p",
-	       [RegExp, lists:flatten(regexp:format_error(ErrDesc))]),
-	    false
+    try re:run(String, RegExp, [{capture, none}]) of
+        nomatch ->
+            false;
+        match ->
+            true
+    catch _:ErrDesc ->
+            ?ERROR_MSG("Wrong regexp ~p in ACL: ~p", [RegExp, ErrDesc]),
+            false
     end.
 
 is_glob_match(String, Glob) ->
-    is_regexp_match(String, regexp:sh_to_awk(Glob)).
-
-
+    is_regexp_match(String, xmerl_regexp:sh_to_awk(Glob)).
