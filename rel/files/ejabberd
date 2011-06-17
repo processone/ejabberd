@@ -12,7 +12,9 @@ PIPE_DIR=/tmp/$RUNNER_BASE_DIR/
 RUNNER_USER=
 
 EJABBERD_SO_PATH=$RUNNER_BASE_DIR/lib/ejabberd-2.1.8/priv/lib
+EJABBERD_CONFIG_PATH=$RUNNER_ETC_DIR/ejabberd.cfg
 export EJABBERD_SO_PATH
+export EJABBERD_CONFIG_PATH
 
 # Make sure this script is running as the appropriate user
 if [ ! -z "$RUNNER_USER" ] && [ `whoami` != "$RUNNER_USER" ]; then
