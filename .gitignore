@@ -52,3 +52,4 @@ apps/ejabberd/src/config.log
 apps/ejabberd/src/ejabberd.init
 apps/ejabberd/src/ejabberdctl.example
 apps/ejabberd/src/eldap_filter_yecc.erl
+rel/ejabberd/

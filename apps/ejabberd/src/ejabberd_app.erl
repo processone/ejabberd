@@ -48,12 +48,7 @@ start(normal, _Args) ->
     LogPath = get_log_path(),
     error_logger:add_report_handler(ejabberd_logger_h, LogPath),
 
-    erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
-    case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
-        ok -> ok;
-        {error, already_loaded} -> ok
-    end,
-
+    load_drivers([tls_drv, expat_erl]),
     translate:start(),
     acl:start(),
     ejabberd_ctl:init(),
@@ -221,4 +216,19 @@ delete_pid_file() ->
             ok;
         PidFilename ->
             file:delete(PidFilename)
+    end.
+
+-spec load_drivers(list(atom())) -> ok.
+load_drivers([]) ->
+    ok;
+load_drivers([Driver | Rest]) ->
+    case erl_ddll:load_driver(ejabberd:get_so_path(), Driver) of
+        ok ->
+            load_drivers(Rest);
+        {error, already_loaded} ->
+            load_drivers(Rest);
+        {error, Reason} ->
+            ?CRITICAL_MSG("unable to load driver 'expat_erl': ~s",
+                          [erl_ddll:format_error(Reason)]),
+            exit({driver_loading_failed, Driver, Reason})
     end.
