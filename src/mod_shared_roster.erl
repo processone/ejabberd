@@ -56,8 +56,8 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -record(sr_group, {group_host, opts}).
 -record(sr_user, {us, group_host}).
@@ -134,15 +134,15 @@ stop(Host) ->
 get_user_roster(Items, US) ->
     {U, S} = US,
     DisplayedGroups = get_user_displayed_groups(US),
-    %% Get shared roster users in all groups and remove self: 
-    SRUsers = 
+    %% Get shared roster users in all groups and remove self:
+    SRUsers =
 	lists:foldl(
 	  fun(Group, Acc1) ->
 		  GroupName = get_group_name(S, Group),
 		  lists:foldl(
 		    fun(User, Acc2) ->
 			    if User == US -> Acc2;
-			       true -> dict:append(User, 
+			       true -> dict:append(User,
 						   GroupName,
 						   Acc2)
 			    end
@@ -336,7 +336,7 @@ get_jid_info({Subscription, Groups}, User, Server, JID) ->
     {U1, S1, _} = jlib:jid_tolower(JID),
     US1 = {U1, S1},
     DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = 
+    SRUsers =
 	lists:foldl(
 	  fun(Group, Acc1) ->
 		  lists:foldl(

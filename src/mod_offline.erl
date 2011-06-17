@@ -46,8 +46,8 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
 
@@ -97,9 +97,9 @@ loop(AccessMaxOfflineMsgs) ->
 			%% Only count messages if needed:
 			Count = if MaxOfflineMsgs =/= infinity ->
 					Len + p1_mnesia:count_records(
-						offline_msg, 
+						offline_msg,
 						#offline_msg{us=US, _='_'});
-				   true -> 
+				   true ->
 					0
 				end,
 			if

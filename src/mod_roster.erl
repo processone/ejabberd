@@ -59,8 +59,8 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 
 start(Host, Opts) ->
@@ -145,9 +145,9 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
 roster_hash(Items) ->
 	sha:sha(term_to_binary(
 		lists:sort(
-			[R#roster{groups = lists:sort(Grs)} || 
+			[R#roster{groups = lists:sort(Grs)} ||
 				R = #roster{groups = Grs} <- Items]))).
-		
+
 roster_versioning_enabled(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, versioning, false).
 
@@ -178,7 +178,7 @@ roster_version(LServer ,LUser) ->
 			roster_hash(ejabberd_hooks:run_fold(roster_get, LServer, [], [US]))
 	end.
 
-%% Load roster from DB only if neccesary. 
+%% Load roster from DB only if neccesary.
 %% It is neccesary if
 %%     - roster versioning is disabled in server OR
 %%     - roster versioning is not used by the client OR
@@ -189,8 +189,8 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
     LServer = From#jid.lserver,
     US = {LUser, LServer},
     try
-	    {ItemsToSend, VersionToSend} = 
-		case {xml:get_tag_attr("ver", SubEl), 
+	    {ItemsToSend, VersionToSend} =
+		case {xml:get_tag_attr("ver", SubEl),
 		      roster_versioning_enabled(LServer),
 		      roster_version_on_db(LServer)} of
 		{{value, RequestedVersion}, true, true} ->
@@ -200,7 +200,7 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
 				[#roster_version{version = RequestedVersion}] ->
 					{false, false};
 				[#roster_version{version = NewVersion}] ->
-					{lists:map(fun item_to_xml/1, 
+					{lists:map(fun item_to_xml/1,
 						ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US])), NewVersion};
 				[] ->
 					RosterVersion = sha:sha(term_to_binary(now())),
@@ -217,9 +217,9 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
 				New ->
 					{lists:map(fun item_to_xml/1, RosterItems), New}
 			end;
-			
+
 		_ ->
-			{lists:map(fun item_to_xml/1, 
+			{lists:map(fun item_to_xml/1,
 					ejabberd_hooks:run_fold(roster_get, To#jid.lserver, [], [US])), false}
 		end,
 		IQ#iq{type = result, sub_el = case {ItemsToSend, VersionToSend} of
@@ -227,8 +227,8 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
 						 {Items, false} -> [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}], Items}];
 						 {Items, Version} -> [{xmlelement, "query", [{"xmlns", ?NS_ROSTER}, {"ver", Version}], Items}]
 						end}
-    catch 
-    	_:_ ->  
+    catch
+    	_:_ ->
 		IQ#iq{type =error, sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
 
@@ -909,7 +909,7 @@ convert_table1(Fields) ->
     mnesia:delete_table(mod_roster_tmp_table).
 
 
-%% Convert roster table: xattrs fields become 
+%% Convert roster table: xattrs fields become
 convert_table2(Fields) ->
     ?INFO_MSG("Converting roster table from "
 	      "{usj, us, jid, name, subscription, ask, groups, xattrs, xs} format", []),

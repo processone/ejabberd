@@ -45,8 +45,8 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include("web/ejabberd_http.hrl").
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_http.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -record(offline_msg, {user, timestamp, expire, from, to, packet}).
 
@@ -92,7 +92,7 @@ loop(Host, AccessMaxOfflineMsgs) ->
 			    Len + count_offline_messages(User, Host);
 		       true -> 0
 		    end,
-	    if 
+	    if
 		Count > MaxOfflineMsgs ->
 		    discard_warn_sender(Msgs);
 		true ->
@@ -118,7 +118,7 @@ loop(Host, AccessMaxOfflineMsgs) ->
 					   jlib:make_jid("", Host, ""),
 					   "Offline Storage"),
 					 %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-					 jlib:timestamp_to_xml( 
+					 jlib:timestamp_to_xml(
 					   calendar:now_to_universal_time(
 						     M#offline_msg.timestamp))]},
 				      XML =

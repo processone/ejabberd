@@ -50,7 +50,7 @@
 	]).
 
 -include("ejabberd.hrl").
--include("eldap/eldap.hrl").
+-include("eldap.hrl").
 -include("jlib.hrl").
 
 -define(PROCNAME, ejabberd_mod_vcard_ldap).
@@ -499,7 +499,7 @@ route(State, From, To, Packet) ->
 				    Packet, ?ERR_NOT_ALLOWED),
 			    ejabberd_router:route(To, From, Err);
 			get ->
-			    ResIQ = 
+			    ResIQ =
 				IQ#iq{type = result,
 				      sub_el = [{xmlelement,
 						 "query",
@@ -510,7 +510,7 @@ route(State, From, To, Packet) ->
 						  jlib:iq_to_xml(ResIQ))
 		    end;
 		#iq{type = get, xmlns = ?NS_VCARD, lang = Lang} ->
-		    ResIQ = 
+		    ResIQ =
 			IQ#iq{type = result,
 			      sub_el = [{xmlelement,
 					 "vCard",

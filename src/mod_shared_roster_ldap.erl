@@ -46,7 +46,7 @@
 
 -include("ejabberd.hrl").
 -include("mod_roster.hrl").
--include("eldap/eldap.hrl").
+-include("eldap.hrl").
 
 -define(CACHE_SIZE, 1000).
 -define(USER_CACHE_VALIDITY, 300). %% in seconds

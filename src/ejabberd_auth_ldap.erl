@@ -58,7 +58,7 @@
 	]).
 
 -include("ejabberd.hrl").
--include("eldap/eldap.hrl").
+-include("eldap.hrl").
 
 -record(state, {host,
 		eldap_id,
@@ -342,7 +342,7 @@ check_local_filter(_Attrs, #state{lfilter = undefined}) ->
 check_local_filter(Attrs, #state{lfilter = LocalFilter}) ->
     {Operation, FilterMatch} = LocalFilter,
     local_filter(Operation, Attrs, FilterMatch).
-    
+
 local_filter(equal, Attrs, FilterMatch) ->
     {Attr, Value} = FilterMatch,
     case lists:keysearch(Attr, 1, Attrs) of
