@@ -542,7 +542,7 @@ get_local_items({_, Host}, ["all users", [$@ | Diap]], _Server, _Lang) ->
 	Users ->
 	    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
 	    case catch begin
-			   {ok, [S1, S2]} = regexp:split(Diap, "-"),
+			   [S1, S2] = re:split(Diap, "-", [{return, list}]),
 			   N1 = list_to_integer(S1),
 			   N2 = list_to_integer(S2),
 			   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
@@ -668,7 +668,7 @@ get_all_vh_users(Host) ->
 					  if L < N -> lists:nth(L, SUsers);
 					     true -> lists:last(SUsers)
 					  end,
-				      Name = 
+				      Name =
 					  FU ++ "@" ++ FS ++
 					  " -- " ++
 					  LU ++ "@" ++ LS,
@@ -806,7 +806,7 @@ adhoc_local_commands(From, #jid{lserver = LServer} = _To,
     if	Action == "cancel" ->
 	    %% User cancels request
 	    adhoc:produce_response(
-	      Request, 
+	      Request,
 	      #adhoc_response{status = canceled});
 	XData == false, ActionIsExecute ->
 	    %% User requests form
@@ -1045,9 +1045,9 @@ get_form(_Host, ["running nodes", ENode, "import", "dir"], Lang) ->
 	       ]}]};
 
 get_form(_Host, ["running nodes", _ENode, "restart"], Lang) ->
-    Make_option = 
+    Make_option =
 	fun(LabelNum, LabelUnit, Value)->
-		{xmlelement, "option", 
+		{xmlelement, "option",
 		 [{"label", LabelNum ++ ?T(Lang, LabelUnit)}],
 		 [{xmlelement, "value", [], [{xmlcdata, Value}]}]}
 	end,
@@ -1055,7 +1055,7 @@ get_form(_Host, ["running nodes", _ENode, "restart"], Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Restart Service")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "list-single"},
 		  {"label", ?T(Lang, "Time delay")},
 		  {"var", "delay"}],
@@ -1073,11 +1073,11 @@ get_form(_Host, ["running nodes", _ENode, "restart"], Lang) ->
 		  Make_option("30 ", "minutes", "1800"),
 		  {xmlelement, "required", [], []}
 		 ]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "fixed"},
 		  {"label", ?T(Lang, "Send announcement to all online users on all hosts")}],
 		 []},
-		{xmlelement, "field", 
+		{xmlelement, "field",
 		 [{"var", "subject"},
 		  {"type", "text-single"},
 		  {"label", ?T(Lang, "Subject")}],
@@ -1090,9 +1090,9 @@ get_form(_Host, ["running nodes", _ENode, "restart"], Lang) ->
 	       ]}]};
 
 get_form(_Host, ["running nodes", _ENode, "shutdown"], Lang) ->
-    Make_option = 
+    Make_option =
 	fun(LabelNum, LabelUnit, Value)->
-		{xmlelement, "option", 
+		{xmlelement, "option",
 		 [{"label", LabelNum ++ ?T(Lang, LabelUnit)}],
 		 [{xmlelement, "value", [], [{xmlcdata, Value}]}]}
 	end,
@@ -1100,7 +1100,7 @@ get_form(_Host, ["running nodes", _ENode, "shutdown"], Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Shut Down Service")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "list-single"},
 		  {"label", ?T(Lang, "Time delay")},
 		  {"var", "delay"}],
@@ -1118,11 +1118,11 @@ get_form(_Host, ["running nodes", _ENode, "shutdown"], Lang) ->
 		  Make_option("30 ", "minutes", "1800"),
 		  {xmlelement, "required", [], []}
 		 ]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "fixed"},
 		  {"label", ?T(Lang, "Send announcement to all online users on all hosts")}],
 		 []},
-		{xmlelement, "field", 
+		{xmlelement, "field",
 		 [{"var", "subject"},
 		  {"type", "text-single"},
 		  {"label", ?T(Lang, "Subject")}],
@@ -1195,17 +1195,17 @@ get_form(_Host, ?NS_ADMINL("add-user"), Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Add User")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "jid-single"},
 		  {"label", ?T(Lang, "Jabber ID")},
 		  {"var", "accountjid"}],
 		 [{xmlelement, "required", [], []}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "text-private"},
 		  {"label", ?T(Lang, "Password")},
 		  {"var", "password"}],
 		 [{xmlelement, "required", [], []}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "text-private"},
 		  {"label", ?T(Lang, "Password Verification")},
 		  {"var", "password-verify"}],
@@ -1217,7 +1217,7 @@ get_form(_Host, ?NS_ADMINL("delete-user"), Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Delete User")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "jid-multi"},
 		  {"label", ?T(Lang, "Jabber ID")},
 		  {"var", "accountjids"}],
@@ -1229,7 +1229,7 @@ get_form(_Host, ?NS_ADMINL("end-user-session"), Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "End User Session")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "jid-single"},
 		  {"label", ?T(Lang, "Jabber ID")},
 		  {"var", "accountjid"}],
@@ -1241,7 +1241,7 @@ get_form(_Host, ?NS_ADMINL("get-user-password"), Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Get User Password")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "jid-single"},
 		  {"label", ?T(Lang, "Jabber ID")},
 		  {"var", "accountjid"}],
@@ -1253,12 +1253,12 @@ get_form(_Host, ?NS_ADMINL("change-user-password"), Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Get User Password")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "jid-single"},
 		  {"label", ?T(Lang, "Jabber ID")},
 		  {"var", "accountjid"}],
 		 [{xmlelement, "required", [], []}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "text-private"},
 		  {"label", ?T(Lang, "Password")},
 		  {"var", "password"}],
@@ -1270,7 +1270,7 @@ get_form(_Host, ?NS_ADMINL("get-user-lastlogin"), Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Get User Last Login Time")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "jid-single"},
 		  {"label", ?T(Lang, "Jabber ID")},
 		  {"var", "accountjid"}],
@@ -1282,7 +1282,7 @@ get_form(_Host, ?NS_ADMINL("user-stats"), Lang) ->
 	       [?HFIELD(),
 		{xmlelement, "title", [],
 		 [{xmlcdata, ?T(Lang, "Get User Statistics")}]},
-	        {xmlelement, "field", 
+	        {xmlelement, "field",
 		 [{"type", "jid-single"},
 		  {"label", ?T(Lang, "Jabber ID")},
 		  {"var", "accountjid"}],
@@ -1292,11 +1292,11 @@ get_form(_Host, ?NS_ADMINL("user-stats"), Lang) ->
 get_form(Host, ?NS_ADMINL("get-registered-users-num"), Lang) ->
     [Num] = io_lib:format("~p", [ejabberd_auth:get_vh_registered_users_number(Host)]),
     {result, completed,
-     [{xmlelement, "x", 
+     [{xmlelement, "x",
        [{"xmlns", ?NS_XDATA}],
        [?HFIELD(),
-	{xmlelement, 
-	 "field", 
+	{xmlelement,
+	 "field",
 	 [{"type", "text-single"},
 	  {"label", ?T(Lang, "Number of registered users")},
 	  {"var", "registeredusersnum"}],
@@ -1306,11 +1306,11 @@ get_form(Host, ?NS_ADMINL("get-registered-users-num"), Lang) ->
 get_form(Host, ?NS_ADMINL("get-online-users-num"), Lang) ->
     Num = io_lib:format("~p", [length(ejabberd_sm:get_vh_session_list(Host))]),
     {result, completed,
-     [{xmlelement, "x", 
+     [{xmlelement, "x",
        [{"xmlns", ?NS_XDATA}],
        [?HFIELD(),
-	{xmlelement, 
-	 "field", 
+	{xmlelement,
+	 "field",
 	 [{"type", "text-single"},
 	  {"label", ?T(Lang, "Number of online users")},
 	  {"var", "onlineusersnum"}],
@@ -1608,7 +1608,7 @@ set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
 	     fun(AccountString) ->
 		     JID = jlib:string_to_jid(AccountString),
 		     [_|_] = JID#jid.luser,
-		     User = JID#jid.luser, 
+		     User = JID#jid.luser,
 		     Server = JID#jid.lserver,
 		     true = (Server == Host) orelse (get_permission_level(From) == global),
 		     true = ejabberd_auth:is_user_exists(User, Server),
@@ -1622,28 +1622,28 @@ set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
-    LUser = JID#jid.luser, 
-    LServer = JID#jid.lserver, 
+    LUser = JID#jid.luser,
+    LServer = JID#jid.lserver,
     true = (LServer == Host) orelse (get_permission_level(From) == global),
     %% Code copied from ejabberd_sm.erl
     case JID#jid.lresource of
-	[] -> 
+	[] ->
 	    SIDs = mnesia:dirty_select(session,
 				       [{#session{sid = '$1', usr = {LUser, LServer, '_'}, _ = '_'}, [], ['$1']}]),
 	    [Pid ! replaced || {_, Pid} <- SIDs];
-	R -> 
+	R ->
 	    [{_, Pid}] = mnesia:dirty_select(session,
 					     [{#session{sid = '$1', usr = {LUser, LServer, R}, _ = '_'}, [], ['$1']}]),
 	    Pid ! replaced
-    end, 
+    end,
     {result, []};
 
 set_form(From, Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
-    User = JID#jid.luser, 
-    Server = JID#jid.lserver, 
+    User = JID#jid.luser,
+    Server = JID#jid.lserver,
     true = (Server == Host) orelse (get_permission_level(From) == global),
     Password = ejabberd_auth:get_password(User, Server),
     true = is_list(Password),
@@ -1658,8 +1658,8 @@ set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     Password = get_value("password", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
-    User = JID#jid.luser, 
-    Server = JID#jid.lserver, 
+    User = JID#jid.luser,
+    Server = JID#jid.lserver,
     true = (Server == Host) orelse (get_permission_level(From) == global),
     true = ejabberd_auth:is_user_exists(User, Server),
     ejabberd_auth:set_password(User, Server, Password),
@@ -1669,8 +1669,8 @@ set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
-    User = JID#jid.luser, 
-    Server = JID#jid.lserver, 
+    User = JID#jid.luser,
+    Server = JID#jid.lserver,
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
     %% Code copied from web/ejabberd_web_admin.erl
@@ -1707,8 +1707,8 @@ set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     JID = jlib:string_to_jid(AccountString),
     [_|_] = JID#jid.luser,
-    User = JID#jid.luser, 
-    Server = JID#jid.lserver, 
+    User = JID#jid.luser,
+    Server = JID#jid.lserver,
     true = (Server == Host) orelse (get_permission_level(From) == global),
 
     Resources = ejabberd_sm:get_user_resources(User, Server),
@@ -1729,9 +1729,9 @@ set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
 set_form(_From, _Host, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
-get_value(Field, XData) -> 
+get_value(Field, XData) ->
     hd(get_values(Field, XData)).
-get_values(Field, XData) -> 
+get_values(Field, XData) ->
     {value, {_, ValueList}} = lists:keysearch(Field, 1, XData),
     ValueList.
 
@@ -1814,7 +1814,7 @@ adhoc_sm_commands(_Acc, From,
 	    if	Action == "cancel" ->
 		    %% User cancels request
 		    adhoc:produce_response(
-		      Request, 
+		      Request,
 		      #adhoc_response{status = canceled});
 		XData == false, ActionIsExecute ->
 		    %% User requests form

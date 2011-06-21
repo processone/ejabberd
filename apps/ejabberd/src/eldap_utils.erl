@@ -91,8 +91,8 @@ get_user_part(String, Pattern) ->
 	{'EXIT', _} ->
 	    {error, badmatch};
 	Result ->
-	    case regexp:sub(Pattern, "%u", Result) of
-		{ok, String, _} -> {ok, Result};
+	    case re:replace(Pattern, "%u", Result, [{return, list}]) of
+		String -> {ok, Result};
 		_ -> {error, badmatch}
 	    end
     end.
@@ -141,6 +141,6 @@ get_state(Server, Module) ->
 uids_domain_subst(Host, UIDs) ->
     lists:map(fun({U,V}) ->
                       {U, eldap_filter:do_sub(V,[{"%d", Host}])};
-                  (A) -> A 
+                  (A) -> A
               end,
               UIDs).

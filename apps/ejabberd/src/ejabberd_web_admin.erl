@@ -149,7 +149,7 @@ is_allowed_path(Path, JID) ->
 %% Convert "admin/user/tom" -> ["admin", "user", "tom"]
 url_to_path(URL) ->
     string:tokens(URL, "/").
-  
+
 %%%==================================
 %%%% process/2
 
@@ -422,7 +422,7 @@ html>body #container {
   width: 100%;
   color: #ffffff;
   background-color: #fe8a00;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 7pt;
   font-weight: bold;
   text-align: center;
@@ -434,7 +434,7 @@ html>body #container {
   left: 0;
   padding: 0 1px 1px 1px;
   margin: 0;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 8pt;
   font-weight: bold;
   border-top: 1px solid #d47911;
@@ -501,14 +501,14 @@ ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
 td.copy {
   color: #ffffff;
   background-color: #fe8a00;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 7pt;
   font-weight: bold;
   text-align: center;
 }
 
 input {
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   border: 1px solid #d6760e;
   color: #723202;
@@ -519,7 +519,7 @@ input {
 }
 
 input[type=submit] {
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 8pt;
   font-weight: bold;
   color: #ffffff;
@@ -528,7 +528,7 @@ input[type=submit] {
 }
 
 textarea {
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   border: 1px solid #d6760e;
   color: #723202;
@@ -540,14 +540,14 @@ select {
   color: #723202;
   background-color: #fff2e8;
   vertical-align: middle;
-  margin-bottom: 0px; 
+  margin-bottom: 0px;
   padding: 0.1em;
 }
 
 thead {
   color: #000000;
   background-color: #ffffff;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   font-weight: bold;
 }
@@ -555,7 +555,7 @@ thead {
 tr.head {
   color: #ffffff;
   background-color: #3b547a;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 9pt;
   font-weight: bold;
   text-align: center;
@@ -564,7 +564,7 @@ tr.head {
 tr.oddraw {
   color: #412c75;
   background-color: #ccd4df;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 9pt;
   font-weight: normal;
   text-align: center;
@@ -573,7 +573,7 @@ tr.oddraw {
 tr.evenraw {
   color: #412c75;
   background-color: #dbe0e8;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 9pt;
   font-weight: normal;
   text-align: center;
@@ -582,7 +582,7 @@ tr.evenraw {
 td.leftheader {
   color: #412c75;
   background-color: #ccccc1;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 9pt;
   font-weight: bold;
   padding-left: 5px;
@@ -595,7 +595,7 @@ td.leftheader {
 td.leftcontent {
   color: #000044;
   background-color: #e6e6df;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 7pt;
   font-weight: normal;
   padding-left: 5px;
@@ -608,7 +608,7 @@ td.leftcontent {
 
 td.rightcontent {
   color: #000044;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   font-weight: normal;
   text-align: justify;
@@ -620,7 +620,7 @@ td.rightcontent {
 
 h1 {
   color: #000044;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 14pt;
   font-weight: bold;
   text-align: center;
@@ -632,7 +632,7 @@ h1 {
 
 h2 {
   color: #000044;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 12pt;
   font-weight: bold;
   text-align: center;
@@ -644,7 +644,7 @@ h2 {
 
 h3 {
   color: #000044;
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   font-weight: bold;
   text-align: left;
@@ -655,22 +655,22 @@ h3 {
 }
 
 #content a:link {
-  color: #990000; 
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  color: #990000;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   font-weight: bold;
   text-decoration: underline;
 }
 #content a:visited {
-  color: #990000;  
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  color: #990000;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   font-weight: bold;
   text-decoration: underline;
 }
 #content a:hover {
-  color: #cc6600;  
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  color: #cc6600;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   font-weight: bold;
   text-decoration: underline;
@@ -693,7 +693,7 @@ h3 {
 }
 
 #content {
-  font-family: Verdana, Arial, Helvetica, sans-serif; 
+  font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 10pt;
   padding-left: 17em;
   padding-top: 5px;
@@ -1140,7 +1140,7 @@ process_admin(Host,
 %%%==================================
 %%%% process_admin default case
 
-process_admin(Host, #request{lang = Lang, 
+process_admin(Host, #request{lang = Lang,
 		       auth = {_, _Auth, AJID}
 		    } = Request) ->
     {Hook, Opts} = case Host of
@@ -1231,7 +1231,7 @@ acl_spec_select(ID, Opt) ->
 			?XAC("option",
 			     Sel ++ [{"value", atom_to_list(O)}],
 			     atom_to_list(O))
-		end, [user, server, user_regexp, server_regexp, 
+		end, [user, server, user_regexp, server_regexp,
 		      node_regexp, user_glob, server_glob, node_glob, all, raw]))]).
 
 
@@ -1239,13 +1239,12 @@ acl_spec_select(ID, Opt) ->
 term_to_string(T) ->
     StringParagraph = lists:flatten(io_lib:format("~1000000p", [T])),
     %% Remove from the string all the carriage returns characters
-    {ok, StringLine, _} = regexp:gsub(StringParagraph, "\\n ", ""),
-    StringLine.
+    re:replace(StringParagraph, "\\n ", "", [global, {return, list}]).
 
 %% @spec (T::any(), Cols::integer()) -> {NumLines::integer(), Paragraph::string()}
 term_to_paragraph(T, Cols) ->
     Paragraph = erl_prettypr:format(erl_syntax:abstract(T), [{paper, Cols}]),
-    {ok, FieldList} = regexp:split(Paragraph, "\n"),
+    FieldList = re:split(Paragraph, "\n", [{return, list}]),
     NumLines = length(FieldList),
     {NumLines, Paragraph}.
 
@@ -1329,9 +1328,9 @@ string_to_spec("raw", Val) ->
 string_to_spec2(ACLName, Val) ->
     #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
     case U of
-	"" -> 
+	"" ->
 	    {ACLName, S};
-	_ -> 
+	_ ->
 	    {ACLName, U, S}
     end.
 
@@ -1498,7 +1497,7 @@ list_users(Host, Query, Lang, URLFunc) ->
 			  Last = if L < N -> su_to_list(lists:nth(L, SUsers));
 				    true -> su_to_list(lists:last(SUsers))
 				 end,
-			  Name = 
+			  Name =
 			      su_to_list(lists:nth(K, SUsers)) ++
 			      [$\s, 226, 128, 148, $\s] ++
 			      Last,
@@ -1558,7 +1557,7 @@ list_users_parse_query(Query, Host) ->
 list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
-    {ok, [S1, S2]} = regexp:split(Diap, "-"),
+    [S1, S2] = re:split(Diap, "-", [{return, list}]),
     N1 = list_to_integer(S1),
     N2 = list_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
@@ -1854,7 +1853,7 @@ histogram(Values, Integral) ->
 
 histogram([H | T], Integral, Current, Count, Hist) when Current == H ->
     histogram(T, Integral, Current, Count + 1, Hist);
-	    
+
 histogram([H | _] = Values, Integral, Current, Count, Hist) when Current < H ->
     if
 	Integral ->
@@ -2178,7 +2177,7 @@ get_node(global, Node, ["stats"], _Query, Lang) ->
 	rpc:call(Node, mnesia, system_info, [transaction_restarts]),
     TransactionsLogged =
 	rpc:call(Node, mnesia, system_info, [transaction_log_writes]),
-    
+
     [?XC("h1", io_lib:format(?T("Statistics of ~p"), [Node])),
      ?XAE("table", [],
 	  [?XE("tbody",
@@ -2484,7 +2483,7 @@ get_port_data(PortIP, Opts) ->
 		 fun(N) -> io_lib:format("~.16b", [N]) end,
 		 binary_to_list(crypto:md5(SPort++IPS++atom_to_list(NetProt))))),
     {Port, SPort, IPT, IPS, SSPort, NetProt, OptsClean}.
-  
+
 
 node_ports_parse_query(Node, Ports, Query) ->
     lists:foreach(
