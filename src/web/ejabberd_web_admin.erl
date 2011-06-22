@@ -2443,8 +2443,17 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 
 get_node(global, Node, ["pid"], _Query, Lang) ->
     NodeS = atom_to_list(Node),
+    Registered = lists:reverse(lists:sort(rpc:call(Node, erlang, registered, []))),
     Processes = rpc:call(Node, erlang, processes, []),
     ProcessesNumber = length(Processes),
+    RegisteredList = lists:foldl(
+		      fun(P, RRL) ->
+			      PS = atom_to_list(P),
+			      NodePidS = NodeS ++ "/pid/" ++ PS,
+			      [?AC("/admin/node/" ++ NodePidS ++ "/", PS), ?BR | RRL]
+		      end,
+		      [],
+		      Registered),
     ProcessesList = lists:map(
 		      fun(P) ->
 			      PS = pid_to_list(P),
@@ -2461,10 +2470,23 @@ get_node(global, Node, ["pid"], _Query, Lang) ->
 	       ])
 	  ]),
      ?XAE('p', [],
-	  [?CT("Processes: ")] ++ ProcessesList
+	  [?CT("Registered processes and ports: ")] ++ RegisteredList
+	 ),
+     ?XAE('p', [],
+	  [?CT("Total processes: ")] ++ ProcessesList
 	 )];
 
-get_node(global, Node, ["pid", PidS], _Query, Lang) ->
+get_node(global, Node, ["pid", [Char1|_] = RegS], _Query, Lang) when Char1 /= $< ->
+    Ref = whereis(list_to_atom(RegS)),
+    {Type, PidS} = try
+	{"process", pid_to_list(Ref)}
+    catch
+	error:badarg ->
+	    {"port", RegS}
+    end,
+    get_node(global, Node, ["pid", Type, PidS], _Query, Lang);
+
+get_node(global, Node, ["pid", "process" = Type, PidS], _Query, Lang) ->
     NodeS = atom_to_list(Node),
     ProcessInfo = rpc:call(Node, erlang, process_info, [list_to_pid(PidS)]),
     ProcessInfoS = io_lib:format("~p", [ProcessInfo]),
@@ -2473,7 +2495,7 @@ get_node(global, Node, ["pid", PidS], _Query, Lang) ->
 		       {match, PidsRareList} ->
 			   lists:map(
 			     fun([PS]) ->
-				     NodePidS = NodeS ++ "/pid/" ++ PS,
+				     NodePidS = NodeS ++ "/pid/" ++ Type ++ "/" ++ PS,
 				     ?AC("/admin/node/" ++ NodePidS ++ "/", PS)
 			     end,
 			     PidsRareList);
@@ -2495,7 +2517,7 @@ get_node(global, Node, ["pid", PidS], _Query, Lang) ->
 	    _ ->
 		[]
 	end,
-    [?XC('h1', io_lib:format(?T("Erlang Process ~s at node ~p"), [PidS, Node])),
+    [?XC('h1', io_lib:format(?T("Erlang process ~s at node ~p"), [PidS, Node])),
      ?XC('h3', ?T("Process Information:")),
      ?XAE('pre', [], [?C(ProcessInfoS)]),
      ?XC('h3', ?T("Related Processes:")),
@@ -2504,6 +2526,14 @@ get_node(global, Node, ["pid", PidS], _Query, Lang) ->
      ?XE('ul',
 	 [ ?XE('li', [ ?C(PortName), ?BR, ?C(PortDescr) ])
 	   || {PortName, PortDescr} <- PortLinkList])
+    ];
+
+get_node(global, Node, ["pid", "port", PidS], _Query, Lang) ->
+    ProcessInfo = rpc:call(Node, erlang, port_info, [list_to_atom(PidS)]),
+    ProcessInfoS = io_lib:format("~p", [ProcessInfo]),
+    [?XC('h1', io_lib:format(?T("Erlang port ~s at node ~p"), [PidS, Node])),
+     ?XC('h3', ?T("Port Information:")),
+     ?XAE('pre', [], [?C(ProcessInfoS)])
     ];
 
 get_node(global, Node, ["ports"], Query, Lang) ->
@@ -3134,7 +3164,6 @@ make_host_menu(Host, HostNodeMenu, Lang, JID) ->
 		 {"online-users", "Online Users"},
 		 {"last-activity", "Last Activity"},
 		 {"nodes", "Nodes", HostNodeMenu},
-		 {"misc", "Miscelanea Options"},
 		 {"stats", "Statistics"}]
 	++ get_menu_items_hook({host, Host}, Lang),
     HostBasePath = url_to_path(HostBase),
