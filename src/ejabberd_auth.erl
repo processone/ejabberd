@@ -54,12 +54,10 @@
 	]).
 
 -export([start/1
-         ,start_module/2
-         ,stop_module/2
          ,start_modules/2
-         ,start_method/2
-         ,stop_method/2
+         ,stop_modules/2
          ,start_methods/2
+         ,stop_methods/2
         ]).
 
 -export([auth_modules/1]).
@@ -84,18 +82,24 @@ start(Host) ->
     start_modules(Host, auth_modules(Host)).
 
 start_modules(Host, Modules) when is_list(Modules) ->
-    lists:foreach(fun (M) -> start_module(Host, M) end, Modules).
-start_module(Host, Module) when is_atom(Module) ->
+    lists:foreach(fun (M) -> start_modules(Host, M) end, Modules);
+start_modules(Host, Module) when is_atom(Module) ->
     Module:start(Host).
-stop_module(Host, Module) when is_atom(Module) ->
+
+stop_modules(Host, Modules) when is_list(Modules) ->
+    lists:foreach(fun (M) -> stop_modules(Host, M) end, Modules);
+stop_modules(Host, Module) when is_atom(Module) ->
     Module:stop(Host).
 
 start_methods(Host, Methods) when is_list(Methods) ->
-    lists:foreach(fun (M) -> start_method(Host, M) end, Methods).
-start_method(Host, Method) when is_atom(Method) ->
-    start_module(Host, module_name(Method)).
-stop_method(Host, Method) when is_atom(Method) ->
-    stop_module(Host, module_name(Method)).
+    lists:foreach(fun (M) -> start_methods(Host, M) end, Methods);
+start_methods(Host, Method) when is_atom(Method) ->
+    start_modules(Host, module_name(Method)).
+
+stop_methods(Host, Methods) when is_list(Methods) ->
+    lists:foreach(fun (M) -> stop_methods(Host, M) end, Methods);
+stop_methods(Host, Method) when is_atom(Method) ->
+    stop_modules(Host, module_name(Method)).
 
 
 %% @spec (Server) -> bool()

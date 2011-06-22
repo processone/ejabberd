@@ -351,7 +351,7 @@ start_host(Host) when is_list(Host) ->
     end,
     case auth_method(Host) of
         {host_method, HostMethod} ->
-            ejabberd_auth:start_method(Host, HostMethod)
+            ejabberd_auth:start_methods(Host, HostMethod)
     end,
     ok.
 
@@ -371,7 +371,7 @@ stop_host(Host) when is_list(Host) ->
                   end, gen_mod:loaded_modules(Host)),
     case auth_method(Host) of
         {host_method, Method} ->
-            ejabberd_auth:stop_method(Host, Method)
+            ejabberd_auth:stop_methods(Host, Method)
     end.
 
 %% Get the current vhost list from a variety of sources (ODBC, internal)
