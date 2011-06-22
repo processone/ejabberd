@@ -7,6 +7,8 @@
 
 %%% Database schema (version / storage / table)
 %%%
+%%% The table 'hosts' keeps the dynamic hosts (not defined in ejabberd.cfg)
+%%%
 %%% 3.0.0-alpha-x / mnesia / hosts
 %%%  host = string()
 %%%  clusterid = integer()
@@ -212,11 +214,6 @@ handle_info(timeout, State = #state{state=wait_odbc,backend=Backend,odbc_wait_ti
 				      {types, [{host, text},
 					       {clusterid, int},
 					       {config, text}]}]),
-
-	    %% Now let's add the default vhost: "localhost"
-	    gen_storage:dirty_write(HostB, #hosts{host = Host,
-							clusterid = 1,
-							config = ""}),
 
             self() ! reload,
             timer:send_interval(?RELOAD_INTERVAL, reload),
