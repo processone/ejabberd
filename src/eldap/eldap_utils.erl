@@ -95,7 +95,14 @@ get_user_part(String, Pattern) ->
 	    {error, badmatch};
 	Result ->
 	    case regexp:sub(Pattern, "%u", Result) of
-		{ok, String, _} -> {ok, Result};
+		{ok, StringRes, _} ->
+                    case (string:to_lower(StringRes) ==
+                              string:to_lower(String)) of
+                        true ->
+                            {ok, Result};
+                        false ->
+                            {error, badmatch}
+                    end;
 		_ -> {error, badmatch}
 	    end
     end.
