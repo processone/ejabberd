@@ -2264,16 +2264,19 @@ items_with_affiliation(SAffiliation, StateData) ->
       fun({JID, {Affiliation, Reason}}) ->
         {N, D, R} = JID,
         #xmlel{name = 'item', 
+               ns = ?NS_MUC_ADMIN,
                attrs = [?XMLATTR(<<"affiliation">>, 
                                  affiliation_to_binary(Affiliation)),
                         ?XMLATTR(<<"jid">>,
                                  exmpp_jid:to_binary(N, D, R))],
                children = [ #xmlel{name = 'reason',
+                                   ns = ?NS_MUC_ADMIN,
                                    children = [#xmlcdata{cdata = Reason}]}]};
 
 	 ({JID, Affiliation}) ->
         {N, D, R} = JID,
         #xmlel{name = 'item', 
+               ns = ?NS_MUC_ADMIN,
                attrs = [?XMLATTR(<<"affiliation">>, 
                                  affiliation_to_binary(Affiliation)),
                         ?XMLATTR(<<"jid">>,
@@ -2286,6 +2289,7 @@ user_to_item(#user{role = Role,
 		  }, StateData) ->
     Affiliation = get_affiliation(JID, StateData),
     #xmlel{name = 'item',
+            ns =?NS_MUC_ADMIN,
            attrs = [
       ?XMLATTR(<<"role">>, role_to_binary(Role)),
       ?XMLATTR(<<"affiliation">>, affiliation_to_binary(Affiliation)),
