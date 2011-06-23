@@ -94,9 +94,13 @@ get_user_part(String, Pattern) ->
 	{'EXIT', _} ->
 	    {error, badmatch};
 	Result ->
-	    case re:replace(Pattern, "%u", Result, [{return, list}]) of
-		String -> {ok, Result};
-		_ -> {error, badmatch}
+	    case string:to_lower(
+                   re:replace(Pattern, "%u", Result, [{return, list}])) ==
+                string:to_lower(String) of
+                true ->
+                    {ok, Result};
+                false ->
+                    {error, badmatch}
 	    end
     end.
 
