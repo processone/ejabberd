@@ -1066,4 +1066,6 @@ update_tables(Host, mnesia) ->
 							  opt = Opt,
 							  val = Val})
 		  end, Options)
-	end}]).
+	end}]);
+update_tables(_Host, _) ->
+  ok.
