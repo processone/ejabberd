@@ -133,9 +133,9 @@ INET_DIST_INTERFACE={127,0,0,1}
 #   The same as previous, but erlang will use long hostname
 #   (see erl (1) manual for details)
 #
-# Default: ejabberd
+# Default: ejabberd@localhost
 #
-#ERLANG_NODE=ejabberd
+#ERLANG_NODE=ejabberd@localhost
 
 #.
 #' EJABBERD_PID_PATH: ejabberd PID file
