@@ -249,6 +249,11 @@ get_roster(LUser, LServer) ->
 			    _ ->
 				[]
 			end,
+            GroupsDict =
+                lists:foldl(
+                  fun({J, G}, Acc) ->
+                          dict:append(J, G, Acc)
+                  end, dict:new(), JIDGroups),
 	    RItems = lists:flatmap(
 		       fun(I) ->
 			       case raw_to_record(LServer, I) of
@@ -257,12 +262,11 @@ get_roster(LUser, LServer) ->
 				       [];
 				   R ->
 				       SJID = jlib:jid_to_string(R#roster.jid),
-				       Groups = lists:flatmap(
-						  fun({S, G}) when S == SJID ->
-							  [G];
-						     (_) ->
-							  []
-						  end, JIDGroups),
+				       Groups =
+                                           case dict:find(SJID, GroupsDict) of
+                                               {ok, Gs} -> Gs;
+                                               error -> []
+                                           end,
 				       [R#roster{groups = Groups}]
 			       end
 		       end, Items),
