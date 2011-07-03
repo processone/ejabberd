@@ -53,7 +53,7 @@ process_local_iq(_From, To, #iq{id = _ID, type = Type,
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Host = To#jid.server,
+	    Host = To#jid.lserver,
 	    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os, true) of
 		     true -> [get_os()];
 		     false -> []
