@@ -60,13 +60,13 @@ void encode_name(const XML_Char *name)
       memcpy(buf, prefix_start+1, prefix_len);
       memcpy(buf+prefix_len, name_start, name_len);
       buf[prefix_len] = ':';
-      ei_x_encode_string_len(&event_buf, buf, buf_len);
+      ei_x_encode_binary(&event_buf, buf, buf_len);
       driver_free(buf);
     } else {
-      ei_x_encode_string(&event_buf, name_start+1);
+      ei_x_encode_binary(&event_buf, name_start+1, strlen(name_start+1));
     };
   } else {
-    ei_x_encode_string(&event_buf, name);
+    ei_x_encode_binary(&event_buf, name, strlen(name));
   }
 }
 
@@ -95,7 +95,7 @@ void *erlXML_StartElementHandler(expat_data *d,
       {
 	 ei_x_encode_tuple_header(&event_buf, 2);
 	 encode_name(atts[i]);
-	 ei_x_encode_string(&event_buf, atts[i+1]);
+	 ei_x_encode_binary(&event_buf, atts[i+1], strlen(atts[i+1]));
       }
    }
 
@@ -149,12 +149,12 @@ void *erlXML_StartNamespaceDeclHandler(expat_data *d,
     buf = driver_alloc(7 + prefix_len);
     strcpy(buf, "xmlns:");
     strcpy(buf+6, prefix);
-    ei_x_encode_string(&xmlns_buf, buf);
+    ei_x_encode_binary(&xmlns_buf, buf, strlen(buf));
     driver_free(buf);
   } else {
-    ei_x_encode_string(&xmlns_buf, "xmlns");
+    ei_x_encode_binary(&xmlns_buf, "xmlns", strlen("xmlns"));
   };
-  ei_x_encode_string(&xmlns_buf, uri);
+  ei_x_encode_binary(&xmlns_buf, uri, strlen(uri));
 
   return NULL;
 }
@@ -219,7 +219,7 @@ static int expat_erl_control(ErlDrvData drv_data,
 	    ei_x_encode_long(&event_buf, XML_ERROR);
 	    ei_x_encode_tuple_header(&event_buf, 2);
 	    ei_x_encode_long(&event_buf, errcode);
-	    ei_x_encode_string(&event_buf, errstring);
+	    ei_x_encode_binary(&event_buf, errstring, strlen(errstring));
 	 }
 
 	 ei_x_encode_empty_list(&event_buf);
