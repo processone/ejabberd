@@ -88,7 +88,7 @@
 		tls_options = [],
 		authenticated = false,
 		jid,
-		user = "", server = ?MYNAME, resource = "",
+		user = <<"">>, server = ?MYNAME, resource = <<"">>,
 		sid,
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
@@ -281,27 +281,27 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		      DL ->
 			  DL
 		  end,
-    case xml:get_attr_s("xmlns:stream", Attrs) of
+    case xml:get_attr_s(<<"xmlns:stream">>, Attrs) of
 	?NS_STREAM ->
-	    Server = jlib:nameprep(xml:get_attr_s("to", Attrs)),
+	    Server = jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs)),
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
-		    Lang = case xml:get_attr_s("xml:lang", Attrs) of
-			       Lang1 when length(Lang1) =< 35 ->
+		    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
+			       Lang1 when size(Lang1) =< 35 ->
 				   %% As stated in BCP47, 4.4.1:
 				   %% Protocols or specifications that
 				   %% specify limited buffer sizes for
 				   %% language tags MUST allow for
 				   %% language tags of at least 35 characters.
-				   Lang1;
+				   binary_to_list(Lang1);
 			       _ ->
 				   %% Do not store long language tag to
 				   %% avoid possible DoS/flood attacks
 				   ""
 			   end,
 		    change_shaper(StateData, jlib:make_jid("", Server, "")),
-		    case xml:get_attr_s("version", Attrs) of
-			"1.0" ->
+		    case xml:get_attr_s(<<"version">>, Attrs) of
+			<<"1.0">> ->
 			    send_header(StateData, Server, "1.0", DefaultLang),
 			    case StateData#state.authenticated of
 				false ->
@@ -613,9 +613,9 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     TLSEnabled = StateData#state.tls_enabled,
     TLSRequired = StateData#state.tls_required,
     SockMod = (StateData#state.sockmod):get_sockmod(StateData#state.socket),
-    case {xml:get_attr_s("xmlns", Attrs), Name} of
-	{?NS_SASL, "auth"} when not ((SockMod == gen_tcp) and TLSRequired) ->
-	    Mech = xml:get_attr_s("mechanism", Attrs),
+    case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
+	{?NS_SASL_BIN, <<"auth">>} when not ((SockMod == gen_tcp) and TLSRequired) ->
+	    Mech = binary_to_list(xml:get_attr_s(<<"mechanism">>, Attrs)),
 	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
 	    case cyrsasl:server_start(StateData#state.sasl_state,
 				      Mech,
@@ -663,7 +663,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				  [{xmlelement, Error, [], []}]}),
 		    fsm_next_state(wait_for_feature_request, StateData)
 	    end;
-	{?NS_TLS, "starttls"} when TLS == true,
+	{?NS_TLS_BIN, <<"starttls">>} when TLS == true,
 				   TLSEnabled == false,
 				   SockMod == gen_tcp ->
 	    TLSOpts = case ejabberd_config:get_local_option(
@@ -685,7 +685,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					   streamid = new_id(),
 					   tls_enabled = true
 					  });
-	{?NS_COMPRESS, "compress"} when Zlib == true,
+	{?NS_COMPRESS_BIN, <<"compress">>} when Zlib == true,
 					((SockMod == gen_tcp) or
 					 (SockMod == tls)) ->
 	    case xml:get_subtag(El, "method") of
@@ -751,8 +751,8 @@ wait_for_feature_request(closed, StateData) ->
 
 wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
-    case {xml:get_attr_s("xmlns", Attrs), Name} of
-	{?NS_SASL, "response"} ->
+    case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
+	{?NS_SASL_BIN, <<"response">>} ->
 	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
 	    case cyrsasl:server_step(StateData#state.sasl_state,
 				     ClientIn) of
@@ -996,7 +996,7 @@ session_established2(El, StateData) ->
     User = StateData#state.user,
     Server = StateData#state.server,
     FromJID = StateData#state.jid,
-    To = xml:get_attr_s("to", Attrs),
+    To = xml:get_attr_s(<<"to">>, Attrs),
     ToJID = case To of
 		"" ->
 		    jlib:make_jid(User, Server, "");
@@ -1004,12 +1004,12 @@ session_established2(El, StateData) ->
 		    jlib:string_to_jid(To)
 	    end,
     NewEl1 = jlib:remove_attr("xmlns", El),
-    NewEl = case xml:get_attr_s("xml:lang", Attrs) of
-		"" ->
+    NewEl = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
+		<<"">> ->
 		    case StateData#state.lang of
 			"" -> NewEl1;
 			Lang ->
-			    xml:replace_tag_attr("xml:lang", Lang, NewEl1)
+			    xml:replace_tag_attr(<<"xml:lang">>, list_to_binary(Lang), NewEl1)
 		    end;
 		_ ->
 		    NewEl1
@@ -1017,9 +1017,9 @@ session_established2(El, StateData) ->
     NewState =
 	case ToJID of
 	    error ->
-		case xml:get_attr_s("type", Attrs) of
-		    "error" -> StateData;
-		    "result" -> StateData;
+		case xml:get_attr_s(<<"type">>, Attrs) of
+		    <<"error">> -> StateData;
+		    <<"result">> -> StateData;
 		    _ ->
 			Err = jlib:make_error_reply(NewEl, ?ERR_JID_MALFORMED),
 			send_element(StateData, Err),
@@ -1027,7 +1027,7 @@ session_established2(El, StateData) ->
 		end;
 	    _ ->
 		case Name of
-		    "presence" ->
+		    <<"presence">> ->
 			PresenceEl = ejabberd_hooks:run_fold(
 				       c2s_update_presence,
 				       Server,
@@ -1049,7 +1049,7 @@ session_established2(El, StateData) ->
 				presence_track(FromJID, ToJID, PresenceEl,
 					       StateData)
 			end;
-		    "iq" ->
+		    <<"iq">> ->
 			case jlib:iq_query_info(NewEl) of
 			    #iq{xmlns = Xmlns} = IQ
 			    when Xmlns == ?NS_PRIVACY;
@@ -1064,7 +1064,7 @@ session_established2(El, StateData) ->
 				check_privacy_route(FromJID, StateData, FromJID, ToJID, NewEl),
 				StateData
 			end;
-		    "message" ->
+		    <<"message">> ->
 			ejabberd_hooks:run(user_send_packet,
 					   Server,
 					   [FromJID, ToJID, NewEl]),
@@ -1154,13 +1154,13 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
     {xmlelement, Name, Attrs, Els} = Packet,
     {Pass, NewAttrs, NewState} =
 	case Name of
-	    "presence" ->
+	    <<"presence">> ->
 		State = ejabberd_hooks:run_fold(
 			  c2s_presence_in, StateData#state.server,
 			  StateData,
 			  [{From, To, Packet}]),
-		case xml:get_attr_s("type", Attrs) of
-		    "probe" ->
+		case xml:get_attr_s(<<"type">>, Attrs) of
+		    <<"probe">> ->
 			LFrom = jlib:jid_tolower(From),
 			LBFrom = jlib:jid_remove_resource(LFrom),
 			NewStateData =
@@ -1193,23 +1193,23 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			    end,
 			process_presence_probe(From, To, NewStateData),
 			{false, Attrs, NewStateData};
-		    "error" ->
+		    <<"error">> ->
 			NewA = remove_element(jlib:jid_tolower(From),
 					      State#state.pres_a),
 			{true, Attrs, State#state{pres_a = NewA}};
-		    "invisible" ->
+		    <<"invisible">> ->
 			Attrs1 = lists:keydelete("type", 1, Attrs),
 			{true, [{"type", "unavailable"} | Attrs1], State};
-		    "subscribe" ->
+		    <<"subscribe">> ->
 			SRes = is_privacy_allow(State, From, To, Packet, in),
 			{SRes, Attrs, State};
-		    "subscribed" ->
+		    <<"subscribed">> ->
 			SRes = is_privacy_allow(State, From, To, Packet, in),
 			{SRes, Attrs, State};
-		    "unsubscribe" ->
+		    <<"unsubscribe">> ->
 			SRes = is_privacy_allow(State, From, To, Packet, in),
 			{SRes, Attrs, State};
-		    "unsubscribed" ->
+		    <<"unsubscribed">> ->
 			SRes = is_privacy_allow(State, From, To, Packet, in),
 			{SRes, Attrs, State};
 		    _ ->
@@ -1250,7 +1250,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				{false, Attrs, State}
 			end
 		end;
-	    "broadcast" ->
+	    <<"broadcast">> ->
 		?DEBUG("broadcast~n~p~n", [Els]),
 		case Els of
 		    [{item, IJID, ISubscription}] ->
@@ -1291,7 +1291,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    _ ->
 			{false, Attrs, StateData}
 		end;
-	    "iq" ->
+	    <<"iq">> ->
 		IQ = jlib:iq_query_info(Packet),
 		case IQ of
 		    #iq{xmlns = ?NS_LAST} ->
@@ -1327,7 +1327,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 		    IQ when (IQ == invalid) or (IQ == not_iq) ->
 			{false, Attrs, StateData}
 		end;
-	    "message" ->
+	    <<"message">> ->
 		case privacy_check_packet(StateData, From, To, Packet, in) of
 		    allow ->
 			{true, Attrs, StateData};
@@ -1578,13 +1578,13 @@ is_auth_packet(El) ->
 get_auth_tags([{xmlelement, Name, _Attrs, Els}| L], U, P, D, R) ->
     CData = xml:get_cdata(Els),
     case Name of
-	"username" ->
+	<<"username">> ->
 	    get_auth_tags(L, CData, P, D, R);
-	"password" ->
+	<<"password">> ->
 	    get_auth_tags(L, U, CData, D, R);
-	"digest" ->
+	<<"digest">> ->
 	    get_auth_tags(L, U, P, CData, R);
-	"resource" ->
+	<<"resource">> ->
 	    get_auth_tags(L, U, P, D, CData);
 	_ ->
 	    get_auth_tags(L, U, P, D, R)
@@ -1667,9 +1667,9 @@ process_presence_probe(From, To, StateData) ->
 %% User updates his presence (non-directed presence packet)
 presence_update(From, Packet, StateData) ->
     {xmlelement, _Name, Attrs, _Els} = Packet,
-    case xml:get_attr_s("type", Attrs) of
-	"unavailable" ->
-	    Status = case xml:get_subtag(Packet, "status") of
+    case xml:get_attr_s(<<"type">>, Attrs) of
+	<<"unavailable">> ->
+	    Status = case xml:get_subtag(Packet, <<"status">>) of
 			 false ->
 			    "";
 			 StatusTag ->
@@ -1690,7 +1690,7 @@ presence_update(From, Packet, StateData) ->
 			    pres_a = ?SETS:new(),
 			    pres_i = ?SETS:new(),
 			    pres_invis = false};
-	"invisible" ->
+	<<"invisible">> ->
 	    NewPriority = get_priority_from_presence(Packet),
 	    update_priority(NewPriority, Packet, StateData),
 	    NewState =
@@ -1712,17 +1712,17 @@ presence_update(From, Packet, StateData) ->
 			StateData
 		end,
 	    NewState;
-	"error" ->
+	<<"error">> ->
 	    StateData;
-	"probe" ->
+	<<"probe">> ->
 	    StateData;
-	"subscribe" ->
+	<<"subscribe">> ->
 	    StateData;
-	"subscribed" ->
+	<<"subscribed">> ->
 	    StateData;
-	"unsubscribe" ->
+	<<"unsubscribe">> ->
 	    StateData;
-	"unsubscribed" ->
+	<<"unsubscribed">> ->
 	    StateData;
 	_ ->
 	    OldPriority = case StateData#state.pres_last of
@@ -1775,51 +1775,51 @@ presence_track(From, To, Packet, StateData) ->
     LTo = jlib:jid_tolower(To),
     User = StateData#state.user,
     Server = StateData#state.server,
-    case xml:get_attr_s("type", Attrs) of
-	"unavailable" ->
+    case xml:get_attr_s(<<"type">>, Attrs) of
+	<<"unavailable">> ->
 	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = remove_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
-	"invisible" ->
+	<<"invisible">> ->
 	    check_privacy_route(From, StateData, From, To, Packet),
 	    I = ?SETS:add_element(LTo, StateData#state.pres_i),
 	    A = remove_element(LTo, StateData#state.pres_a),
 	    StateData#state{pres_i = I,
 			    pres_a = A};
-	"subscribe" ->
+	<<"subscribe">> ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, subscribe]),
 	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
 				To, Packet),
 	    StateData;
-	"subscribed" ->
+	<<"subscribed">> ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, subscribed]),
 	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
 				To, Packet),
 	    StateData;
-	"unsubscribe" ->
+	<<"unsubscribe">> ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, unsubscribe]),
 	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
 				To, Packet),
 	    StateData;
-	"unsubscribed" ->
+	<<"unsubscribed">> ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, unsubscribed]),
 	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
 				To, Packet),
 	    StateData;
-	"error" ->
+	<<"error">> ->
 	    check_privacy_route(From, StateData, From, To, Packet),
 	    StateData;
-	"probe" ->
+	<<"probe">> ->
 	    check_privacy_route(From, StateData, From, To, Packet),
 	    StateData;
 	_ ->
@@ -2006,7 +2006,7 @@ update_priority(Priority, Packet, StateData) ->
 			     Info).
 
 get_priority_from_presence(PresencePacket) ->
-    case xml:get_subtag(PresencePacket, "priority") of
+    case xml:get_subtag(PresencePacket, <<"priority">>) of
 	false ->
 	    0;
 	SubEl ->
@@ -2116,12 +2116,12 @@ get_statustag(Presence) ->
     end.
 
 process_unauthenticated_stanza(StateData, El) ->
-    NewEl = case xml:get_tag_attr_s("xml:lang", El) of
+    NewEl = case xml:get_tag_attr_s(<<"xml:lang">>, El) of
 		"" ->
 		    case StateData#state.lang of
 			"" -> El;
 			Lang ->
-			    xml:replace_tag_attr("xml:lang", Lang, El)
+			    xml:replace_tag_attr(<<"xml:lang">>, list_to_binary(Lang), El)
 		    end;
 		_ ->
 		    El
@@ -2196,7 +2196,7 @@ is_ip_blacklisted({IP,_Port}) ->
 %% Check from attributes
 %% returns invalid-from|NewElement
 check_from(El, FromJID) ->
-    case xml:get_tag_attr("from", El) of
+    case xml:get_tag_attr(<<"from">>, El) of
 	false ->
 	    El;
 	{value, SJID} ->

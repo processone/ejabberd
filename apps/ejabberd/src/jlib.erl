@@ -79,30 +79,30 @@ make_result_iq_reply({xmlelement, Name, Attrs, SubTags}) ->
     {xmlelement, Name, NewAttrs, SubTags}.
 
 make_result_iq_reply_attrs(Attrs) ->
-    To = xml:get_attr("to", Attrs),
-    From = xml:get_attr("from", Attrs),
-    Attrs1 = lists:keydelete("to", 1, Attrs),
-    Attrs2 = lists:keydelete("from", 1, Attrs1),
+    To = xml:get_attr(<<"to">>, Attrs),
+    From = xml:get_attr(<<"from">>, Attrs),
+    Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
+    Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
 		 {value, ToVal} ->
-		      [{"from", ToVal} | Attrs2];
+		      [{<<"from">>, binary_to_list(ToVal)} | Attrs2];
 		 _ ->
 		     Attrs2
 	     end,
     Attrs4 = case From of
 		 {value, FromVal} ->
-		      [{"to", FromVal} | Attrs3];
+		      [{<<"to">>, binary_to_list(FromVal)} | Attrs3];
 		 _ ->
 		     Attrs3
 	     end,
-    Attrs5 = lists:keydelete("type", 1, Attrs4),
-    Attrs6 = [{"type", "result"} | Attrs5],
+    Attrs5 = lists:keydelete(<<"type">>, 1, Attrs4),
+    Attrs6 = [{<<"type">>, <<"result">>} | Attrs5],
     Attrs6.
 
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
     NewAttrs = make_error_reply_attrs(Attrs),
-    {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, "error",
-					      [{"code", Code}],
+    {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, <<"error">>,
+					      [{<<"code">>, Code}],
 					      [{xmlcdata, Desc}]}]}.
 
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
@@ -110,48 +110,48 @@ make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
     {xmlelement, Name, NewAttrs, SubTags ++ [Error]}.
 
 make_error_reply_attrs(Attrs) ->
-    To = xml:get_attr("to", Attrs),
-    From = xml:get_attr("from", Attrs),
-    Attrs1 = lists:keydelete("to", 1, Attrs),
-    Attrs2 = lists:keydelete("from", 1, Attrs1),
+    To = xml:get_attr(<<"to">>, Attrs),
+    From = xml:get_attr(<<"from">>, Attrs),
+    Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
+    Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
 		 {value, ToVal} ->
-		      [{"from", ToVal} | Attrs2];
+		      [{<<"from">>, ToVal} | Attrs2];
 		 _ ->
 		     Attrs2
 	     end,
     Attrs4 = case From of
 		 {value, FromVal} ->
-		      [{"to", FromVal} | Attrs3];
+		      [{<<"to">>, FromVal} | Attrs3];
 		 _ ->
 		     Attrs3
 	     end,
-    Attrs5 = lists:keydelete("type", 1, Attrs4),
-    Attrs6 = [{"type", "error"} | Attrs5],
+    Attrs5 = lists:keydelete(<<"type">>, 1, Attrs4),
+    Attrs6 = [{<<"type">>, <<"error">>} | Attrs5],
     Attrs6.
 
 make_error_element(Code, Desc) ->
-    {xmlelement, "error",
-     [{"code", Code}],
+    {xmlelement, <<"error">>,
+     [{<<"code">>, Code}],
      [{xmlcdata, Desc}]}.
 
 make_correct_from_to_attrs(From, To, Attrs) ->
-    Attrs1 = lists:keydelete("from", 1, Attrs),
-    Attrs2 = case xml:get_attr("to", Attrs) of
+    Attrs1 = lists:keydelete(<<"from">>, 1, Attrs),
+    Attrs2 = case xml:get_attr(<<"to">>, Attrs) of
 		 {value, _} ->
 		     Attrs1;
 		 _ ->
-		     [{"to", To} | Attrs1]
+		     [{<<"to">>, To} | Attrs1]
 	     end,
-    Attrs3 = [{"from", From} | Attrs2],
+    Attrs3 = [{<<"from">>, From} | Attrs2],
     Attrs3.
 
 
 replace_from_to_attrs(From, To, Attrs) ->
-    Attrs1 = lists:keydelete("to", 1, Attrs),
-    Attrs2 = lists:keydelete("from", 1, Attrs1),
-    Attrs3 = [{"to", To} | Attrs2],
-    Attrs4 = [{"from", From} | Attrs3],
+    Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
+    Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
+    Attrs3 = [{<<"to">>, To} | Attrs2],
+    Attrs4 = [{<<"from">>, From} | Attrs3],
     Attrs4.
 
 replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
@@ -161,8 +161,8 @@ replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
     {xmlelement, Name, NewAttrs, Els}.
 
 replace_from_attrs(From, Attrs) ->
-    Attrs1 = lists:keydelete("from", 1, Attrs),
-    [{"from", From} | Attrs1].
+    Attrs1 = lists:keydelete(<<"from">>, 1, Attrs),
+    [{<<"from">>, From} | Attrs1].
 
 replace_from(From, {xmlelement, Name, Attrs, Els}) ->
     NewAttrs = replace_from_attrs(jlib:jid_to_string(From), Attrs),
@@ -305,6 +305,8 @@ nodeprep(S) when length(S) < 1024 ->
 nodeprep(_) ->
     error.
 
+nameprep(S) when erlang:is_binary(S) ->
+    nameprep(binary_to_list(S));
 nameprep(S) when length(S) < 1024 ->
     R = stringprep:nameprep(S),
     if
@@ -354,10 +356,10 @@ jid_replace_resource(JID, Resource) ->
     end.
 
 
-get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == "iq" ->
+get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == <<"iq">> ->
     case xml:remove_cdata(Els) of
 	[{xmlelement, _Name2, Attrs2, _Els2}] ->
-	    xml:get_attr_s("xmlns", Attrs2);
+	    xml:get_attr_s(<<"xmlns">>, Attrs2);
 	_ ->
 	    ""
     end;
@@ -372,17 +374,17 @@ iq_query_info(El) ->
 iq_query_or_response_info(El) ->
     iq_info_internal(El, any).
 
-iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
+iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == <<"iq">> ->
     %% Filter is either request or any.  If it is request, any replies
     %% are converted to the atom reply.
-    ID = xml:get_attr_s("id", Attrs),
-    Type = xml:get_attr_s("type", Attrs),
-    Lang = xml:get_attr_s("xml:lang", Attrs),
+    ID = xml:get_attr_s(<<"id">>, Attrs),
+    Type = xml:get_attr_s(<<"type">>, Attrs),
+    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     {Type1, Class} = case Type of
-			 "set" -> {set, request};
-			 "get" -> {get, request};
-			 "result" -> {result, reply};
-			 "error" -> {error, reply};
+			 <<"set">> -> {set, request};
+			 <<"get">> -> {get, request};
+			 <<"result">> -> {result, reply};
+			 <<"error">> -> {error, reply};
 			 _ -> {invalid, invalid}
 		     end,
     if
@@ -396,7 +398,7 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
 	    {XMLNS, SubEl} =
 		case {Class, FilteredEls} of
 		    {request, [{xmlelement, _Name2, Attrs2, _Els2}]} ->
-			{xml:get_attr_s("xmlns", Attrs2),
+			{xml:get_attr_s(<<"xmlns">>, Attrs2),
 			 hd(FilteredEls)};
 		    {reply, _} ->
 			%% Find the namespace of the first non-error
@@ -404,18 +406,18 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == "iq" ->
 			NonErrorEls = [El || 
 					  {xmlelement, SubName, _, _} = El
 					      <- FilteredEls, 
-					  SubName /= "error"],
+					  SubName /= <<"error">>],
 			{case NonErrorEls of
 			     [NonErrorEl] ->
-				 xml:get_tag_attr_s("xmlns", NonErrorEl);
+				 xml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
 			     _ ->
-				 ""
+				 <<"">>
 			 end,
 			 FilteredEls};
 		    _ ->
-			{"", []}
+			{<<"">>, []}
 		end,
-	    if XMLNS == "", Class == request ->
+	    if XMLNS == <<"">>, Class == request ->
 		    invalid;
 	       true ->
 		    #iq{id = ID,

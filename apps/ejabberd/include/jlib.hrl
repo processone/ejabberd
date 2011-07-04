@@ -67,13 +67,15 @@
 -define(NS_RSM,          "http://jabber.org/protocol/rsm").
 -define(NS_EJABBERD_CONFIG, "ejabberd:config").
 
--define(NS_STREAM,       "http://etherx.jabber.org/streams").
+-define(NS_STREAM,       <<"http://etherx.jabber.org/streams">>).
 
 -define(NS_STANZAS,      "urn:ietf:params:xml:ns:xmpp-stanzas").
 -define(NS_STREAMS,      "urn:ietf:params:xml:ns:xmpp-streams").
 
--define(NS_TLS,          "urn:ietf:params:xml:ns:xmpp-tls").
--define(NS_SASL,         "urn:ietf:params:xml:ns:xmpp-sasl").
+-define(NS_TLS,         "urn:ietf:params:xml:ns:xmpp-tls").
+-define(NS_TLS_BIN,         <<"urn:ietf:params:xml:ns:xmpp-tls">>).
+-define(NS_SASL,        "urn:ietf:params:xml:ns:xmpp-sasl").
+-define(NS_SASL_BIN,        <<"urn:ietf:params:xml:ns:xmpp-sasl">>).
 -define(NS_SESSION,      "urn:ietf:params:xml:ns:xmpp-session").
 -define(NS_BIND,         "urn:ietf:params:xml:ns:xmpp-bind").
 
@@ -82,7 +84,8 @@
 -define(NS_FEATURE_COMPRESS, "http://jabber.org/features/compress").
 -define(NS_FEATURE_MSGOFFLINE, "msgoffline").
 
--define(NS_COMPRESS,     "http://jabber.org/protocol/compress").
+-define(NS_COMPRESS,      "http://jabber.org/protocol/compress").
+-define(NS_COMPRESS_BIN,      <<"http://jabber.org/protocol/compress">>).
 
 -define(NS_CAPS,          "http://jabber.org/protocol/caps").
 -define(NS_SHIM,          "http://jabber.org/protocol/shim").
