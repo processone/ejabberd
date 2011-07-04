@@ -56,7 +56,13 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    case erl_ddll:load_driver(ejabberd:get_so_path(), stringprep_drv) of
+    DrvPath = case code:priv_dir(stringprep) of
+                {error, _} ->
+                    ".";
+                Path ->
+                    filename:join([Path, "lib"])
+              end,
+    case erl_ddll:load_driver(DrvPath, stringprep_drv) of
         ok -> ok;
         {error, already_loaded} -> ok
     end,
