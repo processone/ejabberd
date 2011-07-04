@@ -1,4 +1,4 @@
-.PHONY: rel deps
+.PHONY: rel deps test
 
 all: deps compile
 
@@ -11,7 +11,10 @@ deps:
 clean:
 	./rebar clean
 
-test:
+test:   
+	(cd test; make)
+
+eunit:
 	./rebar skip_deps=true eunit
 
 rel: deps
