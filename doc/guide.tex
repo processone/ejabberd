@@ -565,8 +565,8 @@ ejabberdctl register admin1 example.org FgT5bk3
   \end{enumerate}
 \item Edit the \ejabberd{} configuration file to give administration rights to the XMPP account you created:
 \begin{verbatim}
-{acl, admins, {user, "admin1", "example.org"}}.
-{access, configure, [{allow, admins}]}.
+{acl, admin, {user, "admin1", "example.org"}}.
+{access, configure, [{allow, admin}]}.
 \end{verbatim}
   You can grant administrative privileges to many XMPP accounts,
   and also to accounts in other XMPP servers.
@@ -2781,7 +2781,7 @@ Examples:
 \begin{itemize}
 \item Only administrators can send announcements:
 \begin{verbatim}
-{access, announce, [{allow, admins}]}.
+{access, announce, [{allow, admin}]}.
 
 {modules,
  [
@@ -2795,9 +2795,9 @@ Examples:
 \begin{verbatim}
 {acl, direction, {user, "big_boss", "example.org"}}.
 {acl, direction, {user, "assistant", "example.org"}}.
-{acl, admins, {user, "admin", "example.org"}}.
+{acl, admin, {user, "admin", "example.org"}}.
 
-{access, announce, [{allow, admins},
+{access, announce, [{allow, admin},
                     {allow, direction}]}.
 
 {modules,
@@ -3445,10 +3445,10 @@ Examples:
   be stored in /var/www/muclogs, and the local time will be used. Finally, the
   top link will be the default \verb|<a href="/">Home</a>|.
 \begin{verbatim}
-{acl, admins, {user, "admin1", "example.org"}}.
-{acl, admins, {user, "admin2", "example.net"}}.
+{acl, admin, {user, "admin1", "example.org"}}.
+{acl, admin, {user, "admin2", "example.net"}}.
 
-{access, muc_log, [{allow, admins},
+{access, muc_log, [{allow, admin},
                    {deny, all}]}.
 
 {modules,
@@ -5265,11 +5265,11 @@ Example configurations:
   administer the virtual host \jid{example.com}.
   The account `\jid{reviewer@example.com}' can browse that vhost in read-only mode.
 \begin{verbatim}
-{acl, admins, {user, "admin", "example.net"}}.
-{host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+{acl, admin, {user, "admin", "example.net"}}.
+{host_config, "example.com", [{acl, admin, {user, "admin", "example.com"}}]}.
 {host_config, "example.com", [{acl, viewers, {user, "reviewer", "example.com"}}]}.
 
-{access, configure, [{allow, admins}]}.
+{access, configure, [{allow, admin}]}.
 {access, webadmin_view, [{allow, viewers}]}.
 
 {hosts, ["example.org"]}.
