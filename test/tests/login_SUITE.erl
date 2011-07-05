@@ -28,7 +28,7 @@ all() ->
     [{group, messages}].
 
 groups() ->
-    [{messages, [sequence], [messages_story]}].
+    [{messages, [sequence], [log_one]}].
 
 suite() ->
     escalus:suite().
@@ -58,6 +58,14 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 %% Message tests
 %%--------------------------------------------------------------------
+
+log_one(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+        
+        escalus_client:send_wait(Alice, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_assert:is_chat_message("Hi!", escalus_client:only_stanza(Alice))
+        
+        end).
 
 messages_story(Config) ->
     escalus:story(Config, [1, 1], fun(Alice, Bob) ->

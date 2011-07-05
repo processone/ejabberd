@@ -379,7 +379,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						 lang = Lang});
 				_ ->
 				    case StateData#state.resource of
-					"" ->
+					<<>> ->
 					    RosterVersioningFeature =
 						ejabberd_hooks:run_fold(
 						  roster_get_versioning_feature,
@@ -823,7 +823,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
     case jlib:iq_query_info(El) of
 	#iq{type = set, xmlns = ?NS_BIND, sub_el = SubEl} = IQ ->
 	    U = StateData#state.user,
-	    R1 = xml:get_path_s(SubEl, [{elem, "resource"}, cdata]),
+	    R1 = xml:get_path_s(SubEl, [{elem, <<"resource">>}, cdata]),
 	    R = case jlib:resourceprep(R1) of
 		    error -> error;
 		    "" ->
@@ -2103,7 +2103,7 @@ resend_subscription_requests(#state{user = User,
 get_showtag(undefined) ->
     "unavailable";
 get_showtag(Presence) ->
-    case xml:get_path_s(Presence, [{elem, "show"}, cdata]) of
+    case xml:get_path_s(Presence, [{elem, <<"show">>}, cdata]) of
 	""      -> "available";
 	ShowTag -> ShowTag
     end.
@@ -2111,7 +2111,7 @@ get_showtag(Presence) ->
 get_statustag(undefined) ->
     "";
 get_statustag(Presence) ->
-    case xml:get_path_s(Presence, [{elem, "status"}, cdata]) of
+    case xml:get_path_s(Presence, [{elem, <<"status">>}, cdata]) of
 	ShowTag -> ShowTag
     end.
 

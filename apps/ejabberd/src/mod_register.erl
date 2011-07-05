@@ -102,9 +102,9 @@ process_iq(From, To,
 		       end,
     case Type of
 	set ->
-	    UTag = xml:get_subtag(SubEl, "username"),
-	    PTag = xml:get_subtag(SubEl, "password"),
-	    RTag = xml:get_subtag(SubEl, "remove"),
+	    UTag = xml:get_subtag(SubEl, <<"username">>),
+	    PTag = xml:get_subtag(SubEl, <<"password">>),
+	    RTag = xml:get_subtag(SubEl, <<"remove">>),
 	    Server = To#jid.lserver,
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
 	    AllowRemove = (allow == acl:match_rule(Server, Access, From)),
@@ -346,7 +346,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 					    ok;
 					Error ->
 					    remove_timeout(Source),
-					    case Error of
+ 					    case Error of
 						{atomic, exists} ->
 						    {error, ?ERR_CONFLICT};
 						{error, invalid_jid} ->
@@ -424,7 +424,7 @@ check_timeout(undefined) ->
     true;
 check_timeout(Source) ->
     Timeout = case ejabberd_config:get_local_option(registration_timeout) of
-		  undefined -> 600;
+		  undefined ->  600;
 		  TO -> TO
 	      end,
     if

@@ -25,7 +25,7 @@
 -define(NS_VCARD_UPDATE, "vcard-temp:x:update").
 -define(NS_AUTH,         "jabber:iq:auth").
 -define(NS_AUTH_ERROR,   "jabber:iq:auth:error").
--define(NS_REGISTER,     "jabber:iq:register").
+-define(NS_REGISTER,     <<"jabber:iq:register">>).
 -define(NS_SEARCH,       "jabber:iq:search").
 -define(NS_ROSTER,       "jabber:iq:roster").
 -define(NS_ROSTER_VER,   "urn:xmpp:features:rosterver").
@@ -76,8 +76,8 @@
 -define(NS_TLS_BIN,         <<"urn:ietf:params:xml:ns:xmpp-tls">>).
 -define(NS_SASL,        "urn:ietf:params:xml:ns:xmpp-sasl").
 -define(NS_SASL_BIN,        <<"urn:ietf:params:xml:ns:xmpp-sasl">>).
--define(NS_SESSION,      "urn:ietf:params:xml:ns:xmpp-session").
--define(NS_BIND,         "urn:ietf:params:xml:ns:xmpp-bind").
+-define(NS_SESSION,      <<"urn:ietf:params:xml:ns:xmpp-session">>).
+-define(NS_BIND,         <<"urn:ietf:params:xml:ns:xmpp-bind">>).
 
 -define(NS_FEATURE_IQAUTH, "http://jabber.org/features/iq-auth").
 -define(NS_FEATURE_IQREGISTER, "http://jabber.org/features/iq-register").
