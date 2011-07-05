@@ -88,7 +88,7 @@
 		tls_options = [],
 		authenticated = false,
 		jid,
-		user = <<"">>, server = ?MYNAME, resource = <<"">>,
+		user = <<>>, server = ?MYNAME, resource = <<>>,
 		sid,
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
@@ -472,7 +472,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, _ID, get, {U, _, _, _}} ->
 	    {xmlelement, Name, Attrs, _Els} = jlib:make_result_iq_reply(El),
 	    case U of
-		"" ->
+		<<>> ->
 		    UCdata = [];
 		_ ->
 		    UCdata = [{xmlcdata, U}]
@@ -826,7 +826,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	    R1 = xml:get_path_s(SubEl, [{elem, <<"resource">>}, cdata]),
 	    R = case jlib:resourceprep(R1) of
 		    error -> error;
-		    "" ->
+		    <<>> ->
 			lists:concat(
 			  [randoms:get_string() | tuple_to_list(now())]);
 		    Resource -> Resource
@@ -998,16 +998,16 @@ session_established2(El, StateData) ->
     FromJID = StateData#state.jid,
     To = xml:get_attr_s(<<"to">>, Attrs),
     ToJID = case To of
-		"" ->
+		<<>> ->
 		    jlib:make_jid(User, Server, "");
 		_ ->
 		    jlib:string_to_jid(To)
 	    end,
     NewEl1 = jlib:remove_attr("xmlns", El),
     NewEl = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
-		<<"">> ->
+		<<>> ->
 		    case StateData#state.lang of
-			"" -> NewEl1;
+			<<>> -> NewEl1;
 			Lang ->
 			    xml:replace_tag_attr(<<"xml:lang">>, list_to_binary(Lang), NewEl1)
 		    end;
@@ -2104,7 +2104,7 @@ get_showtag(undefined) ->
     "unavailable";
 get_showtag(Presence) ->
     case xml:get_path_s(Presence, [{elem, <<"show">>}, cdata]) of
-	""      -> "available";
+	<<>>      -> "available";
 	ShowTag -> ShowTag
     end.
 
@@ -2117,9 +2117,9 @@ get_statustag(Presence) ->
 
 process_unauthenticated_stanza(StateData, El) ->
     NewEl = case xml:get_tag_attr_s(<<"xml:lang">>, El) of
-		"" ->
+		<<>> ->
 		    case StateData#state.lang of
-			"" -> El;
+			<<>> -> El;
 			Lang ->
 			    xml:replace_tag_attr(<<"xml:lang">>, list_to_binary(Lang), El)
 		    end;

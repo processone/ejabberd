@@ -212,7 +212,7 @@ get_attr_s(AttrName, Attrs) ->
 	{value, {_, Val}} ->
 	    Val;
 	_ ->
-	    ""
+	    <<>>
     end.
 
 get_tag_attr(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
@@ -238,7 +238,7 @@ get_subtag1([], _) ->
 get_subtag_cdata(Tag, Name) ->
     case get_subtag(Tag, Name) of
 	false ->
-	    "";
+	    <<>>;
 	Subtag ->
 	    get_tag_cdata(Subtag)
     end.
@@ -251,7 +251,7 @@ get_path_s(El, []) ->
 get_path_s(El, [{elem, Name} | Path]) ->
     case get_subtag(El, Name) of
 	false ->
-	    "";
+	    <<>>;
 	SubEl ->
 	    get_path_s(SubEl, Path)
     end;

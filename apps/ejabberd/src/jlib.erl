@@ -196,6 +196,8 @@ make_jid(User, Server, Resource) ->
 make_jid({User, Server, Resource}) ->
     make_jid(User, Server, Resource).
 
+string_to_jid(J) when erlang:is_binary(J) ->
+    string_to_jid(binary_to_list(J));
 string_to_jid(J) ->
     string_to_jid1(J, "").
 

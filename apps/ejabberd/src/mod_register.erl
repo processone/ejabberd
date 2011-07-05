@@ -91,8 +91,9 @@ process_iq(From, To, IQ) ->
     process_iq(From, To, IQ, jlib:jid_tolower(From)).
 
 process_iq(From, To,
-	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} = IQ,
+	   #iq{type = Type, lang = Lang1, sub_el = SubEl, id = ID} = IQ,
 	   Source) ->
+    Lang = binary_to_list(Lang1),
     IsCaptchaEnabled = case gen_mod:get_module_opt(
 			      To#jid.lserver, ?MODULE, captcha_protected, false) of
 			   true ->
@@ -451,6 +452,7 @@ check_timeout(Source) ->
 				false
 			end
 		end,
+
 	    case mnesia:transaction(F) of
 		{atomic, Res} ->
 		    Res;

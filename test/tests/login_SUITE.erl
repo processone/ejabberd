@@ -62,8 +62,8 @@ end_per_testcase(CaseName, Config) ->
 log_one(Config) ->
     escalus:story(Config, [1], fun(Alice) ->
         
-        escalus_client:send_wait(Alice, escalus_stanza:chat_to(Alice, "Hi!")),
-        escalus_assert:is_chat_message("Hi!", escalus_client:only_stanza(Alice))
+        escalus_client:send(Alice, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_assert:is_chat_message(["Hi!"], escalus_client:wait_for_stanza((Alice)))
         
         end).
 
