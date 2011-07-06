@@ -66,8 +66,8 @@ stop(Host) ->
 
 
 stream_feature_register(Acc, _Host) ->
-    [{xmlelement, "register",
-      [{"xmlns", ?NS_FEATURE_IQREGISTER}], []} | Acc].
+    [{xmlelement, <<"register">>,
+      [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}], []} | Acc].
 
 unauthenticated_iq_register(_Acc,
 			    Server, #iq{xmlns = ?NS_REGISTER} = IQ, IP) ->
@@ -207,7 +207,7 @@ process_iq(From, To,
 			case ejabberd_auth:is_user_exists(User,Server) of
 			    true ->
 				{true, [{xmlcdata, User}],
-				 [{xmlelement, "registered", [], []}]};
+				 [{xmlelement, <<"registered">>, [], []}]};
 			    false ->
 				{false, [{xmlcdata, User}], []}
 			end;
@@ -215,33 +215,33 @@ process_iq(From, To,
 			{false, [], []}
 		end,
 	    if IsCaptchaEnabled and not IsRegistered ->
-		    TopInstrEl = {xmlelement, "instructions", [],
+		    TopInstrEl = {xmlelement, <<"instructions">>, [],
 				  [{xmlcdata,
 				    translate:translate(
 				      Lang, "You need a client that supports x:data "
 				      "and CAPTCHA to register")}]},
-		    InstrEl = {xmlelement, "instructions", [],
+		    InstrEl = {xmlelement, <<"instructions">>, [],
 			       [{xmlcdata,
 				 translate:translate(
 				   Lang,
 				   "Choose a username and password "
 				   "to register with this server")}]},
 		    UField = {xmlelement, "field",
-			      [{"type", "text-single"},
-			       {"label", translate:translate(Lang, "User")},
-			       {"var", "username"}],
-			      [{xmlelement, "required", [], []}]},
-		    PField = {xmlelement, "field",
-			      [{"type", "text-private"},
-			       {"label", translate:translate(Lang, "Password")},
-			       {"var", "password"}],
-			      [{xmlelement, "required", [], []}]},
+			      [{<<"type">>, <<"text-single">>},
+			       {<<"label">>, translate:translate(Lang, "User")},
+			       {<<"var">>, <<"username">>}],
+			      [{xmlelement, <<"required">>, [], []}]},
+		    PField = {xmlelement, <<"field">>,
+			      [{<<"type">>, <<"text-private">>},
+			       {<<"label">>, translate:translate(Lang, "Password")},
+			       {<<"var">>, <<"password">>}],
+			      [{xmlelement, <<"required">>, [], []}]},
 		    case ejabberd_captcha:create_captcha_x(
 			   ID, To, Lang, Source, [InstrEl, UField, PField]) of
 			{ok, CaptchaEls} ->
 			    IQ#iq{type = result,
-				  sub_el = [{xmlelement, "query",
-					     [{"xmlns", "jabber:iq:register"}],
+				  sub_el = [{xmlelement, <<"query">>,
+					     [{<<"xmlns">>, <<"jabber:iq:register">>}],
 					     [TopInstrEl | CaptchaEls]}]};
                         {error, limit} ->
                             ErrText = "Too many CAPTCHA requests",
@@ -257,16 +257,16 @@ process_iq(From, To,
 	       true ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement,
-				     "query",
-				     [{"xmlns", "jabber:iq:register"}],
-				     [{xmlelement, "instructions", [],
+				     <<"query">>,
+				     [{<<"xmlns">>, <<"jabber:iq:register">>}],
+				     [{xmlelement, <<"instructions">>, [],
 				       [{xmlcdata,
 					 translate:translate(
 					   Lang,
 					   "Choose a username and password "
 					   "to register with this server")}]},
-				      {xmlelement, "username", [], UsernameSubels},
-				      {xmlelement, "password", [], []}
+				      {xmlelement, <<"username">>, [], UsernameSubels},
+				      {xmlelement, <<"password">>, [], []}
 				      | QuerySubels]}]}
 	    end
     end.
@@ -406,8 +406,8 @@ send_registration_notifications(UJID, Source) ->
 			      ejabberd_router:route(
 				jlib:make_jid("", Host, ""),
 				JID,
-				{xmlelement, "message", [{"type", "chat"}],
-				 [{xmlelement, "body", [],
+				{xmlelement, <<"message">>, [{<<"type">>, <<"chat">>}],
+				 [{xmlelement, <<"body">>, [],
 				   [{xmlcdata, Body}]}]})
 		      end
 	      end, JIDs);

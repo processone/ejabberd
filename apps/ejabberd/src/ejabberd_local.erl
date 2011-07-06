@@ -305,20 +305,20 @@ do_route(From, To, Packet) ->
 	To#jid.lresource == "" ->
 	    {xmlelement, Name, _Attrs, _Els} = Packet,
 	    case Name of
-		"iq" ->
+		<<"iq">> ->
 		    process_iq(From, To, Packet);
-		"message" ->
+		<<"message">> ->
 		    ok;
-		"presence" ->
+		<<"presence">> ->
 		    ok;
 		_ ->
 		    ok
 	    end;
 	true ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
-	    case xml:get_attr_s("type", Attrs) of
-		"error" -> ok;
-		"result" -> ok;
+	    case xml:get_attr_s(<<"type">>, Attrs) of
+		<<"error">> -> ok;
+		<<"result">> -> ok;
 		_ ->
 		    ejabberd_hooks:run(local_send_to_resource_hook,
 				       To#jid.lserver,

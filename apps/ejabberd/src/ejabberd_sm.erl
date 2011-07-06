@@ -131,8 +131,8 @@ bounce_offline_message(From, To, Packet) ->
 disconnect_removed_user(User, Server) ->
     ejabberd_sm:route(jlib:make_jid("", "", ""),
 		      jlib:make_jid(User, Server, ""),
-		      {xmlelement, "broadcast", [],
-		       [{exit, "User removed"}]}).
+		      {xmlelement,<<"broadcast">>, <<>>,
+		       [{exit, <<"User removed">>}]}).
 
 get_user_resources(User, Server) ->
     LUser = jlib:nodeprep(User),
@@ -415,13 +415,13 @@ do_route(From, To, Packet) ->
     case LResource of
 	"" ->
 	    case Name of
-		"presence" ->
+		<<"presence">> ->
 		    {Pass, _Subsc} =
-			case xml:get_attr_s("type", Attrs) of
-			    "subscribe" ->
+			case xml:get_attr_s(<<"type">>, Attrs) of
+			    <<"subscribe">> ->
 				Reason = xml:get_path_s(
 					   Packet,
-					   [{elem, "status"}, cdata]),
+					   [{elem, <<"status">>}, cdata]),
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
@@ -429,7 +429,7 @@ do_route(From, To, Packet) ->
 				   false,
 				   [User, Server, From, subscribe, Reason]),
 				 true};
-			    "subscribed" ->
+			    <<"subscribed">> ->
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
@@ -437,7 +437,7 @@ do_route(From, To, Packet) ->
 				   false,
 				   [User, Server, From, subscribed, ""]),
 				 true};
-			    "unsubscribe" ->
+			    <<"unsubscribe">> ->
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
@@ -445,7 +445,7 @@ do_route(From, To, Packet) ->
 				   false,
 				   [User, Server, From, unsubscribe, ""]),
 				 true};
-			    "unsubscribed" ->
+			    <<"unsubscribed">> ->
 				{is_privacy_allow(From, To, Packet) andalso
 				 ejabberd_hooks:run_fold(
 				   roster_in_subscription,
@@ -469,11 +469,11 @@ do_route(From, To, Packet) ->
 		       true ->
 			    ok
 		    end;
-		"message" ->
+		<<"message">> ->
 		    route_message(From, To, Packet);
-		"iq" ->
+		<<"iq">> ->
 		    process_iq(From, To, Packet);
-		"broadcast" ->
+		<<"broadcast">> ->
 		    lists:foreach(
 		      fun(R) ->
 			      do_route(From,
@@ -488,12 +488,12 @@ do_route(From, To, Packet) ->
 	    case mnesia:dirty_index_read(session, USR, #session.usr) of
 		[] ->
 		    case Name of
-			"message" ->
+			<<"message">> ->
 			    route_message(From, To, Packet);
-			"iq" ->
-			    case xml:get_attr_s("type", Attrs) of
-				"error" -> ok;
-				"result" -> ok;
+			<<"iq">> ->
+			    case xml:get_attr_s(<<"type">>, Attrs) of
+				<<"error">> -> ok;
+				<<"result">> -> ok;
 				_ ->
 				    Err =
 					jlib:make_error_reply(
@@ -563,12 +563,12 @@ route_message(From, To, Packet) ->
 	      end,
 	      PrioRes);
 	_ ->
-	    case xml:get_tag_attr_s("type", Packet) of
-		"error" ->
+	    case xml:get_tag_attr_s(<<"type">>, Packet) of
+		<<"error">> ->
 		    ok;
-		"groupchat" ->
+		<<"groupchat">> ->
 		    bounce_offline_message(From, To, Packet);
-		"headline" ->
+		<<"headline">> ->
 		    bounce_offline_message(From, To, Packet);
 		_ ->
 		    case ejabberd_auth:is_user_exists(LUser, LServer) of

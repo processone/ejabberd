@@ -413,13 +413,13 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == <<"iq">> -
 			     [NonErrorEl] ->
 				 xml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
 			     _ ->
-				 <<"">>
+				 <<>>
 			 end,
 			 FilteredEls};
 		    _ ->
-			{<<"">>, []}
+			{<<>>, []}
 		end,
-	    if XMLNS == <<"">>, Class == request ->
+	    if XMLNS == <<>>, Class == request ->
 		    invalid;
 	       true ->
 		    #iq{id = ID,
@@ -444,15 +444,21 @@ iq_type_to_string(result) -> "result";
 iq_type_to_string(error) -> "error";
 iq_type_to_string(_) -> invalid.
 
+iq_type_to_binary(set) -> <<"set">>;
+iq_type_to_binary(get) -> <<"get">>;
+iq_type_to_binary(result) -> <<"result">>;
+iq_type_to_binary(error) -> <<"error">>;
+iq_type_to_binary(_) -> invalid.
+
 
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
     if
 	ID /= "" ->
-	    {xmlelement, "iq",
-	     [{"id", ID}, {"type", iq_type_to_string(Type)}], SubEl};
+	    {xmlelement, <<"iq">>,
+	     [{<<"id">>, ID}, {<<"type">>, iq_type_to_binary(Type)}], SubEl};
 	true ->
-	    {xmlelement, "iq",
-	     [{"type", iq_type_to_string(Type)}], SubEl}
+	    {xmlelement, <<"iq">>,
+	     [{<<"type">>, iq_type_to_binary(Type)}], SubEl}
     end.
 
 

@@ -77,7 +77,7 @@ route(From, To, Packet) ->
 %% RFC3920 9.3.1
 route_error(From, To, ErrPacket, OrigPacket) ->
     {xmlelement, _Name, Attrs, _Els} = OrigPacket,
-    case "error" == xml:get_attr_s("type", Attrs) of
+    case <<"error">> == xml:get_attr_s(<<"type">>, Attrs) of
 	false ->
 	    route(From, To, ErrPacket);
 	true ->
