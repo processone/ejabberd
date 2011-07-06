@@ -2291,8 +2291,11 @@ one for authentication and other for regular calls.
 
 Parameters:
 \begin{description}
-\titem{\{ldap\_servers, [Servers, ...]\}} \ind{options!ldap\_server}List of IP addresses or DNS names of your
-LDAP servers. This option is required.
+\titem{\{ldap\_servers, [Servers, ...]|\{host, VHost\}\}} \ind{options!ldap\_server}
+This option can contain a list of IP addresses or DNS names of your LDAP servers.
+If you are configuring multiple vhosts, you can configure in this option that some of
+them must use the same LDAP connections as another vhost.
+This option is required.
 \titem{\{ldap\_encrypt, none|tls\}} \ind{options!ldap\_encrypt}Type of connection encryption to the LDAP server.
 Allowed values are: \term{none}, \term{tls}.
 The value \term{tls} enables encryption by using LDAP over SSL.
@@ -2321,6 +2324,12 @@ Example:
 {ldap_port, 389}.
 {ldap_rootdn, "cn=Manager,dc=domain,dc=org"}.
 {ldap_password, "secret"}.
+{host_config, "example3.org", [
+  {ldap_servers, ["ldap3.example.org"]}.
+]}.
+{host_config, "example4.org", [
+  {ldap_servers, {host, "example3.org"}}
+]}.
 \end{verbatim}
 
 \makesubsubsection{ldapauth}{Authentication}
