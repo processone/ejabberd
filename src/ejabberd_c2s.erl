@@ -273,7 +273,18 @@ init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
 			       ip             = IP,
                                redirect       = Redirect,
 			       fsm_limit_opts = FSMLimitOpts},
-	    {ok, wait_for_stream, StateData, ?C2S_OPEN_TIMEOUT}
+            case get_jid_from_opts(Opts) of
+		{ok, #jid{user = U, server = Server, resource = R} = JID} ->
+		    ?GEN_FSM:send_event(self(), open_session),
+                    {ok, wait_for_session, StateData#state{
+                                             user = U,
+                                             server = Server,
+                                             resource = R,
+                                             jid = JID,
+                                             lang = ""}};
+                _ ->
+                    {ok, wait_for_stream, StateData, ?C2S_OPEN_TIMEOUT}
+            end
     end;
 init([StateName, StateData, _FSMLimitOpts]) ->
     MRef = (StateData#state.sockmod):monitor(StateData#state.socket),
@@ -1083,6 +1094,11 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 	_ ->
 	    fsm_next_state(wait_for_session, StateData)
     end;
+
+wait_for_session(open_session, StateData) ->
+    El = {xmlelement, "iq", [{"type", "set"}, {"id", "session"}],
+            [{xmlelement, "session", [{"xmlns", ?NS_SESSION}], []}]},
+    wait_for_session({xmlstreamelement, El}, StateData);
 
 wait_for_session(timeout, StateData) ->
     {stop, normal, StateData};
@@ -3497,3 +3513,21 @@ need_redirect(#state{redirect = true, user = User, server = Server}) ->
     end;
 need_redirect(_) ->
     false.
+
+get_jid_from_opts(Opts) ->
+    case lists:keysearch(jid, 1, Opts) of
+	{value, {_, JIDValue}} ->
+	    JID = case JIDValue of
+		      {_U, _S, _R} ->
+			  jlib:make_jid(JIDValue);
+		      _ when is_binary(JIDValue) ->
+			  jlib:string_to_jid(binary_to_list(JIDValue));
+		      _ when is_list(JIDValue) ->
+			  jlib:string_to_jid(JIDValue);
+		      _ -> 
+			  JIDValue
+		  end,
+	    {ok, JID};
+	_ ->
+	    error
+    end.
