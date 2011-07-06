@@ -28,7 +28,7 @@ all() ->
     [{group, messages}].
 
 groups() ->
-    [{messages, [sequence], [log_one]}].
+    [{messages, [sequence], [log_one_digest]}].
 
 suite() ->
     escalus:suite().
@@ -49,9 +49,15 @@ init_per_group(_GroupName, Config) ->
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
+
+init_per_testcase(log_one_digest, Config) ->
+    [ {escalus_auth_method, "DIGEST-MD5"} | Config],
+    escalus:init_per_testcase(log_one_digest, Config);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
+%%end_per_testcase(log_one_digest, [ _ |Config]) ->
+%%    escalus:end_per_testcase(log_one_digest, Config);
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
@@ -60,6 +66,14 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 
 log_one(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+        
+        escalus_client:send(Alice, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_assert:is_chat_message(["Hi!"], escalus_client:wait_for_stanza((Alice)))
+        
+        end).
+
+log_one_digest(Config) ->
     escalus:story(Config, [1], fun(Alice) ->
         
         escalus_client:send(Alice, escalus_stanza:chat_to(Alice, "Hi!")),

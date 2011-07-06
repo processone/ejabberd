@@ -1,5 +1,9 @@
 #
 # You can add personal rules in your file .git/info/exclude
+test/.#*
+test/#*
+test/tests/.#
+test/tests/#
 test/ct_report
 *.swp
 *~

@@ -752,7 +752,7 @@ wait_for_feature_request(closed, StateData) ->
 wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
     {xmlelement, Name, Attrs, Els} = El,
     case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
-	{?NS_SASL_BIN, <<"response">>} ->
+	{?NS_SASL, <<"response">>} ->
 	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
 	    case cyrsasl:server_step(StateData#state.sasl_state,
 				     ClientIn) of
