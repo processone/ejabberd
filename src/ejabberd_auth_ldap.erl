@@ -99,25 +99,31 @@ handle_info(_Info, State) ->
 
 start(Host) ->
     ?DEBUG("Starting ~p for ~p.", [?MODULE, Host]),
-    case ejabberd_config:get_host_option(Host, ldap_servers) of
-	undefined -> check_bad_config(Host);
-	{host, _Host} -> ok;
-	_ ->
-	    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Option = case ejabberd_config:get_host_option(Host, ldap_servers) of
+		 undefined -> check_local_config(Host);
+		 {host, _Host} -> nothing;
+		 _ ->
+		     {start, Host}
+	     end,
+    case Option of
+	nothing -> ok;
+	{start, Host2} ->
+	    Proc = gen_mod:get_module_proc(Host2, ?MODULE),
 	    ChildSpec = {
-		Proc, {?MODULE, start_link, [Host]},
-		transient, 1000, worker, [?MODULE]
-	    },
+	      Proc, {?MODULE, start_link, [Host2]},
+	      transient, 1000, worker, [?MODULE]
+	     },
 	    supervisor:start_child(ejabberd_sup, ChildSpec)
     end.
 
-check_bad_config(Host) ->
+check_local_config(Host) ->
     case ejabberd_config:get_local_option({ldap_servers, Host}) of
 	undefined ->
-	    ?ERROR_MSG("Can't start ~p for host ~p: missing ldap_servers configuration",
-	               [?MODULE, Host]),
+	    ?ERROR_MSG("Can't start ~p for host ~p: missing ldap_servers "
+		       "configuration", [?MODULE, Host]),
 	    {error, bad_config};
-	_ -> ok
+	X when is_list(X)->
+	    {start, Host}
     end.
 
 %% @spec (Host) -> term()
