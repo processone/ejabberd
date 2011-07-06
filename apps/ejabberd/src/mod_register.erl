@@ -82,7 +82,7 @@ unauthenticated_iq_register(_Acc,
     Res1 = jlib:replace_from_to(jlib:make_jid("", Server, ""),
  				jlib:make_jid("", "", ""),
  				jlib:iq_to_xml(ResIQ)),
-    jlib:remove_attr("to", Res1);
+    jlib:remove_attr(<<"to">>, Res1);
 
 unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
     Acc.
@@ -380,9 +380,9 @@ send_welcome_message(JID) ->
 	    ejabberd_router:route(
 	      jlib:make_jid("", Host, ""),
 	      JID,
-	      {xmlelement, "message", [{"type", "normal"}],
-	       [{xmlelement, "subject", [], [{xmlcdata, Subj}]},
-		{xmlelement, "body", [], [{xmlcdata, Body}]}]});
+	      {xmlelement, <<"message">>, [{<<"type">>, <<"normal">>}],
+	       [{xmlelement, <<"subject">>, [], [{xmlcdata, Subj}]},
+		{xmlelement, <<"body">>, [], [{xmlcdata, Body}]}]});
 	_ ->
 	    ok
     end.
@@ -522,13 +522,13 @@ write_time({{Y,Mo,D},{H,Mi,S}}) ->
 		  [Y, Mo, D, H, Mi, S]).
 
 process_xdata_submit(El) ->
-    case xml:get_subtag(El, "x") of
+    case xml:get_subtag(El, <<"x">>) of
         false ->
 	    error;
         Xdata ->
             Fields = jlib:parse_xdata_submit(Xdata),
-            case catch {proplists:get_value("username", Fields),
-			proplists:get_value("password", Fields)} of
+            case catch {proplists:get_value(<<"username">>, Fields),
+			proplists:get_value(<<"password">>, Fields)} of
                 {[User|_], [Pass|_]} ->
 		    {ok, User, Pass};
 		_ ->

@@ -464,10 +464,10 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
 
 parse_xdata_submit(El) ->
     {xmlelement, _Name, Attrs, Els} = El,
-    case xml:get_attr_s("type", Attrs) of
-	"submit" ->
+    case xml:get_attr_s(<<"type">>, Attrs) of
+	<<"submit">> ->
 	    lists:reverse(parse_xdata_fields(Els, []));
-	"form" -> %% This is a workaround to accept Psi's wrong forms
+	<<"form">> -> %% This is a workaround to accept Psi's wrong forms
 	    lists:reverse(parse_xdata_fields(Els, []));
 	_ ->
 	    invalid
@@ -477,9 +477,9 @@ parse_xdata_fields([], Res) ->
     Res;
 parse_xdata_fields([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
     case Name of
-	"field" ->
-	    case xml:get_attr_s("var", Attrs) of
-		"" ->
+	<<"field">> ->
+	    case xml:get_attr_s(<<"var">>, Attrs) of
+		<<>> ->
 		    parse_xdata_fields(Els, Res);
 		Var ->
 		    Field =
@@ -496,7 +496,7 @@ parse_xdata_values([], Res) ->
     Res;
 parse_xdata_values([{xmlelement, Name, _Attrs, SubEls} | Els], Res) ->
     case Name of
-	"value" ->
+	<<"value">> ->
 	    Val = xml:get_cdata(SubEls),
 	    parse_xdata_values(Els, [Val | Res]);
 	_ ->
@@ -508,27 +508,27 @@ parse_xdata_values([_ | Els], Res) ->
 rsm_decode(#iq{sub_el=SubEl})->
 	rsm_decode(SubEl);
 rsm_decode({xmlelement, _,_,_}=SubEl)->
-	case xml:get_subtag(SubEl,"set") of
+	case xml:get_subtag(SubEl,<<"set">>) of
 		false ->
 			none;
-		{xmlelement, "set", _Attrs, SubEls}->
+		{xmlelement, <<"set">>, _Attrs, SubEls}->
 			lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
 	end.
 
-rsm_parse_element({xmlelement, "max",[], _}=Elem, RsmIn)->
+rsm_parse_element({xmlelement, <<"max">>,[], _}=Elem, RsmIn)->
     CountStr = xml:get_tag_cdata(Elem),
     {Count, _} = string:to_integer(CountStr),
     RsmIn#rsm_in{max=Count};
 
-rsm_parse_element({xmlelement, "before", [], _}=Elem, RsmIn)->
+rsm_parse_element({xmlelement, <<"before">>, [], _}=Elem, RsmIn)->
     UID = xml:get_tag_cdata(Elem),
     RsmIn#rsm_in{direction=before, id=UID};
 
-rsm_parse_element({xmlelement, "after", [], _}=Elem, RsmIn)->
+rsm_parse_element({xmlelement, <<"after">>, [], _}=Elem, RsmIn)->
     UID = xml:get_tag_cdata(Elem),
     RsmIn#rsm_in{direction=aft, id=UID};
 
-rsm_parse_element({xmlelement, "index",[], _}=Elem, RsmIn)->
+rsm_parse_element({xmlelement, <<"index">>,[], _}=Elem, RsmIn)->
     IndexStr = xml:get_tag_cdata(Elem),
     {Index, _} = string:to_integer(IndexStr),
     RsmIn#rsm_in{index=Index};
@@ -538,7 +538,7 @@ rsm_parse_element(_, RsmIn)->
     RsmIn.
 
 rsm_encode(#iq{sub_el=SubEl}=IQ,RsmOut)->
-    Set = {xmlelement, "set", [{"xmlns", ?NS_RSM}],
+    Set = {xmlelement, <<"set">>, [{<<"xmlns">>, ?NS_RSM}],
 	   lists:reverse(rsm_encode_out(RsmOut))},
     {xmlelement, Name, Attrs, SubEls} = SubEl,
     New = {xmlelement, Name, Attrs, [Set | SubEls]},
@@ -547,7 +547,7 @@ rsm_encode(#iq{sub_el=SubEl}=IQ,RsmOut)->
 rsm_encode(none)->
     [];
 rsm_encode(RsmOut)->
-    [{xmlelement, "set", [{"xmlns", ?NS_RSM}], lists:reverse(rsm_encode_out(RsmOut))}].
+    [{xmlelement, <<"set">>, [{<<"xmlns">>, ?NS_RSM}], lists:reverse(rsm_encode_out(RsmOut))}].
 rsm_encode_out(#rsm_out{count=Count, index=Index, first=First, last=Last})->
     El = rsm_encode_first(First, Index, []),
     El2 = rsm_encode_last(Last,El),
@@ -556,17 +556,17 @@ rsm_encode_out(#rsm_out{count=Count, index=Index, first=First, last=Last})->
 rsm_encode_first(undefined, undefined, Arr) ->
     Arr;
 rsm_encode_first(First, undefined, Arr) ->
-    [{xmlelement, "first",[], [{xmlcdata, First}]}|Arr];
+    [{xmlelement, <<"first">>,[], [{xmlcdata, First}]}|Arr];
 rsm_encode_first(First, Index, Arr) ->
-    [{xmlelement, "first",[{"index", i2l(Index)}], [{xmlcdata, First}]}|Arr].
+    [{xmlelement, <<"first">>,[{<<"index">>, i2l(Index)}], [{xmlcdata, First}]}|Arr].
 
 rsm_encode_last(undefined, Arr) -> Arr;
 rsm_encode_last(Last, Arr) ->
-    [{xmlelement, "last",[], [{xmlcdata, Last}]}|Arr].
+    [{xmlelement, <<"last">>,[], [{xmlcdata, Last}]}|Arr].
 
 rsm_encode_count(undefined, Arr)-> Arr;
 rsm_encode_count(Count, Arr)->
-    [{xmlelement, "count",[], [{xmlcdata, i2l(Count)}]} | Arr].
+    [{xmlelement, <<"count">>,[], [{xmlcdata, i2l(Count)}]} | Arr].
 
 i2l(I) when is_integer(I) -> integer_to_list(I);
 i2l(L) when is_list(L)    -> L.
@@ -602,17 +602,17 @@ timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
     {T_string, Tz_string} = timestamp_to_iso(DateTime, Timezone),
     Text = [{xmlcdata, Desc}],
     From = jlib:jid_to_string(FromJID),
-    {xmlelement, "delay",
-     [{"xmlns", ?NS_DELAY},
-      {"from", From},
-      {"stamp", T_string ++ Tz_string}],
+    {xmlelement, <<"delay">>,
+     [{<<"xmlns">>, ?NS_DELAY},
+      {<<"from">>, From},
+      {<<"stamp">>, T_string ++ Tz_string}],
      Text}.
 
 %% TODO: Remove this function once XEP-0091 is Obsolete
 timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
-    {xmlelement, "x",
-     [{"xmlns", ?NS_DELAY91},
-      {"stamp", lists:flatten(
+    {xmlelement, <<"x">>,
+     [{<<"xmlns">>, ?NS_DELAY91},
+      {<<"stamp">>, lists:flatten(
 		  io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
 				[Year, Month, Day, Hour, Minute, Second]))}],
      []}.
@@ -722,7 +722,7 @@ parse_time1(Time) ->
     {[H1, M1, S1], true} = check_list([{H, 24}, {M, 60}, {S, 60}]),
     {{H1, M1, S1}, MS}.
 
-check_list(List) ->
+ check_list(List) ->
     lists:mapfoldl(
       fun({L, N}, B)->
 	  V = list_to_integer(L),

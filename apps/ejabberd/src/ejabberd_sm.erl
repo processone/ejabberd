@@ -131,7 +131,7 @@ bounce_offline_message(From, To, Packet) ->
 disconnect_removed_user(User, Server) ->
     ejabberd_sm:route(jlib:make_jid("", "", ""),
 		      jlib:make_jid(User, Server, ""),
-		      {xmlelement,<<"broadcast">>, <<>>,
+		      {xmlelement,<<"broadcast">>, [],
 		       [{exit, <<"User removed">>}]}).
 
 get_user_resources(User, Server) ->
