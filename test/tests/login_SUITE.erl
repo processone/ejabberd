@@ -51,8 +51,8 @@ end_per_group(_GroupName, Config) ->
 
 
 init_per_testcase(log_one_digest, Config) ->
-    [ {escalus_auth_method, "DIGEST-MD5"} | Config],
-    escalus:init_per_testcase(log_one_digest, Config);
+    Conf1 = [ {escalus_auth_method, "DIGEST-MD5"} | Config],
+    escalus:init_per_testcase(log_one_digest, Conf1);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
