@@ -228,8 +228,12 @@ try_register(User, Server, Password) ->
 %% @doc Get all registered users in Mnesia.
 
 dirty_get_registered_users() ->
-    %% TODO:
-    exit(not_implemented).
+    lists:foldl(
+	fun(HostB, Res) ->
+	    get_vh_registered_users(binary_to_list(HostB)) ++ Res
+	end,
+	[],
+	gen_storage:all_table_hosts(passwd)).
 
 %% @spec (Server) -> [{LUser, LServer}]
 %%     Server = string()
