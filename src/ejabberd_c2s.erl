@@ -114,7 +114,8 @@
 		ip,
 		aux_fields = [],
 		fsm_limit_opts,
-		lang}).
+		lang,
+                flash_connection = false}).
 
 %-define(DBGFSM, true).
 
@@ -150,6 +151,14 @@
 	"xmlns:stream='http://etherx.jabber.org/streams' "
 	"id='~s' from='~s'~s~s>"
        ).
+
+-define(FLASH_STREAM_HEADER,
+       "<?xml version='1.0'?>"
+       "<flash:stream xmlns='jabber:client' "
+       "xmlns:stream='http://etherx.jabber.org/streams' "
+       "id='~s' from='~s'~s~s>"
+       ).
+-define(NS_FLASH_STREAM, "http://www.jabber.com/streams/flash").
 
 -define(INVALID_NS_ERR, exmpp_stream:error('invalid-namespace')).
 -define(INVALID_XML_ERR,  exmpp_stream:error('xml-not-well-formed')).
@@ -344,7 +353,8 @@ get_subscribed(FsmRef) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
+wait_for_stream({xmlstreamstart, #xmlel{ns = NS, name = Name} = Opening},
+                StateData) ->
     DefaultLang = case ?MYLANG of
 		      undefined ->
 			  "en";
@@ -353,11 +363,19 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		  end,
     Header = exmpp_stream:opening_reply(Opening,
       StateData#state.streamid, DefaultLang),
-    case NS of
-	?NS_XMPP ->
+    case {NS, exmpp_xml:is_ns_declared_here(Opening, ?NS_FLASH_STREAM),
+          ?FLASH_HACK,
+          StateData#state.flash_connection} of
+        {_, true, true, false} ->
+            %% Flash client connecting - attention!
+            %% Some of them don't provide an xmlns:stream attribute -
+            %% compensate for that.
+            wait_for_stream({xmlstreamstart, Opening#xmlel{ns = ?NS_XMPP}},
+                            StateData#state{flash_connection = true});
+	{?NS_XMPP, _, _, _} ->
 	    ServerB = exmpp_stringprep:nameprep(
 	      exmpp_stream:get_receiving_entity(Opening)),
-        Server = binary_to_list(ServerB),
+            Server = binary_to_list(ServerB),
 	    case ?IS_MY_HOST(Server) of
 		true ->
 		    Lang = case exmpp_stream:get_lang(Opening) of
@@ -518,11 +536,17 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS} = Opening}, StateData) ->
 		    send_trailer(StateData),
 		    {stop, normal, StateData}
 	    end;
-	_ ->
-	    send_header(StateData, ?MYNAME, "", DefaultLang),
-	    send_element(StateData, ?INVALID_NS_ERR),
-	    send_trailer(StateData),
-	    {stop, normal, StateData}
+        _ ->
+	    case Name of
+		<<"policy-file-request">> ->
+		    send_text(StateData, flash_policy_string()),
+		    {stop, normal, StateData};
+		_ ->
+		    send_header(StateData, ?MYNAME, "", DefaultLang),
+		    send_element(StateData, ?INVALID_NS_ERR),
+		    send_trailer(StateData),
+		    {stop, normal, StateData}
+	    end
     end;
 
 wait_for_stream(timeout, StateData) ->
@@ -1565,8 +1589,15 @@ change_shaper(StateData, JID) ->
 
 send_text(StateData, Text) when StateData#state.xml_socket ->
     ?DEBUG("Send Text on stream = ~p", [lists:flatten(Text)]),
+    Text1 =
+        if ?FLASH_HACK and StateData#state.flash_connection ->
+                %% send a null byte after each stanza to Flash clients
+                [Text, 0];
+           true ->
+                Text
+        end,
     (StateData#state.sockmod):send_xml(StateData#state.socket, 
-				       {xmlstreamraw, Text});
+				       {xmlstreamraw, Text1});
 send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~s", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
@@ -1578,6 +1609,15 @@ send_element(StateData, El) when StateData#state.xml_socket ->
 				       {xmlstreamelement, El});
 send_element(StateData, El) ->
     send_text(StateData, exmpp_stanza:to_iolist(El)).
+
+send_header(StateData,Server, Version, Lang)
+  when StateData#state.flash_connection ->
+    Header = io_lib:format(?FLASH_STREAM_HEADER,
+			   [StateData#state.streamid,
+			    Server,
+			    Version,
+			    Lang]),
+    send_text(StateData, Header);
 
 send_header(StateData, Server, Version, Lang)
   when StateData#state.xml_socket ->
@@ -2361,3 +2401,28 @@ pack_string(String, Pack) ->
         none ->
             {String, gb_trees:insert(String, String, Pack)}
     end.
+
+
+%% @spec () -> string()
+%% @doc Build the content of a Flash policy file.
+%% It specifies as domain "*".
+%% It specifies as to-ports the ports that serve ejabberd_c2s.
+flash_policy_string() ->
+    Listen = ejabberd_config:get_local_option(listen),
+    ClientPortsDeep = ["," ++ integer_to_list(Port)
+		       || {{Port,_,_}, ejabberd_c2s, _Opts} <- Listen],
+    %% NOTE: The function string:join/2 was introduced in Erlang/OTP R12B-0
+    %% so it can't be used yet in ejabberd.
+    ToPortsString = case lists:flatten(ClientPortsDeep) of
+			[$, | Tail] -> Tail;
+			_ -> []
+		    end,
+
+    "<?xml version=\"1.0\"?>\n"
+	"<!DOCTYPE cross-domain-policy SYSTEM "
+        "\"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\n"
+	"<cross-domain-policy>\n"
+	"  <allow-access-from domain=\"*\" to-ports=\""
+	++ ToPortsString ++
+	"\"/>\n"
+	"</cross-domain-policy>\n\0".

@@ -64,6 +64,11 @@ ifeq (@pam@, pam)
   INSTALL_EPAM=install -m 750 $(O_USER) epam $(PBINDIR)
 endif
 
+ifeq (@flash_hack@, true)
+  ERLC_FLAGS+=-DENABLE_FLASH_HACK
+  CPPFLAGS+=-DENABLE_FLASH_HACK
+endif
+
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
@@ -158,7 +163,7 @@ mostlyclean-recursive maintainer-clean-recursive:
 	@ERLC@ -W $(EFLAGS) $*.erl
 
 $(ERLSHLIBS):	%.so:	%.c
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) \
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LIBS) \
 		$(subst ../,,$(subst .so,.c,$@)) \
 		$(ERLANG_LIBS) \
 		$(ERLANG_CFLAGS) \
