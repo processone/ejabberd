@@ -28,7 +28,8 @@ all() ->
     [{group, presence}].
 
 groups() ->
-    [{presence, [sequence], [available]}].
+    [{presence, [sequence], [available, available_direct, additions]},
+     {roster, [sequence], [subscription]}].
 
 suite() ->
     escalus:suite().
@@ -68,7 +69,48 @@ available(Config) ->
                                           
         end).
 
-    
+available_direct(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice,Bob) ->
+        
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, available)),
+        Received = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_presence_stanza(Received),
+        escalus_assert:is_stanza_from(Alice, Received)
+                                          
+        end).
+
+additions(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice,Bob) ->
+        
+        Presence = escalus_stanza:presence_direct(Bob, available),
+        PShow = escalus_stanza:presence_show(Presence, 'dnd'),
+        PStatus = escalus_stanza:presence_status(PShow, "Short break"),
+        PPriority = escalus_stanza:presence_priority(PStatus, 1),
+        escalus_client:send(Alice, PPriority),
+        
+        Received = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_presence_stanza(Received),
+        escalus_assert:is_presence_with_show("dnd", Received),
+        escalus_assert:is_presence_with_status("Short break", Received),
+        escalus_assert:is_presence_with_priority("1", Received)
+                                          
+        end).
+
+subscription(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice,Bob) ->
+        
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, subscribe)),
+        Received = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_presence_type("subscribe", Received),
+        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
+        ReceivedA = escalus_client:wait_for_stanza(Alice),
+        escalus_assert:is_presence_type("subscribed", ReceivedA),
+        
+        escalus_client:send(Alice, escalus_stanza:presence(available)),
+        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Bob))
+                                          
+        end).
+        
 
 unavailable(Config) ->
     escalus:story(Config, [1, 1], fun(Alice, Bob) ->
