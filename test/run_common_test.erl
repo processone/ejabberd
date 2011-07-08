@@ -8,6 +8,7 @@
 ct() ->
     ct:run_test([{config, [?CT_CONFIG]},
     		 {dir, ?CT_DIR},
-		 {logdir, ?CT_REPORT},
-                 {suite, [presence_SUITE]}]),
+		 {logdir, ?CT_REPORT}
+                 %{suite, [presence_SUITE]}
+                 ]),
     init:stop(0).

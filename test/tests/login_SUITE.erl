@@ -29,7 +29,7 @@ all() ->
      {group, unregistered}].
 
 groups() ->
-    [{messages, [sequence], [register, log_one, log_one_digest]},
+    [{messages, [sequence], [register, log_one, log_one_digest, messages_story]},
      {unregistered, [sequence], [check_unregistered]}].
 
 suite() ->
@@ -76,7 +76,7 @@ end_per_testcase(CaseName, Config) ->
 
 register(Config) ->
     %%user should be registered in an init function
-    [{_, UserSpec}] = escalus_config:get_property(escalus_users, Config),
+    [{_, UserSpec}| _] = escalus_config:get_property(escalus_users, Config),
     [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
     true = rpc:call('ejabberd@localhost', 
              ejabberd_auth, 
@@ -96,7 +96,7 @@ log_one_digest(Config) ->
 
 check_unregistered(Config) ->
     %%user should be unregistered by previous end group function 
-    [{_, UserSpec}] = escalus_config:get_property(escalus_users, Config),
+    [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
     [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
     false = rpc:call('ejabberd@localhost', 
                      ejabberd_auth, 

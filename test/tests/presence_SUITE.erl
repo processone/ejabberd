@@ -28,7 +28,7 @@ all() ->
     [{group, presence}].
 
 groups() ->
-    [{presence, [sequence], [available, unavailable]}].
+    [{presence, [sequence], [available]}].
 
 suite() ->
     escalus:suite().
@@ -61,16 +61,22 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 
 available(Config) ->
-    presence_test(available, Config).
-
-unavailable(Config) ->
-    presence_test(unavailable, Config).
-
-presence_test(Type, Config) ->
-    escalus:story(Config, [1], fun(Alice) ->
+    escalus:story(Config, [1, 1], fun(Alice,_Bob) ->
         
-        escalus_client:send(Alice, escalus_stanza:presence(Type)),
+        escalus_client:send(Alice, escalus_stanza:presence(available)),
         escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Alice))
                                           
         end).
+
+    
+
+unavailable(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+        
+        escalus_client:send(Alice, escalus_stanza:presence(unavailable)),
+        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Bob))
+                                          
+        end).
+
+
 

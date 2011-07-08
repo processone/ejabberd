@@ -1,5 +1,5 @@
 ## Name of the node
--name ejabberd@127.0.0.1
+-name ejabberd@localhost
 
 ## Cookie for distributed erlang
 -setcookie ejabberd
