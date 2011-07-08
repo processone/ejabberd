@@ -192,7 +192,7 @@ response(KeyVals, User, Passwd, Nonce, AuthzId, A2Prefix) ->
     NC = xml:get_attr_s("nc", KeyVals),
     QOP = xml:get_attr_s("qop", KeyVals),
     A1 = case AuthzId of
-	     <<>> ->
+	     "" ->
 		 binary_to_list(
 		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
 		     ":" ++ Nonce ++ ":" ++ CNonce;

@@ -212,7 +212,7 @@ get_attr_s(AttrName, Attrs) ->
 	{value, {_, Val}} ->
 	    Val;
 	_ ->
-	    <<>>
+	    context_default(AttrName)
     end.
 
 get_tag_attr(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
@@ -238,7 +238,7 @@ get_subtag1([], _) ->
 get_subtag_cdata(Tag, Name) ->
     case get_subtag(Tag, Name) of
 	false ->
-	    <<>>;
+	    context_default(Name);
 	Subtag ->
 	    get_tag_cdata(Subtag)
     end.
@@ -251,7 +251,7 @@ get_path_s(El, []) ->
 get_path_s(El, [{elem, Name} | Path]) ->
     case get_subtag(El, Name) of
 	false ->
-	    <<>>;
+	    context_default(Name);
 	SubEl ->
 	    get_path_s(SubEl, Path)
     end;
@@ -266,4 +266,7 @@ replace_tag_attr(Attr, Value, {xmlelement, Name, Attrs, Els}) ->
     Attrs2 = [{Attr, Value} | Attrs1],
     {xmlelement, Name, Attrs2, Els}.
 
-
+context_default(Attr) when is_list(Attr) ->
+    "";
+context_default(Attr) when is_binary(Attr) ->
+    <<>>.
