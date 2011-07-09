@@ -1358,7 +1358,7 @@ msgstr "Заповніть поля для пошуку користувача J
 #: web/ejabberd_web_admin.erl:193 web/ejabberd_web_admin.erl:203
 #: web/ejabberd_web_admin.erl:219 web/ejabberd_web_admin.erl:229
 msgid "Unauthorized"
-msgstr "Не авторизован"
+msgstr "Не авторизовано"
 
 #: web/ejabberd_web_admin.erl:286 web/ejabberd_web_admin.erl:303
 msgid "ejabberd Web Admin"
