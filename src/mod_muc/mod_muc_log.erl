@@ -884,6 +884,7 @@ get_roomconfig_text(moderated) -> "Make room moderated";
 get_roomconfig_text(members_by_default) -> "Default users as participants";
 get_roomconfig_text(allow_change_subj) -> "Allow users to change the subject";
 get_roomconfig_text(allow_private_messages) -> "Allow users to send private messages";
+get_roomconfig_text(allow_private_messages_from_visitors) -> "Allow visitors to send private messages";
 get_roomconfig_text(allow_query_users) -> "Allow users to query other users";
 get_roomconfig_text(allow_user_invites) -> "Allow users to send invites";
 get_roomconfig_text(logging) ->  "Enable logging";
