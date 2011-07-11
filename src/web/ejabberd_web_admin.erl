@@ -1768,7 +1768,7 @@ host_info(Server, Query, Lang) ->
 	    error -> [?XREST("Bad format")];
 	    nothing -> []
 	end ++
-	[?XAE('p', [], [?CT("Is registered: "), ?CT(IsRegistered)])
+	[?XAE('p', [], [?CT("Is registered:"), ?C(" "), ?CT(IsRegistered)])
 	] ++ host_info_permanent(Server, Lang)
 	 ++ host_info_running(Server, Lang).
 
@@ -1779,14 +1779,14 @@ host_info_permanent(Server, Lang) ->
 	 [?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?P, ?INPUTT("submit", "removehost", "Remove Host")])]}
     end,
-    [?XAE('p', [], [?CT("Is permanent: "), PermanentX])] ++ FormList.
+    [?XAE('p', [], [?CT("Is permanent:"), ?C(" "), PermanentX])] ++ FormList.
 
 host_info_running(Server, Lang) ->
     {RunningX, InputName,InputString} = case ejabberd_hosts:running(Server) of
 	true -> {?CT("true"), "stophost", "Stop Host"};
 	false -> {?CT("false"), "starthost", "Start Host"}
     end,
-    [?XAE('p', [], [?CT("Is running: "), RunningX]),
+    [?XAE('p', [], [?CT("Is running:"), ?C(" "), RunningX]),
      ?XAE('form', [?XMLATTR(<<"action">>, <<>>), ?XMLATTR(<<"method">>, <<"post">>)],
 	      [?P, ?INPUTT("submit", InputName, InputString)])].
 
@@ -2470,10 +2470,10 @@ get_node(global, Node, ["pid"], _Query, Lang) ->
 	       ])
 	  ]),
      ?XAE('p', [],
-	  [?CT("Registered processes and ports: ")] ++ RegisteredList
+	  [?CT("Registered processes and ports:"), ?C(" ")] ++ RegisteredList
 	 ),
      ?XAE('p', [],
-	  [?CT("Total processes: ")] ++ ProcessesList
+	  [?CT("Total processes:"), ?C(" ")] ++ ProcessesList
 	 )];
 
 get_node(global, Node, ["pid", [Char1|_] = RegS], _Query, Lang) when Char1 /= $< ->
@@ -3191,7 +3191,7 @@ make_server_menu(HostMenu, NodeMenu, Lang, JID) ->
 	     {"access", "Access Rules"},
 	     {"vhosts", "Virtual Hosts", HostMenu},
 	     {"nodes", "Nodes", NodeMenu},
-	     {"misc", "Miscelanea Options"},
+	     {"misc", "Miscellanea Options"},
 	     {"stats", "Statistics"}]
 	++ get_menu_items_hook(server, Lang),
     BasePath = url_to_path(Base),
