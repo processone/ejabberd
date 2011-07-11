@@ -57,8 +57,9 @@
 -define(NS_ADMINL(Sub), ["http:","jabber.org","protocol","admin", Sub]).
 tokenize(Node) -> string:tokens(Node, "/#").
 
-start(Host, _Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, _Opts) ->
     mnesia:create_table(motd, [{disc_copies, [node()]},
 			       {attributes, record_info(fields, motd)}]),
     mnesia:create_table(motd_users, [{disc_copies, [node()]},
@@ -73,7 +74,7 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(adhoc_local_commands, HostB, ?MODULE, announce_commands, 50),
     ejabberd_hooks:add(user_available_hook, HostB,
 		       ?MODULE, send_motd, 50),
-    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+    register(gen_mod:get_module_proc(HostB, ?PROCNAME),
 	     proc_lib:spawn(?MODULE, init, [])).
 
 init() ->
@@ -135,7 +136,7 @@ announce(From, To, Packet) ->
     case {exmpp_jid:prep_node(To), exmpp_jid:prep_resource(To)} of
 	    {undefined, Res} ->
 	    Name = Packet#xmlel.name,
-	    Proc = gen_mod:get_module_proc(exmpp_jid:prep_domain_as_list(To), ?PROCNAME),
+	    Proc = gen_mod:get_module_proc_existing(exmpp_jid:prep_domain_as_list(To), ?PROCNAME),
 	    case {Res, Name} of
 		{<<"announce/all">>, 'message'} ->
 		    Proc ! {announce_all, From, To, Packet},
@@ -541,7 +542,7 @@ handle_adhoc_form(From, To,
 				 node = Node,
 				 sessionid = SessionID},
 		  Fields) ->
-    LServer = exmpp_jid:prep_domain_as_list(To),
+    LServerB = exmpp_jid:prep_domain(To),
     Confirm = case lists:keysearch("confirm", 1, Fields) of
 		  {value, {"confirm", ["true"]}} ->
 		      true;
@@ -582,7 +583,7 @@ handle_adhoc_form(From, To,
 		      []
 	      end},
 
-    Proc = gen_mod:get_module_proc(LServer, ?PROCNAME),
+    Proc = gen_mod:get_module_proc_existing(LServerB, ?PROCNAME),
     case {Node, Body} of
 	{?NS_ADMIN_s ++ "#delete-motd", _} ->
 	    if	Confirm ->

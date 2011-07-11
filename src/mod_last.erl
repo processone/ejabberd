@@ -77,17 +77,18 @@
 -record(last_activity, {user_host, timestamp, status}).
 
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, HostB, last_activity,
 			     [{disc_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {attributes, record_info(fields, last_activity)},
 			      {types, [{user_host, {text, text}},
 				       {timestamp, bigint}]}]),
-    update_table(Host, Backend),
+    update_table(HostB, Backend),
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_LAST_ACTIVITY,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_LAST_ACTIVITY,
@@ -97,8 +98,9 @@ start(Host, Opts) ->
     ejabberd_hooks:add(unset_presence_hook, HostB,
 		       ?MODULE, on_presence_update, 50).
 
-stop(Host) ->
-    HostB = list_to_binary(Host),
+stop(Host) when is_list(Host) ->
+    stop(list_to_binary(Host));
+stop(HostB) ->
     ejabberd_hooks:delete(remove_user, HostB,
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(unset_presence_hook, HostB,
@@ -252,9 +254,12 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
 	    ok
     end.
 
-update_table(Host, mnesia) ->
+update_table(global, Storage) ->
+    [update_table(HostB, Storage) || HostB <- ejabberd_hosts:get_hosts(ejabberd)];
+
+update_table(HostB, mnesia) ->
     gen_storage_migration:migrate_mnesia(
-      Host, last_activity,
+      HostB, last_activity,
       [{last_activity, [us, timestamp, status],
 	fun({last_activity, {U, S}, Timestamp, Status}) ->
 		U1 = case U of
@@ -266,14 +271,14 @@ update_table(Host, mnesia) ->
 			       timestamp = Timestamp,
 			       status = list_to_binary(Status)}
 	end}]);
-update_table(Host, odbc) ->
+update_table(HostB, odbc) ->
     gen_storage_migration:migrate_odbc(
-      Host, [last_activity],
+      HostB, [last_activity],
       [{"last", ["username", "seconds", "state"],
 	fun(_, Username, STimeStamp, Status) ->
 		case catch list_to_integer(STimeStamp) of
 		    TimeStamp when is_integer(TimeStamp) ->
-			[#last_activity{user_host = {Username, Host},
+			[#last_activity{user_host = {Username, HostB},
 					timestamp = TimeStamp,
 					status = Status}];
 		    _ ->

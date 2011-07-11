@@ -47,8 +47,9 @@
 -include("ejabberd.hrl").
 -include("adhoc.hrl").
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
 
     gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_ADHOC,

@@ -611,6 +611,12 @@
 %%
 {static_modules,
  [
+%%  {mod_adhoc,    []},
+%%  {mod_announce, []},
+%%  {mod_disco,    []},
+%%  {mod_echo,     [{prefix, "echo"}]},
+%%  {mod_last,     []},
+%%  {mod_offline,  []}
  ]}.
 
 

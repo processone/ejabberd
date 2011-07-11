@@ -53,8 +53,9 @@
 -include("ejabberd.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
 
     ejabberd_local:refresh_iq_handlers(),
 
@@ -75,7 +76,7 @@ start(Host, Opts) ->
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
-    lists:foreach(fun(Domain) -> register_extra_domain(list_to_binary(Host), Domain) end,
+    lists:foreach(fun(Domain) -> register_extra_domain(HostB, Domain) end,
 		  ExtraDomains),
     catch ets:new(disco_sm_features, [named_table, ordered_set, public]),
     catch ets:new(disco_sm_nodes, [named_table, ordered_set, public]),
@@ -106,7 +107,7 @@ stop(Host) ->
     ok.
 
 
-register_feature(HostB, Feature) when is_binary(HostB) ->
+register_feature(HostB, Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
     ets:insert(disco_features, {{Feature, HostB}}).
 
@@ -114,11 +115,11 @@ unregister_feature(HostB, Feature) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
     ets:delete(disco_features, {Feature, HostB}).
 
-register_extra_domain(HostB, Domain) when is_binary(HostB) ->
+register_extra_domain(HostB, Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ets:insert(disco_extra_domains, {{Domain, HostB}}).
 
-unregister_extra_domain(HostB, Domain) when is_binary(HostB) ->
+unregister_extra_domain(HostB, Domain) ->
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ets:delete(disco_extra_domains, {Domain, HostB}).
 
@@ -242,14 +243,14 @@ get_local_services(Acc, _From, To, <<>>, _Lang) ->
 		empty -> []
 	    end,
     Host = exmpp_jid:prep_domain_as_list(To),
-    NHost = ejabberd:normalize_host(Host),
+    NHostB = list_to_binary(ejabberd:normalize_host(Host)),
     {result,
      lists:usort(
        lists:map(fun domain_to_xml/1,
 		 get_vh_services(Host) ++
 		 ets:select(disco_extra_domains,
 			ets:fun2ms(fun ({{Service, H}})
-				    when H =:= NHost;
+				    when H =:= NHostB;
 				         H =:= global ->
 					     Service
 				end)))

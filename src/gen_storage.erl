@@ -118,6 +118,9 @@ table_info(Host, Tab, InfoKey) ->
 -spec create_table(atom(), storage_host(), storage_table(), list()) ->
 			  tuple().
 
+create_table(Backend, global, Tab, Def) ->
+    [create_table(Backend, list_to_binary(Host), Tab, Def) || Host <- ejabberd_hosts:get_hosts(ejabberd)];
+
 create_table(mnesia, Host, Tab, Def) ->
     MDef = filter_mnesia_tabdef(Def),
     define_table(mnesia, Host, Tab, #mnesia_def{table = Tab,

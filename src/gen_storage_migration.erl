@@ -32,8 +32,9 @@ migrate_mnesia(Host, Table, Migrations) ->
 			  end
 		  end, DifferentTableName).
 
-migrate_mnesia1(Host, Table, {OldTable, OldAttributes, MigrateFun}) ->
-    HostB = list_to_binary(Host),
+migrate_mnesia1(Host, Table, {OldTable, OldAttributes, MigrateFun}) when is_list(Host) ->
+    migrate_mnesia1(list_to_binary(Host), Table, {OldTable, OldAttributes, MigrateFun});
+migrate_mnesia1(HostB, Table, {OldTable, OldAttributes, MigrateFun}) ->
     case (catch mnesia:table_info(OldTable, attributes)) of
 	OldAttributes ->
 	    if

@@ -40,6 +40,7 @@
 	 loaded_modules_with_opts/1,
 	 get_hosts/2,
 	 get_module_proc/2,
+	 get_module_proc_existing/2,
          expand_host_name/3,
 	 is_loaded/2]).
 
@@ -194,7 +195,13 @@ get_module_opt(Host, Module, Opt, Default) ->
     OptsList = ets:lookup(ejabberd_modules, {Module, Host}),
     case OptsList of
 	[] ->
-	    Default;
+	    OptsList2 = ets:lookup(ejabberd_modules, {Module, global}),
+	    case OptsList2 of
+		[] ->
+		    Default;
+		[#ejabberd_module{opts = Opts} | _] ->
+		    get_opt(Opt, Opts, Default)
+	    end;
 	[#ejabberd_module{opts = Opts} | _] ->
 	    get_opt(Opt, Opts, Default)
     end.
@@ -260,6 +267,15 @@ get_hosts(Opts, Prefix) ->
 	    Hosts
     end.
 
+get_module_proc_existing(Host, Base) ->
+    Proc = get_module_proc(Host, Base),
+    %% If the process doesn't exist for Host, it may exist for global
+    case {whereis(Proc), Host == global} of
+	{undefined, false} -> get_module_proc(global, Base);
+	{undefined, true} -> not_existing;
+	{_, _} -> Proc
+    end.
+
 get_module_proc(Host, Base) when is_binary(Host) ->
     get_module_proc(binary_to_list(Host), Base);
 get_module_proc(global, Base) ->
@@ -269,8 +285,11 @@ get_module_proc(Host, {frontend, Base}) ->
 get_module_proc(Host, Base) ->
     list_to_atom(atom_to_list(Base) ++ "_" ++ Host).
 
+%% @spec(Host::string() | global, Module::atom()) -> true | false
+%% @doc Check if the module is loaded in this host (or global), or not.
 is_loaded(Host, Module) ->
-    ets:member(ejabberd_modules, {Module, Host}).
+    ets:member(ejabberd_modules, {Module, Host})
+    orelse ets:member(ejabberd_modules, {Module, global}).
 
 expand_host_name(Host, Opts, DefaultPrefix) ->
     case Host of

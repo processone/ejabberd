@@ -112,12 +112,14 @@
 %% default value for the maximum number of user messages
 -define(MAX_USER_MESSAGES, infinity).
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
+%    Host = binary_to_list(HostB),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, HostB, offline_msg,
 			     [{disc_only_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {type, bag},
 			      {attributes, record_info(fields, offline_msg)},
 			      {types, [{user_host, {text, text}},
@@ -125,7 +127,7 @@ start(Host, Opts) ->
 				       {expire, bigint},
 				       {from, jid},
 				       {to, jid}]}]),
-    update_table(Host, Backend),
+    update_table(HostB, Backend),
     ejabberd_hooks:add(offline_message_hook, HostB,
 		       ?MODULE, store_packet, 50),
     ejabberd_hooks:add(resend_offline_messages_hook, HostB,
@@ -145,7 +147,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(webadmin_user_parse_query, HostB,
                        ?MODULE, webadmin_user_parse_query, 50),
     AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, max_user_offline_messages),
-    register(gen_mod:get_module_proc(Host, ?PROCNAME),
+    register(gen_mod:get_module_proc(HostB, ?PROCNAME),
 	     spawn(?MODULE, loop, [AccessMaxOfflineMsgs])).
 
 stanza_to_store(Stanza) ->
@@ -258,7 +260,7 @@ store_packet(From, To, Packet) ->
             LServer = exmpp_jid:prep_domain(To),
 		    TimeStamp = make_timestamp(),
 		    Expire = find_x_expire(TimeStamp, Packet#xmlel.children),
-		    gen_mod:get_module_proc(LServer, ?PROCNAME) !
+		    gen_mod:get_module_proc_existing(LServer, ?PROCNAME) !
 			#offline_msg{user_host = {LUser, LServer},
 				     timestamp = TimeStamp,
 				     expire = Expire,
@@ -463,6 +465,9 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+update_table(global, Storage) ->
+    [update_table(HostB, Storage) || HostB <- ejabberd_hosts:get_hosts(ejabberd)];
 
 update_table(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(
@@ -720,8 +725,8 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
-    LUser = exmpp_stringprep:nodeprep(User),
-    LServer = exmpp_stringprep:nameprep(Server),
+    LUser = list_to_binary(exmpp_stringprep:nodeprep(User)),
+    LServer = list_to_binary(exmpp_stringprep:nameprep(Server)),
     QueueLen = get_queue_length(LUser, LServer),
     FQueueLen = [?AC("queue/", integer_to_list(QueueLen))],
     Acc ++ [?XCT("h3", "Offline Messages:")] ++ FQueueLen ++ [?C(" "), ?INPUTT("submit", "removealloffline", "Remove All Offline Messages")].

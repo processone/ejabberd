@@ -1658,8 +1658,7 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
     [list_given_users(Host, Sub, "../../", Lang, URLFunc)].
 
-list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
-    ModOffline = get_offlinemsg_module(Host),
+list_given_users(_Host, Users, Prefix, Lang, URLFunc) ->
     ?XE('table',
 	[?XE('thead',
 	     [?XE('tr',
@@ -1672,7 +1671,7 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
                ServerB = list_to_binary(Server),
                UserB = list_to_binary(User),
                US = {UserB, ServerB},
-	       QueueLenStr = get_offlinemsg_length(ModOffline, User, Server),
+	       QueueLenStr = get_offlinemsg_length(User, Server),
                FQueueLen = [?AC(URLFunc({users_queue, Prefix,
     				          		 User, Server}),
 				        	    QueueLenStr)],
@@ -1707,16 +1706,10 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 	       end, Users)
 	    )]).
 
-get_offlinemsg_length(ModOffline, User, Server) ->
-    case ModOffline of
-	none -> "disabled";
-	_ -> pretty_string_int(ModOffline:get_queue_length(list_to_binary(User), list_to_binary(Server)))
-    end.
-
-get_offlinemsg_module(Server) ->
-    case [mod_offline] -- gen_mod:loaded_modules(Server) of
-        [mod_offline] -> none;
-        [] -> mod_offline
+get_offlinemsg_length(User, Server) ->
+    case gen_mod:is_loaded(Server, mod_offline) of
+	false -> "disabled";
+	true -> pretty_string_int(mod_offline:get_queue_length(list_to_binary(User), list_to_binary(Server)))
     end.
 
 us_to_list({User, Server}) ->
