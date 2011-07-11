@@ -451,26 +451,44 @@ normal_state({route, From, ToNick,
 				ToNick),
 			      From, Err);
 			_ ->
-			    case find_jid_by_nick(ToNick, StateData) of
-				false ->
-				    ErrText = "Recipient is not in the room",
+			    ToJID = find_jid_by_nick(ToNick, StateData),
+			    SrcIsVisitor = is_visitor(From, StateData),
+			    DstIsModerator = is_moderator(ToJID, StateData),
+			    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
+			    if SrcIsVisitor == false;
+			       PmFromVisitors == anyone;
+			       (PmFromVisitors == moderators) and (DstIsModerator) ->
+				    case ToJID of
+					false ->
+					    ErrText = "Recipient is not in the conference room",
+					    Err = exmpp_stanza:reply_with_error(Packet,
+										exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
+												   {Lang, translate:translate(Lang, ErrText)})),
+					    ejabberd_router:route(
+					      jid_replace_resource(
+						StateData#state.jid,
+						ToNick),
+					      From, Err);
+					_ ->
+					    {ok, #user{nick = FromNick}} =
+						?DICT:find(jlib:jid_tolower(From),
+							   StateData#state.users),
+					    ejabberd_router:route(
+					      jid_replace_resource(
+						StateData#state.jid,
+						FromNick),
+					      ToJID, Packet)
+				    end;
+			       true ->
+				    ErrText = "It is not allowed to send private messages",
 				    Err = exmpp_stanza:reply_with_error(Packet,
-				      exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
+				      exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
 					{Lang, translate:translate(Lang, ErrText)})),
 				    ejabberd_router:route(
 				      jid_replace_resource(
 					StateData#state.jid,
 					ToNick),
-				      From, Err);
-				ToJID ->
-				    {ok, #user{nick = FromNick}} =
-					?DICT:find(jlib:short_prepd_jid(From),
-						   StateData#state.users),
-				    ejabberd_router:route(
-				      jid_replace_resource(
-					StateData#state.jid,
-					FromNick),
-				      ToJID, Packet)
+				      From, Err)
 			    end
 		    end;
 		{true, false} ->
@@ -1324,6 +1342,9 @@ get_default_role(Affiliation, StateData) ->
 
 is_visitor(Jid, StateData) ->
     get_role(Jid, StateData) =:= visitor.
+
+is_moderator(Jid, StateData) ->
+    get_role(Jid, StateData) =:= moderator.
 
 get_max_users(StateData) ->
     MaxUsers = (StateData#state.config)#config.max_users,
@@ -3097,6 +3118,39 @@ get_config(Lang, StateData, From) ->
          ?BOOLXFIELD("Allow users to send private messages",
                  "allow_private_messages",
                  Config#config.allow_private_messages),
+    #xmlel{name = 'field', attrs = [
+                ?XMLATTR(<<"type">>, <<"list-single">>),
+                ?XMLATTR(<<"label">>,
+                    translate:translate(Lang, "Allow visitors to send private messages to")),
+                ?XMLATTR(<<"var">>, <<"allow_private_messages_from_visitors">>)],
+          children = [#xmlel{name = 'value',
+                        children = [#xmlcdata{cdata =
+				       case Config#config.allow_private_messages_from_visitors of
+					   anyone ->
+					       <<"anyone">>;
+					   moderators ->
+					       <<"moderators">>;
+					   nobody ->
+					       <<"nobody">>
+				       end}]},
+                     #xmlel{name = 'option', attrs = [
+                            ?XMLATTR(<<"label">>,
+                              translate:translate(Lang, "nobody"))],
+                           children = [#xmlel{name = 'value',
+                                       children = [#xmlcdata{cdata =
+                                                        <<"nobody">>}]}]},
+                     #xmlel{name = 'option', attrs = [
+                            ?XMLATTR(<<"label">>,
+                              translate:translate(Lang, "moderators only"))],
+                           children = [#xmlel{name = 'value',
+                                       children = [#xmlcdata{cdata =
+                                                        <<"moderators">>}]}]},
+                     #xmlel{name = 'option', attrs = [
+                            ?XMLATTR(<<"label">>,
+                              translate:translate(Lang, "anyone"))],
+                           children = [#xmlel{name = 'value',
+                                       children = [#xmlcdata{cdata =
+                                                        <<"anyone">>}]}]}]},
          ?BOOLXFIELD("Allow users to query other users",
                  "allow_query_users",
                  Config#config.allow_query_users),
@@ -3201,6 +3255,17 @@ set_xoption([{"allow_query_users", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_query_users, Val);
 set_xoption([{"allow_private_messages", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_private_messages, Val);
+set_xoption([{"allow_private_messages_from_visitors", [Val]} | Opts], Config) ->
+    case Val of
+	"anyone" ->
+	    ?SET_STRING_XOPT(allow_private_messages_from_visitors, anyone);
+	"moderators" ->
+	    ?SET_STRING_XOPT(allow_private_messages_from_visitors, moderators);
+	"nobody" ->
+	    ?SET_STRING_XOPT(allow_private_messages_from_visitors, nobody);
+	_ ->
+	    {error, 'bad-request'}
+    end;
 set_xoption([{"muc#roomconfig_allowvisitorstatus", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_visitor_status, Val);
 set_xoption([{"muc#roomconfig_allowvisitornickchange", [Val]} | Opts], Config) ->
@@ -3303,6 +3368,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      allow_change_subj -> StateData#state{config = (StateData#state.config)#config{allow_change_subj = Val}};
 	      allow_query_users -> StateData#state{config = (StateData#state.config)#config{allow_query_users = Val}};
 	      allow_private_messages -> StateData#state{config = (StateData#state.config)#config{allow_private_messages = Val}};
+	      allow_private_messages_from_visitors -> StateData#state{config = (StateData#state.config)#config{allow_private_messages_from_visitors = Val}};
 	      allow_visitor_nickchange -> StateData#state{config = (StateData#state.config)#config{allow_visitor_nickchange = Val}};
 	      allow_visitor_status -> StateData#state{config = (StateData#state.config)#config{allow_visitor_status = Val}};
 	      public -> StateData#state{config = (StateData#state.config)#config{public = Val}};
@@ -3346,6 +3412,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(allow_change_subj),
      ?MAKE_CONFIG_OPT(allow_query_users),
      ?MAKE_CONFIG_OPT(allow_private_messages),
+     ?MAKE_CONFIG_OPT(allow_private_messages_from_visitors),
      ?MAKE_CONFIG_OPT(allow_visitor_status),
      ?MAKE_CONFIG_OPT(allow_visitor_nickchange),
      ?MAKE_CONFIG_OPT(public),
