@@ -4,6 +4,7 @@ all: test
 
 test_clean:
 	rm -rf tests/*.beam
+	rm -rf escalus/ebin
 	make test
 
 test: escalus/ebin
