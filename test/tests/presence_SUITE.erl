@@ -25,11 +25,12 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, presence}].
+    [{group, presence},
+     {group, roster}].
 
 groups() ->
     [{presence, [sequence], [available, available_direct, additions]},
-     {roster, [sequence], [subscription]}].
+     {roster, [sequence], [get_roster, add_contact]}].
 
 suite() ->
     escalus:suite().
@@ -95,6 +96,36 @@ additions(Config) ->
         escalus_assert:is_presence_with_priority("1", Received)
                                           
         end).
+
+get_roster(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice,_Bob) ->
+    
+        escalus_client:send(Alice, escalus_stanza:roster_get()),
+        escalus_assert:is_roster_result(escalus_client:wait_for_stanza(Alice))
+     
+        end).
+
+add_contact(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+    
+        escalus_client:send(Alice, 
+                            escalus_stanza:roster_add_contact(Bob, 
+                                                              ["boyfriends"], 
+                                                              "Bobby")),
+        Received = escalus_client:wait_for_stanza(Alice),
+        escalus_assert:is_roster_result_set(Received),
+        escalus_assert:count_roster_items(1, Received),
+        escalus_assert:is_roster_result_short(escalus_client:wait_for_stanza(Alice)),
+        
+        escalus_client:send(Alice, escalus_stanza:roster_get()),
+        Received2 = escalus_client:wait_for_stanza(Alice),
+     
+        escalus_assert:is_roster_result(Received2),
+        escalus_assert:roster_contains(Bob, Received2)
+     
+        end).
+
+
 
 subscription(Config) ->
     escalus:story(Config, [1, 1], fun(Alice,Bob) ->
