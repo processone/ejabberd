@@ -51,10 +51,14 @@ init_per_group(_GroupName, Config) ->
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
-
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
+end_per_testcase(add_contact, Config) ->
+    [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
+    [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
+    rpc:call(ejabberd@localhost, mod_roster, remove_user, [Username, Server]),
+    escalus:end_per_testcase(add_contact, Config);    
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
@@ -110,11 +114,12 @@ add_contact(Config) ->
     
         escalus_client:send(Alice, 
                             escalus_stanza:roster_add_contact(Bob, 
-                                                              ["boyfriends"], 
+                                                              ["friends"], 
                                                               "Bobby")),
         Received = escalus_client:wait_for_stanza(Alice),
         escalus_assert:is_roster_result_set(Received),
         escalus_assert:count_roster_items(1, Received),
+        escalus_client:send(Alice, escalus_stanza:iq_result(Received)),
         escalus_assert:is_roster_result_short(escalus_client:wait_for_stanza(Alice)),
         
         escalus_client:send(Alice, escalus_stanza:roster_get()),
@@ -127,18 +132,43 @@ add_contact(Config) ->
 
 
 
-subscription(Config) ->
+subscribtion(Config) ->
     escalus:story(Config, [1, 1], fun(Alice,Bob) ->
         
         escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, subscribe)),
         Received = escalus_client:wait_for_stanza(Bob),
         escalus_assert:is_presence_type("subscribe", Received),
-        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
-        ReceivedA = escalus_client:wait_for_stanza(Alice),
-        escalus_assert:is_presence_type("subscribed", ReceivedA),
+        PushReq = escalus_client:wait_for_stanza(Alice),
+        escalus_assert:is_roster_result_set(PushReq),
+        escalus_client:send(Alice, escalus_stanza:iq_result(PushReq)),
         
-        escalus_client:send(Alice, escalus_stanza:presence(available)),
-        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Bob))
+        escalus_client:send(Bob, 
+                            escalus_stanza:roster_add_contact(Alice, 
+                                                              ["enemies"], 
+                                                              "Alice")),
+        PushReqB = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_roster_result_set(PushReqB),
+        escalus_client:send(Bob, escalus_stanza:iq_result(PushReqB)),
+        escalus_assert:is_roster_result_short(escalus_client:wait_for_stanza(Bob)),
+        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribe)),
+        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
+        
+        PushReqB1 = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_roster_result_set(PushReqB1),
+        Result = escalus_stanza:iq_result(PushReqB1),
+        escalus_client:send(Bob, Result),
+        
+        %% TODO: make this test pass
+        escalus_assert:is_presence_type("subscribe", 
+                                        escalus_client:wait_for_stanza(Alice)),
+
+        escalus_client:send(Alice, escalus_stanza:roster_get()),
+        escalus_client:send(Bob, escalus_stanza:roster_get()),
+        escalus_assert:is_roster_result(escalus_client:wait_for_stanza(Bob)),
+        escalus_assert:is_roster_result(escalus_client:wait_for_stanza(Alice)),
+        
+        escalus_client:send(Bob, escalus_stanza:presence(available)),
+        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Alice))
                                           
         end).
         
@@ -150,6 +180,8 @@ unavailable(Config) ->
         escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Bob))
                                           
         end).
+
+
 
 
 
