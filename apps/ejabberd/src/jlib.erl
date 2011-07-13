@@ -255,7 +255,9 @@ jid_to_string({Node, Server, Resource}) ->
     S3.
 
 jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
-    list_to_binary(jid_to_string({User, Server, Resource})).
+    list_to_binary(jid_to_string({User, Server, Resource}));
+jid_to_binary({Node, Server, Resource}) ->
+    list_to_binary(jid_to_string({Node, Server, Resource})).
 
 is_nodename([]) ->
     false;

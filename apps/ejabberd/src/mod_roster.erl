@@ -127,7 +127,7 @@ stop(Host) ->
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
-    case lists:member(LServer, ?MYHOSTS) of
+    case lists:member(binary_to_list(LServer), ?MYHOSTS) of
 	true ->
 	    process_local_iq(From, To, IQ);
 	_ ->
@@ -247,7 +247,7 @@ get_user_roster(Acc, US) ->
 
 
 item_to_xml(Item) ->
-    Attrs1 = [{<<"jid">>, jlib:jid_to_string(Item#roster.jid)}],
+    Attrs1 = [{<<"jid">>, jlib:jid_to_binary(Item#roster.jid)}],
     Attrs2 = case Item#roster.name of
 		 <<>> ->
 		     Attrs1;
@@ -394,8 +394,8 @@ process_item_els(Item, []) ->
 
 
 push_item(User, Server, From, Item) ->
-    ejabberd_sm:route(jlib:make_jid("", "", ""),
-		      jlib:make_jid(User, Server, ""),
+    ejabberd_sm:route(jlib:make_jid(<<>>, <<>>, <<>>),
+		      jlib:make_jid(User, Server, <<>>),
 		      {xmlelement, <<"broadcast">>, [],
 		       [{item,
 			 Item#roster.jid,
@@ -543,7 +543,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    unsubscribed -> <<"unsubscribed">>
 			end,
 		    ejabberd_router:route(
-		      jlib:make_jid(User, Server, ""), JID1,
+		      jlib:make_jid(User, Server, <<>>), JID1,
 		      {xmlelement, <<"presence">>, [{<<"type">>, T}], []})
 	    end,
 	    case Push of
@@ -554,7 +554,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			    ok;
 			true ->
 			    push_item(User, Server,
-				      jlib:make_jid(User, Server, ""), Item)
+				      jlib:make_jid(User, Server, <<>>), Item)
 		    end,
 		    true;
 		none ->
@@ -678,7 +678,7 @@ remove_user(User, Server) ->
 %% Both or To, send a "unsubscribe" presence stanza.
 send_unsubscription_to_rosteritems(LUser, LServer) ->
     RosterItems = get_user_roster([], {LUser, LServer}),
-    From = jlib:make_jid({LUser, LServer, ""}),
+    From = jlib:make_jid({LUser, LServer, <<>>}),
     lists:foreach(fun(RosterItem) ->
 			  send_unsubscribing_presence(From, RosterItem)
 		  end,
@@ -795,7 +795,7 @@ process_item_attrs_ws(Item, []) ->
     Item.
 
 get_in_pending_subscriptions(Ls, User, Server) ->
-    JID = jlib:make_jid(User, Server, ""),
+    JID = jlib:make_jid(User, Server, <<>>),
     US = {JID#jid.luser, JID#jid.lserver},
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Result when is_list(Result) ->
@@ -808,8 +808,8 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 					      <<>>
 				      end,
 			    {xmlelement, <<"presence">>,
-			     [{<<"from">>, jlib:jid_to_string(R#roster.jid)},
-			      {<<"to">>, jlib:jid_to_string(JID)},
+			     [{<<"from">>, jlib:jid_to_binary(R#roster.jid)},
+			      {<<"to">>, jlib:jid_to_binary(JID)},
 			      {<<"type">>, <<"subscribe">>}],
 			     [{xmlelement, <<"status">>, [],
 			       [{xmlcdata, Status}]}]}
@@ -1045,7 +1045,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
-    UJID = jlib:make_jid(User, Server, ""),
+    UJID = jlib:make_jid(User, Server, <<>>),
     ejabberd_router:route(
       UJID, JID, {xmlelement, <<"presence">>, [{<<"type">>, <<"subscribe">>}], []}).
 
@@ -1059,7 +1059,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 		      JID1 = jlib:make_jid(JID),
 		      out_subscription(
 			User, Server, JID1, subscribed),
-		      UJID = jlib:make_jid(User, Server, ""),
+		      UJID = jlib:make_jid(User, Server, <<>>),
 		      ejabberd_router:route(
 			UJID, JID1, {xmlelement, <<"presence">>,
 				     [{<<"type">>, <<"subscribed">>}], []}),
@@ -1068,14 +1068,14 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 		      case lists:keysearch(
 			     "remove" ++ ejabberd_web_admin:term_to_id(JID), 1, Query) of
 			  {value, _} ->
-			      UJID = jlib:make_jid(User, Server, ""),
+			      UJID = jlib:make_jid(User, Server, <<>>),
 			      process_iq(
 				UJID, UJID,
 				#iq{type = set,
 				    sub_el = {xmlelement, <<"query">>,
 					      [{<<"xmlns">>, ?NS_ROSTER}],
 					      [{xmlelement, <<"item">>,
-						[{<<"jid">>, jlib:jid_to_string(JID)},
+						[{<<"jid">>, jlib:jid_to_binary(JID)},
 						 {<<"subscription">>, <<"remove">>}],
 						[]}]}}),
 			      throw(submitted);
@@ -1088,7 +1088,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    jlib:jid_to_string({User, Server, <<>>}).
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].

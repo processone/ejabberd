@@ -498,7 +498,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		  end,
 	    send_element(StateData, Res),
 	    fsm_next_state(wait_for_auth, StateData);
-	{auth, _ID, set, {_U, _P, _D, ""}} ->
+	{auth, _ID, set, {_U, _P, _D, <<>>}} ->
 	    Err = jlib:make_error_reply(
 		    El,
 		    ?ERR_AUTH_NO_RESOURCE_PROVIDED(StateData#state.lang)),
@@ -1041,7 +1041,7 @@ session_established2(El, StateData) ->
 			case ToJID of
 			    #jid{user = User,
 				 server = Server,
-				 resource = ""} ->
+				 resource = <<>>} ->
 				?DEBUG("presence_update(~p,~n\t~p,~n\t~p)",
 				       [FromJID, PresenceEl, StateData]),
 				presence_update(FromJID, PresenceEl,
@@ -1672,7 +1672,7 @@ presence_update(From, Packet, StateData) ->
 	<<"unavailable">> ->
 	    Status = case xml:get_subtag(Packet, <<"status">>) of
 			 false ->
-			    "";
+			    <<>>;
 			 StatusTag ->
 			    xml:get_tag_cdata(StatusTag)
 		     end,
@@ -2110,7 +2110,7 @@ get_showtag(Presence) ->
     end.
 
 get_statustag(undefined) ->
-    "";
+    <<>>;
 get_statustag(Presence) ->
     case xml:get_path_s(Presence, [{elem, <<"status">>}, cdata]) of
 	ShowTag -> ShowTag
@@ -2213,7 +2213,7 @@ check_from(El, FromJID) ->
 			    El;
 			(JID#jid.luser == FromJID#jid.luser) and
 			(JID#jid.lserver == FromJID#jid.lserver) and
-			(JID#jid.lresource == "") ->
+			(JID#jid.lresource == <<>>) ->
 			    El;
 			true ->
 			    'invalid-from'
