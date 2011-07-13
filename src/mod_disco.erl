@@ -51,6 +51,7 @@
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
+-include("mod_roster.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
 start(Host, Opts) when is_list(Host) ->
@@ -316,7 +317,7 @@ is_presence_subscribed(From, To) ->
     Server = exmpp_jid:prep_domain(From),
     LUser = exmpp_jid:prep_node(To),
     LServer = exmpp_jid:prep_domain(To),
-    lists:any(fun({roster, _, _, {TUser, TServer, _}, _, S, _, _, _, _}) -> 
+    lists:any(fun(#roster{jid = {TUser, TServer, _}, subscription = S}) ->
                             if 
                                 LUser == TUser, LServer == TServer, S/=none ->
                                     true;
