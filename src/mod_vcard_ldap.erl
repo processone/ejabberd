@@ -672,6 +672,17 @@ parse_options(Host, Opts) ->
 			    ejabberd_config:get_local_option({ldap_tls_verify, Host});
 			Verify -> Verify
 		    end,
+    LDAPTLSCAFile = case gen_mod:get_opt(ldap_tls_cacertfile, Opts, undefined) of
+                        undefined ->
+                            ejabberd_config:get_local_option({ldap_tls_cacertfile, Host});
+                        CAFile -> CAFile
+                    end,
+    LDAPTLSDepth = case gen_mod:get_opt(ldap_tls_depth, Opts, undefined) of
+                       undefined ->
+                           ejabberd_config:get_local_option({ldap_tls_depth, Host});
+                       Depth ->
+                           Depth
+                   end,
     LDAPPortTemp = case gen_mod:get_opt(ldap_port, Opts, undefined) of
 		       undefined ->
 			   ejabberd_config:get_local_option({ldap_port, Host});
@@ -757,7 +768,9 @@ parse_options(Host, Opts) ->
 	   backups = LDAPBackups,
 	   port = LDAPPort,
 	   tls_options = [{encrypt, LDAPEncrypt},
-			  {tls_verify, LDAPTLSVerify}],
+			  {tls_verify, LDAPTLSVerify},
+                          {tls_cacertfile, LDAPTLSCAFile},
+                          {tls_depth, LDAPTLSDepth}],
 	   dn = RootDN,
 	   base = LDAPBase,
 	   password = Password,
