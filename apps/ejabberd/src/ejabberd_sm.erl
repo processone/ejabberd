@@ -129,8 +129,8 @@ bounce_offline_message(From, To, Packet) ->
     stop.
 
 disconnect_removed_user(User, Server) ->
-    ejabberd_sm:route(jlib:make_jid("", "", ""),
-		      jlib:make_jid(User, Server, ""),
+    ejabberd_sm:route(jlib:make_jid(<<>>, <<>>, <<>>),
+		      jlib:make_jid(User, Server, <<>>),
 		      {xmlelement,<<"broadcast">>, [],
 		       [{exit, <<"User removed">>}]}).
 
@@ -413,7 +413,7 @@ do_route(From, To, Packet) ->
 	 luser = LUser, lserver = LServer, lresource = LResource} = To,
     {xmlelement, Name, Attrs, _Els} = Packet,
     case LResource of
-	"" ->
+	<<>> ->
 	    case Name of
 		<<"presence">> ->
 		    {Pass, _Subsc} =
@@ -678,7 +678,7 @@ check_max_sessions(LUser, LServer) ->
 %% Defaults to infinity
 get_max_user_sessions(LUser, Host) ->
     case acl:match_rule(
-	   Host, max_user_sessions, jlib:make_jid(LUser, Host, "")) of
+	   Host, max_user_sessions, jlib:make_jid(LUser, Host, <<>>)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_SESSIONS
@@ -691,7 +691,7 @@ process_iq(From, To, Packet) ->
     case IQ of
 	#iq{xmlns = XMLNS} ->
 	    Host = To#jid.lserver,
-	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+	    case ets:lookup(sm_iqtable, {XMLNS, binary_to_list(Host)}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ),
 		    if

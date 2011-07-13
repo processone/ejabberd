@@ -95,27 +95,26 @@ terminate(_Reason, Port) ->
     Port ! {self, close},
     ok.
 
-%% TODO: change String -> Binary (jak zadziala :P)
 
-tolower(String) ->
-    control(0, String).
+tolower(Binary) ->
+    control(0, Binary).
 
-nameprep(String) ->
-    control(?NAMEPREP_COMMAND, String).
+nameprep(Binary) ->
+    control(?NAMEPREP_COMMAND, Binary).
 
-nodeprep(String) ->
-    control(?NODEPREP_COMMAND, String).
+nodeprep(Binary) ->
+    control(?NODEPREP_COMMAND, Binary).
 
-resourceprep(String) ->
-    control(?RESOURCEPREP_COMMAND, String).
+resourceprep(Binary) ->
+    control(?RESOURCEPREP_COMMAND, Binary).
 
 control(Command, String) when is_list(String) ->
     case control(Command, list_to_binary(String)) of
         error -> error;
         Res -> binary_to_list(Res)
     end;
-control(Command, String) ->
-    case port_control(?STRINGPREP_PORT, Command, String) of
+control(Command, Binary) ->
+    case port_control(?STRINGPREP_PORT, Command, Binary) of
         <<0, _/binary>> -> error;
         <<1, Res/binary>> -> Res
     end.

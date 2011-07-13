@@ -136,6 +136,8 @@ run(Hook, Host, Args) ->
 run_fold(Hook, Val, Args) ->
     run_fold(Hook, global, Val, Args).
 
+run_fold(Hook, Host, Val, Args) when erlang:is_binary(Host) ->
+    run_fold(Hook, binary_to_list(Host), Val, Args);
 run_fold(Hook, Host, Val, Args) ->
     case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->

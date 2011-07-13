@@ -187,7 +187,7 @@ remove_cdata_p(_) -> false.
 remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
 
 get_cdata(L) ->
-    binary_to_list(list_to_binary(get_cdata(L, ""))).
+    list_to_binary(get_cdata(L, "")).
 
 get_cdata([{xmlcdata, CData} | L], S) ->
     get_cdata(L, [S, CData]);

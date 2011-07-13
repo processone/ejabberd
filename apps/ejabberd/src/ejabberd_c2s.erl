@@ -284,7 +284,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case xml:get_attr_s(<<"xmlns:stream">>, Attrs) of
 	?NS_STREAM ->
 	    Server = jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs)),
-	    case lists:member(Server, ?MYHOSTS) of
+	    case lists:member(binary_to_list(Server), ?MYHOSTS) of
 		true ->
 		    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
 			       Lang1 when size(Lang1) =< 35 ->
@@ -299,32 +299,33 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				   %% avoid possible DoS/flood attacks
 				   ""
 			   end,
-		    change_shaper(StateData, jlib:make_jid("", Server, "")),
+		    change_shaper(StateData, jlib:make_jid(<<>>, Server, <<>>)),
 		    case xml:get_attr_s(<<"version">>, Attrs) of
 			<<"1.0">> ->
 			    send_header(StateData, Server, "1.0", DefaultLang),
 			    case StateData#state.authenticated of
 				false ->
+                    ServerStr = binary_to_list(Server),
 				    SASLState =
 					cyrsasl:server_new(
-					  "jabber", Server, "", [],
+					  "jabber", ServerStr, "", [],
 					  fun(U) ->
 						  ejabberd_auth:get_password_with_authmodule(
-						    U, Server)
+						    U, ServerStr)
 					  end,
 					  fun(U, P) ->
 						  ejabberd_auth:check_password_with_authmodule(
-						    U, Server, P)
+						    U, ServerStr, P)
 					  end,
 					  fun(U, P, D, DG) ->
 						  ejabberd_auth:check_password_with_authmodule(
-						    U, Server, P, D, DG)
+						    U, ServerStr, P, D, DG)
 					  end),
 				    Mechs = lists:map(
 					      fun(S) ->
 						      {xmlelement, <<"mechanism">>, [],
 						       [{xmlcdata, S}]}
-					      end, cyrsasl:listmech(Server)),
+					      end, cyrsasl:listmech(ServerStr)),
 				    SockMod =
 					(StateData#state.sockmod):get_sockmod(
 					  StateData#state.socket),
@@ -635,7 +636,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				     streamid = new_id(),
 				     authenticated = true,
 				     auth_module = AuthModule,
-				     user = U });
+				     user = list_to_binary(U) });
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, <<"challenge">>,
@@ -771,7 +772,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				     streamid = new_id(),
 				     authenticated = true,
 				     auth_module = AuthModule,
-				     user = U});
+				     user = list_to_binary(U)});
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, <<"challenge">>,
@@ -827,8 +828,8 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	    R = case jlib:resourceprep(R1) of
 		    error -> error;
 		    <<>> ->
-			lists:concat(
-			  [randoms:get_string() | tuple_to_list(now())]);
+                    list_to_binary(lists:concat(
+                                     [randoms:get_string() | tuple_to_list(now())]));
 		    Resource -> Resource
 		end,
 	    case R of
@@ -852,7 +853,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 					   [{<<"xmlns">>, ?NS_BIND}],
 					   [{xmlelement, <<"jid">>, [],
 					     [{xmlcdata,
-					       jlib:jid_to_string(JID)}]}]}]},
+					       jlib:jid_to_binary(JID)}]}]}]},
 		    send_element(StateData, jlib:iq_to_xml(Res)),
 		    fsm_next_state(wait_for_session,
 				   StateData#state{resource = R, jid = JID})
@@ -999,7 +1000,7 @@ session_established2(El, StateData) ->
     To = xml:get_attr_s(<<"to">>, Attrs),
     ToJID = case To of
 		<<>> ->
-		    jlib:make_jid(User, Server, "");
+		    jlib:make_jid(User, Server, <<>>);
 		_ ->
 		    jlib:string_to_jid(To)
 	    end,
@@ -1345,8 +1346,8 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    send_trailer(StateData),
 	    {stop, normal, StateData};
 	Pass ->
-	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-						jlib:jid_to_string(To),
+	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_binary(From),
+						jlib:jid_to_binary(To),
 						NewAttrs),
 	    FixedPacket = {xmlelement, Name, Attrs2, Els},
 	    send_element(StateData, FixedPacket),
@@ -1569,7 +1570,7 @@ is_auth_packet(El) ->
 	#iq{id = ID, type = Type, xmlns = ?NS_AUTH, sub_el = SubEl} ->
 	    {xmlelement, _, _, Els} = SubEl,
 	    {auth, ID, Type,
-	     get_auth_tags(Els, "", "", "", "")};
+	     get_auth_tags(Els, <<>>, <<>>, <<>>, <<>>)};
 	_ ->
 	    false
     end.
@@ -2140,8 +2141,8 @@ process_unauthenticated_stanza(StateData, El) ->
 		    ResIQ = IQ#iq{type = error,
 				  sub_el = [?ERR_SERVICE_UNAVAILABLE]},
 		    Res1 = jlib:replace_from_to(
-			     jlib:make_jid("", StateData#state.server, ""),
-			     jlib:make_jid("", "", ""),
+			     jlib:make_jid(<<>>, StateData#state.server, <<>>),
+			     jlib:make_jid(<<>>, <<>>, <<>>),
 			     jlib:iq_to_xml(ResIQ)),
 		    send_element(StateData, jlib:remove_attr(<<"to">>, Res1));
 		_ ->
@@ -2255,7 +2256,7 @@ route_blocking(What, StateData) ->
 		 lists:map(
 		   fun(JID) ->
 			   {xmlelement, <<"item">>,
-			    [{<<"jid">>, jlib:jid_to_string(JID)}],
+			    [{<<"jid">>, jlib:jid_to_binary(JID)}],
 			    []}
 				       end, JIDs)};
 	    {unblock, JIDs} ->
@@ -2264,7 +2265,7 @@ route_blocking(What, StateData) ->
 		 lists:map(
 		   fun(JID) ->
 			   {xmlelement, <<"item">>,
-			    [{<<"jid">>, jlib:jid_to_string(JID)}],
+			    [{<<"jid">>, jlib:jid_to_binary(JID)}],
 			    []}
 		   end, JIDs)};
 	    unblock_all ->

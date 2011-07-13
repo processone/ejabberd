@@ -315,7 +315,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     case ejabberd_hooks:run_fold(filter_packet,
 				 {OrigFrom, OrigTo, OrigPacket}, []) of
 	{From, To, Packet} ->
-	    LDstDomain = To#jid.lserver,
+	    LDstDomain = binary_to_list(To#jid.lserver),
 	    case mnesia:dirty_read(route, LDstDomain) of
 		[] ->
 		    ejabberd_s2s:route(From, To, Packet);

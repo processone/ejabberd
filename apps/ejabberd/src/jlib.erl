@@ -41,6 +41,7 @@
 	 make_jid/1,
 	 string_to_jid/1,
 	 jid_to_string/1,
+     jid_to_binary/1,
 	 is_nodename/1,
 	 tolower/1,
 	 nodeprep/1,
@@ -155,8 +156,8 @@ replace_from_to_attrs(From, To, Attrs) ->
     Attrs4.
 
 replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
-    NewAttrs = replace_from_to_attrs(jlib:jid_to_string(From),
-				     jlib:jid_to_string(To),
+    NewAttrs = replace_from_to_attrs(jlib:jid_to_binary(From),
+				     jlib:jid_to_binary(To),
 				     Attrs),
     {xmlelement, Name, NewAttrs, Els}.
 
@@ -165,7 +166,7 @@ replace_from_attrs(From, Attrs) ->
     [{<<"from">>, From} | Attrs1].
 
 replace_from(From, {xmlelement, Name, Attrs, Els}) ->
-    NewAttrs = replace_from_attrs(jlib:jid_to_string(From), Attrs),
+    NewAttrs = replace_from_attrs(jlib:jid_to_binary(From), Attrs),
     {xmlelement, Name, NewAttrs, Els}.
 
 remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
@@ -214,7 +215,7 @@ string_to_jid1([C | J], N) ->
 string_to_jid1([], "") ->
     error;
 string_to_jid1([], N) ->
-    make_jid("", lists:reverse(N), "").
+    make_jid(<<>>, list_to_binary(lists:reverse(N)), <<>>).
 
 %% Only one "@" is admitted per JID
 string_to_jid2([$@ | _J], _N, _S) ->
@@ -228,31 +229,33 @@ string_to_jid2([C | J], N, S) ->
 string_to_jid2([], _N, "") ->
     error;
 string_to_jid2([], N, S) ->
-    make_jid(N, lists:reverse(S), "").
+    make_jid(list_to_binary(N), list_to_binary(lists:reverse(S)), <<>>).
 
 string_to_jid3([C | J], N, S, R) ->
     string_to_jid3(J, N, S, [C | R]);
 string_to_jid3([], N, S, R) ->
-    make_jid(N, S, lists:reverse(R)).
+    make_jid(list_to_binary(N), list_to_binary(S), list_to_binary(lists:reverse(R))).
 
 jid_to_string(#jid{user = User, server = Server, resource = Resource}) ->
     jid_to_string({User, Server, Resource});
 jid_to_string({Node, Server, Resource}) ->
     S1 = case Node of
-	     "" ->
+	     <<>> ->
 		 "";
 	     _ ->
-		 Node ++ "@"
+		 binary_to_list(Node) ++ "@"
 	 end,
-    S2 = S1 ++ Server,
+    S2 = S1 ++ binary_to_list(Server),
     S3 = case Resource of
-	     "" ->
+	     <<>> ->
 		 S2;
 	     _ ->
-		 S2 ++ "/" ++ Resource
+		 S2 ++ "/" ++ binary_to_list(Resource)
 	 end,
     S3.
 
+jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
+    list_to_binary(jid_to_string({User, Server, Resource})).
 
 is_nodename([]) ->
     false;
@@ -298,34 +301,34 @@ tolower([]) ->
 %    [].
 
 
-nodeprep(S) when erlang:is_list(S) ->
-    nodeprep(list_to_binary(S));
+nodeprep(S) when is_list(S) ->
+    binary_to_list(nodeprep(list_to_binary(S)));
 nodeprep(S) when size(S) < 1024 ->
     R = stringprep:nodeprep(S),
     if
-	size(R) < 1024 -> binary_to_list(R);
+	size(R) < 1024 -> R;
 	true -> error
     end;
 nodeprep(_) ->
     error.
 
-nameprep(S) when erlang:is_list(S) ->
-    nameprep(list_to_binary(S));
+nameprep(S) when is_list(S) ->
+    binary_to_list(nameprep(list_to_binary(S)));
 nameprep(S) when size(S) < 1024 ->
     R = stringprep:nameprep(S),
     if
-	size(R) < 1024 -> binary_to_list(R);
+	size(R) < 1024 -> R;
 	true -> error
     end;
 nameprep(_) ->
     error.
 
-resourceprep(S) when erlang:is_list(S) ->
-    resourceprep(list_to_binary(S));
+resourceprep(S) when is_list(S) ->
+    binary_to_list(resourceprep(list_to_binary(S)));
 resourceprep(S) when size(S) < 1024 ->
     R = stringprep:resourceprep(S),
     if
-	size(R) < 1024 -> binary_to_list(R);
+	size(R) < 1024 -> R;
 	true -> error
     end;
 resourceprep(_) ->
@@ -350,9 +353,9 @@ jid_tolower({U, S, R}) ->
     end.
 
 jid_remove_resource(#jid{} = JID) ->
-    JID#jid{resource = "", lresource = ""};
+    JID#jid{resource = <<>>, lresource = <<>>};
 jid_remove_resource({U, S, _R}) ->
-    {U, S, ""}.
+    {U, S, <<>>}.
 
 jid_replace_resource(JID, Resource) ->
     case resourceprep(Resource) of
@@ -605,11 +608,11 @@ timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
     {T_string, Tz_string} = timestamp_to_iso(DateTime, Timezone),
     Text = [{xmlcdata, Desc}],
-    From = jlib:jid_to_string(FromJID),
+    From = jlib:jid_to_binary(FromJID),
     {xmlelement, <<"delay">>,
      [{<<"xmlns">>, ?NS_DELAY},
       {<<"from">>, From},
-      {<<"stamp">>, T_string ++ Tz_string}],
+      {<<"stamp">>, list_to_binary(T_string ++ Tz_string)}],
      Text}.
 
 %% TODO: Remove this function once XEP-0091 is Obsolete
@@ -743,6 +746,9 @@ parse_time1(Time) ->
 % Base64 stuff (based on httpd_util.erl)
 %
 
+
+decode_base64(S) when erlang:is_binary(S)->
+    decode_base64(binary_to_list(S));
 decode_base64(S) ->
     decode1_base64([C || C <- S,
 			 C /= $ ,
