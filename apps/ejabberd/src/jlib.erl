@@ -298,30 +298,34 @@ tolower([]) ->
 %    [].
 
 
-nodeprep(S) when length(S) < 1024 ->
+nodeprep(S) when erlang:is_list(S) ->
+    nodeprep(list_to_binary(S));
+nodeprep(S) when size(S) < 1024 ->
     R = stringprep:nodeprep(S),
     if
-	length(R) < 1024 -> R;
+	size(R) < 1024 -> binary_to_list(R);
 	true -> error
     end;
 nodeprep(_) ->
     error.
 
-nameprep(S) when erlang:is_binary(S) ->
-    nameprep(binary_to_list(S));
-nameprep(S) when length(S) < 1024 ->
+nameprep(S) when erlang:is_list(S) ->
+    nameprep(list_to_binary(S));
+nameprep(S) when size(S) < 1024 ->
     R = stringprep:nameprep(S),
     if
-	length(R) < 1024 -> R;
+	size(R) < 1024 -> binary_to_list(R);
 	true -> error
     end;
 nameprep(_) ->
     error.
 
-resourceprep(S) when length(S) < 1024 ->
+resourceprep(S) when erlang:is_list(S) ->
+    resourceprep(list_to_binary(S));
+resourceprep(S) when size(S) < 1024 ->
     R = stringprep:resourceprep(S),
     if
-	length(R) < 1024 -> R;
+	size(R) < 1024 -> binary_to_list(R);
 	true -> error
     end;
 resourceprep(_) ->

@@ -66,7 +66,7 @@ init([]) ->
         ok -> ok;
         {error, already_loaded} -> ok
     end,
-    Port = open_port({spawn, stringprep_drv}, []),
+    Port = open_port({spawn, stringprep_drv}, [binary]),
     register(?STRINGPREP_PORT, Port),
     {ok, Port}.
 
@@ -95,7 +95,7 @@ terminate(_Reason, Port) ->
     Port ! {self, close},
     ok.
 
-
+%% TODO: change String -> Binary (jak zadziala :P)
 
 tolower(String) ->
     control(0, String).
@@ -109,10 +109,15 @@ nodeprep(String) ->
 resourceprep(String) ->
     control(?RESOURCEPREP_COMMAND, String).
 
+control(Command, String) when is_list(String) ->
+    case control(Command, list_to_binary(String)) of
+        error -> error;
+        Res -> binary_to_list(Res)
+    end;
 control(Command, String) ->
     case port_control(?STRINGPREP_PORT, Command, String) of
-        [0 | _] -> error;
-        [1 | Res] -> Res
+        <<0, _/binary>> -> error;
+        <<1, Res/binary>> -> Res
     end.
 
 
