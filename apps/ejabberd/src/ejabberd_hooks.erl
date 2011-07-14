@@ -119,6 +119,8 @@ delete_dist(Hook, Host, Node, Module, Function, Seq) ->
 run(Hook, Args) ->
     run(Hook, global, Args).
 
+run(Hook, Host, Args) when erlang:is_binary(Host) ->
+    run(Hook, binary_to_list(Host), Args);
 run(Hook, Host, Args) ->
     case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->

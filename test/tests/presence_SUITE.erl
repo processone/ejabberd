@@ -27,10 +27,12 @@
 all() ->
     [{group, presence},
      {group, roster}].
+  %%   {group, subscribe}].
 
 groups() ->
     [{presence, [sequence], [available, available_direct, additions]},
-     {roster, [sequence], [get_roster, add_contact, remove_contact]}].
+     {roster, [sequence], [get_roster, add_contact, remove_contact]},
+     {subscribe, [sequence], [subscription, subscription_decline]}].
 
 suite() ->
     escalus:suite().
@@ -56,9 +58,20 @@ init_per_testcase(CaseName, Config) ->
 
 end_per_testcase(add_contact, Config) ->
     [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
-    [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
-    rpc:call(ejabberd@localhost, mod_roster, remove_user, [Username, Server]),
+    remove_roster(UserSpec),
     escalus:end_per_testcase(add_contact, Config);    
+end_per_testcase(subscription, Config) ->
+    [{_, UserSpec1}, {_, UserSpec2} | _] = 
+        escalus_config:get_property(escalus_users, Config),
+    remove_roster(UserSpec1),
+    remove_roster(UserSpec2),
+    escalus:end_per_testcase(subscription, Config);    
+end_per_testcase(subscription_decline, Config) ->
+    [{_, UserSpec1}, {_, UserSpec2} | _] = 
+        escalus_config:get_property(escalus_users, Config),
+    remove_roster(UserSpec1),
+    remove_roster(UserSpec2),
+    escalus:end_per_testcase(subscription_decline, Config);    
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
@@ -155,7 +168,7 @@ remove_contact(Config) ->
     end).
     
 
-subscribtion(Config) ->
+subscription(Config) ->
     escalus:story(Config, [1, 1], fun(Alice,Bob) ->
 
         %% add contact
@@ -184,36 +197,63 @@ subscribtion(Config) ->
         %% Bob sends subscribed presence
         escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
         
-        %% PushReqB1 = escalus_client:wait_for_stanza(Bob),
-        %% escalus_assert:is_roster_result_set(PushReqB1),
-        %% Result = escalus_stanza:iq_result(PushReqB1),
-        %% escalus_client:send(Bob, Result),
-        
-        %% TODO: make this test pass
-        
         %% Alice receives subscribed 
-        escalus_assert:is_presence_type("subscribed", 
-                                        escalus_client:wait_for_stanza(Alice)),
+        Stanzas = [escalus_client:wait_for_stanza(Alice), 
+                   escalus_client:wait_for_stanza(Alice)],
 
-        escalus_client:send(Alice, escalus_stanza:roster_get()),
-        escalus_client:send(Bob, escalus_stanza:roster_get()),
-        escalus_assert:is_roster_result(escalus_client:wait_for_stanza(Bob)),
-        escalus_assert:is_roster_result(escalus_client:wait_for_stanza(Alice)),
+        ok = check_subscription_stanzas(Stanzas, "subscribed"),
+        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Alice)),
         
+        %% Bob receives roster push
+        PushReqB1 = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_roster_result_set(PushReqB1),
+        Result = escalus_stanza:iq_result(PushReqB1),
+         
         %% Bob sends presence
         escalus_client:send(Bob, escalus_stanza:presence(available)),
-        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Alice))
+        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Alice)),
+        
+        %% Bob sends presence
+        escalus_client:send(Bob, escalus_stanza:presence(unavailable)),
+        escalus_assert:is_presence_type("unavailable",
+                                        escalus_client:wait_for_stanza(Alice))
                                           
         end).
+
+subscription_decline(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice,Bob) ->
+
+        %% add contact
+        add_sample_contact(Alice, Bob),
+
+        %% subscribe
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, subscribe)),
+        PushReq = escalus_client:wait_for_stanza(Alice),
+        escalus_assert:is_roster_result_set(PushReq),
+        escalus_client:send(Alice, escalus_stanza:iq_result(PushReq)),
         
-%% TODO
-unavailable(Config) ->
-    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+        %% Bob receives subscription reqest
+        Received = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_presence_type("subscribe", Received),
         
-        escalus_client:send(Alice, escalus_stanza:presence(unavailable)),
-        escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Bob))
-                                          
-        end).
+        %% Bob refuses subscription
+        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, unsubscribed)),
+        
+        %% Alice receives subscribed 
+        Stanzas = [escalus_client:wait_for_stanza(Alice), 
+                   escalus_client:wait_for_stanza(Alice)],
+
+        ok = check_subscription_stanzas(Stanzas, "unsubscribed")
+        
+        %% escalus_assert:is_presence_type("unsubscribed", 
+        %%                                 escalus_client:wait_for_stanza(Alice)),
+        %% PushReq1 = escalus_client:wait_for_stanza(Alice),
+        %% escalus_assert:is_roster_result_set(PushReq1),
+        %% escalus_client:send(Alice, escalus_stanza:iq_result(PushReq1))
+        
+    end).
+        
+        
 
 %%-----------------------------------------------------------------
 %% Helpers
@@ -228,6 +268,32 @@ add_sample_contact(Alice, Bob) ->
     escalus_assert:is_roster_result_set(Received),
     escalus_client:send(Alice, escalus_stanza:iq_result(Received)),
     escalus_assert:is_result(escalus_client:wait_for_stanza(Alice)).
-        
 
+check_subscription_stanzas(Stanzas, Type) ->
+    case {contains_presence(Stanzas, Type), contains_from(Stanzas)} of
+        {true, true} -> ok;
+        _ ->
+            error
+    end.
 
+contains_presence(Stanzas, Type) ->
+    lists:foldl(fun(El, Res) ->
+                      try escalus_assert:is_presence_type(Type, El) of
+                          _ -> true
+                      catch
+                          _:_ -> Res
+                      end
+               end, false, Stanzas).
+
+contains_from(Stanzas) ->
+    lists:foldl(fun(El, Res) ->
+                      try escalus_assert:is_roster_result_set(El) of
+                          _ -> true
+                      catch
+                          _:_ -> Res
+                      end
+               end, false, Stanzas).
+
+remove_roster(UserSpec) ->
+    [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
+    rpc:call(ejabberd@localhost, mod_roster, remove_user, [Username, Server]).
