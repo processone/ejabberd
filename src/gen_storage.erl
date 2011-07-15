@@ -118,9 +118,6 @@ table_info(Host, Tab, InfoKey) ->
 -spec create_table(atom(), storage_host(), storage_table(), list()) ->
 			  tuple().
 
-create_table(Backend, global, Tab, Def) ->
-    [create_table(Backend, list_to_binary(Host), Tab, Def) || Host <- ejabberd_hosts:get_hosts(ejabberd)];
-
 create_table(mnesia, Host, Tab, Def) ->
     MDef = filter_mnesia_tabdef(Def),
     define_table(mnesia, Host, Tab, #mnesia_def{table = Tab,
@@ -600,14 +597,16 @@ async_dirty(Host, Tab, Fun) ->
 get_table(Host, Tab) when is_list(Host) ->
     get_table(list_to_binary(Host), Tab);
 get_table(Host, Tab) ->
-    case mnesia:dirty_read(table, {Host, Tab}) of
-	[T] ->
+    case {mnesia:dirty_read(table, {Host, Tab}), Host} of
+	{[T], _} ->
 	    T;
-	_ ->
+	{_, global} ->
 	    catch throw(error123),
 	    Stacktrace = erlang:get_stacktrace(),
 	    error_logger:error_msg("gen_storage: Table ~p not found on ~p~nStacktrace: ~p", [Tab, Host, Stacktrace]),
-	    exit(table_not_found)
+	    exit(table_not_found);
+	{_, _} ->
+	    get_table(global, Tab)
     end.
 
 backend_apply(F, Host, Tab) ->
