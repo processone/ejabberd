@@ -127,7 +127,7 @@ stop(Host) ->
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
-    case lists:member(binary_to_list(LServer), ?MYHOSTS) of
+    case lists:member(LServer, ?MYHOSTS) of
 	true ->
 	    process_local_iq(From, To, IQ);
 	_ ->
