@@ -1,7 +1,11 @@
 %% Usage:
 %% In config file:
 %% {mod_c2s_debug, [{logdir, "/tmp/xmpplogs"}]},
-%% From Erlang shell:
+%% It is possible to limit to a specific jid with option:
+%%   {users, ["test@localhost"]}
+%% Warning: Only works with a single JID for now.
+%%
+%% Start from Erlang shell:
 %% mod_c2s_debug:start("localhost", []).
 %% mod_c2s_debug:stop("localhost").
 %%
@@ -22,7 +26,7 @@
 -include("jlib.hrl").
 -include("ejabberd_c2s.hrl").
 
--record(modstate, {host, logdir, pid, iodevice}).
+-record(modstate, {host, logdir, pid, iodevice, user}).
 -record(clientinfo, {pid, jid, auth_module, ip}).
 
 -define(SUPERVISOR, ejabberd_sup).
@@ -94,8 +98,15 @@ init([Host, Opts]) ->
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, log_packet, 50),
 
     Logdir = gen_mod:get_opt(logdir, Opts, "/tmp/xmpplogs/"),
+    %% TODO: We currently support only one user. Support multiple users
+    SJID = case gen_mod:get_opt(users, Opts, undefined) of
+               undefined ->
+                   undefined;
+               [User1|_] ->
+                    User1
+          end,        
     make_dir_rec(Logdir),
-    {ok, #modstate{host = MyHost, logdir = Logdir}}.
+    {ok, #modstate{host = MyHost, logdir = Logdir, user = jlib:string_to_jid(SJID)}}.
 
 terminate(_Reason, #modstate{host = Host}) ->
     ?INFO_MSG("Stopping c2s debug module for: ~s", [Host]),
@@ -105,10 +116,11 @@ terminate(_Reason, #modstate{host = Host}) ->
 			  ?MODULE, debug_stop, 50),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, log_packet, 50).
 
-handle_call({debug_start, ClientInfo}, _From, #modstate{pid=undefined} = State) ->
+%% No specific user: Select the first new user to connect
+handle_call({debug_start, ClientInfo}, _From, #modstate{pid=undefined, user=undefined} = State) ->
     Pid = ClientInfo#clientinfo.pid,
     ?INFO_MSG("Debug started for PID:~p", [Pid]),
-
+    
     JID = ClientInfo#clientinfo.jid,
     AuthModule = ClientInfo#clientinfo.auth_module,
     IP = ClientInfo#clientinfo.ip,
@@ -119,6 +131,24 @@ handle_call({debug_start, ClientInfo}, _From, #modstate{pid=undefined} = State) 
     file:write(IOD, Line),
 
     {reply, true, State#modstate{pid = Pid, iodevice = IOD}};
+%% Targeting a specific user
+handle_call({debug_start, ClientInfo}, _From, #modstate{pid=undefined, user=JID} = State) ->
+    ClientJID = ClientInfo#clientinfo.jid,
+    case jlib:jid_remove_resource(jlib:string_to_jid(ClientJID)) of
+        JID ->
+               Pid = ClientInfo#clientinfo.pid,
+               ?INFO_MSG("Debug started for PID:~p", [Pid]),
+               AuthModule = ClientInfo#clientinfo.auth_module,
+               IP = ClientInfo#clientinfo.ip,
+
+               {ok, IOD} = file:open(filename(State#modstate.logdir), [append]),
+               Line = io_lib:format("~s - Session open~nJID: ~s~nAuthModule: ~p~nIP: ~p~n",
+			            [timestamp(), ClientJID, AuthModule, IP]),
+              file:write(IOD, Line),
+              {reply, true, State#modstate{pid = Pid, iodevice = IOD}};
+         _ ->
+             {reply, false, State}
+    end;
 handle_call({debug_start, _ClientInfo}, _From, State) ->
     {reply, false, State};
 handle_call(stop, _From, State) ->
