@@ -112,10 +112,11 @@
 \newcommand{\iqdiscitem}[1]{\titem{\{iqdisc, Discipline\}} \ind{options!iqdisc}This specifies
 the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).}
 \newcommand{\hostitem}[1]{
-  \titem{\{host, HostName\}} \ind{options!host} This option defines the Jabber ID of the
-  service. If the \texttt{host} option is not specified, the Jabber ID will be the
-  hostname of the virtual host with the prefix `\jid{#1.}'. The keyword "@HOST@"
-  is replaced at start time with the real virtual host name.
+  \titem{\{host, HostName\} or \{prefix, PrefixName\}} \ind{options!host}
+  Those options define the Jabber ID of the service.
+  If no option is specified, the Jabber ID of the service will be the
+  hostname of the virtual host preceded with `\jid{#1.}'.
+  For more details see \ref{modhostoption} and \ref{modprefixoption}.
 }
 \newcommand{\backend}[1]{\titem{\{backend, mnesia|odbc\}} \ind{options!backend}
 Specify the backend used to store the tables: #1.
@@ -2562,36 +2563,51 @@ configuration is shown below:
 \makesection{modules}{Modules Configuration}
 \ind{modules}
 
-The option \term{modules} defines the list of modules that will be loaded after
-\ejabberd{}'s startup. Each entry in the list is a tuple in which the first
-element is the name of a module and the second is a list of options for that
-module.
-
+The option \term{modules} defines the modules that will be started
+for each virtual host, and the module options.
 The syntax is:
 \esyntax{\{modules, [ \{ModuleName, ModuleOptions\}, ...]\}.}
 
+Each module is started for each virtual host with the same options.
+If you want a module to be started in a specific host with a different configuration,
+use \term{host\_config} with \term{add} as explained in section~\ref{virtualhost}.
+
+If you configure ejabberd to serve millions of virtual hosts,
+you may want that each module is started only once, and let it serve all the hosts.
+Those modules are started statically when ejabberd starts,
+and cannot be reconfigured until the next server start.
+The option \term{static\_modules} defines the modules that will be started statically.
+The syntax is:
+\esyntax{\{static\_modules, [ \{ModuleName, ModuleOptions\}, ...]\}.}
+
 Examples:
 \begin{itemize}
-\item In this example only the module \modecho{} is loaded and no module
-  options are specified between the square brackets:
+\item Start three modules for each vhost.
+  They can be reconfigured or stopped dynamically, for example with WebAdmin.
+  Remark that, besides the last entry, all entries end with a comma:
 \begin{verbatim}
 {modules,
  [
-  {mod_echo,      []}
+  {mod_echo,      [{host, "echodynamic.@HOST@"}]},
+  {mod_time,      []},
+  {mod_version,   []}
  ]}.
 \end{verbatim}
-\item In the second example the modules \modecho{}, \modtime{}, and
-  \modversion{} are loaded without options. Remark that, besides the last entry,
-  all entries end with a comma:
+\item Start MUC for each vhost, and the other three modules for all the vhosts:
 \begin{verbatim}
 {modules,
  [
-  {mod_echo,      []},
+  {mod_muc,      []}
+ ]}.
+{static_modules,
+ [
+  {mod_echo,      [{prefix, "echostatic"}]}
   {mod_time,      []},
   {mod_version,   []}
  ]}.
 \end{verbatim}
 \end{itemize}
+
 
 \makesubsection{modoverview}{Modules Overview}
 \ind{modules!overview}\ind{XMPP compliancy}
@@ -2600,48 +2616,49 @@ The following table lists all modules included in \ejabberd{}.
 
 \begin{table}[H]
   \centering
-  \begin{tabular}{|l|l|l|}
-    \hline {\bf Module} & {\bf Feature} & {\bf Dependencies} \\
+  \begin{tabular}{|l|l|l|l|}
+    \hline {\bf Module} & {\bf Feature} & {\bf St} & {\bf Dependencies} \\
     \hline
-    \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  \\
-    \hline \ahrefloc{modannounce}{\modannounce{}} & Manage announcements & recommends \modadhoc{} \\
-    \hline \modblocking{} & Simple Communications Blocking (\xepref{0191}) & \modprivacy{} \\
-    \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\
-    \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
-    \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
-    \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas &  \\
-    \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) &  \\
-    \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server &  \\
-    \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
-    \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
-    \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} \\
-    \hline \ahrefloc{modmulticast}{\modmulticast{}} & Multicast Service (\xepref{0033}) &  \\
-    \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
-    \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
-    \hline \ahrefloc{modprescounter}{\modprivacy{}} & Detect presence subscription flood &  \\
-    \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (XMPP IM) &  \\
-    \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) &  \\
-    \hline \ahrefloc{modproxy}{\modproxy{}} & SOCKS5 Bytestreams (\xepref{0065}) &  \\
-    \hline \ahrefloc{modpubsub}{\modpubsub{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & \modcaps{} \\
-    \hline \ahrefloc{modpubsub}{\modpubsubodbc{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & supported DB (*) and \modcaps{} \\
-    \hline \ahrefloc{modregister}{\modregister{}} & In-Band Registration (\xepref{0077}) &  \\
-    \hline \ahrefloc{modregisterweb}{\modregisterweb{}} & Web for Account Registrations &  \\
-    \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) &  \\
-    \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\
-    \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} \\
-    \hline \ahrefloc{modsharedrosterldap}{\modsharedrosterldap{}} & LDAP Shared roster management & \modroster{} \\
-    \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
-    \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) &  \\
-    \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0202}) &  \\
-    \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) &  \\
-    \hline \ahrefloc{modvcardldap}{\modvcardldap{}} & vcard-temp (\xepref{0054}) & LDAP server \\
-    \hline \ahrefloc{modvcardxupdate}{\modvcardxupdate{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} \\
-    \hline \ahrefloc{modversion}{\modversion{}} & Software Version (\xepref{0092}) &  \\
+    \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) & &  \\
+    \hline \ahrefloc{modannounce}{\modannounce{}} & Manage announcements& & recommends \modadhoc{} \\
+    \hline \modblocking{} & Simple Communic. Blocking (\xepref{0191}) & & \modprivacy{} \\
+    \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & & \\
+    \hline \modconfigure{} & Server configuration using Ad-Hoc & & \modadhoc{} \\
+    \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) & &  \\
+    \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas & &  \\
+    \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) & &  \\
+    \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server & &  \\
+    \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) & &  \\
+    \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) & - &  \\
+    \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & - & \modmuc{} \\
+    \hline \ahrefloc{modmulticast}{\modmulticast{}} & Multicast Service (\xepref{0033}) & - &  \\
+    \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) & &  \\
+    \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and keepalives (\xepref{0199}) & &  \\
+    \hline \ahrefloc{modprescounter}{\modprescounter{}} & Detect presence subscription flood & &  \\
+    \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (XMPP IM) & &  \\
+    \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) & &  \\
+    \hline \ahrefloc{modproxy}{\modproxy{}} & SOCKS5 Bytestreams (\xepref{0065}) & - &  \\
+    \hline \ahrefloc{modpubsub}{\modpubsub{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & - & \modcaps{} \\
+    \hline \ahrefloc{modpubsub}{\modpubsubodbc{}} & Pub-Sub (\xepref{0060}), PEP (\xepref{0163}) & - & DB (*) and \modcaps{} \\
+    \hline \ahrefloc{modregister}{\modregister{}} & In-Band Registration (\xepref{0077}) & &  \\
+    \hline \ahrefloc{modregisterweb}{\modregisterweb{}} & Web for Account Registrations & &  \\
+    \hline \ahrefloc{modroster}{\modroster{}} & Roster management (XMPP IM) & &  \\
+    \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service & - &  \\
+    \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & & \modroster{} \\
+    \hline \ahrefloc{modsharedrosterldap}{\modsharedrosterldap{}} & LDAP Shared roster management & - & \modroster{} \\
+    \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) & &  \\
+    \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) & &  \\
+    \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0202}) & &  \\
+    \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) & &  \\
+    \hline \ahrefloc{modvcardldap}{\modvcardldap{}} & vcard-temp (\xepref{0054}) & - & LDAP server \\
+    \hline \ahrefloc{modvcardxupdate}{\modvcardxupdate{}} & vCard-Based Avatars (\xepref{0153}) & & \modvcard{} \\
+    \hline \ahrefloc{modversion}{\modversion{}} & Software Version (\xepref{0092}) & &  \\
     \hline
   \end{tabular}
 \end{table}
 
 \begin{itemize}
+\item St -: This means that the module cannot be configured to start statically, only dynamically.
 \item (*) This module requires a supported database. For a list of supported databases, see section~\ref{database}.
 \end{itemize}
 
@@ -2724,13 +2741,15 @@ Example:
 \makesubsubsection{modhostoption}{\option{host}}
 \ind{options!host}
 
-This option defines the Jabber ID of a service provided by an \ejabberd{} module.
+This option defines the Jabber ID of a service provided by a dynamic \ejabberd{} module.
 
 The syntax is:
 \esyntax{\{host, HostName\}}
 
 If you include the keyword "@HOST@" in the HostName,
 it is replaced at start time with the real virtual host string.
+
+If the module is started statically, use the option \term{prefix} instead (see~\ref{modprefixoption}).
 
 This example configures
 the \ind{modules!\modecho{}}echo module to provide its echoing service
@@ -2751,6 +2770,30 @@ the "@HOST@" keyword must be used:
  [
   ...
   {mod_echo, [{host, "mirror.@HOST@"}]},
+  ...
+ ]}.
+\end{verbatim}
+
+\makesubsubsection{modprefixoption}{\option{prefix}}
+\ind{options!prefix}
+
+This option defines the prefix that will be used to build the Jabber ID of a service provided by a static \ejabberd{} module.
+
+The syntax is:
+\esyntax{\{prefix, PrefixName\}}
+
+If the module is started dynamically, use the option \term{host} instead (see~\ref{modhostoption}).
+
+This example configures
+the \ind{modules!\modecho{}}echo module to provide its echoing service
+in Jabber IDs like
+\jid{mirror.example.org}, \jid{mirror.host2.com}, \jid{mirror.shakespeare.lit}:
+\begin{verbatim}
+{hosts, ["example.org", "host2.com", "shakespeare.lit"]}.
+{static_modules,
+ [
+  ...
+  {mod_echo, [{prefix, "mirror"}]},
   ...
  ]}.
 \end{verbatim}
