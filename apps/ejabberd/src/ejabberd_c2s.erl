@@ -284,7 +284,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case xml:get_attr_s(<<"xmlns:stream">>, Attrs) of
 	?NS_STREAM ->
 	    Server = jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs)),
-	    case lists:member(binary_to_list(Server), ?MYHOSTS) of
+	    case lists:member(Server, ?MYHOSTS) of
 		true ->
 		    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
 			       Lang1 when size(Lang1) =< 35 ->
@@ -305,27 +305,26 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			    send_header(StateData, Server, "1.0", DefaultLang),
 			    case StateData#state.authenticated of
 				false ->
-                    ServerStr = binary_to_list(Server),
-				    SASLState =
+                    SASLState =
 					cyrsasl:server_new(
-					  "jabber", ServerStr, "", [],
+					  "jabber", Server, "", [],
 					  fun(U) ->
 						  ejabberd_auth:get_password_with_authmodule(
-						    U, ServerStr)
+						    U, Server)
 					  end,
 					  fun(U, P) ->
 						  ejabberd_auth:check_password_with_authmodule(
-						    U, ServerStr, P)
+						    U, Server, P)
 					  end,
 					  fun(U, P, D, DG) ->
 						  ejabberd_auth:check_password_with_authmodule(
-						    U, ServerStr, P, D, DG)
+						    U, Server, P, D, DG)
 					  end),
 				    Mechs = lists:map(
 					      fun(S) ->
 						      {xmlelement, <<"mechanism">>, [],
 						       [{xmlcdata, S}]}
-					      end, cyrsasl:listmech(ServerStr)),
+					      end, cyrsasl:listmech(Server)),
 				    SockMod =
 					(StateData#state.sockmod):get_sockmod(
 					  StateData#state.socket),

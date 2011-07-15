@@ -24,7 +24,7 @@
 -define(VERSION, element(2, application:get_key(ejabberd,vsn))).
 
 -define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
--define(MYNAME, list_to_binary(hd(ejabberd_config:get_global_option(hosts)))).
+-define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
 -define(MYLANG, ejabberd_config:get_global_option(language)).
 
 -define(MSGS_DIR, "msgs").

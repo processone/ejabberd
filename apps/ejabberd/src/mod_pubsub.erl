@@ -817,9 +817,10 @@ unsubscribe_user(Entity, Owner) ->
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    Entity = jlib:make_jid(LUser, LServer, ""),
+    Entity = jlib:make_jid(LUser, LServer, <<>>),
     Host = host(LServer),
-    HomeTreeBase = string_to_node("/home/"++LServer++"/"++LUser),
+    HomeTreeBase = string_to_node("/home/" ++ binary_to_list(LServer)
+                                  ++ "/" ++ binary_to_list(LUser)),
     spawn(fun() ->
 	lists:foreach(fun(PType) ->
 	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Entity]),

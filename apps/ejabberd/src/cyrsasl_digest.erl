@@ -64,18 +64,18 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	KeyVals ->
 	    DigestURI = xml:get_attr_s("digest-uri", KeyVals),
 	    UserName = xml:get_attr_s("username", KeyVals),
-	    case is_digesturi_valid(DigestURI, State#state.host) of
+	    case is_digesturi_valid(DigestURI, binary_to_list(State#state.host)) of
 		false ->
 		    ?DEBUG("User login not authorized because digest-uri "
 			   "seems invalid: ~p", [DigestURI]),
 		    {error, "not-authorized", UserName};
 		true ->
 		    AuthzId = xml:get_attr_s("authzid", KeyVals),
-		    case (State#state.get_password)(UserName) of
+		    case (State#state.get_password)(list_to_binary(UserName)) of
 			{false, _} ->
 			    {error, "not-authorized", UserName};
 			{Passwd, AuthModule} ->
-				case (State#state.check_password)(UserName, "",
+				case (State#state.check_password)(list_to_binary(UserName), "",
 					xml:get_attr_s("response", KeyVals),
 					fun(PW) -> response(KeyVals, UserName, PW, Nonce, AuthzId,
 						"AUTHENTICATE") end) of

@@ -691,7 +691,7 @@ process_iq(From, To, Packet) ->
     case IQ of
 	#iq{xmlns = XMLNS} ->
 	    Host = To#jid.lserver,
-	    case ets:lookup(sm_iqtable, {XMLNS, binary_to_list(Host)}) of
+	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
 		[{_, Module, Function}] ->
 		    ResIQ = Module:Function(From, To, IQ),
 		    if

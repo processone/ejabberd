@@ -239,6 +239,8 @@ get_hosts(Opts, Prefix) ->
 	    Hosts
     end.
 
+get_module_proc(Host, Base) when erlang:is_binary(Host) ->
+    get_module_proc(binary_to_list(Host), Base);
 get_module_proc(Host, {frontend, Base}) ->
     get_module_proc("frontend_" ++ Host, Base);
 get_module_proc(Host, Base) ->

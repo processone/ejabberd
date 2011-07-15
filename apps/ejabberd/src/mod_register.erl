@@ -95,7 +95,7 @@ process_iq(From, To,
 	   Source) ->
     Lang = binary_to_list(Lang1),
     IsCaptchaEnabled = case gen_mod:get_module_opt(
-			      binary_to_list(To#jid.lserver), ?MODULE, captcha_protected, false) of
+			      To#jid.lserver, ?MODULE, captcha_protected, false) of
 			   true ->
 			       true;
 			   _ ->
@@ -107,23 +107,22 @@ process_iq(From, To,
 	    PTag = xml:get_subtag(SubEl, <<"password">>),
 	    RTag = xml:get_subtag(SubEl, <<"remove">>),
 	    Server = To#jid.lserver,
-        ServerStr = binary_to_list(Server),
-	    Access = gen_mod:get_module_opt(ServerStr, ?MODULE, access, all),
-	    AllowRemove = (allow == acl:match_rule(ServerStr, Access, From)),
+        Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    AllowRemove = (allow == acl:match_rule(Server, Access, From)),
 	    if
 		(UTag /= false) and (RTag /= false) and AllowRemove ->
 		    User = xml:get_tag_cdata(UTag),
 		    case From of
 			#jid{user = User, lserver = Server} ->
-			    ejabberd_auth:remove_user(binary_to_list(User), ServerStr),
+			    ejabberd_auth:remove_user(User, Server),
 			    IQ#iq{type = result, sub_el = [SubEl]};
 			_ ->
 			    if
 				PTag /= false ->
 				    Password = xml:get_tag_cdata(PTag),
-				    case ejabberd_auth:remove_user(binary_to_list(User),
-								   ServerStr,
-								   binary_to_list(Password)) of
+				    case ejabberd_auth:remove_user(User,
+								   Server,
+								   Password) of
 					ok ->
 					    IQ#iq{type = result,
 						  sub_el = [SubEl]};
@@ -164,7 +163,7 @@ process_iq(From, To,
 			      jlib:make_jid(User, Server, Resource),
 			      jlib:make_jid(User, Server, Resource),
 			      jlib:iq_to_xml(ResIQ)),
-			    ejabberd_auth:remove_user(binary_to_list(User), ServerStr),
+			    ejabberd_auth:remove_user(User, Server),
 			    ignore;
 			_ ->
 			    IQ#iq{type = error,
@@ -174,8 +173,7 @@ process_iq(From, To,
 		    User = xml:get_tag_cdata(UTag),
 		    Password = xml:get_tag_cdata(PTag),
 		    try_register_or_set_password(
-		      binary_to_list(User), binary_to_list(Server), 
-              binary_to_list(Password), From,
+		      User, Server, Password, From,
 		      IQ, SubEl, Source, Lang, not IsCaptchaEnabled);
 		IsCaptchaEnabled ->
 		    case ejabberd_captcha:process_reply(SubEl) of
@@ -183,8 +181,7 @@ process_iq(From, To,
 			    case process_xdata_submit(SubEl) of
 				{ok, User, Password} ->
 				    try_register_or_set_password(
-				      binary_to_list(User), ServerStr,
-                      binary_to_list(Password), From,
+				      User, Server, Password, From,
 				      IQ, SubEl, Source, Lang, true);
 				_ ->
 				    IQ#iq{type = error,
@@ -207,8 +204,7 @@ process_iq(From, To,
 	    {IsRegistered, UsernameSubels, QuerySubels} =
 		case From of
 		    #jid{user = User, lserver = Server} ->
-			case ejabberd_auth:is_user_exists(binary_to_list(User),
-                                              binary_to_list(Server)) of
+			case ejabberd_auth:is_user_exists(User, Server) of
 			    true ->
 				{true, [{xmlcdata, User}],
 				 [{xmlelement, <<"registered">>, [], []}]};
@@ -328,7 +324,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
-	    JID = jlib:make_jid(list_to_binary(User), list_to_binary(Server), <<>>),
+	    JID = jlib:make_jid(User, Server, <<>>),
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
 	    IPAccess = get_ip_access(Server),
 	    case {acl:match_rule(Server, Access, JID),
@@ -377,7 +373,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 
 send_welcome_message(JID) ->
     Host = JID#jid.lserver,
-    case gen_mod:get_module_opt(binary_to_list(Host), ?MODULE, welcome_message, {"", ""}) of
+    case gen_mod:get_module_opt(Host, ?MODULE, welcome_message, {"", ""}) of
 	{"", ""} ->
 	    ok;
 	{Subj, Body} ->

@@ -346,7 +346,7 @@ pop_offline_messages(Ls, User, Server) ->
 			         calendar:now_to_universal_time(
 				   R#offline_msg.timestamp),
 				 utc,
-				 jlib:make_jid("", Server, ""),
+				 jlib:make_jid(<<>>, Server, <<>>),
 				 "Offline Storage"),
 			       %% TODO: Delete the next three lines once XEP-0091 is Obsolete
 			       jlib:timestamp_to_xml(

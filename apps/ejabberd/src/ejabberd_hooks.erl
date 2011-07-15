@@ -119,8 +119,6 @@ delete_dist(Hook, Host, Node, Module, Function, Seq) ->
 run(Hook, Args) ->
     run(Hook, global, Args).
 
-run(Hook, Host, Args) when erlang:is_binary(Host) ->
-    run(Hook, binary_to_list(Host), Args);
 run(Hook, Host, Args) ->
     case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
@@ -138,8 +136,6 @@ run(Hook, Host, Args) ->
 run_fold(Hook, Val, Args) ->
     run_fold(Hook, global, Val, Args).
 
-run_fold(Hook, Host, Val, Args) when erlang:is_binary(Host) ->
-    run_fold(Hook, binary_to_list(Host), Val, Args);
 run_fold(Hook, Host, Val, Args) ->
     case ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
