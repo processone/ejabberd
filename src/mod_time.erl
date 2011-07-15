@@ -39,12 +39,14 @@
 -include("ejabberd.hrl").
 
 
-start(Host, Opts) ->
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     %% TODO: Remove the next two lines once XEP-0090 is Obsolete
-    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME_OLD,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_TIME_OLD,
 				  ?MODULE, process_local_iq90, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, list_to_binary(Host), ?NS_TIME,
+    gen_iq_handler:add_iq_handler(ejabberd_local, HostB, ?NS_TIME,
 				  ?MODULE, process_local_iq, IQDisc).
 
 stop(Host) ->

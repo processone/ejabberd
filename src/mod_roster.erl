@@ -134,26 +134,27 @@
 %%     Opts = list()
 
 start(Host, Opts) when is_list(Host) ->
-    HostB = list_to_binary(Host),
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
 
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, HostB,
 			     rosteritem, [{disc_copies, [node()]},
-					  {odbc_host, Host},
+					  {odbc_host, HostB},
 					  {attributes, record_info(fields, rosteritem)},
 					  {types, [{user_host_jid, {text, text, ljid}},
 						   {subscription, atom},
 						   {ask, atom}]}]),
     gen_storage:create_table(Backend, HostB,
 			     rostergroup, [{disc_copies, [node()]},
-					   {odbc_host, Host},
+					   {odbc_host, HostB},
 					   {type, bag},
 					   {attributes, record_info(fields, rostergroup)},
 					   {types, [{user_host_jid, {text, text, ljid}}]}]),
     mnesia:create_table(roster_version, [{disc_copies, [node()]},
 				{attributes, record_info(fields, roster_version)}]),
-    update_table(Host, Backend),
+    update_table(HostB, Backend),
     mnesia:add_table_index(roster, us),
     mnesia:add_table_index(roster_version, us),
     ejabberd_hooks:add(roster_get, HostB,
@@ -1228,10 +1229,12 @@ get_jid_info(_, User, Server, JID)
 
 %% Only supports migration from ejabberd 1.1.2 or higher.
 
-update_table(Host, mnesia) ->
-    HostB = list_to_binary(Host),
+update_table(global, Storage) ->
+    [update_table(HostB, Storage) || HostB <- ejabberd_hosts:get_hosts(ejabberd)];
+
+update_table(HostB, mnesia) ->
     gen_storage_migration:migrate_mnesia(
-      Host, rosteritem,
+      HostB, rosteritem,
       [{roster, [usj, us, jid, name, subscription, ask, groups, askmessage, xs],
 	fun({roster, USJ, _, _, Name, Subscription, Ask, Groups, AskMessage, _Xs}) ->
 		%% Convert "" to undefined in JIDs and string() to binary().

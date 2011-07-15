@@ -118,24 +118,25 @@
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, HostB, privacy_list,
 			     [{disc_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {type, bag},
 			      {attributes, record_info(fields, privacy_list)},
 			      {types, [{user_host, {text, text}}]}]),
     gen_storage:create_table(Backend, HostB, privacy_default_list,
 			     [{disc_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {attributes, record_info(fields, privacy_default_list)},
 			      {types, [{user_host, {text, text}}]}]),
     gen_storage:create_table(Backend, HostB, privacy_list_data,
 			     [{disc_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {type, bag},
 			      {attributes, record_info(fields, privacy_list_data)},
 			      {types, [{user_host, {text, text}},
@@ -149,7 +150,7 @@ start(Host, Opts) ->
 				       {match_presence_in, atom},
 				       {match_presence_out, atom}
 				      ]}]),
-    update_tables(Host, Backend),
+    update_tables(HostB, Backend),
     gen_storage:add_table_index(HostB, privacy_list, name),
     gen_storage:add_table_index(HostB, privacy_list_data, name),
     ejabberd_hooks:add(privacy_iq_get, HostB,
@@ -807,10 +808,12 @@ updated_list(_,
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-update_tables(Host, mnesia) ->
-    HostB = list_to_binary(Host),
+update_tables(global, Storage) ->
+    [update_tables(HostB, Storage) || HostB <- ejabberd_hosts:get_hosts(ejabberd)];
+
+update_tables(HostB, mnesia) ->
     gen_storage_migration:migrate_mnesia(
-      Host, privacy_default_list,
+      HostB, privacy_default_list,
       [{privacy, [us, default, lists],
 	fun({privacy, {U, S}, Default, Lists}) ->
 		US = {list_to_binary(U), list_to_binary(S)},

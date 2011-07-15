@@ -69,16 +69,17 @@
 %% TODO: usns instead of user_host_ns requires no migration
 -record(private_storage, {user_host_ns, xml}).
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, HostB, private_storage,
 			     [{disc_only_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {attributes, record_info(fields, private_storage)},
 			      {types, [{user_host_ns, {binary, binary, atom}}, {xml, xmlel}]}]),
-    update_table(Host, Backend),
+    update_table(HostB, Backend),
     ejabberd_hooks:add(remove_user, HostB,
 		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_PRIVATE,
@@ -217,6 +218,9 @@ remove_user(User, Server)
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+update_table(global, Storage) ->
+    [update_table(HostB, Storage) || HostB <- ejabberd_hosts:get_hosts(ejabberd)];
 
 update_table(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(

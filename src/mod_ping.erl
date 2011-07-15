@@ -52,7 +52,7 @@
 %% Hook callbacks
 -export([iq_ping/3, user_online/3, user_offline/3, user_send/3]).
 
--record(state, {host = "",
+-record(state, {host, % binary() | global
                 send_pings = ?DEFAULT_SEND_PINGS,
                 ping_interval = ?DEFAULT_PING_INTERVAL,
 		timeout_action = none,
@@ -66,16 +66,18 @@ start_link(Host, Opts) ->
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 start_ping(Host, JID) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Proc = gen_mod:get_module_proc_existing(Host, ?MODULE),
     gen_server:cast(Proc, {start_ping, JID}).
 
 stop_ping(Host, JID) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    Proc = gen_mod:get_module_proc_existing(Host, ?MODULE),
     gen_server:cast(Proc, {stop_ping, JID}).
 
 %%====================================================================
 %% gen_mod callbacks
 %%====================================================================
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     PingSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
@@ -90,8 +92,7 @@ stop(Host) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-init([Host, Opts]) ->
-    HostB = list_to_binary(Host),
+init([HostB, Opts]) ->
     SendPings = gen_mod:get_opt(send_pings, Opts, ?DEFAULT_SEND_PINGS),
     PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
     TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
@@ -112,14 +113,13 @@ init([Host, Opts]) ->
         _ ->
             ok
     end,
-    {ok, #state{host = Host,
+    {ok, #state{host = HostB,
                 send_pings = SendPings,
                 ping_interval = PingInterval,
 		timeout_action = TimeoutAction,
                 timers = ?DICT:new()}}.
 
-terminate(_Reason, #state{host = Host}) ->
-    HostB = list_to_binary(Host),
+terminate(_Reason, #state{host = HostB}) ->
     ejabberd_hooks:delete(sm_remove_connection_hook, HostB,
 			  ?MODULE, user_offline, 100),
     ejabberd_hooks:delete(sm_register_connection_hook, HostB,
@@ -143,7 +143,8 @@ handle_cast({stop_ping, JID}, State) ->
     {noreply, State#state{timers = Timers}};
 handle_cast({iq_pong, JID, timeout}, State) ->
     Timers = del_timer(JID, State#state.timers),
-    ejabberd_hooks:run(user_ping_timeout, list_to_binary(State#state.host), [JID]),
+    Host = exmpp_jid:domain(JID),
+    ejabberd_hooks:run(user_ping_timeout, Host, [JID]),
     case State#state.timeout_action of
 	kill ->
 	    case ejabberd_sm:get_session_pid(JID) of
@@ -171,7 +172,7 @@ handle_info({timeout, _TRef, {ping, JID}}, State) ->
     F = fun(Response) ->
 		gen_server:cast(Pid, {iq_pong, JID, Response})
 	end,
-    From = exmpp_jid:make(State#state.host),
+    From = exmpp_jid:make(exmpp_jid:domain(JID)),
     ejabberd_local:route_iq(From, JID, IQ, F),
     Timers = add_timer(JID, State#state.ping_interval, State#state.timers),
     {noreply, State#state{timers = Timers}};

@@ -92,11 +92,13 @@ start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
-start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
+    Proc = gen_mod:get_module_proc(HostB, ?PROCNAME),
     ChildSpec =
 	{Proc,
-	 {?MODULE, start_link, [Host, Opts]},
+	 {?MODULE, start_link, [HostB, Opts]},
 	 transient,
 	 1000,
 	 worker,
@@ -284,7 +286,7 @@ c2s_broadcast_recipients(Acc, _, _, _, _) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-init([Host, Opts]) ->
+init([HostB, Opts]) ->
     case catch mnesia:table_info(caps_features, storage_type) of
 	{'EXIT', _} ->
 	    ok;
@@ -301,7 +303,6 @@ init([Host, Opts]) ->
     MaxSize = gen_mod:get_opt(cache_size, Opts, 1000),
     LifeTime = gen_mod:get_opt(cache_life_time, Opts, timer:hours(24) div 1000),
     cache_tab:new(caps_features, [{max_size, MaxSize}, {life_time, LifeTime}]),
-    HostB = list_to_binary(Host),
     ejabberd_hooks:add(c2s_presence_in, HostB,
 		       ?MODULE, c2s_presence_in, 75),
     ejabberd_hooks:add(c2s_broadcast_recipients, HostB,
@@ -320,7 +321,7 @@ init([Host, Opts]) ->
 		       ?MODULE, disco_identity, 75),
     ejabberd_hooks:add(disco_info, HostB,
 		       ?MODULE, disco_info, 75),
-    {ok, #state{host = Host}}.
+    {ok, #state{host = HostB}}.
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
@@ -334,7 +335,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, State) ->
-    HostB = list_to_binary(State#state.host),
+    HostB = State#state.host,
     ejabberd_hooks:delete(c2s_presence_in, HostB,
 			  ?MODULE, c2s_presence_in, 75),
     ejabberd_hooks:delete(c2s_broadcast_recipients, HostB,
