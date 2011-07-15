@@ -37,8 +37,9 @@
 
 -record(pres_counter, {dir, start, count, logged = false}).
 
-start(Host, _Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, _Opts) ->
     ejabberd_hooks:add(privacy_check_packet, HostB,
                        ?MODULE, check_packet, 25),
     ok.

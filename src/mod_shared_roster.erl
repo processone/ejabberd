@@ -63,8 +63,9 @@
 -record(sr_group, {group_host, opts}).
 -record(sr_user, {us, group_host}).
 
-start(Host, _Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, _Opts) ->
     mnesia:create_table(sr_group,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, sr_group)}]),

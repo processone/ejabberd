@@ -56,8 +56,9 @@
 %% Copied from ejabberd_sm.erl
 -record(session, {sid, usr, us, priority, info}).
 
-start(Host, _Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, _Opts) ->
     ejabberd_hooks:add(disco_local_items, HostB, ?MODULE, get_local_items, 50),
     ejabberd_hooks:add(disco_local_features, HostB, ?MODULE, get_local_features, 50),
     ejabberd_hooks:add(disco_local_identity, HostB, ?MODULE, get_local_identity, 50),

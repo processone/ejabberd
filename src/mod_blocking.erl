@@ -38,8 +38,9 @@
 -include_lib("exmpp/include/exmpp.hrl").
 -include("mod_privacy.hrl").
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     ejabberd_hooks:add(privacy_iq_get, HostB,
 		       ?MODULE, process_iq_get, 40),
