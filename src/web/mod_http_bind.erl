@@ -103,9 +103,11 @@ get_human_html_xmlel() ->
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
-start(Host, _Opts) ->
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, _Opts) ->
     setup_database(),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME_MHB),
+    Proc = gen_mod:get_module_proc(HostB, ?PROCNAME_MHB),
     ChildSpec =
         {Proc,
          {ejabberd_tmp_sup, start_link,

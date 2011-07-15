@@ -121,7 +121,7 @@
 %%       supervisor
 start(XMPPDomain, Sid, Key, IP) ->
     ?DEBUG("Starting session", []),
-    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
+    SupervisorProc = gen_mod:get_module_proc_existing(XMPPDomain, ?PROCNAME_MHB),
     case catch supervisor:start_child(SupervisorProc, [Sid, Key, IP]) of
     	{ok, Pid} ->
 	    {ok, Pid};

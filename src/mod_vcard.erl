@@ -104,20 +104,21 @@
 
 -define(PROCNAME, ejabberd_mod_vcard).
 
-start(Host, Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, HostB, vcard,
 			     [{disc_only_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {attributes, record_info(fields, vcard)},
 			      {types, [{user_host, {text, text}}]}]),
     gen_storage:create_table(Backend, HostB, vcard_search,
 			     [{disc_copies, [node()]},
-			      {odbc_host, Host},
+			      {odbc_host, HostB},
 			      {attributes, record_info(fields, vcard_search)},
 			      {types, [{user_host, {text, text}}]}]),
-    update_tables(Host, Backend),
+    update_tables(HostB, Backend),
     gen_storage:add_table_index(HostB, vcard_search, lusername),
     gen_storage:add_table_index(HostB, vcard_search, lfn),
     gen_storage:add_table_index(HostB, vcard_search, lfamily),
@@ -147,10 +148,10 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
-    MyHost = gen_mod:expand_host_name(Host, Opts, "vjud"),
+    MyHost = gen_mod:expand_host_name(HostB, Opts, "vjud"),
     Search = gen_mod:get_opt(search, Opts, true),
-    register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [MyHost, Host, Search])).
+    register(gen_mod:get_module_proc(HostB, ?PROCNAME),
+	     spawn(?MODULE, init, [MyHost, HostB, Search])).
 
 
 init(Host, ServerHost, Search) ->
@@ -343,7 +344,7 @@ set_vcard(User, Server, VCARD) ->
 			   })
 	    end,
 	    gen_storage:transaction(Server, vcard, F),
-	    ejabberd_hooks:run(vcard_set, Server, [LUser, Server, VCARD])
+	    ejabberd_hooks:run(vcard_set, Server, [User, Server, VCARD])
     catch
 	_ ->
 	    {error, badarg}
@@ -754,6 +755,9 @@ remove_user(User, Server) when is_binary(User), is_binary(Server) ->
 %%%
 %%% Update tables
 %%%
+
+update_tables(global, Storage) ->
+    [update_tables(HostB, Storage) || HostB <- ejabberd_hosts:get_hosts(ejabberd)];
 
 update_tables(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(

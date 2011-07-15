@@ -26,8 +26,9 @@
 %% gen_mod callbacks
 %%====================================================================
 
-start(Host, _Opts) ->
-    HostB = list_to_binary(Host),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, _Opts) ->
     mnesia:create_table(vcard_xupdate,
                         [{disc_copies, [node()]},
                          {attributes, record_info(fields, vcard_xupdate)}]),
@@ -65,7 +66,7 @@ vcard_set(User, Server, VCARD) ->
 	[] ->
 	    remove_xupdate(User, Server);
 	BinVal ->
-	    add_xupdate(User, Server, sha:sha(jlib:decode_base64(BinVal)))
+	    add_xupdate(User, Server, list_to_binary(sha:sha(jlib:decode_base64(BinVal))))
     end,
     ejabberd_sm:force_update_presence(US).
 
@@ -105,7 +106,7 @@ presence_with_xupdate(Stanza, User, Host) ->
 build_xphotoel(User, Host) ->
     Hash = get_xupdate(User, Host),
     PhotoSubEls = case Hash of
-		      Hash when is_list(Hash) ->
+		      Hash when is_binary(Hash) ->
 			  [exmpp_xml:cdata(Hash)];
 		      _ ->
 			  []
