@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -45,7 +45,8 @@
 		 password = "",
 		 anonymous = true,
 		 max_users = ?MAX_USERS_DEFAULT,
-		 logging = false
+		 logging = false,
+                 captcha_whitelist = ?SETS:empty()
 		}).
 
 -record(user, {jid,

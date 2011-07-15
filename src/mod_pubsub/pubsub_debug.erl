@@ -23,7 +23,7 @@ state(JID, NodeId) ->
     [S] -> S;
     _ -> undefined
     end.
-states(NodeId) -> mnesia:dirty_match_object(#pubsub_state{stateid={'_', NodeId}, _='_'}).
+states(NodeId) -> mnesia:dirty_index_read(pubsub_state, NodeId, #pubsub_state.nodeidx).
 stateid(S) -> element(1, S#pubsub_state.stateid).
 stateids(NodeId) -> [stateid(S) || S <- states(NodeId)].
 states_by_jid(JID) -> mnesia:dirty_match_object(#pubsub_state{stateid={JID, '_'}, _='_'}).
@@ -33,7 +33,7 @@ item(ItemId, NodeId) ->
     [I] -> I;
     _ -> undefined
     end.
-items(NodeId) -> mnesia:dirty_match_object(#pubsub_item{itemid={'_', NodeId}, _='_'}).
+items(NodeId) -> mnesia:dirty_index_read(pubsub_item, NodeId, #pubsub_item.nodeidx).
 itemid(I) -> element(1, I#pubsub_item.itemid).
 itemids(NodeId) -> [itemid(I) || I <- items(NodeId)].
 items_by_id(ItemId) -> mnesia:dirty_match_object(#pubsub_item{itemid={ItemId, '_'}, _='_'}).
@@ -41,10 +41,10 @@ items_by_id(ItemId) -> mnesia:dirty_match_object(#pubsub_item{itemid={ItemId, '_
 affiliated(NodeId) -> [stateid(S) || S <- states(NodeId), S#pubsub_state.affiliation=/=none].
 subscribed(NodeId) -> [stateid(S) || S <- states(NodeId), S#pubsub_state.subscriptions=/=[]].
 %subscribed(NodeId) -> [stateid(S) || S <- states(NodeId), S#pubsub_state.subscription=/=none]. %% old record
-owners(NodeId) -> [stateid(S) || S <- mnesia:dirty_match_object(#pubsub_state{stateid={'_', NodeId}, affiliation=owner, _='_'})].
+owners(NodeId) -> [stateid(S) || S <- states(NodeId), S#pubsub_state.affiliation==owner].
 
 orphan_items(NodeId) ->
-    itemids(NodeId) -- lists:foldl(fun(S, A) -> A++S#pubsub_state.items end, [], mnesia:dirty_match_object(#pubsub_state{stateid={'_', NodeId}, _='_'})).
+    itemids(NodeId) -- lists:foldl(fun(S, A) -> A++S#pubsub_state.items end, [], states(NodeId)).
 newer_items(NodeId, Seconds) ->
     Now = calendar:universal_time(),
     Oldest = calendar:seconds_to_daystime(Seconds),

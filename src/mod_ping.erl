@@ -5,7 +5,7 @@
 %%% Created : 11 Jul 2009 by Brian Cully <bjc@kublai.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -95,7 +95,7 @@ init([Host, Opts]) ->
     SendPings = gen_mod:get_opt(send_pings, Opts, ?DEFAULT_SEND_PINGS),
     PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
     TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, no_queue),
     mod_disco:register_feature(Host, ?NS_PING),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PING,
                                   ?MODULE, iq_ping, IQDisc),

@@ -13,7 +13,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/3,
+-export([start_link/4,
 	 init/1,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -70,6 +70,7 @@
 		wait_timer,
 		ctime = 0,
 		timer,
+                jid,
 		pause=0,
 		unprocessed_req_list = [], % list of request that have been delayed for proper reordering: {Request, PID}
 		req_list = [], % list of requests (cache)
@@ -124,7 +125,7 @@
 start(XMPPDomain, Sid, Key, IP) ->
     ?DEBUG("Starting session", []),
     SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
-    case catch supervisor:start_child(SupervisorProc, [Sid, Key, IP]) of
+    case catch supervisor:start_child(SupervisorProc, [XMPPDomain, Sid, Key, IP]) of
     	{ok, Pid} ->
 	    {ok, Pid};
 	{error, _} = Err ->
@@ -140,8 +141,8 @@ start(XMPPDomain, Sid, Key, IP) ->
 	    {error, Exit}
     end.
 
-start_link(Sid, Key, IP) ->
-    gen_fsm:start_link(?MODULE, [Sid, Key, IP], ?FSMOPTS).
+start_link(ServerHost, Sid, Key, IP) ->
+    gen_fsm:start_link(?MODULE, [ServerHost, Sid, Key, IP], ?FSMOPTS).
 
 send({http_bind, FsmRef, _IP}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
@@ -333,7 +334,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([Sid, Key, IP]) ->
+init([ServerHost, Sid, Key, IP]) ->
     ?DEBUG("started: ~p", [{Sid, Key, IP}]),
 
     %% Read c2s options from the first ejabberd_c2s configuration in
@@ -348,15 +349,25 @@ init([Sid, Key, IP]) ->
     Shaper = none,
     ShaperState = shaper:new(Shaper),
     Socket = {http_bind, self(), IP},
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     Timer = erlang:start_timer(?MAX_INACTIVITY, self(), []),
-    {ok, loop, #state{id = Sid,
-		      key = Key,
-		      socket = Socket,
-		      shaper_state = ShaperState,
-		      max_inactivity = ?MAX_INACTIVITY,
-		      max_pause = ?MAX_PAUSE,
-		      timer = Timer}}.
+    State = #state{id = Sid,
+                   key = Key,
+                   socket = Socket,
+                   shaper_state = ShaperState,
+                   max_inactivity = ?MAX_INACTIVITY,
+                   max_pause = ?MAX_PAUSE,
+                   timer = Timer},
+    case gen_mod:get_module_opt(ServerHost, mod_http_bind,
+                                prebind, false) of
+        true ->
+            JID = make_random_jid(ServerHost),
+            ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket,
+                                  [{jid, JID} | Opts]),
+            {ok, loop, State#state{jid = JID}};
+        false ->
+            ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
+            {ok, loop, State}
+    end.
 
 %%----------------------------------------------------------------------
 %% Func: handle_event/3
@@ -469,6 +480,11 @@ handle_sync_event(#http_put{payload_size = PayloadSize} = Request,
 					  shaper_timer = NewShaperTimer});
 
 %% HTTP GET: send packets to the client
+handle_sync_event({http_get, _Rid, _Wait, _Hold}, _From,
+		  StateName, #state{jid = JID} = StateData)
+  when JID /= undefined ->
+    %% This is a pre-bind state
+    {reply, {ok, {prebind, JID}}, StateName, StateData#state{jid = undefined}};
 handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
     %% setup timer
     send_receiver_reply(StateData#state.http_receiver, {ok, empty}),
@@ -745,15 +761,16 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 								     ip = IP
 								    });
 			C2SPid ->
+                            JID = StateData#state.jid,
 			    case StreamTo of
-				{To, ""} ->
+				{To, ""} when JID == undefined ->
 				    gen_fsm:send_event(
 				      C2SPid,
 				      {xmlstreamstart, "stream:stream",
 				       [{"to", To},
 					{"xmlns", ?NS_CLIENT},
 					{"xmlns:stream", ?NS_STREAM}]});
-				{To, Version} ->
+				{To, Version} when JID == undefined ->
 				    gen_fsm:send_event(
 				      C2SPid,
 				      {xmlstreamstart, "stream:stream",
@@ -950,6 +967,16 @@ prepare_response(Sess, Rid, OutputEls, StreamStart) ->
             {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
 	{ok, terminate} ->
             {200, ?HEADER, "<body type='terminate' xmlns='"++?NS_HTTP_BIND++"'/>"};
+        {ok, {prebind, JID}} ->
+	    {200, ?HEADER,
+	     xml:element_to_string(
+	       {xmlelement, "body",
+		[{"xmlns", ?NS_HTTP_BIND}, {"sid", Sess#http_bind.id},
+		 {"rid", integer_to_list(Rid + 1)}],
+		[{xmlelement, "iq", [{"id", "pre_bind"}, {"type", "result"}],
+		  [{xmlelement, "bind", [{"xmlns", ?NS_BIND}],
+		    [{xmlelement, "jid", [],
+		      [{xmlcdata, jlib:jid_to_string(JID)}]}]}]}]})};
 	{ok, ROutPacket} ->
 	    OutPacket = lists:reverse(ROutPacket),
             ?DEBUG("OutPacket: ~p", [OutputEls++OutPacket]),
@@ -1271,10 +1298,14 @@ check_default_xmlns(El) ->
 %% Print a warning in log file if this is not the case.
 check_bind_module(XmppDomain) ->
     case gen_mod:is_loaded(XmppDomain, mod_http_bind) of
-	true -> true;
-	false -> ?ERROR_MSG("You are trying to use BOSH (HTTP Bind), but the module mod_http_bind is not started.~n"
-			    "Check your 'modules' section in your ejabberd configuration file.",[]),
-		 false
+	true -> ok;
+	false -> ?ERROR_MSG("You are trying to use BOSH (HTTP Bind) in host ~p,"
+			    " but the module mod_http_bind is not started in"
+			    " that host. Configure your BOSH client to connect"
+			    " to the correct host, or add your desired host to"
+			    " the configuration, or check your 'modules'"
+			    " section in your ejabberd configuration file.",
+			    [XmppDomain])
     end.
 
 make_sid() ->
@@ -1304,3 +1335,8 @@ get_session(SID) ->
 	_ ->
 	    {error, enoent}
     end.
+
+make_random_jid(Host) ->
+    %% Copied from cyrsasl_anonymous.erl
+    User = lists:concat([randoms:get_string() | tuple_to_list(now())]),
+    jlib:make_jid(User, Host, randoms:get_string()).

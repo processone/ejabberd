@@ -155,21 +155,25 @@ handle_sync_event({send, Packet}, _From, StateName, #state{ws = WS} = StateData)
 	    true ->
 	        list_to_binary(Packet)
         end,
-    ?DEBUG("sending on websocket : ~p ", [Packet2]),
+    %?DEBUG("sending on websocket : ~p ", [Packet2]),
     WS:send(Packet2),
     {reply, ok, StateName, StateData};
-    
-handle_sync_event(close, _From, _StateName, StateData) ->
-    Reply = ok,
-    {stop, normal, Reply, StateData}.
+
+handle_sync_event(close, From, _StateName, StateData)->
+    {stop, normal, StateData}.
+
+handle_info(closed, _StateName, StateData) ->
+    {stop, normal,  StateData};
     
 handle_info({browser, Packet}, StateName, StateData)->
+    %?DEBUG("Received on websocket : ~p ", [Packet]),
+    NPacket = unicode:characters_to_binary(Packet,latin1),
     NewState = case StateData#state.waiting_input of
 		false ->
-		    Input = [StateData#state.input|Packet],
+		    Input = [StateData#state.input|NPacket],
 		    StateData#state{input = Input};
 		{Receiver, _Tag} ->
-		    Receiver ! {tcp, StateData#state.socket,Packet},
+		    Receiver ! {tcp, StateData#state.socket,NPacket},
 		    cancel_timer(StateData#state.timer),
 		    Timer = erlang:start_timer(StateData#state.timeout, self(), []),
         StateData#state{waiting_input = false,
@@ -190,7 +194,15 @@ handle_info(_, StateName, StateData) ->
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.    
     
-terminate(_Reason, _StateName, _StateData) -> ok.
+terminate(_Reason, _StateName, StateData) -> 
+    case StateData#state.waiting_input of
+	false ->
+	    ok;
+	{Receiver,_} ->
+	    ?DEBUG("C2S Pid : ~p", [Receiver]),
+	    Receiver ! {tcp_closed, StateData#state.socket }
+    end,
+    ok.
 
 cancel_timer(Timer) ->
     erlang:cancel_timer(Timer),

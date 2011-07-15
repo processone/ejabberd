@@ -1,5 +1,5 @@
 /*
- * ejabberd, Copyright (C) 2002-2010   ProcessOne
+ * ejabberd, Copyright (C) 2002-2011   ProcessOne
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,6 +35,7 @@
 #define PARSE_FINAL_COMMAND 1
 
 ei_x_buff event_buf;
+ei_x_buff xmlns_buf;
 
 typedef struct {
       ErlDrvPort port;
@@ -42,6 +43,32 @@ typedef struct {
 } expat_data;
 
 static XML_Memory_Handling_Suite ms = {driver_alloc, driver_realloc, driver_free};
+
+void encode_name(const XML_Char *name)
+{
+  char *name_start;
+  char *prefix_start;
+  char *buf;
+  int name_len, prefix_len, buf_len;
+
+  if ((name_start = strchr(name, '\n'))) {
+    if ((prefix_start = strchr(name_start+1, '\n'))) {
+      name_len = prefix_start - name_start;
+      prefix_len = strlen(prefix_start+1);
+      buf_len = prefix_len + name_len;
+      buf = driver_alloc(buf_len);
+      memcpy(buf, prefix_start+1, prefix_len);
+      memcpy(buf+prefix_len, name_start, name_len);
+      buf[prefix_len] = ':';
+      ei_x_encode_string_len(&event_buf, buf, buf_len);
+      driver_free(buf);
+    } else {
+      ei_x_encode_string(&event_buf, name_start+1);
+    };
+  } else {
+    ei_x_encode_string(&event_buf, name);
+  }
+}
 
 void *erlXML_StartElementHandler(expat_data *d,
 				 const XML_Char *name,
@@ -53,7 +80,10 @@ void *erlXML_StartElementHandler(expat_data *d,
    ei_x_encode_tuple_header(&event_buf, 2);
    ei_x_encode_long(&event_buf, XML_START);
    ei_x_encode_tuple_header(&event_buf, 2);
-   ei_x_encode_string(&event_buf, name);
+   encode_name(name);
+   ei_x_append(&event_buf, &xmlns_buf);
+   ei_x_free(&xmlns_buf);
+   ei_x_new(&xmlns_buf);
 
    for (i = 0; atts[i]; i += 2) {}
 
@@ -64,7 +94,7 @@ void *erlXML_StartElementHandler(expat_data *d,
       for (i = 0; atts[i]; i += 2)
       {
 	 ei_x_encode_tuple_header(&event_buf, 2);
-	 ei_x_encode_string(&event_buf, atts[i]);
+	 encode_name(atts[i]);
 	 ei_x_encode_string(&event_buf, atts[i+1]);
       }
    }
@@ -80,7 +110,7 @@ void *erlXML_EndElementHandler(expat_data *d,
    ei_x_encode_list_header(&event_buf, 1);
    ei_x_encode_tuple_header(&event_buf, 2);
    ei_x_encode_long(&event_buf, XML_END);
-   ei_x_encode_string(&event_buf, name);
+   encode_name(name);
    return NULL;
 }
 
@@ -95,12 +125,45 @@ void *erlXML_CharacterDataHandler(expat_data *d,
    return NULL;
 }
 
+void *erlXML_StartNamespaceDeclHandler(expat_data *d,
+				       const XML_Char *prefix,
+				       const XML_Char *uri)
+{
+  int prefix_len;
+  char *buf;
+
+  /* From the expat documentation:
+     "For a default namespace declaration (xmlns='...'),
+     the prefix will be null ...
+     ... The URI will be null for the case where
+     the default namespace is being unset."
+
+     FIXME: I'm not quite sure what all that means */
+  if (uri == NULL)
+      return NULL;
+
+  ei_x_encode_list_header(&xmlns_buf, 1);
+  ei_x_encode_tuple_header(&xmlns_buf, 2);
+  if (prefix) {
+    prefix_len = strlen(prefix);
+    buf = driver_alloc(7 + prefix_len);
+    strcpy(buf, "xmlns:");
+    strcpy(buf+6, prefix);
+    ei_x_encode_string(&xmlns_buf, buf);
+    driver_free(buf);
+  } else {
+    ei_x_encode_string(&xmlns_buf, "xmlns");
+  };
+  ei_x_encode_string(&xmlns_buf, uri);
+
+  return NULL;
+}
 
 static ErlDrvData expat_erl_start(ErlDrvPort port, char *buff)
 {
    expat_data* d = (expat_data*)driver_alloc(sizeof(expat_data));
    d->port = port;
-   d->parser = XML_ParserCreate_MM("UTF-8", &ms, NULL);
+   d->parser = XML_ParserCreate_MM("UTF-8", &ms, "\n");
    XML_SetUserData(d->parser, d);
 
    set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
@@ -112,6 +175,11 @@ static ErlDrvData expat_erl_start(ErlDrvPort port, char *buff)
    XML_SetCharacterDataHandler(
       d->parser, (XML_CharacterDataHandler)erlXML_CharacterDataHandler);
 
+   XML_SetStartNamespaceDeclHandler(
+      d->parser, (XML_StartNamespaceDeclHandler) erlXML_StartNamespaceDeclHandler);
+   XML_SetReturnNSTriplet(d->parser, 1);
+
+   XML_SetDefaultHandler(d->parser, NULL);
 
    return (ErlDrvData)d;
 }
@@ -138,6 +206,7 @@ static int expat_erl_control(ErlDrvData drv_data,
       case PARSE_COMMAND:
       case PARSE_FINAL_COMMAND:
 	 ei_x_new_with_version(&event_buf);
+	 ei_x_new(&xmlns_buf);
 #ifdef ENABLE_FLASH_HACK
         /* Flash hack - Flash clients send a null byte after the stanza.  Remove that... */
         {
@@ -190,6 +259,7 @@ static int expat_erl_control(ErlDrvData drv_data,
 	 memcpy(b->orig_bytes, event_buf.buff, size);
 
 	 ei_x_free(&event_buf);
+	 ei_x_free(&xmlns_buf);
  
 	 *rbuf = (char *)b;
 	 return size;

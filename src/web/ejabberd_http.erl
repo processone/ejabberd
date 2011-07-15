@@ -5,7 +5,7 @@
 %%% Created : 27 Feb 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -189,28 +189,36 @@ receive_headers(State) ->
 	_ ->
 	    case Data of
 		{ok, Binary} ->
-		    {Request, Trail} = parse_request(
-					 State,
-					 State#state.trail ++ binary_to_list(Binary)),
-		    State1 = State#state{trail = Trail},
-		    NewState = lists:foldl(
-				 fun(D, S) ->
-					case S#state.end_of_request of
-					    true ->
-						S;
-					    _ ->
-						process_header(S, D)
-					end
-				 end, State1, Request),
-		    case NewState#state.end_of_request of
-			true ->
-			    ok;
-			_ ->
-			    receive_headers(NewState)
-		    end;
+            process_requests(State, binary_to_list(Binary));
 		_ ->
 		    ok
 	    end
+    end.
+
+process_requests(State, Data) ->
+    {Request, Trail} = parse_request(
+                State,
+                State#state.trail ++ Data),
+    State1 = State#state{trail = Trail},
+    NewState = lists:foldl(
+            fun(D, S) ->
+            case S#state.end_of_request of
+                true ->
+                S;
+                _ ->
+                process_header(S, D)
+            end
+            end, State1, Request),
+    case State1#state.trail of
+        [] ->
+            case NewState#state.end_of_request of
+            true ->
+                ok;
+            _ ->
+                receive_headers(NewState)
+            end;
+        _ ->
+            process_requests(State1, "")
     end.
 
 process_header(State, Data) ->
@@ -340,7 +348,6 @@ process(Handlers, #ws{} = Ws)->
   case (lists:prefix(HandlerPathPrefix, Ws#ws.path) or
          (HandlerPathPrefix==Ws#ws.path)) of
 	true ->
-      ?DEBUG("~p matches ~p", [Ws#ws.path, HandlerPathPrefix]),
       LocalPath = lists:nthtail(length(HandlerPathPrefix), Ws#ws.path),
       ejabberd_hooks:run(ws_debug, [{LocalPath, Ws}]),
       Protocol = case lists:keysearch(protocol, 1, HandlerOpts) of
@@ -351,9 +358,14 @@ process(Handlers, #ws{} = Ws)->
           {value, {origins, O}} -> O;
           false -> []
         end,
+      Auth =  case lists:keysearch(auth, 1, HandlerOpts) of
+         {value, {auth, A}} -> A;
+         false -> undefined
+       end,
       WS2 = Ws#ws{local_path = LocalPath, 
                   protocol=Protocol,
-                  acceptable_origins=Origins},
+                  acceptable_origins=Origins,
+                  auth_module=Auth},
       case ejabberd_websocket:is_acceptable(WS2) of 
         true ->
           ejabberd_websocket:connect(WS2, HandlerModule);
@@ -361,7 +373,6 @@ process(Handlers, #ws{} = Ws)->
           process(HandlersLeft, Ws)
       end;
 	false ->
-	    ?DEBUG("HandlersLeft : ~p ", [HandlersLeft]),
 	    process(HandlersLeft, Ws)
     end;
 process(Handlers, Request) ->
@@ -425,9 +436,10 @@ process_request(#state{request_method = Method,
 	        {_, Origin} = lists:keyfind("Origin", 1, RequestHeaders),
 	        Ws = #ws{socket = Socket,
     			       sockmod = SockMod,
-    			       ws_autoexit = true,
+    			       ws_autoexit = false,
     			       ip = IP,
     			       path = LPath,
+    			       q = LQuery,
     			       vsn = VSN,
     			       host = Host,
     			       port = Port,
@@ -435,7 +447,6 @@ process_request(#state{request_method = Method,
     			       headers = RequestHeaders
     			       },
     			process(WebSocketHandlers, Ws),
-    			?DEBUG("It is a websocket.",[]),
 	        none;
 	      false ->
 	        Request = #request{method = Method,
@@ -568,7 +579,11 @@ recv_data(_State, 0, Acc) ->
 recv_data(State, Len, Acc) ->
     case State#state.trail of
 	[] ->
-	    case (State#state.sockmod):recv(State#state.socket,   Len, 300000) of
+        Len2 = case State#state.sockmod of
+            gen_tcp -> Len;
+            _ -> 0
+        end,
+	    case (State#state.sockmod):recv(State#state.socket, Len2, 300000) of
 		{ok, Data} ->
 		    recv_data(State, Len - size(Data), [Acc | Data]);
 		_ ->
@@ -621,7 +636,13 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
 		  end, HeadersOut),
     SL = [Version, integer_to_list(Status), " ",
 	  code_to_phrase(Status), "\r\n"],
-    [SL, H, "\r\n", Data].
+
+    Data2 = case State#state.request_method of
+		  'HEAD' -> "";
+		  _ -> Data
+	      end,
+
+    [SL, H, "\r\n", Data2].
 
 make_text_output(State, Status, Headers, Text) when is_list(Text) ->
     make_text_output(State, Status, Headers, list_to_binary(Text));
@@ -658,7 +679,13 @@ make_text_output(State, Status, Headers, Data) when is_binary(Data) ->
 		  end, HeadersOut),
     SL = [Version, integer_to_list(Status), " ",
 	  code_to_phrase(Status), "\r\n"],
-    [SL, H, "\r\n", Data].
+
+    Data2 = case State#state.request_method of
+		  'HEAD' -> "";
+		  _ -> Data
+	      end,
+
+    [SL, H, "\r\n", Data2].
 
 
 parse_lang(Langs) ->

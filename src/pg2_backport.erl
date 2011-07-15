@@ -1,7 +1,7 @@
 %%
 %% %CopyrightBegin%
 %%
-%% Copyright Ericsson AB 1997-2010. All Rights Reserved.
+%% Copyright Ericsson AB 1997-2011. All Rights Reserved.
 %%
 %% The contents of this file are subject to the Erlang Public License,
 %% Version 1.1, (the "License"); you may not use this file except in
@@ -207,9 +207,12 @@ terminate(_Reason, _S) ->
 store(List) ->
     _ = [(assure_group(Name)
           andalso
-          [join_group(Name, P) || P <- Members -- group_members(Name)]) ||
+          store2(Name, Members)) ||
             [Name, Members] <- List],
     ok.
+store2(Name, Members) ->
+    [join_group(Name, P) || P <- Members -- group_members(Name)],
+    true.
 
 assure_group(Name) ->
     Key = {group, Name},

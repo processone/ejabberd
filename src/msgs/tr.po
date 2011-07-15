@@ -1375,8 +1375,8 @@ msgid "~s access rule configuration"
 msgstr "~s erişim kuralları ayarları"
 
 #: web/ejabberd_web_admin.erl:1031
-msgid "ejabberd virtual hosts"
-msgstr "ejabberd sanal sunucuları"
+msgid "Virtual Hosts"
+msgstr "Sanal Sunucuları"
 
 #: web/ejabberd_web_admin.erl:1039 web/ejabberd_web_admin.erl:1046
 msgid "Users"

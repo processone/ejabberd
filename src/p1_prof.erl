@@ -6,7 +6,7 @@
 %%% Created : 23 Jan 2010 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -156,10 +156,10 @@ queue(N) ->
     dump(N, lists:reverse(lists:ukeysort(1, all_pids(queue)))).
 
 memory(N) ->
-    dump(N, lists:reverse(lists:ukeysort(2, all_pids(memory)))).
+    dump(N, lists:reverse(lists:ukeysort(3, all_pids(memory)))).
 
 reds(N) ->
-    dump(N, lists:reverse(lists:ukeysort(3, all_pids(reductions)))).
+    dump(N, lists:reverse(lists:ukeysort(4, all_pids(reductions)))).
 
 trace(Pid) ->
     erlang:trace(Pid, true, [send, 'receive']),
@@ -299,10 +299,17 @@ all_pids(Type) ->
 			    registered_name]) of
 		  [{_, Len}, {_, Memory}, {_, Reds},
 		   {_, Dict}, {_, CurFun}, {_, RegName}] ->
-		      if Type == queue andalso Len == 0 ->
+                      IntQLen = case lists:keysearch('$internal_queue_len', 1, Dict) of
+                                    {value, {_, N}} ->
+                                        N;
+                                    _ ->
+                                        0
+                                end,
+		      if Type == queue andalso Len == 0 andalso IntQLen == 0 ->
 			      Acc;
 			 true ->
-			      [{Len, Memory, Reds, Dict, CurFun, P, RegName}|Acc]
+                              MaxLen = lists:max([Len, IntQLen]),
+			      [{MaxLen, Len, Memory, Reds, Dict, CurFun, P, RegName}|Acc]
 		      end;
 		  _ ->
 		      Acc
@@ -311,7 +318,7 @@ all_pids(Type) ->
 
 dump(N, Rs) ->
     lists:foreach(
-      fun({MsgQLen, Memory, Reds, Dict, CurFun, Pid, RegName}) ->
+      fun({_, MsgQLen, Memory, Reds, Dict, CurFun, Pid, RegName}) ->
 	      PidStr = pid_to_list(Pid),
 	      [_, Maj, Min] = string:tokens(
 				string:substr(

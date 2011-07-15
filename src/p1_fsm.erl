@@ -14,7 +14,7 @@
 %% AB. All Rights Reserved.''
 %% 
 %% The code has been modified and improved by ProcessOne.
-%% Copyright 2007-2010, ProcessOne
+%% Copyright 2007-2011, ProcessOne
 %%
 %%  The change adds the following features:
 %%   - You can send exit(priority_shutdown) to the p1_fsm process to
@@ -395,7 +395,8 @@ loop(Parent, Name, StateName, StateData, Mod, Time, Debug,
 	{process_limit, Limit} ->
 	    Reason = {process_limit, Limit},
 	    Msg = {'EXIT', Parent, {error, {process_limit, Limit}}},
-	    terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug)
+	    terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug,
+                      queue:new())
     end,
     process_message(Parent, Name, StateName, StateData,
 		    Mod, Time, Debug, Limits, Queue, QueueLen).
@@ -451,7 +452,8 @@ decode_msg(Msg,Parent, Name, StateName, StateData, Mod, Time, Debug,
 				  [Name, StateName, StateData,
 				   Mod, Time, Limits, Queue, QueueLen], Hib);
 	{'EXIT', Parent, Reason} ->
-	    terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug);
+	    terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug,
+                      Queue);
 	_Msg when Debug == [] ->
 	    handle_msg(Msg, Parent, Name, StateName, StateData,
 		       Mod, Time, Limits, Queue, QueueLen);
@@ -471,8 +473,9 @@ system_continue(Parent, Debug, [Name, StateName, StateData,
 	 Limits, Queue, QueueLen).
 
 system_terminate(Reason, _Parent, Debug,
-		 [Name, StateName, StateData, Mod, _Time, _Limits]) ->
-    terminate(Reason, Name, [], Mod, StateName, StateData, Debug).
+		 [Name, StateName, StateData, Mod, _Time,
+                  _Limits, Queue, _QueueLen]) ->
+    terminate(Reason, Name, [], Mod, StateName, StateData, Debug, Queue).
 
 system_code_change([Name, StateName, StateData, Mod, Time,
 		    Limits, Queue, QueueLen],
@@ -574,19 +577,25 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 			 _ ->
 			     normal
 		     end,
-	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, []);
+            Queue1 =
+                case Reason of
+                    normal -> Queue;
+                    _ -> queue:new()
+                end,
+	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, [],
+                      Queue1);
 	{stop, Reason, NStateData} ->
-	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, []);
+	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, [], Queue);
 	{stop, Reason, Reply, NStateData} when From =/= undefined ->
 	    {'EXIT', R} = (catch terminate(Reason, Name, Msg, Mod,
-					   StateName, NStateData, [])),
+					   StateName, NStateData, [], Queue)),
 	    reply(From, Reply),
 	    exit(R);
 	{'EXIT', What} ->
-	    terminate(What, Name, Msg, Mod, StateName, StateData, []);
+	    terminate(What, Name, Msg, Mod, StateName, StateData, [], Queue);
 	Reply ->
 	    terminate({bad_return_value, Reply},
-		      Name, Msg, Mod, StateName, StateData, [])
+		      Name, Msg, Mod, StateName, StateData, [], Queue)
     end.
 
 handle_msg(Msg, Parent, Name, StateName, StateData,
@@ -631,19 +640,27 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
 			 _ ->
 			     normal
 		     end,
-	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, Debug);
+            Queue1 =
+                case Reason of
+                    normal -> Queue;
+                    _ -> queue:new()
+                end,
+	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, Debug,
+                      Queue1);
 	{stop, Reason, NStateData} ->
-	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, Debug);
+	    terminate(Reason, Name, Msg, Mod, StateName, NStateData, Debug,
+                      Queue);
 	{stop, Reason, Reply, NStateData} when From =/= undefined ->
 	    {'EXIT', R} = (catch terminate(Reason, Name, Msg, Mod,
-					   StateName, NStateData, Debug)),
+					   StateName, NStateData, Debug,
+                                           Queue)),
 	    reply(Name, From, Reply, Debug, StateName),
 	    exit(R);
 	{'EXIT', What} ->
-	    terminate(What, Name, Msg, Mod, StateName, StateData, Debug);
+	    terminate(What, Name, Msg, Mod, StateName, StateData, Debug, Queue);
 	Reply ->
 	    terminate({bad_return_value, Reply},
-		      Name, Msg, Mod, StateName, StateData, Debug)
+		      Name, Msg, Mod, StateName, StateData, Debug, Queue)
     end.
 
 dispatch({'$gen_event', Event}, Mod, StateName, StateData) ->
@@ -679,7 +696,10 @@ reply(Name, {To, Tag}, Reply, Debug, StateName) ->
 %%% Terminate the server.
 %%% ---------------------------------------------------
 
-terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
+terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug, Queue) ->
+    lists:foreach(
+      fun(Message) -> self() ! Message end,
+      queue:to_list(Queue)),
     case catch Mod:terminate(Reason, StateName, StateData) of
 	{'EXIT', R} ->
 	    error_info(Mod, R, Name, Msg, StateName, StateData, Debug),
@@ -762,7 +782,8 @@ get_msg(Msg) -> Msg.
 %% Status information
 %%-----------------------------------------------------------------
 format_status(Opt, StatusData) ->
-    [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time]] =
+    [PDict, SysState, Parent, Debug,
+     [Name, StateName, StateData, Mod, _Time, _Limits, _Queue, _QueueLen]] =
 	StatusData,
     NameTag = if is_pid(Name) ->
 		      pid_to_list(Name);
@@ -835,7 +856,7 @@ rpc_call(Node, Mod, Fun, Args, Timeout) ->
 	{Ref, Result} ->
 	    erlang:demonitor(MRef, [flush]),
 	    Result;
-	{'DOWN', MRef, _, _, Reason} ->
+	{'DOWN', MRef, _, _, noconnection = Reason} ->
 	    {badrpc, Reason}
     after Timeout ->
 	    erlang:demonitor(MRef, [flush]),

@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -47,6 +47,8 @@
 	    path,						% the websocket GET request path
 	    headers,						% [{Tag, Val}]
 	    local_path,
+	    q,
 	    protocol,
-	    acceptable_origins
+	    acceptable_origins = [],
+	    auth_module
     }).

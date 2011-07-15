@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -30,6 +30,7 @@
 -define(NS_ROSTER,       "jabber:iq:roster").
 -define(NS_ROSTER_VER,   "urn:xmpp:features:rosterver").
 -define(NS_PRIVACY,      "jabber:iq:privacy").
+-define(NS_BLOCKING,     "urn:xmpp:blocking").
 -define(NS_PRIVATE,      "jabber:iq:private").
 -define(NS_VERSION,      "jabber:iq:version").
 -define(NS_TIME90,       "jabber:iq:time"). % TODO: Remove once XEP-0090 is Obsolete
@@ -206,117 +207,117 @@
 	?ERRT_CONFLICT(Lang, "Resource conflict")).
 
 
--define(STREAM_ERROR(Condition),
+-define(STREAM_ERROR(Condition, Cdata),
 	{xmlelement, "stream:error",
 	 [],
-	 [{xmlelement, Condition, [{"xmlns", ?NS_STREAMS}], []}]}).
+	 [{xmlelement, Condition, [{"xmlns", ?NS_STREAMS}],
+           [{xmlcdata, Cdata}]}]}).
 
 -define(SERR_BAD_FORMAT,
-	?STREAM_ERROR("bad-format")).
+	?STREAM_ERROR("bad-format", "")).
 -define(SERR_BAD_NAMESPACE_PREFIX,
-	?STREAM_ERROR("bad-namespace-prefix")).
+	?STREAM_ERROR("bad-namespace-prefix", "")).
 -define(SERR_CONFLICT,
-	?STREAM_ERROR("conflict")).
+	?STREAM_ERROR("conflict", "")).
 -define(SERR_CONNECTION_TIMEOUT,
-	?STREAM_ERROR("connection-timeout")).
+	?STREAM_ERROR("connection-timeout", "")).
 -define(SERR_HOST_GONE,
-	?STREAM_ERROR("host-gone")).
+	?STREAM_ERROR("host-gone", "")).
 -define(SERR_HOST_UNKNOWN,
-	?STREAM_ERROR("host-unknown")).
+	?STREAM_ERROR("host-unknown", "")).
 -define(SERR_IMPROPER_ADDRESSING,
-	?STREAM_ERROR("improper-addressing")).
+	?STREAM_ERROR("improper-addressing", "")).
 -define(SERR_INTERNAL_SERVER_ERROR,
-	?STREAM_ERROR("internal-server-error")).
+	?STREAM_ERROR("internal-server-error", "")).
 -define(SERR_INVALID_FROM,
-	?STREAM_ERROR("invalid-from")).
+	?STREAM_ERROR("invalid-from", "")).
 -define(SERR_INVALID_ID,
-	?STREAM_ERROR("invalid-id")).
+	?STREAM_ERROR("invalid-id", "")).
 -define(SERR_INVALID_NAMESPACE,
-	?STREAM_ERROR("invalid-namespace")).
+	?STREAM_ERROR("invalid-namespace", "")).
 -define(SERR_INVALID_XML,
-	?STREAM_ERROR("invalid-xml")).
+	?STREAM_ERROR("invalid-xml", "")).
 -define(SERR_NOT_AUTHORIZED,
-	?STREAM_ERROR("not-authorized")).
+	?STREAM_ERROR("not-authorized", "")).
 -define(SERR_POLICY_VIOLATION,
-	?STREAM_ERROR("policy-violation")).
+	?STREAM_ERROR("policy-violation", "")).
 -define(SERR_REMOTE_CONNECTION_FAILED,
-	?STREAM_ERROR("remote-connection-failed")).
+	?STREAM_ERROR("remote-connection-failed", "")).
 -define(SERR_RESOURSE_CONSTRAINT,
-	?STREAM_ERROR("resource-constraint")).
+	?STREAM_ERROR("resource-constraint", "")).
 -define(SERR_RESTRICTED_XML,
-	?STREAM_ERROR("restricted-xml")).
-% TODO: include hostname or IP
--define(SERR_SEE_OTHER_HOST,
-	?STREAM_ERROR("see-other-host")).
+	?STREAM_ERROR("restricted-xml", "")).
+-define(SERR_SEE_OTHER_HOST(Host),
+	?STREAM_ERROR("see-other-host", Host)).
 -define(SERR_SYSTEM_SHUTDOWN,
-	?STREAM_ERROR("system-shutdown")).
+	?STREAM_ERROR("system-shutdown", "")).
 -define(SERR_UNSUPPORTED_ENCODING,
-	?STREAM_ERROR("unsupported-encoding")).
+	?STREAM_ERROR("unsupported-encoding", "")).
 -define(SERR_UNSUPPORTED_STANZA_TYPE,
-	?STREAM_ERROR("unsupported-stanza-type")).
+	?STREAM_ERROR("unsupported-stanza-type", "")).
 -define(SERR_UNSUPPORTED_VERSION,
-	?STREAM_ERROR("unsupported-version")).
+	?STREAM_ERROR("unsupported-version", "")).
 -define(SERR_XML_NOT_WELL_FORMED,
-	?STREAM_ERROR("xml-not-well-formed")).
+	?STREAM_ERROR("xml-not-well-formed", "")).
 %-define(SERR_,
-%	?STREAM_ERROR("")).
+%	?STREAM_ERROR("", "")).
 
--define(STREAM_ERRORT(Condition, Lang, Text),
+-define(STREAM_ERRORT(Condition, Cdata, Lang, Text),
 	{xmlelement, "stream:error",
 	 [],
-	 [{xmlelement, Condition, [{"xmlns", ?NS_STREAMS}], []},
+	 [{xmlelement, Condition, [{"xmlns", ?NS_STREAMS}],
+           [{xmlcdata, Cdata}]},
 	  {xmlelement, "text", [{"xml:lang", Lang}, {"xmlns", ?NS_STREAMS}],
 	   [{xmlcdata, translate:translate(Lang, Text)}]}]}).
 
 -define(SERRT_BAD_FORMAT(Lang, Text),
-	?STREAM_ERRORT("bad-format", Lang, Text)).
+	?STREAM_ERRORT("bad-format", "", Lang, Text)).
 -define(SERRT_BAD_NAMESPACE_PREFIX(Lang, Text),
-	?STREAM_ERRORT("bad-namespace-prefix", Lang, Text)).
+	?STREAM_ERRORT("bad-namespace-prefix", "", Lang, Text)).
 -define(SERRT_CONFLICT(Lang, Text),
-	?STREAM_ERRORT("conflict", Lang, Text)).
+	?STREAM_ERRORT("conflict", "", Lang, Text)).
 -define(SERRT_CONNECTION_TIMEOUT(Lang, Text),
-	?STREAM_ERRORT("connection-timeout", Lang, Text)).
+	?STREAM_ERRORT("connection-timeout", "", Lang, Text)).
 -define(SERRT_HOST_GONE(Lang, Text),
-	?STREAM_ERRORT("host-gone", Lang, Text)).
+	?STREAM_ERRORT("host-gone", "", Lang, Text)).
 -define(SERRT_HOST_UNKNOWN(Lang, Text),
-	?STREAM_ERRORT("host-unknown", Lang, Text)).
+	?STREAM_ERRORT("host-unknown", "", Lang, Text)).
 -define(SERRT_IMPROPER_ADDRESSING(Lang, Text),
-	?STREAM_ERRORT("improper-addressing", Lang, Text)).
+	?STREAM_ERRORT("improper-addressing", "", Lang, Text)).
 -define(SERRT_INTERNAL_SERVER_ERROR(Lang, Text),
-	?STREAM_ERRORT("internal-server-error", Lang, Text)).
+	?STREAM_ERRORT("internal-server-error", "", Lang, Text)).
 -define(SERRT_INVALID_FROM(Lang, Text),
-	?STREAM_ERRORT("invalid-from", Lang, Text)).
+	?STREAM_ERRORT("invalid-from", "", Lang, Text)).
 -define(SERRT_INVALID_ID(Lang, Text),
-	?STREAM_ERRORT("invalid-id", Lang, Text)).
+	?STREAM_ERRORT("invalid-id", "", Lang, Text)).
 -define(SERRT_INVALID_NAMESPACE(Lang, Text),
-	?STREAM_ERRORT("invalid-namespace", Lang, Text)).
+	?STREAM_ERRORT("invalid-namespace", "", Lang, Text)).
 -define(SERRT_INVALID_XML(Lang, Text),
-	?STREAM_ERRORT("invalid-xml", Lang, Text)).
+	?STREAM_ERRORT("invalid-xml", "", Lang, Text)).
 -define(SERRT_NOT_AUTHORIZED(Lang, Text),
-	?STREAM_ERRORT("not-authorized", Lang, Text)).
+	?STREAM_ERRORT("not-authorized", "", Lang, Text)).
 -define(SERRT_POLICY_VIOLATION(Lang, Text),
-	?STREAM_ERRORT("policy-violation", Lang, Text)).
+	?STREAM_ERRORT("policy-violation", "", Lang, Text)).
 -define(SERRT_REMOTE_CONNECTION_FAILED(Lang, Text),
-	?STREAM_ERRORT("remote-connection-failed", Lang, Text)).
+	?STREAM_ERRORT("remote-connection-failed", "", Lang, Text)).
 -define(SERRT_RESOURSE_CONSTRAINT(Lang, Text),
-	?STREAM_ERRORT("resource-constraint", Lang, Text)).
+	?STREAM_ERRORT("resource-constraint", "", Lang, Text)).
 -define(SERRT_RESTRICTED_XML(Lang, Text),
-	?STREAM_ERRORT("restricted-xml", Lang, Text)).
-% TODO: include hostname or IP
--define(SERRT_SEE_OTHER_HOST(Lang, Text),
-	?STREAM_ERRORT("see-other-host", Lang, Text)).
+	?STREAM_ERRORT("restricted-xml", "", Lang, Text)).
+-define(SERRT_SEE_OTHER_HOST(Host, Lang, Text),
+	?STREAM_ERRORT("see-other-host", Host, Lang, Text)).
 -define(SERRT_SYSTEM_SHUTDOWN(Lang, Text),
-	?STREAM_ERRORT("system-shutdown", Lang, Text)).
+	?STREAM_ERRORT("system-shutdown", "", Lang, Text)).
 -define(SERRT_UNSUPPORTED_ENCODING(Lang, Text),
-	?STREAM_ERRORT("unsupported-encoding", Lang, Text)).
+	?STREAM_ERRORT("unsupported-encoding", "", Lang, Text)).
 -define(SERRT_UNSUPPORTED_STANZA_TYPE(Lang, Text),
-	?STREAM_ERRORT("unsupported-stanza-type", Lang, Text)).
+	?STREAM_ERRORT("unsupported-stanza-type", "", Lang, Text)).
 -define(SERRT_UNSUPPORTED_VERSION(Lang, Text),
-	?STREAM_ERRORT("unsupported-version", Lang, Text)).
+	?STREAM_ERRORT("unsupported-version", "", Lang, Text)).
 -define(SERRT_XML_NOT_WELL_FORMED(Lang, Text),
-	?STREAM_ERRORT("xml-not-well-formed", Lang, Text)).
+	?STREAM_ERRORT("xml-not-well-formed", "", Lang, Text)).
 %-define(SERRT_(Lang, Text),
-%	?STREAM_ERRORT("", Lang, Text)).
+%	?STREAM_ERRORT("", "", Lang, Text)).
 
 
 -record(jid, {user, server, resource,

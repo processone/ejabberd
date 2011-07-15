@@ -5,7 +5,7 @@
 %%% Created : 15 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -249,6 +249,11 @@ get_roster(LUser, LServer) ->
 			    _ ->
 				[]
 			end,
+            GroupsDict =
+                lists:foldl(
+                  fun({J, G}, Acc) ->
+                          dict:append(J, G, Acc)
+                  end, dict:new(), JIDGroups),
 	    RItems = lists:flatmap(
 		       fun(I) ->
 			       case raw_to_record(LServer, I) of
@@ -257,12 +262,11 @@ get_roster(LUser, LServer) ->
 				       [];
 				   R ->
 				       SJID = jlib:jid_to_string(R#roster.jid),
-				       Groups = lists:flatmap(
-						  fun({S, G}) when S == SJID ->
-							  [G];
-						     (_) ->
-							  []
-						  end, JIDGroups),
+				       Groups =
+                                           case dict:find(SJID, GroupsDict) of
+                                               {ok, Gs} -> Gs;
+                                               error -> []
+                                           end,
 				       [R#roster{groups = Groups}]
 			       end
 		       end, Items),

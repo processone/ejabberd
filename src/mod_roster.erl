@@ -5,7 +5,7 @@
 %%% Created : 11 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -161,7 +161,7 @@ get_versioning_feature(Acc, Host) ->
 	    Feature = {xmlelement,
 		       "ver",
 		       [{"xmlns", ?NS_ROSTER_VER}],
-		       [{xmlelement, "optional", [], []}]},
+		       []},
 	    [Feature | Acc];
 	false -> []
     end.
@@ -411,10 +411,17 @@ push_item(User, Server, From, Item) ->
 
 % TODO: don't push to those who didn't load roster
 push_item(User, Server, Resource, From, Item) ->
+    push_item(User, Server, Resource, From, Item, not_found).
+
+push_item(User, Server, Resource, From, Item, RosterVersion) ->
+    ExtraAttrs = case RosterVersion of
+	not_found -> [];
+	_ -> [{"ver", RosterVersion}]
+    end,
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
 		id = "push" ++ randoms:get_string(),
 		sub_el = [{xmlelement, "query",
-			   [{"xmlns", ?NS_ROSTER}],
+			   [{"xmlns", ?NS_ROSTER}|ExtraAttrs],
 			   [item_to_xml(Item)]}]},
     ejabberd_router:route(
       From,
@@ -425,20 +432,8 @@ push_item(User, Server, Resource, From, Item) ->
 %% TODO: don't push to those who didn't load roster
 push_item_version(Server, User, From, Item, RosterVersion)  ->
     lists:foreach(fun(Resource) ->
-			  push_item_version(User, Server, Resource, From, Item, RosterVersion)
+			  push_item(User, Server, Resource, From, Item, RosterVersion)
 		end, ejabberd_sm:get_user_resources(User, Server)).
-
-push_item_version(User, Server, Resource, From, Item, RosterVersion) ->
-    IQPush = #iq{type = 'set', xmlns = ?NS_ROSTER,
-		 id = "push" ++ randoms:get_string(),
-		 sub_el = [{xmlelement, "query",
-			    [{"xmlns", ?NS_ROSTER},
-			     {"ver", RosterVersion}],
-			    [item_to_xml(Item)]}]},
-    ejabberd_router:route(
-      From,
-      jlib:make_jid(User, Server, Resource),
-      jlib:iq_to_xml(IQPush)).
 
 get_subscription_lists(_, User, Server) ->
     LUser = jlib:nodeprep(User),

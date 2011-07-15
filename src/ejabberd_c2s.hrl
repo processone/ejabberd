@@ -57,6 +57,7 @@
 		conn = unknown,
 		auth_module = unknown,
 		ip,
+                redirect = false,
                 aux_fields = [],
 		fsm_limit_opts,
 		lang,

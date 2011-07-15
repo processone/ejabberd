@@ -5,7 +5,7 @@
 %%% Created : 24 Oct 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -116,7 +116,9 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 		  roster_get_jid_info, Server,
 		  {none, []}, [User, Server, From]),
 	    if
-		(Subscription == both) or (Subscription == from) ->
+		(Subscription == both) or (Subscription == from)
+		or ((From#jid.luser == To#jid.luser)
+		    and (From#jid.lserver == To#jid.lserver)) ->
 		    UserListRecord = ejabberd_hooks:run_fold(
 				       privacy_get_user_list, Server,
 				       #userlist{},

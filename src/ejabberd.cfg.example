@@ -475,10 +475,14 @@
 %%{captcha_cmd, "/lib/ejabberd/priv/bin/captcha.sh"}.
 
 %%
-%% Host part of the URL sent to the user.
+%% Host for the URL and port where ejabberd listens for CAPTCHA requests.
 %%
 %%{captcha_host, "example.org:5280"}.
 
+%%
+%% Limit CAPTCHA calls per minute for JID/IP to avoid DoS.
+%%
+%%{captcha_limit, 5}.
 
 %%%.   =======
 %%%'   MODULES
@@ -490,6 +494,7 @@
  [
   {mod_adhoc,    []},
   {mod_announce, [{access, announce}]}, % recommends mod_adhoc
+  {mod_blocking,[]}, % requires mod_privacy
   {mod_caps,     []},
   {mod_configure,[]}, % requires mod_adhoc
   {mod_disco,    []},
@@ -511,6 +516,7 @@
   %%{mod_muc_log,[]},
   {mod_offline,  [{access_max_user_messages, max_user_offline_messages}]},
   {mod_ping,     []},
+  %%{mod_pres_counter,[{count, 5}, {interval, 60}]},
   {mod_privacy,  []},
   {mod_private,  []},
   %%{mod_proxy65,[]},
@@ -545,8 +551,16 @@
 		  %%
 		  %%{registration_watchers, ["admin1@example.org"]},
 
+		  %%
+		  %% Only clients in the server machine can register accounts
+		  %%
 		  {ip_access, [{allow, "127.0.0.0/8"},
 			       {deny, "0.0.0.0/0"}]},
+
+		  %%
+		  %% Local c2s or remote s2s users cannot register accounts
+		  %%
+		  %%{access_from, deny},
 
 		  {access, register}
 		 ]},

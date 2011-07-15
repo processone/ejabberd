@@ -5,7 +5,7 @@
 %%% Created :  5 Oct 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -554,9 +554,12 @@ get_user_list(_, User, Server) ->
     end.
 
 
+%% From is the sender, To is the destination.
+%% If Dir = out, User@Server is the sender account (From).
+%% If Dir = in, User@Server is the destination account (To).
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
-	     {From, To, {xmlelement, PName, _, _}},
+	     {From, To, {xmlelement, PName, Attrs, _}},
 	     Dir) ->
     case List of
 	[] ->
@@ -565,48 +568,36 @@ check_packet(_, User, Server,
 	    PType = case PName of
 			"message" -> message;
 			"iq" -> iq;
-			"presence" -> presence
+			"presence" ->
+			    case xml:get_attr_s("type", Attrs) of
+				%% notification
+				"" -> presence;
+				"unavailable" -> presence;
+				%% subscribe, subscribed, unsubscribe,
+				%% unsubscribed, error, probe, or other
+				_ -> other
+			    end
 		    end,
-	    case {PType, Dir} of
-		{message, in} ->
-		    LJID = jlib:jid_tolower(From),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, message,
-				     LJID, Subscription, Groups);
-		{iq, in} ->
-		    LJID = jlib:jid_tolower(From),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, iq,
-				     LJID, Subscription, Groups);
-		{presence, in} ->
-		    LJID = jlib:jid_tolower(From),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, presence_in,
-				     LJID, Subscription, Groups);
-		{presence, out} ->
-		    LJID = jlib:jid_tolower(To),
-		    {Subscription, Groups} =
-			case NeedDb of
-			    true -> ejabberd_hooks:run_fold(roster_get_jid_info, jlib:nameprep(Server), {none, []}, [User, Server, LJID]);
-			    false -> {[], []}
-			end,
-		    check_packet_aux(List, presence_out,
-				     LJID, Subscription, Groups);
-		_ ->
-		    allow
-	    end
+	    PType2 = case {PType, Dir} of
+			 {message, in} -> message;
+			 {iq, in} -> iq;
+			 {presence, in} -> presence_in;
+			 {presence, out} -> presence_out;
+			 {_, _} -> other
+		     end,
+	    LJID = case Dir of
+		       in -> jlib:jid_tolower(From);
+		       out -> jlib:jid_tolower(To)
+		   end,
+	    {Subscription, Groups} =
+		case NeedDb of
+		    true -> ejabberd_hooks:run_fold(roster_get_jid_info,
+						    jlib:nameprep(Server),
+						    {none, []},
+						    [User, Server, LJID]);
+		    false -> {[], []}
+		end,
+	    check_packet_aux(List, PType2, LJID, Subscription, Groups)
     end.
 
 check_packet_aux([], _PType, _JID, _Subscription, _Groups) ->
@@ -646,7 +637,9 @@ is_ptype_match(Item, PType) ->
 		presence_in ->
 		    Item#listitem.match_presence_in;
 		presence_out ->
-		    Item#listitem.match_presence_out
+		    Item#listitem.match_presence_out;
+		other ->
+		    false
 	    end
     end.
 
@@ -758,9 +751,9 @@ item_to_raw(#listitem{type = Type,
 	    none ->
 		{"n", ""};
 	    jid ->
-		{"j", jlib:jid_to_string(Value)};
+		{"j", ejabberd_odbc:escape(jlib:jid_to_string(Value))};
 	    group ->
-		{"g", Value};
+		{"g", ejabberd_odbc:escape(Value)};
 	    subscription ->
 		case Value of
 		    none ->

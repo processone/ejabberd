@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -106,8 +106,10 @@ process_iq(From, To,
 	    PTag = xml:get_subtag(SubEl, "password"),
 	    RTag = xml:get_subtag(SubEl, "remove"),
 	    Server = To#jid.lserver,
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    AllowRemove = (allow == acl:match_rule(Server, Access, From)),
 	    if
-		(UTag /= false) and (RTag /= false) ->
+		(UTag /= false) and (RTag /= false) and AllowRemove ->
 		    User = xml:get_tag_cdata(UTag),
 		    case From of
 			#jid{user = User, lserver = Server} ->
@@ -148,7 +150,7 @@ process_iq(From, To,
 					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
 			    end
 		    end;
-		(UTag == false) and (RTag /= false) ->
+		(UTag == false) and (RTag /= false) and AllowRemove ->
 		    case From of
 			#jid{user = User,
 			     lserver = Server,
@@ -234,13 +236,18 @@ process_iq(From, To,
 			       {"var", "password"}],
 			      [{xmlelement, "required", [], []}]},
 		    case ejabberd_captcha:create_captcha_x(
-			   ID, To, Lang, [InstrEl, UField, PField]) of
+			   ID, To, Lang, Source, [InstrEl, UField, PField]) of
 			{ok, CaptchaEls} ->
 			    IQ#iq{type = result,
 				  sub_el = [{xmlelement, "query",
 					     [{"xmlns", "jabber:iq:register"}],
 					     [TopInstrEl | CaptchaEls]}]};
-			error ->
+                        {error, limit} ->
+                            ErrText = "Too many CAPTCHA requests",
+                            IQ#iq{type = error,
+				  sub_el = [SubEl, ?ERRT_RESOURCE_CONSTRAINT(
+                                                      Lang, ErrText)]};
+			_Err ->
 			    ErrText = "Unable to generate a CAPTCHA",
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(

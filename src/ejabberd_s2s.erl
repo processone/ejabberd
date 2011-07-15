@@ -5,7 +5,7 @@
 %%% Created :  7 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -203,9 +203,9 @@ migrate(After) ->
 	     ['$$']}]),
     lists:foreach(
       fun([FromTo, Pid]) ->
-	      case ejabberd_cluster:get_node_new(FromTo) of
+	      case ejabberd_cluster:get_node(FromTo) of
 		  Node when Node /= node() ->
-		      ejabberd_s2s_out:stop_connection(Pid, After * 2);
+		      ejabberd_s2s_out:stop_connection(Pid, After);
 		  _ ->
 		      ok
 	      end

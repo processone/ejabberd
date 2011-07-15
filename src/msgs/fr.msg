@@ -80,7 +80,6 @@
 {"ejabberd Publish-Subscribe module","Module Publish-Subscribe d'ejabberd"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams module"}.
 {"ejabberd vCard module","Module vCard ejabberd"}.
-{"ejabberd virtual hosts","Serveurs virtuels d'ejabberd"}.
 {"ejabberd Web Admin","Console Web d'administration de ejabberd"}.
 {"Elements","Éléments"}.
 {"Email","Email"}.
@@ -351,9 +350,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","C'est insensible à la casse : macbeth est identique à MacBeth et Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Cette page permet de créer un compte Jabber sur ce serveur Jabber. Votre JID (Jabber IDentifier, identifiant Jabber) sera de la forme : nom@serveur. Prière de lire avec attention les instructions pour remplir correctement ces champs."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Cette page permet d'effacer un compte Jabber sur ce serveur Jabber."}.
-{"This participant is kicked from the room because he sent an error message","Ce participant est expulsé du salon pour avoir envoyé un message erroné"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Ce participant est expulsé du salon pour avoir envoyé un message erroné à un autre participant"}.
-{"This participant is kicked from the room because he sent an error presence","Ce participant est expulsé du salon pour avoir envoyé une présence erroné"}.
+{"This participant is kicked from the room because he sent an error message","Ce participant est expulsé du salon pour avoir envoyé un message erronée"}.
+{"This participant is kicked from the room because he sent an error message to another participant","Ce participant est expulsé du salon pour avoir envoyé un message erronée à un autre participant"}.
+{"This participant is kicked from the room because he sent an error presence","Ce participant est expulsé du salon pour avoir envoyé une présence erronée"}.
 {"This room is not anonymous","Ce salon n'est pas anonyme"}.
 {"Thursday","Jeudi"}.
 {"Time delay","Délais"}.
@@ -388,6 +387,7 @@
 {"User","Utilisateur"}.
 {"Validate","Valider"}.
 {"vCard User Search","Recherche dans l'annnuaire"}.
+{"Virtual Hosts","Serveurs virtuels"}.
 {"Visitors are not allowed to change their nicknames in this room","Les visiteurs ne sont pas autorisés à changer de pseudo dans ce salon"}.
 {"Visitors are not allowed to send messages to all occupants","Les visiteurs ne sont pas autorisés à envoyer des messages à tout les occupants"}.
 {"Wednesday","Mercredi"}.

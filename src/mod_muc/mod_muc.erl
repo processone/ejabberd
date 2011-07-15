@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -42,6 +42,7 @@
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
 	 register_room/3,
+	 node_up/1,
 	 migrate/1,
 	 get_vh_rooms/1,
 	 can_use_nick/3]).
@@ -175,13 +176,32 @@ migrate(After) ->
 	     ['$$']}]),
     lists:foreach(
       fun([NameHost, Pid]) ->
-	      case ejabberd_cluster:get_node_new(NameHost) of
+	      case ejabberd_cluster:get_node(NameHost) of
 		  Node when Node /= node() ->
-		      mod_muc_room:migrate(Pid, Node, After);
+		      mod_muc_room:migrate(Pid, Node, random:uniform(After));
 		  _ ->
 		      ok
 	      end
       end, Rs).
+
+node_up(_Node) ->
+    copy_rooms(mnesia:dirty_first(muc_online_room)).
+
+copy_rooms('$end_of_table') ->
+    ok;
+copy_rooms(Key) ->
+    case mnesia:dirty_read(muc_online_room, Key) of
+        [#muc_online_room{name_host = NameHost} = Room] ->
+            case ejabberd_cluster:get_node_new(NameHost) of
+                Node when node() /= Node ->
+                    rpc:cast(Node, mnesia, dirty_write, [Room]);
+                _ ->
+                    ok
+            end;
+        _ ->
+            ok
+    end,
+    copy_rooms(mnesia:dirty_next(muc_online_room, Key)).
 
 %%====================================================================
 %% gen_server callbacks
@@ -219,6 +239,7 @@ init([Host, Opts]) ->
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     ejabberd_router:register_route(MyHost),
+    ejabberd_hooks:add(node_up, ?MODULE, node_up, 100),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
@@ -306,7 +327,15 @@ handle_info({room_destroyed, RoomHost, Pid}, State) ->
 		mnesia:delete_object(#muc_online_room{name_host = RoomHost,
 						      pid = Pid})
 	end,
-    mnesia:sync_dirty(F),
+    mnesia:async_dirty(F),
+    case ejabberd_cluster:get_node_new(RoomHost) of
+	Node when Node /= node() ->
+	    rpc:cast(Node, mnesia, dirty_delete_object,
+		     [#muc_online_room{name_host = RoomHost,
+				       pid = Pid}]);
+	_ ->
+	    ok
+    end,
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -319,6 +348,7 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
+    ejabberd_hooks:delete(node_up, ?MODULE, node_up, 100),
     ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_router:unregister_route(State#state.host),
     ok.
@@ -507,14 +537,20 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 							    AccessCreate, From,
 							    Room) of
 				true ->
-				    {ok, Pid} = start_new_room(
-						  Host, ServerHost, Access,
-						  Room, HistorySize,
-						  RoomShaper, From,
-						  Nick, DefRoomOpts),
-				    register_room(Host, Room, Pid),
-				    mod_muc_room:route(Pid, From, Nick, Packet),
-				    ok;
+				    case start_new_room(
+					   Host, ServerHost, Access,
+					   Room, HistorySize,
+					   RoomShaper, From,
+					   Nick, DefRoomOpts) of
+					{ok, Pid} ->
+					    mod_muc_room:route(Pid, From, Nick, Packet),
+					    register_room(Host, Room, Pid),
+					    ok;
+					_Err ->
+					    Err = jlib:make_error_reply(
+						    Packet, ?ERR_INTERNAL_SERVER_ERROR),
+					    ejabberd_router:route(To, From, Err)
+				    end;
 				false ->
 				    Lang = xml:get_attr_s("xml:lang", Attrs),
 				    ErrText = "Room creation is denied by service policy",
@@ -603,7 +639,28 @@ register_room(Host, Room, Pid) ->
     		mnesia:write(#muc_online_room{name_host = {Room, Host},
     					      pid = Pid})
     	end,
-    mnesia:sync_dirty(F).
+    mnesia:async_dirty(F),
+    case ejabberd_cluster:get_node_new({Room, Host}) of
+	Node when Node /= node() ->
+	    %% New node has just been added. But we may miss MUC records
+            %% copy procedure, so we copy the MUC record manually just
+            %% to make sure
+	    rpc:cast(Node, mnesia, dirty_write,
+		     [#muc_online_room{name_host = {Room, Host},
+				       pid = Pid}]),
+	    case ejabberd_cluster:get_node({Room, Host}) of
+                Node when node() /= Node ->
+                    %% Migration to new node has completed, and seems like
+                    %% we missed it, so we migrate the MUC room pid manually.
+                    %% It is not a problem if we have already got migration
+                    %% notification: dups are just ignored by the MUC room pid.
+                    mod_muc_room:migrate(Pid, Node, 0);
+                _ ->
+                    ok
+            end;
+	_ ->
+	    ok
+    end.
 
 iq_disco_info(Lang) ->
     [{xmlelement, "identity",
@@ -847,7 +904,7 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, ?EJABBERD_URI}]},
      {xmlelement, "DESC", [],
       [{xmlcdata, translate:translate(Lang, "ejabberd MUC module") ++
-	  "\nCopyright (c) 2003-2010 Alexey Shchepin"}]}].
+	  "\nCopyright (c) 2003-2011 ProcessOne"}]}].
 
 
 broadcast_service_message(Host, Msg) ->

@@ -69,7 +69,6 @@
 {"ejabberd Publish-Subscribe module","Module d' eplaidaedje-abounmint po ejabberd"}.
 {"ejabberd SOCKS5 Bytestreams module","Module SOCKS5 Bytestreams po ejabberd"}.
 {"ejabberd vCard module","Module vCard ejabberd"}.
-{"ejabberd virtual hosts","Forveyous sierveus da ejabberd"}.
 {"ejabberd Web Admin","Manaedjeu waibe ejabberd"}.
 {"Email","Emile"}.
 {"Enable logging","Mete en alaedje li djournå"}.
@@ -310,6 +309,7 @@
 {"User","Uzeu"}.
 {"Validate","Valider"}.
 {"vCard User Search","Calpin des uzeus"}.
+{"Virtual Hosts","Forveyous sierveus"}.
 {"Visitors are not allowed to change their nicknames in this room","Les viziteus èn polèt nén candjî leus metous no po ç' såle ci"}.
 {"Visitors are not allowed to send messages to all occupants","Les viziteus n' polèt nén evoyî des messaedjes a tos les prezints"}.
 {"Wednesday","mierkidi"}.

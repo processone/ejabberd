@@ -5,7 +5,7 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -64,11 +64,15 @@ get_acl_rule(["additions.js"],_) -> {"localhost", [all]};
 get_acl_rule(["vhosts"],_) -> {"localhost", [all]};
 
 %% The pages of a vhost are only accesible if the user is admin of that vhost:
-get_acl_rule(["server", VHost | _RPath], 'GET') -> {VHost, [configure, webadmin_view]};
+get_acl_rule(["server", VHost | _RPath], Method)
+    when Method=:='GET' orelse Method=:='HEAD' ->
+    {VHost, [configure, webadmin_view]};
 get_acl_rule(["server", VHost | _RPath], 'POST') -> {VHost, [configure]};
 
 %% Default rule: only global admins can access any other random page
-get_acl_rule(_RPath, 'GET') -> {global, [configure, webadmin_view]};
+get_acl_rule(_RPath, Method)
+    when Method=:='GET' orelse Method=:='HEAD' ->
+    {global, [configure, webadmin_view]};
 get_acl_rule(_RPath, 'POST') -> {global, [configure]}.
 
 is_acl_match(Host, Rules, Jid) ->
@@ -314,7 +318,7 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 		 [?XAE("div",
 		       [{"id", "copyright"}],
 		       [?XC("p",
-			     "ejabberd (c) 2002-2010 ProcessOne")
+			     "ejabberd (c) 2002-2011 ProcessOne")
 		       ])])])
       ]}}.
 
@@ -1028,7 +1032,7 @@ process_admin(global,
 		       auth = {_, _Auth, AJID},
 		       lang = Lang}) ->
     Res = list_vhosts(Lang, AJID),
-    make_xhtml(?H1GL(?T("ejabberd virtual hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang, AJID);
+    make_xhtml(?H1GL(?T("Virtual Hosts"), "virtualhost", "Virtual Hosting") ++ Res, global, Lang, AJID);
 
 process_admin(Host,
 	      #request{path = ["users"],
@@ -2026,7 +2030,7 @@ get_node(global, Node, ["backup"], Query, Lang) ->
 	       ok -> [?XREST("Submitted")];
 	       {error, Error} -> [?XRES(?T("Error") ++": " ++ io_lib:format("~p", [Error]))]
 	   end,
-    [?XC("h1", ?T("Backup of ") ++ atom_to_list(Node))] ++
+    ?H1GL(?T("Backup of ") ++ atom_to_list(Node), "list-eja-commands", "List of ejabberd Commands") ++
 	ResS ++
 	[?XCT("p", "Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately."),
      ?XAE("form", [{"action", ""}, {"method", "post"}],

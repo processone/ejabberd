@@ -80,7 +80,6 @@
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe modul"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams modul"}.
 {"ejabberd vCard module","ejabberd vCard modul"}.
-{"ejabberd virtual hosts","Virtuální hostitelé ejabberd"}.
 {"ejabberd Web Admin","Webová administrace ejabberd"}.
 {"Elements","Položek"}.
 {"Email","E-mail"}.
@@ -388,6 +387,7 @@
 {"User","Uživatel"}.
 {"Validate","Ověřit"}.
 {"vCard User Search","Hledání uživatelů podle vizitek"}.
+{"Virtual Hosts","Virtuální hostitelé"}.
 {"Visitors are not allowed to change their nicknames in this room","Návštěvníkům této místnosti je zakázáno měnit přezdívku"}.
 {"Visitors are not allowed to send messages to all occupants","Návštevníci nemají povoleno zasílat zprávy všem účastníkům konference"}.
 {"Wednesday","Středa"}.

@@ -5,7 +5,7 @@
 %%% Created : 30 Jul 2004 by Leif Johansson <leifj@it.su.se>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -45,16 +45,23 @@
 start(Host, ExtPrg) ->
     lists:foreach(
 	fun(This) ->
-	    spawn(?MODULE, init, [get_process_name(Host, This), ExtPrg])
+	    start_instance(get_process_name(Host, This), ExtPrg)
 	end,
 	lists:seq(0, get_instances(Host)-1)
     ).
+
+start_instance(ProcessName, ExtPrg) ->
+    spawn(?MODULE, init, [ProcessName, ExtPrg]).
+
+restart_instance(ProcessName, ExtPrg) ->
+    unregister(ProcessName),
+    start_instance(ProcessName, ExtPrg).
 
 init(ProcessName, ExtPrg) ->
     register(ProcessName, self()),
     process_flag(trap_exit,true),
     Port = open_port({spawn, ExtPrg}, [{packet,2}]),
-    loop(Port, ?INIT_TIMEOUT).
+    loop(Port, ?INIT_TIMEOUT, ProcessName, ExtPrg).
 
 stop(Host) ->
     lists:foreach(
@@ -108,23 +115,27 @@ get_instances(Server) ->
 	_ -> 1
     end.
 
-loop(Port, Timeout) ->
+loop(Port, Timeout, ProcessName, ExtPrg) ->
     receive
 	{call, Caller, Msg} ->
-	    Port ! {self(), {command, encode(Msg)}},
+	    port_command(Port, encode(Msg)),
 	    receive
 		{Port, {data, Data}} ->
                     ?DEBUG("extauth call '~p' received data response:~n~p", [Msg, Data]),
-                    Caller ! {eauth, decode(Data)};
+		    Caller ! {eauth, decode(Data)},
+		    loop(Port, ?CALL_TIMEOUT, ProcessName, ExtPrg);
 		{Port, Other} ->
                     ?ERROR_MSG("extauth call '~p' received strange response:~n~p", [Msg, Other]),
-                    Caller ! {eauth, false}
+		    Caller ! {eauth, false},
+		    loop(Port, ?CALL_TIMEOUT, ProcessName, ExtPrg)
             after
                 Timeout ->
                     ?ERROR_MSG("extauth call '~p' didn't receive response", [Msg]),
-                    Caller ! {eauth, false}
-	    end,
-	    loop(Port, ?CALL_TIMEOUT);
+		    Caller ! {eauth, false},
+		    Pid = restart_instance(ProcessName, ExtPrg),
+		    flush_buffer_and_forward_messages(Pid),
+		    exit(port_terminated)
+	    end;
 	stop ->
 	    Port ! {self(), close},
 	    receive
@@ -132,8 +143,19 @@ loop(Port, Timeout) ->
 		    exit(normal)
 	    end;
 	{'EXIT', Port, Reason} ->
-	    ?CRITICAL_MSG("~p ~n", [Reason]),
+	    ?CRITICAL_MSG("extauth script has exitted abruptly with reason '~p'", [Reason]),
+	    Pid = restart_instance(ProcessName, ExtPrg),
+	    flush_buffer_and_forward_messages(Pid),
 	    exit(port_terminated)
+    end.
+
+flush_buffer_and_forward_messages(Pid) ->
+    receive
+	Message ->
+	    Pid ! Message,
+	    flush_buffer_and_forward_messages(Pid)
+    after 0 ->
+	    true
     end.
 
 join(List, Sep) ->

@@ -5,7 +5,7 @@
 %%% Created : by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -89,6 +89,8 @@
 -undef(generic).
 -define(generic, true).
 -endif.
+
+-include("ejabberd.hrl").
 
 %% Almost a copy of string:join/2.
 %% We use this version because string:join/2 is relatively
@@ -882,8 +884,14 @@ count_records_where(LServer, Table, WhereClause) ->
       ["select count(*) from ", Table, " with (nolock) ", WhereClause]).
 
 get_roster_version(LServer, LUser) ->
-	ejabberd_odbc:sql_query(LServer, 
-		["select version from dbo.roster_version with (nolock) where username = '", LUser, "'"]).
-set_roster_version(LUser, Version) ->
-	update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.get_roster_version '", LUser, "'"]).
+
+set_roster_version(Username, Version) ->
+    %% This function doesn't know the vhost, so we hope it's the first one defined:
+    LServer = ?MYNAME,
+    ejabberd_odbc:sql_query(
+      LServer,
+      ["EXECUTE dbo.set_roster_version '", Username, "', '", Version, "'"]).
 -endif.

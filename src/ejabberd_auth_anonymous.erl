@@ -5,7 +5,7 @@
 %%% Created : 17 Feb 2006 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -155,6 +155,7 @@ register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
     AuthModule = xml:get_attr_s(auth_module, Info),
     case AuthModule == ?MODULE of
 	true ->
+	    ejabberd_hooks:run(register_user, LServer, [LUser, LServer]),
 	    US = {LUser, LServer},
 	    mnesia:async_dirty(
 	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
@@ -231,8 +232,8 @@ try_register(_User, _Server, _Password) ->
 dirty_get_registered_users() ->
     [].
 
-get_vh_registered_users(_Server) ->
-    [].
+get_vh_registered_users(Server) ->
+    [{U, S} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(Server)].
 
 
 %% Return password of permanent user or false for anonymous users

@@ -5,7 +5,7 @@
 %%% Created : 18 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@ process_local_iq(_From, To, #iq{id = _ID, type = Type,
 	set ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
-	    Host = To#jid.server,
+	    Host = To#jid.lserver,
 	    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os, true) of
 		     true -> [get_os()];
 		     false -> []

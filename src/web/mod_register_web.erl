@@ -5,7 +5,7 @@
 %%% Created :  4 May 2008 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2010   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -86,8 +86,9 @@ process([], #request{method = 'GET', lang = Lang}) ->
 process(["register.css"], #request{method = 'GET'}) ->
     serve_css();
 
-process(["new"], #request{method = 'GET', lang = Lang, host = Host}) ->
-    form_new_get(Host, Lang);
+process(["new"], #request{method = 'GET', lang = Lang, host = Host, ip = IP}) ->
+    {Addr, _Port} = IP,
+    form_new_get(Host, Lang, Addr);
 
 process(["delete"], #request{method = 'GET', lang = Lang, host = Host}) ->
     form_del_get(Host, Lang);
@@ -185,8 +186,8 @@ index_page(Lang) ->
 %%% Formulary new account GET
 %%%----------------------------------------------------------------------
 
-form_new_get(Host, Lang) ->
-    CaptchaEls = build_captcha_li_list(Lang),
+form_new_get(Host, Lang, IP) ->
+    CaptchaEls = build_captcha_li_list(Lang, IP),
     HeadEls = [
 	       ?XCT("title", "Register a Jabber account"),
 	       ?XA("link",
@@ -336,27 +337,31 @@ form_new_post(Username, Host, Password, {Id, Key}) ->
 %%% Formulary Captcha support for new GET/POST
 %%%----------------------------------------------------------------------
 
-build_captcha_li_list(Lang) ->
+build_captcha_li_list(Lang, IP) ->
     case ejabberd_captcha:is_feature_available() of
-	true -> build_captcha_li_list2(Lang);
+	true -> build_captcha_li_list2(Lang, IP);
 	false -> []
     end.
 
-build_captcha_li_list2(Lang) ->
-    Id = randoms:get_string(),
+build_captcha_li_list2(Lang, IP) ->
     SID = "",
     From = #jid{user = "", server = "test", resource = ""},
     To = #jid{user = "", server = "test", resource = ""},
     Args = [],
-    ejabberd_captcha:create_captcha(Id, SID, From, To, Lang, Args),
-    {_, {CImg,CText,CId,CKey}} = ejabberd_captcha:build_captcha_html(Id, Lang),
-    [?XE("li", [CText,
-		?C(" "),
-		CId,
-		CKey,
-		?BR,
-		CImg]
-	)].
+    case ejabberd_captcha:create_captcha(SID, From, To, Lang, IP, Args) of
+        {ok, Id, _} ->
+            {_, {CImg,CText,CId,CKey}} =
+                ejabberd_captcha:build_captcha_html(Id, Lang),
+            [?XE("li", [CText,
+                        ?C(" "),
+                        CId,
+                        CKey,
+                        ?BR,
+                        CImg]
+                )];
+        _ ->
+            []
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Formulary change password GET

@@ -11,9 +11,9 @@
 %%% under the License.
 %%%
 %%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2010, ProcessOne
+%%% Portions created by ProcessOne are Copyright 2006-2011, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2010, ProcessOne.
+%%% This software is copyright 2006-2011, ProcessOne.
 %%%
 %%% @author Brian Cully <bjc@kublai.com>
 %%% @version {@vsn}, {@date} {@time}
@@ -160,6 +160,8 @@ create_table() ->
 	Other			  -> Other
     end.
 
+add_subscription(_JID, _NodeID, []) ->
+    make_subid();
 add_subscription(_JID, _NodeID, Options) ->
     SubID = make_subid(),
     mnesia:write(#pubsub_subscription{subid = SubID, options = Options}),
@@ -174,11 +176,8 @@ read_subscription(_JID, _NodeID, SubID) ->
     _ -> {error, notfound}
     end.
 
-write_subscription(JID, NodeID, SubID, Options) ->
-    case read_subscription(JID, NodeID, SubID) of
-    {error, notfound} -> {error, notfound};
-    Sub -> mnesia:write(Sub#pubsub_subscription{options = Options})
-    end.
+write_subscription(_JID, _NodeID, SubID, Options) ->
+    mnesia:write(#pubsub_subscription{subid = SubID, options = Options}).
 
 make_subid() ->
     {T1, T2, T3} = now(),
