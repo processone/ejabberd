@@ -1945,10 +1945,17 @@ send_new_presence(NJID, Reason, StateData) ->
 			    false ->
 				Status
 			end,
+	      Status3 = case NJID == Info#user.jid of
+			    true ->
+				[{xmlelement, "status", [{"code", "110"}], []}
+				 | Status2];
+			    false ->
+				Status2
+			end,
 	      Packet = xml:append_subtags(
 			 Presence,
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
-			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status2]}]),
+			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status3]}]),
 	      ejabberd_router:route(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
