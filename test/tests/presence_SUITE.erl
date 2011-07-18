@@ -25,15 +25,15 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [%%{group, presence},
-     %%{group, roster},
+    [{group, presence},
+     {group, roster},
      {group, subscribe}].
 
 groups() ->
     [{presence, [sequence], [available, available_direct, additions]},
      {roster, [sequence], [get_roster, add_contact, remove_contact]},
      {subscribe, [sequence], [subscription, subscription_decline]}].
-
+     
 suite() ->
     escalus:suite().
 
@@ -223,6 +223,10 @@ subscription(Config) ->
 subscription_decline(Config) ->
     escalus:story(Config, [1, 1], fun(Alice,Bob) ->
 
+
+        escalus_client:send(Alice, escalus_stanza:roster_get()),
+        escalus_assert:count_roster_items(0, escalus_client:wait_for_stanza(Alice)),
+     
         %% add contact
         add_sample_contact(Alice, Bob),
 
