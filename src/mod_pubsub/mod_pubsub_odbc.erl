@@ -1864,7 +1864,6 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 			    node_call(Type, publish_item, [NodeId, Publisher, PublishModel, MaxItems, ItemId, Payload])
 		    end
 	    end,
-    ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, Payload]),
     Reply = [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], 
 		[{xmlelement, "publish", nodeAttr(Node),
 		    [{xmlelement, "item", itemAttr(ItemId), []}]}]}],
@@ -1877,6 +1876,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		broadcast -> Payload;
 		PluginPayload -> PluginPayload
 	    end,
+	    ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, BrPayload]),
 	    broadcast_publish_item(Host, Node, NodeId, Type, Options, ItemId, jlib:jid_tolower(Publisher), BrPayload, Removed),
 	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    case Result of
