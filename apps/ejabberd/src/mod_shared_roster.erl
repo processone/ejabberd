@@ -167,9 +167,9 @@ get_user_roster(Items, US) ->
 
     %% Export items in roster format:
     ModVcard = get_vcard_module(S),
-    SRItems = [#roster{usj = {U, S, {U1, S1, ""}},
+    SRItems = [#roster{usj = {U, S, {U1, S1, <<>>}},
 		       us = US,
-		       jid = {U1, S1, ""},
+		       jid = {U1, S1, <<>>},
 		       name = get_rosteritem_name(ModVcard, U1, S1),
 		       subscription = both,
 		       ask = none,
@@ -185,8 +185,8 @@ get_vcard_module(Server) ->
 get_rosteritem_name([], _, _) ->
     "";
 get_rosteritem_name([ModVcard], U, S) ->
-    From = jlib:make_jid("", S, mod_shared_roster),
-    To = jlib:make_jid(U, S, ""),
+    From = jlib:make_jid(<<>>, S, mod_shared_roster),
+    To = jlib:make_jid(U, S, <<>>),
     IQ = {iq,"",get,"vcard-temp","",
 	  {xmlelement,"vCard",[{"xmlns","vcard-temp"}],[]}},
     IQ_Vcard = ModVcard:process_sm_iq(From, To, IQ),
@@ -240,13 +240,13 @@ process_item(RosterItem, Host) ->
 
                     %% Remove pending out subscription
                     Mod:out_subscription(UserTo, ServerTo,
-                                         jlib:make_jid(UserFrom, ServerFrom, ""),
+                                         jlib:make_jid(UserFrom, ServerFrom, <<>>),
                                          unsubscribe),
 
                     %% Remove pending in subscription
                     Mod:in_subscription(aaaa, UserFrom, ServerFrom,
-                                        jlib:make_jid(UserTo, ServerTo, ""),
-                                        unsubscribe, ""),
+                                        jlib:make_jid(UserTo, ServerTo, <<>>),
+                                        unsubscribe, <<>>),
 
                     %% But we're still subscribed, so respond as such.
 		    RosterItem#roster{subscription = both, ask = none};
@@ -261,7 +261,7 @@ process_item(RosterItem, Host) ->
     end.
 
 build_roster_record(User1, Server1, User2, Server2, Name2, Groups) ->
-    USR2 = {User2, Server2, ""},
+    USR2 = {User2, Server2, <<>>},
     #roster{usj = {User1, Server1, USR2},
 	    us = {User1, Server1},
 	    jid = USR2,
@@ -278,40 +278,40 @@ set_new_rosteritems(UserFrom, ServerFrom,
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
-    JIDTo = jlib:make_jid(UserTo, ServerTo, ""),
+    JIDTo = jlib:make_jid(UserTo, ServerTo, <<>>),
 
-    JIDFrom = jlib:make_jid(UserFrom, ServerFrom, ""),
+    JIDFrom = jlib:make_jid(UserFrom, ServerFrom, <<>>),
     RITo = build_roster_record(UserTo, ServerTo,
 			       UserFrom, ServerFrom, UserFrom,[]),
-    set_item(UserTo, ServerTo, "", RITo),
+    set_item(UserTo, ServerTo, <<>>, RITo),
 
     %% From requests
     Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribe),
-    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribe, ""),
+    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribe, <<>>),
 
     %% To accepts
     Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribed),
-    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribed, ""),
+    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribed, <<>>),
 
     %% To requests
     Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribe),
-    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribe, ""),
+    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribe, <<>>),
 
     %% From accepts
     Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribed),
-    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribed, ""),
+    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribed, <<>>),
 
     RIFrom.
 
 set_item(User, Server, Resource, Item) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
-		id = "push" ++ randoms:get_string(),
-		sub_el = [{xmlelement, "query",
-			   [{"xmlns", ?NS_ROSTER}],
+		id = list_to_binary("push" ++ randoms:get_string()),
+		sub_el = [{xmlelement, <<"query">>,
+			   [{<<"xmlns">>, ?NS_ROSTER}],
 			   [mod_roster:item_to_xml(Item)]}]},
     ejabberd_router:route(
       jlib:make_jid(User, Server, Resource),
-      jlib:make_jid("", Server, ""),
+      jlib:make_jid(<<>>, Server, <<>>),
       jlib:iq_to_xml(ResIQ)).
 
 
@@ -326,7 +326,7 @@ get_subscription_lists({F, T}, User, Server) ->
 	    fun(Group) ->
 		    get_group_users(LServer, Group)
 	    end, DisplayedGroups)),
-    SRJIDs = [{U1, S1, ""} || {U1, S1} <- SRUsers],
+    SRJIDs = [{U1, S1, <<>>} || {U1, S1} <- SRUsers],
     {lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}.
 
 get_jid_info({Subscription, Groups}, User, Server, JID) ->
@@ -364,11 +364,11 @@ out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
 
     %% Remove pending out subscription
     #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
-    JIDFrom = jlib:make_jid(UserFrom, UserTo, ""),
+    JIDFrom = jlib:make_jid(UserFrom, UserTo, <<>>),
     Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
 
     %% Remove pending in subscription
-    Mod:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, ""),
+    Mod:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, <<>>),
 
     process_subscription(out, UserFrom, ServerFrom, JIDTo, unsubscribed, false);
 out_subscription(User, Server, JID, Type) ->
@@ -733,16 +733,16 @@ push_item(User, Server, From, Item) ->
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
     %%                    jlib:make_jid(User, Server, "")
     %% why?
-    ejabberd_sm:route(From, jlib:make_jid(User, Server, ""),
-		      {xmlelement, "broadcast", [],
+    ejabberd_sm:route(From, jlib:make_jid(User, Server, <<>>),
+		      {xmlelement, <<"broadcast">>, [],
 		       [{item,
 			 Item#roster.jid,
 			 Item#roster.subscription}]}),
     Stanza = jlib:iq_to_xml(
 	       #iq{type = set, xmlns = ?NS_ROSTER,
-		   id = "push" ++ randoms:get_string(),
-		   sub_el = [{xmlelement, "query",
-			      [{"xmlns", ?NS_ROSTER}],
+		   id = list_to_binary("push" ++ randoms:get_string()),
+		   sub_el = [{xmlelement, <<"query">>,
+			      [{<<"xmlns">>, ?NS_ROSTER}],
 			      [item_to_xml(Item)]}]}),
     lists:foreach(
       fun(Resource) ->
@@ -751,48 +751,48 @@ push_item(User, Server, From, Item) ->
       end, ejabberd_sm:get_user_resources(User, Server)).
 
 push_roster_item(User, Server, ContactU, ContactS, GroupName, Subscription) ->
-    Item = #roster{usj = {User, Server, {ContactU, ContactS, ""}},
+    Item = #roster{usj = {User, Server, {ContactU, ContactS, <<>>}},
 		   us = {User, Server},
-		   jid = {ContactU, ContactS, ""},
-		   name = "",
+		   jid = {ContactU, ContactS, <<>>},
+		   name = <<>>,
 		   subscription = Subscription,
 		   ask = none,
 		   groups = [GroupName]},
-    push_item(User, Server, jlib:make_jid("", Server, ""), Item).
+    push_item(User, Server, jlib:make_jid(<<>>, Server, <<>>), Item).
 
 item_to_xml(Item) ->
-    Attrs1 = [{"jid", jlib:jid_to_string(Item#roster.jid)}],
+    Attrs1 = [{<<"jid">>, jlib:jid_to_binary(Item#roster.jid)}],
     Attrs2 = case Item#roster.name of
-		 "" ->
+		 <<>> ->
 		     Attrs1;
 		 Name ->
-		     [{"name", Name} | Attrs1]
+		     [{<<"name">>, Name} | Attrs1]
 	     end,
     Attrs3 = case Item#roster.subscription of
 		 none ->
-		     [{"subscription", "none"} | Attrs2];
+		     [{<<"subscription">>, <<"none">>} | Attrs2];
 		 from ->
-		     [{"subscription", "from"} | Attrs2];
+		     [{<<"subscription">>, <<"from">>} | Attrs2];
 		 to ->
-		     [{"subscription", "to"} | Attrs2];
+		     [{<<"subscription">>, <<"to">>} | Attrs2];
 		 both ->
-		     [{"subscription", "both"} | Attrs2];
+		     [{<<"subscription">>, <<"both">>} | Attrs2];
 		 remove ->
-		     [{"subscription", "remove"} | Attrs2]
+		     [{<<"subscription">>, <<"remove">>} | Attrs2]
 	     end,
     Attrs4 = case ask_to_pending(Item#roster.ask) of
 		 out ->
-		     [{"ask", "subscribe"} | Attrs3];
+		     [{<<"ask">>, <<"subscribe">>} | Attrs3];
 		 both ->
-		     [{"ask", "subscribe"} | Attrs3];
+		     [{<<"ask">>, <<"subscribe">>} | Attrs3];
 		 _ ->
 		     Attrs3
 	     end,
     SubEls1 = lists:map(fun(G) ->
-				{xmlelement, "group", [], [{xmlcdata, G}]}
+				{xmlelement, <<"group">>, [], [{xmlcdata, G}]}
 			end, Item#roster.groups),
     SubEls = SubEls1 ++ Item#roster.xs,
-    {xmlelement, "item", Attrs4, SubEls}.
+    {xmlelement, <<"item">>, Attrs4, SubEls}.
 
 ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;
@@ -1111,4 +1111,4 @@ get_opt(Opts, Opt, Default) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    jlib:jid_to_string({User, Server, <<>>}).

@@ -471,7 +471,7 @@ in_subscription(_, User, Server, JID, Type, Reason) ->
     process_subscription(in, User, Server, JID, Type, Reason).
 
 out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type, []).
+    process_subscription(out, User, Server, JID, Type, <<>>).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     LUser = jlib:nodeprep(User),
@@ -511,7 +511,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		AskMessage = case NewState of
 				 {_, both} -> Reason;
 				 {_, in}   -> Reason;
-				 _         -> ""
+				 _         -> <<>>
 			     end,
 		case NewState of
 		    none ->
@@ -523,7 +523,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 		    {Subscription, Pending} ->
 			NewItem = Item#roster{subscription = Subscription,
 					      ask = Pending,
-					      askmessage = list_to_binary(AskMessage)},
+					      askmessage = AskMessage},
 			mnesia:write(NewItem),
 			case roster_version_on_db(LServer) of
 				true -> mnesia:write(#roster_version{us = {LUser, LServer}, version = sha:sha(term_to_binary(now()))});

@@ -25,9 +25,9 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, presence},
-     {group, roster}].
-  %%   {group, subscribe}].
+    [%%{group, presence},
+     %%{group, roster},
+     {group, subscribe}].
 
 groups() ->
     [{presence, [sequence], [available, available_direct, additions]},

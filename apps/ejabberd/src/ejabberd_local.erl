@@ -300,9 +300,9 @@ do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
 	   [From, To, Packet, 8]),
     if
-	To#jid.luser /= "" ->
+	To#jid.luser /= <<>> ->
 	    ejabberd_sm:route(From, To, Packet);
-	To#jid.lresource == "" ->
+	To#jid.lresource == <<>> ->
 	    {xmlelement, Name, _Attrs, _Els} = Packet,
 	    case Name of
 		<<"iq">> ->
