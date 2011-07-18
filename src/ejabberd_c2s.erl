@@ -538,7 +538,7 @@ wait_for_stream({xmlstreamstart, #xmlel{ns = NS, name = Name} = Opening},
 	    end;
         _ ->
 	    case Name of
-		<<"policy-file-request">> ->
+		"policy-file-request" ->
 		    send_text(StateData, flash_policy_string()),
 		    {stop, normal, StateData};
 		_ ->
