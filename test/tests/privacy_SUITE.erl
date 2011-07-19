@@ -36,6 +36,8 @@ groups() ->
                             activate,
                             activate_nonexistent,
                             deactivate,
+                            default_nonexistent,
+                            nodefault,
                             set_list,
                             remove_list]}].
 
@@ -99,7 +101,7 @@ end_per_testcase(CaseName, Config) ->
 %%     check the conflict case, i.e.:
 %%     "Client attempts to change the default list but that list is in use
 %%     by another resource",
-%%     check the nonexistent list case
+%%   - set nonexistent default list
 %%   - use domain's routing, i.e. no default list -> send empty <default />,
 %%     check conflict case, when a resource currently uses the default list
 %%
@@ -213,12 +215,40 @@ activate_nonexistent(Config) ->
 
         end).
 
-deactivate() -> [{require, privacy_lists}].
-
 deactivate(Config) ->
     escalus:story(Config, [1], fun(Alice) ->
 
         Request = escalus_stanza:privacy_deactivate(Alice),
+        escalus_client:send(Alice, Request),
+
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_result(Response)
+
+        %escalus_utils:log_stanzas("Request", [Request]),
+        %escalus_utils:log_stanzas("Response", [Response])
+
+        end).
+
+default_nonexistent(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+
+        Request = escalus_stanza:privacy_default(Alice, some_list),
+        escalus_client:send(Alice, Request),
+
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_error(Response),
+        <<"cancel">> = exmpp_stanza:get_error_type(Response),
+        'item-not-found' = exmpp_stanza:get_condition(Response)
+
+        %escalus_utils:log_stanzas("Request", [Request]),
+        %escalus_utils:log_stanzas("Response", [Response])
+
+        end).
+
+nodefault(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+
+        Request = escalus_stanza:privacy_nodefault(Alice),
         escalus_client:send(Alice, Request),
 
         Response = escalus_client:wait_for_stanza(Alice),
