@@ -96,8 +96,7 @@ check_password(User, Server, Password, Digest, DigestGen) ->
 	[#passwd{password = Passwd}] ->
 	    DigRes = if
 			 Digest /= "" ->
-                 check_digest(Passwd, DigestGen),
-			     Digest == DigestGen(Passwd);
+                 Digest == DigestGen(Passwd);
 			 true ->
 			     false
 		     end,
@@ -109,9 +108,6 @@ check_password(User, Server, Password, Digest, DigestGen) ->
 	_ ->
 	    false
     end.
-
-check_digest(Passwd, DigestGen) ->
-    DigestGen(Passwd).
 
 %% @spec (User::string(), Server::string(), Password::string()) ->
 %%       ok | {error, invalid_jid}
