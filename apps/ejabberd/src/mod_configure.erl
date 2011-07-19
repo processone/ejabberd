@@ -106,6 +106,9 @@ stop(Host) ->
 
 -define(NS_ADMINX(Sub), ?NS_ADMIN++"#"++Sub).
 -define(NS_ADMINL(Sub), ["http:","jabber.org","protocol","admin", Sub]).
+
+tokenize(Node) when is_binary(Node) ->
+    tokenize(binary_to_list(Node));
 tokenize(Node) -> string:tokens(Node, "/#").
 
 get_sm_identity(Acc, _From, _To, Node, Lang) ->
