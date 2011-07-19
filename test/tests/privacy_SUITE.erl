@@ -31,6 +31,7 @@ all() ->
 groups() ->
     [{privacy, [sequence], [get_all_lists,
                             get_existing_list,
+                            get_many_lists,
                             get_nonexistent_list,
                             set_list,
                             remove_list]}].
@@ -91,10 +92,10 @@ end_per_testcase(CaseName, Config) ->
 
 %% TODO:
 %% x get all privacy lists
-%% - get single privacy list
+%% x get single privacy list
 %%   x that exists
 %%   x that doesn't exist (ensure server returns item-not-found)
-%%   - request more than one at a time (ensure server returns bad-request)
+%%   x request more than one at a time (ensure server returns bad-request)
 %% x set new/edit privacy list (ensure server pushes notifications
 %%   to all resources)
 %% x remove existing list (ensure server push)
@@ -126,9 +127,26 @@ get_all_lists(Config) ->
 get_nonexistent_list(Config) ->
     escalus:story(Config, [1], fun(Alice) ->
 
-        escalus_client:send(Alice, escalus_stanza:privacy_get_one(Alice, "public")),
+        escalus_client:send(Alice,
+            escalus_stanza:privacy_get_one(Alice, "public")),
         escalus_assert:is_nonexistent_list_error(
             escalus_client:wait_for_stanza(Alice))
+
+        end).
+
+get_many_lists(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+
+        Request = escalus_stanza:privacy_get_many(Alice, ["public", "private"]),
+        escalus_client:send(Alice, Request),
+        Response = escalus_client:wait_for_stanza(Alice),
+
+        true = exmpp_iq:is_error(Response),
+        <<"modify">> = exmpp_stanza:get_error_type(Response),
+        'bad-request' = exmpp_stanza:get_condition(Response)
+
+        %escalus_utils:log_stanzas("Request", [Request]),
+        %escalus_utils:log_stanzas("Response", [Response])
 
         end).
 
