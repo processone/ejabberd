@@ -877,6 +877,7 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 				       max_users -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(integer_to_list(T), FileFormat) ++ "\"</div>";
 				       title -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
 				       description -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
+				       allow_private_messages_from_visitors -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(atom_to_list(T), FileFormat) ++ "\"</div>";
 				       _ -> "\"" ++ T ++ "\""
 				   end
 			   end,
