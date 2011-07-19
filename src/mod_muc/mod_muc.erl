@@ -415,8 +415,7 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet},
-	    #state{host = HostOrGlobal,
-		   server_host = ServerHost,
+	    #state{server_host = ServerHost,
 		   access = Access,
  		   default_room_opts = DefRoomOpts,
 		   history_size = HistorySize,
