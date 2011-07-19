@@ -92,7 +92,7 @@ end_per_testcase(CaseName, Config) ->
 %% TODO:
 %% x get all privacy lists
 %% - get single privacy list
-%%   - that exists
+%%   x that exists
 %%   x that doesn't exist (ensure server returns item-not-found)
 %%   - request more than one at a time (ensure server returns bad-request)
 %% x set new/edit privacy list (ensure server pushes notifications
@@ -143,24 +143,21 @@ get_existing_list(Config) ->
         %% skip responses
         _AliceResponses = escalus_client:wait_for_stanzas(Alice, 2),
 
-        Request = escalus_stanza:privacy_get_one(Alice, alice_deny_bob),
-        escalus_client:send(Alice, Request),
-
-        AwaitedResponse = exmpp_stanza:set_sender(
-            exmpp_xml:append_child(
-                exmpp_iq:result(Request),
-                exmpp_xml:append_child(
-                    exmpp_xml:element(?NS_PRIVACY, 'query'),
-                    AliceDenyBob)),
-            Alice#client.jid),
+        escalus_client:send(Alice,
+            escalus_stanza:privacy_get_one(Alice, alice_deny_bob)),
 
         Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_xml:has_element(Response, 'query'),
+        true = exmpp_xml:has_element(
+            exmpp_xml:get_element(Response, 'query'), 'list'),
+        List = exmpp_xml:get_element(
+            exmpp_xml:get_element(Response, 'query'), 'list'),
 
-        escalus_utils:log_stanzas("Request", [Request]),
-        escalus_utils:log_stanzas("Awaited response", [AwaitedResponse]),
-        escalus_utils:log_stanzas("Actual response", [Response]),
+        true = exmpp_xml:get_attribute_as_list(AliceDenyBob, <<"name">>, 1)
+            =:= exmpp_xml:get_attribute_as_list(List, <<"name">>, 2)
 
-        AwaitedResponse = Response
+        %escalus_utils:log_stanzas("Created list", [AliceDenyBob]),
+        %escalus_utils:log_stanzas("Actual response", [Response])
 
         end).
 
@@ -233,7 +230,11 @@ remove_list(Config) ->
 %% Create empty list element with given name.
 privacy_list(Name, Items) ->
     exmpp_xml:append_children(
-        exmpp_xml:set_attribute(exmpp_xml:element('list'), {<<"name">>, Name}),
+        exmpp_xml:set_attribute(
+            exmpp_xml:remove_attribute(
+                exmpp_xml:element('list'),
+                <<"xmlns">>),
+            {<<"name">>, Name}),
         Items).
 
 %% Create a privacy list item element, wrapping up arguments as attributes.
