@@ -35,6 +35,7 @@ groups() ->
                             get_nonexistent_list,
                             activate,
                             activate_nonexistent,
+                            deactivate,
                             set_list,
                             remove_list]}].
 
@@ -89,10 +90,10 @@ end_per_testcase(CaseName, Config) ->
 %% x set new/edit privacy list (ensure server pushes notifications
 %%   to all resources)
 %% x remove existing list (ensure server push)
-%% - manage active list(s)
+%% x manage active list(s)
 %%   x activate
-%%   - activate nonexistent (ensure item-not-found)
-%%   - deactivate by sending empty <active />
+%%   x activate nonexistent (ensure item-not-found)
+%%   x deactivate by sending empty <active />
 %% - manage default list
 %%   - set default,
 %%     check the conflict case, i.e.:
@@ -131,6 +132,7 @@ get_many_lists(Config) ->
         escalus_client:send(Alice, Request),
         Response = escalus_client:wait_for_stanza(Alice),
 
+        %% TODO: refactor - put into escalus
         true = exmpp_iq:is_error(Response),
         <<"modify">> = exmpp_stanza:get_error_type(Response),
         'bad-request' = exmpp_stanza:get_condition(Response)
@@ -205,6 +207,22 @@ activate_nonexistent(Config) ->
         true = exmpp_iq:is_error(Response),
         <<"cancel">> = exmpp_stanza:get_error_type(Response),
         'item-not-found' = exmpp_stanza:get_condition(Response)
+
+        %escalus_utils:log_stanzas("Request", [Request]),
+        %escalus_utils:log_stanzas("Response", [Response])
+
+        end).
+
+deactivate() -> [{require, privacy_lists}].
+
+deactivate(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+
+        Request = escalus_stanza:privacy_deactivate(Alice),
+        escalus_client:send(Alice, Request),
+
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_result(Response)
 
         %escalus_utils:log_stanzas("Request", [Request]),
         %escalus_utils:log_stanzas("Response", [Response])
