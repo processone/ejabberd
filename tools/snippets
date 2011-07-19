@@ -1,0 +1,12 @@
+%------------------------------
+% Registering new users
+%------------------------------
+
+[ejabberd_auth:try_register("user" ++ integer_to_list(N), "localhost", "pass" ++ integer_to_list(N)) || N <- lists:seq(1, 500000)].
+
+%------------------------------
+% Adding users to rosters
+%------------------------------
+
+code:add_patha("../../tools/").
+fill_roster:fill(500000, 10).
