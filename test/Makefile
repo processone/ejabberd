@@ -2,17 +2,23 @@
 
 all: test
 
-test_clean:
+test_clean: escalus/ebin
 	rm -rf tests/*.beam
-	rm -rf escalus/ebin
 	make test
 
 test: escalus/ebin
 	rm -rf ct_report
 	mkdir  ct_report
-	erlc run_common_test.erl
-	erl -noinput -sname test -setcookie ejabberd -pa `pwd`/tests -pa `pwd`/escalus/ebin `pwd`/escalus/deps/exmpp/ebin -s run_common_test ct
+	erlc -I escalus/deps/exmpp/include run_common_test.erl
+	erl -noinput -sname test -setcookie ejabberd \
+		-pa `pwd`/tests \
+		-pa `pwd`/escalus/ebin \
+		`pwd`/escalus/deps/exmpp/ebin -s run_common_test ct
 
 escalus/ebin:
 	(cd escalus; make)
 
+console:
+	rlwrap erl -pa `pwd`/tests -pa `pwd`/escalus/ebin `pwd`/escalus/deps/exmpp/ebin
+
+.PHONY: escalus/ebin
