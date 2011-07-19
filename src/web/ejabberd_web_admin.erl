@@ -1177,11 +1177,12 @@ process_admin(Host,
 process_admin(Host, #request{lang = Lang, 
 		       auth = {_, _Auth, AJID}
 		    } = Request) ->
-    {Hook, Opts} = case Host of
-		       global -> {webadmin_page_main, [Request]};
-		       Host -> {webadmin_page_host, [Host, Request]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, list_to_binary(Host), [], Opts) of
+    {Hook, Opts, HostB} =
+	case Host of
+	    global -> {webadmin_page_main, [Request], global};
+	    Host -> {webadmin_page_host, [Host, Request], list_to_binary(Host)}
+	end,
+    case ejabberd_hooks:run_fold(Hook, HostB, [], Opts) of
 	[] ->
 	    setelement(1, make_xhtml([?XC('h1', "Not Found")], Host, Lang, AJID), 404);
 	[{xmlel, _, _, _, _, _} | _] = Res ->
