@@ -128,12 +128,14 @@ start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
-start(Host, Opts) ->
-    start_supervisor(Host),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+start(Host, Opts) when is_list(Host) ->
+    start(list_to_binary(Host), Opts);
+start(HostB, Opts) ->
+    start_supervisor(HostB),
+    Proc = gen_mod:get_module_proc(HostB, ?PROCNAME),
     ChildSpec =
 	{Proc,
-	 {?MODULE, start_link, [Host, Opts]},
+	 {?MODULE, start_link, [HostB, Opts]},
 	 temporary,
 	 1000,
 	 worker,
@@ -154,7 +156,7 @@ stop(Host) ->
 %%    So the message sending must be catched
 room_destroyed(Host, Room, Pid, ServerHost) when is_binary(Host), 
                                                  is_binary(Room) ->
-    catch gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
+    catch gen_mod:get_module_proc_existing(ServerHost, ?PROCNAME) !
 	{room_destroyed, {Room, Host}, Pid},
     ok.
 
@@ -162,7 +164,7 @@ room_destroyed(Host, Room, Pid, ServerHost) when is_binary(Host),
 %% If Opts = default, the default room options are used.
 %% Else use the passed options as defined in mod_muc_room.
 create_room(Host, Name, From, Nick, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc = gen_mod:get_module_proc_existing(Host, ?PROCNAME),
     RoomHost = gen_mod:get_module_opt_host(Host, ?MODULE, "conference.@HOST@"),
     Node = ejabberd_cluster:get_node({Name, RoomHost}),
     gen_server:call({Proc, Node}, {create, Name, From, Nick, Opts}).
@@ -255,7 +257,7 @@ forget_room(Host, Name) when is_binary(Host), is_binary(Name) ->
 	end,
     gen_storage:transaction(Host, muc_room_opt, F).
 
-process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) when is_binary(Host) ->
+process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
     Rsm = jlib:rsm_decode(IQ),
     Res = exmpp_iq:result(IQ, #xmlel{ns = ?NS_DISCO_ITEMS, 
                                name = 'query',
@@ -308,8 +310,8 @@ migrate(After) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    MyHost_L = gen_mod:expand_host_name(Host, Opts, "conference"),
-    MyHost = list_to_binary(MyHost_L),
+    MyHostStr = gen_mod:expand_host_name(Host, Opts, "conference"),
+    MyHost = l2b(MyHostStr),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, MyHost, muc_room_opt,
 			     [{disc_copies, [node()]},
@@ -339,11 +341,11 @@ init([Host, Opts]) ->
 				       {pid, pid}]}]),
     %% If ejabberd stops abruptly, ODBC table keeps obsolete data. Let's clean:
     gen_storage:dirty_delete_where(MyHost, muc_online_room,
-				   [{'=', name_host, {'_', MyHost}}]),
+                                  [{'=', name_host, {'_', MyHost}}]),
     gen_storage:add_table_copy(MyHost, muc_online_room, node(), ram_copies),
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
     gen_storage:add_table_index(MyHost, muc_registered, nick),
-    update_tables(MyHost_L, Backend),
+    update_tables(MyHost, Backend),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
@@ -351,7 +353,7 @@ init([Host, Opts]) ->
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
-    ejabberd_router:register_route(MyHost_L),
+    ejabberd_router:register_route(MyHostStr),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
@@ -413,12 +415,13 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet},
-	    #state{host = Host,
+	    #state{host = HostOrGlobal,
 		   server_host = ServerHost,
 		   access = Access,
  		   default_room_opts = DefRoomOpts,
 		   history_size = HistorySize,
 		   room_shaper = RoomShaper} = State) ->
+    Host = exmpp_jid:domain(To),
     US = {exmpp_jid:prep_node(To), exmpp_jid:prep_domain(To)},
     case ejabberd_cluster:get_node(US) of
 	Node when Node == node() ->
@@ -430,7 +433,7 @@ handle_info({route, From, To, Packet},
 		    ok
 	    end;
 	Node ->
-	    Proc = gen_mod:get_module_proc(ServerHost, ?PROCNAME),
+	    Proc = gen_mod:get_module_proc_existing(ServerHost, ?PROCNAME),
 	    {Proc, Node} ! {route, From, To, Packet}
     end,
     {noreply, State};
@@ -500,6 +503,9 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	    ejabberd_router:route_error(To, From, Err, Packet)
     end.
 
+l2b(global) -> global;
+l2b(String) when is_list(String) -> list_to_binary(String);
+l2b(Other) -> Other.
 
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
@@ -516,7 +522,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			    case exmpp_iq:xmlel_to_iq(Packet) of
 				#iq{type = get, ns = ?NS_DISCO_INFO = XMLNS,
  				    payload = _SubEl, lang = Lang} = IQ ->
-		    ServerHostB = list_to_binary(ServerHost),
+		    ServerHostB = l2b(ServerHost),
 		    Info = ejabberd_hooks:run_fold(
 			     disco_info, ServerHostB, [],
 			     [ServerHost, ?MODULE, <<>>, ""]),
@@ -661,10 +667,20 @@ check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
     end.
 
 
-load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
+load_permanent_rooms({global, Prefix}, global, Access, HistorySize, RoomShaper) ->
+    timer:sleep(2000), %% Wait for ejabberd_hosts to start
+    lists:foreach(
+	fun(ServerHost) ->
+	    Host = list_to_binary(Prefix++"."++ServerHost),
+	    load_permanent_rooms(Host, global, Access, HistorySize, RoomShaper)
+	end,
+	?MYHOSTS);
+
+load_permanent_rooms(Host, ServerHost1, Access, HistorySize, RoomShaper) ->
      F = fun() ->
  		Rs = gen_storage:select(Host, muc_room_opt,
- 					[{'=', name_host, {'_', Host}}]),
+					[{'=', opt, persistent},
+					 {'=', name_host, {'_', Host}}]),
  		Names = lists:foldl(
  			  fun(#muc_room_opt{name_host = {Room, _}}, Names) ->
  				  sets:add_element(Room, Names)
@@ -678,7 +694,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 				      Opts = restore_room_internal(Host, Room),
 				      {ok, Pid} = mod_muc_room:start(
 						    Host,
-						    ServerHost,
+						    ServerHost1,
 						    Access,
 						    Room,
 						    HistorySize,
@@ -1029,10 +1045,12 @@ get_vh_rooms(Host) when is_binary(Host) ->
 %%%%% Database migration from ejabberd 2.1.x
 %%%%%
 
-update_tables(Host, mnesia) ->
-    HostB = list_to_binary(Host),
+update_tables(global, Storage) ->
+    [update_tables(HostB, Storage) || HostB <- ejabberd_hosts:get_hosts(ejabberd)];
+
+update_tables(HostB, mnesia) ->
     gen_storage_migration:migrate_mnesia(
-      Host, muc_registered,
+      HostB, muc_registered,
       [{muc_registered, [us_host, nick],
 	fun({muc_registered, {{UserS, ServerS}, HostS}, NickS}) ->
 		#muc_registered{user_host = {exmpp_jid:make(UserS, ServerS),
@@ -1040,7 +1058,7 @@ update_tables(Host, mnesia) ->
 				nick = list_to_binary(NickS)}
 	end}]),
     gen_storage_migration:migrate_mnesia(
-      Host, muc_room_opt,
+      HostB, muc_room_opt,
       [{muc_room, [name_host, opts],
 	fun({muc_room, {NameString, HostString}, Options}) ->
 		NameHost = {list_to_binary(NameString),

@@ -600,13 +600,16 @@ get_table(Host, Tab) ->
     case {mnesia:dirty_read(table, {Host, Tab}), Host} of
 	{[T], _} ->
 	    T;
+	{_, Host} when is_binary(Host) ->
+	    Prefix = lists:nth(1, string:tokens(binary_to_list(Host), ".")),
+	    get_table({global, Prefix}, Tab);
+	{_, {global, _Prefix}} ->
+	    get_table(global, Tab);
 	{_, global} ->
 	    catch throw(error123),
 	    Stacktrace = erlang:get_stacktrace(),
 	    error_logger:error_msg("gen_storage: Table ~p not found on ~p~nStacktrace: ~p", [Tab, Host, Stacktrace]),
-	    exit(table_not_found);
-	{_, _} ->
-	    get_table(global, Tab)
+	    exit(table_not_found)
     end.
 
 backend_apply(F, Host, Tab) ->
