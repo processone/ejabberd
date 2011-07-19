@@ -33,6 +33,7 @@ groups() ->
                             get_existing_list,
                             get_many_lists,
                             get_nonexistent_list,
+                            activate,
                             set_list,
                             remove_list]}].
 
@@ -61,25 +62,13 @@ init_per_group(privacy, Config) ->
                 lists:map(fun privacy_list_item/1, Items)) }
         end,
         ct:get_config(privacy_lists)),
-    escalus:create_users([{privacy_lists, PrivacyLists} | Config]);
+    escalus:create_users(PrivacyLists ++ Config);
 init_per_group(_GroupName, Config) ->
     escalus:create_users(Config).
 
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
-init_per_testcase(CaseName = set_list, Config) ->
-    PrivacyLists = ?config(privacy_lists, Config),
-    PrivacyList = lists:keyfind(alice_deny_bob, 1, PrivacyLists),
-    escalus:init_per_testcase(CaseName, [ PrivacyList | Config]);
-init_per_testcase(CaseName = remove_list, Config) ->
-    PrivacyLists = ?config(privacy_lists, Config),
-    PrivacyList = lists:keyfind(alice_deny_bob, 1, PrivacyLists),
-    escalus:init_per_testcase(CaseName, [ PrivacyList | Config]);
-init_per_testcase(CaseName = get_existing_list, Config) ->
-    PrivacyLists = ?config(privacy_lists, Config),
-    PrivacyList = lists:keyfind(alice_deny_bob, 1, PrivacyLists),
-    escalus:init_per_testcase(CaseName, [ PrivacyList | Config]);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -100,7 +89,7 @@ end_per_testcase(CaseName, Config) ->
 %%   to all resources)
 %% x remove existing list (ensure server push)
 %% - manage active list(s)
-%%   - activate
+%%   x activate
 %%   - activate nonexistent (ensure item-not-found)
 %%   - deactivate by sending empty <active />
 %% - manage default list
@@ -176,6 +165,43 @@ get_existing_list(Config) ->
 
         %escalus_utils:log_stanzas("Created list", [AliceDenyBob]),
         %escalus_utils:log_stanzas("Actual response", [Response])
+
+        end).
+
+activate() -> [{require, privacy_lists}].
+
+activate(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
+
+        %% testcase setup - this should probably go to the testcase init,
+        %% but I don't know yet how to setup users on the server
+        %% before calling escalus:story
+        AliceDenyBob = ?config(alice_deny_bob, Config),
+        escalus_client:send(Alice,
+            escalus_stanza:privacy_set_one(Alice, AliceDenyBob)),
+        %% skip responses
+        _AliceResponses = escalus_client:wait_for_stanzas(Alice, 2),
+        %% setup done
+
+        %% TODO: refactor - make an escalus_stanza out of it
+        ActiveList = alice_deny_bob,
+        Request = exmpp_stanza:set_sender(
+            exmpp_iq:set(?NS_JABBER_CLIENT,
+                exmpp_xml:append_child(                                                                                      
+                    exmpp_xml:element(?NS_PRIVACY, 'query'),
+                    exmpp_xml:set_attribute(
+                        exmpp_xml:remove_attribute(
+                            exmpp_xml:element('active'),
+                            <<"xmlns">>),
+                        {<<"name">>, ActiveList}))),
+            Alice#client.jid),
+        escalus_client:send(Alice, Request),
+
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_result(Response)
+
+        %escalus_utils:log_stanzas("Request", [Request]),
+        %escalus_utils:log_stanzas("Response", [Response])
 
         end).
 
