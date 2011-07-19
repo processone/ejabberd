@@ -34,6 +34,7 @@ groups() ->
                             get_many_lists,
                             get_nonexistent_list,
                             activate,
+                            activate_nonexistent,
                             set_list,
                             remove_list]}].
 
@@ -183,22 +184,27 @@ activate(Config) ->
         _AliceResponses = escalus_client:wait_for_stanzas(Alice, 2),
         %% setup done
 
-        %% TODO: refactor - make an escalus_stanza out of it
-        ActiveList = alice_deny_bob,
-        Request = exmpp_stanza:set_sender(
-            exmpp_iq:set(?NS_JABBER_CLIENT,
-                exmpp_xml:append_child(                                                                                      
-                    exmpp_xml:element(?NS_PRIVACY, 'query'),
-                    exmpp_xml:set_attribute(
-                        exmpp_xml:remove_attribute(
-                            exmpp_xml:element('active'),
-                            <<"xmlns">>),
-                        {<<"name">>, ActiveList}))),
-            Alice#client.jid),
+        Request = escalus_stanza:privacy_activate(Alice, alice_deny_bob),
         escalus_client:send(Alice, Request),
 
         Response = escalus_client:wait_for_stanza(Alice),
         true = exmpp_iq:is_result(Response)
+
+        %escalus_utils:log_stanzas("Request", [Request]),
+        %escalus_utils:log_stanzas("Response", [Response])
+
+        end).
+
+activate_nonexistent(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+
+        Request = escalus_stanza:privacy_activate(Alice, some_list),
+        escalus_client:send(Alice, Request),
+
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_error(Response),
+        <<"cancel">> = exmpp_stanza:get_error_type(Response),
+        'item-not-found' = exmpp_stanza:get_condition(Response)
 
         %escalus_utils:log_stanzas("Request", [Request]),
         %escalus_utils:log_stanzas("Response", [Response])
