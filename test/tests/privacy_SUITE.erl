@@ -36,6 +36,8 @@ groups() ->
                             activate,
                             activate_nonexistent,
                             deactivate,
+                            default,
+                            %default_conflict,  % fails, as of bug #7073
                             default_nonexistent,
                             nodefault,
                             set_list,
@@ -91,19 +93,23 @@ end_per_testcase(CaseName, Config) ->
 %%   x request more than one at a time (ensure server returns bad-request)
 %% x set new/edit privacy list (ensure server pushes notifications
 %%   to all resources)
-%% x remove existing list (ensure server push)
+%% - remove existing list
+%%   x remove existing list (ensure server push)
+%%   - remove, but check conflict case
 %% x manage active list(s)
 %%   x activate
 %%   x activate nonexistent (ensure item-not-found)
 %%   x deactivate by sending empty <active />
 %% - manage default list
-%%   - set default,
-%%     check the conflict case, i.e.:
+%%   x set default
+%%   - set default, but check the conflict case, i.e.:
 %%     "Client attempts to change the default list but that list is in use
 %%     by another resource",
-%%   - set nonexistent default list
-%%   - use domain's routing, i.e. no default list -> send empty <default />,
-%%     check conflict case, when a resource currently uses the default list
+%%     !!! ejabberd doesn't support this, bug filed (#7073)
+%%   x set nonexistent default list
+%%   x use domain's routing, i.e. no default list -> send empty <default />
+%%   - set no default list, but check conflict case,
+%%     when a resource currently uses the default list
 %%
 %% TODO later:
 %% - blocking: messages, presence (in/out), iqs, all
@@ -226,6 +232,71 @@ deactivate(Config) ->
 
         %escalus_utils:log_stanzas("Request", [Request]),
         %escalus_utils:log_stanzas("Response", [Response])
+
+        end).
+
+default() -> [{require, privacy_lists}].
+
+default(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
+
+        %% testcase setup - this should probably go to the testcase init,
+        %% but I don't know yet how to setup users on the server
+        %% before calling escalus:story
+        AliceDenyBob = ?config(alice_deny_bob, Config),
+        escalus_client:send(Alice,
+            escalus_stanza:privacy_set_one(Alice, AliceDenyBob)),
+        %% skip responses
+        _AliceResponses = escalus_client:wait_for_stanzas(Alice, 2),
+        %% setup done
+
+        Request = escalus_stanza:privacy_default(Alice, alice_deny_bob),
+        escalus_client:send(Alice, Request),
+
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_result(Response)
+
+        %escalus_utils:log_stanzas("Request", [Request]),
+        %escalus_utils:log_stanzas("Response", [Response])
+
+        end).
+
+default_conflict() -> [{require, privacy_lists}].
+
+default_conflict(Config) ->
+    escalus:story(Config, [2, 1], fun(Alice, Alice2, _Bob) ->
+
+        %% testcase setup
+        %% setup list on server
+        AliceDenyBob = ?config(alice_deny_bob, Config),
+        AliceAllowBob = ?config(alice_allow_bob, Config),
+        escalus_client:send(Alice,
+            escalus_stanza:privacy_set_one(Alice, AliceDenyBob)),
+        escalus_client:send(Alice,
+            escalus_stanza:privacy_set_one(Alice, AliceAllowBob)),
+        %% skip responses
+        _AliceResponses = escalus_client:wait_for_stanzas(Alice, 4),
+        %% make a default list for Alice2
+        R1 = escalus_stanza:privacy_default(Alice2, alice_deny_bob),
+        escalus_client:send(Alice2, R1),
+        R2s = escalus_client:wait_for_stanzas(Alice2, 3),
+        escalus_utils:log_stanzas("Alice2", [R1] ++ R2s),
+        %% setup done
+
+        Request = escalus_stanza:privacy_default(Alice, alice_allow_bob),
+        escalus_client:send(Alice, Request),
+
+        Response = escalus_client:wait_for_stanza(Alice),
+        %% TODO: should fail on this (result) and receive error
+        %%       this is a bug and was filed to the esl redmine as Bug #7073
+        %true = exmpp_iq:is_result(Response),
+        %% but this should pass just fine
+        true = exmpp_iq:is_error(Response),
+        <<"cancel">> = exmpp_stanza:get_error_type(Response),
+        'conflict' = exmpp_stanza:get_condition(Response),
+
+        escalus_utils:log_stanzas("Request", [Request]),
+        escalus_utils:log_stanzas("Response", [Response])
 
         end).
 
