@@ -54,6 +54,8 @@
 -define(PROCNAME, ejabberd_announce).
 
 -define(NS_ADMINL(Sub), ["http:","jabber.org","protocol","admin", Sub]).
+tokenize(Node) when is_binary(Node) ->
+    tokenize(binary_to_list(Node));
 tokenize(Node) -> string:tokens(Node, "/#").
 
 start(Host, _Opts) ->
