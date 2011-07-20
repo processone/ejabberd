@@ -26,22 +26,27 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, privacy}].
+    [{group, management}, {group, blocking}].
 
 groups() ->
-    [{privacy, [sequence], [get_all_lists,
-                            get_existing_list,
-                            get_many_lists,
-                            get_nonexistent_list,
-                            activate,
-                            activate_nonexistent,
-                            deactivate,
-                            default,
-                            %default_conflict,  % fails, as of bug #7073
-                            default_nonexistent,
-                            nodefault,
-                            set_list,
-                            remove_list]}].
+    [{management, [sequence], [get_all_lists,
+                               get_existing_list,
+                               get_many_lists,
+                               get_nonexistent_list,
+                               activate,
+                               activate_nonexistent,
+                               deactivate,
+                               default,
+                               %default_conflict,  % fails, as of bug #7073
+                               default_nonexistent,
+                               nodefault,
+                               set_list,
+                               remove_list]},
+     {blocking, [sequence], [block_jid_message,
+                             block_jid_presence_in]}].
+
+privacy() ->
+    [{require, privacy_lists}].
 
 suite() ->
     escalus:suite().
@@ -51,24 +56,18 @@ suite() ->
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    escalus:init_per_suite(Config).
+    PrivacyLists = lists:map(
+        fun(Name) ->
+            { Name,
+              privacy_list(Name,
+                  [privacy_list_item(Item) || Item <- ct:get_config(Name)]) }
+        end,
+        ct:get_config(privacy_lists)),
+    escalus:init_per_suite(PrivacyLists ++ Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
-        %Items = lists:map(fun privacy_list_item/1,
-        %[{"jid", Bob#client.jid, "deny", "1"}]),
-        %privacy_list("someList", Items)
-
-init_per_group(privacy, Config) ->
-    PrivacyLists = lists:map(
-        fun({Name,Items}) ->
-            { Name,
-              privacy_list(Name,
-                lists:map(fun privacy_list_item/1, Items)) }
-        end,
-        ct:get_config(privacy_lists)),
-    escalus:create_users(PrivacyLists ++ Config);
 init_per_group(_GroupName, Config) ->
     escalus:create_users(Config).
 
@@ -112,6 +111,12 @@ end_per_testcase(CaseName, Config) ->
 %%     when a resource currently uses the default list
 %%
 %% TODO later:
+%% - big picture:
+%%   - blocking can be done on jids, roster groups,
+%%     subscription type or globally
+%%   - a blocking rule may block one or more of {message, presence-in,
+%%     presence-out, iqs} by specifying these as children to the list item
+%%     or block all of them, when the item has no children
 %% - blocking: messages, presence (in/out), iqs, all
 
 get_all_lists(Config) ->
@@ -150,7 +155,7 @@ get_many_lists(Config) ->
 
         end).
 
-get_existing_list() -> [{require, privacy_lists}].
+get_existing_list() -> [{require, alice_deny_bob}].
 
 get_existing_list(Config) ->
     escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
@@ -179,7 +184,7 @@ get_existing_list(Config) ->
 
         end).
 
-activate() -> [{require, privacy_lists}].
+activate() -> [{require, alice_deny_bob}].
 
 activate(Config) ->
     escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
@@ -235,7 +240,7 @@ deactivate(Config) ->
 
         end).
 
-default() -> [{require, privacy_lists}].
+default() -> [{require, alice_deny_bob}].
 
 default(Config) ->
     escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
@@ -261,7 +266,8 @@ default(Config) ->
 
         end).
 
-default_conflict() -> [{require, privacy_lists}].
+default_conflict() -> [{require, alice_deny_bob},
+                       {require, alice_allow_bob}].
 
 default_conflict(Config) ->
     escalus:story(Config, [2, 1], fun(Alice, Alice2, _Bob) ->
@@ -330,7 +336,7 @@ nodefault(Config) ->
 
         end).
 
-set_list() -> [{require, privacy_lists}].
+set_list() -> [{require, alice_deny_bob}].
 
 set_list(Config) ->
     escalus:story(Config, [3, 1], fun(Alice, Alice2, Alice3, _Bob) ->
@@ -361,7 +367,7 @@ set_list(Config) ->
 
         end).
 
-remove_list() -> [{require, privacy_lists}].
+remove_list() -> [{require, alice_deny_bob}].
 
 remove_list(Config) ->
     escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
@@ -392,9 +398,72 @@ remove_list(Config) ->
 
         end).
 
+block_jid_message() -> [{require, alice_deny_bob_message}].
+
+block_jid_message(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        PrivacyList = config_list(alice_deny_bob_message, Config),
+
+        %% Alice should receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_assert:is_chat_message(["Hi!"],
+            escalus_client:wait_for_stanza(Alice)),
+
+        %% set the list on server and make it active
+        set_and_activate(Alice, PrivacyList),
+
+        %% Alice should NOT receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        timer:sleep(100),
+        escalus_assert:has_no_stanzas(Alice)
+
+        end).
+
+block_jid_presence_in() -> [{require, alice_deny_bob_presence_in}].
+
+block_jid_presence_in(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        PrivacyList = config_list(alice_deny_bob_presence_in, Config),
+
+        %% Alice should receive presence in
+        escalus_client:send(Bob,
+            escalus_stanza:presence_direct(Alice, available)),
+        Received = escalus_client:wait_for_stanza(Alice),
+        escalus_assert:is_presence_stanza(Received),
+        escalus_assert:is_stanza_from(Bob, Received),
+
+        set_and_activate(Alice, PrivacyList),
+
+        %% Alice should NOT receive presence in
+        escalus_client:send(Bob,
+            escalus_stanza:presence_direct(Alice, available)),
+        timer:sleep(100),
+        escalus_assert:has_no_stanzas(Alice)
+
+        end).
+
 %%-----------------------------------------------------------------
 %% Helpers
 %%-----------------------------------------------------------------
+
+config_list(Name, Config) ->
+    {Name, ?config(Name, Config)}.
+
+%% Sets the list on server and makes it the active one.
+set_and_activate(Client, {ListName, PrivacyList}) ->
+    %% set list
+    escalus_client:send(Client,
+        escalus_stanza:privacy_set_one(Client, PrivacyList)),
+    %% skip responses
+    _ClientResponses = escalus_client:wait_for_stanzas(Client, 2),
+
+    %% activate it
+    escalus_client:send(Client,
+        escalus_stanza:privacy_activate(Client, ListName)),
+    true = exmpp_iq:is_result(escalus_client:wait_for_stanza(Client)).
+
 
 %% Create empty list element with given name.
 privacy_list(Name, Items) ->
@@ -407,10 +476,18 @@ privacy_list(Name, Items) ->
         Items).
 
 %% Create a privacy list item element, wrapping up arguments as attributes.
-privacy_list_item({Type, Value, Action, Order}) ->
-    Attrs = [{<<"type">>, Type}, {<<"value">>, Value}, {<<"action">>, Action},
-        {<<"order">>, Order}],
-    exmpp_xml:set_attributes(exmpp_xml:element('item'), Attrs).
+privacy_list_item(ItemDescription) ->
+    Attrs = case ItemDescription of
+        {Action, Order, Contents} ->
+            [{<<"action">>, Action}, {<<"order">>, Order}];
+        {Type, Value, Action, Order, Contents} ->
+            [{<<"type">>, Type}, {<<"value">>, Value}, {<<"action">>, Action}, 
+             {<<"order">>, Order}]
+    end,
+    ContentElements = [ exmpp_xml:element(Content) || Content <- Contents ],
+    exmpp_xml:append_children(
+        exmpp_xml:set_attributes(exmpp_xml:element('item'), Attrs),
+        ContentElements).
 
 %% Is this iq a notification about a privacy list being changed?
 is_privacy_list_push(Iq) ->
