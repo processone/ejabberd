@@ -44,6 +44,7 @@ groups() ->
                                remove_list]},
      {blocking, [sequence], [block_jid_message,
                              block_group_message,
+                             block_subscription_message,
 
                              block_jid_presence_in,
 
@@ -447,8 +448,36 @@ block_group_message(Config) ->
         escalus_assert:is_chat_message(["Hi!"],
             escalus_client:wait_for_stanza(Alice)),
 
-        %% add Bob to Alices group 'ignored'
+        %% add Bob to Alices' group 'ignored'
         add_sample_contact(Alice, Bob, [ignored], "Ugly Bastard"),
+
+        %% set the list on server and make it active
+        set_and_activate(Alice, PrivacyList),
+
+        %% Alice should NOT receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        timer:sleep(Timeout),
+        escalus_assert:has_no_stanzas(Alice)
+
+        end).
+
+block_subscription_message() -> [{require, timeout},
+                                 {require, alice_deny_unsubscribed_message}].
+
+block_subscription_message(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        Timeout = ?config(timeout, Config),
+        PrivacyList = config_list(alice_deny_unsubscribed_message, Config),
+
+        %% Alice should receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_assert:is_chat_message(["Hi!"],
+            escalus_client:wait_for_stanza(Alice)),
+
+        %% Alice sends unsubscribe
+        escalus_client:send(Alice,
+            escalus_stanza:presence_direct(Bob, unsubscribe)),
 
         %% set the list on server and make it active
         set_and_activate(Alice, PrivacyList),
