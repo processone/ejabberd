@@ -45,6 +45,7 @@ groups() ->
      {blocking, [sequence], [block_jid_message,
                              block_group_message,
                              block_subscription_message,
+                             block_all_message,
 
                              block_jid_presence_in,
 
@@ -478,6 +479,30 @@ block_subscription_message(Config) ->
         %% Alice sends unsubscribe
         escalus_client:send(Alice,
             escalus_stanza:presence_direct(Bob, unsubscribe)),
+
+        %% set the list on server and make it active
+        set_and_activate(Alice, PrivacyList),
+
+        %% Alice should NOT receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        timer:sleep(Timeout),
+        escalus_assert:has_no_stanzas(Alice)
+
+        end).
+
+block_all_message() -> [{require, timeout},
+                        {require, alice_deny_all_message}].
+
+block_all_message(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        Timeout = ?config(timeout, Config),
+        PrivacyList = config_list(alice_deny_all_message, Config),
+
+        %% Alice should receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_assert:is_chat_message(["Hi!"],
+            escalus_client:wait_for_stanza(Alice)),
 
         %% set the list on server and make it active
         set_and_activate(Alice, PrivacyList),
