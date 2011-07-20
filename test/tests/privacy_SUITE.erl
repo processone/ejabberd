@@ -43,9 +43,14 @@ groups() ->
                                set_list,
                                remove_list]},
      {blocking, [sequence], [block_jid_message,
+                             block_group_message,
+
                              block_jid_presence_in,
+
                              block_jid_presence_out,
+
                              block_jid_iq,
+
                              block_jid_all]}].
 
 privacy() ->
@@ -428,6 +433,33 @@ block_jid_message(Config) ->
 
         end).
 
+block_group_message() -> [{require, timeout},
+                          {require, alice_deny_group_message}].
+
+block_group_message(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        Timeout = ?config(timeout, Config),
+        PrivacyList = config_list(alice_deny_group_message, Config),
+
+        %% Alice should receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_assert:is_chat_message(["Hi!"],
+            escalus_client:wait_for_stanza(Alice)),
+
+        %% add Bob to Alices group 'ignored'
+        add_sample_contact(Alice, Bob, [ignored], "Ugly Bastard"),
+
+        %% set the list on server and make it active
+        set_and_activate(Alice, PrivacyList),
+
+        %% Alice should NOT receive message
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        timer:sleep(Timeout),
+        escalus_assert:has_no_stanzas(Alice)
+
+        end).
+
 block_jid_presence_in() -> [{require, timeout},
                             {require, alice_deny_bob_presence_in}].
 
@@ -669,3 +701,13 @@ verify_presence_error(Stanza) ->
     catch
         _:_ -> false
     end.
+
+add_sample_contact(Who, Whom, Groups, Nick) ->
+    escalus_client:send(Who, 
+                        escalus_stanza:roster_add_contact(Whom, 
+                                                          Groups, 
+                                                          Nick)),
+    Received = escalus_client:wait_for_stanza(Who),
+    escalus_assert:is_roster_result_set(Received),
+    escalus_client:send(Who, escalus_stanza:iq_result(Received)),
+    escalus_assert:is_result(escalus_client:wait_for_stanza(Who)).
