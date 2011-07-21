@@ -2451,7 +2451,7 @@ get_node(global, Node, ["pid"], _Query, Lang) ->
     ProcessesList = lists:map(
 		      fun(P) ->
 			      PS = pid_to_list(P),
-			      NodePidS = NodeS ++ "/pid/" ++ PS,
+			      NodePidS = NodeS ++ "/pid/process/" ++ PS,
 			      ?AC("/admin/node/" ++ NodePidS ++ "/", PS)
 		      end,
 		      Processes),
@@ -2684,11 +2684,12 @@ get_node(global, Node, ["update"], Query, Lang) ->
 	];
 
 get_node(Host, Node, NPath, Query, Lang) ->
-    {Hook, Opts} = case Host of
-		       global -> {webadmin_page_node, [Node, NPath, Query, Lang]};
-		       Host -> {webadmin_page_hostnode, [Host, Node, NPath, Query, Lang]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, list_to_binary(Host), [], Opts) of
+    {Hook, Opts, HostB} =
+	case Host of
+	    global -> {webadmin_page_node, [Node, NPath, Query, Lang], global};
+	    Host -> {webadmin_page_hostnode, [Host, Node, NPath, Query, Lang], list_to_binary(Host)}
+	end,
+    case ejabberd_hooks:run_fold(Hook, HostB, [], Opts) of
 	[] -> [?XC('h1', "Not Found")];
 	Res -> Res
     end.
