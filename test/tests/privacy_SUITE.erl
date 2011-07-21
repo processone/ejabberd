@@ -33,6 +33,7 @@ groups() ->
                                get_existing_list,
                                get_many_lists,
                                get_nonexistent_list,
+                               set_list,
                                activate,
                                activate_nonexistent,
                                deactivate,
@@ -40,7 +41,6 @@ groups() ->
                                %default_conflict,  % fails, as of bug #7073
                                default_nonexistent,
                                nodefault,
-                               set_list,
                                remove_list]},
      {blocking, [sequence], [block_jid_message,
                              block_group_message,
@@ -55,11 +55,8 @@ groups() ->
 
                              block_jid_all]}].
 
-privacy() ->
-    [{require, privacy_lists}].
-
 suite() ->
-    escalus:suite().
+    [{require, privacy_lists} | escalus:suite()].
 
 %%--------------------------------------------------------------------
 %% Init & teardown
@@ -355,8 +352,9 @@ set_list(Config) ->
     escalus:story(Config, [3, 1], fun(Alice, Alice2, Alice3, _Bob) ->
 
         AliceDenyBob = ?config(alice_deny_bob, Config),
-        escalus_client:send(Alice,
-            escalus_stanza:privacy_set_one(Alice, AliceDenyBob)),
+        Request = escalus_stanza:privacy_set_one(Alice, AliceDenyBob),
+        %escalus_utils:log_stanzas("Alice sent", [Request]),
+        escalus_client:send(Alice, Request),
 
         %% Verify that original Alice gets iq result and notification.
         %% It's a bit quirky as these come in undefined order
