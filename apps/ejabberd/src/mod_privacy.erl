@@ -654,14 +654,14 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
     case Type of
 	jid ->
 	    case Value of
-		{"", Server, ""} ->
+		{<<>>, Server, <<>>} ->
 		    case JID of
 			{_, Server, _} ->
 			    true;
 			_ ->
 			    false
 		    end;
-		{User, Server, ""} ->
+		{User, Server, <<>>} ->
 		    case JID of
 			{User, Server, _} ->
 			    true;
