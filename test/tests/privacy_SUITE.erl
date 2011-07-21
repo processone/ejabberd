@@ -41,7 +41,11 @@ groups() ->
                                %default_conflict,  % fails, as of bug #7073
                                default_nonexistent,
                                nodefault,
-                               remove_list]},
+                               remove_list,
+                               get_all_lists_with_active
+                               %get_all_lists_with_default
+                                 % not implemented (see testcase)
+                              ]},
      {blocking, [sequence], [block_jid_message,
                              block_group_message,
                              block_subscription_message,
@@ -135,6 +139,54 @@ get_all_lists(Config) ->
         escalus_client:send(Alice, escalus_stanza:privacy_get_all(Alice)),
         escalus_assert:is_privacy_query_result(
             escalus_client:wait_for_stanza(Alice) )
+
+        end).
+
+get_all_lists_with_active() -> [{require, alice_deny_bob}].
+
+get_all_lists_with_active(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
+
+        PrivacyList = config_list(alice_deny_bob, Config),
+        set_and_activate(Alice, PrivacyList),
+
+        escalus_client:send(Alice, escalus_stanza:privacy_get_all(Alice)),
+        %% TODO: maybe refactor into escalus assertion?
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_result(Response),
+        Result = exmpp_iq:get_result(Response),
+        true = exmpp_xml:has_element(Result, active),
+        true = exmpp_xml:has_attribute(
+            exmpp_xml:get_element(Result, active),
+            <<"name">>)
+
+        %, escalus_utils:log_stanzas("Result", [Result])
+
+        end).
+
+get_all_lists_with_default() -> [{require, alice_deny_bob},
+                                 {require, alice_allow_bob}].
+
+%% Black box testing showed that this feature is not implemented,
+%% i.e. the <default /> element is never returned by ejabberd.
+%% However, I'm not 100% sure, as I didn't look inside the source.
+get_all_lists_with_default(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, _Bob) ->
+
+        PrivacyList1 = config_list(alice_deny_bob, Config),
+        PrivacyList2 = config_list(alice_allow_bob, Config),
+        set_list(Alice, PrivacyList1),
+        set_and_activate(Alice, PrivacyList2),
+
+        escalus_client:send(Alice, escalus_stanza:privacy_get_all(Alice)),
+        Response = escalus_client:wait_for_stanza(Alice),
+        true = exmpp_iq:is_result(Response),
+        Result = exmpp_iq:get_result(Response),
+        escalus_utils:log_stanzas("Result", [Result]),
+        true = exmpp_xml:has_element(Result, default),
+        true = exmpp_xml:has_attribute(
+            exmpp_xml:get_element(Result, default),
+            <<"name">>)
 
         end).
 
@@ -419,16 +471,19 @@ block_jid_message(Config) ->
         PrivacyList = config_list(alice_deny_bob_message, Config),
 
         %% Alice should receive message
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
-        escalus_assert:is_chat_message(["Hi!"],
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi! What's your name?")),
+        escalus_assert:is_chat_message(["Hi! What's your name?"],
             escalus_client:wait_for_stanza(Alice)),
 
         %% set the list on server and make it active
         set_and_activate(Alice, PrivacyList),
 
         %% Alice should NOT receive message
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi, Alice!")),
         timer:sleep(Timeout),
+        %Responses = escalus_client:wait_for_stanzas(Alice, 2),
+        %escalus_utils:log_stanzas("Responses", Responses),
+        %[] = Responses
         escalus_assert:has_no_stanzas(Alice)
 
         end).
@@ -682,17 +737,23 @@ config_list(Name, Config) ->
 
 %% Sets the list on server and makes it the active one.
 set_and_activate(Client, {ListName, PrivacyList}) ->
+    set_list(Client, {ListName, PrivacyList}),
+    activate_list(Client, {ListName, PrivacyList}).
+
+%% Sets the list on server.
+set_list(Client, {_ListName, PrivacyList}) ->
     %% set list
     escalus_client:send(Client,
         escalus_stanza:privacy_set_one(Client, PrivacyList)),
     %% skip responses
-    _ClientResponses = escalus_client:wait_for_stanzas(Client, 2),
+    _ClientResponses = escalus_client:wait_for_stanzas(Client, 2).
 
+%% Make the list the active one.
+activate_list(Client, {ListName, _PrivacyList}) ->
     %% activate it
     escalus_client:send(Client,
         escalus_stanza:privacy_activate(Client, ListName)),
     true = exmpp_iq:is_result(escalus_client:wait_for_stanza(Client)).
-
 
 %% Create empty list element with given name.
 privacy_list(Name, Items) ->
