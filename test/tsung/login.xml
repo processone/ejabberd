@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "/home/wirenth/.tsung/tsung-1.0.dtd">
+<tsung loglevel="notice" version="1.0" dumptraffic="false">
+
+  <clients>
+    <client host="localhost" use_controller_vm="true" maxusers="500"/>
+  </clients>
+
+  <servers>
+    <server host="10.152.0.111" port="5222" type="tcp"></server>
+  </servers>
+
+  <load>
+    <arrivalphase phase="1" duration="90" unit="minute">
+      <users interarrival="0.01" unit="second"></users>
+    </arrivalphase>
+  </load>
+
+  <options>
+    <option type="ts_jabber" name="global_number" value="50000"></option>
+    <option type="ts_jabber" name="userid_max" value="50000"></option>
+    <option type="ts_jabber" name="domain" value="localhost"></option>
+    <option type="ts_jabber" name="username" value="user"></option>
+    <option type="ts_jabber" name="passwd" value="pass"></option>
+  </options>
+
+  <sessions>
+    <session name="inactive-user" probability="100" type="ts_jabber">
+
+      <request subst="true">
+        <jabber type="connect" ack="no_ack" />
+      </request>
+
+      <thinktime value="1" />
+
+      <request subst="true">
+        <jabber type="auth_get" ack="no_ack" />
+      </request>
+
+      <thinktime value="1" />
+
+      <request subst="true">
+        <jabber type="auth_set_plain" ack="no_ack" />
+      </request>
+
+      <thinktime value="1" />
+
+      <request subst="true">
+        <jabber type="presence:initial" ack="no_ack"/>
+      </request>
+
+      <thinktime value="10000000" />
+      
+    </session>
+
+  </sessions>
+</tsung>

@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "/home/aleksandra.lipiec/tsung_dist/share/tsung/tsung-1.0.dtd">
+<tsung loglevel="error" version="1.0" dumptraffic="false">
+
+  <clients>
+    <client host="localhost" use_controller_vm="true" maxusers="60000">
+      <ip value="10.152.1.12" />
+    </client>
+  </clients>
+
+  <servers>
+    <server host="10.152.0.111" port="5222" type="tcp"></server>
+  </servers>
+
+  <load>
+    <arrivalphase phase="1" duration="90" unit="minute">
+      <users interarrival="0.02" unit="second"></users>
+    </arrivalphase>
+  </load>
+
+  <options>
+    <option type="ts_jabber" name="global_number" value="200000"></option>
+    <option type="ts_jabber" name="userid_max" value="200000"></option>
+    <option type="ts_jabber" name="domain" value="localhost"></option>
+    <option type="ts_jabber" name="username" value="buser"></option>
+    <option type="ts_jabber" name="passwd" value="pass"></option>
+  </options>
+
+  <sessions>
+    <session name="inactive-user" probability="100" type="ts_jabber">
+
+       <thinktime min="1" max="2" random="true"/>
+
+        <!-- connect and logon -->
+        <!-- regexp captures stream ID returned by server -->
+
+        <request>
+            <dyn_variable name="sid" regexp="id='\(.*\)' from"/>
+                <jabber type="connect" ack="local"/>
+        </request>
+
+        <transaction name="auth_digest">
+
+                <request> <jabber type="auth_get" ack="local"/> </request>
+                <request subst="true"> <jabber type="auth_set_digest" ack="local"/> </request>
+        </transaction>
+      <thinktime value="1" />
+
+      <request subst='true'>
+        <jabber type="presence:initial" ack="no_ack"/>
+      </request>
+
+      <thinktime value="1000000" />
+      
+    </session>
+
+  </sessions>
+</tsung>
