@@ -9,7 +9,7 @@ ct() ->
     ct:run_test([
         {config, [?CT_CONFIG]},
         {dir, ?CT_DIR},
-        {logdir, ?CT_REPORT},
+        {logdir, ?CT_REPORT}
 
         %{suite, "login_SUITE"},
         %{group, [messages]}
@@ -20,7 +20,7 @@ ct() ->
         %{group, [roster]}
         %{group, [subscribe]}
 
-        {suite, "privacy_SUITE"}
+        %{suite, "privacy_SUITE"}
 
         %, {group, [management]}
         %, {testcase, get_all_lists_with_active}

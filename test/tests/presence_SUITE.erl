@@ -206,8 +206,7 @@ subscribe(Config) ->
         escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
         
         %% Alice receives subscribed 
-        Stanzas = [escalus_client:wait_for_stanza(Alice), 
-                   escalus_client:wait_for_stanza(Alice)],
+        Stanzas = escalus_client:wait_for_stanzas(Alice, 2), 
 
         check_subscription_stanzas(Stanzas, "subscribed"),
         escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Alice)),
@@ -247,8 +246,7 @@ subscribe_decline(Config) ->
         escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, unsubscribed)),
         
         %% Alice receives subscribed 
-        Stanzas = [escalus_client:wait_for_stanza(Alice), 
-                   escalus_client:wait_for_stanza(Alice)],
+        Stanzas = escalus_client:wait_for_stanzas(Alice, 2), 
 
         check_subscription_stanzas(Stanzas, "unsubscribed")
         
@@ -281,8 +279,7 @@ unsubscribe(Config) ->
         escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
         
         %% Alice receives subscribed 
-        Stanzas = [escalus_client:wait_for_stanza(Alice), 
-                   escalus_client:wait_for_stanza(Alice)],
+        Stanzas = escalus_client:wait_for_stanzas(Alice, 2), 
 
         check_subscription_stanzas(Stanzas, "subscribed"),
         escalus_assert:is_presence_stanza(escalus_client:wait_for_stanza(Alice)),
