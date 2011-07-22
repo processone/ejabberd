@@ -11,6 +11,7 @@
 ## Enable kernel poll and a few async threads
 +K true
 +A 5
++P 10000000
 
 ## Increase number of concurrent ports/sockets
 -env ERL_MAX_PORTS 250000
