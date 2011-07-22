@@ -6,10 +6,31 @@
 -define(CT_CONFIG, "test.config").
 
 ct() ->
-    ct:run_test([{config, [?CT_CONFIG]},
-    		 {dir, ?CT_DIR},
-		 {logdir, ?CT_REPORT}
-%%                 {suite, [presence_SUITE]}
-%%                 {group, [roster]}
-                 ]),
+    ct:run_test([
+        {config, [?CT_CONFIG]},
+        {dir, ?CT_DIR},
+        {logdir, ?CT_REPORT},
+
+        %{suite, "login_SUITE"},
+        %{group, [messages]}
+        %{group, [unregistered]}
+
+        %{suite, "presence_SUITE"},
+        %{group, [presence]}
+        %{group, [roster]}
+        %{group, [subscribe]}
+
+        {suite, "privacy_SUITE"}
+
+        %, {group, [management]}
+        %, {testcase, get_all_lists_with_active}
+        %, {testcase, get_all_lists_with_default}
+        %, {testcase, get_many_lists}
+        %, {testcase, get_existing_list}
+        %, {testcase, activate}
+
+        %, {group, [blocking]}
+        %, {testcase, block_jid_message}
+        %, {testcase, block_jid_all}
+    ]),
     init:stop(0).

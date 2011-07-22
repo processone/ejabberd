@@ -92,8 +92,8 @@ process_iq_get(_, From, _To, #iq{sub_el = SubEl},
 	    process_lists_get(LUser, LServer, Active);
 	[{xmlelement, Name, Attrs, _SubEls}] ->
 	    case Name of
-		"list" ->
-		    ListName = xml:get_attr("name", Attrs),
+		<<"list">> ->
+		    ListName = xml:get_attr(<<"name">>, Attrs),
 		    process_list_get(LUser, LServer, ListName);
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
@@ -108,36 +108,36 @@ process_lists_get(LUser, LServer, Active) ->
 	{'EXIT', _Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
-	    {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+	    {result, [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
 	[#privacy{default = Default, lists = Lists}] ->
 	    case Lists of
 		[] ->
-		    {result, [{xmlelement, "query",
-			       [{"xmlns", ?NS_PRIVACY}], []}]};
+		    {result, [{xmlelement, <<"query">>,
+			       [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
 		_ ->
 		    LItems = lists:map(
 			       fun({N, _}) ->
-				       {xmlelement, "list",
-					[{"name", N}], []}
+				       {xmlelement, <<"list">>,
+					[{<<"name">>, N}], []}
 			       end, Lists),
 		    DItems =
 			case Default of
 			    none ->
 				LItems;
 			    _ ->
-				[{xmlelement, "default",
-				  [{"name", Default}], []} | LItems]
+				[{xmlelement, <<"default">>,
+				  [{<<"name">>, Default}], []} | LItems]
 			end,
 		    ADItems =
 			case Active of
 			    none ->
 				DItems;
 			    _ ->
-				[{xmlelement, "active",
-				  [{"name", Active}], []} | DItems]
+				[{xmlelement, <<"active">>,
+				  [{<<"name">>, Active}], []} | DItems]
 			end,
 		    {result,
-		     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
+		     [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}],
 		       ADItems}]}
 	    end
     end.
@@ -148,15 +148,15 @@ process_list_get(LUser, LServer, {value, Name}) ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
-	    %{result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+	    %{result, [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
 	[#privacy{lists = Lists}] ->
 	    case lists:keysearch(Name, 1, Lists) of
 		{value, {_, List}} ->
 		    LItems = lists:map(fun item_to_xml/1, List),
 		    {result,
-		     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
-		       [{xmlelement, "list",
-			 [{"name", Name}], LItems}]}]};
+		     [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}],
+		       [{xmlelement, <<"list">>,
+			 [{<<"name">>, Name}], LItems}]}]};
 		_ ->
 		    {error, ?ERR_ITEM_NOT_FOUND}
 	    end
@@ -166,14 +166,14 @@ process_list_get(_LUser, _LServer, false) ->
     {error, ?ERR_BAD_REQUEST}.
 
 item_to_xml(Item) ->
-    Attrs1 = [{"action", action_to_list(Item#listitem.action)},
-	      {"order", order_to_list(Item#listitem.order)}],
+    Attrs1 = [{<<"action">>, action_to_binary(Item#listitem.action)},
+	      {<<"order">>, order_to_binary(Item#listitem.order)}],
     Attrs2 = case Item#listitem.type of
 		 none ->
 		     Attrs1;
 		 Type ->
-		     [{"type", type_to_list(Item#listitem.type)},
-		      {"value", value_to_list(Type, Item#listitem.value)} |
+		     [{<<"type">>, type_to_binary(Item#listitem.type)},
+		      {<<"value">>, value_to_binary(Type, Item#listitem.value)} |
 		      Attrs1]
 	     end,
     SubEls = case Item#listitem.match_all of
@@ -182,68 +182,71 @@ item_to_xml(Item) ->
 		 false ->
 		     SE1 = case Item#listitem.match_iq of
 			       true ->
-				   [{xmlelement, "iq", [], []}];
+				   [{xmlelement, <<"iq">>, [], []}];
 			       false ->
 				   []
 			   end,
 		     SE2 = case Item#listitem.match_message of
 			       true ->
-				   [{xmlelement, "message", [], []} | SE1];
+				   [{xmlelement, <<"message">>, [], []} | SE1];
 			       false ->
 				   SE1
 			   end,
 		     SE3 = case Item#listitem.match_presence_in of
 			       true ->
-				   [{xmlelement, "presence-in", [], []} | SE2];
+				   [{xmlelement, <<"presence-in">>, [], []} | SE2];
 			       false ->
 				   SE2
 			   end,
 		     SE4 = case Item#listitem.match_presence_out of
 			       true ->
-				   [{xmlelement, "presence-out", [], []} | SE3];
+				   [{xmlelement, <<"presence-out">>, [], []} | SE3];
 			       false ->
 				   SE3
 			   end,
 		     SE4
 	     end,
-    {xmlelement, "item", Attrs2, SubEls}.
+    {xmlelement, <<"item">>, Attrs2, SubEls}.
 
 
-action_to_list(Action) ->
+action_to_binary(Action) ->
     case Action of
-	allow -> "allow";
-	deny -> "deny"
+	allow -> <<"allow">>;
+	deny -> <<"deny">>
     end.
 
-order_to_list(Order) ->
-    integer_to_list(Order).
+order_to_binary(Order) ->
+    list_to_binary(integer_to_list(Order)).
 
-type_to_list(Type) ->
+binary_to_order(Binary) ->
+    list_to_integer(binary_to_list(Binary)).
+
+type_to_binary(Type) ->
     case Type of
-	jid -> "jid";
-	group -> "group";
-	subscription -> "subscription"
+	jid -> <<"jid">>;
+	group -> <<"group">>;
+	subscription -> <<"subscription">>
     end.
 
-value_to_list(Type, Val) ->
+value_to_binary(Type, Val) ->
     case Type of
 	jid -> jlib:jid_to_string(Val);
 	group -> Val;
 	subscription ->
 	    case Val of
-		both -> "both";
-		to -> "to";
-		from -> "from";
-		none -> "none"
+		both -> <<"both">>;
+		to -> <<"to">>;
+		from -> <<"from">>;
+		none -> <<"none">>
 	    end
     end.
 
 
 
-list_to_action(S) ->
+binary_to_action(S) ->
     case S of
-	"allow" -> allow;
-	"deny" -> deny
+	<<"allow">> -> allow;
+	<<"deny">> -> deny
     end.
 
 
@@ -253,14 +256,14 @@ process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[{xmlelement, Name, Attrs, SubEls}] ->
-	    ListName = xml:get_attr("name", Attrs),
+	    ListName = xml:get_attr(<<"name">>, Attrs),
 	    case Name of
-		"list" ->
+		<<"list">> ->
 		    process_list_set(LUser, LServer, ListName,
 				     xml:remove_cdata(SubEls));
-		"active" ->
+		<<"active">> ->
 		    process_active_set(LUser, LServer, ListName);
-		"default" ->
+		<<"default">> ->
 		    process_default_set(LUser, LServer, ListName);
 		_ ->
 		    {error, ?ERR_BAD_REQUEST}
@@ -362,9 +365,9 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		    Error;
 		{atomic, {result, _} = Res} ->
 		    ejabberd_router:route(
-		      jlib:make_jid(LUser, LServer, ""),
-		      jlib:make_jid(LUser, LServer, ""),
-		      {xmlelement, "broadcast", [],
+		      jlib:make_jid(LUser, LServer, <<>>),
+		      jlib:make_jid(LUser, LServer, <<>>),
+		      {xmlelement, <<"broadcast">>, [],
 		       [{privacy_list,
 			 #userlist{name = Name, list = []},
 			 Name}]}),
@@ -394,9 +397,9 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		{atomic, {result, _} = Res} ->
 		    NeedDb = is_list_needdb(List),
 		    ejabberd_router:route(
-		      jlib:make_jid(LUser, LServer, ""),
-		      jlib:make_jid(LUser, LServer, ""),
-		      {xmlelement, "broadcast", [],
+		      jlib:make_jid(LUser, LServer, <<>>),
+		      jlib:make_jid(LUser, LServer, <<>>),
+		      {xmlelement, <<"broadcast">>, [],
 		       [{privacy_list,
 			 #userlist{name = Name, list = List, needdb = NeedDb},
 			 Name}]}),
@@ -418,16 +421,16 @@ parse_items(Els) ->
 parse_items([], Res) ->
     %% Sort the items by their 'order' attribute
     lists:keysort(#listitem.order, Res);
-parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
-    Type   = xml:get_attr("type",   Attrs),
-    Value  = xml:get_attr("value",  Attrs),
-    SAction = xml:get_attr("action", Attrs),
-    SOrder = xml:get_attr("order",  Attrs),
-    Action = case catch list_to_action(element(2, SAction)) of
+parse_items([{xmlelement, <<"item">>, Attrs, SubEls} | Els], Res) ->
+    Type   = xml:get_attr(<<"type">>,   Attrs),
+    Value  = xml:get_attr(<<"value">>,  Attrs),
+    SAction = xml:get_attr(<<"action">>, Attrs),
+    SOrder = xml:get_attr(<<"order">>,  Attrs),
+    Action = case catch binary_to_action(element(2, SAction)) of
 		 {'EXIT', _} -> false;
 		 Val -> Val
 	     end,
-    Order = case catch list_to_integer(element(2, SOrder)) of
+    Order = case catch binary_to_order(element(2, SOrder)) of
 		{'EXIT', _} ->
 		    false;
 		IntVal ->
@@ -444,7 +447,7 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 	    I2 = case {Type, Value} of
 		     {{value, T}, {value, V}} ->
 			 case T of
-			     "jid" ->
+			     <<"jid">> ->
 				 case jlib:string_to_jid(V) of
 				     error ->
 					 false;
@@ -453,21 +456,21 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 					   type = jid,
 					   value = jlib:jid_tolower(JID)}
 				 end;
-			     "group" ->
+			     <<"group">> ->
 				 I1#listitem{type = group,
 					     value = V};
-			     "subscription" ->
+			     <<"subscription">> ->
 				 case V of
-				     "none" ->
+				     <<"none">> ->
 					 I1#listitem{type = subscription,
 						     value = none};
-				     "both" ->
+				     <<"both">> ->
 					 I1#listitem{type = subscription,
 						     value = both};
-				     "from" ->
+				     <<"from">> ->
 					 I1#listitem{type = subscription,
 						     value = from};
-				     "to" ->
+				     <<"to">> ->
 					 I1#listitem{type = subscription,
 						     value = to};
 				     _ ->
@@ -505,13 +508,13 @@ parse_matches(Item, Els) ->
 
 parse_matches1(Item, []) ->
     Item;
-parse_matches1(Item, [{xmlelement, "message", _, _} | Els]) ->
+parse_matches1(Item, [{xmlelement, <<"message">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_message = true}, Els);
-parse_matches1(Item, [{xmlelement, "iq", _, _} | Els]) ->
+parse_matches1(Item, [{xmlelement, <<"iq">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_iq = true}, Els);
-parse_matches1(Item, [{xmlelement, "presence-in", _, _} | Els]) ->
+parse_matches1(Item, [{xmlelement, <<"presence-in">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_presence_in = true}, Els);
-parse_matches1(Item, [{xmlelement, "presence-out", _, _} | Els]) ->
+parse_matches1(Item, [{xmlelement, <<"presence-out">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_presence_out = true}, Els);
 parse_matches1(_Item, [{xmlelement, _, _, _} | _Els]) ->
     false.
@@ -568,13 +571,13 @@ check_packet(_, User, Server,
 	    allow;
 	_ ->
 	    PType = case PName of
-			"message" -> message;
-			"iq" -> iq;
-			"presence" ->
-			    case xml:get_attr_s("type", Attrs) of
+			<<"message">> -> message;
+			<<"iq">> -> iq;
+			<<"presence">> ->
+			    case xml:get_attr_s(<<"type">>, Attrs) of
 				%% notification
-				"" -> presence;
-				"unavailable" -> presence;
+				<<>> -> presence;
+				<<"unavailable">> -> presence;
 				%% subscribe, subscribed, unsubscribe,
 				%% unsubscribed, error, probe, or other
 				_ -> other
@@ -651,14 +654,14 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
     case Type of
 	jid ->
 	    case Value of
-		{"", Server, ""} ->
+		{<<>>, Server, <<>>} ->
 		    case JID of
 			{_, Server, _} ->
 			    true;
 			_ ->
 			    false
 		    end;
-		{User, Server, ""} ->
+		{User, Server, <<>>} ->
 		    case JID of
 			{User, Server, _} ->
 			    true;

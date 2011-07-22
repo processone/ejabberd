@@ -19,6 +19,9 @@ escalus/ebin:
 	(cd escalus; make)
 
 console:
-	rlwrap erl -pa `pwd`/tests -pa `pwd`/escalus/ebin `pwd`/escalus/deps/exmpp/ebin
+	erl -sname test -setcookie ejabberd \
+		-pa `pwd`/tests \
+		-pa `pwd`/escalus/ebin \
+		`pwd`/escalus/deps/exmpp/ebin
 
 .PHONY: escalus/ebin
