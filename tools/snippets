@@ -2,11 +2,16 @@
 % Registering new users
 %------------------------------
 
-[ejabberd_auth:try_register("user" ++ integer_to_list(N), "localhost", "pass" ++ integer_to_list(N)) || N <- lists:seq(1, 500000)].
+[ejabberd_auth:try_register("user" ++ integer_to_list(N), "localhost", "pass" ++ integer_to_list(N)) || N <- lists:seq(1, 120000)].
+
+[ejabberd_auth:try_register("auser" ++ integer_to_list(N), "localhost", "pass" ++ integer_to_list(N)) || N <- lists:seq(1, 60000)].
+
+[ejabberd_auth:try_register("buser" ++ integer_to_list(N), "localhost", "pass" ++ integer_to_list(N)) || N <- lists:seq(1, 60000)].
 
 %------------------------------
-% Adding users to rosters
+% Adding users to roster
 %------------------------------
 
 code:add_patha("../../tools/").
-fill_roster:fill(500000, 10).
+l(fill_roster).
+fill_roster:fill(60000, 5, "auser", bin (string)).
