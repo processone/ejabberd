@@ -510,7 +510,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				StateData#state.access, JID) == allow) of
 		true ->
                     DGen = fun(PW) ->
-                             sha:sha(StateData#state.streamid ++ PW) end,
+                             list_to_binary(sha:sha(
+                                              StateData#state.streamid 
+                                              ++ binary_to_list(PW))) end,
 		    case ejabberd_auth:check_password_with_authmodule(
 			   U, StateData#state.server, P, D, DGen) of
 			{true, AuthModule} ->

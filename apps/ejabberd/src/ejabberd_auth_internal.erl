@@ -83,7 +83,7 @@ check_password(User, Server, Password) ->
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
 	[#passwd{password = Password}] ->
-	    Password /= "";
+	    Password /= <<>>;
 	_ ->
 	    false
     end.
@@ -95,7 +95,7 @@ check_password(User, Server, Password, Digest, DigestGen) ->
     case catch mnesia:dirty_read({passwd, US}) of
 	[#passwd{password = Passwd}] ->
 	    DigRes = if
-			 Digest /= "" ->
+			 Digest /= <<>> ->
                  Digest == DigestGen(Passwd);
 			 true ->
 			     false
@@ -103,7 +103,7 @@ check_password(User, Server, Password, Digest, DigestGen) ->
 	    if DigRes ->
 		    true;
 	       true ->
-		    (Passwd == Password) and (Password /= "")
+		    (Passwd == Password) and (Password /= <<>>)
 	    end;
 	_ ->
 	    false

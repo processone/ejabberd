@@ -100,6 +100,9 @@ check_password(User, Server, Password, Digest, DigestGen)
                    list_to_binary(Password),
                    Digest,
                    DigestGen);
+check_password(User, Server, Password, Digest, DigestGen) 
+  when is_list(Digest) ->
+    check_password(User, Server, Password, list_to_binary(Digest), DigestGen);    
 check_password(User, Server, Password, Digest, DigestGen) ->
     case check_password_with_authmodule(User, Server, Password,
 					Digest, DigestGen) of
