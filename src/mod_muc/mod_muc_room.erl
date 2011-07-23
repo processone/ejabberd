@@ -256,42 +256,48 @@ normal_state({route, From, "",
 		      From, Err),
 		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
-		    case catch check_invitation(From, Els, Lang, StateData) of
-			{error, Error} ->
-			    Err = jlib:make_error_reply(
-				    Packet, Error),
-			    ejabberd_router:route(
-			      StateData#state.jid,
-			      From, Err),
-			    {next_state, normal_state, StateData};
-			IJID ->
-			    Config = StateData#state.config,
-			    case Config#config.members_only of
-				true ->
-				    case get_affiliation(IJID, StateData) of
-					none ->
-					    NSD = set_affiliation(
-						    IJID,
-						    member,
-						    StateData),
-					    case (NSD#state.config)#config.persistent of
-						true ->
-						    mod_muc:store_room(
-						      NSD#state.host,
-						      NSD#state.room,
-						      make_opts(NSD));
+			IsInvitation = is_invitation(Els),
+			if 
+			IsInvitation ->
+				case catch check_invitation(From, Els, Lang, StateData) of
+				{error, Error} ->
+					Err = jlib:make_error_reply(
+						Packet, Error),
+					ejabberd_router:route(
+					StateData#state.jid,
+					From, Err),
+					{next_state, normal_state, StateData};
+				IJID ->
+					Config = StateData#state.config,
+					case Config#config.members_only of
+					true ->
+						case get_affiliation(IJID, StateData) of
+						none ->
+							NSD = set_affiliation(
+								IJID,
+								member,
+								StateData),
+							case (NSD#state.config)#config.persistent of
+							true ->
+								mod_muc:store_room(
+								NSD#state.host,
+								NSD#state.room,
+								make_opts(NSD));
+							_ ->
+								ok
+							end,
+							{next_state, normal_state, NSD};
 						_ ->
-						    ok
-					    end,
-					    {next_state, normal_state, NSD};
-					_ ->
-					    {next_state, normal_state,
-					     StateData}
-				    end;
-				false ->
-				    {next_state, normal_state, StateData}
-			    end
-		    end;
+							{next_state, normal_state,
+							StateData}
+						end;
+					false ->
+						{next_state, normal_state, StateData}
+					end
+				end;
+			true ->
+				{next_state, normal_state, StateData}
+			end;
 		_ ->
 		    ErrText = "Improper message type",
 		    Err = jlib:make_error_reply(
@@ -3622,6 +3628,24 @@ get_mucroom_disco_items(StateData) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
+
+is_invitation(Els) ->
+	case xml:remove_cdata(Els) of
+	[{xmlelement, "x", _Attrs1, Els1} = XEl] ->
+		case xml:get_tag_attr_s("xmlns", XEl) of
+		?NS_MUC_USER ->
+			case xml:remove_cdata(Els1) of
+			[{xmlelement, "invite", _, _}] ->
+				true;
+			_ ->
+				false
+			end;
+		_ ->
+			false
+		end;
+	_ -> 
+		false
+	end.
 
 check_invitation(From, Els, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
