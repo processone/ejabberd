@@ -257,6 +257,7 @@ normal_state({route, From, "",
 		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
 			IsInvitation = is_invitation(Els),
+			IsVoiceRequest = is_voice_request(Els),
 			if 
 			IsInvitation ->
 				case catch check_invitation(From, Els, Lang, StateData) of
@@ -295,6 +296,8 @@ normal_state({route, From, "",
 						{next_state, normal_state, StateData}
 					end
 				end;
+			IsVoiceRequest ->
+				{next_state, normal_state, StateData};
 			true ->
 				{next_state, normal_state, StateData}
 			end;
@@ -3625,6 +3628,48 @@ get_mucroom_disco_items(StateData) ->
 		{"name", Nick}], []}
       end,
       ?DICT:to_list(StateData#state.users)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Voice request support
+
+is_voice_request(Els) ->
+	try
+		case xml:remove_cdata(Els) of
+		[{xmlelement, "x", _, Els1} = XEl] ->
+			case xml:get_attr_s("xmlns", XEl) of
+			?NS_XDATA ->
+				lists:foldl(check_voice_requests_fields, true, Els1)
+			end
+		end
+	catch
+	_ ->
+		false
+	end.
+
+check_voice_request_fields({xmlelement, "field", _, Els} = Elem, Acc) ->
+	try
+		case Acc of
+		true ->
+			case xml:get_attr_s("var", Elem) of
+			"FORM_TYPE" ->
+				[{xmlelement, "value", _, Value}] = Els,
+				case xml:get_cdata(Value) of
+				"http://jabber.org/protocol/muc#request" ->
+					true
+				end;
+			"muc#role" ->
+				[{xmlelement, "value", _, Value}] = Els,
+				case xml:get_cdata(Value) of
+				"participant" ->
+					true
+				end
+			end
+		end
+	catch
+	_ ->
+		false
+	end.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
