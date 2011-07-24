@@ -3682,7 +3682,7 @@ prepare_request_form(Requester, Nick, Lang) ->
 		{xmlelement, "title", [],
 			[{xmlcdata, translate:translate(Lang, "Voice request")}]},
 		{xmlelement, "instructions", [],
-			[{xmlcdata, translate:translate(Lang, "To approve this request for voice, select the &quot;Grant voice to this person?&quot; checkbox and click OK. To skip this request, click the cancel button.")}]},
+			[{xmlcdata, translate:translate(Lang, "To approve this request for voice, select the \"Grant voice to this person?\" checkbox and click OK. To skip this request, click the cancel button.")}]},
 		{xmlelement, "field", [{"var", "FORM_TYPE"}, {"type", "hidden"}],
 			[{xmlelement, "value", [],
 				[{xmlcdata, "http://jabber.org/protocol/muc#request"}]}]},
