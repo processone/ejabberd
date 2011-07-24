@@ -3647,7 +3647,7 @@ is_voice_request(Els) ->
 			end
 		end
 	catch
-	_ ->
+	error: _ ->
 		false
 	end.
 
@@ -3671,7 +3671,7 @@ check_voice_request_fields({xmlelement, "field", _, Els} = Elem, Acc) ->
 			end
 		end
 	catch
-	_ ->
+	error: _ ->
 		false
 	end.
 
