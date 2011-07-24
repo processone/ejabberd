@@ -3702,14 +3702,13 @@ send_voice_request(From, StateData) ->
 		?DICT:to_list(StateData#state.users)),
 	?ERROR_MSG("MUC ROOM: send_voice_request: FromNick = ~p~n", [FromNick]),
 	lists:map(
-		fun({_, User}) -> send_packet_to(
-			prepare_request_form(From, FromNick, ""),
-			User#user.jid, StateData)
+		fun({_, User}) ->
+			ejabberd_router:route(
+				StateData#state.jid,
+				User#user.jid,
+				prepare_request_form(From, FromNick, ""))
 		end, Moderators),
 	ok.
-
-send_packet_to(Packet, To, StateData) ->
-	ejabberd_router:route(StateData#state.jid, To, Packet).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
