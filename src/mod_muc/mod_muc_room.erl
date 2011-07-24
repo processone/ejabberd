@@ -297,6 +297,7 @@ normal_state({route, From, "",
 					end
 				end;
 			IsVoiceRequest ->
+				send_voice_request(From, StateData),
 				{next_state, normal_state, StateData};
 			true ->
 				{next_state, normal_state, StateData}
@@ -3636,9 +3637,13 @@ is_voice_request(Els) ->
 	try
 		case xml:remove_cdata(Els) of
 		[{xmlelement, "x", _, Els1} = XEl] ->
-			case xml:get_attr_s("xmlns", XEl) of
+			case xml:get_tag_attr_s("xmlns", XEl) of
 			?NS_XDATA ->
-				lists:foldl(check_voice_requests_fields, true, Els1)
+				lists:foldl(
+					fun(X,Y) ->
+						check_voice_request_fields(X,Y)
+					end,
+					true, xml:remove_cdata(Els1))
 			end
 		end
 	catch
@@ -3650,15 +3655,15 @@ check_voice_request_fields({xmlelement, "field", _, Els} = Elem, Acc) ->
 	try
 		case Acc of
 		true ->
-			case xml:get_attr_s("var", Elem) of
+			case xml:get_tag_attr_s("var", Elem) of
 			"FORM_TYPE" ->
-				[{xmlelement, "value", _, Value}] = Els,
+				[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
 				case xml:get_cdata(Value) of
 				"http://jabber.org/protocol/muc#request" ->
 					true
 				end;
 			"muc#role" ->
-				[{xmlelement, "value", _, Value}] = Els,
+				[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
 				case xml:get_cdata(Value) of
 				"participant" ->
 					true
@@ -3670,6 +3675,41 @@ check_voice_request_fields({xmlelement, "field", _, Els} = Elem, Acc) ->
 		false
 	end.
 
+prepare_request_form(Requester, Nick, Lang) ->
+	{xmlelement, "message", [{"type", "normal"}], [
+	{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+		[
+		{xmlelement, "title", [],
+			[{xmlcdata, translate:translate(Lang, "Voice request")}]},
+		{xmlelement, "instructions", [],
+			[{xmlcdata, translate:translate(Lang, "To approve this request for voice, select the &quot;Grant voice to this person?&quot; checkbox and click OK. To skip this request, click the cancel button.")}]},
+		{xmlelement, "field", [{"var", "FORM_TYPE"}, {"type", "hidden"}],
+			[{xmlelement, "value", [],
+				[{xmlcdata, "http://jabber.org/protocol/muc#request"}]}]},
+		?STRINGXFIELD("Requested role", "muc#role", "participant"),
+		?STRINGXFIELD("User JID", "muc#jid", jlib:jid_to_string(Requester)),
+		?STRINGXFIELD("Nickname", "muc#roomnick", Nick),
+		?BOOLXFIELD("Grant voice to this person?", "muc#request_allow", false)
+		]
+	}]}.
+
+send_voice_request(From, StateData) ->
+	?ERROR_MSG("MUC ROOM: send_voice_request: From = ~p~n", [From]),
+	Moderators = search_role(moderator, StateData),
+	?ERROR_MSG("MUC ROOM: send_voice_request: Moderators = ~p~n", [Moderators]),
+	[{_, #user{nick = FromNick}}] = lists:filter(
+		fun({_, #user{jid = Jid}}) -> Jid == From end,
+		?DICT:to_list(StateData#state.users)),
+	?ERROR_MSG("MUC ROOM: send_voice_request: FromNick = ~p~n", [FromNick]),
+	lists:map(
+		fun({_, User}) -> send_packet_to(
+			prepare_request_form(From, FromNick, ""),
+			User#user.jid, StateData)
+		end, Moderators),
+	ok.
+
+send_packet_to(Packet, To, StateData) ->
+	ejabberd_router:route(StateData#state.jid, To, Packet).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
