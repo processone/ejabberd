@@ -3715,20 +3715,19 @@ send_packet_to(Packet, To, StateData) ->
 % Invitation support
 
 is_invitation(Els) ->
-	case xml:remove_cdata(Els) of
-	[{xmlelement, "x", _Attrs1, Els1} = XEl] ->
-		case xml:get_tag_attr_s("xmlns", XEl) of
-		?NS_MUC_USER ->
-			case xml:remove_cdata(Els1) of
-			[{xmlelement, "invite", _, _}] ->
-				true;
-			_ ->
-				false
-			end;
-		_ ->
-			false
-		end;
-	_ -> 
+	try
+		case xml:remove_cdata(Els) of
+		[{xmlelement, "x", _Attrs1, Els1} = XEl] ->
+			case xml:get_tag_attr_s("xmlns", XEl) of
+			?NS_MUC_USER ->
+				case xml:remove_cdata(Els1) of
+				[{xmlelement, "invite", _, _}] ->
+					true
+				end
+			end
+		end
+	catch
+	error: _ -> 
 		false
 	end.
 
