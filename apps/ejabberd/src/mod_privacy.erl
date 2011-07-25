@@ -230,7 +230,7 @@ type_to_binary(Type) ->
 
 value_to_binary(Type, Val) ->
     case Type of
-	jid -> jlib:jid_to_string(Val);
+	jid -> jlib:jid_to_binary(Val);
 	group -> Val;
 	subscription ->
 	    case Val of
@@ -448,7 +448,7 @@ parse_items([{xmlelement, <<"item">>, Attrs, SubEls} | Els], Res) ->
 		     {{value, T}, {value, V}} ->
 			 case T of
 			     <<"jid">> ->
-				 case jlib:string_to_jid(V) of
+				 case jlib:binary_to_jid(V) of
 				     error ->
 					 false;
 				     JID ->

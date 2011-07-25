@@ -120,7 +120,7 @@ get_sm_commands(Acc, _From, #jid{lserver = LServer} = To, "", Lang) ->
 		    end,
 	    Nodes = [{xmlelement,
 		      "item",
-		      [{"jid", jlib:jid_to_string(To)},
+		      [{"jid", jlib:jid_to_binary(To)},
 		       {"node", ?NS_COMMANDS},
 		       {"name", translate:translate(Lang, "Commands")}],
 		      []}],

@@ -494,7 +494,7 @@ disco_items(Host, <<>>, From) ->
 			[{xmlelement, "item",
 				[{"node", binary_to_list(NodeID)},
 				    {"jid",  case Host of
-					    {_,_,_} -> jlib:jid_to_string(Host);
+					    {_,_,_} -> jlib:jid_to_binary(Host);
 					    _Host   -> Host
 					end}
 				    | case get_option(Options, title) of
@@ -518,7 +518,7 @@ disco_items(Host, Node, From) ->
 		{result, Items} ->
 		    {result, [{xmlelement, "item",
 			    [{"jid", case Host of
-					{_,_,_} -> jlib:jid_to_string(Host);
+					{_,_,_} -> jlib:jid_to_binary(Host);
 					_Host   -> Host
 				    end},
 				{"name", ItemID}], []}
@@ -1274,7 +1274,7 @@ get_pending_nodes(Host, Owner, Plugins) ->
 %% subscriptions on Host and Node.</p>
 send_pending_auth_events(Host, Node, Owner) ->
     ?DEBUG("Sending pending auth events for ~s on ~s:~s",
-	   [jlib:jid_to_string(Owner), Host, node_to_string(Node)]),
+	   [jlib:jid_to_binary(Owner), Host, node_to_string(Node)]),
     Action =
 	fun (#pubsub_node{id = NodeID, type = Type}) ->
 		case lists:member("get-pending", features(Type)) of
@@ -1323,7 +1323,7 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node}, type = Type, id =
 					{"type", "jid-single"},
 					{"label", translate:translate(Lang, "Subscriber Address")}],
 		  [{xmlelement, "value", [],
-		    [{xmlcdata, jlib:jid_to_string(Subscriber)}]}]},
+		    [{xmlcdata, jlib:jid_to_binary(Subscriber)}]}]},
 		 {xmlelement, "field",
 		  [{"var", "pubsub#allow"},
 		   {"type", "boolean"},
@@ -1378,7 +1378,7 @@ send_authorization_approval(Host, JID, SNode, Subscription) ->
 	       end,
     Stanza = event_stanza(
 	[{xmlelement, "subscription",
-	  [{"jid", jlib:jid_to_string(JID)}|nodeAttr(SNode)] ++ SubAttrs,
+	  [{"jid", jlib:jid_to_binary(JID)}|nodeAttr(SNode)] ++ SubAttrs,
 	  []}]),
     ejabberd_router:route(service_jid(Host), JID, Stanza).
 
@@ -1389,7 +1389,7 @@ handle_authorization_response(Host, From, To, Packet, XFields) ->
 	{{value, {_, [SNode]}}, {value, {_, [SSubscriber]}},
 	 {value, {_, [SAllow]}}} ->
 	    Node = string_to_node(SNode),
-	    Subscriber = jlib:string_to_jid(SSubscriber),
+	    Subscriber = jlib:binary_to_jid(SSubscriber),
 	    Allow = case SAllow of
 			"1" -> true;
 			"true" -> true;
@@ -1702,7 +1702,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	{result, GoodSubOpts} -> GoodSubOpts;
 	_ -> invalid
     end,
-    Subscriber = case jlib:string_to_jid(JID) of
+    Subscriber = case jlib:binary_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
 		 end,
@@ -1750,7 +1750,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 				        {"node", Node}]
 			       end,
 		    Fields =
-			[{"jid", jlib:jid_to_string(Subscriber)} | SubAttrs],
+			[{"jid", jlib:jid_to_binary(Subscriber)} | SubAttrs],
 		    [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], 
 			[{xmlelement, "subscription", Fields, []}]}]
 	    end,
@@ -1797,7 +1797,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 %%<li>The request specifies a subscription ID that is not valid or current.</li>
 %%</ul>
 unsubscribe_node(Host, Node, From, JID, SubId) when is_list(JID) ->
-    Subscriber = case jlib:string_to_jid(JID) of
+    Subscriber = case jlib:binary_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
 		 end,
@@ -2247,7 +2247,7 @@ get_affiliations(Host, Node, JID) ->
 			 fun({_, none}) -> [];
 			    ({AJID, Affiliation}) ->
 				 [{xmlelement, "affiliation",
-				   [{"jid", jlib:jid_to_string(AJID)},
+				   [{"jid", jlib:jid_to_binary(AJID)},
 				    {"affiliation", affiliation_to_string(Affiliation)}],
 				   []}]
 			 end, Affiliations),
@@ -2269,7 +2269,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
 		      _ ->
 			  case El of
 			      {xmlelement, "affiliation", Attrs, _} ->
-				  JID = jlib:string_to_jid(
+				  JID = jlib:binary_to_jid(
 					  xml:get_attr_s("jid", Attrs)),
 				  Affiliation = string_to_affiliation(
 						  xml:get_attr_s("affiliation", Attrs)),
@@ -2328,7 +2328,7 @@ get_options(Host, Node, JID, SubID, Lang) ->
     end.
 
 get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
-    Subscriber = case jlib:string_to_jid(JID) of
+    Subscriber = case jlib:binary_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
 		 end,
@@ -2356,7 +2356,7 @@ read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
 	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	{result, #pubsub_subscription{options = Options}} ->
 	    {result, XdataEl} = pubsub_subscription_odbc:get_options_xform(Lang, Options),
-	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_string(Subscriber)},
+	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_binary(Subscriber)},
 						 {"subid", SubID}|nodeAttr(Node)],
 			 [XdataEl]},
             PubsubEl = {xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}], [OptionsEl]},
@@ -2385,7 +2385,7 @@ set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
 	{result, GoodSubOpts} -> GoodSubOpts;
 	_ -> invalid
     end,
-    Subscriber = case jlib:string_to_jid(JID) of
+    Subscriber = case jlib:binary_to_jid(JID) of
 		     error -> {"", "", ""};
 		     J -> jlib:jid_tolower(J)
 		 end,
@@ -2464,13 +2464,13 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				case Node of
 				<<>> ->
 				 [{xmlelement, "subscription",
-				   [{"jid", jlib:jid_to_string(SubJID)},
+				   [{"jid", jlib:jid_to_binary(SubJID)},
 				    {"subid", SubID},
 				    {"subscription", subscription_to_string(Subscription)}|nodeAttr(SubsNode)],
 				   []}];
 				SubsNode ->
 				 [{xmlelement, "subscription",
-				   [{"jid", jlib:jid_to_string(SubJID)},
+				   [{"jid", jlib:jid_to_binary(SubJID)},
 				    {"subid", SubID},
 				    {"subscription", subscription_to_string(Subscription)}],
 				   []}];
@@ -2481,12 +2481,12 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				case Node of
 				<<>> ->
 				 [{xmlelement, "subscription",
-				   [{"jid", jlib:jid_to_string(SubJID)},
+				   [{"jid", jlib:jid_to_binary(SubJID)},
 				    {"subscription", subscription_to_string(Subscription)}|nodeAttr(SubsNode)],
 				   []}];
 				SubsNode ->
 				 [{xmlelement, "subscription",
-				   [{"jid", jlib:jid_to_string(SubJID)},
+				   [{"jid", jlib:jid_to_binary(SubJID)},
 				    {"subscription", subscription_to_string(Subscription)}],
 				   []}];
 				_ ->
@@ -2522,12 +2522,12 @@ get_subscriptions(Host, Node, JID) ->
 			    ({_, pending, _}) -> [];
 			    ({AJID, Subscription}) ->
 				 [{xmlelement, "subscription",
-				   [{"jid", jlib:jid_to_string(AJID)},
+				   [{"jid", jlib:jid_to_binary(AJID)},
 				    {"subscription", subscription_to_string(Subscription)}],
 				   []}];
 			    ({AJID, Subscription, SubId}) ->
 				 [{xmlelement, "subscription",
-				   [{"jid", jlib:jid_to_string(AJID)},
+				   [{"jid", jlib:jid_to_binary(AJID)},
 				    {"subscription", subscription_to_string(Subscription)},
 				    {"subid", SubId}],
 				   []}]
@@ -2550,7 +2550,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 		      _ ->
 			  case El of
 			      {xmlelement, "subscription", Attrs, _} ->
-				  JID = jlib:string_to_jid(
+				  JID = jlib:binary_to_jid(
 					  xml:get_attr_s("jid", Attrs)),
 				  Subscription = string_to_subscription(
 						   xml:get_attr_s("subscription", Attrs)),
@@ -2573,7 +2573,7 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 		Stanza = {xmlelement, "message", [],
 			    [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
 				[{xmlelement, "subscription",
-				    [{"jid", jlib:jid_to_string(JID)}, 
+				    [{"jid", jlib:jid_to_binary(JID)}, 
 				    %{"subid", SubId},
 				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
 		ejabberd_router:route(service_jid(Host), jlib:make_jid(JID), Stanza)
@@ -3015,7 +3015,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	        {pep_message, binary_to_list(Node)++"+notify"},
 	        _Sender = jlib:make_jid(LUser, LServer, ""),
 	        _StanzaToSend = add_extended_headers(Stanza,
-	            _ReplyTo = extended_headers([jlib:jid_to_string(Publisher)])));
+	            _ReplyTo = extended_headers([jlib:jid_to_binary(Publisher)])));
 	_ ->
 	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
     end;
@@ -3208,8 +3208,8 @@ max_items(Host, Options) ->
 
 -define(JLIST_CONFIG_FIELD(Label, Var, Opts),
 	?LISTXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
-		    jlib:jid_to_string(get_option(Options, Var)),
-		    [jlib:jid_to_string(O) || O <- Opts])).
+		    jlib:jid_to_binary(get_option(Options, Var)),
+		    [jlib:jid_to_binary(O) || O <- Opts])).
 
 -define(ALIST_CONFIG_FIELD(Label, Var, Opts),
 	?LISTXFIELD(Label, "pubsub#" ++ atom_to_list(Var),
@@ -3647,7 +3647,7 @@ odbc_conn(Host) ->
 
 %% escape value for database storage
 escape({_U, _H, _R}=JID)->
-    ejabberd_odbc:escape(jlib:jid_to_string(JID));
+    ejabberd_odbc:escape(jlib:jid_to_binary(JID));
 escape(Value)->
     ejabberd_odbc:escape(Value).
 

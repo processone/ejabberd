@@ -39,9 +39,8 @@
 	 remove_attr/2,
 	 make_jid/3,
 	 make_jid/1,
-	 string_to_jid/1,
-	 jid_to_string/1,
-     jid_to_binary/1,
+	 binary_to_jid/1,
+	 jid_to_binary/1,
 	 is_nodename/1,
 	 tolower/1,
 	 nodeprep/1,
@@ -197,67 +196,72 @@ make_jid(User, Server, Resource) ->
 make_jid({User, Server, Resource}) ->
     make_jid(User, Server, Resource).
 
-string_to_jid(J) when erlang:is_binary(J) ->
-    string_to_jid(binary_to_list(J));
-string_to_jid(J) ->
-    string_to_jid1(J, "").
+%% binary_to_jid(J) when erlang:is_binary(J) ->
+%%     binary_to_jid(binary_to_list(J));
+binary_to_jid(J) ->
+    binary_to_jid1(J, <<>>).
 
-string_to_jid1([$@ | _J], "") ->
+binary_to_jid1(<<$@, _J/binary>>, <<>>) ->
     error;
-string_to_jid1([$@ | J], N) ->
-    string_to_jid2(J, lists:reverse(N), "");
-string_to_jid1([$/ | _J], "") ->
+binary_to_jid1(<<$@, J/binary>>, N) ->
+    binary_to_jid2(J, binary_reverse(N), <<>>);
+binary_to_jid1(<<$/, _J/binary>>, <<>>) ->
     error;
-string_to_jid1([$/ | J], N) ->
-    string_to_jid3(J, "", lists:reverse(N), "");
-string_to_jid1([C | J], N) ->
-    string_to_jid1(J, [C | N]);
-string_to_jid1([], "") ->
+binary_to_jid1(<<$/, J/binary>>, N) ->
+    binary_to_jid3(J, <<>>, binary_reverse(N), <<>>);
+binary_to_jid1(<<C, J/binary>>, N) ->
+    binary_to_jid1(J, <<C, N/binary>>);
+binary_to_jid1(<<>>, <<>>) ->
     error;
-string_to_jid1([], N) ->
-    make_jid(<<>>, list_to_binary(lists:reverse(N)), <<>>).
+binary_to_jid1(<<>>, N) ->
+    make_jid(<<>>, binary_reverse(N), <<>>).
 
 %% Only one "@" is admitted per JID
-string_to_jid2([$@ | _J], _N, _S) ->
+binary_to_jid2(<<$@, _J/binary>>, _N, _S) ->
     error;
-string_to_jid2([$/ | _J], _N, "") ->
+binary_to_jid2(<<$/, _J/binary>>, _N, <<>>) ->
     error;
-string_to_jid2([$/ | J], N, S) ->
-    string_to_jid3(J, N, lists:reverse(S), "");
-string_to_jid2([C | J], N, S) ->
-    string_to_jid2(J, N, [C | S]);
-string_to_jid2([], _N, "") ->
+binary_to_jid2(<<$/, J/binary>>, N, S) ->
+    binary_to_jid3(J, N, binary_reverse(S), <<>>);
+binary_to_jid2(<<C, J/binary>>, N, S) ->
+    binary_to_jid2(J, N, <<C, S/binary>>);
+binary_to_jid2(<<>>, _N, <<>>) ->
     error;
-string_to_jid2([], N, S) ->
-    make_jid(list_to_binary(N), list_to_binary(lists:reverse(S)), <<>>).
+binary_to_jid2(<<>>, N, S) ->
+    make_jid(N, binary_reverse(S), <<>>).
 
-string_to_jid3([C | J], N, S, R) ->
-    string_to_jid3(J, N, S, [C | R]);
-string_to_jid3([], N, S, R) ->
-    make_jid(list_to_binary(N), list_to_binary(S), list_to_binary(lists:reverse(R))).
+binary_to_jid3(<<C, J/binary>>, N, S, R) ->
+    binary_to_jid3(J, N, S, <<C, R/binary>>);
+binary_to_jid3(<<>>, N, S, R) ->
+    make_jid(N, S, binary_reverse(R)).
 
-jid_to_string(#jid{user = User, server = Server, resource = Resource}) ->
-    jid_to_string({User, Server, Resource});
-jid_to_string({Node, Server, Resource}) ->
+binary_reverse(<<>>) ->
+    <<>>;
+binary_reverse(<<H,T/binary>>) ->
+    <<(binary_reverse(T))/binary,H>>.
+
+jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
+    jid_to_binary({User, Server, Resource});
+jid_to_binary({Node, Server, Resource}) ->
     S1 = case Node of
 	     <<>> ->
-		 "";
+		 <<>>;
 	     _ ->
-		 binary_to_list(Node) ++ "@"
+		 list_to_binary([Node, <<"@">>])
 	 end,
-    S2 = S1 ++ binary_to_list(Server),
+    S2 = list_to_binary([S1, Server]),
     S3 = case Resource of
 	     <<>> ->
 		 S2;
 	     _ ->
-		 S2 ++ "/" ++ binary_to_list(Resource)
+		 list_to_binary([S2, <<"/">>, Resource])
 	 end,
     S3.
 
-jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
-    list_to_binary(jid_to_string({User, Server, Resource}));
-jid_to_binary({Node, Server, Resource}) ->
-    list_to_binary(jid_to_string({Node, Server, Resource})).
+%% jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
+%%     list_to_binary(jid_to_binary({User, Server, Resource}));
+%% jid_to_binary({Node, Server, Resource}) ->
+%%     list_to_binary(jid_to_binary({Node, Server, Resource})).
 
 is_nodename([]) ->
     false;

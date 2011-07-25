@@ -1050,7 +1050,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 			      "@online@" ->
 				  USs;
 			      _ ->
-				  case jlib:string_to_jid(SJID) of
+				  case jlib:binary_to_jid(SJID) of
 				      JID when is_record(JID, jid) ->
 					  [{JID#jid.luser, JID#jid.lserver} | USs];
 				      error ->
@@ -1111,4 +1111,4 @@ get_opt(Opts, Opt, Default) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, <<>>}).
+    jlib:jid_to_binary({User, Server, <<>>}).

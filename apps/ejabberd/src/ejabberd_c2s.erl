@@ -519,7 +519,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    ?INFO_MSG(
 			       "(~w) Accepted legacy authentication for ~s by ~p",
 			       [StateData#state.socket,
-				jlib:jid_to_string(JID), AuthModule]),
+				jlib:jid_to_binary(JID), AuthModule]),
 			    SID = {now(), self()},
 			    Conn = get_conn_type(StateData),
 			    Info = [{ip, StateData#state.ip}, {conn, Conn},
@@ -561,7 +561,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    ?INFO_MSG(
 			       "(~w) Failed legacy authentication for ~s",
 			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
+				jlib:jid_to_binary(JID)]),
 			    Err = jlib:make_error_reply(
 				    El, ?ERR_NOT_AUTHORIZED),
 			    send_element(StateData, Err),
@@ -581,7 +581,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    ?INFO_MSG(
 			       "(~w) Forbidden legacy authentication for ~s",
 			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
+				jlib:jid_to_binary(JID)]),
 			    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 			    send_element(StateData, Err),
 			    fsm_next_state(wait_for_auth, StateData)
@@ -891,7 +891,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		allow ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
 			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
+			       jlib:jid_to_binary(JID)]),
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
@@ -928,7 +928,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				       StateData#state.server, [JID]),
 		    ?INFO_MSG("(~w) Forbidden session for ~s",
 			      [StateData#state.socket,
-			       jlib:jid_to_string(JID)]),
+			       jlib:jid_to_binary(JID)]),
 		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 		    send_element(StateData, Err),
 		    fsm_next_state(wait_for_session, StateData)
@@ -1003,7 +1003,7 @@ session_established2(El, StateData) ->
 		<<>> ->
 		    jlib:make_jid(User, Server, <<>>);
 		_ ->
-		    jlib:string_to_jid(To)
+		    jlib:binary_to_jid(To)
 	    end,
     NewEl1 = jlib:remove_attr(<<"xmlns">>, El),
     NewEl = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
@@ -1436,7 +1436,7 @@ terminate(_Reason, StateName, StateData) ->
 		replaced ->
 		    ?INFO_MSG("(~w) Replaced session for ~s",
 			      [StateData#state.socket,
-			       jlib:jid_to_string(StateData#state.jid)]),
+			       jlib:jid_to_binary(StateData#state.jid)]),
 		    From = StateData#state.jid,
 		    Packet = {xmlelement, <<"presence">>,
 			      [{<<"type">>, <<"unavailable">>}],
@@ -1455,7 +1455,7 @@ terminate(_Reason, StateName, StateData) ->
 		_ ->
 		    ?INFO_MSG("(~w) Close session for ~s",
 			      [StateData#state.socket,
-			       jlib:jid_to_string(StateData#state.jid)]),
+			       jlib:jid_to_binary(StateData#state.jid)]),
 
 		    EmptySet = ?SETS:new(),
 		    case StateData of
@@ -2072,8 +2072,8 @@ resend_offline_messages(StateData) ->
 		      if
 			  Pass ->
 			      %% Attrs2 = jlib:replace_from_to_attrs(
-			      %%		 jlib:jid_to_string(From),
-			      %%		 jlib:jid_to_string(To),
+			      %%		 jlib:jid_to_binary(From),
+			      %%		 jlib:jid_to_binary(To),
 			      %%		 Attrs),
 			      %% FixedPacket = {xmlelement, Name, Attrs2, Els},
                               %% Use route instead of send_element to go through standard workflow
@@ -2202,7 +2202,7 @@ check_from(El, FromJID) ->
 	false ->
 	    El;
 	{value, SJID} ->
-	    JID = jlib:string_to_jid(SJID),
+	    JID = jlib:binary_to_jid(SJID),
 	    case JID of
 		error ->
 		    'invalid-from';

@@ -246,10 +246,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		  %% when accept packets from any address.
 		  %% In this case, the component can send packet of
 		  %% behalf of the server users.
-		  false -> jlib:string_to_jid(From);
+		  false -> jlib:binary_to_jid(From);
 		  %% The default is the standard behaviour in XEP-0114
 		  _ ->
-		      FromJID1 = jlib:string_to_jid(From),
+		      FromJID1 = jlib:binary_to_jid(From),
 		      case FromJID1 of
 			  #jid{lserver = Server} ->
 			      case lists:member(Server, StateData#state.hosts) of
@@ -262,7 +262,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
     To = xml:get_attr_s("to", Attrs),
     ToJID = case To of
 		"" -> error;
-		_ -> jlib:string_to_jid(To)
+		_ -> jlib:binary_to_jid(To)
 	    end,
     if ((Name == "iq") or
 	(Name == "message") or
@@ -344,8 +344,8 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
     case acl:match_rule(global, StateData#state.access, From) of
 	allow ->
 	    {xmlelement, Name, Attrs, Els} = Packet,
-	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-						jlib:jid_to_string(To),
+	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_binary(From),
+						jlib:jid_to_binary(To),
 						Attrs),
 	    Text = xml:element_to_binary({xmlelement, Name, Attrs2, Els}),
 	    send_text(StateData, Text);

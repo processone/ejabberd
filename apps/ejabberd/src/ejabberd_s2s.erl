@@ -255,8 +255,8 @@ do_route(From, To, Packet) ->
 	{atomic, Pid} when is_pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
 	    {xmlelement, Name, Attrs, Els} = Packet,
-	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-						  jlib:jid_to_string(To),
+	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_binary(From),
+						  jlib:jid_to_binary(To),
 						  Attrs),
 	    #jid{lserver = MyServer} = From,
 	    ejabberd_hooks:run(

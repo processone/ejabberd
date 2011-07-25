@@ -626,7 +626,7 @@ mnesia_pop_offline_messages(Ls, User, Server) ->
 	    Ls ++ lists:map(
 		    fun(R) ->
 			    {xmlelement, Name, Attrs, Els} = R#offline_msg.packet,
-			    FromString = jlib:jid_to_string(R#offline_msg.from),
+			    FromString = jlib:jid_to_binary(R#offline_msg.from),
 			    Attrs2 = lists:keystore("from", 1, Attrs, {"from", FromString}),
 			    Attrs3 = lists:keystore("xmlns", 1, Attrs2, {"xmlns", "jabber:client"}),
 			    {xmlelement, Name, Attrs3,

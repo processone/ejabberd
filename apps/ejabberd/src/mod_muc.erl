@@ -596,7 +596,7 @@ iq_disco_items(Host, From, Lang, none) ->
 			     flush(),
 			     {true,
 			      {xmlelement, "item",
-			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
+			       [{"jid", jlib:jid_to_binary({Name, Host, ""})},
 				{"name", Desc}], []}};
 			 _ ->
 			     false
@@ -613,7 +613,7 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			     flush(),
 			     {true,
 			      {xmlelement, "item",
-			       [{"jid", jlib:jid_to_string({Name, Host, ""})},
+			       [{"jid", jlib:jid_to_binary({Name, Host, ""})},
 				{"name", Desc}], []}};
 			 _ ->
 			     false

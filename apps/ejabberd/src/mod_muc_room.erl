@@ -124,7 +124,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 				   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
-	      [Room, Host, jlib:jid_to_string(Creator)]),
+	      [Room, Host, jlib:jid_to_binary(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
     {ok, normal_state, State1};
@@ -569,12 +569,12 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
                      [], [{xmlcdata, Reason}]}]
            end}, StateData),
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
-	      [jlib:jid_to_string(StateData#state.jid), Reason]),
+	      [jlib:jid_to_binary(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
     {stop, shutdown, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
-	      [jlib:jid_to_string(StateData#state.jid)]),
+	      [jlib:jid_to_binary(StateData#state.jid)]),
     handle_event({destroy, none}, StateName, StateData);
 
 handle_event({set_affiliations, Affiliations}, StateName, StateData) ->
@@ -966,7 +966,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 	(?DICT:to_list(StateData1#state.users) == []) of
 	true ->
 	    ?INFO_MSG("Destroyed MUC room ~s because it's temporary and empty", 
-		      [jlib:jid_to_string(StateData#state.jid)]),
+		      [jlib:jid_to_binary(StateData#state.jid)]),
 	    add_to_log(room_existence, destroyed, StateData),
 	    {stop, normal, StateData1};
 	_ ->
@@ -1075,7 +1075,7 @@ decide_fate_message("error", Packet, From, StateData) ->
 	     %% If this is an error stanza and its condition matches a criteria
 	     true ->
 		 Reason = io_lib:format("This participant is considered a ghost and is expulsed: ~s",
-					[jlib:jid_to_string(From)]),
+					[jlib:jid_to_binary(From)]),
 		 {expulse_sender, Reason};
 	     false ->
 		 continue_delivery
@@ -1897,7 +1897,7 @@ send_new_presence(NJID, Reason, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [{"jid", jlib:jid_to_string(RealJID)},
+			  [{"jid", jlib:jid_to_binary(RealJID)},
 			   {"affiliation", SAffiliation},
 			   {"role", SRole}];
 		      _ ->
@@ -1957,7 +1957,7 @@ send_existing_presences(ToJID, StateData) ->
 			      ((StateData#state.config)#config.anonymous ==
 			       false) of
 			      true ->
-				  [{"jid", jlib:jid_to_string(FromJID)},
+				  [{"jid", jlib:jid_to_binary(FromJID)},
 				   {"affiliation",
 				    affiliation_to_list(FromAffiliation)},
 				   {"role", role_to_list(FromRole)}];
@@ -2013,7 +2013,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [{"jid", jlib:jid_to_string(RealJID)},
+			  [{"jid", jlib:jid_to_binary(RealJID)},
 			   {"affiliation", SAffiliation},
 			   {"role", SRole},
 			   {"nick", Nick}];
@@ -2026,7 +2026,7 @@ send_nick_changing(JID, OldNick, StateData) ->
 		  case (Info#user.role == moderator) orelse
 		      ((StateData#state.config)#config.anonymous == false) of
 		      true ->
-			  [{"jid", jlib:jid_to_string(RealJID)},
+			  [{"jid", jlib:jid_to_binary(RealJID)},
 			   {"affiliation", SAffiliation},
 			   {"role", SRole}];
 		      _ ->
@@ -2224,12 +2224,12 @@ items_with_affiliation(SAffiliation, StateData) ->
       fun({JID, {Affiliation, Reason}}) ->
 	      {xmlelement, "item",
 	       [{"affiliation", affiliation_to_list(Affiliation)},
-		{"jid", jlib:jid_to_string(JID)}],
+		{"jid", jlib:jid_to_binary(JID)}],
 	       [{xmlelement, "reason", [], [{xmlcdata, Reason}]}]};
 	 ({JID, Affiliation}) ->
 	      {xmlelement, "item",
 	       [{"affiliation", affiliation_to_list(Affiliation)},
-		{"jid", jlib:jid_to_string(JID)}],
+		{"jid", jlib:jid_to_binary(JID)}],
 	       []}
       end, search_affiliation(SAffiliation, StateData)).
 
@@ -2242,7 +2242,7 @@ user_to_item(#user{role = Role,
      [{"role", role_to_list(Role)},
       {"affiliation", affiliation_to_list(Affiliation)},
       {"nick", Nick},
-      {"jid", jlib:jid_to_string(JID)}],
+      {"jid", jlib:jid_to_binary(JID)}],
      []}.
 
 search_role(Role, StateData) ->
@@ -2269,7 +2269,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
     case find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, []) of
 	{result, Res} ->
 	    ?INFO_MSG("Processing MUC admin query from ~s in room ~s:~n ~p",
-		      [jlib:jid_to_string(UJID), jlib:jid_to_string(StateData#state.jid), Res]),
+		      [jlib:jid_to_binary(UJID), jlib:jid_to_binary(StateData#state.jid), Res]),
 	    NSD =
 		lists:foldl(
 		  fun(E, SD) ->
@@ -2355,7 +2355,7 @@ find_changed_items(UJID, UAffiliation, URole,
 		   Lang, StateData, Res) ->
     TJID = case xml:get_attr("jid", Attrs) of
 	       {value, S} ->
-		   case jlib:string_to_jid(S) of
+		   case jlib:binary_to_jid(S) of
 		       error ->
 			   ErrText = io_lib:format(
 				       translate:translate(
@@ -2702,7 +2702,7 @@ send_kickban_presence1(UJID, Reason, Code, Affiliation, StateData) ->
 	       nick = Nick}} =
 	?DICT:find(jlib:jid_tolower(UJID), StateData#state.users),
     SAffiliation = affiliation_to_list(Affiliation),
-    BannedJIDString = jlib:jid_to_string(RealJID),
+    BannedJIDString = jlib:jid_to_binary(RealJID),
     lists:foreach(
       fun({_LJID, Info}) ->
 	      JidAttrList = case (Info#user.role == moderator) orelse
@@ -2764,7 +2764,7 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 		    end;
 		[{xmlelement, "destroy", _Attrs1, _Els1} = SubEl1] ->
 		    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s", 
-			      [jlib:jid_to_string(StateData#state.jid), jlib:jid_to_string(From)]),
+			      [jlib:jid_to_binary(StateData#state.jid), jlib:jid_to_binary(From)]),
 		    add_to_log(room_existence, destroyed, StateData),
 		    destroy_room(SubEl1, StateData);
 		Items ->
@@ -2917,7 +2917,7 @@ is_password_settings_correct(XEl, StateData) ->
         {xmlelement, "field", [{"type", "jid-multi"},
 			       {"label", translate:translate(Lang, Label)},
 			       {"var", Var}],
-         [{xmlelement, "value", [], [{xmlcdata, jlib:jid_to_string(JID)}]}
+         [{xmlelement, "value", [], [{xmlcdata, jlib:jid_to_binary(JID)}]}
           || JID <- JIDList]}).
 
 get_default_room_maxusers(RoomState) ->
@@ -2938,7 +2938,7 @@ get_config(Lang, StateData, From) ->
 	end,
     Res =
 	[{xmlelement, "title", [],
-	  [{xmlcdata, io_lib:format(translate:translate(Lang, "Configuration of room ~s"), [jlib:jid_to_string(StateData#state.jid)])}]},
+	  [{xmlcdata, io_lib:format(translate:translate(Lang, "Configuration of room ~s"), [jlib:jid_to_binary(StateData#state.jid)])}]},
 	 {xmlelement, "field", [{"type", "hidden"},
 				{"var", "FORM_TYPE"}],
 	  [{xmlelement, "value", [],
@@ -3182,7 +3182,7 @@ set_xoption([{"muc#roomconfig_maxusers", [Val]} | Opts], Config) ->
 set_xoption([{"muc#roomconfig_enablelogging", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(logging, Val);
 set_xoption([{"muc#roomconfig_captcha_whitelist", Vals} | Opts], Config) ->
-    JIDs = [jlib:string_to_jid(Val) || Val <- Vals],
+    JIDs = [jlib:binary_to_jid(Val) || Val <- Vals],
     ?SET_JIDMULTI_XOPT(captcha_whitelist, JIDs);
 set_xoption([{"FORM_TYPE", _} | Opts], Config) ->
     %% Ignore our FORM_TYPE
@@ -3453,7 +3453,7 @@ get_mucroom_disco_items(StateData) ->
       fun({_LJID, Info}) ->
 	      Nick = Info#user.nick,
 	      {xmlelement, "item",
-	       [{"jid", jlib:jid_to_string({StateData#state.room,
+	       [{"jid", jlib:jid_to_binary({StateData#state.room,
 					    StateData#state.host, Nick})},
 		{"name", Nick}], []}
       end,
@@ -3483,7 +3483,7 @@ check_invitation(From, Els, Lang, StateData) ->
 		   _ ->
 		       throw({error, ?ERR_BAD_REQUEST})
 	       end,
-    JID = case jlib:string_to_jid(
+    JID = case jlib:binary_to_jid(
 		 xml:get_tag_attr_s("to", InviteEl)) of
 	      error ->
 		  throw({error, ?ERR_JID_MALFORMED});
@@ -3508,7 +3508,7 @@ check_invitation(From, Els, Lang, StateData) ->
 	    IEl =
 		[{xmlelement, "invite",
 		  [{"from",
-		    jlib:jid_to_string(From)}],
+		    jlib:jid_to_binary(From)}],
 		  [{xmlelement, "reason", [],
 		    [{xmlcdata, Reason}]}] ++ ContinueEl}],
 	    PasswdEl =
@@ -3527,8 +3527,8 @@ check_invitation(From, Els, Lang, StateData) ->
 		       translate:translate(
 			 Lang,
 			 "~s invites you to the room ~s"),
-		       [jlib:jid_to_string(From),
-			jlib:jid_to_string({StateData#state.room,
+		       [jlib:jid_to_binary(From),
+			jlib:jid_to_binary({StateData#state.room,
 					    StateData#state.host,
 					    ""})
 		       ])) ++
@@ -3552,7 +3552,7 @@ check_invitation(From, Els, Lang, StateData) ->
 		 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}], IEl ++ PasswdEl},
 		  {xmlelement, "x",
 		   [{"xmlns", ?NS_XCONFERENCE},
-		    {"jid", jlib:jid_to_string(
+		    {"jid", jlib:jid_to_binary(
 			      {StateData#state.room,
 			       StateData#state.host,
 			       ""})}],
@@ -3583,13 +3583,13 @@ check_decline_invitation(Packet) ->
     ?NS_MUC_USER = xml:get_tag_attr_s("xmlns", XEl),
     DEl = xml:get_subtag(XEl, "decline"),
     ToString = xml:get_tag_attr_s("to", DEl),
-    ToJID = jlib:string_to_jid(ToString),
+    ToJID = jlib:binary_to_jid(ToString),
     {true, {Packet, XEl, DEl, ToJID}}.
 
 %% Send the decline to the inviter user.
 %% The original stanza must be slightly modified.
 send_decline_invitation({Packet, XEl, DEl, ToJID}, RoomJID, FromJID) ->
-    FromString = jlib:jid_to_string(FromJID),
+    FromString = jlib:jid_to_binary(FromJID),
     {xmlelement, "decline", DAttrs, DEls} = DEl,
     DAttrs2 = lists:keydelete("to", 1, DAttrs),
     DAttrs3 = [{"from", FromString} | DAttrs2],

@@ -396,11 +396,11 @@ send_registration_notifications(UJID, Source) ->
 		     io_lib:format(
 		       "[~s] The account ~s was registered from IP address ~s "
 		       "on node ~w using ~p.",
-		       [get_time_string(), jlib:jid_to_string(UJID),
+		       [get_time_string(), jlib:jid_to_binary(UJID),
 			ip_to_string(Source), node(), ?MODULE])),
 	    lists:foreach(
 	      fun(S) ->
-		      case jlib:string_to_jid(S) of
+		      case jlib:binary_to_jid(S) of
 			  error -> ok;
 			  JID ->
 			      ejabberd_router:route(

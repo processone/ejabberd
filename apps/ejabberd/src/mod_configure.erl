@@ -94,7 +94,7 @@ stop(Host) ->
 
 -define(NODEJID(To, Name, Node),
 	{xmlelement, "item",
-	 [{"jid", jlib:jid_to_string(To)},
+	 [{"jid", jlib:jid_to_binary(To)},
 	  {"name", ?T(Lang, Name)},
 	  {"node", Node}], []}).
 
@@ -273,7 +273,7 @@ adhoc_sm_items(Acc, From, #jid{lserver = LServer} = To, Lang) ->
 			empty -> []
 		    end,
 	    Nodes = [{xmlelement, "item",
-		      [{"jid", jlib:jid_to_string(To)},
+		      [{"jid", jlib:jid_to_binary(To)},
 		       {"name", ?T(Lang, "Configuration")},
 		       {"node", "config"}], []}],
 	    {result, Items ++ Nodes};
@@ -389,7 +389,7 @@ get_permission_level(JID) ->
 	    allow ->
 		PermLev = get_permission_level(From),
 		case get_local_items({PermLev, LServer}, LNode,
-				     jlib:jid_to_string(To), Lang) of
+				     jlib:jid_to_binary(To), Lang) of
 		    {result, Res} ->
 			{result, Res};
 		    {error, Error} ->
@@ -413,7 +413,7 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To, "", Lang) ->
 		allow ->
 		    PermLev = get_permission_level(From),
 		    case get_local_items({PermLev, LServer}, [],
-					 jlib:jid_to_string(To), Lang) of
+					 jlib:jid_to_binary(To), Lang) of
 			{result, Res} ->
 			    {result, Items ++ Res};
 			{error, _Error} ->
@@ -1596,7 +1596,7 @@ set_form(From, Host, ?NS_ADMINL("add-user"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
     Password = get_value("password-verify", XData),
-    AccountJID = jlib:string_to_jid(AccountString),
+    AccountJID = jlib:binary_to_jid(AccountString),
     User = AccountJID#jid.luser,
     Server = AccountJID#jid.lserver,
     true = lists:member(Server, ?MYHOSTS),
@@ -1609,7 +1609,7 @@ set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
     [_|_] = AccountStringList,
     ASL2 = lists:map(
 	     fun(AccountString) ->
-		     JID = jlib:string_to_jid(AccountString),
+		     JID = jlib:binary_to_jid(AccountString),
 		     [_|_] = JID#jid.luser,
 		     User = JID#jid.luser,
 		     Server = JID#jid.lserver,
@@ -1623,7 +1623,7 @@ set_form(From, Host, ?NS_ADMINL("delete-user"), _Lang, XData) ->
 
 set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = jlib:string_to_jid(AccountString),
+    JID = jlib:binary_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
@@ -1643,7 +1643,7 @@ set_form(From, Host, ?NS_ADMINL("end-user-session"), _Lang, XData) ->
 
 set_form(From, Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = jlib:string_to_jid(AccountString),
+    JID = jlib:binary_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser,
     Server = JID#jid.lserver,
@@ -1659,7 +1659,7 @@ set_form(From, Host, ?NS_ADMINL("get-user-password"), Lang, XData) ->
 set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
     AccountString = get_value("accountjid", XData),
     Password = get_value("password", XData),
-    JID = jlib:string_to_jid(AccountString),
+    JID = jlib:binary_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser,
     Server = JID#jid.lserver,
@@ -1670,7 +1670,7 @@ set_form(From, Host, ?NS_ADMINL("change-user-password"), _Lang, XData) ->
 
 set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = jlib:string_to_jid(AccountString),
+    JID = jlib:binary_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser,
     Server = JID#jid.lserver,
@@ -1708,7 +1708,7 @@ set_form(From, Host, ?NS_ADMINL("get-user-lastlogin"), Lang, XData) ->
 
 set_form(From, Host, ?NS_ADMINL("user-stats"), Lang, XData) ->
     AccountString = get_value("accountjid", XData),
-    JID = jlib:string_to_jid(AccountString),
+    JID = jlib:binary_to_jid(AccountString),
     [_|_] = JID#jid.luser,
     User = JID#jid.luser,
     Server = JID#jid.lserver,

@@ -233,7 +233,7 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
     case Auth of
         {SJID, Pass} ->
 	    {HostOfRule, AccessRule} = get_acl_rule(RPath, Method),
-            case jlib:string_to_jid(SJID) of
+            case jlib:binary_to_jid(SJID) of
                 error ->
                     {unauthorized, "badformed-jid"};
                 #jid{user = "", server = User} ->
@@ -1309,14 +1309,14 @@ string_to_spec("user_regexp", Val) ->
 string_to_spec("server_regexp", Val) ->
     {server_regexp, Val};
 string_to_spec("node_regexp", Val) ->
-    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    #jid{luser = U, lserver = S, resource = ""} = jlib:binary_to_jid(Val),
     {node_regexp, U, S};
 string_to_spec("user_glob", Val) ->
     string_to_spec2(user_glob, Val);
 string_to_spec("server_glob", Val) ->
     {server_glob, Val};
 string_to_spec("node_glob", Val) ->
-    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    #jid{luser = U, lserver = S, resource = ""} = jlib:binary_to_jid(Val),
     {node_glob, U, S};
 string_to_spec("all", _) ->
     all;
@@ -1326,7 +1326,7 @@ string_to_spec("raw", Val) ->
     NewSpec.
 
 string_to_spec2(ACLName, Val) ->
-    #jid{luser = U, lserver = S, resource = ""} = jlib:string_to_jid(Val),
+    #jid{luser = U, lserver = S, resource = ""} = jlib:binary_to_jid(Val),
     case U of
 	"" ->
 	    {ACLName, S};
@@ -1538,7 +1538,7 @@ list_users_parse_query(Query, Host) ->
 		lists:keysearch("newusername", 1, Query),
 	    {value, {_, Password}} =
 		lists:keysearch("newuserpassword", 1, Query),
-	    case jlib:string_to_jid(Username++"@"++Host) of
+	    case jlib:binary_to_jid(Username++"@"++Host) of
 		error ->
 		    error;
 		#jid{user = User, server = Server} ->
@@ -1637,10 +1637,10 @@ get_lastactivity_menuitem_list(Server) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    jlib:jid_to_binary({User, Server, ""}).
 
 su_to_list({Server, User}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    jlib:jid_to_binary({User, Server, ""}).
 
 %%%==================================
 %%%% get_stats
