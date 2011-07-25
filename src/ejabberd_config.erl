@@ -60,6 +60,13 @@ start() ->
     load_file(Config),
     %% This start time is used by mod_last:
     add_local_option(node_start, now()),
+    SharedKey = case erlang:get_cookie() of
+                    nocookie ->
+                        sha:sha(randoms:get_string());
+                    Cookie ->
+                        sha:sha(atom_to_list(Cookie))
+                end,
+    add_local_option(shared_key, SharedKey),
     ok.
 
 %% @doc Get the filename of the ejabberd configuration file.
