@@ -310,7 +310,37 @@ normal_state({route, From, "",
 				end,
 				{next_state, normal_state, StateData};
 			IsVoiceApprovement ->
-				{next_state, normal_state, StateData};
+				NewStateData = case is_moderator(From, StateData) of
+				true ->
+					case extract_jid_from_voice_approvement(Els) of
+					{error, X} ->
+						?ERROR_MSG("Failed to extract JID from voice approvement: ~n~p", [X]),
+						ErrText = "Failed to extract JID from your voice request approvement",
+						Err = jlib:make_error_reply(
+							Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
+						ejabberd_router:route(
+							StateData#state.jid, From, Err),
+						StateData;
+					TargetJid ->
+						case is_visitor(TargetJid, StateData) of
+						true ->
+							Reason = [],
+							NSD = set_role(TargetJid, participant, StateData),
+							catch send_new_presence(TargetJid, Reason, NSD),
+							NSD;
+						_ ->
+							StateData
+						end
+					end;
+				_ ->
+					ErrText = "Only moderators can approve voice requests",
+					Err = jlib:make_error_reply(
+						Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
+					ejabberd_router:route(
+						StateData#state.jid, From, Err),
+					StateData
+				end,
+				{next_state, normal_state, NewStateData};
 			true ->
 				{next_state, normal_state, StateData}
 			end;
@@ -3769,6 +3799,31 @@ check_voice_approvement_fields({xmlelement, "field", Attrs, Els}, Acc) ->
 				true
 			end
 		end
+	end.
+
+extract_jid_from_voice_approvement(Els) ->
+	try
+		[{xmlelement, "x", _, Els1}] = xml:remove_cdata(Els),
+		Jid = lists:foldl(
+			fun(El, Acc) ->
+				case xml:get_tag_attr_s("var", El) of
+				"muc#jid" ->
+					{xmlelement, "field", _, Els2} = El,
+					[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els2),
+					xml:get_cdata(Value);
+				_ ->
+					Acc
+				end
+			end, {error, jid_not_found}, xml:remove_cdata(Els1)),
+		case Jid of
+		{error, _} = Err ->
+			Err;
+		_ ->
+			jlib:string_to_jid(Jid)
+		end
+	catch
+	error: X ->
+		{error, X}
 	end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
