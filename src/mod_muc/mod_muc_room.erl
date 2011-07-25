@@ -298,7 +298,16 @@ normal_state({route, From, "",
 					end
 				end;
 			IsVoiceRequest ->
-				send_voice_request(From, StateData),
+				case is_visitor(From, StateData) of
+				true ->
+					send_voice_request(From, StateData);
+				_ ->
+					ErrText = "Only visitors allowed to request voice",
+					Err = jlib:make_error_reply(
+						Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
+					ejabberd_router:route(
+						StateData#state.jid, From, Err)
+				end,
 				{next_state, normal_state, StateData};
 			IsVoiceApprovement ->
 				{next_state, normal_state, StateData};
