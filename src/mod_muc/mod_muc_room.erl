@@ -258,6 +258,7 @@ normal_state({route, From, "",
 		Type when (Type == "") or (Type == "normal") ->
 			IsInvitation = is_invitation(Els),
 			IsVoiceRequest = is_voice_request(Els),
+			IsVoiceApprovement = is_voice_approvement(Els),
 			if 
 			IsInvitation ->
 				case catch check_invitation(From, Els, Lang, StateData) of
@@ -298,6 +299,8 @@ normal_state({route, From, "",
 				end;
 			IsVoiceRequest ->
 				send_voice_request(From, StateData),
+				{next_state, normal_state, StateData};
+			IsVoiceApprovement ->
 				{next_state, normal_state, StateData};
 			true ->
 				{next_state, normal_state, StateData}
@@ -3694,13 +3697,10 @@ prepare_request_form(Requester, Nick, Lang) ->
 	}]}.
 
 send_voice_request(From, StateData) ->
-	?ERROR_MSG("MUC ROOM: send_voice_request: From = ~p~n", [From]),
 	Moderators = search_role(moderator, StateData),
-	?ERROR_MSG("MUC ROOM: send_voice_request: Moderators = ~p~n", [Moderators]),
 	[{_, #user{nick = FromNick}}] = lists:filter(
 		fun({_, #user{jid = Jid}}) -> Jid == From end,
 		?DICT:to_list(StateData#state.users)),
-	?ERROR_MSG("MUC ROOM: send_voice_request: FromNick = ~p~n", [FromNick]),
 	lists:map(
 		fun({_, User}) ->
 			ejabberd_router:route(
@@ -3709,6 +3709,58 @@ send_voice_request(From, StateData) ->
 				prepare_request_form(From, FromNick, ""))
 		end, Moderators),
 	ok.
+
+is_voice_approvement(Els) ->
+	try
+		case xml:remove_cdata(Els) of
+		[{xmlelement, "x", Attrs, Els1}] ->
+			case xml:get_attr_s("xmlns", Attrs) of
+			?NS_XDATA ->
+				case xml:get_attr_s("type", Attrs) of
+				"submit" ->
+					lists:foldl(
+						fun(X,Y) ->
+							check_voice_approvement_fields(X,Y)
+						end,
+						true, xml:remove_cdata(Els1))
+				end
+			end
+		end
+	catch
+	error: _ ->
+		false
+	end.
+
+check_voice_approvement_fields({xmlelement, "field", Attrs, Els}, Acc) ->
+	if Acc ->
+		case xml:get_attr_s("var", Attrs) of
+		"FORM_TYPE" ->
+			[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
+			case xml:get_cdata(Value) of
+			"http://jabber.org/protocol/muc#request" ->
+				true
+			end;
+		"muc#role" ->
+			[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
+			case xml:get_cdata(Value) of
+			"participant" ->
+				true
+			end;
+		"muc#jid" ->
+			true; % TODO: make some validation here
+		"muc#roomnick" ->
+			true;
+		"muc#request_allow" ->
+			% XXX: submitted forms with request_allow unchecked ignored here
+			[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
+			case xml:get_cdata(Value) of
+			"true" ->
+				true;
+			"1" ->
+				true
+			end
+		end
+	end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
