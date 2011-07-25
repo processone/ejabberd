@@ -1,0 +1,20 @@
+This package was debianized by Nicolas Niclausse <nicolas.niclausse@niclux.org> on
+Tue, 10 Feb 2004 12:09:23 +0100.
+
+It was downloaded from http://tsung.erlang-projects.org/
+
+Upstream Author(s): Nicolas Niclausse <nicolas.niclausse@niclux.org>
+
+Copyright:
+
+    Tsung is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+   
+    Tsung is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    See /usr/share/common-licenses/GPL

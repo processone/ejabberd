@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "@prefix@/share/@PACKAGE_NAME@/@DTD@">
+<tsung loglevel="notice" version="1.0">
+
+  <clients>
+    <client host="localhost" use_controller_vm="true"></client>
+  </clients>
+
+ <servers> <server host="127.0.0.1" port="5222" type="tcp"></server> </servers>
+
+ <monitoring>
+    <monitor host="foo" type="snmp">
+      <snmp version="v2" community="public"/>
+    </monitor>
+ </monitoring>
+
+  <load>
+   <arrivalphase phase="1" duration="1" unit="minute">
+    <users interarrival="2" unit="second"></users>
+   </arrivalphase>
+  </load>
+
+ <options>
+   <option name="file_server"  value="./src/test/test_file_server.csv"></option>
+   <option name="file_server"  id="random" value="./src/test/test_file_server2.csv"></option>
+ </options>
+
+  <sessions>
+   <session probability="50" name="jabber-example" type="ts_jabber">
+    <transaction name="offline">
+      <request> <jabber type="chat" ack="no_ack" size="56" destination="offline"></jabber> </request>
+    </transaction>
+    <thinktime value="30"></thinktime>
+  </session>
+
+  <session probability="19" name="jabber-plain" type="ts_jabber">
+    <request> <jabber type="connect" ack="no_ack"></jabber> </request>
+  </session>
+
+  <session probability="20" name="jabber-digest" type="ts_jabber">
+    <transaction name="close">
+      <request> <jabber type="close" ack="no_ack"></jabber> </request>
+    </transaction>
+  </session>
+
+  <session probability="10" name="jabber-sipdigest" type="ts_jabber">
+    <request> <jabber type="connect" ack="no_ack"></jabber> </request>
+  </session>
+ </sessions>
+</tsung>
+

@@ -1,0 +1,4 @@
+usr/bin/
+usr/lib/erlang/lib
+usr/lib/tsung/bin
+usr/share/tsung/templates

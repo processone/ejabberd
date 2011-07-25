@@ -1,0 +1,156 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry>
+  <refentryinfo>
+    <address>
+      <email>nicolas.niclausse@niclux.org</email>
+    </address>
+    <author>
+      <firstname>Nicolas</firstname>
+      <surname>Niclausse</surname>
+    </author>
+    <date>March 2009</date>
+    <copyright>
+      <year>2009</year>
+      <holder>Nicolas Niclausse</holder>
+    </copyright>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>tsung-recorder</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>tsung-recorder</refname>
+    <refpurpose>
+Proxy recorder for the tsung load testing tool.
+    </refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>tsung-recorder</command>
+      <arg><option>-l</option> log file</arg>
+      <arg><option>-r</option> command</arg>
+      <arg><option>-p</option> plugin</arg>
+      <arg><option>-L</option> listen port</arg>
+      <arg><option>-I</option> IP</arg>
+      <arg><option>-P</option> port</arg>
+      <arg><option>-u</option> </arg>
+      <arg>start|stop|restart|record_tag</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>description</title>
+    <para>
+      <command>tsung</command> is a distributed load testing
+      tool.  It is protocol-independent and can currently be used to
+      stress and benchmark HTTP, WebDAV, LDAP, PostgreSQL, MySQL and
+      Jabber/XMPP servers. <command>tsung-recorder</command> can be
+      used to record sessions (only for HTTP, WebDAV and Postgresql) that can be edited and replayed later by tsung</para>
+
+    <para> tsung-recorder is a proxy that records  a session in the
+    tsung native XML format; it can be used by your favorite client (browser in the case of the http plugin). </para>
+
+    <variablelist>
+       <varlistentry>
+        <term><option>start</option></term>
+        <listitem>
+          <para>start the proxy recorder (listening port is 8090). By default the HTTP recorder is started. With the -p option, you can select another plugin. The resulting files will be created as <filename>~/.tsung/tsung_recorderYYYMMDD-HH:MM.xml</filename>; if it doesn't work, take a look at <filename>~/.tsung/log/tsung.log-tsunami_recorder@hostname</filename> </para>
+        </listitem>
+      </varlistentry>
+       <varlistentry>
+        <term><option>stop</option></term>
+        <listitem>
+          <para>stop the proxy recorder</para>
+        </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><option>record_tag</option> value</term>
+        <listitem>
+          <para>add a string (comment or tag) while recording a
+          session. This is useful for example to add transaction tag
+          while recording a session. </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
+  </refsect1>
+  <refsect1>
+    <title>manual</title> <para>A manual should be available at
+    <filename>/usr/share/doc/tsung/user_manual.html</filename>. It
+    is also available online at
+    <address>http://tsung.erlang-projects.org/user_manual.html</address>
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>options</title>
+    <variablelist>
+      <varlistentry>
+        <term><option>-l logfile</option></term>
+        <listitem>
+          <para>Specifies the log file to use. The default log file name is <filename>~/tsung/log/tsung.log</filename></para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+      <term><option>-p plugin</option></term>
+      <listitem>
+        <para> Specifies the plugin used for the recorder. Default is
+        http, available: http, pgsql, webdav</para>
+      </listitem>
+    </varlistentry>
+      <varlistentry>
+      <term><option>-L port</option></term>
+      <listitem>
+        <para> Listening port for the recorder. Default is 8090</para>
+      </listitem>
+    </varlistentry>
+      <varlistentry>
+      <term><option>-I IP</option></term>
+      <listitem>
+        <para> For the pgsql recorder (or parent proxy): server IP. default is 127.0.0.1 </para>
+      </listitem>
+    </varlistentry>
+      <varlistentry>
+      <term><option>-P port</option></term>
+      <listitem>
+        <para> For the pgsql recorder (or parent proxy): server port. Default is 5432</para>
+      </listitem>
+    </varlistentry>
+      <varlistentry>
+      <term><option>-u</option></term>
+      <listitem>
+        <para> For the http recorder: use a parent proxy</para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Bugs</title> <para> Please reports bugs to the mailing list
+    <email>tsung-users@process-one.net</email>, see
+    <address>https://lists.process-one.net/mailman/listinfo/tsung-users</address> for
+    archives.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>see also</title>
+    <para>
+    <citerefentry><refentrytitle>erlang</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+ and <citerefentry><refentrytitle>tsung</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Authors</title>
+    <para>
+        <command>Tsung</command> is written by <author><firstname>Nicolas</firstname> <surname>Niclausse</surname></author>
+      <email>nicolas@niclux.org</email>. Contributors list
+      is available in
+      <filename>/usr/share/doc/tsung/CONTRIBUTORS</filename>
+</para>
+  </refsect1>
+</refentry>

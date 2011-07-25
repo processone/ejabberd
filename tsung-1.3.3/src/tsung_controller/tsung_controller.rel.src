@@ -1,0 +1,5 @@
+{release, {"tsung_controller", "&tsung_controller_vsn&"}, {erts, "&erts_vsn&"},
+ [
+  {kernel,"&kernel_vsn&"},
+  {ssl,"&ssl_vsn&"},
+  {stdlib,"&stdlib_vsn&"}]}.

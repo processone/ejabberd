@@ -1,0 +1,9 @@
+<hr/>
+<div id="footer">
+    <address>
+		<a href="http://tsung.erlang-projects.org">http://tsung.erlang-projects.org/</a>
+        Contact:   <a href="mailto:[% contact %]">[% contact %]</a>
+    </address>
+</div>
+  </body>
+</html>

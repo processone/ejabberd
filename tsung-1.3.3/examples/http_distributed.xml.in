@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "@prefix@/share/@PACKAGE_NAME@/@DTD@">
+<!-- set dumptraffic="true" to dump all received and sent packets -->
+<!-- set loglevel="debug" for maximum verbosity -->
+<tsung loglevel="notice" dumptraffic="false" version="1.0">
+
+  <!-- Client side setup -->
+  <clients>
+    <!-- maxusers is the max number of simultaneous clients. Don't set
+    it too high because you can run out of file descriptors. Remember
+    that ssl_esock use 2 fds by connection. -->
+
+    <client host="myhost" weight="2" maxusers="500">
+      <!-- Several virtual IP can be used to simulate more
+      machines. Very useful when a load-balancer use the client's IP to
+      distribute the traffic amoung a cluster of servers-->
+      <ip value="192.168.2.223"></ip> 
+      <ip value="192.168.2.224"></ip> 
+    </client>
+
+    <!-- a second machine is used, with a higher weight, and 2 cpus
+    (erlang is not SMP aware, so we starts 2 beams to use all the
+    CPUs -->
+    <client host="myhost2" weight="3" maxusers="250" cpu="2">
+      <ip value="192.168.2.225"></ip>
+    </client>
+
+    <!-- If you have a single machine to do the tests, you may add
+    this attribute to the client tag: use_controller_vm="true" . This
+    will run the virtual users on the same Virtual Machine as the
+    controller. Useful if you have problems with starting up remote
+    beam -->
+
+  </clients>
+  
+  <!-- Server side setup -->
+<servers>
+  <server host="myserver" port="80" type="tcp"/>
+</servers>
+
+  <!-- to start os monitoring (cpu, network, memory). Use an erlang
+  agent on the remote machine or SNMP. erlang is the default --> 
+  <monitoring>
+    <monitor host="myserver" type="snmp"></monitor>
+    <monitor host="myhost" type="erlang"></monitor>
+  </monitoring>
+  
+  <!-- several arrival phases can be set: for each phase, you can set
+  the mean inter-arrival time between new clients and the phase
+  duration -->
+ <load>
+  <arrivalphase phase="1" duration="1" unit="hour">
+    <users interarrival="2" unit="second"></users>
+  </arrivalphase>
+  <arrivalphase phase="2" duration="1" unit="hour">
+    <users interarrival="1" unit="second"></users>
+  </arrivalphase>
+ </load>
+
+  <!--  Options. -->
+  <options> 
+  <!-- Thinktime value overrides those set in the session
+  nodes if override=true. -->
+  <option name="thinktime" value="3" random="true" override="false"></option>
+
+  <!-- to set specific ssl_ciphers -->
+  <!--   <default name="ssl_ciphers" value="EXP1024-RC4-SHA,EDH-RSA-DES-CBC3-SHA"></default> -->
+
+  <option name="tcp_rcv_buffer"  value="4096"></option>
+  <option name="tcp_snd_buffer"  value="4096"></option>
+
+  <!-- To start ts_file_server. It can be use later in dynamic
+  substitution using ts_file_server:get_next_line() --> 
+ <option name="file_server"  value="./src/test/test_file_server.csv"></option>
+
+  <!-- HTTP parameters -->
+  
+  <!-- If you want to benchmark a proxy server instead of a reguler web server-->
+<!--   <default type="ts_http" name="http_use_server_as_proxy" value="true"/> -->
+
+   <option type="ts_http" name="user_agent">
+    <user_agent probability="80">Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.8) Gecko/20050513 Galeon/1.3.21</user_agent>
+    <user_agent probability="20">Mozilla/5.0 (Windows; U; Windows NT 5.2; fr-FR; rv:1.7.8) Gecko/20050511 Firefox/1.0.4</user_agent>
+   </option>
+  </options> 
+
+  <!-- ********************************************** -->
+  <!-- start a session for a http user. the popularity is the
+  frequency of this type os session. The sum of all session's
+  popularity must be 100 -->
+  <!-- ********************************************** -->
+ <sessions>
+  <session name="http-example" probability="30" type="ts_http">
+    <!-- full url with server name, this overrides the "server" config value -->
+    <request> <http url="http://linuxit02/" method="GET" version="1.1"></http> </request>
+    <!-- when if_modified_since is defined, it send a GET with If-modified since: Date header -->
+    <!-- relative URL, use the latest server config -->
+    <request> <http url="/images/accueil2/home-txtdeclar-2.gif" method="GET" version="1.1" if_modified_since="Fri, 14 Nov 2003 02:43:31 GMT"></http> </request>
+
+    <thinktime value="20" random="true"></thinktime>
+    
+    <!--  after a thinktime, a new page begins. -->
+    <!--  start a transaction. This is used to have custom response time statistics -->
+    <transaction name="index_request">
+    <request> <http url="/index.en.html" method="GET" version="1.1" ></http> </request>
+
+      <!-- Example of a dynamic request (subst=true); %%symbol:new%%
+      will be parsed and the result of symbol:new(Pid) will be put
+      instead in the request (at run time) -->
+      <request subst="true">
+        <http url='http://localhost:8080/axis/servlet/AxisServlet' version='1.0' content_type='text/xml; charset=utf-8' method='POST' 
+          contents='&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+ &lt;SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"&gt; &lt;SOAP-ENV:Body&gt;
+ &lt;echo:Echo xmlns:echo="EchoService"&gt;
+ &lt;symbol&gt;%%symbol:new%%&lt;/symbol&gt;
+ &lt;/echo:Echo&gt;
+ &lt;/SOAP-ENV:Body&gt;&lt;/SOAP-ENV:Envelope&gt;'>
+          <soap action='EchoService'></soap>
+        </http>
+      </request>
+
+  </transaction>
+
+    <!-- wait during 60 seconds -->
+      <thinktime value="60" random="true"></thinktime>
+
+      <request> <http url="/" method="POST" version="1.1" contents="bla=blu"></http> </request>
+
+    <!-- GET request with Basic authentication -->
+      <request> <http url="/bla" method="GET" version="1.1" contents="bla=blu&amp;name=glop">
+          <www_authenticate userid="Aladdin" passwd="open sesame"/>
+        </http>
+      </request>
+  </session>
+
+
+  <session name="http-example" probability="30" type="ts_http">
+
+    <request> <http url="/" method="GET" version="1.1"></http> </request>
+    <request> <http url="/images/icon1.gif" method="GET" version="1.1" if_modified_since="Fri, 14 Nov 2003 02:43:31 GMT"></http> </request>
+    <request> <http url="/images/icon1.gif" method="GET" version="1.1"></http> </request>
+
+    <thinktime value="60" random="true"></thinktime>
+
+    <request> <http url="/" method="GET" version="1.1"  if_modified_since="Fri, 14 Nov 2003 02:43:31 GMT"></http> </request>
+
+  </session>
+ </sessions>
+</tsung>

@@ -1,0 +1,117 @@
+
+OTP Supervision tree:
+====================
+
+The application is now split in two (see tsung-inside.png for an overview):
+
+** a single controller (tsung_controller)
+
+ * ts_config_server (gen_server). Configuration server. Session's
+   definitions are kept by the config server.
+
+ * ts_mon (gen_server). Each client send reports of stats to this
+   server. Several types of messages are handled by ts_mon.
+
+ * ts_os_mon (gen_server). Use to monitor remote node activity (cpu,
+   memory, network traffic). Currently, use an erlang agent on remote nodes.
+
+ * ts_timer  (used by ts_client when ack is global) (gen_fsm)
+
+   servers used to construct messages:
+
+ * ts_msg_server (gen_server) 
+ * ts_user_server (gen_server) used by jabber_* for unicity of users id
+
+** several clients (tsung) Several nodes can be used simultaneously
+
+This application is simpler:
+  
+ * ts_launcher (gen_fsm) launch simulated users.
+
+ * ts_session_cache (gen_server) cache the sessions's definition (ask
+   the config_server if it's not yet in the cache)
+
+ * 1 process per simultated client (ts_client), under
+   the supervision of ts_clients_sup ( using simple_one_for_one )
+
+Main modules:
+============
+
+   1/ ts_launcher. the master process that spawns other simulated clients:
+
+   1.1/ client processes: at each simulated client correspond 1 erlang
+        process (ts_client)
+
+   1.2/ monitoring process (ts_mon)
+
+   2/ statistical module (ts_stats)
+
+   3/ protocol-specific modules (ts_jabber and ts_http, for
+   example).
+
+      tsung use different types of acknoledgements to determine
+      when a the response of a request is over. For each requests, 4
+      options are possible:
+
+      * parse -> the receiving process parse the response from the
+        server dans can warn the sending process when the response is
+        finish (function parse/2). This is used for HTTP.
+
+      * no_ack: as soon as the request has been sent, the next one is
+        executed (it can be a thinktime)
+
+      * local: the request is acknoledge once a packet is received
+
+      * global: the request is acknoledge once all clients has
+        received an acknoledgement. This has been introduced for
+        Jabber: with that, you can set that users starts talking when
+        everyone is connected.
+
+
+How to add a new protocol, or extend an existing one: 
+====================================================
+
+ To add a new protocol, you have to create a module that implement and
+ exports:
+
+-export([init_dynparams/0,
+		 add_dynparams/4,
+		 get_message/1,
+		 session_defaults/0,
+         parse/2,
+         parse_config/2,
+         new_session/0]).
+
+There is a template file is doc/ts_template.erl
+
+
+References:
+==========
+
+  - Erlang
+
+  http://www.erlang.org/
+
+  Design principles: 
+    http://www.erlang.org/doc/r7b/doc/design_principles/part_frame.html
+
+  - Jabber
+
+  http://docs.jabber.org/general/html/protocol.html
+
+  
+  - Stochastics models:
+
+  For more details on stochastics models and application to Web
+  workload generators, have a look at:
+
+    Nicolas Niclausse. Modélisation, analyse de performance et
+    dimensionnement du World Wide Web. Thèse de Doctorat (PhD), Université
+    de Nice - Sophia Antipolis, Juin 1999.
+    http://www-sop.inria.fr/mistral/personnel/Nicolas.Niclausse/these.html
+
+	Z. Liu, N. Niclausse, C. Jalpa-Villanueva & S. Barbier. Traffic
+    Model and Performance Evaluation of Web Servers Rapport de
+recherche INRIA, RR-3840 (http://www.inria.fr/rrrt/rr-3840.html)
+
+

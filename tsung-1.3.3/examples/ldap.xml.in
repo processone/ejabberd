@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "@prefix@/share/@PACKAGE_NAME@/@DTD@">
+<tsung loglevel="notice" version="1.0">
+
+  <!-- Client side setup -->
+  <clients>
+    <client host="localhost" use_controller_vm="true"/>
+  </clients>
+  
+  <!-- Server side setup -->
+<servers>
+  <server host="myserver" port="80" type="tcp"></server>
+</servers>
+
+  <monitoring>
+    <monitor host="myserver" type="snmp"></monitor>
+  </monitoring>
+  
+  <load>
+   <arrivalphase phase="1" duration="10" unit="minute">
+     <users interarrival="2" unit="second"></users>
+   </arrivalphase>
+  </load>
+
+  <options>
+  </options>
+
+  <!-- start a session for a http user. the probability is the
+  frequency of this type os session. The sum of all session's
+  probabilities must be 100 -->
+
+ <sessions>
+  <session name="ldap-example" probability="100" type="ts_ldap">
+
+    <!-- **startTLS** 
+    <request subst="false">
+      <ldap type="start_tls"
+            cacertfile="/etc/ldap/ssl/cacertfile.pem"
+            certfile="/etc/ldap/ssl/certfile.pem"
+            keyfile="/etc/ldap/ssl/keyfile.pem">
+      </ldap>
+    </request>
+    -->
+
+    <request>
+        <ldap type="bind" user="uid=nniclausse" password="XXX"/>
+    </request>
+    
+    <request>
+       <ldap type="search" base="dc=pablo-desktop" filter="(cn=user2)" scope="wholeSubtree"></ldap> </request>
+
+    <request subst="true">
+       <ldap type="search" base="dc=pablo-desktop" filter="(&amp;(cn=a*%%cn:f%%*n)(dc=pablo-desktop))" scope="wholeSubtree"></ldap></request>
+
+    <thinktime value="1" ></thinktime>
+
+    <request>
+      <ldap type="search" base="dc=pablo-desktop" filter="(filename=C:\5cMyFile)" scope="wholeSubtree"></ldap>
+    </request>
+
+
+<!-- **Add. Adds a new entry to the directory** -->
+<request subst="true">
+  <ldap type="add" dn="%%_new_user_dn%%" >
+    <attr type="objectClass">
+      <value>organizationalPerson</value>
+      <value>inetOrgPerson</value>
+      <value>person</value>
+    </attr>
+    <attr type="cn"><value>%%_new_user_cn%%</value></attr>
+    <attr type="sn"><value>fffs</value></attr>
+  </ldap>
+</request>
+
+
+<!-- **Modify. Modifies an existing entry ** -->
+<request subst="false">
+  <ldap type="modify" dn="cn=u119843,dc=pablo-desktop" >
+    <modification type="add"/>
+    <modification type="replace">
+      <attr type="sn"><value>SomeSN</value></attr>
+      <attr type="mail"><value>some@mail.com</value></attr>
+    </modification>
+    <modification type="delete"/>
+  </ldap>
+</request>
+  </session>
+ </sessions>
+</tsung>

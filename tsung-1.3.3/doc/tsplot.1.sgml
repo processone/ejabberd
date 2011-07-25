@@ -1,0 +1,363 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry>
+  <refentryinfo>
+    <address>
+      <email>dim@tapoueh.org</email>
+    </address>
+    <author>
+      <firstname>Dimitri</firstname>
+      <surname>Fontaine</surname>
+    </author>
+    <date>February 2007</date>
+    <copyright>
+      <year>2006-2007</year>
+      <holder>Dimitri Fontaine</holder>
+    </copyright>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>tsplot</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>tsplot</refname>
+    <refpurpose>
+Plot several tsung logs on the same charts, for comparison purpose.
+    </refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>tsplot</command>
+      <arg><option>-c</option> configuration file</arg>
+      <arg><option>-d</option> images output directory</arg>
+      <arg><option>-v</option> verbose</arg>
+      <arg>legend logfile</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>DESCRIPTION</title>
+    <para>
+      Tsung comes with a plotting tool using
+      <command>gnuplot</command>, producing some graphs from the
+      <filename>tsung.log</filename> file data.
+
+      <command>tsplot</command> is able to plot data from several
+      <filename>tsung.log</filename> files onto the same charts serie,
+      for further comparison and analyze.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>OPTIONS</title>
+    <para>
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-c</option></term>
+        <term><option>--config</option></term>
+        <listitem>
+          <para>
+	    specifies the configuration file to use. Default is <filename>http.en.plots.conf</filename>.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-d</option></term>
+        <term><option>--outdir</option></term>
+        <listitem>
+          <para>
+	    directory where <command>tsplot</command> saves the images
+	    it produces, defaults to <filename>/tmp/tsung</filename>.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-v</option></term>
+        <term><option>--verbose</option></term>
+        <listitem>
+          <para>
+	    makes <command>tsplot</command> very verbose about
+	    what it does.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>CONFIGURATION</title>
+    <para>
+      The configuration file of <command>tsplot</command> allows to
+      define the plots you want to obtain, from their label to the
+      data they will show. The configuration file adopts a
+      <filename>.ini</filename> file syntax, each section defining a
+      chart.
+    </para>
+    <para>
+      <command>tsplot</command> comes with two sample configuration
+      files, namely <filename>http.plots.en.conf</filename> and
+      <filename>pgsql.plots.en.conf</filename>. They respectively define
+      charts to be plotted for a <command>tsung</command> HTTP test
+      and a <command>tsung</command> PGSQL test.
+    </para>
+    <para>
+      A <command>DEFAULT</command> section may be provided, any
+      element configured here may then be overriden into a specific
+      plot section.
+    </para>
+    <para>
+      Another configuration file is used by <command>tsplot</command>:
+      the <filename>tsung/stats.conf</filename> one. It's used to
+      define by type the statistics to be read into
+      <command>tsung</command> log files, and you shouldn't need to
+      edit it, short of adding support for new
+      <command>tsung</command> statistics.
+    </para>
+
+    <para>
+      Common settings, to be found into <command>DEFAULT</command>
+      section or any specific chart section.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>encoding</option></term>
+        <listitem>
+          <para>
+	    set here the encoding used thereafter in the file, for
+	    labels and titles.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>dpi</option></term>
+        <listitem>
+          <para>
+	    dpi setting of produced charts images
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>tn_dpi</option></term>
+        <listitem>
+          <para>
+	    dpi setting of produced charts thumbnail images
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>imgtype</option></term>
+        <listitem>
+          <para>
+	    type of chart image to produce, as in
+	    <filename>png</filename> or <filename>ps</filename>
+	  </para>
+	  <para>A complete list might be obtained on the
+	  <command>python-matplotlib</command> website,
+	  http://matplotlib.sourceforge.net/</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>xlabel</option></term>
+        <listitem>
+          <para>
+	    default label for horizontal axe, often you want seconds
+	    or minutes, depending on xfactor.
+	  </para>
+	  <para>
+	    Please note you can also set some defaults for ylabel, but
+	    this seems not to be a good idea in practise.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>xfactor</option></term>
+        <listitem>
+          <para>
+	    tsung logs statistics in its logfile every 10 seconds. By
+	    default, charts will not scale this and have seconds as
+	    horizontal axis units. By setting an xfactor of 60, you
+	    have a minute precision on horizontal axis.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>yfactor</option></term>
+        <listitem>
+          <para>
+	    same as xfactor, but for vertical axis.
+	  </para>
+          <para>
+	    Depending on the data you obtain with your tests, you may
+	    want to adapt the vertical scale of your plotting. For
+	    example, the <command>page.mean</command> statistic is
+	    logged in milliseconds by <command>tsung</command>. You
+	    may want to display seconds if this unit better fits your
+	    measures. Then simply set <command>yfactor =
+	    1000</command>.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>styles</option></term>
+        <listitem>
+          <para>
+	    set here any number of <command>matplotlib</command>
+	    styles you want to use, separated by spaces, as available
+	    here:
+	    http://matplotlib.sourceforge.net/matplotlib.pylab.html#-plot.
+	  </para>
+	  <para>
+	    For exemple, set <command>styles = b- g+ r- cx</command>
+	    for plotting first dataset (see <command>stats</command>
+	    below) with a blue solid line, second with green plus
+	    symbols, third with a red line and last with cyan cross
+	    symbols.
+	  </para>
+	  <para>
+	    This could fit a <command>stats = 200.count
+	    400.count</command> stats setting when plotting two
+	    <command>tsung</command> logs.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
+    <para>
+      You then can define any number of plot, one by section, and give
+      them an arbitrary name. The name must be unique, and will be
+      used for naming output images.
+    </para>
+    <para>
+      Any option available in DEFAULT section is also available in any
+      specific chart section, with the same meaning and effect. The
+      specific setting will systematically override the DEFAULT one.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>title</option></term>
+        <listitem>
+          <para>
+	    Title of the chart, as printed into the resulting image.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>stats</option></term>
+        <listitem>
+          <para>
+	    The statistics properties to use for this plotting, as
+	    named in the <filename>tsung/stats</filename>
+	    configuration file. Please see this bundled file for a
+	    list of what is available.
+	  </para>
+	  <para>
+	    Tsung provide several types of statistics, as documented
+	    here:
+	    http://tsung.erlang-projects.org/user_manual.html#htoc53. The
+	    two main types of statistics used are
+	    <command>sample</command> and <command>counter</command>. A
+	    third one is <command>gauge</command> but is only use for a
+	    single statistic (users).
+	  </para>
+	  <para>
+	    sample provides count, mean, stdvar, max, min and gmean
+	    (global mean)
+	    properties, and counter provides only count and
+	    totalcount. gauge provide count and max.
+	  </para>
+	  <para>
+	    The stats setting can accept several
+	    <command>stat.property</command> elements, separated by
+	    spaces.
+	  </para>
+	  <para>
+	    Examples: <command>stats = users.count</command> to plot
+	    the number of simultaneously connected users, and
+	    <command>stats = 200.count 400.count</command> to plot
+	    given HTTP return codes count, both on the same chart.
+	  </para>
+	  <para>
+	    Please notice <command>tsplot</command> is currently
+	    limited to use only one horizontal and only one vertical
+	    scales. <command>matplotlib</command> is able to define
+	    some more complex drawings, but <command>tsplot</command>
+	    is not yet able to benefit from this.
+	  </para>	  
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>legend</option></term>
+        <listitem>
+          <para>
+	    Legend prefix, which will be followed by the legend given
+	    on command line.
+	  </para>
+	  <para>
+	    Each plot on a chart has a legend entry, you configure
+	    here the meaning of the plot (say 'concurrent users') and
+	    <command>tsplot</command> will add it the name of the data
+	    serie being plotted (say 'scenario x'). You'd obtain this
+	    legend: 'concurrent users scenario x'.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>ylabel</option></term>
+        <listitem>
+          <para>
+	    label for vertical axe
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>CONFIGURATION EXAMPLE</title>
+    <para>
+      Please see the given configuration examples which should be
+      distributed in
+      <filename>/usr/share/doc/tsung/tsung-plotter/http.plots.en.conf</filename>
+      and
+      <filename>/usr/share/doc/tsung/tsung-plotter/pgsql.plots.en.conf</filename>.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>BUGS</title>
+    <para>
+ Please reports bugs to the mailing list
+    <email>tsung-users@process-one.net</email> or in the bug
+    tracker <ulink url="https://support.process-one.net/browse/TSUN"></ulink>,
+    see also    <ulink url="https://lists.process-one.net/mailman/listinfo/tsung-users"></ulink> for
+    archives.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>AUTHORS</title>
+    <para>
+      <command>tsplot</command> is written by   <author>    <firstname>Dimitri</firstname>
+      <surname>Fontaine</surname></author>
+ <email>dim@tapoueh.org</email>.
+    </para>
+  </refsect1>
+</refentry>

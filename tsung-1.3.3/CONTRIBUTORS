@@ -1,0 +1,41 @@
+$Id$
+
+AUTHOR:
+======================
+
+o Nicolas Niclausse <nicolas@niclux.org>: Maintainer;
+
+CONTRIBUTORS:
+======================
+
+o Jean François Lecomte : several enhancements for Jabber
+
+o Mickaël Rémond <mickael.remond@erlang-fr.org>: erlang server monitoring;
+  various patches for HTTP; configure support; SOAP support; initial
+  dynamic substitution implementation.
+
+o Jérome Sautret: Multiple file patch for file_server, costum header
+  for HTTP, bug reports
+
+o Jason Tucker: Solaris testing and fixes, jabber patches (sip_digest,
+  roster and presence enhancements, bidi support for presence:subscribe ).
+
+o Pablo Polvorin: LDAP plugin, set_dynvars, xpath search for html,
+  for/repeat loop, dynvars_api, hibernate. PubSub and MUC support.
+
+o Gregoire Reboul: MySQL plugin.
+
+o Dimitri Fontaine: SNMP & postgresql testing, patch for snmp, tsung-plotter
+
+o Oleg Nitz: Fix for Cookies over https, fix rewrite of POST (http recorder)
+o David Jez: allow substitutions in match
+o Will Brant: load info for monitoring, fix for tsplot
+o Jonathan Bresler: Jabber testing and bug reporting
+o Gordon Guthrie: tips for ssh setup on Suse
+o Romain Lenglet: Suggestions for ts_os_mon
+o Johann Messner: Bug reports
+o Anders Nygren: Documentation updates/suggestions, fix for recorder
+o Adam Spotton: Bug reports and tests (status, HTTP proxy load testing)
+o Matthew Schulkind: small fix to freemem computation
+o t ty: plugin tutorial
+o Jesper Wilhelmsson: testing

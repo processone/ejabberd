@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "@prefix@/share/@PACKAGE_NAME@/@DTD@">
+<tsung loglevel="notice">
+
+  <clients>
+    <client host="localhost" use_controller_vm="true"/>
+  </clients>
+
+  <!-- Server side setup -->
+ <servers>
+  <server host="127.0.0.1" port="5432" type="tcp"/>
+ </servers>
+
+  <monitoring>
+   <monitor host="localhost"/>
+  </monitoring>
+  
+ <load>
+  <arrivalphase phase="1" duration="10" unit="minute">
+    <users interarrival="30" unit="second"></users>
+  </arrivalphase>
+ </load>
+
+ <sessions>
+  <session probability="100" name="pgsql-example" type="ts_pgsql">
+    <transaction name="connection">
+      <request>
+        <pgsql type="connect" database="bench" username="bench" />
+      </request>
+    </transaction>
+
+    <transaction name="authentication">
+      <request>
+        <pgsql type="authenticate" password="sesame"/>
+      </request>
+    </transaction>
+
+    <thinktime value="2"/>
+
+    <transaction name="select">
+      <request><pgsql type="sql">SELECT * from accounts;</pgsql></request>
+    </transaction>
+
+    <thinktime value="20"/>
+
+    <request><pgsql type="sql">SELECT * from users;</pgsql></request>
+
+    <request><pgsql type='sql'><![CDATA[SELECT n.nspname as "Schema",
+  c.relname as "Name",
+  CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN '%_toto_% END as "Type",
+  u.usename as "Owner"
+FROM pg_catalog.pg_class c
+     LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner
+     LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind IN ('r','v','S','')
+      AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
+      AND pg_catalog.pg_table_is_visible(c.oid)
+ORDER BY 1,2;]]></pgsql></request>
+
+    <request><pgsql type="close"></pgsql></request>
+
+  </session>
+ </sessions>
+</tsung>
+

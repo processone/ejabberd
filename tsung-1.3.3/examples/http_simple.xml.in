@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "@prefix@/share/@PACKAGE_NAME@/@DTD@">
+<tsung loglevel="notice" version="1.0">
+
+  <!-- Client side setup -->
+  <clients>
+    <client host="localhost" use_controller_vm="true"/>
+  </clients>
+  
+  <!-- Server side setup -->
+<servers>
+  <server host="myserver" port="80" type="tcp"></server>
+</servers>
+
+  <!-- to start os monitoring (cpu, network, memory). Use an erlang
+  agent on the remote machine or SNMP. erlang is the default --> 
+  <monitoring>
+    <monitor host="myserver" type="snmp"></monitor>
+  </monitoring>
+  
+  <load>
+  <!-- several arrival phases can be set: for each phase, you can set
+  the mean inter-arrival time between new clients and the phase
+  duration -->
+   <arrivalphase phase="1" duration="10" unit="minute">
+     <users interarrival="2" unit="second"></users>
+   </arrivalphase>
+  </load>
+
+  <options>
+   <option type="ts_http" name="user_agent">
+    <user_agent probability="80">Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.8) Gecko/20050513 Galeon/1.3.21</user_agent>
+    <user_agent probability="20">Mozilla/5.0 (Windows; U; Windows NT 5.2; fr-FR; rv:1.7.8) Gecko/20050511 Firefox/1.0.4</user_agent>
+   </option>
+  </options>
+
+  <!-- start a session for a http user. the probability is the
+  frequency of this type os session. The sum of all session's
+  probabilities must be 100 -->
+
+ <sessions>
+  <session name="http-example" probability="100" type="ts_http">
+
+    <!-- full url with server name, this overrides the "server" config value -->
+
+    <request> <http url="/" method="GET" version="1.1"></http> </request>
+    <request> <http url="/images/accueil1.gif" method="GET" version="1.1" if_modified_since="Fri, 14 Nov 2003 02:43:31 GMT"></http> </request>
+    <request> <http url="/images/accueil2.gif" method="GET" version="1.1" if_modified_since="Fri, 14 Nov 2003 02:43:31 GMT"></http> </request>
+    <request> <http url="/images/accueil3.gif" method="GET" version="1.1" if_modified_since="Fri, 14 Nov 2003 02:43:31 GMT"></http> </request>
+
+    <thinktime value="20" random="true"></thinktime>
+    
+    <request> <http url="/index.en.html" method="GET" version="1.1" ></http> </request>
+
+  </session>
+ </sessions>
+</tsung>

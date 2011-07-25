@@ -1,0 +1,28 @@
+Requirements:
+============
+
+users has to be already registered:
+
+tsung users name  :  cXX
+                  passwd:  pasXX
+
+where XX is a integer between 1 and the maximum number of users (say 1000000).
+
+or you can use jabber_register (see below).
+
+optional parameters: (can be set in tsung.xml file)
+==================
+
+jabber_domain=mydomain.com
+
+modules implemented for the Jabber protocol:
+============================================
+
+- jabber_common: module regrouping common functions for building
+  messages
+
+NOTE: currently, no XML parsing is done by the receiving process (it
+would be very time consuming to parse thousands of simultaneous XML
+flows). It use acknoledgements instead based on the first packet
+received after the request has been sent.
+

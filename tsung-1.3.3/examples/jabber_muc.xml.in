@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "@prefix@/share/@PACKAGE_NAME@/@DTD@">
+<tsung loglevel="notice" version="1.0">
+
+  <clients>
+    <client host="localhost" use_controller_vm="true"></client>
+  </clients>
+
+  <!-- Server side setup -->
+ <servers>
+  <server host="127.0.0.1" port="5222" type="tcp"></server>
+ </servers>
+
+  <load>
+   <arrivalphase phase="1" duration="1" unit="minute">
+    <users interarrival="2" unit="second"></users>
+   </arrivalphase>
+  </load>
+
+  <!-- JABBER parameters -->
+  <!-- to synchronise users,  use a global acknoledgement -->
+ <options>
+  <option type="ts_jabber" name="global_number" value="100"></option>
+  <option type="ts_jabber" name="userid_max" value="10000"></option>
+  <option type="ts_jabber" name="domain" value="mydomain.org"></option>
+  <option type="ts_jabber" name="username" value="user"></option>
+  <option type="ts_jabber" name="passwd" value="pass"></option>
+
+  <option type="ts_jabber" name="muc_service" value="conference.mydomain.org"/>
+  <!-- full name of the MUC component -->
+ </options>
+
+  <sessions>
+   <session bidi="true" probability="100" name="jabber-muc" type="ts_jabber">
+
+    <request> <jabber type="connect" ack="no_ack"></jabber> </request>
+    <thinktime value="2"></thinktime>
+    <transaction name="authenticate">
+      <request> <jabber type="auth_get" ack="local"></jabber> </request>
+      <request> <jabber type="auth_set_plain" ack="local"></jabber> </request>
+    </transaction>
+
+    <request> <jabber type="presence:initial" ack="no_ack"/> </request>
+    <thinktime value="2"></thinktime>
+
+    <transaction name="roster">
+      <request> <jabber type="iq:roster:get" ack="local"></jabber></request>
+    </transaction>
+
+    <thinktime value="30"></thinktime>
+    
+    <!-- choose room name and nick. -->
+    <setdynvars sourcetype="random_number" start="1" end="100">
+        <var name="room"/>
+    </setdynvars>
+    <setdynvars sourcetype="random_string" length="10">
+        <var name="nick1"/>
+    </setdynvars>
+
+    <!-- join an existing room or create a new one -->
+    <request subst="true"> <jabber type='muc:join' ack = "local" room = "room%%_room%%" nick = "%%_nick1%%"/> </request>
+
+    <for from="1" to="4" var="i">
+        <thinktime value="45"/>
+        <transaction name="online_chat">
+            <request subst="true"> <jabber type="muc:chat" ack="no_ack" size="16" room = "room%%_room%%"/> </request>
+        </transaction>
+    </for>
+
+    <!-- choose a new nickname -->
+    <thinktime value="2"/>
+    <setdynvars sourcetype="random_string" length="10">
+        <var name="nick2"/>
+    </setdynvars>
+    <request subst="true"><jabber type="muc:nick" room="room%%_room%%" nick="%%_nick2%%" ack="no_ack"/></request>
+
+    <for from="1" to="2" var="i">
+        <thinktime value="35"/>
+        <transaction name="online_chat">
+            <request subst="true"> <jabber type="muc:chat" ack="no_ack" size="16" room="room%%_room%%"/> </request>
+        </transaction>
+    </for>
+
+    <transaction name="close">
+      <request> <jabber type="close" ack="no_ack"></jabber> </request>
+    </transaction>
+
+  </session>
+
+
+ </sessions>
+</tsung>
+

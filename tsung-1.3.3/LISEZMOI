@@ -1,0 +1,76 @@
+# $Id$
+
+  Tsung LISEZMOI
+
+  1.  Introduction
+
+  1.1.  Généralités
+
+  Ce document donne un rapide descriptifs de Tsung, qui est
+  distribué sous les termes de la GNU General Public License version 2
+  (voir le fichier COPYING).
+
+  1.2.  Qu'est-ce que ce logiciel fait?
+
+  Le propos de Tsung est de simuler des utilisateurs afin de tester la
+  montée en charge et les performances d'applications client/serveur
+  (basées sur IP). Actuellement, les protocoles HTTP, Jabber,
+  PostgreSQL, WEBDAV et LDAP sont implémentés, et Tsung est très
+  facilement extensible (voir le fichier doc/Design.txt pour une
+  description de l'implémentation et des possibilités
+  d'extensions). Tsung utilise le langage Erlang.
+
+  Ce logiciel est capable de simuler plusieurs milliers d'utilisateurs
+  simultanément, et ceux-ci peuvent être répartis sur plusieurs
+  machines. Plus de 10000 utilisateurs peuvent être simulés sur une
+  seule machine; la limite supérieure dépend du type de hardware et
+  également de l'activité des clients simulés.
+
+  L'idée est de simuler le comportement d'un client réel en utilisant
+  un modèle de type stochastique, ceci afin de reproduire le trafic
+  plus fidèlement que peuvent le faire de simple modèles déterministes.
+
+  Un utilisateur est caractérisé par une une suite d'actions
+  (requetes, thinktime) faites au cours d'une session. Plusieurs
+  sessions peuvent être définies, chacune avec une popularité
+  donnée. De cette façon, lors de l'injection, chaque nouvel
+  utilisateur utilisera un type de session en tirant aléatoirement une
+  session (en fonction de la popularité de chaque session).
+
+  Un paramètre important est le l'inter-arrivée des clients qui
+  détermine le taux d'arrivée des clients sur le système (ie. le
+  nombre de clients arrivant sur le système -- démarrant leur session -- par
+  unité de temps). Plusieurs phases peuvent être définies pour un
+  tests, chaque phase injectant des utilisateurs à un taux donné.
+
+  Dans l'implémentation actuelle, la taux d'arrivée des clients et le
+  temps entre message d'un même client ("think time") sont modélisés
+  par une distribution exponentielle (par conséquent, le processus
+  d'arrivée est un processus de Poisson).
+
+
+  Voir également le site  http://tsung.erlang-projects.org/
+
+  Un manuel utilisateur est disponible en anglais:
+  http://tsung.erlang-projects.org/user_manual.html
+
+  2.  Installation & Configuration
+
+  cf. http://tsung.erlang-projects.org/user_manual.html
+
+
+
+  2.3.  Problèmes/Bugs
+
+    Envoyez vos questions/rapports à la liste de diffusion
+       https://lists.process-one.net/mailman/listinfo/tsung-users
+
+    ou directement à l'auteur, <nicolas@niclux.org>
+
+  2.4.  Portabilité
+
+    Ce logiciel a été testé sous Linux, Solaris, FreeBSD. Il devrait
+    fonctionner sous toute plate-forme supporté par Erlang.
+
+
+

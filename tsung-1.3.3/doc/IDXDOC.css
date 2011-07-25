@@ -1,0 +1,33 @@
+body        {font-size: 90%; margin-right:40px; margin-left:40px; font-family:Sans-Serif; color:#000000; background-color:#ffffff;}
+p, .n       {font-size: 90%; font-family:Sans-Serif; color:#000000; background-color:#ffffff;}
+h1          {font-size: 200%; color:#800000; background-color:#ffffff;}
+h2          {font-size:150%; color:#000080; background-color:#ffffff;}
+h3          {font-family:Sans-Serif; font-size: 120%; font-weight:bold; color:#000080; background-color:#ffffff;}
+h4          {font-family:Sans-Serif; font-size:100%; font-weight:bold; color:#000080; background-color:#ffffff;}
+h5          {font-family:Sans-Serif; font-size:100%; font-weight:bold; color:#000000;  background-color:#ffffff; margin-bottom: 0;}
+form        {margin-bottom:-5px;}
+textarea    {color:#333333;  background-color:#ffffff; width:90%;}
+table       {font-size:90%;}
+dl,ul,ol    {margin-top: 2pt; margin-bottom: 2pt;}
+tt, pre     {font-family:monospace; color:#666666; background-color:#ffffff;}
+pre {
+    background-color: #ffffee;
+    white-space:pre;
+    border-style:solid;
+    border-width:thin;
+    border-color:#999999;
+    color:#333333;
+    padding:3px;
+    width:100%;
+}
+
+a:link      {color:#800000; background-color: #ffffff;}
+a:visited   {color:#006600; background-color: #ffffff;}
+a:active    {color:green; background-color: #ffffff;}
+a:hover     {background:#ffffaa;}
+
+.piedpage, .entete {
+    font-family:Sans-Serif; font-size:90%; font-style:italic; color:#0000ff; background-color: #ffffff;
+	text-align: center;	
+}
+
