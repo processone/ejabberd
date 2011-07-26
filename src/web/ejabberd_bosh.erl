@@ -83,7 +83,12 @@
                 max_requests,
                 ip}).
 
--record(body, {attrs = [], els = []}).
+-record(body, {http_reason = "", %% Using HTTP reason phrase is
+                                 %% a hack, but we need a clue why
+                                 %% a connection gets terminated:
+                                 %% 'condition' attribute is not enough
+               attrs = [],
+               els = []}).
 
 %%%===================================================================
 %%% API
@@ -167,7 +172,8 @@ process_request(Data, IP) ->
                     if SID == "", To == "" ->
                             %% Initial request which lacks "to" attribute
                             bosh_response(
-                              #body{attrs = [{type, "terminate"},
+                              #body{http_reason = "Missing 'to' attribute",
+                                    attrs = [{type, "terminate"},
                                              {condition, "improper-addressing"}]});
                        SID == "" ->
                             %% Initial request
@@ -176,7 +182,9 @@ process_request(Data, IP) ->
                                     process_request(Pid, Body, IP);
                                 _Err ->
                                     bosh_response(
-                                      #body{attrs = [{type, "terminate"},
+                                      #body{http_reason =
+                                                "Failed to start BOSH session",
+                                            attrs = [{type, "terminate"},
                                                      {condition,
                                                       "internal-server-error"}]})
                             end;
@@ -186,7 +194,8 @@ process_request(Data, IP) ->
                                     process_request(Pid, Body, IP);
                                 error ->
                                     bosh_response(
-                                      #body{attrs = [{type, "terminate"},
+                                      #body{http_reason = "Session ID mismatch",
+                                            attrs = [{type, "terminate"},
                                                      {condition,
                                                       "item-not-found"}]})
                             end
@@ -201,11 +210,13 @@ process_request(Pid, Req, _IP) ->
         #body{} = Resp ->
             bosh_response(Resp);
         {'EXIT', {Reason, _}} when Reason == noproc; Reason == normal ->
-            bosh_response(#body{attrs = [{type, "terminate"},
+            bosh_response(#body{http_reason = "BOSH session not found",
+                                attrs = [{type, "terminate"},
                                          {condition,
                                           "item-not-found"}]});
         {'EXIT', _} ->
-            bosh_response(#body{attrs = [{type, "terminate"},
+            bosh_response(#body{http_reason = "Unexpected error",
+                                attrs = [{type, "terminate"},
                                          {condition, "internal-server-error"}]})
     end.
 
@@ -314,7 +325,8 @@ active(#body{attrs = Attrs} = Req, From, State) ->
     Type = get_attr('type', Attrs),
     if RID > State#state.prev_rid + State#state.max_requests ->
             reply_stop(State,
-                       #body{attrs = [{"type", "terminate"},
+                       #body{http_reason = "Request ID is out of range",
+                             attrs = [{"type", "terminate"},
                                       {"condition", "item-not-found"}]},
                        From, RID);
        RID > State#state.prev_rid + 1 ->
@@ -330,18 +342,21 @@ active(#body{attrs = Attrs} = Req, From, State) ->
                     {next_state, active, do_reply(State, From, PrevBody, RID)};
                 none ->
                     reply_stop(State, 
-                               #body{attrs = [{"type", "terminate"},
+                               #body{http_reason = "Request ID is out of range",
+                                     attrs = [{"type", "terminate"},
                                               {"condition", "item-not-found"}]},
                                From, RID)
             end;
        not IsValidKey ->
             reply_stop(State,
-                       #body{attrs = [{"type", "terminate"},
+                       #body{http_reason = "Session key mismatch",
+                             attrs = [{"type", "terminate"},
                                       {"condition", "item-not-found"}]},
                        From, RID);
        IsOveractivity ->
             reply_stop(State,
-                       #body{attrs = [{"type", "terminate"},
+                       #body{http_reason = "Too many requests",
+                             attrs = [{"type", "terminate"},
                                       {"condition", "policy-violation"}]},
                        From, RID);
        true ->
@@ -368,7 +383,8 @@ active(#body{attrs = Attrs} = Req, From, State) ->
             State5 = State4#state{prev_poll = NewPoll,
                                   prev_key = NewKey},
             if Type == "terminate" ->
-                    reply_stop(State5, #body{attrs = [{"type", "terminate"}],
+                    reply_stop(State5, #body{http_reason = "Session close",
+                                             attrs = [{"type", "terminate"}],
                                              els = RespEls}, From, RID);
                Pause /= undefined ->
                     State6 = drop_holding_receiver(State5),
@@ -542,7 +558,8 @@ bounce_receivers(State) ->
     lists:foreach(
       fun({RID, {From, _Body}}) ->
               do_reply(State, From,
-                       #body{attrs = [{type, "terminate"},
+                       #body{http_reason = "Session close",
+                             attrs = [{type, "terminate"},
                                       {condition, "other-request"}]},
                        RID)
       end, gb_trees:to_list(State#state.receivers)).
@@ -728,10 +745,10 @@ attr_to_list({Name, Value}) ->
     [$\s, Name, $=, $', xml:crypt(Value), $'].
 
 bosh_response(Body) ->
-    {200, ?HEADER, encode_body(Body)}.
+    {200, Body#body.http_reason, ?HEADER, encode_body(Body)}.
 
-http_error(Status, _Reason) ->
-    {Status, ?HEADER, ""}.
+http_error(Status, Reason) ->
+    {Status, Reason, ?HEADER, ""}.
 
 make_sid(Pid) ->
     Key = ejabberd_config:get_local_option(shared_key),

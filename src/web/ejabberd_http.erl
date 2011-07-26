@@ -468,7 +468,9 @@ process_request(#state{request_method = Method,
 		        Output when is_list(Output) or is_binary(Output) ->
 		          make_text_output(State, 200, [], Output);
 		        {Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
-		          make_text_output(State, Status, Headers, Output)
+                        make_text_output(State, Status, Headers, Output);
+                        {Status, Reason, Headers, Output} when is_list(Output) or is_binary(Output) ->
+                          make_text_output(State, Status, Reason, Headers, Output)
 	        end
 	      end
     end;
@@ -534,7 +536,9 @@ process_request(#state{request_method = Method,
 		Output when is_list(Output) or is_binary(Output) ->
 		    make_text_output(State, 200, [], Output);
 		{Status, Headers, Output} when is_list(Output) or is_binary(Output) ->
-		    make_text_output(State, Status, Headers, Output)
+		    make_text_output(State, Status, Headers, Output);
+                {Status, Reason, Headers, Output} when is_list(Output) or is_binary(Output) ->
+                    make_text_output(State, Status, Reason, Headers, Output)
 	    end
     end;
 
@@ -644,10 +648,13 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
 
     [SL, H, "\r\n", Data2].
 
-make_text_output(State, Status, Headers, Text) when is_list(Text) ->
-    make_text_output(State, Status, Headers, list_to_binary(Text));
+make_text_output(State, Status, Headers, Text) ->
+    make_text_output(State, Status, "", Headers, Text).
 
-make_text_output(State, Status, Headers, Data) when is_binary(Data) ->
+make_text_output(State, Status, Reason, Headers, Text) when is_list(Text) ->
+    make_text_output(State, Status, Reason, Headers, list_to_binary(Text));
+
+make_text_output(State, Status, Reason, Headers, Data) when is_binary(Data) ->
     Headers1 = case lists:keysearch("Content-Type", 1, Headers) of
 		   {value, _} ->
 		       [{"Content-Length", integer_to_list(size(Data))} |
@@ -677,8 +684,12 @@ make_text_output(State, Status, Headers, Data) when is_binary(Data) ->
     H = lists:map(fun({Attr, Val}) ->
 			  [Attr, ": ", Val, "\r\n"]
 		  end, HeadersOut),
+    NewReason = case Reason of
+                    "" -> code_to_phrase(Status);
+                    _ -> Reason
+                end,
     SL = [Version, integer_to_list(Status), " ",
-	  code_to_phrase(Status), "\r\n"],
+	  NewReason, "\r\n"],
 
     Data2 = case State#state.request_method of
 		  'HEAD' -> "";
