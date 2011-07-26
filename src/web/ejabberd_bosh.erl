@@ -74,7 +74,7 @@
                 inactivity_timer,
                 wait_timer,
                 wait_timeout = ?DEFAULT_WAIT,
-                inactivity_timeout = ?DEFAULT_INACTIVITY,
+                inactivity_timeout,
                 prev_rid,
                 prev_key,
                 prev_poll,
@@ -247,11 +247,14 @@ init([#body{attrs = Attrs}, IP]) ->
                              Opts2}
                     end,
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
+    Inactivity = gen_mod:get_module_opt(XMPPDomain, mod_bosh,
+                                        max_inactivity, ?DEFAULT_INACTIVITY),
     State = #state{host = XMPPDomain,
                    xmpp_ver = XMPPVer,
                    socket = Socket,
                    el_ibuf = InBuf,
                    el_obuf = [],
+                   inactivity_timeout = Inactivity,
                    shaper_state = ShaperState},
     NewState = restart_inactivity_timer(State),
     {ok, wait_for_session, NewState}.
@@ -278,6 +281,8 @@ wait_for_session(#body{attrs = Attrs} = Req, From, State) ->
                              true ->
                                   {undefined, []}
                           end,
+    MaxPause = gen_mod:get_module_opt(State#state.host, mod_bosh,
+                                      max_pause, ?DEFAULT_MAXPAUSE),
     Resp = #body{attrs = [{sid, make_sid(self())},
                           {wait, Wait},
                           {ver, ?BOSH_VERSION},
@@ -287,7 +292,7 @@ wait_for_session(#body{attrs = Attrs} = Req, From, State) ->
                           {'xmpp:restartlogic', true},
                           {requests, Requests},
                           {secure, true},
-                          {maxpause, ?DEFAULT_MAXPAUSE},
+                          {maxpause, MaxPause},
                           {'xmlns:xmpp', ?NS_BOSH},
                           {'xmlns:stream', ?NS_STREAM},
                           {from, State#state.host}|Polling]},
