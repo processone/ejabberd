@@ -280,14 +280,15 @@ wait_for_session(#body{attrs = Attrs} = Req, From, State) ->
     Els = maybe_add_xmlstreamend(Req#body.els, Type),
     State2 = route_els(State1, Els),
     {State3, RespEls} = get_response_els(State2),
+    State4 = stop_inactivity_timer(State3),
     case RespEls of
         [] ->
-            State4 = restart_wait_timer(State3),
+            State5 = restart_wait_timer(State4),
             Receivers = gb_trees:insert(RID, {From, Resp},
-                                        State4#state.receivers),
-            {next_state, active, State4#state{receivers = Receivers}};
+                                        State5#state.receivers),
+            {next_state, active, State5#state{receivers = Receivers}};
         _ ->
-            reply_next_state(State3, Resp#body{els = RespEls}, RID, From)
+            reply_next_state(State4, Resp#body{els = RespEls}, RID, From)
     end;
 wait_for_session(_Event, _From, State) ->
     ?ERROR_MSG("unexpected sync event in 'wait_for_session': ~p", [_Event]),
@@ -365,8 +366,7 @@ active(#body{attrs = Attrs} = Req, From, State) ->
                           _ -> now()
                       end,
             State5 = State4#state{prev_poll = NewPoll,
-                                  prev_key = NewKey,
-                                  prev_rid = RID},
+                                  prev_key = NewKey},
             if Type == "terminate" ->
                     reply_stop(State5, #body{attrs = [{"type", "terminate"}],
                                              els = RespEls}, From, RID);
@@ -374,17 +374,20 @@ active(#body{attrs = Attrs} = Req, From, State) ->
                     State6 = drop_holding_receiver(State5),
                     State7 = restart_inactivity_timer(State6, Pause),
                     {next_state, active,
-                     State7#state{el_ibuf = lists:reverse(RespEls)}};
+                     State7#state{prev_rid = RID,
+                                  el_ibuf = lists:reverse(RespEls)}};
                RespEls == [] ->
                     State6 = drop_holding_receiver(State5),
                     State7 = restart_wait_timer(State6),
                     %% TODO: gb_trees:insert/3 may raise an exception
                     Receivers = gb_trees:insert(RID, {From, #body{}},
                                                 State7#state.receivers),
-                    {next_state, active, State7#state{receivers = Receivers}};
+                    {next_state, active, State7#state{prev_rid = RID,
+                                                      receivers = Receivers}};
                true ->
                     State6 = drop_holding_receiver(State5),
-                    reply_next_state(State6, #body{els = RespEls}, RID, From)
+                    reply_next_state(State6#state{prev_rid = RID},
+                                     #body{els = RespEls}, RID, From)
             end
     end;
 active(_Event, _From, State) ->
@@ -511,8 +514,8 @@ drop_holding_receiver(State) ->
         {value, {From, Body}} ->
             State1 = restart_inactivity_timer(State),
             Receivers = gb_trees:delete_any(RID, State1#state.receivers),
-            State2 = do_reply(State1, From, Body, RID),
-            State2#state{receivers = Receivers};
+            State2 = State1#state{receivers = Receivers},
+            do_reply(State2, From, Body, RID);
         none ->
             State
     end.
