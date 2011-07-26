@@ -231,14 +231,22 @@ init([#body{attrs = Attrs}, IP]) ->
     %% the default c2s restrictions if not defined for the current
     %% connector.
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
-    Opts = [{xml_socket, true} | Opts1],
+    Opts2 = [{xml_socket, true} | Opts1],
     Shaper = none,
     ShaperState = shaper:new(Shaper),
     Socket = {http_bind, self(), IP},
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     XMPPVer = get_attr('xmpp:version', Attrs),
     XMPPDomain = get_attr('to', Attrs),
-    InBuf = [make_xmlstreamstart(XMPPDomain, XMPPVer)],
+    {InBuf, Opts} = case gen_mod:get_module_opt(XMPPDomain, mod_bosh,
+                                                prebind, false) of
+                        true ->
+                            JID = make_random_jid(XMPPDomain),
+                            {[], [{jid, JID} | Opts2]};
+                        false ->
+                            {[make_xmlstreamstart(XMPPDomain, XMPPVer)],
+                             Opts2}
+                    end,
+    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     State = #state{host = XMPPDomain,
                    xmpp_ver = XMPPVer,
                    socket = Socket,
@@ -823,3 +831,8 @@ restart_wait_timer(#state{wait_timer = TRef,
 stop_wait_timer(#state{wait_timer = TRef} = State) ->
     cancel_timer(TRef),
     State#state{wait_timer = undefined}.
+
+make_random_jid(Host) ->
+    %% Copied from cyrsasl_anonymous.erl
+    User = lists:concat([randoms:get_string() | tuple_to_list(now())]),
+    jlib:make_jid(User, Host, randoms:get_string()).
