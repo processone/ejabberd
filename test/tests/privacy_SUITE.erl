@@ -632,10 +632,14 @@ block_jid_all(Config) ->
 
         set_list(Alice, PrivacyList),
 
-        %% activate it
+        %% Alice blocks Bob
         escalus_client:send(Alice,
             escalus_stanza:privacy_activate(Alice, Name)),
-        %% From now on nothing whatsoever should reach Alice.
+        %% IQ response is blocked;
+        %% do magic wait for the request to take effect
+        timer:sleep(200),
+
+        %% From now on nothing whatsoever sent by Bob should reach Alice.
 
         %% Alice should NOT receive message
         escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
