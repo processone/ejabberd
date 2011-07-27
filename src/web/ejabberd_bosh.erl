@@ -241,9 +241,10 @@ init([#body{attrs = Attrs}, IP]) ->
                                                 prebind, false) of
                         true ->
                             JID = make_random_jid(XMPPDomain),
-                            {[], [{jid, JID} | Opts2]};
+                            {buf_new(), [{jid, JID} | Opts2]};
                         false ->
-                            {[make_xmlstreamstart(XMPPDomain, XMPPVer)],
+                            {buf_in([make_xmlstreamstart(XMPPDomain, XMPPVer)],
+                                    buf_new()),
                              Opts2}
                     end,
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
@@ -253,7 +254,7 @@ init([#body{attrs = Attrs}, IP]) ->
                    xmpp_ver = XMPPVer,
                    socket = Socket,
                    el_ibuf = InBuf,
-                   el_obuf = [],
+                   el_obuf = buf_new(),
                    inactivity_timeout = Inactivity,
                    shaper_state = ShaperState},
     NewState = restart_inactivity_timer(State),
@@ -402,9 +403,10 @@ active(#body{attrs = Attrs} = Req, From, State) ->
                Pause /= undefined ->
                     State6 = drop_holding_receiver(State5),
                     State7 = restart_inactivity_timer(State6, Pause),
+                    InBuf = buf_in(RespEls, State7#state.el_ibuf),
                     {next_state, active,
                      State7#state{prev_rid = RID,
-                                  el_ibuf = lists:reverse(RespEls)}};
+                                  el_ibuf = InBuf}};
                RespEls == [] ->
                     State6 = drop_holding_receiver(State5),
                     State7 = restart_wait_timer(State6),
@@ -436,17 +438,17 @@ handle_event(_Event, StateName, State) ->
 handle_sync_event({send_xml, {xmlstreamstart, _, _} = El}, _From,
                   StateName, State) ->
     %% Avoid sending empty <body/> element
-    OutBuf = [El | State#state.el_obuf],
+    OutBuf = buf_in([El], State#state.el_obuf),
     {reply, ok, StateName, State#state{el_obuf = OutBuf}};
 handle_sync_event({send_xml, El}, _From, StateName, State) ->
     case gb_trees:lookup(State#state.prev_rid, State#state.receivers) of
         {value, {From, Body}} ->
-            OutBuf = lists:reverse([El | State#state.el_obuf]),
-            State1 = State#state{el_obuf = []},
+            OutBuf = buf_to_list(buf_in([El], State#state.el_obuf)),
+            State1 = State#state{el_obuf = buf_new()},
             {reply, ok, StateName, reply(State1, Body#body{els = OutBuf},
                                          State1#state.prev_rid, From)};
         none ->
-            OutBuf = [El | State#state.el_obuf],
+            OutBuf = buf_in([El], State#state.el_obuf),
             {reply, ok, StateName, State#state{el_obuf = OutBuf}}
     end;
 handle_sync_event(peername, _From, StateName, State) ->
@@ -489,8 +491,8 @@ print_state(State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-route_els(#state{el_ibuf = Els} = State) ->
-    route_els(State#state{el_ibuf = []}, lists:reverse(Els)).
+route_els(#state{el_ibuf = Buf} = State) ->
+    route_els(State#state{el_ibuf = buf_new()}, buf_to_list(Buf)).
 
 route_els(State, Els) ->
     case State#state.c2s_pid of
@@ -501,15 +503,12 @@ route_els(State, Els) ->
               end, Els),
             State;
         _ ->
-            InBuf = lists:foldl(
-                      fun(El, Q) ->
-                              [El | Q]
-                      end, State#state.el_ibuf, Els),
+            InBuf = buf_in(Els, State#state.el_ibuf),
             State#state{el_ibuf = InBuf}
     end.
 
 get_response_els(#state{el_obuf = OutBuf} = State) ->
-    {State#state{el_obuf = []}, lists:reverse(OutBuf)}.
+    {State#state{el_obuf = buf_new()}, buf_to_list(OutBuf)}.
 
 reply(State, Body, RID, From) ->
     State1 = restart_inactivity_timer(State),
@@ -809,6 +808,18 @@ get_attr(Attr, Attrs, Default) ->
         _ ->
             Default
     end.
+
+buf_new() ->
+    [].
+
+buf_in(Xs, Buf) ->
+    lists:foldl(
+      fun(X, Acc) ->
+              [X|Acc]
+      end, Buf, Xs).
+
+buf_to_list(Buf) ->
+    lists:reverse(Buf).
 
 cancel_timer(TRef) when is_reference(TRef) ->
     ?GEN_FSM:cancel_timer(TRef);
