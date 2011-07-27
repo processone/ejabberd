@@ -34,7 +34,7 @@
 -record(state, {check_password}).
 
 start(_Opts) ->
-    cyrsasl:register_mechanism("PLAIN", ?MODULE, false),
+    cyrsasl:register_mechanism(<<"PLAIN">>, ?MODULE, false),
     ok.
 
 stop() ->
@@ -46,21 +46,22 @@ mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
 mech_step(State, ClientIn) ->
     case prepare(ClientIn) of
 	[AuthzId, User, Password] ->
-	    case (State#state.check_password)(list_to_binary(User),
-                                          list_to_binary(Password)) of
+	    case (State#state.check_password)(User, 
+                                          Password
+                                         ) of
 		{true, AuthModule} ->
 		    {ok, [{username, User}, {authzid, AuthzId},
 			  {auth_module, AuthModule}]};
 		_ ->
-		    {error, "not-authorized", User}
+		    {error, <<"not-authorized">>, User}
 	    end;
 	_ ->
-	    {error, "bad-protocol"}
+	    {error, <<"bad-protocol">>}
     end.
 
 prepare(ClientIn) ->
     case parse(ClientIn) of
-	[[], UserMaybeDomain, Password] ->
+	[<<>>, UserMaybeDomain, Password] ->
 	    case parse_domain(UserMaybeDomain) of
 		%% <NUL>login@domain<NUL>pwd
 		[User, _Domain] ->
@@ -69,7 +70,7 @@ prepare(ClientIn) ->
              Password];
 		%% <NUL>login<NUL>pwd
 		[User] ->
-		    ["", User, Password]
+		    [<<>>, User, Password]
 	    end;
 	%% login@domain<NUL>login<NUL>pwd
 	[AuthzId, User, Password] ->
@@ -80,24 +81,30 @@ prepare(ClientIn) ->
 
 
 parse(S) ->
-    parse1(S, "", []).
+    parse1(S, <<>>, []).
 
-parse1([0 | Cs], S, T) ->
-    parse1(Cs, "", [lists:reverse(S) | T]);
-parse1([C | Cs], S, T) ->
-    parse1(Cs, [C | S], T);
+parse1(<<0, Cs/binary>>, S, T) ->
+    parse1(Cs, <<>>, [binary_reverse(S)| T]);
+parse1(<<C, Cs/binary>>, S, T) ->
+    parse1(Cs, <<C, S/binary>>, T);
 %parse1([], [], T) ->
 %    lists:reverse(T);
-parse1([], S, T) ->
-    lists:reverse([lists:reverse(S) | T]).
+parse1(<<>>, S, T) ->
+    lists:reverse([binary_reverse(S)| T]).
 
 
 parse_domain(S) ->
-    parse_domain1(S, "", []).
+    parse_domain1(S, <<>>, []).
 
-parse_domain1([$@ | Cs], S, T) ->
-    parse_domain1(Cs, "", [lists:reverse(S) | T]);
-parse_domain1([C | Cs], S, T) ->
-    parse_domain1(Cs, [C | S], T);
-parse_domain1([], S, T) ->
-    lists:reverse([lists:reverse(S) | T]).
+parse_domain1(<<$@, Cs/binary>>, S, T) ->
+    parse_domain1(Cs, <<>>, [binary_reverse(S) | T]);
+parse_domain1(<<C, Cs/binary>>, S, T) ->
+    parse_domain1(Cs, <<C, S/binary>>, T);
+parse_domain1(<<>>, S, T) ->
+    lists:reverse([binary_reverse(S) | T]).
+
+
+binary_reverse(<<>>) ->
+    <<>>;
+binary_reverse(<<H,T/binary>>) ->
+    <<(binary_reverse(T))/binary,H>>.

@@ -307,7 +307,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				false ->
                     SASLState =
 					cyrsasl:server_new(
-					  "jabber", Server, "", [],
+					  <<"jabber">>, Server, <<>>, [],
 					  fun(U) ->
 						  ejabberd_auth:get_password_with_authmodule(
 						    U, Server)
@@ -617,7 +617,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
     SockMod = (StateData#state.sockmod):get_sockmod(StateData#state.socket),
     case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
 	{?NS_SASL, <<"auth">>} when not ((SockMod == gen_tcp) and TLSRequired) ->
-	    Mech = binary_to_list(xml:get_attr_s(<<"mechanism">>, Attrs)),
+	    Mech = xml:get_attr_s(<<"mechanism">>, Attrs),
 	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
 	    case cyrsasl:server_start(StateData#state.sasl_state,
 				      Mech,
@@ -637,7 +637,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				     streamid = new_id(),
 				     authenticated = true,
 				     auth_module = AuthModule,
-				     user = list_to_binary(U) });
+				     user = U });
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, <<"challenge">>,
@@ -773,7 +773,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				     streamid = new_id(),
 				     authenticated = true,
 				     auth_module = AuthModule,
-				     user = list_to_binary(U)});
+				     user = U});
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 				 {xmlelement, <<"challenge">>,

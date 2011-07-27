@@ -89,9 +89,9 @@ check_credentials(_State, Props) ->
     User = xml:get_attr_s(username, Props),
     case jlib:nodeprep(User) of
 	error ->
-	    {error, "not-authorized"};
-	"" ->
-	    {error, "not-authorized"};
+	    {error, <<"not-authorized">>};
+	<<>> ->
+	    {error, <<"not-authorized">>};
 	_LUser ->
 	    ok
     end.
@@ -135,10 +135,10 @@ server_start(State, Mech, ClientIn) ->
 						 mech_state = MechState},
 				ClientIn);
 		_ ->
-		    {error, "no-mechanism"}
+		    {error, <<"no-mechanism">>}
 	    end;
 	false ->
-	    {error, "no-mechanism"}
+	    {error, <<"no-mechanism">>}
     end.
 
 server_step(State, ClientIn) ->
@@ -166,5 +166,5 @@ server_step(State, ClientIn) ->
 filter_anonymous(Host, Mechs) ->
     case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(Host) of
 	true  -> Mechs;
-	false -> Mechs -- ["ANONYMOUS"]
+	false -> Mechs -- [<<"ANONYMOUS">>]
     end.

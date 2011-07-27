@@ -268,5 +268,5 @@ replace_tag_attr(Attr, Value, {xmlelement, Name, Attrs, Els}) ->
 
 context_default(Attr) when is_list(Attr) ->
     "";
-context_default(Attr) when is_binary(Attr) ->
+context_default(_Attr) ->
     <<>>.

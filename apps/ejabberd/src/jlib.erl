@@ -754,7 +754,7 @@ parse_time1(Time) ->
 
 
 decode_base64(S) when erlang:is_binary(S)->
-    decode_base64(binary_to_list(S));
+    list_to_binary(decode_base64(binary_to_list(S)));
 decode_base64(S) ->
     decode1_base64([C || C <- S,
 			 C /= $ ,
@@ -802,6 +802,8 @@ d($/) -> 63;
 d(_) -> 63.
 
 
+encode_base64(B) when is_binary(B) ->
+    list_to_binary(encode_base64(binary_to_list(B)));
 encode_base64([]) ->
     [];
 encode_base64([A]) ->

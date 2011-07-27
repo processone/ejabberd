@@ -34,7 +34,7 @@
 -record(state, {server}).
 
 start(_Opts) ->
-    cyrsasl:register_mechanism("ANONYMOUS", ?MODULE, false),
+    cyrsasl:register_mechanism(<<"ANONYMOUS">>, ?MODULE, false),
     ok.
 
 stop() ->
@@ -50,7 +50,7 @@ mech_step(State, _ClientIn) ->
     
     %% Checks that the username is available
     case ejabberd_auth:is_user_exists(User, Server) of
-	true  -> {error, "not-authorized"};
+	true  -> {error, <<"not-authorized">>};
 	false -> {ok, [{username, User},
 		       {auth_module, ejabberd_auth_anonymous}]}
     end.
