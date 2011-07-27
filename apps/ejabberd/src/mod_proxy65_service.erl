@@ -157,11 +157,11 @@ process_iq(InitiatorJID, #iq{type = set, sub_el = SubEl, xmlns = ?NS_BYTESTREAMS
 	allow ->
 	    ActivateEl = xml:get_path_s(SubEl, [{elem, "activate"}]),
 	    SID = xml:get_tag_attr_s("sid", SubEl),
-	    case catch jlib:string_to_jid(xml:get_tag_cdata(ActivateEl)) of
+	    case catch jlib:binary_to_jid(xml:get_tag_cdata(ActivateEl)) of
 		TargetJID when is_record(TargetJID, jid), SID /= "",
 		               length(SID) =< 128, TargetJID /= InitiatorJID ->
-		    Target = jlib:jid_to_string(jlib:jid_tolower(TargetJID)),
-		    Initiator = jlib:jid_to_string(jlib:jid_tolower(InitiatorJID)),
+		    Target = jlib:jid_to_binary(jlib:jid_tolower(TargetJID)),
+		    Initiator = jlib:jid_to_binary(jlib:jid_tolower(InitiatorJID)),
 		    SHA1 = sha:sha(SID ++ Initiator ++ Target),
 		    case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID, TargetJID, ServerHost) of
 			ok ->

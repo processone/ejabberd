@@ -194,7 +194,7 @@ process_offline(Server, To, {xmlelement, _, _, Els}) ->
 				     "" ->
 					 jlib:make_jid("", Server, "");
 				     _ ->
-					 jlib:string_to_jid(FromS)
+					 jlib:binary_to_jid(FromS)
 				 end,
 			  case From of
 			      error ->

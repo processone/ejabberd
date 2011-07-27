@@ -228,7 +228,7 @@ type_to_list(Type) ->
 
 value_to_list(Type, Val) ->
     case Type of
-	jid -> jlib:jid_to_string(Val);
+	jid -> jlib:jid_to_binary(Val);
 	group -> Val;
 	subscription ->
 	    case Val of
@@ -445,7 +445,7 @@ parse_items([{xmlelement, "item", Attrs, SubEls} | Els], Res) ->
 		     {{value, T}, {value, V}} ->
 			 case T of
 			     "jid" ->
-				 case jlib:string_to_jid(V) of
+				 case jlib:binary_to_jid(V) of
 				     error ->
 					 false;
 				     JID ->
@@ -696,7 +696,7 @@ raw_to_item({SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
 	    "n" ->
 		{none, none};
 	    "j" ->
-		case jlib:string_to_jid(SValue) of
+		case jlib:binary_to_jid(SValue) of
 		    #jid{} = JID ->
 			{jid, jlib:jid_tolower(JID)}
 		end;
@@ -751,7 +751,7 @@ item_to_raw(#listitem{type = Type,
 	    none ->
 		{"n", ""};
 	    jid ->
-		{"j", ejabberd_odbc:escape(jlib:jid_to_string(Value))};
+		{"j", ejabberd_odbc:escape(jlib:jid_to_binary(Value))};
 	    group ->
 		{"g", ejabberd_odbc:escape(Value)};
 	    subscription ->

@@ -283,7 +283,7 @@ set_vcard(User, LServer, VCARD) ->
 	 {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
 	  [{xmlelement, "title", [],
 	    [{xmlcdata, translate:translate(Lang, "Search users in ") ++
-	      jlib:jid_to_string(JID)}]},
+	      jlib:jid_to_binary(JID)}]},
 	   {xmlelement, "instructions", [],
 	    [{xmlcdata, translate:translate(Lang, "Fill in the form to search "
 					    "for any matching Jabber User "
@@ -461,7 +461,7 @@ find_xdata_el1([_ | Els]) ->
 search_result(Lang, JID, ServerHost, Data) ->
     [{xmlelement, "title", [],
       [{xmlcdata, translate:translate(Lang, "Search Results for ") ++
-	jlib:jid_to_string(JID)}]},
+	jlib:jid_to_binary(JID)}]},
      {xmlelement, "reported", [],
       [?TLFIELD("text-single", "Jabber ID", "jid"),
        ?TLFIELD("text-single", "Full Name", "fn"),

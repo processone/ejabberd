@@ -448,7 +448,7 @@ resend_message(Packet) ->
 get_jid(Type, ParsedPacket) ->
     case xml:get_tag_attr(Type, ParsedPacket) of
 	{value, StringJid} ->
-	    jlib:string_to_jid(StringJid);
+	    jlib:binary_to_jid(StringJid);
 	false ->
 	    jlib:make_jid("","","")
     end.

@@ -762,7 +762,7 @@ adhoc_join(From, To, #adhoc_request{lang = Lang,
 				      [{xmlelement, "x",
 					[{"xmlns", ?NS_MUC_USER}],
 					[{xmlelement, "invite", 
-					  [{"from", jlib:jid_to_string(From)}],
+					  [{"from", jlib:jid_to_binary(From)}],
 					  [{xmlelement, "reason", [],
 					    [{xmlcdata, 
 					      translate:translate(Lang,
@@ -776,7 +776,7 @@ adhoc_join(From, To, #adhoc_request{lang = Lang,
 						      translate:translate(Lang,
 									  "Join the IRC channel in this Jabber ID: ~s"),
 						      [RoomJID])}]}]},
-			    ejabberd_router:route(jlib:string_to_jid(RoomJID), From, Invite),
+			    ejabberd_router:route(jlib:binary_to_jid(RoomJID), From, Invite),
 			    adhoc:produce_response(Request, #adhoc_response{status = completed});
 		       true ->
 			    {error, ?ERR_BAD_REQUEST}

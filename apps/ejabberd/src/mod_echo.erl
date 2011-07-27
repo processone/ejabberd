@@ -171,7 +171,7 @@ code_change(_OldVsn, State, _Extra) ->
 do_client_version(disabled, _From, _To) ->
     ok;
 do_client_version(enabled, From, To) ->
-    ToS = jlib:jid_to_string(To),
+    ToS = jlib:jid_to_binary(To),
     %% It is important to identify this process and packet
     Random_resource = integer_to_list(random:uniform(100000)),
     From2 = From#jid{resource = Random_resource,

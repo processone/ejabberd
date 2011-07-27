@@ -395,7 +395,7 @@ ldap_attribute_to_vcard(_, _) ->
 	 {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
 	  [{xmlelement, "title", [],
 	    [{xmlcdata, translate:translate(Lang, "Search users in ") ++
-	      jlib:jid_to_string(JID)}]},
+	      jlib:jid_to_binary(JID)}]},
 	   {xmlelement, "instructions", [],
 	    [{xmlcdata, translate:translate(Lang, "Fill in fields to search "
 					    "for any matching Jabber User")}]}
@@ -545,7 +545,7 @@ search_result(Lang, JID, State, Data) ->
     SearchReported = State#state.search_reported,
     Header = [{xmlelement, "title", [],
 	       [{xmlcdata, translate:translate(Lang, "Search Results for ") ++
-		 jlib:jid_to_string(JID)}]},
+		 jlib:jid_to_binary(JID)}]},
 	      {xmlelement, "reported", [],
 	       [?TLFIELD("text-single", "Jabber ID", "jid")] ++
 	       lists:map(

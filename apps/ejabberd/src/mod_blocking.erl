@@ -134,7 +134,7 @@ parse_blocklist_items([], JIDs) ->
 parse_blocklist_items([{xmlelement, "item", Attrs, _} | Els], JIDs) ->
     case xml:get_attr("jid", Attrs) of
 	{value, JID1} ->
-	    JID = jlib:jid_tolower(jlib:string_to_jid(JID1)),
+	    JID = jlib:jid_tolower(jlib:binary_to_jid(JID1)),
 	    parse_blocklist_items(Els, [JID | JIDs]);
 	false ->
 	    % Tolerate missing jid attribute
@@ -322,7 +322,7 @@ process_blocklist_get(LUser, LServer) ->
 			      fun(JID) ->
 				      ?DEBUG("JID: ~p",[JID]),
 				      {xmlelement, "item",
-				       [{"jid", jlib:jid_to_string(JID)}], []}
+				       [{"jid", jlib:jid_to_binary(JID)}], []}
 			      end, JIDs),
 		    {result,
 		     [{xmlelement, "blocklist", [{"xmlns", ?NS_BLOCKING}],

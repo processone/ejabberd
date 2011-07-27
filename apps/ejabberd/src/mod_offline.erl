@@ -544,8 +544,8 @@ user_queue(User, Server, Query, Lang) ->
 			   io_lib:format(
 			     "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 			     [Year, Month, Day, Hour, Minute, Second])),
-		  SFrom = jlib:jid_to_string(From),
-		  STo = jlib:jid_to_string(To),
+		  SFrom = jlib:jid_to_binary(From),
+		  STo = jlib:jid_to_binary(To),
 		  Attrs2 = jlib:replace_from_to_attrs(SFrom, STo, Attrs),
 		  Packet = {xmlelement, Name, Attrs2, Els},
 		  FPacket = ejabberd_web_admin:pretty_print_xml(Packet),
@@ -612,7 +612,7 @@ user_queue_parse_query(US, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    jlib:jid_to_binary({User, Server, ""}).
 
 get_queue_length(User, Server) ->
     length(mnesia:dirty_read({offline_msg, {User, Server}})).

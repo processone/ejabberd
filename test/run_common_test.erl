@@ -13,6 +13,7 @@ ct() ->
 
         %{suite, "login_SUITE"},
         %{group, [messages]}
+        %{testcase, [log_one_digest]}
         %{group, [unregistered]}
 
         %{suite, "presence_SUITE"},

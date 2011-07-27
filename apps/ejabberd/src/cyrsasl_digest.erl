@@ -40,7 +40,7 @@
 		host}).
 
 start(_Opts) ->
-    cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE, true).
+    cyrsasl:register_mechanism(<<"DIGEST-MD5">>, ?MODULE, true).
 
 stop() ->
     ok.
@@ -54,45 +54,45 @@ mech_new(Host, GetPassword, _CheckPassword, CheckPasswordDigest) ->
 
 mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
     {continue,
-     "nonce=\"" ++ Nonce ++
-     "\",qop=\"auth\",charset=utf-8,algorithm=md5-sess",
+     list_to_binary("nonce=\"" ++ Nonce ++
+     "\",qop=\"auth\",charset=utf-8,algorithm=md5-sess"),
      State#state{step = 3}};
 mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
     case parse(ClientIn) of
 	bad ->
-	    {error, "bad-protocol"};
+	    {error, <<"bad-protocol">>};
 	KeyVals ->
-	    DigestURI = xml:get_attr_s("digest-uri", KeyVals),
-	    UserName = xml:get_attr_s("username", KeyVals),
-	    case is_digesturi_valid(DigestURI, binary_to_list(State#state.host)) of
+	    DigestURI = xml:get_attr_s(<<"digest-uri">>, KeyVals),
+	    UserName = xml:get_attr_s(<<"username">>, KeyVals),
+	    case is_digesturi_valid(DigestURI, State#state.host) of
 		false ->
 		    ?DEBUG("User login not authorized because digest-uri "
 			   "seems invalid: ~p", [DigestURI]),
-		    {error, "not-authorized", UserName};
+		    {error, <<"not-authorized">>, UserName};
 		true ->
-		    AuthzId = xml:get_attr_s("authzid", KeyVals),
-		    case (State#state.get_password)(list_to_binary(UserName)) of
+		    AuthzId = xml:get_attr_s(<<"authzid">>, KeyVals),
+		    case (State#state.get_password)(UserName) of
 			{false, _} ->
-			    {error, "not-authorized", UserName};
+			    {error, <<"not-authorized">>, UserName};
 			{Passwd, AuthModule} ->
-				case (State#state.check_password)(list_to_binary(UserName), "",
-					xml:get_attr_s("response", KeyVals),
+				case (State#state.check_password)(UserName, <<>>,
+					xml:get_attr_s(<<"response">>, KeyVals),
 					fun(PW) -> response(KeyVals, UserName, PW, Nonce, AuthzId,
-						"AUTHENTICATE") end) of
+						<<"AUTHENTICATE">>) end) of
 				{true, _} ->
 				    RspAuth = response(KeyVals,
 						       UserName, Passwd,
-						       Nonce, AuthzId, ""),
+						       Nonce, AuthzId, <<>>),
 				    {continue,
-				     "rspauth=" ++ RspAuth,
+				     list_to_binary([<<"rspauth=">>, RspAuth]),
 				     State#state{step = 5,
 						 auth_module = AuthModule,
 						 username = UserName,
 						 authzid = AuthzId}};
 				false ->
-				    {error, "not-authorized", UserName};
+				    {error, <<"not-authorized">>, UserName};
 				{false, _} ->
-				    {error, "not-authorized", UserName}
+				    {error, <<"not-authorized">>, UserName}
 			    end
 		    end
 	    end
@@ -100,54 +100,58 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 mech_step(#state{step = 5,
 		 auth_module = AuthModule,
 		 username = UserName,
-		 authzid = AuthzId}, "") ->
+		 authzid = AuthzId}, <<>>) ->
     {ok, [{username, UserName}, {authzid, AuthzId},
 	  {auth_module, AuthModule}]};
 mech_step(A, B) ->
     ?DEBUG("SASL DIGEST: A ~p B ~p", [A,B]),
-    {error, "bad-protocol"}.
+    {error, <<"bad-protocol">>}.
 
 parse(S) ->
-    parse1(S, "", []).
+    parse1(S, <<>>, []).
 
-parse1([$= | Cs], S, Ts) ->
-    parse2(Cs, lists:reverse(S), "", Ts);
-parse1([$, | Cs], [], Ts) ->
-    parse1(Cs, [], Ts);
-parse1([$\s | Cs], [], Ts) ->
-    parse1(Cs, [], Ts);
-parse1([C | Cs], S, Ts) ->
-    parse1(Cs, [C | S], Ts);
-parse1([], [], T) ->
+parse1(<<$=, Cs/binary>>, S, Ts) ->
+    parse2(Cs, binary_reverse(S), <<>>, Ts);
+parse1(<<$,, Cs/binary>>, <<>>, Ts) ->
+    parse1(Cs, <<>>, Ts);
+parse1(<<$\s, Cs/binary>>, <<>>, Ts) ->
+    parse1(Cs, <<>>, Ts);
+parse1(<<C, Cs/binary>>, S, Ts) ->
+    parse1(Cs, <<C, S/binary>>, Ts);
+parse1(<<>>, <<>>, T) ->
     lists:reverse(T);
-parse1([], _S, _T) ->
+parse1(<<>>, _S, _T) ->
     bad.
 
-parse2([$\" | Cs], Key, Val, Ts) ->
+parse2(<<$\", Cs/binary>>, Key, Val, Ts) ->
     parse3(Cs, Key, Val, Ts);
-parse2([C | Cs], Key, Val, Ts) ->
-    parse4(Cs, Key, [C | Val], Ts);
-parse2([], _, _, _) ->
+parse2(<<C, Cs/binary>>, Key, Val, Ts) ->
+    parse4(Cs, Key, <<C, Val/binary>>, Ts);
+parse2(<<>>, _, _, _) ->
     bad.
 
-parse3([$\" | Cs], Key, Val, Ts) ->
+parse3(<<$\", Cs/binary>>, Key, Val, Ts) ->
     parse4(Cs, Key, Val, Ts);
-parse3([$\\, C | Cs], Key, Val, Ts) ->
-    parse3(Cs, Key, [C | Val], Ts);
-parse3([C | Cs], Key, Val, Ts) ->
-    parse3(Cs, Key, [C | Val], Ts);
-parse3([], _, _, _) ->
+parse3(<<$\\, C, Cs/binary>>, Key, Val, Ts) ->
+    parse3(Cs, Key, <<C, Val/binary>>, Ts);
+parse3(<<C, Cs/binary>>, Key, Val, Ts) ->
+    parse3(Cs, Key, <<C, Val/binary>>, Ts);
+parse3(<<>>, _, _, _) ->
     bad.
 
-parse4([$, | Cs], Key, Val, Ts) ->
-    parse1(Cs, "", [{Key, lists:reverse(Val)} | Ts]);
-parse4([$\s | Cs], Key, Val, Ts) ->
+parse4(<<$, , Cs/binary>>, Key, Val, Ts) ->
+    parse1(Cs, <<>>, [{Key, binary_reverse(Val)} | Ts]);
+parse4(<<$\s, Cs/binary>>, Key, Val, Ts) ->
     parse4(Cs, Key, Val, Ts);
-parse4([C | Cs], Key, Val, Ts) ->
-    parse4(Cs, Key, [C | Val], Ts);
-parse4([], Key, Val, Ts) ->
-    parse1([], "", [{Key, lists:reverse(Val)} | Ts]).
+parse4(<<C, Cs/binary>>, Key, Val, Ts) ->
+    parse4(Cs, Key, <<C, Val/binary>>, Ts);
+parse4(<<>>, Key, Val, Ts) ->
+    parse1(<<>>, <<>>, [{Key, binary_reverse(Val)} | Ts]).
 
+binary_reverse(<<>>) ->
+    <<>>;
+binary_reverse(<<H,T/binary>>) ->
+    <<(binary_reverse(T))/binary,H>>.
 
 %% @doc Check if the digest-uri is valid.
 %% RFC-2831 allows to provide the IP address in Host,
@@ -158,10 +162,10 @@ parse4([], Key, Val, Ts) ->
 %% In that case, ejabberd only checks the service name, not the host.
 is_digesturi_valid(DigestURICase, JabberHost) ->
     DigestURI = stringprep:tolower(DigestURICase),
-    case catch string:tokens(DigestURI, "/") of
-	["xmpp", Host] when Host == JabberHost ->
+    case catch binary:split(DigestURI, <<"/">>) of
+	[<<"xmpp">>, Host] when Host == JabberHost ->
 	    true;
-	["xmpp", _Host, ServName] when ServName == JabberHost ->
+	[<<"xmpp">>, _Host, ServName] when ServName == JabberHost ->
 	    true;
 	_ ->
 	    false
@@ -176,42 +180,43 @@ digit_to_xchar(D) ->
     D + 87.
 
 hex(S) ->
-    hex(S, []).
+    hex(S, <<>>).
 
-hex([], Res) ->
-    lists:reverse(Res);
-hex([N | Ns], Res) ->
-    hex(Ns, [digit_to_xchar(N rem 16),
-	     digit_to_xchar(N div 16) | Res]).
+hex(<<>>, Res) ->
+    binary_reverse(Res);
+hex(<<N, Ns/binary>>, Res) ->
+    D1 = digit_to_xchar(N rem 16),
+    D2 = digit_to_xchar(N div 16),
+    hex(Ns, <<D1, D2, Res/binary>>).
 
 
 response(KeyVals, User, Passwd, Nonce, AuthzId, A2Prefix) ->
-    Realm = xml:get_attr_s("realm", KeyVals),
-    CNonce = xml:get_attr_s("cnonce", KeyVals),
-    DigestURI = xml:get_attr_s("digest-uri", KeyVals),
-    NC = xml:get_attr_s("nc", KeyVals),
-    QOP = xml:get_attr_s("qop", KeyVals),
+    Realm = xml:get_attr_s(<<"realm">>, KeyVals),
+    CNonce = xml:get_attr_s(<<"cnonce">>, KeyVals),
+    DigestURI = xml:get_attr_s(<<"digest-uri">>, KeyVals),
+    NC = xml:get_attr_s(<<"nc">>, KeyVals),
+    QOP = xml:get_attr_s(<<"qop">>, KeyVals),
     A1 = case AuthzId of
-	     "" ->
-		 binary_to_list(
-		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
-		     ":" ++ Nonce ++ ":" ++ CNonce;
+	     <<>> ->
+		 list_to_binary(
+		   [crypto:md5([User, <<":">>, Realm, <<":">>, Passwd]),
+		     <<":">>, Nonce, <<":">>, CNonce]);
 	     _ ->
-		 binary_to_list(
-		   crypto:md5(User ++ ":" ++ Realm ++ ":" ++ Passwd)) ++
-		     ":" ++ Nonce ++ ":" ++ CNonce ++ ":" ++ AuthzId
+		 list_to_binary(
+		   [crypto:md5([User, <<":">>, Realm, <<":">>, Passwd]),
+		     <<":">>, Nonce, <<":">>, CNonce, <<":">>, AuthzId])
 	 end,
     A2 = case QOP of
-	     "auth" ->
-		 A2Prefix ++ ":" ++ DigestURI;
+	     <<"auth">> ->
+		 [A2Prefix, <<":">>, DigestURI];
 	     _ ->
-		 A2Prefix ++ ":" ++ DigestURI ++
-		     ":00000000000000000000000000000000"
+		 [A2Prefix, <<":">>, DigestURI,
+		     <<":00000000000000000000000000000000">>]
 	 end,
-    T = hex(binary_to_list(crypto:md5(A1))) ++ ":" ++ Nonce ++ ":" ++
-	NC ++ ":" ++ CNonce ++ ":" ++ QOP ++ ":" ++
-	hex(binary_to_list(crypto:md5(A2))),
-    hex(binary_to_list(crypto:md5(T))).
+    T = [hex(crypto:md5(A1)), <<":">>, Nonce, <<":">>,
+	NC, <<":">>, CNonce, <<":">>, QOP, <<":">>,
+	hex(crypto:md5(A2))],
+    hex(crypto:md5(T)).
 
 
 

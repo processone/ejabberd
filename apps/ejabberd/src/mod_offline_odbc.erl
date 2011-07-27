@@ -106,8 +106,8 @@ loop(Host, AccessMaxOfflineMsgs) ->
 				      {xmlelement, Name, Attrs, Els} =
 					  M#offline_msg.packet,
 				      Attrs2 = jlib:replace_from_to_attrs(
-						 jlib:jid_to_string(From),
-						 jlib:jid_to_string(To),
+						 jlib:jid_to_binary(From),
+						 jlib:jid_to_binary(To),
 						 Attrs),
 				      Packet = {xmlelement, Name, Attrs2,
 						Els ++
@@ -315,9 +315,9 @@ pop_offline_messages(Ls, User, Server) ->
 				{error, _Reason} ->
 				    [];
 				El ->
-				    To = jlib:string_to_jid(
+				    To = jlib:binary_to_jid(
 					   xml:get_tag_attr_s("to", El)),
-				    From = jlib:string_to_jid(
+				    From = jlib:binary_to_jid(
 					     xml:get_tag_attr_s("from", El)),
 				    if
 					(To /= error) and
@@ -478,7 +478,7 @@ user_queue_parse_query(Username, LServer, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    jlib:jid_to_binary({User, Server, ""}).
 
 get_queue_length(Username, LServer) ->
     case catch ejabberd_odbc:sql_query(

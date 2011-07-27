@@ -62,8 +62,8 @@ log_packet(From, To, {xmlelement, Name, Attrs, Els}, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
     ServerJID = #jid{user = "", server = Host, resource = "",
 		     luser = "", lserver = Host, lresource = ""},
-    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-					  jlib:jid_to_string(To),
+    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_binary(From),
+					  jlib:jid_to_binary(To),
 					  Attrs),
     FixedPacket = {xmlelement, Name, NewAttrs, Els},
     lists:foreach(

@@ -433,9 +433,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    NewEl = jlib:remove_attr("xmlns", El),
 	    {xmlelement, Name, Attrs, _Els} = NewEl,
 	    From_s = xml:get_attr_s("from", Attrs),
-	    From = jlib:string_to_jid(From_s),
+	    From = jlib:binary_to_jid(From_s),
 	    To_s = xml:get_attr_s("to", Attrs),
-	    To = jlib:string_to_jid(To_s),
+	    To = jlib:binary_to_jid(To_s),
 	    if
 		(To /= error) and (From /= error) ->
 		    LFrom = From#jid.lserver,
@@ -702,7 +702,7 @@ get_cert_domains(Cert) ->
 			  end,
 		      if
 			  D /= error ->
-			      case jlib:string_to_jid(D) of
+			      case jlib:binary_to_jid(D) of
 				  #jid{luser = "",
 				       lserver = LD,
 				       lresource = ""} ->
@@ -737,7 +737,7 @@ get_cert_domains(Cert) ->
 				    case 'XmppAddr':decode(
 					   'XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
-					    case jlib:string_to_jid(
+					    case jlib:binary_to_jid(
 						   binary_to_list(D)) of
 						#jid{luser = "",
 						     lserver = LD,
@@ -755,7 +755,7 @@ get_cert_domains(Cert) ->
 					    []
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
-				    case jlib:string_to_jid(D) of
+				    case jlib:binary_to_jid(D) of
 					#jid{luser = "",
 					     lserver = LD,
 					     lresource = ""} ->

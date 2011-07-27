@@ -256,7 +256,7 @@ get_roster(LUser, LServer) ->
 				   error ->
 				       [];
 				   R ->
-				       SJID = jlib:jid_to_string(R#roster.jid),
+				       SJID = jlib:jid_to_binary(R#roster.jid),
 				       Groups = lists:flatmap(
 						  fun({S, G}) when S == SJID ->
 							  [G];
@@ -273,7 +273,7 @@ get_roster(LUser, LServer) ->
 
 
 item_to_xml(Item) ->
-    Attrs1 = [{"jid", jlib:jid_to_string(Item#roster.jid)}],
+    Attrs1 = [{"jid", jlib:jid_to_binary(Item#roster.jid)}],
     Attrs2 = case Item#roster.name of
 		 "" ->
 		     Attrs1;
@@ -312,7 +312,7 @@ process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = result, sub_el = []}.
 
 process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
-    JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
+    JID1 = jlib:binary_to_jid(xml:get_attr_s("jid", Attrs)),
     #jid{user = User, luser = LUser, lserver = LServer} = From,
     case JID1 of
 	error ->
@@ -320,7 +320,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 	_ ->
 	    LJID = jlib:jid_tolower(JID1),
 	    Username = ejabberd_odbc:escape(LUser),
-	    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+	    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(LJID)),
 	    F = fun() ->
 			{selected,
 			 ["username", "jid", "nick", "subscription",
@@ -388,7 +388,7 @@ process_item_set(_From, _To, _) ->
 process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
     case Attr of
 	"jid" ->
-	    case jlib:string_to_jid(Val) of
+	    case jlib:binary_to_jid(Val) of
 		error ->
 		    process_item_attrs(Item, Attrs);
 		JID1 ->
@@ -527,7 +527,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     LServer = jlib:nameprep(Server),
     LJID = jlib:jid_tolower(JID1),
     Username = ejabberd_odbc:escape(LUser),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(LJID)),
     F = fun() ->
 		Item =
 		    case odbc_queries:get_roster_by_jid(LServer, Username, SJID) of
@@ -792,14 +792,14 @@ set_items(User, Server, SubEl) ->
 			  end, Els)).
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
-    JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
+    JID1 = jlib:binary_to_jid(xml:get_attr_s("jid", Attrs)),
     case JID1 of
 	error ->
 	    [];
 	_ ->
 	    LJID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
 	    Username = ejabberd_odbc:escape(LUser),
-	    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+	    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(LJID)),
 	    Item = #roster{usj = {LUser, LServer, LJID},
 			   us = {LUser, LServer},
 			   jid = LJID},
@@ -820,7 +820,7 @@ process_item_set_t(_LUser, _LServer, _) ->
 process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
     case Attr of
 	"jid" ->
-	    case jlib:string_to_jid(Val) of
+	    case jlib:binary_to_jid(Val) of
 		error ->
 		    process_item_attrs_ws(Item, Attrs);
 		JID1 ->
@@ -870,8 +870,8 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 		    fun(R) ->
 			    Message = R#roster.askmessage,
 			    {xmlelement, "presence",
-			     [{"from", jlib:jid_to_string(R#roster.jid)},
-			      {"to", jlib:jid_to_string(JID)},
+			     [{"from", jlib:jid_to_binary(R#roster.jid)},
+			      {"to", jlib:jid_to_binary(JID)},
 			      {"type", "subscribe"}],
 			     [{xmlelement, "status", [],
 			       [{xmlcdata, Message}]}]}
@@ -903,7 +903,7 @@ get_jid_info(_, User, Server, JID) ->
     LServer = jlib:nameprep(Server),
     LJID = jlib:jid_tolower(JID),
     Username = ejabberd_odbc:escape(LUser),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(LJID)),
     case catch odbc_queries:get_subscription(LServer, Username, SJID) of
 	{selected, ["subscription"], [{SSubscription}]} ->
 	    Subscription = case SSubscription of
@@ -925,7 +925,7 @@ get_jid_info(_, User, Server, JID) ->
 		LRJID == LJID ->
 		    {none, []};
 		true ->
-		    SRJID = ejabberd_odbc:escape(jlib:jid_to_string(LRJID)),
+		    SRJID = ejabberd_odbc:escape(jlib:jid_to_binary(LRJID)),
 		    case catch odbc_queries:get_subscription(LServer, Username, SRJID) of
 			{selected, ["subscription"], [{SSubscription}]} ->
 			    Subscription = case SSubscription of
@@ -951,7 +951,7 @@ get_jid_info(_, User, Server, JID) ->
 
 raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 			_SServer, _SSubscribe, _SType}) ->
-    case jlib:string_to_jid(SJID) of
+    case jlib:binary_to_jid(SJID) of
 	error ->
 	    error;
 	JID ->
@@ -986,7 +986,7 @@ record_to_string(#roster{us = {User, _Server},
 			 ask = Ask,
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(jlib:jid_tolower(JID))),
     Nick = ejabberd_odbc:escape(Name),
     SSubscription = case Subscription of
 			both -> "B";
@@ -1009,7 +1009,7 @@ groups_to_string(#roster{us = {User, _Server},
 			 jid = JID,
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(jlib:jid_tolower(JID))),
 
     %% Empty groups do not need to be converted to string to be inserted in
     %% the database
@@ -1113,9 +1113,9 @@ build_contact_jid_td(RosterJID) ->
 	     end,
     case JIDURI of
 	[] ->
-	    ?XAC("td", [{"class", "valign"}], jlib:jid_to_string(RosterJID));
+	    ?XAC("td", [{"class", "valign"}], jlib:jid_to_binary(RosterJID));
 	URI when is_list(URI) ->
-	    ?XAE("td", [{"class", "valign"}], [?AC(JIDURI, jlib:jid_to_string(RosterJID))])
+	    ?XAE("td", [{"class", "valign"}], [?AC(JIDURI, jlib:jid_to_binary(RosterJID))])
     end.
 
 user_roster_parse_query(User, Server, Items, Query) ->
@@ -1125,7 +1125,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 		{value, {_, undefined}} ->
 		    error;
 		{value, {_, SJID}} ->
-		    case jlib:string_to_jid(SJID) of
+		    case jlib:binary_to_jid(SJID) of
 			JID when is_record(JID, jid) ->
 			    user_roster_subscribe_jid(User, Server, JID),
 			    ok;
@@ -1180,7 +1180,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 				    sub_el = {xmlelement, "query",
 					      [{"xmlns", ?NS_ROSTER}],
 					      [{xmlelement, "item",
-						[{"jid", jlib:jid_to_string(JID)},
+						[{"jid", jlib:jid_to_binary(JID)},
 						 {"subscription", "remove"}],
 						[]}]}}),
 			      throw(submitted);
@@ -1193,7 +1193,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, ""}).
+    jlib:jid_to_binary({User, Server, ""}).
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].

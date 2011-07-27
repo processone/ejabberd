@@ -91,7 +91,7 @@ export_roster(Server, Output) ->
       fun(Host, #roster{usj = {LUser, LServer, LJID}} = R)
 	 when LServer == Host ->
 	      Username = ejabberd_odbc:escape(LUser),
-	      SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
+	      SJID = ejabberd_odbc:escape(jlib:jid_to_binary(LJID)),
 	      ItemVals = record_to_string(R),
 	      ItemGroups = groups_to_string(R),
 	      ["delete from rosterusers "
@@ -125,8 +125,8 @@ export_offline(Server, Output) ->
 	      Username = ejabberd_odbc:escape(LUser),
 	      {xmlelement, Name, Attrs, Els} = Packet,
 	      Attrs2 = jlib:replace_from_to_attrs(
-			 jlib:jid_to_string(From),
-			 jlib:jid_to_string(To),
+			 jlib:jid_to_binary(From),
+			 jlib:jid_to_binary(To),
 			 Attrs),
 	      NewPacket = {xmlelement, Name, Attrs2,
 			   Els ++
@@ -322,7 +322,7 @@ record_to_string(#roster{usj = {User, _Server, JID},
 			 ask = Ask,
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(JID)),
     Nick = ejabberd_odbc:escape(Name),
     SSubscription = case Subscription of
 			both -> "B";
@@ -358,7 +358,7 @@ record_to_string(#roster{usj = {User, _Server, JID},
 groups_to_string(#roster{usj = {User, _Server, JID},
 			 groups = Groups}) ->
     Username = ejabberd_odbc:escape(User),
-    SJID = ejabberd_odbc:escape(jlib:jid_to_string(JID)),
+    SJID = ejabberd_odbc:escape(jlib:jid_to_binary(JID)),
     [["("
       "'", Username, "',"
       "'", SJID, "',"

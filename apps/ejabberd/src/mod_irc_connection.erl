@@ -722,8 +722,8 @@ bounce_messages(Reason) ->
 	        _ ->
 	            Err = jlib:make_error_reply(El,
 	        				"502", Reason),
-		    From = jlib:string_to_jid(xml:get_attr_s("from", Attrs)),
-		    To = jlib:string_to_jid(xml:get_attr_s("to", Attrs)),
+		    From = jlib:binary_to_jid(xml:get_attr_s("from", Attrs)),
+		    To = jlib:binary_to_jid(xml:get_attr_s("to", Attrs)),
 		    ejabberd_router:route(To, From, Err)
 	    end,
 	    bounce_messages(Reason)
@@ -1015,7 +1015,7 @@ process_userinfo(StateData, _Nick, From) ->
 		    "xmpp:~s"
 		    "\001\r\n",
 		    [FromUser,
-		     jlib:jid_to_string(StateData#state.user)])).
+		     jlib:jid_to_binary(StateData#state.user)])).
 
 
 process_topic(StateData, Chan, From, String) ->

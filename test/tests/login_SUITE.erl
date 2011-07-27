@@ -25,12 +25,14 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, messages},
-     {group, unregistered}].
+    [{group, register},
+     {group, login},
+     {group, messages}].
 
 groups() ->
-    [{messages, [sequence], [register, log_one, log_one_digest, messages_story]},
-     {unregistered, [sequence], [check_unregistered]}].
+    [{register, [sequence], [register, check_unregistered]},
+     {login, [sequence], [log_one, log_one_digest]},
+     {messages, [sequence], [messages_story]}].
 
 suite() ->
     escalus:suite().
@@ -45,13 +47,10 @@ init_per_suite(Config) ->
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
-init_per_group(unregistered, Config) ->
-    Users = escalus_users:get_users(all),
-    [{escalus_users, Users} | Config];
 init_per_group(_GroupName, Config) ->
     escalus:create_users(Config).
 
-end_per_group(unregistered, _Config) ->
+end_per_group(register, Config) ->
     ok;
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
@@ -76,12 +75,22 @@ end_per_testcase(CaseName, Config) ->
 
 register(Config) ->
     %%user should be registered in an init function
-    [{_, UserSpec}| _] = escalus_config:get_property(escalus_users, Config),
+    [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
     [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
     true = rpc:call('ejabberd@localhost', 
              ejabberd_auth, 
              is_user_exists, 
              [Username, Server]).
+
+check_unregistered(Config) ->
+    escalus:delete_users(Config),
+    [{_, UserSpec}| _] = escalus_users:get_users(all),
+    [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
+    false = rpc:call('ejabberd@localhost', 
+                     ejabberd_auth, 
+                     is_user_exists, 
+                     [Username, Server]).
+
 
 log_one(Config) ->
     escalus:story(Config, [1], fun(Alice) ->
@@ -93,15 +102,6 @@ log_one(Config) ->
 
 log_one_digest(Config) ->
     log_one(Config).
-
-check_unregistered(Config) ->
-    %%user should be unregistered by previous end group function 
-    [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
-    [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
-    false = rpc:call('ejabberd@localhost', 
-                     ejabberd_auth, 
-                     is_user_exists, 
-                     [Username, Server]).
 
 
 messages_story(Config) ->

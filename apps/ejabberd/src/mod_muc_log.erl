@@ -279,7 +279,7 @@ build_filename_string(TimeStamp, OutDir, RoomJID, DirType, DirName, FileFormat) 
     {Fd, Fn, Fnrel}.
 
 get_room_name(RoomJID) ->
-    JID = jlib:string_to_jid(RoomJID),
+    JID = jlib:binary_to_jid(RoomJID),
     JID#jid.user.
 
 %% calculate day before
@@ -824,7 +824,7 @@ get_room_info(RoomJID, Opts) ->
 	    {value, {_, SA}} -> SA;
 	    false -> ""
 	end,
-    #room{jid = jlib:jid_to_string(RoomJID),
+    #room{jid = jlib:jid_to_binary(RoomJID),
 	  title = Title,
 	  subject = Subject,
 	  subject_author = SubjectAuthor,
@@ -931,7 +931,7 @@ role_users_to_string(RoleS, Users) ->
     [RoleS, ": ", UsersString].
 
 get_room_occupants(RoomJIDString) ->
-    RoomJID = jlib:string_to_jid(RoomJIDString),
+    RoomJID = jlib:binary_to_jid(RoomJIDString),
     RoomName = RoomJID#jid.luser,
     MucService = RoomJID#jid.lserver,
     StateData = get_room_state(RoomName, MucService),

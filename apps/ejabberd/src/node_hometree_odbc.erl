@@ -1312,7 +1312,7 @@ update_subscription(NodeId, JID, Subscription) ->
 		     "values('", NodeId, "', '", J, "', 'n', '", S, "');"])
     end.
 
-decode_jid(SJID) -> jlib:jid_tolower(jlib:string_to_jid(SJID)).
+decode_jid(SJID) -> jlib:jid_tolower(jlib:binary_to_jid(SJID)).
 
 decode_node(N) -> ?PUBSUB:string_to_node(N).
 
@@ -1334,7 +1334,7 @@ decode_subscriptions(Subscriptions) ->
 	end
     end, [], string:tokens(Subscriptions, ",")).
 
-encode_jid(JID) -> ?PUBSUB:escape(jlib:jid_to_string(JID)).
+encode_jid(JID) -> ?PUBSUB:escape(jlib:jid_to_binary(JID)).
 
 encode_affiliation(owner) -> "o";
 encode_affiliation(publisher) -> "p";

@@ -287,7 +287,7 @@ process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = result, sub_el = []}.
 
 process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
-    JID1 = jlib:string_to_jid(xml:get_attr_s(<<"jid">>, Attrs)),
+    JID1 = jlib:binary_to_jid(xml:get_attr_s(<<"jid">>, Attrs)),
     #jid{user = User, luser = LUser, lserver = LServer} = From,
     case JID1 of
 	error ->
@@ -347,7 +347,7 @@ process_item_set(_From, _To, _) ->
 process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
     case Attr of
 	<<"jid">> ->
-	    case jlib:string_to_jid(Val) of
+	    case jlib:binary_to_jid(Val) of
 		error ->
 		    process_item_attrs(Item, Attrs);
 		JID1 ->
@@ -734,7 +734,7 @@ set_items(User, Server, SubEl) ->
     mnesia:transaction(F).
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
-    JID1 = jlib:string_to_jid(xml:get_attr_s(<<"jid">>, Attrs)),
+    JID1 = jlib:binary_to_jid(xml:get_attr_s(<<"jid">>, Attrs)),
     case JID1 of
 	error ->
 	    ok;
@@ -759,7 +759,7 @@ process_item_set_t(_LUser, _LServer, _) ->
 process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
     case Attr of
 	<<"jid">> ->
-	    case jlib:string_to_jid(Val) of
+	    case jlib:binary_to_jid(Val) of
 		error ->
 		    process_item_attrs_ws(Item, Attrs);
 		JID1 ->
@@ -1010,9 +1010,9 @@ build_contact_jid_td(RosterJID) ->
 	     end,
     case JIDURI of
 	[] ->
-	    ?XAC("td", [{"class", "valign"}], jlib:jid_to_string(RosterJID));
+	    ?XAC("td", [{"class", "valign"}], jlib:jid_to_binary(RosterJID));
 	URI when is_list(URI) ->
-	    ?XAE("td", [{"class", "valign"}], [?AC(JIDURI, jlib:jid_to_string(RosterJID))])
+	    ?XAE("td", [{"class", "valign"}], [?AC(JIDURI, jlib:jid_to_binary(RosterJID))])
     end.
 
 user_roster_parse_query(User, Server, Items, Query) ->
@@ -1022,7 +1022,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 		{value, {_, undefined}} ->
 		    error;
 		{value, {_, SJID}} ->
-		    case jlib:string_to_jid(SJID) of
+		    case jlib:binary_to_jid(SJID) of
 			JID when is_record(JID, jid) ->
 			    user_roster_subscribe_jid(User, Server, JID),
 			    ok;
@@ -1090,7 +1090,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
     nothing.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, <<>>}).
+    jlib:jid_to_binary({User, Server, <<>>}).
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++ [?XE("h3", [?ACT("roster/", "Roster")])].
