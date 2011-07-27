@@ -596,7 +596,9 @@ bounce_els_from_obuf(State) ->
                       end;
                   _ ->
                       ok
-              end
+              end;
+         (_) ->
+              ok
       end, State#state.el_obuf).
 
 is_valid_key("", "") ->
