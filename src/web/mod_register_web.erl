@@ -536,6 +536,11 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
+    case jlib:make_jid(Username, Host, "") of
+	error -> {error, invalid_jid};
+	_ -> register_account2(Username, Host, Password)
+    end.
+register_account2(Username, Host, Password) ->
     case ejabberd_auth:try_register(Username, Host, Password) of
 	{atomic, Res} ->
 	    {success, Res, {Username, Host, Password}};
