@@ -146,19 +146,39 @@ dirty_get_registered_users() ->
     ejabberd_auth_storage:dirty_get_registered_users().
 
 get_vh_registered_users(Server) ->
-    ejabberd_auth_storage:get_vh_registered_users(Server).
+    case check_cache_last_options(Server) of
+	cache ->
+	    ejabberd_auth_storage:get_vh_registered_users(Server);
+	no_cache ->
+	    []
+    end.
 
 get_vh_registered_users(Server, Data)  ->
-    ejabberd_auth_storage:get_vh_registered_users(Server, Data).
+    case check_cache_last_options(Server) of
+	cache ->
+	    ejabberd_auth_storage:get_vh_registered_users(Server, Data);
+	no_cache ->
+	    []
+    end.
 
 %% @spec (Server) -> nil()
 %%     Server = string()
 
 get_vh_registered_users_number(Server) ->
-    ejabberd_auth_storage:get_vh_registered_users_number(Server).
+    case check_cache_last_options(Server) of
+	cache ->
+	    ejabberd_auth_storage:get_vh_registered_users_number(Server);
+	no_cache ->
+	    0
+    end.
 
 get_vh_registered_users_number(Server, Data) ->
-    ejabberd_auth_storage:get_vh_registered_users_number(Server, Data).
+    case check_cache_last_options(Server) of
+	cache ->
+	    ejabberd_auth_storage:get_vh_registered_users_number(Server, Data);
+	no_cache ->
+	    0
+    end.
 
 %% @spec (User, Server) -> bool()
 %%     User = string()
