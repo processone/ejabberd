@@ -298,23 +298,39 @@ normal_state({route, From, "",
 					end
 				end;
 			IsVoiceRequest ->
-				case is_visitor(From, StateData) of
+				NewStateData = case is_visitor(From, StateData) of
 				true ->
-					send_voice_request(From, StateData);
+					MinInterval = 1800,
+					FromNick = find_nick_by_jid(From, StateData),
+					LastTime = last_voice_request_time(FromNick, StateData),
+					{MegaSecs, Secs, _} = erlang:now(),
+					Now = MegaSecs * 1000000 + Secs,
+					if
+					timer:now_diff(LastTime, erlang:now()) > MinInterval*1000000 ->
+						send_voice_request(From, StateData),
+						update_voice_request_time(FromNick, StateData);
+					true ->
+						ErrText = "Please, wait for a while before sending new voice request",
+						Err =  jlib:make_error_reply(
+							Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+						ejabberd_router:route(
+							StateData#state.jid, From, Err),
+						StateData
+					end;
 				_ ->
 					ErrText = "Only visitors allowed to request voice",
 					Err = jlib:make_error_reply(
 						Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
 					ejabberd_router:route(
-						StateData#state.jid, From, Err)
+						StateData#state.jid, From, Err),
+					StateData
 				end,
-				{next_state, normal_state, StateData};
+				{next_state, normal_state, NewStateData};
 			IsVoiceApprovement ->
 				NewStateData = case is_moderator(From, StateData) of
 				true ->
 					case extract_jid_from_voice_approvement(Els) of
 					{error, X} ->
-						?ERROR_MSG("Failed to extract JID from voice approvement: ~n~p", [X]),
 						ErrText = "Failed to extract JID from your voice request approvement",
 						Err = jlib:make_error_reply(
 							Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
@@ -1533,7 +1549,9 @@ remove_online_user(JID, StateData, Reason) ->
 		error ->
 		    StateData#state.nicks
 	    end,
-    StateData#state{users = Users, nicks = Nicks}.
+    LastTimes = ?DICT:erase(Nick, StateData#state.last_voice_request_time),
+    StateData#state{users = Users, nicks = Nicks,
+		last_voice_request_time = LastTimes}.
 
 
 filter_presence({xmlelement, "presence", Attrs, Els}) ->
@@ -1640,6 +1658,12 @@ get_priority_from_presence(PresencePacket) ->
 		    0
 	    end
     end.
+
+find_nick_by_jid(Jid, StateData) ->
+	[{_, #user{nick = Nick}}] = lists:filter(
+		fun({_, #user{jid = FJid}}) -> FJid == Jid end,
+		?DICT:to_list(StateData#state.users)),
+	Nick.
 
 is_nick_change(JID, Nick, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -2169,7 +2193,18 @@ change_nick(JID, Nick, StateData) ->
 			     ?DICT:store(OldNick, OldNickUsers -- [LJID],
 					 StateData#state.nicks))
 	end,
-    NewStateData = StateData#state{users = Users, nicks = Nicks},
+	LastTimes =
+	case ?DICT:find(OldNick, StateData#state.last_voice_request_time) of
+	{ok, Time} ->
+		?DICT:store(
+			Nick, Time,
+			?DICT:erase(OldNick, StateData#state.last_voice_request_time)
+		);
+	error ->
+		StateData#state.last_voice_request_time
+	end,
+    NewStateData = StateData#state{users = Users, nicks = Nicks,
+			last_voice_request_time = LastTimes},
     send_nick_changing(JID, OldNick, NewStateData, SendOldUnavailable, SendNewAvailable),
     add_to_log(nickchange, {OldNick, Nick}, StateData),
     NewStateData.
@@ -3737,9 +3772,7 @@ prepare_request_form(Requester, Nick, Lang) ->
 
 send_voice_request(From, StateData) ->
 	Moderators = search_role(moderator, StateData),
-	[{_, #user{nick = FromNick}}] = lists:filter(
-		fun({_, #user{jid = Jid}}) -> Jid == From end,
-		?DICT:to_list(StateData#state.users)),
+	FromNick = find_nick_by_jid(From, StateData),
 	lists:map(
 		fun({_, User}) ->
 			ejabberd_router:route(
@@ -3825,6 +3858,20 @@ extract_jid_from_voice_approvement(Els) ->
 	error: X ->
 		{error, X}
 	end.
+
+last_voice_request_time(Nick, StateData) ->
+	case ?DICT:find(Nick, StateData#state.last_voice_request_time) of
+	{ok, Value} ->
+		Value;
+	error ->
+		0
+	end.
+
+update_voice_request_time(Nick, StateData) ->
+	{MegaSecs, Secs, _} = erlang:now(),
+	Time = MegaSecs * 1000000 + Secs,
+	NewDict = ?DICT:store(Nick, Time, StateData#state.last_voice_request_time),
+	StateData#state{last_voice_request_time = NewDict}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support

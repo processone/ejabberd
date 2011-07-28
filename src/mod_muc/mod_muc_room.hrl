@@ -69,6 +69,7 @@
 		jid,
 		config = #config{},
 		users = ?DICT:new(),
+		last_voice_request_time = ?DICT:new(),
 		robots = ?DICT:new(),
 		nicks = ?DICT:new(),
 		affiliations = ?DICT:new(),
