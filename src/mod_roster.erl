@@ -384,7 +384,7 @@ storageroster_to_roster(#rosteritem{user_host_jid = {U, S, JID} = USJ,
 	  fun(#rostergroup{user_host_jid = USJ1, grp = G}, R)
 	     when USJ =:= USJ1 ->
 		  %% G is a string when using odbc beckend, and a binary when using mnesia
-		  GString = convert_to_string(G),
+		  GString = convert_to_binary(G),
 		  [GString | R];
 	     (_, R) ->
 		  R
@@ -392,14 +392,14 @@ storageroster_to_roster(#rosteritem{user_host_jid = {U, S, JID} = USJ,
     #roster{usj = {U, S, JID},
 	    us = US,
 	    jid = JID,
-	    name = convert_to_string(Name),
+	    name = convert_to_binary(Name),
 	    subscription = Subscription,
 	    ask = Ask,
 	    askmessage = AskMessage,
 	    groups = Groups}.
 
-convert_to_string(A) when is_binary(A) -> binary_to_list(A);
-convert_to_string(A) when is_list(A) -> A.
+convert_to_binary(A) when is_list(A) -> list_to_binary(A);
+convert_to_binary(A) when is_binary(A) -> A.
 
 %% @spec (Item) -> XML
 %%     Item = rosteritem()
