@@ -436,7 +436,7 @@ handle_event(_Event, StateName, State) ->
     {next_state, StateName, State}.
 
 handle_sync_event({send_xml, {xmlstreamstart, _, _} = El}, _From,
-                  StateName, State) ->
+                  StateName, State) when State#state.xmpp_ver >= "1.0" ->
     %% Avoid sending empty <body/> element
     OutBuf = buf_in([El], State#state.el_obuf),
     {reply, ok, StateName, State#state{el_obuf = OutBuf}};
