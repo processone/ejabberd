@@ -288,7 +288,7 @@ wait_for_session(#body{attrs = Attrs} = Req, From, State) ->
                           {wait, Wait},
                           {ver, ?BOSH_VERSION},
                           {polling, ?DEFAULT_POLLING},
-                          {inactivity, ?DEFAULT_INACTIVITY},
+                          {inactivity, State#state.inactivity_timeout},
                           {hold, Hold},
                           {'xmpp:restartlogic', true},
                           {requests, Requests},
