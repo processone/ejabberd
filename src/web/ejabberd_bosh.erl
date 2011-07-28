@@ -717,23 +717,25 @@ attrs_to_body_attrs(Attrs) ->
       fun(_, {error, Reason}) ->
               {error, Reason};
          ({Attr, Val}, Acc) ->
-              try Attr of
-                  "ver" -> [{ver, Val}|Acc];
-                  "xmpp:version" -> [{'xmpp:version', Val}|Acc];
-                  "type" -> [{type, Val}|Acc];
-                  "key" -> [{key, Val}|Acc];
-                  "newkey" -> [{newkey, Val}|Acc];
-                  "xmlns" -> Val = ?NS_HTTP_BIND, Acc;
-                  "secure" -> [{secure, to_bool(Val)}|Acc];
-                  "xmpp:restart" -> [{'xmpp:restart', to_bool(Val)}|Acc];
-                  "to" -> [{to, [_|_] = jlib:nameprep(Val)}|Acc];
-                  "wait" -> [{wait, to_int(Val, 0)}|Acc];
-                  "ack" -> [{ack, to_int(Val, 0)}|Acc];
-                  "sid" -> [{sid, Val}|Acc];
-                  "hold" -> [{hold, to_int(Val, 0)}|Acc];
-                  "rid" -> [{rid, to_int(Val, 0)}|Acc];
-                  "pause" -> [{pause, to_int(Val, 0)}|Acc];
-                  _ -> [{Attr, Val}|Acc]
+              try
+                  case Attr of
+                      "ver" -> [{ver, Val}|Acc];
+                      "xmpp:version" -> [{'xmpp:version', Val}|Acc];
+                      "type" -> [{type, Val}|Acc];
+                      "key" -> [{key, Val}|Acc];
+                      "newkey" -> [{newkey, Val}|Acc];
+                      "xmlns" -> Val = ?NS_HTTP_BIND, Acc;
+                      "secure" -> [{secure, to_bool(Val)}|Acc];
+                      "xmpp:restart" -> [{'xmpp:restart', to_bool(Val)}|Acc];
+                      "to" -> [{to, [_|_] = jlib:nameprep(Val)}|Acc];
+                      "wait" -> [{wait, to_int(Val, 0)}|Acc];
+                      "ack" -> [{ack, to_int(Val, 0)}|Acc];
+                      "sid" -> [{sid, Val}|Acc];
+                      "hold" -> [{hold, to_int(Val, 0)}|Acc];
+                      "rid" -> [{rid, to_int(Val, 0)}|Acc];
+                      "pause" -> [{pause, to_int(Val, 0)}|Acc];
+                      _ -> [{Attr, Val}|Acc]
+                  end
               catch _:_ ->
                       {error, "Invalid \"" ++ Attr ++ "\" attribute"}
               end
