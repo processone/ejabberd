@@ -333,7 +333,7 @@ get_subscription_lists({F, T}, User, Server)
 		fun(Group) ->
 			get_group_users(LServer, Group)
 		end, DisplayedGroups)),
-	SRJIDs = [{U1, S1, undefined} || {U1, S1} <- SRUsers],
+	SRJIDs = [{list_to_binary(U1), list_to_binary(S1), undefined} || {U1, S1} <- SRUsers],
 	{lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}
     catch
 	_ ->
