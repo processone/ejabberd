@@ -146,9 +146,11 @@ get_user_roster(Items, US) ->
 	  fun(Group, Acc1) ->
 		  GroupName = get_group_name(S, Group),
 		  lists:foldl(
-		    fun(UserServer, Acc2) ->
+		    fun({User, Server} = UserServer, Acc2) ->
 			    if UserServer == US -> Acc2;
-			       true -> dict:append(UserServer,
+			       true ->
+				    UserServerB = {list_to_binary(User), list_to_binary(Server)},
+				    dict:append(UserServerB,
 						   GroupName,
 						   Acc2)
 			    end
