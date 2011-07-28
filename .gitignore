@@ -61,3 +61,5 @@ apps/ejabberd/src/eldap_filter_yecc.erl
 rel/ejabberd/
 apps/stringprep/ebin
 apps/stringprep/priv
+apps/ejabberd/include/EJABBERD-MIB.hrl
+apps/ejabberd/priv/mibs/EJABBERD-MIB.bin

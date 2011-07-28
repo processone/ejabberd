@@ -118,6 +118,7 @@
              mod_shared_roster,
              mod_shared_roster_ldap,
              mod_sic,
+             mod_snmp,
              mod_stats,
              mod_time,
              mod_vcard,
