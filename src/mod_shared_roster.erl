@@ -175,9 +175,9 @@ get_user_roster(Items, US) ->
 
     %% Export items in roster format:
     ModVcard = get_vcard_module(S),
-    SRItems = [#roster{usj = {U, S, {U1, S1, undefined}},
-		       us = US,
-		       jid = {U1, S1, undefined},
+    SRItems = [#roster{usj = {list_to_binary(U), list_to_binary(S), {list_to_binary(U1), list_to_binary(S1), undefined}},
+		       us = {list_to_binary(U), list_to_binary(S)},
+		       jid = {list_to_binary(U1), list_to_binary(S1), undefined},
 		       name = get_rosteritem_name(ModVcard, U1, S1),
 		       subscription = both,
 		       ask = none,
