@@ -52,6 +52,7 @@
              ejabberd_service,
              ejabberd_sm,
              ejabberd_snmp_core,
+             ejabberd_snmp_hooks,
              ejabberd_socket,
              ejabberd_stun,
              ejabberd_sup,

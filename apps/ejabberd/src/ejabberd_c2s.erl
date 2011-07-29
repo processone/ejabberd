@@ -2138,7 +2138,7 @@ process_unauthenticated_stanza(StateData, El) ->
 	    case Res of
 		empty ->
 		    % The only reasonable IQ's here are auth and register IQ's
-		    % They contain secrets, so don't include subelements to response
+		    % They contain secrets, so don't include subelements to responsec
 		    ResIQ = IQ#iq{type = error,
 				  sub_el = [?ERR_SERVICE_UNAVAILABLE]},
 		    Res1 = jlib:replace_from_to(

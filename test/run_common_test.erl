@@ -9,11 +9,11 @@ ct() ->
     ct:run_test([
         {config, [?CT_CONFIG]},
         {dir, ?CT_DIR},
-        {logdir, ?CT_REPORT}
+        {logdir, ?CT_REPORT},
 
-        %{suite, "login_SUITE"},
-        %{group, [messages]}
-        %{testcase, [log_one_digest]}
+        {suite, "login_SUITE"},
+        {group, [login]},
+        {testcase, [log_one_basic_digest]}
         %{group, [unregistered]}
 
         %{suite, "presence_SUITE"},

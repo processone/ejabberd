@@ -30,8 +30,12 @@ all() ->
      {group, messages}].
 
 groups() ->
-    [{register, [sequence], [register, check_unregistered]},
-     {login, [sequence], [log_one, log_one_digest]},
+    [{register, [sequence], [register, 
+                             check_unregistered]},
+     {login, [sequence], [log_one, 
+                          log_one_digest, 
+                          log_one_basic_plain, 
+                          log_one_basic_digest]},
      {messages, [sequence], [messages_story]}].
 
 suite() ->
@@ -58,6 +62,12 @@ end_per_group(_GroupName, Config) ->
 
 init_per_testcase(log_one_digest, Config) ->
     Conf1 = [ {escalus_auth_method, "DIGEST-MD5"} | Config],
+    escalus:init_per_testcase(log_one_digest, Conf1);
+init_per_testcase(log_one_basic_digest, Config) ->
+    Conf1 = [ {escalus_auth_method, digest} | Config],
+    escalus:init_per_testcase(log_one_digest, Conf1);
+init_per_testcase(log_one_basic_plain, Config) ->
+    Conf1 = [ {escalus_auth_method, password} | Config],
     escalus:init_per_testcase(log_one_digest, Conf1);
 init_per_testcase(check_unregistered, Config) ->
     Config;
@@ -101,6 +111,12 @@ log_one(Config) ->
         end).
 
 log_one_digest(Config) ->
+    log_one(Config).
+
+log_one_basic_plain(Config) ->
+    log_one(Config).
+
+log_one_basic_digest(Config) ->
     log_one(Config).
 
 
