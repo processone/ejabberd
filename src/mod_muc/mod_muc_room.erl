@@ -298,9 +298,10 @@ normal_state({route, From, "",
 					end
 				end;
 			IsVoiceRequest ->
-				NewStateData = case is_visitor(From, StateData) of
-				true ->
-					MinInterval = 1800,
+				NewStateData = case {is_visitor(From, StateData),
+					(StateData#state.config)#config.allow_voice_requests} of
+				{true, true} ->
+					MinInterval = (StateData#state.config)#config.voice_request_min_interval,
 					FromNick = find_nick_by_jid(From, StateData),
 					LastTime = last_voice_request_time(FromNick, StateData),
 					{MegaSecs, Secs, _} = erlang:now(),
@@ -317,6 +318,13 @@ normal_state({route, From, "",
 							StateData#state.jid, From, Err),
 						StateData
 					end;
+				{_, false} ->
+					ErrText = "Voice requests are disabled in this room",
+					Err = jlib:make_error_reply(
+						Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+					ejabberd_router:route(
+						StateData#state.jid, From, Err),
+					StateData;
 				_ ->
 					ErrText = "Only visitors allowed to request voice",
 					Err = jlib:make_error_reply(
@@ -3266,7 +3274,13 @@ get_config(Lang, StateData, From) ->
 		     Config#config.allow_visitor_status),
 	 ?BOOLXFIELD("Allow visitors to change nickname",
 		     "muc#roomconfig_allowvisitornickchange",
-		     Config#config.allow_visitor_nickchange)
+		     Config#config.allow_visitor_nickchange),
+	 ?BOOLXFIELD("Allow visitors to send voice requests",
+		"muc#roomconfig_allowvoicerequests",
+		Config#config.allow_voice_requests),
+	 ?STRINGXFIELD("Minimum interval between voice requests (in seconds)",
+		"muc#roomconfig_voicerequestmininterval",
+		erlang:integer_to_list(Config#config.voice_request_min_interval))
 	] ++
 	case ejabberd_captcha:is_feature_available() of
 	    true ->
@@ -3409,6 +3423,10 @@ set_xoption([{"muc#roomconfig_roomsecret", [Val]} | Opts], Config) ->
     ?SET_STRING_XOPT(password, Val);
 set_xoption([{"anonymous", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(anonymous, Val);
+set_xoption([{"muc#roomconfig_allowvoicerequests", [Val]} | Opts], Config) ->
+	?SET_BOOL_XOPT(allow_voice_requests, Val);
+set_xoption([{"muc#roomconfig_voicerequestmininterval", [Val]} | Opts], Config) ->
+	?SET_NAT_XOPT(voice_request_min_interval, Val);
 set_xoption([{"muc#roomconfig_whois", [Val]} | Opts], Config) ->
     case Val of
 	"moderators" ->
@@ -3501,6 +3519,8 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      anonymous -> StateData#state{config = (StateData#state.config)#config{anonymous = Val}};
 	      logging -> StateData#state{config = (StateData#state.config)#config{logging = Val}};
               captcha_whitelist -> StateData#state{config = (StateData#state.config)#config{captcha_whitelist = ?SETS:from_list(Val)}};
+	      allow_voice_requests -> StateData#state{config = (StateData#state.config)#config{allow_voice_requests = Val}};
+	      voice_request_min_interval -> StateData#state{config = (StateData#state.config)#config{voice_request_min_interval = Val}};
 	      max_users ->
 		  ServiceMaxUsers = get_service_max_users(StateData),
 		  MaxUsers = if
@@ -3546,6 +3566,8 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
      ?MAKE_CONFIG_OPT(max_users),
+     ?MAKE_CONFIG_OPT(allow_voice_requests),
+     ?MAKE_CONFIG_OPT(voice_request_min_interval),
      {captcha_whitelist,
       ?SETS:to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},
