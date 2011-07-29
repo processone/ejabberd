@@ -5,7 +5,6 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("EJABBERD-MIB.hrl").
--include("mod_snmp.hrl").
 
 %% behaviour: gen_mod
 -export([start/2, stop/1]).
@@ -13,8 +12,10 @@
 %% snmp handlers
 %-export([handle_entry/2, handle_entry/4]).
 
+-define(CORE, ejabberd_snmp_core).
 
 start(_Host, Opts) ->
+    ?CORE:start([]),
     SampleOID = lists:foldl(fun(E,A) -> A ++ "." ++ integer_to_list(E) end,
         integer_to_list(hd(?ejabberd)), tl(?ejabberd)),
     %% These are the options from ejabberd.cfg
@@ -27,7 +28,7 @@ start(_Host, Opts) ->
     ?INFO_MSG("mod_snmp started. Sample OID is: ~s~nSample opts: ~s", [SampleOID, SampleOpts]).
 
 stop(_Host) ->
-    ok.
+    ?CORE:stop().
 
 %% The following is straight from ooVoo
 

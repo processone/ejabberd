@@ -1,1 +1,0 @@
--define(STATS(asd), body).
