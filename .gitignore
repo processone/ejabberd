@@ -64,3 +64,13 @@ apps/stringprep/ebin
 apps/stringprep/priv
 apps/ejabberd/include/EJABBERD-MIB.hrl
 apps/ejabberd/priv/mibs/EJABBERD-MIB.bin
+tsung-1.3.3/config.log
+tsung-1.3.3/examples/*
+tsung-1.3.3/priv/*
+tsung-1.3.3/src/log2tsung.pl
+tsung-1.3.3/src/tsung-plotter/tsplot.py
+tsung-1.3.3/src/tsung-rrd.pl
+tsung-1.3.3/src/tsung_stats.pl
+tsung-1.3.3/tsung-recorder.sh
+tsung-1.3.3/tsung.sh
+tsung-1.3.3/tsung.spec
