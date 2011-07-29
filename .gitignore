@@ -1,6 +1,7 @@
 #
 # You can add personal rules in your file .git/info/exclude
 apps/*/src/#*
+apps/*/src/.#*
 test/.#*
 test/#*
 test/tests/.#
