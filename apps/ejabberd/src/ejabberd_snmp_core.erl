@@ -115,6 +115,7 @@ stop() ->
 
 table_name(general)      -> stats_general;
 table_name(core)         -> stats_core;
+table_name(c2s)          -> stats_c2s;
 table_name(mod_privacy)  -> stats_mod_privacy;
 table_name(mod_register) -> stats_mod_register;
 table_name(mod_roster)   -> stats_mod_roster.
@@ -131,6 +132,9 @@ module_for(Counter) ->
 
 %%%.
 
+initialize_tables([]) ->
+    AllModules = proplists:get_keys(?COUNTERS_FOR_MODULE),
+    initialize_tables(AllModules);
 initialize_tables(Modules) ->
     lists:foreach(fun initialize_table/1, Modules).
 
@@ -138,11 +142,10 @@ initialize_table(Module) ->
     ets:new(?STATS(Module), [named_table]),
     initialize_counters(Module).
 
-initialize_counters({Module, Counters}) ->
-    lists:foreach(fun(C) -> ets:insert(?STATS(Module), {C, 0}) end,
-                  Counters);
 initialize_counters(Module) ->
-    initialize_counters(proplists:lookup(Module, counters_for(Module))).
+    Counters = counters_for(Module),
+    lists:foreach(fun(C) -> ets:insert(?STATS(Module), {C, 0}) end,
+                  Counters).
 
 %% Delete a table if it exists
 destroy_table(Tab) ->
