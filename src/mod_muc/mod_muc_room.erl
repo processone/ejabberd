@@ -3852,9 +3852,13 @@ check_voice_approvement_fields({xmlelement, "field", Attrs, Els}, Acc) ->
 				true;
 			"1" ->
 				true
-			end
+			end;
+		_ ->
+			true % ignore unknown fields
 		end
-	end.
+	end;
+check_voice_approvement_fields({xmlelement, _, _, _}, _) ->
+	true.
 
 extract_jid_from_voice_approvement(Els) ->
 	try
