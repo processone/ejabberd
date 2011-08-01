@@ -173,16 +173,27 @@ destroy_table(Tab) ->
         ets:delete(Tab)
     end.
 
+get_all_modules() ->
+    proplists:get_keys(?COUNTERS_FOR_MODULE).
+
+get_all_tables() ->
+    [ ?STATS(Module) || Module <- get_all_modules() ].
+
 %% Delete all tables possibly used by this module
 %% This operation won't error on tables which are not currently used.
 destroy_tables() ->
-    Tabs = [ ?STATS(Module) ||
-        Module <- proplists:get_keys(?COUNTERS_FOR_MODULE)],
-    lists:foreach(fun destroy_table/1, Tabs).
+    lists:foreach(fun destroy_table/1, get_all_tables()).
 
 -spec is_started() -> boolean().
 is_started() ->
-    false.
+    lists:any(
+        fun(Tab) ->
+            case ets:info(Tab) of
+            undefined -> false;
+            _ -> true
+            end
+        end,
+        get_all_tables()).
 
 increment_counter(Counter) ->
     update_counter(Counter, 1).
