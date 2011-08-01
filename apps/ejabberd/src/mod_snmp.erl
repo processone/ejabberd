@@ -101,7 +101,7 @@ snmp_error(Error) ->
                [Error]).
     
     
--spec(handle_entry/2 :: (get | new | delete, atom()) -> {value, term()} | ok).
+-spec(handle_entry/2 :: (get, atom()) -> {value, term()} | ok).
 %handle_entry(T, generalUptime)      -> ?UTILS:fun_value(T, getFun(generalUptime));
 %%% Default for counters
 handle_entry(get, Counter) -> 
