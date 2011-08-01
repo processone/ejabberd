@@ -14,7 +14,8 @@
 %% Internal eksports
 %%-------------------
 -export([sm_register_connection_hook/3,
-          sm_remove_connection_hook/3]).
+         sm_remove_connection_hook/3,
+         auth_failed/3]).
 
 
 -include("ejabberd.hrl").
@@ -27,7 +28,8 @@
 %% Here will be declared which hooks should be registered
 get_hooks(Host) ->
     [[sm_register_connection_hook, Host, ?MODULE, sm_register_connection_hook, 50],
-     [sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 50]].
+     [sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 50],
+     [auth_failed, Host, ?MODULE, auth_failed, 50]].
 
 
 %%------------------------------
@@ -43,6 +45,10 @@ sm_register_connection_hook(_,_,_) ->
 sm_remove_connection_hook(_,_,_) ->
     ejabberd_snmp_core:increment_counter(sessionLogouts),
     ejabberd_snmp_core:decrement_counter(sessionCount).
+
+-spec auth_failed(binary(), binary(), binary()) -> term().
+auth_failed(_,_,_) ->
+    ejabberd_snmp_core:increment_counter(sessionAuthFails).
 
 
 

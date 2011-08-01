@@ -30,7 +30,7 @@ all() ->
     [{group, session}].
 
 groups() ->
-    [{session, [sequence], [login_one, login_many]}].
+    [{session, [sequence], [login_one, login_many, auth_failed]}].
      
 suite() ->
     [{require, ejabberd_node} | escalus:suite()].
@@ -89,6 +89,17 @@ login_many(Config) ->
         end).
     
 
+auth_failed(Config) ->
+    {value, AuthFails} = get_counter_value(sessionAuthFails),
+    assert_counter(0, sessionCount),
+    
+    [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
+    UserSpecM = proplists:delete(password, UserSpec) ++ [{password, "mazabe"}],
+    
+    catch escalus_client:start(Config, UserSpecM, "res1"),
+    assert_counter(0, sessionCount),
+    assert_counter(AuthFails + 1, sessionAuthFails).
+    
 
 messages_story(Config) ->
     escalus:story(Config, [1, 1], fun(Alice, Bob) ->
