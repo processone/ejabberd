@@ -9,6 +9,7 @@
          is_started/0,
          increment_counter/1,
          decrement_counter/1,
+         reset_counters/0,
          counter_value/1,
          table_value/4]).
 
@@ -133,8 +134,7 @@ module_for(Counter) ->
 %%%.
 
 initialize_tables([]) ->
-    AllModules = proplists:get_keys(?COUNTERS_FOR_MODULE),
-    initialize_tables(AllModules);
+    initialize_tables(get_all_modules());
 initialize_tables(Modules) ->
     lists:foreach(fun initialize_table/1, Modules).
 
@@ -146,6 +146,21 @@ initialize_counters(Module) ->
     Counters = counters_for(Module),
     lists:foreach(fun(C) -> ets:insert(?STATS(Module), {C, 0}) end,
                   Counters).
+
+%% Reset all counters for initialized tables
+reset_counters() ->
+    lists:foreach(
+        fun(Module) ->
+            Tab = ?STATS(Module),
+            case ets:info(Tab) of
+            undefined ->
+                ok;
+            _ ->
+                lists:foreach(fun(C) -> ets:insert(Tab, {C, 0}) end,
+                              counters_for(Module))
+            end
+        end,
+        get_all_modules()).
 
 %% Delete a table if it exists
 destroy_table(Tab) ->
