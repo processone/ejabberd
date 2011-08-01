@@ -193,7 +193,9 @@ static int compose(int ch1, int ch2)
 	       }
 
 //prepare binary from string
-ErlDrvBinary* to_binary(char* rstring, ErlDrvBinary* rbinary) {
+ErlDrvBinary* to_binary(char* rstring, int size) {
+   ErlDrvBinary* rbinary = driver_alloc_binary(size);
+   rbinary->orig_size = size;
    strcpy(rbinary->orig_bytes, rstring);
    return rbinary;
 }
@@ -211,7 +213,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    int info;
    int prohibit = 0, tolower = 0;
    char *rstring;
-   ErlDrvBinary *rbinary;
+   //ErlDrvBinary *rbinary;
    int *mc;
    int *str32;
    int str32len, str32pos = 0;
@@ -225,8 +227,6 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 
    rstring = driver_alloc(size);
    rstring[0] = 0;
-   rbinary = driver_alloc_binary(size);
-   rbinary->orig_size = size;
 
    str32len = len + 1;
 
@@ -299,8 +299,9 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       }
 
       if (bad) {
-	 *rbuf = to_binary(rstring, rbinary);
+	 *rbuf = to_binary(rstring, size);
 	 driver_free(str32);
+         driver_free(rstring);
 	 return 1;
       }
       
@@ -329,8 +330,9 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 
    if (str32pos == 0) {
       rstring[0] = 1;
-      *rbuf = to_binary(rstring, rbinary);
+      *rbuf = to_binary(rstring, size);
       driver_free(str32);
+      driver_free(rstring);
       return 1;
    }
 
@@ -370,8 +372,9 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       ruc = str32[i];
       info = GetUniCharInfo(ruc);
       if (info & prohibit) {
-	 *rbuf = to_binary(rstring, rbinary);
+	 *rbuf = to_binary(rstring, size);
 	 driver_free(str32);
+         driver_free(rstring);
 	 return 1;
       }
       last_ral = info & D1Mask;
@@ -381,13 +384,15 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    }
 
    if (have_ral && (!first_ral || !last_ral || have_l)) {
-      *rbuf = to_binary(rstring, rbinary);
+      *rbuf = to_binary(rstring, size);
       driver_free(str32);
+      driver_free(rstring);
       return 1;
    }
 
    rstring[0] = 1;
-   *rbuf = to_binary(rstring, rbinary);
+
+   *rbuf = to_binary(rstring, size);
    driver_free(str32);
    driver_free(rstring);
    
