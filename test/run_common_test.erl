@@ -11,9 +11,9 @@ ct() ->
         {dir, ?CT_DIR},
         {logdir, ?CT_REPORT},
 
-        {suite, "login_SUITE"},
-        {group, [login]},
-        {testcase, [log_one_basic_digest]}
+        %{suite, "login_SUITE"},
+        %{group, [login]},
+        %{testcase, [log_one_basic_digest]}
         %{group, [unregistered]}
 
         %{suite, "presence_SUITE"},
@@ -21,7 +21,7 @@ ct() ->
         %{group, [roster]}
         %{group, [subscribe]}
 
-        %{suite, "privacy_SUITE"}
+        {suite, "privacy_SUITE"}
 
         %, {group, [management]}
         %, {testcase, get_all_lists_with_active}
@@ -33,5 +33,13 @@ ct() ->
         %, {group, [blocking]}
         %, {testcase, block_jid_message}
         %, {testcase, block_jid_all}
+
+        %{repeat, 10},
+        %{suite, "snmp_SUITE"}
+
+        %, {group, [mod_privacy]}
+        %, {testcase, modPrivacyGets}
+        %, {testcase, modPrivacySets}
+        %, {testcase, modPrivacySetsActive}
     ]),
     init:stop(0).
