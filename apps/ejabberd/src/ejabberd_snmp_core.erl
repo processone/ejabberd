@@ -139,7 +139,7 @@ initialize_tables(Modules) ->
     lists:foreach(fun initialize_table/1, Modules).
 
 initialize_table(Module) ->
-    ets:new(?STATS(Module), [named_table]),
+    ets:new(?STATS(Module), [public, named_table]),
     initialize_counters(Module).
 
 initialize_counters(Module) ->
