@@ -21,6 +21,18 @@
 -include_lib("escalus/include/escalus.hrl").
 -include_lib("common_test/include/ct.hrl").
 
+-import(privacy_helper, [config_list/2,
+                         set_and_activate/2,
+                         set_list/2,
+                         activate_list/2,
+                         privacy_list/2,
+                         privacy_list_item/1,
+                         is_privacy_list_push/1,
+                         is_presence_error/1,
+                         verify_result/1,
+                         verify_push/1,
+                         verify_presence_error/1]).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -381,8 +393,8 @@ set_list(Config) ->
         %% but I suppose it's not mandatory).
         AliceResponses = escalus_client:wait_for_stanzas(Alice, 2),
         %escalus_utils:log_stanzas("Alice got", AliceResponses),
-        true = lists:any(fun verify_result/1, AliceResponses)
-            and lists:any(fun verify_push/1, AliceResponses),
+        true = lists:any(fun privacy_helper:verify_result/1, AliceResponses)
+            and lists:any(fun privacy_helper:verify_push/1, AliceResponses),
 
         %% Verify that other resources also get the push.
         AliceResourceResponses = [
@@ -390,7 +402,8 @@ set_list(Config) ->
             escalus_client:wait_for_stanza(Alice3)
         ],
         %escalus_utils:log_stanzas("Alice resources got", AliceResourceResponses),
-        lists:foreach(fun is_privacy_list_push/1, AliceResourceResponses)
+        lists:foreach(fun privacy_helper:is_privacy_list_push/1,
+            AliceResourceResponses)
 
         %% All in all, the spec requires the resources to reply
         %% (as to every iq), but it's omitted here.
@@ -713,89 +726,6 @@ block_jid_message_but_not_presence(Config) ->
 %%-----------------------------------------------------------------
 %% Helpers
 %%-----------------------------------------------------------------
-
-config_list(Name, Config) ->
-    {Name, ?config(Name, Config)}.
-
-%% Sets the list on server and makes it the active one.
-set_and_activate(Client, {ListName, PrivacyList}) ->
-    set_list(Client, {ListName, PrivacyList}),
-    activate_list(Client, {ListName, PrivacyList}).
-
-%% Sets the list on server.
-set_list(Client, {_ListName, PrivacyList}) ->
-    %% set list
-    escalus_client:send(Client,
-        escalus_stanza:privacy_set_one(Client, PrivacyList)),
-    %% skip responses
-    _ClientResponses = escalus_client:wait_for_stanzas(Client, 2).
-
-%% Make the list the active one.
-activate_list(Client, {ListName, _PrivacyList}) ->
-    %% activate it
-    escalus_client:send(Client,
-        escalus_stanza:privacy_activate(Client, ListName)),
-    true = exmpp_iq:is_result(escalus_client:wait_for_stanza(Client)).
-
-%% Create empty list element with given name.
-privacy_list(Name, Items) ->
-    exmpp_xml:append_children(
-        exmpp_xml:set_attribute(
-            exmpp_xml:remove_attribute(
-                exmpp_xml:element('list'),
-                <<"xmlns">>),
-            {<<"name">>, Name}),
-        Items).
-
-%% Create a privacy list item element, wrapping up arguments as attributes.
-privacy_list_item(ItemDescription) ->
-    Attrs = case ItemDescription of
-        {Action, Order, Contents} ->
-            [{<<"action">>, Action}, {<<"order">>, Order}];
-        {Type, Value, Action, Order, Contents} ->
-            [{<<"type">>, Type}, {<<"value">>, Value}, {<<"action">>, Action}, 
-             {<<"order">>, Order}]
-    end,
-    ContentElements = [ exmpp_xml:element(Content) || Content <- Contents ],
-    exmpp_xml:append_children(
-        exmpp_xml:set_attributes(exmpp_xml:element('item'), Attrs),
-        ContentElements).
-
-%% Is this iq a notification about a privacy list being changed?
-is_privacy_list_push(Iq) ->
-    escalus_assert:is_iq('set', Iq),
-    Query = exmpp_xml:get_element(Iq, ?NS_PRIVACY, 'query'),
-    true = exmpp_xml:has_element(Query, 'list'),
-    true.
-
-is_presence_error(Stanza) ->
-    true = exmpp_presence:is_presence(Stanza),
-    error = exmpp_presence:get_type(Stanza),
-    <<"modify">> = exmpp_stanza:get_error_type(Stanza),
-    'not-acceptable' = exmpp_stanza:get_condition(Stanza),
-    true.
-
-verify_result(Stanza) ->
-    try escalus_assert:is_iq('result', Stanza) of
-        _ -> true
-    catch
-        _:_ -> false
-    end.
-
-verify_push(Stanza) ->
-    try is_privacy_list_push(Stanza) of
-        _ -> true
-    catch
-        _:_ -> false
-    end.
-
-verify_presence_error(Stanza) ->
-    try is_presence_error(Stanza) of
-        true -> true;
-        _ -> false
-    catch
-        _:_ -> false
-    end.
 
 add_sample_contact(Who, Whom, Groups, Nick) ->
     escalus_client:send(Who, 
