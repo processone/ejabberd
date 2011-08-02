@@ -332,6 +332,9 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			is_pid(Pid) ->
 			    Pid ! {route, From, To, Packet};
 			true ->
+                ejabberd_hooks:run(xmpp_stanza_dropped, 
+                                   From#jid.lserver,
+                                   [From, To, Packet]),
 			    drop
 		    end;
 		Rs ->
@@ -358,7 +361,10 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 					is_pid(Pid) ->
 					    Pid ! {route, From, To, Packet};
 					true ->
-					    drop
+                        ejabberd_hooks:run(xmpp_stanza_dropped, 
+                                           From#jid.lserver,
+                                           [From, To, Packet]),
+                        drop
 				    end;
 				LRs ->
 				    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
@@ -378,12 +384,18 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 				is_pid(Pid) ->
 				    Pid ! {route, From, To, Packet};
 				true ->
-				    drop
+				    ejabberd_hooks:run(xmpp_stanza_dropped, 
+                                       From#jid.lserver,
+                                       [From, To, Packet]),
+			        drop
 			    end
 		    end
 	    end;
 	drop ->
-	    ok
+	    ejabberd_hooks:run(xmpp_stanza_dropped, 
+                           OrigFrom#jid.lserver,
+                           [OrigFrom, OrigTo, OrigPacket]),
+		ok
     end.
 
 get_component_number(LDomain) ->

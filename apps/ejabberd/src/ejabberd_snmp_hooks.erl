@@ -18,7 +18,8 @@
          auth_failed/3,
          user_send_packet/3,
          user_receive_packet/4,
-         xmpp_bounce_message/1]).
+         xmpp_bounce_message/1,
+         xmpp_stanza_dropped/3]).
 
 
 -include("ejabberd.hrl").
@@ -35,6 +36,7 @@ get_hooks(Host) ->
      [auth_failed, Host, ?MODULE, auth_failed, 50],
      [user_send_packet, Host, ?MODULE, user_send_packet, 50],
      [user_receive_packet, Host, ?MODULE, user_receive_packet, 50],
+     [xmpp_stanza_dropped, Host, ?MODULE, xmpp_stanza_dropped, 50],
      [xmpp_bounce_message, Host, ?MODULE, xmpp_bounce_message, 50]].
 
 
@@ -81,3 +83,7 @@ user_receive_packet(_,_,_,{xmlelement, <<"presence">>,_,_}) ->
 -spec xmpp_bounce_message(tuple()) -> term().
 xmpp_bounce_message(_) ->
     ejabberd_snmp_core:increment_counter(xmppMessageBounced).
+
+-spec xmpp_stanza_dropped(tuple(), tuple(), tuple()) -> term().
+xmpp_stanza_dropped(_,_,_) ->
+    ejabberd_snmp_core:increment_counter(xmppStanzaDropped).
