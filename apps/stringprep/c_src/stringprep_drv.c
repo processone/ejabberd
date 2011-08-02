@@ -194,7 +194,7 @@ static int compose(int ch1, int ch2)
 
 //prepare binary from string
 ErlDrvBinary* to_binary(char* rstring, int size) {
-   ErlDrvBinary* rbinary = driver_alloc_binary(size);
+   ErlDrvBinary* rbinary = driver_alloc_binary(size + 2 * sizeof(int));
    rbinary->orig_size = size;
    strcpy(rbinary->orig_bytes, rstring);
    return rbinary;
