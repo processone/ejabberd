@@ -45,6 +45,7 @@
 
 -define(STRINGPREP_PORT, stringprep_port).
 
+-define(TOLOWER_COMMAND, 0).
 -define(NAMEPREP_COMMAND, 1).
 -define(NODEPREP_COMMAND, 2).
 -define(RESOURCEPREP_COMMAND, 3).
@@ -97,7 +98,7 @@ terminate(_Reason, Port) ->
 
 
 tolower(Binary) ->
-    control(0, Binary).
+    control(?TOLOWER_COMMAND, Binary).
 
 nameprep(Binary) ->
     control(?NAMEPREP_COMMAND, Binary).
@@ -110,14 +111,14 @@ resourceprep(Binary) ->
 
 control(Command, String) when is_list(String) ->
     case control(Command, list_to_binary(String)) of
-        error -> error;
-        Res -> binary_to_list(Res)
+        Result when is_binary(Result) ->
+            binary_to_list(Result);
+        error -> error
     end;
 control(Command, Binary) ->
     case port_control(?STRINGPREP_PORT, Command, Binary) of
-        <<0, _/binary>> -> error;
-        <<1, Res/binary>> -> Res
+        Result when is_binary(Result) ->
+            Result;
+        [] ->
+            error
     end.
-
-
-

@@ -1,4 +1,4 @@
-.PHONY: rel deps test
+.PHONY: rel deps test generate_snmp_header
 
 all: deps compile
 

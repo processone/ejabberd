@@ -26,6 +26,7 @@
 #include "uni_data.c"
 #include "uni_norm.c"
 
+#define TOLOWER_COMMAND 0
 #define NAMEPREP_COMMAND 1
 #define NODEPREP_COMMAND 2
 #define RESOURCEPREP_COMMAND 3
@@ -41,7 +42,7 @@ static ErlDrvData stringprep_erl_start(ErlDrvPort port, char *buff)
    d->port = port;
 
    set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
-   
+
    return (ErlDrvData)d;
 }
 
@@ -133,41 +134,41 @@ static int compose(int ch1, int ch2)
 }
 
 
-#define ADD_UCHAR(ruc)							\
-	 if (ruc <= 0x7F) {						\
-	    if (pos >= size) {						\
-	       size = 2*size + 1;					\
-	       rstring = driver_realloc(rstring, size);			\
-	    }								\
-	    rstring[pos] = (char) ruc;					\
-	    pos++;							\
-	 } else if (ruc <= 0x7FF) {					\
-	    if (pos + 1 >= size) {					\
-	       size = 2*size + 2;					\
-	       rstring = driver_realloc(rstring, size);			\
-	    }								\
-	    rstring[pos] = (char) ((ruc >> 6) | 0xC0);			\
-	    rstring[pos+1] = (char) ((ruc | 0x80) & 0xBF);		\
-	    pos += 2;							\
-	 } else if (ruc <= 0xFFFF) {					\
-	    if (pos + 2 >= size) {					\
-	       size = 2*size + 3;					\
-	       rstring = driver_realloc(rstring, size);			\
-	    }								\
-	    rstring[pos] = (char) ((ruc >> 12) | 0xE0);			\
-	    rstring[pos+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
-	    rstring[pos+2] = (char) ((ruc | 0x80) & 0xBF);		\
-	    pos += 3;							\
-	 } else if (ruc <= 0x1FFFFF) {					\
-	    if (pos + 3 >= size) {					\
-	       size = 2*size + 4;					\
-	       rstring = driver_realloc(rstring, size);			\
-	    }								\
-	    rstring[pos] = (char) ((ruc >> 18) | 0xF0);			\
-	    rstring[pos+1] = (char) (((ruc >> 12) | 0x80) & 0xBF);	\
-	    rstring[pos+2] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
-	    rstring[pos+3] = (char) ((ruc | 0x80) & 0xBF);		\
-	    pos += 4;							\
+#define ADD_UCHAR(ruc)								\
+	 if (ruc <= 0x7F) {							\
+	    if (pos >= size) {							\
+	       size = 2*size + 1;						\
+	       result = driver_realloc_binary(result, size);			\
+	    }									\
+	    result->orig_bytes[pos] = (char) ruc;				\
+	    pos++;								\
+	 } else if (ruc <= 0x7FF) {						\
+	    if (pos + 1 >= size) {						\
+	       size = 2*size + 2;						\
+	       result = driver_realloc_binary(result, size);			\
+	    }									\
+	    result->orig_bytes[pos] = (char) ((ruc >> 6) | 0xC0);		\
+	    result->orig_bytes[pos+1] = (char) ((ruc | 0x80) & 0xBF);		\
+	    pos += 2;								\
+	 } else if (ruc <= 0xFFFF) {						\
+	    if (pos + 2 >= size) {						\
+	       size = 2*size + 3;						\
+	       result = driver_realloc_binary(result, size);			\
+	    }									\
+	    result->orig_bytes[pos] = (char) ((ruc >> 12) | 0xE0);		\
+	    result->orig_bytes[pos+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
+	    result->orig_bytes[pos+2] = (char) ((ruc | 0x80) & 0xBF);		\
+	    pos += 3;								\
+	 } else if (ruc <= 0x1FFFFF) {						\
+	    if (pos + 3 >= size) {						\
+	       size = 2*size + 4;						\
+	       result = driver_realloc_binary(result, size);			\
+	    }									\
+	    result->orig_bytes[pos] = (char) ((ruc >> 18) | 0xF0);		\
+	    result->orig_bytes[pos+1] = (char) (((ruc >> 12) | 0x80) & 0xBF);	\
+	    result->orig_bytes[pos+2] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
+	    result->orig_bytes[pos+3] = (char) ((ruc | 0x80) & 0xBF);		\
+	    pos += 4;								\
 	 }
 
 #define ADD_UCHAR32(str, pos, len, ch)				\
@@ -192,12 +193,11 @@ static int compose(int ch1, int ch2)
 		  ADD_UCHAR32(str32, str32pos, str32len, ruc);	\
 	       }
 
-//prepare binary from string
-ErlDrvBinary* to_binary(char* rstring, int size) {
-   ErlDrvBinary* rbinary = driver_alloc_binary(size + 2 * sizeof(int));
-   rbinary->orig_size = size;
-   strcpy(rbinary->orig_bytes, rstring);
-   return rbinary;
+#define FAIL {                       \
+	*rbuf = NULL;                \
+	driver_free_binary(result);  \
+	driver_free(str32);          \
+	return 1;                    \
 }
 
 static int stringprep_erl_control(ErlDrvData drv_data,
@@ -205,15 +205,13 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 				  char *buf, int len,
 				  char **rbuf, int rlen)
 {
-   int i, j, pos=1;
+   int i, j, pos=0;
    unsigned char c;
-   int bad = 0;
    int uc = 0, ruc;
    int size;
    int info;
    int prohibit = 0, tolower = 0;
-   char *rstring;
-   //ErlDrvBinary *rbinary;
+   ErlDrvBinary *result;
    int *mc;
    int *str32;
    int str32len, str32pos = 0;
@@ -221,20 +219,16 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    int comp_pos, comp_starter_pos;
    int cclass_prev, cclass2;
    int ch1, ch2;
-   int first_ral, last_ral, have_ral, have_l;
+   int just_lowercase = 0, first_ral, last_ral, have_ral, have_l;
 
-   size = len + 1;
+   result = driver_alloc_binary(size = len);
 
-   rstring = driver_alloc(size);
-   rstring[0] = 0;
-
-   str32len = len + 1;
-
-   str32 = driver_alloc(str32len * sizeof(int));
+   str32 = driver_alloc((str32len = len) * sizeof(int));
 
    switch (command)
    {
-      case 0:
+      case TOLOWER_COMMAND:
+	 just_lowercase = 1;
 	 prohibit = ACMask;
 	 tolower = 1;
 	 break;
@@ -261,13 +255,13 @@ static int stringprep_erl_control(ErlDrvData drv_data,
       if (c < 0x80) {
 	 uc = c;
       } else if (c < 0xC0) {
-	 bad = 1;
+	 FAIL;
       } else if (c < 0xE0) {
 	 if (i+1 < len && (buf[i+1] & 0xC0) == 0x80) {
 	    uc = ((c & 0x1F) << 6) | (buf[i+1] & 0x3F);
 	    i++;
 	 } else {
-	    bad = 1;
+	    FAIL;
 	 }
       } else if (c < 0xF0) {
 	 if (i+2 < len && (buf[i+1] & 0xC0) == 0x80 &&
@@ -277,7 +271,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 	       | (buf[i+2] & 0x3F);
 	    i += 2;
 	 } else {
-	    bad = 1;
+	    FAIL;
 	 }
       } else if (c < 0xF8) {
 	 if (i+3 < len &&
@@ -290,27 +284,20 @@ static int stringprep_erl_control(ErlDrvData drv_data,
 	       | (buf[i+3] & 0x3F);
 	    i += 3;
 	    if (uc > 0x10FFFF)
-	       bad = 1;
+	       FAIL;
 	 } else {
-	    bad = 1;
+	    FAIL;
 	 }
       } else {
-	 bad = 1;
+	 FAIL;
       }
 
-      if (bad) {
-	 *rbuf = to_binary(rstring, size);
-	 driver_free(str32);
-         driver_free(rstring);
-	 return 1;
-      }
-      
       info = GetUniCharInfo(uc);
 
-      if (!(info & B1Mask)) 
+      if (!(info & B1Mask))
       {
 	 if (tolower) {
-	    if (!(info & MCMask)) 
+	    if (!(info & MCMask))
 	    {
 	       ruc = uc + GetDelta(info);
 	       ADD_DECOMP(ruc);
@@ -329,11 +316,9 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    }
 
    if (str32pos == 0) {
-      rstring[0] = 1;
-      *rbuf = to_binary(rstring, size);
-      driver_free(str32);
-      driver_free(rstring);
-      return 1;
+       *rbuf = (char*) driver_realloc_binary(result, 0);
+       driver_free(str32);
+       return 0;
    }
 
    canonical_ordering(str32, str32pos);
@@ -363,7 +348,7 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    }
    str32[comp_starter_pos] = ch1;
    str32pos = comp_pos;
-   
+
    last_ral = have_ral = have_l = 0;
    info = GetUniCharInfo(str32[0]);
    first_ral = info & D1Mask;
@@ -371,32 +356,21 @@ static int stringprep_erl_control(ErlDrvData drv_data,
    {
       ruc = str32[i];
       info = GetUniCharInfo(ruc);
-      if (info & prohibit) {
-	 *rbuf = to_binary(rstring, size);
-	 driver_free(str32);
-         driver_free(rstring);
-	 return 1;
-      }
+      if (info & prohibit)
+	  FAIL;
       last_ral = info & D1Mask;
       have_ral = have_ral || last_ral;
       have_l |= info & D2Mask;
       ADD_UCHAR(ruc);
    }
 
-   if (have_ral && (!first_ral || !last_ral || have_l)) {
-      *rbuf = to_binary(rstring, size);
-      driver_free(str32);
-      driver_free(rstring);
-      return 1;
-   }
+   if (!just_lowercase && have_ral && (!first_ral || !last_ral || have_l))
+       FAIL;
 
-   rstring[0] = 1;
-
-   *rbuf = to_binary(rstring, size);
+   // possibly shrink binary before returning
+   *rbuf = (char*) driver_realloc_binary(result, pos);
    driver_free(str32);
-   driver_free(rstring);
-   
-   return pos;
+   return 0;
 }
 
 
