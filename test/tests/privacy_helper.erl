@@ -8,6 +8,7 @@
          set_and_activate/2,
          set_list/2,
          activate_list/2,
+         set_default_list/2,
          privacy_list/2,
          privacy_list_item/1,
          is_privacy_list_push/1,
@@ -37,6 +38,12 @@ activate_list(Client, {ListName, _PrivacyList}) ->
     %% activate it
     escalus_client:send(Client,
         escalus_stanza:privacy_activate(Client, ListName)),
+    true = exmpp_iq:is_result(escalus_client:wait_for_stanza(Client)).
+
+%% Make the list the default one.
+set_default_list(Client, {ListName, _PrivacyList}) ->
+    escalus_client:send(Client,
+        escalus_stanza:privacy_default(Client, ListName)),
     true = exmpp_iq:is_result(escalus_client:wait_for_stanza(Client)).
 
 %% Create empty list element with given name.

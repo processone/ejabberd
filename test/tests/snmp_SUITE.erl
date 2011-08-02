@@ -28,6 +28,7 @@
                          set_and_activate/2,
                          set_list/2,
                          activate_list/2,
+                         set_default_list/2,
                          privacy_list/2,
                          privacy_list_item/1,
                          is_privacy_list_push/1,
@@ -53,7 +54,11 @@ groups() ->
                          generalNodeName]},
      {mod_privacy, [sequence], [modPrivacyGets,
                                 modPrivacySets,
-                                modPrivacySetsActive]}].
+                                modPrivacySetsActive,
+                                modPrivacySetsDefault,
+                                modPrivacyStanzaBlocked%,
+                                %modPrivacyStanzaAll  % doesn't work yet
+                               ]}].
 
 suite() ->
     [{require, privacy_lists} | escalus:suite()].
@@ -82,10 +87,11 @@ end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
 init_per_testcase(CaseName, Config) ->
-    escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
     escalus:init_per_testcase(CaseName, Config).
 
 end_per_testcase(CaseName, Config) ->
+    escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
+    escalus_ejabberd:rpc(mnesia, clear_table, [privacy]),
     escalus:end_per_testcase(CaseName, Config).
 
 %%--------------------------------------------------------------------
@@ -139,8 +145,84 @@ modPrivacySetsActive(Config) ->
 
         end).
 
+modPrivacySetsDefault() -> [{require, alice_deny_bob}].
+
+modPrivacySetsDefault(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+
+        PrivacyList = config_list(alice_deny_bob, Config),
+
+        Table = stats_mod_privacy,
+        Counter = modPrivacySetsDefault,
+
+        [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
+        set_list(Alice, PrivacyList),
+        [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
+        set_default_list(Alice, PrivacyList),
+        [{Counter, 1}] = ?RPC_LOOKUP(Table, Counter)
+
+        end).
+
+modPrivacyStanzaBlocked() -> [{require, alice_deny_bob_message}].
+
+modPrivacyStanzaBlocked(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        PrivacyList = config_list(alice_deny_bob_message, Config),
+
+        Table = stats_mod_privacy,
+        Counter = modPrivacyStanzaBlocked,
+
+        [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
+        chit_chat(Alice, Bob),
+        %% No blocking yet
+        [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
+        set_and_activate(Alice, PrivacyList),
+        chit_chat(Alice, Bob),
+        %% One message blocked
+        [{Counter, 1}] = ?RPC_LOOKUP(Table, Counter)
+
+        end).
+
+modPrivacyStanzaAll() -> [{require, alice_deny_bob_message}].
+
+modPrivacyStanzaAll(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        PrivacyList = config_list(alice_deny_bob_message, Config),
+
+        Table = stats_mod_privacy,
+        Counter = modPrivacyStanzaAll,
+
+        escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
+
+        [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
+        chit_chat(Alice, Bob),
+        [{Counter, 1}] = ?RPC_LOOKUP(Table, Counter),
+        set_and_activate(Alice, PrivacyList),
+        chit_chat(Alice, Bob),
+        [{Counter, 1}] = ?RPC_LOOKUP(Table, Counter)
+
+        end).
+
+%% TODO:
+%% - (?) modPrivacyStanzaAll
+%% - modPrivacyStanzaPush
+%% - modPrivacyStanzaListLength
+
 %%-----------------------------------------------------------------
 %% Helpers
 %%-----------------------------------------------------------------
 
-
+%% Bob sends message to Alice.
+%% Alice either receives or gracefully handles timeout.
+chit_chat(Alice, Bob) ->
+    Request = escalus_stanza:chat_to(Alice, "Hi! What's your name?"),
+    escalus_client:send(Bob, Request),
+    Responses = escalus_client:wait_for_stanzas(Alice, 1),
+    case Responses of
+    [Response] ->
+        escalus_assert:is_chat_message(["Hi! What's your name?"], Response);
+    [] ->
+        ok
+    end.

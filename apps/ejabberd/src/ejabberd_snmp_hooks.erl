@@ -20,7 +20,8 @@
          sm_remove_connection_hook/3,
          auth_failed/3,
          privacy_iq_get/5,
-         privacy_iq_set/4]).
+         privacy_iq_set/4,
+         privacy_check_packet/6]).
 
 -define(CORE, ejabberd_snmp_core).
 
@@ -31,10 +32,11 @@
 %% Here will be declared which hooks should be registered
 get_hooks(Host) ->
     [[sm_register_connection_hook, Host, ?MODULE, sm_register_connection_hook, 50],
-     [sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 50],
-     [auth_failed, Host, ?MODULE, auth_failed, 50],
-     [privacy_iq_get, Host, ?MODULE, privacy_iq_get, 1],
-     [privacy_iq_set, Host, ?MODULE, privacy_iq_set, 1]].
+     [sm_remove_connection_hook,   Host, ?MODULE, sm_remove_connection_hook, 50],
+     [auth_failed,            Host, ?MODULE, auth_failed, 50],
+     [privacy_iq_get,         Host, ?MODULE, privacy_iq_get, 1],
+     [privacy_iq_set,         Host, ?MODULE, privacy_iq_set, 1],
+     [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55]].
 
 %%------------------------------
 %% SNMP specific hook callbacks
@@ -71,6 +73,17 @@ privacy_iq_set(Acc, _, _, #iq{sub_el = SubEl}) ->
         ok
     end,
     ?CORE:increment_counter(modPrivacySets),
+    Acc.
+
+-spec privacy_check_packet(Acc :: allow | deny, term(), term(), term(), term(), term()) -> allow | deny.
+privacy_check_packet(Acc, _, _, _, _, _) ->
+    ?CORE:increment_counter(modPrivacyStanzaAll),
+    case Acc of
+    deny ->
+        ?CORE:increment_counter(modPrivacyStanzaBlocked);
+    allow ->
+        ok
+    end,
     Acc.
 
 %%% vim: set sts=4 ts=4 sw=4 et filetype=erlang foldmarker=%%%',%%%. foldmethod=marker:
