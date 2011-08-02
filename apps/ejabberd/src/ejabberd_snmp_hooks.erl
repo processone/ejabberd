@@ -17,7 +17,8 @@
          sm_remove_connection_hook/3,
          auth_failed/3,
          user_send_packet/3,
-         user_receive_packet/4]).
+         user_receive_packet/4,
+         xmpp_bounce_message/1]).
 
 
 -include("ejabberd.hrl").
@@ -33,7 +34,8 @@ get_hooks(Host) ->
      [sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 50],
      [auth_failed, Host, ?MODULE, auth_failed, 50],
      [user_send_packet, Host, ?MODULE, user_send_packet, 50],
-     [user_receive_packet, Host, ?MODULE, user_receive_packet, 50]].
+     [user_receive_packet, Host, ?MODULE, user_receive_packet, 50],
+     [xmpp_bounce_message, Host, ?MODULE, xmpp_bounce_message, 50]].
 
 
 %%------------------------------
@@ -76,4 +78,6 @@ user_receive_packet(_,_,_,{xmlelement, <<"presence">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppPresenceReceived),
     ejabberd_snmp_core:increment_counter(xmppStanzaReceived).
 
-
+-spec xmpp_bounce_message(tuple()) -> term().
+xmpp_bounce_message(_) ->
+    ejabberd_snmp_core:increment_counter(xmppMessageBounced).

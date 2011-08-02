@@ -28,7 +28,8 @@
 
 all() ->
     [{group, single},
-     {group, multiple}].
+     {group, multiple},
+     {group, drop}].
 
 groups() ->
     [{single, [sequence], [message_one, 
@@ -36,7 +37,8 @@ groups() ->
                            presence_one,
                            presence_direct_one,
                            iq_one]},
-     {multiple, [sequence], [messages]}].
+     {multiple, [sequence], [messages]},
+     {drop, [sequence], [bounced]}].
      
 suite() ->
     [{require, ejabberd_node} | escalus:suite()].
@@ -166,6 +168,21 @@ messages(Config) ->
         assert_counter(MesgReceived + 4, xmppMessageReceived)
         
         end).
+
+bounced(Config) ->
+    {value, MesgBounced} = get_counter_value(xmppMessageBounced),
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        escalus_client:stop(Bob),
+        timer:sleep(?WAIT_TIME),
+        
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, "Hi!")),
+        timer:sleep(?WAIT_TIME),
+
+        assert_counter(MesgBounced + 1, xmppMessageBounced)
+        
+        end).
+    
     
 
 %%--------------------------------------------------------------------

@@ -73,7 +73,7 @@ login_one(Config) ->
 
         end),
     {value, Logouts} = get_counter_value(sessionLogouts),
-    escalus_cleaner:stop(Config),
+    escalus_client:stop(Alice),
     timer:sleep(?WAIT_TIME),
     assert_counter(0, sessionCount),
     assert_counter(Logouts + 1, sessionLogouts).
@@ -100,17 +100,6 @@ auth_failed(Config) ->
     assert_counter(0, sessionCount),
     assert_counter(AuthFails + 1, sessionAuthFails).
     
-
-messages_story(Config) ->
-    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
-
-        % Alice sends a message to Bob
-        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, "Hi!")),
-
-        % Bob gets the message
-        escalus_assert:is_chat_message("Hi!", escalus_client:wait_for_stanza(Bob))
-
-    end).
 
 %%--------------------------------------------------------------------
 %% Helpers
