@@ -59,6 +59,7 @@
                     modPrivacyPush,
                     modPrivacyGets,
                     modPrivacyStanzaBlocked,
+                    modPrivacyStanzaAll,
                     modPrivacyListLength]} ]).
 -define(MODULE_FOR_COUNTERS, [
         {generalUptime,              general},
@@ -103,6 +104,7 @@
         {modPrivacyPush,             mod_privacy},
         {modPrivacyGets,             mod_privacy},
         {modPrivacyStanzaBlocked,    mod_privacy},
+        {modPrivacyStanzaAll,        mod_privacy},
         {modPrivacyListLength,       mod_privacy} ]).
 
 %%%.

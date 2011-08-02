@@ -41,5 +41,8 @@ ct() ->
         %, {testcase, modPrivacyGets}
         %, {testcase, modPrivacySets}
         %, {testcase, modPrivacySetsActive}
+        %, {testcase, modPrivacySetsDefault}
+        %, {testcase, modPrivacyStanzaBlocked}
+        %, {testcase, modPrivacyStanzaAll}
     ]),
     init:stop(0).
