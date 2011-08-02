@@ -29,7 +29,8 @@
 all() ->
     [{group, single},
      {group, multiple},
-     {group, drop}].
+     {group, drop},
+     {group, errors}].
 
 groups() ->
     [{single, [sequence], [message_one, 
@@ -38,7 +39,10 @@ groups() ->
                            presence_direct_one,
                            iq_one]},
      {multiple, [sequence], [messages]},
-     {drop, [sequence], [bounced]}].
+     {drop, [sequence], [bounced
+                        % dropped
+                         ]},
+     {errors, [sequence], [error_total]}].
      
 suite() ->
     [{require, ejabberd_node} | escalus:suite()].
@@ -182,8 +186,35 @@ bounced(Config) ->
         assert_counter(MesgBounced + 1, xmppMessageBounced)
         
         end).
+
+%% dropped(Config) ->
+%%     {value, Dropped} = get_counter_value(xmppStanzaDropped),
+%%     escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+%%         %force drop
+               
+%%         escalus_client:send(Alice, escalus_stanza:chat_to(Bob, "Hi!")),
+%%         timer:sleep(?WAIT_TIME),
+
+%%         assert_counter(Dropped + 1, xmppStanzaDropped)
+        
+%%         end).
     
-    
+error_total(Config) ->
+    {value, Errors} = get_counter_value(xmppErrorTotal),
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        escalus_client:stop(Bob),
+        timer:sleep(?WAIT_TIME),
+        
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, "Hi!")),
+        timer:sleep(?WAIT_TIME),
+
+        
+        assert_counter(Errors + 1, xmppErrorTotal)
+        
+        end).
+
 
 %%--------------------------------------------------------------------
 %% Helpers
