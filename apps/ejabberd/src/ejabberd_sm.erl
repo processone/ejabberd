@@ -438,7 +438,7 @@ do_route(From, To, Packet) ->
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, subscribed, ""]),
+				   [User, Server, From, subscribed, <<>>]),
 				 true};
 			    <<"unsubscribe">> ->
 				{is_privacy_allow(From, To, Packet) andalso
@@ -446,7 +446,7 @@ do_route(From, To, Packet) ->
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, unsubscribe, ""]),
+				   [User, Server, From, unsubscribe, <<>>]),
 				 true};
 			    <<"unsubscribed">> ->
 				{is_privacy_allow(From, To, Packet) andalso
@@ -454,7 +454,7 @@ do_route(From, To, Packet) ->
 				   roster_in_subscription,
 				   LServer,
 				   false,
-				   [User, Server, From, unsubscribed, ""]),
+				   [User, Server, From, unsubscribed, <<>>]),
 				 true};
 			    _ ->
 				{true, false}

@@ -26,6 +26,7 @@
          xmpp_send_element/1,
          roster_get/2,
          roster_set/3,
+         roster_in_subscription/6,
          privacy_iq_get/5,
          privacy_iq_set/4,
          privacy_check_packet/6]).
@@ -48,6 +49,7 @@ get_hooks(Host) ->
      [xmpp_send_element, Host, ?MODULE, xmpp_send_element, 50],
      [roster_get, Host, ?MODULE, roster_get, 55],
      [roster_set, Host, ?MODULE, roster_set, 50],
+     [roster_in_subscription, Host, ?MODULE, roster_in_subscription, 55],
      [privacy_iq_get,         Host, ?MODULE, privacy_iq_get, 1],
      [privacy_iq_set,         Host, ?MODULE, privacy_iq_set, 1],
      [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55]].
@@ -131,6 +133,16 @@ roster_get(Acc, _) ->
 -spec roster_set(tuple(), tuple(), tuple()) -> list().
 roster_set(_,_,_) ->
     ejabberd_snmp_core:increment_counter(modRosterSets).
+
+-spec roster_in_subscription(term(), binary(), binary(), tuple(), atom(), term()) -> term().
+roster_in_subscription(Acc,_,_,_,subscribed,_) ->
+    ejabberd_snmp_core:increment_counter(modPresenceSubscriptions),
+    Acc;
+roster_in_subscription(Acc,_,_,_,unsubscribed,_) ->
+    ejabberd_snmp_core:increment_counter(modPresenceUnsubscriptions),
+    Acc;
+roster_in_subscription(Acc,_,_,_,_,_) ->
+    Acc.
 
 %% Privacy
 

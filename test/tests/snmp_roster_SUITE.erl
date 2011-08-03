@@ -25,12 +25,17 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, roster}].
+    [{group, roster},
+     {group, subscriptions}].
      
 groups() ->
     [{roster, [sequence], [get_roster,
                            add_contact
-                           ]}].
+                           ]},
+     {subscriptions, [sequence], [subscribe,
+                                  unsubscribe,
+                                  decline_subscription
+                                 ]}].
      
 suite() ->
     escalus:suite().
@@ -54,8 +59,25 @@ end_per_group(_GroupName, Config) ->
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
+end_per_testcase(add_contact, Config) ->
+    [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
+    remove_roster(UserSpec),
+    escalus:end_per_testcase(add_contact, Config);    
+end_per_testcase(subscribe, Config) ->
+    end_rosters_remove(Config);
+end_per_testcase(decline_subscription, Config) ->
+    end_rosters_remove(Config);
+end_per_testcase(unsubscribe, Config) ->
+    end_rosters_remove(Config);
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
+end_rosters_remove(Config) ->
+    [{_, UserSpec1}, {_, UserSpec2} | _] = 
+        escalus_config:get_property(escalus_users, Config),
+    remove_roster(UserSpec1),
+    remove_roster(UserSpec2),
+    escalus:end_per_testcase(subscription, Config).    
 
 
 %%--------------------------------------------------------------------
@@ -76,7 +98,7 @@ get_roster(Config) ->
 add_contact(Config) ->
     {value, Sets} = get_counter_value(modRosterSets),
     escalus:story(Config, [1, 1], fun(Alice, Bob) ->
-    
+        
         %% add contact
         escalus_client:send(Alice, 
                             escalus_stanza:roster_add_contact(Bob, 
@@ -89,6 +111,121 @@ add_contact(Config) ->
         assert_counter(Sets + 1, modRosterSets)
         
         end).
+
+
+subscribe(Config) ->
+    {value, Subscriptions} = get_counter_value(modPresenceSubscriptions),
+    escalus:story(Config, [1, 1], fun(Alice,Bob) ->
+
+        %% add contact
+        add_sample_contact(Alice, Bob),
+
+        %% subscribe
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, subscribe)),
+        PushReq = escalus_client:wait_for_stanza(Alice),
+        escalus_client:send(Alice, escalus_stanza:iq_result(PushReq)),
+        
+        %% Bob receives subscription reqest
+        escalus_client:wait_for_stanza(Bob),
+        
+        %% Bob adds new contact to his roster
+        escalus_client:send(Bob, 
+                            escalus_stanza:roster_add_contact(Alice, 
+                                                              ["enemies"], 
+                                                              "Alice")),
+        PushReqB = escalus_client:wait_for_stanza(Bob),
+        escalus_client:send(Bob, escalus_stanza:iq_result(PushReqB)),
+        escalus_client:wait_for_stanza(Bob),
+        
+        %% Bob sends subscribed presence
+        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
+        
+        %% Alice receives subscribed 
+        escalus_client:wait_for_stanzas(Alice, 3), 
+        
+        %% Bob receives roster push
+        escalus_client:wait_for_stanza(Bob),
+         
+        assert_counter(Subscriptions +1, modPresenceSubscriptions)
+                                          
+        end).
+
+decline_subscription(Config) ->
+    {value, Subscriptions} = get_counter_value(modPresenceUnsubscriptions),
+    escalus:story(Config, [1, 1], fun(Alice,Bob) ->
+
+        %% add contact
+        add_sample_contact(Alice, Bob),
+
+        %% subscribe
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, subscribe)),
+        PushReq = escalus_client:wait_for_stanza(Alice),
+        escalus_client:send(Alice, escalus_stanza:iq_result(PushReq)),
+        
+        %% Bob receives subscription reqest
+        escalus_client:wait_for_stanza(Bob),
+        
+        %% Bob refuses subscription
+        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, unsubscribed)),
+        
+        %% Alice receives subscribed 
+        escalus_client:wait_for_stanzas(Alice, 2), 
+         
+        assert_counter(Subscriptions +1, modPresenceUnsubscriptions)
+                                          
+        end).
+
+
+unsubscribe(Config) ->
+    {value, Subscriptions} = get_counter_value(modPresenceUnsubscriptions),
+    escalus:story(Config, [1, 1], fun(Alice,Bob) ->
+    
+        %% add contact
+        add_sample_contact(Alice, Bob),
+        
+        %% subscribe
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, subscribe)),
+        PushReq = escalus_client:wait_for_stanza(Alice),
+        escalus_client:send(Alice, escalus_stanza:iq_result(PushReq)),
+        
+        %% Bob receives subscription reqest
+        escalus_client:wait_for_stanza(Bob),
+        %% Bob adds new contact to his roster
+        escalus_client:send(Bob, 
+                            escalus_stanza:roster_add_contact(Alice, 
+                                                              ["enemies"], 
+                                                              "Alice")),
+        PushReqB = escalus_client:wait_for_stanza(Bob),
+        escalus_client:send(Bob, escalus_stanza:iq_result(PushReqB)),
+        escalus_client:wait_for_stanza(Bob),
+        
+        %% Bob sends subscribed presence
+        escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
+        
+        %% Alice receives subscribed 
+        escalus_client:wait_for_stanzas(Alice, 2), 
+
+        escalus_client:wait_for_stanza(Alice),
+        
+        %% Bob receives roster push
+        PushReqB1 = escalus_client:wait_for_stanza(Bob),
+        escalus_assert:is_roster_result_set(PushReqB1),
+        
+        %% Alice sends unsubscribe
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, unsubscribe)),
+        
+        PushReqA2 = escalus_client:wait_for_stanza(Alice),
+        escalus_client:send(Alice, escalus_stanza:iq_result(PushReqA2)),
+
+        %% Bob receives unsubscribe
+
+        escalus_client:wait_for_stanzas(Bob, 2),
+        
+        assert_counter(Subscriptions +1, modPresenceUnsubscriptions)
+        
+
+    end).                                   
+
 
 
 %%-----------------------------------------------------------------
@@ -120,3 +257,7 @@ get_counter_value(Counter) ->
              mod_snmp, 
              handle_entry, 
              [get, Counter]).
+
+remove_roster(UserSpec) ->
+    [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
+    rpc:call(ejabberd@localhost, mod_roster, remove_user, [Username, Server]).
