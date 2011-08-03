@@ -23,7 +23,7 @@
          user_receive_packet/4,
          xmpp_bounce_message/1,
          xmpp_stanza_dropped/3,
-         xmpp_errors/1,
+         xmpp_send_element/1,
          privacy_iq_get/5,
          privacy_iq_set/4,
          privacy_check_packet/6]).
@@ -43,9 +43,9 @@ get_hooks(Host) ->
      [user_receive_packet, Host, ?MODULE, user_receive_packet, 50],
      [xmpp_stanza_dropped, Host, ?MODULE, xmpp_stanza_dropped, 50],
      [xmpp_bounce_message, Host, ?MODULE, xmpp_bounce_message, 50],
-     [xmpp_errors, ?MODULE, xmpp_errors, 50],
-     [sm_remove_connection_hook,   Host, ?MODULE, sm_remove_connection_hook, 50],
-     [auth_failed,            Host, ?MODULE, auth_failed, 50],
+     [sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 50],
+     [auth_failed, Host, ?MODULE, auth_failed, 50],
+     [xmpp_send_element, Host, ?MODULE, xmpp_send_element, 50],
      [privacy_iq_get,         Host, ?MODULE, privacy_iq_get, 1],
      [privacy_iq_set,         Host, ?MODULE, privacy_iq_set, 1],
      [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55]].
@@ -75,7 +75,7 @@ user_send_packet(_,_,Packet) ->
 
 user_send_packet_type({xmlelement, <<"message">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppMessageSent);
-user_send_packet_type({xmlelement, <<"iq">>,_,_1}) ->
+user_send_packet_type({xmlelement, <<"iq">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppIqSent);
 user_send_packet_type({xmlelement, <<"presence">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppPresenceSent).
@@ -100,25 +100,30 @@ xmpp_bounce_message(_) ->
 xmpp_stanza_dropped(_,_,_) ->
     ejabberd_snmp_core:increment_counter(xmppStanzaDropped).
 
--spec xmpp_errors(binary()) -> term().
-xmpp_errors(Name) ->
-    ejabberd_snmp_core:increment_counter(xmppErrorTotal),
-    xmpp_errors_types(Name).
+-spec xmpp_send_element(tuple()) -> term().
+xmpp_send_element({xmlelement, Name, Attrs, _}) ->
+    case proplists:get_value(<<"type">>, Attrs) of
+        <<"error">> ->
+            ejabberd_snmp_core:increment_counter(xmppErrorTotal),
+            case Name of
+                <<"iq">> ->
+                    ejabberd_snmp_core:increment_counter(xmppErrorIq);
+                <<"message">> ->
+                    ejabberd_snmp_core:increment_counter(xmppErrorMessage);
+                <<"presence">> ->
+                    ejabberd_snmp_core:increment_counter(xmppErrorPresence)
+            end;
+        _ -> ok
+    end;
+xmpp_send_element(_) ->
+    ok.
 
-xmpp_errors_types(<<"iq">>) ->
-    ejabberd_snmp_core:increment_counter(xmppErrorIq);
-xmpp_errors_types(<<"message">>) ->
-    ejabberd_snmp_core:increment_counter(xmppErrorMessage);
-xmpp_errors_types(<<"presence">>) ->
-    ejabberd_snmp_core:increment_counter(xmppErrorPresence).
-
-
--spec privacy_iq_get(term(), term(), term(), term(), term()) -> term().                                                        
+-spec privacy_iq_get(term(), term(), term(), term(), term()) -> term().
 privacy_iq_get(Acc, _, _, _, _) ->
     ?CORE:increment_counter(modPrivacyGets),
     Acc.
 
--spec privacy_iq_set(term(), term(), term(), term()) -> term().                                                        
+-spec privacy_iq_set(term(), term(), term(), term()) -> term().        
 privacy_iq_set(Acc, _, _, #iq{sub_el = SubEl}) ->
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of

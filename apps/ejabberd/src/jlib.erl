@@ -100,14 +100,12 @@ make_result_iq_reply_attrs(Attrs) ->
     Attrs6.
 
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
-    ejabberd_hooks:run(xmpp_errors, [Name]),
     NewAttrs = make_error_reply_attrs(Attrs),
     {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, <<"error">>,
 					      [{<<"code">>, Code}],
 					      [{xmlcdata, Desc}]}]}.
 
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
-    ejabberd_hooks:run(xmpp_errors, [Name]),
     NewAttrs = make_error_reply_attrs(Attrs),
     {xmlelement, Name, NewAttrs, SubTags ++ [Error]}.
 

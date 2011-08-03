@@ -42,7 +42,10 @@ groups() ->
      {drop, [sequence], [bounced
                         % dropped
                          ]},
-     {errors, [sequence], [error_total]}].
+     {errors, [sequence], [error_total,
+                           error_mesg,
+                           error_iq,
+                           error_presence]}].
      
 suite() ->
     [{require, ejabberd_node} | escalus:suite()].
@@ -63,10 +66,17 @@ init_per_group(_GroupName, Config) ->
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
-
+%% init_per_testcase(error_iq, Config) ->
+%%     Alice = escalus_users:get_user_by_name(alice),
+%%     escalus_users:delete_user(Alice),
+%%     escalus:init_per_testcase(error_iq, Config);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
+%% end_per_testcase(error_iq, Config) ->
+%%     Alice = escalus_users:get_user_by_name(alice),
+%%     escalus_users:create_user(Alice),
+%%     escalus:end_per_testcase(error_iq, Config);
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
@@ -215,6 +225,48 @@ error_total(Config) ->
         
         end).
 
+error_mesg(Config) ->
+    {value, Errors} = get_counter_value(xmppErrorMessage),
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        escalus_client:stop(Bob),
+        timer:sleep(?WAIT_TIME),
+        
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, "Hi!")),
+        timer:sleep(?WAIT_TIME),
+        
+        assert_counter(Errors + 1, xmppErrorMessage)
+        
+        end).
+
+error_presence(Config) ->
+    {value, Errors} = get_counter_value(xmppErrorPresence),
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+
+        escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, available)),
+        Presence = escalus_client:wait_for_stanza(Bob),
+
+        %% [] = escalus_stanza:presence_error(
+        %%                            Presence,
+        %%                            'gone'),
+        escalus_client:send(Bob, escalus_stanza:presence_error(Presence, 'gone')),
+        escalus_client:wait_for_stanza(Alice),
+        
+        assert_counter(Errors + 1, xmppErrorPresence)
+        
+        end).
+
+error_iq(Config) ->
+    {value, Errors} = get_counter_value(xmppErrorIq),
+    
+    Alice = escalus_users:get_user_by_name(alice),
+    escalus_users:create_user(Alice),
+    
+    timer:sleep(?WAIT_TIME),
+
+    assert_counter(Errors + 1, xmppErrorIq).
+        
+    
 
 %%--------------------------------------------------------------------
 %% Helpers
