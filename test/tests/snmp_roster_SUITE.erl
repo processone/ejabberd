@@ -30,7 +30,8 @@ all() ->
      
 groups() ->
     [{roster, [sequence], [get_roster,
-                           add_contact
+                           add_contact,
+                           roster_push
                            ]},
      {subscriptions, [sequence], [subscribe,
                                   unsubscribe,
@@ -63,6 +64,10 @@ end_per_testcase(add_contact, Config) ->
     [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
     remove_roster(UserSpec),
     escalus:end_per_testcase(add_contact, Config);    
+end_per_testcase(roster_push, Config) ->
+    [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
+    remove_roster(UserSpec),
+    escalus:end_per_testcase(roster_push, Config);    
 end_per_testcase(subscribe, Config) ->
     end_rosters_remove(Config);
 end_per_testcase(decline_subscription, Config) ->
@@ -109,6 +114,26 @@ add_contact(Config) ->
         escalus_client:wait_for_stanza(Alice),
         
         assert_counter(Sets + 1, modRosterSets)
+        
+        end).
+
+roster_push(Config) ->
+    {value, Pushes} = get_counter_value(modRosterPush),
+    escalus:story(Config, [2, 1], fun(Alice1, Alice2, Bob) ->
+        
+        %% add contact
+        escalus_client:send(Alice1, 
+                            escalus_stanza:roster_add_contact(Bob, 
+                                                              ["friends"], 
+                                                              "Bobby")),
+        Received = escalus_client:wait_for_stanza(Alice1),
+        escalus_client:send(Alice1, escalus_stanza:iq_result(Received)),
+        escalus_client:wait_for_stanza(Alice1),
+        
+        Received2 = escalus_client:wait_for_stanza(Alice2),
+        escalus_client:send(Alice2, escalus_stanza:iq_result(Received2)),
+        
+        assert_counter(Pushes + 2, modRosterPush)
         
         end).
 

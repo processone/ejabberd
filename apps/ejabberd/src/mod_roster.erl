@@ -416,6 +416,7 @@ push_item(User, Server, Resource, From, Item) ->
     push_item(User, Server, Resource, From, Item, not_found).
 
 push_item(User, Server, Resource, From, Item, RosterVersion) ->
+    ejabberd_hooks:run(roster_push, Server, [From, Item]),
     ExtraAttrs = case RosterVersion of
 	not_found -> [];
 	_ -> [{<<"ver">>, RosterVersion}]
