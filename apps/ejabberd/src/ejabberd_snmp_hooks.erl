@@ -24,6 +24,8 @@
          xmpp_bounce_message/1,
          xmpp_stanza_dropped/3,
          xmpp_send_element/1,
+         roster_get/2,
+         roster_set/3,
          privacy_iq_get/5,
          privacy_iq_set/4,
          privacy_check_packet/6]).
@@ -43,9 +45,9 @@ get_hooks(Host) ->
      [user_receive_packet, Host, ?MODULE, user_receive_packet, 50],
      [xmpp_stanza_dropped, Host, ?MODULE, xmpp_stanza_dropped, 50],
      [xmpp_bounce_message, Host, ?MODULE, xmpp_bounce_message, 50],
-     [sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 50],
-     [auth_failed, Host, ?MODULE, auth_failed, 50],
      [xmpp_send_element, Host, ?MODULE, xmpp_send_element, 50],
+     [roster_get, Host, ?MODULE, roster_get, 55],
+     [roster_set, Host, ?MODULE, roster_set, 50],
      [privacy_iq_get,         Host, ?MODULE, privacy_iq_get, 1],
      [privacy_iq_set,         Host, ?MODULE, privacy_iq_set, 1],
      [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55]].
@@ -117,6 +119,20 @@ xmpp_send_element({xmlelement, Name, Attrs, _}) ->
     end;
 xmpp_send_element(_) ->
     ok.
+
+
+%% Roster
+
+-spec roster_get(list(), term()) -> list().
+roster_get(Acc, _) ->
+    ejabberd_snmp_core:increment_counter(modRosterGets),
+    Acc.
+
+-spec roster_set(tuple(), tuple(), tuple()) -> list().
+roster_set(_,_,_) ->
+    ejabberd_snmp_core:increment_counter(modRosterSets).
+
+%% Privacy
 
 -spec privacy_iq_get(term(), term(), term(), term(), term()) -> term().
 privacy_iq_get(Acc, _, _, _, _) ->

@@ -283,6 +283,8 @@ item_to_xml(Item) ->
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
+    #jid{lserver = LServer} = From,
+    ejabberd_hooks:run(roster_set, LServer, [From, To, SubEl]),
     lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
     IQ#iq{type = result, sub_el = []}.
 
