@@ -104,6 +104,8 @@ init([HostB, Opts]) ->
                                   ?MODULE, iq_ping, IQDisc),
     case SendPings of
         true ->
+	    %% Ping requests are sent to all entities, whether they
+	    %% announce 'urn:xmpp:ping' in their caps or not
             ejabberd_hooks:add(sm_register_connection_hook, HostB,
                                ?MODULE, user_online, 100),
             ejabberd_hooks:add(sm_remove_connection_hook, HostB,
