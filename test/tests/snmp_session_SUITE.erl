@@ -22,6 +22,9 @@
 
 -define(WAIT_TIME, 500).
 
+-import(snmp_helper, [assert_counter/2,
+                      get_counter_value/1]).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -30,7 +33,9 @@ all() ->
     [{group, session}].
 
 groups() ->
-    [{session, [sequence], [login_one, login_many, auth_failed]}].
+    [{session, [sequence], [login_one, 
+                            login_many, 
+                            auth_failed]}].
      
 suite() ->
     [{require, ejabberd_node} | escalus:suite()].
@@ -59,7 +64,7 @@ end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
 %%--------------------------------------------------------------------
-%% Message tests
+%% Tests
 %%--------------------------------------------------------------------
 
 
@@ -101,18 +106,3 @@ auth_failed(Config) ->
     assert_counter(AuthFails + 1, sessionAuthFails).
     
 
-%%--------------------------------------------------------------------
-%% Helpers
-%%--------------------------------------------------------------------
-
-assert_counter(Value, Counter) ->
-    {value, Value} = rpc:call(ct:get_config(ejabberd_node), 
-                     mod_snmp, 
-                     handle_entry, 
-                     [get, Counter]).
-
-get_counter_value(Counter) ->
-    rpc:call(ct:get_config(ejabberd_node), 
-             mod_snmp, 
-             handle_entry, 
-             [get, Counter]).

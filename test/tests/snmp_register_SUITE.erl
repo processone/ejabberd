@@ -22,6 +22,9 @@
 
 -define(WAIT_TIME, 500).
 
+-import(snmp_helper, [assert_counter/2,
+                      get_counter_value/1]).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -56,13 +59,13 @@ end_per_group(_GroupName, Config) ->
 init_per_testcase(unregister, Config) ->
     Alice = escalus_users:get_user_by_name(alice),
     escalus_users:create_user(Alice),
-    escalus:init_per_testcase(unregister, Config);
+    Config;
 init_per_testcase(CaseName, Config) ->
-    escalus:init_per_testcase(CaseName, Config).
+    Config.
 
-
+end_per_testcase(unregister, Config) ->
+    ok;
 end_per_testcase(CaseName, Config) ->
-    escalus:end_per_testcase(CaseName, Config),
     Alice = escalus_users:get_user_by_name(alice),
     escalus:delete_user(Alice).
 
@@ -87,18 +90,4 @@ unregister(Config) ->
     assert_counter(Deregistarations + 1, modUnregisterCount).
     
 
-%%--------------------------------------------------------------------
-%% Helpers
-%%--------------------------------------------------------------------
 
-assert_counter(Value, Counter) ->
-    {value, Value} = rpc:call(ct:get_config(ejabberd_node), 
-                     mod_snmp, 
-                     handle_entry, 
-                     [get, Counter]).
-
-get_counter_value(Counter) ->
-    rpc:call(ct:get_config(ejabberd_node), 
-             mod_snmp, 
-             handle_entry, 
-             [get, Counter]).

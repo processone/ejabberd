@@ -20,6 +20,10 @@
 -include_lib("escalus/include/escalus.hrl").
 -include_lib("common_test/include/ct.hrl").
 
+
+-import(snmp_helper, [assert_counter/2,
+                      get_counter_value/1]).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -39,7 +43,7 @@ groups() ->
                                  ]}].
      
 suite() ->
-    escalus:suite().
+    [{required, ejabberd_node} | escalus:suite()].
 
 %%--------------------------------------------------------------------
 %% Init & teardown
@@ -266,22 +270,6 @@ add_sample_contact(Alice, Bob) ->
     escalus_client:send(Alice, escalus_stanza:iq_result(Received)),
     escalus_client:wait_for_stanza(Alice).
 
-%% remove_roster(UserSpec) ->
-%%     [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
-%%     rpc:call(ejabberd@localhost, mod_roster, remove_user, [Username, Server]).
-
-
-assert_counter(Value, Counter) ->
-    {value, Value} = rpc:call(ct:get_config(ejabberd_node), 
-                     mod_snmp, 
-                     handle_entry, 
-                     [get, Counter]).
-
-get_counter_value(Counter) ->
-    rpc:call(ct:get_config(ejabberd_node), 
-             mod_snmp, 
-             handle_entry, 
-             [get, Counter]).
 
 remove_roster(UserSpec) ->
     [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),

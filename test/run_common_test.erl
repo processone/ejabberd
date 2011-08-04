@@ -9,7 +9,7 @@ ct() ->
     ct:run_test([
         {config, [?CT_CONFIG]},
         {dir, ?CT_DIR},
-        {logdir, ?CT_REPORT},
+        {logdir, ?CT_REPORT}
 
         %{suite, "snmp_session_SUITE"}
         %{group, [session]},
@@ -29,7 +29,7 @@ ct() ->
         %, {group, [errors]}
         %, {testcase, [error_presence]}
 
-        {suite, "snmp_register_SUITE"}
+        %{suite, "snmp_register_SUITE"}
         
         %, {group, [management]}
         %, {testcase, get_all_lists_with_active}
