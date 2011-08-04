@@ -1,5 +1,12 @@
 .PHONY: rel deps test generate_snmp_header
 
+EJABBERD_DIR = apps/ejabberd
+EJD_INCLUDE = $(EJABBERD_DIR)/include
+EJD_PRIV = $(EJABBERD_DIR)/priv
+EJD_PRIV_MIB = $(EJD_PRIV)/mibs
+EJD_MIB = $(EJABBERD_DIR)/mibs
+
+
 all: deps compile
 
 compile:
@@ -22,11 +29,11 @@ rel: deps
 
 generate_snmp_header: apps/ejabberd/include/EJABBERD-MIB.hrl
 
-apps/ejabberd/include/EJABBERD-MIB.hrl: apps/ejabberd/priv/mibs/EJABBERD-MIB.bin
-	erlc -o apps/ejabberd/include $<
+$(EJD_INCLUDE)/EJABBERD-MIB.hrl: $(EJD_PRIV_MIB)/EJABBERD-MIB.bin
+	erlc -o $(EJD_INCLUDE) $<
 
-apps/ejabberd/priv/mibs/EJABBERD-MIB.bin: apps/ejabberd/mibs/EJABBERD-MIB.mib
-	erlc -o apps/ejabberd/priv/mibs/ $<
+$(EJD_PRIV_MIB)/EJABBERD-MIB.bin: $(EJD_MIB)/EJABBERD-MIB.mib $(EJD_MIB)/EJABBERD-MIB.funcs
+	erlc -o $(EJD_PRIV_MIB) $<
 
 relclean:
 	rm -rf rel/ejabberd
