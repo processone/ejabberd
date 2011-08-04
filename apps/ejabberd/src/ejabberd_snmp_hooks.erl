@@ -28,6 +28,8 @@
          roster_set/3,
          roster_push/2,
          roster_in_subscription/6,
+         register_user/2,
+         remove_user/2,
          privacy_iq_get/5,
          privacy_iq_set/4,
          privacy_check_packet/6]).
@@ -52,6 +54,8 @@ get_hooks(Host) ->
      [roster_set, Host, ?MODULE, roster_set, 50],
      [roster_push, Host, ?MODULE, roster_push, 50],
      [roster_in_subscription, Host, ?MODULE, roster_in_subscription, 55],
+     [register_user, Host, ?MODULE, register_user, 50],
+     [remove_user, Host, ?MODULE, remove_user, 50],
      [privacy_iq_get,         Host, ?MODULE, privacy_iq_get, 1],
      [privacy_iq_set,         Host, ?MODULE, privacy_iq_set, 1],
      [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55]].
@@ -149,6 +153,16 @@ roster_in_subscription(Acc,_,_,_,_,_) ->
 -spec roster_push(term(),term()) -> term().
 roster_push(_,_) ->
     ejabberd_snmp_core:increment_counter(modRosterPush).
+
+%% Register
+
+-spec register_user(binary(),binary()) -> term().
+register_user(_,_) ->
+    ejabberd_snmp_core:increment_counter(modRegisterCount).
+
+-spec remove_user(binary(),binary()) -> term().
+remove_user(_,_) ->
+    ejabberd_snmp_core:increment_counter(modUnregisterCount).
 
 %% Privacy
 

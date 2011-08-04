@@ -11,6 +11,10 @@ ct() ->
         {dir, ?CT_DIR},
         {logdir, ?CT_REPORT},
 
+        %{suite, "snmp_session_SUITE"}
+        %{group, [session]},
+        %{testcase, [auth_failed]}
+        
         %{suite, "login_SUITE"},
         %{group, [login]},
         %{testcase, [log_one_basic_digest]}
@@ -21,8 +25,12 @@ ct() ->
         %{group, [roster]}
         %{group, [subscribe]}
 
-        {suite, "privacy_SUITE"}
+        %{suite, "snmp_c2s_SUITE"}
+        %, {group, [errors]}
+        %, {testcase, [error_presence]}
 
+        {suite, "snmp_register_SUITE"}
+        
         %, {group, [management]}
         %, {testcase, get_all_lists_with_active}
         %, {testcase, get_all_lists_with_default}

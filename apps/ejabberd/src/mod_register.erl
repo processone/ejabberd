@@ -342,7 +342,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 				    case ejabberd_auth:try_register(
 					   User, Server, Password) of
 					{atomic, ok} ->
-					    send_welcome_message(JID),
+                        send_welcome_message(JID),
 					    send_registration_notifications(JID, Source),
 					    ok;
 					Error ->
