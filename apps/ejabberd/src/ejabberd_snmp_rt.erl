@@ -24,7 +24,9 @@
 
 -define(DEFAULT_INTERVAL, 60).
 -define(MIN_INTERVAL, 10).
--define(COUNTERS, [modRosterSize]). %% counters computed by this module
+-define(COUNTERS, [globalSessionCount,       %% counters computed by this module
+                   globalUniqueSessionCount,
+                   modRosterSize]). 
 
 
 %% Internal exports (gen_server)
@@ -39,6 +41,8 @@
 
 -record(state, {timer_ref,         % ref to timer
                 computing_num}).   % number of counters in computation
+
+-record(session, {sid, usr, us, priority, info}).
 
 %%--------------------
 %% Implementation
@@ -79,6 +83,7 @@ stop() ->
 
 
 init([Interval]) ->
+    ets:new(?MODULE, [public, named_table]),
     {ok, TickRef} = start_timer(Interval, tick),
     {ok, #state{timer_ref = TickRef,
                 computing_num = 0}}.
@@ -97,10 +102,25 @@ handle_call(Request, _From, State) ->
 
 %%-------------------
 
-handle_cast({compute, modRosterSize}, #state{computing_num = Num} = State) ->
+handle_cast({compute, globalSessionCount}, 
+            #state{computing_num = Num} = State) ->
+    Count = ets:info(session, size),
+    ejabberd_snmp_core:set_counter(globalSessionCount, Count),
+    {noreply, State#state{computing_num = Num - 1}};
+
+handle_cast({compute, globalUniqueSessionCount}, 
+            #state{computing_num = Num} = State) ->
+    ets:delete_all_objects(?MODULE),
+    Count = compute_unique(ets:first(session)),
+    ejabberd_snmp_core:set_counter(globalUniqueSessionCount, Count),
+    {noreply, State#state{computing_num = Num - 1}};
+
+handle_cast({compute, modRosterSize}, 
+            #state{computing_num = Num} = State) ->
     %% TODO
     %% ejabberd_snmp_core:set_counter(modRosterSize, X),
     {noreply, State#state{computing_num = Num - 1}};
+
 
 %% Similar for all rt counters
 
@@ -141,3 +161,13 @@ code_change(_OldVsn, State, _Extra) ->
 start_timer(Interval, Type) ->
     timer:send_interval(Interval*1000, self(), Type).
 
+compute_unique('$end_of_table') ->
+    ets:info(?MODULE, size);
+compute_unique(Key) ->
+    case ets:lookup(session, Key) of
+        [#session{usr = {User, Server, _}}] ->
+            ets:insert(?MODULE, {list_to_binary([User, Server])});
+        _ ->
+            ok
+    end,
+    compute_unique(ets:next(session, Key)).
