@@ -34,7 +34,7 @@
 -export([send_xml/2, setopts/2, controlling_process/2,
          custom_receiver/1, become_controller/2, reset_stream/1,
          change_shaper/2, monitor/1, close/1, sockname/1,
-         peername/1, process_request/2, send/2]).
+         peername/1, process_request/2, send/2, change_controller/2]).
 
 %% gen_fsm callbacks
 -export([init/1, wait_for_session/2, wait_for_session/3,
@@ -127,7 +127,18 @@ setopts({http_bind, FsmRef, _IP}, Opts) ->
 	true ->
 	    ?GEN_FSM:send_all_state_event(FsmRef, {activate, self()});
 	_ ->
-	    ok
+	    case lists:member({active, false}, Opts) of
+		true ->
+		    case catch ?GEN_FSM:sync_send_all_state_event(
+				 FsmRef, deactivate_socket) of
+			{'EXIT', _} ->
+			    {error, einval};
+			Res ->
+			    Res
+		    end;
+		_ ->
+		    ok
+	    end
     end.
 
 controlling_process(_Socket, _Pid) ->
@@ -138,6 +149,9 @@ custom_receiver({http_bind, FsmRef, _IP}) ->
 
 become_controller(FsmRef, C2SPid) ->
     ?GEN_FSM:send_all_state_event(FsmRef, {become_controller, C2SPid}).
+
+change_controller({http_bind, FsmRef, _IP}, C2SPid) ->
+    become_controller(FsmRef, C2SPid).
 
 reset_stream({http_bind, _FsmRef, _IP}) ->
     ok.
@@ -490,6 +504,8 @@ handle_sync_event(peername, _From, StateName, State) ->
     {reply, {ok, State#state.ip}, StateName, State};
 handle_sync_event(close, _From, _StateName, State) ->
     {stop, normal, State};
+handle_sync_event(deactivate_socket, _From, StateName, StateData) ->
+    {reply, ok, StateName, StateData#state{c2s_pid = undefined}};
 handle_sync_event(_Event, _From, StateName, State) ->
     ?ERROR_MSG("unexpected sync event in '~s': ~p", [StateName, _Event]),
     {reply, {error, badarg}, StateName, State}.
