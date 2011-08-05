@@ -65,6 +65,7 @@
 -define(DEFAULT_INACTIVITY, 30). %% secs
 
 -define(MAX_SHAPED_REQUESTS_QUEUE_LEN, 1000).
+-define(SEND_TIMEOUT, 15000). %% millisecs
 
 -record(state, {host,
                 el_ibuf,
@@ -114,11 +115,19 @@ start(#body{attrs = Attrs} = Body, IP) ->
 start_link(Body, IP) ->
     ?GEN_FSM:start_link(?MODULE, [Body, IP], ?FSMOPTS).
 
-send({http_bind, FsmRef, _IP}, Packet) ->
-    ?GEN_FSM:sync_send_all_state_event(FsmRef, {send, Packet}).
+send({http_bind, _FsmRef, _IP}, _Packet) ->
+    {error, badarg}.
 
 send_xml({http_bind, FsmRef, _IP}, Packet) ->
-    ?GEN_FSM:sync_send_all_state_event(FsmRef, {send_xml, Packet}).
+    case catch ?GEN_FSM:sync_send_all_state_event(
+                  FsmRef, {send_xml, Packet}, ?SEND_TIMEOUT) of
+        {'EXIT', {timeout, _}} ->
+            {error, timeout};
+        {'EXIT', _} ->
+            {error, einval};
+        Res ->
+            Res
+    end.
 
 setopts({http_bind, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
