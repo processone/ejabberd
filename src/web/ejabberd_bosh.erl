@@ -67,7 +67,6 @@
 -define(MAX_SHAPED_REQUESTS_QUEUE_LEN, 1000).
 
 -record(state, {host,
-                socket,
                 el_ibuf,
                 el_obuf,
                 shaper_state,
@@ -270,7 +269,6 @@ init([#body{attrs = Attrs}, IP]) ->
                                         max_inactivity, ?DEFAULT_INACTIVITY),
     State = #state{host = XMPPDomain,
                    xmpp_ver = XMPPVer,
-                   socket = Socket,
                    el_ibuf = InBuf,
                    el_obuf = buf_new(),
                    inactivity_timeout = Inactivity,
