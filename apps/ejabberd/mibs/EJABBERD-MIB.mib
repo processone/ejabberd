@@ -187,7 +187,7 @@ xmppStanzaReceived	OBJECT-TYPE
 	"Number of XMPP stanzas received by the users"
     ::= {ejabberdC2s 9}
 
-xmppStanzaDroped	OBJECT-TYPE
+xmppStanzaDropped	OBJECT-TYPE
     SYNTAX	Counter64
     MAX-ACCESS	read-only
     STATUS	current
@@ -468,7 +468,7 @@ monitorGroup OBJECT-GROUP
     xmppIqReceived,
     xmppStanzaSent,
     xmppStanzaReceived,
-    xmppStanzaDroped,
+    xmppStanzaDropped,
     xmppErrorTotal,
     xmppErrorBadRequest,
     xmppErrorIq,

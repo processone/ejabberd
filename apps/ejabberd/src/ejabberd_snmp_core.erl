@@ -17,8 +17,6 @@
 
 -define(STATS(Module), table_name(Module)).
 -define(COUNTERS_FOR_MODULE, [
-    {general,      [generalUptime,
-                    generalNodeName]},
     {core,         [sessionCount,
                     globalSessionCount,
                     globalUniqueSessionCount,
@@ -62,8 +60,6 @@
                     modPrivacyStanzaAll,
                     modPrivacyListLength]} ]).
 -define(MODULE_FOR_COUNTERS, [
-        {generalUptime,              general},
-        {generalNodeName,            general},
         {sessionCount,               core},
         {globalSessionCount,         core},
         {globalUniqueSessionCount,   core},
@@ -118,7 +114,6 @@ stop() ->
 
 %%%' Helper functions (module local)
 
-table_name(general)      -> stats_general;
 table_name(core)         -> stats_core;
 table_name(c2s)          -> stats_c2s;
 table_name(mod_privacy)  -> stats_mod_privacy;
@@ -213,6 +208,10 @@ update_counter(Counter, How) ->
     end.
 
 -spec counter_value(atom()) -> {value, term()}.
+counter_value(generalUptime) ->
+    {value, erlang:round(element(1, erlang:statistics(wall_clock))/1000)};
+counter_value(generalNodeName) ->
+    {value, atom_to_list(node())};
 counter_value(Counter) ->
     Tab = ?STATS(module_for(Counter)),
     [{Counter, Value}] = ets:lookup(Tab, Counter),

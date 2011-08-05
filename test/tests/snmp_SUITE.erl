@@ -37,21 +37,20 @@
                          verify_push/1,
                          verify_presence_error/1]).
 
+-import(snmp_helper, [assert_counter/2,
+                      get_counter_value/1]).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, core},
-     {group, general},
-     {group, c2s},
-     {group, mod_privacy},
-     {group, mod_roster},
-     {group, mod_register}].
-
+    [{group, general},
+     {group, mod_privacy}].
+     
 groups() ->
-    [{core, [sequence], [generalUptime,
-                         generalNodeName]},
+    [{general, [sequence], [generalUptime,
+                            generalNodeName]},
      {mod_privacy, [sequence], [modPrivacyGets,
                                 modPrivacySets,
                                 modPrivacySetsActive,
@@ -97,6 +96,20 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 %% Tests
 %%--------------------------------------------------------------------
+
+generalUptime(Config) ->
+    T_Measured = erlang:round(element(1,escalus_ejabberd:rpc(
+                                          erlang, statistics, 
+                                          [wall_clock])) / 1000),
+    {value, T_Counter} = get_counter_value(generalUptime),
+    true = (T_Counter - T_Measured) =< 1.
+            
+generalNodeName(Config) ->
+    assert_counter(atom_to_list(escalus_ejabberd:rpc(erlang, node, [])),
+                   generalNodeName).
+    
+
+%% Privacy
 
 modPrivacyGets(Config) ->
     escalus:story(Config, [1], fun(Alice) ->
