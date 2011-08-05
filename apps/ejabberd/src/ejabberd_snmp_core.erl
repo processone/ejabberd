@@ -9,6 +9,7 @@
          is_started/0,
          increment_counter/1,
          decrement_counter/1,
+         set_counter/2,
          reset_counters/0,
          counter_value/1,
          table_value/4]).
@@ -198,13 +199,20 @@ increment_counter(Counter) ->
 decrement_counter(Counter) ->
     update_counter(Counter, -1).
 
+set_counter(Counter, Value) ->
+    modify_counter(Counter, {ets, update_element}, [{2, Value}]).
+
 update_counter(Counter, How) ->
+    modify_counter(Counter, {ets, update_counter}, [How]).
+
+modify_counter(Counter, Fun, Args) ->
     Tab = ?STATS(module_for(Counter)),
     case ets:info(Tab) of
-    undefined ->
-        ok;
-    _ ->
-        ets:update_counter(Tab, Counter, How)
+        undefined ->
+            ok;
+        _ ->
+            ArgsNew = [ Tab, Counter | Args],
+            apply(Fun, ArgsNew)
     end.
 
 -spec counter_value(atom()) -> {value, term()}.

@@ -43,21 +43,30 @@ init_snmp(Host, Opts) ->
                List ->
                    List
            end,
+    Interval = gen_mod:get_opt(count_interval, Opts, undefined),
+    RtEnabled = gen_mod:get_opt(rt_enabled, Opts, false),
+    
     ok = ejabberd_snmp_core:start(Mods),
+    case RtEnabled of
+        true ->
+            {ok, _} = ejabberd_snmp_rt:start_link(Interval);
+        _ -> ok
+    end,
+
     snmp_hooks(add, Host),
     
-    SampleOID = lists:foldl(fun(E,A) -> A ++ "." ++ integer_to_list(E) end,
-        integer_to_list(hd(?ejabberd)), tl(?ejabberd)),
-    %% These are the options from ejabberd.cfg
-    SampleMods = case Mods of
-             [H|T] ->
-                 lists:foldl(fun(E,A) -> A ++ " " ++ atom_to_list(E) end,
-                     atom_to_list(H), T);
-             _ -> "none"
-         end,
+    %% SampleOID = lists:foldl(fun(E,A) -> A ++ "." ++ integer_to_list(E) end,
+    %%     integer_to_list(hd(?ejabberd)), tl(?ejabberd)),
+    %% %% These are the options from ejabberd.cfg
+    %% SampleMods = case Mods of
+    %%          [H|T] ->
+    %%              lists:foldl(fun(E,A) -> A ++ " " ++ atom_to_list(E) end,
+    %%                  atom_to_list(H), T);
+    %%          _ -> "none"
+    %%      end,
     
-    ?INFO_MSG("mod_snmp started. Sample OID is: ~s~nSample opts: ~s",
-              [SampleOID, SampleMods]),
+    %% ?INFO_MSG("mod_snmp started. Sample OID is: ~s~nSample opts: ~s",
+    %%           [SampleOID, SampleMods]),
 
     PrivDir = case code:priv_dir(ejabberd) of
                   {error, _} ->
