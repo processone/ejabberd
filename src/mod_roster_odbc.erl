@@ -163,7 +163,15 @@ roster_version(LServer ,LUser) ->
 		true ->
 			case odbc_queries:get_roster_version(ejabberd_odbc:escape(LServer), ejabberd_odbc:escape(LUser)) of
 				{selected, ["version"], [{Version}]} -> Version;
-				{selected, ["version"], []} -> not_found
+				{selected, ["version"], []} -> 
+				%% If for some reason we don't had it on DB. Create a version Id and store it.
+				%% (we did the same on process_iq_get, that is called when client get roster,
+				%%  not sure why it can still not be on DB at this point)
+				RosterVersion = sha:sha(term_to_binary(now())),
+				{atomic, {updated,1}} = odbc_queries:sql_transaction(LServer, fun() ->
+				    odbc_queries:set_roster_version(ejabberd_odbc:escape(LUser), RosterVersion)
+				end),
+				RosterVersion
 			end;
 		false ->
 			roster_hash(ejabberd_hooks:run_fold(roster_get, LServer, [], [US]))
