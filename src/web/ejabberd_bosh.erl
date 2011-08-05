@@ -524,7 +524,7 @@ handle_info(_Info, StateName, State) ->
 terminate(_Reason, _StateName, State) ->
     case State#state.c2s_pid of
         C2SPid when is_pid(C2SPid) ->
-            gen_fsm:send_event(C2SPid, closed);
+            ?GEN_FSM:send_event(C2SPid, closed);
         _ ->
             ok
     end,
@@ -548,7 +548,7 @@ route_els(State, Els) ->
         C2SPid when is_pid(C2SPid) ->
             lists:foreach(
               fun(El) ->
-                      gen_fsm:send_event(C2SPid, El)
+                      ?GEN_FSM:send_event(C2SPid, El)
               end, Els),
             State;
         _ ->
