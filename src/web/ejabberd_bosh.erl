@@ -82,8 +82,7 @@
                 responses = gb_trees:empty(),
                 receivers = gb_trees:empty(),
                 shaped_receivers = queue:new(),
-                max_requests,
-                ip}).
+                max_requests}).
 
 -record(body, {http_reason = "", %% Using HTTP reason phrase is
                                  %% a hack, but we need a clue why
@@ -498,8 +497,6 @@ handle_sync_event({send_xml, El}, _From, StateName, State) ->
             OutBuf = buf_in([El], State1#state.el_obuf),
             {reply, ok, StateName, State1#state{el_obuf = OutBuf}}
     end;
-handle_sync_event(peername, _From, StateName, State) ->
-    {reply, {ok, State#state.ip}, StateName, State};
 handle_sync_event(close, _From, _StateName, State) ->
     {stop, normal, State};
 handle_sync_event(deactivate_socket, _From, StateName, StateData) ->
