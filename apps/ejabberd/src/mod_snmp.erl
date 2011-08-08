@@ -43,16 +43,13 @@ init_snmp(Host, Opts) ->
                List ->
                    List
            end,
-    Interval = gen_mod:get_opt(count_interval, Opts, undefined),
+    RtInterval = gen_mod:get_opt(rt_count_interval, Opts, undefined),
+    WInterval = gen_mod:get_opt(w_count_interval, Opts, undefined),
     RtEnabled = gen_mod:get_opt(rt_enabled, Opts, false),
     
     ok = ejabberd_snmp_core:start(Mods),
-    case RtEnabled of
-        true ->
-            {ok, _} = ejabberd_snmp_rt:start_link(Interval);
-        _ -> ok
-    end,
-
+    ejabberd_snmp_rt:start_link(RtEnabled, RtInterval, WInterval),
+    
     snmp_hooks(add, Host),
     
     %% SampleOID = lists:foldl(fun(E,A) -> A ++ "." ++ integer_to_list(E) end,

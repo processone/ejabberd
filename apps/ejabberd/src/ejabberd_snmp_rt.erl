@@ -19,7 +19,7 @@
 %%--------------------
 
 %% will potentially include function for updating temporary window counters
--export([start_link/1,
+-export([start_link/3,
          stop/0]).
 
 -define(DEFAULT_INTERVAL, 60).
@@ -31,7 +31,7 @@
 
 %% Internal exports (gen_server)
 -export([init/1,
-         start_link2/1,
+         start_link2/2,
          handle_call/3,
          handle_cast/2,
          handle_info/2,
@@ -39,7 +39,8 @@
          code_change/3]).
 
 
--record(state, {timer_ref,         % ref to timer
+-record(state, {timer_ref_rt,      % ref to timer (ticks for rt counters)
+                timer_ref_w,       % ref to timer (ticks for window counters)
                 computing_num}).   % number of counters in computation
 
 -record(session, {sid, usr, us, priority, info}).
@@ -48,18 +49,27 @@
 %% Implementation
 %%--------------------
 
--spec start_link(integer()) -> {ok, pid()} | {error, term()}.
-start_link(Interval) ->                
-    NewInterval = case Interval of
-                      I when I < ?MIN_INTERVAL ->
+-spec start_link(true | false, integer(), integer()) -> {ok, pid()} | {error, term()}.
+start_link(RtEnabled, RtInterval, WInterval) ->                
+    NewRtInterval = case {RtEnabled, RtInterval} of
+                      {true, I} when I < ?MIN_INTERVAL ->
                           ?MIN_INTERVAL;
-                      I when is_integer(I) ->
+                      {true, I} when is_integer(I) ->
                           I;
+                      {true, _} ->
+                          ?DEFAULT_INTERVAL;
+                      {false, _} ->
+                            undefined
+                  end,
+    NewWInterval = case WInterval of
+                      W when W < ?MIN_INTERVAL ->
+                          ?MIN_INTERVAL;
+                      W when is_integer(W) ->
+                          W;
                       _ ->
                           ?DEFAULT_INTERVAL
                   end,
-    ?INFO_MSG("NewInterval: ~p", [NewInterval]),
-    Spec = {?MODULE, {?MODULE, start_link2, [NewInterval]},
+    Spec = {?MODULE, {?MODULE, start_link2, [NewRtInterval, NewWInterval]},
             transient, 2000, worker, [?MODULE]},
     case supervisor:start_child(ejabberd_sup, Spec) of
         {error, Error} ->
@@ -68,9 +78,9 @@ start_link(Interval) ->
             Ok
     end.
 
--spec start_link2(integer()) -> {ok, pid()} | {error, term()}.
-start_link2(Interval) ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [Interval], []).
+-spec start_link2(integer(), integer()) -> {ok, pid()} | {error, term()}.
+start_link2(RtInterval, WInterval) ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [RtInterval, WInterval], []).
 
 -spec stop() -> term().
 stop() ->
@@ -82,19 +92,37 @@ stop() ->
 %%----------------------
 
 
-init([Interval]) ->
+init([RtInterval, WInterval]) ->
     ets:new(?MODULE, [public, named_table]),
-    {ok, TickRef} = start_timer(Interval, tick),
-    {ok, #state{timer_ref = TickRef,
+    TickRefRt = case RtInterval of
+                    undefined ->
+                        none;
+                    I ->
+                        {ok, TickRef} = start_timer(I, tick_rt),
+                        TickRef
+                end,
+    {ok, TickRefW} = start_timer(WInterval, tick_w),
+    {ok, #state{timer_ref_rt = TickRefRt,
+                timer_ref_w = TickRefW,
                 computing_num = 0}}.
 
 %%-------------------
 
-handle_call({change_interval, NewInterval}, _From, 
-            #state{timer_ref = TickRef} = State) ->
+handle_call({change_interval_rt, _NewInterval}, _From, 
+            #state{timer_ref_rt = none} = State) ->
+    {reply, {error, disabled}, State};
+
+handle_call({change_interval_rt, NewInterval}, _From, 
+            #state{timer_ref_rt = TickRef} = State) ->
     timer:cancel(TickRef),
-    {ok, NewTickRef} = start_timer(NewInterval, tick),
-    {reply, ok, State#state{timer_ref = NewTickRef}};
+    {ok, NewTickRef} = start_timer(NewInterval, tick_rt),
+    {reply, ok, State#state{timer_ref_rt = NewTickRef}};
+
+handle_call({change_interval_w, NewInterval}, _From, 
+            #state{timer_ref_w = TickRef} = State) ->
+    timer:cancel(TickRef),
+    {ok, NewTickRef} = start_timer(NewInterval, tick_w),
+    {reply, ok, State#state{timer_ref_w = NewTickRef}};
 
 handle_call(Request, _From, State) ->
     ?WARNING_MSG("~p received unknown call ~p ", [?MODULE, Request]),
@@ -130,14 +158,18 @@ handle_cast(Request, State) ->
 
 %%-------------------
 
-handle_info(tick, #state{computing_num = 0} = State) ->
+handle_info(tick_rt, #state{computing_num = 0} = State) ->
     Num = lists:foldl(fun(Counter, Res) ->
                               gen_server:cast(?MODULE, {compute, Counter}),
                               Res +1
                       end, 0,  ?COUNTERS),
     {noreply, State#state{computing_num = Num}};
 
-handle_info(tick, State) ->
+handle_info(tick_rt, State) ->
+    {noreply, State};
+
+handle_info(tick_w, State) ->
+    ejabberd_snmp_core:window_change(),
     {noreply, State};
 
 handle_info(Info, State) ->
