@@ -9,6 +9,7 @@
          is_started/0,
          increment_counter/1,
          decrement_counter/1,
+         update_counter/2,
          set_counter/2,
          reset_counters/0,
          increment_window_counter/1,
@@ -282,8 +283,8 @@ is_started() ->
     lists:any(
         fun(Tab) ->
             case ets:info(Tab) of
-            undefined -> false;
-            _ -> true
+                undefined -> false;
+                _ -> true
             end
         end,
         get_all_tables()).

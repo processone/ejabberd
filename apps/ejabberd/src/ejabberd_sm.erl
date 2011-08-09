@@ -477,12 +477,8 @@ do_route(From, To, Packet) ->
 		<<"iq">> ->
 		    process_iq(From, To, Packet);
 		<<"broadcast">> ->
-		    lists:foreach(
-		      fun(R) ->
-			      do_route(From,
-				       jlib:jid_replace_resource(To, R),
-				       Packet)
-		      end, get_user_resources(User, Server));
+		    ejabberd_hooks:run(sm_broadcast, LServer, [From, To, Packet]),
+		    broadcast_packet(From, To, Packet);
 		_ ->
 		    ok
 	    end;
@@ -513,6 +509,15 @@ do_route(From, To, Packet) ->
 		    Pid ! {route, From, To, Packet}
 	    end
     end.
+
+broadcast_packet(From, To, Packet) ->
+    #jid{user = User, server = Server} = To,
+    lists:foreach(
+	fun(R) ->
+	    do_route(From,
+		     jlib:jid_replace_resource(To, R),
+		     Packet)
+	end, get_user_resources(User, Server)).
 
 %% The default list applies to the user as a whole,
 %% and is processed if there is no active list set
