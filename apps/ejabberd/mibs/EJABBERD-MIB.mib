@@ -367,8 +367,7 @@ routerRegisteredPathEntry	OBJECT-TYPE
 
 RouteEntry ::= SEQUENCE {
     routeTo      DisplayString,
-    routeFrom	 DisplayString,
-    routeType    DisplayString
+    routeNum     Gauge32
 }
 
 routeTo	OBJECT-TYPE
@@ -376,24 +375,16 @@ routeTo	OBJECT-TYPE
     MAX-ACCESS	read-only
     STATUS	current
     DESCRIPTION
-	"A conceptual row for routerRegisteredPathsTable"
+	"Domain to which packets will be routed"
     ::= {routerRegisteredPathEntry 1}
 
-routeFrom	OBJECT-TYPE
-    SYNTAX	DisplayString
+routeNum	OBJECT-TYPE
+    SYNTAX	Gauge32
     MAX-ACCESS	read-only
     STATUS	current
     DESCRIPTION
-	"A conceptual row for routerRegisteredPathsTable"
+	"Number of routes"
     ::= {routerRegisteredPathEntry 2}
-
-routeType	OBJECT-TYPE
-    SYNTAX	DisplayString
-    MAX-ACCESS	read-only
-    STATUS	current
-    DESCRIPTION
-	"A conceptual row for routerRegisteredPathsTable"
-    ::= {routerRegisteredPathEntry 3}
 
 
 -- ModRoster
@@ -688,8 +679,7 @@ monitorGroup OBJECT-GROUP
     xmppStanzaReceivedW,
     xmppErrorTotalW,
     routeTo,
-    routeFrom,
-    routeType,
+    routeNum,
     modRosterSets,
     modRosterGets,
     modPresenceSubscriptions,

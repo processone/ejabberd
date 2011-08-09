@@ -88,7 +88,8 @@
     {mod_privacy,  [modPrivacySetsW,
                     modPrivacySetsActiveW,
                     modPrivacySetsDefaultW,
-                    modPrivacyPushW]} ]).
+                    modPrivacyPushW,
+                    modPrivacyGetsW]} ]).
 
 
 -define(MODULE_FOR_COUNTERS, [
@@ -329,7 +330,118 @@ counter_value(Counter) ->
     [{Counter, Value}] = ets:lookup(Tab, Counter),
     {value, Value}.
 
+-spec table_value(atom(), list(), list(), atom()) -> list().
+table_value(get, RowInd, Cols, Table) ->
+    Row = get_row(RowInd, Table),
+    get_cols(Row, Cols, Table);
+table_value(get_next,RowInd,Cols,Table) ->
+    lists:foldl(fun(Col, Res) ->
+                      case {Res, get_next_value(RowInd, Col, Table)} of
+                          {{genErr, _}, _} ->
+                              Res;
+                          {_, {genErr, Err}} ->
+                              {genErr, Err};
+                          {_, Value} ->
+                              [Value| Res]
+                      end     
+              end,[], Cols);
 table_value(_,_,_,_) ->
     ok.
+
+%% gets full row with specified index
+get_row([RowInd], routerRegisteredPathsTable) ->
+    Routes = mnesia:dirty_all_keys(route),
+    case RowInd of
+        RInd when RInd > 0, RInd =< length(Routes) ->
+            HName = lists:nth(RowInd, Routes),
+            H = case HName of
+                    N when is_binary(N) -> binary_to_list(N);
+                    _ ->
+                        HName
+                end,
+            {{value, H}, {value, length(mnesia:dirty_read(route, HName))}};
+        _ ->
+            {{noValue, noSuchInstance}, {noValue, noSuchInstance}}
+    end.
+
+%% gets column values from specified row row
+get_cols(Row, Cols, Table) ->
+    Mapping = column_mapping(Cols, get_column_map(Table)),
+    lists:map(fun(Col) -> element(Col, Row) end, Mapping).
+
+%% gets value of specified cell in the table
+get_cell_value(R, C, Table) ->
+    Row = get_row([R], Table),
+    [Col] = column_mapping([C], get_column_map(Table)),
+    case element(Col, Row) of
+        {value, Value} ->
+            {[C, R], Value};
+        _ ->
+            {genErr, C}
+    end.
+            
+
+%% gets value of next element (table get_next)
+get_next_value(RowInd, Col, Table) ->
+    case next_indexes(RowInd, Col, Table) of
+        {R, C} ->
+            get_cell_value(R, C, Table); 
+        endOfTable ->
+            endOfTable
+    end.
+
+
+%% finds indexes of next element
+next_indexes(RowInd, Col, Table) ->
+    case {next_row(RowInd, Table), 
+          next_col(Col, get_column_map(Table))} of
+        {{[], endOfTable}, _} ->
+            endOfTable;
+        {{last, _NextR}, {_C, endOfTable}} ->
+            endOfTable;
+        {{last, NextR}, {_C, NextC}} ->
+            {NextR, NextC};
+        {{_R, NextR}, {C, _NextC}} ->
+            {NextR, C}
+    end.
+
+%% finds next column
+next_col(0, [H | _T]) ->
+    {Col, _} = H, 
+    {Col, Col};
+next_col(Col, [H | T]) ->
+    case H of 
+        {Col, _} when length(T) > 0->
+            [{Next, _} | _T1] = T,
+            {Col, Next};
+        {Col, _} ->
+            {Col, endOfTable};
+        _ ->
+            next_col(Col, T)
+    end.
+
+%% finds next row index
+next_row(RowInd, routerRegisteredPathsTable) ->
+    case { RowInd, length(mnesia:dirty_all_keys(route))} of
+        {_, L} when L == 0 ->
+            {[], endOfTable};
+        {[], _L} ->
+            {[], 1};
+        {[RInd] ,L} when L < RInd; RInd < 0 ->
+            {[], 1};
+        {[RInd], L} when L == RInd ->
+            {last, 1};
+        {[RInd], _} ->
+            {RInd, RInd +1}
+    end.
+
+
+column_mapping(Cols, Map) ->
+    lists:map(fun(Col) -> proplists:get_value(Col, Map) end, Cols).
+
+get_column_map(routerRegisteredPathsTable) ->
+    [{?routeTo, 1},
+     {?routeNum, 2}].
+    
 
 %%% vim: set sts=4 ts=4 sw=4 et filetype=erlang foldmarker=%%%',%%%. foldmethod=marker:
