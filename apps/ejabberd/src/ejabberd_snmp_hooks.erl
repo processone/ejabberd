@@ -69,40 +69,51 @@ get_hooks(Host) ->
 -spec sm_register_connection_hook(tuple(), tuple(), term()) -> term().
 sm_register_connection_hook(_,_,_) ->
     ejabberd_snmp_core:increment_counter(sessionSuccessfulLogins),
+    ejabberd_snmp_core:increment_window_counter(sessionSuccessfulLoginsW),
     ejabberd_snmp_core:increment_counter(sessionCount).
 
 -spec sm_remove_connection_hook(tuple(), tuple(), term()) -> term().
 sm_remove_connection_hook(_,_,_) ->
     ejabberd_snmp_core:increment_counter(sessionLogouts),
+    ejabberd_snmp_core:increment_window_counter(sessionLogoutsW),
     ejabberd_snmp_core:decrement_counter(sessionCount).
 
 -spec auth_failed(binary(), binary(), binary()) -> term().
 auth_failed(_,_,_) ->
-    ejabberd_snmp_core:increment_counter(sessionAuthFails).
+    ejabberd_snmp_core:increment_counter(sessionAuthFails),
+    ejabberd_snmp_core:increment_window_counter(sessionAuthFailsW).
 
 -spec user_send_packet(tuple(), tuple(), tuple()) -> term().
 user_send_packet(_,_,Packet) ->
     ejabberd_snmp_core:increment_counter(xmppStanzaSent),
+    ejabberd_snmp_core:increment_window_counter(xmppStanzaSentW),
     user_send_packet_type(Packet).
 
 user_send_packet_type({xmlelement, <<"message">>,_,_}) ->
-    ejabberd_snmp_core:increment_counter(xmppMessageSent);
+    ejabberd_snmp_core:increment_counter(xmppMessageSent),
+    ejabberd_snmp_core:increment_window_counter(xmppMessageSentW);
 user_send_packet_type({xmlelement, <<"iq">>,_,_}) ->
-    ejabberd_snmp_core:increment_counter(xmppIqSent);
+    ejabberd_snmp_core:increment_counter(xmppIqSent),
+    ejabberd_snmp_core:increment_window_counter(xmppIqSentW);
 user_send_packet_type({xmlelement, <<"presence">>,_,_}) ->
-    ejabberd_snmp_core:increment_counter(xmppPresenceSent).
+    ejabberd_snmp_core:increment_counter(xmppPresenceSent),
+    ejabberd_snmp_core:increment_window_counter(xmppPresenceSentW).
 
 -spec user_receive_packet(tuple(), tuple(), tuple(), tuple()) -> term().
 user_receive_packet(_,_,_,Packet) ->
     ejabberd_snmp_core:increment_counter(xmppStanzaReceived),
+    ejabberd_snmp_core:increment_window_counter(xmppStanzaReceivedW),
     user_receive_packet_type(Packet).
 
 user_receive_packet_type({xmlelement, <<"message">>,_,_}) ->
-    ejabberd_snmp_core:increment_counter(xmppMessageReceived);
+    ejabberd_snmp_core:increment_counter(xmppMessageReceived),
+    ejabberd_snmp_core:increment_window_counter(xmppMessageReceivedW);
 user_receive_packet_type({xmlelement, <<"iq">>,_,_}) ->
-    ejabberd_snmp_core:increment_counter(xmppIqReceived);
+    ejabberd_snmp_core:increment_counter(xmppIqReceived),
+    ejabberd_snmp_core:increment_window_counter(xmppIqReceivedW);
 user_receive_packet_type({xmlelement, <<"presence">>,_,_}) ->
-    ejabberd_snmp_core:increment_counter(xmppPresenceReceived).
+    ejabberd_snmp_core:increment_counter(xmppPresenceReceived),
+    ejabberd_snmp_core:increment_window_counter(xmppPresenceReceivedW).
 
 -spec xmpp_bounce_message(tuple()) -> term().
 xmpp_bounce_message(_) ->
@@ -117,6 +128,7 @@ xmpp_send_element({xmlelement, Name, Attrs, _}) ->
     case proplists:get_value(<<"type">>, Attrs) of
         <<"error">> ->
             ejabberd_snmp_core:increment_counter(xmppErrorTotal),
+            ejabberd_snmp_core:increment_window_counter(xmppErrorTotalW),
             case Name of
                 <<"iq">> ->
                     ejabberd_snmp_core:increment_counter(xmppErrorIq);
@@ -136,41 +148,49 @@ xmpp_send_element(_) ->
 -spec roster_get(list(), term()) -> list().
 roster_get(Acc, _) ->
     ejabberd_snmp_core:increment_counter(modRosterGets),
+    ejabberd_snmp_core:increment_window_counter(modRosterGetsW),
     Acc.
 
 -spec roster_set(tuple(), tuple(), tuple()) -> list().
 roster_set(_,_,_) ->
-    ejabberd_snmp_core:increment_counter(modRosterSets).
+    ejabberd_snmp_core:increment_counter(modRosterSets),
+    ejabberd_snmp_core:increment_window_counter(modRosterSetsW).
 
 -spec roster_in_subscription(term(), binary(), binary(), tuple(), atom(), term()) -> term().
 roster_in_subscription(Acc,_,_,_,subscribed,_) ->
     ejabberd_snmp_core:increment_counter(modPresenceSubscriptions),
+    ejabberd_snmp_core:increment_window_counter(modPresenceSubscriptionsW),
     Acc;
 roster_in_subscription(Acc,_,_,_,unsubscribed,_) ->
     ejabberd_snmp_core:increment_counter(modPresenceUnsubscriptions),
+    ejabberd_snmp_core:increment_window_counter(modPresenceUnsubscriptionsW),
     Acc;
 roster_in_subscription(Acc,_,_,_,_,_) ->
     Acc.
 
 -spec roster_push(term(),term()) -> term().
 roster_push(_,_) ->
-    ejabberd_snmp_core:increment_counter(modRosterPush).
+    ejabberd_snmp_core:increment_counter(modRosterPush),
+    ejabberd_snmp_core:increment_window_counter(modRosterPushW).
 
 %% Register
 
 -spec register_user(binary(),binary()) -> term().
 register_user(_,_) ->
-    ejabberd_snmp_core:increment_counter(modRegisterCount).
+    ejabberd_snmp_core:increment_counter(modRegisterCount),
+    ejabberd_snmp_core:increment_window_counter(modRegisterCountW).
 
 -spec remove_user(binary(),binary()) -> term().
 remove_user(_,_) ->
-    ejabberd_snmp_core:increment_counter(modUnregisterCount).
+    ejabberd_snmp_core:increment_counter(modUnregisterCount),
+    ejabberd_snmp_core:increment_window_counter(modUnregisterCountW).
 
 %% Privacy
 
 -spec privacy_iq_get(term(), term(), term(), term(), term()) -> term().
 privacy_iq_get(Acc, _, _, _, _) ->
     ?CORE:increment_counter(modPrivacyGets),
+    ?CORE:increment_window_counter(modPrivacyGetsW),
     Acc.
 
 -spec privacy_iq_set(term(), term(), term(), term()) -> term().        
@@ -178,13 +198,16 @@ privacy_iq_set(Acc, _From, _To, #iq{sub_el = SubEl}) ->
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
         [{xmlelement, <<"active">>, _, _}] ->
-            ?CORE:increment_counter(modPrivacySetsActive);
+            ?CORE:increment_counter(modPrivacySetsActive),
+            ?CORE:increment_window_counter(modPrivacySetsActiveW);
         [{xmlelement, <<"default">>, _, _}] ->
-            ?CORE:increment_counter(modPrivacySetsDefault);
+            ?CORE:increment_counter(modPrivacySetsDefault),
+            ?CORE:increment_window_counter(modPrivacySetsDefaultW);
         _ ->
             ok
     end,
     ?CORE:increment_counter(modPrivacySets),
+    ?CORE:increment_window_counter(modPrivacySetsW),
     Acc.
 
 -spec privacy_list_push(term(), term(), term()) -> term().
@@ -192,8 +215,9 @@ privacy_list_push(_From, To, Packet) ->
     case Packet of
         {xmlelement, <<"broadcast">>, _Attrs, [{privacy_list, _, _}]} ->
             #jid{user = User, server = Server} = To,
-            ?CORE:update_counter(modPrivacyPush,
-                length(ejabberd_sm:get_user_resources(User, Server)));
+            Count = length(ejabberd_sm:get_user_resources(User, Server)),
+            ?CORE:update_counter(modPrivacyPush, Count),
+            ?CORE:update_window_counter(modPrivacyPushW, Count);
         _ ->
             ok
     end.

@@ -13,6 +13,7 @@
          set_counter/2,
          reset_counters/0,
          increment_window_counter/1,
+         update_window_counter/2,
          window_change/0,
          counter_value/1,
          table_value/4]).
@@ -291,19 +292,22 @@ is_started() ->
         get_all_tables()).
 
 increment_window_counter(Counter) ->
+    update_window_counter(Counter, 1).
+
+update_window_counter(Counter, How) ->
     Tab = ?STATS_W(module_for(Counter)),
     case ets:info(Tab) of
         undefined ->
             ok;
         _ ->
-            ets:update_counter(Tab, Counter, 1)
+            ets:update_counter(Tab, Counter, How)
     end.
 
 increment_counter(Counter) ->
     update_counter(Counter, 1).
 
 decrement_counter(Counter) ->
-    update_counter(Counter, -1).
+    update_counter(Counter, {2, -1, 0, 0}).
 
 set_counter(Counter, Value) ->
     modify_counter(Counter, {ets, update_element}, [{2, Value}]).
@@ -368,17 +372,27 @@ get_row([RowInd], routerRegisteredPathsTable) ->
 %% gets column values from specified row row
 get_cols(Row, Cols, Table) ->
     Mapping = column_mapping(Cols, get_column_map(Table)),
-    lists:map(fun(Col) -> element(Col, Row) end, Mapping).
+    lists:map(fun(Col) -> 
+                      try element(Col, Row) of
+                          Res -> Res
+                      catch
+                          _:_ ->
+                              {noValue, noSuchInstance}
+                      end
+              end, Mapping).
 
 %% gets value of specified cell in the table
 get_cell_value(R, C, Table) ->
     Row = get_row([R], Table),
     [Col] = column_mapping([C], get_column_map(Table)),
-    case element(Col, Row) of
+    try element(Col, Row) of
         {value, Value} ->
             {[C, R], Value};
         _ ->
             {genErr, C}
+    catch
+        _:_ ->
+            {genErr, Col}
     end.
             
 
