@@ -2,7 +2,7 @@
 
 -compile([export_all]).
 
--include("../../apps/ejabberd/include/mod_privacy.hrl").
+-include("../apps/ejabberd/include/mod_privacy.hrl").
 
 -define(MAX_ORDER, 5).
 -define(MAX_LIST_SIZE, 5).

@@ -22,6 +22,7 @@ console:
 	erl -sname test -setcookie ejabberd \
 		-pa `pwd`/tests \
 		-pa `pwd`/escalus/ebin \
+		-pa `pwd`/../tools \
 		`pwd`/escalus/deps/exmpp/ebin
 
 .PHONY: escalus/ebin

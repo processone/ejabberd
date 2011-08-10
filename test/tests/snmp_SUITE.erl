@@ -21,7 +21,6 @@
 -include_lib("escalus/include/escalus.hrl").
 -include_lib("common_test/include/ct.hrl").
 
--define(RPC(Mod, Fun, Args), escalus_ejabberd:rpc(Mod, Fun, Args)).
 -define(RPC_LOOKUP(Table, Counter), escalus_ejabberd:rpc(ets, lookup, [Table, Counter])).
 
 -import(privacy_helper, [config_list/2,
@@ -55,8 +54,10 @@ groups() ->
                                 modPrivacySets,
                                 modPrivacySetsActive,
                                 modPrivacySetsDefault,
-                                modPrivacyStanzaBlocked%,
+                                modPrivacyStanzaBlocked,
                                 %modPrivacyStanzaAll  % doesn't work yet
+                                modPrivacyPush,
+                                modPrivacyListLength
                                ]}].
 
 suite() ->
@@ -85,26 +86,38 @@ init_per_group(_GroupName, Config) ->
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
+init_per_testcase(modPrivacyListLength, Config) ->
+    escalus_ejabberd:rpc(gen_server, call,
+        [ejabberd_snmp_rt, {change_interval_rt, 1}]),
+    %% rest is the same
+    escalus_ejabberd:rpc(mnesia, clear_table, [privacy]),
+    escalus:init_per_testcase(modPrivacyListLength, Config);
 init_per_testcase(CaseName, Config) ->
+    escalus_ejabberd:rpc(mnesia, clear_table, [privacy]),
     escalus:init_per_testcase(CaseName, Config).
 
+end_per_testcase(modPrivacyListLength, Config) ->
+    escalus_ejabberd:rpc(gen_server, call,
+        [ejabberd_snmp_rt, {change_interval_rt, 60}]),
+    %% rest is the same
+    escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
+    escalus:end_per_testcase(modPrivacyListLength, Config);
 end_per_testcase(CaseName, Config) ->
     escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
-    escalus_ejabberd:rpc(mnesia, clear_table, [privacy]),
     escalus:end_per_testcase(CaseName, Config).
 
 %%--------------------------------------------------------------------
 %% Tests
 %%--------------------------------------------------------------------
 
-generalUptime(Config) ->
+generalUptime(_Config) ->
     T_Measured = erlang:round(element(1,escalus_ejabberd:rpc(
                                           erlang, statistics, 
                                           [wall_clock])) / 1000),
     {value, T_Counter} = get_counter_value(generalUptime),
     true = (T_Counter - T_Measured) =< 1.
             
-generalNodeName(Config) ->
+generalNodeName(_Config) ->
     assert_counter(atom_to_list(escalus_ejabberd:rpc(erlang, node, [])),
                    generalNodeName).
     
@@ -207,6 +220,8 @@ modPrivacyStanzaAll(Config) ->
         Table = stats_mod_privacy,
         Counter = modPrivacyStanzaAll,
 
+        %% This is needed *here* as some stanzas are sent in escalus:story,
+        %% so after the per-testcase initialization.
         escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
 
         [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
@@ -220,8 +235,47 @@ modPrivacyStanzaAll(Config) ->
 
 %% TODO:
 %% - (?) modPrivacyStanzaAll
-%% - modPrivacyStanzaPush
-%% - modPrivacyStanzaListLength
+%% x modPrivacyPush
+%% - modPrivacyListLength
+
+modPrivacyPush() -> [{require, alice_deny_bob}].
+
+modPrivacyPush(Config) ->
+    escalus:story(Config, [3], fun(Alice1, _Alice2, _Alice3) ->
+
+        PrivacyList = config_list(alice_deny_bob, Config),
+
+        Table = stats_mod_privacy,
+        Counter = modPrivacyPush,
+
+        %% No pushes for Alice should exist yet
+        [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
+        set_list(Alice1, PrivacyList),
+        %% Alice has got 3 resources, so after 1 set, the counter should equal 3
+        [{Counter, 3}] = ?RPC_LOOKUP(Table, Counter)
+
+        end).
+
+modPrivacyListLength() -> [{require, alice_deny_bob},
+                           {require, alice_with_3_items}].
+
+modPrivacyListLength(Config) ->
+    escalus:story(Config, [1], fun(Alice) ->
+
+        PrivacyList1 = config_list(alice_deny_bob, Config),
+        PrivacyList2 = config_list(alice_with_3_items, Config),
+
+        Table = stats_mod_privacy,
+        Counter = modPrivacyListLength,
+
+        [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
+        set_list(Alice, PrivacyList1),
+        set_list(Alice, PrivacyList2),
+        timer:sleep(1500),
+        %% First list has 1 item, second has 3
+        [{Counter, 2}] = ?RPC_LOOKUP(Table, Counter)
+
+        end).
 
 %%-----------------------------------------------------------------
 %% Helpers

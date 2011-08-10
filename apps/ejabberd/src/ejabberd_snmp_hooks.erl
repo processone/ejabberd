@@ -32,7 +32,8 @@
          remove_user/2,
          privacy_iq_get/5,
          privacy_iq_set/4,
-         privacy_check_packet/6]).
+         privacy_check_packet/6,
+         privacy_list_push/3]).
 
 -define(CORE, ejabberd_snmp_core).
 
@@ -58,7 +59,8 @@ get_hooks(Host) ->
      [remove_user, Host, ?MODULE, remove_user, 50],
      [privacy_iq_get,         Host, ?MODULE, privacy_iq_get, 1],
      [privacy_iq_set,         Host, ?MODULE, privacy_iq_set, 1],
-     [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55]].
+     [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55],
+     [sm_broadcast,           Host, ?MODULE, privacy_list_push, 1]].
 
 %%------------------------------
 %% SNMP specific hook callbacks
@@ -172,18 +174,29 @@ privacy_iq_get(Acc, _, _, _, _) ->
     Acc.
 
 -spec privacy_iq_set(term(), term(), term(), term()) -> term().        
-privacy_iq_set(Acc, _, _, #iq{sub_el = SubEl}) ->
+privacy_iq_set(Acc, _From, _To, #iq{sub_el = SubEl}) ->
     {xmlelement, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
-	[{xmlelement, <<"active">>, _, _}] ->
+        [{xmlelement, <<"active">>, _, _}] ->
             ?CORE:increment_counter(modPrivacySetsActive);
-	[{xmlelement, <<"default">>, _, _}] ->
+        [{xmlelement, <<"default">>, _, _}] ->
             ?CORE:increment_counter(modPrivacySetsDefault);
-    _ ->
-        ok
+        _ ->
+            ok
     end,
     ?CORE:increment_counter(modPrivacySets),
     Acc.
+
+-spec privacy_list_push(term(), term(), term()) -> term().
+privacy_list_push(_From, To, Packet) ->
+    case Packet of
+        {xmlelement, <<"broadcast">>, _Attrs, [{privacy_list, _, _}]} ->
+            #jid{user = User, server = Server} = To,
+            ?CORE:update_counter(modPrivacyPush,
+                length(ejabberd_sm:get_user_resources(User, Server)));
+        _ ->
+            ok
+    end.
 
 -spec privacy_check_packet(Acc :: allow | deny, term(), term(), term(), term(), term()) -> allow | deny.
 privacy_check_packet(Acc, _, _, _, _, _) ->
