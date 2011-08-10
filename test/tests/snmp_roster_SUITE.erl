@@ -35,8 +35,9 @@ all() ->
 groups() ->
     [{roster, [sequence], [get_roster,
                            add_contact,
-                           roster_push
-                           ]},
+                           roster_push,
+                           average_roster_size
+                          ]},
      {subscriptions, [sequence], [subscribe,
                                   unsubscribe,
                                   decline_subscription
@@ -61,6 +62,10 @@ init_per_group(_GroupName, Config) ->
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
+init_per_testcase(average_roster_size = CaseName, Config) ->
+    escalus_ejabberd:rpc(gen_server, call,
+        [ejabberd_snmp_rt, {change_interval_rt, 1}]),
+    escalus:init_per_testcase(CaseName, Config);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -78,6 +83,10 @@ end_per_testcase(decline_subscription, Config) ->
     end_rosters_remove(Config);
 end_per_testcase(unsubscribe, Config) ->
     end_rosters_remove(Config);
+end_per_testcase(average_roster_size = CaseName, Config) ->
+    escalus_ejabberd:rpc(gen_server, call,
+        [ejabberd_snmp_rt, {change_interval_rt, 60}]),
+    escalus:end_per_testcase(CaseName, Config);
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
@@ -227,34 +236,57 @@ unsubscribe(Config) ->
         PushReqB = escalus_client:wait_for_stanza(Bob),
         escalus_client:send(Bob, escalus_stanza:iq_result(PushReqB)),
         escalus_client:wait_for_stanza(Bob),
-        
+
         %% Bob sends subscribed presence
         escalus_client:send(Bob, escalus_stanza:presence_direct(Alice, subscribed)),
-        
+
         %% Alice receives subscribed 
         escalus_client:wait_for_stanzas(Alice, 2), 
 
         escalus_client:wait_for_stanza(Alice),
-        
+
         %% Bob receives roster push
         PushReqB1 = escalus_client:wait_for_stanza(Bob),
         escalus_assert:is_roster_result_set(PushReqB1),
-        
+
         %% Alice sends unsubscribe
         escalus_client:send(Alice, escalus_stanza:presence_direct(Bob, unsubscribe)),
-        
+
         PushReqA2 = escalus_client:wait_for_stanza(Alice),
         escalus_client:send(Alice, escalus_stanza:iq_result(PushReqA2)),
 
         %% Bob receives unsubscribe
 
         escalus_client:wait_for_stanzas(Bob, 2),
-        
+
         assert_counter(Subscriptions +1, modPresenceUnsubscriptions)
-        
 
-    end).                                   
+    end).
 
+
+average_roster_size(Config) ->
+    escalus:story(Config, [1, 1, 1, 1], fun(Alice, Bob, Kate, Mike) ->
+
+        Friends = [Alice, Bob, Kate, Mike],
+        lists:foreach(
+            fun(Other) -> add_sample_contact(Alice, Other) end,
+            [ Other || Other <- Friends, Other =/= Alice ]),
+        lists:foreach(
+            fun(Other) -> add_sample_contact(Bob, Other) end,
+            [ Other || Other <- Friends, Other =/= Bob ]),
+        lists:foreach(
+            fun(Other) -> add_sample_contact(Kate, Other) end,
+            [Alice, Bob]),
+        lists:foreach(
+            fun(Other) -> add_sample_contact(Mike, Other) end,
+            [Alice, Bob]),
+
+        timer:sleep(1500),
+
+        %% average roster size is now (3 + 3 + 2 + 2) / 4 = 10 / 4 ~= 3
+        assert_counter(3, modRosterSize)
+
+        end).
 
 
 %%-----------------------------------------------------------------
@@ -262,10 +294,11 @@ unsubscribe(Config) ->
 %%-----------------------------------------------------------------
 
 add_sample_contact(Alice, Bob) ->
+    add_sample_contact(Alice, Bob, ["friends"], "generic :p name").
+
+add_sample_contact(Alice, Bob, Groups, Name) ->
     escalus_client:send(Alice, 
-                        escalus_stanza:roster_add_contact(Bob, 
-                                                          ["friends"], 
-                                                          "Bobby")),
+        escalus_stanza:roster_add_contact(Bob, Groups, Name)),
     Received = escalus_client:wait_for_stanza(Alice),
     escalus_client:send(Alice, escalus_stanza:iq_result(Received)),
     escalus_client:wait_for_stanza(Alice).

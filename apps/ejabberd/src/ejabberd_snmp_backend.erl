@@ -11,8 +11,14 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_privacy.hrl").
+-include("mod_roster.hrl").
 
--export([privacy_list_length/0]).
+-export([privacy_list_length/0,
+         roster_size/0]).
+
+%% Internal exports (used below by dispatch/0)
+-export([mnesia_privacy_list_length/0,
+         mnesia_roster_size/0]).
 
 %% This is one of the gen_mod modules with different backends
 -type ejabberd_module() :: atom().
@@ -52,18 +58,24 @@ backend(Module) ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-privacy_list_length() ->
-    privacy_list_length(backend(mod_privacy)).
-
-privacy_list_length(Backend) ->
+-spec dispatch(mnesia | odbc, atom()) -> term().
+dispatch(Backend, Function) ->
+    BackendFunction = list_to_atom(atom_to_list(Backend) ++ "_"
+        ++ atom_to_list(Function)),
     case Backend of
         mnesia ->
-            mnesia_privacy_list_length();
+            apply(?MODULE, BackendFunction, []);
         odbc ->
             {error, ?ERR_INTERNAL_SERVER_ERROR};
         _ ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
+
+privacy_list_length() ->
+    dispatch(backend(mod_privacy), privacy_list_length).
+
+roster_size() ->
+    dispatch(backend(mod_roster), roster_size).
 
 mnesia_privacy_list_length() ->
     F = fun() ->
@@ -84,6 +96,29 @@ mnesia_privacy_list_length() ->
     case mnesia:transaction(F) of
         {atomic, AvgLength} ->
             AvgLength;
+        _ ->
+            {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
+
+mnesia_roster_size() ->
+    F = fun() ->
+        length(
+            mnesia:foldl(fun(#roster{us = User}, Acc) ->
+                case lists:member(User, Acc) of
+                    false ->
+                        [User | Acc];
+                    _ ->
+                        Acc
+                end
+            end,
+            [], roster))
+    end,
+    case mnesia:transaction(F) of
+        {atomic, 0} ->
+            0;
+        {atomic, UserCount} ->
+            TableSize = mnesia:table_info(roster, size),
+            erlang:round(TableSize / UserCount);
         _ ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.

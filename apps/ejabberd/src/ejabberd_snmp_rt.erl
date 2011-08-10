@@ -147,8 +147,8 @@ handle_cast({compute, globalUniqueSessionCount},
 
 handle_cast({compute, modRosterSize}, 
             #state{computing_num = Num} = State) ->
-    %% TODO
-    %% ejabberd_snmp_core:set_counter(modRosterSize, X),
+    ejabberd_snmp_core:set_counter(modRosterSize,
+        ?BACKEND:roster_size()),
     {noreply, State#state{computing_num = Num - 1}};
 
 handle_cast({compute, modPrivacyListLength}, 
