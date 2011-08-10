@@ -14,17 +14,32 @@
 
 -export([privacy_list_length/0]).
 
--spec privacy_backend() -> mnesia | odbc | none | {error, term()}.
-privacy_backend() ->
+%% This is one of the gen_mod modules with different backends
+-type ejabberd_module() :: atom().
+
+%% Determine backend for Module.
+%%
+%% This function is based on the assumption that different mod_sth backends
+%% have different suffixes, e.g. mod_privacy for mnesia, mod_privacy_odbc
+%% for ODBC.
+%% Furthermore, they must be present in mnesia table local_config.
+%% No module may appear with two or more different backends simultaneously
+%% (impossible anyway, but mentioning it can't hurt).
+-spec backend(ejabberd_module()) -> mnesia | odbc | none | {error, term()}.
+backend(Module) ->
+    %% extend if/when more backends appear (see also _1_)
+    MnesiaBackend = Module,
+    OdbcBackend = list_to_atom(atom_to_list(Module) ++ "_odbc"),
     F = fun() ->
         [{local_config, _, Modules}] =
             mnesia:read(local_config, {modules, <<"localhost">>}),
         Select = fun({Mod,_}, Acc) ->
-            %% ASSUMPTION: either mod_privacy or mod_privacy_odbc is used,
-            %%             never both/all
+            %% ASSUMPTION: either mod_something or mod_something_odbc
+            %% (or some other backend) is used, never both/all
             case Mod of
-                mod_privacy -> mnesia;
-                mod_privacy_odbc -> odbc;
+                %% _1_ add cases for more backends
+                MnesiaBackend -> mnesia;
+                OdbcBackend -> odbc;
                 _ -> Acc
             end
         end,
@@ -38,11 +53,14 @@ privacy_backend() ->
     end.
 
 privacy_list_length() ->
-    case privacy_backend() of
+    privacy_list_length(backend(mod_privacy)).
+
+privacy_list_length(Backend) ->
+    case Backend of
         mnesia ->
             mnesia_privacy_list_length();
         odbc ->
-            {error, odbc_not_implemented_yet};
+            {error, ?ERR_INTERNAL_SERVER_ERROR};
         _ ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
