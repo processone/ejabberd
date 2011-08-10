@@ -9,10 +9,10 @@ EJD_MIB = $(EJABBERD_DIR)/mibs
 
 all: deps compile
 
-compile:
+compile: generate_snmp_header
 	./rebar compile
 
-deps:
+deps: generate_snmp_header
 	./rebar get-deps
 
 clean:

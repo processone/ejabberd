@@ -52,5 +52,9 @@ ct() ->
         %, {testcase, modPrivacySetsDefault}
         %, {testcase, modPrivacyStanzaBlocked}
         %, {testcase, modPrivacyStanzaAll}
+        %, {testcase, modPrivacyPush}
+        %, {testcase, modPrivacyListLength}
+
+        %{suite, "privacy_SUITE"}
     ]),
     init:stop(0).
