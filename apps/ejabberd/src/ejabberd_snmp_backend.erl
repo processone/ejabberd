@@ -34,19 +34,25 @@
 %%-------------------
 
 privacy_list_length() ->
-    dispatch(backend(mod_privacy), privacy_list_length).
+    dispatch(backends(mod_privacy), privacy_list_length).
 
 roster_size() ->
-    dispatch(backend(mod_roster), roster_size).
+    dispatch(backends(mod_roster), roster_size).
 
 roster_groups() ->
-    dispatch(backend(mod_roster), roster_groups).
+    dispatch(backends(mod_roster), roster_groups).
 
 registered_count() ->
-    %% all hosts have the same auth method
-    [Host |_ ] = ejabberd_config:get_global_option(hosts),
-    Backend = ejabberd_config:get_local_option({auth_method, Host}),
-    registered_count_disp(Backend).
+    Hosts = ejabberd_config:get_global_option(hosts),
+    Backends = sets:to_list(
+                 lists:foldl(fun(Host, Set) ->
+                                     Backend = ejabberd_config:get_local_option(
+                                                 {auth_method, Host}),
+                                     sets:add_element(Backend, Set)
+                             end, sets:new(), Hosts)),
+    lists:foldl(fun(Backend, Res) ->
+                          Res + registered_count_disp(Backend)
+                  end, 0, Backends).
 
 %%-------------------
 %% Helpers
@@ -60,45 +66,44 @@ registered_count() ->
 %% Furthermore, they must be present in mnesia table local_config.
 %% No module may appear with two or more different backends simultaneously
 %% (impossible anyway, but mentioning it can't hurt).
--spec backend(ejabberd_module()) -> mnesia | odbc | none | {error, term()}.
-backend(Module) ->
+-spec backends(ejabberd_module()) -> mnesia | odbc | none | {error, term()}.
+backends(Module) ->
     %% extend if/when more backends appear (see also _1_)
     MnesiaBackend = Module,
     OdbcBackend = list_to_atom(atom_to_list(Module) ++ "_odbc"),
-    F = fun() ->
-        [{local_config, _, Modules}] =
-            mnesia:read(local_config, {modules, <<"localhost">>}),
-        Select = fun({Mod,_}, Acc) ->
-            %% ASSUMPTION: either mod_something or mod_something_odbc
-            %% (or some other backend) is used, never both/all
-            case Mod of
-                %% _1_ add cases for more backends
-                MnesiaBackend -> mnesia;
-                OdbcBackend -> odbc;
-                _ -> Acc
-            end
+    
+    Hosts = ejabberd_config:get_global_option(hosts),
+    
+    F = fun(Host, Set) ->
+                Modules = ejabberd_config:get_local_option({modules, Host}),
+                Select = fun({Mod,_}, Acc) ->
+                                 %% ASSUMPTION: either mod_something or mod_something_odbc
+                                 %% (or some other backend) is used, never both/all
+                                 case Mod of
+                                     %% _1_ add cases for more backends
+                                     MnesiaBackend -> mnesia;
+                                     OdbcBackend -> odbc;
+                                     _ -> Acc
+                                 end
+                         end,
+                sets:add_element(lists:foldl(Select, none, Modules), Set)
         end,
-        lists:foldl(Select, none, Modules)
-    end,
-    case mnesia:transaction(F) of
-        {atomic, Backend} ->
-            Backend;
-        _ ->
-            {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end.
-
+    sets:to_list(lists:foldl(F, sets:new(), Hosts)).
+    
 -spec dispatch(mnesia | odbc, atom()) -> term().
-dispatch(Backend, Function) ->
-    BackendFunction = list_to_atom(atom_to_list(Backend) ++ "_"
-        ++ atom_to_list(Function)),
-    case Backend of
-        mnesia ->
-            apply(?MODULE, BackendFunction, []);
-        odbc ->
-            {error, ?ERR_INTERNAL_SERVER_ERROR};
-        _ ->
-            {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end.
+dispatch(Backends, Function) ->
+    lists:foldl(fun(Backend, Res) ->
+               BackendFunction = list_to_atom(atom_to_list(Backend) ++ "_"
+                                                  ++ atom_to_list(Function)),
+               case Backend of
+                   mnesia ->
+                       Res + apply(?MODULE, BackendFunction, []);
+                   odbc ->
+                       {error, ?ERR_INTERNAL_SERVER_ERROR};
+                   _ ->
+                       {error, ?ERR_INTERNAL_SERVER_ERROR}
+               end
+           end, 0, Backends). 
 
 
 mnesia_privacy_list_length() ->
