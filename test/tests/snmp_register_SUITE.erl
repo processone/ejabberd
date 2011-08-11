@@ -21,6 +21,7 @@
 -include_lib("common_test/include/ct.hrl").
 
 -define(WAIT_TIME, 500).
+-define(RT_WAIT_TIME, 60000).
 
 -import(snmp_helper, [assert_counter/2,
                       get_counter_value/1]).
@@ -34,7 +35,8 @@ all() ->
 
 groups() ->
     [{registration, [sequence], [register,
-                                 unregister]}].
+                                 unregister,
+                                 registered_users]}].
      
 suite() ->
     [{require, ejabberd_node} | escalus:suite()].
@@ -55,19 +57,18 @@ init_per_group(_GroupName, Config) ->
 end_per_group(_GroupName, Config) ->
     ok.
 
-
 init_per_testcase(unregister, Config) ->
     Alice = escalus_users:get_user_by_name(alice),
     escalus_users:create_user(Alice),
     Config;
-init_per_testcase(CaseName, Config) ->
+init_per_testcase(_CaseName, Config) ->
     Config.
 
 end_per_testcase(unregister, Config) ->
     ok;
-end_per_testcase(CaseName, Config) ->
+end_per_testcase(_CaseName, Config) ->
     Alice = escalus_users:get_user_by_name(alice),
-    escalus:delete_user(Alice).
+    escalus_users:delete_user(Alice).
 
 %%--------------------------------------------------------------------
 %% Registration tests
@@ -80,6 +81,7 @@ register(Config) ->
     escalus_users:create_user(Alice),
     
     assert_counter(Registarations + 1, modRegisterCount).
+    
 
 unregister(Config) ->
     {value, Deregistarations} = get_counter_value(modUnregisterCount),
@@ -89,5 +91,11 @@ unregister(Config) ->
     
     assert_counter(Deregistarations + 1, modUnregisterCount).
     
-
+registered_users(Config) ->
+    {value, Registered} = get_counter_value(modRegisterUserCount),
+    Alice = escalus_users:get_user_by_name(alice),
+    escalus_users:create_user(Alice),
+    
+    timer:sleep(?RT_WAIT_TIME),
+    assert_counter(Registered +1, modRegisterUserCount).
 

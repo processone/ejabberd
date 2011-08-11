@@ -11,7 +11,9 @@ ct() ->
         {dir, ?CT_DIR},
         {logdir, ?CT_REPORT}
 
-        %{suite, "snmp_session_SUITE"}
+        %,{suite, "snmp_table_SUITE"}
+        %,{suite, "snmp_session_SUITE"}
+        %,{suite, "snmp_c2s_SUITE"}
         %{group, [session]},
         %{testcase, [auth_failed]}
         
@@ -29,7 +31,7 @@ ct() ->
         %, {group, [errors]}
         %, {testcase, [error_presence]}
 
-        %{suite, "snmp_register_SUITE"}
+        ,{suite, "snmp_register_SUITE"}
 
         %{suite, "privacy_SUITE"}
         

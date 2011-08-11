@@ -28,7 +28,8 @@
                    globalUniqueSessionCount,
                    modPrivacyListLength,
                    modRosterSize,
-                   modRosterGroups
+                   modRosterGroups,
+                   modRegisterUserCount
                   ]). 
 
 -define(BACKEND, ejabberd_snmp_backend).
@@ -164,6 +165,13 @@ handle_cast({compute, modRosterGroups},
     ejabberd_snmp_core:set_counter(modRosterGroups,
         ?BACKEND:roster_groups()),
     {noreply, State#state{computing_num = Num - 1}};
+
+handle_cast({compute, modRegisterUserCount}, 
+            #state{computing_num = Num} = State) ->
+    ejabberd_snmp_core:set_counter(modRegisterUserCount,
+        ?BACKEND:registered_count()),
+    {noreply, State#state{computing_num = Num - 1}};
+
 
 %% Similar for all rt counters
 

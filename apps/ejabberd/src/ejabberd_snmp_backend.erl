@@ -16,7 +16,8 @@
 %% Public API
 -export([privacy_list_length/0,
          roster_size/0,
-         roster_groups/0
+         roster_groups/0,
+         registered_count/0
         ]).
 
 %% Internal exports (used below by dispatch/0)
@@ -27,6 +28,29 @@
 
 %% This is one of the gen_mod modules with different backends
 -type ejabberd_module() :: atom().
+
+%%-------------------
+%% API
+%%-------------------
+
+privacy_list_length() ->
+    dispatch(backend(mod_privacy), privacy_list_length).
+
+roster_size() ->
+    dispatch(backend(mod_roster), roster_size).
+
+roster_groups() ->
+    dispatch(backend(mod_roster), roster_groups).
+
+registered_count() ->
+    %% all hosts have the same auth method
+    [Host |_ ] = ejabberd_config:get_global_option(hosts),
+    Backend = ejabberd_config:get_local_option({auth_method, Host}),
+    registered_count_disp(Backend).
+
+%%-------------------
+%% Helpers
+%%-------------------
 
 %% Determine backend for Module.
 %%
@@ -76,14 +100,6 @@ dispatch(Backend, Function) ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-privacy_list_length() ->
-    dispatch(backend(mod_privacy), privacy_list_length).
-
-roster_size() ->
-    dispatch(backend(mod_roster), roster_size).
-
-roster_groups() ->
-    dispatch(backend(mod_roster), roster_groups).
 
 mnesia_privacy_list_length() ->
     F = fun() ->
@@ -156,3 +172,8 @@ mnesia_roster_groups() ->
         _ ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
+
+registered_count_disp(internal) ->
+    ets:info(passwd, size);
+registered_count_disp(_) ->
+    0.         %% no such instance
