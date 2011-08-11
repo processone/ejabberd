@@ -104,12 +104,7 @@ mnesia_roster_size() ->
     F = fun() ->
         length(
             mnesia:foldl(fun(#roster{us = User}, Acc) ->
-                case lists:member(User, Acc) of
-                    false ->
-                        [User | Acc];
-                    _ ->
-                        Acc
-                end
+                lists:keystore(User, 1, Acc, {User,true})
             end,
             [], roster))
     end,
