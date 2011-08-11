@@ -13,12 +13,17 @@
 -include("mod_privacy.hrl").
 -include("mod_roster.hrl").
 
+%% Public API
 -export([privacy_list_length/0,
-         roster_size/0]).
+         roster_size/0,
+         roster_groups/0
+        ]).
 
 %% Internal exports (used below by dispatch/0)
 -export([mnesia_privacy_list_length/0,
-         mnesia_roster_size/0]).
+         mnesia_roster_size/0,
+         mnesia_roster_groups/0
+        ]).
 
 %% This is one of the gen_mod modules with different backends
 -type ejabberd_module() :: atom().
@@ -77,6 +82,9 @@ privacy_list_length() ->
 roster_size() ->
     dispatch(backend(mod_roster), roster_size).
 
+roster_groups() ->
+    dispatch(backend(mod_roster), roster_groups).
+
 mnesia_privacy_list_length() ->
     F = fun() ->
         TotalItemsAndListCount = fun(#privacy{lists = NamedLists}, Acc) ->
@@ -114,6 +122,37 @@ mnesia_roster_size() ->
         {atomic, UserCount} ->
             TableSize = mnesia:table_info(roster, size),
             erlang:round(TableSize / UserCount);
+        _ ->
+            {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
+
+mnesia_roster_groups() ->
+    F = fun() ->
+        {Users, Groups} = mnesia:foldl(
+            fun(#roster{us = User, groups = Groups}, {UAcc, GAcc}) ->
+                NewUAcc = lists:keystore(User, 1, UAcc, {User,true}),
+                NewGroups =
+                    lists:filter(
+                        fun(G) ->
+                            not lists:member(G, GAcc)
+                        end,
+                        Groups),
+                NewGAcc =
+                    lists:foldl(
+                        fun(G, Acc) ->
+                            lists:keystore(G, 1, Acc, {G, true})
+                        end,
+                        GAcc, NewGroups),
+                {NewUAcc, NewGAcc}
+            end,
+            {[],[]}, roster),
+        {length(Users), length(Groups)}
+    end,
+    case mnesia:transaction(F) of
+        {atomic, {0, _}} ->
+            0;
+        {atomic, {UserCount, GroupCount}} ->
+            erlang:round(GroupCount / UserCount);
         _ ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.

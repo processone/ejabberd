@@ -30,6 +30,8 @@ ct() ->
         %, {testcase, [error_presence]}
 
         %{suite, "snmp_register_SUITE"}
+
+        %{suite, "privacy_SUITE"}
         
         %, {group, [management]}
         %, {testcase, get_all_lists_with_active}
@@ -42,7 +44,11 @@ ct() ->
         %, {testcase, block_jid_message}
         %, {testcase, block_jid_all}
 
-        %{repeat, 10},
+        %{suite, "snmp_roster_SUITE"}
+        %, {group, [roster]}
+        %, {testcase, average_roster_size}
+        %, {testcase, average_roster_groups}
+
         %{suite, "snmp_SUITE"}
 
         %, {group, [mod_privacy]}
@@ -54,7 +60,5 @@ ct() ->
         %, {testcase, modPrivacyStanzaAll}
         %, {testcase, modPrivacyPush}
         %, {testcase, modPrivacyListLength}
-
-        %{suite, "privacy_SUITE"}
     ]),
     init:stop(0).

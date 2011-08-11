@@ -26,8 +26,10 @@
 -define(MIN_INTERVAL, 10).
 -define(COUNTERS, [globalSessionCount,       %% counters computed by this module
                    globalUniqueSessionCount,
+                   modPrivacyListLength,
                    modRosterSize,
-                   modPrivacyListLength]). 
+                   modRosterGroups
+                  ]). 
 
 -define(BACKEND, ejabberd_snmp_backend).
 
@@ -145,16 +147,22 @@ handle_cast({compute, globalUniqueSessionCount},
     ejabberd_snmp_core:set_counter(globalUniqueSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
+handle_cast({compute, modPrivacyListLength}, 
+            #state{computing_num = Num} = State) ->
+    ejabberd_snmp_core:set_counter(modPrivacyListLength,
+        ?BACKEND:privacy_list_length()),
+    {noreply, State#state{computing_num = Num - 1}};
+
 handle_cast({compute, modRosterSize}, 
             #state{computing_num = Num} = State) ->
     ejabberd_snmp_core:set_counter(modRosterSize,
         ?BACKEND:roster_size()),
     {noreply, State#state{computing_num = Num - 1}};
 
-handle_cast({compute, modPrivacyListLength}, 
+handle_cast({compute, modRosterGroups}, 
             #state{computing_num = Num} = State) ->
-    ejabberd_snmp_core:set_counter(modPrivacyListLength,
-        ?BACKEND:privacy_list_length()),
+    ejabberd_snmp_core:set_counter(modRosterGroups,
+        ?BACKEND:roster_groups()),
     {noreply, State#state{computing_num = Num - 1}};
 
 %% Similar for all rt counters

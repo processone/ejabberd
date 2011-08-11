@@ -36,7 +36,8 @@ groups() ->
     [{roster, [sequence], [get_roster,
                            add_contact,
                            roster_push,
-                           average_roster_size
+                           average_roster_size,
+                           average_roster_groups
                           ]},
      {subscriptions, [sequence], [subscribe,
                                   unsubscribe,
@@ -63,9 +64,9 @@ end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
 init_per_testcase(average_roster_size = CaseName, Config) ->
-    escalus_ejabberd:rpc(gen_server, call,
-        [ejabberd_snmp_rt, {change_interval_rt, 1}]),
-    escalus:init_per_testcase(CaseName, Config);
+    init_realtime_counter_testcase(CaseName, Config);
+init_per_testcase(average_roster_groups = CaseName, Config) ->
+    init_realtime_counter_testcase(CaseName, Config);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -84,9 +85,9 @@ end_per_testcase(decline_subscription, Config) ->
 end_per_testcase(unsubscribe, Config) ->
     end_rosters_remove(Config);
 end_per_testcase(average_roster_size = CaseName, Config) ->
-    escalus_ejabberd:rpc(gen_server, call,
-        [ejabberd_snmp_rt, {change_interval_rt, 60}]),
-    escalus:end_per_testcase(CaseName, Config);
+    end_realtime_counter_testcase(CaseName, Config);
+end_per_testcase(average_roster_groups = CaseName, Config) ->
+    end_realtime_counter_testcase(CaseName, Config);
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
@@ -95,7 +96,18 @@ end_rosters_remove(Config) ->
         escalus_config:get_property(escalus_users, Config),
     remove_roster(UserSpec1),
     remove_roster(UserSpec2),
-    escalus:end_per_testcase(subscription, Config).    
+    escalus:end_per_testcase(subscription, Config).
+
+init_realtime_counter_testcase(CaseName, Config) ->
+    escalus_ejabberd:rpc(mnesia, clear_table, [roster]),
+    escalus_ejabberd:rpc(gen_server, call,
+        [ejabberd_snmp_rt, {change_interval_rt, 1}]),
+    escalus:init_per_testcase(CaseName, Config).
+
+end_realtime_counter_testcase(CaseName, Config) ->
+    escalus_ejabberd:rpc(gen_server, call,
+        [ejabberd_snmp_rt, {change_interval_rt, 60}]),
+    escalus:end_per_testcase(CaseName, Config).
 
 
 %%--------------------------------------------------------------------
@@ -288,6 +300,21 @@ average_roster_size(Config) ->
 
         end).
 
+
+average_roster_groups(Config) ->
+    escalus:story(Config, [1, 1, 1, 1], fun(Alice, Bob, Kate, Mike) ->
+
+        add_sample_contact(Alice, Bob, ["my dearest love"], "Bobby"),
+        add_sample_contact(Bob, Alice, ["my hottest lass"], "Alice"),
+        add_sample_contact(Bob, Kate, ["my sis"], "Katie"),
+        add_sample_contact(Bob, Mike, ["my pals"], "Mike"),
+
+        timer:sleep(1500),
+
+        %% 2 rosters, 4 groups -> average groups per roster = 2
+        assert_counter(2, modRosterGroups)
+
+        end).
 
 %%-----------------------------------------------------------------
 %% Helpers
