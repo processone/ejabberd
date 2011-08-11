@@ -6,7 +6,7 @@
 
 -export([fill/4]).
 
--include_lib("mod_roster.hrl").
+-include_lib("../apps/ejabberd/include/mod_roster.hrl").
 
 fill(UserNum, PerRosterNum, Name, Type) when UserNum < PerRosterNum ->
     fill_bucket(1, UserNum, Name, Type);

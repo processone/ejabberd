@@ -1,5 +1,5 @@
 %%==============================================================================
-%% Copyright 2010 Erlang Solutions Ltd.
+%% Copyright 2011 Erlang Solutions Ltd.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ groups() ->
                                 modPrivacySetsActive,
                                 modPrivacySetsDefault,
                                 modPrivacyStanzaBlocked,
-                                %modPrivacyStanzaAll  % doesn't work yet
+                                modPrivacyStanzaAll,
                                 modPrivacyPush,
                                 modPrivacyListLength
                                ]}].
@@ -89,9 +89,9 @@ end_per_group(_GroupName, Config) ->
 init_per_testcase(modPrivacyListLength, Config) ->
     escalus_ejabberd:rpc(gen_server, call,
         [ejabberd_snmp_rt, {change_interval_rt, 1}]),
-    %% rest is the same
-    escalus_ejabberd:rpc(mnesia, clear_table, [privacy]),
-    escalus:init_per_testcase(modPrivacyListLength, Config);
+    %% rest is the same; fallthrough is not a test name,
+    %% I just want to call the generic clause
+    init_per_testcase(fallthrough, Config);
 init_per_testcase(CaseName, Config) ->
     escalus_ejabberd:rpc(mnesia, clear_table, [privacy]),
     escalus:init_per_testcase(CaseName, Config).
@@ -99,9 +99,7 @@ init_per_testcase(CaseName, Config) ->
 end_per_testcase(modPrivacyListLength, Config) ->
     escalus_ejabberd:rpc(gen_server, call,
         [ejabberd_snmp_rt, {change_interval_rt, 60}]),
-    %% rest is the same
-    escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
-    escalus:end_per_testcase(modPrivacyListLength, Config);
+    end_per_testcase(fallthrough, Config);
 end_per_testcase(CaseName, Config) ->
     escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
     escalus:end_per_testcase(CaseName, Config).
@@ -226,17 +224,12 @@ modPrivacyStanzaAll(Config) ->
 
         [{Counter, 0}] = ?RPC_LOOKUP(Table, Counter),
         chit_chat(Alice, Bob),
-        [{Counter, 1}] = ?RPC_LOOKUP(Table, Counter),
+        [{Counter, 2}] = ?RPC_LOOKUP(Table, Counter),
         set_and_activate(Alice, PrivacyList),
         chit_chat(Alice, Bob),
-        [{Counter, 1}] = ?RPC_LOOKUP(Table, Counter)
+        [{Counter, 6}] = ?RPC_LOOKUP(Table, Counter)
 
         end).
-
-%% TODO:
-%% - (?) modPrivacyStanzaAll
-%% x modPrivacyPush
-%% - modPrivacyListLength
 
 modPrivacyPush() -> [{require, alice_deny_bob}].
 
