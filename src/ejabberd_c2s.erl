@@ -1696,6 +1696,14 @@ handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
 		From, jlib:make_jid(USR), Packet)
       end, lists:usort(Recipients)),
     fsm_next_state(StateName, StateData);
+handle_info({change_socket, Socket}, StateName, StateData) ->
+    erlang:demonitor(StateData#state.socket_monitor),
+    NewSocket = (StateData#state.sockmod):change_socket(
+                  StateData#state.socket, Socket),
+    MRef = (StateData#state.sockmod):monitor(NewSocket),
+    fsm_next_state(StateName,
+                   StateData#state{socket = NewSocket,
+                                   socket_monitor = MRef});
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).

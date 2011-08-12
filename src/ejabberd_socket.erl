@@ -45,6 +45,7 @@
 	 get_verify_result/1,
 	 close/1,
 	 change_controller/2,
+         change_socket/2,
 	 sockname/1, peername/1]).
 
 -include("ejabberd.hrl").
@@ -165,6 +166,9 @@ change_controller(#socket_state{socket = Socket, receiver = Mod}, Pid) ->
     Mod:setopts(Socket, [{active, false}]),
     sync_events(Pid),
     Mod:change_controller(Socket, Pid).
+
+change_socket(SocketData, Socket) ->
+    SocketData#socket_state{socket = Socket}.
 
 %% sockmod=gen_tcp|tls|ejabberd_zlib
 send(SocketData, Data) ->

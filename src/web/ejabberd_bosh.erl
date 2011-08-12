@@ -30,8 +30,8 @@
 -behaviour(?GEN_FSM).
 
 %% API
--export([start/2, start_link/2]).
--export([send_xml/2, setopts/2, controlling_process/2,
+-export([start/2, start/3, start_link/3]).
+-export([send_xml/2, setopts/2, controlling_process/2, migrate/3,
          custom_receiver/1, become_controller/2, reset_stream/1,
          change_shaper/2, monitor/1, close/1, sockname/1,
          peername/1, process_request/2, send/2, change_controller/2]).
@@ -68,6 +68,7 @@
 -define(SEND_TIMEOUT, 15000). %% millisecs
 
 -record(state, {host,
+                sid,
                 el_ibuf,
                 el_obuf,
                 shaper_state,
@@ -83,6 +84,7 @@
                 responses = gb_trees:empty(),
                 receivers = gb_trees:empty(),
                 shaped_receivers = queue:new(),
+                ip,
                 max_requests}).
 
 -record(body, {http_reason = "", %% Using HTTP reason phrase is
@@ -98,10 +100,11 @@
 %%%===================================================================
 %% TODO: If compile with no supervisor option, start the session without
 %%       supervisor
-start(#body{attrs = Attrs} = Body, IP) ->
+start(#body{attrs = Attrs} = Body, IP, SID) ->
     XMPPDomain = get_attr('to', Attrs),
-    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME),
-    case catch supervisor:start_child(SupervisorProc, [Body, IP]) of
+    Node = ejabberd_cluster:get_node(SID),
+    SupervisorProc = {gen_mod:get_module_proc(XMPPDomain, ?PROCNAME), Node},
+    case catch supervisor:start_child(SupervisorProc, [Body, IP, SID]) of
     	{ok, Pid} ->
             {ok, Pid};
         {'EXIT', {noproc, _}} ->
@@ -112,8 +115,11 @@ start(#body{attrs = Attrs} = Body, IP) ->
             {error, Err}
     end.
 
-start_link(Body, IP) ->
-    ?GEN_FSM:start_link(?MODULE, [Body, IP], ?FSMOPTS).
+start(StateName, State) ->
+    ?GEN_FSM:start_link(?MODULE, [StateName, State], ?FSMOPTS).
+
+start_link(Body, IP, SID) ->
+    ?GEN_FSM:start_link(?MODULE, [Body, IP, SID], ?FSMOPTS).
 
 send({http_bind, _FsmRef, _IP}, _Packet) ->
     {error, badarg}.
@@ -178,6 +184,9 @@ sockname(_Socket) ->
 peername({http_bind, _FsmRef, IP}) ->
     {ok, IP}.
 
+migrate(FsmRef, Node, After) ->
+    erlang:send_after(After, FsmRef, {migrate, Node}).
+
 process_request(Data, IP) ->
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
     Opts = [{xml_socket, true} | Opts1],
@@ -202,7 +211,7 @@ process_request(Data, IP) ->
                                              {condition, "improper-addressing"}]});
                        SID == "" ->
                             %% Initial request
-                            case start(Body, IP) of
+                            case start(Body, IP, make_sid()) of
                                 {ok, Pid} ->
                                     process_request(Pid, Body, IP);
                                 _Err ->
@@ -214,7 +223,7 @@ process_request(Data, IP) ->
                                                       "internal-server-error"}]})
                             end;
                        true ->
-                            case find_session(SID) of
+                            case mod_bosh:find_session(SID) of
                                 {ok, Pid} ->
                                     process_request(Pid, Body, IP);
                                 error ->
@@ -248,7 +257,7 @@ process_request(Pid, Req, _IP) ->
 %%%===================================================================
 %%% gen_fsm callbacks
 %%%===================================================================
-init([#body{attrs = Attrs}, IP]) ->
+init([#body{attrs = Attrs}, IP, SID]) ->
     %% Read c2s options from the first ejabberd_c2s configuration in
     %% the config file listen section
     %% TODO: We should have different access and shaper values for
@@ -259,7 +268,7 @@ init([#body{attrs = Attrs}, IP]) ->
     Opts2 = [{xml_socket, true} | Opts1],
     Shaper = none,
     ShaperState = shaper:new(Shaper),
-    Socket = {http_bind, self(), IP},
+    Socket = make_socket(self(), IP),
     XMPPVer = get_attr('xmpp:version', Attrs),
     XMPPDomain = get_attr('to', Attrs),
     {InBuf, Opts} = case gen_mod:get_module_opt(XMPPDomain, mod_bosh,
@@ -276,13 +285,28 @@ init([#body{attrs = Attrs}, IP]) ->
     Inactivity = gen_mod:get_module_opt(XMPPDomain, mod_bosh,
                                         max_inactivity, ?DEFAULT_INACTIVITY),
     State = #state{host = XMPPDomain,
+                   sid = SID,
+                   ip = IP,
                    xmpp_ver = XMPPVer,
                    el_ibuf = InBuf,
                    el_obuf = buf_new(),
                    inactivity_timeout = Inactivity,
                    shaper_state = ShaperState},
     NewState = restart_inactivity_timer(State),
-    {ok, wait_for_session, NewState}.
+    mod_bosh:open_session(SID, self()),
+    {ok, wait_for_session, NewState};
+init([StateName, State]) ->
+    mod_bosh:open_session(State#state.sid, self()),
+    case State#state.c2s_pid of
+        C2SPid when is_pid(C2SPid) ->
+            NewSocket = make_socket(self(), State#state.ip),
+            C2SPid ! {change_socket, NewSocket},
+            NewState = restart_inactivity_timer(State),
+            {ok, StateName, NewState};
+        _ ->
+            %% TODO: it seems like we're losing the connection :-/
+            {stop, normal}
+    end.
 
 wait_for_session(_Event, State) ->
     ?ERROR_MSG("unexpected event in 'wait_for_session': ~p", [_Event]),
@@ -308,7 +332,7 @@ wait_for_session(#body{attrs = Attrs} = Req, From, State) ->
                           end,
     MaxPause = gen_mod:get_module_opt(State#state.host, mod_bosh,
                                       max_pause, ?DEFAULT_MAXPAUSE),
-    Resp = #body{attrs = [{sid, make_sid(self())},
+    Resp = #body{attrs = [{sid, State#state.sid},
                           {wait, Wait},
                           {ver, ?BOSH_VERSION},
                           {polling, ?DEFAULT_POLLING},
@@ -534,6 +558,14 @@ handle_info({timeout, TRef, shaper_timeout}, StateName, State) ->
         _ ->
             {next_state, StateName, State}
     end;
+handle_info({migrate, Node}, StateName, State) ->
+    if Node /= node() ->
+            NewState = bounce_receivers(State, migrated),
+            {migrate, NewState,
+             {Node, ?MODULE, start, [StateName, NewState]}, 0};
+       true ->
+            {next_state, StateName, State}
+    end;
 handle_info(_Info, StateName, State) ->
     ?ERROR_MSG("unexpected info:~n"
                "** Msg: ~p~n"
@@ -541,14 +573,17 @@ handle_info(_Info, StateName, State) ->
                [_Info, StateName]),
     {next_state, StateName, State}.
 
+terminate({migrated, _ClonePid}, _StateName, State) ->
+    mod_bosh:close_session(State#state.sid);
 terminate(_Reason, _StateName, State) ->
+    mod_bosh:close_session(State#state.sid),
     case State#state.c2s_pid of
         C2SPid when is_pid(C2SPid) ->
             ?GEN_FSM:send_event(C2SPid, closed);
         _ ->
             ok
     end,
-    bounce_receivers(State),
+    bounce_receivers(State, closed),
     bounce_els_from_obuf(State).
 
 code_change(_OldVsn, StateName, State, _Extra) ->
@@ -635,21 +670,24 @@ do_reply(State, From, Body, RID) ->
     Responses2 = gb_trees:insert(RID, Body, Responses1),
     State#state{responses = Responses2}.
 
-bounce_receivers(State) ->
+bounce_receivers(State, Reason) ->
     Receivers = gb_trees:to_list(State#state.receivers),
     ShapedReceivers = lists:map(
                         fun({_, From, #body{attrs = Attrs} = Body}) ->
                                 RID = get_attr('rid', Attrs),
                                 {RID, {From, Body}}
                         end, queue:to_list(State#state.shaped_receivers)),
-    lists:foreach(
-      fun({RID, {From, _Body}}) ->
-              do_reply(State, From,
-                       #body{http_reason = "Session close",
-                             attrs = [{type, "terminate"},
-                                      {condition, "other-request"}]},
-                       RID)
-      end, Receivers ++ ShapedReceivers).
+    lists:foldl(
+      fun({RID, {From, Body}}, AccState) ->
+              NewBody = if Reason == closed ->
+                                #body{http_reason = "Session closed",
+                                      attrs = [{type, "terminate"},
+                                               {condition, "other-request"}]};
+                           Reason == migrated ->
+                                Body#body{http_reason = "Session migrated"}
+                        end,
+              do_reply(AccState, From, NewBody, RID)
+      end, State, Receivers ++ ShapedReceivers).
 
 bounce_els_from_obuf(State) ->
     lists:foreach(
@@ -843,20 +881,9 @@ bosh_response(Body) ->
 http_error(Status, Reason) ->
     {Status, Reason, ?HEADER, ""}.
 
-make_sid(Pid) ->
-    Key = ejabberd_config:get_local_option(shared_key),
-    base64:encode_to_string(crypto:rc4_encrypt(Key, term_to_binary(Pid))).
-
-find_session(SID) ->
-    Key = ejabberd_config:get_local_option(shared_key),
-    try binary_to_term(crypto:rc4_encrypt(Key, base64:decode(SID))) of
-        Pid when is_pid(Pid) ->
-            {ok, Pid};
-        _ ->
-            error
-    catch _:_ ->
-            error
-    end.
+make_sid() ->
+    %%sha:sha(randoms:get_string()).
+    "9f8c223b5663a4323f8f68e3e8ee1195fa68b2cb".
 
 -compile({no_auto_import,[min/2]}).
 min(A, undefined) -> A;
@@ -936,3 +963,6 @@ make_random_jid(Host) ->
     %% Copied from cyrsasl_anonymous.erl
     User = lists:concat([randoms:get_string() | tuple_to_list(now())]),
     jlib:make_jid(User, Host, randoms:get_string()).
+
+make_socket(Pid, IP) ->
+    {http_bind, Pid, IP}.
