@@ -111,9 +111,12 @@ migrate_mnesia1(HostB, Table, {OldTable, OldAttributes, MigrateFun}) ->
     end.
 
 
+migrate_odbc(HostStr, Tables, Migrations) when is_list(HostStr) ->
+    migrate_odbc(list_to_binary(HostStr), Tables, Migrations);
 migrate_odbc(Host, Tables, Migrations) ->
+    HostStr = binary_to_list(Host),
     try ejabberd_odbc:sql_transaction(
-	  Host,
+	  HostStr,
 	  fun() ->
 		  lists:foreach(
 		    fun(Migration) ->
@@ -146,10 +149,9 @@ migrate_odbc1(Host, Tables, {OldTablesColumns, MigrateFun}) ->
 	    ignored
     end.
 
-migrate_odbc2(Host, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun)
+migrate_odbc2(HostB, Tables, OldTable, OldTables, OldColumns, OldColumnsAll, OldTablesA, ColumnsT, MigrateFun)
   when ColumnsT == OldColumnsAll ->
     ?INFO_MSG("Migrating ODBC table ~p to gen_storage tables ~p", [OldTable, Tables]),
-    HostB = list_to_binary(Host),
 
     %% rename old tables to *_old
     lists:foreach(fun(OldTable1) ->

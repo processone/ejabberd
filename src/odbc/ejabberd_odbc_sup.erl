@@ -100,6 +100,7 @@ init([Host]) ->
 		     [?MODULE]}
 	    end, lists:seq(1, PoolSize))}}.
 
+%% @spec (Host::string()) -> [pid()]
 get_pids(Host) ->
     case ejabberd_config:get_local_option({odbc_server, Host}) of
 	{host, Host1} ->
@@ -109,10 +110,18 @@ get_pids(Host) ->
 	    [R#sql_pool.pid || R <- Rs]
     end.
 
+get_random_pid(HostB) when is_binary(HostB) ->
+    get_random_pid(binary_to_list(HostB));
+get_random_pid(global) ->
+    get_random_pid("localhost");
 get_random_pid(Host) ->
     Pids = get_pids(ejabberd:normalize_host(Host)),
     lists:nth(erlang:phash(now(), length(Pids)), Pids).
 
+get_dbtype(HostB) when is_binary(HostB) ->
+    get_dbtype(binary_to_list(HostB));
+get_dbtype(global) ->
+    get_dbtype("localhost");
 get_dbtype(Host) ->
     case ejabberd_config:get_local_option({odbc_server, Host}) of
        {host, Host1} ->

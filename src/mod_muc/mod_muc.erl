@@ -1083,4 +1083,7 @@ update_tables(HostB, mnesia) ->
 							  opt = Opt,
 							  val = Val})
 		  end, Options)
-	end}]).
+	end}]);
+
+update_tables(_HostB, odbc) ->
+    ok.
