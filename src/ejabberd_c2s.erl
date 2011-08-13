@@ -65,7 +65,8 @@
 	 handle_info/3,
 	 terminate/3,
 	 print_state/1,
-	 migrate/3
+	 migrate/3,
+         migrate_shutdown/3
 	]).
 
 -include("ejabberd.hrl").
@@ -195,6 +196,9 @@ stop(FsmRef) ->
 
 migrate(FsmRef, Node, After) ->
     erlang:send_after(After, FsmRef, {migrate, Node}).
+
+migrate_shutdown(FsmRef, Node, After) ->
+    FsmRef ! {migrate_shutdown, Node, After}.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -1685,6 +1689,14 @@ handle_info({migrate, Node}, StateName, StateData) ->
        true ->
 	    fsm_next_state(StateName, StateData)
     end;
+handle_info({migrate_shutdown, Node, After}, StateName, StateData) ->
+    if StateData#state.sockmod == ejabberd_frontend_socket orelse
+       StateData#state.xml_socket == true ->
+            migrate(self(), Node, After);
+       true ->
+            self() ! system_shutdown
+    end,
+    fsm_next_state(StateName, StateData);
 handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     Recipients = ejabberd_hooks:run_fold(
 		   c2s_broadcast_recipients, StateData#state.server,

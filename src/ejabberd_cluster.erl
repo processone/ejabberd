@@ -11,7 +11,8 @@
 
 %% API
 -export([start_link/0, get_node/1, get_node_new/1, announce/1, shutdown/0,
-	 node_id/0, get_node_by_id/1, get_nodes/0, rehash_timeout/0, start/0]).
+	 node_id/0, get_node_by_id/1, get_nodes/0, rehash_timeout/0, start/0,
+         shutdown_migrate/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -89,6 +90,17 @@ shutdown() ->
 	      ok
       end, get_nodes()).
 
+shutdown_migrate(WaitTime) ->
+    delete_node(?HASHTBL_NEW, node()),
+    ejabberd_hooks:run(node_down, [node()]),
+    shutdown(),
+    delete_node(?HASHTBL, node()),
+    ejabberd_hooks:run(node_hash_update, [node(), down, WaitTime]),
+    ?INFO_MSG("Waiting ~p seconds for the migration to be completed.",
+              [WaitTime div 1000]),
+    timer:sleep(WaitTime),
+    ok.
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -157,7 +169,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({node_ready, Node}, State) ->
     ?INFO_MSG("adding node ~p to hash and starting migration", [Node]),
     append_node(?HASHTBL, Node),
-    ejabberd_hooks:run(node_hash_update, [?MIGRATE_TIMEOUT]),
+    ejabberd_hooks:run(node_hash_update, [Node, up, ?MIGRATE_TIMEOUT]),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.

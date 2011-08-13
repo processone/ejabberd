@@ -30,6 +30,7 @@
 -export([start/0, stop/0,
 	 %% Server
 	 status/0, reopen_log/0,
+         stop_migrate/1,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 %% Erlang
 	 update_list/0, update/1,
@@ -87,6 +88,12 @@ commands() ->
 			desc = "Inform users and rooms, wait, and stop the server",
 			module = ?MODULE, function = stop_kindly,
 			args = [{delay, integer}, {announcement, string}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = stop_migrate, tags = [server],
+                        desc = "Try to migrate C2S/BOSH/MUC sessions to other"
+                        "nodes and then stop",
+                        module = ?MODULE, function = stop_migrate,
+			args = [{delay, integer}],
 			result = {res, rescode}},
      #ejabberd_commands{name = get_loglevel, tags = [logs, server],
 			desc = "Get the current loglevel",
@@ -288,6 +295,38 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
 	      mod_muc:broadcast_service_message(MUCHost, Message)
       end,
       ?MYHOSTS).
+
+%%%
+%%% Migrate and stop
+%%%
+stop_migrate(DelaySeconds) ->
+    WaitingDesc = io_lib:format("Starting migration, this will take ~p seconds",
+                                [DelaySeconds]),
+    Steps = [
+	     {"Stopping ejabberd port listeners",
+	      ejabberd_listener, stop_listeners, []},
+             {WaitingDesc, ejabberd_cluster, shutdown_migrate,
+              [DelaySeconds * 1000]},
+	     {"Stopping ejabberd", application, stop, [ejabberd]},
+	     {"Stopping Mnesia", mnesia, stop, []},
+	     {"Stopping Erlang node", init, stop, []}
+    ],
+    NumberLast = length(Steps),
+    TimestampStart = calendar:datetime_to_gregorian_seconds({date(), time()}),
+    lists:foldl(
+      fun({Desc, Mod, Func, Args}, NumberThis) ->
+	      SecondsDiff =
+		  calendar:datetime_to_gregorian_seconds({date(), time()})
+		  - TimestampStart,
+	      io:format("[~p/~p ~ps] ~s... ",
+			[NumberThis, NumberLast, SecondsDiff, Desc]),
+	      Result = apply(Mod, Func, Args),
+	      io:format("~p~n", [Result]),
+	      NumberThis+1
+      end,
+      1,
+      Steps),
+    ok.
 
 %%%
 %%% ejabberd_update

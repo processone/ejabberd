@@ -40,7 +40,8 @@
          close_session/1,
          find_session/1,
          node_up/1,
-         migrate/1
+         node_down/1,
+         migrate/3
 	]).
 
 -include("ejabberd.hrl").
@@ -108,7 +109,7 @@ find_session(SID) ->
             error
     end.
 
-migrate(After) ->
+migrate(_Node, _UpOrDown, After) ->
     Rs = mnesia:dirty_select(
            bosh,
            [{#bosh{sid = '$1', pid = '$2', _ = '_'},
@@ -118,7 +119,7 @@ migrate(After) ->
       fun([SID, Pid]) ->
               case ejabberd_cluster:get_node(SID) of
                   Node when Node /= node() ->
-                      ejabberd_bosh:migrate(Pid, Node, 1000);%%random:uniform(After));
+                      ejabberd_bosh:migrate(Pid, Node, random:uniform(After));
                   _ ->
                       ok
               end
@@ -126,6 +127,11 @@ migrate(After) ->
 
 node_up(_Node) ->
     copy_entries(mnesia:dirty_first(bosh)).
+
+node_down(Node) when Node == node() ->
+    copy_entries(mnesia:dirty_first(bosh));
+node_down(_) ->
+    ok.
 
 copy_entries('$end_of_table') ->
     ok;
@@ -183,6 +189,7 @@ hook_handler() ->
     case catch register(ejabberd_bosh_hook_handler, self()) of
         true ->
             ejabberd_hooks:add(node_up, ?MODULE, node_up, 100),
+            ejabberd_hooks:add(node_down, ?MODULE, node_down, 100),
             ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
             %% Stop if ejabberd_sup goes down
             %% (i.e. the whole ejabberd goes down)
@@ -197,6 +204,7 @@ hook_handler_loop(MRef) ->
         {'DOWN', MRef, _Type, _Object, _Info} ->
             %% Unregister the hooks. I think this is useless, thus 'catch'
             catch ejabberd_hooks:delete(node_up, ?MODULE, node_up, 100),
+            catch ejabberd_hooks:delete(node_down, ?MODULE, node_down, 100),
             catch ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
             ok;
         _ ->

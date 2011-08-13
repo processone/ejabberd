@@ -62,7 +62,8 @@
 	 get_user_info/3,
 	 get_user_ip/3,
 	 node_up/1,
-	 migrate/1
+         node_down/1,
+	 migrate/3
 	]).
 
 %% gen_server callbacks
@@ -316,7 +317,7 @@ register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
 unregister_iq_handler(Host, XMLNS) ->
     ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
 
-migrate(After) ->
+migrate(InitiatorNode, UpOrDown, After) ->
     Ss = mnesia:dirty_select(
 	   session,
 	   [{#session{us = '$1', sid = {'_', '$2'}, _ = '_'},
@@ -326,7 +327,13 @@ migrate(After) ->
       fun([US, Pid]) ->
 	      case ejabberd_cluster:get_node(US) of
 		  Node when Node /= node() ->
-		      ejabberd_c2s:migrate(Pid, Node, random:uniform(After));
+                      if InitiatorNode == node() andalso UpOrDown == down ->
+                              ejabberd_c2s:migrate_shutdown(
+                                Pid, Node, random:uniform(After));
+                         true ->
+                              ejabberd_c2s:migrate(
+                                Pid, Node, random:uniform(After))
+                      end;
 		  _ ->
 		      ok
 	      end
@@ -334,6 +341,11 @@ migrate(After) ->
 
 node_up(_Node) ->
     copy_sessions(mnesia:dirty_first(session)).
+
+node_down(Node) when Node == node() ->
+    copy_sessions(mnesia:dirty_first(session));
+node_down(_) ->
+    ok.
 
 copy_sessions('$end_of_table') ->
     ok;
@@ -373,6 +385,7 @@ init([]) ->
     mnesia:add_table_copy(session, node(), ram_copies),
     ets:new(sm_iqtable, [named_table]),
     ejabberd_hooks:add(node_up, ?MODULE, node_up, 100),
+    ejabberd_hooks:add(node_down, ?MODULE, node_down, 100),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     lists:foreach(
       fun(Host) ->
@@ -457,6 +470,7 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
     ejabberd_hooks:delete(node_up, ?MODULE, node_up, 100),
+    ejabberd_hooks:delete(node_down, ?MODULE, node_down, 100),
     ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_commands:unregister_commands(commands()),
     stop_dispatchers(),

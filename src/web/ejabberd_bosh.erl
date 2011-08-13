@@ -573,7 +573,10 @@ handle_info(_Info, StateName, State) ->
                [_Info, StateName]),
     {next_state, StateName, State}.
 
-terminate({migrated, _ClonePid}, _StateName, State) ->
+terminate({migrated, ClonePid}, _StateName, State) ->
+    ?INFO_MSG("Migrating session \"~s\" (c2s_pid = ~p) to ~p on node ~p",
+              [State#state.sid, State#state.c2s_pid,
+               ClonePid, node(ClonePid)]),
     mod_bosh:close_session(State#state.sid);
 terminate(_Reason, _StateName, State) ->
     mod_bosh:close_session(State#state.sid),
@@ -882,8 +885,7 @@ http_error(Status, Reason) ->
     {Status, Reason, ?HEADER, ""}.
 
 make_sid() ->
-    %%sha:sha(randoms:get_string()).
-    "9f8c223b5663a4323f8f68e3e8ee1195fa68b2cb".
+    sha:sha(randoms:get_string()).
 
 -compile({no_auto_import,[min/2]}).
 min(A, undefined) -> A;

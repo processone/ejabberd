@@ -43,7 +43,8 @@
 	 broadcast_service_message/2,
 	 register_room/3,
 	 node_up/1,
-	 migrate/1,
+         node_down/1,
+	 migrate/3,
 	 get_vh_rooms/1,
 	 can_use_nick/3]).
 
@@ -168,7 +169,7 @@ can_use_nick(Host, JID, Nick) ->
 	    U == LUS
     end.
 
-migrate(After) ->
+migrate(_Node, _UpOrDown, After) ->
     Rs = mnesia:dirty_select(
 	   muc_online_room,
 	   [{#muc_online_room{name_host = '$1', pid = '$2', _ = '_'},
@@ -186,6 +187,11 @@ migrate(After) ->
 
 node_up(_Node) ->
     copy_rooms(mnesia:dirty_first(muc_online_room)).
+
+node_down(Node) when Node == node() ->
+    copy_rooms(mnesia:dirty_first(muc_online_room));
+node_down(_) ->
+    ok.
 
 copy_rooms('$end_of_table') ->
     ok;
@@ -240,6 +246,7 @@ init([Host, Opts]) ->
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     ejabberd_router:register_route(MyHost),
     ejabberd_hooks:add(node_up, ?MODULE, node_up, 100),
+    ejabberd_hooks:add(node_down, ?MODULE, node_down, 100),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
@@ -349,6 +356,7 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
     ejabberd_hooks:delete(node_up, ?MODULE, node_up, 100),
+    ejabberd_hooks:delete(node_down, ?MODULE, node_down, 100),
     ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
     ejabberd_router:unregister_route(State#state.host),
     ok.
