@@ -1,31 +1,5 @@
-%%%----------------------------------------------------------------------
-%%% File    : ejabberd_auth_internal.erl
-%%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Authentification via mnesia
-%%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
-%%%
-%%%
-%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
-%%%
-%%% This program is free software; you can redistribute it and/or
-%%% modify it under the terms of the GNU General Public License as
-%%% published by the Free Software Foundation; either version 2 of the
-%%% License, or (at your option) any later version.
-%%%
-%%% This program is distributed in the hope that it will be useful,
-%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
-%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-%%% General Public License for more details.
-%%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
-%%%
-%%%----------------------------------------------------------------------
-
--module(ejabberd_auth_internal).
--author('alexey@process-one.net').
+-module(ejabberd_auth_internal_scram).
+-author('stephen.roettger@googlemail.com').
 
 %% External exports
 -export([start/1,
@@ -49,8 +23,11 @@
 
 -include("ejabberd.hrl").
 
--record(passwd, {us, password}).
+-record(passwd, {us, stored_key, salt, iteration_count, server_key}).
 -record(reg_users_counter, {vhost, count}).
+
+-define(DEFAULT_ITERATION_COUNT, 4096).
+-define(SALT_LENGTH, 16).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -76,28 +53,33 @@ update_reg_users_counter_table(Server) ->
     mnesia:sync_dirty(F).
 
 plain_password_required() ->
-    false.
+    true.
 
 storage_type() ->
-	plain.
+	scram.
 
 check_password(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-	[#passwd{password = Password}] ->
-	    Password /= "";
-	_ ->
-	    false
-    end.
+    [UserEntry] = (catch mnesia:dirty_read({passwd, US})),
+	IterationCount = UserEntry#passwd.iteration_count,
+	Salt = UserEntry#passwd.salt,
+	SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+	StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+	if
+	(UserEntry#passwd.stored_key == StoredKey) ->
+		true;
+	true ->
+		false
+	end.
 
 check_password(User, Server, Password, Digest, DigestGen) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
-	[#passwd{password = Passwd}] ->
+	[#passwd{stored_key = Passwd}] ->
 	    DigRes = if
 			 Digest /= "" ->
 			     Digest == DigestGen(Passwd);
@@ -119,13 +101,21 @@ set_password(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
+	Salt = crypto:rand_bytes(?SALT_LENGTH),
+	IterationCount = ?DEFAULT_ITERATION_COUNT,
+	SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+	StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+	ServerKey = scram:server_key(SaltedPassword),
     if
 	(LUser == error) or (LServer == error) ->
 	    {error, invalid_jid};
 	true ->
 	    F = fun() ->
 			mnesia:write(#passwd{us = US,
-					     password = Password})
+						     stored_key = StoredKey,
+							 salt = Salt,
+							 iteration_count = IterationCount,
+							 server_key = ServerKey})
 		end,
 	    {atomic, ok} = mnesia:transaction(F),
 	    ok
@@ -133,9 +123,16 @@ set_password(User, Server, Password) ->
 
 %% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid} | {aborted, Reason}
 try_register(User, Server, Password) ->
+	try_register(User, Server, Password, ?DEFAULT_ITERATION_COUNT).
+
+try_register(User, Server, Password, IterationCount) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
+	Salt = crypto:rand_bytes(?SALT_LENGTH),
+	SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+	StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+	ServerKey = scram:server_key(SaltedPassword),
     if
 	(LUser == error) or (LServer == error) ->
 	    {error, invalid_jid};
@@ -144,7 +141,10 @@ try_register(User, Server, Password) ->
 			case mnesia:read({passwd, US}) of
 			    [] ->
 				mnesia:write(#passwd{us = US,
-						     password = Password}),
+						     stored_key = StoredKey,
+							 salt = Salt,
+							 iteration_count = IterationCount,
+							 server_key = ServerKey}),
 				mnesia:dirty_update_counter(
 						    reg_users_counter,
 						    LServer, 1),
@@ -235,23 +235,25 @@ get_vh_registered_users_number(Server, _) ->
     get_vh_registered_users_number(Server).
 
 get_password(User, Server) ->
+	%false.
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
-	    Password;
+	[#passwd{stored_key = Password, server_key = ServerKey, salt = Salt, iteration_count = IterationCount}] ->
+		{Password, ServerKey, Salt, IterationCount};
 	_ ->
 	    false
     end.
 
 get_password_s(User, Server) ->
+	%"".
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
-	    Password;
+	[#passwd{stored_key = Password, server_key = ServerKey, salt = Salt, iteration_count = IterationCount}] ->
+		{Password, ServerKey, Salt, IterationCount};
 	_ ->
 	    []
     end.
@@ -293,17 +295,24 @@ remove_user(User, Server, Password) ->
     US = {LUser, LServer},
     F = fun() ->
 		case mnesia:read({passwd, US}) of
-		    [#passwd{password = Password}] ->
-			mnesia:delete({passwd, US}),
-			mnesia:dirty_update_counter(reg_users_counter,
-						    LServer, -1),
-			ok;
-		    [_] ->
-			not_allowed;
-		    _ ->
+		[UserEntry] ->
+			IterationCount = UserEntry#passwd.iteration_count,
+			Salt = UserEntry#passwd.salt,
+			SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+			StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+			if
+			(UserEntry#passwd.stored_key == StoredKey) ->
+				mnesia:delete({passwd, US}),
+				mnesia:dirty_update_counter(reg_users_counter,
+								LServer, -1),
+				ok;
+			true ->
+				not_allowed
+			end;
+		_Else ->
 			not_exists
-		end
-        end,
+        end
+	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
 	    ok;
@@ -319,9 +328,9 @@ update_table() ->
     case mnesia:table_info(passwd, attributes) of
 	Fields ->
 	    ok;
-	[user, password] ->
+	[user, stored_key] ->
 	    ?INFO_MSG("Converting passwd table from "
-		      "{user, password} format", []),
+		      "{user, stored_key} format", []),
 	    Host = ?MYNAME,
 	    {atomic, ok} = mnesia:create_table(
 			     ejabberd_auth_internal_tmp_table,

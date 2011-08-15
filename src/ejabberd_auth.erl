@@ -50,6 +50,7 @@
 	 remove_user/2,
 	 remove_user/3,
 	 plain_password_required/1,
+	 storage_type/1,
 	 entropy/1
 	]).
 
@@ -74,6 +75,21 @@ plain_password_required(Server) ->
       fun(M) ->
 	      M:plain_password_required()
       end, auth_modules(Server)).
+
+storage_type(Server) ->
+    lists:foldl(
+      fun(_, external) ->
+	      external;
+	  (M, scram) ->
+	      case M:storage_type() of
+		  external ->
+		      external;
+		  _Else ->
+		      scram
+		  end;
+	  (M, plain) ->
+	      M:storage_type()
+      end, plain, auth_modules(Server)).
 
 %% @doc Check if the user and password can login in server.
 %% @spec (User::string(), Server::string(), Password::string()) ->
