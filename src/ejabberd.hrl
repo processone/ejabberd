@@ -37,6 +37,9 @@
 
 %%-define(DBGFSM, true).
 
+-record(scram, {storedkey, serverkey, salt, iterationcount}).
+-define(SCRAM_DEFAULT_ITERATION_COUNT, 4096).
+
 %% ---------------------------------
 %% Logging mechanism
 

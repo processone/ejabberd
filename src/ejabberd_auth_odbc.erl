@@ -43,7 +43,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
-	 storage_type/0,
+	 store_type/0,
 	 plain_password_required/0
 	]).
 
@@ -58,7 +58,7 @@ start(_Host) ->
 plain_password_required() ->
     false.
 
-storage_type() ->
+store_type() ->
 	plain.
 
 %% @spec (User, Server, Password) -> true | false | {error, Error}

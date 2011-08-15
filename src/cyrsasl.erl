@@ -34,6 +34,8 @@
 	 server_start/3,
 	 server_step/2]).
 
+-include("ejabberd.hrl").
+
 -record(sasl_mechanism, {mechanism, module, password_type}).
 -record(sasl_state, {service, myname, realm,
 		     get_password, check_password, check_password_digest,
@@ -102,11 +104,14 @@ listmech(Host) ->
 		       [{#sasl_mechanism{mechanism = '$1',
 					 password_type = '$2',
 					 _ = '_'},
-			 case ejabberd_auth:storage_type(Host) of
+			 case catch ejabberd_auth:store_type(Host) of
 			 external ->
 			      [{'==', '$2', plain}];
 			 scram ->
 			      [{'/=', '$2', digest}];
+			 {'EXIT',{undef,[{Module,store_type,[]} | _]}} ->
+			      ?WARNING_MSG("~p doesn't implement the function store_type/0", [Module]),
+			      [];
 			 _Else ->
 			      []
 			 end,

@@ -54,7 +54,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
-	 storage_type/0,
+	 store_type/0,
 	 plain_password_required/0
 	]).
 
@@ -138,7 +138,7 @@ init(Host) ->
 plain_password_required() ->
     true.
 
-storage_type() ->
+store_type() ->
 	external.
 
 check_password(User, Server, Password) ->

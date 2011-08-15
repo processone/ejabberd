@@ -1221,6 +1221,24 @@ Account creation is only supported by internal, external and odbc methods.
 \ejabberd{} uses its internal Mnesia database as the default authentication method.
 The value \term{internal} will enable the internal authentication method.
 
+The option \term{\{auth\_password\_format, plain|scram\}}
+defines in what format the users passwords are stored:
+\begin{description}
+    \titem{plain}
+    The password is stored as plain text in the database.
+    This is risky because the passwords can be read if your database gets compromised.
+    This is the default value.
+    This format allows clients to authenticate using:
+    the old Jabber Non-SASL (\xepref{0078}), \term{SASL PLAIN},
+    \term{SASL DIGEST-MD5}, and \term{SASL SCRAM-SHA-1}.
+
+    \titem{scram}
+    The password is not stored, only some information that allows to verify the hash provided by the client.
+    It is impossible to obtain the original plain password from the stored information;
+    for this reason, when this value is configured it cannot be changed to \term{plain} anymore.
+    This format allows clients to authenticate using: \term{SASL PLAIN} and \term{SASL SCRAM-SHA-1}.
+\end{description}
+
 Examples:
 \begin{itemize}
 \item To use internal authentication on \jid{example.org} and LDAP
@@ -1229,9 +1247,10 @@ Examples:
 {host_config, "example.org", [{auth_method, [internal]}]}.
 {host_config, "example.net", [{auth_method, [ldap]}]}.
 \end{verbatim}
-\item To use internal authentication on all virtual hosts:
+\item To use internal authentication with hashed passwords on all virtual hosts:
 \begin{verbatim}
 {auth_method, internal}.
+{auth_password_format, scram}.
 \end{verbatim}
 \end{itemize}
 

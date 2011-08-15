@@ -39,7 +39,6 @@
 -record(state, {step, stored_key, server_key, username, get_password, check_password,
 		auth_message, client_nonce, server_nonce}).
 
--define(DEFAULT_ITERATION_COUNT, 4096).
 -define(SALT_LENGTH, 16).
 -define(NONCE_LENGTH, 16).
 
@@ -54,9 +53,9 @@ mech_new(_Host, GetPassword, _CheckPassword, _CheckPasswordDigest) ->
 
 mech_step(#state{step = 2} = State, ClientIn) ->
 	case string:tokens(ClientIn, ",") of
-	["n", UserNameAttribute, ClientNonceAttribute] ->
+	[CBind, UserNameAttribute, ClientNonceAttribute] when (CBind == "y") or (CBind == "n") ->
 		case parse_attribute(UserNameAttribute) of
-		{$n, EscapedUserName} ->
+		{_, EscapedUserName} ->
 			case unescape_username(EscapedUserName) of
 			error ->
 				{error, "protocol-error-bad-username"};
@@ -72,8 +71,9 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 							Ret;
 						true ->
 							TempSalt = crypto:rand_bytes(?SALT_LENGTH),
-							SaltedPassword = scram:salted_password(Ret, TempSalt, ?DEFAULT_ITERATION_COUNT),
-							{scram:stored_key(scram:client_key(SaltedPassword)), TempSalt, ?DEFAULT_ITERATION_COUNT}
+							SaltedPassword = scram:salted_password(Ret, TempSalt, ?SCRAM_DEFAULT_ITERATION_COUNT),
+							{scram:stored_key(scram:client_key(SaltedPassword)),
+							 scram:server_key(SaltedPassword), TempSalt, ?SCRAM_DEFAULT_ITERATION_COUNT}
 						end,
 						ClientFirstMessageBare = string:substr(ClientIn, string:str(ClientIn, "n=")),
 						ServerNonce = base64:encode_to_string(crypto:rand_bytes(?NONCE_LENGTH)),
@@ -102,7 +102,9 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 	case string:tokens(ClientIn, ",") of
 	[GS2ChannelBindingAttribute, NonceAttribute, ClientProofAttribute] ->
 		case parse_attribute(GS2ChannelBindingAttribute) of
-		{$c, "biws"} ->  %biws is base64 for n,, => channelbinding not supported
+		{$c, CVal} when (CVal == "biws") or (CVal == "eSws") ->
+		    %% biws is base64 for n,, => channelbinding not supported
+		    %% eSws is base64 for y,, => channelbinding supported by client only
  			Nonce = State#state.client_nonce ++ State#state.server_nonce,
 			case parse_attribute(NonceAttribute) of
 			{$r, CompareNonce} when CompareNonce == Nonce ->

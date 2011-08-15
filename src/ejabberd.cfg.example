@@ -218,6 +218,10 @@
 %% comment this line and enable the correct ones.
 %%
 {auth_method, internal}.
+%%
+%% Store the plain passwords or hashed for SCRAM:
+%%{auth_password_format, plain}.
+%%{auth_password_format, scram}.
 
 %%
 %% Authentication using external script
