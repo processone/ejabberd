@@ -44,10 +44,27 @@
 %%%  user_host = {Username::string(), Host::string()}
 %%%  password = string()
 %%%
+%%% 3.0.0-beta / mnesia / passwd
+%%%  user_host = {Username::string(), Host::string()}
+%%%  password = string()
+%%%  storedkey = base64 binary()
+%%%  serverkey = base64 binary()
+%%%  iterationcount = integer()
+%%%  salt = base64 binary()
+%%%
 %%% 3.0.0-alpha / odbc / passwd
 %%%  user = varchar150
 %%%  host = varchar150
 %%%  password = text
+%%%
+%%% 3.0.0-beta / odbc / passwd
+%%%  user = varchar150
+%%%  host = varchar150
+%%%  password = base64 text
+%%%  storedkey = base64 text
+%%%  serverkey = base64 text
+%%%  iterationcount = integer
+%%%  salt = base64 text
 
 -module(ejabberd_auth_storage).
 -author('alexey@process-one.net').
@@ -69,13 +86,16 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
+	 store_type/0,
 	 plain_password_required/0
 	]).
 
 -include("ejabberd.hrl").
 
--record(passwd, {user_host, password}).
+-record(passwd, {user_host, password, storedkey, serverkey, salt, iterationcount}).
 -record(reg_users_counter, {vhost, count}).
+
+-define(SALT_LENGTH, 16).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -95,13 +115,19 @@ start(Host) ->
 			     [{odbc_host, Host},
 			      {disc_copies, [node()]},
 			      {attributes, record_info(fields, passwd)},
-			      {types, [{user_host, {text, text}}]}
+			      {types, [{user_host, {text, text}},
+			               {storedkey, binary},
+			               {serverkey, binary},
+			               {salt, binary},
+			               {iterationcount, int}]}
 			     ]),
     update_table(Host, Backend),
+    maybe_scram_passwords(Host),
     mnesia:create_table(reg_users_counter,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, reg_users_counter)}]),
     update_reg_users_counter_table(Host),
+    maybe_alert_password_scrammed_without_option(Host),
     ok.
 
 stop(_Host) ->
@@ -120,7 +146,16 @@ update_reg_users_counter_table(Server) ->
 %% @spec () -> bool()
 
 plain_password_required() ->
-    false.
+    case is_scrammed(?MYNAME) of
+	false -> false;
+	true -> true
+    end.
+
+store_type() ->
+    case is_scrammed(?MYNAME) of
+	false -> plain; %% allows: PLAIN DIGEST-MD5 SCRAM
+	true -> scram %% allows: PLAIN SCRAM
+    end.
 
 %% @spec (User, Server, Password) -> bool()
 %%     User = string()
@@ -132,6 +167,8 @@ check_password(User, Server, Password) ->
     LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case catch gen_storage:dirty_read(LServer, {passwd, US}) of
+	[#passwd{password = ""} = Passwd] ->
+	    is_password_scram_valid(Password, Passwd);
 	[#passwd{password = Password}] ->
 	    Password /= "";
 	_ ->
@@ -150,6 +187,19 @@ check_password(User, Server, Password, Digest, DigestGen) ->
     LServer = exmpp_stringprep:nameprep(Server),
     US = {LUser, LServer},
     case catch gen_storage:dirty_read(LServer, {passwd, US}) of
+	[#passwd{password = ""} = Passwd] ->
+	    Passwd = base64:decode(Passwd#passwd.storedkey),
+	    DigRes = if
+			 Digest /= "" ->
+			     Digest == DigestGen(Passwd);
+			 true ->
+			     false
+		     end,
+	    if DigRes ->
+		    true;
+	       true ->
+		    (Passwd == Password) and (Password /= "")
+	    end;
 	[#passwd{password = Passwd}] ->
 	    DigRes = if
 			 Digest /= "" ->
@@ -182,9 +232,11 @@ set_password(User, Server, Password) ->
 	US ->
 	    %% TODO: why is this a transaction?
 	    F = fun() ->
-			gen_storage:write(LServer,
-					  #passwd{user_host = US,
-						  password = Password})
+			Passwd = case is_scrammed(LServer) and (Password /= "") of
+					true -> password_to_scram(Password, #passwd{user_host=US});
+					false -> #passwd{user_host = US, password = Password}
+				    end,
+			gen_storage:write(LServer, Passwd)
 		end,
 	    {atomic, ok} = gen_storage:transaction(LServer, passwd, F),
 	    ok
@@ -207,9 +259,11 @@ try_register(User, Server, Password) ->
 	    F = fun() ->
 			case gen_storage:read(LServer, {passwd, US}) of
 			    [] ->
-				gen_storage:write(LServer,
-						  #passwd{user_host = US,
-							  password = Password}),
+				Passwd = case is_scrammed(LServer) and (Password /= "") of
+						true -> password_to_scram(Password, #passwd{user_host=US});
+						false -> #passwd{user_host = US, password = Password}
+					    end,
+				gen_storage:write(LServer, Passwd),
 				mnesia:dirty_update_counter(
 						    reg_users_counter,
 						    exmpp_jid:prep_domain(exmpp_jid:parse(Server)), 1),
@@ -352,9 +406,14 @@ get_password(User, Server) ->
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
         case catch gen_storage:dirty_read(LServer, passwd, US) of
-	    [#passwd{password = Password}] ->
+	[#passwd{password = ""} = Passwd] ->
+	    {base64:decode(Passwd#passwd.storedkey),
+	     base64:decode(Passwd#passwd.serverkey),
+	     base64:decode(Passwd#passwd.salt),
+	     Passwd#passwd.iterationcount};
+	[#passwd{password = Password}] ->
 		Password;
-	    _ ->
+	_ ->
 		false
 	end
     catch
@@ -373,8 +432,8 @@ get_password_s(User, Server) ->
 	LServer = exmpp_stringprep:nameprep(Server),
 	US = {LUser, LServer},
         case catch gen_storage:dirty_read(LServer, passwd, US) of
-	    [#passwd{password = Password}] ->
-		Password;
+	[#passwd{password = Password}] ->
+	    Password;
 	    _ ->
 		[]
 	end
@@ -441,13 +500,21 @@ remove_user(User, Server, Password) ->
 	US = {LUser, LServer},
 	F = fun() ->
 		    case gen_storage:read(LServer, {passwd, US}) of
+		    [#passwd{password = ""} = Passwd] ->
+			case is_password_scram_valid(Password, Passwd) of
+			    true ->
+				gen_storage:delete(LServer, {passwd, US}),
+				mnesia:dirty_update_counter(reg_users_counter,
+							    LServer, -1),
+				ok;
+			    false ->
+				not_allowed
+			end;
 			[#passwd{password = Password}] ->
 			    gen_storage:delete(LServer, {passwd, US}),
 			    mnesia:dirty_update_counter(reg_users_counter,
 							exmpp_jid:prep_domain(exmpp_jid:parse(Server)), -1),
 			    ok;
-			[_] ->
-			    not_allowed;
 			_ ->
 			    not_exists
 		    end
@@ -463,13 +530,120 @@ remove_user(User, Server, Password) ->
 	    bad_request
     end.
 
+%%%
+%%% SCRAM
+%%%
+
+%% The passwords are stored scrammed in the table either if the option says so,
+%% or if at least the first password is empty.
+is_scrammed(Host) ->
+    case action_password_format(Host) of
+	scram -> true;
+	must_scram -> true;
+	plain -> false;
+	forced_scram -> true
+    end.
+
+action_password_format(Host) ->
+    OptionScram = is_option_scram(),
+    case {OptionScram, get_format_first_element(Host)} of
+	{true, scram} -> scram;
+	{true, any} -> scram;
+	{true, plain} -> must_scram;
+	{false, plain} -> plain;
+	{false, any} -> plain;
+	{false, scram} -> forced_scram
+    end.
+
+get_format_first_element(Host) ->
+    case gen_storage:dirty_select(Host, passwd, []) of
+	[] -> any;
+	[#passwd{password = ""} | _] -> scram;
+	[#passwd{} | _] -> plain
+    end.
+
+is_option_scram() ->
+    scram == ejabberd_config:get_local_option({auth_password_format, ?MYNAME}).
+
+maybe_alert_password_scrammed_without_option(Host) ->
+    case is_scrammed(Host) andalso not is_option_scram() of
+	true ->
+	    ?ERROR_MSG("Some passwords were stored in the database as SCRAM, "
+		       "but 'auth_password_format' is not configured 'scram'. "
+		       "The option will now be considered to be 'scram'.", []);
+	false ->
+	    ok
+    end.
+
+maybe_scram_passwords(Host) ->
+    case action_password_format(Host) of
+	must_scram -> scram_passwords(Host);
+	_ -> ok
+    end.
+
+scram_passwords(Host) ->
+    Backend =
+        case ejabberd_config:get_local_option({auth_storage, Host}) of
+            undefined -> mnesia;
+            B -> B
+        end,
+    scram_passwords(Host, Backend).
+scram_passwords(Host, mnesia) ->
+    ?INFO_MSG("Converting the passwords stored in odbc for host ~p into SCRAM bits", [Host]),
+    gen_storage_migration:migrate_mnesia(
+      Host, passwd,
+      [{passwd, [user_host, password, storedkey, serverkey, iterationcount, salt],
+	fun(#passwd{password = Password} = Passwd) ->
+		password_to_scram(Password, Passwd)
+	end}]);
+scram_passwords(Host, odbc) ->
+    ?INFO_MSG("Converting the passwords stored in odbc for host ~p into SCRAM bits", [Host]),
+    gen_storage_migration:migrate_odbc(
+      Host, [passwd],
+      [{"passwd", ["user", "host", "password", "storedkey", "serverkey", "iterationcount", "salt"],
+	fun(_, User, Host2, Password, _Storedkey, _Serverkey, _Iterationcount, _Salt) ->
+		password_to_scram(Password, #passwd{user_host = {User, Host2}})
+	end}]).
+
+password_to_scram(Password, Passwd) ->
+    password_to_scram(Password, Passwd, ?SCRAM_DEFAULT_ITERATION_COUNT).
+
+password_to_scram(Password, Passwd, IterationCount) ->
+    Salt = crypto:rand_bytes(?SALT_LENGTH),
+    SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+    StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+    ServerKey = scram:server_key(SaltedPassword),
+    Passwd#passwd{password = "",
+	   storedkey = base64:encode(StoredKey),
+	   salt = base64:encode(Salt),
+	   iterationcount = IterationCount,
+	   serverkey = base64:encode(ServerKey)}.
+
+is_password_scram_valid(Password, Passwd) ->
+    IterationCount = Passwd#passwd.iterationcount,
+    Salt = base64:decode(Passwd#passwd.salt),
+    SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+    StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+    (base64:decode(Passwd#passwd.storedkey) == StoredKey).
+
+
 update_table(Host, mnesia) ->
     gen_storage_migration:migrate_mnesia(
       Host, passwd,
       [{passwd, [us, password],
 	fun({passwd, {User, _Host}, Password}) ->
-		#passwd{user_host = {User, Host},
-			password = Password}
+		case is_list(Password) of
+		    true ->
+			#passwd{user_host = {User, Host},
+				password = Password};
+		    false ->
+			#passwd{user_host = {User, Host},
+				password = "",
+				storedkey = Password#scram.storedkey,
+				serverkey = Password#scram.serverkey,
+				salt = Password#scram.salt,
+				iterationcount = Password#scram.iterationcount}
+		end
 	end}]);
 update_table(Host, odbc) ->
     gen_storage_migration:migrate_odbc(

@@ -8,6 +8,7 @@
 	     cyrsasl,
 	     cyrsasl_digest,
 	     cyrsasl_plain,
+	     cyrsasl_scram,
 	     ejabberd_admin,
 	     ejabberd_app,
 	     ejabberd_auth_anonymous,

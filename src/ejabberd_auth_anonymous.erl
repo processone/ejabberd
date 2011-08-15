@@ -52,6 +52,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
+	 store_type/0,
 	 plain_password_required/0]).
 
 -include_lib("exmpp/include/exmpp.hrl").
@@ -359,6 +360,9 @@ remove_user(_User, _Server, _Password) ->
 
 plain_password_required() ->
     false.
+
+store_type() ->
+	plain.
 
 update_tables() ->
     case catch mnesia:table_info(anonymous, local_content) of

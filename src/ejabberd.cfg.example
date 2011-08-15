@@ -295,6 +295,15 @@
 %%
 %%{host_config, "public.example.org", [{auth_method, [internal, anonymous]}]}.
 
+%%
+%% auth_password_format: Format of storing users passwords
+%% The default format is plain text.
+%% If you change to hashed scram, you can never go back to plain.
+%% This option is only supported by the 'storage' auth_method.
+%% 
+{auth_password_format, plain}.
+%%{auth_password_format, scram}.
+
 
 %%%.   ==============
 %%%'   DATABASE SETUP

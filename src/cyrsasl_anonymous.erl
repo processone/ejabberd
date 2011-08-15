@@ -42,7 +42,7 @@
 %%     Opts = term()
 
 start(_Opts) ->
-    cyrsasl:register_mechanism("ANONYMOUS", ?MODULE, false),
+    cyrsasl:register_mechanism("ANONYMOUS", ?MODULE, plain),
     ok.
 
 %% @spec () -> ok

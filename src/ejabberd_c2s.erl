@@ -853,6 +853,21 @@ wait_for_sasl_response({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 				     authenticated = true,
 				     auth_module = AuthModule,
 				     user = list_to_binary(U)});
+		{ok, Props, ServerOut} ->
+		    catch (StateData#state.sockmod):reset_stream(
+		      StateData#state.socket),
+		    send_element(StateData, exmpp_server_sasl:success(ServerOut)),
+		    U = proplists:get_value(username, Props),
+
+		    AuthModule = proplists:get_value(auth_module, Props),
+		    ?INFO_MSG("(~w) Accepted authentication for ~s by ~s",
+			      [StateData#state.socket, U, AuthModule]),
+		    fsm_next_state(wait_for_stream,
+				   StateData#state{
+				     streamid = new_id(),
+				     authenticated = true,
+				     auth_module = AuthModule,
+				     user = list_to_binary(U)});
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
 		      exmpp_server_sasl:challenge(ServerOut)),

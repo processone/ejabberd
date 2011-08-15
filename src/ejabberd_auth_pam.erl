@@ -40,6 +40,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
+	 store_type/0,
 	 plain_password_required/0
 	]).
 
@@ -170,6 +171,9 @@ remove_user(_User, _Server, _Password) ->
 
 plain_password_required() ->
     true.
+
+store_type() ->
+	external.
 
 %%====================================================================
 %% Internal functions

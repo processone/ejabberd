@@ -44,6 +44,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
+	 store_type/0,
 	 plain_password_required/0
 	]).
 
@@ -98,6 +99,9 @@ plain_password_required() ->
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
+
+store_type() ->
+	external.
 
 check_password(User, Server, Password) ->
     case get_cache_option(Server) of

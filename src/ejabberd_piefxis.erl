@@ -159,21 +159,24 @@ process_element(El,State) ->
 
 add_user(El, Domain) ->
     User = exmpp_xml:get_attribute(El,<<"name">>,none),
+    PasswordFormat = exmpp_xml:get_attribute(El,<<"password-format">>,none),
     Password = exmpp_xml:get_attribute(El,<<"password">>,none),
-    add_user(El, Domain, User, Password).
+    add_user(El, Domain, User, PasswordFormat, Password).
 
-%% @spec (El::xmlel(), Domain::string(), User::binary(), Password::binary() | none)
+%% @spec (El::xmlel(), Domain::string(), User::binary(), PasswordFormat, Password::binary() | none)
 %%       -> ok | {error, ErrorText::string()}
+%% PasswordFormat = <<"plaintext">> | <<"scram">>
 %% @doc Add a new user to the database.
 %% If user already exists, it will be only updated.
-add_user(El, Domain, User, none) ->
+add_user(El, Domain, User, <<"plaintext">>, none) ->
     io:format("Account ~s@~s will not be created, updating it...~n",
 	      [User, Domain]),
     io:format(""),
     populate_user_with_elements(El, Domain, User),
     ok;
-add_user(El, Domain, User, Password) ->
-    case create_user(User,Password,Domain) of
+add_user(El, Domain, User, PasswordFormat, Password) ->
+    Password2 = prepare_password(PasswordFormat, Password, El),
+    case create_user(User,Password2,Domain) of
 	ok ->
 	    populate_user_with_elements(El, Domain, User),
 	    ok;
@@ -187,6 +190,21 @@ add_user(El, Domain, User, Password) ->
 	    ?ERROR_MSG("Error adding user ~s@~s: ~p~n", [User, Domain, Other]),
 	    {error, Other}
     end.
+
+prepare_password(<<"plaintext">>, PasswordBinary, _El) ->
+    ?BTL(PasswordBinary);
+prepare_password(<<"scram">>, none, El) ->
+    ScramEl = exmpp_xml:get_element(El, 'scram-hash'),
+    #scram{storedkey = base64:decode(exmpp_xml:get_attribute(
+					ScramEl, <<"stored-key">>, none)),
+	   serverkey = base64:decode(exmpp_xml:get_attribute(
+					ScramEl, <<"server-key">>, none)),
+	   salt = base64:decode(exmpp_xml:get_attribute(
+				  ScramEl, <<"salt">>, none)),
+	   iterationcount = list_to_integer(exmpp_xml:get_attribute_as_list(
+					       ScramEl, <<"iteration-count">>,
+					       ?SCRAM_DEFAULT_ITERATION_COUNT))
+	  }.
 
 populate_user_with_elements(El, Domain, User) ->
     exmpp_xml:foreach(
@@ -482,10 +500,23 @@ export_user(Fd, Username, Host) ->
 
 %% @spec (Username::string(), Host::string()) -> string()
 extract_user(Username, Host) ->
-    Password = ejabberd_auth:get_password_s(Username, Host),
+    Password = ejabberd_auth:get_password(Username, Host),
+    PasswordStr = build_password_string(Password),
     UserInfo = [extract_user_info(InfoName, Username, Host) || InfoName <- [roster, offline, private, vcard]],
     UserInfoString = lists:flatten(UserInfo),
-    io_lib:format("<user name='~s' password='~s'>~s</user>", [Username, Password, UserInfoString]).
+    io_lib:format("<user name='~s' ~s ~s</user>",
+		  [Username, PasswordStr, UserInfoString]).
+
+build_password_string({StoredKey, ServerKey, Salt, IterationCount}) ->
+    io_lib:format("password-format='scram'>"
+		  "<scram-hash stored-key='~s' server-key='~s' "
+		  "salt='~s' iteration-count='~w'/> ",
+		  [base64:encode_to_string(StoredKey),
+		   base64:encode_to_string(ServerKey),
+		   base64:encode_to_string(Salt),
+		   IterationCount]);
+build_password_string(Password) when is_list(Password) ->
+    io_lib:format("password-format='plaintext' password='~s'>", [Password]).
 
 %% @spec (InfoName::atom(), Username::string(), Host::string()) -> string()
 extract_user_info(roster, Username, Host) ->

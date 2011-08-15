@@ -50,6 +50,7 @@
 	 remove_user/2,
 	 remove_user/3,
 	 plain_password_required/1,
+	 store_type/1,
 	 entropy/1
 	]).
 
@@ -105,11 +106,30 @@ stop_methods(Host, Method) when is_atom(Method) ->
 %% @spec (Server) -> bool()
 %%     Server = string()
 
+%% This is only executed by ejabberd_c2s for non-SASL auth client
 plain_password_required(Server) when is_list(Server) ->
     lists:any(
       fun(M) ->
 	      M:plain_password_required()
       end, auth_modules(Server)).
+
+%% @spec (Server) -> bool()
+%%     Server = string()
+
+store_type(Server) ->
+    lists:foldl(
+      fun(_, external) ->
+	      external;
+	  (M, scram) ->
+	      case M:store_type() of
+		  external ->
+		      external;
+		  _Else ->
+		      scram
+		  end;
+	  (M, plain) ->
+	      M:store_type()
+      end, plain, auth_modules(Server)).
 
 %% @spec (User, Server, Password) -> bool()
 %%     User = string()
@@ -342,8 +362,10 @@ get_password_s(User, Server) when is_list(User), is_list(Server) ->
     case get_password(User, Server) of
 	false ->
 	    "";
-	Password ->
-	    Password
+	Password when is_list(Password) ->
+	    Password;
+	_ ->
+	    ""
     end.
 
 %% @spec (User, Server) -> {Password, AuthModule} | {false, none}

@@ -42,7 +42,7 @@
 %%     Opts = term()
 
 start(_Opts) ->
-    cyrsasl:register_mechanism("PLAIN", ?MODULE, false),
+    cyrsasl:register_mechanism("PLAIN", ?MODULE, plain),
     ok.
 
 %% @spec () -> ok
