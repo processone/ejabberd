@@ -188,17 +188,17 @@ check_password(User, Server, Password, Digest, DigestGen) ->
     US = {LUser, LServer},
     case catch gen_storage:dirty_read(LServer, {passwd, US}) of
 	[#passwd{password = ""} = Passwd] ->
-	    Passwd = base64:decode(Passwd#passwd.storedkey),
+	    Storedkey = base64:decode(Passwd#passwd.storedkey),
 	    DigRes = if
 			 Digest /= "" ->
-			     Digest == DigestGen(Passwd);
+			     Digest == DigestGen(Storedkey);
 			 true ->
 			     false
 		     end,
 	    if DigRes ->
 		    true;
 	       true ->
-		    (Passwd == Password) and (Password /= "")
+		    (Storedkey == Password) and (Password /= "")
 	    end;
 	[#passwd{password = Passwd}] ->
 	    DigRes = if
@@ -589,10 +589,10 @@ scram_passwords(Host) ->
         end,
     scram_passwords(Host, Backend).
 scram_passwords(Host, mnesia) ->
-    ?INFO_MSG("Converting the passwords stored in odbc for host ~p into SCRAM bits", [Host]),
+    ?INFO_MSG("Converting the passwords stored in mnesia for host ~p into SCRAM bits", [Host]),
     gen_storage_migration:migrate_mnesia(
       Host, passwd,
-      [{passwd, [user_host, password, storedkey, serverkey, iterationcount, salt],
+      [{passwd, [user_host, password, storedkey, serverkey, salt, iterationcount],
 	fun(#passwd{password = Password} = Passwd) ->
 		password_to_scram(Password, Passwd)
 	end}]);
@@ -600,7 +600,7 @@ scram_passwords(Host, odbc) ->
     ?INFO_MSG("Converting the passwords stored in odbc for host ~p into SCRAM bits", [Host]),
     gen_storage_migration:migrate_odbc(
       Host, [passwd],
-      [{"passwd", ["user", "host", "password", "storedkey", "serverkey", "iterationcount", "salt"],
+      [{"passwd", ["user", "host", "password", "storedkey", "serverkey", "salt", "iterationcount"],
 	fun(_, User, Host2, Password, _Storedkey, _Serverkey, _Iterationcount, _Salt) ->
 		password_to_scram(Password, #passwd{user_host = {User, Host2}})
 	end}]).
