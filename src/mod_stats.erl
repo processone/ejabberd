@@ -162,7 +162,12 @@ get_local_stat(_Server, [], Name) when Name == "users/all-hosts/online" ->
     end;
 
 get_local_stat(_Server, [], Name) when Name == "users/all-hosts/total" ->
-    case catch mnesia:table_info(passwd, size) of
+    NumUsers = lists:foldl(
+		 fun(Host, Total) ->
+			 ejabberd_auth:get_vh_registered_users_number(Host)
+			     + Total
+		 end, 0, ejabberd_config:get_global_option(hosts)),
+    case NumUsers of
 	{'EXIT', _Reason} ->
 	    ?STATERR("500", "Internal Server Error");
 	Users ->

@@ -1648,7 +1648,10 @@ su_to_list({Server, User}) ->
 
 get_stats(global, Lang) ->
     OnlineUsers = mnesia:table_info(session, size),
-    RegisteredUsers = mnesia:table_info(passwd, size),
+    RegisteredUsers = lists:foldl(
+	fun(Host, Total) ->
+	    ejabberd_auth:get_vh_registered_users_number(Host) + Total
+	end, 0, ejabberd_config:get_global_option(hosts)),
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     S2SConnections = length(S2SConns),
     S2SServers = length(lists:usort([element(2, C) || C <- S2SConns])),
