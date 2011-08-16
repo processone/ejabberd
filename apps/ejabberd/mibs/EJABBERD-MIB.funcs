@@ -23,6 +23,7 @@
 {xmppStanzaSent,		     {mod_snmp, handle_entry, [xmppStanzaSent]}}.
 {xmppStanzaReceived,	     {mod_snmp, handle_entry, [xmppStanzaReceived]}}.
 {xmppStanzaDropped,		     {mod_snmp, handle_entry, [xmppStanzaDropped]}}.
+{xmppStanzaCount,			 {mod_snmp, handle_entry, [xmppStanzaCount]}}.
 {xmppErrorTotal,		     {mod_snmp, handle_entry, [xmppErrorTotal]}}.
 {xmppErrorBadRequest,	     {mod_snmp, handle_entry, [xmppErrorBadRequest]}}.
 {xmppErrorIq,		         {mod_snmp, handle_entry, [xmppErrorIq]}}.
@@ -67,5 +68,6 @@
 {modPrivacyPushW,		     {mod_snmp, handle_entry, [modPrivacyPushW]}}.
 {modPrivacyGetsW,		     {mod_snmp, handle_entry, [modPrivacyGetsW]}}.
 {modPrivacyStanzaBlocked,	 {mod_snmp, handle_entry, [modPrivacyStanzaBlocked]}}. 
+{modPrivacyStanzaAll,		 {mod_snmp, handle_entry, [modPrivacyStanzaAll]}}. 
 {modPrivacyListLength,       {mod_snmp, handle_entry, [modPrivacyListLength]}}.
     

@@ -125,6 +125,7 @@ xmpp_stanza_dropped(_,_,_) ->
 
 -spec xmpp_send_element(tuple()) -> term().
 xmpp_send_element({xmlelement, Name, Attrs, _}) ->
+    ejabberd_snmp_core:increment_counter(xmppStanzaCount),
     case proplists:get_value(<<"type">>, Attrs) of
         <<"error">> ->
             ejabberd_snmp_core:increment_counter(xmppErrorTotal),

@@ -33,7 +33,8 @@ all() ->
     [{group, single},
      {group, multiple},
      {group, drop},
-     {group, errors}].
+     {group, errors},
+     {group, count}].
 
 groups() ->
     [{single, [sequence], [message_one, 
@@ -47,7 +48,8 @@ groups() ->
      {errors, [sequence], [error_total,
                            error_mesg,
                            error_iq,
-                           error_presence]}].
+                           error_presence]},
+     {count, [sequence], [stanza_count]}].
      
 suite() ->
     [{require, ejabberd_node} | escalus:suite()].
@@ -191,6 +193,24 @@ bounced(Config) ->
         
         end).
 
+stanza_count(Config) ->
+    escalus:story(Config, [1, 1], fun(Alice, Bob) ->
+        {value, OldStanzaCount} = get_counter_value(xmppStanzaCount),
+
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, "Hi!")),
+        escalus_client:wait_for_stanza(Bob),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_client:wait_for_stanza(Alice),
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, "Hi!")),
+        escalus_client:wait_for_stanza(Bob),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, "Hi!")),
+        escalus_client:wait_for_stanza(Alice),
+
+        {value, StanzaCount} = get_counter_value(xmppStanzaCount),
+        true = StanzaCount >= OldStanzaCount + 4
+        
+        end).
+
 
 %%-----------------------------------------------------
 %% Error tests
@@ -238,7 +258,7 @@ error_presence(Config) ->
         
         end).
 
-error_iq(Config) ->
+error_iq(_Config) ->
     {value, Errors} = get_counter_value(xmppErrorIq),
     
     Alice = escalus_users:get_user_by_name(alice),
