@@ -79,10 +79,10 @@ def main():
     hostid = zapi.host.get({"filter":{"host":hostname}})[0]["hostid"]
     #print hostid
 
-    #add_counters(hrl)
+    add_counters(hrl)
 
     # ...or list specified item
-    print_item( get_item('ejabberd.generalNodeName')[0] )
+    #print_item( get_item('ejabberd.generalNodeName')[0] )
 
 if __name__ == '__main__':
     main()
