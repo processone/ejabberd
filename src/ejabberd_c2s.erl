@@ -836,6 +836,29 @@ wait_for_sasl_response(closed, StateData) ->
     {stop, normal, StateData}.
 
 
+resource_conflict_action(U, S, R) ->
+    OptionRaw = case ejabberd_sm:is_existing_resource(U, S, R) of
+		    true ->
+			ejabberd_config:get_local_option({resource_conflict,S});
+		    false ->
+			acceptnew
+		end,
+    Option = case OptionRaw of
+		 setresource -> setresource;
+		 closeold -> acceptnew; %% ejabberd_sm will close old session
+		 closenew -> closenew;
+		 acceptnew -> acceptnew;
+		 _ -> acceptnew %% default ejabberd behavior
+	     end,
+    case Option of
+	acceptnew ->
+	    {accept_resource, R};
+	closenew ->
+	    closenew;
+	setresource ->
+	    Rnew = lists:concat([randoms:get_string() | tuple_to_list(now())]),
+	    {accept_resource, Rnew}
+    end.
 
 wait_for_bind({xmlstreamelement, El}, StateData) ->
     case jlib:iq_query_info(El) of
@@ -855,7 +878,6 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		    send_element(StateData, Err),
 		    fsm_next_state(wait_for_bind, StateData);
 		_ ->
-		    JID = jlib:make_jid(U, StateData#state.server, R),
 		    %%Server = StateData#state.server,
 		    %%RosterVersioningFeature =
 		    %%	ejabberd_hooks:run_fold(
@@ -865,15 +887,23 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		    %%		      RosterVersioningFeature],
 		    %%send_element(StateData, {xmlelement, "stream:features",
 		    %%			     [], StreamFeatures}),
-		    Res = IQ#iq{type = result,
-				sub_el = [{xmlelement, "bind",
-					   [{"xmlns", ?NS_BIND}],
-					   [{xmlelement, "jid", [],
-					     [{xmlcdata,
-					       jlib:jid_to_string(JID)}]}]}]},
-		    send_element(StateData, jlib:iq_to_xml(Res)),
-		    fsm_next_state(wait_for_session,
-				   StateData#state{resource = R, jid = JID})
+		    case resource_conflict_action(U, StateData#state.server, R) of
+			closenew ->
+			    Err = jlib:make_error_reply(El, ?STANZA_ERROR("409", "modify", "conflict")),
+			    send_element(StateData, Err),
+			    fsm_next_state(wait_for_bind, StateData);
+			{accept_resource, R2} ->
+			    JID = jlib:make_jid(U, StateData#state.server, R2),
+			    Res = IQ#iq{type = result,
+					sub_el = [{xmlelement, "bind",
+						   [{"xmlns", ?NS_BIND}],
+						   [{xmlelement, "jid", [],
+						     [{xmlcdata,
+						       jlib:jid_to_string(JID)}]}]}]},
+			    send_element(StateData, jlib:iq_to_xml(Res)),
+			    fsm_next_state(wait_for_session,
+					   StateData#state{resource = R2, jid = JID})
+		    end
 	    end;
 	_ ->
 	    fsm_next_state(wait_for_bind, StateData)

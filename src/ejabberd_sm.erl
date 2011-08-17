@@ -53,7 +53,8 @@
 	 user_resources/2,
 	 get_session_pid/3,
 	 get_user_info/3,
-	 get_user_ip/3
+	 get_user_ip/3,
+	 is_existing_resource/3
 	]).
 
 %% gen_server callbacks
@@ -639,14 +640,11 @@ check_for_sessions_to_replace(User, Server, Resource) ->
     check_max_sessions(LUser, LServer).
 
 check_existing_resources(LUser, LServer, LResource) ->
-    USR = {LUser, LServer, LResource},
-    %% A connection exist with the same resource. We replace it:
-    SIDs = mnesia:dirty_select(
-	     session,
-	     [{#session{sid = '$1', usr = USR, _ = '_'}, [], ['$1']}]),
+    SIDs = get_resource_sessions(LUser, LServer, LResource),
     if
 	SIDs == [] -> ok;
 	true ->
+	    %% A connection exist with the same resource. We replace it:
 	    MaxSID = lists:max(SIDs),
 	    lists:foreach(
 	      fun({_, Pid} = S) when S /= MaxSID ->
@@ -654,6 +652,15 @@ check_existing_resources(LUser, LServer, LResource) ->
 		 (_) -> ok
 	      end, SIDs)
     end.
+
+is_existing_resource(LUser, LServer, LResource) ->
+    [] /= get_resource_sessions(LUser, LServer, LResource).
+
+get_resource_sessions(User, Server, Resource) ->
+    USR = {jlib:nodeprep(User), jlib:nameprep(Server), jlib:resourceprep(Resource)},
+    mnesia:dirty_select(
+	     session,
+	     [{#session{sid = '$1', usr = USR, _ = '_'}, [], ['$1']}]).
 
 check_max_sessions(LUser, LServer) ->
     %% If the max number of sessions for a given is reached, we replace the
