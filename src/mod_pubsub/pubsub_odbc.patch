@@ -1,5 +1,5 @@
 --- mod_pubsub.erl	2011-07-18 12:23:39.000000000 +0200
-+++ mod_pubsub_odbc.erl	2011-07-18 12:25:36.000000000 +0200
++++ mod_pubsub_odbc.erl	2011-08-17 16:17:28.000000000 +0200
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -798,6 +798,15 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
+@@ -3450,7 +3243,7 @@
+ 				end
+ 			end,
+ 		    case transaction(Host, Node, Action, transaction) of
+-			{result, {TNode, ok}} ->
++			{result, {TNode, _}} ->
+ 			    NodeId = TNode#pubsub_node.id,
+ 			    Type = TNode#pubsub_node.type,
+ 			    Options = TNode#pubsub_node.options,
 @@ -3716,7 +3509,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),

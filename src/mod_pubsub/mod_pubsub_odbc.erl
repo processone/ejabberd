@@ -3243,7 +3243,7 @@ set_configure(Host, Node, From, Els, Lang) ->
 				end
 			end,
 		    case transaction(Host, Node, Action, transaction) of
-			{result, {TNode, ok}} ->
+			{result, {TNode, _}} ->
 			    NodeId = TNode#pubsub_node.id,
 			    Type = TNode#pubsub_node.type,
 			    Options = TNode#pubsub_node.options,
