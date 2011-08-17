@@ -1243,6 +1243,16 @@ defines in what format the users passwords are stored:
     This format allows clients to authenticate using: \term{SASL PLAIN} and \term{SASL SCRAM-SHA-1}.
 \end{description}
 
+The option \option{resource\_conflict} defines the action when a client attempts to
+login to an account with a resource that is already connected.
+The option syntax is:
+\esyntax{\{resource\_conflict, setresource|closenew|closeold\}.}
+The possible values match exactly the three possibilities described in
+\footahref{http://tools.ietf.org/html/rfc6120\#section-7.7.2.2}{XMPP Core: section 7.7.2.2}.
+The default value is \term{closeold}.
+If the client uses old Jabber Non-SASL authentication (\xepref{0078}),
+then this option is not respected, and the action performed is \term{closeold}.
+
 Examples:
 \begin{itemize}
 \item To use internal Mnesia storage with hashed passwords on all virtual hosts:

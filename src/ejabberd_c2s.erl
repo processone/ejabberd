@@ -907,6 +907,29 @@ wait_for_sasl_response(closed, StateData) ->
     {stop, normal, StateData}.
 
 
+resource_conflict_action(U, S, R) ->
+    OptionRaw = case ejabberd_sm:is_existing_resource(U, S, R) of
+		    true ->
+			ejabberd_config:get_local_option({resource_conflict,binary_to_list(S)});
+		    false ->
+			acceptnew
+		end,
+    Option = case OptionRaw of
+		 setresource -> setresource;
+		 closeold -> acceptnew; %% ejabberd_sm will close old session
+		 closenew -> closenew;
+		 acceptnew -> acceptnew;
+		 _ -> acceptnew %% default ejabberd behavior
+	     end,
+    case Option of
+	acceptnew ->
+	    {accept_resource, R};
+	closenew ->
+	    closenew;
+	setresource ->
+	    Rnew = lists:concat([randoms:get_string() | tuple_to_list(now())]),
+	    {accept_resource, Rnew}
+    end.
 
 wait_for_bind({xmlstreamelement, El}, StateData) ->
     try
@@ -923,11 +946,17 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	%%send_element(StateData,
 	%%	     exmpp_stream:features([exmpp_server_session:feature()
 	%%				    | RosterVersioningFeature])),
-	JID = exmpp_jid:make(StateData#state.user, StateData#state.server, R),
-	Res = exmpp_server_binding:bind(El, JID),
-	send_element(StateData, Res),
-	fsm_next_state(wait_for_session,
+	case resource_conflict_action(StateData#state.user, StateData#state.server, list_to_binary(R)) of
+	closenew ->
+		send_element(StateData, ?SERRT_CONFLICT), %% (Lang, "Replaced by new connection")),
+		fsm_next_state(wait_for_bind, StateData);
+	{accept_resource, R2} ->
+		JID = exmpp_jid:make(StateData#state.user, StateData#state.server, R2),
+		Res = exmpp_server_binding:bind(El, JID),
+		send_element(StateData, Res),
+		fsm_next_state(wait_for_session,
 		       StateData#state{resource = exmpp_jid:resource(JID), jid = JID})
+	end
     catch
 	throw:{stringprep, resourceprep, _, _} ->
 	    Err = exmpp_server_binding:error(El, 'bad-request'),

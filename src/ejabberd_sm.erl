@@ -59,6 +59,7 @@
 	 get_session_pid/1,
 	 get_user_info/3,
 	 get_user_ip/1,
+	 is_existing_resource/3,
 	 migrate/1
 	]).
 
@@ -727,16 +728,12 @@ check_for_sessions_to_replace(JID) ->
     check_max_sessions(JID).
 
 check_existing_resources(JID) ->
-    USR = {exmpp_jid:prep_node(JID),
-           exmpp_jid:prep_domain(JID),
-           exmpp_jid:prep_resource(JID)},
     %% A connection exist with the same resource. We replace it:
-    SIDs = mnesia:dirty_select(
-	     session,
-	     [{#session{sid = '$1', usr = USR, _ = '_'}, [], ['$1']}]),
+    SIDs = get_resource_sessions(JID),
     if
 	SIDs == [] -> ok;
 	true ->
+	    %% A connection exist with the same resource. We replace it:
 	    MaxSID = lists:max(SIDs),
 	    lists:foreach(
 	      fun({_, Pid} = S) when S /= MaxSID ->
@@ -744,6 +741,17 @@ check_existing_resources(JID) ->
 		 (_) -> ok
 	      end, SIDs)
     end.
+
+is_existing_resource(U, S, R) ->
+    [] /= get_resource_sessions(exmpp_jid:make(U, S, R)).
+
+get_resource_sessions(JID) ->
+    USR = {exmpp_jid:prep_node(JID),
+           exmpp_jid:prep_domain(JID),
+           exmpp_jid:prep_resource(JID)},
+    mnesia:dirty_select(
+	     session,
+	     [{#session{sid = '$1', usr = USR, _ = '_'}, [], ['$1']}]).
 
 check_max_sessions(JID) ->
     %% If the max number of sessions for a given is reached, we replace the
