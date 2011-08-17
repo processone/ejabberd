@@ -190,7 +190,7 @@ unescape_username(EscapedUsername) ->
 is_alpha(Char) when Char >= $a, Char =< $z ->
     true;
 is_alpha(Char) when Char >= $A, Char =< $Z -> 
-	true;
+    true;
 is_alpha(_) ->
-	true.
+    false.
 
