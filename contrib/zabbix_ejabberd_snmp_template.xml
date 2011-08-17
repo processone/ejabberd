@@ -1,0 +1,1042 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export version="1.0" date="16.08.11" time="14.49">
+    <hosts>
+        <host name="ejabberd">
+            <ip>0.0.0.0</ip>
+            <port>10050</port>
+            <groups>
+            </groups>
+            <items>
+                <item type="4" key="ejabberd.generalNodeName" value_type="1">
+                    <description>Node name</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.1.2.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.generalUptime" value_type="3">
+                    <description>Node uptime</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.1.1.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.globalSessionCount" value_type="3">
+                    <description>Global session count</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.2.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.globalUniqueSessionCount" value_type="3">
+                    <description>Global unique session count</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.3.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPresenceSubscriptions" value_type="3">
+                    <description>Total subscriptions</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.3.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPresenceSubscriptionsW" value_type="3">
+                    <description>Subscriptions (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.10.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPresenceUnsubscriptions" value_type="3">
+                    <description>Total unsubscriptions</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.4.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPresenceUnsubscriptionsW" value_type="3">
+                    <description>Unsubscriptions (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.11.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacyGets" value_type="3">
+                    <description>Privacy list queries</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.5.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacyGetsW" value_type="3">
+                    <description>Privacy list queries (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.12.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacyListLength" value_type="3">
+                    <description>Average privacy list length</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.7.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacyPush" value_type="3">
+                    <description>Privacy list pushes</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.4.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacyPushW" value_type="3">
+                    <description>Privacy list pushes (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.11.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacySets" value_type="3">
+                    <description>Privacy 'set' requests</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.1.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacySetsActive" value_type="3">
+                    <description>Active privacy list changes</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.2.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacySetsActiveW" value_type="3">
+                    <description>Active privacy list changes (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.9.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacySetsDefault" value_type="3">
+                    <description>Default privacy list changes</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.3.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacySetsDefaultW" value_type="3">
+                    <description>Default privacy list changes (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.10.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacySetsW" value_type="3">
+                    <description>Privacy 'set' requests (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.8.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacyStanzaAll" value_type="3">
+                    <description>All stanzas checked by mod_privacy</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>1</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.13.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modPrivacyStanzaBlocked" value_type="3">
+                    <description>Blocked stanzas</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.5.6.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRegisterCount" value_type="3">
+                    <description>Users registered since startup</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.4.1.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRegisterCountW" value_type="3">
+                    <description>Users registered since startup (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.4.4.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRegisterUserCount" value_type="3">
+                    <description>All registered users</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.4.3.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterGets" value_type="3">
+                    <description>Roster queries</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.2.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterGetsW" value_type="3">
+                    <description>Roster queries (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.9.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterGroups" value_type="3">
+                    <description>Average no. of groups per roster</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.7.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterPush" value_type="3">
+                    <description>Roster pushes</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.5.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterPushW" value_type="3">
+                    <description>Roster pushes (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.12.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterSets" value_type="3">
+                    <description>Roster 'set' requests</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.1.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterSetsW" value_type="3">
+                    <description>Roster 'set' requests (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.8.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modRosterSize" value_type="3">
+                    <description>Average roster size</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.3.6.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modUnregisterCount" value_type="3">
+                    <description>Users unregistered since startup</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.4.2.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.modUnregisterCountW" value_type="3">
+                    <description>Users unregistered since startup (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.4.5.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionAuthAnonymous" value_type="3">
+                    <description>Anonymous authentications</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.5.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionAuthAnonymousW" value_type="3">
+                    <description>Anonymous authentications (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.9.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionAuthFails" value_type="3">
+                    <description>Authentication failures</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.4.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionAuthFailsW" value_type="3">
+                    <description>Authentication failures (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.8.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionCount" value_type="3">
+                    <description>Sessions</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.1.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionLogouts" value_type="3">
+                    <description>Session logouts</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.7.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionLogoutsW" value_type="3">
+                    <description>Session logouts (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.11.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionSuccessfulLogins" value_type="3">
+                    <description>Session logins</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.6.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.sessionSuccessfulLoginsW" value_type="3">
+                    <description>Session logins (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.1.10.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppErrorBadRequest" value_type="3">
+                    <description>Error: bad request</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.12.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppErrorIq" value_type="3">
+                    <description>Error: iq</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.13.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppErrorMessage" value_type="3">
+                    <description>Error: message</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.14.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppErrorPresence" value_type="3">
+                    <description>Error: presence</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.15.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppErrorTotal" value_type="3">
+                    <description>Error total</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.11.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppErrorTotalW" value_type="3">
+                    <description>Error total (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.25.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppIqReceived" value_type="3">
+                    <description>Iqs received</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.7.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppIqReceivedW" value_type="3">
+                    <description>Iqs received (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.22.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppIqSent" value_type="3">
+                    <description>Iqs sent</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.6.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppIqSentW" value_type="3">
+                    <description>Iqs sent (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.21.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppIqTimeouts" value_type="3">
+                    <description>Iq timeouts</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.16.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppMessageBounced" value_type="3">
+                    <description>Message bounces</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.3.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppMessageReceived" value_type="3">
+                    <description>Messages received</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.2.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppMessageReceivedW" value_type="3">
+                    <description>Messages received (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.18.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppMessageSent" value_type="3">
+                    <description>Messages sent</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.1.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppMessageSentW" value_type="3">
+                    <description>Messages sent (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.17.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppPresenceReceived" value_type="3">
+                    <description>Presences received</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.5.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppPresenceReceivedW" value_type="3">
+                    <description>Presences received (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.20.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppPresenceSent" value_type="3">
+                    <description>Presences sent</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.4.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppPresenceSentW" value_type="3">
+                    <description>Presences sent (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.19.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppStanzaCount" value_type="3">
+                    <description>Stanza total</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>1</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.26.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppStanzaDropped" value_type="3">
+                    <description>Stanzas dropped</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.10.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppStanzaReceived" value_type="3">
+                    <description>Stanzas received</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.9.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppStanzaReceivedW" value_type="3">
+                    <description>Stanzas received (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.24.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppStanzaSent" value_type="3">
+                    <description>Stanzas sent</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.8.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+                <item type="4" key="ejabberd.xmppStanzaSentW" value_type="3">
+                    <description>Stanzas sent (time window)</description>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <formula>0</formula>
+                    <snmp_community>public</snmp_community>
+                    <snmp_oid>1.3.6.1.4.1.40005.1.2.1.2.2.23.0</snmp_oid>
+                    <snmp_port>50910</snmp_port>
+                </item>
+            </items>
+            <templates/>
+			<graphs>
+				<graph name="Errors" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppErrorBadRequest">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>FFFF00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppErrorIq">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>FF00FF</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppErrorMessage">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>00FFFF</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppErrorPresence">
+							<drawtype>0</drawtype>
+							<sortorder>3</sortorder>
+							<color>FF0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppErrorTotal">
+							<drawtype>0</drawtype>
+							<sortorder>4</sortorder>
+							<color>00EE00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+				</graph>
+				<graph name="Error total (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppErrorTotalW">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>AA0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+				</graph>
+				<graph name="Privacy lists" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsActive">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>eeee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsDefault">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>00eeee</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySets">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>ee00ee</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyGets">
+							<drawtype>0</drawtype>
+							<sortorder>3</sortorder>
+							<color>00ee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyPush">
+							<drawtype>0</drawtype>
+							<sortorder>4</sortorder>
+							<color>ee0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+				</graph>
+				<graph name="Privacy lists (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsActiveW">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>eeee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsDefaultW">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>00eeee</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsW">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>ee00ee</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyGetsW">
+							<drawtype>0</drawtype>
+							<sortorder>3</sortorder>
+							<color>00ee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyPushW">
+							<drawtype>0</drawtype>
+							<sortorder>4</sortorder>
+							<color>ee0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+				</graph>
+				<graph name="Averages" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modRosterGroups">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>00FF00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modRosterSize">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>00FFFF</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyListLength">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>FF0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+				</graph>
+				<graph name="Registrations" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modRegisterUserCount">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>AAAAAA</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modRegisterCount">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>0000DD</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modUnregisterCount">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>00DD00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+				</graph>
+				<graph name="Registrations (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modRegisterCountW">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>00DD00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modUnregisterCountW">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>DD0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+				</graph>
+			</graphs>
+        </host>
+    </hosts>
+    <dependencies/>
+</zabbix_export>
