@@ -122,12 +122,12 @@ start(Host) ->
 			               {iterationcount, int}]}
 			     ]),
     update_table(Host, Backend),
-    maybe_scram_passwords(Host),
+    maybe_scram_passwords(HostB),
     mnesia:create_table(reg_users_counter,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, reg_users_counter)}]),
     update_reg_users_counter_table(Host),
-    maybe_alert_password_scrammed_without_option(Host),
+    maybe_alert_password_scrammed_without_option(HostB),
     ok.
 
 stop(_Host) ->
@@ -544,9 +544,9 @@ is_scrammed(Host) ->
 	forced_scram -> true
     end.
 
-action_password_format(Host) ->
+action_password_format(HostB) ->
     OptionScram = is_option_scram(),
-    case {OptionScram, get_format_first_element(Host)} of
+    case {OptionScram, get_format_first_element(HostB)} of
 	{true, scram} -> scram;
 	{true, any} -> scram;
 	{true, plain} -> must_scram;
@@ -555,8 +555,8 @@ action_password_format(Host) ->
 	{false, scram} -> forced_scram
     end.
 
-get_format_first_element(Host) ->
-    case gen_storage:dirty_select(Host, passwd, []) of
+get_format_first_element(HostB) ->
+    case gen_storage:dirty_select(HostB, passwd, []) of
 	[] -> any;
 	[#passwd{password = ""} | _] -> scram;
 	[#passwd{} | _] -> plain

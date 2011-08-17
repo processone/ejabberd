@@ -452,24 +452,24 @@ normal_state({route, From, ToNick,
 			      From, Err);
 			_ ->
 			    ToJID = find_jid_by_nick(ToNick, StateData),
-			    SrcIsVisitor = is_visitor(From, StateData),
-			    DstIsModerator = is_moderator(ToJID, StateData),
-			    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
-			    if SrcIsVisitor == false;
-			       PmFromVisitors == anyone;
-			       (PmFromVisitors == moderators) and (DstIsModerator) ->
-				    case ToJID of
-					false ->
-					    ErrText = "Recipient is not in the conference room",
-					    Err = exmpp_stanza:reply_with_error(Packet,
-										exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
-												   {Lang, translate:translate(Lang, ErrText)})),
-					    ejabberd_router:route(
-					      jid_replace_resource(
-						StateData#state.jid,
-						ToNick),
-					      From, Err);
-					_ ->
+			    case ToJID of
+				false ->
+				    ErrText = "Recipient is not in the conference room",
+				    Err = exmpp_stanza:reply_with_error(Packet,
+									exmpp_stanza:error(Packet#xmlel.ns, 'item-not-found',
+											   {Lang, translate:translate(Lang, ErrText)})),
+				    ejabberd_router:route(
+				      jid_replace_resource(
+					StateData#state.jid,
+					ToNick),
+				      From, Err);
+				_ ->
+				    SrcIsVisitor = is_visitor(From, StateData),
+				    DstIsModerator = is_moderator(ToJID, StateData),
+				    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
+				    if SrcIsVisitor == false;
+				       PmFromVisitors == anyone;
+				       (PmFromVisitors == moderators) and (DstIsModerator) ->
 					    {ok, #user{nick = FromNick}} =
 						?DICT:find(jlib:jid_tolower(From),
 							   StateData#state.users),
@@ -477,18 +477,19 @@ normal_state({route, From, ToNick,
 					      jid_replace_resource(
 						StateData#state.jid,
 						FromNick),
-					      ToJID, Packet)
-				    end;
-			       true ->
-				    ErrText = "It is not allowed to send private messages",
-				    Err = exmpp_stanza:reply_with_error(Packet,
-				      exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
-					{Lang, translate:translate(Lang, ErrText)})),
-				    ejabberd_router:route(
-				      jid_replace_resource(
-					StateData#state.jid,
-					ToNick),
-				      From, Err)
+					      ToJID, Packet);
+				       true ->
+					    ErrText = "It is not allowed to send private messages",
+					    Err = exmpp_stanza:reply_with_error(Packet,
+					      exmpp_stanza:error(Packet#xmlel.ns, 'forbidden',
+						{Lang, translate:translate(Lang, ErrText)})),
+					    ejabberd_router:route(
+					      jid_replace_resource(
+						StateData#state.jid,
+						ToNick),
+					      From, Err)
+
+				    end
 			    end
 		    end;
 		{true, false} ->

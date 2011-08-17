@@ -92,9 +92,7 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 				_Else ->
 					{error, 'not-supported'}
 				end
-			end;
-		_Else ->
-			{error, 'bad-protocol'}
+			end
 		end;
 	_Else ->
 	    {error, 'bad-protocol'}
@@ -146,12 +144,8 @@ parse_attribute(Attribute) ->
 			true ->
 				if
 				SecondChar == $= ->
-					case string:substr(Attribute, 3) of
-					String when is_list(String) ->
-						{lists:nth(1, Attribute), String};
-					_Else ->
-						{error, 'bad-format failed'}
-					end;
+					String = string:substr(Attribute, 3),
+					{lists:nth(1, Attribute), String};
 				true ->
 					{error, 'bad-format second char not equal sign'}
 				end;
@@ -191,7 +185,7 @@ unescape_username(EscapedUsername) ->
 is_alpha(Char) when Char >= $a, Char =< $z ->
     true;
 is_alpha(Char) when Char >= $A, Char =< $Z -> 
-	true;
+    true;
 is_alpha(_) ->
-	true.
+    false.
 

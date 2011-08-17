@@ -163,9 +163,8 @@ add_user(El, Domain) ->
     Password = exmpp_xml:get_attribute(El,<<"password">>,none),
     add_user(El, Domain, User, PasswordFormat, Password).
 
-%% @spec (El::xmlel(), Domain::string(), User::binary(), PasswordFormat, Password::binary() | none)
+%% @spec (El::xmlel(), Domain::string(), User::binary(), PasswordFormat::binary(), Password::binary() | none)
 %%       -> ok | {error, ErrorText::string()}
-%% PasswordFormat = <<"plaintext">> | <<"scram">>
 %% @doc Add a new user to the database.
 %% If user already exists, it will be only updated.
 add_user(El, Domain, User, <<"plaintext">>, none) ->
@@ -174,7 +173,7 @@ add_user(El, Domain, User, <<"plaintext">>, none) ->
     io:format(""),
     populate_user_with_elements(El, Domain, User),
     ok;
-add_user(El, Domain, User, PasswordFormat, Password) ->
+add_user(El, Domain, User, <<"scram">> = PasswordFormat, Password) ->
     Password2 = prepare_password(PasswordFormat, Password, El),
     case create_user(User,Password2,Domain) of
 	ok ->
@@ -217,7 +216,7 @@ populate_user_with_elements(El, Domain, User) ->
 %%       -> ok | {atomic, exists} | {error, not_allowed}
 %% @doc  Create a new user
 create_user(User,Password,Domain) ->
-    case ejabberd_auth:try_register(?BTL(User),?BTL(Domain),?BTL(Password)) of
+    case ejabberd_auth:try_register(?BTL(User),?BTL(Domain),Password) of
 	{atomic,ok} -> ok;
 	{atomic, exists} -> {atomic, exists};
 	{error, not_allowed} -> {error, not_allowed};

@@ -232,7 +232,7 @@ server_start(State, Mech, ClientIn) ->
 %% @spec (State, ClientIn) -> Ok | Continue | Error
 %%     State = saslstate()
 %%     ClientIn = string()
-%%     Ok = {ok, Props}
+%%     Ok = {ok, Props} | {ok, Props, ServerOut}
 %%         Props = [Prop]
 %%         Prop = [{Key, Value}]
 %%         Key = atom()
