@@ -760,9 +760,26 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
+					</graph_elements>
+                </graph>
+				<graph name="Errors (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppErrorTotalW">
 							<drawtype>0</drawtype>
-							<sortorder>5</sortorder>
+							<sortorder>0</sortorder>
 							<color>00ee00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -770,7 +787,35 @@
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
 					</graph_elements>
-				</graph>
+                </graph>
+
+				<graph name="Privacy: all checked stanzas" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+                    <graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyStanzaAll">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>3333ff</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+                </graph>
+
 				<graph name="Privacy" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -795,28 +840,10 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsActiveW">
-							<drawtype>0</drawtype>
-							<sortorder>1</sortorder>
-							<color>eeee00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsDefault">
 							<drawtype>0</drawtype>
-							<sortorder>2</sortorder>
+							<sortorder>1</sortorder>
 							<color>00aaaa</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsDefaultW">
-							<drawtype>0</drawtype>
-							<sortorder>3</sortorder>
-							<color>00eeee</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -824,17 +851,8 @@
 						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySets">
 							<drawtype>0</drawtype>
-							<sortorder>4</sortorder>
+							<sortorder>2</sortorder>
 							<color>aa00aa</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsW">
-							<drawtype>0</drawtype>
-							<sortorder>5</sortorder>
-							<color>ee00ee</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -842,17 +860,8 @@
 						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyGets">
 							<drawtype>0</drawtype>
-							<sortorder>6</sortorder>
+							<sortorder>3</sortorder>
 							<color>00aa00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyGetsW">
-							<drawtype>0</drawtype>
-							<sortorder>7</sortorder>
-							<color>00ee00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -860,26 +869,8 @@
 						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyPush">
 							<drawtype>0</drawtype>
-							<sortorder>8</sortorder>
+							<sortorder>4</sortorder>
 							<color>aa0000</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyPushW">
-							<drawtype>0</drawtype>
-							<sortorder>9</sortorder>
-							<color>ee0000</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyStanzaAll">
-							<drawtype>0</drawtype>
-							<sortorder>10</sortorder>
-							<color>3333ff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -887,7 +878,7 @@
 						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyStanzaBlocked">
 							<drawtype>0</drawtype>
-							<sortorder>11</sortorder>
+							<sortorder>5</sortorder>
 							<color>aaaaaa</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -895,7 +886,70 @@
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
 					</graph_elements>
-				</graph>
+                </graph>
+				<graph name="Privacy (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+                    <graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsActiveW">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>eeee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsDefaultW">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>00eeee</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacySetsW">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>ee00ee</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyGetsW">
+							<drawtype>0</drawtype>
+							<sortorder>3</sortorder>
+							<color>00ee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modPrivacyPushW">
+							<drawtype>0</drawtype>
+							<sortorder>4</sortorder>
+							<color>ee0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+					</graph_elements>
+                </graph>
+
 				<graph name="Averages" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -939,7 +993,8 @@
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
 					</graph_elements>
-				</graph>
+                </graph>
+
 				<graph name="Registrations" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -973,19 +1028,36 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modRegisterCountW">
+						<graph_element item="{HOSTNAME}:ejabberd.modUnregisterCount">
 							<drawtype>0</drawtype>
 							<sortorder>2</sortorder>
-							<color>3333ff</color>
+							<color>00aa00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modUnregisterCount">
+					</graph_elements>
+                </graph>
+				<graph name="Registrations (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modRegisterCountW">
 							<drawtype>0</drawtype>
-							<sortorder>3</sortorder>
-							<color>00aa00</color>
+							<sortorder>0</sortorder>
+							<color>3333ff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -993,7 +1065,7 @@
 						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modUnregisterCountW">
 							<drawtype>0</drawtype>
-							<sortorder>4</sortorder>
+							<sortorder>1</sortorder>
 							<color>00ee00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -1001,7 +1073,8 @@
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
 					</graph_elements>
-				</graph>
+                </graph>
+
 				<graph name="Presence" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1026,19 +1099,36 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPresenceSubscriptionsW">
+						<graph_element item="{HOSTNAME}:ejabberd.modPresenceUnsubscriptions">
 							<drawtype>0</drawtype>
 							<sortorder>1</sortorder>
-							<color>00ee00</color>
+							<color>0000aa</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modPresenceUnsubscriptions">
+					</graph_elements>
+                </graph>
+				<graph name="Presence (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modPresenceSubscriptionsW">
 							<drawtype>0</drawtype>
-							<sortorder>2</sortorder>
-							<color>0000aa</color>
+							<sortorder>0</sortorder>
+							<color>00ee00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -1046,7 +1136,7 @@
                         </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modPresenceUnsubscriptionsW">
 							<drawtype>0</drawtype>
-							<sortorder>3</sortorder>
+							<sortorder>1</sortorder>
 							<color>3333ff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -1054,7 +1144,8 @@
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
 					</graph_elements>
-				</graph>
+                </graph>
+
 				<graph name="Rosters" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1079,46 +1170,19 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modRosterSetsW">
-							<drawtype>0</drawtype>
-							<sortorder>1</sortorder>
-							<color>eeee00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modRosterGets">
 							<drawtype>0</drawtype>
-							<sortorder>2</sortorder>
+							<sortorder>1</sortorder>
 							<color>00aa00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modRosterGetsW">
-							<drawtype>0</drawtype>
-							<sortorder>3</sortorder>
-							<color>00ee00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modRosterGets">
 							<drawtype>0</drawtype>
-							<sortorder>4</sortorder>
+							<sortorder>2</sortorder>
 							<color>aa0000</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.modRosterGetsW">
-							<drawtype>0</drawtype>
-							<sortorder>5</sortorder>
-							<color>ff0000</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -1126,8 +1190,52 @@
                         </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modRosterPush">
 							<drawtype>0</drawtype>
-							<sortorder>6</sortorder>
+							<sortorder>3</sortorder>
 							<color>0000aa</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+					</graph_elements>
+                </graph>
+				<graph name="Rosters (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.modRosterSetsW">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>eeee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modRosterGetsW">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>00ee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.modRosterGetsW">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>ff0000</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -1135,7 +1243,7 @@
                         </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.modRosterPushW">
 							<drawtype>0</drawtype>
-							<sortorder>7</sortorder>
+							<sortorder>3</sortorder>
 							<color>3333ff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -1143,7 +1251,8 @@
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
 					</graph_elements>
-				</graph>
+                </graph>
+
 				<graph name="Sessions" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1168,36 +1277,18 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.sessionAuthAnonymousW">
-							<drawtype>0</drawtype>
-							<sortorder>1</sortorder>
-							<color>eeee00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.sessionAuthFails">
 							<drawtype>0</drawtype>
-							<sortorder>2</sortorder>
+							<sortorder>1</sortorder>
 							<color>00aa00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.sessionAuthFailsW">
-							<drawtype>0</drawtype>
-							<sortorder>3</sortorder>
-							<color>00ee00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.sessionCount">
 							<drawtype>0</drawtype>
-							<sortorder>4</sortorder>
+							<sortorder>2</sortorder>
 							<color>ff0000</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -1206,17 +1297,8 @@
                         </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.sessionLogouts">
 							<drawtype>0</drawtype>
-							<sortorder>5</sortorder>
+							<sortorder>3</sortorder>
 							<color>0000aa</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.sessionLogoutsW">
-							<drawtype>0</drawtype>
-							<sortorder>6</sortorder>
-							<color>3333ff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -1224,8 +1306,52 @@
                         </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.sessionSuccessfulLogins">
 							<drawtype>0</drawtype>
-							<sortorder>7</sortorder>
+							<sortorder>4</sortorder>
 							<color>00aaaa</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+					</graph_elements>
+                </graph>
+				<graph name="Sessions (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.sessionAuthAnonymousW">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>eeee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.sessionAuthFailsW">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>00ee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.sessionLogoutsW">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>3333ff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -1233,7 +1359,7 @@
                         </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.sessionSuccessfulLoginsW">
 							<drawtype>0</drawtype>
-							<sortorder>8</sortorder>
+							<sortorder>3</sortorder>
 							<color>00ffff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -1242,6 +1368,7 @@
                         </graph_element>
 					</graph_elements>
                 </graph>
+
 				<graph name="Iq stanzas" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1266,6 +1393,41 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppIqSent">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>00aa00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppIqTimeouts">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>ff0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+					</graph_elements>
+                </graph>
+				<graph name="Iq stanzas (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppIqReceivedW">
 							<drawtype>0</drawtype>
 							<sortorder>1</sortorder>
@@ -1275,15 +1437,6 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.xmppIqSent">
-							<drawtype>0</drawtype>
-							<sortorder>2</sortorder>
-							<color>00aa00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppIqSentW">
 							<drawtype>0</drawtype>
 							<sortorder>3</sortorder>
@@ -1293,17 +1446,9 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.xmppIqTimeouts">
-							<drawtype>0</drawtype>
-							<sortorder>4</sortorder>
-							<color>ff0000</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
 					</graph_elements>
                 </graph>
+
 				<graph name="Message stanzas" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1328,6 +1473,41 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppMessageSent">
+							<drawtype>0</drawtype>
+							<sortorder>1</sortorder>
+							<color>00aa00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+						</graph_element>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppMessageBounced">
+							<drawtype>0</drawtype>
+							<sortorder>2</sortorder>
+							<color>ff0000</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
+					</graph_elements>
+                </graph>
+				<graph name="Message stanzas (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppMessageReceivedW">
 							<drawtype>0</drawtype>
 							<sortorder>1</sortorder>
@@ -1337,15 +1517,6 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.xmppMessageSent">
-							<drawtype>0</drawtype>
-							<sortorder>2</sortorder>
-							<color>00aa00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-						</graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppMessageSentW">
 							<drawtype>0</drawtype>
 							<sortorder>3</sortorder>
@@ -1355,17 +1526,9 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.xmppMessageBounced">
-							<drawtype>0</drawtype>
-							<sortorder>4</sortorder>
-							<color>ff0000</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
 					</graph_elements>
                 </graph>
+
 				<graph name="Presence stanzas" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1390,27 +1553,44 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.xmppPresenceReceivedW">
-							<drawtype>0</drawtype>
-							<sortorder>1</sortorder>
-							<color>eeee00</color>
-							<yaxisside>0</yaxisside>
-							<calc_fnc>7</calc_fnc>
-							<type>0</type>
-							<periods_cnt>5</periods_cnt>
-                        </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppPresenceSent">
 							<drawtype>0</drawtype>
-							<sortorder>2</sortorder>
+							<sortorder>1</sortorder>
 							<color>00aa00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
 						</graph_element>
+					</graph_elements>
+                </graph>
+				<graph name="Presence stanzas (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppPresenceReceivedW">
+							<drawtype>0</drawtype>
+							<sortorder>0</sortorder>
+							<color>eeee00</color>
+							<yaxisside>0</yaxisside>
+							<calc_fnc>7</calc_fnc>
+							<type>0</type>
+							<periods_cnt>5</periods_cnt>
+                        </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppPresenceSentW">
 							<drawtype>0</drawtype>
-							<sortorder>3</sortorder>
+							<sortorder>1</sortorder>
 							<color>00ee00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -1419,6 +1599,7 @@
                         </graph_element>
 					</graph_elements>
                 </graph>
+
 				<graph name="All stanzas" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1461,19 +1642,36 @@
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.xmppStanzaReceivedW">
+						<graph_element item="{HOSTNAME}:ejabberd.xmppStanzaSent">
 							<drawtype>0</drawtype>
 							<sortorder>3</sortorder>
-							<color>00ee00</color>
+							<color>0000aa</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
 							<periods_cnt>5</periods_cnt>
                         </graph_element>
-						<graph_element item="{HOSTNAME}:ejabberd.xmppStanzaSent">
+					</graph_elements>
+                </graph>
+				<graph name="All stanzas (time window)" width="900" height="200">
+					<ymin_type>0</ymin_type>
+					<ymax_type>0</ymax_type>
+					<ymin_item_key></ymin_item_key>
+					<ymax_item_key></ymax_item_key>
+					<show_work_period>0</show_work_period>
+					<show_triggers>0</show_triggers>
+					<graphtype>0</graphtype>
+					<yaxismin>0.0000</yaxismin>
+					<yaxismax>100.0000</yaxismax>
+					<show_legend>0</show_legend>
+					<show_3d>0</show_3d>
+					<percent_left>0.0000</percent_left>
+					<percent_right>0.0000</percent_right>
+					<graph_elements>
+						<graph_element item="{HOSTNAME}:ejabberd.xmppStanzaReceivedW">
 							<drawtype>0</drawtype>
-							<sortorder>4</sortorder>
-							<color>0000aa</color>
+							<sortorder>0</sortorder>
+							<color>00ee00</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
 							<type>0</type>
@@ -1481,7 +1679,7 @@
                         </graph_element>
 						<graph_element item="{HOSTNAME}:ejabberd.xmppStanzaSentW">
 							<drawtype>0</drawtype>
-							<sortorder>5</sortorder>
+							<sortorder>1</sortorder>
 							<color>3333ff</color>
 							<yaxisside>0</yaxisside>
 							<calc_fnc>7</calc_fnc>
@@ -1490,6 +1688,7 @@
                         </graph_element>
 					</graph_elements>
                 </graph>
+
 				<graph name="Global" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
@@ -1525,6 +1724,7 @@
                         </graph_element>
 					</graph_elements>
                 </graph>
+
 				<graph name="Node uptime" width="900" height="200">
 					<ymin_type>0</ymin_type>
 					<ymax_type>0</ymax_type>
