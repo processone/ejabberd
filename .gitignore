@@ -1,5 +1,8 @@
 #
 # You can add personal rules in your file .git/info/exclude
+tools/*.tar.gz
+tools/*.pyc
+tools/*.png
 apps/*/src/#*
 apps/*/src/.#*
 test/.#*

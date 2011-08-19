@@ -17,16 +17,23 @@ class DataRetriever():
     server = "http://127.0.1.1/zabbix"
     username = "admin"
     password = "zabbix" 
+
+    hist_type = 3
+    dens = 1
     
-    time_format = "%d-%m-%Y %H:%M"
+    time_format = "%d-%m-%Y %H:%M:%S"
     
     def __init__(self, item_key):
         self.zapi = ZabbixAPI(server=self.server, path="", log_level=3)
         self.zapi.login(self.username, self.password)
         
         self.item_key = item_key
-    
-    # Time format: "%d-%m-%Y %H:%M"
+   
+    def set_config(self, config):
+        self.hist_type = config.get("general", "hist_type")
+        self.dens = int(config.get("general", "dens"))
+
+    # Time format: "%d-%m-%Y %H:%M:%s"
     def get_data(self, str_time_from, str_time_to):
         
         time_from = int(time.mktime(time.strptime(str_time_from, self.time_format)))
@@ -35,16 +42,24 @@ class DataRetriever():
         print str_time_from, time_from
         print str_time_to, time_to
         
-        itemid = self.zapi.item.get({"output" : "extend", 
+        hostid = self.zapi.host.get({"output":"extend", "filter": {"host":"localhost"}})[0]["hostid"]
+        itemid = self.zapi.item.get({"output" : "extend",
+                                     "hostids" : [hostid], 
                                      "filter" : {"key_" : self.item_key}})[0]['itemid']
+
         H = self.zapi.history.get({"time_from" : str(time_from), 
                                    "time_till" : str(time_to), 
                                    "output":"extend", 
-                                   "itemids" : [itemid]})
+                                   "itemids" : [itemid],
+                                   "hostids" : [hostid],
+                                   "history" : self.hist_type})
         result = [[], []]
+        i = 0
         for el in H:
-            result[0].append(int(el["clock"]) - time_from)
-            result[1].append(int(el["value"]))
+            i += 1
+            if i % self.dens == 0:
+                result[0].append(int(el["clock"]) - time_from)
+                result[1].append(float(el["value"]))
         
         return result
   
@@ -56,10 +71,17 @@ class Graph():
     max_wy = 0
     min_wy = 4000000000
     
+    label_suffix = " MB"
+    scale = 1024*1024
+
     def __init__(self):
         self.chart = XYLineChart(750, 400)
         
     
+    def set_config(self, config):
+        self.label_suffix = config.get("general", "label_suffix")
+        self.scale = int(config.get("general", "scale"))
+
     def add_serie(self, WX, WY, colour, descr):
         self.chart.add_data(WX)
         self.chart.add_data(WY)
@@ -76,14 +98,12 @@ class Graph():
     def make_chart(self, name):
         densX = self.max_wx / 15
         
-        scale = 1024*1024
-        
-        wy_max_lab = self.max_wy / scale + 1
-        wy_min_lab = self.min_wy / scale - 1
+        wy_max_lab = int(self.max_wy / self.scale + 1)
+        wy_min_lab = int(max(self.min_wy / self.scale - 1, 0))
         densY = max((wy_max_lab - wy_min_lab) / 10, 1) 
         self.chart.set_axis_labels(Axis.BOTTOM, range(0, self.max_wx + 1, densX))
-        self.chart.set_axis_labels(Axis.LEFT, self.__make_Ylabels(wy_min_lab, wy_max_lab, densY))
-        self.chart.y_range = (self.min_wy - scale, self.max_wy + scale)
+        self.chart.set_axis_labels(Axis.LEFT, self.__make_Ylabels(wy_min_lab, wy_max_lab, int(densY)))
+        self.chart.y_range = (wy_min_lab * self.scale, wy_max_lab * self.scale)
         
         self.chart.set_legend(self.legend)
         self.chart.set_colours(self.colours)
@@ -94,7 +114,7 @@ class Graph():
     def __make_Ylabels(self, wy_min_lab, wy_max_lab, densY):
         result = []
         for i in range(wy_min_lab, wy_max_lab, densY):
-            result.append("%d MB" % (i))
+            result.append("%d%s" % (i, self.label_suffix))
         return result
 
 def main():
@@ -107,6 +127,7 @@ def main():
     filename = config.get("general", "filename")
     
     graph = Graph()
+    graph.set_config(config)
     
     for i in range(1, series_num + 1):
         # retrieve data serie
@@ -119,9 +140,10 @@ def main():
         legend = config.get(section, "legend")
         
         retriever = DataRetriever(item_key)
+        retriever.set_config(config)
         data = retriever.get_data(time_from, time_to)
         for i in range(0, len(data[0])):
-            print ("%d : %d" % (data[0][i], data[1][i]))
+            print ("%d : %f" % (data[0][i], data[1][i]))
             
         graph.add_serie(data[0], data[1], colour, legend)
             
