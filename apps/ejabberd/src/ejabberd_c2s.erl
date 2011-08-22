@@ -179,7 +179,7 @@ del_aux_field(Key, #state{aux_fields = Opts} = State) ->
 get_subscription(From = #jid{}, StateData) ->
     get_subscription(jlib:jid_tolower(From), StateData);
 get_subscription(LFrom, StateData) ->
-    LBFrom = setelement(3, LFrom, ""),
+    LBFrom = setelement(3, LFrom, <<>>),
     F = ?SETS:is_element(LFrom, StateData#state.pres_f) orelse
 	?SETS:is_element(LBFrom, StateData#state.pres_f),
     T = ?SETS:is_element(LFrom, StateData#state.pres_t) orelse
@@ -1619,7 +1619,7 @@ get_conn_type(StateData) ->
 
 process_presence_probe(From, To, StateData) ->
     LFrom = jlib:jid_tolower(From),
-    LBFrom = setelement(3, LFrom, ""),
+    LBFrom = setelement(3, LFrom, <<>>),
     case StateData#state.pres_last of
 	undefined ->
 	    ok;
@@ -1643,7 +1643,7 @@ process_presence_probe(From, To, StateData) ->
 		    Packet = xml:append_subtags(
 			       StateData#state.pres_last,
 			       %% To is the one sending the presence (the target of the probe)
-			       [jlib:timestamp_to_xml(Timestamp, utc, To, ""),
+			       [jlib:timestamp_to_xml(Timestamp, utc, To, <<>>),
 				%% TODO: Delete the next line once XEP-0091 is Obsolete
 				jlib:timestamp_to_xml(Timestamp)]),
 		    case privacy_check_packet(StateData, To, From, Packet, out) of
