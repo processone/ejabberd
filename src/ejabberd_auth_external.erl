@@ -95,13 +95,13 @@ check_cache_last_options(Server) ->
 plain_password_required() ->
     true.
 
+store_type() ->
+	external.
+
 %% @spec (User, Server, Password) -> bool()
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
-
-store_type() ->
-	external.
 
 check_password(User, Server, Password) ->
     case get_cache_option(Server) of

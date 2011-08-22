@@ -180,13 +180,13 @@ init(Host) ->
 plain_password_required() ->
     true.
 
+store_type() ->
+	external.
+
 %% @spec (User, Server, Password) -> bool()
 %%     User = string()
 %%     Server = string()
 %%     Password = string()
-
-store_type() ->
-	external.
 
 check_password(User, Server, Password) ->
     %% In LDAP spec: empty password means anonymous authentication.
