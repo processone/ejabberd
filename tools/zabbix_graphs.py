@@ -128,6 +128,8 @@ def main():
     
     graph = Graph()
     graph.set_config(config)
+
+    wyX = []
     
     for i in range(1, series_num + 1):
         # retrieve data serie
@@ -144,8 +146,11 @@ def main():
         data = retriever.get_data(time_from, time_to)
         for i in range(0, len(data[0])):
             print ("%d : %f" % (data[0][i], data[1][i]))
+
+        if len(wyX) == 0:
+            wyX = data[0]
             
-        graph.add_serie(data[0], data[1], colour, legend)
+        graph.add_serie(wyX, data[1], colour, legend)
             
     #create graph
     graph.set_title(title)
