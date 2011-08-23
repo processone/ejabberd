@@ -893,7 +893,10 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 				    end,
 			NewState =
 			    add_user_presence_un(From, NewPacket, StateData),
-			send_new_presence(From, NewState),
+			case ?DICT:find(Nick, StateData#state.nicks) of
+			    {ok, [_, _ | _]} -> ok;
+			    _ -> send_new_presence(From, NewState)
+			end,
 			Reason = case xml:get_subtag(NewPacket, "status") of
 				false -> "";
 				Status_el -> xml:get_tag_cdata(Status_el)
