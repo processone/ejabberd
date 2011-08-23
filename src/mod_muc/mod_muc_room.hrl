@@ -69,6 +69,7 @@
 		config = #config{},
 		users = ?DICT:new(),
 		robots = ?DICT:new(),
+		nicks = ?DICT:new(),
 		affiliations = ?DICT:new(),
 		history,
 		subject = "",
@@ -79,6 +80,7 @@
 		room_queue = queue:new()}).
 
 -record(muc_online_users, {us,
+			   resource,
 			   room,
 			   host}).
 
