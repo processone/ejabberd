@@ -3811,23 +3811,23 @@ add_to_log(Type, Data, StateData) ->
 %% Users number checking
 
 tab_add_online_user(JID, StateData) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    {LUser, LServer, LResource} = jlib:jid_tolower(JID),
     US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
     catch ets:insert(
 	    muc_online_users,
-	    #muc_online_users{us = US, room = Room, host = Host}).
+	    #muc_online_users{us = US, resource = LResource, room = Room, host = Host}).
 
 
 tab_remove_online_user(JID, StateData) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    {LUser, LServer, LResource} = jlib:jid_tolower(JID),
     US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
     catch ets:delete_object(
 	    muc_online_users,
-	    #muc_online_users{us = US, room = Room, host = Host}).
+	    #muc_online_users{us = US, resource = LResource, room = Room, host = Host}).
 
 tab_count_user(JID) ->
     {LUser, LServer, _} = jlib:jid_tolower(JID),

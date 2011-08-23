@@ -81,5 +81,6 @@
 		room_queue = queue:new()}).
 
 -record(muc_online_users, {us,
+			   resource,
 			   room,
 			   host}).
