@@ -426,14 +426,14 @@ normal_state({route, From, ToNick,
 				ToNick),
 			      From, Err);
 			_ ->
-			    ToJID = find_jid_by_nick(ToNick, StateData),
+			    ToJIDs = find_jids_by_nick(ToNick, StateData),
 			    SrcIsVisitor = is_visitor(From, StateData),
-			    DstIsModerator = is_moderator(ToJID, StateData),
+			    DstIsModerator = is_moderator(hd(ToJIDs), StateData),
 			    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
 			    if SrcIsVisitor == false;
 			       PmFromVisitors == anyone;
 			       (PmFromVisitors == moderators) and (DstIsModerator) ->
-				    case ToJID of
+				    case ToJIDs of
 					false ->
 					    ErrText = "Recipient is not in the conference room",
 					    Err = jlib:make_error_reply(
@@ -447,11 +447,8 @@ normal_state({route, From, ToNick,
 					    {ok, #user{nick = FromNick}} =
 						?DICT:find(jlib:jid_tolower(From),
 							   StateData#state.users),
-					    ejabberd_router:route(
-					      jlib:jid_replace_resource(
-						StateData#state.jid,
-						FromNick),
-					      ToJID, Packet)
+					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
+					    [ejabberd_router:route(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs]
 				    end;
 			       true ->
 				    ErrText = "It is not allowed to send private messages",
@@ -1547,6 +1544,18 @@ add_user_presence_un(JID, Presence, StateData) ->
 	   end, StateData#state.users),
     StateData#state{users = Users}.
 
+
+%% Find and return a list of the full JIDs of the users of Nick.
+%% Return jid record.
+find_jids_by_nick(Nick, StateData) ->
+    case ?DICT:find(Nick, StateData#state.nicks) of
+	{ok, [User]} ->
+	    [jlib:make_jid(User)];
+	{ok, Users} ->
+	    [jlib:make_jid(LJID) || LJID <- Users];
+	error ->
+	    false
+    end.
 
 %% Find and return the full JID of the user of Nick with
 %% highest-priority presence.  Return jid record.
