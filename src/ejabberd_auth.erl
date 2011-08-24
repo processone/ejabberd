@@ -50,6 +50,7 @@
 	 remove_user/2,
 	 remove_user/3,
 	 plain_password_required/1,
+	 store_type/1,
 	 entropy/1
 	]).
 
@@ -69,11 +70,27 @@ start() ->
 		end, auth_modules(Host))
       end, ?MYHOSTS).
 
+%% This is only executed by ejabberd_c2s for non-SASL auth client
 plain_password_required(Server) ->
     lists:any(
       fun(M) ->
 	      M:plain_password_required()
       end, auth_modules(Server)).
+
+store_type(Server) ->
+    lists:foldl(
+      fun(_, external) ->
+	      external;
+	  (M, scram) ->
+	      case M:store_type() of
+		  external ->
+		      external;
+		  _Else ->
+		      scram
+		  end;
+	  (M, plain) ->
+	      M:store_type()
+      end, plain, auth_modules(Server)).
 
 %% @doc Check if the user and password can login in server.
 %% @spec (User::string(), Server::string(), Password::string()) ->
@@ -232,8 +249,10 @@ get_password_s(User, Server) ->
     case get_password(User, Server) of
 	false ->
 	    "";
-	Password ->
-	    Password
+	Password when is_list(Password) ->
+	    Password;
+	_ ->
+	    ""
     end.
 
 %% @doc Get the password of the user and the auth module.

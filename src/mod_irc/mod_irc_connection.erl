@@ -132,8 +132,6 @@ open_socket(init, StateData) ->
 			 StateData#state.nick,
 			 StateData#state.host,
 			 StateData#state.nick])),
-	    send_text(NewStateData,
-		      io_lib:format("CODEPAGE ~s\r\n", [StateData#state.encoding])),
 	    {next_state, wait_for_registration,
 	     NewStateData};
 	{error, Reason} ->
@@ -498,6 +496,8 @@ handle_info({ircstring, [$: | String]}, wait_for_registration, StateData) ->
     {NewState, NewStateData} =
 	case Words of
 	    [_, "001" | _] ->
+		send_text(StateData,
+		      io_lib:format("CODEPAGE ~s\r\n", [StateData#state.encoding])),
 		{stream_established, StateData};
 	    [_, "433" | _] ->
 		{error,

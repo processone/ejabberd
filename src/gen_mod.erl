@@ -79,7 +79,7 @@ start_module(Host, Module, Opts) ->
 		false ->
 		    ?CRITICAL_MSG("ejabberd initialization was aborted because a module start failed.", []),
 		    timer:sleep(3000),
-		    erlang:halt(lists:flatten(ErrorText))
+		    erlang:halt(string:substr(lists:flatten(ErrorText), 1, 199))
 	    end
     end.
 

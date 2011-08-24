@@ -49,6 +49,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include("mod_roster.hrl").
 
 start(Host, Opts) ->
     ejabberd_local:refresh_iq_handlers(),
@@ -327,7 +328,7 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
     end.
 
 is_presence_subscribed(#jid{luser=User, lserver=Server}, #jid{luser=LUser, lserver=LServer}) ->
-    lists:any(fun({roster, _, _, {TUser, TServer, _}, _, S, _, _, _, _}) -> 
+    lists:any(fun(#roster{jid = {TUser, TServer, _}, subscription = S}) ->
                             if 
                                 LUser == TUser, LServer == TServer, S/=none ->
                                     true;

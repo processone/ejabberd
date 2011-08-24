@@ -1,0 +1,97 @@
+
+                              Release Notes
+                             ejabberd 2.1.7
+
+  ejabberd 2.1.7 is the eighth release in ejabberd 2.1.x branch,
+  and includes a lot of bugfixes and improvements.
+
+  Read more details about the changes in:
+    http://redir.process-one.net/ejabberd-2.1.7
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+  The changes are:
+
+* BOSH and Web
+- Clarify error message when BOSH query is sent to non-running module
+- Keep the order of stanzas when BOSH sends several (EJAB-1374)
+- Show configuration for HTTPS http_bind
+- Support as read-only HTTP method not only GET, also HEAD
+- The responses to HEAD must have empty Body
+
+* CAPTCHA
+- If the port number isn't listener, then specify the protocol (EJAB-1418)
+- New CAPTCHA limit
+- New CAPTCHA whitelist support
+- Only check system at startup if option is enabled
+- Provide HTTPS URL in CAPTCHA form when listener has 'tls' option (EJAB-1406)
+- Show captcha_limit option in the example config
+- Support more captcha_host value formats (EJAB-1418)
+- Throw error when captcha fails at server start, not later at runtime
+- captcha_host must have the port number to get protocol (EJAB-1418)
+
+* Core ejabberd
+- Disable all entity expansions (EJAB-1451)
+- Do not accept XML with undefined prefixes (EJAB-680)
+- Make jlib:ip_to_list safe to use
+- Make sure 'closed' event is correctly processed on every state
+- New route_iq/5 accepting Timeout (EJAB-1398)
+- Take into consideration internal queue length when sorting processes queues
+- Use route instead of send_element to go through standard workflow
+
+* Erlang/OTP compatibility
+- Remove Type and Spec, backport list comprehensions, so R12B-5 can compile
+- Tweak pg2_backport.erl to work with Erlang older than R13A (EJAB-1349)
+
+* ODBC
+- Don't let presence-in privacy rule block a presence subscription (EJAB-255)
+- Escape user input in mod_privacy_odbc (EJAB-1442)
+- Try to improve support for roster_version in MSSQL (EJAB-1437)
+
+* Pubsub/PEP/Caps
+- Apply filtered notification to PEP last items (EJAB-1456)
+- Fix empty pubsub payload check
+- Owner can delete any items from its own node (EJAB-1445)
+- Pubsub node maxitem forced to 0 if non persistent node (EJAB-1434)
+- Reorganize the push_item function, and handle version not_found (EJAB-1420)
+
+* Scripts
+- ejabberd.init: Several fixes and improvements
+- ejabberdctl: Escape output from ctlexec() to erl script (EJAB-1399)
+- ejabberdctl: Fix bashism and mimic master branch (EJAB-1404)
+- ejabberdctl: Fix space between INET_DIST_INTERFACE (EJAB-1416)
+- ejabberdctl: New DIST_USE_INTERFACE restricts IP of erlang listen (EJAB-1404)
+- ejabberdctl: New ERL_EPMD_ADDRESS that works since Erlang/OTP R14B03
+- extauth: Fix delayed response of timeout was reused for next login (EJAB-1385)
+- extauth: Forward old messages to newly spawned extauth process (EJAB-1385)
+- extauth: If script crashes, ejabberd should restart it (EJAB-1428)
+
+* XEP support
+- mod_blocking: New XEP-0191 Simple Communications Blocking (EJAB-695)
+- No need to inform that XEP-0237 is optional; clarified in XEP version 1.2
+
+* Miscellanea:
+- If a module start fails during server start, stop erlang (EJAB-1446)
+- New Indonesian translation (EJAB-1407)
+- LDAP: Note that ejabberd works with CGP LDAP server
+- S2S: Handle Tigase's unexpected version=1.0 (EJAB-1379)
+- mod_irc: Send presence unavailable to the departing occupant (EJAB-1417)
+- mod_last: Allow user to query his own Last activity
+- mod_muc: Do not decrease MUC admin's role/affiliation
+- mod_muc: Send jid attribute when occupant is banned (EJAB-1432)
+- mod_offline: Change c2s state before offline messages resending
+- mod_ping: Use iqdisc no_queue by default (EJAB-1435)
+- mod_pres_counter: Prevent subscription flood (EJAB-1388)
+- mod_register Access now also controls account unregistrations
+- mod_register: Clarify more the expected content of welcome_message option
+- mod_shared_roster: Fix support for anonymous accounts in @all@ (EJAB-1264)
+- mod_shared_roster: New @online@ directive (EJAB-1391)
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/
+

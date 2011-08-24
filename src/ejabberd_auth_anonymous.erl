@@ -52,6 +52,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
+	 store_type/0,
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
@@ -271,3 +272,6 @@ update_tables() ->
 	_ ->
 	    ok
     end.
+
+store_type() ->
+	plain.

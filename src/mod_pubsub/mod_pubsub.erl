@@ -2066,9 +2066,12 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		    Features = features(Type),
 		    PublishFeature = lists:member("publish", Features),
 		    PublishModel = get_option(Options, publish_model),
-		    MaxItems = max_items(Host, Options),
 		    DeliverPayloads = get_option(Options, deliver_payloads),
 		    PersistItems = get_option(Options, persist_items),
+		    MaxItems = case PersistItems of
+			false -> 0;
+			true -> max_items(Host, Options)
+		    end,
 		    PayloadCount = payload_xmlelements(Payload),
 		    PayloadSize = size(term_to_binary(Payload))-2, % size(term_to_binary([])) == 2
 		    PayloadMaxSize = get_option(Options, max_payload_size),
@@ -2361,7 +2364,7 @@ get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) ->
 %%	 Number = last | integer()
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
-send_items(Host, Node, NodeId, Type, LJID, last) ->
+send_items(Host, Node, NodeId, Type, {U,S,R} = LJID, last) ->
     case get_cached_item(Host, NodeId) of
 	undefined ->
 	    send_items(Host, Node, NodeId, Type, LJID, 1);
@@ -2370,9 +2373,22 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 	    Stanza = event_stanza_with_delay(
 		[{xmlelement, "items", nodeAttr(Node),
 		  itemsEls([LastItem])}], ModifNow, ModifUSR),
-	    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza)
+	    case is_tuple(Host) of
+	        false ->
+	            ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
+	        true ->
+	            case ejabberd_sm:get_session_pid(U,S,R) of
+	                C2SPid when is_pid(C2SPid) ->
+	                    ejabberd_c2s:broadcast(C2SPid,
+	                        {pep_message, binary_to_list(Node)++"+notify"},
+	                        _Sender = service_jid(Host),
+	                        Stanza);
+	                _ ->
+	                    ok
+	            end
+	    end
     end;
-send_items(Host, Node, NodeId, Type, LJID, Number) ->
+send_items(Host, Node, NodeId, Type, {U,S,R} = LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items, [NodeId, LJID]) of
 	{result, []} -> 
 	    [];
@@ -2395,7 +2411,20 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 		[{xmlelement, "items", nodeAttr(Node),
 		  itemsEls(ToSend)}])
     end,
-    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza).
+    case is_tuple(Host) of
+        false ->
+            ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
+        true ->
+            case ejabberd_sm:get_session_pid(U,S,R) of
+	                C2SPid when is_pid(C2SPid) ->
+	                    ejabberd_c2s:broadcast(C2SPid,
+	                        {pep_message, binary_to_list(Node)++"+notify"},
+	                        _Sender = service_jid(Host),
+	                        Stanza);
+	                _ ->
+	                    ok
+	            end
+    end.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()

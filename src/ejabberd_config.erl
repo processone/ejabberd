@@ -222,7 +222,7 @@ exit_or_halt(ExitText) ->
     case [Vsn || {ejabberd, _Desc, Vsn} <- application:which_applications()] of
 	[] ->
 	    timer:sleep(1000),
-	    halt(ExitText);
+	    halt(string:substr(ExitText, 1, 199));
 	[_] ->
 	    exit(ExitText)
     end.

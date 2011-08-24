@@ -54,6 +54,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
+	 store_type/0,
 	 plain_password_required/0
 	]).
 
@@ -136,6 +137,9 @@ init(Host) ->
 
 plain_password_required() ->
     true.
+
+store_type() ->
+	external.
 
 check_password(User, Server, Password) ->
     %% In LDAP spec: empty password means anonymous authentication.
@@ -374,6 +378,8 @@ parse_options(Host) ->
 		   end,
     LDAPEncrypt = ejabberd_config:get_local_option({ldap_encrypt, Host}),
     LDAPTLSVerify = ejabberd_config:get_local_option({ldap_tls_verify, Host}),
+    LDAPTLSCAFile = ejabberd_config:get_local_option({ldap_tls_cacertfile, Host}),
+    LDAPTLSDepth = ejabberd_config:get_local_option({ldap_tls_depth, Host}),
     LDAPPort = case ejabberd_config:get_local_option({ldap_port, Host}) of
 		   undefined -> case LDAPEncrypt of
 				    tls -> ?LDAPS_PORT;
@@ -398,7 +404,9 @@ parse_options(Host) ->
     UserFilter = case ejabberd_config:get_local_option({ldap_filter, Host}) of
 		     undefined -> SubFilter;
 		     "" -> SubFilter;
-		     F -> "(&" ++ SubFilter ++ F ++ ")"
+		     F ->
+                         eldap_utils:check_filter(F),
+                         "(&" ++ SubFilter ++ F ++ ")"
 		 end,
     SearchFilter = eldap_filter:do_sub(UserFilter, [{"%u", "*"}]),
     LDAPBase = ejabberd_config:get_local_option({ldap_base, Host}),
@@ -411,7 +419,8 @@ parse_options(Host) ->
 	    {DNF, DNFA} ->
 		{DNF, DNFA}
 	end,
-	LocalFilter = ejabberd_config:get_local_option({ldap_local_filter, Host}),
+    eldap_utils:check_filter(DNFilter),
+    LocalFilter = ejabberd_config:get_local_option({ldap_local_filter, Host}),
     #state{host = Host,
 	   eldap_id = Eldap_ID,
 	   bind_eldap_id = Bind_Eldap_ID,
@@ -419,7 +428,9 @@ parse_options(Host) ->
 	   backups = LDAPBackups,
 	   port = LDAPPort,
 	   tls_options = [{encrypt, LDAPEncrypt},
-			  {tls_verify, LDAPTLSVerify}],
+			  {tls_verify, LDAPTLSVerify},
+                          {tls_cacertfile, LDAPTLSCAFile},
+                          {tls_depth, LDAPTLSDepth}],
 	   dn = RootDN,
 	   password = Password,
 	   base = LDAPBase,

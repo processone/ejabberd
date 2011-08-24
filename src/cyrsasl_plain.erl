@@ -34,7 +34,7 @@
 -record(state, {check_password}).
 
 start(_Opts) ->
-    cyrsasl:register_mechanism("PLAIN", ?MODULE, false),
+    cyrsasl:register_mechanism("PLAIN", ?MODULE, plain),
     ok.
 
 stop() ->

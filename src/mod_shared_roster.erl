@@ -602,10 +602,10 @@ get_user_displayed_groups(US) ->
 	    end, get_user_groups(US))),
     [Group || Group <- DisplayedGroups1, is_group_enabled(Host, Group)].
 
-is_user_in_group({_U, S} = US, Group, Host) ->
+is_user_in_group(US, Group, Host) ->
     case catch mnesia:dirty_match_object(
 		 #sr_user{us=US, group_host={Group, Host}}) of
-        [] -> lists:member(US, get_group_users(S, Group));
+        [] -> lists:member(US, get_group_users(Host, Group));
 	_  -> true
     end.
 

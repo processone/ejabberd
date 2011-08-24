@@ -43,6 +43,7 @@
 	 is_user_exists/2,
 	 remove_user/2,
 	 remove_user/3,
+	 store_type/0,
 	 plain_password_required/0
 	]).
 
@@ -50,6 +51,8 @@
 
 -record(passwd, {us, password}).
 -record(reg_users_counter, {vhost, count}).
+
+-define(SALT_LENGTH, 16).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -62,6 +65,7 @@ start(Host) ->
 			 {attributes, record_info(fields, reg_users_counter)}]),
     update_table(),
     update_reg_users_counter_table(Host),
+    maybe_alert_password_scrammed_without_option(),
     ok.
 
 update_reg_users_counter_table(Server) ->
@@ -75,15 +79,26 @@ update_reg_users_counter_table(Server) ->
     mnesia:sync_dirty(F).
 
 plain_password_required() ->
-    false.
+    case is_scrammed() of
+	false -> false;
+	true -> true
+    end.
+
+store_type() ->
+    case is_scrammed() of
+	false -> plain; %% allows: PLAIN DIGEST-MD5 SCRAM
+	true -> scram %% allows: PLAIN SCRAM
+    end.
 
 check_password(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
-	[#passwd{password = Password}] ->
+	[#passwd{password = Password}] when is_list(Password) ->
 	    Password /= "";
+	[#passwd{password = Scram}] when is_record(Scram, scram) ->
+	    is_password_scram_valid(Password, Scram);
 	_ ->
 	    false
     end.
@@ -93,7 +108,20 @@ check_password(User, Server, Password, Digest, DigestGen) ->
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({passwd, US}) of
-	[#passwd{password = Passwd}] ->
+	[#passwd{password = Passwd}] when is_list(Passwd) ->
+	    DigRes = if
+			 Digest /= "" ->
+			     Digest == DigestGen(Passwd);
+			 true ->
+			     false
+		     end,
+	    if DigRes ->
+		    true;
+	       true ->
+		    (Passwd == Password) and (Password /= "")
+	    end;
+	[#passwd{password = Scram}] when is_record(Scram, scram) ->
+	    Passwd = base64:decode(Scram#scram.storedkey),
 	    DigRes = if
 			 Digest /= "" ->
 			     Digest == DigestGen(Passwd);
@@ -120,8 +148,12 @@ set_password(User, Server, Password) ->
 	    {error, invalid_jid};
 	true ->
 	    F = fun() ->
+			Password2 = case is_scrammed() and is_list(Password) of
+					true -> password_to_scram(Password);
+					false -> Password
+				    end,
 			mnesia:write(#passwd{us = US,
-					     password = Password})
+					     password = Password2})
 		end,
 	    {atomic, ok} = mnesia:transaction(F),
 	    ok
@@ -139,8 +171,12 @@ try_register(User, Server, Password) ->
 	    F = fun() ->
 			case mnesia:read({passwd, US}) of
 			    [] ->
+				Password2 = case is_scrammed() and is_list(Password) of
+						true -> password_to_scram(Password);
+						false -> Password
+					    end,
 				mnesia:write(#passwd{us = US,
-						     password = Password}),
+						     password = Password2}),
 				mnesia:dirty_update_counter(
 						    reg_users_counter,
 						    LServer, 1),
@@ -235,8 +271,13 @@ get_password(User, Server) ->
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
+	[#passwd{password = Password}] when is_list(Password) ->
 	    Password;
+	[#passwd{password = Scram}] when is_record(Scram, scram) ->
+	    {base64:decode(Scram#scram.storedkey),
+	     base64:decode(Scram#scram.serverkey),
+	     base64:decode(Scram#scram.salt),
+	     Scram#scram.iterationcount};
 	_ ->
 	    false
     end.
@@ -246,8 +287,10 @@ get_password_s(User, Server) ->
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read(passwd, US) of
-	[#passwd{password = Password}] ->
+	[#passwd{password = Password}] when is_list(Password) ->
 	    Password;
+	[#passwd{password = Scram}] when is_record(Scram, scram) ->
+	    [];
 	_ ->
 	    []
     end.
@@ -289,13 +332,21 @@ remove_user(User, Server, Password) ->
     US = {LUser, LServer},
     F = fun() ->
 		case mnesia:read({passwd, US}) of
-		    [#passwd{password = Password}] ->
+		    [#passwd{password = Password}] when is_list(Password) ->
 			mnesia:delete({passwd, US}),
 			mnesia:dirty_update_counter(reg_users_counter,
 						    LServer, -1),
 			ok;
-		    [_] ->
-			not_allowed;
+		    [#passwd{password = Scram}] when is_record(Scram, scram) ->
+			case is_password_scram_valid(Password, Scram) of
+			    true ->
+				mnesia:delete({passwd, US}),
+				mnesia:dirty_update_counter(reg_users_counter,
+							    LServer, -1),
+				ok;
+			    false ->
+				not_allowed
+			end;
 		    _ ->
 			not_exists
 		end
@@ -309,11 +360,11 @@ remove_user(User, Server, Password) ->
 	    bad_request
     end.
 
-
 update_table() ->
     Fields = record_info(fields, passwd),
     case mnesia:table_info(passwd, attributes) of
 	Fields ->
+	    maybe_scram_passwords(),
 	    ok;
 	[user, password] ->
 	    ?INFO_MSG("Converting passwd table from "
@@ -352,5 +403,68 @@ update_table() ->
 	    mnesia:transform_table(passwd, ignore, Fields)
     end.
 
+%%%
+%%% SCRAM
+%%%
 
+%% The passwords are stored scrammed in the table either if the option says so,
+%% or if at least the first password is scrammed.
+is_scrammed() ->
+    OptionScram = is_option_scram(),
+    FirstElement = mnesia:dirty_read(passwd, mnesia:dirty_first(passwd)),
+    case {OptionScram, FirstElement} of
+	{true, _} ->
+	    true;
+	{false, [#passwd{password = Scram}]} when is_record(Scram, scram) ->
+	    true;
+	_ ->
+	    false
+    end.
 
+is_option_scram() ->
+    scram == ejabberd_config:get_local_option({auth_password_format, ?MYNAME}).
+
+maybe_alert_password_scrammed_without_option() ->
+    case is_scrammed() andalso not is_option_scram() of
+	true ->
+	    ?ERROR_MSG("Some passwords were stored in the database as SCRAM, "
+		       "but 'auth_password_format' is not configured 'scram'. "
+		       "The option will now be considered to be 'scram'.", []);
+	false ->
+	    ok
+    end.
+
+maybe_scram_passwords() ->
+    case is_scrammed() of
+	true -> scram_passwords();
+	false -> ok
+    end.
+
+scram_passwords() ->
+    ?INFO_MSG("Converting the stored passwords into SCRAM bits", []),
+    Fun = fun(#passwd{password = Password} = P) ->
+		  Scram = password_to_scram(Password),
+		  P#passwd{password = Scram}
+	  end,
+    Fields = record_info(fields, passwd),
+    mnesia:transform_table(passwd, Fun, Fields).
+
+password_to_scram(Password) ->
+    password_to_scram(Password, ?SCRAM_DEFAULT_ITERATION_COUNT).
+
+password_to_scram(Password, IterationCount) ->
+    Salt = crypto:rand_bytes(?SALT_LENGTH),
+    SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+    StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+    ServerKey = scram:server_key(SaltedPassword),
+    #scram{storedkey = base64:encode(StoredKey),
+	   serverkey = base64:encode(ServerKey),
+	   salt = base64:encode(Salt),
+	   iterationcount = IterationCount}.
+
+is_password_scram_valid(Password, Scram) ->
+    IterationCount = Scram#scram.iterationcount,
+    Salt = base64:decode(Scram#scram.salt),
+    SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
+    StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
+    (base64:decode(Scram#scram.storedkey) == StoredKey).

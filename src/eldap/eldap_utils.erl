@@ -35,7 +35,10 @@
 	 make_filter/2,
 	 get_state/2,
 	 case_insensitive_match/2,
+         check_filter/1,
 	 uids_domain_subst/2]).
+
+-include("ejabberd.hrl").
 
 %% Generate an 'or' LDAP query on one or several attributes
 %% If there is only one attribute
@@ -92,7 +95,14 @@ get_user_part(String, Pattern) ->
 	    {error, badmatch};
 	Result ->
 	    case regexp:sub(Pattern, "%u", Result) of
-		{ok, String, _} -> {ok, Result};
+		{ok, StringRes, _} ->
+                    case (string:to_lower(StringRes) ==
+                              string:to_lower(String)) of
+                        true ->
+                            {ok, Result};
+                        false ->
+                            {error, badmatch}
+                    end;
 		_ -> {error, badmatch}
 	    end
     end.
@@ -144,3 +154,16 @@ uids_domain_subst(Host, UIDs) ->
                   (A) -> A 
               end,
               UIDs).
+
+check_filter(undefined) ->
+    ok;
+check_filter(Filter) ->
+    case eldap_filter:parse(Filter) of
+        {ok, _} ->
+            ok;
+        Err ->
+            ?ERROR_MSG("failed to parse LDAP filter:~n"
+                       "** Filter: ~p~n"
+                       "** Reason: ~p",
+                       [Filter, Err])
+    end.

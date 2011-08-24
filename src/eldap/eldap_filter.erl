@@ -82,6 +82,8 @@ parse(L) when is_list(L) ->
 %%%-------------------------------------------------------------------
 parse(L, SList) when is_list(L), is_list(SList) ->
     case catch eldap_filter_yecc:parse(scan(L, SList)) of
+        {'EXIT', _} = Err ->
+            {error, Err};
 	{error, {_, _, Msg}} ->
 	    {error, Msg};
 	{ok, Result} ->

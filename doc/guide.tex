@@ -587,8 +587,8 @@ ejabberdctl register admin1 example.org FgT5bk3
   \end{enumerate}
 \item Edit the \ejabberd{} configuration file to give administration rights to the XMPP account you created:
 \begin{verbatim}
-{acl, admins, {user, "admin1", "example.org"}}.
-{access, configure, [{allow, admins}]}.
+{acl, admin, {user, "admin1", "example.org"}}.
+{access, configure, [{allow, admin}]}.
 \end{verbatim}
   You can grant administrative privileges to many XMPP accounts,
   and also to accounts in other XMPP servers.
@@ -1218,11 +1218,39 @@ The following authentication methods are supported by \ejabberd{}:
 
 Account creation is only supported by internal, external and odbc methods.
 
+The option \option{resource\_conflict} defines the action when a client attempts to
+login to an account with a resource that is already connected.
+The option syntax is:
+\esyntax{\{resource\_conflict, setresource|closenew|closeold\}.}
+The possible values match exactly the three possibilities described in
+\footahref{http://tools.ietf.org/html/rfc6120\#section-7.7.2.2}{XMPP Core: section 7.7.2.2}.
+The default value is \term{closeold}.
+If the client uses old Jabber Non-SASL authentication (\xepref{0078}),
+then this option is not respected, and the action performed is \term{closeold}.
+
 \makesubsubsection{internalauth}{Internal}
 \ind{internal authentication}\ind{Mnesia}
 
 \ejabberd{} uses its internal Mnesia database as the default authentication method.
 The value \term{internal} will enable the internal authentication method.
+
+The option \term{\{auth\_password\_format, plain|scram\}}
+defines in what format the users passwords are stored:
+\begin{description}
+    \titem{plain}
+    The password is stored as plain text in the database.
+    This is risky because the passwords can be read if your database gets compromised.
+    This is the default value.
+    This format allows clients to authenticate using:
+    the old Jabber Non-SASL (\xepref{0078}), \term{SASL PLAIN},
+    \term{SASL DIGEST-MD5}, and \term{SASL SCRAM-SHA-1}.
+
+    \titem{scram}
+    The password is not stored, only some information that allows to verify the hash provided by the client.
+    It is impossible to obtain the original plain password from the stored information;
+    for this reason, when this value is configured it cannot be changed to \term{plain} anymore.
+    This format allows clients to authenticate using: \term{SASL PLAIN} and \term{SASL SCRAM-SHA-1}.
+\end{description}
 
 Examples:
 \begin{itemize}
@@ -1232,9 +1260,10 @@ Examples:
 {host_config, "example.org", [{auth_method, [internal]}]}.
 {host_config, "example.net", [{auth_method, [ldap]}]}.
 \end{verbatim}
-\item To use internal authentication on all virtual hosts:
+\item To use internal authentication with hashed passwords on all virtual hosts:
 \begin{verbatim}
 {auth_method, internal}.
+{auth_password_format, scram}.
 \end{verbatim}
 \end{itemize}
 
@@ -1479,7 +1508,7 @@ declarations of ACLs in the configuration file have the following syntax:
   with a name that matches \term{UserRegexp} at any server that matches
   \term{ServerRegexp}. Example:
 \begin{verbatim}
-{acl, yohzik, {node_regexp, "^yohzik$", "^example.(com|org)$"}}.
+{acl, yozhik, {node_regexp, "^yozhik$", "^example.(com|org)$"}}.
 \end{verbatim}
 \titem{\{user\_glob, Glob\}}
 \titem{\{user\_glob, Glob, Server\}}
@@ -2263,6 +2292,16 @@ This option specifies whether to verify LDAP server certificate or not when TLS 
 When \term{hard} is enabled \ejabberd{} doesn't proceed if a certificate is invalid.
 When \term{soft} is enabled \ejabberd{} proceeds even if check fails.
 The default is \term{false} which means no checks are performed.
+\titem{\{ldap\_tls\_cacertfile, Path\}} \ind{options!ldap\_tls\_cacertfile}
+Path to file containing PEM encoded CA certificates. This option is needed
+(and required) when TLS verification is enabled.
+\titem{\{ldap\_tls\_depth, Number\}} \ind{options!ldap\_tls\_depth}
+Specifies the maximum verification depth when TLS verification is enabled,
+i.e. how far in a chain of certificates the verification process can proceed
+before the verification is considered to fail.
+Peer certificate = 0, CA certificate = 1, higher level CA certificate = 2, etc.
+The value 2 thus means that a chain can at most contain peer cert,
+CA cert, next CA cert, and an additional CA cert. The default value is 1.
 \titem{\{ldap\_port, Number\}} \ind{options!ldap\_port}Port to connect to your LDAP server.
 The default port is~389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in \ejabberd{}'s database.
@@ -2550,7 +2589,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
-    \hline \ahrefloc{modprescounter}{\modprivacy{}} & Detect presence subscription flood &  \\
+    \hline \ahrefloc{modprescounter}{\modprescounter{}} & Detect presence subscription flood &  \\
     \hline \ahrefloc{modprivacy}{\modprivacy{}} & Blocking Communication (\xepref{0016}) &  \\
     \hline \ahrefloc{modprivacy}{\modprivacyodbc{}} & Blocking Communication (\xepref{0016}) & supported DB (*) \\
     \hline \ahrefloc{modprivate}{\modprivate{}} & Private XML Storage (\xepref{0049}) &  \\
@@ -2746,7 +2785,7 @@ Examples:
 \begin{itemize}
 \item Only administrators can send announcements:
 \begin{verbatim}
-{access, announce, [{allow, admins}]}.
+{access, announce, [{allow, admin}]}.
 
 {modules,
  [
@@ -2760,9 +2799,9 @@ Examples:
 \begin{verbatim}
 {acl, direction, {user, "big_boss", "example.org"}}.
 {acl, direction, {user, "assistant", "example.org"}}.
-{acl, admins, {user, "admin", "example.org"}}.
+{acl, admin, {user, "admin", "example.org"}}.
 
-{access, announce, [{allow, admins},
+{access, announce, [{allow, admin},
                     {allow, direction}]}.
 
 {modules,
@@ -3061,7 +3100,7 @@ End user information:
   to join a channel, and to set custom IRC username and encoding.
 \item When using a popular \XMPP{} server, it can occur that no
   connection can be achieved with some IRC servers because they limit the
-  number of conections from one IP.
+  number of connections from one IP.
 \end{itemize}
 
 Options:
@@ -3233,6 +3272,7 @@ Module options:
   \begin{description}
   \titem{\{allow\_change\_subj, true|false\}} Allow occupants to change the subject.
   \titem{\{allow\_private\_messages, true|false\}} Occupants can send private messages to other occupants.
+  \titem{\{allow\_private\_messages\_from\_visitors, anyone|moderators|nobody\}} Visitors can send private messages to other occupants.
   \titem{\{allow\_query\_users, true|false\}} Occupants can send IQ queries to other occupants.
   \titem{\{allow\_user\_invites, false|true\}} Allow occupants to send invitations.
   \titem{\{allow\_visitor\_nickchange, true|false\}} Allow visitors to
@@ -3477,10 +3517,10 @@ Examples:
   be stored in /var/www/muclogs, and the local time will be used. Finally, the
   top link will be the default \verb|<a href="/">Home</a>|.
 \begin{verbatim}
-{acl, admins, {user, "admin1", "example.org"}}.
-{acl, admins, {user, "admin2", "example.net"}}.
+{acl, admin, {user, "admin1", "example.org"}}.
+{acl, admin, {user, "admin2", "example.net"}}.
 
-{access, muc_log, [{allow, admins},
+{access, muc_log, [{allow, admin},
                    {deny, all}]}.
 
 {modules,
@@ -3960,6 +4000,8 @@ Options:
 
 This example configuration shows how to enable the module and the web handler:
 \begin{verbatim}
+{hosts, ["localhost", "example.org", "example.com"]}.
+
 {listen, [
   ...
   {5281, ejabberd_http, [
@@ -3978,7 +4020,8 @@ This example configuration shows how to enable the module and the web handler:
  ]}.
 \end{verbatim}
 
-The users can visit this page: https://localhost:5281/register/
+For example, the users of the host \term{example.org} can visit the page:
+\ns{https://example.org:5281/register/}
 It is important to include the last / character in the URL,
 otherwise the subpages URL will be incorrect.
 
@@ -4637,7 +4680,7 @@ Examples:
 \makesubsection{modvcardldap}{\modvcardldap{}}
 \ind{modules!\modvcardldap{}}\ind{JUD}\ind{Jabber User Directory}\ind{vCard}\ind{protocols!XEP-0054: vcard-temp}
 
-%TODO: verify if the referers to the LDAP section are still correct
+%TODO: verify if the referrers to the LDAP section are still correct
 
 \ejabberd{} can map LDAP attributes to vCard fields. This behaviour is
 implemented in the \modvcardldap{} module. This module does not depend on the
@@ -4989,6 +5032,8 @@ The environment variables:
 	This path is used to read the file \term{.erlang.cookie}.
   \titem{ERL\_CRASH\_DUMP}
 	Path to the file where crash reports will be dumped.
+  \titem{ERL\_EPMD\_ADDRESS}
+	IP address where epmd listens for connections (see section \ref{epmd}).
   \titem{ERL\_INETRC}
 	Indicates which IP name resolution to use.
 	If using \term{-sname}, specify either this option or \term{-kernel inetrc filepath}.
@@ -5017,10 +5062,10 @@ The command line parameters:
         connections (see section \ref{epmd}).
   \titem{-detached}
         Starts the Erlang system detached from the system console.
-	Useful for running daemons and backgrounds processes.
+	Useful for running daemons and background processes.
   \titem{-noinput}
 	Ensures that the Erlang system never tries to read any input.
-	Useful for running daemons and backgrounds processes.
+	Useful for running daemons and background processes.
   \titem{-pa /var/lib/ejabberd/ebin}
 	Specify the directory where Erlang binary files (*.beam) are located.
   \titem{-s ejabberd}
@@ -5226,11 +5271,11 @@ Example configurations:
   administer the virtual host \jid{example.com}.
   The account `\jid{reviewer@example.com}' can browse that vhost in read-only mode.
 \begin{verbatim}
-{acl, admins, {user, "admin", "example.net"}}.
-{host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+{acl, admin, {user, "admin", "example.net"}}.
+{host_config, "example.com", [{acl, admin, {user, "admin", "example.com"}}]}.
 {host_config, "example.com", [{acl, viewers, {user, "reviewer", "example.com"}}]}.
 
-{access, configure, [{allow, admins}]}.
+{access, configure, [{allow, admin}]}.
 {access, webadmin_view, [{allow, viewers}]}.
 
 {hosts, ["example.org"]}.
@@ -5410,6 +5455,8 @@ In order for this communication to work,
 \term{epmd} must be running and listening for name requests in the port 4369.
 You should block the port 4369 in the firewall in such a way that
 only the programs in your machine can access it.
+or configure the option \term{ERL\_EPMD\_ADDRESS} in the file \term{ejabberdctl.cfg}
+(this option works only in Erlang/OTP R14B03 or higher).
 
 If you build a cluster of several \ejabberd{} instances,
 each \ejabberd{} instance is called an \ejabberd{} node.
@@ -5816,10 +5863,6 @@ The Web Admin also supports the \verb|Accept-Language| HTTP header.
   \label{fig:webadmmainru}
 \end{figure}
 
-
-%\section{Ultra Complex Example}
-%\label{ultracomplexexample}
-%TODO: a very big example covering the whole guide, with a good explanation before the example: different authenticaton mechanisms, transports, ACLs, multple virtual hosts, virtual host specific settings and general settings, modules,...
 
 \makechapter{releasenotes}{Release Notes}
 \ind{release notes}

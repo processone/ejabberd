@@ -448,14 +448,29 @@ init({Hosts, Port, Rootdn, Passwd, Opts}) ->
 		       end;
 		   PT -> PT
 	       end,
-    TLSOpts = case proplists:get_value(tls_verify, Opts) of
-		  soft ->
-		      [{verify, 1}];
-		  hard ->
-		      [{verify, 2}];
-		  _ ->
-		      [{verify, 0}]
-	      end,
+    CacertOpts = case proplists:get_value(tls_cacertfile, Opts) of
+                     [_|_] = Path -> [{cacertfile, Path}];
+                     _ -> []
+                 end,
+    DepthOpts = case proplists:get_value(tls_depth, Opts) of
+                    Depth when is_integer(Depth), Depth >= 0 ->
+                        [{depth, Depth}];
+                    _ -> []
+                end,
+    Verify = proplists:get_value(tls_verify, Opts),
+    TLSOpts = if (Verify == hard orelse Verify == soft)
+                 andalso CacertOpts == [] ->
+                      ?WARNING_MSG("TLS verification is enabled "
+                                   "but no CA certfiles configured, so "
+                                   "verification is disabled.", []),
+                      [];
+                 Verify == soft ->
+                      [{verify, 1}] ++ CacertOpts ++ DepthOpts;
+                 Verify == hard ->
+                      [{verify, 2}] ++ CacertOpts ++ DepthOpts;
+                 true ->
+                      []
+              end,
     {ok, connecting, #eldap{hosts = Hosts,
 			    port = PortTemp,
 			    rootdn = Rootdn,
@@ -965,18 +980,21 @@ polish([], Res, Ref) ->
 connect_bind(S) ->
     Host = next_host(S#eldap.host, S#eldap.hosts),
     ?INFO_MSG("LDAP connection on ~s:~p", [Host, S#eldap.port]),
+    Opts = if S#eldap.tls == tls ->
+                   [{packet, asn1}, {active, true}, {keepalive, true},
+                    binary | S#eldap.tls_options];
+              true ->
+                   [{packet, asn1}, {active, true}, {keepalive, true},
+                    {send_timeout, ?SEND_TIMEOUT}, binary]
+           end,
     SocketData = case S#eldap.tls of
 		     tls ->
 			 SockMod = ssl,
-			 SslOpts = [{packet, asn1}, {active, true}, {keepalive, true},
-				    binary | S#eldap.tls_options],
-			 ssl:connect(Host, S#eldap.port, SslOpts);
+			 ssl:connect(Host, S#eldap.port, Opts);
 		     %% starttls -> %% TODO: Implement STARTTLS;
 		     _ ->
 			 SockMod = gen_tcp,
-			 TcpOpts = [{packet, asn1}, {active, true}, {keepalive, true},
-				    {send_timeout, ?SEND_TIMEOUT}, binary],
-			 gen_tcp:connect(Host, S#eldap.port, TcpOpts)
+			 gen_tcp:connect(Host, S#eldap.port, Opts)
 		 end,
     case SocketData of
 	{ok, Socket} ->
@@ -994,8 +1012,11 @@ connect_bind(S) ->
 		    {ok, connecting, NewS#eldap{host = Host}}
 	    end;
 	{error, Reason} ->
-	    ?ERROR_MSG("LDAP connection failed on ~s:~p~nReason: ~p",
-		       [Host, S#eldap.port, Reason]),
+	    ?ERROR_MSG("LDAP connection failed:~n"
+                       "** Server: ~s:~p~n"
+                       "** Reason: ~p~n"
+                       "** Socket options: ~p",
+		       [Host, S#eldap.port, Reason, Opts]),
 	    NewS = close_and_retry(S),
 	    {ok, connecting, NewS#eldap{host = Host}}
     end.

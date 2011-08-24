@@ -232,10 +232,6 @@ list_users(LServer, [{prefix, Prefix},
 
 users_number(LServer) ->
     case element(1, ejabberd_config:get_local_option({odbc_server, LServer})) of
-    mysql ->
-	ejabberd_odbc:sql_query(
-	LServer,
-	"select table_rows from information_schema.tables where table_name='users'");
     pgsql ->
 	case ejabberd_config:get_local_option({pgsql_users_number_estimate, LServer}) of
 	true ->

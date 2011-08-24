@@ -34,7 +34,9 @@
 	 server_start/3,
 	 server_step/2]).
 
--record(sasl_mechanism, {mechanism, module, require_plain_password}).
+-include("ejabberd.hrl").
+
+-record(sasl_mechanism, {mechanism, module, password_type}).
 -record(sasl_state, {service, myname, realm,
 		     get_password, check_password, check_password_digest,
 		     mech_mod, mech_state}).
@@ -52,14 +54,15 @@ start() ->
 			     {keypos, #sasl_mechanism.mechanism}]),
     cyrsasl_plain:start([]),
     cyrsasl_digest:start([]),
+    cyrsasl_scram:start([]),
     cyrsasl_anonymous:start([]),
     ok.
 
-register_mechanism(Mechanism, Module, RequirePlainPassword) ->
+register_mechanism(Mechanism, Module, PasswordType) ->
     ets:insert(sasl_mechanism,
 	       #sasl_mechanism{mechanism = Mechanism,
 			       module = Module,
-			       require_plain_password = RequirePlainPassword}).
+			       password_type = PasswordType}).
 
 %%% TODO: use callbacks
 %%-include("ejabberd.hrl").
@@ -97,17 +100,20 @@ check_credentials(_State, Props) ->
     end.
 
 listmech(Host) ->
-    RequirePlainPassword = ejabberd_auth:plain_password_required(Host),
-
     Mechs = ets:select(sasl_mechanism,
 		       [{#sasl_mechanism{mechanism = '$1',
-					 require_plain_password = '$2',
+					 password_type = '$2',
 					 _ = '_'},
-			 if
-			     RequirePlainPassword ->
-				 [{'==', '$2', false}];
-			     true ->
-				 []
+			 case catch ejabberd_auth:store_type(Host) of
+			 external ->
+			      [{'==', '$2', plain}];
+			 scram ->
+			      [{'/=', '$2', digest}];
+			 {'EXIT',{undef,[{Module,store_type,[]} | _]}} ->
+			      ?WARNING_MSG("~p doesn't implement the function store_type/0", [Module]),
+			      [];
+			 _Else ->
+			      []
 			 end,
 			 ['$1']}]),
     filter_anonymous(Host, Mechs).
@@ -149,6 +155,13 @@ server_step(State, ClientIn) ->
 	    case check_credentials(State, Props) of
 		ok ->
 		    {ok, Props};
+		{error, Error} ->
+		    {error, Error}
+	    end;
+	{ok, Props, ServerOut} ->
+	    case check_credentials(State, Props) of
+		ok ->
+		    {ok, Props, ServerOut};
 		{error, Error} ->
 		    {error, Error}
 	    end;

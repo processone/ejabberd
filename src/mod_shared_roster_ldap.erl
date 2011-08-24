@@ -483,6 +483,17 @@ parse_options(Host, Opts) ->
 			    ejabberd_config:get_local_option({ldap_tls_verify, Host});
 			Verify -> Verify
 		    end,
+    LDAPTLSCAFile = case gen_mod:get_opt(ldap_tls_cacertfile, Opts, undefined) of
+                        undefined ->
+                            ejabberd_config:get_local_option({ldap_tls_cacertfile, Host});
+                        CAFile -> CAFile
+                    end,
+    LDAPTLSDepth = case gen_mod:get_opt(ldap_tls_depth, Opts, undefined) of
+                       undefined ->
+                           ejabberd_config:get_local_option({ldap_tls_depth, Host});
+                       Depth ->
+                           Depth
+                   end,
     LDAPPort = case gen_mod:get_opt(ldap_port, Opts, undefined) of
 		   undefined ->
 		       case ejabberd_config:get_local_option({ldap_port, Host}) of
@@ -619,7 +630,9 @@ parse_options(Host, Opts) ->
 		       RF ->
 			   RF
 		   end,
-
+    lists:foreach(fun eldap_utils:check_filter/1, 
+                  [ConfigFilter, ConfigUserFilter,
+                   ConfigGroupFilter, RosterFilter]),
     SubFilter = "(&("++UIDAttr++"="++UIDAttrFormat++")("++GroupAttr++"=%g))",
     UserSubFilter = case ConfigUserFilter of
                         undefined -> eldap_filter:do_sub(SubFilter, [{"%g", "*"}]);
@@ -652,7 +665,9 @@ parse_options(Host, Opts) ->
 	   backups = LDAPBackups,
 	   port = LDAPPort,
 	   tls_options = [{encrypt, LDAPEncrypt},
-			  {tls_verify, LDAPTLSVerify}],
+			  {tls_verify, LDAPTLSVerify},
+                          {tls_cacertfile, LDAPTLSCAFile},
+                          {tls_depth, LDAPTLSDepth}],
 	   dn = RootDN,
 	   base = LDAPBase,
 	   password = Password,
