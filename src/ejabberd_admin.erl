@@ -427,7 +427,11 @@ restore_mnesia(Path) ->
 %% mod_configure/adhoc 
 restore(Path) ->
     mnesia:restore(Path, [{keep_tables,keep_tables()},
+			  {skip_tables, skip_tables()},
 			  {default_op, skip_tables}]).
+
+skip_tables() ->
+    [disco_publish,user_caps,user_caps_resources].
 
 %% This function return a list of tables that should be kept from a previous
 %% version backup.
