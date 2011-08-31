@@ -2259,11 +2259,17 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    Nidx = TNode#pubsub_node.idx,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
-	    BrPayload = case Broadcast of
-				   broadcast -> Payload;
-				   PluginPayload -> PluginPayload
-			       end,
-	    broadcast_publish_item(Host, Node, Nidx, Type, Options, ItemId, jlib:short_prepd_jid(Publisher), BrPayload, Removed),
+	    case get_option(Options, deliver_notifications) of
+			true ->
+			    BrPayload = case Broadcast of
+						   broadcast -> Payload;
+						   PluginPayload -> PluginPayload
+					       end,
+			    broadcast_publish_item(Host, Node, Nidx, Type, Options, ItemId,
+					jlib:short_prepd_jid(Publisher), BrPayload, Removed);
+			false ->
+				ok
+		end,
 	    set_cached_item(Host, Nidx, ItemId, Publisher, Payload),
 	    case Result of
 		default -> {result, Reply};
