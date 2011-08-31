@@ -2064,13 +2064,20 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    NodeId = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
-	    BroadcastPayload = case Broadcast of
-		default -> Payload;
-		broadcast -> Payload;
-		PluginPayload -> PluginPayload
-	    end,
-	    broadcast_publish_item(Host, Node, NodeId, Type, Options, Removed, ItemId, jlib:jid_tolower(Publisher), BroadcastPayload),
-	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
+	    case get_option(Options, deliver_notifications) of
+			true ->
+				BroadcastPayload = case Broadcast of
+					default -> Payload;
+					broadcast -> Payload;
+					PluginPayload -> PluginPayload
+				end,
+				broadcast_publish_item(Host, Node, NodeId, Type, Options,
+					Removed, ItemId, jlib:jid_tolower(Publisher),
+					BroadcastPayload);
+			false ->
+				ok
+		end,
+		set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
