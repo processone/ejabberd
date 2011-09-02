@@ -788,9 +788,11 @@ wait_for_feature_request({xmlstreamelement, #xmlel{ns = NS, name = Name} = El},
 		    fsm_next_state(wait_for_feature_request, StateData);
 		<<"zlib">> ->
 		    Socket = StateData#state.socket,
+		    Compressed = exmpp_xml:node_to_list(
+		      exmpp_server_compression:compressed(), [?DEFAULT_NS], ?PREFIXED_NS),
 		    ZlibSocket = (StateData#state.sockmod):compress(
 				   Socket,
-				   exmpp_server_compression:compressed()),
+				   Compressed),
 		    fsm_next_state(wait_for_stream,
 		     StateData#state{socket = ZlibSocket,
 				     streamid = new_id()
