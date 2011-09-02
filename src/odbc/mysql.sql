@@ -25,6 +25,10 @@
 -- Needs MySQL (at least 4.0.x) with innodb back-end
 SET table_type=InnoDB;
 
+--
+-- Tables schemas keep from previous ejabberd versions
+--
+
 CREATE TABLE hosts (
     clusterid integer NOT NULL,
     host varchar(250) NOT NULL PRIMARY KEY,
@@ -34,157 +38,11 @@ CREATE TABLE hosts (
 INSERT INTO hosts (clusterid, host, config)
 VALUES (1, 'localhost', '');
 
-CREATE TABLE users (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    password text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (host, username)
-) CHARACTER SET utf8;
-
-
-CREATE TABLE last (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    seconds text NOT NULL,
-    state text NOT NULL,
-    PRIMARY KEY (host, username)
-) CHARACTER SET utf8;
-
-
-CREATE TABLE rosteritem (
-    host varchar(250) NOT NULL,
-    user varchar(250) NOT NULL,
-    jid varchar(250) NOT NULL,
-    name text,
-    subscription text NOT NULL,
-    ask text NOT NULL,
-    askmessage text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (host(75), username(75), jid(75))
-) CHARACTER SET utf8;
-
-CREATE INDEX i_rosteru_username ON rosteritem(username);
-CREATE INDEX i_rosteru_jid ON rosteritem(jid);
-
-CREATE TABLE rostergroup (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    jid varchar(250) NOT NULL,
-    grp text NOT NULL,
-    PRIMARY KEY (host(75), username(75), jid(75))
-) CHARACTER SET utf8;
-
-CREATE TABLE spool (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    xml text NOT NULL,
-    seq BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (host, username, seq)
-) CHARACTER SET utf8;
-
-
-CREATE TABLE vcard (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    vcard mediumtext NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (host, username)
-) CHARACTER SET utf8;
-
-
-CREATE TABLE vcard_search (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    lusername varchar(250) NOT NULL,
-    fn text NOT NULL,
-    lfn varchar(250) NOT NULL,
-    family text NOT NULL,
-    lfamily varchar(250) NOT NULL,
-    given text NOT NULL,
-    lgiven varchar(250) NOT NULL,
-    middle text NOT NULL,
-    lmiddle varchar(250) NOT NULL,
-    nickname text NOT NULL,
-    lnickname varchar(250) NOT NULL,
-    bday text NOT NULL,
-    lbday varchar(250) NOT NULL,
-    ctry text NOT NULL,
-    lctry varchar(250) NOT NULL,
-    locality text NOT NULL,
-    llocality varchar(250) NOT NULL,
-    email text NOT NULL,
-    lemail varchar(250) NOT NULL,
-    orgname text NOT NULL,
-    lorgname varchar(250) NOT NULL,
-    orgunit text NOT NULL,
-    lorgunit varchar(250) NOT NULL,
-    PRIMARY KEY (host, lusername)
-) CHARACTER SET utf8;
-
-CREATE INDEX i_vcard_search_lfn       ON vcard_search(lfn);
-CREATE INDEX i_vcard_search_lfamily   ON vcard_search(lfamily);
-CREATE INDEX i_vcard_search_lgiven    ON vcard_search(lgiven);
-CREATE INDEX i_vcard_search_lmiddle   ON vcard_search(lmiddle);
-CREATE INDEX i_vcard_search_lnickname ON vcard_search(lnickname);
-CREATE INDEX i_vcard_search_lbday     ON vcard_search(lbday);
-CREATE INDEX i_vcard_search_lctry     ON vcard_search(lctry);
-CREATE INDEX i_vcard_search_llocality ON vcard_search(llocality);
-CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
-CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
-CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
-
-CREATE TABLE privacy_default_list (
-    host varchar(250) NOT NULL,
-    username varchar(250),
-    name varchar(250) NOT NULL,
-    PRIMARY KEY (host, username)
-) CHARACTER SET utf8;
-
-CREATE TABLE privacy_list (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    name varchar(250) NOT NULL,
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (host, username, name)
-) CHARACTER SET utf8;
-
-CREATE TABLE privacy_list_data (
-    id bigint,
-    t character(1) NOT NULL,
-    value text NOT NULL,
-    action character(1) NOT NULL,
-    ord NUMERIC NOT NULL,
-    match_all boolean NOT NULL,
-    match_iq boolean NOT NULL,
-    match_message boolean NOT NULL,
-    match_presence_in boolean NOT NULL,
-    match_presence_out boolean NOT NULL
-) CHARACTER SET utf8;
-
-CREATE TABLE private_storage (
-    host varchar(250) NOT NULL,
-    username varchar(250) NOT NULL,
-    namespace varchar(250) NOT NULL,
-    data text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (host(75), username(75), namespace(75))
-) CHARACTER SET utf8;
-
-CREATE INDEX i_private_storage_username USING BTREE ON private_storage(username);
-
 -- Not tested in mysql
 CREATE TABLE roster_version (
     username varchar(250) PRIMARY KEY,
     version text NOT NULL
 ) CHARACTER SET utf8;
-
--- To update from 1.x:
--- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;
--- UPDATE rosterusers SET askmessage = '';
--- ALTER TABLE rosterusers ALTER COLUMN askmessage SET NOT NULL;
 
 CREATE TABLE pubsub_node (
   host text,
@@ -240,3 +98,177 @@ CREATE TABLE pubsub_subscription_opt (
   opt_value text
 );
 CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt(subid(32), opt_name(32));
+
+--
+-- Tables schemas dumped from gen_storage
+--
+
+CREATE TABLE `last_activity` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `timestamp` bigint(20) DEFAULT NULL,
+  `status` text,
+  PRIMARY KEY (`user`(105),`host`(105))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `muc_online_room` (
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `pid` text,
+  PRIMARY KEY (`name`(105),`host`(105))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `muc_registered` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `nick` text,
+  PRIMARY KEY (`user`(105),`host`(105)),
+  KEY `muc_registered_nick` (`nick`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `muc_room_affiliation` (
+  `name` varchar(255) DEFAULT NULL,
+  `host` varchar(255) DEFAULT NULL,
+  `jid` varchar(255) DEFAULT NULL,
+  `affiliation` varchar(255) DEFAULT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  KEY `muc_room_affiliation_bag` (`name`(75),`host`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `muc_room_opt` (
+  `name` varchar(255) DEFAULT NULL,
+  `host` varchar(255) DEFAULT NULL,
+  `opt` varchar(255) DEFAULT NULL,
+  `val` varchar(255) DEFAULT NULL,
+  KEY `muc_room_opt_bag` (`name`(75),`host`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `offline_msg` (
+  `user` varchar(255) DEFAULT NULL,
+  `host` varchar(255) DEFAULT NULL,
+  `timestamp` bigint(20) DEFAULT NULL,
+  `expire` bigint(20) DEFAULT NULL,
+  `from` varchar(255) DEFAULT NULL,
+  `to` varchar(255) DEFAULT NULL,
+  `packet` text,
+  KEY `offline_msg_bag` (`user`(75),`host`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `passwd` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `password` text,
+  `storedkey` text,
+  `serverkey` text,
+  `salt` text,
+  `iterationcount` int(11) DEFAULT NULL,
+  PRIMARY KEY (`user`(105),`host`(105))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `privacy_default_list` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `name` text,
+  PRIMARY KEY (`user`(105),`host`(105))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `privacy_list` (
+  `user` varchar(255) DEFAULT NULL,
+  `host` varchar(255) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  KEY `privacy_list_bag` (`user`(75),`host`(75)),
+  KEY `privacy_list_name` (`name`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `privacy_list_data` (
+  `user` varchar(255) DEFAULT NULL,
+  `host` varchar(255) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `type` varchar(255) DEFAULT NULL,
+  `value` varchar(255) DEFAULT NULL,
+  `action` varchar(255) DEFAULT NULL,
+  `order` int(11) DEFAULT NULL,
+  `match_all` varchar(255) DEFAULT NULL,
+  `match_iq` varchar(255) DEFAULT NULL,
+  `match_message` varchar(255) DEFAULT NULL,
+  `match_presence_in` varchar(255) DEFAULT NULL,
+  `match_presence_out` varchar(255) DEFAULT NULL,
+  KEY `privacy_list_data_bag` (`user`(75),`host`(75)),
+  KEY `privacy_list_data_name` (`name`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `private_storage` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `ns` varchar(255) NOT NULL DEFAULT '',
+  `xml` text,
+  PRIMARY KEY (`user`(105),`host`(105),`ns`(105))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `rostergroup` (
+  `user` varchar(255) DEFAULT NULL,
+  `host` varchar(255) DEFAULT NULL,
+  `jid` varchar(255) DEFAULT NULL,
+  `grp` varchar(255) DEFAULT NULL,
+  KEY `rostergroup_bag` (`user`(75),`host`(75),`jid`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `rosteritem` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `jid` varchar(255) NOT NULL DEFAULT '',
+  `name` text,
+  `subscription` text,
+  `ask` text,
+  `askmessage` text,
+  PRIMARY KEY (`user`(105),`host`(105),`jid`(105))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `vcard` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `vcard` text,
+  PRIMARY KEY (`user`(105),`host`(105))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+CREATE TABLE `vcard_search` (
+  `user` varchar(255) NOT NULL DEFAULT '',
+  `host` varchar(255) NOT NULL DEFAULT '',
+  `username` text,
+  `lusername` text,
+  `fn` text,
+  `lfn` text,
+  `family` text,
+  `lfamily` text,
+  `given` text,
+  `lgiven` text,
+  `middle` text,
+  `lmiddle` text,
+  `nickname` text,
+  `lnickname` text,
+  `bday` text,
+  `lbday` text,
+  `ctry` text,
+  `lctry` text,
+  `locality` text,
+  `llocality` text,
+  `email` text,
+  `lemail` text,
+  `orgname` text,
+  `lorgname` text,
+  `orgunit` text,
+  `lorgunit` text,
+  PRIMARY KEY (`user`(105),`host`(105)),
+  KEY `vcard_search_lusername` (`lusername`(75)),
+  KEY `vcard_search_lfn` (`lfn`(75)),
+  KEY `vcard_search_lfamily` (`lfamily`(75)),
+  KEY `vcard_search_lgiven` (`lgiven`(75)),
+  KEY `vcard_search_lmiddle` (`lmiddle`(75)),
+  KEY `vcard_search_lnickname` (`lnickname`(75)),
+  KEY `vcard_search_lbday` (`lbday`(75)),
+  KEY `vcard_search_lctry` (`lctry`(75)),
+  KEY `vcard_search_llocality` (`llocality`(75)),
+  KEY `vcard_search_lemail` (`lemail`(75)),
+  KEY `vcard_search_lorgname` (`lorgname`(75)),
+  KEY `vcard_search_lorgunit` (`lorgunit`(75))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
