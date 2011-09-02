@@ -318,7 +318,6 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
   Don't use R14A or R14B because \footahref{http://www.erlang.org/cgi-bin/ezmlm-cgi/4/54598}{they have a bug}.
 \item exmpp 0.9.6 or higher
 \item OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
-\item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
 \item Erlang pgsql library. Optional. For PostgreSQL authentication or storage. See section \ref{compilepgsql}.
 \item PAM library. Optional. For Pluggable Authentication Modules (PAM). See section \ref{pam}.
@@ -524,7 +523,6 @@ To compile \ejabberd{} on a Microsoft Windows system, you need:
 \item \footahref{http://support.process-one.net/doc/display/EXMPP}{exmpp 0.9.5 or higher}
 \item \footahref{http://www.slproweb.com/products/Win32OpenSSL.html}{Shining Light OpenSSL 0.9.8d or higher}
 (to enable SSL connections)
-\item \footahref{http://www.zlib.net/}{Zlib 1.2.3 or higher}
 \end{itemize}
 
 
@@ -535,8 +533,6 @@ We assume that we will try to put as much library as possible into \verb|C:\sdk\
 \begin{enumerate}
 \item Install Erlang emulator (for example, into \verb|C:\sdk\erl5.6.5|).
 \item Install OpenSSL in \verb|C:\sdk\OpenSSL| and add \verb|C:\sdk\OpenSSL\lib\VC| to your path or copy the binaries to your system directory.
-\item Install ZLib in \verb|C:\sdk\gnuWin32|. Copy
-  \verb|C:\sdk\GnuWin32\bin\zlib1.dll| to your system directory.
 \item Make sure the you can access Erlang binaries from your path. For example: \verb|set PATH=%PATH%;"C:\sdk\erl5.6.5\bin"|
 \item Depending on how you end up actually installing the library you might need to check and tweak the paths in the file configure.erl.
 \item While in the directory \verb|ejabberd\src| run:

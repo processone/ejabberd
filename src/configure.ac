@@ -36,10 +36,6 @@ AC_MOD_ENABLE(odbc, no)
 AC_MOD_ENABLE(tls, yes)
 AC_MOD_ENABLE(web, yes)
 
-AC_MOD_ENABLE(ejabberd_zlib, yes)
-#locating zlib
-AM_WITH_ZLIB
-
 AC_MOD_ENABLE(pam, no)
 #locating PAM
 AM_WITH_PAM
@@ -107,8 +103,7 @@ AC_CONFIG_FILES([Makefile
                  $make_web
                  stun/Makefile
                  $make_tls
-                 $make_odbc
-                 $make_ejabberd_zlib])
+                 $make_odbc])
 #openssl
 AM_WITH_OPENSSL
 # If ssl is kerberized it need krb5.h

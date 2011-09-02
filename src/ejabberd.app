@@ -48,7 +48,6 @@
 	     ejabberd_update,
 	     ejabberd_web_admin,
 	     ejabberd_web,
-	     ejabberd_zlib,
 	     ejd2odbc,
 	     eldap,
 	     eldap_filter,

@@ -1,39 +1,3 @@
-AC_DEFUN([AM_WITH_ZLIB],
-[ AC_ARG_WITH(zlib,
-	      [AC_HELP_STRING([--with-zlib=PREFIX], [prefix where zlib is installed])])
-
-if test x"$ejabberd_zlib" != x; then
-  ZLIB_CFLAGS=
-  ZLIB_LIBS=
-	if test x"$with_zlib" != x; then
-		ZLIB_CFLAGS="-I$with_zlib/include"
-		ZLIB_LIBS="-L$with_zlib/lib"
-	fi
-
-	AC_CHECK_LIB(z, gzgets,
-		     [ ZLIB_LIBS="$ZLIB_LIBS -lz"
-		       zlib_found=yes ],
-		     [ zlib_found=no ],
-		     "$ZLIB_LIBS")
-	if test $zlib_found = no; then
-		AC_MSG_ERROR([Could not find development files of zlib library. Install them or disable `ejabberd_zlib' with: --disable-ejabberd_zlib])
-	fi
-	zlib_save_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS $ZLIB_CFLAGS"
-       zlib_save_CPPFLAGS="$CFLAGS"
-       CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-	AC_CHECK_HEADERS(zlib.h, , zlib_found=no)
-	if test $zlib_found = no; then
-		AC_MSG_ERROR([Could not find zlib.h. Install it or disable `ejabberd_zlib' with: --disable-ejabberd_zlib])
-	fi
-	CFLAGS="$zlib_save_CFLAGS"
-       CPPFLAGS="$zlib_save_CPPFLAGS"
-
-  AC_SUBST(ZLIB_CFLAGS)
-  AC_SUBST(ZLIB_LIBS)
-fi
-])
-
 AC_DEFUN([AM_WITH_PAM],
 [ AC_ARG_WITH(pam,
 	      [AC_HELP_STRING([--with-pam=PREFIX], [prefix where PAM is installed])])

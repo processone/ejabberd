@@ -12,8 +12,6 @@ To compile ejabberd you need:
    Avoid R14A and R14B.
  - exmpp 0.9.6 or higher
  - OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
- - Zlib 1.2.3 or higher, for Stream Compression support
-   (XEP-0138). Optional.
  - Erlang mysql library. Optional. MySQL authentication/storage.
  - Erlang pgsql library. Optional. PostgreSQL authentication/storage.
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
