@@ -162,12 +162,7 @@ create_table(#tabdef{name = Tab,
 	  end, {"", []}, Attributes),
     TabS = atom_to_list(Tab),
     PKey = case TableType of
-	       %% This 105 limits the size of fields in the primary key.
-	       %% That prevents MySQL from complaining when setting the
-	       %% last_activity key (text, text) with this error:
-	       %% #42000Specified key was too long; max key length is 1000bytes"
-	       %% Similarly for rosteritem and other tables, maybe also PgSQL.
-	       set -> [", PRIMARY KEY (", string:join(K, "(105), "), "(105))"];
+	       set -> primary_key_string(Host, K);
 	       bag -> []
 	   end,
     case odbc_command(Host,
@@ -190,6 +185,22 @@ create_table(#tabdef{name = Tab,
 	    end;
 	{error, Reason} ->
 	    {aborted, Reason}
+    end.
+
+%% This 105 limits the size of fields in the primary key.
+%% That prevents MySQL from complaining when setting the
+%% last_activity key (text, text) with this error:
+%% #42000Specified key was too long; max key length is 1000bytes"
+%% Similarly for rosteritem and other tables.
+primary_key_string(Host, K) ->
+    Dbtype = ejabberd_odbc:db_type(Host),
+    case Dbtype of
+	mysql ->
+	    [", PRIMARY KEY (", string:join(K, "(105), "), "(105))"];
+	odbc ->
+	    [", PRIMARY KEY (", string:join(K, ", "), ")"];
+	pgsql ->
+	    [", PRIMARY KEY (", string:join(K, ", "), ")"]
     end.
 
 type_to_sql_type(Type, false = _NoTextKeys) ->
