@@ -426,39 +426,38 @@ normal_state({route, From, ToNick,
 				ToNick),
 			      From, Err);
 			_ ->
-			    ToJIDs = find_jids_by_nick(ToNick, StateData),
-			    SrcIsVisitor = is_visitor(From, StateData),
-			    DstIsModerator = is_moderator(hd(ToJIDs), StateData),
-			    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
-			    if SrcIsVisitor == false;
-			       PmFromVisitors == anyone;
-			       (PmFromVisitors == moderators) and (DstIsModerator) ->
-				    case ToJIDs of
-					false ->
-					    ErrText = "Recipient is not in the conference room",
-					    Err = jlib:make_error_reply(
-						    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-					    ejabberd_router:route(
-					      jlib:jid_replace_resource(
-						StateData#state.jid,
-						ToNick),
-					      From, Err);
-					_ ->
-					    {ok, #user{nick = FromNick}} =
-						?DICT:find(jlib:jid_tolower(From),
-							   StateData#state.users),
-					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
-					    [ejabberd_router:route(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs]
-				    end;
-			       true ->
-				    ErrText = "It is not allowed to send private messages",
+			    case find_jids_by_nick(ToNick, StateData) of
+				false ->
+				    ErrText = "Recipient is not in the conference room",
 				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+					    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
 				    ejabberd_router:route(
 				      jlib:jid_replace_resource(
 					StateData#state.jid,
 					ToNick),
-				      From, Err)
+				      From, Err);
+				ToJIDs ->
+				    SrcIsVisitor = is_visitor(From, StateData),
+				    DstIsModerator = is_moderator(hd(ToJIDs), StateData),
+				    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
+				    if SrcIsVisitor == false;
+				       PmFromVisitors == anyone;
+				       (PmFromVisitors == moderators) and (DstIsModerator) ->
+					    {ok, #user{nick = FromNick}} =
+						?DICT:find(jlib:jid_tolower(From),
+							   StateData#state.users),
+					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
+					    [ejabberd_router:route(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs];
+				       true ->
+					    ErrText = "It is not allowed to send private messages",
+					    Err = jlib:make_error_reply(
+						    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+					    ejabberd_router:route(
+					      jlib:jid_replace_resource(
+						StateData#state.jid,
+						ToNick),
+					      From, Err)
+				    end
 			    end
 		    end;
 		{true, false} ->
