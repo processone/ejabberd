@@ -40,6 +40,12 @@
 -define(DEFLATE, 1).
 -define(INFLATE, 2).
 
+%% Copied from exmpp/src/core/exmpp_compress.erl
+-record(compress_socket, {socket,
+                          packet_mode = binary,
+                          port
+                         }).
+
 start() ->
     exmpp_compress:start().
 
@@ -65,7 +71,20 @@ recv(Socket, Length) ->
 recv(ZlibSock, _Length, Timeout) ->
     exmpp_compress:recv(ZlibSock, Timeout).
 
-recv_data(ZlibSock, Packet) ->
+recv_data(#compress_socket{socket = {SockMod, Socket}} = ZlibSock, Packet) ->
+    case SockMod of
+       gen_tcp ->
+           recv_data2(ZlibSock, Packet);
+       _ ->
+           case SockMod:recv_data(Socket, Packet) of
+               {ok, Packet2} ->
+                   recv_data2(ZlibSock, Packet2);
+               Error ->
+                   Error
+           end
+    end.
+
+recv_data2(ZlibSock, Packet) ->
     exmpp_compress:recv_data(ZlibSock, Packet).
 
 send(ZlibSock, Packet) ->
@@ -74,12 +93,6 @@ send(ZlibSock, Packet) ->
 
 setopts(ZlibSock, Opts) ->
     exmpp_compress:setopts(ZlibSock, Opts).
-
-%% Copied from exmpp/src/core/exmpp_compress.erl
--record(compress_socket, {socket,
-                          packet_mode = binary,
-                          port
-                         }).
 
 get_sockmod(#compress_socket{socket = {SockMod, _Port}}) ->
     SockMod.
