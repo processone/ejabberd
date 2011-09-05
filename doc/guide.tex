@@ -1486,10 +1486,10 @@ declarations of ACLs in the configuration file have the following syntax:
 {acl, tests, {user_regexp, "^test[0-9]*$"}}.
 \end{verbatim}
 %$
-\titem{\{user\_regexp, UserRegexp, Server\}} Matches any user with a name
+\titem{\{user\_regexp, Regexp, Server\}} Matches any user with a name
   that matches \term{Regexp} at server \term{Server}. Example:
 \begin{verbatim}
-{acl, tests, {user_Userregexp, "^test", "example.org"}}.
+{acl, tests, {user_regexp, "^test", "example.org"}}.
 \end{verbatim}
 \titem{\{server\_regexp, Regexp\}} Matches any JID from the server that
   matches \term{Regexp}. Example:
