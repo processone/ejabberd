@@ -37,8 +37,9 @@
 	 client_key/2
 	]).
 
+%% ejabberd doesn't implement SASLPREP, so we use the similar RESOURCEPREP instead
 salted_password(Password, Salt, IterationCount) ->
-	hi(jlib:nameprep(Password), Salt, IterationCount).
+	hi(jlib:resourceprep(Password), Salt, IterationCount).
 
 client_key(SaltedPassword) ->
 	crypto:sha_mac(SaltedPassword, "Client Key").
