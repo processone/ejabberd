@@ -1156,19 +1156,9 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 
 
 set_affiliation(JID, Affiliation, StateData) ->
-    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
-    Affiliations = case Affiliation of
-		       none ->
-			   ?DICT:erase(LJID,
-				       StateData#state.affiliations);
-		       _ ->
-			   ?DICT:store(LJID,
-				       Affiliation,
-				       StateData#state.affiliations)
-		   end,
-    StateData#state{affiliations = Affiliations}.
+    set_affiliation(JID, Affiliation, StateData, "").
 
-set_affiliation_and_reason(JID, Affiliation, Reason, StateData) ->
+set_affiliation(JID, Affiliation, StateData, Reason) ->
     LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
     Affiliations = case Affiliation of
 		       none ->
@@ -2443,18 +2433,18 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 				     {JID, affiliation, outcast, Reason} ->
 					 catch send_kickban_presence(
 						 JID, Reason, "301", outcast, SD),
-					 set_affiliation_and_reason(
-					   JID, outcast, Reason,
-					   set_role(JID, none, SD));
+					 set_affiliation(
+					   JID, outcast,
+					   set_role(JID, none, SD), Reason);
 				     {JID, affiliation, A, Reason} when
 					   (A == admin) or (A == owner) ->
-					 SD1 = set_affiliation_and_reason(JID, A, Reason, SD),
+					 SD1 = set_affiliation(JID, A, SD, Reason),
 					 SD2 = set_role(JID, moderator, SD1),
 					 send_update_presence(JID, Reason, SD2),
 					 SD2;
 				     {JID, affiliation, member, Reason} ->
-					 SD1 = set_affiliation_and_reason(
-						 JID, member, Reason, SD),
+					 SD1 = set_affiliation(
+						 JID, member, SD, Reason),
 					 SD2 = set_role(JID, participant, SD1),
 					 send_update_presence(JID, Reason, SD2),
 					 SD2;
