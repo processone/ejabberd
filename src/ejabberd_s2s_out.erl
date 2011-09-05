@@ -1073,33 +1073,29 @@ get_addr_port(Server) ->
 	{ok, HEnt} ->
 	    ?DEBUG("srv lookup of '~s': ~p~n",
 		   [Server, HEnt#hostent.h_addr_list]),
-	    case HEnt#hostent.h_addr_list of
-		[] ->
-		    [{Server, outgoing_s2s_port()}];
-		AddrList ->
-		    %% Probabilities are not exactly proportional to weights
-		    %% for simplicity (higher weigths are overvalued)
-		    {A1, A2, A3} = now(),
-		    random:seed(A1, A2, A3),
-		    case (catch lists:map(
-				  fun({Priority, Weight, Port, Host}) ->
-					  N = case Weight of
-						  0 -> 0;
-						  _ -> (Weight + 1) * random:uniform()
-					      end,
-					  {Priority * 65536 - N, Host, Port}
-				  end, AddrList)) of
-			{'EXIT', _Reason} ->
-			    [{Server, outgoing_s2s_port()}];
-			SortedList ->
-			    List = lists:map(
-				     fun({_, Host, Port}) ->
-					     {Host, Port}
-				     end, lists:keysort(1, SortedList)),
-			    ?DEBUG("srv lookup of '~s': ~p~n", [Server, List]),
-			    List
-		    end
-	    end
+	    AddrList = HEnt#hostent.h_addr_list,
+            %% Probabilities are not exactly proportional to weights
+            %% for simplicity (higher weigths are overvalued)
+            {A1, A2, A3} = now(),
+            random:seed(A1, A2, A3),
+            case (catch lists:map(
+                          fun({Priority, Weight, Port, Host}) ->
+                                  N = case Weight of
+                                          0 -> 0;
+                                          _ -> (Weight + 1) * random:uniform()
+                                      end,
+                                  {Priority * 65536 - N, Host, Port}
+                          end, AddrList)) of
+                SortedList = [_|_] ->
+                    List = lists:map(
+                             fun({_, Host, Port}) ->
+                                     {Host, Port}
+                             end, lists:keysort(1, SortedList)),
+                    ?DEBUG("srv lookup of '~s': ~p~n", [Server, List]),
+                    List;
+                _ ->
+                    [{Server, outgoing_s2s_port()}]
+            end
     end.
 
 srv_lookup(Server) ->
