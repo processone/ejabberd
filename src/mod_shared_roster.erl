@@ -30,6 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1,
+         item_to_xml/1,
 	 webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
@@ -726,8 +727,6 @@ displayed_to_groups(GroupName, LServer) ->
 	      lists:member(GroupName, proplists:get_value(displayed_groups, Opts, []))
       end, GroupsOpts).
 
-push_item(_User, _Server, _From, none) ->
-    ok;
 push_item(User, Server, From, Item) ->
     %% It was
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),
