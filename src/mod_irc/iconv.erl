@@ -52,7 +52,7 @@ init([]) ->
 	ok -> ok;
 	{error, already_loaded} -> ok
     end,
-    Port = open_port({spawn, iconv_erl}, []),
+    Port = open_port({spawn, "iconv_erl"}, []),
     ets:new(iconv_table, [set, public, named_table]),
     ets:insert(iconv_table, {port, Port}),
     {ok, Port}.

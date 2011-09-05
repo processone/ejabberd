@@ -84,7 +84,7 @@ init([]) ->
 	ok -> ok;
 	{error, already_loaded} -> ok
     end,
-    Port = open_port({spawn, tls_drv}, [binary]),
+    Port = open_port({spawn, "tls_drv"}, [binary]),
     Res = port_control(Port, ?SET_CERTIFICATE_FILE_ACCEPT, "./ssl.pem" ++ [0]),
     case Res of
 	<<0>> ->
@@ -130,7 +130,7 @@ tcp_to_tls(TCPSocket, Options) ->
 		ok -> ok;
 		{error, already_loaded} -> ok
 	    end,
-	    Port = open_port({spawn, tls_drv}, [binary]),
+	    Port = open_port({spawn, "tls_drv"}, [binary]),
 	    Flags =
 		case lists:member(verify_none, Options) of
 		    true ->
@@ -267,7 +267,7 @@ test() ->
 	ok -> ok;
 	{error, already_loaded} -> ok
     end,
-    Port = open_port({spawn, tls_drv}, [binary]),
+    Port = open_port({spawn, "tls_drv"}, [binary]),
     ?PRINT("open_port: ~p~n", [Port]),
     PCRes = port_control(Port, ?SET_CERTIFICATE_FILE_ACCEPT,
 			 "./ssl.pem" ++ [0]),
