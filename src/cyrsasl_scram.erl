@@ -137,7 +137,7 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 parse_attribute(Attribute) ->
 	AttributeLen = string:len(Attribute),
 	if
-	AttributeLen > 3 ->
+	AttributeLen >= 3 ->
 		SecondChar = lists:nth(2, Attribute),
 		case is_alpha(lists:nth(1, Attribute)) of
 			true ->
