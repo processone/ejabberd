@@ -813,13 +813,9 @@ process_channel_topic_who(StateData, Chan, String) ->
     Words = string:tokens(String, " "),
     Msg1 = case Words of
 	       [_, "333", _, _Chan, Whoset , Timeset] ->
-		   case string:to_integer(Timeset) of
-		       {Unixtimeset, _Rest} ->
-			   "Topic for #" ++ Chan ++ " set by " ++ Whoset ++
-			       " at " ++ unixtime2string(Unixtimeset);
-		       _->
-			   "Topic for #" ++ Chan ++ " set by " ++ Whoset
-		   end;
+		   {Unixtimeset, _Rest} = string:to_integer(Timeset),
+                   "Topic for #" ++ Chan ++ " set by " ++ Whoset ++
+                       " at " ++ unixtime2string(Unixtimeset);
 	       [_, "333", _, _Chan, Whoset | _] ->
                    "Topic for #" ++ Chan ++ " set by " ++ Whoset;
 	       _ ->
@@ -1327,15 +1323,12 @@ filter_mirc_colors(Msg) ->
 unixtime2string(Unixtime) ->
     Secs = Unixtime + calendar:datetime_to_gregorian_seconds(
 			{{1970, 1, 1}, {0,0,0}}),
-    case calendar:universal_time_to_local_time(
-	   calendar:gregorian_seconds_to_datetime(Secs)) of
-	{{Year, Month, Day}, {Hour, Minute, Second}} ->
-	    lists:flatten(
-	      io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",
-			    [Year, Month, Day, Hour, Minute, Second]));
-	_->
-	    "0000-00-00 00:00:00"
-    end.
+    {{Year, Month, Day}, {Hour, Minute, Second}} =
+        calendar:universal_time_to_local_time(
+          calendar:gregorian_seconds_to_datetime(Secs)),
+    lists:flatten(
+      io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",
+                    [Year, Month, Day, Hour, Minute, Second])).
 
 toupper([C | Cs]) ->
     if
