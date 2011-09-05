@@ -888,7 +888,6 @@ make_sid() ->
     sha:sha(randoms:get_string()).
 
 -compile({no_auto_import,[min/2]}).
-min(A, undefined) -> A;
 min(undefined, B) -> B;
 min(A, B) -> erlang:min(A, B).
 
