@@ -1622,7 +1622,6 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		       mod_muc, max_user_conferences, 10),
     Collision = nick_collision(From, Nick, StateData),
     case {(ServiceAffiliation == owner orelse
-	   MaxUsers == none orelse
 	   ((Affiliation == admin orelse Affiliation == owner) andalso
 	    NUsers < MaxAdminUsers) orelse
 	   NUsers < MaxUsers) andalso
