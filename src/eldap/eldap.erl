@@ -112,7 +112,7 @@
 		host = null,   % Connected Host LDAP server
 		port = 389,    % The LDAP server port
 		sockmod,       % SockMod (gen_tcp|tls)
-		tls = none,    % LDAP/LDAPS (none|starttls|tls)
+		tls = none,    % LDAP/LDAPS (none|tls)
 		tls_options = [],
 		fd = null,     % Socket filedescriptor.
 		rootdn = "",   % Name of the entry to bind as
@@ -424,8 +424,8 @@ get_handle(Name) when is_list(Name) -> list_to_atom("eldap_" ++ Name).
 %%----------------------------------------------------------------------
 init([]) ->
     case get_config() of
-	{ok, Hosts, Rootdn, Passwd, Opts} ->
-	    init({Hosts, Rootdn, Passwd, Opts});
+	{ok, Hosts, Port, Rootdn, Passwd, Opts} ->
+	    init({Hosts, Port, Rootdn, Passwd, Opts});
 	{error, Reason} ->
 	    {stop, Reason}
     end;
@@ -441,8 +441,6 @@ init({Hosts, Port, Rootdn, Passwd, Opts}) ->
 		       case Encrypt of
 			   tls ->
 			       ?LDAPS_PORT;
-			   starttls ->
-			       ?LDAP_PORT;
 			   _ ->
 			       ?LDAP_PORT
 		       end;
@@ -902,14 +900,9 @@ cancel_timer(Timer) ->
 
 %%% Sanity check of received packet
 check_tag(Data) ->
-    case asn1rt_ber_bin:decode_tag(Data) of
-	{_Tag, Data1, _Rb} ->
-	    case asn1rt_ber_bin:decode_length(Data1) of
-		{{_Len,_Data2}, _Rb2} -> ok;
-		_ -> throw({error,decoded_tag_length})
-	    end;
-	_ -> throw({error,decoded_tag})
-    end.
+    {_Tag, Data1, _Rb} = asn1rt_ber_bin:decode_tag(Data),
+    {{_Len,_Data2}, _Rb2} = asn1rt_ber_bin:decode_length(Data1),
+    ok.
 
 close_and_retry(S, Timeout) ->
     catch (S#eldap.sockmod):close(S#eldap.fd),
