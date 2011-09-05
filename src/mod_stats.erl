@@ -167,12 +167,7 @@ get_local_stat(_Server, [], Name) when Name == "users/all-hosts/total" ->
 			 ejabberd_auth:get_vh_registered_users_number(Host)
 			     + Total
 		 end, 0, ejabberd_config:get_global_option(hosts)),
-    case NumUsers of
-	{'EXIT', _Reason} ->
-	    ?STATERR("500", "Internal Server Error");
-	Users ->
-	    ?STATVAL(integer_to_list(Users), "users")
-    end;
+    ?STATVAL(integer_to_list(NumUsers), "users");
 
 get_local_stat(_Server, _, Name) ->
     ?STATERR("404", "Not Found").
