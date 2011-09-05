@@ -3340,9 +3340,9 @@ set_xoption([{"anonymous", [Val]} | Opts], Config) ->
 set_xoption([{"muc#roomconfig_whois", [Val]} | Opts], Config) ->
     case Val of
 	"moderators" ->
-	    ?SET_BOOL_XOPT(anonymous, "1");
+	    ?SET_BOOL_XOPT(anonymous, integer_to_list(1));
 	"anyone" ->
-	    ?SET_BOOL_XOPT(anonymous, "0");
+	    ?SET_BOOL_XOPT(anonymous, integer_to_list(0));
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
