@@ -91,7 +91,7 @@ mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
 mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
     case parse(ClientIn) of
 	bad ->
-	    {error, 'bad-protocol'};
+	    {error, 'malformed-request'};
 	KeyVals ->
 	    DigestURI = proplists:get_value("digest-uri", KeyVals, ""),
 	    UserName = proplists:get_value("username", KeyVals, ""),
@@ -136,7 +136,7 @@ mech_step(#state{step = 5,
 	  {auth_module, AuthModule}]};
 mech_step(A, B) ->
     ?DEBUG("SASL DIGEST: A ~p B ~p", [A,B]),
-    {error, 'bad-protocol'}.
+    {error, 'malformed-request'}.
 
 %% @spec (S) -> [{Key, Value}] | bad
 %%     S = string()

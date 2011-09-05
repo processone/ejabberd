@@ -61,7 +61,7 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 		{_, EscapedUserName} ->
 			case unescape_username(EscapedUserName) of
 			error ->
-				{error, 'protocol-error-bad-username'};
+				{error, 'malformed-request', "Error in username encoding", EscapedUserName};
 			UserName ->
 				case parse_attribute(ClientNonceAttribute) of
 				{$r, ClientNonce} ->
@@ -90,12 +90,12 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 									 client_nonce = ClientNonce, server_nonce = ServerNonce, username = UserName}}
 					end;
 				_Else ->
-					{error, 'not-supported'}
+					{error, 'malformed-request'}
 				end
 			end
 		end;
 	_Else ->
-	    {error, 'bad-protocol'}
+	    {error, 'malformed-request'}
 	end;
 mech_step(#state{step = 4} = State, ClientIn) ->
 	case string:tokens(ClientIn, ",") of
@@ -118,21 +118,21 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 						ServerSignature = scram:server_signature(State#state.server_key, AuthMessage),
 						{ok, [{username, State#state.username}], "v=" ++ base64:encode_to_string(ServerSignature)};
 					true ->
-						{error, 'bad-auth'}
+						{error, 'not-authorized', "", State#state.username}
 					end;
 				_Else ->
-					{error, 'bad-protocol'}
+					{error, 'malformed-request', "Bad protocol", State#state.username}
 				end;
 			{$r, _} ->
-				{error, 'bad-nonce'};
+				{error, 'malformed-request', "Bad nonce", State#state.username};
 			_Else ->
-				{error, 'bad-protocol'}
+				{error, 'malformed-request', "Bad protocol", State#state.username}
 			end;
 		_Else ->
-	   		{error, 'bad-protocol'}
+	   		{error, 'malformed-request', "Bad protocol", State#state.username}
 		end;
 	_Else ->
-		{error, 'bad-protocol'}
+		{error, 'malformed-request', "Bad protocol", State#state.username}
 	end.
 
 parse_attribute(Attribute) ->
@@ -147,13 +147,13 @@ parse_attribute(Attribute) ->
 					String = string:substr(Attribute, 3),
 					{lists:nth(1, Attribute), String};
 				true ->
-					{error, 'bad-format second char not equal sign'}
+					{error, 'malformed-request', "Second char not equal sign", ""}
 				end;
 			_Else ->
-				{error, 'bad-format first char not a letter'}
+				{error, 'malformed-request', "First char not a letter", ""}
 		end;
 	true -> 
-		{error, 'bad-format attribute too short'}
+		{error, 'malformed-request', "Attribute too short", ""}
 	end.
 
 unescape_username("") ->

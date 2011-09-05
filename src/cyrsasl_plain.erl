@@ -77,7 +77,7 @@ mech_step(State, ClientIn) ->
 		    {error, 'not-authorized', "", User}
 	    end;
 	_ ->
-	    {error, 'bad-protocol'}
+	    {error, 'malformed-request'}
     end.
 
 prepare(ClientIn) ->
