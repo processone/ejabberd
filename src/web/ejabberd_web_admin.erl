@@ -113,17 +113,17 @@ get_menu_items(Host, cluster, Lang, JID) ->
 		{Base++URI++"/", Name}
 	end,
 	Items
-    );
-get_menu_items(Host, Node, Lang, JID) ->
-    {Base, _, Items} = make_host_node_menu(Host, Node, Lang, JID),
-    lists:map(
-	fun({URI, Name}) ->
-		{Base++URI++"/", Name};
-	   ({URI, Name, _SubMenu}) ->
-		{Base++URI++"/", Name}
-	end,
-	Items
     ).
+%% get_menu_items(Host, Node, Lang, JID) ->
+%%     {Base, _, Items} = make_host_node_menu(Host, Node, Lang, JID),
+%%     lists:map(
+%% 	fun({URI, Name}) ->
+%% 		{Base++URI++"/", Name};
+%% 	   ({URI, Name, _SubMenu}) ->
+%% 		{Base++URI++"/", Name}
+%% 	end,
+%% 	Items
+%%     ).
 
 is_allowed_path(BasePath, {Path, _}, JID) ->
     is_allowed_path(BasePath ++ [Path], JID);
@@ -2023,7 +2023,6 @@ get_node(global, Node, ["db"], Query, Lang) ->
 get_node(global, Node, ["backup"], Query, Lang) ->
     HomeDirRaw = case {os:getenv("HOME"), os:type()} of
 	{EnvHome, _} when is_list(EnvHome) -> EnvHome;
-	{false, win32} -> "C:/";
 	{false, {win32, _Osname}} -> "C:/";
 	{false, _} -> "/tmp/"
     end,
