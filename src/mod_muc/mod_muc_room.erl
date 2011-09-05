@@ -1488,7 +1488,7 @@ remove_online_user(JID, StateData, Reason) ->
 		    ?DICT:erase(Nick, StateData#state.nicks);
 		{ok, U} ->
 		    ?DICT:store(Nick, U -- [LJID], StateData#state.nicks);
-		false ->
+		error ->
 		    StateData#state.nicks
 	    end,
     StateData#state{users = Users, nicks = Nicks}.
