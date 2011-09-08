@@ -2464,7 +2464,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 			      NSD ->
 				  NSD
 			  end
-		  end, StateData, Res),
+		  end, StateData, lists:flatten(Res)),
 	    case (NSD#state.config)#config.persistent of
 		true ->
 		    mod_muc:store_room(NSD#state.host, NSD#state.room,
@@ -2501,7 +2501,7 @@ find_changed_items(UJID, UAffiliation, URole,
 	       _ ->
 		   case xml:get_attr("nick", Attrs) of
 		       {value, N} ->
-			   case find_jid_by_nick(N, StateData) of
+			   case find_jids_by_nick(N, StateData) of
 			       false ->
 				   ErrText =
 				       io_lib:format(
@@ -2518,7 +2518,7 @@ find_changed_items(UJID, UAffiliation, URole,
 		   end
 	   end,
     case TJID of
-	{value, JID} ->
+	{value, [JID|_]=JIDs} ->
 	    TAffiliation = get_affiliation(JID, StateData),
 	    TRole = get_role(JID, StateData),
 	    case xml:get_attr("role", Attrs) of
@@ -2568,16 +2568,13 @@ find_changed_items(UJID, UAffiliation, URole,
 					      Items, Lang, StateData,
 					      Res);
 					true ->
+					    Reason = xml:get_path_s(Item, [{elem, "reason"}, cdata]),
+					    MoreRes = [{jlib:jid_remove_resource(Jidx), affiliation, SAffiliation, Reason} || Jidx <- JIDs],
 					    find_changed_items(
 					      UJID,
 					      UAffiliation, URole,
 					      Items, Lang, StateData,
-					      [{jlib:jid_remove_resource(JID),
-						affiliation,
-						SAffiliation,
-						xml:get_path_s(
-						  Item, [{elem, "reason"},
-							 cdata])} | Res]);
+					      [MoreRes | Res]);
 					false ->
 					    {error, ?ERR_NOT_ALLOWED}
 				    end
@@ -2625,14 +2622,13 @@ find_changed_items(UJID, UAffiliation, URole,
 				      Items, Lang, StateData,
 				      Res);
 				true ->
+				    Reason = xml:get_path_s(Item, [{elem, "reason"}, cdata]),
+				    MoreRes = [{Jidx, role, SRole, Reason} || Jidx <- JIDs],
 				    find_changed_items(
 				      UJID,
 				      UAffiliation, URole,
 				      Items, Lang, StateData,
-				      [{JID, role, SRole,
-					xml:get_path_s(
-					  Item, [{elem, "reason"},
-						 cdata])} | Res]);
+				      [MoreRes | Res]);
 				_ ->
 				    {error, ?ERR_NOT_ALLOWED}
 			    end
