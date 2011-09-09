@@ -2559,7 +2559,7 @@ find_changed_items(UJID, UAffiliation, URole,
 	       S when S =/= false ->
 		   try exmpp_jid:parse(S) of
 		       J ->
-			   {value, J}
+			   {value, [J]}
             catch
 		       _:_ ->
 			   ErrText = io_lib:format(
