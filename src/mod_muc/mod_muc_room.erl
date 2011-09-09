@@ -2496,7 +2496,7 @@ find_changed_items(UJID, UAffiliation, URole,
 					 "Jabber ID ~s is invalid"), [S]),
 			   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 		       J ->
-			   {value, J}
+			   {value, [J]}
 		   end;
 	       _ ->
 		   case xml:get_attr("nick", Attrs) of
@@ -2511,7 +2511,7 @@ find_changed_items(UJID, UAffiliation, URole,
 					 [N]),
 				   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 			       J ->
-				   {value, J}
+				   {value, [J]}
 			   end;
 		       _ ->
 			   {error, ?ERR_BAD_REQUEST}
