@@ -2511,7 +2511,7 @@ find_changed_items(UJID, UAffiliation, URole,
 					 [N]),
 				   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 			       J ->
-				   {value, [J]}
+				   {value, J}
 			   end;
 		       _ ->
 			   {error, ?ERR_BAD_REQUEST}
