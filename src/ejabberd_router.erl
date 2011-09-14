@@ -378,9 +378,21 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 				      jlib:jid_tolower(From));
 				bare_destination ->
 				    jlib:jid_remove_resource(
-				      jlib:jid_tolower(To))
+				      jlib:jid_tolower(To));
+                                broadcast ->
+                                    broadcast
 			    end,
 		    case get_component_number(LDstDomain) of
+                        _ when Value == broadcast ->
+                            lists:foreach(
+                              fun(R) ->
+                                      Pid = R#route.pid,
+                                      if is_pid(Pid) ->
+                                              Pid ! {route, From, To, Packet};
+                                         true ->
+                                              drop
+                                      end
+                              end, Rs);
 			undefined ->
 			    case [R || R <- Rs, node(R#route.pid) == node()] of
 				[] ->
