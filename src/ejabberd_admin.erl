@@ -427,18 +427,14 @@ restore_mnesia(Path) ->
 %% mod_configure/adhoc 
 restore(Path) ->
     mnesia:restore(Path, [{keep_tables,keep_tables()},
-			  {skip_tables, skip_tables()},
 			  {default_op, skip_tables}]).
-
-skip_tables() ->
-    [disco_publish,user_caps,user_caps_resources].
 
 %% This function return a list of tables that should be kept from a previous
 %% version backup.
 %% Obsolete tables or tables created by module who are no longer used are not
 %% restored and are ignored.
 keep_tables() ->
-    lists:flatten([acl, passwd, config, local_config, disco_publish,
+    lists:flatten([acl, passwd, config, local_config,
 		   keep_modules_tables()]).
 
 %% Returns the list of modules tables in use, according to the list of actually
