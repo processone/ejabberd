@@ -187,7 +187,7 @@ normal_state({route, From, "",
 			    ErrText = "Traffic rate limit is exceeded",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
-			    ejabberd_router:route(
+			    route_stanza(
 			      StateData#state.jid,
 			      From, Err),
 			    {next_state, normal_state, StateData};
@@ -268,7 +268,7 @@ normal_state({route, From, "",
 		    ErrText = "It is not allowed to send private messages to the conference",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-		    ejabberd_router:route(
+		    route_stanza(
 		      StateData#state.jid,
 		      From, Err),
 		    {next_state, normal_state, StateData};
@@ -277,7 +277,7 @@ normal_state({route, From, "",
 			{error, Error} ->
 			    Err = jlib:make_error_reply(
 				    Packet, Error),
-			    ejabberd_router:route(
+			    route_stanza(
 			      StateData#state.jid,
 			      From, Err),
 			    {next_state, normal_state, StateData};
@@ -313,7 +313,7 @@ normal_state({route, From, "",
 		    ErrText = "Improper message type",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-		    ejabberd_router:route(
+		    route_stanza(
 		      StateData#state.jid,
 		      From, Err),
 		    {next_state, normal_state, StateData}
@@ -364,7 +364,7 @@ normal_state({route, From, "",
 			       sub_el = [SubEl, Error]},
 			 StateData}
 		end,
-	    ejabberd_router:route(StateData#state.jid,
+	    route_stanza(StateData#state.jid,
 				  From,
 				  jlib:iq_to_xml(IQRes)),
 	    case NewStateData of
@@ -378,7 +378,7 @@ normal_state({route, From, "",
 	_ ->
 	    Err = jlib:make_error_reply(
 		    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-	    ejabberd_router:route(StateData#state.jid, From, Err),
+	    route_stanza(StateData#state.jid, From, Err),
 	    {next_state, normal_state, StateData}
     end;
 
@@ -437,7 +437,7 @@ normal_state({route, From, ToNick,
 				"messages of type \"groupchat\"",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
-			    ejabberd_router:route(
+			    route_stanza(
 			      jlib:jid_replace_resource(
 				StateData#state.jid,
 				ToNick),
@@ -455,7 +455,7 @@ normal_state({route, From, ToNick,
 					    ErrText = "Recipient is not in the conference room",
 					    Err = jlib:make_error_reply(
 						    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-					    ejabberd_router:route(
+					    route_stanza(
 					      jlib:jid_replace_resource(
 						StateData#state.jid,
 						ToNick),
@@ -465,13 +465,13 @@ normal_state({route, From, ToNick,
 						?DICT:find(jlib:jid_tolower(From),
 							   StateData#state.users),
 					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
-					    [ejabberd_router:route(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs]
+					    [route_stanza(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs]
 				    end;
 			       true ->
 				    ErrText = "It is not allowed to send private messages",
 				    Err = jlib:make_error_reply(
 					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-				    ejabberd_router:route(
+				    route_stanza(
 				      jlib:jid_replace_resource(
 					StateData#state.jid,
 					ToNick),
@@ -482,7 +482,7 @@ normal_state({route, From, ToNick,
 		    ErrText = "Only occupants are allowed to send messages to the conference",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-		    ejabberd_router:route(
+		    route_stanza(
 		      jlib:jid_replace_resource(
 			StateData#state.jid,
 			ToNick),
@@ -491,7 +491,7 @@ normal_state({route, From, ToNick,
 		    ErrText = "It is not allowed to send private messages",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-		    ejabberd_router:route(
+		    route_stanza(
 		      jlib:jid_replace_resource(
 			StateData#state.jid,
 			ToNick),
@@ -517,7 +517,7 @@ normal_state({route, From, ToNick,
 			    ErrText = "Recipient is not in the conference room",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-			    ejabberd_router:route(
+			    route_stanza(
 			      jlib:jid_replace_resource(
 				StateData#state.jid, ToNick),
 			      From, Err)
@@ -528,7 +528,7 @@ normal_state({route, From, ToNick,
 				   StateData#state.users),
 		    {ToJID2, Packet2} = handle_iq_vcard(FromFull, ToJID,
 							StanzaId, NewId,Packet),
-		    ejabberd_router:route(
+		    route_stanza(
 		      jlib:jid_replace_resource(StateData#state.jid, FromNick),
 		      ToJID2, Packet2)
 	    end;
@@ -540,7 +540,7 @@ normal_state({route, From, ToNick,
 		    ErrText = "Only occupants are allowed to send queries to the conference",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-		    ejabberd_router:route(
+		    route_stanza(
 		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
 		      From, Err)
 	    end;
@@ -552,7 +552,7 @@ normal_state({route, From, ToNick,
 		    ErrText = "Queries to the conference members are not allowed in this room",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
-		    ejabberd_router:route(
+		    route_stanza(
 		      jlib:jid_replace_resource(StateData#state.jid, ToNick),
 		      From, Err)
 	    end
@@ -576,7 +576,7 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
 		  [{xmlelement, "body", [], [{xmlcdata, Msg}]}]},
     lists:foreach(
       fun({_LJID, Info}) ->
-	      ejabberd_router:route(
+	      route_stanza(
 		StateData#state.jid,
 		Info#user.jid,
 		MessagePkt)
@@ -718,7 +718,7 @@ handle_info({captcha_failed, From}, normal_state, StateData) ->
 		       Robots = ?DICT:erase(From, StateData#state.robots),
 		       Err = jlib:make_error_reply(
 			       Packet, ?ERR_NOT_AUTHORIZED),
-		       ejabberd_router:route( % TODO: s/Nick/""/
+		       route_stanza( % TODO: s/Nick/""/
 			 jlib:jid_replace_resource(
 			   StateData#state.jid, Nick),
 			 From, Err),
@@ -769,7 +769,7 @@ terminate(Reason, _StateName, StateData) ->
 	       Nick = Info#user.nick,
 	       case Reason of
 		   shutdown ->
-		       ejabberd_router:route(
+		       route_stanza(
 			 jlib:jid_replace_resource(StateData#state.jid, Nick),
 			 Info#user.jid,
 			 Packet);
@@ -830,7 +830,7 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 			true ->
 			    lists:foreach(
 			      fun({_LJID, Info}) ->
-				      ejabberd_router:route(
+				      route_stanza(
 					jlib:jid_replace_resource(
 					  StateData#state.jid,
 					  FromNick),
@@ -858,7 +858,7 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 					   "Only moderators "
 					   "are allowed to change the subject in this room")
 				end,
-			    ejabberd_router:route(
+			    route_stanza(
 			      StateData#state.jid,
 			      From,
 			      jlib:make_error_reply(Packet, Err)),
@@ -868,7 +868,7 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 		    ErrText = "Visitors are not allowed to send messages to all occupants",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-		    ejabberd_router:route(
+		    route_stanza(
 		      StateData#state.jid,
 		      From, Err),
 		    {next_state, normal_state, StateData}
@@ -877,7 +877,7 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 	    ErrText = "Only occupants are allowed to send messages to the conference",
 	    Err = jlib:make_error_reply(
 		    Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-	    ejabberd_router:route(StateData#state.jid, From, Err),
+	    route_stanza(StateData#state.jid, From, Err),
 	    {next_state, normal_state, StateData}
     end.
 
@@ -961,7 +961,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					Err = jlib:make_error_reply(
 						Packet,
 						?ERRT_NOT_ALLOWED(Lang, ErrText)),
-					ejabberd_router:route(
+					route_stanza(
 					  % TODO: s/Nick/""/
 					  jlib:jid_replace_resource(
 					    StateData#state.jid,
@@ -974,7 +974,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					Err = jlib:make_error_reply(
 						Packet,
 						?ERRT_CONFLICT(Lang, ErrText)),
-					ejabberd_router:route(
+					route_stanza(
 					  jlib:jid_replace_resource(
 					    StateData#state.jid,
 					    Nick), % TODO: s/Nick/""/
@@ -985,7 +985,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 					Err = jlib:make_error_reply(
 						Packet,
 						?ERRT_CONFLICT(Lang, ErrText)),
-					ejabberd_router:route(
+					route_stanza(
 					  % TODO: s/Nick/""/
 					  jlib:jid_replace_resource(
 					    StateData#state.jid,
@@ -1680,7 +1680,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	    Err = jlib:make_error_reply(
 		    Packet,
 		    ?ERR_SERVICE_UNAVAILABLE),
-	    ejabberd_router:route( % TODO: s/Nick/""/
+	    route_stanza( % TODO: s/Nick/""/
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
@@ -1695,14 +1695,14 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    ErrText = "Membership is required to enter this room",
 			    ?ERRT_REGISTRATION_REQUIRED(Lang, ErrText)
 		    end),
-	    ejabberd_router:route( % TODO: s/Nick/""/
+	    route_stanza( % TODO: s/Nick/""/
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
 	    StateData;
 	{_, true, _, _} ->
 	    ErrText = "That nickname is already in use by another occupant",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
-	    ejabberd_router:route(
+	    route_stanza(
 	      % TODO: s/Nick/""/
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
@@ -1710,7 +1710,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	{_, _, false, _} ->
 	    ErrText = "That nickname is registered by another person",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_CONFLICT(Lang, ErrText)),
-	    ejabberd_router:route(
+	    route_stanza(
 	      % TODO: s/Nick/""/
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
@@ -1731,7 +1731,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 						       "This room is not anonymous")}]},
 					{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 					 [{xmlelement, "status", [{"code", "100"}], []}]}]},
-			    ejabberd_router:route(
+			    route_stanza(
 			      StateData#state.jid,
 			      From, WPacket);
 			true ->
@@ -1757,7 +1757,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		    ErrText = "A password is required to enter this room",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
-		    ejabberd_router:route( % TODO: s/Nick/""/
+		    route_stanza( % TODO: s/Nick/""/
 		      jlib:jid_replace_resource(
 			StateData#state.jid, Nick),
 		      From, Err),
@@ -1773,13 +1773,13 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    MsgPkt = {xmlelement, "message", [{"id", ID}], CaptchaEls},
 			    Robots = ?DICT:store(From,
 						 {Nick, Packet}, StateData#state.robots),
-			    ejabberd_router:route(RoomJID, From, MsgPkt),
+			    route_stanza(RoomJID, From, MsgPkt),
 			    StateData#state{robots = Robots};
                         {error, limit} ->
                             ErrText = "Too many CAPTCHA requests",
                             Err = jlib:make_error_reply(
 				    Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
-                            ejabberd_router:route( % TODO: s/Nick/""/
+                            route_stanza( % TODO: s/Nick/""/
                               jlib:jid_replace_resource(
 				StateData#state.jid, Nick),
 			      From, Err),
@@ -1788,7 +1788,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			    ErrText = "Unable to generate a captcha",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERRT_INTERNAL_SERVER_ERROR(Lang, ErrText)),
-			    ejabberd_router:route( % TODO: s/Nick/""/
+			    route_stanza( % TODO: s/Nick/""/
 			      jlib:jid_replace_resource(
 				StateData#state.jid, Nick),
 			      From, Err),
@@ -1798,7 +1798,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		    ErrText = "Incorrect password",
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERRT_NOT_AUTHORIZED(Lang, ErrText)),
-		    ejabberd_router:route( % TODO: s/Nick/""/
+		    route_stanza( % TODO: s/Nick/""/
 		      jlib:jid_replace_resource(
 			StateData#state.jid, Nick),
 		      From, Err),
@@ -2074,7 +2074,7 @@ send_new_presence(NJID, Reason, StateData) ->
 			 Presence,
 			 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			   [{xmlelement, "item", ItemAttrs, ItemEls} | Status3]}]),
-	      ejabberd_router:route(
+	      route_stanza(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
@@ -2116,7 +2116,7 @@ send_existing_presences(ToJID, StateData) ->
 				 Presence,
 				 [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 				   [{xmlelement, "item", ItemAttrs, []}]}]),
-		      ejabberd_router:route(
+		      route_stanza(
 			jlib:jid_replace_resource(
 			  StateData#state.jid, FromNick),
 			RealToJID,
@@ -2214,7 +2214,7 @@ send_nick_changing(JID, OldNick, StateData,
 			  [{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			    [{xmlelement, "item", ItemAttrs2, []}]}]),
 	      if SendOldUnavailable ->
-		      ejabberd_router:route(
+		      route_stanza(
 			jlib:jid_replace_resource(StateData#state.jid, OldNick),
 			Info#user.jid,
 			Packet1);
@@ -2222,7 +2222,7 @@ send_nick_changing(JID, OldNick, StateData,
 		      ok
 	      end,
 	      if SendNewAvailable ->
-		      ejabberd_router:route(
+		      route_stanza(
 			jlib:jid_replace_resource(StateData#state.jid, Nick),
 			Info#user.jid,
 			Packet2);
@@ -2294,7 +2294,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 send_history(JID, Shift, StateData) ->
     lists:foldl(
       fun({Nick, Packet, HaveSubject, _TimeStamp, _Size}, B) ->
-	      ejabberd_router:route(
+	      route_stanza(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		JID,
 		Packet),
@@ -2316,7 +2316,7 @@ send_subject(JID, Lang, StateData) ->
 			  translate:translate(Lang,
 					      " has set the subject to: ") ++
 			  Subject}]}]},
-	    ejabberd_router:route(
+	    route_stanza(
 	      StateData#state.jid,
 	      JID,
 	      Packet)
@@ -2903,7 +2903,7 @@ send_kickban_presence1(UJID, Reason, Code, Affiliation, StateData) ->
 			[{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			  [{xmlelement, "item", ItemAttrs, ItemEls},
 			   {xmlelement, "status", [{"code", Code}], []}]}]},
-	      ejabberd_router:route(
+	      route_stanza(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
@@ -3527,7 +3527,7 @@ destroy_room(DEl, StateData) ->
 	      Packet = {xmlelement, "presence", [{"type", "unavailable"}],
 			[{xmlelement, "x", [{"xmlns", ?NS_MUC_USER}],
 			  [{xmlelement, "item", ItemAttrs, []}, DEl]}]},
-	      ejabberd_router:route(
+	      route_stanza(
 		jlib:jid_replace_resource(StateData#state.jid, Nick),
 		Info#user.jid,
 		Packet)
@@ -3769,7 +3769,7 @@ check_invitation(From, Els, Lang, StateData) ->
 			       ""})}],
 		   [{xmlcdata, Reason}]},
 		  Body]},
-	    ejabberd_router:route(StateData#state.jid, JID, Msg),
+	    route_stanza(StateData#state.jid, JID, Msg),
 	    JID
     end.
 
@@ -3807,7 +3807,7 @@ send_decline_invitation({Packet, XEl, DEl, ToJID}, RoomJID, FromJID) ->
     DEl2 = {xmlelement, "decline", DAttrs3, DEls},
     XEl2 = replace_subelement(XEl, DEl2),
     Packet2 = replace_subelement(Packet, XEl2),
-    ejabberd_router:route(RoomJID, ToJID, Packet2).
+    route_stanza(RoomJID, ToJID, Packet2).
 
 %% Given an element and a new subelement, 
 %% replace the instance of the subelement in element with the new subelement.
@@ -3819,7 +3819,7 @@ replace_subelement({xmlelement, Name, Attrs, SubEls}, NewSubEl) ->
 send_error_only_occupants(Packet, Lang, RoomJID, From) ->
     ErrText = "Only occupants are allowed to send messages to the conference",
     Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-    ejabberd_router:route(RoomJID, From, Err).
+    route_stanza(RoomJID, From, Err).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3877,3 +3877,12 @@ tab_count_user(JID) ->
 
 element_size(El) ->
     size(xml:element_to_binary(El)).
+
+route_stanza(From, To, El) ->
+    #jid{luser = LUser, lserver = LServer} = To,
+    case ejabberd_cluster:get_node({LUser, LServer}) of
+        Node when Node == node() ->
+            ejabberd_router:route(From, To, El);
+        _ ->
+            ok
+    end.

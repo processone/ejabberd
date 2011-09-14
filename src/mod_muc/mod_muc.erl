@@ -115,7 +115,7 @@ room_destroyed(Host, Room, Pid, ServerHost) ->
 create_room(Host, Name, From, Nick, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     RoomHost = gen_mod:get_module_opt_host(Host, ?MODULE, "conference.@HOST@"),
-    Node = ejabberd_cluster:get_node({Name, RoomHost}),
+    Node = get_node({Name, RoomHost}),
     gen_server:call({Proc, Node}, {create, Name, From, Nick, Opts}).
 
 store_room(Host, Name, Opts) ->
@@ -177,7 +177,7 @@ migrate(_Node, _UpOrDown, After) ->
 	     ['$$']}]),
     lists:foreach(
       fun([NameHost, Pid]) ->
-	      case ejabberd_cluster:get_node(NameHost) of
+	      case get_node(NameHost) of
 		  Node when Node /= node() ->
 		      mod_muc_room:migrate(Pid, Node, random:uniform(After));
 		  _ ->
@@ -198,7 +198,7 @@ copy_rooms('$end_of_table') ->
 copy_rooms(Key) ->
     case mnesia:dirty_read(muc_online_room, Key) of
         [#muc_online_room{name_host = NameHost} = Room] ->
-            case ejabberd_cluster:get_node_new(NameHost) of
+            case get_node_new(NameHost) of
                 Node when node() /= Node ->
                     rpc:cast(Node, mnesia, dirty_write, [Room]);
                 _ ->
@@ -315,7 +315,7 @@ handle_info({route, From, To, Packet},
 		   history_size = HistorySize,
 		   room_shaper = RoomShaper} = State) ->
     {U, S, _} = jlib:jid_tolower(To),
-    case ejabberd_cluster:get_node({U, S}) of
+    case get_node({U, S}) of
 	Node when Node == node() ->
 	    case catch do_route(Host, ServerHost, Access, HistorySize,
 				RoomShaper, From, To, Packet, DefRoomOpts) of
@@ -335,7 +335,7 @@ handle_info({room_destroyed, RoomHost, Pid}, State) ->
 						      pid = Pid})
 	end,
     mnesia:async_dirty(F),
-    case ejabberd_cluster:get_node_new(RoomHost) of
+    case get_node_new(RoomHost) of
 	Node when Node /= node() ->
 	    rpc:cast(Node, mnesia, dirty_delete_object,
 		     [#muc_online_room{name_host = RoomHost,
@@ -603,19 +603,26 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 	    lists:foreach(
 	      fun(R) ->
 		      {Room, Host} = R#muc_room.name_host,
-		      case ejabberd_cluster:get_node({Room, Host}) of
+		      case get_node({Room, Host}) of
 			  Node when Node == node() ->
 			      case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 				  [] ->
-				      {ok, Pid} = mod_muc_room:start(
-						    Host,
-						    ServerHost,
-						    Access,
-						    Room,
-						    HistorySize,
-						    RoomShaper,
-						    R#muc_room.opts),
-				      register_room(Host, Room, Pid);
+                                      case get_room_state_if_broadcasted(
+                                             {Room, Host}) of
+                                          {ok, RoomState} ->
+                                              mod_muc_room:start(
+                                                normal_state, RoomState);
+                                          error ->
+                                              {ok, Pid} = mod_muc_room:start(
+                                                            Host,
+                                                            ServerHost,
+                                                            Access,
+                                                            Room,
+                                                            HistorySize,
+                                                            RoomShaper,
+                                                            R#muc_room.opts),
+                                              register_room(Host, Room, Pid)
+                                      end;
 				  _ ->
 				      ok
 			      end;
@@ -628,18 +635,24 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 start_new_room(Host, ServerHost, Access, Room,
 	       HistorySize, RoomShaper, From,
 	       Nick, DefRoomOpts) ->
-    case mnesia:dirty_read(muc_room, {Room, Host}) of
-	[] ->
-	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
-	    mod_muc_room:start(Host, ServerHost, Access,
-			       Room, HistorySize,
-			       RoomShaper, From,
-			       Nick, DefRoomOpts);
-	[#muc_room{opts = Opts}|_] ->
-	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
-	    mod_muc_room:start(Host, ServerHost, Access,
-			       Room, HistorySize,
-			       RoomShaper, Opts)
+    case get_room_state_if_broadcasted({Room, Host}) of
+        {ok, RoomState} ->
+            ?DEBUG("MUC: restore room '~s' from other node~n", [Room]),
+            mod_muc_room:start(normal_state, RoomState);
+        error ->
+            case mnesia:dirty_read(muc_room, {Room, Host}) of
+                [] ->
+                    ?DEBUG("MUC: open new room '~s'~n", [Room]),
+                    mod_muc_room:start(Host, ServerHost, Access,
+                                       Room, HistorySize,
+                                       RoomShaper, From,
+                                       Nick, DefRoomOpts);
+                [#muc_room{opts = Opts}|_] ->
+                    ?DEBUG("MUC: restore room '~s'~n", [Room]),
+                    mod_muc_room:start(Host, ServerHost, Access,
+                                       Room, HistorySize,
+                                       RoomShaper, Opts)
+            end
     end.
 
 register_room(Host, Room, Pid) ->
@@ -648,7 +661,7 @@ register_room(Host, Room, Pid) ->
     					      pid = Pid})
     	end,
     mnesia:async_dirty(F),
-    case ejabberd_cluster:get_node_new({Room, Host}) of
+    case get_node_new({Room, Host}) of
 	Node when Node /= node() ->
 	    %% New node has just been added. But we may miss MUC records
             %% copy procedure, so we copy the MUC record manually just
@@ -656,7 +669,7 @@ register_room(Host, Room, Pid) ->
 	    rpc:cast(Node, mnesia, dirty_write,
 		     [#muc_online_room{name_host = {Room, Host},
 				       pid = Pid}]),
-	    case ejabberd_cluster:get_node({Room, Host}) of
+	    case get_node({Room, Host}) of
                 Node when node() /= Node ->
                     %% Migration to new node has completed, and seems like
                     %% we missed it, so we migrate the MUC room pid manually.
@@ -934,7 +947,7 @@ get_vh_rooms_all_nodes(Host) ->
 			  _ ->
 			      Acc
 		      end
-	      end, [], ejabberd_cluster:get_nodes()),
+	      end, [], get_nodes(Host)),
     lists:ukeysort(#muc_online_room.name_host, Rooms).
 
 get_vh_rooms(Host) ->
@@ -1037,4 +1050,68 @@ update_muc_registered_table(Host) ->
 	_ ->
 	    ?INFO_MSG("Recreating muc_registered table", []),
 	    mnesia:transform_table(muc_registered, ignore, Fields)
+    end.
+
+is_broadcasted(RoomHost) ->
+    case ejabberd_config:get_local_option({domain_balancing, RoomHost}) of
+        broadcast ->
+            true;
+        _ ->
+            false
+    end.
+
+get_node({_, RoomHost} = Key) ->
+    case is_broadcasted(RoomHost) of
+        true ->
+            node();
+        false ->
+            ejabberd_cluster:get_node(Key)
+    end;
+get_node(RoomHost) ->
+    get_node({"", RoomHost}).
+
+get_node_new({_, RoomHost} = Key) ->
+    case is_broadcasted(RoomHost) of
+        true ->
+            node();
+        false ->
+            ejabberd_cluster:get_node_new(Key)
+    end;
+get_node_new(RoomHost) ->
+    get_node_new({"", RoomHost}).
+
+get_nodes(RoomHost) ->
+    case is_broadcasted(RoomHost) of
+        true ->
+            [node()];
+        false ->
+            ejabberd_cluster:get_nodes()
+    end.
+
+get_room_state_if_broadcasted({Room, Host}) ->
+    case is_broadcasted(Host) of
+        true ->
+            lists:foldl(
+              fun(_, {ok, StateData}) ->
+                      {ok, StateData};
+                 (Node, _) when Node /= node() ->
+                      case catch rpc:call(
+                                   Node, mnesia, dirty_read,
+                                   [muc_online_room, {Room, Host}], 5000) of
+                          [#muc_online_room{pid = Pid}] ->
+                              case catch gen_fsm:sync_send_all_state_event(
+                                           Pid, get_state, 5000) of
+                                  {ok, StateData} ->
+                                      {ok, StateData};
+                                  _ ->
+                                      error
+                              end;
+                          _ ->
+                              error
+                      end;
+                 (_, Acc) ->
+                      Acc
+              end, error, ejabberd_cluster:get_nodes());
+        false ->
+            error
     end.
