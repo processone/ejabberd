@@ -3879,10 +3879,15 @@ element_size(El) ->
     size(xml:element_to_binary(El)).
 
 route_stanza(From, To, El) ->
-    #jid{luser = LUser, lserver = LServer} = To,
-    case ejabberd_cluster:get_node({LUser, LServer}) of
-        Node when Node == node() ->
-            ejabberd_router:route(From, To, El);
-        _ ->
-            ok
+    case mod_muc:is_broadcasted(From#jid.lserver) of
+        true ->
+            #jid{luser = LUser, lserver = LServer} = To,
+            case ejabberd_cluster:get_node({LUser, LServer}) of
+                Node when Node == node() ->
+                    ejabberd_router:route(From, To, El);
+                _ ->
+                    ok
+            end;
+        false ->
+            ejabberd_router:route(From, To, El)
     end.

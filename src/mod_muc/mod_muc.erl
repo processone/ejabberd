@@ -46,6 +46,7 @@
          node_down/1,
 	 migrate/3,
 	 get_vh_rooms/1,
+         is_broadcasted/1,
 	 can_use_nick/3]).
 
 %% gen_server callbacks
