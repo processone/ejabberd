@@ -1056,7 +1056,7 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 		     exmpp_xml:document_to_list(
 		       #xmlel{name = 'body',
 			      ns = ?NS_HTTP_BIND_s,
-		              declared_ns = [{?NS_XBOSH_s, ?NS_XBOSH_pfx}],
+		              declared_ns = [{?NS_BOSH_s, ?NS_BOSH_pfx}],
 			      attrs = [
 			       #xmlattr{name = <<"sid">>,
 					value = list_to_binary(Sid)
