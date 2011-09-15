@@ -95,7 +95,7 @@
 -define(FSMOPTS, []).
 -endif.
 
--define(BOSH_VERSION_b, <<"1.8">>).
+-define(BOSH_VERSION_b, <<"1.10">>).
 
 -define(MAX_REQUESTS, 2).  % number of simultaneous requests
 -define(MIN_POLLING, 2000000). % don't poll faster than that or we will
@@ -1049,14 +1049,15 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 		    BOSH_attribs =
 			[#xmlattr{name = <<"authid">>, value = list_to_binary(AuthID)},
 			 #xmlattr{name = <<"xmlns:stream">>, value = ?NS_XMPP_b}] ++
-		    [#xmlattr{name = <<"version">>, ns = ?NS_BOSH_s, value = list_to_binary(Version)}],
+		    [#xmlattr{name = <<"version">>, ns = ?NS_BOSH_s, value = list_to_binary(Version)},
+		     #xmlattr{name = <<"restartlogic">>, ns = ?NS_BOSH_s, value = <<"true">>}],
 		    MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 		    MaxPause = get_max_pause(To),
 		    {200, ?HEADER,
 		     exmpp_xml:document_to_list(
 		       #xmlel{name = 'body',
 			      ns = ?NS_HTTP_BIND_s,
-		              declared_ns = [{?NS_XBOSH_s, ?NS_XBOSH_pfx}],
+		              declared_ns = [{?NS_BOSH_s, ?NS_BOSH_pfx}],
 			      attrs = [
 			       #xmlattr{name = <<"sid">>,
 					value = list_to_binary(Sid)
