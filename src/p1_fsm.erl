@@ -456,7 +456,7 @@ decode_msg(Msg,Parent, Name, StateName, StateData, Mod, Time, Debug,
 	    handle_msg(Msg, Parent, Name, StateName, StateData,
 		       Mod, Time, Limits, Queue, QueueLen);
 	_Msg ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, fun print_event/3,
 				      {Name, StateName}, {in, Msg}),
 	    handle_msg(Msg, Parent, Name, StateName, StateData,
 		       Mod, Time, Debug1, Limits, Queue, QueueLen)
@@ -469,6 +469,8 @@ system_continue(Parent, Debug, [Name, StateName, StateData,
 				Mod, Time, Limits, Queue, QueueLen]) ->
     loop(Parent, Name, StateName, StateData, Mod, Time, Debug,
 	 Limits, Queue, QueueLen).
+
+-spec system_terminate(term(), _, _, [term(),...]) -> no_return().
 
 system_terminate(Reason, _Parent, Debug,
 		 [Name, StateName, StateData, Mod, _Time, _Limits]) ->
@@ -590,12 +592,12 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
     From = from(Msg),
     case catch dispatch(Msg, Mod, StateName, StateData) of
 	{next_state, NStateName, NStateData} ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, fun print_event/3,
 				      {Name, NStateName}, return),
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, infinity, Debug1, Limits, Queue, QueueLen);
 	{next_state, NStateName, NStateData, Time1} ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, fun print_event/3,
 				      {Name, NStateName}, return),
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, Time1, Debug1, Limits, Queue, QueueLen);
@@ -664,12 +666,14 @@ reply({To, Tag}, Reply) ->
 
 reply(Name, {To, Tag}, Reply, Debug, StateName) ->
     reply({To, Tag}, Reply),
-    sys:handle_debug(Debug, {?MODULE, print_event}, Name,
+    sys:handle_debug(Debug, fun print_event/3, Name,
 		     {out, Reply, To, StateName}).
 
 %%% ---------------------------------------------------
 %%% Terminate the server.
 %%% ---------------------------------------------------
+
+-spec terminate(term(), _, _, atom(), _, _, _) -> no_return().
 
 terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
     case catch Mod:terminate(Reason, StateName, StateData) of
