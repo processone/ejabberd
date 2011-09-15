@@ -232,7 +232,7 @@ process_request(Data, IP) ->
 	%% Existing session
         {ok, {Sid, Rid, Attrs, Payload1}} ->
             StreamStart =
-                case exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, <<"restart">>, "") of
+                case exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_XBOSH, <<"restart">>, "") of
                     "true" ->
                         true;
                     _ ->
@@ -303,7 +303,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 	    {'EXIT', _} -> 0.0;
 	    V -> V
 	end,
-    XmppVersion = exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_BOSH, <<"version">>, ""),
+    XmppVersion = exmpp_xml:get_attribute_from_list_as_list(Attrs, ?NS_XBOSH, <<"version">>, ""),
     ?DEBUG("Create session: ~p", [Sid]),
     mnesia:async_dirty(
       fun() ->
@@ -1049,8 +1049,8 @@ prepare_outpacket_response(#http_bind{id=Sid, wait=Wait,
 		    BOSH_attribs =
 			[#xmlattr{name = <<"authid">>, value = list_to_binary(AuthID)},
 			 #xmlattr{name = <<"xmlns:stream">>, value = ?NS_XMPP_b}] ++
-		    [#xmlattr{name = <<"version">>, ns = ?NS_BOSH_s, value = list_to_binary(Version)},
-		     #xmlattr{name = <<"restartlogic">>, ns = ?NS_BOSH_s, value = <<"true">>}],
+		    [#xmlattr{name = <<"version">>, ns = ?NS_XBOSH_s, value = list_to_binary(Version)},
+		     #xmlattr{name = <<"restartlogic">>, ns = ?NS_XBOSH_s, value = <<"true">>}],
 		    MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 		    MaxPause = get_max_pause(To),
 		    {200, ?HEADER,
