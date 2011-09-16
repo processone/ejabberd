@@ -869,10 +869,16 @@ http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
                     _ ->
                         ""
                 end,
-            {gen_fsm:sync_send_all_state_event(
-               FsmRef, #http_put{rid = Rid, attrs = Attrs, payload = Payload,
-				 payload_size = PayloadSize, hold = Hold,
-				 stream = NewStream, ip = IP}, 30000), Sess}
+            case catch {gen_fsm:sync_send_all_state_event(
+                          FsmRef,
+                          #http_put{rid = Rid, attrs = Attrs, payload = Payload,
+                                    payload_size = PayloadSize, hold = Hold,
+                                    stream = NewStream, ip = IP}, 30000), Sess} of
+                {'EXIT', _} ->
+                    {error, not_exists};
+                Res ->
+                    Res
+            end
     end.
 
 handle_http_put_error(Reason, #http_bind{pid=FsmRef, version=Version})
