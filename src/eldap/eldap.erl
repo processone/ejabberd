@@ -323,6 +323,14 @@ parse_search_args([{timeout, Timeout}|T],A) when is_integer(Timeout) ->
     parse_search_args(T,A#eldap_search{timeout = Timeout});
 parse_search_args([{limit, Limit}|T],A) when is_integer(Limit) ->
     parse_search_args(T,A#eldap_search{limit = Limit});
+parse_search_args([{deref_aliases, never}|T],A) ->
+    parse_search_args(T,A#eldap_search{deref_aliases = neverDerefAliases});
+parse_search_args([{deref_aliases, searching}|T],A) ->
+    parse_search_args(T,A#eldap_search{deref_aliases = derefInSearching});
+parse_search_args([{deref_aliases, finding}|T],A) ->
+    parse_search_args(T,A#eldap_search{deref_aliases = derefFindingBaseObj});
+parse_search_args([{deref_aliases, always}|T],A) ->
+    parse_search_args(T,A#eldap_search{deref_aliases = derefAlways});
 parse_search_args([H|_],_) ->
     throw({error,{unknown_arg, H}});
 parse_search_args([],A) ->
@@ -700,7 +708,7 @@ gen_req({search, A}) ->
     {searchRequest,
      #'SearchRequest'{baseObject   = A#eldap_search.base,
 		      scope        = v_scope(A#eldap_search.scope),
-		      derefAliases = neverDerefAliases,
+		      derefAliases = A#eldap_search.deref_aliases,
 		      sizeLimit    = A#eldap_search.limit,
 		      timeLimit    = v_timeout(A#eldap_search.timeout),
 		      typesOnly    = v_bool(A#eldap_search.types_only),

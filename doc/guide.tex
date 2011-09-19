@@ -2303,6 +2303,7 @@ the value previously stored in the database will be used instead of the default 
   is~\term{""} which means `anonymous connection'.
 \titem{\{ldap\_password, Password\}} \ind{options!ldap\_password}Bind password. The default
   value is \term{""}.
+\titem{\{ldap\_deref\_aliases, never|always|finding|searching\}} \ind{options!ldap\_deref\_aliases} Whether or not to dereference aliases. The default is \term{never}.
 \end{description}
 
 Example:
@@ -4689,8 +4690,9 @@ The \modvcardldap{} module has
 its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 \option{ldap\_servers}, \option{ldap\_port}, \option{ldap\_rootdn},
-\option{ldap\_password}, \option{ldap\_base}, \option{ldap\_uids}, and
-\option{ldap\_filter}. See section~\ref{ldapauth} for detailed information
+\option{ldap\_password}, \option{ldap\_base}, \option{ldap\_uids},
+\option{ldap\_deref\_aliases} and \option{ldap\_filter}.
+See section~\ref{ldapauth} for detailed information
 about these options. If one of these options is not set, \ejabberd{} will look
 for the top-level option with the same name.
 
