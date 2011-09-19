@@ -203,7 +203,12 @@ commands() ->
      #ejabberd_commands{name = install_fallback, tags = [mnesia],
 			desc = "Install the database from a fallback file",
 			module = ?MODULE, function = install_fallback_mnesia,
-			args = [{file, string}], result = {res, restuple}}
+			args = [{file, string}], result = {res, restuple}},
+     #ejabberd_commands{name = moderate_room_history, tags = [server],
+	     		desc = "Clean messages from the short-term MUC storage",
+			module = mod_muc, function = moderate_room_history,
+			args = [{room, string}, {nick, string}],
+			result = {res, restuple}}
     ].
 
 

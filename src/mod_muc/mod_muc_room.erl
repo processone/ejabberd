@@ -40,7 +40,8 @@
 	 start/7,
 	 start/2,
 	 migrate/3,
-	 route/4]).
+	 route/4,
+ 	moderate_room_history/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -111,6 +112,9 @@ start_link(StateName, StateData) ->
 
 migrate(FsmRef, Node, After) ->
     erlang:send_after(After, FsmRef, {migrate, Node}).
+
+moderate_room_history(FsmRef, Nick) ->
+	?GEN_FSM:sync_send_all_state_event(FsmRef, {moderate_room_history, Nick}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -623,6 +627,13 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
+handle_sync_event({moderate_room_history, Nick}, _From, StateName, #state{history = History} = StateData) ->
+	NewHistory = lqueue_filter(fun({FromNick, _TSPacket, _HaveSubject, _Timestamp, _Size}) -> 
+				FromNick /= Nick 
+		end, History),
+	Moderated = History#lqueue.len - NewHistory#lqueue.len,
+	{reply, {ok, integer_to_list(Moderated)}, StateName, StateData#state{history = NewHistory}};
+
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
     Reply = get_roomdesc_reply(JID, StateData,
 			       get_roomdesc_tail(StateData, Lang)),
@@ -2260,6 +2271,9 @@ lqueue_cut(Q, N) ->
 lqueue_to_list(#lqueue{queue = Q1}) ->
     queue:to_list(Q1).
 
+lqueue_filter(F, #lqueue{queue = Q1} = LQ) ->
+	Q2 = queue:filter(F, Q1),
+	LQ#lqueue{queue = Q2, len = queue:len(Q2)}.
 
 add_message_to_history(FromNick, FromJID, Packet, StateData) ->
     HaveSubject = case xml:get_subtag(Packet, "subject") of

@@ -47,7 +47,8 @@
 	 migrate/3,
 	 get_vh_rooms/1,
          is_broadcasted/1,
-	 can_use_nick/3]).
+	 can_use_nick/3,
+ 	 moderate_room_history/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -98,6 +99,19 @@ stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc).
+
+
+moderate_room_history(RoomStr, Nick) ->
+	Room = jlib:string_to_jid(RoomStr),
+	Name = Room#jid.luser,
+	Host = Room#jid.lserver,
+	case mnesia:dirty_read(muc_online_room, {Name, Host}) of
+		[] ->
+			{error, not_found};
+		[R] ->
+		    	Pid = R#muc_online_room.pid,
+			mod_muc_room:moderate_room_history(Pid, Nick)
+	end.
 
 %% This function is called by a room in three situations:
 %% A) The owner of the room destroyed it
