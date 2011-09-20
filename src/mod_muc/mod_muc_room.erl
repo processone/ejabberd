@@ -302,7 +302,7 @@ normal_state({route, From, "",
 					(StateData#state.config)#config.allow_voice_requests} of
 				{true, true} ->
 					MinInterval = (StateData#state.config)#config.voice_request_min_interval,
-					BareFrom = jlib:jid_remove_resource(jlib:jid_to_lower(From)),
+					BareFrom = jlib:jid_remove_resource(jlib:jid_tolower(From)),
 					LastTime = last_voice_request_time(BareFrom, StateData),
 					TimeFromLastRequest = timer:now_diff(erlang:now(), LastTime),
 					if
