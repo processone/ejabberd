@@ -337,7 +337,7 @@ normal_state({route, From, "",
 				NewStateData = case is_moderator(From, StateData) of
 				true ->
 					case extract_jid_from_voice_approvement(Els) of
-					{error, X} ->
+					{error, _} ->
 						ErrText = "Failed to extract JID from your voice request approvement",
 						Err = jlib:make_error_reply(
 							Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
@@ -3721,46 +3721,53 @@ get_mucroom_disco_items(StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Voice request support
 
+is_voice_request({xmlelement, "x", _, _} = Elem) ->
+	try
+		case xml:get_tag_attr_s("xmlns", Elem) of
+		?NS_XDATA ->
+			Fields = jlib:parse_xdata_submit(Elem),
+			lists:foldl(
+				fun(X,Y) ->
+					check_voice_request_fields(X,Y)
+				end,
+				true, Fields)
+		end
+	catch
+	error: _ ->
+		false
+	end;
 is_voice_request(Els) ->
-	try
-		case xml:remove_cdata(Els) of
-		[{xmlelement, "x", _, Els1} = XEl] ->
-			case xml:get_tag_attr_s("xmlns", XEl) of
-			?NS_XDATA ->
-				lists:foldl(
-					fun(X,Y) ->
-						check_voice_request_fields(X,Y)
-					end,
-					true, xml:remove_cdata(Els1))
-			end
-		end
-	catch
-	error: _ ->
-		false
-	end.
-
-check_voice_request_fields({xmlelement, "field", _, Els} = Elem, Acc) ->
-	try
-		case Acc of
-		true ->
-			case xml:get_tag_attr_s("var", Elem) of
-			"FORM_TYPE" ->
-				[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
-				case xml:get_cdata(Value) of
-				"http://jabber.org/protocol/muc#request" ->
-					true
+	lists:foldl(
+		fun(X, Acc) -> 
+			case Acc of
+			false ->
+				case X of
+				{xmlelement, "x", _, _} ->
+					is_voice_request(X);
+				_ ->
+					false
 				end;
-			"muc#role" ->
-				[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
-				case xml:get_cdata(Value) of
-				"participant" ->
-					true
-				end
+			true ->
+				true
 			end
+		end, false, Els).
+
+check_voice_request_fields({Field, Value}, Acc) ->
+	if Acc ->
+		case Field of
+		"FORM_TYPE" ->
+			case Value of
+			"http://jabber.org/protocol/muc#request" ->
+				true
+			end;
+		"muc#role" ->
+			case Value of
+			"participant" ->
+				true
+			end;
+		_ ->
+			true % silently ignore any extra fields
 		end
-	catch
-	error: _ ->
-		false
 	end.
 
 prepare_request_form(Requester, Nick, Lang) ->
@@ -3792,39 +3799,47 @@ send_voice_request(From, StateData) ->
 				prepare_request_form(From, FromNick, ""))
 		end, Moderators).
 
-is_voice_approvement(Els) ->
+is_voice_approvement({xmlelement, "x", _, _} = Elem) ->
 	try
-		case xml:remove_cdata(Els) of
-		[{xmlelement, "x", Attrs, Els1}] ->
-			case xml:get_attr_s("xmlns", Attrs) of
-			?NS_XDATA ->
-				case xml:get_attr_s("type", Attrs) of
-				"submit" ->
-					lists:foldl(
-						fun(X,Y) ->
-							check_voice_approvement_fields(X,Y)
-						end,
-						true, xml:remove_cdata(Els1))
-				end
-			end
+		case xml:get_tag_attr_s("xmlns", Elem) of
+		?NS_XDATA ->
+			Fields = jlib:parse_xdata_submit(Elem),
+			lists:foldl(
+				fun(X,Y) ->
+					check_voice_approvement_fields(X,Y)
+				end,
+				true, Fields)
 		end
 	catch
 	error: _ ->
 		false
-	end.
+	end;
+is_voice_approvement(Els) ->
+	lists:foldl(
+		fun(X, Acc) -> 
+			case Acc of
+			false ->
+				case X of
+				{xmlelement, "x", _, _} ->
+					is_voice_approvement(X);
+				_ ->
+					false
+				end;
+			true ->
+				true
+			end
+		end, false, Els).
 
-check_voice_approvement_fields({xmlelement, "field", Attrs, Els}, Acc) ->
+check_voice_approvement_fields({Field, Value}, Acc) ->
 	if Acc ->
-		case xml:get_attr_s("var", Attrs) of
+		case Field of
 		"FORM_TYPE" ->
-			[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
-			case xml:get_cdata(Value) of
+			case Value of
 			"http://jabber.org/protocol/muc#request" ->
 				true
 			end;
 		"muc#role" ->
-			[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
-			case xml:get_cdata(Value) of
+			case Value of
 			"participant" ->
 				true
 			end;
@@ -3834,8 +3849,7 @@ check_voice_approvement_fields({xmlelement, "field", Attrs, Els}, Acc) ->
 			true;
 		"muc#request_allow" ->
 			% XXX: submitted forms with request_allow unchecked ignored here
-			[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els),
-			case xml:get_cdata(Value) of
+			case Value of
 			"true" ->
 				true;
 			"1" ->
@@ -3844,34 +3858,38 @@ check_voice_approvement_fields({xmlelement, "field", Attrs, Els}, Acc) ->
 		_ ->
 			true % ignore unknown fields
 		end
-	end;
-check_voice_approvement_fields({xmlelement, _, _, _}, _) ->
-	true.
+	end.
 
 extract_jid_from_voice_approvement(Els) ->
-	try
-		[{xmlelement, "x", _, Els1}] = xml:remove_cdata(Els),
-		Jid = lists:foldl(
-			fun(El, Acc) ->
-				case xml:get_tag_attr_s("var", El) of
-				"muc#jid" ->
-					{xmlelement, "field", _, Els2} = El,
-					[{xmlelement, "value", _, Value}] = xml:remove_cdata(Els2),
-					xml:get_cdata(Value);
+	lists:foldl(
+		fun(X, Acc) -> 
+			case Acc of
+			{error, _} ->
+				case X of
+				{xmlelement, "x", _, _} ->
+					Fields = jlib:parse_xdata_submit(X),
+					Jid = lists:foldl(
+						fun(T, Acc2) ->
+							case Acc2 of
+							{error, _} ->
+								case T of
+								{"muc#jid", Jid} ->
+									Jid;
+								_ ->
+									Acc2
+								end;
+							_ ->
+								Acc2
+							end
+						end, {error, jid_not_found}, Fields),
+					jlib:string_to_jid(Jid);
 				_ ->
 					Acc
-				end
-			end, {error, jid_not_found}, xml:remove_cdata(Els1)),
-		case Jid of
-		{error, _} = Err ->
-			Err;
-		_ ->
-			jlib:string_to_jid(Jid)
-		end
-	catch
-	error: X ->
-		{error, X}
-	end.
+				end;
+			_ ->
+				Acc
+			end
+		end, {error, jid_not_found}, Els).
 
 last_voice_request_time(BareJID, StateData) ->
 	case ?DICT:find(BareJID, StateData#state.last_voice_request_time) of
