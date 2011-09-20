@@ -3896,7 +3896,7 @@ last_voice_request_time(BareJID, StateData) ->
 	{ok, Value} ->
 		Value;
 	error ->
-		0
+		{0, 0, 0}
 	end.
 
 update_voice_request_time(BareJID, StateData) ->
