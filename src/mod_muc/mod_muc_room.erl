@@ -3793,14 +3793,13 @@ prepare_request_form(Requester, Nick, Lang) ->
 send_voice_request(From, StateData) ->
 	Moderators = search_role(moderator, StateData),
 	FromNick = find_nick_by_jid(From, StateData),
-	lists:map(
+	lists:foreach(
 		fun({_, User}) ->
 			ejabberd_router:route(
 				StateData#state.jid,
 				User#user.jid,
 				prepare_request_form(From, FromNick, ""))
-		end, Moderators),
-	ok.
+		end, Moderators).
 
 is_voice_approvement(Els) ->
 	try
