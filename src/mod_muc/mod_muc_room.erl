@@ -3722,18 +3722,15 @@ get_mucroom_disco_items(StateData) ->
 % Voice request support
 
 is_voice_request({xmlelement, "x", _, _} = Elem) ->
-	try
-		case xml:get_tag_attr_s("xmlns", Elem) of
-		?NS_XDATA ->
-			Fields = jlib:parse_xdata_submit(Elem),
-			lists:foldl(
-				fun(X,Y) ->
-					check_voice_request_fields(X,Y)
-				end,
-				true, Fields)
-		end
-	catch
-	error: _ ->
+	case xml:get_tag_attr_s("xmlns", Elem) of
+	?NS_XDATA ->
+		Fields = jlib:parse_xdata_submit(Elem),
+		lists:foldl(
+			fun(X,Y) ->
+				check_voice_request_fields(X,Y)
+			end,
+			true, Fields);
+	_ ->
 		false
 	end;
 is_voice_request(Els) ->
@@ -3795,18 +3792,15 @@ send_voice_request(From, StateData) ->
 		end, Moderators).
 
 is_voice_approvement({xmlelement, "x", _, _} = Elem) ->
-	try
-		case xml:get_tag_attr_s("xmlns", Elem) of
-		?NS_XDATA ->
-			Fields = jlib:parse_xdata_submit(Elem),
-			lists:foldl(
-				fun(X,Y) ->
-					check_voice_approvement_fields(X,Y)
-				end,
-				true, Fields)
-		end
-	catch
-	error: _ ->
+	case xml:get_tag_attr_s("xmlns", Elem) of
+	?NS_XDATA ->
+		Fields = jlib:parse_xdata_submit(Elem),
+		lists:foldl(
+			fun(X,Y) ->
+				check_voice_approvement_fields(X,Y)
+			end,
+			true, Fields);
+	_ ->
 		false
 	end;
 is_voice_approvement(Els) ->
