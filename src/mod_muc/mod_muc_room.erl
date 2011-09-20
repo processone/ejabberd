@@ -3745,11 +3745,11 @@ is_voice_request(Els) ->
 
 check_voice_request_fields(_, false) ->
 	false;
-check_voice_request_fields({"FORM_TYPE", "http://jabber.org/protocol/muc#request"}, true) ->
+check_voice_request_fields({"FORM_TYPE", ["http://jabber.org/protocol/muc#request"]}, true) ->
 	true;
 check_voice_request_fields({"FORM_TYPE", _}, _) ->
 	false;
-check_voice_request_fields({"muc#role", "participant"}, true) ->
+check_voice_request_fields({"muc#role", ["participant"]}, true) ->
 	true;
 check_voice_request_fields({"muc#role", _}, _) ->
 	false;
@@ -3809,17 +3809,17 @@ is_voice_approvement(Els) ->
 
 check_voice_approvement_fields(_, false) ->
 	false;
-check_voice_approvement_fields({"FORM_TYPE", "http://jabber.org/protocol/muc#request"}, true) ->
+check_voice_approvement_fields({"FORM_TYPE", ["http://jabber.org/protocol/muc#request"]}, true) ->
 	true;
 check_voice_approvement_fields({"FORM_TYPE", _}, _) ->
 	false;
-check_voice_approvement_fields({"muc#role", "participant"}, true) ->
+check_voice_approvement_fields({"muc#role", ["participant"]}, true) ->
 	true;
 check_voice_approvement_fields({"muc#role", _}, _) ->
 	false;
-check_voice_approvement_fields({"muc#request_allow", "true"}, true) ->
+check_voice_approvement_fields({"muc#request_allow", ["true"]}, true) ->
 	true;
-check_voice_approvement_fields({"muc#request_allow", "1"}, true) ->
+check_voice_approvement_fields({"muc#request_allow", ["1"]}, true) ->
 	true;
 check_voice_approvement_fields({"muc#request_allow", _}, _) ->
 	false;
