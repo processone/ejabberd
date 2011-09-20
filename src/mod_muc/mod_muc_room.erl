@@ -302,12 +302,13 @@ normal_state({route, From, "",
 					(StateData#state.config)#config.allow_voice_requests} of
 				{true, true} ->
 					MinInterval = (StateData#state.config)#config.voice_request_min_interval,
-					FromNick = find_nick_by_jid(From, StateData),
-					LastTime = last_voice_request_time(FromNick, StateData),
+					BareFrom = jlib:jid_remove_resource(jlib:jid_to_lower(From)),
+					LastTime = last_voice_request_time(BareFrom, StateData),
+					TimeFromLastRequest = timer:now_diff(LastTime, erlang:now()),
 					if
-					timer:now_diff(LastTime, erlang:now()) > MinInterval*1000000 ->
+					TimeFromLastRequest > MinInterval*1000000 ->
 						send_voice_request(From, StateData),
-						update_voice_request_time(FromNick, StateData);
+						update_voice_request_time(BareFrom, StateData);
 					true ->
 						ErrText = "Please, wait for a while before sending new voice request",
 						Err =  jlib:make_error_reply(
@@ -1555,7 +1556,8 @@ remove_online_user(JID, StateData, Reason) ->
 		error ->
 		    StateData#state.nicks
 	    end,
-    LastTimes = ?DICT:erase(Nick, StateData#state.last_voice_request_time),
+		LastTimes = ?DICT:erase(jlib:jid_remove_resource(LJID),
+			StateData#state.last_voice_request_time),
     StateData#state{users = Users, nicks = Nicks,
 		last_voice_request_time = LastTimes}.
 
@@ -2199,18 +2201,7 @@ change_nick(JID, Nick, StateData) ->
 			     ?DICT:store(OldNick, OldNickUsers -- [LJID],
 					 StateData#state.nicks))
 	end,
-	LastTimes =
-	case ?DICT:find(OldNick, StateData#state.last_voice_request_time) of
-	{ok, Time} ->
-		?DICT:store(
-			Nick, Time,
-			?DICT:erase(OldNick, StateData#state.last_voice_request_time)
-		);
-	error ->
-		StateData#state.last_voice_request_time
-	end,
-    NewStateData = StateData#state{users = Users, nicks = Nicks,
-			last_voice_request_time = LastTimes},
+	NewStateData = StateData#state{users = Users, nicks = Nicks},
     send_nick_changing(JID, OldNick, NewStateData, SendOldUnavailable, SendNewAvailable),
     add_to_log(nickchange, {OldNick, Nick}, StateData),
     NewStateData.
@@ -3882,16 +3873,16 @@ extract_jid_from_voice_approvement(Els) ->
 		{error, X}
 	end.
 
-last_voice_request_time(Nick, StateData) ->
-	case ?DICT:find(Nick, StateData#state.last_voice_request_time) of
+last_voice_request_time(BareJID, StateData) ->
+	case ?DICT:find(BareJID, StateData#state.last_voice_request_time) of
 	{ok, Value} ->
 		Value;
 	error ->
 		0
 	end.
 
-update_voice_request_time(Nick, StateData) ->
-	NewDict = ?DICT:store(Nick, erlang:now(), StateData#state.last_voice_request_time),
+update_voice_request_time(BareJID, StateData) ->
+	NewDict = ?DICT:store(BareJID, erlang:now(), StateData#state.last_voice_request_time),
 	StateData#state{last_voice_request_time = NewDict}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
