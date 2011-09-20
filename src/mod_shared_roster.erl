@@ -664,14 +664,15 @@ add_user_to_group(Host, {LUser, LServer} = US, Group) ->
     case re:run(LUser, "^@.+@$", [{capture, none}]) of
 	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
-	    AllUsersOpt =
-		case LUser == "@all@" of
-		    true -> [{all_users, true}];
-		    false -> []
+	    MoreGroupOpts =
+		case LUser of
+		    "@all@" -> [{all_users, true}];
+		    "@online@" -> [{online_users, true}];
+		    _ -> []
 		end,
             mod_shared_roster:set_group_opts(
 	      Host, Group,
-	      GroupOpts ++ AllUsersOpt);
+	      GroupOpts ++ MoreGroupOpts);
 	nomatch ->
 	    %% Push this new user to members of groups where this group is displayed
 	    push_user_to_displayed(LUser, LServer, Group, both),
@@ -700,7 +701,9 @@ remove_user_from_group(Host, {LUser, LServer} = US, Group) ->
 	    NewGroupOpts =
 		case LUser of
 		    "@all@" ->
-			lists:filter(fun(X) -> X/={all_users,true} end, GroupOpts)
+			lists:filter(fun(X) -> X/={all_users,true} end, GroupOpts);
+		    "@online@" ->
+			lists:filter(fun(X) -> X/={online_users,true} end, GroupOpts)
 		end,
 	    mod_shared_roster:set_group_opts(Host, Group, NewGroupOpts);
 	nomatch ->
