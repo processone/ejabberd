@@ -3752,23 +3752,18 @@ is_voice_request(Els) ->
 			end
 		end, false, Els).
 
-check_voice_request_fields({Field, Value}, Acc) ->
-	if Acc ->
-		case Field of
-		"FORM_TYPE" ->
-			case Value of
-			"http://jabber.org/protocol/muc#request" ->
-				true
-			end;
-		"muc#role" ->
-			case Value of
-			"participant" ->
-				true
-			end;
-		_ ->
-			true % silently ignore any extra fields
-		end
-	end.
+check_voice_request_fields(_, false) ->
+	false;
+check_voice_request_fields({"FORM_TYPE", "http://jabber.org/protocol/muc#request"}, true) ->
+	true;
+check_voice_request_fields({"FORM_TYPE", _}, _) ->
+	false;
+check_voice_request_fields({"muc#role", "participant"}, true) ->
+	true;
+check_voice_request_fields({"muc#role", _}, _) ->
+	false;
+check_voice_request_fields(_, true) ->
+	true. % silently ignore any extra fields
 
 prepare_request_form(Requester, Nick, Lang) ->
 	{xmlelement, "message", [{"type", "normal"}], [
@@ -3830,35 +3825,24 @@ is_voice_approvement(Els) ->
 			end
 		end, false, Els).
 
-check_voice_approvement_fields({Field, Value}, Acc) ->
-	if Acc ->
-		case Field of
-		"FORM_TYPE" ->
-			case Value of
-			"http://jabber.org/protocol/muc#request" ->
-				true
-			end;
-		"muc#role" ->
-			case Value of
-			"participant" ->
-				true
-			end;
-		"muc#jid" ->
-			true; % TODO: make some validation here
-		"muc#roomnick" ->
-			true;
-		"muc#request_allow" ->
-			% XXX: submitted forms with request_allow unchecked ignored here
-			case Value of
-			"true" ->
-				true;
-			"1" ->
-				true
-			end;
-		_ ->
-			true % ignore unknown fields
-		end
-	end.
+check_voice_approvement_fields(_, false) ->
+	false;
+check_voice_approvement_fields({"FORM_TYPE", "http://jabber.org/protocol/muc#request"}, true) ->
+	true;
+check_voice_approvement_fields({"FORM_TYPE", _}, _) ->
+	false;
+check_voice_approvement_fields({"muc#role", "participant"}, true) ->
+	true;
+check_voice_approvement_fields({"muc#role", _}, _) ->
+	false;
+check_voice_approvement_fields({"muc#request_allow", "true"}, true) ->
+	true;
+check_voice_approvement_fields({"muc#request_allow", "1"}, true) ->
+	true;
+check_voice_approvement_fields({"muc#request_allow", _}, _) ->
+	false;
+check_voice_approvement_fields(_, true) ->
+	true; % do not check any other fields
 
 extract_jid_from_voice_approvement(Els) ->
 	lists:foldl(
