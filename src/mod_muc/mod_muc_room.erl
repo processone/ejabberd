@@ -3735,18 +3735,12 @@ is_voice_request({xmlelement, "x", _, _} = Elem) ->
 	end;
 is_voice_request(Els) ->
 	lists:foldl(
-		fun(X, Acc) -> 
-			case Acc of
-			false ->
-				case X of
-				{xmlelement, "x", _, _} ->
-					is_voice_request(X);
-				_ ->
-					false
-				end;
-			true ->
-				true
-			end
+		fun(_, true) ->
+			true;
+		({xmlelement, "x", _, _} = X, false) ->
+			is_voice_request(X);
+		(_, _) ->
+			false
 		end, false, Els).
 
 check_voice_request_fields(_, false) ->
@@ -3805,18 +3799,12 @@ is_voice_approvement({xmlelement, "x", _, _} = Elem) ->
 	end;
 is_voice_approvement(Els) ->
 	lists:foldl(
-		fun(X, Acc) -> 
-			case Acc of
-			false ->
-				case X of
-				{xmlelement, "x", _, _} ->
-					is_voice_approvement(X);
-				_ ->
-					false
-				end;
-			true ->
-				true
-			end
+		fun(_, true) ->
+			true;
+		({xmlelement, "x", _, _} = X, false) ->
+			is_voice_approvement(X);
+		(_, _) ->
+			false
 		end, false, Els).
 
 check_voice_approvement_fields(_, false) ->
@@ -3836,7 +3824,7 @@ check_voice_approvement_fields({"muc#request_allow", "1"}, true) ->
 check_voice_approvement_fields({"muc#request_allow", _}, _) ->
 	false;
 check_voice_approvement_fields(_, true) ->
-	true; % do not check any other fields
+	true. % do not check any other fields
 
 extract_jid_from_voice_approvement(Els) ->
 	lists:foldl(
