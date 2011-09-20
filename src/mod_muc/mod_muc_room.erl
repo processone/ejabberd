@@ -304,8 +304,6 @@ normal_state({route, From, "",
 					MinInterval = (StateData#state.config)#config.voice_request_min_interval,
 					FromNick = find_nick_by_jid(From, StateData),
 					LastTime = last_voice_request_time(FromNick, StateData),
-					{MegaSecs, Secs, _} = erlang:now(),
-					Now = MegaSecs * 1000000 + Secs,
 					if
 					timer:now_diff(LastTime, erlang:now()) > MinInterval*1000000 ->
 						send_voice_request(From, StateData),
@@ -3894,9 +3892,7 @@ last_voice_request_time(Nick, StateData) ->
 	end.
 
 update_voice_request_time(Nick, StateData) ->
-	{MegaSecs, Secs, _} = erlang:now(),
-	Time = MegaSecs * 1000000 + Secs,
-	NewDict = ?DICT:store(Nick, Time, StateData#state.last_voice_request_time),
+	NewDict = ?DICT:store(Nick, erlang:now(), StateData#state.last_voice_request_time),
 	StateData#state{last_voice_request_time = NewDict}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
