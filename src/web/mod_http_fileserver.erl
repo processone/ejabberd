@@ -77,14 +77,15 @@
 
 -define(DEFAULT_CONTENT_TYPE, "application/octet-stream").
 -define(DEFAULT_CONTENT_TYPES, [{".css",  "text/css"},
-                                {".gif",  "image/gif"},
                                 {".html", "text/html"},
-                                {".jar",  "application/java-archive"},
-                                {".jpeg", "image/jpeg"},
-				{".jpg",  "image/jpeg"},
-                                {".js",   "text/javascript"},
-                                {".png",  "image/png"},
                                 {".txt",  "text/plain"},
+                                {".js",   "text/javascript"},
+                                {".gif",  "image/gif"},
+                                {".jpeg", "image/jpeg"},
+                                {".jpg",  "image/jpeg"},
+                                {".png",  "image/png"},
+                                {".svg",  "image/svg+xml"},
+                                {".jar",  "application/java-archive"},
                                 {".xml",  "application/xml"},
                                 {".xpi",  "application/x-xpinstall"},
                                 {".xul",  "application/vnd.mozilla.xul+xml"}]).
