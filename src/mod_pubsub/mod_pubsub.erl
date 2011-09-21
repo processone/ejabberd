@@ -2509,8 +2509,11 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    case lists:member("auto-create", features(Type)) of
 		true ->
 		    case create_node(Host, ServerHost, Node, Publisher, Type) of
-			{result, _} ->
-			    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload);
+			{result, Reply2} ->
+			    NewNode = exmpp_xml:get_path(Reply2, [{element, 'create'},
+				    {attribute, <<"node">>}]),
+			    publish_item(Host, ServerHost, NewNode, Publisher, ItemId,
+				    Payload);
 			_ ->
 			    {error, 'item-not-found'}
 		    end;
