@@ -257,8 +257,8 @@ normal_state({route, From, "",
 		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
 			IsInvitation = is_invitation(Els),
-			IsVoiceRequest = is_voice_request(Els),
-			IsVoiceApprovement = is_voice_approvement(Els),
+			IsVoiceRequest = is_voice_request(Els) and is_visitor(From, StateData),
+			IsVoiceApprovement = is_voice_approvement(Els) and not is_visitor(From, StateData),
 			if 
 			IsInvitation ->
 				case catch check_invitation(From, Els, Lang, StateData) of
@@ -298,9 +298,8 @@ normal_state({route, From, "",
 					end
 				end;
 			IsVoiceRequest ->
-				NewStateData = case {is_visitor(From, StateData),
-					(StateData#state.config)#config.allow_voice_requests} of
-				{true, true} ->
+				NewStateData = case (StateData#state.config)#config.allow_voice_requests of
+				true ->
 					MinInterval = (StateData#state.config)#config.voice_request_min_interval,
 					BareFrom = jlib:jid_remove_resource(jlib:jid_tolower(From)),
 					LastTime = last_voice_request_time(BareFrom, StateData),
@@ -317,17 +316,10 @@ normal_state({route, From, "",
 							StateData#state.jid, From, Err),
 						StateData
 					end;
-				{_, false} ->
+				false ->
 					ErrText = "Voice requests are disabled in this room",
 					Err = jlib:make_error_reply(
 						Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-					ejabberd_router:route(
-						StateData#state.jid, From, Err),
-					StateData;
-				_ ->
-					ErrText = "Only visitors allowed to request voice",
-					Err = jlib:make_error_reply(
-						Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
 					ejabberd_router:route(
 						StateData#state.jid, From, Err),
 					StateData
@@ -3839,7 +3831,7 @@ extract_jid_from_voice_approvement(Els) ->
 							case Acc2 of
 							{error, _} ->
 								case T of
-								{"muc#jid", Jid} ->
+								{"muc#jid", [Jid]} ->
 									Jid;
 								_ ->
 									Acc2
