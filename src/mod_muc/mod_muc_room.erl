@@ -1548,7 +1548,7 @@ remove_online_user(JID, StateData, Reason) ->
 		error ->
 		    StateData#state.nicks
 	    end,
-		LastTimes = ?DICT:erase(jlib:jid_remove_resource(LJID),
+		LastTimes = treap:delete(jlib:jid_remove_resource(LJID),
 			StateData#state.last_voice_request_time),
     StateData#state{users = Users, nicks = Nicks,
 		last_voice_request_time = LastTimes}.
@@ -3850,15 +3850,15 @@ extract_jid_from_voice_approvement(Els) ->
 		end, {error, jid_not_found}, Els).
 
 last_voice_request_time(BareJID, StateData) ->
-	case ?DICT:find(BareJID, StateData#state.last_voice_request_time) of
-	{ok, Value} ->
+	case treap:lookup(BareJID, StateData#state.last_voice_request_time) of
+	{ok, _, Value} ->
 		Value;
 	error ->
 		{0, 0, 0}
 	end.
 
 update_voice_request_time(BareJID, StateData) ->
-	NewDict = ?DICT:store(BareJID, erlang:now(), StateData#state.last_voice_request_time),
+	NewDict = treap:insert(BareJID, {0, 0}, erlang:now(), StateData#state.last_voice_request_time),
 	StateData#state{last_voice_request_time = NewDict}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
