@@ -178,8 +178,7 @@ create_node_permission(Host, ServerHost, _NodeId, _ParentNodeId, #jid{node = U, 
 	    ).
 
 create_node(NodeIdx, JID) ->
-    {result, _} = node_flat:create_node(NodeIdx, JID),
-    {result, []}.
+    node_flat:create_node(NodeIdx, JID).
 %    case node_flat:create_node(NodeIdx, JID) of
 %	{result, _} -> {result, []};
 %	Error -> Error
