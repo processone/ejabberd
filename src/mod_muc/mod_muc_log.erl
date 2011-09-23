@@ -945,7 +945,7 @@ get_room_state(RoomName, MucService) ->
 	    RoomPid = R#muc_online_room.pid,
 	    get_room_state(RoomPid);
 	[] ->
-	    room_not_found
+	    #state{}
     end.
 
 get_room_state(RoomPid) ->
