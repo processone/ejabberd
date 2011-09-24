@@ -80,7 +80,10 @@
 	 escape/1,
 	 count_records_where/3,
 	 get_roster_version/2,
-	 set_roster_version/2]).
+	 set_roster_version/2,
+ 	 add_roomhistory_sql/6,
+ 	 clear_and_add_roomhistory/3,
+ 	 load_and_clear_roomhistory/2]).
 
 %% We have only two compile time options for db queries:
 %-define(generic, true).
@@ -258,6 +261,23 @@ users_number(LServer, [{prefix, Prefix}]) when is_list(Prefix) ->
                     "where username like '~s%'", [Prefix]));
 users_number(LServer, []) ->
     users_number(LServer).
+
+quote(Str) -> ["'", Str, "'"].
+add_roomhistory_sql(Room, Nick, Packet, HaveSubject, Timestamp, Size) ->
+	["insert into room_history(room, nick, packet, have_subject, timestamp, size) "
+	 "values (", quote(Room), ",", quote(Nick), ",", quote(Packet), ",", HaveSubject, ",", Timestamp,
+	 ",", Size, ");"].
+
+clear_and_add_roomhistory(LServer, Room, Queries) ->
+	Q = ["delete from room_history where room = '", Room, "';"],
+	ejabberd_odbc:sql_transaction(LServer, [Q|Queries]).
+
+load_and_clear_roomhistory(LServer, Room) ->
+	Q = ["select nick, packet, have_subject, timestamp, size from room_history where room = '", Room, 
+		"' order by timestamp ;"],
+	R = ejabberd_odbc:sql_query(LServer, Q),
+	ejabberd_odbc:sql_query(LServer, ["delete from room_history where room = '", Room, "';"]),
+	R.
 
 
 add_spool_sql(Username, XML) ->

@@ -73,6 +73,7 @@
 		nicks = ?DICT:new(),
 		affiliations = ?DICT:new(),
 		history,
+		persist_history = false,
 		subject = "",
 		subject_author = "",
 		just_created = false,

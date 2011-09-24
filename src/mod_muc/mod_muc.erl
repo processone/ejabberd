@@ -66,6 +66,7 @@
 		server_host,
 		access,
 		history_size,
+		persist_history,
 		default_room_opts,
 		room_shaper}).
 
@@ -257,6 +258,7 @@ init([Host, Opts]) ->
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
     AccessPersistent = gen_mod:get_opt(access_persistent, Opts, all),
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
+    PersistHistory = gen_mod:get_opt(persist_history, Opts, false),
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     ejabberd_router:register_route(MyHost),
@@ -266,12 +268,14 @@ init([Host, Opts]) ->
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize,
+			 PersistHistory,
 			 RoomShaper),
     {ok, #state{host = MyHost,
 		server_host = Host,
 		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
 		default_room_opts = DefRoomOpts,
 		history_size = HistorySize,
+		persist_history = PersistHistory,
 		room_shaper = RoomShaper}}.
 
 %%--------------------------------------------------------------------
@@ -293,6 +297,7 @@ handle_call({create, Room, From, Nick, Opts},
 		   access = Access,
 		   default_room_opts = DefOpts,
 		   history_size = HistorySize,
+		   persist_history = PersistHistory,
 		   room_shaper = RoomShaper} = State) ->
     ?DEBUG("MUC: create new room '~s'~n", [Room]),
     NewOpts = case Opts of
@@ -301,7 +306,7 @@ handle_call({create, Room, From, Nick, Opts},
 	      end,
     {ok, Pid} = mod_muc_room:start(
 		  Host, ServerHost, Access,
-		  Room, HistorySize,
+		  Room, HistorySize, PersistHistory,
 		  RoomShaper, From,
 		  Nick, NewOpts),
     register_room(Host, Room, Pid),
@@ -328,11 +333,12 @@ handle_info({route, From, To, Packet},
 		   access = Access,
  		   default_room_opts = DefRoomOpts,
 		   history_size = HistorySize,
+		   persist_history = PersistHistory,
 		   room_shaper = RoomShaper} = State) ->
     {U, S, _} = jlib:jid_tolower(To),
     case get_node({U, S}) of
 	Node when Node == node() ->
-	    case catch do_route(Host, ServerHost, Access, HistorySize,
+	    case catch do_route(Host, ServerHost, Access, HistorySize, PersistHistory,
 				RoomShaper, From, To, Packet, DefRoomOpts) of
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]);
@@ -403,12 +409,12 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
+do_route(Host, ServerHost, Access, HistorySize, PersistHistory, RoomShaper,
 	 From, To, Packet, DefRoomOpts) ->
     {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
-	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
+	    do_route1(Host, ServerHost, Access, HistorySize, PersistHistory, RoomShaper,
 		      From, To, Packet, DefRoomOpts);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
@@ -420,7 +426,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
     end.
 
 
-do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
+do_route1(Host, ServerHost, Access, HistorySize, PersistHistory, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
     {Room, _, Nick} = jlib:jid_tolower(To),
@@ -562,7 +568,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				true ->
 				    case start_new_room(
 					   Host, ServerHost, Access,
-					   Room, HistorySize,
+					   Room, HistorySize, PersistHistory,
 					   RoomShaper, From,
 					   Nick, DefRoomOpts) of
 					{ok, Pid} ->
@@ -606,7 +612,7 @@ check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
     end.
 
 
-load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
+load_permanent_rooms(Host, ServerHost, Access, HistorySize, PersistHistory, RoomShaper) ->
     case catch mnesia:dirty_select(
 		 muc_room, [{#muc_room{name_host = {'_', Host}, _ = '_'},
 			     [],
@@ -634,6 +640,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
                                                             Access,
                                                             Room,
                                                             HistorySize,
+							    PersistHistory,
                                                             RoomShaper,
                                                             R#muc_room.opts),
                                               register_room(Host, Room, Pid)
@@ -648,7 +655,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
     end.
 
 start_new_room(Host, ServerHost, Access, Room,
-	       HistorySize, RoomShaper, From,
+	       HistorySize, PersistHistory, RoomShaper, From,
 	       Nick, DefRoomOpts) ->
     case get_room_state_if_broadcasted({Room, Host}) of
         {ok, RoomState} ->
@@ -659,13 +666,13 @@ start_new_room(Host, ServerHost, Access, Room,
                 [] ->
                     ?DEBUG("MUC: open new room '~s'~n", [Room]),
                     mod_muc_room:start(Host, ServerHost, Access,
-                                       Room, HistorySize,
+                                       Room, HistorySize, PersistHistory,
                                        RoomShaper, From,
                                        Nick, DefRoomOpts);
                 [#muc_room{opts = Opts}|_] ->
                     ?DEBUG("MUC: restore room '~s'~n", [Room]),
                     mod_muc_room:start(Host, ServerHost, Access,
-                                       Room, HistorySize,
+                                       Room, HistorySize, PersistHistory,
                                        RoomShaper, Opts)
             end
     end.

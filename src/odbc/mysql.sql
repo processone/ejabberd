@@ -160,6 +160,19 @@ CREATE TABLE roster_version (
     version text NOT NULL
 ) CHARACTER SET utf8;
 
+
+-- Needed if persistent room history is enabled (recent room history survive server restart)
+CREATE TABLE room_history (
+    room varchar(250) NOT NULL,
+    nick varchar(250) NOT NULL,
+    packet text,
+    have_subject boolean,
+    timestamp bigint,
+    size int
+) CHARACTER SET utf8;
+CREATE INDEX i_room_history USING BTREE ON room_history(room);
+
+
 -- To update from 1.x:
 -- ALTER TABLE rosterusers ADD COLUMN askmessage text AFTER ask;
 -- UPDATE rosterusers SET askmessage = '';
@@ -219,3 +232,4 @@ CREATE TABLE pubsub_subscription_opt (
   opt_value text
 );
 CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt(subid(32), opt_name(32));
+

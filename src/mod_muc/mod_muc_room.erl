@@ -33,11 +33,11 @@
 
 
 %% External exports
--export([start_link/9,
-	 start_link/7,
+-export([start_link/10,
+	 start_link/8,
 	 start_link/2,
-	 start/9,
-	 start/7,
+	 start/10,
+	 start/8,
 	 start/2,
 	 migrate/3,
 	 route/4,
@@ -81,29 +81,29 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
+start(Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper,
       Creator, Nick, DefRoomOpts) ->
-    ?SUPERVISOR_START([Host, ServerHost, Access, Room, HistorySize,
+    ?SUPERVISOR_START([Host, ServerHost, Access, Room, HistorySize, PersistHistory,
 		       RoomShaper, Creator, Nick, DefRoomOpts]).
 
-start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
+start(Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper, Opts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
     supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
+      Supervisor, [Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper,
 		   Opts]).
 
 start(StateName, StateData) ->
     ServerHost = StateData#state.server_host,
     ?SUPERVISOR_START([StateName, StateData]).
 
-start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
+start_link(Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper,
 	   Creator, Nick, DefRoomOpts) ->
-    ?GEN_FSM:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+    ?GEN_FSM:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize, PersistHistory,
 				  RoomShaper, Creator, Nick, DefRoomOpts],
 			?FSMOPTS).
 
-start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
-    ?GEN_FSM:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+start_link(Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper, Opts) ->
+    ?GEN_FSM:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize, PersistHistory,
 				  RoomShaper, Opts],
 			?FSMOPTS).
 
@@ -127,7 +127,7 @@ moderate_room_history(FsmRef, Nick) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
+init([Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_affiliation(Creator, owner,
@@ -136,6 +136,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 				   access = Access,
 				   room = Room,
 				   history = lqueue_new(HistorySize),
+				   persist_history = PersistHistory,
 				   jid = jlib:make_jid(Room, Host, ""),
 				   just_created = true,
 				   room_shaper = Shaper}),
@@ -145,14 +146,15 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
     {ok, normal_state, State1};
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
+init([Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper, Opts]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_opts(Opts, #state{host = Host,
 				  server_host = ServerHost,
 				  access = Access,
 				  room = Room,
-				  history = lqueue_new(HistorySize),
+				  history = load_history(ServerHost, Room, PersistHistory, lqueue_new(HistorySize)),
+				  persist_history = PersistHistory,
 				  jid = jlib:make_jid(Room, Host, ""),
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
@@ -789,6 +791,13 @@ terminate(Reason, _StateName, StateData) ->
 	       tab_remove_online_user(LJID, StateData)
        end, [], StateData#state.users),
     add_to_log(room_existence, stopped, StateData),
+    if
+	    Reason == 'shutdown' ->
+		    persist_muc_history(StateData);
+	    true ->
+		    ok
+    end,
+	    
     mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
 			   StateData#state.server_host),
     ok.
@@ -796,6 +805,45 @@ terminate(Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
+
+load_history(_Host, _Room, false, Queue) ->
+	Queue;
+load_history(Host, Room, true, Queue) ->
+	?INFO_MSG("Loading history for room ~s on host ~s", [Room, Host]),
+	case odbc_queries:load_and_clear_roomhistory(Host, ejabberd_odbc:escape(Room)) of
+		{selected, ["nick", "packet", "have_subject", "timestamp", "size"], Items} ->
+			?DEBUG("Found ~p messages on history for ~s", [length(Items), Room]),
+			lists:foldl(fun(I, Q) -> 
+						{Nick, XML, HS, Ts, Size} = I,
+						Item = {Nick, 
+							xml_stream:parse_element(XML), 
+							HS /= "0", 
+							calendar:gregorian_seconds_to_datetime(list_to_integer(Ts)), 
+							list_to_integer(Size)},
+						lqueue_in(Item, Q) 
+				end, Queue, Items);
+		_ ->
+			Queue
+	end.
+
+
+persist_muc_history(#state{room = Room, server_host = Server, config = #config{persistent = true} ,persist_history = true, history = Q}) ->
+	?INFO_MSG("Persisting history for room ~s on host ~s", [Room, Server]),
+	Queries = lists:map(fun({FromNick, Packet, HaveSubject, Timestamp, Size}) ->
+				odbc_queries:add_roomhistory_sql(
+						ejabberd_odbc:escape(Room), 
+						ejabberd_odbc:escape(FromNick), 
+						ejabberd_odbc:escape(xml:element_to_binary(Packet)),
+					       	atom_to_list(HaveSubject), 
+						integer_to_list(calendar:datetime_to_gregorian_seconds(Timestamp)), 
+						integer_to_list(Size)) 
+		end, lqueue_to_list(Q)),
+	odbc_queries:clear_and_add_roomhistory(Server,ejabberd_odbc:escape(Room), Queries);
+	%% en mod_muc, cuando se levantan los muc persistentes, si se crea, y el flag persist_history esta en true,
+	%% se levantan los mensajes persistentes tb.
+
+persist_muc_history(_) ->
+	ok.
 
 route(Pid, From, ToNick, Packet) ->
     ?GEN_FSM:send_event(Pid, {route, From, ToNick, Packet}).
