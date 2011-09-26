@@ -306,16 +306,24 @@ normal_state({route, From, "",
                                             #config.voice_request_min_interval,
                                         BareFrom = jlib:jid_remove_resource(
                                                      jlib:jid_tolower(From)),
-                                        {LastTime, NewStateData1} = last_voice_request_time(
-                                                     BareFrom, StateData),
-                                        TimeFromLastRequest =
-                                            (now_to_usec(now()) - LastTime) div 1000000,
-                                        if TimeFromLastRequest > MinInterval ->
-                                                send_voice_request(
-                                                  From, NewStateData1),
-                                                update_voice_request_time(
-                                                  BareFrom, NewStateData1);
-                                           true ->
+                                        NowPriority = -now_to_usec(now()),
+                                        CleanPriority =
+                                            NowPriority + MinInterval*1000000,
+                                        Times = clean_treap(
+                                                  StateData#state.last_voice_request_time,
+                                                  CleanPriority),
+                                        case treap:lookup(BareFrom, Times) of
+                                            error ->
+                                                Times1 = treap:insert(
+                                                           BareFrom,
+                                                           NowPriority,
+                                                           true, Times),
+                                                NSD = StateData#state{
+                                                        last_voice_request_time =
+                                                            Times1},
+                                                send_voice_request(From, NSD),
+                                                NSD;
+                                            {ok, _, _} ->
                                                 ErrText = "Please, wait for "
                                                     "a while before sending "
                                                     "new voice request",
@@ -326,7 +334,9 @@ normal_state({route, From, "",
 						ejabberd_router:route(
                                                   StateData#state.jid,
                                                   From, Err),
-						NewStateData1
+						StateData#state{
+                                                  last_voice_request_time =
+                                                      Times}
 					end;
                                     false ->
 					ErrText = "Voice requests are "
@@ -3843,42 +3853,26 @@ extract_jid_from_voice_approvement(Els) ->
               Acc
       end, error, Els).
 
-last_voice_request_time(BareJID, StateData) ->
-    Timeout = (StateData#state.config)#config.voice_request_min_interval,
-    Times = clean_treap(StateData#state.last_voice_request_time,
-                        -now_to_usec(now()) + Timeout*1000000),
-    NewStateData = StateData#state{last_voice_request_time = Times},
-    case treap:lookup(BareJID, StateData#state.last_voice_request_time) of
-	{ok, Value, _} ->
-	    {-Value, NewStateData};
-	error ->
-	    {0, NewStateData}
-    end.
-
-update_voice_request_time(BareJID, StateData) ->
-    Times = treap:insert(BareJID, -now_to_usec(now()), true,
-                           StateData#state.last_voice_request_time),
-    StateData#state{last_voice_request_time = Times}.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
 
 is_invitation(Els) ->
-	try
-		case xml:remove_cdata(Els) of
-		[{xmlelement, "x", _Attrs1, Els1} = XEl] ->
-			case xml:get_tag_attr_s("xmlns", XEl) of
-			?NS_MUC_USER ->
-				case xml:remove_cdata(Els1) of
-				[{xmlelement, "invite", _, _}] ->
-					true
-				end
-			end
-		end
-	catch
-	error: _ -> 
-		false
-	end.
+    lists:foldl(
+      fun({xmlelement, "x", Attrs, _} = El, false) ->
+              case xml:get_attr_s("xmlns", Attrs) of
+                  ?NS_MUC_USER ->
+                      case xml:get_subtag(El, "invite") of
+                          false ->
+                              false;
+                          _ ->
+                              true
+                      end;
+                  _ ->
+                      false
+              end;
+         (_, Acc) ->
+              Acc
+      end, false, Els).
 
 check_invitation(From, Els, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
