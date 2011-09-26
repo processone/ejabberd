@@ -256,109 +256,140 @@ normal_state({route, From, "",
 		      From, Err),
 		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
-			IsInvitation = is_invitation(Els),
-			IsVoiceRequest = is_voice_request(Els) and is_visitor(From, StateData),
-			IsVoiceApprovement = is_voice_approvement(Els) and not is_visitor(From, StateData),
-			if 
-			IsInvitation ->
-				case catch check_invitation(From, Els, Lang, StateData) of
+                    IsInvitation = is_invitation(Els),
+                    IsVoiceRequest = is_voice_request(Els)
+                        and is_visitor(From, StateData),
+                    IsVoiceApprovement = is_voice_approvement(Els)
+                        and not is_visitor(From, StateData),
+                    if IsInvitation ->
+                            case catch check_invitation(From, Els, Lang, StateData) of
 				{error, Error} ->
-					Err = jlib:make_error_reply(
-						Packet, Error),
-					ejabberd_router:route(
-					StateData#state.jid,
-					From, Err),
-					{next_state, normal_state, StateData};
+                                    Err = jlib:make_error_reply(
+                                            Packet, Error),
+                                    ejabberd_router:route(
+                                      StateData#state.jid,
+                                      From, Err),
+                                    {next_state, normal_state, StateData};
 				IJID ->
-					Config = StateData#state.config,
-					case Config#config.members_only of
+                                    Config = StateData#state.config,
+                                    case Config#config.members_only of
 					true ->
-						case get_affiliation(IJID, StateData) of
+                                            case get_affiliation(IJID, StateData) of
 						none ->
-							NSD = set_affiliation(
-								IJID,
-								member,
-								StateData),
-							case (NSD#state.config)#config.persistent of
+                                                    NSD = set_affiliation(
+                                                            IJID,
+                                                            member,
+                                                            StateData),
+                                                    case (NSD#state.config)#config.persistent of
 							true ->
-								mod_muc:store_room(
-								NSD#state.host,
-								NSD#state.room,
-								make_opts(NSD));
+                                                            mod_muc:store_room(
+                                                              NSD#state.host,
+                                                              NSD#state.room,
+                                                              make_opts(NSD));
 							_ ->
-								ok
-							end,
-							{next_state, normal_state, NSD};
+                                                            ok
+                                                    end,
+                                                    {next_state, normal_state, NSD};
 						_ ->
-							{next_state, normal_state,
-							StateData}
-						end;
+                                                    {next_state, normal_state,
+                                                     StateData}
+                                            end;
 					false ->
-						{next_state, normal_state, StateData}
-					end
-				end;
+                                            {next_state, normal_state, StateData}
+                                    end
+                            end;
 			IsVoiceRequest ->
-				NewStateData = case (StateData#state.config)#config.allow_voice_requests of
-				true ->
-					MinInterval = (StateData#state.config)#config.voice_request_min_interval,
-					BareFrom = jlib:jid_remove_resource(jlib:jid_tolower(From)),
-					LastTime = last_voice_request_time(BareFrom, StateData),
-					TimeFromLastRequest = timer:now_diff(erlang:now(), LastTime),
-					if
-					TimeFromLastRequest > MinInterval*1000000 ->
-						send_voice_request(From, StateData),
-						update_voice_request_time(BareFrom, StateData);
-					true ->
-						ErrText = "Please, wait for a while before sending new voice request",
-						Err =  jlib:make_error_reply(
-							Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+                            NewStateData =
+                                case (StateData#state.config)#config.allow_voice_requests of
+                                    true ->
+                                        MinInterval = (StateData#state.config)
+                                            #config.voice_request_min_interval,
+                                        BareFrom = jlib:jid_remove_resource(
+                                                     jlib:jid_tolower(From)),
+                                        LastTime = last_voice_request_time(
+                                                     BareFrom, StateData),
+                                        TimeFromLastRequest =
+                                            timer:now_diff(
+                                              now(), LastTime) div 1000000,
+                                        if TimeFromLastRequest > MinInterval ->
+                                                send_voice_request(
+                                                  From, StateData),
+                                                update_voice_request_time(
+                                                  BareFrom, StateData);
+                                           true ->
+                                                ErrText = "Please, wait for "
+                                                    "a while before sending "
+                                                    "new voice request",
+                                                Err = jlib:make_error_reply(
+                                                        Packet,
+                                                        ?ERRT_NOT_ACCEPTABLE(
+                                                           Lang, ErrText)),
 						ejabberd_router:route(
-							StateData#state.jid, From, Err),
+                                                  StateData#state.jid,
+                                                  From, Err),
 						StateData
 					end;
-				false ->
-					ErrText = "Voice requests are disabled in this room",
+                                    false ->
+					ErrText = "Voice requests are "
+                                            "disabled in this room",
 					Err = jlib:make_error_reply(
-						Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+						Packet,
+                                                ?ERRT_FORBIDDEN(
+                                                   Lang, ErrText)),
 					ejabberd_router:route(
-						StateData#state.jid, From, Err),
+                                          StateData#state.jid, From, Err),
 					StateData
 				end,
-				{next_state, normal_state, NewStateData};
-			IsVoiceApprovement ->
-				NewStateData = case is_moderator(From, StateData) of
-				true ->
+                            {next_state, normal_state, NewStateData};
+                       IsVoiceApprovement ->
+                            NewStateData =
+                                case is_moderator(From, StateData) of
+                                    true ->
 					case extract_jid_from_voice_approvement(Els) of
-					{error, _} ->
-						ErrText = "Failed to extract JID from your voice request approvement",
+                                            error ->
+						ErrText = "Failed to extract "
+                                                    "JID from your voice "
+                                                    "request approvement",
 						Err = jlib:make_error_reply(
-							Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
+							Packet,
+                                                        ?ERRT_BAD_REQUEST(
+                                                           Lang, ErrText)),
 						ejabberd_router:route(
-							StateData#state.jid, From, Err),
+                                                  StateData#state.jid,
+                                                  From, Err),
 						StateData;
-					TargetJid ->
-						case is_visitor(TargetJid, StateData) of
-						true ->
+                                            {ok, TargetJid} ->
+						case is_visitor(
+                                                       TargetJid, StateData) of
+                                                    true ->
 							Reason = [],
-							NSD = set_role(TargetJid, participant, StateData),
-							catch send_new_presence(TargetJid, Reason, NSD),
+							NSD = set_role(
+                                                                TargetJid,
+                                                                participant,
+                                                                StateData),
+							catch send_new_presence(
+                                                                TargetJid,
+                                                                Reason, NSD),
 							NSD;
-						_ ->
+                                                    _ ->
 							StateData
 						end
 					end;
-				_ ->
-					ErrText = "Only moderators can approve voice requests",
+                                    _ ->
+					ErrText = "Only moderators can "
+                                            "approve voice requests",
 					Err = jlib:make_error_reply(
-						Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
+						Packet,
+                                                ?ERRT_NOT_ALLOWED(
+                                                   Lang, ErrText)),
 					ejabberd_router:route(
-						StateData#state.jid, From, Err),
+                                          StateData#state.jid, From, Err),
 					StateData
 				end,
-				{next_state, normal_state, NewStateData};
-			true ->
-				{next_state, normal_state, StateData}
-			end;
+                            {next_state, normal_state, NewStateData};
+                       true ->
+                            {next_state, normal_state, StateData}
+                    end;
 		_ ->
 		    ErrText = "Improper message type",
 		    Err = jlib:make_error_reply(
@@ -3713,153 +3744,121 @@ get_mucroom_disco_items(StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Voice request support
 
-is_voice_request({xmlelement, "x", _, _} = Elem) ->
-	case xml:get_tag_attr_s("xmlns", Elem) of
-	?NS_XDATA ->
-		Fields = jlib:parse_xdata_submit(Elem),
-		lists:foldl(
-			fun(X,Y) ->
-				check_voice_request_fields(X,Y)
-			end,
-			true, Fields);
-	_ ->
-		false
-	end;
 is_voice_request(Els) ->
-	lists:foldl(
-		fun(_, true) ->
-			true;
-		({xmlelement, "x", _, _} = X, false) ->
-			is_voice_request(X);
-		(_, _) ->
-			false
-		end, false, Els).
-
-check_voice_request_fields(_, false) ->
-	false;
-check_voice_request_fields({"FORM_TYPE", ["http://jabber.org/protocol/muc#request"]}, true) ->
-	true;
-check_voice_request_fields({"FORM_TYPE", _}, _) ->
-	false;
-check_voice_request_fields({"muc#role", ["participant"]}, true) ->
-	true;
-check_voice_request_fields({"muc#role", _}, _) ->
-	false;
-check_voice_request_fields(_, true) ->
-	true. % silently ignore any extra fields
+    lists:foldl(
+      fun({xmlelement, "x", Attrs, _} = El, false) ->
+              case xml:get_attr_s("xmlns", Attrs) of
+                  ?NS_XDATA ->
+                      case jlib:parse_xdata_submit(El) of
+                          [_|_] = Fields ->
+                              case {lists:keysearch("FORM_TYPE", 1, Fields),
+                                    lists:keysearch("muc#role", 1, Fields)} of
+                                  {["http://jabber.org/protocol/muc#request"],
+                                   ["participant"]} ->
+                                      true;
+                                  _ ->
+                                      false
+                              end;
+                          _ ->
+                              false
+                      end;
+                  _ ->
+                      false
+              end;
+         (_, Acc) ->
+              Acc
+      end, false, Els).
 
 prepare_request_form(Requester, Nick, Lang) ->
-	{xmlelement, "message", [{"type", "normal"}], [
-	{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-		[
-		{xmlelement, "title", [],
-			[{xmlcdata, translate:translate(Lang, "Voice request")}]},
-		{xmlelement, "instructions", [],
-			[{xmlcdata, translate:translate(Lang, "To approve this request for voice, select the \"Grant voice to this person?\" checkbox and click OK. To skip this request, click the cancel button.")}]},
-		{xmlelement, "field", [{"var", "FORM_TYPE"}, {"type", "hidden"}],
-			[{xmlelement, "value", [],
-				[{xmlcdata, "http://jabber.org/protocol/muc#request"}]}]},
-		?STRINGXFIELD("Requested role", "muc#role", "participant"),
-		?STRINGXFIELD("User JID", "muc#jid", jlib:jid_to_string(Requester)),
-		?STRINGXFIELD("Nickname", "muc#roomnick", Nick),
-		?BOOLXFIELD("Grant voice to this person?", "muc#request_allow", false)
-		]
-	}]}.
+    {xmlelement, "message", [{"type", "normal"}],
+     [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+       [{xmlelement, "title", [],
+         [{xmlcdata, translate:translate(Lang, "Voice request")}]},
+        {xmlelement, "instructions", [],
+         [{xmlcdata,
+           translate:translate(
+             Lang, "To approve this request for voice, select the "
+             "\"Grant voice to this person?\" checkbox and click OK. "
+             "To skip this request, click the cancel button.")}]},
+        {xmlelement, "field", [{"var", "FORM_TYPE"}, {"type", "hidden"}],
+         [{xmlelement, "value", [],
+           [{xmlcdata, "http://jabber.org/protocol/muc#request"}]}]},
+        ?STRINGXFIELD("Requested role", "muc#role", "participant"),
+        ?STRINGXFIELD("User JID", "muc#jid", jlib:jid_to_string(Requester)),
+        ?STRINGXFIELD("Nickname", "muc#roomnick", Nick),
+        ?BOOLXFIELD("Grant voice to this person?", "muc#request_allow", false)
+       ]}]}.
 
 send_voice_request(From, StateData) ->
-	Moderators = search_role(moderator, StateData),
-	FromNick = find_nick_by_jid(From, StateData),
-	lists:foreach(
-		fun({_, User}) ->
-			ejabberd_router:route(
-				StateData#state.jid,
-				User#user.jid,
-				prepare_request_form(From, FromNick, ""))
-		end, Moderators).
+    Moderators = search_role(moderator, StateData),
+    FromNick = find_nick_by_jid(From, StateData),
+    lists:foreach(
+      fun({_, User}) ->
+              ejabberd_router:route(
+                StateData#state.jid,
+                User#user.jid,
+                prepare_request_form(From, FromNick, ""))
+      end, Moderators).
 
-is_voice_approvement({xmlelement, "x", _, _} = Elem) ->
-	case xml:get_tag_attr_s("xmlns", Elem) of
-	?NS_XDATA ->
-		Fields = jlib:parse_xdata_submit(Elem),
-		lists:foldl(
-			fun(X,Y) ->
-				check_voice_approvement_fields(X,Y)
-			end,
-			true, Fields);
-	_ ->
-		false
-	end;
 is_voice_approvement(Els) ->
-	lists:foldl(
-		fun(_, true) ->
-			true;
-		({xmlelement, "x", _, _} = X, false) ->
-			is_voice_approvement(X);
-		(_, _) ->
-			false
-		end, false, Els).
-
-check_voice_approvement_fields(_, false) ->
-	false;
-check_voice_approvement_fields({"FORM_TYPE", ["http://jabber.org/protocol/muc#request"]}, true) ->
-	true;
-check_voice_approvement_fields({"FORM_TYPE", _}, _) ->
-	false;
-check_voice_approvement_fields({"muc#role", ["participant"]}, true) ->
-	true;
-check_voice_approvement_fields({"muc#role", _}, _) ->
-	false;
-check_voice_approvement_fields({"muc#request_allow", ["true"]}, true) ->
-	true;
-check_voice_approvement_fields({"muc#request_allow", ["1"]}, true) ->
-	true;
-check_voice_approvement_fields({"muc#request_allow", _}, _) ->
-	false;
-check_voice_approvement_fields(_, true) ->
-	true. % do not check any other fields
+    lists:foldl(
+      fun({xmlelement, "x", Attrs, _} = El, false) ->
+              case xml:get_attr_s("xmlns", Attrs) of
+                  ?NS_XDATA ->
+                      case jlib:parse_xdata_submit(El) of
+                          [_|_] = Fs ->
+                              case {lists:keysearch("FORM_TYPE", 1, Fs),
+                                    lists:keysearch("muc#role", 1, Fs),
+                                    lists:keysearch("muc#request_allow", 1, Fs)} of
+                                  {["http://jabber.org/protocol/muc#request"],
+                                   ["participant"], [Flag]}
+                                    when Flag == "true"; Flag == "1" ->
+                                      true;
+                                  _ ->
+                                      false
+                              end;
+                          _ ->
+                              false
+                      end;
+                  _ ->
+                      false
+              end;
+         (_, Acc) ->
+              Acc
+      end, false, Els).
 
 extract_jid_from_voice_approvement(Els) ->
-	lists:foldl(
-		fun(X, Acc) -> 
-			case Acc of
-			{error, _} ->
-				case X of
-				{xmlelement, "x", _, _} ->
-					Fields = jlib:parse_xdata_submit(X),
-					Jid = lists:foldl(
-						fun(T, Acc2) ->
-							case Acc2 of
-							{error, _} ->
-								case T of
-								{"muc#jid", [Jid]} ->
-									Jid;
-								_ ->
-									Acc2
-								end;
-							_ ->
-								Acc2
-							end
-						end, {error, jid_not_found}, Fields),
-					jlib:string_to_jid(Jid);
-				_ ->
-					Acc
-				end;
-			_ ->
-				Acc
-			end
-		end, {error, jid_not_found}, Els).
+    lists:foldl(
+      fun({xmlelement, "x", _, _} = El, error) ->
+              Fields = case jlib:parse_xdata_submit(El) of
+                           invalid -> [];
+                           Res -> Res
+                       end,
+              lists:foldl(
+                fun({"muc#jid", [JIDStr]}, error) ->
+                        case jlib:string_to_jid(JIDStr) of
+                            error -> error;
+                            J -> {ok, J}
+                        end;
+                   (_, Acc) ->
+                        Acc
+                end, error, Fields);
+         (_, Acc) ->
+              Acc
+      end, error, Els).
 
 last_voice_request_time(BareJID, StateData) ->
-	case treap:lookup(BareJID, StateData#state.last_voice_request_time) of
+    case treap:lookup(BareJID, StateData#state.last_voice_request_time) of
 	{ok, _, Value} ->
-		Value;
+            Value;
 	error ->
-		{0, 0, 0}
-	end.
+            {0, 0, 0}
+    end.
 
 update_voice_request_time(BareJID, StateData) ->
-	NewDict = treap:insert(BareJID, {0, 0}, erlang:now(), StateData#state.last_voice_request_time),
-	StateData#state{last_voice_request_time = NewDict}.
+    NewDict = treap:insert(BareJID, {0, 0}, erlang:now(),
+                           StateData#state.last_voice_request_time),
+    StateData#state{last_voice_request_time = NewDict}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
