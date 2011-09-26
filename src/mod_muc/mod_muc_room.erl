@@ -306,16 +306,15 @@ normal_state({route, From, "",
                                             #config.voice_request_min_interval,
                                         BareFrom = jlib:jid_remove_resource(
                                                      jlib:jid_tolower(From)),
-                                        LastTime = last_voice_request_time(
+                                        {LastTime, NewStateData1} = last_voice_request_time(
                                                      BareFrom, StateData),
                                         TimeFromLastRequest =
-                                            timer:now_diff(
-                                              now(), LastTime) div 1000000,
+                                            (now_to_usec(now()) - LastTime) div 1000000,
                                         if TimeFromLastRequest > MinInterval ->
                                                 send_voice_request(
-                                                  From, StateData),
+                                                  From, NewStateData1),
                                                 update_voice_request_time(
-                                                  BareFrom, StateData);
+                                                  BareFrom, NewStateData1);
                                            true ->
                                                 ErrText = "Please, wait for "
                                                     "a while before sending "
@@ -327,7 +326,7 @@ normal_state({route, From, "",
 						ejabberd_router:route(
                                                   StateData#state.jid,
                                                   From, Err),
-						StateData
+						NewStateData1
 					end;
                                     false ->
 					ErrText = "Voice requests are "
@@ -1579,10 +1578,7 @@ remove_online_user(JID, StateData, Reason) ->
 		error ->
 		    StateData#state.nicks
 	    end,
-		LastTimes = treap:delete(jlib:jid_remove_resource(LJID),
-			StateData#state.last_voice_request_time),
-    StateData#state{users = Users, nicks = Nicks,
-		last_voice_request_time = LastTimes}.
+    StateData#state{users = Users, nicks = Nicks}.
 
 
 filter_presence({xmlelement, "presence", Attrs, Els}) ->
@@ -3848,17 +3844,21 @@ extract_jid_from_voice_approvement(Els) ->
       end, error, Els).
 
 last_voice_request_time(BareJID, StateData) ->
+    Timeout = (StateData#state.config)#config.voice_request_min_interval,
+    Times = clean_treap(StateData#state.last_voice_request_time,
+                        -now_to_usec(now()) + Timeout*1000000),
+    NewStateData = StateData#state{last_voice_request_time = Times},
     case treap:lookup(BareJID, StateData#state.last_voice_request_time) of
-	{ok, _, Value} ->
-            Value;
+	{ok, Value, _} ->
+	    {-Value, NewStateData};
 	error ->
-            {0, 0, 0}
+	    {0, NewStateData}
     end.
 
 update_voice_request_time(BareJID, StateData) ->
-    NewDict = treap:insert(BareJID, {0, 0}, erlang:now(),
+    Times = treap:insert(BareJID, -now_to_usec(now()), true,
                            StateData#state.last_voice_request_time),
-    StateData#state{last_voice_request_time = NewDict}.
+    StateData#state{last_voice_request_time = Times}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
