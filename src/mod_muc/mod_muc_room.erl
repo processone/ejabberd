@@ -340,7 +340,7 @@ normal_state({route, From, "",
 					end;
                                     false ->
 					ErrText = "Voice requests are "
-                                            "disabled in this room",
+                                            "disabled in this conference",
 					Err = jlib:make_error_reply(
 						Packet,
                                                 ?ERRT_FORBIDDEN(
@@ -3784,9 +3784,7 @@ prepare_request_form(Requester, Nick, Lang) ->
         {xmlelement, "instructions", [],
          [{xmlcdata,
            translate:translate(
-             Lang, "To approve this request for voice, select the "
-             "\"Grant voice to this person?\" checkbox and click OK. "
-             "To skip this request, click the cancel button.")}]},
+             Lang, "Either approve or decline the voice request.")}]},
         {xmlelement, "field", [{"var", "FORM_TYPE"}, {"type", "hidden"}],
          [{xmlelement, "value", [],
            [{xmlcdata, "http://jabber.org/protocol/muc#request"}]}]},
