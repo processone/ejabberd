@@ -3759,8 +3759,9 @@ is_voice_request(Els) ->
                           [_|_] = Fields ->
                               case {lists:keysearch("FORM_TYPE", 1, Fields),
                                     lists:keysearch("muc#role", 1, Fields)} of
-                                  {["http://jabber.org/protocol/muc#request"],
-                                   ["participant"]} ->
+                                  {{value,
+                                    {_, ["http://jabber.org/protocol/muc#request"]}},
+                                   {value, {_, ["participant"]}}} ->
                                       true;
                                   _ ->
                                       false
@@ -3792,7 +3793,8 @@ prepare_request_form(Requester, Nick, Lang) ->
         ?STRINGXFIELD("Requested role", "muc#role", "participant"),
         ?STRINGXFIELD("User JID", "muc#jid", jlib:jid_to_string(Requester)),
         ?STRINGXFIELD("Nickname", "muc#roomnick", Nick),
-        ?BOOLXFIELD("Grant voice to this person?", "muc#request_allow", false)
+        ?BOOLXFIELD("Grant voice to this person?", "muc#request_allow",
+                    list_to_atom("false"))
        ]}]}.
 
 send_voice_request(From, StateData) ->
@@ -3816,8 +3818,10 @@ is_voice_approvement(Els) ->
                               case {lists:keysearch("FORM_TYPE", 1, Fs),
                                     lists:keysearch("muc#role", 1, Fs),
                                     lists:keysearch("muc#request_allow", 1, Fs)} of
-                                  {["http://jabber.org/protocol/muc#request"],
-                                   ["participant"], [Flag]}
+                                  {{value,
+                                    {_, ["http://jabber.org/protocol/muc#request"]}},
+                                   {value, {_, ["participant"]}},
+                                   {value, {_, [Flag]}}}
                                     when Flag == "true"; Flag == "1" ->
                                       true;
                                   _ ->
