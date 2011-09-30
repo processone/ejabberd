@@ -279,133 +279,149 @@ normal_state({route, From, "",
 		      From, Err),
 		    {next_state, normal_state, StateData};
 		Type when (Type == "") or (Type == "normal") ->
-		    case catch check_invitation(From, Els, Lang, StateData) of
-			{error, Error} ->
-			    Err = jlib:make_error_reply(
-				    Packet, Error),
-			    route_stanza(
-			      StateData#state.jid,
-			      From, Err),
-			    {next_state, normal_state, StateData};
-			IJID ->
-			    Config = StateData#state.config,
-			    case Config#config.members_only of
-				true ->
-				    case get_affiliation(IJID, StateData) of
-					none ->
-					    NSD = set_affiliation(
-						    IJID,
-						    member,
-						    StateData),
-					    case (NSD#state.config)#config.persistent of
-						true ->
-						    mod_muc:store_room(
-						      NSD#state.host,
-						      NSD#state.room,
-						      make_opts(NSD));
+                    IsInvitation = is_invitation(Els),
+                    IsVoiceRequest = is_voice_request(Els)
+                        and is_visitor(From, StateData),
+                    IsVoiceApprovement = is_voice_approvement(Els)
+                        and not is_visitor(From, StateData),
+                    if IsInvitation ->
+                            case catch check_invitation(From, Els, Lang, StateData) of
+				{error, Error} ->
+                                    Err = jlib:make_error_reply(
+                                            Packet, Error),
+                                    route_stanza(
+                                      StateData#state.jid,
+                                      From, Err),
+                                    {next_state, normal_state, StateData};
+				IJID ->
+                                    Config = StateData#state.config,
+                                    case Config#config.members_only of
+					true ->
+                                            case get_affiliation(IJID, StateData) of
+						none ->
+                                                    NSD = set_affiliation(
+                                                            IJID,
+                                                            member,
+                                                            StateData),
+                                                    case (NSD#state.config)#config.persistent of
+							true ->
+                                                            mod_muc:store_room(
+                                                              NSD#state.host,
+                                                              NSD#state.room,
+                                                              make_opts(NSD));
+							_ ->
+                                                            ok
+                                                    end,
+                                                    {next_state, normal_state, NSD};
 						_ ->
-						    {next_state, normal_state, StateData}
-					    end;
+                                                    {next_state, normal_state,
+                                                     StateData}
+                                            end;
 					false ->
-					    {next_state, normal_state, StateData}
-				    end
-			    end;
+                                            {next_state, normal_state, StateData}
+                                    end
+                            end;
 			IsVoiceRequest ->
-			    NewStateData =
-			    case (StateData#state.config)#config.allow_voice_requests of
-				true ->
-				    MinInterval = (StateData#state.config)
-				    #config.voice_request_min_interval,
-				    BareFrom = jlib:jid_remove_resource( jlib:jid_tolower(From)),
-				    NowPriority = -now_to_usec(now()),
-				    CleanPriority =
-				    NowPriority + MinInterval*1000000,
-				    Times = clean_treap(
-					StateData#state.last_voice_request_time,
-					CleanPriority),
-				    case treap:lookup(BareFrom, Times) of
-					error ->
-					    Times1 = treap:insert(
-						    BareFrom,
-						    NowPriority,
-						    true, Times),
-					    NSD = StateData#state{last_voice_request_time = Times1},
-					    send_voice_request(From, NSD),
-					    NSD;
-					{ok, _, _} ->
-					    ErrText = "Please, wait for "
-					    "a while before sending "
-					    "new voice request",
-					    Err = jlib:make_error_reply(
+                            NewStateData =
+                                case (StateData#state.config)#config.allow_voice_requests of
+                                    true ->
+                                        MinInterval = (StateData#state.config)
+                                            #config.voice_request_min_interval,
+                                        BareFrom = jlib:jid_remove_resource(
+                                                     jlib:jid_tolower(From)),
+                                        NowPriority = -now_to_usec(now()),
+                                        CleanPriority =
+                                            NowPriority + MinInterval*1000000,
+                                        Times = clean_treap(
+                                                  StateData#state.last_voice_request_time,
+                                                  CleanPriority),
+                                        case treap:lookup(BareFrom, Times) of
+                                            error ->
+                                                Times1 = treap:insert(
+                                                           BareFrom,
+                                                           NowPriority,
+                                                           true, Times),
+                                                NSD = StateData#state{
+                                                        last_voice_request_time =
+                                                            Times1},
+                                                send_voice_request(From, NSD),
+                                                NSD;
+                                            {ok, _, _} ->
+                                                ErrText = "Please, wait for "
+                                                    "a while before sending "
+                                                    "new voice request",
+                                                Err = jlib:make_error_reply(
+                                                        Packet,
+                                                        ?ERRT_NOT_ACCEPTABLE(
+                                                           Lang, ErrText)),
+						route_stanza(
+                                                  StateData#state.jid,
+                                                  From, Err),
+						StateData#state{
+                                                  last_voice_request_time =
+                                                      Times}
+					end;
+                                    false ->
+					ErrText = "Voice requests are "
+                                            "disabled in this conference",
+					Err = jlib:make_error_reply(
 						Packet,
-						?ERRT_NOT_ACCEPTABLE(
-						    Lang, ErrText)),
-					    ejabberd_router:route(
-						StateData#state.jid,
-						From, Err),
-					    StateData#state{
-						last_voice_request_time =
-						Times}
-				    end;
-				false ->
-				    ErrText = "Voice requests are "
-				    "disabled in this conference",
-				    Err = jlib:make_error_reply(
-					Packet,
-					?ERRT_FORBIDDEN(
-					    Lang, ErrText)),
-				    ejabberd_router:route(StateData#state.jid, From, Err),
-				    StateData
-			    end,
-			    {next_state, normal_state, NewStateData};
-			IsVoiceApprovement ->
-			    NewStateData =
-			    case is_moderator(From, StateData) of
-				true ->
-				    case extract_jid_from_voice_approvement(Els) of
-					error ->
-					    ErrText = "Failed to extract "
-					    "JID from your voice "
-					    "request approvement",
-					    Err = jlib:make_error_reply(
+                                                ?ERRT_FORBIDDEN(
+                                                   Lang, ErrText)),
+					route_stanza(
+                                          StateData#state.jid, From, Err),
+					StateData
+				end,
+                            {next_state, normal_state, NewStateData};
+                       IsVoiceApprovement ->
+                            NewStateData =
+                                case is_moderator(From, StateData) of
+                                    true ->
+					case extract_jid_from_voice_approvement(Els) of
+                                            error ->
+						ErrText = "Failed to extract "
+                                                    "JID from your voice "
+                                                    "request approvement",
+						Err = jlib:make_error_reply(
+							Packet,
+                                                        ?ERRT_BAD_REQUEST(
+                                                           Lang, ErrText)),
+						route_stanza(
+                                                  StateData#state.jid,
+                                                  From, Err),
+						StateData;
+                                            {ok, TargetJid} ->
+						case is_visitor(
+                                                       TargetJid, StateData) of
+                                                    true ->
+							Reason = [],
+							NSD = set_role(
+                                                                TargetJid,
+                                                                participant,
+                                                                StateData),
+							catch send_new_presence(
+                                                                TargetJid,
+                                                                Reason, NSD),
+							NSD;
+                                                    _ ->
+							StateData
+						end
+					end;
+                                    _ ->
+					ErrText = "Only moderators can "
+                                            "approve voice requests",
+					Err = jlib:make_error_reply(
 						Packet,
-						?ERRT_BAD_REQUEST(
-						    Lang, ErrText)),
-					    ejabberd_router:route(
-						StateData#state.jid,
-						From, Err),
-					    StateData;
-					{ok, TargetJid} ->
-					    case is_visitor(
-						    TargetJid, StateData) of
-						true ->
-						    Reason = [],
-						    NSD = set_role(
-							TargetJid,
-							participant,
-							StateData),
-						    catch send_new_presence(
-							TargetJid,
-							Reason, NSD),
-						    NSD;
-						_ ->
-						    StateData
-					    end
-				    end;
-				_ ->
-				    ErrText = "Only moderators can "
-				    "approve voice requests",
-				    Err = jlib:make_error_reply(
-					Packet,
-					?ERRT_NOT_ALLOWED(
-					    Lang, ErrText)),
-				    ejabberd_router:route(StateData#state.jid, From, Err),
-				    StateData
-			    end,
-			    {next_state, normal_state, NewStateData};
-			true ->
-			    {next_state, normal_state, StateData}
-		    end;
+                                                ?ERRT_NOT_ALLOWED(
+                                                   Lang, ErrText)),
+					route_stanza(
+                                          StateData#state.jid, From, Err),
+					StateData
+				end,
+                            {next_state, normal_state, NewStateData};
+                       true ->
+                            {next_state, normal_state, StateData}
+                    end;
 		_ ->
 		    ErrText = "Improper message type",
 		    Err = jlib:make_error_reply(
@@ -540,35 +556,12 @@ normal_state({route, From, ToNick,
 				ToNick),
 			      From, Err);
 			_ ->
-			    ToJIDs = find_jids_by_nick(ToNick, StateData),
-			    SrcIsVisitor = is_visitor(From, StateData),
-			    DstIsModerator = is_moderator(hd(ToJIDs), StateData),
-			    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
-			    if SrcIsVisitor == false;
-			       PmFromVisitors == anyone;
-			       (PmFromVisitors == moderators) and (DstIsModerator) ->
-				    case ToJIDs of
-					false ->
-					    ErrText = "Recipient is not in the conference room",
-					    Err = jlib:make_error_reply(
-						    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-					    route_stanza(
-					      jlib:jid_replace_resource(
-						StateData#state.jid,
-						ToNick),
-					      From, Err);
-					_ ->
-					    {ok, #user{nick = FromNick}} =
-						?DICT:find(jlib:jid_tolower(From),
-							   StateData#state.users),
-					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
-					    [route_stanza(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs]
-				    end;
-			       true ->
-				    ErrText = "It is not allowed to send private messages",
+			    case find_jids_by_nick(ToNick, StateData) of
+				false ->
+				    ErrText = "Recipient is not in the conference room",
 				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-				    route_stanza(
+					    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+                                    route_stanza(
 				      jlib:jid_replace_resource(
 					StateData#state.jid,
 					ToNick),
@@ -584,12 +577,12 @@ normal_state({route, From, ToNick,
 						?DICT:find(jlib:jid_tolower(From),
 							   StateData#state.users),
 					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
-					    [ejabberd_router:route(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs];
+					    [route_stanza(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs];
 				       true ->
 					    ErrText = "It is not allowed to send private messages",
 					    Err = jlib:make_error_reply(
 						    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-					    ejabberd_router:route(
+                                            route_stanza(
 					      jlib:jid_replace_resource(
 						StateData#state.jid,
 						ToNick),
@@ -3904,7 +3897,7 @@ send_voice_request(From, StateData) ->
     FromNick = find_nick_by_jid(From, StateData),
     lists:foreach(
       fun({_, User}) ->
-              ejabberd_router:route(
+              route_stanza(
                 StateData#state.jid,
                 User#user.jid,
                 prepare_request_form(From, FromNick, ""))
