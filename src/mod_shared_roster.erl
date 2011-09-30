@@ -30,6 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1,
+         item_to_xml/1,
 	 webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
@@ -616,14 +617,15 @@ add_user_to_group(Host, US, Group) ->
     case regexp:match(LUser, "^@.+@$") of
 	{match,_,_} ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
-	    AllUsersOpt =
-		case LUser == "@all@" of
-		    true -> [{all_users, true}];
-		    false -> []
+	    MoreGroupOpts =
+		case LUser of
+		    "@all@" -> [{all_users, true}];
+		    "@online@" -> [{online_users, true}];
+		    _ -> []
 		end,
             mod_shared_roster:set_group_opts(
 	      Host, Group,
-	      GroupOpts ++ AllUsersOpt);
+	      GroupOpts ++ MoreGroupOpts);
 	nomatch ->
 	    %% Push this new user to members of groups where this group is displayed
 	    push_user_to_displayed(LUser, LServer, Group, both),
@@ -651,7 +653,9 @@ remove_user_from_group(Host, US, Group) ->
 	    NewGroupOpts =
 		case LUser of
 		    "@all@" ->
-			lists:filter(fun(X) -> X/={all_users,true} end, GroupOpts)
+			lists:filter(fun(X) -> X/={all_users,true} end, GroupOpts);
+		    "@online@" ->
+			lists:filter(fun(X) -> X/={online_users,true} end, GroupOpts)
 		end,
 	    mod_shared_roster:set_group_opts(Host, Group, NewGroupOpts);
 	nomatch ->
@@ -726,8 +730,6 @@ displayed_to_groups(GroupName, LServer) ->
 	      lists:member(GroupName, proplists:get_value(displayed_groups, Opts, []))
       end, GroupsOpts).
 
-push_item(_User, _Server, _From, none) ->
-    ok;
 push_item(User, Server, From, Item) ->
     %% It was
     %%  ejabberd_sm:route(jlib:make_jid("", "", ""),

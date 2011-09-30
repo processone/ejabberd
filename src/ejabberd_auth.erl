@@ -306,19 +306,16 @@ is_user_exists_in_other_modules_loop([AuthModule|AuthModules], User, Server) ->
     end.
 
 
-%% @spec (User, Server) -> ok | error | {error, not_allowed}
+%% @spec (User, Server) -> ok
 %% @doc Remove user.
 %% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
-    R = lists:foreach(
+    lists:foreach(
       fun(M) ->
 	      M:remove_user(User, Server)
       end, auth_modules(Server)),
-    case R of
-		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
-		_ -> none
-    end,
-    R.
+    ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]),
+    ok.
 
 %% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error
 %% @doc Try to remove user if the provided password is correct.

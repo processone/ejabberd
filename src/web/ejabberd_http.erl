@@ -409,7 +409,7 @@ process_request(#state{request_method = Method,
   when Method=:='GET' orelse Method=:='HEAD' orelse Method=:='DELETE' orelse Method=:='OPTIONS' ->
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
-	    process_request(false);
+	    make_bad_request(State);
 	{NPath, Query} ->
 	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Query)) of
@@ -507,7 +507,7 @@ process_request(#state{request_method = Method,
     ?DEBUG("client data: ~p~n", [Data]),
     case (catch url_decode_q_split(Path)) of
 	{'EXIT', _} ->
-	    process_request(false);
+            make_bad_request(State);
 	{NPath, _Query} ->
 	    LPath = [path_decode(NPE) || NPE <- string:tokens(NPath, "/")],
 	    LQuery = case (catch parse_urlencoded(Data)) of
@@ -543,6 +543,9 @@ process_request(#state{request_method = Method,
     end;
 
 process_request(State) ->
+    make_bad_request(State).
+
+make_bad_request(State) ->
     make_xhtml_output(State,
       400,
       [],
@@ -589,7 +592,7 @@ recv_data(State, Len, Acc) ->
         end,
 	    case (State#state.sockmod):recv(State#state.socket, Len2, 300000) of
 		{ok, Data} ->
-		    recv_data(State, Len - size(Data), [Acc | Data]);
+		    recv_data(State, Len - size(Data), [Acc | [Data]]);
 		_ ->
 		    ""
 	    end;
@@ -1179,8 +1182,8 @@ is_space(_) ->
 strip_spaces(String) ->
     strip_spaces(String, both).
 
-strip_spaces(String, left) ->
-    drop_spaces(String);
+%% strip_spaces(String, left) ->
+%%     drop_spaces(String);
 strip_spaces(String, right) ->
     lists:reverse(drop_spaces(lists:reverse(String)));
 strip_spaces(String, both) ->

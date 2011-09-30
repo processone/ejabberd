@@ -863,6 +863,7 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 				       max_users -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(integer_to_list(T), FileFormat) ++ "\"</div>";
 				       title -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
 				       description -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
+				       allow_private_messages_from_visitors -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(?T(atom_to_list(T)), FileFormat) ++ "\"</div>";
 				       _ -> "\"" ++ T ++ "\""
 				   end
 			   end,
@@ -884,7 +885,7 @@ get_roomconfig_text(moderated) -> "Make room moderated";
 get_roomconfig_text(members_by_default) -> "Default users as participants";
 get_roomconfig_text(allow_change_subj) -> "Allow users to change the subject";
 get_roomconfig_text(allow_private_messages) -> "Allow users to send private messages";
-get_roomconfig_text(allow_private_messages_from_visitors) -> "Allow visitors to send private messages";
+get_roomconfig_text(allow_private_messages_from_visitors) -> "Allow visitors to send private messages to";
 get_roomconfig_text(allow_query_users) -> "Allow users to query other users";
 get_roomconfig_text(allow_user_invites) -> "Allow users to send invites";
 get_roomconfig_text(logging) ->  "Enable logging";
@@ -944,7 +945,7 @@ get_room_state(RoomName, MucService) ->
 	    RoomPid = R#muc_online_room.pid,
 	    get_room_state(RoomPid);
 	[] ->
-	    room_not_found
+	    #state{}
     end.
 
 get_room_state(RoomPid) ->

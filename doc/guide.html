@@ -6,7 +6,7 @@
  
  
 
- ejabberd 2.1.7 
+ ejabberd 2.1.9 
  
  Installation and Operation Guide
  
@@ -76,7 +76,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <HR SIZE=2><BR>
 <BR>
 
-<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.7 </B></FONT></TD></TR>
+<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.9 </B></FONT></TD></TR>
 <TR><TD ALIGN=right NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=right NOWRAP> <FONT SIZE=6>Installation and Operation Guide</FONT></TD></TR>
 </TABLE><BR>
@@ -306,8 +306,9 @@ Note that the Windows service is a feature still in development,
 and for example it doesn&#X2019;t read the file ejabberdctl.cfg.</P><P>On a *nix system, if you want ejabberd to be started as daemon at boot time,
 copy <TT>ejabberd.init</TT> from the &#X2019;bin&#X2019; directory to something like <TT>/etc/init.d/ejabberd</TT>
 (depending on your distribution).
-Create a system user called <TT>ejabberd</TT>;
-it will be used by the script to start the server.
+Create a system user called <TT>ejabberd</TT>,
+give it write access to the directories <TT>database/</TT> and <TT>logs/</TT>, and set that as home;
+the script will start the server with that user.
 Then you can call <TT>/etc/inid.d/ejabberd start</TT> as root to start the server.</P><P>If <TT>ejabberd</TT> doesn&#X2019;t start correctly in Windows,
 try to start it using the shortcut in desktop or start menu.
 If the window shows error 14001, the solution is to install:
@@ -525,8 +526,8 @@ Using <TT>ejabberdctl</TT> (see section&#XA0;<A HREF="#ejabberdctl">4.1</A>):
 </PRE></LI><LI CLASS="li-enumerate">Using a XMPP client and In-Band Registration (see section&#XA0;<A HREF="#modregister">3.3.19</A>).
 </LI></OL>
 </LI><LI CLASS="li-enumerate">Edit the <TT>ejabberd</TT> configuration file to give administration rights to the XMPP account you created:
-<PRE CLASS="verbatim">{acl, admins, {user, "admin1", "example.org"}}.
-{access, configure, [{allow, admins}]}.
+<PRE CLASS="verbatim">{acl, admin, {user, "admin1", "example.org"}}.
+{access, configure, [{allow, admin}]}.
 </PRE>You can grant administrative privileges to many XMPP accounts,
 and also to accounts in other XMPP servers.
 </LI><LI CLASS="li-enumerate">Restart <TT>ejabberd</TT> to load the new configuration.
@@ -1051,17 +1052,40 @@ internal (default) &#X2014; See section&#XA0;<A HREF="#internalauth">3.1.4</A>.
 <A HREF="#mssql">3.2.2</A> and <A HREF="#odbc">3.2.4</A>.
 </LI><LI CLASS="li-itemize">anonymous &#X2014; See section&#XA0;<A HREF="#saslanonymous">3.1.4</A>.
 </LI><LI CLASS="li-itemize">pam &#X2014; See section&#XA0;<A HREF="#pam">3.1.4</A>.
-</LI></UL><P>Account creation is only supported by internal, external and odbc methods.</P><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
+</LI></UL><P>Account creation is only supported by internal, external and odbc methods.</P><P>The option <TT>resource_conflict</TT> defines the action when a client attempts to
+login to an account with a resource that is already connected.
+The option syntax is:
+</P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{resource_conflict, setresource|closenew|closeold}.</TT></B></DT></DL><P>
+The possible values match exactly the three possibilities described in
+<A HREF="http://tools.ietf.org/html/rfc6120#section-7.7.2.2">XMPP Core: section 7.7.2.2</A>.
+The default value is <TT>closeold</TT>.
+If the client uses old Jabber Non-SASL authentication (<A HREF="http://xmpp.org/extensions/xep-0078.html">XEP-0078</A>),
+then this option is not respected, and the action performed is <TT>closeold</TT>.</P><P> <A NAME="internalauth"></A> </P><!--TOC subsubsection Internal-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#internalauth">Internal</A></H4><!--SEC END --><P> <A NAME="internalauth"></A> 
 </P><P><TT>ejabberd</TT> uses its internal Mnesia database as the default authentication method.
-The value <TT>internal</TT> will enable the internal authentication method.</P><P>Examples:
+The value <TT>internal</TT> will enable the internal authentication method.</P><P>The option <TT>{auth_password_format, plain|scram}</TT>
+defines in what format the users passwords are stored:
+</P><DL CLASS="description"><DT CLASS="dt-description">
+<B><TT>plain</TT></B></DT><DD CLASS="dd-description">
+The password is stored as plain text in the database.
+This is risky because the passwords can be read if your database gets compromised.
+This is the default value.
+This format allows clients to authenticate using:
+the old Jabber Non-SASL (<A HREF="http://xmpp.org/extensions/xep-0078.html">XEP-0078</A>), <TT>SASL PLAIN</TT>,
+<TT>SASL DIGEST-MD5</TT>, and <TT>SASL SCRAM-SHA-1</TT>.</DD><DT CLASS="dt-description"><B><TT>scram</TT></B></DT><DD CLASS="dd-description">
+The password is not stored, only some information that allows to verify the hash provided by the client.
+It is impossible to obtain the original plain password from the stored information;
+for this reason, when this value is configured it cannot be changed to <TT>plain</TT> anymore.
+This format allows clients to authenticate using: <TT>SASL PLAIN</TT> and <TT>SASL SCRAM-SHA-1</TT>.
+</DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 To use internal authentication on <TT>example.org</TT> and LDAP
 authentication on <TT>example.net</TT>:
 <PRE CLASS="verbatim">{host_config, "example.org", [{auth_method, [internal]}]}.
 {host_config, "example.net", [{auth_method, [ldap]}]}.
-</PRE></LI><LI CLASS="li-itemize">To use internal authentication on all virtual hosts:
+</PRE></LI><LI CLASS="li-itemize">To use internal authentication with hashed passwords on all virtual hosts:
 <PRE CLASS="verbatim">{auth_method, internal}.
+{auth_password_format, scram}.
 </PRE></LI></UL><P> <A NAME="extauth"></A> </P><!--TOC subsubsection External Script-->
 <H4 CLASS="subsubsection"><!--SEC ANCHOR --><A HREF="#extauth">External Script</A></H4><!--SEC END --><P> <A NAME="extauth"></A> 
 </P><P>In this authentication method, when <TT>ejabberd</TT> starts,
@@ -1208,9 +1232,9 @@ declarations of ACLs in the configuration file have the following syntax:
 </PRE></DD><DT CLASS="dt-description"><B><TT>{user_regexp, Regexp}</TT></B></DT><DD CLASS="dd-description"> Matches any local user with a name that
 matches <TT>Regexp</TT> on local virtual hosts. Example:
 <PRE CLASS="verbatim">{acl, tests, {user_regexp, "^test[0-9]*$"}}.
-</PRE></DD><DT CLASS="dt-description"><B><TT>{user_regexp, UserRegexp, Server}</TT></B></DT><DD CLASS="dd-description"> Matches any user with a name
+</PRE></DD><DT CLASS="dt-description"><B><TT>{user_regexp, Regexp, Server}</TT></B></DT><DD CLASS="dd-description"> Matches any user with a name
 that matches <TT>Regexp</TT> at server <TT>Server</TT>. Example:
-<PRE CLASS="verbatim">{acl, tests, {user_Userregexp, "^test", "example.org"}}.
+<PRE CLASS="verbatim">{acl, tests, {user_regexp, "^test", "example.org"}}.
 </PRE></DD><DT CLASS="dt-description"><B><TT>{server_regexp, Regexp}</TT></B></DT><DD CLASS="dd-description"> Matches any JID from the server that
 matches <TT>Regexp</TT>. Example:
 <PRE CLASS="verbatim">{acl, icq, {server_regexp, "^icq\\."}}.
@@ -1701,6 +1725,16 @@ This option specifies whether to verify LDAP server certificate or not when TLS 
 When <TT>hard</TT> is enabled <TT>ejabberd</TT> doesn&#X2019;t proceed if a certificate is invalid.
 When <TT>soft</TT> is enabled <TT>ejabberd</TT> proceeds even if check fails.
 The default is <TT>false</TT> which means no checks are performed.
+</DD><DT CLASS="dt-description"><B><TT>{ldap_tls_cacertfile, Path}</TT></B></DT><DD CLASS="dd-description"> 
+Path to file containing PEM encoded CA certificates. This option is needed
+(and required) when TLS verification is enabled.
+</DD><DT CLASS="dt-description"><B><TT>{ldap_tls_depth, Number}</TT></B></DT><DD CLASS="dd-description"> 
+Specifies the maximum verification depth when TLS verification is enabled,
+i.e. how far in a chain of certificates the verification process can proceed
+before the verification is considered to fail.
+Peer certificate = 0, CA certificate = 1, higher level CA certificate = 2, etc.
+The value 2 thus means that a chain can at most contain peer cert,
+CA cert, next CA cert, and an additional CA cert. The default value is 1.
 </DD><DT CLASS="dt-description"><B><TT>{ldap_port, Number}</TT></B></DT><DD CLASS="dd-description"> Port to connect to your LDAP server.
 The default port is&#XA0;389 if encryption is disabled; and 636 if encryption is enabled.
 If you configure a value, it is stored in <TT>ejabberd</TT>&#X2019;s database.
@@ -1710,6 +1744,7 @@ the value previously stored in the database will be used instead of the default 
 is&#XA0;<TT>""</TT> which means &#X2018;anonymous connection&#X2019;.
 </DD><DT CLASS="dt-description"><B><TT>{ldap_password, Password}</TT></B></DT><DD CLASS="dd-description"> Bind password. The default
 value is <TT>""</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{ldap_deref_aliases, never|always|finding|searching}</TT></B></DT><DD CLASS="dd-description">  Whether or not to dereference aliases. The default is <TT>never</TT>.
 </DD></DL><P>Example:
 </P><PRE CLASS="verbatim">{auth_method, ldap}.
 {ldap_servers, ["ldap.example.org"]}.
@@ -1931,7 +1966,7 @@ all entries end with a comma:
 <TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modoffline"><TT>mod_offline_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Offline message storage (<A HREF="http://xmpp.org/extensions/xep-0160.html">XEP-0160</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modping"><TT>mod_ping</TT></A></TD><TD ALIGN=left NOWRAP>XMPP Ping and periodic keepalives (<A HREF="http://xmpp.org/extensions/xep-0199.html">XEP-0199</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
-<TR><TD ALIGN=left NOWRAP><A HREF="#modprescounter"><TT>mod_privacy</TT></A></TD><TD ALIGN=left NOWRAP>Detect presence subscription flood</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
+<TR><TD ALIGN=left NOWRAP><A HREF="#modprescounter"><TT>mod_pres_counter</TT></A></TD><TD ALIGN=left NOWRAP>Detect presence subscription flood</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivacy"><TT>mod_privacy</TT></A></TD><TD ALIGN=left NOWRAP>Blocking Communication (<A HREF="http://xmpp.org/extensions/xep-0016.html">XEP-0016</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivacy"><TT>mod_privacy_odbc</TT></A></TD><TD ALIGN=left NOWRAP>Blocking Communication (<A HREF="http://xmpp.org/extensions/xep-0016.html">XEP-0016</A>)</TD><TD ALIGN=left NOWRAP>supported DB (*)</TD></TR>
 <TR><TD ALIGN=left NOWRAP><A HREF="#modprivate"><TT>mod_private</TT></A></TD><TD ALIGN=left NOWRAP>Private XML Storage (<A HREF="http://xmpp.org/extensions/xep-0049.html">XEP-0049</A>)</TD><TD ALIGN=left NOWRAP>&nbsp;</TD></TR>
@@ -2077,7 +2112,7 @@ able to send such messages).
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Only administrators can send announcements:
-<PRE CLASS="verbatim">{access, announce, [{allow, admins}]}.
+<PRE CLASS="verbatim">{access, announce, [{allow, admin}]}.
 
 {modules,
  [
@@ -2089,9 +2124,9 @@ Only administrators can send announcements:
 </PRE></LI><LI CLASS="li-itemize">Administrators as well as the direction can send announcements:
 <PRE CLASS="verbatim">{acl, direction, {user, "big_boss", "example.org"}}.
 {acl, direction, {user, "assistant", "example.org"}}.
-{acl, admins, {user, "admin", "example.org"}}.
+{acl, admin, {user, "admin", "example.org"}}.
 
-{access, announce, [{allow, admins},
+{access, announce, [{allow, admin},
                     {allow, direction}]}.
 
 {modules,
@@ -2497,6 +2532,7 @@ The available room options and the default values are:
 <DL CLASS="description"><DT CLASS="dt-description">
 <B><TT>{allow_change_subj, true|false}</TT></B></DT><DD CLASS="dd-description"> Allow occupants to change the subject.
 </DD><DT CLASS="dt-description"><B><TT>{allow_private_messages, true|false}</TT></B></DT><DD CLASS="dd-description"> Occupants can send private messages to other occupants.
+</DD><DT CLASS="dt-description"><B><TT>{allow_private_messages_from_visitors, anyone|moderators|nobody}</TT></B></DT><DD CLASS="dd-description"> Visitors can send private messages to other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{allow_query_users, true|false}</TT></B></DT><DD CLASS="dd-description"> Occupants can send IQ queries to other occupants.
 </DD><DT CLASS="dt-description"><B><TT>{allow_user_invites, false|true}</TT></B></DT><DD CLASS="dd-description"> Allow occupants to send invitations.
 </DD><DT CLASS="dt-description"><B><TT>{allow_visitor_nickchange, true|false}</TT></B></DT><DD CLASS="dd-description"> Allow visitors to
@@ -2715,10 +2751,10 @@ used. The names of the log files will only contain the day (number),
 and there will be subdirectories for each year and month. The log files will
 be stored in /var/www/muclogs, and the local time will be used. Finally, the
 top link will be the default <CODE>&lt;a href="/"&gt;Home&lt;/a&gt;</CODE>.
-<PRE CLASS="verbatim">{acl, admins, {user, "admin1", "example.org"}}.
-{acl, admins, {user, "admin2", "example.net"}}.
+<PRE CLASS="verbatim">{acl, admin, {user, "admin1", "example.org"}}.
+{acl, admin, {user, "admin2", "example.net"}}.
 
-{access, muc_log, [{allow, admins},
+{access, muc_log, [{allow, admin},
                    {deny, all}]}.
 
 {modules,
@@ -3115,7 +3151,9 @@ To enable this feature, configure the options captcha_cmd and captcha_host.</P><
 <B><TT>{registration_watchers, [ JID, ...]}</TT></B></DT><DD CLASS="dd-description"> This option defines a
 list of JIDs which will be notified each time a new account is registered.
 </DD></DL><P>This example configuration shows how to enable the module and the web handler:
-</P><PRE CLASS="verbatim">{listen, [
+</P><PRE CLASS="verbatim">{hosts, ["localhost", "example.org", "example.com"]}.
+
+{listen, [
   ...
   {5281, ejabberd_http, [
     tls,
@@ -3131,7 +3169,8 @@ list of JIDs which will be notified each time a new account is registered.
   {mod_register_web, []},
   ...
  ]}.
-</PRE><P>The users can visit this page: https://localhost:5281/register/
+</PRE><P>For example, the users of the host <TT>example.org</TT> can visit the page:
+<TT>https://example.org:5281/register/</TT>
 It is important to include the last / character in the URL,
 otherwise the subpages URL will be incorrect.</P><P> <A NAME="modroster"></A> </P><!--TOC subsection <TT>mod_roster</TT>-->
 <H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc59">3.3.21</A>&#XA0;&#XA0;<A HREF="#modroster"><TT>mod_roster</TT></A></H3><!--SEC END --><P> <A NAME="modroster"></A> 
@@ -3598,8 +3637,9 @@ and LDAP server supports
 its own optional parameters. The first group of parameters has the same
 meaning as the top-level LDAP parameters to set the authentication method:
 <TT>ldap_servers</TT>, <TT>ldap_port</TT>, <TT>ldap_rootdn</TT>,
-<TT>ldap_password</TT>, <TT>ldap_base</TT>, <TT>ldap_uids</TT>, and
-<TT>ldap_filter</TT>. See section&#XA0;<A HREF="#ldapauth">3.2.5</A> for detailed information
+<TT>ldap_password</TT>, <TT>ldap_base</TT>, <TT>ldap_uids</TT>,
+<TT>ldap_deref_aliases</TT> and <TT>ldap_filter</TT>.
+See section&#XA0;<A HREF="#ldapauth">3.2.5</A> for detailed information
 about these options. If one of these options is not set, <TT>ejabberd</TT> will look
 for the top-level option with the same name.</P><P>The second group of parameters
 consists of the following <TT>mod_vcard_ldap</TT>-specific options:</P><DL CLASS="description"><DT CLASS="dt-description">
@@ -3865,6 +3905,8 @@ all the environment variables and command line parameters.</P><P>The environment
 	This path is used to read the file <TT>.erlang.cookie</TT>.
 </DD><DT CLASS="dt-description"><B><TT>ERL_CRASH_DUMP</TT></B></DT><DD CLASS="dd-description">
 	Path to the file where crash reports will be dumped.
+</DD><DT CLASS="dt-description"><B><TT>ERL_EPMD_ADDRESS</TT></B></DT><DD CLASS="dd-description">
+	IP address where epmd listens for connections (see section <A HREF="#epmd">5.2</A>).
 </DD><DT CLASS="dt-description"><B><TT>ERL_INETRC</TT></B></DT><DD CLASS="dd-description">
 	Indicates which IP name resolution to use.
 	If using <TT>-sname</TT>, specify either this option or <TT>-kernel inetrc filepath</TT>.
@@ -3891,10 +3933,10 @@ This is only useful if you plan to setup an <TT>ejabberd</TT> cluster with nodes
 connections (see section <A HREF="#epmd">5.2</A>).
 </DD><DT CLASS="dt-description"><B><TT>-detached</TT></B></DT><DD CLASS="dd-description">
 Starts the Erlang system detached from the system console.
-	Useful for running daemons and backgrounds processes.
+	Useful for running daemons and background processes.
 </DD><DT CLASS="dt-description"><B><TT>-noinput</TT></B></DT><DD CLASS="dd-description">
 	Ensures that the Erlang system never tries to read any input.
-	Useful for running daemons and backgrounds processes.
+	Useful for running daemons and background processes.
 </DD><DT CLASS="dt-description"><B><TT>-pa /var/lib/ejabberd/ebin</TT></B></DT><DD CLASS="dd-description">
 	Specify the directory where Erlang binary files (*.beam) are located.
 </DD><DT CLASS="dt-description"><B><TT>-s ejabberd</TT></B></DT><DD CLASS="dd-description">
@@ -4059,11 +4101,11 @@ URL). If you log in with &#X2018;<TT>admin@example.com</TT>&#X2019; on<BR>
  <CODE>http://example.org:5280/admin/server/example.com/</CODE> you can only
 administer the virtual host <TT>example.com</TT>.
 The account &#X2018;<TT>reviewer@example.com</TT>&#X2019; can browse that vhost in read-only mode.
-<PRE CLASS="verbatim">{acl, admins, {user, "admin", "example.net"}}.
-{host_config, "example.com", [{acl, admins, {user, "admin", "example.com"}}]}.
+<PRE CLASS="verbatim">{acl, admin, {user, "admin", "example.net"}}.
+{host_config, "example.com", [{acl, admin, {user, "admin", "example.com"}}]}.
 {host_config, "example.com", [{acl, viewers, {user, "reviewer", "example.com"}}]}.
 
-{access, configure, [{allow, admins}]}.
+{access, configure, [{allow, admin}]}.
 {access, webadmin_view, [{allow, viewers}]}.
 
 {hosts, ["example.org"]}.
@@ -4178,7 +4220,9 @@ and connects to the Erlang node that holds <TT>ejabberd</TT>.
 In order for this communication to work,
 <TT>epmd</TT> must be running and listening for name requests in the port 4369.
 You should block the port 4369 in the firewall in such a way that
-only the programs in your machine can access it.</P><P>If you build a cluster of several <TT>ejabberd</TT> instances,
+only the programs in your machine can access it.
+or configure the option <TT>ERL_EPMD_ADDRESS</TT> in the file <TT>ejabberdctl.cfg</TT>
+(this option works only in Erlang/OTP R14B03 or higher).</P><P>If you build a cluster of several <TT>ejabberd</TT> instances,
 each <TT>ejabberd</TT> instance is called an <TT>ejabberd</TT> node.
 Those <TT>ejabberd</TT> nodes use a special Erlang communication method to
 build the cluster, and EPMD is again needed listening in the port 4369.

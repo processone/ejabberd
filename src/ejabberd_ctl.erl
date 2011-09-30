@@ -269,8 +269,8 @@ try_call_command(Args, Auth, AccessCommands) ->
     try call_command(Args, Auth, AccessCommands) of
 	{error, command_unknown} ->
 	    {io_lib:format("Error: command ~p not known.", [hd(Args)]), ?STATUS_ERROR};
-	{error, wrong_number_parameters} ->
-	    {"Error: wrong number of parameters", ?STATUS_ERROR};
+	{error, wrong_command_arguments} ->
+	    {"Error: wrong arguments", ?STATUS_ERROR};
 	Res ->
 	    Res
     catch
@@ -637,7 +637,7 @@ print_usage_help(MaxC, ShCode) ->
     ArgsDef = [],
     C = #ejabberd_commands{
       desc = "Show help of ejabberd commands",
-      longdesc = LongDesc,
+      longdesc = lists:flatten(LongDesc),
       args = ArgsDef,
       result = {help, string}},
     print_usage_command("help", C, MaxC, ShCode).

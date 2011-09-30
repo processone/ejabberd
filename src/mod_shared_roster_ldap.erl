@@ -63,6 +63,7 @@
 		base,
 		password,
 		uid,
+                deref_aliases,
 		group_attr,
 		group_desc,
 		user_desc,
@@ -314,6 +315,7 @@ eldap_search(State, FilterParseArgs, AttributesList) ->
 				   [{base, State#state.base},
 				    {filter, EldapFilter},
 				    {timeout, ?LDAP_SEARCH_TIMEOUT},
+                                    {deref_aliases, State#state.deref_aliases},
 				    {attributes, AttributesList}]) of
                 #eldap_search_result{entries = Es} ->
 		    %% A result with entries. Return their list.
@@ -659,6 +661,15 @@ parse_options(Host, Opts) ->
 		      "" -> GroupSubFilter;
 		      _ -> "(&" ++ GroupSubFilter ++ ConfigFilter ++ ")"
 		  end,
+    DerefAliases = case gen_mod:get_opt(deref_aliases, Opts, undefined) of
+                       undefined ->
+                           case ejabberd_config:get_local_option(
+                                  {deref_aliases, Host}) of
+                               undefined -> never;
+                               D -> D
+                           end;
+                       D -> D
+                   end,
     #state{host = Host,
 	   eldap_id = Eldap_ID,
 	   servers = LDAPServers,
@@ -672,6 +683,7 @@ parse_options(Host, Opts) ->
 	   base = LDAPBase,
 	   password = Password,
 	   uid = UIDAttr,
+           deref_aliases = DerefAliases,
 	   group_attr = GroupAttr,
 	   group_desc = GroupDesc,
 	   user_desc = UserDesc,

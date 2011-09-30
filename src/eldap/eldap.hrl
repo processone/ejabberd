@@ -28,6 +28,7 @@
 		       limit = 0,
 		       attributes = [],
 		       types_only = false,
+                       deref_aliases = neverDerefAliases,
 		       timeout = 0}).
 
 

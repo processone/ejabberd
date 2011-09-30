@@ -63,8 +63,6 @@ insert1({HashKey1, Priority1, Value1, Left, Right} = Tree,
 	    insert1(delete_root(Tree), HashKey, Priority, Value)
     end.
 
-heapify(nil) ->
-    nil;
 heapify({_HashKey, _Priority, _Value, nil, nil} = Tree) ->
     Tree;
 heapify({HashKey, Priority, Value,

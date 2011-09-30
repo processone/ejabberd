@@ -45,6 +45,8 @@
 		 password_protected = false,
 		 password = "",
 		 anonymous = true,
+		 allow_voice_requests = true,
+		 voice_request_min_interval = 1800,
 		 max_users = ?MAX_USERS_DEFAULT,
 		 logging = false,
                  captcha_whitelist = ?SETS:empty()
@@ -69,6 +71,7 @@
 		jid,
 		config = #config{},
 		users = ?DICT:new(),
+		last_voice_request_time = treap:empty(),
 		robots = ?DICT:new(),
 		nicks = ?DICT:new(),
 		affiliations = ?DICT:new(),

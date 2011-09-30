@@ -55,6 +55,8 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 	case string:tokens(ClientIn, ",") of
 	[CBind, UserNameAttribute, ClientNonceAttribute] when (CBind == "y") or (CBind == "n") ->
 		case parse_attribute(UserNameAttribute) of
+                {error, Reason} ->
+			{error, Reason};
 		{_, EscapedUserName} ->
 			case unescape_username(EscapedUserName) of
 			error ->
@@ -89,11 +91,7 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 				_Else ->
 					{error, "not-supported"}
 				end
-			end;
-		{error, Reason} ->
-			{error, Reason};
-		_Else ->
-			{error, "bad-protocol"}
+			end
 		end;
 	_Else ->
 	    {error, "bad-protocol"}
@@ -139,18 +137,14 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 parse_attribute(Attribute) ->
 	AttributeLen = string:len(Attribute),
 	if
-	AttributeLen > 3 ->
+	AttributeLen >= 3 ->
 		SecondChar = lists:nth(2, Attribute),
 		case is_alpha(lists:nth(1, Attribute)) of
 			true ->
 				if
 				SecondChar == $= ->
-					case string:substr(Attribute, 3) of
-					String when is_list(String) ->
-						{lists:nth(1, Attribute), String};
-					_Else ->
-						{error, "bad-format failed"}
-					end;
+					String = string:substr(Attribute, 3),
+                                        {lists:nth(1, Attribute), String};
 				true ->
 					{error, "bad-format second char not equal sign"}
 				end;

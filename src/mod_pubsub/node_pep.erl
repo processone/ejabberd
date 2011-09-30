@@ -136,10 +136,7 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
     {result, Allowed}.
 
 create_node(NodeId, Owner) ->
-    case node_hometree:create_node(NodeId, Owner) of
-	{result, _} -> {result, []};
-	Error -> Error
-    end.
+    node_hometree:create_node(NodeId, Owner).
 
 delete_node(Removed) ->
     case node_hometree:delete_node(Removed) of

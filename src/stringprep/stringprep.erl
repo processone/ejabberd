@@ -60,7 +60,7 @@ init([]) ->
 	ok -> ok;
 	{error, already_loaded} -> ok
     end,
-    Port = open_port({spawn, stringprep_drv}, []),
+    Port = open_port({spawn, "stringprep_drv"}, []),
     register(?STRINGPREP_PORT, Port),
     {ok, Port}.
 

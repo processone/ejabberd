@@ -304,16 +304,107 @@ normal_state({route, From, "",
 						      NSD#state.room,
 						      make_opts(NSD));
 						_ ->
-						    ok
-					    end,
-					    {next_state, normal_state, NSD};
-					_ ->
-					    {next_state, normal_state,
-					     StateData}
+						    {next_state, normal_state, StateData}
+					    end;
+					false ->
+					    {next_state, normal_state, StateData}
+				    end
+			    end;
+			IsVoiceRequest ->
+			    NewStateData =
+			    case (StateData#state.config)#config.allow_voice_requests of
+				true ->
+				    MinInterval = (StateData#state.config)
+				    #config.voice_request_min_interval,
+				    BareFrom = jlib:jid_remove_resource( jlib:jid_tolower(From)),
+				    NowPriority = -now_to_usec(now()),
+				    CleanPriority =
+				    NowPriority + MinInterval*1000000,
+				    Times = clean_treap(
+					StateData#state.last_voice_request_time,
+					CleanPriority),
+				    case treap:lookup(BareFrom, Times) of
+					error ->
+					    Times1 = treap:insert(
+						    BareFrom,
+						    NowPriority,
+						    true, Times),
+					    NSD = StateData#state{last_voice_request_time = Times1},
+					    send_voice_request(From, NSD),
+					    NSD;
+					{ok, _, _} ->
+					    ErrText = "Please, wait for "
+					    "a while before sending "
+					    "new voice request",
+					    Err = jlib:make_error_reply(
+						Packet,
+						?ERRT_NOT_ACCEPTABLE(
+						    Lang, ErrText)),
+					    ejabberd_router:route(
+						StateData#state.jid,
+						From, Err),
+					    StateData#state{
+						last_voice_request_time =
+						Times}
 				    end;
 				false ->
-				    {next_state, normal_state, StateData}
-			    end
+				    ErrText = "Voice requests are "
+				    "disabled in this conference",
+				    Err = jlib:make_error_reply(
+					Packet,
+					?ERRT_FORBIDDEN(
+					    Lang, ErrText)),
+				    ejabberd_router:route(StateData#state.jid, From, Err),
+				    StateData
+			    end,
+			    {next_state, normal_state, NewStateData};
+			IsVoiceApprovement ->
+			    NewStateData =
+			    case is_moderator(From, StateData) of
+				true ->
+				    case extract_jid_from_voice_approvement(Els) of
+					error ->
+					    ErrText = "Failed to extract "
+					    "JID from your voice "
+					    "request approvement",
+					    Err = jlib:make_error_reply(
+						Packet,
+						?ERRT_BAD_REQUEST(
+						    Lang, ErrText)),
+					    ejabberd_router:route(
+						StateData#state.jid,
+						From, Err),
+					    StateData;
+					{ok, TargetJid} ->
+					    case is_visitor(
+						    TargetJid, StateData) of
+						true ->
+						    Reason = [],
+						    NSD = set_role(
+							TargetJid,
+							participant,
+							StateData),
+						    catch send_new_presence(
+							TargetJid,
+							Reason, NSD),
+						    NSD;
+						_ ->
+						    StateData
+					    end
+				    end;
+				_ ->
+				    ErrText = "Only moderators can "
+				    "approve voice requests",
+				    Err = jlib:make_error_reply(
+					Packet,
+					?ERRT_NOT_ALLOWED(
+					    Lang, ErrText)),
+				    ejabberd_router:route(StateData#state.jid, From, Err),
+				    StateData
+			    end,
+			    {next_state, normal_state, NewStateData};
+			true ->
+			    {next_state, normal_state, StateData}
 		    end;
 		_ ->
 		    ErrText = "Improper message type",
@@ -481,7 +572,29 @@ normal_state({route, From, ToNick,
 				      jlib:jid_replace_resource(
 					StateData#state.jid,
 					ToNick),
-				      From, Err)
+				      From, Err);
+				ToJIDs ->
+				    SrcIsVisitor = is_visitor(From, StateData),
+				    DstIsModerator = is_moderator(hd(ToJIDs), StateData),
+				    PmFromVisitors = (StateData#state.config)#config.allow_private_messages_from_visitors,
+				    if SrcIsVisitor == false;
+				       PmFromVisitors == anyone;
+				       (PmFromVisitors == moderators) and (DstIsModerator) ->
+					    {ok, #user{nick = FromNick}} =
+						?DICT:find(jlib:jid_tolower(From),
+							   StateData#state.users),
+					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
+					    [ejabberd_router:route(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs];
+				       true ->
+					    ErrText = "It is not allowed to send private messages",
+					    Err = jlib:make_error_reply(
+						    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+					    ejabberd_router:route(
+					      jlib:jid_replace_resource(
+						StateData#state.jid,
+						ToNick),
+					      From, Err)
+				    end
 			    end
 		    end;
 		{true, false} ->
@@ -1250,19 +1363,9 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 
 
 set_affiliation(JID, Affiliation, StateData) ->
-    LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
-    Affiliations = case Affiliation of
-		       none ->
-			   ?DICT:erase(LJID,
-				       StateData#state.affiliations);
-		       _ ->
-			   ?DICT:store(LJID,
-				       Affiliation,
-				       StateData#state.affiliations)
-		   end,
-    StateData#state{affiliations = Affiliations}.
+    set_affiliation(JID, Affiliation, StateData, "").
 
-set_affiliation_and_reason(JID, Affiliation, Reason, StateData) ->
+set_affiliation(JID, Affiliation, StateData, Reason) ->
     LJID = jlib:jid_remove_resource(jlib:jid_tolower(JID)),
     Affiliations = case Affiliation of
 		       none ->
@@ -1582,7 +1685,7 @@ remove_online_user(JID, StateData, Reason) ->
 		    ?DICT:erase(Nick, StateData#state.nicks);
 		{ok, U} ->
 		    ?DICT:store(Nick, U -- [LJID], StateData#state.nicks);
-		false ->
+		error ->
 		    StateData#state.nicks
 	    end,
     StateData#state{users = Users, nicks = Nicks}.
@@ -1693,6 +1796,12 @@ get_priority_from_presence(PresencePacket) ->
 	    end
     end.
 
+find_nick_by_jid(Jid, StateData) ->
+	[{_, #user{nick = Nick}}] = lists:filter(
+		fun({_, #user{jid = FJid}}) -> FJid == Jid end,
+		?DICT:to_list(StateData#state.users)),
+	Nick.
+
 is_nick_change(JID, Nick, StateData) ->
     LJID = jlib:jid_tolower(JID),
     case Nick of
@@ -1726,7 +1835,6 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 		       mod_muc, max_user_conferences, 10),
     Collision = nick_collision(From, Nick, StateData),
     case {(ServiceAffiliation == owner orelse
-	   MaxUsers == none orelse
 	   ((Affiliation == admin orelse Affiliation == owner) andalso
 	    NUsers < MaxAdminUsers) orelse
 	   NUsers < MaxUsers) andalso
@@ -2222,7 +2330,7 @@ change_nick(JID, Nick, StateData) ->
 			     ?DICT:store(OldNick, OldNickUsers -- [LJID],
 					 StateData#state.nicks))
 	end,
-    NewStateData = StateData#state{users = Users, nicks = Nicks},
+	NewStateData = StateData#state{users = Users, nicks = Nicks},
     send_nick_changing(JID, OldNick, NewStateData, SendOldUnavailable, SendNewAvailable),
     add_to_log(nickchange, {OldNick, Nick}, StateData),
     NewStateData.
@@ -2540,18 +2648,18 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 				     {JID, affiliation, outcast, Reason} ->
 					 catch send_kickban_presence(
 						 JID, Reason, "301", outcast, SD),
-					 set_affiliation_and_reason(
-					   JID, outcast, Reason,
-					   set_role(JID, none, SD));
+					 set_affiliation(
+					   JID, outcast,
+					   set_role(JID, none, SD), Reason);
 				     {JID, affiliation, A, Reason} when
 					   (A == admin) or (A == owner) ->
-					 SD1 = set_affiliation_and_reason(JID, A, Reason, SD),
+					 SD1 = set_affiliation(JID, A, SD, Reason),
 					 SD2 = set_role(JID, moderator, SD1),
 					 send_update_presence(JID, Reason, SD2),
 					 SD2;
 				     {JID, affiliation, member, Reason} ->
-					 SD1 = set_affiliation_and_reason(
-						 JID, member, Reason, SD),
+					 SD1 = set_affiliation(
+						 JID, member, SD, Reason),
 					 SD2 = set_role(JID, participant, SD1),
 					 send_update_presence(JID, Reason, SD2),
 					 SD2;
@@ -2572,7 +2680,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 			      NSD ->
 				  NSD
 			  end
-		  end, StateData, Res),
+		  end, StateData, lists:flatten(Res)),
 	    case (NSD#state.config)#config.persistent of
 		true ->
 		    mod_muc:store_room(NSD#state.host, NSD#state.room,
@@ -2604,12 +2712,12 @@ find_changed_items(UJID, UAffiliation, URole,
 					 "Jabber ID ~s is invalid"), [S]),
 			   {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 		       J ->
-			   {value, J}
+			   {value, [J]}
 		   end;
 	       _ ->
 		   case xml:get_attr("nick", Attrs) of
 		       {value, N} ->
-			   case find_jid_by_nick(N, StateData) of
+			   case find_jids_by_nick(N, StateData) of
 			       false ->
 				   ErrText =
 				       io_lib:format(
@@ -2626,7 +2734,7 @@ find_changed_items(UJID, UAffiliation, URole,
 		   end
 	   end,
     case TJID of
-	{value, JID} ->
+	{value, [JID|_]=JIDs} ->
 	    TAffiliation = get_affiliation(JID, StateData),
 	    TRole = get_role(JID, StateData),
 	    case xml:get_attr("role", Attrs) of
@@ -2676,16 +2784,13 @@ find_changed_items(UJID, UAffiliation, URole,
 					      Items, Lang, StateData,
 					      Res);
 					true ->
+					    Reason = xml:get_path_s(Item, [{elem, "reason"}, cdata]),
+					    MoreRes = [{jlib:jid_remove_resource(Jidx), affiliation, SAffiliation, Reason} || Jidx <- JIDs],
 					    find_changed_items(
 					      UJID,
 					      UAffiliation, URole,
 					      Items, Lang, StateData,
-					      [{jlib:jid_remove_resource(JID),
-						affiliation,
-						SAffiliation,
-						xml:get_path_s(
-						  Item, [{elem, "reason"},
-							 cdata])} | Res]);
+					      [MoreRes | Res]);
 					false ->
 					    {error, ?ERR_NOT_ALLOWED}
 				    end
@@ -2733,14 +2838,13 @@ find_changed_items(UJID, UAffiliation, URole,
 				      Items, Lang, StateData,
 				      Res);
 				true ->
+				    Reason = xml:get_path_s(Item, [{elem, "reason"}, cdata]),
+				    MoreRes = [{Jidx, role, SRole, Reason} || Jidx <- JIDs],
 				    find_changed_items(
 				      UJID,
 				      UAffiliation, URole,
 				      Items, Lang, StateData,
-				      [{JID, role, SRole,
-					xml:get_path_s(
-					  Item, [{elem, "reason"},
-						 cdata])} | Res]);
+				      [MoreRes | Res]);
 				_ ->
 				    {error, ?ERR_NOT_ALLOWED}
 			    end
@@ -3291,7 +3395,13 @@ get_config(Lang, StateData, From) ->
 		     Config#config.allow_visitor_status),
 	 ?BOOLXFIELD("Allow visitors to change nickname",
 		     "muc#roomconfig_allowvisitornickchange",
-		     Config#config.allow_visitor_nickchange)
+		     Config#config.allow_visitor_nickchange),
+	 ?BOOLXFIELD("Allow visitors to send voice requests",
+		"muc#roomconfig_allowvoicerequests",
+		Config#config.allow_voice_requests),
+	 ?STRINGXFIELD("Minimum interval between voice requests (in seconds)",
+		"muc#roomconfig_voicerequestmininterval",
+		erlang:integer_to_list(Config#config.voice_request_min_interval))
 	] ++
 	case ejabberd_captcha:is_feature_available() of
 	    true ->
@@ -3434,12 +3544,16 @@ set_xoption([{"muc#roomconfig_roomsecret", [Val]} | Opts], Config) ->
     ?SET_STRING_XOPT(password, Val);
 set_xoption([{"anonymous", [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(anonymous, Val);
+set_xoption([{"muc#roomconfig_allowvoicerequests", [Val]} | Opts], Config) ->
+	?SET_BOOL_XOPT(allow_voice_requests, Val);
+set_xoption([{"muc#roomconfig_voicerequestmininterval", [Val]} | Opts], Config) ->
+	?SET_NAT_XOPT(voice_request_min_interval, Val);
 set_xoption([{"muc#roomconfig_whois", [Val]} | Opts], Config) ->
     case Val of
 	"moderators" ->
-	    ?SET_BOOL_XOPT(anonymous, "1");
+	    ?SET_BOOL_XOPT(anonymous, integer_to_list(1));
 	"anyone" ->
-	    ?SET_BOOL_XOPT(anonymous, "0");
+	    ?SET_BOOL_XOPT(anonymous, integer_to_list(0));
 	_ ->
 	    {error, ?ERR_BAD_REQUEST}
     end;
@@ -3526,6 +3640,8 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	      anonymous -> StateData#state{config = (StateData#state.config)#config{anonymous = Val}};
 	      logging -> StateData#state{config = (StateData#state.config)#config{logging = Val}};
               captcha_whitelist -> StateData#state{config = (StateData#state.config)#config{captcha_whitelist = ?SETS:from_list(Val)}};
+	      allow_voice_requests -> StateData#state{config = (StateData#state.config)#config{allow_voice_requests = Val}};
+	      voice_request_min_interval -> StateData#state{config = (StateData#state.config)#config{voice_request_min_interval = Val}};
 	      max_users ->
 		  ServiceMaxUsers = get_service_max_users(StateData),
 		  MaxUsers = if
@@ -3571,6 +3687,8 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
      ?MAKE_CONFIG_OPT(max_users),
+     ?MAKE_CONFIG_OPT(allow_voice_requests),
+     ?MAKE_CONFIG_OPT(voice_request_min_interval),
      {captcha_whitelist,
       ?SETS:to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},
@@ -3733,7 +3851,134 @@ get_mucroom_disco_items(StateData) ->
       ?DICT:to_list(StateData#state.users)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Voice request support
+
+is_voice_request(Els) ->
+    lists:foldl(
+      fun({xmlelement, "x", Attrs, _} = El, false) ->
+              case xml:get_attr_s("xmlns", Attrs) of
+                  ?NS_XDATA ->
+                      case jlib:parse_xdata_submit(El) of
+                          [_|_] = Fields ->
+                              case {lists:keysearch("FORM_TYPE", 1, Fields),
+                                    lists:keysearch("muc#role", 1, Fields)} of
+                                  {{value,
+                                    {_, ["http://jabber.org/protocol/muc#request"]}},
+                                   {value, {_, ["participant"]}}} ->
+                                      true;
+                                  _ ->
+                                      false
+                              end;
+                          _ ->
+                              false
+                      end;
+                  _ ->
+                      false
+              end;
+         (_, Acc) ->
+              Acc
+      end, false, Els).
+
+prepare_request_form(Requester, Nick, Lang) ->
+    {xmlelement, "message", [{"type", "normal"}],
+     [{xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+       [{xmlelement, "title", [],
+         [{xmlcdata, translate:translate(Lang, "Voice request")}]},
+        {xmlelement, "instructions", [],
+         [{xmlcdata,
+           translate:translate(
+             Lang, "Either approve or decline the voice request.")}]},
+        {xmlelement, "field", [{"var", "FORM_TYPE"}, {"type", "hidden"}],
+         [{xmlelement, "value", [],
+           [{xmlcdata, "http://jabber.org/protocol/muc#request"}]}]},
+        {xmlelement, "field", [{"var", "muc#role"}, {"type", "hidden"}],
+         [{xmlelement, "value", [], [{xmlcdata, "participant"}]}]},
+        ?STRINGXFIELD("User JID", "muc#jid", jlib:jid_to_string(Requester)),
+        ?STRINGXFIELD("Nickname", "muc#roomnick", Nick),
+        ?BOOLXFIELD("Grant voice to this person?", "muc#request_allow",
+                    list_to_atom("false"))
+       ]}]}.
+
+send_voice_request(From, StateData) ->
+    Moderators = search_role(moderator, StateData),
+    FromNick = find_nick_by_jid(From, StateData),
+    lists:foreach(
+      fun({_, User}) ->
+              ejabberd_router:route(
+                StateData#state.jid,
+                User#user.jid,
+                prepare_request_form(From, FromNick, ""))
+      end, Moderators).
+
+is_voice_approvement(Els) ->
+    lists:foldl(
+      fun({xmlelement, "x", Attrs, _} = El, false) ->
+              case xml:get_attr_s("xmlns", Attrs) of
+                  ?NS_XDATA ->
+                      case jlib:parse_xdata_submit(El) of
+                          [_|_] = Fs ->
+                              case {lists:keysearch("FORM_TYPE", 1, Fs),
+                                    lists:keysearch("muc#role", 1, Fs),
+                                    lists:keysearch("muc#request_allow", 1, Fs)} of
+                                  {{value,
+                                    {_, ["http://jabber.org/protocol/muc#request"]}},
+                                   {value, {_, ["participant"]}},
+                                   {value, {_, [Flag]}}}
+                                    when Flag == "true"; Flag == "1" ->
+                                      true;
+                                  _ ->
+                                      false
+                              end;
+                          _ ->
+                              false
+                      end;
+                  _ ->
+                      false
+              end;
+         (_, Acc) ->
+              Acc
+      end, false, Els).
+
+extract_jid_from_voice_approvement(Els) ->
+    lists:foldl(
+      fun({xmlelement, "x", _, _} = El, error) ->
+              Fields = case jlib:parse_xdata_submit(El) of
+                           invalid -> [];
+                           Res -> Res
+                       end,
+              lists:foldl(
+                fun({"muc#jid", [JIDStr]}, error) ->
+                        case jlib:string_to_jid(JIDStr) of
+                            error -> error;
+                            J -> {ok, J}
+                        end;
+                   (_, Acc) ->
+                        Acc
+                end, error, Fields);
+         (_, Acc) ->
+              Acc
+      end, error, Els).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
+
+is_invitation(Els) ->
+    lists:foldl(
+      fun({xmlelement, "x", Attrs, _} = El, false) ->
+              case xml:get_attr_s("xmlns", Attrs) of
+                  ?NS_MUC_USER ->
+                      case xml:get_subtag(El, "invite") of
+                          false ->
+                              false;
+                          _ ->
+                              true
+                      end;
+                  _ ->
+                      false
+              end;
+         (_, Acc) ->
+              Acc
+      end, false, Els).
 
 check_invitation(From, Els, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),

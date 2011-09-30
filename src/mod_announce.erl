@@ -473,16 +473,17 @@ announce_commands(From, To,
 
 -define(VVALUE(Val),
 	{xmlelement, "value", [], [{xmlcdata, Val}]}).
--define(VVALUEL(Val),
-	case Val of
-	    "" -> [];
-	    _ -> [?VVALUE(Val)]
-	end).
 -define(TVFIELD(Type, Var, Val),
 	{xmlelement, "field", [{"type", Type},
 			       {"var", Var}],
-	 ?VVALUEL(Val)}).
+	 vvaluel(Val)}).
 -define(HFIELD(), ?TVFIELD("hidden", "FORM_TYPE", ?NS_ADMIN)).
+
+vvaluel(Val) ->
+    case Val of
+        "" -> [];
+        _ -> [?VVALUE(Val)]
+    end.
 
 generate_adhoc_form(Lang, Node, ServerHost) ->
     LNode = tokenize(Node),
@@ -512,12 +513,12 @@ generate_adhoc_form(Lang, Node, ServerHost) ->
 	       [{"var", "subject"},
 		{"type", "text-single"},
 		{"label", translate:translate(Lang, "Subject")}],
-	       ?VVALUEL(OldSubject)},
+	       vvaluel(OldSubject)},
 	      {xmlelement, "field",
 	       [{"var", "body"},
 		{"type", "text-multi"},
 		{"label", translate:translate(Lang, "Message body")}],
-	       ?VVALUEL(OldBody)}]
+	       vvaluel(OldBody)}]
      end}.
 
 join_lines([]) ->

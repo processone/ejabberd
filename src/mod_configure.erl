@@ -1403,9 +1403,7 @@ set_form(_From, Host, ["running nodes", ENode, "modules", "start"], _Lang, XData
 			    end;
 			_ ->
 			    {error, ?ERR_BAD_REQUEST}
-		    end;
-		_ ->
-		    {error, ?ERR_BAD_REQUEST}
+		    end
 	    end
     end;
 

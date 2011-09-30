@@ -195,7 +195,7 @@ process_element(El,State) ->
 
 add_user(El, Domain) ->
     User = exmpp_xml:get_attribute(El, <<"name">>, none),
-    PasswordFormat = exmpp_xml:get_attribute(El, <<"password-format">>, none),
+    PasswordFormat = exmpp_xml:get_attribute(El, <<"password-format">>, <<"plaintext">>),
     Password = exmpp_xml:get_attribute(El, <<"password">>, none),
     add_user(El, Domain, User, PasswordFormat, Password).
 

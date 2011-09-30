@@ -1,0 +1,56 @@
+
+                              Release Notes
+                             ejabberd 2.1.9
+
+  ejabberd 2.1.9 is the eighth release in ejabberd 2.1.x branch,
+  and includes a lot of bugfixes and improvements.
+
+  Read more details about the changes in:
+    http://redir.process-one.net/ejabberd-2.1.9
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+  The changes are:
+
+* Core ejabberd
+- Decrease CPU usage caused by tls:send with large data
+- Escape iolist correctly when NIFs are disabled (EJAB-1462)
+- Fix code to satisfy Dialyzer warnings
+- Fix compilation in Windows
+- Replace calls of OTP's Binary, since they would require R14
+
+* LDAP
+- Document ldap_tls_cacertfile and ldap_tls_depth options (EJAB-1299)
+- Log an error when an LDAP filter is incorrect (EJAB-1395)
+- New options: ldap_tls_cacertfile and ldap_tls_depth (EJAB-1299)
+- New option: ldap_deref_aliases (EJAB-639)
+- Match ldap_uidattr_format case-insensitively (EJAB-1449)
+
+* MUC
+- Support for multiple entry with same nick to MUC rooms (EJAB-305)
+- Support voice request and approvement
+- New room option: allow_private_messages_from_visitors
+- New room options: allow_voice_requests and voice_request_min_interval
+- Include status 110 in presence to new occupant (EJAB-740)
+- Fix mod_muc_log crash when first log entry is room destroy (EJAB-1499)
+- Many fixes and improvements in mod_muc
+
+* Pubsub
+- Enable pubsub#deliver_notification checking (EJAB-1453)
+- Fix Denial of Service when user sends malformed publish stanza (EJAB-1498)
+
+* ODBC
+- Fix ODBC account counting (EJAB-1491)
+- Optimized mod_roster_odbc:get_roster
+
+* Miscellanea:
+- New SASL SCRAM-SHA-1 authentication mechanism (EJAB-1196)
+- New option: resource_conflict (EJAB-650)
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/

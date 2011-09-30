@@ -2113,8 +2113,11 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 		PluginPayload -> PluginPayload
 	    end,
 	    ejabberd_hooks:run(pubsub_publish_item, ServerHost, [ServerHost, Node, Publisher, service_jid(Host), ItemId, BrPayload]),
-	    broadcast_publish_item(Host, Node, NodeId, Type, Options, ItemId, jlib:jid_tolower(Publisher), BrPayload, Removed),
-	    set_cached_item(Host, NodeId, ItemId, Publisher, Payload),
+	    set_cached_item(Host, NodeId, ItemId, Publisher, BrPayload),
+	    case get_option(Options, deliver_notifications) of
+		true -> broadcast_publish_item(Host, Node, NodeId, Type, Options, ItemId, jlib:jid_tolower(Publisher), BrPayload, Removed);
+		false -> ok
+	    end,
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -2145,8 +2148,10 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    case lists:member("auto-create", features(Type)) of
 		true ->
 		    case create_node(Host, ServerHost, Node, Publisher, Type) of
-			{result, _} ->
-			    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload);
+			{result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
+			  [{xmlelement, "create", [{"node", NewNode}], []}]}]} ->
+			    publish_item(Host, ServerHost,  list_to_binary(NewNode),
+				    Publisher, ItemId, Payload);
 			_ ->
 			    {error, ?ERR_ITEM_NOT_FOUND}
 		    end;

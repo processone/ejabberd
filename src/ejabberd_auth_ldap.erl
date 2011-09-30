@@ -75,6 +75,7 @@
 		ufilter,
 		sfilter,
 		lfilter, %% Local filter (performed by ejabberd, not LDAP)
+                deref_aliases,
 		dn_filter,
 		dn_filter_attrs
 	       }).
@@ -230,10 +231,12 @@ get_vh_registered_users_ldap(Server) ->
     ResAttrs = result_attrs(State),
     case eldap_filter:parse(State#state.sfilter) of
 		{ok, EldapFilter} ->
-		    case eldap_pool:search(Eldap_ID, [{base, State#state.base},
-						 {filter, EldapFilter},
-						 {timeout, ?LDAP_SEARCH_TIMEOUT},
-						 {attributes, ResAttrs}]) of
+		    case eldap_pool:search(Eldap_ID,
+                                           [{base, State#state.base},
+                                            {filter, EldapFilter},
+                                            {timeout, ?LDAP_SEARCH_TIMEOUT},
+                                            {deref_aliases, State#state.deref_aliases},
+                                            {attributes, ResAttrs}]) of
 			#eldap_search_result{entries = Entries} ->
 			    lists:flatmap(
 			      fun(#eldap_entry{attributes = Attrs,
@@ -285,6 +288,7 @@ find_user_dn(User, State) ->
 	    case eldap_pool:search(State#state.eldap_id,
 				   [{base, State#state.base},
 				    {filter, Filter},
+                                    {deref_aliases, State#state.deref_aliases},
 				    {attributes, ResAttrs}]) of
 		#eldap_search_result{entries = [#eldap_entry{attributes = Attrs,
 							     object_name = DN} | _]} ->
@@ -322,10 +326,11 @@ is_valid_dn(DN, Attrs, State) ->
 		  end ++ [{"%d", State#state.host}, {"%D", DN}],
     case eldap_filter:parse(State#state.dn_filter, SubstValues) of
 	{ok, EldapFilter} ->
-	    case eldap_pool:search(State#state.eldap_id, [
-						     {base, State#state.base},
-						     {filter, EldapFilter},
-						     {attributes, ["dn"]}]) of
+	    case eldap_pool:search(State#state.eldap_id,
+                                   [{base, State#state.base},
+                                    {filter, EldapFilter},
+                                    {deref_aliases, State#state.deref_aliases},
+                                    {attributes, ["dn"]}]) of
 		#eldap_search_result{entries = [_|_]} ->
 		    DN;
 		_ ->
@@ -421,6 +426,11 @@ parse_options(Host) ->
 	end,
     eldap_utils:check_filter(DNFilter),
     LocalFilter = ejabberd_config:get_local_option({ldap_local_filter, Host}),
+    DerefAliases = case ejabberd_config:get_local_option(
+                          {ldap_deref_aliases, Host}) of
+                       undefined -> never;
+                       Val -> Val
+                   end,
     #state{host = Host,
 	   eldap_id = Eldap_ID,
 	   bind_eldap_id = Bind_Eldap_ID,
@@ -438,6 +448,7 @@ parse_options(Host) ->
 	   ufilter = UserFilter,
 	   sfilter = SearchFilter,
 	   lfilter = LocalFilter,
+           deref_aliases = DerefAliases,
 	   dn_filter = DNFilter,
 	   dn_filter_attrs = DNFilterAttrs
 	  }.

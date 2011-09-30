@@ -409,20 +409,12 @@ static int tls_drv_control(ErlDrvData handle,
 	 break;
       case GET_ENCRYPTED_OUTPUT:
 	 die_unless(d->ssl, "SSL not initialized");
-	 rlen = 1;
-	 b = driver_alloc_binary(rlen + BUF_SIZE);
+	 size = BIO_ctrl_pending(d->bio_write) + 1;
+	 b = driver_alloc_binary(size);
 	 b->orig_bytes[0] = 0;
-	 while ((res = BIO_read(d->bio_write,
-				b->orig_bytes + rlen, BUF_SIZE)) > 0)
-	 {
-	    //printf("%d bytes of encrypted data read from state machine\r\n", res);
-
-	    rlen += res;
-	    b = driver_realloc_binary(b, rlen + BUF_SIZE);
-	 }
-	 b = driver_realloc_binary(b, rlen);
+	 BIO_read(d->bio_write, b->orig_bytes + 1, size - 1);
 	 *rbuf = (char *)b;
-	 return rlen;
+	 return size;
       case GET_DECRYPTED_INPUT:
 	 if (!SSL_is_init_finished(d->ssl))
 	 {
