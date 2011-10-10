@@ -73,7 +73,6 @@ start(HostB, Opts) ->
     catch ets:new(disco_features, [named_table, ordered_set, public]),
     register_feature(HostB, "iq"),
     register_feature(HostB, "presence"),
-    register_feature(HostB, "presence-invisible"),
 
     catch ets:new(disco_extra_domains, [named_table, ordered_set, public]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),

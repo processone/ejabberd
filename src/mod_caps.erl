@@ -227,7 +227,7 @@ c2s_presence_in(C2SState, {From, To, #xmlel{attrs = Attrs, children = Els}}) ->
     Subscription = ejabberd_c2s:get_subscription(From, C2SState),
     Insert = ((Type == <<>>) or (Type == <<"available">>))
 	and ((Subscription == both) or (Subscription == to)),
-    Delete = (Type == <<"unavailable">>) or (Type == <<"error">>) or (Type == <<"invisible">>),
+    Delete = (Type == <<"unavailable">>) or (Type == <<"error">>),
     if Insert or Delete ->
 	    LFrom = exmpp_jid:to_lower(From),
 	    Rs = case ejabberd_c2s:get_aux_field(caps_resources, C2SState) of
