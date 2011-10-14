@@ -283,19 +283,16 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 	end,
     XmppVersion = xml:get_attr_s("xmpp:version", Attrs),
     ?DEBUG("Create session: ~p", [Sid]),
-    mnesia:transaction(
-      fun() ->
-	      mnesia:write(
-		#http_bind{id = Sid,
-			   pid = Pid,
-			   to = {XmppDomain,
-				 XmppVersion},
-			   hold = Hold,
-			   wait = Wait,
-			   process_delay = Pdelay,
-			   version = Version
-			  })
-      end),
+    mnesia:dirty_write(
+      #http_bind{id = Sid,
+                 pid = Pid,
+                 to = {XmppDomain,
+                       XmppVersion},
+                 hold = Hold,
+                 wait = Wait,
+                 process_delay = Pdelay,
+                 version = Version
+                }),
     handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, true, IP).
 
 %%%----------------------------------------------------------------------
