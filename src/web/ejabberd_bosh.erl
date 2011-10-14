@@ -81,6 +81,7 @@
                 prev_rid,
                 prev_key,
                 prev_poll,
+                dont_concat = false,
                 responses = gb_trees:empty(),
                 receivers = gb_trees:empty(),
                 shaped_receivers = queue:new(),
@@ -284,11 +285,14 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     Inactivity = gen_mod:get_module_opt(XMPPDomain, mod_bosh,
                                         max_inactivity, ?DEFAULT_INACTIVITY),
+    DontConcat = gen_mod:get_module_opt(XMPPDomain, mod_bosh,
+                                        dont_concat, false),
     State = #state{host = XMPPDomain,
                    sid = SID,
                    ip = IP,
                    xmpp_ver = XMPPVer,
                    el_ibuf = InBuf,
+                   dont_concat = DontConcat,
                    el_obuf = buf_new(),
                    inactivity_timeout = Inactivity,
                    shaper_state = ShaperState},
@@ -656,13 +660,20 @@ drop_holding_receiver(State) ->
     end.
 
 do_reply(State, From, Body, RID) ->
+    {NewBody, Obuf} = case {Body#body.els, State#state.dont_concat} of
+                          {[El|Els], true} ->
+                              {Body#body{els = [El]},
+                               buf_in(Els, State#state.el_obuf)};
+                          _ ->
+                              {Body, State#state.el_obuf}
+                      end,
     ?DEBUG("send reply:~n"
            "** RequestID: ~p~n"
            "** Reply: ~p~n"
            "** To: ~p~n"
            "** State: ~p",
-           [RID, Body, From, State]),
-    ?GEN_FSM:reply(From, Body),
+           [RID, NewBody, From, State]),
+    ?GEN_FSM:reply(From, NewBody),
     Responses = gb_trees:delete_any(RID, State#state.responses),
     Responses1 = case gb_trees:size(Responses) of
                      N when N < State#state.max_requests; N == 0 ->
@@ -670,8 +681,8 @@ do_reply(State, From, Body, RID) ->
                      _ ->
                          element(3, gb_trees:take_smallest(Responses))
                  end,
-    Responses2 = gb_trees:insert(RID, Body, Responses1),
-    State#state{responses = Responses2}.
+    Responses2 = gb_trees:insert(RID, NewBody, Responses1),
+    State#state{responses = Responses2, el_obuf = Obuf}.
 
 bounce_receivers(State, Reason) ->
     Receivers = gb_trees:to_list(State#state.receivers),
