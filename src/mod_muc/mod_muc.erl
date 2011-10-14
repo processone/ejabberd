@@ -96,10 +96,23 @@ start(Host, Opts) ->
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
+    %% if compiled with no transient supervisor, we need to manually shutdown
+    %% the rooms to give them a chance to store persistent messages to DB
+    Rooms = shutdown_rooms(Host), 
     stop_supervisor(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    {wait, Rooms}. %%wait for rooms shutdown before stopping ejabberd
+
+shutdown_rooms(Host) ->
+    MyHost = gen_mod:get_module_opt_host(Host, mod_muc, "conference.@HOST@"),
+    Rooms = mnesia:dirty_select(muc_online_room,
+			[{#muc_online_room{name_host = '$1', pid = '$2'},
+			  [{'==', {element, 2, '$1'}, MyHost}],
+			  ['$2']}]),
+    [Pid ! 'shutdown' || Pid <- Rooms],
+    Rooms.
 
 
 moderate_room_history(RoomStr, Nick) ->

@@ -853,6 +853,8 @@ handle_info({migrate, Node}, StateName, StateData) ->
        true ->
 	    {next_state, StateName, StateData}
     end;
+handle_info('shutdown', _StateName, StateData) ->
+	{stop, 'shutdown', StateData};
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
