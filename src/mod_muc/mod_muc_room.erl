@@ -141,6 +141,16 @@ init([Host, ServerHost, Access, Room, HistorySize, PersistHistory, RoomShaper, C
 				   just_created = true,
 				   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
+    %% this will trigger a write of the muc to disc if it is persistent.
+    %% we need to do this because otherwise if muc are persistent by default,
+    %% but never configured in any way by the client, we were never 
+    %% storing it on disc to be recreated on startup.
+    if 
+	 (State1#state.config)#config.persistent ->
+	    mod_muc:store_room(State1#state.host, State1#state.room, make_opts(State1));
+    	true ->
+		ok
+    end,
     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
 	      [Room, Host, jlib:jid_to_string(Creator)]),
     add_to_log(room_existence, created, State1),
