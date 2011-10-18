@@ -81,7 +81,7 @@
                 prev_rid,
                 prev_key,
                 prev_poll,
-                dont_concat = false,
+                max_concat = unlimited,
                 responses = gb_trees:empty(),
                 receivers = gb_trees:empty(),
                 shaped_receivers = queue:new(),
@@ -285,14 +285,14 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
     Inactivity = gen_mod:get_module_opt(XMPPDomain, mod_bosh,
                                         max_inactivity, ?DEFAULT_INACTIVITY),
-    DontConcat = gen_mod:get_module_opt(XMPPDomain, mod_bosh,
-                                        dont_concat, false),
+    MaxConcat = gen_mod:get_module_opt(XMPPDomain, mod_bosh,
+                                       max_concat, unlimited),
     State = #state{host = XMPPDomain,
                    sid = SID,
                    ip = IP,
                    xmpp_ver = XMPPVer,
                    el_ibuf = InBuf,
-                   dont_concat = DontConcat,
+                   max_concat = MaxConcat,
                    el_obuf = buf_new(),
                    inactivity_timeout = Inactivity,
                    shaper_state = ShaperState},
@@ -618,13 +618,9 @@ route_els(State, Els) ->
             State#state{el_ibuf = InBuf}
     end.
 
-get_response_els(#state{el_obuf = OutBuf, dont_concat = DontConcat} = State) ->
-    case {buf_out(OutBuf), DontConcat} of
-        {{{value, El}, NewOutBuf}, true} ->
-            {State#state{el_obuf = NewOutBuf}, [El]};
-        _ ->
-            {State#state{el_obuf = buf_new()}, buf_to_list(OutBuf)}
-    end.
+get_response_els(#state{el_obuf = OutBuf, max_concat = MaxConcat} = State) ->
+    {Els, NewOutBuf} = buf_out(OutBuf, MaxConcat),
+    {State#state{el_obuf = NewOutBuf}, Els}.
 
 reply(State, Body, RID, From) ->
     State1 = restart_inactivity_timer(State),
@@ -934,8 +930,20 @@ buf_in(Xs, Buf) ->
               queue:in(X, Acc)
       end, Buf, Xs).
 
-buf_out(Buf) ->
-    queue:out(Buf).
+buf_out(Buf, Num) when is_integer(Num), Num > 0 ->
+    buf_out(Buf, Num, []);
+buf_out(Buf, _) ->
+    {queue:to_list(Buf), buf_new()}.
+
+buf_out(Buf, 0, Els) ->
+    {lists:reverse(Els), Buf};
+buf_out(Buf, I, Els) ->
+    case queue:out(Buf) of
+        {{value, El}, NewBuf} ->
+            buf_out(NewBuf, I-1, [El|Els]);
+        {empty, _} ->
+            buf_out(Buf, 0, Els)
+    end.
 
 buf_to_list(Buf) ->
     queue:to_list(Buf).
