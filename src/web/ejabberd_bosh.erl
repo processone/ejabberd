@@ -516,23 +516,23 @@ handle_sync_event({send_xml, {xmlstreamstart, _, _} = El}, _From,
     OutBuf = buf_in([El], State#state.el_obuf),
     {reply, ok, StateName, State#state{el_obuf = OutBuf}};
 handle_sync_event({send_xml, El}, _From, StateName, State) ->
-    case gb_trees:lookup(State#state.prev_rid, State#state.receivers) of
+    OutBuf = buf_in([El], State#state.el_obuf),
+    State1 = State#state{el_obuf = OutBuf},
+    case gb_trees:lookup(State1#state.prev_rid, State1#state.receivers) of
         {value, {From, Body}} ->
-            OutBuf = buf_to_list(buf_in([El], State#state.el_obuf)),
-            State1 = State#state{el_obuf = buf_new()},
-            {reply, ok, StateName, reply(State1, Body#body{els = OutBuf},
-                                         State1#state.prev_rid, From)};
+            {State2, Els} = get_response_els(State1),
+            {reply, ok, StateName, reply(State2, Body#body{els = Els},
+                                         State2#state.prev_rid, From)};
         none ->
-            State1 = case queue:out(State#state.shaped_receivers) of
+            State2 = case queue:out(State1#state.shaped_receivers) of
                          {{value, {TRef, From, Body}}, Q} ->
                              cancel_timer(TRef),
                              ?GEN_FSM:send_event(self(), {Body, From}),
-                             State#state{shaped_receivers = Q};
+                             State1#state{shaped_receivers = Q};
                          _ ->
-                             State
+                             State1
                      end,
-            OutBuf = buf_in([El], State1#state.el_obuf),
-            {reply, ok, StateName, State1#state{el_obuf = OutBuf}}
+            {reply, ok, StateName, State2}
     end;
 handle_sync_event(close, _From, _StateName, State) ->
     {stop, normal, State};
@@ -618,8 +618,13 @@ route_els(State, Els) ->
             State#state{el_ibuf = InBuf}
     end.
 
-get_response_els(#state{el_obuf = OutBuf} = State) ->
-    {State#state{el_obuf = buf_new()}, buf_to_list(OutBuf)}.
+get_response_els(#state{el_obuf = OutBuf, dont_concat = DontConcat} = State) ->
+    case {buf_out(OutBuf), DontConcat} of
+        {{{value, El}, NewOutBuf}, true} ->
+            {State#state{el_obuf = NewOutBuf}, [El]};
+        _ ->
+            {State#state{el_obuf = buf_new()}, buf_to_list(OutBuf)}
+    end.
 
 reply(State, Body, RID, From) ->
     State1 = restart_inactivity_timer(State),
@@ -660,20 +665,13 @@ drop_holding_receiver(State) ->
     end.
 
 do_reply(State, From, Body, RID) ->
-    {NewBody, Obuf} = case {Body#body.els, State#state.dont_concat} of
-                          {[El|Els], true} ->
-                              {Body#body{els = [El]},
-                               buf_in(Els, State#state.el_obuf)};
-                          _ ->
-                              {Body, State#state.el_obuf}
-                      end,
     ?DEBUG("send reply:~n"
            "** RequestID: ~p~n"
            "** Reply: ~p~n"
            "** To: ~p~n"
            "** State: ~p",
-           [RID, NewBody, From, State]),
-    ?GEN_FSM:reply(From, NewBody),
+           [RID, Body, From, State]),
+    ?GEN_FSM:reply(From, Body),
     Responses = gb_trees:delete_any(RID, State#state.responses),
     Responses1 = case gb_trees:size(Responses) of
                      N when N < State#state.max_requests; N == 0 ->
@@ -681,8 +679,8 @@ do_reply(State, From, Body, RID) ->
                      _ ->
                          element(3, gb_trees:take_smallest(Responses))
                  end,
-    Responses2 = gb_trees:insert(RID, NewBody, Responses1),
-    State#state{responses = Responses2, el_obuf = Obuf}.
+    Responses2 = gb_trees:insert(RID, Body, Responses1),
+    State#state{responses = Responses2}.
 
 bounce_receivers(State, Reason) ->
     Receivers = gb_trees:to_list(State#state.receivers),
@@ -725,7 +723,7 @@ bounce_els_from_obuf(State) ->
               end;
          (_) ->
               ok
-      end, State#state.el_obuf).
+      end, buf_to_list(State#state.el_obuf)).
 
 is_valid_key("", "") ->
     true;
@@ -928,16 +926,19 @@ get_attr(Attr, Attrs, Default) ->
     end.
 
 buf_new() ->
-    [].
+    queue:new().
 
 buf_in(Xs, Buf) ->
     lists:foldl(
       fun(X, Acc) ->
-              [X|Acc]
+              queue:in(X, Acc)
       end, Buf, Xs).
 
+buf_out(Buf) ->
+    queue:out(Buf).
+
 buf_to_list(Buf) ->
-    lists:reverse(Buf).
+    queue:to_list(Buf).
 
 cancel_timer(TRef) when is_reference(TRef) ->
     ?GEN_FSM:cancel_timer(TRef);
