@@ -91,6 +91,7 @@
 	 register_room/3,
 	 migrate/1,
 	 get_vh_rooms/1,
+	 remove_host/1,
 	 can_use_nick/3]).
 
 %% gen_server callbacks
@@ -298,6 +299,16 @@ migrate(After) ->
 	      end
       end, Rs).
 
+remove_host(MyHostB) when is_binary(MyHostB) ->
+    Host = gen_mod:get_module_opt_host(binary_to_list(MyHostB), ?MODULE, "conference.@HOST@"),
+    ?INFO_MSG("Removing rooms of MUC service ~p", [Host]),
+    lists:foreach(
+	fun(#muc_online_room{name_host = {NameB, HostB}, pid = Pid}) ->
+	    gen_fsm:send_all_state_event(Pid, destroy),
+	    forget_room(HostB, NameB)
+	end,
+	get_vh_rooms(list_to_binary(Host))).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -355,6 +366,7 @@ init([Host, Opts]) ->
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     ejabberd_router:register_route(MyHostStr),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate, 100),
+    ejabberd_hooks:add(remove_host, Host, ?MODULE, remove_host, 50),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize,
@@ -456,6 +468,7 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
     ejabberd_hooks:delete(node_hash_update, ?MODULE, migrate, 100),
+    ejabberd_hooks:delete(remove_host, State#state.server_host, ?MODULE, remove_host, 50),
     ejabberd_router:unregister_route(binary_to_list(State#state.host)),
     ok.
 

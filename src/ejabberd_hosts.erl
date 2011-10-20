@@ -101,13 +101,18 @@ update_host_conf(Host, Config) when is_list(Host), is_list(Config) ->
     case registered(Host) of
 	false -> {error, host_process_not_registered};
 	true ->
-	    remove(Host),
+	    remove_host_info(Host),
 	    ?MODULE:register(Host, Config)
     end.
-   
+
 %% Removes a vhost from the system,
 %% XXX deleting all ODBC data.
 remove(Host) when is_list(Host) ->
+    HostB = list_to_binary(Host),
+    ejabberd_hooks:run(remove_host, HostB, [HostB]),
+    remove_host_info(Host).
+
+remove_host_info(Host) ->
     true = exmpp_stringprep:is_node(Host),
     ID = get_clusterid(),
     gen_storage:dirty_delete_where(
@@ -346,10 +351,7 @@ start_host(Host) when is_list(Host) ->
                       gen_mod:start_module(Host, Module, Args)
               end, Modules)
     end,
-    case auth_method(Host) of
-        {host_method, HostMethod} ->
-            ejabberd_auth:start_methods(Host, HostMethod)
-    end,
+    ejabberd_auth:start(Host),
     ok.
 
 
@@ -366,10 +368,7 @@ stop_host(Host) when is_list(Host) ->
     lists:foreach(fun(Module) ->
                           gen_mod:stop_module_keep_config(Host, Module)
                   end, gen_mod:loaded_modules(Host)),
-    case auth_method(Host) of
-        {host_method, Method} ->
-            ejabberd_auth:stop_methods(Host, Method)
-    end.
+    ejabberd_auth:stop(Host).
 
 %% Get the current vhost list from a variety of sources (ODBC, internal)
 get_hosts(ejabberd) -> ?MYHOSTS;
@@ -416,16 +415,6 @@ diff_hosts(NewHosts, OldHosts) ->
     RemoveHosts = OldHosts -- NewHosts,
     AddHosts = NewHosts -- OldHosts,
     {AddHosts,RemoveHosts}.    
-
-%% XXX - this should be part of auth, not hosts.
-auth_method(Host) ->
-    case ejabberd_config:get_host_option(Host, auth_method) of
-        undefined ->
-	    [Default] = ejabberd_config:get_host_option(global, auth_method),
-            {host_method, Default};
-        Other ->
-            {host_method, Other}
-    end.
 
 configure_static_hosts() ->
     ?DEBUG("Node startup - configuring hosts: ~p", [?MYHOSTS]),

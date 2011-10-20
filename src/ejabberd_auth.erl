@@ -49,16 +49,16 @@
 	 is_user_exists_in_other_modules/3,
 	 remove_user/2,
 	 remove_user/3,
+	 remove_host/1,
 	 plain_password_required/1,
 	 store_type/1,
 	 entropy/1
 	]).
 
 -export([start/1
+         ,stop/1
          ,start_modules/2
          ,stop_modules/2
-         ,start_methods/2
-         ,stop_methods/2
         ]).
 
 -export([auth_modules/1]).
@@ -80,7 +80,19 @@ start() ->
     lists:foreach(fun start/1, ?MYHOSTS).
 
 start(Host) ->
+    ejabberd_hooks:add(remove_host, list_to_binary(Host), ?MODULE, remove_host, 150),
     start_modules(Host, auth_modules(Host)).
+
+stop(Host) ->
+    ejabberd_hooks:delete(remove_host, list_to_binary(Host), ?MODULE, remove_host, 150),
+    stop_modules(Host, auth_modules(Host)).
+
+remove_host(HostB) when is_binary(HostB) ->
+    lists:foreach(
+        fun({Username, Host}) ->
+            ejabberd_auth:remove_user(Username, Host)
+        end,
+        ejabberd_auth:get_vh_registered_users(binary_to_list(HostB))).
 
 start_modules(Host, Modules) when is_list(Modules) ->
     lists:foreach(fun (M) -> start_modules(Host, M) end, Modules);
@@ -91,17 +103,6 @@ stop_modules(Host, Modules) when is_list(Modules) ->
     lists:foreach(fun (M) -> stop_modules(Host, M) end, Modules);
 stop_modules(Host, Module) when is_atom(Module) ->
     Module:stop(Host).
-
-start_methods(Host, Methods) when is_list(Methods) ->
-    lists:foreach(fun (M) -> start_methods(Host, M) end, Methods);
-start_methods(Host, Method) when is_atom(Method) ->
-    start_modules(Host, module_name(Method)).
-
-stop_methods(Host, Methods) when is_list(Methods) ->
-    lists:foreach(fun (M) -> stop_methods(Host, M) end, Methods);
-stop_methods(Host, Method) when is_atom(Method) ->
-    stop_modules(Host, module_name(Method)).
-
 
 %% @spec (Server) -> bool()
 %%     Server = string()
@@ -517,9 +518,8 @@ auth_modules() ->
 %%     Server = string()
 %% @doc Return the list of authenticated modules for a given host.
 
-auth_modules(Server) when is_list(Server) ->
-    LServer = exmpp_stringprep:nameprep(Server),
-    Method = ejabberd_config:get_local_option({auth_method, ejabberd:normalize_host(LServer)}),
+auth_modules(Server) ->
+    Method = ejabberd_config:get_local_option({auth_method, Server}),
     Methods = if
 		  Method == undefined -> [];
 		  is_list(Method) -> Method;
