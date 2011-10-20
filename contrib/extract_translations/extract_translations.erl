@@ -254,7 +254,7 @@ get_msg_header_props(F, Lines) ->
     end.
 
 prepare_props(MsgProps) ->
-    Language = proplists:get_value("Language:", MsgProps),
+    Language = proplists:get_value("X-Language:", MsgProps),
     Authors = proplists:get_all_values("Author:", MsgProps),
     {Language, Authors}.
 
