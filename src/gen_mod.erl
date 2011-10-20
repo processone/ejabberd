@@ -41,7 +41,6 @@
 	 get_hosts/2,
 	 get_module_proc/2,
 	 get_module_proc_existing/2,
-         expand_host_name/3,
 	 is_loaded/2]).
 
 -export([behaviour_info/1]).
@@ -211,8 +210,14 @@ get_module_opt_host(Host, Module, Default) ->
     re:replace(Val, "@HOST@", Host, [global,{return,list}]).
 
 get_opt_host(Host, Opts, Default) ->
-    Val = get_opt(host, Opts, Default),
-    re:replace(Val, "@HOST@", Host, [global,{return,list}]).
+    case Host of
+	global ->
+	    Val = get_opt(host, Opts, Default),
+	    {global, re:replace(Val, ".@HOST@", "", [global,{return,list}])};
+	Host ->
+	    Val = get_opt(host, Opts, Default),
+	    re:replace(Val, "@HOST@", Host, [global,{return,list}])
+    end.
 
 loaded_modules(Host) ->
     ets:select(ejabberd_modules,
@@ -290,12 +295,3 @@ get_module_proc(Host, Base) ->
 is_loaded(Host, Module) ->
     ets:member(ejabberd_modules, {Module, Host})
     orelse ets:member(ejabberd_modules, {Module, global}).
-
-expand_host_name(Host, Opts, DefaultPrefix) ->
-    case Host of
-        global ->
-            {global, gen_mod:get_opt(prefix, Opts, DefaultPrefix)};
-        _ ->
-            gen_mod:get_opt_host(Host, Opts, DefaultPrefix ++ ".@HOST@")
-    end.
-

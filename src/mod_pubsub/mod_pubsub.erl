@@ -203,7 +203,7 @@ stop(Host) ->
 
 init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p",[ServerHost,Opts]),
-    Host = gen_mod:expand_host_name(ServerHost, Opts, "pubsub"),
+    Host = gen_mod:get_opt_host(ServerHost, Opts, "pubsub.@HOST@"),
     Access = gen_mod:get_opt('access_createnode', Opts, 'all'),
     PepOffline = gen_mod:get_opt('ignore_pep_from_offline', Opts, true),
     IQDisc = gen_mod:get_opt('iqdisc', Opts, 'one_queue'),

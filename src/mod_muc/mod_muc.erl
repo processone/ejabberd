@@ -321,7 +321,7 @@ remove_host(MyHostB) when is_binary(MyHostB) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    MyHostStr = gen_mod:expand_host_name(Host, Opts, "conference"),
+    MyHostStr = gen_mod:get_opt_host(Host, Opts, "conference.@HOST@"),
     MyHost = l2b(MyHostStr),
     Backend = gen_mod:get_opt(backend, Opts, mnesia),
     gen_storage:create_table(Backend, MyHost, muc_room_opt,

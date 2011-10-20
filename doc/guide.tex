@@ -112,11 +112,11 @@
 \newcommand{\iqdiscitem}[1]{\titem{\{iqdisc, Discipline\}} \ind{options!iqdisc}This specifies
 the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).}
 \newcommand{\hostitem}[1]{
-  \titem{\{host, HostName\} or \{prefix, PrefixName\}} \ind{options!host}
-  Those options define the Jabber ID of the service.
-  If no option is specified, the Jabber ID of the service will be the
+  \titem{\{host, HostName\}} \ind{options!host}
+  This option defines the Jabber ID of the service.
+  If the option is not specified, the Jabber ID of the service will be the
   hostname of the virtual host preceded with `\jid{#1.}'.
-  For more details see \ref{modhostoption} and \ref{modprefixoption}.
+  For more details see \ref{modhostoption}.
 }
 \newcommand{\backend}[1]{\titem{\{backend, mnesia|odbc\}} \ind{options!backend}
 Specify the backend used to store the tables: #1.
@@ -2628,7 +2628,7 @@ Examples:
  ]}.
 {static_modules,
  [
-  {mod_echo,      [{prefix, "echostatic"}]}
+  {mod_echo,      [{host, "echostatic.@HOST@"}]}
   {mod_time,      []},
   {mod_version,   []}
  ]}.
@@ -2768,15 +2768,14 @@ Example:
 \makesubsubsection{modhostoption}{\option{host}}
 \ind{options!host}
 
-This option defines the Jabber ID of a service provided by a dynamic \ejabberd{} module.
+This option defines the Jabber ID of a service provided by an \ejabberd{} module.
 
 The syntax is:
 \esyntax{\{host, HostName\}}
 
 If you include the keyword "@HOST@" in the HostName,
 it is replaced at start time with the real virtual host string.
-
-If the module is started statically, use the option \term{prefix} instead (see~\ref{modprefixoption}).
+If you configure the module to be started statically, then the keyword @HOST@ is mandatory.
 
 This example configures
 the \ind{modules!\modecho{}}echo module to provide its echoing service
@@ -2801,16 +2800,6 @@ the "@HOST@" keyword must be used:
  ]}.
 \end{verbatim}
 
-\makesubsubsection{modprefixoption}{\option{prefix}}
-\ind{options!prefix}
-
-This option defines the prefix that will be used to build the Jabber ID of a service provided by a static \ejabberd{} module.
-
-The syntax is:
-\esyntax{\{prefix, PrefixName\}}
-
-If the module is started dynamically, use the option \term{host} instead (see~\ref{modhostoption}).
-
 This example configures
 the \ind{modules!\modecho{}}echo module to provide its echoing service
 in Jabber IDs like
@@ -2820,7 +2809,7 @@ in Jabber IDs like
 {static_modules,
  [
   ...
-  {mod_echo, [{prefix, "mirror"}]},
+  {mod_echo, [{host, "mirror.@HOST@"}]},
   ...
  ]}.
 \end{verbatim}

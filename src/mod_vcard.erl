@@ -148,7 +148,7 @@ start(HostB, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, HostB, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, HostB, ?MODULE, get_sm_features, 50),
-    MyHost = gen_mod:expand_host_name(HostB, Opts, "vjud"),
+    MyHost = gen_mod:get_opt_host(HostB, Opts, "vjud.@HOST@"),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(HostB, ?PROCNAME),
 	     spawn(?MODULE, init, [MyHost, HostB, Search])).
@@ -444,9 +444,8 @@ do_route(ServerHost, From, To, Packet) ->
 			Err = exmpp_iq:error(Packet, 'not-allowed'),
 			ejabberd_router:route(To, From, Err);
 		    {get, ?NS_DISCO_INFO} ->
-			ServerHostB = list_to_binary(ServerHost),
 			Info = ejabberd_hooks:run_fold(
-				 disco_info, ServerHostB, [],
+				 disco_info, ServerHost, [],
 				 [ServerHost, ?MODULE, <<>>, ""]),
 			Result = #xmlel{ns = ?NS_DISCO_INFO, name = 'query',
 			  children = Info ++ [

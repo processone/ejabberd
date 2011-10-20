@@ -86,7 +86,7 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    MyHost = gen_mod:expand_host_name(Host, Opts, "echo"),
+    MyHost = gen_mod:get_opt_host(Host, Opts, "echo.@HOST@"),
     ClientVersion = gen_mod:get_opt(client_version, Opts, false),
     ejabberd_router:register_route(MyHost),
     {ok, #state{host = MyHost, client_version = ClientVersion}}.
