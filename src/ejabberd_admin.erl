@@ -48,7 +48,8 @@
 	 install_fallback_mnesia/1,
 	 dump_to_textfile/1, dump_to_textfile/2,
 	 mnesia_change_nodename/4,
-	 restore/1 % Still used by some modules
+	 restore/1, % Still used by some modules
+	 moderate_room_history/2
 	]).
 
 -include("ejabberd.hrl").
@@ -206,10 +207,25 @@ commands() ->
 			args = [{file, string}], result = {res, restuple}},
      #ejabberd_commands{name = moderate_room_history, tags = [server],
 	     		desc = "Clean messages from the short-term MUC storage",
-			module = mod_muc, function = moderate_room_history,
+			module = ?MODULE, function = moderate_room_history,
 			args = [{room, string}, {nick, string}],
 			result = {res, restuple}}
     ].
+
+%%%
+%%% MUC moderation
+%%%
+%%% Same room can be replicated into different nodes,
+%%% call all of them.
+moderate_room_history(Room, Nick) ->
+	{Res, BadNodes} = rpc:multicall(mod_muc, moderate_room_history, [Room, Nick], 5000),
+	B = case BadNodes of
+		[] ->
+			"";
+		_ ->
+			io_lib:format("Bad nodes: ~p", [BadNodes])
+	end,
+	{ok, io:format("Deleted: ~p ~s", [Res, B])}.
 
 
 %%%
