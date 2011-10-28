@@ -45,7 +45,8 @@
 	 del_aux_field/2,
 	 get_subscription/2,
 	 broadcast/4,
-	 get_subscribed/1]).
+	 get_subscribed/1,
+	 filter_packet/1]).
 
 %% API:
 -export([add_rosteritem/3, del_rosteritem/2]).
@@ -1865,10 +1866,11 @@ presence_update(From, Packet, StateData) ->
 	    end,
 	    Timestamp = calendar:now_to_universal_time(now()),
 	    update_priority(NewPriority, Packet, StateData),
+	    FilteredPacket = filter_packet(Packet),
 	    FromUnavail = (StateData#state.pres_last == undefined),
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	    NewState =
-                NewStateData = StateData#state{pres_last = Packet,
+                NewStateData = StateData#state{pres_last = FilteredPacket,
                                                pres_timestamp = Timestamp},
 		if
 		    FromUnavail ->
@@ -1881,13 +1883,13 @@ presence_update(From, Packet, StateData) ->
 			   true ->
 				ok
 			end,
-			presence_broadcast_first(From, NewStateData, Packet);
+			presence_broadcast_first(From, NewStateData, FilteredPacket);
 		    true ->
 			presence_broadcast_to_trusted(NewStateData,
 						      From,
 						      NewStateData#state.pres_f,
 						      NewStateData#state.pres_a,
-						      Packet),
+						      FilteredPacket),
 			if OldPriority < 0, NewPriority >= 0 ->
 				resend_offline_messages(NewStateData);
 			   true ->
@@ -1897,6 +1899,25 @@ presence_update(From, Packet, StateData) ->
 		end,
 	    NewState
     end.
+
+filter_packet(Packet) ->
+     ProtectedName = mod_filter:get_protected_names,
+    {xmlelement, Name, Attrs, Els} = Packet,
+
+    % List of filtered 'names'
+    FilNames = [B || {_A,B,_C,_D}<-Els,
+		     not lists:any(fun(N)->N==B end, ProtectedName)],
+
+    % List of filtered 'attrs' (based on names)
+    FilAttrs = [C || {_A,B,C,_D}<-Els,
+		     not lists:any(fun(N)->N==B end, ProtectedName)],
+
+    % Associating them together
+    Zips = lists:zip(FilNames, FilAttrs),
+
+    % return filtered packet (Removed the protected names).
+    FilteredEls = [{xmlelement, B, C, []} || {B,C}<-Zips],
+    {xmlelement, Name, Attrs, FilteredEls}.
 
 %% User sends a directed presence packet
 presence_track(From, To, Packet, StateData) ->
