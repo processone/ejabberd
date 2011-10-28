@@ -127,7 +127,6 @@ start(Host) ->
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, reg_users_counter)}]),
     update_reg_users_counter_table(Host),
-    maybe_alert_password_scrammed_without_option(HostB),
     ok.
 
 stop(_Host) ->
@@ -146,13 +145,13 @@ update_reg_users_counter_table(Server) ->
 %% @spec () -> bool()
 
 plain_password_required() ->
-    case is_scrammed(?MYNAME) of
+    case is_option_scram(?MYNAME) of
 	false -> false;
 	true -> true
     end.
 
 store_type() ->
-    case is_scrammed(?MYNAME) of
+    case is_option_scram(?MYNAME) of
 	false -> plain; %% allows: PLAIN DIGEST-MD5 SCRAM
 	true -> scram %% allows: PLAIN SCRAM
     end.
@@ -232,7 +231,7 @@ set_password(User, Server, Password) ->
 	US ->
 	    %% TODO: why is this a transaction?
 	    F = fun() ->
-			Passwd = case is_scrammed(LServer) and (Password /= "") of
+			Passwd = case is_option_scram(LServer) and (Password /= "") of
 					true -> password_to_scram(Password, #passwd{user_host=US});
 					false -> #passwd{user_host = US, password = Password}
 				    end,
@@ -259,7 +258,7 @@ try_register(User, Server, Password) ->
 	    F = fun() ->
 			case gen_storage:read(LServer, {passwd, US}) of
 			    [] ->
-				Passwd = case is_scrammed(LServer) and (Password /= "") of
+				Passwd = case is_option_scram(LServer) and (Password /= "") of
 						true -> password_to_scram(Password, #passwd{user_host=US});
 						false -> #passwd{user_host = US, password = Password}
 					    end,
@@ -536,23 +535,18 @@ remove_user(User, Server, Password) ->
 
 %% The passwords are stored scrammed in the table either if the option says so,
 %% or if at least the first password is empty.
-is_scrammed(Host) ->
-    case action_password_format(Host) of
-	scram -> true;
-	must_scram -> true;
-	plain -> false;
-	forced_scram -> true
-    end.
 
-action_password_format(HostB) ->
-    OptionScram = is_option_scram(),
-    case {OptionScram, get_format_first_element(HostB)} of
+action_password_format(Host) ->
+    OptionScram = is_option_scram(Host),
+    case {OptionScram, get_format_first_element(Host)} of
 	{true, scram} -> scram;
 	{true, any} -> scram;
 	{true, plain} -> must_scram;
 	{false, plain} -> plain;
 	{false, any} -> plain;
-	{false, scram} -> forced_scram
+	{false, scram} ->
+	    set_option_password_format(scram),
+	    forced_scram
     end.
 
 get_format_first_element(HostB) ->
@@ -562,44 +556,40 @@ get_format_first_element(HostB) ->
 	[#passwd{} | _] -> plain
     end.
 
-is_option_scram() ->
-    scram == ejabberd_config:get_local_option({auth_password_format, ?MYNAME}).
+is_option_scram(Host) when is_list(Host) ->
+    scram == ejabberd_config:get_local_option({auth_password_format, Host}).
 
-maybe_alert_password_scrammed_without_option(Host) ->
-    case is_scrammed(Host) andalso not is_option_scram() of
-	true ->
-	    ?ERROR_MSG("Some passwords were stored in the database as SCRAM, "
-		       "but 'auth_password_format' is not configured 'scram'. "
-		       "The option will now be considered to be 'scram'.", []);
-	false ->
-	    ok
-    end.
+set_option_password_format(Value) ->
+    ?ERROR_MSG("Some passwords are stored in the database as SCRAM bits, "
+	       "but the option 'auth_password_format' is not configured 'scram'. "
+	       "The option will now be considered to be 'scram'.", []),
+    ejabberd_config:add_local_option({auth_password_format, ?MYNAME}, Value).
 
-maybe_scram_passwords(Host) ->
-    case action_password_format(Host) of
-	must_scram -> scram_passwords(Host);
+maybe_scram_passwords(HostB) ->
+    case action_password_format(binary_to_list(HostB)) of
+	must_scram -> scram_passwords(HostB);
 	_ -> ok
     end.
 
-scram_passwords(Host) ->
+scram_passwords(HostB) ->
     Backend =
-        case ejabberd_config:get_local_option({auth_storage, Host}) of
+        case ejabberd_config:get_local_option({auth_storage, binary_to_list(HostB)}) of
             undefined -> mnesia;
             B -> B
         end,
-    scram_passwords(Host, Backend).
-scram_passwords(Host, mnesia) ->
-    ?INFO_MSG("Converting the passwords stored in mnesia for host ~p into SCRAM bits", [Host]),
+    scram_passwords(HostB, Backend).
+scram_passwords(HostB, mnesia) ->
+    ?INFO_MSG("Converting the passwords stored in mnesia for host ~p into SCRAM bits", [HostB]),
     gen_storage_migration:migrate_mnesia(
-      Host, passwd,
+      HostB, passwd,
       [{passwd, [user_host, password, storedkey, serverkey, salt, iterationcount],
 	fun(#passwd{password = Password} = Passwd) ->
 		password_to_scram(Password, Passwd)
 	end}]);
-scram_passwords(Host, odbc) ->
-    ?INFO_MSG("Converting the passwords stored in odbc for host ~p into SCRAM bits", [Host]),
+scram_passwords(HostB, odbc) ->
+    ?INFO_MSG("Converting the passwords stored in odbc for host ~p into SCRAM bits", [HostB]),
     gen_storage_migration:migrate_odbc(
-      Host, [passwd],
+      HostB, [passwd],
       [{"passwd", ["user", "host", "password", "storedkey", "serverkey", "salt", "iterationcount"],
 	fun(_, User, Host2, Password, _Storedkey, _Serverkey, _Iterationcount, _Salt) ->
 		password_to_scram(Password, #passwd{user_host = {User, Host2}})
