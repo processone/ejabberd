@@ -1785,10 +1785,10 @@ presence_update(From, Packet, StateData) ->
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
+	    NewStateData = StateData#state{pres_last = Packet,
+                                           pres_invis = false,
+                                           pres_timestamp = Timestamp},
 	    NewState =
-                NewStateData = StateData#state{pres_last = Packet,
-                                               pres_invis = false,
-                                               pres_timestamp = Timestamp},
 		if
 		    FromUnavail ->
 			ejabberd_hooks:run(user_available_hook,
