@@ -210,7 +210,7 @@ commands() ->
 	     		desc = "Clean messages from the short-term MUC storage",
 			module = ?MODULE, function = moderate_room_history,
 			args = [{room, string}, {nick, string}],
-			result = {res, restuple}}
+			result = {res, restuple}},
      #ejabberd_commands{name = persist_recent_messages, tags = [server],
 	     		desc = "Force recent muc messages to be savd on DB",
 			module = ?MODULE, function = persist_recent_messages,
