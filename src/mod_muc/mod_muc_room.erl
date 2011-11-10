@@ -928,7 +928,7 @@ load_history(_Host, _Room, false, Queue) ->
 	Queue;
 load_history(Host, Room, true, Queue) ->
 	?INFO_MSG("Loading history for room ~s on host ~s", [Room, Host]),
-	case odbc_queries:load_and_clear_roomhistory(Host, ejabberd_odbc:escape(Room)) of
+	case odbc_queries:load_roomhistory(Host, ejabberd_odbc:escape(Room)) of
 		{selected, ["nick", "packet", "have_subject", "timestamp", "size"], Items} ->
 			?DEBUG("Found ~p messages on history for ~s", [length(Items), Room]),
 			lists:foldl(fun(I, Q) -> 

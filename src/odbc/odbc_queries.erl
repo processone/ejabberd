@@ -83,7 +83,7 @@
 	 set_roster_version/2,
  	 add_roomhistory_sql/6,
  	 clear_and_add_roomhistory/3,
- 	 load_and_clear_roomhistory/2]).
+ 	 load_roomhistory/2]).
 
 %% We have only two compile time options for db queries:
 %-define(generic, true).
@@ -272,12 +272,10 @@ clear_and_add_roomhistory(LServer, Room, Queries) ->
 	Q = ["delete from room_history where room = '", Room, "';"],
 	ejabberd_odbc:sql_transaction(LServer, [Q|Queries]).
 
-load_and_clear_roomhistory(LServer, Room) ->
+load_roomhistory(LServer, Room) ->
 	Q = ["select nick, packet, have_subject, timestamp, size from room_history where room = '", Room, 
 		"' order by timestamp ;"],
-	R = ejabberd_odbc:sql_query(LServer, Q),
-	ejabberd_odbc:sql_query(LServer, ["delete from room_history where room = '", Room, "';"]),
-	R.
+	ejabberd_odbc:sql_query(LServer, Q).
 
 
 add_spool_sql(Username, XML) ->
