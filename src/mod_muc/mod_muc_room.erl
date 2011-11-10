@@ -41,7 +41,8 @@
 	 start/2,
 	 migrate/3,
 	 route/4,
- 	moderate_room_history/2]).
+ 	moderate_room_history/2,
+        persist_recent_messages/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -116,6 +117,8 @@ migrate(FsmRef, Node, After) ->
 moderate_room_history(FsmRef, Nick) ->
 	?GEN_FSM:sync_send_all_state_event(FsmRef, {moderate_room_history, Nick}).
 
+persist_recent_messages(FsmRef) ->
+	?GEN_FSM:sync_send_all_state_event(FsmRef, persist_recent_messages).
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
@@ -752,6 +755,9 @@ handle_sync_event({moderate_room_history, Nick}, _From, StateName, #state{histor
 	Moderated = History#lqueue.len - NewHistory#lqueue.len,
 	{reply, {ok, integer_to_list(Moderated)}, StateName, StateData#state{history = NewHistory}};
 
+handle_sync_event(persist_recent_messages, _From, StateName, StateData) ->
+	{reply, persist_muc_history(StateData), StateName, StateData};
+
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
     Reply = get_roomdesc_reply(JID, StateData,
 			       get_roomdesc_tail(StateData, Lang)),
@@ -956,12 +962,13 @@ persist_muc_history(#state{room = Room, server_host = Server, config = #config{p
 						integer_to_list(calendar:datetime_to_gregorian_seconds(Timestamp)), 
 						integer_to_list(Size)) 
 		end, lqueue_to_list(Q)),
-	odbc_queries:clear_and_add_roomhistory(Server,ejabberd_odbc:escape(Room), Queries);
+	odbc_queries:clear_and_add_roomhistory(Server,ejabberd_odbc:escape(Room), Queries),
+	{ok, {persisted, length(Queries)}};
 	%% en mod_muc, cuando se levantan los muc persistentes, si se crea, y el flag persist_history esta en true,
 	%% se levantan los mensajes persistentes tb.
 
 persist_muc_history(_) ->
-	ok.
+	{ok, not_persistent}.
 
 route(Pid, From, ToNick, Packet) ->
     ?GEN_FSM:send_event(Pid, {route, From, ToNick, Packet}).

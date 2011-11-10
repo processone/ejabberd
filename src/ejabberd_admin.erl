@@ -49,7 +49,8 @@
 	 dump_to_textfile/1, dump_to_textfile/2,
 	 mnesia_change_nodename/4,
 	 restore/1, % Still used by some modules
-	 moderate_room_history/2
+	 moderate_room_history/2,
+	 persist_recent_messages/0
 	]).
 
 -include("ejabberd.hrl").
@@ -210,6 +211,11 @@ commands() ->
 			module = ?MODULE, function = moderate_room_history,
 			args = [{room, string}, {nick, string}],
 			result = {res, restuple}}
+     #ejabberd_commands{name = persist_recent_messages, tags = [server],
+	     		desc = "Force recent muc messages to be savd on DB",
+			module = ?MODULE, function = persist_recent_messages,
+			args = [],
+			result = {res, restuple}}
     ].
 
 %%%
@@ -225,8 +231,14 @@ moderate_room_history(Room, Nick) ->
 		_ ->
 			io_lib:format("Bad nodes: ~p", [BadNodes])
 	end,
-	{ok, io:format("Deleted: ~p ~s", [Res, B])}.
+	{ok, io_lib:format("Deleted: ~p ~s", [Res, B])}.
 
+persist_recent_messages() ->
+	Saved = [ {Host, mod_muc:persist_recent_messages(Host)} || Host <- ?MYHOSTS],
+	R = lists:map(fun({Host, {RoomsPersisted, Messages}}) -> 
+				io_lib:format("Host '~s' , ~p messages persisted in ~p rooms\n", [Host, Messages, RoomsPersisted])
+	       	end, Saved),
+	{ok,io_lib:format("~s", [R])}.
 
 %%%
 %%% Server management

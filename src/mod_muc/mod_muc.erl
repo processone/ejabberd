@@ -48,7 +48,8 @@
 	 get_vh_rooms/1,
          is_broadcasted/1,
 	 can_use_nick/3,
- 	 moderate_room_history/2]).
+ 	 moderate_room_history/2,
+ 	 persist_recent_messages/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -114,6 +115,18 @@ shutdown_rooms(Host) ->
     [Pid ! 'shutdown' || Pid <- Rooms],
     Rooms.
 
+%% Returns {RoomsPersisted, MessagesPersisted}
+persist_recent_messages(Host) ->
+    MyHost = gen_mod:get_module_opt_host(Host, mod_muc, "conference.@HOST@"),
+    Rooms = mnesia:dirty_select(muc_online_room,
+			[{#muc_online_room{name_host = '$1', pid = '$2'},
+			  [{'==', {element, 2, '$1'}, MyHost}],
+			  ['$2']}]),
+  lists:foldl(fun(Pid, {NRooms, Messages}) ->
+			  case mod_muc_room:persist_recent_messages(Pid) of
+				  {ok, {persisted, N}} -> {NRooms +1, Messages +N};
+				  {ok, not_persistent} -> {NRooms, Messages}
+			  end end, {0, 0}, Rooms).
 
 moderate_room_history(RoomStr, Nick) ->
 	Room = jlib:string_to_jid(RoomStr),
