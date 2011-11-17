@@ -10,57 +10,5 @@ ct() ->
         {config, [?CT_CONFIG]},
         {dir, ?CT_DIR},
         {logdir, ?CT_REPORT}
-
-        %,{suite, "snmp_table_SUITE"}
-        %,{suite, "snmp_session_SUITE"}
-        %,{suite, "snmp_c2s_SUITE"}
-        %{group, [session]},
-        %{testcase, [auth_failed]}
-        
-        %{suite, "login_SUITE"},
-        %{group, [login]},
-        %{testcase, [log_one_basic_digest]}
-        %{group, [unregistered]}
-
-        %{suite, "presence_SUITE"},
-        %{group, [presence]}
-        %{group, [roster]}
-        %{group, [subscribe]}
-
-        %{suite, "snmp_c2s_SUITE"}
-        %, {group, [errors]}
-        %, {testcase, [error_presence]}
-
-        ,{suite, "snmp_register_SUITE"}
-
-        %{suite, "privacy_SUITE"}
-        
-        %, {group, [management]}
-        %, {testcase, get_all_lists_with_active}
-        %, {testcase, get_all_lists_with_default}
-        %, {testcase, get_many_lists}
-        %, {testcase, get_existing_list}
-        %, {testcase, activate}
-
-        %, {group, [blocking]}
-        %, {testcase, block_jid_message}
-        %, {testcase, block_jid_all}
-
-        %{suite, "snmp_roster_SUITE"}
-        %, {group, [roster]}
-        %, {testcase, average_roster_size}
-        %, {testcase, average_roster_groups}
-
-        %{suite, "snmp_SUITE"}
-
-        %, {group, [mod_privacy]}
-        %, {testcase, modPrivacyGets}
-        %, {testcase, modPrivacySets}
-        %, {testcase, modPrivacySetsActive}
-        %, {testcase, modPrivacySetsDefault}
-        %, {testcase, modPrivacyStanzaBlocked}
-        %, {testcase, modPrivacyStanzaAll}
-        %, {testcase, modPrivacyPush}
-        %, {testcase, modPrivacyListLength}
     ]),
     init:stop(0).
