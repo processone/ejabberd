@@ -36,7 +36,7 @@ get_sessions(User, Server) ->
 
 -spec get_session(binary(), binary(), binary()) -> #session{}.
 get_session(User, Server, Resource) ->
-    mnesia:dirty_index_read(session, {User, Server, Resource}, #session.us).
+    mnesia:dirty_index_read(session, {User, Server, Resource}, #session.usr).
 
 -spec create_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
 create_session(User, Server, Resource, Session) ->
