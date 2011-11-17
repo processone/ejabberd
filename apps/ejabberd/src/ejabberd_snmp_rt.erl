@@ -10,7 +10,6 @@
 
 -behaviour(gen_server).
 
-
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
@@ -30,7 +29,7 @@
                    modRosterSize,
                    modRosterGroups,
                    modRegisterUserCount
-                  ]). 
+                  ]).
 
 -define(BACKEND, ejabberd_snmp_backend).
 
@@ -43,19 +42,16 @@
          terminate/2,
          code_change/3]).
 
-
 -record(state, {timer_ref_rt,      % ref to timer (ticks for rt counters)
                 timer_ref_w,       % ref to timer (ticks for window counters)
                 computing_num}).   % number of counters in computation
-
--record(session, {sid, usr, us, priority, info}).
 
 %%--------------------
 %% Implementation
 %%--------------------
 
 -spec start_link(true | false, integer(), integer()) -> {ok, pid()} | {error, term()}.
-start_link(RtEnabled, RtInterval, WInterval) ->                
+start_link(RtEnabled, RtInterval, WInterval) ->
     NewRtInterval = case {RtEnabled, RtInterval} of
                       {true, I} when I < ?MIN_INTERVAL ->
                           ?MIN_INTERVAL;
@@ -113,17 +109,17 @@ init([RtInterval, WInterval]) ->
 
 %%-------------------
 
-handle_call({change_interval_rt, _NewInterval}, _From, 
+handle_call({change_interval_rt, _NewInterval}, _From,
             #state{timer_ref_rt = none} = State) ->
     {reply, {error, disabled}, State};
 
-handle_call({change_interval_rt, NewInterval}, _From, 
+handle_call({change_interval_rt, NewInterval}, _From,
             #state{timer_ref_rt = TickRef} = State) ->
     timer:cancel(TickRef),
     {ok, NewTickRef} = start_timer(NewInterval, tick_rt),
     {reply, ok, State#state{timer_ref_rt = NewTickRef}};
 
-handle_call({change_interval_w, NewInterval}, _From, 
+handle_call({change_interval_w, NewInterval}, _From,
             #state{timer_ref_w = TickRef} = State) ->
     timer:cancel(TickRef),
     {ok, NewTickRef} = start_timer(NewInterval, tick_w),
@@ -135,38 +131,38 @@ handle_call(Request, _From, State) ->
 
 %%-------------------
 
-handle_cast({compute, globalSessionCount}, 
+handle_cast({compute, globalSessionCount},
             #state{computing_num = Num} = State) ->
     Count = ets:info(session, size),
     ejabberd_snmp_core:set_counter(globalSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
-handle_cast({compute, globalUniqueSessionCount}, 
+handle_cast({compute, globalUniqueSessionCount},
             #state{computing_num = Num} = State) ->
     ets:delete_all_objects(?MODULE),
     Count = compute_unique(ets:first(session)),
     ejabberd_snmp_core:set_counter(globalUniqueSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
-handle_cast({compute, modPrivacyListLength}, 
+handle_cast({compute, modPrivacyListLength},
             #state{computing_num = Num} = State) ->
     ejabberd_snmp_core:set_counter(modPrivacyListLength,
         ?BACKEND:privacy_list_length()),
     {noreply, State#state{computing_num = Num - 1}};
 
-handle_cast({compute, modRosterSize}, 
+handle_cast({compute, modRosterSize},
             #state{computing_num = Num} = State) ->
     ejabberd_snmp_core:set_counter(modRosterSize,
         ?BACKEND:roster_size()),
     {noreply, State#state{computing_num = Num - 1}};
 
-handle_cast({compute, modRosterGroups}, 
+handle_cast({compute, modRosterGroups},
             #state{computing_num = Num} = State) ->
     ejabberd_snmp_core:set_counter(modRosterGroups,
         ?BACKEND:roster_groups()),
     {noreply, State#state{computing_num = Num - 1}};
 
-handle_cast({compute, modRegisterUserCount}, 
+handle_cast({compute, modRegisterUserCount},
             #state{computing_num = Num} = State) ->
     ejabberd_snmp_core:set_counter(modRegisterUserCount,
         ?BACKEND:registered_count()),
