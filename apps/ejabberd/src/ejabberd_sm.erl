@@ -92,7 +92,7 @@ open_session(SID, User, Server, Resource, Info) ->
                        [SID, JID, Info]).
 
 close_session(SID, User, Server, Resource) ->
-    Info = case ?SM_BACKEND:get_session(User, Server, Resource) of
+    Info = case ?SM_BACKEND:get_sessions(User, Server, Resource) of
                [Session] ->
                    Session#session.info;
                _ ->
@@ -135,7 +135,7 @@ get_user_ip(User, Server, Resource) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
-    case ?SM_BACKEND:get_session(LUser, LServer, LResource) of
+    case ?SM_BACKEND:get_sessions(LUser, LServer, LResource) of
         [] ->
             undefined;
         Ss ->
@@ -147,7 +147,7 @@ get_user_info(User, Server, Resource) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
-    case ?SM_BACKEND:get_session(LUser, LServer, LResource) of
+    case ?SM_BACKEND:get_sessions(LUser, LServer, LResource) of
         [] ->
             offline;
         Ss ->
@@ -177,7 +177,7 @@ get_session_pid(User, Server, Resource) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
-    case ?SM_BACKEND:get_session(LUser, LServer, LResource) of
+    case ?SM_BACKEND:get_sessions(LUser, LServer, LResource) of
         [#session{sid = {_, Pid}}] ->
             Pid;
         _ ->
@@ -398,7 +398,7 @@ do_route(From, To, Packet) ->
                     ok
             end;
         _ ->
-            case ?SM_BACKEND:get_session(LUser, LServer, LResource) of
+            case ?SM_BACKEND:get_sessions(LUser, LServer, LResource) of
                 [] ->
                     case Name of
                         <<"message">> ->
@@ -469,7 +469,7 @@ route_message(From, To, Packet) ->
               %% positive
               fun({P, R}) when P == Priority ->
                       LResource = jlib:resourceprep(R),
-                      case ?SM_BACKEND:get_session(LUser, LServer, LResource) of
+                      case ?SM_BACKEND:get_sessions(LUser, LServer, LResource) of
                           [] ->
                               ok; % Race condition
                           Ss ->
@@ -556,7 +556,7 @@ check_for_sessions_to_replace(User, Server, Resource) ->
 
 check_existing_resources(LUser, LServer, LResource) ->
     %% A connection exist with the same resource. We replace it:
-    Sessions = ?SM_BACKEND:get_session(LUser, LServer, LResource),
+    Sessions = ?SM_BACKEND:get_sessions(LUser, LServer, LResource),
     SIDs = [S#session.sid || S <- Sessions],
     if
         SIDs == [] ->
