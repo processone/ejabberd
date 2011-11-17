@@ -135,9 +135,13 @@ get_user_ip(User, Server, Resource) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LResource = jlib:resourceprep(Resource),
-    Ss = ?SM_BACKEND:get_session(LUser, LServer, LResource),
-    Session = lists:max(Ss),
-    proplists:get_value(ip, Session#session.info).
+    case ?SM_BACKEND:get_session(LUser, LServer, LResource) of
+        [] ->
+            undefined;
+        Ss ->
+            Session = lists:max(Ss),
+            proplists:get_value(ip, Session#session.info)
+    end.
 
 get_user_info(User, Server, Resource) ->
     LUser = jlib:nodeprep(User),
