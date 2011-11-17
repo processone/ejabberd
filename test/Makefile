@@ -16,6 +16,7 @@ test: escalus/ebin
 		`pwd`/escalus/deps/exmpp/ebin -s run_common_test ct
 
 escalus/ebin:
+	(cd ../; git submodule init; git submodule update)
 	(cd escalus; make)
 
 console:

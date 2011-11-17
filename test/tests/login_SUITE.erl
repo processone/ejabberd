@@ -30,12 +30,12 @@ all() ->
      {group, messages}].
 
 groups() ->
-    [{register, [sequence], [register, 
+    [{register, [sequence], [register,
                              check_unregistered]},
-     {login, [sequence], [log_one, 
-                          log_one_digest, 
-                          log_one_basic_plain, 
-                          log_one_basic_digest]},
+     {login, [sequence], [log_one,
+                          log_one_digest]},
+%%                          log_one_basic_plain,
+%%                          log_one_basic_digest]},
      {messages, [sequence], [messages_story]}].
 
 suite() ->
@@ -87,27 +87,27 @@ register(Config) ->
     %%user should be registered in an init function
     [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
     [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
-    true = rpc:call('ejabberd@localhost', 
-             ejabberd_auth, 
-             is_user_exists, 
+    true = rpc:call('ejabberd@localhost',
+             ejabberd_auth,
+             is_user_exists,
              [Username, Server]).
 
 check_unregistered(Config) ->
     escalus:delete_users(Config),
     [{_, UserSpec}| _] = escalus_users:get_users(all),
     [Username, Server, _Pass] = escalus_config:get_usp(UserSpec),
-    false = rpc:call('ejabberd@localhost', 
-                     ejabberd_auth, 
-                     is_user_exists, 
+    false = rpc:call('ejabberd@localhost',
+                     ejabberd_auth,
+                     is_user_exists,
                      [Username, Server]).
 
 
 log_one(Config) ->
     escalus:story(Config, [1], fun(Alice) ->
-        
+
         escalus_client:send(Alice, escalus_stanza:chat_to(Alice, "Hi!")),
         escalus_assert:is_chat_message(["Hi!"], escalus_client:wait_for_stanza((Alice)))
-        
+
         end).
 
 log_one_digest(Config) ->

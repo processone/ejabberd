@@ -389,6 +389,8 @@ process_term(Term, State) ->
             add_option(listen, Listeners2, State);
         {language, Val} ->
             add_option(language, Val, State);
+        {sm_backend, Val} ->
+            add_option(sm_backend, Val, State);
         {outgoing_s2s_port, Port} ->
             add_option(outgoing_s2s_port, Port, State);
         {outgoing_s2s_options, Methods, Timeout} ->
@@ -473,6 +475,8 @@ add_option(Opt, Val, State) ->
                 hosts ->
                     config;
                 language ->
+                    config;
+                sm_backend ->
                     config;
                 _ ->
                     local_config
