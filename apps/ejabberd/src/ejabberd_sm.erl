@@ -92,11 +92,16 @@ open_session(SID, User, Server, Resource, Info) ->
                        [SID, JID, Info]).
 
 close_session(SID, User, Server, Resource) ->
+    Info = case ?SM_BACKEND:get_session(User, Server, Resource) of
+               [Session] ->
+                   Session#session.info;
+               _ ->
+                   []
+           end,
     ?SM_BACKEND:delete_session(SID, User, Server, Resource),
     JID = jlib:make_jid(User, Server, Resource),
-    %% FIXME: get Info field as a last hook param
     ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
-                       [SID, JID, []]).
+                       [SID, JID, Info]).
 
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     case ejabberd_auth:is_user_exists(User, Server) of
