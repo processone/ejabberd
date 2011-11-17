@@ -1,4 +1,4 @@
-.PHONY: rel deps test generate_snmp_header
+.PHONY: rel deps test show_test_results generate_snmp_header
 
 EJABBERD_DIR = apps/ejabberd
 EJD_INCLUDE = $(EJABBERD_DIR)/include
@@ -20,6 +20,9 @@ clean:
 
 test:   
 	(cd test; make)
+
+show_test_results:
+	$$BROWSER `ls -td test/ct_report/ct_run.test@*/index.html | head -n 1` & disown
 
 eunit:
 	./rebar skip_deps=true eunit
