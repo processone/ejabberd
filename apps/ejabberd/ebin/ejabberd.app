@@ -46,6 +46,7 @@
              ejabberd_piefxis,
              ejabberd_rdbms,
              ejabberd_receiver,
+             ejabberd_redis,
              ejabberd_router,
              ejabberd_s2s,
              ejabberd_s2s_in,
