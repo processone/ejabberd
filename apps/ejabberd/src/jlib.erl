@@ -307,14 +307,14 @@ tolower([]) ->
 %    [].
 
 
-nodeprep(S) when is_list(S) ->
-    case nodeprep(list_to_binary(S)) of
-        error ->
-            error;
-        Binary ->
-            binary_to_list(Binary)
-    end;
-nodeprep(S) when size(S) < 1024 ->
+%%nodeprep(S) when is_list(S) ->
+%%    case nodeprep(list_to_binary(S)) of
+%%        error ->
+%%            error;
+%%        Binary ->
+%%            binary_to_list(Binary)
+%%    end;
+nodeprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nodeprep(S),
     if
 	size(R) < 1024 -> R;
@@ -323,14 +323,14 @@ nodeprep(S) when size(S) < 1024 ->
 nodeprep(_) ->
     error.
 
-nameprep(S) when is_list(S) ->
-    case nameprep(list_to_binary(S)) of
-        error ->
-            error;
-        Binary ->
-            binary_to_list(Binary)
-    end;
-nameprep(S) when size(S) < 1024 ->
+%%nameprep(S) when is_list(S) ->
+%%    case nameprep(list_to_binary(S)) of
+%%        error ->
+%%            error;
+%%        Binary ->
+%%            binary_to_list(Binary)
+%%    end;
+nameprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nameprep(S),
     if
 	size(R) < 1024 -> R;
