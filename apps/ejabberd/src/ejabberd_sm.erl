@@ -64,7 +64,6 @@
 -include("ejabberd_commands.hrl").
 -include("mod_privacy.hrl").
 
--record(session, {sid, usr, us, priority, info}).
 -record(session_counter, {vhost, count}).
 -record(state, {}).
 

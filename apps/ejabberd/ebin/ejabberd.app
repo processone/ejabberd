@@ -51,6 +51,7 @@
              ejabberd_s2s_out,
              ejabberd_service,
              ejabberd_sm,
+             ejabberd_sm_mnesia,
              ejabberd_snmp_backend,
              ejabberd_snmp_core,
              ejabberd_snmp_hooks,

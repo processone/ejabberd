@@ -49,13 +49,18 @@
 
 -define(INFO_MSG(Format, Args),
     ejabberd_logger:info_msg(?MODULE,?LINE,Format, Args)).
-			      
+
 -define(WARNING_MSG(Format, Args),
     ejabberd_logger:warning_msg(?MODULE,?LINE,Format, Args)).
-			      
+
 -define(ERROR_MSG(Format, Args),
     ejabberd_logger:error_msg(?MODULE,?LINE,Format, Args)).
 
 -define(CRITICAL_MSG(Format, Args),
     ejabberd_logger:critical_msg(?MODULE,?LINE,Format, Args)).
 
+-record(session, {sid :: tuple(),
+                  usr :: {binary(), binary(), binary()},
+                  us :: {binary(), binary()},
+                  priority :: integer(),
+                  info :: list()}).
