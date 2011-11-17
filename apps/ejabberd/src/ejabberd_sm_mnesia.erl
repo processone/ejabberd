@@ -15,8 +15,8 @@
 -export([start/1,
          get_sessions/2,
          get_session/3,
-         set_session/4,
          create_session/4,
+         update_session/4,
          delete_session/4,
          cleanup/1,
          count/0]).
@@ -38,15 +38,15 @@ get_sessions(User, Server) ->
 get_session(User, Server, Resource) ->
     mnesia:dirty_index_read(session, {User, Server, Resource}, #session.us).
 
--spec set_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
-set_session(_User, _Server, _Resource, Session) ->
+-spec create_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
+create_session(User, Server, Resource, Session) ->
+    update_session(User, Server, Resource, Session).
+
+-spec update_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
+update_session(_User, _Server, _Resource, Session) ->
     mnesia:sync_dirty(fun() ->
                               mnesia:write(Session)
                       end).
-
--spec create_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
-create_session(User, Server, Resource, Session) ->
-    set_session(User, Server, Resource, Session).
 
 -spec delete_session(tuple(), binary(), binary(), binary()) -> ok.
 delete_session(SID, _User, _Server, _Resource) ->
