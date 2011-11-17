@@ -31,6 +31,7 @@
              ejabberd_config,
              ejabberd_ctl,
              ejabberd_frontend_socket,
+             ejabberd_gen_sm,
              ejabberd_hooks,
              ejabberd_http,
              ejabberd_http_bind,
