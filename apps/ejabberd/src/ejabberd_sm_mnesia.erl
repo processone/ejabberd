@@ -14,7 +14,7 @@
 
 -export([start/1,
          get_sessions/2,
-         get_session/3,
+         get_sessions/3,
          create_session/4,
          update_session/4,
          delete_session/4,
@@ -34,8 +34,8 @@ start(_Opts) ->
 get_sessions(User, Server) ->
     mnesia:dirty_index_read(session, {User, Server}, #session.us).
 
--spec get_session(binary(), binary(), binary()) -> list(#session{}).
-get_session(User, Server, Resource) ->
+-spec get_sessions(binary(), binary(), binary()) -> list(#session{}).
+get_sessions(User, Server, Resource) ->
     mnesia:dirty_index_read(session, {User, Server, Resource}, #session.usr).
 
 -spec create_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
