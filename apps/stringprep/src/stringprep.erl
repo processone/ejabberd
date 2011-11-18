@@ -109,12 +109,6 @@ nodeprep(Binary) ->
 resourceprep(Binary) ->
     control(?RESOURCEPREP_COMMAND, Binary).
 
-control(Command, String) when is_list(String) ->
-    case control(Command, list_to_binary(String)) of
-        Result when is_binary(Result) ->
-            binary_to_list(Result);
-        error -> error
-    end;
 control(Command, Binary) ->
     case port_control(?STRINGPREP_PORT, Command, Binary) of
         Result when is_binary(Result) ->

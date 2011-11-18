@@ -71,9 +71,6 @@
 
 -include("jlib.hrl").
 
-%send_iq(From, To, ID, SubTags) ->
-%    ok.
-
 make_result_iq_reply({xmlelement, Name, Attrs, SubTags}) ->
     NewAttrs = make_result_iq_reply_attrs(Attrs),
     {xmlelement, Name, NewAttrs, SubTags}.
@@ -85,13 +82,13 @@ make_result_iq_reply_attrs(Attrs) ->
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
 		 {value, ToVal} ->
-		      [{<<"from">>, binary_to_list(ToVal)} | Attrs2];
+                     [{<<"from">>, binary_to_list(ToVal)} | Attrs2];
 		 _ ->
 		     Attrs2
 	     end,
     Attrs4 = case From of
 		 {value, FromVal} ->
-		      [{<<"to">>, binary_to_list(FromVal)} | Attrs3];
+                     [{<<"to">>, binary_to_list(FromVal)} | Attrs3];
 		 _ ->
 		     Attrs3
 	     end,
@@ -116,13 +113,13 @@ make_error_reply_attrs(Attrs) ->
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
 		 {value, ToVal} ->
-		      [{<<"from">>, ToVal} | Attrs2];
+                     [{<<"from">>, ToVal} | Attrs2];
 		 _ ->
 		     Attrs2
 	     end,
     Attrs4 = case From of
 		 {value, FromVal} ->
-		      [{<<"to">>, FromVal} | Attrs3];
+                     [{<<"to">>, FromVal} | Attrs3];
 		 _ ->
 		     Attrs3
 	     end,
@@ -258,21 +255,10 @@ jid_to_binary({Node, Server, Resource}) ->
 	 end,
     S3.
 
-%% jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
-%%     list_to_binary(jid_to_binary({User, Server, Resource}));
-%% jid_to_binary({Node, Server, Resource}) ->
-%%     list_to_binary(jid_to_binary({Node, Server, Resource})).
-
 is_nodename([]) ->
     false;
 is_nodename(J) ->
     nodeprep(J) /= error.
-
-
-%tolower_c(C) when C >= $A, C =< $Z ->
-%    C + 32;
-%tolower_c(C) ->
-%    C.
 
 -define(LOWER(Char),
         if
@@ -282,13 +268,7 @@ is_nodename(J) ->
                 Char
         end).
 
-%tolower(S) ->
-%    lists:map(fun tolower_c/1, S).
-
-%tolower(S) ->
-%    [?LOWER(Char) || Char <- S].
-
-% Not tail-recursive but it seems works faster than variants above
+%% Not tail-recursive but it seems works faster than variants above
 tolower([C | Cs]) ->
     if
 	C >= $A, C =< $Z ->
@@ -299,22 +279,7 @@ tolower([C | Cs]) ->
 tolower([]) ->
     [].
 
-%tolower([C | Cs]) when C >= $A, C =< $Z ->
-%    [C + 32 | tolower(Cs)];
-%tolower([C | Cs]) ->
-%    [C | tolower(Cs)];
-%tolower([]) ->
-%    [].
-
-
-nodeprep(S) when is_list(S) ->
-    case nodeprep(list_to_binary(S)) of
-        error ->
-            error;
-        Binary ->
-            binary_to_list(Binary)
-    end;
-nodeprep(S) when size(S) < 1024 ->
+nodeprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nodeprep(S),
     if
 	size(R) < 1024 -> R;
@@ -323,14 +288,7 @@ nodeprep(S) when size(S) < 1024 ->
 nodeprep(_) ->
     error.
 
-nameprep(S) when is_list(S) ->
-    case nameprep(list_to_binary(S)) of
-        error ->
-            error;
-        Binary ->
-            binary_to_list(Binary)
-    end;
-nameprep(S) when size(S) < 1024 ->
+nameprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nameprep(S),
     if
 	size(R) < 1024 -> R;
@@ -395,8 +353,6 @@ get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == <<"iq">> ->
     end;
 get_iq_namespace(_) ->
     "".
-
-%% @spec (xmlelement()) -> iq() | reply | invalid | not_iq
 
 iq_query_info(El) ->
     iq_info_internal(El, request).
@@ -534,14 +490,14 @@ parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
 
 rsm_decode(#iq{sub_el=SubEl})->
-	rsm_decode(SubEl);
+    rsm_decode(SubEl);
 rsm_decode({xmlelement, _,_,_}=SubEl)->
-	case xml:get_subtag(SubEl,<<"set">>) of
-		false ->
-			none;
-		{xmlelement, <<"set">>, _Attrs, SubEls}->
-			lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
-	end.
+    case xml:get_subtag(SubEl,<<"set">>) of
+        false ->
+            none;
+        {xmlelement, <<"set">>, _Attrs, SubEls}->
+            lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
+    end.
 
 rsm_parse_element({xmlelement, <<"max">>,[], _}=Elem, RsmIn)->
     CountStr = xml:get_tag_cdata(Elem),
@@ -641,8 +597,8 @@ timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     {xmlelement, <<"x">>,
      [{<<"xmlns">>, ?NS_DELAY91},
       {<<"stamp">>, lists:flatten(
-		  io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
-				[Year, Month, Day, Hour, Minute, Second]))}],
+                      io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
+                                    [Year, Month, Day, Hour, Minute, Second]))}],
      []}.
 
 now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
@@ -656,20 +612,20 @@ now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
     LocalTime = calendar:now_to_local_time({MegaSecs, Secs, MicroSecs}),
     UTCTime = calendar:now_to_universal_time({MegaSecs, Secs, MicroSecs}),
     Seconds = calendar:datetime_to_gregorian_seconds(LocalTime) -
-            calendar:datetime_to_gregorian_seconds(UTCTime),
+        calendar:datetime_to_gregorian_seconds(UTCTime),
     {{H, M, _}, Sign} = if
 			    Seconds < 0 ->
 				{calendar:seconds_to_time(-Seconds), "-"};
 			    true ->
 				{calendar:seconds_to_time(Seconds), "+"}
-    end,
+                        end,
     {{Year, Month, Day}, {Hour, Minute, Second}} = LocalTime,
     lists:flatten(
       io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6..0w~s~2..0w:~2..0w",
 		    [Year, Month, Day, Hour, Minute, Second, MicroSecs, Sign, H, M])).
 
 
-% yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {MegaSecs, Secs, MicroSecs}
+%% yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {MegaSecs, Secs, MicroSecs}
 datetime_string_to_timestamp(TimeStr) ->
     case catch parse_datetime(TimeStr) of
 	{'EXIT', _Err} ->
@@ -687,7 +643,7 @@ parse_datetime(TimeStr) ->
     Seconds = (S - S1) - TZH * 60 * 60 - TZM * 60,
     {Seconds div 1000000, Seconds rem 1000000, MS}.
 
-% yyyy-mm-dd
+%% yyyy-mm-dd
 parse_date(Date) ->
     [Y, M, D] = string:tokens(Date, "-"),
     Date1 = {list_to_integer(Y), list_to_integer(M), list_to_integer(D)},
@@ -698,7 +654,7 @@ parse_date(Date) ->
 	    false
     end.
 
-% hh:mm:ss[.sss]TZD
+%% hh:mm:ss[.sss]TZD
 parse_time(Time) ->
     case string:str(Time, "Z") of
 	0 ->
@@ -750,24 +706,22 @@ parse_time1(Time) ->
     {[H1, M1, S1], true} = check_list([{H, 24}, {M, 60}, {S, 60}]),
     {{H1, M1, S1}, MS}.
 
- check_list(List) ->
+check_list(List) ->
     lists:mapfoldl(
       fun({L, N}, B)->
-	  V = list_to_integer(L),
-	  if
-	      (V >= 0) and (V =< N) ->
-		  {V, B};
-	      true ->
-		  {false, false}
-	  end
+              V = list_to_integer(L),
+              if
+                  (V >= 0) and (V =< N) ->
+                      {V, B};
+                  true ->
+                      {false, false}
+              end
       end, true, List).
 
 
-%
-% Base64 stuff (based on httpd_util.erl)
-%
-
-
+%%
+%% Base64 stuff (based on httpd_util.erl)
+%%
 decode_base64(S) when erlang:is_binary(S)->
     list_to_binary(decode_base64(binary_to_list(S)));
 decode_base64(S) ->

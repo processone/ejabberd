@@ -65,9 +65,10 @@ check_password(User, Server, Password) ->
 	LUser ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
+            PasswdStr = binary_to_list(Password),
 	    try odbc_queries:get_password(LServer, Username) of
-		{selected, ["password"], [{Password}]} ->
-		    Password /= ""; %% Password is correct, and not empty
+		{selected, ["password"], [{PasswdStr}]} ->	
+		    Password /= <<"">>; %% Password is correct, and not empty
 		{selected, ["password"], [{_Password2}]} ->
 		    false; %% Password is not correct
 		{selected, ["password"], []} ->
@@ -90,17 +91,18 @@ check_password(User, Server, Password, Digest, DigestGen) ->
 	    LServer = jlib:nameprep(Server),
 	    try odbc_queries:get_password(LServer, Username) of
 		%% Account exists, check if password is valid
+
 		{selected, ["password"], [{Passwd}]} ->
 		    DigRes = if
-				 Digest /= "" ->
-				     Digest == DigestGen(Passwd);
+				 Digest /= <<"">> ->
+				     Digest == DigestGen(list_to_binary(Passwd));
 				 true ->
 				     false
 			     end,
 		    if DigRes ->
 			    true;
 		       true ->
-			    (Passwd == Password) and (Password /= "")
+			    (list_to_binary(Passwd) == Password) and (Password /= <<"">>)
 		    end;
 		{selected, ["password"], []} ->
 		    false; %% Account does not exist
@@ -198,7 +200,7 @@ get_password(User, Server) ->
 	    LServer = jlib:nameprep(Server),
 	    case catch odbc_queries:get_password(LServer, Username) of
 		{selected, ["password"], [{Password}]} ->
-		    Password;
+		    list_to_binary(Password);
 		_ ->
 		    false
 	    end
@@ -207,15 +209,15 @@ get_password(User, Server) ->
 get_password_s(User, Server) ->
     case jlib:nodeprep(User) of
 	error ->
-	    "";
+	    <<"">>;
 	LUser ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
 	    case catch odbc_queries:get_password(LServer, Username) of
 		{selected, ["password"], [{Password}]} ->
-		    Password;
+		    list_to_binary(Password);
 		_ ->
-		    ""
+		    <<"">>
 	    end
     end.
 
@@ -251,7 +253,7 @@ remove_user(User, Server) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
 	    catch odbc_queries:del_user(LServer, Username),
-		ok
+            ok
     end.
 
 %% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
@@ -264,11 +266,12 @@ remove_user(User, Server, Password) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    Pass = ejabberd_odbc:escape(Password),
 	    LServer = jlib:nameprep(Server),
+            PasswdStr = binary_to_list(Password),
 	    F = fun() ->
 			Result = odbc_queries:del_user_return_password(
 				   LServer, Username, Pass),
 			case Result of
-			    {selected, ["password"], [{Password}]} ->
+			    {selected, ["password"], [{PasswdStr}]} ->
 				ok;
 			    {selected, ["password"], []} ->
 				not_exists;

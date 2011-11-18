@@ -284,7 +284,7 @@ get_password_s(User, Server) when is_list(User), is_list(Server) ->
 get_password_s(User, Server) ->
     case get_password(User, Server) of
 	false ->
-	    "";
+	    <<"">>;
 	Password ->
 	    Password
     end.
