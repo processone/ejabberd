@@ -83,8 +83,8 @@
 	 set_roster_version/2]).
 
 %% We have only two compile time options for db queries:
-%-define(generic, true).
-%-define(mssql, true).
+%%-define(generic, true).
+%%-define(mssql, true).
 -ifndef(mssql).
 -undef(generic).
 -define(generic, true).
@@ -216,8 +216,8 @@ list_users(LServer, [{limit, Limit}, {offset, Offset}]) when is_integer(Limit) a
       LServer,
       io_lib:format(
         "select username from users " ++
-        "order by username " ++
-        "limit ~w offset ~w", [Limit, Offset]));
+            "order by username " ++
+            "limit ~w offset ~w", [Limit, Offset]));
 list_users(LServer, [{prefix, Prefix},
                      {limit, Limit},
                      {offset, Offset}]) when is_list(Prefix) and
@@ -226,40 +226,40 @@ list_users(LServer, [{prefix, Prefix},
     ejabberd_odbc:sql_query(
       LServer,
       io_lib:format("select username from users " ++
-                    "where username like '~s%' " ++
-                    "order by username " ++
-                    "limit ~w offset ~w ", [Prefix, Limit, Offset])).
+                        "where username like '~s%' " ++
+                        "order by username " ++
+                        "limit ~w offset ~w ", [Prefix, Limit, Offset])).
 
 users_number(LServer) ->
     case element(1, ejabberd_config:get_local_option({odbc_server, LServer})) of
-    mysql ->
-	ejabberd_odbc:sql_query(
-	LServer,
-	"select table_rows from information_schema.tables where table_name='users'");
-    pgsql ->
-	case ejabberd_config:get_local_option({pgsql_users_number_estimate, LServer}) of
-	true ->
-	    ejabberd_odbc:sql_query(
-	    LServer,
-	    "select reltuples from pg_class where oid = 'users'::regclass::oid");
-	_ ->
-	    ejabberd_odbc:sql_query(
-	    LServer,
-	    "select count(*) from users")
-        end;
-    _ ->
-	ejabberd_odbc:sql_query(
-	LServer,
-	"select count(*) from users")
+        mysql ->
+            ejabberd_odbc:sql_query(
+              LServer,
+              "select table_rows from information_schema.tables where table_name='users'");
+        pgsql ->
+            case ejabberd_config:get_local_option({pgsql_users_number_estimate, LServer}) of
+                true ->
+                    ejabberd_odbc:sql_query(
+                      LServer,
+                      "select reltuples from pg_class where oid = 'users'::regclass::oid");
+                _ ->
+                    ejabberd_odbc:sql_query(
+                      LServer,
+                      "select count(*) from users")
+            end;
+        _ ->
+            ejabberd_odbc:sql_query(
+              LServer,
+              "select count(*) from users")
     end.
 
 users_number(LServer, [{prefix, Prefix}]) when is_list(Prefix) ->
     ejabberd_odbc:sql_query(
       LServer,
       io_lib:fwrite("select count(*) from users " ++
-                    %% Warning: Escape prefix at higher level to prevent SQL
-                    %%          injection.
-                    "where username like '~s%'", [Prefix]));
+                        %% Warning: Escape prefix at higher level to prevent SQL
+                        %%          injection.
+                        "where username like '~s%'", [Prefix]));
 users_number(LServer, []) ->
     users_number(LServer).
 
@@ -323,10 +323,10 @@ del_user_roster_t(LServer, Username) ->
 
 get_roster_by_jid(_LServer, Username, SJID) ->
     ejabberd_odbc:sql_query_t(
-    ["select username, jid, nick, subscription, "
-     "ask, askmessage, server, subscribe, type from rosterusers "
-     "where username='", Username, "' "
-     "and jid='", SJID, "';"]).
+      ["select username, jid, nick, subscription, "
+       "ask, askmessage, server, subscribe, type from rosterusers "
+       "where username='", Username, "' "
+       "and jid='", SJID, "';"]).
 
 get_rostergroup_by_jid(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
@@ -383,10 +383,10 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
      ["delete from rostergroups "
       "      where username='", Username, "' "
       "        and jid='", SJID, "';"]] ++
-     [["insert into rostergroups("
-       "              username, jid, grp) "
-       " values ('", join(ItemGroup, "', '"), "');"] ||
-	 ItemGroup <- ItemGroups].
+        [["insert into rostergroups("
+          "              username, jid, grp) "
+          " values ('", join(ItemGroup, "', '"), "');"] ||
+            ItemGroup <- ItemGroups].
 
 roster_subscribe(_LServer, Username, SJID, ItemVals) ->
     update_t("rosterusers",
@@ -410,18 +410,18 @@ set_private_data(_LServer, Username, LXMLNS, SData) ->
 
 set_private_data_sql(Username, LXMLNS, SData) ->
     [["delete from private_storage "
-       "where username='", Username, "' and "
-       "namespace='", LXMLNS, "';"],
-      ["insert into private_storage(username, namespace, data) "
-       "values ('", Username, "', '", LXMLNS, "', "
-       "'", SData, "');"]].
+      "where username='", Username, "' and "
+      "namespace='", LXMLNS, "';"],
+     ["insert into private_storage(username, namespace, data) "
+      "values ('", Username, "', '", LXMLNS, "', "
+      "'", SData, "');"]].
 
 get_private_data(LServer, Username, LXMLNS) ->
     ejabberd_odbc:sql_query(
-		 LServer,
-		 ["select data from private_storage "
-		  "where username='", Username, "' and "
-		  "namespace='", LXMLNS, "';"]).
+      LServer,
+      ["select data from private_storage "
+       "where username='", Username, "' and "
+       "namespace='", LXMLNS, "';"]).
 
 del_user_private_storage(LServer, Username) ->
     ejabberd_odbc:sql_query(
@@ -574,10 +574,10 @@ count_records_where(LServer, Table, WhereClause) ->
 
 
 get_roster_version(LServer, LUser) ->
-	ejabberd_odbc:sql_query(LServer,
-		["select version from roster_version where username = '", LUser, "'"]).
+    ejabberd_odbc:sql_query(LServer,
+                            ["select version from roster_version where username = '", LUser, "'"]).
 set_roster_version(LUser, Version) ->
-	update_t("roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
+    update_t("roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
 -endif.
 
 %% -----------------
@@ -592,10 +592,10 @@ sql_transaction(LServer, Queries) when is_list(Queries) ->
     %% SQL transaction based on a list of queries
     %% This function automatically
     F = fun() ->
-    	lists:foreach(fun(Query) ->
-    		ejabberd_odbc:sql_query(LServer, Query)
-    	end, Queries)
-      end,
+                lists:foreach(fun(Query) ->
+                                      ejabberd_odbc:sql_query(LServer, Query)
+                              end, Queries)
+        end,
     {atomic, catch F()};
 sql_transaction(_LServer, FQueries) ->
     {atomic, catch FQueries()}.
@@ -607,9 +607,9 @@ get_last(LServer, Username) ->
 
 set_last_t(LServer, Username, Seconds, State) ->
     Result = ejabberd_odbc:sql_query(
-		 LServer,
-		 ["EXECUTE dbo.set_last '", Username, "', '", Seconds,
-		  "', '", State, "'"]),
+               LServer,
+               ["EXECUTE dbo.set_last '", Username, "', '", Seconds,
+                "', '", State, "'"]),
     {atomic, Result}.
 
 del_last(LServer, Username) ->
@@ -624,8 +624,8 @@ get_password(LServer, Username) ->
 
 set_password_t(LServer, Username, Pass) ->
     Result = ejabberd_odbc:sql_query(
-      LServer,
-      ["EXECUTE dbo.set_password '", Username, "', '", Pass, "'"]),
+               LServer,
+               ["EXECUTE dbo.set_password '", Username, "', '", Pass, "'"]),
     {atomic, Result}.
 
 add_user(LServer, Username, Pass) ->
@@ -650,16 +650,16 @@ list_users(LServer) ->
       "EXECUTE dbo.list_users").
 
 list_users(LServer, _) ->
-    % scope listing not supported
+    %% scope listing not supported
     list_users(LServer).
 
 users_number(LServer) ->
-	ejabberd_odbc:sql_query(
-	      LServer,
-	      "select count(*) from users with (nolock)").
+    ejabberd_odbc:sql_query(
+      LServer,
+      "select count(*) from users with (nolock)").
 
 users_number(LServer, _) ->
-    % scope listing not supported
+    %% scope listing not supported
     users_number(LServer).
 
 add_spool_sql(Username, XML) ->
@@ -673,15 +673,15 @@ add_spool(LServer, Queries) ->
 
 get_and_del_spool_msg_t(LServer, Username) ->
     [Result] = case ejabberd_odbc:sql_query(
-		    LServer,
-		    ["EXECUTE dbo.get_and_del_spool_msg '", Username, "'"]) of
+                      LServer,
+                      ["EXECUTE dbo.get_and_del_spool_msg '", Username, "'"]) of
 		   Rs when is_list(Rs) ->
-		     lists:filter(fun({selected, _Header, _Row}) ->
-					  true;
-				     ({updated, _N}) ->
-					  false
-				  end,
-				  Rs);
+                       lists:filter(fun({selected, _Header, _Row}) ->
+                                            true;
+                                       ({updated, _N}) ->
+                                            false
+                                    end,
+                                    Rs);
 		   Rs -> [Rs]
 	       end,
     {atomic, Result}.
@@ -708,8 +708,8 @@ get_roster_groups(LServer, Username, SJID) ->
 
 del_user_roster_t(LServer, Username) ->
     Result = ejabberd_odbc:sql_query(
-		      LServer,
-		      ["EXECUTE dbo.del_user_roster '", Username, "'"]),
+               LServer,
+               ["EXECUTE dbo.del_user_roster '", Username, "'"]),
     {atomic, Result}.
 
 get_roster_by_jid(LServer, Username, SJID) ->
@@ -765,21 +765,21 @@ get_subscription(LServer, Username, SJID) ->
 
 set_private_data(LServer, Username, LXMLNS, SData) ->
     ejabberd_odbc:sql_query(
-	    LServer,
-	    set_private_data_sql(Username, LXMLNS, SData)).
+      LServer,
+      set_private_data_sql(Username, LXMLNS, SData)).
 
 set_private_data_sql(Username, LXMLNS, SData) ->
     ["EXECUTE dbo.set_private_data '", Username, "' , '", LXMLNS, "' , '", SData, "'"].
 
 get_private_data(LServer, Username, LXMLNS) ->
     ejabberd_odbc:sql_query(
-        LServer,
-        ["EXECUTE dbo.get_private_data '", Username, "' , '", LXMLNS, "'"]).
+      LServer,
+      ["EXECUTE dbo.get_private_data '", Username, "' , '", LXMLNS, "'"]).
 
 del_user_private_storage(LServer, Username) ->
     ejabberd_odbc:sql_query(
-        LServer,
-        ["EXECUTE dbo.del_user_storage '", Username, "'"]).
+      LServer,
+      ["EXECUTE dbo.del_user_storage '", Username, "'"]).
 
 set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
 	  SLBDay, SLCTRY, SLEMail, SLFN, SLFamily, SLGiven, SLLocality,
@@ -860,11 +860,11 @@ set_privacy_list(ID, RItems) ->
 
     lists:foreach(fun(Items) ->
 			  ejabberd_odbc:sql_query_t(
-				["EXECUTE dbo.set_privacy_list '", ID, "', '", join(Items, "', '"), "'"])
+                            ["EXECUTE dbo.set_privacy_list '", ID, "', '", join(Items, "', '"), "'"])
 		  end, RItems).
 
 del_privacy_lists(LServer, Server, Username) ->
-	ejabberd_odbc:sql_query(
+    ejabberd_odbc:sql_query(
       LServer,
       ["EXECUTE dbo.del_privacy_lists @Server='", Server ,"' @username='", Username, "'"]).
 
