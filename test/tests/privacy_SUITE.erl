@@ -38,7 +38,8 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, management}, {group, blocking}].
+    [{group, management},
+     {group, blocking}].
 
 groups() ->
     [{management, [sequence], [get_all_lists,
@@ -70,7 +71,7 @@ groups() ->
                              block_jid_iq,
 
                              block_jid_all,
-                         
+
                              block_jid_message_but_not_presence]}].
 
 suite() ->
@@ -167,9 +168,7 @@ get_all_lists_with_active(Config) ->
         escalus_client:send(Alice, escalus_stanza:privacy_get_all(Alice)),
         Response = escalus_client:wait_for_stanza(Alice),
         escalus_assert:is_privacy_query_result_with_active(
-            Response, ListName)
-        %, escalus_utils:log_stanzas("Response", [Response])
-
+          ListName, Response)
         end).
 
 get_all_lists_with_default() -> [{require, alice_deny_bob},
@@ -611,7 +610,7 @@ block_jid_iq(Config) ->
         PrivacyList = {Name, _} =
             config_list(alice_deny_localhost_iq, Config),
         ToyList = ?config(alice_deny_bob, Config),
-        
+
         set_list(Alice, PrivacyList),
         %% activate it
         escalus_client:send(Alice,
@@ -728,9 +727,9 @@ block_jid_message_but_not_presence(Config) ->
 %%-----------------------------------------------------------------
 
 add_sample_contact(Who, Whom, Groups, Nick) ->
-    escalus_client:send(Who, 
-                        escalus_stanza:roster_add_contact(Whom, 
-                                                          Groups, 
+    escalus_client:send(Who,
+                        escalus_stanza:roster_add_contact(Whom,
+                                                          Groups,
                                                           Nick)),
     Received = escalus_client:wait_for_stanza(Who),
     escalus_assert:is_roster_result_set(Received),

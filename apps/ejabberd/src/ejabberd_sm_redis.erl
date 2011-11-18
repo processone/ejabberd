@@ -22,8 +22,8 @@
          count/0]).
 
 -spec start(list()) -> any().
-start(_Opts) ->
-    ejabberd_redis:start_link([]).
+start(Opts) ->
+    ejabberd_redis:start_link(Opts).
 
 -spec get_sessions(binary(), binary()) -> list(#session{}).
 get_sessions(User, Server) ->
