@@ -140,7 +140,7 @@ handle_cast({compute, globalSessionCount},
 handle_cast({compute, globalUniqueSessionCount},
             #state{computing_num = Num} = State) ->
     ets:delete_all_objects(?MODULE),
-    Count = compute_unique(ets:first(session)),
+    Count = compute_unique(),
     ejabberd_snmp_core:set_counter(globalUniqueSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
@@ -212,13 +212,6 @@ code_change(_OldVsn, State, _Extra) ->
 start_timer(Interval, Type) ->
     timer:send_interval(Interval*1000, self(), Type).
 
-compute_unique('$end_of_table') ->
-    ets:info(?MODULE, size);
-compute_unique(Key) ->
-    case ets:lookup(session, Key) of
-        [#session{usr = {User, Server, _}}] ->
-            ets:insert(?MODULE, {list_to_binary([User, Server])});
-        _ ->
-            ok
-    end,
-    compute_unique(ets:next(session, Key)).
+compute_unique() ->
+    {Counts, _} = rpc:multicall(supervisor, count_children, [ejabberd_c2s_sup]),
+    lists:sum([proplists:get_value(active, Count, 0) || Count <- Counts]).

@@ -47,26 +47,36 @@ create_session(User, Server, Resource, Session) ->
 
 -spec update_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
 update_session(User, Server, Resource, Session) ->
-    ejabberd_redis:cmd(["SADD", n(node()), hash(User, Server)]),
+    ejabberd_redis:cmd(["SADD", n(node()), hash(User, Server, Resource)]),
     ejabberd_redis:cmd(["HSET", hash(User, Server), Resource, term_to_binary(Session)]).
 
 -spec delete_session(tuple(), binary(), binary(), binary()) -> ok.
 delete_session(_SID, User, Server, Resource) ->
-    ejabberd_redis:cmd(["HDEL", hash(User, Server), Resource]).
+    ejabberd_redis:cmd(["HDEL", hash(User, Server), Resource]),
+    ejabberd_redis:cmd(["SREM", n(node()), hash(User, Server, Resource)]).
 
--spec cleanup(atom()) -> any().
+-spec cleanup(atom()) -> ok.
 cleanup(Node) ->
     Hashes = ejabberd_redis:cmd(["SMEMBERS", n(Node)]),
     ejabberd_redis:cmd(["DEL", n(Node)]),
-    [ejabberd_redis:cmd(["DEL", H]) || H <- Hashes].
+    lists:foreach(fun(H) ->
+                          [_, U, S, R] = re:split(H, ":"),
+                          ejabberd_redis:cmd(["HDEL", hash(U, S), R])
+                  end, Hashes).
 
 -spec count() -> integer().
 count() ->
     length(ejabberd_redis:cmd(["KEYS", "s:*"])).
 
 %% Internal functions
+-spec hash(binary(), binary()) -> iolist().
 hash(Val1, Val2) ->
     ["s:", Val1, ":", Val2].
 
+-spec hash(binary(), binary(), binary()) -> iolist().
+hash(Val1, Val2, Val3) ->
+    ["s:", Val1, ":", Val2, ":", Val3].
+
+-spec n(atom()) -> iolist().
 n(Node) ->
     ["n:", atom_to_list(Node)].
