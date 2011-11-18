@@ -71,9 +71,6 @@
 
 -include("jlib.hrl").
 
-%%send_iq(From, To, ID, SubTags) ->
-%%    ok.
-
 make_result_iq_reply({xmlelement, Name, Attrs, SubTags}) ->
     NewAttrs = make_result_iq_reply_attrs(Attrs),
     {xmlelement, Name, NewAttrs, SubTags}.
@@ -258,21 +255,10 @@ jid_to_binary({Node, Server, Resource}) ->
 	 end,
     S3.
 
-%% jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
-%%     list_to_binary(jid_to_binary({User, Server, Resource}));
-%% jid_to_binary({Node, Server, Resource}) ->
-%%     list_to_binary(jid_to_binary({Node, Server, Resource})).
-
 is_nodename([]) ->
     false;
 is_nodename(J) ->
     nodeprep(J) /= error.
-
-
-%%tolower_c(C) when C >= $A, C =< $Z ->
-%%    C + 32;
-%%tolower_c(C) ->
-%%    C.
 
 -define(LOWER(Char),
         if
@@ -281,12 +267,6 @@ is_nodename(J) ->
             true ->
                 Char
         end).
-
-%%tolower(S) ->
-%%    lists:map(fun tolower_c/1, S).
-
-%%tolower(S) ->
-%%    [?LOWER(Char) || Char <- S].
 
 %% Not tail-recursive but it seems works faster than variants above
 tolower([C | Cs]) ->
@@ -299,20 +279,6 @@ tolower([C | Cs]) ->
 tolower([]) ->
     [].
 
-%%tolower([C | Cs]) when C >= $A, C =< $Z ->
-%%    [C + 32 | tolower(Cs)];
-%%tolower([C | Cs]) ->
-%%    [C | tolower(Cs)];
-%%tolower([]) ->
-%%    [].
-
-%%nodeprep(S) when is_list(S) ->
-%%    case nodeprep(list_to_binary(S)) of
-%%        error ->
-%%            error;
-%%        Binary ->
-%%            binary_to_list(Binary)
-%%    end;
 nodeprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nodeprep(S),
     if
@@ -322,13 +288,6 @@ nodeprep(S) when is_binary(S), size(S) < 1024 ->
 nodeprep(_) ->
     error.
 
-%%nameprep(S) when is_list(S) ->
-%%    case nameprep(list_to_binary(S)) of
-%%        error ->
-%%            error;
-%%        Binary ->
-%%            binary_to_list(Binary)
-%%    end;
 nameprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nameprep(S),
     if
@@ -394,8 +353,6 @@ get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == <<"iq">> ->
     end;
 get_iq_namespace(_) ->
     "".
-
-%% @spec (xmlelement()) -> iq() | reply | invalid | not_iq
 
 iq_query_info(El) ->
     iq_info_internal(El, request).
