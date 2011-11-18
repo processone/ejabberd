@@ -253,7 +253,7 @@ remove_user(User, Server) ->
 	    Username = ejabberd_odbc:escape(LUser),
 	    LServer = jlib:nameprep(Server),
 	    catch odbc_queries:del_user(LServer, Username),
-		ok
+            ok
     end.
 
 %% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
