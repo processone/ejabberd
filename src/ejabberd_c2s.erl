@@ -45,6 +45,7 @@
 	 del_aux_field/2,
 	 get_subscription/2,
 	 broadcast/4,
+   get_broadcast_recipients/3,
 	 get_subscribed/1]).
 
 %% gen_fsm callbacks
@@ -266,6 +267,15 @@ init([{SockMod, Socket}, Opts]) ->
 %% Return list of all available resources of contacts,
 get_subscribed(FsmRef) ->
     ?GEN_FSM:sync_send_all_state_event(FsmRef, get_subscribed, 1000).
+
+get_broadcast_recipients(_From, _StateName, StateData) ->
+    Subscribed = StateData#state.pres_f,
+    OnlineList = ejabberd_sm:dirty_get_sessions_list(),
+    Online = ?SETS:from_list(OnlineList),
+    OnlineWithoutResource = ?SETS:from_list(lists:map(fun(El) -> jlib:jid_remove_resource(El) end, OnlineList)),
+    Pred = fun(User) -> ?SETS:is_element(User, Online) orelse ?SETS:is_element(User, OnlineWithoutResource) end,
+    SubscribedAndOnline = ?SETS:filter(Pred, Subscribed),
+    ?SETS:to_list(SubscribedAndOnline).
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -1442,11 +1452,8 @@ handle_info({force_update_presence, LUser}, StateName,
 		StateData
 	end,
     {next_state, StateName, NewStateData};
-handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
-    Recipients = ejabberd_hooks:run_fold(
-		   c2s_broadcast_recipients, StateData#state.server,
-		   [],
-		   [StateData, Type, From, Packet]),
+handle_info({broadcast, _Type, From, Packet}, StateName, StateData) ->
+    Recipients = get_broadcast_recipients(From, StateName, StateData),
     lists:foreach(
       fun(USR) ->
 	      ejabberd_router:route(
