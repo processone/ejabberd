@@ -180,8 +180,8 @@ handle_cast(Request, State) ->
 handle_info(tick_rt, #state{computing_num = 0} = State) ->
     Num = lists:foldl(fun(Counter, Res) ->
                               gen_server:cast(?MODULE, {compute, Counter}),
-                              Res +1
-                      end, 0,  ?COUNTERS),
+                              Res + 1
+                      end, 0, ?COUNTERS),
     {noreply, State#state{computing_num = Num}};
 
 handle_info(tick_rt, State) ->
@@ -214,4 +214,4 @@ start_timer(Interval, Type) ->
 
 compute_unique() ->
     {Counts, _} = rpc:multicall(supervisor, count_children, [ejabberd_c2s_sup]),
-    lists:sum([proplists:get_value(active, Count, 0) || Count <- Counts]).
+    lists:sum([proplists:get_value(active, Count, 0) || Count <- Counts, is_list(Count)]).

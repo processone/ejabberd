@@ -46,7 +46,7 @@
 all() ->
     [{group, general},
      {group, mod_privacy}].
-     
+
 groups() ->
     [{general, [sequence], [generalUptime,
                             generalNodeName]},
@@ -87,8 +87,8 @@ end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
 init_per_testcase(modPrivacyListLength, Config) ->
-    escalus_ejabberd:rpc(gen_server, call,
-        [ejabberd_snmp_rt, {change_interval_rt, 1}]),
+    ok = escalus_ejabberd:rpc(gen_server, call,
+            [ejabberd_snmp_rt, {change_interval_rt, 1}]),
     %% rest is the same; fallthrough is not a test name,
     %% I just want to call the generic clause
     init_per_testcase(fallthrough, Config);
@@ -97,8 +97,8 @@ init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
 end_per_testcase(modPrivacyListLength, Config) ->
-    escalus_ejabberd:rpc(gen_server, call,
-        [ejabberd_snmp_rt, {change_interval_rt, 60}]),
+    ok = escalus_ejabberd:rpc(gen_server, call,
+           [ejabberd_snmp_rt, {change_interval_rt, 60}]),
     end_per_testcase(fallthrough, Config);
 end_per_testcase(CaseName, Config) ->
     escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
@@ -109,16 +109,16 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 
 generalUptime(_Config) ->
-    T_Measured = erlang:round(element(1,escalus_ejabberd:rpc(
-                                          erlang, statistics, 
-                                          [wall_clock])) / 1000),
-    {value, T_Counter} = get_counter_value(generalUptime),
-    true = (T_Counter - T_Measured) =< 1.
-            
+    TMeasured = erlang:round(element(1,escalus_ejabberd:rpc(
+                                         erlang, statistics,
+                                         [wall_clock])) / 1000),
+    {value, TCounter} = get_counter_value(generalUptime),
+    true = (TCounter - TMeasured) =< 1.
+
 generalNodeName(_Config) ->
     assert_counter(atom_to_list(escalus_ejabberd:rpc(erlang, node, [])),
                    generalNodeName).
-    
+
 
 %% Privacy
 

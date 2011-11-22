@@ -28,7 +28,7 @@ eunit:
 	./rebar skip_deps=true eunit
 
 rel: deps
-	./rebar compile generate
+	./rebar generate -f
 
 generate_snmp_header: apps/ejabberd/include/EJABBERD-MIB.hrl
 
