@@ -39,6 +39,8 @@
          set_presence/7,
          unset_presence/6,
          close_session_unset_presence/5,
+         get_unique_sessions_number/0,
+         get_total_sessions_number/0,
          get_vh_session_number/1,
          register_iq_handler/4,
          register_iq_handler/5,
@@ -184,8 +186,16 @@ get_session_pid(User, Server, Resource) ->
             none
     end.
 
+-spec get_unique_sessions_number() -> integer().
+get_unique_sessions_number() ->
+    ?SM_BACKEND:unique_count().
+
+-spec get_total_sessions_number() -> integer().
+get_total_sessions_number() ->
+    ?SM_BACKEND:total_count().
+
 get_vh_session_number(_Server) ->
-    ?SM_BACKEND:count().
+    get_total_sessions_number().
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.

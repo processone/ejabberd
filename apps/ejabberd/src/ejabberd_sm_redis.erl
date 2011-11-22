@@ -19,7 +19,8 @@
          update_session/4,
          delete_session/4,
          cleanup/1,
-         count/0]).
+         total_count/0,
+         unique_count/0]).
 
 -spec start(list()) -> any().
 start(Opts) ->
@@ -64,8 +65,13 @@ cleanup(Node) ->
                           ejabberd_redis:cmd(["HDEL", hash(U, S), R])
                   end, Hashes).
 
--spec count() -> integer().
-count() ->
+-spec total_count() -> integer().
+total_count() ->
+    {Counts, _} = rpc:multicall(supervisor, count_children, [ejabberd_c2s_sup]),
+    lists:sum([proplists:get_value(active, Count, 0) || Count <- Counts, is_list(Count)]).
+
+-spec unique_count() -> integer().
+unique_count() ->
     length(ejabberd_redis:cmd(["KEYS", "s:*"])).
 
 %% Internal functions

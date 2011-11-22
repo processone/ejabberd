@@ -91,10 +91,7 @@ stop() ->
 %%----------------------
 %% Callbacks
 %%----------------------
-
-
 init([RtInterval, WInterval]) ->
-    ets:new(?MODULE, [public, named_table]),
     TickRefRt = case RtInterval of
                     undefined ->
                         none;
@@ -133,14 +130,13 @@ handle_call(Request, _From, State) ->
 
 handle_cast({compute, globalSessionCount},
             #state{computing_num = Num} = State) ->
-    Count = ets:info(session, size),
+    Count = ejabberd_sm:get_total_sessions_number(),
     ejabberd_snmp_core:set_counter(globalSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
 handle_cast({compute, globalUniqueSessionCount},
             #state{computing_num = Num} = State) ->
-    ets:delete_all_objects(?MODULE),
-    Count = compute_unique(),
+    Count = ejabberd_sm:get_unique_sessions_number(),
     ejabberd_snmp_core:set_counter(globalUniqueSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
@@ -208,10 +204,5 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------
 %% Helpers
 %%--------------------
-
 start_timer(Interval, Type) ->
     timer:send_interval(Interval*1000, self(), Type).
-
-compute_unique() ->
-    {Counts, _} = rpc:multicall(supervisor, count_children, [ejabberd_c2s_sup]),
-    lists:sum([proplists:get_value(active, Count, 0) || Count <- Counts, is_list(Count)]).

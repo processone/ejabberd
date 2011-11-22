@@ -19,7 +19,8 @@
          update_session/4,
          delete_session/4,
          cleanup/1,
-         count/0]).
+         total_count/0,
+         unique_count/0]).
 
 -spec start(list()) -> any().
 start(_Opts) ->
@@ -69,6 +70,23 @@ cleanup(Node) ->
         end,
     mnesia:async_dirty(F).
 
--spec count() -> integer().
-count() ->
+-spec total_count() -> integer().
+total_count() ->
     mnesia:table_info(session, size).
+
+-spec unique_count() -> integer().
+unique_count() ->
+    compute_unique(mnesia:dirty_first(session),
+                   sets:new()).
+
+-spec compute_unique(term(), dict()) -> integer().
+compute_unique('$end_of_table', Set) ->
+    sets:size(Set);
+compute_unique(Key, Set) ->
+    NewSet = case mnesia:dirty_read(session, Key) of
+                 [Session] ->
+                     sets:add_element(Session#session.us, Set);
+                 _ ->
+                     Set
+             end,
+    compute_unique(mnesia:dirty_next(session, Key), NewSet).

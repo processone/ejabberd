@@ -11,6 +11,7 @@ behaviour_info(callbacks) ->
      {update_session, 4},
      {delete_session, 4},
      {cleanup, 1},
-     {count, 0}];
+     {total_count, 0},
+     {unique_count, 0}];
 behaviour_info(_Other) ->
     undefined.
