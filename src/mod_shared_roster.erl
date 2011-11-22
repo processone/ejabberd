@@ -614,8 +614,8 @@ is_user_in_group(US, Group, Host) ->
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
 add_user_to_group(Host, US, Group) ->
     {LUser, LServer} = US,
-    case regexp:match(LUser, "^@.+@$") of
-	{match,_,_} ->
+    case ejabberd_regexp:run(LUser, "^@.+@$") of
+	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	    MoreGroupOpts =
 		case LUser of
@@ -647,8 +647,8 @@ push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
 remove_user_from_group(Host, US, Group) ->
     GroupHost = {Group, Host},
     {LUser, LServer} = US,
-    case regexp:match(LUser, "^@.+@$") of
-	{match,_,_} ->
+    case ejabberd_regexp:run(LUser, "^@.+@$") of
+	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	    NewGroupOpts =
 		case LUser of
@@ -967,7 +967,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	end ++
 	[[us_to_list(Member), $\n] || Member <- Members],
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
-    DescNL = length(element(2, regexp:split(Description, "\n"))),
+    DescNL = length(ejabberd_regexp:split(Description, "\n")),
     FGroup =
 	?XAE("table", [{"class", "withtextareas"}],
 	     [?XE("tbody",

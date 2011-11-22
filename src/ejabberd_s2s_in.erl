@@ -823,11 +823,11 @@ match_labels([DL | DLabels], [PL | PLabels]) ->
 				 orelse (C == $-) orelse (C == $*)
 		   end, PL) of
 	true ->
-	    Regexp = regexp:sh_to_awk(PL),
-	    case regexp:match(DL, Regexp) of
-		{match, _, _} ->
+	    Regexp = ejabberd_regexp:sh_to_awk(PL),
+	    case ejabberd_regexp:run(DL, Regexp) of
+		match ->
 		    match_labels(DLabels, PLabels);
-		_ ->
+		nomatch ->
 		    false
 	    end;
 	false ->
