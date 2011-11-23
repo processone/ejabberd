@@ -153,7 +153,6 @@ parse_options_xform(XFields) ->
 create_table() ->
     case mnesia:create_table(pubsub_subscription,
 			     [{disc_copies, [node()]},
-			      {local_content, true},
 			      {attributes, record_info(fields, pubsub_subscription)},
 			      {type, set}]) of
 	{atomic, ok}		   -> ok;
