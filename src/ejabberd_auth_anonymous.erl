@@ -47,6 +47,8 @@
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
+	 get_vh_registered_users_number/1,
+	 get_vh_registered_users_number/2,
 	 get_password/2,
 	 get_password/3,
 	 is_user_exists/2,
@@ -126,30 +128,36 @@ allow_multiple_connections(Host) ->
 
 %% Check if user exist in the anonymus database
 anonymous_user_exist(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    Ss = case ejabberd_cluster:get_node(US) of
-             Node when Node == node() ->
-                 catch mnesia:dirty_read({anonymous, US});
-             Node ->
-                 catch rpc:call(Node, mnesia, dirty_read,
-                                [{anonymous, US}], 5000)
-         end,
-    case Ss of
-	[_H|_T] ->
-	    true;
-	_ ->
-	    false
-    end.
+%    LUser = jlib:nodeprep(User),
+%    LServer = jlib:nameprep(Server),
+%    US = {LUser, LServer},
+%    Ss = case ejabberd_cluster:get_node(US) of
+%             Node when Node == node() ->
+%                 catch mnesia:dirty_read({anonymous, US});
+%             Node ->
+%                 catch rpc:call(Node, mnesia, dirty_read,
+%                                [{anonymous, US}], 5000)
+%         end,
+%    case Ss of
+%	[_H|_T] ->
+%	    true;
+%	_ ->
+%	    false
+%    end.
+	%% We hardcode this value for the BBC case, because they are using SASL anonymous: the way
+	%% cyrsasl_anonymous.erl generate username makes collision not possible in normal cases.
+	false.
 
 %% Remove connection from Mnesia tables
 remove_connection(SID, LUser, LServer) ->
-    US = {LUser, LServer},
-    F = fun() ->
-		mnesia:delete_object({anonymous, US, SID})
-        end,
-    mnesia:async_dirty(F).
+%    US = {LUser, LServer},
+%    F = fun() ->
+%		mnesia:delete_object({anonymous, US, SID})
+%        end,
+%    mnesia:async_dirty(F).
+	%% We do not use anonymous table for the BBC case, because they are using SASL anonymous: the way
+	%% cyrsasl_anonymous.erl generate username makes collision not possible in normal cases.
+    ok.
 
 %% Register connection
 register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
@@ -157,17 +165,21 @@ register_connection(SID, #jid{luser = LUser, lserver = LServer}, Info) ->
     case AuthModule == ?MODULE of
 	true ->
 	    ejabberd_hooks:run(register_user, LServer, [LUser, LServer]),
-	    US = {LUser, LServer},
-	    mnesia:async_dirty(
-	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
-	      end);
+%	    US = {LUser, LServer},
+%	    mnesia:async_dirty(
+%	      fun() -> mnesia:write(#anonymous{us = US, sid=SID})
+%	      end);
+		%% We do not use anonymous table for the BBC case, because they are using SASL anonymous: the way
+		%% cyrsasl_anonymous.erl generate username makes collision not possible in normal cases.
+	    ok;
 	false ->
 	    ok
     end.
 
 %% Remove an anonymous user from the anonymous users table
 unregister_connection(SID, #jid{luser = LUser, lserver = LServer}, _) ->
-    purge_hook(anonymous_user_exist(LUser, LServer),
+    %% We consider for BBC case that user always exist if not registered (We force to true to always call the purge hook)
+    purge_hook(not bbc:registered(LUser),
 	       LUser, LServer),
     remove_connection(SID, LUser, LServer).
 
@@ -192,13 +204,10 @@ check_password(User, Server, Password) ->
 check_password(User, Server, _Password, _Digest, _DigestGen) ->
     %% We refuse login for registered accounts (They cannot logged but
     %% they however are "reserved")
-    case ejabberd_auth:is_user_exists_in_other_modules(?MODULE,
-						       User, Server) of
-	%% If user exists in other module, reject anonnymous authentication
-	true  -> false;
-	%% If we are not sure whether the user exists in other module, reject anon auth
-	maybe  -> false;
-	false -> login(User, Server)
+    case bbc:registered(User) of
+		%% We reject anonnymous authentication for reserved users
+		true -> false;
+    	false -> login(User, Server)
     end.
 
 login(User, Server) ->
@@ -236,6 +245,14 @@ dirty_get_registered_users() ->
 get_vh_registered_users(Server) ->
     [{U, S} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(Server)].
 
+%% this module never had any registered user. 
+%% Note that this is not consistent with get_vh_registered_users/1,
+%% that function was modified to improve shared roster support, check commit
+%% 0874b93e7ca589b51d0250cd7ec511c4b394beb6
+get_vh_registered_users_number(_Server) ->
+	0.
+get_vh_registered_users_number(_Server, _Opts) ->
+	0.
 
 %% Return password of permanent user or false for anonymous users
 get_password(User, Server) ->

@@ -44,7 +44,7 @@
 
 -module(mod_pubsub_odbc).
 -author('christophe.romain@process-one.net').
--version('1.13-0').
+-version('1.13-p1pp').
 
 -behaviour(gen_server).
 -behaviour(gen_mod).
@@ -183,7 +183,7 @@ init([ServerHost, Opts]) ->
     ets:new(gen_mod:get_module_proc(Host, config), [set, named_table]),
     ets:new(gen_mod:get_module_proc(ServerHost, config), [set, named_table]),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
-    mnesia:create_table(pubsub_last_item, [{ram_copies, [node()]}, {attributes, record_info(fields, pubsub_last_item)}]),
+    mnesia:create_table(pubsub_last_item, [{ram_copies, [node()]}, {local_content, true}, {attributes, record_info(fields, pubsub_last_item)}]),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     ets:insert(gen_mod:get_module_proc(Host, config), {nodetree, NodeTree}),
     ets:insert(gen_mod:get_module_proc(Host, config), {plugins, Plugins}),
@@ -200,7 +200,7 @@ init([ServerHost, Opts]) ->
     ejabberd_hooks:add(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
     ejabberd_hooks:add(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
     ejabberd_hooks:add(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
-    ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 80),
+    % ejabberd_hooks:add(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 80), %% BBC don't need last item at connection
     ejabberd_hooks:add(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
     ejabberd_hooks:add(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost, ?MODULE, remove_user, 50),
@@ -624,24 +624,11 @@ unsubscribe_user(Entity, Owner) ->
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    Entity = jlib:make_jid(LUser, LServer, ""),
-    Host = host(LServer),
-    HomeTreeBase = string_to_node("/home/"++LServer++"/"++LUser),
-    spawn(fun() ->
-	lists:foreach(fun(PType) ->
-	    {result, Subscriptions} = node_action(Host, PType, get_entity_subscriptions, [Host, Entity]),
-	    lists:foreach(fun
-		({#pubsub_node{id = NodeId}, _, _, JID}) -> node_action(Host, PType, unsubscribe_node, [NodeId, Entity, JID, all])
-	    end, Subscriptions),
-	    {result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Entity]),
-	    lists:foreach(fun
-		({#pubsub_node{nodeid = {H, N}, parents = []}, owner}) -> delete_node(H, N, Entity);
-		({#pubsub_node{nodeid = {H, N}, type = "hometree"}, owner}) when N == HomeTreeBase -> delete_node(H, N, Entity);
-		({#pubsub_node{id = NodeId}, publisher}) -> node_action(Host, PType, set_affiliation, [NodeId, Entity, none]);
-		(_) -> ok
-	    end, Affiliations)
-	end, plugins(Host))
-    end).
+    % BBC special optimization, no check, just bare unsubscribe
+    %% dirty_delete_object expect the object to be complete,
+    %% http://stackoverflow.com/questions/650348/mnesia-delete-object-exception
+    Objs = mnesia:dirty_match_object(#pubsub_state{stateid = {{LUser, LServer, '_'}, '_'}, _ = '_'}),
+    [mnesia:dirty_delete_object(Obj) || Obj <- Objs].
 
 %%--------------------------------------------------------------------
 %% Function:
@@ -722,7 +709,7 @@ terminate(_Reason, #state{host = Host,
     ejabberd_hooks:delete(disco_local_identity, ServerHost, ?MODULE, disco_local_identity, 75),
     ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE, disco_local_features, 75),
     ejabberd_hooks:delete(disco_local_items, ServerHost, ?MODULE, disco_local_items, 75),
-    ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 80),
+    %ejabberd_hooks:delete(presence_probe_hook, ServerHost, ?MODULE, presence_probe, 80), %% BBC don't need last item at connection
     ejabberd_hooks:delete(roster_in_subscription, ServerHost, ?MODULE, in_subscription, 50),
     ejabberd_hooks:delete(roster_out_subscription, ServerHost, ?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
@@ -1057,7 +1044,12 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		{set, "publish"} ->
 		    case xml:remove_cdata(Els) of
 			[{xmlelement, "item", ItemAttrs, Payload}] ->
-			    ItemId = xml:get_attr_s("id", ItemAttrs),
+			    ItemId = case xml:get_attr_s("id", ItemAttrs) of
+				    "" -> uniqid();
+				    Value -> Value
+				end,
+			    %% BBC special optimization, multicast publish call
+				[rpc:cast(N, ?MODULE, publish_item, [Host, ServerHost, Node, From, ItemId, Payload]) || N <- ejabberd_cluster:get_nodes(), N /= node()],
 			    publish_item(Host, ServerHost, Node, From, ItemId, Payload);
 			[] ->
 			    %% Publisher attempts to publish to persistent node with no item
@@ -1077,6 +1069,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		    case xml:remove_cdata(Els) of
 			[{xmlelement, "item", ItemAttrs, _}] ->
 			    ItemId = xml:get_attr_s("id", ItemAttrs),
+			    [rpc:cast(N, ?MODULE, delete_item, [Host, Node, From, ItemId]) || N <- nodes(), N /= node()],
 			    delete_item(Host, Node, From, ItemId, ForceNotify);
 			_ ->
 			    %% Request does not specify an item

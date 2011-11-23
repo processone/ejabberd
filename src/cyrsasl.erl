@@ -116,7 +116,7 @@ listmech(Host) ->
 			      []
 			 end,
 			 ['$1']}]),
-    filter_anonymous(Host, Mechs).
+    filter_anonymous(Host, lists:sort(Mechs)).
 
 server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 	   GetPassword, CheckPassword, CheckPasswordDigest) ->
