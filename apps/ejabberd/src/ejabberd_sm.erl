@@ -39,6 +39,8 @@
          set_presence/7,
          unset_presence/6,
          close_session_unset_presence/5,
+         get_unique_sessions_number/0,
+         get_total_sessions_number/0,
          get_vh_session_number/1,
          register_iq_handler/4,
          register_iq_handler/5,
@@ -184,8 +186,16 @@ get_session_pid(User, Server, Resource) ->
             none
     end.
 
+-spec get_unique_sessions_number() -> integer().
+get_unique_sessions_number() ->
+    ?SM_BACKEND:unique_count().
+
+-spec get_total_sessions_number() -> integer().
+get_total_sessions_number() ->
+    ?SM_BACKEND:total_count().
+
 get_vh_session_number(_Server) ->
-    ?SM_BACKEND:count().
+    get_total_sessions_number().
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
@@ -327,102 +337,77 @@ set_session(SID, User, Server, Resource, Priority, Info) ->
 do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
-    #jid{user = User, server = Server,
-         luser = LUser, lserver = LServer, lresource = LResource} = To,
+    #jid{ luser = LUser, lserver = LServer, lresource = LResource} = To,
     {xmlelement, Name, Attrs, _Els} = Packet,
     case LResource of
         <<>> ->
-            case Name of
-                <<"presence">> ->
-                    {Pass, _Subsc} =
-                        case xml:get_attr_s(<<"type">>, Attrs) of
-                            <<"subscribe">> ->
-                                Reason = xml:get_path_s(
-                                           Packet,
-                                           [{elem, <<"status">>}, cdata]),
-                                {is_privacy_allow(From, To, Packet) andalso
-                                 ejabberd_hooks:run_fold(
-                                   roster_in_subscription,
-                                   LServer,
-                                   false,
-                                   [User, Server, From, subscribe, Reason]),
-                                 true};
-                            <<"subscribed">> ->
-                                {is_privacy_allow(From, To, Packet) andalso
-                                 ejabberd_hooks:run_fold(
-                                   roster_in_subscription,
-                                   LServer,
-                                   false,
-                                   [User, Server, From, subscribed, <<>>]),
-                                 true};
-                            <<"unsubscribe">> ->
-                                {is_privacy_allow(From, To, Packet) andalso
-                                 ejabberd_hooks:run_fold(
-                                   roster_in_subscription,
-                                   LServer,
-                                   false,
-                                   [User, Server, From, unsubscribe, <<>>]),
-                                 true};
-                            <<"unsubscribed">> ->
-                                {is_privacy_allow(From, To, Packet) andalso
-                                 ejabberd_hooks:run_fold(
-                                   roster_in_subscription,
-                                   LServer,
-                                   false,
-                                   [User, Server, From, unsubscribed, <<>>]),
-                                 true};
-                            _ ->
-                                {true, false}
-                        end,
-                    if Pass ->
-                            PResources = get_user_present_resources(
-                                           LUser, LServer),
-                            lists:foreach(
-                              fun({_, R}) ->
-                                      do_route(
-                                        From,
-                                        jlib:jid_replace_resource(To, R),
-                                        Packet)
-                              end, PResources);
-                       true ->
-                            ok
-                    end;
-                <<"message">> ->
-                    route_message(From, To, Packet);
-                <<"iq">> ->
-                    process_iq(From, To, Packet);
-                <<"broadcast">> ->
-                    ejabberd_hooks:run(sm_broadcast, LServer, [From, To, Packet]),
-                    broadcast_packet(From, To, Packet);
-                _ ->
-                    ok
-            end;
+            do_route_no_resource(Name, xml:get_attr_s(<<"type">>, Attrs),
+                                 From, To, Packet);
         _ ->
             case ?SM_BACKEND:get_sessions(LUser, LServer, LResource) of
                 [] ->
-                    case Name of
-                        <<"message">> ->
-                            route_message(From, To, Packet);
-                        <<"iq">> ->
-                            case xml:get_attr_s(<<"type">>, Attrs) of
-                                <<"error">> -> ok;
-                                <<"result">> -> ok;
-                                _ ->
-                                    Err =
-                                        jlib:make_error_reply(
-                                          Packet, ?ERR_SERVICE_UNAVAILABLE),
-                                    ejabberd_router:route(To, From, Err)
-                            end;
-                        _ ->
-                            ?DEBUG("packet droped~n", [])
-                    end;
+                    do_route_offline(Name, xml:get_attr_s(<<"type">>, Attrs),
+                                     From, To, Packet);
                 Ss ->
                     Session = lists:max(Ss),
                     Pid = element(2, Session#session.sid),
                     ?DEBUG("sending to process ~p~n", [Pid]),
                     Pid ! {route, From, To, Packet}
-            end
+	    end
     end.
+
+do_route_no_resource_presence_prv(From,To,Packet,Type,Reason) ->
+	is_privacy_allow(From, To, Packet) andalso ejabberd_hooks:run_fold(
+	   roster_in_subscription,
+	   To#jid.lserver,
+	   false,
+	   [To#jid.user, To#jid.server, From, Type, Reason]).
+
+-spec do_route_no_resource_presence(binary(), #jid{}, #jid{}, tuple()) -> any().
+do_route_no_resource_presence(<<"subscribe">>, From, To, Packet) ->
+	Reason = xml:get_path_s(Packet, [{elem, <<"status">>}, cdata]),
+	do_route_no_resource_presence_prv(From, To, Packet, subscribe, Reason);
+do_route_no_resource_presence(<<"subscribed">>, From, To, Packet) ->
+	do_route_no_resource_presence_prv(From, To, Packet, subscribed, <<>>);
+do_route_no_resource_presence(<<"unsubscribe">>, From, To, Packet) ->
+	do_route_no_resource_presence_prv(From, To, Packet, unsubscribe, <<>>);
+do_route_no_resource_presence(<<"unsubscribed">>, From, To, Packet) ->
+	do_route_no_resource_presence_prv(From, To, Packet, unsubscribed, <<>>);
+do_route_no_resource_presence(_, _, _, _) ->
+	true.
+
+do_route_no_resource(<<"presence">>, Type, From, To, Packet) ->
+	case do_route_no_resource_presence(Type, From, To, Packet) of
+	    true ->
+            PResources = get_user_present_resources(To#jid.luser, To#jid.lserver),
+		    lists:foreach(
+		      fun({_, R}) ->
+                      do_route(From, jlib:jid_replace_resource(To, R), Packet)
+		      end, PResources);
+        false ->
+            ok
+	end;
+do_route_no_resource(<<"message">>, _, From, To, Packet) ->
+	route_message(From, To, Packet);
+do_route_no_resource(<<"iq">>, _, From, To, Packet) ->
+	process_iq(From, To, Packet);
+do_route_no_resource(<<"broadcast">>, _, From, To, Packet) ->
+	ejabberd_hooks:run(sm_broadcast, To#jid.lserver, [From, To, Packet]),
+	broadcast_packet(From, To, Packet);
+do_route_no_resource(_, _, _, _, _) ->
+	ok.
+
+do_route_offline(<<"message">>, _, From, To, Packet)  ->
+	route_message(From, To, Packet);
+do_route_offline(<<"iq">>, <<"error">>, _From, _To, _Packet) ->
+	ok;
+do_route_offline(<<"iq">>, <<"result">>, _From, _To, _Packet) ->
+	ok;
+do_route_offline(<<"iq">>, _, From, To, Packet) ->
+	Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
+	ejabberd_router:route(To, From, Err);
+do_route_offline(_, _, _, _, _) ->
+	?DEBUG("packet droped~n", []).
 
 broadcast_packet(From, To, Packet) ->
     #jid{user = User, server = Server} = To,
@@ -452,11 +437,8 @@ is_privacy_allow(From, To, Packet, PrivacyList) ->
     allow == ejabberd_hooks:run_fold(
                privacy_check_packet, Server,
                allow,
-               [User,
-                Server,
-                PrivacyList,
-                {From, To, Packet},
-                in]).
+               [User, Server, PrivacyList,
+                {From, To, Packet}, in]).
 
 route_message(From, To, Packet) ->
     LUser = To#jid.luser,

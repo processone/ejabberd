@@ -20,7 +20,7 @@ start_link(Opts) ->
     ChildMods = [redo, redo_redis_proto, redo_uri],
     ChildMFA = {redo, start_link, [undefined, RedoOpts]},
 
-    supervisor:start_child(ejabberd_sup,
+    supervisor:start_child(ejabberd_sm_backend_sup,
                            {ejabberd_redis_sup,
                             {cuesport, start_link,
                              [?POOL_NAME, PoolSize, ChildMods, ChildMFA]},

@@ -191,12 +191,20 @@ init([]) ->
          infinity,
          supervisor,
          [cache_tab_sup]},
+    SMBackendSupervisor =
+        {ejabberd_sm_backend_sup,
+         {ejabberd_sm_backend_sup, start_link, []},
+         permanent,
+         infinity,
+         supervisor,
+         [ejabberd_sm_backend_sup]},
 
     {ok, {{one_for_one, 10, 1},
           [Randoms,
            Hooks,
            NodeGroups,
            SystemMonitor,
+           SMBackendSupervisor,
            Router,
            SM,
            S2S,
@@ -214,5 +222,3 @@ init([]) ->
            FrontendSocketSupervisor,
            CacheTabSupervisor,
            Listener]}}.
-
-

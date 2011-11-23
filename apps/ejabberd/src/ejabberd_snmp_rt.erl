@@ -91,10 +91,7 @@ stop() ->
 %%----------------------
 %% Callbacks
 %%----------------------
-
-
 init([RtInterval, WInterval]) ->
-    ets:new(?MODULE, [public, named_table]),
     TickRefRt = case RtInterval of
                     undefined ->
                         none;
@@ -133,14 +130,13 @@ handle_call(Request, _From, State) ->
 
 handle_cast({compute, globalSessionCount},
             #state{computing_num = Num} = State) ->
-    Count = ets:info(session, size),
+    Count = ejabberd_sm:get_total_sessions_number(),
     ejabberd_snmp_core:set_counter(globalSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
 handle_cast({compute, globalUniqueSessionCount},
             #state{computing_num = Num} = State) ->
-    ets:delete_all_objects(?MODULE),
-    Count = compute_unique(ets:first(session)),
+    Count = ejabberd_sm:get_unique_sessions_number(),
     ejabberd_snmp_core:set_counter(globalUniqueSessionCount, Count),
     {noreply, State#state{computing_num = Num - 1}};
 
@@ -180,8 +176,8 @@ handle_cast(Request, State) ->
 handle_info(tick_rt, #state{computing_num = 0} = State) ->
     Num = lists:foldl(fun(Counter, Res) ->
                               gen_server:cast(?MODULE, {compute, Counter}),
-                              Res +1
-                      end, 0,  ?COUNTERS),
+                              Res + 1
+                      end, 0, ?COUNTERS),
     {noreply, State#state{computing_num = Num}};
 
 handle_info(tick_rt, State) ->
@@ -208,17 +204,5 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------
 %% Helpers
 %%--------------------
-
 start_timer(Interval, Type) ->
     timer:send_interval(Interval*1000, self(), Type).
-
-compute_unique('$end_of_table') ->
-    ets:info(?MODULE, size);
-compute_unique(Key) ->
-    case ets:lookup(session, Key) of
-        [#session{usr = {User, Server, _}}] ->
-            ets:insert(?MODULE, {list_to_binary([User, Server])});
-        _ ->
-            ok
-    end,
-    compute_unique(ets:next(session, Key)).

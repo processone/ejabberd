@@ -16,10 +16,10 @@
          get_sessions/2,
          get_sessions/3,
          create_session/4,
-         update_session/4,
          delete_session/4,
          cleanup/1,
-         count/0]).
+         total_count/0,
+         unique_count/0]).
 
 -spec start(list()) -> any().
 start(_Opts) ->
@@ -39,11 +39,7 @@ get_sessions(User, Server, Resource) ->
     mnesia:dirty_index_read(session, {User, Server, Resource}, #session.usr).
 
 -spec create_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
-create_session(User, Server, Resource, Session) ->
-    update_session(User, Server, Resource, Session).
-
--spec update_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
-update_session(_User, _Server, _Resource, Session) ->
+create_session(_User, _Server, _Resource, Session) ->
     mnesia:sync_dirty(fun() ->
                               mnesia:write(Session)
                       end).
@@ -69,6 +65,23 @@ cleanup(Node) ->
         end,
     mnesia:async_dirty(F).
 
--spec count() -> integer().
-count() ->
+-spec total_count() -> integer().
+total_count() ->
     mnesia:table_info(session, size).
+
+-spec unique_count() -> integer().
+unique_count() ->
+    compute_unique(mnesia:dirty_first(session),
+                   sets:new()).
+
+-spec compute_unique(term(), dict()) -> integer().
+compute_unique('$end_of_table', Set) ->
+    sets:size(Set);
+compute_unique(Key, Set) ->
+    NewSet = case mnesia:dirty_read(session, Key) of
+                 [Session] ->
+                     sets:add_element(Session#session.us, Set);
+                 _ ->
+                     Set
+             end,
+    compute_unique(mnesia:dirty_next(session, Key), NewSet).

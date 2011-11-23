@@ -8,9 +8,9 @@ behaviour_info(callbacks) ->
      {get_sessions, 2},
      {get_sessions, 3},
      {create_session, 4},
-     {update_session, 4},
      {delete_session, 4},
      {cleanup, 1},
-     {count, 0}];
+     {total_count, 0},
+     {unique_count, 0}];
 behaviour_info(_Other) ->
     undefined.
