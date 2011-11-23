@@ -16,7 +16,6 @@
          get_sessions/2,
          get_sessions/3,
          create_session/4,
-         update_session/4,
          delete_session/4,
          cleanup/1,
          total_count/0,
@@ -28,41 +27,60 @@ start(Opts) ->
 
 -spec get_sessions(binary(), binary()) -> list(#session{}).
 get_sessions(User, Server) ->
-    Sessions = ejabberd_redis:cmd(["HVALS", hash(User, Server)]),
+    Sessions = ejabberd_redis:cmd(["SMEMBERS", hash(User, Server)]),
+
     lists:map(fun(S) ->
                       binary_to_term(S)
               end, Sessions).
 
 -spec get_sessions(binary(), binary(), binary()) -> list(#session{}).
 get_sessions(User, Server, Resource) ->
-    case ejabberd_redis:cmd(["HGET", hash(User, Server), Resource]) of
-        undefined ->
-            [];
-        Session ->
-            [binary_to_term(Session)]
-    end.
+    Sessions = ejabberd_redis:cmd(["SMEMBERS", hash(User, Server, Resource)]),
+
+    lists:map(fun(S) ->
+                      binary_to_term(S)
+              end, Sessions).
 
 -spec create_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
 create_session(User, Server, Resource, Session) ->
-    update_session(User, Server, Resource, Session).
+    OldSessions = get_sessions(User, Server, Resource),
+    BSession = term_to_binary(Session),
+    case lists:keysearch(Session#session.sid, #session.sid, OldSessions) of
+        {value, OldSession} ->
+            BOldSession = term_to_binary(OldSession),
 
--spec update_session(binary(), binary(), binary(), #session{}) -> ok | {error, term()}.
-update_session(User, Server, Resource, Session) ->
-    ejabberd_redis:cmd(["SADD", n(node()), hash(User, Server, Resource)]),
-    ejabberd_redis:cmd(["HSET", hash(User, Server), Resource, term_to_binary(Session)]).
+            ejabberd_redis:cmd([["SADD", n(node()), hash(User, Server, Resource, Session#session.sid)],
+                                ["SREM", hash(User, Server), BOldSession],
+                                ["SREM", hash(User, Server, Resource), BOldSession],
+                                ["SADD", hash(User, Server), BSession],
+                                ["SADD", hash(User, Server, Resource), BSession]]);
+        false ->
+            ejabberd_redis:cmd([["SADD", n(node()), hash(User, Server, Resource, Session#session.sid)],
+                                ["SADD", hash(User, Server), BSession],
+                                ["SADD", hash(User, Server, Resource), BSession]])
+    end.
 
 -spec delete_session(tuple(), binary(), binary(), binary()) -> ok.
-delete_session(_SID, User, Server, Resource) ->
-    ejabberd_redis:cmd(["HDEL", hash(User, Server), Resource]),
-    ejabberd_redis:cmd(["SREM", n(node()), hash(User, Server, Resource)]).
+delete_session(SID, User, Server, Resource) ->
+    Sessions = get_sessions(User, Server, Resource),
+    case lists:keysearch(SID, #session.sid, Sessions) of
+        {value, Session} ->
+            BSession = term_to_binary(Session),
+
+            ejabberd_redis:cmd([["SREM", hash(User, Server), BSession],
+                                ["SREM", hash(User, Server, Resource), BSession],
+                                ["SREM", n(node()), hash(User, Server, Resource, SID)]]);
+        false ->
+            ok
+    end.
 
 -spec cleanup(atom()) -> ok.
 cleanup(Node) ->
     Hashes = ejabberd_redis:cmd(["SMEMBERS", n(Node)]),
     ejabberd_redis:cmd(["DEL", n(Node)]),
     lists:foreach(fun(H) ->
-                          [_, U, S, R] = re:split(H, ":"),
-                          ejabberd_redis:cmd(["HDEL", hash(U, S), R])
+                          [_, U, S, R | SID] = re:split(H, ":"),
+                          delete_session(SID, U, S, R)
                   end, Hashes).
 
 -spec total_count() -> integer().
@@ -72,16 +90,20 @@ total_count() ->
 
 -spec unique_count() -> integer().
 unique_count() ->
-    length(ejabberd_redis:cmd(["KEYS", "s:*"])).
+    length(ejabberd_redis:cmd(["KEYS", "s2:*"])).
 
 %% Internal functions
 -spec hash(binary(), binary()) -> iolist().
 hash(Val1, Val2) ->
-    ["s:", Val1, ":", Val2].
+    ["s2:", Val1, ":", Val2].
 
 -spec hash(binary(), binary(), binary()) -> iolist().
 hash(Val1, Val2, Val3) ->
-    ["s:", Val1, ":", Val2, ":", Val3].
+    ["s3:", Val1, ":", Val2, ":", Val3].
+
+-spec hash(binary(), binary(), binary(), binary()) -> iolist().
+hash(Val1, Val2, Val3, Val4) ->
+    ["s4:", Val1, ":", Val2, ":", Val3, ":", term_to_binary(Val4)].
 
 -spec n(atom()) -> iolist().
 n(Node) ->

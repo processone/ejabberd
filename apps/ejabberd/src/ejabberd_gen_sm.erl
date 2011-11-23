@@ -8,7 +8,6 @@ behaviour_info(callbacks) ->
      {get_sessions, 2},
      {get_sessions, 3},
      {create_session, 4},
-     {update_session, 4},
      {delete_session, 4},
      {cleanup, 1},
      {total_count, 0},
