@@ -78,6 +78,6 @@ is_chat(Content) ->
 
 login_send_presence(Config, User) ->
     Spec = escalus_users:get_userspec(Config, User),
-    Client = escalus_client:start(Config, Spec, "dummy"),
+    {ok, Client} = escalus_client:start(Config, Spec, "dummy"),
     escalus:send(Client, escalus_stanza:presence(available)),
     Client.

@@ -106,7 +106,7 @@ auth_failed(Config) ->
     [{_, UserSpec} | _] = escalus_config:get_property(escalus_users, Config),
     UserSpecM = proplists:delete(password, UserSpec) ++ [{password, "mazabe"}],
     
-    catch escalus_client:start(Config, UserSpecM, "res1"),
+    {error, _} = escalus_client:start(Config, UserSpecM, "res1"),
     assert_counter(0, sessionCount),
     assert_counter(AuthFails + 1, sessionAuthFails).
     
