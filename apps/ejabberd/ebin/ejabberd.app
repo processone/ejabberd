@@ -7,7 +7,6 @@
              adhoc,
              cache_tab,
              cache_tab_sup,
-             configure,
              cyrsasl_anonymous,
              cyrsasl,
              cyrsasl_digest,
