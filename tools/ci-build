@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TOOLS=`dirname $0`
+BASE=`readlink -f $TOOLS/..`
+EJD_CTL=$BASE/rel/ejabberd/bin/ejabberd
+SUMMARIES_GLOB=$BASE'/test/ct_report/ct_run*/test.*.logs/*/suite.summary'
+
+make rel
+echo "starting ejabberd"
+$EJD_CTL start
+sleep 1
+echo "pinging ejabberd"
+$EJD_CTL ping
+make test
+$EJD_CTL stop
+$TOOLS/summarise-ct-results `eval ls $SUMMARIES_GLOB --sort time | head -n 1`
+CT_STATUS=$?
+echo
+echo "All tests done."
+exit $CT_STATUS
