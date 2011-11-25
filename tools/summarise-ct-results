@@ -1,0 +1,11 @@
+#!/usr/bin/env escript
+
+main([Filename]) ->
+    {ok, [{summary, {Ok, Failed, UserSkipped, AutoSkipped}}]} = file:consult(Filename),
+    io:format("CT results:~n"
+              "    ~p tests passed~n"
+              "    ~p tests failed~n"
+              "    ~p tests skipped by user~n"
+              "    ~p tests skipped automatically~n",
+          [Ok, Failed, UserSkipped, AutoSkipped]),
+    erlang:halt(Failed).
