@@ -732,6 +732,6 @@ add_sample_contact(Who, Whom, Groups, Nick) ->
                                                           Groups,
                                                           Nick)),
     Received = escalus_client:wait_for_stanza(Who),
-    escalus_assert:is_roster_result_set(Received),
+    escalus_assert:is_roster_set(Received),
     escalus_client:send(Who, escalus_stanza:iq_result(Received)),
     escalus_assert:is_result(escalus_client:wait_for_stanza(Who)).

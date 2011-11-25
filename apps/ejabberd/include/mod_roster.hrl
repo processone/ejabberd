@@ -22,11 +22,11 @@
 -record(roster, {usj,
 		 us,
 		 jid,
-		 name = "",
+		 name = <<>>,
 		 subscription = none,
 		 ask = none,
 		 groups = [],
-		 askmessage = [],
+		 askmessage = <<>>,
 		 xs = []}).
 
 -record(roster_version, {us,
