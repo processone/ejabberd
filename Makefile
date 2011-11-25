@@ -18,7 +18,7 @@ deps: generate_snmp_header
 clean:
 	./rebar clean
 
-test:   
+test:
 	(cd test; make)
 
 show_test_results:
