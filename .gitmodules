@@ -1,9 +1,3 @@
 [submodule "test/escalus"]
         path = test/escalus
         url = https://github.com/esl/escalus.git
-[submodule "apps/cuesport"]
-	path = apps/cuesport
-	url = git://github.com/goj/cuesport.git
-[submodule "apps/redo"]
-	path = apps/redo
-	url = git://github.com/JacobVorreuter/redo.git

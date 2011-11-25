@@ -1,5 +1,6 @@
 #
 # You can add personal rules in your file .git/info/exclude
+deps
 tools/*.tar.gz
 tools/*.pyc
 tools/*.png
