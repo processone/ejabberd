@@ -33,6 +33,7 @@
 
 %% API:
 -export([start/2,
+         preinit/2,
          init/1,
          stop/1]).
 -export([update_bl_c2s/0]).
@@ -49,14 +50,20 @@
 -record(bl_c2s, {ip}).
 
 %% Start once for all vhost
-start(Host, Opts) ->
-    case whereis(?PROCNAME) of
-        undefined ->
-            ?DEBUG("Starting mod_ip_blacklist ~p  ~p~n", [Host, Opts]),
-              register(?PROCNAME,
-                     spawn(?MODULE, init, [#state{}]));
-        _ ->
-            ok
+start(_Host, _Opts) ->
+   Pid = spawn(?MODULE, preinit, [self(), #state{}]),
+   receive {ok, Pid, PreinitResult} ->
+       PreinitResult
+   end.
+
+preinit(Parent, State) ->
+    Pid = self(),
+    try register(?PROCNAME, Pid) of
+        true ->
+            Parent ! {ok, Pid, true},
+            init(State)
+    catch error:_ ->
+        Parent ! {ok, Pid, true}
     end.
 
 %% TODO:
