@@ -92,7 +92,7 @@ loop(_State) ->
 %% TODO: Support comment lines starting by %
 update_bl_c2s() ->
     ?INFO_MSG("Updating C2S Blacklist", []),
-    case http:request(?BLC2S) of
+    case httpc:request(?BLC2S) of
 	{ok, {{_Version, 200, _Reason}, _Headers, Body}} ->
 	    IPs = string:tokens(Body,"\n"),
 	    ets:delete_all_objects(bl_c2s),
