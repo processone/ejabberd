@@ -109,7 +109,7 @@ get_db_type() ->
 
 %% Safe atomic update.
 update_t(Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
+    UPairs = lists:zipwith(fun(A, B) -> [A, "='", B, "'"] end,
 			   Fields, Vals),
     case ejabberd_odbc:sql_query_t(
 	   ["update ", Table, " set ",
@@ -124,7 +124,7 @@ update_t(Table, Fields, Vals, Where) ->
     end.
 
 update(LServer, Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
+    UPairs = lists:zipwith(fun(A, B) -> [A, "='", B, "'"] end,
 			   Fields, Vals),
     case ejabberd_odbc:sql_query(
 	   LServer,
@@ -215,9 +215,9 @@ list_users(LServer, [{limit, Limit}, {offset, Offset}]) when is_integer(Limit) a
     ejabberd_odbc:sql_query(
       LServer,
       io_lib:format(
-        "select username from users " ++
-            "order by username " ++
-            "limit ~w offset ~w", [Limit, Offset]));
+        "select username from users "
+        "order by username "
+        "limit ~w offset ~w", [Limit, Offset]));
 list_users(LServer, [{prefix, Prefix},
                      {limit, Limit},
                      {offset, Offset}]) when is_list(Prefix) and
@@ -225,10 +225,10 @@ list_users(LServer, [{prefix, Prefix},
                                              is_integer(Offset) ->
     ejabberd_odbc:sql_query(
       LServer,
-      io_lib:format("select username from users " ++
-                        "where username like '~s%' " ++
-                        "order by username " ++
-                        "limit ~w offset ~w ", [Prefix, Limit, Offset])).
+      io_lib:format("select username from users "
+                    "where username like '~s%' "
+                    "order by username "
+                    "limit ~w offset ~w ", [Prefix, Limit, Offset])).
 
 users_number(LServer) ->
     case element(1, ejabberd_config:get_local_option({odbc_server, LServer})) of
@@ -256,10 +256,10 @@ users_number(LServer) ->
 users_number(LServer, [{prefix, Prefix}]) when is_list(Prefix) ->
     ejabberd_odbc:sql_query(
       LServer,
-      io_lib:fwrite("select count(*) from users " ++
-                        %% Warning: Escape prefix at higher level to prevent SQL
-                        %%          injection.
-                        "where username like '~s%'", [Prefix]));
+      io_lib:fwrite("select count(*) from users "
+                    %% Warning: Escape prefix at higher level to prevent SQL
+                    %%          injection.
+                    "where username like '~s%'", [Prefix]));
 users_number(LServer, []) ->
     users_number(LServer).
 
@@ -405,7 +405,7 @@ get_subscription(LServer, Username, SJID) ->
 set_private_data(_LServer, Username, LXMLNS, SData) ->
     update_t("private_storage",
 	     ["username", "namespace", "data"],
-	     [Username, LXMLNS, SData], 
+	     [Username, LXMLNS, SData],
 	     ["username='", Username, "' and namespace='", LXMLNS, "'"]).
 
 set_private_data_sql(Username, LXMLNS, SData) ->
@@ -550,7 +550,7 @@ del_privacy_lists(LServer, Server, Username) ->
       ["delete from privacy_list where username='", Username, "';"]),
     ejabberd_odbc:sql_query(
       LServer,
-      ["delete from privacy_list_data where value='", Username++"@"++Server, "';"]),
+      ["delete from privacy_list_data where value='", Username, "@", Server, "';"]),
     ejabberd_odbc:sql_query(
       LServer,
       ["delete from privacy_default_list where username='", Username, "';"]).

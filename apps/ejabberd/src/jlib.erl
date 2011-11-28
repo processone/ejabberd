@@ -28,46 +28,46 @@
 -author('alexey@process-one.net').
 
 -export([make_result_iq_reply/1,
-	 make_error_reply/3,
-	 make_error_reply/2,
-	 make_error_element/2,
-	 make_correct_from_to_attrs/3,
-	 replace_from_to_attrs/3,
-	 replace_from_to/3,
-	 replace_from_attrs/2,
-	 replace_from/2,
-	 remove_attr/2,
-	 make_jid/3,
-	 make_jid/1,
-	 binary_to_jid/1,
-	 jid_to_binary/1,
-	 is_nodename/1,
-	 tolower/1,
-	 nodeprep/1,
-	 nameprep/1,
-	 resourceprep/1,
-	 jid_tolower/1,
-	 jid_remove_resource/1,
-	 jid_replace_resource/2,
-	 get_iq_namespace/1,
-	 iq_query_info/1,
-	 iq_query_or_response_info/1,
-	 is_iq_request_type/1,
-	 iq_to_xml/1,
-	 parse_xdata_submit/1,
-	 timestamp_to_iso/1, % TODO: Remove once XEP-0091 is Obsolete
-	 timestamp_to_iso/2,
-	 timestamp_to_xml/4,
-	 timestamp_to_xml/1, % TODO: Remove once XEP-0091 is Obsolete
-	 now_to_utc_string/1,
-	 now_to_local_string/1,
-	 datetime_string_to_timestamp/1,
-	 decode_base64/1,
-	 encode_base64/1,
-	 ip_to_list/1,
-	 rsm_encode/1,
-	 rsm_encode/2,
-	 rsm_decode/1]).
+         make_error_reply/3,
+         make_error_reply/2,
+         make_error_element/2,
+         make_correct_from_to_attrs/3,
+         replace_from_to_attrs/3,
+         replace_from_to/3,
+         replace_from_attrs/2,
+         replace_from/2,
+         remove_attr/2,
+         make_jid/3,
+         make_jid/1,
+         binary_to_jid/1,
+         jid_to_binary/1,
+         is_nodename/1,
+         tolower/1,
+         nodeprep/1,
+         nameprep/1,
+         resourceprep/1,
+         jid_tolower/1,
+         jid_remove_resource/1,
+         jid_replace_resource/2,
+         get_iq_namespace/1,
+         iq_query_info/1,
+         iq_query_or_response_info/1,
+         is_iq_request_type/1,
+         iq_to_xml/1,
+         parse_xdata_submit/1,
+         timestamp_to_iso/1, % TODO: Remove once XEP-0091 is Obsolete
+         timestamp_to_iso/2,
+         timestamp_to_xml/4,
+         timestamp_to_xml/1, % TODO: Remove once XEP-0091 is Obsolete
+         now_to_utc_string/1,
+         now_to_local_string/1,
+         datetime_string_to_timestamp/1,
+         decode_base64/1,
+         encode_base64/1,
+         ip_to_list/1,
+         rsm_encode/1,
+         rsm_encode/2,
+         rsm_decode/1]).
 
 -include("jlib.hrl").
 
@@ -81,17 +81,17 @@ make_result_iq_reply_attrs(Attrs) ->
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
-		 {value, ToVal} ->
+                 {value, ToVal} ->
                      [{<<"from">>, binary_to_list(ToVal)} | Attrs2];
-		 _ ->
-		     Attrs2
-	     end,
+                 _ ->
+                     Attrs2
+             end,
     Attrs4 = case From of
-		 {value, FromVal} ->
+                 {value, FromVal} ->
                      [{<<"to">>, binary_to_list(FromVal)} | Attrs3];
-		 _ ->
-		     Attrs3
-	     end,
+                 _ ->
+                     Attrs3
+             end,
     Attrs5 = lists:keydelete(<<"type">>, 1, Attrs4),
     Attrs6 = [{<<"type">>, <<"result">>} | Attrs5],
     Attrs6.
@@ -99,8 +99,8 @@ make_result_iq_reply_attrs(Attrs) ->
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
     NewAttrs = make_error_reply_attrs(Attrs),
     {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, <<"error">>,
-					      [{<<"code">>, Code}],
-					      [{xmlcdata, Desc}]}]}.
+                                              [{<<"code">>, Code}],
+                                              [{xmlcdata, Desc}]}]}.
 
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
     NewAttrs = make_error_reply_attrs(Attrs),
@@ -112,17 +112,17 @@ make_error_reply_attrs(Attrs) ->
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
-		 {value, ToVal} ->
+                 {value, ToVal} ->
                      [{<<"from">>, ToVal} | Attrs2];
-		 _ ->
-		     Attrs2
-	     end,
+                 _ ->
+                     Attrs2
+             end,
     Attrs4 = case From of
-		 {value, FromVal} ->
+                 {value, FromVal} ->
                      [{<<"to">>, FromVal} | Attrs3];
-		 _ ->
-		     Attrs3
-	     end,
+                 _ ->
+                     Attrs3
+             end,
     Attrs5 = lists:keydelete(<<"type">>, 1, Attrs4),
     Attrs6 = [{<<"type">>, <<"error">>} | Attrs5],
     Attrs6.
@@ -135,11 +135,11 @@ make_error_element(Code, Desc) ->
 make_correct_from_to_attrs(From, To, Attrs) ->
     Attrs1 = lists:keydelete(<<"from">>, 1, Attrs),
     Attrs2 = case xml:get_attr(<<"to">>, Attrs) of
-		 {value, _} ->
-		     Attrs1;
-		 _ ->
-		     [{<<"to">>, To} | Attrs1]
-	     end,
+                 {value, _} ->
+                     Attrs1;
+                 _ ->
+                     [{<<"to">>, To} | Attrs1]
+             end,
     Attrs3 = [{<<"from">>, From} | Attrs2],
     Attrs3.
 
@@ -153,8 +153,8 @@ replace_from_to_attrs(From, To, Attrs) ->
 
 replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
     NewAttrs = replace_from_to_attrs(jlib:jid_to_binary(From),
-				     jlib:jid_to_binary(To),
-				     Attrs),
+                                     jlib:jid_to_binary(To),
+                                     Attrs),
     {xmlelement, Name, NewAttrs, Els}.
 
 replace_from_attrs(From, Attrs) ->
@@ -172,22 +172,22 @@ remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
 
 make_jid(User, Server, Resource) ->
     case nodeprep(User) of
-	error -> error;
-	LUser ->
-	    case nameprep(Server) of
-		error -> error;
-		LServer ->
-		    case resourceprep(Resource) of
-			error -> error;
-			LResource ->
-			    #jid{user = User,
-				 server = Server,
-				 resource = Resource,
-				 luser = LUser,
-				 lserver = LServer,
-				 lresource = LResource}
-		    end
-	    end
+        error -> error;
+        LUser ->
+            case nameprep(Server) of
+                error -> error;
+                LServer ->
+                    case resourceprep(Resource) of
+                        error -> error;
+                        LResource ->
+                            #jid{user = User,
+                                 server = Server,
+                                 resource = Resource,
+                                 luser = LUser,
+                                 lserver = LServer,
+                                 lresource = LResource}
+                    end
+            end
     end.
 
 make_jid({User, Server, Resource}) ->
@@ -241,18 +241,18 @@ jid_to_binary(#jid{user = User, server = Server, resource = Resource}) ->
     jid_to_binary({User, Server, Resource});
 jid_to_binary({Node, Server, Resource}) ->
     S1 = case Node of
-	     <<>> ->
-		 <<>>;
-	     _ ->
-		 list_to_binary([Node, <<"@">>])
-	 end,
+             <<>> ->
+                 <<>>;
+             _ ->
+                 list_to_binary([Node, <<"@">>])
+         end,
     S2 = list_to_binary([S1, Server]),
     S3 = case Resource of
-	     <<>> ->
-		 S2;
-	     _ ->
-		 list_to_binary([S2, <<"/">>, Resource])
-	 end,
+             <<>> ->
+                 S2;
+             _ ->
+                 list_to_binary([S2, <<"/">>, Resource])
+         end,
     S3.
 
 is_nodename([]) ->
@@ -271,10 +271,10 @@ is_nodename(J) ->
 %% Not tail-recursive but it seems works faster than variants above
 tolower([C | Cs]) ->
     if
-	C >= $A, C =< $Z ->
-	    [C + 32 | tolower(Cs)];
-	true ->
-	    [C | tolower(Cs)]
+        C >= $A, C =< $Z ->
+            [C + 32 | tolower(Cs)];
+        true ->
+            [C | tolower(Cs)]
     end;
 tolower([]) ->
     [].
@@ -282,8 +282,8 @@ tolower([]) ->
 nodeprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nodeprep(S),
     if
-	size(R) < 1024 -> R;
-	true -> error
+        size(R) < 1024 -> R;
+        true -> error
     end;
 nodeprep(_) ->
     error.
@@ -291,8 +291,8 @@ nodeprep(_) ->
 nameprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nameprep(S),
     if
-	size(R) < 1024 -> R;
-	true -> error
+        size(R) < 1024 -> R;
+        true -> error
     end;
 nameprep(_) ->
     error.
@@ -307,8 +307,8 @@ resourceprep(S) when is_list(S) ->
 resourceprep(S) when size(S) < 1024 ->
     R = stringprep:resourceprep(S),
     if
-	size(R) < 1024 -> R;
-	true -> error
+        size(R) < 1024 -> R;
+        true -> error
     end;
 resourceprep(_) ->
     error.
@@ -318,17 +318,17 @@ jid_tolower(#jid{luser = U, lserver = S, lresource = R}) ->
     {U, S, R};
 jid_tolower({U, S, R}) ->
     case nodeprep(U) of
-	error -> error;
-	LUser ->
-	    case nameprep(S) of
-		error -> error;
-		LServer ->
-		    case resourceprep(R) of
-			error -> error;
-			LResource ->
-			    {LUser, LServer, LResource}
-		    end
-	    end
+        error -> error;
+        LUser ->
+            case nameprep(S) of
+                error -> error;
+                LServer ->
+                    case resourceprep(R) of
+                        error -> error;
+                        LResource ->
+                            {LUser, LServer, LResource}
+                    end
+            end
     end.
 
 jid_remove_resource(#jid{} = JID) ->
@@ -338,18 +338,18 @@ jid_remove_resource({U, S, _R}) ->
 
 jid_replace_resource(JID, Resource) ->
     case resourceprep(Resource) of
-	error -> error;
-	LResource ->
-	    JID#jid{resource = Resource, lresource = LResource}
+        error -> error;
+        LResource ->
+            JID#jid{resource = Resource, lresource = LResource}
     end.
 
 
 get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == <<"iq">> ->
     case xml:remove_cdata(Els) of
-	[{xmlelement, _Name2, Attrs2, _Els2}] ->
-	    xml:get_attr_s(<<"xmlns">>, Attrs2);
-	_ ->
-	    ""
+        [{xmlelement, _Name2, Attrs2, _Els2}] ->
+            xml:get_attr_s(<<"xmlns">>, Attrs2);
+        _ ->
+            ""
     end;
 get_iq_namespace(_) ->
     "".
@@ -367,53 +367,53 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == <<"iq">> -
     Type = xml:get_attr_s(<<"type">>, Attrs),
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     {Type1, Class} = case Type of
-			 <<"set">> -> {set, request};
-			 <<"get">> -> {get, request};
-			 <<"result">> -> {result, reply};
-			 <<"error">> -> {error, reply};
-			 _ -> {invalid, invalid}
-		     end,
+                         <<"set">> -> {set, request};
+                         <<"get">> -> {get, request};
+                         <<"result">> -> {result, reply};
+                         <<"error">> -> {error, reply};
+                         _ -> {invalid, invalid}
+                     end,
     if
-	Type1 == invalid ->
-	    invalid;
-	Class == request; Filter == any ->
-	    %% The iq record is a bit strange.  The sub_el field is an
-	    %% XML tuple for requests, but a list of XML tuples for
-	    %% responses.
-	    FilteredEls = xml:remove_cdata(Els),
-	    {XMLNS, SubEl} =
-		case {Class, FilteredEls} of
-		    {request, [{xmlelement, _Name2, Attrs2, _Els2}]} ->
-			{xml:get_attr_s(<<"xmlns">>, Attrs2),
-			 hd(FilteredEls)};
-		    {reply, _} ->
-			%% Find the namespace of the first non-error
-			%% element, if there is one.
-			NonErrorEls = [El || 
-					  {xmlelement, SubName, _, _} = El
-					      <- FilteredEls, 
-					  SubName /= <<"error">>],
-			{case NonErrorEls of
-			     [NonErrorEl] ->
-				 xml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
-			     _ ->
-				 <<>>
-			 end,
-			 FilteredEls};
-		    _ ->
-			{<<>>, []}
-		end,
-	    if XMLNS == <<>>, Class == request ->
-		    invalid;
-	       true ->
-		    #iq{id = ID,
-			type = Type1,
-			xmlns = XMLNS,
-			lang = Lang,
-			sub_el = SubEl}
-	    end;
-	Class == reply, Filter /= any ->
-	    reply
+        Type1 == invalid ->
+            invalid;
+        Class == request; Filter == any ->
+            %% The iq record is a bit strange.  The sub_el field is an
+            %% XML tuple for requests, but a list of XML tuples for
+            %% responses.
+            FilteredEls = xml:remove_cdata(Els),
+            {XMLNS, SubEl} =
+                case {Class, FilteredEls} of
+                    {request, [{xmlelement, _Name2, Attrs2, _Els2}]} ->
+                        {xml:get_attr_s(<<"xmlns">>, Attrs2),
+                         hd(FilteredEls)};
+                    {reply, _} ->
+                        %% Find the namespace of the first non-error
+                        %% element, if there is one.
+                        NonErrorEls = [El ||
+                                          {xmlelement, SubName, _, _} = El
+                                              <- FilteredEls,
+                                          SubName /= <<"error">>],
+                        {case NonErrorEls of
+                             [NonErrorEl] ->
+                                 xml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
+                             _ ->
+                                 <<>>
+                         end,
+                         FilteredEls};
+                    _ ->
+                        {<<>>, []}
+                end,
+            if XMLNS == <<>>, Class == request ->
+                    invalid;
+               true ->
+                    #iq{id = ID,
+                        type = Type1,
+                        xmlns = XMLNS,
+                        lang = Lang,
+                        sub_el = SubEl}
+            end;
+        Class == reply, Filter /= any ->
+            reply
     end;
 iq_info_internal(_, _) ->
     not_iq.
@@ -422,56 +422,50 @@ is_iq_request_type(set) -> true;
 is_iq_request_type(get) -> true;
 is_iq_request_type(_) -> false.
 
-iq_type_to_string(set) -> "set";
-iq_type_to_string(get) -> "get";
-iq_type_to_string(result) -> "result";
-iq_type_to_string(error) -> "error";
-iq_type_to_string(_) -> invalid.
-
+-spec iq_type_to_binary(atom()) -> invalid | binary().
 iq_type_to_binary(set) -> <<"set">>;
 iq_type_to_binary(get) -> <<"get">>;
 iq_type_to_binary(result) -> <<"result">>;
 iq_type_to_binary(error) -> <<"error">>;
 iq_type_to_binary(_) -> invalid.
 
-
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
     if
-	ID /= "" ->
-	    {xmlelement, <<"iq">>,
-	     [{<<"id">>, ID}, {<<"type">>, iq_type_to_binary(Type)}], SubEl};
-	true ->
-	    {xmlelement, <<"iq">>,
-	     [{<<"type">>, iq_type_to_binary(Type)}], SubEl}
+        ID /= "" ->
+            {xmlelement, <<"iq">>,
+             [{<<"id">>, ID}, {<<"type">>, iq_type_to_binary(Type)}], SubEl};
+        true ->
+            {xmlelement, <<"iq">>,
+             [{<<"type">>, iq_type_to_binary(Type)}], SubEl}
     end.
 
 
 parse_xdata_submit(El) ->
     {xmlelement, _Name, Attrs, Els} = El,
     case xml:get_attr_s(<<"type">>, Attrs) of
-	<<"submit">> ->
-	    lists:reverse(parse_xdata_fields(Els, []));
-	<<"form">> -> %% This is a workaround to accept Psi's wrong forms
-	    lists:reverse(parse_xdata_fields(Els, []));
-	_ ->
-	    invalid
+        <<"submit">> ->
+            lists:reverse(parse_xdata_fields(Els, []));
+        <<"form">> -> %% This is a workaround to accept Psi's wrong forms
+            lists:reverse(parse_xdata_fields(Els, []));
+        _ ->
+            invalid
     end.
 
 parse_xdata_fields([], Res) ->
     Res;
 parse_xdata_fields([{xmlelement, Name, Attrs, SubEls} | Els], Res) ->
     case Name of
-	<<"field">> ->
-	    case xml:get_attr_s(<<"var">>, Attrs) of
-		<<>> ->
-		    parse_xdata_fields(Els, Res);
-		Var ->
-		    Field =
-			{Var, lists:reverse(parse_xdata_values(SubEls, []))},
-		    parse_xdata_fields(Els, [Field | Res])
-	    end;
-	_ ->
-	    parse_xdata_fields(Els, Res)
+        <<"field">> ->
+            case xml:get_attr_s(<<"var">>, Attrs) of
+                <<>> ->
+                    parse_xdata_fields(Els, Res);
+                Var ->
+                    Field =
+                        {Var, lists:reverse(parse_xdata_values(SubEls, []))},
+                    parse_xdata_fields(Els, [Field | Res])
+            end;
+        _ ->
+            parse_xdata_fields(Els, Res)
     end;
 parse_xdata_fields([_ | Els], Res) ->
     parse_xdata_fields(Els, Res).
@@ -480,11 +474,11 @@ parse_xdata_values([], Res) ->
     Res;
 parse_xdata_values([{xmlelement, Name, _Attrs, SubEls} | Els], Res) ->
     case Name of
-	<<"value">> ->
-	    Val = xml:get_cdata(SubEls),
-	    parse_xdata_values(Els, [Val | Res]);
-	_ ->
-	    parse_xdata_values(Els, Res)
+        <<"value">> ->
+            Val = xml:get_cdata(SubEls),
+            parse_xdata_values(Els, [Val | Res]);
+        _ ->
+            parse_xdata_values(Els, Res)
     end;
 parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
@@ -523,7 +517,7 @@ rsm_parse_element(_, RsmIn)->
 
 rsm_encode(#iq{sub_el=SubEl}=IQ,RsmOut)->
     Set = {xmlelement, <<"set">>, [{<<"xmlns">>, ?NS_RSM}],
-	   lists:reverse(rsm_encode_out(RsmOut))},
+           lists:reverse(rsm_encode_out(RsmOut))},
     {xmlelement, Name, Attrs, SubEls} = SubEl,
     New = {xmlelement, Name, Attrs, [Set | SubEls]},
     IQ#iq{sub_el=New}.
@@ -560,27 +554,27 @@ i2l(L) when is_list(L)    -> L.
 %% Minutes = integer()
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}, Timezone) ->
     Timestamp_string =
-	lists:flatten(
-	  io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
-			[Year, Month, Day, Hour, Minute, Second])),
+        lists:flatten(
+          io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+                        [Year, Month, Day, Hour, Minute, Second])),
     Timezone_string =
-	case Timezone of
-	    utc -> "Z";
-	    {Sign, {TZh, TZm}} ->
-		io_lib:format("~s~2..0w:~2..0w", [Sign, TZh, TZm]);
-	    {TZh, TZm} ->
-		Sign = case TZh >= 0 of
-			   true -> "+";
-			   false -> "-"
-		       end,
-		io_lib:format("~s~2..0w:~2..0w", [Sign, abs(TZh),TZm])
-	end,
+        case Timezone of
+            utc -> "Z";
+            {Sign, {TZh, TZm}} ->
+                io_lib:format("~s~2..0w:~2..0w", [Sign, TZh, TZm]);
+            {TZh, TZm} ->
+                Sign = case TZh >= 0 of
+                           true -> "+";
+                           false -> "-"
+                       end,
+                io_lib:format("~s~2..0w:~2..0w", [Sign, abs(TZh),TZm])
+        end,
     {Timestamp_string, Timezone_string}.
 
 timestamp_to_iso({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     lists:flatten(
       io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
-		    [Year, Month, Day, Hour, Minute, Second])).
+                    [Year, Month, Day, Hour, Minute, Second])).
 
 timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
     {T_string, Tz_string} = timestamp_to_iso(DateTime, Timezone),
@@ -603,10 +597,10 @@ timestamp_to_xml({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 
 now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =
-	calendar:now_to_universal_time({MegaSecs, Secs, MicroSecs}),
+        calendar:now_to_universal_time({MegaSecs, Secs, MicroSecs}),
     lists:flatten(
       io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6..0wZ",
-		    [Year, Month, Day, Hour, Minute, Second, MicroSecs])).
+                    [Year, Month, Day, Hour, Minute, Second, MicroSecs])).
 
 now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
     LocalTime = calendar:now_to_local_time({MegaSecs, Secs, MicroSecs}),
@@ -614,24 +608,24 @@ now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
     Seconds = calendar:datetime_to_gregorian_seconds(LocalTime) -
         calendar:datetime_to_gregorian_seconds(UTCTime),
     {{H, M, _}, Sign} = if
-			    Seconds < 0 ->
-				{calendar:seconds_to_time(-Seconds), "-"};
-			    true ->
-				{calendar:seconds_to_time(Seconds), "+"}
+                            Seconds < 0 ->
+                                {calendar:seconds_to_time(-Seconds), "-"};
+                            true ->
+                                {calendar:seconds_to_time(Seconds), "+"}
                         end,
     {{Year, Month, Day}, {Hour, Minute, Second}} = LocalTime,
     lists:flatten(
       io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6..0w~s~2..0w:~2..0w",
-		    [Year, Month, Day, Hour, Minute, Second, MicroSecs, Sign, H, M])).
+                    [Year, Month, Day, Hour, Minute, Second, MicroSecs, Sign, H, M])).
 
 
 %% yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {MegaSecs, Secs, MicroSecs}
 datetime_string_to_timestamp(TimeStr) ->
     case catch parse_datetime(TimeStr) of
-	{'EXIT', _Err} ->
-	    undefined;
-	TimeStamp ->
-	    TimeStamp
+        {'EXIT', _Err} ->
+            undefined;
+        TimeStamp ->
+            TimeStamp
     end.
 
 parse_datetime(TimeStr) ->
@@ -648,34 +642,34 @@ parse_date(Date) ->
     [Y, M, D] = string:tokens(Date, "-"),
     Date1 = {list_to_integer(Y), list_to_integer(M), list_to_integer(D)},
     case calendar:valid_date(Date1) of
-	true ->
-	    Date1;
-	_ ->
-	    false
+        true ->
+            Date1;
+        _ ->
+            false
     end.
 
 %% hh:mm:ss[.sss]TZD
 parse_time(Time) ->
     case string:str(Time, "Z") of
-	0 ->
-	    parse_time_with_timezone(Time);
-	_ ->
-	    [T | _] = string:tokens(Time, "Z"),
-	    {TT, MS} = parse_time1(T),
-	    {TT, MS, 0, 0}
+        0 ->
+            parse_time_with_timezone(Time);
+        _ ->
+            [T | _] = string:tokens(Time, "Z"),
+            {TT, MS} = parse_time1(T),
+            {TT, MS, 0, 0}
     end.
 
 parse_time_with_timezone(Time) ->
     case string:str(Time, "+") of
-	0 ->
-	    case string:str(Time, "-") of
-		0 ->
-		    false;
-		_ ->
-		    parse_time_with_timezone(Time, "-")
-	    end;
-	_ ->
-	    parse_time_with_timezone(Time, "+")
+        0 ->
+            case string:str(Time, "-") of
+                0 ->
+                    false;
+                _ ->
+                    parse_time_with_timezone(Time, "-")
+            end;
+        _ ->
+            parse_time_with_timezone(Time, "+")
     end.
 
 parse_time_with_timezone(Time, Delim) ->
@@ -683,10 +677,10 @@ parse_time_with_timezone(Time, Delim) ->
     {TZH, TZM} = parse_timezone(TZ),
     {TT, MS} = parse_time1(T),
     case Delim of
-	"-" ->
-	    {TT, MS, -TZH, -TZM};
-	"+" ->
-	    {TT, MS, TZH, TZM}
+        "-" ->
+            {TT, MS, -TZH, -TZM};
+        "+" ->
+            {TT, MS, TZH, TZM}
     end.
 
 parse_timezone(TZ) ->
@@ -697,11 +691,11 @@ parse_timezone(TZ) ->
 parse_time1(Time) ->
     [HMS | T] =  string:tokens(Time, "."),
     MS = case T of
-	     [] ->
-		 0;
-	     [Val] ->
-		 list_to_integer(string:left(Val, 6, $0))
-	 end,
+             [] ->
+                 0;
+             [Val] ->
+                 list_to_integer(string:left(Val, 6, $0))
+         end,
     [H, M, S] = string:tokens(HMS, ":"),
     {[H1, M1, S1], true} = check_list([{H, 24}, {M, 60}, {S, 60}]),
     {{H1, M1, S1}, MS}.
@@ -726,33 +720,33 @@ decode_base64(S) when erlang:is_binary(S)->
     list_to_binary(decode_base64(binary_to_list(S)));
 decode_base64(S) ->
     decode1_base64([C || C <- S,
-			 C /= $ ,
-			 C /= $\t,
-			 C /= $\n,
-			 C /= $\r]).
+                         C /= $ ,
+                         C /= $\t,
+                         C /= $\n,
+                         C /= $\r]).
 
 decode1_base64([]) ->
     [];
 decode1_base64([Sextet1,Sextet2,$=,$=|Rest]) ->
     Bits2x6=
-	(d(Sextet1) bsl 18) bor
-	(d(Sextet2) bsl 12),
+        (d(Sextet1) bsl 18) bor
+        (d(Sextet2) bsl 12),
     Octet1=Bits2x6 bsr 16,
     [Octet1|decode1_base64(Rest)];
 decode1_base64([Sextet1,Sextet2,Sextet3,$=|Rest]) ->
     Bits3x6=
-	(d(Sextet1) bsl 18) bor
-	(d(Sextet2) bsl 12) bor
-	(d(Sextet3) bsl 6),
+        (d(Sextet1) bsl 18) bor
+        (d(Sextet2) bsl 12) bor
+        (d(Sextet3) bsl 6),
     Octet1=Bits3x6 bsr 16,
     Octet2=(Bits3x6 bsr 8) band 16#ff,
     [Octet1,Octet2|decode1_base64(Rest)];
 decode1_base64([Sextet1,Sextet2,Sextet3,Sextet4|Rest]) ->
     Bits4x6=
-	(d(Sextet1) bsl 18) bor
-	(d(Sextet2) bsl 12) bor
-	(d(Sextet3) bsl 6) bor
-	d(Sextet4),
+        (d(Sextet1) bsl 18) bor
+        (d(Sextet2) bsl 12) bor
+        (d(Sextet3) bsl 6) bor
+        d(Sextet4),
     Octet1=Bits4x6 bsr 16,
     Octet2=(Bits4x6 bsr 8) band 16#ff,
     Octet3=Bits4x6 band 16#ff,
@@ -783,7 +777,7 @@ encode_base64([A,B,C|Ls]) ->
     encode_base64_do(A,B,C, Ls).
 encode_base64_do(A,B,C, Rest) ->
     BB = (A bsl 16) bor (B bsl 8) bor C,
-    [e(BB bsr 18), e((BB bsr 12) band 63), 
+    [e(BB bsr 18), e((BB bsr 12) band 63),
      e((BB bsr 6) band 63), e(BB band 63)|encode_base64(Rest)].
 
 e(X) when X >= 0, X < 26 -> X+65;
