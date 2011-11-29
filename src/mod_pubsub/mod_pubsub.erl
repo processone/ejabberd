@@ -219,6 +219,7 @@ init([ServerHost, Opts]) ->
     ejabberd_router:register_route(Host),
     update_node_database(Host, ServerHost),
     update_state_database(Host, ServerHost),
+    put(server_host, ServerHost), % not clean, but needed to plug hooks at any location
     init_nodes(Host, ServerHost, NodeTree, Plugins),
     State = #state{host = Host,
 		server_host = ServerHost,
@@ -1783,13 +1784,16 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 	    case transaction(CreateNode, transaction) of
 		{result, {NodeId, SubsByDepth, {Result, broadcast}}} ->
 		    broadcast_created_node(Host, Node, NodeId, Type, NodeOptions, SubsByDepth),
+		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    case Result of
 			default -> {result, Reply};
 			_ -> {result, Result}
 		    end;
-		{result, {_NodeId, _SubsByDepth, default}} ->
+		{result, {NodeId, _SubsByDepth, default}} ->
+		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    {result, Reply};
-		{result, {_NodeId, _SubsByDepth, Result}} ->
+		{result, {NodeId, _SubsByDepth, Result}} ->
+		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    {result, Result};
 		Error ->
 		    %% in case we change transaction to sync_dirty...
@@ -1834,27 +1838,38 @@ delete_node(Host, Node, Owner) ->
 		    end
 	     end,
     Reply = [],
+    ServerHost = get(server_host), % not clean, but prevent many API changes
     case transaction(Host, Node, Action, transaction) of
-	{result, {_, {SubsByDepth, {Result, broadcast, Removed}}}} ->
+	{result, {_TNode, {SubsByDepth, {Result, broadcast, Removed}}}} ->
 	    lists:foreach(fun({RNode, _RSubscriptions}) ->
 		{RH, RN} = RNode#pubsub_node.nodeid,
 		NodeId = RNode#pubsub_node.id,
 		Type = RNode#pubsub_node.type,
 		Options = RNode#pubsub_node.options,
-		broadcast_removed_node(RH, RN, NodeId, Type, Options, SubsByDepth)
+		broadcast_removed_node(RH, RN, NodeId, Type, Options, SubsByDepth),
+		ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, RH, RN, NodeId])
 	    end, Removed),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
-	{result, {_, {_, {Result, _Removed}}}} ->
+	{result, {_TNode, {_, {Result, Removed}}}} ->
+	    lists:foreach(fun({RNode, _RSubscriptions}) ->
+		{RH, RN} = RNode#pubsub_node.nodeid,
+		NodeId = RNode#pubsub_node.id,
+		ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, RH, RN, NodeId])
+	    end, Removed),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
-	{result, {_, {_, default}}} ->
+	{result, {TNode, {_, default}}} ->
+	    NodeId = TNode#pubsub_node.id,
+	    ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, Host, Node, NodeId]),
 	    {result, Reply};
-	{result, {_, {_, Result}}} ->
+	{result, {TNode, {_, Result}}} ->
+	    NodeId = TNode#pubsub_node.id,
+	    ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, Host, Node, NodeId]),
 	    {result, Result};
 	Error ->
 	    Error
