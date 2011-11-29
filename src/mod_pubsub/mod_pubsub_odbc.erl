@@ -248,6 +248,7 @@ init([ServerHost, Opts]) ->
 	    ok
     end,
     ejabberd_router:register_route(Host),
+    put(server_host, ServerHost),
     init_nodes(Host, ServerHost, NodeTree, Plugins),
     State = #state{host = Host,
 		   server_host = ServerHost,
@@ -1964,13 +1965,16 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 	    case transaction(Host, CreateNode, transaction) of
 		{result, {NodeId, {Result, broadcast}}} ->
 		    broadcast_created_node(Host, Node, NodeId, Type, NodeOptions),
+		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    case Result of
 			default -> {result, Reply};
 			_ -> {result, Result}
 		    end;
-		{result, {_NodeId, default}} ->
+		{result, {NodeId, default}} ->
+		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    {result, Reply};
-		{result, {_NodeId, Result}} ->
+		{result, {NodeId, Result}} ->
+		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    {result, Result};
 		Error ->
 		    %% in case we change transaction to sync_dirty...
@@ -2013,6 +2017,7 @@ delete_node(Host, Node, Owner) ->
 		     end
 	     end,
     Reply = [],
+    ServerHost = get(server_host),
     case transaction(Host, Node, Action, transaction) of
 	{result, {_, {Result, broadcast, Removed}}} ->
 	    lists:foreach(fun({RNode, _RSubscriptions}) ->
@@ -2021,20 +2026,31 @@ delete_node(Host, Node, Owner) ->
 				  Type = RNode#pubsub_node.type,
 				  Options = RNode#pubsub_node.options,
 				  broadcast_removed_node(RH, RN, Nidx, Type, Options),
+				  ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, RH, RN, Nidx]),
 				  unset_cached_item(RH, Nidx)
 			  end, Removed),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
-	{result, {_, {Result, _Removed}}} ->
+	{result, {_, {Result, Removed}}} ->
+	    lists:foreach(fun({RNode, _RSubscriptions}) ->
+				  {RH, RN} = RNode#pubsub_node.id,
+				  Nidx = RNode#pubsub_node.idx,
+				  ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, RH, RN, Nidx]),
+				  unset_cached_item(RH, Nidx)
+			  end, Removed),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
 	    end;
-	{result, {_, default}} ->
+	{result, {TNode, default}} ->
+	    Nidx = TNode#pubsub_node.idx,
+	    ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, Host, Node, Nidx]),
 	    {result, Reply};
-	{result, {_, Result}} ->
+	{result, {TNode, Result}} ->
+	    Nidx = TNode#pubsub_node.idx,
+	    ejabberd_hooks:run(pubsub_delete_node, ServerHost, [ServerHost, Host, Node, Nidx]),
 	    {result, Result};
 	Error ->
 	    Error
