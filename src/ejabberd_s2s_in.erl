@@ -330,6 +330,11 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			      exmpp_server_sasl:success()),
 			    ?DEBUG("(~w) Accepted s2s authentication for ~s",
 				      [StateData#state.socket, AuthDomain]),
+			  %% acess rules are first checked against the globally defined ones, that have precedence over 
+			  %% domain-specific ones.. http://www.process-one.net/docs/ejabberd/guide_en.html#AccessRights
+			  %% since there is allways a shaper defined globally for s2s, it doesn't matter the actual
+			 %% local host, since the globall one will be used, even if this domain has a special rule
+			    change_shaper(StateData, "", exmpp_jid:make(AuthDomain)),
 			    {next_state, wait_for_stream,
 			     StateData#state{streamid = new_id(),
 					     authenticated = true,
