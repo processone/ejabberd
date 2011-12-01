@@ -274,7 +274,11 @@ handle_data(L, <<>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit);
 
 handle_data(<<>>, L, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit).
+	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit);
+
+%% Invalid input
+handle_data(_, _, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+    websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit).
 
 % Close socket and custom handling loop dependency
 websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
