@@ -41,7 +41,11 @@
 	 dirty_get_connections/0,
 	 allow_host/2,
 	 incoming_s2s_number/0,
-	 outgoing_s2s_number/0
+	 outgoing_s2s_number/0,
+	 clean_temporarily_blocked_table/0,
+	 list_temporarily_blocked_hosts/0,
+	 external_host_overloaded/1,
+	 is_temporarly_blocked/1
 	]).
 
 %% gen_server callbacks
@@ -57,8 +61,13 @@
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER, 1).
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE, 1).
 
+-define(S2S_OVERLOAD_BLOCK_PERIOD, 60).
+%% once a server is temporarly blocked, it stay blocked for 60 seconds
+
 -record(s2s, {fromto, pid, key}).
 -record(state, {}).
+
+-record(temporarily_blocked, {host, timestamp}).
 
 %%====================================================================
 %% API
@@ -78,6 +87,31 @@ route(From, To, Packet) ->
         _ ->
             ok
     end.
+
+clean_temporarily_blocked_table() ->
+	mnesia:clear_table(temporarily_blocked).
+list_temporarily_blocked_hosts() ->
+	ets:tab2list(temporarily_blocked).
+
+external_host_overloaded(Host) ->
+	?INFO_MSG("Disabling connections from ~s for ~p seconds", [Host, ?S2S_OVERLOAD_BLOCK_PERIOD]),
+	mnesia:transaction( fun() ->
+		mnesia:write(#temporarily_blocked{host = Host, timestamp = now()})
+	end).
+
+is_temporarly_blocked(Host) ->
+	case mnesia:dirty_read(temporarily_blocked, Host) of
+		[] -> false;
+		[#temporarily_blocked{timestamp = T}=Entry] ->
+			case timer:now_diff(now(), T) of
+				N when N > ?S2S_OVERLOAD_BLOCK_PERIOD * 1000 * 1000 ->
+					mnesia:dirty_delete_object(Entry),
+					false;
+				_ ->
+					true
+			end
+	end.
+
 
 remove_connection(FromTo, Pid, Key) ->
     case catch mnesia:dirty_match_object(s2s, #s2s{fromto = FromTo,
@@ -169,6 +203,7 @@ init([]) ->
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
     ejabberd_commands:register_commands(commands()),
+    mnesia:create_table(temporarily_blocked, [{ram_copies, [node()]}, {attributes, record_info(fields, temporarily_blocked)}]),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -486,6 +521,9 @@ update_tables() ->
 
 %% Check if host is in blacklist or white list
 allow_host(MyServer, S2SHost) ->
+   allow_host2(MyServer, S2SHost) andalso (not is_temporarly_blocked(S2SHost)).
+
+allow_host2(MyServer, S2SHost) ->
     Hosts = ?MYHOSTS,
     case lists:dropwhile(
 	   fun(ParentDomain) ->
