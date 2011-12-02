@@ -123,11 +123,11 @@ case "$1" in
         $ERTS_PATH/to_erl $PIPE_DIR
         ;;
 
-    console|console_clean)
+    console|live|console_clean)
         # .boot file typically just $SCRIPT (ie, the app name)
         # however, for debugging, sometimes start_clean.boot is useful:
         case "$1" in
-            console)        BOOTFILE=$SCRIPT ;;
+            console|live)   BOOTFILE=$SCRIPT ;;
             console_clean)  BOOTFILE=start_clean ;;
         esac
         # Setup beam-required vars
@@ -153,7 +153,7 @@ case "$1" in
         ;;
 
     *)
-        echo "Usage: $SCRIPT {start|stop|restart|reboot|ping|console|console_clean|attach}"
+        echo "Usage: $SCRIPT {start|stop|restart|reboot|ping|live|console|console_clean|attach}"
         exit 1
         ;;
 esac
