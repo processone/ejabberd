@@ -27,7 +27,7 @@
 -module(ejabberd_s2s_in).
 -author('alexey@process-one.net').
 
--behaviour(gen_fsm).
+-behaviour(p1_fsm).
 
 %% External exports
 -export([start/2,
@@ -80,10 +80,12 @@
 -define(FSMOPTS, []).
 -endif.
 
+-define(FSMLIMITS, [{max_queue, 2000}]). %% if queue grows more than this, we shutdown this connection.
+
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, gen_fsm:start(ejabberd_s2s_in, [SockData, Opts],
-					?FSMOPTS)).
+-define(SUPERVISOR_START, p1_fsm:start(ejabberd_s2s_in, [SockData, Opts],
+					?FSMOPTS ++ ?FSMLIMITS)).
 -else.
 -define(SUPERVISOR_START, supervisor:start_child(ejabberd_s2s_in_sup,
 						 [SockData, Opts])).
@@ -102,7 +104,7 @@ start(SockData, Opts) ->
     ?SUPERVISOR_START.
 
 start_link(SockData, Opts) ->
-    gen_fsm:start_link(ejabberd_s2s_in, [SockData, Opts], ?FSMOPTS).
+    p1_fsm:start_link(ejabberd_s2s_in, [SockData, Opts], ?FSMOPTS ++ ?FSMLIMITS).
 
 socket_type() ->
     xml_stream.
@@ -323,7 +325,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    false
 		    end,
 		    if
-			AuthRes ->
+		    	AllowRemoteHost = ejabberd_s2s:allow_host("", AuthDomain),
+			AuthRes andalso AllowRemoteHost ->
 			    (StateData#state.sockmod):reset_stream(
 			      StateData#state.socket),
 			    send_element(StateData,
@@ -622,8 +625,24 @@ handle_info(_, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
     ?DEBUG("terminated: ~p", [Reason]),
+    case Reason of
+	    {process_limit, _} ->
+		    [ejabberd_s2s:external_host_overloaded(Host) || Host <- get_external_hosts(StateData)];
+	    _ ->
+		    ok
+    end,
     (StateData#state.sockmod):close(StateData#state.socket),
     ok.
+
+get_external_hosts(StateData) ->
+    case StateData#state.authenticated of
+	    true ->
+		[StateData#state.auth_domain];
+	    false ->
+		Connections = StateData#state.connections,
+		[D || {{D, _}, established} <- dict:to_list(Connections)]
+    end.
+
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
