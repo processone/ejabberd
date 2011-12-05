@@ -123,11 +123,11 @@ case "$1" in
         $ERTS_PATH/to_erl $PIPE_DIR
         ;;
 
-    console|console_clean)
+    console|live|console_clean)
         # .boot file typically just $SCRIPT (ie, the app name)
         # however, for debugging, sometimes start_clean.boot is useful:
         case "$1" in
-            console)        BOOTFILE=$SCRIPT ;;
+            console|live)   BOOTFILE=$SCRIPT ;;
             console_clean)  BOOTFILE=start_clean ;;
         esac
         # Setup beam-required vars
@@ -152,8 +152,40 @@ case "$1" in
         exec $CMD
         ;;
 
+    debug)
+        echo "--------------------------------------------------------------------"
+        echo ""
+        echo "IMPORTANT: we will attempt to attach an INTERACTIVE shell"
+        echo "to an already running ejabberd node."
+        echo "If an ERROR is printed, it means the connection was not successful."
+        echo "You can interact with the ejabberd node if you know how to use it."
+        echo "Please be extremely cautious with your actions,"
+        echo "and exit immediately if you are not completely sure."
+        echo ""
+        echo "To detach this shell from ejabberd, press:"
+        echo "  control+c, control+c"
+        echo ""
+        echo "--------------------------------------------------------------------"
+        echo "Press 'Enter' to continue"
+        read
+        echo ""
+        NAME=$(echo $NAME_ARG | awk '{print $1}')
+        NODE=$(echo $NAME_ARG | awk '{print $2}')
+        TTY=$(basename `tty`)
+
+        ROOTDIR=$RUNNER_BASE_DIR
+        BINDIR=$ROOTDIR/erts-$ERTS_VSN/bin
+        PROGNAME=`echo $0 | sed 's/.*\\///'`
+        CMD="$BINDIR/erl $NAME debug-$TTY-$NODE $COOKIE_ARG -remsh $NODE -hidden"
+
+        # Log the startup
+        logger -t "$SCRIPT[$$]" "Starting up"
+
+        # Start the VM
+        exec $CMD
+        ;;
     *)
-        echo "Usage: $SCRIPT {start|stop|restart|reboot|ping|console|console_clean|attach}"
+        echo "Usage: $SCRIPT {start|stop|restart|reboot|ping|live|console|console_clean|attach|debug}"
         exit 1
         ;;
 esac
