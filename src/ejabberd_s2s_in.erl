@@ -324,8 +324,8 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			_ ->
 			    false
 		    end,
+		    AllowRemoteHost = ejabberd_s2s:allow_host("", AuthDomain),
 		    if
-		    	AllowRemoteHost = ejabberd_s2s:allow_host("", AuthDomain),
 			AuthRes andalso AllowRemoteHost ->
 			    (StateData#state.sockmod):reset_stream(
 			      StateData#state.socket),
