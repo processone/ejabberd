@@ -44,6 +44,7 @@
 	 handle_sync_event/4,
 	 code_change/4,
 	 handle_info/3,
+	 print_state/1,
 	 terminate/3]).
 
 -include("ejabberd.hrl").
@@ -670,6 +671,13 @@ get_external_hosts(StateData) ->
 		[D || {{D, _}, established} <- dict:to_list(Connections)]
     end.
 
+%%----------------------------------------------------------------------
+%% Func: print_state/1
+%% Purpose: Prepare the state to be printed on error log
+%% Returns: State to print
+%%----------------------------------------------------------------------
+print_state(State) ->
+    State.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
