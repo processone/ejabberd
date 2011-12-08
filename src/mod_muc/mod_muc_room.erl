@@ -4004,7 +4004,7 @@ check_decline_invitation(Packet) ->
 %% Send the decline to the inviter user.
 %% The original stanza must be slightly modified.
 send_decline_invitation({Packet, XEl, DEl, ToJID}, RoomJID, FromJID) ->
-    FromString = jlib:jid_to_string(FromJID),
+    FromString = jlib:jid_to_string(jlib:jid_remove_resource(FromJID)),
     {xmlelement, "decline", DAttrs, DEls} = DEl,
     DAttrs2 = lists:keydelete("to", 1, DAttrs),
     DAttrs3 = [{"from", FromString} | DAttrs2],
