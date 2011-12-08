@@ -299,14 +299,15 @@ update_list() ->
     [atom_to_list(Beam) || Beam <- UpdatedBeams].
 
 update("all") ->
-    [update_module(ModStr) || ModStr <- update_list()];
+    [update_module(ModStr) || ModStr <- update_list()],
+    {ok, []};
 update(ModStr) ->
     update_module(ModStr).
 
 update_module(ModuleNameString) ->
     ModuleName = list_to_atom(ModuleNameString),
     case ejabberd_update:update([ModuleName]) of
-          {ok, Res} -> {ok, io_lib:format("Updated: ~p", [Res])};
+          {ok, _Res} -> {ok, []};
           {error, Reason} -> {error, Reason}
     end.
 
