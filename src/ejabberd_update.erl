@@ -44,7 +44,7 @@ update() ->
 		eval_script(
 		  LowLevelScript, [],
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    ?INFO_MSG("eval: ~p~n", [Eval]),
+	    ?DEBUG("eval: ~p~n", [Eval]),
 	    Eval;
 	{error, Reason} ->
 	    {error, Reason}
@@ -61,7 +61,7 @@ update(ModulesToUpdate) ->
 		eval_script(
 		  LowLevelScript, [],
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    ?INFO_MSG("eval: ~p~n", [Eval]),
+	    ?DEBUG("eval: ~p~n", [Eval]),
 	    Eval;
 	{error, Reason} ->
 	    {error, Reason}
