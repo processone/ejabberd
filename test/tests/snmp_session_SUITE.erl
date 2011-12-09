@@ -21,7 +21,8 @@
 -include_lib("common_test/include/ct.hrl").
 
 -define(WAIT_TIME, 500).
--define(GLOBAL_WAIT_TIME, 60000).
+-define(GLOBAL_WAIT_TIME, 3000).  % milliseconds
+-define(RT_WINDOW, 3).  % seconds
 
 -import(snmp_helper, [assert_counter/2,
                       get_counter_value/1]).
@@ -36,8 +37,8 @@ all() ->
 
 groups() ->
     [{session, [sequence], [login_one, 
-                          login_many, 
-                          auth_failed]},
+                            login_many,
+                            auth_failed]},
      {session_rt, [sequence], [session_global,
                                session_unique]}].
      
@@ -61,10 +62,29 @@ end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
 
 
+init_per_testcase(session_global, Config) ->
+    ok = escalus_ejabberd:rpc(gen_server, call,
+            [ejabberd_snmp_rt, {change_interval_rt, ?RT_WINDOW}]),
+    %% call the generic clause
+    init_per_testcase(fallthrough, Config);
+init_per_testcase(session_unique, Config) ->
+    ok = escalus_ejabberd:rpc(gen_server, call,
+            [ejabberd_snmp_rt, {change_interval_rt, ?RT_WINDOW}]),
+    %% call the generic clause
+    init_per_testcase(fallthrough, Config);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
+end_per_testcase(session_global, Config) ->
+    ok = escalus_ejabberd:rpc(gen_server, call,
+           [ejabberd_snmp_rt, {change_interval_rt, 60}]),
+    end_per_testcase(fallthrough, Config);
+end_per_testcase(session_unique, Config) ->
+    ok = escalus_ejabberd:rpc(gen_server, call,
+           [ejabberd_snmp_rt, {change_interval_rt, 60}]),
+    end_per_testcase(fallthrough, Config);
 end_per_testcase(CaseName, Config) ->
+    ok = escalus_ejabberd:rpc(ejabberd_snmp_core, reset_counters, []),
     escalus:end_per_testcase(CaseName, Config).
 
 %%--------------------------------------------------------------------
