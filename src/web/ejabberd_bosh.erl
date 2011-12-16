@@ -746,6 +746,7 @@ make_xmlstreamstart(XMPPDomain, Version) ->
     {xmlstreamstart, "stream:stream",
      [{"to", XMPPDomain},
       {"xmlns", ?NS_CLIENT},
+      {"xmlns:xmpp", ?NS_BOSH},
       {"xmlns:stream", ?NS_STREAM}|VersionEl]}.
 
 maybe_add_xmlstreamend(Els, "terminate") ->
@@ -778,7 +779,10 @@ encode_body(#body{attrs = Attrs, els = Els}) ->
                     {"condition", "remote-stream-error"},
                     {"xmlns:stream", ?NS_STREAM}|AttrsAcc],
                    [xml:element_to_binary(El)|XMLBuf]};
-             ({xmlstreamelement, El}, {AttrsAcc, XMLBuf}) ->
+             ({xmlstreamelement, {xmlelement, "stream:features", _, _} = El}, {AttrsAcc, XMLBuf}) ->
+                 {lists:keystore("xmlns:stream", 1, AttrsAcc, {"xmlns:stream", ?NS_STREAM}),
+                  [xml:element_to_binary(El)|XMLBuf]};
+           ({xmlstreamelement, El}, {AttrsAcc, XMLBuf}) ->
                   {AttrsAcc, [xml:element_to_binary(El)|XMLBuf]};
              ({xmlstreamend, _}, {AttrsAcc, XMLBuf}) ->
                   {[{"type", "terminate"},
@@ -789,8 +793,9 @@ encode_body(#body{attrs = Attrs, els = Els}) ->
                                  "" ->
                                      [{"authid", StreamID}|AttrsAcc];
                                  V ->
-                                     [{"xmpp:version", V},
-                                      {"authid", StreamID} | AttrsAcc]
+                                     lists:keystore("xmlns:xmpp", 1, [{"xmpp:version", V},
+                                             {"authid", StreamID} | AttrsAcc],
+                                         {"xmlns:xmpp", ?NS_BOSH})
                              end,
                   {NewAttrs, XMLBuf};
              ({xmlstreamerror, _}, {AttrsAcc, XMLBuf}) ->
