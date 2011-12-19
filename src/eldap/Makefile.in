@@ -6,7 +6,7 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-ASN_FLAGS = -bber_bin +optimize +driver
+ASN_FLAGS = -bber_bin +optimize
 
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
