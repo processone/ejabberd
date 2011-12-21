@@ -199,7 +199,7 @@ process_blocklist_block(LUser, LServer, JIDs) ->
 	    Error;
 	{atomic, {ok, Default, List}} ->
             UserList = make_userlist(Default, List),
-	    broadcast_list_update(LUser, LServer, Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
 	    broadcast_blocklist_event(LUser, LServer, {block, JIDs}),
 	    {result, [], UserList};
 	_ ->
