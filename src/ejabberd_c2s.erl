@@ -1356,7 +1356,7 @@ handle_event({del_rosteritem, IJID}, StateName, StateData) ->
     NewStateData = roster_change(IJID, none, StateData),
     fsm_next_state(StateName, NewStateData);
 
-handle_event({xmlstreamcdata, _}, StateName, StateData) ->
+handle_event({xmlstreamcdata, _}, session_established = StateName, StateData) ->
     ?DEBUG("cdata ping", []),
     NSD1 = change_reception(StateData, true),
     NSD2 = start_keepalive_timer(NSD1),
