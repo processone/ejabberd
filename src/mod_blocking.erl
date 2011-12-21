@@ -67,9 +67,9 @@ process_iq_get(_, From, _To, #iq{ns = ?NS_BLOCKING, payload = SubEl}, _) ->
 	true ->
 	    LUser = exmpp_jid:prep_node(From),
 	    LServer = exmpp_jid:prep_domain(From),
-	    process_blocklist_get(LUser, LServer);
+	    {stop, process_blocklist_get(LUser, LServer)};
 	false ->
-	    {error, 'bad-request'}
+	    {stop, {error, 'bad-request'}}
     end;
 
 process_iq_get(Acc, _, _, _, _) ->
@@ -80,7 +80,7 @@ process_iq_set(_, From, _To, #iq{ns = ?NS_BLOCKING,
 						  children = SubEls}}) ->
     LUser = exmpp_jid:prep_node(From),
     LServer = exmpp_jid:prep_domain(From),
-    case {SubElName, exmpp_xml:remove_cdata_from_list(SubEls)} of
+    Res = case {SubElName, exmpp_xml:remove_cdata_from_list(SubEls)} of
 	{block, []} ->
 	    {error, 'bad-request'};
 	{block, Els} ->
@@ -93,7 +93,8 @@ process_iq_set(_, From, _To, #iq{ns = ?NS_BLOCKING,
 	    process_blocklist_unblock(LUser, LServer, JIDs);
 	_ ->
 	    {error, 'bad-request'}
-    end;
+    end,
+    {stop, Res};
 
 process_iq_set(Acc, _, _,  _) ->
     Acc.
@@ -199,9 +200,10 @@ process_blocklist_block(LUser, LServer, JIDs) ->
 	    %%				  [{'=', user_host, {LUser, LServer}},
 	    %%				   {'=', name, Default}]),
 	    List = list_data_to_items(Data),
-	    broadcast_list_update(LUser, LServer, Default, List),
+	    UserList = make_userlist(Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
 	    broadcast_blocklist_event(LUser, LServer, {block, JIDs}),
-	    {result, []};
+	    {result, [], UserList};
 	Error ->
 	    ?DEBUG("Error ~n~p", [Error]),
 	    {error, 'internal-server-error'}
@@ -260,9 +262,10 @@ process_blocklist_unblock_all(LUser, LServer) ->
 	    {result, []};
 	{atomic, {ok, Default, Data}} ->
 	    List = list_data_to_items(Data),
-	    broadcast_list_update(LUser, LServer, Default, List),
+	    UserList = make_userlist(Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
 	    broadcast_blocklist_event(LUser, LServer, unblock_all),
-	    {result, []};
+	    {result, [], UserList};
 	_ ->
 	    {error, 'internal-server-error'}
     end.
@@ -305,17 +308,21 @@ process_blocklist_unblock(LUser, LServer, JIDs) ->
 	    {result, []};
 	{atomic, {ok, Default, Data}} ->
 	    List = list_data_to_items(Data),
-	    broadcast_list_update(LUser, LServer, Default, List),
+	    UserList = make_userlist(Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
 	    broadcast_blocklist_event(LUser, LServer, {unblock, JIDs}),
-	    {result, []};
+	    {result, [], UserList};
 	_ ->
 	    {error, 'internal-server-error'}
     end.
 
-broadcast_list_update(LUser, LServer, Name, List) ->
+make_userlist(Name, List) ->
     NeedDb = is_list_needdb(List),
+    #userlist{name = Name, list = List, needdb = NeedDb}.
+
+broadcast_list_update(LUser, LServer, Name, UserList) ->
     JID = exmpp_jid:make(LUser, LServer),
-    ListString = lists:flatten(io_lib:format("~p.", [#userlist{name = Name, list = List, needdb = NeedDb}])),
+    ListString = lists:flatten(io_lib:format("~p.", [UserList])),
     ejabberd_router:route(
       JID,
       JID,
