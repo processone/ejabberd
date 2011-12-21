@@ -34,6 +34,16 @@
 #define PARSE_COMMAND 0
 #define PARSE_FINAL_COMMAND 1
 
+/*
+ * R15B changed several driver callbacks to use ErlDrvSizeT and
+ * ErlDrvSSizeT typedefs instead of int.
+ * This provides missing typedefs on older OTP versions.
+ */
+#if ERL_DRV_EXTENDED_MAJOR_VERSION < 2
+typedef int ErlDrvSizeT;
+typedef int ErlDrvSSizeT;
+#endif
+
 ei_x_buff event_buf;
 ei_x_buff xmlns_buf;
 
@@ -190,10 +200,10 @@ static void expat_erl_stop(ErlDrvData handle)
    driver_free((char*)handle);
 }
 
-static int expat_erl_control(ErlDrvData drv_data,
+static ErlDrvSSizeT expat_erl_control(ErlDrvData drv_data,
 			     unsigned int command,
-			     char *buf, int len,
-			     char **rbuf, int rlen)
+			     char *buf, ErlDrvSizeT len,
+			     char **rbuf, ErlDrvSizeT rlen)
 {
    expat_data* d = (expat_data*)drv_data;
    int res, errcode;
@@ -251,7 +261,19 @@ ErlDrvEntry expat_driver_entry = {
    NULL,			/* handle */
    expat_erl_control,		/* F_PTR control, port_command callback */
    NULL,			/* F_PTR timeout, reserved */
-   NULL				/* F_PTR outputv, reserved */
+   NULL,			/* F_PTR outputv, reserved */
+  /* Added in Erlang/OTP R15B: */
+  NULL,                 /* ready_async */
+  NULL,                 /* flush */
+  NULL,                 /* call */
+  NULL,                 /* event */
+  ERL_DRV_EXTENDED_MARKER,        /* extended_marker */
+  ERL_DRV_EXTENDED_MAJOR_VERSION, /* major_version */
+  ERL_DRV_EXTENDED_MINOR_VERSION, /* minor_version */
+  0,                    /* driver_flags */
+  NULL,                 /* handle2 */
+  NULL,                 /* process_exit */
+  NULL                  /* stop_select */
 };
 
 DRIVER_INIT(expat_erl) /* must match name in driver_entry */

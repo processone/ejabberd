@@ -24,16 +24,26 @@
 #include <openssl/md2.h>
 #endif
 
+/*
+ * R15B changed several driver callbacks to use ErlDrvSizeT and
+ * ErlDrvSSizeT typedefs instead of int.
+ * This provides missing typedefs on older OTP versions.
+ */
+#if ERL_DRV_EXTENDED_MAJOR_VERSION < 2
+typedef int ErlDrvSizeT;
+typedef int ErlDrvSSizeT;
+#endif
+
 static ErlDrvData sha_drv_start(ErlDrvPort port, char *buf)
 {
   set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
   return NULL;
 }
 
-static int sha_drv_control(ErlDrvData handle,
+static ErlDrvSSizeT sha_drv_control(ErlDrvData handle,
 			   unsigned int command,
-			   char *buf, int len,
-			   char **rbuf, int rlen)
+			   char *buf, ErlDrvSizeT len,
+			   char **rbuf, ErlDrvSizeT rlen)
 {
   ErlDrvBinary *b = NULL;
 
@@ -89,7 +99,19 @@ ErlDrvEntry sha_driver_entry = {
   NULL,			/* handle */
   sha_drv_control,	/* F_PTR control, port_command callback */
   NULL,			/* F_PTR timeout, reserved */
-  NULL			/* F_PTR outputv, reserved */
+  NULL,			/* F_PTR outputv, reserved */
+  /* Added in Erlang/OTP R15B: */
+  NULL,                 /* ready_async */
+  NULL,                 /* flush */
+  NULL,                 /* call */
+  NULL,                 /* event */
+  ERL_DRV_EXTENDED_MARKER,        /* extended_marker */
+  ERL_DRV_EXTENDED_MAJOR_VERSION, /* major_version */
+  ERL_DRV_EXTENDED_MINOR_VERSION, /* minor_version */
+  0,                    /* driver_flags */
+  NULL,                 /* handle2 */
+  NULL,                 /* process_exit */
+  NULL                  /* stop_select */
 };
 
 DRIVER_INIT(sha_drv) /* must match name in driver_entry */
