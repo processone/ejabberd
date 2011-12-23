@@ -114,6 +114,7 @@
 	 updated_list/3]).
 
 -include_lib("exmpp/include/exmpp.hrl").
+-include_lib("exmpp/include/exmpp_jid.hrl").
 
 -include("ejabberd.hrl").
 -include("mod_privacy.hrl").
@@ -674,6 +675,27 @@ get_user_list(_, LUser, LServer)
 %% From is the sender, To is the destination.
 %% If Dir = out, User@Server is the sender account (From).
 %% If Dir = in, User@Server is the destination account (To).
+check_packet(_, _User, _Server,
+	     _UserList,
+	     {#jid{node = "", domain = Server} = _From,
+              #jid{domain = Server} = _To,
+              _},
+	     in) ->
+    allow;
+check_packet(_, _User, _Server,
+	     _UserList,
+	     {#jid{domain = Server} = _From,
+              #jid{node = "", domain = Server} = _To,
+              _},
+	     out) ->
+    allow;
+check_packet(_, _User, _Server,
+	     _UserList,
+	     {#jid{node = User, domain = Server} = _From,
+              #jid{node = User, domain = Server} = _To,
+              _},
+	     _Dir) ->
+    allow;
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
 	     {From, To, #xmlel{name = PName} = El},
