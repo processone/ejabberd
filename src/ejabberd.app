@@ -1,6 +1,6 @@
 {application, ejabberd,
  [{description, "ejabberd"},
-  {vsn, "3.0.0-alpha-x"},
+  {vsn, "3.0.0-alpha-5"},
   {modules, [acl,
 	     adhoc,
 	     configure,
