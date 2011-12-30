@@ -39,6 +39,11 @@
 
 -record(private_storage, {usns, xml}).
 
+-define(Xmlel_Query(Attrs, Children),
+(
+    {xmlelement, "query", Attrs, Children}
+)).
+
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     mnesia:create_table(private_storage,
@@ -56,73 +61,97 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE).
 
 
-process_sm_iq(From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
-    #jid{luser = LUser, lserver = LServer} = From,
-    case lists:member(LServer, ?MYHOSTS) of
-	true ->
-	    {xmlelement, Name, Attrs, Els} = SubEl,
-	    case Type of
-		set ->
-		    F = fun() ->
-				lists:foreach(
-				  fun(El) ->
-					  set_data(LUser, LServer, El)
-				  end, Els)
-			end,
-		    mnesia:transaction(F),
-		    IQ#iq{type = result,
-			  sub_el = [{xmlelement, Name, Attrs, []}]};
-		get ->
-		    case catch get_data(LUser, LServer, Els) of
-			{'EXIT', _Reason} ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl,
-					    ?ERR_INTERNAL_SERVER_ERROR]};
-			Res ->
-			    IQ#iq{type = result,
-				  sub_el = [{xmlelement, Name, Attrs, Res}]}
-		    end
-	    end;
-	false ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+process_sm_iq(#jid{luser = LUser, lserver = LServer},
+  #jid{luser = LUser, lserver = LServer}, IQ)
+  when IQ#iq.type == 'set' ->
+    case IQ#iq.sub_el of
+        {xmlelement, "query", _, Xmlels} ->
+            case filter_xmlels(Xmlels) of
+                [] ->
+                    IQ#iq{
+                      type   = error,
+                      sub_el = [IQ#iq.sub_el, ?ERR_NOT_ACCEPTABLE]
+                    };
+                Data ->
+                    mnesia:transaction(fun() ->
+                        lists:foreach(fun
+                            (Datum) ->
+                                set_data(LUser, LServer, Datum)
+                        end, Data)
+                    end),
+                    IQ#iq{type = result, sub_el = []}
+            end;
+        _ ->
+            IQ#iq{type = error, sub_el = [IQ#iq.sub_el, ?ERR_NOT_ACCEPTABLE]}
+    end;
+%%
+process_sm_iq(#jid{luser = LUser, lserver = LServer},
+  #jid{luser = LUser, lserver = LServer}, IQ)
+  when IQ#iq.type == 'get' ->
+    case IQ#iq.sub_el of
+        {xmlelement, "query", Attrs, Xmlels} ->
+            case filter_xmlels(Xmlels) of
+                [] ->
+                    IQ#iq{
+                      type   = error,
+                      sub_el = [IQ#iq.sub_el, ?ERR_BAD_FORMAT]
+                    };
+                Data ->
+                    case catch get_data(LUser, LServer, Data) of
+                        {'EXIT', _Reason} ->
+                            IQ#iq{
+                                type   = error,
+                                sub_el = [IQ#iq.sub_el, ?ERR_INTERNAL_SERVER_ERROR]
+                            };
+                        Storage_Xmlels ->
+                            IQ#iq{
+                                type   = result,
+                                sub_el = [?Xmlel_Query(Attrs, Storage_Xmlels)]
+                            }
+                    end
+            end;
+        _ ->
+            IQ#iq{type = error, sub_el = [IQ#iq.sub_el, ?ERR_BAD_FORMAT]}
+    end;
+%%
+process_sm_iq(_From, _To, IQ) ->
+    IQ#iq{type = error, sub_el = [IQ#iq.sub_el, ?ERR_FORBIDDEN]}.
+
+
+filter_xmlels(Xmlels) ->
+    filter_xmlels(Xmlels, []).
+
+filter_xmlels([], Data) ->
+    lists:reverse(Data);
+filter_xmlels([{xmlelement, _, Attrs, _} = Xmlel | Xmlels], Data) ->
+    case xml:get_attr_s("xmlns", Attrs) of
+        ""    -> [];
+        XmlNS -> filter_xmlels(Xmlels, [{XmlNS, Xmlel} | Data])
+    end;
+filter_xmlels([_ | Xmlels], Data) ->
+    filter_xmlels(Xmlels, Data).
+
+
+set_data(LUser, LServer, {XmlNS, Xmlel}) ->
+    mnesia:write(#private_storage{
+        usns = {LUser, LServer, XmlNS},
+        xml  = Xmlel
+    }).
+
+
+get_data(LUser, LServer, Data) ->
+    get_data(LUser, LServer, Data, []).
+
+get_data(_LUser, _LServer, [], Storage_Xmlels) ->
+    lists:reverse(Storage_Xmlels);
+get_data(LUser, LServer, [{XmlNS, Xmlel} | Data], Storage_Xmlels) ->
+    case mnesia:dirty_read(private_storage, {LUser, LServer, XmlNS}) of
+        [#private_storage{xml = Storage_Xmlel}] ->
+            get_data(LUser, LServer, Data, [Storage_Xmlel | Storage_Xmlels]);
+        _ ->
+            get_data(LUser, LServer, Data, [Xmlel | Storage_Xmlels])
     end.
 
-set_data(LUser, LServer, El) ->
-    case El of
-	{xmlelement, _Name, Attrs, _Els} ->
-	    XMLNS = xml:get_attr_s("xmlns", Attrs),
-	    case XMLNS of
-		"" ->
-		    ignore;
-		_ ->
-		    mnesia:write(
-		      #private_storage{usns = {LUser, LServer, XMLNS},
-				       xml = El})
-	    end;
-	_ ->
-	    ignore
-    end.
-
-get_data(LUser, LServer, Els) ->
-    get_data(LUser, LServer, Els, []).
-
-get_data(_LUser, _LServer, [], Res) ->
-    lists:reverse(Res);
-get_data(LUser, LServer, [El | Els], Res) ->
-    case El of
-	{xmlelement, _Name, Attrs, _} ->
-	    XMLNS = xml:get_attr_s("xmlns", Attrs),
-	    case mnesia:dirty_read(private_storage, {LUser, LServer, XMLNS}) of
-		[R] ->
-		    get_data(LUser, LServer, Els,
-			     [R#private_storage.xml | Res]);
-		[] ->
-		    get_data(LUser, LServer, Els,
-			     [El | Res])
-	    end;
-	_ ->
-	    get_data(LUser, LServer, Els, Res)
-    end.
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
