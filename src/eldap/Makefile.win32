@@ -6,7 +6,7 @@ EFLAGS = -I .. -pz ..
 OUTDIR = ..
 BEAMS = ..\eldap.beam ..\eldap_filter.beam ..\eldap_pool.beam ..\eldap_utils.beam ..\eldap_filter_yecc.beam
 
-ASN_FLAGS = -bber_bin +optimize +driver
+ASN_FLAGS = -bber_bin +optimize
 
 ALL : $(BEAMS)
 

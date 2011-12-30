@@ -463,7 +463,8 @@ get_user_groups(US) ->
 	    []
     end ++ get_special_users_groups(Host).
 
-is_group_enabled(Host, Group) ->
+is_group_enabled(Host1, Group1) ->
+    {Host, Group} = split_grouphost(Host1, Group1),
     case catch mnesia:dirty_read(sr_group, {Group, Host}) of
 	[#sr_group{opts = Opts}] ->
 	    not lists:member(disabled, Opts);
@@ -488,7 +489,8 @@ get_group_opt(Host, Group, Opt, Default) ->
 get_online_users(Host) ->
     lists:usort([{U, S} || {U, S, _} <- ejabberd_sm:get_vh_session_list(Host)]).
 
-get_group_users(Host, Group) ->
+get_group_users(Host1, Group1) ->
+    {Host, Group} = split_grouphost(Host1, Group1),
     case get_group_opt(Host, Group, all_users, false) of
 	true ->
 	    ejabberd_auth:get_vh_registered_users(Host);
@@ -531,7 +533,8 @@ get_group_explicit_users(Host, Group) ->
 	    []
     end.
 
-get_group_name(Host, Group) ->
+get_group_name(Host1, Group1) ->
+    {Host, Group} = split_grouphost(Host1, Group1),
     get_group_opt(Host, Group, name, Group).
 
 %% Get list of names of groups that have @all@/@online@/etc in the memberlist
@@ -614,8 +617,8 @@ is_user_in_group(US, Group, Host) ->
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
 add_user_to_group(Host, US, Group) ->
     {LUser, LServer} = US,
-    case regexp:match(LUser, "^@.+@$") of
-	{match,_,_} ->
+    case ejabberd_regexp:run(LUser, "^@.+@$") of
+	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	    MoreGroupOpts =
 		case LUser of
@@ -647,8 +650,8 @@ push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
 remove_user_from_group(Host, US, Group) ->
     GroupHost = {Group, Host},
     {LUser, LServer} = US,
-    case regexp:match(LUser, "^@.+@$") of
-	{match,_,_} ->
+    case ejabberd_regexp:run(LUser, "^@.+@$") of
+	match ->
 	    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	    NewGroupOpts =
 		case LUser of
@@ -967,7 +970,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 	end ++
 	[[us_to_list(Member), $\n] || Member <- Members],
     FDisplayedGroups = [[DG, $\n] || DG <- DisplayedGroups],
-    DescNL = length(element(2, regexp:split(Description, "\n"))),
+    DescNL = length(ejabberd_regexp:split(Description, "\n")),
     FGroup =
 	?XAE("table", [{"class", "withtextareas"}],
 	     [?XE("tbody",
@@ -1114,3 +1117,11 @@ get_opt(Opts, Opt, Default) ->
 
 us_to_list({User, Server}) ->
     jlib:jid_to_string({User, Server, ""}).
+
+split_grouphost(Host, Group) ->
+    case string:tokens(Group, "@") of
+	[GroupName, HostName] ->
+	    {HostName, GroupName};
+	[_] ->
+	    {Host, Group}
+    end.

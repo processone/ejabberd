@@ -91,7 +91,7 @@ extract_lang_all ()
 	cd $MSGS_DIR
 	for i in $( ls *.msg ) ; do
 		MISSING=`cat $i.translate | grep "\", \"\"}." | wc -l`
-		LANGUAGE=`grep "Language:" $i.translate | sed 's/% Language: //g'`
+		LANGUAGE=`grep "X-Language:" $i.translate | sed 's/% Language: //g'`
 		LASTAUTH=`grep "Author:" $i.translate | head -n 1 | sed 's/% Author: //g'`
 		echo -e "$i\t$MISSING\t$LANGUAGE\t$LASTAUTH"
 	done
@@ -258,7 +258,7 @@ extract_lang_updateall ()
 		MISSING=`msgfmt --statistics $PO 2>&1 | awk '{printf "%5s", $4 }'`
 		echo -n " $MISSING"
 
-		LANGUAGE=`grep "Language:" $PO | sed 's/\"X-Language: //g' | sed 's/\\\\n\"//g' | awk '{printf "%-12s", $1}'`
+		LANGUAGE=`grep "X-Language:" $PO | sed 's/\"X-Language: //g' | sed 's/\\\\n\"//g' | awk '{printf "%-12s", $1}'`
 		echo -n " $LANGUAGE"
 
 		LASTAUTH=`grep "Last-Translator" $PO | sed 's/\"Last-Translator: //g' | sed 's/\\\\n\"//g'`

@@ -190,7 +190,7 @@ process(["help" | Mode]) ->
 	    print_usage_help(MaxC, ShCode),
 	    ?STATUS_SUCCESS;
 	[CmdString | _] ->
-	    {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
+	    CmdStringU = ejabberd_regexp:greplace(CmdString, "-", "_"),
 	    print_usage_commands(CmdStringU, MaxC, ShCode),
 	    ?STATUS_SUCCESS
     end;
@@ -281,7 +281,7 @@ try_call_command(Args, Auth, AccessCommands) ->
 
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, ErrorType}
 call_command([CmdString | Args], Auth, AccessCommands) ->
-    {ok, CmdStringU, _} = regexp:gsub(CmdString, "-", "_"),
+    CmdStringU = ejabberd_regexp:greplace(CmdString, "-", "_"),
     Command = list_to_atom(CmdStringU),
     case ejabberd_commands:get_command_format(Command) of
 	{error, command_unknown} ->
@@ -678,13 +678,13 @@ filter_commands(All, SubString) ->
     end.
 
 filter_commands_regexp(All, Glob) ->
-    RegExp = regexp:sh_to_awk(Glob),
+    RegExp = ejabberd_regexp:sh_to_awk(Glob),
     lists:filter(
       fun(Command) ->
-	      case regexp:first_match(Command, RegExp) of
-		  {match, _, _} ->
+	      case ejabberd_regexp:run(Command, RegExp) of
+		  match ->
 		      true;
-		  _ ->
+		  nomatch ->
 		      false
 	      end
       end,
