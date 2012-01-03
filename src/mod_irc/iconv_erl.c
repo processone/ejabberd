@@ -24,6 +24,16 @@
 #include <ei.h>
 #include <iconv.h>
 
+/*
+ * R15B changed several driver callbacks to use ErlDrvSizeT and
+ * ErlDrvSSizeT typedefs instead of int.
+ * This provides missing typedefs on older OTP versions.
+ */
+#if ERL_DRV_EXTENDED_MAJOR_VERSION < 2
+typedef int ErlDrvSizeT;
+typedef int ErlDrvSSizeT;
+#endif
+
 typedef struct {
       ErlDrvPort port;
       iconv_t cd;
@@ -46,10 +56,10 @@ static void iconv_erl_stop(ErlDrvData handle)
    driver_free((char*)handle);
 }
 
-static int iconv_erl_control(ErlDrvData drv_data,
+static ErlDrvSSizeT iconv_erl_control(ErlDrvData drv_data,
 			     unsigned int command,
-			     char *buf, int len,
-			     char **rbuf, int rlen)
+			     char *buf, ErlDrvSizeT len,
+			     char **rbuf, ErlDrvSizeT rlen)
 {
    int i;
    int size;
@@ -144,7 +154,19 @@ ErlDrvEntry iconv_driver_entry = {
    NULL,                       /* handle */
    iconv_erl_control,          /* F_PTR control, port_command callback */
    NULL,                       /* F_PTR timeout, reserved */
-   NULL                        /* F_PTR outputv, reserved */
+   NULL,                       /* F_PTR outputv, reserved */
+  /* Added in Erlang/OTP R15B: */
+  NULL,                 /* ready_async */
+  NULL,                 /* flush */
+  NULL,                 /* call */
+  NULL,                 /* event */
+  ERL_DRV_EXTENDED_MARKER,        /* extended_marker */
+  ERL_DRV_EXTENDED_MAJOR_VERSION, /* major_version */
+  ERL_DRV_EXTENDED_MINOR_VERSION, /* minor_version */
+  0,                    /* driver_flags */
+  NULL,                 /* handle2 */
+  NULL,                 /* process_exit */
+  NULL                  /* stop_select */
 };
 
 DRIVER_INIT(iconv_erl) /* must match name in driver_entry */

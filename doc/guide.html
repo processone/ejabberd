@@ -6,7 +6,7 @@
  
  
 
- ejabberd 2.1.9 
+ ejabberd 2.1.10 
  
  Installation and Operation Guide
  
@@ -76,7 +76,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <HR SIZE=2><BR>
 <BR>
 
-<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.9 </B></FONT></TD></TR>
+<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.10 </B></FONT></TD></TR>
 <TR><TD ALIGN=right NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=right NOWRAP> <FONT SIZE=6>Installation and Operation Guide</FONT></TD></TR>
 </TABLE><BR>
@@ -207,21 +207,20 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </LI><LI CLASS="li-toc"><A HREF="#htoc92">6.2&#XA0;&#XA0;Clustering Setup</A>
 </LI><LI CLASS="li-toc"><A HREF="#htoc93">6.3&#XA0;&#XA0;Service Load-Balancing</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc94">6.3.1&#XA0;&#XA0;Components Load-Balancing</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc95">6.3.2&#XA0;&#XA0;Domain Load-Balancing Algorithm</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc96">6.3.3&#XA0;&#XA0;Load-Balancing Buckets</A>
+<A HREF="#htoc94">6.3.1&#XA0;&#XA0;Domain Load-Balancing Algorithm</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc95">6.3.2&#XA0;&#XA0;Load-Balancing Buckets</A>
 </LI></UL>
 </LI></UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc97">Chapter&#XA0;7&#XA0;&#XA0;Debugging</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc96">Chapter&#XA0;7&#XA0;&#XA0;Debugging</A>
 <UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc98">7.1&#XA0;&#XA0;Log Files</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc99">7.2&#XA0;&#XA0;Debug Console</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc100">7.3&#XA0;&#XA0;Watchdog Alerts</A>
+<A HREF="#htoc97">7.1&#XA0;&#XA0;Log Files</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc98">7.2&#XA0;&#XA0;Debug Console</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc99">7.3&#XA0;&#XA0;Watchdog Alerts</A>
 </LI></UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc101">Appendix&#XA0;A&#XA0;&#XA0;Internationalization and Localization</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc102">Appendix&#XA0;B&#XA0;&#XA0;Release Notes</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc103">Appendix&#XA0;C&#XA0;&#XA0;Acknowledgements</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc104">Appendix&#XA0;D&#XA0;&#XA0;Copyright Information</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc100">Appendix&#XA0;A&#XA0;&#XA0;Internationalization and Localization</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc101">Appendix&#XA0;B&#XA0;&#XA0;Release Notes</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc102">Appendix&#XA0;C&#XA0;&#XA0;Acknowledgements</A>
+</LI><LI CLASS="li-toc"><A HREF="#htoc103">Appendix&#XA0;D&#XA0;&#XA0;Copyright Information</A>
 </LI></UL><!--TOC chapter Introduction-->
 <H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc1">Chapter&#XA0;1</A>&#XA0;&#XA0;Introduction</H1><!--SEC END --><P>
 <A NAME="intro"></A></P><P><TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang/OTP</A>.</P><P><TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
@@ -3251,8 +3250,9 @@ represents all the registered users in the virtual host;
 which is only recommended for a small server with just a few hundred users.
 The special member directive <TT>@online@</TT>
 represents the online users in the virtual host.
-</DD><DT CLASS="dt-description"><B>Displayed groups</B></DT><DD CLASS="dd-description"> A list of groups that will be in the rosters of this
-group&#X2019;s members.
+</DD><DT CLASS="dt-description"><B>Displayed groups</B></DT><DD CLASS="dd-description">
+A list of groups that will be in the rosters of this group&#X2019;s members.
+A group of other vhost can be identified with <TT>groupid@vhost</TT>
 </DD></DL><P>Examples:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Take the case of a computer club that wants all its members seeing each
@@ -4359,9 +4359,8 @@ enabled only on one machine in the cluster.
 </LI></OL><P>You can repeat these steps for other machines supposed to serve this
 domain.</P><P> <A NAME="servicelb"></A> </P><!--TOC section Service Load-Balancing-->
 <H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc93">6.3</A>&#XA0;&#XA0;<A HREF="#servicelb">Service Load-Balancing</A></H2><!--SEC END --><P> <A NAME="servicelb"></A> 
-</P><P> <A NAME="componentlb"></A> </P><!--TOC subsection Components Load-Balancing-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc94">6.3.1</A>&#XA0;&#XA0;<A HREF="#componentlb">Components Load-Balancing</A></H3><!--SEC END --><P> <A NAME="componentlb"></A> </P><P> <A NAME="domainlb"></A> </P><!--TOC subsection Domain Load-Balancing Algorithm-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc95">6.3.2</A>&#XA0;&#XA0;<A HREF="#domainlb">Domain Load-Balancing Algorithm</A></H3><!--SEC END --><P> <A NAME="domainlb"></A> 
+</P><P> <A NAME="domainlb"></A> </P><!--TOC subsection Domain Load-Balancing Algorithm-->
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc94">6.3.1</A>&#XA0;&#XA0;<A HREF="#domainlb">Domain Load-Balancing Algorithm</A></H3><!--SEC END --><P> <A NAME="domainlb"></A> 
 </P><P><TT>ejabberd</TT> includes an algorithm to load balance the components that are plugged on an <TT>ejabberd</TT> cluster. It means that you can plug one or several instances of the same component on each <TT>ejabberd</TT> cluster and that the traffic will be automatically distributed.</P><P>The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is chosen randomly. If no instance is available locally, one instance is chosen randomly among the remote component instances.</P><P>If you need a different behaviour, you can change the load balancing behaviour with the option <TT>domain_balancing</TT>. The syntax of the option is the following:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{domain_balancing, "component.example.com", BalancingCriteria}.</TT></B></DT></DL><P>Several balancing criteria are available:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
@@ -4370,12 +4369,12 @@ domain.</P><P> <A NAME="servicelb"></A> </P><!--TOC section Service Load-Balanci
 </LI><LI CLASS="li-itemize"><TT>bare_destination</TT>: the bare JID (without resource) of the packet <TT>to</TT> attribute is used.
 </LI><LI CLASS="li-itemize"><TT>bare_source</TT>: the bare JID (without resource) of the packet <TT>from</TT> attribute is used.
 </LI></UL><P>If the value corresponding to the criteria is the same, the same component instance in the cluster will be used.</P><P> <A NAME="lbbuckets"></A> </P><!--TOC subsection Load-Balancing Buckets-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc96">6.3.3</A>&#XA0;&#XA0;<A HREF="#lbbuckets">Load-Balancing Buckets</A></H3><!--SEC END --><P> <A NAME="lbbuckets"></A> 
+<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc95">6.3.2</A>&#XA0;&#XA0;<A HREF="#lbbuckets">Load-Balancing Buckets</A></H3><!--SEC END --><P> <A NAME="lbbuckets"></A> 
 </P><P>When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failing the service will not work correctly unless the sessions are rebalanced.</P><P>In this case, it is best to limit the problem to the sessions handled by the failing component. This is what the <TT>domain_balancing_component_number</TT> option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.</P><P>The syntax is:
 </P><DL CLASS="description"><DT CLASS="dt-description"><B><TT>{domain_balancing_component_number, "component.example.com", Number}.</TT></B></DT></DL><P> <A NAME="debugging"></A> </P><!--TOC chapter Debugging-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc97">Chapter&#XA0;7</A>&#XA0;&#XA0;<A HREF="#debugging">Debugging</A></H1><!--SEC END --><P> <A NAME="debugging"></A> 
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc96">Chapter&#XA0;7</A>&#XA0;&#XA0;<A HREF="#debugging">Debugging</A></H1><!--SEC END --><P> <A NAME="debugging"></A> 
 </P><P> <A NAME="logfiles"></A> </P><!--TOC section Log Files-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc98">7.1</A>&#XA0;&#XA0;<A HREF="#logfiles">Log Files</A></H2><!--SEC END --><P> <A NAME="logfiles"></A> </P><P>An <TT>ejabberd</TT> node writes two log files:
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc97">7.1</A>&#XA0;&#XA0;<A HREF="#logfiles">Log Files</A></H2><!--SEC END --><P> <A NAME="logfiles"></A> </P><P>An <TT>ejabberd</TT> node writes two log files:
 </P><DL CLASS="description"><DT CLASS="dt-description">
 	<B><TT>ejabberd.log</TT></B></DT><DD CLASS="dd-description"> is the ejabberd service log, with the messages reported by <TT>ejabberd</TT> code
 	</DD><DT CLASS="dt-description"><B><TT>erlang.log</TT></B></DT><DD CLASS="dd-description"> is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
@@ -4400,12 +4399,12 @@ The ejabberdctl command <TT>reopen-log</TT>
 (please refer to section <A HREF="#ectl-commands">4.1.1</A>)
 reopens the log files,
 and also renames the old ones if you didn&#X2019;t rename them.</P><P> <A NAME="debugconsole"></A> </P><!--TOC section Debug Console-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc99">7.2</A>&#XA0;&#XA0;<A HREF="#debugconsole">Debug Console</A></H2><!--SEC END --><P> <A NAME="debugconsole"></A> </P><P>The Debug Console is an Erlang shell attached to an already running <TT>ejabberd</TT> server.
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc98">7.2</A>&#XA0;&#XA0;<A HREF="#debugconsole">Debug Console</A></H2><!--SEC END --><P> <A NAME="debugconsole"></A> </P><P>The Debug Console is an Erlang shell attached to an already running <TT>ejabberd</TT> server.
 With this Erlang shell, an experienced administrator can perform complex tasks.</P><P>This shell gives complete control over the <TT>ejabberd</TT> server,
 so it is important to use it with extremely care.
 There are some simple and safe examples in the article
 <A HREF="http://www.ejabberd.im/interconnect-erl-nodes">Interconnecting Erlang Nodes</A></P><P>To exit the shell, close the window or press the keys: control+c control+c.</P><P> <A NAME="watchdog"></A> </P><!--TOC section Watchdog Alerts-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc100">7.3</A>&#XA0;&#XA0;<A HREF="#watchdog">Watchdog Alerts</A></H2><!--SEC END --><P> <A NAME="watchdog"></A> 
+<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc99">7.3</A>&#XA0;&#XA0;<A HREF="#watchdog">Watchdog Alerts</A></H2><!--SEC END --><P> <A NAME="watchdog"></A> 
 </P><P><TT>ejabberd</TT> includes a watchdog mechanism that may be useful to developers
 when troubleshooting a problem related to memory usage.
 If a process in the <TT>ejabberd</TT> server consumes more memory than the configured threshold,
@@ -4425,7 +4424,7 @@ or in a conversation with the watchdog alert bot.</P><P>The syntax is:
 To remove all watchdog admins, set the option with an empty list:
 </P><PRE CLASS="verbatim">{watchdog_admins, []}.
 </PRE><P> <A NAME="i18ni10n"></A> </P><!--TOC chapter Internationalization and Localization-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc101">Appendix&#XA0;A</A>&#XA0;&#XA0;<A HREF="#i18ni10n">Internationalization and Localization</A></H1><!--SEC END --><P> <A NAME="i18ni10n"></A> 
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc100">Appendix&#XA0;A</A>&#XA0;&#XA0;<A HREF="#i18ni10n">Internationalization and Localization</A></H1><!--SEC END --><P> <A NAME="i18ni10n"></A> 
 </P><P>The source code of <TT>ejabberd</TT> supports localization.
 The translators can edit the
 <A HREF="http://www.gnu.org/software/gettext/">gettext</A> .po files
@@ -4460,9 +4459,9 @@ HTTP header &#X2018;Accept-Language: ru&#X2019;</TD></TR>
 </TABLE></DIV>
 <A NAME="fig:webadmmainru"></A>
 <DIV CLASS="center"><HR WIDTH="80%" SIZE=2></DIV></DIV></BLOCKQUOTE><P> <A NAME="releasenotes"></A> </P><!--TOC chapter Release Notes-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc102">Appendix&#XA0;B</A>&#XA0;&#XA0;<A HREF="#releasenotes">Release Notes</A></H1><!--SEC END --><P> <A NAME="releasenotes"></A> 
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc101">Appendix&#XA0;B</A>&#XA0;&#XA0;<A HREF="#releasenotes">Release Notes</A></H1><!--SEC END --><P> <A NAME="releasenotes"></A> 
 </P><P>Release notes are available from <A HREF="http://www.process-one.net/en/ejabberd/release_notes/">ejabberd Home Page</A></P><P> <A NAME="acknowledgements"></A> </P><!--TOC chapter Acknowledgements-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc103">Appendix&#XA0;C</A>&#XA0;&#XA0;<A HREF="#acknowledgements">Acknowledgements</A></H1><!--SEC END --><P> <A NAME="acknowledgements"></A> </P><P>Thanks to all people who contributed to this guide:
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc102">Appendix&#XA0;C</A>&#XA0;&#XA0;<A HREF="#acknowledgements">Acknowledgements</A></H1><!--SEC END --><P> <A NAME="acknowledgements"></A> </P><P>Thanks to all people who contributed to this guide:
 </P><UL CLASS="itemize"><LI CLASS="li-itemize">
 Alexey Shchepin (<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A>)
 </LI><LI CLASS="li-itemize">Badlop (<A HREF="xmpp:badlop@jabberes.org"><TT>xmpp:badlop@jabberes.org</TT></A>)
@@ -4475,7 +4474,7 @@ Alexey Shchepin (<A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT
 </LI><LI CLASS="li-itemize">Sergei Golovan (<A HREF="xmpp:sgolovan@nes.ru"><TT>xmpp:sgolovan@nes.ru</TT></A>)
 </LI><LI CLASS="li-itemize">Vsevolod Pelipas (<A HREF="xmpp:vsevoload@jabber.ru"><TT>xmpp:vsevoload@jabber.ru</TT></A>)
 </LI></UL><P> <A NAME="copyright"></A> </P><!--TOC chapter Copyright Information-->
-<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc104">Appendix&#XA0;D</A>&#XA0;&#XA0;<A HREF="#copyright">Copyright Information</A></H1><!--SEC END --><P> <A NAME="copyright"></A> </P><P>Ejabberd Installation and Operation Guide.<BR>
+<H1 CLASS="chapter"><!--SEC ANCHOR --><A NAME="htoc103">Appendix&#XA0;D</A>&#XA0;&#XA0;<A HREF="#copyright">Copyright Information</A></H1><!--SEC END --><P> <A NAME="copyright"></A> </P><P>Ejabberd Installation and Operation Guide.<BR>
 Copyright &#XA9; 2003 &#X2014; 2010 ProcessOne</P><P>This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2

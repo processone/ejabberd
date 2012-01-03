@@ -70,7 +70,7 @@
 		wait_timer,
 		ctime = 0,
 		timer,
-                jid,
+		jid,
 		pause=0,
 		unprocessed_req_list = [], % list of request that have been delayed for proper reordering: {Request, PID}
 		req_list = [], % list of requests (cache)

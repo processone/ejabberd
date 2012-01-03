@@ -1,0 +1,39 @@
+
+                              Release Notes
+                             ejabberd 2.1.10
+
+  ejabberd 2.1.10 includes a few bugfixes and improvements.
+
+  Read more details about the changes in:
+    http://redir.process-one.net/ejabberd-2.1.10
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+  The major changes are:
+
+* Erlang/OTP compatibility
+- Support Erlang/OTP R15B regexp and drivers (EJAB-1521)
+- Fix modules update in R14B04 and higher
+- Fix modules update of stripped beams (EJAB-1520)
+
+* XMPP Core
+- Fix presence problem in C2S after first unavailable (EJAB-1466)
+- Fix bug on S2S shaper when TLS is used
+- Prevent overload of incoming S2S connections
+
+* XEPs
+- BOSH: Get rid of useless mnesia transaction (EJAB-1502)
+- MUC: Don't reveal invitee resource when room informs invitor
+- Privacy: Activate "Blocked Contacts" to current c2s connection (EJAB-1519)
+- Privacy: Always allow packets from user's server and bare jid (EJAB-1441)
+- Pubsub: Add hooks for node creation/deletion (EJAB-1470)
+- Shared Rosters: support groupname@vhost in Displayed Groups (EJAB-506)
+- Vcard: Fix error when lowercasing some search results (EJAB-1490)
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/

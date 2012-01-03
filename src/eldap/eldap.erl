@@ -439,7 +439,7 @@ init([]) ->
     end;
 init({Hosts, Port, Rootdn, Passwd, Opts}) ->
     catch ssl:start(),
-    ssl:seed(randoms:get_string()),
+    catch ssl:seed(randoms:get_string()),
     Encrypt = case proplists:get_value(encrypt, Opts) of
 		  tls -> tls;
 		  _ -> none

@@ -223,19 +223,19 @@ match_acl(ACL, JID, Host) ->
     end.
 
 is_regexp_match(String, RegExp) ->
-    case regexp:first_match(String, RegExp) of
+    case ejabberd_regexp:run(String, RegExp) of
 	nomatch ->
 	    false;
-	{match, _, _} ->
+	match ->
 	    true;
 	{error, ErrDesc} ->
 	    ?ERROR_MSG(
 	       "Wrong regexp ~p in ACL: ~p",
-	       [RegExp, lists:flatten(regexp:format_error(ErrDesc))]),
+	       [RegExp, ErrDesc]),
 	    false
     end.
 
 is_glob_match(String, Glob) ->
-    is_regexp_match(String, regexp:sh_to_awk(Glob)).
+    is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
 
 

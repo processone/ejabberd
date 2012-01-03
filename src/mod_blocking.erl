@@ -64,7 +64,7 @@ process_iq_get(_, From, _To,
 		   sub_el = {xmlelement, "blocklist", _, _}},
 	       _) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    process_blocklist_get(LUser, LServer);
+    {stop, process_blocklist_get(LUser, LServer)};
 
 process_iq_get(Acc, _, _, _, _) ->
     Acc.
@@ -72,20 +72,22 @@ process_iq_get(Acc, _, _, _, _) ->
 process_iq_set(_, From, _To, #iq{xmlns = ?NS_BLOCKING,
 				 sub_el = {xmlelement, SubElName, _, SubEls}}) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    case {SubElName, xml:remove_cdata(SubEls)} of
-	{"block", []} ->
-	    {error, ?ERR_BAD_REQUEST};
-	{"block", Els} ->
-	    JIDs = parse_blocklist_items(Els, []),
-	    process_blocklist_block(LUser, LServer, JIDs);
-	{"unblock", []} ->
-	    process_blocklist_unblock_all(LUser, LServer);
-	{"unblock", Els} ->
-	    JIDs = parse_blocklist_items(Els, []),
-	    process_blocklist_unblock(LUser, LServer, JIDs);
-	_ ->
-	    {error, ?ERR_BAD_REQUEST}
-    end;
+    Res =
+        case {SubElName, xml:remove_cdata(SubEls)} of
+            {"block", []} ->
+                {error, ?ERR_BAD_REQUEST};
+            {"block", Els} ->
+                JIDs = parse_blocklist_items(Els, []),
+                process_blocklist_block(LUser, LServer, JIDs);
+            {"unblock", []} ->
+                process_blocklist_unblock_all(LUser, LServer);
+            {"unblock", Els} ->
+                JIDs = parse_blocklist_items(Els, []),
+                process_blocklist_unblock(LUser, LServer, JIDs);
+            _ ->
+                {error, ?ERR_BAD_REQUEST}
+        end,
+    {stop, Res};
 
 process_iq_set(Acc, _, _,  _) ->
     Acc.
@@ -196,9 +198,10 @@ process_blocklist_block(LUser, LServer, JIDs) ->
 	{atomic, {error, _} = Error} ->
 	    Error;
 	{atomic, {ok, Default, List}} ->
-	    broadcast_list_update(LUser, LServer, Default, List),
+            UserList = make_userlist(Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
 	    broadcast_blocklist_event(LUser, LServer, {block, JIDs}),
-	    {result, []};
+	    {result, [], UserList};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
@@ -238,9 +241,10 @@ process_blocklist_unblock_all(LUser, LServer) ->
 	{atomic, ok} ->
 	    {result, []};
 	{atomic, {ok, Default, List}} ->
-	    broadcast_list_update(LUser, LServer, Default, List),
+            UserList = make_userlist(Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
 	    broadcast_blocklist_event(LUser, LServer, unblock_all),
-	    {result, []};
+	    {result, [], UserList};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
@@ -284,22 +288,24 @@ process_blocklist_unblock(LUser, LServer, JIDs) ->
 	{atomic, ok} ->
 	    {result, []};
 	{atomic, {ok, Default, List}} ->
-	    broadcast_list_update(LUser, LServer, Default, List),
+            UserList = make_userlist(Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
 	    broadcast_blocklist_event(LUser, LServer, {unblock, JIDs}),
-	    {result, []};
+	    {result, [], UserList};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-broadcast_list_update(LUser, LServer, Name, List) ->
+make_userlist(Name, List) ->
     NeedDb = is_list_needdb(List),
+    #userlist{name = Name, list = List, needdb = NeedDb}.
+
+broadcast_list_update(LUser, LServer, Name, UserList) ->
     ejabberd_router:route(
       jlib:make_jid(LUser, LServer, ""),
       jlib:make_jid(LUser, LServer, ""),
       {xmlelement, "broadcast", [],
-       [{privacy_list,
-	 #userlist{name = Name, list = List, needdb = NeedDb},
-	 Name}]}).
+       [{privacy_list, UserList, Name}]}).
 
 broadcast_blocklist_event(LUser, LServer, Event) ->
     JID = jlib:make_jid(LUser, LServer, ""),

@@ -186,17 +186,17 @@ set_vcard(User, LServer, VCARD) ->
 	    end,
 
     LUser     = jlib:nodeprep(User),
-    LFN       = stringprep:tolower(FN),
-    LFamily   = stringprep:tolower(Family),
-    LGiven    = stringprep:tolower(Given),
-    LMiddle   = stringprep:tolower(Middle),
-    LNickname = stringprep:tolower(Nickname),
-    LBDay     = stringprep:tolower(BDay),
-    LCTRY     = stringprep:tolower(CTRY),
-    LLocality = stringprep:tolower(Locality),
-    LEMail    = stringprep:tolower(EMail),
-    LOrgName  = stringprep:tolower(OrgName),
-    LOrgUnit  = stringprep:tolower(OrgUnit),
+    LFN       = string:to_lower(FN),
+    LFamily   = string:to_lower(Family),
+    LGiven    = string:to_lower(Given),
+    LMiddle   = string:to_lower(Middle),
+    LNickname = string:to_lower(Nickname),
+    LBDay     = string:to_lower(BDay),
+    LCTRY     = string:to_lower(CTRY),
+    LLocality = string:to_lower(Locality),
+    LEMail    = string:to_lower(EMail),
+    LOrgName  = string:to_lower(OrgName),
+    LOrgUnit  = string:to_lower(OrgUnit),
 
     if
 	(LUser     == error) or
@@ -531,7 +531,7 @@ filter_fields([], Match, _LServer) ->
     end;
 filter_fields([{SVar, [Val]} | Ds], Match, LServer)
   when is_list(Val) and (Val /= "") ->
-    LVal = stringprep:tolower(Val),
+    LVal = string:to_lower(Val),
     NewMatch = case SVar of
                    "user"     -> make_val(Match, "lusername", LVal);
                    "fn"       -> make_val(Match, "lfn",       LVal);

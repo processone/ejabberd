@@ -41,10 +41,10 @@ update() ->
     case update_info() of
 	{ok, Dir, _UpdatedBeams, _Script, LowLevelScript, _Check} ->
 	    Eval =
-		release_handler_1:eval_script(
+		eval_script(
 		  LowLevelScript, [],
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    ?INFO_MSG("eval: ~p~n", [Eval]),
+	    ?DEBUG("eval: ~p~n", [Eval]),
 	    Eval;
 	{error, Reason} ->
 	    {error, Reason}
@@ -58,13 +58,23 @@ update(ModulesToUpdate) ->
 		[A || A <- UpdatedBeamsAll, B <- ModulesToUpdate, A == B],
 	    {_, LowLevelScript, _} = build_script(Dir, UpdatedBeamsNow),
 	    Eval =
-		release_handler_1:eval_script(
+		eval_script(
 		  LowLevelScript, [],
 		  [{ejabberd, "", filename:join(Dir, "..")}]),
-	    ?INFO_MSG("eval: ~p~n", [Eval]),
+	    ?DEBUG("eval: ~p~n", [Eval]),
 	    Eval;
 	{error, Reason} ->
 	    {error, Reason}
+    end.
+
+%% OTP R14B03 and older provided release_handler_1:eval_script/3
+%% But OTP R14B04 and newer provide release_handler_1:eval_script/5
+eval_script(Script, Apps, LibDirs) ->
+    case lists:member({eval_script, 5}, release_handler_1:module_info(exports)) of
+	true ->
+	    release_handler_1:eval_script(Script, Apps, LibDirs, [], []);
+	false ->
+	    release_handler_1:eval_script(Script, Apps, LibDirs)
     end.
 
 %% Get information about the modified modules
@@ -118,8 +128,10 @@ get_new_version(Module) ->
 
 get_current_version(Module) ->
     Attrs = Module:module_info(attributes),
-    {value, {vsn, CurVsn}} = lists:keysearch(vsn, 1, Attrs),
-    CurVsn.
+    case lists:keysearch(vsn, 1, Attrs) of
+        {value, {vsn, CurVsn}} -> CurVsn;
+        _ -> unknown_version
+    end.
 
 %% @spec(Dir::string(), UpdatedBeams::[atom()]) -> {Script,LowLevelScript,Check}
 build_script(Dir, UpdatedBeams) ->
@@ -131,6 +143,10 @@ build_script(Dir, UpdatedBeams) ->
 	  [{ejabberd, "", filename:join(Dir, "..")}]),
     case Check of
 	ok -> 
+	    ?DEBUG("script: ~p~n", [Script]),
+	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
+	    ?DEBUG("check: ~p~n", [Check]);
+	{ok, []} ->
 	    ?DEBUG("script: ~p~n", [Script]),
 	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
 	    ?DEBUG("check: ~p~n", [Check]);

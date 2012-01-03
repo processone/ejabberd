@@ -557,6 +557,27 @@ get_user_list(_, User, Server) ->
 %% From is the sender, To is the destination.
 %% If Dir = out, User@Server is the sender account (From).
 %% If Dir = in, User@Server is the destination account (To).
+check_packet(_, _User, _Server,
+	     _UserList,
+	     {#jid{luser = "", lserver = Server} = _From,
+              #jid{lserver = Server} = _To,
+              _},
+	     in) ->
+    allow;
+check_packet(_, _User, _Server,
+	     _UserList,
+	     {#jid{lserver = Server} = _From,
+              #jid{luser = "", lserver = Server} = _To,
+              _},
+	     out) ->
+    allow;
+check_packet(_, _User, _Server,
+	     _UserList,
+	     {#jid{luser = User, lserver = Server} = _From,
+              #jid{luser = User, lserver = Server} = _To,
+              _},
+	     _Dir) ->
+    allow;
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
 	     {From, To, {xmlelement, PName, Attrs, _}},

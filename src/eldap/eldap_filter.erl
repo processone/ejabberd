@@ -146,30 +146,36 @@ do_sub(S, [{RegExp, New, Times} | T]) ->
     do_sub(Result, T).
 
 do_sub(S, {RegExp, New}, Iter) ->
-    case regexp:sub(S, RegExp, New) of
-	{ok, NewS, 0} ->
-	    NewS;
-	{ok, NewS, _} when Iter =< ?MAX_RECURSION ->
-	    do_sub(NewS, {RegExp, New}, Iter+1);
-	{ok, _, _} when Iter > ?MAX_RECURSION ->
-	    erlang:error(max_substitute_recursion);
-	_ ->
-	    erlang:error(bad_regexp)
+    case ejabberd_regexp:run(S, RegExp) of
+        match ->
+            case ejabberd_regexp:replace(S, RegExp, New) of
+                NewS when Iter =< ?MAX_RECURSION ->
+                    do_sub(NewS, {RegExp, New}, Iter+1);
+                _NewS when Iter > ?MAX_RECURSION ->
+                    erlang:error(max_substitute_recursion)
+            end;
+        nomatch ->
+            S;
+        _ ->
+            erlang:error(bad_regexp)
     end;
 
 do_sub(S, {_, _, N}, _) when N<1 ->
     S;
 
 do_sub(S, {RegExp, New, Times}, Iter) ->
-    case regexp:sub(S, RegExp, New) of
-	{ok, NewS, 0} ->
-	    NewS;
-	{ok, NewS, _} when Iter < Times ->
-	    do_sub(NewS, {RegExp, New, Times}, Iter+1);
-	{ok, NewS, _} ->
-	    NewS;
-	_ ->
-	    erlang:error(bad_regexp)
+    case ejabberd_regexp:run(S, RegExp) of
+        match ->
+            case ejabberd_regexp:replace(S, RegExp, New) of
+                NewS when Iter < Times ->
+                    do_sub(NewS, {RegExp, New, Times}, Iter+1);
+                NewS ->
+                    NewS
+            end;
+        nomatch ->
+            S;
+        _ ->
+            erlang:error(bad_regexp)
     end.
 
 replace_amps(String) ->
