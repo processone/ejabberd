@@ -1748,7 +1748,8 @@ handle_info({migrate, Node}, StateName, StateData) ->
     end;
 handle_info({migrate_shutdown, Node, After}, StateName, StateData) ->
     if StateData#state.sockmod == ejabberd_frontend_socket orelse
-       StateData#state.xml_socket == true ->
+       StateData#state.xml_socket == true orelse
+       node(StateData#state.socket_monitor) /= node() ->
             migrate(self(), Node, After);
        true ->
             self() ! system_shutdown
