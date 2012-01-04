@@ -1747,11 +1747,12 @@ handle_info({migrate, Node}, StateName, StateData) ->
 	    fsm_next_state(StateName, StateData)
     end;
 handle_info({migrate_shutdown, Node, After}, StateName, StateData) ->
-    if StateData#state.sockmod == ejabberd_frontend_socket orelse
-       StateData#state.xml_socket == true orelse
-       node(StateData#state.socket_monitor) /= node() ->
+    case StateData#state.sockmod == ejabberd_frontend_socket orelse
+        StateData#state.xml_socket == true orelse
+        is_remote_receiver(StateData#state.socket) of
+        true ->
             migrate(self(), Node, After);
-       true ->
+        false ->
             self() ! system_shutdown
     end,
     fsm_next_state(StateName, StateData);
@@ -3609,3 +3610,8 @@ get_jid_from_opts(Opts) ->
 	_ ->
 	    error
     end.
+
+is_remote_receiver(#socket_state{receiver = Pid}) when is_pid(Pid) ->
+    node(Pid) /= node();
+is_remote_receiver(_) ->
+    false.
