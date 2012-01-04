@@ -678,7 +678,7 @@ add_user_to_group(Host, {LUser, LServer} = US, Group) ->
 	      GroupOpts ++ MoreGroupOpts);
 	nomatch ->
 	    %% Push this new user to members of groups where this group is displayed
-	    push_user_to_displayed(LUser, LServer, Group, both),
+	    push_user_to_displayed(LUser, LServer, Group, Host, both),
 	    %% Push members of groups that are displayed to this group
 	    push_displayed_to_user(LUser, LServer, Group, Host, both),
 	    R = #sr_user{us = US, group_host = {Group, Host}},
@@ -716,7 +716,7 @@ remove_user_from_group(Host, {LUser, LServer} = US, Group) ->
 		end,
 	    Result = mnesia:transaction(F),
 	    %% Push removal of the old user to members of groups where the group that this user was members was displayed
-	    push_user_to_displayed(LUser, LServer, Group, remove),
+	    push_user_to_displayed(LUser, LServer, Group, Host, remove),
 	    %% Push removal of members of groups that where displayed to the group which this user has left
 	    push_displayed_to_user(LUser, LServer, Group, Host, remove),
 	    Result
@@ -737,7 +737,7 @@ register_user(User, Server) ->
     %% Get list of groups where this user is member
     Groups = get_user_groups({User, Server}),
     %% Push this user to members of groups where is displayed a group which this user is member
-    [push_user_to_displayed(User, Server, Group, both) || Group <- Groups].
+    [push_user_to_displayed(User, Server, Group, Server, both) || Group <- Groups].
 
 remove_user(User, Server) ->
     push_user_to_members(User, Server, remove).
@@ -766,23 +766,23 @@ push_user_to_members(User, Server, Subscription) ->
 	    ok
     end.
 
-push_user_to_displayed(User, Server, Group, Subscription) when is_binary(User) ->
+push_user_to_displayed(User, Server, Group, Host, Subscription) when is_binary(User) ->
     LUser = binary_to_list(User),
     LServer = binary_to_list(Server),
-    push_user_to_displayed(LUser, LServer, Group, Subscription);
-push_user_to_displayed(LUser, LServer, Group, Subscription) ->
-    GroupsOpts = groups_with_opts(LServer),
+    push_user_to_displayed(LUser, LServer, Group, Host, Subscription);
+push_user_to_displayed(LUser, LServer, Group, Host, Subscription) ->
+    GroupsOpts = groups_with_opts(Host),
     GroupOpts = proplists:get_value(Group, GroupsOpts, []),
     GroupName = proplists:get_value(name, GroupOpts, Group),
-    DisplayedToGroupsOpts = displayed_to_groups(Group, LServer),
-    [push_user_to_group(LUser, LServer, GroupD, GroupName, Subscription) || {GroupD, _Opts} <- DisplayedToGroupsOpts].
+    DisplayedToGroupsOpts = displayed_to_groups(Group, Host),
+    [push_user_to_group(LUser, LServer, GroupD, Host, GroupName, Subscription) || {GroupD, _Opts} <- DisplayedToGroupsOpts].
 
-push_user_to_group(LUser, LServer, Group, GroupName, Subscription) ->
+push_user_to_group(LUser, LServer, Group, Host, GroupName, Subscription) ->
     lists:foreach(
-      fun({U, S}) when (U == LUser) and (S == LServer) -> ok;
+      fun({U, S})  when (U == LUser) and (S == LServer) -> ok;
          ({U, S}) ->
 	      push_roster_item(U, S, LUser, LServer, GroupName, Subscription)
-      end, get_group_users(LServer, Group)).
+      end, get_group_users(Host, Group)).
 
 %% Get list of groups to which this group is displayed
 displayed_to_groups(GroupName, LServer) ->
@@ -840,7 +840,7 @@ user_available(New) ->
 	      fun(OG) ->
 		      ?DEBUG("user_available: pushing  ~p @ ~p grp ~p",
 			     [LUser, LServer, OG ]),
-		      push_user_to_displayed(LUser, LServer, OG, both)
+		      push_user_to_displayed(LUser, LServer, OG, LServer, both)
 	      end, OnlineGroups);
 	_ ->
 	    ok
@@ -863,7 +863,7 @@ unset_presence(User, Server, Resource, Status) ->
 	      fun(OG) ->
 		      %% Push removal of the old user to members of groups
 		      %% where the group that this uwas members was displayed
-		      push_user_to_displayed(LUser, LServer, OG, remove),
+		      push_user_to_displayed(LUser, LServer, OG, LServer, remove),
 		      %% Push removal of members of groups that where
 		      %% displayed to the group which thiuser has left
 		      push_displayed_to_user(LUser, LServer, OG, LServer,remove)
