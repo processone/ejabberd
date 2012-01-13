@@ -18,8 +18,11 @@ deps: generate_snmp_header
 clean:
 	./rebar clean
 
-test:
-	(cd test; make)
+test: test/Makefile
+	cd test; make
+
+test/Makefile:
+	git submodule update --init --recursive
 
 show_test_results:
 	$$BROWSER `ls -td test/ct_report/ct_run.test@*/index.html | head -n 1` & disown
