@@ -89,7 +89,8 @@
 -define(SECURE_CONNECTION, 32768).
 -define(MYSQL_QUERY_OP, 3).
 -define(DEFAULT_STANDALONE_TIMEOUT, 5000).
--define(DEFAULT_RESULT_TYPE, list).
+%-define(DEFAULT_RESULT_TYPE, list).
+-define(DEFAULT_RESULT_TYPE, binary).
 -define(MYSQL_4_0, 40). %% Support for MySQL 4.0.x
 -define(MYSQL_4_1, 41). %% Support for MySQL 4.1.x et 5.0.x
 
