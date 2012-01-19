@@ -430,7 +430,8 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 	    if (res <= 0)
 	       die_unless(SSL_get_error(d->ssl, res) == SSL_ERROR_WANT_READ,
 			  "SSL_do_handshake failed");
-	 } else {
+	 }
+	 if (SSL_is_init_finished(d->ssl)) {
 	    size = BUF_SIZE + 1;
 	    rlen = 1;
 	    b = driver_alloc_binary(size);
