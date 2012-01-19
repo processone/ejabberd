@@ -1222,4 +1222,6 @@ get_line("\r\n" ++ Tail, Cur) ->
 	    end
     end;
 get_line([H|T], Cur) ->
-    get_line(T, [H|Cur]).
+    get_line(T, [H|Cur]);
+get_line([], Cur) ->
+    {incomplete, lists:reverse(Cur)}.
