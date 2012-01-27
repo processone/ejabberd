@@ -168,7 +168,11 @@ user_receive_packet(_DebugFlag,
                     #jid{lserver = Server}, From, _To,
 		    {xmlelement, "presence", Attrs, Els}) ->
     Type = xml:get_attr_s("type", Attrs),
-    if Type == ""; Type == "available" ->
+    IsRemote = not lists:member(From#jid.lserver, ?MYHOSTS),
+    %% Local users presence caps are already handled by user_send_packet.
+    %% Otherwise we could send multiple request when broadcasting presence 
+    %% to every local subscriber.
+    if IsRemote and ((Type == "") or (Type == "available")) ->
 	    case read_caps(Els) of
 		nothing ->
 		    ok;
