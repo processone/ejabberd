@@ -127,6 +127,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 	      [Room, Host, jlib:jid_to_string(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
+		mod_muc_hook:room_state(Host, Room, opened),
     {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     process_flag(trap_exit, true),
@@ -554,7 +555,8 @@ normal_state({route, From, ToNick,
 						?DICT:find(jlib:jid_tolower(From),
 							   StateData#state.users),
 					    FromNickJID = jlib:jid_replace_resource(StateData#state.jid, FromNick),
-					    [ejabberd_router:route(FromNickJID, ToJID, Packet) || ToJID <- ToJIDs];
+							NewPacket = mod_hook_message(Packet, StateData#state.host, StateData#state.room, From, FromNick, ToJIDs, ToNick),
+					    [ejabberd_router:route(FromNickJID, ToJID, NewPacket) || ToJID <- ToJIDs];
 				       true ->
 					    ErrText = "It is not allowed to send private messages",
 					    Err = jlib:make_error_reply(
@@ -691,6 +693,7 @@ handle_event({destroy, Reason}, _StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
 	      [jlib:jid_to_string(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
+		mod_muc_hook:room_state(StateData#state.host, StateData#state.room, closed),
     {stop, shutdown, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s", 
@@ -900,6 +903,7 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 			end,
 		    case IsAllowed of
 			true ->
+					NewPacket = mod_hook_message(Packet, StateData#state.host, StateData#state.room, From, FromNick),
 			    lists:foreach(
 			      fun({_LJID, Info}) ->
 				      ejabberd_router:route(
@@ -907,13 +911,13 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 					  StateData#state.jid,
 					  FromNick),
 					Info#user.jid,
-					Packet)
+					NewPacket)
 			      end,
 			      ?DICT:to_list(StateData#state.users)),
 			    NewStateData2 =
 				add_message_to_history(FromNick,
 						       From,
-						       Packet,
+						       NewPacket,
 						       NewStateData1),
 			    {next_state, normal_state, NewStateData2};
 			_ ->
@@ -1091,6 +1095,7 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 	    ?INFO_MSG("Destroyed MUC room ~s because it's temporary and empty", 
 		      [jlib:jid_to_string(StateData#state.jid)]),
 	    add_to_log(room_existence, destroyed, StateData),
+			mod_muc_hook:room_state(StateData#state.host, StateData#state.room, closed),
 	    {stop, normal, StateData1};
 	_ ->
 	    {next_state, normal_state, StateData1}
@@ -1556,6 +1561,7 @@ add_online_user(JID, Nick, Role, StateData) ->
 			      role = Role},
 			StateData#state.users),
     add_to_log(join, Nick, StateData),
+		mod_muc_hook:room_user(StateData#state.host, StateData#state.room, JID, Nick, joined),
     Nicks = ?DICT:update(Nick,
 			 fun(Entry) ->
 				 case lists:member(LJID, Entry) of
@@ -1578,6 +1584,7 @@ remove_online_user(JID, StateData, Reason) ->
     {ok, #user{nick = Nick}} =
     	?DICT:find(LJID, StateData#state.users),
     add_to_log(leave, {Nick, Reason}, StateData),
+		mod_muc_hook:room_user(StateData#state.host, StateData#state.room, JID, Nick, left),
     tab_remove_online_user(JID, StateData),
     Users = ?DICT:erase(LJID, StateData#state.users),
     Nicks = case ?DICT:find(Nick, StateData#state.nicks) of
@@ -3008,6 +3015,7 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
 		    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s", 
 			      [jlib:jid_to_string(StateData#state.jid), jlib:jid_to_string(From)]),
 		    add_to_log(room_existence, destroyed, StateData),
+				mod_muc_hook:room_state(StateData#state.host, StateData#state.room, closed),
 		    destroy_room(SubEl1, StateData);
 		Items ->
 		    process_admin_items_set(From, Items, Lang, StateData)
@@ -4081,3 +4089,33 @@ tab_count_user(JID) ->
 
 element_size(El) ->
     size(xml:element_to_binary(El)).
+
+
+mod_hook_modify_message(Out, [], _ModFun) -> 
+	Out;
+mod_hook_modify_message(Out, [ H | Elems ], ModFun) ->
+	case H of
+		{ xmlelement, "body", _, _ } ->
+			Message = xml:get_tag_cdata(H),
+			NewMessage = ModFun(Message),
+			NewBody = { xmlelement, "body", [], [{xmlcdata, NewMessage}] },
+			mod_hook_modify_message(Out ++ [NewBody], Elems, ModFun);
+		_ ->
+			mod_hook_modify_message(Out ++ [H], Elems, ModFun)
+		end.
+
+mod_hook_message({xmlelement, "message", Attrs, Elems}, ModFun) ->
+	ModElems = mod_hook_modify_message([], Elems, ModFun),
+	{xmlelement, "message", Attrs, ModElems}.
+
+mod_hook_message(Packet, Host, Room, JID, Nick) ->
+	mod_hook_message(Packet, 
+		fun(Message) ->
+			mod_muc_hook:room_message(Host, Room, JID, Nick, Message)
+		end).
+		
+mod_hook_message(Packet, Host, Room, JID, Nick, ToJIDs, ToNick) ->
+	mod_hook_message(Packet, 
+		fun(Message) ->
+			mod_muc_hook:room_message_private(Host, Room, JID, Nick, ToJIDs, ToNick, Message)
+		end).
