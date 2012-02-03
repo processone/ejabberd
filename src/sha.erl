@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : sha.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 20 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -28,7 +28,7 @@
 -author('alexey@process-one.net').
 
 -export([start/0, sha/1, sha1/1, sha224/1, sha256/1, sha384/1,
-	 sha512/1]).
+	 sha512/1, to_hexlist/1]).
 
 -ifdef(HAVE_MD2).
 -export([md2/1]).
@@ -61,6 +61,9 @@ digit_to_xchar(D) ->
 
 sha(Text) ->
     Bin = crypto:sha(Text),
+    to_hexlist(Bin).
+
+to_hexlist(Bin) ->
     lists:reverse(ints_to_rxstr(binary_to_list(Bin), [])).
 
 ints_to_rxstr([], Res) ->
