@@ -277,6 +277,7 @@ init([{SockMod, Socket}, Opts, FSMLimitOpts]) ->
 			       ip             = IP,
                                redirect       = Redirect,
 			       fsm_limit_opts = FSMLimitOpts},
+            erlang:send_after(?C2S_OPEN_TIMEOUT, self(), open_timeout),
             case get_jid_from_opts(Opts) of
 		{ok, #jid{user = U, server = Server, resource = R} = JID} ->
 		    ?GEN_FSM:send_event(self(), open_session),
@@ -1693,6 +1694,13 @@ handle_info({ack_timeout, Counter}, StateName, StateData) ->
 		true ->
 		    fsm_next_state(StateName, StateData)
 	    end
+    end;
+handle_info(open_timeout, StateName, StateData) ->
+    case StateName of
+        session_established ->
+            fsm_next_state(StateName, StateData);
+        _ ->
+            {stop, normal, StateData}
     end;
 handle_info({'DOWN', Monitor, _Type, _Object, _Info}, StateName, StateData)
   when Monitor == StateData#state.socket_monitor ->
