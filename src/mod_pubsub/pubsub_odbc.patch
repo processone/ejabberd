@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2011-12-30 11:27:07.143093497 +0100
-+++ mod_pubsub_odbc.erl	2011-12-30 11:26:43.566518734 +0100
+--- mod_pubsub.erl	2012-01-03 15:02:46.000000000 +0100
++++ mod_pubsub_odbc.erl	2012-02-08 21:11:14.874000001 +0100
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -393,6 +393,15 @@
  				true ->
  				    node_action(Host, PType, unsubscribe_node, [NodeId, Entity, JID, all]);
  				false ->
+@@ -879,7 +637,7 @@
+ 	    {result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Entity]),
+ 	    lists:foreach(fun
+ 		({#pubsub_node{nodeid = {H, N}, parents = []}, owner}) -> delete_node(H, N, Entity);
+-		({#pubsub_node{nodeid = {H, N}, type = "hometree"}, owner}) when N == HomeTreeBase -> delete_node(H, N, Entity);
++		({#pubsub_node{nodeid = {H, N}, type = "hometree_odbc"}, owner}) when N == HomeTreeBase -> delete_node(H, N, Entity);
+ 		({#pubsub_node{id = NodeId}, publisher}) -> node_action(Host, PType, set_affiliation, [NodeId, Entity, none]);
+ 		(_) -> ok
+ 	    end, Affiliations)
 @@ -1013,7 +771,8 @@
  			    sub_el = SubEl} = IQ ->
  			    {xmlelement, _, QAttrs, _} = SubEl,

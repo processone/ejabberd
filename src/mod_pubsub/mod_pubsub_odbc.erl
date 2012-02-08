@@ -637,7 +637,7 @@ remove_user(User, Server) ->
 	    {result, Affiliations} = node_action(Host, PType, get_entity_affiliations, [Host, Entity]),
 	    lists:foreach(fun
 		({#pubsub_node{nodeid = {H, N}, parents = []}, owner}) -> delete_node(H, N, Entity);
-		({#pubsub_node{nodeid = {H, N}, type = "hometree"}, owner}) when N == HomeTreeBase -> delete_node(H, N, Entity);
+		({#pubsub_node{nodeid = {H, N}, type = "hometree_odbc"}, owner}) when N == HomeTreeBase -> delete_node(H, N, Entity);
 		({#pubsub_node{id = NodeId}, publisher}) -> node_action(Host, PType, set_affiliation, [NodeId, Entity, none]);
 		(_) -> ok
 	    end, Affiliations)
