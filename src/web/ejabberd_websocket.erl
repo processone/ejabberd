@@ -249,7 +249,7 @@ handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host, 
 		lists:concat([Host, integer_to_list(Port)]),
 		"/",string:join(Path,"/"),  "\r\n\r\n"
 	];
-handshake({'draft-hybi', 8}, Sock,SocketMod, Headers, {Path, Q,Origin, Host, Port}) ->
+handshake({'draft-hybi', _}, Sock,SocketMod, Headers, {Path, Q,Origin, Host, Port}) ->
 	% build data
 	{_, Key} = lists:keyfind("Sec-Websocket-Key",1, Headers),
     Hash = jlib:encode_base64(binary_to_list(sha:sha1(Key++"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))),
