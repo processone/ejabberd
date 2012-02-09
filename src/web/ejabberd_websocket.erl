@@ -327,14 +327,16 @@ encode_frame(_, Data) ->
     <<0, Data/binary, 255>>.
 
 process_hixie_68(none, Data) ->
-    process_hixie_68(<<>>, Data);
+    process_hixie_68({false, <<>>}, Data);
+process_hixie_68({false, <<>>}, <<0,T/binary>>) ->
+    process_hixie_68({true, <<>>}, T);
 process_hixie_68(L, <<>>) ->
     {L, [], []};
-process_hixie_68(L, <<255,T/binary>>) ->
-    {L2, Recv, Send} = process_hixie_68(<<>>, T),
+process_hixie_68({_, L}, <<255,T/binary>>) ->
+    {L2, Recv, Send} = process_hixie_68({false, <<>>}, T),
     {L2, [L|Recv], Send};
-process_hixie_68(L, <<H/utf8, T/binary>>) ->
-    process_hixie_68(<<L/binary, H>>, T).
+process_hixie_68({true, L}, <<H/utf8, T/binary>>) ->
+    process_hixie_68({true, <<L/binary, H>>}, T).
 
 -record(hybi_8_state, {mask=none, offset=0, left, final_frame=true, opcode, unprocessed = <<>>, unmasked = <<>>, unmasked_msg = <<>>}).
 
