@@ -12,7 +12,7 @@
 %% API
 -export([start_link/0, get_node/1, get_node_new/1, announce/1, shutdown/0,
 	 node_id/0, get_node_by_id/1, get_nodes/0, rehash_timeout/0, start/0,
-         shutdown_migrate/1]).
+         shutdown_migrate/1, migrate_timeout/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -25,8 +25,6 @@
 -define(POINTS, 64).
 -define(REHASH_TIMEOUT, timer:seconds(30)).
 -define(MIGRATE_TIMEOUT, timer:minutes(2)).
-%%-define(REHASH_TIMEOUT, timer:seconds(10)).
-%%-define(MIGRATE_TIMEOUT, timer:seconds(5)).
 -define(LOCK, {migrate, node()}).
 
 -record(state, {}).
@@ -65,7 +63,20 @@ node_id() ->
     integer_to_list(erlang:phash2(node())).
 
 rehash_timeout() ->
-    ?REHASH_TIMEOUT.
+    case ejabberd_config:get_local_option(rehash_timeout) of
+        N when is_integer(N), N > 0 ->
+            timer:seconds(N);
+        _ ->
+            ?REHASH_TIMEOUT
+    end.
+
+migrate_timeout() ->
+    case ejabberd_config:get_local_option(migrate_timeout) of
+        N when is_integer(N), N > 0 ->
+            timer:seconds(N);
+        _ ->
+            ?MIGRATE_TIMEOUT
+    end.
 
 get_node_by_id(NodeID) when is_list(NodeID) ->
     case catch list_to_existing_atom(NodeID) of
@@ -153,7 +164,7 @@ handle_call(announce, _From, State) ->
                     global:del_lock(?LOCK);
                 WorkingNodes ->
                     gen_server:abcast(WorkingNodes, ?MODULE, {node_ready, node()}),
-                    erlang:send_after(?MIGRATE_TIMEOUT, self(), del_lock)
+                    erlang:send_after(migrate_timeout(), self(), del_lock)
             end
     end,
     {reply, ok, State};
@@ -169,7 +180,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({node_ready, Node}, State) ->
     ?INFO_MSG("adding node ~p to hash and starting migration", [Node]),
     append_node(?HASHTBL, Node),
-    ejabberd_hooks:run(node_hash_update, [Node, up, ?MIGRATE_TIMEOUT]),
+    ejabberd_hooks:run(node_hash_update, [Node, up, migrate_timeout()]),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.

@@ -449,6 +449,10 @@ process_term(Term, State) ->
 	    add_option(max_fsm_queue, N, State);
         {hostname, Host} ->
             add_option(hostname, Host, State);
+        {rehash_timeout, Secs} ->
+            add_option(rehash_timeout, Secs, State);
+        {migrate_timeout, Secs} ->
+            add_option(migrate_timeout, Secs, State);
 	{_Opt, _Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)
