@@ -125,12 +125,12 @@ init([]) ->
 handle_call(announce, _From, State) ->
     case global:set_lock(?LOCK, get_nodes(), 0) of
 	false ->
-	    ?INFO_MSG("Another node is recently attached to "
-		      "the cluster and is being rebalanced. "
-		      "Waiting for the rebalancing to be completed "
-		      "before starting this node. "
-		      "This may take serveral minutes. "
-		      "Please, be patient.", []),
+	    ?WARNING_MSG("Another node is recently attached to "
+                         "the cluster and is being rebalanced. "
+                         "Waiting for the rebalancing to be completed "
+                         "before starting this node. "
+                         "This may take serveral minutes. "
+                         "Please, be patient.", []),
 	    global:set_lock(?LOCK, get_nodes(), infinity);
 	true ->
 	    ok
