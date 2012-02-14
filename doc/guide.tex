@@ -826,7 +826,7 @@ The available modules, their purpose and the options allowed by each one are:
     Options: \texttt{certfile}
   \titem{\texttt{ejabberd\_http}}
     Handles incoming HTTP connections.\\
-    Options: \texttt{captcha}, \texttt{certfile}, \texttt{http\_bind}, \texttt{http\_poll},
+    Options: \texttt{captcha}, \texttt{certfile}, \texttt{default\_host}, \texttt{http\_bind}, \texttt{http\_poll},
     \texttt{request\_handlers}, \texttt{tls}, \texttt{trusted\_proxies}, \texttt{web\_admin}\\
 \end{description}
 
@@ -847,6 +847,11 @@ This is a detailed description of each option allowed by the listening modules:
     Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
   \titem{\{certfile, Path\}} Full path to a file containing the default SSL certificate.
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
+  \titem{\{default\_host, undefined|HostName\}}
+    If the HTTP request received by ejabberd contains the HTTP header \term{Host}
+    with an ambiguous virtual host that doesn't match any one defined in ejabberd (see \ref{hostnames}),
+    then this configured HostName is set as the request Host.
+    The default value of this option is: \term{undefined}.
   \titem{\{hosts, [Hostname, ...], [HostOption, ...]\}} \ind{options!hosts}
     The external Jabber component that connects to this \term{ejabberd\_service}
     can serve one or more hostnames.
