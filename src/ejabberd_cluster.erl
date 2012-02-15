@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : ejabberd_cluster.erl
 %%% Author  : Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% Description : 
+%%% Description :
 %%%
 %%% Created :  2 Apr 2010 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
@@ -134,14 +134,15 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call(announce, _From, State) ->
+    Migrate_timeout = migrate_timeout(),
     case global:set_lock(?LOCK, get_nodes(), 0) of
 	false ->
 	    ?WARNING_MSG("Another node is recently attached to "
                          "the cluster and is being rebalanced. "
                          "Waiting for the rebalancing to be completed "
                          "before starting this node. "
-                         "This may take serveral minutes. "
-                         "Please, be patient.", []),
+                         "This will take at least ~p seconds. "
+                         "Please, be patient.", [Migrate_timeout div 1000]),
 	    global:set_lock(?LOCK, get_nodes(), infinity);
 	true ->
 	    ok
@@ -164,7 +165,7 @@ handle_call(announce, _From, State) ->
                     global:del_lock(?LOCK);
                 WorkingNodes ->
                     gen_server:abcast(WorkingNodes, ?MODULE, {node_ready, node()}),
-                    erlang:send_after(migrate_timeout(), self(), del_lock)
+                    erlang:send_after(Migrate_timeout, self(), del_lock)
             end
     end,
     {reply, ok, State};
