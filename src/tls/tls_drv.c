@@ -442,8 +442,10 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 	    {
 	       //printf("%d bytes of decrypted data read from state machine\r\n",res);
 	       rlen += res;
-	       size += BUF_SIZE;
-	       b = driver_realloc_binary(b, size);
+	       if (size - rlen < BUF_SIZE) {
+		  size *= 2;
+		  b = driver_realloc_binary(b, size);
+	       }
 	    }
 
 	    if (res < 0)
