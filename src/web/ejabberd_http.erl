@@ -65,6 +65,7 @@
 		request_tp,
 		request_headers = [],
 		end_of_request = false,
+		default_host,
 		trail = "",
 		websocket_handlers = []
 	       }).
@@ -145,9 +146,11 @@ init({SockMod, Socket}, Opts) ->
   	    false -> []
     end,
     ?DEBUG("WS: ~p~n", [WebSocketHandlers]),
+    DefaultHost = gen_mod:get_opt(default_host, Opts, undefined),
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
+                   default_host = DefaultHost,
                    request_handlers = RequestHandlers,
                    websocket_handlers = WebSocketHandlers},
     receive_headers(State).
@@ -278,8 +281,9 @@ process_header(State, Data) ->
 		   [State#state.socket,
 		    State#state.request_method,
 		    element(2, State#state.request_path)]),
-	    {Host, Port, TP} = get_transfer_protocol(SockMod,
+	    {HostProvided, Port, TP} = get_transfer_protocol(SockMod,
 						     State#state.request_host),
+	    Host = get_host_really_served(State#state.default_host, HostProvided),
 	    State2 = State#state{request_host = Host,
 				 request_port = Port,
 				 request_tp = TP},
@@ -316,6 +320,15 @@ add_header(Name, Value, State) ->
    {value, {Param, V}} -> V;
    false -> undefined
  end).
+
+get_host_really_served(undefined, Provided) ->
+    Provided;
+get_host_really_served(Default, Provided) ->
+    case lists:member(Provided, ?MYHOSTS) of
+	true -> Provided;
+	false -> Default
+    end.
+
 %% @spec (SockMod, HostPort) -> {Host::string(), Port::integer(), TP}
 %% where
 %%       SockMod = gen_tcp | tls

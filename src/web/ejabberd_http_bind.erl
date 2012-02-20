@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_http_bind.erl
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Purpose : Implements XMPP over BOSH (XEP-0205) (formerly known as
+%%% Purpose : Implements XMPP over BOSH (XEP-0206) (formerly known as
 %%%           HTTP Binding)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Modified: may 2009 by Mickael Remond, Alexey Schepin

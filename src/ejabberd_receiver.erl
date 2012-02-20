@@ -89,19 +89,19 @@ change_shaper(Pid, Shaper) ->
     gen_server:cast(Pid, {change_shaper, Shaper}).
 
 reset_stream(Pid) ->
-    gen_server:call(Pid, reset_stream).
+    do_call(Pid, reset_stream).
 
 starttls(Pid, TLSOpts) ->
     starttls(Pid, TLSOpts, undefined).
 
 starttls(Pid, TLSOpts, Data) ->
-    gen_server:call(Pid, {starttls, TLSOpts, Data}).
+    do_call(Pid, {starttls, TLSOpts, Data}).
 
 compress(Pid, Data) ->
-    gen_server:call(Pid, {compress, Data}).
+    do_call(Pid, {compress, Data}).
 
 become_controller(Pid, C2SPid) ->
-    gen_server:call(Pid, {become_controller, C2SPid}).
+    do_call(Pid, {become_controller, C2SPid}).
 
 change_controller(Pid, C2SPid) ->
     case catch gen_server:call(Pid, {change_controller, C2SPid}) of
@@ -448,3 +448,11 @@ cancel_timer(TRef) when is_reference(TRef) ->
     end;
 cancel_timer(_) ->
     ok.
+
+do_call(Pid, Msg) ->
+    case catch gen_server:call(Pid, Msg) of
+        {'EXIT', Why} ->
+            {error, Why};
+        Res ->
+            Res
+    end.

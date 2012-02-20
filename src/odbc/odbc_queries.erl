@@ -575,7 +575,7 @@ escape($\n) -> "\\n";
 escape($\t) -> "\\t";
 escape($\b) -> "\\b";
 escape($\r) -> "\\r";
-escape($')  -> "\\'";
+escape($')  -> "''";
 escape($")  -> "\\\"";
 escape($\\) -> "\\\\";
 escape(C)   -> C.

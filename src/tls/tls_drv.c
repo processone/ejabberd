@@ -433,30 +433,37 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 	       die_unless(SSL_get_error(d->ssl, res) == SSL_ERROR_WANT_READ,
 			  "SSL_do_handshake failed");
 	 }
-          rlen = 1;
-          b = driver_alloc_binary(rlen + BUF_SIZE);
-          b->orig_bytes[0] = 0;
+	 if (SSL_is_init_finished(d->ssl)) {
+	    size = BUF_SIZE + 1;
+	    rlen = 1;
+	    b = driver_alloc_binary(size);
+	    b->orig_bytes[0] = 0;
 
-          while ((res = SSL_read(d->ssl,
-                                  b->orig_bytes + rlen, BUF_SIZE)) > 0)
-          {
-              //printf("%d bytes of decrypted data read from state machine\r\n",res);
-              rlen += res;
-              b = driver_realloc_binary(b, rlen + BUF_SIZE);
-          }
+	    while ((res = SSL_read(d->ssl,
+				   b->orig_bytes + rlen, BUF_SIZE)) > 0)
+	    {
+	       //printf("%d bytes of decrypted data read from state machine\r\n",res);
+	       rlen += res;
+	       size += BUF_SIZE;
+	       b = driver_realloc_binary(b, size);
+	    }
 
-          if (res < 0)
-          {
-              int err = SSL_get_error(d->ssl, res);
+	    if (res < 0)
+	    {
+	       int err = SSL_get_error(d->ssl, res);
 
-              if (err != SSL_ERROR_WANT_READ)
-              {
-              // TODO
-              }
-          }
-          b = driver_realloc_binary(b, rlen);
-          *rbuf = (char *)b;
-          return rlen;
+	       if (err == SSL_ERROR_WANT_READ)
+	       {
+		  //printf("SSL_read wants more data\r\n");
+		  //return 0;
+	       }
+	       // TODO
+	    }
+	    b = driver_realloc_binary(b, rlen);
+	    *rbuf = (char *)b;
+	    return rlen;
+	 }
+	 break;
       case GET_PEER_CERTIFICATE:
 	 cert = SSL_get_peer_certificate(d->ssl);
 	 if (cert == NULL)
