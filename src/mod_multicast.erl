@@ -5,7 +5,7 @@
 %%% Created : 29 May 2007 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2012   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -318,7 +318,7 @@ iq_vcard(Lang) ->
      #xmlel{ns = ?NS_VCARD, name = 'URL', children = [#xmlcdata{cdata = list_to_binary(?EJABBERD_URI)}]},
      #xmlel{ns = ?NS_VCARD, name ='DESC', children = [#xmlcdata{cdata = list_to_binary(
 									  translate:translate(Lang, "ejabberd Multicast service") ++
-									      "\nCopyright (c) 2003-2011 ProcessOne")}]}
+									      "\nCopyright (c) 2002-2012 ProcessOne")}]}
     ].
 
 iq_version() ->
