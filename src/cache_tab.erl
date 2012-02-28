@@ -380,7 +380,12 @@ do_setopts(#state{procs_num = N} = State, Opts) ->
 		shrink_size = ShrinkSize}.
 
 get_proc_num() ->
-    erlang:system_info(logical_processors).
+    case erlang:system_info(logical_processors) of
+        unknown ->
+            1;
+        Num ->
+            Num
+    end.
 
 get_proc_by_hash(Tab, Term) ->
     N = erlang:phash2(Term, get_proc_num()) + 1,
