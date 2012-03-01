@@ -48,11 +48,11 @@
 
 start() ->
     mnesia:create_table(config,
-                        [{disc_copies, [node()]},
+                        [{ram_copies, [node()]},
                          {attributes, record_info(fields, config)}]),
     mnesia:add_table_copy(config, node(), ram_copies),
     mnesia:create_table(local_config,
-                        [{disc_copies, [node()]},
+                        [{ram_copies, [node()]},
                          {local_content, true},
                          {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
