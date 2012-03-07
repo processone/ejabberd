@@ -32,7 +32,7 @@
 -export([start/0, start_link/0,
 	 tcp_to_tls/2, tls_to_tcp/1,
 	 send/2,
-	 recv/2, recv/3, recv_data/2,
+	 recv/2, recv/3,
 	 setopts/2,
 	 sockname/1, peername/1,
 	 controlling_process/2,
@@ -160,29 +160,34 @@ tls_to_tcp(#tlssock{tcpsock = TCPSocket, tlsport = Port}) ->
 
 recv(Socket, Length) ->
     recv(Socket, Length, infinity).
-recv(#tlssock{tcpsock = TCPSocket} = TLSSock,
-     _Length, Timeout) ->
-    %% The Length argument cannot be used for gen_tcp:recv/3, because the
-    %% compressed size does not equal the desired uncompressed one.
-    case gen_tcp:recv(TCPSocket, 0, Timeout) of
-	{ok, Packet} ->
-	    recv_data(TLSSock, Packet);
-	{error, _Reason} = Error ->
-	    Error
+recv(#tlssock{tcpsock = TCPSocket, tlsport = Port} = TLSSock,
+     Length, Timeout) ->
+    case port_control(Port, ?GET_DECRYPTED_INPUT, <<Length:32>>) of
+        <<0>> ->
+            case gen_tcp:recv(TCPSocket, 0, Timeout) of
+                {ok, Packet} ->
+                    recv_data(TLSSock, Packet, Length);
+                {error, _Reason} = Error ->
+                    Error
+            end;
+        <<0, In/binary>> ->
+            {ok, In};
+        <<1, Error/binary>> ->
+            {error, binary_to_list(Error)}
     end.
 
-recv_data(TLSSock, Packet) ->
-    case catch recv_data1(TLSSock, Packet) of
+recv_data(TLSSock, Packet, Length) ->
+    case catch recv_data1(TLSSock, Packet, Length) of
 	{'EXIT', Reason} ->
 	    {error, Reason};
 	Res ->
 	    Res
     end.
 
-recv_data1(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet) ->
+recv_data1(#tlssock{tcpsock = TCPSocket, tlsport = Port}, Packet, Length) ->
     case port_control(Port, ?SET_ENCRYPTED_INPUT, Packet) of
 	<<0>> ->
-	    case port_control(Port, ?GET_DECRYPTED_INPUT, []) of
+	    case port_control(Port, ?GET_DECRYPTED_INPUT, <<Length:32>>) of
 		<<0, In/binary>> ->
 		    case port_control(Port, ?GET_ENCRYPTED_OUTPUT, []) of
 			<<0, Out/binary>> ->
