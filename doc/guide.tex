@@ -315,7 +315,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GNU Make
 \item GCC
 \item Libexpat 1.95 or higher
-\item Erlang/OTP R10B-9 or higher. The recommended versions are R12B-5 and R13B04.
+\item Erlang/OTP R10B-9 or higher. The recommended versions are R13B04 and R14B04.
   Don't use R14A or R14B because \footahref{http://www.erlang.org/cgi-bin/ezmlm-cgi/4/54598}{they have a bug}.
 \item OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
@@ -572,19 +572,19 @@ werl -s ejabberd -name ejabberd
 %TODO: how to compile database support on windows?
 
 
-\makesection{initialadmin}{Create a XMPP Account for Administration}
+\makesection{initialadmin}{Create an XMPP Account for Administration}
 
-You need a XMPP account and grant him administrative privileges
+You need an XMPP account and grant him administrative privileges
 to enter the \ejabberd{} Web Admin:
 \begin{enumerate}
-\item Register a XMPP account on your \ejabberd{} server, for example \term{admin1@example.org}.
-  There are two ways to register a XMPP account:
+\item Register an XMPP account on your \ejabberd{} server, for example \term{admin1@example.org}.
+  There are two ways to register an XMPP account:
   \begin{enumerate}
   \item Using \term{ejabberdctl}\ind{ejabberdctl} (see section~\ref{ejabberdctl}):
 \begin{verbatim}
 ejabberdctl register admin1 example.org FgT5bk3
 \end{verbatim}
-  \item Using a XMPP client and In-Band Registration (see section~\ref{modregister}).
+  \item Using an XMPP client and In-Band Registration (see section~\ref{modregister}).
   \end{enumerate}
 \item Edit the \ejabberd{} configuration file to give administration rights to the XMPP account you created:
 \begin{verbatim}
@@ -3274,7 +3274,7 @@ Module options:
 \titem{\{default\_room\_options, [ \{OptionName, OptionValue\}, ...]\}} \ind{options!default\_room\_options}
   This module option allows to define the desired default room options.
   Note that the creator of a room can modify the options of his room
-  at any time using a XMPP client with MUC capability.
+  at any time using an XMPP client with MUC capability.
   The available room options and the default values are:
   \begin{description}
   \titem{\{allow\_change\_subj, true|false\}} Allow occupants to change the subject.
@@ -5334,7 +5334,7 @@ See section \ref{erlangconfiguration}.
 
 If you enable \modconfigure\ and \modadhoc,
 you can perform several administrative tasks in \ejabberd{}
-with a XMPP client.
+with an XMPP client.
 The client must support Ad-Hoc Commands (\xepref{0050}),
 and you must login in the XMPP server with
 an account with proper privileges.
@@ -5900,7 +5900,7 @@ Thanks to all people who contributed to this guide:
 \makechapter{copyright}{Copyright Information}
 
 Ejabberd Installation and Operation Guide.\\
-Copyright \copyright{} 2003 --- 2010 ProcessOne
+Copyright \copyright{} 2003 --- 2012 ProcessOne
 
 This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
