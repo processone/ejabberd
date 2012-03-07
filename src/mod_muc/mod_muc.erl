@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2012   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -1011,7 +1011,7 @@ iq_get_vcard(Lang) ->
          #xmlel{ns = ?NS_VCARD, name = 'DESC',
             children = [#xmlcdata{cdata = 
                     list_to_binary(translate:translate(Lang, "ejabberd MUC module") ++
-                	  "\nCopyright (c) 2003-2011 ProcessOne")}]}]}.
+                	  "\nCopyright (c) 2002-2012 ProcessOne")}]}]}.
 
 iq_get_unique_el(From) ->
     #xmlel{ns = ?NS_MUC_UNIQUE, name = 'unique',

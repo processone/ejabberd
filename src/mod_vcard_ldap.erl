@@ -5,7 +5,7 @@
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2012   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -232,7 +232,7 @@ process_local_iq(_From, _To, #iq{type = get, lang = Lang} = IQ_Rec) ->
 	  ?EJABBERD_URI),
 	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'DESC'},
 	  translate:translate(Lang, "Erlang Jabber Server") ++
-	  "\nCopyright (c) 2002-2011 ProcessOne"),
+	  "\nCopyright (c) 2002-2012 ProcessOne"),
 	exmpp_xml:set_cdata(#xmlel{ns = ?NS_VCARD, name = 'BDAY'},
 	  "2002-11-16")
       ]},
@@ -525,7 +525,7 @@ iq_get_vcard(Lang) ->
       #xmlel{ns = ?NS_SEARCH, name ='DESC', children = [
 	  #xmlcdata{cdata = list_to_binary(
 	      translate:translate(Lang, "ejabberd vCard module") ++
-	      "\nCopyright (c) 2003-2011 ProcessOne")}]}
+	      "\nCopyright (c) 2002-2012 ProcessOne")}]}
     ].
 
 search_result(Lang, JID, State, Data) ->
