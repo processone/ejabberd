@@ -41,7 +41,7 @@
 
 start() ->
     mnesia:create_table(acl,
-			[{disc_copies, [node()]},
+			[{ram_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, acl)}]),
     mnesia:add_table_copy(acl, node(), ram_copies),
