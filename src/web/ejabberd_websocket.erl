@@ -188,6 +188,10 @@ handshake({'draft-hixie', 0}, Sock,SocketMod, Headers, {Path, Q,Origin, Host, Po
 	% build data
 	{_, Key1} = lists:keyfind("Sec-Websocket-Key1",1, Headers),
 	{_, Key2} = lists:keyfind("Sec-Websocket-Key2",1, Headers),
+	HostPort = case lists:keyfind('Host', 1, Headers) of
+		{_, Value} -> Value;
+		_ -> string:join([Host, integer_to_list(Port)],":")
+	end,
 	% handshake needs body of the request, still need to read it [TODO: default recv timeout hard set, will be exported when WS protocol is final]
 	case SocketMod of
 	  gen_tcp ->
@@ -220,25 +224,24 @@ handshake({'draft-hixie', 0}, Sock,SocketMod, Headers, {Path, Q,Origin, Host, Po
 		"Upgrade: WebSocket\r\n",
 		"Connection: Upgrade\r\n",
 		"Sec-WebSocket-Origin: ", Origin, "\r\n",
-		"Sec-WebSocket-Location: ws://",
-		string:join([Host, integer_to_list(Port)],":"),
-		"/",string:join(Path,"/"),QString, "\r\n\r\n",
+		"Sec-WebSocket-Location: ws://", HostPort, "/", string:join(Path,"/"),
+		QString, "\r\n\r\n",
 		build_challenge({'draft-hixie', 0}, {Key1, Key2, Body})
 	];
-handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host, Port}) ->
-	% prepare handhsake response
+handshake({'draft-hixie', 68}, _Sock,_SocketMod, Headers, {Path, Origin, Host, Port}) ->
+	HostPort = case lists:keyfind('Host', 1, Headers) of
+		{_, Value} -> Value;
+		_ -> string:join([Host, integer_to_list(Port)],":")
+	end,
 	["HTTP/1.1 101 Web Socket Protocol Handshake\r\n",
 		"Upgrade: WebSocket\r\n",
 		"Connection: Upgrade\r\n",
 		"WebSocket-Origin: ", Origin , "\r\n",
-		"WebSocket-Location: ws://", 
-		lists:concat([Host, integer_to_list(Port)]),
-		"/",string:join(Path,"/"),  "\r\n\r\n"
+		"WebSocket-Location: ws://", HostPort, "/", string:join(Path,"/"),"\r\n\r\n"
 	];
 handshake({'draft-hybi', _}, Sock,SocketMod, Headers, {Path, Q,Origin, Host, Port}) ->
-	% build data
 	{_, Key} = lists:keyfind("Sec-Websocket-Key",1, Headers),
-    Hash = jlib:encode_base64(binary_to_list(sha:sha1(Key++"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))),
+	Hash = jlib:encode_base64(binary_to_list(sha:sha1(Key++"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))),
 	["HTTP/1.1 101 Switching Protocols\r\n",
 		"Upgrade: websocket\r\n",
 		"Connection: Upgrade\r\n",
