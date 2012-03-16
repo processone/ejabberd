@@ -37,9 +37,11 @@
 -behaviour(cyrsasl).
 
 -record(state, {step, nonce, username, authzid, get_password, check_password, auth_module,
-		host}).
+		host, hostfqdn}).
 
 start(_Opts) ->
+    Fqdn = get_local_fqdn(),
+    ?INFO_MSG("FQDN used to check DIGEST-MD5 SASL authentication: ~p", [Fqdn]),
     cyrsasl:register_mechanism("DIGEST-MD5", ?MODULE, digest).
 
 stop() ->
@@ -49,6 +51,7 @@ mech_new(Host, GetPassword, _CheckPassword, CheckPasswordDigest) ->
     {ok, #state{step = 1,
 		nonce = randoms:get_string(),
 		host = Host,
+		hostfqdn = get_local_fqdn(),
 		get_password = GetPassword,
 		check_password = CheckPasswordDigest}}.
 
@@ -64,10 +67,11 @@ mech_step(#state{step = 3, nonce = Nonce} = State, ClientIn) ->
 	KeyVals ->
 	    DigestURI = xml:get_attr_s("digest-uri", KeyVals),
 	    UserName = xml:get_attr_s("username", KeyVals),
-	    case is_digesturi_valid(DigestURI, State#state.host) of
+	    case is_digesturi_valid(DigestURI, State#state.host, State#state.hostfqdn) of
 		false ->
 		    ?DEBUG("User login not authorized because digest-uri "
-			   "seems invalid: ~p", [DigestURI]),
+			   "seems invalid: ~p (checking for Host ~p, FQDN ~p)", [DigestURI,
+			   State#state.host, State#state.hostfqdn]),
 		    {error, "not-authorized", UserName};
 		true ->
 		    AuthzId = xml:get_attr_s("authzid", KeyVals),
@@ -154,21 +158,35 @@ parse4([], Key, Val, Ts) ->
 %% however ejabberd doesn't allow that.
 %% If the service (for example jabber.example.org)
 %% is provided by several hosts (being one of them server3.example.org),
-%% then digest-uri can be like xmpp/server3.example.org/jabber.example.org
-%% In that case, ejabberd only checks the service name, not the host.
-is_digesturi_valid(DigestURICase, JabberHost) ->
+%% then acceptable digest-uris would be:
+%% xmpp/server3.example.org/jabber.example.org, xmpp/server3.example.org and
+%% xmpp/jabber.example.org
+%% The last version is not actually allowed by the RFC, but implemented by popular clients
+is_digesturi_valid(DigestURICase, JabberDomain, JabberFQDN) ->
     DigestURI = stringprep:tolower(DigestURICase),
     case catch string:tokens(DigestURI, "/") of
-	["xmpp", Host] when Host == JabberHost ->
+	["xmpp", Host] when (Host == JabberDomain) or (Host == JabberFQDN) ->
 	    true;
-	["xmpp", _Host, ServName] when ServName == JabberHost ->
+	["xmpp", Host, ServName] when (ServName == JabberDomain) and (Host == JabberFQDN) ->
 	    true;
 	_ ->
 	    false
     end.
 
-
-
+get_local_fqdn() ->
+    case (catch get_local_fqdn2()) of
+	Str when is_list(Str) -> Str;
+	_ -> "unknown-fqdn, please configure fqdn option in ejabberd.cfg!"
+    end.
+get_local_fqdn2() ->
+    case ejabberd_config:get_local_option(fqdn) of
+	ConfiguredFqdn when is_list(ConfiguredFqdn) ->
+	    ConfiguredFqdn;
+	_undefined ->
+	    {ok, Hostname} = inet:gethostname(),
+	    {ok, {hostent, Fqdn, _, _, _, _}} = inet:gethostbyname(Hostname),
+	    Fqdn
+    end.
 
 digit_to_xchar(D) when (D >= 0) and (D < 10) ->
     D + 48;

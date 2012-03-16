@@ -1231,6 +1231,12 @@ The default value is \term{closeold}.
 If the client uses old Jabber Non-SASL authentication (\xepref{0078}),
 then this option is not respected, and the action performed is \term{closeold}.
 
+The option \option{fqdn} allows you to define the Fully Qualified Domain Name
+of the machine, in case it isn't detected automatically.
+The FQDN is used to authenticate some clients that use the DIGEST-MD5 SASL mechanism.
+The option syntax is:
+\esyntax{\{fqdn, undefined|FqdnString\}.}
+
 \makesubsubsection{internalauth}{Internal}
 \ind{internal authentication}\ind{Mnesia}
 
