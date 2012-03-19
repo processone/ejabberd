@@ -290,8 +290,8 @@ accept(ListenSocket, Module, Opts) ->
 	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
 	    accept(ListenSocket, Module, Opts);
 	{error, Reason} ->
-	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
-		      [ListenSocket, Reason]),
+	    ?ERROR_MSG("(~w) Failed TCP accept: ~w",
+                       [ListenSocket, Reason]),
 	    accept(ListenSocket, Module, Opts)
     end.
 
