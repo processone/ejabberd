@@ -26,6 +26,16 @@
 
 #define BUF_SIZE 1024
 
+/*
+ * R15B changed several driver callbacks to use ErlDrvSizeT and
+ * ErlDrvSSizeT typedefs instead of int.
+ * This provides missing typedefs on older OTP versions.
+ */
+#if ERL_DRV_EXTENDED_MAJOR_VERSION < 2
+typedef int ErlDrvSizeT;
+typedef int ErlDrvSSizeT;
+#endif
+
 typedef struct {
       ErlDrvPort port;
       z_stream *d_stream;
@@ -98,10 +108,10 @@ static void ejabberd_zlib_drv_stop(ErlDrvData handle)
 	 }
 
 
-static int ejabberd_zlib_drv_control(ErlDrvData handle,
+static ErlDrvSSizeT ejabberd_zlib_drv_control(ErlDrvData handle,
 				     unsigned int command,
-				     char *buf, int len,
-				     char **rbuf, int rlen)
+				     char *buf, ErlDrvSizeT len,
+				     char **rbuf, ErlDrvSizeT rlen)
 {
    ejabberd_zlib_data *d = (ejabberd_zlib_data *)handle;
    int err;
@@ -187,7 +197,19 @@ ErlDrvEntry ejabberd_zlib_driver_entry = {
    NULL,			/* handle */
    ejabberd_zlib_drv_control,   /* F_PTR control, port_command callback */
    NULL,			/* F_PTR timeout, reserved */
-   NULL				/* F_PTR outputv, reserved */
+   NULL,				/* F_PTR outputv, reserved */
+   /* Added in Erlang/OTP R15B: */
+   NULL,                 /* ready_async */
+   NULL,                 /* flush */
+   NULL,                 /* call */
+   NULL,                 /* event */
+   ERL_DRV_EXTENDED_MARKER,        /* extended_marker */
+   ERL_DRV_EXTENDED_MAJOR_VERSION, /* major_version */
+   ERL_DRV_EXTENDED_MINOR_VERSION, /* minor_version */
+   0,                    /* driver_flags */
+   NULL,                 /* handle2 */
+   NULL,                 /* process_exit */
+   NULL					 /* stop select */
 };
 
 DRIVER_INIT(ejabberd_zlib_drv) /* must match name in driver_entry */
