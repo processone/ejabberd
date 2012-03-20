@@ -442,7 +442,10 @@ process_request(#state{request_method = Method,
 	    %% URL path prefix.
 	    case ejabberd_websocket:check(Path, RequestHeaders) of
 	      {true, VSN} ->
-	        {_, Origin} = lists:keyfind("Origin", 1, RequestHeaders),
+	        {_, Origin} = case lists:keyfind("Sec-Websocket-Origin", 1, RequestHeaders) of
+                                  false -> lists:keyfind("Origin", 1, RequestHeaders);
+                                  Value -> Value
+                              end,
 	        Ws = #ws{socket = Socket,
     			       sockmod = SockMod,
     			       ws_autoexit = false,

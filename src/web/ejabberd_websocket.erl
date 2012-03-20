@@ -45,7 +45,7 @@
 
 check(_Path, Headers)->
 	% set supported websocket protocols, order does matter
-	VsnSupported = [{'draft-hixie', 0}, {'draft-hixie', 68}],	
+	VsnSupported = [{'draft-hybi', 8}, {'draft-hybi', 13}, {'draft-hixie', 0}, {'draft-hixie', 68}],
 	% checks
 	check_websockets(VsnSupported, Headers).
 
@@ -90,14 +90,14 @@ connect(#ws{vsn = Vsn, socket = Socket, q=Q,origin=Origin, host=Host, port=Port,
   	    SockMod:setopts(Socket, [{packet, 0}, {active, true}])
   	end,
   	% start listening for incoming data
-  	ws_loop(Socket, none, WsHandleLoopPid, SockMod, WsAutoExit).
+        ws_loop(Vsn, none, Socket, WsHandleLoopPid, SockMod, WsAutoExit).
 
 	
 check_websockets([], _Headers) -> false;
 check_websockets([Vsn|T], Headers) ->
 	case check_websocket(Vsn, Headers) of
 		false -> check_websockets(T, Headers);
-		{true, Vsn} -> {true, Vsn}
+		Value -> Value
 	end.
 
 % Function: {true, Vsn} | false
@@ -113,7 +113,7 @@ check_websocket({'draft-hixie', 0} = Vsn, Headers) ->
 	case check_headers(Headers, RequiredHeaders) of
 		true ->
 			% return
-			{true, Vsn};
+            {true, Vsn};
 		_RemainingHeaders ->
 			%?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
 			false
@@ -131,16 +131,58 @@ check_websocket({'draft-hixie', 68} = Vsn, Headers) ->
 			%?DEBUG("not protocol ~p, remaining headers: ~p", [Vsn, _RemainingHeaders]),
 			false
 	end;
+check_websocket({'draft-hybi', 8} = Vsn, Headers) ->
+	%?DEBUG("testing for websocket protocol ~p", [Vsn]),
+	% set required headers
+	RequiredHeaders = [
+                           {'Upgrade', "websocket"}, {'Connection', ignore}, {'Host', ignore},
+                           {"Sec-WebSocket-Key", ignore}, {"Sec-WebSocket-Version", "8"}
+                          ],
+	% check for headers existance
+	case check_headers(Headers, RequiredHeaders) of
+		true -> {true, Vsn};
+		RemainingHeaders ->
+			%%?INFO_MSG("not protocol ~p, remaining headers: ~p", [Vsn, RemainingHeaders]),
+			false
+	end;
+check_websocket({'draft-hybi', 13} = Vsn, Headers) ->
+	%?DEBUG("testing for websocket protocol ~p", [Vsn]),
+	% set required headers
+	RequiredHeaders = [
+                           {'Upgrade', "websocket"}, {'Connection', ignore}, {'Host', ignore},
+                           {"Sec-WebSocket-Key", ignore}, {"Sec-WebSocket-Version", "13"}
+                          ],
+	% check for headers existance
+	case check_headers(Headers, RequiredHeaders) of
+		true -> {true, Vsn};
+		RemainingHeaders ->
+			%%?INFO_MSG("not protocol ~p, remaining headers: ~p", [Vsn, RemainingHeaders]),
+			false
+	end;
 check_websocket(_Vsn, _Headers) -> false. % not implemented
+
+tolower(T) when is_list(T) -> stringprep:tolower(T);
+tolower(T) -> T.
+
+case_insensitive_keyfind(Name, List) when is_atom(Name) ->
+    lists:keyfind(Name, 1, List);
+case_insensitive_keyfind(Name, []) ->
+    false;
+case_insensitive_keyfind(Name, [{FName, Val}|T]) ->
+    FNameL = tolower(FName),
+    if
+        FNameL == Name -> {Name, Val};
+        true -> case_insensitive_keyfind(Name, T)
+    end.
 
 % Function: true | [{RequiredTag, RequiredVal}, ..]
 % Description: Check if headers correspond to headers requirements.
 check_headers(Headers, RequiredHeaders) ->
 	F = fun({Tag, Val}) ->
 		% see if the required Tag is in the Headers
-		case lists:keyfind(Tag, 1, Headers) of
+        case case_insensitive_keyfind(tolower(Tag), Headers) of
 			false -> true; % header not found, keep in list
-			{Tag, HVal} ->
+			{_, HVal} ->
 			  %?DEBUG("check: ~p", [{Tag, HVal,Val }]),
 				case Val of
 					ignore -> false; % ignore value -> ok, remove from list
@@ -206,6 +248,15 @@ handshake({'draft-hixie', 68}, _Sock,_SocketMod, _Headers, {Path, Origin, Host, 
 		"WebSocket-Location: ws://", 
 		lists:concat([Host, integer_to_list(Port)]),
 		"/",string:join(Path,"/"),  "\r\n\r\n"
+	];
+handshake({'draft-hybi', 8}, Sock,SocketMod, Headers, {Path, Q,Origin, Host, Port}) ->
+	% build data
+	{_, Key} = lists:keyfind("Sec-Websocket-Key",1, Headers),
+    Hash = jlib:encode_base64(binary_to_list(sha:sha1(Key++"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))),
+	["HTTP/1.1 101 Switching Protocols\r\n",
+		"Upgrade: websocket\r\n",
+		"Connection: Upgrade\r\n",
+		"Sec-WebSocket-Accept: ", Hash, "\r\n\r\n"
 	].
 
 % Function: List
@@ -222,11 +273,15 @@ build_challenge({'draft-hixie', 0}, {Key1, Key2, Key3}) ->
 	erlang:md5(Ckey).
 	
 	
-ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+ws_loop(Vsn, HandlerState, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 	receive
-		{tcp, Socket, Data} ->
-		    %?ERROR_MSG("[WS recv] ~p~n[Buffer state] ~p", [Data, Buffer]),
-			handle_data(Buffer, Data, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
+               {tcp, Socket, Data} ->
+                   %?ERROR_MSG("[WS recv] ~p~n[Buffer state] ~p", [Data, Buffer]),
+                   {NewHandlerState, ToSend} = handle_data(Vsn, HandlerState, Data, Socket, WsHandleLoopPid, SocketMode, WsAutoExit),
+                   lists:foreach(fun(Pkt) ->
+                                        SocketMode:send(Socket, Pkt)
+                                end, ToSend),
+                   ws_loop(Vsn, NewHandlerState, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);                
 		{tcp_closed, Socket} ->
 			?DEBUG("tcp connection was closed, exit", []),
 			% close websocket and custom controlling loop
@@ -245,39 +300,134 @@ ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit) ->
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		{send, Data} ->
 			%?DEBUG("sending data to websocket: ~p", [Data]),
-			SocketMode:send(Socket, iolist_to_binary([0,Data,255])),
-			ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit);
+			SocketMode:send(Socket, encode_frame(Vsn, Data)),
+			ws_loop(Vsn, HandlerState, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		shutdown ->
 			?DEBUG("shutdown request received, closing websocket with pid ~p", [self()]),
 			% close websocket and custom controlling loop
 			websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
 		_Ignored ->
 			?WARNING_MSG("received unexpected message, ignoring: ~p", [_Ignored]),
-			ws_loop(Socket, Buffer, WsHandleLoopPid, SocketMode, WsAutoExit)
+			ws_loop(Vsn, HandlerState, Socket, WsHandleLoopPid, SocketMode, WsAutoExit)
 	end.
 
+encode_frame({'draft-hybi', _}, Data, Opcode) ->
+    case byte_size(Data) of
+        S1 when S1 < 126 ->
+            <<1:1, 0:3, Opcode:4, 0:1, S1:7, Data/binary>>;
+        S2 when S2 < 65536 ->
+            <<1:1, 0:3, Opcode:4, 0:1, 126:7, S2:16, Data/binary>>;
+        S3 ->
+            <<1:1, 0:3, Opcode:4, 0:1, 127:7, S3:64, Data/binary>>
+    end.
+
+encode_frame({'draft-hybi', _}=Vsn, Data) ->
+    encode_frame(Vsn, Data, 1);
+encode_frame(_, Data) ->
+    <<0, Data/binary, 255>>.
+
+process_hixie_68(none, Data) ->
+    process_hixie_68(<<>>, Data);
+process_hixie_68(L, <<>>) ->
+    {L, [], []};
+process_hixie_68(L, <<255,T/binary>>) ->
+    {L2, Recv, Send} = process_hixie_68(<<>>, T),
+    {L2, [L|Recv], Send};
+process_hixie_68(L, <<H/utf8, T/binary>>) ->
+    process_hixie_68(<<L/binary, H>>, T).
+
+-record(hybi_8_state, {mask=none, offset=0, left, final_frame=true, opcode, unprocessed = <<>>, unmasked = <<>>, unmasked_msg = <<>>}).
+
+decode_hybi_8_header(<<Final:1, _:3, Opcode:4, 0:1, Len:7, Data/binary>>) when Len < 126 ->
+    {Len, Final, Opcode, none, Data};
+decode_hybi_8_header(<<Final:1, _:3, Opcode:4, 0:1, 126:7, Len:16/integer, Data/binary>>) ->
+    {Len, Final, Opcode, none, Data};
+decode_hybi_8_header(<<Final:1, _:3, Opcode:4, 0:1, 127:7, Len:64/integer, Data/binary>>) ->
+    {Len, Final, Opcode, none, Data};
+decode_hybi_8_header(<<Final:1, _:3, Opcode:4, 1:1, Len:7, Mask:4/binary, Data/binary>>) when Len < 126 ->
+    {Len, Final, Opcode, Mask, Data};
+decode_hybi_8_header(<<Final:1, _:3, Opcode:4, 1:1, 126:7, Len:16/integer, Mask:4/binary, Data/binary>>) ->
+    {Len, Final, Opcode, Mask, Data};
+decode_hybi_8_header(<<Final:1, _:3, Opcode:4, 1:1, 127:7, Len:64/integer, Mask:4/binary, Data/binary>>) ->
+    {Len, Final, Opcode, Mask, Data};
+decode_hybi_8_header(_) ->
+    none.
+
+unmask_hybi_8_int(Offset, _, <<>>, Acc) ->
+    {Acc, Offset};
+unmask_hybi_8_int(0, <<M:32>>=Mask, <<N:32, Rest/binary>>, Acc) ->
+    unmask_hybi_8_int(0, Mask, Rest, <<Acc/binary, (M bxor N):32>>);
+unmask_hybi_8_int(0, <<M:8, _/binary>>=Mask, <<N:8, Rest/binary>>, Acc) ->
+    unmask_hybi_8_int(1, Mask, Rest, <<Acc/binary, (M bxor N):8>>);
+unmask_hybi_8_int(1, <<_:8, M:8, _/binary>>=Mask, <<N:8, Rest/binary>>, Acc) ->
+    unmask_hybi_8_int(2, Mask, Rest, <<Acc/binary, (M bxor N):8>>);
+unmask_hybi_8_int(2, <<_:16, M:8, _/binary>>=Mask, <<N:8, Rest/binary>>, Acc) ->
+    unmask_hybi_8_int(3, Mask, Rest, <<Acc/binary, (M bxor N):8>>);
+unmask_hybi_8_int(3, <<_:24, M:8>>=Mask, <<N:8, Rest/binary>>, Acc) ->
+    unmask_hybi_8_int(0, Mask, Rest, <<Acc/binary, (M bxor N):8>>).
+
+unmask_hybi_8(#hybi_8_state{mask=none}=State, Data) ->
+    {State, Data};
+unmask_hybi_8(#hybi_8_state{mask=Mask, offset=Offset}=State, Data) ->
+    {Unmasked, NewOffset} = unmask_hybi_8_int(Offset, Mask, Data, <<>>),
+    {State#hybi_8_state{offset=NewOffset}, Unmasked}.
+
+
+process_hybi_8(none, Data) ->
+    process_hybi_8(#hybi_8_state{}, Data);
+process_hybi_8(State, <<>>) ->
+    {State, [], []};
+process_hybi_8(#hybi_8_state{unprocessed=none, unmasked=UnmaskedPre, left=Left}=State,
+                Data) when byte_size(Data) < Left ->
+    {State2, Unmasked} = unmask_hybi_8(State, Data),
+    {State2#hybi_8_state{left=Left-byte_size(Data), unmasked=[UnmaskedPre, Unmasked]}, [], []};
+process_hybi_8(#hybi_8_state{unprocessed=none, unmasked=UnmaskedPre, opcode=Opcode,
+                              final_frame=Final, left=Left, unmasked_msg=UnmaskedMsg}=State, Data) ->
+    {_State, Unmasked} = unmask_hybi_8(State, binary_part(Data, 0, Left)),
+    Unprocessed = binary_part(Data, Left, byte_size(Data)-Left),
+    case Final of
+        true ->
+            {State3, Recv, Send} = process_hybi_8(#hybi_8_state{}, Unprocessed),
+            case Opcode of
+                9 ->
+                    Frame = encode_frame({'draft-hybi', 8}, Unprocessed, 10),
+                    {State3#hybi_8_state{unmasked_msg=UnmaskedMsg}, Recv, [Frame|Send]};
+                X when X < 3 ->
+                    {State3, [iolist_to_binary([UnmaskedMsg, UnmaskedPre, Unmasked])|Recv], Send};
+                _ ->
+                    {State3#hybi_8_state{unmasked_msg=UnmaskedMsg}, Recv, Send}                     
+            end;
+        _ ->
+            process_hybi_8(#hybi_8_state{unmasked_msg=[UnmaskedMsg, UnmaskedPre, Unmasked]}, Unprocessed)
+    end;
+process_hybi_8(#hybi_8_state{unprocessed= <<>>}=State, Data) ->
+    case decode_hybi_8_header(Data) of
+        none ->
+            {State#hybi_8_state{unprocessed=Data}, [], []};
+        {Len, Final, Opcode, Mask, Rest} ->
+            process_hybi_8(State#hybi_8_state{mask=Mask, final_frame=Final==1,
+                                               left=Len, opcode=Opcode,
+                                               unprocessed=none}, Rest)
+    end;
+process_hybi_8(#hybi_8_state{unprocessed=UnprocessedPre}=State, Data) ->
+    process_hybi_8(State#hybi_8_state{unprocessed = <<>>}, <<UnprocessedPre/binary, Data/binary>>).
+
+
 % Buffering and data handling
-handle_data(none,<<0,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	handle_data(<<>>, T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
-	
-handle_data(none, <<>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	ws_loop(Socket, none, WsHandleLoopPid, SocketMode, WsAutoExit);
-	
-handle_data(L, <<255,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	WsHandleLoopPid ! {browser, iolist_to_binary(L)},
-	handle_data(none, T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
-	
-handle_data(L, <<H/utf8,T/binary>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	handle_data(iolist_to_binary([L, H]), T, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
-
-handle_data(L, <<>>, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit);
-
-handle_data(<<>>, L, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
-	ws_loop(Socket, L, WsHandleLoopPid, SocketMode, WsAutoExit);
-
+handle_data({'draft-hybi', _}, State, Data, _Socket, WsHandleLoopPid, _SocketMode, _WsAutoExit) ->
+    {NewState, Recv, Send} = process_hybi_8(State, Data),
+    lists:foreach(fun(El) ->
+                          WsHandleLoopPid ! {browser, El}
+                  end, Recv),
+    {NewState, Send};
+handle_data(_Vsn, State, Data, _Socket, WsHandleLoopPid, _SocketMode, _WsAutoExit) ->
+    {NewState, Recv, Send} = process_hixie_68(State, Data),
+    lists:foreach(fun(El) ->
+                          WsHandleLoopPid ! {browser, El}
+                  end, Recv),
+    {NewState, Send};
 %% Invalid input
-handle_data(_, _, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
+handle_data(_Vsn, _State, _Data, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) ->
     websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit).
 
 % Close socket and custom handling loop dependency
