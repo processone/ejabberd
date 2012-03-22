@@ -71,41 +71,44 @@
 process_data(CallbackPid, Stack, Data) ->
     case Data of
       {?XML_START, {Name, Attrs}} ->
-	  if Stack == [] ->
-		 catch gen_fsm:send_event(CallbackPid,
-					  {xmlstreamstart, Name, Attrs});
-	     true -> ok
-	  end,
-	  [#xmlel{name = Name, attrs = Attrs, children = []}
-	   | Stack];
+	  if
+		Stack == [] ->
+		    catch gen_fsm:send_event(CallbackPid,
+					  {xmlstreamstart, Name, Attrs}),
+		    %% There is no need to store name or attributes of
+		    %% stream opening element as it is not used
+		    %% anymore.
+		    [xmlstreamstart];
+		true ->
+		    [#xmlel{name = Name, attrs = Attrs, children = []}
+			| Stack]
+	  end;
       {?XML_END, EndName} ->
 	  case Stack of
+	    [xmlstreamstart] ->
+		    catch gen_fsm:send_event(CallbackPid,
+					     {xmlstreamend, EndName}),
+		    [];
 	    [#xmlel{name = Name, attrs = Attrs, children = Els}
+	     | xmlstreamstart] ->
+		NewEl = #xmlel{name = Name, attrs = Attrs,
+			       children = lists:reverse(Els)},
+		catch gen_fsm:send_event(CallbackPid,
+			    {xmlstreamelement, NewEl}),
+		[xmlstreamstart];
+	    [#xmlel{name = Name, attrs = Attrs, children = Els},
+	     #xmlel{name = Name1, attrs = Attrs1, children = Els1}
 	     | Tail] ->
 		NewEl = #xmlel{name = Name, attrs = Attrs,
 			       children = lists:reverse(Els)},
-		case Tail of
-		  [] ->
-		      catch gen_fsm:send_event(CallbackPid,
-					       {xmlstreamend, EndName}),
-		      Tail;
-		  [_] ->
-		      catch gen_fsm:send_event(CallbackPid,
-					       {xmlstreamelement, NewEl}),
-		      Tail;
-		  [#xmlel{name = Name1, attrs = Attrs1, children = Els1}
-		   | Tail1] ->
-		      [#xmlel{name = Name1, attrs = Attrs1,
-			      children = [NewEl | Els1]}
-		       | Tail1]
-		end
+		[{xmlel, Name1, Attrs1, [NewEl | Els1]} | Tail]
 	  end;
       {?XML_CDATA, CData} ->
 	  case Stack of
-	    [El] ->
+	    [xmlstreamstart] ->
 		catch gen_fsm:send_all_state_event(CallbackPid,
 						   {xmlstreamcdata, CData}),
-		[El];
+		[xmlstreamstart];
 	    %% Merge CDATA nodes if they are contiguous
 	    %% This does not change the semantic: the split in
 	    %% several CDATA nodes depends on the TCP/IP packet
