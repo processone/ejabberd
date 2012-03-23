@@ -33,6 +33,7 @@
 	 tcp_to_tls/2, tls_to_tcp/1,
 	 send/2,
 	 recv/2, recv/3,
+         recv_data/2,
 	 setopts/2,
 	 sockname/1, peername/1,
 	 controlling_process/2,
@@ -175,6 +176,9 @@ recv(#tlssock{tcpsock = TCPSocket, tlsport = Port} = TLSSock,
         <<1, Error/binary>> ->
             {error, binary_to_list(Error)}
     end.
+
+recv_data(TLSSock, Packet) ->
+    recv_data(TLSSock, Packet, 0).
 
 recv_data(TLSSock, Packet, Length) ->
     case catch recv_data1(TLSSock, Packet, Length) of
