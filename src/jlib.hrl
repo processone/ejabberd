@@ -127,6 +127,8 @@
 	?STANZA_ERROR("401", "auth",   "not-authorized")).
 -define(ERR_PAYMENT_REQUIRED,
 	?STANZA_ERROR("402", "auth",   "payment-required")).
+-define(ERR_POLICY_VIOLATION,
+	?STANZA_ERROR("405", "cancel", "policy-violation")).
 -define(ERR_RECIPIENT_UNAVAILABLE,
 	?STANZA_ERROR("404", "wait",   "recipient-unavailable")).
 -define(ERR_REDIRECT,
