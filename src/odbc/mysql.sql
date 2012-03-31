@@ -219,3 +219,22 @@ CREATE TABLE pubsub_subscription_opt (
   opt_value text
 );
 CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt(subid(32), opt_name(32));
+
+CREATE TABLE muc_room (
+    name text NOT NULL,
+    host text NOT NULL,
+    opts text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE UNIQUE INDEX i_muc_room_name_host USING BTREE ON muc_room(name(75), host(75));
+
+CREATE TABLE muc_registered (
+    jid text NOT NULL,
+    host text NOT NULL,
+    nick text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE INDEX i_muc_registered_nick USING BTREE ON muc_registered(nick(75));
+CREATE UNIQUE INDEX i_muc_registered_jid_host USING BTREE ON muc_registered(jid(75), host(75));

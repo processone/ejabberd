@@ -34,7 +34,9 @@
 	 export_last/2,
 	 export_vcard/2,
 	 export_vcard_search/2,
-	 export_private_storage/2]).
+	 export_private_storage/2,
+         export_muc_room/2,
+         export_muc_registered/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -58,6 +60,8 @@
 		       orgunit,	 lorgunit
 		      }).
 -record(private_storage, {usns, xml}).
+-record(muc_room, {name_host, opts}).
+-record(muc_registered, {us_host, nick}).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 1000).
 
@@ -263,6 +267,44 @@ export_private_storage(Server, Output) ->
       	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
 	 (_Host, _R) ->
       	      []
+      end).
+
+export_muc_room(Server, Output) ->
+    export_common(
+      Server, muc_room, Output,
+      fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
+              case lists:suffix(Host, RoomHost) of
+                  true ->
+                      SName = ejabberd_odbc:escape(Name),
+                      SRoomHost = ejabberd_odbc:escape(RoomHost),
+                      SOpts = mod_muc_odbc:encode_opts(Opts),
+                      ["delete from muc_room where name='", SName,
+                       "' and host='", SRoomHost, "';",
+                       "insert into muc_room(name, host, opts) values (",
+                       "'", SName, "', '", SRoomHost, "', '", SOpts, "');"];
+                  false ->
+                      []
+              end
+      end).
+
+export_muc_registered(Server, Output) ->
+    export_common(
+      Server, muc_registered, Output,
+      fun(Host, #muc_registered{us_host = {{U, S}, RoomHost}, nick = Nick}) ->
+              case lists:suffix(Host, RoomHost) of
+                  true ->
+                      SJID = ejabberd_odbc:escape(
+                               jlib:jid_to_string(
+                                 jlib:make_jid(U, S, ""))),
+                      SNick = ejabberd_odbc:escape(Nick),
+                      SRoomHost = ejabberd_odbc:escape(RoomHost),
+                      ["delete from muc_registered where jid='", SJID,
+                       "' and host='", SRoomHost, "';"
+                       "insert into muc_registered(jid, host, nick) values ("
+                       "'", SJID, "', '", SRoomHost, "', '", SNick, "');"];
+                  false ->
+                      []
+              end
       end).
 
 %%%----------------------------------------------------------------------

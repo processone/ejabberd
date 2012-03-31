@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : mod_muc.erl
+%%% File    : mod_muc_odbc.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : MUC support (XEP-0045)
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
@@ -24,7 +24,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(mod_muc).
+-module(mod_muc_odbc).
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -41,6 +41,8 @@
 	 create_room/5,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
+         encode_opts/1,
+         decode_opts/1,
 	 can_use_nick/4]).
 
 %% gen_server callbacks
@@ -51,9 +53,7 @@
 -include("jlib.hrl").
 
 
--record(muc_room, {name_host, opts}).
 -record(muc_online_room, {name_host, pid}).
--record(muc_registered, {us_host, nick}).
 
 -record(state, {host,
 		server_host,
@@ -111,26 +111,42 @@ create_room(Host, Name, From, Nick, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, {create, Name, From, Nick, Opts}).
 
-store_room(_ServerHost, Host, Name, Opts) ->
+store_room(ServerHost, Host, Name, Opts) ->
+    SName = ejabberd_odbc:escape(Name),
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
     F = fun() ->
-		mnesia:write(#muc_room{name_host = {Name, Host},
-				       opts = Opts})
+                update_t(
+                  "muc_room",
+                  ["name", "host", "opts"],
+                  [SName, SHost, encode_opts(Opts)],
+                  ["name='", SName, "' and host='", SHost, "'"])
 	end,
-    mnesia:transaction(F).
+    ejabberd_odbc:sql_transaction(LServer, F).
 
-restore_room(_ServerHost, Host, Name) ->
-    case catch mnesia:dirty_read(muc_room, {Name, Host}) of
-	[#muc_room{opts = Opts}] ->
-	    Opts;
-	_ ->
-	    error
+restore_room(ServerHost, Host, Name) ->
+    SName = ejabberd_odbc:escape(Name),
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
+    case catch ejabberd_odbc:sql_query(
+                 LServer, ["select opts from muc_room where name='",
+                           SName, "' and host='", SHost, "';"]) of
+        {selected, ["opts"], [{Opts}]} ->
+            decode_opts(Opts);
+        _ ->
+            error
     end.
 
-forget_room(_ServerHost, Host, Name) ->
+forget_room(ServerHost, Host, Name) ->
+    SName = ejabberd_odbc:escape(Name),
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
     F = fun() ->
-		mnesia:delete({muc_room, {Name, Host}})
+		ejabberd_odbc:sql_query_t(
+                  ["delete from muc_room where name='",
+                   SName, "' and host='", SHost, "';"])
 	end,
-    mnesia:transaction(F).
+    ejabberd_odbc:sql_transaction(LServer, F).
 
 process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
     Rsm = jlib:rsm_decode(IQ),
@@ -144,22 +160,21 @@ process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
 
 can_use_nick(_ServerHost, _Host, _JID, "") ->
     false;
-can_use_nick(_ServerHost, Host, JID, Nick) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
-    LUS = {LUser, LServer},
-    case catch mnesia:dirty_select(
-		 muc_registered,
-		 [{#muc_registered{us_host = '$1',
-				   nick = Nick,
-				   _ = '_'},
-		   [{'==', {element, 2, '$1'}, Host}],
-		   ['$_']}]) of
-	{'EXIT', _Reason} ->
-	    true;
-	[] ->
-	    true;
-	[#muc_registered{us_host = {U, _Host}}] ->
-	    U == LUS
+can_use_nick(ServerHost, Host, JID, Nick) ->
+    SJID = jlib:jid_to_string(
+             jlib:jid_tolower(
+               jlib:jid_remove_resource(JID))),
+    SNick = ejabberd_odbc:escape(Nick),
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
+    case catch ejabberd_odbc:sql_query(
+                 LServer, ["select jid from muc_registered ",
+                           "where nick='", SNick, "' and host='",
+                           SHost, "';"]) of
+        {selected, ["jid"], [{SJID1}]} ->
+            SJID == SJID1;
+        _ ->
+            true
     end.
 
 %%====================================================================
@@ -174,21 +189,13 @@ can_use_nick(_ServerHost, Host, JID, Nick) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    mnesia:create_table(muc_room,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, muc_room)}]),
-    mnesia:create_table(muc_registered,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, muc_registered)}]),
     mnesia:create_table(muc_online_room,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, muc_online_room)}]),
     mnesia:add_table_copy(muc_online_room, node(), ram_copies),
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
     MyHost = gen_mod:get_opt_host(Host, Opts, "conference.@HOST@"),
-    update_tables(MyHost),
     clean_table_from_bad_node(node(), MyHost),
-    mnesia:add_table_index(muc_registered, nick),
     mnesia:subscribe(system),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
@@ -379,7 +386,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 						[{xmlelement, "query",
 						  [{"xmlns", XMLNS}],
 						  iq_get_register_info(
-						    Host, From, Lang)}]},
+						    ServerHost, Host, From, Lang)}]},
 				    ejabberd_router:route(To,
 							  From,
 							  jlib:iq_to_xml(Res));
@@ -387,7 +394,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    xmlns = ?NS_REGISTER = XMLNS,
 				    lang = Lang,
 				    sub_el = SubEl} = IQ ->
-				    case process_iq_register_set(Host, From, SubEl, Lang) of
+				    case process_iq_register_set(
+                                           ServerHost, Host, From, SubEl, Lang) of
 					{result, IQRes} ->
 					    Res = IQ#iq{type = result,
 							sub_el =
@@ -521,18 +529,18 @@ check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
 
 
 load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
-    case catch mnesia:dirty_select(
-		 muc_room, [{#muc_room{name_host = {'_', Host}, _ = '_'},
-			     [],
-			     ['$_']}]) of
-	{'EXIT', Reason} ->
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
+    case catch ejabberd_odbc:sql_query(
+                 LServer, ["select name, opts from muc_room ",
+                           "where host='", SHost, "';"]) of
+        {'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]),
 	    ok;
-	Rs ->
-	    lists:foreach(
-	      fun(R) ->
-		      {Room, Host} = R#muc_room.name_host,
-		      case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+        {selected, ["name", "opts"], RoomOpts} ->
+            lists:foreach(
+              fun({Room, Opts}) ->
+                      case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 			  [] ->
 			      {ok, Pid} = mod_muc_room:start(
 					    Host,
@@ -541,30 +549,35 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 					    Room,
 					    HistorySize,
 					    RoomShaper,
-					    R#muc_room.opts,
+					    decode_opts(Opts),
                                             ?MODULE),
 			      register_room(Host, Room, Pid);
 			  _ ->
 			      ok
 		      end
-	      end, Rs)
+              end, RoomOpts)
     end.
 
 start_new_room(Host, ServerHost, Access, Room,
 	       HistorySize, RoomShaper, From,
 	       Nick, DefRoomOpts) ->
-    case mnesia:dirty_read(muc_room, {Room, Host}) of
-	[] ->
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
+    SRoom = ejabberd_odbc:escape(Room),
+    case ejabberd_odbc:sql_query(
+           LServer, ["select opts from muc_room where name='", SRoom,
+                     "' and host='", SHost, "';"]) of
+	{selected, ["opts"], []} ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access,
 			       Room, HistorySize,
 			       RoomShaper, From,
 			       Nick, DefRoomOpts, ?MODULE);
-	[#muc_room{opts = Opts}|_] ->
+        {selected, ["opts"], [{Opts}|_]} ->
 	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access,
 			       Room, HistorySize,
-			       RoomShaper, Opts, ?MODULE)
+			       RoomShaper, decode_opts(Opts), ?MODULE)
     end.
 
 register_room(Host, Room, Pid) ->
@@ -693,18 +706,22 @@ flush() ->
 iq_get_unique(From) ->
 	{xmlcdata, sha:sha(term_to_binary([From, now(), randoms:get_string()]))}.
 
-iq_get_register_info(Host, From, Lang) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
-    LUS = {LUser, LServer},
+iq_get_register_info(ServerHost, Host, From, Lang) ->
+    SJID = ejabberd_odbc:escape(
+             jlib:jid_to_string(
+               jlib:jid_tolower(
+                 jlib:jid_remove_resource(From)))),
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
     {Nick, Registered} =
-	case catch mnesia:dirty_read(muc_registered, {LUS, Host}) of
-	    {'EXIT', _Reason} ->
-		{"", []};
-	    [] ->
-		{"", []};
-	    [#muc_registered{nick = N}] ->
-		{N, [{xmlelement, "registered", [], []}]}
-	end,
+        case catch ejabberd_odbc:sql_query(
+                     LServer, ["select nick from muc_registered where "
+                               "jid='", SJID, "' and host='", SHost, "';"]) of
+            {selected, ["nick"], [{N}]} ->
+                {N, [{xmlelement, "registered", [], []}]};
+            _ ->
+                {"", []}
+        end,
     Registered ++
 	[{xmlelement, "instructions", [],
 	  [{xmlcdata,
@@ -722,50 +739,55 @@ iq_get_register_info(Host, From, Lang) ->
 		Lang, "Enter nickname you want to register")}]},
 	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
 
-iq_set_register_info(Host, From, Nick, Lang) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
-    LUS = {LUser, LServer},
+iq_set_register_info(ServerHost, Host, From, Nick, Lang) ->
+    JID = jlib:jid_to_string(
+            jlib:jid_tolower(
+              jlib:jid_remove_resource(From))),
+    SJID = ejabberd_odbc:escape(JID),
+    SNick = ejabberd_odbc:escape(Nick),
+    SHost = ejabberd_odbc:escape(Host),
+    LServer = jlib:nameprep(ServerHost),
     F = fun() ->
-		case Nick of
-		    "" ->
-			mnesia:delete({muc_registered, {LUS, Host}}),
-			ok;
-		    _ ->
-			Allow =
-			    case mnesia:select(
-				   muc_registered,
-				   [{#muc_registered{us_host = '$1',
-						     nick = Nick,
-						     _ = '_'},
-				     [{'==', {element, 2, '$1'}, Host}],
-				     ['$_']}]) of
-				[] ->
-				    true;
-				[#muc_registered{us_host = {U, _Host}}] ->
-				    U == LUS
-			    end,
-			if
-			    Allow ->
-				mnesia:write(
-				  #muc_registered{us_host = {LUS, Host},
-						  nick = Nick}),
-				ok;
-			    true ->
-				false
-			end
-		end
-	end,
-    case mnesia:transaction(F) of
-	{atomic, ok} ->
-	    {result, []};
-	{atomic, false} ->
-	    ErrText = "That nickname is registered by another person",
+                case Nick of
+                    "" ->
+                        ejabberd_odbc:sql_query_t(
+                          ["delete from muc_registered where ",
+                           "jid='", SJID, "' and host='", Host, "';"]),
+                        ok;
+                    _ ->
+                        Allow =
+                            case ejabberd_odbc:sql_query_t(
+                                   ["select jid from muc_registered ",
+                                    "where nick='", SNick, "' and host='",
+                                    SHost, "';"]) of
+                                {selected, ["jid"], [{J}]} ->
+                                    J == JID;
+                                _ ->
+                                    true
+                            end,
+                        if Allow ->
+                                update_t(
+                                  "muc_registered",
+                                  ["jid", "host", "nick"],
+                                  [SJID, SHost, SNick],
+                                  ["jid='", SJID, "' and host='", SHost, "'"]),
+                                ok;
+                           true ->
+                                false
+                        end
+                end
+        end,
+    case catch ejabberd_odbc:sql_transaction(LServer, F) of
+        {atomic, ok} ->
+            {result, []};
+        {atomic, false} ->
+            ErrText = "That nickname is registered by another person",
 	    {error, ?ERRT_CONFLICT(Lang, ErrText)};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-process_iq_register_set(Host, From, SubEl, Lang) ->
+process_iq_register_set(ServerHost, Host, From, SubEl, Lang) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
     case xml:get_subtag(SubEl, "remove") of
 	false ->
@@ -783,7 +805,8 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 				_ ->
 				    case lists:keysearch("nick", 1, XData) of
 					{value, {_, [Nick]}} when Nick /= "" ->
-					    iq_set_register_info(Host, From, Nick, Lang);
+					    iq_set_register_info(ServerHost, Host,
+                                                                 From, Nick, Lang);
 					_ ->
 					    ErrText = "You must fill in field \"Nickname\" in the form",
 					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
@@ -796,7 +819,7 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
 	_ ->
-	    iq_set_register_info(Host, From, "", Lang)
+	    iq_set_register_info(ServerHost, Host, From, "", Lang)
     end.
 
 iq_get_vcard(Lang) ->
@@ -851,90 +874,34 @@ clean_table_from_bad_node(Node, Host) ->
         end,
     mnesia:async_dirty(F).
 
-update_tables(Host) ->
-    update_muc_room_table(Host),
-    update_muc_registered_table(Host).
+encode_opts(Opts) ->
+    ejabberd_odbc:escape(erl_prettypr:format(erl_syntax:abstract(Opts))).
 
-update_muc_room_table(Host) ->
-    Fields = record_info(fields, muc_room),
-    case mnesia:table_info(muc_room, attributes) of
-	Fields ->
-	    ok;
-	[name, opts] ->
-	    ?INFO_MSG("Converting muc_room table from "
-		      "{name, opts} format", []),
-	    {atomic, ok} = mnesia:create_table(
-			     mod_muc_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, muc_room},
-			      {attributes, record_info(fields, muc_room)}]),
-	    mnesia:transform_table(muc_room, ignore, Fields),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_muc_tmp_table),
-			 mnesia:foldl(
-			   fun(#muc_room{name_host = Name} = R, _) ->
-				   mnesia:dirty_write(
-				     mod_muc_tmp_table,
-				     R#muc_room{name_host = {Name, Host}})
-			   end, ok, muc_room)
-		 end,
-	    mnesia:transaction(F1),
-	    mnesia:clear_table(muc_room),
-	    F2 = fun() ->
-			 mnesia:write_lock_table(muc_room),
-			 mnesia:foldl(
-			   fun(R, _) ->
-				   mnesia:dirty_write(R)
-			   end, ok, mod_muc_tmp_table)
-		 end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_muc_tmp_table);
-	_ ->
-	    ?INFO_MSG("Recreating muc_room table", []),
-	    mnesia:transform_table(muc_room, ignore, Fields)
-    end.
+decode_opts(Str) ->
+    {ok, Tokens, _} = erl_scan:string(Str ++ "."),
+    {ok, Opts} = erl_parse:parse_term(Tokens),
+    Opts.
 
+%% Almost a copy of string:join/2.
+%% We use this version because string:join/2 is relatively
+%% new function (introduced in R12B-0).
+join([], _Sep) ->
+    [];
+join([H|T], Sep) ->
+    [H, [[Sep, X] || X <- T]].
 
-update_muc_registered_table(Host) ->
-    Fields = record_info(fields, muc_registered),
-    case mnesia:table_info(muc_registered, attributes) of
-	Fields ->
-	    ok;
-	[user, nick] ->
-	    ?INFO_MSG("Converting muc_registered table from "
-		      "{user, nick} format", []),
-	    {atomic, ok} = mnesia:create_table(
-			     mod_muc_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, muc_registered},
-			      {attributes, record_info(fields, muc_registered)}]),
-	    mnesia:del_table_index(muc_registered, nick),
-	    mnesia:transform_table(muc_registered, ignore, Fields),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_muc_tmp_table),
-			 mnesia:foldl(
-			   fun(#muc_registered{us_host = US} = R, _) ->
-				   mnesia:dirty_write(
-				     mod_muc_tmp_table,
-				     R#muc_registered{us_host = {US, Host}})
-			   end, ok, muc_registered)
-		 end,
-	    mnesia:transaction(F1),
-	    mnesia:clear_table(muc_registered),
-	    F2 = fun() ->
-			 mnesia:write_lock_table(muc_registered),
-			 mnesia:foldl(
-			   fun(R, _) ->
-				   mnesia:dirty_write(R)
-			   end, ok, mod_muc_tmp_table)
-		 end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_muc_tmp_table);
-	_ ->
-	    ?INFO_MSG("Recreating muc_registered table", []),
-	    mnesia:transform_table(muc_registered, ignore, Fields)
+%% Safe atomic update.
+update_t(Table, Fields, Vals, Where) ->
+    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
+                           Fields, Vals),
+    case ejabberd_odbc:sql_query_t(
+           ["update ", Table, " set ",
+            join(UPairs, ", "),
+            " where ", Where, ";"]) of
+        {updated, 1} ->
+            ok;
+        _ ->
+            ejabberd_odbc:sql_query_t(
+              ["insert into ", Table, "(", join(Fields, ", "),
+               ") values ('", join(Vals, "', '"), "');"])
     end.

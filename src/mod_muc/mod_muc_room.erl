@@ -31,10 +31,10 @@
 
 
 %% External exports
--export([start_link/9,
-	 start_link/7,
-	 start/9,
-	 start/7,
+-export([start_link/10,
+	 start_link/8,
+	 start/10,
+	 start/8,
 	 route/4]).
 
 %% gen_fsm callbacks
@@ -65,38 +65,38 @@
 -ifdef(NO_TRANSIENT_SUPERVISORS).
 -define(SUPERVISOR_START, 
 	gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-				RoomShaper, Creator, Nick, DefRoomOpts],
+				RoomShaper, Creator, Nick, DefRoomOpts, Mod],
 		      ?FSMOPTS)).
 -else.
 -define(SUPERVISOR_START, 
 	Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
 	supervisor:start_child(
 	  Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-		       Creator, Nick, DefRoomOpts])).
+		       Creator, Nick, DefRoomOpts, Mod])).
 -endif.
 
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-      Creator, Nick, DefRoomOpts) ->
+      Creator, Nick, DefRoomOpts, Mod) ->
     ?SUPERVISOR_START.
 
-start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
+start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, Mod) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
     supervisor:start_child(
       Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-		   Opts]).
+		   Opts, Mod]).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-	   Creator, Nick, DefRoomOpts) ->
+	   Creator, Nick, DefRoomOpts, Mod) ->
     gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-				 RoomShaper, Creator, Nick, DefRoomOpts],
+				 RoomShaper, Creator, Nick, DefRoomOpts, Mod],
 		       ?FSMOPTS).
 
-start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
+start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, Mod) ->
     gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-				 RoomShaper, Opts],
+				 RoomShaper, Opts, Mod],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -110,12 +110,14 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
+init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick,
+      DefRoomOpts, Mod]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_affiliation(Creator, owner,
 			    #state{host = Host,
 				   server_host = ServerHost,
+                                   mod = Mod,
 				   access = Access,
 				   room = Room,
 				   history = lqueue_new(HistorySize),
@@ -128,11 +130,12 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
     {ok, normal_state, State1};
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
+init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, Mod]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_opts(Opts, #state{host = Host,
 				  server_host = ServerHost,
+                                  mod = Mod,
 				  access = Access,
 				  room = Room,
 				  history = lqueue_new(HistorySize),
@@ -161,7 +164,8 @@ normal_state({route, From, "",
 		    MinMessageInterval =
 			trunc(gen_mod:get_module_opt(
 				StateData#state.server_host,
-				mod_muc, min_message_interval, 0) * 1000000),
+				StateData#state.mod,
+                                min_message_interval, 0) * 1000000),
 		    Size = element_size(Packet),
 		    {MessageShaper, MessageShaperInterval} =
 			shaper:update(Activity#activity.message_shaper, Size),
@@ -282,7 +286,8 @@ normal_state({route, From, "",
                                                             StateData),
                                                     case (NSD#state.config)#config.persistent of
 							true ->
-                                                            mod_muc:store_room(
+                                                            (NSD#state.mod):store_room(
+                                                              NSD#state.server_host,
                                                               NSD#state.host,
                                                               NSD#state.room,
                                                               make_opts(NSD));
@@ -480,7 +485,7 @@ normal_state({route, From, Nick,
     MinPresenceInterval =
 	trunc(gen_mod:get_module_opt(
 		StateData#state.server_host,
-		mod_muc, min_presence_interval, 0) * 1000000),
+		StateData#state.mod, min_presence_interval, 0) * 1000000),
     if
 	(Now >= Activity#activity.presence_time + MinPresenceInterval) and
 	(Activity#activity.presence == undefined) ->
@@ -850,8 +855,9 @@ terminate(Reason, _StateName, StateData) ->
 	       tab_remove_online_user(LJID, StateData)
        end, [], StateData#state.users),
     add_to_log(room_existence, stopped, StateData),
-    mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
-			   StateData#state.server_host),
+    (StateData#state.mod):room_destroyed(
+      StateData#state.host, StateData#state.room, self(),
+      StateData#state.server_host),
     ok.
 
 %%%----------------------------------------------------------------------
@@ -886,7 +892,8 @@ process_groupchat_message(From, {xmlelement, "message", Attrs, _Els} = Packet,
 					      FromNick},
 					case (NSD#state.config)#config.persistent of
 					    true ->
-						mod_muc:store_room(
+						(NSD#state.mod):store_room(
+                                                  NSD#state.server_host,
 						  NSD#state.host,
 						  NSD#state.room,
 						  make_opts(NSD));
@@ -1024,8 +1031,9 @@ process_presence(From, Nick, {xmlelement, "presence", Attrs, _Els} = Packet,
 			case is_nick_change(From, Nick, StateData) of
 			    true ->
 				case {nick_collision(From, Nick, StateData),
-				      mod_muc:can_use_nick(
-					StateData#state.host, From, Nick),
+				      (StateData#state.mod):can_use_nick(
+					StateData#state.server_host,
+                                        StateData#state.host, From, Nick),
                                       {(StateData#state.config)#config.allow_visitor_nickchange,
                                        is_visitor(From, StateData)}} of
                                     {_, _, {false, true}} ->
@@ -1420,11 +1428,11 @@ get_max_users(StateData) ->
 
 get_service_max_users(StateData) ->
     gen_mod:get_module_opt(StateData#state.server_host,
-			   mod_muc, max_users, ?MAX_USERS_DEFAULT).
+			   StateData#state.mod, max_users, ?MAX_USERS_DEFAULT).
 
 get_max_users_admin_threshold(StateData) ->
     gen_mod:get_module_opt(StateData#state.server_host,
-			   mod_muc, max_users_admin_threshold, 5).
+			   StateData#state.mod, max_users_admin_threshold, 5).
 
 get_user_activity(JID, StateData) ->
     case treap:lookup(jlib:jid_tolower(JID),
@@ -1434,11 +1442,11 @@ get_user_activity(JID, StateData) ->
 	    MessageShaper =
 		shaper:new(gen_mod:get_module_opt(
 			     StateData#state.server_host,
-			     mod_muc, user_message_shaper, none)),
+			     StateData#state.mod, user_message_shaper, none)),
 	    PresenceShaper =
 		shaper:new(gen_mod:get_module_opt(
 			     StateData#state.server_host,
-			     mod_muc, user_presence_shaper, none)),
+			     StateData#state.mod, user_presence_shaper, none)),
 	    #activity{message_shaper = MessageShaper,
 		      presence_shaper = PresenceShaper}
     end.
@@ -1447,11 +1455,11 @@ store_user_activity(JID, UserActivity, StateData) ->
     MinMessageInterval =
 	gen_mod:get_module_opt(
 	  StateData#state.server_host,
-	  mod_muc, min_message_interval, 0),
+	  StateData#state.mod, min_message_interval, 0),
     MinPresenceInterval =
 	gen_mod:get_module_opt(
 	  StateData#state.server_host,
-	  mod_muc, min_presence_interval, 0),
+	  StateData#state.mod, min_presence_interval, 0),
     Key = jlib:jid_tolower(JID),
     Now = now_to_usec(now()),
     Activity1 = clean_treap(StateData#state.activity, {1, -Now}),
@@ -1732,7 +1740,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
     NConferences = tab_count_user(From),
     MaxConferences = gen_mod:get_module_opt(
 		       StateData#state.server_host,
-		       mod_muc, max_user_conferences, 10),
+		       StateData#state.mod, max_user_conferences, 10),
     Collision = nick_collision(From, Nick, StateData),
     case {(ServiceAffiliation == owner orelse
 	   ((Affiliation == admin orelse Affiliation == owner) andalso
@@ -1740,7 +1748,8 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	   NUsers < MaxUsers) andalso
 	  NConferences < MaxConferences,
 	  Collision,
-	  mod_muc:can_use_nick(StateData#state.host, From, Nick),
+	  (StateData#state.mod):can_use_nick(StateData#state.server_host,
+                                             StateData#state.host, From, Nick),
 	  get_default_role(Affiliation, StateData)} of
 	{false, _, _, _} ->
 	    % max user reached and user is not admin or owner
@@ -2580,8 +2589,9 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 		  end, StateData, lists:flatten(Res)),
 	    case (NSD#state.config)#config.persistent of
 		true ->
-		    mod_muc:store_room(NSD#state.host, NSD#state.room,
-				       make_opts(NSD));
+		    (NSD#state.mod):store_room(NSD#state.server_host,
+                                               NSD#state.host, NSD#state.room,
+                                               make_opts(NSD));
 		_ ->
 		    ok
 	    end,
@@ -3081,8 +3091,8 @@ is_allowed_room_name_desc_limits(XEl, StateData) ->
 			     jlib:parse_xdata_submit(XEl)) of
 	    {value, {_, [N]}} ->
 		length(N) =< gen_mod:get_module_opt(StateData#state.server_host,
-						    mod_muc, max_room_name,
-						    infinite);
+						    StateData#state.mod,
+                                                    max_room_name, infinite);
 	    _ ->
 		true
 	end,
@@ -3091,8 +3101,8 @@ is_allowed_room_name_desc_limits(XEl, StateData) ->
 			     jlib:parse_xdata_submit(XEl)) of
 	    {value, {_, [D]}} ->
 		length(D) =< gen_mod:get_module_opt(StateData#state.server_host,
-						    mod_muc, max_room_desc,
-						    infinite);
+						    StateData#state.mod,
+                                                    max_room_desc, infinite);
 	    _ ->
 		true
 	end,
@@ -3163,7 +3173,9 @@ is_password_settings_correct(XEl, StateData) ->
           || JID <- JIDList]}).
 
 get_default_room_maxusers(RoomState) ->
-    DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, []),
+    DefRoomOpts = gen_mod:get_module_opt(
+                    RoomState#state.server_host,
+                    RoomState#state.mod, default_room_options, []),
     RoomState2 = set_opts(DefRoomOpts, RoomState),
     (RoomState2#state.config)#config.max_users.
 
@@ -3475,12 +3487,14 @@ set_xoption([_ | _Opts], _Config) ->
 
 change_config(Config, StateData) ->
     NSD = StateData#state{config = Config},
+    Mod = StateData#state.mod,
     case {(StateData#state.config)#config.persistent,
 	  Config#config.persistent} of
 	{_, true} ->
-	    mod_muc:store_room(NSD#state.host, NSD#state.room, make_opts(NSD));
+	    Mod:store_room(NSD#state.server_host, NSD#state.host,
+                           NSD#state.room, make_opts(NSD));
 	{true, false} ->
-	    mod_muc:forget_room(NSD#state.host, NSD#state.room);
+	    Mod:forget_room(NSD#state.server_host, NSD#state.host, NSD#state.room);
 	{false, false} ->
 	    ok
     end,
@@ -3611,7 +3625,9 @@ destroy_room(DEl, StateData) ->
       end, ?DICT:to_list(StateData#state.users)),
     case (StateData#state.config)#config.persistent of
 	true ->
-	    mod_muc:forget_room(StateData#state.host, StateData#state.room);
+	    (StateData#state.mod):forget_room(
+              StateData#state.server_host,
+              StateData#state.host, StateData#state.room);
 	false ->
 	    ok
 	end,
