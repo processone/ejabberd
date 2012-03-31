@@ -96,8 +96,8 @@ stop(Host) ->
 %% This function is called by a room in three situations:
 %% A) The owner of the room destroyed it
 %% B) The only participant of a temporary room leaves it
-%% C) mod_muc:stop was called, and each room is being terminated
-%%    In this case, the mod_muc process died before the room processes
+%% C) mod_muc_odbc:stop was called, and each room is being terminated
+%%    In this case, the mod_muc_odbc process died before the room processes
 %%    So the message sending must be catched
 room_destroyed(Host, Room, Pid, ServerHost) ->
     catch gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
@@ -521,7 +521,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
     case acl:match_rule(ServerHost, AccessCreate, From) of
 	allow ->
-	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
+	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, ?MODULE,
 						      max_room_id, infinite));
 	_ ->
 	    false

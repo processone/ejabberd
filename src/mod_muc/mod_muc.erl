@@ -513,7 +513,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
     case acl:match_rule(ServerHost, AccessCreate, From) of
 	allow ->
-	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
+	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, ?MODULE,
 						      max_room_id, infinite));
 	_ ->
 	    false
