@@ -76,6 +76,11 @@ CREATE TABLE vcard (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
+CREATE TABLE vcard_xupdate (
+    username varchar(250) PRIMARY KEY,
+    hash text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
 
 CREATE TABLE vcard_search (
     username varchar(250) NOT NULL,

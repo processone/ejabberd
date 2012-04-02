@@ -34,6 +34,7 @@
 	 export_last/2,
 	 export_vcard/2,
 	 export_vcard_search/2,
+         export_vcard_xupdate/2,
 	 export_private_storage/2,
          export_privacy/2,
          export_motd/2,
@@ -49,6 +50,7 @@
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
 -record(last_activity, {us, timestamp, status}).
 -record(vcard, {us, vcard}).
+-record(vcard_xupdate, {us, hash}).
 -record(vcard_search, {us,
 		       user,     luser,
 		       fn,	 lfn,
@@ -256,6 +258,20 @@ export_vcard_search(Server, Output) ->
 	       "        '", SEMail,    "', '", SLEMail,	 "',"
 	       "        '", SOrgName,  "', '", SLOrgName,  "',"
 	       "        '", SOrgUnit,  "', '", SLOrgUnit,  "');"];
+	 (_Host, _R) ->
+	      []
+      end).
+
+export_vcard_xupdate(Server, Output) ->
+    export_common(
+      Server, vcard_xupdate, Output,
+      fun(Host, #vcard_xupdate{us = {LUser, LServer}, hash = Hash})
+            when LServer == Host ->
+	      Username = ejabberd_odbc:escape(LUser),
+	      SHash = ejabberd_odbc:escape(Hash),
+	      ["delete from vcard_xupdate where username='", Username, "';"
+	       "insert into vcard_xupdate(username, hash) "
+	       "values ('", Username, "', '", SHash, "');"];
 	 (_Host, _R) ->
 	      []
       end).

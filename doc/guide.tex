@@ -105,6 +105,7 @@
 \newcommand{\modvcardldap}{\module{mod\_vcard\_ldap}}
 \newcommand{\modvcardodbc}{\module{mod\_vcard\_odbc}}
 \newcommand{\modvcardxupdate}{\module{mod\_vcard\_xupdate}}
+\newcommand{\modvcardxupdateodbc}{\module{mod\_vcard\_xupdate\_odbc}}
 \newcommand{\modversion}{\module{mod\_version}}
 
 %% Contributed modules
@@ -2622,6 +2623,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modvcardldap}{\modvcardldap{}} & vcard-temp (\xepref{0054}) & LDAP server \\
     \hline \ahrefloc{modvcard}{\modvcardodbc{}} & vcard-temp (\xepref{0054}) & supported DB (*) \\
     \hline \ahrefloc{modvcardxupdate}{\modvcardxupdate{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} or \modvcardodbc{} \\
+    \hline \ahrefloc{modvcardxupdate}{\modvcardxupdateodbc{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} or \modvcardodbc{} \\
     \hline \ahrefloc{modversion}{\modversion{}} & Software Version (\xepref{0092}) &  \\
     \hline
   \end{tabular}
@@ -2653,6 +2655,7 @@ database for the following data:
   \term{mod\_offline}.
 \item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
 \item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
+\item vCard-Based Avatars: Use \term{mod\_vcard\_xupdate\_odbc} instead of \term{mod\_vcard\_xupdate}.
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
 \item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
 \item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
