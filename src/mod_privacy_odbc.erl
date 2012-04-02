@@ -36,6 +36,7 @@
 	 get_user_list/3,
 	 check_packet/6,
 	 remove_user/2,
+         item_to_raw/1,
 	 updated_list/3]).
 
 -include("ejabberd.hrl").

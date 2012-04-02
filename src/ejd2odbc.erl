@@ -35,12 +35,14 @@
 	 export_vcard/2,
 	 export_vcard_search/2,
 	 export_private_storage/2,
+         export_privacy/2,
          export_muc_room/2,
          export_muc_registered/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
+-include("mod_privacy.hrl").
 
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
 -record(last_activity, {us, timestamp, status}).
@@ -307,6 +309,52 @@ export_muc_registered(Server, Output) ->
               end
       end).
 
+export_privacy(Server, Output) ->
+    case ejabberd_odbc:sql_query(
+           jlib:nameprep(Server),
+           ["select id from privacy_list order by id desc limit 1;"]) of
+        {selected, ["id"], [{I}]} ->
+            put(id, list_to_integer(I));
+        _ ->
+            put(id, 0)
+    end,
+    export_common(
+      Server, privacy, Output,
+      fun(Host, #privacy{us = {LUser, LServer},
+                         lists = Lists,
+                         default = Default}) when LServer == Host ->
+              Username = ejabberd_odbc:escape(LUser),
+              if Default /= none ->
+                      SDefault = ejabberd_odbc:escape(Default),
+                      ["delete from privacy_default_list where ",
+                       "username='", Username, "';",
+                       "insert into privacy_default_list(username, name) ",
+                       "values ('", Username, "', '", SDefault, "');"];
+                 true ->
+                      []
+              end ++
+                  lists:flatmap(
+                    fun({Name, List}) ->
+                            SName = ejabberd_odbc:escape(Name),
+                            RItems = lists:map(
+                                       fun mod_privacy_odbc:item_to_raw/1,
+                                       List),
+                            ID = integer_to_list(get_id()),
+                            ["delete from privacy_list "
+                             "where username='", Username, "' and name='", SName, "';"
+                             "insert into privacy_list(username, name, id) "
+                             "values ('", Username, "', '", SName, "', '", ID, "');",
+                             "delete from privacy_list_data where id='", ID, "';"
+                             |[["insert into privacy_list_data("
+                                "id, t, value, action, ord, match_all, match_iq, "
+                                "match_message, match_presence_in, "
+                                "match_presence_out) values ('", ID, "', '",
+                                string:join(Items, "', '"), "');"] || Items <- RItems]]
+                    end, Lists);
+         (_Host, _R) ->
+              []
+      end).
+
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
@@ -405,3 +453,8 @@ groups_to_string(#roster{usj = {User, _Server, JID},
       "'", Username, "',"
       "'", SJID, "',"
       "'", ejabberd_odbc:escape(Group), "')"] || Group <- Groups].
+
+get_id() ->
+    ID = get(id),
+    put(id, ID+1),
+    ID+1.
