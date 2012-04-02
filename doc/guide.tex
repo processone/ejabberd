@@ -77,6 +77,7 @@
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
+\newcommand{\modmucodbc}{\module{mod\_muc\_odbc}}
 \newcommand{\modmuclog}{\module{mod\_muc\_log}}
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
@@ -2589,7 +2590,8 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
-    \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} \\
+    \hline \ahrefloc{modmuc}{\modmucodbc{}} & Multi-User Chat (\xepref{0045}) & supported DB (*) \\
+    \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} or \modmucodbc{} \\
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
@@ -2651,6 +2653,7 @@ database for the following data:
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
 \item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
 \item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
+\item Multi-user chats: Use \term{mod\_muc\_odbc} instead of \term{mod\_muc}.
 \end{itemize}
 
 You can find more
