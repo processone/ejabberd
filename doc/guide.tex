@@ -66,6 +66,7 @@
 \newcommand{\module}[1]{\texttt{#1}}
 \newcommand{\modadhoc}{\module{mod\_adhoc}}
 \newcommand{\modannounce}{\module{mod\_announce}}
+\newcommand{\modannounceodbc}{\module{mod\_announce\_odbc}}
 \newcommand{\modblocking}{\module{mod\_blocking}}
 \newcommand{\modcaps}{\module{mod\_caps}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
@@ -2579,6 +2580,8 @@ The following table lists all modules included in \ejabberd{}.
     \hline
     \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  \\
     \hline \ahrefloc{modannounce}{\modannounce{}} & Manage announcements & recommends \modadhoc{} \\
+    \hline \ahrefloc{modannounce}{\modannounceodbc{}} & Manage announcements & recommends \modadhoc{} \\
+    & & supported DB (*) \\
     \hline \modblocking{} & Simple Communications Blocking (\xepref{0191}) & \modprivacy{} \\
     \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
@@ -2654,6 +2657,7 @@ database for the following data:
 \item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
 \item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
 \item Multi-user chats: Use \term{mod\_muc\_odbc} instead of \term{mod\_muc}.
+\item Manage announcements: Use \term{mod\_announce\_odbc} instead of \term{mod\_announce}.
 \end{itemize}
 
 You can find more

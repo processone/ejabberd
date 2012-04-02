@@ -36,6 +36,8 @@
 	 export_vcard_search/2,
 	 export_private_storage/2,
          export_privacy/2,
+         export_motd/2,
+         export_motd_users/2,
          export_muc_room/2,
          export_muc_registered/2]).
 
@@ -64,6 +66,8 @@
 -record(private_storage, {usns, xml}).
 -record(muc_room, {name_host, opts}).
 -record(muc_registered, {us_host, nick}).
+-record(motd, {server, packet}).
+-record(motd_users, {us, dummy = []}).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 1000).
 
@@ -351,6 +355,31 @@ export_privacy(Server, Output) ->
                                 "match_presence_out) values ('", ID, "', '",
                                 string:join(Items, "', '"), "');"] || Items <- RItems]]
                     end, Lists);
+         (_Host, _R) ->
+              []
+      end).
+
+export_motd(Server, Output) ->
+    export_common(
+      Server, motd, Output,
+      fun(Host, #motd{server = LServer, packet = El})
+            when LServer == Host ->
+              ["delete from motd where username='';"
+               "insert into motd(username, xml) values ('', '",
+               ejabberd_odbc:escape(xml:element_to_binary(El)), "');"];
+         (_Host, _R) ->
+              []
+      end).
+
+export_motd_users(Server, Output) ->
+    export_common(
+      Server, motd_users, Output,
+      fun(Host, #motd_users{us = {LUser, LServer}})
+            when LServer == Host, LUser /= "" ->
+              Username = ejabberd_odbc:escape(LUser),
+              ["delete from motd where username='", Username, "';"
+               "insert into motd(username, xml) values ('",
+               Username, "', '');"];
          (_Host, _R) ->
               []
       end).

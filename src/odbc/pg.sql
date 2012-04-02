@@ -238,3 +238,9 @@ CREATE TABLE muc_registered (
 
 CREATE INDEX i_muc_registered_nick ON muc_registered USING btree (nick);
 CREATE UNIQUE INDEX i_muc_registered_jid_host ON muc_registered USING btree (jid, host);
+
+CREATE TABLE motd (
+    username text PRIMARY KEY,
+    xml text,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
