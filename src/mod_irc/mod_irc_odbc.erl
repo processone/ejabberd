@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : mod_irc.erl
+%%% File    : mod_irc_odbc.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : IRC transport
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
@@ -24,7 +24,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(mod_irc).
+-module(mod_irc_odbc).
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -34,6 +34,7 @@
 -export([start_link/2,
 	 start/2,
 	 stop/1,
+         encode_data/1,
 	 closed_connection/3,
 	 get_connection_params/3]).
 
@@ -50,7 +51,6 @@
 -define(POSSIBLE_ENCODINGS, ["koi8-r", "iso8859-1", "iso8859-2", "utf-8", "utf-8+latin-1"]).
 
 -record(irc_connection, {jid_server_host, pid}).
--record(irc_custom, {us_host, data}).
 
 -record(state, {host, server_host, access}).
 
@@ -98,11 +98,7 @@ stop(Host) ->
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     iconv:start(),
-    mnesia:create_table(irc_custom,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, irc_custom)}]),
     MyHost = gen_mod:get_opt_host(Host, Opts, "irc.@HOST@"),
-    update_table(MyHost),
     Access = gen_mod:get_opt(access, Opts, all),
     catch ets:new(irc_connection, [named_table,
 				   public,
@@ -218,7 +214,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 			    Info = ejabberd_hooks:run_fold(
 				     disco_info, ServerHost, [],
 				     [ServerHost, ?MODULE, "", ""]),
-			    case iq_disco(Node, Lang) of
+			    case iq_disco(ServerHost, Node, Lang) of
 				[] ->
 				    Res = IQ#iq{type = result,
 						sub_el = [{xmlelement, "query",
@@ -263,7 +259,8 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 						sub_el = [{xmlelement, "query",
 							   [{"xmlns", XMLNS},
 							    {"node", Node}],
-							   command_items(Host, Lang)}]},
+							   command_items(ServerHost,
+                                                                         Host, Lang)}]},
 				    Res = jlib:iq_to_xml(ResIQ);
 				_ ->
 				    Res = jlib:make_error_reply(
@@ -273,7 +270,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 						  From,
 						  Res);
 			#iq{xmlns = ?NS_REGISTER} = IQ ->
-			    process_register(Host, From, To, IQ);
+			    process_register(ServerHost, Host, From, To, IQ);
 			#iq{type = get, xmlns = ?NS_VCARD = XMLNS,
 			    lang = Lang} = IQ ->
 			    Res = IQ#iq{type = result,
@@ -287,7 +284,8 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 			#iq{type = set, xmlns = ?NS_COMMANDS,
 			    lang = _Lang, sub_el = SubEl} = IQ ->
 			    Request = adhoc:parse_request(IQ),
-			    case lists:keysearch(Request#adhoc_request.node, 1, commands()) of
+			    case lists:keysearch(Request#adhoc_request.node,
+                                                 1, commands(ServerHost)) of
 				{value, {_, _, Function}} ->
 				    case catch Function(From, To, Request) of
 					{'EXIT', Reason} ->
@@ -394,7 +392,7 @@ closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).
 
 
-iq_disco([], Lang) ->
+iq_disco(_ServerHost, [], Lang) ->
     [{xmlelement, "identity",
       [{"category", "conference"},
        {"type", "irc"},
@@ -404,8 +402,8 @@ iq_disco([], Lang) ->
      {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
      {xmlelement, "feature", [{"var", ?NS_VCARD}], []},
      {xmlelement, "feature", [{"var", ?NS_COMMANDS}], []}];
-iq_disco(Node, Lang) ->
-    case lists:keysearch(Node, 1, commands()) of
+iq_disco(ServerHost, Node, Lang) ->
+    case lists:keysearch(Node, 1, commands(ServerHost)) of
 	{value, {_, Name, _}} ->
 	    [{xmlelement, "identity",
 	      [{"category", "automation"},
@@ -428,20 +426,23 @@ iq_get_vcard(Lang) ->
       [{xmlcdata, translate:translate(Lang, "ejabberd IRC module") ++ 
         "\nCopyright (c) 2003-2012 ProcessOne"}]}].
 
-command_items(Host, Lang) ->
+command_items(ServerHost, Host, Lang) ->
     lists:map(fun({Node, Name, _Function})
 		 -> {xmlelement, "item",
 		     [{"jid", Host},
 		      {"node", Node},
 		      {"name", translate:translate(Lang, Name)}], []}
-	      end, commands()).
+	      end, commands(ServerHost)).
 
-commands() ->
+commands(ServerHost) ->
     [{"join", "Join channel", fun adhoc_join/3},
-     {"register", "Configure username, encoding, port and password", fun adhoc_register/3}].
+     {"register", "Configure username, encoding, port and password",
+      fun(From, To, Request) ->
+              adhoc_register(ServerHost, From, To, Request)
+      end}].
 
-process_register(Host, From, To, #iq{} = IQ) ->
-    case catch process_irc_register(Host, From, To, IQ) of
+process_register(ServerHost, Host, From, To, #iq{} = IQ) ->
+    case catch process_irc_register(ServerHost, Host, From, To, IQ) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	ResIQ ->
@@ -471,7 +472,7 @@ find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
 find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
-process_irc_register(Host, From, _To,
+process_irc_register(ServerHost, Host, From, _To,
 		     #iq{type = Type, xmlns = XMLNS,
 			 lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
@@ -497,7 +498,8 @@ process_irc_register(Host, From, _To,
 					     xml:get_tag_attr_s("node", SubEl),
 					     "/"),
 				    case set_form(
-					   Host, From, Node, Lang, XData) of
+					   ServerHost, Host, From,
+                                           Node, Lang, XData) of
 					{result, Res} ->
 					    IQ#iq{type = result,
 						  sub_el = [{xmlelement, "query",
@@ -517,7 +519,7 @@ process_irc_register(Host, From, _To,
 	get ->
 	    Node =
 		string:tokens(xml:get_tag_attr_s("node", SubEl), "/"),
-	    case get_form(Host, From, Node, Lang) of
+	    case get_form(ServerHost, Host, From, Node, Lang) of
 		{result, Res} ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement, "query",
@@ -532,21 +534,29 @@ process_irc_register(Host, From, _To,
 
 
 
-get_form(Host, From, [], Lang) ->
-    #jid{user = User, server = Server,
-	 luser = LUser, lserver = LServer} = From,
-    US = {LUser, LServer},
+get_form(ServerHost, Host, From, [], Lang) ->
+    #jid{user = User, server = Server} = From,
+    LServer = jlib:nameprep(ServerHost),
+    SJID = ejabberd_odbc:escape(
+             jlib:jid_to_string(
+               jlib:jid_tolower(
+                 jlib:jid_remove_resource(From)))),
+    SHost = ejabberd_odbc:escape(Host),
     DefaultEncoding = get_default_encoding(Host),
     Customs =
-	case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
-	    {'EXIT', _Reason} ->
-		{error, ?ERR_INTERNAL_SERVER_ERROR};
-	    [] ->
-		{User, []};
-	    [#irc_custom{data = Data}] ->
-		{xml:get_attr_s(username, Data),
-		 xml:get_attr_s(connections_params, Data)}
-	end,
+        case catch ejabberd_odbc:sql_query(
+                     LServer,
+                     ["select data from irc_custom where "
+                      "jid='", SJID, "' and host='", SHost, "';"]) of
+            {selected, ["data"], [{SData}]} ->
+                Data = decode_data(SData),
+                {xml:get_attr_s(username, Data),
+	 	 xml:get_attr_s(connections_params, Data)};
+            {'EXIT', _} ->
+                {error, ?ERR_INTERNAL_SERVER_ERROR};
+            {selected, _, _} ->
+                {User, []}
+        end,
     case Customs of
 	{error, _Error} ->
 	    Customs;
@@ -614,15 +624,19 @@ get_form(Host, From, [], Lang) ->
 	       ]}]}
     end;
 
-get_form(_Host, _, _, _Lang) ->
+get_form(_ServerHost, _Host, _, _, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
 
 
-set_form(Host, From, [], _Lang, XData) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
-    US = {LUser, LServer},
+set_form(ServerHost, Host, From, [], _Lang, XData) ->
+    LServer = jlib:nameprep(ServerHost),
+    SJID = ejabberd_odbc:escape(
+             jlib:jid_to_string(
+               jlib:jid_tolower(
+                 jlib:jid_remove_resource(From)))),
+    SHost = ejabberd_odbc:escape(Host),
     case {lists:keysearch("username", 1, XData),
 	  lists:keysearch("connections_params", 1, XData)} of
 	{{value, {_, [Username]}}, {value, {_, Strings}}} ->
@@ -633,17 +647,22 @@ set_form(Host, From, [], _Lang, XData) ->
 		{ok, Tokens, _} ->
 		    case erl_parse:parse_term(Tokens) of
 			{ok, ConnectionsParams} ->
-			    case mnesia:transaction(
-				   fun() ->
-					   mnesia:write(
-					     #irc_custom{us_host =
-							 {US, Host},
-							 data =
-							 [{username,
-							   Username},
-							  {connections_params,
-							   ConnectionsParams}]})
-				   end) of
+                            SData = encode_data(
+                                      [{username,
+                                        Username},
+                                       {connections_params,
+                                        ConnectionsParams}]),
+                            case ejabberd_odbc:sql_transaction(
+                                   LServer,
+                                   fun() ->
+                                           update_t("irc_custom",
+                                                    ["jid", "host", "data"],
+                                                    [SJID, SHost, SData],
+                                                    ["jid='", SJID,
+                                                     "' and host='",
+                                                     SHost, "'"]),
+                                           ok
+                                   end) of
 				{atomic, _} ->
 				    {result, []};
 				_ ->
@@ -660,7 +679,7 @@ set_form(Host, From, [], _Lang, XData) ->
     end;
 
 
-set_form(_Host, _, _, _Lang, _XData) ->
+set_form(_ServerHost, _Host, _, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 
@@ -679,19 +698,29 @@ get_default_encoding(ServerHost) ->
     Result.
 
 get_connection_params(Host, ServerHost, From, IRCServer) ->
-    #jid{user = User, server = _Server,
-	 luser = LUser, lserver = LServer} = From,
-    US = {LUser, LServer},
+    #jid{user = User, server = _Server} = From,
+    LServer = jlib:nameprep(ServerHost),
+    SJID = ejabberd_odbc:escape(
+             jlib:jid_to_string(
+               jlib:jid_tolower(
+                 jlib:jid_remove_resource(From)))),
+    SHost = ejabberd_odbc:escape(Host),
     DefaultEncoding = get_default_encoding(ServerHost),
-    case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
-	{'EXIT', _Reason} ->
+    case catch ejabberd_odbc:sql_query(
+                 LServer,
+                 ["select data from irc_custom where "
+                  "jid='", SJID, "' and host='", SHost, "';"]) of
+        {'EXIT', _Reason} ->
 	    {User, DefaultEncoding, ?DEFAULT_IRC_PORT, ""};
-	[] ->
+	{selected, ["data"], []} ->
 	    {User, DefaultEncoding, ?DEFAULT_IRC_PORT, ""};
-	[#irc_custom{data = Data}] ->
+        {selected, ["data"], [{SData}]} ->
+            Data = decode_data(SData),
 	    Username = xml:get_attr_s(username, Data),
 	    {NewUsername, NewEncoding, NewPort, NewPassword} = 
-    		case lists:keysearch(IRCServer, 1, xml:get_attr_s(connections_params, Data)) of
+    		case lists:keysearch(
+                       IRCServer, 1,
+                       xml:get_attr_s(connections_params, Data)) of
 	    	    {value, {_, Encoding, Port, Password}} ->
 		        {Username, Encoding, Port, Password};
 		    {value, {_, Encoding, Port}} ->
@@ -704,13 +733,13 @@ get_connection_params(Host, ServerHost, From, IRCServer) ->
 	    {NewUsername, 
 	     NewEncoding, 
 	     if 
-	        NewPort >= 0 andalso NewPort =< 65535 -> 
-		    NewPort; 
-		true -> 
-		    ?DEFAULT_IRC_PORT
+                 NewPort >= 0 andalso NewPort =< 65535 -> 
+                     NewPort; 
+                 true -> 
+                     ?DEFAULT_IRC_PORT
 	     end,
 	     NewPassword}
-      end.
+    end.
 
 adhoc_join(_From, _To, #adhoc_request{action = "cancel"} = Request) ->
     adhoc:produce_response(Request,
@@ -785,28 +814,37 @@ adhoc_join(From, To, #adhoc_request{lang = Lang,
 	    end
     end.
 
-adhoc_register(_From, _To, #adhoc_request{action = "cancel"} = Request) ->
+adhoc_register(_ServerHost, _From, _To, #adhoc_request{action = "cancel"} = Request) ->
     adhoc:produce_response(Request,
 			   #adhoc_response{status = canceled});
-adhoc_register(From, To, #adhoc_request{lang = Lang,
-					node = _Node,
-					xdata = XData,
-					action = Action} = Request) ->
-    #jid{user = User, luser = LUser, lserver = LServer} = From,
+adhoc_register(ServerHost, From, To, #adhoc_request{lang = Lang,
+                                                    node = _Node,
+                                                    xdata = XData,
+                                                    action = Action} = Request) ->
+    #jid{user = User} = From,
     #jid{lserver = Host} = To,
-    US = {LUser, LServer},
+    LServer = jlib:nameprep(ServerHost),
+    SHost = ejabberd_odbc:escape(Host),
+    SJID = ejabberd_odbc:escape(
+             jlib:jid_to_string(
+               jlib:jid_tolower(
+                 jlib:jid_remove_resource(From)))),
     %% Generate form for setting username and encodings.  If the user
     %% hasn't begun to fill out the form, generate an initial form
     %% based on current values.
     if XData == false ->
-	    case catch mnesia:dirty_read({irc_custom, {US, Host}}) of
+            case catch ejabberd_odbc:sql_query(
+                         LServer,
+                         ["select data from irc_custom where "
+                          "jid='", SJID, "' and host='", SHost, "';"]) of
 		{'EXIT', _Reason} ->
 		    Username = User,
 		    ConnectionsParams = [];
-		[] ->
+		{selected, ["data"], []} ->
 		    Username = User,
 		    ConnectionsParams = [];
-		[#irc_custom{data = Data}] ->
+		{selected, ["data"], [{Data1}]} ->
+                    Data = decode_data(Data1),
 		    Username = xml:get_attr_s(username, Data),
 		    ConnectionsParams = xml:get_attr_s(connections_params, Data)
 	    end,
@@ -832,18 +870,19 @@ adhoc_register(From, To, #adhoc_request{lang = Lang,
     if Error /= false ->
 	    Error;
        Action == "complete" ->
-	    case mnesia:transaction(
-		   fun () ->
-			   mnesia:write(
-			     #irc_custom{us_host =
-					 {US, Host},
-					 data =
-					 [{username,
-					   Username},
-					  {connections_params,
-					   ConnectionsParams}]})
-		   end) of
-		{atomic, _} ->
+            SData = encode_data([{username, Username},
+                                 {connections_params, ConnectionsParams}]),
+            case catch ejabberd_odbc:sql_transaction(
+                         LServer,
+                         fun() ->
+                                 update_t("irc_custom",
+                                          ["jid", "host", "data"],
+                                          [SJID, SHost, SData],
+                                          ["jid='", SJID,
+                                           "' and host='", SHost, "'"]),
+                                 ok
+                         end) of
+		{atomic, ok} ->
 		    adhoc:produce_response(Request, #adhoc_response{status = completed});
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
@@ -990,44 +1029,35 @@ parse_connections_params([{ServerN, Server} | Servers], Encodings, Ports, Passwo
     {NewPort, NewPorts} = retrieve_connections_params(Ports, ServerN),
     {NewPassword, NewPasswords} = retrieve_connections_params(Passwords, ServerN),
     [{Server, NewEncoding, NewPort, NewPassword} | parse_connections_params(Servers, NewEncodings, NewPorts, NewPasswords)].
-	    
-update_table(Host) ->
-    Fields = record_info(fields, irc_custom),
-    case mnesia:table_info(irc_custom, attributes) of
-	Fields ->
-	    ok;
-	[userserver, data] ->
-	    ?INFO_MSG("Converting irc_custom table from "
-		      "{userserver, data} format", []),
-	    {atomic, ok} = mnesia:create_table(
-			     mod_irc_tmp_table,
-			     [{disc_only_copies, [node()]},
-			      {type, bag},
-			      {local_content, true},
-			      {record_name, irc_custom},
-			      {attributes, record_info(fields, irc_custom)}]),
-	    mnesia:transform_table(irc_custom, ignore, Fields),
-	    F1 = fun() ->
-			 mnesia:write_lock_table(mod_irc_tmp_table),
-			 mnesia:foldl(
-			   fun(#irc_custom{us_host = US} = R, _) ->
-				   mnesia:dirty_write(
-				     mod_irc_tmp_table,
-				     R#irc_custom{us_host = {US, Host}})
-			   end, ok, irc_custom)
-		 end,
-	    mnesia:transaction(F1),
-	    mnesia:clear_table(irc_custom),
-	    F2 = fun() ->
-			 mnesia:write_lock_table(irc_custom),
-			 mnesia:foldl(
-			   fun(R, _) ->
-				   mnesia:dirty_write(R)
-			   end, ok, mod_irc_tmp_table)
-		 end,
-	    mnesia:transaction(F2),
-	    mnesia:delete_table(mod_irc_tmp_table);
-	_ ->
-	    ?INFO_MSG("Recreating irc_custom table", []),
-	    mnesia:transform_table(irc_custom, ignore, Fields)
+
+encode_data(Data) ->
+    ejabberd_odbc:escape(erl_prettypr:format(erl_syntax:abstract(Data))).
+
+decode_data(Str) ->
+    {ok, Tokens, _} = erl_scan:string(Str ++ "."),
+    {ok, Data} = erl_parse:parse_term(Tokens),
+    Data.
+
+%% Almost a copy of string:join/2.
+%% We use this version because string:join/2 is relatively
+%% new function (introduced in R12B-0).
+join([], _Sep) ->
+    [];
+join([H|T], Sep) ->
+    [H, [[Sep, X] || X <- T]].
+
+%% Safe atomic update.
+update_t(Table, Fields, Vals, Where) ->
+    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
+                           Fields, Vals),
+    case ejabberd_odbc:sql_query_t(
+           ["update ", Table, " set ",
+            join(UPairs, ", "),
+            " where ", Where, ";"]) of
+        {updated, 1} ->
+            ok;
+        _ ->
+            ejabberd_odbc:sql_query_t(
+              ["insert into ", Table, "(", join(Fields, ", "),
+               ") values ('", join(Vals, "', '"), "');"])
     end.

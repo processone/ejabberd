@@ -39,6 +39,7 @@
          export_privacy/2,
          export_motd/2,
          export_motd_users/2,
+         export_irc_custom/2,
          export_muc_room/2,
          export_muc_registered/2]).
 
@@ -66,6 +67,7 @@
 		       orgunit,	 lorgunit
 		      }).
 -record(private_storage, {usns, xml}).
+-record(irc_custom, {us_host, data}).
 -record(muc_room, {name_host, opts}).
 -record(muc_registered, {us_host, nick}).
 -record(motd, {server, packet}).
@@ -324,6 +326,26 @@ export_muc_registered(Server, Output) ->
                        "' and host='", SRoomHost, "';"
                        "insert into muc_registered(jid, host, nick) values ("
                        "'", SJID, "', '", SRoomHost, "', '", SNick, "');"];
+                  false ->
+                      []
+              end
+      end).
+
+export_irc_custom(Server, Output) ->
+    export_common(
+      Server, irc_custom, Output,
+      fun(Host, #irc_custom{us_host = {{U, S}, IRCHost}, data = Data}) ->
+              case lists:suffix(Host, IRCHost) of
+                  true ->
+                      SJID = ejabberd_odbc:escape(
+                               jlib:jid_to_string(
+                                 jlib:make_jid(U, S, ""))),
+                      SIRCHost = ejabberd_odbc:escape(IRCHost),
+                      SData = mod_irc_odbc:encode_data(Data),
+                      ["delete from irc_custom where jid='", SJID,
+                       "' and host='", SIRCHost, "';"
+                       "insert into irc_custom(jid, host, data) values ("
+                       "'", SJID, "', '", SIRCHost, "', '", SData, "');"];
                   false ->
                       []
               end

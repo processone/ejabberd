@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/7, start/8, route_chan/4, route_nick/3]).
+-export([start_link/8, start/9, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -51,7 +51,7 @@
 -record(state, {socket, encoding, port, password,
 		queue, user, host, server, nick,
 		channels = dict:new(),
-		nickchannel,
+		nickchannel, mod,
 		inbuf = "", outbuf = ""}).
 
 %-define(DBGFSM, true).
@@ -65,13 +65,13 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(From, Host, ServerHost, Server, Username, Encoding, Port, Password) ->
+start(From, Host, ServerHost, Server, Username, Encoding, Port, Password, Mod) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_irc_sup),
     supervisor:start_child(
-      Supervisor, [From, Host, Server, Username, Encoding, Port, Password]).
+      Supervisor, [From, Host, Server, Username, Encoding, Port, Password, Mod]).
 
-start_link(From, Host, Server, Username, Encoding, Port, Password) ->
-    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding, Port, Password],
+start_link(From, Host, Server, Username, Encoding, Port, Password, Mod) ->
+    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding, Port, Password, Mod],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -85,9 +85,10 @@ start_link(From, Host, Server, Username, Encoding, Port, Password) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([From, Host, Server, Username, Encoding, Port, Password]) ->
+init([From, Host, Server, Username, Encoding, Port, Password, Mod]) ->
     gen_fsm:send_event(self(), init),
     {ok, open_socket, #state{queue = queue:new(),
+                             mod = Mod,
 			     encoding = Encoding,
 			     port = Port,
 			     password = Password,
@@ -651,9 +652,9 @@ terminate(_Reason, _StateName, FullStateData) ->
 	      [{xmlcdata, "Server Connect Failed"}]},
 	     FullStateData}
 	end,
-    mod_irc:closed_connection(StateData#state.host,
-			      StateData#state.user,
-			      StateData#state.server),
+    (FullStateData#state.mod):closed_connection(StateData#state.host,
+                                                StateData#state.user,
+                                                StateData#state.server),
     bounce_messages("Server Connect Failed"),
     lists:foreach(
       fun(Chan) ->

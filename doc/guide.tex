@@ -75,6 +75,7 @@
 \newcommand{\modhttpbind}{\module{mod\_http\_bind}}
 \newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
 \newcommand{\modirc}{\module{mod\_irc}}
+\newcommand{\modircodbc}{\module{mod\_irc\_odbc}}
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
@@ -2591,6 +2592,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) &  \\
     \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server &  \\
     \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\
+    \hline \ahrefloc{modirc}{\modircodbc{}} & IRC transport & supported DB (*) \\
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
@@ -2661,6 +2663,7 @@ database for the following data:
 \item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
 \item Multi-user chats: Use \term{mod\_muc\_odbc} instead of \term{mod\_muc}.
 \item Manage announcements: Use \term{mod\_announce\_odbc} instead of \term{mod\_announce}.
+\item IRC transport: Use \term{mod\_irc\_odbc} instead of \term{mod\_irc}.
 \end{itemize}
 
 You can find more
