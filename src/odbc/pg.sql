@@ -57,6 +57,21 @@ CREATE TABLE rostergroups (
 
 CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
 
+CREATE TABLE sr_group (
+    name text NOT NULL,
+    opts text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE sr_user (
+    jid text NOT NULL,
+    grp text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX i_sr_user_jid_grp ON sr_user USING btree (jid, grp);
+CREATE INDEX i_sr_user_jid ON sr_user USING btree (jid);
+CREATE INDEX i_sr_user_grp ON sr_user USING btree (grp);
 
 CREATE TABLE spool (
     username text NOT NULL,

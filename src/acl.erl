@@ -181,9 +181,11 @@ match_acl(ACL, JID, Host) ->
 					lists:member(Server, ?MYHOSTS)))
 					  andalso is_regexp_match(User, UR);
 				  {shared_group, G} ->
-				      mod_shared_roster:is_user_in_group({User, Server}, G, Host);
+                                      Mod = loaded_shared_roster_module(Host),
+				      Mod:is_user_in_group({User, Server}, G, Host);
 				  {shared_group, G, H} ->
-				      mod_shared_roster:is_user_in_group({User, Server}, G, H);
+                                      Mod = loaded_shared_roster_module(H),
+				      Mod:is_user_in_group({User, Server}, G, H);
 				  {user_regexp, UR, S} ->
 				      (S == Server) andalso
 					  is_regexp_match(User, UR);
@@ -238,4 +240,10 @@ is_regexp_match(String, RegExp) ->
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
 
-
+loaded_shared_roster_module(Host) ->
+    case {gen_mod:is_loaded(Host, mod_shared_roster_odbc),
+          gen_mod:is_loaded(Host, mod_shared_roster_ldap)} of
+        {true, _} -> mod_shared_roster_odbc;
+        {_, true} -> mod_shared_roster_ldap;
+        _ -> mod_shared_roster
+    end.

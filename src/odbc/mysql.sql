@@ -59,6 +59,21 @@ CREATE TABLE rostergroups (
 
 CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 
+CREATE TABLE sr_group (
+    name varchar(250) NOT NULL,
+    opts text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE TABLE sr_user (
+    jid varchar(250) NOT NULL,
+    grp varchar(250) NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE UNIQUE INDEX i_sr_user_jid_group ON sr_user(jid(75), grp(75));
+CREATE INDEX i_sr_user_jid ON sr_user(jid);
+CREATE INDEX i_sr_user_grp ON sr_user(grp);
 
 CREATE TABLE spool (
     username varchar(250) NOT NULL,

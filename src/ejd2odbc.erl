@@ -40,6 +40,8 @@
          export_motd/2,
          export_motd_users/2,
          export_irc_custom/2,
+         export_sr_group/2,
+         export_sr_user/2,
          export_muc_room/2,
          export_muc_registered/2]).
 
@@ -70,6 +72,8 @@
 -record(irc_custom, {us_host, data}).
 -record(muc_room, {name_host, opts}).
 -record(muc_registered, {us_host, nick}).
+-record(sr_group, {group_host, opts}).
+-record(sr_user, {us, group_host}).
 -record(motd, {server, packet}).
 -record(motd_users, {us, dummy = []}).
 
@@ -393,6 +397,38 @@ export_privacy(Server, Output) ->
                                 "match_presence_out) values ('", ID, "', '",
                                 string:join(Items, "', '"), "');"] || Items <- RItems]]
                     end, Lists);
+         (_Host, _R) ->
+              []
+      end).
+
+export_sr_group(Server, Output) ->
+    export_common(
+      Server, sr_group, Output,
+      fun(Host, #sr_group{group_host = {Group, LServer}, opts = Opts})
+            when LServer == Host ->
+              SGroup = ejabberd_odbc:escape(Group),
+              SOpts = mod_shared_roster_odbc:encode_opts(Opts),
+              ["delete from sr_group where name='", Group, "';"
+               "insert into sr_group(name, opts) values ('",
+               SGroup, "', '", SOpts, "');"];
+         (_Host, _R) ->
+              []
+      end).
+
+export_sr_user(Server, Output) ->
+    export_common(
+      Server, sr_user, Output,
+      fun(Host, #sr_user{us = {U, S}, group_host = {Group, LServer}})
+            when LServer == Host ->
+              SGroup = ejabberd_odbc:escape(Group),
+              SJID = ejabberd_odbc:escape(
+                       jlib:jid_to_string(
+                         jlib:jid_tolower(
+                           jlib:make_jid(U, S, "")))),
+              ["delete from sr_user where jid='", SJID,
+               "'and grp='", Group, "';"
+               "insert into sr_user(jid, grp) values ('",
+               SJID, "', '", SGroup, "');"];
          (_Host, _R) ->
               []
       end).

@@ -98,6 +98,7 @@
 \newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
+\newcommand{\modsharedrosterodbc}{\module{mod\_shared\_roster\_odbc}}
 \newcommand{\modsharedrosterldap}{\module{mod\_shared\_roster\_ldap}}
 \newcommand{\modsic}{\module{mod\_sic}}
 \newcommand{\modstats}{\module{mod\_stats}}
@@ -2616,6 +2617,8 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\
     \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} or \\
     & & \modrosterodbc\\
+    \hline \ahrefloc{modsharedroster}{\modsharedrosterodbc{}} & Shared roster management & supported DB (*) and\\
+    & & \modroster{} or \modrosterodbc\\
     \hline \ahrefloc{modsharedrosterldap}{\modsharedrosterldap{}} & LDAP Shared roster management & \modroster{} or \\
     & & \modrosterodbc\\
     \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
@@ -2656,6 +2659,7 @@ database for the following data:
 \item Offline messages: Use \term{mod\_offline\_odbc} instead of
   \term{mod\_offline}.
 \item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
+\item Shared Rosters: Use \term{mod\_shared\_roster\_odbc} instead of \term{mod\_shared\_roster}.
 \item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
 \item vCard-Based Avatars: Use \term{mod\_vcard\_xupdate\_odbc} instead of \term{mod\_vcard\_xupdate}.
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
@@ -4062,7 +4066,7 @@ Options:
   This option does not affect the client in any way.
   This option is only useful if Roster Versioning is enabled.
   This option is disabled by default.
-  Important: if you use \modsharedroster{} or \modsharedrosterldap{},
+  Important: if you use \modsharedroster{}, \modsharedrosterodbc{} or \modsharedrosterldap{},
   you must disable this option.
 \end{description}
 
