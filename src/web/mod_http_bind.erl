@@ -74,6 +74,8 @@ process([], #request{method = 'GET',
 process([], #request{method = 'OPTIONS',
                      data = []}) ->
     {200, ?OPTIONS_HEADER, []};
+process([], #request{method = 'HEAD'}) ->
+    {200, ?HEADER, []};
 process(_Path, _Request) ->
     ?DEBUG("Bad Request: ~p", [_Request]),
     {400, ?HEADER, {xmlelement, "h1", [],
