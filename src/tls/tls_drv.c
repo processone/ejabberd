@@ -443,6 +443,8 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 	    b = driver_alloc_binary(size);
 	    b->orig_bytes[0] = 0;
 
+	    res = 0;
+
 	    while ((req_size == 0 || rlen < req_size + 1) &&
 		   (res = SSL_read(d->ssl,
 				   b->orig_bytes + rlen,
