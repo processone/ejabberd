@@ -923,12 +923,22 @@ old_integer_to_hex(I) when I>=16 ->
 
 % The following code is mostly taken from yaws_ssl.erl
 
+extract_line(_, <<>>, _) ->
+    none;
+extract_line(0, <<"\r", Rest/binary>>, Line) ->
+    extract_line(1, Rest, Line);
+extract_line(0, <<A:8, Rest/binary>>, Line) ->
+    extract_line(0, Rest, <<Line/binary, A>>);
+extract_line(1, <<"\n", Rest/binary>>, Line) ->
+    {Line, Rest};
+extract_line(1, Data, Line) ->
+    extract_line(0, Data, <<Line/binary, "\r">>).
+
 decode_packet(_, <<"\r\n", Rest/binary>>) ->
     {ok, http_eoh, Rest};
 decode_packet(Type, Data) ->
-    case binary:match(Data, <<"\r\n">>) of
-        {Start, _Len} ->
-            <<LineB:Start/binary, _:2/binary, Rest/binary>> = Data,
+    case extract_line(0, Data, <<>>) of
+        {LineB, Rest} ->
             Line = binary_to_list(LineB),
             Result = case Type of
                          http ->
