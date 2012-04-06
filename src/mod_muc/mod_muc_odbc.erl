@@ -41,8 +41,6 @@
 	 create_room/5,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
-         encode_opts/1,
-         decode_opts/1,
 	 can_use_nick/4]).
 
 %% gen_server callbacks
@@ -115,11 +113,12 @@ store_room(ServerHost, Host, Name, Opts) ->
     SName = ejabberd_odbc:escape(Name),
     SHost = ejabberd_odbc:escape(Host),
     LServer = jlib:nameprep(ServerHost),
+    SOpts = ejabberd_odbc:encode_term(Opts),
     F = fun() ->
-                update_t(
+                odbc_queries:update_t(
                   "muc_room",
                   ["name", "host", "opts"],
-                  [SName, SHost, encode_opts(Opts)],
+                  [SName, SHost, SOpts],
                   ["name='", SName, "' and host='", SHost, "'"])
 	end,
     ejabberd_odbc:sql_transaction(LServer, F).
@@ -132,7 +131,7 @@ restore_room(ServerHost, Host, Name) ->
                  LServer, ["select opts from muc_room where name='",
                            SName, "' and host='", SHost, "';"]) of
         {selected, ["opts"], [{Opts}]} ->
-            decode_opts(Opts);
+            ejabberd_odbc:decode_term(Opts);
         _ ->
             error
     end.
@@ -549,7 +548,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 					    Room,
 					    HistorySize,
 					    RoomShaper,
-					    decode_opts(Opts),
+					    ejabberd_odbc:decode_term(Opts),
                                             ?MODULE),
 			      register_room(Host, Room, Pid);
 			  _ ->
@@ -577,7 +576,8 @@ start_new_room(Host, ServerHost, Access, Room,
 	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access,
 			       Room, HistorySize,
-			       RoomShaper, decode_opts(Opts), ?MODULE)
+			       RoomShaper, ejabberd_odbc:decode_term(Opts),
+                               ?MODULE)
     end.
 
 register_room(Host, Room, Pid) ->
@@ -766,7 +766,7 @@ iq_set_register_info(ServerHost, Host, From, Nick, Lang) ->
                                     true
                             end,
                         if Allow ->
-                                update_t(
+                                odbc_queries:update_t(
                                   "muc_registered",
                                   ["jid", "host", "nick"],
                                   [SJID, SHost, SNick],
@@ -873,35 +873,3 @@ clean_table_from_bad_node(Node, Host) ->
 			      end, Es)
         end,
     mnesia:async_dirty(F).
-
-encode_opts(Opts) ->
-    ejabberd_odbc:escape(erl_prettypr:format(erl_syntax:abstract(Opts))).
-
-decode_opts(Str) ->
-    {ok, Tokens, _} = erl_scan:string(Str ++ "."),
-    {ok, Opts} = erl_parse:parse_term(Tokens),
-    Opts.
-
-%% Almost a copy of string:join/2.
-%% We use this version because string:join/2 is relatively
-%% new function (introduced in R12B-0).
-join([], _Sep) ->
-    [];
-join([H|T], Sep) ->
-    [H, [[Sep, X] || X <- T]].
-
-%% Safe atomic update.
-update_t(Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
-                           Fields, Vals),
-    case ejabberd_odbc:sql_query_t(
-           ["update ", Table, " set ",
-            join(UPairs, ", "),
-            " where ", Where, ";"]) of
-        {updated, 1} ->
-            ok;
-        _ ->
-            ejabberd_odbc:sql_query_t(
-              ["insert into ", Table, "(", join(Fields, ", "),
-               ") values ('", join(Vals, "', '"), "');"])
-    end.

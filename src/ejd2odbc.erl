@@ -305,7 +305,7 @@ export_muc_room(Server, Output) ->
                   true ->
                       SName = ejabberd_odbc:escape(Name),
                       SRoomHost = ejabberd_odbc:escape(RoomHost),
-                      SOpts = mod_muc_odbc:encode_opts(Opts),
+                      SOpts = ejabberd_odbc:encode_term(Opts),
                       ["delete from muc_room where name='", SName,
                        "' and host='", SRoomHost, "';",
                        "insert into muc_room(name, host, opts) values (",
@@ -345,7 +345,7 @@ export_irc_custom(Server, Output) ->
                                jlib:jid_to_string(
                                  jlib:make_jid(U, S, ""))),
                       SIRCHost = ejabberd_odbc:escape(IRCHost),
-                      SData = mod_irc_odbc:encode_data(Data),
+                      SData = ejabberd_odbc:encode_term(Data),
                       ["delete from irc_custom where jid='", SJID,
                        "' and host='", SIRCHost, "';"
                        "insert into irc_custom(jid, host, data) values ("
@@ -407,7 +407,7 @@ export_sr_group(Server, Output) ->
       fun(Host, #sr_group{group_host = {Group, LServer}, opts = Opts})
             when LServer == Host ->
               SGroup = ejabberd_odbc:escape(Group),
-              SOpts = mod_shared_roster_odbc:encode_opts(Opts),
+              SOpts = ejabberd_odbc:encode_term(Opts),
               ["delete from sr_group where name='", Group, "';"
                "insert into sr_group(name, opts) values ('",
                SGroup, "', '", SOpts, "');"];

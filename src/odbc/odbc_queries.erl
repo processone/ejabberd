@@ -28,6 +28,7 @@
 -author("mremond@process-one.net").
 
 -export([get_db_type/0,
+         update_t/4,
 	 sql_transaction/2,
 	 get_last/2,
 	 set_last_t/4,

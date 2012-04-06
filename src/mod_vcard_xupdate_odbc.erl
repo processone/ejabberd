@@ -75,8 +75,8 @@ add_xupdate(LUser, LServer, Hash) ->
     Username = ejabberd_odbc:escape(LUser),
     SHash = ejabberd_odbc:escape(Hash),
     F = fun() ->
-                update_t(
-                  ["vcard_xupdate"],
+                odbc_queries:update_t(
+                  "vcard_xupdate",
                   ["username", "hash"],
                   [Username, SHash],
                   ["username='", Username, "'"])
@@ -131,27 +131,3 @@ build_xphotoel(User, Host) ->
 		  end,
     PhotoEl = [{xmlelement, "photo", [], PhotoSubEls}],
     {xmlelement, "x", [{"xmlns", ?NS_VCARD_UPDATE}], PhotoEl}.
-
-%% Almost a copy of string:join/2.
-%% We use this version because string:join/2 is relatively
-%% new function (introduced in R12B-0).
-join([], _Sep) ->
-    [];
-join([H|T], Sep) ->
-    [H, [[Sep, X] || X <- T]].
-
-%% Safe atomic update.
-update_t(Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
-                           Fields, Vals),
-    case ejabberd_odbc:sql_query_t(
-           ["update ", Table, " set ",
-            join(UPairs, ", "),
-            " where ", Where, ";"]) of
-        {updated, 1} ->
-            ok;
-        _ ->
-            ejabberd_odbc:sql_query_t(
-              ["insert into ", Table, "(", join(Fields, ", "),
-               ") values ('", join(Vals, "', '"), "');"])
-    end.

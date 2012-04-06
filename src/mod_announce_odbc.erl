@@ -742,10 +742,11 @@ announce_motd(Host, Packet) ->
                 lists:foreach(
                   fun({U, _S, _R}) ->
                           Username = ejabberd_odbc:escape(U),
-                          update_t("motd",
-                                   ["username", "xml"],
-                                   [Username, ""],
-                                   ["username='", Username, "'"])
+                          odbc_queries:update_t(
+                            "motd",
+                            ["username", "xml"],
+                            [Username, ""],
+                            ["username='", Username, "'"])
                   end, Sessions)
         end,
     LServer = jlib:nameprep(Host),
@@ -777,10 +778,11 @@ announce_motd_update(LServer, Packet) ->
     announce_motd_delete(LServer),
     XML = ejabberd_odbc:escape(xml:element_to_binary(Packet)),
     F = fun() ->
-                update_t("motd",
-                         ["username", "xml"],
-                         ["", XML],
-                         ["username=''"])
+                odbc_queries:update_t(
+                  "motd",
+                  ["username", "xml"],
+                  ["", XML],
+                  ["username=''"])
         end,
     ejabberd_odbc:sql_transaction(LServer, F).
 
@@ -829,8 +831,8 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID) when LUser /= "" ->
                             Local = jlib:make_jid("", LServer, ""),
                             ejabberd_router:route(Local, JID, Packet),
                             F = fun() ->
-                                        update_t(
-                                          ["motd"],
+                                        odbc_queries:update_t(
+                                          "motd",
                                           ["username", "xml"],
                                           [Username, ""],
                                           ["username='", Username, "'"])
@@ -881,27 +883,3 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
 	      Dest = jlib:make_jid(U, S, R),
 	      ejabberd_router:route(Local, Dest, Packet)
       end, Sessions).
-
-%% Almost a copy of string:join/2.
-%% We use this version because string:join/2 is relatively
-%% new function (introduced in R12B-0).
-join([], _Sep) ->
-    [];
-join([H|T], Sep) ->
-    [H, [[Sep, X] || X <- T]].
-
-%% Safe atomic update.
-update_t(Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
-                           Fields, Vals),
-    case ejabberd_odbc:sql_query_t(
-           ["update ", Table, " set ",
-            join(UPairs, ", "),
-            " where ", Where, ";"]) of
-        {updated, 1} ->
-            ok;
-        _ ->
-            ejabberd_odbc:sql_query_t(
-              ["insert into ", Table, "(", join(Fields, ", "),
-               ") values ('", join(Vals, "', '"), "');"])
-    end.

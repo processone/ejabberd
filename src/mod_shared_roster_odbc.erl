@@ -52,7 +52,6 @@
 	 get_group_explicit_users/2,
 	 is_user_in_group/3,
 	 add_user_to_group/3,
-         encode_opts/1,
 	 remove_user_from_group/3]).
 
 -include("ejabberd.hrl").
@@ -403,7 +402,7 @@ groups_with_opts(Host) ->
     case ejabberd_odbc:sql_query(
            Host, ["select name, opts from sr_group;"]) of
         {selected, ["name", "opts"], Rs} ->
-            [{G, decode_opts(Opts)} || {G, Opts} <- Rs];
+            [{G, ejabberd_odbc:decode_term(Opts)} || {G, Opts} <- Rs];
         _ ->
             []
     end.
@@ -413,12 +412,12 @@ create_group(Host, Group) ->
 
 create_group(Host, Group, Opts) ->
     SGroup = ejabberd_odbc:escape(Group),
-    SOpts = encode_opts(Opts),
+    SOpts = ejabberd_odbc:encode_term(Opts),
     F = fun() ->
-                update_t("sr_group",
-                         ["name", "opts"],
-                         [SGroup, SOpts],
-                         ["name='", SGroup, "'"])
+                odbc_queries:update_t("sr_group",
+                                      ["name", "opts"],
+                                      [SGroup, SOpts],
+                                      ["name='", SGroup, "'"])
         end,
     ejabberd_odbc:sql_transaction(Host, F).
 
@@ -438,19 +437,19 @@ get_group_opts(Host, Group) ->
                  Host, ["select opts from sr_group "
                         "where name='", SGroup, "';"]) of
         {selected, ["opts"], [{SOpts}]} ->
-            decode_opts(SOpts);
+            ejabberd_odbc:decode_term(SOpts);
         _ ->
             error
     end.
 
 set_group_opts(Host, Group, Opts) ->
     SGroup = ejabberd_odbc:escape(Group),
-    SOpts = encode_opts(Opts),
+    SOpts = ejabberd_odbc:encode_term(Opts),
     F = fun() ->
-                update_t("sr_group",
-                         ["name", "opts"],
-                         [SGroup, SOpts],
-                         ["name='", SGroup, "'"])
+                odbc_queries:update_t("sr_group",
+                                      ["name", "opts"],
+                                      [SGroup, SOpts],
+                                      ["name='", SGroup, "'"])
         end,
     ejabberd_odbc:sql_transaction(Host, F).
 
@@ -473,7 +472,7 @@ is_group_enabled(Host1, Group1) ->
                  Host, ["select opts from sr_group "
                         "where name='", SGroup, "';"]) of
         {selected, ["opts"], [{SOpts}]} ->
-            Opts = decode_opts(SOpts),
+            Opts = ejabberd_odbc:decode_term(SOpts),
             not lists:member(disabled, Opts);
         _ ->
             false
@@ -486,7 +485,7 @@ get_group_opt(Host, Group, Opt, Default) ->
                  Host, ["select opts from sr_group "
                         "where name='", SGroup, "';"]) of
         {selected, ["opts"], [{SOpts}]} ->
-            Opts = decode_opts(SOpts),
+            Opts = ejabberd_odbc:decode_term(SOpts),
 	    case lists:keysearch(Opt, 1, Opts) of
 		{value, {_, Val}} ->
 		    Val;
@@ -659,10 +658,11 @@ add_user_to_group(Host, US, Group) ->
             SJID = make_jid_s(US),
             SGroup = ejabberd_odbc:escape(Group),
             F = fun() ->
-                        update_t("sr_user",
-                                 ["jid", "grp"],
-                                 [SJID, SGroup],
-                                 ["jid='", SJID, "' and grp='", SGroup, "'"])
+                        odbc_queries:update_t(
+                          "sr_user",
+                          ["jid", "grp"],
+                          [SJID, SGroup],
+                          ["jid='", SJID, "' and grp='", SGroup, "'"])
                 end,
             ejabberd_odbc:sql_transaction(Host, F)
     end.
@@ -1163,35 +1163,3 @@ make_jid_s(U, S) ->
 
 make_jid_s({U, S}) ->
     make_jid_s(U, S).
-
-encode_opts(Opts) ->
-    ejabberd_odbc:escape(erl_prettypr:format(erl_syntax:abstract(Opts))).
-
-decode_opts(Str) ->
-    {ok, Tokens, _} = erl_scan:string(Str ++ "."),
-    {ok, Opts} = erl_parse:parse_term(Tokens),
-    Opts.
-
-%% Almost a copy of string:join/2.
-%% We use this version because string:join/2 is relatively
-%% new function (introduced in R12B-0).
-join([], _Sep) ->
-    [];
-join([H|T], Sep) ->
-    [H, [[Sep, X] || X <- T]].
-
-%% Safe atomic update.
-update_t(Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
-                           Fields, Vals),
-    case ejabberd_odbc:sql_query_t(
-           ["update ", Table, " set ",
-            join(UPairs, ", "),
-            " where ", Where, ";"]) of
-        {updated, 1} ->
-            ok;
-        _ ->
-            ejabberd_odbc:sql_query_t(
-              ["insert into ", Table, "(", join(Fields, ", "),
-               ") values ('", join(Vals, "', '"), "');"])
-    end.

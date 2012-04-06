@@ -34,7 +34,6 @@
 -export([start_link/2,
 	 start/2,
 	 stop/1,
-         encode_data/1,
 	 closed_connection/3,
 	 get_connection_params/3]).
 
@@ -549,7 +548,7 @@ get_form(ServerHost, Host, From, [], Lang) ->
                      ["select data from irc_custom where "
                       "jid='", SJID, "' and host='", SHost, "';"]) of
             {selected, ["data"], [{SData}]} ->
-                Data = decode_data(SData),
+                Data = ejabberd_odbc:decode_term(SData),
                 {xml:get_attr_s(username, Data),
 	 	 xml:get_attr_s(connections_params, Data)};
             {'EXIT', _} ->
@@ -647,7 +646,7 @@ set_form(ServerHost, Host, From, [], _Lang, XData) ->
 		{ok, Tokens, _} ->
 		    case erl_parse:parse_term(Tokens) of
 			{ok, ConnectionsParams} ->
-                            SData = encode_data(
+                            SData = ejabberd_odbc:encode_term(
                                       [{username,
                                         Username},
                                        {connections_params,
@@ -655,12 +654,13 @@ set_form(ServerHost, Host, From, [], _Lang, XData) ->
                             case ejabberd_odbc:sql_transaction(
                                    LServer,
                                    fun() ->
-                                           update_t("irc_custom",
-                                                    ["jid", "host", "data"],
-                                                    [SJID, SHost, SData],
-                                                    ["jid='", SJID,
-                                                     "' and host='",
-                                                     SHost, "'"]),
+                                           odbc_queries:update_t(
+                                             "irc_custom",
+                                             ["jid", "host", "data"],
+                                             [SJID, SHost, SData],
+                                             ["jid='", SJID,
+                                              "' and host='",
+                                              SHost, "'"]),
                                            ok
                                    end) of
 				{atomic, _} ->
@@ -715,7 +715,7 @@ get_connection_params(Host, ServerHost, From, IRCServer) ->
 	{selected, ["data"], []} ->
 	    {User, DefaultEncoding, ?DEFAULT_IRC_PORT, ""};
         {selected, ["data"], [{SData}]} ->
-            Data = decode_data(SData),
+            Data = ejabberd_odbc:decode_term(SData),
 	    Username = xml:get_attr_s(username, Data),
 	    {NewUsername, NewEncoding, NewPort, NewPassword} = 
     		case lists:keysearch(
@@ -844,7 +844,7 @@ adhoc_register(ServerHost, From, To, #adhoc_request{lang = Lang,
 		    Username = User,
 		    ConnectionsParams = [];
 		{selected, ["data"], [{Data1}]} ->
-                    Data = decode_data(Data1),
+                    Data = ejabberd_odbc:decode_term(Data1),
 		    Username = xml:get_attr_s(username, Data),
 		    ConnectionsParams = xml:get_attr_s(connections_params, Data)
 	    end,
@@ -870,16 +870,18 @@ adhoc_register(ServerHost, From, To, #adhoc_request{lang = Lang,
     if Error /= false ->
 	    Error;
        Action == "complete" ->
-            SData = encode_data([{username, Username},
-                                 {connections_params, ConnectionsParams}]),
+            SData = ejabberd_odbc:encode_term(
+                      [{username, Username},
+                       {connections_params, ConnectionsParams}]),
             case catch ejabberd_odbc:sql_transaction(
                          LServer,
                          fun() ->
-                                 update_t("irc_custom",
-                                          ["jid", "host", "data"],
-                                          [SJID, SHost, SData],
-                                          ["jid='", SJID,
-                                           "' and host='", SHost, "'"]),
+                                 odbc_queries:update_t(
+                                   "irc_custom",
+                                   ["jid", "host", "data"],
+                                   [SJID, SHost, SData],
+                                   ["jid='", SJID,
+                                    "' and host='", SHost, "'"]),
                                  ok
                          end) of
 		{atomic, ok} ->
@@ -1029,35 +1031,3 @@ parse_connections_params([{ServerN, Server} | Servers], Encodings, Ports, Passwo
     {NewPort, NewPorts} = retrieve_connections_params(Ports, ServerN),
     {NewPassword, NewPasswords} = retrieve_connections_params(Passwords, ServerN),
     [{Server, NewEncoding, NewPort, NewPassword} | parse_connections_params(Servers, NewEncodings, NewPorts, NewPasswords)].
-
-encode_data(Data) ->
-    ejabberd_odbc:escape(erl_prettypr:format(erl_syntax:abstract(Data))).
-
-decode_data(Str) ->
-    {ok, Tokens, _} = erl_scan:string(Str ++ "."),
-    {ok, Data} = erl_parse:parse_term(Tokens),
-    Data.
-
-%% Almost a copy of string:join/2.
-%% We use this version because string:join/2 is relatively
-%% new function (introduced in R12B-0).
-join([], _Sep) ->
-    [];
-join([H|T], Sep) ->
-    [H, [[Sep, X] || X <- T]].
-
-%% Safe atomic update.
-update_t(Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun(A, B) -> A ++ "='" ++ B ++ "'" end,
-                           Fields, Vals),
-    case ejabberd_odbc:sql_query_t(
-           ["update ", Table, " set ",
-            join(UPairs, ", "),
-            " where ", Where, ";"]) of
-        {updated, 1} ->
-            ok;
-        _ ->
-            ejabberd_odbc:sql_query_t(
-              ["insert into ", Table, "(", join(Fields, ", "),
-               ") values ('", join(Vals, "', '"), "');"])
-    end.
