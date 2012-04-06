@@ -35,8 +35,8 @@ LD=link.exe
 LD_FLAGS=-release -nologo -incremental:no -dll "$(EI_DIR)\lib\ei_md.lib" "$(EI_DIR)\lib\erl_interface_md.lib" "$(ICONV_LIB)" MSVCRT.LIB kernel32.lib advapi32.lib gdi32.lib user32.lib comctl32.lib comdlg32.lib shell32.lib
 
 $(DLL) : $(OBJECT)
-	$(LD) $(LD_FLAGS) -out:$(DLL) $(OBJECT)
+	$(LD) $(LD_FLAGS) -out:$@ $<
 
 $(OBJECT) : $(SOURCE)
-    	$(CC) $(CC_FLAGS) -c -Fo$(OBJECT) $(SOURCE) 
+	$(CC) $(CC_FLAGS) -c -Fo$@ $<
 
