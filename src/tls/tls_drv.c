@@ -432,13 +432,22 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 			  "SSL_do_handshake failed");
 	 }
 	 if (SSL_is_init_finished(d->ssl)) {
+	    size_t req_size = 0;
+	    if (len == 4)
+	    {
+	       req_size =
+		  (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	    }
 	    size = BUF_SIZE + 1;
 	    rlen = 1;
 	    b = driver_alloc_binary(size);
 	    b->orig_bytes[0] = 0;
 
-	    while ((res = SSL_read(d->ssl,
-				   b->orig_bytes + rlen, BUF_SIZE)) > 0)
+	    while ((req_size == 0 || rlen < req_size + 1) &&
+		   (res = SSL_read(d->ssl,
+				   b->orig_bytes + rlen,
+				   (req_size == 0 || req_size + 1 >= size) ?
+				   size - rlen : req_size + 1 - rlen)) > 0)
 	    {
 	       //printf("%d bytes of decrypted data read from state machine\r\n",res);
 	       rlen += res;
