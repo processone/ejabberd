@@ -511,7 +511,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 		true ->
                     DGen = fun(PW) ->
                              list_to_binary(sha:sha(
-                                              StateData#state.streamid 
+                                              StateData#state.streamid
                                               ++ binary_to_list(PW))) end,
 		    case ejabberd_auth:check_password_with_authmodule(
 			   U, StateData#state.server, P, D, DGen) of
@@ -1423,7 +1423,7 @@ print_state(State = #state{pres_t = T, pres_f = F, pres_a = A, pres_i = I}) ->
                pres_a = {pres_a, ?SETS:size(A)},
                pres_i = {pres_i, ?SETS:size(I)}
                }.
-    
+
 %%----------------------------------------------------------------------
 %% Func: terminate/3
 %% Purpose: Shutdown the fsm
@@ -1501,7 +1501,7 @@ change_shaper(StateData, JID) ->
 
 send_text(StateData, Text) when StateData#state.xml_socket ->
     ?DEBUG("Send Text on stream = ~p", [lists:flatten(Text)]),
-    (StateData#state.sockmod):send_xml(StateData#state.socket, 
+    (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamraw, Text});
 send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~p", [Text]),
@@ -1743,10 +1743,9 @@ presence_update(From, Packet, StateData) ->
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
 	    ?DEBUG("from unavail = ~p~n", [FromUnavail]),
-	    NewState =
-                NewStateData = StateData#state{pres_last = Packet,
-                                               pres_invis = false,
-                                               pres_timestamp = Timestamp},
+        NewStateData = StateData#state{pres_last = Packet,
+                                       pres_invis = false,
+                                       pres_timestamp = Timestamp},
 		if
 		    FromUnavail ->
 			ejabberd_hooks:run(user_available_hook,
@@ -1771,8 +1770,7 @@ presence_update(From, Packet, StateData) ->
 				ok
 			end,
                         NewStateData
-		end,
-	    NewState
+		end
     end.
 
 %% User sends a directed presence packet
@@ -2081,7 +2079,7 @@ resend_offline_messages(StateData) ->
 			      %%		 Attrs),
 			      %% FixedPacket = {xmlelement, Name, Attrs2, Els},
                               %% Use route instead of send_element to go through standard workflow
-                              ejabberd_router:route(From, To, Packet); 
+                              ejabberd_router:route(From, To, Packet);
 			      %% send_element(StateData, FixedPacket),
 			      %% ejabberd_hooks:run(user_receive_packet,
 			      %%			 StateData#state.server,
