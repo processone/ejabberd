@@ -54,7 +54,7 @@ check(_Path, Headers)->
 % If origins not set, access is open.
 is_acceptable(#ws{origin=Origin, protocol=Protocol, 
                   headers = Headers, acceptable_origins = Origins, auth_module=undefined})->
-  ClientProtocol = lists:keyfind("Sec-WebSocket-Protocol",1, Headers),
+  ClientProtocol = lists:keyfind("Sec-Websocket-Protocol",1, Headers),
   case {(Origins == []) or lists:member(Origin, Origins), ClientProtocol, Protocol } of
     {false, _, _} -> 
       ?INFO_MSG("client does not come from authorized origin", []),
@@ -136,7 +136,7 @@ check_websocket({'draft-hybi', 8} = Vsn, Headers) ->
 	% set required headers
 	RequiredHeaders = [
                            {'Upgrade', "websocket"}, {'Connection', ignore}, {'Host', ignore},
-                           {"Sec-WebSocket-Key", ignore}, {"Sec-WebSocket-Version", "8"}
+                           {"Sec-Websocket-Key", ignore}, {"Sec-Websocket-Version", "8"}
                           ],
 	% check for headers existance
 	case check_headers(Headers, RequiredHeaders) of
@@ -150,7 +150,7 @@ check_websocket({'draft-hybi', 13} = Vsn, Headers) ->
 	% set required headers
 	RequiredHeaders = [
                            {'Upgrade', "websocket"}, {'Connection', ignore}, {'Host', ignore},
-                           {"Sec-WebSocket-Key", ignore}, {"Sec-WebSocket-Version", "13"}
+                           {"Sec-Websocket-Key", ignore}, {"Sec-Websocket-Version", "13"}
                           ],
 	% check for headers existance
 	case check_headers(Headers, RequiredHeaders) of
@@ -161,26 +161,12 @@ check_websocket({'draft-hybi', 13} = Vsn, Headers) ->
 	end;
 check_websocket(_Vsn, _Headers) -> false. % not implemented
 
-tolower(T) when is_list(T) -> stringprep:tolower(T);
-tolower(T) -> T.
-
-case_insensitive_keyfind(Name, List) when is_atom(Name) ->
-    lists:keyfind(Name, 1, List);
-case_insensitive_keyfind(Name, []) ->
-    false;
-case_insensitive_keyfind(Name, [{FName, Val}|T]) ->
-    FNameL = tolower(FName),
-    if
-        FNameL == Name -> {Name, Val};
-        true -> case_insensitive_keyfind(Name, T)
-    end.
-
 % Function: true | [{RequiredTag, RequiredVal}, ..]
 % Description: Check if headers correspond to headers requirements.
 check_headers(Headers, RequiredHeaders) ->
 	F = fun({Tag, Val}) ->
 		% see if the required Tag is in the Headers
-        case case_insensitive_keyfind(tolower(Tag), Headers) of
+        case lists:keyfind(Tag, 1, Headers) of
 			false -> true; % header not found, keep in list
 			{_, HVal} ->
 			  %?DEBUG("check: ~p", [{Tag, HVal,Val }]),

@@ -182,7 +182,7 @@ receive_headers(#state{trail=Trail} = State) ->
     Data = SockMod:recv(Socket, 0, 300000),
     case State#state.sockmod of
         gen_tcp ->
-	    NewState = process_header(State, Data),
+	    NewState = process_header(State, Data, true),
 	    case NewState#state.end_of_request of
 		true ->
 		    ok;
@@ -207,7 +207,7 @@ parse_headers(#state{request_method = Method, trail = Data} = State) ->
               end,
     case decode_packet(PktType, Data) of
         {ok, Pkt, Rest} ->
-            NewState = process_header(State#state{trail = Rest}, {ok, Pkt}),
+            NewState = process_header(State#state{trail = Rest}, {ok, Pkt}, false),
 	    case NewState#state.end_of_request of
 		true ->
 		    ok;
@@ -220,7 +220,7 @@ parse_headers(#state{request_method = Method, trail = Data} = State) ->
             ok
     end.
 
-process_header(State, Data) ->
+process_header(State, Data, Normalize) ->
     SockMod = State#state.sockmod,
     Socket = State#state.socket,
     case Data of
@@ -267,6 +267,8 @@ process_header(State, Data) ->
 	{ok, {http_header, _, 'Host'=Name, _, Host}} ->
 	    State#state{request_host = Host,
 			request_headers=add_header(Name, Host, State)};
+	{ok, {http_header, _, Name, _, Value}} when is_list(Name) andalso Normalize ->
+	    State#state{request_headers=add_header(normalize_header_name(Name), Value, State)};
 	{ok, {http_header, _, Name, _, Value}} ->
 	    State#state{request_headers=add_header(Name, Value, State)};
 	{ok, http_eoh} when State#state.request_host == undefined ->
@@ -1117,14 +1119,28 @@ tolower(C) when C >= $A andalso C =< $Z ->
 tolower(C) ->
     C.
 
+normalize_header_name(Name) ->
+    case parse_header_line(Name, "", true) of
+        {ok, RName, _} ->
+            lists:reverse(RName);
+        {eol, RName} ->
+            lists:reverse(RName)
+    end.
+
 
 parse_header_line(Line) ->
-    parse_header_line(Line, "", true).
+    case parse_header_line(Line, "", true) of
+        {ok, Name, Rest} ->
+            encode_header(lists:reverse(Name), Rest);
+        _ ->
+            bad_request
+    end.
 
-parse_header_line("", _, _) ->
-    bad_request;
+
+parse_header_line("", Name, _) ->
+    {eol, Name};
 parse_header_line(":" ++ Rest, Name, _) ->
-    encode_header(lists:reverse(Name), Rest);
+    {ok, Name, Rest};
 parse_header_line("-" ++ Rest, Name, _) ->
     parse_header_line(Rest, "-" ++ Name, true);
 parse_header_line([C | Rest], Name, true) ->
