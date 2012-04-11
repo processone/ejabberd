@@ -1112,7 +1112,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		{get, "subscriptions"} ->
 		    get_subscriptions(Host, Node, From, Plugins);
 		{get, "affiliations"} ->
-		    get_affiliations(Host, From, Plugins);
+		    get_affiliations(Host, Node, From, Plugins);
 		{get, "options"} ->
 		    SubID = xml:get_attr_s("subid", Attrs),
 		    JID = xml:get_attr_s("jid", Attrs),
@@ -2218,7 +2218,7 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 %%	 Reason = stanzaError()
 %%	 Response = [pubsubIQResponse()]
 %% @doc <p>Return the list of affiliations as an XMPP response.</p>
-get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
+get_affiliations(Host, <<>>, JID, Plugins) when is_list(Plugins) ->
     Result = lists:foldl(
 	       fun(Type, {Status, Acc}) ->
 		       Features = features(Type),
@@ -2247,6 +2247,40 @@ get_affiliations(Host, JID, Plugins) when is_list(Plugins) ->
 	{Error, _} ->
 	    Error
     end;
+get_affiliations(Host, NodeId, JID, Plugins) when is_list(Plugins) ->
+    Result = lists:foldl(
+	       fun(Type, {Status, Acc}) ->
+		       Features = features(Type),
+		       RetrieveFeature = lists:member("retrieve-affiliations", Features),
+		       if
+			   not RetrieveFeature ->
+			       %% Service does not support retreive affiliatons
+			       {{error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, "retrieve-affiliations")}, Acc};
+			   true ->
+			       {result, Affiliations} = node_action(Host, Type, get_entity_affiliations, [Host, JID]),
+			       {Status, [Affiliations|Acc]}
+		       end
+	       end, {ok, []}, Plugins),
+    case Result of
+	{ok, Affiliations} ->
+	    Entities = lists:flatmap(
+			 fun({_, none}) -> [];
+			    ({#pubsub_node{nodeid = {_, Node}}, Affiliation})
+			      when NodeId == Node ->
+				 [{xmlelement, "affiliation",
+				   [{"affiliation", affiliation_to_string(Affiliation)}|nodeAttr(Node)],
+				   []}];
+				(_) ->
+				    []
+			 end, lists:usort(lists:flatten(Affiliations))),
+	    {result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
+		       [{xmlelement, "affiliations", [],
+			 Entities}]}]};
+	{Error, _} ->
+	    Error
+    end.
+
+
 get_affiliations(Host, Node, JID) ->
     Action = fun(#pubsub_node{type = Type, id = NodeId}) ->
 		     Features = features(Type),

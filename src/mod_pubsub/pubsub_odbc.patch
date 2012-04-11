@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2011-11-29 14:10:41.000000000 +0100
-+++ mod_pubsub_odbc.erl	2011-11-29 14:12:01.000000000 +0100
+--- mod_pubsub.erl	2012-04-11 16:47:33.620900390 +0200
++++ mod_pubsub_odbc.erl	2012-04-11 16:47:53.390899087 +0200
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -692,7 +692,7 @@
  
  %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
  %%	 Host = host()
-@@ -2506,7 +2311,8 @@
+@@ -2540,7 +2345,8 @@
  	error ->
  	    {error, ?ERR_BAD_REQUEST};
  	_ ->
@@ -702,7 +702,7 @@
  			case lists:member(Owner, Owners) of
  			    true ->
  				OwnerJID = jlib:make_jid(Owner),
-@@ -2516,24 +2322,7 @@
+@@ -2550,24 +2356,7 @@
  				    end,
  				lists:foreach(
  				    fun({JID, Affiliation}) ->
@@ -728,7 +728,7 @@
  				    end, FilteredEntities),
  				{result, []};
  			    _ ->
-@@ -2586,11 +2375,11 @@
+@@ -2620,11 +2409,11 @@
      end.
  
  read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
@@ -742,7 +742,7 @@
  	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_string(Subscriber)},
  						 {"subid", SubID}|nodeAttr(Node)],
  			 [XdataEl]},
-@@ -2616,7 +2405,7 @@
+@@ -2650,7 +2439,7 @@
      end.
  
  set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
@@ -751,7 +751,7 @@
  	{result, GoodSubOpts} -> GoodSubOpts;
  	_ -> invalid
      end,
-@@ -2645,7 +2434,7 @@
+@@ -2679,7 +2468,7 @@
  write_sub(_Subscriber, _NodeID, _SubID, invalid) ->
      {error, extended_error(?ERR_BAD_REQUEST, "invalid-options")};
  write_sub(Subscriber, NodeID, SubID, Options) ->
@@ -760,7 +760,7 @@
  	{error, notfound} ->
  	    {error, extended_error(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
  	{result, _} ->
-@@ -2813,8 +2602,8 @@
+@@ -2847,8 +2636,8 @@
  				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
  		ejabberd_router:route(service_jid(Host), jlib:make_jid(JID), Stanza)
  	    end,
@@ -771,7 +771,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3169,7 +2958,7 @@
+@@ -3203,7 +2992,7 @@
  			{Depth, [{N, get_node_subs(N)} || N <- Nodes]}
  	    end, tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]))}
  	end,
@@ -780,7 +780,7 @@
  	{result, CollSubs} -> CollSubs;
  	_ -> []
      end.
-@@ -3183,9 +2972,9 @@
+@@ -3217,9 +3006,9 @@
  
  get_options_for_subs(NodeID, Subs) ->
      lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
@@ -792,7 +792,7 @@
  			    _ -> Acc
  			end;
  		    (_, Acc) ->
-@@ -3374,6 +3163,30 @@
+@@ -3408,6 +3197,30 @@
  	    Result
      end.
  
@@ -823,7 +823,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3770,7 +3583,13 @@
+@@ -3804,7 +3617,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -838,7 +838,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3790,13 +3609,13 @@
+@@ -3824,13 +3643,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -854,7 +854,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3808,13 +3627,19 @@
+@@ -3842,13 +3661,19 @@
  				Error
  			end
  		end, Trans).
@@ -878,7 +878,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3822,6 +3647,15 @@
+@@ -3856,6 +3681,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -894,7 +894,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-@@ -3830,6 +3664,17 @@
+@@ -3864,6 +3698,17 @@
  	    {error, ?ERR_INTERNAL_SERVER_ERROR}
      end.
  
