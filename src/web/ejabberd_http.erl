@@ -1025,7 +1025,7 @@ decode_packet(Type, Data) ->
                          http ->
                              parse_req(Line);
                          httph ->
-                             parse_line(Line)
+                             parse_header_line(Line)
                      end,
             case Result of
                 {ok, H} ->
@@ -1107,55 +1107,72 @@ parse_req(Line) ->
     end.
 
 
-parse_line("Connection:" ++ Con) ->
+toupper(C) when C >= $a andalso C =< $z ->
+    C - 32;
+toupper(C) ->
+    C.
+
+tolower(C) when C >= $A andalso C =< $Z ->
+    C + 32;
+tolower(C) ->
+    C.
+
+
+parse_header_line(Line) ->
+    parse_header_line(Line, "", true).
+
+parse_header_line("", _, _) ->
+    bad_request;
+parse_header_line(":" ++ Rest, Name, _) ->
+    encode_header(lists:reverse(Name), Rest);
+parse_header_line("-" ++ Rest, Name, _) ->
+    parse_header_line(Rest, "-" ++ Name, true);
+parse_header_line([C | Rest], Name, true) ->
+    parse_header_line(Rest, [toupper(C) | Name], false);
+parse_header_line([C | Rest], Name, false) ->
+    parse_header_line(Rest, [tolower(C) | Name], false).
+
+
+encode_header("Connection", Con) ->
     {ok, {http_header,  undefined, 'Connection', undefined, strip_spaces(Con)}};
-parse_line("Host:" ++ Con) ->
+encode_header("Host", Con) ->
     {ok, {http_header,  undefined, 'Host', undefined, strip_spaces(Con)}};
-parse_line("Accept:" ++ Con) ->
+encode_header("Accept", Con) ->
     {ok, {http_header,  undefined, 'Accept', undefined, strip_spaces(Con)}};
-parse_line("If-Modified-Since:" ++ Con) ->
+encode_header("If-Modified-Since", Con) ->
     {ok, {http_header,  undefined, 'If-Modified-Since', undefined, strip_spaces(Con)}};
-parse_line("If-Match:" ++ Con) ->
+encode_header("If-Match", Con) ->
     {ok, {http_header,  undefined, 'If-Match', undefined, strip_spaces(Con)}};
-parse_line("If-None-Match:" ++ Con) ->
+encode_header("If-None-Match", Con) ->
     {ok, {http_header,  undefined, 'If-None-Match', undefined, strip_spaces(Con)}};
-parse_line("If-Range:" ++ Con) ->
+encode_header("If-Range", Con) ->
     {ok, {http_header,  undefined, 'If-Range', undefined, strip_spaces(Con)}};
-parse_line("If-Unmodified-Since:" ++ Con) ->
+encode_header("If-Unmodified-Since", Con) ->
     {ok, {http_header,  undefined, 'If-Unmodified-Since', undefined, strip_spaces(Con)}};
-parse_line("Range:" ++ Con) ->
+encode_header("Range", Con) ->
     {ok, {http_header,  undefined, 'Range', undefined, strip_spaces(Con)}};
-parse_line("User-Agent:" ++ Con) ->
+encode_header("User-Agent", Con) ->
     {ok, {http_header,  undefined, 'User-Agent', undefined, strip_spaces(Con)}};
-parse_line("Accept-Ranges:" ++ Con) ->
+encode_header("Accept-Ranges", Con) ->
     {ok, {http_header,  undefined, 'Accept-Ranges', undefined, strip_spaces(Con)}};
-parse_line("Authorization:" ++ Con) ->
+encode_header("Authorization", Con) ->
     {ok, {http_header,  undefined, 'Authorization', undefined, strip_spaces(Con)}};
-parse_line("Keep-Alive:" ++ Con) ->
+encode_header("Keep-Alive", Con) ->
     {ok, {http_header,  undefined, 'Keep-Alive', undefined, strip_spaces(Con)}};
-parse_line("Referer:" ++ Con) ->
+encode_header("Referer", Con) ->
     {ok, {http_header,  undefined, 'Referer', undefined, strip_spaces(Con)}};
-parse_line("Content-type:"++Con) ->
+encode_header("Content-Type", Con) ->
     {ok, {http_header,  undefined, 'Content-Type', undefined, strip_spaces(Con)}};
-parse_line("Content-Type:"++Con) ->
-    {ok, {http_header,  undefined, 'Content-Type', undefined, strip_spaces(Con)}};
-parse_line("Content-Length:"++Con) ->
+encode_header("Content-Length", Con) ->
     {ok, {http_header,  undefined, 'Content-Length', undefined, strip_spaces(Con)}};
-parse_line("Content-length:"++Con) ->
-    {ok, {http_header,  undefined, 'Content-Length', undefined, strip_spaces(Con)}};
-parse_line("Cookie:"++Con) ->
+encode_header("Cookie", Con) ->
     {ok, {http_header,  undefined, 'Cookie', undefined, strip_spaces(Con)}};
-parse_line("Accept-Language:"++Con) ->
+encode_header("Accept-Language", Con) ->
     {ok, {http_header,  undefined, 'Accept-Language', undefined, strip_spaces(Con)}};
-parse_line("Accept-Encoding:"++Con) ->
+encode_header("Accept-Encoding", Con) ->
     {ok, {http_header,  undefined, 'Accept-Encoding', undefined, strip_spaces(Con)}};
-parse_line(S) ->
-    case lists:splitwith(fun(C)->C /= $: end, S) of
-	{Name, [$:|Val]} ->
-	    {ok, {http_header,  undefined, Name, undefined, strip_spaces(Val)}};
-	_ ->
-	    bad_request
-    end.
+encode_header(Name, Val) ->
+    {ok, {http_header,  undefined, Name, undefined, strip_spaces(Val)}}.
 
 
 is_space($\s) ->
