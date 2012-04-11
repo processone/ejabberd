@@ -439,6 +439,7 @@ init([]) ->
     end;
 init({Hosts, Port, Rootdn, Passwd, Opts}) ->
     catch ssl:start(),
+    %% ssl:seed was removed in OTP R14B04, newer Dialyzer will complain
     catch ssl:seed(randoms:get_string()),
     Encrypt = case proplists:get_value(encrypt, Opts) of
 		  tls -> tls;
