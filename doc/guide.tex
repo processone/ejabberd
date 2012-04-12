@@ -68,6 +68,7 @@
 \newcommand{\modannounce}{\module{mod\_announce}}
 \newcommand{\modannounceodbc}{\module{mod\_announce\_odbc}}
 \newcommand{\modblocking}{\module{mod\_blocking}}
+\newcommand{\modblockingodbc}{\module{mod\_blocking\_odbc}}
 \newcommand{\modcaps}{\module{mod\_caps}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
@@ -2586,6 +2587,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modannounce}{\modannounceodbc{}} & Manage announcements & recommends \modadhoc{} \\
     & & supported DB (*) \\
     \hline \modblocking{} & Simple Communications Blocking (\xepref{0191}) & \modprivacy{} \\
+    \hline \modblockingodbc{} & Simple Communications Blocking (\xepref{0191}) & \modprivacyodbc{} \\
     \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
@@ -2664,6 +2666,7 @@ database for the following data:
 \item vCard-Based Avatars: Use \term{mod\_vcard\_xupdate\_odbc} instead of \term{mod\_vcard\_xupdate}.
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
 \item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
+\item Simple Communications Blocking: Use \term{mod\_blocking\_odbc} instead of \term{mod\_blocking}.
 \item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
 \item Multi-user chats: Use \term{mod\_muc\_odbc} instead of \term{mod\_muc}.
 \item Manage announcements: Use \term{mod\_announce\_odbc} instead of \term{mod\_announce}.

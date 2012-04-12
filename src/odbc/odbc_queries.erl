@@ -70,6 +70,7 @@
 	 get_privacy_list_id_t/2,
 	 get_privacy_list_data/3,
 	 get_privacy_list_data_by_id/2,
+         get_privacy_list_data_by_id_t/1,
 	 set_default_privacy_list/2,
 	 unset_default_privacy_list/2,
 	 remove_privacy_list/2,
@@ -506,6 +507,13 @@ get_privacy_list_data_by_id(LServer, ID) ->
        "from privacy_list_data "
        "where id='", ID, "' order by ord;"]).
 
+get_privacy_list_data_by_id_t(ID) ->
+    ejabberd_odbc:sql_query_t(
+      ["select t, value, action, ord, match_all, match_iq, "
+       "match_message, match_presence_in, match_presence_out "
+       "from privacy_list_data "
+       "where id='", ID, "' order by ord;"]).
+
 set_default_privacy_list(Username, SName) ->
     update_t("privacy_default_list", ["username", "name"],
 	     [Username, SName], ["username='", Username, "'"]).
@@ -832,6 +840,10 @@ get_privacy_list_data(LServer, Username, SName) ->
 get_privacy_list_data_by_id(LServer, ID) ->
     ejabberd_odbc:sql_query(
       LServer,
+      ["EXECUTE dbo.get_privacy_list_data_by_id '", ID, "'"]).
+
+get_privacy_list_data_by_id_t(ID) ->
+    ejabberd_odbc:sql_query_t(
       ["EXECUTE dbo.get_privacy_list_data_by_id '", ID, "'"]).
 
 set_default_privacy_list(Username, SName) ->
