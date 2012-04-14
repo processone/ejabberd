@@ -271,7 +271,7 @@ stop_kindly(DelaySeconds, AnnouncementText) ->
 		  - TimestampStart,
 	      io:format("[~p/~p ~ps] ~s... ",
 			[NumberThis, NumberLast, SecondsDiff, Desc]),
-	      Result = apply(Mod, Func, Args),
+	      Result = (catch apply(Mod, Func, Args)),
 	      io:format("~p~n", [Result]),
 	      NumberThis+1
       end,
