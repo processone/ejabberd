@@ -43,3 +43,22 @@ $(EJD_PRIV_MIB)/EJABBERD-MIB.bin: $(EJD_MIB)/EJABBERD-MIB.mib $(EJD_MIB)/EJABBER
 
 relclean:
 	rm -rf rel/ejabberd
+
+COMBO_PLT = $(HOME)/.esl_ejabberd_combo_dialyzer_plt
+PLT_LIBS  = $(wildcard rel/ejabberd/lib/*/ebin)
+
+DIALYZER_APPS = ejabberd
+DIALYZER_APPS_PATHS = $(addsuffix /ebin, $(addprefix apps/, $(DIALYZER_APPS)))
+
+check_plt: rel
+	dialyzer --check_plt --plt $(COMBO_PLT) $(PLT_LIBS)
+
+build_plt: rel
+	dialyzer --build_plt --output_plt $(COMBO_PLT) $(PLT_LIBS)
+
+dialyzer: compile
+	dialyzer -Wno_return --fullpath --plt $(COMBO_PLT) $(DIALYZER_APPS_PATHS) | \
+	    fgrep -v -f ./dialyzer.ignore-warnings
+
+cleanplt:
+	rm $(COMBO_PLT)
