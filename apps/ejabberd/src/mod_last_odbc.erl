@@ -139,7 +139,7 @@ get_last(LUser, LServer) ->
         {selected, ["seconds","state"], []} ->
             not_found;
         {selected, ["seconds","state"], [{STimeStamp, Status}]} ->
-            case catch list_to_integer(STimeStamp) of
+            case catch list_to_integer(binary_to_list(STimeStamp)) of
                 TimeStamp when is_integer(TimeStamp) ->
                     {ok, TimeStamp, Status};
                 Reason ->
