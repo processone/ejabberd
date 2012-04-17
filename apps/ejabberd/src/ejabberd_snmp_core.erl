@@ -252,13 +252,13 @@ window_change() ->
                 lists:foreach(fun(C) ->
                                       [{C, Value}] = ets:lookup(Tab, C),
                                       set_counter(C, Value),
-                                      ets:insert(Tab, {C, 0}) 
+                                      ets:insert(Tab, {C, 0})
                               end,
                               w_counters_for(Module))
             end
         end,
         get_all_modules()).
-    
+
 
 %% Delete a table if it exists
 destroy_table(Tab) ->
@@ -312,19 +312,19 @@ decrement_counter(Counter) ->
     update_counter(Counter, {2, -1, 0, 0}).
 
 set_counter(Counter, Value) ->
-    modify_counter(Counter, {ets, update_element}, [{2, Value}]).
+    modify_counter(Counter, ets, update_element, [{2, Value}]).
 
 update_counter(Counter, How) ->
-    modify_counter(Counter, {ets, update_counter}, [How]).
+    modify_counter(Counter, ets, update_counter, [How]).
 
-modify_counter(Counter, Fun, Args) ->
+modify_counter(Counter, Mod, Fun, Args) ->
     Tab = ?STATS(module_for(Counter)),
     case ets:info(Tab) of
         undefined ->
             ok;
         _ ->
-            ArgsNew = [ Tab, Counter | Args],
-            apply(Fun, ArgsNew)
+            ArgsNew = [Tab, Counter | Args],
+            apply(Mod, Fun, ArgsNew)
     end.
 
 -spec counter_value(atom()) -> {value, term()}.
@@ -350,7 +350,7 @@ table_value(get_next,RowInd,Cols,Table) ->
                               {genErr, Err};
                           {_, Value} ->
                               [Value| Res]
-                      end     
+                      end
               end,[], Cols);
 table_value(_,_,_,_) ->
     ok.
@@ -374,7 +374,7 @@ get_row([RowInd], routerRegisteredPathsTable) ->
 %% gets column values from specified row row
 get_cols(Row, Cols, Table) ->
     Mapping = column_mapping(Cols, get_column_map(Table)),
-    lists:map(fun(Col) -> 
+    lists:map(fun(Col) ->
                       try element(Col, Row) of
                           Res -> Res
                       catch
@@ -396,13 +396,13 @@ get_cell_value(R, C, Table) ->
         _:_ ->
             {genErr, Col}
     end.
-            
+
 
 %% gets value of next element (table get_next)
 get_next_value(RowInd, Col, Table) ->
     case next_indexes(RowInd, Col, Table) of
         {R, C} ->
-            get_cell_value(R, C, Table); 
+            get_cell_value(R, C, Table);
         endOfTable ->
             endOfTable
     end.
@@ -410,7 +410,7 @@ get_next_value(RowInd, Col, Table) ->
 
 %% finds indexes of next element
 next_indexes(RowInd, Col, Table) ->
-    case {next_row(RowInd, Table), 
+    case {next_row(RowInd, Table),
           next_col(Col, get_column_map(Table))} of
         {{[], endOfTable}, _} ->
             endOfTable;
@@ -424,10 +424,10 @@ next_indexes(RowInd, Col, Table) ->
 
 %% finds next column
 next_col(0, [H | _T]) ->
-    {Col, _} = H, 
+    {Col, _} = H,
     {Col, Col};
 next_col(Col, [H | T]) ->
-    case H of 
+    case H of
         {Col, _} when length(T) > 0->
             [{Next, _} | _T1] = T,
             {Col, Next};
@@ -459,6 +459,6 @@ column_mapping(Cols, Map) ->
 get_column_map(routerRegisteredPathsTable) ->
     [{?routeTo, 1},
      {?routeNum, 2}].
-    
+
 
 %%% vim: set sts=4 ts=4 sw=4 et filetype=erlang foldmarker=%%%',%%%. foldmethod=marker:
