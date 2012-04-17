@@ -45,6 +45,17 @@ typedef unsigned __int32 uint32_t;
 #endif
 
 /*
+ * R15B changed several driver callbacks to use ErlDrvSizeT and
+ * ErlDrvSSizeT typedefs instead of int.
+ * This provides missing typedefs on older OTP versions.
+ */
+#if ERL_DRV_EXTENDED_MAJOR_VERSION < 2
+typedef int ErlDrvSizeT;
+typedef int ErlDrvSSizeT;
+#endif
+
+
+/*
  * str_hash is based on the public domain code from
  * http://www.burtleburtle.net/bob/hash/doobs.html
  */
@@ -96,7 +107,7 @@ static void init_hash_table()
    ht.level = MIN_LEVEL;
    for (i = 0; i < size; i++)
       ht.buckets[i] = NULL;
-   
+
 }
 
 static void hash_table_insert(char *key_file, time_t mtime,
@@ -305,10 +316,10 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	 }
 
 
-static int tls_drv_control(ErlDrvData handle,
+static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 			   unsigned int command,
-			   char *buf, int len,
-			   char **rbuf, int rlen)
+			   char *buf, ErlDrvSizeT len,
+			   char **rbuf, ErlDrvSizeT rlen)
 {
    tls_data *d = (tls_data *)handle;
    int res;
@@ -391,10 +402,10 @@ static int tls_drv_control(ErlDrvData handle,
       case SET_DECRYPTED_OUTPUT:
 	 die_unless(d->ssl, "SSL not initialized");
 	 res = SSL_write(d->ssl, buf, len);
-	 if (res <= 0) 
+	 if (res <= 0)
 	 {
 	    res = SSL_get_error(d->ssl, res);
-	    if (res == SSL_ERROR_WANT_READ || res == SSL_ERROR_WANT_WRITE) 
+	    if (res == SSL_ERROR_WANT_READ || res == SSL_ERROR_WANT_WRITE)
 	    {
 	       b = driver_alloc_binary(1);
 	       b->orig_bytes[0] = 2;
@@ -513,7 +524,19 @@ ErlDrvEntry tls_driver_entry = {
    NULL,			/* handle */
    tls_drv_control,		/* F_PTR control, port_command callback */
    NULL,			/* F_PTR timeout, reserved */
-   NULL				/* F_PTR outputv, reserved */
+   NULL,				/* F_PTR outputv, reserved */
+   /* Added in Erlang/OTP R15B: */
+   NULL,                 /* ready_async */
+   NULL,                 /* flush */
+   NULL,                 /* call */
+   NULL,                 /* event */
+   ERL_DRV_EXTENDED_MARKER,        /* extended_marker */
+   ERL_DRV_EXTENDED_MAJOR_VERSION, /* major_version */
+   ERL_DRV_EXTENDED_MINOR_VERSION, /* minor_version */
+   0,                    /* driver_flags */
+   NULL,                 /* handle2 */
+   NULL,                 /* process_exit */
+   NULL     			 /* stop select */
 };
 
 DRIVER_INIT(tls_drv) /* must match name in driver_entry */

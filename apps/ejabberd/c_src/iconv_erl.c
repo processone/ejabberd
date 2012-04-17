@@ -24,6 +24,17 @@
 #include <ei.h>
 #include <iconv.h>
 
+/*
+ * R15B changed several driver callbacks to use ErlDrvSizeT and
+ * ErlDrvSSizeT typedefs instead of int.
+ * This provides missing typedefs on older OTP versions.
+ */
+#if ERL_DRV_EXTENDED_MAJOR_VERSION < 2
+typedef int ErlDrvSizeT;
+typedef int ErlDrvSSizeT;
+#endif
+
+
 typedef struct {
       ErlDrvPort port;
       iconv_t cd;
@@ -37,7 +48,7 @@ static ErlDrvData iconv_erl_start(ErlDrvPort port, char *buff)
    d->cd = NULL;
 
    set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
-   
+
    return (ErlDrvData)d;
 }
 
@@ -46,10 +57,10 @@ static void iconv_erl_stop(ErlDrvData handle)
    driver_free((char*)handle);
 }
 
-static int iconv_erl_control(ErlDrvData drv_data,
+static ErlDrvSSizeT iconv_erl_control(ErlDrvData drv_data,
 			     unsigned int command,
-			     char *buf, int len,
-			     char **rbuf, int rlen)
+			     char *buf, ErlDrvSizeT len,
+			     char **rbuf, ErlDrvSizeT rlen)
 {
    int i;
    int size;
@@ -64,15 +75,15 @@ static int iconv_erl_control(ErlDrvData drv_data,
    ei_decode_version(buf, &index, &i);
    ei_decode_tuple_header(buf, &index, &i);
    ei_get_type(buf, &index, &i, &size);
-   from = driver_alloc(size + 1); 
+   from = driver_alloc(size + 1);
    ei_decode_string(buf, &index, from);
 
    ei_get_type(buf, &index, &i, &size);
-   to = driver_alloc(size + 1); 
+   to = driver_alloc(size + 1);
    ei_decode_string(buf, &index, to);
-  
+
    ei_get_type(buf, &index, &i, &size);
-   stmp = string = driver_alloc(size + 1); 
+   stmp = string = driver_alloc(size + 1);
    ei_decode_string(buf, &index, string);
 
    /* Special mode: parse as UTF-8 if possible; otherwise assume it's
@@ -99,7 +110,7 @@ static int iconv_erl_control(ErlDrvData drv_data,
 	 return size;
       }
    }
-   
+
    outleft = avail = 4*size;
    inleft = size;
    rtmp = rstring = driver_alloc(avail);
@@ -115,7 +126,7 @@ static int iconv_erl_control(ErlDrvData drv_data,
 	 inleft--;
       }
    }
-   
+
    size = rtmp - rstring;
 
    *rbuf = (char*)(b = driver_alloc_binary(size));
@@ -126,7 +137,7 @@ static int iconv_erl_control(ErlDrvData drv_data,
    driver_free(string);
    driver_free(rstring);
    iconv_close(cd);
-   
+
    return size;
 }
 
@@ -144,7 +155,19 @@ ErlDrvEntry iconv_driver_entry = {
    NULL,                       /* handle */
    iconv_erl_control,          /* F_PTR control, port_command callback */
    NULL,                       /* F_PTR timeout, reserved */
-   NULL                        /* F_PTR outputv, reserved */
+   NULL,				/* F_PTR outputv, reserved */
+   /* Added in Erlang/OTP R15B: */
+   NULL,                 /* ready_async */
+   NULL,                 /* flush */
+   NULL,                 /* call */
+   NULL,                 /* event */
+   ERL_DRV_EXTENDED_MARKER,        /* extended_marker */
+   ERL_DRV_EXTENDED_MAJOR_VERSION, /* major_version */
+   ERL_DRV_EXTENDED_MINOR_VERSION, /* minor_version */
+   0,                    /* driver_flags */
+   NULL,                 /* handle2 */
+   NULL,                 /* process_exit */
+   NULL
 };
 
 DRIVER_INIT(iconv_erl) /* must match name in driver_entry */

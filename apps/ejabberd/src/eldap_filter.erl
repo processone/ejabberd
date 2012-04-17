@@ -143,32 +143,14 @@ do_sub(S, [{RegExp, New, Times} | T]) ->
     Result = do_sub(S, {RegExp, replace_amps(New), Times}, 1),
     do_sub(Result, T).
 
-do_sub(S, {RegExp, New}, Iter) ->
-    case regexp:sub(S, RegExp, New) of
-	{ok, NewS, 0} ->
-	    NewS;
-	{ok, NewS, _} when Iter =< ?MAX_RECURSION ->
-	    do_sub(NewS, {RegExp, New}, Iter+1);
-	{ok, _, _} when Iter > ?MAX_RECURSION ->
-	    erlang:error(max_substitute_recursion);
-	_ ->
-	    erlang:error(bad_regexp)
-    end;
+do_sub(S, {RegExp, New}, _Iter) ->
+    re:replace(S, RegExp, New, [global, {return, list}]);
 
 do_sub(S, {_, _, N}, _) when N<1 ->
     S;
 
-do_sub(S, {RegExp, New, Times}, Iter) ->
-    case regexp:sub(S, RegExp, New) of
-	{ok, NewS, 0} ->
-	    NewS;
-	{ok, NewS, _} when Iter < Times ->
-	    do_sub(NewS, {RegExp, New, Times}, Iter+1);
-	{ok, NewS, _} ->
-	    NewS;
-	_ ->
-	    erlang:error(bad_regexp)
-    end.
+do_sub(S, {RegExp, New, _Times}, _Iter) ->
+    re:replace(S, RegExp, New, [global, {return, list}]).
 
 replace_amps(String) ->
     lists:flatmap(
