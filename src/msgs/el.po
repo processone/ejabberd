@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: el\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2010-12-01 04:37-0000\n"
+"PO-Revision-Date: 2012-04-18 12:50-0000\n"
 "Last-Translator: James Iakovos Mandelis <ebuggerd@008.clara.co.uk>\n"
 "Language-Team: \n"
 "Language: \n"
@@ -770,19 +770,19 @@ msgstr "Δεν επιτρέπεται να στείλει προσωπικά μ�
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Παρακαλώ, περιμένετε για λίγο πριν την αποστολή νέου αιτήματος φωνής"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Απέτυχε η εξαγωγή JID από την έγκριση του αιτήματος φωνής σας"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Μόνο οι συντονιστές μπορούν να εγκρίνουν τις αιτήσεις φωνής"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -875,7 +875,7 @@ msgstr "Απαιτείται κωδικός πρόσβασης για είσοδ
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Πάρα πολλά αιτήματα CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -982,13 +982,12 @@ msgid "Allow users to send private messages"
 msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
+msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα σε"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "κανείς"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -1009,13 +1008,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Επιτρέψετε στους επισκέπτες να αλλάζου ψευδώνυμο"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν προσκλήσεις"
+msgstr "Επιτρέψτε στους επισκέπτες να στέλνουν αιτήματα φωνής"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Ελάχιστο χρονικό διάστημα μεταξύ αιτημάτων φωνής (σε δευτερόλεπτα)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1023,7 +1021,7 @@ msgstr "Κάντε την αίθουσα CAPTCHA προστατεύονομεν�
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Εξαίρεση από τις ταυτότητες Jabber, ή CAPTCHA πρόκληση"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1043,20 +1041,19 @@ msgstr "ιδιωτικό,"
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Αίτημα φωνής"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Είτε εγκρίνετε ή απορρίψτε το αίτημα φωνής."
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Χρήστης"
+msgstr "JID Χρήστη"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Παραχώρηση φωνής σε αυτό το άτομο;"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
