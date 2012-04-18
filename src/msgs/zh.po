@@ -35,11 +35,11 @@ msgstr "您发送给 ~s 的消息已被阻止. 要解除阻止, 请访问 ~s"
 
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "如果您在这里没有看到验证码图片, 请访问 Web 页面."
+msgstr "如果您在这里没有看到验证码图片, 请访问网页."
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
-msgstr "验证码 Web 页面"
+msgstr "验证码网页"
 
 #: ejabberd_captcha.erl:307
 msgid "The captcha is valid."
@@ -304,7 +304,7 @@ msgstr "要启动的模块列表"
 
 #: mod_configure.erl:983
 msgid "Backup to File at "
-msgstr "备份到文件位于"
+msgstr "备份文件位于"
 
 #: mod_configure.erl:987 mod_configure.erl:1001
 msgid "Enter path to backup file"
@@ -747,23 +747,23 @@ msgstr "不允许向会议发送私聊消息"
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "请稍后再发送新的声音请求"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "该会议的声音请求以被禁用"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "无法从你的声音请求确认信息中提取JID"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "仅主持人能确认声音请求"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
-msgstr "不正确的消息类型"
+msgstr "不恰当的消息类型"
 
 #: mod_muc/mod_muc_room.erl:518
 msgid ""
@@ -841,7 +841,7 @@ msgstr "进入此房间需要密码"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "验证码请求太多"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -861,11 +861,11 @@ msgstr "需要主持人权限"
 
 #: mod_muc/mod_muc_room.erl:2619
 msgid "Jabber ID ~s is invalid"
-msgstr "Jabber ID ~s无效"
+msgstr "Jabber ID ~s 无效"
 
 #: mod_muc/mod_muc_room.erl:2633
 msgid "Nickname ~s does not exist in the room"
-msgstr "昵称~s不在该房间"
+msgstr "昵称 ~s 不在该房间"
 
 #: mod_muc/mod_muc_room.erl:2659 mod_muc/mod_muc_room.erl:3049
 msgid "Invalid affiliation: ~s"
@@ -881,7 +881,7 @@ msgstr "需要持有人权限"
 
 #: mod_muc/mod_muc_room.erl:3195
 msgid "Configuration of room ~s"
-msgstr "房间~s的配置 "
+msgstr "房间 ~s 的配置 "
 
 #: mod_muc/mod_muc_room.erl:3200
 msgid "Room title"
@@ -948,13 +948,12 @@ msgid "Allow users to send private messages"
 msgstr "允许用户发送私聊消息"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "允许用户发送私聊消息"
+msgstr "允许访客发送私聊消息至"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "没有人"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -973,13 +972,12 @@ msgid "Allow visitors to change nickname"
 msgstr "允许用户更改昵称"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "允许用户发送邀请"
+msgstr "允许访客发送声音请求"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "声音请求的最小间隔(以秒为单位)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -987,7 +985,7 @@ msgstr "保护房间验证码"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "从验证码挑战中排除 Jabber ID"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1007,24 +1005,23 @@ msgstr "保密, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "声音请求"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "接受或拒绝声音请求"
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "用户 "
+msgstr "用户 JID"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "为此人授权声音?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
-msgstr "~s邀请你到~s房间"
+msgstr "~s 邀请你到 ~s 房间"
 
 #: mod_muc/mod_muc_room.erl:3969
 msgid "the password is"
@@ -1112,7 +1109,7 @@ msgstr "订阅人地址"
 
 #: mod_pubsub/mod_pubsub.erl:1516 mod_pubsub/mod_pubsub_odbc.erl:1331
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "允许该 Jabber ID 订阅该pubsub节点?"
+msgstr "允许该 Jabber ID 订阅该 pubsub 节点?"
 
 #: mod_pubsub/mod_pubsub.erl:3474 mod_pubsub/mod_pubsub_odbc.erl:3287
 msgid "Deliver payloads with event notifications"
@@ -1152,7 +1149,7 @@ msgstr "是否允许订阅"
 
 #: mod_pubsub/mod_pubsub.erl:3483 mod_pubsub/mod_pubsub_odbc.erl:3296
 msgid "Specify the access model"
-msgstr "指定访问模式"
+msgstr "指定访问范例"
 
 #: mod_pubsub/mod_pubsub.erl:3486 mod_pubsub/mod_pubsub_odbc.erl:3299
 msgid "Roster groups allowed to subscribe"
@@ -1160,7 +1157,7 @@ msgstr "允许订阅的花名册组"
 
 #: mod_pubsub/mod_pubsub.erl:3487 mod_pubsub/mod_pubsub_odbc.erl:3300
 msgid "Specify the publisher model"
-msgstr "指定发布人样式"
+msgstr "指定发布人范例"
 
 #: mod_pubsub/mod_pubsub.erl:3489 mod_pubsub/mod_pubsub_odbc.erl:3302
 msgid "Purge all items when the relevant publisher goes offline"
@@ -1170,9 +1167,10 @@ msgstr "相关发布人离线后清除所有选项"
 msgid "Specify the event message type"
 msgstr "指定事件消息类型"
 
+# bytes was translated as 'bits'. It's corrected now.
 #: mod_pubsub/mod_pubsub.erl:3492 mod_pubsub/mod_pubsub_odbc.erl:3305
 msgid "Max payload size in bytes"
-msgstr "最大有效负载比特数"
+msgstr "最大有效负载字节数"
 
 #: mod_pubsub/mod_pubsub.erl:3493 mod_pubsub/mod_pubsub_odbc.erl:3306
 msgid "When to send the last published item"
@@ -1505,7 +1503,7 @@ msgstr "已连接资源:"
 #: web/ejabberd_web_admin.erl:1766 web/mod_register_web.erl:227
 #: web/mod_register_web.erl:519
 msgid "Password:"
-msgstr "密码: "
+msgstr "密码:"
 
 #: web/ejabberd_web_admin.erl:1828
 msgid "No Data"
@@ -1604,7 +1602,7 @@ msgstr "立即恢复普通文本备份:"
 
 #: web/ejabberd_web_admin.erl:2077
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "从 PIEFXIS 文件 (XEP-0227)导入用户数据:"
+msgstr "从 PIEFXIS 文件 (XEP-0227) 导入用户数据:"
 
 #: web/ejabberd_web_admin.erl:2084
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
@@ -1616,11 +1614,11 @@ msgstr "将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2099
 msgid "Import user data from jabberd14 spool file:"
-msgstr "从 jabberd14 Spool文件导入用户数据:"
+msgstr "从 jabberd14 Spool 文件导入用户数据:"
 
 #: web/ejabberd_web_admin.erl:2106
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "从 jabberd14 Spool目录导入用户数据:"
+msgstr "从 jabberd14 Spool 目录导入用户数据:"
 
 #: web/ejabberd_web_admin.erl:2132
 msgid "Listened Ports at "
