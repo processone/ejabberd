@@ -10,7 +10,7 @@ msgstr ""
 
 #: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
-msgstr "Je vyžadováno STARTTLS."
+msgstr "Je vyžadováno STARTTLS"
 
 #: ejabberd_c2s.erl:503
 msgid "No resource provided"
@@ -34,7 +34,7 @@ msgstr "Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"
 
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "Pokud zde nevidíte obrázek CAPTCHE, přejděte na webovou stránku."
+msgstr "Pokud zde nevidíte obrázek CAPTCHA, přejděte na webovou stránku."
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
@@ -749,19 +749,19 @@ msgstr "Není povoleno odesílat soukromé zprávy do konference"
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Prosím, počkejte chvíli před posláním nové žádosti o voice práva"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Voice žádosti jsou v této konferenci zakázány"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Došlo k chybě při získávání Jabber ID z vaší žádosti o voice práva"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Pouze moderátoři mohou schválit žádosti o voice práva"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -846,7 +846,7 @@ msgstr "Pro vstup do místnosti musíte zadat heslo"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Přiliš mnoho CAPTCHA žádostí"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -953,13 +953,12 @@ msgid "Allow users to send private messages"
 msgstr "Povolit uživatelům odesílat soukromé zprávy"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Povolit uživatelům odesílat soukromé zprávy"
+msgstr "Povolit návštěvníkům odesílat soukromé zprávy"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "nikdo"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -978,13 +977,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Povolit návštěvníkům měnit přezdívku"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Povolit uživatelům posílání pozvánek"
+msgstr "Povolit uživatelům posílat žádosti o voice práva"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Minimální interval mezi žádostmi o voice práva (v sekundách)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -992,7 +990,7 @@ msgstr "Chránit místnost pomocí CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Vyloučit Jabber ID z procesu CAPTCHA ověřování"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1012,20 +1010,19 @@ msgstr "soukromá, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Žádost o voice práva"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Povolit nebo odmítnout voice žádost."
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Uživatel "
+msgstr "Jabber ID uživatele"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Udělit voice práva této osobě?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
