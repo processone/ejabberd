@@ -1,10 +1,10 @@
-# translation of ejabberd.tr.po to Turkish
-# Doruk Fisek <dfisek@fisek.com.tr>, 2009.
+# translation of tr.po to Turkish
+# Doruk Fisek <dfisek@ozguryazilim.com.tr>, 2009, 2012.
 msgid ""
 msgstr ""
-"Project-Id-Version: ejabberd.tr\n"
-"PO-Revision-Date: 2009-08-12 22:55+0300\n"
-"Last-Translator: Doruk Fisek <dfisek@fisek.com.tr>\n"
+"Project-Id-Version: tr\n"
+"PO-Revision-Date: 2012-04-17 11:18+0300\n"
+"Last-Translator: Doruk Fisek <dfisek@ozguryazilim.com.tr>\n"
 "Language-Team: Turkish <gnu-tr-u12a@lists.sourceforge.net>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -27,7 +27,7 @@ msgstr "Eski bağlantı yenisi ile değiştirildi"
 
 #: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Etkin mahremiyet listeniz bu bölümün yönlendirilmesini engelledi."
 
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
@@ -42,10 +42,11 @@ msgstr ""
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
 msgstr ""
+"Eğer burada CAPTCHA resmini göremiyorsanız, web sayfasını ziyaret edin."
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "CAPTCHA web sayfası"
 
 #: ejabberd_captcha.erl:307
 msgid "The captcha is valid."
@@ -573,10 +574,9 @@ msgid "Chatrooms"
 msgstr "Sohbet Odaları"
 
 #: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
-"Takma isminizi kaydettirmek için x:data becerisine sahip bir istemciye "
+"Takma isminizi kaydettirmek için x:data destekleyen bir istemciye "
 "gereksinimiz var"
 
 #: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
@@ -649,24 +649,20 @@ msgid " has set the subject to: "
 msgstr " konuyu değiştirdi: "
 
 #: mod_muc/mod_muc_log.erl:452
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası oluşturuldu"
 
 #: mod_muc/mod_muc_log.erl:453
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası kaldırıldı"
 
 #: mod_muc/mod_muc_log.erl:454
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası başlatıldı"
 
 #: mod_muc/mod_muc_log.erl:455
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası durduruldu"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -767,19 +763,19 @@ msgstr "Konferansa özel mesajlar gönderilmesine izin verilmiyor"
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Lütfen yeni bir ses isteği göndermeden önce biraz bekleyin"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Bu konferansta ses istekleri etkisizleştirilmiş durumda."
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Ses isteği onayınızdan JID bilginize ulaşılamadı"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Yalnız moderatörler ses isteklerini onaylayabilir"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -867,7 +863,7 @@ msgstr "Bu odaya girmek için parola gerekiyor"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Çok fazla CAPTCHA isteği"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -974,13 +970,12 @@ msgid "Allow users to send private messages"
 msgstr "Kullanıcıların özel mesaj göndermelerine izin ver"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Kullanıcıların özel mesaj göndermelerine izin ver"
+msgstr "Ziyaretçilerin özel mesaj göndermelerine izin ver"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "hiç kimse"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -1001,13 +996,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Ziyaretçilerin takma isim değiştirmelerine izin ver"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Kullanıcıların davetiye göndermelerine izin ver"
+msgstr "Ziyaretçilerin ses isteğine göndermelerine izin ver"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Ses istekleri arasında olabilecek en az aralık (saniye olarak)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1015,7 +1009,7 @@ msgstr "Odayı insan doğrulaması (captcha) korumalı hale getir"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "CAPTCHA doğrulamasını şu Jabber ID'ler için yapma"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1036,20 +1030,19 @@ msgstr "özel"
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Ses isteği"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Ses isteğini kabul edin ya da reddedin"
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Kullanıcı "
+msgstr "Kullanıcı JID"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Bu kişiye ses verelim mi?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
@@ -1193,12 +1186,11 @@ msgstr "Yayıncı modelini belirtiniz"
 
 #: mod_pubsub/mod_pubsub.erl:3489 mod_pubsub/mod_pubsub_odbc.erl:3302
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr ""
+msgstr "İlgili yayıncı çevirimdışı olunca tüm onunla ilgili olanları sil"
 
 #: mod_pubsub/mod_pubsub.erl:3490 mod_pubsub/mod_pubsub_odbc.erl:3303
-#, fuzzy
 msgid "Specify the event message type"
-msgstr "Erişim modelini belirtiniz"
+msgstr "Olay mesaj tipini belirtiniz"
 
 #: mod_pubsub/mod_pubsub.erl:3492 mod_pubsub/mod_pubsub_odbc.erl:3305
 msgid "Max payload size in bytes"
@@ -1218,13 +1210,12 @@ msgstr "Bir düğüm ile bağlantılı koleksiyonlar"
 
 #: mod_register.erl:193
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "CAPTCHA doğrulaması başarısız oldu"
 
 #: mod_register.erl:220
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"Takma isminizi kaydettirmek için x:data becerisine sahip bir istemciye "
+"Takma isminizi kaydettirmek için x:data ve CAPTCHA destekleyen bir istemciye "
 "gereksinimiz var"
 
 #: mod_register.erl:226 mod_register.erl:265
@@ -1237,14 +1228,12 @@ msgid "User"
 msgstr "Kullanıcı"
 
 #: mod_register.erl:251
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "İnsan doğrulaması (captcha) oluşturulamadı"
+msgstr "CAPTCHA oluşturulamadı"
 
 #: mod_register.erl:316 mod_register.erl:361
-#, fuzzy
 msgid "The password is too weak"
-msgstr "parola :"
+msgstr "Parola çok zayıf"
 
 #: mod_register.erl:365
 msgid "Users are not allowed to register accounts so quickly"
@@ -1757,41 +1746,41 @@ msgstr "Başlat"
 
 #: web/mod_register_web.erl:104
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Jabber hesabınız başarıyla oluşturuldu."
 
 #: web/mod_register_web.erl:107
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Hesap oluşturulurken bir hata oluştu:"
 
 #: web/mod_register_web.erl:115
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Jabber hesabınız başarıyla silindi."
 
 #: web/mod_register_web.erl:118
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Hesabın silinmesi sırasında bir hata oluştu:"
 
 #: web/mod_register_web.erl:128
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Jabber hesabınızın parolası başarıyla değiştirildi."
 
 #: web/mod_register_web.erl:131
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Parolanın değiştirilmesi sırasında bir hata oluştu:"
 
 #: web/mod_register_web.erl:163 web/mod_register_web.erl:172
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Jabber Hesap Kaydı"
 
 #: web/mod_register_web.erl:174 web/mod_register_web.erl:192
 #: web/mod_register_web.erl:201
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Bir Jabber hesabı kaydet"
 
 #: web/mod_register_web.erl:176 web/mod_register_web.erl:493
 #: web/mod_register_web.erl:502
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Bir Jabber hesabı kaydı sil"
 
 #: web/mod_register_web.erl:203
 msgid ""
@@ -1799,42 +1788,48 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Bu sayfa bu Jabber sunucusunda bir Jabber hesabı oluşturulmasına olanak "
+"tanıyor. Sizin JID'iniz (Jabber Tanımlayıcısı) şu biçemde olacaktır: "
+"kullanici_adi@sunucu. Lütfen alanları doğru doldurabilmek için yönergeleri "
+"dikkatle okuyunuz."
 
 #: web/mod_register_web.erl:212 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Username:"
-msgstr "IRC Kullanıcı İsmi"
+msgstr "Kullanıcı adı:"
 
 #: web/mod_register_web.erl:217
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Burada büyük küçük harfi yapılmaz: macbeth ile MacBeth ve Macbeth aynıdır."
 
 #: web/mod_register_web.erl:218
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "İzin verilmeyen karakterler:"
 
 #: web/mod_register_web.erl:222 web/mod_register_web.erl:391
 #: web/mod_register_web.erl:514
-#, fuzzy
 msgid "Server:"
-msgstr "Sunucu ~b"
+msgstr "Sunucu:"
 
 #: web/mod_register_web.erl:232
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
-msgstr ""
+msgstr "Parolanızı kimseye söylemeyin, Jabber sunucusunun yöneticilerine bile."
 
 #: web/mod_register_web.erl:234
 msgid "You can later change your password using a Jabber client."
 msgstr ""
+"Parolanızı daha sonra bir Jabber istemci kullanarak değiştirebilirsiniz."
 
 #: web/mod_register_web.erl:235
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Bazı Jabber istemcileri parolanızı bilgisayarınızda saklayabilir. Bu "
+"özelliği ancak bilgisayarın güvenli olduğuna güveniyorsanız kullanın."
 
 #: web/mod_register_web.erl:237
 msgid ""
@@ -1842,35 +1837,32 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Parolanızı ezberleyin ya da bir kağıda yazarak güvenli bir yerde saklayın. "
+"Jabber'da parolanızı unutursanız, otomatik kurtarmak için bir yöntem "
+"bulunmuyor."
 
 #: web/mod_register_web.erl:242 web/mod_register_web.erl:406
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Parola Doğrulaması"
+msgstr "Parola Doğrulaması:"
 
 #: web/mod_register_web.erl:250
-#, fuzzy
 msgid "Register"
-msgstr "Kontak Listesi"
+msgstr "Kayıt Ol"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "Old Password:"
-msgstr "Parola:"
+msgstr "Eski Parola:"
 
 #: web/mod_register_web.erl:401
-#, fuzzy
 msgid "New Password:"
-msgstr "Parola:"
+msgstr "Yeni Parola:"
 
 #: web/mod_register_web.erl:504
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
+"Bu sayfa bu Jabber sunucusundan bir Jabber hesabının kaydını silmeye olanak "
+"tanıyor."
 
 #: web/mod_register_web.erl:524
 msgid "Unregister"
-msgstr ""
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "İnsan doğrulaması (captcha) geçerli."
+msgstr "Kaydı Sil"
