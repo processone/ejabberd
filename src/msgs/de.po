@@ -772,18 +772,21 @@ msgstr "Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
 msgstr ""
+"Bitte warten sie ein wenig, bevor sie eine weitere Sprachrechts-Anfrage "
+"senden"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Sprachrechts-Anfragen sind in diesem Raum deaktiviert"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
 msgstr ""
+"Fehler beim Auslesen der JID aus ihrer Sprachrechts-Anfragenbestätigung"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Nur Moderatoren können Sprachrechts-Anfragen bestätigen"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -870,7 +873,7 @@ msgstr "Sie brauchen ein Passwort um diesen Raum zu betreten"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Zu viele CAPTCHA Anfragen"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -954,7 +957,7 @@ msgstr "ausschliesslich Moderatoren"
 
 #: mod_muc/mod_muc_room.erl:3260 mod_muc/mod_muc_room.erl:3294
 msgid "anyone"
-msgstr "jeder"
+msgstr "jeden"
 
 #: mod_muc/mod_muc_room.erl:3262
 msgid "Make room members-only"
@@ -977,13 +980,12 @@ msgid "Allow users to send private messages"
 msgstr "Erlaube Benutzern private Nachrichten zu senden"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Erlaube Benutzern private Nachrichten zu senden"
+msgstr "Erlaube Besuchern das Senden von privaten Nachrichten an"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "niemanden"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -1002,13 +1004,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Erlaube Besuchern ihren Spitznamen zu ändern"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Erlaube Benutzern Einladungen zu senden"
+msgstr "Anfragen von Sprachrechten für Benutzer erlauben"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Mindestdauer zwischen Sprachrechts-Anfragen (in Sekunden)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1016,7 +1017,7 @@ msgstr "Raum mit Verifizierung (Captcha) versehen"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Von CAPTCHA Überprüfung ausgeschlossene Jabber IDs"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1038,20 +1039,19 @@ msgstr "privat, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Sprachrechts-Anfrage"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Diese Anfrage für Sprachrechte bestätigen oder ablehnen."
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Benutzer "
+msgstr "Benutzer JID"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Sprachrechte dieser Person erteilen?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
