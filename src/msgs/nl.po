@@ -26,7 +26,7 @@ msgstr "Vervangen door een nieuwe verbinding"
 
 #: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Uw actieve privacy-lijst verbied het routeren van dit stanza."
 
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
@@ -39,11 +39,11 @@ msgstr ""
 
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Als U het CAPTCHA-plaatje niet ziet, bezoek dan de webpagina."
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "CAPTCHA webpagina."
 
 #: ejabberd_captcha.erl:307
 msgid "The captcha is valid."
@@ -576,7 +576,6 @@ msgid "Chatrooms"
 msgstr "Groepsgesprekken"
 
 #: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "U hebt een client nodig die x:data ondersteunt om een bijnaam te registreren"
@@ -769,19 +768,19 @@ msgstr "Er mogen geen privéberichten naar de chatruimte worden verzonden"
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Wacht s.v.p. met het maken van een nieuwe stemaanvraag."
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Stemaanvragen zijn uitgeschakeld voor deze chatruimte"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Er kon geen JID worden ontleend uit deze stemaanvraag"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Alleen moderators kunnen stemaanvragen goedkeuren"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -871,7 +870,7 @@ msgstr "U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Te veel CAPTCHA-aanvragen"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -978,13 +977,12 @@ msgid "Allow users to send private messages"
 msgstr "Gebruikers mogen privéberichten verzenden"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Gebruikers mogen privéberichten verzenden"
+msgstr "Gebruikers mogen privéberichten verzenden aan"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "niemand"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -1003,13 +1001,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Sta bezoekers toe hun naam te veranderen"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Gebruikers mogen uitnodigingen verzenden"
+msgstr "Gebruikers mogen stemaanvragen verzenden"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Minimale interval tussen stemaanvragen (in seconden)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1017,7 +1014,7 @@ msgstr "Chatruimte beveiligen met een geautomatiseerde Turing test"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Geen CAPTCHA test voor Jabber IDs"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1039,20 +1036,19 @@ msgstr "privé, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Stemaanvraag"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Keur stemaanvraag goed of af."
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Gebruiker "
+msgstr "JID Gebruiker"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Stemaanvraag honoreren voor deze persoon?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
@@ -1222,13 +1218,13 @@ msgstr "De collecties waar een node mee is gerelateerd"
 
 #: mod_register.erl:193
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "De CAPTCHA-verificatie is mislukt"
 
 #: mod_register.erl:220
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"U hebt een client nodig die x:data ondersteunt om een bijnaam te registreren"
+"U hebt een client nodig die x:data en CAPTCHA ondersteunt om een bijnaam te "
+"registreren"
 
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
@@ -1241,14 +1237,12 @@ msgid "User"
 msgstr "Gebruiker"
 
 #: mod_register.erl:251
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "Het generen van een gautomatiseerde Turing test is mislukt"
+msgstr "Het generen van een CAPTCHA is mislukt"
 
 #: mod_register.erl:316 mod_register.erl:361
-#, fuzzy
 msgid "The password is too weak"
-msgstr "het wachtwoord is"
+msgstr "Het wachtwoord is te zwak"
 
 #: mod_register.erl:365
 msgid "Users are not allowed to register accounts so quickly"
@@ -1759,41 +1753,41 @@ msgstr "Starten"
 
 #: web/mod_register_web.erl:104
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Uw Jabber-account is succesvol gecreeerd."
 
 #: web/mod_register_web.erl:107
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Er was een fout bij het creeern van de account:"
 
 #: web/mod_register_web.erl:115
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Uw Jabber-account is succesvol verwijderd."
 
 #: web/mod_register_web.erl:118
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Er was een fout bij het verwijderen van de account."
 
 #: web/mod_register_web.erl:128
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Het wachtwoord van Uw Jabber-account is succesvol veranderd."
 
 #: web/mod_register_web.erl:131
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Er was een fout bij het veranderen van het wachtwoord:"
 
 #: web/mod_register_web.erl:163 web/mod_register_web.erl:172
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Jabber-account registratie"
 
 #: web/mod_register_web.erl:174 web/mod_register_web.erl:192
 #: web/mod_register_web.erl:201
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Registreer een Jabber-account"
 
 #: web/mod_register_web.erl:176 web/mod_register_web.erl:493
 #: web/mod_register_web.erl:502
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Opheffen van Jabber-account"
 
 #: web/mod_register_web.erl:203
 msgid ""
@@ -1801,42 +1795,50 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Deze pagina maakt het mogelijk een Jabber-account te registreren op deze "
+"server. Uw JID (Jabber IDentiteit) zal er als volg uit zien: "
+"gebruikersnaam@server. Lees de instructies zorgvuldig teneinde de velden "
+"correct in te vullen."
 
 #: web/mod_register_web.erl:212 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Username:"
-msgstr "Gebruikersnaam voor IRC:"
+msgstr "Gebruikersnaam:"
 
 #: web/mod_register_web.erl:217
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Dit is niet hoofdlettergevoelig: macbeth is hetzelfde als MacBeth en Macbeth."
 
 #: web/mod_register_web.erl:218
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Niet-toegestane karakters:"
 
 #: web/mod_register_web.erl:222 web/mod_register_web.erl:391
 #: web/mod_register_web.erl:514
-#, fuzzy
 msgid "Server:"
-msgstr "Server ~b"
+msgstr "Server:"
 
 #: web/mod_register_web.erl:232
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Geef Uw wachtwoord aan niemand, zelfs niet aan de beheerders van deze Jabber-"
+"server."
 
 #: web/mod_register_web.erl:234
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "U can het wachtwoord later veranderen met een Jabber-client."
 
 #: web/mod_register_web.erl:235
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Sommige Jabber-clienten kunnen het wachtwoord opslaan op Uw computer. "
+"Gebruik deze mogelijkheid alleen als U vertrouwd dat Uw computer afdoende "
+"beveiligd is."
 
 #: web/mod_register_web.erl:237
 msgid ""
@@ -1844,34 +1846,35 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Onthou het wachtwoord, of schrijf het op en bewaar het op een veilige "
+"plaats. Met Jabber is er geen geautomatiseerde manier om het wachtwoord "
+"terug te halen als U het vergeet."
 
 #: web/mod_register_web.erl:242 web/mod_register_web.erl:406
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Wachtwoord Bevestiging"
+msgstr "Wachtwoord Bevestiging:"
 
 #: web/mod_register_web.erl:250
-#, fuzzy
 msgid "Register"
-msgstr "Roster"
+msgstr "Registreer"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "Old Password:"
-msgstr "Wachtwoord:"
+msgstr "Oud Wachtwoord:"
 
 #: web/mod_register_web.erl:401
-#, fuzzy
 msgid "New Password:"
-msgstr "Wachtwoord:"
+msgstr "Nieuw Wachtwoord:"
 
 #: web/mod_register_web.erl:504
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
+"Deze pagina maakt het mogelijk een Jabber-account op deze server op te "
+"heffen."
 
 #: web/mod_register_web.erl:524
 msgid "Unregister"
-msgstr ""
+msgstr "Opheffen"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
