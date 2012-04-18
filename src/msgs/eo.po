@@ -25,7 +25,7 @@ msgstr "Anstataŭigita je nova konekto"
 
 #: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Via aktiva privatec-listo malpermesas enkursigi ĉi-tiun pakaĵon"
 
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
@@ -37,15 +37,15 @@ msgstr "Viaj mesaĝoj al ~s estas blokata. Por malbloki ilin, iru al ~s"
 
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Se vi ne vidas la CAPTCHA-imagon jene, vizitu la teksaĵ-paĝon."
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "CAPTCHA teksaĵ-paĝo"
 
 #: ejabberd_captcha.erl:307
 msgid "The captcha is valid."
-msgstr "La aŭtomata Turingtesto estas ĝusta"
+msgstr "La CAPTCHA ĝustas"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -521,6 +521,7 @@ msgid "IRC settings"
 msgstr "IRC agordoj"
 
 #: mod_irc/mod_irc.erl:868 mod_irc/mod_irc_odbc.erl:909
+#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
@@ -567,9 +568,8 @@ msgid "Chatrooms"
 msgstr "Babilejoj"
 
 #: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
-msgstr "Vi bezonas klienton kun x:data-funkcio por registri kaŝnomon"
+msgstr "Vi bezonas klienton subtenante x:data-funkcio por registri kaŝnomon"
 
 #: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
 msgid "Nickname Registration at "
@@ -757,19 +757,19 @@ msgstr "Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Bonvolu atendi iomete antaŭ ol sendi plian voĉ-peton"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Voĉ-petoj estas malebligita en jena babilejo"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Malsukcesis ekstrakti JID-on de via voĉ-pet-aprobo"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Nur moderigantoj povas aprobi voĉ-petojn"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -856,11 +856,11 @@ msgstr "Pasvorto estas bezonata por eniri ĉi tiun babilejon"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Tro multaj CAPTCHA-petoj"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
-msgstr "Ne eblis krei aŭtomatas turingteston"
+msgstr "Ne eblis krei CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -963,13 +963,12 @@ msgid "Allow users to send private messages"
 msgstr "Permesu uzantojn sendi privatajn mesaĝojn"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Permesu uzantojn sendi privatajn mesaĝojn"
+msgstr "Permesu uzantojn sendi privatajn mesaĝojn al"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "neniu"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -988,21 +987,20 @@ msgid "Allow visitors to change nickname"
 msgstr "Permesu al vizitantoj ŝanĝi siajn kaŝnomojn"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Permesu uzantojn sendi invitojn"
+msgstr "Permesu uzantojn sendi voĉ-petojn"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Minimuma intervalo inter voĉ-petoj (je sekundoj)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
-msgstr "Farigu babilejon protektata per aŭtomata Turingtesto"
+msgstr "Farigu babilejon protektata per CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Esceptu Ĵabber-identigilojn je CAPTCHA-defio"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1022,20 +1020,19 @@ msgstr "privata, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Voĉ-peto"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Ĉu aprobu, aŭ malaprobu la voĉ-peton."
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Uzanto "
+msgstr "Uzant-JID"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Koncedu voĉon al ĉi-persono?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
@@ -1205,12 +1202,13 @@ msgstr "Aro kun kiu nodo estas filigita"
 
 #: mod_register.erl:193
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "La CAPTCHA-kontrolado malsukcesis"
 
 #: mod_register.erl:220
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "Vi bezonas klienton kun x:data-funkcio por registri kaŝnomon"
+msgstr ""
+"Vi bezonas klienton subtenante x:data-funkcio kaj CAPTCHA por registri "
+"kaŝnomon"
 
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
@@ -1222,14 +1220,12 @@ msgid "User"
 msgstr "Uzanto"
 
 #: mod_register.erl:251
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "Ne eblis krei aŭtomatas turingteston"
+msgstr "Ne eblis krei CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
-#, fuzzy
 msgid "The password is too weak"
-msgstr "la pasvorto estas"
+msgstr "La pasvorto estas ne sufiĉe forta"
 
 #: mod_register.erl:365
 msgid "Users are not allowed to register accounts so quickly"
@@ -1736,41 +1732,41 @@ msgstr "Startu"
 
 #: web/mod_register_web.erl:104
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Via Ĵabber-konto estis sukcese kreata."
 
 #: web/mod_register_web.erl:107
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Estis eraro dum kreado de la konto:"
 
 #: web/mod_register_web.erl:115
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Via Ĵabber-konto estas sukcese forigita."
 
 #: web/mod_register_web.erl:118
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Estis eraro dum forigado de la konto:"
 
 #: web/mod_register_web.erl:128
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "La pasvorto de via Ĵabber-konto estas sukcese ŝanĝata."
 
 #: web/mod_register_web.erl:131
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Estis eraro dum ŝanĝi de la pasvortro:"
 
 #: web/mod_register_web.erl:163 web/mod_register_web.erl:172
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Ĵabber-konto registrado"
 
 #: web/mod_register_web.erl:174 web/mod_register_web.erl:192
 #: web/mod_register_web.erl:201
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Registru Ĵabber-konton"
 
 #: web/mod_register_web.erl:176 web/mod_register_web.erl:493
 #: web/mod_register_web.erl:502
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Malregistru Ĵabber-konton"
 
 #: web/mod_register_web.erl:203
 msgid ""
@@ -1778,42 +1774,47 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Jena paĝo ebligas kreadon de Ĵabber-konto je ĉi-Ĵabber-servilo. Via JID "
+"(Ĵabber-IDentigilo) estos ĉi-tiel: uzantnomo@servilo. Bonvolu legu bone la "
+"instrukciojn por korekta enmetigo de la kampoj. "
 
 #: web/mod_register_web.erl:212 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Username:"
-msgstr "IRC-kaŝnomo"
+msgstr "Uzantnomo"
 
 #: web/mod_register_web.erl:217
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
-msgstr ""
+msgstr "Uskleco ne signifas: macbeth estas la sama ol MacBeth kaj Macbeth."
 
 #: web/mod_register_web.erl:218
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Karaktroj ne permesata:"
 
 #: web/mod_register_web.erl:222 web/mod_register_web.erl:391
 #: web/mod_register_web.erl:514
-#, fuzzy
 msgid "Server:"
-msgstr "Servilo ~b"
+msgstr "Servilo:"
 
 #: web/mod_register_web.erl:232
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Ne donu vian pasvorton al iun ajn, eĉ ne al la administrantoj de la Ĵabber-"
+"servilo."
 
 #: web/mod_register_web.erl:234
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Poste vi povas ŝanĝi vian pasvorton per Ĵabber-kliento."
 
 #: web/mod_register_web.erl:235
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Kelkaj Ĵabber-klientoj povas memori vian pasvorton je via komputilo. Nur uzu "
+"tiun eblon se vi fidas ke via komputilo estas sekura."
 
 #: web/mod_register_web.erl:237
 msgid ""
@@ -1821,34 +1822,33 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Memoru vian pasvorton, aŭ skribu ĝin sur papero formetata je sekura loko. Je "
+"Ĵabber ne ekzistas aŭtomata metodo por reakiri vian pasvorton se vi forgesas "
+"ĝin."
 
 #: web/mod_register_web.erl:242 web/mod_register_web.erl:406
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Pasvortkontrolo"
+msgstr "Pasvortkontrolo:"
 
 #: web/mod_register_web.erl:250
-#, fuzzy
 msgid "Register"
-msgstr "Kontaktlisto"
+msgstr "Registru"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "Old Password:"
-msgstr "Pasvorto:"
+msgstr "Malnova Pasvorto:"
 
 #: web/mod_register_web.erl:401
-#, fuzzy
 msgid "New Password:"
-msgstr "Pasvorto:"
+msgstr "Nova Pasvorto:"
 
 #: web/mod_register_web.erl:504
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Jena pagxo ebligas malregistri Jxabber-konton je ĉi-servilo."
 
 #: web/mod_register_web.erl:524
 msgid "Unregister"
-msgstr ""
+msgstr "Malregistru"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
