@@ -377,7 +377,7 @@ msgstr "Akses peraturan"
 #: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
 #: mod_configure.erl:1287 mod_configure.erl:1650 mod_configure.erl:1700
 #: mod_configure.erl:1721 mod_roster.erl:943 mod_roster_odbc.erl:1060
-#: mod_vcard.erl:472 mod_vcard_ldap.erl:553 mod_vcard_odbc.erl:448
+#: mod_vcard.erl:472 mod_vcard_ldap.erl:554 mod_vcard_odbc.erl:448
 msgid "Jabber ID"
 msgstr "Jabber ID"
 
@@ -1387,27 +1387,27 @@ msgstr "Nama Organisasi"
 msgid "Organization Unit"
 msgstr "Unit Organisasi"
 
-#: mod_vcard.erl:364 mod_vcard_ldap.erl:461 mod_vcard_odbc.erl:342
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "Search users in "
 msgstr "Pencarian pengguna dalam"
 
-#: mod_vcard.erl:364 mod_vcard_ldap.erl:461 mod_vcard_odbc.erl:342
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "You need an x:data capable client to search"
 msgstr "Anda memerlukan x:data klien untuk melakukan pencarian"
 
-#: mod_vcard.erl:389 mod_vcard_ldap.erl:486 mod_vcard_odbc.erl:367
+#: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
 msgid "vCard User Search"
 msgstr "vCard Pencarian Pengguna"
 
-#: mod_vcard.erl:445 mod_vcard_ldap.erl:540 mod_vcard_odbc.erl:421
+#: mod_vcard.erl:445 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:421
 msgid "ejabberd vCard module"
 msgstr "Modul ejabberd vCard"
 
-#: mod_vcard.erl:469 mod_vcard_ldap.erl:550 mod_vcard_odbc.erl:445
+#: mod_vcard.erl:469 mod_vcard_ldap.erl:551 mod_vcard_odbc.erl:445
 msgid "Search Results for "
 msgstr "Hasil Pencarian untuk"
 
-#: mod_vcard_ldap.erl:461
+#: mod_vcard_ldap.erl:462
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Isi kolom untuk mencari pengguna Jabber yang sama"
 

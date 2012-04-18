@@ -384,7 +384,7 @@ msgstr "Κανόνες Πρόσβασης"
 #: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
 #: mod_configure.erl:1287 mod_configure.erl:1650 mod_configure.erl:1700
 #: mod_configure.erl:1721 mod_roster.erl:943 mod_roster_odbc.erl:1060
-#: mod_vcard.erl:472 mod_vcard_ldap.erl:553 mod_vcard_odbc.erl:448
+#: mod_vcard.erl:472 mod_vcard_ldap.erl:554 mod_vcard_odbc.erl:448
 msgid "Jabber ID"
 msgstr "Ταυτότητα Jabber"
 
@@ -1406,27 +1406,27 @@ msgstr "Όνομα Οργανισμού"
 msgid "Organization Unit"
 msgstr "Μονάδα Οργανισμού"
 
-#: mod_vcard.erl:364 mod_vcard_ldap.erl:461 mod_vcard_odbc.erl:342
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "Search users in "
 msgstr "Αναζήτηση χρηστών στο"
 
-#: mod_vcard.erl:364 mod_vcard_ldap.erl:461 mod_vcard_odbc.erl:342
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "You need an x:data capable client to search"
 msgstr "Χρειάζεστε ένα  x:data ικανό πελάτη για αναζήτηση"
 
-#: mod_vcard.erl:389 mod_vcard_ldap.erl:486 mod_vcard_odbc.erl:367
+#: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
 msgid "vCard User Search"
 msgstr "vCard Αναζήτηση χρηστών"
 
-#: mod_vcard.erl:445 mod_vcard_ldap.erl:540 mod_vcard_odbc.erl:421
+#: mod_vcard.erl:445 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:421
 msgid "ejabberd vCard module"
 msgstr "ejabberd vCard module"
 
-#: mod_vcard.erl:469 mod_vcard_ldap.erl:550 mod_vcard_odbc.erl:445
+#: mod_vcard.erl:469 mod_vcard_ldap.erl:551 mod_vcard_odbc.erl:445
 msgid "Search Results for "
 msgstr "Αποτελέσματα αναζήτησης για "
 
-#: mod_vcard_ldap.erl:461
+#: mod_vcard_ldap.erl:462
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr ""
 "Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα Jabber χρήστη"
