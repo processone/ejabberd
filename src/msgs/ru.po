@@ -2,8 +2,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"PO-Revision-Date: 2010-11-19 22:46+0900\n"
-"Last-Translator: Evgeniy Khramtsov\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2012-04-15 13:38+0900\n"
+"Last-Translator: Evgeniy Khramtsov <ekhramtsov@process-one.net>\n"
 "Language-Team: Russian <kde-russian@lists.kde.ru>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -766,18 +767,19 @@ msgstr "Не разрешается посылать частные сообще
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
 msgstr ""
+"Пожалуйста, подождите перед тем как подать новый запрос на право голоса"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Запросы на право голоса отключены в этой конференции"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Ошибка обработки JID из вашего запроса на право голоса"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Только модераторы могут утверждать запросы на право голоса"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -862,7 +864,7 @@ msgstr "Чтобы войти в эту конференцию, нужен па�
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Слишком много запросов капчи"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -969,13 +971,12 @@ msgid "Allow users to send private messages"
 msgstr "Разрешить приватные сообщения"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Разрешить приватные сообщения"
+msgstr "Разрешить посетителям посылать приватные сообщения"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "никто"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -995,13 +996,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Разрешить посетителям изменять псевдоним"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Разрешить пользователям посылать приглашения"
+msgstr "Разрешить посетителям запрашивать право голоса"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Минимальный интервал между запросами на право голоса"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1009,7 +1009,7 @@ msgstr "Сделать комнату защищённой капчей"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Исключить показ капчи для списка Jabber ID"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1029,20 +1029,19 @@ msgstr "приватная, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Запрос на право голоса"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Подтвердите или отклоните право голоса."
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Пользователь "
+msgstr "JID пользователя"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Предоставить голос?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
