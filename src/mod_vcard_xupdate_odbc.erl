@@ -20,16 +20,11 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(vcard_xupdate, {us, hash}).
-
 %%====================================================================
 %% gen_mod callbacks
 %%====================================================================
 
 start(Host, _Opts) ->
-    mnesia:create_table(vcard_xupdate,
-                        [{disc_copies, [node()]},
-                         {attributes, record_info(fields, vcard_xupdate)}]),
     ejabberd_hooks:add(c2s_update_presence, Host,
 		       ?MODULE, update_presence, 100),
     ejabberd_hooks:add(vcard_set, Host,
@@ -68,7 +63,7 @@ vcard_set(LUser, LServer, VCARD) ->
     ejabberd_sm:force_update_presence(US).
 
 %%====================================================================
-%% Mnesia storage
+%% ODBC storage
 %%====================================================================
 
 add_xupdate(LUser, LServer, Hash) ->
