@@ -1,12 +1,19 @@
+# Jan, 2012.
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Jan Kusanagi\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2012-04-22 00:19+0200\n"
+"Last-Translator: JanKusanagi\n"
+"Language-Team: American English <kde-i18n-doc@kde.org>\n"
+"Language: en_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Catalan (català)\n"
 "X-Additional-Translator: Vicent Alberola Canet\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Lokalize 1.4\n"
 
 #: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
@@ -23,10 +30,12 @@ msgstr "Reemplaçat per una nova connexió"
 #: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
+"La teva llista de privacitat activa ha denegat l'encaminament d'aquesta "
+"stanza."
 
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
-msgstr "Introdueix el textque veus"
+msgstr "Introdueix el text que veus"
 
 #: ejabberd_captcha.erl:101
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
@@ -35,11 +44,11 @@ msgstr ""
 
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Si no veus la imatge CAPTCHA açí, visita la pàgina web."
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "Pàgina web del CAPTCHA"
 
 #: ejabberd_captcha.erl:307
 msgid "The captcha is valid."
@@ -183,11 +192,11 @@ msgstr "Finalitzar Sesió d'Usuari"
 #: mod_configure.erl:151 mod_configure.erl:521 mod_configure.erl:1243
 #: mod_configure.erl:1255
 msgid "Get User Password"
-msgstr "Obtenir Password d'usuari"
+msgstr "Obtenir Contrasenya d'usuari"
 
 #: mod_configure.erl:153 mod_configure.erl:522
 msgid "Change User Password"
-msgstr "Canviar Password d'Usuari"
+msgstr "Canviar Contrasenya d'Usuari"
 
 #: mod_configure.erl:155 mod_configure.erl:523 mod_configure.erl:1272
 msgid "Get User Last Login Time"
@@ -381,11 +390,11 @@ msgstr "ID Jabber"
 #: mod_configure.erl:1863 mod_muc/mod_muc_room.erl:3224 mod_register.erl:235
 #: web/ejabberd_web_admin.erl:1520
 msgid "Password"
-msgstr "Password"
+msgstr "Contrasenya"
 
 #: mod_configure.erl:1210
 msgid "Password Verification"
-msgstr "Verificació del Password"
+msgstr "Verificació de la Contrasenya"
 
 #: mod_configure.erl:1301
 msgid "Number of registered users"
@@ -466,7 +475,7 @@ msgid ""
 "connecting to IRC servers"
 msgstr ""
 "Introdueix el nom d'usuari, les codificacions de caràcters, els ports i "
-"contrassenyes per a utilitzar al connectar als servidors de IRC "
+"contrasenyes per a utilitzar al connectar als servidors de IRC"
 
 #: mod_irc/mod_irc.erl:576 mod_irc/mod_irc_odbc.erl:585
 msgid "IRC Username"
@@ -481,8 +490,8 @@ msgid ""
 msgstr ""
 "Si vols especificar codificacions de caràcters diferents per a cada servidor "
 "IRC emplena aquesta llista amb els valors amb el format '{\"servidor irc\", "
-"\"codificació\", port, \"contrassenya\"}'.  Aquest servei utilitza per "
-"defecte la codificació \"~s\", port ~p, no contrassenya."
+"\"codificació\", port, \"contrasenya\"}'.  Aquest servei utilitza per "
+"defecte la codificació \"~s\", port ~p, no contrasenya."
 
 #: mod_irc/mod_irc.erl:598 mod_irc/mod_irc_odbc.erl:607
 msgid ""
@@ -537,7 +546,7 @@ msgstr "Nom d'usuari al IRC"
 
 #: mod_irc/mod_irc.erl:923 mod_irc/mod_irc_odbc.erl:964
 msgid "Password ~b"
-msgstr "Password ~b"
+msgstr "Contrasenya ~b"
 
 #: mod_irc/mod_irc.erl:928 mod_irc/mod_irc_odbc.erl:969
 msgid "Port ~b"
@@ -570,7 +579,6 @@ msgid "Chatrooms"
 msgstr "Sales de xat"
 
 #: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Necessites un client amb suport x:data per a poder registrar el Nickname"
@@ -757,23 +765,23 @@ msgstr ""
 
 #: mod_muc/mod_muc_room.erl:255
 msgid "It is not allowed to send private messages to the conference"
-msgstr "No està permés l'enviament de missatges privats a la sala"
+msgstr "No està permès l'enviament de missatges privats a la sala"
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Si us plau, espera una mica abans d'enviar una nova petició de veu"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Les peticions de veu es troben desactivades en aquesta conferència"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "No s'ha pogut extraure el JID de la teva aprovació de petició de veu"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Només els moderadors poden aprovar les peticions de veu"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -806,11 +814,12 @@ msgstr "Sols els ocupants poden enviar missatges a la sala"
 
 #: mod_muc/mod_muc_room.erl:634
 msgid "Only occupants are allowed to send queries to the conference"
-msgstr "Sols els ocupants poden enviar solicituts a la sala"
+msgstr "Sols els ocupants poden enviar sol·licituds a la sala"
 
 #: mod_muc/mod_muc_room.erl:646
 msgid "Queries to the conference members are not allowed in this room"
-msgstr " En aquesta sala no es permeten solicituts als membres de la sala"
+msgstr ""
+" En aquesta sala no es permeten sol·licituds als membres de la conferència"
 
 #: mod_muc/mod_muc_room.erl:932
 msgid ""
@@ -856,11 +865,11 @@ msgstr "Aquesta sala no és anònima"
 
 #: mod_muc/mod_muc_room.erl:1833
 msgid "A password is required to enter this room"
-msgstr "Es necessita password per a entrar en aquesta sala"
+msgstr "Es necessita contrasenya per a entrar en aquesta sala"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Massa peticions de CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -868,7 +877,7 @@ msgstr "No s'ha pogut generar un captcha"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
-msgstr "Password incorrecte"
+msgstr "Contrasenya incorrecta"
 
 #: mod_muc/mod_muc_room.erl:2448
 msgid "Administrator privileges required"
@@ -924,7 +933,7 @@ msgstr "Crear una llista de participants pública"
 
 #: mod_muc/mod_muc_room.erl:3221
 msgid "Make room password protected"
-msgstr "Crear una sala amb password"
+msgstr "Crear una sala amb contrasenya"
 
 #: mod_muc/mod_muc_room.erl:3232
 msgid "Maximum Number of Occupants"
@@ -967,13 +976,12 @@ msgid "Allow users to send private messages"
 msgstr "Permetre que els usuaris envien missatges privats"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Permetre que els usuaris envien missatges privats"
+msgstr "Permetre als visitants enviar missatges privats a"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "ningú"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -994,13 +1002,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Permetre als visitants canviar el Nickname"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Permetre que els usuaris envien invitacions"
+msgstr "Permetre als visitants enviar peticions de veu"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Interval mínim entre peticions de veu (en segons)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1008,7 +1015,7 @@ msgstr "Crear una sala protegida per captcha"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Excloure Jabber IDs de la comprovació CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1028,20 +1035,19 @@ msgstr "privat"
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Petició de veu"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Aprova o denega la petició de veu"
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Usuari "
+msgstr "JID del usuari "
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Concedir veu a aquesta persona?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
@@ -1049,7 +1055,7 @@ msgstr "~s et convida a la sala ~s"
 
 #: mod_muc/mod_muc_room.erl:3969
 msgid "the password is"
-msgstr "el password és"
+msgstr "la contrasenya és"
 
 #: mod_offline.erl:510 mod_offline_odbc.erl:352
 msgid ""
@@ -1113,7 +1119,7 @@ msgstr "Publicar-subscriure't"
 
 #: mod_pubsub/mod_pubsub.erl:1214 mod_pubsub/mod_pubsub_odbc.erl:1025
 msgid "ejabberd Publish-Subscribe module"
-msgstr "Mòdul ejannerd Publicar-Subscriure"
+msgstr "Mòdul ejabberd Publicar-Subscriure"
 
 #: mod_pubsub/mod_pubsub.erl:1497 mod_pubsub/mod_pubsub_odbc.erl:1312
 msgid "PubSub subscriber request"
@@ -1209,17 +1215,16 @@ msgstr "Les col.leccions amb les que un node està afiliat"
 
 #: mod_register.erl:193
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "La verificació CAPTCHA ha fallat"
 
 #: mod_register.erl:220
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"Necessites un client amb suport x:data per a poder registrar el Nickname"
+"Necessites un client amb suport x:data i de CAPTCHA para poder registrar-te"
 
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
-msgstr "Tria nom d'usuari i password per a registrar-te en aquest servidor"
+msgstr "Tria nom d'usuari i contrasenya per a registrar-te en aquest servidor"
 
 #: mod_register.erl:230 mod_vcard.erl:364 mod_vcard_odbc.erl:342
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
@@ -1227,14 +1232,12 @@ msgid "User"
 msgstr "Usuari"
 
 #: mod_register.erl:251
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "No s'ha pogut generar un captcha"
+msgstr "No s'ha pogut generar un CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
-#, fuzzy
 msgid "The password is too weak"
-msgstr "el password és"
+msgstr "La contrasenya és massa simple"
 
 #: mod_register.erl:365
 msgid "Users are not allowed to register accounts so quickly"
@@ -1395,7 +1398,7 @@ msgstr "Cerca usuaris en "
 
 #: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "You need an x:data capable client to search"
-msgstr "Necesites un client amb suport x:data per a poder buscar"
+msgstr "Necessites un client amb suport x:data per a poder buscar"
 
 #: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
 msgid "vCard User Search"
@@ -1519,7 +1522,7 @@ msgstr "Servidors d'eixida de s2s"
 #: web/mod_register_web.erl:372 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:411
 msgid "Change Password"
-msgstr "Canviar password"
+msgstr "Canviar Contrasenya"
 
 #: web/ejabberd_web_admin.erl:1758
 msgid "User "
@@ -1532,7 +1535,7 @@ msgstr "Recursos connectats:"
 #: web/ejabberd_web_admin.erl:1766 web/mod_register_web.erl:227
 #: web/mod_register_web.erl:519
 msgid "Password:"
-msgstr "Password:"
+msgstr "Contrasenya:"
 
 #: web/ejabberd_web_admin.erl:1828
 msgid "No Data"
@@ -1743,41 +1746,41 @@ msgstr "Iniciar"
 
 #: web/mod_register_web.erl:104
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "El teu compte Jabber ha sigut creat correctament."
 
 #: web/mod_register_web.erl:107
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Hi ha hagut un error creant el compte: "
 
 #: web/mod_register_web.erl:115
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "El teu compte Jabber ha sigut esborrat correctament."
 
 #: web/mod_register_web.erl:118
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Hi ha hagut un error esborrant el compte: "
 
 #: web/mod_register_web.erl:128
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "La contrasenya del teu compte Jabber s'ha canviat correctament."
 
 #: web/mod_register_web.erl:131
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Hi ha hagut un error canviant la contrasenya: "
 
 #: web/mod_register_web.erl:163 web/mod_register_web.erl:172
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Registre de compte Jabber"
 
 #: web/mod_register_web.erl:174 web/mod_register_web.erl:192
 #: web/mod_register_web.erl:201
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Registrar un compte Jabber"
 
 #: web/mod_register_web.erl:176 web/mod_register_web.erl:493
 #: web/mod_register_web.erl:502
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Anul·lar el registre d'un compte Jabber"
 
 #: web/mod_register_web.erl:203
 msgid ""
@@ -1785,42 +1788,52 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Aquesta pàgina permet crear un compte Jabber en aquest servidor Jabber. El "
+"teu JID (Jabber IDentifier; Identificador Jabber) tindrà aquesta forma: "
+"usuari@servidor. Si us plau, llegeix amb cura les instruccions per emplenar "
+"correctament els camps."
 
 #: web/mod_register_web.erl:212 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Username:"
-msgstr "Nom d'usuari al IRC"
+msgstr "Nom d'usuari:"
 
 #: web/mod_register_web.erl:217
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Això no distingeix majúscules de minúscules: macbeth es el mateix que "
+"MacBeth i Macbeth."
 
 #: web/mod_register_web.erl:218
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Caràcters no permesos:"
 
 #: web/mod_register_web.erl:222 web/mod_register_web.erl:391
 #: web/mod_register_web.erl:514
-#, fuzzy
 msgid "Server:"
-msgstr "Servidor ~b"
+msgstr "Servidor:"
 
 #: web/mod_register_web.erl:232
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"No li donis la teva contrasenya a ningú, ni tan sols als administradors del "
+"servidor Jabber."
 
 #: web/mod_register_web.erl:234
 msgid "You can later change your password using a Jabber client."
 msgstr ""
+"Podràs canviar la teva contrasenya més endavant utilitzant un client Jabber."
 
 #: web/mod_register_web.erl:235
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Alguns clients Jabber poden emmagatzemar la teva contrasenya al teu "
+"ordinador. Fes servir aquesta característica només si saps que el teu "
+"ordinador és segur."
 
 #: web/mod_register_web.erl:237
 msgid ""
@@ -1828,34 +1841,35 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc "
+"segur.A Jabber no hi ha una forma automatitzada de recuperar la teva "
+"contrasenya si la oblides."
 
 #: web/mod_register_web.erl:242 web/mod_register_web.erl:406
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Verificació del Password"
+msgstr "Verificació de la Contrasenya:"
 
 #: web/mod_register_web.erl:250
-#, fuzzy
 msgid "Register"
-msgstr "Llista de contactes"
+msgstr "Registrar"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "Old Password:"
-msgstr "Password:"
+msgstr "Antiga contrasenya:"
 
 #: web/mod_register_web.erl:401
-#, fuzzy
 msgid "New Password:"
-msgstr "Password:"
+msgstr "Nova Contrasenya:"
 
 #: web/mod_register_web.erl:504
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
+"Aquesta pàgina permet anul·lar el registre d'un compte Jabber en aquest "
+"servidor Jabber."
 
 #: web/mod_register_web.erl:524
 msgid "Unregister"
-msgstr ""
+msgstr "Anul·lar el registre"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
