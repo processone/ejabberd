@@ -1,7 +1,11 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
 "Last-Translator: Stian B. Barmen <stian@barmen.nu>\n"
+"Language-Team: \n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,7 +25,7 @@ msgstr "Erstattet av en ny tilkobling"
 
 #: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Din aktive privat liste har blokkert rutingen av denne strofen."
 
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
@@ -33,11 +37,11 @@ msgstr "Dine meldinger til ~s blir blokkert. For å åpne igjen, besøk ~s"
 
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Dersom du ikke ser CAPTCHA bilde her, besøk web siden. "
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "CAPTCHA web side"
 
 #: ejabberd_captcha.erl:307
 msgid "The captcha is valid."
@@ -562,9 +566,8 @@ msgid "Chatrooms"
 msgstr "Samtalerom"
 
 #: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
-msgstr "Du trenger en klient som støtter x:data for å "
+msgstr "Du trenger en klient som støtter x:data for å registrere kallenavnet"
 
 #: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
 msgid "Nickname Registration at "
@@ -752,19 +755,19 @@ msgstr "Det er ikke tillatt å sende private meldinger til "
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Vennligst vent en stund før du sender en ny lyd forespørsel"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Lyd forespørsler er blokkert i denne konferansen"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Feilet i forsøk på å hente JID fra din lyd forespørsel godkjenning"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Bare ordstyrer kan godkjenne lyd forespørsler"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -850,7 +853,7 @@ msgstr "Et passord kreves for tilgang til samtalerommet"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "For mange CAPTCHA forespørsler"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -957,13 +960,12 @@ msgid "Allow users to send private messages"
 msgstr "Tillat brukere å sende private meldinger"
 
 #: mod_muc/mod_muc_room.erl:3279
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Tillat brukere å sende private meldinger"
+msgstr "Tillat brukere å sende private meldinger til"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "ingen"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -982,13 +984,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Tillat besøkende å endre kallenavn"
 
 #: mod_muc/mod_muc_room.erl:3308
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Tillat brukere å sende invitasjoner"
+msgstr "Tillat brukere å sende lyd forespørsler"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Minimums interval mellom lyd forespørsler (i sekunder)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -996,7 +997,7 @@ msgstr "Gjør rommet captcha beskyttet"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Ekskluder Jabber IDer fra CAPTCHA utfordring"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1016,20 +1017,19 @@ msgstr "privat, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Lyd forespørsel"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Enten godkjenn eller forby lyd forespørselen"
 
 #: mod_muc/mod_muc_room.erl:3809
-#, fuzzy
 msgid "User JID"
-msgstr "Bruker "
+msgstr "Bruker JID"
 
 #: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Gi lyd til denne personen?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
@@ -1197,12 +1197,11 @@ msgstr "Samlingene som en node er assosiert med"
 
 #: mod_register.erl:193
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "CAPTCHA godkjenningen har feilet"
 
 #: mod_register.erl:220
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "Du trenger en klient som støtter x:data for å "
+msgstr "Du trenger en klient som støtter x:data og CAPTCHA for registrering "
 
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
@@ -1214,14 +1213,12 @@ msgid "User"
 msgstr "Bruker"
 
 #: mod_register.erl:251
-#, fuzzy
 msgid "Unable to generate a CAPTCHA"
-msgstr "Umulig å generere en captcha"
+msgstr "Umulig å generere en CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
-#, fuzzy
 msgid "The password is too weak"
-msgstr "passordet er"
+msgstr "Passordet er for svakt"
 
 #: mod_register.erl:365
 msgid "Users are not allowed to register accounts so quickly"
@@ -1728,41 +1725,41 @@ msgstr "Start"
 
 #: web/mod_register_web.erl:104
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Din Jabber konto ble opprettet"
 
 #: web/mod_register_web.erl:107
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "En feil skjedde under oppretting av kontoen:"
 
 #: web/mod_register_web.erl:115
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Dni Jabber konto er blitt sltettet."
 
 #: web/mod_register_web.erl:118
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "En feil skjedde under sletting av kontoen: "
 
 #: web/mod_register_web.erl:128
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Passordet for din Jabber konto ble endret."
 
 #: web/mod_register_web.erl:131
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "En feil skjedde under endring av passordet:"
 
 #: web/mod_register_web.erl:163 web/mod_register_web.erl:172
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Jabber Konto Registrering"
 
 #: web/mod_register_web.erl:174 web/mod_register_web.erl:192
 #: web/mod_register_web.erl:201
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Registrer en Jabber konto"
 
 #: web/mod_register_web.erl:176 web/mod_register_web.erl:493
 #: web/mod_register_web.erl:502
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Avregistrer en Jabber konto"
 
 #: web/mod_register_web.erl:203
 msgid ""
@@ -1770,42 +1767,49 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Denne siden lar deg lage en Jabber konto på denne Jabber serveren. Din JID "
+"(Jabber ID) vil være i formatet: brukernavn@server. Vennligst les "
+"instruksjonene nøye slik at du fyller ut skjemaet riktig."
 
 #: web/mod_register_web.erl:212 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Username:"
-msgstr "IRC Brukernavn"
+msgstr "Brukernavn:"
 
 #: web/mod_register_web.erl:217
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Denne er ufølsom for små og store bokstaver: macbeth er det samme som "
+"MacBeth og Macbeth. "
 
 #: web/mod_register_web.erl:218
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Ikke godtatte tegn:"
 
 #: web/mod_register_web.erl:222 web/mod_register_web.erl:391
 #: web/mod_register_web.erl:514
-#, fuzzy
 msgid "Server:"
-msgstr "Server ~b"
+msgstr "Server:"
 
 #: web/mod_register_web.erl:232
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Ikke fortell passordet til noen, ikke en gang til administratoren av Jabber "
+"serveren."
 
 #: web/mod_register_web.erl:234
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Du kan når som helst endre passordet via en Jabber klient."
 
 #: web/mod_register_web.erl:235
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Noen Jabber klienter kan lagre passordet på datamaskinen. Bruk bare den "
+"funksjonen dersom du er sikker på at maskinen er trygg."
 
 #: web/mod_register_web.erl:237
 msgid ""
@@ -1813,34 +1817,34 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Husk passordet, eller skriv det ned på et papir lagret på et trygt sted. I "
+"Jabber er det ingen automatisert måte å gjenskape passordet om du glemmer "
+"det. "
 
 #: web/mod_register_web.erl:242 web/mod_register_web.erl:406
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Passord Bekreftelse"
+msgstr "Passord Bekreftelse:"
 
 #: web/mod_register_web.erl:250
-#, fuzzy
 msgid "Register"
-msgstr "Kontaktliste"
+msgstr "Registrer"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "Old Password:"
-msgstr "Passord:"
+msgstr "Gammelt Passord:"
 
 #: web/mod_register_web.erl:401
-#, fuzzy
 msgid "New Password:"
-msgstr "Passord:"
+msgstr "Nytt Passord:"
 
 #: web/mod_register_web.erl:504
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
+"Denne siden lar deg avregistrere en Jabber konto på denne Jabber serveren."
 
 #: web/mod_register_web.erl:524
 msgid "Unregister"
-msgstr ""
+msgstr "Avregistrer"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
