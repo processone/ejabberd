@@ -13,11 +13,11 @@ msgstr ""
 
 #: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
-msgstr "É obrigatório usar STARTTLS"
+msgstr "É obrigatório uso de STARTTLS"
 
 #: ejabberd_c2s.erl:503
 msgid "No resource provided"
-msgstr "Recurso não foi fornecido"
+msgstr "Nenhum recurso foi informado"
 
 #: ejabberd_c2s.erl:1197
 msgid "Replaced by new connection"
@@ -25,7 +25,7 @@ msgstr "Substituído por nova conexão"
 
 #: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr "Sua lista de privacidade ativa negou o roteamento desta estada."
+msgstr "Sua lista de privacidade ativa negou o roteamento deste."
 
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
@@ -760,23 +760,23 @@ msgstr ""
 
 #: mod_muc/mod_muc_room.erl:255
 msgid "It is not allowed to send private messages to the conference"
-msgstr "Impedir o envio de mensagens privados a la sala"
+msgstr "Impedir o envio de mensagens privadas para a sala"
 
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Por favor, espere antes de enviar uma nova requisição de voz"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Requisições de voz estào desabilitadas nesta conferência"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
-msgstr ""
+msgstr "Não foi possível extrair o JID (Jabber ID) da requisição de voz"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr ""
+msgstr "Somente moderadores podem aprovar requisições de voz"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -864,7 +864,7 @@ msgstr "Se necessita senha para entrar em esta sala"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Número excessivo de requisições para o CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1864
 msgid "Unable to generate a captcha"
@@ -896,7 +896,7 @@ msgstr "Afiliação não válida: ~s"
 
 #: mod_muc/mod_muc_room.erl:2713
 msgid "Invalid role: ~s"
-msgstr "Rol não válido: ~s"
+msgstr "Cargo (role) é não válido: ~s"
 
 #: mod_muc/mod_muc_room.erl:3026 mod_muc/mod_muc_room.erl:3062
 msgid "Owner privileges required"
@@ -977,7 +977,7 @@ msgstr "Permitir a usuários enviarem mensagens privadas"
 
 #: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
-msgstr ""
+msgstr "ninguém"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
@@ -1002,7 +1002,7 @@ msgstr "Permitir a usuários envio de convites"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "O intervalo mínimo entre requisições de voz (em segundos)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1010,7 +1010,7 @@ msgstr "Tornar protegida a senha da sala"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Excluir IDs Jabber de serem submetidos ao CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
@@ -1026,15 +1026,15 @@ msgstr "Número de participantes"
 
 #: mod_muc/mod_muc_room.erl:3750
 msgid "private, "
-msgstr "privado"
+msgstr "privado, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr ""
+msgstr "Requisição de voz"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Você deve aprovar/desaprovar a requisição de voz."
 
 #: mod_muc/mod_muc_room.erl:3809
 #, fuzzy
@@ -1211,7 +1211,7 @@ msgstr "As coleções com as quais o nó está relacionado"
 
 #: mod_register.erl:193
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "A verificação do CAPTCHA falhou"
 
 #: mod_register.erl:220
 #, fuzzy
@@ -1236,7 +1236,7 @@ msgstr "Impossível gerar um CAPTCHA"
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy
 msgid "The password is too weak"
-msgstr "a senha é"
+msgstr "Senha considerada fraca'"
 
 #: mod_register.erl:365
 msgid "Users are not allowed to register accounts so quickly"
@@ -1266,7 +1266,7 @@ msgstr "Validar"
 
 #: mod_roster.erl:982 mod_roster_odbc.erl:1099
 msgid "Remove"
-msgstr "Borrar"
+msgstr "Remover"
 
 #: mod_roster.erl:985 mod_roster_odbc.erl:1102
 msgid "Roster of "
@@ -1859,12 +1859,12 @@ msgstr "Lista de contatos"
 #: web/mod_register_web.erl:396
 #, fuzzy
 msgid "Old Password:"
-msgstr "Senha:"
+msgstr "Senha Antiga:"
 
 #: web/mod_register_web.erl:401
 #, fuzzy
 msgid "New Password:"
-msgstr "Senha:"
+msgstr "Nova Senha:"
 
 #: web/mod_register_web.erl:504
 msgid "This page allows to unregister a Jabber account in this Jabber server."
