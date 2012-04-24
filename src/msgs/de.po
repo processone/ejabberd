@@ -426,7 +426,7 @@ msgstr "Kontaktlistengröße"
 
 #: mod_configure.erl:1723
 msgid "IP addresses"
-msgstr "IP Addresse"
+msgstr "IP Adressen"
 
 #: mod_configure.erl:1724
 msgid "Resources"
@@ -619,7 +619,7 @@ msgstr "Chatraum-Konfiguration geändert"
 
 #: mod_muc/mod_muc_log.erl:384
 msgid "joins the room"
-msgstr "kommt in den Raum"
+msgstr "betretet den Raum"
 
 #: mod_muc/mod_muc_log.erl:387 mod_muc/mod_muc_log.erl:390
 msgid "leaves the room"
@@ -762,8 +762,8 @@ msgstr "Datenratenlimit wurde überschritten"
 msgid ""
 "This participant is kicked from the room because he sent an error message"
 msgstr ""
-"Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht "
-"gesendet hat"
+"Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte "
+"Nachricht gesendet hat"
 
 #: mod_muc/mod_muc_room.erl:255
 msgid "It is not allowed to send private messages to the conference"
@@ -772,21 +772,21 @@ msgstr "Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"
 #: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
 msgstr ""
-"Bitte warten sie ein wenig, bevor sie eine weitere Sprachrechts-Anfrage "
+"Bitte warten sie ein wenig, bevor sie eine weitere Anfrage für Sprachrechte "
 "senden"
 
 #: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
-msgstr "Sprachrechts-Anfragen sind in diesem Raum deaktiviert"
+msgstr "Anfragen für Sprachrechte sind in diesem Raum deaktiviert"
 
 #: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approvement"
 msgstr ""
-"Fehler beim Auslesen der JID aus ihrer Sprachrechts-Anfragenbestätigung"
+"Fehler beim Auslesen der JID aus der Anfragenbestätigung für Sprachrechte"
 
 #: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
-msgstr "Nur Moderatoren können Sprachrechts-Anfragen bestätigen"
+msgstr "Nur Moderatoren können Anfragen für Sprachrechte bestätigen"
 
 #: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
@@ -797,8 +797,8 @@ msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
 msgstr ""
-"Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht an "
-"einen anderen Teilnehmer gesendet hat"
+"Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte "
+"Nachricht an einen anderen Teilnehmer gesendet hat"
 
 #: mod_muc/mod_muc_room.erl:531
 msgid "It is not allowed to send private messages of type \"groupchat\""
@@ -989,7 +989,7 @@ msgstr "niemanden"
 
 #: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
-msgstr "Erlaube Benutzern andere Benutzer abzufragen"
+msgstr "Erlaube Benutzern Informationen über andere Benutzer abzufragen"
 
 #: mod_muc/mod_muc_room.erl:3299
 msgid "Allow users to send invites"
@@ -997,7 +997,7 @@ msgstr "Erlaube Benutzern Einladungen zu senden"
 
 #: mod_muc/mod_muc_room.erl:3302
 msgid "Allow visitors to send status text in presence updates"
-msgstr "Erlaube Besuchern einen Text bei Statusänderung zu setzen"
+msgstr "Erlaube Besuchern einen Text bei Statusänderung zu senden"
 
 #: mod_muc/mod_muc_room.erl:3305
 msgid "Allow visitors to change nickname"
@@ -1009,7 +1009,7 @@ msgstr "Anfragen von Sprachrechten für Benutzer erlauben"
 
 #: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr "Mindestdauer zwischen Sprachrechts-Anfragen (in Sekunden)"
+msgstr "Mindestdauer zwischen Anfragen für Sprachrechte (in Sekunden)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room captcha protected"
@@ -1039,7 +1039,7 @@ msgstr "privat, "
 
 #: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
-msgstr "Sprachrechts-Anfrage"
+msgstr "Anfrage für Sprachrechte"
 
 #: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
@@ -1149,7 +1149,7 @@ msgstr "Dieser Jabber-ID das Abonnement dieses pubsub-Knotens erlauben?"
 
 #: mod_pubsub/mod_pubsub.erl:3474 mod_pubsub/mod_pubsub_odbc.erl:3287
 msgid "Deliver payloads with event notifications"
-msgstr "Nachrichten mit mit Ereignis-Benachrichtigungen zustellen"
+msgstr "Nachrichten mit Ereignis-Benachrichtigungen zustellen"
 
 #: mod_pubsub/mod_pubsub.erl:3475 mod_pubsub/mod_pubsub_odbc.erl:3288
 msgid "Deliver event notifications"
@@ -1309,7 +1309,7 @@ msgstr "Gruppen der gemeinsamen Kontaktliste"
 #: mod_shared_roster.erl:895 mod_shared_roster_odbc.erl:924
 #: web/ejabberd_web_admin.erl:1365 web/ejabberd_web_admin.erl:2461
 msgid "Add New"
-msgstr "Neuen hinzufügen"
+msgstr "Neue hinzufügen"
 
 #: mod_shared_roster.erl:978 mod_shared_roster_odbc.erl:1007
 msgid "Name:"
