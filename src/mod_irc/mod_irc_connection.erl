@@ -206,6 +206,31 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 		StateData#state{outbuf = StateData#state.outbuf ++ S}
 	end).
 
+get_password_from_presence({xmlelement, "presence", _Attrs, Els}) ->
+	case lists:filter(fun(El) ->
+			case El of
+			    {xmlelement, "x", Attrs, _Els} ->
+				case xml:get_attr_s("xmlns", Attrs) of
+				    ?NS_MUC ->
+					true;
+				    _ ->
+					false
+				end;
+			    _ ->
+				false
+			end
+		end, Els) of
+	    [ElXMUC | _] ->
+		case xml:get_subtag(ElXMUC, "password") of
+		    {xmlelement, "password", _, _} = PasswordTag ->
+			{true, xml:get_tag_cdata(PasswordTag)};
+		    _ ->
+			false
+		end;
+	    _ ->
+	    false
+	end.
+
 %%----------------------------------------------------------------------
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
@@ -213,7 +238,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({route_chan, Channel, Resource,
-	     {xmlelement, "presence", Attrs, _Els}},
+	     {xmlelement, "presence", Attrs, _Els} = Presence},
 	    StateName, StateData) ->
     NewStateData =
 	case xml:get_attr_s("type", Attrs) of
@@ -247,7 +272,12 @@ handle_info({route_chan, Channel, Resource,
 		    true ->
 			S1;
 		    _ ->
-			S2 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel])),
+			case get_password_from_presence(Presence) of
+				{true, Password} ->
+				S2 = ?SEND(io_lib:format("JOIN #~s ~s\r\n", [Channel, Password]));
+				_ ->
+				S2 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel]))
+			end,
 			S2#state{channels =
 				 dict:store(Channel, ?SETS:new(),
 					    S1#state.channels)}
