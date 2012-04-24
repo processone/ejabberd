@@ -363,7 +363,7 @@ normal_state({route, From, "",
                                             error ->
 						ErrText = "Failed to extract "
                                                     "JID from your voice "
-                                                    "request approvement",
+                                                    "request approval",
 						Err = jlib:make_error_reply(
 							Packet,
                                                         ?ERRT_BAD_REQUEST(
@@ -1861,7 +1861,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			      From, Err),
 			    StateData;
                         _ ->
-			    ErrText = "Unable to generate a captcha",
+			    ErrText = "Unable to generate a CAPTCHA",
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERRT_INTERNAL_SERVER_ERROR(Lang, ErrText)),
 			    ejabberd_router:route( % TODO: s/Nick/""/
@@ -3314,7 +3314,7 @@ get_config(Lang, StateData, From) ->
 	] ++
 	case ejabberd_captcha:is_feature_available() of
 	    true ->
-	        [?BOOLXFIELD("Make room captcha protected",
+	        [?BOOLXFIELD("Make room CAPTCHA protected",
 			     "captcha_protected",
 			     Config#config.captcha_protected)];
 	    false -> []

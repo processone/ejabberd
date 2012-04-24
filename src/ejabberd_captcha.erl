@@ -304,7 +304,7 @@ process(_Handlers, #request{method='POST', q=Q, lang=Lang, path=[_, Id]}) ->
 	    Form =
 		{xmlelement, "p", [],
 		 [{xmlcdata,
-		   translate:translate(Lang, "The captcha is valid.")
+		   translate:translate(Lang, "The CAPTCHA is valid.")
 		  }]},
 	    ejabberd_web:make_xhtml([Form]);
 	captcha_non_valid ->
