@@ -44,7 +44,7 @@ msgid "CAPTCHA web page"
 msgstr "CAPTCHA ウェブページ"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "CAPTCHA は有効です。"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -760,7 +760,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "この会議では、発言権の要求はできません"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "発言権要求の承認から JID を取り出すことに失敗しました"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -851,9 +851,9 @@ msgstr "この談話室に入るにはパスワードが必要です"
 msgid "Too many CAPTCHA requests"
 msgstr "CAPTCHA 要求が多すぎます"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "CAPTCHA を生成することができません"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "CAPTCHA を生成できません"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -988,7 +988,7 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "発言権の要求の最小時間間隔 (秒)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "談話室を CAPTCHA で保護"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1208,10 +1208,6 @@ msgstr "サーバーに登録するユーザー名とパスワードを選択し
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "ユーザー"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "CAPTCHA を生成できません"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"

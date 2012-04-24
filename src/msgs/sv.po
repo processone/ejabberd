@@ -45,8 +45,8 @@ msgid "CAPTCHA web page"
 msgstr ""
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Din captcha är godkänd."
+msgid "The CAPTCHA is valid."
+msgstr "Din CAPTCHA är godkänd."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -769,7 +769,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:393
@@ -867,9 +867,10 @@ msgstr "Lösenord erfordras"
 msgid "Too many CAPTCHA requests"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "Kunde inte generera ett captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+#, fuzzy
+msgid "Unable to generate a CAPTCHA"
+msgstr "Kunde inte generera ett CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -1008,7 +1009,7 @@ msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3317
 #, fuzzy
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "Gör losenorden i rummet publika"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1231,11 +1232,6 @@ msgstr "Välj ett användarnamn och lösenord för att registrera mot denna serv
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Användarnamn"
-
-#: mod_register.erl:251
-#, fuzzy
-msgid "Unable to generate a CAPTCHA"
-msgstr "Kunde inte generera ett captcha"
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy
@@ -1863,4 +1859,4 @@ msgstr ""
 
 #, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "Din captcha är godkänd."
+#~ msgstr "Din CAPTCHA är godkänd."

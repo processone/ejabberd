@@ -42,7 +42,7 @@ msgid "CAPTCHA web page"
 msgstr "验证码网页"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "验证码有效."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -754,7 +754,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "该会议的声音请求以被禁用"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "无法从你的声音请求确认信息中提取JID"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -843,9 +843,9 @@ msgstr "进入此房间需要密码"
 msgid "Too many CAPTCHA requests"
 msgstr "验证码请求太多"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "无法产生验证码"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "无法生成验证码"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -980,7 +980,7 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "声音请求的最小间隔(以秒为单位)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "保护房间验证码"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1200,10 +1200,6 @@ msgstr "请选择在此服务器上注册所需的用户名和密码"
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "用户"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "无法生成验证码"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"

@@ -47,8 +47,8 @@ msgid "CAPTCHA web page"
 msgstr "Ιστοσελίδα CAPTCHA "
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Το captcha είναι έγκυρο."
+msgid "The CAPTCHA is valid."
+msgstr "Το CAPTCHA είναι έγκυρο."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -777,7 +777,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "Απέτυχε η εξαγωγή JID από την έγκριση του αιτήματος φωνής σας"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -877,8 +877,8 @@ msgstr "Απαιτείται κωδικός πρόσβασης για είσοδ
 msgid "Too many CAPTCHA requests"
 msgstr "Πάρα πολλά αιτήματα CAPTCHA"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
 msgstr "Αδήνατο να δημιουργηθεί CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
@@ -1016,7 +1016,7 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Ελάχιστο χρονικό διάστημα μεταξύ αιτημάτων φωνής (σε δευτερόλεπτα)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "Κάντε την αίθουσα CAPTCHA προστατεύονομενη"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1240,10 +1240,6 @@ msgstr ""
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Χρήστης"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Αδήνατο να δημιουργηθεί εικόνα CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1890,4 +1886,4 @@ msgstr "Καταργήση εγγραφής"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "Το captcha είναι έγκυρο."
+#~ msgstr "Το CAPTCHA είναι έγκυρο."

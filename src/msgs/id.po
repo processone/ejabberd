@@ -47,7 +47,7 @@ msgid "CAPTCHA web page"
 msgstr "CAPTCHA laman web"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "Captcha ini benar."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -767,7 +767,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:393
@@ -864,9 +864,9 @@ msgstr "Diperlukan kata sandi untuk masuk ruangan ini"
 msgid "Too many CAPTCHA requests"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "Tidak dapat menghasilkan captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "Tidak dapat menghasilkan CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -1003,8 +1003,8 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
-msgstr "Buat ruangan dilindungi dengan chapta"
+msgid "Make room CAPTCHA protected"
+msgstr "Buat ruangan dilindungi dengan CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1225,10 +1225,6 @@ msgstr "Pilih nama pengguna dan kata sandi untuk mendaftar dengan layanan ini"
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Pengguna"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Tidak dapat menghasilkan CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"

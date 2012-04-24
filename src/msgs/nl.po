@@ -46,7 +46,7 @@ msgid "CAPTCHA web page"
 msgstr "CAPTCHA webpagina."
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "De geautomatiseerde Turing-test is geslaagd."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -775,7 +775,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "Stemaanvragen zijn uitgeschakeld voor deze chatruimte"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "Er kon geen JID worden ontleend uit deze stemaanvraag"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -872,9 +872,9 @@ msgstr "U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"
 msgid "Too many CAPTCHA requests"
 msgstr "Te veel CAPTCHA-aanvragen"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "Het generen van een gautomatiseerde Turing test is mislukt"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "Het generen van een CAPTCHA is mislukt"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -1009,7 +1009,7 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Minimale interval tussen stemaanvragen (in seconden)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "Chatruimte beveiligen met een geautomatiseerde Turing test"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1235,10 +1235,6 @@ msgstr ""
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Gebruiker"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Het generen van een CAPTCHA is mislukt"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"

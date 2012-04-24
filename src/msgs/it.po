@@ -42,8 +42,8 @@ msgid "CAPTCHA web page"
 msgstr ""
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Il captcha è valido."
+msgid "The CAPTCHA is valid."
+msgstr "Il CAPTCHA è valido."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -768,7 +768,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:393
@@ -863,9 +863,9 @@ msgstr "Per entrare in questa stanza è prevista una password"
 msgid "Too many CAPTCHA requests"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "Impossibile generare un captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "Impossibile generare un CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -1004,8 +1004,8 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
-msgstr "Rendere la stanza protetta da captcha"
+msgid "Make room CAPTCHA protected"
+msgstr "Rendere la stanza protetta da CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1231,11 +1231,6 @@ msgstr ""
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Utente"
-
-#: mod_register.erl:251
-#, fuzzy
-msgid "Unable to generate a CAPTCHA"
-msgstr "Impossibile generare un captcha"
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy
@@ -1866,4 +1861,4 @@ msgstr ""
 
 #, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "Il captcha è valido."
+#~ msgstr "Il CAPTCHA è valido."

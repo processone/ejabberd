@@ -44,7 +44,7 @@ msgid "CAPTCHA web page"
 msgstr "CAPTCHA web side"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "Captchaen er ikke gyldig"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -762,7 +762,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "Lyd forespørsler er blokkert i denne konferansen"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "Feilet i forsøk på å hente JID fra din lyd forespørsel godkjenning"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -855,9 +855,9 @@ msgstr "Et passord kreves for tilgang til samtalerommet"
 msgid "Too many CAPTCHA requests"
 msgstr "For mange CAPTCHA forespørsler"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "Umulig å generere en captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "Umulig å generere en CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -992,8 +992,8 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Minimums interval mellom lyd forespørsler (i sekunder)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
-msgstr "Gjør rommet captcha beskyttet"
+msgid "Make room CAPTCHA protected"
+msgstr "Gjør rommet CAPTCHA beskyttet"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1211,10 +1211,6 @@ msgstr "Velg et brukernavn og passord for å registrere på "
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Bruker"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Umulig å generere en CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"

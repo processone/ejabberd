@@ -41,7 +41,7 @@ msgid "CAPTCHA web page"
 msgstr ""
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr ""
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -777,7 +777,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:393
@@ -877,8 +877,8 @@ msgstr "Yêu cầu nhập mật khẩu để vào phòng này"
 msgid "Too many CAPTCHA requests"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:1874
@@ -1023,7 +1023,7 @@ msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3317
 #, fuzzy
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "Tạo phòng được bảo vệ bằng mật khẩu"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1251,10 +1251,6 @@ msgstr "Chọn một tên truy cập và mật khẩu để đăng ký với má
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Người sử dụng"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr ""
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy

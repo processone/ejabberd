@@ -51,8 +51,8 @@ msgid "CAPTCHA web page"
 msgstr "Pàgina web del CAPTCHA"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "El captcha es vàlid."
+msgid "The CAPTCHA is valid."
+msgstr "El CAPTCHA es vàlid."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -776,7 +776,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "Les peticions de veu es troben desactivades en aquesta conferència"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "No s'ha pogut extraure el JID de la teva aprovació de petició de veu"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -871,9 +871,9 @@ msgstr "Es necessita contrasenya per a entrar en aquesta sala"
 msgid "Too many CAPTCHA requests"
 msgstr "Massa peticions de CAPTCHA"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "No s'ha pogut generar un captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "No s'ha pogut generar un CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -1010,8 +1010,8 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Interval mínim entre peticions de veu (en segons)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
-msgstr "Crear una sala protegida per captcha"
+msgid "Make room CAPTCHA protected"
+msgstr "Crear una sala protegida per CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1230,10 +1230,6 @@ msgstr "Tria nom d'usuari i contrasenya per a registrar-te en aquest servidor"
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Usuari"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "No s'ha pogut generar un CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1873,4 +1869,4 @@ msgstr "Anul·lar el registre"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "El captcha es vàlid."
+#~ msgstr "El CAPTCHA es vàlid."

@@ -45,8 +45,8 @@ msgid "CAPTCHA web page"
 msgstr ""
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "O captcha é inválido."
+msgid "The CAPTCHA is valid."
+msgstr "O CAPTCHA é inválido."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -771,7 +771,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "Requisições de voz estào desabilitadas nesta conferência"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "Não foi possível extrair o JID (Jabber ID) da requisição de voz"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -866,9 +866,9 @@ msgstr "Se necessita senha para entrar em esta sala"
 msgid "Too many CAPTCHA requests"
 msgstr "Número excessivo de requisições para o CAPTCHA"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "Impossível gerar um captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "Impossível gerar um CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -1005,7 +1005,7 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "O intervalo mínimo entre requisições de voz (em segundos)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "Tornar protegida a senha da sala"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1227,11 +1227,6 @@ msgstr "Escolha um nome de usuário e senha para registrar-se neste servidor"
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Usuário"
-
-#: mod_register.erl:251
-#, fuzzy
-msgid "Unable to generate a CAPTCHA"
-msgstr "Impossível gerar um CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy
@@ -1876,4 +1871,4 @@ msgstr "Deletar registro"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "O captcha é inválido."
+#~ msgstr "O CAPTCHA é inválido."

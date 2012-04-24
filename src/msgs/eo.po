@@ -44,7 +44,7 @@ msgid "CAPTCHA web page"
 msgstr "CAPTCHA teksaĵ-paĝo"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "La CAPTCHA ĝustas"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -764,7 +764,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "Voĉ-petoj estas malebligita en jena babilejo"
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "Malsukcesis ekstrakti JID-on de via voĉ-pet-aprobo"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -858,8 +858,8 @@ msgstr "Pasvorto estas bezonata por eniri ĉi tiun babilejon"
 msgid "Too many CAPTCHA requests"
 msgstr "Tro multaj CAPTCHA-petoj"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
 msgstr "Ne eblis krei CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:1874
@@ -995,7 +995,7 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Minimuma intervalo inter voĉ-petoj (je sekundoj)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "Farigu babilejon protektata per CAPTCHA"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1218,10 +1218,6 @@ msgstr "Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Uzanto"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Ne eblis krei CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"

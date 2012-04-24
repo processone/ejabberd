@@ -49,7 +49,7 @@ msgid "CAPTCHA web page"
 msgstr "CAPTCHA web sayfası"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "İnsan doğrulaması (captcha) geçerli."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -770,7 +770,7 @@ msgid "Voice requests are disabled in this conference"
 msgstr "Bu konferansta ses istekleri etkisizleştirilmiş durumda."
 
 #: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approvement"
+msgid "Failed to extract JID from your voice request approval"
 msgstr "Ses isteği onayınızdan JID bilginize ulaşılamadı"
 
 #: mod_muc/mod_muc_room.erl:393
@@ -865,9 +865,9 @@ msgstr "Bu odaya girmek için parola gerekiyor"
 msgid "Too many CAPTCHA requests"
 msgstr "Çok fazla CAPTCHA isteği"
 
-#: mod_muc/mod_muc_room.erl:1864
-msgid "Unable to generate a captcha"
-msgstr "İnsan doğrulaması (captcha) oluşturulamadı"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "İnsan doğrulaması (CAPTCHA) oluşturulamadı"
 
 #: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
@@ -1004,7 +1004,7 @@ msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Ses istekleri arasında olabilecek en az aralık (saniye olarak)"
 
 #: mod_muc/mod_muc_room.erl:3317
-msgid "Make room captcha protected"
+msgid "Make room CAPTCHA protected"
 msgstr "Odayı insan doğrulaması (captcha) korumalı hale getir"
 
 #: mod_muc/mod_muc_room.erl:3322
@@ -1226,10 +1226,6 @@ msgstr "Bu sunucuya kayıt olmak için bir kullanıcı ismi ve parola seçiniz"
 #: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Kullanıcı"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "CAPTCHA oluşturulamadı"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
