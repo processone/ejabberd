@@ -1,0 +1,58 @@
+
+                              Release Notes
+                             ejabberd 2.1.11
+
+  ejabberd 2.1.11 includes a few bugfixes and improvements.
+
+  Read more details about the changes in:
+    http://redir.process-one.net/ejabberd-2.1.11
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+  The major changes are:
+
+* HTTP service
+- Fix ejabberd_http:get_line
+- Don't use binary:match to extract lines from binaries
+- Parse and encode https header names like native http parser does
+- Parse correctly https request split into multiple packets
+- Properly handle HEAD request in mod_http_bind (EJAB-1538)
+- New option default_host for handling requests with ambiguous Host (EJAB-1261)
+
+* ODBC
+- New ODBC support for mod_announce
+- New ODBC support for mod_blocking
+- New ODBC support for mod_irc
+- New ODBC support for mod_muc
+- New ODBC support for mod_shared_roster
+- New ODBC support for mod_vcard_xupdate
+- Add ODBC exporting function for privacy table
+- Work also with some unicode strings in PgSQL (EJAB-1490)
+- Replace a single quote with double quotes in an ODBC escape
+
+* SSL
+- Make sure that res is initialized in all cases
+- Parse correctly https request split into multiple packets (EJAB-1537)
+- Added missed tls:recv_data/2
+- Don't ignore Length parameter in tls:recv
+- Avoid quadratic behavior in reading SSL data
+- Dix http_bind webserver TLS fail on Chrome (EJAB-1530)
+
+* Miscelanea
+- Assume we have only one CPU when an auto-detection fails (EJAB-1516)
+- Auth: Relax digest-uri handling (EJAB-1529)
+- Caps: Cache caps timestamp before the IQ-request is done
+- IRC: Use of MUC password
+- Private: misc errors cases fixes
+- Pubsub: return user affiliation for a specified node (EJAB-1294)
+- Shared Roster: Foreign items were not pushed (EJAB-1509)
+- Shared Roster LDAP: user substitution in ldap_rfilter (EJAB-1555)
+- Windows: Fix makefile rules for building DLLs
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/
