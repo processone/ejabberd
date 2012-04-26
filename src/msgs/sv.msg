@@ -312,7 +312,7 @@
 {"Subscription","Prenumeration"}.
 {"Sunday","Söndag"}.
 {"That nickname is registered by another person","Smeknamnet är reserverat"}.
-{"The captcha is valid.","Din captcha är godkänd."}.
+{"The CAPTCHA is valid.","Din CAPTCHA är godkänd."}.
 {"the password is","Lösenordet är"}.
 {"This participant is kicked from the room because he sent an error message","Deltagaren har blivit kickad fran rummet p.g.a att han skickade ett errormeddelande"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Deltagaren har blivit kickad från rummet p.g.a att han skickade ett errormeddelande till en annan deltagare"}.
@@ -329,7 +329,6 @@
 {"Transactions Logged:","Transaktioner loggade "}.
 {"Transactions Restarted:","Transaktioner omstartade"}.
 {"Tuesday","Tisdag"}.
-{"Unable to generate a captcha","Kunde inte generera ett captcha"}.
 {"Unauthorized","Ej auktoriserad"}.
 {"Update message of the day (don't send)","Uppdatera dagens status meddelande (skicka inte)"}.
 {"Update message of the day on all hosts (don't send)","Uppdatera dagens status meddelande på alla värdar (skicka inte)"}.

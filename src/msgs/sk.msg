@@ -163,7 +163,7 @@
 {"List of modules to start","Zoznam modulov, ktoré majú byť spustené"}.
 {"Low level update script","Nízkoúrovňový aktualizačný skript"}.
 {"Make participants list public","Nastaviť zoznam zúčastnených ako verejný"}.
-{"Make room captcha protected","Chrániť miestnosť systémom captcha"}.
+{"Make room CAPTCHA protected","Chrániť miestnosť systémom CAPTCHA"}.
 {"Make room members-only","Nastaviť miestnosť len pre členov"}.
 {"Make room moderated","Nastaviť miestnosť ako moderovanú"}.
 {"Make room password protected","Chrániť miestnosť heslom"}.
@@ -325,7 +325,7 @@
 {"Sunday","Nedeľa"}.
 {"That nickname is already in use by another occupant","Prezývka je už používaná iným členom"}.
 {"That nickname is registered by another person","Prezývka je už zaregistrovaná inou osobou"}.
-{"The captcha is valid.","Platná captcha."}.
+{"The CAPTCHA is valid.","Platná CAPTCHA."}.
 {"The collections with which a node is affiliated","Kolekcie asociované s uzlom"}.
 {"the password is","heslo je"}.
 {"This participant is kicked from the room because he sent an error message to another participant","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu inému účastníkovi"}.
@@ -343,7 +343,6 @@
 {"Transactions Logged:","Transakcie zaznamenaná"}.
 {"Transactions Restarted:","Transakcie reštartovaná"}.
 {"Tuesday","Utorok"}.
-{"Unable to generate a captcha","Nepodarilo sa vygenerovat captcha"}.
 {"Unauthorized","Neautorizovaný"}.
 {"Update ","Aktualizovať "}.
 {"Update","Aktualizovať"}.

@@ -168,7 +168,7 @@
 {"List of modules to start","Daftar modul untuk memulai"}.
 {"Low level update script","Perbaruan naskah tingkat rendah"}.
 {"Make participants list public","Buat daftar participant diketahui oleh public"}.
-{"Make room captcha protected","Buat ruangan dilindungi dengan chapta"}.
+{"Make room CAPTCHA protected","Buat ruangan dilindungi dengan CAPTCHA"}.
 {"Make room members-only","Buat ruangan hanya untuk member saja"}.
 {"Make room moderated","Buat ruangan hanya untuk moderator saja"}.
 {"Make room password protected","Buat ruangan yang dilindungi dengan kata sandi"}.
@@ -338,7 +338,7 @@
 {"Sunday","Minggu"}.
 {"That nickname is already in use by another occupant","Julukan itu sudah digunakan oleh penghuni lain"}.
 {"That nickname is registered by another person","Julukan tersebut telah didaftarkan oleh orang lain"}.
-{"The captcha is valid.","Captcha ini benar."}.
+{"The CAPTCHA is valid.","Captcha ini benar."}.
 {"The CAPTCHA verification has failed","Verifikasi CAPTCHA telah gagal"}.
 {"The collections with which a node is affiliated","Koleksi dengan yang berafiliasi dengan sebuah node"}.
 {"the password is","kata sandi yaitu:"}.
@@ -365,7 +365,6 @@
 {"Transactions Logged:","Transaksi yang ditempuh:"}.
 {"Transactions Restarted:","Transaksi yang dijalankan ulang:"}.
 {"Tuesday","Selasa"}.
-{"Unable to generate a captcha","Tidak dapat menghasilkan captcha"}.
 {"Unable to generate a CAPTCHA","Tidak dapat menghasilkan CAPTCHA"}.
 {"Unauthorized","Ditolak"}.
 {"Unregister a Jabber account","Nonaktifkan akun jabber"}.

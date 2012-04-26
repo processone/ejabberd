@@ -7,7 +7,7 @@
 {"Access Rules","Zugangsregeln"}.
 {"Action on user","Aktion auf Benutzer"}.
 {"Add Jabber ID","Jabber-ID hinzufügen"}.
-{"Add New","Neuen hinzufügen"}.
+{"Add New","Neue hinzufügen"}.
 {"Add User","Benutzer hinzufügen"}.
 {"Administration of ","Administration von "}.
 {"Administration","Verwaltung"}.
@@ -16,14 +16,16 @@
 {"All activity","Alle Aktivitäten"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Dieser Jabber-ID das Abonnement dieses pubsub-Knotens erlauben?"}.
 {"Allow users to change the subject","Erlaube Benutzern das Thema zu ändern"}.
-{"Allow users to query other users","Erlaube Benutzern andere Benutzer abzufragen"}.
+{"Allow users to query other users","Erlaube Benutzern Informationen über andere Benutzer abzufragen"}.
 {"Allow users to send invites","Erlaube Benutzern Einladungen zu senden"}.
 {"Allow users to send private messages","Erlaube Benutzern private Nachrichten zu senden"}.
 {"Allow visitors to change nickname","Erlaube Besuchern ihren Spitznamen zu ändern"}.
-{"Allow visitors to send status text in presence updates","Erlaube Besuchern einen Text bei Statusänderung zu setzen"}.
+{"Allow visitors to send private messages to","Erlaube Besuchern das Senden von privaten Nachrichten an"}.
+{"Allow visitors to send status text in presence updates","Erlaube Besuchern einen Text bei Statusänderung zu senden"}.
+{"Allow visitors to send voice requests","Anfragen von Sprachrechten für Benutzer erlauben"}.
 {"All Users","Alle Benutzer"}.
 {"Announcements","Ankündigungen"}.
-{"anyone","jeder"}.
+{"anyone","jeden"}.
 {"A password is required to enter this room","Sie brauchen ein Passwort um diesen Raum zu betreten"}.
 {"April","April"}.
 {"August","August"}.
@@ -67,7 +69,7 @@
 {"Delete Selected","Markierte löschen"}.
 {"Delete User","Benutzer löschen"}.
 {"Deliver event notifications","Ereignisbenachrichtigung zustellen"}.
-{"Deliver payloads with event notifications","Nachrichten mit mit Ereignis-Benachrichtigungen zustellen"}.
+{"Deliver payloads with event notifications","Nachrichten mit Ereignis-Benachrichtigungen zustellen"}.
 {"Description:","Beschreibung:"}.
 {"Disc only copy","Nur auf Festplatte"}.
 {"Displayed Groups:","Angezeigte Gruppen:"}.
@@ -75,6 +77,7 @@
 {"Dump Backup to Text File at ","Ausgabe der Sicherung in diese Textdatei "}.
 {"Dump to Text File","Ausgabe in Textdatei"}.
 {"Edit Properties","Einstellungen ändern"}.
+{"Either approve or decline the voice request.","Diese Anfrage für Sprachrechte bestätigen oder ablehnen."}.
 {"ejabberd IRC module","ejabberd IRC-Modul"}.
 {"ejabberd MUC module","ejabberd MUC-Modul"}.
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe-Modul"}.
@@ -98,8 +101,10 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Fehler"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Beispiel: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Von CAPTCHA Überprüfung ausgeschlossene Jabber IDs"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Alle Benutzerdaten des Servers in PIEFXIS Dateien (XEP-0227) exportieren:"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Alle Benutzerdaten des Hosts in PIEFXIS Dateien (XEP-0227) exportieren:"}.
+{"Failed to extract JID from your voice request approval","Fehler beim Auslesen der JID aus der Anfragenbestätigung für Sprachrechte"}.
 {"Family Name","Nachname"}.
 {"February","Februar"}.
 {"Fill in fields to search for any matching Jabber User","Füllen Sie die Felder aus, um nach passenden Jabber-Benutzern zu suchen"}.
@@ -113,6 +118,7 @@
 {"Get User Last Login Time","letzte Anmeldezeit abrufen"}.
 {"Get User Password","Benutzer-Passwort abrufen"}.
 {"Get User Statistics","Benutzer-Statistiken abrufen"}.
+{"Grant voice to this person?","Sprachrechte dieser Person erteilen?"}.
 {"Group ","Gruppe "}.
 {"Groups","Gruppen"}.
 {"has been banned","wurde gebannt"}.
@@ -136,7 +142,7 @@
 {"Incorrect password","Falsches Passwort"}.
 {"Invalid affiliation: ~s","Ungültige Mitgliedschaft: ~s"}.
 {"Invalid role: ~s","Ungültige Rolle: ~s"}.
-{"IP addresses","IP Addresse"}.
+{"IP addresses","IP Adressen"}.
 {"IP","IP"}.
 {"IRC channel (don't put the first #)","IRC Channel (ohne dem ersten #)"}.
 {"IRC server","IRC Server"}.
@@ -153,7 +159,7 @@
 {"Jabber ID ~s is invalid","Die Jabber-ID ~s ist ungültig"}.
 {"January","Januar"}.
 {"Join IRC channel","IRC Channel beitreten"}.
-{"joins the room","kommt in den Raum"}.
+{"joins the room","betretet den Raum"}.
 {"Join the IRC channel here.","Hier den IRC Channel beitreten."}.
 {"Join the IRC channel in this Jabber ID: ~s","Den IRC Channel mit dieser Jabber ID beitreten: ~s"}.
 {"July","Juli"}.
@@ -168,7 +174,7 @@
 {"List of modules to start","Liste der zu startenden Module"}.
 {"Low level update script","Low level Aktualisierungsscript"}.
 {"Make participants list public","Teilnehmerliste öffentlich machen"}.
-{"Make room captcha protected","Raum mit Verifizierung (Captcha) versehen"}.
+{"Make room CAPTCHA protected","Raum mit Verifizierung (Captcha) versehen"}.
 {"Make room members-only","Raum nur für Mitglieder zugänglich machen"}.
 {"Make room moderated","Raum moderiert machen"}.
 {"Make room password protected","Raum mit Passwort schützen"}.
@@ -185,6 +191,7 @@
 {"Memory","Speicher"}.
 {"Message body","Nachrichtentext"}.
 {"Middle Name","Zweiter Vorname"}.
+{"Minimum interval between voice requests (in seconds)","Mindestdauer zwischen Anfragen für Sprachrechte (in Sekunden)"}.
 {"Moderator privileges required","Moderatorrechte benötigt"}.
 {"moderators only","ausschliesslich Moderatoren"}.
 {"Modified modules","Geänderte Module"}.
@@ -199,6 +206,7 @@
 {"Nickname","Benutzername"}.
 {"Nickname Registration at ","Registrieren des Benutzernames auf"}.
 {"Nickname ~s does not exist in the room","Der Benutzername ~s existiert im Raum nicht"}.
+{"nobody","niemanden"}.
 {"No body provided for announce message","Kein Text für die Ankündigung angegeben"}.
 {"No Data","Keine Daten"}.
 {"Node ID","Knoten-ID"}.
@@ -227,6 +235,7 @@
 {"Only deliver notifications to available users","Benachrichtigungen nur an verfügbare Benutzer schicken"}.
 {"Only moderators and participants are allowed to change the subject in this room","Nur Moderatoren und Mitglieder dürfen das Thema in diesem Raum ändern"}.
 {"Only moderators are allowed to change the subject in this room","Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
+{"Only moderators can approve voice requests","Nur Moderatoren können Anfragen für Sprachrechte bestätigen"}.
 {"Only occupants are allowed to send messages to the conference","Nur Teilnehmer dürfen Nachrichten an den Raum schicken"}.
 {"Only occupants are allowed to send queries to the conference","Nur Teilnehmer sind berechtigt Anfragen an die Konferenz zu senden"}.
 {"Only service administrators are allowed to send service messages","Nur Service-Administratoren sind berechtigt, Servicenachrichten zu versenden"}.
@@ -250,6 +259,7 @@
 {"Persist items to storage","Einträge dauerhaft speichern"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Beachten sie, das diese Optionen nur die eingebaute Mnesia-Datenbank sichern. Wenn sie das ODBC-Modul verwenden, müssen sie die SQL-Datenbank manuell sichern."}.
+{"Please, wait for a while before sending new voice request","Bitte warten sie ein wenig, bevor sie eine weitere Anfrage für Sprachrechte senden"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
 {"Port","Port"}.
@@ -338,7 +348,7 @@
 {"Sunday","Sonntag"}.
 {"That nickname is already in use by another occupant","Dieser Benutzername wird bereits von einem Teilnehmer genutzt"}.
 {"That nickname is registered by another person","Dieser Benutzername wurde bereits von jemand anderem registriert"}.
-{"The captcha is valid.","Die Verifizierung ist gültig."}.
+{"The CAPTCHA is valid.","Die Verifizierung ist gültig."}.
 {"The CAPTCHA verification has failed","Die CAPTCHA Verifizierung schlug fehl"}.
 {"The collections with which a node is affiliated","Sammlungen, mit denen ein Knoten verknüpft ist"}.
 {"the password is","das Passwort lautet"}.
@@ -350,14 +360,15 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Groß/Klein-Schreibung spielt hierbei keine Rolle: macbeth ist gleich MacBeth und Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Diese Seite erlaubt das anlegen eines Jabber Kontos auf diesem Jabber Server. Ihre JID (Jabber IDentifier) setzt sich folgend zusammen: benutzername@server. Bitte lesen sie die Hinweise genau durch, um die Felder korrekt auszufüllen."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Diese Seite erlaubt es, ein Jabber Konto von diesem Server zu entfernen."}.
-{"This participant is kicked from the room because he sent an error message","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht gesendet hat"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine Fehlernachricht an einen anderen Teilnehmer gesendet hat"}.
+{"This participant is kicked from the room because he sent an error message","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht gesendet hat"}.
+{"This participant is kicked from the room because he sent an error message to another participant","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht an einen anderen Teilnehmer gesendet hat"}.
 {"This participant is kicked from the room because he sent an error presence","Dieser Teilnehmer wurde aus dem Raum gekickt, da er einen fehlerhaften Status gesendet hat"}.
 {"This room is not anonymous","Dieser Raum ist nicht anonym"}.
 {"Thursday","Donnerstag"}.
 {"Time delay","Zeitverzögerung"}.
 {"Time","Zeit"}.
 {"To","An"}.
+{"Too many CAPTCHA requests","Zu viele CAPTCHA Anfragen"}.
 {"To ~s","An ~s"}.
 {"Traffic rate limit is exceeded","Datenratenlimit wurde überschritten"}.
 {"Transactions Aborted:","Abgebrochene Transaktionen:"}.
@@ -365,7 +376,6 @@
 {"Transactions Logged:","Protokollierte Transaktionen:"}.
 {"Transactions Restarted:","Neu gestartete Transaktionen:"}.
 {"Tuesday","Dienstag"}.
-{"Unable to generate a captcha","Konnte Captcha nicht erstellen"}.
 {"Unable to generate a CAPTCHA","Konnte CAPTCHA nicht erstellen"}.
 {"Unauthorized","Nicht berechtigt"}.
 {"Unregister","Abmelden"}.
@@ -380,6 +390,7 @@
 {"Use of STARTTLS required","Verwendung von STARTTLS erforderlich"}.
 {"User ","Benutzer "}.
 {"User","Benutzer"}.
+{"User JID","Benutzer JID"}.
 {"User Management","Benutzerverwaltung"}.
 {"Username:","Benutzername:"}.
 {"Users are not allowed to register accounts so quickly","Benutzer dürfen Konten nicht so schnell registrieren"}.
@@ -390,6 +401,8 @@
 {"Virtual Hosts","Virtuelle Hosts"}.
 {"Visitors are not allowed to change their nicknames in this room","Besucher dürfen in diesem Raum ihren Benutzernamen nicht ändern"}.
 {"Visitors are not allowed to send messages to all occupants","Besucher dürfen nicht an alle Teilnehmer Nachrichten verschicken"}.
+{"Voice request","Anfrage für Sprachrechte"}.
+{"Voice requests are disabled in this conference","Anfragen für Sprachrechte sind in diesem Raum deaktiviert"}.
 {"Wednesday","Mittwoch"}.
 {"When to send the last published item","Wann soll das letzte veröffentlichte Objekt gesendet werden"}.
 {"Whether to allow subscriptions","Ob Abonnements erlaubt sind"}.

@@ -20,7 +20,9 @@
 {"Allow users to send invites","Povolit uživatelům posílání pozvánek"}.
 {"Allow users to send private messages","Povolit uživatelům odesílat soukromé zprávy"}.
 {"Allow visitors to change nickname","Povolit návštěvníkům měnit přezdívku"}.
+{"Allow visitors to send private messages to","Povolit návštěvníkům odesílat soukromé zprávy"}.
 {"Allow visitors to send status text in presence updates","Povolit návštěvníkům posílat stavové zprávy ve statusu"}.
+{"Allow visitors to send voice requests","Povolit uživatelům posílat žádosti o voice práva"}.
 {"All Users","Všichni uživatelé"}.
 {"Announcements","Oznámení"}.
 {"anyone","každému"}.
@@ -75,6 +77,7 @@
 {"Dump Backup to Text File at ","Uložit zálohu do textového souboru na "}.
 {"Dump to Text File","Uložit do textového souboru"}.
 {"Edit Properties","Upravit vlastnosti"}.
+{"Either approve or decline the voice request.","Povolit nebo odmítnout voice žádost."}.
 {"ejabberd IRC module","ejabberd IRC modul"}.
 {"ejabberd MUC module","ejabberd MUC modul"}.
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe modul"}.
@@ -98,8 +101,10 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Chyba"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Příklad: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].2\"}]."}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Vyloučit Jabber ID z procesu CAPTCHA ověřování"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportovat všechny uživatele do souboru ve formátu PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportovat uživatele na hostiteli do souboru ve formátu PIEFXIS (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Došlo k chybě při získávání Jabber ID z vaší žádosti o voice práva"}.
 {"Family Name","Příjmení"}.
 {"February",". února"}.
 {"Fill in fields to search for any matching Jabber User","Vyplňte políčka pro vyhledání uživatele Jabberu"}.
@@ -113,6 +118,7 @@
 {"Get User Last Login Time","Získat čas podleního přihlášení uživatele"}.
 {"Get User Password","Získat heslo uživatele"}.
 {"Get User Statistics","Získat statistiky uživatele"}.
+{"Grant voice to this person?","Udělit voice práva této osobě?"}.
 {"Group ","Skupina "}.
 {"Groups","Skupiny"}.
 {"has been banned","byl(a) zablokován(a)"}.
@@ -122,7 +128,7 @@
 {"has been kicked","byl(a) vyhozen(a) z místnosti"}.
 {" has set the subject to: "," změnil(a) téma na: "}.
 {"Host","Hostitel"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","Pokud zde nevidíte obrázek CAPTCHE, přejděte na webovou stránku."}.
+{"If you don't see the CAPTCHA image here, visit the web page.","Pokud zde nevidíte obrázek CAPTCHA, přejděte na webovou stránku."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Pokud chcete zadat jiné kódování pro IRC servery, vyplňte seznam s hodnotami ve formátu '{\"irc server\",\"encoding\", port, \"password\"}'. Výchozí kódování pro tuto službu je \"~s\", port ~p, empty password."}.
 {"Import Directory","Import adresáře"}.
 {"Import File","Import souboru"}.
@@ -168,7 +174,7 @@
 {"List of modules to start","Seznam modulů, které mají být spuštěné"}.
 {"Low level update script","Nízkoúrovňový aktualizační skript"}.
 {"Make participants list public","Nastavit seznam účastníků jako veřejný"}.
-{"Make room captcha protected","Chránit místnost pomocí CAPTCHA"}.
+{"Make room CAPTCHA protected","Chránit místnost pomocí CAPTCHA"}.
 {"Make room members-only","Zpřístupnit místnost jen členům"}.
 {"Make room moderated","Nastavit místnost jako moderovanou"}.
 {"Make room password protected","Chránit místnost heslem"}.
@@ -185,6 +191,7 @@
 {"Memory","Paměť"}.
 {"Message body","Tělo zprávy"}.
 {"Middle Name","Druhé jméno"}.
+{"Minimum interval between voice requests (in seconds)","Minimální interval mezi žádostmi o voice práva (v sekundách)"}.
 {"Moderator privileges required","Potřebujete práva moderátora"}.
 {"moderators only","moderátorům"}.
 {"Modified modules","Aktualizované moduly"}.
@@ -199,6 +206,7 @@
 {"Nickname","Přezdívka"}.
 {"Nickname Registration at ","Registrace přezdívky na "}.
 {"Nickname ~s does not exist in the room","Přezdívka ~s v místnosti neexistuje"}.
+{"nobody","nikdo"}.
 {"No body provided for announce message","Zpráva neobsahuje text"}.
 {"No Data","Žádná data"}.
 {"Node ID","ID uzlu"}.
@@ -227,6 +235,7 @@
 {"Only deliver notifications to available users","Doručovat upozornění jen právě přihlášeným uživatelům"}.
 {"Only moderators and participants are allowed to change the subject in this room","Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"}.
 {"Only moderators are allowed to change the subject in this room","Jen moderátoři mají povoleno měnit téma místnosti"}.
+{"Only moderators can approve voice requests","Pouze moderátoři mohou schválit žádosti o voice práva"}.
 {"Only occupants are allowed to send messages to the conference","Jen členové mají povolené zasílat zprávy do konference"}.
 {"Only occupants are allowed to send queries to the conference","Jen členové mohou odesílat požadavky (query) do konference"}.
 {"Only service administrators are allowed to send service messages","Pouze správci služby smí odesílat servisní zprávy"}.
@@ -250,6 +259,7 @@
 {"Persist items to storage","Uložit položky natrvalo do úložiště"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
+{"Please, wait for a while before sending new voice request","Prosím, počkejte chvíli před posláním nové žádosti o voice práva"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
 {"Port","Port"}.
@@ -338,7 +348,7 @@
 {"Sunday","Neděle"}.
 {"That nickname is already in use by another occupant","Přezdívka je již používána jiným členem"}.
 {"That nickname is registered by another person","Přezdívka je zaregistrována jinou osobou"}.
-{"The captcha is valid.","CAPTCHA souhlasí."}.
+{"The CAPTCHA is valid.","CAPTCHA souhlasí."}.
 {"The CAPTCHA verification has failed","Ověření CAPTCHA se nezdařilo"}.
 {"The collections with which a node is affiliated","Kolekce, se kterými je uzel spřízněn"}.
 {"the password is","heslo je"}.
@@ -357,6 +367,7 @@
 {"Thursday","Čtvrtek"}.
 {"Time","Čas"}.
 {"Time delay","Časový posun"}.
+{"Too many CAPTCHA requests","Přiliš mnoho CAPTCHA žádostí"}.
 {"To","Pro"}.
 {"To ~s","Pro ~s"}.
 {"Traffic rate limit is exceeded","Byl překročen limit"}.
@@ -365,7 +376,6 @@
 {"Transactions Logged:","Transakce zaznamenána"}.
 {"Transactions Restarted:","Transakce restartována"}.
 {"Tuesday","Úterý"}.
-{"Unable to generate a captcha","Nebylo možné vygenerovat CAPTCHA"}.
 {"Unable to generate a CAPTCHA","Nebylo možné vygenerovat CAPTCHA"}.
 {"Unauthorized","Nemáte oprávnění"}.
 {"Unregister a Jabber account","Zrušte registraci účtu Jabberu"}.
@@ -377,7 +387,8 @@
 {"Update plan","Aktualizovat plán"}.
 {"Update script","Aktualizované skripty"}.
 {"Uptime:","Čas běhu:"}.
-{"Use of STARTTLS required","Je vyžadováno STARTTLS."}.
+{"Use of STARTTLS required","Je vyžadováno STARTTLS"}.
+{"User JID","Jabber ID uživatele"}.
 {"User Management","Správa uživatelů"}.
 {"Username:","Uživatelské jméno:"}.
 {"Users are not allowed to register accounts so quickly","Je zakázáno registrovat účty v tak rychlém sledu"}.
@@ -390,6 +401,8 @@
 {"Virtual Hosts","Virtuální hostitelé"}.
 {"Visitors are not allowed to change their nicknames in this room","Návštěvníkům této místnosti je zakázáno měnit přezdívku"}.
 {"Visitors are not allowed to send messages to all occupants","Návštevníci nemají povoleno zasílat zprávy všem účastníkům konference"}.
+{"Voice requests are disabled in this conference","Voice žádosti jsou v této konferenci zakázány"}.
+{"Voice request","Žádost o voice práva"}.
 {"Wednesday","Středa"}.
 {"When to send the last published item","Kdy odeslat poslední publikovanou položku"}.
 {"Whether to allow subscriptions","Povolit odebírání"}.

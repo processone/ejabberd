@@ -20,7 +20,9 @@
 {"Allow users to send invites","Επιτρέψετε στους χρήστες να αποστέλλουν προσκλήσεις"}.
 {"Allow users to send private messages","Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"}.
 {"Allow visitors to change nickname","Επιτρέψετε στους επισκέπτες να αλλάζου ψευδώνυμο"}.
+{"Allow visitors to send private messages to","Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα σε"}.
 {"Allow visitors to send status text in presence updates","Επιτρέψτε στους επισκέπτες να αποστέλλουν κατάσταση στις ενημερώσεις παρουσίας"}.
+{"Allow visitors to send voice requests","Επιτρέψτε στους επισκέπτες να στέλνουν αιτήματα φωνής"}.
 {"All Users","Όλοι οι χρήστες"}.
 {"Announcements","Ανακοινώσεις"}.
 {"anyone","οποιοσδήποτε"}.
@@ -75,6 +77,7 @@
 {"Dump Backup to Text File at ","Αποθήκευση Αντιγράφου Ασφαλείας σε αρχείο κειμένου στο "}.
 {"Dump to Text File","Αποθήκευση σε αρχείο κειμένου"}.
 {"Edit Properties","Επεξεργασία ιδιοτήτων"}.
+{"Either approve or decline the voice request.","Είτε εγκρίνετε ή απορρίψτε το αίτημα φωνής."}.
 {"ejabberd IRC module","ejabberd IRC module"}.
 {"ejabberd MUC module","ejabberd MUC module"}.
 {"ejabberd Publish-Subscribe module","ejabberd module Δημοσίευσης-Εγγραφής"}.
@@ -98,8 +101,10 @@
 {"Erlang Jabber Server","Erlang Jabber Διακομιστής"}.
 {"Error","Σφάλμα"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Παράδειγμα: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Εξαίρεση από τις ταυτότητες Jabber, ή CAPTCHA πρόκληση"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Εξαγωγή δεδομένων όλων των χρηστών του διακομιστή σε PIEFXIS αρχεία (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Εξαγωγή δεδομένων των χρηστών κεντρικού υπολογιστή σε PIEFXIS αρχεία (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Απέτυχε η εξαγωγή JID από την έγκριση του αιτήματος φωνής σας"}.
 {"Family Name","Επώνυμο"}.
 {"February","Φεβρουάριος"}.
 {"Fill in fields to search for any matching Jabber User","Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα Jabber χρήστη"}.
@@ -113,6 +118,7 @@
 {"Get User Last Login Time","Έκθεση Τελευταίας Ώρας Σύνδεσης Χρήστη"}.
 {"Get User Password","Έκθεση Κωδικού Πρόσβασης Χρήστη"}.
 {"Get User Statistics","Έκθεση Στατιστικών Χρήστη"}.
+{"Grant voice to this person?","Παραχώρηση φωνής σε αυτό το άτομο;"}.
 {"Groups","Ομάδες"}.
 {"Group ","Ομάδα"}.
 {"has been banned","έχει απαγορευθεί"}.
@@ -168,7 +174,7 @@
 {"List of modules to start","Λίστα των Module για Εκκίνηση"}.
 {"Low level update script","Προγράμα ενημέρωσης χαμηλού επίπεδου "}.
 {"Make participants list public","Κάντε κοινό τον κατάλογο συμμετεχόντων"}.
-{"Make room captcha protected","Κάντε την αίθουσα CAPTCHA προστατεύονομενη"}.
+{"Make room CAPTCHA protected","Κάντε την αίθουσα CAPTCHA προστατεύονομενη"}.
 {"Make room members-only","Κάντε την αίθουσα μόνο για μέλη"}.
 {"Make room moderated","Κάντε την αίθουσα εποπτεύονομενη"}.
 {"Make room password protected","Κάντε την αίθουσα προστατεύομενη με κωδικό πρόσβασης"}.
@@ -185,6 +191,7 @@
 {"Memory","Μνήμη"}.
 {"Message body","Περιεχόμενο μηνυμάτως"}.
 {"Middle Name","Πατρώνυμο"}.
+{"Minimum interval between voice requests (in seconds)","Ελάχιστο χρονικό διάστημα μεταξύ αιτημάτων φωνής (σε δευτερόλεπτα)"}.
 {"Moderator privileges required","Aπαιτούνται προνόμια συντονιστή"}.
 {"moderators only","συντονιστές μόνο"}.
 {"Modified modules","Τροποποιημένα modules"}.
@@ -200,6 +207,7 @@
 {"Nickname ~s does not exist in the room","Ψευδώνυμο ~s δεν υπάρχει σε αυτή την αίθουσα"}.
 {"Nickname","Ψευδώνυμο"}.
 {"No body provided for announce message","Δεν προμηθεύτικε περιεχόμενο ανακοινώσης"}.
+{"nobody","κανείς"}.
 {"No Data","Κανένα στοιχείο"}.
 {"Node ID","Ταυτότητα Κόμβου"}.
 {"Node not found","Κόμβος δεν βρέθηκε"}.
@@ -227,6 +235,7 @@
 {"Only deliver notifications to available users","Παράδωση κοινοποιήσεων μόνο σε διαθέσιμους χρήστες"}.
 {"Only moderators and participants are allowed to change the subject in this room","Μόνο οι συντονιστές και οι συμμετέχοντες μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"}.
 {"Only moderators are allowed to change the subject in this room","Μόνο οι συντονιστές μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"}.
+{"Only moderators can approve voice requests","Μόνο οι συντονιστές μπορούν να εγκρίνουν τις αιτήσεις φωνής"}.
 {"Only occupants are allowed to send messages to the conference","Μόνο οι συμμετέχωντες  μπορούν να στέλνουν μηνύματα στο συνέδριο"}.
 {"Only occupants are allowed to send queries to the conference","Μόνο οι συμετεχόντες  μπορούν να στείλουν ερωτήματα στη διάσκεψη"}.
 {"Only service administrators are allowed to send service messages","Μόνο οι διαχειριστές των υπηρεσιών επιτρέπεται να στείλουν υπηρεσιακά μηνύματα"}.
@@ -250,6 +259,7 @@
 {"Persist items to storage","Μονιμη αποθήκευση στοιχείων"}.
 {"Ping","Πινγκ"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Παρακαλώ σημειώστε ότι οι επιλογές αυτές θα αποθήκευσουν Αντιγράφο Ασφαλείας μόνο της ενσωματωμένης βάσης δεδομένων Mnesia. Εάν χρησιμοποιείτε το module ODBC, θα πρέπει επίσης να κάνετε χωριστά Αντιγράφο Ασφαλείας της SQL βάση δεδομένων σας ."}.
+{"Please, wait for a while before sending new voice request","Παρακαλώ, περιμένετε για λίγο πριν την αποστολή νέου αιτήματος φωνής"}.
 {"Pong","Πονγκ"}.
 {"Port ~b","Θύρα ~b"}.
 {"Port","Θύρα"}.
@@ -338,7 +348,7 @@
 {"Sunday","Κυριακή"}.
 {"That nickname is already in use by another occupant","Αυτό το ψευδώνυμο είναι ήδη σε χρήση από άλλον συμμετέχων"}.
 {"That nickname is registered by another person","Αυτό το ψευδώνυμο είναι καταχωρημένο από άλλο πρόσωπο"}.
-{"The captcha is valid.","Το captcha είναι έγκυρο."}.
+{"The CAPTCHA is valid.","Το CAPTCHA είναι έγκυρο."}.
 {"The CAPTCHA verification has failed","Η επαλήθευση της εικόνας CAPTCHA απέτυχε"}.
 {"The collections with which a node is affiliated","Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"}.
 {"The password is too weak","Ο κωδικός πρόσβασης είναι πολύ ασθενές"}.
@@ -357,6 +367,7 @@
 {"Thursday","Πέμπτη"}.
 {"Time delay","Χρόνος καθυστέρησης"}.
 {"Time","Χρόνος"}.
+{"Too many CAPTCHA requests","Πάρα πολλά αιτήματα CAPTCHA"}.
 {"To ~s","Πρώς ~s"}.
 {"To","Πρώς"}.
 {"Traffic rate limit is exceeded","Υπέρφορτωση"}.
@@ -365,8 +376,7 @@
 {"Transactions Logged:","Καταγραμμένες συναλλαγές:"}.
 {"Transactions Restarted:","Επανειλημμένες συναλλαγές:"}.
 {"Tuesday","Τρίτη"}.
-{"Unable to generate a captcha","Αδήνατο να δημιουργηθεί CAPTCHA"}.
-{"Unable to generate a CAPTCHA","Αδήνατο να δημιουργηθεί εικόνα CAPTCHA"}.
+{"Unable to generate a CAPTCHA","Αδήνατο να δημιουργηθεί CAPTCHA"}.
 {"Unauthorized","Χορίς Εξουσιοδότηση"}.
 {"Unregister a Jabber account","Καταργήστε την εγγραφή ενός λογαριασμού Jabber"}.
 {"Unregister","Καταργήση εγγραφής"}.
@@ -378,6 +388,7 @@
 {"Update","Ενημέρωση"}.
 {"Uptime:","Uptime:"}.
 {"Use of STARTTLS required","Απαιτείται χρήση STARTTLS "}.
+{"User JID","JID Χρήστη"}.
 {"User Management","Διαχείριση χρηστών"}.
 {"Username:","Όνομα χρήστη"}.
 {"Users are not allowed to register accounts so quickly","Οι χρήστες δεν επιτρέπεται να εγγραφούν λογαριασμούς τόσο γρήγορα"}.
@@ -390,6 +401,8 @@
 {"Virtual Hosts","εικονικοί κεντρικοί υπολογιστές"}.
 {"Visitors are not allowed to change their nicknames in this room","Οι επισκέπτες δεν επιτρέπεται να αλλάξουν τα ψευδώνυμα τους σε αυτή την αίθουσα"}.
 {"Visitors are not allowed to send messages to all occupants","Οι επισκέπτες δεν επιτρέπεται να στείλουν μηνύματα σε όλους τους συμμετέχωντες"}.
+{"Voice requests are disabled in this conference","Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"}.
+{"Voice request","Αίτημα φωνής"}.
 {"Wednesday","Τετάρτη"}.
 {"When to send the last published item","Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"}.
 {"Whether to allow subscriptions","Εάν επιτρέποντε συνδρομές"}.
