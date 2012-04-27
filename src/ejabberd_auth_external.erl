@@ -293,27 +293,20 @@ get_last_access(User, Server) ->
 get_last_info(User, Server) ->
     case get_mod_last_enabled(Server) of
 	mod_last -> mod_last:get_last_info(User, Server);
-	mod_last_odbc -> mod_last_odbc:get_last_info(User, Server);
 	no_mod_last -> mod_last_required
     end.
 
-%% @spec (Server) -> mod_last | mod_last_odbc | no_mod_last
+%% @spec (Server) -> mod_last | no_mod_last
 get_mod_last_enabled(Server) ->
-    ML = gen_mod:is_loaded(Server, mod_last),
-    MLO = gen_mod:is_loaded(Server, mod_last_odbc),
-    case {ML, MLO} of
-	{true, _} -> mod_last;
-	{false, true} -> mod_last_odbc;
-	{false, false} -> no_mod_last
+    case gen_mod:is_loaded(Server, mod_last) of
+        true -> mod_last;
+	false -> no_mod_last
     end.
 
 get_mod_last_configured(Server) ->
-    ML = is_configured(Server, mod_last),
-    MLO = is_configured(Server, mod_last_odbc),
-    case {ML, MLO} of
-	{true, _} -> mod_last;
-	{false, true} -> mod_last_odbc;
-	{false, false} -> no_mod_last
+    case is_configured(Server, mod_last) of
+        true -> mod_last;
+	false -> no_mod_last
     end.
 
 is_configured(Host, Module) ->
