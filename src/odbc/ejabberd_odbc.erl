@@ -41,7 +41,9 @@
 	 escape_like/1,
 	 to_bool/1,
 	 keep_alive/1,
-	 sql_query_on_all_connections/2]).
+	 sql_query_on_all_connections/2,
+	 encode_term/1,
+	 decode_term/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -176,6 +178,14 @@ to_bool("1") -> true;
 to_bool(true) -> true;
 to_bool(1) -> true;
 to_bool(_) -> false.
+
+encode_term(Term) ->
+    escape(erl_prettypr:format(erl_syntax:abstract(Term))).
+
+decode_term(Str) ->
+    {ok, Tokens, _} = erl_scan:string(Str ++ "."),
+    {ok, Term} = erl_parse:parse_term(Tokens),
+    Term.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm

@@ -1,10 +1,10 @@
-# translation of ejabberd.tr.po to Turkish
-# Doruk Fisek <dfisek@fisek.com.tr>, 2009.
+# translation of tr.po to Turkish
+# Doruk Fisek <dfisek@ozguryazilim.com.tr>, 2009, 2012.
 msgid ""
 msgstr ""
-"Project-Id-Version: ejabberd.tr\n"
-"PO-Revision-Date: 2009-08-12 22:55+0300\n"
-"Last-Translator: Doruk Fisek <dfisek@fisek.com.tr>\n"
+"Project-Id-Version: tr\n"
+"PO-Revision-Date: 2012-04-17 11:18+0300\n"
+"Last-Translator: Doruk Fisek <dfisek@ozguryazilim.com.tr>\n"
 "Language-Team: Turkish <gnu-tr-u12a@lists.sourceforge.net>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -21,13 +21,13 @@ msgstr "STARTTLS kullanımı gereklidir"
 msgid "No resource provided"
 msgstr "Hiç kaynak sağlanmadı"
 
-#: ejabberd_c2s.erl:1149
+#: ejabberd_c2s.erl:1197
 msgid "Replaced by new connection"
 msgstr "Eski bağlantı yenisi ile değiştirildi"
 
-#: ejabberd_c2s.erl:1837
+#: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Etkin mahremiyet listeniz bu bölümün yönlendirilmesini engelledi."
 
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
@@ -42,13 +42,14 @@ msgstr ""
 #: ejabberd_captcha.erl:134
 msgid "If you don't see the CAPTCHA image here, visit the web page."
 msgstr ""
+"Eğer burada CAPTCHA resmini göremiyorsanız, web sayfasını ziyaret edin."
 
 #: ejabberd_captcha.erl:146
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "CAPTCHA web sayfası"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr "İnsan doğrulaması (captcha) geçerli."
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -63,64 +64,67 @@ msgstr "Ping"
 msgid "Pong"
 msgstr "Pong"
 
-#: mod_announce.erl:506
+#: mod_announce.erl:507 mod_announce_odbc.erl:499
 msgid "Really delete message of the day?"
 msgstr "Günün mesajını silmek istediğinize emin misiniz?"
 
-#: mod_announce.erl:514 mod_configure.erl:1083 mod_configure.erl:1128
+#: mod_announce.erl:515 mod_announce_odbc.erl:507 mod_configure.erl:1083
+#: mod_configure.erl:1128
 msgid "Subject"
 msgstr "Konu"
 
-#: mod_announce.erl:519 mod_configure.erl:1088 mod_configure.erl:1133
+#: mod_announce.erl:520 mod_announce_odbc.erl:512 mod_configure.erl:1088
+#: mod_configure.erl:1133
 msgid "Message body"
 msgstr "Mesajın gövdesi"
 
-#: mod_announce.erl:599
+#: mod_announce.erl:600 mod_announce_odbc.erl:592
 msgid "No body provided for announce message"
 msgstr "Duyuru mesajının gövdesi yok"
 
-#: mod_announce.erl:634
+#: mod_announce.erl:635 mod_announce_odbc.erl:627
 msgid "Announcements"
 msgstr "Duyurular"
 
-#: mod_announce.erl:636
+#: mod_announce.erl:637 mod_announce_odbc.erl:629
 msgid "Send announcement to all users"
 msgstr "Duyuruyu tüm kullanıcılara yolla"
 
-#: mod_announce.erl:638
+#: mod_announce.erl:639 mod_announce_odbc.erl:631
 msgid "Send announcement to all users on all hosts"
 msgstr "Tüm sunuculardaki tüm kullanıcılara duyuru yolla"
 
-#: mod_announce.erl:640
+#: mod_announce.erl:641 mod_announce_odbc.erl:633
 msgid "Send announcement to all online users"
 msgstr "Duyuruyu tüm bağlı kullanıcılara yolla"
 
-#: mod_announce.erl:642 mod_configure.erl:1078 mod_configure.erl:1123
+#: mod_announce.erl:643 mod_announce_odbc.erl:635 mod_configure.erl:1078
+#: mod_configure.erl:1123
 msgid "Send announcement to all online users on all hosts"
 msgstr "Duyuruyu tüm sunuculardaki tüm bağlı kullanıcılara yolla"
 
-#: mod_announce.erl:644
+#: mod_announce.erl:645 mod_announce_odbc.erl:637
 msgid "Set message of the day and send to online users"
 msgstr "Günün mesajını belirle"
 
-#: mod_announce.erl:646
+#: mod_announce.erl:647 mod_announce_odbc.erl:639
 msgid "Set message of the day on all hosts and send to online users"
 msgstr ""
 "Tüm sunucularda günün mesajını belirle ve bağlı tüm kullanıcılara gönder"
 
-#: mod_announce.erl:648
+#: mod_announce.erl:649 mod_announce_odbc.erl:641
 msgid "Update message of the day (don't send)"
 msgstr "Günün mesajını güncelle (gönderme)"
 
-#: mod_announce.erl:650
+#: mod_announce.erl:651 mod_announce_odbc.erl:643
 msgid "Update message of the day on all hosts (don't send)"
 msgstr "Tüm sunuculardaki günün mesajını güncelle (gönderme)"
 
-#: mod_announce.erl:652
+#: mod_announce.erl:653 mod_announce_odbc.erl:645
 msgid "Delete message of the day"
 msgstr "Günün mesajını sil"
 
-#: mod_announce.erl:654
+#: mod_announce.erl:655 mod_announce_odbc.erl:647
 msgid "Delete message of the day on all hosts"
 msgstr "Tüm sunuculardaki günün mesajını sil"
 
@@ -129,7 +133,7 @@ msgstr "Tüm sunuculardaki günün mesajını sil"
 msgid "Configuration"
 msgstr "Ayarlar"
 
-#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1934
+#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1936
 msgid "Database"
 msgstr "Veritabanı"
 
@@ -141,7 +145,7 @@ msgstr "Modülleri Başlat"
 msgid "Stop Modules"
 msgstr "Modülleri Durdur"
 
-#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1935
+#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1937
 msgid "Backup"
 msgstr "Yedekle"
 
@@ -170,7 +174,7 @@ msgid "Shut Down Service"
 msgstr "Servisi Kapat"
 
 #: mod_configure.erl:145 mod_configure.erl:518 mod_configure.erl:1197
-#: web/ejabberd_web_admin.erl:1528
+#: web/ejabberd_web_admin.erl:1527
 msgid "Add User"
 msgstr "Kullanıcı Ekle"
 
@@ -222,7 +226,7 @@ msgid "User Management"
 msgstr "Kullanıcı Yönetimi"
 
 #: mod_configure.erl:500 web/ejabberd_web_admin.erl:1058
-#: web/ejabberd_web_admin.erl:1463
+#: web/ejabberd_web_admin.erl:1462
 msgid "Online Users"
 msgstr "Bağlı Kullanıcılar"
 
@@ -234,15 +238,15 @@ msgstr "Tüm Kullanıcılar"
 msgid "Outgoing s2s Connections"
 msgstr "Giden s2s Bağlantıları"
 
-#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1905
+#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1907
 msgid "Running Nodes"
 msgstr "Çalışan Düğümler"
 
-#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1907
+#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1909
 msgid "Stopped Nodes"
 msgstr "Durdurulmuş Düğümler"
 
-#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1951
+#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1953
 msgid "Modules"
 msgstr "Modüller"
 
@@ -373,15 +377,15 @@ msgstr "Erişim kuralları"
 
 #: mod_configure.erl:1200 mod_configure.erl:1222 mod_configure.erl:1234
 #: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
-#: mod_configure.erl:1287 mod_configure.erl:1652 mod_configure.erl:1702
-#: mod_configure.erl:1723 mod_roster.erl:943 mod_roster_odbc.erl:1048
-#: mod_vcard.erl:466 mod_vcard_ldap.erl:550 mod_vcard_odbc.erl:442
+#: mod_configure.erl:1287 mod_configure.erl:1650 mod_configure.erl:1700
+#: mod_configure.erl:1721 mod_roster.erl:943 mod_roster_odbc.erl:1060
+#: mod_vcard.erl:472 mod_vcard_ldap.erl:554 mod_vcard_odbc.erl:448
 msgid "Jabber ID"
 msgstr "Jabber ID"
 
-#: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1653
-#: mod_configure.erl:1865 mod_muc/mod_muc_room.erl:2970 mod_register.erl:235
-#: web/ejabberd_web_admin.erl:1521
+#: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1651
+#: mod_configure.erl:1863 mod_muc/mod_muc_room.erl:3224 mod_register.erl:235
+#: web/ejabberd_web_admin.erl:1520
 msgid "Password"
 msgstr "Parola"
 
@@ -397,71 +401,72 @@ msgstr "Kayıtlı kullanıcı sayısı"
 msgid "Number of online users"
 msgstr "Bağlı kullanıcı sayısı"
 
-#: mod_configure.erl:1684 web/ejabberd_web_admin.erl:1589
-#: web/ejabberd_web_admin.erl:1741
+#: mod_configure.erl:1682 web/ejabberd_web_admin.erl:1588
+#: web/ejabberd_web_admin.erl:1743
 msgid "Never"
 msgstr "Asla"
 
-#: mod_configure.erl:1698 web/ejabberd_web_admin.erl:1602
-#: web/ejabberd_web_admin.erl:1754
+#: mod_configure.erl:1696 web/ejabberd_web_admin.erl:1601
+#: web/ejabberd_web_admin.erl:1756
 msgid "Online"
 msgstr "Bağlı"
 
-#: mod_configure.erl:1703
+#: mod_configure.erl:1701
 msgid "Last login"
 msgstr "Son giriş"
 
-#: mod_configure.erl:1724
+#: mod_configure.erl:1722
 msgid "Roster size"
 msgstr "İsim listesi boyutu"
 
-#: mod_configure.erl:1725
+#: mod_configure.erl:1723
 msgid "IP addresses"
 msgstr "IP adresleri"
 
-#: mod_configure.erl:1726
+#: mod_configure.erl:1724
 msgid "Resources"
 msgstr "Kaynaklar"
 
-#: mod_configure.erl:1852
+#: mod_configure.erl:1850
 msgid "Administration of "
 msgstr "Yönetim : "
 
-#: mod_configure.erl:1855
+#: mod_configure.erl:1853
 msgid "Action on user"
 msgstr "Kullanıcıya uygulanacak eylem"
 
-#: mod_configure.erl:1859
+#: mod_configure.erl:1857
 msgid "Edit Properties"
 msgstr "Özellikleri Düzenle"
 
-#: mod_configure.erl:1862 web/ejabberd_web_admin.erl:1767
+#: mod_configure.erl:1860 web/ejabberd_web_admin.erl:1769
 msgid "Remove User"
 msgstr "Kullanıcıyı Kaldır"
 
-#: mod_irc/mod_irc.erl:201 mod_muc/mod_muc.erl:336
+#: mod_irc/mod_irc.erl:201 mod_irc/mod_irc_odbc.erl:196
+#: mod_muc/mod_muc.erl:336 mod_muc/mod_muc_odbc.erl:342
 msgid "Access denied by service policy"
 msgstr "Servis politikası gereği erişim engellendi"
 
-#: mod_irc/mod_irc.erl:400
+#: mod_irc/mod_irc.erl:401 mod_irc/mod_irc_odbc.erl:398
 msgid "IRC Transport"
 msgstr "IRC Nakli (Transport)"
 
-#: mod_irc/mod_irc.erl:427
+#: mod_irc/mod_irc.erl:428 mod_irc/mod_irc_odbc.erl:425
 msgid "ejabberd IRC module"
 msgstr "ejabberd IRC modülü"
 
-#: mod_irc/mod_irc.erl:558
+#: mod_irc/mod_irc.erl:559 mod_irc/mod_irc_odbc.erl:568
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr ""
 "mod_irc ayarlarını düzenlemek için x:data becerisine sahip bir istemciye "
 "gereksinimiz var"
 
-#: mod_irc/mod_irc.erl:565
+#: mod_irc/mod_irc.erl:566 mod_irc/mod_irc_odbc.erl:575
 msgid "Registration in mod_irc for "
 msgstr "mod_irc'ye kayıt : "
 
-#: mod_irc/mod_irc.erl:570
+#: mod_irc/mod_irc.erl:571 mod_irc/mod_irc_odbc.erl:580
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
@@ -469,11 +474,11 @@ msgstr ""
 "IRC sunuculara bağlanmak için kullanmak istediğiniz kullanıcı ismi, "
 "kodlamalar, kapılar (portlar) ve parolaları giriniz"
 
-#: mod_irc/mod_irc.erl:575
+#: mod_irc/mod_irc.erl:576 mod_irc/mod_irc_odbc.erl:585
 msgid "IRC Username"
 msgstr "IRC Kullanıcı İsmi"
 
-#: mod_irc/mod_irc.erl:585
+#: mod_irc/mod_irc.erl:586 mod_irc/mod_irc_odbc.erl:595
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -485,7 +490,7 @@ msgstr ""
 "\"}' biçeminde değerlerle bu listeyi doldurunuz. Öntanımlı olarak bu servis "
 "\"~s\" kodlamasını, ~p \"kapısını\", \"boş\" parolasını kullanıyor."
 
-#: mod_irc/mod_irc.erl:597
+#: mod_irc/mod_irc.erl:598 mod_irc/mod_irc_odbc.erl:607
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
@@ -493,35 +498,36 @@ msgstr ""
 "Örnek: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"gizli\"}, {\"vendetta.fef.net"
 "\", \"iso8859-1\", 7000}], {\"irc.sometestserver.net\", \"utf-8\"}]"
 
-#: mod_irc/mod_irc.erl:602
+#: mod_irc/mod_irc.erl:603 mod_irc/mod_irc_odbc.erl:612
 msgid "Connections parameters"
 msgstr "Bağlantı parametreleri"
 
-#: mod_irc/mod_irc.erl:727
+#: mod_irc/mod_irc.erl:728 mod_irc/mod_irc_odbc.erl:757
 msgid "Join IRC channel"
 msgstr "IRC kanalına katıl"
 
-#: mod_irc/mod_irc.erl:731
+#: mod_irc/mod_irc.erl:732 mod_irc/mod_irc_odbc.erl:761
 msgid "IRC channel (don't put the first #)"
 msgstr "IRC kanalı (ilk # işaretini koymayın)"
 
-#: mod_irc/mod_irc.erl:736
+#: mod_irc/mod_irc.erl:737 mod_irc/mod_irc_odbc.erl:766
 msgid "IRC server"
 msgstr "IRC sunucusu"
 
-#: mod_irc/mod_irc.erl:769 mod_irc/mod_irc.erl:773
+#: mod_irc/mod_irc.erl:770 mod_irc/mod_irc.erl:774
+#: mod_irc/mod_irc_odbc.erl:799 mod_irc/mod_irc_odbc.erl:803
 msgid "Join the IRC channel here."
 msgstr "Buradaki IRC kanalına katıl."
 
-#: mod_irc/mod_irc.erl:777
+#: mod_irc/mod_irc.erl:778 mod_irc/mod_irc_odbc.erl:807
 msgid "Join the IRC channel in this Jabber ID: ~s"
 msgstr "IRC kanalına bu Jabber ID'si ile katıl: ~s"
 
-#: mod_irc/mod_irc.erl:862
+#: mod_irc/mod_irc.erl:863 mod_irc/mod_irc_odbc.erl:904
 msgid "IRC settings"
 msgstr "IRC ayarları"
 
-#: mod_irc/mod_irc.erl:867
+#: mod_irc/mod_irc.erl:868 mod_irc/mod_irc_odbc.erl:909
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
@@ -531,73 +537,73 @@ msgstr ""
 "kodlamaları giriniz.  'İleri' tuşuna basınca karşınıza dolduracak daha fazla "
 "alan çıkacak. 'Tamamla' tuşuna basarak ayarları kaydedin."
 
-#: mod_irc/mod_irc.erl:873
+#: mod_irc/mod_irc.erl:874 mod_irc/mod_irc_odbc.erl:915
 msgid "IRC username"
 msgstr "IRC kullanıcı ismi"
 
-#: mod_irc/mod_irc.erl:922
+#: mod_irc/mod_irc.erl:923 mod_irc/mod_irc_odbc.erl:964
 msgid "Password ~b"
 msgstr "Parola ~b"
 
-#: mod_irc/mod_irc.erl:927
+#: mod_irc/mod_irc.erl:928 mod_irc/mod_irc_odbc.erl:969
 msgid "Port ~b"
 msgstr "Kapı (Port) ~b"
 
-#: mod_irc/mod_irc.erl:932
+#: mod_irc/mod_irc.erl:933 mod_irc/mod_irc_odbc.erl:974
 msgid "Encoding for server ~b"
 msgstr "Sunucu için kodlama ~b"
 
-#: mod_irc/mod_irc.erl:941
+#: mod_irc/mod_irc.erl:942 mod_irc/mod_irc_odbc.erl:983
 msgid "Server ~b"
 msgstr "Sunucu ~b"
 
-#: mod_muc/mod_muc.erl:449
+#: mod_muc/mod_muc.erl:449 mod_muc/mod_muc_odbc.erl:456
 msgid "Only service administrators are allowed to send service messages"
 msgstr "Sadece servis yöneticileri servis mesajı gönderebilirler"
 
-#: mod_muc/mod_muc.erl:493
+#: mod_muc/mod_muc.erl:493 mod_muc/mod_muc_odbc.erl:500
 msgid "Room creation is denied by service policy"
 msgstr "Odanın oluşturulması servis politikası gereği reddedildi"
 
-#: mod_muc/mod_muc.erl:500
+#: mod_muc/mod_muc.erl:500 mod_muc/mod_muc_odbc.erl:507
 msgid "Conference room does not exist"
 msgstr "Konferans odası bulunamadı"
 
-#: mod_muc/mod_muc.erl:581
+#: mod_muc/mod_muc.erl:582 mod_muc/mod_muc_odbc.erl:595
 msgid "Chatrooms"
 msgstr "Sohbet Odaları"
 
-#: mod_muc/mod_muc.erl:711
-#, fuzzy
+#: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
-"Takma isminizi kaydettirmek için x:data becerisine sahip bir istemciye "
+"Takma isminizi kaydettirmek için x:data destekleyen bir istemciye "
 "gereksinimiz var"
 
-#: mod_muc/mod_muc.erl:717
+#: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
 msgid "Nickname Registration at "
 msgstr "Takma İsim Kaydı : "
 
-#: mod_muc/mod_muc.erl:721
+#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_odbc.erl:739
 msgid "Enter nickname you want to register"
 msgstr "Kaydettirmek istediğiniz takma ismi giriniz"
 
-#: mod_muc/mod_muc.erl:722 mod_roster.erl:944 mod_roster_odbc.erl:1049
-#: mod_vcard.erl:358 mod_vcard.erl:471 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:447
+#: mod_muc/mod_muc.erl:723 mod_muc/mod_muc_odbc.erl:740
+#: mod_muc/mod_muc_room.erl:3810 mod_roster.erl:944 mod_roster_odbc.erl:1061
+#: mod_vcard.erl:364 mod_vcard.erl:477 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:453
 msgid "Nickname"
 msgstr "Takma isim"
 
-#: mod_muc/mod_muc.erl:761 mod_muc/mod_muc_room.erl:933
-#: mod_muc/mod_muc_room.erl:1577
+#: mod_muc/mod_muc.erl:762 mod_muc/mod_muc_odbc.erl:784
+#: mod_muc/mod_muc_room.erl:1064 mod_muc/mod_muc_room.erl:1787
 msgid "That nickname is registered by another person"
 msgstr "O takma isim başka biri tarafından kaydettirilmiş"
 
-#: mod_muc/mod_muc.erl:787
+#: mod_muc/mod_muc.erl:788 mod_muc/mod_muc_odbc.erl:811
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Formda \"Takma isim\" alanını doldurmanız gerekiyor"
 
-#: mod_muc/mod_muc.erl:807
+#: mod_muc/mod_muc.erl:808 mod_muc/mod_muc_odbc.erl:831
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC modülü"
 
@@ -637,30 +643,26 @@ msgstr "sistem kapandığından dolayı atıldı"
 msgid "is now known as"
 msgstr "isim değiştirdi :"
 
-#: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:689
-#: mod_muc/mod_muc_room.erl:2138
+#: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:688
+#: mod_muc/mod_muc_room.erl:2393
 msgid " has set the subject to: "
 msgstr " konuyu değiştirdi: "
 
 #: mod_muc/mod_muc_log.erl:452
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası oluşturuldu"
 
 #: mod_muc/mod_muc_log.erl:453
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası kaldırıldı"
 
 #: mod_muc/mod_muc_log.erl:454
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası başlatıldı"
 
 #: mod_muc/mod_muc_log.erl:455
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Sohbet Odaları"
+msgstr "Sohbet odası durduruldu"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -738,32 +740,48 @@ msgstr "Kasım"
 msgid "December"
 msgstr "Aralık"
 
-#: mod_muc/mod_muc_log.erl:751
+#: mod_muc/mod_muc_log.erl:750
 msgid "Room Configuration"
 msgstr "Oda Ayarları"
 
-#: mod_muc/mod_muc_log.erl:760
+#: mod_muc/mod_muc_log.erl:759
 msgid "Room Occupants"
 msgstr "Oda Sakini Sayısı"
 
-#: mod_muc/mod_muc_room.erl:170
+#: mod_muc/mod_muc_room.erl:174
 msgid "Traffic rate limit is exceeded"
 msgstr "Trafik oran sınırı aşıldı"
 
-#: mod_muc/mod_muc_room.erl:242
+#: mod_muc/mod_muc_room.erl:246
 msgid ""
 "This participant is kicked from the room because he sent an error message"
 msgstr "Bu katılımcı bir hata mesajı gönderdiği için odadan atıldı"
 
-#: mod_muc/mod_muc_room.erl:251
+#: mod_muc/mod_muc_room.erl:255
 msgid "It is not allowed to send private messages to the conference"
 msgstr "Konferansa özel mesajlar gönderilmesine izin verilmiyor"
 
-#: mod_muc/mod_muc_room.erl:296
+#: mod_muc/mod_muc_room.erl:332
+msgid "Please, wait for a while before sending new voice request"
+msgstr "Lütfen yeni bir ses isteği göndermeden önce biraz bekleyin"
+
+#: mod_muc/mod_muc_room.erl:347
+msgid "Voice requests are disabled in this conference"
+msgstr "Bu konferansta ses istekleri etkisizleştirilmiş durumda."
+
+#: mod_muc/mod_muc_room.erl:364
+msgid "Failed to extract JID from your voice request approval"
+msgstr "Ses isteği onayınızdan JID bilginize ulaşılamadı"
+
+#: mod_muc/mod_muc_room.erl:393
+msgid "Only moderators can approve voice requests"
+msgstr "Yalnız moderatörler ses isteklerini onaylayabilir"
+
+#: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
 msgstr "Uygunsuz mesaj tipi"
 
-#: mod_muc/mod_muc_room.erl:406
+#: mod_muc/mod_muc_room.erl:518
 msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
@@ -771,32 +789,32 @@ msgstr ""
 "Bu katılımcı başka bir katılımcıya bir hata mesajı gönderdiği için odadan "
 "atıldı"
 
-#: mod_muc/mod_muc_room.erl:419
+#: mod_muc/mod_muc_room.erl:531
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr "\"groupchat\" tipinde özel mesajlar gönderilmesine izin verilmiyor"
 
-#: mod_muc/mod_muc_room.erl:431 mod_muc/mod_muc_room.erl:486
+#: mod_muc/mod_muc_room.erl:543 mod_muc/mod_muc_room.erl:611
 msgid "Recipient is not in the conference room"
 msgstr "Alıcı konferans odasında değil"
 
-#: mod_muc/mod_muc_room.erl:451 mod_muc/mod_muc_room.erl:829
-#: mod_muc/mod_muc_room.erl:3609
-msgid "Only occupants are allowed to send messages to the conference"
-msgstr "Sadece oda sakinlerinin konferansa mesaj göndermesine izin veriliyor"
-
-#: mod_muc/mod_muc_room.erl:460
+#: mod_muc/mod_muc_room.erl:564 mod_muc/mod_muc_room.erl:585
 msgid "It is not allowed to send private messages"
 msgstr "Özel mesaj gönderilmesine izin verilmiyor"
 
-#: mod_muc/mod_muc_room.erl:509
+#: mod_muc/mod_muc_room.erl:576 mod_muc/mod_muc_room.erl:956
+#: mod_muc/mod_muc_room.erl:4040
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Sadece oda sakinlerinin konferansa mesaj göndermesine izin veriliyor"
+
+#: mod_muc/mod_muc_room.erl:634
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr "Sadece oda sakinlerinin konferansa sorgu göndermesine izin veriliyor"
 
-#: mod_muc/mod_muc_room.erl:521
+#: mod_muc/mod_muc_room.erl:646
 msgid "Queries to the conference members are not allowed in this room"
 msgstr "Bu odada konferans üyelerine sorgu yapılmasına izin verilmiyor"
 
-#: mod_muc/mod_muc_room.erl:805
+#: mod_muc/mod_muc_room.erl:932
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -804,201 +822,233 @@ msgstr ""
 "Sadece moderatörlerin ve katılımcıların bu odanın konusunu değiştirmesine "
 "izin veriliyor"
 
-#: mod_muc/mod_muc_room.erl:810
+#: mod_muc/mod_muc_room.erl:937
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Sadece moderatörlerin bu odanın konusunu değiştirmesine izin veriliyor"
 
-#: mod_muc/mod_muc_room.erl:820
+#: mod_muc/mod_muc_room.erl:947
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr ""
 "Ziyaretçilerin odadaki tüm sakinlere mesaj göndermesine izin verilmiyor"
 
-#: mod_muc/mod_muc_room.erl:891
+#: mod_muc/mod_muc_room.erl:1021
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
 msgstr "Bu katılımcı bir hata varlığı (presence) gönderdiği için odadan atıldı"
 
-#: mod_muc/mod_muc_room.erl:909
+#: mod_muc/mod_muc_room.erl:1040
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr ""
 "Bu odada ziyaretçilerin takma isimlerini değiştirmesine izin verilmiyor"
 
-#: mod_muc/mod_muc_room.erl:922 mod_muc/mod_muc_room.erl:1569
+#: mod_muc/mod_muc_room.erl:1053 mod_muc/mod_muc_room.erl:1779
 msgid "That nickname is already in use by another occupant"
 msgstr "Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"
 
-#: mod_muc/mod_muc_room.erl:1558
+#: mod_muc/mod_muc_room.erl:1768
 msgid "You have been banned from this room"
 msgstr "Bu odaya girmeniz yasaklandı"
 
-#: mod_muc/mod_muc_room.erl:1561
+#: mod_muc/mod_muc_room.erl:1771
 msgid "Membership is required to enter this room"
 msgstr "Bu odaya girmek için üyelik gerekiyor"
 
-#: mod_muc/mod_muc_room.erl:1597
+#: mod_muc/mod_muc_room.erl:1807
 msgid "This room is not anonymous"
 msgstr "Bu oda anonim değil"
 
-#: mod_muc/mod_muc_room.erl:1623
+#: mod_muc/mod_muc_room.erl:1833
 msgid "A password is required to enter this room"
 msgstr "Bu odaya girmek için parola gerekiyor"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
+#: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Çok fazla CAPTCHA isteği"
 
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "İnsan doğrulaması (captcha) oluşturulamadı"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "İnsan doğrulaması (CAPTCHA) oluşturulamadı"
 
-#: mod_muc/mod_muc_room.erl:1664
+#: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
 msgstr "Yanlış parola"
 
-#: mod_muc/mod_muc_room.erl:2193
+#: mod_muc/mod_muc_room.erl:2448
 msgid "Administrator privileges required"
 msgstr "Yönetim yetkileri gerekli"
 
-#: mod_muc/mod_muc_room.erl:2208
+#: mod_muc/mod_muc_room.erl:2463
 msgid "Moderator privileges required"
 msgstr "Moderatör yetkileri gerekli"
 
-#: mod_muc/mod_muc_room.erl:2363
+#: mod_muc/mod_muc_room.erl:2619
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s geçersiz"
 
-#: mod_muc/mod_muc_room.erl:2377
+#: mod_muc/mod_muc_room.erl:2633
 msgid "Nickname ~s does not exist in the room"
 msgstr "~s takma ismi odada yok"
 
-#: mod_muc/mod_muc_room.erl:2403 mod_muc/mod_muc_room.erl:2797
+#: mod_muc/mod_muc_room.erl:2659 mod_muc/mod_muc_room.erl:3049
 msgid "Invalid affiliation: ~s"
 msgstr "Geçersiz ilişki: ~s"
 
-#: mod_muc/mod_muc_room.erl:2460
+#: mod_muc/mod_muc_room.erl:2713
 msgid "Invalid role: ~s"
 msgstr "Geçersiz rol: ~s"
 
-#: mod_muc/mod_muc_room.erl:2774 mod_muc/mod_muc_room.erl:2810
+#: mod_muc/mod_muc_room.erl:3026 mod_muc/mod_muc_room.erl:3062
 msgid "Owner privileges required"
 msgstr "Sahip yetkileri gerekli"
 
-#: mod_muc/mod_muc_room.erl:2941
+#: mod_muc/mod_muc_room.erl:3195
 msgid "Configuration of room ~s"
 msgstr "~s odasının ayarları"
 
-#: mod_muc/mod_muc_room.erl:2946
+#: mod_muc/mod_muc_room.erl:3200
 msgid "Room title"
 msgstr "Oda başlığı"
 
-#: mod_muc/mod_muc_room.erl:2949 mod_muc/mod_muc_room.erl:3388
+#: mod_muc/mod_muc_room.erl:3203 mod_muc/mod_muc_room.erl:3692
 msgid "Room description"
 msgstr "Oda tanımı"
 
-#: mod_muc/mod_muc_room.erl:2956
+#: mod_muc/mod_muc_room.erl:3210
 msgid "Make room persistent"
 msgstr "Odayı kalıcı hale getir"
 
-#: mod_muc/mod_muc_room.erl:2961
+#: mod_muc/mod_muc_room.erl:3215
 msgid "Make room public searchable"
 msgstr "Odayı herkes tarafından aranabilir hale getir"
 
-#: mod_muc/mod_muc_room.erl:2964
+#: mod_muc/mod_muc_room.erl:3218
 msgid "Make participants list public"
 msgstr "Katılımcı listesini herkese açık hale getir"
 
-#: mod_muc/mod_muc_room.erl:2967
+#: mod_muc/mod_muc_room.erl:3221
 msgid "Make room password protected"
 msgstr "Odayı parola korumalı hale getir"
 
-#: mod_muc/mod_muc_room.erl:2978
+#: mod_muc/mod_muc_room.erl:3232
 msgid "Maximum Number of Occupants"
 msgstr "Odada En Fazla Bulunabilecek Kişi Sayısı"
 
-#: mod_muc/mod_muc_room.erl:2985
+#: mod_muc/mod_muc_room.erl:3239
 msgid "No limit"
 msgstr "Sınırsız"
 
-#: mod_muc/mod_muc_room.erl:2996
+#: mod_muc/mod_muc_room.erl:3250
 msgid "Present real Jabber IDs to"
 msgstr "Gerçek Jabber ID'lerini göster :"
 
-#: mod_muc/mod_muc_room.erl:3004
+#: mod_muc/mod_muc_room.erl:3258 mod_muc/mod_muc_room.erl:3292
 msgid "moderators only"
 msgstr "sadece moderatörler"
 
-#: mod_muc/mod_muc_room.erl:3006
+#: mod_muc/mod_muc_room.erl:3260 mod_muc/mod_muc_room.erl:3294
 msgid "anyone"
 msgstr "herkes"
 
-#: mod_muc/mod_muc_room.erl:3008
+#: mod_muc/mod_muc_room.erl:3262
 msgid "Make room members-only"
 msgstr "Odayı sadece üyelere açık hale getir"
 
-#: mod_muc/mod_muc_room.erl:3011
+#: mod_muc/mod_muc_room.erl:3265
 msgid "Make room moderated"
 msgstr "Odayı moderasyonlu hale getir"
 
-#: mod_muc/mod_muc_room.erl:3014
+#: mod_muc/mod_muc_room.erl:3268
 msgid "Default users as participants"
 msgstr "Kullanıcılar öntanımlı olarak katılımcı olsun"
 
-#: mod_muc/mod_muc_room.erl:3017
+#: mod_muc/mod_muc_room.erl:3271
 msgid "Allow users to change the subject"
 msgstr "Kullanıcıların konu değiştirmesine izin ver"
 
-#: mod_muc/mod_muc_room.erl:3020
+#: mod_muc/mod_muc_room.erl:3274
 msgid "Allow users to send private messages"
 msgstr "Kullanıcıların özel mesaj göndermelerine izin ver"
 
-#: mod_muc/mod_muc_room.erl:3023
+#: mod_muc/mod_muc_room.erl:3279
+msgid "Allow visitors to send private messages to"
+msgstr "Ziyaretçilerin özel mesaj göndermelerine izin ver"
+
+#: mod_muc/mod_muc_room.erl:3290
+msgid "nobody"
+msgstr "hiç kimse"
+
+#: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
 msgstr "Kullanıcıların diğer kullanıcıları sorgulamalarına izin ver"
 
-#: mod_muc/mod_muc_room.erl:3026
+#: mod_muc/mod_muc_room.erl:3299
 msgid "Allow users to send invites"
 msgstr "Kullanıcıların davetiye göndermelerine izin ver"
 
-#: mod_muc/mod_muc_room.erl:3029
+#: mod_muc/mod_muc_room.erl:3302
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Ziyaretçilerin varlık (presence) güncellemelerinde durum metni "
 "göndermelerine izin ver"
 
-#: mod_muc/mod_muc_room.erl:3032
+#: mod_muc/mod_muc_room.erl:3305
 msgid "Allow visitors to change nickname"
 msgstr "Ziyaretçilerin takma isim değiştirmelerine izin ver"
 
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
+#: mod_muc/mod_muc_room.erl:3308
+msgid "Allow visitors to send voice requests"
+msgstr "Ziyaretçilerin ses isteğine göndermelerine izin ver"
+
+#: mod_muc/mod_muc_room.erl:3311
+msgid "Minimum interval between voice requests (in seconds)"
+msgstr "Ses istekleri arasında olabilecek en az aralık (saniye olarak)"
+
+#: mod_muc/mod_muc_room.erl:3317
+msgid "Make room CAPTCHA protected"
 msgstr "Odayı insan doğrulaması (captcha) korumalı hale getir"
 
-#: mod_muc/mod_muc_room.erl:3043
+#: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "CAPTCHA doğrulamasını şu Jabber ID'ler için yapma"
 
-#: mod_muc/mod_muc_room.erl:3050
+#: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
 msgstr "Kayıt tutma özelliğini aç"
 
-#: mod_muc/mod_muc_room.erl:3058
+#: mod_muc/mod_muc_room.erl:3337
 msgid "You need an x:data capable client to configure room"
 msgstr ""
 "Odayı ayarlamak için x:data becerisine sahip bir istemciye gereksinimiz var"
 
-#: mod_muc/mod_muc_room.erl:3390
+#: mod_muc/mod_muc_room.erl:3694
 msgid "Number of occupants"
 msgstr "Oda sakini sayısı"
 
-#: mod_muc/mod_muc_room.erl:3446
+#: mod_muc/mod_muc_room.erl:3750
 msgid "private, "
 msgstr "özel"
 
-#: mod_muc/mod_muc_room.erl:3529
+#: mod_muc/mod_muc_room.erl:3799
+msgid "Voice request"
+msgstr "Ses isteği"
+
+#: mod_muc/mod_muc_room.erl:3803
+msgid "Either approve or decline the voice request."
+msgstr "Ses isteğini kabul edin ya da reddedin"
+
+#: mod_muc/mod_muc_room.erl:3809
+msgid "User JID"
+msgstr "Kullanıcı JID"
+
+#: mod_muc/mod_muc_room.erl:3811
+msgid "Grant voice to this person?"
+msgstr "Bu kişiye ses verelim mi?"
+
+#: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
 msgstr "~s sizi ~s odasına davet ediyor"
 
-#: mod_muc/mod_muc_room.erl:3538
+#: mod_muc/mod_muc_room.erl:3969
 msgid "the password is"
 msgstr "parola :"
 
@@ -1012,14 +1062,15 @@ msgid "~s's Offline Messages Queue"
 msgstr "~s Kullanıcısının Mesaj Kuyruğu"
 
 #: mod_offline.erl:563 mod_offline_odbc.erl:411 mod_roster.erl:987
-#: mod_roster_odbc.erl:1092 mod_shared_roster.erl:896
-#: mod_shared_roster.erl:1005 web/ejabberd_web_admin.erl:833
+#: mod_roster_odbc.erl:1104 mod_shared_roster.erl:901
+#: mod_shared_roster.erl:1010 mod_shared_roster_odbc.erl:930
+#: mod_shared_roster_odbc.erl:1039 web/ejabberd_web_admin.erl:833
 #: web/ejabberd_web_admin.erl:874 web/ejabberd_web_admin.erl:942
 #: web/ejabberd_web_admin.erl:978 web/ejabberd_web_admin.erl:1019
-#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1758
-#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1961
-#: web/ejabberd_web_admin.erl:2030 web/ejabberd_web_admin.erl:2134
-#: web/ejabberd_web_admin.erl:2159 web/ejabberd_web_admin.erl:2247
+#: web/ejabberd_web_admin.erl:1508 web/ejabberd_web_admin.erl:1760
+#: web/ejabberd_web_admin.erl:1931 web/ejabberd_web_admin.erl:1963
+#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2135
+#: web/ejabberd_web_admin.erl:2160 web/ejabberd_web_admin.erl:2248
 msgid "Submitted"
 msgstr "Gönderilenler"
 
@@ -1039,8 +1090,9 @@ msgstr "Kime"
 msgid "Packet"
 msgstr "Paket"
 
-#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:903
-#: web/ejabberd_web_admin.erl:882 web/ejabberd_web_admin.erl:986
+#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:908
+#: mod_shared_roster_odbc.erl:937 web/ejabberd_web_admin.erl:882
+#: web/ejabberd_web_admin.erl:986
 msgid "Delete Selected"
 msgstr "Seçilenleri Sil"
 
@@ -1056,255 +1108,250 @@ msgstr "Tüm Çevirim-dışı Mesajları Kaldır"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams modülü"
 
-#: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
+#: mod_pubsub/mod_pubsub.erl:1120 mod_pubsub/mod_pubsub_odbc.erl:929
 msgid "Publish-Subscribe"
 msgstr "Yayınla-Üye Ol"
 
-#: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
+#: mod_pubsub/mod_pubsub.erl:1214 mod_pubsub/mod_pubsub_odbc.erl:1025
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe modülü"
 
-#: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
+#: mod_pubsub/mod_pubsub.erl:1497 mod_pubsub/mod_pubsub_odbc.erl:1312
 msgid "PubSub subscriber request"
 msgstr "PubSub üye isteği"
 
-#: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1499 mod_pubsub/mod_pubsub_odbc.erl:1314
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Bu varlığın üyeliğini onaylayıp onaylamamayı seçiniz."
 
-#: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1320
 msgid "Node ID"
 msgstr "Düğüm ID"
 
-#: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
+#: mod_pubsub/mod_pubsub.erl:1510 mod_pubsub/mod_pubsub_odbc.erl:1325
 msgid "Subscriber Address"
 msgstr "Üye Olanın Adresi"
 
-#: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
+#: mod_pubsub/mod_pubsub.erl:1516 mod_pubsub/mod_pubsub_odbc.erl:1331
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Bu Jabber ID bu pubsub düğümüne üye olmasına izin verilsin mi?"
 
-#: mod_pubsub/mod_pubsub.erl:3416 mod_pubsub/mod_pubsub_odbc.erl:3229
+#: mod_pubsub/mod_pubsub.erl:3474 mod_pubsub/mod_pubsub_odbc.erl:3287
 msgid "Deliver payloads with event notifications"
 msgstr "Yükleri (payload) olay uyarıları ile beraber gönder"
 
-#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3230
+#: mod_pubsub/mod_pubsub.erl:3475 mod_pubsub/mod_pubsub_odbc.erl:3288
 msgid "Deliver event notifications"
 msgstr "Olay uyarıları gönderilsin"
 
-#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3476 mod_pubsub/mod_pubsub_odbc.erl:3289
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Düğüm ayarları değiştiğinde üyeleri uyar"
 
-#: mod_pubsub/mod_pubsub.erl:3419 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3477 mod_pubsub/mod_pubsub_odbc.erl:3290
 msgid "Notify subscribers when the node is deleted"
 msgstr "Bir düğüm silindiğinde üyeleri uyar"
 
-#: mod_pubsub/mod_pubsub.erl:3420 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3478 mod_pubsub/mod_pubsub_odbc.erl:3291
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Düğümden öğeler kaldırıldığında üyeleri uyar"
 
-#: mod_pubsub/mod_pubsub.erl:3421 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3479 mod_pubsub/mod_pubsub_odbc.erl:3292
 msgid "Persist items to storage"
 msgstr "Öğeleri depoda kalıcı hale getir"
 
-#: mod_pubsub/mod_pubsub.erl:3422 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3480 mod_pubsub/mod_pubsub_odbc.erl:3293
 msgid "A friendly name for the node"
 msgstr "Düğüm için dostane bir isim"
 
-#: mod_pubsub/mod_pubsub.erl:3423 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3481 mod_pubsub/mod_pubsub_odbc.erl:3294
 msgid "Max # of items to persist"
 msgstr "Kalıcı hale getirilecek en fazla öğe sayısı"
 
-#: mod_pubsub/mod_pubsub.erl:3424 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3482 mod_pubsub/mod_pubsub_odbc.erl:3295
 msgid "Whether to allow subscriptions"
 msgstr "Üyeliklere izin verilsin mi"
 
-#: mod_pubsub/mod_pubsub.erl:3425 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3483 mod_pubsub/mod_pubsub_odbc.erl:3296
 msgid "Specify the access model"
 msgstr "Erişim modelini belirtiniz"
 
-#: mod_pubsub/mod_pubsub.erl:3428 mod_pubsub/mod_pubsub_odbc.erl:3241
+#: mod_pubsub/mod_pubsub.erl:3486 mod_pubsub/mod_pubsub_odbc.erl:3299
 msgid "Roster groups allowed to subscribe"
 msgstr "Üye olunmasına izin verilen kontak listesi grupları"
 
-#: mod_pubsub/mod_pubsub.erl:3429 mod_pubsub/mod_pubsub_odbc.erl:3242
+#: mod_pubsub/mod_pubsub.erl:3487 mod_pubsub/mod_pubsub_odbc.erl:3300
 msgid "Specify the publisher model"
 msgstr "Yayıncı modelini belirtiniz"
 
-#: mod_pubsub/mod_pubsub.erl:3431 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3489 mod_pubsub/mod_pubsub_odbc.erl:3302
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr ""
+msgstr "İlgili yayıncı çevirimdışı olunca tüm onunla ilgili olanları sil"
 
-#: mod_pubsub/mod_pubsub.erl:3432 mod_pubsub/mod_pubsub_odbc.erl:3245
-#, fuzzy
+#: mod_pubsub/mod_pubsub.erl:3490 mod_pubsub/mod_pubsub_odbc.erl:3303
 msgid "Specify the event message type"
-msgstr "Erişim modelini belirtiniz"
+msgstr "Olay mesaj tipini belirtiniz"
 
-#: mod_pubsub/mod_pubsub.erl:3434 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3492 mod_pubsub/mod_pubsub_odbc.erl:3305
 msgid "Max payload size in bytes"
 msgstr "En fazla yük (payload) boyutu (bayt olarak)"
 
-#: mod_pubsub/mod_pubsub.erl:3435 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3493 mod_pubsub/mod_pubsub_odbc.erl:3306
 msgid "When to send the last published item"
 msgstr "Son yayınlanan öğe ne zaman gönderilsin"
 
-#: mod_pubsub/mod_pubsub.erl:3437 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3495 mod_pubsub/mod_pubsub_odbc.erl:3308
 msgid "Only deliver notifications to available users"
 msgstr "Uyarıları sadece durumu uygun kullanıcılara ulaştır"
 
-#: mod_pubsub/mod_pubsub.erl:3438 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3496 mod_pubsub/mod_pubsub_odbc.erl:3309
 msgid "The collections with which a node is affiliated"
 msgstr "Bir düğüm ile bağlantılı koleksiyonlar"
 
 #: mod_register.erl:193
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "CAPTCHA doğrulaması başarısız oldu"
 
 #: mod_register.erl:220
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"Takma isminizi kaydettirmek için x:data becerisine sahip bir istemciye "
+"Takma isminizi kaydettirmek için x:data ve CAPTCHA destekleyen bir istemciye "
 "gereksinimiz var"
 
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Bu sunucuya kayıt olmak için bir kullanıcı ismi ve parola seçiniz"
 
-#: mod_register.erl:230 mod_vcard.erl:358 mod_vcard_odbc.erl:336
-#: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
+#: mod_register.erl:230 mod_vcard.erl:364 mod_vcard_odbc.erl:342
+#: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Kullanıcı"
 
-#: mod_register.erl:251
-#, fuzzy
-msgid "Unable to generate a CAPTCHA"
-msgstr "İnsan doğrulaması (captcha) oluşturulamadı"
-
 #: mod_register.erl:316 mod_register.erl:361
-#, fuzzy
 msgid "The password is too weak"
-msgstr "parola :"
+msgstr "Parola çok zayıf"
 
 #: mod_register.erl:365
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Kullanıcıların bu kadar hızlı hesap açmalarına izin verilmiyor"
 
-#: mod_roster.erl:938 mod_roster_odbc.erl:1043 web/ejabberd_web_admin.erl:1699
-#: web/ejabberd_web_admin.erl:1884 web/ejabberd_web_admin.erl:1895
-#: web/ejabberd_web_admin.erl:2218
+#: mod_roster.erl:938 mod_roster_odbc.erl:1055 web/ejabberd_web_admin.erl:1701
+#: web/ejabberd_web_admin.erl:1886 web/ejabberd_web_admin.erl:1897
+#: web/ejabberd_web_admin.erl:2219
 msgid "None"
 msgstr "Hiçbiri"
 
-#: mod_roster.erl:945 mod_roster_odbc.erl:1050
+#: mod_roster.erl:945 mod_roster_odbc.erl:1062
 msgid "Subscription"
 msgstr "Üyelik"
 
-#: mod_roster.erl:946 mod_roster_odbc.erl:1051
+#: mod_roster.erl:946 mod_roster_odbc.erl:1063
 msgid "Pending"
 msgstr "Sıra Bekleyen"
 
-#: mod_roster.erl:947 mod_roster_odbc.erl:1052
+#: mod_roster.erl:947 mod_roster_odbc.erl:1064
 msgid "Groups"
 msgstr "Gruplar"
 
-#: mod_roster.erl:974 mod_roster_odbc.erl:1079
+#: mod_roster.erl:974 mod_roster_odbc.erl:1091
 msgid "Validate"
 msgstr "Geçerli"
 
-#: mod_roster.erl:982 mod_roster_odbc.erl:1087
+#: mod_roster.erl:982 mod_roster_odbc.erl:1099
 msgid "Remove"
 msgstr "Kaldır"
 
-#: mod_roster.erl:985 mod_roster_odbc.erl:1090
+#: mod_roster.erl:985 mod_roster_odbc.erl:1102
 msgid "Roster of "
 msgstr "Kontak Listesi : "
 
-#: mod_roster.erl:988 mod_roster_odbc.erl:1093 mod_shared_roster.erl:897
-#: mod_shared_roster.erl:1006 web/ejabberd_web_admin.erl:834
+#: mod_roster.erl:988 mod_roster_odbc.erl:1105 mod_shared_roster.erl:902
+#: mod_shared_roster.erl:1011 mod_shared_roster_odbc.erl:931
+#: mod_shared_roster_odbc.erl:1040 web/ejabberd_web_admin.erl:834
 #: web/ejabberd_web_admin.erl:875 web/ejabberd_web_admin.erl:943
 #: web/ejabberd_web_admin.erl:979 web/ejabberd_web_admin.erl:1020
-#: web/ejabberd_web_admin.erl:1510 web/ejabberd_web_admin.erl:1759
-#: web/ejabberd_web_admin.erl:1930 web/ejabberd_web_admin.erl:2135
-#: web/ejabberd_web_admin.erl:2160
+#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1761
+#: web/ejabberd_web_admin.erl:1932 web/ejabberd_web_admin.erl:2136
+#: web/ejabberd_web_admin.erl:2161
 msgid "Bad format"
 msgstr "Kötü biçem"
 
-#: mod_roster.erl:995 mod_roster_odbc.erl:1100
+#: mod_roster.erl:995 mod_roster_odbc.erl:1112
 msgid "Add Jabber ID"
 msgstr "Jabber ID'si Ekle"
 
-#: mod_roster.erl:1094 mod_roster_odbc.erl:1199
+#: mod_roster.erl:1094 mod_roster_odbc.erl:1211
 msgid "Roster"
 msgstr "Kontak Listesi"
 
-#: mod_shared_roster.erl:852 mod_shared_roster.erl:894
-#: mod_shared_roster.erl:1002
+#: mod_shared_roster.erl:857 mod_shared_roster.erl:899
+#: mod_shared_roster.erl:1007 mod_shared_roster_odbc.erl:886
+#: mod_shared_roster_odbc.erl:928 mod_shared_roster_odbc.erl:1036
 msgid "Shared Roster Groups"
 msgstr "Paylaşımlı Kontak Listesi Grupları"
 
-#: mod_shared_roster.erl:890 web/ejabberd_web_admin.erl:1366
-#: web/ejabberd_web_admin.erl:2460
+#: mod_shared_roster.erl:895 mod_shared_roster_odbc.erl:924
+#: web/ejabberd_web_admin.erl:1365 web/ejabberd_web_admin.erl:2461
 msgid "Add New"
 msgstr "Yeni Ekle"
 
-#: mod_shared_roster.erl:973
+#: mod_shared_roster.erl:978 mod_shared_roster_odbc.erl:1007
 msgid "Name:"
 msgstr "İsim:"
 
-#: mod_shared_roster.erl:978
+#: mod_shared_roster.erl:983 mod_shared_roster_odbc.erl:1012
 msgid "Description:"
 msgstr "Tanım:"
 
-#: mod_shared_roster.erl:986
+#: mod_shared_roster.erl:991 mod_shared_roster_odbc.erl:1020
 msgid "Members:"
 msgstr "Üyeler:"
 
-#: mod_shared_roster.erl:994
+#: mod_shared_roster.erl:999 mod_shared_roster_odbc.erl:1028
 msgid "Displayed Groups:"
 msgstr "Gösterilen Gruplar:"
 
-#: mod_shared_roster.erl:1003
+#: mod_shared_roster.erl:1008 mod_shared_roster_odbc.erl:1037
 msgid "Group "
 msgstr "Group "
 
-#: mod_shared_roster.erl:1012 web/ejabberd_web_admin.erl:840
-#: web/ejabberd_web_admin.erl:884 web/ejabberd_web_admin.erl:949
-#: web/ejabberd_web_admin.erl:1026 web/ejabberd_web_admin.erl:2015
+#: mod_shared_roster.erl:1017 mod_shared_roster_odbc.erl:1046
+#: web/ejabberd_web_admin.erl:840 web/ejabberd_web_admin.erl:884
+#: web/ejabberd_web_admin.erl:949 web/ejabberd_web_admin.erl:1026
+#: web/ejabberd_web_admin.erl:2017
 msgid "Submit"
 msgstr "Gönder"
 
-#: mod_vcard.erl:165 mod_vcard_ldap.erl:237 mod_vcard_odbc.erl:129
+#: mod_vcard.erl:165 mod_vcard_ldap.erl:238 mod_vcard_odbc.erl:129
 msgid "Erlang Jabber Server"
 msgstr "Erlang Jabber Sunucusu"
 
-#: mod_vcard.erl:358 mod_vcard.erl:472 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:448
+#: mod_vcard.erl:364 mod_vcard.erl:478 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:454
 msgid "Birthday"
 msgstr "Doğumgünü"
 
-#: mod_vcard.erl:358 mod_vcard.erl:474 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:450
+#: mod_vcard.erl:364 mod_vcard.erl:480 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:456
 msgid "City"
 msgstr "İl"
 
-#: mod_vcard.erl:358 mod_vcard.erl:473 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:449
+#: mod_vcard.erl:364 mod_vcard.erl:479 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:455
 msgid "Country"
 msgstr "Ülke"
 
-#: mod_vcard.erl:358 mod_vcard.erl:475 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:451
+#: mod_vcard.erl:364 mod_vcard.erl:481 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:457
 msgid "Email"
 msgstr "E-posta"
 
-#: mod_vcard.erl:358 mod_vcard.erl:470 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:446
+#: mod_vcard.erl:364 mod_vcard.erl:476 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:452
 msgid "Family Name"
 msgstr "Soyisim"
 
-#: mod_vcard.erl:358 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_odbc.erl:342
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
@@ -1312,53 +1359,53 @@ msgstr ""
 "Eşleşen jabber kullanıcılarını aramak için formu doldurunuz (Alt dizgi "
 "eşlemek için alanın sonuna * ekleyin)"
 
-#: mod_vcard.erl:358 mod_vcard.erl:467 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:443
+#: mod_vcard.erl:364 mod_vcard.erl:473 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:449
 msgid "Full Name"
 msgstr "Tam İsim"
 
-#: mod_vcard.erl:358 mod_vcard.erl:469 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:445
+#: mod_vcard.erl:364 mod_vcard.erl:475 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:451
 msgid "Middle Name"
 msgstr "Ortanca İsim"
 
-#: mod_vcard.erl:358 mod_vcard.erl:468 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:444 web/ejabberd_web_admin.erl:2004
+#: mod_vcard.erl:364 mod_vcard.erl:474 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:450 web/ejabberd_web_admin.erl:2006
 msgid "Name"
 msgstr "İsim"
 
-#: mod_vcard.erl:358 mod_vcard.erl:476 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:452
+#: mod_vcard.erl:364 mod_vcard.erl:482 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:458
 msgid "Organization Name"
 msgstr "Kurum İsmi"
 
-#: mod_vcard.erl:358 mod_vcard.erl:477 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:453
+#: mod_vcard.erl:364 mod_vcard.erl:483 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:459
 msgid "Organization Unit"
 msgstr "Kurumun İlgili Birimi"
 
-#: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "Search users in "
 msgstr "Kullanıcılarda arama yap : "
 
-#: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "You need an x:data capable client to search"
 msgstr ""
 "Arama yapabilmek için x:data becerisine sahip bir istemciye gereksinimiz var"
 
-#: mod_vcard.erl:383 mod_vcard_ldap.erl:483 mod_vcard_odbc.erl:361
+#: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
 msgid "vCard User Search"
 msgstr "vCard Kullanıcı Araması"
 
-#: mod_vcard.erl:439 mod_vcard_ldap.erl:537 mod_vcard_odbc.erl:415
+#: mod_vcard.erl:445 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:421
 msgid "ejabberd vCard module"
 msgstr "ejabberd vCard modülü"
 
-#: mod_vcard.erl:463 mod_vcard_ldap.erl:547 mod_vcard_odbc.erl:439
+#: mod_vcard.erl:469 mod_vcard_ldap.erl:551 mod_vcard_odbc.erl:445
 msgid "Search Results for "
 msgstr "Arama sonuçları : "
 
-#: mod_vcard_ldap.erl:458
+#: mod_vcard_ldap.erl:462
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Eşleşen jabber kullanıcılarını aramak için alanları doldurunuz"
 
@@ -1419,7 +1466,7 @@ msgstr "Sıradan Tabloyu Göster"
 msgid "Show Integral Table"
 msgstr "Önemli Tabloyu Göster"
 
-#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1937
+#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1939
 msgid "Statistics"
 msgstr "İstatistikler"
 
@@ -1431,116 +1478,116 @@ msgstr "Bulunamadı"
 msgid "Node not found"
 msgstr "Düğüm bulunamadı"
 
-#: web/ejabberd_web_admin.erl:1461
+#: web/ejabberd_web_admin.erl:1460
 msgid "Host"
 msgstr "Sunucu"
 
-#: web/ejabberd_web_admin.erl:1462
+#: web/ejabberd_web_admin.erl:1461
 msgid "Registered Users"
 msgstr "Kayıtlı Kullanıcılar"
 
-#: web/ejabberd_web_admin.erl:1574
+#: web/ejabberd_web_admin.erl:1573
 msgid "Offline Messages"
 msgstr "Çevirim-dışı Mesajlar"
 
-#: web/ejabberd_web_admin.erl:1575 web/ejabberd_web_admin.erl:1765
+#: web/ejabberd_web_admin.erl:1574 web/ejabberd_web_admin.erl:1767
 msgid "Last Activity"
 msgstr "Son Aktivite"
 
-#: web/ejabberd_web_admin.erl:1657 web/ejabberd_web_admin.erl:1673
+#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
 msgid "Registered Users:"
 msgstr "Kayıtlı Kullanıcılar:"
 
-#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
-#: web/ejabberd_web_admin.erl:2191
+#: web/ejabberd_web_admin.erl:1661 web/ejabberd_web_admin.erl:1677
+#: web/ejabberd_web_admin.erl:2192
 msgid "Online Users:"
 msgstr "Bağlı Kullanıcılar:"
 
-#: web/ejabberd_web_admin.erl:1661
+#: web/ejabberd_web_admin.erl:1663
 msgid "Outgoing s2s Connections:"
 msgstr "Giden s2s Bağlantıları:"
 
-#: web/ejabberd_web_admin.erl:1663
+#: web/ejabberd_web_admin.erl:1665
 msgid "Outgoing s2s Servers:"
 msgstr "Giden s2s Sunucuları"
 
-#: web/ejabberd_web_admin.erl:1732 web/mod_register_web.erl:175
+#: web/ejabberd_web_admin.erl:1734 web/mod_register_web.erl:175
 #: web/mod_register_web.erl:372 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:411
 msgid "Change Password"
 msgstr "Parola Değiştir"
 
-#: web/ejabberd_web_admin.erl:1756
+#: web/ejabberd_web_admin.erl:1758
 msgid "User "
 msgstr "Kullanıcı "
 
-#: web/ejabberd_web_admin.erl:1763
+#: web/ejabberd_web_admin.erl:1765
 msgid "Connected Resources:"
 msgstr "Bağlı Kaynaklar:"
 
-#: web/ejabberd_web_admin.erl:1764 web/mod_register_web.erl:227
+#: web/ejabberd_web_admin.erl:1766 web/mod_register_web.erl:227
 #: web/mod_register_web.erl:519
 msgid "Password:"
 msgstr "Parola:"
 
-#: web/ejabberd_web_admin.erl:1826
+#: web/ejabberd_web_admin.erl:1828
 msgid "No Data"
 msgstr "Veri Yok"
 
-#: web/ejabberd_web_admin.erl:1904
+#: web/ejabberd_web_admin.erl:1906
 msgid "Nodes"
 msgstr "Düğümler"
 
-#: web/ejabberd_web_admin.erl:1927 web/ejabberd_web_admin.erl:1949
+#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1951
 msgid "Node "
 msgstr "Düğüm "
 
-#: web/ejabberd_web_admin.erl:1936
+#: web/ejabberd_web_admin.erl:1938
 msgid "Listened Ports"
 msgstr "Dinlenen Kapılar (Portlar)"
 
-#: web/ejabberd_web_admin.erl:1938 web/ejabberd_web_admin.erl:2259
-#: web/ejabberd_web_admin.erl:2447
+#: web/ejabberd_web_admin.erl:1940 web/ejabberd_web_admin.erl:2260
+#: web/ejabberd_web_admin.erl:2448
 msgid "Update"
 msgstr "GÜncelle"
 
-#: web/ejabberd_web_admin.erl:1941 web/ejabberd_web_admin.erl:2568
+#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2569
 msgid "Restart"
 msgstr "Tekrar Başlat"
 
-#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2570
+#: web/ejabberd_web_admin.erl:1945 web/ejabberd_web_admin.erl:2571
 msgid "Stop"
 msgstr "Durdur"
 
-#: web/ejabberd_web_admin.erl:1957
+#: web/ejabberd_web_admin.erl:1959
 msgid "RPC Call Error"
 msgstr "RPC Çağrı Hatası"
 
-#: web/ejabberd_web_admin.erl:1998
+#: web/ejabberd_web_admin.erl:2000
 msgid "Database Tables at "
 msgstr "Veritabanı Tabloları : "
 
-#: web/ejabberd_web_admin.erl:2005
+#: web/ejabberd_web_admin.erl:2007
 msgid "Storage Type"
 msgstr "Depolama Tipi"
 
-#: web/ejabberd_web_admin.erl:2006
+#: web/ejabberd_web_admin.erl:2008
 msgid "Elements"
 msgstr "Elementler"
 
-#: web/ejabberd_web_admin.erl:2007
+#: web/ejabberd_web_admin.erl:2009
 msgid "Memory"
 msgstr "Bellek"
 
-#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2136
+#: web/ejabberd_web_admin.erl:2032 web/ejabberd_web_admin.erl:2137
 msgid "Error"
 msgstr "Hata"
 
-#: web/ejabberd_web_admin.erl:2033
+#: web/ejabberd_web_admin.erl:2034
 msgid "Backup of "
 msgstr "Yedek : "
 
-#: web/ejabberd_web_admin.erl:2035
+#: web/ejabberd_web_admin.erl:2036
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1550,186 +1597,186 @@ msgstr ""
 "edin. Eğer ODBC modülünü kullanıyorsanız, SQL veritabanınızı da ayrıca "
 "yedeklemeniz gerekiyor."
 
-#: web/ejabberd_web_admin.erl:2040
+#: web/ejabberd_web_admin.erl:2041
 msgid "Store binary backup:"
 msgstr "İkili yedeği sakla:"
 
-#: web/ejabberd_web_admin.erl:2044 web/ejabberd_web_admin.erl:2051
-#: web/ejabberd_web_admin.erl:2059 web/ejabberd_web_admin.erl:2066
-#: web/ejabberd_web_admin.erl:2073 web/ejabberd_web_admin.erl:2080
-#: web/ejabberd_web_admin.erl:2087 web/ejabberd_web_admin.erl:2095
-#: web/ejabberd_web_admin.erl:2102 web/ejabberd_web_admin.erl:2109
+#: web/ejabberd_web_admin.erl:2045 web/ejabberd_web_admin.erl:2052
+#: web/ejabberd_web_admin.erl:2060 web/ejabberd_web_admin.erl:2067
+#: web/ejabberd_web_admin.erl:2074 web/ejabberd_web_admin.erl:2081
+#: web/ejabberd_web_admin.erl:2088 web/ejabberd_web_admin.erl:2096
+#: web/ejabberd_web_admin.erl:2103 web/ejabberd_web_admin.erl:2110
 msgid "OK"
 msgstr "Tamam"
 
-#: web/ejabberd_web_admin.erl:2047
+#: web/ejabberd_web_admin.erl:2048
 msgid "Restore binary backup immediately:"
 msgstr "Hemen ikili yedekten geri al:"
 
-#: web/ejabberd_web_admin.erl:2055
+#: web/ejabberd_web_admin.erl:2056
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "ejabberd'nin bir sonraki tekrar başlatılışında ikili yedekten geri al (daha "
 "az bellek gerektirir)"
 
-#: web/ejabberd_web_admin.erl:2062
+#: web/ejabberd_web_admin.erl:2063
 msgid "Store plain text backup:"
 msgstr "Düz metin yedeği sakla:"
 
-#: web/ejabberd_web_admin.erl:2069
+#: web/ejabberd_web_admin.erl:2070
 msgid "Restore plain text backup immediately:"
 msgstr "Hemen düz metin yedekten geri al"
 
-#: web/ejabberd_web_admin.erl:2076
+#: web/ejabberd_web_admin.erl:2077
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr "Kullanıcıları bir PIEFXIS dosyasından (XEP-0227) içe aktar:"
 
-#: web/ejabberd_web_admin.erl:2083
+#: web/ejabberd_web_admin.erl:2084
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa "
 "aktar:"
 
-#: web/ejabberd_web_admin.erl:2090
+#: web/ejabberd_web_admin.erl:2091
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Bir sunucudaki kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa "
 "aktar:"
 
-#: web/ejabberd_web_admin.erl:2098
+#: web/ejabberd_web_admin.erl:2099
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Jabberd 1.4 Spool Dosyalarından Kullanıcıları İçe Aktar:"
 
-#: web/ejabberd_web_admin.erl:2105
+#: web/ejabberd_web_admin.erl:2106
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Jabberd 1.4 Spool Dizininden Kullanıcıları İçe Aktar:"
 
-#: web/ejabberd_web_admin.erl:2131
+#: web/ejabberd_web_admin.erl:2132
 msgid "Listened Ports at "
 msgstr "Dinlenen Kapılar (Portlar) : "
 
-#: web/ejabberd_web_admin.erl:2156
+#: web/ejabberd_web_admin.erl:2157
 msgid "Modules at "
 msgstr "Modüller : "
 
-#: web/ejabberd_web_admin.erl:2182
+#: web/ejabberd_web_admin.erl:2183
 msgid "Statistics of ~p"
 msgstr "~p istatistikleri"
 
-#: web/ejabberd_web_admin.erl:2185
+#: web/ejabberd_web_admin.erl:2186
 msgid "Uptime:"
 msgstr "Hizmet Süresi:"
 
-#: web/ejabberd_web_admin.erl:2188
+#: web/ejabberd_web_admin.erl:2189
 msgid "CPU Time:"
 msgstr "İşlemci Zamanı:"
 
-#: web/ejabberd_web_admin.erl:2194
+#: web/ejabberd_web_admin.erl:2195
 msgid "Transactions Committed:"
 msgstr "Tamamlanan Hareketler (Transactions Committed):"
 
-#: web/ejabberd_web_admin.erl:2197
+#: web/ejabberd_web_admin.erl:2198
 msgid "Transactions Aborted:"
 msgstr "İptal Edilen Hareketler (Transactions):"
 
-#: web/ejabberd_web_admin.erl:2200
+#: web/ejabberd_web_admin.erl:2201
 msgid "Transactions Restarted:"
 msgstr "Tekrar Başlatılan Hareketler (Transactions):"
 
-#: web/ejabberd_web_admin.erl:2203
+#: web/ejabberd_web_admin.erl:2204
 msgid "Transactions Logged:"
 msgstr "Kaydı Tutulan Hareketler (Transactions):"
 
-#: web/ejabberd_web_admin.erl:2245
+#: web/ejabberd_web_admin.erl:2246
 msgid "Update "
 msgstr "Güncelle "
 
-#: web/ejabberd_web_admin.erl:2253
+#: web/ejabberd_web_admin.erl:2254
 msgid "Update plan"
 msgstr "Planı güncelle"
 
-#: web/ejabberd_web_admin.erl:2254
+#: web/ejabberd_web_admin.erl:2255
 msgid "Modified modules"
 msgstr "Değişen modüller"
 
-#: web/ejabberd_web_admin.erl:2255
+#: web/ejabberd_web_admin.erl:2256
 msgid "Update script"
 msgstr "Betiği Güncelle"
 
-#: web/ejabberd_web_admin.erl:2256
+#: web/ejabberd_web_admin.erl:2257
 msgid "Low level update script"
 msgstr "Düşük seviye güncelleme betiği"
 
-#: web/ejabberd_web_admin.erl:2257
+#: web/ejabberd_web_admin.erl:2258
 msgid "Script check"
 msgstr "Betik kontrolü"
 
-#: web/ejabberd_web_admin.erl:2425
+#: web/ejabberd_web_admin.erl:2426
 msgid "Port"
 msgstr "Kapı (Port)"
 
-#: web/ejabberd_web_admin.erl:2426
+#: web/ejabberd_web_admin.erl:2427
 msgid "IP"
 msgstr "IP"
 
-#: web/ejabberd_web_admin.erl:2427
+#: web/ejabberd_web_admin.erl:2428
 msgid "Protocol"
 msgstr "Protokol"
 
-#: web/ejabberd_web_admin.erl:2428 web/ejabberd_web_admin.erl:2555
+#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
 msgid "Module"
 msgstr "Modül"
 
-#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
+#: web/ejabberd_web_admin.erl:2430 web/ejabberd_web_admin.erl:2557
 msgid "Options"
 msgstr "Seçenekler"
 
-#: web/ejabberd_web_admin.erl:2449
+#: web/ejabberd_web_admin.erl:2450
 msgid "Delete"
 msgstr "Sil"
 
-#: web/ejabberd_web_admin.erl:2578
+#: web/ejabberd_web_admin.erl:2579
 msgid "Start"
 msgstr "Başlat"
 
 #: web/mod_register_web.erl:104
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Jabber hesabınız başarıyla oluşturuldu."
 
 #: web/mod_register_web.erl:107
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Hesap oluşturulurken bir hata oluştu:"
 
 #: web/mod_register_web.erl:115
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Jabber hesabınız başarıyla silindi."
 
 #: web/mod_register_web.erl:118
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Hesabın silinmesi sırasında bir hata oluştu:"
 
 #: web/mod_register_web.erl:128
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Jabber hesabınızın parolası başarıyla değiştirildi."
 
 #: web/mod_register_web.erl:131
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Parolanın değiştirilmesi sırasında bir hata oluştu:"
 
 #: web/mod_register_web.erl:163 web/mod_register_web.erl:172
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Jabber Hesap Kaydı"
 
 #: web/mod_register_web.erl:174 web/mod_register_web.erl:192
 #: web/mod_register_web.erl:201
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Bir Jabber hesabı kaydet"
 
 #: web/mod_register_web.erl:176 web/mod_register_web.erl:493
 #: web/mod_register_web.erl:502
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Bir Jabber hesabı kaydı sil"
 
 #: web/mod_register_web.erl:203
 msgid ""
@@ -1737,42 +1784,48 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Bu sayfa bu Jabber sunucusunda bir Jabber hesabı oluşturulmasına olanak "
+"tanıyor. Sizin JID'iniz (Jabber Tanımlayıcısı) şu biçemde olacaktır: "
+"kullanici_adi@sunucu. Lütfen alanları doğru doldurabilmek için yönergeleri "
+"dikkatle okuyunuz."
 
 #: web/mod_register_web.erl:212 web/mod_register_web.erl:386
 #: web/mod_register_web.erl:509
-#, fuzzy
 msgid "Username:"
-msgstr "IRC Kullanıcı İsmi"
+msgstr "Kullanıcı adı:"
 
 #: web/mod_register_web.erl:217
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
+"Burada büyük küçük harfi yapılmaz: macbeth ile MacBeth ve Macbeth aynıdır."
 
 #: web/mod_register_web.erl:218
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "İzin verilmeyen karakterler:"
 
 #: web/mod_register_web.erl:222 web/mod_register_web.erl:391
 #: web/mod_register_web.erl:514
-#, fuzzy
 msgid "Server:"
-msgstr "Sunucu ~b"
+msgstr "Sunucu:"
 
 #: web/mod_register_web.erl:232
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
-msgstr ""
+msgstr "Parolanızı kimseye söylemeyin, Jabber sunucusunun yöneticilerine bile."
 
 #: web/mod_register_web.erl:234
 msgid "You can later change your password using a Jabber client."
 msgstr ""
+"Parolanızı daha sonra bir Jabber istemci kullanarak değiştirebilirsiniz."
 
 #: web/mod_register_web.erl:235
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
+"Bazı Jabber istemcileri parolanızı bilgisayarınızda saklayabilir. Bu "
+"özelliği ancak bilgisayarın güvenli olduğuna güveniyorsanız kullanın."
 
 #: web/mod_register_web.erl:237
 msgid ""
@@ -1780,35 +1833,32 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Parolanızı ezberleyin ya da bir kağıda yazarak güvenli bir yerde saklayın. "
+"Jabber'da parolanızı unutursanız, otomatik kurtarmak için bir yöntem "
+"bulunmuyor."
 
 #: web/mod_register_web.erl:242 web/mod_register_web.erl:406
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Parola Doğrulaması"
+msgstr "Parola Doğrulaması:"
 
 #: web/mod_register_web.erl:250
-#, fuzzy
 msgid "Register"
-msgstr "Kontak Listesi"
+msgstr "Kayıt Ol"
 
 #: web/mod_register_web.erl:396
-#, fuzzy
 msgid "Old Password:"
-msgstr "Parola:"
+msgstr "Eski Parola:"
 
 #: web/mod_register_web.erl:401
-#, fuzzy
 msgid "New Password:"
-msgstr "Parola:"
+msgstr "Yeni Parola:"
 
 #: web/mod_register_web.erl:504
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
+"Bu sayfa bu Jabber sunucusundan bir Jabber hesabının kaydını silmeye olanak "
+"tanıyor."
 
 #: web/mod_register_web.erl:524
 msgid "Unregister"
-msgstr ""
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "İnsan doğrulaması (captcha) geçerli."
+msgstr "Kaydı Sil"

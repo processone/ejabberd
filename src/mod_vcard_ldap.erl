@@ -352,6 +352,7 @@ ldap_attribute_to_vcard(vCard, {"email", Value}) ->
 
 ldap_attribute_to_vcard(vCard, {"photo", Value}) ->
     {xmlelement,"PHOTO",[],[
+			    {xmlelement,"TYPE",[],[{xmlcdata,"image/jpeg"}]},
 			    {xmlelement,"BINVAL",[],[{xmlcdata, jlib:encode_base64(Value)}]}]};
 
 ldap_attribute_to_vcard(vCardN, {"family", Value}) ->

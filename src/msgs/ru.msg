@@ -20,7 +20,9 @@
 {"Allow users to send invites","Разрешить пользователям посылать приглашения"}.
 {"Allow users to send private messages","Разрешить приватные сообщения"}.
 {"Allow visitors to change nickname","Разрешить посетителям изменять псевдоним"}.
+{"Allow visitors to send private messages to","Разрешить посетителям посылать приватные сообщения"}.
 {"Allow visitors to send status text in presence updates","Разрешить посетителям вставлять текcт статуса в сообщения о присутствии"}.
+{"Allow visitors to send voice requests","Разрешить посетителям запрашивать право голоса"}.
 {"All Users","Все пользователи"}.
 {"Announcements","Объявления"}.
 {"anyone","всем участникам"}.
@@ -75,6 +77,7 @@
 {"Dump Backup to Text File at ","Копирование в текстовый файл на "}.
 {"Dump to Text File","Копирование в текстовый файл"}.
 {"Edit Properties","Изменить параметры"}.
+{"Either approve or decline the voice request.","Подтвердите или отклоните право голоса."}.
 {"ejabberd IRC module","ejabberd IRC модуль"}.
 {"ejabberd MUC module","ejabberd MUC модуль"}.
 {"ejabberd Publish-Subscribe module","Модуль ejabberd Публикации-Подписки"}.
@@ -98,8 +101,10 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Ошибка"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Пример: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Исключить показ капчи для списка Jabber ID"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Ошибка обработки JID из вашего запроса на право голоса"}.
 {"Family Name","Фамилия"}.
 {"February","февраля"}.
 {"Fill in fields to search for any matching Jabber User","Заполните форму для поиска пользователя Jabber"}.
@@ -113,6 +118,7 @@
 {"Get User Last Login Time","Получить время последнего подключения пользователя"}.
 {"Get User Password","Получить пароль пользователя"}.
 {"Get User Statistics","Получить статистику по пользователю"}.
+{"Grant voice to this person?","Предоставить голос?"}.
 {"Groups","Группы"}.
 {"Group ","Группа "}.
 {"has been banned","запретили входить в комнату"}.
@@ -168,7 +174,7 @@
 {"List of modules to start","Список запускаемых модулей"}.
 {"Low level update script","Низкоуровневый сценарий обновления"}.
 {"Make participants list public","Сделать список участников видимым всем"}.
-{"Make room captcha protected","Сделать комнату защищённой капчей"}.
+{"Make room CAPTCHA protected","Сделать комнату защищённой капчей"}.
 {"Make room members-only","Комната только для зарегистрированных участников"}.
 {"Make room moderated","Сделать комнату модерируемой"}.
 {"Make room password protected","Сделать комнату защищённой паролем"}.
@@ -185,6 +191,7 @@
 {"Memory","Память"}.
 {"Message body","Тело сообщения"}.
 {"Middle Name","Отчество"}.
+{"Minimum interval between voice requests (in seconds)","Минимальный интервал между запросами на право голоса"}.
 {"Moderator privileges required","Требуются права модератора"}.
 {"moderators only","только модераторам"}.
 {"Modified modules","Изменённые модули"}.
@@ -200,6 +207,7 @@
 {"Nickname ~s does not exist in the room","Псевдоним ~s в комнате отсутствует"}.
 {"Nickname","Псевдоним"}.
 {"No body provided for announce message","Тело объявления не должно быть пустым"}.
+{"nobody","никто"}.
 {"No Data","Нет данных"}.
 {"Node ID","ID узла"}.
 {"Node not found","Узел не найден"}.
@@ -227,6 +235,7 @@
 {"Only deliver notifications to available users","Доставлять уведомления только доступным пользователям"}.
 {"Only moderators and participants are allowed to change the subject in this room","Только модераторы и участники могут изменять тему в этой комнате"}.
 {"Only moderators are allowed to change the subject in this room","Только модераторы могут изменять тему в этой комнате"}.
+{"Only moderators can approve voice requests","Только модераторы могут утверждать запросы на право голоса"}.
 {"Only occupants are allowed to send messages to the conference","Только присутствующим разрешается посылать сообщения в конференцию"}.
 {"Only occupants are allowed to send queries to the conference","Только присутствующим разрешается посылать запросы в конференцию"}.
 {"Only service administrators are allowed to send service messages","Только администратор службы может посылать служебные сообщения"}.
@@ -250,6 +259,7 @@
 {"Persist items to storage","Сохранять публикации в хранилище"}.
 {"Ping","Пинг"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
+{"Please, wait for a while before sending new voice request","Пожалуйста, подождите перед тем как подать новый запрос на право голоса"}.
 {"Pong","Понг"}.
 {"Port ~b","Порт ~b"}.
 {"Port","Порт"}.
@@ -338,7 +348,7 @@
 {"Sunday","Воскресенье"}.
 {"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
-{"The captcha is valid.","Проверка капчи прошла успешно."}.
+{"The CAPTCHA is valid.","Проверка капчи прошла успешно."}.
 {"The CAPTCHA verification has failed","Проверка капчи не пройдена"}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
 {"The password is too weak","Слишком слабый пароль"}.
@@ -357,6 +367,7 @@
 {"Thursday","Четверг"}.
 {"Time delay","По истечение"}.
 {"Time","Время"}.
+{"Too many CAPTCHA requests","Слишком много запросов капчи"}.
 {"To ~s","К ~s"}.
 {"To","Кому"}.
 {"Traffic rate limit is exceeded","Превышен лимит скорости посылки информации"}.
@@ -365,7 +376,6 @@
 {"Transactions Logged:","Транзакции запротоколированные:"}.
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
-{"Unable to generate a captcha","Не получилось создать капчу"}.
 {"Unable to generate a CAPTCHA","Не получилось создать капчу"}.
 {"Unauthorized","Не авторизован"}.
 {"Unregister a Jabber account","Удалить Jabber-аккаунт"}.
@@ -378,6 +388,7 @@
 {"Update ","Обновление "}.
 {"Uptime:","Время работы:"}.
 {"Use of STARTTLS required","Вы обязаны использовать STARTTLS"}.
+{"User JID","JID пользователя"}.
 {"User Management","Управление пользователями"}.
 {"Username:","Имя пользователя:"}.
 {"Users are not allowed to register accounts so quickly","Пользователи не могут регистрировать учётные записи так быстро"}.
@@ -390,6 +401,8 @@
 {"Virtual Hosts","Виртуальные хосты"}.
 {"Visitors are not allowed to change their nicknames in this room","Посетителям запрещено изменять свои псевдонимы в этой комнате"}.
 {"Visitors are not allowed to send messages to all occupants","Посетителям не разрешается посылать сообщения всем присутствующим"}.
+{"Voice requests are disabled in this conference","Запросы на право голоса отключены в этой конференции"}.
+{"Voice request","Запрос на право голоса"}.
 {"Wednesday","Среда"}.
 {"When to send the last published item","Когда посылать последний опубликованный элемент"}.
 {"Whether to allow subscriptions","Разрешить подписку"}.

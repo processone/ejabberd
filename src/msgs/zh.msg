@@ -14,13 +14,15 @@
 {"Administrator privileges required","需要管理员权限"}.
 {"A friendly name for the node","该节点的友好名称"}.
 {"All activity","所有活动"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","允许该 Jabber ID 订阅该pubsub节点?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","允许该 Jabber ID 订阅该 pubsub 节点?"}.
 {"Allow users to change the subject","允许用户更改主题"}.
 {"Allow users to query other users","允许用户查询其它用户"}.
 {"Allow users to send invites","允许用户发送邀请"}.
 {"Allow users to send private messages","允许用户发送私聊消息"}.
 {"Allow visitors to change nickname","允许用户更改昵称"}.
+{"Allow visitors to send private messages to","允许访客发送私聊消息至"}.
 {"Allow visitors to send status text in presence updates","更新在线状态时允许用户发送状态文本"}.
+{"Allow visitors to send voice requests","允许访客发送声音请求"}.
 {"All Users","所有用户"}.
 {"Announcements","通知"}.
 {"anyone","任何人"}.
@@ -29,11 +31,11 @@
 {"August","八月"}.
 {"Backup Management","备份管理"}.
 {"Backup of ","备份来源 "}.
-{"Backup to File at ","备份到文件位于"}.
+{"Backup to File at ","备份文件位于"}.
 {"Backup","备份"}.
 {"Bad format","格式错误"}.
 {"Birthday","出生日期"}.
-{"CAPTCHA web page","验证码 Web 页面"}.
+{"CAPTCHA web page","验证码网页"}.
 {"Change Password","更改密码"}.
 {"Change User Password","更改用户密码"}.
 {"Characters not allowed:","禁用字符:"}.
@@ -50,7 +52,7 @@
 {"City","城市"}.
 {"Commands","命令"}.
 {"Conference room does not exist","会议室不存在"}.
-{"Configuration of room ~s","房间~s的配置 "}.
+{"Configuration of room ~s","房间 ~s 的配置 "}.
 {"Configuration","配置"}.
 {"Connected Resources:","已连接资源:"}.
 {"Connections parameters","连接参数"}.
@@ -75,6 +77,7 @@
 {"Dump Backup to Text File at ","转储备份到文本文件于"}.
 {"Dump to Text File","转储到文本文件"}.
 {"Edit Properties","编辑属性"}.
+{"Either approve or decline the voice request.","接受或拒绝声音请求"}.
 {"ejabberd IRC module","ejabberd IRC 模块"}.
 {"ejabberd MUC module","ejabberd MUC 模块"}.
 {"ejabberd Publish-Subscribe module","ejabberd 发行-订阅模块"}.
@@ -98,8 +101,10 @@
 {"Erlang Jabber Server","Erlang Jabber 服务器"}.
 {"Error","错误"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","例如: [{\"irc.lucky.net\", \"koi8-r\"}, 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
+{"Exclude Jabber IDs from CAPTCHA challenge","从验证码挑战中排除 Jabber ID"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","将服务器上所有用户的数据导出到 PIEFXIS 文件 (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","无法从你的声音请求确认信息中提取JID"}.
 {"Family Name","姓氏"}.
 {"February","二月"}.
 {"Fill in fields to search for any matching Jabber User","填充字段以搜索任何匹配的 Jabber 用户"}.
@@ -113,6 +118,7 @@
 {"Get User Last Login Time","获取用户上次登陆时间"}.
 {"Get User Password","获取用户密码"}.
 {"Get User Statistics","获取用户统计"}.
+{"Grant voice to this person?","为此人授权声音?"}.
 {"Groups","组"}.
 {"Group ","组"}.
 {"has been banned","已被禁止"}.
@@ -122,17 +128,17 @@
 {"has been kicked","已被踢出"}.
 {" has set the subject to: ","已将标题设置为: "}.
 {"Host","主机"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","如果您在这里没有看到验证码图片, 请访问 Web 页面."}.
+{"If you don't see the CAPTCHA image here, visit the web page.","如果您在这里没有看到验证码图片, 请访问网页."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","如果您想为 IRC 服务器指定不同的端口, 密码, 编码, 请用 '{\"irc 服务器\", \"编码\", 端口, \"密码\"}' 格式的值填充此表单. 默认情况下此服务使用\"~s\"编码, ~p 端口, 密码为空."}.
 {"Import Directory","导入目录"}.
 {"Import File","导入文件"}.
-{"Import user data from jabberd14 spool file:","从 jabberd14 Spool文件导入用户数据:"}.
+{"Import user data from jabberd14 spool file:","从 jabberd14 Spool 文件导入用户数据:"}.
 {"Import User from File at ","导入用户的文件位于 "}.
-{"Import users data from a PIEFXIS file (XEP-0227):","从 PIEFXIS 文件 (XEP-0227)导入用户数据:"}.
-{"Import users data from jabberd14 spool directory:","从 jabberd14 Spool目录导入用户数据:"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","从 PIEFXIS 文件 (XEP-0227) 导入用户数据:"}.
+{"Import users data from jabberd14 spool directory:","从 jabberd14 Spool 目录导入用户数据:"}.
 {"Import Users from Dir at ","导入用户的目录位于 "}.
 {"Import Users From jabberd14 Spool Files","从 jabberd14 Spool 文件导入用户"}.
-{"Improper message type","不正确的消息类型"}.
+{"Improper message type","不恰当的消息类型"}.
 {"Incorrect password","密码不正确"}.
 {"Invalid affiliation: ~s","无效加入: ~s"}.
 {"Invalid role: ~s","无效角色: ~s"}.
@@ -150,7 +156,7 @@
 {"It is not allowed to send private messages","不可以发送私聊消息"}.
 {"Jabber Account Registration","Jabber 帐户注册"}.
 {"Jabber ID","Jabber ID"}.
-{"Jabber ID ~s is invalid","Jabber ID ~s无效"}.
+{"Jabber ID ~s is invalid","Jabber ID ~s 无效"}.
 {"January","一月"}.
 {"Join IRC channel","加入 IRC 频道"}.
 {"joins the room","加入房间"}.
@@ -168,7 +174,7 @@
 {"List of modules to start","要启动的模块列表"}.
 {"Low level update script","低级别更新脚本"}.
 {"Make participants list public","公开参与人列表"}.
-{"Make room captcha protected","保护房间验证码"}.
+{"Make room CAPTCHA protected","保护房间验证码"}.
 {"Make room members-only","设置房间只接收会员"}.
 {"Make room moderated","设置房间只接收主持人"}.
 {"Make room password protected","进入此房间需要密码"}.
@@ -177,7 +183,7 @@
 {"March","三月"}.
 {"Maximum Number of Occupants","允许的与会人最大数"}.
 {"Max # of items to persist","允许持久化的最大内容条目数"}.
-{"Max payload size in bytes","最大有效负载比特数"}.
+{"Max payload size in bytes","最大有效负载字节数"}.
 {"May","五月"}.
 {"Membership is required to enter this room","进入此房间需要会员身份"}.
 {"Members:","会员:"}.
@@ -185,6 +191,7 @@
 {"Memory","内存"}.
 {"Message body","消息主体"}.
 {"Middle Name","中间名"}.
+{"Minimum interval between voice requests (in seconds)","声音请求的最小间隔(以秒为单位)"}.
 {"Moderator privileges required","需要主持人权限"}.
 {"moderators only","仅主持人"}.
 {"Modified modules","被修改模块"}.
@@ -197,9 +204,10 @@
 {"Never","从未"}.
 {"New Password:","新密码: "}.
 {"Nickname Registration at ","昵称注册于 "}.
-{"Nickname ~s does not exist in the room","昵称~s不在该房间"}.
+{"Nickname ~s does not exist in the room","昵称 ~s 不在该房间"}.
 {"Nickname","昵称"}.
 {"No body provided for announce message","通知消息无正文内容"}.
+{"nobody","没有人"}.
 {"No Data","没有数据"}.
 {"Node ID","节点 ID"}.
 {"Node not found","没有找到节点"}.
@@ -227,6 +235,7 @@
 {"Only deliver notifications to available users","仅将通知发送给可发送的用户"}.
 {"Only moderators and participants are allowed to change the subject in this room","只有主持人和参与人可以在此房间里更改主题"}.
 {"Only moderators are allowed to change the subject in this room","只有主持人可以在此房间里更改主题"}.
+{"Only moderators can approve voice requests","仅主持人能确认声音请求"}.
 {"Only occupants are allowed to send messages to the conference","只有与会人可以向大会发送消息"}.
 {"Only occupants are allowed to send queries to the conference","只有与会人可以向大会发出查询请求"}.
 {"Only service administrators are allowed to send service messages","只有服务管理员可以发送服务消息"}.
@@ -241,7 +250,7 @@
 {"Password ~b","~b 的密码"}.
 {"Password Verification:","密码确认:"}.
 {"Password Verification","确认密码"}.
-{"Password:","密码: "}.
+{"Password:","密码:"}.
 {"Password","密码"}.
 {"Path to Dir","目录的路径"}.
 {"Path to File","文件路径"}.
@@ -250,6 +259,7 @@
 {"Persist items to storage","持久化内容条目"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项仅将备份内置的 Mnesia 数据库. 如果您正在使用 ODBC 模块, 您还需要分别备份您的数据库."}.
+{"Please, wait for a while before sending new voice request","请稍后再发送新的声音请求"}.
 {"Pong","Pong"}.
 {"Port ~b","~b 的端口"}.
 {"Port","端口"}.
@@ -312,11 +322,11 @@
 {"Show Integral Table","显示完整列表"}.
 {"Show Ordinary Table","显示普通列表"}.
 {"Shut Down Service","关闭服务"}.
-{"~s invites you to the room ~s","~s邀请你到~s房间"}.
+{"~s invites you to the room ~s","~s 邀请你到 ~s 房间"}.
 {"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","某些 Jabber 客户端可以在你的计算机里存储密码. 请仅在你确认你的计算机安全的情况下使用该功能."}.
-{"Specify the access model","指定访问模式"}.
+{"Specify the access model","指定访问范例"}.
 {"Specify the event message type","指定事件消息类型"}.
-{"Specify the publisher model","指定发布人样式"}.
+{"Specify the publisher model","指定发布人范例"}.
 {"~s's Offline Messages Queue","~s 的离线消息队列"}.
 {"Start Modules at ","要启动的模块位于 "}.
 {"Start Modules","启动模块"}.
@@ -338,7 +348,7 @@
 {"Sunday","星期天"}.
 {"That nickname is already in use by another occupant","该昵称已被另一用户使用"}.
 {"That nickname is registered by another person","该昵称已被另一个人注册了"}.
-{"The captcha is valid.","验证码有效."}.
+{"The CAPTCHA is valid.","验证码有效."}.
 {"The CAPTCHA verification has failed","验证码检查失败"}.
 {"The collections with which a node is affiliated","加入结点的集合"}.
 {"The password is too weak","密码强度太弱"}.
@@ -357,6 +367,7 @@
 {"Thursday","星期四"}.
 {"Time delay","时间延迟"}.
 {"Time","时间"}.
+{"Too many CAPTCHA requests","验证码请求太多"}.
 {"To ~s","发送给~s"}.
 {"To","到"}.
 {"Traffic rate limit is exceeded","已经超过传输率限制"}.
@@ -365,7 +376,6 @@
 {"Transactions Logged:","记入日志的事务:"}.
 {"Transactions Restarted:","重启的事务:"}.
 {"Tuesday","星期二"}.
-{"Unable to generate a captcha","无法产生验证码"}.
 {"Unable to generate a CAPTCHA","无法生成验证码"}.
 {"Unauthorized","未认证的"}.
 {"Unregister a Jabber account","注销 Jabber 帐户"}.
@@ -378,6 +388,7 @@
 {"Update","更新"}.
 {"Uptime:","正常运行时间:"}.
 {"Use of STARTTLS required","要求使用 STARTTLS"}.
+{"User JID","用户 JID"}.
 {"User Management","用户管理"}.
 {"Username:","用户名:"}.
 {"Users are not allowed to register accounts so quickly","不允许用户太频繁地注册帐户"}.
@@ -390,6 +401,8 @@
 {"Virtual Hosts","虚拟主机"}.
 {"Visitors are not allowed to change their nicknames in this room","此房间不允许用户更改昵称"}.
 {"Visitors are not allowed to send messages to all occupants","不允许访客给所有占有者发送消息"}.
+{"Voice requests are disabled in this conference","该会议的声音请求以被禁用"}.
+{"Voice request","声音请求"}.
 {"Wednesday","星期三"}.
 {"When to send the last published item","何时发送最新发布的内容条目"}.
 {"Whether to allow subscriptions","是否允许订阅"}.

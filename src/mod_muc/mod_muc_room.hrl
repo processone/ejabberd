@@ -67,6 +67,7 @@
 -record(state, {room,
 		host,
 		server_host,
+                mod,
 		access,
 		jid,
 		config = #config{},

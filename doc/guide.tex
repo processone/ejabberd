@@ -66,7 +66,9 @@
 \newcommand{\module}[1]{\texttt{#1}}
 \newcommand{\modadhoc}{\module{mod\_adhoc}}
 \newcommand{\modannounce}{\module{mod\_announce}}
+\newcommand{\modannounceodbc}{\module{mod\_announce\_odbc}}
 \newcommand{\modblocking}{\module{mod\_blocking}}
+\newcommand{\modblockingodbc}{\module{mod\_blocking\_odbc}}
 \newcommand{\modcaps}{\module{mod\_caps}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
@@ -74,9 +76,11 @@
 \newcommand{\modhttpbind}{\module{mod\_http\_bind}}
 \newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
 \newcommand{\modirc}{\module{mod\_irc}}
+\newcommand{\modircodbc}{\module{mod\_irc\_odbc}}
 \newcommand{\modlast}{\module{mod\_last}}
 \newcommand{\modlastodbc}{\module{mod\_last\_odbc}}
 \newcommand{\modmuc}{\module{mod\_muc}}
+\newcommand{\modmucodbc}{\module{mod\_muc\_odbc}}
 \newcommand{\modmuclog}{\module{mod\_muc\_log}}
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
@@ -95,6 +99,7 @@
 \newcommand{\modrosterodbc}{\module{mod\_roster\_odbc}}
 \newcommand{\modservicelog}{\module{mod\_service\_log}}
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
+\newcommand{\modsharedrosterodbc}{\module{mod\_shared\_roster\_odbc}}
 \newcommand{\modsharedrosterldap}{\module{mod\_shared\_roster\_ldap}}
 \newcommand{\modsic}{\module{mod\_sic}}
 \newcommand{\modstats}{\module{mod\_stats}}
@@ -103,6 +108,7 @@
 \newcommand{\modvcardldap}{\module{mod\_vcard\_ldap}}
 \newcommand{\modvcardodbc}{\module{mod\_vcard\_odbc}}
 \newcommand{\modvcardxupdate}{\module{mod\_vcard\_xupdate}}
+\newcommand{\modvcardxupdateodbc}{\module{mod\_vcard\_xupdate\_odbc}}
 \newcommand{\modversion}{\module{mod\_version}}
 
 %% Contributed modules
@@ -1233,6 +1239,12 @@ The possible values match exactly the three possibilities described in
 The default value is \term{closeold}.
 If the client uses old Jabber Non-SASL authentication (\xepref{0078}),
 then this option is not respected, and the action performed is \term{closeold}.
+
+The option \option{fqdn} allows you to define the Fully Qualified Domain Name
+of the machine, in case it isn't detected automatically.
+The FQDN is used to authenticate some clients that use the DIGEST-MD5 SASL mechanism.
+The option syntax is:
+\esyntax{\{fqdn, undefined|FqdnString\}.}
 
 \makesubsubsection{internalauth}{Internal}
 \ind{internal authentication}\ind{Mnesia}
@@ -2581,7 +2593,10 @@ The following table lists all modules included in \ejabberd{}.
     \hline
     \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  \\
     \hline \ahrefloc{modannounce}{\modannounce{}} & Manage announcements & recommends \modadhoc{} \\
+    \hline \ahrefloc{modannounce}{\modannounceodbc{}} & Manage announcements & recommends \modadhoc{} \\
+    & & supported DB (*) \\
     \hline \modblocking{} & Simple Communications Blocking (\xepref{0191}) & \modprivacy{} \\
+    \hline \modblockingodbc{} & Simple Communications Blocking (\xepref{0191}) & \modprivacyodbc{} \\
     \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
@@ -2589,10 +2604,12 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) &  \\
     \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server &  \\
     \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\
+    \hline \ahrefloc{modirc}{\modircodbc{}} & IRC transport & supported DB (*) \\
     \hline \ahrefloc{modlast}{\modlast{}} & Last Activity (\xepref{0012}) &  \\
     \hline \ahrefloc{modlast}{\modlastodbc{}} & Last Activity (\xepref{0012}) & supported DB (*) \\
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
-    \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} \\
+    \hline \ahrefloc{modmuc}{\modmucodbc{}} & Multi-User Chat (\xepref{0045}) & supported DB (*) \\
+    \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} or \modmucodbc{} \\
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
@@ -2611,6 +2628,8 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modservicelog}{\modservicelog{}} & Copy user messages to logger service &  \\
     \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} or \\
     & & \modrosterodbc\\
+    \hline \ahrefloc{modsharedroster}{\modsharedrosterodbc{}} & Shared roster management & supported DB (*) and\\
+    & & \modroster{} or \modrosterodbc\\
     \hline \ahrefloc{modsharedrosterldap}{\modsharedrosterldap{}} & LDAP Shared roster management & \modroster{} or \\
     & & \modrosterodbc\\
     \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
@@ -2620,6 +2639,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modvcardldap}{\modvcardldap{}} & vcard-temp (\xepref{0054}) & LDAP server \\
     \hline \ahrefloc{modvcard}{\modvcardodbc{}} & vcard-temp (\xepref{0054}) & supported DB (*) \\
     \hline \ahrefloc{modvcardxupdate}{\modvcardxupdate{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} or \modvcardodbc{} \\
+    \hline \ahrefloc{modvcardxupdate}{\modvcardxupdateodbc{}} & vCard-Based Avatars (\xepref{0153}) & \modvcard{} or \modvcardodbc{} \\
     \hline \ahrefloc{modversion}{\modversion{}} & Software Version (\xepref{0092}) &  \\
     \hline
   \end{tabular}
@@ -2650,10 +2670,16 @@ database for the following data:
 \item Offline messages: Use \term{mod\_offline\_odbc} instead of
   \term{mod\_offline}.
 \item Rosters: Use \term{mod\_roster\_odbc} instead of \term{mod\_roster}.
+\item Shared Rosters: Use \term{mod\_shared\_roster\_odbc} instead of \term{mod\_shared\_roster}.
 \item Users' VCARD: Use \term{mod\_vcard\_odbc} instead of \term{mod\_vcard}.
+\item vCard-Based Avatars: Use \term{mod\_vcard\_xupdate\_odbc} instead of \term{mod\_vcard\_xupdate}.
 \item Private XML storage: Use \term{mod\_private\_odbc} instead of \term{mod\_private}.
 \item User rules for blocking communications: Use \term{mod\_privacy\_odbc} instead of \term{mod\_privacy}.
+\item Simple Communications Blocking: Use \term{mod\_blocking\_odbc} instead of \term{mod\_blocking}.
 \item Pub-Sub nodes, items and subscriptions: Use \term{mod\_pubsub\_odbc} instead of \term{mod\_pubsub}.
+\item Multi-user chats: Use \term{mod\_muc\_odbc} instead of \term{mod\_muc}.
+\item Manage announcements: Use \term{mod\_announce\_odbc} instead of \term{mod\_announce}.
+\item IRC transport: Use \term{mod\_irc\_odbc} instead of \term{mod\_irc}.
 \end{itemize}
 
 You can find more
@@ -4052,7 +4078,7 @@ Options:
   This option does not affect the client in any way.
   This option is only useful if Roster Versioning is enabled.
   This option is disabled by default.
-  Important: if you use \modsharedroster{} or \modsharedrosterldap{},
+  Important: if you use \modsharedroster{}, \modsharedrosterodbc{} or \modsharedrosterldap{},
   you must disable this option.
 \end{description}
 

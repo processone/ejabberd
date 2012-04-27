@@ -57,6 +57,21 @@ CREATE TABLE rostergroups (
 
 CREATE INDEX pk_rosterg_user_jid ON rostergroups USING btree (username, jid);
 
+CREATE TABLE sr_group (
+    name text NOT NULL,
+    opts text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE sr_user (
+    jid text NOT NULL,
+    grp text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX i_sr_user_jid_grp ON sr_user USING btree (jid, grp);
+CREATE INDEX i_sr_user_jid ON sr_user USING btree (jid);
+CREATE INDEX i_sr_user_grp ON sr_user USING btree (grp);
 
 CREATE TABLE spool (
     username text NOT NULL,
@@ -71,6 +86,12 @@ CREATE INDEX i_despool ON spool USING btree (username);
 CREATE TABLE vcard (
     username text PRIMARY KEY,
     vcard text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE vcard_xupdate (
+    username text PRIMARY KEY,
+    hash text NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -219,3 +240,37 @@ CREATE TABLE pubsub_subscription_opt (
   opt_value text
 );
 CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt USING btree (subid, opt_name);
+
+CREATE TABLE muc_room (
+    name text NOT NULL,
+    host text NOT NULL,
+    opts text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX i_muc_room_name_host ON muc_room USING btree (name, host);
+
+CREATE TABLE muc_registered (
+    jid text NOT NULL,
+    host text NOT NULL,
+    nick text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX i_muc_registered_nick ON muc_registered USING btree (nick);
+CREATE UNIQUE INDEX i_muc_registered_jid_host ON muc_registered USING btree (jid, host);
+
+CREATE TABLE irc_custom (
+    jid text NOT NULL,
+    host text NOT NULL,
+    data text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX i_irc_custom_jid_host ON irc_custom USING btree (jid, host);
+
+CREATE TABLE motd (
+    username text PRIMARY KEY,
+    xml text,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);

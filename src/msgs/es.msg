@@ -14,13 +14,15 @@
 {"Administrator privileges required","Se necesita privilegios de administrador"}.
 {"A friendly name for the node","Un nombre sencillo para el nodo"}.
 {"All activity","Toda la actividad"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","¿Deseas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","¿Deseas permitir a este Jabber ID que se subscriba a este nodo PubSub?"}.
 {"Allow users to change the subject","Permitir a los usuarios cambiar el asunto"}.
 {"Allow users to query other users","Permitir a los usuarios consultar a otros usuarios"}.
 {"Allow users to send invites","Permitir a los usuarios enviar invitaciones"}.
 {"Allow users to send private messages","Permitir a los usuarios enviar mensajes privados"}.
 {"Allow visitors to change nickname","Permitir a los visitantes cambiarse el apodo"}.
+{"Allow visitors to send private messages to","Permitir a los visitantes enviar mensajes privados a"}.
 {"Allow visitors to send status text in presence updates","Permitir a los visitantes enviar texto de estado en las actualizaciones de presencia"}.
+{"Allow visitors to send voice requests","Permitir a los visitantes enviar peticiones de voz"}.
 {"All Users","Todos los usuarios"}.
 {"Announcements","Anuncios"}.
 {"anyone","cualquiera"}.
@@ -75,6 +77,7 @@
 {"Dump Backup to Text File at ","Exporta copia de seguridad a fichero de texto en "}.
 {"Dump to Text File","Exportar a fichero de texto"}.
 {"Edit Properties","Editar propiedades"}.
+{"Either approve or decline the voice request.","Aprueba o rechaza la petición de voz."}.
 {"ejabberd IRC module","Módulo de IRC para ejabberd"}.
 {"ejabberd MUC module","Módulo de MUC para ejabberd"}.
 {"ejabberd Publish-Subscribe module","Módulo de Publicar-Subscribir de ejabberd"}.
@@ -98,8 +101,10 @@
 {"Erlang Jabber Server","Servidor Jabber en Erlang"}.
 {"Error","Error"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Ejemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Excluir Jabber IDs de las pruebas de CAPTCHA"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar datos de todos los usuarios del servidor a ficheros PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar datos de los usuarios de un dominio a ficheros PIEFXIS (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Fallo al extraer el Jabber ID de tu aprobación de petición de voz"}.
 {"Family Name","Apellido"}.
 {"February","febrero"}.
 {"Fill in fields to search for any matching Jabber User","Rellena campos para buscar usuarios Jabber que concuerden"}.
@@ -113,6 +118,7 @@
 {"Get User Last Login Time","Ver fecha de la última conexión de usuario"}.
 {"Get User Password","Ver contraseña de usuario"}.
 {"Get User Statistics","Ver estadísticas de usuario"}.
+{"Grant voice to this person?","¿Conceder voz a esta persona?"}.
 {"Group ","Grupo "}.
 {"Groups","Grupos"}.
 {"has been banned","ha sido bloqueado"}.
@@ -168,7 +174,7 @@
 {"List of modules to start","Lista de módulos a iniciar"}.
 {"Low level update script","Script de actualización a bajo nivel"}.
 {"Make participants list public","La lista de participantes es pública"}.
-{"Make room captcha protected","Proteger la sala con captcha"}.
+{"Make room CAPTCHA protected","Proteger la sala con CAPTCHA"}.
 {"Make room members-only","Sala sólo para miembros"}.
 {"Make room moderated","Sala moderada"}.
 {"Make room password protected","Proteger la sala con contraseña"}.
@@ -185,6 +191,7 @@
 {"Memory","Memoria"}.
 {"Message body","Cuerpo del mensaje"}.
 {"Middle Name","Segundo nombre"}.
+{"Minimum interval between voice requests (in seconds)","Intervalo mínimo entre peticiones de voz (en segundos)"}.
 {"Moderator privileges required","Se necesita privilegios de moderador"}.
 {"moderators only","solo moderadores"}.
 {"Modified modules","Módulos modificados"}.
@@ -199,6 +206,7 @@
 {"Nickname","Apodo"}.
 {"Nickname Registration at ","Registro del apodo en "}.
 {"Nickname ~s does not exist in the room","El apodo ~s no existe en la sala"}.
+{"nobody","nadie"}.
 {"No body provided for announce message","No se ha proporcionado cuerpo de mensaje para el anuncio"}.
 {"No Data","Sin datos"}.
 {"Node ID","Nodo ID"}.
@@ -227,6 +235,7 @@
 {"Only deliver notifications to available users","Solo enviar notificaciones a los usuarios disponibles"}.
 {"Only moderators and participants are allowed to change the subject in this room","Solo los moderadores y participantes pueden cambiar el asunto de esta sala"}.
 {"Only moderators are allowed to change the subject in this room","Solo los moderadores pueden cambiar el asunto de esta sala"}.
+{"Only moderators can approve voice requests","Solo los moderadores pueden aprobar peticiones de voz"}.
 {"Only occupants are allowed to send messages to the conference","Solo los ocupantes pueden enviar mensajes a la sala"}.
 {"Only occupants are allowed to send queries to the conference","Solo los ocupantes pueden enviar solicitudes a la sala"}.
 {"Only service administrators are allowed to send service messages","Solo los administradores del servicio tienen permiso para enviar mensajes de servicio"}.
@@ -250,6 +259,7 @@
 {"Persist items to storage","Persistir elementos al almacenar"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ten en cuenta que estas opciones solo harán copia de seguridad de la base de datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia de seguridad de tu base de datos SQL."}.
+{"Please, wait for a while before sending new voice request","Por favor, espera un poco antes de enviar otra petición de voz"}.
 {"Pong","Pong"}.
 {"Port ~b","Puerto ~b"}.
 {"Port","Puerto"}.
@@ -338,7 +348,7 @@
 {"Sunday","domingo"}.
 {"That nickname is already in use by another occupant","Ese apodo ya está siendo usado por otro ocupante"}.
 {"That nickname is registered by another person","El apodo ya está registrado por otra persona"}.
-{"The captcha is valid.","El captcha es válido."}.
+{"The CAPTCHA is valid.","El CAPTCHA es válido."}.
 {"The CAPTCHA verification has failed","La verificación de CAPTCHA ha fallado"}.
 {"The collections with which a node is affiliated","Las colecciones a las que un nodo está afiliado"}.
 {"the password is","la contraseña es"}.
@@ -357,6 +367,7 @@
 {"Thursday","jueves"}.
 {"Time delay","Retraso temporal"}.
 {"Time","Fecha"}.
+{"Too many CAPTCHA requests","Demasiadas peticiones de CAPTCHA"}.
 {"To","Para"}.
 {"To ~s","A ~s"}.
 {"Traffic rate limit is exceeded","Se ha exedido el límite de tráfico"}.
@@ -365,7 +376,6 @@
 {"Transactions Logged:","Transacciones registradas:"}.
 {"Transactions Restarted:","Transacciones reiniciadas:"}.
 {"Tuesday","martes"}.
-{"Unable to generate a captcha","No se pudo generar un captcha."}.
 {"Unable to generate a CAPTCHA","No se pudo generar un CAPTCHA"}.
 {"Unauthorized","No autorizado"}.
 {"Unregister a Jabber account","Borrar una cuenta Jabber"}.
@@ -378,6 +388,7 @@
 {"Update script","Script de actualización"}.
 {"Uptime:","Tiempo desde el inicio:"}.
 {"Use of STARTTLS required","Es obligatorio usar STARTTLS"}.
+{"User JID","Jabber ID del usuario"}.
 {"User Management","Administración de usuarios"}.
 {"Username:","Nombre de usuario:"}.
 {"Users are not allowed to register accounts so quickly","Los usuarios no tienen permitido crear cuentas con tanta rapidez"}.
@@ -390,6 +401,8 @@
 {"Virtual Hosts","Dominios Virtuales"}.
 {"Visitors are not allowed to change their nicknames in this room","Los visitantes no tienen permitido cambiar sus apodos en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Los visitantes no pueden enviar mensajes a todos los ocupantes"}.
+{"Voice request","Petición de voz"}.
+{"Voice requests are disabled in this conference","Las peticiones de voz están desactivadas en esta sala"}.
 {"Wednesday","miércoles"}.
 {"When to send the last published item","Cuando enviar el último elemento publicado"}.
 {"Whether to allow subscriptions","Permitir subscripciones"}.

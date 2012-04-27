@@ -35,9 +35,9 @@
 	 start/2,
 	 stop/1,
 	 room_destroyed/4,
-	 store_room/3,
-	 restore_room/2,
-	 forget_room/2,
+	 store_room/4,
+	 restore_room/3,
+	 forget_room/3,
 	 create_room/5,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
@@ -47,9 +47,9 @@
 	 migrate/3,
 	 get_vh_rooms/1,
          is_broadcasted/1,
-	 can_use_nick/3,
  	 moderate_room_history/2,
- 	 persist_recent_messages/1]).
+ 	 persist_recent_messages/1,
+	 can_use_nick/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -160,14 +160,14 @@ create_room(Host, Name, From, Nick, Opts) ->
     Node = get_node({Name, RoomHost}),
     gen_server:call({Proc, Node}, {create, Name, From, Nick, Opts}).
 
-store_room(Host, Name, Opts) ->
+store_room(_ServerHost, Host, Name, Opts) ->
     F = fun() ->
 		mnesia:write(#muc_room{name_host = {Name, Host},
 				       opts = Opts})
 	end,
     mnesia:transaction(F).
 
-restore_room(Host, Name) ->
+restore_room(_ServerHost, Host, Name) ->
     case catch mnesia:dirty_read(muc_room, {Name, Host}) of
 	[#muc_room{opts = Opts}] ->
 	    Opts;
@@ -175,7 +175,7 @@ restore_room(Host, Name) ->
 	    error
     end.
 
-forget_room(Host, Name) ->
+forget_room(_ServerHost, Host, Name) ->
     F = fun() ->
 		mnesia:delete({muc_room, {Name, Host}})
 	end,
@@ -191,9 +191,9 @@ process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
 			  From,
 			  jlib:iq_to_xml(Res)).
 
-can_use_nick(_Host, _JID, "") ->
+can_use_nick(_ServerHost, _Host, _JID, "") ->
     false;
-can_use_nick(Host, JID, Nick) ->
+can_use_nick(_ServerHost, Host, JID, Nick) ->
     {LUser, LServer, _} = jlib:jid_tolower(JID),
     LUS = {LUser, LServer},
     case catch mnesia:dirty_select(
@@ -334,7 +334,7 @@ handle_call({create, Room, From, Nick, Opts},
 		  Host, ServerHost, Access,
 		  Room, HistorySize, PersistHistory,
 		  RoomShaper, From,
-		  Nick, NewOpts),
+		  Nick, NewOpts, ?MODULE),
     register_room(Host, Room, Pid),
     {reply, ok, State}.
 
@@ -631,7 +631,7 @@ do_route1(Host, ServerHost, Access, HistorySize, PersistHistory, RoomShaper,
 check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
     case acl:match_rule(ServerHost, AccessCreate, From) of
 	allow ->
-	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
+	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, ?MODULE,
 						      max_room_id, infinite));
 	_ ->
 	    false
@@ -668,7 +668,8 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, PersistHistory, Room
                                                             HistorySize,
 							    PersistHistory,
                                                             RoomShaper,
-                                                            R#muc_room.opts),
+                                                            R#muc_room.opts,
+                                                            ?MODULE),
                                               register_room(Host, Room, Pid)
                                       end;
 				  _ ->
@@ -694,12 +695,12 @@ start_new_room(Host, ServerHost, Access, Room,
                     mod_muc_room:start(Host, ServerHost, Access,
                                        Room, HistorySize, PersistHistory,
                                        RoomShaper, From,
-                                       Nick, DefRoomOpts);
+                                       Nick, DefRoomOpts, ?MODULE);
                 [#muc_room{opts = Opts}|_] ->
                     ?DEBUG("MUC: restore room '~s'~n", [Room]),
                     mod_muc_room:start(Host, ServerHost, Access,
                                        Room, HistorySize, PersistHistory,
-                                       RoomShaper, Opts)
+                                       RoomShaper, Opts, ?MODULE)
             end
     end.
 

@@ -168,7 +168,7 @@
 {"List of modules to start","Liste des modules à démarrer"}.
 {"Low level update script","Script de mise à jour de bas-niveau"}.
 {"Make participants list public","Rendre la liste des participants publique"}.
-{"Make room captcha protected","Protéger le salon par un captcha"}.
+{"Make room CAPTCHA protected","Protéger le salon par un CAPTCHA"}.
 {"Make room members-only","Réserver le salon aux membres uniquement"}.
 {"Make room moderated","Rendre le salon modéré"}.
 {"Make room password protected","Protéger le salon par mot de passe"}.
@@ -338,7 +338,7 @@
 {"Sunday","Dimanche"}.
 {"That nickname is already in use by another occupant","Le pseudo est déjà utilisé par un autre occupant"}.
 {"That nickname is registered by another person","Le pseudo est enregistré par une autre personne"}.
-{"The captcha is valid.","Le captcha est valide"}.
+{"The CAPTCHA is valid.","Le CAPTCHA est valide"}.
 {"The CAPTCHA verification has failed","La vérification du CAPTCHA a échoué"}.
 {"The collections with which a node is affiliated","Les collections avec lesquelle un nœud est affilié"}.
 {"the password is","le mot de passe est"}.
@@ -365,7 +365,6 @@
 {"Transactions Logged:","Transactions journalisées :"}.
 {"Transactions Restarted:","Transactions redémarrées :"}.
 {"Tuesday","Mardi"}.
-{"Unable to generate a captcha","Impossible de générer le captcha"}.
 {"Unable to generate a CAPTCHA","Impossible de générer le CAPTCHA"}.
 {"Unauthorized","Non autorisé"}.
 {"Unregister a Jabber account","Effacer un compte Jabber"}.

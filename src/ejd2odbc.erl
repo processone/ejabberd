@@ -34,15 +34,26 @@
 	 export_last/2,
 	 export_vcard/2,
 	 export_vcard_search/2,
-	 export_private_storage/2]).
+         export_vcard_xupdate/2,
+	 export_private_storage/2,
+         export_privacy/2,
+         export_motd/2,
+         export_motd_users/2,
+         export_irc_custom/2,
+         export_sr_group/2,
+         export_sr_user/2,
+         export_muc_room/2,
+         export_muc_registered/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
+-include("mod_privacy.hrl").
 
 -record(offline_msg, {us, timestamp, expire, from, to, packet}).
 -record(last_activity, {us, timestamp, status}).
 -record(vcard, {us, vcard}).
+-record(vcard_xupdate, {us, hash}).
 -record(vcard_search, {us,
 		       user,     luser,
 		       fn,	 lfn,
@@ -58,6 +69,13 @@
 		       orgunit,	 lorgunit
 		      }).
 -record(private_storage, {usns, xml}).
+-record(irc_custom, {us_host, data}).
+-record(muc_room, {name_host, opts}).
+-record(muc_registered, {us_host, nick}).
+-record(sr_group, {group_host, opts}).
+-record(sr_user, {us, group_host}).
+-record(motd, {server, packet}).
+-record(motd_users, {us, dummy = []}).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 1000).
 
@@ -250,6 +268,20 @@ export_vcard_search(Server, Output) ->
 	      []
       end).
 
+export_vcard_xupdate(Server, Output) ->
+    export_common(
+      Server, vcard_xupdate, Output,
+      fun(Host, #vcard_xupdate{us = {LUser, LServer}, hash = Hash})
+            when LServer == Host ->
+	      Username = ejabberd_odbc:escape(LUser),
+	      SHash = ejabberd_odbc:escape(Hash),
+	      ["delete from vcard_xupdate where username='", Username, "';"
+	       "insert into vcard_xupdate(username, hash) "
+	       "values ('", Username, "', '", SHash, "');"];
+	 (_Host, _R) ->
+	      []
+      end).
+
 export_private_storage(Server, Output) ->
     export_common(
       Server, private_storage, Output,
@@ -263,6 +295,167 @@ export_private_storage(Server, Output) ->
       	      odbc_queries:set_private_data_sql(Username, LXMLNS, SData);
 	 (_Host, _R) ->
       	      []
+      end).
+
+export_muc_room(Server, Output) ->
+    export_common(
+      Server, muc_room, Output,
+      fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
+              case lists:suffix(Host, RoomHost) of
+                  true ->
+                      SName = ejabberd_odbc:escape(Name),
+                      SRoomHost = ejabberd_odbc:escape(RoomHost),
+                      SOpts = ejabberd_odbc:encode_term(Opts),
+                      ["delete from muc_room where name='", SName,
+                       "' and host='", SRoomHost, "';",
+                       "insert into muc_room(name, host, opts) values (",
+                       "'", SName, "', '", SRoomHost, "', '", SOpts, "');"];
+                  false ->
+                      []
+              end
+      end).
+
+export_muc_registered(Server, Output) ->
+    export_common(
+      Server, muc_registered, Output,
+      fun(Host, #muc_registered{us_host = {{U, S}, RoomHost}, nick = Nick}) ->
+              case lists:suffix(Host, RoomHost) of
+                  true ->
+                      SJID = ejabberd_odbc:escape(
+                               jlib:jid_to_string(
+                                 jlib:make_jid(U, S, ""))),
+                      SNick = ejabberd_odbc:escape(Nick),
+                      SRoomHost = ejabberd_odbc:escape(RoomHost),
+                      ["delete from muc_registered where jid='", SJID,
+                       "' and host='", SRoomHost, "';"
+                       "insert into muc_registered(jid, host, nick) values ("
+                       "'", SJID, "', '", SRoomHost, "', '", SNick, "');"];
+                  false ->
+                      []
+              end
+      end).
+
+export_irc_custom(Server, Output) ->
+    export_common(
+      Server, irc_custom, Output,
+      fun(Host, #irc_custom{us_host = {{U, S}, IRCHost}, data = Data}) ->
+              case lists:suffix(Host, IRCHost) of
+                  true ->
+                      SJID = ejabberd_odbc:escape(
+                               jlib:jid_to_string(
+                                 jlib:make_jid(U, S, ""))),
+                      SIRCHost = ejabberd_odbc:escape(IRCHost),
+                      SData = ejabberd_odbc:encode_term(Data),
+                      ["delete from irc_custom where jid='", SJID,
+                       "' and host='", SIRCHost, "';"
+                       "insert into irc_custom(jid, host, data) values ("
+                       "'", SJID, "', '", SIRCHost, "', '", SData, "');"];
+                  false ->
+                      []
+              end
+      end).
+
+export_privacy(Server, Output) ->
+    case ejabberd_odbc:sql_query(
+           jlib:nameprep(Server),
+           ["select id from privacy_list order by id desc limit 1;"]) of
+        {selected, ["id"], [{I}]} ->
+            put(id, list_to_integer(I));
+        _ ->
+            put(id, 0)
+    end,
+    export_common(
+      Server, privacy, Output,
+      fun(Host, #privacy{us = {LUser, LServer},
+                         lists = Lists,
+                         default = Default}) when LServer == Host ->
+              Username = ejabberd_odbc:escape(LUser),
+              if Default /= none ->
+                      SDefault = ejabberd_odbc:escape(Default),
+                      ["delete from privacy_default_list where ",
+                       "username='", Username, "';",
+                       "insert into privacy_default_list(username, name) ",
+                       "values ('", Username, "', '", SDefault, "');"];
+                 true ->
+                      []
+              end ++
+                  lists:flatmap(
+                    fun({Name, List}) ->
+                            SName = ejabberd_odbc:escape(Name),
+                            RItems = lists:map(
+                                       fun mod_privacy_odbc:item_to_raw/1,
+                                       List),
+                            ID = integer_to_list(get_id()),
+                            ["delete from privacy_list "
+                             "where username='", Username, "' and name='", SName, "';"
+                             "insert into privacy_list(username, name, id) "
+                             "values ('", Username, "', '", SName, "', '", ID, "');",
+                             "delete from privacy_list_data where id='", ID, "';"
+                             |[["insert into privacy_list_data("
+                                "id, t, value, action, ord, match_all, match_iq, "
+                                "match_message, match_presence_in, "
+                                "match_presence_out) values ('", ID, "', '",
+                                string:join(Items, "', '"), "');"] || Items <- RItems]]
+                    end, Lists);
+         (_Host, _R) ->
+              []
+      end).
+
+export_sr_group(Server, Output) ->
+    export_common(
+      Server, sr_group, Output,
+      fun(Host, #sr_group{group_host = {Group, LServer}, opts = Opts})
+            when LServer == Host ->
+              SGroup = ejabberd_odbc:escape(Group),
+              SOpts = ejabberd_odbc:encode_term(Opts),
+              ["delete from sr_group where name='", Group, "';"
+               "insert into sr_group(name, opts) values ('",
+               SGroup, "', '", SOpts, "');"];
+         (_Host, _R) ->
+              []
+      end).
+
+export_sr_user(Server, Output) ->
+    export_common(
+      Server, sr_user, Output,
+      fun(Host, #sr_user{us = {U, S}, group_host = {Group, LServer}})
+            when LServer == Host ->
+              SGroup = ejabberd_odbc:escape(Group),
+              SJID = ejabberd_odbc:escape(
+                       jlib:jid_to_string(
+                         jlib:jid_tolower(
+                           jlib:make_jid(U, S, "")))),
+              ["delete from sr_user where jid='", SJID,
+               "'and grp='", Group, "';"
+               "insert into sr_user(jid, grp) values ('",
+               SJID, "', '", SGroup, "');"];
+         (_Host, _R) ->
+              []
+      end).
+
+export_motd(Server, Output) ->
+    export_common(
+      Server, motd, Output,
+      fun(Host, #motd{server = LServer, packet = El})
+            when LServer == Host ->
+              ["delete from motd where username='';"
+               "insert into motd(username, xml) values ('', '",
+               ejabberd_odbc:escape(xml:element_to_binary(El)), "');"];
+         (_Host, _R) ->
+              []
+      end).
+
+export_motd_users(Server, Output) ->
+    export_common(
+      Server, motd_users, Output,
+      fun(Host, #motd_users{us = {LUser, LServer}})
+            when LServer == Host, LUser /= "" ->
+              Username = ejabberd_odbc:escape(LUser),
+              ["delete from motd where username='", Username, "';"
+               "insert into motd(username, xml) values ('",
+               Username, "', '');"];
+         (_Host, _R) ->
+              []
       end).
 
 %%%----------------------------------------------------------------------
@@ -363,3 +556,8 @@ groups_to_string(#roster{usj = {User, _Server, JID},
       "'", Username, "',"
       "'", SJID, "',"
       "'", ejabberd_odbc:escape(Group), "')"] || Group <- Groups].
+
+get_id() ->
+    ID = get(id),
+    put(id, ID+1),
+    ID+1.

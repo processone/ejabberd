@@ -22,11 +22,11 @@ msgstr "L'utilisation de STARTTLS est impérative"
 msgid "No resource provided"
 msgstr "Aucune ressource fournie"
 
-#: ejabberd_c2s.erl:1149
+#: ejabberd_c2s.erl:1197
 msgid "Replaced by new connection"
 msgstr "Remplacé par une nouvelle connexion"
 
-#: ejabberd_c2s.erl:1837
+#: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "Votre règle de flitrage active a empêché le routage de ce stanza."
 
@@ -48,8 +48,8 @@ msgid "CAPTCHA web page"
 msgstr "Page web de CAPTCHA"
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Le captcha est valide"
+msgid "The CAPTCHA is valid."
+msgstr "Le CAPTCHA est valide"
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
@@ -63,67 +63,70 @@ msgstr "Ping"
 msgid "Pong"
 msgstr "Pong"
 
-#: mod_announce.erl:506
+#: mod_announce.erl:507 mod_announce_odbc.erl:499
 msgid "Really delete message of the day?"
 msgstr "Confirmer la suppression du message du jour ?"
 
-#: mod_announce.erl:514 mod_configure.erl:1083 mod_configure.erl:1128
+#: mod_announce.erl:515 mod_announce_odbc.erl:507 mod_configure.erl:1083
+#: mod_configure.erl:1128
 msgid "Subject"
 msgstr "Sujet"
 
-#: mod_announce.erl:519 mod_configure.erl:1088 mod_configure.erl:1133
+#: mod_announce.erl:520 mod_announce_odbc.erl:512 mod_configure.erl:1088
+#: mod_configure.erl:1133
 msgid "Message body"
 msgstr "Corps du message"
 
-#: mod_announce.erl:599
+#: mod_announce.erl:600 mod_announce_odbc.erl:592
 msgid "No body provided for announce message"
 msgstr "Pas de corps de message pour l'annonce"
 
-#: mod_announce.erl:634
+#: mod_announce.erl:635 mod_announce_odbc.erl:627
 msgid "Announcements"
 msgstr "Annonces"
 
-#: mod_announce.erl:636
+#: mod_announce.erl:637 mod_announce_odbc.erl:629
 msgid "Send announcement to all users"
 msgstr "Envoyer l'annonce à tous les utilisateurs"
 
-#: mod_announce.erl:638
+#: mod_announce.erl:639 mod_announce_odbc.erl:631
 msgid "Send announcement to all users on all hosts"
 msgstr "Envoyer une annonce à tous les utilisateurs de tous les domaines"
 
-#: mod_announce.erl:640
+#: mod_announce.erl:641 mod_announce_odbc.erl:633
 msgid "Send announcement to all online users"
 msgstr "Envoyer l'annonce à tous les utilisateurs en ligne"
 
-#: mod_announce.erl:642 mod_configure.erl:1078 mod_configure.erl:1123
+#: mod_announce.erl:643 mod_announce_odbc.erl:635 mod_configure.erl:1078
+#: mod_configure.erl:1123
 msgid "Send announcement to all online users on all hosts"
 msgstr ""
 "Envoyer l'annonce à tous les utilisateurs en ligne sur tous les serveurs"
 
-#: mod_announce.erl:644
+#: mod_announce.erl:645 mod_announce_odbc.erl:637
 msgid "Set message of the day and send to online users"
 msgstr "Définir le message du jour et l'envoyer aux utilisateurs en ligne"
 
-#: mod_announce.erl:646
+#: mod_announce.erl:647 mod_announce_odbc.erl:639
 msgid "Set message of the day on all hosts and send to online users"
 msgstr ""
 "Définir le message du jour pour tous domaines et l'envoyer aux utilisateurs "
 "en ligne"
 
-#: mod_announce.erl:648
+#: mod_announce.erl:649 mod_announce_odbc.erl:641
 msgid "Update message of the day (don't send)"
 msgstr "Mise à jour du message du jour (pas d'envoi)"
 
-#: mod_announce.erl:650
+#: mod_announce.erl:651 mod_announce_odbc.erl:643
 msgid "Update message of the day on all hosts (don't send)"
 msgstr ""
 "Mettre à jour le message du jour sur tous les domaines (ne pas envoyer)"
 
-#: mod_announce.erl:652
+#: mod_announce.erl:653 mod_announce_odbc.erl:645
 msgid "Delete message of the day"
 msgstr "Supprimer le message du jour"
 
-#: mod_announce.erl:654
+#: mod_announce.erl:655 mod_announce_odbc.erl:647
 msgid "Delete message of the day on all hosts"
 msgstr "Supprimer le message du jour sur tous les domaines"
 
@@ -132,7 +135,7 @@ msgstr "Supprimer le message du jour sur tous les domaines"
 msgid "Configuration"
 msgstr "Configuration"
 
-#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1934
+#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1936
 msgid "Database"
 msgstr "Base de données"
 
@@ -144,7 +147,7 @@ msgstr "Modules de démarrage"
 msgid "Stop Modules"
 msgstr "Modules d'arrêt"
 
-#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1935
+#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1937
 msgid "Backup"
 msgstr "Sauvegarde"
 
@@ -173,7 +176,7 @@ msgid "Shut Down Service"
 msgstr "Arrêter le service"
 
 #: mod_configure.erl:145 mod_configure.erl:518 mod_configure.erl:1197
-#: web/ejabberd_web_admin.erl:1528
+#: web/ejabberd_web_admin.erl:1527
 msgid "Add User"
 msgstr "Ajouter un utilisateur"
 
@@ -225,7 +228,7 @@ msgid "User Management"
 msgstr "Gestion des utilisateurs"
 
 #: mod_configure.erl:500 web/ejabberd_web_admin.erl:1058
-#: web/ejabberd_web_admin.erl:1463
+#: web/ejabberd_web_admin.erl:1462
 msgid "Online Users"
 msgstr "Utilisateurs en ligne"
 
@@ -237,15 +240,15 @@ msgstr "Tous les utilisateurs"
 msgid "Outgoing s2s Connections"
 msgstr "Connexions s2s sortantes"
 
-#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1905
+#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1907
 msgid "Running Nodes"
 msgstr "Noeuds actifs"
 
-#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1907
+#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1909
 msgid "Stopped Nodes"
 msgstr "Noeuds arrêtés"
 
-#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1951
+#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1953
 msgid "Modules"
 msgstr "Modules"
 
@@ -376,15 +379,15 @@ msgstr "Règles d'accès"
 
 #: mod_configure.erl:1200 mod_configure.erl:1222 mod_configure.erl:1234
 #: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
-#: mod_configure.erl:1287 mod_configure.erl:1652 mod_configure.erl:1702
-#: mod_configure.erl:1723 mod_roster.erl:943 mod_roster_odbc.erl:1048
-#: mod_vcard.erl:466 mod_vcard_ldap.erl:550 mod_vcard_odbc.erl:442
+#: mod_configure.erl:1287 mod_configure.erl:1650 mod_configure.erl:1700
+#: mod_configure.erl:1721 mod_roster.erl:943 mod_roster_odbc.erl:1060
+#: mod_vcard.erl:472 mod_vcard_ldap.erl:554 mod_vcard_odbc.erl:448
 msgid "Jabber ID"
 msgstr "Jabber ID"
 
-#: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1653
-#: mod_configure.erl:1865 mod_muc/mod_muc_room.erl:2970 mod_register.erl:235
-#: web/ejabberd_web_admin.erl:1521
+#: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1651
+#: mod_configure.erl:1863 mod_muc/mod_muc_room.erl:3224 mod_register.erl:235
+#: web/ejabberd_web_admin.erl:1520
 msgid "Password"
 msgstr "Mot de passe"
 
@@ -400,70 +403,71 @@ msgstr "Nombre d'utilisateurs enregistrés"
 msgid "Number of online users"
 msgstr "Nombre d'utilisateurs en ligne"
 
-#: mod_configure.erl:1684 web/ejabberd_web_admin.erl:1589
-#: web/ejabberd_web_admin.erl:1741
+#: mod_configure.erl:1682 web/ejabberd_web_admin.erl:1588
+#: web/ejabberd_web_admin.erl:1743
 msgid "Never"
 msgstr "Jamais"
 
-#: mod_configure.erl:1698 web/ejabberd_web_admin.erl:1602
-#: web/ejabberd_web_admin.erl:1754
+#: mod_configure.erl:1696 web/ejabberd_web_admin.erl:1601
+#: web/ejabberd_web_admin.erl:1756
 msgid "Online"
 msgstr "En ligne"
 
-#: mod_configure.erl:1703
+#: mod_configure.erl:1701
 msgid "Last login"
 msgstr "Dernière connexion"
 
-#: mod_configure.erl:1724
+#: mod_configure.erl:1722
 msgid "Roster size"
 msgstr "Taille de la liste de contacts"
 
-#: mod_configure.erl:1725
+#: mod_configure.erl:1723
 msgid "IP addresses"
 msgstr "Adresses IP"
 
-#: mod_configure.erl:1726
+#: mod_configure.erl:1724
 msgid "Resources"
 msgstr "Ressources"
 
-#: mod_configure.erl:1852
+#: mod_configure.erl:1850
 msgid "Administration of "
 msgstr "Administration de "
 
-#: mod_configure.erl:1855
+#: mod_configure.erl:1853
 msgid "Action on user"
 msgstr "Action sur l'utilisateur"
 
-#: mod_configure.erl:1859
+#: mod_configure.erl:1857
 msgid "Edit Properties"
 msgstr "Modifier les propriétés"
 
-#: mod_configure.erl:1862 web/ejabberd_web_admin.erl:1767
+#: mod_configure.erl:1860 web/ejabberd_web_admin.erl:1769
 msgid "Remove User"
 msgstr "Supprimer l'utilisateur"
 
-#: mod_irc/mod_irc.erl:201 mod_muc/mod_muc.erl:336
+#: mod_irc/mod_irc.erl:201 mod_irc/mod_irc_odbc.erl:196
+#: mod_muc/mod_muc.erl:336 mod_muc/mod_muc_odbc.erl:342
 msgid "Access denied by service policy"
 msgstr "L'accès au service est refusé"
 
-#: mod_irc/mod_irc.erl:400
+#: mod_irc/mod_irc.erl:401 mod_irc/mod_irc_odbc.erl:398
 msgid "IRC Transport"
 msgstr "Passerelle IRC"
 
-#: mod_irc/mod_irc.erl:427
+#: mod_irc/mod_irc.erl:428 mod_irc/mod_irc_odbc.erl:425
 msgid "ejabberd IRC module"
 msgstr "Module IRC ejabberd"
 
-#: mod_irc/mod_irc.erl:558
+#: mod_irc/mod_irc.erl:559 mod_irc/mod_irc_odbc.erl:568
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr ""
 "Vous avez besoin d'un client supportant x:data pour configurer le module IRC"
 
-#: mod_irc/mod_irc.erl:565
+#: mod_irc/mod_irc.erl:566 mod_irc/mod_irc_odbc.erl:575
 msgid "Registration in mod_irc for "
 msgstr "Enregistrement du mod_irc pour "
 
-#: mod_irc/mod_irc.erl:570
+#: mod_irc/mod_irc.erl:571 mod_irc/mod_irc_odbc.erl:580
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
@@ -471,11 +475,11 @@ msgstr ""
 "Entrez le nom d'utilisateur, les encodages, les ports et mots de passe que "
 "vous souhaitez utiliser pour vous connecter aux serveurs IRC"
 
-#: mod_irc/mod_irc.erl:575
+#: mod_irc/mod_irc.erl:576 mod_irc/mod_irc_odbc.erl:585
 msgid "IRC Username"
 msgstr "Nom d'utilisateur IRC"
 
-#: mod_irc/mod_irc.erl:585
+#: mod_irc/mod_irc.erl:586 mod_irc/mod_irc_odbc.erl:595
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -487,7 +491,7 @@ msgstr ""
 "'{\"serveur irc\", \"encodage\", port, \"mot de passe\"}'. Par défaut ce "
 "service utilise l'encodage \"~s\", port ~p, mot de passe vide."
 
-#: mod_irc/mod_irc.erl:597
+#: mod_irc/mod_irc.erl:598 mod_irc/mod_irc_odbc.erl:607
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
@@ -495,35 +499,36 @@ msgstr ""
 "Exemple: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
-#: mod_irc/mod_irc.erl:602
+#: mod_irc/mod_irc.erl:603 mod_irc/mod_irc_odbc.erl:612
 msgid "Connections parameters"
 msgstr "Paramètres de connexion"
 
-#: mod_irc/mod_irc.erl:727
+#: mod_irc/mod_irc.erl:728 mod_irc/mod_irc_odbc.erl:757
 msgid "Join IRC channel"
 msgstr "Rejoindre un canal IRC"
 
-#: mod_irc/mod_irc.erl:731
+#: mod_irc/mod_irc.erl:732 mod_irc/mod_irc_odbc.erl:761
 msgid "IRC channel (don't put the first #)"
 msgstr "Canal IRC (ne pas insérer le premier caractère #)"
 
-#: mod_irc/mod_irc.erl:736
+#: mod_irc/mod_irc.erl:737 mod_irc/mod_irc_odbc.erl:766
 msgid "IRC server"
 msgstr "Serveur IRC"
 
-#: mod_irc/mod_irc.erl:769 mod_irc/mod_irc.erl:773
+#: mod_irc/mod_irc.erl:770 mod_irc/mod_irc.erl:774
+#: mod_irc/mod_irc_odbc.erl:799 mod_irc/mod_irc_odbc.erl:803
 msgid "Join the IRC channel here."
 msgstr "Rejoindre un canal IRC ici"
 
-#: mod_irc/mod_irc.erl:777
+#: mod_irc/mod_irc.erl:778 mod_irc/mod_irc_odbc.erl:807
 msgid "Join the IRC channel in this Jabber ID: ~s"
 msgstr "Rejoindre un canal IRC avec ce Jabber ID: ~s"
 
-#: mod_irc/mod_irc.erl:862
+#: mod_irc/mod_irc.erl:863 mod_irc/mod_irc_odbc.erl:904
 msgid "IRC settings"
 msgstr "Configuration IRC"
 
-#: mod_irc/mod_irc.erl:867
+#: mod_irc/mod_irc.erl:868 mod_irc/mod_irc_odbc.erl:909
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
@@ -533,74 +538,75 @@ msgstr ""
 "pour vous connecter aux serveurs IRC. Appuyez sur 'Suivant' pour pour avoir "
 "d'autres champs à remplir. Appuyez sur 'Terminer' pour sauver les paramètres."
 
-#: mod_irc/mod_irc.erl:873
+#: mod_irc/mod_irc.erl:874 mod_irc/mod_irc_odbc.erl:915
 msgid "IRC username"
 msgstr "Nom d'utilisateur IRC"
 
-#: mod_irc/mod_irc.erl:922
+#: mod_irc/mod_irc.erl:923 mod_irc/mod_irc_odbc.erl:964
 msgid "Password ~b"
 msgstr "Mot de passe ~b"
 
-#: mod_irc/mod_irc.erl:927
+#: mod_irc/mod_irc.erl:928 mod_irc/mod_irc_odbc.erl:969
 msgid "Port ~b"
 msgstr "Port ~b"
 
-#: mod_irc/mod_irc.erl:932
+#: mod_irc/mod_irc.erl:933 mod_irc/mod_irc_odbc.erl:974
 msgid "Encoding for server ~b"
 msgstr "Codage pour le serveur ~b"
 
-#: mod_irc/mod_irc.erl:941
+#: mod_irc/mod_irc.erl:942 mod_irc/mod_irc_odbc.erl:983
 msgid "Server ~b"
 msgstr "Serveur ~b"
 
-#: mod_muc/mod_muc.erl:449
+#: mod_muc/mod_muc.erl:449 mod_muc/mod_muc_odbc.erl:456
 msgid "Only service administrators are allowed to send service messages"
 msgstr ""
 "Seuls les administrateurs du service sont autoriser à envoyer des messages "
 "de service"
 
-#: mod_muc/mod_muc.erl:493
+#: mod_muc/mod_muc.erl:493 mod_muc/mod_muc_odbc.erl:500
 msgid "Room creation is denied by service policy"
 msgstr "La création de salons est interdite par le service"
 
-#: mod_muc/mod_muc.erl:500
+#: mod_muc/mod_muc.erl:500 mod_muc/mod_muc_odbc.erl:507
 msgid "Conference room does not exist"
 msgstr "La salle de conférence n'existe pas"
 
-#: mod_muc/mod_muc.erl:581
+#: mod_muc/mod_muc.erl:582 mod_muc/mod_muc_odbc.erl:595
 msgid "Chatrooms"
 msgstr "Salons de discussion"
 
-#: mod_muc/mod_muc.erl:711
+#: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Vous avez besoin d'un client prenant en charge x:data pour enregistrer un "
 "pseudo"
 
-#: mod_muc/mod_muc.erl:717
+#: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
 msgid "Nickname Registration at "
 msgstr "Enregistrement d'un pseudo sur "
 
-#: mod_muc/mod_muc.erl:721
+#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_odbc.erl:739
 msgid "Enter nickname you want to register"
 msgstr "Entrez le pseudo que vous souhaitez enregistrer"
 
-#: mod_muc/mod_muc.erl:722 mod_roster.erl:944 mod_roster_odbc.erl:1049
-#: mod_vcard.erl:358 mod_vcard.erl:471 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:447
+#: mod_muc/mod_muc.erl:723 mod_muc/mod_muc_odbc.erl:740
+#: mod_muc/mod_muc_room.erl:3810 mod_roster.erl:944 mod_roster_odbc.erl:1061
+#: mod_vcard.erl:364 mod_vcard.erl:477 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:453
 msgid "Nickname"
 msgstr "Pseudo"
 
-#: mod_muc/mod_muc.erl:761 mod_muc/mod_muc_room.erl:933
-#: mod_muc/mod_muc_room.erl:1577
+#: mod_muc/mod_muc.erl:762 mod_muc/mod_muc_odbc.erl:784
+#: mod_muc/mod_muc_room.erl:1064 mod_muc/mod_muc_room.erl:1787
 msgid "That nickname is registered by another person"
 msgstr "Le pseudo est enregistré par une autre personne"
 
-#: mod_muc/mod_muc.erl:787
+#: mod_muc/mod_muc.erl:788 mod_muc/mod_muc_odbc.erl:811
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Vous devez préciser le champ \"pseudo\" dans le formulaire"
 
-#: mod_muc/mod_muc.erl:807
+#: mod_muc/mod_muc.erl:808 mod_muc/mod_muc_odbc.erl:831
 msgid "ejabberd MUC module"
 msgstr "Module MUC ejabberd"
 
@@ -640,8 +646,8 @@ msgstr "a été éjecté en raison de l'arrêt du système"
 msgid "is now known as"
 msgstr "est maintenant connu comme"
 
-#: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:689
-#: mod_muc/mod_muc_room.erl:2138
+#: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:688
+#: mod_muc/mod_muc_room.erl:2393
 msgid " has set the subject to: "
 msgstr " a changé le sujet pour: "
 
@@ -737,33 +743,49 @@ msgstr "Novembre"
 msgid "December"
 msgstr "Décembre"
 
-#: mod_muc/mod_muc_log.erl:751
+#: mod_muc/mod_muc_log.erl:750
 msgid "Room Configuration"
 msgstr "Configuration du salon"
 
-#: mod_muc/mod_muc_log.erl:760
+#: mod_muc/mod_muc_log.erl:759
 msgid "Room Occupants"
 msgstr "Occupants du salon"
 
-#: mod_muc/mod_muc_room.erl:170
+#: mod_muc/mod_muc_room.erl:174
 msgid "Traffic rate limit is exceeded"
 msgstr "La limite de trafic a été dépassée"
 
-#: mod_muc/mod_muc_room.erl:242
+#: mod_muc/mod_muc_room.erl:246
 msgid ""
 "This participant is kicked from the room because he sent an error message"
 msgstr ""
 "Ce participant est expulsé du salon pour avoir envoyé un message erronée"
 
-#: mod_muc/mod_muc_room.erl:251
+#: mod_muc/mod_muc_room.erl:255
 msgid "It is not allowed to send private messages to the conference"
 msgstr "Il n'est pas permis d'envoyer des messages \"normaux\" à la conférence"
 
-#: mod_muc/mod_muc_room.erl:296
+#: mod_muc/mod_muc_room.erl:332
+msgid "Please, wait for a while before sending new voice request"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:347
+msgid "Voice requests are disabled in this conference"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:364
+msgid "Failed to extract JID from your voice request approval"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:393
+msgid "Only moderators can approve voice requests"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
 msgstr "Mauvais type de message"
 
-#: mod_muc/mod_muc_room.erl:406
+#: mod_muc/mod_muc_room.erl:518
 msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
@@ -771,36 +793,36 @@ msgstr ""
 "Ce participant est expulsé du salon pour avoir envoyé un message erronée à "
 "un autre participant"
 
-#: mod_muc/mod_muc_room.erl:419
+#: mod_muc/mod_muc_room.erl:531
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr ""
 "Il n'est pas permis d'envoyer des messages privés de type \"groupchat\""
 
-#: mod_muc/mod_muc_room.erl:431 mod_muc/mod_muc_room.erl:486
+#: mod_muc/mod_muc_room.erl:543 mod_muc/mod_muc_room.erl:611
 msgid "Recipient is not in the conference room"
 msgstr "Le destinataire n'est pas dans la conférence"
 
-#: mod_muc/mod_muc_room.erl:451 mod_muc/mod_muc_room.erl:829
-#: mod_muc/mod_muc_room.erl:3609
-msgid "Only occupants are allowed to send messages to the conference"
-msgstr "Seuls les occupants peuvent envoyer des messages à la conférence"
-
-#: mod_muc/mod_muc_room.erl:460
+#: mod_muc/mod_muc_room.erl:564 mod_muc/mod_muc_room.erl:585
 msgid "It is not allowed to send private messages"
 msgstr "L'envoi de messages privés n'est pas autorisé"
 
-#: mod_muc/mod_muc_room.erl:509
+#: mod_muc/mod_muc_room.erl:576 mod_muc/mod_muc_room.erl:956
+#: mod_muc/mod_muc_room.erl:4040
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Seuls les occupants peuvent envoyer des messages à la conférence"
+
+#: mod_muc/mod_muc_room.erl:634
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr ""
 "Seuls les occupants sont autorisés à envoyer des requêtes à la conférence"
 
-#: mod_muc/mod_muc_room.erl:521
+#: mod_muc/mod_muc_room.erl:646
 msgid "Queries to the conference members are not allowed in this room"
 msgstr ""
 "Les requêtes sur les membres de la conférence ne sont pas autorisé dans ce "
 "salon"
 
-#: mod_muc/mod_muc_room.erl:805
+#: mod_muc/mod_muc_room.erl:932
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -808,201 +830,236 @@ msgstr ""
 "Seuls les modérateurs et les participants peuvent changer le sujet dans ce "
 "salon"
 
-#: mod_muc/mod_muc_room.erl:810
+#: mod_muc/mod_muc_room.erl:937
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Seuls les modérateurs peuvent changer le sujet dans ce salon"
 
-#: mod_muc/mod_muc_room.erl:820
+#: mod_muc/mod_muc_room.erl:947
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr ""
 "Les visiteurs ne sont pas autorisés à envoyer des messages à tout les "
 "occupants"
 
-#: mod_muc/mod_muc_room.erl:891
+#: mod_muc/mod_muc_room.erl:1021
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
 msgstr ""
 "Ce participant est expulsé du salon pour avoir envoyé une présence erronée"
 
-#: mod_muc/mod_muc_room.erl:909
+#: mod_muc/mod_muc_room.erl:1040
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "Les visiteurs ne sont pas autorisés à changer de pseudo dans ce salon"
 
-#: mod_muc/mod_muc_room.erl:922 mod_muc/mod_muc_room.erl:1569
+#: mod_muc/mod_muc_room.erl:1053 mod_muc/mod_muc_room.erl:1779
 msgid "That nickname is already in use by another occupant"
 msgstr "Le pseudo est déjà utilisé par un autre occupant"
 
-#: mod_muc/mod_muc_room.erl:1558
+#: mod_muc/mod_muc_room.erl:1768
 msgid "You have been banned from this room"
 msgstr "Vous avez été exclus de ce salon"
 
-#: mod_muc/mod_muc_room.erl:1561
+#: mod_muc/mod_muc_room.erl:1771
 msgid "Membership is required to enter this room"
 msgstr "Vous devez être membre pour accèder à ce salon"
 
-#: mod_muc/mod_muc_room.erl:1597
+#: mod_muc/mod_muc_room.erl:1807
 msgid "This room is not anonymous"
 msgstr "Ce salon n'est pas anonyme"
 
-#: mod_muc/mod_muc_room.erl:1623
+#: mod_muc/mod_muc_room.erl:1833
 msgid "A password is required to enter this room"
 msgstr "Un mot de passe est nécessaire pour accèder à ce salon"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
+#: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "Impossible de générer le captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
+msgstr "Impossible de générer le CAPTCHA"
 
-#: mod_muc/mod_muc_room.erl:1664
+#: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
 msgstr "Mot de passe incorrect"
 
-#: mod_muc/mod_muc_room.erl:2193
+#: mod_muc/mod_muc_room.erl:2448
 msgid "Administrator privileges required"
 msgstr "Les droits d'administrateur sont nécessaires"
 
-#: mod_muc/mod_muc_room.erl:2208
+#: mod_muc/mod_muc_room.erl:2463
 msgid "Moderator privileges required"
 msgstr "Les droits de modérateur sont nécessaires"
 
-#: mod_muc/mod_muc_room.erl:2363
+#: mod_muc/mod_muc_room.erl:2619
 msgid "Jabber ID ~s is invalid"
 msgstr "Le Jabber ID ~s n'est pas valide"
 
-#: mod_muc/mod_muc_room.erl:2377
+#: mod_muc/mod_muc_room.erl:2633
 msgid "Nickname ~s does not exist in the room"
 msgstr "Le pseudo ~s n'existe pas dans ce salon"
 
-#: mod_muc/mod_muc_room.erl:2403 mod_muc/mod_muc_room.erl:2797
+#: mod_muc/mod_muc_room.erl:2659 mod_muc/mod_muc_room.erl:3049
 msgid "Invalid affiliation: ~s"
 msgstr "Affiliation invalide : ~s"
 
-#: mod_muc/mod_muc_room.erl:2460
+#: mod_muc/mod_muc_room.erl:2713
 msgid "Invalid role: ~s"
 msgstr "Role invalide : ~s"
 
-#: mod_muc/mod_muc_room.erl:2774 mod_muc/mod_muc_room.erl:2810
+#: mod_muc/mod_muc_room.erl:3026 mod_muc/mod_muc_room.erl:3062
 msgid "Owner privileges required"
 msgstr "Les droits de propriétaire sont nécessaires"
 
-#: mod_muc/mod_muc_room.erl:2941
+#: mod_muc/mod_muc_room.erl:3195
 msgid "Configuration of room ~s"
 msgstr "Configuration pour le salon ~s"
 
-#: mod_muc/mod_muc_room.erl:2946
+#: mod_muc/mod_muc_room.erl:3200
 msgid "Room title"
 msgstr "Titre du salon"
 
-#: mod_muc/mod_muc_room.erl:2949 mod_muc/mod_muc_room.erl:3388
+#: mod_muc/mod_muc_room.erl:3203 mod_muc/mod_muc_room.erl:3692
 msgid "Room description"
 msgstr "Description :"
 
-#: mod_muc/mod_muc_room.erl:2956
+#: mod_muc/mod_muc_room.erl:3210
 msgid "Make room persistent"
 msgstr "Rendre le salon persistant"
 
-#: mod_muc/mod_muc_room.erl:2961
+#: mod_muc/mod_muc_room.erl:3215
 msgid "Make room public searchable"
 msgstr "Rendre le salon public"
 
-#: mod_muc/mod_muc_room.erl:2964
+#: mod_muc/mod_muc_room.erl:3218
 msgid "Make participants list public"
 msgstr "Rendre la liste des participants publique"
 
-#: mod_muc/mod_muc_room.erl:2967
+#: mod_muc/mod_muc_room.erl:3221
 msgid "Make room password protected"
 msgstr "Protéger le salon par mot de passe"
 
-#: mod_muc/mod_muc_room.erl:2978
+#: mod_muc/mod_muc_room.erl:3232
 msgid "Maximum Number of Occupants"
 msgstr "Nombre maximum d'occupants"
 
-#: mod_muc/mod_muc_room.erl:2985
+#: mod_muc/mod_muc_room.erl:3239
 msgid "No limit"
 msgstr "Pas de limite"
 
-#: mod_muc/mod_muc_room.erl:2996
+#: mod_muc/mod_muc_room.erl:3250
 msgid "Present real Jabber IDs to"
 msgstr "Rendre le Jabber ID réel visible pour"
 
-#: mod_muc/mod_muc_room.erl:3004
+#: mod_muc/mod_muc_room.erl:3258 mod_muc/mod_muc_room.erl:3292
 msgid "moderators only"
 msgstr "modérateurs seulement"
 
-#: mod_muc/mod_muc_room.erl:3006
+#: mod_muc/mod_muc_room.erl:3260 mod_muc/mod_muc_room.erl:3294
 msgid "anyone"
 msgstr "tout le monde"
 
-#: mod_muc/mod_muc_room.erl:3008
+#: mod_muc/mod_muc_room.erl:3262
 msgid "Make room members-only"
 msgstr "Réserver le salon aux membres uniquement"
 
-#: mod_muc/mod_muc_room.erl:3011
+#: mod_muc/mod_muc_room.erl:3265
 msgid "Make room moderated"
 msgstr "Rendre le salon modéré"
 
-#: mod_muc/mod_muc_room.erl:3014
+#: mod_muc/mod_muc_room.erl:3268
 msgid "Default users as participants"
 msgstr "Les utilisateurs sont par défaut participant"
 
-#: mod_muc/mod_muc_room.erl:3017
+#: mod_muc/mod_muc_room.erl:3271
 msgid "Allow users to change the subject"
 msgstr "Autoriser les utilisateurs à changer le sujet"
 
-#: mod_muc/mod_muc_room.erl:3020
+#: mod_muc/mod_muc_room.erl:3274
 msgid "Allow users to send private messages"
 msgstr "Autoriser les utilisateurs à envoyer des messages privés"
 
-#: mod_muc/mod_muc_room.erl:3023
+#: mod_muc/mod_muc_room.erl:3279
+#, fuzzy
+msgid "Allow visitors to send private messages to"
+msgstr "Autoriser les utilisateurs à envoyer des messages privés"
+
+#: mod_muc/mod_muc_room.erl:3290
+msgid "nobody"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
 msgstr ""
 "Permettre aux utilisateurs d'envoyer des requêtes aux autres utilisateurs"
 
-#: mod_muc/mod_muc_room.erl:3026
+#: mod_muc/mod_muc_room.erl:3299
 msgid "Allow users to send invites"
 msgstr "Permettre aux utilisateurs d'envoyer des invitations"
 
-#: mod_muc/mod_muc_room.erl:3029
+#: mod_muc/mod_muc_room.erl:3302
 msgid "Allow visitors to send status text in presence updates"
 msgstr "Autoriser les visiteurs à envoyer un message d'état avec leur présence"
 
-#: mod_muc/mod_muc_room.erl:3032
+#: mod_muc/mod_muc_room.erl:3305
 msgid "Allow visitors to change nickname"
 msgstr "Autoriser les visiteurs à changer de pseudo"
 
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "Protéger le salon par un captcha"
+#: mod_muc/mod_muc_room.erl:3308
+#, fuzzy
+msgid "Allow visitors to send voice requests"
+msgstr "Permettre aux utilisateurs d'envoyer des invitations"
 
-#: mod_muc/mod_muc_room.erl:3043
+#: mod_muc/mod_muc_room.erl:3311
+msgid "Minimum interval between voice requests (in seconds)"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3317
+msgid "Make room CAPTCHA protected"
+msgstr "Protéger le salon par un CAPTCHA"
+
+#: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:3050
+#: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
 msgstr "Activer l'archivage"
 
-#: mod_muc/mod_muc_room.erl:3058
+#: mod_muc/mod_muc_room.erl:3337
 msgid "You need an x:data capable client to configure room"
 msgstr ""
 "Vous avez besoin d'un client supportant x:data pour configurer le salon"
 
-#: mod_muc/mod_muc_room.erl:3390
+#: mod_muc/mod_muc_room.erl:3694
 msgid "Number of occupants"
 msgstr "Nombre d'occupants"
 
-#: mod_muc/mod_muc_room.erl:3446
+#: mod_muc/mod_muc_room.erl:3750
 msgid "private, "
 msgstr "privé"
 
-#: mod_muc/mod_muc_room.erl:3529
+#: mod_muc/mod_muc_room.erl:3799
+msgid "Voice request"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3803
+msgid "Either approve or decline the voice request."
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3809
+#, fuzzy
+msgid "User JID"
+msgstr "Utilisateur "
+
+#: mod_muc/mod_muc_room.erl:3811
+msgid "Grant voice to this person?"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
 msgstr "~s vous a invité dans la salle de discussion ~s"
 
-#: mod_muc/mod_muc_room.erl:3538
+#: mod_muc/mod_muc_room.erl:3969
 msgid "the password is"
 msgstr "le mot de passe est"
 
@@ -1018,14 +1075,15 @@ msgid "~s's Offline Messages Queue"
 msgstr "~s messages en file d'attente"
 
 #: mod_offline.erl:563 mod_offline_odbc.erl:411 mod_roster.erl:987
-#: mod_roster_odbc.erl:1092 mod_shared_roster.erl:896
-#: mod_shared_roster.erl:1005 web/ejabberd_web_admin.erl:833
+#: mod_roster_odbc.erl:1104 mod_shared_roster.erl:901
+#: mod_shared_roster.erl:1010 mod_shared_roster_odbc.erl:930
+#: mod_shared_roster_odbc.erl:1039 web/ejabberd_web_admin.erl:833
 #: web/ejabberd_web_admin.erl:874 web/ejabberd_web_admin.erl:942
 #: web/ejabberd_web_admin.erl:978 web/ejabberd_web_admin.erl:1019
-#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1758
-#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1961
-#: web/ejabberd_web_admin.erl:2030 web/ejabberd_web_admin.erl:2134
-#: web/ejabberd_web_admin.erl:2159 web/ejabberd_web_admin.erl:2247
+#: web/ejabberd_web_admin.erl:1508 web/ejabberd_web_admin.erl:1760
+#: web/ejabberd_web_admin.erl:1931 web/ejabberd_web_admin.erl:1963
+#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2135
+#: web/ejabberd_web_admin.erl:2160 web/ejabberd_web_admin.erl:2248
 msgid "Submitted"
 msgstr "Soumis"
 
@@ -1045,8 +1103,9 @@ msgstr "A"
 msgid "Packet"
 msgstr "Paquet"
 
-#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:903
-#: web/ejabberd_web_admin.erl:882 web/ejabberd_web_admin.erl:986
+#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:908
+#: mod_shared_roster_odbc.erl:937 web/ejabberd_web_admin.erl:882
+#: web/ejabberd_web_admin.erl:986
 msgid "Delete Selected"
 msgstr "Suppression des éléments sélectionnés"
 
@@ -1062,103 +1121,103 @@ msgstr "Effacer tous les messages hors ligne"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
+#: mod_pubsub/mod_pubsub.erl:1120 mod_pubsub/mod_pubsub_odbc.erl:929
 msgid "Publish-Subscribe"
 msgstr "Publication-Abonnement"
 
-#: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
+#: mod_pubsub/mod_pubsub.erl:1214 mod_pubsub/mod_pubsub_odbc.erl:1025
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Module Publish-Subscribe d'ejabberd"
 
-#: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
+#: mod_pubsub/mod_pubsub.erl:1497 mod_pubsub/mod_pubsub_odbc.erl:1312
 msgid "PubSub subscriber request"
 msgstr "Demande d'abonnement PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1499 mod_pubsub/mod_pubsub_odbc.erl:1314
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Accepter cet abonnement ?"
 
-#: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1320
 msgid "Node ID"
 msgstr "Identifiant du nœud"
 
-#: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
+#: mod_pubsub/mod_pubsub.erl:1510 mod_pubsub/mod_pubsub_odbc.erl:1325
 msgid "Subscriber Address"
 msgstr "Adresse de l'abonné"
 
-#: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
+#: mod_pubsub/mod_pubsub.erl:1516 mod_pubsub/mod_pubsub_odbc.erl:1331
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Autoriser ce Jabber ID à s'abonner à ce nœud PubSub"
 
-#: mod_pubsub/mod_pubsub.erl:3416 mod_pubsub/mod_pubsub_odbc.erl:3229
+#: mod_pubsub/mod_pubsub.erl:3474 mod_pubsub/mod_pubsub_odbc.erl:3287
 msgid "Deliver payloads with event notifications"
 msgstr "Inclure le contenu du message avec la notification"
 
-#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3230
+#: mod_pubsub/mod_pubsub.erl:3475 mod_pubsub/mod_pubsub_odbc.erl:3288
 msgid "Deliver event notifications"
 msgstr "Envoyer les notifications d'événement"
 
-#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3476 mod_pubsub/mod_pubsub_odbc.erl:3289
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Avertir les abonnés lorsque la configuration du nœud change"
 
-#: mod_pubsub/mod_pubsub.erl:3419 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3477 mod_pubsub/mod_pubsub_odbc.erl:3290
 msgid "Notify subscribers when the node is deleted"
 msgstr "Avertir les abonnés lorsque le nœud est supprimé"
 
-#: mod_pubsub/mod_pubsub.erl:3420 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3478 mod_pubsub/mod_pubsub_odbc.erl:3291
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Avertir les abonnés lorsque des éléments sont supprimés sur le nœud"
 
-#: mod_pubsub/mod_pubsub.erl:3421 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3479 mod_pubsub/mod_pubsub_odbc.erl:3292
 msgid "Persist items to storage"
 msgstr "Stockage persistant des éléments"
 
-#: mod_pubsub/mod_pubsub.erl:3422 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3480 mod_pubsub/mod_pubsub_odbc.erl:3293
 msgid "A friendly name for the node"
 msgstr "Un nom convivial pour le noeud"
 
-#: mod_pubsub/mod_pubsub.erl:3423 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3481 mod_pubsub/mod_pubsub_odbc.erl:3294
 msgid "Max # of items to persist"
 msgstr "Nombre maximum d'éléments à stocker"
 
-#: mod_pubsub/mod_pubsub.erl:3424 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3482 mod_pubsub/mod_pubsub_odbc.erl:3295
 msgid "Whether to allow subscriptions"
 msgstr "Autoriser l'abonnement ?"
 
-#: mod_pubsub/mod_pubsub.erl:3425 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3483 mod_pubsub/mod_pubsub_odbc.erl:3296
 msgid "Specify the access model"
 msgstr "Définir le modèle d'accès"
 
-#: mod_pubsub/mod_pubsub.erl:3428 mod_pubsub/mod_pubsub_odbc.erl:3241
+#: mod_pubsub/mod_pubsub.erl:3486 mod_pubsub/mod_pubsub_odbc.erl:3299
 msgid "Roster groups allowed to subscribe"
 msgstr "Groupes de liste de contact autorisés à s'abonner"
 
-#: mod_pubsub/mod_pubsub.erl:3429 mod_pubsub/mod_pubsub_odbc.erl:3242
+#: mod_pubsub/mod_pubsub.erl:3487 mod_pubsub/mod_pubsub_odbc.erl:3300
 msgid "Specify the publisher model"
 msgstr "Définir le modèle de publication"
 
-#: mod_pubsub/mod_pubsub.erl:3431 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3489 mod_pubsub/mod_pubsub_odbc.erl:3302
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr "Purger tous les items lorsque publieur est hors-ligne"
 
-#: mod_pubsub/mod_pubsub.erl:3432 mod_pubsub/mod_pubsub_odbc.erl:3245
+#: mod_pubsub/mod_pubsub.erl:3490 mod_pubsub/mod_pubsub_odbc.erl:3303
 msgid "Specify the event message type"
 msgstr "Définir le type de message d'événement"
 
-#: mod_pubsub/mod_pubsub.erl:3434 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3492 mod_pubsub/mod_pubsub_odbc.erl:3305
 msgid "Max payload size in bytes"
 msgstr "Taille maximum pour le contenu du message en octet"
 
-#: mod_pubsub/mod_pubsub.erl:3435 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3493 mod_pubsub/mod_pubsub_odbc.erl:3306
 msgid "When to send the last published item"
 msgstr "A quel moment envoyer le dernier élément publié"
 
-#: mod_pubsub/mod_pubsub.erl:3437 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3495 mod_pubsub/mod_pubsub_odbc.erl:3308
 msgid "Only deliver notifications to available users"
 msgstr "Envoyer les notifications uniquement aux utilisateurs disponibles"
 
-#: mod_pubsub/mod_pubsub.erl:3438 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3496 mod_pubsub/mod_pubsub_odbc.erl:3309
 msgid "The collections with which a node is affiliated"
 msgstr "Les collections avec lesquelle un nœud est affilié"
 
@@ -1178,14 +1237,10 @@ msgstr ""
 "Choisissez un nom d'utilisateur et un mot de passe pour s'enregistrer sur ce "
 "serveur"
 
-#: mod_register.erl:230 mod_vcard.erl:358 mod_vcard_odbc.erl:336
-#: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
+#: mod_register.erl:230 mod_vcard.erl:364 mod_vcard_odbc.erl:342
+#: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Utilisateur"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Impossible de générer le CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1197,120 +1252,123 @@ msgstr ""
 "Les utilisateurs ne sont pas autorisés à enregistrer des comptes si "
 "rapidement"
 
-#: mod_roster.erl:938 mod_roster_odbc.erl:1043 web/ejabberd_web_admin.erl:1699
-#: web/ejabberd_web_admin.erl:1884 web/ejabberd_web_admin.erl:1895
-#: web/ejabberd_web_admin.erl:2218
+#: mod_roster.erl:938 mod_roster_odbc.erl:1055 web/ejabberd_web_admin.erl:1701
+#: web/ejabberd_web_admin.erl:1886 web/ejabberd_web_admin.erl:1897
+#: web/ejabberd_web_admin.erl:2219
 msgid "None"
 msgstr "Aucun"
 
-#: mod_roster.erl:945 mod_roster_odbc.erl:1050
+#: mod_roster.erl:945 mod_roster_odbc.erl:1062
 msgid "Subscription"
 msgstr "Abonnement"
 
-#: mod_roster.erl:946 mod_roster_odbc.erl:1051
+#: mod_roster.erl:946 mod_roster_odbc.erl:1063
 msgid "Pending"
 msgstr "En suspens"
 
-#: mod_roster.erl:947 mod_roster_odbc.erl:1052
+#: mod_roster.erl:947 mod_roster_odbc.erl:1064
 msgid "Groups"
 msgstr "Groupes"
 
-#: mod_roster.erl:974 mod_roster_odbc.erl:1079
+#: mod_roster.erl:974 mod_roster_odbc.erl:1091
 msgid "Validate"
 msgstr "Valider"
 
-#: mod_roster.erl:982 mod_roster_odbc.erl:1087
+#: mod_roster.erl:982 mod_roster_odbc.erl:1099
 msgid "Remove"
 msgstr "Enlever"
 
-#: mod_roster.erl:985 mod_roster_odbc.erl:1090
+#: mod_roster.erl:985 mod_roster_odbc.erl:1102
 msgid "Roster of "
 msgstr "Liste de contact de "
 
-#: mod_roster.erl:988 mod_roster_odbc.erl:1093 mod_shared_roster.erl:897
-#: mod_shared_roster.erl:1006 web/ejabberd_web_admin.erl:834
+#: mod_roster.erl:988 mod_roster_odbc.erl:1105 mod_shared_roster.erl:902
+#: mod_shared_roster.erl:1011 mod_shared_roster_odbc.erl:931
+#: mod_shared_roster_odbc.erl:1040 web/ejabberd_web_admin.erl:834
 #: web/ejabberd_web_admin.erl:875 web/ejabberd_web_admin.erl:943
 #: web/ejabberd_web_admin.erl:979 web/ejabberd_web_admin.erl:1020
-#: web/ejabberd_web_admin.erl:1510 web/ejabberd_web_admin.erl:1759
-#: web/ejabberd_web_admin.erl:1930 web/ejabberd_web_admin.erl:2135
-#: web/ejabberd_web_admin.erl:2160
+#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1761
+#: web/ejabberd_web_admin.erl:1932 web/ejabberd_web_admin.erl:2136
+#: web/ejabberd_web_admin.erl:2161
 msgid "Bad format"
 msgstr "Mauvais format"
 
-#: mod_roster.erl:995 mod_roster_odbc.erl:1100
+#: mod_roster.erl:995 mod_roster_odbc.erl:1112
 msgid "Add Jabber ID"
 msgstr "Ajouter un Jabber ID"
 
-#: mod_roster.erl:1094 mod_roster_odbc.erl:1199
+#: mod_roster.erl:1094 mod_roster_odbc.erl:1211
 msgid "Roster"
 msgstr "Liste de contacts"
 
-#: mod_shared_roster.erl:852 mod_shared_roster.erl:894
-#: mod_shared_roster.erl:1002
+#: mod_shared_roster.erl:857 mod_shared_roster.erl:899
+#: mod_shared_roster.erl:1007 mod_shared_roster_odbc.erl:886
+#: mod_shared_roster_odbc.erl:928 mod_shared_roster_odbc.erl:1036
 msgid "Shared Roster Groups"
 msgstr "Groupes de liste de contacts partagée"
 
-#: mod_shared_roster.erl:890 web/ejabberd_web_admin.erl:1366
-#: web/ejabberd_web_admin.erl:2460
+#: mod_shared_roster.erl:895 mod_shared_roster_odbc.erl:924
+#: web/ejabberd_web_admin.erl:1365 web/ejabberd_web_admin.erl:2461
 msgid "Add New"
 msgstr "Ajouter"
 
-#: mod_shared_roster.erl:973
+#: mod_shared_roster.erl:978 mod_shared_roster_odbc.erl:1007
 msgid "Name:"
 msgstr "Nom :"
 
-#: mod_shared_roster.erl:978
+#: mod_shared_roster.erl:983 mod_shared_roster_odbc.erl:1012
 msgid "Description:"
 msgstr "Description :"
 
-#: mod_shared_roster.erl:986
+#: mod_shared_roster.erl:991 mod_shared_roster_odbc.erl:1020
 msgid "Members:"
 msgstr "Membres :"
 
-#: mod_shared_roster.erl:994
+#: mod_shared_roster.erl:999 mod_shared_roster_odbc.erl:1028
 msgid "Displayed Groups:"
 msgstr "Groupes affichés :"
 
-#: mod_shared_roster.erl:1003
+#: mod_shared_roster.erl:1008 mod_shared_roster_odbc.erl:1037
 msgid "Group "
 msgstr "Groupe "
 
-#: mod_shared_roster.erl:1012 web/ejabberd_web_admin.erl:840
-#: web/ejabberd_web_admin.erl:884 web/ejabberd_web_admin.erl:949
-#: web/ejabberd_web_admin.erl:1026 web/ejabberd_web_admin.erl:2015
+#: mod_shared_roster.erl:1017 mod_shared_roster_odbc.erl:1046
+#: web/ejabberd_web_admin.erl:840 web/ejabberd_web_admin.erl:884
+#: web/ejabberd_web_admin.erl:949 web/ejabberd_web_admin.erl:1026
+#: web/ejabberd_web_admin.erl:2017
 msgid "Submit"
 msgstr "Soumettre"
 
-#: mod_vcard.erl:165 mod_vcard_ldap.erl:237 mod_vcard_odbc.erl:129
+#: mod_vcard.erl:165 mod_vcard_ldap.erl:238 mod_vcard_odbc.erl:129
 msgid "Erlang Jabber Server"
 msgstr "Serveur Jabber Erlang"
 
-#: mod_vcard.erl:358 mod_vcard.erl:472 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:448
+#: mod_vcard.erl:364 mod_vcard.erl:478 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:454
 msgid "Birthday"
 msgstr "Date d'anniversaire"
 
-#: mod_vcard.erl:358 mod_vcard.erl:474 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:450
+#: mod_vcard.erl:364 mod_vcard.erl:480 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:456
 msgid "City"
 msgstr "Ville"
 
-#: mod_vcard.erl:358 mod_vcard.erl:473 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:449
+#: mod_vcard.erl:364 mod_vcard.erl:479 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:455
 msgid "Country"
 msgstr "Pays"
 
-#: mod_vcard.erl:358 mod_vcard.erl:475 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:451
+#: mod_vcard.erl:364 mod_vcard.erl:481 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:457
 msgid "Email"
 msgstr "Email"
 
-#: mod_vcard.erl:358 mod_vcard.erl:470 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:446
+#: mod_vcard.erl:364 mod_vcard.erl:476 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:452
 msgid "Family Name"
 msgstr "Nom de famille"
 
-#: mod_vcard.erl:358 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_odbc.erl:342
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
@@ -1318,53 +1376,53 @@ msgstr ""
 "Remplissez le formulaire pour recherche un utilisateur Jabber (Ajouter * à "
 "la fin du champ pour chercher n'importe quelle fin de chaîne"
 
-#: mod_vcard.erl:358 mod_vcard.erl:467 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:443
+#: mod_vcard.erl:364 mod_vcard.erl:473 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:449
 msgid "Full Name"
 msgstr "Nom complet"
 
-#: mod_vcard.erl:358 mod_vcard.erl:469 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:445
+#: mod_vcard.erl:364 mod_vcard.erl:475 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:451
 msgid "Middle Name"
 msgstr "Autre nom"
 
-#: mod_vcard.erl:358 mod_vcard.erl:468 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:444 web/ejabberd_web_admin.erl:2004
+#: mod_vcard.erl:364 mod_vcard.erl:474 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:450 web/ejabberd_web_admin.erl:2006
 msgid "Name"
 msgstr "Nom"
 
-#: mod_vcard.erl:358 mod_vcard.erl:476 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:452
+#: mod_vcard.erl:364 mod_vcard.erl:482 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:458
 msgid "Organization Name"
 msgstr "Nom de l'organisation"
 
-#: mod_vcard.erl:358 mod_vcard.erl:477 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:453
+#: mod_vcard.erl:364 mod_vcard.erl:483 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:459
 msgid "Organization Unit"
 msgstr "Unité de l'organisation"
 
-#: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "Search users in "
 msgstr "Rechercher des utilisateurs "
 
-#: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "You need an x:data capable client to search"
 msgstr ""
 "Vous avez besoin d'un client supportant x:data pour faire une recherche"
 
-#: mod_vcard.erl:383 mod_vcard_ldap.erl:483 mod_vcard_odbc.erl:361
+#: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
 msgid "vCard User Search"
 msgstr "Recherche dans l'annnuaire"
 
-#: mod_vcard.erl:439 mod_vcard_ldap.erl:537 mod_vcard_odbc.erl:415
+#: mod_vcard.erl:445 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:421
 msgid "ejabberd vCard module"
 msgstr "Module vCard ejabberd"
 
-#: mod_vcard.erl:463 mod_vcard_ldap.erl:547 mod_vcard_odbc.erl:439
+#: mod_vcard.erl:469 mod_vcard_ldap.erl:551 mod_vcard_odbc.erl:445
 msgid "Search Results for "
 msgstr "Résultats de recherche pour "
 
-#: mod_vcard_ldap.erl:458
+#: mod_vcard_ldap.erl:462
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Remplissez les champs pour rechercher un utilisateur Jabber"
 
@@ -1425,7 +1483,7 @@ msgstr "Montrer la table ordinaire"
 msgid "Show Integral Table"
 msgstr "Montrer la table intégralement"
 
-#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1937
+#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1939
 msgid "Statistics"
 msgstr "Statistiques"
 
@@ -1437,116 +1495,116 @@ msgstr "Nœud non trouvé"
 msgid "Node not found"
 msgstr "Noeud non trouvé"
 
-#: web/ejabberd_web_admin.erl:1461
+#: web/ejabberd_web_admin.erl:1460
 msgid "Host"
 msgstr "Serveur"
 
-#: web/ejabberd_web_admin.erl:1462
+#: web/ejabberd_web_admin.erl:1461
 msgid "Registered Users"
 msgstr "Utilisateurs enregistrés"
 
-#: web/ejabberd_web_admin.erl:1574
+#: web/ejabberd_web_admin.erl:1573
 msgid "Offline Messages"
 msgstr "Messages en attente"
 
-#: web/ejabberd_web_admin.erl:1575 web/ejabberd_web_admin.erl:1765
+#: web/ejabberd_web_admin.erl:1574 web/ejabberd_web_admin.erl:1767
 msgid "Last Activity"
 msgstr "Dernière Activité"
 
-#: web/ejabberd_web_admin.erl:1657 web/ejabberd_web_admin.erl:1673
+#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
 msgid "Registered Users:"
 msgstr "Utilisateurs enregistrés:"
 
-#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
-#: web/ejabberd_web_admin.erl:2191
+#: web/ejabberd_web_admin.erl:1661 web/ejabberd_web_admin.erl:1677
+#: web/ejabberd_web_admin.erl:2192
 msgid "Online Users:"
 msgstr "Utilisateurs connectés:"
 
-#: web/ejabberd_web_admin.erl:1661
+#: web/ejabberd_web_admin.erl:1663
 msgid "Outgoing s2s Connections:"
 msgstr "Connexions s2s sortantes:"
 
-#: web/ejabberd_web_admin.erl:1663
+#: web/ejabberd_web_admin.erl:1665
 msgid "Outgoing s2s Servers:"
 msgstr "Serveurs s2s sortants"
 
-#: web/ejabberd_web_admin.erl:1732 web/mod_register_web.erl:175
+#: web/ejabberd_web_admin.erl:1734 web/mod_register_web.erl:175
 #: web/mod_register_web.erl:372 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:411
 msgid "Change Password"
 msgstr "Modifier le mot de passe"
 
-#: web/ejabberd_web_admin.erl:1756
+#: web/ejabberd_web_admin.erl:1758
 msgid "User "
 msgstr "Utilisateur "
 
-#: web/ejabberd_web_admin.erl:1763
+#: web/ejabberd_web_admin.erl:1765
 msgid "Connected Resources:"
 msgstr "Ressources connectées:"
 
-#: web/ejabberd_web_admin.erl:1764 web/mod_register_web.erl:227
+#: web/ejabberd_web_admin.erl:1766 web/mod_register_web.erl:227
 #: web/mod_register_web.erl:519
 msgid "Password:"
 msgstr "Mot de passe:"
 
-#: web/ejabberd_web_admin.erl:1826
+#: web/ejabberd_web_admin.erl:1828
 msgid "No Data"
 msgstr "Aucune information disponible"
 
-#: web/ejabberd_web_admin.erl:1904
+#: web/ejabberd_web_admin.erl:1906
 msgid "Nodes"
 msgstr "Noeuds"
 
-#: web/ejabberd_web_admin.erl:1927 web/ejabberd_web_admin.erl:1949
+#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1951
 msgid "Node "
 msgstr "Noeud "
 
-#: web/ejabberd_web_admin.erl:1936
+#: web/ejabberd_web_admin.erl:1938
 msgid "Listened Ports"
 msgstr "Ports ouverts"
 
-#: web/ejabberd_web_admin.erl:1938 web/ejabberd_web_admin.erl:2259
-#: web/ejabberd_web_admin.erl:2447
+#: web/ejabberd_web_admin.erl:1940 web/ejabberd_web_admin.erl:2260
+#: web/ejabberd_web_admin.erl:2448
 msgid "Update"
 msgstr "Mettre à jour"
 
-#: web/ejabberd_web_admin.erl:1941 web/ejabberd_web_admin.erl:2568
+#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2569
 msgid "Restart"
 msgstr "Redémarrer"
 
-#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2570
+#: web/ejabberd_web_admin.erl:1945 web/ejabberd_web_admin.erl:2571
 msgid "Stop"
 msgstr "Arrêter"
 
-#: web/ejabberd_web_admin.erl:1957
+#: web/ejabberd_web_admin.erl:1959
 msgid "RPC Call Error"
 msgstr "Erreur d'appel RPC"
 
-#: web/ejabberd_web_admin.erl:1998
+#: web/ejabberd_web_admin.erl:2000
 msgid "Database Tables at "
 msgstr "Tables de base de données sur "
 
-#: web/ejabberd_web_admin.erl:2005
+#: web/ejabberd_web_admin.erl:2007
 msgid "Storage Type"
 msgstr "Type de stockage"
 
-#: web/ejabberd_web_admin.erl:2006
+#: web/ejabberd_web_admin.erl:2008
 msgid "Elements"
 msgstr "Éléments"
 
-#: web/ejabberd_web_admin.erl:2007
+#: web/ejabberd_web_admin.erl:2009
 msgid "Memory"
 msgstr "Mémoire"
 
-#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2136
+#: web/ejabberd_web_admin.erl:2032 web/ejabberd_web_admin.erl:2137
 msgid "Error"
 msgstr "Erreur"
 
-#: web/ejabberd_web_admin.erl:2033
+#: web/ejabberd_web_admin.erl:2034
 msgid "Backup of "
 msgstr "Sauvegarde de "
 
-#: web/ejabberd_web_admin.erl:2035
+#: web/ejabberd_web_admin.erl:2036
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1555,147 +1613,147 @@ msgstr ""
 "Ces options sauvegardent uniquement la base de données interne Mnesia. Si "
 "vous utilisez le module ODBC vous devez sauvegarde votre base SQL séparément."
 
-#: web/ejabberd_web_admin.erl:2040
+#: web/ejabberd_web_admin.erl:2041
 msgid "Store binary backup:"
 msgstr "Sauvegarde binaire:"
 
-#: web/ejabberd_web_admin.erl:2044 web/ejabberd_web_admin.erl:2051
-#: web/ejabberd_web_admin.erl:2059 web/ejabberd_web_admin.erl:2066
-#: web/ejabberd_web_admin.erl:2073 web/ejabberd_web_admin.erl:2080
-#: web/ejabberd_web_admin.erl:2087 web/ejabberd_web_admin.erl:2095
-#: web/ejabberd_web_admin.erl:2102 web/ejabberd_web_admin.erl:2109
+#: web/ejabberd_web_admin.erl:2045 web/ejabberd_web_admin.erl:2052
+#: web/ejabberd_web_admin.erl:2060 web/ejabberd_web_admin.erl:2067
+#: web/ejabberd_web_admin.erl:2074 web/ejabberd_web_admin.erl:2081
+#: web/ejabberd_web_admin.erl:2088 web/ejabberd_web_admin.erl:2096
+#: web/ejabberd_web_admin.erl:2103 web/ejabberd_web_admin.erl:2110
 msgid "OK"
 msgstr "OK"
 
-#: web/ejabberd_web_admin.erl:2047
+#: web/ejabberd_web_admin.erl:2048
 msgid "Restore binary backup immediately:"
 msgstr "Restauration immédiate d'une sauvegarde binaire:"
 
-#: web/ejabberd_web_admin.erl:2055
+#: web/ejabberd_web_admin.erl:2056
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Restauration de la sauvegarde binaire après redémarrage (nécessite moins de "
 "mémoire):"
 
-#: web/ejabberd_web_admin.erl:2062
+#: web/ejabberd_web_admin.erl:2063
 msgid "Store plain text backup:"
 msgstr "Sauvegarde texte:"
 
-#: web/ejabberd_web_admin.erl:2069
+#: web/ejabberd_web_admin.erl:2070
 msgid "Restore plain text backup immediately:"
 msgstr "Restauration immédiate d'une sauvegarde texte:"
 
-#: web/ejabberd_web_admin.erl:2076
+#: web/ejabberd_web_admin.erl:2077
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr ""
 "Importer les données utilisateurs à partir d'un fichier PIEFXIS (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2083
+#: web/ejabberd_web_admin.erl:2084
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Exporter les données de tous les utilisateurs du serveur vers un fichier "
 "PIEFXIS (XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2090
+#: web/ejabberd_web_admin.erl:2091
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Exporter les données utilisateurs d'un hôte vers un fichier PIEFXIS "
 "(XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2098
+#: web/ejabberd_web_admin.erl:2099
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"
 
-#: web/ejabberd_web_admin.erl:2105
+#: web/ejabberd_web_admin.erl:2106
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"
 
-#: web/ejabberd_web_admin.erl:2131
+#: web/ejabberd_web_admin.erl:2132
 msgid "Listened Ports at "
 msgstr "Ports ouverts sur "
 
-#: web/ejabberd_web_admin.erl:2156
+#: web/ejabberd_web_admin.erl:2157
 msgid "Modules at "
 msgstr "Modules sur "
 
-#: web/ejabberd_web_admin.erl:2182
+#: web/ejabberd_web_admin.erl:2183
 msgid "Statistics of ~p"
 msgstr "Statistiques de ~p"
 
-#: web/ejabberd_web_admin.erl:2185
+#: web/ejabberd_web_admin.erl:2186
 msgid "Uptime:"
 msgstr "Temps depuis le démarrage :"
 
-#: web/ejabberd_web_admin.erl:2188
+#: web/ejabberd_web_admin.erl:2189
 msgid "CPU Time:"
 msgstr "Temps CPU :"
 
-#: web/ejabberd_web_admin.erl:2194
+#: web/ejabberd_web_admin.erl:2195
 msgid "Transactions Committed:"
 msgstr "Transactions commitées :"
 
-#: web/ejabberd_web_admin.erl:2197
+#: web/ejabberd_web_admin.erl:2198
 msgid "Transactions Aborted:"
 msgstr "Transactions annulées :"
 
-#: web/ejabberd_web_admin.erl:2200
+#: web/ejabberd_web_admin.erl:2201
 msgid "Transactions Restarted:"
 msgstr "Transactions redémarrées :"
 
-#: web/ejabberd_web_admin.erl:2203
+#: web/ejabberd_web_admin.erl:2204
 msgid "Transactions Logged:"
 msgstr "Transactions journalisées :"
 
-#: web/ejabberd_web_admin.erl:2245
+#: web/ejabberd_web_admin.erl:2246
 msgid "Update "
 msgstr "Mise à jour "
 
-#: web/ejabberd_web_admin.erl:2253
+#: web/ejabberd_web_admin.erl:2254
 msgid "Update plan"
 msgstr "Plan de mise à jour"
 
-#: web/ejabberd_web_admin.erl:2254
+#: web/ejabberd_web_admin.erl:2255
 msgid "Modified modules"
 msgstr "Modules mis à jour"
 
-#: web/ejabberd_web_admin.erl:2255
+#: web/ejabberd_web_admin.erl:2256
 msgid "Update script"
 msgstr "Script de mise à jour"
 
-#: web/ejabberd_web_admin.erl:2256
+#: web/ejabberd_web_admin.erl:2257
 msgid "Low level update script"
 msgstr "Script de mise à jour de bas-niveau"
 
-#: web/ejabberd_web_admin.erl:2257
+#: web/ejabberd_web_admin.erl:2258
 msgid "Script check"
 msgstr "Validation du script"
 
-#: web/ejabberd_web_admin.erl:2425
+#: web/ejabberd_web_admin.erl:2426
 msgid "Port"
 msgstr "Port"
 
-#: web/ejabberd_web_admin.erl:2426
+#: web/ejabberd_web_admin.erl:2427
 msgid "IP"
 msgstr "IP"
 
-#: web/ejabberd_web_admin.erl:2427
+#: web/ejabberd_web_admin.erl:2428
 msgid "Protocol"
 msgstr "Protocole"
 
-#: web/ejabberd_web_admin.erl:2428 web/ejabberd_web_admin.erl:2555
+#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
 msgid "Module"
 msgstr "Module"
 
-#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
+#: web/ejabberd_web_admin.erl:2430 web/ejabberd_web_admin.erl:2557
 msgid "Options"
 msgstr "Options"
 
-#: web/ejabberd_web_admin.erl:2449
+#: web/ejabberd_web_admin.erl:2450
 msgid "Delete"
 msgstr "Supprimer"
 
-#: web/ejabberd_web_admin.erl:2578
+#: web/ejabberd_web_admin.erl:2579
 msgid "Start"
 msgstr "Démarrer"
 
@@ -1826,7 +1884,7 @@ msgstr "Effacer"
 
 #, fuzzy
 #~ msgid "Captcha test failed"
-#~ msgstr "Le captcha est valide"
+#~ msgstr "Le CAPTCHA est valide"
 
 #~ msgid "Encodings"
 #~ msgstr "Encodages"

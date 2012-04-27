@@ -59,6 +59,21 @@ CREATE TABLE rostergroups (
 
 CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 
+CREATE TABLE sr_group (
+    name varchar(250) NOT NULL,
+    opts text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE TABLE sr_user (
+    jid varchar(250) NOT NULL,
+    grp varchar(250) NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE UNIQUE INDEX i_sr_user_jid_group ON sr_user(jid(75), grp(75));
+CREATE INDEX i_sr_user_jid ON sr_user(jid);
+CREATE INDEX i_sr_user_grp ON sr_user(grp);
 
 CREATE TABLE spool (
     username varchar(250) NOT NULL,
@@ -76,6 +91,11 @@ CREATE TABLE vcard (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
 
+CREATE TABLE vcard_xupdate (
+    username varchar(250) PRIMARY KEY,
+    hash text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
 
 CREATE TABLE vcard_search (
     username varchar(250) NOT NULL,
@@ -233,3 +253,36 @@ CREATE TABLE pubsub_subscription_opt (
 );
 CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt(subid(32), opt_name(32));
 
+CREATE TABLE muc_room (
+    name text NOT NULL,
+    host text NOT NULL,
+    opts text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE UNIQUE INDEX i_muc_room_name_host USING BTREE ON muc_room(name(75), host(75));
+
+CREATE TABLE muc_registered (
+    jid text NOT NULL,
+    host text NOT NULL,
+    nick text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE INDEX i_muc_registered_nick USING BTREE ON muc_registered(nick(75));
+CREATE UNIQUE INDEX i_muc_registered_jid_host USING BTREE ON muc_registered(jid(75), host(75));
+
+CREATE TABLE irc_custom (
+    jid text NOT NULL,
+    host text NOT NULL,
+    data text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE UNIQUE INDEX i_irc_custom_jid_host USING BTREE ON irc_custom(jid(75), host(75));
+
+CREATE TABLE motd (
+    username varchar(250) PRIMARY KEY,
+    xml text,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;

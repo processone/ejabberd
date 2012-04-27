@@ -381,6 +381,10 @@ feature_request(Host, From, Caps, [SubNode | Tail] = SubNodes) ->
 					[{"xmlns", ?NS_DISCO_INFO},
 					 {"node", Node ++ "#" ++ SubNode}],
 					[]}]},
+                    %% We cache current timestamp in order to avoid
+                    %% caps requests flood
+                    cache_tab:insert(caps_features, BinaryNode, now_ts(),
+                                     caps_write_fun(BinaryNode, now_ts())),
 		    F = fun(IQReply) ->
 				feature_response(
 				  IQReply, Host, From, Caps, SubNodes)
@@ -411,19 +415,11 @@ feature_response(#iq{type = result,
 	      caps_features, BinaryNode, BinaryFeatures,
 	      caps_write_fun(BinaryNode, BinaryFeatures));
 	false ->
-	    %% We cache current timestamp and will probe the client
-	    %% after BAD_HASH_LIFETIME seconds.
-	    cache_tab:insert(caps_features, BinaryNode, now_ts(),
-			     caps_write_fun(BinaryNode, now_ts()))
+            ok
     end,
     feature_request(Host, From, Caps, SubNodes);
-feature_response(_IQResult, Host, From, Caps, [SubNode | SubNodes]) ->
-    %% We got type=error or invalid type=result stanza or timeout,
-    %% so we cache current timestamp and will probe the client
-    %% after BAD_HASH_LIFETIME seconds.
-    BinaryNode = node_to_binary(Caps#caps.node, SubNode),
-    cache_tab:insert(caps_features, BinaryNode, now_ts(),
-		     caps_write_fun(BinaryNode, now_ts())),
+feature_response(_IQResult, Host, From, Caps, [_SubNode | SubNodes]) ->
+    %% We got type=error or invalid type=result stanza or timeout.
     feature_request(Host, From, Caps, SubNodes).
 
 node_to_binary(Node, SubNode) ->

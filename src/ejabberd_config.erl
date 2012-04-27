@@ -381,6 +381,9 @@ process_term(Term, State) ->
 	    State;
 	{hosts, _Hosts} ->
 	    State;
+	{fqdn, HostFQDN} ->
+	    ?DEBUG("FQDN set to: ~p", [HostFQDN]),
+	    add_option(fqdn, HostFQDN, State);
 	{host_config, Host, Terms} ->
 	    lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
 			State, Terms);

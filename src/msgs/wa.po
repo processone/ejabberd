@@ -15,11 +15,11 @@ msgstr "L' eployaedje di STARTTL est oblidjî"
 msgid "No resource provided"
 msgstr "Nole rissoûce di dnêye"
 
-#: ejabberd_c2s.erl:1149
+#: ejabberd_c2s.erl:1197
 msgid "Replaced by new connection"
 msgstr "Replaecî pa on novea raloyaedje"
 
-#: ejabberd_c2s.erl:1837
+#: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 
@@ -41,7 +41,7 @@ msgid "CAPTCHA web page"
 msgstr ""
 
 #: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
+msgid "The CAPTCHA is valid."
 msgstr ""
 
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
@@ -56,64 +56,67 @@ msgstr "Ping"
 msgid "Pong"
 msgstr "Pong"
 
-#: mod_announce.erl:506
+#: mod_announce.erl:507 mod_announce_odbc.erl:499
 msgid "Really delete message of the day?"
 msgstr "Voloz vs vormint disfacer l' messaedje do djoû?"
 
-#: mod_announce.erl:514 mod_configure.erl:1083 mod_configure.erl:1128
+#: mod_announce.erl:515 mod_announce_odbc.erl:507 mod_configure.erl:1083
+#: mod_configure.erl:1128
 msgid "Subject"
 msgstr "Sudjet"
 
-#: mod_announce.erl:519 mod_configure.erl:1088 mod_configure.erl:1133
+#: mod_announce.erl:520 mod_announce_odbc.erl:512 mod_configure.erl:1088
+#: mod_configure.erl:1133
 msgid "Message body"
 msgstr "Coir do messaedje"
 
-#: mod_announce.erl:599
+#: mod_announce.erl:600 mod_announce_odbc.erl:592
 msgid "No body provided for announce message"
 msgstr "I n' a nou coir do messaedje po ciste anonce la"
 
-#: mod_announce.erl:634
+#: mod_announce.erl:635 mod_announce_odbc.erl:627
 msgid "Announcements"
 msgstr "Anonces"
 
-#: mod_announce.erl:636
+#: mod_announce.erl:637 mod_announce_odbc.erl:629
 msgid "Send announcement to all users"
 msgstr "Evoyî l' anonce a tos les uzeus"
 
-#: mod_announce.erl:638
+#: mod_announce.erl:639 mod_announce_odbc.erl:631
 msgid "Send announcement to all users on all hosts"
 msgstr "Evoyî l' anonce a tos les uzeus so tos les lodjoes"
 
-#: mod_announce.erl:640
+#: mod_announce.erl:641 mod_announce_odbc.erl:633
 msgid "Send announcement to all online users"
 msgstr "Evoyî l' anonce a tos les uzeus raloyîs"
 
-#: mod_announce.erl:642 mod_configure.erl:1078 mod_configure.erl:1123
+#: mod_announce.erl:643 mod_announce_odbc.erl:635 mod_configure.erl:1078
+#: mod_configure.erl:1123
 msgid "Send announcement to all online users on all hosts"
 msgstr "Evoyî l' anonce a tos les uzeus raloyîs so tos les lodjoes"
 
-#: mod_announce.erl:644
+#: mod_announce.erl:645 mod_announce_odbc.erl:637
 msgid "Set message of the day and send to online users"
 msgstr "Defini l' messaedje do djoû et l' evoyî åzès uzeus raloyîs"
 
-#: mod_announce.erl:646
+#: mod_announce.erl:647 mod_announce_odbc.erl:639
 msgid "Set message of the day on all hosts and send to online users"
 msgstr ""
 "Defini l' messaedje do djoû so tos les lodjoes et l' evoyî åzès uzeus raloyîs"
 
-#: mod_announce.erl:648
+#: mod_announce.erl:649 mod_announce_odbc.erl:641
 msgid "Update message of the day (don't send)"
 msgstr "Mete a djoû l' messaedje do djoû (nén l' evoyî)"
 
-#: mod_announce.erl:650
+#: mod_announce.erl:651 mod_announce_odbc.erl:643
 msgid "Update message of the day on all hosts (don't send)"
 msgstr "Mete a djoû l' messaedje do djoû so tos les lodjoes (nén l' evoyî)"
 
-#: mod_announce.erl:652
+#: mod_announce.erl:653 mod_announce_odbc.erl:645
 msgid "Delete message of the day"
 msgstr "Disfacer l' messaedje do djoû"
 
-#: mod_announce.erl:654
+#: mod_announce.erl:655 mod_announce_odbc.erl:647
 msgid "Delete message of the day on all hosts"
 msgstr "Disfacer l' messaedje do djoû so tos les lodjoes"
 
@@ -122,7 +125,7 @@ msgstr "Disfacer l' messaedje do djoû so tos les lodjoes"
 msgid "Configuration"
 msgstr "Apontiaedjes"
 
-#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1934
+#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1936
 msgid "Database"
 msgstr "Båze di dnêyes"
 
@@ -134,7 +137,7 @@ msgstr "Enonder des modules"
 msgid "Stop Modules"
 msgstr "Arester des modules"
 
-#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1935
+#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1937
 msgid "Backup"
 msgstr "Copeye di såvrité"
 
@@ -163,7 +166,7 @@ msgid "Shut Down Service"
 msgstr "Arester siervice"
 
 #: mod_configure.erl:145 mod_configure.erl:518 mod_configure.erl:1197
-#: web/ejabberd_web_admin.erl:1528
+#: web/ejabberd_web_admin.erl:1527
 msgid "Add User"
 msgstr "Radjouter èn uzeu"
 
@@ -215,7 +218,7 @@ msgid "User Management"
 msgstr "Manaedjaedje des uzeus"
 
 #: mod_configure.erl:500 web/ejabberd_web_admin.erl:1058
-#: web/ejabberd_web_admin.erl:1463
+#: web/ejabberd_web_admin.erl:1462
 msgid "Online Users"
 msgstr "Uzeus raloyîs"
 
@@ -227,15 +230,15 @@ msgstr "Tos les uzeus"
 msgid "Outgoing s2s Connections"
 msgstr "Raloyaedjes s2s e rexhowe"
 
-#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1905
+#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1907
 msgid "Running Nodes"
 msgstr "Nuks en alaedje"
 
-#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1907
+#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1909
 msgid "Stopped Nodes"
 msgstr "Nuks essoctés"
 
-#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1951
+#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1953
 msgid "Modules"
 msgstr "Modules"
 
@@ -366,15 +369,15 @@ msgstr "Rîles d' accès"
 
 #: mod_configure.erl:1200 mod_configure.erl:1222 mod_configure.erl:1234
 #: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
-#: mod_configure.erl:1287 mod_configure.erl:1652 mod_configure.erl:1702
-#: mod_configure.erl:1723 mod_roster.erl:943 mod_roster_odbc.erl:1048
-#: mod_vcard.erl:466 mod_vcard_ldap.erl:550 mod_vcard_odbc.erl:442
+#: mod_configure.erl:1287 mod_configure.erl:1650 mod_configure.erl:1700
+#: mod_configure.erl:1721 mod_roster.erl:943 mod_roster_odbc.erl:1060
+#: mod_vcard.erl:472 mod_vcard_ldap.erl:554 mod_vcard_odbc.erl:448
 msgid "Jabber ID"
 msgstr "ID Jabber"
 
-#: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1653
-#: mod_configure.erl:1865 mod_muc/mod_muc_room.erl:2970 mod_register.erl:235
-#: web/ejabberd_web_admin.erl:1521
+#: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1651
+#: mod_configure.erl:1863 mod_muc/mod_muc_room.erl:3224 mod_register.erl:235
+#: web/ejabberd_web_admin.erl:1520
 msgid "Password"
 msgstr "Sicret"
 
@@ -390,71 +393,72 @@ msgstr "Nombe d' uzeus edjîstrés"
 msgid "Number of online users"
 msgstr "Nombe d' uzeus raloyîs"
 
-#: mod_configure.erl:1684 web/ejabberd_web_admin.erl:1589
-#: web/ejabberd_web_admin.erl:1741
+#: mod_configure.erl:1682 web/ejabberd_web_admin.erl:1588
+#: web/ejabberd_web_admin.erl:1743
 msgid "Never"
 msgstr "Måy"
 
-#: mod_configure.erl:1698 web/ejabberd_web_admin.erl:1602
-#: web/ejabberd_web_admin.erl:1754
+#: mod_configure.erl:1696 web/ejabberd_web_admin.erl:1601
+#: web/ejabberd_web_admin.erl:1756
 msgid "Online"
 msgstr "Raloyî"
 
-#: mod_configure.erl:1703
+#: mod_configure.erl:1701
 msgid "Last login"
 msgstr "Dierin elodjaedje"
 
-#: mod_configure.erl:1724
+#: mod_configure.erl:1722
 msgid "Roster size"
 msgstr "Grandeu del djivêye des soçons"
 
-#: mod_configure.erl:1725
+#: mod_configure.erl:1723
 msgid "IP addresses"
 msgstr "Adresses IP"
 
-#: mod_configure.erl:1726
+#: mod_configure.erl:1724
 msgid "Resources"
 msgstr "Rissoûces"
 
-#: mod_configure.erl:1852
+#: mod_configure.erl:1850
 msgid "Administration of "
 msgstr "Manaedjaedje di "
 
-#: mod_configure.erl:1855
+#: mod_configure.erl:1853
 msgid "Action on user"
 msgstr "Accion so l' uzeu"
 
-#: mod_configure.erl:1859
+#: mod_configure.erl:1857
 msgid "Edit Properties"
 msgstr "Candjî les prôpietés"
 
-#: mod_configure.erl:1862 web/ejabberd_web_admin.erl:1767
+#: mod_configure.erl:1860 web/ejabberd_web_admin.erl:1769
 msgid "Remove User"
 msgstr "Disfacer l' uzeu"
 
-#: mod_irc/mod_irc.erl:201 mod_muc/mod_muc.erl:336
+#: mod_irc/mod_irc.erl:201 mod_irc/mod_irc_odbc.erl:196
+#: mod_muc/mod_muc.erl:336 mod_muc/mod_muc_odbc.erl:342
 msgid "Access denied by service policy"
 msgstr "L' accès a stî rfuzé pal politike do siervice"
 
-#: mod_irc/mod_irc.erl:400
+#: mod_irc/mod_irc.erl:401 mod_irc/mod_irc_odbc.erl:398
 msgid "IRC Transport"
 msgstr "Transpoirt IRC"
 
-#: mod_irc/mod_irc.erl:427
+#: mod_irc/mod_irc.erl:428 mod_irc/mod_irc_odbc.erl:425
 msgid "ejabberd IRC module"
 msgstr "Module IRC po ejabberd"
 
-#: mod_irc/mod_irc.erl:558
+#: mod_irc/mod_irc.erl:559 mod_irc/mod_irc_odbc.erl:568
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr ""
 "Vos avoz mezåjhe d' on cliyint ki sopoite x:data po candjî ls apontiaedjes "
 "di mod_irc"
 
-#: mod_irc/mod_irc.erl:565
+#: mod_irc/mod_irc.erl:566 mod_irc/mod_irc_odbc.erl:575
 msgid "Registration in mod_irc for "
 msgstr "Edjîstraedje dins mod_irc po "
 
-#: mod_irc/mod_irc.erl:570
+#: mod_irc/mod_irc.erl:571 mod_irc/mod_irc_odbc.erl:580
 #, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
@@ -463,11 +467,11 @@ msgstr ""
 "Dinez les nos d' uzeu et ls ecôdaedjes ki vos vloz eployî po vs raloyî åzès "
 "sierveus IRC"
 
-#: mod_irc/mod_irc.erl:575
+#: mod_irc/mod_irc.erl:576 mod_irc/mod_irc_odbc.erl:585
 msgid "IRC Username"
 msgstr "No d' uzeu IRC"
 
-#: mod_irc/mod_irc.erl:585
+#: mod_irc/mod_irc.erl:586 mod_irc/mod_irc_odbc.erl:595
 #, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
@@ -479,7 +483,7 @@ msgstr ""
 "cisse djivêye ci avou des valixhances del cogne «{\"sierveu irc\", "
 "\"ecôdaedje\"}». Li prémetou ecôdaedje do siervice c' est «~s»."
 
-#: mod_irc/mod_irc.erl:597
+#: mod_irc/mod_irc.erl:598 mod_irc/mod_irc_odbc.erl:607
 #, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
@@ -488,36 +492,37 @@ msgstr ""
 "Egzimpe: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", "
 "\"iso8859-1\"}]."
 
-#: mod_irc/mod_irc.erl:602
+#: mod_irc/mod_irc.erl:603 mod_irc/mod_irc_odbc.erl:612
 msgid "Connections parameters"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:727
+#: mod_irc/mod_irc.erl:728 mod_irc/mod_irc_odbc.erl:757
 msgid "Join IRC channel"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:731
+#: mod_irc/mod_irc.erl:732 mod_irc/mod_irc_odbc.erl:761
 msgid "IRC channel (don't put the first #)"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:736
+#: mod_irc/mod_irc.erl:737 mod_irc/mod_irc_odbc.erl:766
 #, fuzzy
 msgid "IRC server"
 msgstr "No d' uzeu IRC"
 
-#: mod_irc/mod_irc.erl:769 mod_irc/mod_irc.erl:773
+#: mod_irc/mod_irc.erl:770 mod_irc/mod_irc.erl:774
+#: mod_irc/mod_irc_odbc.erl:799 mod_irc/mod_irc_odbc.erl:803
 msgid "Join the IRC channel here."
 msgstr ""
 
-#: mod_irc/mod_irc.erl:777
+#: mod_irc/mod_irc.erl:778 mod_irc/mod_irc_odbc.erl:807
 msgid "Join the IRC channel in this Jabber ID: ~s"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:862
+#: mod_irc/mod_irc.erl:863 mod_irc/mod_irc_odbc.erl:904
 msgid "IRC settings"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:867
+#: mod_irc/mod_irc.erl:868 mod_irc/mod_irc_odbc.erl:909
 #, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
@@ -527,77 +532,78 @@ msgstr ""
 "Dinez les nos d' uzeu et ls ecôdaedjes ki vos vloz eployî po vs raloyî åzès "
 "sierveus IRC"
 
-#: mod_irc/mod_irc.erl:873
+#: mod_irc/mod_irc.erl:874 mod_irc/mod_irc_odbc.erl:915
 #, fuzzy
 msgid "IRC username"
 msgstr "No d' uzeu IRC"
 
-#: mod_irc/mod_irc.erl:922
+#: mod_irc/mod_irc.erl:923 mod_irc/mod_irc_odbc.erl:964
 #, fuzzy
 msgid "Password ~b"
 msgstr "Sicret"
 
-#: mod_irc/mod_irc.erl:927
+#: mod_irc/mod_irc.erl:928 mod_irc/mod_irc_odbc.erl:969
 #, fuzzy
 msgid "Port ~b"
 msgstr "Pôrt"
 
-#: mod_irc/mod_irc.erl:932
+#: mod_irc/mod_irc.erl:933 mod_irc/mod_irc_odbc.erl:974
 msgid "Encoding for server ~b"
 msgstr ""
 
-#: mod_irc/mod_irc.erl:941
+#: mod_irc/mod_irc.erl:942 mod_irc/mod_irc_odbc.erl:983
 msgid "Server ~b"
 msgstr ""
 
-#: mod_muc/mod_muc.erl:449
+#: mod_muc/mod_muc.erl:449 mod_muc/mod_muc_odbc.erl:456
 msgid "Only service administrators are allowed to send service messages"
 msgstr ""
 "Seulmint les manaedjeus d' siervices polèt evoyî des messaedjes di siervice"
 
-#: mod_muc/mod_muc.erl:493
+#: mod_muc/mod_muc.erl:493 mod_muc/mod_muc_odbc.erl:500
 msgid "Room creation is denied by service policy"
 msgstr "L' ahivaedje del såle est rfuzé pal politike do siervice"
 
-#: mod_muc/mod_muc.erl:500
+#: mod_muc/mod_muc.erl:500 mod_muc/mod_muc_odbc.erl:507
 msgid "Conference room does not exist"
 msgstr "Li såle di conferince n' egzistêye nén"
 
-#: mod_muc/mod_muc.erl:581
+#: mod_muc/mod_muc.erl:582 mod_muc/mod_muc_odbc.erl:595
 msgid "Chatrooms"
 msgstr "Såles di berdelaedje"
 
-#: mod_muc/mod_muc.erl:711
+#: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
 #, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Vos avoz mezåjhe d' on cliyint ki sopoite x:data po-z edjîstrer on metou no"
 
-#: mod_muc/mod_muc.erl:717
+#: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
 msgid "Nickname Registration at "
 msgstr "Edjîstraedje di metou no amon "
 
-#: mod_muc/mod_muc.erl:721
+#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_odbc.erl:739
 msgid "Enter nickname you want to register"
 msgstr "Dinez l' metou no ki vos vloz edjîstrer"
 
-#: mod_muc/mod_muc.erl:722 mod_roster.erl:944 mod_roster_odbc.erl:1049
-#: mod_vcard.erl:358 mod_vcard.erl:471 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:447
+#: mod_muc/mod_muc.erl:723 mod_muc/mod_muc_odbc.erl:740
+#: mod_muc/mod_muc_room.erl:3810 mod_roster.erl:944 mod_roster_odbc.erl:1061
+#: mod_vcard.erl:364 mod_vcard.erl:477 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:453
 msgid "Nickname"
 msgstr "Metou no"
 
-#: mod_muc/mod_muc.erl:761 mod_muc/mod_muc_room.erl:933
-#: mod_muc/mod_muc_room.erl:1577
+#: mod_muc/mod_muc.erl:762 mod_muc/mod_muc_odbc.erl:784
+#: mod_muc/mod_muc_room.erl:1064 mod_muc/mod_muc_room.erl:1787
 #, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "Li metou no est ddja edjîstré pa ene ôte sakî"
 
-#: mod_muc/mod_muc.erl:787
+#: mod_muc/mod_muc.erl:788 mod_muc/mod_muc_odbc.erl:811
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Vos dvoz rimpli l' tchamp «Metou no» dins l' formiulaire"
 
-#: mod_muc/mod_muc.erl:807
+#: mod_muc/mod_muc.erl:808 mod_muc/mod_muc_odbc.erl:831
 msgid "ejabberd MUC module"
 msgstr "Module MUC (såles di berdelaedje) po ejabberd"
 
@@ -638,8 +644,8 @@ msgstr "a stî pité evoye cåze d' èn arestaedje do sistinme"
 msgid "is now known as"
 msgstr "est asteure kinoxhou come"
 
-#: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:689
-#: mod_muc/mod_muc_room.erl:2138
+#: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:688
+#: mod_muc/mod_muc_room.erl:2393
 msgid " has set the subject to: "
 msgstr " a candjî l' tite a: "
 
@@ -739,35 +745,51 @@ msgstr "nôvimbe"
 msgid "December"
 msgstr "decimbe"
 
-#: mod_muc/mod_muc_log.erl:751
+#: mod_muc/mod_muc_log.erl:750
 msgid "Room Configuration"
 msgstr "Apontiaedje del såle"
 
-#: mod_muc/mod_muc_log.erl:760
+#: mod_muc/mod_muc_log.erl:759
 #, fuzzy
 msgid "Room Occupants"
 msgstr "Nombe di prezints"
 
-#: mod_muc/mod_muc_room.erl:170
+#: mod_muc/mod_muc_room.erl:174
 msgid "Traffic rate limit is exceeded"
 msgstr "Li limite pol volume di trafik a stî passêye"
 
-#: mod_muc/mod_muc_room.erl:242
+#: mod_muc/mod_muc_room.erl:246
 msgid ""
 "This participant is kicked from the room because he sent an error message"
 msgstr ""
 "Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on "
 "messaedje d' aroke"
 
-#: mod_muc/mod_muc_room.erl:251
+#: mod_muc/mod_muc_room.erl:255
 msgid "It is not allowed to send private messages to the conference"
 msgstr "On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"
 
-#: mod_muc/mod_muc_room.erl:296
+#: mod_muc/mod_muc_room.erl:332
+msgid "Please, wait for a while before sending new voice request"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:347
+msgid "Voice requests are disabled in this conference"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:364
+msgid "Failed to extract JID from your voice request approval"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:393
+msgid "Only moderators can approve voice requests"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
 msgstr "Sôre di messaedje nén valide"
 
-#: mod_muc/mod_muc_room.erl:406
+#: mod_muc/mod_muc_room.erl:518
 msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
@@ -775,34 +797,34 @@ msgstr ""
 "Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on "
 "messaedje d' aroke a èn ôte pårticipant"
 
-#: mod_muc/mod_muc_room.erl:419
+#: mod_muc/mod_muc_room.erl:531
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr "C' est nén possibe d' evoyî des messaedjes privés del sôre «groupchat»"
 
-#: mod_muc/mod_muc_room.erl:431 mod_muc/mod_muc_room.erl:486
+#: mod_muc/mod_muc_room.erl:543 mod_muc/mod_muc_room.erl:611
 msgid "Recipient is not in the conference room"
 msgstr "Li riçuveu n' est nén dins l' såle di conferince"
 
-#: mod_muc/mod_muc_room.erl:451 mod_muc/mod_muc_room.erl:829
-#: mod_muc/mod_muc_room.erl:3609
-msgid "Only occupants are allowed to send messages to the conference"
-msgstr "Seulmint les prezints polèt evoyî des messaedjes al conferince"
-
-#: mod_muc/mod_muc_room.erl:460
+#: mod_muc/mod_muc_room.erl:564 mod_muc/mod_muc_room.erl:585
 msgid "It is not allowed to send private messages"
 msgstr "Ci n' est nén permetou d' evoyî des messaedjes privés"
 
-#: mod_muc/mod_muc_room.erl:509
+#: mod_muc/mod_muc_room.erl:576 mod_muc/mod_muc_room.erl:956
+#: mod_muc/mod_muc_room.erl:4040
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Seulmint les prezints polèt evoyî des messaedjes al conferince"
+
+#: mod_muc/mod_muc_room.erl:634
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr "Seulmint les prezints polèt evoyî des cweraedjes sol conferince"
 
-#: mod_muc/mod_muc_room.erl:521
+#: mod_muc/mod_muc_room.erl:646
 msgid "Queries to the conference members are not allowed in this room"
 msgstr ""
 "Les cweraedjes des mimbes del conferince ni sont nén permetous dins cisse "
 "såle ci"
 
-#: mod_muc/mod_muc_room.erl:805
+#: mod_muc/mod_muc_room.erl:932
 #, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
@@ -811,208 +833,243 @@ msgstr ""
 "Seulmint les moderateus et les pårticipants polèt candjî l' sudjet dins "
 "cisse såle ci"
 
-#: mod_muc/mod_muc_room.erl:810
+#: mod_muc/mod_muc_room.erl:937
 #, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Seulmint les moderateus polèt candjî l' sudjet dins cisse såle ci"
 
-#: mod_muc/mod_muc_room.erl:820
+#: mod_muc/mod_muc_room.erl:947
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr "Les viziteus n' polèt nén evoyî des messaedjes a tos les prezints"
 
-#: mod_muc/mod_muc_room.erl:891
+#: mod_muc/mod_muc_room.erl:1021
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
 msgstr ""
 "Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî ene aroke "
 "di prezince"
 
-#: mod_muc/mod_muc_room.erl:909
+#: mod_muc/mod_muc_room.erl:1040
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "Les viziteus èn polèt nén candjî leus metous no po ç' såle ci"
 
-#: mod_muc/mod_muc_room.erl:922 mod_muc/mod_muc_room.erl:1569
+#: mod_muc/mod_muc_room.erl:1053 mod_muc/mod_muc_room.erl:1779
 #, fuzzy
 msgid "That nickname is already in use by another occupant"
 msgstr "Li metou no est ddja eployî pa ene ôte sakî sol såle"
 
-#: mod_muc/mod_muc_room.erl:1558
+#: mod_muc/mod_muc_room.erl:1768
 msgid "You have been banned from this room"
 msgstr "Vos avoz stî bani di cisse såle ci"
 
-#: mod_muc/mod_muc_room.erl:1561
+#: mod_muc/mod_muc_room.erl:1771
 #, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "I fåt esse mimbe po poleur intrer dins cisse såle ci"
 
-#: mod_muc/mod_muc_room.erl:1597
+#: mod_muc/mod_muc_room.erl:1807
 msgid "This room is not anonymous"
 msgstr "Cisse såle ci n' est nén anonime"
 
-#: mod_muc/mod_muc_room.erl:1623
+#: mod_muc/mod_muc_room.erl:1833
 #, fuzzy
 msgid "A password is required to enter this room"
 msgstr "I fåt dner on scret po poleur intrer dins cisse såle ci"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
+#: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
+msgid "Unable to generate a CAPTCHA"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:1664
+#: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
 msgstr "Sicret nén corek"
 
-#: mod_muc/mod_muc_room.erl:2193
+#: mod_muc/mod_muc_room.erl:2448
 msgid "Administrator privileges required"
 msgstr "I fåt des priviledjes di manaedjeu"
 
-#: mod_muc/mod_muc_room.erl:2208
+#: mod_muc/mod_muc_room.erl:2463
 msgid "Moderator privileges required"
 msgstr "I fåt des priviledjes di moderateu"
 
-#: mod_muc/mod_muc_room.erl:2363
+#: mod_muc/mod_muc_room.erl:2619
 msgid "Jabber ID ~s is invalid"
 msgstr "Li Jabber ID ~s n' est nén valide"
 
-#: mod_muc/mod_muc_room.erl:2377
+#: mod_muc/mod_muc_room.erl:2633
 msgid "Nickname ~s does not exist in the room"
 msgstr "Li metou no ~s n' egzistêye nén dins l' såle"
 
-#: mod_muc/mod_muc_room.erl:2403 mod_muc/mod_muc_room.erl:2797
+#: mod_muc/mod_muc_room.erl:2659 mod_muc/mod_muc_room.erl:3049
 msgid "Invalid affiliation: ~s"
 msgstr "Afiyaedje nén valide: ~s"
 
-#: mod_muc/mod_muc_room.erl:2460
+#: mod_muc/mod_muc_room.erl:2713
 msgid "Invalid role: ~s"
 msgstr "Role nén valide: ~s"
 
-#: mod_muc/mod_muc_room.erl:2774 mod_muc/mod_muc_room.erl:2810
+#: mod_muc/mod_muc_room.erl:3026 mod_muc/mod_muc_room.erl:3062
 msgid "Owner privileges required"
 msgstr "I fåt des priviledjes di prôpietaire"
 
-#: mod_muc/mod_muc_room.erl:2941
+#: mod_muc/mod_muc_room.erl:3195
 #, fuzzy
 msgid "Configuration of room ~s"
 msgstr "Apontiaedje po "
 
-#: mod_muc/mod_muc_room.erl:2946
+#: mod_muc/mod_muc_room.erl:3200
 msgid "Room title"
 msgstr "Tite del såle"
 
-#: mod_muc/mod_muc_room.erl:2949 mod_muc/mod_muc_room.erl:3388
+#: mod_muc/mod_muc_room.erl:3203 mod_muc/mod_muc_room.erl:3692
 #, fuzzy
 msgid "Room description"
 msgstr "Discrijhaedje:"
 
-#: mod_muc/mod_muc_room.erl:2956
+#: mod_muc/mod_muc_room.erl:3210
 msgid "Make room persistent"
 msgstr "Rinde li såle permaninte"
 
-#: mod_muc/mod_muc_room.erl:2961
+#: mod_muc/mod_muc_room.erl:3215
 msgid "Make room public searchable"
 msgstr "Rinde li såle di berdelaedje cweråve publicmint"
 
-#: mod_muc/mod_muc_room.erl:2964
+#: mod_muc/mod_muc_room.erl:3218
 msgid "Make participants list public"
 msgstr "Rinde publike li djivêye des pårticipants"
 
-#: mod_muc/mod_muc_room.erl:2967
+#: mod_muc/mod_muc_room.erl:3221
 msgid "Make room password protected"
 msgstr "Rinde li såle di berdelaedje protedjeye pa scret"
 
-#: mod_muc/mod_muc_room.erl:2978
+#: mod_muc/mod_muc_room.erl:3232
 msgid "Maximum Number of Occupants"
 msgstr "Nombe macsimom di prezints"
 
-#: mod_muc/mod_muc_room.erl:2985
+#: mod_muc/mod_muc_room.erl:3239
 msgid "No limit"
 msgstr "Pont d' limite"
 
-#: mod_muc/mod_muc_room.erl:2996
+#: mod_muc/mod_muc_room.erl:3250
 msgid "Present real Jabber IDs to"
 msgstr "Mostrer les vraiys Jabber IDs a"
 
-#: mod_muc/mod_muc_room.erl:3004
+#: mod_muc/mod_muc_room.erl:3258 mod_muc/mod_muc_room.erl:3292
 msgid "moderators only"
 msgstr "les moderateus seulmint"
 
-#: mod_muc/mod_muc_room.erl:3006
+#: mod_muc/mod_muc_room.erl:3260 mod_muc/mod_muc_room.erl:3294
 msgid "anyone"
 msgstr "tot l' minme kî"
 
-#: mod_muc/mod_muc_room.erl:3008
+#: mod_muc/mod_muc_room.erl:3262
 msgid "Make room members-only"
 msgstr "Rinde li såle di berdelaedje ristrindowe ås mimbes seulmint"
 
-#: mod_muc/mod_muc_room.erl:3011
+#: mod_muc/mod_muc_room.erl:3265
 msgid "Make room moderated"
 msgstr "Rinde li såle di berdelaedje moderêye"
 
-#: mod_muc/mod_muc_room.erl:3014
+#: mod_muc/mod_muc_room.erl:3268
 msgid "Default users as participants"
 msgstr "Les uzeus sont des pårticipants come prémetowe dujhance"
 
-#: mod_muc/mod_muc_room.erl:3017
+#: mod_muc/mod_muc_room.erl:3271
 #, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Les uzeus polèt candjî l' tite"
 
-#: mod_muc/mod_muc_room.erl:3020
+#: mod_muc/mod_muc_room.erl:3274
 msgid "Allow users to send private messages"
 msgstr "Les uzeus polèt evoyî des messaedjes privés"
 
-#: mod_muc/mod_muc_room.erl:3023
+#: mod_muc/mod_muc_room.erl:3279
+#, fuzzy
+msgid "Allow visitors to send private messages to"
+msgstr "Les uzeus polèt evoyî des messaedjes privés"
+
+#: mod_muc/mod_muc_room.erl:3290
+msgid "nobody"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
 msgstr "Les uzeus polèt cweri ls ôtes uzeus"
 
-#: mod_muc/mod_muc_room.erl:3026
+#: mod_muc/mod_muc_room.erl:3299
 msgid "Allow users to send invites"
 msgstr "Les uzeus polèt evoyî priyaedjes"
 
-#: mod_muc/mod_muc_room.erl:3029
+#: mod_muc/mod_muc_room.erl:3302
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Permete ki les viziteus evoyexhe des tecse d' estat dins leus messaedjes di "
 "prezince"
 
-#: mod_muc/mod_muc_room.erl:3032
+#: mod_muc/mod_muc_room.erl:3305
 msgid "Allow visitors to change nickname"
 msgstr "Permete ki les viziteus candjexhe leus metous nos"
 
-#: mod_muc/mod_muc_room.erl:3038
+#: mod_muc/mod_muc_room.erl:3308
 #, fuzzy
-msgid "Make room captcha protected"
+msgid "Allow visitors to send voice requests"
+msgstr "Les uzeus polèt evoyî priyaedjes"
+
+#: mod_muc/mod_muc_room.erl:3311
+msgid "Minimum interval between voice requests (in seconds)"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3317
+#, fuzzy
+msgid "Make room CAPTCHA protected"
 msgstr "Rinde li såle di berdelaedje protedjeye pa scret"
 
-#: mod_muc/mod_muc_room.erl:3043
+#: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr ""
 
-#: mod_muc/mod_muc_room.erl:3050
+#: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
 msgstr "Mete en alaedje li djournå"
 
-#: mod_muc/mod_muc_room.erl:3058
+#: mod_muc/mod_muc_room.erl:3337
 msgid "You need an x:data capable client to configure room"
 msgstr "I vs fåt on cliyint ki sopoite x:data por vos poleur apontyî l' såle"
 
-#: mod_muc/mod_muc_room.erl:3390
+#: mod_muc/mod_muc_room.erl:3694
 msgid "Number of occupants"
 msgstr "Nombe di prezints"
 
-#: mod_muc/mod_muc_room.erl:3446
+#: mod_muc/mod_muc_room.erl:3750
 msgid "private, "
 msgstr "privé, "
 
-#: mod_muc/mod_muc_room.erl:3529
+#: mod_muc/mod_muc_room.erl:3799
+msgid "Voice request"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3803
+msgid "Either approve or decline the voice request."
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3809
+#, fuzzy
+msgid "User JID"
+msgstr "Uzeu "
+
+#: mod_muc/mod_muc_room.erl:3811
+msgid "Grant voice to this person?"
+msgstr ""
+
+#: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
 msgstr "~s vos preye sol såle ~s"
 
-#: mod_muc/mod_muc_room.erl:3538
+#: mod_muc/mod_muc_room.erl:3969
 msgid "the password is"
 msgstr "li scret est"
 
@@ -1028,14 +1085,15 @@ msgid "~s's Offline Messages Queue"
 msgstr "messaedjes ki ratindèt el cawêye po ~s"
 
 #: mod_offline.erl:563 mod_offline_odbc.erl:411 mod_roster.erl:987
-#: mod_roster_odbc.erl:1092 mod_shared_roster.erl:896
-#: mod_shared_roster.erl:1005 web/ejabberd_web_admin.erl:833
+#: mod_roster_odbc.erl:1104 mod_shared_roster.erl:901
+#: mod_shared_roster.erl:1010 mod_shared_roster_odbc.erl:930
+#: mod_shared_roster_odbc.erl:1039 web/ejabberd_web_admin.erl:833
 #: web/ejabberd_web_admin.erl:874 web/ejabberd_web_admin.erl:942
 #: web/ejabberd_web_admin.erl:978 web/ejabberd_web_admin.erl:1019
-#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1758
-#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1961
-#: web/ejabberd_web_admin.erl:2030 web/ejabberd_web_admin.erl:2134
-#: web/ejabberd_web_admin.erl:2159 web/ejabberd_web_admin.erl:2247
+#: web/ejabberd_web_admin.erl:1508 web/ejabberd_web_admin.erl:1760
+#: web/ejabberd_web_admin.erl:1931 web/ejabberd_web_admin.erl:1963
+#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2135
+#: web/ejabberd_web_admin.erl:2160 web/ejabberd_web_admin.erl:2248
 msgid "Submitted"
 msgstr "Candjmints evoyîs"
 
@@ -1055,8 +1113,9 @@ msgstr "Po"
 msgid "Packet"
 msgstr "Paket"
 
-#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:903
-#: web/ejabberd_web_admin.erl:882 web/ejabberd_web_admin.erl:986
+#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:908
+#: mod_shared_roster_odbc.erl:937 web/ejabberd_web_admin.erl:882
+#: web/ejabberd_web_admin.erl:986
 msgid "Delete Selected"
 msgstr "Disfacer les elemints tchoezis"
 
@@ -1073,105 +1132,105 @@ msgstr "Messaedjes ki ratindèt"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "Module SOCKS5 Bytestreams po ejabberd"
 
-#: mod_pubsub/mod_pubsub.erl:1119 mod_pubsub/mod_pubsub_odbc.erl:928
+#: mod_pubsub/mod_pubsub.erl:1120 mod_pubsub/mod_pubsub_odbc.erl:929
 msgid "Publish-Subscribe"
 msgstr "Eplaidaedje-abounmint"
 
-#: mod_pubsub/mod_pubsub.erl:1213 mod_pubsub/mod_pubsub_odbc.erl:1024
+#: mod_pubsub/mod_pubsub.erl:1214 mod_pubsub/mod_pubsub_odbc.erl:1025
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Module d' eplaidaedje-abounmint po ejabberd"
 
-#: mod_pubsub/mod_pubsub.erl:1496 mod_pubsub/mod_pubsub_odbc.erl:1311
+#: mod_pubsub/mod_pubsub.erl:1497 mod_pubsub/mod_pubsub_odbc.erl:1312
 msgid "PubSub subscriber request"
 msgstr "Dimande d' eplaidaedje-abounmint d' èn abouné"
 
-#: mod_pubsub/mod_pubsub.erl:1498 mod_pubsub/mod_pubsub_odbc.erl:1313
+#: mod_pubsub/mod_pubsub.erl:1499 mod_pubsub/mod_pubsub_odbc.erl:1314
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Tchoezi s' i fåt aprover ou nén l' abounmint di ciste intité."
 
-#: mod_pubsub/mod_pubsub.erl:1504 mod_pubsub/mod_pubsub_odbc.erl:1319
+#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1320
 msgid "Node ID"
 msgstr "ID d' nuk"
 
-#: mod_pubsub/mod_pubsub.erl:1509 mod_pubsub/mod_pubsub_odbc.erl:1324
+#: mod_pubsub/mod_pubsub.erl:1510 mod_pubsub/mod_pubsub_odbc.erl:1325
 msgid "Subscriber Address"
 msgstr "Adresse di l' abouné"
 
-#: mod_pubsub/mod_pubsub.erl:1515 mod_pubsub/mod_pubsub_odbc.erl:1330
+#: mod_pubsub/mod_pubsub.erl:1516 mod_pubsub/mod_pubsub_odbc.erl:1331
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr ""
 "Permete ki ci Jabber ID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"
 
-#: mod_pubsub/mod_pubsub.erl:3416 mod_pubsub/mod_pubsub_odbc.erl:3229
+#: mod_pubsub/mod_pubsub.erl:3474 mod_pubsub/mod_pubsub_odbc.erl:3287
 msgid "Deliver payloads with event notifications"
 msgstr "Evoyî l' contnou avou les notifiaedjes d' evenmints"
 
-#: mod_pubsub/mod_pubsub.erl:3417 mod_pubsub/mod_pubsub_odbc.erl:3230
+#: mod_pubsub/mod_pubsub.erl:3475 mod_pubsub/mod_pubsub_odbc.erl:3288
 msgid "Deliver event notifications"
 msgstr "Evoyî des notifiaedjes d' evenmints"
 
-#: mod_pubsub/mod_pubsub.erl:3418 mod_pubsub/mod_pubsub_odbc.erl:3231
+#: mod_pubsub/mod_pubsub.erl:3476 mod_pubsub/mod_pubsub_odbc.erl:3289
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Notifyî åzès abounés cwand l' apontiaedje do nuk candje"
 
-#: mod_pubsub/mod_pubsub.erl:3419 mod_pubsub/mod_pubsub_odbc.erl:3232
+#: mod_pubsub/mod_pubsub.erl:3477 mod_pubsub/mod_pubsub_odbc.erl:3290
 msgid "Notify subscribers when the node is deleted"
 msgstr "Notifyî åzès abounés cwand l' nuk est disfacé"
 
-#: mod_pubsub/mod_pubsub.erl:3420 mod_pubsub/mod_pubsub_odbc.erl:3233
+#: mod_pubsub/mod_pubsub.erl:3478 mod_pubsub/mod_pubsub_odbc.erl:3291
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Notifyî åzès abounés cwand des cayets sont oisté foû do nuk"
 
-#: mod_pubsub/mod_pubsub.erl:3421 mod_pubsub/mod_pubsub_odbc.erl:3234
+#: mod_pubsub/mod_pubsub.erl:3479 mod_pubsub/mod_pubsub_odbc.erl:3292
 msgid "Persist items to storage"
 msgstr "Cayets permanints a wårder"
 
-#: mod_pubsub/mod_pubsub.erl:3422 mod_pubsub/mod_pubsub_odbc.erl:3235
+#: mod_pubsub/mod_pubsub.erl:3480 mod_pubsub/mod_pubsub_odbc.erl:3293
 msgid "A friendly name for the node"
 msgstr "On no uzeu-ahessåve pol nuk"
 
-#: mod_pubsub/mod_pubsub.erl:3423 mod_pubsub/mod_pubsub_odbc.erl:3236
+#: mod_pubsub/mod_pubsub.erl:3481 mod_pubsub/mod_pubsub_odbc.erl:3294
 msgid "Max # of items to persist"
 msgstr "Nombe macsimoms di cayets permanints"
 
-#: mod_pubsub/mod_pubsub.erl:3424 mod_pubsub/mod_pubsub_odbc.erl:3237
+#: mod_pubsub/mod_pubsub.erl:3482 mod_pubsub/mod_pubsub_odbc.erl:3295
 msgid "Whether to allow subscriptions"
 msgstr "Si on permete les abounmints"
 
-#: mod_pubsub/mod_pubsub.erl:3425 mod_pubsub/mod_pubsub_odbc.erl:3238
+#: mod_pubsub/mod_pubsub.erl:3483 mod_pubsub/mod_pubsub_odbc.erl:3296
 msgid "Specify the access model"
 msgstr "Sipecifyî l' modele d' accès"
 
-#: mod_pubsub/mod_pubsub.erl:3428 mod_pubsub/mod_pubsub_odbc.erl:3241
+#: mod_pubsub/mod_pubsub.erl:3486 mod_pubsub/mod_pubsub_odbc.erl:3299
 msgid "Roster groups allowed to subscribe"
 msgstr "Pårtaedjîs groupes di soçons k' on s' î pout abouner"
 
-#: mod_pubsub/mod_pubsub.erl:3429 mod_pubsub/mod_pubsub_odbc.erl:3242
+#: mod_pubsub/mod_pubsub.erl:3487 mod_pubsub/mod_pubsub_odbc.erl:3300
 msgid "Specify the publisher model"
 msgstr "Dinez l' modele d' eplaideu"
 
-#: mod_pubsub/mod_pubsub.erl:3431 mod_pubsub/mod_pubsub_odbc.erl:3244
+#: mod_pubsub/mod_pubsub.erl:3489 mod_pubsub/mod_pubsub_odbc.erl:3302
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
 
-#: mod_pubsub/mod_pubsub.erl:3432 mod_pubsub/mod_pubsub_odbc.erl:3245
+#: mod_pubsub/mod_pubsub.erl:3490 mod_pubsub/mod_pubsub_odbc.erl:3303
 #, fuzzy
 msgid "Specify the event message type"
 msgstr "Sipecifyî l' modele d' accès"
 
-#: mod_pubsub/mod_pubsub.erl:3434 mod_pubsub/mod_pubsub_odbc.erl:3247
+#: mod_pubsub/mod_pubsub.erl:3492 mod_pubsub/mod_pubsub_odbc.erl:3305
 msgid "Max payload size in bytes"
 msgstr "Contnou macsimom en octets"
 
-#: mod_pubsub/mod_pubsub.erl:3435 mod_pubsub/mod_pubsub_odbc.erl:3248
+#: mod_pubsub/mod_pubsub.erl:3493 mod_pubsub/mod_pubsub_odbc.erl:3306
 msgid "When to send the last published item"
 msgstr "Cwand evoyî l' dierin cayet eplaidî"
 
-#: mod_pubsub/mod_pubsub.erl:3437 mod_pubsub/mod_pubsub_odbc.erl:3250
+#: mod_pubsub/mod_pubsub.erl:3495 mod_pubsub/mod_pubsub_odbc.erl:3308
 msgid "Only deliver notifications to available users"
 msgstr "Seulmint evoyî des notifiaedje åzès uzeus disponibes"
 
-#: mod_pubsub/mod_pubsub.erl:3438 mod_pubsub/mod_pubsub_odbc.erl:3251
+#: mod_pubsub/mod_pubsub.erl:3496 mod_pubsub/mod_pubsub_odbc.erl:3309
 msgid "The collections with which a node is affiliated"
 msgstr ""
 
@@ -1190,14 +1249,10 @@ msgid "Choose a username and password to register with this server"
 msgstr ""
 "Tchoezixhoz on no d' uzeu eyet on scret po vs edjîstrer so ç' sierveu ci"
 
-#: mod_register.erl:230 mod_vcard.erl:358 mod_vcard_odbc.erl:336
-#: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
+#: mod_register.erl:230 mod_vcard.erl:364 mod_vcard_odbc.erl:342
+#: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "Uzeu"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr ""
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy
@@ -1209,120 +1264,123 @@ msgstr "li scret est"
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Les noveas uzeus n' si polèt nén edjîstrer si raddimint"
 
-#: mod_roster.erl:938 mod_roster_odbc.erl:1043 web/ejabberd_web_admin.erl:1699
-#: web/ejabberd_web_admin.erl:1884 web/ejabberd_web_admin.erl:1895
-#: web/ejabberd_web_admin.erl:2218
+#: mod_roster.erl:938 mod_roster_odbc.erl:1055 web/ejabberd_web_admin.erl:1701
+#: web/ejabberd_web_admin.erl:1886 web/ejabberd_web_admin.erl:1897
+#: web/ejabberd_web_admin.erl:2219
 msgid "None"
 msgstr "Nole"
 
-#: mod_roster.erl:945 mod_roster_odbc.erl:1050
+#: mod_roster.erl:945 mod_roster_odbc.erl:1062
 msgid "Subscription"
 msgstr "Abounmimnt"
 
-#: mod_roster.erl:946 mod_roster_odbc.erl:1051
+#: mod_roster.erl:946 mod_roster_odbc.erl:1063
 msgid "Pending"
 msgstr "Ratindant"
 
-#: mod_roster.erl:947 mod_roster_odbc.erl:1052
+#: mod_roster.erl:947 mod_roster_odbc.erl:1064
 msgid "Groups"
 msgstr "Groupes"
 
-#: mod_roster.erl:974 mod_roster_odbc.erl:1079
+#: mod_roster.erl:974 mod_roster_odbc.erl:1091
 msgid "Validate"
 msgstr "Valider"
 
-#: mod_roster.erl:982 mod_roster_odbc.erl:1087
+#: mod_roster.erl:982 mod_roster_odbc.erl:1099
 msgid "Remove"
 msgstr "Oister"
 
-#: mod_roster.erl:985 mod_roster_odbc.erl:1090
+#: mod_roster.erl:985 mod_roster_odbc.erl:1102
 msgid "Roster of "
 msgstr "Djivêye des soçons da "
 
-#: mod_roster.erl:988 mod_roster_odbc.erl:1093 mod_shared_roster.erl:897
-#: mod_shared_roster.erl:1006 web/ejabberd_web_admin.erl:834
+#: mod_roster.erl:988 mod_roster_odbc.erl:1105 mod_shared_roster.erl:902
+#: mod_shared_roster.erl:1011 mod_shared_roster_odbc.erl:931
+#: mod_shared_roster_odbc.erl:1040 web/ejabberd_web_admin.erl:834
 #: web/ejabberd_web_admin.erl:875 web/ejabberd_web_admin.erl:943
 #: web/ejabberd_web_admin.erl:979 web/ejabberd_web_admin.erl:1020
-#: web/ejabberd_web_admin.erl:1510 web/ejabberd_web_admin.erl:1759
-#: web/ejabberd_web_admin.erl:1930 web/ejabberd_web_admin.erl:2135
-#: web/ejabberd_web_admin.erl:2160
+#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1761
+#: web/ejabberd_web_admin.erl:1932 web/ejabberd_web_admin.erl:2136
+#: web/ejabberd_web_admin.erl:2161
 msgid "Bad format"
 msgstr "Mwais fôrmat"
 
-#: mod_roster.erl:995 mod_roster_odbc.erl:1100
+#: mod_roster.erl:995 mod_roster_odbc.erl:1112
 msgid "Add Jabber ID"
 msgstr "Radjouter èn ID Jabber"
 
-#: mod_roster.erl:1094 mod_roster_odbc.erl:1199
+#: mod_roster.erl:1094 mod_roster_odbc.erl:1211
 msgid "Roster"
 msgstr "Djivêye des soçons"
 
-#: mod_shared_roster.erl:852 mod_shared_roster.erl:894
-#: mod_shared_roster.erl:1002
+#: mod_shared_roster.erl:857 mod_shared_roster.erl:899
+#: mod_shared_roster.erl:1007 mod_shared_roster_odbc.erl:886
+#: mod_shared_roster_odbc.erl:928 mod_shared_roster_odbc.erl:1036
 msgid "Shared Roster Groups"
 msgstr "Pårtaedjîs groupes ezès djivêyes di soçons"
 
-#: mod_shared_roster.erl:890 web/ejabberd_web_admin.erl:1366
-#: web/ejabberd_web_admin.erl:2460
+#: mod_shared_roster.erl:895 mod_shared_roster_odbc.erl:924
+#: web/ejabberd_web_admin.erl:1365 web/ejabberd_web_admin.erl:2461
 msgid "Add New"
 msgstr "Radjouter"
 
-#: mod_shared_roster.erl:973
+#: mod_shared_roster.erl:978 mod_shared_roster_odbc.erl:1007
 msgid "Name:"
 msgstr "Pitit no:"
 
-#: mod_shared_roster.erl:978
+#: mod_shared_roster.erl:983 mod_shared_roster_odbc.erl:1012
 msgid "Description:"
 msgstr "Discrijhaedje:"
 
-#: mod_shared_roster.erl:986
+#: mod_shared_roster.erl:991 mod_shared_roster_odbc.erl:1020
 msgid "Members:"
 msgstr "Mimbes:"
 
-#: mod_shared_roster.erl:994
+#: mod_shared_roster.erl:999 mod_shared_roster_odbc.erl:1028
 msgid "Displayed Groups:"
 msgstr "Groupes håynés:"
 
-#: mod_shared_roster.erl:1003
+#: mod_shared_roster.erl:1008 mod_shared_roster_odbc.erl:1037
 msgid "Group "
 msgstr "Groupe "
 
-#: mod_shared_roster.erl:1012 web/ejabberd_web_admin.erl:840
-#: web/ejabberd_web_admin.erl:884 web/ejabberd_web_admin.erl:949
-#: web/ejabberd_web_admin.erl:1026 web/ejabberd_web_admin.erl:2015
+#: mod_shared_roster.erl:1017 mod_shared_roster_odbc.erl:1046
+#: web/ejabberd_web_admin.erl:840 web/ejabberd_web_admin.erl:884
+#: web/ejabberd_web_admin.erl:949 web/ejabberd_web_admin.erl:1026
+#: web/ejabberd_web_admin.erl:2017
 msgid "Submit"
 msgstr "Evoyî"
 
-#: mod_vcard.erl:165 mod_vcard_ldap.erl:237 mod_vcard_odbc.erl:129
+#: mod_vcard.erl:165 mod_vcard_ldap.erl:238 mod_vcard_odbc.erl:129
 msgid "Erlang Jabber Server"
 msgstr "Sierveu Jabber Erlang"
 
-#: mod_vcard.erl:358 mod_vcard.erl:472 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:448
+#: mod_vcard.erl:364 mod_vcard.erl:478 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:454
 msgid "Birthday"
 msgstr "Date d' askepiaedje"
 
-#: mod_vcard.erl:358 mod_vcard.erl:474 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:450
+#: mod_vcard.erl:364 mod_vcard.erl:480 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:456
 msgid "City"
 msgstr "Veye"
 
-#: mod_vcard.erl:358 mod_vcard.erl:473 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:449
+#: mod_vcard.erl:364 mod_vcard.erl:479 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:455
 msgid "Country"
 msgstr "Payis"
 
-#: mod_vcard.erl:358 mod_vcard.erl:475 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:451
+#: mod_vcard.erl:364 mod_vcard.erl:481 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:457
 msgid "Email"
 msgstr "Emile"
 
-#: mod_vcard.erl:358 mod_vcard.erl:470 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:446
+#: mod_vcard.erl:364 mod_vcard.erl:476 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:452
 msgid "Family Name"
 msgstr "No d' famile"
 
-#: mod_vcard.erl:358 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_odbc.erl:342
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
@@ -1330,52 +1388,52 @@ msgstr ""
 "Rimplixhoz les tchamps do formulaire po cweri èn uzeu Jabber (radjouter «*» "
 "al fén do tchamp po cweri tot l' minme kéne fén d' tchinne"
 
-#: mod_vcard.erl:358 mod_vcard.erl:467 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:443
+#: mod_vcard.erl:364 mod_vcard.erl:473 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:449
 msgid "Full Name"
 msgstr "No etir"
 
-#: mod_vcard.erl:358 mod_vcard.erl:469 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:445
+#: mod_vcard.erl:364 mod_vcard.erl:475 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:451
 msgid "Middle Name"
 msgstr "No do mitan"
 
-#: mod_vcard.erl:358 mod_vcard.erl:468 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:444 web/ejabberd_web_admin.erl:2004
+#: mod_vcard.erl:364 mod_vcard.erl:474 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:450 web/ejabberd_web_admin.erl:2006
 msgid "Name"
 msgstr "No"
 
-#: mod_vcard.erl:358 mod_vcard.erl:476 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:452
+#: mod_vcard.erl:364 mod_vcard.erl:482 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:458
 msgid "Organization Name"
 msgstr "No d' l' organizåcion"
 
-#: mod_vcard.erl:358 mod_vcard.erl:477 mod_vcard_odbc.erl:336
-#: mod_vcard_odbc.erl:453
+#: mod_vcard.erl:364 mod_vcard.erl:483 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:459
 msgid "Organization Unit"
 msgstr "Unité d' l' organizåcion"
 
-#: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "Search users in "
 msgstr "Cweri des uzeus dins "
 
-#: mod_vcard.erl:358 mod_vcard_ldap.erl:458 mod_vcard_odbc.erl:336
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "You need an x:data capable client to search"
 msgstr "Vos avoz mezåjhe d' on cliyint ki sopoite x:data po fé on cweraedje"
 
-#: mod_vcard.erl:383 mod_vcard_ldap.erl:483 mod_vcard_odbc.erl:361
+#: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
 msgid "vCard User Search"
 msgstr "Calpin des uzeus"
 
-#: mod_vcard.erl:439 mod_vcard_ldap.erl:537 mod_vcard_odbc.erl:415
+#: mod_vcard.erl:445 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:421
 msgid "ejabberd vCard module"
 msgstr "Module vCard ejabberd"
 
-#: mod_vcard.erl:463 mod_vcard_ldap.erl:547 mod_vcard_odbc.erl:439
+#: mod_vcard.erl:469 mod_vcard_ldap.erl:551 mod_vcard_odbc.erl:445
 msgid "Search Results for "
 msgstr "Rizultats do cweraedje po "
 
-#: mod_vcard_ldap.erl:458
+#: mod_vcard_ldap.erl:462
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Rimplixhoz les tchamps po cweri èn uzeu Jabber"
 
@@ -1436,7 +1494,7 @@ msgstr "Mostrer crexhince"
 msgid "Show Integral Table"
 msgstr "Mostrer totå"
 
-#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1937
+#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1939
 msgid "Statistics"
 msgstr "Sitatistikes"
 
@@ -1449,116 +1507,116 @@ msgstr "Nuk nén trové"
 msgid "Node not found"
 msgstr "Nuk nén trové"
 
-#: web/ejabberd_web_admin.erl:1461
+#: web/ejabberd_web_admin.erl:1460
 msgid "Host"
 msgstr "Sierveu"
 
-#: web/ejabberd_web_admin.erl:1462
+#: web/ejabberd_web_admin.erl:1461
 msgid "Registered Users"
 msgstr "Uzeus edjistrés"
 
-#: web/ejabberd_web_admin.erl:1574
+#: web/ejabberd_web_admin.erl:1573
 msgid "Offline Messages"
 msgstr "Messaedjes ki ratindèt"
 
-#: web/ejabberd_web_admin.erl:1575 web/ejabberd_web_admin.erl:1765
+#: web/ejabberd_web_admin.erl:1574 web/ejabberd_web_admin.erl:1767
 msgid "Last Activity"
 msgstr "Dierinne activité"
 
-#: web/ejabberd_web_admin.erl:1657 web/ejabberd_web_admin.erl:1673
+#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
 msgid "Registered Users:"
 msgstr "Uzeus edjistrés:"
 
-#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
-#: web/ejabberd_web_admin.erl:2191
+#: web/ejabberd_web_admin.erl:1661 web/ejabberd_web_admin.erl:1677
+#: web/ejabberd_web_admin.erl:2192
 msgid "Online Users:"
 msgstr "Uzeus raloyîs:"
 
-#: web/ejabberd_web_admin.erl:1661
+#: web/ejabberd_web_admin.erl:1663
 msgid "Outgoing s2s Connections:"
 msgstr "Raloyaedjes s2s e rexhowe:"
 
-#: web/ejabberd_web_admin.erl:1663
+#: web/ejabberd_web_admin.erl:1665
 msgid "Outgoing s2s Servers:"
 msgstr "Sierveus s2s e rexhowe:"
 
-#: web/ejabberd_web_admin.erl:1732 web/mod_register_web.erl:175
+#: web/ejabberd_web_admin.erl:1734 web/mod_register_web.erl:175
 #: web/mod_register_web.erl:372 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:411
 msgid "Change Password"
 msgstr "Candjî l' sicret"
 
-#: web/ejabberd_web_admin.erl:1756
+#: web/ejabberd_web_admin.erl:1758
 msgid "User "
 msgstr "Uzeu "
 
-#: web/ejabberd_web_admin.erl:1763
+#: web/ejabberd_web_admin.erl:1765
 msgid "Connected Resources:"
 msgstr "Raloyî avou les rsoûces:"
 
-#: web/ejabberd_web_admin.erl:1764 web/mod_register_web.erl:227
+#: web/ejabberd_web_admin.erl:1766 web/mod_register_web.erl:227
 #: web/mod_register_web.erl:519
 msgid "Password:"
 msgstr "Sicret:"
 
-#: web/ejabberd_web_admin.erl:1826
+#: web/ejabberd_web_admin.erl:1828
 msgid "No Data"
 msgstr "Nole dinêye disponibe"
 
-#: web/ejabberd_web_admin.erl:1904
+#: web/ejabberd_web_admin.erl:1906
 msgid "Nodes"
 msgstr "Nuks"
 
-#: web/ejabberd_web_admin.erl:1927 web/ejabberd_web_admin.erl:1949
+#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1951
 msgid "Node "
 msgstr "Nuk "
 
-#: web/ejabberd_web_admin.erl:1936
+#: web/ejabberd_web_admin.erl:1938
 msgid "Listened Ports"
 msgstr "Pôrts drovous"
 
-#: web/ejabberd_web_admin.erl:1938 web/ejabberd_web_admin.erl:2259
-#: web/ejabberd_web_admin.erl:2447
+#: web/ejabberd_web_admin.erl:1940 web/ejabberd_web_admin.erl:2260
+#: web/ejabberd_web_admin.erl:2448
 msgid "Update"
 msgstr "Mete a djoû"
 
-#: web/ejabberd_web_admin.erl:1941 web/ejabberd_web_admin.erl:2568
+#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2569
 msgid "Restart"
 msgstr "Renonder"
 
-#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2570
+#: web/ejabberd_web_admin.erl:1945 web/ejabberd_web_admin.erl:2571
 msgid "Stop"
 msgstr "Arester"
 
-#: web/ejabberd_web_admin.erl:1957
+#: web/ejabberd_web_admin.erl:1959
 msgid "RPC Call Error"
 msgstr "Aroke di houcaedje RPC"
 
-#: web/ejabberd_web_admin.erl:1998
+#: web/ejabberd_web_admin.erl:2000
 msgid "Database Tables at "
 msgstr "Tåves del båze di dnêyes so "
 
-#: web/ejabberd_web_admin.erl:2005
+#: web/ejabberd_web_admin.erl:2007
 msgid "Storage Type"
 msgstr "Sôre di wårdaedje"
 
-#: web/ejabberd_web_admin.erl:2006
+#: web/ejabberd_web_admin.erl:2008
 msgid "Elements"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2007
+#: web/ejabberd_web_admin.erl:2009
 msgid "Memory"
 msgstr "Memwere"
 
-#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2136
+#: web/ejabberd_web_admin.erl:2032 web/ejabberd_web_admin.erl:2137
 msgid "Error"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2033
+#: web/ejabberd_web_admin.erl:2034
 msgid "Backup of "
 msgstr "Copeye di såvrité po "
 
-#: web/ejabberd_web_admin.erl:2035
+#: web/ejabberd_web_admin.erl:2036
 #, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
@@ -1570,146 +1628,146 @@ msgstr ""
 "båze di dnêyes avou l' module ODBC, vos dvoz fé ene copeye di såvrité del "
 "båze SQL da vosse sepårumint."
 
-#: web/ejabberd_web_admin.erl:2040
+#: web/ejabberd_web_admin.erl:2041
 msgid "Store binary backup:"
 msgstr "Copeye di såvrité binaire:"
 
-#: web/ejabberd_web_admin.erl:2044 web/ejabberd_web_admin.erl:2051
-#: web/ejabberd_web_admin.erl:2059 web/ejabberd_web_admin.erl:2066
-#: web/ejabberd_web_admin.erl:2073 web/ejabberd_web_admin.erl:2080
-#: web/ejabberd_web_admin.erl:2087 web/ejabberd_web_admin.erl:2095
-#: web/ejabberd_web_admin.erl:2102 web/ejabberd_web_admin.erl:2109
+#: web/ejabberd_web_admin.erl:2045 web/ejabberd_web_admin.erl:2052
+#: web/ejabberd_web_admin.erl:2060 web/ejabberd_web_admin.erl:2067
+#: web/ejabberd_web_admin.erl:2074 web/ejabberd_web_admin.erl:2081
+#: web/ejabberd_web_admin.erl:2088 web/ejabberd_web_admin.erl:2096
+#: web/ejabberd_web_admin.erl:2103 web/ejabberd_web_admin.erl:2110
 msgid "OK"
 msgstr "'l est bon"
 
-#: web/ejabberd_web_admin.erl:2047
+#: web/ejabberd_web_admin.erl:2048
 msgid "Restore binary backup immediately:"
 msgstr "Rapexhî do côp foû d' ene copeye di såvrité binaire:"
 
-#: web/ejabberd_web_admin.erl:2055
+#: web/ejabberd_web_admin.erl:2056
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Rapexhî l' copeye di såvrité binaire après l' renondaedje ki vént "
 "d' ejabberd (çoula prind moens d' memwere del fé insi):"
 
-#: web/ejabberd_web_admin.erl:2062
+#: web/ejabberd_web_admin.erl:2063
 msgid "Store plain text backup:"
 msgstr "Copeye di såvrité tecse:"
 
-#: web/ejabberd_web_admin.erl:2069
+#: web/ejabberd_web_admin.erl:2070
 msgid "Restore plain text backup immediately:"
 msgstr "Rapexhî do côp foû d' ene copeye di såvrité tecse:"
 
-#: web/ejabberd_web_admin.erl:2076
+#: web/ejabberd_web_admin.erl:2077
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2083
+#: web/ejabberd_web_admin.erl:2084
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2090
+#: web/ejabberd_web_admin.erl:2091
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2098
+#: web/ejabberd_web_admin.erl:2099
 #, fuzzy
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Sititchî des uzeus Jabberd 1.4"
 
-#: web/ejabberd_web_admin.erl:2105
+#: web/ejabberd_web_admin.erl:2106
 #, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Sititchî des uzeus Jabberd 1.4"
 
-#: web/ejabberd_web_admin.erl:2131
+#: web/ejabberd_web_admin.erl:2132
 msgid "Listened Ports at "
 msgstr "Pôrts drovous so "
 
-#: web/ejabberd_web_admin.erl:2156
+#: web/ejabberd_web_admin.erl:2157
 msgid "Modules at "
 msgstr "Modules so "
 
-#: web/ejabberd_web_admin.erl:2182
+#: web/ejabberd_web_admin.erl:2183
 msgid "Statistics of ~p"
 msgstr "Sitatistikes di ~p"
 
-#: web/ejabberd_web_admin.erl:2185
+#: web/ejabberd_web_admin.erl:2186
 msgid "Uptime:"
 msgstr "Tins dispoy l' enondaedje:"
 
-#: web/ejabberd_web_admin.erl:2188
+#: web/ejabberd_web_admin.erl:2189
 msgid "CPU Time:"
 msgstr "Tins CPU:"
 
-#: web/ejabberd_web_admin.erl:2194
+#: web/ejabberd_web_admin.erl:2195
 msgid "Transactions Committed:"
 msgstr "Transaccions evoyeyes:"
 
-#: web/ejabberd_web_admin.erl:2197
+#: web/ejabberd_web_admin.erl:2198
 msgid "Transactions Aborted:"
 msgstr "Transaccions arestêyes:"
 
-#: web/ejabberd_web_admin.erl:2200
+#: web/ejabberd_web_admin.erl:2201
 msgid "Transactions Restarted:"
 msgstr "Transaccions renondêyes:"
 
-#: web/ejabberd_web_admin.erl:2203
+#: web/ejabberd_web_admin.erl:2204
 msgid "Transactions Logged:"
 msgstr "Transaccions wårdêyes e djournå:"
 
-#: web/ejabberd_web_admin.erl:2245
+#: web/ejabberd_web_admin.erl:2246
 msgid "Update "
 msgstr "Metaedje a djoû "
 
-#: web/ejabberd_web_admin.erl:2253
+#: web/ejabberd_web_admin.erl:2254
 msgid "Update plan"
 msgstr "Plan d' metaedje a djoû"
 
-#: web/ejabberd_web_admin.erl:2254
+#: web/ejabberd_web_admin.erl:2255
 #, fuzzy
 msgid "Modified modules"
 msgstr "Modules metous a djoû"
 
-#: web/ejabberd_web_admin.erl:2255
+#: web/ejabberd_web_admin.erl:2256
 msgid "Update script"
 msgstr "Sicripe di metaedje a djoû"
 
-#: web/ejabberd_web_admin.erl:2256
+#: web/ejabberd_web_admin.erl:2257
 msgid "Low level update script"
 msgstr "Sicripe di metaedje a djoû d' bas livea"
 
-#: web/ejabberd_web_admin.erl:2257
+#: web/ejabberd_web_admin.erl:2258
 msgid "Script check"
 msgstr "Acertinaedje do scripe"
 
-#: web/ejabberd_web_admin.erl:2425
+#: web/ejabberd_web_admin.erl:2426
 msgid "Port"
 msgstr "Pôrt"
 
-#: web/ejabberd_web_admin.erl:2426
+#: web/ejabberd_web_admin.erl:2427
 msgid "IP"
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2427
+#: web/ejabberd_web_admin.erl:2428
 #, fuzzy
 msgid "Protocol"
 msgstr "Pôrt"
 
-#: web/ejabberd_web_admin.erl:2428 web/ejabberd_web_admin.erl:2555
+#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
 msgid "Module"
 msgstr "Module"
 
-#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
+#: web/ejabberd_web_admin.erl:2430 web/ejabberd_web_admin.erl:2557
 msgid "Options"
 msgstr "Tchuzes"
 
-#: web/ejabberd_web_admin.erl:2449
+#: web/ejabberd_web_admin.erl:2450
 msgid "Delete"
 msgstr "Disfacer"
 
-#: web/ejabberd_web_admin.erl:2578
+#: web/ejabberd_web_admin.erl:2579
 msgid "Start"
 msgstr "Enonder"
 

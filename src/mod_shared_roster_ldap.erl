@@ -329,10 +329,13 @@ eldap_search(State, FilterParseArgs, AttributesList) ->
             []
     end.
 
-get_user_displayed_groups({_User, Host}) ->
+get_user_displayed_groups({User, Host}) ->
     {ok, State} = eldap_utils:get_state(Host, ?MODULE),
     GroupAttr = State#state.group_attr,
-    Entries = eldap_search(State, [State#state.rfilter], [GroupAttr]),
+    Entries = eldap_search(
+                State,
+                [eldap_filter:do_sub(State#state.rfilter, [{"%u", User}])],
+                [GroupAttr]),
     Reply = lists:flatmap(
 	      fun(#eldap_entry{attributes = Attrs}) ->
 		      case Attrs of

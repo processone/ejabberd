@@ -1,5 +1,5 @@
---- mod_pubsub.erl	2012-01-03 15:02:46.000000000 +0100
-+++ mod_pubsub_odbc.erl	2012-02-08 21:11:14.874000001 +0100
+--- mod_pubsub.erl	2012-04-26 16:29:53.653392761 +0200
++++ mod_pubsub_odbc.erl	2012-04-26 16:29:53.616726238 +0200
 @@ -42,7 +42,7 @@
  %%% 6.2.3.1, 6.2.3.5, and 6.3. For information on subscription leases see
  %%% XEP-0060 section 12.18.
@@ -710,7 +710,7 @@
  	    end
      end;
  send_items(Host, Node, NodeId, Type, {U,S,R} = LJID, Number) ->
-@@ -2546,7 +2331,8 @@
+@@ -2580,7 +2365,8 @@
  	error ->
  	    {error, ?ERR_BAD_REQUEST};
  	_ ->
@@ -720,7 +720,7 @@
  			case lists:member(Owner, Owners) of
  			    true ->
  				OwnerJID = jlib:make_jid(Owner),
-@@ -2556,24 +2342,7 @@
+@@ -2590,24 +2376,7 @@
  				    end,
  				lists:foreach(
  				    fun({JID, Affiliation}) ->
@@ -746,7 +746,7 @@
  				    end, FilteredEntities),
  				{result, []};
  			    _ ->
-@@ -2626,9 +2395,9 @@
+@@ -2660,9 +2429,9 @@
      end.
  
  read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
@@ -758,7 +758,7 @@
  	    OptionsEl = {xmlelement, "options", [{"jid", jlib:jid_to_string(Subscriber)},
  						 {"subid", SubID}|nodeAttr(Node)],
  			 [XdataEl]},
-@@ -2660,7 +2429,7 @@
+@@ -2694,7 +2463,7 @@
      end.
  
  set_options_helper(Configuration, JID, NodeID, SubID, Type) ->
@@ -767,7 +767,7 @@
  	{result, GoodSubOpts} -> GoodSubOpts;
  	_ -> invalid
      end,
-@@ -2859,8 +2628,8 @@
+@@ -2893,8 +2662,8 @@
  				     {"subscription", subscription_to_string(Sub)} | nodeAttr(Node)], []}]}]},
  		ejabberd_router:route(service_jid(Host), jlib:make_jid(JID), Stanza)
  	    end,
@@ -778,7 +778,7 @@
  				true ->
  				    Result = lists:foldl(fun({JID, Subscription, SubId}, Acc) ->
  
-@@ -3223,7 +2992,7 @@
+@@ -3257,7 +3026,7 @@
  	    Collection = tree_call(Host, get_parentnodes_tree, [Host, Node, service_jid(Host)]),
  	    {result, [{Depth, [{N, sub_with_options(N)} || N <- Nodes]} || {Depth, Nodes} <- Collection]}
  	end,
@@ -787,7 +787,7 @@
  	{result, CollSubs} -> subscribed_nodes_by_jid(NotifyType, CollSubs);
  	_ -> []
      end.
-@@ -3292,8 +3061,8 @@
+@@ -3326,8 +3095,8 @@
  	    []
      end.
  sub_with_options(JID, NodeId, SubId) ->
@@ -798,7 +798,7 @@
  	_ -> {JID, SubId, []}
      end.
  
-@@ -3369,6 +3138,30 @@
+@@ -3403,6 +3172,30 @@
  	    Result
      end.
  
@@ -829,7 +829,7 @@
  %% @spec (Host, Options) -> MaxItems
  %%	 Host = host()
  %%	 Options = [Option]
-@@ -3765,7 +3558,13 @@
+@@ -3799,7 +3592,13 @@
  tree_action(Host, Function, Args) ->
      ?DEBUG("tree_action ~p ~p ~p",[Host,Function,Args]),
      Fun = fun() -> tree_call(Host, Function, Args) end,
@@ -844,7 +844,7 @@
  
  %% @doc <p>node plugin call.</p>
  node_call(Type, Function, Args) ->
-@@ -3785,13 +3584,13 @@
+@@ -3819,13 +3618,13 @@
  
  node_action(Host, Type, Function, Args) ->
      ?DEBUG("node_action ~p ~p ~p ~p",[Host,Type,Function,Args]),
@@ -860,7 +860,7 @@
  			case tree_call(Host, get_node, [Host, Node]) of
  			    N when is_record(N, pubsub_node) ->
  				case Action(N) of
-@@ -3803,13 +3602,19 @@
+@@ -3837,13 +3636,19 @@
  				Error
  			end
  		end, Trans).
@@ -884,7 +884,7 @@
  	{result, Result} -> {result, Result};
  	{error, Error} -> {error, Error};
  	{atomic, {result, Result}} -> {result, Result};
-@@ -3817,6 +3622,15 @@
+@@ -3851,6 +3656,15 @@
  	{aborted, Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -900,7 +900,7 @@
  	{'EXIT', Reason} ->
  	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
  	    {error, ?ERR_INTERNAL_SERVER_ERROR};
-@@ -3825,6 +3639,17 @@
+@@ -3859,6 +3673,17 @@
  	    {error, ?ERR_INTERNAL_SERVER_ERROR}
      end.
  

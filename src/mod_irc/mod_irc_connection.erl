@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/7, start/8, route_chan/4, route_nick/3]).
+-export([start_link/8, start/9, route_chan/4, route_nick/3]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -51,7 +51,7 @@
 -record(state, {socket, encoding, port, password,
 		queue, user, host, server, nick,
 		channels = dict:new(),
-		nickchannel,
+		nickchannel, mod,
 		inbuf = "", outbuf = ""}).
 
 %-define(DBGFSM, true).
@@ -65,13 +65,13 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(From, Host, ServerHost, Server, Username, Encoding, Port, Password) ->
+start(From, Host, ServerHost, Server, Username, Encoding, Port, Password, Mod) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_irc_sup),
     supervisor:start_child(
-      Supervisor, [From, Host, Server, Username, Encoding, Port, Password]).
+      Supervisor, [From, Host, Server, Username, Encoding, Port, Password, Mod]).
 
-start_link(From, Host, Server, Username, Encoding, Port, Password) ->
-    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding, Port, Password],
+start_link(From, Host, Server, Username, Encoding, Port, Password, Mod) ->
+    gen_fsm:start_link(?MODULE, [From, Host, Server, Username, Encoding, Port, Password, Mod],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -85,9 +85,10 @@ start_link(From, Host, Server, Username, Encoding, Port, Password) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([From, Host, Server, Username, Encoding, Port, Password]) ->
+init([From, Host, Server, Username, Encoding, Port, Password, Mod]) ->
     gen_fsm:send_event(self(), init),
     {ok, open_socket, #state{queue = queue:new(),
+                             mod = Mod,
 			     encoding = Encoding,
 			     port = Port,
 			     password = Password,
@@ -205,6 +206,31 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 		StateData#state{outbuf = StateData#state.outbuf ++ S}
 	end).
 
+get_password_from_presence({xmlelement, "presence", _Attrs, Els}) ->
+	case lists:filter(fun(El) ->
+			case El of
+			    {xmlelement, "x", Attrs, _Els} ->
+				case xml:get_attr_s("xmlns", Attrs) of
+				    ?NS_MUC ->
+					true;
+				    _ ->
+					false
+				end;
+			    _ ->
+				false
+			end
+		end, Els) of
+	    [ElXMUC | _] ->
+		case xml:get_subtag(ElXMUC, "password") of
+		    {xmlelement, "password", _, _} = PasswordTag ->
+			{true, xml:get_tag_cdata(PasswordTag)};
+		    _ ->
+			false
+		end;
+	    _ ->
+	    false
+	end.
+
 %%----------------------------------------------------------------------
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
@@ -212,7 +238,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({route_chan, Channel, Resource,
-	     {xmlelement, "presence", Attrs, _Els}},
+	     {xmlelement, "presence", Attrs, _Els} = Presence},
 	    StateName, StateData) ->
     NewStateData =
 	case xml:get_attr_s("type", Attrs) of
@@ -246,7 +272,12 @@ handle_info({route_chan, Channel, Resource,
 		    true ->
 			S1;
 		    _ ->
-			S2 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel])),
+			case get_password_from_presence(Presence) of
+				{true, Password} ->
+				S2 = ?SEND(io_lib:format("JOIN #~s ~s\r\n", [Channel, Password]));
+				_ ->
+				S2 = ?SEND(io_lib:format("JOIN #~s\r\n", [Channel]))
+			end,
 			S2#state{channels =
 				 dict:store(Channel, ?SETS:new(),
 					    S1#state.channels)}
@@ -651,9 +682,9 @@ terminate(_Reason, _StateName, FullStateData) ->
 	      [{xmlcdata, "Server Connect Failed"}]},
 	     FullStateData}
 	end,
-    mod_irc:closed_connection(StateData#state.host,
-			      StateData#state.user,
-			      StateData#state.server),
+    (FullStateData#state.mod):closed_connection(StateData#state.host,
+                                                StateData#state.user,
+                                                StateData#state.server),
     bounce_messages("Server Connect Failed"),
     lists:foreach(
       fun(Chan) ->
