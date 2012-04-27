@@ -66,6 +66,7 @@
 		last_receiver,
 		last_poll,
 		http_receiver,
+		out_of_order_receiver = false,
 		wait_timer,
 		ctime = 0,
 		timer,
@@ -372,6 +373,11 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
     Output = [Packet | StateData#state.output],
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
+handle_sync_event({send_xml, Packet}, _From, StateName,
+		  #state{out_of_order_receiver = true} = StateData) ->
+    Output = [Packet | StateData#state.output],
+    Reply = ok,
+    {reply, Reply, StateName, StateData#state{output = Output}};
 handle_sync_event({send_xml, Packet}, _From, StateName, StateData) ->
     Output = [Packet | StateData#state.output],
     cancel_timer(StateData#state.timer),
@@ -440,9 +446,9 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
     TNow = tnow(),
     if
 	(Hold > 0) and
-	(StateData#state.output == []) and
+	((StateData#state.output == []) or (StateData#state.rid < Rid)) and
 	((TNow - StateData#state.ctime) < (Wait*1000*1000)) and
-	(StateData#state.rid == Rid) and
+	(StateData#state.rid =< Rid) and
 	(StateData#state.input /= cancel) and
         (StateData#state.pause == 0) ->
 	    WaitTimer = erlang:start_timer(Wait * 1000, self(), []),
@@ -450,6 +456,7 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 	    cancel_timer(StateData#state.timer),
 	    {next_state, StateName, StateData#state{
 				      http_receiver = From,
+				      out_of_order_receiver = StateData#state.rid < Rid,
 				      wait_timer = WaitTimer,
 				      timer = undefined}};
 	(StateData#state.input == cancel) ->
@@ -587,10 +594,11 @@ handle_http_put_event(#http_put{rid = Rid, attrs = Attrs,
 	    UnprocessedReqList = [Request | Requests],
 	    cancel_timer(StateData#state.timer),
 	    Timer = set_inactivity_timer(0, StateData#state.max_inactivity),
-	    {reply, buffered, StateName,
-	     StateData#state{unprocessed_req_list = UnprocessedReqList,
-			     req_list = ReqList,
-			     timer = Timer}};
+	    {reply, ok, StateName,
+             StateData#state{unprocessed_req_list = UnprocessedReqList,
+                             req_list = ReqList,
+                             timer = Timer}, hibernate};
+
 	_ ->
 	    %% Request is in sequence:
 	    process_http_put(Request, StateName, StateData, RidAllow)
@@ -794,8 +802,6 @@ handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
             %     {"type", "error"}], []})};
             handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize,
 			    StreamStart, IP);
-        {buffered, _Sess} ->
-            {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
         {ok, Sess} ->
             prepare_response(Sess, Rid, [], StreamStart)
     end.
