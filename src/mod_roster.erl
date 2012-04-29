@@ -598,7 +598,7 @@ get_subscription_lists(_, LUser, LServer, mnesia) ->
 	Items when is_list(Items) ->
             Items;
 	_ ->
-	    {[], []}
+            []
     end;
 get_subscription_lists(_, LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
