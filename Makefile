@@ -9,13 +9,13 @@ EJD_MIB = $(EJABBERD_DIR)/mibs
 
 all: deps compile
 
-compile: generate_snmp_header
+compile: rebar generate_snmp_header
 	./rebar compile
 
-deps: generate_snmp_header
+deps: rebar generate_snmp_header
 	./rebar get-deps
 
-clean:
+clean: rebar
 	./rebar clean
 
 test: test/Makefile
@@ -27,10 +27,10 @@ test/Makefile:
 show_test_results:
 	$$BROWSER `ls -td test/ct_report/ct_run.test@*/index.html | head -n 1` & disown
 
-eunit:
+eunit: rebar
 	./rebar skip_deps=true eunit
 
-rel: deps
+rel: rebar deps
 	./rebar compile generate -f
 
 generate_snmp_header: apps/ejabberd/include/EJABBERD-MIB.hrl
@@ -62,3 +62,8 @@ dialyzer: compile
 
 cleanplt:
 	rm $(COMBO_PLT)
+
+rebar:
+	wget -q http://cloud.github.com/downloads/basho/rebar/rebar
+	chmod u+x rebar
+
