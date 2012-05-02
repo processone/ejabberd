@@ -1,0 +1,192 @@
+#!/usr/bin/env escript
+-module(fprof_graph).
+
+-export([main/1]).
+
+-record(state, {totalCount=0, totalAcc=0, totalOwn=0, ids=0, seen, hot, links}).
+
+-record(function, {id, count=0, acc=0, own=0}).
+
+-define(THRESHOLD, 0.001).
+-define(BASE_SIZE, 6).
+
+main([Fprof, Output]) ->
+    check_dot(),
+
+    TmpFile = string:strip(os:cmd("mktemp -t " ?MODULE_STRING ".XXXX"), both, $\n),
+    {ok, Fd} = file:open(TmpFile, [write]),
+
+    io:format(Fd, "digraph \"analysis\" {~n", []),
+    io:format(Fd, "  node [shape=box];~n", []),
+    {ok, Terms} = file:consult(Fprof),
+    State = grok(Fd, Terms, #state{hot=dict:new(),
+                                   seen=dict:new(),
+                                   links=dict:new()}),
+    {LowestPercent, HighestPercent} = find_range(State),
+    State2 = dict:fold(fun(K, V, S) ->
+                               define_nodes(Fd, K, V, S, LowestPercent, HighestPercent)
+                       end,
+                       State, State#state.seen),
+    LineMax = find_line_max(State2#state.links),
+    io:format(Fd, "  // LineMax=~p~n", [LineMax]),
+    draw_links(Fd, State2, LineMax),
+    io:format(Fd, "}~n", []),
+
+    ok = file:close(Fd),
+    os:cmd(io_lib:format("dot -Tsvg -o~p ~p", [Output, TmpFile])),
+    ok = file:delete(TmpFile);
+main(_) ->
+    io:format("Usage: ./fprof_graph $FPROF_OUTPUT_FILE $OUTPUT_FILE~n", []).
+
+check_dot() ->
+    case os:cmd("dot -V") of
+        "dot " ++ _ ->
+            ok;
+        _Else ->
+            erlang:error("dot was not found, please install graphviz",[])
+    end.
+
+name_bin({M,F,A}) ->
+    iolist_to_binary([atom_to_list(M), ":", atom_to_list(F), "/", integer_to_list(A)]);
+name_bin(N) -> iolist_to_binary(atom_to_list(N)).
+
+maybe_link_seen(SomeFun, Nid, D) ->
+    case dict:is_key(SomeFun, D) of
+        true ->
+            {Nid, D};
+        _ ->
+            {Nid+1, dict:store(SomeFun, Nid+1, D)}
+    end.
+
+record_one(Callers, {Name, Count, Acc, Own}, Callees, State) ->
+    {NextId, NextSeen} = lists:foldl(fun({SomeFun,_,_,_}, {Nid, D}) ->
+                                             maybe_link_seen(SomeFun, Nid, D);
+                                        (SomeFun, {Nid, D}) ->
+                                             maybe_link_seen(SomeFun, Nid, D)
+                                     end,
+                                     {State#state.ids, State#state.seen},
+                                     [Name] ++ Callers ++ Callees),
+
+    Newd = dict:update(Name,
+                       fun(#function{count=CCount, acc=CAcc, own=COwn}) ->
+                               #function{count=CCount + Count,
+                                         acc=CAcc + Acc, own=COwn + Own}
+                       end,
+                       #function{id=State#state.ids, count=Count, acc=Acc, own=Own},
+                       State#state.hot),
+
+
+    InLinks = lists:foldl(fun({Caller, CCount, CAcc, COwn}, D) ->
+                                  dict:update({Caller, Name},
+                                              fun({ICount, IAcc, IOwn}) ->
+                                                      {ICount + CCount,
+                                                       IAcc + CAcc,
+                                                       IOwn + COwn}
+                                              end,
+                                              {CCount, CAcc, COwn},
+                                              D)
+                          end, State#state.links, Callers),
+
+    OutLinks = lists:foldl(fun({Callee, CCount, CAcc, COwn}, D) ->
+                                  dict:update({Name, Callee},
+                                              fun({ICount, IAcc, IOwn}) ->
+                                                      {ICount + CCount,
+                                                       IAcc + CAcc,
+                                                       IOwn + COwn}
+                                              end,
+                                              {CCount, CAcc, COwn},
+                                              D)
+                          end, InLinks, Callees),
+
+    State#state{hot=Newd, ids=NextId, seen=NextSeen, links=OutLinks}.
+
+display_function(Fd, Callers, {Name, Count, Acc, Own}=Self, Callees, State) ->
+    Marker = case (Own / State#state.totalOwn) > ?THRESHOLD of
+                 true -> "(*)";
+                 _ -> ""
+             end,
+    io:format(Fd, "//   function~s: ~s (~p, ~p, ~p)~n", [Marker, name_bin(Name), Count, Acc, Own]),
+    case (Own / State#state.totalOwn) > ?THRESHOLD of
+        true -> record_one(Callers, Self, Callees, State);
+        _ -> State
+    end.
+
+grok(_, [], State) -> State;
+grok(Fd, [{analysis_options, Options}|Tl], State) ->
+    io:format(Fd, "// Enabled options:  ~p~n", [Options]),
+    grok(Fd, Tl, State);
+grok(Fd, [[{totals, TotalCount, TotalAcc, TotalOwn}]|Tl], OldState) ->
+    io:format(Fd, "// Totals:  Count: ~p, Acc: ~p, Own: ~p~n",
+              [TotalCount, TotalAcc, TotalOwn]),
+    grok(Fd, Tl, OldState#state{totalCount=TotalCount,
+                                totalAcc=TotalAcc,
+                                totalOwn=TotalOwn});
+grok(Fd, [[{_Pid, _Count, _Acc, _Own},
+           {spawned_by, _PPid},
+           {spawned_as, { Module, Function, Args}},
+           {initial_calls, _InitialCalls }]|Tl], State) ->
+    io:format(Fd, "// Got a process:  ~p:~p/~p~n", [Module, Function, length(Args)]),
+    grok(Fd, Tl, State);
+grok(Fd, [{Callers, Me, Callees}|Tl], State) ->
+    grok(Fd, Tl, display_function(Fd, Callers, Me, Callees, State));
+grok(Fd, [Hd|Tl], State) ->
+    io:format(Fd, " /* junk unknown:~n~p~n */~n", [Hd]),
+    grok(Fd, Tl, State).
+
+define_nodes(Fd, Name, Id, State, MinPercent, MaxPercent) ->
+    case dict:find(Name, State#state.hot) of
+        {ok, Func} ->
+            Percent = (Func#function.own * 100) / State#state.totalOwn,
+            Extra = case (range_map(Percent, MinPercent, MaxPercent, 0, 100) > 50) of
+                        true -> ",color=red";
+                        _ -> ""
+                    end,
+            io:format(Fd, "  N~p [label=\"~s\\n(~p calls, ~.2f%)\",fontsize=~.2f~s];~n",
+                      [Id, name_bin(Name), Func#function.count, Percent,
+                       range_map(Percent, MinPercent, MaxPercent, 8, 48),
+                       Extra]);
+        error ->
+            Shape = case Name of
+                        {_M, _F, _A} -> "oval";
+                        _ -> "pentagon"
+                    end,
+            io:format(Fd, "  N~p [label=\"~s\",fontsize=8,shape=~p]; // not hot~n",
+                      [Id, name_bin(Name), Shape])
+    end,
+    State.
+
+get_id({Func, _, _, _}, D) ->
+    dict:fetch(Func, D);
+get_id(Func, D) ->
+    dict:fetch(Func, D).
+
+range_map(Val, FromLow, FromHigh, ToLow, ToHigh) ->
+    (Val - FromLow) * (ToHigh - ToLow) / (FromHigh - FromLow) + ToLow.
+
+draw_links(Fd, State, LineMax) ->
+    dict:fold(fun({From, To}, {_CCount, _CAcc, COwn}, _) ->
+                      FromId = get_id(From, State#state.seen),
+                      ToId = get_id(To, State#state.seen),
+                      LineWidth = range_map(COwn, 0, LineMax, 0.5, 7),
+                      Extra = case (LineWidth >= 4) of
+                                  true -> " color=red,";
+                                  _ -> ""
+                              end,
+                      io:format(Fd, "  N~p -> N~p [label=~p,~s style=\"setlinewidth(~.2f)\"];~n",
+                                [FromId, ToId, COwn, Extra, LineWidth])
+              end, ok, State#state.links),
+    State.
+
+find_range(State) ->
+    Total = State#state.totalOwn,
+    dict:fold(fun(_, V, {L,H}) ->
+                      X = (V#function.own * 100) / Total,
+                      {min(L, X), max(H, X)}
+              end,
+              {100, 0},
+              State#state.hot).
+
+find_line_max(D) ->
+    lists:max(lists:flatten(
+                lists:map(fun({_, {_, _, C}}) -> C end,
+                          dict:to_list(D)))).
