@@ -1,10 +1,10 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_applepush.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Push module support 
+%%% Purpose : Push module support
 %%% Created :  5 Jun 2009 by Alexey Shchepin <alexey@process-one.net>
 %%%
-%%% ejabberd, Copyright (C) 2002-2009   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2012   ProcessOne
 %%%----------------------------------------------------------------------
 
 -module(mod_applepush).
