@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_vcard.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Vcard management in Mnesia
+%%% Purpose : Vcard management
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -61,25 +61,32 @@
 -define(PROCNAME, ejabberd_mod_vcard).
 
 start(Host, Opts) ->
-    mnesia:create_table(vcard, [{disc_only_copies, [node()]},
-				{attributes, record_info(fields, vcard)}]),
-    mnesia:create_table(vcard_search,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, vcard_search)}]),
-    update_tables(),
-    mnesia:add_table_index(vcard_search, luser),
-    mnesia:add_table_index(vcard_search, lfn),
-    mnesia:add_table_index(vcard_search, lfamily),
-    mnesia:add_table_index(vcard_search, lgiven),
-    mnesia:add_table_index(vcard_search, lmiddle),
-    mnesia:add_table_index(vcard_search, lnickname),
-    mnesia:add_table_index(vcard_search, lbday),
-    mnesia:add_table_index(vcard_search, lctry),
-    mnesia:add_table_index(vcard_search, llocality),
-    mnesia:add_table_index(vcard_search, lemail),
-    mnesia:add_table_index(vcard_search, lorgname),
-    mnesia:add_table_index(vcard_search, lorgunit),
-
+    case gen_mod:db_type(Opts) of
+        mnesia ->
+            mnesia:create_table(vcard,
+                                [{disc_only_copies, [node()]},
+                                 {attributes,
+                                  record_info(fields, vcard)}]),
+            mnesia:create_table(vcard_search,
+                                [{disc_copies, [node()]},
+                                 {attributes,
+                                  record_info(fields, vcard_search)}]),
+            update_tables(),
+            mnesia:add_table_index(vcard_search, luser),
+            mnesia:add_table_index(vcard_search, lfn),
+            mnesia:add_table_index(vcard_search, lfamily),
+            mnesia:add_table_index(vcard_search, lgiven),
+            mnesia:add_table_index(vcard_search, lmiddle),
+            mnesia:add_table_index(vcard_search, lnickname),
+            mnesia:add_table_index(vcard_search, lbday),
+            mnesia:add_table_index(vcard_search, lctry),
+            mnesia:add_table_index(vcard_search, llocality),
+            mnesia:add_table_index(vcard_search, lemail),
+            mnesia:add_table_index(vcard_search, lorgname),
+            mnesia:add_table_index(vcard_search, lorgunit);
+        _ ->
+            ok
+    end,
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
@@ -183,19 +190,45 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 	    end;
 	get ->
 	    #jid{luser = LUser, lserver = LServer} = To,
-	    US = {LUser, LServer},
-	    F = fun() ->
-			mnesia:read({vcard, US})
-		end,
-	    Els = case mnesia:transaction(F) of
-		      {atomic, Rs} ->
-			  lists:map(fun(R) ->
-					    R#vcard.vcard
-				    end, Rs);
-		      {aborted, _Reason} ->
-			  []
-		  end,
-	    IQ#iq{type = result, sub_el = Els}
+            case get_vcard(LUser, LServer) of
+                error ->
+                    IQ#iq{type = error,
+			  sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+                Els ->
+                    IQ#iq{type = result, sub_el = Els}
+            end
+    end.
+
+get_vcard(LUser, LServer) ->
+    get_vcard(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
+
+get_vcard(LUser, LServer, mnesia) ->
+    US = {LUser, LServer},
+    F = fun() ->
+                mnesia:read({vcard, US})
+        end,
+    case mnesia:transaction(F) of
+        {atomic, Rs} ->
+            lists:map(fun(R) ->
+                              R#vcard.vcard
+                      end, Rs);
+        {aborted, _Reason} ->
+            error
+    end;
+get_vcard(LUser, LServer, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    case catch odbc_queries:get_vcard(LServer, Username) of
+        {selected, ["vcard"], [{SVCARD}]} ->
+            case xml_stream:parse_element(SVCARD) of
+                {error, _Reason} ->
+                    error;
+                VCARD ->
+                    [VCARD]
+            end;
+        {selected, ["vcard"], []} ->
+            [];
+        _ ->
+            error
     end.
 
 set_vcard(User, LServer, VCARD) ->
@@ -231,8 +264,6 @@ set_vcard(User, LServer, VCARD) ->
     LOrgName  = string2lower(OrgName),
     LOrgUnit  = string2lower(OrgUnit),
 
-    US = {LUser, LServer},
-
     if
 	(LUser     == error) or
 	(LFN       == error) or
@@ -248,26 +279,66 @@ set_vcard(User, LServer, VCARD) ->
 	(LOrgUnit  == error) ->
 	    {error, badarg};
 	true ->
-	    F = fun() ->
-		mnesia:write(#vcard{us = US, vcard = VCARD}),
-		mnesia:write(
-		  #vcard_search{us        = US,
-				user      = {User, LServer},
-				luser     = LUser,
-				fn        = FN,       lfn        = LFN,       
-				family    = Family,   lfamily    = LFamily,   
-				given     = Given,    lgiven     = LGiven,    
-				middle    = Middle,   lmiddle    = LMiddle,   
-				nickname  = Nickname, lnickname  = LNickname, 
-				bday      = BDay,     lbday      = LBDay,     
-				ctry      = CTRY,     lctry      = LCTRY,     
-				locality  = Locality, llocality  = LLocality, 
-				email     = EMail,    lemail     = LEMail,    
-				orgname   = OrgName,  lorgname   = LOrgName,  
-				orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
-			       })
-		end,
-	    mnesia:transaction(F),
+            case gen_mod:db_type(LServer, ?MODULE) of
+                mnesia ->
+                    US = {LUser, LServer},
+                    F = fun() ->
+                                mnesia:write(#vcard{us = US, vcard = VCARD}),
+                                mnesia:write(
+                                  #vcard_search{us        = US,
+                                                user      = {User, LServer},
+                                                luser     = LUser,
+                                                fn        = FN,       lfn        = LFN,       
+                                                family    = Family,   lfamily    = LFamily,   
+                                                given     = Given,    lgiven     = LGiven,    
+                                                middle    = Middle,   lmiddle    = LMiddle,   
+                                                nickname  = Nickname, lnickname  = LNickname, 
+                                                bday      = BDay,     lbday      = LBDay,     
+                                                ctry      = CTRY,     lctry      = LCTRY,     
+                                                locality  = Locality, llocality  = LLocality, 
+                                                email     = EMail,    lemail     = LEMail,    
+                                                orgname   = OrgName,  lorgname   = LOrgName,  
+                                                orgunit   = OrgUnit,  lorgunit   = LOrgUnit   
+                                               })
+                        end,
+                    mnesia:transaction(F);
+                odbc ->
+                    Username = ejabberd_odbc:escape(User),
+                    LUsername = ejabberd_odbc:escape(LUser),
+                    SVCARD = ejabberd_odbc:escape(
+                               xml:element_to_binary(VCARD)),
+                    
+                    SFN = ejabberd_odbc:escape(FN),
+                    SLFN = ejabberd_odbc:escape(LFN),
+                    SFamily = ejabberd_odbc:escape(Family),
+                    SLFamily = ejabberd_odbc:escape(LFamily),
+                    SGiven = ejabberd_odbc:escape(Given),
+                    SLGiven = ejabberd_odbc:escape(LGiven),
+                    SMiddle = ejabberd_odbc:escape(Middle),
+                    SLMiddle = ejabberd_odbc:escape(LMiddle),
+                    SNickname = ejabberd_odbc:escape(Nickname),
+                    SLNickname = ejabberd_odbc:escape(LNickname),
+                    SBDay = ejabberd_odbc:escape(BDay),
+                    SLBDay = ejabberd_odbc:escape(LBDay),
+                    SCTRY = ejabberd_odbc:escape(CTRY),
+                    SLCTRY = ejabberd_odbc:escape(LCTRY),
+                    SLocality = ejabberd_odbc:escape(Locality),
+                    SLLocality = ejabberd_odbc:escape(LLocality),
+                    SEMail = ejabberd_odbc:escape(EMail),
+                    SLEMail = ejabberd_odbc:escape(LEMail),
+                    SOrgName = ejabberd_odbc:escape(OrgName),
+                    SLOrgName = ejabberd_odbc:escape(LOrgName),
+                    SOrgUnit = ejabberd_odbc:escape(OrgUnit),
+                    SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
+                    
+                    odbc_queries:set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail,
+                                           SFN, SFamily, SGiven, SLBDay, SLCTRY,
+                                           SLEMail, SLFN, SLFamily, SLGiven,
+                                           SLLocality, SLMiddle, SLNickname,
+                                           SLOrgName, SLOrgUnit, SLocality,
+                                           SMiddle, SNickname, SOrgName,
+                                           SOrgUnit, SVCARD, Username)
+            end,
 	    ejabberd_hooks:run(vcard_set, LServer, [LUser, LServer, VCARD])
     end.
 
@@ -481,14 +552,34 @@ search_result(Lang, JID, ServerHost, Data) ->
        ?TLFIELD("text-single", "Email", "email"),
        ?TLFIELD("text-single", "Organization Name", "orgname"),
        ?TLFIELD("text-single", "Organization Unit", "orgunit")
-      ]}] ++ lists:map(fun record_to_item/1, search(ServerHost, Data)).
+      ]}] ++ lists:map(fun(R) -> record_to_item(ServerHost, R) end,
+		       search(ServerHost, Data)).
 
 -define(FIELD(Var, Val),
 	{xmlelement, "field", [{"var", Var}],
 	 [{xmlelement, "value", [],
 	   [{xmlcdata, Val}]}]}).
 
-record_to_item(R) ->
+record_to_item(LServer, {Username, FN, Family, Given, Middle,
+			 Nickname, BDay, CTRY, Locality,
+			 EMail, OrgName, OrgUnit}) ->
+    {xmlelement, "item", [],
+     [
+       ?FIELD("jid",      Username ++ "@" ++ LServer),
+       ?FIELD("fn",       FN),
+       ?FIELD("last",     Family),
+       ?FIELD("first",    Given),
+       ?FIELD("middle",   Middle),
+       ?FIELD("nick",     Nickname),
+       ?FIELD("bday",     BDay),
+       ?FIELD("ctry",     CTRY),
+       ?FIELD("locality", Locality),
+       ?FIELD("email",    EMail),
+       ?FIELD("orgname",  OrgName),
+       ?FIELD("orgunit",  OrgUnit)
+      ]
+    };
+record_to_item(_LServer, #vcard_search{} = R) ->
     {User, Server} = R#vcard_search.user,
     {xmlelement, "item", [],
      [
@@ -509,9 +600,13 @@ record_to_item(R) ->
 
 
 search(LServer, Data) ->
-    MatchSpec = make_matchspec(LServer, Data),
+    DBType = gen_mod:db_type(LServer, ?MODULE), 
+    MatchSpec = make_matchspec(LServer, Data, DBType),
     AllowReturnAll = gen_mod:get_module_opt(LServer, ?MODULE,
 					    allow_return_all, false),
+    search(LServer, MatchSpec, AllowReturnAll, DBType).
+
+search(LServer, MatchSpec, AllowReturnAll, mnesia) ->
     if
 	(MatchSpec == #vcard_search{_ = '_'}) and (not AllowReturnAll) ->
 	    [];
@@ -535,17 +630,58 @@ search(LServer, Data) ->
 			    lists:sublist(Rs, ?JUD_MATCHES)
 		    end
 	    end
+    end;
+search(LServer, MatchSpec, AllowReturnAll, odbc) ->
+        if
+	(MatchSpec == "") and (not AllowReturnAll) ->
+	    [];
+	true ->
+	    Limit = case gen_mod:get_module_opt(LServer, ?MODULE,
+						matches, ?JUD_MATCHES) of
+			infinity ->
+			    "";
+			Val when is_integer(Val) and (Val > 0) ->
+			    [" LIMIT ", integer_to_list(Val)];
+			Val ->
+			    ?ERROR_MSG("Illegal option value ~p. "
+				       "Default value ~p substituted.",
+				       [{matches, Val}, ?JUD_MATCHES]),
+			    [" LIMIT ", integer_to_list(?JUD_MATCHES)]
+		    end,
+	    case catch ejabberd_odbc:sql_query(
+			 LServer,
+			 ["select username, fn, family, given, middle, "
+			  "       nickname, bday, ctry, locality, "
+			  "       email, orgname, orgunit from vcard_search ",
+			  MatchSpec, Limit, ";"]) of
+		{selected, ["username", "fn", "family", "given", "middle",
+			    "nickname", "bday", "ctry", "locality",
+			    "email", "orgname", "orgunit"],
+		 Rs} when is_list(Rs) ->
+		    Rs;
+		Error ->
+		    ?ERROR_MSG("~p", [Error]),
+		    []
+	    end
     end.
 
-
-make_matchspec(LServer, Data) ->
+make_matchspec(LServer, Data, mnesia) ->
     GlobMatch = #vcard_search{_ = '_'},
-    Match = filter_fields(Data, GlobMatch, LServer),
-    Match.
-
-filter_fields([], Match, _LServer) ->
+    Match = filter_fields(Data, GlobMatch, LServer, mnesia),
     Match;
-filter_fields([{SVar, [Val]} | Ds], Match, LServer)
+make_matchspec(LServer, Data, odbc) ->
+    filter_fields(Data, "", LServer, odbc).
+
+filter_fields([], Match, _LServer, mnesia) ->
+    Match;
+filter_fields([], Match, _LServer, odbc) ->
+    case Match of
+	"" ->
+	    "";
+	_ ->
+	    [" where ", Match]
+    end;
+filter_fields([{SVar, [Val]} | Ds], Match, LServer, mnesia)
   when is_list(Val) and (Val /= "") ->
     LVal = string2lower(Val),
     NewMatch = case SVar of
@@ -571,9 +707,46 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
                    "orgunit"  -> Match#vcard_search{lorgunit  = make_val(LVal)};
 		   _          -> Match
 	       end,
-    filter_fields(Ds, NewMatch, LServer);
-filter_fields([_ | Ds], Match, LServer) ->
-    filter_fields(Ds, Match, LServer).
+    filter_fields(Ds, NewMatch, LServer, mnesia);
+filter_fields([{SVar, [Val]} | Ds], Match, LServer, odbc)
+  when is_list(Val) and (Val /= "") ->
+    LVal = string2lower(Val),
+    NewMatch = case SVar of
+                   "user"     -> make_val(Match, "lusername", LVal);
+                   "fn"       -> make_val(Match, "lfn",       LVal);
+                   "last"     -> make_val(Match, "lfamily",   LVal);
+                   "first"    -> make_val(Match, "lgiven",    LVal);
+                   "middle"   -> make_val(Match, "lmiddle",   LVal);
+                   "nick"     -> make_val(Match, "lnickname", LVal);
+                   "bday"     -> make_val(Match, "lbday",     LVal);
+                   "ctry"     -> make_val(Match, "lctry",     LVal);
+                   "locality" -> make_val(Match, "llocality", LVal);
+                   "email"    -> make_val(Match, "lemail",    LVal);
+                   "orgname"  -> make_val(Match, "lorgname",  LVal);
+                   "orgunit"  -> make_val(Match, "lorgunit",  LVal);
+		   _          -> Match
+	       end,
+    filter_fields(Ds, NewMatch, LServer, odbc);
+filter_fields([_ | Ds], Match, LServer, DBType) ->
+    filter_fields(Ds, Match, LServer, DBType).
+
+make_val(Match, Field, Val) ->
+    Condition =
+	case lists:suffix("*", Val) of
+	    true ->
+		Val1 = lists:sublist(Val, length(Val) - 1),
+		SVal = ejabberd_odbc:escape_like(Val1) ++ "%",
+		[Field, " LIKE '", SVal, "'"];
+	    _ ->
+		SVal = ejabberd_odbc:escape(Val),
+		[Field, " = '", SVal, "'"]
+	end,
+    case Match of
+	"" ->
+	    Condition;
+	_ ->
+	    [Match, " and ", Condition]
+    end.
 
 make_val(Val) ->
     case lists:suffix("*", Val) of
@@ -679,13 +852,21 @@ reindex_vcards() ->
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
+    remove_user(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
+
+remove_user(LUser, LServer, mnesia) ->
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:delete({vcard, US}),
 		mnesia:delete({vcard_search, US})
 	end,
-    mnesia:transaction(F).
-
+    mnesia:transaction(F);
+remove_user(LUser, LServer, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      [["delete from vcard where username='", Username, "';"],
+       ["delete from vcard_search where lusername='", Username, "';"]]).
 
 update_tables() ->
     update_vcard_table(),

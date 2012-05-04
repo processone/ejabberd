@@ -1782,14 +1782,12 @@ stop_node(From, Host, ENode, Action, XData) ->
 
 
 get_last_info(User, Server) ->
-    ML = lists:member(mod_last, gen_mod:loaded_modules(Server)),
-    MLO = lists:member(mod_last_odbc, gen_mod:loaded_modules(Server)),
-    case {ML, MLO} of
-	{true, _} -> mod_last:get_last_info(User, Server);
-	{false, true} -> mod_last_odbc:get_last_info(User, Server);
-	{false, false} -> not_found
+    case gen_mod:is_loaded(Server, mod_last) of
+        true ->
+            mod_last:get_last_info(User, Server);
+        false ->
+            not_found
     end.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

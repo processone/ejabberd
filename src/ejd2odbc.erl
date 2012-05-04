@@ -383,7 +383,7 @@ export_privacy(Server, Output) ->
                     fun({Name, List}) ->
                             SName = ejabberd_odbc:escape(Name),
                             RItems = lists:map(
-                                       fun mod_privacy_odbc:item_to_raw/1,
+                                       fun mod_privacy:item_to_raw/1,
                                        List),
                             ID = integer_to_list(get_id()),
                             ["delete from privacy_list "

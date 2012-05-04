@@ -47,10 +47,16 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mnesia:create_table(last_activity,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, last_activity)}]),
-    update_table(),
+    case gen_mod:db_type(Opts) of
+        mnesia ->
+            mnesia:create_table(last_activity,
+                                [{disc_copies, [node()]},
+                                 {attributes,
+                                  record_info(fields, last_activity)}]),
+            update_table();
+        _ ->
+            ok
+    end,
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST,
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST,
@@ -145,6 +151,9 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 %% @spec (LUser::string(), LServer::string()) ->
 %%      {ok, TimeStamp::integer(), Status::string()} | not_found | {error, Reason}
 get_last(LUser, LServer) ->
+    get_last(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
+
+get_last(LUser, LServer, mnesia) ->
     case catch mnesia:dirty_read(last_activity, {LUser, LServer}) of
 	{'EXIT', Reason} ->
 	    {error, Reason};
@@ -152,6 +161,21 @@ get_last(LUser, LServer) ->
 	    not_found;
 	[#last_activity{timestamp = TimeStamp, status = Status}] ->
 	    {ok, TimeStamp, Status}
+    end;
+get_last(LUser, LServer, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    case catch odbc_queries:get_last(LServer, Username) of
+	{selected, ["seconds","state"], []} ->
+	    not_found;
+	{selected, ["seconds","state"], [{STimeStamp, Status}]} ->
+	    case catch list_to_integer(STimeStamp) of
+		TimeStamp when is_integer(TimeStamp) ->
+		    {ok, TimeStamp, Status};
+		Reason ->
+		    {error, {invalid_timestamp, Reason}}
+	    end;
+	Reason ->
+	    {error, {invalid_result, Reason}}
     end.
 
 get_last_iq(IQ, SubEl, LUser, LServer) ->
@@ -186,13 +210,22 @@ on_presence_update(User, Server, _Resource, Status) ->
 store_last_info(User, Server, TimeStamp, Status) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
+    DBType = gen_mod:db_type(LServer, ?MODULE),
+    store_last_info(LUser, LServer, TimeStamp, Status, DBType).
+
+store_last_info(LUser, LServer, TimeStamp, Status, mnesia) ->
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:write(#last_activity{us = US,
 					    timestamp = TimeStamp,
 					    status = Status})
 	end,
-    mnesia:transaction(F).
+    mnesia:transaction(F);
+store_last_info(LUser, LServer, TimeStamp, Status, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    Seconds = ejabberd_odbc:escape(integer_to_list(TimeStamp)),
+    State = ejabberd_odbc:escape(Status),
+    odbc_queries:set_last_t(LServer, Username, Seconds, State).
 
 %% @spec (LUser::string(), LServer::string()) ->
 %%      {ok, TimeStamp::integer(), Status::string()} | not_found
@@ -207,12 +240,18 @@ get_last_info(LUser, LServer) ->
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
+    DBType = gen_mod:db_type(LServer, ?MODULE),
+    remove_user(LUser, LServer, DBType).
+
+remove_user(LUser, LServer, mnesia) ->
     US = {LUser, LServer},
     F = fun() ->
 		mnesia:delete({last_activity, US})
 	end,
-    mnesia:transaction(F).
-
+    mnesia:transaction(F);
+remove_user(LUser, LServer, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    odbc_queries:del_last(LServer, Username).
 
 update_table() ->
     Fields = record_info(fields, last_activity),

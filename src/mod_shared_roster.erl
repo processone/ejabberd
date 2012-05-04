@@ -63,15 +63,20 @@
 -record(sr_group, {group_host, opts}).
 -record(sr_user, {us, group_host}).
 
-start(Host, _Opts) ->
-    mnesia:create_table(sr_group,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, sr_group)}]),
-    mnesia:create_table(sr_user,
-			[{disc_copies, [node()]},
-			 {type, bag},
-			 {attributes, record_info(fields, sr_user)}]),
-    mnesia:add_table_index(sr_user, group_host),
+start(Host, Opts) ->
+    case gen_mod:db_type(Opts) of
+        mnesia ->
+            mnesia:create_table(sr_group,
+                                [{disc_copies, [node()]},
+                                 {attributes, record_info(fields, sr_group)}]),
+            mnesia:create_table(sr_user,
+                                [{disc_copies, [node()]},
+                                 {type, bag},
+                                 {attributes, record_info(fields, sr_user)}]),
+            mnesia:add_table_index(sr_user, group_host);
+        _ ->
+            ok
+    end,
     ejabberd_hooks:add(webadmin_menu_host, Host,
 		       ?MODULE, webadmin_menu, 70),
     ejabberd_hooks:add(webadmin_page_host, Host,
@@ -181,7 +186,7 @@ get_user_roster(Items, US) ->
 get_vcard_module(Server) ->
     Modules = gen_mod:loaded_modules(Server),
     [M || M <- Modules,
-	  (M == mod_vcard) or (M == mod_vcard_odbc) or (M == mod_vcard_ldap)].
+	  (M == mod_vcard) or (M == mod_vcard_ldap)].
 
 get_rosteritem_name([], _, _) ->
     "";
@@ -237,15 +242,14 @@ process_item(RosterItem, Host) ->
 		[] ->
                     %% Remove pending subscription by setting it
                     %% unsubscribed.
-                    Mod = get_roster_mod(ServerFrom),
 
                     %% Remove pending out subscription
-                    Mod:out_subscription(UserTo, ServerTo,
+                    mod_roster:out_subscription(UserTo, ServerTo,
                                          jlib:make_jid(UserFrom, ServerFrom, ""),
                                          unsubscribe),
 
                     %% Remove pending in subscription
-                    Mod:in_subscription(aaaa, UserFrom, ServerFrom,
+                    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom,
                                         jlib:make_jid(UserTo, ServerTo, ""),
                                         unsubscribe, ""),
 
@@ -274,8 +278,6 @@ build_roster_record(User1, Server1, User2, Server2, Name2, Groups) ->
 
 set_new_rosteritems(UserFrom, ServerFrom,
 		    UserTo, ServerTo, ResourceTo, NameTo, GroupsFrom) ->
-    Mod = get_roster_mod(ServerFrom),
-
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
@@ -287,20 +289,20 @@ set_new_rosteritems(UserFrom, ServerFrom,
     set_item(UserTo, ServerTo, "", RITo),
 
     %% From requests
-    Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribe),
-    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribe, ""),
+    mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo, subscribe),
+    mod_roster:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribe, ""),
 
     %% To accepts
-    Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribed),
-    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribed, ""),
+    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, subscribed),
+    mod_roster:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribed, ""),
 
     %% To requests
-    Mod:out_subscription(UserTo, ServerTo, JIDFrom, subscribe),
-    Mod:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribe, ""),
+    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, subscribe),
+    mod_roster:in_subscription(aaa, UserFrom, ServerFrom, JIDTo, subscribe, ""),
 
     %% From accepts
-    Mod:out_subscription(UserFrom, ServerFrom, JIDTo, subscribed),
-    Mod:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribed, ""),
+    mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo, subscribed),
+    mod_roster:in_subscription(aaa, UserTo, ServerTo, JIDFrom, subscribed, ""),
 
     RIFrom.
 
@@ -361,15 +363,13 @@ in_subscription(Acc, User, Server, JID, Type, _Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).
 
 out_subscription(UserFrom, ServerFrom, JIDTo, unsubscribed) ->
-    Mod = get_roster_mod(ServerFrom),
-
     %% Remove pending out subscription
     #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
     JIDFrom = jlib:make_jid(UserFrom, ServerFrom, ""),
-    Mod:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
+    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom, unsubscribe),
 
     %% Remove pending in subscription
-    Mod:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, ""),
+    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom, JIDTo, unsubscribe, ""),
 
     process_subscription(out, UserFrom, ServerFrom, JIDTo, unsubscribed, false);
 out_subscription(User, Server, JID, Type) ->
@@ -401,32 +401,70 @@ process_subscription(Direction, User, Server, JID, _Type, Acc) ->
     end.
 
 list_groups(Host) ->
+    list_groups(Host, gen_mod:db_type(Host, ?MODULE)).
+
+list_groups(Host, mnesia) ->
     mnesia:dirty_select(
       sr_group,
       [{#sr_group{group_host = {'$1', '$2'},
 		  _ = '_'},
 	[{'==', '$2', Host}],
-	['$1']}]).
+	['$1']}]);
+list_groups(Host, odbc) ->
+    case ejabberd_odbc:sql_query(
+           Host, ["select name from sr_group;"]) of
+        {selected, ["name"], Rs} ->
+            [G || {G} <- Rs];
+        _ ->
+            []
+    end.
 
 groups_with_opts(Host) ->
+    groups_with_opts(Host, gen_mod:db_type(Host, ?MODULE)).
+
+groups_with_opts(Host, mnesia) ->
     Gs = mnesia:dirty_select(
 	   sr_group,
 	   [{#sr_group{group_host={'$1', Host}, opts='$2', _='_'},
 	     [],
 	     [['$1','$2']] }]),
-    lists:map(fun([G,O]) -> {G, O} end, Gs).
+    lists:map(fun([G,O]) -> {G, O} end, Gs);
+groups_with_opts(Host, odbc) ->
+    case ejabberd_odbc:sql_query(
+           Host, ["select name, opts from sr_group;"]) of
+        {selected, ["name", "opts"], Rs} ->
+            [{G, ejabberd_odbc:decode_term(Opts)} || {G, Opts} <- Rs];
+        _ ->
+            []
+    end.
 
 create_group(Host, Group) ->
     create_group(Host, Group, []).
 
 create_group(Host, Group, Opts) ->
+    create_group(Host, Group, Opts, gen_mod:db_type(Host, ?MODULE)).
+
+create_group(Host, Group, Opts, mnesia) ->
     R = #sr_group{group_host = {Group, Host}, opts = Opts},
     F = fun() ->
 		mnesia:write(R)
 	end,
-    mnesia:transaction(F).
+    mnesia:transaction(F);
+create_group(Host, Group, Opts, odbc) ->
+    SGroup = ejabberd_odbc:escape(Group),
+    SOpts = ejabberd_odbc:encode_term(Opts),
+    F = fun() ->
+                odbc_queries:update_t("sr_group",
+                                      ["name", "opts"],
+                                      [SGroup, SOpts],
+                                      ["name='", SGroup, "'"])
+        end,
+    ejabberd_odbc:sql_transaction(Host, F).
 
 delete_group(Host, Group) ->
+    delete_group(Host, Group, gen_mod:db_type(Host, ?MODULE)).
+
+delete_group(Host, Group, mnesia) ->
     GroupHost = {Group, Host},
     F = fun() ->
 		%% Delete the group ...
@@ -437,53 +475,102 @@ delete_group(Host, Group) ->
 				      mnesia:delete_object(UserEntry)
 			      end, Users)
 	end,
-    mnesia:transaction(F).
+    mnesia:transaction(F);
+delete_group(Host, Group, odbc) ->
+    SGroup = ejabberd_odbc:escape(Group),
+    F = fun() ->
+                ejabberd_odbc:sql_query_t(
+                  ["delete from sr_group where name='", SGroup, "';"]),
+                ejabberd_odbc:sql_query_t(
+                  ["delete from sr_user where grp='", SGroup, "';"])
+        end,
+    ejabberd_odbc:sql_transaction(Host, F).
 
 get_group_opts(Host, Group) ->
+    get_group_opts(Host, Group, gen_mod:db_type(Host, ?MODULE)).
+
+get_group_opts(Host, Group, mnesia) ->
     case catch mnesia:dirty_read(sr_group, {Group, Host}) of
 	[#sr_group{opts = Opts}] ->
 	    Opts;
 	_ ->
 	    error
+    end;
+get_group_opts(Host, Group, odbc) ->
+    SGroup = ejabberd_odbc:escape(Group),
+    case catch ejabberd_odbc:sql_query(
+                 Host, ["select opts from sr_group "
+                        "where name='", SGroup, "';"]) of
+        {selected, ["opts"], [{SOpts}]} ->
+            ejabberd_odbc:decode_term(SOpts);
+        _ ->
+            error
     end.
 
 set_group_opts(Host, Group, Opts) ->
+    set_group_opts(Host, Group, Opts, gen_mod:db_type(Host, ?MODULE)).
+
+set_group_opts(Host, Group, Opts, mnesia) ->
     R = #sr_group{group_host = {Group, Host}, opts = Opts},
     F = fun() ->
 		mnesia:write(R)
 	end,
-    mnesia:transaction(F).
+    mnesia:transaction(F);
+set_group_opts(Host, Group, Opts, odbc) ->
+    SGroup = ejabberd_odbc:escape(Group),
+    SOpts = ejabberd_odbc:encode_term(Opts),
+    F = fun() ->
+                odbc_queries:update_t("sr_group",
+                                      ["name", "opts"],
+                                      [SGroup, SOpts],
+                                      ["name='", SGroup, "'"])
+        end,
+    ejabberd_odbc:sql_transaction(Host, F).
 
 get_user_groups(US) ->
     Host = element(2, US),
+    DBType = gen_mod:db_type(Host, ?MODULE),
+    get_user_groups(US, Host, DBType) ++ get_special_users_groups(Host).
+
+get_user_groups(US, Host, mnesia) ->
     case catch mnesia:dirty_read(sr_user, US) of
 	Rs when is_list(Rs) ->
 	    [Group || #sr_user{group_host = {Group, H}} <- Rs, H == Host];
 	_ ->
 	    []
-    end ++ get_special_users_groups(Host).
+    end;
+get_user_groups(US, Host, odbc) ->
+    SJID = make_jid_s(US),
+    case catch ejabberd_odbc:sql_query(
+                 Host, ["select grp from sr_user "
+                        "where jid='", SJID, "';"]) of
+        {selected, ["grp"], Rs} ->
+            [G || {G} <- Rs];
+        _ ->
+            []
+    end.
 
 is_group_enabled(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
-    case catch mnesia:dirty_read(sr_group, {Group, Host}) of
-	[#sr_group{opts = Opts}] ->
-	    not lists:member(disabled, Opts);
-	_ ->
-	    false
+    case get_group_opts(Host, Group) of
+        error ->
+            false;
+        Opts ->
+            not lists:member(disabled, Opts)
     end.
 
 %% @spec (Host::string(), Group::string(), Opt::atom(), Default) -> OptValue | Default
 get_group_opt(Host, Group, Opt, Default) ->
-    case catch mnesia:dirty_read(sr_group, {Group, Host}) of
-	[#sr_group{opts = Opts}] ->
+    case get_group_opts(Host, Group) of
+        error ->
+            Default;
+        Opts ->
 	    case lists:keysearch(Opt, 1, Opts) of
 		{value, {_, Val}} ->
 		    Val;
 		false ->
 		    Default
-	    end;
-	_ ->
-	    Default
+	    end
     end.
 
 get_online_users(Host) ->
@@ -522,6 +609,9 @@ get_group_users(Host, Group, GroupOpts) ->
 
 %% @spec (Host::string(), Group::string()) -> [{User::string(), Server::string()}]
 get_group_explicit_users(Host, Group) ->
+    get_group_explicit_users(Host, Group, gen_mod:db_type(Host, ?MODULE)).
+
+get_group_explicit_users(Host, Group, mnesia) ->
     Read = (catch mnesia:dirty_index_read(
 		    sr_user,
 		    {Group, Host},
@@ -531,6 +621,21 @@ get_group_explicit_users(Host, Group) ->
 	    [R#sr_user.us || R <- Rs];
 	_ ->
 	    []
+    end;
+get_group_explicit_users(Host, Group, odbc) ->
+    SGroup = ejabberd_odbc:escape(Group),
+    case catch ejabberd_odbc:sql_query(
+                 Host, ["select jid from sr_user "
+                        "where grp='", SGroup, "';"]) of
+        {selected, ["jid"], Rs} ->
+            lists:map(
+              fun({JID}) ->
+                      {U, S, _} = jlib:jid_tolower(
+                                    jlib:string_to_jid(JID)),
+                      {U, S}
+              end, Rs);
+        _ ->
+            []
     end.
 
 get_group_name(Host1, Group1) ->
@@ -581,14 +686,29 @@ get_special_displayed_groups(GroupsOpts) ->
 %% for the list of groups of that server that user is member
 %% get the list of groups displayed
 get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
-    Groups = case catch mnesia:dirty_read(sr_user, {LUser, LServer}) of
-		 Rs when is_list(Rs) ->
-		     [{Group, proplists:get_value(Group, GroupsOpts, [])} ||
-			 #sr_user{group_host = {Group, H}} <- Rs, H == LServer];
-		 _ ->
-		     []
-	     end,
+    Groups = get_user_displayed_groups(LUser, LServer, GroupsOpts,
+                                       gen_mod:db_type(LServer, ?MODULE)),
     displayed_groups(GroupsOpts, Groups).
+
+get_user_displayed_groups(LUser, LServer, GroupsOpts, mnesia) ->
+    case catch mnesia:dirty_read(sr_user, {LUser, LServer}) of
+        Rs when is_list(Rs) ->
+            [{Group, proplists:get_value(Group, GroupsOpts, [])} ||
+                #sr_user{group_host = {Group, H}} <- Rs, H == LServer];
+        _ ->
+            []
+    end;
+get_user_displayed_groups(LUser, LServer, GroupsOpts, odbc) ->
+    SJID = make_jid_s(LUser, LServer),
+    case catch ejabberd_odbc:sql_query(
+                 LServer, ["select grp from sr_user "
+                           "where jid='", SJID, "';"]) of
+        {selected, ["grp"], Rs} ->
+            [{Group, proplists:get_value(Group, GroupsOpts, [])} ||
+                {Group} <- Rs];
+        _ ->
+            []
+    end.
 
 %% @doc Get the list of groups that are displayed to this user
 get_user_displayed_groups(US) ->
@@ -607,12 +727,25 @@ get_user_displayed_groups(US) ->
     [Group || Group <- DisplayedGroups1, is_group_enabled(Host, Group)].
 
 is_user_in_group(US, Group, Host) ->
+    is_user_in_group(US, Group, Host, gen_mod:db_type(Host, ?MODULE)).
+
+is_user_in_group(US, Group, Host, mnesia) ->
     case catch mnesia:dirty_match_object(
 		 #sr_user{us=US, group_host={Group, Host}}) of
         [] -> lists:member(US, get_group_users(Host, Group));
 	_  -> true
+    end;
+is_user_in_group(US, Group, Host, odbc) ->
+    SJID = make_jid_s(US),
+    SGroup = ejabberd_odbc:escape(Group),
+    case catch ejabberd_odbc:sql_query(
+                 Host, ["select * from sr_user where "
+                        "jid='", SJID, "' and grp='", SGroup, "';"]) of
+        {selected, _, []} ->
+            lists:member(US, get_group_users(Host, Group));
+        _ ->
+            true
     end.
-
 
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
 add_user_to_group(Host, US, Group) ->
@@ -634,12 +767,26 @@ add_user_to_group(Host, US, Group) ->
 	    push_user_to_displayed(LUser, LServer, Group, Host, both),
 	    %% Push members of groups that are displayed to this group
 	    push_displayed_to_user(LUser, LServer, Group, Host, both),
-	    R = #sr_user{us = US, group_host = {Group, Host}},
-	    F = fun() ->
-			mnesia:write(R)
-	        end,
-	    mnesia:transaction(F)
+            add_user_to_group(Host, US, Group, gen_mod:db_type(Host, ?MODULE))
     end.
+
+add_user_to_group(Host, US, Group, mnesia) ->
+    R = #sr_user{us = US, group_host = {Group, Host}},
+    F = fun() ->
+                mnesia:write(R)
+        end,
+    mnesia:transaction(F);
+add_user_to_group(Host, US, Group, odbc) ->
+    SJID = make_jid_s(US),
+    SGroup = ejabberd_odbc:escape(Group),
+    F = fun() ->
+                odbc_queries:update_t(
+                  "sr_user",
+                  ["jid", "grp"],
+                  [SJID, SGroup],
+                  ["jid='", SJID, "' and grp='", SGroup, "'"])
+        end,
+    ejabberd_odbc:sql_transaction(Host, F).
 
 push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
     GroupsOpts = groups_with_opts(LServer),
@@ -648,7 +795,6 @@ push_displayed_to_user(LUser, LServer, Group, Host, Subscription) ->
     [push_members_to_user(LUser, LServer, DGroup, Host, Subscription) || DGroup <- DisplayedGroups].
 
 remove_user_from_group(Host, US, Group) ->
-    GroupHost = {Group, Host},
     {LUser, LServer} = US,
     case ejabberd_regexp:run(LUser, "^@.+@$") of
 	match ->
@@ -662,11 +808,8 @@ remove_user_from_group(Host, US, Group) ->
 		end,
 	    ?MODULE:set_group_opts(Host, Group, NewGroupOpts);
 	nomatch ->
-	    R = #sr_user{us = US, group_host = GroupHost},
-	    F = fun() ->
-			mnesia:delete_object(R)
-		end,
-	    Result = mnesia:transaction(F),
+            Result = remove_user_from_group(Host, US, Group,
+                                            gen_mod:db_type(Host, ?MODULE)),
 	    %% Push removal of the old user to members of groups where the group that this user was members was displayed
 	    push_user_to_displayed(LUser, LServer, Group, Host, remove),
 	    %% Push removal of members of groups that where displayed to the group which this user has left
@@ -674,6 +817,22 @@ remove_user_from_group(Host, US, Group) ->
 	    Result
     end.
 
+remove_user_from_group(Host, US, Group, mnesia) ->
+    R = #sr_user{us = US, group_host = {Group, Host}},
+    F = fun() ->
+                mnesia:delete_object(R)
+        end,
+    mnesia:transaction(F);
+remove_user_from_group(Host, US, Group, odbc) ->
+    SJID = make_jid_s(US),
+    SGroup = ejabberd_odbc:escape(Group),
+    F = fun() ->
+                ejabberd_odbc:sql_query_t(
+                  ["delete from sr_user where jid='",
+                   SJID, "' and grp='", SGroup, "';"]),
+                ok
+        end,
+    ejabberd_odbc:sql_transaction(Host, F).
 
 push_members_to_user(LUser, LServer, Group, Host, Subscription) ->
     GroupsOpts = groups_with_opts(LServer),
@@ -1099,14 +1258,6 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	    nothing
     end.
 
-%% Get the roster module for Server.
-get_roster_mod(Server) ->
-    case lists:member(mod_roster_odbc,
-                      gen_mod:loaded_modules(Server)) of
-        true -> mod_roster_odbc;
-        false -> mod_roster
-    end.
-
 get_opt(Opts, Opt, Default) ->
     case lists:keysearch(Opt, 1, Opts) of
 	{value, {_, Val}} ->
@@ -1125,3 +1276,12 @@ split_grouphost(Host, Group) ->
 	[_] ->
 	    {Host, Group}
     end.
+
+make_jid_s(U, S) ->
+    ejabberd_odbc:escape(
+      jlib:jid_to_string(
+        jlib:jid_tolower(
+          jlib:make_jid(U, S, "")))).
+
+make_jid_s({U, S}) ->
+    make_jid_s(U, S).

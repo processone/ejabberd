@@ -92,16 +92,6 @@ process_iq_set(_, From, _To, #iq{xmlns = ?NS_BLOCKING,
 process_iq_set(Acc, _, _,  _) ->
     Acc.
 
-is_list_needdb(Items) ->
-    lists:any(
-      fun(X) ->
-	      case X#listitem.type of
-		  subscription -> true;
-		  group -> true;
-		  _ -> false
-	      end
-      end, Items).
-
 list_to_blocklist_jids([], JIDs) ->
     JIDs;
 
@@ -148,6 +138,35 @@ parse_blocklist_items([_ | Els], JIDs) ->
     parse_blocklist_items(Els, JIDs).
 
 process_blocklist_block(LUser, LServer, JIDs) ->
+    Filter = fun(List) ->
+                     AlreadyBlocked = list_to_blocklist_jids(List, []),
+                     lists:foldr(
+                       fun(JID, List1) ->
+                               case lists:member(JID, AlreadyBlocked) of
+                                   true ->
+                                       List1;
+                                   false ->
+                                       [#listitem{type = jid,
+                                                  value = JID,
+                                                  action = deny,
+                                                  order = 0,
+                                                  match_all = true}
+                                        | List1]
+                               end
+                       end, List, JIDs)
+             end,
+    case process_blocklist_block(LUser, LServer, Filter,
+                                 gen_mod:db_type(LServer, mod_privacy)) of
+        {atomic, {ok, Default, List}} ->
+            UserList = make_userlist(Default, List),
+	    broadcast_list_update(LUser, LServer, Default, UserList),
+	    broadcast_blocklist_event(LUser, LServer, {block, JIDs}),
+	    {result, [], UserList};
+	_ ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
+
+process_blocklist_block(LUser, LServer, Filter, mnesia) ->
     F =
 	fun() ->
 		case mnesia:wread({privacy, {LUser, LServer}}) of
@@ -173,40 +192,72 @@ process_blocklist_block(LUser, LServer, JIDs) ->
 				List = []
 			end
 		end,
-
-		AlreadyBlocked = list_to_blocklist_jids(List, []),
-		NewList =
-		    lists:foldr(fun(JID, List1) ->
-					case lists:member(JID, AlreadyBlocked) of
-					    true ->
-						List1;
-					    false ->
-						[#listitem{type = jid,
-							   value = JID,
-							   action = deny,
-							   order = 0,
-							   match_all = true
-							  } | List1]
-					end
-				end, List, JIDs),
+                NewList = Filter(List),
 		NewLists = [{NewDefault, NewList} | NewLists1],
 		mnesia:write(P#privacy{default = NewDefault,
 				       lists = NewLists}),
 		{ok, NewDefault, NewList}
 	end,
-    case mnesia:transaction(F) of
-	{atomic, {error, _} = Error} ->
-	    Error;
+    mnesia:transaction(F);
+process_blocklist_block(LUser, LServer, Filter, odbc) ->
+    F = fun() ->
+                Default =
+                    case mod_privacy:sql_get_default_privacy_list_t(LUser) of
+                        {selected, ["name"], []} ->
+                            Name = "Blocked contacts",
+                            mod_privacy:sql_add_privacy_list(LUser, Name),
+                            mod_privacy:sql_set_default_privacy_list(
+                              LUser, Name),
+                            Name;
+                        {selected, ["name"], [{Name}]} ->
+                            Name
+                    end,
+                {selected, ["id"], [{ID}]} =
+                    mod_privacy:sql_get_privacy_list_id_t(LUser, Default),
+                case mod_privacy:sql_get_privacy_list_data_by_id_t(ID) of
+                    {selected,
+                     ["t", "value", "action", "ord",
+                      "match_all", "match_iq", "match_message",
+                      "match_presence_in",
+                      "match_presence_out"],
+                     RItems = [_|_]} ->
+                        List = lists:map(
+                                 fun mod_privacy:raw_to_item/1,
+                                 RItems);
+                    _ ->
+                        List = []
+                end,
+                NewList = Filter(List),
+                NewRItems = lists:map(
+                              fun mod_privacy:item_to_raw/1,
+                              NewList),
+                mod_privacy:sql_set_privacy_list(
+                  ID, NewRItems),
+                {ok, Default, NewList}
+        end,
+    ejabberd_odbc:sql_transaction(LServer, F).
+
+process_blocklist_unblock_all(LUser, LServer) ->
+    Filter = fun(List) ->
+                     lists:filter(
+                       fun(#listitem{action = A}) ->
+                               A =/= deny
+                       end, List)
+             end,
+    case process_blocklist_unblock_all(
+           LUser, LServer, Filter, gen_mod:db_type(LServer, mod_privacy)) of
+        {atomic, ok} ->
+	    {result, []};
 	{atomic, {ok, Default, List}} ->
             UserList = make_userlist(Default, List),
 	    broadcast_list_update(LUser, LServer, Default, UserList),
-	    broadcast_blocklist_event(LUser, LServer, {block, JIDs}),
+	    broadcast_blocklist_event(LUser, LServer, unblock_all),
 	    {result, [], UserList};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-process_blocklist_unblock_all(LUser, LServer) ->
+process_blocklist_unblock_all(LUser, LServer, Filter, mnesia) ->
     F =
 	fun() ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
@@ -218,12 +269,7 @@ process_blocklist_unblock_all(LUser, LServer) ->
 			case lists:keysearch(Default, 1, Lists) of
 			    {value, {_, List}} ->
 				% Default list, remove all deny items
-				NewList =
-				    lists:filter(
-				      fun(#listitem{action = A}) ->
-					      A =/= deny
-				      end, List),
-
+				NewList = Filter(List),
 				NewLists1 = lists:keydelete(Default, 1, Lists),
 				NewLists = [{Default, NewList} | NewLists1],
 				mnesia:write(P#privacy{lists = NewLists}),
@@ -235,21 +281,67 @@ process_blocklist_unblock_all(LUser, LServer) ->
 			end
 		end
 	end,
-    case mnesia:transaction(F) of
-	{atomic, {error, _} = Error} ->
-	    Error;
-	{atomic, ok} ->
+    mnesia:transaction(F);
+process_blocklist_unblock_all(LUser, LServer, Filter, odbc) ->
+    F = fun() ->
+                case mod_privacy:sql_get_default_privacy_list_t(LUser) of
+                    {selected, ["name"], []} ->
+                        ok;
+                    {selected, ["name"], [{Default}]} ->
+                        {selected, ["id"], [{ID}]} =
+                            mod_privacy:sql_get_privacy_list_id_t(
+                              LUser, Default),
+                        case mod_privacy:sql_get_privacy_list_data_by_id_t(ID) of
+                            {selected,
+                             ["t", "value", "action", "ord",
+                              "match_all", "match_iq", "match_message",
+                              "match_presence_in",
+                              "match_presence_out"],
+                             RItems = [_|_]} ->
+                                List = lists:map(
+                                         fun mod_privacy:raw_to_item/1,
+                                         RItems),
+                                NewList = Filter(List),
+                                NewRItems = lists:map(
+                                              fun mod_privacy:item_to_raw/1,
+                                              NewList),
+                                mod_privacy:sql_set_privacy_list(
+                                  ID, NewRItems),
+                                {ok, Default, NewList};
+                            _ ->
+                                ok
+                        end;
+                    _ ->
+                        ok
+                end
+        end,
+    ejabberd_odbc:sql_transaction(LServer, F).
+
+process_blocklist_unblock(LUser, LServer, JIDs) ->
+    Filter = fun(List) ->
+                     lists:filter(
+                       fun(#listitem{action = deny,
+                                     type = jid,
+                                     value = JID}) ->
+                               not(lists:member(JID, JIDs));
+                          (_) ->
+                               true
+                       end, List)
+             end,
+    case process_blocklist_unblock(LUser, LServer, Filter,
+                                   gen_mod:db_type(LServer, mod_privacy)) of
+        {atomic, ok} ->
 	    {result, []};
 	{atomic, {ok, Default, List}} ->
             UserList = make_userlist(Default, List),
 	    broadcast_list_update(LUser, LServer, Default, UserList),
-	    broadcast_blocklist_event(LUser, LServer, unblock_all),
+	    broadcast_blocklist_event(LUser, LServer, {unblock, JIDs}),
 	    {result, [], UserList};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-process_blocklist_unblock(LUser, LServer, JIDs) ->
+process_blocklist_unblock(LUser, LServer, Filter, mnesia) ->
     F =
 	fun() ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
@@ -261,16 +353,7 @@ process_blocklist_unblock(LUser, LServer, JIDs) ->
 			case lists:keysearch(Default, 1, Lists) of
 			    {value, {_, List}} ->
 				% Default list, remove matching deny items
-				NewList =
-				    lists:filter(
-				      fun(#listitem{action = deny,
-						    type = jid,
-						    value = JID}) ->
-					      not(lists:member(JID, JIDs));
-					 (_) ->
-					      true
-				      end, List),
-
+				NewList = Filter(List),
 				NewLists1 = lists:keydelete(Default, 1, Lists),
 				NewLists = [{Default, NewList} | NewLists1],
 				mnesia:write(P#privacy{lists = NewLists}),
@@ -282,22 +365,44 @@ process_blocklist_unblock(LUser, LServer, JIDs) ->
 			end
 		end
 	end,
-    case mnesia:transaction(F) of
-	{atomic, {error, _} = Error} ->
-	    Error;
-	{atomic, ok} ->
-	    {result, []};
-	{atomic, {ok, Default, List}} ->
-            UserList = make_userlist(Default, List),
-	    broadcast_list_update(LUser, LServer, Default, UserList),
-	    broadcast_blocklist_event(LUser, LServer, {unblock, JIDs}),
-	    {result, [], UserList};
-	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end.
+    mnesia:transaction(F);
+process_blocklist_unblock(LUser, LServer, Filter, odbc) ->
+    F = fun() ->
+                case mod_privacy:sql_get_default_privacy_list_t(LUser) of
+                    {selected, ["name"], []} ->
+                        ok;
+                    {selected, ["name"], [{Default}]} ->
+                        {selected, ["id"], [{ID}]} =
+                            mod_privacy:sql_get_privacy_list_id_t(
+                              LUser, Default),
+                        case mod_privacy:sql_get_privacy_list_data_by_id_t(ID) of
+                            {selected,
+                             ["t", "value", "action", "ord",
+                              "match_all", "match_iq", "match_message",
+                              "match_presence_in",
+                              "match_presence_out"],
+                             RItems = [_|_]} ->
+                                List = lists:map(
+                                         fun mod_privacy:raw_to_item/1,
+                                         RItems),
+                                NewList = Filter(List),
+                                NewRItems = lists:map(
+                                              fun mod_privacy:item_to_raw/1,
+                                              NewList),
+                                mod_privacy:sql_set_privacy_list(
+                                  ID, NewRItems),
+                                {ok, Default, NewList};
+                            _ ->
+                                ok
+                        end;
+                    _ ->
+                        ok
+                end
+        end,
+    ejabberd_odbc:sql_transaction(LServer, F).
 
 make_userlist(Name, List) ->
-    NeedDb = is_list_needdb(List),
+    NeedDb = mod_privacy:is_list_needdb(List),
     #userlist{name = Name, list = List, needdb = NeedDb}.
 
 broadcast_list_update(LUser, LServer, Name, UserList) ->
@@ -315,25 +420,52 @@ broadcast_blocklist_event(LUser, LServer, Event) ->
        [{blocking, Event}]}).
 
 process_blocklist_get(LUser, LServer) ->
+    case process_blocklist_get(
+           LUser, LServer, gen_mod:db_type(LServer, mod_privacy)) of
+        error ->
+            {error, ?ERR_INTERNAL_SERVER_ERROR};
+        List ->
+            JIDs = list_to_blocklist_jids(List, []),
+            Items = lists:map(
+                      fun(JID) ->
+                              ?DEBUG("JID: ~p",[JID]),
+                              {xmlelement, "item",
+                               [{"jid", jlib:jid_to_string(JID)}], []}
+                      end, JIDs),
+            {result,
+             [{xmlelement, "blocklist", [{"xmlns", ?NS_BLOCKING}],
+               Items}]}
+    end.
+
+process_blocklist_get(LUser, LServer, mnesia) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+            error;
 	[] ->
-	    {result, [{xmlelement, "blocklist", [{"xmlns", ?NS_BLOCKING}], []}]};
+            [];
 	[#privacy{default = Default, lists = Lists}] ->
 	    case lists:keysearch(Default, 1, Lists) of
 		{value, {_, List}} ->
-		    JIDs = list_to_blocklist_jids(List, []),
-		    Items = lists:map(
-			      fun(JID) ->
-				      ?DEBUG("JID: ~p",[JID]),
-				      {xmlelement, "item",
-				       [{"jid", jlib:jid_to_string(JID)}], []}
-			      end, JIDs),
-		    {result,
-		     [{xmlelement, "blocklist", [{"xmlns", ?NS_BLOCKING}],
-		       Items}]};
+                    List;
 		_ ->
-		    {result, [{xmlelement, "blocklist", [{"xmlns", ?NS_BLOCKING}], []}]}
+                    []
 	    end
+    end;
+process_blocklist_get(LUser, LServer, odbc) ->
+    case catch mod_privacy:sql_get_default_privacy_list(LUser, LServer) of
+	{selected, ["name"], []} ->
+            [];
+	{selected, ["name"], [{Default}]} ->
+	    case catch mod_privacy:sql_get_privacy_list_data(
+                         LUser, LServer, Default) of
+		{selected, ["t", "value", "action", "ord", "match_all",
+			    "match_iq", "match_message",
+			    "match_presence_in", "match_presence_out"],
+		 RItems} ->
+                    lists:map(fun mod_privacy:raw_to_item/1, RItems);
+                {'EXIT', _} ->
+                    error
+            end;
+        {'EXIT', _} ->
+            error
     end.

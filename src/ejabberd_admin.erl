@@ -479,13 +479,16 @@ import_dir(Path) ->
 %%%
 
 delete_expired_messages() ->
-    {atomic, ok} = mod_offline:remove_expired_messages(),
-    ok.
+    lists:foreach(
+      fun(Host) ->
+              {atomic, ok} = mod_offline:remove_expired_messages(Host)
+      end, ?MYHOSTS).
 
 delete_old_messages(Days) ->
-    {atomic, _} = mod_offline:remove_old_messages(Days),
-    ok.
-
+    lists:foreach(
+      fun(Host) ->
+              {atomic, _} = mod_offline:remove_old_messages(Days, Host)
+      end, ?MYHOSTS).
 
 %%%
 %%% Mnesia management
