@@ -1,5 +1,14 @@
 ejabberd - High-Performance Enterprise Instant Messaging Server 
 
+
+ejabberd - High-Performance Enterprise Instant Messaging Server 
+
+Customization in branch 2.1.x
+1) External script for handling offline messages. (you can push email on an offline msg or make rest call to create alert or just dump to a file)
+
+
+
+
 Quickstart guide
 
 
