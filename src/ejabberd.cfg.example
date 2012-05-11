@@ -491,6 +491,14 @@
 %%
 %%{captcha_limit, 5}.
 
+
+%%%.   =======
+%%%'   External Offline Message Hook.
+%% {extoffmsghook_program, "/path_to_/script_to_executed"}.
+%% Make sure the script is executable by ejabberd.
+%% Also add   {mod_ext_offline_msg_hook, []} to modules.
+
+
 %%%.   =======
 %%%'   MODULES
 
@@ -522,6 +530,8 @@
 		 ]},
   %%{mod_muc_log,[]},
   {mod_offline,  [{access_max_user_messages, max_user_offline_messages}]},
+  %% To add external message hook uncomment the following
+  %%{mod_ext_offline_msg_hook, []},
   {mod_ping,     []},
   %%{mod_pres_counter,[{count, 5}, {interval, 60}]},
   {mod_privacy,  []},
