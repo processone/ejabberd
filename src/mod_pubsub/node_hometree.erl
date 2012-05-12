@@ -169,7 +169,7 @@ features() ->
      "outcast-affiliation",
      "persistent-items",
      "publish",
-	 "publish-only-affiliation",
+     "publish-only-affiliation",
      "purge-nodes",
      "retract-items",
      "retrieve-affiliations",
@@ -493,8 +493,7 @@ publish_item(NodeIdx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
     if
 	not ((PublishModel == open)
 	     or ((PublishModel == publishers)
-	     or ((PublishModel == publish_only)
-		 and ((Affiliation == owner) or (Affiliation == publisher)))
+		 and ((Affiliation == owner) or (Affiliation == publisher) or (Affiliation == publish_only)))
 	     or (Subscribed == true)) ->
 	    %% Entity does not have sufficient privileges to publish to node
 	    {error, ?ERR_FORBIDDEN};
