@@ -38,7 +38,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--define(NS_SIC, "urn:xmpp:sic:0").
+-define(NS_SIC, <<"urn:xmpp:sic:0">>).
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
