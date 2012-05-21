@@ -4359,6 +4359,7 @@ section~\ref{msrlfilters}.
 \makesubsubsection{msrlcontrolparams}{Control parameters}
 
 These paramters control the behaviour of the module.
+See section~\ref{msrlconfigroster} on how they are used during roster retrieval.
 
 \begin{description}
 
@@ -4398,19 +4399,29 @@ These paramters control the behaviour of the module.
  \titem{{\tt ldap\_auth\_check}}
  Whether the module should check (via the ejabberd authentication subsystem)
  for existence of each user in the shared LDAP roster. See
- section~\ref{msrlconfigroster} form more information. Set to {\tt off} if you
+ section~\ref{msrlconfigroster} for more information. Set to {\tt off} if you
  want to disable the check.
  Defaults to {\tt on}.
+\end{description}
 
+\makesubsubsection{msrlcacheparams}{Cache parameters}
+
+These paramters control the characteristics of the internal \modsharedrosterldap{} LDAP result cache.
+
+\begin{description}
  \titem{{\tt ldap\_user\_cache\_validity}}
  Number of seconds for which the cache for roster item full names is considered
- fresh after retrieval. 300 by default. See section~\ref{msrlconfigroster} on
- how it is used during roster retrieval.
+ fresh after retrieval. 300 by default.
 
  \titem{{\tt ldap\_group\_cache\_validity}}
  Number of seconds for which the cache for group membership is considered
- fresh after retrieval. 300 by default. See section~\ref{msrlconfigroster} on
- how it is used during roster retrieval.
+ fresh after retrieval. 300 by default.
+
+ \titem{{\tt ldap\_user\_cache\_size}}
+ Maximum number of user items the cache will hold. 1000 by default.
+
+ \titem{{\tt ldap\_group\_cache\_size}}
+ Maximum number of group items the cache will hold. 1000 by default.
 \end{description}
 
 \makesubsubsection{msrlconnparams}{Connection parameters}
