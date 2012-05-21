@@ -82,6 +82,8 @@
              jd2ejd,
              jlib,
              mod_ip_blacklist,
+	     mod_last_odbc,
+	     mod_offline,
              mod_privacy,
              mod_private_odbc,
              mod_register,
