@@ -598,18 +598,18 @@ parse_options(Host, Opts) ->
 	    undefined ->
 		case ejabberd_config:get_local_option({ldap_user_cache_size, Host}) of
 		    undefined -> ?CACHE_SIZE;
-		    USSeconds -> USSeconds
+		    USItems -> USItems
 		end;
-	    USSeconds -> USSeconds
+	    USItems -> USItems
 	end,
     GroupCacheSize =
 	case gen_mod:get_opt(ldap_group_cache_size, Opts, undefined) of
 	    undefined ->
 		case ejabberd_config:get_local_option({ldap_group_cache_size, Host}) of
 		    undefined -> ?CACHE_SIZE;
-		    GSSeconds -> GSSeconds
+		    GSItems -> GSItems
 		end;
-	    GSSeconds -> GSSeconds
+	    GSItems -> GSItems
 	end,
     ConfigFilter = case gen_mod:get_opt(ldap_filter, Opts, undefined) of
 		       undefined ->
