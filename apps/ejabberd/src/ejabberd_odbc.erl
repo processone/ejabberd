@@ -165,6 +165,8 @@ escape_like($%) -> "\\%";
 escape_like($_) -> "\\_";
 escape_like(C)  -> odbc_queries:escape(C).
 
+to_bool(B) when is_binary(B) ->
+    to_bool(binary_to_list(B));
 to_bool("t") -> true;
 to_bool("true") -> true;
 to_bool("1") -> true;
