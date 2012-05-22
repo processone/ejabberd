@@ -145,7 +145,7 @@ process_item(RosterItem, _Host) ->
             RosterItem;
         {ok, []} ->
             RosterItem;
-        {ok, GroupNames} when RosterItem#roster.subscription == remove ->
+        {ok, GroupNames} when RosterItem#roster.subscription =:= remove ->
             %% Roster item cannot be removed:
 	    %% We simply reset the original groups:
             RosterItem#roster{subscription = both, ask = none,
@@ -178,7 +178,7 @@ get_jid_info({Subscription, Groups}, User, Server, JID) ->
     case dict:find(US1, SRUsers) of
 	{ok, GroupNames} ->
 	    NewGroups = if
-			    Groups == [] -> GroupNames;
+			    Groups =:= [] -> GroupNames;
 			    true -> Groups
 			end,
 	    {both, NewGroups};
@@ -293,7 +293,7 @@ get_user_to_groups_map({_, Server} = US, SkipUS) ->
 	      GroupName = get_group_name(Server, Group),
 	      lists:foldl(
 		fun(Contact, Dict) ->
-			if SkipUS, Contact == US ->
+			if SkipUS, Contact =:= US ->
 				Dict;
 			   true ->
 				dict:append(Contact, GroupName, Dict)
@@ -353,7 +353,7 @@ get_group_users(Host, Group) ->
 	   shared_roster_ldap_group,
 	   {Group, Host},
 	   fun() -> search_group_info(State, Group) end) of
-	{ok, #group_info{members = Members}} when Members /= undefined ->
+	{ok, #group_info{members = Members}} when Members =/= undefined ->
 	    Members;
 	_ ->
 	    []
@@ -365,7 +365,7 @@ get_group_name(Host, Group) ->
 	   shared_roster_ldap_group,
 	   {Group, Host},
 	   fun() -> search_group_info(State, Group) end) of
-	{ok, #group_info{desc = GroupName}} when GroupName /= undefined ->
+	{ok, #group_info{desc = GroupName}} when GroupName =/= undefined ->
             GroupName;
         _ ->
             Group
@@ -413,8 +413,8 @@ search_group_info(State, Group) ->
 			  case {eldap_utils:get_ldap_attr(State#state.group_attr, Attrs),
 				eldap_utils:get_ldap_attr(State#state.group_desc, Attrs),
 				lists:keysearch(State#state.uid, 1, Attrs)} of
-			      {ID, Desc, {value, {GroupMemberAttr, Members}}}
-			      when ID /= "", GroupMemberAttr == State#state.uid ->
+			      {ID, Desc, {value, {State#state.uid, Members}}}
+			      when ID =/= "" ->
 				  JIDs = lists:foldl(
 					   fun({ok, UID}, L) ->
 						   PUID = jlib:nodeprep(UID),
@@ -446,7 +446,7 @@ search_user_name(State, User) ->
 	[#eldap_entry{attributes=Attrs}|_] ->
 	    case {eldap_utils:get_ldap_attr(State#state.user_uid, Attrs),
 		  eldap_utils:get_ldap_attr(State#state.user_desc, Attrs)} of
-		{UID, Desc} when UID /= "" ->
+		{UID, Desc} when UID =/= "" ->
 		    %% By returning "" get_ldap_attr means "not found"
 		    {ok, Desc};
 		_ ->
