@@ -31,7 +31,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, route/3, set_session/6,
+-export([start_link/0, route/3, do_route1/3, set_session/6,
 	 open_session/5, open_session/6, close_session/4,
 	 close_migrated_session/4, drop_session/1,
 	 check_in_subscription/6, bounce_offline_message/3,
@@ -439,7 +439,7 @@ init([]) ->
 		  end,
 		  ?MYHOSTS),
     ejabberd_commands:register_commands(commands()),
-    start_dispatchers(),
+    start_handlers(),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -447,18 +447,19 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(_Msg, State) -> {noreply, State}.
 
-handle_info({route, From, To, Packet} = Msg, State) ->
-    case get_proc_num() of
-      N when N > 1 ->
-	  #jid{luser = U, lserver = S} = To,
-	  get_proc_by_hash({U, S}) ! Msg;
-      _ ->
-	  case catch do_route(From, To, Packet) of
-	    {'EXIT', Reason} ->
-		?ERROR_MSG("~p~nwhen processing: ~p",
-			   [Reason, {From, To, Packet}]);
-	    _ -> ok
-	  end
+%%--------------------------------------------------------------------
+%% Function: handle_info(Info, State) -> {noreply, State} |
+%%                                       {noreply, State, Timeout} |
+%%                                       {stop, Reason, State}
+%% Description: Handling all non call/cast messages
+%%--------------------------------------------------------------------
+handle_info({route, From, To, Packet}, State) ->
+    case catch do_route(From, To, Packet) of
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("~p~nwhen processing: ~p",
+                       [Reason, {From, To, Packet}]);
+        _ ->
+            ok
     end,
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module,
@@ -503,7 +504,7 @@ terminate(_Reason, _State) ->
     ejabberd_hooks:delete(node_hash_update, ?MODULE,
 			  migrate, 100),
     ejabberd_commands:unregister_commands(commands()),
-    stop_dispatchers(),
+    stop_handlers(),
     ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
@@ -548,9 +549,10 @@ do_route(From, To, Packet) ->
 	   [From, To, Packet, 8]),
     {U, S, _} = jlib:jid_tolower(To),
     case ejabberd_cluster:get_node({U, S}) of
-      Node when Node /= node() ->
-	  {?MODULE, Node} ! {route, From, To, Packet};
-      _ -> do_route1(From, To, Packet)
+	Node when Node /= node() ->
+	    {?MODULE, Node} ! {route, From, To, Packet};
+	_ ->
+	    dispatch(From, To, Packet)
     end.
 
 do_route1(From, To, {broadcast, _} = Packet) ->
@@ -925,38 +927,23 @@ get_proc(N) ->
 			    "_",
 			    (iolist_to_binary(integer_to_list(N)))/binary>>).
 
-start_dispatchers() ->
-    case get_proc_num() of
-      N when N > 1 ->
-	  lists:foreach(fun (I) ->
-				Pid = spawn(fun dispatch/0),
-				erlang:register(get_proc(I), Pid)
-			end,
-			lists:seq(1, N));
-      _ -> ok
-    end.
+start_handlers() ->
+    N = get_proc_num(),
+    lists:foreach(
+      fun(I) ->
+              ejabberd_sm_handler:start(get_proc(I))
+      end, lists:seq(1, N)).
 
-stop_dispatchers() ->
-    case get_proc_num() of
-      N when N > 1 ->
-	  lists:foreach(fun (I) -> get_proc(I) ! stop end,
-			lists:seq(1, N));
-      _ -> ok
-    end.
+stop_handlers() ->
+    N = get_proc_num(),
+    lists:foreach(
+      fun(I) ->
+              ejabberd_sm_handler:stop(get_proc(I))
+      end, lists:seq(1, N)).
 
-dispatch() ->
-    receive
-      {route, From, To, Packet} ->
-	  case catch do_route(From, To, Packet) of
-	    {'EXIT', Reason} ->
-		?ERROR_MSG("~p~nwhen processing: ~p",
-			   [Reason, {From, To, Packet}]);
-	    _ -> ok
-	  end,
-	  dispatch();
-      stop -> stopped;
-      _ -> dispatch()
-    end.
+dispatch(From, To, Packet) ->
+    #jid{luser = U, lserver = S} = To,
+    ejabberd_sm_handler:route(get_proc_by_hash({U, S}), From, To, Packet).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Update Mnesia tables

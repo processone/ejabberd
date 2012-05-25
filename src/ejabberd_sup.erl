@@ -168,6 +168,13 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_iq_sup]},
+    SMHandlerSup =
+        {ejabberd_sm_sup,
+	 {ejabberd_sm_sup, start_link, []},
+	 permanent,
+	 infinity,
+	 supervisor,
+	 [ejabberd_sm_sup]},
     STUNSupervisor =
 	{ejabberd_stun_sup,
 	 {ejabberd_tmp_sup, start_link,
@@ -188,6 +195,7 @@ init([]) ->
 	   SystemMonitor,
 	   Router,
 	   Router_multicast,
+           SMHandlerSup,
 	   SM,
 	   S2S,
 	   Local,
