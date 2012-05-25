@@ -66,30 +66,39 @@ start_link() ->
 process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
-      #iq{xmlns = XMLNS} ->
-	  Host = To#jid.lserver,
-	  case ets:lookup(?IQTABLE, {XMLNS, Host}) of
-	    [{_, Module, Function}] ->
-		ResIQ = Module:Function(From, To, IQ),
-		if ResIQ /= ignore ->
-		       ejabberd_router:route(To, From, jlib:iq_to_xml(ResIQ));
-		   true -> ok
-		end;
-	    [{_, Module, Function, Opts}] ->
-		gen_iq_handler:handle(Host, Module, Function, Opts,
-				      From, To, IQ);
-	    [] ->
-		Err = jlib:make_error_reply(Packet,
-					    ?ERR_FEATURE_NOT_IMPLEMENTED),
-		ejabberd_router:route(To, From, Err)
-	  end;
-      reply ->
-	  IQReply = jlib:iq_query_or_response_info(Packet),
-	  process_iq_reply(From, To, IQReply);
-      _ ->
-	  Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
-	  ejabberd_router:route(To, From, Err),
-	  ok
+	#iq{xmlns = XMLNS} ->
+	    Host = To#jid.lserver,
+	    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
+		[{_, Module, Function}] ->
+		    ResIQ = Module:Function(From, To, IQ),
+		    if
+			ResIQ /= ignore ->
+			    ejabberd_router:route(
+			      To, From, jlib:iq_to_xml(ResIQ));
+			true ->
+			    ok
+		    end;
+                [{_, Module, Function, Opts1}|Tail] ->
+                    Opts = if is_pid(Opts1) ->
+                                   [Opts1 |
+                                    [Pid || {_, _, _, Pid} <- Tail]];
+                              true ->
+                                   Opts1
+                           end,
+		    gen_iq_handler:handle(Host, Module, Function, Opts,
+					  From, To, IQ);
+		[] ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+		    ejabberd_router:route(To, From, Err)
+	    end;
+	reply ->
+	    IQReply = jlib:iq_query_or_response_info(Packet),
+	    process_iq_reply(From, To, IQReply);
+	_ ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
+	    ejabberd_router:route(To, From, Err),
+	    ok
     end.
 
 process_iq_reply(From, To, #iq{id = ID} = IQ) ->
@@ -167,16 +176,13 @@ bounce_resource_packet(From, To, Packet) ->
 %%====================================================================
 
 init([]) ->
-    lists:foreach(fun (Host) ->
-			  ejabberd_router:register_route(Host,
-							 {apply, ?MODULE,
-							  route}),
-			  ejabberd_hooks:add(local_send_to_resource_hook, Host,
-					     ?MODULE, bounce_resource_packet,
-					     100)
-		  end,
-		  ?MYHOSTS),
-    catch ets:new(?IQTABLE, [named_table, public]),
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_router:register_route(Host, {apply, ?MODULE, route}),
+	      ejabberd_hooks:add(local_send_to_resource_hook, Host,
+				 ?MODULE, bounce_resource_packet, 100)
+      end, ?MYHOSTS),
+    catch ets:new(?IQTABLE, [named_table, public, bag]),
     mnesia:delete_table(iq_response),
     catch ets:new(iq_response,
 		  [named_table, public, {keypos, #iq_response.id}]),
@@ -201,19 +207,23 @@ handle_info({register_iq_handler, Host, XMLNS, Module,
     ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
     catch mod_disco:register_feature(Host, XMLNS),
     {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module,
-	     Function, Opts},
-	    State) ->
-    ets:insert(?IQTABLE,
-	       {{XMLNS, Host}, Module, Function, Opts}),
+handle_info({register_iq_handler, Host, XMLNS, Module, Function, Opts}, State) ->
+    ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function, Opts}),
+    if is_pid(Opts) ->
+            erlang:monitor(process, Opts);
+       true ->
+            ok
+    end,
     catch mod_disco:register_feature(Host, XMLNS),
     {noreply, State};
 handle_info({unregister_iq_handler, Host, XMLNS},
 	    State) ->
     case ets:lookup(?IQTABLE, {XMLNS, Host}) of
-      [{_, Module, Function, Opts}] ->
-	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-      _ -> ok
+        [{_, Module, Function, Opts1}|Tail] when is_pid(Opts1) ->
+            Opts = [Opts1 | [Pid || {_, _, _, Pid} <- Tail]],
+	    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+	_ ->
+	    ok
     end,
     ets:delete(?IQTABLE, {XMLNS, Host}),
     catch mod_disco:unregister_feature(Host, XMLNS),
@@ -233,12 +243,36 @@ handle_info(refresh_iq_handlers, State) ->
 handle_info({timeout, _TRef, ID}, State) ->
     spawn(fun () -> process_iq_timeout(ID) end),
     {noreply, State};
-handle_info(_Info, State) -> {noreply, State}.
+handle_info({'DOWN', _MRef, _Type, Pid, _Info}, State) ->
+    Rs = ets:select(?IQTABLE,
+                    [{{'_','_','_','$1'},
+                      [{'==', '$1', Pid}],
+                      ['$_']}]),
+    lists:foreach(fun(R) -> ets:delete_object(?IQTABLE, R) end, Rs),
+    {noreply, State};
+handle_info(_Info, State) ->
+    {noreply, State}.
 
-terminate(_Reason, _State) -> ok.
+%%--------------------------------------------------------------------
+%% Function: terminate(Reason, State) -> void()
+%% Description: This function is called by a gen_server when it is about to
+%% terminate. It should be the opposite of Module:init/1 and do any necessary
+%% cleaning up. When it returns, the gen_server terminates with Reason.
+%% The return value is ignored.
+%%--------------------------------------------------------------------
+terminate(_Reason, _State) ->
+    ok.
 
-code_change(_OldVsn, State, _Extra) -> {ok, State}.
+%%--------------------------------------------------------------------
+%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
+%% Description: Convert process state when code is changed
+%%--------------------------------------------------------------------
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
 do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket "
 	   "~P~n",

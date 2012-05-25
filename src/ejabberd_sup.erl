@@ -163,12 +163,11 @@ init([]) ->
 	 [ejabberd_tmp_sup]},
     IQSupervisor =
 	{ejabberd_iq_sup,
-	 {ejabberd_tmp_sup, start_link,
-	  [ejabberd_iq_sup, gen_iq_handler]},
+	 {ejabberd_iq_sup, start_link, []},
 	 permanent,
 	 infinity,
 	 supervisor,
-	 [ejabberd_tmp_sup]},
+	 [ejabberd_iq_sup]},
     STUNSupervisor =
 	{ejabberd_stun_sup,
 	 {ejabberd_tmp_sup, start_link,

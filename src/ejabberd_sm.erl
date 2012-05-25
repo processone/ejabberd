@@ -422,7 +422,7 @@ init([]) ->
     mnesia:add_table_index(session, usr),
     mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies),
-    ets:new(sm_iqtable, [named_table]),
+    ets:new(sm_iqtable, [named_table, bag]),
     ejabberd_hooks:add(node_up, ?MODULE, node_up, 100),
     ejabberd_hooks:add(node_down, ?MODULE, node_down, 100),
     ejabberd_hooks:add(node_hash_update, ?MODULE, migrate,
@@ -467,22 +467,34 @@ handle_info({register_iq_handler, Host, XMLNS, Module,
     ets:insert(sm_iqtable,
 	       {{XMLNS, Host}, Module, Function}),
     {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module,
-	     Function, Opts},
-	    State) ->
-    ets:insert(sm_iqtable,
-	       {{XMLNS, Host}, Module, Function, Opts}),
+handle_info({register_iq_handler, Host, XMLNS, Module, Function, Opts}, State) ->
+    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function, Opts}),
+    if is_pid(Opts) ->
+            erlang:monitor(process, Opts);
+       true ->
+            ok
+    end,
     {noreply, State};
 handle_info({unregister_iq_handler, Host, XMLNS},
 	    State) ->
     case ets:lookup(sm_iqtable, {XMLNS, Host}) of
-      [{_, Module, Function, Opts}] ->
-	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-      _ -> ok
+	[{_, Module, Function, Opts1}|Tail] when is_pid(Opts1) ->
+            Opts = [Opts1 | [Pid || {_, _, _, Pid} <- Tail]],
+	    gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+	_ ->
+	    ok
     end,
     ets:delete(sm_iqtable, {XMLNS, Host}),
     {noreply, State};
-handle_info(_Info, State) -> {noreply, State}.
+handle_info({'DOWN', _MRef, _Type, Pid, _Info}, State) ->
+    Rs = ets:select(sm_iqtable,
+                    [{{'_','_','_','$1'},
+                      [{'==', '$1', Pid}],
+                      ['$_']}]),
+    lists:foreach(fun(R) -> ets:delete_object(sm_iqtable, R) end, Rs),
+    {noreply, State};
+handle_info(_Info, State) ->
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
     ejabberd_hooks:delete(node_up, ?MODULE, node_up, 100),
@@ -817,28 +829,38 @@ get_max_user_sessions(LUser, Host) ->
 process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
-      #iq{xmlns = XMLNS} ->
-	  Host = To#jid.lserver,
-	  case ets:lookup(sm_iqtable, {XMLNS, Host}) of
-	    [{_, Module, Function}] ->
-		ResIQ = Module:Function(From, To, IQ),
-		if ResIQ /= ignore ->
-		       ejabberd_router:route(To, From, jlib:iq_to_xml(ResIQ));
-		   true -> ok
-		end;
-	    [{_, Module, Function, Opts}] ->
-		gen_iq_handler:handle(Host, Module, Function, Opts,
-				      From, To, IQ);
-	    [] ->
-		Err = jlib:make_error_reply(Packet,
-					    ?ERR_SERVICE_UNAVAILABLE),
-		ejabberd_router:route(To, From, Err)
-	  end;
-      reply -> ok;
-      _ ->
-	  Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
-	  ejabberd_router:route(To, From, Err),
-	  ok
+	#iq{xmlns = XMLNS} ->
+	    Host = To#jid.lserver,
+	    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+		[{_, Module, Function}] ->
+		    ResIQ = Module:Function(From, To, IQ),
+		    if
+			ResIQ /= ignore ->
+			    ejabberd_router:route(To, From,
+						  jlib:iq_to_xml(ResIQ));
+			true ->
+			    ok
+		    end;
+		[{_, Module, Function, Opts1}|Tail] ->
+                    Opts = if is_pid(Opts1) ->
+                                   [Opts1 |
+                                    [Pid || {_, _, _, Pid} <- Tail]];
+                              true ->
+                                   Opts1
+                           end,
+		    gen_iq_handler:handle(Host, Module, Function, Opts,
+					  From, To, IQ);
+		[] ->
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERR_SERVICE_UNAVAILABLE),
+		    ejabberd_router:route(To, From, Err)
+	    end;
+	reply ->
+	    ok;
+	_ ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
+	    ejabberd_router:route(To, From, Err),
+	    ok
     end.
 
 -spec force_update_presence({binary(), binary()}) -> any().
