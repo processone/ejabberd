@@ -59,8 +59,7 @@ bind_tcp_ports() ->
 	Ls ->
 	    lists:foreach(
 	      fun({Port, Module, Opts}) ->
-		      ModuleRaw = strip_frontend(Module),
-		      case ModuleRaw:socket_type() of
+		      case Module:socket_type() of
 			  independent -> ok;
 			  _ ->
 			      bind_tcp_port(Port, Module, Opts)
@@ -114,9 +113,8 @@ report_duplicated_portips(L) ->
 
 start(Port, Module, Opts) ->
     %% Check if the module is an ejabberd listener or an independent listener
-    ModuleRaw = strip_frontend(Module),
-    case ModuleRaw:socket_type() of
-	independent -> ModuleRaw:start_listener(Port, Opts);
+    case Module:socket_type() of
+	independent -> Module:start_listener(Port, Opts);
 	_ -> start_dependent(Port, Module, Opts)
     end.
 
@@ -336,7 +334,7 @@ start_module_sup(_Port, Module) ->
     Proc1 = gen_mod:get_module_proc("sup", Module),
     ChildSpec1 =
 	{Proc1,
-	 {ejabberd_tmp_sup, start_link, [Proc1, strip_frontend(Module)]},
+	 {ejabberd_tmp_sup, start_link, [Proc1, Module]},
 	 permanent,
 	 infinity,
 	 supervisor,
@@ -433,7 +431,6 @@ strip_frontend({frontend, Module}) ->
     Module;
 strip_frontend(Module) when is_atom(Module) ->
     Module.
-
 
 %%%
 %%% Check options
