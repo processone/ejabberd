@@ -196,5 +196,4 @@ init([]) ->
            HTTPPollSupervisor,
            IQSupervisor,
            STUNSupervisor,
-           FrontendSocketSupervisor,
            Listener]}}.
