@@ -5,8 +5,6 @@
   {vsn, "2.1.8"},
   {modules, [acl,
              adhoc,
-             cache_tab,
-             cache_tab_sup,
              cyrsasl_anonymous,
              cyrsasl,
              cyrsasl_digest,

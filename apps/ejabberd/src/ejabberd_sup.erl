@@ -161,13 +161,14 @@ init([]) ->
          infinity,
          supervisor,
          [ejabberd_tmp_sup]},
-    CacheTabSupervisor =
-        {cache_tab_sup,
-         {cache_tab_sup, start_link, []},
+    STUNSupervisor =
+        {ejabberd_stun_sup,
+         {ejabberd_tmp_sup, start_link,
+          [ejabberd_stun_sup, ejabberd_stun]},
          permanent,
          infinity,
          supervisor,
-         [cache_tab_sup]},
+         [ejabberd_tmp_sup]},
     SMBackendSupervisor =
         {ejabberd_sm_backend_sup,
          {ejabberd_sm_backend_sup, start_link, []},
@@ -194,5 +195,6 @@ init([]) ->
            HTTPSupervisor,
            HTTPPollSupervisor,
            IQSupervisor,
-           CacheTabSupervisor,
+           STUNSupervisor,
+           FrontendSocketSupervisor,
            Listener]}}.
