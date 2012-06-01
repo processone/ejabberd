@@ -94,13 +94,8 @@ process_iq(From, To,
 	   #iq{type = Type, lang = Lang1, sub_el = SubEl, id = ID} = IQ,
 	   Source) ->
     Lang = binary_to_list(Lang1),
-    IsCaptchaEnabled = case gen_mod:get_module_opt(
-			      To#jid.lserver, ?MODULE, captcha_protected, false) of
-			   true ->
-			       true;
-			   _ ->
-			       false
-		       end,
+    IsCaptchaEnabled = false,
+
     case Type of
 	set ->
 	    UTag = xml:get_subtag(SubEl, <<"username">>),
@@ -175,27 +170,6 @@ process_iq(From, To,
 		    try_register_or_set_password(
 		      User, Server, Password, From,
 		      IQ, SubEl, Source, Lang, not IsCaptchaEnabled);
-		IsCaptchaEnabled ->
-		    case ejabberd_captcha:process_reply(SubEl) of
-			ok ->
-			    case process_xdata_submit(SubEl) of
-				{ok, User, Password} ->
-				    try_register_or_set_password(
-				      User, Server, Password, From,
-				      IQ, SubEl, Source, Lang, true);
-				_ ->
-				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
-			    end;
-			{error, malformed} ->
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-			_ ->
-			    ErrText = "The CAPTCHA verification has failed",
-			    IQ#iq{type = error,
-				  sub_el = [SubEl,
-					    ?ERRT_NOT_ALLOWED(Lang, ErrText)]}
-		    end;
 		true ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
