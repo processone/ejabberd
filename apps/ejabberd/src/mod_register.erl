@@ -175,7 +175,7 @@ process_iq(From, To,
 			  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
 	    end;
 	get ->
-	    {IsRegistered, UsernameSubels, QuerySubels} =
+	    {_IsRegistered, UsernameSubels, QuerySubels} =
 		case From of
 		    #jid{user = User, lserver = Server} ->
 			case ejabberd_auth:is_user_exists(User, Server) of
@@ -188,47 +188,6 @@ process_iq(From, To,
 		    _ ->
 			{false, [], []}
 		end,
-	    if IsCaptchaEnabled and not IsRegistered ->
-		    TopInstrEl = {xmlelement, <<"instructions">>, [],
-				  [{xmlcdata,
-				    translate:translate(
-				      Lang, "You need a client that supports x:data "
-				      "and CAPTCHA to register")}]},
-		    InstrEl = {xmlelement, <<"instructions">>, [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang,
-				   "Choose a username and password "
-				   "to register with this server")}]},
-		    UField = {xmlelement, "field",
-			      [{<<"type">>, <<"text-single">>},
-			       {<<"label">>, translate:translate(Lang, "User")},
-			       {<<"var">>, <<"username">>}],
-			      [{xmlelement, <<"required">>, [], []}]},
-		    PField = {xmlelement, <<"field">>,
-			      [{<<"type">>, <<"text-private">>},
-			       {<<"label">>, translate:translate(Lang, "Password")},
-			       {<<"var">>, <<"password">>}],
-			      [{xmlelement, <<"required">>, [], []}]},
-		    case ejabberd_captcha:create_captcha_x(
-			   ID, To, Lang, Source, [InstrEl, UField, PField]) of
-			{ok, CaptchaEls} ->
-			    IQ#iq{type = result,
-				  sub_el = [{xmlelement, <<"query">>,
-					     [{<<"xmlns">>, <<"jabber:iq:register">>}],
-					     [TopInstrEl | CaptchaEls]}]};
-                        {error, limit} ->
-                            ErrText = "Too many CAPTCHA requests",
-                            IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERRT_RESOURCE_CONSTRAINT(
-                                                      Lang, ErrText)]};
-			_Err ->
-			    ErrText = "Unable to generate a CAPTCHA",
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(
-						      Lang, ErrText)]}
-		    end;
-	       true ->
 		    IQ#iq{type = result,
 			  sub_el = [{xmlelement,
 				     <<"query">>,
@@ -242,7 +201,6 @@ process_iq(From, To,
 				      {xmlelement, <<"username">>, [], UsernameSubels},
 				      {xmlelement, <<"password">>, [], []}
 				      | QuerySubels]}]}
-	    end
     end.
 
 try_register_or_set_password(User, Server, Password, From, IQ,
