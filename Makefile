@@ -36,7 +36,7 @@ rel: rebar deps
 devrel: rebar deps compile
 	mkdir -p dev
 	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd)
-	cp apps/ejabberd/src/*.erl dev/ejabberd/lib/ejabberd-2.1.8/ebin/
+	cp apps/ejabberd/src/*.erl dev/ejabberd/lib/ejabberd/ebin/
 	cp -R `which erl`/../../lib/tools-2.6.7 dev/ejabberd/lib/
 
 devclean:
