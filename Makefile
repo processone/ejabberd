@@ -33,10 +33,10 @@ eunit: rebar
 rel: rebar deps
 	./rebar compile generate -f
 
-devrel:
+devrel: rebar deps
 	mkdir -p dev
 	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd)
-	cp apps/ejabberd/src/*.erl dev/ejabberd/lib/ejabberd/ebin/
+	cp apps/ejabberd/src/*.erl dev/ejabberd/lib/ejabberd-2.1.8/ebin/
 	cp -R `which erl`/../../lib/tools-2.6.7 dev/ejabberd/lib/
 
 devclean:
