@@ -69,7 +69,6 @@
 		user_desc,
 		member_attr_format,
 		member_attr_format_re,
-		filter,
 		ufilter,
 		rfilter,
 		gfilter,
@@ -643,11 +642,6 @@ parse_options(Host, Opts) ->
 		         "" -> eldap_filter:do_sub(SubFilter, [{"%u", "*"}]);
 		         GString -> GString
                      end,
-    Filter = case ConfigFilter of
-		 undefined -> SubFilter;
-		 "" -> SubFilter;
-		 _ -> "(&" ++ SubFilter ++ ConfigFilter ++ ")"
-	     end,
     UserFilter = case ConfigFilter of
 		     undefined -> UserSubFilter;
 		     "" -> UserSubFilter;
@@ -686,7 +680,6 @@ parse_options(Host, Opts) ->
 	   user_desc = UserDesc,
 	   member_attr_format = MemberAttrFormat,
 	   member_attr_format_re = MemberAttrFormatRe,
-	   filter = Filter,
 	   ufilter = UserFilter,
 	   rfilter = RosterFilter,
 	   gfilter = GroupFilter,
