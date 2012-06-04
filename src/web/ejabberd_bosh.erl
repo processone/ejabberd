@@ -463,20 +463,18 @@ active1(#body{attrs = Attrs} = Req, From, State) ->
 	   {next_state, active,
 	    State1#state{receivers = Receivers}};
        RID =< State#state.prev_rid ->
-	   case gb_trees:lookup(RID, State#state.responses) of
-	     {value, PrevBody} ->
-		 {next_state, active,
-		  do_reply(State, From, PrevBody, RID)};
-	     none ->
-		 reply_stop(State,
-			    #body{http_reason =
-				      <<"Request ID is out of range">>,
-				  attrs =
-				      [{<<"type">>, <<"terminate">>},
-				       {<<"condition">>,
-					<<"item-not-found">>}]},
-			    From, RID)
-	   end;
+            %% TODO: do we need to check 'key' here? It seems so...
+            case gb_trees:lookup(RID, State#state.responses) of
+                {value, PrevBody} ->
+                    {next_state, active,
+                     do_reply(State, From, PrevBody, RID)};
+                none ->
+                    State1 = drop_holding_receiver(State),
+                    State2 = restart_inactivity_timer(State1),
+                    Receivers = gb_trees:insert(RID, {From, Req},
+                                                State2#state.receivers),
+                    {next_state, active, State2#state{receivers = Receivers}}
+            end;
        not IsValidKey ->
 	   reply_stop(State,
 		      #body{http_reason = <<"Session key mismatch">>,
