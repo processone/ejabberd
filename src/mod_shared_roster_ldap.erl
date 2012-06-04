@@ -62,13 +62,13 @@
 		dn,
 		base,
 		password,
-		uid,
+		member_attr,
                 deref_aliases,
 		group_attr,
 		group_desc,
 		user_desc,
-		uid_format,
-		uid_format_re,
+		member_attr_format,
+		member_attr_format_re,
 		filter,
 		ufilter,
 		rfilter,
@@ -384,14 +384,14 @@ get_user_name(User, Host) ->
 
 search_group_info(State, Group) ->
     Extractor =
-	case State#state.uid_format_re of
+	case State#state.member_attr_format_re of
 	    "" ->
-		fun(UID) ->
-			catch eldap_utils:get_user_part(UID, State#state.uid_format)
+		fun(Str) ->
+			catch eldap_utils:get_user_part(Str, State#state.member_attr_format)
 		end;
 	    _  ->
-		fun(UID) ->
-			catch get_user_part_re(UID, State#state.uid_format_re)
+		fun(Str) ->
+			catch get_user_part_re(Str, State#state.member_attr_format_re)
 		end
 	end,
     AuthChecker = case State#state.auth_check of
@@ -402,7 +402,7 @@ search_group_info(State, Group) ->
     case eldap_search(
 	   State,
 	   [eldap_filter:do_sub(State#state.gfilter, [{"%g", Group}])],
-	   [State#state.group_desc, State#state.uid]) of
+	   [State#state.group_desc, State#state.member_attr]) of
 	[] ->
 	    error;
 	LDAPEntries ->
@@ -410,7 +410,7 @@ search_group_info(State, Group) ->
 		lists:foldl(
 		  fun(#eldap_entry{attributes=Attrs}, {DescAcc, JIDsAcc}) ->
 			  case {eldap_utils:get_ldap_attr(State#state.group_desc, Attrs),
-				lists:keysearch(State#state.uid, 1, Attrs)} of
+				lists:keysearch(State#state.member_attr, 1, Attrs)} of
 			      {Desc, {value, {_, Members}}}
 			      when Desc =/= "" ->
 		                  %% By returning "" get_ldap_attr means "not found"
@@ -526,25 +526,25 @@ parse_options(Host, Opts) ->
 		   undefined -> "cn";
 		   UD -> UD
 	       end,
-    UIDAttr = case gen_mod:get_opt(ldap_memberattr, Opts, undefined) of
-		  undefined -> "memberUid";
-		  UA -> UA
-	      end,
-    UIDAttrFormat = case gen_mod:get_opt(ldap_memberattr_format, Opts, undefined) of
-			undefined -> "%u";
-			UAF -> UAF
-		    end,
-    UIDAttrFormatRe =
+    MemberAttr = case gen_mod:get_opt(ldap_memberattr, Opts, undefined) of
+		     undefined -> "memberUid";
+		     MA -> MA
+	         end,
+    MemberAttrFormat = case gen_mod:get_opt(ldap_memberattr_format, Opts, undefined) of
+			   undefined -> "%u";
+			   MAF -> MAF
+		       end,
+    MemberAttrFormatRe =
 	case gen_mod:get_opt(ldap_memberattr_format_re, Opts, undefined) of
 	    undefined -> "";
-	    UAFre -> case catch re:compile(UAFre) of
+	    MAFre -> case catch re:compile(MAFre) of
 			 {ok, MP} ->
 			     MP;
 			 _ ->
 			     ?ERROR_MSG("Invalid ldap_memberattr_format_re '~s' "
 					"or no RE support in this erlang version. "
 					"ldap_memberattr_format '~s' will be used "
-					"instead.", [UAFre, UIDAttrFormat]),
+					"instead.", [MAFre, MemberAttrFormat]),
 			     ""
 		     end
 	end,
@@ -632,7 +632,7 @@ parse_options(Host, Opts) ->
     lists:foreach(fun eldap_utils:check_filter/1, 
                   [ConfigFilter, ConfigUserFilter,
                    ConfigGroupFilter, RosterFilter]),
-    SubFilter = "(&("++UIDAttr++"="++UIDAttrFormat++")("++GroupAttr++"=%g))",
+    SubFilter = "(&("++MemberAttr++"="++MemberAttrFormat++")("++GroupAttr++"=%g))",
     UserSubFilter = case ConfigUserFilter of
                         undefined -> eldap_filter:do_sub(SubFilter, [{"%g", "*"}]);
                         "" -> eldap_filter:do_sub(SubFilter, [{"%g", "*"}]);
@@ -679,13 +679,13 @@ parse_options(Host, Opts) ->
 	   dn = RootDN,
 	   base = LDAPBase,
 	   password = Password,
-	   uid = UIDAttr,
+	   member_attr = MemberAttr,
            deref_aliases = DerefAliases,
 	   group_attr = GroupAttr,
 	   group_desc = GroupDesc,
 	   user_desc = UserDesc,
-	   uid_format = UIDAttrFormat,
-	   uid_format_re = UIDAttrFormatRe,
+	   member_attr_format = MemberAttrFormat,
+	   member_attr_format_re = MemberAttrFormatRe,
 	   filter = Filter,
 	   ufilter = UserFilter,
 	   rfilter = RosterFilter,
