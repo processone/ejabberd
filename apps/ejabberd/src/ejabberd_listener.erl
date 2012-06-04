@@ -283,11 +283,7 @@ accept(ListenSocket, Module, Opts) ->
 		_ ->
 		    ok
 	    end,
-	    CallMod = case is_frontend(Module) of
-			  true -> ejabberd_frontend_socket;
-			  false -> ejabberd_socket
-		      end,
-	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
+	    ejabberd_socket:start(strip_frontend(Module), gen_tcp, Socket, Opts),
 	    accept(ListenSocket, Module, Opts);
 	{error, Reason} ->
 	    ?INFO_MSG("(~w) Failed TCP accept: ~w",
@@ -430,13 +426,13 @@ delete_listener(PortIP, Module, Opts) ->
     ejabberd_config:add_local_option(listen, Ports1),
     stop_listener(PortIP1, Module).
 
-is_frontend({frontend, _Module}) -> true;
-is_frontend(_) -> false.
-
 %% @doc(FrontMod) -> atom()
 %% where FrontMod = atom() | {frontend, atom()}
-strip_frontend({frontend, Module}) -> Module;
-strip_frontend(Module) when is_atom(Module) -> Module.
+strip_frontend({frontend, Module}) ->
+    ?ERROR_MSG("using deprecated feature: frontend socket~n", []),
+    Module;
+strip_frontend(Module) when is_atom(Module) ->
+    Module.
 
 
 %%%

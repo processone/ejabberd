@@ -49,13 +49,6 @@ init([]) ->
          brutal_kill,
          worker,
          [ejabberd_hooks]},
-    NodeGroups =
-        {ejabberd_node_groups,
-         {ejabberd_node_groups, start_link, []},
-         permanent,
-         brutal_kill,
-         worker,
-         [ejabberd_node_groups]},
     SystemMonitor =
         {ejabberd_system_monitor,
          {ejabberd_system_monitor, start_link, []},
@@ -160,14 +153,6 @@ init([]) ->
          infinity,
          supervisor,
          [ejabberd_tmp_sup]},
-    FrontendSocketSupervisor =
-        {ejabberd_frontend_socket_sup,
-         {ejabberd_tmp_sup, start_link,
-          [ejabberd_frontend_socket_sup, ejabberd_frontend_socket]},
-         permanent,
-         infinity,
-         supervisor,
-         [ejabberd_tmp_sup]},
     IQSupervisor =
         {ejabberd_iq_sup,
          {ejabberd_tmp_sup, start_link,
@@ -194,7 +179,6 @@ init([]) ->
     {ok, {{one_for_one, 10, 1},
           [Randoms,
            Hooks,
-           NodeGroups,
            SystemMonitor,
            SMBackendSupervisor,
            Router,
@@ -210,6 +194,5 @@ init([]) ->
            HTTPSupervisor,
            HTTPPollSupervisor,
            IQSupervisor,
-           FrontendSocketSupervisor,
            CacheTabSupervisor,
            Listener]}}.
