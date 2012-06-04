@@ -67,7 +67,6 @@
 		group_attr,
 		group_desc,
 		user_desc,
-		user_uid,
 		uid_format,
 		uid_format_re,
 		filter,
@@ -403,18 +402,18 @@ search_group_info(State, Group) ->
     case eldap_search(
 	   State,
 	   [eldap_filter:do_sub(State#state.gfilter, [{"%g", Group}])],
-	   [State#state.group_attr, State#state.group_desc, State#state.uid]) of
+	   [State#state.group_desc, State#state.uid]) of
 	[] ->
 	    error;
 	LDAPEntries ->
 	    {GroupDesc, MembersLists} =
 		lists:foldl(
 		  fun(#eldap_entry{attributes=Attrs}, {DescAcc, JIDsAcc}) ->
-			  case {eldap_utils:get_ldap_attr(State#state.group_attr, Attrs),
-				eldap_utils:get_ldap_attr(State#state.group_desc, Attrs),
+			  case {eldap_utils:get_ldap_attr(State#state.group_desc, Attrs),
 				lists:keysearch(State#state.uid, 1, Attrs)} of
-			      {ID, Desc, {value, {State#state.uid, Members}}}
-			      when ID =/= "" ->
+			      {Desc, {value, {_, Members}}}
+			      when Desc =/= "" ->
+		                  %% By returning "" get_ldap_attr means "not found"
 				  JIDs = lists:foldl(
 					   fun({ok, UID}, L) ->
 						   PUID = jlib:nodeprep(UID),
@@ -442,15 +441,14 @@ search_user_name(State, User) ->
     case eldap_search(
 	   State,
 	   [eldap_filter:do_sub(State#state.ufilter, [{"%u", User}])],
-	   [State#state.user_desc, State#state.user_uid]) of
+	   [State#state.user_desc]) of
 	[#eldap_entry{attributes=Attrs}|_] ->
-	    case {eldap_utils:get_ldap_attr(State#state.user_uid, Attrs),
-		  eldap_utils:get_ldap_attr(State#state.user_desc, Attrs)} of
-		{UID, Desc} when UID =/= "" ->
+	    case eldap_utils:get_ldap_attr(State#state.user_desc, Attrs) of
+		"" ->
 		    %% By returning "" get_ldap_attr means "not found"
-		    {ok, Desc};
-		_ ->
-		    error
+		    error;
+		Desc ->
+		    {ok, Desc}
 	    end;
 	[] ->
 	    error
@@ -528,10 +526,6 @@ parse_options(Host, Opts) ->
 		   undefined -> "cn";
 		   UD -> UD
 	       end,
-    UserUID = case gen_mod:get_opt(ldap_useruid, Opts, undefined) of
-		  undefined -> "cn";
-		  UU -> UU
-	      end,
     UIDAttr = case gen_mod:get_opt(ldap_memberattr, Opts, undefined) of
 		  undefined -> "memberUid";
 		  UA -> UA
@@ -690,7 +684,6 @@ parse_options(Host, Opts) ->
 	   group_attr = GroupAttr,
 	   group_desc = GroupDesc,
 	   user_desc = UserDesc,
-	   user_uid = UserUID,
 	   uid_format = UIDAttrFormat,
 	   uid_format_re = UIDAttrFormatRe,
 	   filter = Filter,
