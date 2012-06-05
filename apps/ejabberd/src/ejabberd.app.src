@@ -85,6 +85,7 @@
 	     mod_last_odbc,
 	     mod_offline,
              mod_privacy,
+             mod_privacy_odbc,
              mod_private_odbc,
              mod_register,
              mod_roster,

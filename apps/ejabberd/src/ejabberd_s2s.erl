@@ -418,12 +418,14 @@ is_service(From, To) ->
     end.
 
 parent_domains(Domain) ->
-    lists:foldl(
-      fun(Label, []) ->
-	      [Label];
-	 (Label, [Head | Tail]) ->
-	      [Label ++ "." ++ Head, Head | Tail]
-      end, [], lists:reverse(string:tokens(Domain, "."))).
+    parent_domains(Domain, [Domain]).
+
+parent_domains(<<>>, Acc) ->
+    lists:reverse(Acc);
+parent_domains(<<$., Rest/binary>>, Acc) ->
+    parent_domains(Rest, [Rest | Acc]);
+parent_domains(<<_, Rest/binary>>, Acc) ->
+    parent_domains(Rest, Acc).
 
 send_element(Pid, El) ->
     Pid ! {send_element, El}.
