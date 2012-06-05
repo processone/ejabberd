@@ -3,16 +3,16 @@
 %% compliance with the License. You should have received a copy of the
 %% Erlang Public License along with this software. If not, it can be
 %% retrieved via the world wide web at http://www.erlang.org/.
-%% 
+%%
 %% Software distributed under the License is distributed on an "AS IS"
 %% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %% the License for the specific language governing rights and limitations
 %% under the License.
-%% 
+%%
 %% The Initial Developer of the Original Code is Ericsson Utvecklings AB.
 %% Portions created by Ericsson are Copyright 1999, Ericsson Utvecklings
 %% AB. All Rights Reserved.''
-%% 
+%%
 %% The code has been modified and improved by ProcessOne.
 %% Copyright 2007-2011, ProcessOne
 %%
@@ -32,7 +32,7 @@
 -module(p1_fsm).
 
 %%%-----------------------------------------------------------------
-%%%   
+%%%
 %%% This state machine is somewhat more pure than state_lib.  It is
 %%% still based on State dispatching (one function per state), but
 %%% allows a function handle_event to take care of events in all states.
@@ -233,7 +233,7 @@ sync_send_all_state_event(Name, Event, Timeout) ->
 %% e.g. when straddling a failover, or turn up in a restarted
 %% instance of the process.
 
-%% Returns Ref, sends event {timeout,Ref,Msg} after Time 
+%% Returns Ref, sends event {timeout,Ref,Msg} after Time
 %% to the (then) current state.
 start_timer(Time, Msg) ->
     erlang:start_timer(Time, self(), {'$gen_timer', Msg}).
@@ -242,13 +242,13 @@ start_timer(Time, Msg) ->
 send_event_after(Time, Event) ->
     erlang:start_timer(Time, self(), {'$gen_event', Event}).
 
-%% Returns the remaing time for the timer if Ref referred to 
+%% Returns the remaing time for the timer if Ref referred to
 %% an active timer/send_event_after, false otherwise.
 cancel_timer(Ref) ->
     case erlang:cancel_timer(Ref) of
 	false ->
 	    receive {timeout, Ref, _} -> 0
-	    after 0 -> false 
+	    after 0 -> false
 	    end;
 	RemainingTime ->
 	    RemainingTime
@@ -341,10 +341,10 @@ init_it(Starter, Parent, Name0, Mod, Args, Options) ->
     QueueLen = 0,
     case catch Mod:init(Args) of
 	{ok, StateName, StateData} ->
-	    proc_lib:init_ack(Starter, {ok, self()}), 	    
+	    proc_lib:init_ack(Starter, {ok, self()}),
 	    loop(Parent, Name, StateName, StateData, Mod, infinity, Debug, Limits, Queue, QueueLen);
 	{ok, StateName, StateData, Timeout} ->
-	    proc_lib:init_ack(Starter, {ok, self()}), 	    
+	    proc_lib:init_ack(Starter, {ok, self()}),
 	    loop(Parent, Name, StateName, StateData, Mod, Timeout, Debug, Limits, Queue, QueueLen);
 	{stop, Reason} ->
 	    proc_lib:init_ack(Starter, {error, Reason}),
@@ -388,7 +388,7 @@ loop(Parent, Name, StateName, StateData, Mod, hibernate, Debug,
 %% First we test if we have reach a defined limit ...
 loop(Parent, Name, StateName, StateData, Mod, Time, Debug,
      Limits, Queue, QueueLen) ->
-    try 	
+    try
 	message_queue_len(Limits, QueueLen)
 	%% TODO: We can add more limit checking here...
     catch
@@ -456,7 +456,7 @@ decode_msg(Msg,Parent, Name, StateName, StateData, Mod, Time, Debug,
 	    handle_msg(Msg, Parent, Name, StateName, StateData,
 		       Mod, Time, Limits, Queue, QueueLen);
 	_Msg ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event},
 				      {Name, StateName}, {in, Msg}),
 	    handle_msg(Msg, Parent, Name, StateName, StateData,
 		       Mod, Time, Debug1, Limits, Queue, QueueLen)
@@ -540,7 +540,7 @@ handle_msg(Msg, Parent, Name, StateName, StateData, Mod, _Time,
 	   Limits, Queue, QueueLen) -> %No debug here
     From = from(Msg),
     case catch dispatch(Msg, Mod, StateName, StateData) of
-	{next_state, NStateName, NStateData} ->	    
+	{next_state, NStateName, NStateData} ->
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, infinity, [], Limits, Queue, QueueLen);
 	{next_state, NStateName, NStateData, Time1} ->
@@ -590,12 +590,12 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
     From = from(Msg),
     case catch dispatch(Msg, Mod, StateName, StateData) of
 	{next_state, NStateName, NStateData} ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event},
 				      {Name, NStateName}, return),
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, infinity, Debug1, Limits, Queue, QueueLen);
 	{next_state, NStateName, NStateData, Time1} ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event},
 				      {Name, NStateName}, return),
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, Time1, Debug1, Limits, Queue, QueueLen);
@@ -697,7 +697,7 @@ terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
     end.
 
 error_info(Mod, Reason, Name, Msg, StateName, StateData, Debug) ->
-    Reason1 = 
+    Reason1 =
 	case Reason of
 	    {undef,[{M,F,A}|MFAs]} ->
 		case code:is_loaded(M) of
@@ -754,7 +754,7 @@ get_msg(Msg) -> Msg.
 %% Status information
 %%-----------------------------------------------------------------
 format_status(Opt, StatusData) ->
-    [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time]] =
+    [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time | _]] =
 	StatusData,
     NameTag = if is_pid(Name) ->
 		      pid_to_list(Name);
@@ -763,7 +763,7 @@ format_status(Opt, StatusData) ->
 	      end,
     Header = lists:concat(["Status for state machine ", NameTag]),
     Log = sys:get_debug(log, Debug, []),
-    Specfic = 
+    Specfic =
 	case erlang:function_exported(Mod, format_status, 2) of
 	    true ->
 		case catch Mod:format_status(Opt,[PDict,StateData]) of
@@ -789,7 +789,7 @@ limit_options(Options) ->
 limit_options([], Limits) ->
     Limits;
 %% Maximum number of messages allowed in the process message queue
-limit_options([{max_queue,N}|Options], Limits) 
+limit_options([{max_queue,N}|Options], Limits)
   when is_integer(N) ->
     NewLimits = Limits#limits{max_queue=N},
     limit_options(Options, NewLimits);
