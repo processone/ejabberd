@@ -95,13 +95,13 @@ start(Host, Opts) ->
 
 loop(Host, AccessMaxOfflineMsgs) ->
     receive
-        #offline_msg{us = User} = Msg ->
+        #offline_msg{us = UserServer} = Msg ->
             DBType = gen_mod:db_type(Host, ?MODULE),
-	    Msgs = receive_all(User, [Msg], DBType),
+	    Msgs = receive_all(UserServer, [Msg], DBType),
 	    Len = length(Msgs),
 	    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
-						   User, Host),
-            store_offline_msg(Host, User, Msgs, Len, MaxOfflineMsgs, DBType),
+						   UserServer, Host),
+            store_offline_msg(Host, UserServer, Msgs, Len, MaxOfflineMsgs, DBType),
             loop(Host, AccessMaxOfflineMsgs);
         _ ->
 	    loop(Host, AccessMaxOfflineMsgs)
@@ -176,9 +176,9 @@ store_offline_msg(Host, User, Msgs, Len, MaxOfflineMsgs, odbc) ->
     end.
 
 %% Function copied from ejabberd_sm.erl:
-get_max_user_messages(AccessRule, LUser, Host) ->
+get_max_user_messages(AccessRule, {User, Server}, Host) ->
     case acl:match_rule(
-	   Host, AccessRule, jlib:make_jid(LUser, Host, "")) of
+	   Host, AccessRule, jlib:make_jid(User, Server, "")) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
