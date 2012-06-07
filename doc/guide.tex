@@ -4242,61 +4242,146 @@ This module lets the server administrator
 automatically populate users' rosters (contact lists) with entries based on
 users and groups defined in an LDAP-based directory.
 
+The model used by this module when retrieving data from the LDAP-based
+directory is:
+\begin{itemize}
+\item For any user of a virtual host, there can be zero or more {\bf groups}.
+The set of groups may vary between users or be the same for all users within a
+virtual host.
+\item Each group has:
+  \begin{itemize}
+  \item An ID (a short name to distinguish groups by) --- usually not visible
+  to the users.
+  \item A human-readable ``Group Display Name'' --- that is shown to the users. If
+  there is none, the group ID is shown instead.
+  \item A list of one or more {\bf contacts}, i.e. the items that will appear
+  in the users' roster.
+  \end{itemize}
+\item Each contact has:
+  \begin{itemize}
+  \item An ID --- i.e. the part before the {\tt @} in a JID.
+  \item A domain name --- this is the same as the name of the virtual host.
+  The module currently does {\em not} support contacts in domains outside the
+  virtual host.
+  \item A human-readable ``Contact Display Name'' --- i.e. the full name if the
+  contact represents a person. If there is none, the contact ID is shown
+  instead.
+  \end{itemize}
+\end{itemize}
+
+See the subsection on ``Retrieving The Roster'' in
+section~\ref{msrlconfigroster} for more details.
+
+Also note that when the roster is sent to the user's XMPP client, it is
+structured as a flat list of contacts, each with a ``Contact Display Name'' and
+a list of ``Group Display Names'' it belongs to.
+
 \makesubsubsection{msrlconfigparams}{Configuration parameters}
 
-The module accepts the following configuration parameters. Some of them, if
-unspecified, default to the values specified for the top level of
-configuration. This lets you avoid specifying, for example, the bind password,
-in multiple places.
+The module accepts the following configuration parameters, which can be grouped
+into a few categories:
+\begin{itemize}
+\item Filters
+\item Attributes
+\item Control Parameters
+\item Cache Parameters
+\item Connection Parameters
+\end{itemize}
+
+Some of the parameters, if left unspecified in the configuration stanza for the
+module, take their value from top level of configuration. This lets you avoid
+specifying for example the bind password in multiple places in the
+configuration file.
 
 \makeparagraph{msrlfilters}{Filters}
 
-These parameters specify LDAP filters used to query for shared roster information.
-All of them are run against the \verb|ldap_base|.
-
-Note that query timeout is hardcoded to 5 seconds for the \modsharedrosterldap{} module.
+These parameters specify LDAP filters used to query for shared roster
+information.  Each of them is run against the \verb|ldap_base| with a timeout
+of 5 seconds.
 
 \begin{description}
 
  \titem{{\tt ldap\_rfilter}}
- So called ``Roster Filter''. Used to find names of all ``shared roster'' groups.
- See also the \verb|ldap_groupattr| parameter.
- If unspecified, defaults to the top-level parameter of the same name.
- You {\em must} specify it in some place in the configuration, there is no default.
+ So called ``Roster Filter'' --- used to find IDs of ``shared roster'' groups for a given user.
+ May contain the string {\tt \%u}, which will be replaced with the ID of the
+ user for which the roster is being retrieved.
+ See also the attribute \verb|ldap_groupattr|.\\
+ If unspecified, defaults to the top-level parameter of the same name.\\
+ {\bf Default:} {\em none}, you {\em must} specify it in some place in the configuration.
 
  \titem{{\tt ldap\_ufilter}}
- ``User Filter'' -- used for retrieving the human-readable name of roster
- entries (usually full names of people in the roster).
- See also the parameters \verb|ldap_userdesc| and \verb|ldap_useruid|.
- If unspecified, defaults to the top-level parameter of the same name.
- If that one also is unspecified, then the filter is assembled from values of
- other parameters as follows (\verb|[ldap_SOMETHING]| is used to mean ``the
- value of the configuration parameter {\tt ldap\_SOMETHING}''):
+ So called ``User Filter'' --- used for retrieving the human-readable ``Contact
+ Display Name'' for each contact in the roster (i.e. usually full name of a
+ person).
+ See also the attribute \verb|ldap_userdesc|.\\
+ If unspecified, defaults to the top-level parameter of the same name.\\
+ {\bf Default:} assembled from values of other parameters as:
 
 \begin{verbatim}
 (&(&([ldap_memberattr]=[ldap_memberattr_format])([ldap_groupattr]=%g))[ldap_filter])
 \end{verbatim}
 
- Subsequently {\tt \%u} and {\tt \%g} are replaced with a {\tt *}. This means
- that given the defaults, the filter sent to the LDAP server is would be
- \verb|(&(memberUid=*)(cn=*))|.  If however the {\tt ldap\_memberattr\_format}
- is something like \verb|uid=%u,ou=People,o=org|, then the filter will be
- \verb|(&(memberUid=uid=*,ou=People,o=org)(cn=*))|.
+ Where \verb|[ldap_SOMETHING]| is used to mean ``the value of the configuration
+ parameter {\tt ldap\_SOMETHING}''. When querying, the string {\tt \%g} is
+ replaced with a {\tt *}, and the string {\tt \%u} is replaced with the ID of
+ the contact.
+
+ \begin{description}
+ \titem{{\bf Example~1:}} Given the default values of the above parameters, the
+ filter sent to the LDAP server when retrieving the ``Contact Display Name'' of
+ {\tt alice@example.com} would be:\\
+ \verb|(&(memberUid=alice)(cn=*))|.
+
+ \titem{{\bf Example~2:}} Given the following values of parameters:
+ \begin{itemize}
+ \item {\tt ldap\_memberattr} = {\tt member}
+ \item {\tt ldap\_memberattr\_format} = \verb|uid=%u,ou=People,o=example,o=org|
+ \item {\tt ldap\_groupattr} = {\tt  dn}
+ \item {\tt ldap\_filter} = \verb|(type=1)|
+ \end{itemize}
+ then the filter sent to the LDAP server when retrieving the ``Contact Display
+ Name'' of {\tt bob@example.com} would be:\\
+ \verb|(&(&(member=uid=bob,ou=People,o=example,o=org)(dn=*))(type=1))|.
+ \end{description}
 
  \titem{{\tt ldap\_gfilter}}
- ``Group Filter'' -- used when retrieving human-readable name (a.k.a.
- ``Display Name'') and the members of a group.
- See also the parameters \verb|ldap_groupattr|, \verb|ldap_groupdesc| and \verb|ldap_memberattr|.
- If unspecified, defaults to the top-level parameter of the same name.
- If that one also is unspecified, then the filter is constructed exactly in the
- same way as {\tt User Filter}.
+ So called ``Group Filter'' --- used when retrieving human-readable ``Group
+ Display Name'' of a group and the list of its members.
+ See also the attributes \verb|ldap_groupdesc| and \verb|ldap_memberattr|.\\
+ If unspecified, defaults to the top-level parameter of the same name.\\
+ {\bf Default:} assembled from values of other parameters as:
+
+\begin{verbatim}
+(&(&([ldap_memberattr]=[ldap_memberattr_format])([ldap_groupattr]=%g))[ldap_filter])
+\end{verbatim}
+
+ Where \verb|[ldap_SOMETHING]| is used to mean ``the value of the configuration
+ parameter {\tt ldap\_SOMETHING}''. When querying, the string {\tt \%u} is
+ replaced with a {\tt *}, and the string {\tt \%g} is replaced with ID of the group.
+
+ \begin{description}
+ \titem{{\bf Example~1:}} Given the default values of the above parameters, the
+ filter sent to the LDAP server when retrieving the information on group {\tt
+ management} would be:\\
+ \verb|(&(memberUid=*)(cn=management))|.
+
+ \titem{{\bf Example~2:}} Given the following values of parameters:
+ \begin{itemize}
+ \item {\tt ldap\_memberattr} = {\tt member}
+ \item {\tt ldap\_memberattr\_format} = \verb|uid=%u,ou=People,o=example,o=org|
+ \item {\tt ldap\_groupattr} = {\tt  dn}
+ \item {\tt ldap\_filter} = \verb|(type=1)|
+ \end{itemize}
+ then the filter sent to the LDAP server when retrieving the information on
+ group {\tt sales} would be:\\
+ \verb|(&(&(member=uid=*,ou=People,o=example,o=org)(dn=sales))(type=1))|.
+ \end{description}
 
  \titem{{\tt ldap\_filter}}
- Additional filter which is AND-ed together with {\tt User Filter} and {\tt
- Group Filter}.
- If unspecified, defaults to the top-level parameter of the same name. If that
- one is also unspecified, then no additional filter is merged with the other
- filters.
+ Additional filter which --- if specified --- is AND-ed together with {\tt User
+ Filter} and {\tt Group Filter}.\\
+ If unspecified, defaults to the top-level parameter of the same name.\\
+ {\bf Default:} {\em none}
 \end{description}
 
 Note that you will probably need to manually define the {\tt User} and {\tt
@@ -4312,75 +4397,86 @@ get_filter: unknown filter type=130
 filter="(&(?=undefined)(?=undefined)(something=else))"
 \end{verbatim}
 
-\makesubsubsection{msrlattrs}{Attributes}
+\makeparagraph{msrlattrs}{Attributes}
 
 These parameters specify the names of the attributes which hold interesting data
-in the entries returned by running filters specified in
-section~\ref{msrlfilters}.
+in the LDAP entries returned by running filters specified in the ``Filters''
+paragraph of section~\ref{msrlfilters}.
 
 \begin{description}
  \titem{{\tt ldap\_groupattr}}
- The name of the attribute that holds the group name, and that is used to differentiate between them.
- Retrieved from results of the ``Roster Filter'' and ``Group Filter''.
- Defaults to {\tt cn}.
+ The name of the attribute that holds the group ID, and that is used to differentiate between them.
+ Retrieved from results of the ``Roster Filter'' and used as part of default
+ ``Group Filter'' and ``User Filter''.\\
+ {\bf Default:} {\tt cn}.
 
  \titem{{\tt ldap\_groupdesc}}
- The name of the attribute which holds the human-readable group name in the
- objects you use to represent groups.
- Retrieved from results of the ``Group Filter''.
- Defaults to whatever {\tt ldap\_groupattr} is set.
+ The name of the attribute which holds the human-readable ``Group Display Name'' in the
+ objects that represent groups.
+ Retrieved from results of the ``Group Filter''.\\
+ {\bf Default:} whatever {\tt ldap\_groupattr} is set to.
 
  \titem{{\tt ldap\_memberattr}}
  The name of the attribute which holds the IDs of the members of a group.
- Retrieved from results of the ``Group Filter''.
- Defaults to {\tt memberUid}.
+ Retrieved from results of the ``Group Filter'' and used as part of default
+ ``Group Filter'' and ``User Filter''.\\
+ {\bf Default:} {\tt memberUid}.
 
- The name of the attribute differs depending on the {\tt objectClass} you use
+ You should set this parameter depending on the {\tt objectClass} you use
  for your group objects, for example:
- \begin{description}
- \item{{\tt posixGroup}} $\rightarrow{}$ {\tt memberUid}
- \item{{\tt groupOfNames}} $\rightarrow{}$ {\tt member}
- \item{{\tt groupOfUniqueNames}} $\rightarrow{}$ {\tt uniqueMember}
- \end{description}
+ \begin{table}[H]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline {\bf {\tt objectClass}} & {\bf {\tt ldap\_memberattr}} \\
+    \hline
+    \hline {\tt posixGroup} & {\tt memberUid} \\
+    \hline {\tt groupOfNames} & {\tt member} \\
+    \hline {\tt groupOfUniqueNames} & {\tt uniqueMember} \\
+    \hline
+  \end{tabular}
+ \end{table}
 
  \titem{{\tt ldap\_userdesc}}
- The name of the attribute which holds the human-readable user name.
- Retrieved from results of the ``User Filter''.
- Defaults to {\tt cn}.
-
- \titem{{\tt ldap\_useruid}}
- The name of the attribute which holds the ID of a roster item. Value of this
- attribute in the roster item objects needs to match the ID retrieved from the
- {\tt ldap\_memberattr} attribute of a group object.
- Retrieved from results of the ``User Filter''.
- Defaults to {\tt cn}.
+ The name of the attribute which holds the human-readable ``Contact Display Name''.
+ Retrieved from results of the ``User Filter''.\\
+ {\bf Default:} {\tt cn}.
 \end{description}
 
-\makesubsubsection{msrlcontrolparams}{Control parameters}
+\makeparagraph{msrlcontrolparams}{Control Parameters}
 
 These paramters control the behaviour of the module.
-See section~\ref{msrlconfigroster} on how they are used during roster retrieval.
+See the section on ``Retrieving The Roster'' in section~\ref{msrlconfigroster}
+for more information about how they are used.
 
 \begin{description}
 
  \titem{{\tt ldap\_memberattr\_format}}
- A globbing format for extracting user ID from the value of the attribute named by
- \verb|ldap_memberattr|.
- Defaults to {\tt \%u}, which means that the whole value is the member ID. If
- you change it to something different, you may also need to specify the User
- and Group Filters manually --- see section~\ref{msrlfilters}.
+ A globbing format for extracting contact ID from the value of the attribute
+ named by \verb|ldap_memberattr|.\\
+ {\bf Default:} {\tt \%u}, which means that the whole value is the contact ID. If
+ you change it to something different, you may also need to specify the ``User''
+ and ``Group Filter''s manually --- see the paragraph on ``Filters'' in
+ section~\ref{msrlfilters}.\\
+ See also the {\tt ldap\_memberattr\_format\_re} parameter, below.
 
  \titem{{\tt ldap\_memberattr\_format\_re}}
- A regex for extracting user ID from the value of the attribute named by
+ A regex for extracting contact ID from the value of the attribute named by
  \verb|ldap_memberattr|.
 
- An example value {\tt "CN=($\backslash{}\backslash{}$w*),(OU=.*,)*DC=company,DC=com"} works for user IDs such as the following:
- \begin{itemize}
- \item \texttt{CN=Romeo,OU=Montague,DC=company,DC=com}
- \item \texttt{CN=Abram,OU=Servants,OU=Montague,DC=company,DC=com}
- \item \texttt{CN=Juliet,OU=Capulet,DC=company,DC=com}
- \item \texttt{CN=Peter,OU=Servants,OU=Capulet,DC=company,DC=com}
- \end{itemize}
+ {\bf Example:} the following table shows what IDs are extracted if the parameter is set to:\\
+ {\tt "CN=($\backslash{}\backslash{}$w*),(OU=.*,)*DC=company,DC=com"}
+ \begin{table}[H]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline {\bf Value of \verb|ldap_memberattr|} & {\bf Extracted contact ID} \\
+    \hline
+    \hline \texttt{CN=Romeo,OU=Montague,DC=company,DC=com} & {\tt Romeo} \\
+    \hline \texttt{CN=Abram,OU=Servants,OU=Montague,DC=company,DC=com} & {\tt Abram} \\
+    \hline \texttt{CN=Juliet,OU=Capulet,DC=company,DC=com} & {\tt Juliet} \\
+    \hline \texttt{CN=Peter,OU=Servants,OU=Capulet,DC=company,DC=com} & {\tt Peter} \\
+    \hline
+  \end{tabular}
+ \end{table}
 
  In case:
  \begin{itemize}
@@ -4394,110 +4490,121 @@ See section~\ref{msrlconfigroster} on how they are used during roster retrieval.
 
  Also, note that in all cases {\tt ldap\_memberattr\_format} (and {\em not} the
  regex version) is used for constructing the default ``User/Group Filter'' ---
- see section~\ref{msrlfilters}.
+ see the paragraph on ``Filters'' in section~\ref{msrlfilters}.
 
  \titem{{\tt ldap\_auth\_check}}
  Whether the module should check (via the ejabberd authentication subsystem)
  for existence of each user in the shared LDAP roster. See
  section~\ref{msrlconfigroster} for more information. Set to {\tt off} if you
- want to disable the check.
- Defaults to {\tt on}.
+ want to disable the check.\\
+ {\bf Default:} {\tt on}
 \end{description}
 
-\makesubsubsection{msrlcacheparams}{Cache parameters}
+\makeparagraph{msrlcacheparams}{Cache Parameters}
 
 These paramters control the characteristics of the internal \modsharedrosterldap{} LDAP result cache.
 
 \begin{description}
  \titem{{\tt ldap\_user\_cache\_validity}}
- Number of seconds for which the cache for roster item full names is considered
- fresh after retrieval. 300 by default.
+ Number of seconds for which a cached ``Contact Display Name'' is
+ considered fresh after retrieval.\\
+ {\bf Default:} 300
 
  \titem{{\tt ldap\_group\_cache\_validity}}
- Number of seconds for which the cache for group membership is considered
- fresh after retrieval. 300 by default.
+ Number of seconds for which cached group information (``Group Display Name''
+ and its members' list) is considered fresh after retrieval.\\
+ {\bf Default:} 300
 
  \titem{{\tt ldap\_user\_cache\_size}}
- Maximum number of user items the cache will hold. 1000 by default.
+ Maximum number of contact items the cache will hold.\\
+ {\bf Default:}  1000
 
  \titem{{\tt ldap\_group\_cache\_size}}
- Maximum number of group items the cache will hold. 1000 by default.
+ Maximum number of group items the cache will hold.\\
+ {\bf Default:} 1000
 \end{description}
 
-\makesubsubsection{msrlconnparams}{Connection parameters}
+\makeparagraph{msrlconnparams}{Connection Parameters}
 
 The module also accepts the connection parameters, all of which default to the
-top-level parameter of the same name, if unspecified. See~\ref{ldapconnection}
-for more information about them.
+top-level parameter of the same name, if unspecified. See
+section~\ref{ldapconnection} for more information about them.
 
-\makesubsubsection{msrlconfigroster}{Retrieving the roster}
+\makesubsubsection{msrlconfigroster}{Retrieving The Roster}
 
 When the module is called to retrieve the shared roster for a user, the
 following algorithm is used:
 
 \begin{enumerate}
-\item \label{step:rfilter} A list of names of groups to display is created: the {\tt Roster Filter}
-is run against the base DN, retrieving the values of the attribute named by
-{\tt ldap\_groupattr}.
-
-\item Unless the group cache is fresh (see the {\tt
-ldap\_group\_cache\_validity} option), it is refreshed:
-
+\item  A list of IDs of groups to display is created:
   \begin{enumerate}
-  \item Information for all groups is retrieved using a single query: the {\tt
-  Group Filter} is run against the Base DN, retrieving the values of attributes
-  named by {\tt ldap\_groupattr} (group ID), {\tt ldap\_groupdesc} (group
-  ``Display Name'') and {\tt ldap\_memberattr} (IDs of group members).
+  \item the {\tt \%u} string in the {\tt Roster Filter} is replaced with the
+  user ID (the part before {\tt @})
 
-  \item group ``Display Name'', read from the attribute named by {\tt
-  ldap\_groupdesc}, is stored in the cache for the given group
+  \item the resulting filter is run against the base DN, retrieving the values
+   of the attribute named by {\tt ldap\_groupattr}.
+  \end{enumerate}
+
+\item Then, for each group ID separately, further information on each group
+is retrieved from LDAP (or from the cache): the ``Group Display Name'' and
+the list of members.  This information is cached separately for each group ---
+see the paragraph on ``Cache Parameters'' in section~\ref{msrlcacheparams} for
+the caching parameters.  The retrieval from LDAP works as follows:
+  \begin{enumerate}
+  \item the {\tt \%g} string in the {\tt Group Filter} is replaced with the
+  group ID
+
+  \item the resulting filter is run against the Base DN, retrieving the values
+  of attributes named by {\tt ldap\_groupdesc} (``Group Display Name'') and
+  {\tt ldap\_memberattr} (IDs of group members).
 
   \item the following processing takes place for each retrieved value of
-  attribute named by {\tt ldap\_memberattr}:
-    \begin{enumerate}
-    \item the user ID part of it is extracted using {\tt
-    ldap\_memberattr\_format(\_re)},
+  the attribute named by {\tt ldap\_memberattr}:
 
-    \item then (unless {\tt ldap\_auth\_check} is set to {\tt off}) for each
-    found user ID, the module checks (using the \ejabberd{} authentication
-    subsystem) whether such user exists in the given virtual host. It is
-    skipped if the check is enabled and fails.
+    \begin{enumerate}
+    \item the contact ID part of the value is extracted according to {\tt
+    ldap\_memberattr\_format} or {\tt ldap\_memberattr\_format\_re},
+
+    \item then (unless {\tt ldap\_auth\_check} is set to {\tt off}) the
+    \ejabberd{} authentication subsystem checks whether a user named the same
+    as the extracted contact ID exists in the given virtual host. The member
+    is skipped if the check is enabled and fails.\\
 
     This step is here for historical reasons. If you have a tidy DIT and
     properly defined ``Roster Filter'' and ``Group Filter'', it is safe to
     disable it by setting {\tt ldap\_auth\_check} to {\tt off} --- it will
     speed up the roster retrieval.
 
-    \item the user ID is stored in the list of members in the cache for the
-    given group
+    \item the returned contact JID is constructed by joining the extracted
+    contact ID with {\tt @} to the virtual server hostname
     \end{enumerate}
   \end{enumerate}
 
-\item For each item (group name) in the list of groups retrieved in step~\ref{step:rfilter}:
-
+\item Next, for each contact (all members of all the groups retrieved in the
+previous step), the following happens:
   \begin{enumerate}
-  \item the display name of a shared roster group is retrieved from the group
-  cache
+  \item the contact is skipped if its ID is the same as the ID of the user
+  for which we are retrieving the roster. This is so that the user does not
+  have himself in his own roster.
 
-  \item for each IDs of users which belong to the group, retrieved from the
-  group cache:
-
+  \item the ``Contact Display Name'' is retrieved from LDAP (or from the
+  cache). The display name is cached separately for each contact --- see
+  the paragraph on ``Cache Parameters'' in section~\ref{msrlcacheparams} for
+  the caching parameters. The retrieval from LDAP works as follows:
     \begin{enumerate}
-    \item the ID is skipped if it's the same as the one for which we are
-    retrieving the roster. This is so that the user does not have himself in
-    the roster.
+    \item the {\tt \%u} string in the {\tt User Filter} is replaced with the
+    contact ID
 
-    \item the display name of a shared roster user is retrieved:
-      \begin{enumerate}
-      \item first, unless the user name cache is fresh (see the {\tt
-      ldap\_user\_cache\_validity} option), it is refreshed by running the
-      {\tt User Filter}, against the Base DN, retrieving the values of
-      attributes named by {\tt ldap\_useruid} and {\tt ldap\_userdesc}.
-      \item then, the display name for the given user ID is retrieved from the
-      user name cache.
-      \end{enumerate}
+    \item the resulting filter is run against the Base DN, retrieving the
+    value of attribute named by {\tt ldap\_userdesc} (which contains the
+    ``Contact Display Name'').
+
+    \item if no results are found, the contact ID is used as ``Contact
+    Display Name''
+
+    \item if results are found, the first one is used as ``Contact Display
+    Name''
     \end{enumerate}
-
   \end{enumerate}
 
 \end{enumerate}
@@ -4512,9 +4619,9 @@ by looking at an example for a given DIT (or one resembling it).
 \makeparagraph{msrlconfigexampleflat}{Flat DIT}
 
 This seems to be the kind of DIT for which this module was initially designed.
-Basically there are just user objects, and group membership is stored in an
-attribute individually for each user. For example in a layout shown in
-figure~\ref{fig:msrl-dit-flat}, the group of each  user is stored in its {\tt
+Basically there are just ``contact'' objects, and group membership is stored in an
+attribute individually for each contact. For example in a layout shown in
+figure~\ref{fig:msrl-dit-flat}, the group of each contact is stored in its {\tt
 ou} attribute.
 
 \begin{figure}[htbp]
@@ -4526,10 +4633,10 @@ ou} attribute.
 
 Such layout has a few downsides, including:
 \begin{itemize}
-\item information duplication -- the group name is repeated in every member object
-\item difficult group management -- information about group members is not
+\item information duplication --- the ``Group Display Name'' is repeated in every member object
+\item difficult group management --- information about group members is not
       centralized, but distributed between member objects
-\item inefficiency -- the list of unique group names has to be computed by iterating over all users
+\item inefficiency --- the list of unique group IDs has to be computed by iterating over all users
 \end{itemize}
 
 This however seems to be a common DIT layout, so the module keeps supporting it.
@@ -4556,7 +4663,8 @@ You can use the following configuration\ldots
 
 \makeparagraph{msrlconfigexampledeep}{Deep DIT}
 
-This type of DIT contains distinctly typed objects for users and groups -- see figure~\ref{fig:msrl-dit-deep}.
+This type of DIT contains distinctly typed objects for contacts and groups ---
+see figure~\ref{fig:msrl-dit-deep}.
 They are shown separated into different subtrees, but it's not a requirement.
 
 \begin{figure}[htbp]
