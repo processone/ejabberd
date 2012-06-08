@@ -143,6 +143,9 @@ export EXEC_CMD
 # start server
 start ()
 {
+    checknodenameusage
+    [ "$?" -eq 0 ] && echo "\nERROR: The node '$ERLANG_NODE' is already running." && return 1
+
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -noinput -detached \
@@ -189,6 +192,9 @@ debug ()
 # start interactive server
 live ()
 {
+    checknodenameusage
+    [ "$?" -eq 0 ] && echo "\nERROR: The node '$ERLANG_NODE' is already running." && return 1
+
     echo "--------------------------------------------------------------------"
     echo ""
     echo "IMPORTANT: ejabberd is going to start in LIVE (interactive) mode."
@@ -360,6 +366,15 @@ wait_for_status()
         status=0
     }
     return $status
+}
+
+# check node name is used or not
+# $? --> 0=alreadyused 1=available
+checknodenameusage ()
+{
+    $EXEC_CMD "$ERL \
+      $NAME $ERLANG_NODE \
+	-s erlang halt | grep -c duplicate_name > /dev/null "
 }
 
 case $ARGS in
