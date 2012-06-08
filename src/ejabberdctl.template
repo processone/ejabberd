@@ -41,7 +41,9 @@ fi
 if [ "$EJABBERDCTL_CONFIG_PATH" = "" ] ; then
     EJABBERDCTL_CONFIG_PATH=$ETCDIR/ejabberdctl.cfg
 fi
-[ -f "$EJABBERDCTL_CONFIG_PATH" ] && . "$EJABBERDCTL_CONFIG_PATH"
+if [ -f "$EJABBERDCTL_CONFIG_PATH" ] ; then
+    . "$EJABBERDCTL_CONFIG_PATH"
+fi
 if [ "$LOGS_DIR" = "" ] ; then
     LOGS_DIR=@LOCALSTATEDIR@/log/ejabberd
 fi
@@ -63,19 +65,21 @@ EJID=`id -g $INSTALLUSER`
 EXEC_CMD="false"
 for GID in $GIDS; do
     if [ $GID -eq 0 ] ; then
-	EXEC_CMD="su ${INSTALLUSER} -p -c"
+        EXEC_CMD="su ${INSTALLUSER} -p -c"
     fi
 done
 if [ "$ID" -eq "$EJID" ] ; then
-	EXEC_CMD="sh -c"
+    EXEC_CMD="sh -c"
 fi
 if [ "$EXEC_CMD" = "false" ] ; then
-	echo "This command can only be run by root or the user $INSTALLUSER" >&2
-	exit 4
+    echo "This command can only be run by root or the user $INSTALLUSER" >&2
+    exit 4
 fi
 
 NAME=-name
-[ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && NAME=-sname
+if [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] ; then
+    NAME=-sname
+fi
 
 KERNEL_OPTS=""
 if [ "$FIREWALL_WINDOW" != "" ] ; then
@@ -88,22 +92,22 @@ fi
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 
 # define additional environment variables
-if [ "$EJABBERDDIR" = "" ]; then
+if [ "$EJABBERDDIR" = "" ] ; then
     EJABBERDDIR=@LIBDIR@/ejabberd
 fi
-if [ "$EJABBERD_EBIN_PATH" = "" ]; then
+if [ "$EJABBERD_EBIN_PATH" = "" ] ; then
     EJABBERD_EBIN_PATH=$EJABBERDDIR/ebin
 fi
-if [ "$EJABBERD_PRIV_PATH" = "" ]; then
+if [ "$EJABBERD_PRIV_PATH" = "" ] ; then
     EJABBERD_PRIV_PATH=$EJABBERDDIR/priv
 fi
-if [ "$EJABBERD_BIN_PATH" = "" ]; then
+if [ "$EJABBERD_BIN_PATH" = "" ] ; then
     EJABBERD_BIN_PATH=$EJABBERD_PRIV_PATH/bin
 fi
-if [ "$EJABBERD_SO_PATH" = "" ]; then
+if [ "$EJABBERD_SO_PATH" = "" ] ; then
     EJABBERD_SO_PATH=$EJABBERD_PRIV_PATH/lib
 fi
-if [ "$EJABBERD_MSGS_PATH" = "" ]; then
+if [ "$EJABBERD_MSGS_PATH" = "" ] ; then
     EJABBERD_MSGS_PATH=$EJABBERD_PRIV_PATH/msgs
 fi
 
@@ -176,7 +180,7 @@ debug ()
     echo "  EJABBERD_BYPASS_WARNINGS=true"
     echo "Press any key to continue"
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
-	read foo
+        read foo
     fi
     echo ""
     TTY=`tty | sed -e  's/.*\///g'`
@@ -208,7 +212,7 @@ live ()
     echo "  EJABBERD_BYPASS_WARNINGS=true"
     echo "Press any key to continue"
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
-	read foo
+        read foo
     fi
     echo ""
     $EXEC_CMD "$ERL \
@@ -257,66 +261,66 @@ ctl ()
     CONNLOCKDIR=@LOCALSTATEDIR@/lock/ejabberdctl
     FLOCK='/usr/bin/flock'
     if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
-	JOT='/usr/bin/jot'
-	if [ ! -x "$JOT" ] ; then
-	    # no flock or jot, simply invoke ctlexec()
-	    CTL_CONN="ctl-${ERLANG_NODE}"
-	    ctlexec $CTL_CONN $COMMAND
-	    result=$?
-	else
-	    # no flock, but at least there is jot
-	    RAND=`jot -r 1 0 $MAXCONNID`
-	    CTL_CONN="ctl-${RAND}-${ERLANG_NODE}"
-	    ctlexec $CTL_CONN $COMMAND
-	    result=$?
-	fi
+        JOT='/usr/bin/jot'
+        if [ ! -x "$JOT" ] ; then
+            # no flock or jot, simply invoke ctlexec()
+            CTL_CONN="ctl-${ERLANG_NODE}"
+            ctlexec $CTL_CONN $COMMAND
+            result=$?
+        else
+            # no flock, but at least there is jot
+            RAND=`jot -r 1 0 $MAXCONNID`
+            CTL_CONN="ctl-${RAND}-${ERLANG_NODE}"
+            ctlexec $CTL_CONN $COMMAND
+            result=$?
+        fi
     else
-	# we have flock so we get a lock
-	# on one of a limited number of
-	# conn names -- this allows
-	# concurrent invocations using a bound
-	# number of atoms
-	for N in $(seq 1 $MAXCONNID); do
-	    CTL_CONN="ejabberdctl-$N"
-	    CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
-	    (
-		exec 8>"$CTL_LOCKFILE"
-		if flock --nb 8; then
-		    ctlexec $CTL_CONN $COMMAND
+        # we have flock so we get a lock
+        # on one of a limited number of
+        # conn names -- this allows
+        # concurrent invocations using a bound
+        # number of atoms
+        for N in $(seq 1 $MAXCONNID); do
+            CTL_CONN="ejabberdctl-$N"
+            CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
+            (
+                exec 8>"$CTL_LOCKFILE"
+                if flock --nb 8; then
+                    ctlexec $CTL_CONN $COMMAND
                     ssresult=$?
                     # segregate from possible flock exit(1)
-		    ssresult=$(expr $ssresult \* 10)
-		    exit $ssresult
-		else
-		    exit 1
-		fi
+                    ssresult=$(expr $ssresult \* 10)
+                    exit $ssresult
+                else
+                    exit 1
+                fi
             )
-	    result=$?
-	    if [ $result -eq 1 ]; then
+            result=$?
+            if [ $result -eq 1 ] ; then
                 # means we errored out in flock
                 # rather than in the exec - stay in the loop
                 # trying other conn names...
-		badlock=1
-	    else
-		badlock=""
-		break;
-	    fi
-	done
-	result=$(expr $result / 10)
+                badlock=1
+            else
+                badlock=""
+                break;
+            fi
+        done
+        result=$(expr $result / 10)
     fi
 
-    if [ "$badlock" ];then
-	echo "Ran out of connections to try. Your ejabberd processes" >&2
-	echo "may be stuck or this is a very busy server. For very"   >&2
-	echo "busy servers, consider raising MAXCONNID in ejabberdctl">&2
-	exit 1;
+    if [ "$badlock" ] ;then
+        echo "Ran out of connections to try. Your ejabberd processes" >&2
+        echo "may be stuck or this is a very busy server. For very"   >&2
+        echo "busy servers, consider raising MAXCONNID in ejabberdctl">&2
+        exit 1;
     fi
 
     case $result in
-	0) :;;
-	1) :;;
-	2) help;;
-	3) help;;
+        0) :;;
+        1) :;;
+        2) help;;
+        3) help;;
     esac
     return $result
 }
@@ -352,13 +356,13 @@ check_start()
 {
     epmd -names | grep -q $NODE && {
         ps ux | grep -v grep | grep -q $ERLANG_NODE && {
-            echo "ejabberd is already running."
+            echo "ERROR: The ejabberd node '$ERLANG_NODE' is already running."
             exit 4
         } || {
             ps ux | grep beam | grep -v "grep beam" && {
-                echo "ejabberd node is registered, but no ejabberd process has been found."
-                echo "can not kill epmd as other erlang nodes are running."
-                echo "please stop all erlang nodes, and call 'epmd -kill'."
+                echo "ERROR: The ejabberd node '$ERLANG_NODE' is registered,"
+                echo "       but no ejabberd process has been found."
+                echo "Shutdown other erlang nodes, and call 'epmd -kill'."
                 exit 5
             } || {
                 epmd -kill
@@ -374,7 +378,7 @@ wait_for_status()
     # return: 0 OK, 1 KO
     timeout=$2
     status=4
-    while [ $status -ne $1 ]; do
+    while [ $status -ne $1 ] ; do
         sleep $3
         timeout=$(($timeout - 1))
         [ $timeout -eq 0 ] && {
