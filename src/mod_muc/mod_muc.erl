@@ -240,7 +240,6 @@ init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts, "conference.@HOST@"),
     case gen_mod:db_type(Opts) of
         mnesia ->
-            update_tables(MyHost),
             mnesia:create_table(muc_room,
                                 [{disc_copies, [node()]},
                                  {attributes,
@@ -249,6 +248,7 @@ init([Host, Opts]) ->
                                 [{disc_copies, [node()]},
                                  {attributes,
                                   record_info(fields, muc_registered)}]),
+            update_tables(MyHost),
             mnesia:add_table_index(muc_registered, nick);
         _ ->
             ok
