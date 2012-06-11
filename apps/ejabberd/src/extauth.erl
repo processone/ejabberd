@@ -72,28 +72,28 @@ stop(Host) ->
     ).
 
 get_process_name(Host, Integer) ->
-    gen_mod:get_module_proc(lists:append([Host, integer_to_list(Integer)]), eauth).
+    gen_mod:get_module_proc(lists:append([erlang:binary_to_list(Host), integer_to_list(Integer)]), eauth).
 
 check_password(User, Server, Password) ->
-    call_port(Server, ["auth", User, Server, Password]).
+    call_port(Server, [<<"auth">>, User, Server, Password]).
 
 is_user_exists(User, Server) ->
-    call_port(Server, ["isuser", User, Server]).
+    call_port(Server, [<<"isuser">>, User, Server]).
 
 set_password(User, Server, Password) ->
-    call_port(Server, ["setpass", User, Server, Password]).
+    call_port(Server, [<<"setpass">>, User, Server, Password]).
 
 try_register(User, Server, Password) ->
-    case call_port(Server, ["tryregister", User, Server, Password]) of
+    case call_port(Server, [<<"tryregister">>, User, Server, Password]) of
 	true -> {atomic, ok};
 	false -> {error, not_allowed}
     end.
 
 remove_user(User, Server) ->
-    call_port(Server, ["removeuser", User, Server]).
+    call_port(Server, [<<"removeuser">>, User, Server]).
 
 remove_user(User, Server, Password) ->
-    call_port(Server, ["removeuser3", User, Server, Password]).
+    call_port(Server, [<<"removeuser3">>, User, Server, Password]).
 
 call_port(Server, Msg) ->
     LServer = jlib:nameprep(Server),
@@ -159,12 +159,12 @@ flush_buffer_and_forward_messages(Pid) ->
     end.
 
 join(List, Sep) ->
-    lists:foldl(fun(A, "") -> A;
-		   (A, Acc) -> Acc ++ Sep ++ A
-		end, "", List).
+    lists:foldl(fun(A, <<"">>) -> A;
+		   (A, Acc) -> <<Acc/bitstring, Sep/bitstring, A/bitstring>>
+        end, <<"">>, List).
 
 encode(L) ->
-    join(L,":").
+    erlang:binary_to_list(join(L,<<":">>)).
 
 decode([0,0]) ->
     false;
