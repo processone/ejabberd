@@ -241,15 +241,11 @@ handle_cast(_Msg, State) -> {noreply, State}.
 handle_info({timeout, _TRef, {ID, Pid}}, State) ->
     case lookup(Pid, ID, State#state.timers) of
       {ok, _} ->
-	  MRef = erlang:monitor(process, Pid),
 	  catch ejabberd_c2s:stop(Pid),
-	  receive
-	    {'DOWN', MRef, process, Pid, _Reason} -> ok
-	    after 5 -> catch exit(Pid, kill)
-	  end,
-	  erlang:demonitor(MRef, [flush]),
 	  handle_cast({del, Pid}, State);
-      error -> {noreply, State}
+      error -> 
+	?WARNING_MSG("ack ID not found :~p", [ID]),
+	{noreply, State}
     end;
 handle_info(_Info, State) -> {noreply, State}.
 
