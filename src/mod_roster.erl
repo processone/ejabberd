@@ -203,7 +203,9 @@ read_roster_version(LServer, LUser, odbc) ->
             Version;
         {selected, ["version"], []} ->
             error
-    end.
+    end;
+read_roster_version(LServer, LUser, redis) ->
+    error.
 
 write_roster_version(LUser, LServer) ->
     write_roster_version(LUser, LServer, false).
@@ -235,7 +237,9 @@ write_roster_version(LUser, LServer, InTransaction, Ver, odbc) ->
               fun() ->
                       odbc_queries:set_roster_version(Username, EVer)
               end)
-    end.
+    end;
+write_roster_version(LUser, LServer, InTransaction, Ver, redis) ->
+    error.
 
 %% Load roster from DB only if neccesary. 
 %% It is neccesary if
@@ -361,7 +365,9 @@ get_roster(LUser, LServer, odbc) ->
 	    RItems;
 	_ ->
 	    []
-    end.
+    end;
+get_roster(LUser, LServer, odbc) ->
+    [].
 
 
 item_to_xml(Item) ->
@@ -441,7 +447,9 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
                       jid = LJID,
                       name = ""}
             end
-    end.
+    end;
+get_roster_by_jid_t(LUser, LServer, LJID, redis) ->
+    #roster{}.
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
@@ -609,7 +617,9 @@ get_subscription_lists(_, LUser, LServer, odbc) ->
             Items;
         _ ->
             []
-    end.
+    end;
+get_subscription_lists(_, LUser, LServer, redis) ->
+    [].
 
 fill_subscription_lists(LServer, [#roster{} = I | Is], F, T) ->
     J = element(3, I#roster.usj),
@@ -650,14 +660,18 @@ roster_subscribe_t(LUser, LServer, LJID, Item, odbc) ->
     ItemVals = record_to_string(Item),
     Username = ejabberd_odbc:escape(LUser),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
-    odbc_queries:roster_subscribe(LServer, Username, SJID, ItemVals).
+    odbc_queries:roster_subscribe(LServer, Username, SJID, ItemVals);
+roster_subscribe_t(LUser, LServer, LJID, Item, redis) ->
+    error.
 
 transaction(LServer, F) ->
     case gen_mod:db_type(LServer, ?MODULE) of
         mnesia ->
             mnesia:transaction(F);
         odbc ->
-            ejabberd_odbc:sql_transaction(LServer, F)
+            ejabberd_odbc:sql_transaction(LServer, F);
+        redis ->
+            error
     end.
 
 in_subscription(_, User, Server, JID, Type, Reason) ->
@@ -705,7 +719,9 @@ get_roster_by_jid_with_groups_t(LUser, LServer, LJID, odbc) ->
             #roster{usj = {LUser, LServer, LJID},
                     us = {LUser, LServer},
                     jid = LJID}
-    end.
+    end;
+get_roster_by_jid_with_groups_t(LUser, LServer, LJID, redis) ->
+    #roster{}.
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     LUser = jlib:nodeprep(User),
@@ -903,7 +919,9 @@ remove_user(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     send_unsubscription_to_rosteritems(LUser, LServer),
     odbc_queries:del_user_roster_t(LServer, Username),
-    ok.
+    ok;
+remove_user(LUser, LServer, redis) ->
+    error.
 
 %% For each contact with Subscription:
 %% Both or From, send a "unsubscribed" presence stanza;
@@ -975,7 +993,9 @@ update_roster_t(LUser, _LServer, LJID, Item, odbc) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     ItemVals = record_to_string(Item),
     ItemGroups = groups_to_string(Item),
-    odbc_queries:update_roster_sql(Username, SJID, ItemVals, ItemGroups).
+    odbc_queries:update_roster_sql(Username, SJID, ItemVals, ItemGroups);
+update_roster_t(LUser, LServer, LJID, Item, redis) ->
+    error.
 
 del_roster_t(LUser, LServer, LJID) ->
     DBType = gen_mod:db_type(LServer, ?MODULE),
@@ -986,7 +1006,9 @@ del_roster_t(LUser, LServer, LJID, mnesia) ->
 del_roster_t(LUser, _LServer, LJID, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
-    odbc_queries:del_roster_sql(Username, SJID).
+    odbc_queries:del_roster_sql(Username, SJID);
+del_roster_t(LUser, LServer, LJID, redis) ->
+    error.
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
@@ -1124,7 +1146,9 @@ get_in_pending_subscriptions(Ls, User, Server, odbc) ->
 		      Items));
 	_ ->
 	    Ls
-    end.
+    end;
+get_in_pending_subscriptions(Ls, User, Server, odbc) ->
+    [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1162,7 +1186,9 @@ read_subscription_and_groups(LUser, LServer, LJID, odbc) ->
 	    {Subscription, Groups};
         _ ->
             error
-    end.
+    end;
+read_subscription_and_groups(LUser, LServer, LJID, redis) ->
+    [].
 
 get_jid_info(_, User, Server, JID) ->
     LJID = jlib:jid_tolower(JID),

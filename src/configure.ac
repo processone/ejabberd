@@ -38,6 +38,7 @@ AC_MOD_ENABLE(mod_proxy65, yes)
 AC_MOD_ENABLE(mod_pubsub, yes)
 AC_MOD_ENABLE(eldap, yes)
 AC_MOD_ENABLE(odbc, no)
+AC_MOD_ENABLE(eredis, no)
 AC_MOD_ENABLE(tls, yes)
 AC_MOD_ENABLE(web, yes)
 
@@ -115,6 +116,7 @@ AC_CONFIG_FILES([Makefile
                  stun/Makefile
                  $make_tls
                  $make_odbc
+                 $make_eredis
                  $make_ejabberd_zlib])
 #openssl
 AM_WITH_OPENSSL

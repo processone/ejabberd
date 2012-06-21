@@ -1,0 +1,9 @@
+all:
+	./rebar compile
+
+clean:
+	./rebar clean
+
+distclean: clean
+	rm -f Makefile
+
