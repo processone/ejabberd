@@ -1,5 +1,6 @@
 all:
 	./rebar compile
+	cp ebin/* ..
 
 clean:
 	./rebar clean

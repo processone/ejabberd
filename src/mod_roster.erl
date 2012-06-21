@@ -80,6 +80,14 @@ start(Host, Opts) ->
        _ ->
             ok
     end,
+    
+    case proplists:get_value(db_type, Opts, mnesia) of
+        redis ->
+            {Server, Port, Database, Password} = ejabberd_config:get_local_option({redis_server, Host}),
+            {ok, _Pid} = ejabberd_redis:start_link(Server, Port, Database, Password);
+        Any ->
+            ?INFO_MSG("No Redis database configured [~p] en host [~p] y opts: ~p", [Any, Host, Opts])
+    end,
     ejabberd_hooks:add(roster_get, Host,
 		       ?MODULE, get_user_roster, 50),
     ejabberd_hooks:add(roster_in_subscription, Host,
@@ -106,6 +114,7 @@ start(Host, Opts) ->
 				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
+    ejabberd_redis:stop(),
     ejabberd_hooks:delete(roster_get, Host,
 			  ?MODULE, get_user_roster, 50),
     ejabberd_hooks:delete(roster_in_subscription, Host,
@@ -205,7 +214,11 @@ read_roster_version(LServer, LUser, odbc) ->
             error
     end;
 read_roster_version(LServer, LUser, redis) ->
-    error.
+    Key = io_lib:format("~s:~s:version", [LServer, LUser]),
+    case gen_server:call(ejabberd_redis, {get, Key}) of
+        [] -> error;
+        Version -> Version
+    end.
 
 write_roster_version(LUser, LServer) ->
     write_roster_version(LUser, LServer, false).
