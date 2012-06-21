@@ -347,6 +347,9 @@ format_result(Int, {_Name, integer}) ->
 format_result(String, {_Name, string}) ->
     io_lib:format("~s", [String]);
 
+format_result(Binary, {_Name, binary}) ->
+    io_lib:format("~s", [Binary]);
+
 format_result(Code, {_Name, rescode}) ->
     make_status(Code);
 

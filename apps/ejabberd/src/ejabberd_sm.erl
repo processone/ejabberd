@@ -41,7 +41,10 @@
          close_session_unset_presence/5,
          get_unique_sessions_number/0,
          get_total_sessions_number/0,
+         get_node_sessions_number/0,
          get_vh_session_number/1,
+         get_vh_session_list/1,
+         get_full_session_list/0,
          register_iq_handler/4,
          register_iq_handler/5,
          unregister_iq_handler/2,
@@ -194,8 +197,18 @@ get_unique_sessions_number() ->
 get_total_sessions_number() ->
     ?SM_BACKEND:total_count().
 
-get_vh_session_number(_Server) ->
-    get_total_sessions_number().
+get_vh_session_number(Server) ->
+    length(?SM_BACKEND:get_sessions(Server)).
+
+get_vh_session_list(Server) ->
+    ?SM_BACKEND:get_sessions(Server).
+
+get_node_sessions_number() ->
+    {value, {active, Active}} = lists:keysearch(active, 1, supervisor:count_children(ejabberd_c2s_sup)),
+    Active.
+
+get_full_session_list() ->
+    ?SM_BACKEND:get_sessions().
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
     ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
@@ -640,11 +653,11 @@ commands() ->
                         desc = "List user's connected resources",
                         module = ?MODULE, function = user_resources,
                         args = [{user, string}, {host, string}],
-                        result = {resources, {list, {resource, string}}}}
+                        result = {resources, {list, {resource, binary}}}}
 	].
 
 user_resources(User, Server) ->
-    Resources =  get_user_resources(User, Server),
+    Resources =  get_user_resources(list_to_binary(User), list_to_binary(Server)),
     lists:sort(Resources).
 
 -spec sm_backend(atom()) -> string().
