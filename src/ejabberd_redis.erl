@@ -24,8 +24,45 @@
 start_link(Server, Port, Database, Password) ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [Server, Port, Database, Password], []).
 
+%%--------------------------------------------------------------------
+%% @spec stop() -> ok
+%% @doc Stops the server
+%% @end
+%%--------------------------------------------------------------------
 stop() ->
     gen_server:call(?SERVER, stop).
+
+%%--------------------------------------------------------------------
+%% @spec multi() -> ok
+%% @doc Begin a transaction
+%% @end
+%%--------------------------------------------------------------------
+multi() ->
+    gen_server:call(?SERVER, multi).
+
+%%--------------------------------------------------------------------
+%% @spec exec() -> [Binary1, Binary2, ..., BinaryN] | Binary
+%% @doc Ends a transaction
+%% @end
+%%--------------------------------------------------------------------
+exec() ->
+    gen_server:call(?SERVER, exec).
+
+%%--------------------------------------------------------------------
+%% @spec getter() -> [Binary1, Binary2, ..., BinaryN] | Binary
+%% @doc Gets a value, given by its key
+%% @end
+%%--------------------------------------------------------------------
+getter(Key) ->
+    gen_server:call(?SERVER, {get, Key}).
+
+%%--------------------------------------------------------------------
+%% @spec setter() -> ok
+%% @doc Sets a given value for a given key
+%% @end
+%%--------------------------------------------------------------------
+setter(Key, Value) ->
+    gen_server:call(?SERVER, {set, Key, Value}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -56,6 +93,12 @@ init([Server, Port, Database, Password]) ->
 %%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
+handle_call(multi, _From, #state{conn=C}=State) ->
+    {ok, <<"OK">>} = eredis:q(C, ["MULTI"]),
+    {reply, ok, State};
+handle_call(exec, _From, #state{conn=C}=State) ->
+    {ok, Reply} = eredis:q(C, ["EXEC"]),
+    {reply, Reply, State};
 handle_call({get, Key}, _From, #state{conn=C}=State) ->
     {ok, Reply} = eredis:q(C, ["GET", Key]),
     {reply, Reply, State};
@@ -73,6 +116,9 @@ handle_call(_Request, _From, State) ->
 %% @doc Handling cast messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_cast(multi, #state{conn=C}=State) ->
+    {ok, <<"OK">>} = eredis:q(C, ["MULTI"]),
+    {noreply, State};
 handle_cast({set, Key, Value}, #state{conn=C}=State) ->
     {ok, <<"OK">>} = eredis:q(C, ["SET", Key, Value]),
     {noreply, State};

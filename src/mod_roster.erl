@@ -252,7 +252,8 @@ write_roster_version(LUser, LServer, InTransaction, Ver, odbc) ->
               end)
     end;
 write_roster_version(LUser, LServer, InTransaction, Ver, redis) ->
-    error.
+    Key = io_lib:format("~s:~s:version", [LServer, LUser]),
+    gen_server:call(ejabberd_redis, {set, Key, Ver}).
 
 %% Load roster from DB only if neccesary. 
 %% It is neccesary if
@@ -379,7 +380,8 @@ get_roster(LUser, LServer, odbc) ->
 	_ ->
 	    []
     end;
-get_roster(LUser, LServer, odbc) ->
+get_roster(LUser, LServer, redis) ->
+    ?INFO_MSG("Get Redis Roster...", []),
     [].
 
 
@@ -462,6 +464,7 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
             end
     end;
 get_roster_by_jid_t(LUser, LServer, LJID, redis) ->
+    ?INFO_MSG("Roster de [~p] ( ?= ~s@~s )", [LJID, LUser, LServer]),
     #roster{}.
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
@@ -632,6 +635,7 @@ get_subscription_lists(_, LUser, LServer, odbc) ->
             []
     end;
 get_subscription_lists(_, LUser, LServer, redis) ->
+    ?INFO_MSG("Roster subscriptions...", []),
     [].
 
 fill_subscription_lists(LServer, [#roster{} = I | Is], F, T) ->
@@ -675,6 +679,7 @@ roster_subscribe_t(LUser, LServer, LJID, Item, odbc) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     odbc_queries:roster_subscribe(LServer, Username, SJID, ItemVals);
 roster_subscribe_t(LUser, LServer, LJID, Item, redis) ->
+    ?INFO_MSG("Roster subscribe ~p to ~p", [LJID, Item]),
     error.
 
 transaction(LServer, F) ->
@@ -734,6 +739,7 @@ get_roster_by_jid_with_groups_t(LUser, LServer, LJID, odbc) ->
                     jid = LJID}
     end;
 get_roster_by_jid_with_groups_t(LUser, LServer, LJID, redis) ->
+    ?INFO_MSG("Get Roster with groups to ~p", [LJID]),
     #roster{}.
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
@@ -934,6 +940,7 @@ remove_user(LUser, LServer, odbc) ->
     odbc_queries:del_user_roster_t(LServer, Username),
     ok;
 remove_user(LUser, LServer, redis) ->
+    ?INFO_MSG("Roster, remove user: ~p@~p", [LUser, LServer]),
     error.
 
 %% For each contact with Subscription:
@@ -1008,6 +1015,7 @@ update_roster_t(LUser, _LServer, LJID, Item, odbc) ->
     ItemGroups = groups_to_string(Item),
     odbc_queries:update_roster_sql(Username, SJID, ItemVals, ItemGroups);
 update_roster_t(LUser, LServer, LJID, Item, redis) ->
+    ?INFO_MSG("Update roster for ~p in item ~p", [LJID, Item]),
     error.
 
 del_roster_t(LUser, LServer, LJID) ->
@@ -1021,6 +1029,7 @@ del_roster_t(LUser, _LServer, LJID, odbc) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     odbc_queries:del_roster_sql(Username, SJID);
 del_roster_t(LUser, LServer, LJID, redis) ->
+    ?INFO_MSG("Remove roster for ~p", [LJID]),
     error.
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
@@ -1160,7 +1169,8 @@ get_in_pending_subscriptions(Ls, User, Server, odbc) ->
 	_ ->
 	    Ls
     end;
-get_in_pending_subscriptions(Ls, User, Server, odbc) ->
+get_in_pending_subscriptions(Ls, User, Server, redis) ->
+    ?INFO_MSG("Pending subscriptions for ~p@~p", [User,Server]),
     [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1201,7 +1211,8 @@ read_subscription_and_groups(LUser, LServer, LJID, odbc) ->
             error
     end;
 read_subscription_and_groups(LUser, LServer, LJID, redis) ->
-    [].
+    ?INFO_MSG("Read subscription and groups for ~p@~p", [LUser,LServer]),
+    {none, []}.
 
 get_jid_info(_, User, Server, JID) ->
     LJID = jlib:jid_tolower(JID),
