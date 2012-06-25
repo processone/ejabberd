@@ -85,8 +85,8 @@ start(Host, Opts) ->
         redis ->
             {Server, Port, Database, Password} = ejabberd_config:get_local_option({redis_server, Host}),
             {ok, _Pid} = ejabberd_redis:start_link(Server, Port, Database, Password);
-        Any ->
-            ?INFO_MSG("No Redis database configured [~p] en host [~p] y opts: ~p", [Any, Host, Opts])
+        _ ->
+            ok
     end,
     ejabberd_hooks:add(roster_get, Host,
 		       ?MODULE, get_user_roster, 50),
@@ -251,7 +251,7 @@ write_roster_version(LUser, LServer, InTransaction, Ver, odbc) ->
                       odbc_queries:set_roster_version(Username, EVer)
               end)
     end;
-write_roster_version(LUser, LServer, InTransaction, Ver, redis) ->
+write_roster_version(LUser, LServer, _InTransaction, Ver, redis) ->
     Key = io_lib:format("~s:~s:version", [LServer, LUser]),
     gen_server:call(ejabberd_redis, {set, Key, Ver}).
 
@@ -381,8 +381,9 @@ get_roster(LUser, LServer, odbc) ->
 	    []
     end;
 get_roster(LUser, LServer, redis) ->
-    ?INFO_MSG("Get Redis Roster...", []),
-    [].
+    lists:map(fun(X) ->
+        get_roster_by_jid_t(LUser, LServer, X, redis)
+    end, ejabberd_redis:set_members(LUser ++ ":" ++ LServer ++ ":roster")).
 
 
 item_to_xml(Item) ->
@@ -463,9 +464,45 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
                       name = ""}
             end
     end;
-get_roster_by_jid_t(LUser, LServer, LJID, redis) ->
-    ?INFO_MSG("Roster de [~p] ( ?= ~s@~s )", [LJID, LUser, LServer]),
-    #roster{}.
+get_roster_by_jid_t(LUser, LServer, LJID, redis) when is_tuple(LJID) ->
+    SJID = jlib:jid_to_string(LJID),
+    get_roster_by_jid_t(LUser, LServer, SJID, redis);
+get_roster_by_jid_t(LUser, LServer, SJID, redis) when is_binary(SJID) ->
+    get_roster_by_jid_t(LUser, LServer, erlang:binary_to_list(SJID), redis);
+get_roster_by_jid_t(LUser, LServer, SJID, redis) when is_list(SJID) ->
+    Key = io_lib:format("~s:~s:roster:~s:", [LUser, LServer, SJID]),
+    [JUser, JServer, JResource, Name, Subscription,
+    Ask, AskMessage, XS, Groups] = ejabberd_redis:multi([
+        ["GET", Key ++ "juser"],
+        ["GET", Key ++ "jserver"],
+        ["GET", Key ++ "jresource"],
+        ["GET", Key ++ "name"],
+        ["GET", Key ++ "subscription"],
+        ["GET", Key ++ "ask"],
+        ["GET", Key ++ "askmessage"],
+        ["GET", Key ++ "xs"],
+        ["SMEMBERS", Key ++ "groups"]
+    ]),
+    case JUser of
+        undefined ->
+            #roster{};
+        _ ->
+            JID = {erlang:binary_to_list(JUser), erlang:binary_to_list(JServer), erlang:binary_to_list(JResource)},
+            #roster{
+                usj = {LUser, LServer, JID},
+                us = {LUser, LServer},
+                jid = JID,
+                name = erlang:binary_to_list(Name),
+                ask = erlang:binary_to_atom(Ask, utf8),
+                subscription = case Subscription of
+                    _ when is_atom(Subscription) -> none;
+                    _ when is_binary(Subscription) -> erlang:binary_to_atom(Subscription, utf8)
+                end,
+                askmessage = AskMessage,
+                xs = erlang:binary_to_list(XS),
+                groups = lists:map(fun(X) -> erlang:binary_to_list(X) end, Groups)
+            }
+    end.
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
@@ -635,8 +672,7 @@ get_subscription_lists(_, LUser, LServer, odbc) ->
             []
     end;
 get_subscription_lists(_, LUser, LServer, redis) ->
-    ?INFO_MSG("Roster subscriptions...", []),
-    [].
+    get_roster(LUser, LServer, redis).
 
 fill_subscription_lists(LServer, [#roster{} = I | Is], F, T) ->
     J = element(3, I#roster.usj),
@@ -679,8 +715,19 @@ roster_subscribe_t(LUser, LServer, LJID, Item, odbc) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     odbc_queries:roster_subscribe(LServer, Username, SJID, ItemVals);
 roster_subscribe_t(LUser, LServer, LJID, Item, redis) ->
-    ?INFO_MSG("Roster subscribe ~p to ~p", [LJID, Item]),
-    error.
+    Key = io_lib:format("~s:~s:roster:~s:", [LUser, LServer, jlib:jid_to_string(LJID)]),
+    {JUser, JServer, JResource} = LJID,
+    ejabberd_redis:multi([
+        ["SADD", LUser ++ ":" ++ LServer ++ ":roster", jlib:jid_to_string(LJID)],
+        ["SET", Key ++ "juser", JUser],
+        ["SET", Key ++ "jserver", JServer],
+        ["SET", Key ++ "jresource", JResource],
+        ["SET", Key ++ "name", Item#roster.name],
+        ["SET", Key ++ "ask", erlang:atom_to_list(Item#roster.ask)],
+        ["SET", Key ++ "askmessage", erlang:binary_to_list(Item#roster.askmessage)],
+        ["SET", Key ++ "xs", Item#roster.xs] |
+        [ ["SADD", Key ++ "groups", X ] || X <- Item#roster.groups ]
+    ]).
 
 transaction(LServer, F) ->
     case gen_mod:db_type(LServer, ?MODULE) of
@@ -689,7 +736,7 @@ transaction(LServer, F) ->
         odbc ->
             ejabberd_odbc:sql_transaction(LServer, F);
         redis ->
-            error
+            F()
     end.
 
 in_subscription(_, User, Server, JID, Type, Reason) ->
@@ -739,8 +786,8 @@ get_roster_by_jid_with_groups_t(LUser, LServer, LJID, odbc) ->
                     jid = LJID}
     end;
 get_roster_by_jid_with_groups_t(LUser, LServer, LJID, redis) ->
-    ?INFO_MSG("Get Roster with groups to ~p", [LJID]),
-    #roster{}.
+    SJID = jlib:jid_to_string(LJID),
+    get_roster_by_jid_t(LUser, LServer, SJID, redis).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     LUser = jlib:nodeprep(User),
@@ -940,8 +987,21 @@ remove_user(LUser, LServer, odbc) ->
     odbc_queries:del_user_roster_t(LServer, Username),
     ok;
 remove_user(LUser, LServer, redis) ->
-    ?INFO_MSG("Roster, remove user: ~p@~p", [LUser, LServer]),
-    error.
+    Key = LUser ++ ":" ++ LServer ++ ":roster",
+    JIDs = ejabberd_redis:set_members(Key),
+    ejabberd_redis:multi([
+        ["DEL", Key ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":juser" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":jserver" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":jresource" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":name" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":subscription" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":ask" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":askmessage" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":xs" || X <- JIDs ]
+        ++ [ Key ++ ":" ++ erlang:binary_to_list(X) ++ ":groups" || X <- JIDs ]
+    ]),
+    ok.
 
 %% For each contact with Subscription:
 %% Both or From, send a "unsubscribed" presence stanza;
@@ -1015,8 +1075,7 @@ update_roster_t(LUser, _LServer, LJID, Item, odbc) ->
     ItemGroups = groups_to_string(Item),
     odbc_queries:update_roster_sql(Username, SJID, ItemVals, ItemGroups);
 update_roster_t(LUser, LServer, LJID, Item, redis) ->
-    ?INFO_MSG("Update roster for ~p in item ~p", [LJID, Item]),
-    error.
+    roster_subscribe_t(LUser, LServer, LJID, Item, redis).
 
 del_roster_t(LUser, LServer, LJID) ->
     DBType = gen_mod:db_type(LServer, ?MODULE),
@@ -1029,8 +1088,23 @@ del_roster_t(LUser, _LServer, LJID, odbc) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     odbc_queries:del_roster_sql(Username, SJID);
 del_roster_t(LUser, LServer, LJID, redis) ->
-    ?INFO_MSG("Remove roster for ~p", [LJID]),
-    error.
+    SJID = jlib:jid_to_string(LJID),
+    Key = LUser ++ ":" ++ LServer ++ ":roster:" ++ SJID,
+    ejabberd_redis:multi([
+        ["DEL", 
+            Key ++ ":" ++ SJID ++ ":juser",
+            Key ++ ":" ++ SJID ++ ":jserver",
+            Key ++ ":" ++ SJID ++ ":jresource",
+            Key ++ ":" ++ SJID ++ ":name",
+            Key ++ ":" ++ SJID ++ ":subscription",
+            Key ++ ":" ++ SJID ++ ":ask",
+            Key ++ ":" ++ SJID ++ ":askmessage",
+            Key ++ ":" ++ SJID ++ ":xs",
+            Key ++ ":" ++ SJID ++ ":groups"
+        ],
+        ["SREM", LUser ++ ":" ++ LServer ++ ":roster", SJID]
+    ]),
+    ok.
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
@@ -1170,8 +1244,35 @@ get_in_pending_subscriptions(Ls, User, Server, odbc) ->
 	    Ls
     end;
 get_in_pending_subscriptions(Ls, User, Server, redis) ->
-    ?INFO_MSG("Pending subscriptions for ~p@~p", [User,Server]),
-    [].
+    LJID = jlib:make_jid(User, Server, ""),
+    SJID = jlib:jid_to_string(LJID),
+    case get_roster(User, Server, redis) of
+        Result when is_list(Result) ->
+            Ls ++ lists:map(
+            fun(R) ->
+                Message = R#roster.askmessage,
+                Status  = if is_binary(Message) ->
+                          binary_to_list(Message);
+                     true ->
+                          ""
+                      end,
+                {xmlelement, "presence",
+                 [{"from", jlib:jid_to_string(R#roster.jid)},
+                  {"to", SJID},
+                  {"type", "subscribe"}],
+                 [{xmlelement, "status", [],
+                   [{xmlcdata, Status}]}]}
+            end,
+            lists:filter(fun(R) ->
+                case R#roster.ask of
+                    in   -> true;
+                    both -> true;
+                    _ -> false
+                end
+            end, Result));
+        _ ->
+            Ls
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1211,8 +1312,12 @@ read_subscription_and_groups(LUser, LServer, LJID, odbc) ->
             error
     end;
 read_subscription_and_groups(LUser, LServer, LJID, redis) ->
-    ?INFO_MSG("Read subscription and groups for ~p@~p", [LUser,LServer]),
-    {none, []}.
+    case get_roster_by_jid_with_groups_t(LUser, LServer, LJID, redis) of
+        #roster{subscription=Subscription, groups=Groups} ->
+            {Subscription, Groups};
+        _ ->
+            error
+    end.
 
 get_jid_info(_, User, Server, JID) ->
     LJID = jlib:jid_tolower(JID),

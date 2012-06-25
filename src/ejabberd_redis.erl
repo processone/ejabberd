@@ -4,8 +4,10 @@
 
 -define(SERVER, ?MODULE).
 
+-include("ejabberd.hrl").
+
 %% API
--export([start_link/4, stop/0]).
+-export([start_link/4, stop/0, multi/1, getter/1, setter/2, set_add/2, set_rem/2, set_members/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -37,16 +39,8 @@ stop() ->
 %% @doc Begin a transaction
 %% @end
 %%--------------------------------------------------------------------
-multi() ->
-    gen_server:call(?SERVER, multi).
-
-%%--------------------------------------------------------------------
-%% @spec exec() -> [Binary1, Binary2, ..., BinaryN] | Binary
-%% @doc Ends a transaction
-%% @end
-%%--------------------------------------------------------------------
-exec() ->
-    gen_server:call(?SERVER, exec).
+multi(Transaction) ->
+    gen_server:call(?SERVER, {multi, Transaction}).
 
 %%--------------------------------------------------------------------
 %% @spec getter() -> [Binary1, Binary2, ..., BinaryN] | Binary
@@ -55,6 +49,15 @@ exec() ->
 %%--------------------------------------------------------------------
 getter(Key) ->
     gen_server:call(?SERVER, {get, Key}).
+
+set_add(Key, Value) ->
+    gen_server:call(?SERVER, {sadd, Key, Value}).
+
+set_rem(Key, Value) ->
+    gen_server:call(?SERVER, {srem, Key, Value}).
+
+set_members(Key) ->
+    gen_server:call(?SERVER, {smembers, Key}).
 
 %%--------------------------------------------------------------------
 %% @spec setter() -> ok
@@ -93,10 +96,18 @@ init([Server, Port, Database, Password]) ->
 %%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-handle_call(multi, _From, #state{conn=C}=State) ->
-    {ok, <<"OK">>} = eredis:q(C, ["MULTI"]),
+handle_call({smembers, Key}, _From, #state{conn=C}=State) ->
+    {ok, Reply} = eredis:q(C, ["SMEMBERS", Key]),
+    {reply, Reply, State};
+handle_call({srem, Key, Value}, _From, #state{conn=C}=State) ->
+    {ok, _} = eredis:q(C, ["SREM", Key, Value]),
     {reply, ok, State};
-handle_call(exec, _From, #state{conn=C}=State) ->
+handle_call({sadd, Key, Value}, _From, #state{conn=C}=State) ->
+    {ok, _} = eredis:q(C, ["SADD", Key, Value]),
+    {reply, ok, State};
+handle_call({multi, Transaction}, _From, #state{conn=C}=State) ->
+    eredis:q(C, ["MULTI"]),
+    lists:map(fun(X) -> eredis:q(C, X) end, Transaction),
     {ok, Reply} = eredis:q(C, ["EXEC"]),
     {reply, Reply, State};
 handle_call({get, Key}, _From, #state{conn=C}=State) ->
@@ -106,7 +117,7 @@ handle_call({set, Key, Value}, _From, #state{conn=C}=State) ->
     {ok, <<"OK">>} = eredis:q(C, ["SET", Key, Value]),
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
-    Reply = ok,
+    Reply = noproc,
     {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
@@ -116,9 +127,6 @@ handle_call(_Request, _From, State) ->
 %% @doc Handling cast messages
 %% @end 
 %%--------------------------------------------------------------------
-handle_cast(multi, #state{conn=C}=State) ->
-    {ok, <<"OK">>} = eredis:q(C, ["MULTI"]),
-    {noreply, State};
 handle_cast({set, Key, Value}, #state{conn=C}=State) ->
     {ok, <<"OK">>} = eredis:q(C, ["SET", Key, Value]),
     {noreply, State};
