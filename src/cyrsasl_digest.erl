@@ -165,13 +165,24 @@ parse4([], Key, Val, Ts) ->
 is_digesturi_valid(DigestURICase, JabberDomain, JabberFQDN) ->
     DigestURI = stringprep:tolower(DigestURICase),
     case catch string:tokens(DigestURI, "/") of
-	["xmpp", Host] when (Host == JabberDomain) or (Host == JabberFQDN) ->
-	    true;
-	["xmpp", Host, ServName] when (ServName == JabberDomain) and (Host == JabberFQDN) ->
-	    true;
+	["xmpp", Host] ->
+	    IsHostFqdn = is_host_fqdn(Host, JabberFQDN),
+	    (Host == JabberDomain) or IsHostFqdn;
+	["xmpp", Host, ServName] ->
+	    IsHostFqdn = is_host_fqdn(Host, JabberFQDN),
+	    (ServName == JabberDomain) and IsHostFqdn;
 	_ ->
 	    false
     end.
+
+is_host_fqdn(Host, [Letter | _Tail] = Fqdn) when not is_list(Letter) ->
+    Host == Fqdn;
+is_host_fqdn(_Host, []) ->
+    false;
+is_host_fqdn(Host, [Fqdn | _FqdnTail]) when Host == Fqdn ->
+    true;
+is_host_fqdn(Host, [Fqdn | FqdnTail]) when Host /= Fqdn ->
+    is_host_fqdn(Host, FqdnTail).
 
 get_local_fqdn() ->
     case (catch get_local_fqdn2()) of
