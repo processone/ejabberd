@@ -80,3 +80,4 @@ tsung-1.3.3/tsung.sh
 tsung-1.3.3/tsung.spec
 rebar
 apps/ejabberd/ebin/ejabberd.app
+dev
