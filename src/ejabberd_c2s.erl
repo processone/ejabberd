@@ -35,7 +35,7 @@
 -behaviour(?GEN_FSM).
 
 %% External exports
--export([start/2, stop/1, start_link/3, send_text/2,
+-export([start/2, stop_or_detach/1, start_link/3, send_text/2,
 	 send_element/2, socket_type/0, get_presence/1,
 	 get_aux_field/2, set_aux_field/3, del_aux_field/2,
 	 get_subscription/2, broadcast/4, get_subscribed/1]).
@@ -44,10 +44,13 @@
 -export([add_rosteritem/3, del_rosteritem/2]).
 
 %% gen_fsm callbacks
--export([init/1, wait_for_stream/2, wait_for_auth/2,
-	 wait_for_feature_request/2, wait_for_bind/2,
-	 wait_for_session/2, wait_for_sasl_response/2,
-	 session_established/2, handle_event/3,
+-export([init/1, wait_for_stream/2, wait_for_stream/3,
+	 wait_for_auth/2, wait_for_auth/3,
+	 wait_for_feature_request/2, wait_for_feature_request/3,
+	 wait_for_bind/2, wait_for_bind/3,
+	 wait_for_session/2, wait_for_session/3,
+	 wait_for_sasl_response/2, wait_for_sasl_response/3,
+	 session_established/2, session_established/3, handle_event/3,
 	 handle_sync_event/4, code_change/4, handle_info/3,
 	 terminate/3, print_state/1, migrate/3,
 	 migrate_shutdown/3]).
@@ -195,7 +198,28 @@ get_subscription(LFrom, StateData) ->
 broadcast(FsmRef, Type, From, Packet) ->
     FsmRef ! {broadcast, Type, From, Packet}.
 
-stop(FsmRef) -> (?GEN_FSM):send_event(FsmRef, closed).
+%% Used by mod_ack and mod_ping.  
+%% If the client is not oor capable, we must stop the session,
+%% and be sure to not return until the c2s process has really stopped. This
+%% is to avoid race conditions when resending messages in mod_ack (EJABS-1677). 
+%% In the other side, if the client is oor capable, then this just
+%% switch reception to false, and returns inmediately.
+stop_or_detach(FsmRef) ->
+    case ?GEN_FSM:sync_send_event(FsmRef, stop_or_detach) of
+	stopped ->
+		MRef = erlang:monitor(process, FsmRef),
+		receive 
+		   {'DOWN', MRef, process, FsmRef, _Reason}->
+			ok
+		after 5 ->
+			catch exit(FsmRef, kill)
+		end,
+		erlang:demonitor(MRef, [flush]),
+		ok;
+	detached ->
+		ok
+    end.
+
 
 migrate(FsmRef, Node, After) ->
     erlang:send_after(After, FsmRef, {migrate, Node}).
@@ -575,6 +599,8 @@ wait_for_stream({xmlstreamerror, _}, StateData) ->
     {stop, normal, StateData};
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
+wait_for_stream(stop_or_detach, _From, StateData) ->
+    {stop, normal, stopped, StateData}.
 
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
@@ -762,6 +788,8 @@ wait_for_auth({xmlstreamerror, _}, StateData) ->
     {stop, normal, StateData};
 wait_for_auth(closed, StateData) ->
     {stop, normal, StateData}.
+wait_for_auth(stop_or_detach,_From, StateData) ->
+    {stop, normal, stopped, StateData}.
 
 wait_for_feature_request({xmlstreamelement, El},
 			 StateData) ->
@@ -951,6 +979,8 @@ wait_for_feature_request({xmlstreamerror, _},
     {stop, normal, StateData};
 wait_for_feature_request(closed, StateData) ->
     {stop, normal, StateData}.
+wait_for_feature_request(stop_or_detach, _From, StateData) ->
+    {stop, normal, stopped, StateData}.
 
 wait_for_sasl_response({xmlstreamelement, El},
 		       StateData) ->
@@ -1063,6 +1093,8 @@ wait_for_sasl_response({xmlstreamerror, _},
     {stop, normal, StateData};
 wait_for_sasl_response(closed, StateData) ->
     {stop, normal, StateData}.
+wait_for_sasl_response(stop_or_detach, _From, StateData) ->
+    {stop, normal, stopped, StateData}.
 
 resource_conflict_action(U, S, R) ->
     OptionRaw = case ejabberd_sm:is_existing_resource(U, S,
@@ -1155,6 +1187,8 @@ wait_for_bind({xmlstreamerror, _}, StateData) ->
     {stop, normal, StateData};
 wait_for_bind(closed, StateData) ->
     {stop, normal, StateData}.
+wait_for_bind(stop_or_detach, _From, StateData) ->
+    {stop, normal, stopped, StateData}.
 
 wait_for_session({xmlstreamelement, El}, StateData) ->
     case jlib:iq_query_info(El) of
@@ -1224,6 +1258,8 @@ wait_for_session({xmlstreamerror, _}, StateData) ->
     {stop, normal, StateData};
 wait_for_session(closed, StateData) ->
     {stop, normal, StateData}.
+wait_for_session(stop_or_detach, _From, StateData) ->
+    {stop, normal, stopped, StateData}.
 
 session_established({xmlstreamelement, El},
 		    StateData) ->
@@ -1266,6 +1302,19 @@ session_established(closed, StateData) ->
 	   NewState = start_keepalive_timer(NewState1),
 	   fsm_next_state(session_established, NewState);
        true -> {stop, normal, StateData}
+    end.
+session_established(stop_or_detach, From, StateData) ->
+    if
+	not StateData#state.reception ->
+	    ?GEN_FSM:reply(From, detached),
+	    fsm_next_state(session_established, StateData);
+	(StateData#state.keepalive_timer /= undefined) ->
+	    NewState1 = change_reception(StateData, false),
+	    NewState = start_keepalive_timer(NewState1),
+	    ?GEN_FSM:reply(From, detached),
+	    fsm_next_state(session_established, NewState);
+	true ->
+	    {stop, normal, stopped, StateData}
     end.
 
 session_established2(El, StateData) ->

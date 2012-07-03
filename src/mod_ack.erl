@@ -241,7 +241,7 @@ handle_cast(_Msg, State) -> {noreply, State}.
 handle_info({timeout, _TRef, {ID, Pid}}, State) ->
     case lookup(Pid, ID, State#state.timers) of
       {ok, _} ->
-	  catch ejabberd_c2s:stop(Pid),
+	  catch ejabberd_c2s:stop_or_detach(Pid),
 	  handle_cast({del, Pid}, State);
       error -> 
 	?WARNING_MSG("ack ID not found :~p", [ID]),
