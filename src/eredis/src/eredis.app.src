@@ -1,0 +1,7 @@
+{application, eredis, [
+    {description, "Erlang Redis Client"},
+    {vsn, "1.0.2"},
+    {modules, []},
+    {registered, []},
+    {applications, [kernel, stdlib]}
+]}.

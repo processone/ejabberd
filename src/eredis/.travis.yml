@@ -1,0 +1,5 @@
+language: erlang
+notifications:
+  email: false
+otp_release:
+  - R14B04

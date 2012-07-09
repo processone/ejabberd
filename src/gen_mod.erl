@@ -203,6 +203,7 @@ db_type(Opts) ->
 db_type(Host, Module) ->
     case get_module_opt(Host, Module, db_type, mnesia) of
         odbc -> odbc;
+        redis -> redis;
         _ -> mnesia
     end.
 

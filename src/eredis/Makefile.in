@@ -1,0 +1,10 @@
+all:
+	./rebar compile
+	cp ebin/* ..
+
+clean:
+	./rebar clean
+
+distclean: clean
+	rm -f Makefile
+
