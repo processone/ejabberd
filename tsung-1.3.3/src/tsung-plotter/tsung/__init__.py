@@ -1,3 +1,0 @@
-"""
-Tsung log data parser.
-"""
