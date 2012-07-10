@@ -49,33 +49,33 @@ process_data(CallbackPid, Stack, Data) ->
 	    if
 		Stack == [] ->
 		    catch gen_fsm:send_event(CallbackPid,
-					     {xmlstreamstart, Name, Attrs});
+					     {xmlstreamstart, Name, Attrs}),
+		    %% There is no need to store name or attributes of
+		    %% stream opening element as it is not used
+		    %% anymore.
+		    [xmlstreamstart];
 		true ->
-		    ok
-	    end,
-	    [{xmlelement, Name, Attrs, []} | Stack];
+		    [{xmlelement, Name, Attrs, []} | Stack]
+	    end;
 	{?XML_END, EndName} ->
 	    case Stack of
-		[{xmlelement, Name, Attrs, Els} | Tail] ->
+		[xmlstreamstart] ->
+		    catch gen_fsm:send_event(CallbackPid,
+					     {xmlstreamend, EndName}),
+		    [];
+		[{xmlelement, Name, Attrs, Els}, xmlstreamstart] ->
 		    NewEl = {xmlelement, Name, Attrs, lists:reverse(Els)},
-		    case Tail of
-			[] ->
-			    catch gen_fsm:send_event(CallbackPid,
-						     {xmlstreamend, EndName}),
-			    Tail;
-			[_] ->
-			    catch gen_fsm:send_event(CallbackPid,
-						     {xmlstreamelement, NewEl}),
-			    Tail;
-			[{xmlelement, Name1, Attrs1, Els1} | Tail1] ->
-			    [{xmlelement, Name1, Attrs1, [NewEl | Els1]} |
-			     Tail1]
-		    end
+		    catch gen_fsm:send_event(CallbackPid,
+					     {xmlstreamelement, NewEl}),
+		    [xmlstreamstart];
+		[{xmlelement, Name, Attrs, Els}, {xmlelement, Name1, Attrs1, Els1} | Tail] ->
+		    NewEl = {xmlelement, Name, Attrs, lists:reverse(Els)},
+		    [{xmlelement, Name1, Attrs1, [NewEl | Els1]} | Tail]
 	    end;
 	{?XML_CDATA, CData} ->
 	    case Stack of
-		[El] ->
-		    [El];
+		[xmlstreamstart] ->
+		    [xmlstreamstart];
 		%% Merge CDATA nodes if they are contiguous
 		%% This does not change the semantic: the split in
 		%% several CDATA nodes depends on the TCP/IP packet
@@ -187,4 +187,3 @@ process_element_events([Event | Events], Stack) ->
 	{?XML_ERROR, Err} ->
 	    {error, Err}
     end.
-

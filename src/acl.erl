@@ -241,9 +241,9 @@ is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
 
 loaded_shared_roster_module(Host) ->
-    case {gen_mod:is_loaded(Host, mod_shared_roster_odbc),
-          gen_mod:is_loaded(Host, mod_shared_roster_ldap)} of
-        {true, _} -> mod_shared_roster_odbc;
-        {_, true} -> mod_shared_roster_ldap;
-        _ -> mod_shared_roster
+    case gen_mod:is_loaded(Host, mod_shared_roster_ldap) of
+        true ->
+            mod_shared_roster_ldap;
+        false ->
+            mod_shared_roster
     end.

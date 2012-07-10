@@ -66,6 +66,7 @@
 		last_receiver,
 		last_poll,
 		http_receiver,
+		out_of_order_receiver = false,
 		wait_timer,
 		ctime = 0,
 		timer,
@@ -372,6 +373,11 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
     Output = [Packet | StateData#state.output],
     Reply = ok,
     {reply, Reply, StateName, StateData#state{output = Output}};
+handle_sync_event({send_xml, Packet}, _From, StateName,
+		  #state{out_of_order_receiver = true} = StateData) ->
+    Output = [Packet | StateData#state.output],
+    Reply = ok,
+    {reply, Reply, StateName, StateData#state{output = Output}};
 handle_sync_event({send_xml, Packet}, _From, StateName, StateData) ->
     Output = [Packet | StateData#state.output],
     cancel_timer(StateData#state.timer),
@@ -435,37 +441,25 @@ handle_sync_event(#http_put{payload_size = PayloadSize} = Request,
 %% HTTP GET: send packets to the client
 handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
     %% setup timer
-    send_receiver_reply(StateData#state.http_receiver, {ok, empty}),
-    cancel_timer(StateData#state.wait_timer),
     TNow = tnow(),
     if
 	(Hold > 0) and
-	(StateData#state.output == []) and
+	((StateData#state.output == []) or (StateData#state.rid < Rid)) and
 	((TNow - StateData#state.ctime) < (Wait*1000*1000)) and
-	(StateData#state.rid == Rid) and
-	(StateData#state.input /= cancel) and
-        (StateData#state.pause == 0) ->
+	(StateData#state.rid =< Rid) and
+	(StateData#state.pause == 0) ->
+	    send_receiver_reply(StateData#state.http_receiver, {ok, empty}),
+	    cancel_timer(StateData#state.wait_timer),
 	    WaitTimer = erlang:start_timer(Wait * 1000, self(), []),
 	    %% MR: Not sure we should cancel the state timer here.
 	    cancel_timer(StateData#state.timer),
 	    {next_state, StateName, StateData#state{
 				      http_receiver = From,
+				      out_of_order_receiver = StateData#state.rid < Rid,
 				      wait_timer = WaitTimer,
 				      timer = undefined}};
-	(StateData#state.input == cancel) ->
-	    cancel_timer(StateData#state.timer),
-	    Timer = set_inactivity_timer(StateData#state.pause,
-					 StateData#state.max_inactivity),
-	    Reply = {ok, cancel},
-	    {reply, Reply, StateName, StateData#state{
-					input = queue:new(),
-					http_receiver = undefined,
-					wait_timer = undefined,
-					timer = Timer}};
 	true ->
 	    cancel_timer(StateData#state.timer),
-	    Timer = set_inactivity_timer(StateData#state.pause,
-					 StateData#state.max_inactivity),
 	    Reply = {ok, StateData#state.output},
 	    %% save request
 	    ReqList = [#hbr{rid = Rid,
@@ -475,12 +469,26 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 		       [El || El <- StateData#state.req_list,
 			      El#hbr.rid /= Rid ]
 		      ],
-	    {reply, Reply, StateName, StateData#state{
-					output = [],
-					http_receiver = undefined,
-					wait_timer = undefined,
-					timer = Timer,
-					req_list = ReqList}}
+	    if
+                (StateData#state.http_receiver /= undefined) and
+                StateData#state.out_of_order_receiver ->
+                    {reply, Reply, StateName, StateData#state{
+                                                output = [],
+                                                timer = undefined,
+                                                req_list = ReqList,
+                                                out_of_order_receiver = false}};
+                true ->
+                    send_receiver_reply(StateData#state.http_receiver, {ok, empty}),
+                    cancel_timer(StateData#state.wait_timer),
+                    Timer = set_inactivity_timer(StateData#state.pause,
+                                                 StateData#state.max_inactivity),
+                    {reply, Reply, StateName,
+                     StateData#state{output = [],
+                                     http_receiver = undefined,
+                                     wait_timer = undefined,
+                                     timer = Timer,
+                                     req_list = ReqList}}
+            end
     end;
 
 handle_sync_event(peername, _From, StateName, StateData) ->
@@ -587,10 +595,11 @@ handle_http_put_event(#http_put{rid = Rid, attrs = Attrs,
 	    UnprocessedReqList = [Request | Requests],
 	    cancel_timer(StateData#state.timer),
 	    Timer = set_inactivity_timer(0, StateData#state.max_inactivity),
-	    {reply, buffered, StateName,
-	     StateData#state{unprocessed_req_list = UnprocessedReqList,
-			     req_list = ReqList,
-			     timer = Timer}};
+	    {reply, ok, StateName,
+             StateData#state{unprocessed_req_list = UnprocessedReqList,
+                             req_list = ReqList,
+                             timer = Timer}, hibernate};
+
 	_ ->
 	    %% Request is in sequence:
 	    process_http_put(Request, StateName, StateData, RidAllow)
@@ -646,16 +655,20 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs, payload = Payload,
 		    {reply, Reply, StateName, StateData};
 		repeat ->
 		    ?DEBUG("REPEATING ~p", [Rid]),
-		    Reply = case [El#hbr.out ||
-				     El <- StateData#state.req_list,
-				     El#hbr.rid == Rid] of
-				[] ->
-				    {error, not_exists};
-				[Out | _XS] ->
-				    {repeat, lists:reverse(Out)}
-			    end,
-		    {reply, Reply, StateName, StateData#state{input = cancel,
-							      last_poll = LastPoll}};
+                    case [El#hbr.out ||
+                             El <- StateData#state.req_list,
+                             El#hbr.rid == Rid] of
+                        [] ->
+                            {error, not_exists};
+                        [Out | _XS] ->
+                            if (Rid == StateData#state.rid) and
+                               (StateData#state.http_receiver /= undefined) ->
+                                    {reply, ok, StateName, StateData};
+                               true ->
+                                    Reply = {repeat, lists:reverse(Out)},
+                                    {reply, Reply, StateName, StateData#state{last_poll = LastPoll}}
+                            end
+                    end;
 		{true, Pause} ->
 		    SaveKey = if
 				  NewKey == "" ->
@@ -794,8 +807,6 @@ handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize, StreamStart, IP) ->
             %     {"type", "error"}], []})};
             handle_http_put(Sid, Rid, Attrs, Payload, PayloadSize,
 			    StreamStart, IP);
-        {buffered, _Sess} ->
-            {200, ?HEADER, "<body xmlns='"++?NS_HTTP_BIND++"'/>"};
         {ok, Sess} ->
             prepare_response(Sess, Rid, [], StreamStart)
     end.

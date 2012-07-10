@@ -34,6 +34,8 @@
 	 get_opt/2,
 	 get_opt/3,
 	 get_opt_host/3,
+         db_type/1,
+         db_type/2,
 	 get_module_opt/4,
 	 get_module_opt_host/3,
 	 loaded_modules/1,
@@ -191,6 +193,18 @@ get_module_opt_host(Host, Module, Default) ->
 get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, Default),
     ejabberd_regexp:greplace(Val, "@HOST@", Host).
+
+db_type(Opts) ->
+    case get_opt(db_type, Opts, mnesia) of
+        odbc -> odbc;
+        _ -> mnesia
+    end.
+
+db_type(Host, Module) ->
+    case get_module_opt(Host, Module, db_type, mnesia) of
+        odbc -> odbc;
+        _ -> mnesia
+    end.
 
 loaded_modules(Host) ->
     ets:select(ejabberd_modules,

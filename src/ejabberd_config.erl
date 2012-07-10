@@ -467,6 +467,8 @@ process_host_term(Term, Host, State) ->
 	    State;
 	{odbc_server, ODBC_server} ->
 	    add_option({odbc_server, Host}, ODBC_server, State);
+        {modules, Modules} ->
+            add_option({modules, Host}, replace_modules(Modules), State);
 	{Opt, Val} ->
 	    add_option({Opt, Host}, Val, State)
     end.
@@ -610,3 +612,30 @@ is_file_readable(Path) ->
 	{error, _Reason} ->
 	    false
     end.
+
+replace_module(mod_announce_odbc) -> {mod_announce, odbc};
+replace_module(mod_blocking_odbc) -> {mod_blocking, odbc};
+replace_module(mod_irc_odbc) -> {mod_irc, odbc};
+replace_module(mod_last_odbc) -> {mod_last, odbc};
+replace_module(mod_muc_odbc) -> {mod_muc, odbc};
+replace_module(mod_offline_odbc) -> {mod_offline, odbc};
+replace_module(mod_privacy_odbc) -> {mod_privacy, odbc};
+replace_module(mod_private_odbc) -> {mod_private, odbc};
+replace_module(mod_roster_odbc) -> {mod_roster, odbc};
+replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, odbc};
+replace_module(mod_vcard_odbc) -> {mod_vcard, odbc};
+replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, odbc};
+replace_module(Module) -> Module.
+
+replace_modules(Modules) ->
+    lists:map(
+      fun({Module, Opts}) ->
+              case replace_module(Module) of
+                  {NewModule, DBType} ->
+                      NewOpts = [{db_type, DBType} |
+                                 lists:keydelete(db_type, 1, Opts)],
+                      {NewModule, NewOpts};
+                  NewModule ->
+                      {NewModule, Opts}
+              end
+      end, Modules).

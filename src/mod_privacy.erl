@@ -36,7 +36,20 @@
 	 get_user_list/3,
 	 check_packet/6,
 	 remove_user/2,
+         item_to_raw/1,
+         raw_to_item/1,
+         is_list_needdb/1,
 	 updated_list/3]).
+
+%% For mod_blocking
+-export([sql_add_privacy_list/2,
+         sql_get_default_privacy_list/2,
+         sql_get_default_privacy_list_t/1,
+         sql_get_privacy_list_data/3,
+         sql_get_privacy_list_data_by_id_t/1,
+         sql_get_privacy_list_id_t/2,
+         sql_set_default_privacy_list/2,
+         sql_set_privacy_list/2]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -45,9 +58,15 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mnesia:create_table(privacy, [{disc_copies, [node()]},
-				  {attributes, record_info(fields, privacy)}]),
-    update_table(),
+    case gen_mod:db_type(Opts) of
+        mnesia ->
+            mnesia:create_table(privacy,
+                                [{disc_copies, [node()]},
+                                 {attributes, record_info(fields, privacy)}]),
+            update_table();
+        _ ->
+            ok
+    end,
     ejabberd_hooks:add(privacy_iq_get, Host,
 		       ?MODULE, process_iq_get, 50),
     ejabberd_hooks:add(privacy_iq_set, Host,
@@ -102,68 +121,116 @@ process_iq_get(_, From, _To, #iq{sub_el = SubEl},
 	    {error, ?ERR_BAD_REQUEST}
     end.
 
-
 process_lists_get(LUser, LServer, Active) ->
+    case process_lists_get(LUser, LServer, Active,
+                           gen_mod:db_type(LServer, ?MODULE)) of
+        error ->
+            {error, ?ERR_INTERNAL_SERVER_ERROR};
+        {_Default, []} ->
+            {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+        {Default, LItems} ->
+            DItems =
+                case Default of
+                    none ->
+                        LItems;
+                    _ ->
+                        [{xmlelement, "default",
+                          [{"name", Default}], []} | LItems]
+                end,
+            ADItems =
+                case Active of
+                    none ->
+                        DItems;
+                    _ ->
+                        [{xmlelement, "active",
+                          [{"name", Active}], []} | DItems]
+                end,
+            {result,
+             [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
+               ADItems}]}
+    end.
+
+process_lists_get(LUser, LServer, _Active, mnesia) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+            error;
 	[] ->
-	    {result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+            {none, []};
 	[#privacy{default = Default, lists = Lists}] ->
-	    case Lists of
-		[] ->
-		    {result, [{xmlelement, "query",
-			       [{"xmlns", ?NS_PRIVACY}], []}]};
-		_ ->
-		    LItems = lists:map(
-			       fun({N, _}) ->
-				       {xmlelement, "list",
-					[{"name", N}], []}
-			       end, Lists),
-		    DItems =
-			case Default of
-			    none ->
-				LItems;
-			    _ ->
-				[{xmlelement, "default",
-				  [{"name", Default}], []} | LItems]
-			end,
-		    ADItems =
-			case Active of
-			    none ->
-				DItems;
-			    _ ->
-				[{xmlelement, "active",
-				  [{"name", Active}], []} | DItems]
-			end,
-		    {result,
-		     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
-		       ADItems}]}
-	    end
+            LItems = lists:map(
+                       fun({N, _}) ->
+                               {xmlelement, "list", [{"name", N}], []}
+                       end, Lists),
+            {Default, LItems}
+    end;
+process_lists_get(LUser, LServer, _Active, odbc) ->
+    Default = case catch sql_get_default_privacy_list(LUser, LServer) of
+		  {selected, ["name"], []} ->
+		      none;
+		  {selected, ["name"], [{DefName}]} ->
+		      DefName;
+		  _ ->
+		      none
+	      end,
+    case catch sql_get_privacy_list_names(LUser, LServer) of
+	{selected, ["name"], Names} ->
+            LItems = lists:map(
+                       fun({N}) ->
+                               {xmlelement, "list", [{"name", N}], []}
+                       end, Names),
+            {Default, LItems};
+        _ ->
+            error
     end.
 
 process_list_get(LUser, LServer, {value, Name}) ->
+    case process_list_get(LUser, LServer, Name,
+                          gen_mod:db_type(LServer, ?MODULE)) of
+        error ->
+            {error, ?ERR_INTERNAL_SERVER_ERROR};
+        not_found ->
+            {error, ?ERR_ITEM_NOT_FOUND};
+        Items ->
+            LItems = lists:map(fun item_to_xml/1, Items),
+            {result,
+             [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
+               [{xmlelement, "list",
+                 [{"name", Name}], LItems}]}]}
+    end;
+process_list_get(_LUser, _LServer, false) ->
+    {error, ?ERR_BAD_REQUEST}.
+
+process_list_get(LUser, LServer, Name, mnesia) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+            error;
 	[] ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
-	    %{result, [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}], []}]};
+            not_found;
 	[#privacy{lists = Lists}] ->
 	    case lists:keysearch(Name, 1, Lists) of
 		{value, {_, List}} ->
-		    LItems = lists:map(fun item_to_xml/1, List),
-		    {result,
-		     [{xmlelement, "query", [{"xmlns", ?NS_PRIVACY}],
-		       [{xmlelement, "list",
-			 [{"name", Name}], LItems}]}]};
+                    List;
 		_ ->
-		    {error, ?ERR_ITEM_NOT_FOUND}
+                    not_found
 	    end
     end;
-
-process_list_get(_LUser, _LServer, false) ->
-    {error, ?ERR_BAD_REQUEST}.
+process_list_get(LUser, LServer, Name, odbc) ->
+    case catch sql_get_privacy_list_id(LUser, LServer, Name) of
+	{selected, ["id"], []} ->
+            not_found;
+	{selected, ["id"], [{ID}]} ->
+	    case catch sql_get_privacy_list_data_by_id(ID, LServer) of
+		{selected, ["t", "value", "action", "ord", "match_all",
+			    "match_iq", "match_message",
+			    "match_presence_in", "match_presence_out"],
+		 RItems} ->
+		    lists:map(fun raw_to_item/1, RItems);
+		_ ->
+                    error
+	    end;
+	_ ->
+            error
+    end.
 
 item_to_xml(Item) ->
     Attrs1 = [{"action", action_to_list(Item#listitem.action)},
@@ -269,98 +336,194 @@ process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
 	    {error, ?ERR_BAD_REQUEST}
     end.
 
+process_default_set(LUser, LServer, Value) ->
+    case process_default_set(LUser, LServer, Value,
+                             gen_mod:db_type(LServer, ?MODULE)) of
+        {atomic, error} ->
+            {error, ?ERR_INTERNAL_SERVER_ERROR};
+        {atomic, not_found} ->
+            {error, ?ERR_ITEM_NOT_FOUND};
+	{atomic, ok} ->
+            {result, []};
+	_ ->
+	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
 
-process_default_set(LUser, LServer, {value, Name}) ->
+process_default_set(LUser, LServer, {value, Name}, mnesia) ->
     F = fun() ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
 		    [] ->
-			{error, ?ERR_ITEM_NOT_FOUND};
+                        not_found;
 		    [#privacy{lists = Lists} = P] ->
 			case lists:keymember(Name, 1, Lists) of
 			    true ->
 				mnesia:write(P#privacy{default = Name,
 						       lists = Lists}),
-				{result, []};
+                                ok;
 			    false ->
-				{error, ?ERR_ITEM_NOT_FOUND}
+                                not_found
 			end
 		end
 	end,
-    case mnesia:transaction(F) of
-	{atomic, {error, _} = Error} ->
-	    Error;
-	{atomic, {result, _} = Res} ->
-	    Res;
-	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
-    end;
-
-process_default_set(LUser, LServer, false) ->
+    mnesia:transaction(F);
+process_default_set(LUser, LServer, {value, Name}, odbc) ->
+    F = fun() ->
+		case sql_get_privacy_list_names_t(LUser) of
+		    {selected, ["name"], []} ->
+                        not_found;
+		    {selected, ["name"], Names} ->
+			case lists:member({Name}, Names) of
+			    true ->
+				sql_set_default_privacy_list(LUser, Name),
+                                ok;
+			    false ->
+                                not_found
+			end
+		end
+	end,
+    odbc_queries:sql_transaction(LServer, F);
+process_default_set(LUser, LServer, false, mnesia) ->
     F = fun() ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
 		    [] ->
-			{result, []};
+                        ok;
 		    [R] ->
-			mnesia:write(R#privacy{default = none}),
-			{result, []}
+			mnesia:write(R#privacy{default = none})
 		end
 	end,
-    case mnesia:transaction(F) of
-	{atomic, {error, _} = Error} ->
-	    Error;
-	{atomic, {result, _} = Res} ->
-	    Res;
+    mnesia:transaction(F);
+process_default_set(LUser, LServer, false, odbc) ->
+    case catch sql_unset_default_privacy_list(LUser, LServer) of
+	{'EXIT', _Reason} ->
+            {atomic, error};
+	{error, _Reason} ->
+            {atomic, error};
 	_ ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    {atomic, ok}
     end.
 
-
 process_active_set(LUser, LServer, {value, Name}) ->
-    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
-	[] ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
-	[#privacy{lists = Lists}] ->
-	    case lists:keysearch(Name, 1, Lists) of
-		{value, {_, List}} ->
-		    NeedDb = is_list_needdb(List),
-		    {result, [], #userlist{name = Name, list = List, needdb = NeedDb}};
-		false ->
-		    {error, ?ERR_ITEM_NOT_FOUND}
-	    end
+    case process_active_set(LUser, LServer, Name,
+                            gen_mod:db_type(LServer, ?MODULE)) of
+        error ->
+            {error, ?ERR_ITEM_NOT_FOUND};
+        Items ->
+            NeedDb = is_list_needdb(Items),
+            {result, [], #userlist{name = Name, list = Items, needdb = NeedDb}}
     end;
-
 process_active_set(_LUser, _LServer, false) ->
     {result, [], #userlist{}}.
 
+process_active_set(LUser, LServer, Name, mnesia) ->
+    case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
+	[] ->
+            error;
+	[#privacy{lists = Lists}] ->
+	    case lists:keysearch(Name, 1, Lists) of
+		{value, {_, List}} ->
+                    List;
+		false ->
+                    error
+	    end
+    end;
+process_active_set(LUser, LServer, Name, odbc) ->
+    case catch sql_get_privacy_list_id(LUser, LServer, Name) of
+	{selected, ["id"], []} ->
+            error;
+	{selected, ["id"], [{ID}]} ->
+	    case catch sql_get_privacy_list_data_by_id(ID, LServer) of
+		{selected, ["t", "value", "action", "ord", "match_all",
+			    "match_iq", "match_message",
+			    "match_presence_in", "match_presence_out"],
+		 RItems} ->
+		    lists:map(fun raw_to_item/1, RItems);
+		_ ->
+                    error
+	    end;
+	_ ->
+            error
+    end.
+
+remove_privacy_list(LUser, LServer, Name, mnesia) ->
+    F =	fun() ->
+                case mnesia:read({privacy, {LUser, LServer}}) of
+                    [] ->
+                        ok;
+                    [#privacy{default = Default, lists = Lists} = P] ->
+                        %% TODO: check active
+                        if
+                            Name == Default ->
+                                conflict;
+                            true ->
+                                NewLists =
+                                    lists:keydelete(Name, 1, Lists),
+                                mnesia:write(
+                                  P#privacy{lists = NewLists})
+                        end
+                end
+        end,
+    mnesia:transaction(F);
+remove_privacy_list(LUser, LServer, Name, odbc) ->
+    F =	fun() ->
+                case sql_get_default_privacy_list_t(LUser) of
+                    {selected, ["name"], []} ->
+                        sql_remove_privacy_list(LUser, Name),
+                        ok;
+                    {selected, ["name"], [{Default}]} ->
+                        %% TODO: check active
+                        if
+                            Name == Default ->
+                                conflict;
+                            true ->
+                                sql_remove_privacy_list(LUser, Name),
+                                ok
+                        end
+                end
+        end,
+    odbc_queries:sql_transaction(LServer, F).
+
+set_privacy_list(LUser, LServer, Name, List, mnesia) ->
+    F =	fun() ->
+                case mnesia:wread({privacy, {LUser, LServer}}) of
+                    [] ->
+                        NewLists = [{Name, List}],
+                        mnesia:write(#privacy{us = {LUser, LServer},
+                                              lists = NewLists});
+                    [#privacy{lists = Lists} = P] ->
+                        NewLists1 = lists:keydelete(Name, 1, Lists),
+                        NewLists = [{Name, List} | NewLists1],
+                        mnesia:write(P#privacy{lists = NewLists})
+		end
+        end,
+    mnesia:transaction(F);
+set_privacy_list(LUser, LServer, Name, List, odbc) ->
+    RItems = lists:map(fun item_to_raw/1, List),
+    F =	fun() ->
+                ID =
+                    case sql_get_privacy_list_id_t(LUser, Name) of
+                        {selected, ["id"], []} ->
+                            sql_add_privacy_list(LUser, Name),
+                            {selected, ["id"], [{I}]} =
+                                sql_get_privacy_list_id_t(LUser, Name),
+                            I;
+                        {selected, ["id"], [{I}]} ->
+                            I
+                    end,
+                sql_set_privacy_list(ID, RItems),
+                ok
+        end,
+    odbc_queries:sql_transaction(LServer, F).
 
 process_list_set(LUser, LServer, {value, Name}, Els) ->
     case parse_items(Els) of
 	false ->
 	    {error, ?ERR_BAD_REQUEST};
 	remove ->
-	    F =
-		fun() ->
-			case mnesia:read({privacy, {LUser, LServer}}) of
-			    [] ->
-				{result, []};
-			    [#privacy{default = Default, lists = Lists} = P] ->
-				% TODO: check active
-				if
-				    Name == Default ->
-					{error, ?ERR_CONFLICT};
-				    true ->
-					NewLists =
-					    lists:keydelete(Name, 1, Lists),
-					mnesia:write(
-					  P#privacy{lists = NewLists}),
-					{result, []}
-				end
-			end
-		end,
-	    case mnesia:transaction(F) of
-		{atomic, {error, _} = Error} ->
-		    Error;
-		{atomic, {result, _} = Res} ->
+	    case remove_privacy_list(LUser, LServer, Name,
+                                     gen_mod:db_type(LServer, ?MODULE)) of
+		{atomic, conflict} ->
+                    {error, ?ERR_CONFLICT};
+		{atomic, ok} ->
 		    ejabberd_router:route(
 		      jlib:make_jid(LUser, LServer, ""),
 		      jlib:make_jid(LUser, LServer, ""),
@@ -368,30 +531,14 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		       [{privacy_list,
 			 #userlist{name = Name, list = []},
 			 Name}]}),
-		    Res;
+                    {result, []};
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
 	    end;
 	List ->
-	    F =
-		fun() ->
-			case mnesia:wread({privacy, {LUser, LServer}}) of
-			    [] ->
-				NewLists = [{Name, List}],
-				mnesia:write(#privacy{us = {LUser, LServer},
-						      lists = NewLists}),
-				{result, []};
-			    [#privacy{lists = Lists} = P] ->
-				NewLists1 = lists:keydelete(Name, 1, Lists),
-				NewLists = [{Name, List} | NewLists1],
-				mnesia:write(P#privacy{lists = NewLists}),
-				{result, []}
-			end
-		end,
-	    case mnesia:transaction(F) of
-		{atomic, {error, _} = Error} ->
-		    Error;
-		{atomic, {result, _} = Res} ->
+	    case set_privacy_list(LUser, LServer, Name, List,
+                                  gen_mod:db_type(LServer, ?MODULE)) of
+		{atomic, ok} ->
 		    NeedDb = is_list_needdb(List),
 		    ejabberd_router:route(
 		      jlib:make_jid(LUser, LServer, ""),
@@ -400,7 +547,7 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		       [{privacy_list,
 			 #userlist{name = Name, list = List, needdb = NeedDb},
 			 Name}]}),
-		    Res;
+		    {result, []};
 		_ ->
 		    {error, ?ERR_INTERNAL_SERVER_ERROR}
 	    end
@@ -532,29 +679,50 @@ is_list_needdb(Items) ->
 	      end
       end, Items).
 
-get_user_list(_, User, Server) ->
+get_user_list(Acc, User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
+    {Default, Items} = get_user_list(Acc, LUser, LServer,
+                                     gen_mod:db_type(LServer, ?MODULE)),
+    NeedDb = is_list_needdb(Items),
+    #userlist{name = Default, list = Items, needdb = NeedDb}.
+
+get_user_list(_, LUser, LServer, mnesia) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
 	[] ->
-	    #userlist{};
+            {none, []};
 	[#privacy{default = Default, lists = Lists}] ->
 	    case Default of
 		none ->
-		    #userlist{};
+                    {none, []};
 		_ ->
 		    case lists:keysearch(Default, 1, Lists) of
 			{value, {_, List}} ->
-			    NeedDb = is_list_needdb(List),
-			    #userlist{name = Default, list = List, needdb = NeedDb};
+                            {Default, List};
 			_ ->
-			    #userlist{}
+                            {none, []}
 		    end
 	    end;
 	_ ->
-	    #userlist{}
+            {none, []}
+    end;
+get_user_list(_, LUser, LServer, odbc) ->
+    case catch sql_get_default_privacy_list(LUser, LServer) of
+	{selected, ["name"], []} ->
+            {none, []};
+	{selected, ["name"], [{Default}]} ->
+	    case catch sql_get_privacy_list_data(LUser, LServer, Default) of
+		{selected, ["t", "value", "action", "ord", "match_all",
+			    "match_iq", "match_message",
+			    "match_presence_in", "match_presence_out"],
+		 RItems} ->
+		    {Default, lists:map(fun raw_to_item/1, RItems)};
+		_ ->
+                    {none, []}
+	    end;
+	_ ->
+            {none, []}
     end.
-
 
 %% From is the sender, To is the destination.
 %% If Dir = out, User@Server is the sender account (From).
@@ -699,12 +867,16 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
+    remove_user(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
+
+remove_user(LUser, LServer, mnesia) ->
     F = fun() ->
 		mnesia:delete({privacy,
 			       {LUser, LServer}})
         end,
-    mnesia:transaction(F).
-
+    mnesia:transaction(F);
+remove_user(LUser, LServer, odbc) ->
+    sql_del_privacy_lists(LUser, LServer).
 
 updated_list(_,
 	     #userlist{name = OldName} = Old,
@@ -716,6 +888,160 @@ updated_list(_,
 	    Old
     end.
 
+raw_to_item({SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
+	     SMatchMessage, SMatchPresenceIn, SMatchPresenceOut}) ->
+    {Type, Value} =
+	case SType of
+	    "n" ->
+		{none, none};
+	    "j" ->
+		case jlib:string_to_jid(SValue) of
+		    #jid{} = JID ->
+			{jid, jlib:jid_tolower(JID)}
+		end;
+	    "g" ->
+		{group, SValue};
+	    "s" ->
+		case SValue of
+		    "none" ->
+			{subscription, none};
+		    "both" ->
+			{subscription, both};
+		    "from" ->
+			{subscription, from};
+		    "to" ->
+			{subscription, to}
+		end
+	end,
+    Action =
+	case SAction of
+	    "a" -> allow;
+	    "d" -> deny
+	end,
+    Order = list_to_integer(SOrder),
+    MatchAll = ejabberd_odbc:to_bool(SMatchAll),
+    MatchIQ = ejabberd_odbc:to_bool(SMatchIQ),
+    MatchMessage = ejabberd_odbc:to_bool(SMatchMessage),
+    MatchPresenceIn = ejabberd_odbc:to_bool(SMatchPresenceIn),
+    MatchPresenceOut =  ejabberd_odbc:to_bool(SMatchPresenceOut),
+    #listitem{type = Type,
+	      value = Value,
+	      action = Action,
+	      order = Order,
+	      match_all = MatchAll,
+	      match_iq = MatchIQ,
+	      match_message = MatchMessage,
+	      match_presence_in = MatchPresenceIn,
+	      match_presence_out = MatchPresenceOut
+	     }.
+
+item_to_raw(#listitem{type = Type,
+		      value = Value,
+		      action = Action,
+		      order = Order,
+		      match_all = MatchAll,
+		      match_iq = MatchIQ,
+		      match_message = MatchMessage,
+		      match_presence_in = MatchPresenceIn,
+		      match_presence_out = MatchPresenceOut
+		     }) ->
+    {SType, SValue} =
+	case Type of
+	    none ->
+		{"n", ""};
+	    jid ->
+		{"j", ejabberd_odbc:escape(jlib:jid_to_string(Value))};
+	    group ->
+		{"g", ejabberd_odbc:escape(Value)};
+	    subscription ->
+		case Value of
+		    none ->
+			{"s", "none"};
+		    both ->
+			{"s", "both"};
+		    from ->
+			{"s", "from"};
+		    to ->
+			{"s", "to"}
+		end
+	end,
+    SAction =
+	case Action of
+	    allow -> "a";
+	    deny -> "d"
+	end,
+    SOrder = integer_to_list(Order),
+    SMatchAll = if MatchAll -> "1"; true -> "0" end,
+    SMatchIQ = if MatchIQ -> "1"; true -> "0" end,
+    SMatchMessage = if MatchMessage -> "1"; true -> "0" end,
+    SMatchPresenceIn = if MatchPresenceIn -> "1"; true -> "0" end,
+    SMatchPresenceOut = if MatchPresenceOut -> "1"; true -> "0" end,
+    [SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
+     SMatchMessage, SMatchPresenceIn, SMatchPresenceOut].
+
+sql_get_default_privacy_list(LUser, LServer) ->
+    Username = ejabberd_odbc:escape(LUser),
+    odbc_queries:get_default_privacy_list(LServer, Username).
+
+sql_get_default_privacy_list_t(LUser) ->
+    Username = ejabberd_odbc:escape(LUser),
+    odbc_queries:get_default_privacy_list_t(Username).
+
+sql_get_privacy_list_names(LUser, LServer) ->
+    Username = ejabberd_odbc:escape(LUser),
+    odbc_queries:get_privacy_list_names(LServer, Username).
+
+sql_get_privacy_list_names_t(LUser) ->
+    Username = ejabberd_odbc:escape(LUser),
+    odbc_queries:get_privacy_list_names_t(Username).
+
+sql_get_privacy_list_id(LUser, LServer, Name) ->
+    Username = ejabberd_odbc:escape(LUser),
+    SName = ejabberd_odbc:escape(Name),
+    odbc_queries:get_privacy_list_id(LServer, Username, SName).
+
+sql_get_privacy_list_id_t(LUser, Name) ->
+    Username = ejabberd_odbc:escape(LUser),
+    SName = ejabberd_odbc:escape(Name),
+    odbc_queries:get_privacy_list_id_t(Username, SName).
+
+sql_get_privacy_list_data(LUser, LServer, Name) ->
+    Username = ejabberd_odbc:escape(LUser),
+    SName = ejabberd_odbc:escape(Name),
+    odbc_queries:get_privacy_list_data(LServer, Username, SName).
+
+sql_get_privacy_list_data_by_id(ID, LServer) ->
+    odbc_queries:get_privacy_list_data_by_id(LServer, ID).
+
+sql_get_privacy_list_data_by_id_t(ID) ->
+    odbc_queries:get_privacy_list_data_by_id_t(ID).
+
+sql_set_default_privacy_list(LUser, Name) ->
+    Username = ejabberd_odbc:escape(LUser),
+    SName = ejabberd_odbc:escape(Name),
+    odbc_queries:set_default_privacy_list(Username, SName).
+
+sql_unset_default_privacy_list(LUser, LServer) ->
+    Username = ejabberd_odbc:escape(LUser),
+    odbc_queries:unset_default_privacy_list(LServer, Username).
+
+sql_remove_privacy_list(LUser, Name) ->
+    Username = ejabberd_odbc:escape(LUser),
+    SName = ejabberd_odbc:escape(Name),
+    odbc_queries:remove_privacy_list(Username, SName).
+
+sql_add_privacy_list(LUser, Name) ->
+    Username = ejabberd_odbc:escape(LUser),
+    SName = ejabberd_odbc:escape(Name),
+    odbc_queries:add_privacy_list(Username, SName).
+
+sql_set_privacy_list(ID, RItems) ->
+    odbc_queries:set_privacy_list(ID, RItems).
+
+sql_del_privacy_lists(LUser, LServer) ->
+    Username = ejabberd_odbc:escape(LUser),
+    Server = ejabberd_odbc:escape(LServer),
+    odbc_queries:del_privacy_lists(LServer, Server, Username).
 
 update_table() ->
     Fields = record_info(fields, privacy),

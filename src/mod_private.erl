@@ -46,10 +46,16 @@
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    mnesia:create_table(private_storage,
-			[{disc_only_copies, [node()]},
-			 {attributes, record_info(fields, private_storage)}]),
-    update_table(),
+    case gen_mod:db_type(Opts) of
+        mnesia ->
+            mnesia:create_table(private_storage,
+                                [{disc_only_copies, [node()]},
+                                 {attributes,
+                                  record_info(fields, private_storage)}]),
+            update_table();
+        _ ->
+            ok
+    end,
     ejabberd_hooks:add(remove_user, Host,
 		       ?MODULE, remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE,
@@ -73,12 +79,21 @@ process_sm_iq(#jid{luser = LUser, lserver = LServer},
                       sub_el = [IQ#iq.sub_el, ?ERR_NOT_ACCEPTABLE]
                     };
                 Data ->
-                    mnesia:transaction(fun() ->
-                        lists:foreach(fun
-                            (Datum) ->
-                                set_data(LUser, LServer, Datum)
-                        end, Data)
-                    end),
+                    DBType = gen_mod:db_type(LServer, ?MODULE),
+                    F = fun() ->
+                                lists:foreach(
+                                  fun
+                                      (Datum) ->
+                                          set_data(LUser, LServer,
+                                                   Datum, DBType)
+                                  end, Data)
+                        end,
+                    case DBType of
+                        odbc ->
+                            ejabberd_odbc:sql_transaction(LServer, F);
+                        mnesia ->
+                            mnesia:transaction(F)
+                    end,
                     IQ#iq{type = result, sub_el = []}
             end;
         _ ->
@@ -132,30 +147,53 @@ filter_xmlels([_ | Xmlels], Data) ->
     filter_xmlels(Xmlels, Data).
 
 
-set_data(LUser, LServer, {XmlNS, Xmlel}) ->
+set_data(LUser, LServer, {XmlNS, Xmlel}, mnesia) ->
     mnesia:write(#private_storage{
-        usns = {LUser, LServer, XmlNS},
-        xml  = Xmlel
-    }).
-
+                    usns = {LUser, LServer, XmlNS},
+                    xml  = Xmlel});
+set_data(LUser, LServer, {XMLNS, El}, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    LXMLNS = ejabberd_odbc:escape(XMLNS),
+    SData = ejabberd_odbc:escape(
+              xml:element_to_binary(El)),
+    odbc_queries:set_private_data(LServer, Username, LXMLNS, SData).
 
 get_data(LUser, LServer, Data) ->
-    get_data(LUser, LServer, Data, []).
+    get_data(LUser, LServer, gen_mod:db_type(LServer, ?MODULE), Data, []).
 
-get_data(_LUser, _LServer, [], Storage_Xmlels) ->
+get_data(_LUser, _LServer, _DBType, [], Storage_Xmlels) ->
     lists:reverse(Storage_Xmlels);
-get_data(LUser, LServer, [{XmlNS, Xmlel} | Data], Storage_Xmlels) ->
+get_data(LUser, LServer, mnesia, [{XmlNS, Xmlel} | Data], Storage_Xmlels) ->
     case mnesia:dirty_read(private_storage, {LUser, LServer, XmlNS}) of
         [#private_storage{xml = Storage_Xmlel}] ->
-            get_data(LUser, LServer, Data, [Storage_Xmlel | Storage_Xmlels]);
+            get_data(LUser, LServer, mnesia, Data,
+                     [Storage_Xmlel | Storage_Xmlels]);
         _ ->
-            get_data(LUser, LServer, Data, [Xmlel | Storage_Xmlels])
+            get_data(LUser, LServer, mnesia, Data,
+                     [Xmlel | Storage_Xmlels])
+    end;
+get_data(LUser, LServer, odbc, [{XMLNS, El} | Els], Res) ->
+    Username = ejabberd_odbc:escape(LUser),
+    LXMLNS = ejabberd_odbc:escape(XMLNS),
+    case catch odbc_queries:get_private_data(LServer, Username, LXMLNS) of
+        {selected, ["data"], [{SData}]} ->
+            case xml_stream:parse_element(SData) of
+                Data when element(1, Data) == xmlelement ->
+                    get_data(LUser, LServer, odbc, Els, [Data | Res])
+            end;
+        %% MREMOND: I wonder when the query could return a vcard ?
+        {selected, ["vcard"], []} ->
+            get_data(LUser, LServer, odbc, Els, [El | Res]);
+        _ -> 
+            get_data(LUser, LServer, odbc, Els, [El | Res])
     end.
-
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
+    remove_user(LUser, LServer, gen_mod:db_type(Server, ?MODULE)).
+
+remove_user(LUser, LServer, mnesia) ->
     F = fun() ->
 		Namespaces = mnesia:select(
 			    private_storage,
@@ -169,8 +207,10 @@ remove_user(User, Server) ->
 					 {LUser, LServer, Namespace}})
 		     end, Namespaces)
         end,
-    mnesia:transaction(F).
-
+    mnesia:transaction(F);
+remove_user(LUser, LServer, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    odbc_queries:del_user_private_storage(LServer, Username).
 
 update_table() ->
     Fields = record_info(fields, private_storage),

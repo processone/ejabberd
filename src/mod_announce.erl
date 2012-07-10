@@ -56,12 +56,21 @@
 -define(NS_ADMINL(Sub), ["http:","jabber.org","protocol","admin", Sub]).
 tokenize(Node) -> string:tokens(Node, "/#").
 
-start(Host, _Opts) ->
-    mnesia:create_table(motd, [{disc_copies, [node()]},
-			       {attributes, record_info(fields, motd)}]),
-    mnesia:create_table(motd_users, [{disc_copies, [node()]},
-				     {attributes, record_info(fields, motd_users)}]),
-    update_tables(),
+start(Host, Opts) ->
+    case gen_mod:db_type(Opts) of
+        mnesia ->
+            mnesia:create_table(motd,
+                                [{disc_copies, [node()]},
+                                 {attributes,
+                                  record_info(fields, motd)}]),
+            mnesia:create_table(motd_users,
+                                [{disc_copies, [node()]},
+                                 {attributes,
+                                  record_info(fields, motd_users)}]),
+            update_tables();
+        _ ->
+            ok
+    end,
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, announce, 50),
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 50),
@@ -743,16 +752,33 @@ announce_all_hosts_motd(From, To, Packet) ->
     end.
 
 announce_motd(Host, Packet) ->
-    announce_motd_update(Host, Packet),
-    Sessions = ejabberd_sm:get_vh_session_list(Host),
-    announce_online1(Sessions, Host, Packet),
-    F = fun() ->
-		lists:foreach(
-		  fun({U, S, _R}) ->
-			  mnesia:write(#motd_users{us = {U, S}})
-		  end, Sessions)
-	end,
-    mnesia:transaction(F).
+    LServer = jlib:nameprep(Host),
+    announce_motd_update(LServer, Packet),
+    Sessions = ejabberd_sm:get_vh_session_list(LServer),
+    announce_online1(Sessions, LServer, Packet),
+    case gen_mod:db_type(LServer, ?MODULE) of
+        mnesia ->
+            F = fun() ->
+                        lists:foreach(
+                          fun({U, S, _R}) ->
+                                  mnesia:write(#motd_users{us = {U, S}})
+                          end, Sessions)
+                end,
+            mnesia:transaction(F);
+        odbc ->
+            F = fun() ->
+                        lists:foreach(
+                          fun({U, _S, _R}) ->
+                                  Username = ejabberd_odbc:escape(U),
+                                  odbc_queries:update_t(
+                                    "motd",
+                                    ["username", "xml"],
+                                    [Username, ""],
+                                    ["username='", Username, "'"])
+                          end, Sessions)
+                end,
+            ejabberd_odbc:sql_transaction(LServer, F)
+    end.
 
 announce_motd_update(From, To, Packet) ->
     Host = To#jid.lserver,
@@ -778,10 +804,23 @@ announce_all_hosts_motd_update(From, To, Packet) ->
 
 announce_motd_update(LServer, Packet) ->
     announce_motd_delete(LServer),
-    F = fun() ->
-		mnesia:write(#motd{server = LServer, packet = Packet})
-	end,
-    mnesia:transaction(F).
+    case gen_mod:db_type(LServer, ?MODULE) of
+        mnesia ->
+            F = fun() ->
+                        mnesia:write(#motd{server = LServer, packet = Packet})
+                end,
+            mnesia:transaction(F);
+        odbc ->
+            XML = ejabberd_odbc:escape(xml:element_to_binary(Packet)),
+            F = fun() ->
+                        odbc_queries:update_t(
+                          "motd",
+                          ["username", "xml"],
+                          ["", XML],
+                          ["username=''"])
+                end,
+            ejabberd_odbc:sql_transaction(LServer, F)
+    end.
 
 announce_motd_delete(From, To, Packet) ->
     Host = To#jid.lserver,
@@ -806,21 +845,32 @@ announce_all_hosts_motd_delete(From, To, Packet) ->
     end.
 
 announce_motd_delete(LServer) ->
-    F = fun() ->
-		mnesia:delete({motd, LServer}),
-		mnesia:write_lock_table(motd_users),
-		Users = mnesia:select(
-			  motd_users,
-			  [{#motd_users{us = '$1', _ = '_'},
-			    [{'==', {element, 2, '$1'}, LServer}],
-			    ['$1']}]),
-		lists:foreach(fun(US) ->
-				      mnesia:delete({motd_users, US})
-			      end, Users)
-	end,
-    mnesia:transaction(F).
+    case gen_mod:db_type(LServer, ?MODULE) of
+        mnesia ->
+            F = fun() ->
+                        mnesia:delete({motd, LServer}),
+                        mnesia:write_lock_table(motd_users),
+                        Users = mnesia:select(
+                                  motd_users,
+                                  [{#motd_users{us = '$1', _ = '_'},
+                                    [{'==', {element, 2, '$1'}, LServer}],
+                                    ['$1']}]),
+                        lists:foreach(fun(US) ->
+                                              mnesia:delete({motd_users, US})
+                                      end, Users)
+                end,
+            mnesia:transaction(F);
+        odbc ->
+            F = fun() ->
+                        ejabberd_odbc:sql_query_t(["delete from motd;"])
+                end,
+            ejabberd_odbc:sql_transaction(LServer, F)
+    end.
 
-send_motd(#jid{luser = LUser, lserver = LServer} = JID) ->
+send_motd(JID) ->
+    send_motd(JID, gen_mod:db_type(JID#jid.lserver, ?MODULE)).
+
+send_motd(#jid{luser = LUser, lserver = LServer} = JID, mnesia) ->
     case catch mnesia:dirty_read({motd, LServer}) of
 	[#motd{packet = Packet}] ->
 	    US = {LUser, LServer},
@@ -837,15 +887,69 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID) ->
 	    end;
 	_ ->
 	    ok
-    end.
+    end;
+send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= "" ->
+    case catch ejabberd_odbc:sql_query(
+                 LServer, ["select xml from motd where username='';"]) of
+        {selected, ["xml"], [{XML}]} ->
+            case xml_stream:parse_element(XML) of
+                {error, _} ->
+                    ok;
+                Packet ->
+                    Username = ejabberd_odbc:escape(LUser),
+                    case catch ejabberd_odbc:sql_query(
+                                 LServer,
+                                 ["select username from motd "
+                                  "where username='", Username, "';"]) of
+                        {selected, ["username"], []} ->
+                            Local = jlib:make_jid("", LServer, ""),
+                            ejabberd_router:route(Local, JID, Packet),
+                            F = fun() ->
+                                        odbc_queries:update_t(
+                                          "motd",
+                                          ["username", "xml"],
+                                          [Username, ""],
+                                          ["username='", Username, "'"])
+                                end,
+                            ejabberd_odbc:sql_transaction(LServer, F);
+                        _ ->
+                            ok
+                    end
+            end;
+        _ ->
+            ok
+    end;
+send_motd(_, odbc) ->
+    ok.
 
 get_stored_motd(LServer) ->
+    case get_stored_motd_packet(LServer, gen_mod:db_type(LServer, ?MODULE)) of
+        {ok, Packet} ->
+            {xml:get_subtag_cdata(Packet, "subject"),
+	     xml:get_subtag_cdata(Packet, "body")};
+        error ->
+            {"", ""}
+    end.
+
+get_stored_motd_packet(LServer, mnesia) ->
     case catch mnesia:dirty_read({motd, LServer}) of
 	[#motd{packet = Packet}] ->
-	    {xml:get_subtag_cdata(Packet, "subject"),
-	     xml:get_subtag_cdata(Packet, "body")};
+            {ok, Packet};
 	_ ->
-	    {"", ""}
+	    error
+    end;
+get_stored_motd_packet(LServer, odbc) ->
+    case catch ejabberd_odbc:sql_query(
+                 LServer, ["select xml from motd where username='';"]) of
+        {selected, ["xml"], [{XML}]} ->
+            case xml_stream:parse_element(XML) of
+                {error, _} ->
+                    error;
+                Packet ->
+                    {ok, Packet}
+            end;
+        _ ->
+            error
     end.
 
 %% This function is similar to others, but doesn't perform any ACL verification
