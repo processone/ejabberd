@@ -13,6 +13,8 @@
 -include("ejabberd.hrl").
 
 -export([start/1,
+         get_sessions/0,
+         get_sessions/1,
          get_sessions/2,
          get_sessions/3,
          create_session/4,
@@ -24,6 +26,34 @@
 -spec start(list()) -> any().
 start(Opts) ->
     ejabberd_redis:start_link(Opts).
+
+-spec get_sessions() -> list(list(term())).
+get_sessions() ->
+    Keys = ejabberd_redis:cmd(["KEYS", hash(<<"*">>)]),
+    Res = lists:map(fun(K) ->
+                Sessions = ejabberd_redis:cmd(["SMEMBERS", K]),
+                lists:map(fun(S) ->
+                            Session = binary_to_term(S),
+                            { Session#session.usr,
+                              Session#session.sid,
+                              Session#session.priority,
+                              Session#session.info }
+                          end,
+                Sessions)
+          end, Keys),
+    lists:flatten(Res).
+
+-spec get_sessions(binary()) -> list(tuple()).
+get_sessions(Server) ->
+    Keys = ejabberd_redis:cmd(["KEYS", hash(Server)]),
+    Res = lists:map(fun(K) ->
+                Sessions = ejabberd_redis:cmd(["SMEMBERS", K]),
+                lists:map(fun(S) ->
+                            (binary_to_term(S))#session.usr
+                          end,
+                Sessions)
+          end, Keys),
+    lists:flatten(Res).
 
 -spec get_sessions(binary(), binary()) -> list(#session{}).
 get_sessions(User, Server) ->
@@ -93,6 +123,10 @@ unique_count() ->
     length(ejabberd_redis:cmd(["KEYS", "s2:*"])).
 
 %% Internal functions
+-spec hash(binary()) -> iolist().
+hash(Val1) ->
+    ["s3:*:", Val1, ":*"].
+
 -spec hash(binary(), binary()) -> iolist().
 hash(Val1, Val2) ->
     ["s2:", Val1, ":", Val2].

@@ -31,9 +31,13 @@
 -export([domain_utf8_to_ascii/1,
 	 domain_ucs2_to_ascii/1]).
 
-
+%% TODO: Ugly, need to provide separate functions
+%% TODO: for binaries or convert whole module
+domain_utf8_to_ascii(Domain) when is_binary(Domain) ->
+    list_to_binary(domain_utf8_to_ascii(binary_to_list(Domain)));
 domain_utf8_to_ascii(Domain) ->
     domain_ucs2_to_ascii(utf8_to_ucs2(Domain)).
+
 
 utf8_to_ucs2(S) ->
     utf8_to_ucs2(S, "").

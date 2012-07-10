@@ -13,6 +13,8 @@
 -include("ejabberd.hrl").
 
 -export([start/1,
+         get_sessions/0,
+         get_sessions/1,
          get_sessions/2,
          get_sessions/3,
          create_session/4,
@@ -29,6 +31,25 @@ start(_Opts) ->
     mnesia:add_table_index(session, usr),
     mnesia:add_table_index(session, us),
     mnesia:add_table_copy(session, node(), ram_copies).
+
+-spec get_sessions() -> list(list(term())).
+get_sessions() ->
+    mnesia:activity(transaction,
+        fun() ->
+            mnesia:foldl(fun(#session{ usr = Usr, sid = Sid, priority = Pri, info = Inf}, AccIn) ->
+                    [{Usr, Sid, Pri, Inf}|AccIn]
+                end,
+                [],
+                session)
+        end).
+
+-spec get_sessions(binary()) -> list(tuple()).
+get_sessions(Server) ->
+    mnesia:dirty_select(
+        session,
+        [{#session{usr = '$1', _ = '_' },
+          [{'==', {element, 2, '$1'}, Server}],
+          ['$1']}]).
 
 -spec get_sessions(binary(), binary()) -> list(#session{}).
 get_sessions(User, Server) ->

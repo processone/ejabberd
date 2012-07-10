@@ -5,6 +5,8 @@
 -spec behaviour_info(atom()) -> 'undefined' | [{atom(), arity()}].
 behaviour_info(callbacks) ->
     [{start, 1},
+     {get_sessions, 0},
+     {get_sessions, 1},
      {get_sessions, 2},
      {get_sessions, 3},
      {create_session, 4},

@@ -122,7 +122,7 @@ get_connections_pids(FromTo) ->
     end.
 
 try_register(FromTo) ->
-    Key = randoms:get_string(),
+    Key = list_to_binary(randoms:get_string()),
     MaxS2SConnectionsNumber = max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
 	max_s2s_connections_number_per_node(FromTo),
@@ -266,9 +266,9 @@ do_route(From, To, Packet) ->
 	    send_element(Pid, {xmlelement, Name, NewAttrs, Els}),
 	    ok;
 	{aborted, _Reason} ->
-	    case xml:get_tag_attr_s("type", Packet) of
-		"error" -> ok;
-		"result" -> ok;
+	    case xml:get_tag_attr_s(<<"type">>, Packet) of
+		<<"error">> -> ok;
+		<<"result">> -> ok;
 		_ ->
 		    Err = jlib:make_error_reply(
 			    Packet, ?ERR_SERVICE_UNAVAILABLE),
@@ -353,7 +353,7 @@ open_several_connections(N, MyServer, Server, From, FromTo,
 
 new_connection(MyServer, Server, From, FromTo,
 	       MaxS2SConnectionsNumber, MaxS2SConnectionsNumberPerNode) ->
-    Key = randoms:get_string(),
+    Key = list_to_binary(randoms:get_string()),
     {ok, Pid} = ejabberd_s2s_out:start(
 		  MyServer, Server, {new, Key}),
     F = fun() ->
@@ -383,14 +383,14 @@ new_connection(MyServer, Server, From, FromTo,
 
 max_s2s_connections_number({From, To}) ->
     case acl:match_rule(
-	   From, max_s2s_connections, jlib:make_jid("", To, "")) of
+	   From, max_s2s_connections, jlib:make_jid(<<"">>, To, <<"">>)) of
 	Max when is_integer(Max) -> Max;
 	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
     end.
 
 max_s2s_connections_number_per_node({From, To}) ->
     case acl:match_rule(
-	   From, max_s2s_connections_per_node, jlib:make_jid("", To, "")) of
+	   From, max_s2s_connections_per_node, jlib:make_jid(<<"">>, To, <<"">>)) of
 	Max when is_integer(Max) -> Max;
 	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
     end.

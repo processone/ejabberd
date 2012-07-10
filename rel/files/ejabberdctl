@@ -1,0 +1,200 @@
+#!/bin/sh
+
+
+# parse command line parameters
+ARGS=
+while [ $# -ne 0 ] ; do
+    PARAM=$1
+    shift
+    case $PARAM in
+        --) break ;;
+        *) ARGS="$ARGS $PARAM" ;;
+    esac
+done
+
+RUNNER_SCRIPT_DIR=$(cd ${0%/*} && pwd)
+EJABBERD_DIR=${RUNNER_SCRIPT_DIR%/*}
+EJABBERD_VMARGS_PATH=$EJABBERD_DIR/etc/vm.args
+START_ERL=`cat $EJABBERD_DIR/releases/start_erl.data`
+ERTS_VSN=${START_ERL% *}
+ERTS_PATH=$EJABBERD_DIR/erts-$ERTS_VSN/bin
+ERL=$ERTS_PATH/erl
+EJABBERD_EBIN_PATH=$EJABBERD_DIR/lib/ejabberd-*/ebin/
+
+COOKIE_ARG=`grep -e '^-setcookie' $EJABBERD_VMARGS_PATH`
+if [ -z "$COOKIE_ARG" ]; then
+    echo "vm.args needs to have a -setcookie parameter."
+    exit 1
+fi
+
+NODENAME_ARG=`egrep -e '^-s?name' $EJABBERD_VMARGS_PATH`
+if [ -z "$NODENAME_ARG" ]; then
+    echo "vm.args needs to have either -name or -sname parameter."
+    exit 1
+fi
+
+NAME_TYPE="${NODENAME_ARG% *}"
+NODENAME="${NODENAME_ARG#* }"
+
+start ()
+{
+    $RUNNER_SCRIPT_DIR/ejabberd start
+}
+
+# attach to server
+debug ()
+{
+    $RUNNER_SCRIPT_DIR/ejabberd debug
+}
+
+# start interactive server
+live ()
+{
+    $RUNNER_SCRIPT_DIR/ejabberd console
+}
+
+help ()
+{
+    echo ""
+    echo "Commands to start an ejabberd node:"
+    echo "  start  Start an ejabberd node in server mode"
+    echo "  debug  Attach an interactive Erlang shell to a running ejabberd node"
+    echo "  live   Start an ejabberd node in live (interactive) mode"
+    echo ""
+}
+
+# common control function
+ctl ()
+{
+    COMMAND=$@
+
+    # Control number of connections identifiers
+    # using flock if available. Expects a linux-style
+    # flock that can lock a file descriptor.
+    MAXCONNID=100
+    CONNLOCKDIR=$EJABBERD_DIR/var/lock/ejabberdctl
+    FLOCK='/usr/bin/flock'
+    if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
+	JOT='/usr/bin/jot'
+	if [ ! -x "$JOT" ] ; then
+	    # no flock or jot, simply invoke ctlexec()
+	    CTL_CONN="ctl-${NODENAME}"
+	    ctlexec $CTL_CONN $COMMAND
+	    result=$?
+	else
+	    # no flock, but at least there is jot
+	    RAND=`jot -r 1 0 $MAXCONNID`
+	    CTL_CONN="ctl-${RAND}-${NODENAME}"
+	    ctlexec $CTL_CONN $COMMAND
+	    result=$?
+	fi
+    else
+	# we have flock so we get a lock
+	# on one of a limited number of
+	# conn names -- this allows
+	# concurrent invocations using a bound
+	# number of atoms
+	for N in $(seq 1 $MAXCONNID); do
+	    CTL_CONN="ejabberdctl-$N"
+	    CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
+	    (
+		exec 8>"$CTL_LOCKFILE"
+		if flock --nb 8; then
+		    ctlexec $CTL_CONN $COMMAND
+                    ssresult=$?
+                    # segregate from possible flock exit(1)
+		    ssresult=$(expr $ssresult \* 10)
+		    exit $ssresult
+		else
+		    exit 1
+		fi
+            )
+	    result=$?
+	    if [ $result -eq 1 ]; then
+                # means we errored out in flock
+                # rather than in the exec - stay in the loop
+                # trying other conn names...
+		badlock=1
+	    else
+		badlock=""
+		break;
+	    fi
+	done
+	result=$(expr $result / 10)
+    fi
+
+    if [ "$badlock" ];then
+	echo "Ran out of connections to try. Your ejabberd processes" >&2
+	echo "may be stuck or this is a very busy server. For very"   >&2
+	echo "busy servers, consider raising MAXCONNID in ejabberdctl">&2
+	exit 1;
+    fi
+
+    case $result in
+	0) :;;
+	1) :;;
+	2) help;;
+	3) help;;
+    esac
+    return $result
+}
+
+ctlexec ()
+{
+    CONN_NAME=$1; shift
+    COMMAND=$@
+    $ERL \
+      $NAME_TYPE ${CONN_NAME} \
+      -noinput \
+      -hidden \
+      $COOKIE_ARG \
+      -pa $EJABBERD_EBIN_PATH \
+      -s ejabberd_ctl -extra $NODENAME $COMMAND
+}
+
+# display ctl usage
+usage ()
+{
+    ctl
+    exit
+}
+
+# stop epmd if there is no other running node
+stop_epmd()
+{
+    epmd -names | grep -q name || epmd -kill
+}
+
+# allow sync calls
+wait_for_status()
+{
+    # args: status try delay
+    # return: 0 OK, 1 KO
+    timeout=$2
+    status=4
+    while [ $status -ne $1 ]; do
+        sleep $3
+        timeout=$(($timeout - 1))
+        [ $timeout -eq 0 ] && {
+            status=$1
+        } || {
+            ctl status > /dev/null
+            status=$?
+        }
+    done
+    [ $timeout -eq 0 ] && {
+        status=1
+    } || {
+        status=0
+    }
+    return $status
+}
+
+case $ARGS in
+    ' start') start;;
+    ' debug') debug;;
+    ' live') live;;
+    ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
+    ' stopped') wait_for_status 3 15 2; stop_epmd;; # wait 15x2s before timeout
+    *) ctl $ARGS;;
+esac

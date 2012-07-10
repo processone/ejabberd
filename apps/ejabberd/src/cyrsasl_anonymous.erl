@@ -45,7 +45,7 @@ mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
 
 mech_step(State, _ClientIn) ->
     %% We generate a random username:
-    User = lists:concat([randoms:get_string() | tuple_to_list(now())]),
+    User = list_to_binary(lists:concat([randoms:get_string() | tuple_to_list(now())])),
     Server = State#state.server,
     
     %% Checks that the username is available

@@ -45,8 +45,8 @@ start(normal, _Args) ->
     sha:start(),
     xml:start(),
 
-%%    LogPath = get_log_path(),
-%%    error_logger:add_report_handler(ejabberd_logger_h, LogPath),
+    %LogPath = get_log_path(),
+    %ok = error_logger:add_report_handler(ejabberd_logger_h, LogPath),
 
     load_drivers([tls_drv, expat_erl]),
     translate:start(),
@@ -69,6 +69,7 @@ start(normal, _Args) ->
     maybe_add_nameservers(),
     start_modules(),
     ejabberd_listener:start_listeners(),
+    ejabberd_admin:start(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
 start(_, _) ->

@@ -33,6 +33,15 @@ eunit: rebar
 rel: rebar deps
 	./rebar compile generate -f
 
+devrel: rebar deps compile
+	mkdir -p dev
+	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd)
+	cp apps/ejabberd/src/*.erl dev/ejabberd/lib/ejabberd-2.1.8/ebin/
+	cp -R `which erl`/../../lib/tools-* dev/ejabberd/lib/
+
+devclean:
+	rm -rf dev/*
+
 generate_snmp_header: apps/ejabberd/include/EJABBERD-MIB.hrl
 
 $(EJD_INCLUDE)/EJABBERD-MIB.hrl: $(EJD_PRIV_MIB)/EJABBERD-MIB.bin

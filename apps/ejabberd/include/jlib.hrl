@@ -45,12 +45,13 @@
 -define(NS_CHATSTATES,  <<"http://jabber.org/protocol/chatstates">>).
 -define(NS_XCONFERENCE, <<"jabber:x:conference">>).
 -define(NS_STATS,       <<"http://jabber.org/protocol/stats">>).
--define(NS_MUC,         "http://jabber.org/protocol/muc").
+-define(NS_MUC,         <<"http://jabber.org/protocol/muc">>).
 -define(NS_MUC_USER,    <<"http://jabber.org/protocol/muc#user">>).
 -define(NS_MUC_ADMIN,   <<"http://jabber.org/protocol/muc#admin">>).
 -define(NS_MUC_OWNER,   <<"http://jabber.org/protocol/muc#owner">>).
 -define(NS_MUC_UNIQUE,  <<"http://jabber.org/protocol/muc#unique">>).
--define(NS_PUBSUB,      "http://jabber.org/protocol/pubsub").
+-define(NS_PING,        <<"urn:xmpp:ping">>).
+-define(NS_PUBSUB,      <<"http://jabber.org/protocol/pubsub">>).
 -define(NS_PUBSUB_EVENT,<<"http://jabber.org/protocol/pubsub#event">>).
 -define(NS_PUBSUB_OWNER,<<"http://jabber.org/protocol/pubsub#owner">>).
 -define(NS_PUBSUB_NMI,  <<"http://jabber.org/protocol/pubsub#node-meta-info">>).
@@ -59,9 +60,9 @@
 -define(NS_PUBSUB_SUB_OPTIONS,<<"http://jabber.org/protocol/pubsub#subscribe_options">>).
 -define(NS_PUBSUB_SUB_AUTH,<<"http://jabber.org/protocol/pubsub#subscribe_authorization">>).
 -define(NS_PUBSUB_GET_PENDING, "http://jabber.org/protocol/pubsub#get-pending").
--define(NS_COMMANDS,    "http://jabber.org/protocol/commands").
+-define(NS_COMMANDS,    <<"http://jabber.org/protocol/commands">>).
 -define(NS_BYTESTREAMS, <<"http://jabber.org/protocol/bytestreams">>).
--define(NS_ADMIN,       "http://jabber.org/protocol/admin").
+-define(NS_ADMIN,       <<"http://jabber.org/protocol/admin">>).
 -define(NS_SERVERINFO,  <<"http://jabber.org/network/serverinfo">>).
 
 -define(NS_RSM,         <<"http://jabber.org/protocol/rsm">>).

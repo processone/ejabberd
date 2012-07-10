@@ -105,6 +105,8 @@ load_file(Lang, File) ->
             exit(ExitText)
     end.
 
+translate(Lang, Msg) when is_binary(Lang) ->
+    translate(binary:bin_to_list(Lang), Msg);
 translate(Lang, Msg) ->
     LLang = ascii_tolower(Lang),
     case ets:lookup(translations, {LLang, Msg}) of

@@ -60,6 +60,7 @@
          timestamp_to_xml/4,
          timestamp_to_xml/1, % TODO: Remove once XEP-0091 is Obsolete
          now_to_utc_string/1,
+         now_to_utc_binary/1,
          now_to_local_string/1,
          datetime_string_to_timestamp/1,
          decode_base64/1,
@@ -601,6 +602,8 @@ now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
     lists:flatten(
       io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6..0wZ",
                     [Year, Month, Day, Hour, Minute, Second, MicroSecs])).
+now_to_utc_binary(Timestamp) ->
+    list_to_binary(now_to_utc_string(Timestamp)).
 
 now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
     LocalTime = calendar:now_to_local_time({MegaSecs, Secs, MicroSecs}),
