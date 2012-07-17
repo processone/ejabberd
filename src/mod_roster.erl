@@ -970,12 +970,12 @@ update_roster_t(LUser, LServer, LJID, Item) ->
 
 update_roster_t(_LUser, _LServer,_LJID, Item, mnesia) ->
     mnesia:write(Item);
-update_roster_t(LUser, _LServer, LJID, Item, odbc) ->
+update_roster_t(LUser, LServer, LJID, Item, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     ItemVals = record_to_string(Item),
     ItemGroups = groups_to_string(Item),
-    odbc_queries:update_roster_sql(Username, SJID, ItemVals, ItemGroups).
+    odbc_queries:update_roster(LServer, Username, SJID, ItemVals, ItemGroups).
 
 del_roster_t(LUser, LServer, LJID) ->
     DBType = gen_mod:db_type(LServer, ?MODULE),
@@ -983,10 +983,10 @@ del_roster_t(LUser, LServer, LJID) ->
 
 del_roster_t(LUser, LServer, LJID, mnesia) ->
     mnesia:delete({roster, {LUser, LServer, LJID}});
-del_roster_t(LUser, _LServer, LJID, odbc) ->
+del_roster_t(LUser, LServer, LJID, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
-    odbc_queries:del_roster_sql(Username, SJID).
+    odbc_queries:del_roster(LServer, Username, SJID).
 
 process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
