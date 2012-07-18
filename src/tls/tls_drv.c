@@ -44,6 +44,8 @@ typedef unsigned __int32 uint32_t;
 #define SSL_OP_NO_TICKET 0
 #endif
 
+#define CIPHERS "DEFAULT:!EXPORT:!LOW:!SSLv2"
+
 /*
  * R15B changed several driver callbacks to use ErlDrvSizeT and
  * ErlDrvSSizeT typedefs instead of int.
@@ -353,6 +355,8 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 
 	    res = SSL_CTX_check_private_key(ctx);
 	    die_unless(res > 0, "SSL_CTX_check_private_key failed");
+
+	    SSL_CTX_set_cipher_list(ctx, CIPHERS);
 
 	    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 	    SSL_CTX_set_default_verify_paths(ctx);
