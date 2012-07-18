@@ -26,7 +26,7 @@ CREATE TABLE users (
     username text NOT NULL,
     host text NOT NULL,
     "password" text NOT NULL,
-    PRIMARY KEY (host, username)
+    PRIMARY KEY (host, username),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -49,7 +49,7 @@ CREATE TABLE rosterusers (
     server character(1) NOT NULL,
     subscribe text,
     "type" text,
-    PRIMARY KEY (host, username, jid)
+    PRIMARY KEY (host, username, jid),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -66,7 +66,7 @@ CREATE TABLE spool (
     host text NOT NULL,
     xml text NOT NULL,
     seq SERIAL,
-    PRIMARY KEY (host, username, seq)
+    PRIMARY KEY (host, username, seq),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -74,7 +74,7 @@ CREATE TABLE vcard (
     username text NOT NULL,
     host text NOT NULL,
     vcard text NOT NULL,
-    PRIMARY KEY (host, username)
+    PRIMARY KEY (host, username),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -132,7 +132,7 @@ CREATE TABLE privacy_list (
     host text NOT NULL,
     name text NOT NULL,
     id SERIAL UNIQUE,
-    PRIMARY KEY (host, username, name)
+    PRIMARY KEY (host, username, name),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -155,7 +155,7 @@ CREATE TABLE private_storage (
     host text NOT NULL,
     namespace text NOT NULL,
     data text NOT NULL,
-    PRIMARY KEY (host, username, namespace)
+    PRIMARY KEY (host, username, namespace),
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
