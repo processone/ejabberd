@@ -354,6 +354,8 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 	    res = SSL_CTX_check_private_key(ctx);
 	    die_unless(res > 0, "SSL_CTX_check_private_key failed");
 
+	    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2|SSL_OP_NO_TICKET);
+
 	    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 	    SSL_CTX_set_default_verify_paths(ctx);
 #ifdef SSL_MODE_RELEASE_BUFFERS
@@ -386,10 +388,8 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 	 SSL_set_bio(d->ssl, d->bio_read, d->bio_write);
 
 	 if (command == SET_CERTIFICATE_FILE_ACCEPT) {
-	    SSL_set_options(d->ssl, SSL_OP_NO_TICKET);
 	    SSL_set_accept_state(d->ssl);
 	 } else {
-	    SSL_set_options(d->ssl, SSL_OP_NO_SSLv2|SSL_OP_NO_TICKET);
 	    SSL_set_connect_state(d->ssl);
 	 }
 	 break;
