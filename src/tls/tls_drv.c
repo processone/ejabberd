@@ -278,6 +278,24 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
    return 1;
 }
 
+/*
+ * ECDHE is enabled only on OpenSSL 1.0.0e and later.
+ * See http://www.openssl.org/news/secadv_20110906.txt
+ * for details.
+ */
+#if OPENSSL_VERSION_NUMBER >= 0x1000005fL && !defined(OPENSSL_NO_ECDH)
+static void setup_ecdh(SSL_CTX *ctx)
+{
+   EC_KEY *ecdh;
+
+   ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+   SSL_CTX_set_options(ctx, SSL_OP_SINGLE_ECDH_USE);
+   SSL_CTX_set_tmp_ecdh(ctx, ecdh);
+
+   EC_KEY_free(ecdh);
+}
+#endif
+
 #define SET_CERTIFICATE_FILE_ACCEPT 1
 #define SET_CERTIFICATE_FILE_CONNECT 2
 #define SET_ENCRYPTED_INPUT  3
@@ -357,6 +375,12 @@ static ErlDrvSSizeT tls_drv_control(ErlDrvData handle,
 	    die_unless(res > 0, "SSL_CTX_check_private_key failed");
 
 	    SSL_CTX_set_cipher_list(ctx, CIPHERS);
+
+#if OPENSSL_VERSION_NUMBER >= 0x1000005fL && !defined(OPENSSL_NO_ECDH)
+	    if (command == SET_CERTIFICATE_FILE_ACCEPT) {
+		setup_ecdh(ctx);
+	    }
+#endif
 
 	    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 	    SSL_CTX_set_default_verify_paths(ctx);
