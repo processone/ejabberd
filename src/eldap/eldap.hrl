@@ -46,6 +46,7 @@
 
 -type tlsopts() :: [{encrypt, tls | starttls | none} |
                     {tls_cacertfile, binary() | undefined} |
+                    {tls_certfile, binary() | undefined} |
                     {tls_depth, non_neg_integer() | undefined} |
                     {tls_verify, hard | soft | false}].
 

@@ -207,6 +207,8 @@ get_config(Host, Opts) ->
                            (soft) -> soft;
                            (false) -> false
                         end, false),
+    TLSCFile = get_opt({ldap_tls_certfile, Host}, Opts,
+                       fun iolist_to_binary/1),
     TLSCAFile = get_opt({ldap_tls_cacertfile, Host}, Opts,
                         fun iolist_to_binary/1),
     TLSDepth = get_opt({ldap_tls_depth, Host}, Opts,
@@ -237,6 +239,7 @@ get_config(Host, Opts) ->
                   backups = Backups,
                   tls_options = [{encrypt, Encrypt},
                                  {tls_verify, TLSVerify},
+                                 {tls_certfile, TLSCFile},
                                  {tls_cacertfile, TLSCAFile},
                                  {tls_depth, TLSDepth}],
                   port = Port,
