@@ -35,7 +35,7 @@
 -export([start/2,
 	 init/0,
 	 stop/1,
-         export/1,
+	 export/1,
 	 announce/3,
 	 send_motd/1,
 	 disco_identity/5,
@@ -598,7 +598,7 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 			       status = completed},
     Packet = #xmlel{
         name     = <<"message">>,
-        attrs    = [{<<"type">>, <<"normal">>}],
+        attrs    = [{<<"type">>, <<"headline">>}],
         children = if Subject /= <<>> ->
             [#xmlel{name = <<"subject">>, children = [{xmlcdata, Subject}]}];
         true ->
@@ -991,7 +991,7 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
     end,
     Packet = #xmlel{
         name     = <<"message">>,
-        attrs    = [{<<"type">>, <<"normal">>}],
+        attrs    = [{<<"type">>, <<"headline">>}],
         children = SubjectEls ++ BodyEls
     },
     Sessions = ejabberd_sm:dirty_get_sessions_list(),
