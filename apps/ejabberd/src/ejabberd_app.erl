@@ -45,9 +45,6 @@ start(normal, _Args) ->
     sha:start(),
     xml:start(),
 
-    %LogPath = get_log_path(),
-    %ok = error_logger:add_report_handler(ejabberd_logger_h, LogPath),
-
     load_drivers([tls_drv, expat_erl]),
     translate:start(),
     acl:start(),
