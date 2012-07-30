@@ -5,7 +5,8 @@ EJD_INCLUDE = $(EJABBERD_DIR)/include
 EJD_PRIV = $(EJABBERD_DIR)/priv
 EJD_PRIV_MIB = $(EJD_PRIV)/mibs
 EJD_MIB = $(EJABBERD_DIR)/mibs
-DEVNODES = node1 node2 internal_mnesia internal_redis odbc_mnesia odbc_redis external_mnesia external_redis
+DEVNODES = node1 node2 
+TESTNODES = internal_mnesia internal_redis odbc_mnesia odbc_redis external_mnesia external_redis
 
 all: deps compile
 
