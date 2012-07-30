@@ -26,8 +26,8 @@
 
 -record(lqueue, {queue, len, max}).
 
--record(config, {title = "",
-		 description = "",
+-record(config, {title = <<>>,
+		 description = <<>>,
 		 allow_change_subj = true,
 		 allow_query_users = true,
 		 allow_private_messages = true,
@@ -42,7 +42,7 @@
 		 members_only = false,
 		 allow_user_invites = false,
 		 password_protected = false,
-		 password = "",
+		 password = <<>>,
 		 anonymous = true,
 		 max_users = ?MAX_USERS_DEFAULT,
 		 logging = false,
@@ -71,8 +71,8 @@
 		robots = ?DICT:new(),
 		affiliations = ?DICT:new(),
 		history,
-		subject = "",
-		subject_author = "",
+		subject = <<>>,
+		subject_author = <<>>,
 		just_created = false,
 		activity = treap:empty(),
 		room_shaper,

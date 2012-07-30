@@ -135,14 +135,14 @@ forget_room(Host, Name) ->
 process_iq_disco_items(Host, From, To, #iq{lang = Lang} = IQ) ->
     Rsm = jlib:rsm_decode(IQ),
     Res = IQ#iq{type = result,
-		sub_el = [{xmlelement, "query",
-			   [{"xmlns", ?NS_DISCO_ITEMS}],
+		sub_el = [{xmlelement, <<"query">>,
+			   [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
 			   iq_disco_items(Host, From, Lang, Rsm)}]},
     ejabberd_router:route(To,
 			  From,
 			  jlib:iq_to_xml(Res)).
 
-can_use_nick(_Host, _JID, "") ->
+can_use_nick(_Host, _JID, <<>>) ->
     false;
 can_use_nick(Host, JID, Nick) ->
     {LUser, LServer, _} = jlib:jid_tolower(JID),
@@ -332,8 +332,8 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 		      From, To, Packet, DefRoomOpts);
 	_ ->
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
-	    Lang = xml:get_attr_s("xml:lang", Attrs),
-	    ErrText = "Access denied by service policy",
+	    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+	    ErrText = <<"Access denied by service policy">>,
 	    Err = jlib:make_error_reply(Packet,
 					?ERRT_FORBIDDEN(Lang, ErrText)),
 	    ejabberd_router:route_error(To, From, Err, Packet)
@@ -346,20 +346,20 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
     {Room, _, Nick} = jlib:jid_tolower(To),
     {xmlelement, Name, Attrs, _Els} = Packet,
     case Room of
-	"" ->
+	<<>> ->
 	    case Nick of
-		"" ->
+		<<>> ->
 		    case Name of
-			"iq" ->
+			<<"iq">> ->
 			    case jlib:iq_query_info(Packet) of
 				#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
  				    sub_el = _SubEl, lang = Lang} = IQ ->
 				    Info = ejabberd_hooks:run_fold(
 					     disco_info, ServerHost, [],
-					     [ServerHost, ?MODULE, "", ""]),
+					     [ServerHost, ?MODULE, <<>>, <<>>]),
 				    Res = IQ#iq{type = result,
-						sub_el = [{xmlelement, "query",
-							   [{"xmlns", XMLNS}],
+						sub_el = [{xmlelement, <<"query">>,
+							   [{<<"xmlns">>, XMLNS}],
 							   iq_disco_info(Lang)
 							   ++Info}]},
 				    ejabberd_router:route(To,
@@ -376,8 +376,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    sub_el = _SubEl} = IQ ->
 				    Res = IQ#iq{type = result,
 						sub_el =
-						[{xmlelement, "query",
-						  [{"xmlns", XMLNS}],
+						[{xmlelement, <<"query">>,
+						  [{<<"xmlns">>, XMLNS}],
 						  iq_get_register_info(
 						    Host, From, Lang)}]},
 				    ejabberd_router:route(To,
@@ -391,8 +391,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 					{result, IQRes} ->
 					    Res = IQ#iq{type = result,
 							sub_el =
-							[{xmlelement, "query",
-							  [{"xmlns", XMLNS}],
+							[{xmlelement, <<"query">>,
+							  [{<<"xmlns">>, XMLNS}],
 							  IQRes}]},
 					    ejabberd_router:route(
 					      To, From, jlib:iq_to_xml(Res));
@@ -408,8 +408,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    sub_el = _SubEl} = IQ ->
 				    Res = IQ#iq{type = result,
 						sub_el =
-						[{xmlelement, "vCard",
-						  [{"xmlns", XMLNS}],
+						[{xmlelement, <<"vCard">>,
+						  [{<<"xmlns">>, XMLNS}],
 						  iq_get_vcard(Lang)}]},
 				    ejabberd_router:route(To,
 							  From,
@@ -419,8 +419,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				   } = IQ ->
 				   Res = IQ#iq{type = result,
 						sub_el =
-						[{xmlelement, "unique",
-						   [{"xmlns", ?NS_MUC_UNIQUE}],
+						[{xmlelement, <<"unique">>,
+						   [{<<"xmlns">>, ?NS_MUC_UNIQUE}],
 						   [iq_get_unique(From)]}]},
 				   ejabberd_router:route(To,
 				   			 From,
@@ -433,21 +433,20 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				_ ->
 				    ok
 			    end;
-			"message" ->
-			    case xml:get_attr_s("type", Attrs) of
-				"error" ->
+			<<"message">> ->
+			    case xml:get_attr_s(<<"type">>, Attrs) of
+				<<"error">> ->
 				    ok;
 				_ ->
 				    case acl:match_rule(ServerHost, AccessAdmin, From) of
 					allow ->
 					    Msg = xml:get_path_s(
 						    Packet,
-						    [{elem, "body"}, cdata]),
+						    [{elem, <<"body">>}, cdata]),
 					    broadcast_service_message(Host, Msg);
 					_ ->
-					    Lang = xml:get_attr_s("xml:lang", Attrs),
-					    ErrText = "Only service administrators "
-						      "are allowed to send service messages",
+					    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+					    ErrText = <<"Only service administrators are allowed to send service messages">>,
 					    Err = jlib:make_error_reply(
 						    Packet,
 						    ?ERRT_FORBIDDEN(Lang, ErrText)),
@@ -455,14 +454,14 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 					      To, From, Err)
 				    end
 			    end;
-			"presence" ->
+			<<"presence">> ->
 			    ok
 		    end;
 		_ ->
-		    case xml:get_attr_s("type", Attrs) of
-			"error" ->
+		    case xml:get_attr_s(<<"type">>, Attrs) of
+			<<"error">> ->
 			    ok;
-			"result" ->
+			<<"result">> ->
 			    ok;
 			_ ->
 			    Err = jlib:make_error_reply(
@@ -473,9 +472,9 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	_ ->
 	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 		[] ->
-		    Type = xml:get_attr_s("type", Attrs),
+		    Type = xml:get_attr_s(<<"type">>, Attrs),
 		    case {Name, Type} of
-			{"presence", ""} ->
+			{<<"presence">>, <<>>} ->
 			    case check_user_can_create_room(ServerHost,
 							    AccessCreate, From,
 							    Room) of
@@ -489,15 +488,15 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;
 				false ->
-				    Lang = xml:get_attr_s("xml:lang", Attrs),
-				    ErrText = "Room creation is denied by service policy",
+				    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+				    ErrText = <<"Room creation is denied by service policy">>,
 				    Err = jlib:make_error_reply(
 					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
 				    ejabberd_router:route(To, From, Err)
 			    end;
 			_ ->
-			    Lang = xml:get_attr_s("xml:lang", Attrs),
-			    ErrText = "Conference room does not exist",
+			    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+			    ErrText = <<"Conference room does not exist">>,
 			    Err = jlib:make_error_reply(
 				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
 			    ejabberd_router:route(To, From, Err)
@@ -513,7 +512,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
     case acl:match_rule(ServerHost, AccessCreate, From) of
 	allow ->
-	    (length(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
+	    (size(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
 						      max_room_id, infinite));
 	_ ->
 	    false
@@ -575,17 +574,17 @@ register_room(Host, Room, Pid) ->
 
 
 iq_disco_info(Lang) ->
-    [{xmlelement, "identity",
-      [{"category", "conference"},
-       {"type", "text"},
-       {"name", translate:translate(Lang, "Chatrooms")}], []},
-     {xmlelement, "feature", [{"var", ?NS_DISCO_INFO}], []},
-     {xmlelement, "feature", [{"var", ?NS_DISCO_ITEMS}], []},
-     {xmlelement, "feature", [{"var", ?NS_MUC}], []},
-     {xmlelement, "feature", [{"var", ?NS_MUC_UNIQUE}], []},
-     {xmlelement, "feature", [{"var", ?NS_REGISTER}], []},
-     {xmlelement, "feature", [{"var", ?NS_RSM}], []},
-     {xmlelement, "feature", [{"var", ?NS_VCARD}], []}].
+    [{xmlelement, <<"identity">>,
+      [{<<"category">>, <<"conference">>},
+       {<<"type">>, <<"text">>},
+       {<<"name">>, translate:translate(Lang, <<"Chatrooms">>)}], []},
+     {xmlelement, <<"feature">>, [{<<"var">>, ?NS_DISCO_INFO}], []},
+     {xmlelement, <<"feature">>, [{<<"var">>, ?NS_DISCO_ITEMS}], []},
+     {xmlelement, <<"feature">>, [{<<"var">>, ?NS_MUC}], []},
+     {xmlelement, <<"feature">>, [{<<"var">>, ?NS_MUC_UNIQUE}], []},
+     {xmlelement, <<"feature">>, [{<<"var">>, ?NS_REGISTER}], []},
+     {xmlelement, <<"feature">>, [{<<"var">>, ?NS_RSM}], []},
+     {xmlelement, <<"feature">>, [{<<"var">>, ?NS_VCARD}], []}].
 
 
 iq_disco_items(Host, From, Lang, none) ->
@@ -595,9 +594,9 @@ iq_disco_items(Host, From, Lang, none) ->
 			 {item, Desc} ->
 			     flush(),
 			     {true,
-			      {xmlelement, "item",
-			       [{"jid", jlib:jid_to_binary({Name, Host, ""})},
-				{"name", Desc}], []}};
+			      {xmlelement, <<"item">>,
+			       [{<<"jid">>, jlib:jid_to_binary({Name, Host, <<>>})},
+				{<<"name">>, Desc}], []}};
 			 _ ->
 			     false
 		     end
@@ -612,9 +611,9 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			 {item, Desc} ->
 			     flush(),
 			     {true,
-			      {xmlelement, "item",
-			       [{"jid", jlib:jid_to_binary({Name, Host, ""})},
-				{"name", Desc}], []}};
+			      {xmlelement, <<"item">>,
+			       [{<<"jid">>, jlib:jid_to_binary({Name, Host, <<>>})},
+				{<<"name">>, Desc}], []}};
 			 _ ->
 			     false
 		     end
@@ -677,17 +676,17 @@ flush() ->
     end.
 
 -define(XFIELD(Type, Label, Var, Val),
-	{xmlelement, "field", [{"type", Type},
-			       {"label", translate:translate(Lang, Label)},
-			       {"var", Var}],
-	 [{xmlelement, "value", [], [{xmlcdata, Val}]}]}).
+	{xmlelement, <<"field">>, [{<<"type">>, Type},
+			       {<<"label">>, translate:translate(Lang, Label)},
+			       {<<"var">>, Var}],
+	 [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
 
 %% @doc Get a pseudo unique Room Name. The Room Name is generated as a hash of 
 %%      the requester JID, the local time and a random salt.
 %%
-%%      "pseudo" because we don't verify that there is not a room
+%%      <<"pseudo">> because we don't verify that there is not a room
 %%       with the returned Name already created, nor mark the generated Name 
-%%       as "already used".  But in practice, it is unique enough. See
+%%       as <<"already used">>.  But in practice, it is unique enough. See
 %%       http://xmpp.org/extensions/xep-0045.html#createroom-unique
 iq_get_unique(From) ->
 	{xmlcdata, sha:sha(term_to_binary([From, now(), randoms:get_string()]))}.
@@ -698,35 +697,35 @@ iq_get_register_info(Host, From, Lang) ->
     {Nick, Registered} =
 	case catch mnesia:dirty_read(muc_registered, {LUS, Host}) of
 	    {'EXIT', _Reason} ->
-		{"", []};
+		{<<>>, []};
 	    [] ->
-		{"", []};
+		{<<>>, []};
 	    [#muc_registered{nick = N}] ->
-		{N, [{xmlelement, "registered", [], []}]}
+		{N, [{xmlelement, <<"registered">>, [], []}]}
 	end,
     Registered ++
-	[{xmlelement, "instructions", [],
+	[{xmlelement, <<"instructions">>, [],
 	  [{xmlcdata,
 	    translate:translate(
-	      Lang, "You need a client that supports x:data to register the nickname")}]},
-	 {xmlelement, "x",
-	  [{"xmlns", ?NS_XDATA}],
-	  [{xmlelement, "title", [],
+	      Lang, <<"You need a client that supports x:data to register the nickname">>)}]},
+	 {xmlelement, <<"x">>,
+	  [{<<"xmlns">>, ?NS_XDATA}],
+	  [{xmlelement, <<"title">>, [],
 	    [{xmlcdata,
 	      translate:translate(
-		Lang, "Nickname Registration at ") ++ Host}]},
-	   {xmlelement, "instructions", [],
+		Lang, <<"Nickname Registration at ">>) ++ Host}]},
+	   {xmlelement, <<"instructions">>, [],
 	    [{xmlcdata,
 	      translate:translate(
-		Lang, "Enter nickname you want to register")}]},
-	   ?XFIELD("text-single", "Nickname", "nick", Nick)]}].
+		Lang, <<"Enter nickname you want to register">>)}]},
+	   ?XFIELD(<<"text-single">>, <<"Nickname">>, <<"nick">>, Nick)]}].
 
 iq_set_register_info(Host, From, Nick, Lang) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     LUS = {LUser, LServer},
     F = fun() ->
 		case Nick of
-		    "" ->
+		    <<>> ->
 			mnesia:delete({muc_registered, {LUS, Host}}),
 			ok;
 		    _ ->
@@ -758,7 +757,7 @@ iq_set_register_info(Host, From, Nick, Lang) ->
 	{atomic, ok} ->
 	    {result, []};
 	{atomic, false} ->
-	    ErrText = "That nickname is registered by another person",
+	    ErrText = <<"That nickname is registered by another person">>,
 	    {error, ?ERRT_CONFLICT(Lang, ErrText)};
 	_ ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR}
@@ -766,25 +765,25 @@ iq_set_register_info(Host, From, Nick, Lang) ->
 
 process_iq_register_set(Host, From, SubEl, Lang) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
-    case xml:get_subtag(SubEl, "remove") of
+    case xml:get_subtag(SubEl, <<"remove">>) of
 	false ->
 	    case xml:remove_cdata(Els) of
-		[{xmlelement, "x", _Attrs1, _Els1} = XEl] ->
-		    case {xml:get_tag_attr_s("xmlns", XEl),
-			  xml:get_tag_attr_s("type", XEl)} of
-			{?NS_XDATA, "cancel"} ->
+		[{xmlelement, <<"x">>, _Attrs1, _Els1} = XEl] ->
+		    case {xml:get_tag_attr_s(<<"xmlns">>, XEl),
+			  xml:get_tag_attr_s(<<"type">>, XEl)} of
+			{?NS_XDATA, <<"cancel">>} ->
 			    {result, []};
-			{?NS_XDATA, "submit"} ->
+			{?NS_XDATA, <<"submit">>} ->
 			    XData = jlib:parse_xdata_submit(XEl),
 			    case XData of
 				invalid ->
 				    {error, ?ERR_BAD_REQUEST};
 				_ ->
-				    case lists:keysearch("nick", 1, XData) of
-					{value, {_, [Nick]}} when Nick /= "" ->
+				    case lists:keysearch(<<"nick">>, 1, XData) of
+					{value, {_, [Nick]}} when Nick /= <<>> ->
 					    iq_set_register_info(Host, From, Nick, Lang);
 					_ ->
-					    ErrText = "You must fill in field \"Nickname\" in the form",
+					    ErrText = <<"You must fill in field \"Nickname\" in the form">>,
 					    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
 				    end
 			    end;
@@ -795,17 +794,17 @@ process_iq_register_set(Host, From, SubEl, Lang) ->
 		    {error, ?ERR_BAD_REQUEST}
 	    end;
 	_ ->
-	    iq_set_register_info(Host, From, "", Lang)
+	    iq_set_register_info(Host, From, <<>>, Lang)
     end.
 
 iq_get_vcard(Lang) ->
-    [{xmlelement, "FN", [],
-      [{xmlcdata, "ejabberd/mod_muc"}]},
-     {xmlelement, "URL", [],
+    [{xmlelement, <<"FN">>, [],
+      [{xmlcdata, <<"ejabberd/mod_muc">>}]},
+     {xmlelement, <<"URL">>, [],
       [{xmlcdata, ?EJABBERD_URI}]},
-     {xmlelement, "DESC", [],
-      [{xmlcdata, translate:translate(Lang, "ejabberd MUC module") ++
-	  "\nCopyright (c) 2003-2011 ProcessOne"}]}].
+     {xmlelement, <<"DESC">>, [],
+      [{xmlcdata, translate:translate(Lang, <<"ejabberd MUC module">>) ++
+	  <<"\nCopyright (c) 2003-2011 ProcessOne">>}]}].
 
 
 broadcast_service_message(Host, Msg) ->
@@ -860,8 +859,7 @@ update_muc_room_table(Host) ->
 	Fields ->
 	    ok;
 	[name, opts] ->
-	    ?INFO_MSG("Converting muc_room table from "
-		      "{name, opts} format", []),
+	    ?INFO_MSG("Converting muc_room table from {name, opts} format", []),
 	    {atomic, ok} = mnesia:create_table(
 			     mod_muc_tmp_table,
 			     [{disc_only_copies, [node()]},
@@ -902,8 +900,7 @@ update_muc_registered_table(Host) ->
 	Fields ->
 	    ok;
 	[user, nick] ->
-	    ?INFO_MSG("Converting muc_registered table from "
-		      "{user, nick} format", []),
+	    ?INFO_MSG("Converting muc_registered table from {user, nick} format", []),
 	    {atomic, ok} = mnesia:create_table(
 			     mod_muc_tmp_table,
 			     [{disc_only_copies, [node()]},
