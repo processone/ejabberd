@@ -3496,7 +3496,7 @@ check_invitation(From, Els, Lang, StateData) ->
 		case xml:get_path_s(
 		       InviteEl,
 		       [{elem, <<"continue">>}]) of
-		    [] -> [];
+		    <<>> -> [];
 		    Continue1 -> [Continue1]
 		end,
 	    IEl =
@@ -3513,33 +3513,26 @@ check_invitation(From, Els, Lang, StateData) ->
 		    _ ->
 			[]
 		end,
+            IFrom = jlib:jid_to_binary(From),
+            IRoom = jlib:jid_to_binary({StateData#state.room, StateData#state.host, <<>>}),
+            ITranslate = translate:translate(Lang, <<" invites you to the room ">>),
+            IMessage = <<IFrom/binary, ITranslate/binary, IRoom/binary>>,
+            IPassword = case (StateData#state.config)#config.password_protected of
+                true ->
+                    PTranslate = translate:translate(Lang, <<"the password is">>),
+                    PPassword = StateData#state.config#config.password,
+                    <<", ", PTranslate/binary, " '", PPassword/binary, "'">>;
+                _ ->
+                    <<>>
+            end,
+            IReason = case Reason of
+                <<>> -> <<>>;
+                _ -> <<" (", Reason/binary, ") ">>
+            end,
 	    Body =
 		{xmlelement, <<"body">>, [],
-		 [{xmlcdata,
-		   lists:flatten(
-		     io_lib:format(
-		       translate:translate(
-			 Lang,
-			 <<"~s invites you to the room ~s">>),
-		       [jlib:jid_to_binary(From),
-			jlib:jid_to_binary({StateData#state.room,
-					    StateData#state.host,
-					    <<>>})
-		       ])) ++
-		   case (StateData#state.config)#config.password_protected of
-		       true ->
-			   <<", ">> ++
-			       translate:translate(Lang, <<"the password is">>) ++
-			       <<" '">> ++
-			       (StateData#state.config)#config.password ++ <<"'">>;
-		       _ ->
-			   <<>>
-		   end ++
-		   case Reason of
-		       <<>> -> <<>>;
-		       _ -> <<" (">> ++ Reason ++ <<") ">>
-		   end
-		  }]},
+                    [{xmlcdata, <<IMessage/binary, IPassword/binary, IReason/binary>>}]
+                },
 	    Msg =
 		{xmlelement, <<"message">>,
 		 [{<<"type">>, <<"normal">>}],
