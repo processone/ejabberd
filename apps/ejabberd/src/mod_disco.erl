@@ -228,7 +228,7 @@ domain_to_xml(Domain) ->
 get_local_services({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_local_services(Acc, _From, To, [], _Lang) ->
+get_local_services(Acc, _From, To, <<>>, _Lang) ->
     Items = case Acc of
 		{result, Its} -> Its;
 		empty -> []
@@ -253,7 +253,8 @@ get_vh_services(Host) ->
     lists:filter(fun(H) ->
 			 case lists:dropwhile(
 				fun(VH) ->
-					not lists:suffix("." ++ VH, H)
+					not lists:suffix("." ++ binary_to_list(VH),
+                                            binary_to_list(H))
 				end, Hosts) of
 			     [] ->
 				 false;

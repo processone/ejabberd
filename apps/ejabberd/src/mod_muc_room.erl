@@ -3024,13 +3024,14 @@ get_config(Lang, StateData, From) ->
 		     <<"muc#roomconfig_allowvisitornickchange">>,
 		     Config#config.allow_visitor_nickchange)
 	] ++
-	case ejabberd_captcha:is_feature_available() of
-	    true ->
-	        [?BOOLXFIELD(<<"Make room captcha protected">>,
-			     <<"captcha_protected">>,
-			     Config#config.captcha_protected)];
-	    false -> []
-	end ++
+%%      Temporarily turned off, no ejabberd_captcha module
+%% 	case ejabberd_captcha:is_feature_available() of
+%% 	    true ->
+%% 	        [?BOOLXFIELD(<<"Make room captcha protected">>,
+%% 			     <<"captcha_protected">>,
+%% 			     Config#config.captcha_protected)];
+%% 	    false -> []
+%% 	end ++
         [?JIDMULTIXFIELD(<<"Exclude Jabber IDs from CAPTCHA challenge">>,
                          <<"muc#roomconfig_captcha_whitelist">>,
                          ?SETS:to_list(Config#config.captcha_whitelist))] ++
@@ -3421,7 +3422,8 @@ get_roomdesc_reply(JID, StateData, Tail) ->
     IsOccupantOrAdmin = is_occupant_or_admin(JID, StateData),
     if (StateData#state.config)#config.public or IsOccupantOrAdmin ->
 	    if (StateData#state.config)#config.public_list or IsOccupantOrAdmin ->
-		    {item, get_title(StateData) ++ Tail};
+                    Title = get_title(StateData),
+		    {item, <<Title/binary, Tail/binary>>};
 	       true ->
 		    {item, get_title(StateData)}
 	    end;
@@ -3437,7 +3439,8 @@ get_roomdesc_tail(StateData, Lang) ->
 		   translate:translate(Lang, <<"private, ">>)
 	   end,
     Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0, StateData#state.users),
-    <<" (">> ++ Desc ++ integer_to_list(Len) ++ <<")">>.
+    LenBin = list_to_binary(integer_to_list(Len)),
+    <<" (", Desc/binary, LenBin/binary, ")">>.
 
 get_mucroom_disco_items(StateData) ->
     lists:map(
