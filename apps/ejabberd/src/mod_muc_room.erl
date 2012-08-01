@@ -1582,20 +1582,6 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 			add_user_presence(
 			  From, Packet,
 			  add_online_user(From, Nick, Role, StateData)),
-		    if not (NewState#state.config)#config.anonymous ->
-			    WPacket = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
-				       [{xmlelement, <<"body">>, [],
-					 [{xmlcdata, translate:translate(
-						       Lang,
-						       <<"This room is not anonymous">>)}]},
-					{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-					 [{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}]}]},
-			    ejabberd_router:route(
-			      StateData#state.jid,
-			      From, WPacket);
-			true ->
-			    ok
-		    end,
 		    send_existing_presences(From, NewState),
 		    send_new_presence(From, NewState),
 		    Shift = count_stanza_shift(Nick, Els, NewState),
@@ -1911,7 +1897,7 @@ send_new_presence(NJID, Reason, StateData) ->
 			       []
 		       end,
 	      Status1 = case ((StateData#state.config)#config.anonymous==false)
-			    andalso (NJID == Info#user.jid) of
+			    andalso ((NJID == Info#user.jid)==true) of
 			    true ->
 				[{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}
 				 | Status];
@@ -1921,9 +1907,9 @@ send_new_presence(NJID, Reason, StateData) ->
 	      Status2 = case ((NJID == Info#user.jid)==true) of
 			    true ->
 				[{xmlelement, <<"status">>, [{<<"code">>, <<"110">>}], []}
-				 | Status];
+				 | Status1];
 			    false ->
-				Status
+				Status1
 			end,
 	      Packet = xml:append_subtags(
 			 Presence,
