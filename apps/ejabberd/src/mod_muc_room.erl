@@ -1910,10 +1910,17 @@ send_new_presence(NJID, Reason, StateData) ->
 			   false ->
 			       []
 		       end,
-	      Status2 = case ((StateData#state.config)#config.anonymous==false)
+	      Status1 = case ((StateData#state.config)#config.anonymous==false)
 			    andalso (NJID == Info#user.jid) of
 			    true ->
 				[{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}
+				 | Status];
+			    false ->
+				Status
+			end,
+	      Status2 = case ((NJID == Info#user.jid)==true) of
+			    true ->
+				[{xmlelement, <<"status">>, [{<<"code">>, <<"110">>}], []}
 				 | Status];
 			    false ->
 				Status
