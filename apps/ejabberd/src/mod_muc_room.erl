@@ -1896,21 +1896,34 @@ send_new_presence(NJID, Reason, StateData) ->
 			   false ->
 			       []
 		       end,
-	      Status1 = case ((StateData#state.config)#config.anonymous==false)
-			    andalso ((NJID == Info#user.jid)==true) of
-			    true ->
-				[{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}
-				 | Status];
-			    false ->
-				Status
-			end,
-	      Status2 = case ((NJID == Info#user.jid)==true) of
-			    true ->
-				[{xmlelement, <<"status">>, [{<<"code">>, <<"110">>}], []}
-				 | Status1];
-			    false ->
-				Status1
-			end,
+		  Status2 = case (NJID == Info#user.jid) of 
+		  	   true ->	
+					Status0 = case ((StateData#state.config)#config.logging)
+							andalso ((NJID == Info#user.jid)==true) of
+							true ->
+							[{xmlelement, <<"status">>, [{<<"code">>, <<"170">>}], []}
+							| Status];
+							false ->
+							Status
+						end,
+					Status1 = case ((StateData#state.config)#config.anonymous==false)
+							andalso ((NJID == Info#user.jid)==true) of
+							true ->
+							[{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}
+							| Status0];
+							false ->
+							Status0
+						end,
+					case ((NJID == Info#user.jid)==true) of
+							true ->
+							[{xmlelement, <<"status">>, [{<<"code">>, <<"110">>}], []}
+							| Status1];
+							false ->
+							Status1
+						end;
+				false ->
+						Status
+	      end,
 	      Packet = xml:append_subtags(
 			 Presence,
 			 [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
