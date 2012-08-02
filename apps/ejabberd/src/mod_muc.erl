@@ -491,7 +491,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
 				    ErrText = <<"Room creation is denied by service policy">>,
 				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+					    Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
 				    ejabberd_router:route(To, From, Err)
 			    end;
 			_ ->

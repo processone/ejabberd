@@ -805,9 +805,11 @@ process_groupchat_message(From, {xmlelement, <<"message">>, Attrs, _Els} = Packe
 					   <<"Only moderators are allowed to change the subject in this room">>)
 				end,
 			    ejabberd_router:route(
-			      StateData#state.jid,
-			      From,
-			      jlib:make_error_reply(Packet, Err)),
+                                jlib:jid_replace_resource(
+                                    StateData#state.jid,
+                                    FromNick),
+			        From,
+			        jlib:make_error_reply(Packet, Err)),
 			    {next_state, normal_state, StateData}
 		    end;
 		true ->
@@ -2412,6 +2414,8 @@ find_changed_items(UJID, UAffiliation, URole,
 						nothing;
 					    true ->
 						true;
+                                            cancel ->
+                                                cancel;
 					    check_owner ->
 						case search_affiliation(
 						       owner, StateData) of
@@ -2442,8 +2446,10 @@ find_changed_items(UJID, UAffiliation, URole,
 						xml:get_path_s(
 						  Item, [{elem, <<"reason">>},
 							 cdata])} | Res]);
+                                        cancel ->
+                                            {error, ?ERR_NOT_ALLOWED};
 					false ->
-					    {error, ?ERR_NOT_ALLOWED}
+					    {error, ?ERR_FORBIDDEN}
 				    end
 			    end
 		    end;
@@ -2593,6 +2599,15 @@ can_change_ra(owner, _FRole,
 	      owner, _TRole,
 	      affiliation, _Affiliation, _ServiceAf) ->
     check_owner;
+can_change_ra(none, _FRole,
+              TAffiliation, _TRole,
+              affiliation, _Affiliation, _ServiceAf)
+    when (TAffiliation == admin orelse TAffiliation == owner) ->
+    cancel;
+can_change_ra(admin, _FRole,
+              owner, _TRole,
+              affiliation, _Value, _ServiceAf) ->
+    cancel;
 can_change_ra(_FAffiliation, _FRole,
 	      _TAffiliation, _TRole,
 	      affiliation, _Value, _ServiceAf) ->
