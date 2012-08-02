@@ -2124,23 +2124,28 @@ send_history(JID, Shift, StateData) ->
       end, false, lists:nthtail(Shift, lqueue_to_list(StateData#state.history))).
 
 
+send_subject(JID, Lang, StateData = #state{subject = <<>>, subject_author = <<>>}) ->
+	Message = translate:translate(Lang, <<" has set the subject to: ">>),
+	Packet = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
+			[{xmlelement, <<"subject">>, [], []},
+			{xmlelement, <<"body">>, [],
+		[]}]},
+	ejabberd_router:route(
+		StateData#state.jid,
+		JID,
+		Packet);
+
 send_subject(JID, Lang, StateData) ->
-    case StateData#state.subject_author of
-	<<>> ->
-	    ok;
-	Nick ->
-	    Subject = StateData#state.subject,
-            Message = translate:translate(Lang, <<" has set the subject to: ">>),
-	    Packet = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
-		      [{xmlelement, <<"subject">>, [], [{xmlcdata, Subject}]},
-		       {xmlelement, <<"body">>, [],
-			[{xmlcdata,
-			  <<Nick/binary, Message/binary, Subject/binary>>}]}]},
-	    ejabberd_router:route(
-	      StateData#state.jid,
-	      JID,
-	      Packet)
-    end.
+	Subject = StateData#state.subject,
+		Message = translate:translate(Lang, <<" has set the subject to: ">>),
+	Packet = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
+			[{xmlelement, <<"subject">>, [], [{xmlcdata, Subject}]},
+			{xmlelement, <<"body">>, [],
+		[]}]},
+	ejabberd_router:route(
+		StateData#state.jid,
+		JID,
+		Packet).
 
 check_subject(Packet) ->
     case xml:get_subtag(Packet, <<"subject">>) of
