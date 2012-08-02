@@ -31,6 +31,7 @@
          make_error_reply/3,
          make_error_reply/2,
          make_error_element/2,
+         make_config_change_message/1,
          make_correct_from_to_attrs/3,
          replace_from_to_attrs/3,
          replace_from_to/3,
@@ -143,6 +144,18 @@ make_correct_from_to_attrs(From, To, Attrs) ->
              end,
     Attrs3 = [{<<"from">>, From} | Attrs2],
     Attrs3.
+
+make_config_change_message(Status) ->
+    {xmlelement, <<"message">>,
+        [{<<"type">>, <<"groupchat">>}],
+        [{xmlelement, <<"x">>,
+            [{<<"xmlns">>, ?NS_MUC_USER}],
+            [{xmlelement, <<"status">>,
+                [{<<"code">>, Status}],
+                []
+            }]
+        }]
+    }.
 
 
 replace_from_to_attrs(From, To, Attrs) ->

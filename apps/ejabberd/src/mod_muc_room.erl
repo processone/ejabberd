@@ -1979,6 +1979,22 @@ send_existing_presences(ToJID, StateData) ->
 	      end
       end, ?DICT:to_list(StateData#state.users)).
 
+send_config_update(Type, StateData) ->
+    Status = case Type of
+        logging_enabled -> <<"170">>;
+        logging_disabled -> <<"171">>;
+        nonanonymous -> <<"172">>;
+        semianonymous -> <<"173">>;
+        _ -> <<"104">>
+    end,
+    Message = jlib:make_config_change_message(Status),
+    lists:foreach(fun({_LJID, Info}) ->
+        ejabberd_router:route(
+            StateData#state.jid,
+            Info#user.jid,
+            Message)
+        end, ?DICT:to_list(StateData#state.users)).
+
 
 now_to_usec({MSec, Sec, USec}) ->
     (MSec*1000000 + Sec)*1000000 + USec.
@@ -3094,11 +3110,22 @@ set_config(XEl, StateData) ->
 		    Type = case {(StateData#state.config)#config.logging,
 				 Config#config.logging} of
 			       {true, false} ->
-				   roomconfig_change_disabledlogging;
+                                  send_config_update(logging_disabled, StateData),
+			          roomconfig_change_disabledlogging;
 			       {false, true} ->
-				   roomconfig_change_enabledlogging;
-			       {_, _} ->
-				   roomconfig_change
+                                  send_config_update(logging_enabled, StateData),
+			          roomconfig_change_enabledlogging;
+                               {_, _} -> case {(StateData#state.config)#config.anonymous,
+                                    Config#config.anonymous} of
+			          {true, false} ->
+                                      send_config_update(nonanonymous, StateData),
+                                      roomconfig_change_nonanonymous;
+                                  {false, true} ->
+                                      send_config_update(semianonymous, StateData),
+                                      roomconfig_change_anonymous;
+                                  {_, _} ->
+				      roomconfig_change
+                                end
 			   end,
 		    Users = [{U#user.jid, U#user.nick, U#user.role} ||
 				{_, U} <- ?DICT:to_list(StateData#state.users)],
