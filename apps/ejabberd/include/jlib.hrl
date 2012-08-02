@@ -143,6 +143,8 @@
 	?STANZA_ERROR(<<"500">>,<<"wait">>,  <<"resource-constraint">>)).
 -define(ERR_SERVICE_UNAVAILABLE,
 	?STANZA_ERROR(<<"503">>,<<"cancel">>,<<"service-unavailable">>)).
+-define(ERR_SERVICE_UNAVAILABLE_WAIT,
+	?STANZA_ERROR(<<"502">>,<<"wait">>,<<"service-unavailable">>)).
 -define(ERR_SUBSCRIPTION_REQUIRED,
 	?STANZA_ERROR(<<"407">>,<<"auth">>,  <<"subscription-required">>)).
 -define(ERR_UNEXPECTED_REQUEST,

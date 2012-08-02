@@ -1540,7 +1540,7 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
 	    % max user reached and user is not admin or owner
 	    Err = jlib:make_error_reply(
 		    Packet,
-		    ?ERR_SERVICE_UNAVAILABLE),
+		    ?ERR_SERVICE_UNAVAILABLE_WAIT),
 	    ejabberd_router:route( % TODO: s/Nick/<<>>/
 	      jlib:jid_replace_resource(StateData#state.jid, Nick),
 	      From, Err),
