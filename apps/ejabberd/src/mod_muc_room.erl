@@ -1069,8 +1069,8 @@ decide_fate_message(<<"error">>, Packet, From, StateData) ->
     PD = case check_error_kick(Packet) of
          %% If this is an error stanza and its condition matches a criteria
          true ->
-         Reason = io_lib:format(<<"This participant is considered a ghost and is expulsed: ~s">>,
-                    [jlib:jid_to_binary(From)]),
+         Reason = <<"This participant is considered a ghost and is expulsed: ",
+                    (jlib:jid_to_binary(From))/binary>>,
          {expulse_sender, Reason};
          false ->
          continue_delivery
@@ -1121,7 +1121,7 @@ get_error_condition2(Packet) ->
 
 expulse_participant(Packet, From, StateData, Reason1) ->
     ErrorCondition = get_error_condition(Packet),
-    Reason2 = io_lib:format(Reason1 ++ <<": ">> ++ <<"~s">>, [ErrorCondition]),
+    Reason2 = <<Reason1/binary, ": ", ErrorCondition/binary>>,
     NewState = add_user_presence_un(
         From,
         {xmlelement, <<"presence">>,
@@ -2318,7 +2318,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
                          set_role(JID, none, SD1);
                          _ ->
                          SD1 = set_affiliation(JID, none, SD),
-                         send_update_presence(JID, SD1),
+                         send_update_presence(JID, Reason, SD1),
                          SD1
                      end;
                      {JID, affiliation, outcast, Reason} ->
@@ -2343,9 +2343,9 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
                      SD1 = set_role(JID, Role, SD),
                      catch send_new_presence(JID, Reason, SD1),
                      SD1;
-                     {JID, affiliation, A, _Reason} ->
+                     {JID, affiliation, A, Reason} ->
                      SD1 = set_affiliation(JID, A, SD),
-                     send_update_presence(JID, SD1),
+                     send_update_presence(JID, Reason, SD1),
                      SD1
                        end
                 ) of
@@ -2382,10 +2382,8 @@ find_changed_items(UJID, UAffiliation, URole,
            {value, S} ->
            case jlib:binary_to_jid(S) of
                error ->
-               ErrText = io_lib:format(
-                       translate:translate(
-                     Lang,
-                     <<"Jabber ID ~s is invalid">>), [S]),
+               ErrText = <<(translate:translate(Lang, <<"Jabber ID ">>))/binary,
+                  S/binary, (translate:translate(Lang, <<" is invalid">>))/binary>>,
                {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
                J ->
                {value, J}
@@ -2395,12 +2393,8 @@ find_changed_items(UJID, UAffiliation, URole,
                {value, N} ->
                case find_jid_by_nick(N, StateData) of
                    false ->
-                   ErrText =
-                       io_lib:format(
-                     translate:translate(
-                       Lang,
-                       <<"Nickname ~s does not exist in the room">>),
-                     [N]),
+                   ErrText = <<(translate:translate(Lang, <<"Nickname ">>))/binary,
+                      N/binary, (translate:translate(Lang, <<" does not exist in the room">>))/binary>>,
                    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
                    J ->
                    {value, J}
@@ -2421,12 +2415,8 @@ find_changed_items(UJID, UAffiliation, URole,
             {value, StrAffiliation} ->
                 case catch list_to_affiliation(StrAffiliation) of
                 {'EXIT', _} ->
-                    ErrText1 =
-                    io_lib:format(
-                      translate:translate(
-                        Lang,
-                        <<"Invalid affiliation: ~s">>),
-                        [StrAffiliation]),
+                    ErrText1 = <<(translate:translate(Lang, <<"Invalid affiliation ">>))/binary,
+                        StrAffiliation/binary>>,
                     {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText1)};
                 SAffiliation ->
                     ServiceAf = get_service_affiliation(JID, StateData),
@@ -2482,12 +2472,8 @@ find_changed_items(UJID, UAffiliation, URole,
         {value, StrRole} ->
             case catch list_to_role(StrRole) of
             {'EXIT', _} ->
-                ErrText1 =
-                io_lib:format(
-                  translate:translate(
-                    Lang,
-                    <<"Invalid role: ~s">>),
-                  [StrRole]),
+                ErrText1 = <<(translate:translate(Lang, <<"Invalid role ">>))/binary,
+                    StrRole/binary>>,
                 {error, ?ERRT_BAD_REQUEST(Lang, ErrText1)};
             SRole ->
                 ServiceAf = get_service_affiliation(JID, StateData),
@@ -2828,12 +2814,8 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
             {value, StrAffiliation} ->
                 case catch list_to_affiliation(StrAffiliation) of
                 {'EXIT', _} ->
-                    ErrText =
-                    io_lib:format(
-                      translate:translate(
-                        Lang,
-                        <<"Invalid affiliation: ~s">>),
-                      [StrAffiliation]),
+                    ErrText = <<(translate:translate(Lang, <<"Invalid affiliation ">>))/binary,
+                        StrAffiliation/binary>>,
                     {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
                 SAffiliation ->
                     Items = items_with_affiliation(
@@ -2976,7 +2958,8 @@ get_config(Lang, StateData, From) ->
     end,
     Res =
     [{xmlelement, <<"title">>, [],
-      [{xmlcdata, io_lib:format(translate:translate(Lang, <<"Configuration of room ~s">>), [jlib:jid_to_binary(StateData#state.jid)])}]},
+      [{xmlcdata, <<(translate:translate(Lang, <<"Configuration of room ">>))/binary,
+          (jlib:jid_to_binary(StateData#state.jid))/binary>>}]},
      {xmlelement, <<"field">>, [{<<"type">>, <<"hidden">>},
                 {<<"var">>, <<"FORM_TYPE">>}],
       [{xmlelement, <<"value">>, [],
