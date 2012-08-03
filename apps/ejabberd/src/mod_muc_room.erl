@@ -951,8 +951,10 @@ process_presence(From, Nick, {xmlelement, <<"presence">>, Attrs, _Els} = Packet,
                                 send_new_presence(From, NewState),
                                 NewState
             end;
-            _ ->
-            add_new_user(From, Nick, Packet, StateData)
+			%at this point we know that the presence has no type (user wants to enter the room)
+			%and that the user is not alredy online
+			false ->
+				handle_new_user(From, Nick, Packet, StateData, Attrs)
         end;
         _ ->
         StateData
@@ -967,6 +969,19 @@ process_presence(From, Nick, {xmlelement, <<"presence">>, Attrs, _Els} = Packet,
     _ ->
         {next_state, normal_state, StateData1}
     end.
+
+handle_new_user(From, Nick = <<>>, _Packet, StateData, Attrs) ->
+	Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+	ErrText = <<"No nickname">>,
+	Error =jlib:make_error_reply(
+				{xmlelement,<<"presence">>, [], []},
+				?ERRT_JID_MALFORMED(Lang, ErrText)),
+	%ejabberd_route(From, To, Packet),
+	ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid, Nick), From, Error),
+	StateData;
+
+handle_new_user(From, Nick, Packet, StateData, _Attrs) ->
+	add_new_user(From, Nick, Packet, StateData).
 
 is_user_online(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -2145,8 +2160,7 @@ send_history(JID, Shift, StateData) ->
       end, false, lists:nthtail(Shift, lqueue_to_list(StateData#state.history))).
 
 
-send_subject(JID, Lang, StateData = #state{subject = <<>>, subject_author = <<>>}) ->
-    Message = translate:translate(Lang, <<" has set the subject to: ">>),
+send_subject(JID, _Lang, StateData = #state{subject = <<>>, subject_author = <<>>}) ->
     Packet = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
             [{xmlelement, <<"subject">>, [], []},
             {xmlelement, <<"body">>, [],
@@ -2156,9 +2170,8 @@ send_subject(JID, Lang, StateData = #state{subject = <<>>, subject_author = <<>>
         JID,
         Packet);
 
-send_subject(JID, Lang, StateData) ->
+send_subject(JID, _Lang, StateData) ->
     Subject = StateData#state.subject,
-        Message = translate:translate(Lang, <<" has set the subject to: ">>),
     Packet = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
             [{xmlelement, <<"subject">>, [], [{xmlcdata, Subject}]},
             {xmlelement, <<"body">>, [],
