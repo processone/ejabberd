@@ -1900,16 +1900,14 @@ send_new_presence(NJID, Reason, StateData) ->
                end,
           Status2 = case (NJID == Info#user.jid) of 
                  true ->    
-                    Status0 = case ((StateData#state.config)#config.logging)
-                            andalso ((NJID == Info#user.jid)==true) of
+    				Status0 = case ((StateData#state.config)#config.logging) of
                             true ->
                             [{xmlelement, <<"status">>, [{<<"code">>, <<"170">>}], []}
                             | Status];
                             false ->
                             Status
                         end,
-                    Status1 = case ((StateData#state.config)#config.anonymous==false)
-                            andalso ((NJID == Info#user.jid)==true) of
+    				Status1 = case ((StateData#state.config)#config.anonymous==false) of
                             true ->
                             [{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}
                             | Status0];
@@ -2050,15 +2048,22 @@ send_nick_changing(JID, OldNick, StateData) ->
               [{<<"affiliation">>, SAffiliation},
                {<<"role">>, SRole}]
           end,
+
+		  SelfPresenceCode= if 
+		  		JID == Info#user.jid -> 
+					[{xmlelement, <<"status">>, [{<<"code">>, <<"110">>}], []}];
+				true ->
+					[]
+				end,
           Packet1 =
           {xmlelement, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
            [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
              [{xmlelement, <<"item">>, ItemAttrs1, []},
-              {xmlelement, <<"status">>, [{<<"code">>, <<"303">>}], []}]}]},
+              {xmlelement, <<"status">>, [{<<"code">>, <<"303">>}], []}| SelfPresenceCode]}]},
           Packet2 = xml:append_subtags(
               Presence,
               [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-                [{xmlelement, <<"item">>, ItemAttrs2, []}]}]),
+                [{xmlelement, <<"item">>, ItemAttrs2, []}| SelfPresenceCode]}]),
           ejabberd_router:route(
         jlib:jid_replace_resource(StateData#state.jid, OldNick),
         Info#user.jid,
