@@ -75,6 +75,34 @@
                Creator, Nick, DefRoomOpts])).
 -endif.
 
+-define(XFIELD(Type, Label, Var, Val),
+	{xmlelement, <<"field">>, [{<<"type">>, Type},
+			       {<<"label">>, translate:translate(Lang, Label)},
+			       {<<"var">>, Var}],
+	 [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
+
+-define(BOOLXFIELD(Label, Var, Val),
+	?XFIELD(<<"boolean">>, Label, Var,
+		case Val of
+		    true -> <<"1">>;
+		    _ -> <<"0">>
+		end)).
+
+-define(STRINGXFIELD(Label, Var, Val),
+	?XFIELD(<<"text-single">>, Label, Var, Val)).
+
+-define(PRIVATEXFIELD(Label, Var, Val),
+	?XFIELD(<<"text-private">>, Label, Var, Val)).
+
+-define(JIDXFIELD(Label, Var, Val),
+        ?XFIELD(<<"jid-single">>, Label, Var, Val)).
+
+-define(JIDMULTIXFIELD(Label, Var, JIDList),
+        {xmlelement, <<"field">>, [{<<"type">>, <<"jid-multi">>},
+			       {<<"label">>, translate:translate(Lang, Label)},
+			       {<<"var">>, Var}],
+         [{xmlelement, <<"value">>, [], [{xmlcdata, jlib:jid_to_binary(JID)}]}
+          || JID <- JIDList]}).
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -2008,6 +2036,17 @@ send_config_update(Type, StateData) ->
             Message)
         end, ?DICT:to_list(StateData#state.users)).
 
+send_invitation(From, To, Reason, StateData) ->
+    Config = StateData#state.config,
+    Password = case Config#config.password_protected of
+        false -> <<>>;
+        true -> Config#config.password
+    end,
+    ejabberd_router:route(
+        StateData#state.jid,
+        To,
+        jlib:make_invitation(
+            jlib:jid_replace_resource(From, <<>>), Password, Reason)).
 
 now_to_usec({MSec, Sec, USec}) ->
     (MSec*1000000 + Sec)*1000000 + USec.
@@ -2347,11 +2386,15 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
                      send_update_presence(JID, Reason, SD2),
                      SD2;
                      {JID, affiliation, member, Reason} ->
-                     SD1 = set_affiliation_and_reason(
-                         JID, member, Reason, SD),
-                     SD2 = set_role(JID, participant, SD1),
-                     send_update_presence(JID, Reason, SD2),
-                     SD2;
+                        case (SD#state.config)#config.members_only of
+                            true -> send_invitation(UJID, JID, Reason, SD);
+                            _ -> ok
+                         end,
+                         SD1 = set_affiliation_and_reason(
+                             JID, member, Reason, SD),
+                         SD2 = set_role(JID, participant, SD1),
+                         send_update_presence(JID, Reason, SD2),
+                         SD2;
                      {JID, role, Role, Reason} ->
                      SD1 = set_role(JID, Role, SD),
                      catch send_new_presence(JID, Reason, SD1),
@@ -2926,32 +2969,6 @@ is_password_settings_correct(XEl, StateData) ->
         true
     end.
 
-
--define(XFIELD(Type, Label, Var, Val),
-    {xmlelement, <<"field">>, [{<<"type">>, Type},
-                   {<<"label">>, translate:translate(Lang, Label)},
-                   {<<"var">>, Var}],
-     [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
-
--define(BOOLXFIELD(Label, Var, Val),
-    ?XFIELD(<<"boolean">>, Label, Var,
-        case Val of
-            true -> <<"1">>;
-            _ -> <<"0">>
-        end)).
-
--define(STRINGXFIELD(Label, Var, Val),
-    ?XFIELD(<<"text-single">>, Label, Var, Val)).
-
--define(PRIVATEXFIELD(Label, Var, Val),
-    ?XFIELD(<<"text-private">>, Label, Var, Val)).
-
--define(JIDMULTIXFIELD(Label, Var, JIDList),
-        {xmlelement, <<"field">>, [{<<"type">>, <<"jid-multi">>},
-                   {<<"label">>, translate:translate(Lang, Label)},
-                   {<<"var">>, Var}],
-         [{xmlelement, <<"value">>, [], [{xmlcdata, jlib:jid_to_binary(JID)}]}
-          || JID <- JIDList]}).
 
 get_default_room_maxusers(RoomState) ->
     DefRoomOpts = gen_mod:get_module_opt(RoomState#state.server_host, mod_muc, default_room_options, []),
@@ -3540,7 +3557,7 @@ check_invitation(From, Els, Lang, StateData) ->
       end,
     case CanInvite of
     false ->
-        throw({error, ?ERR_NOT_ALLOWED});
+        throw({error, ?ERR_FORBIDDEN});
     true ->
         Reason =
         xml:get_path_s(

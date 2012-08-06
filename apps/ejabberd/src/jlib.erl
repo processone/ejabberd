@@ -31,6 +31,7 @@
          make_error_reply/3,
          make_error_reply/2,
          make_error_element/2,
+         make_invitation/3,
          make_config_change_message/1,
          make_correct_from_to_attrs/3,
          replace_from_to_attrs/3,
@@ -157,6 +158,25 @@ make_config_change_message(Status) ->
         }]
     }.
 
+make_invitation(From, Password, Reason) ->
+    Elements = [{xmlelement, <<"invite">>,
+        [{<<"from">>, jlib:jid_to_binary(From)}], []}],
+    Elements2 = case Password of
+        <<>> -> Elements;
+        _ -> [{xmlelement, <<"password">>, [], [{xmlcdata, Password}]} | Elements]
+    end,
+    Elements3 = case Reason of
+        <<>> -> Elements2;
+        _ -> [{xmlelement, <<"reason">>, [], [{xmlcdata, Reason}]} | Elements2]
+    end,
+
+    {xmlelement, <<"message">>,
+        [],
+        [{xmlelement, <<"x">>,
+            [{<<"xmlns">>, ?NS_MUC_USER}],
+            Elements3
+        }]
+    }.
 
 replace_from_to_attrs(From, To, Attrs) ->
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
