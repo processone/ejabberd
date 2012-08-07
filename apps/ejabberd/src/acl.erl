@@ -86,8 +86,11 @@ add_list(Host, ACLs, Clear) ->
 	    false
     end.
 
+normalize(A) when is_list(A) ->
+    normalize(list_to_binary(A));
 normalize(A) ->
     jlib:nodeprep(A).
+
 normalize_spec({A, B}) ->
     {A, normalize(B)};
 normalize_spec({A, B, C}) ->

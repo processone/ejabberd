@@ -117,23 +117,24 @@ check_access_log(Host, From) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    OutDir = gen_mod:get_opt(outdir, Opts, "www/muc"),
+    OutDir = list_to_binary(gen_mod:get_opt(outdir, Opts, "www/muc")),
     DirType = gen_mod:get_opt(dirtype, Opts, subdirs),
     DirName = gen_mod:get_opt(dirname, Opts, room_jid),
     FileFormat = gen_mod:get_opt(file_format, Opts, html), % Allowed values: html|plaintext
     CSSFile = gen_mod:get_opt(cssfile, Opts, false),
     AccessLog = gen_mod:get_opt(access_log, Opts, muc_admin),
     Timezone = gen_mod:get_opt(timezone, Opts, local),
-    Top_link = gen_mod:get_opt(top_link, Opts, {"/", "Home"}),
+    {TL1, TL2} = gen_mod:get_opt(top_link, Opts, {"/", "Home"}),
+    Top_link = {list_to_binary(TL1), list_to_binary(TL2)},
     NoFollow = gen_mod:get_opt(spam_prevention, Opts, true),
-    Lang = case ejabberd_config:get_local_option({language, Host}) of
+    Lang = list_to_binary(case ejabberd_config:get_local_option({language, Host}) of
 	       undefined ->
-		   case ejabberd_config:get_global_option(language) of
-		       undefined -> "en";
-		       L -> L
-		   end;
+		       case ejabberd_config:get_global_option(language) of
+		           undefined -> "en";
+		           L -> L
+		       end;
 	       L -> L
-	   end,
+	   end),
     {ok, #logstate{host = Host,
 		out_dir = OutDir,
 		dir_type = DirType,
@@ -208,7 +209,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
-    case {xml:get_subtag(Packet, "subject"), xml:get_subtag(Packet, "body")} of
+    case {xml:get_subtag(Packet, <<"subject">>), xml:get_subtag(Packet, <<"body">>)} of
 	{false, false} ->
 	    ok;
 	{false, SubEl} ->
@@ -220,13 +221,13 @@ add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
     end;
 
 add_to_log2(roomconfig_change, _Occupants, Room, Opts, State) ->
-    add_message_to_log("", roomconfig_change, Room, Opts, State);
+    add_message_to_log(<<"">>, roomconfig_change, Room, Opts, State);
 
 add_to_log2(roomconfig_change_enabledlogging, Occupants, Room, Opts, State) ->
-    add_message_to_log("", {roomconfig_change, Occupants}, Room, Opts, State);
+    add_message_to_log(<<"">>, {roomconfig_change, Occupants}, Room, Opts, State);
 
 add_to_log2(room_existence, NewStatus, Room, Opts, State) ->
-    add_message_to_log("", {room_existence, NewStatus}, Room, Opts, State);
+    add_message_to_log(<<"">>, {room_existence, NewStatus}, Room, Opts, State);
 
 add_to_log2(nickchange, {OldNick, NewNick}, Room, Opts, State) ->
     add_message_to_log(NewNick, {nickchange, OldNick}, Room, Opts, State);
@@ -236,7 +237,7 @@ add_to_log2(join, Nick, Room, Opts, State) ->
 
 add_to_log2(leave, {Nick, Reason}, Room, Opts, State) ->
     case Reason of
-	"" -> add_message_to_log(Nick, leave, Room, Opts, State);
+	<<"">> -> add_message_to_log(Nick, leave, Room, Opts, State);
 	_ -> add_message_to_log(Nick, {leave, Reason}, Room, Opts, State)
     end;
 
@@ -254,15 +255,15 @@ build_filename_string(TimeStamp, OutDir, RoomJID, DirType, DirName, FileFormat) 
     {Dir, Filename, Rel} =
 	case DirType of
 	    subdirs ->
-		SYear = lists:flatten(io_lib:format("~4..0w", [Year])),
-		SMonth = lists:flatten(io_lib:format("~2..0w", [Month])),
-		SDay = lists:flatten(io_lib:format("~2..0w", [Day])),
-		{filename:join(SYear, SMonth), SDay, "../.."};
+		    SYear = list_to_binary(lists:flatten(io_lib:format("~4..0w", [Year]))),
+		    SMonth = list_to_binary(lists:flatten(io_lib:format("~2..0w", [Month]))),
+		    SDay = list_to_binary(lists:flatten(io_lib:format("~2..0w", [Day]))),
+    		{filename:join(SYear, SMonth), SDay, <<"../..">>};
 	    plain ->
-		Date = lists:flatten(
-			 io_lib:format("~4..0w-~2..0w-~2..0w",
-				       [Year, Month, Day])),
-		{"", Date, "."}
+		    Date = list_to_binary(lists:flatten(
+			     io_lib:format("~4..0w-~2..0w-~2..0w",
+				           [Year, Month, Day]))),
+		    {<<"">>, Date, <<".">>}
 	end,
 
     RoomString = case DirName of
@@ -270,12 +271,12 @@ build_filename_string(TimeStamp, OutDir, RoomJID, DirType, DirName, FileFormat) 
 		     room_name -> get_room_name(RoomJID)
 		 end,
     Extension = case FileFormat of
-		    html -> ".html";
-		    plaintext -> ".txt"
+		    html -> <<".html">>;
+		    plaintext -> <<".txt">>
 		end,
     Fd = filename:join([OutDir, RoomString, Dir]),
-    Fn = filename:join([Fd, Filename ++ Extension]),
-    Fnrel = filename:join([Rel, Dir, Filename ++ Extension]),
+    Fn = filename:join([Fd, <<Filename/binary, Extension/binary>>]),
+    Fnrel = filename:join([Rel, Dir, <<Filename/binary, Extension/binary>>]),
     {Fd, Fn, Fnrel}.
 
 get_room_name(RoomJID) ->
@@ -301,15 +302,14 @@ close_previous_log(Fn, Images_dir, FileFormat) ->
 
 write_last_lines(_, _, plaintext) ->
     ok;
-write_last_lines(F, Images_dir, _FileFormat) ->
-    %%fw(F, "<div class=\"legend\">ejabberd/mod_muc log<span class=\"w3c\">"),
-    fw(F, "<div class=\"legend\">"),
-    fw(F, "  <a href=\"http://www.ejabberd.im\"><img style=\"border:0\" src=\"~s/powered-by-ejabberd.png\" alt=\"Powered by ejabberd\"/></a>", [Images_dir]),
-    fw(F, "  <a href=\"http://www.erlang.org/\"><img style=\"border:0\" src=\"~s/powered-by-erlang.png\" alt=\"Powered by Erlang\"/></a>", [Images_dir]),
-    fw(F, "<span class=\"w3c\">"),
-    fw(F, "  <a href=\"http://validator.w3.org/check?uri=referer\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/valid-xhtml10.png\" alt=\"Valid XHTML 1.0 Transitional\" /></a>", [Images_dir]),
-    fw(F, "  <a href=\"http://jigsaw.w3.org/css-validator/\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/vcss.png\" alt=\"Valid CSS!\"/></a>", [Images_dir]),
-    fw(F, "</span></div></body></html>").
+write_last_lines(F, ImagesDir, _FileFormat) ->
+    fw(F, <<"<div class=\"legend\">">>),
+    fw(F, <<"  <a href=\"http://www.ejabberd.im\"><img style=\"border:0\" src=\"", ImagesDir/binary, "/powered-by-ejabberd.png\" alt=\"Powered by ejabberd\"/></a>">>),
+    fw(F, <<"  <a href=\"http://www.erlang.org/\"><img style=\"border:0\" src=\"", ImagesDir/binary, "/powered-by-erlang.png\" alt=\"Powered by Erlang\"/></a>">>),
+    fw(F, <<"<span class=\"w3c\">">>),
+    fw(F, <<"  <a href=\"http://validator.w3.org/check?uri=referer\"><img style=\"border:0;width:88px;height:31px\" src=\"", ImagesDir/binary, "/valid-xhtml10.png\" alt=\"Valid XHTML 1.0 Transitional\" /></a>">>),
+    fw(F, <<"  <a href=\"http://jigsaw.w3.org/css-validator/\"><img style=\"border:0;width:88px;height:31px\" src=\"", ImagesDir/binary, "/vcss.png\" alt=\"Valid CSS!\"/></a>">>),
+    fw(F, <<"</span></div></body></html>">>).
 
 add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     #logstate{out_dir = OutDir,
@@ -323,7 +323,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	   top_link = TopLink} = State,
     Room = get_room_info(RoomJID, Opts),
     Nick = htmlize(Nick1, FileFormat),
-    Nick2 = htmlize("<"++Nick1++">", FileFormat),
+    Nick2 = htmlize(<<"<",Nick1/binary,">">>, FileFormat),
     Now = now(),
     TimeStamp = case Timezone of
 		    local -> calendar:now_to_local_time(Now);
@@ -355,12 +355,12 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	    put_header(F, Room, Datestring, CSSFile, Lang,
 		       HourOffset, DatePrev, DateNext, TopLink, FileFormat),
 
-	    Images_dir = filename:join([OutDir, "images"]),
+	    Images_dir = <<OutDir/binary, "images">>,
 	    file:make_dir(Images_dir),
 	    create_image_files(Images_dir),
 	    Images_url = case DirType of
-			     subdirs -> "../../../images";
-			     plain -> "../images"
+			     subdirs -> <<"../../../images">>;
+			     plain -> <<"../images">>
 			 end,
 	    close_previous_log(FnYesterday, Images_url, FileFormat)
     end,
@@ -368,78 +368,71 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     %% Build message
     Text = case Message of
 	       roomconfig_change ->
-		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
-		   put_room_config(F, RoomConfig, Lang, FileFormat),
-		   io_lib:format("<font class=\"mrcm\">~s</font><br/>",
-				 [?T("Chatroom configuration modified")]);
+		       RoomConfig = roomconfig_to_binary(Room#room.config, Lang, FileFormat),
+		       put_room_config(F, RoomConfig, Lang, FileFormat),
+		       <<"<font class=\"mrcm\">", (?T(<<"Chatroom configuration modified">>))/binary, "</font><br/>">>;
 	       {roomconfig_change, Occupants} ->
-		   RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
-		   put_room_config(F, RoomConfig, Lang, FileFormat),
-		   RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
-		   put_room_occupants(F, RoomOccupants, Lang, FileFormat),
-		   io_lib:format("<font class=\"mrcm\">~s</font><br/>",
-				 [?T("Chatroom configuration modified")]);
+		       RoomConfig = roomconfig_to_binary(Room#room.config, Lang, FileFormat),
+		       put_room_config(F, RoomConfig, Lang, FileFormat),
+		       RoomOccupants = roomoccupants_to_binary(Occupants, FileFormat),
+		       put_room_occupants(F, RoomOccupants, Lang, FileFormat),
+		       <<"<font class=\"mrcm\">", (?T("Chatroom configuration modified"))/binary, "</font><br/>">>;
 	       join ->
-		   io_lib:format("<font class=\"mj\">~s ~s</font><br/>",
-				 [Nick, ?T("joins the room")]);
+		       <<"<font class=\"mj\">", Nick/binary, " ", (?T("joins the room"))/binary, "</font><br/>">>;
 	       leave ->
-		   io_lib:format("<font class=\"ml\">~s ~s</font><br/>",
-				 [Nick, ?T("leaves the room")]);
+		       <<"<font class=\"mj\">", Nick/binary, " ", (?T("leaves the room"))/binary, "</font><br/>">>;
 	       {leave, Reason} ->
-		   io_lib:format("<font class=\"ml\">~s ~s: ~s</font><br/>",
-				 [Nick, ?T("leaves the room"), htmlize(Reason,NoFollow,FileFormat)]);
+		       <<"<font class=\"ml\">", Nick/binary, " ", (?T("leaves the room"))/binary, ": ",
+		            (htmlize(Reason,NoFollow,FileFormat))/binary, ": ~s</font><br/>">>;
 	       {kickban, "301", ""} ->
-		   io_lib:format("<font class=\"mb\">~s ~s</font><br/>",
-				 [Nick, ?T("has been banned")]);
+		       <<"<font class=\"mb\">", Nick/binary, " ", (?T("has been banned"))/binary, "</font><br/>">>;
 	       {kickban, "301", Reason} ->
-		   io_lib:format("<font class=\"mb\">~s ~s: ~s</font><br/>",
-				 [Nick, ?T("has been banned"), htmlize(Reason,FileFormat)]);
+		       <<"<font class=\"mb\">", Nick/binary, " ", (?T("has been banned"))/binary, ": ",
+		            (htmlize(Reason,FileFormat))/binary, "</font><br/>">>;
 	       {kickban, "307", ""} ->
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
-				 [Nick, ?T("has been kicked")]);
+		       <<"<font class=\"mk\">", Nick/binary, " ", (?T("has been kicked"))/binary, "</font><br/>">>;
 	       {kickban, "307", Reason} ->
-		   io_lib:format("<font class=\"mk\">~s ~s: ~s</font><br/>",
-				 [Nick, ?T("has been kicked"), htmlize(Reason,FileFormat)]);
+		       <<"<font class=\"mk\">", Nick/binary, " ", (?T("has been kicked"))/binary, ": ",
+		            (htmlize(Reason,FileFormat))/binary, "</font><br/>">>;
 	       {kickban, "321", ""} ->
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
-				 [Nick, ?T("has been kicked because of an affiliation change")]);
+		       <<"<font class=\"mk\">", Nick/binary, " ",
+		            (?T("has been kicked because of an affiliation change"))/binary, "</font><br/>">>;
 	       {kickban, "322", ""} ->
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
-				 [Nick, ?T("has been kicked because the room has been changed to members-only")]);
+		       <<"<font class=\"mk\">", Nick/binary, " ",
+		            (?T("has been kicked because the room has been changed to members-only"))/binary, "</font><br/>">>;
 	       {kickban, "332", ""} ->
-		   io_lib:format("<font class=\"mk\">~s ~s</font><br/>",
-				 [Nick, ?T("has been kicked because of a system shutdown")]);
+		       <<"<font class=\"mk\">", Nick/binary, " ",
+		            (?T("has been kicked because of a system shutdown"))/binary, "</font><br/>">>;
 	       {nickchange, OldNick} ->
-		   io_lib:format("<font class=\"mnc\">~s ~s ~s</font><br/>",
-				 [htmlize(OldNick,FileFormat), ?T("is now known as"), Nick]);
+		       <<"<font class=\"mnc\">", (htmlize(OldNick,FileFormat))/binary, " ",
+		            (?T("is now known as"))/binary, " ", Nick/binary, "</font><br/>">>;
 	       {subject, T} ->
-		   io_lib:format("<font class=\"msc\">~s~s~s</font><br/>",
-				 [Nick, ?T(" has set the subject to: "), htmlize(T,NoFollow,FileFormat)]);
+		      <<"<font class=\"msc\">", Nick/binary, (?T(" has set the subject to: "))/binary,
+		            (htmlize(T,NoFollow,FileFormat))/binary, "</font><br/>">>;
 	       {body, T} ->
-		   case {re:run(T, "^/me\s", [{capture, none}]), Nick} of
-		       {_, ""} ->
-			   io_lib:format("<font class=\"msm\">~s</font><br/>",
-					 [htmlize(T,NoFollow,FileFormat)]);
-		       {match, _} ->
-			   io_lib:format("<font class=\"mne\">~s ~s</font><br/>",
-					 [Nick, string:substr(htmlize(T,FileFormat), 5)]);
-		       {nomatch, _} ->
-			   io_lib:format("<font class=\"mn\">~s</font> ~s<br/>",
-					 [Nick2, htmlize(T,NoFollow,FileFormat)])
-		   end;
+		       case {re:run(T, <<"^/me\s">>, [{capture, none}]), Nick} of
+		           {_, ""} ->
+			           <<"<font class=\"msm\">", (htmlize(T,NoFollow,FileFormat))/binary, "</font><br/>">>;
+		           {match, _} ->
+		               <<_Pref:32, SubStr>> = htmlize(T,FileFormat),
+			           <<"<font class=\"mne\">", Nick/binary, " ", SubStr/binary, "</font><br/>">>;
+		           {nomatch, _} ->
+			           <<"<font class=\"mn\">", Nick2/binary, "</font> ",
+			                (htmlize(T,NoFollow,FileFormat))/binary, "<br/>">>
+		       end;
 	       {room_existence, RoomNewExistence} ->
-		   io_lib:format("<font class=\"mrcm\">~s</font><br/>",
-				 [get_room_existence_string(RoomNewExistence, Lang)])
+		       <<"<font class=\"mrcm\">", (get_room_existence_string(RoomNewExistence, Lang))/binary, "</font><br/>">>
 	   end,
     {Hour, Minute, Second} = Time,
     STime = lists:flatten(
 	      io_lib:format("~2..0w:~2..0w:~2..0w", [Hour, Minute, Second])),
     {_, _, Microsecs} = Now,
-    STimeUnique = io_lib:format("~s.~w", [STime, Microsecs]),
+    STimeUnique = list_to_binary(lists:flatten(io_lib:format("~s.~w", [STime, Microsecs]))),
 
     %% Write message
-    fw(F, io_lib:format("<a id=\"~s\" name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ",
-			[STimeUnique, STimeUnique, STimeUnique, STime]) ++ Text, FileFormat),
+    fw(F, <<"<a id=\"", STimeUnique/binary, "\" name=\"", STimeUnique/binary,
+        "\" href=\"#", STimeUnique/binary, "\" class=\"ts\">[",
+        (list_to_binary(STime))/binary, "]</a> ", Text/binary>>, FileFormat),
 
     %% Close file
     file:close(F),
@@ -449,40 +442,40 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 %%----------------------------------------------------------------------
 %% Utilities
 
-get_room_existence_string(created, Lang) -> ?T("Chatroom is created");
-get_room_existence_string(destroyed, Lang) -> ?T("Chatroom is destroyed");
-get_room_existence_string(started, Lang) -> ?T("Chatroom is started");
-get_room_existence_string(stopped, Lang) -> ?T("Chatroom is stopped").
+get_room_existence_string(created, Lang) -> ?T(<<"Chatroom is created">>);
+get_room_existence_string(destroyed, Lang) -> ?T(<<"Chatroom is destroyed">>);
+get_room_existence_string(started, Lang) -> ?T(<<"Chatroom is started">>);
+get_room_existence_string(stopped, Lang) -> ?T(<<"Chatroom is stopped">>).
 
 get_dateweek(Date, Lang) ->
     Weekday = case calendar:day_of_the_week(Date) of
-		  1 -> ?T("Monday");
-		  2 -> ?T("Tuesday");
-		  3 -> ?T("Wednesday");
-		  4 -> ?T("Thursday");
-		  5 -> ?T("Friday");
-		  6 -> ?T("Saturday");
-		  7 -> ?T("Sunday")
+		  1 -> ?T(<<"Monday">>);
+		  2 -> ?T(<<"Tuesday">>);
+		  3 -> ?T(<<"Wednesday">>);
+		  4 -> ?T(<<"Thursday">>);
+		  5 -> ?T(<<"Friday">>);
+		  6 -> ?T(<<"Saturday">>);
+		  7 -> ?T(<<"Sunday">>)
 	      end,
     {Y, M, D} = Date,
     Month = case M of
-		1 -> ?T("January");
-		2 -> ?T("February");
-		3 -> ?T("March");
-		4 -> ?T("April");
-		5 -> ?T("May");
-		6 -> ?T("June");
-		7 -> ?T("July");
-		8 -> ?T("August");
-		9 -> ?T("September");
-		10 -> ?T("October");
-		11 -> ?T("November");
-		12 -> ?T("December")
+		1 -> ?T(<<"January">>);
+		2 -> ?T(<<"February">>);
+		3 -> ?T(<<"March">>);
+		4 -> ?T(<<"April">>);
+		5 -> ?T(<<"May">>);
+		6 -> ?T(<<"June">>);
+		7 -> ?T(<<"July">>);
+		8 -> ?T(<<"August">>);
+		9 -> ?T(<<"September">>);
+		10 -> ?T(<<"October">>);
+		11 -> ?T(<<"November">>);
+		12 -> ?T(<<"December">>)
 	    end,
     case Lang of
-	"en" -> io_lib:format("~s, ~s ~w, ~w", [Weekday, Month, D, Y]);
-	"es" -> io_lib:format("~s ~w de ~s de ~w", [Weekday, D, Month, Y]);
-	_    -> io_lib:format("~s, ~w ~s ~w", [Weekday, D, Month, Y])
+	<<"en">> -> list_to_binary(lists:flatten(io_lib:format("~s, ~s ~w, ~w", [Weekday, Month, D, Y])));
+	<<"es">> -> list_to_binary(lists:flatten(io_lib:format("~s ~w de ~s de ~w", [Weekday, D, Month, Y])));
+	_    -> list_to_binary(lists:flatten(io_lib:format("~s, ~w ~s ~w", [Weekday, D, Month, Y])))
     end.
 
 make_dir_rec(Dir) ->
@@ -502,8 +495,8 @@ make_dir_rec(Dir) ->
 %% c("../../ejabberd/src/jlib.erl").
 %% jlib:encode_base64(F1b).
 
-image_base64("powered-by-erlang.png") ->
-    "iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAYAAAD+xQNoAAADN0lEQVRo3u1a"
+image_base64(<<"powered-by-erlang.png">>) ->
+    <<"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAYAAAD+xQNoAAADN0lEQVRo3u1a"
 	"P0waURz+rjGRRQ+nUyRCYmJyDPTapDARaSIbTUjt1gVSh8ZW69aBAR0cWLSx"
 	"CXWp59LR1jbdqKnGxoQuRZZrSYyHEVM6iZMbHewROA7u3fHvkr5vOn737vcu"
 	"33ffu9/vcQz+gef5Cij6CkmSGABgFEH29r5SVvqIsTEOHo8HkiQxDBXEOjg9"
@@ -522,10 +515,10 @@ image_base64("powered-by-erlang.png") ->
 	"ZDVZSkzPKaQkW8kthpyS297BvRdRzR6DdTurJbPy9Ov1K6xr3HBPQuIMowR3"
 	"asegUyDuU9SuUG+dmIGyZ0b7FBN9St3WunyC5yMsrVv7uXzRP58s/qKn6C4q"
 	"lQoVxVIvd4YBwzBUFKs6ZaD27U9hEdcAN98Sx2IxykafIYrizbfESoB+dd9/"
-	"KF/d/wX3cJvREzl1vAAAAABJRU5ErkJggg==";
+	"KF/d/wX3cJvREzl1vAAAAABJRU5ErkJggg==">>;
 
-image_base64("valid-xhtml10.png") ->
-    "iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAAEjEcpEAAACiFBMVEUAAADe"
+image_base64(<<"valid-xhtml10.png">>) ->
+    <<"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAAEjEcpEAAACiFBMVEUAAADe"
 	"5+fOezmtra3ejEKlhELvvWO9WlrehELOe3vepaWclHvetVLGc3PerVKcCAj3"
 	"vVqUjHOUe1JjlL0xOUpjjL2UAAC91ueMrc7vrVKlvdbW3u+EpcbO3ufO1ucY"
 	"WpSMKQi9SiF7e3taWkoQEAiMczkQSoxaUkpzc3O1lEoICACEazEhGAgIAACE"
@@ -578,10 +571,10 @@ image_base64("valid-xhtml10.png") ->
 	"Zu8z7wo7eYPfXysnF0i9NnPh1t1zR7VBb9GqaOXhtTmHQdgMFXE+Z608cnpO"
 	"DdZdjL+TuDY44Q38kJXHhccWLoOd9uv1AwwvO+48uu+faCSJPJ1bmy6Thyvp"
 	"ivBmYWgjxPDPAp7JTemY/yGKFEiRt/jG/2P79s8KCwoLCgoLC/khUBA5F0Sf"
-	"QZ+RYfpNE/4Xosmq7jsZAJsAAAAASUVORK5CYII=";
+	"QZ+RYfpNE/4Xosmq7jsZAJsAAAAASUVORK5CYII=">>;
 
-image_base64("vcss.png") ->
-    "iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAABUFvrSAAABKVBMVEUAAAAj"
+image_base64(<<"vcss.png">>) ->
+    <<"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAABUFvrSAAABKVBMVEUAAAAj"
 	"Ix8MR51ZVUqAdlmdnZ3ejEWLDAuNjY1kiMG0n2d9fX19Ghfrp1FtbW3y39+3"
 	"Ph6lIRNdXV2qJBFcVUhcVUhPT0/dsmpUfLr57+/u7u4/PDWZAACZAADOp1Gd"
 	"GxG+SyTgvnNdSySzk16+mkuxw+BOS0BOS0DOzs7MzMy4T09RRDwsJBG+vr73"
@@ -606,10 +599,10 @@ image_base64("vcss.png") ->
 	"DS8Xc5+8Gmmbu1xwSoGIokA3oTptQecQ4Iimm/Ew7jwbPfMi3TM91T9XVIGo"
 	"+W9xC8oWpugVCXLuwXijjxJ3r/6PjX7nlFua8QmyM+TO/Gja2TTc2Z95C5ua"
 	"ewGH6cJi6bJO6Z+TY276eH3tbgy+/3ly3Js+rj66osG/AV5htgaQ9SeRAAAA"
-	"AElFTkSuQmCC";
+	"AElFTkSuQmCC">>;
 
-image_base64("powered-by-ejabberd.png") ->
-    "iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAMAAADJG/NaAAAAw1BMVEUAAAAj"
+image_base64(<<"powered-by-ejabberd.png">>) ->
+    <<"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAMAAADJG/NaAAAAw1BMVEUAAAAj"
 	"BgYtBAM5AwFCAAAYGAJNAABcAABIDQ5qAAAoJRV7AACFAAAoKSdJHByLAAAw"
 	"Lwk1NQA1MzFJKyo4NxtDQQBEQT5KSCxSTgBSUBlgQ0JYSEpZWQJPUU5hYABb"
 	"W0ZiYClcW1poaCVwbQRpaDhzYWNsakhuZ2VrbFZ8dwCEgAB3dnd4d2+OjACD"
@@ -630,13 +623,13 @@ image_base64("powered-by-ejabberd.png") ->
 	"Arq49/fEvjBwz4eDS2/JpaXRNOoXRD/VmOrDVTJJRIZCTLav3VrqbPvP3vdd"
 	"uGEhQJzilncbpSA4F3vsihErO+dayv/sY5/yRE0GDEXCu2VoNiMlo5i+P2Kl"
 	"gMEvTNk2eYa5XEyh12Ex17Z8vzQUR3KEPbYd6XG87eC4Ly75RneS5ZYHAAAA"
-	"AElFTkSuQmCC".
+	"AElFTkSuQmCC">>.
 
 create_image_files(Images_dir) ->
-    Filenames = ["powered-by-ejabberd.png",
-		 "powered-by-erlang.png",
-		 "valid-xhtml10.png",
-		 "vcss.png"
+    Filenames = [<<"powered-by-ejabberd.png">>,
+		 <<"powered-by-erlang.png">>,
+		 <<"valid-xhtml10.png">>,
+		 <<"vcss.png">>
 		],
     lists:foreach(
       fun(Filename) ->
@@ -649,116 +642,113 @@ create_image_files(Images_dir) ->
       Filenames),
     ok.
 
-fw(F, S) -> fw(F, S, [], html).
+fw(F, S) -> fw(F, S, html).
 
-fw(F, S, O) when is_list(O) ->
-    fw(F, S, O, html);
-fw(F, S, FileFormat) when is_atom(FileFormat) ->
-    fw(F, S, [], FileFormat).
-
-fw(F, S, O, FileFormat) ->
-    S1 = io_lib:format(S ++ "~n", O),
+fw(F, S, FileFormat) ->
+    S1 = <<S/binary, "~n">>,
     S2 = case FileFormat of
 	     html ->
-		 S1;
+		    S1;
 	     plaintext ->
-                 re:replace(S1, "<[^>]*>", "", [global, {return, list}])
+            re:replace(S1, <<"<[^>]*>">>, <<"">>, [global, {return, binary}])
 	 end,
     io:format(F, S2, []).
 
 put_header(_, _, _, _, _, _, _, _, _, plaintext) ->
     ok;
 put_header(F, Room, Date, CSSFile, Lang, Hour_offset, Date_prev, Date_next, Top_link, FileFormat) ->
-    fw(F, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"),
-    fw(F, "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"~s\" lang=\"~s\">", [Lang, Lang]),
-    fw(F, "<head>"),
-    fw(F, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />"),
-    fw(F, "<title>~s - ~s</title>", [htmlize(Room#room.title), Date]),
+    fw(F, <<"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">">>),
+    fw(F, <<"<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"", Lang/binary, "\" lang=\"", Lang/binary, "\">">>),
+    fw(F, <<"<head>">>),
+    fw(F, <<"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />">>),
+    fw(F, <<"<title>", (htmlize(Room#room.title))/binary, " - ", Date/binary, "</title>">>),
     put_header_css(F, CSSFile),
     put_header_script(F),
-    fw(F, "</head>"),
-    fw(F, "<body>"),
+    fw(F, <<"</head>">>),
+    fw(F, <<"<body>">>),
     {Top_url, Top_text} = Top_link,
-    fw(F, "<div style=\"text-align: right;\"><a style=\"color: #AAAAAA; font-family: monospace; text-decoration: none; font-weight: bold;\" href=\"~s\">~s</a></div>", [Top_url, Top_text]),
-    fw(F, "<div class=\"roomtitle\">~s</div>", [htmlize(Room#room.title)]),
-    fw(F, "<a class=\"roomjid\" href=\"xmpp:~s?join\">~s</a>", [Room#room.jid, Room#room.jid]),
-    fw(F, "<div class=\"logdate\">~s<span class=\"w3c\"><a class=\"nav\" href=\"~s\">&lt;</a> <a class=\"nav\" href=\".\/\">^</a> <a class=\"nav\" href=\"~s\">&gt;</a></span></div>", [Date, Date_prev, Date_next]),
+    fw(F, <<"<div style=\"text-align: right;\"><a style=\"color: #AAAAAA; font-family: monospace; text-decoration: none; font-weight: bold;\" href=\"", Top_url/binary, "\">", Top_text/binary, "</a></div>">>),
+    fw(F, <<"<div class=\"roomtitle\">", (htmlize(Room#room.title))/binary, "</div>">>),
+    fw(F, <<"<a class=\"roomjid\" href=\"xmpp:", (Room#room.jid)/binary, "?join\">", (Room#room.jid)/binary, "</a>">>),
+    fw(F, <<"<div class=\"logdate\">", Date/binary, "<span class=\"w3c\"><a class=\"nav\" href=\"", Date_prev/binary, "\">&lt;</a> <a class=\"nav\" href=\".\/\">^</a> <a class=\"nav\" href=\"", Date_next/binary, "\">&gt;</a></span></div>">>),
     case {htmlize(Room#room.subject_author), htmlize(Room#room.subject)} of
-	{"", ""} -> ok;
-	{SuA, Su} -> fw(F, "<div class=\"roomsubject\">~s~s~s</div>", [SuA, ?T(" has set the subject to: "), Su])
+	{<<"">>, <<"">>} -> ok;
+	{SuA, Su} -> fw(F, <<"<div class=\"roomsubject\">", SuA/binary, (?T(" has set the subject to: "))/binary, Su/binary, "</div>">>)
     end,
-    RoomConfig = roomconfig_to_string(Room#room.config, Lang, FileFormat),
+    RoomConfig = roomconfig_to_binary(Room#room.config, Lang, FileFormat),
     put_room_config(F, RoomConfig, Lang, FileFormat),
     Occupants = get_room_occupants(Room#room.jid),
-    RoomOccupants = roomoccupants_to_string(Occupants, FileFormat),
+    RoomOccupants = roomoccupants_to_binary(Occupants, FileFormat),
     put_room_occupants(F, RoomOccupants, Lang, FileFormat),
-    Time_offset_str = case Hour_offset<0 of
-			  true -> io_lib:format("~p", [Hour_offset]);
-			  false -> io_lib:format("+~p", [Hour_offset])
+    Time_offset_bin = case Hour_offset<0 of
+			  true -> list_to_binary(lists:flatten(io_lib:format("~p", [Hour_offset])));
+			  false -> list_to_binary(lists:flatten(io_lib:format("+~p", [Hour_offset])))
 		      end,
-    fw(F, "<br/><a class=\"ts\">GMT~s</a><br/>", [Time_offset_str]).
+    fw(F, <<"<br/><a class=\"ts\">GMT", Time_offset_bin/binary, "</a><br/>">>).
 
 put_header_css(F, false) ->
-    fw(F, "<style type=\"text/css\">"),
-    fw(F, "<!--"),
-    fw(F, ".ts {color: #AAAAAA; text-decoration: none;}"),
-    fw(F, ".mrcm {color: #009900; font-style: italic; font-weight: bold;}"),
-    fw(F, ".msc {color: #009900; font-style: italic; font-weight: bold;}"),
-    fw(F, ".msm {color: #000099; font-style: italic; font-weight: bold;}"),
-    fw(F, ".mj {color: #009900; font-style: italic;}"),
-    fw(F, ".ml {color: #009900; font-style: italic;}"),
-    fw(F, ".mk {color: #009900; font-style: italic;}"),
-    fw(F, ".mb {color: #009900; font-style: italic;}"),
-    fw(F, ".mnc {color: #009900; font-style: italic;}"),
-    fw(F, ".mn {color: #0000AA;}"),
-    fw(F, ".mne {color: #AA0099;}"),
-    fw(F, "a.nav {color: #AAAAAA; font-family: monospace; letter-spacing: 3px; text-decoration: none;}"),
-    fw(F, "div.roomtitle {border-bottom: #224466 solid 3pt; margin-left: 20pt;}"),
-    fw(F, "div.roomtitle {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}"),
-    fw(F, "a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; margin-left: 20pt; text-decoration: none;}"),
-    fw(F, "div.logdate {color: #663399; font-size: 20px; font-weight: bold; font-family: sans-serif; letter-spacing: 2px; border-bottom: #224466 solid 1pt; margin-left:80pt; margin-top:20px;}"),
-    fw(F, "div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}"),
-    fw(F, "div.rc {color: #336699; font-size: 12px; font-family: sans-serif; margin-left: 50%; text-align: right; background: #f3f6f9; border-bottom: 1px solid #336699; border-right: 4px solid #336699;}"),
-    fw(F, "div.rct {font-weight: bold; background: #e3e6e9; padding-right: 10px;}"),
-    fw(F, "div.rcos {padding-right: 10px;}"),
-    fw(F, "div.rcoe {color: green;}"),
-    fw(F, "div.rcod {color: red;}"),
-    fw(F, "div.rcoe:after {content: \": v\";}"),
-    fw(F, "div.rcod:after {content: \": x\";}"),
-    fw(F, "div.rcot:after {}"),
-    fw(F, ".legend {width: 100%; margin-top: 30px; border-top: #224466 solid 1pt;  padding: 10px 0px 10px 0px; text-align: left; font-family: monospace; letter-spacing: 2px;}"),
-    fw(F, ".w3c {position: absolute; right: 10px; width: 60%; text-align: right; font-family: monospace; letter-spacing: 1px;}"),
-    fw(F, "//-->"),
-    fw(F, "</style>");
+    fw(F, <<"<style type=\"text/css\">">>),
+    fw(F, <<"<!--">>),
+    fw(F, <<".ts {color: #AAAAAA; text-decoration: none;}">>),
+    fw(F, <<".mrcm {color: #009900; font-style: italic; font-weight: bold;}">>),
+    fw(F, <<".msc {color: #009900; font-style: italic; font-weight: bold;}">>),
+    fw(F, <<".msm {color: #000099; font-style: italic; font-weight: bold;}">>),
+    fw(F, <<".mj {color: #009900; font-style: italic;}">>),
+    fw(F, <<".ml {color: #009900; font-style: italic;}">>),
+    fw(F, <<".mk {color: #009900; font-style: italic;}">>),
+    fw(F, <<".mb {color: #009900; font-style: italic;}">>),
+    fw(F, <<".mnc {color: #009900; font-style: italic;}">>),
+    fw(F, <<".mn {color: #0000AA;}">>),
+    fw(F, <<".mne {color: #AA0099;}">>),
+    fw(F, <<"a.nav {color: #AAAAAA; font-family: monospace; letter-spacing: 3px; text-decoration: none;}">>),
+    fw(F, <<"div.roomtitle {border-bottom: #224466 solid 3pt; margin-left: 20pt;}">>),
+    fw(F, <<"div.roomtitle {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}">>),
+    fw(F, <<"a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; margin-left: 20pt; text-decoration: none;}">>),
+    fw(F, <<"div.logdate {color: #663399; font-size: 20px; font-weight: bold; font-family: sans-serif; letter-spacing: 2px; border-bottom: #224466 solid 1pt; margin-left:80pt; margin-top:20px;}">>),
+    fw(F, <<"div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}">>),
+    fw(F, <<"div.rc {color: #336699; font-size: 12px; font-family: sans-serif; margin-left: 50%; text-align: right; background: #f3f6f9; border-bottom: 1px solid #336699; border-right: 4px solid #336699;}">>),
+    fw(F, <<"div.rct {font-weight: bold; background: #e3e6e9; padding-right: 10px;}">>),
+    fw(F, <<"div.rcos {padding-right: 10px;}">>),
+    fw(F, <<"div.rcoe {color: green;}">>),
+    fw(F, <<"div.rcod {color: red;}">>),
+    fw(F, <<"div.rcoe:after {content: \": v\";}">>),
+    fw(F, <<"div.rcod:after {content: \": x\";}">>),
+    fw(F, <<"div.rcot:after {}">>),
+    fw(F, <<".legend {width: 100%; margin-top: 30px; border-top: #224466 solid 1pt;  padding: 10px 0px 10px 0px; text-align: left; font-family: monospace; letter-spacing: 2px;}">>),
+    fw(F, <<".w3c {position: absolute; right: 10px; width: 60%; text-align: right; font-family: monospace; letter-spacing: 1px;}">>),
+    fw(F, <<"//-->">>),
+    fw(F, <<"</style>">>);
 
 put_header_css(F, CSSFile) ->
-    fw(F, "<link rel=\"stylesheet\" type=\"text/css\" href=\"~s\" media=\"all\">", [CSSFile]).
+    fw(F, <<"<link rel=\"stylesheet\" type=\"text/css\" href=\"", CSSFile/binary, "\" media=\"all\">">>).
 
 put_header_script(F) ->
-    fw(F, "<script type=\"text/javascript\">"),
-    fw(F, "function sh(e) // Show/Hide an element"),
-    fw(F, "{if(document.getElementById(e).style.display=='none')"),
-    fw(F, "{document.getElementById(e).style.display='block';}"),
-    fw(F, "else {document.getElementById(e).style.display='none';}}"),
-    fw(F, "</script>").
+    fw(F, <<"<script type=\"text/javascript\">">>),
+    fw(F, <<"function sh(e) // Show/Hide an element">>),
+    fw(F, <<"{if(document.getElementById(e).style.display=='none')">>),
+    fw(F, <<"{document.getElementById(e).style.display='block';}">>),
+    fw(F, <<"else {document.getElementById(e).style.display='none';}}">>),
+    fw(F, <<"</script>">>).
 
 put_room_config(_F, _RoomConfig, _Lang, plaintext) ->
     ok;
 put_room_config(F, RoomConfig, Lang, _FileFormat) ->
     {_, Now2, _} = now(),
-    fw(F, "<div class=\"rc\">"),
-    fw(F,   "<div class=\"rct\" onclick=\"sh('a~p');return false;\">~s</div>", [Now2, ?T("Room Configuration")]),
-    fw(F,   "<div class=\"rcos\" id=\"a~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomConfig]),
-    fw(F, "</div>").
+    Now2bin = list_to_binary(lists:flatten(io_lib:format("~p", [Now2]))),
+    fw(F, <<"<div class=\"rc\">">>),
+    fw(F,   <<"<div class=\"rct\" onclick=\"sh('a", Now2bin/binary, "');return false;\">", (?T("Room Configuration"))/binary, "</div>">>),
+    fw(F,   <<"<div class=\"rcos\" id=\"a", Now2bin/binary, "\" style=\"display: none;\" ><br/>", RoomConfig/binary, "</div>">>),
+    fw(F, <<"</div>">>).
 
 put_room_occupants(_F, _RoomOccupants, _Lang, plaintext) ->
     ok;
 put_room_occupants(F, RoomOccupants, Lang, _FileFormat) ->
     {_, Now2, _} = now(),
-    fw(F, "<div class=\"rc\">"),
-    fw(F,   "<div class=\"rct\" onclick=\"sh('o~p');return false;\">~s</div>", [Now2, ?T("Room Occupants")]),
-    fw(F,   "<div class=\"rcos\" id=\"o~p\" style=\"display: none;\" ><br/>~s</div>", [Now2, RoomOccupants]),
-    fw(F, "</div>").
+    Now2bin = list_to_binary(lists:flatten(io_lib:format("~p", [Now2]))),
+    fw(F, <<"<div class=\"rc\">">>),
+    fw(F,   <<"<div class=\"rct\" onclick=\"sh('o", Now2bin/binary, "');return false;\">", (?T("Room Occupants"))/binary, "</div>">>),
+    fw(F,   <<"<div class=\"rcos\" id=\"o", Now2bin/binary, "\" style=\"display: none;\" ><br/>", RoomOccupants/binary, "</div>">>),
+    fw(F, <<"</div>">>).
 
 %% htmlize
 %% The default behaviour is to ignore the nofollow spam prevention on links
@@ -776,27 +766,27 @@ htmlize(S1, FileFormat) ->
 htmlize(S1, _NoFollow, plaintext) ->
     S1;
 htmlize(S1, NoFollow, _FileFormat) ->
-    S2_list = string:tokens(S1, "\n"),
+    S2_list = binary:split(S1, <<"\n">>, [global]),
     lists:foldl(
       fun(Si, Res) ->
 	      Si2 = htmlize2(Si, NoFollow),
 	      case Res of
-		  "" -> Si2;
-		  _ -> Res ++ "<br/>" ++ Si2
+		  <<"">> -> Si2;
+		  _ -> <<Res/binary, "<br/>", Si2/binary>>
 	      end
       end,
-      "",
+      <<"">>,
       S2_list).
 
 htmlize2(S1, NoFollow) ->
     ReplacementRules =
-        [{"\\&", "\\&amp;"},
-         {"<", "\\&lt;"},
-         {">", "\\gt;"},
-         {"((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+", link_regexp(NoFollow)},
-         {"  ", "\\&nbsp;\\&nbsp;"},
-         {"\\t", "\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;"},
-         {[226,128,174], "[RLO]"}],
+        [{<<"\\&">>, <<"\\&amp;">>},
+         {<<"<">>, <<"\\&lt;">>},
+         {<<">">>, <<"\\gt;">>},
+         {<<"((http|https|ftp)://|(mailto|xmpp):)[^] )\'\"}]+">>, link_regexp(NoFollow)},
+         {<<"  ">>, <<"\\&nbsp;\\&nbsp;">>},
+         {<<"\\t">>, <<"\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;">>},
+         {<<226,128,174>>, <<"[RLO]">>}],
     lists:foldl(fun({RegExp, Replace}, Acc) ->
                         re:replace(Acc, RegExp, Replace)
                 end, S1, ReplacementRules).
@@ -804,25 +794,25 @@ htmlize2(S1, NoFollow) ->
 %% Regexp link
 %% Add the nofollow rel attribute when required
 link_regexp(false) ->
-    "<a href=\"&\">&</a>";
+    <<"<a href=\"&\">&</a>">>;
 link_regexp(true) ->
-    "<a href=\"&\" rel=\"nofollow\">&</a>".
+    <<"<a href=\"&\" rel=\"nofollow\">&</a>">>.
 
 get_room_info(RoomJID, Opts) ->
     Title =
 	case lists:keysearch(title, 1, Opts) of
 	    {value, {_, T}} -> T;
-	    false -> ""
+	    false -> <<"">>
 	end,
     Subject =
 	case lists:keysearch(subject, 1, Opts) of
 	    {value, {_, S}} -> S;
-	    false -> ""
+	    false -> <<"">>
 	end,
     SubjectAuthor =
 	case lists:keysearch(subject_author, 1, Opts) of
 	    {value, {_, SA}} -> SA;
-	    false -> ""
+	    false -> <<"">>
 	end,
     #room{jid = jlib:jid_to_binary(RoomJID),
 	  title = Title,
@@ -831,7 +821,7 @@ get_room_info(RoomJID, Opts) ->
 	  config = Opts
 	 }.
 
-roomconfig_to_string(Options, Lang, FileFormat) ->
+roomconfig_to_binary(Options, Lang, FileFormat) ->
     %% Get title, if available
     Title = case lists:keysearch(title, 1, Options) of
 		{value, Tuple} -> [Tuple];
@@ -855,53 +845,51 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 		  OptT ->
 		      OptText = ?T(OptT),
 		      R2 = case Val of
-			       false -> "<div class=\"rcod\">" ++ OptText ++ "</div>";
-			       true -> "<div class=\"rcoe\">" ++ OptText ++ "</div>";
-			       "" -> "<div class=\"rcod\">" ++ OptText ++ "</div>";
+			       false -> <<"<div class=\"rcod\">", OptText/binary, "</div>">>;
+			       true -> <<"<div class=\"rcoe\">", OptText/binary, "</div>">>;
+			       "" -> <<"<div class=\"rcod\">", OptText/binary, "</div>">>;
 			       T ->
-				   case Opt of
-				       password -> "<div class=\"rcoe\">" ++ OptText ++ "</div>";
-				       max_users -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(integer_to_list(T), FileFormat) ++ "\"</div>";
-				       title -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
-				       description -> "<div class=\"rcot\">" ++ OptText ++ ": \"" ++ htmlize(T, FileFormat) ++ "\"</div>";
-				       _ -> "\"" ++ T ++ "\""
-				   end
+				       case Opt of
+				           password -> <<"<div class=\"rcoe\">", OptText/binary, "</div>">>;
+				           max_users -> <<"<div class=\"rcot\">", OptText/binary, ": \"", (htmlize(integer_to_list(T), FileFormat))/binary, "\"</div>">>;
+				           title -> <<"<div class=\"rcot\">", OptText/binary, ": \"", (htmlize(T, FileFormat))/binary, "\"</div>">>;
+				           description -> <<"<div class=\"rcot\">", OptText, ": \"", (htmlize(T, FileFormat))/binary, "\"</div>">>;
+				           _ -> <<"\"", T/binary, "\"">>
+				       end
 			   end,
-		      R ++ R2
+		      <<R/binary, R2/binary>>
 	      end
       end,
-      "",
+      <<"">>,
       Options2).
 
-get_roomconfig_text(title) -> "Room title";
-get_roomconfig_text(persistent) -> "Make room persistent";
-get_roomconfig_text(public) -> "Make room public searchable";
-get_roomconfig_text(public_list) -> "Make participants list public";
-get_roomconfig_text(password_protected) -> "Make room password protected";
-get_roomconfig_text(password) -> "Password";
-get_roomconfig_text(anonymous) -> "This room is not anonymous";
-get_roomconfig_text(members_only) -> "Make room members-only";
-get_roomconfig_text(moderated) -> "Make room moderated";
-get_roomconfig_text(members_by_default) -> "Default users as participants";
-get_roomconfig_text(allow_change_subj) -> "Allow users to change the subject";
-get_roomconfig_text(allow_private_messages) -> "Allow users to send private messages";
-get_roomconfig_text(allow_query_users) -> "Allow users to query other users";
-get_roomconfig_text(allow_user_invites) -> "Allow users to send invites";
-get_roomconfig_text(logging) ->  "Enable logging";
-get_roomconfig_text(allow_visitor_nickchange) ->  "Allow visitors to change nickname";
-get_roomconfig_text(allow_visitor_status) ->  "Allow visitors to send status text in presence updates";
-get_roomconfig_text(captcha_protected) ->  "Make room captcha protected";
-get_roomconfig_text(description) ->  "Room description";
-%% get_roomconfig_text(subject) ->  "Subject";
-%% get_roomconfig_text(subject_author) ->  "Subject author";
-get_roomconfig_text(max_users) -> "Maximum Number of Occupants";
+get_roomconfig_text(title) -> <<"Room title">>;
+get_roomconfig_text(persistent) -> <<"Make room persistent">>;
+get_roomconfig_text(public) -> <<"Make room public searchable">>;
+get_roomconfig_text(public_list) -> <<"Make participants list public">>;
+get_roomconfig_text(password_protected) -> <<"Make room password protected">>;
+get_roomconfig_text(password) -> <<"Password">>;
+get_roomconfig_text(anonymous) -> <<"This room is not anonymous">>;
+get_roomconfig_text(members_only) -> <<"Make room members-only">>;
+get_roomconfig_text(moderated) -> <<"Make room moderated">>;
+get_roomconfig_text(members_by_default) -> <<"Default users as participants">>;
+get_roomconfig_text(allow_change_subj) -> <<"Allow users to change the subject">>;
+get_roomconfig_text(allow_private_messages) -> <<"Allow users to send private messages">>;
+get_roomconfig_text(allow_query_users) -> <<"Allow users to query other users">>;
+get_roomconfig_text(allow_user_invites) -> <<"Allow users to send invites">>;
+get_roomconfig_text(logging) ->  <<"Enable logging">>;
+get_roomconfig_text(allow_visitor_nickchange) ->  <<"Allow visitors to change nickname">>;
+get_roomconfig_text(allow_visitor_status) ->  <<"Allow visitors to send status text in presence updates">>;
+get_roomconfig_text(captcha_protected) ->  <<"Make room captcha protected">>;
+get_roomconfig_text(description) ->  <<"Room description">>;
+get_roomconfig_text(max_users) -> <<"Maximum Number of Occupants">>;
 get_roomconfig_text(_) -> undefined.
 
 %% Users = [{JID, Nick, Role}]
-roomoccupants_to_string(Users, _FileFormat) ->
+roomoccupants_to_binary(Users, _FileFormat) ->
     Res = [role_users_to_string(RoleS, Users1)
 	   || {RoleS, Users1} <- group_by_role(Users), Users1 /= []],
-    lists:flatten(["<div class=\"rcot\">", Res, "</div>"]).
+    list_to_binary(lists:flatten(["<div class=\"rcot\">", Res, "</div>"])).
 
 %% Users = [{JID, Nick, Role}]
 group_by_role(Users) ->
