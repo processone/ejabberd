@@ -34,6 +34,7 @@
          make_invitation/3,
          make_config_change_message/1,
          make_correct_from_to_attrs/3,
+         make_voice_approval_form/3,
          replace_from_to_attrs/3,
          replace_from_to/3,
          replace_from_attrs/2,
@@ -176,7 +177,35 @@ make_invitation(From, Password, Reason) ->
             [{<<"xmlns">>, ?NS_MUC_USER}],
             Elements3
         }]
-    }.
+     }.
+
+form_field({Var, Type, Value, Label}) ->
+    {xmlelement, <<"field">>,
+        [{<<"var">>, Var}, {<<"type">>, Type}, {<<"label">>, Label}],
+        [{xmlelement, <<"value">>, [], [{xmlcdata, Value}]}]};
+
+form_field({Var, Type, Value}) ->
+    {xmlelement, <<"field">>,
+        [{<<"var">>, Var}, {<<"type">>, Type}],
+        [{xmlelement, <<"value">>, [], [{xmlcdata, Value}]}]}.
+
+make_voice_approval_form(From, Nick, Role) ->
+    Fields = [{<<"FORM_TYPE">>, <<"hidden">>, ?NS_MUC_REQUEST},
+        {<<"muc#role">>, <<"text-single">>, Role, <<"Request role">>},
+        {<<"muc#jid">>, <<"jid-single">>, jid_to_binary(From), <<"User ID">>},
+        {<<"muc#roomnick">>, <<"text-single">>, Nick, <<"Room Nickname">>},
+        {<<"muc#request_allow">>, <<"boolean">>, <<"false">>, <<"Grant voice to this person?">>}
+    ],
+    {xmlelement, <<"message">>, [], [
+        {xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"form">>}],
+            [{xmlelement, <<"title">>, [], [{xmlcdata, <<"Voice request">>}]},
+             {xmlelement, <<"instructions">>, [], [{xmlcdata, <<"To approve this request",
+                " for voice, select the &quot;Grant voice to this person?&quot; checkbox",
+                " and click OK. To skip this request, click the cancel button.">>}]} |
+             [form_field(El) || El <- Fields]
+            ]
+        }
+    ]}.
 
 replace_from_to_attrs(From, To, Attrs) ->
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),

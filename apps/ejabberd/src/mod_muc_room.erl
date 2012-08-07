@@ -175,6 +175,80 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
+%% Handle voice request or approval (XEP-0045 7.13, 8.6)
+normal_state({route, From, <<>>,
+    {xmlelement, <<"message">>, Attrs, [{xmlelement, <<"x">>,
+        [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"submit">>}],
+        [{xmlelement, <<"field">>,
+            [{<<"var">>, <<"FORM_TYPE">>} | _Type],
+            [{xmlelement, <<"value">>,[],[{xmlcdata, ?NS_MUC_REQUEST}]}]}, Role | Items]}]} = Packet},
+    StateData) ->
+    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+    Reply = case is_user_online(From, StateData) orelse
+    is_user_allowed_message_nonparticipant(From, StateData) of
+        true ->
+            RoleBin = xml:get_path_s(Role, [{elem, <<"value">>}, cdata]),
+
+            GetField = fun(Var, Items) ->
+                lists:foldl(fun({xmlelement,<<"field">>,Attrs,Body} = Item, Acc) ->
+                    case xml:get_attr(<<"var">>, Attrs) of
+                        {value, Var} -> case xml:get_path_s(Item, [{elem, <<"value">>}, cdata]) of
+                            <<>> -> Acc;
+                            Value -> Value
+                        end;
+                        _ -> Acc
+                    end;
+                    (_, Acc) -> Acc
+                end, false, Items)
+            end,
+
+            case Items of
+                [] ->
+                    case catch list_to_role(RoleBin) of
+                        {'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
+                        _ -> {form, RoleBin}
+                    end;
+                _ ->
+                    case get_role(From, StateData) of
+                        moderator ->
+                            case GetField(<<"muc#request_allow">>, Items) of
+                                <<"true">> -> case GetField(<<"muc#roomnick">>, Items) of
+                                    false -> {error, ?ERR_BAD_REQUEST};
+                                    RoomNick -> {role, RoleBin, RoomNick}
+                                end;
+                                _ -> ok
+                            end;
+                        _ -> {error, ?ERR_NOT_ALLOWED}
+                end
+            end;
+        _ -> {error, ?ERR_BAD_REQUEST}
+    end,
+    SD = case Reply of
+        {error, Type} ->
+            ejabberd_router:route(StateData#state.jid, From,
+                jlib:make_error_reply(Packet, Type)),
+            StateData;
+        {form, RoleName} ->
+            {Nick, _} = get_participant_data(From, StateData),
+            lists:foreach(fun({_, Info}) ->
+                ejabberd_router:route(StateData#state.jid, Info#user.jid,
+                    jlib:make_voice_approval_form(From, Nick, RoleName))
+            end, search_role(moderator, StateData)),
+            StateData;
+        {role, RoleName, Nick} ->
+            case process_admin_items_set(From,
+                [{xmlelement, <<"item">>, [{<<"role">>, RoleName}, {<<"nick">>, Nick}], []}],
+                <<"en">>, StateData) of
+                {result, _Res, SD1} -> SD1;
+                {error, Error} ->
+                    ejabberd_router:route(StateData#state.jid, From,
+                        jlib:make_error_reply(Packet, Error)),
+                    StateData
+            end;
+        _ -> StateData
+    end,
+    {next_state, normal_state, SD};
+
 normal_state({route, From, <<>>,
           {xmlelement, <<"message">>, Attrs, Els} = Packet},
          StateData) ->
