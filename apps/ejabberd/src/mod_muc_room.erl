@@ -176,199 +176,22 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 normal_state({route, From, <<>>,
-          {xmlelement, <<"message">>, Attrs, Els} = Packet},
+          {xmlelement, <<"message">>, Attrs, _Els} = Packet},
          StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+    Type = xml:get_attr_s(<<"type">>, Attrs),
     case is_user_online(From, StateData) orelse
-    is_user_allowed_message_nonparticipant(From, StateData) of
-    true ->
-        case xml:get_attr_s(<<"type">>, Attrs) of
-        <<"groupchat">> ->
-            Activity = get_user_activity(From, StateData),
-            Now = now_to_usec(now()),
-            MinMessageInterval =
-            trunc(gen_mod:get_module_opt(
-                StateData#state.server_host,
-                mod_muc, min_message_interval, 0) * 1000000),
-            Size = element_size(Packet),
-            {MessageShaper, MessageShaperInterval} =
-            shaper:update(Activity#activity.message_shaper, Size),
-            if
-            Activity#activity.message /= undefined ->
-                ErrText = <<"Traffic rate limit is exceeded">>,
-                Err = jlib:make_error_reply(
-                    Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
-                ejabberd_router:route(
-                  StateData#state.jid,
-                  From, Err),
-                {next_state, normal_state, StateData};
-            Now >= Activity#activity.message_time + MinMessageInterval,
-            MessageShaperInterval == 0 ->
-                {RoomShaper, RoomShaperInterval} =
-                shaper:update(StateData#state.room_shaper, Size),
-                RoomQueueEmpty = queue:is_empty(
-                           StateData#state.room_queue),
-                if
-                RoomShaperInterval == 0,
-                RoomQueueEmpty ->
-                    NewActivity = Activity#activity{
-                            message_time = Now,
-                            message_shaper = MessageShaper},
-                    StateData1 =
-                    store_user_activity(
-                      From, NewActivity, StateData),
-                    StateData2 =
-                    StateData1#state{
-                      room_shaper = RoomShaper},
-                    process_groupchat_message(From, Packet, StateData2);
-                true ->
-                    StateData1 =
-                    if
-                        RoomQueueEmpty ->
-                        erlang:send_after(
-                          RoomShaperInterval, self(),
-                          process_room_queue),
-                        StateData#state{
-                          room_shaper = RoomShaper};
-                        true ->
-                        StateData
-                    end,
-                    NewActivity = Activity#activity{
-                            message_time = Now,
-                            message_shaper = MessageShaper,
-                            message = Packet},
-                    RoomQueue = queue:in(
-                          {message, From},
-                          StateData#state.room_queue),
-                    StateData2 =
-                    store_user_activity(
-                      From, NewActivity, StateData1),
-                    StateData3 =
-                    StateData2#state{
-                      room_queue = RoomQueue},
-                    {next_state, normal_state, StateData3}
-                end;
-            true ->
-                MessageInterval =
-                (Activity#activity.message_time +
-                 MinMessageInterval - Now) div 1000,
-                Interval = lists:max([MessageInterval,
-                          MessageShaperInterval]),
-                erlang:send_after(
-                  Interval, self(), {process_user_message, From}),
-                NewActivity = Activity#activity{
-                        message = Packet,
-                        message_shaper = MessageShaper},
-                StateData1 =
-                store_user_activity(
-                  From, NewActivity, StateData),
-                {next_state, normal_state, StateData1}
-            end;
-        <<"error">> ->
-            case is_user_online(From, StateData) of
-            true ->
-                ErrorText = <<"This participant is kicked from the room because he sent an error message">>,
-                NewState = expulse_participant(Packet, From, StateData, 
-                     translate:translate(Lang, ErrorText)),
-                {next_state, normal_state, NewState};
-            _ ->
-                {next_state, normal_state, StateData}
-            end;
-        <<"chat">> ->
-            ErrText = <<"It is not allowed to send private messages to the conference">>,
-            Err = jlib:make_error_reply(
-                Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-            ejabberd_router:route(
-              StateData#state.jid,
-              From, Err),
-            {next_state, normal_state, StateData};
-        Type when (Type == <<>>) or (Type == <<"normal">>) ->
-            Invite = xml:get_path_s(Packet, [{elem, <<"x">>}, {elem, <<"invite">>}]),
-            case Invite of
-                <<>> ->
-                    SD = case catch check_voice_approval(From, Els, Lang, StateData) of
-                        {error, ErrType} ->
-                            ejabberd_router:route(StateData#state.jid, From,
-                                jlib:make_error_reply(Packet, ErrType)),
-                            StateData;
-                       {form, RoleName} ->
-                            {Nick, _} = get_participant_data(From, StateData),
-                            lists:foreach(fun({_, Info}) ->
-                                ejabberd_router:route(StateData#state.jid, Info#user.jid,
-                                    jlib:make_voice_approval_form(From, Nick, RoleName))
-                                end, search_role(moderator, StateData)),
-                            StateData;
-                        {role, RoleName, Nick} ->
-                            case process_admin_items_set(From,
-                                [{xmlelement, <<"item">>, [{<<"role">>, RoleName}, {<<"nick">>, Nick}], []}],
-                                    Lang, StateData) of
-                                {result, _Res, SD1} -> SD1;
-                                {error, Error} ->
-                                    ejabberd_router:route(StateData#state.jid, From,
-                                        jlib:make_error_reply(Packet, Error)),
-                                StateData
-                            end;
-                        _ ->
-                            ejabberd_router:route(StateData#state.jid, From,
-                              jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST)),
-                            StateData
-                    end,
-                    {next_state, normal_state, SD};
+	is_user_allowed_message_nonparticipant(From, StateData) of
+	true ->
+            route_message(Type, From, Packet, Lang, StateData);
+         _ ->
+            case Type of
+                <<"error">> ->
+                    ok;
                 _ ->
-                    case catch check_invitation(From, Els, Lang, StateData) of
-                        {error, Error} ->
-                            Err = jlib:make_error_reply(
-                                Packet, Error),
-                            ejabberd_router:route(
-                                StateData#state.jid,
-                                From, Err),
-                            {next_state, normal_state, StateData};
-                        IJID ->
-                            Config = StateData#state.config,
-                            case Config#config.members_only of
-                                true ->
-                                    case get_affiliation(IJID, StateData) of
-                                        none ->
-                                            NSD = set_affiliation(
-                                                IJID,
-                                                member,
-                                                StateData),
-                                                case (NSD#state.config)#config.persistent of
-                                                    true ->
-                                                        mod_muc:store_room(
-                                                            NSD#state.host,
-                                                            NSD#state.room,
-                                                            make_opts(NSD));
-                                                    _ ->
-                                                        ok
-                                                end,
-                                                {next_state, normal_state, NSD};
-                                        _ ->
-                                            {next_state, normal_state,
-                                                StateData}
-                                        end;
-                                false ->
-                                    {next_state, normal_state, StateData}
-                            end
-                        end
-                    end;
-        _ ->
-            ErrText = <<"Improper message type">>,
-            Err = jlib:make_error_reply(
-                Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-            ejabberd_router:route(
-              StateData#state.jid,
-              From, Err),
+                    handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From)
+            end,
             {next_state, normal_state, StateData}
-        end;
-    _ ->
-        case xml:get_attr_s(<<"type">>, Attrs) of
-        <<"error">> ->
-            ok;
-        _ ->
-            handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From)
-        end,
-        {next_state, normal_state, StateData}
     end;
 
 normal_state({route, From, <<>>,
@@ -3559,9 +3382,9 @@ get_mucroom_disco_items(StateData) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Handle voice request or approval (XEP-0045 7.13, 8.6)
-check_voice_approval(From, [{xmlelement, <<"x">>, _Attrs, Items}], Lang, StateData) ->
+check_voice_approval(From, [{xmlelement, <<"x">>, _Attrs, Items}], _Lang, StateData) ->
     GetField = fun(Var) ->
-        lists:foldl(fun({xmlelement,<<"field">>,Attrs,Body} = Item, Acc) ->
+        lists:foldl(fun({xmlelement,<<"field">>,Attrs,_Body} = Item, Acc) ->
             case xml:get_attr(<<"var">>, Attrs) of
                 {value, Var} -> case xml:get_path_s(Item, [{elem, <<"value">>}, cdata]) of
                     <<>> -> Acc;
@@ -3573,7 +3396,7 @@ check_voice_approval(From, [{xmlelement, <<"x">>, _Attrs, Items}], Lang, StateDa
         end, false, Items)
     end,
     RoleBin = GetField(<<"muc#role">>),
-    Reply = case Items of
+    case Items of
         [_Form, _Role] ->
             case catch list_to_role(RoleBin) of
                 {'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
@@ -3792,3 +3615,182 @@ tab_count_user(JID) ->
 
 element_size(El) ->
     size(xml:element_to_binary(El)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Routing functions
+
+route_message(<<"groupchat">>, From, Packet, Lang, StateData) ->
+    Activity = get_user_activity(From, StateData),
+    Now = now_to_usec(now()),
+    MinMessageInterval = trunc(gen_mod:get_module_opt(
+        StateData#state.server_host,
+        mod_muc, min_message_interval, 0) * 1000000),
+    Size = element_size(Packet),
+    {MessageShaper, MessageShaperInterval} =
+        shaper:update(Activity#activity.message_shaper, Size),
+    if
+        Activity#activity.message /= undefined ->
+            ErrText = <<"Traffic rate limit is exceeded">>,
+            Err = jlib:make_error_reply(
+                Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
+            ejabberd_router:route(
+                StateData#state.jid,
+                From, Err),
+            {next_state, normal_state, StateData};
+        Now >= Activity#activity.message_time + MinMessageInterval,
+            MessageShaperInterval == 0 ->
+            {RoomShaper, RoomShaperInterval} =
+                shaper:update(StateData#state.room_shaper, Size),
+            RoomQueueEmpty = queue:is_empty(
+                StateData#state.room_queue),
+            if
+                RoomShaperInterval == 0, RoomQueueEmpty ->
+                    NewActivity = Activity#activity{
+                            message_time = Now,
+                            message_shaper = MessageShaper},
+                    StateData1 = store_user_activity(
+                        From, NewActivity, StateData),
+                    StateData2 =
+                        StateData1#state{room_shaper = RoomShaper},
+                    process_groupchat_message(From, Packet, StateData2);
+                true ->
+                    StateData1 =
+                    if
+                        RoomQueueEmpty ->
+                            erlang:send_after(RoomShaperInterval, self(),
+                                process_room_queue),
+                        StateData#state{room_shaper = RoomShaper};
+                        true ->
+                            StateData
+                    end,
+                    NewActivity = Activity#activity{
+                        message_time = Now,
+                        message_shaper = MessageShaper,
+                        message = Packet},
+                    RoomQueue = queue:in(
+                        {message, From},
+                        StateData#state.room_queue),
+                    StateData2 = store_user_activity(
+                        From, NewActivity, StateData1),
+                    StateData3 = StateData2#state{room_queue = RoomQueue},
+                    {next_state, normal_state, StateData3}
+            end;
+        true ->
+            MessageInterval =
+                (Activity#activity.message_time +
+                MinMessageInterval - Now) div 1000,
+                Interval = lists:max([MessageInterval,MessageShaperInterval]),
+                erlang:send_after(
+                    Interval, self(), {process_user_message, From}),
+                NewActivity = Activity#activity{
+                        message = Packet,
+                        message_shaper = MessageShaper},
+                StateData1 = store_user_activity(From, NewActivity, StateData),
+                {next_state, normal_state, StateData1}
+    end;
+
+route_message(<<"error">>, From, Packet, Lang, StateData) ->
+    case is_user_online(From, StateData) of
+        true ->
+            ErrorText = <<"This participant is kicked from the room because he sent an error message">>,
+            NewState = expulse_participant(Packet, From, StateData,
+                translate:translate(Lang, ErrorText)),
+            {next_state, normal_state, NewState};
+        _ ->
+            {next_state, normal_state, StateData}
+    end;
+
+route_message(<<"chat">>, From, Packet, Lang, StateData) ->
+    ErrText = <<"It is not allowed to send private messages to the conference">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+    ejabberd_router:route(
+        StateData#state.jid,
+        From, Err),
+    {next_state, normal_state, StateData};
+
+route_message(Type, From, {xmlelement, <<"message">>, _Attrs, Els} = Packet,
+    Lang, StateData) when (Type == <<>> orelse Type == <<"normal">>) ->
+    Invite = xml:get_path_s(Packet, [{elem, <<"x">>}, {elem, <<"invite">>}]),
+    SD = case Invite of
+        <<>> ->
+            AppType = (catch check_voice_approval(From, Els, Lang, StateData)),
+            route_voice_approval(AppType, From, Packet, Lang, StateData);
+        _ ->
+            InType = (catch check_invitation(From, Els, Lang, StateData)),
+            route_invitation(InType, From, Packet, Lang, StateData)
+    end,
+    {next_state, normal_state, SD};
+
+route_message(_Type, From, Packet, Lang, StateData) ->
+    ErrText = <<"Improper message type">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+    ejabberd_router:route(
+              StateData#state.jid,
+              From, Err),
+    {next_state, normal_state, StateData}.
+
+route_voice_approval({error, ErrType}, From, Packet, _Lang, StateData) ->
+    ejabberd_router:route(StateData#state.jid, From,
+        jlib:make_error_reply(Packet, ErrType)),
+    StateData;
+
+route_voice_approval({form, RoleName}, From, _Packet, _Lang, StateData) ->
+    {Nick, _} = get_participant_data(From, StateData),
+    lists:foreach(fun({_, Info}) ->
+        ejabberd_router:route(StateData#state.jid, Info#user.jid,
+            jlib:make_voice_approval_form(From, Nick, RoleName))
+    end, search_role(moderator, StateData)),
+    StateData;
+
+route_voice_approval({role, RoleName, Nick}, From, Packet, Lang, StateData) ->
+    case process_admin_items_set(From,
+        [{xmlelement, <<"item">>,
+            [{<<"role">>, RoleName}, {<<"nick">>, Nick}], []}],
+              Lang, StateData) of
+        {result, _Res, SD1} -> SD1;
+        {error, Error} ->
+            ejabberd_router:route(StateData#state.jid, From,
+                jlib:make_error_reply(Packet, Error)),
+            StateData
+    end;
+
+route_voice_approval(_Type, From, Packet, _Lang, StateData) ->
+    ejabberd_router:route(StateData#state.jid, From,
+        jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST)),
+    StateData.
+
+route_invitation({error, Error}, From, Packet, _Lang, StateData) ->
+    Err = jlib:make_error_reply(Packet, Error),
+        ejabberd_router:route(
+            StateData#state.jid,
+                From, Err),
+    StateData;
+
+route_invitation(IJID, _From, _Packet, _Lang, StateData) ->
+    Config = StateData#state.config,
+    case Config#config.members_only of
+        true ->
+             case get_affiliation(IJID, StateData) of
+                none ->
+                    NSD = set_affiliation(
+                        IJID,
+                        member,
+                        StateData),
+                     case (NSD#state.config)#config.persistent of
+                        true ->
+                            mod_muc:store_room(
+                                NSD#state.host,
+                                NSD#state.room,
+                                make_opts(NSD));
+                        _ ->
+                             ok
+                    end,
+                    NSD;
+                _ ->
+                    StateData
+            end;
+        false ->
+            StateData
+    end.
