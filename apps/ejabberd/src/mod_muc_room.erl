@@ -175,80 +175,6 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
-%% Handle voice request or approval (XEP-0045 7.13, 8.6)
-normal_state({route, From, <<>>,
-    {xmlelement, <<"message">>, Attrs, [{xmlelement, <<"x">>,
-        [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"submit">>}],
-        [{xmlelement, <<"field">>,
-            [{<<"var">>, <<"FORM_TYPE">>} | _Type],
-            [{xmlelement, <<"value">>,[],[{xmlcdata, ?NS_MUC_REQUEST}]}]}, Role | Items]}]} = Packet},
-    StateData) ->
-    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-    Reply = case is_user_online(From, StateData) orelse
-    is_user_allowed_message_nonparticipant(From, StateData) of
-        true ->
-            RoleBin = xml:get_path_s(Role, [{elem, <<"value">>}, cdata]),
-
-            GetField = fun(Var, Items) ->
-                lists:foldl(fun({xmlelement,<<"field">>,Attrs,Body} = Item, Acc) ->
-                    case xml:get_attr(<<"var">>, Attrs) of
-                        {value, Var} -> case xml:get_path_s(Item, [{elem, <<"value">>}, cdata]) of
-                            <<>> -> Acc;
-                            Value -> Value
-                        end;
-                        _ -> Acc
-                    end;
-                    (_, Acc) -> Acc
-                end, false, Items)
-            end,
-
-            case Items of
-                [] ->
-                    case catch list_to_role(RoleBin) of
-                        {'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
-                        _ -> {form, RoleBin}
-                    end;
-                _ ->
-                    case get_role(From, StateData) of
-                        moderator ->
-                            case GetField(<<"muc#request_allow">>, Items) of
-                                <<"true">> -> case GetField(<<"muc#roomnick">>, Items) of
-                                    false -> {error, ?ERR_BAD_REQUEST};
-                                    RoomNick -> {role, RoleBin, RoomNick}
-                                end;
-                                _ -> ok
-                            end;
-                        _ -> {error, ?ERR_NOT_ALLOWED}
-                end
-            end;
-        _ -> {error, ?ERR_BAD_REQUEST}
-    end,
-    SD = case Reply of
-        {error, Type} ->
-            ejabberd_router:route(StateData#state.jid, From,
-                jlib:make_error_reply(Packet, Type)),
-            StateData;
-        {form, RoleName} ->
-            {Nick, _} = get_participant_data(From, StateData),
-            lists:foreach(fun({_, Info}) ->
-                ejabberd_router:route(StateData#state.jid, Info#user.jid,
-                    jlib:make_voice_approval_form(From, Nick, RoleName))
-            end, search_role(moderator, StateData)),
-            StateData;
-        {role, RoleName, Nick} ->
-            case process_admin_items_set(From,
-                [{xmlelement, <<"item">>, [{<<"role">>, RoleName}, {<<"nick">>, Nick}], []}],
-                <<"en">>, StateData) of
-                {result, _Res, SD1} -> SD1;
-                {error, Error} ->
-                    ejabberd_router:route(StateData#state.jid, From,
-                        jlib:make_error_reply(Packet, Error)),
-                    StateData
-            end;
-        _ -> StateData
-    end,
-    {next_state, normal_state, SD};
-
 normal_state({route, From, <<>>,
           {xmlelement, <<"message">>, Attrs, Els} = Packet},
          StateData) ->
@@ -357,42 +283,75 @@ normal_state({route, From, <<>>,
               From, Err),
             {next_state, normal_state, StateData};
         Type when (Type == <<>>) or (Type == <<"normal">>) ->
-            case catch check_invitation(From, Els, Lang, StateData) of
-            {error, Error} ->
-                Err = jlib:make_error_reply(
-                    Packet, Error),
-                ejabberd_router:route(
-                  StateData#state.jid,
-                  From, Err),
-                {next_state, normal_state, StateData};
-            IJID ->
-                Config = StateData#state.config,
-                case Config#config.members_only of
-                true ->
-                    case get_affiliation(IJID, StateData) of
-                    none ->
-                        NSD = set_affiliation(
-                            IJID,
-                            member,
-                            StateData),
-                        case (NSD#state.config)#config.persistent of
-                        true ->
-                            mod_muc:store_room(
-                              NSD#state.host,
-                              NSD#state.room,
-                              make_opts(NSD));
+            Invite = xml:get_path_s(Packet, [{elem, <<"x">>}, {elem, <<"invite">>}]),
+            case Invite of
+                <<>> ->
+                    SD = case catch check_voice_approval(From, Els, Lang, StateData) of
+                        {error, ErrType} ->
+                            ejabberd_router:route(StateData#state.jid, From,
+                                jlib:make_error_reply(Packet, ErrType)),
+                            StateData;
+                       {form, RoleName} ->
+                            {Nick, _} = get_participant_data(From, StateData),
+                            lists:foreach(fun({_, Info}) ->
+                                ejabberd_router:route(StateData#state.jid, Info#user.jid,
+                                    jlib:make_voice_approval_form(From, Nick, RoleName))
+                                end, search_role(moderator, StateData)),
+                            StateData;
+                        {role, RoleName, Nick} ->
+                            case process_admin_items_set(From,
+                                [{xmlelement, <<"item">>, [{<<"role">>, RoleName}, {<<"nick">>, Nick}], []}],
+                                    Lang, StateData) of
+                                {result, _Res, SD1} -> SD1;
+                                {error, Error} ->
+                                    ejabberd_router:route(StateData#state.jid, From,
+                                        jlib:make_error_reply(Packet, Error)),
+                                StateData
+                            end;
                         _ ->
-                            ok
-                        end,
-                        {next_state, normal_state, NSD};
-                    _ ->
-                        {next_state, normal_state,
-                         StateData}
+                            ejabberd_router:route(StateData#state.jid, From,
+                              jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST)),
+                            StateData
+                    end,
+                    {next_state, normal_state, SD};
+                _ ->
+                    case catch check_invitation(From, Els, Lang, StateData) of
+                        {error, Error} ->
+                            Err = jlib:make_error_reply(
+                                Packet, Error),
+                            ejabberd_router:route(
+                                StateData#state.jid,
+                                From, Err),
+                            {next_state, normal_state, StateData};
+                        IJID ->
+                            Config = StateData#state.config,
+                            case Config#config.members_only of
+                                true ->
+                                    case get_affiliation(IJID, StateData) of
+                                        none ->
+                                            NSD = set_affiliation(
+                                                IJID,
+                                                member,
+                                                StateData),
+                                                case (NSD#state.config)#config.persistent of
+                                                    true ->
+                                                        mod_muc:store_room(
+                                                            NSD#state.host,
+                                                            NSD#state.room,
+                                                            make_opts(NSD));
+                                                    _ ->
+                                                        ok
+                                                end,
+                                                {next_state, normal_state, NSD};
+                                        _ ->
+                                            {next_state, normal_state,
+                                                StateData}
+                                        end;
+                                false ->
+                                    {next_state, normal_state, StateData}
+                            end
+                        end
                     end;
-                false ->
-                    {next_state, normal_state, StateData}
-                end
-            end;
         _ ->
             ErrText = <<"Improper message type">>,
             Err = jlib:make_error_reply(
@@ -3599,6 +3558,41 @@ get_mucroom_disco_items(StateData) ->
       ?DICT:to_list(StateData#state.users)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Handle voice request or approval (XEP-0045 7.13, 8.6)
+check_voice_approval(From, [{xmlelement, <<"x">>, _Attrs, Items}], Lang, StateData) ->
+    GetField = fun(Var) ->
+        lists:foldl(fun({xmlelement,<<"field">>,Attrs,Body} = Item, Acc) ->
+            case xml:get_attr(<<"var">>, Attrs) of
+                {value, Var} -> case xml:get_path_s(Item, [{elem, <<"value">>}, cdata]) of
+                    <<>> -> Acc;
+                    Value -> Value
+                end;
+                _ -> Acc
+            end;
+            (_, Acc) -> Acc
+        end, false, Items)
+    end,
+    RoleBin = GetField(<<"muc#role">>),
+    Reply = case Items of
+        [_Form, _Role] ->
+            case catch list_to_role(RoleBin) of
+                {'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
+                _ -> {form, RoleBin}
+            end;
+        _ ->
+            case get_role(From, StateData) of
+                moderator ->
+                    case GetField(<<"muc#request_allow">>) of
+                        <<"true">> -> case GetField(<<"muc#roomnick">>) of
+                            false -> {error, ?ERR_BAD_REQUEST};
+                            RoomNick -> {role, RoleBin, RoomNick}
+                        end;
+                         _ -> ok
+                    end;
+                 _ -> {error, ?ERR_NOT_ALLOWED}
+            end
+    end.
+
 % Invitation support
 
 check_invitation(From, Els, Lang, StateData) ->
