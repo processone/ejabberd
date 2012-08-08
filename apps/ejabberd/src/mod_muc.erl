@@ -62,6 +62,8 @@
 		default_room_opts,
 		room_shaper}).
 
+-record(routed, {from, to, packet}).
+
 -define(PROCNAME, ejabberd_mod_muc).
 
 %%====================================================================
@@ -257,15 +259,10 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet},
-	    #state{host = Host,
-		   server_host = ServerHost,
-		   access = Access,
- 		   default_room_opts = DefRoomOpts,
-		   history_size = HistorySize,
-		   room_shaper = RoomShaper} = State) ->
-    case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-			From, To, Packet, DefRoomOpts) of
+
+handle_info({route, From, To, Packet}, State) ->
+    case catch route(#routed{from=From, to=To, packet=Packet},
+	                State) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -323,14 +320,20 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-	 From, To, Packet, DefRoomOpts) ->
-    {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
+
+route(Routed, State) ->
+    route_by_privilege(Routed, State).
+
+
+route_by_privilege(#routed{to=To, from=From} = Routed,
+                   #state{access={AccessRoute,_,_,_},
+		          server_host=ServerHost} = State) ->
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
-	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-		      From, To, Packet, DefRoomOpts);
+	    {Room, _, _} = jlib:jid_tolower(To),
+	    route_to_room(Room, Routed, State);
 	_ ->
+	    Packet = Routed#routed.packet,
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
 	    ErrText = <<"Access denied by service policy">>,
@@ -340,180 +343,164 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
     end.
 
 
-do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-	  From, To, Packet, DefRoomOpts) ->
-    {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
-    {Room, _, Nick} = jlib:jid_tolower(To),
-    {xmlelement, Name, Attrs, _Els} = Packet,
-    case Room of
-	<<>> ->
-	    case Nick of
-		<<>> ->
-		    case Name of
-			<<"iq">> ->
-			    case jlib:iq_query_info(Packet) of
-				#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS,
- 				    sub_el = _SubEl, lang = Lang} = IQ ->
-				    Info = ejabberd_hooks:run_fold(
-					     disco_info, ServerHost, [],
-					     [ServerHost, ?MODULE, <<>>, <<>>]),
-				    Res = IQ#iq{type = result,
-						sub_el = [{xmlelement, <<"query">>,
-							   [{<<"xmlns">>, XMLNS}],
-							   iq_disco_info(Lang)
-							   ++Info}]},
-				    ejabberd_router:route(To,
-							  From,
-							  jlib:iq_to_xml(Res));
-				#iq{type = get,
-				    xmlns = ?NS_DISCO_ITEMS} = IQ ->
-				    spawn(?MODULE,
-					  process_iq_disco_items,
-					  [Host, From, To, IQ]);
-				#iq{type = get,
-				    xmlns = ?NS_REGISTER = XMLNS,
-				    lang = Lang,
-				    sub_el = _SubEl} = IQ ->
-				    Res = IQ#iq{type = result,
-						sub_el =
-						[{xmlelement, <<"query">>,
-						  [{<<"xmlns">>, XMLNS}],
-						  iq_get_register_info(
-						    Host, From, Lang)}]},
-				    ejabberd_router:route(To,
-							  From,
-							  jlib:iq_to_xml(Res));
-				#iq{type = set,
-				    xmlns = ?NS_REGISTER = XMLNS,
-				    lang = Lang,
-				    sub_el = SubEl} = IQ ->
-				    case process_iq_register_set(Host, From, SubEl, Lang) of
-					{result, IQRes} ->
-					    Res = IQ#iq{type = result,
-							sub_el =
-							[{xmlelement, <<"query">>,
-							  [{<<"xmlns">>, XMLNS}],
-							  IQRes}]},
-					    ejabberd_router:route(
-					      To, From, jlib:iq_to_xml(Res));
-					{error, Error} ->
-					    Err = jlib:make_error_reply(
-						    Packet, Error),
-					    ejabberd_router:route(
-					      To, From, Err)
-				    end;
-				#iq{type = get,
-				    xmlns = ?NS_VCARD = XMLNS,
-				    lang = Lang,
-				    sub_el = _SubEl} = IQ ->
-				    Res = IQ#iq{type = result,
-						sub_el =
-						[{xmlelement, <<"vCard">>,
-						  [{<<"xmlns">>, XMLNS}],
-						  iq_get_vcard(Lang)}]},
-				    ejabberd_router:route(To,
-							  From,
-							  jlib:iq_to_xml(Res));
-				#iq{type = get,
-				   xmlns = ?NS_MUC_UNIQUE
-				   } = IQ ->
-				   Res = IQ#iq{type = result,
-						sub_el =
-						[{xmlelement, <<"unique">>,
-						   [{<<"xmlns">>, ?NS_MUC_UNIQUE}],
-						   [iq_get_unique(From)]}]},
-				   ejabberd_router:route(To,
-				   			 From,
-							 jlib:iq_to_xml(Res));
-				#iq{} ->
-				    Err = jlib:make_error_reply(
-					    Packet,
-					    ?ERR_FEATURE_NOT_IMPLEMENTED),
-				    ejabberd_router:route(To, From, Err);
-				_ ->
-				    ok
-			    end;
-			<<"message">> ->
-			    case xml:get_attr_s(<<"type">>, Attrs) of
-				<<"error">> ->
-				    ok;
-				_ ->
-				    case acl:match_rule(ServerHost, AccessAdmin, From) of
-					allow ->
-					    Msg = xml:get_path_s(
-						    Packet,
-						    [{elem, <<"body">>}, cdata]),
-					    broadcast_service_message(Host, Msg);
-					_ ->
-					    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-					    ErrText = <<"Only service administrators are allowed to send service messages">>,
-					    Err = jlib:make_error_reply(
-						    Packet,
-						    ?ERRT_FORBIDDEN(Lang, ErrText)),
-					    ejabberd_router:route(
-					      To, From, Err)
-				    end
-			    end;
-			<<"presence">> ->
-			    ok
-		    end;
-		_ ->
-		    case xml:get_attr_s(<<"type">>, Attrs) of
-			<<"error">> ->
-			    ok;
-			<<"result">> ->
-			    ok;
-			_ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
-			    ejabberd_router:route(To, From, Err)
-		    end
+route_to_room(<<>>, #routed{to=To} = Routed, State) ->
+    {_, _, Nick} = jlib:jid_tolower(To),
+    route_by_nick(Nick, Routed, State);
+
+route_to_room(Room, #routed{from=From, packet=Packet} = Routed,
+		       #state{host=Host} = State) ->
+    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+	[] ->
+	    route_to_nonexistent_room(Room, Routed, State);
+	[R] ->
+	    Pid = R#muc_online_room.pid,
+	    ?DEBUG("MUC: send to process ~p~n", [Pid]),
+	    {_, _, Nick} = jlib:jid_tolower(Routed#routed.to),
+	    mod_muc_room:route(Pid, From, Nick, Packet),
+	    ok
+    end.
+
+
+route_to_nonexistent_room(Room, #routed{to=To, from=From, packet=Packet} = Routed,
+				#state{host=Host} = State) ->
+    {xmlelement, Name, Attrs, _} = Packet,
+    Type = xml:get_attr_s(<<"type">>, Attrs),
+    case {Name, Type} of
+	{<<"presence">>, <<>>} ->
+	    ServerHost = State#state.server_host,
+	    Access = State#state.access,
+	    {_, AccessCreate, _, _} = Access,
+	    case check_user_can_create_room(ServerHost, AccessCreate,
+					    From, Room) of
+		true ->
+		    HistorySize = State#state.history_size,
+		    RoomShaper  = State#state.room_shaper,
+		    DefRoomOpts = State#state.default_room_opts,
+		    {_, _, Nick} = jlib:jid_tolower(Routed#routed.to),
+		    {ok, Pid} = start_new_room(Host, ServerHost, Access, Room,
+			                       HistorySize, RoomShaper, From,
+					       Nick, DefRoomOpts),
+		    register_room(Host, Room, Pid),
+		    mod_muc_room:route(Pid, From, Nick, Packet),
+		    ok;
+		false ->
+		    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+		    ErrText = <<"Room creation is denied by service policy">>,
+		    Err = jlib:make_error_reply(
+			    Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
+		    ejabberd_router:route(To, From, Err)
 	    end;
 	_ ->
-	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
-		[] ->
-		    Type = xml:get_attr_s(<<"type">>, Attrs),
-		    case {Name, Type} of
-			{<<"presence">>, <<>>} ->
-			    case check_user_can_create_room(ServerHost,
-							    AccessCreate, From,
-							    Room) of
-				true ->
-				    {ok, Pid} = start_new_room(
-						  Host, ServerHost, Access,
-						  Room, HistorySize,
-						  RoomShaper, From,
-						  Nick, DefRoomOpts),
-				    register_room(Host, Room, Pid),
-				    mod_muc_room:route(Pid, From, Nick, Packet),
-				    ok;
-				false ->
-				    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-				    ErrText = <<"Room creation is denied by service policy">>,
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
-				    ejabberd_router:route(To, From, Err)
-			    end;
-			_ ->
-			    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-			    ErrText = <<"Conference room does not exist">>,
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-			    ejabberd_router:route(To, From, Err)
-		    end;
-		[R] ->
-		    Pid = R#muc_online_room.pid,
-		    ?DEBUG("MUC: send to process ~p~n", [Pid]),
-		    mod_muc_room:route(Pid, From, Nick, Packet),
-		    ok
-	    end
+	    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+	    ErrText = <<"Conference room does not exist">>,
+	    Err = jlib:make_error_reply(
+		    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+	    ejabberd_router:route(To, From, Err)
     end.
+
+
+route_by_nick(<<>>, #routed{packet = Packet} = Routed, State) ->
+    {xmlelement, Name, _Attrs, _Els} = Packet,
+    route_by_type(Name, Routed, State);
+
+route_by_nick(_Nick, #routed{to = To, from = From, packet = Packet},
+		     _State) ->
+    {xmlelement, _Name, Attrs, _Els} = Packet,
+    case xml:get_attr_s(<<"type">>, Attrs) of
+	<<"error">> ->
+	    ok;
+	<<"result">> ->
+	    ok;
+	_ ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_ITEM_NOT_FOUND),
+	    ejabberd_router:route(To, From, Err)
+    end.
+
+
+route_by_type(<<"iq">>, #routed{from=From, to=To, packet = Packet},
+			#state{host = Host} = State) ->
+    ServerHost = State#state.server_host,
+    case jlib:iq_query_info(Packet) of
+	#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS, lang = Lang} = IQ ->
+	    Info = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
+					   [ServerHost, ?MODULE, <<>>, <<>>]),
+	    Res = IQ#iq{type = result,
+			sub_el = [{xmlelement, <<"query">>,
+				   [{<<"xmlns">>, XMLNS}],
+				   iq_disco_info(Lang) ++ Info}]},
+	    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+	#iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ ->
+	    spawn(?MODULE, process_iq_disco_items, [Host, From, To, IQ]);
+	#iq{type = get, xmlns = ?NS_REGISTER = XMLNS, lang = Lang} = IQ ->
+	    Res = IQ#iq{type = result,
+			sub_el = [{xmlelement, <<"query">>,
+				   [{<<"xmlns">>, XMLNS}],
+			           iq_get_register_info(Host, From, Lang)}]},
+	    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+	#iq{type = set,
+	    xmlns = ?NS_REGISTER = XMLNS,
+	    lang = Lang,
+	    sub_el = SubEl} = IQ ->
+	    case process_iq_register_set(Host, From, SubEl, Lang) of
+		{result, IQRes} ->
+		    Res = IQ#iq{type = result,
+				sub_el = [{xmlelement, <<"query">>,
+					   [{<<"xmlns">>, XMLNS}],
+					   IQRes}]},
+		    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+		{error, Error} ->
+		    Err = jlib:make_error_reply(Packet, Error),
+		    ejabberd_router:route(To, From, Err)
+	    end;
+	#iq{type = get, xmlns = ?NS_VCARD = XMLNS, lang = Lang} = IQ ->
+	    Res = IQ#iq{type = result,
+			sub_el = [{xmlelement, <<"vCard">>,
+				   [{<<"xmlns">>, XMLNS}],
+				   iq_get_vcard(Lang)}]},
+	    ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+	#iq{type = get, xmlns = ?NS_MUC_UNIQUE} = IQ ->
+	   Res = IQ#iq{type = result,
+		       sub_el = [{xmlelement, <<"unique">>,
+				  [{<<"xmlns">>, ?NS_MUC_UNIQUE}],
+				  [iq_get_unique(From)]}]},
+	   ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
+	#iq{} ->
+	    Err = jlib:make_error_reply(Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+	    ejabberd_router:route(To, From, Err);
+	_ ->
+	    ok
+    end;
+
+route_by_type(<<"message">>, #routed{from=From, to=To, packet = Packet},
+			     #state{host=Host, server_host=ServerHost} = State) ->
+    {xmlelement, _Name, Attrs, _Els} = Packet,
+    {_, _, AccessAdmin, _} = State#state.access,
+    case xml:get_attr_s(<<"type">>, Attrs) of
+	<<"error">> ->
+	    ok;
+	_ ->
+	    case acl:match_rule(ServerHost, AccessAdmin, From) of
+		allow ->
+		    Msg = xml:get_path_s(Packet, [{elem, <<"body">>}, cdata]),
+		    broadcast_service_message(Host, Msg);
+		_ ->
+		    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+		    ErrText = <<"Only service administrators are allowed to send service messages">>,
+		    Err = ?ERRT_FORBIDDEN(Lang, ErrText),
+		    ErrorReply = jlib:make_error_reply(Packet, Err),
+		    ejabberd_router:route(To, From, ErrorReply)
+	    end
+    end;
+
+route_by_type(<<"presence">>, _Routed, _State) ->
+    ok.
+
 
 check_user_can_create_room(ServerHost, AccessCreate, From, RoomID) ->
     case acl:match_rule(ServerHost, AccessCreate, From) of
 	allow ->
 	    (size(RoomID) =< gen_mod:get_module_opt(ServerHost, mod_muc,
-						      max_room_id, infinite));
+						    max_room_id, infinite));
 	_ ->
 	    false
     end.
