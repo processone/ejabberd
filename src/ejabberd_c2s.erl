@@ -1645,7 +1645,7 @@ send_text(StateData, Text) when StateData#state.xml_socket ->
     (StateData#state.sockmod):send_xml(StateData#state.socket, 
 				       {xmlstreamraw, Text1});
 send_text(StateData, Text) ->
-    ?DEBUG("Send XML on stream = ~s", [Text]),
+    ?DEBUG("Send XML on stream = ~s", [iolist_to_binary(Text)]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
 send_element(StateData, #xmlel{ns = ?NS_XMPP, name = 'stream'} = El) ->

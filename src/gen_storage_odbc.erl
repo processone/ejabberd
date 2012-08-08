@@ -423,6 +423,9 @@ rows_to_result(#tabdef{record_name = RecordName,
 
 row_to_result(Row, [], Result) ->
     {Row, lists:reverse(Result)};
+
+row_to_result([null | Row], [_ | Types], Result) ->
+    row_to_result(Row, Types, [undefined | Result]);
 row_to_result([Field | Row], [Type | Types], Result) ->
     case Type of
 	int ->
@@ -648,6 +651,10 @@ tabdef_column_names(#tabdef{column_names = ColumnNames}, Attribute) ->
 format(I) when is_integer(I) ->
     %% escaping not needed
     integer_to_list(I);
+
+
+format(undefined) ->
+    "NULL";
 
 format(A) when is_atom(A) ->
     %% escaping usually not needed, watch atom() usage
