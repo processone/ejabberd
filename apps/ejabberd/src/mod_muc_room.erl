@@ -166,10 +166,10 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick,
     ?INFO_MSG("Created MUC room ~s@~s by ~s",
               [Room, Host, jlib:jid_to_binary(Creator)]),
     add_to_log(room_existence, created, State1),
-    add_to_log(room_existence, started, State1),
     NextState = case proplists:get_value(instant, DefRoomOpts, false) of
                     true ->
                         %% Instant room -- groupchat 1.0 request
+                        add_to_log(room_existence, started, State1),
                         normal_state;
                     false ->
                         %% Locked room waiting for configuration -- MUC request
@@ -225,6 +225,7 @@ initial_state({route, From, ToNick,
     case  xml:get_path_s(Presence,[{elem, <<"x">>}, {attr, <<"xmlns">>}]) of
         ?NS_MUC ->
             %FIXME
+            add_to_log(room_existence, started, StateData),
             process_presence(From, ToNick, Presence, StateData, locked_state);
             %The fragment of normal_state with Activity that used to do this - how does that work?
             %Seems to work without it
@@ -233,48 +234,49 @@ initial_state({route, From, ToNick,
             process_presence(From, ToNick, Presence, StateData)
         end.
 
-%Destroy room
-locked_state({route, From, _ToNick,
-              {xmlelement, <<"iq">>, Attrs,
-               [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_MUC_OWNER}],
-                 [{xmlelement, <<"destroy">>, _Attrs, _Body}]} = SubEl
-                 ]} = Packet} = Call,
+%Destroy room/ confirm instant room/ configure room
+locked_state({route, From, ToNick,
+              {xmlelement, <<"iq">>, Attrs, _Body} = Packet} = Call,
          StateData) ->
-    ?INFO_MSG("Packet: ~p", [Packet]),
-    case xml:get_tag_attr_s(<<"type">>, Packet) =:= <<"set">> andalso
-        get_affiliation(From, StateData)  =:= owner of
-        true ->
+    case xml:get_tag_attr_s(<<"type">>, Packet) of
+    <<"set">> ->
+        SubEl = xml:get_subtag(Packet, <<"query">>),
+        case xml:get_tag_attr_s(<<"xmlns">>, SubEl) == ?NS_MUC_OWNER  andalso
+        xml:get_subtag(SubEl, <<"destroy">>) =/= false andalso
+        get_affiliation(From, StateData)  =:= owner  of
+        true->
             Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
             {result, [], stop} = process_iq_owner(From, set, Lang, SubEl , StateData),
-
-            ?INFO_MSG("IQ: ~p", [jlib:iq_to_xml(#iq{type = result})]),
             %FIXME
             ejabberd_router:route(StateData#state.jid, From, jlib:iq_to_xml(#iq{type = result, sub_el = []})),
             {stop, normal, StateData};
-        _ ->
+        false ->
+            case xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER andalso
+            get_affiliation(From, StateData)  =:= owner andalso
+            xml:get_path_s(Packet,
+                        [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"xmlns">>}]) == ?NS_XDATA andalso
+            xml:get_path_s(Packet,
+                        [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"type">>}]) == <<"submit">> of
+                true ->
+                    ReplyIq = jlib:make_result_iq_reply(Packet),
+                    ejabberd_router:route(
+                        jlib:jid_replace_resource(
+                    StateData#state.jid,
+                    ToNick),
+                        From,ReplyIq),
+                    {next_state, normal_state, StateData#state{just_created=false} };
+                false ->
+                    locked_error(Call, locked_state, StateData)
+            end
+        end;
+    <<"get">> ->
+            %% send the configuration form here
+            locked_error(Call, locked_state, StateData);
+    _ ->
+            %% send the configuration form here
             locked_error(Call, locked_state, StateData)
     end;
 
-%Confirm instant room    %/configure room
-locked_state({route, From, ToNick,
-              {xmlelement, <<"iq">>, _Attrs, _Body} = Packet} = Call,
-         StateData) ->
-    case xml:get_tag_attr_s(<<"type">>, Packet) == <<"set">> andalso
-        xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER andalso
-        xml:get_path_s(Packet, [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"xmlns">>}]) == ?NS_XDATA andalso
-        xml:get_path_s(Packet, [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"type">>}]) == <<"submit">>
-    of
-       true ->
-            ReplyIq = jlib:make_result_iq_reply(Packet),
-            ejabberd_router:route(
-                jlib:jid_replace_resource(
-            StateData#state.jid,
-            ToNick),
-                From,ReplyIq),
-            {next_state, normal_state, StateData#state{just_created=false} };
-        _ ->
-            locked_error(Call, locked_state, StateData)
-    end;
 
 %Let owner leave. Destroy the room
 locked_state({route, From, ToNick,
