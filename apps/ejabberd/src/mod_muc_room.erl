@@ -146,49 +146,36 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
 
-%An instant room is created using the same method as the p1 version. a test backdoor of sorts
-%Will be used to handle groupchat 1.0 requests
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, [{instant, true}|DefRoomOpts]]) ->
-     process_flag(trap_exit, true),
-     Shaper = shaper:new(RoomShaper),
-     State = set_affiliation(Creator, owner,
-                 #state{host = Host,
-                    server_host = ServerHost,
-                    access = Access,
-                    room = Room,
-                    history = lqueue_new(HistorySize),
-                    jid = jlib:make_jid(Room, Host, <<>>),
-                    just_created = true,
-                    room_shaper = Shaper}),
-     State1 = set_opts(DefRoomOpts, State),
-     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
-           [Room, Host, jlib:jid_to_binary(Creator)]),
-     add_to_log(room_existence, created, State1),
-     add_to_log(room_existence, started, State1),
-     {ok, normal_state, State1};
-
-
-
-%%A room is created
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
+%% A room is created. Depending on request type (MUC/groupchat 1.0) the next
+%% state is determined accordingly (a locked room for MUC or an instant
+%% one for groupchat).
+init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick,
+      DefRoomOpts]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_affiliation(Creator, owner,
-                #state{host = Host,
-                   server_host = ServerHost,
-                   access = Access,
-                   room = Room,
-                   history = lqueue_new(HistorySize),
-                   jid = jlib:make_jid(Room, Host, <<>>),
-                   just_created = true,
-                   room_shaper = Shaper}),
+                            #state{host = Host,
+                                   server_host = ServerHost,
+                                   access = Access,
+                                   room = Room,
+                                   history = lqueue_new(HistorySize),
+                                   jid = jlib:make_jid(Room, Host, <<>>),
+                                   just_created = true,
+                                   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
-    ?INFO_MSG("Created MUC room ~s@~s by ~s", 
-          [Room, Host, jlib:jid_to_binary(Creator)]),
+    ?INFO_MSG("Created MUC room ~s@~s by ~s",
+              [Room, Host, jlib:jid_to_binary(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
-    {ok,initial_state, State1};
-
+    NextState = case proplists:get_value(instant, DefRoomOpts, false) of
+                    true ->
+                        %% Instant room -- groupchat 1.0 request
+                        normal_state;
+                    false ->
+                        %% Locked room waiting for configuration -- MUC request
+                        initial_state
+                end,
+    {ok, NextState, State1};
 
 %%A room is restored
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
