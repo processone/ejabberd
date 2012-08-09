@@ -52,8 +52,10 @@
 -include("jlib.hrl").
 -include("mod_muc_room.hrl").
 
--record(routed_message, {type, from, packet, lang}).
+-record(routed_message, {allowed, type, from, packet, lang}).
+-record(routed_nick_message, {allow_pm, online, type, from, nick, lang, packet, decide, jid}).
 -record(routed_iq, {iq, from, packet}).
+-record(routed_nick_iq, {allow_query, online, iq, packet, lang, nick, jid, from, stanza}).
 
 -define(MAX_USERS_DEFAULT_LIST,
     [5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
@@ -311,26 +313,23 @@ normal_state({route, From, <<>>,
          StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     Type = xml:get_attr_s(<<"type">>, Attrs),
-    case is_user_online(From, StateData) orelse
-	is_user_allowed_message_nonparticipant(From, StateData) of
-	true ->
-            route_message(#routed_message{type = Type, from = From,
-                packet = Packet, lang = Lang}, StateData);
-         _ ->
-            case Type of
-                <<"error">> ->
-                    ok;
-                _ ->
-                    handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From)
-            end,
-            {next_state, normal_state, StateData}
-    end;
+
+    NewStateData = route_message(#routed_message{
+        allowed = is_user_online(From, StateData) orelse
+            is_user_allowed_message_nonparticipant(From, StateData),
+        type = Type,
+        from = From,
+        packet = Packet,
+        lang = Lang}, StateData),
+    {next_state, normal_state, NewStateData};
 
 normal_state({route, From, <<>>,
           {xmlelement, <<"iq">>, _Attrs, _Els} = Packet},
          StateData) ->
-    Query = jlib:iq_query_info(Packet),
-    NewStateData = route_iq(#routed_iq{iq = Query, from = From, packet = Packet}, StateData),
+    NewStateData = route_iq(#routed_iq{
+        iq = jlib:iq_query_info(Packet),
+        from = From,
+        packet = Packet}, StateData),
     case NewStateData of
         stop ->
             {stop, normal, StateData};
@@ -372,131 +371,32 @@ normal_state({route, From, ToNick,
           {xmlelement, <<"message">>, Attrs, _} = Packet},
          StateData) ->
     Type = xml:get_attr_s(<<"type">>, Attrs),
-    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-    case decide_fate_message(Type, Packet, From, StateData) of
-    {expulse_sender, Reason} ->
-        ?DEBUG(Reason, []),
-        ErrorText = <<"This participant is kicked from the room because he sent an error message to another participant">>,
-        NewState = expulse_participant(Packet, From, StateData, 
-                       translate:translate(Lang, ErrorText)),
-        {next_state, normal_state, NewState};
-    forget_message ->
-        {next_state, normal_state, StateData};
-    continue_delivery ->
-        case {(StateData#state.config)#config.allow_private_messages,
-        is_user_online(From, StateData)} of
-        {true, true} ->
-            case Type of
-            <<"groupchat">> ->
-                ErrText = <<"It is not allowed to send private messages of type groupchat">>,
-                Err = jlib:make_error_reply(
-                    Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
-                ejabberd_router:route(
-                  jlib:jid_replace_resource(
-                StateData#state.jid,
-                ToNick),
-                  From, Err);
-            _ ->
-                case find_jid_by_nick(ToNick, StateData) of
-                false ->
-                    ErrText = <<"Recipient is not in the conference room">>,
-                    Err = jlib:make_error_reply(
-                        Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-                    ejabberd_router:route(
-                      jlib:jid_replace_resource(
-                    StateData#state.jid,
-                    ToNick),
-                      From, Err);
-                ToJID ->
-                    {ok, #user{nick = FromNick}} =
-                    ?DICT:find(jlib:jid_tolower(From),
-                           StateData#state.users),
-                    ejabberd_router:route(
-                      jlib:jid_replace_resource(
-                    StateData#state.jid,
-                    FromNick),
-                      ToJID, Packet)
-                end
-            end;
-        {true, false} ->
-            ErrText = <<"Only occupants are allowed to send messages to the conference">>,
-            Err = jlib:make_error_reply(
-                Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-            ejabberd_router:route(
-              jlib:jid_replace_resource(
-            StateData#state.jid,
-            ToNick),
-              From, Err);
-        {false, _} ->
-            ErrText = <<"It is not allowed to send private messages">>,
-            Err = jlib:make_error_reply(
-                Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-            ejabberd_router:route(
-              jlib:jid_replace_resource(
-            StateData#state.jid,
-            ToNick),
-              From, Err)
-        end,
-        {next_state, normal_state, StateData}
-    end;
+    NewStateData = route_nick_message(#routed_nick_message{
+        allow_pm = (StateData#state.config)#config.allow_private_messages,
+        online = is_user_online(From, StateData),
+        type = Type, 
+        from = From,
+        nick = ToNick,
+        lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+        decide = decide_fate_message(Type, Packet, From, StateData),
+        packet = Packet,
+        jid = find_jid_by_nick(ToNick, StateData)}, StateData),
+    {next_state, normal_state, NewStateData};
 
 normal_state({route, From, ToNick,
           {xmlelement, <<"iq">>, Attrs, _Els} = Packet},
          StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     StanzaId = xml:get_attr_s(<<"id">>, Attrs),
-    case {(StateData#state.config)#config.allow_query_users,
-      is_user_online_iq(StanzaId, From, StateData)} of
-    {true, {true, NewId, FromFull}} ->
-        case find_jid_by_nick(ToNick, StateData) of
-        false ->
-            case jlib:iq_query_info(Packet) of
-            reply ->
-                ok;
-            _ ->
-                ErrText = <<"Recipient is not in the conference room">>,
-                Err = jlib:make_error_reply(
-                    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-                ejabberd_router:route(
-                  jlib:jid_replace_resource(
-                StateData#state.jid, ToNick),
-                  From, Err)
-            end;
-        ToJID ->
-            {ok, #user{nick = FromNick}} =
-            ?DICT:find(jlib:jid_tolower(FromFull),
-                   StateData#state.users),
-            {ToJID2, Packet2} = handle_iq_vcard(FromFull, ToJID,
-                            StanzaId, NewId,Packet),
-            ejabberd_router:route(
-              jlib:jid_replace_resource(StateData#state.jid, FromNick),
-              ToJID2, Packet2)
-        end;
-    {_, {false, _, _}} ->
-        case jlib:iq_query_info(Packet) of
-        reply ->
-            ok;
-        _ ->
-            ErrText = <<"Only occupants are allowed to send queries to the conference">>,
-            Err = jlib:make_error_reply(
-                Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
-            ejabberd_router:route(
-              jlib:jid_replace_resource(StateData#state.jid, ToNick),
-              From, Err)
-        end;
-    _ ->
-        case jlib:iq_query_info(Packet) of
-        reply ->
-            ok;
-        _ ->
-            ErrText = <<"Queries to the conference members are not allowed in this room">>,
-            Err = jlib:make_error_reply(
-                Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
-            ejabberd_router:route(
-              jlib:jid_replace_resource(StateData#state.jid, ToNick),
-              From, Err)
-        end
-    end,
+    route_nick_iq(#routed_nick_iq{
+        allow_query = (StateData#state.config)#config.allow_query_users,
+        online = is_user_online_iq(StanzaId, From, StateData),
+        jid = find_jid_by_nick(ToNick, StateData),
+        iq = jlib:iq_query_info(Packet),
+        packet = Packet,
+        lang = Lang,
+        stanza = StanzaId,
+        nick = ToNick}, StateData),
     {next_state, normal_state, StateData};
 
 normal_state(_Event, StateData) ->
@@ -3714,8 +3614,8 @@ element_size(El) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Routing functions
 
-route_message(#routed_message{type = <<"groupchat">>, from = From, packet = Packet,
-    lang = Lang}, StateData) ->
+route_message(#routed_message{allowed = true, type = <<"groupchat">>,
+    from = From, packet = Packet, lang = Lang}, StateData) ->
     Activity = get_user_activity(From, StateData),
     Now = now_to_usec(now()),
     MinMessageInterval = trunc(gen_mod:get_module_opt(
@@ -3732,7 +3632,7 @@ route_message(#routed_message{type = <<"groupchat">>, from = From, packet = Pack
             ejabberd_router:route(
                 StateData#state.jid,
                 From, Err),
-            {next_state, normal_state, StateData};
+            StateData;
         Now >= Activity#activity.message_time + MinMessageInterval,
             MessageShaperInterval == 0 ->
             {RoomShaper, RoomShaperInterval} =
@@ -3748,7 +3648,9 @@ route_message(#routed_message{type = <<"groupchat">>, from = From, packet = Pack
                         From, NewActivity, StateData),
                     StateData2 =
                         StateData1#state{room_shaper = RoomShaper},
-                    process_groupchat_message(From, Packet, StateData2);
+                    {next_state, normal_state, StateData3} =
+                        process_groupchat_message(From, Packet, StateData2),
+                    StateData3;
                 true ->
                     StateData1 =
                     if
@@ -3769,7 +3671,7 @@ route_message(#routed_message{type = <<"groupchat">>, from = From, packet = Pack
                     StateData2 = store_user_activity(
                         From, NewActivity, StateData1),
                     StateData3 = StateData2#state{room_queue = RoomQueue},
-                    {next_state, normal_state, StateData3}
+                    StateData3
             end;
         true ->
             MessageInterval =
@@ -3782,22 +3684,22 @@ route_message(#routed_message{type = <<"groupchat">>, from = From, packet = Pack
                         message = Packet,
                         message_shaper = MessageShaper},
                 StateData1 = store_user_activity(From, NewActivity, StateData),
-                {next_state, normal_state, StateData1}
+                StateData1
     end;
 
-route_message(#routed_message{type = <<"error">>, from = From, packet = Packet,
-    lang = Lang}, StateData) ->
+route_message(#routed_message{allowed = true, type = <<"error">>, from = From,
+    packet = Packet, lang = Lang}, StateData) ->
     case is_user_online(From, StateData) of
         true ->
             ErrorText = <<"This participant is kicked from the room because he sent an error message">>,
             NewState = expulse_participant(Packet, From, StateData,
                 translate:translate(Lang, ErrorText)),
-            {next_state, normal_state, NewState};
+            NewState;
         _ ->
-            {next_state, normal_state, StateData}
+            StateData
     end;
 
-route_message(#routed_message{type = <<"chat">>, from = From, packet = Packet,
+route_message(#routed_message{allowed = true, type = <<"chat">>, from = From, packet = Packet,
     lang = Lang}, StateData) ->
     ErrText = <<"It is not allowed to send private messages to the conference">>,
     Err = jlib:make_error_reply(
@@ -3805,31 +3707,39 @@ route_message(#routed_message{type = <<"chat">>, from = From, packet = Packet,
     ejabberd_router:route(
         StateData#state.jid,
         From, Err),
-    {next_state, normal_state, StateData};
+    StateData;
 
-route_message(#routed_message{type = Type, from = From,
+route_message(#routed_message{allowed = true, type = Type, from = From,
     packet = {xmlelement, <<"message">>, _Attrs, Els} = Packet, lang = Lang},
     StateData) when (Type == <<>> orelse Type == <<"normal">>) ->
 
     Invite = xml:get_path_s(Packet, [{elem, <<"x">>}, {elem, <<"invite">>}]),
-    SD = case Invite of
+    case Invite of
         <<>> ->
             AppType = (catch check_voice_approval(From, Els, Lang, StateData)),
             route_voice_approval(AppType, From, Packet, Lang, StateData);
         _ ->
             InType = (catch check_invitation(From, Els, Lang, StateData)),
             route_invitation(InType, From, Packet, Lang, StateData)
-    end,
-    {next_state, normal_state, SD};
+    end;
 
-route_message(#routed_message{from = From, packet = Packet, lang = Lang}, StateData) ->
+route_message(#routed_message{allowed = true, from = From, packet = Packet,
+    lang = Lang}, StateData) ->
     ErrText = <<"Improper message type">>,
     Err = jlib:make_error_reply(
         Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
     ejabberd_router:route(
               StateData#state.jid,
               From, Err),
-    {next_state, normal_state, StateData}.
+    StateData;
+
+route_message(#routed_message{type = <<"error">>}, StateData) ->
+    StateData;
+
+route_message(#routed_message{from = From, packet = Packet, lang = Lang},
+    StateData) ->
+    handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From),
+    StateData.
 
 route_voice_approval({error, ErrType}, From, Packet, _Lang, StateData) ->
     ejabberd_router:route(StateData#state.jid, From,
@@ -3947,3 +3857,117 @@ do_route_iq(Res1, #routed_iq{iq = #iq{xmlns = XMLNS, sub_el = SubEl} = IQ,
     ejabberd_router:route(StateData#state.jid, From,
         jlib:iq_to_xml(IQRes)),
     NewStateData.
+
+route_nick_message(#routed_nick_message{decide = {expulse_sender, Reason},
+    packet = Packet, lang = Lang, from = From}, StateData) ->
+    ?DEBUG(Reason, []),
+    ErrorText = <<"This participant is kicked from the room because he",
+        "sent an error message to another participant">>,
+    expulse_participant(Packet, From, StateData,
+        translate:translate(Lang, ErrorText));
+
+route_nick_message(#routed_nick_message{decide = forget_message}, StateData) ->
+    StateData;
+
+route_nick_message(#routed_nick_message{decide = continue_delivery, allow_pm = true,
+    online = true, packet = Packet, from = From, type = <<"groupchat">>,
+    lang = Lang, nick = ToNick}, StateData) ->
+    ErrText = <<"It is not allowed to send private messages of type groupchat">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_BAD_REQUEST(Lang, ErrText)),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(
+            StateData#state.jid,
+            ToNick),
+        From, Err),
+    StateData;
+
+route_nick_message(#routed_nick_message{decide = continue_delivery, allow_pm = true,
+    online = true, packet = Packet, from = From,
+    lang = Lang, nick = ToNick, jid = false}, StateData) ->
+    ErrText = <<"Recipient is not in the conference room">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(
+            StateData#state.jid,
+            ToNick),
+        From, Err),
+    StateData;
+
+route_nick_message(#routed_nick_message{decide = continue_delivery, allow_pm = true,
+    online = true, packet = Packet, from = From, jid = ToJID}, StateData) ->
+    {ok, #user{nick = FromNick}} = ?DICT:find(jlib:jid_tolower(From),
+        StateData#state.users),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(StateData#state.jid, FromNick), ToJID, Packet),
+    StateData;
+
+route_nick_message(#routed_nick_message{decide = continue_delivery, allow_pm = true,
+    online = false, packet = Packet, from = From,
+    lang = Lang, nick = ToNick}, StateData) ->
+    ErrText = <<"Only occupants are allowed to send messages to the conference">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(StateData#state.jid, ToNick),
+        From, Err),
+    StateData;
+
+route_nick_message(#routed_nick_message{decide = continue_delivery, allow_pm = false,
+    packet = Packet, from = From,
+    lang = Lang, nick = ToNick}, StateData) ->
+    ErrText = <<"It is not allowed to send private messages">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(StateData#state.jid, ToNick), From, Err),
+    StateData.
+
+route_nick_iq(#routed_nick_iq{allow_query = true, online = {true, _, _}, jid = false,
+    iq = reply}, _StateData) ->
+    ok;
+
+route_nick_iq(#routed_nick_iq{allow_query = true, online = {true, _, _}, jid = false,
+    packet = Packet, lang = Lang, from = From, nick = ToNick}, StateData) ->
+    ErrText = <<"Recipient is not in the conference room">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(
+            StateData#state.jid, ToNick),
+        From, Err);
+
+route_nick_iq(#routed_nick_iq{allow_query = true, online = {true, NewId, FromFull},
+    jid = ToJID, packet = Packet, stanza = StanzaId}, StateData) ->
+    {ok, #user{nick = FromNick}} = ?DICT:find(jlib:jid_tolower(FromFull),
+        StateData#state.users),
+    {ToJID2, Packet2} = handle_iq_vcard(FromFull, ToJID,
+        StanzaId, NewId,Packet),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(StateData#state.jid, FromNick),
+        ToJID2, Packet2);
+
+route_nick_iq(#routed_nick_iq{online = {false, _, _}, iq = reply}, _StateData) ->
+    ok;
+
+route_nick_iq(#routed_nick_iq{online = {false, _, _}, from = From, nick = ToNick,
+    packet = Packet, lang = Lang}, StateData) ->
+    ErrText = <<"Only occupants are allowed to send queries to the conference">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
+    ejabberd_router:route(
+      jlib:jid_replace_resource(StateData#state.jid, ToNick),
+    From, Err);
+
+route_nick_iq(#routed_nick_iq{iq = reply}, _StateData) ->
+    ok;
+
+route_nick_iq(#routed_nick_iq{packet = Packet, lang = Lang, nick = ToNick,
+    from = From}, StateData) ->
+    ErrText = <<"Queries to the conference members are not allowed in this room">>,
+    Err = jlib:make_error_reply(
+        Packet, ?ERRT_NOT_ALLOWED(Lang, ErrText)),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(StateData#state.jid, ToNick),
+    From, Err).
