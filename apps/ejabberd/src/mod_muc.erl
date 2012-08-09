@@ -63,8 +63,6 @@
 		default_room_opts,
 		room_shaper}).
 
--record(routed, {from, to, packet}).
-
 -define(PROCNAME, ejabberd_mod_muc).
 
 %%====================================================================
@@ -290,8 +288,7 @@ handle_cast(_Msg, State) ->
 %%--------------------------------------------------------------------
 
 handle_info({route, From, To, Packet}, State) ->
-    case catch route(#routed{from=From, to=To, packet=Packet},
-	                State) of
+    case catch route({From, To, Packet}, State) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -354,7 +351,7 @@ route(Routed, State) ->
     route_by_privilege(Routed, State).
 
 
-route_by_privilege(#routed{to=To, from=From} = Routed,
+route_by_privilege({From, To, Packet} = Routed,
                    #state{access={AccessRoute,_,_,_},
 		          server_host=ServerHost} = State) ->
     case acl:match_rule(ServerHost, AccessRoute, From) of
@@ -362,7 +359,6 @@ route_by_privilege(#routed{to=To, from=From} = Routed,
 	    {Room, _, _} = jlib:jid_tolower(To),
 	    route_to_room(Room, Routed, State);
 	_ ->
-	    Packet = Routed#routed.packet,
 	    {xmlelement, _Name, Attrs, _Els} = Packet,
 	    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
 	    ErrText = <<"Access denied by service policy">>,
@@ -372,26 +368,25 @@ route_by_privilege(#routed{to=To, from=From} = Routed,
     end.
 
 
-route_to_room(<<>>, #routed{to=To} = Routed, State) ->
+route_to_room(<<>>, {_,To,_} = Routed, State) ->
     {_, _, Nick} = jlib:jid_tolower(To),
     route_by_nick(Nick, Routed, State);
 
-route_to_room(Room, #routed{from=From, packet=Packet} = Routed,
-		       #state{host=Host} = State) ->
+route_to_room(Room, {From,To,Packet} = Routed, #state{host=Host} = State) ->
     case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 	[] ->
 	    route_to_nonexistent_room(Room, Routed, State);
 	[R] ->
 	    Pid = R#muc_online_room.pid,
 	    ?DEBUG("MUC: send to process ~p~n", [Pid]),
-	    {_, _, Nick} = jlib:jid_tolower(Routed#routed.to),
+	    {_, _, Nick} = jlib:jid_tolower(To),
 	    mod_muc_room:route(Pid, From, Nick, Packet),
 	    ok
     end.
 
 
-route_to_nonexistent_room(Room, #routed{to=To, from=From, packet=Packet} = Routed,
-				#state{host=Host} = State) ->
+route_to_nonexistent_room(Room, {From, To, Packet},
+			  #state{host=Host} = State) ->
     {xmlelement, Name, Attrs, _} = Packet,
     Type = xml:get_attr_s(<<"type">>, Attrs),
     case {Name, Type} of
@@ -405,7 +400,7 @@ route_to_nonexistent_room(Room, #routed{to=To, from=From, packet=Packet} = Route
 		    HistorySize = State#state.history_size,
 		    RoomShaper  = State#state.room_shaper,
 		    DefRoomOpts = State#state.default_room_opts,
-		    {_, _, Nick} = jlib:jid_tolower(Routed#routed.to),
+		    {_, _, Nick} = jlib:jid_tolower(To),
 		    {ok, Pid} = start_new_room(Host, ServerHost, Access, Room,
 			                       HistorySize, RoomShaper, From,
 					       Nick, DefRoomOpts),
@@ -428,12 +423,11 @@ route_to_nonexistent_room(Room, #routed{to=To, from=From, packet=Packet} = Route
     end.
 
 
-route_by_nick(<<>>, #routed{packet = Packet} = Routed, State) ->
+route_by_nick(<<>>, {_,_,Packet} = Routed, State) ->
     {xmlelement, Name, _Attrs, _Els} = Packet,
     route_by_type(Name, Routed, State);
 
-route_by_nick(_Nick, #routed{to = To, from = From, packet = Packet},
-		     _State) ->
+route_by_nick(_Nick, {From, To, Packet}, _State) ->
     {xmlelement, _Name, Attrs, _Els} = Packet,
     case xml:get_attr_s(<<"type">>, Attrs) of
 	<<"error">> ->
@@ -446,8 +440,7 @@ route_by_nick(_Nick, #routed{to = To, from = From, packet = Packet},
     end.
 
 
-route_by_type(<<"iq">>, #routed{from=From, to=To, packet = Packet},
-			#state{host = Host} = State) ->
+route_by_type(<<"iq">>, {From, To, Packet}, #state{host = Host} = State) ->
     ServerHost = State#state.server_host,
     case jlib:iq_query_info(Packet) of
 	#iq{type = get, xmlns = ?NS_DISCO_INFO = XMLNS, lang = Lang} = IQ ->
@@ -500,10 +493,10 @@ route_by_type(<<"iq">>, #routed{from=From, to=To, packet = Packet},
 	    ok
     end;
 
-route_by_type(<<"message">>, #routed{from=From, to=To, packet = Packet},
-			     #state{host=Host, server_host=ServerHost} = State) ->
+route_by_type(<<"message">>, {From, To, Packet},
+	      #state{host = Host, server_host = ServerHost,
+	             access = {_,_,AccessAdmin,_}}) ->
     {xmlelement, _Name, Attrs, _Els} = Packet,
-    {_, _, AccessAdmin, _} = State#state.access,
     case xml:get_attr_s(<<"type">>, Attrs) of
 	<<"error">> ->
 	    ok;
