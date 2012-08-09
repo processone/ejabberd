@@ -52,6 +52,9 @@
 -include("jlib.hrl").
 -include("mod_muc_room.hrl").
 
+-record(routed_message, {type, from, packet, lang}).
+-record(routed_iq, {iq, from, packet}).
+
 -define(MAX_USERS_DEFAULT_LIST,
     [5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
@@ -311,7 +314,8 @@ normal_state({route, From, <<>>,
     case is_user_online(From, StateData) orelse
 	is_user_allowed_message_nonparticipant(From, StateData) of
 	true ->
-            route_message(Type, From, Packet, Lang, StateData);
+            route_message(#routed_message{type = Type, from = From,
+                packet = Packet, lang = Lang}, StateData);
          _ ->
             case Type of
                 <<"error">> ->
@@ -325,55 +329,13 @@ normal_state({route, From, <<>>,
 normal_state({route, From, <<>>,
           {xmlelement, <<"iq">>, _Attrs, _Els} = Packet},
          StateData) ->
-    case jlib:iq_query_info(Packet) of
-    #iq{type = Type, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ when
-          (XMLNS == ?NS_MUC_ADMIN) or
-          (XMLNS == ?NS_MUC_OWNER) or
-          (XMLNS == ?NS_DISCO_INFO) or
-          (XMLNS == ?NS_DISCO_ITEMS) or
-          (XMLNS == ?NS_CAPTCHA) ->
-        Res1 = case XMLNS of
-               ?NS_MUC_ADMIN ->
-               process_iq_admin(From, Type, Lang, SubEl, StateData);
-               ?NS_MUC_OWNER ->
-               process_iq_owner(From, Type, Lang, SubEl, StateData);
-               ?NS_DISCO_INFO ->
-               process_iq_disco_info(From, Type, Lang, StateData);
-               ?NS_DISCO_ITEMS ->
-               process_iq_disco_items(From, Type, Lang, StateData);
-               ?NS_CAPTCHA ->
-               process_iq_captcha(From, Type, Lang, SubEl, StateData)
-           end,
-        {IQRes, NewStateData} =
-        case Res1 of
-            {result, Res, SD} ->
-            {IQ#iq{type = result,
-                   sub_el = [{xmlelement, <<"query">>,
-                      [{<<"xmlns">>, XMLNS}],
-                      Res
-                     }]},
-             SD};
-            {error, Error} ->
-            {IQ#iq{type = error,
-                   sub_el = [SubEl, Error]},
-             StateData}
-        end,
-        ejabberd_router:route(StateData#state.jid,
-                  From,
-                  jlib:iq_to_xml(IQRes)),
-        case NewStateData of
+    Query = jlib:iq_query_info(Packet),
+    NewStateData = route_iq(#routed_iq{iq = Query, from = From, packet = Packet}, StateData),
+    case NewStateData of
         stop ->
             {stop, normal, StateData};
         _ ->
             {next_state, normal_state, NewStateData}
-        end;
-    reply ->
-        {next_state, normal_state, StateData};
-    _ ->
-        Err = jlib:make_error_reply(
-            Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
-        ejabberd_router:route(StateData#state.jid, From, Err),
-        {next_state, normal_state, StateData}
     end;
 
 normal_state({route, From, Nick,
@@ -3752,7 +3714,8 @@ element_size(El) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Routing functions
 
-route_message(<<"groupchat">>, From, Packet, Lang, StateData) ->
+route_message(#routed_message{type = <<"groupchat">>, from = From, packet = Packet,
+    lang = Lang}, StateData) ->
     Activity = get_user_activity(From, StateData),
     Now = now_to_usec(now()),
     MinMessageInterval = trunc(gen_mod:get_module_opt(
@@ -3822,7 +3785,8 @@ route_message(<<"groupchat">>, From, Packet, Lang, StateData) ->
                 {next_state, normal_state, StateData1}
     end;
 
-route_message(<<"error">>, From, Packet, Lang, StateData) ->
+route_message(#routed_message{type = <<"error">>, from = From, packet = Packet,
+    lang = Lang}, StateData) ->
     case is_user_online(From, StateData) of
         true ->
             ErrorText = <<"This participant is kicked from the room because he sent an error message">>,
@@ -3833,7 +3797,8 @@ route_message(<<"error">>, From, Packet, Lang, StateData) ->
             {next_state, normal_state, StateData}
     end;
 
-route_message(<<"chat">>, From, Packet, Lang, StateData) ->
+route_message(#routed_message{type = <<"chat">>, from = From, packet = Packet,
+    lang = Lang}, StateData) ->
     ErrText = <<"It is not allowed to send private messages to the conference">>,
     Err = jlib:make_error_reply(
         Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
@@ -3842,8 +3807,10 @@ route_message(<<"chat">>, From, Packet, Lang, StateData) ->
         From, Err),
     {next_state, normal_state, StateData};
 
-route_message(Type, From, {xmlelement, <<"message">>, _Attrs, Els} = Packet,
-    Lang, StateData) when (Type == <<>> orelse Type == <<"normal">>) ->
+route_message(#routed_message{type = Type, from = From,
+    packet = {xmlelement, <<"message">>, _Attrs, Els} = Packet, lang = Lang},
+    StateData) when (Type == <<>> orelse Type == <<"normal">>) ->
+
     Invite = xml:get_path_s(Packet, [{elem, <<"x">>}, {elem, <<"invite">>}]),
     SD = case Invite of
         <<>> ->
@@ -3855,7 +3822,7 @@ route_message(Type, From, {xmlelement, <<"message">>, _Attrs, Els} = Packet,
     end,
     {next_state, normal_state, SD};
 
-route_message(_Type, From, Packet, Lang, StateData) ->
+route_message(#routed_message{from = From, packet = Packet, lang = Lang}, StateData) ->
     ErrText = <<"Improper message type">>,
     Err = jlib:make_error_reply(
         Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
@@ -3927,3 +3894,56 @@ route_invitation(IJID, _From, _Packet, _Lang, StateData) ->
         false ->
             StateData
     end.
+
+route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_MUC_ADMIN, lang = Lang,
+    sub_el = SubEl}, from = From} = Routed, StateData) ->
+    Res = process_iq_admin(From, Type, Lang, SubEl, StateData),
+    do_route_iq(Res, Routed, StateData);
+
+route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_MUC_OWNER, lang = Lang,
+    sub_el = SubEl}, from = From} = Routed, StateData) ->
+    Res = process_iq_owner(From, Type, Lang, SubEl, StateData),
+    do_route_iq(Res, Routed, StateData);
+
+route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang},
+    from = From} = Routed, StateData) ->
+    Res = process_iq_disco_info(From, Type, Lang, StateData),
+    do_route_iq(Res, Routed, StateData);
+
+route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_DISCO_ITEMS, lang = Lang},
+    from = From} = Routed, StateData) ->
+    Res = process_iq_disco_items(From, Type, Lang, StateData),
+    do_route_iq(Res, Routed, StateData);
+
+route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_CAPTCHA, lang = Lang,
+    sub_el = SubEl}, from = From} = Routed, StateData) ->
+    Res = process_iq_captcha(From, Type, Lang, SubEl, StateData),
+    do_route_iq(Res, Routed, StateData);
+
+route_iq(#routed_iq{iq = reply}, StateData) ->
+    StateData;
+
+route_iq(#routed_iq{packet = Packet, from = From}, StateData) ->
+    Err = jlib:make_error_reply(
+        Packet, ?ERR_FEATURE_NOT_IMPLEMENTED),
+    ejabberd_router:route(StateData#state.jid, From, Err),
+    StateData.
+
+do_route_iq(Res1, #routed_iq{iq = #iq{xmlns = XMLNS, sub_el = SubEl} = IQ,
+    from = From}, StateData) ->
+    {IQRes, NewStateData} = case Res1 of
+        {result, Res, SD} ->
+            {IQ#iq{type = result,
+                sub_el = [{xmlelement, <<"query">>,
+                [{<<"xmlns">>, XMLNS}],
+                Res
+            }]},
+            SD};
+        {error, Error} ->
+            {IQ#iq{type = error,
+                sub_el = [SubEl, Error]},
+            StateData}
+    end,
+    ejabberd_router:route(StateData#state.jid, From,
+        jlib:iq_to_xml(IQRes)),
+    NewStateData.
