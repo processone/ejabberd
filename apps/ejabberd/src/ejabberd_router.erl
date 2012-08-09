@@ -208,7 +208,7 @@ init([]) ->
     update_tables(),
     mnesia:create_table(route,
 			[{ram_copies, [node()]},
-			 {type, bag},
+			 {type, set},
 			 {attributes,
 			  record_info(fields, route)}]),
     mnesia:add_table_copy(route, node(), ram_copies),
@@ -320,89 +320,27 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 		[] ->
 		    ejabberd_s2s:route(From, To, Packet);
 		[R] ->
-		    Pid = R#route.pid,
-		    if
-			node(Pid) == node() ->
-			    case R#route.local_hint of
-				{apply, Module, Function} ->
-				    Module:Function(From, To, Packet);
-				_ ->
-				    Pid ! {route, From, To, Packet}
-			    end;
-			is_pid(Pid) ->
-			    Pid ! {route, From, To, Packet};
-			true ->
-                ejabberd_hooks:run(xmpp_stanza_dropped, 
-                                   From#jid.lserver,
-                                   [From, To, Packet]),
-			    drop
-		    end;
-		Rs ->
-		    Value = case ejabberd_config:get_local_option(
-				   {domain_balancing, LDstDomain}) of
-				undefined -> now();
-				random -> now();
-				source -> jlib:jid_tolower(From);
-				destination -> jlib:jid_tolower(To);
-				bare_source ->
-				    jlib:jid_remove_resource(
-				      jlib:jid_tolower(From));
-				bare_destination ->
-				    jlib:jid_remove_resource(
-				      jlib:jid_tolower(To))
-			    end,
-		    case get_component_number(LDstDomain) of
-			undefined ->
-			    case [R || R <- Rs, node(R#route.pid) == node()] of
-				[] ->
-				    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
-				    Pid = R#route.pid,
-				    if
-					is_pid(Pid) ->
-					    Pid ! {route, From, To, Packet};
-					true ->
-                        ejabberd_hooks:run(xmpp_stanza_dropped, 
-                                           From#jid.lserver,
-                                           [From, To, Packet]),
-                        drop
-				    end;
-				LRs ->
-				    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
-				    Pid = R#route.pid,
-				    case R#route.local_hint of
-					{apply, Module, Function} ->
-					    Module:Function(From, To, Packet);
-					_ ->
-					    Pid ! {route, From, To, Packet}
-				    end
-			    end;
+		    case R#route.local_hint of
+			{apply_fun, Fun} ->
+			    Fun(From, To, Packet);
+			{apply, Module, Function} ->
+			    Module:Function(From, To, Packet);
 			_ ->
-			    SRs = lists:ukeysort(#route.local_hint, Rs),
-			    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
 			    Pid = R#route.pid,
-			    if
-				is_pid(Pid) ->
-				    Pid ! {route, From, To, Packet};
-				true ->
-				    ejabberd_hooks:run(xmpp_stanza_dropped, 
-                                       From#jid.lserver,
-                                       [From, To, Packet]),
-			        drop
-			    end
+			    Pid ! {route, From, To, Packet}
 		    end
 	    end;
 	drop ->
 	    ejabberd_hooks:run(xmpp_stanza_dropped, 
-                           OrigFrom#jid.lserver,
-                           [OrigFrom, OrigTo, OrigPacket]),
-		ok
+			       OrigFrom#jid.lserver,
+                               [OrigFrom, OrigTo, OrigPacket]),
+	    ok
     end.
 
 get_component_number(LDomain) ->
     case ejabberd_config:get_local_option(
 	   {domain_balancing_component_number, LDomain}) of
-	N when is_integer(N),
-	       N > 1 ->
+	N when is_integer(N), N > 1 ->
 	    N;
 	_ ->
 	    undefined
