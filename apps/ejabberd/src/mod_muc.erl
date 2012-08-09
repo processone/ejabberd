@@ -39,6 +39,7 @@
 	 restore_room/2,
 	 forget_room/2,
 	 create_room/5,
+	 create_instant_room/5,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
 	 can_use_nick/3]).
@@ -112,6 +113,13 @@ room_destroyed(Host, Room, Pid, ServerHost) ->
 create_room(Host, Name, From, Nick, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, {create, Name, From, Nick, Opts}).
+
+%% @doc Create a room.
+%% If Opts = default, the default room options are used.
+%% Else use the passed options as defined in mod_muc_room.
+create_instant_room(Host, Name, From, Nick, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:call(Proc, {create_instant, Name, From, Nick, Opts}).
 
 store_room(Host, Name, Opts) ->
     F = fun() ->
@@ -222,6 +230,27 @@ init([Host, Opts]) ->
 %%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
+
+handle_call({create_instant, Room, From, Nick, Opts},
+	    _From,
+	    #state{host = Host,
+		   server_host = ServerHost,
+		   access = Access,
+		   default_room_opts = DefOpts,
+		   history_size = HistorySize,
+		   room_shaper = RoomShaper} = State) ->
+    ?DEBUG("MUC: create new room '~s'~n", [Room]),
+    NewOpts = case Opts of
+		  default -> DefOpts;
+		  _ -> Opts
+	      end,
+    {ok, Pid} = mod_muc_room:start(
+		  Host, ServerHost, Access,
+		  Room, HistorySize,
+		  RoomShaper, From,
+          Nick, [{instant, true}|NewOpts]),
+    register_room(Host, Room, Pid),
+    {reply, ok, State};
 
 handle_call({create, Room, From, Nick, Opts},
 	    _From,

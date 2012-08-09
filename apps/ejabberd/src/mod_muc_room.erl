@@ -40,6 +40,8 @@
 %% gen_fsm callbacks
 -export([init/1,
      normal_state/2,
+     locked_state/2,
+     initial_state/2,
      handle_event/3,
      handle_sync_event/4,
      handle_info/3,
@@ -138,6 +140,31 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
+
+%An instant room is created using the same method as the p1 version. a test backdoor of sorts
+%Will be used to handle groupchat 1.0 requests
+init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, [{instant, true}|DefRoomOpts]]) ->
+     process_flag(trap_exit, true),
+     Shaper = shaper:new(RoomShaper),
+     State = set_affiliation(Creator, owner,
+                 #state{host = Host,
+                    server_host = ServerHost,
+                    access = Access,
+                    room = Room,
+                    history = lqueue_new(HistorySize),
+                    jid = jlib:make_jid(Room, Host, <<>>),
+                    just_created = true,
+                    room_shaper = Shaper}),
+     State1 = set_opts(DefRoomOpts, State),
+     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
+           [Room, Host, jlib:jid_to_binary(Creator)]),
+     add_to_log(room_existence, created, State1),
+     add_to_log(room_existence, started, State1),
+     {ok, normal_state, State1};
+
+
+
+%%A room is created
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
@@ -155,7 +182,10 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
           [Room, Host, jlib:jid_to_binary(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
-    {ok, normal_state, State1};
+    {ok,initial_state, State1};
+
+
+%%A room is restored
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
@@ -175,6 +205,104 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
+
+%in the locked state StateData contains the same settingd it previously held
+%for the normal_state. The fsm awaits either a confirmation or a configuration form from the creator.
+%responds with error to the any other queries
+
+locked_error({route, From, ToNick,
+          {xmlelement, _Name, Attrs, _} = Packet}, NextState,
+         StateData) ->
+    ?INFO_MSG("Wrong stanza: ~p", [Packet]),
+    ErrText = <<"This room is locked">>,
+    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+    Err = jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+    ejabberd_router:route(
+        jlib:jid_replace_resource(
+    StateData#state.jid,
+    ToNick),
+        From, Err),
+    {next_state, NextState, StateData}.
+
+%Receive the room-creating Stanza
+%will crash if any other stanza is received in this state
+initial_state({route, From, ToNick,
+              {xmlelement, <<"presence">>, Attrs, _Body} = Presence}, StateData) ->
+    %this should never happen so crash if it does
+    <<>> = xml:get_attr_s(<<"type">>, Attrs),
+    case  xml:get_path_s(Presence,[{elem, <<"x">>}, {attr, <<"xmlns">>}]) of
+        ?NS_MUC ->
+            %FIXME
+            process_presence(From, ToNick, Presence, StateData, locked_state);
+            %The fragment of normal_state with Activity that used to do this - how does that work?
+            %Seems to work without it
+        <<>> ->
+            %groupchat 1.0 user, straight to normal_state
+            process_presence(From, ToNick, Presence, StateData)
+        end.
+
+%Destroy room
+locked_state({route, From, _ToNick,
+              {xmlelement, <<"iq">>, Attrs,
+               [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_MUC_OWNER}],
+                 [{xmlelement, <<"destroy">>, _Attrs, _Body}]} = SubEl
+                 ]} = Packet} = Call,
+         StateData) ->
+    ?INFO_MSG("Packet: ~p", [Packet]),
+    case xml:get_tag_attr_s(<<"type">>, Packet) =:= <<"set">> andalso
+        get_affiliation(From, StateData)  =:= owner of
+        true ->
+            Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+            {result, [], stop} = process_iq_owner(From, set, Lang, SubEl , StateData),
+
+            ?INFO_MSG("IQ: ~p", [jlib:iq_to_xml(#iq{type = result})]),
+            %FIXME
+            ejabberd_router:route(StateData#state.jid, From, jlib:iq_to_xml(#iq{type = result, sub_el = []})),
+            {stop, normal, StateData};
+        _ ->
+            locked_error(Call, locked_state, StateData)
+    end;
+
+%Confirm instant room    %/configure room
+locked_state({route, From, ToNick,
+              {xmlelement, <<"iq">>, _Attrs, _Body} = Packet} = Call,
+         StateData) ->
+    case xml:get_tag_attr_s(<<"type">>, Packet) == <<"set">> andalso
+        xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER andalso
+        xml:get_path_s(Packet, [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"xmlns">>}]) == ?NS_XDATA andalso
+        xml:get_path_s(Packet, [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"type">>}]) == <<"submit">>
+    of
+       true ->
+            ReplyIq = jlib:make_result_iq_reply(Packet),
+            ejabberd_router:route(
+                jlib:jid_replace_resource(
+            StateData#state.jid,
+            ToNick),
+                From,ReplyIq),
+            {next_state, normal_state, StateData#state{just_created=false} };
+        _ ->
+            locked_error(Call, locked_state, StateData)
+    end;
+
+%Let owner leave. Destroy the room
+locked_state({route, From, ToNick,
+              {xmlelement, <<"presence">>, Attrs, _Body} = Presence} = Call,
+         StateData) ->
+    case xml:get_attr_s(<<"type">>, Attrs) =:= <<"unavailable">>
+        andalso get_affiliation(From, StateData)  =:= owner of
+        true ->
+            %will let the owner leave and destroy the room if it's not persistant
+            %FIXME - move the rooms configuration from init.
+            %The rooms are not presistent by default, but just to be safe...
+            StateData1 = StateData#state{config = (StateData#state.config)#config{persistent = false}},
+            process_presence(From, ToNick, Presence, StateData1, locked_state);
+        _ ->
+            locked_error(Call, locked_state, StateData)
+    end;
+
+locked_state(Call, StateData) ->
+    locked_error(Call,locked_state, StateData).
+
 normal_state({route, From, <<>>,
           {xmlelement, <<"message">>, Attrs, _Els} = Packet},
          StateData) ->
@@ -737,6 +865,12 @@ get_participant_data(From, StateData) ->
         {<<>>, moderator}
     end.
 
+%FIXME
+process_presence(From, ToNick, Presence, StateData, NewState) ->
+    case process_presence(From, ToNick, Presence, StateData) of
+        {next_state, normal_state, StateData1} -> {next_state, NewState, StateData1};
+        {stop, normal, _StateData2} = X -> X
+    end.
 
 process_presence(From, Nick, {xmlelement, <<"presence">>, Attrs, _Els} = Packet,
          StateData) ->
@@ -835,10 +969,10 @@ process_presence(From, Nick, {xmlelement, <<"presence">>, Attrs, _Els} = Packet,
                                 send_new_presence(From, NewState),
                                 NewState
             end;
-			%at this point we know that the presence has no type (user wants to enter the room)
-			%and that the user is not alredy online
-			false ->
-				handle_new_user(From, Nick, Packet, StateData, Attrs)
+            %at this point we know that the presence has no type (user wants to enter the room)
+            %and that the user is not alredy online
+            false ->
+                handle_new_user(From, Nick, Packet, StateData, Attrs)
         end;
         _ ->
         StateData
@@ -855,17 +989,17 @@ process_presence(From, Nick, {xmlelement, <<"presence">>, Attrs, _Els} = Packet,
     end.
 
 handle_new_user(From, Nick = <<>>, _Packet, StateData, Attrs) ->
-	Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-	ErrText = <<"No nickname">>,
-	Error =jlib:make_error_reply(
-				{xmlelement,<<"presence">>, [], []},
-				?ERRT_JID_MALFORMED(Lang, ErrText)),
-	%ejabberd_route(From, To, Packet),
-	ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid, Nick), From, Error),
-	StateData;
+    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+    ErrText = <<"No nickname">>,
+    Error =jlib:make_error_reply(
+                {xmlelement,<<"presence">>, [], []},
+                ?ERRT_JID_MALFORMED(Lang, ErrText)),
+    %ejabberd_route(From, To, Packet),
+    ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid, Nick), From, Error),
+    StateData;
 
 handle_new_user(From, Nick, Packet, StateData, _Attrs) ->
-	add_new_user(From, Nick, Packet, StateData).
+    add_new_user(From, Nick, Packet, StateData).
 
 is_user_online(JID, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -1797,16 +1931,15 @@ send_new_presence(NJID, Reason, StateData) ->
                false ->
                    []
                end,
-          Status2 = case (NJID == Info#user.jid) of 
-                 true ->    
-    				Status0 = case ((StateData#state.config)#config.logging) of
+          Status2 = case (NJID == Info#user.jid) of
+                 true ->
+                    Status0 = case ((StateData#state.config)#config.logging) of
                             true ->
-                            [{xmlelement, <<"status">>, [{<<"code">>, <<"170">>}], []}
-                            | Status];
+                            [{xmlelement, <<"status">>, [{<<"code">>, <<"170">>}], []}|Status];
                             false ->
                             Status
                         end,
-    				Status1 = case ((StateData#state.config)#config.anonymous==false) of
+                    Status1 = case ((StateData#state.config)#config.anonymous==false) of
                             true ->
                             [{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}
                             | Status0];
