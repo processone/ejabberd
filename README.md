@@ -10,10 +10,9 @@ Its home at GitHub is http://github.com/esl/ejabberd.
 
 Quickstart guide
 ----------------
-For a quick start just download the pre-built package that suits your
-platform from XYZ.
-
-TODO: add a disclaimer about pre-built packages here (link do download page)!
+For a quick start just
+[download the pre-built package](http://www.erlang-solutions.com/section/137/download-erlang-omp)
+that suits your platform.
 
 
 Main differences from the parent project
