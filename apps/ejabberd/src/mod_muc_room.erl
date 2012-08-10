@@ -20,9 +20,9 @@
 %%% You should have received a copy of the GNU General Public License
 %%% along with this program; if not, write to the Free Software
 %%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
-%%%
-%%%----------------------------------------------------------------------
+    %%% 02111-1307 USA
+    %%%
+    %%%----------------------------------------------------------------------
 
 -module(mod_muc_room).
 -author('alexey@process-one.net').
@@ -234,41 +234,48 @@ initial_state({route, From, ToNick,
             process_presence(From, ToNick, Presence, StateData)
         end.
 
+is_query_allowed(Query) -> 
+    X = xml:get_subtag(Query, <<"x">>),
+    xml:get_subtag(Query, <<"destroy">>) =/= false
+        orelse( X =/= false andalso xml:get_tag_attr_s(<<"xmlns">>, X)== ?NS_XDATA
+        andalso ( xml:get_tag_attr_s(<<"type">>, X) == <<"submit">>
+        orelse xml:get_tag_attr_s(<<"type">>, X)== <<"cancel">>)).
+
+locked_state_process_owner_iq(From, {xmlelement, <<"iq">>, Attrs, _Body} = Packet,
+                              Lang, <<"set">>, StateData) ->
+    Query= xml:get_subtag(Packet, <<"query">>),
+    case is_query_allowed(Query) of
+        true ->
+            Result = process_iq_owner(From, set, Lang, Query, StateData);
+        false ->
+            Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, <<"Query not allowed">>))}
+    end,
+    {Result, normal_state};
+
+
+locked_state_process_owner_iq(From, Packet, Lang, <<"get">>, StateData) ->
+    Query= xml:get_subtag(Packet, <<"query">>),
+    {process_iq_owner(From, get, Lang, Query, StateData), locked_state};
+
+locked_state_process_owner_iq(_From, Packet, Lang, _Type, _StateData) ->
+    {{error, jlib:make_error_reply(Packet,
+                                   ?ERRT_ITEM_NOT_FOUND(Lang, <<"Wrong type">>))}, locked_state}.
 
 %Destroy room/ confirm instant room/ configure room
 locked_state({route, From, _ToNick,
               {xmlelement, <<"iq">>, Attrs, _Body} = Packet}, StateData) ->
     ErrText = <<"This room is locked">>,
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-    SubEl = xml:get_subtag(Packet, <<"query">>),
-    NextState = case xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER
-    andalso get_affiliation(From, StateData)  =:= owner of
-    true ->
-        case xml:get_tag_attr_s(<<"type">>, Packet) of
-        <<"set">> ->
-            X = xml:get_subtag(SubEl, <<"x">>),
-            case xml:get_subtag(SubEl, <<"destroy">>) =/= false
-            orelse( X =/= false andalso xml:get_tag_attr_s(<<"xmlns">>, X)== ?NS_XDATA
-                andalso ( xml:get_tag_attr_s(<<"type">>, X) == <<"submit">>
-                         orelse xml:get_tag_attr_s(<<"type">>, X)== <<"cancel">>)) of
-            true->
-                Result = process_iq_owner(From, set, Lang, SubEl, StateData);
+    {Result, NextState} =
+        case xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER
+            andalso get_affiliation(From, StateData)  =:= owner of
+            true ->
+                locked_state_process_owner_iq(From, Packet, Lang,
+                                                xml:get_tag_attr_s(<<"type">>, Packet), StateData);
             false ->
-                Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))}
-            end,
-            normal_state;
-        <<"get">> ->
-            %% send the configuration form here
-            Result = process_iq_owner(From, get, Lang, SubEl , StateData),
-            locked_state;
-        _ ->
-            Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))},
-            locked_state
-        end;
-    false ->
-        Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))},
-        locked_state
-    end,
+                {{error, jlib:make_error_reply(Packet,
+                                               ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))}, locked_state}
+        end,
     {IQRes, StateData3, NextState1} =
         %FIXME
         case Result of
@@ -279,7 +286,8 @@ locked_state({route, From, _ToNick,
                 {#iq{type = result, sub_el = [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
                     StateData2, NextState};
             {error, Error} ->
-                {#iq{type = error, sub_el = [SubEl, Error]},
+                Query= xml:get_subtag(Packet, <<"query">>),
+                {#iq{type = error, sub_el = [Query, Error]},
                     StateData, NextState}
         end,
     ejabberd_router:route(StateData3#state.jid, From, jlib:iq_to_xml(IQRes)),
