@@ -50,7 +50,7 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--record(route, {domain, pid, local_hint}).
+-record(route, {domain, handler}).
 -record(state, {}).
 
 %%====================================================================
@@ -87,58 +87,17 @@ route_error(From, To, ErrPacket, OrigPacket) ->
 register_route(Domain) ->
     register_route(Domain, undefined).
 
-register_route(Domain, LocalHint) ->
-    case jlib:nameprep(Domain) of
-	error ->
-	    erlang:error({invalid_domain, Domain});
-	LDomain ->
-	    Pid = self(),
-	    case get_component_number(LDomain) of
-		undefined ->
-		    F = fun() ->
-				mnesia:write(#route{domain = LDomain,
-						    pid = Pid,
-						    local_hint = LocalHint})
-			end,
-		    mnesia:transaction(F);
-		N ->
-		    F = fun() ->
-				case mnesia:wread({route, LDomain}) of
-				    [] ->
-					mnesia:write(
-					  #route{domain = LDomain,
-						 pid = Pid,
-						 local_hint = 1}),
-					lists:foreach(
-					  fun(I) ->
-						  mnesia:write(
-						    #route{domain = LDomain,
-							   pid = undefined,
-							   local_hint = I})
-					  end, lists:seq(2, N));
-				    Rs ->
-					lists:any(
-					  fun(#route{pid = undefined,
-						     local_hint = I} = R) ->
-						  mnesia:write(
-						    #route{domain = LDomain,
-							   pid = Pid,
-							   local_hint = I}),
-						  mnesia:delete_object(R),
-						  true;
-					     (_) ->
-						  false
-					  end, Rs)
-				end
-			end,
-		    mnesia:transaction(F)
-	    end
-    end.
+register_route(Domain, HandlerOrPid) ->
+    register_route_to_ldomain(jlib:nameprep(Domain), Domain, HandlerOrPid).
 
-register_routes(Domains) ->
-    lists:foreach(fun(Domain) ->
-			  register_route(Domain)
-		  end, Domains).
+register_route_to_ldomain(error, Domain, _) ->
+    erlang:error({invalid_domain, Domain});
+register_route_to_ldomain(LDomain, _, HandlerOrPid) ->
+    Handler = make_handler(HandlerOrPid),
+    F = fun() ->
+	    mnesia:write(#route{domain = LDomain, handler = Handler})
+	end,
+    mnesia:transaction(F).
 
 unregister_route(Domain) ->
     case jlib:nameprep(Domain) of
@@ -335,15 +294,6 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			       OrigFrom#jid.lserver,
                                [OrigFrom, OrigTo, OrigPacket]),
 	    ok
-    end.
-
-get_component_number(LDomain) ->
-    case ejabberd_config:get_local_option(
-	   {domain_balancing_component_number, LDomain}) of
-	N when is_integer(N), N > 1 ->
-	    N;
-	_ ->
-	    undefined
     end.
 
 update_tables() ->
