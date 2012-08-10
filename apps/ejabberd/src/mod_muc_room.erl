@@ -291,7 +291,7 @@ locked_state({route, From, _ToNick,
                                        [{<<"xmlns">>, ?NS_MUC_OWNER}],
                                        Res}]}
                     end,
-    {IQRes, StateData3, NextState} =
+    {IQRes, StateData3, NextState1} =
         case Result of
             {result, Res, stop} ->
                 {MkQueryResult(Res), StateData, stop};
@@ -303,13 +303,13 @@ locked_state({route, From, _ToNick,
                  StateData, NextState}
         end,
     ejabberd_router:route(StateData3#state.jid, From, jlib:iq_to_xml(IQRes)),
-    case NextState of
+    case NextState1 of
         stop->
             {stop, normal, StateData3};
         locked_state ->
-            {next_state, NextState, StateData3};
+            {next_state, NextState1, StateData3};
         normal_state ->
-            {next_state, NextState, StateData3#state{just_created = false}}
+            {next_state, NextState1, StateData3#state{just_created = false}}
     end;
 
 %% Let owner leave. Destroy the room.
