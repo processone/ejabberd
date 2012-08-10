@@ -32,21 +32,21 @@
 
 %% External exports
 -export([start_link/9,
-    start_link/7,
-    start/9,
-    start/7,
-    route/4]).
+         start_link/7,
+         start/9,
+         start/7,
+         route/4]).
 
 %% gen_fsm callbacks
 -export([init/1,
-     normal_state/2,
-     locked_state/2,
-     initial_state/2,
-     handle_event/3,
-     handle_sync_event/4,
-     handle_info/3,
-     terminate/3,
-     code_change/4]).
+         normal_state/2,
+         locked_state/2,
+         initial_state/2,
+         handle_event/3,
+         handle_sync_event/4,
+         handle_info/3,
+         terminate/3,
+         code_change/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -58,7 +58,7 @@
 -record(routed_nick_iq, {allow_query, online, iq, packet, lang, nick, jid, from, stanza}).
 
 -define(MAX_USERS_DEFAULT_LIST,
-    [5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
+        [5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
 %-define(DBGFSM, true).
 
@@ -71,43 +71,45 @@
 %% Module start with or without supervisor:
 -ifdef(NO_TRANSIENT_SUPERVISORS).
 -define(SUPERVISOR_START, 
-    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-                RoomShaper, Creator, Nick, DefRoomOpts],
-              ?FSMOPTS)).
+        gen_fsm:start(?MODULE,
+                      [Host, ServerHost, Access, Room, HistorySize,
+                       RoomShaper, Creator, Nick, DefRoomOpts],
+                      ?FSMOPTS)).
 -else.
--define(SUPERVISOR_START, 
-    Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
-    supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-               Creator, Nick, DefRoomOpts])).
+-define(SUPERVISOR_START,
+        Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
+        supervisor:start_child(Supervisor,
+                               [Host, ServerHost, Access, Room, HistorySize,
+                                RoomShaper, Creator, Nick, DefRoomOpts])).
 -endif.
 
 -define(XFIELD(Type, Label, Var, Val),
-	{xmlelement, <<"field">>, [{<<"type">>, Type},
-			       {<<"label">>, translate:translate(Lang, Label)},
-			       {<<"var">>, Var}],
-	 [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
+        {xmlelement, <<"field">>, [{<<"type">>, Type},
+                                   {<<"label">>, translate:translate(Lang, Label)},
+                                   {<<"var">>, Var}],
+        [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
 
 -define(BOOLXFIELD(Label, Var, Val),
-	?XFIELD(<<"boolean">>, Label, Var,
-		case Val of
-		    true -> <<"1">>;
-		    _ -> <<"0">>
-		end)).
+        ?XFIELD(<<"boolean">>, Label, Var,
+                case Val of
+                    true -> <<"1">>;
+                    _ -> <<"0">>
+                end)).
 
 -define(STRINGXFIELD(Label, Var, Val),
-	?XFIELD(<<"text-single">>, Label, Var, Val)).
+        ?XFIELD(<<"text-single">>, Label, Var, Val)).
 
 -define(PRIVATEXFIELD(Label, Var, Val),
-	?XFIELD(<<"text-private">>, Label, Var, Val)).
+        ?XFIELD(<<"text-private">>, Label, Var, Val)).
 
 -define(JIDXFIELD(Label, Var, Val),
         ?XFIELD(<<"jid-single">>, Label, Var, Val)).
 
 -define(JIDMULTIXFIELD(Label, Var, JIDList),
-        {xmlelement, <<"field">>, [{<<"type">>, <<"jid-multi">>},
-			       {<<"label">>, translate:translate(Lang, Label)},
-			       {<<"var">>, Var}],
+        {xmlelement, <<"field">>,
+         [{<<"type">>, <<"jid-multi">>},
+          {<<"label">>, translate:translate(Lang, Label)},
+          {<<"var">>, Var}],
          [{xmlelement, <<"value">>, [], [{xmlcdata, jlib:jid_to_binary(JID)}]}
           || JID <- JIDList]}).
 %%%----------------------------------------------------------------------
@@ -119,32 +121,33 @@ start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
 
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
     Supervisor = gen_mod:get_module_proc(ServerHost, ejabberd_mod_muc_sup),
-    supervisor:start_child(
-      Supervisor, [Host, ServerHost, Access, Room, HistorySize, RoomShaper,
-           Opts]).
+    supervisor:start_child(Supervisor, [Host, ServerHost, Access, Room,
+                                        HistorySize, RoomShaper, Opts]).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
        Creator, Nick, DefRoomOpts) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-                 RoomShaper, Creator, Nick, DefRoomOpts],
-               ?FSMOPTS).
+    gen_fsm:start_link(?MODULE,
+                       [Host, ServerHost, Access, Room, HistorySize,
+                        RoomShaper, Creator, Nick, DefRoomOpts],
+                       ?FSMOPTS).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-                 RoomShaper, Opts],
-               ?FSMOPTS).
+    gen_fsm:start_link(?MODULE,
+                       [Host, ServerHost, Access, Room, HistorySize,
+                        RoomShaper, Opts],
+                       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 
-%%----------------------------------------------------------------------
+%%-----------------------------------------------------------------------
 %% Func: init/1
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
 %%          {stop, StopReason}
-%%----------------------------------------------------------------------
+%%-----------------------------------------------------------------------
 
 %% A room is created. Depending on request type (MUC/groupchat 1.0) the next
 %% state is determined accordingly (a locked room for MUC or an instant
@@ -177,19 +180,20 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick,
                 end,
     {ok, NextState, State1};
 
-%%A room is restored
+%% A room is restored
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_opts(Opts, #state{host = Host,
-                  server_host = ServerHost,
-                  access = Access,
-                  room = Room,
-                  history = lqueue_new(HistorySize),
-                  jid = jlib:make_jid(Room, Host, <<>>),
-                  room_shaper = Shaper}),
+                                  server_host = ServerHost,
+                                  access = Access,
+                                  room = Room,
+                                  history = lqueue_new(HistorySize),
+                                  jid = jlib:make_jid(Room, Host, <<>>),
+                                  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
     {ok, normal_state, State}.
+
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -198,39 +202,36 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
-%in the locked state StateData contains the same settingd it previously held
-%for the normal_state. The fsm awaits either a confirmation or a configuration form from the creator.
-%responds with error to the any other queries
-
-locked_error({route, From, ToNick,
-          {xmlelement, _Name, Attrs, _} = Packet}, NextState,
-         StateData) ->
+%% In the locked state StateData contains the same settings it previously held
+%% for the normal_state. The fsm awaits either a confirmation
+%% or a configuration form from the creator.
+%% Responds with error to the any other queries.
+locked_error({route, From, ToNick, {xmlelement, _Name, Attrs, _} = Packet},
+             NextState, StateData) ->
     ?INFO_MSG("Wrong stanza: ~p", [Packet]),
     ErrText = <<"This room is locked">>,
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     Err = jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-    ejabberd_router:route(
-        jlib:jid_replace_resource(
-    StateData#state.jid,
-    ToNick),
-        From, Err),
+    ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
+                                                    ToNick),
+                          From, Err),
     {next_state, NextState, StateData}.
 
-%Receive the room-creating Stanza
-%will crash if any other stanza is received in this state
+%% Receive the room-creating Stanza.
+%% Will crash if any other stanza is received in this state.
 initial_state({route, From, ToNick,
               {xmlelement, <<"presence">>, Attrs, _Body} = Presence}, StateData) ->
-    %this should never happen so crash if it does
+    %% this should never happen so crash if it does
     <<>> = xml:get_attr_s(<<"type">>, Attrs),
     case  xml:get_path_s(Presence,[{elem, <<"x">>}, {attr, <<"xmlns">>}]) of
         ?NS_MUC ->
-            %FIXME
+            %% FIXME
             add_to_log(room_existence, started, StateData),
             process_presence(From, ToNick, Presence, StateData, locked_state);
-            %The fragment of normal_state with Activity that used to do this - how does that work?
-            %Seems to work without it
+            %% The fragment of normal_state with Activity that used to do this - how does that work?
+            %% Seems to work without it
         <<>> ->
-            %groupchat 1.0 user, straight to normal_state
+            %% groupchat 1.0 user, straight to normal_state
             process_presence(From, ToNick, Presence, StateData)
         end.
 
@@ -241,76 +242,85 @@ is_query_allowed(Query) ->
         andalso ( xml:get_tag_attr_s(<<"type">>, X) == <<"submit">>
         orelse xml:get_tag_attr_s(<<"type">>, X)== <<"cancel">>)).
 
-locked_state_process_owner_iq(From, {xmlelement, <<"iq">>, Attrs, _Body} = Packet,
+locked_state_process_owner_iq(From, {xmlelement, <<"iq">>, _, _} = Packet,
                               Lang, <<"set">>, StateData) ->
     Query= xml:get_subtag(Packet, <<"query">>),
-    case is_query_allowed(Query) of
-        true ->
-            Result = process_iq_owner(From, set, Lang, Query, StateData);
-        false ->
-            Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, <<"Query not allowed">>))}
-    end,
+    Result = case is_query_allowed(Query) of
+                 true ->
+                     process_iq_owner(From, set, Lang, Query, StateData);
+                 false ->
+                     {error,
+                      jlib:make_error_reply(Packet,
+                                            ?ERRT_ITEM_NOT_FOUND(Lang, <<"Query not allowed">>))}
+             end,
     {Result, normal_state};
-
 
 locked_state_process_owner_iq(From, Packet, Lang, <<"get">>, StateData) ->
     Query= xml:get_subtag(Packet, <<"query">>),
     {process_iq_owner(From, get, Lang, Query, StateData), locked_state};
 
 locked_state_process_owner_iq(_From, Packet, Lang, _Type, _StateData) ->
-    {{error, jlib:make_error_reply(Packet,
-                                   ?ERRT_ITEM_NOT_FOUND(Lang, <<"Wrong type">>))}, locked_state}.
+    {{error,
+      jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang,
+                                                         <<"Wrong type">>))},
+     locked_state}.
 
-%Destroy room/ confirm instant room/ configure room
+%% Destroy room / confirm instant room / configure room
 locked_state({route, From, _ToNick,
               {xmlelement, <<"iq">>, Attrs, _Body} = Packet}, StateData) ->
     ErrText = <<"This room is locked">>,
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     {Result, NextState} =
-        case xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER
-            andalso get_affiliation(From, StateData)  =:= owner of
+        case xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}])
+                == ?NS_MUC_OWNER
+            andalso get_affiliation(From, StateData)  =:= owner
+        of
             true ->
                 locked_state_process_owner_iq(From, Packet, Lang,
-                                                xml:get_tag_attr_s(<<"type">>, Packet), StateData);
+                                              xml:get_tag_attr_s(<<"type">>, Packet),
+                                              StateData);
             false ->
-                {{error, jlib:make_error_reply(Packet,
-                                               ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))}, locked_state}
+                {{error,
+                  jlib:make_error_reply(Packet,
+                                        ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))},
+                 locked_state}
         end,
-    {IQRes, StateData3, NextState1} =
-        %FIXME
+    MkQueryResult = fun(Res) ->
+                        #iq{type = result,
+                            sub_el = [{xmlelement, <<"query">>,
+                                       [{<<"xmlns">>, ?NS_MUC_OWNER}],
+                                       Res}]}
+                    end,
+    {IQRes, StateData3, NextState} =
         case Result of
             {result, Res, stop} ->
-                {#iq{type = result, sub_el =
-                     [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
-                    StateData, stop};
+                {MkQueryResult(Res), StateData, stop};
             {result, Res, StateData2} ->
-                {#iq{type = result, sub_el = 
-                     [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
-                    StateData2, NextState};
+                {MkQueryResult(Res), StateData2, NextState};
             {error, Error} ->
                 Query= xml:get_subtag(Packet, <<"query">>),
                 {#iq{type = error, sub_el = [Query, Error]},
-                    StateData, NextState}
+                 StateData, NextState}
         end,
     ejabberd_router:route(StateData3#state.jid, From, jlib:iq_to_xml(IQRes)),
-    case NextState1 of
-    stop->
-        {stop, normal, StateData3};
-    locked_state ->
-        {next_state, NextState1, StateData3};
-    normal_state ->
-        {next_state, NextState1, StateData3#state{just_created = false}}
+    case NextState of
+        stop->
+            {stop, normal, StateData3};
+        locked_state ->
+            {next_state, NextState, StateData3};
+        normal_state ->
+            {next_state, NextState, StateData3#state{just_created = false}}
     end;
 
-%Let owner leave. Destroy the room
+%% Let owner leave. Destroy the room.
 locked_state({route, From, ToNick,
               {xmlelement, <<"presence">>, Attrs, _Body} = Presence} = Call,
-         StateData) ->
+             StateData) ->
     case xml:get_attr_s(<<"type">>, Attrs) =:= <<"unavailable">>
         andalso get_affiliation(From, StateData)  =:= owner of
         true ->
-            %will let the owner leave and destroy the room if it's not persistant
-            %The rooms are not presistent by default, but just to be safe...
+            %% Will let the owner leave and destroy the room if it's not persistant
+            %% The rooms are not presistent by default, but just to be safe...
             StateData1 = StateData#state{config = (StateData#state.config)#config{persistent = false}},
             process_presence(From, ToNick, Presence, StateData1, locked_state);
         _ ->
@@ -321,8 +331,8 @@ locked_state(Call, StateData) ->
     locked_error(Call,locked_state, StateData).
 
 normal_state({route, From, <<>>,
-          {xmlelement, <<"message">>, Attrs, _Els} = Packet},
-         StateData) ->
+              {xmlelement, <<"message">>, Attrs, _Els} = Packet},
+             StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     Type = xml:get_attr_s(<<"type">>, Attrs),
 
@@ -350,14 +360,14 @@ normal_state({route, From, <<>>,
     end;
 
 normal_state({route, From, Nick,
-          {xmlelement, <<"presence">>, _Attrs, _Els} = Packet},
-         StateData) ->
+              {xmlelement, <<"presence">>, _Attrs, _Els} = Packet},
+             StateData) ->
     Activity = get_user_activity(From, StateData),
     Now = now_to_usec(now()),
     MinPresenceInterval =
-    trunc(gen_mod:get_module_opt(
-        StateData#state.server_host,
-        mod_muc, min_presence_interval, 0) * 1000000),
+        trunc(gen_mod:get_module_opt(StateData#state.server_host,
+                                     mod_muc, min_presence_interval, 0)
+              * 1000000),
     if
     (Now >= Activity#activity.presence_time + MinPresenceInterval) and
     (Activity#activity.presence == undefined) ->
@@ -380,8 +390,8 @@ normal_state({route, From, Nick,
     end;
 
 normal_state({route, From, ToNick,
-          {xmlelement, <<"message">>, Attrs, _} = Packet},
-         StateData) ->
+              {xmlelement, <<"message">>, Attrs, _} = Packet},
+             StateData) ->
     Type = xml:get_attr_s(<<"type">>, Attrs),
     NewStateData = route_nick_message(#routed_nick_message{
         allow_pm = (StateData#state.config)#config.allow_private_messages,
