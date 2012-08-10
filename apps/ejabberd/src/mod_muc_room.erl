@@ -32,10 +32,10 @@
 
 %% External exports
 -export([start_link/9,
-     start_link/7,
-     start/9,
-     start/7,
-     route/4]).
+    start_link/7,
+    start/9,
+    start/7,
+    route/4]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -234,49 +234,63 @@ initial_state({route, From, ToNick,
             process_presence(From, ToNick, Presence, StateData)
         end.
 
-%Destroy room/ confirm instant room/ configure room
-locked_state({route, From, ToNick,
-              {xmlelement, <<"iq">>, Attrs, _Body} = Packet} = Call,
-         StateData) ->
-    case xml:get_tag_attr_s(<<"type">>, Packet) of
-    <<"set">> ->
-        SubEl = xml:get_subtag(Packet, <<"query">>),
-        case xml:get_tag_attr_s(<<"xmlns">>, SubEl) == ?NS_MUC_OWNER  andalso
-        xml:get_subtag(SubEl, <<"destroy">>) =/= false andalso
-        get_affiliation(From, StateData)  =:= owner  of
-        true->
-            Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-            {result, [], stop} = process_iq_owner(From, set, Lang, SubEl , StateData),
-            %FIXME
-            ejabberd_router:route(StateData#state.jid, From, jlib:iq_to_xml(#iq{type = result, sub_el = []})),
-            {stop, normal, StateData};
-        false ->
-            case xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER andalso
-            get_affiliation(From, StateData)  =:= owner andalso
-            xml:get_path_s(Packet,
-                        [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"xmlns">>}]) == ?NS_XDATA andalso
-            xml:get_path_s(Packet,
-                        [{elem, <<"query">>}, {elem, <<"x">>}, {attr, <<"type">>}]) == <<"submit">> of
-                true ->
-                    ReplyIq = jlib:make_result_iq_reply(Packet),
-                    ejabberd_router:route(
-                        jlib:jid_replace_resource(
-                    StateData#state.jid,
-                    ToNick),
-                        From,ReplyIq),
-                    {next_state, normal_state, StateData#state{just_created=false} };
-                false ->
-                    locked_error(Call, locked_state, StateData)
-            end
-        end;
-    <<"get">> ->
-            %% send the configuration form here
-            locked_error(Call, locked_state, StateData);
-    _ ->
-            %% send the configuration form here
-            locked_error(Call, locked_state, StateData)
-    end;
 
+%Destroy room/ confirm instant room/ configure room
+locked_state({route, From, _ToNick,
+              {xmlelement, <<"iq">>, Attrs, _Body} = Packet}, StateData) ->
+    ErrText = <<"This room is locked">>,
+    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+    SubEl = xml:get_subtag(Packet, <<"query">>),
+    NextState = case xml:get_path_s(Packet, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) == ?NS_MUC_OWNER
+    andalso get_affiliation(From, StateData)  =:= owner of
+    true ->
+        case xml:get_tag_attr_s(<<"type">>, Packet) of
+        <<"set">> ->
+            X = xml:get_subtag(SubEl, <<"x">>),
+            case xml:get_subtag(SubEl, <<"destroy">>) =/= false
+            orelse( X =/= false andalso xml:get_tag_attr_s(<<"xmlns">>, X)== ?NS_XDATA
+                andalso ( xml:get_tag_attr_s(<<"type">>, X) == <<"submit">>
+                         orelse xml:get_tag_attr_s(<<"type">>, X)== <<"cancel">>)) of
+            true->
+                Result = process_iq_owner(From, set, Lang, SubEl, StateData);
+            false ->
+                Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))}
+            end,
+            normal_state;
+        <<"get">> ->
+            %% send the configuration form here
+            Result = process_iq_owner(From, get, Lang, SubEl , StateData),
+            locked_state;
+        _ ->
+            Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))},
+            locked_state
+        end;
+    false ->
+        Result = {error, jlib:make_error_reply(Packet, ?ERRT_ITEM_NOT_FOUND(Lang, ErrText))},
+        locked_state
+    end,
+    {IQRes, StateData3, NextState1} =
+        %FIXME
+        case Result of
+            {result, Res, stop} ->
+                {#iq{type = result, sub_el = [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
+                    StateData, stop};
+            {result, Res, StateData2} ->
+                {#iq{type = result, sub_el = [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
+                    StateData2, NextState};
+            {error, Error} ->
+                {#iq{type = error, sub_el = [SubEl, Error]},
+                    StateData, NextState}
+        end,
+    ejabberd_router:route(StateData3#state.jid, From, jlib:iq_to_xml(IQRes)),
+    case NextState1 of
+    stop->
+        {stop, normal, StateData3};
+    locked_state ->
+        {next_state, NextState1, StateData3};
+    normal_state ->
+        {next_state, NextState1, StateData3#state{just_created = false}}
+    end;
 
 %Let owner leave. Destroy the room
 locked_state({route, From, ToNick,
@@ -286,7 +300,6 @@ locked_state({route, From, ToNick,
         andalso get_affiliation(From, StateData)  =:= owner of
         true ->
             %will let the owner leave and destroy the room if it's not persistant
-            %FIXME - move the rooms configuration from init.
             %The rooms are not presistent by default, but just to be safe...
             StateData1 = StateData#state{config = (StateData#state.config)#config{persistent = false}},
             process_presence(From, ToNick, Presence, StateData1, locked_state);
@@ -2656,28 +2669,39 @@ send_kickban_presence1(UJID, Reason, Code, Affiliation, StateData) ->
 % Owner stuff
 
 process_iq_owner(From, set, Lang, SubEl, StateData) ->
+    
     FAffiliation = get_affiliation(From, StateData),
     case FAffiliation of
     owner ->
         {xmlelement, _Name, _Attrs, Els} = SubEl,
         case xml:remove_cdata(Els) of
-        [{xmlelement, <<"x">>, _Attrs1, _Els1} = XEl] ->
+        [{xmlelement, <<"x">>, _Attrs1, Els1} = XEl] ->
             case {xml:get_tag_attr_s(<<"xmlns">>, XEl),
               xml:get_tag_attr_s(<<"type">>, XEl)} of
             {?NS_XDATA, <<"cancel">>} ->
-                {result, [], StateData};
+                ?INFO_MSG("Destroyed MUC room ~s by the owner ~s : cancelled", 
+                    [jlib:jid_to_binary(StateData#state.jid), jlib:jid_to_binary(From)]),
+                add_to_log(room_existence, destroyed, StateData),
+                destroy_room(XEl, StateData);
             {?NS_XDATA, <<"submit">>} ->
-                case is_allowed_log_change(XEl, StateData, From)
-                andalso
-                is_allowed_persistent_change(XEl, StateData,
-                                 From)
-                andalso
-                is_allowed_room_name_desc_limits(XEl,
-                                 StateData)
-                andalso
-                is_password_settings_correct(XEl, StateData) of
-                true -> set_config(XEl, StateData);
-                false -> {error, ?ERR_NOT_ACCEPTABLE}
+                case Els1 of
+                [] ->
+                    %confrm an instant room
+                    {result, [], StateData};
+                _ ->
+                    %attepmt to configure
+                    case is_allowed_log_change(XEl, StateData, From)
+                    andalso
+                    is_allowed_persistent_change(XEl, StateData,
+                                    From)
+                    andalso
+                    is_allowed_room_name_desc_limits(XEl,
+                                    StateData)
+                    andalso
+                    is_password_settings_correct(XEl, StateData) of
+                    true -> set_config(XEl, StateData);
+                    false -> {error, ?ERR_NOT_ACCEPTABLE}
+                    end
                 end;
             _ ->
                 {error, ?ERR_BAD_REQUEST}
