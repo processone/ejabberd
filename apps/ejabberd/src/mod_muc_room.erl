@@ -280,10 +280,12 @@ locked_state({route, From, _ToNick,
         %FIXME
         case Result of
             {result, Res, stop} ->
-                {#iq{type = result, sub_el = [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
+                {#iq{type = result, sub_el =
+                     [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
                     StateData, stop};
             {result, Res, StateData2} ->
-                {#iq{type = result, sub_el = [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
+                {#iq{type = result, sub_el = 
+                     [{xmlelement, <<"query">>, [{<<"xmlns">>,?NS_MUC_OWNER}], Res }]},
                     StateData2, NextState};
             {error, Error} ->
                 Query= xml:get_subtag(Packet, <<"query">>),
