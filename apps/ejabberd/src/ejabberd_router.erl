@@ -87,8 +87,8 @@ route_error(From, To, ErrPacket, OrigPacket) ->
 register_route(Domain) ->
     register_route(Domain, undefined).
 
-register_route(Domain, HandlerOrPid) ->
-    register_route_to_ldomain(jlib:nameprep(Domain), Domain, HandlerOrPid).
+register_route(Domain, Handler) ->
+    register_route_to_ldomain(jlib:nameprep(Domain), Domain, Handler).
 
 register_routes(Domains) ->
     lists:foreach(fun(Domain) ->
@@ -98,60 +98,28 @@ register_routes(Domains) ->
 
 register_route_to_ldomain(error, Domain, _) ->
     erlang:error({invalid_domain, Domain});
-register_route_to_ldomain(LDomain, _, HandlerOrPid) ->
-    Handler = make_handler(HandlerOrPid),
-    F = fun() ->
-            mnesia:write(#route{domain = LDomain, handler = Handler})
-        end,
-    mnesia:transaction(F).
+register_route_to_ldomain(LDomain, _, HandlerOrUndef) ->
+    Handler = make_handler(HandlerOrUndef),
+    mnesia:dirty_write(#route{domain = LDomain, handler = Handler}).
 
-make_handler(Pid) when is_pid(Pid) ->
+make_handler(undefined) ->
+    Pid = self(),
     {apply_fun, fun(From, To, Packet) ->
                     Pid ! {route, From, To, Packet}
                 end};
-make_handler(Fun) when is_function(Handler, 3) ->
+make_handler(Fun) when is_function(Fun, 3) ->
     {apply_fun, Fun};
-make_handler({M,F}) when is_atom(M), is_atom(F) ->
-    {apply, {M,F}}.
+make_handler({apply, Module, Function} = Handler)
+    when is_atom(Module),
+         is_atom(Function) ->
+    Handler.
 
 unregister_route(Domain) ->
     case jlib:nameprep(Domain) of
         error ->
             erlang:error({invalid_domain, Domain});
         LDomain ->
-            Pid = self(),
-            case get_component_number(LDomain) of
-                undefined ->
-                    F = fun() ->
-                                case mnesia:match_object(
-                                       #route{domain = LDomain,
-                                              pid = Pid,
-                                              _ = '_'}) of
-                                    [R] ->
-                                        mnesia:delete_object(R);
-                                    _ ->
-                                        ok
-                                end
-                        end,
-                    mnesia:transaction(F);
-                _ ->
-                    F = fun() ->
-                                case mnesia:match_object(#route{domain=LDomain,
-                                                                pid = Pid,
-                                                                _ = '_'}) of
-                                    [R] ->
-                                        I = R#route.local_hint,
-                                        mnesia:write(
-                                          #route{domain = LDomain,
-                                                 pid = undefined,
-                                                 local_hint = I}),
-                                        mnesia:delete_object(R);
-                                    _ ->
-                                        ok
-                                end
-                        end,
-                    mnesia:transaction(F)
-            end
+            mnesia:dirty_delete(route, LDomain)
     end.
 
 unregister_routes(Domains) ->
@@ -294,15 +262,12 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
             case mnesia:dirty_read(route, LDstDomain) of
                 [] ->
                     ejabberd_s2s:route(From, To, Packet);
-                [R] ->
-                    case R#route.local_hint of
+                [#route{handler=Handler}] ->
+                    case Handler of
                         {apply_fun, Fun} ->
                             Fun(From, To, Packet);
                         {apply, Module, Function} ->
-                            Module:Function(From, To, Packet);
-                        _ ->
-                            Pid = R#route.pid,
-                            Pid ! {route, From, To, Packet}
+                            Module:Function(From, To, Packet)
                     end
             end;
         drop ->
@@ -319,6 +284,8 @@ update_tables() ->
         [domain, pid] ->
             mnesia:delete_table(route);
         [domain, pid, local_hint] ->
+            mnesia:delete_table(route);
+        [domain, handler] ->
             ok;
         {'EXIT', _} ->
             ok
