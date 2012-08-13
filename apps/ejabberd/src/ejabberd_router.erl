@@ -90,6 +90,11 @@ register_route(Domain) ->
 register_route(Domain, HandlerOrPid) ->
     register_route_to_ldomain(jlib:nameprep(Domain), Domain, HandlerOrPid).
 
+register_routes(Domains) ->
+    lists:foreach(fun(Domain) ->
+		    register_route(Domain)
+		  end, Domains).
+
 register_route_to_ldomain(error, Domain, _) ->
     erlang:error({invalid_domain, Domain});
 register_route_to_ldomain(LDomain, _, HandlerOrPid) ->
