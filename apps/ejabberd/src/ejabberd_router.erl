@@ -107,8 +107,8 @@ make_handler(undefined) ->
     {apply_fun, fun(From, To, Packet) ->
                     Pid ! {route, From, To, Packet}
                 end};
-make_handler(Fun) when is_function(Fun, 3) ->
-    {apply_fun, Fun};
+make_handler({apply_fun, Fun} = Handler) when is_function(Fun, 3) ->
+    Handler;
 make_handler({apply, Module, Function} = Handler)
     when is_atom(Module),
          is_atom(Function) ->
