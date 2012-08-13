@@ -205,17 +205,23 @@ init([Host, Opts]) ->
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
-    ejabberd_router:register_route(MyHost),
+
+    State = #state{host = MyHost,
+            server_host = Host,
+            access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
+            default_room_opts = DefRoomOpts,
+            history_size = HistorySize,
+            room_shaper = RoomShaper},
+
+    ejabberd_router:register_route(MyHost, fun(From, To, Packet) ->
+            mod_muc:route({From, To, Packet}, State)
+        end),
+
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize,
 			 RoomShaper),
-    {ok, #state{host = MyHost,
-		server_host = Host,
-		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
-		default_room_opts = DefRoomOpts,
-		history_size = HistorySize,
-		room_shaper = RoomShaper}}.
+    {ok, State}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
