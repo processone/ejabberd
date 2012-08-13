@@ -48,6 +48,9 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+%% Internal exports
+-export([route/2]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
@@ -213,9 +216,10 @@ init([Host, Opts]) ->
             history_size = HistorySize,
             room_shaper = RoomShaper},
 
-    ejabberd_router:register_route(MyHost, fun(From, To, Packet) ->
+    F = fun(From, To, Packet) ->
             mod_muc:route({From, To, Packet}, State)
-        end),
+        end,
+    ejabberd_router:register_route(MyHost, {apply_fun, F}),
 
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
