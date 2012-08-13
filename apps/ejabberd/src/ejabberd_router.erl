@@ -156,11 +156,6 @@ init([]) ->
                          {local_content, true}]),
     mnesia:add_table_copy(route, node(), ram_copies),
     mnesia:subscribe({table, route, simple}),
-    lists:foreach(fun(Pid) ->
-                      erlang:monitor(process, Pid)
-                  end,
-                  mnesia:dirty_select(route, [{{route, '_', '$1', '_'},
-                                               [], ['$1']}])),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -200,35 +195,6 @@ handle_info({route, From, To, Packet}, State) ->
         _ ->
             ok
     end,
-    {noreply, State};
-handle_info({mnesia_table_event, {write, #route{pid = Pid}, _ActivityId}},
-            State) ->
-    erlang:monitor(process, Pid),
-    {noreply, State};
-handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
-    F = fun() ->
-                Es = mnesia:select(
-                       route,
-                       [{#route{pid = Pid, _ = '_'},
-                         [],
-                         ['$_']}]),
-                lists:foreach(
-                  fun(E) ->
-                          if
-                              is_integer(E#route.local_hint) ->
-                                  LDomain = E#route.domain,
-                                  I = E#route.local_hint,
-                                  mnesia:write(
-                                    #route{domain = LDomain,
-                                           pid = undefined,
-                                           local_hint = I}),
-                                  mnesia:delete_object(E);
-                              true ->
-                                  mnesia:delete_object(E)
-                          end
-                  end, Es)
-        end,
-    mnesia:transaction(F),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
