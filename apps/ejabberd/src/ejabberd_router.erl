@@ -152,7 +152,8 @@ init([]) ->
     mnesia:create_table(route,
                         [{ram_copies, [node()]},
                          {type, set},
-                         {attributes, record_info(fields, route)}]),
+                         {attributes, record_info(fields, route)},
+                         {local_content, true}]),
     mnesia:add_table_copy(route, node(), ram_copies),
     mnesia:subscribe({table, route, simple}),
     lists:foreach(fun(Pid) ->
