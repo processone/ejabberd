@@ -104,6 +104,15 @@ register_route_to_ldomain(LDomain, _, HandlerOrPid) ->
 	end,
     mnesia:transaction(F).
 
+make_handler(Pid) when is_pid(Pid) ->
+    {apply_fun, fun(From, To, Packet) ->
+		    Pid ! {route, From, To, Packet}
+		end};
+make_handler(Fun) when is_function(Handler, 3) ->
+    {apply_fun, Fun};
+make_handler({M,F}) when is_atom(M), is_atom(F) ->
+    {apply, {M,F}}.
+
 unregister_route(Domain) ->
     case jlib:nameprep(Domain) of
 	error ->
