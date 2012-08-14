@@ -1,4 +1,4 @@
-.PHONY: rel deps test show_test_results generate_snmp_header
+.PHONY: rel deps test show_test_results generate_snmp_header 
 
 EJABBERD_DIR = apps/ejabberd
 EJD_INCLUDE = $(EJABBERD_DIR)/include
@@ -35,9 +35,10 @@ rel: rebar deps
 
 devrel: rebar deps compile
 	mkdir -p dev
-	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd)
+	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd overlay_vars=./reltool_vars/node1_vars.config)
 	cp apps/ejabberd/src/*.erl dev/ejabberd/lib/ejabberd-2.1.8/ebin/
 	cp -R `which erl`/../../lib/tools-* dev/ejabberd/lib/
+	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd2 overlay_vars=./reltool_vars/node2_vars.config)
 
 devclean:
 	rm -rf dev/*
