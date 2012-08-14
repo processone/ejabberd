@@ -3131,8 +3131,7 @@ so nobody else can use that nickname in any room in the MUC service.
 To register a nickname, open the Service Discovery in your
 XMPP client and register in the MUC service.
 
-This module supports clustering and load
-balancing. One module can be started per cluster node. Rooms are
+One module can be started per cluster node. Rooms are
 distributed at creation time on all available MUC module
 instances. The multi-user chat module is clustered but the rooms
 themselves are not clustered nor fault-tolerant: if the node managing a
@@ -5635,42 +5634,6 @@ mnesia:change_table_copy_type(schema, node(), disc_copies).
 
 You can repeat these steps for other machines supposed to serve this
 domain.
-
-\makesection{servicelb}{Service Load-Balancing}
-\ind{component load-balancing}
-
-\makesubsection{componentlb}{Components Load-Balancing}
-
-\makesubsection{domainlb}{Domain Load-Balancing Algorithm}
-\ind{options!domain\_balancing}
-
-\ejabberd{} includes an algorithm to load balance the components that are plugged on an \ejabberd{} cluster. It means that you can plug one or several instances of the same component on each \ejabberd{} cluster and that the traffic will be automatically distributed.
-
-The default distribution algorithm try to deliver to a local instance of a component. If several local instances are available, one instance is chosen randomly. If no instance is available locally, one instance is chosen randomly among the remote component instances.
-
-If you need a different behaviour, you can change the load balancing behaviour with the option \option{domain\_balancing}. The syntax of the option is the following:
-\esyntax{\{domain\_balancing, "component.example.com", BalancingCriteria\}.}
-
-Several balancing criteria are available:
-\begin{itemize}
-\item \term{destination}: the full JID of the packet \term{to} attribute is used.
-\item \term{source}: the full JID of the packet \term{from} attribute is used.
-\item \term{bare\_destination}: the bare JID (without resource) of the packet \term{to} attribute is used.
-\item \term{bare\_source}: the bare JID (without resource) of the packet \term{from} attribute is used.
-\end{itemize}
-
-If the value corresponding to the criteria is the same, the same component instance in the cluster will be used.
-
-\makesubsection{lbbuckets}{Load-Balancing Buckets}
-\ind{options!domain\_balancing\_component\_number}
-
-When there is a risk of failure for a given component, domain balancing can cause service trouble. If one component is failing the service will not work correctly unless the sessions are rebalanced.
-
-In this case, it is best to limit the problem to the sessions handled by the failing component. This is what the \term{domain\_balancing\_component\_number} option does, making the load balancing algorithm not dynamic, but sticky on a fix number of component instances.
-
-The syntax is:
-\esyntax{\{domain\_balancing\_component\_number, "component.example.com", Number\}.}
-
 
 
 % TODO
