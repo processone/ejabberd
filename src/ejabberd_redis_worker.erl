@@ -1,4 +1,4 @@
--module(ejabberd_redis).
+-module(ejabberd_redis_worker).
 
 -behaviour(gen_server).
 
@@ -7,13 +7,13 @@
 -include("ejabberd.hrl").
 
 %% API
--export([start_link/5, stop/0, multi/1, getter/1, setter/2, set_add/2, set_rem/2, set_members/1]).
+-export([start_link/4, stop/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {pool}).
+-record(state, {server, port, database, password, conn}).
 
 %%====================================================================
 %% API
@@ -23,55 +23,16 @@
 %% @doc Starts the server
 %% @end 
 %%--------------------------------------------------------------------
-start_link(Server, Port, Database, Password, PoolSize) ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [Server, Port, Database, Password, PoolSize], []).
+start_link(Server, Port, Database, Password) ->
+    gen_server:start_link(?MODULE, [Server, Port, Database, Password], []).
 
 %%--------------------------------------------------------------------
 %% @spec stop() -> ok
 %% @doc Stops the server
 %% @end
 %%--------------------------------------------------------------------
-stop() ->
-    gen_server:call(?SERVER, stop).
-
-%%--------------------------------------------------------------------
-%% @spec multi() -> ok
-%% @doc Begin a transaction
-%% @end
-%%--------------------------------------------------------------------
-multi(Transaction) ->
-    {ok, Worker} = gen_server:call(?SERVER, worker),
-    gen_server:call(Worker, {multi, Transaction}).
-
-%%--------------------------------------------------------------------
-%% @spec getter() -> [Binary1, Binary2, ..., BinaryN] | Binary
-%% @doc Gets a value, given by its key
-%% @end
-%%--------------------------------------------------------------------
-getter(Key) ->
-    {ok, Worker} = gen_server:call(?SERVER, worker),
-    gen_server:call(Worker, {get, Key}).
-
-set_add(Key, Value) ->
-    {ok, Worker} = gen_server:call(?SERVER, worker),
-    gen_server:call(Worker, {sadd, Key, Value}).
-
-set_rem(Key, Value) ->
-    {ok, Worker} = gen_server:call(?SERVER, worker),
-    gen_server:call(Worker, {srem, Key, Value}).
-
-set_members(Key) ->
-    {ok, Worker} = gen_server:call(?SERVER, worker),
-    gen_server:call(Worker, {smembers, Key}).
-
-%%--------------------------------------------------------------------
-%% @spec setter() -> ok
-%% @doc Sets a given value for a given key
-%% @end
-%%--------------------------------------------------------------------
-setter(Key, Value) ->
-    {ok, Worker} = gen_server:call(?SERVER, worker),
-    gen_server:call(Worker, {set, Key, Value}).
+stop(Pid) ->
+    gen_server:call(Pid, stop).
 
 %%====================================================================
 %% gen_server callbacks
@@ -85,12 +46,9 @@ setter(Key, Value) ->
 %% @doc Initiates the server
 %% @end 
 %%--------------------------------------------------------------------
-init([Server, Port, Database, Password, PoolSize]) ->
-    Pool = lists:map(fun(_X) ->
-        {ok, Pid} = ejabberd_redis_worker:start_link(Server, Port, Database, Password),
-        Pid
-    end, lists:seq(1, PoolSize)),
-    {ok, #state{pool = Pool}}.
+init([Server, Port, Database, Password]) ->
+    {ok, C} = eredis:start_link(Server, Port, Database, Password),
+    {ok, #state{server=Server, port=Port, database=Database, password=Password, conn=C}}.
 
 %%--------------------------------------------------------------------
 %% @spec 
@@ -105,8 +63,26 @@ init([Server, Port, Database, Password, PoolSize]) ->
 %%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-handle_call(worker, _From, #state{pool=[C|Rest]}=State) ->
-    {reply, {ok, C}, State#state{pool=Rest ++ [C]}};
+handle_call({smembers, Key}, _From, #state{conn=C}=State) ->
+    {ok, Reply} = eredis:q(C, ["SMEMBERS", Key]),
+    {reply, Reply, State};
+handle_call({srem, Key, Value}, _From, #state{conn=C}=State) ->
+    {ok, _} = eredis:q(C, ["SREM", Key, Value]),
+    {reply, ok, State};
+handle_call({sadd, Key, Value}, _From, #state{conn=C}=State) ->
+    {ok, _} = eredis:q(C, ["SADD", Key, Value]),
+    {reply, ok, State};
+handle_call({multi, Transaction}, _From, #state{conn=C}=State) ->
+    eredis:q(C, ["MULTI"]),
+    lists:map(fun(X) -> eredis:q(C, X) end, Transaction),
+    {ok, Reply} = eredis:q(C, ["EXEC"]),
+    {reply, Reply, State};
+handle_call({get, Key}, _From, #state{conn=C}=State) ->
+    {ok, Reply} = eredis:q(C, ["GET", Key]),
+    {reply, Reply, State};
+handle_call({set, Key, Value}, _From, #state{conn=C}=State) ->
+    {ok, <<"OK">>} = eredis:q(C, ["SET", Key, Value]),
+    {reply, ok, State};
 handle_call(_Request, _From, State) ->
     Reply = noproc,
     {reply, Reply, State}.
@@ -118,6 +94,9 @@ handle_call(_Request, _From, State) ->
 %% @doc Handling cast messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_cast({set, Key, Value}, #state{conn=C}=State) ->
+    {ok, <<"OK">>} = eredis:q(C, ["SET", Key, Value]),
+    {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 

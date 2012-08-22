@@ -83,8 +83,8 @@ start(Host, Opts) ->
     
     case proplists:get_value(db_type, Opts, mnesia) of
         redis ->
-            {Server, Port, Database, Password} = ejabberd_config:get_local_option({redis_server, Host}),
-            {ok, _Pid} = ejabberd_redis:start_link(Server, Port, Database, Password);
+            {Server, Port, Database, Password, PoolSize} = ejabberd_config:get_local_option({redis_server, Host}),
+            {ok, _Pid} = ejabberd_redis:start_link(Server, Port, Database, Password, PoolSize);
         _ ->
             ok
     end,
@@ -724,10 +724,16 @@ roster_subscribe_t(LUser, LServer, LJID, Item, redis) ->
         ["SET", Key ++ "jresource", JResource],
         ["SET", Key ++ "name", Item#roster.name],
         ["SET", Key ++ "ask", erlang:atom_to_list(Item#roster.ask)],
-        ["SET", Key ++ "askmessage", erlang:binary_to_list(Item#roster.askmessage)],
+        ["SET", Key ++ "askmessage", to_list(Item#roster.askmessage)],
         ["SET", Key ++ "xs", Item#roster.xs] |
         [ ["SADD", Key ++ "groups", X ] || X <- Item#roster.groups ]
     ]).
+
+to_list(Dato) when is_list(Dato) -> Dato;
+to_list(Dato) when is_binary(Dato) -> erlang:binary_to_list(Dato);
+to_list(Dato) when is_integer(Dato) -> erlang:integer_to_list(Dato);
+to_list(Dato) when is_float(Dato) -> erlang:float_to_list(Dato);
+to_list(Dato) when is_atom(Dato) -> erlang:atom_to_list(Dato).
 
 transaction(LServer, F) ->
     case gen_mod:db_type(LServer, ?MODULE) of
