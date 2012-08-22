@@ -27,7 +27,10 @@
 -author('piotr.nosek@erlang-solutions.com').
 
 -export([set/1,
-	 get/0
+	 get/0,
+	 set_custom/2,
+	 clear_custom/0,
+	 clear_custom/1
 	 ]).
 
 -include("ejabberd.hrl").
@@ -53,3 +56,13 @@ set(Level) ->
     ok = lager:set_loglevel(lager_console_backend, Level),
     ok = lager:set_loglevel(lager_file_backend, "log/ejabberd.log", Level).
 
+set_custom(Module, Level) ->
+    ok = lager:set_mod_loglevel(lager_console_backend, Level, Module),
+    ok = lager:set_mod_loglevel(lager_file_backend, "log/ejabberd.log", Level, Module).
+    
+clear_custom() ->
+    clear_custom('_').
+
+clear_custom(Module) when is_atom(Module) ->
+    ok = lager:clear_mod_loglevel(lager_console_backend, Module),
+    ok = lager:clear_mod_loglevel(lager_file_backend, "log/ejabberd.log", Module).
