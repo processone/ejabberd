@@ -986,8 +986,8 @@ decide_fate_message(<<"error">>, Packet, From, StateData) ->
     PD = case check_error_kick(Packet) of
          %% If this is an error stanza and its condition matches a criteria
          true ->
-         Reason = <<"This participant is considered a ghost and is expulsed: ",
-                    (jlib:jid_to_binary(From))/binary>>,
+         Reason = "This participant is considered a ghost and is expulsed: " ++
+            binary_to_list(jlib:jid_to_binary(From)),
          {expulse_sender, Reason};
          false ->
          continue_delivery
