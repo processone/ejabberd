@@ -139,7 +139,10 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %% @end 
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    lists:foreach(fun(X) ->
+        gen_server:call(X, stop)
+    end, State#state.pool),
     ok.
 
 %%--------------------------------------------------------------------

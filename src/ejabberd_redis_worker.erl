@@ -64,25 +64,49 @@ init([Server, Port, Database, Password]) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 handle_call({smembers, Key}, _From, #state{conn=C}=State) ->
-    {ok, Reply} = eredis:q(C, ["SMEMBERS", Key]),
-    {reply, Reply, State};
+    case eredis:q(C, ["SMEMBERS", Key]) of
+        {ok, Reply} -> {reply, Reply, State};
+        _ ->
+            ?ERROR_MSG("Can't connect to redis server", []), 
+            {reply, [], State}
+    end;
 handle_call({srem, Key, Value}, _From, #state{conn=C}=State) ->
-    {ok, _} = eredis:q(C, ["SREM", Key, Value]),
-    {reply, ok, State};
+    case eredis:q(C, ["SREM", Key, Value]) of
+        {ok, _} -> {reply, ok, State};
+        _ ->
+            ?ERROR_MSG("Can't connect to redis server", []), 
+            {reply, error, State}
+    end;
 handle_call({sadd, Key, Value}, _From, #state{conn=C}=State) ->
-    {ok, _} = eredis:q(C, ["SADD", Key, Value]),
-    {reply, ok, State};
+    case eredis:q(C, ["SADD", Key, Value]) of
+        {ok, _} -> {reply, ok, State};
+        _ ->
+            ?ERROR_MSG("Can't connect to redis server", []), 
+            {reply, error, State}
+    end;
 handle_call({multi, Transaction}, _From, #state{conn=C}=State) ->
     eredis:q(C, ["MULTI"]),
     lists:map(fun(X) -> eredis:q(C, X) end, Transaction),
-    {ok, Reply} = eredis:q(C, ["EXEC"]),
-    {reply, Reply, State};
+    case eredis:q(C, ["EXEC"]) of
+        {ok, Reply} -> {reply, Reply, State};
+        _ ->
+            ?ERROR_MSG("Can't connect to redis server", []), 
+            {reply, [], State}
+    end;
 handle_call({get, Key}, _From, #state{conn=C}=State) ->
-    {ok, Reply} = eredis:q(C, ["GET", Key]),
-    {reply, Reply, State};
+    case eredis:q(C, ["GET", Key]) of
+        {ok, Reply} -> {reply, Reply, State};
+        _ ->
+            ?ERROR_MSG("Can't connect to redis server", []), 
+            {reply, [], State}
+    end;
 handle_call({set, Key, Value}, _From, #state{conn=C}=State) ->
-    {ok, <<"OK">>} = eredis:q(C, ["SET", Key, Value]),
-    {reply, ok, State};
+    case eredis:q(C, ["SET", Key, Value]) of
+        {ok, <<"OK">>} -> {reply, ok, State};
+        _ ->
+            ?ERROR_MSG("Can't connect to redis server", []), 
+            {reply, error, State}
+    end;
 handle_call(_Request, _From, State) ->
     Reply = noproc,
     {reply, Reply, State}.
@@ -95,7 +119,12 @@ handle_call(_Request, _From, State) ->
 %% @end 
 %%--------------------------------------------------------------------
 handle_cast({set, Key, Value}, #state{conn=C}=State) ->
-    {ok, <<"OK">>} = eredis:q(C, ["SET", Key, Value]),
+    case eredis:q(C, ["SET", Key, Value]) of
+        {ok, <<"OK">>} -> ok;
+        _ ->
+            ?ERROR_MSG("Can't connect to redis server", []), 
+            error
+    end,
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -118,7 +147,8 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %% @end 
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    eredis:stop(State#state.conn),
     ok.
 
 %%--------------------------------------------------------------------
