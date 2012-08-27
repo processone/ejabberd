@@ -556,10 +556,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    fsm_next_state_pack(session_established,
                                                 NewStateData);
 			_ ->
+			    IP = peerip(StateData#state.sockmod, StateData#state.socket),
 			    ?INFO_MSG(
-			       "(~w) Failed legacy authentication for ~s",
+			       "(~w) Failed legacy authentication for ~s from IP ~s (~w)",
 			       [StateData#state.socket,
-				jlib:jid_to_string(JID)]),
+				jlib:jid_to_string(JID), jlib:ip_to_list(IP), IP]),
 			    Err = jlib:make_error_reply(
 				    El, ?ERR_NOT_AUTHORIZED),
 			    send_element(StateData, Err),
@@ -646,10 +647,11 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				   StateData#state{
 				     sasl_state = NewSASLState});
 		{error, Error, Username} ->
+		    IP = peerip(StateData#state.sockmod, StateData#state.socket),
 		    ?INFO_MSG(
-		       "(~w) Failed authentication for ~s@~s",
+		       "(~w) Failed authentication for ~s@~s from IP ~s (~w)",
 		       [StateData#state.socket,
-			Username, StateData#state.server]),
+			Username, StateData#state.server, jlib:ip_to_list(IP), IP]),
 		    send_element(StateData,
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
@@ -799,10 +801,11 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		    fsm_next_state(wait_for_sasl_response,
 		     StateData#state{sasl_state = NewSASLState});
 		{error, Error, Username} ->
+		    IP = peerip(StateData#state.sockmod, StateData#state.socket),
 		    ?INFO_MSG(
-		       "(~w) Failed authentication for ~s@~s",
+		       "(~w) Failed authentication for ~s@~s from IP ~s (~w)",
 		       [StateData#state.socket,
-			Username, StateData#state.server]),
+			Username, StateData#state.server, jlib:ip_to_list(IP), IP]),
 		    send_element(StateData,
 				 {xmlelement, "failure",
 				  [{"xmlns", ?NS_SASL}],
