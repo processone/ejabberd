@@ -381,17 +381,12 @@ check_auth(noauth) ->
     no_auth_provided;
 check_auth({User, Server, Password}) ->
     %% Check the account exists and password is valid
-    AccountPass = ejabberd_auth:get_password_s(User, Server),
-    AccountPassMD5 = get_md5(AccountPass),
-    case Password of
-	AccountPass -> {ok, User, Server};
-	AccountPassMD5 -> {ok, User, Server};
-	_ -> throw({error, invalid_account_data})
+    case ejabberd_auth:check_password(User, Server, Password) of
+	true ->
+	    {ok, User, Server};
+	false ->
+	    throw({error, invalid_account_data})
     end.
-
-get_md5(AccountPass) ->
-    lists:flatten([io_lib:format("~.16B", [X])
-		   || X <- binary_to_list(crypto:md5(AccountPass))]).
 
 check_access(all, _) ->
     true;

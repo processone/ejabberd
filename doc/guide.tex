@@ -5010,7 +5010,6 @@ In this example there is no restriction:
 \end{verbatim}
 
 If account \term{robot1@example.org} is registered in \ejabberd{} with password \term{abcdef}
-(which MD5 is E8B501798950FC58AAD83C8C14978E),
 and \term{ejabberd.cfg} contains this setting:
 \begin{verbatim}
 {hosts, ["example.org"]}.
@@ -5022,7 +5021,7 @@ then you can do this in the shell:
 \begin{verbatim}
 $ ejabberdctl registered_users example.org
 Error: no_auth_provided
-$ ejabberdctl --auth robot1 example.org E8B501798950FC58AAD83C8C14978E registered_users example.org
+$ ejabberdctl --auth robot1 example.org abcdef registered_users example.org
 robot1
 testuser1
 testuser2
@@ -5215,7 +5214,6 @@ and is Username, Hostname and Password of a local XMPP account
 that has permission to execute the corresponding command.
 This means that the account must be registered in the local ejabberd,
 because the information will be verified.
-It is possible to provide the plaintext password or its MD5 sum.
 
 When one or several access restrictions are defined and the
 authentication information is provided,
