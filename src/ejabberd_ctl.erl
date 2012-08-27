@@ -292,7 +292,18 @@ call_command([CmdString | Args], Auth, AccessCommands) ->
 		    Result = ejabberd_commands:execute_command(AccessCommands, Auth, Command,
 							       ArgsFormatted),
 		    format_result(Result, ResultFormat);
+		%% This case clause is for Erlang R14 and older
 		{'EXIT', {function_clause,[{lists,zip,[A1, A2]} | _]}} ->
+		    {NumCompa, TextCompa} =
+			case {length(A1), length(A2)} of
+			    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
+			    {L1, L2} when L1 > L2 -> {L1-L2, "more argument"}
+			end,
+		    {io_lib:format("Error: the command ~p requires ~p ~s.",
+				   [CmdString, NumCompa, TextCompa]),
+		     wrong_command_arguments};
+		%% This case clause is for Erlang R15 and newer
+		{'EXIT', {function_clause,[{lists,zip,[A1, A2],_} | _]}} ->
 		    {NumCompa, TextCompa} =
 			case {length(A1), length(A2)} of
 			    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
