@@ -46,10 +46,12 @@
 -define(NS_XCONFERENCE, <<"jabber:x:conference">>).
 -define(NS_STATS,       <<"http://jabber.org/protocol/stats">>).
 -define(NS_MUC,         <<"http://jabber.org/protocol/muc">>).
+-define(NS_MUC_S,       "http://jabber.org/protocol/muc").
 -define(NS_MUC_USER,    <<"http://jabber.org/protocol/muc#user">>).
 -define(NS_MUC_ADMIN,   <<"http://jabber.org/protocol/muc#admin">>).
 -define(NS_MUC_OWNER,   <<"http://jabber.org/protocol/muc#owner">>).
 -define(NS_MUC_UNIQUE,  <<"http://jabber.org/protocol/muc#unique">>).
+-define(NS_MUC_REQUEST,  <<"http://jabber.org/protocol/muc#request">>).
 -define(NS_PING,        <<"urn:xmpp:ping">>).
 -define(NS_PUBSUB,      <<"http://jabber.org/protocol/pubsub">>).
 -define(NS_PUBSUB_EVENT,<<"http://jabber.org/protocol/pubsub#event">>).
@@ -142,6 +144,8 @@
 	?STANZA_ERROR(<<"500">>,<<"wait">>,  <<"resource-constraint">>)).
 -define(ERR_SERVICE_UNAVAILABLE,
 	?STANZA_ERROR(<<"503">>,<<"cancel">>,<<"service-unavailable">>)).
+-define(ERR_SERVICE_UNAVAILABLE_WAIT,
+	?STANZA_ERROR(<<"502">>,<<"wait">>,<<"service-unavailable">>)).
 -define(ERR_SUBSCRIPTION_REQUIRED,
 	?STANZA_ERROR(<<"407">>,<<"auth">>,  <<"subscription-required">>)).
 -define(ERR_UNEXPECTED_REQUEST,

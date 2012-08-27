@@ -38,7 +38,8 @@
 	 append_subtags/2,
 	 get_path_s/2,
 	 start/0,
-	 replace_tag_attr/3]).
+	 replace_tag_attr/3,
+	 replace_subtag/2]).
 
 -include("ejabberd.hrl").
 
@@ -260,6 +261,16 @@ get_path_s(El, [{attr, Name}]) ->
 get_path_s(El, [cdata]) ->
     get_tag_cdata(El).
 
+replace_subtag2({xmlelement, Name, _Attrs, _Body} = NewSubtag, [{xmlelement, Name, _Attrs2, _Body2}| T], Acc) ->
+    Acc ++[NewSubtag|T];
+replace_subtag2({xmlelement, _Name, _Attrs, _Body} = NewSubtag, [H| T], Acc) ->
+    replace_subtag2(NewSubtag, T, [H|Acc]);
+replace_subtag2({xmlelement, _Name, _Attrs, _Body} = NewSubtag, [], Acc) ->
+    [NewSubtag|Acc].
+
+%Will add an attribute if it was not present before
+replace_subtag(NewSubtag, {xmlelement, Name, Attrs, Body}) ->
+    {xmlelement, Name, Attrs, replace_subtag2(NewSubtag, [], [])}.
 
 replace_tag_attr(Attr, Value, {xmlelement, Name, Attrs, Els}) ->
     Attrs1 = lists:keydelete(Attr, 1, Attrs),
