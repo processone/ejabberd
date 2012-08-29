@@ -1,19 +1,40 @@
 #!/bin/bash
 
 TOOLS=`dirname $0`
-BASE=`readlink -f $TOOLS/..`
-EJD_CTL=$BASE/rel/ejabberd/bin/ejabberd
+if [ `uname` = "Darwin" ]; then
+    BASE=$(cd "$TOOLS/.."; pwd -P)
+else
+    BASE=`readlink -f $TOOLS/..`
+fi
+
+EJD1=$BASE/dev/ejabberd_node1
+EJD2=$BASE/dev/ejabberd_node2
+EJD1CTL=$EJD1/bin/ejabberd
+EJD2CTL=$EJD2/bin/ejabberd
 SUMMARIES_GLOB=$BASE'/test/ct_report/ct_run*/test.*.logs/*/suite.summary'
 
-make rel
-echo "starting ejabberd"
-$EJD_CTL start
+make devrel
+echo -n "starting ejabberd node 1: "
+$EJD1CTL start && echo ok || echo failed
+echo -n "starting ejabberd node 2: "
+$EJD2CTL start && echo ok || echo failed
 sleep 1
-echo "pinging ejabberd"
-$EJD_CTL ping
+echo -n "pinging ejabberd node 1: "
+$EJD1CTL ping
+echo -n "pinging ejabberd node 2: "
+$EJD2CTL ping
 make test
-$EJD_CTL stop
-$TOOLS/summarise-ct-results `eval ls $SUMMARIES_GLOB --sort time | head -n 1`
+echo -n "stopping ejabberd node 1: "
+$EJD1CTL stop
+echo -n "stopping ejabberd node 2: "
+$EJD2CTL stop
+
+if [ `uname` = "Darwin" ]; then
+    $TOOLS/summarise-ct-results `ls -t $SUMMARIES_GLOB | head -n 1`
+else
+    $TOOLS/summarise-ct-results `eval ls $SUMMARIES_GLOB --sort time | head -n 1`
+fi
+
 CT_STATUS=$?
 echo
 echo "All tests done."

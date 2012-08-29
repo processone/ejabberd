@@ -5,7 +5,7 @@ EJD_INCLUDE = $(EJABBERD_DIR)/include
 EJD_PRIV = $(EJABBERD_DIR)/priv
 EJD_PRIV_MIB = $(EJD_PRIV)/mibs
 EJD_MIB = $(EJABBERD_DIR)/mibs
-
+DEVNODES = node1 node2
 
 all: deps compile
 
@@ -33,12 +33,18 @@ eunit: rebar
 rel: rebar deps
 	./rebar compile generate -f
 
-devrel: rebar deps compile
+devrel: $(DEVNODES)
+
+$(DEVNODES): rebar deps compile
+	@echo "building $@"
 	mkdir -p dev
-	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd overlay_vars=./reltool_vars/node1_vars.config)
-	cp apps/ejabberd/src/*.erl dev/ejabberd/lib/ejabberd-2.1.8/ebin/
-	cp -R `which erl`/../../lib/tools-* dev/ejabberd/lib/
-	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd2 overlay_vars=./reltool_vars/node2_vars.config)
+	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd_$@ overlay_vars=./reltool_vars/$@_vars.config)
+	cp apps/ejabberd/src/*.erl dev/ejabberd_$@/lib/ejabberd-2.1.8/ebin/
+ifeq ($(shell uname), Linux)
+	cp -R `dirname $(shell readlink -f $(shell which erl))`/../lib/tools-* dev/ejabberd_$@/lib/
+else
+	cp -R `which erl`/../../lib/tools-* dev/ejabberd_$@/lib/
+endif
 
 devclean:
 	rm -rf dev/*
