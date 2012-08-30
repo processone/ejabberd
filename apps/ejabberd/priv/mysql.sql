@@ -18,7 +18,6 @@
 --
 
 -- Needs MySQL (at least 4.0.x) with innodb back-end
-SET table_type=InnoDB;
 
 CREATE TABLE users (
     username varchar(250) PRIMARY KEY,
@@ -136,7 +135,7 @@ CREATE TABLE privacy_list_data (
     t character(1) NOT NULL,
     value text NOT NULL,
     action character(1) NOT NULL,
-    ord NUMERIC NOT NULL,
+    ord bigint NOT NULL,
     match_all boolean NOT NULL,
     match_iq boolean NOT NULL,
     match_message boolean NOT NULL,
