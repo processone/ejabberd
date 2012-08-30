@@ -27,8 +27,7 @@
 -module(xml_stream).
 -author('alexey@process-one.net').
 
--export([new/1,
-	 new/2,
+-export([new/2,
 	 parse/2,
 	 close/1,
 	 parse_element/1]).
@@ -93,10 +92,6 @@ process_data(CallbackPid, Stack, Data) ->
 	{?XML_ERROR, Err} ->
 	    catch gen_fsm:send_event(CallbackPid, {xmlstreamerror, Err})
     end.
-
-
-new(CallbackPid) ->
-    new(CallbackPid, infinity).
 
 new(CallbackPid, MaxSize) ->
     Port = open_port({spawn, expat_erl}, [binary]),
@@ -178,7 +173,7 @@ process_element_events([Event | Events], Stack) ->
 	    case Stack of
 		[{xmlelement, Name, Attrs, Els} | Tail] ->
 		    process_element_events(
-		      Events, 
+		      Events,
 		      [{xmlelement, Name, Attrs, [{xmlcdata, CData} | Els]} |
 		       Tail]);
 		[] ->

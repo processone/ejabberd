@@ -28,49 +28,37 @@
 -author('alexey@process-one.net').
 
 -export([make_result_iq_reply/1,
-         make_error_reply/3,
          make_error_reply/2,
-         make_error_element/2,
          make_invitation/3,
          make_config_change_message/1,
-         make_correct_from_to_attrs/3,
          make_voice_approval_form/3,
          replace_from_to_attrs/3,
          replace_from_to/3,
-         replace_from_attrs/2,
-         replace_from/2,
          remove_attr/2,
          make_jid/3,
          make_jid/1,
          binary_to_jid/1,
          jid_to_binary/1,
          is_nodename/1,
-         tolower/1,
          nodeprep/1,
          nameprep/1,
          resourceprep/1,
          jid_tolower/1,
          jid_remove_resource/1,
          jid_replace_resource/2,
-         get_iq_namespace/1,
          iq_query_info/1,
          iq_query_or_response_info/1,
-         is_iq_request_type/1,
          iq_to_xml/1,
          parse_xdata_submit/1,
          timestamp_to_iso/1, % TODO: Remove once XEP-0091 is Obsolete
-         timestamp_to_iso/2,
          timestamp_to_xml/4,
          timestamp_to_xml/1, % TODO: Remove once XEP-0091 is Obsolete
-         now_to_utc_string/1,
          now_to_utc_binary/1,
-         now_to_local_string/1,
          datetime_string_to_timestamp/1,
          decode_base64/1,
          encode_base64/1,
          ip_to_list/1,
          rsm_encode/1,
-         rsm_encode/2,
          rsm_decode/1]).
 
 -include("jlib.hrl").
@@ -100,12 +88,6 @@ make_result_iq_reply_attrs(Attrs) ->
     Attrs6 = [{<<"type">>, <<"result">>} | Attrs5],
     Attrs6.
 
-make_error_reply({xmlelement, Name, Attrs, SubTags}, Code, Desc) ->
-    NewAttrs = make_error_reply_attrs(Attrs),
-    {xmlelement, Name, NewAttrs, SubTags ++ [{xmlelement, <<"error">>,
-                                              [{<<"code">>, Code}],
-                                              [{xmlcdata, Desc}]}]}.
-
 make_error_reply({xmlelement, Name, Attrs, SubTags}, Error) ->
     NewAttrs = make_error_reply_attrs(Attrs),
     {xmlelement, Name, NewAttrs, SubTags ++ [Error]}.
@@ -130,22 +112,6 @@ make_error_reply_attrs(Attrs) ->
     Attrs5 = lists:keydelete(<<"type">>, 1, Attrs4),
     Attrs6 = [{<<"type">>, <<"error">>} | Attrs5],
     Attrs6.
-
-make_error_element(Code, Desc) ->
-    {xmlelement, <<"error">>,
-     [{<<"code">>, Code}],
-     [{xmlcdata, Desc}]}.
-
-make_correct_from_to_attrs(From, To, Attrs) ->
-    Attrs1 = lists:keydelete(<<"from">>, 1, Attrs),
-    Attrs2 = case xml:get_attr(<<"to">>, Attrs) of
-                 {value, _} ->
-                     Attrs1;
-                 _ ->
-                     [{<<"to">>, To} | Attrs1]
-             end,
-    Attrs3 = [{<<"from">>, From} | Attrs2],
-    Attrs3.
 
 make_config_change_message(Status) ->
     {xmlelement, <<"message">>,
@@ -218,14 +184,6 @@ replace_from_to(From, To, {xmlelement, Name, Attrs, Els}) ->
     NewAttrs = replace_from_to_attrs(jlib:jid_to_binary(From),
                                      jlib:jid_to_binary(To),
                                      Attrs),
-    {xmlelement, Name, NewAttrs, Els}.
-
-replace_from_attrs(From, Attrs) ->
-    Attrs1 = lists:keydelete(<<"from">>, 1, Attrs),
-    [{<<"from">>, From} | Attrs1].
-
-replace_from(From, {xmlelement, Name, Attrs, Els}) ->
-    NewAttrs = replace_from_attrs(jlib:jid_to_binary(From), Attrs),
     {xmlelement, Name, NewAttrs, Els}.
 
 remove_attr(Attr, {xmlelement, Name, Attrs, Els}) ->
@@ -331,17 +289,6 @@ is_nodename(J) ->
                 Char
         end).
 
-%% Not tail-recursive but it seems works faster than variants above
-tolower([C | Cs]) ->
-    if
-        C >= $A, C =< $Z ->
-            [C + 32 | tolower(Cs)];
-        true ->
-            [C | tolower(Cs)]
-    end;
-tolower([]) ->
-    [].
-
 nodeprep(S) when is_binary(S), size(S) < 1024 ->
     R = stringprep:nodeprep(S),
     if
@@ -406,17 +353,6 @@ jid_replace_resource(JID, Resource) ->
             JID#jid{resource = Resource, lresource = LResource}
     end.
 
-
-get_iq_namespace({xmlelement, Name, _Attrs, Els}) when Name == <<"iq">> ->
-    case xml:remove_cdata(Els) of
-        [{xmlelement, _Name2, Attrs2, _Els2}] ->
-            xml:get_attr_s(<<"xmlns">>, Attrs2);
-        _ ->
-            ""
-    end;
-get_iq_namespace(_) ->
-    "".
-
 iq_query_info(El) ->
     iq_info_internal(El, request).
 
@@ -480,10 +416,6 @@ iq_info_internal({xmlelement, Name, Attrs, Els}, Filter) when Name == <<"iq">> -
     end;
 iq_info_internal(_, _) ->
     not_iq.
-
-is_iq_request_type(set) -> true;
-is_iq_request_type(get) -> true;
-is_iq_request_type(_) -> false.
 
 -spec iq_type_to_binary(atom()) -> invalid | binary().
 iq_type_to_binary(set) -> <<"set">>;
@@ -578,13 +510,6 @@ rsm_parse_element({xmlelement, <<"index">>,[], _}=Elem, RsmIn)->
 rsm_parse_element(_, RsmIn)->
     RsmIn.
 
-rsm_encode(#iq{sub_el=SubEl}=IQ,RsmOut)->
-    Set = {xmlelement, <<"set">>, [{<<"xmlns">>, ?NS_RSM}],
-           lists:reverse(rsm_encode_out(RsmOut))},
-    {xmlelement, Name, Attrs, SubEls} = SubEl,
-    New = {xmlelement, Name, Attrs, [Set | SubEls]},
-    IQ#iq{sub_el=New}.
-
 rsm_encode(none)->
     [];
 rsm_encode(RsmOut)->
@@ -666,22 +591,6 @@ now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
                     [Year, Month, Day, Hour, Minute, Second, MicroSecs])).
 now_to_utc_binary(Timestamp) ->
     list_to_binary(now_to_utc_string(Timestamp)).
-
-now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
-    LocalTime = calendar:now_to_local_time({MegaSecs, Secs, MicroSecs}),
-    UTCTime = calendar:now_to_universal_time({MegaSecs, Secs, MicroSecs}),
-    Seconds = calendar:datetime_to_gregorian_seconds(LocalTime) -
-        calendar:datetime_to_gregorian_seconds(UTCTime),
-    {{H, M, _}, Sign} = if
-                            Seconds < 0 ->
-                                {calendar:seconds_to_time(-Seconds), "-"};
-                            true ->
-                                {calendar:seconds_to_time(Seconds), "+"}
-                        end,
-    {{Year, Month, Day}, {Hour, Minute, Second}} = LocalTime,
-    lists:flatten(
-      io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6..0w~s~2..0w:~2..0w",
-                    [Year, Month, Day, Hour, Minute, Second, MicroSecs, Sign, H, M])).
 
 
 %% yyyy-mm-ddThh:mm:ss[.sss]{Z|{+|-}hh:mm} -> {MegaSecs, Secs, MicroSecs}

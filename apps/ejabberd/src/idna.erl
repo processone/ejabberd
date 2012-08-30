@@ -28,8 +28,7 @@
 -author('alexey@process-one.net').
 
 %%-compile(export_all).
--export([domain_utf8_to_ascii/1,
-	 domain_ucs2_to_ascii/1]).
+-export([domain_utf8_to_ascii/1]).
 
 %% TODO: Ugly, need to provide separate functions
 %% TODO: for binaries or convert whole module

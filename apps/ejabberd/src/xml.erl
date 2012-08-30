@@ -34,12 +34,11 @@
 	 get_cdata/1, get_tag_cdata/1,
 	 get_attr/2, get_attr_s/2,
 	 get_tag_attr/2, get_tag_attr_s/2,
-	 get_subtag/2, get_subtag_cdata/2,
+	 get_subtag/2,
 	 append_subtags/2,
 	 get_path_s/2,
 	 start/0,
-	 replace_tag_attr/3,
-	 replace_subtag/2]).
+	 replace_tag_attr/3]).
 
 -include("ejabberd.hrl").
 
@@ -181,7 +180,7 @@ escape_cdata(CData, Index, [Pos|Positions], Acc) ->
     {Part, Rest} = split_binary(CData, Split+1),
     %% Note: We build the list in reverse to optimize construction
     escape_cdata(Rest, Pos+1, Positions, [CDATA2, Part, CDATA1|Acc]).
-	 
+
 remove_cdata_p({xmlelement, _Name, _Attrs, _Els}) -> true;
 remove_cdata_p(_) -> false.
 
@@ -236,14 +235,6 @@ get_subtag1([El | Els], Name) ->
 get_subtag1([], _) ->
     false.
 
-get_subtag_cdata(Tag, Name) ->
-    case get_subtag(Tag, Name) of
-	false ->
-	    context_default(Name);
-	Subtag ->
-	    get_tag_cdata(Subtag)
-    end.
-
 append_subtags({xmlelement, Name, Attrs, SubTags1}, SubTags2) ->
     {xmlelement, Name, Attrs, SubTags1 ++ SubTags2}.
 
@@ -260,17 +251,6 @@ get_path_s(El, [{attr, Name}]) ->
     get_tag_attr_s(Name, El);
 get_path_s(El, [cdata]) ->
     get_tag_cdata(El).
-
-replace_subtag2({xmlelement, Name, _Attrs, _Body} = NewSubtag, [{xmlelement, Name, _Attrs2, _Body2}| T], Acc) ->
-    Acc ++[NewSubtag|T];
-replace_subtag2({xmlelement, _Name, _Attrs, _Body} = NewSubtag, [H| T], Acc) ->
-    replace_subtag2(NewSubtag, T, [H|Acc]);
-replace_subtag2({xmlelement, _Name, _Attrs, _Body} = NewSubtag, [], Acc) ->
-    [NewSubtag|Acc].
-
-%Will add an attribute if it was not present before
-replace_subtag(NewSubtag, {xmlelement, Name, Attrs, Body}) ->
-    {xmlelement, Name, Attrs, replace_subtag2(NewSubtag, [], [])}.
 
 replace_tag_attr(Attr, Value, {xmlelement, Name, Attrs, Els}) ->
     Attrs1 = lists:keydelete(Attr, 1, Attrs),
