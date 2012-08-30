@@ -43,7 +43,6 @@
 	 process_local_iq/3,
 	 get_user_roster/2,
 	 get_subscription_lists/3,
-	 get_in_pending_subscriptions/3,
 	 in_subscription/6,
 	 out_subscription/4,
 	 set_items/3,
@@ -87,8 +86,6 @@ start(Host, Opts) ->
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host,
 		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(resend_subscription_requests_hook, Host,
-		       ?MODULE, get_in_pending_subscriptions, 50),
     ejabberd_hooks:add(roster_get_versioning_feature, Host,
 		       ?MODULE, get_versioning_feature, 50),
     ejabberd_hooks:add(webadmin_page_host, Host,
@@ -113,8 +110,6 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(resend_subscription_requests_hook, Host,
-			  ?MODULE, get_in_pending_subscriptions, 50),
     ejabberd_hooks:delete(roster_get_versioning_feature, Host,
 		          ?MODULE, get_versioning_feature, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host,
@@ -442,27 +437,46 @@ get_subscription_lists(_, User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
+    JID = jlib:make_jid(User, Server, <<>>),
     case mnesia:dirty_index_read(roster, US, #roster.us) of
 	Items when is_list(Items) ->
-	    fill_subscription_lists(Items, [], []);
+	    fill_subscription_lists(JID, Items, [], [], []);
 	_ ->
-	    {[], []}
+	    {[], [], []}
     end.
 
-fill_subscription_lists([I | Is], F, T) ->
+fill_subscription_lists(JID, [I | Is], F, T, P) ->
     J = element(3, I#roster.usj),
+    NewP = case I#roster.ask of
+               Ask when Ask == in;
+                        Ask == both ->
+                   Message = I#roster.askmessage,
+                   Status  = if is_binary(Message) ->
+                                     Message;
+                                true ->
+                                     <<>>
+                             end,
+                   [{xmlelement, <<"presence">>,
+                     [{<<"from">>, jlib:jid_to_binary(I#roster.jid)},
+                      {<<"to">>, jlib:jid_to_binary(JID)},
+                      {<<"type">>, <<"subscribe">>}],
+                     [{xmlelement, <<"status">>, [],
+                       [{xmlcdata, Status}]}]} | P];
+               _ ->
+                   P
+           end,
     case I#roster.subscription of
 	both ->
-	    fill_subscription_lists(Is, [J | F], [J | T]);
+	    fill_subscription_lists(JID, Is, [J | F], [J | T], NewP);
 	from ->
-	    fill_subscription_lists(Is, [J | F], T);
+	    fill_subscription_lists(JID, Is, [J | F], T, NewP);
 	to ->
-	    fill_subscription_lists(Is, F, [J | T]);
+	    fill_subscription_lists(JID, Is, F, [J | T], NewP);
 	_ ->
-	    fill_subscription_lists(Is, F, T)
+	    fill_subscription_lists(JID, Is, F, T, NewP)
     end;
-fill_subscription_lists([], F, T) ->
-    {F, T}.
+fill_subscription_lists(_JID, [], F, T, P) ->
+    {F, T, P}.
 
 ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;
@@ -798,40 +812,6 @@ process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
     end;
 process_item_attrs_ws(Item, []) ->
     Item.
-
-get_in_pending_subscriptions(Ls, User, Server) ->
-    JID = jlib:make_jid(User, Server, <<>>),
-    US = {JID#jid.luser, JID#jid.lserver},
-    case mnesia:dirty_index_read(roster, US, #roster.us) of
-	Result when is_list(Result) ->
-    	    Ls ++ lists:map(
-		    fun(R) ->
-			    Message = R#roster.askmessage,
-			    Status  = if is_binary(Message) ->
-					      Message;
-					 true ->
-					      <<>>
-				      end,
-			    {xmlelement, <<"presence">>,
-			     [{<<"from">>, jlib:jid_to_binary(R#roster.jid)},
-			      {<<"to">>, jlib:jid_to_binary(JID)},
-			      {<<"type">>, <<"subscribe">>}],
-			     [{xmlelement, <<"status">>, [],
-			       [{xmlcdata, Status}]}]}
-		    end,
-		    lists:filter(
-		      fun(R) ->
-			      case R#roster.ask of
-				  in   -> true;
-				  both -> true;
-				  _ -> false
-			      end
-		      end,
-		      Result));
-	_ ->
-	    Ls
-    end.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

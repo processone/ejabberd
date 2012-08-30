@@ -94,6 +94,7 @@
 		pres_f = ?SETS:new(),
 		pres_a = ?SETS:new(),
 		pres_i = ?SETS:new(),
+        pending_invitations = [],
 		pres_last, pres_pri,
 		pres_timestamp,
 		pres_invis = false,
@@ -530,11 +531,11 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    ejabberd_sm:open_session(
 			      SID, U, StateData#state.server, R, Info),
 			    change_shaper(StateData, JID),
-			    {Fs, Ts} = ejabberd_hooks:run_fold(
-					 roster_get_subscription_lists,
-					 StateData#state.server,
-					 {[], []},
-					 [U, StateData#state.server]),
+			    {Fs, Ts, Pending} = ejabberd_hooks:run_fold(
+                                      roster_get_subscription_lists,
+                                      StateData#state.server,
+                                      {[], [], []},
+                                      [U, StateData#state.server]),
 			    LJID = jlib:jid_tolower(
 				     jlib:jid_remove_resource(JID)),
 			    Fs1 = [LJID | Fs],
@@ -554,6 +555,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     auth_module = AuthModule,
 					     pres_f = ?SETS:from_list(Fs1),
 					     pres_t = ?SETS:from_list(Ts1),
+                         pending_invitations = Pending,
 					     privacy_list = PrivList},
 			    fsm_next_state_pack(session_established,
                                                 NewStateData);
@@ -895,11 +897,11 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    Res = jlib:make_result_iq_reply(El),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
-		    {Fs, Ts} = ejabberd_hooks:run_fold(
-				 roster_get_subscription_lists,
-				 StateData#state.server,
-				 {[], []},
-				 [U, StateData#state.server]),
+		    {Fs, Ts, Pending} = ejabberd_hooks:run_fold(
+                                  roster_get_subscription_lists,
+                                  StateData#state.server,
+                                  {[], [], []},
+                                  [U, StateData#state.server]),
 		    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
 		    Fs1 = [LJID | Fs],
 		    Ts1 = [LJID | Ts],
@@ -920,6 +922,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				     conn = Conn,
 				     pres_f = ?SETS:from_list(Fs1),
 				     pres_t = ?SETS:from_list(Ts1),
+                     pending_invitations = Pending,
 				     privacy_list = PrivList},
 		    fsm_next_state_pack(session_established,
                                         NewStateData);
@@ -1751,13 +1754,13 @@ presence_update(From, Packet, StateData) ->
 			ejabberd_hooks:run(user_available_hook,
 					   NewStateData#state.server,
 					   [NewStateData#state.jid]),
-			if NewPriority >= 0 ->
-				resend_offline_messages(NewStateData),
-				resend_subscription_requests(NewStateData);
-			   true ->
-				ok
-			end,
-			presence_broadcast_first(From, NewStateData, Packet);
+			NewStateData1 = if NewPriority >= 0 ->
+                                    resend_offline_messages(NewStateData),
+                                    resend_subscription_requests(NewStateData);
+                               true ->
+                                    NewStateData
+                            end,
+			presence_broadcast_first(From, NewStateData1, Packet);
 		    true ->
 			presence_broadcast_to_trusted(NewStateData,
 						      From,
@@ -1769,7 +1772,7 @@ presence_update(From, Packet, StateData) ->
 			   true ->
 				ok
 			end,
-                        NewStateData
+            NewStateData
 		end
     end.
 
@@ -2091,18 +2094,12 @@ resend_offline_messages(StateData) ->
 	      end, Rs)
     end.
 
-resend_subscription_requests(#state{user = User,
-				    server = Server} = StateData) ->
-    PendingSubscriptions = ejabberd_hooks:run_fold(
-			     resend_subscription_requests_hook,
-			     Server,
-			     [],
-			     [User, Server]),
+resend_subscription_requests(#state{pending_invitations = Pending} = StateData) ->
     lists:foreach(fun(XMLPacket) ->
 			  send_element(StateData,
 				       XMLPacket)
-		  end,
-		  PendingSubscriptions).
+		  end, Pending),
+    StateData#state{pending_invitations = []}.
 
 get_showtag(undefined) ->
     <<"unavailable">>;
