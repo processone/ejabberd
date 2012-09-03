@@ -19,10 +19,10 @@ clean: rebar
 	./rebar clean
 
 test: test/Makefile
-	cd test; make
+	cd test/test; make
 
-test/Makefile:
-	git submodule update --init --recursive
+test/Makefile: rebar
+	./rebar -C rebar.tests.config get-deps
 
 show_test_results:
 	$$BROWSER `ls -td test/ct_report/ct_run.test@*/index.html | head -n 1` & disown
