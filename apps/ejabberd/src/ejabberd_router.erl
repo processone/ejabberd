@@ -155,7 +155,6 @@ init([]) ->
                          {attributes, record_info(fields, route)},
                          {local_content, true}]),
     mnesia:add_table_copy(route, node(), ram_copies),
-    mnesia:subscribe({table, route, simple}),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
