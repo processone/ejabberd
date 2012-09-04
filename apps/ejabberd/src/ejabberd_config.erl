@@ -375,7 +375,8 @@ process_term(Term, State) ->
         {hosts, _Hosts} ->
             State;
         {host_config, Host, Terms} ->
-            lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
+            lists:foldl(fun(T, S) ->
+                            process_host_term(T, list_to_binary(Host), S) end,
                         State, Terms);
         {listen, Listeners} ->
             Listeners2 =

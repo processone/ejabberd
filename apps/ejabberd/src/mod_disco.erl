@@ -249,7 +249,7 @@ get_local_services(empty, _From, _To, _Node, _Lang) ->
     {error, ?ERR_ITEM_NOT_FOUND}.
 
 get_vh_services(Host) ->
-    Hosts = lists:sort(fun(H1, H2) -> length(H1) >= length(H2) end, ?MYHOSTS),
+    Hosts = lists:sort(fun(H1, H2) -> size(H1) >= size(H2) end, ?MYHOSTS),
     lists:filter(fun(H) ->
 			 case lists:dropwhile(
 				fun(VH) ->

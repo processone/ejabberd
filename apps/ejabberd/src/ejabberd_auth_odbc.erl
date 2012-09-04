@@ -177,7 +177,7 @@ get_vh_registered_users_number(Server) ->
     LServer = jlib:nameprep(Server),
     case catch odbc_queries:users_number(LServer) of
 	{selected, [_], [{Res}]} ->
-	    list_to_integer(Res);
+	    list_to_integer(binary_to_list(Res));
 	_ ->
 	    0
     end.

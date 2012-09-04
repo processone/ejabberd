@@ -23,11 +23,15 @@
 %% Internal exports (used below by dispatch/0)
 -export([mnesia_privacy_list_length/0,
          mnesia_roster_size/0,
-         mnesia_roster_groups/0
+         mnesia_roster_groups/0,
+         odbc_privacy_list_length/1,
+         odbc_roster_size/1,
+         odbc_roster_groups/1
         ]).
 
 %% This is one of the gen_mod modules with different backends
 -type ejabberd_module() :: atom().
+-type ejabberd_host() :: binary().
 
 %%-------------------
 %% API
@@ -48,10 +52,10 @@ registered_count() ->
                  lists:foldl(fun(Host, Set) ->
                                      Backend = ejabberd_config:get_local_option(
                                                  {auth_method, Host}),
-                                     sets:add_element(Backend, Set)
+                                     sets:add_element({Backend, Host}, Set)
                              end, sets:new(), Hosts)),
-    lists:foldl(fun(Backend, Res) ->
-                          Res + registered_count_disp(Backend)
+    lists:foldl(fun({Backend, Host}, Res) ->
+                          Res + registered_count_disp(Backend, Host)
                   end, 0, Backends).
 
 %%-------------------
@@ -66,7 +70,7 @@ registered_count() ->
 %% Furthermore, they must be present in mnesia table local_config.
 %% No module may appear with two or more different backends simultaneously
 %% (impossible anyway, but mentioning it can't hurt).
--spec backends(ejabberd_module()) -> mnesia | odbc | none | {error, term()}.
+-spec backends(ejabberd_module()) -> mnesia | {odbc, ejabberd_host()} | none | {error, term()}.
 backends(Module) ->
     %% extend if/when more backends appear (see also _1_)
     MnesiaBackend = Module,
@@ -82,7 +86,7 @@ backends(Module) ->
                                  case Mod of
                                      %% _1_ add cases for more backends
                                      MnesiaBackend -> mnesia;
-                                     OdbcBackend -> odbc;
+                                     OdbcBackend -> {odbc, Host};
                                      _ -> Acc
                                  end
                          end,
@@ -90,16 +94,20 @@ backends(Module) ->
         end,
     sets:to_list(lists:foldl(F, sets:new(), Hosts)).
     
--spec dispatch(mnesia | odbc, atom()) -> term().
-dispatch(Backends, Function) ->
+-spec dispatch(mnesia | {odbc, ejabberd_host()}, atom()) -> term().
+dispatch(Backends, Function) -> 
     lists:foldl(fun(Backend, Res) ->
-               BackendFunction = list_to_atom(atom_to_list(Backend) ++ "_"
+               BackendName = case Backend of
+                  {Name, _} -> Name;
+                  Name -> Name
+               end,
+               BackendFunction = list_to_atom(atom_to_list(BackendName) ++ "_"
                                                   ++ atom_to_list(Function)),
                case Backend of
                    mnesia ->
                        Res + apply(?MODULE, BackendFunction, []);
-                   odbc ->
-                       {error, ?ERR_INTERNAL_SERVER_ERROR};
+                   {odbc, Host} ->
+                       Res + apply(?MODULE, BackendFunction, [Host]);
                    _ ->
                        {error, ?ERR_INTERNAL_SERVER_ERROR}
                end
@@ -129,6 +137,10 @@ mnesia_privacy_list_length() ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
+odbc_privacy_list_length(Host) ->
+    {selected, [_], [{Count}]} = odbc_queries:count_privacy_lists(Host),
+    list_to_integer(binary_to_list(Count)). 
+
 mnesia_roster_size() ->
     F = fun() ->
         length(
@@ -145,6 +157,13 @@ mnesia_roster_size() ->
             erlang:round(TableSize / UserCount);
         _ ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
+    end.
+
+odbc_roster_size(Host) ->
+    {selected, [_], [{Average}]} = odbc_queries:get_average_roster_size(Host),
+    case Average of
+        null -> 0;
+        Average -> erlang:round(list_to_float(binary_to_list(Average)))
     end.
 
 mnesia_roster_groups() ->
@@ -178,7 +197,16 @@ mnesia_roster_groups() ->
             {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-registered_count_disp(internal) ->
+odbc_roster_groups(Host) ->
+    {selected, [_], [{Average}]} = odbc_queries:get_average_rostergroup_size(Host),
+    case Average of
+        null -> 0;
+        Average -> erlang:round(list_to_float(binary_to_list(Average)))
+    end.
+
+registered_count_disp(internal, _Host) ->
     ets:info(passwd, size);
-registered_count_disp(_) ->
+registered_count_disp(odbc, Host) ->
+    ejabberd_auth_odbc:get_vh_registered_users_number(Host);
+registered_count_disp(_, _) ->
     0.         %% no such instance
