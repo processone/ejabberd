@@ -11,7 +11,7 @@ Its home at GitHub is http://github.com/esl/ejabberd.
 Quickstart guide
 ----------------
 For a quick start just
-[download the pre-built package](http://www.erlang-solutions.com/section/137/download-erlang-omp)
+[download the pre-built package](https://www.erlang-solutions.com/downloads/download-mongooseim)
 that suits your platform.
 
 
