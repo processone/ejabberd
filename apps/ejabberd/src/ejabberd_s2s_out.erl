@@ -52,7 +52,7 @@
 	 handle_sync_event/4,
 	 handle_info/3,
 	 terminate/3,
-     print_state/1,
+	 print_state/1,
 	 code_change/4,
 	 test_get_addr_port/1,
 	 get_addr_port/1]).
@@ -204,8 +204,10 @@ open_socket(init, StateData) ->
 				StateData#state.server,
 				StateData#state.new,
 				StateData#state.verify}]),
-    AddrList = case idna:domain_utf8_to_ascii(StateData#state.server) of
-		   false -> [];
+    AddrList = get_predefined_addresses(StateData#state.server) ++
+	       case idna:domain_utf8_to_ascii(StateData#state.server) of
+		   false ->
+		       [];
 		   ASCIIAddr ->
 		       get_addr_port(ASCIIAddr)
 	       end,
@@ -1144,6 +1146,8 @@ test_get_addr_port(Server) ->
 	      end
       end, [], lists:seq(1, 100000)).
 
+get_addrs(Host, Family) when is_binary(Host) ->
+    get_addrs(binary_to_list(Host), Family);
 get_addrs(Host, Family) ->
     Type = case Family of
 	       inet4 -> inet;
@@ -1151,7 +1155,7 @@ get_addrs(Host, Family) ->
 	       inet6 -> inet6;
 	       ipv6 -> inet6
 	   end,
-    case inet:gethostbyname(binary_to_list(Host), Type) of
+    case inet:gethostbyname(Host, Type) of
 	{ok, #hostent{h_addr_list = Addrs}} ->
 	    ?DEBUG("~s of ~s resolved to: ~p~n", [Type, Host, Addrs]),
 	    Addrs;
@@ -1271,4 +1275,19 @@ fsm_limit_opts() ->
 	    [{max_queue, N}];
 	_ ->
 	    []
+    end.
+
+%% Get IPs predefined for a given s2s domain in the configuration
+get_predefined_addresses(Server) ->
+    case ejabberd_config:get_local_option({s2s_addr, Server}) of
+	undefined ->
+	    [];
+	{{_,_,_,_}, Port} = IP4Port when is_integer(Port) ->
+	    [IP4Port];
+	{{_,_,_,_,_,_,_,_}, Port} = IP6Port when is_integer(Port) ->
+	    [IP6Port];
+	{_,_,_,_} = IP4 ->
+	    [{IP4, outgoing_s2s_port()}];
+	{_,_,_,_,_,_,_,_} = IP6 ->
+	    [{IP6, outgoing_s2s_port()}]
     end.
