@@ -71,3 +71,4 @@ apps/ejabberd/priv/mibs/EJABBERD-MIB.bin
 rebar
 apps/ejabberd/ebin/ejabberd.app
 dev
+test

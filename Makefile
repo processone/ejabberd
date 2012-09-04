@@ -5,7 +5,7 @@ EJD_INCLUDE = $(EJABBERD_DIR)/include
 EJD_PRIV = $(EJABBERD_DIR)/priv
 EJD_PRIV_MIB = $(EJD_PRIV)/mibs
 EJD_MIB = $(EJABBERD_DIR)/mibs
-DEVNODES = node1 node2 
+DEVNODES = node1 node2
 TESTNODES = internal_mnesia internal_redis odbc_mnesia odbc_redis external_mnesia external_redis
 
 all: deps compile
@@ -33,9 +33,10 @@ rel: rebar deps
 
 devrel: $(DEVNODES)
 
-$(DEVNODES): rebar deps compile
+testrel: $(DEVNODES) $(TESTNODES)
+
+$(DEVNODES) $(TESTNODES): rebar deps compile deps_dev
 	@echo "building $@"
-	mkdir -p dev
 	(cd rel && ../rebar generate -f target_dir=../dev/ejabberd_$@ overlay_vars=./reltool_vars/$@_vars.config)
 	cp apps/ejabberd/src/*.erl dev/ejabberd_$@/lib/ejabberd-2.1.8/ebin/
 ifeq ($(shell uname), Linux)
@@ -43,6 +44,11 @@ ifeq ($(shell uname), Linux)
 else
 	cp -R `which erl`/../../lib/tools-* dev/ejabberd_$@/lib/
 endif
+
+deps_dev:
+	mkdir -p dev
+	cp rel/files/test_cert.pem /tmp/server.pem
+	cp rel/files/sample_external_auth.py /tmp
 
 devclean:
 	rm -rf dev/*
