@@ -11,7 +11,7 @@ EJD1=$BASE/dev/ejabberd_node1
 EJD2=$BASE/dev/ejabberd_node2
 EJD1CTL=$EJD1/bin/ejabberd
 EJD2CTL=$EJD2/bin/ejabberd
-SUMMARIES_GLOB=$BASE'/test/ct_report/ct_run*/test.*.logs/*/suite.summary'
+SUMMARIES_GLOB=$BASE'/test/ejabberd_tests/ct_report/ct_run*/ejabberd_tests.*.logs/*/suite.summary'
 
 make devrel testrel
 echo -n "starting ejabberd node 1: "
