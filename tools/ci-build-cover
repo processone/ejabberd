@@ -1,0 +1,23 @@
+#!/bin/bash
+
+TOOLS=`dirname $0`
+if [ `uname` = "Darwin" ]; then
+    BASE=$(cd "$TOOLS/.."; pwd -P)
+else
+    BASE=`readlink -f $TOOLS/..`
+fi
+SUMMARIES_GLOB=$BASE'/test/ejabberd_tests/ct_report/ct_run*/ejabberd_tests.*.logs/*/suite.summary'
+
+make devclean devrel testrel
+make cover_test
+
+if [ `uname` = "Darwin" ]; then
+    $TOOLS/summarise-ct-results `ls -t $SUMMARIES_GLOB | head -n 1`
+else
+    $TOOLS/summarise-ct-results `eval ls $SUMMARIES_GLOB --sort time | head -n 1`
+fi
+
+CT_STATUS=$?
+echo
+echo "All tests done."
+exit $CT_STATUS
