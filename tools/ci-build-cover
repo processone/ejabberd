@@ -8,8 +8,21 @@ else
 fi
 SUMMARIES_GLOB=$BASE'/test/ejabberd_tests/ct_report/ct_run*/ejabberd_tests.*.logs/*/suite.summary'
 
+EJD2=$BASE/dev/ejabberd_node2
+EJD2CTL=$EJD2/bin/ejabberd
+
 make devclean devrel testrel
+
+echo -n "starting auxiliary s2s node: "
+$EJD2CTL start && echo ok || echo failed
+sleep 5s
+echo -n "pinging auxiliary s2s node: "
+$EJD2CTL ping
+
 make cover_test
+
+echo -n "stopping auxiliary s2s node: "
+$EJD2CTL stop
 
 if [ `uname` = "Darwin" ]; then
     $TOOLS/summarise-ct-results `ls -t $SUMMARIES_GLOB | head -n 1`
