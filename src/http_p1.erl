@@ -25,19 +25,11 @@
 %%%----------------------------------------------------------------------
 
 -module(http_p1).
+
 -author('ebustos@process-one.net').
 
--export([
-        start/0,
-        stop/0,
-        get/1,
-        get/2,
-        post/2,
-        post/3,
-        request/3,
-        request/4,
-        request/5
-]).
+-export([start/0, stop/0, get/1, get/2, post/2, post/3,
+	 request/3, request/4, request/5]).
 
 % -define(USE_INETS, 1).
 % -define(USE_LHTTPC, 1).
@@ -45,85 +37,131 @@
 % inets used as default if none specified
 
 -ifdef(USE_IBROWSE).
-    -define(start(), start_ibrowse()).
-    -define(request(M, U, H, B, O), request_ibrowse(M, U, H, B, O)).
-    -define(stop(), stop_ibrowse()).
--else.
-    -ifdef(USE_LHTTPC).
-        -define(start(), start_lhttpc()).
-        -define(request(M, U, H, B, O), request_lhttpc(M, U, H, B, O)).
-        -define(stop(), stop_lhttpc()).
-    -else.
-        -define(start(), start_inets()).
-        -define(request(M, U, H, B, O), request_inets(M, U, H, B, O)).
-        -define(stop(), stop_inets()).
-    -endif.
--endif.
 
--type header() :: {string() | atom(), string()}.
--type headers() :: [header()].
-
--type option() ::
-        {connect_timeout, timeout()} |
-        {timeout, timeout()} |
-
-        {send_retry, non_neg_integer()} |
-        {partial_upload, non_neg_integer() | infinity} |
-        {partial_download, pid(), non_neg_integer() | infinity}.
-
--type options() :: [option()].
-
--type result() :: {ok, {{pos_integer(), string()}, headers(), string()}} |
-    {error, atom()}.
-
-%% @spec () -> ok | {error, Reason}
-%%   Reason = term()
-%% @doc
-%% Start the application.
-%% This is a helper function that will start the corresponding backend.
-%% It allows the library to be started using the `-s' flag.
-%% For instance:
-%% `$ erl -s http_p1'
-%%
-%% @end
--spec start() -> ok | {error, any()}.
 start() ->
-    ?start().
-
-start_inets()->
-    inets:start(),
+    ibrowse:start(),
     ssl:start().
 
-start_lhttpc()->
+stop() ->
+    ibrowse:stop().
+
+request(Method, URL, Hdrs, Body, Opts) ->
+    TimeOut = proplists:get_value(timeout, Opts, infinity),
+    Options = [{inactivity_timeout, TimeOut}
+	       | proplists:delete(timeout, Opts)],
+    case ibrowse:send_req(URL, Hdrs, Method, Body, Options)
+	of
+      {ok, Status, Headers, Response} ->
+	  {ok, jlib:binary_to_integer(Status), Headers,
+	   Response};
+      {error, Reason} -> {error, Reason}
+    end.
+
+-else.
+
+-ifdef(USE_LHTTPC).
+
+start() ->
     application:start(crypto),
     application:start(ssl),
     lhttpc:start().
 
-start_ibrowse()->
-    ibrowse:start(),
-    ssl:start().
-
-%% @spec () -> ok | {error, Reason}
-%%   Reason = term()
-%% @doc
-%% Stops the application.
-%% This is a helper function that will stop the corresponding backend.
-%%
-%% @end
--spec stop() -> ok | {error, any()}.
 stop() ->
-    ?stop().
-
-stop_inets()->
-    inets:stop(),
-    ssl:stop().
-
-stop_lhttpc()->
     lhttpc:stop(),
     application:stop(ssl).
 
-stop_ibrowse()->
-    ibrowse:stop().
+request(Method, URL, Hdrs, Body, Opts) ->
+    TimeOut = proplists:get_value(timeout, Opts, infinity),
+    SockOpt = proplists:get_value(socket_options, Opts, []),
+    Options = [{connect_options, SockOpt}
+	       | proplists:delete(timeout, Opts)],
+    case lhttpc:request(URL, Method, Hdrs, Body, TimeOut,
+			Options)
+	of
+      {ok, {{Status, _Reason}, Headers, Response}} ->
+	  {ok, Status, Headers, (Response)};
+      {error, Reason} -> {error, Reason}
+    end.
+
+-else.
+
+start() ->
+    inets:start(),
+    ssl:start().
+
+stop() ->
+    inets:stop(),
+    ssl:stop().
+
+request(Method, URL, Hdrs, Body, Opts) ->
+    Request = case Method of
+		get -> {URL, Hdrs};
+		head -> {URL, Hdrs};
+		_ -> % post, etc.
+		    {URL, Hdrs,
+		     proplists:get_value(<<"content-type">>, Hdrs, []), Body}
+	      end,
+    Options = case proplists:get_value(timeout, Opts,
+				       infinity)
+		  of
+		infinity -> proplists:delete(timeout, Opts);
+		_ -> Opts
+	      end,
+    case httpc:request(Method, Request, Options, []) of
+      {ok, {{_, Status, _}, Headers, Response}} ->
+	  {ok, Status, Headers, Response};
+      {error, Reason} -> {error, Reason}
+    end.
+
+-endif.
+
+-endif.
+
+-type({header,
+       {type, 63, tuple,
+	[{type, 63, union,
+	  [{type, 63, string, []}, {type, 63, atom, []}]},
+	 {type, 63, string, []}]},
+       []}).
+
+-type({headers,
+       {type, 64, list, [{type, 64, header, []}]}, []}).
+
+-type({option,
+       {type, 67, union,
+	[{type, 67, tuple,
+	  [{atom, 67, connect_timeout}, {type, 67, timeout, []}]},
+	 {type, 68, tuple,
+	  [{atom, 68, timeout}, {type, 68, timeout, []}]},
+	 {type, 70, tuple,
+	  [{atom, 70, send_retry},
+	   {type, 70, non_neg_integer, []}]},
+	 {type, 71, tuple,
+	  [{atom, 71, partial_upload},
+	   {type, 71, union,
+	    [{type, 71, non_neg_integer, []},
+	     {atom, 71, infinity}]}]},
+	 {type, 72, tuple,
+	  [{atom, 72, partial_download}, {type, 72, pid, []},
+	   {type, 72, union,
+	    [{type, 72, non_neg_integer, []},
+	     {atom, 72, infinity}]}]}]},
+       []}).
+
+-type({options,
+       {type, 74, list, [{type, 74, option, []}]}, []}).
+
+-type({result,
+       {type, 76, union,
+	[{type, 76, tuple,
+	  [{atom, 76, ok},
+	   {type, 76, tuple,
+	    [{type, 76, tuple,
+	      [{type, 76, pos_integer, []}, {type, 76, string, []}]},
+	     {type, 76, headers, []}, {type, 76, string, []}]}]},
+	 {type, 77, tuple,
+	  [{atom, 77, error}, {type, 77, atom, []}]}]},
+       []}).
 
 %% @spec (URL) -> Result
 %%   URL = string()
@@ -138,8 +176,7 @@ stop_ibrowse()->
 %% @end
 %% @see request/3
 -spec get(string()) -> result().
-get(URL) ->
-    request(get, URL, []).
+get(URL) -> request(get, URL, []).
 
 %% @spec (URL, Hdrs) -> Result
 %%   URL = string()
@@ -156,8 +193,7 @@ get(URL) ->
 %% @end
 %% @see request/3
 -spec get(string(), headers()) -> result().
-get(URL, Hdrs) ->
-    request(get, URL, Hdrs).
+get(URL, Hdrs) -> request(get, URL, Hdrs).
 
 %% @spec (URL, RequestBody) -> Result
 %%   URL = string()
@@ -174,7 +210,9 @@ get(URL, Hdrs) ->
 %% @see request/4
 -spec post(string(), string()) -> result().
 post(URL, Body) ->
-    request(post, URL, [{"content-type", "x-www-form-urlencoded"}], Body).
+    request(post, URL,
+	    [{<<"content-type">>, <<"x-www-form-urlencoded">>}],
+	    Body).
 
 %% @spec (URL, Hdrs, RequestBody) -> Result
 %%   URL = string()
@@ -194,12 +232,15 @@ post(URL, Body) ->
 %% @see request/4
 -spec post(string(), headers(), string()) -> result().
 post(URL, Hdrs, Body) ->
-    NewHdrs = case [X || {X,_}<-Hdrs, string:to_lower(X) == "content-type"] of
-            [] ->
-            [{"content-type", "x-www-form-urlencoded"} | Hdrs];
-        _ ->
-            Hdrs
-    end,
+    NewHdrs = case [X
+		    || {X, _} <- Hdrs,
+		       str:to_lower(X) == <<"content-type">>]
+		  of
+		[] ->
+		    [{<<"content-type">>, <<"x-www-form-urlencoded">>}
+		     | Hdrs];
+		_ -> Hdrs
+	      end,
     request(post, URL, NewHdrs, Body).
 
 %% @spec (Method, URL, Hdrs) -> Result
@@ -269,63 +310,6 @@ request(Method, URL, Hdrs, Body) ->
 %% @end
 %% @see request/5
 -spec request(atom(), string(), headers(), string(), options()) -> result().
-request(Method, URL, Hdrs, Body, Opts) ->
-%    ?DEBUG("Making request with headers: ~p~n~n", [Hdrs]),
-%    Headers = lists:map(fun({H, V}) ->
-%                H2 = if
-%                    is_atom(H) ->
-%                        string:to_lower(atom_to_list(H));
-%                    is_list(H) ->
-%                        string:to_lower(H);
-%                    true ->
-%                        H
-%                end,
-%                {H2, V}
-%        end, Hdrs),
-    ?request(Method, URL, Hdrs, Body, Opts).
-
-request_inets(Method, URL, Hdrs, Body, Opts) ->
-    Request = case Method of
-        get ->
-            {URL, Hdrs};
-        head ->
-            {URL, Hdrs};
-        _ -> % post, etc.
-            {URL, Hdrs, proplists:get_value("content-type", Hdrs, []), Body}
-    end,
-    Options = case proplists:get_value(timeout, Opts, infinity) of
-        infinity ->
-            proplists:delete(timeout, Opts);
-        _ ->
-            Opts
-    end,
-    case http:request(Method, Request, Options, []) of
-        {ok, {{_, Status, _}, Headers, Response}} ->
-            {ok, Status, Headers, Response};
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
-request_lhttpc(Method, URL, Hdrs, Body, Opts) ->
-    TimeOut = proplists:get_value(timeout, Opts, infinity),
-    SockOpt = proplists:get_value(socket_options, Opts, []),
-    Options = [{connect_options, SockOpt} | proplists:delete(timeout, Opts)],
-    case lhttpc:request(URL, Method, Hdrs, Body, TimeOut, Options) of
-        {ok, {{Status, _Reason}, Headers, Response}} ->
-            {ok, Status, Headers, binary_to_list(Response)};
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
-request_ibrowse(Method, URL, Hdrs, Body, Opts) ->
-    TimeOut = proplists:get_value(timeout, Opts, infinity),
-    Options = [{inactivity_timeout, TimeOut} | proplists:delete(timeout, Opts)],
-    case ibrowse:send_req(URL, Hdrs, Method, Body, Options) of
-        {ok, Status, Headers, Response} ->
-            {ok, list_to_integer(Status), Headers, Response};
-        {error, Reason} ->
-            {error, Reason}
-    end.
 
 % ibrowse {response_format, response_format()} |
 % Options - [option()]
@@ -335,3 +319,4 @@ request_ibrowse(Method, URL, Hdrs, Body, Opts) ->
 %                       The body_format option is only valid for the synchronous request and the default is  string.
 %                     When making an asynchronous request the body will always be received as a binary.
 % lhttpc: always binary
+

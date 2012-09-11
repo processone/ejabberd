@@ -62,7 +62,7 @@ start() ->
     RootDirS = "ERLANG_DIR = " ++ code:root_dir() ++ "\n",
     %% Load the ejabberd application description so that ?VERSION can read the vsn key
     application:load(ejabberd),
-    Version  = "EJABBERD_VERSION = " ++ ?VERSION ++ "\n",
+    Version  = "EJABBERD_VERSION = " ++ binary_to_list(?VERSION) ++ "\n",
     ExpatDir = "EXPAT_DIR = c:\\sdk\\Expat-2.0.0\n",
     OpenSSLDir = "OPENSSL_DIR = c:\\sdk\\OpenSSL\n",
     DBType = "DBTYPE = generic\n",    %% 'generic' or 'mssql'

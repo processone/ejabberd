@@ -19,53 +19,67 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%% This macro returns a string of the ejabberd version running, e.g. "2.3.4"
-%% If the ejabberd application description isn't loaded, returns atom: undefined
--define(VERSION, element(2, application:get_key(ejabberd,vsn))).
+-define(VERSION, ejabberd_config:get_version()).
 
--define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
--define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
--define(MYLANG, ejabberd_config:get_global_option(language)).
+-define(MYHOSTS, ejabberd_config:get_myhosts()).
 
--define(MSGS_DIR, "msgs").
--define(CONFIG_PATH, "ejabberd.cfg").
--define(LOG_PATH, "ejabberd.log").
+-define(MYNAME, hd(ejabberd_config:get_myhosts())).
+
+-define(MYLANG, ejabberd_config:get_mylang()).
+
+-define(MSGS_DIR, <<"msgs">>).
+
+-define(CONFIG_PATH, <<"ejabberd.cfg">>).
+
+-define(LOG_PATH, <<"ejabberd.log">>).
 
 -ifdef(ENABLE_FLASH_HACK).
+
 -define(FLASH_HACK, true).
+
 -else.
+
 -define(FLASH_HACK, false).
+
 -endif.
 
-
--define(EJABBERD_URI, "http://www.process-one.net/en/ejabberd/").
+-define(EJABBERD_URI,
+	<<"http://www.process-one.net/en/ejabberd/">>).
 
 -define(S2STIMEOUT, 600000).
 
 %%-define(DBGFSM, true).
 
--record(scram, {storedkey, serverkey, salt, iterationcount}).
+-record(scram,
+	{storedkey = <<"">>,
+         serverkey = <<"">>,
+         salt = <<"">>,
+         iterationcount = 0 :: integer()}).
+
+-type scram() :: #scram{}.
+
 -define(SCRAM_DEFAULT_ITERATION_COUNT, 4096).
 
 %% ---------------------------------
 %% Logging mechanism
 
-%% Print in standard output
--define(PRINT(Format, Args),
-    io:format(Format, Args)).
+-define(PRINT(Format, Args), io:format(Format, Args)).
 
 -define(DEBUG(Format, Args),
-    ejabberd_logger:debug_msg(?MODULE,?LINE,Format, Args)).
+	ejabberd_logger:debug_msg(?MODULE, ?LINE, Format,
+				  Args)).
 
 -define(INFO_MSG(Format, Args),
-    ejabberd_logger:info_msg(?MODULE,?LINE,Format, Args)).
-			      
+	ejabberd_logger:info_msg(?MODULE, ?LINE, Format, Args)).
+
 -define(WARNING_MSG(Format, Args),
-    ejabberd_logger:warning_msg(?MODULE,?LINE,Format, Args)).
-			      
+	ejabberd_logger:warning_msg(?MODULE, ?LINE, Format,
+				    Args)).
+
 -define(ERROR_MSG(Format, Args),
-    ejabberd_logger:error_msg(?MODULE,?LINE,Format, Args)).
+	ejabberd_logger:error_msg(?MODULE, ?LINE, Format,
+				  Args)).
 
 -define(CRITICAL_MSG(Format, Args),
-    ejabberd_logger:critical_msg(?MODULE,?LINE,Format, Args)).
-
+	ejabberd_logger:critical_msg(?MODULE, ?LINE, Format,
+				     Args)).

@@ -42,13 +42,7 @@
 	 terminate/2, code_change/3]).
 
 
--record(state, {groups = []}).
-
--ifdef(SSL40).
--define(PG2, pg2).
--else.
--define(PG2, pg2_backport).
--endif.
+-record(state, {groups = [] :: [frontend | backend]}).
 
 %%====================================================================
 %% API
@@ -71,20 +65,20 @@ start_link() ->
 
 join(Name) ->
     PG = {?MODULE, Name},
-    ?PG2:create(PG),
-    ?PG2:join(PG, whereis(?MODULE)).
+    pg2:create(PG),
+    pg2:join(PG, whereis(?MODULE)).
 
 leave(Name) ->
     PG = {?MODULE, Name},
-    ?PG2:leave(PG, whereis(?MODULE)).
+    pg2:leave(PG, whereis(?MODULE)).
 
 get_members(Name) ->
     PG = {?MODULE, Name},
-    [node(P) || P <- ?PG2:get_members(PG)].
+    [node(P) || P <- pg2:get_members(PG)].
 
 get_closest_node(Name) ->
     PG = {?MODULE, Name},
-    node(?PG2:get_closest_pid(PG)).
+    node(pg2:get_closest_pid(PG)).
 
 %%====================================================================
 %% gen_server callbacks
@@ -99,14 +93,17 @@ get_closest_node(Name) ->
 %%--------------------------------------------------------------------
 init([]) ->
     Groups =
-	case ejabberd_config:get_local_option(node_type) of
+	case ejabberd_config:get_local_option(
+               node_type,
+               fun(frontend) -> frontend;
+                  (backend) -> backend;
+                  (generic) -> generic
+               end, generic) of
 	    frontend ->
 		[frontend];
 	    backend ->
 		[backend];
 	    generic ->
-		[frontend, backend];
-	    undefined ->
 		[frontend, backend]
 	end,
     lists:foreach(fun join/1, Groups),

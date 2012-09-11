@@ -11,30 +11,34 @@
 %%
 %% Warning: Only one module for the debug handler can be defined.
 -module(mod_c2s_debug).
+
 -author('mremond@process-one.net').
 
 -behaviour(gen_mod).
+
 -behavior(gen_server).
 
--export([start/2, start_link/2, stop/1,
-	 debug_start/3, debug_stop/2, log_packet/4, log_packet/5]).
+-export([start/2, start_link/2, stop/1, debug_start/3,
+	 debug_stop/2, log_packet/4, log_packet/5]).
+
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+
 -include("jlib.hrl").
+
 -include("ejabberd_c2s.hrl").
 
 -record(modstate, {host, logdir, pid, iodevice, user}).
+
 -record(clientinfo, {pid, jid, auth_module, ip}).
 
 -define(SUPERVISOR, ejabberd_sup).
+
 -define(PROCNAME, c2s_debug).
 
-%%====================================================================
-%% gen_mod callbacks
-%%====================================================================
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Spec = {Proc, {?MODULE, start_link, [Host, Opts]},
@@ -48,22 +52,21 @@ stop(Host) ->
 
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
+    gen_server:start_link({local, Proc}, ?MODULE,
+			  [Host, Opts], []).
 
 %%====================================================================
 %% Hooks
 %%====================================================================
 
-%% Debug handled by another module... Do nothing:
 debug_start(_Status, Pid, C2SState) ->
     Host = C2SState#state.server,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-
     JID = jlib:jid_to_string(C2SState#state.jid),
     AuthModule = C2SState#state.auth_module,
     IP = C2SState#state.ip,
-    ClientInfo = #clientinfo{pid = Pid, jid = JID, auth_module = AuthModule, ip = IP},
-
+    ClientInfo = #clientinfo{pid = Pid, jid = JID,
+			     auth_module = AuthModule, ip = IP},
     gen_server:call(Proc, {debug_start, ClientInfo}).
 
 debug_stop(Pid, C2SState) ->
@@ -71,42 +74,51 @@ debug_stop(Pid, C2SState) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {debug_stop, Pid}).
 
-log_packet(false, _FromJID, _ToJID, _Packet) ->
-    ok;
+log_packet(false, _FromJID, _ToJID, _Packet) -> ok;
 log_packet(true, FromJID, ToJID, Packet) ->
     Host = FromJID#jid.lserver,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:cast(Proc, {addlog, {"Send", FromJID, ToJID, Packet}}).
+    gen_server:cast(Proc,
+		    {addlog, {<<"Send">>, FromJID, ToJID, Packet}}).
+
 log_packet(false, _JID, _FromJID, _ToJID, _Packet) ->
     ok;
 log_packet(true, JID, FromJID, ToJID, Packet) ->
     Host = JID#jid.lserver,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:cast(Proc, {addlog, {"Receive", FromJID, ToJID, Packet}}).
+    gen_server:cast(Proc,
+		    {addlog, {<<"Receive">>, FromJID, ToJID, Packet}}).
 
-%%====================================================================
-%% gen_server callbacks
-%%====================================================================
 init([Host, Opts]) ->
     ?INFO_MSG("Starting c2s debug module for: ~p", [Host]),
-    MyHost = gen_mod:get_opt_host(Host, Opts, "c2s_debug.@HOST@"),
-    ejabberd_hooks:add(c2s_debug_start_hook, Host,
-		       ?MODULE, debug_start, 50),
-    ejabberd_hooks:add(c2s_debug_stop_hook, Host,
-		       ?MODULE, debug_stop, 50),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, log_packet, 50),
-    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, log_packet, 50),
-
-    Logdir = gen_mod:get_opt(logdir, Opts, "/tmp/xmpplogs/"),
-    %% TODO: We currently support only one user. Support multiple users
-    SJID = case gen_mod:get_opt(users, Opts, undefined) of
-               undefined ->
-                   undefined;
-               [User1|_] ->
-                    User1
-          end,        
+    MyHost = gen_mod:get_opt_host(Host, Opts,
+				  <<"c2s_debug.@HOST@">>),
+    ejabberd_hooks:add(c2s_debug_start_hook, Host, ?MODULE,
+		       debug_start, 50),
+    ejabberd_hooks:add(c2s_debug_stop_hook, Host, ?MODULE,
+		       debug_stop, 50),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+		       log_packet, 50),
+    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
+		       log_packet, 50),
+    Logdir = gen_mod:get_opt(logdir, Opts,
+                             fun(S) ->
+                                     case iolist_to_binary(S) of
+                                         <<_, _/binary>> = B ->
+                                             B
+                                     end
+                             end,
+			     <<"/tmp/xmpplogs/">>),
+    SJID = gen_mod:get_opt(users, Opts,
+                           fun([S|_]) ->
+                                   case jlib:string_to_jid(S) of
+                                       #jid{} = J -> J
+                                   end
+                           end),
     make_dir_rec(Logdir),
-    {ok, #modstate{host = MyHost, logdir = Logdir, user = jlib:string_to_jid(SJID)}}.
+    {ok,
+     #modstate{host = MyHost, logdir = Logdir,
+	       user = jlib:string_to_jid(SJID)}}.
 
 terminate(_Reason, #modstate{host = Host}) ->
     ?INFO_MSG("Stopping c2s debug module for: ~s", [Host]),
@@ -114,40 +126,47 @@ terminate(_Reason, #modstate{host = Host}) ->
 			  ?MODULE, debug_start, 50),
     ejabberd_hooks:delete(c2s_debug_stop_hook, Host,
 			  ?MODULE, debug_stop, 50),
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, log_packet, 50).
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+			  log_packet, 50).
 
-%% No specific user: Select the first new user to connect
-handle_call({debug_start, ClientInfo}, _From, #modstate{pid=undefined, user=undefined} = State) ->
+handle_call({debug_start, ClientInfo}, _From,
+	    #modstate{pid = undefined, user = undefined} = State) ->
     Pid = ClientInfo#clientinfo.pid,
     ?INFO_MSG("Debug started for PID:~p", [Pid]),
-    
     JID = ClientInfo#clientinfo.jid,
     AuthModule = ClientInfo#clientinfo.auth_module,
     IP = ClientInfo#clientinfo.ip,
-
-    {ok, IOD} = file:open(filename(State#modstate.logdir), [append]),
-    Line = io_lib:format("~s - Session open~nJID: ~s~nAuthModule: ~p~nIP: ~p~n",
-			 [timestamp(), JID, AuthModule, IP]),
+    {ok, IOD} = file:open(filename(State#modstate.logdir),
+			  [append]),
+    Line =
+	io_lib:format("~s - Session open~nJID: ~s~nAuthModule: "
+		      "~p~nIP: ~p~n",
+		      [timestamp(), JID, AuthModule, IP]),
     file:write(IOD, Line),
-
-    {reply, true, State#modstate{pid = Pid, iodevice = IOD}};
+    {reply, true,
+     State#modstate{pid = Pid, iodevice = IOD}};
 %% Targeting a specific user
-handle_call({debug_start, ClientInfo}, _From, #modstate{pid=undefined, user=JID} = State) ->
+handle_call({debug_start, ClientInfo}, _From,
+	    #modstate{pid = undefined, user = JID} = State) ->
     ClientJID = ClientInfo#clientinfo.jid,
-    case jlib:jid_remove_resource(jlib:string_to_jid(ClientJID)) of
-        JID ->
-               Pid = ClientInfo#clientinfo.pid,
-               ?INFO_MSG("Debug started for PID:~p", [Pid]),
-               AuthModule = ClientInfo#clientinfo.auth_module,
-               IP = ClientInfo#clientinfo.ip,
-
-               {ok, IOD} = file:open(filename(State#modstate.logdir), [append]),
-               Line = io_lib:format("~s - Session open~nJID: ~s~nAuthModule: ~p~nIP: ~p~n",
-			            [timestamp(), ClientJID, AuthModule, IP]),
-              file:write(IOD, Line),
-              {reply, true, State#modstate{pid = Pid, iodevice = IOD}};
-         _ ->
-             {reply, false, State}
+    case
+      jlib:jid_remove_resource(jlib:string_to_jid(ClientJID))
+	of
+      JID ->
+	  Pid = ClientInfo#clientinfo.pid,
+	  ?INFO_MSG("Debug started for PID:~p", [Pid]),
+	  AuthModule = ClientInfo#clientinfo.auth_module,
+	  IP = ClientInfo#clientinfo.ip,
+	  {ok, IOD} = file:open(filename(State#modstate.logdir),
+				[append]),
+	  Line =
+	      io_lib:format("~s - Session open~nJID: ~s~nAuthModule: "
+			    "~p~nIP: ~p~n",
+			    [timestamp(), ClientJID, AuthModule, IP]),
+	  file:write(IOD, Line),
+	  {reply, true,
+	   State#modstate{pid = Pid, iodevice = IOD}};
+      _ -> {reply, false, State}
     end;
 handle_call({debug_start, _ClientInfo}, _From, State) ->
     {reply, false, State};
@@ -156,50 +175,49 @@ handle_call(stop, _From, State) ->
 handle_call(_Req, _From, State) ->
     {reply, {error, badarg}, State}.
 
-handle_cast({addlog, _}, #modstate{iodevice=undefined} = State) ->
+handle_cast({addlog, _},
+	    #modstate{iodevice = undefined} = State) ->
     {noreply, State};
-handle_cast({addlog, {Direction, FromJID, ToJID, Packet}}, #modstate{iodevice=IOD} = State) ->
-    LogEntry = io_lib:format("=====~n~s - ~s~nFrom: ~s~nTo: ~s~n~s~n", [timestamp(), Direction,
-									jlib:jid_to_string(FromJID),
-									jlib:jid_to_string(ToJID),
-									xml:element_to_string(Packet)]),
+handle_cast({addlog,
+	     {Direction, FromJID, ToJID, Packet}},
+	    #modstate{iodevice = IOD} = State) ->
+    LogEntry =
+	io_lib:format("=====~n~s - ~s~nFrom: ~s~nTo: ~s~n~s~n",
+		      [timestamp(), Direction, jlib:jid_to_string(FromJID),
+		       jlib:jid_to_string(ToJID),
+		       xml:element_to_binary(Packet)]),
     file:write(IOD, LogEntry),
     {noreply, State};
-handle_cast({debug_stop, Pid}, #modstate{pid=Pid, iodevice=IOD} = State) ->
+handle_cast({debug_stop, Pid},
+	    #modstate{pid = Pid, iodevice = IOD} = State) ->
     Line = io_lib:format("=====~n~s - Session closed~n",
 			 [timestamp()]),
     file:write(IOD, Line),
-
     file:close(IOD),
-    {noreply, State#modstate{pid = undefined, iodevice=undefined}};
-handle_cast(_Msg, State) ->
-    {noreply, State}.
+    {noreply,
+     State#modstate{pid = undefined, iodevice = undefined}};
+handle_cast(_Msg, State) -> {noreply, State}.
 
-handle_info(_Info, State) ->
-    {noreply, State}.
+handle_info(_Info, State) -> {noreply, State}.
 
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-%% Generate filename
 filename(LogDir) ->
     Filename = lists:flatten(timestamp()) ++ "-c2s.log",
     filename:join([LogDir, Filename]).
 
-%% Generate timestamp
 timestamp() ->
-    {Y,Mo,D} = erlang:date(),
-    {H,Mi,S} = erlang:time(),
-    io_lib:format("~4.4.0w~2.2.0w~2.2.0w-~2.2.0w~2.2.0w~2.2.0w", [Y,Mo,D,H,Mi,S]).
+    {Y, Mo, D} = erlang:date(),
+    {H, Mi, S} = erlang:time(),
+    io_lib:format("~4.4.0w~2.2.0w~2.2.0w-~2.2.0w~2.2.0w~2.2.0w",
+		  [Y, Mo, D, H, Mi, S]).
 
-%% Create dir recusively
 make_dir_rec(Dir) ->
     case file:read_file_info(Dir) of
-        {ok, _} ->
-            ok;
-        {error, enoent} ->
-            DirS = filename:split(Dir),
-            DirR = lists:sublist(DirS, length(DirS)-1),
-            make_dir_rec(filename:join(DirR)),
-            file:make_dir(Dir)
+      {ok, _} -> ok;
+      {error, enoent} ->
+	  DirS = filename:split(Dir),
+	  DirR = lists:sublist(DirS, length(DirS) - 1),
+	  make_dir_rec(filename:join(DirR)),
+	  file:make_dir(Dir)
     end.

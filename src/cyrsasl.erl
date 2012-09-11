@@ -25,43 +25,76 @@
 %%%----------------------------------------------------------------------
 
 -module(cyrsasl).
+
 -author('alexey@process-one.net').
 
--export([start/0,
-	 register_mechanism/3,
-	 listmech/1,
-	 server_new/7,
-	 server_start/3,
-	 server_step/2]).
+-export([start/0, register_mechanism/3, listmech/1,
+	 server_new/7, server_start/3, server_step/2]).
 
 -include("ejabberd.hrl").
 
--record(sasl_mechanism, {mechanism, module, password_type}).
--record(sasl_state, {service, myname, realm,
-		     get_password, check_password, check_password_digest,
-		     mech_mod, mech_state}).
+%%
+-export_type([
+    mechanism/0,
+    mechanisms/0,
+    sasl_mechanism/0
+]).
 
--export([behaviour_info/1]).
+-record(sasl_mechanism,
+        {mechanism = <<"">>    :: mechanism() | '$1',
+         module                :: atom(),
+         password_type = plain :: password_type() | '$2'}).
 
-behaviour_info(callbacks) ->
-    [{mech_new, 4}, {mech_step, 2}];
-behaviour_info(_Other) ->
-    undefined.
+-type(mechanism() :: binary()).
+-type(mechanisms() :: [mechanism(),...]).
+-type(password_type() :: plain | digest | scram).
+-type(props() :: [{username, binary()} |
+                  {authzid, binary()} |
+                  {auth_module, atom()}]).
+
+-type(sasl_mechanism() :: #sasl_mechanism{}).
+
+-record(sasl_state,
+{
+    service,
+    myname,
+    realm,
+    get_password,
+    check_password,
+    check_password_digest,
+    mech_mod,
+    mech_state
+}).
+
+-callback mech_new(binary(), fun(), fun(), fun()) -> any().
+-callback mech_step(any(), binary()) -> {ok, props()} |
+                                        {ok, props(), binary()} |
+                                        {continue, binary(), any()} |
+                                        {error, binary()} |
+                                        {error, binary(), binary()}.
 
 start() ->
-    ets:new(sasl_mechanism, [named_table,
-			     public,
-			     {keypos, #sasl_mechanism.mechanism}]),
+    ets:new(sasl_mechanism,
+	    [named_table, public,
+	     {keypos, #sasl_mechanism.mechanism}]),
     cyrsasl_plain:start([]),
     cyrsasl_digest:start([]),
     cyrsasl_scram:start([]),
     cyrsasl_anonymous:start([]),
     ok.
 
+%%
+-spec(register_mechanism/3 ::
+(
+  Mechanim     :: mechanism(),
+  Module       :: module(),
+  PasswordType :: password_type())
+    -> any()
+).
+
 register_mechanism(Mechanism, Module, PasswordType) ->
     ets:insert(sasl_mechanism,
-	       #sasl_mechanism{mechanism = Mechanism,
-			       module = Module,
+	       #sasl_mechanism{mechanism = Mechanism, module = Module,
 			       password_type = PasswordType}).
 
 %%% TODO: use callbacks
@@ -89,95 +122,94 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 %%    end.
 
 check_credentials(_State, Props) ->
-    User = xml:get_attr_s(username, Props),
+    User = proplists:get_value(username, Props, <<>>),
     case jlib:nodeprep(User) of
-	error ->
-	    {error, "not-authorized"};
-	"" ->
-	    {error, "not-authorized"};
-	_LUser ->
-	    ok
+      error -> {error, <<"not-authorized">>};
+      <<"">> -> {error, <<"not-authorized">>};
+      _LUser -> ok
     end.
+
+-spec(listmech/1 ::
+(
+  Host ::binary())
+    -> Mechanisms::mechanisms()
+).
 
 listmech(Host) ->
     Mechs = ets:select(sasl_mechanism,
 		       [{#sasl_mechanism{mechanism = '$1',
-					 password_type = '$2',
-					 _ = '_'},
+					 password_type = '$2', _ = '_'},
 			 case catch ejabberd_auth:store_type(Host) of
-			 external ->
-			      [{'==', '$2', plain}];
-			 scram ->
-			      [{'/=', '$2', digest}];
-			 {'EXIT',{undef,[{Module,store_type,[]} | _]}} ->
-			      ?WARNING_MSG("~p doesn't implement the function store_type/0", [Module]),
-			      [];
-			 _Else ->
-			      []
+			   external -> [{'==', '$2', plain}];
+			   scram -> [{'/=', '$2', digest}];
+			   {'EXIT', {undef, [{Module, store_type, []} | _]}} ->
+			       ?WARNING_MSG("~p doesn't implement the function store_type/0",
+					    [Module]),
+			       [];
+			   _Else -> []
 			 end,
 			 ['$1']}]),
     filter_anonymous(Host, Mechs).
 
 server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 	   GetPassword, CheckPassword, CheckPasswordDigest) ->
-    #sasl_state{service = Service,
-		myname = ServerFQDN,
-		realm = UserRealm,
-		get_password = GetPassword,
+    #sasl_state{service = Service, myname = ServerFQDN,
+		realm = UserRealm, get_password = GetPassword,
 		check_password = CheckPassword,
-		check_password_digest= CheckPasswordDigest}.
+		check_password_digest = CheckPasswordDigest}.
 
 server_start(State, Mech, ClientIn) ->
-    case lists:member(Mech, listmech(State#sasl_state.myname)) of
-	true ->
-	    case ets:lookup(sasl_mechanism, Mech) of
-		[#sasl_mechanism{module = Module}] ->
-		    {ok, MechState} = Module:mech_new(
-					State#sasl_state.myname,
-					State#sasl_state.get_password,
-					State#sasl_state.check_password,
-					State#sasl_state.check_password_digest),
-		    server_step(State#sasl_state{mech_mod = Module,
-						 mech_state = MechState},
-				ClientIn);
-		_ ->
-		    {error, "no-mechanism"}
-	    end;
-	false ->
-	    {error, "no-mechanism"}
+    case lists:member(Mech,
+		      listmech(State#sasl_state.myname))
+	of
+      true ->
+	  case ets:lookup(sasl_mechanism, Mech) of
+	    [#sasl_mechanism{module = Module}] ->
+		{ok, MechState} =
+		    Module:mech_new(State#sasl_state.myname,
+				    State#sasl_state.get_password,
+				    State#sasl_state.check_password,
+				    State#sasl_state.check_password_digest),
+		server_step(State#sasl_state{mech_mod = Module,
+					     mech_state = MechState},
+			    ClientIn);
+	    _ -> {error, <<"no-mechanism">>}
+	  end;
+      false -> {error, <<"no-mechanism">>}
     end.
 
 server_step(State, ClientIn) ->
     Module = State#sasl_state.mech_mod,
     MechState = State#sasl_state.mech_state,
     case Module:mech_step(MechState, ClientIn) of
-	{ok, Props} ->
-	    case check_credentials(State, Props) of
-		ok ->
-		    {ok, Props};
-		{error, Error} ->
-		    {error, Error}
-	    end;
-	{ok, Props, ServerOut} ->
-	    case check_credentials(State, Props) of
-		ok ->
-		    {ok, Props, ServerOut};
-		{error, Error} ->
-		    {error, Error}
-	    end;
-	{continue, ServerOut, NewMechState} ->
-	    {continue, ServerOut,
-	     State#sasl_state{mech_state = NewMechState}};
-	{error, Error, Username} ->
-	    {error, Error, Username};
-	{error, Error} ->
-	    {error, Error}
+        {ok, Props} ->
+            case check_credentials(State, Props) of
+                ok             -> {ok, Props};
+                {error, Error} -> {error, Error}
+            end;
+        {ok, Props, ServerOut} ->
+            case check_credentials(State, Props) of
+                ok             -> {ok, Props, ServerOut};
+                {error, Error} -> {error, Error}
+            end;
+        {continue, ServerOut, NewMechState} ->
+            {continue, ServerOut, State#sasl_state{mech_state = NewMechState}};
+        {error, Error, Username} ->
+            {error, Error, Username};
+        {error, Error} ->
+            {error, Error}
     end.
 
-%% Remove the anonymous mechanism from the list if not enabled for the given
-%% host
+%%
+-spec(filter_anonymous/2 ::
+(
+  Host  :: binary(),
+  Mechs :: mechanisms())
+    -> mechanisms()
+).
+
 filter_anonymous(Host, Mechs) ->
     case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(Host) of
-	true  -> Mechs;
-	false -> Mechs -- ["ANONYMOUS"]
+      true  -> Mechs;
+      false -> Mechs -- [<<"ANONYMOUS">>]
     end.

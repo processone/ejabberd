@@ -67,16 +67,8 @@ update(ModulesToUpdate) ->
 	    {error, Reason}
     end.
 
-%% OTP R14B03 and older provided release_handler_1:eval_script/3
-%% But OTP R14B04 and newer provide release_handler_1:eval_script/5
-%% Dialyzer reports a call to missing function; don't worry.
 eval_script(Script, Apps, LibDirs) ->
-    case lists:member({eval_script, 5}, release_handler_1:module_info(exports)) of
-	true ->
-	    release_handler_1:eval_script(Script, Apps, LibDirs, [], []);
-	false ->
-	    release_handler_1:eval_script(Script, Apps, LibDirs)
-    end.
+    release_handler_1:eval_script(Script, Apps, LibDirs, [], []).
 
 %% Get information about the modified modules
 update_info() ->
@@ -142,23 +134,19 @@ build_script(Dir, UpdatedBeams) ->
 	release_handler_1:check_script(
 	  LowLevelScript,
 	  [{ejabberd, "", filename:join(Dir, "..")}]),
-    case Check of
-	ok -> 
-	    %% This clause is for OTP R14B03 and older.
-	    %% Newer Dialyzer reports a never match pattern; don't worry.
-	    ?DEBUG("script: ~p~n", [Script]),
-	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
-	    ?DEBUG("check: ~p~n", [Check]);
+    Check2 = case Check of
 	{ok, []} ->
 	    ?DEBUG("script: ~p~n", [Script]),
 	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
-	    ?DEBUG("check: ~p~n", [Check]);
+	    ?DEBUG("check: ~p~n", [Check]),
+	    "ok";
 	_ ->
 	    ?ERROR_MSG("script: ~p~n", [Script]),
 	    ?ERROR_MSG("low level script: ~p~n", [LowLevelScript]),
-	    ?ERROR_MSG("check: ~p~n", [Check])
+	    ?ERROR_MSG("check: ~p~n", [Check]),
+	    io_lib:format("~p", [Check])
     end,
-    {Script, LowLevelScript, Check}.
+    {Script, LowLevelScript, Check2}.
 
 %% Copied from Erlang/OTP file: lib/sasl/src/systools.hrl
 -record(application, 

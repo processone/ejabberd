@@ -36,7 +36,8 @@
 	 parse_listener_portip/2,
 	 add_listener/3,
 	 delete_listener/2,
-	 rate_limit/2
+	 rate_limit/2,
+         validate_cfg/1
 	]).
 
 -include("ejabberd.hrl").
@@ -54,7 +55,7 @@ init(_) ->
     {ok, {{one_for_one, 10, 1}, []}}.
 
 bind_tcp_ports() ->
-    case ejabberd_config:get_local_option(listen) of
+    case ejabberd_config:get_local_option(listen, fun validate_cfg/1) of
 	undefined ->
 	    ignore;
 	Ls ->
@@ -78,7 +79,8 @@ bind_tcp_port(PortIP, Module, RawOpts) ->
 		udp -> ok;
 		_ ->
 		    ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
-		    ets:insert(listen_sockets, {PortIP, ListenSocket})
+		    ets:insert(listen_sockets, {PortIP, ListenSocket}),
+                    ok
 	    end
     catch
 	throw:{error, Error} ->
@@ -86,7 +88,7 @@ bind_tcp_port(PortIP, Module, RawOpts) ->
     end.
 
 start_listeners() ->
-    case ejabberd_config:get_local_option(listen) of
+    case ejabberd_config:get_local_option(listen, fun validate_cfg/1) of
 	undefined ->
 	    ignore;
 	Ls ->
@@ -206,6 +208,13 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 %% but they are only used when no IP address was specified in the PortIP.
 %% The IP version (either IPv4 or IPv6) is inferred from the IP address type,
 %% so the option inet/inet6 is only used when no IP is specified at all.
+-spec parse_listener_portip(port_ip_transport(), list()) -> {inet:port_number(),
+                                                             inet:ip_address(),
+                                                             binary(),
+                                                             inet | inet6,
+                                                             transport(),
+                                                             list()}.
+
 parse_listener_portip(PortIP, Opts) ->
     {IPOpt, Opts2} = strip_ip_option(Opts),
     {IPVOpt, OptsClean} = case lists:member(inet6, Opts2) of
@@ -216,17 +225,17 @@ parse_listener_portip(PortIP, Opts) ->
 	case add_proto(PortIP, Opts) of
 	    {P, Prot} ->
 		T = get_ip_tuple(IPOpt, IPVOpt),
-		S = inet_parse:ntoa(T),
+		S = jlib:ip_to_list(T),
 		{P, T, S, Prot};
 	    {P, T, Prot} when is_integer(P) and is_tuple(T) ->
-		S = inet_parse:ntoa(T),
+		S = jlib:ip_to_list(T),
 		{P, T, S, Prot};
-	    {P, S, Prot} when is_integer(P) and is_list(S) ->
-		[S | _] = string:tokens(S, "/"),
-		{ok, T} = inet_parse:address(S),
+	    {P, S, Prot} when is_integer(P) and is_binary(S) ->
+		[S | _] = str:tokens(S, <<"/">>),
+		{ok, T} = inet_parse:address(binary_to_list(S)),
 		{P, T, S, Prot}
 	end,
-    IPV = case size(IPT) of
+    IPV = case tuple_size(IPT) of
 	      4 -> inet;
 	      8 -> inet6
 	  end,
@@ -341,7 +350,7 @@ start_listener2(Port, Module, Opts) ->
     start_listener_sup(Port, Module, Opts).
 
 start_module_sup(_Port, Module) ->
-    Proc1 = gen_mod:get_module_proc("sup", Module),
+    Proc1 = gen_mod:get_module_proc(<<"sup">>, Module),
     ChildSpec1 =
 	{Proc1,
 	 {ejabberd_tmp_sup, start_link, [Proc1, strip_frontend(Module)]},
@@ -361,7 +370,7 @@ start_listener_sup(Port, Module, Opts) ->
     supervisor:start_child(ejabberd_listeners, ChildSpec).
 
 stop_listeners() ->
-    Ports = ejabberd_config:get_local_option(listen),
+    Ports = ejabberd_config:get_local_option(listen, fun validate_cfg/1),
     lists:foreach(
       fun({PortIpNetp, Module, _Opts}) ->
 	      delete_listener(PortIpNetp, Module)
@@ -375,6 +384,8 @@ stop_listeners() ->
 %%      IPT = tuple()
 %%      IPS = string()
 %%      Module = atom()
+-spec stop_listener(port_ip_transport(), module()) -> ok | {error, any()}.
+
 stop_listener(PortIP, _Module) ->
     supervisor:terminate_child(ejabberd_listeners, PortIP),
     supervisor:delete_child(ejabberd_listeners, PortIP).
@@ -394,7 +405,8 @@ add_listener(PortIP, Module, Opts) ->
     PortIP1 = {Port, IPT, Proto},
     case start_listener(PortIP1, Module, Opts) of
 	{ok, _Pid} ->
-	    Ports = case ejabberd_config:get_local_option(listen) of
+	    Ports = case ejabberd_config:get_local_option(
+                           listen, fun validate_cfg/1) of
 			undefined ->
 			    [];
 			Ls ->
@@ -424,7 +436,8 @@ delete_listener(PortIP, Module) ->
 delete_listener(PortIP, Module, Opts) ->
     {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
     PortIP1 = {Port, IPT, Proto},
-    Ports = case ejabberd_config:get_local_option(listen) of
+    Ports = case ejabberd_config:get_local_option(
+                   listen, fun validate_cfg/1) of
 		undefined ->
 		    [];
 		Ls ->
@@ -434,11 +447,14 @@ delete_listener(PortIP, Module, Opts) ->
     ejabberd_config:add_local_option(listen, Ports1),
     stop_listener(PortIP1, Module).
 
+
+-spec is_frontend({frontend, module} | module()) -> boolean().
+
 is_frontend({frontend, _Module}) -> true;
 is_frontend(_) -> false.
 
-%% @doc(FrontMod) -> atom()
-%% where FrontMod = atom() | {frontend, atom()}
+-spec strip_frontend({frontend, module()} | module()) -> module().
+
 strip_frontend({frontend, Module}) -> Module;
 strip_frontend(Module) when is_atom(Module) -> Module.
 
@@ -509,7 +525,7 @@ socket_error(Reason, PortIP, Module, SockOpts, Port, IPS) ->
 		      "IP address not available: " ++ IPS;
 		  eaddrinuse ->
 		      "IP address and port number already used: "
-			  ++IPS++" "++integer_to_list(Port);
+			  ++binary_to_list(IPS)++" "++integer_to_list(Port);
 		  _ ->
 		      format_error(Reason)
 	      end,
@@ -560,3 +576,45 @@ check_rate_limit(Interval) ->
 	    timer:sleep(Ms)
     end,
     NewInterval.
+
+-define(IS_CHAR(C), (is_integer(C) and (C >= 0) and (C =< 255))).
+-define(IS_UINT(U), (is_integer(U) and (U >= 0) and (U =< 65535))).
+-define(IS_PORT(P), (is_integer(P) and (P > 0) and (P =< 65535))).
+-define(IS_TRANSPORT(T), ((T == tcp) or (T == udp))).
+
+-type transport() :: udp | tcp.
+-type port_ip_transport() :: inet:port_number() |
+                             {inet:port_number(), transport()} |
+                             {inet:port_number(), inet:ip_address()} |
+                             {inet:port_number(), inet:ip_address(),
+                              transport()}.
+
+-spec validate_cfg(list()) -> [{port_ip_transport(), module(), list()}].
+
+validate_cfg(L) ->
+    lists:map(
+      fun({PortIPTransport, Mod, Opts}) when is_atom(Mod), is_list(Opts) ->
+              case PortIPTransport of
+                  Port when ?IS_PORT(Port) ->
+                      {Port, Mod, Opts};
+                  {Port, Trans} when ?IS_PORT(Port) and ?IS_TRANSPORT(Trans) ->
+                      {{Port, Trans}, Mod, Opts};
+                  {Port, IP} when ?IS_PORT(Port) ->
+                      {{Port, prepare_ip(IP)}, Mod, Opts};
+                  {Port, IP, Trans} when ?IS_PORT(Port) and ?IS_TRANSPORT(Trans) ->
+                      {{Port, prepare_ip(IP), Trans}, Mod, Opts}
+              end
+      end, L).
+
+prepare_ip({A, B, C, D} = IP)
+  when ?IS_CHAR(A) and ?IS_CHAR(B) and ?IS_CHAR(C) and ?IS_CHAR(D) ->
+    IP;
+prepare_ip({A, B, C, D, E, F, G, H} = IP)
+  when ?IS_UINT(A) and ?IS_UINT(B) and ?IS_UINT(C) and ?IS_UINT(D)
+       and ?IS_UINT(E) and ?IS_UINT(F) and ?IS_UINT(G) and ?IS_UINT(H) ->
+    IP;
+prepare_ip(IP) when is_list(IP) ->
+    {ok, Addr} = inet_parse:address(IP),
+    Addr;
+prepare_ip(IP) when is_binary(IP) ->
+    prepare_ip(binary_to_list(IP)).

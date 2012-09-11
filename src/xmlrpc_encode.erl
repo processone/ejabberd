@@ -3,10 +3,10 @@
 %%
 %% Redistribution and use in source and binary forms, with or without
 %% modification, are permitted provided that the following conditions
-%% are met: 
+%% are met:
 %%
 %% 1. Redistributions of source code must retain the above copyright
-%%    notice, this list of conditions and the following disclaimer. 
+%%    notice, this list of conditions and the following disclaimer.
 %% 2. Redistributions in binary form must reproduce the above
 %%    copyright notice, this list of conditions and the following
 %%    disclaimer in the documentation and/or other materials provided
@@ -25,121 +25,103 @@
 %% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -module(xmlrpc_encode).
+
 -author('jocke@gleipnir.com').
+
 -export([payload/1]).
 
 %% Exported: payload/1
 
-payload({call, Name, Params}) when atom(Name), list(Params) ->
-    case encode_params(Params) of
-	{error, Reason} -> {error, Reason};
-	EncodedParams ->
-	    EncodedPayload =
-		["<?xml version=\"1.0\"?><methodCall><methodName>",
-		 atom_to_list(Name), "</methodName>", EncodedParams,
-		 "</methodCall>"],
-	    {ok, EncodedPayload}
-    end;
-payload({response, {fault, Code, String}}) when integer(Code) ->
-    case xmlrpc_util:is_string(String) of
-	yes ->
-	    EncodedPayload =
-		["<?xml version=\"1.0\"?><methodResponse><fault>"
-		 "<value><struct><member><name>faultCode</name><value><int>",
-		 integer_to_list(Code), "</int></value></member><member><name>"
-		 "faultString</name><value><string>", escape_string(String),
-		 "</string></value></member></struct></value></fault>",
-		 "</methodResponse>"],
-	    {ok, EncodedPayload};
-	no -> {error, {bad_string, String}}
-    end;
-payload({response, []} = Payload) ->
-    {ok, ["<?xml version=\"1.0\"?><methodResponse></methodResponse>"]};
-payload({response, [Param]} = Payload) ->
-    case encode_params([Param]) of
-	{error, Reason} -> {error, Reason};
-	EncodedParam ->
-	    {ok, ["<?xml version=\"1.0\"?><methodResponse>", EncodedParam,
-		  "</methodResponse>"]}
-    end;
-payload(Payload) -> {error, {bad_payload, Payload}}.
+-type xmlrpc() :: number() | boolean() | binary() |
+                  {base64, binary()} | {date, binary()} |
+                  {array, [xmlrpc()]} | {struct, [{atom(), xmlrpc()}]}.
 
-encode_params(Params) -> encode_params(Params, []).
+-spec payload({call, atom(), [xmlrpc()]} |
+              {response, {fault, integer(), binary()} | [xmlrpc()]}) ->
+                     binary().
 
-encode_params([], []) -> [];
-encode_params([], Acc) -> ["<params>", Acc, "</params>"];
-encode_params([Param|Rest], Acc) ->
-    case encode(Param) of
-	{error, Reason} -> {error, Reason};
-	EncodedParam ->
-	    NewAcc = Acc++["<param><value>", EncodedParam, "</value></param>"],
-	    encode_params(Rest, NewAcc)
-    end.
+payload({call, Name, Params}) ->
+    <<"<?xml version=\"1.0\"?><methodCall><methodName>",
+      (jlib:atom_to_binary(Name))/binary,
+      "</methodName>",
+      (encode_params(Params))/binary,
+      "</methodCall>">>;
+payload({response, {fault, Code, String}}) ->
+    <<"<?xml version=\"1.0\"?><methodResponse><fault"
+      "><value><struct><member><name>faultCode</name"
+      "><value><int>",
+      (jlib:integer_to_binary(Code))/binary,
+      "</int></value></member><member><name>faultStr"
+      "ing</name><value><string>",
+      (escape_string(String))/binary,
+      "</string></value></member></struct></value></"
+      "fault></methodResponse>">>;
+payload({response, []}) ->
+    <<"<?xml version=\"1.0\"?><methodResponse></methodResponse>">>;
+payload({response, [Param]}) ->
+    <<"<?xml version=\"1.0\"?><methodResponse>",
+      (encode_params([Param]))/binary,
+      "</methodResponse>">>.
+
+encode_params(Params) -> encode_params(Params, <<>>).
+
+encode_params([], <<>>) -> <<>>;
+encode_params([], Acc) ->
+    <<"<params>", Acc/binary, "</params>">>;
+encode_params([Param | Rest], Acc) ->
+    EncodedParam = encode(Param),
+    NewAcc = <<Acc/binary, "<param><value>",
+               EncodedParam/binary, "</value></param>">>,
+    encode_params(Rest, NewAcc).
 
 encode({struct, Struct}) ->
-    case encode_members(Struct) of
-	{error, Reason} -> {error, Reason};
-	Members -> ["<struct>", Members, "</struct>"]
-    end;
-encode({array, Array}) when list(Array) ->
-    case encode_values(Array)of
-	{error, Reason} -> {error, Reason};
-	Values -> ["<array><data>", Values, "</data></array>"]
-    end;
-encode(Integer) when integer(Integer) ->
-    ["<int>", integer_to_list(Integer), "</int>"];
-encode(true) -> "<boolean>1</boolean>"; % duh!
-encode(false) -> "<boolean>0</boolean>"; % duh!
-encode(Double) when float(Double) ->
-    ["<double>", io_lib:format("~p", [Double]), "</double>"];
+    Members = encode_members(Struct),
+    <<"<struct>", Members/binary, "</struct>">>;
+encode({array, Array}) ->
+    Values = encode_values(Array),
+    <<"<array><data>", Values/binary, "</data></array>">>;
+encode(Integer) when is_integer(Integer) ->
+    <<"<int>", (jlib:integer_to_binary(Integer))/binary, "</int>">>;
+encode(true) -> <<"<boolean>1</boolean>">>; % duh!
+encode(false) -> <<"<boolean>0</boolean>">>; % duh!
+encode(Double) when is_float(Double) ->
+    list_to_binary(
+      [<<"<double>">>, io_lib:format("~p", [Double]),
+       <<"</double>">>]);
 encode({date, Date}) ->
-    case xmlrpc_util:is_iso8601_date(Date) of
-	yes -> ["<dateTime.iso8601>", Date, "</dateTime.iso8601>"];
-	no -> {error, {bad_date, Date}}
-    end;
+    <<"<dateTime.iso8601>", Date/binary, "</dateTime.iso8601>">>;
 encode({base64, Base64}) ->
-    case xmlrpc_util:is_base64(Base64) of
-	yes -> ["<base64>", Base64, "</base64>"];
-	no -> {error, {bad_base64, Base64}}
-    end;
+    <<"<base64>", Base64/binary, "</base64>">>;
 encode(Value) ->
-    case xmlrpc_util:is_string(Value) of
-	yes -> escape_string(Value);
-	no -> {error, {bad_value, Value}}
-    end.
+    escape_string(Value).
 
-escape_string([]) -> [];
-escape_string([$<|Rest]) -> ["&lt;", escape_string(Rest)];
-escape_string([$>|Rest]) -> ["&gt;", escape_string(Rest)];
-escape_string([$&|Rest]) -> ["&amp;", escape_string(Rest)];
-escape_string([C|Rest]) -> [C|escape_string(Rest)].
+escape_string(<<>>) -> <<>>;
+escape_string(<<$<, Rest/binary>>) ->
+    <<"&lt;", (escape_string(Rest))/binary>>;
+escape_string(<<$>, Rest/binary>>) ->
+    <<"&gt;", (escape_string(Rest))/binary>>;
+escape_string(<<$&, Rest/binary>>) ->
+    <<"&amp;", (escape_string(Rest))/binary>>;
+escape_string(<<C, Rest/binary>>) -> <<C, (escape_string(Rest))/binary>>.
 
-encode_members(Struct) -> encode_members(Struct, []).
+encode_members(Struct) -> encode_members(Struct, <<>>).
 
 encode_members([], Acc) -> Acc;
-encode_members([{Name, Value}|Rest], Acc) when atom(Name) ->
-    case encode(Value) of
-	{error, Reason} -> {error, Reason};
-	EncodedValue ->
-	    NewAcc =
-		Acc++["<member><name>", atom_to_list(Name), "</name><value>",
-		      EncodedValue, "</value></member>"],
-	    encode_members(Rest, NewAcc)
-    end;
-encode_members([{Name, Value}|Rest], Acc) -> {error, {invalid_name, Name}};
-encode_members(UnknownMember, Acc) ->
-    {error, {unknown_member, UnknownMember}}.
+encode_members([{Name, Value} | Rest], Acc) ->
+    NewAcc = <<Acc/binary,
+               "<member><name>",
+               (jlib:atom_to_binary(Name))/binary,
+               "</name><value>",
+               (encode(Value))/binary,
+               "</value></member>">>,
+    encode_members(Rest, NewAcc).
 
-encode_values(Array) -> encode_values(Array, []).
+encode_values(Array) -> encode_values(Array, <<>>).
 
 encode_values([], Acc) -> Acc;
-encode_values([Value|Rest], Acc) ->
-    case encode(Value) of
-	{error, Reason} -> {error, Reason};
-	EncodedValue ->
-	    NewAcc = Acc++["<value>", EncodedValue, "</value>"],
-	    encode_values(Rest, NewAcc)
-    end;
-encode_values([{Name, Value}|Rest], Acc) -> {error, {invalid_name, Name}};
-encode_values(UnknownMember, Acc) ->
-    {error, {unknown_member, UnknownMember}}.
+encode_values([Value | Rest], Acc) ->
+    NewAcc = <<Acc/binary,
+               "<value>",
+               (encode(Value))/binary,
+               "</value>">>,
+    encode_values(Rest, NewAcc).

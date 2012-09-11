@@ -1,0 +1,62 @@
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+ERLANG_CFLAGS = @ERLANG_CFLAGS@
+ERLANG_LIBS = @ERLANG_LIBS@
+
+EFLAGS += -I ..
+EFLAGS += -pz ..
+
+# make debug=true to compile Erlang module with debug informations.
+ifdef debug
+	EFLAGS+=+debug_info
+endif
+
+OUTDIR = ..
+ERLBEHAVS = gen_pubsub_node.erl gen_pubsub_nodetree.erl
+SOURCES_ALL = $(wildcard *.erl)
+SOURCES = $(filter-out $(ERLBEHAVS),$(SOURCES_ALL))
+ERLBEHAVBEAMS = $(addprefix $(OUTDIR)/,$(ERLBEHAVS:.erl=.beam))
+BEAMS = $(addprefix $(OUTDIR)/,$(SOURCES:.erl=.beam))
+
+
+all: $(ERLBEHAVBEAMS) $(BEAMS)
+
+$(BEAMS): $(ERLBEHAVBEAMS)
+
+$(OUTDIR)/%.beam:       %.erl
+	@ERLC@ -W $(EFLAGS) -o $(OUTDIR) $<
+
+clean:
+	rm -f $(BEAMS)
+
+distclean: clean
+	rm -f Makefile
+
+
+
+TAGS:
+	etags *.erl
+
+
+DEVDOCDIR=../../doc/devdoc
+DDTDIR=..
+HTMLS = $(SOURCES:%.erl=../../doc/devdoc/%.html)
+ERLHTMLS = $(SOURCES:%.erl=../../doc/devdoc/%.erl.html)
+SVGS = $(SOURCES:%.erl=../../doc/devdoc/%.svg)
+
+devdoc: $(HTMLS) $(ERLHTMLS) $(SVGS)
+
+$(DEVDOCDIR)/%.erl.html: %.erl
+	@ERL@ -noshell -pa $(DEVDOCDIR) -run escobar_run file $< $(DDTDIR) -s init stop
+
+$(DEVDOCDIR)/%.html: %.erl
+	@ERL@ -noshell -run edoc_run file $< \
+	'[{dir,"$(DDTDIR)"},{packages,false},{todo,true},{private,true},{def,{vsn,"$(VSN)"}},{stylesheet,"process-one.css"},{overview,"overview.edoc"}]' -s init stop
+
+$(DEVDOCDIR)/%.svg: %.erl
+	@ERL@ -noshell -pa $(DEVDOCDIR) -run funrelg dir $< $(DDTDIR) -s init stop
+

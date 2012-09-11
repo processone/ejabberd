@@ -14,20 +14,21 @@
 %%% TODO: commands strings should be strings without ~n
 
 -module(ejabberd_xmlrpc).
+
 -author('badlop@process-one.net').
 
--export([
-	 start_listener/2,
-	 handler/2,
-	 socket_type/0
-	]).
+-export([start_listener/2, handler/2, socket_type/0]).
 
 -include("ejabberd.hrl").
+
 -include("mod_roster.hrl").
+
 -include("jlib.hrl").
 
--record(state, {access_commands, auth = noauth, get_auth}).
-
+-record(state,
+	{access_commands = [] :: list(),
+         auth = noauth        :: noauth | {binary(), binary(), binary()},
+         get_auth = true      :: boolean()}).
 
 %% Test:
 
@@ -163,56 +164,57 @@
 %% xmlrpc:call({127, 0, 0, 1}, 4560, "/", {call, this_crashes, [{struct, []}]}).
 %% {ok,{response,{fault,-100, "Error -100\nA problem 'error' occurred executing the command this_crashes with arguments []: badarith"}}}
 
-
 %% -----------------------------
 %% Listener interface
 %% -----------------------------
 
-start_listener({Port, Ip, tcp = _TranportProtocol}, Opts) ->
-    %% get options
-    MaxSessions = gen_mod:get_opt(maxsessions, Opts, 10),
-    Timeout = gen_mod:get_opt(timeout, Opts, 5000),
-    AccessCommands = gen_mod:get_opt(access_commands, Opts, []),
-    GetAuth = case [ACom || {Ac, _, _} = ACom <- AccessCommands, Ac /= all] of
-	[] -> false;
-	_ -> true
-    end,
-
-    %% start the XML-RPC server
+start_listener({Port, Ip, tcp = _TranportProtocol},
+	       Opts) ->
+    MaxSessions = gen_mod:get_opt(maxsessions, Opts,
+                                  fun(I) when is_integer(I), I>0 -> I end,
+                                  10),
+    Timeout = gen_mod:get_opt(timeout, Opts,
+                              fun(I) when is_integer(I), I>0 -> I end,
+                              5000),
+    AccessCommands = gen_mod:get_opt(access_commands, Opts,
+                                     fun(V) -> V end,
+				     []),
+    GetAuth = case [ACom
+		    || {Ac, _, _} = ACom <- AccessCommands, Ac /= all]
+		  of
+		[] -> false;
+		_ -> true
+	      end,
     Handler = {?MODULE, handler},
-    State = #state{access_commands = AccessCommands, get_auth = GetAuth},
-    xmlrpc:start_link(Ip, Port, MaxSessions, Timeout, Handler, State).
+    State = #state{access_commands = AccessCommands,
+		   get_auth = GetAuth},
+    xmlrpc:start_link(Ip, Port, MaxSessions, Timeout,
+		      Handler, State).
 
-socket_type() ->
-    independent.
-
+socket_type() -> independent.
 
 %% -----------------------------
 %% Access verification
 %% -----------------------------
 
-%% @spec (AuthList) -> {User, Server, Password}
-%% where 
-%%       AuthList = [{user, string()}, {server, string()}, {password, string()}]
-%% It may throw: {error, missing_auth_arguments, Attr}
 get_auth(AuthList) ->
-    %% Check AuthList contains all the required data
-    [User, Server, Password] =
-	try get_attrs([user, server, password], AuthList) of
-	    [U, S, P] -> [U, S, P]
-	catch
-	    exit:{attribute_not_found, Attr, _} ->
-		throw({error, missing_auth_arguments, Attr})
-	end,
+    [User, Server, Password] = try get_attrs([user, server,
+					      password],
+					     AuthList)
+			       of
+				 [U, S, P] -> [U, S, P]
+			       catch
+				 exit:{attribute_not_found, Attr, _} ->
+				     throw({error, missing_auth_arguments,
+					    Attr})
+			       end,
     {User, Server, Password}.
-
 
 %% -----------------------------
 %% Handlers
 %% -----------------------------
 
 %% Call:           Arguments:                                      Returns:
-
 
 %% .............................
 %%  Access verification
@@ -232,108 +234,100 @@ get_auth(AuthList) ->
 %% xmlrpc:call({127, 0, 0, 1}, 4560, "/", {call, echothis, [{struct, [{user, "badlop"}, {server, "localhost"}, {password, "79C1574A43BC995F2B145A299EF97277"}]}, 152]}).
 %% {ok,{response,[152]}}
 
-handler(#state{get_auth = true, auth = noauth} = State, {call, Method, [{struct, AuthList} | Arguments] = AllArgs}) ->
+handler(#state{get_auth = true, auth = noauth} = State,
+	{call, Method,
+	 [{struct, AuthList} | Arguments] = AllArgs}) ->
     try get_auth(AuthList) of
-	Auth ->
-	    handler(State#state{get_auth = false, auth = Auth}, {call, Method, Arguments})
+      Auth ->
+	  handler(State#state{get_auth = false, auth = Auth},
+		  {call, Method, Arguments})
     catch
-	{error, missing_auth_arguments, _Attr} ->
-	    handler(State#state{get_auth = false, auth = noauth}, {call, Method, AllArgs})
+      {error, missing_auth_arguments, _Attr} ->
+	  handler(State#state{get_auth = false, auth = noauth},
+		  {call, Method, AllArgs})
     end;
-
-
 %% .............................
 %%  Debug
-
 %% echothis       String                                          String
 handler(_State, {call, echothis, [A]}) ->
     {false, {response, [A]}};
-
 %% echothisnew    struct[{sentence, String}]   struct[{repeated, String}]
-handler(_State, {call, echothisnew, [{struct, [{sentence, A}]}]}) ->
+handler(_State,
+	{call, echothisnew, [{struct, [{sentence, A}]}]}) ->
     {false, {response, [{struct, [{repeated, A}]}]}};
-
 %% multhis        struct[{a, Integer}, {b, Integer}]              Integer
-handler(_State, {call, multhis, [{struct, [{a, A}, {b, B}]}]}) ->
-    {false, {response, [A*B]}};
-
+handler(_State,
+	{call, multhis, [{struct, [{a, A}, {b, B}]}]}) ->
+    {false, {response, [A * B]}};
 %% multhisnew     struct[{a, Integer}, {b, Integer}]    struct[{mu, Integer}]
-handler(_State, {call, multhisnew, [{struct, [{a, A}, {b, B}]}]}) ->
-    {false, {response, [{struct, [{mu, A*B}]}]}};
-
-%% .............................
-%%  Statistics
-
-%% tellme_title    String                                          String
-handler(_State, {call, tellme_title, [A]}) ->
-    {false, {response, [get_title(A)]}};
-
-%% tellme_value    String                                          String
-handler(_State, {call, tellme_value, [A]}) ->
-    N = node(),
-    {false, {response, [get_value(N, A)]}};
-
-%% tellme          String          struct[{title, String}, {value. String}]
-handler(_State, {call, tellme, [A]}) ->
-    N = node(),
-    T = {title, get_title(A)},
-    V = {value, get_value(N, A)},
-    R = {struct, [T, V]},
-    {false, {response, [R]}};
-
+handler(_State,
+	{call, multhisnew, [{struct, [{a, A}, {b, B}]}]}) ->
+    {false, {response, [{struct, [{mu, A * B}]}]}};
 %% .............................
 %% ejabberd commands
-
 handler(State, {call, Command, []}) ->
-    %% The XMLRPC request may not contain a struct parameter,
-    %% but our internal functions need such struct, even if it's empty
-    %% So let's add it and do a recursive call: 
     handler(State, {call, Command, [{struct, []}]});
-
-handler(State, {call, Command, [{struct, AttrL}]} = Payload) ->
+handler(State,
+	{call, Command, [{struct, AttrL}]} = Payload) ->
     case ejabberd_commands:get_command_format(Command) of
-	{error, command_unknown} ->
-	    build_fault_response(-112, "Unknown call: ~p", [Payload]);
-	{ArgsF, ResultF} ->
-	    try_do_command(State#state.access_commands, State#state.auth, Command, AttrL, ArgsF, ResultF)
+      {error, command_unknown} ->
+	  build_fault_response(-112, "Unknown call: ~p",
+			       [Payload]);
+      {ArgsF, ResultF} ->
+	  try_do_command(State#state.access_commands,
+			 State#state.auth, Command, AttrL, ArgsF, ResultF)
     end;
-
 %% If no other guard matches
 handler(_State, Payload) ->
-    build_fault_response(-112, "Unknown call: ~p", [Payload]).
-
+    build_fault_response(-112, "Unknown call: ~p",
+			 [Payload]).
 
 %% -----------------------------
 %% Command
 %% -----------------------------
 
-try_do_command(AccessCommands, Auth, Command, AttrL, ArgsF, ResultF) ->
-    try do_command(AccessCommands, Auth, Command, AttrL, ArgsF, ResultF) of
-	{command_result, ResultFormatted} ->
-	    {false, {response, [ResultFormatted]}}
+try_do_command(AccessCommands, Auth, Command, AttrL,
+	       ArgsF, ResultF) ->
+    try do_command(AccessCommands, Auth, Command, AttrL,
+		   ArgsF, ResultF)
+    of
+      {command_result, ResultFormatted} ->
+	  {false, {response, [ResultFormatted]}}
     catch
-	exit:{duplicated_attribute, ExitAt, ExitAtL} ->
-	    build_fault_response(-114, "Attribute '~p' duplicated:~n~p", [ExitAt, ExitAtL]);
-        exit:{attribute_not_found, ExitAt, ExitAtL} ->
-	    build_fault_response(-116, "Required attribute '~p' not found:~n~p", [ExitAt, ExitAtL]);
-        exit:{additional_unused_args, ExitAtL} ->
-	    build_fault_response(-120, "The call provided additional unused arguments:~n~p", [ExitAtL]);
-        throw:Why ->
-            build_fault_response(-118, "A problem '~p' occurred executing the command ~p with arguments~n~p", [Why, Command, AttrL])
+      exit:{duplicated_attribute, ExitAt, ExitAtL} ->
+	  build_fault_response(-114,
+			       "Attribute '~p' duplicated:~n~p",
+			       [ExitAt, ExitAtL]);
+      exit:{attribute_not_found, ExitAt, ExitAtL} ->
+	  build_fault_response(-116,
+			       "Required attribute '~p' not found:~n~p",
+			       [ExitAt, ExitAtL]);
+      exit:{additional_unused_args, ExitAtL} ->
+	  build_fault_response(-120,
+			       "The call provided additional unused "
+				 "arguments:~n~p",
+			       [ExitAtL]);
+      Why ->
+	  build_fault_response(-118,
+			       "A problem '~p' occurred executing the "
+				 "command ~p with arguments~n~p",
+			       [Why, Command, AttrL])
     end.
 
 build_fault_response(Code, ParseString, ParseArgs) ->
-    FaultString = "Error " ++ integer_to_list(Code) ++ "\n" ++
-	lists:flatten(io_lib:format(ParseString, ParseArgs)),
-    ?WARNING_MSG(FaultString, []), %% Show Warning message in ejabberd log file
+    FaultString = "Error " ++ integer_to_list(Code) ++ "\n"
+        ++ lists:flatten(io_lib:format(ParseString, ParseArgs)),
+    ?WARNING_MSG(FaultString, []),
     {false, {response, {fault, Code, FaultString}}}.
 
-do_command(AccessCommands, Auth, Command, AttrL, ArgsF, ResultF) ->
+do_command(AccessCommands, Auth, Command, AttrL, ArgsF,
+	   ResultF) ->
     ArgsFormatted = format_args(AttrL, ArgsF),
-    Result = ejabberd_commands:execute_command(AccessCommands, Auth, Command, ArgsFormatted),
+    Result =
+	ejabberd_commands:execute_command(AccessCommands, Auth,
+					  Command, ArgsFormatted),
     ResultFormatted = format_result(Result, ResultF),
     {command_result, ResultFormatted}.
-
 
 %%-----------------------------
 %% Format arguments
@@ -344,65 +338,59 @@ get_attrs(Attribute_names, L) ->
 
 get_attr(A, L) ->
     case lists:keysearch(A, 1, L) of
-	{value, {A, Value}} -> Value;
-	false ->
-	    %% Report the error and then force a crash
-	    exit({attribute_not_found, A, L})
+      {value, {A, Value}} -> Value;
+      false ->
+	  %% Report the error and then force a crash
+	  exit({attribute_not_found, A, L})
     end.
 
-%% Get an element from a list and delete it.
-%% The element must be defined once and only once,
-%% otherwise the function crashes on purpose.
 get_elem_delete(A, L) ->
     case proplists:get_all_values(A, L) of
-	[Value] ->
-	    {Value, proplists:delete(A, L)};
-	[_, _ | _] ->
-	    %% Crash reporting the error
-	    exit({duplicated_attribute, A, L});
-	[] ->
-	    %% Report the error and then force a crash
-	    exit({attribute_not_found, A, L})
+      [Value] -> {Value, proplists:delete(A, L)};
+      [_, _ | _] ->
+	  %% Crash reporting the error
+	  exit({duplicated_attribute, A, L});
+      [] ->
+	  %% Report the error and then force a crash
+	  exit({attribute_not_found, A, L})
     end.
-
 
 format_args(Args, ArgsFormat) ->
-    {ArgsRemaining, R} =
-	lists:foldl(
-		fun({ArgName, ArgFormat}, {Args1, Res}) ->
-			{ArgValue, Args2} = get_elem_delete(ArgName, Args1),
-			Formatted = format_arg(ArgValue, ArgFormat),
-			{Args2, Res ++ [Formatted]}
-		end,
-		{Args, []},
-		ArgsFormat),
+    {ArgsRemaining, R} = lists:foldl(fun ({ArgName,
+					   ArgFormat},
+					  {Args1, Res}) ->
+					     {ArgValue, Args2} =
+						 get_elem_delete(ArgName,
+								 Args1),
+					     Formatted = format_arg(ArgValue,
+								    ArgFormat),
+					     {Args2, Res ++ [Formatted]}
+				     end,
+				     {Args, []}, ArgsFormat),
     case ArgsRemaining of
-	[] -> R;
-	L when is_list(L) ->
-	    exit({additional_unused_args, L})
+      [] -> R;
+      L when is_list(L) -> exit({additional_unused_args, L})
     end.
-format_arg({array, [{struct, Elements}]}, {list, {ElementDefName, ElementDefFormat}})
-  when is_list(Elements) ->
-    lists:map(
-      fun({ElementName, ElementValue}) ->
-	      true = (ElementDefName == ElementName),
-	      format_arg(ElementValue, ElementDefFormat)
-      end,
-      Elements);
-format_arg({array, [{struct, Elements}]}, {tuple, ElementsDef})
-  when is_list(Elements) ->
+
+format_arg({array, [{struct, Elements}]},
+	   {list, {ElementDefName, ElementDefFormat}})
+    when is_list(Elements) ->
+    lists:map(fun ({ElementName, ElementValue}) ->
+		      true = ElementDefName == ElementName,
+		      format_arg(ElementValue, ElementDefFormat)
+	      end,
+	      Elements);
+format_arg({array, [{struct, Elements}]},
+	   {tuple, ElementsDef})
+    when is_list(Elements) ->
     FormattedList = format_args(Elements, ElementsDef),
     list_to_tuple(FormattedList);
 format_arg({array, Elements}, {list, ElementsDef})
-  when is_list(Elements) and is_atom(ElementsDef) ->
-    [format_arg(Element, ElementsDef) || Element <- Elements];
-format_arg(Arg, integer)
-  when is_integer(Arg) ->
-    Arg;
-format_arg(Arg, string)
-  when is_list(Arg) ->
-    Arg.
-
+    when is_list(Elements) and is_atom(ElementsDef) ->
+    [format_arg(Element, ElementsDef)
+     || Element <- Elements];
+format_arg(Arg, integer) when is_integer(Arg) -> Arg;
+format_arg(Arg, string) when is_binary(Arg) -> Arg.
 
 %% -----------------------------
 %% Result
@@ -410,58 +398,40 @@ format_arg(Arg, string)
 
 format_result({error, Error}, _) ->
     throw({error, Error});
-
-format_result(String, string) ->
-    lists:flatten(String);
-
+format_result(String, string) -> lists:flatten(String);
 format_result(Atom, {Name, atom}) ->
-    {struct, [{Name, atom_to_list(Atom)}]};
-
+    {struct,
+     [{Name, iolist_to_binary(atom_to_list(Atom))}]};
 format_result(Int, {Name, integer}) ->
     {struct, [{Name, Int}]};
-
 format_result(String, {Name, string}) ->
     {struct, [{Name, lists:flatten(String)}]};
-
 format_result(Code, {Name, rescode}) ->
     {struct, [{Name, make_status(Code)}]};
-
 format_result({Code, Text}, {Name, restuple}) ->
-    {struct, [{Name, make_status(Code)},
-              {text, lists:flatten(Text)}]};
-
+    {struct,
+     [{Name, make_status(Code)},
+      {text, lists:flatten(Text)}]};
 %% Result is a list of something: [something()]
 format_result(Elements, {Name, {list, ElementsDef}}) ->
-    FormattedList = lists:map(
-		      fun(Element) ->
-			      format_result(Element, ElementsDef)
-		      end,
-		      Elements),
+    FormattedList = lists:map(fun (Element) ->
+				      format_result(Element, ElementsDef)
+			      end,
+			      Elements),
     {struct, [{Name, {array, FormattedList}}]};
-
 %% Result is a tuple with several elements: {something1(), something2(), ...}
-format_result(ElementsTuple, {Name, {tuple, ElementsDef}}) ->
+format_result(ElementsTuple,
+	      {Name, {tuple, ElementsDef}}) ->
     ElementsList = tuple_to_list(ElementsTuple),
     ElementsAndDef = lists:zip(ElementsList, ElementsDef),
-    FormattedList = lists:map(
-		      fun({Element, ElementDef}) ->
-			      format_result(Element, ElementDef)
-		      end,
-		      ElementsAndDef),
+    FormattedList = lists:map(fun ({Element, ElementDef}) ->
+				      format_result(Element, ElementDef)
+			      end,
+			      ElementsAndDef),
     {struct, [{Name, {array, FormattedList}}]}.
-%% TODO: should be struct instead of array?
-
 
 make_status(ok) -> 0;
 make_status(true) -> 0;
 make_status(false) -> 1;
 make_status(error) -> 1;
 make_status(_) -> 1.
-
-
-%% -----------------------------
-%% Internal
-%% -----------------------------
-
-get_title(A) -> mod_statsdx:get_title(A).
-get_value(N, A) -> mod_statsdx:get(N, [A]).

@@ -643,6 +643,8 @@ make_odbc
 odbc
 make_eldap
 eldap
+make_mod_pubsub_ng
+mod_pubsub_ng
 make_mod_pubsub
 mod_pubsub
 make_mod_proxy65
@@ -719,6 +721,7 @@ enable_mod_irc
 enable_mod_muc
 enable_mod_proxy65
 enable_mod_pubsub
+enable_mod_pubsub_ng
 enable_eldap
 enable_odbc
 enable_tls
@@ -1368,6 +1371,7 @@ Optional Features:
   --enable-mod_muc        enable mod_muc (default: yes)
   --enable-mod_proxy65    enable mod_proxy65 (default: yes)
   --enable-mod_pubsub     enable mod_pubsub (default: yes)
+  --enable-mod_pubsub_ng  enable mod_pubsub_ng (default: yes)
   --enable-eldap          enable eldap (default: yes)
   --enable-odbc           enable odbc (default: no)
   --enable-tls            enable tls (default: yes)
@@ -4308,6 +4312,28 @@ $as_echo "$mr_enable_mod_pubsub" >&6; }
 
 
 
+mod_pubsub_ng=
+make_mod_pubsub_ng=
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether build mod_pubsub_ng" >&5
+$as_echo_n "checking whether build mod_pubsub_ng... " >&6; }
+# Check whether --enable-mod_pubsub_ng was given.
+if test "${enable_mod_pubsub_ng+set}" = set; then :
+  enableval=$enable_mod_pubsub_ng; mr_enable_mod_pubsub_ng="$enableval"
+else
+  mr_enable_mod_pubsub_ng=yes
+fi
+
+if test "$mr_enable_mod_pubsub_ng" = "yes"; then
+mod_pubsub_ng=mod_pubsub_ng
+make_mod_pubsub_ng=mod_pubsub_ng/Makefile
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $mr_enable_mod_pubsub_ng" >&5
+$as_echo "$mr_enable_mod_pubsub_ng" >&6; }
+
+
+
+
+
 eldap=
 make_eldap=
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether build eldap" >&5
@@ -4712,7 +4738,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_mod_proxy65 $make_eldap $make_pam $make_web stringprep/Makefile stun/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
+ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_mod_pubsub_ng $make_mod_proxy65 $make_eldap $make_pam $make_web stringprep/Makefile stun/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
 
 #openssl
 
@@ -5873,6 +5899,7 @@ do
     "$make_mod_irc") CONFIG_FILES="$CONFIG_FILES $make_mod_irc" ;;
     "$make_mod_muc") CONFIG_FILES="$CONFIG_FILES $make_mod_muc" ;;
     "$make_mod_pubsub") CONFIG_FILES="$CONFIG_FILES $make_mod_pubsub" ;;
+    "$make_mod_pubsub_ng") CONFIG_FILES="$CONFIG_FILES $make_mod_pubsub_ng" ;;
     "$make_mod_proxy65") CONFIG_FILES="$CONFIG_FILES $make_mod_proxy65" ;;
     "$make_eldap") CONFIG_FILES="$CONFIG_FILES $make_eldap" ;;
     "$make_pam") CONFIG_FILES="$CONFIG_FILES $make_pam" ;;

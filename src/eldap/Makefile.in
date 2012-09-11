@@ -6,7 +6,7 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-ASN_FLAGS = -bber_bin +optimize
+ASN_FLAGS = -bber_bin +optimize +binary_strings
 
 ERLANG_CFLAGS = @ERLANG_CFLAGS@
 ERLANG_LIBS = @ERLANG_LIBS@
@@ -17,7 +17,7 @@ EFLAGS += -pz ..
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-	EFLAGS+=+debug_info +export_all
+	EFLAGS+=+debug_info
 endif
 
 OUTDIR = ..
@@ -31,6 +31,8 @@ ELDAPv3.beam: ELDAPv3.erl
 
 ELDAPv3.erl:       ELDAPv3.asn
 	@ERLC@ $(ASN_FLAGS) -W $(EFLAGS) $<
+	@ERL@ -noinput +B -eval \
+	'case file:read_file("ELDAPv3.erl") of {ok, Data} -> NewData = re:replace(Data, "\\?RT_BER:decode_octet_string", "eldap_utils:decode_octet_string", [global]), file:write_file("ELDAPv3.erl", NewData), halt(0); _Err -> halt(1) end'
 
 eldap_filter_yecc.beam: eldap_filter_yecc.erl
 

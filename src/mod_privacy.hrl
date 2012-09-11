@@ -21,19 +21,26 @@
 
 -define(mod_privacy_hrl, true).
 
--record(privacy, {us,
-		  default = none,
-		  lists = []}).
+-record(privacy, {us = {<<"">>, <<"">>} :: {binary(), binary()},
+                  default = none        :: none | binary(),
+                  lists = []            :: [{binary(), [listitem()]}]}).
 
--record(listitem, {type = none,
-		   value = none,
-		   action,
-		   order,
-		   match_all = false,
-		   match_iq = false,
-		   match_message = false,
-		   match_presence_in = false,
-		   match_presence_out = false
-		  }).
+-record(listitem, {type = none :: none | jid | group | subscription,
+                   value = none :: none | both | from | to | ljid() | binary(),
+                   action = allow :: allow | deny,
+                   order = 0 :: integer(),
+                   match_all = false :: boolean(),
+                   match_iq = false :: boolean(),
+                   match_message = false :: boolean(),
+                   match_presence_in = false :: boolean(),
+                   match_presence_out = false :: boolean()}).
 
--record(userlist, {name = none, list = [], needdb = false }).
+-type listitem() :: #listitem{}.
+
+-record(userlist, {name = none :: none | binary(),
+                   list = [] :: [listitem()],
+                   needdb = false :: boolean()}).
+
+-type userlist() :: #userlist{}.
+
+-export_type([userlist/0]).

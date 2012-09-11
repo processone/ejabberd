@@ -274,3 +274,12 @@ CREATE TABLE motd (
     xml text,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
+
+CREATE TABLE caps_features (
+    node text NOT NULL,
+    subnode text NOT NULL,
+    feature text,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX i_caps_features_node_subnode ON caps_features USING btree (node, subnode);

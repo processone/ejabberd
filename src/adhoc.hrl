@@ -19,18 +19,27 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(adhoc_request, {lang,
-			node,
-			sessionid,
-			action,
-			xdata,
-			others}).
+-record(adhoc_request,
+{
+    lang = <<"">>      :: binary(),
+    node = <<"">>      :: binary(),
+    sessionid = <<"">> :: binary(),
+    action = <<"">>    :: binary(),
+    xdata = false      :: false | xmlel(),
+    others = []        :: [xmlel()]
+}).
 
--record(adhoc_response, {lang,
-			 node,
-			 sessionid,
-			 status,
-			 defaultaction = "",
-			 actions = [],
-			 notes = [],
-			 elements = []}).
+-record(adhoc_response,
+{
+    lang = <<"">>          :: binary(),
+    node = <<"">>          :: binary(),
+    sessionid = <<"">>     :: binary(),
+    status                 :: atom(),
+    defaultaction = <<"">> :: binary(),
+    actions       = []     :: [binary()],
+    notes         = []     :: [{binary(), binary()}],
+    elements      = []     :: [xmlel()]
+}).
+
+-type adhoc_request() :: #adhoc_request{}.
+-type adhoc_response() :: #adhoc_response{}.

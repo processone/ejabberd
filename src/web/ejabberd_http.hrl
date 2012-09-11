@@ -19,36 +19,39 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(request, {method,
-		  path,
-		  q = [],
-		  us,
-		  auth,
-		  lang = "",
-		  data = "",
-		  ip,
-		  host, % string()
-		  port, % integer()
-		  tp, % transfer protocol = http | https
-		  headers
-		 }).
+-record(request,
+	{method            :: method(),
+         path = []         :: [binary()],
+         q = []            :: [{binary() | nokey, binary()}],
+         us = {<<>>, <<>>} :: {binary(), binary()},
+         auth              :: {binary(), binary()} |
+                              {auth_jid, {binary(), binary()}, jlib:jid()},
+         lang = <<"">>     :: binary(),
+	 data = <<"">>     :: binary(),
+         ip                :: {inet:ip_address(), inet:port_number()},
+         host = <<"">>     :: binary(),
+         port = 5280       :: inet:port_number(),
+         tp = http         :: protocol(),
+         headers = []      :: [{atom() | binary(), binary()}]}).
 
+-record(ws,
+	{socket                  :: inet:socket() | tls:tls_socket(),
+         sockmod = gen_tcp       :: gen_tcp | tls,
+         ws_autoexit = false     :: boolean(),
+         ip                      :: {inet:ip_address(), inet:port_number()},
+         vsn                     :: vsn(),
+         origin = <<"">>         :: binary(),
+         host = <<"">>           :: binary(),
+	 port = 5280             :: inet:port_number(),
+         path = []               :: [binary()],
+         headers = []            :: [{atom() | binary(), binary()}],
+         local_path = []         :: [binary()],
+         q = []                  :: [{binary() | nokey, binary()}],
+         protocol                :: binary(),
+	 acceptable_origins = [] :: [binary()],
+         auth_module             :: atom()}).
 
-% Websocket Request
--record(ws, {
-	    socket,						% the socket handling the request
-	    sockmod,				% gen_tcp | tls
-	    ws_autoexit,				% websocket process is automatically killed: true | false
-	    ip,					% peer IP | undefined
-	    vsn,						% {Maj,Min} | {'draft-hixie', Ver}
-	    origin,						% the originator
-	    host,						% the host
-	    port,
-	    path,						% the websocket GET request path
-	    headers,						% [{Tag, Val}]
-	    local_path,
-	    q,
-	    protocol,
-	    acceptable_origins = [],
-	    auth_module
-    }).
+-type method() :: 'GET' | 'HEAD' | 'DELETE' | 'OPTIONS' | 'PUT' | 'POST' | 'TRACE'.
+-type protocol() :: http | https.
+-type http_request() :: #request{}.
+-type vsn() :: {'draft-hybi' | 'draft-hixie', non_neg_integer()}.

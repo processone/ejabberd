@@ -3,10 +3,10 @@
 %%
 %% Redistribution and use in source and binary forms, with or without
 %% modification, are permitted provided that the following conditions
-%% are met: 
+%% are met:
 %%
 %% 1. Redistributions of source code must retain the above copyright
-%%    notice, this list of conditions and the following disclaimer. 
+%%    notice, this list of conditions and the following disclaimer.
 %% 2. Redistributions in binary form must reproduce the above
 %%    copyright notice, this list of conditions and the following
 %%    disclaimer in the documentation and/or other materials provided
@@ -31,8 +31,13 @@
 	error_logger:error_report({?MODULE, ?LINE, Reason})).
 
 -ifdef(DEBUG).
+
 -define(DEBUG_LOG(Reason),
-	error_logger:info_report({debug, ?MODULE, ?LINE, Reason})).
+	error_logger:info_report({debug, ?MODULE, ?LINE,
+				  Reason})).
+
 -else.
+
 -define(DEBUG_LOG(Reason), ok).
+
 -endif.

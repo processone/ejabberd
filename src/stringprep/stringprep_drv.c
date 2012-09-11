@@ -50,7 +50,7 @@ static ErlDrvData stringprep_erl_start(ErlDrvPort port, char *buff)
    stringprep_data* d = (stringprep_data*)driver_alloc(sizeof(stringprep_data));
    d->port = port;
 
-   //set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
+   set_port_control_flags(port, PORT_CONTROL_FLAG_BINARY);
    
    return (ErlDrvData)d;
 }
@@ -147,36 +147,36 @@ static int compose(int ch1, int ch2)
 	 if (ruc <= 0x7F) {						\
 	    if (pos >= size) {						\
 	       size = 2*size + 1;					\
-	       rstring = driver_realloc(rstring, size);			\
+	       rstring = driver_realloc_binary(rstring, size);		\
 	    }								\
-	    rstring[pos] = (char) ruc;					\
+	    rstring->orig_bytes[pos] = (char) ruc;			\
 	    pos++;							\
 	 } else if (ruc <= 0x7FF) {					\
 	    if (pos + 1 >= size) {					\
 	       size = 2*size + 2;					\
-	       rstring = driver_realloc(rstring, size);			\
+	       rstring = driver_realloc_binary(rstring, size);		\
 	    }								\
-	    rstring[pos] = (char) ((ruc >> 6) | 0xC0);			\
-	    rstring[pos+1] = (char) ((ruc | 0x80) & 0xBF);		\
+	    rstring->orig_bytes[pos] = (char) ((ruc >> 6) | 0xC0);	\
+	    rstring->orig_bytes[pos+1] = (char) ((ruc | 0x80) & 0xBF);	\
 	    pos += 2;							\
 	 } else if (ruc <= 0xFFFF) {					\
 	    if (pos + 2 >= size) {					\
 	       size = 2*size + 3;					\
-	       rstring = driver_realloc(rstring, size);			\
+	       rstring = driver_realloc_binary(rstring, size);		\
 	    }								\
-	    rstring[pos] = (char) ((ruc >> 12) | 0xE0);			\
-	    rstring[pos+1] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
-	    rstring[pos+2] = (char) ((ruc | 0x80) & 0xBF);		\
+	    rstring->orig_bytes[pos] = (char) ((ruc >> 12) | 0xE0);	\
+	    rstring->orig_bytes[pos+1] = (char) (((ruc >> 6) | 0x80) & 0xBF); \
+	    rstring->orig_bytes[pos+2] = (char) ((ruc | 0x80) & 0xBF);	\
 	    pos += 3;							\
 	 } else if (ruc <= 0x1FFFFF) {					\
 	    if (pos + 3 >= size) {					\
 	       size = 2*size + 4;					\
-	       rstring = driver_realloc(rstring, size);			\
+	       rstring = driver_realloc_binary(rstring, size);		\
 	    }								\
-	    rstring[pos] = (char) ((ruc >> 18) | 0xF0);			\
-	    rstring[pos+1] = (char) (((ruc >> 12) | 0x80) & 0xBF);	\
-	    rstring[pos+2] = (char) (((ruc >> 6) | 0x80) & 0xBF);	\
-	    rstring[pos+3] = (char) ((ruc | 0x80) & 0xBF);		\
+	    rstring->orig_bytes[pos] = (char) ((ruc >> 18) | 0xF0);	\
+	    rstring->orig_bytes[pos+1] = (char) (((ruc >> 12) | 0x80) & 0xBF); \
+	    rstring->orig_bytes[pos+2] = (char) (((ruc >> 6) | 0x80) & 0xBF); \
+	    rstring->orig_bytes[pos+3] = (char) ((ruc | 0x80) & 0xBF);	\
 	    pos += 4;							\
 	 }
 
@@ -216,7 +216,7 @@ static ErlDrvSSizeT stringprep_erl_control(ErlDrvData drv_data,
    int size;
    int info;
    int prohibit = 0, tolower = 0;
-   char *rstring;
+   ErlDrvBinary *rstring;
    int *mc;
    int *str32;
    int str32len, str32pos = 0;
@@ -228,8 +228,8 @@ static ErlDrvSSizeT stringprep_erl_control(ErlDrvData drv_data,
 
    size = len + 1;
 
-   rstring = driver_alloc(size);
-   rstring[0] = 0;
+   rstring = driver_alloc_binary(size);
+   rstring->orig_bytes[0] = 0;
 
    str32len = len + 1;
 
@@ -302,7 +302,7 @@ static ErlDrvSSizeT stringprep_erl_control(ErlDrvData drv_data,
       }
 
       if (bad) {
-	 *rbuf = rstring;
+	 *rbuf = (char *)rstring;
 	 driver_free(str32);
 	 return 1;
       }
@@ -331,8 +331,8 @@ static ErlDrvSSizeT stringprep_erl_control(ErlDrvData drv_data,
    }
 
    if (str32pos == 0) {
-      rstring[0] = 1;
-      *rbuf = rstring;
+      rstring->orig_bytes[0] = 1;
+      *rbuf = (char *)rstring;
       driver_free(str32);
       return 1;
    }
@@ -373,7 +373,7 @@ static ErlDrvSSizeT stringprep_erl_control(ErlDrvData drv_data,
       ruc = str32[i];
       info = GetUniCharInfo(ruc);
       if (info & prohibit) {
-	 *rbuf = rstring;
+	 *rbuf = (char *)rstring;
 	 driver_free(str32);
 	 return 1;
       }
@@ -384,13 +384,13 @@ static ErlDrvSSizeT stringprep_erl_control(ErlDrvData drv_data,
    }
 
    if (have_ral && (!first_ral || !last_ral || have_l)) {
-      *rbuf = rstring;
+      *rbuf = (char *)rstring;
       driver_free(str32);
       return 1;
    }
 
-   rstring[0] = 1;
-   *rbuf = rstring;
+   rstring->orig_bytes[0] = 1;
+   *rbuf = (char *)rstring;
    driver_free(str32);
    
    return pos;

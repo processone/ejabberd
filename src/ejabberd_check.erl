@@ -31,8 +31,6 @@
 -include("ejabberd.hrl").
 -include("ejabberd_config.hrl").
 
--compile([export_all]).
-
 %% TODO:
 %% We want to implement library checking at launch time to issue
 %% human readable user messages.
@@ -87,7 +85,7 @@ get_db_used() ->
 	    fun([Domain, DB], Acc) ->
 		    case check_odbc_option(
 			   ejabberd_config:get_local_option(
-			     {auth_method, Domain})) of
+			     {auth_method, Domain}, fun(V) -> V end)) of
 			true -> [get_db_type(DB)|Acc];
 			_ -> Acc
 		    end

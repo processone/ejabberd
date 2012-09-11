@@ -23,192 +23,158 @@
 %%% 02111-1307 USA
 %%%
 %%%----------------------------------------------------------------------
--module (ejabberd_http_ws).
+-module(ejabberd_http_ws).
 
 -author('ecestari@process-one.net').
 
 -behaviour(gen_fsm).
 
 % External exports
--export([
-   start/1,
-   start_link/1,
-	 init/1,
-	 handle_event/3,
-	 handle_sync_event/4,
-	 code_change/4,
-	 handle_info/3,
-	 terminate/3,
-	 send/2,
-	 setopts/2,
-	 sockname/1, peername/1,
-	 controlling_process/2,
-	 become_controller/2,
-	 close/1]).
+-export([start/1, start_link/1, init/1, handle_event/3,
+	 handle_sync_event/4, code_change/4, handle_info/3,
+	 terminate/3, send/2, setopts/2, sockname/1, peername/1,
+	 controlling_process/2, become_controller/2, close/1]).
 
 -include("ejabberd.hrl").
+
 -include("jlib.hrl").
+
 -include("ejabberd_http.hrl").
 
--record(state, {
-		socket,
-		timeout,
-		timer,
-		input = "",
-		waiting_input = false, %% {ReceiverPid, Tag}
-		last_receiver,
-		ws}).
+-define(WEBSOCKET_TIMEOUT, 300).
+
+-record(state,
+	{socket                       :: ws_socket(),
+         timeout = ?WEBSOCKET_TIMEOUT :: pos_integer(),
+         timer = make_ref()           :: reference(),
+         input = <<"">>               :: binary(),
+	 waiting_input = false        :: false | pid(),
+         last_receiver                :: pid(),
+         ws                           :: atom()}).
 
 %-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
+
 -define(FSMOPTS, [{debug, [trace]}]).
+
 -else.
+
 -define(FSMOPTS, []).
+
 -endif.
 
--define(WEBSOCKET_TIMEOUT, 300000).
-%
-%
-%%%%----------------------------------------------------------------------
-%%%% API
-%%%%----------------------------------------------------------------------
+-type ws_socket() :: {http_ws, pid(), {inet:ip_address(), inet:port_number()}}.
+-export_type([ws_socket/0]).
+
 start(WS) ->
     supervisor:start_child(ejabberd_wsloop_sup, [WS]).
 
 start_link(WS) ->
-    gen_fsm:start_link(?MODULE, [WS],?FSMOPTS).
+    gen_fsm:start_link(?MODULE, [WS], ?FSMOPTS).
 
 send({http_ws, FsmRef, _IP}, Packet) ->
-    gen_fsm:sync_send_all_state_event(FsmRef, {send, Packet}).
+    gen_fsm:sync_send_all_state_event(FsmRef,
+				      {send, Packet}).
 
 setopts({http_ws, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
-	true ->
-	    gen_fsm:send_all_state_event(FsmRef, {activate, self()});
-	_ ->
-	    ok
+      true ->
+	  gen_fsm:send_all_state_event(FsmRef,
+				       {activate, self()});
+      _ -> ok
     end.
 
-sockname(_Socket) ->
-    {ok, {{0, 0, 0, 0}, 0}}.
+sockname(_Socket) -> {ok, {{0, 0, 0, 0}, 0}}.
 
-peername({http_ws, _FsmRef, IP}) ->
-    {ok, IP}.
+peername({http_ws, _FsmRef, IP}) -> {ok, IP}.
 
-controlling_process(_Socket, _Pid) ->
-    ok.
+controlling_process(_Socket, _Pid) -> ok.
 
 become_controller(FsmRef, C2SPid) ->
-    gen_fsm:send_all_state_event(FsmRef, {become_controller, C2SPid}).
+    gen_fsm:send_all_state_event(FsmRef,
+				 {become_controller, C2SPid}).
 
 close({http_ws, FsmRef, _IP}) ->
-    catch gen_fsm:sync_send_all_state_event(FsmRef, close).    
-    
+    catch gen_fsm:sync_send_all_state_event(FsmRef, close).
+
 %%% Internal
 
-
 init([WS]) ->
-    %% Read c2s options from the first ejabberd_c2s configuration in
-    %% the config file listen section
-    %% TODO: We should have different access and shaper values for
-    %% each connector. The default behaviour should be however to use
-    %% the default c2s restrictions if not defined for the current
-    %% connector.
     Opts = ejabberd_c2s_config:get_c2s_limits(),
-
-    WSTimeout = case ejabberd_config:get_local_option({websocket_timeout,
-							     ?MYNAME}) of
-			  %% convert seconds of option into milliseconds
-			  Int when is_integer(Int) -> Int*1000;
-			  undefined -> ?WEBSOCKET_TIMEOUT
-		      end,
-    
+    WSTimeout = ejabberd_config:get_local_option(
+                  {websocket_timeout, ?MYNAME},
+                  fun(I) when is_integer(I), I>0 -> I end,
+                  ?WEBSOCKET_TIMEOUT) * 1000,
     Socket = {http_ws, self(), WS:get(ip)},
-    ?DEBUG("Client connected through websocket ~p", [Socket]),
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket, Opts),
+    ?DEBUG("Client connected through websocket ~p",
+	   [Socket]),
+    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket,
+			  Opts),
     Timer = erlang:start_timer(WSTimeout, self(), []),
-    {ok, loop, #state{
-		      socket = Socket,
-		      timeout = WSTimeout,
-		      timer = Timer,
-		      ws = WS}}.
+    {ok, loop,
+     #state{socket = Socket, timeout = WSTimeout,
+	    timer = Timer, ws = WS}}.
 
 handle_event({activate, From}, StateName, StateData) ->
     case StateData#state.input of
-	"" ->
-	    {next_state, StateName,
-	     StateData#state{waiting_input = {From, ok}}};
-	Input ->
-            Receiver = From,
-	    Receiver ! {tcp, StateData#state.socket, list_to_binary(Input)},
-	    {next_state, StateName, StateData#state{input = "",
-						    waiting_input = false,
-						    last_receiver = Receiver
-						   }}
+      <<"">> ->
+	  {next_state, StateName,
+	   StateData#state{waiting_input = From}};
+      Input ->
+	  Receiver = From,
+	  Receiver !
+	    {tcp, StateData#state.socket, Input},
+	  {next_state, StateName,
+	   StateData#state{input = <<"">>, waiting_input = false,
+			   last_receiver = Receiver}}
     end.
 
-handle_sync_event({send, Packet}, _From, StateName, #state{ws = WS} = StateData) ->
-    Packet2 = if
-	    is_binary(Packet) ->
-	        Packet;
-	    true ->
-	        list_to_binary(Packet)
-        end,
-    %?DEBUG("sending on websocket : ~p ", [Packet2]),
+handle_sync_event({send, Packet}, _From, StateName,
+		  #state{ws = WS} = StateData) ->
+    Packet2 = if is_binary(Packet) -> Packet;
+		 true -> iolist_to_binary(Packet)
+	      end,
     WS:send(Packet2),
     {reply, ok, StateName, StateData};
-
-handle_sync_event(close, From, _StateName, StateData)->
+handle_sync_event(close, _From, _StateName, StateData) ->
     {stop, normal, StateData}.
 
 handle_info(closed, _StateName, StateData) ->
-    {stop, normal,  StateData};
-    
-handle_info({browser, Packet}, StateName, StateData)->
-    %?DEBUG("Received on websocket : ~p ", [Packet]),
-    NPacket = unicode:characters_to_binary(Packet,latin1),
+    {stop, normal, StateData};
+handle_info({browser, Packet}, StateName, StateData) ->
+    NPacket = unicode:characters_to_binary(Packet, latin1),
     NewState = case StateData#state.waiting_input of
-		false ->
-		    Input = [StateData#state.input|NPacket],
-		    StateData#state{input = Input};
-		{Receiver, _Tag} ->
-		    Receiver ! {tcp, StateData#state.socket,NPacket},
-		    cancel_timer(StateData#state.timer),
-		    Timer = erlang:start_timer(StateData#state.timeout, self(), []),
-        StateData#state{waiting_input = false,
-				     last_receiver = Receiver,
-				     timer = Timer}
-	    end,
-	   {next_state, StateName, NewState};
-  
-
+		 false ->
+		     Input = <<(StateData#state.input)/binary, NPacket/binary>>,
+		     StateData#state{input = Input};
+		 Receiver ->
+		     Receiver ! {tcp, StateData#state.socket, NPacket},
+		     cancel_timer(StateData#state.timer),
+		     Timer = erlang:start_timer(StateData#state.timeout,
+						self(), []),
+		     StateData#state{waiting_input = false,
+				     last_receiver = Receiver, timer = Timer}
+	       end,
+    {next_state, StateName, NewState};
 handle_info({timeout, Timer, _}, _StateName,
 	    #state{timer = Timer} = StateData) ->
     {stop, normal, StateData};
-    
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-
 code_change(_OldVsn, StateName, StateData, _Extra) ->
-    {ok, StateName, StateData}.    
-    
-terminate(_Reason, _StateName, StateData) -> 
+    {ok, StateName, StateData}.
+
+terminate(_Reason, _StateName, StateData) ->
     case StateData#state.waiting_input of
-	false ->
-	    ok;
-	{Receiver,_} ->
-	    ?DEBUG("C2S Pid : ~p", [Receiver]),
-	    Receiver ! {tcp_closed, StateData#state.socket }
+      false -> ok;
+      Receiver ->
+	  ?DEBUG("C2S Pid : ~p", [Receiver]),
+	  Receiver ! {tcp_closed, StateData#state.socket}
     end,
     ok.
 
 cancel_timer(Timer) ->
     erlang:cancel_timer(Timer),
-    receive
-	{timeout, Timer, _} ->
-	    ok
-    after 0 ->
-	    ok
-    end.
+    receive {timeout, Timer, _} -> ok after 0 -> ok end.

@@ -67,5 +67,5 @@ final(Value)                -> {final, Value}.
 'any'(Token, Value)         -> [Token, {any, Value}].
 xattr(Value)                -> {type, Value}.
 matchingrule(Value)         -> {matchingRule, Value}.
-value_of(Token)             -> element(3, Token).
+value_of(Token)             -> iolist_to_binary(element(3, Token)).
 flatten(List)               -> lists:flatten(List).

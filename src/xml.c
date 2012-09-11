@@ -29,7 +29,7 @@ static int make_element(ErlNifEnv* env, struct buf *rbuf, ERL_NIF_TERM el);
 
 static int load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
-  atom_xmlelement = enif_make_atom(env, "xmlelement");
+  atom_xmlelement = enif_make_atom(env, "xmlel");
   atom_xmlcdata = enif_make_atom(env, "xmlcdata");
   return 0;
 }
@@ -57,10 +57,11 @@ inline void resize_buf(ErlNifEnv* env, struct buf *rbuf, int len_to_add)
 {
   int new_len = rbuf->len + len_to_add;
   
-  if (new_len >= rbuf->limit) {
-    rbuf->limit = ((new_len / 1024) + 1) * 1024;
-    rbuf->b = ENIF_REALLOC(rbuf->b, rbuf->limit);
-  };
+  if (new_len > rbuf->limit) {
+     while (new_len > rbuf->limit)
+	rbuf->limit *= 2;
+     rbuf->b = ENIF_REALLOC(rbuf->b, rbuf->limit);
+  }
 }
 
 static void buf_add_char(ErlNifEnv* env, struct buf *rbuf, unsigned char c)

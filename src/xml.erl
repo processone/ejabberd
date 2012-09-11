@@ -25,272 +25,408 @@
 %%%----------------------------------------------------------------------
 
 -module(xml).
+
 -author('alexey@process-one.net').
 
--export([element_to_string/1,
-	 element_to_binary/1,
-	 crypt/1, make_text_node/1,
-	 remove_cdata/1,
-         remove_subtags/3,
-	 get_cdata/1, get_tag_cdata/1,
-	 get_attr/2, get_attr_s/2,
-	 get_tag_attr/2, get_tag_attr_s/2,
-	 get_subtag/2, get_subtag_cdata/2,
-	 append_subtags/2,
-	 get_path_s/2,
-	 start/0,
-	 replace_tag_attr/3]).
+-export([element_to_binary/1,
+	 crypt/1, make_text_node/1, remove_cdata/1,
+	 remove_subtags/3, get_cdata/1, get_tag_cdata/1,
+	 get_attr/2, get_attr_s/2, get_tag_attr/2,
+	 get_tag_attr_s/2, get_subtag/2, get_subtag_cdata/2,
+	 append_subtags/2, get_path_s/2, start/0,
+	 replace_tag_attr/3, to_xmlel/1]).
 
+-include("jlib.hrl").
 -include("ejabberd.hrl").
 
 %% Select at compile time how to escape characters in binary text
 %% nodes.
 %% Can be choosen with ./configure --enable-full-xml
 -ifdef(FULL_XML_SUPPORT).
+
 -define(ESCAPE_BINARY(CData), make_text_node(CData)).
+
 -else.
+
 -define(ESCAPE_BINARY(CData), crypt(CData)).
+
 -endif.
 
 %% Replace element_to_binary/1 with NIF
 %% Can be choosen with ./configure --enable-nif
 -ifdef(NIF).
+
 start() ->
     SOPath = filename:join(ejabberd:get_so_path(), "xml"),
     case catch erlang:load_nif(SOPath, 0) of
-	ok ->
-	    ok;
-	Err ->
-	    ?WARNING_MSG("unable to load xml NIF: ~p", [Err])
+      ok -> ok;
+      Err -> ?WARNING_MSG("unable to load xml NIF: ~p", [Err])
     end.
+
 -else.
-start() ->
-    ok.
+
+start() -> ok.
+
 -endif.
+
+%%
+-spec(element_to_binary/1 ::
+(
+  El :: xmlel() | cdata())
+    -> binary()
+).
 
 element_to_binary(El) ->
     iolist_to_binary(element_to_string(El)).
 
+%%
+-spec(element_to_string/1 ::
+(
+  El :: xmlel() | cdata())
+    -> string()
+).
+
 element_to_string(El) ->
     case catch element_to_string_nocatch(El) of
-	{'EXIT', Reason} ->
-	    erlang:error({badxml, El, Reason});
-	Result ->
-	    Result
+      {'EXIT', Reason} -> erlang:error({badxml, El, Reason});
+      Result -> Result
     end.
+
+-spec(element_to_string_nocatch/1 ::
+(
+  El :: xmlel() | cdata())
+    -> iolist()
+).
 
 element_to_string_nocatch(El) ->
     case El of
-	{xmlelement, Name, Attrs, Els} ->
-	    if
-		Els /= [] ->
-		    [$<, Name, attrs_to_list(Attrs), $>,
-		     [element_to_string_nocatch(E) || E <- Els],
-		     $<, $/, Name, $>];
-	       true ->
-		    [$<, Name, attrs_to_list(Attrs), $/, $>]
-	       end;
-	%% We do not crypt CDATA binary, but we enclose it in XML CDATA
-	{xmlcdata, CData} when is_binary(CData) ->
-	    ?ESCAPE_BINARY(CData);
-	%% We crypt list and possibly binaries if full XML usage is
-	%% disabled unsupported (implies a conversion to list).
-	{xmlcdata, CData} ->
-	    crypt(CData)
+      #xmlel{name = Name, attrs = Attrs, children = Els} ->
+	  if Els /= [] ->
+		 [$<, Name, attrs_to_list(Attrs), $>,
+		  [element_to_string_nocatch(E) || E <- Els], $<, $/,
+		  Name, $>];
+	     true -> [$<, Name, attrs_to_list(Attrs), $/, $>]
+	  end;
+      %% We do not crypt CDATA binary, but we enclose it in XML CDATA
+      {xmlcdata, CData} ->
+	  ?ESCAPE_BINARY(CData)
     end.
 
-attrs_to_list(Attrs) ->
-    [attr_to_list(A) || A <- Attrs].
+attrs_to_list(Attrs) -> [attr_to_list(A) || A <- Attrs].
 
 attr_to_list({Name, Value}) ->
     [$\s, Name, $=, $', crypt(Value), $'].
 
-crypt(S) when is_list(S) ->
-    [case C of
-	 $& -> "&amp;";
-	 $< -> "&lt;";
-	 $> -> "&gt;";
-	 $" -> "&quot;";
-	 $' -> "&apos;";
-         _ when is_list(C); is_binary(C) -> crypt(C);
-	 _ -> C
-     end || C <- S];
-crypt(S) when is_binary(S) ->
-    crypt(binary_to_list(S)).
+crypt(S) ->
+    << <<(case C of
+              $& -> <<"&amp;">>;
+              $< -> <<"&lt;">>;
+              $> -> <<"&gt;">>;
+              $" -> <<"&quot;">>;
+              $' -> <<"&apos;">>;
+              _ -> <<C>>
+          end)/binary>>
+       || <<C>> <= S >>.
 
-%% Make a cdata_binary depending on what characters it contains
+%%
+-spec(make_text_node/1 ::
+(
+  CData :: binary())
+    -> binary()
+).
+
 make_text_node(CData) ->
     case cdata_need_escape(CData) of
-	cdata ->
-	    CDATA1 = <<"<![CDATA[">>,
-	    CDATA2 = <<"]]>">>,
-	    list_to_binary([CDATA1, CData, CDATA2]);
-	none ->
-	    CData;
-	{cdata, EndTokens} ->
-	    EscapedCData = escape_cdata(CData, EndTokens),
-	    list_to_binary(EscapedCData)
+      cdata ->
+	  CDATA1 = <<"<![CDATA[">>,
+	  CDATA2 = <<"]]>">>,
+	  iolist_to_binary([CDATA1, CData, CDATA2]);
+      none -> CData;
+      {cdata, EndTokens} ->
+	  EscapedCData = escape_cdata(CData, EndTokens),
+	  iolist_to_binary(EscapedCData)
     end.
 
-%% Returns escape type needed for the text node
-%% none, cdata, {cdata, [Positions]}
-%% Positions is a list a integer containing positions of CDATA end
-%% tokens, so that they can be escaped
 cdata_need_escape(CData) ->
     cdata_need_escape(CData, 0, false, []).
-cdata_need_escape(<<>>, _, false, _) ->
-    none;
-cdata_need_escape(<<>>, _, true, []) ->
-    cdata;
+
+cdata_need_escape(<<>>, _, false, _) -> none;
+cdata_need_escape(<<>>, _, true, []) -> cdata;
 cdata_need_escape(<<>>, _, true, CDataEndTokens) ->
     {cdata, lists:reverse(CDataEndTokens)};
-cdata_need_escape(<<$],$],$>,Rest/binary>>, CurrentPosition,
-                  _XMLEscape, CDataEndTokens) ->
+cdata_need_escape(<<$], $], $>, Rest/binary>>,
+		  CurrentPosition, _XMLEscape, CDataEndTokens) ->
     NewPosition = CurrentPosition + 3,
     cdata_need_escape(Rest, NewPosition, true,
-                      [CurrentPosition+1|CDataEndTokens]);
+		      [CurrentPosition + 1 | CDataEndTokens]);
 %% Only <, & need to be escaped in XML text node
 %% See reference: http://www.w3.org/TR/xml11/#syntax
-cdata_need_escape(<<$<,Rest/binary>>, CurrentPosition,
-                  _XMLEscape, CDataEndTokens) ->
-    cdata_need_escape(Rest, CurrentPosition+1, true, CDataEndTokens);
-cdata_need_escape(<<$&,Rest/binary>>, CurrentPosition,
-                  _XMLEscape, CDataEndTokens) ->
-    cdata_need_escape(Rest, CurrentPosition+1, true, CDataEndTokens);
-cdata_need_escape(<<_:8,Rest/binary>>, CurrentPosition,
+cdata_need_escape(<<$<, Rest/binary>>, CurrentPosition,
+		  _XMLEscape, CDataEndTokens) ->
+    cdata_need_escape(Rest, CurrentPosition + 1, true,
+		      CDataEndTokens);
+cdata_need_escape(<<$&, Rest/binary>>, CurrentPosition,
+		  _XMLEscape, CDataEndTokens) ->
+    cdata_need_escape(Rest, CurrentPosition + 1, true,
+		      CDataEndTokens);
+cdata_need_escape(<<_:8, Rest/binary>>, CurrentPosition,
 		  XMLEscape, CDataEndTokens) ->
-    cdata_need_escape(Rest, CurrentPosition+1, XMLEscape,
-                      CDataEndTokens).
+    cdata_need_escape(Rest, CurrentPosition + 1, XMLEscape,
+		      CDataEndTokens).
 
-%% escape cdata that contain CDATA end tokens
-%% EndTokens is a list of position of end tokens (integer)
-%% This is supposed to be a very rare case: You need to generate several
-%% fields, splitting it in the middle of the end token.
-%% See example: http://en.wikipedia.org/wiki/CDATA#Uses_of_CDATA_sections
 escape_cdata(CData, EndTokens) ->
     escape_cdata(CData, 0, EndTokens, []).
+
 escape_cdata(<<>>, _CurrentPosition, [], Acc) ->
     lists:reverse(Acc);
 escape_cdata(Rest, CurrentPosition, [], Acc) ->
     CDATA1 = <<"<![CDATA[">>,
     CDATA2 = <<"]]>">>,
-    escape_cdata(<<>>, CurrentPosition, [], [CDATA2, Rest, CDATA1|Acc]);
-escape_cdata(CData, Index, [Pos|Positions], Acc) ->
+    escape_cdata(<<>>, CurrentPosition, [],
+		 [CDATA2, Rest, CDATA1 | Acc]);
+escape_cdata(CData, Index, [Pos | Positions], Acc) ->
     CDATA1 = <<"<![CDATA[">>,
     CDATA2 = <<"]]>">>,
-    Split = Pos-Index,
-    {Part, Rest} = split_binary(CData, Split+1),
-    %% Note: We build the list in reverse to optimize construction
-    escape_cdata(Rest, Pos+1, Positions, [CDATA2, Part, CDATA1|Acc]).
-	 
-remove_cdata_p({xmlelement, _Name, _Attrs, _Els}) -> true;
+    Split = Pos - Index,
+    {Part, Rest} = split_binary(CData, Split + 1),
+    escape_cdata(Rest, Pos + 1, Positions,
+		 [CDATA2, Part, CDATA1 | Acc]).
+
+%%
+-spec(remove_cdata_p/1 ::
+(
+  El :: xmlel() | cdata())
+    -> boolean()
+).
+
+remove_cdata_p(#xmlel{}) -> true;
 remove_cdata_p(_) -> false.
+
+%%
+-spec(remove_cdata/1 ::
+(
+  L :: [xmlel() | cdata()])
+    -> [xmlel()]
+).
 
 remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
 
-%% TODO: Make more generic.
-%% For now only support all parameters:
-%% xml:remove_subtags({xmlelement,"message", [{"id","81be72"}],[{xmlelement,"on-sender-server",[{"xmlns","urn:xmpp:receipts"},{"server","text-one.com"}], []}]}, "on-sender-server", {"xmlns","urn:xmpp:receipts"}).
-remove_subtags({xmlelement, TagName, TagAttrs, Els}, Name, Attr) ->
-    {xmlelement, TagName, TagAttrs, remove_subtags1(Els, [], Name, Attr)}.
+-spec(remove_subtags/3 ::
+(
+  Xmlel :: xmlel(),
+  Name  :: binary(),
+  Attr  :: attr())
+    -> Xmlel :: xmlel()
+).
+
+remove_subtags(#xmlel{name = TagName, attrs = TagAttrs, children = Els},
+  Name, Attr) ->
+    #xmlel{name = TagName, attrs = TagAttrs,
+        children = remove_subtags1(Els, [], Name, Attr)}.
+
+%%
+-spec(remove_subtags1/4 ::
+(
+  Els    :: [xmlel() | cdata()],
+  NewEls :: [xmlel()],
+  Name   :: binary(),
+  Attr   :: attr())
+    -> NewEls :: [xmlel()]
+).
 
 remove_subtags1([], NewEls, _Name, _Attr) ->
     lists:reverse(NewEls);
-remove_subtags1([El | Els], NewEls, Name, {AttrName, AttrValue} = Attr) ->
+remove_subtags1([El | Els], NewEls, Name,
+		{AttrName, AttrValue} = Attr) ->
     case El of
-        {xmlelement, Name, Attrs, _} ->
-            case get_attr(AttrName, Attrs) of
-     	         false -> 
-			remove_subtags1(Els, [El|NewEls], Name, Attr);
-                 {value, AttrValue} ->
-			remove_subtags1(Els, NewEls, Name, Attr);
-                 _ ->
-                        remove_subtags1(Els, [El|NewEls], Name, Attr)
-            end;
-        _ ->
-	    remove_subtags1(Els, [El|NewEls], Name, Attr)
+      #xmlel{name = Name, attrs = Attrs} ->
+	  case get_attr(AttrName, Attrs) of
+	    false ->
+		remove_subtags1(Els, [El | NewEls], Name, Attr);
+	    {value, AttrValue} ->
+		remove_subtags1(Els, NewEls, Name, Attr);
+	    _ -> remove_subtags1(Els, [El | NewEls], Name, Attr)
+	  end;
+      _ -> remove_subtags1(Els, [El | NewEls], Name, Attr)
     end.
 
-
+-spec(get_cdata/1 ::
+(
+  L :: [xmlel() | cdata()])
+    -> binary()
+).
 
 get_cdata(L) ->
-    binary_to_list(list_to_binary(get_cdata(L, ""))).
+    (iolist_to_binary(get_cdata(L, <<"">>))).
+
+-spec(get_cdata/2 ::
+(
+  L :: [xmlel() | cdata()],
+  S :: binary() | iolist())
+    -> binary() | iolist()
+).
 
 get_cdata([{xmlcdata, CData} | L], S) ->
-    get_cdata(L, [S, CData]);
-get_cdata([_ | L], S) ->
-    get_cdata(L, S);
-get_cdata([], S) ->
-    S.
+     get_cdata(L, [S, CData]);
+get_cdata([_ | L], S) -> get_cdata(L, S);
+get_cdata([], S) -> S.
 
-get_tag_cdata({xmlelement, _Name, _Attrs, Els}) ->
-    get_cdata(Els).
+-spec(get_tag_cdata/1 ::
+(
+  Xmlel :: xmlel())
+    -> binary()
+).
+
+get_tag_cdata(#xmlel{children = Els}) -> get_cdata(Els).
+
+%%
+-spec(get_attr/2 ::
+(
+  AttrName :: binary(),
+  Attrs    :: [attr()])
+    -> {value, binary()}
+     | false
+).
 
 get_attr(AttrName, Attrs) ->
     case lists:keysearch(AttrName, 1, Attrs) of
-	{value, {_, Val}} ->
-	    {value, Val};
-	_ ->
-	    false
+      {value, {_, Val}} -> {value, Val};
+      _ -> false
     end.
+
+%%
+-spec(get_attr_s/2 ::
+(
+  AttrName :: binary(),
+  Attrs    :: [attr()])
+    -> Val :: binary()
+).
 
 get_attr_s(AttrName, Attrs) ->
     case lists:keysearch(AttrName, 1, Attrs) of
-	{value, {_, Val}} ->
-	    Val;
-	_ ->
-	    ""
+      {value, {_, Val}} -> Val;
+      _ -> <<"">>
     end.
 
-get_tag_attr(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
+%%
+-spec(get_tag_attr/2 ::
+(
+  AttrName :: binary(),
+  Xmlel    :: xmlel())
+    -> {value, binary()}
+     | false
+).
+
+get_tag_attr(AttrName, #xmlel{attrs = Attrs}) ->
     get_attr(AttrName, Attrs).
 
-get_tag_attr_s(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
+%%
+-spec(get_tag_attr_s/2 ::
+(
+  AttrName :: binary(),
+  Xmlel    :: xmlel())
+    -> binary()
+).
+
+get_tag_attr_s(AttrName, #xmlel{attrs = Attrs}) ->
     get_attr_s(AttrName, Attrs).
 
+%%
+-spec(get_subtag/2 ::
+(
+  Xmlel :: xmlel(),
+  Name  :: binary())
+    -> xmlel() | false
+).
 
-get_subtag({xmlelement, _, _, Els}, Name) ->
+get_subtag(#xmlel{children = Els}, Name) ->
     get_subtag1(Els, Name).
+
+%%
+-spec(get_subtag1/2 ::
+(
+  Els  :: [xmlel() | cdata()],
+  Name :: binary())
+    -> xmlel() | false
+).
 
 get_subtag1([El | Els], Name) ->
     case El of
-	{xmlelement, Name, _, _} ->
-	    El;
-	_ ->
-	    get_subtag1(Els, Name)
+      #xmlel{name = Name} -> El;
+      _ -> get_subtag1(Els, Name)
     end;
-get_subtag1([], _) ->
-    false.
+get_subtag1([], _) -> false.
+
+%%
+-spec(get_subtag_cdata/2 ::
+(
+  Tag  :: xmlel(),
+  Name :: binary())
+    -> binary()
+).
 
 get_subtag_cdata(Tag, Name) ->
     case get_subtag(Tag, Name) of
-	false ->
-	    "";
-	Subtag ->
-	    get_tag_cdata(Subtag)
+      false -> <<"">>;
+      Subtag -> get_tag_cdata(Subtag)
     end.
 
-append_subtags({xmlelement, Name, Attrs, SubTags1}, SubTags2) ->
-    {xmlelement, Name, Attrs, SubTags1 ++ SubTags2}.
+%%
+-spec(append_subtags/2 ::
+(
+  Xmlel    :: xmlel(),
+  SubTags2 :: [xmlel() | cdata()])
+    -> Xmlel :: xmlel()
+).
 
-get_path_s(El, []) ->
-    El;
+append_subtags(#xmlel{name = Name, attrs = Attrs, children = SubTags1}, SubTags2) ->
+    #xmlel{name = Name, attrs = Attrs, children = SubTags1 ++ SubTags2}.
+
+%%
+-spec(get_path_s/2 ::
+(
+  El   :: xmlel(),
+  Path :: [{elem, Name::binary()}
+          |{attr, Name::binary()}
+          |cdata])
+    -> xmlel()
+     | binary()
+).
+
+get_path_s(El, []) -> El;
 get_path_s(El, [{elem, Name} | Path]) ->
     case get_subtag(El, Name) of
-	false ->
-	    "";
-	SubEl ->
-	    get_path_s(SubEl, Path)
+      false -> <<"">>;
+      SubEl -> get_path_s(SubEl, Path)
     end;
 get_path_s(El, [{attr, Name}]) ->
     get_tag_attr_s(Name, El);
-get_path_s(El, [cdata]) ->
-    get_tag_cdata(El).
+get_path_s(El, [cdata]) -> get_tag_cdata(El).
 
+%%
+-spec(replace_tag_attr/3 ::
+(
+  Name  :: binary(),
+  Value :: binary(),
+  Xmlel :: xmlel())
+    -> Xmlel :: #xmlel{
+           name     :: binary(),
+           attrs    :: [attr(),...],
+           children :: [xmlel() | cdata()]
+       }
+).
 
-replace_tag_attr(Attr, Value, {xmlelement, Name, Attrs, Els}) ->
-    Attrs1 = lists:keydelete(Attr, 1, Attrs),
-    Attrs2 = [{Attr, Value} | Attrs1],
-    {xmlelement, Name, Attrs2, Els}.
+replace_tag_attr(Name, Value, Xmlel) ->
+    Xmlel#xmlel{
+        attrs = [{Name, Value} | lists:keydelete(Name, 1, Xmlel#xmlel.attrs)]
+    }.
 
+-spec to_xmlel(xmlelement() | xmlel()) -> xmlel().
 
+to_xmlel({_, Name, Attrs, Els}) ->
+    #xmlel{name = iolist_to_binary(Name),
+           attrs = [{iolist_to_binary(K), iolist_to_binary(V)}
+                    || {K, V} <- Attrs],
+           children = [to_xmlel(El) || El <- Els]};
+to_xmlel({xmlcdata, CData}) ->
+    {xmlcdata, iolist_to_binary(CData)}.

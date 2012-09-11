@@ -20,20 +20,45 @@
 %%%----------------------------------------------------------------------
 
 -define(LDAP_PORT, 389).
+
 -define(LDAPS_PORT, 636).
 
--record(eldap_search, {scope = wholeSubtree,
-		       base = [],
-		       filter,
-		       limit = 0,
-		       attributes = [],
-		       types_only = false,
-                       deref_aliases = neverDerefAliases,
-		       timeout = 0}).
+-type scope() :: baseObject | singleLevel | wholeSubtree.
 
+-record(eldap_search,
+	{scope = wholeSubtree              :: scope(),
+         base = <<"">>                     :: binary(),
+         filter                            :: eldap:filter(),
+         limit = 0                         :: non_neg_integer(),
+	 attributes = []                   :: [binary()],
+         types_only = false                :: boolean(),
+	 deref_aliases = neverDerefAliases :: neverDerefAliases |
+                                              derefInSearching |
+                                              derefFindingBaseObj |
+                                              derefAlways,
+         timeout = 0                       :: non_neg_integer()}).
 
--record(eldap_search_result, {entries,
-			      referrals}).
+-record(eldap_search_result, {entries = []   :: [eldap_entry()],
+                              referrals = [] :: list()}).
 
--record(eldap_entry, {object_name,
-		      attributes}).
+-record(eldap_entry, {object_name = <<>> :: binary(),
+                      attributes = []    :: [{binary(), [binary()]}]}).
+
+-type tlsopts() :: [{encrypt, tls | starttls | none} |
+                    {tls_cacertfile, binary() | undefined} |
+                    {tls_depth, non_neg_integer() | undefined} |
+                    {tls_verify, hard | soft | false}].
+
+-record(eldap_config, {servers = [] :: [binary()],
+                       backups = [] :: [binary()],
+                       tls_options = [] :: tlsopts(),
+                       port = ?LDAP_PORT :: inet:port_number(),
+                       dn = <<"">> :: binary(),
+                       password = <<"">> :: binary(),
+                       base = <<"">> :: binary(),
+                       deref_aliases = never :: never | searching |
+                                                finding | always}).
+
+-type eldap_config() :: #eldap_config{}.
+-type eldap_search() :: #eldap_search{}.
+-type eldap_entry() :: #eldap_entry{}.

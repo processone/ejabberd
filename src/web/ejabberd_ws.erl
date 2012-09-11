@@ -8,12 +8,12 @@
 % MISULTIN - Websocket Request
 %
 % >-|-|-(°>
-% 
+%
 % Copyright (C) 2010, Roberto Ostinelli <roberto@ostinelli.net>.
 % All rights reserved.
 %
 % BSD License
-% 
+%
 % Redistribution and use in source and binary forms, with or without modification, are permitted provided
 % that the following conditions are met:
 %
@@ -34,6 +34,7 @@
 % POSSIBILITY OF SUCH DAMAGE.
 % ==========================================================================================================
 -module(ejabberd_ws, [Ws, SocketPid]).
+
 -vsn("0.6.1").
 
 % API
@@ -42,39 +43,24 @@
 % includes
 -include("ejabberd_http.hrl").
 
-
 % ============================ \/ API ======================================================================
 
-% Description: Returns raw websocket content.
-raw() ->
-	Ws.
+raw() -> Ws.
 
-% Description: Get websocket info.
-get(socket) ->
-	Ws#ws.socket;
-get(socket_mode) ->
-	Ws#ws.sockmod;
-get(ip) ->
-	Ws#ws.ip;
-get(vsn) ->
-	Ws#ws.vsn;
-get(origin) ->
-	Ws#ws.origin;
-get(host) ->
-	Ws#ws.host;
-get(path) ->
-	Ws#ws.path;
-get(headers) ->
-	Ws#ws.headers.
+get(socket) -> Ws#ws.socket;
+get(socket_mode) -> Ws#ws.sockmod;
+get(ip) -> Ws#ws.ip;
+get(vsn) -> Ws#ws.vsn;
+get(origin) -> Ws#ws.origin;
+get(host) -> Ws#ws.host;
+get(path) -> Ws#ws.path;
+get(headers) -> Ws#ws.headers.
 
-% send data
-send(Data) ->
-	SocketPid ! {send, Data}.
-		
+send(Data) -> SocketPid ! {send, Data}.
+
 % ============================ /\ API ======================================================================
-
-
 
 % ============================ \/ INTERNAL FUNCTIONS =======================================================
 
 % ============================ /\ INTERNAL FUNCTIONS =======================================================
+

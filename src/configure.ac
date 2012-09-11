@@ -36,6 +36,7 @@ AC_MOD_ENABLE(mod_irc, yes)
 AC_MOD_ENABLE(mod_muc, yes)
 AC_MOD_ENABLE(mod_proxy65, yes)
 AC_MOD_ENABLE(mod_pubsub, yes)
+AC_MOD_ENABLE(mod_pubsub_ng, yes)
 AC_MOD_ENABLE(eldap, yes)
 AC_MOD_ENABLE(odbc, no)
 AC_MOD_ENABLE(tls, yes)
@@ -116,6 +117,7 @@ AC_CONFIG_FILES([Makefile
                  $make_mod_irc
                  $make_mod_muc
                  $make_mod_pubsub
+                 $make_mod_pubsub_ng
                  $make_mod_proxy65
                  $make_eldap
                  $make_pam

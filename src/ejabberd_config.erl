@@ -29,9 +29,13 @@
 
 -export([start/0, load_file/1,
 	 add_global_option/2, add_local_option/2,
-	 get_global_option/1, get_local_option/1]).
+	 get_global_option/2, get_local_option/2,
+         get_global_option/3, get_local_option/3]).
 -export([get_vh_by_auth_method/1]).
 -export([is_file_readable/1]).
+-export([get_version/0, get_myhosts/0, get_mylang/0]).
+-export([prepare_opt_val/4]).
+-export([convert_table_to_binary/5]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_config.hrl").
@@ -64,9 +68,10 @@ start() ->
                     nocookie ->
                         sha:sha(randoms:get_string());
                     Cookie ->
-                        sha:sha(atom_to_list(Cookie))
+                        sha:sha(jlib:atom_to_binary(Cookie))
                 end,
     add_local_option(shared_key, SharedKey),
+    add_local_option(flash_hack, ?FLASH_HACK),
     ok.
 
 %% @doc Get the filename of the ejabberd configuration file.
@@ -102,12 +107,15 @@ load_file(File) ->
 %% Returns a list of plain terms,
 %% in which the options 'include_config_file' were parsed
 %% and the terms in those files were included.
-%% @spec(string()) -> [term()]
+%% @spec(iolist()) -> [term()]
+get_plain_terms_file(File) when is_binary(File) ->
+    get_plain_terms_file(binary_to_list(File));
 get_plain_terms_file(File1) ->
     File = get_absolute_path(File1),
     case file:consult(File) of
 	{ok, Terms} ->
-	    include_config_files(Terms);
+            BinTerms = strings_to_binary(Terms),
+	    include_config_files(BinTerms);
 	{error, {LineNumber, erl_parse, _ParseMessage} = Reason} ->
 	    ExitText = describe_config_problem(File, Reason, LineNumber),
 	    ?ERROR_MSG(ExitText, []),
@@ -166,7 +174,7 @@ normalize_hosts(Hosts) ->
 normalize_hosts([], PrepHosts) ->
     lists:reverse(PrepHosts);
 normalize_hosts([Host|Hosts], PrepHosts) ->
-    case jlib:nodeprep(Host) of
+    case jlib:nodeprep(iolist_to_binary(Host)) of
 	error ->
 	    ?ERROR_MSG("Can't load config file: "
 		       "invalid host name [~p]", [Host]),
@@ -577,7 +585,6 @@ set_opts(State) ->
 	    exit("Error reading Mnesia database")
     end.
 
-
 add_global_option(Opt, Val) ->
     mnesia:transaction(fun() ->
 			       mnesia:write(#config{key = Opt,
@@ -590,22 +597,62 @@ add_local_option(Opt, Val) ->
 							  value = Val})
 		       end).
 
+-spec prepare_opt_val(any(), any(), check_fun(), any()) -> any().
 
-get_global_option(Opt) ->
+prepare_opt_val(Opt, Val, F, Default) ->
+    Res = case F of
+              {Mod, Fun} ->
+                  catch Mod:Fun(Val);
+              _ ->
+                  catch F(Val)
+          end,
+    case Res of
+        {'EXIT', _} ->
+            ?INFO_MSG("Configuration problem:~n"
+                      "** Option: ~s~n"
+                      "** Invalid value: ~s~n"
+                      "** Using as fallback: ~s",
+                      [format_term(Opt),
+                       format_term(Val),
+                       format_term(Default)]),
+            Default;
+        _ ->
+            Res
+    end.
+
+-type check_fun() :: fun((any()) -> any()) | {module(), atom()}.
+
+-spec get_global_option(any(), check_fun()) -> any().
+
+get_global_option(Opt, F) ->
+    get_global_option(Opt, F, undefined).
+
+-spec get_global_option(any(), check_fun(), any()) -> any().
+
+get_global_option(Opt, F, Default) ->
     case ets:lookup(config, Opt) of
 	[#config{value = Val}] ->
-	    Val;
+	    prepare_opt_val(Opt, Val, F, Default);
 	_ ->
-	    undefined
+            Default
     end.
 
-get_local_option(Opt) ->
+-spec get_local_option(any(), check_fun()) -> any().
+
+get_local_option(Opt, F) ->
+    get_local_option(Opt, F, undefined).
+
+-spec get_local_option(any(), check_fun(), any()) -> any().
+
+get_local_option(Opt, F, Default) ->
     case ets:lookup(local_config, Opt) of
 	[#local_config{value = Val}] ->
-	    Val;
+	    prepare_opt_val(Opt, Val, F, Default);
 	_ ->
-	    undefined
+	    Default
     end.
+
+-spec get_vh_by_auth_method(atom()) -> [binary()].
 
 %% Return the list of hosts handled by a given module
 get_vh_by_auth_method(AuthMethod) ->
@@ -626,8 +673,25 @@ is_file_readable(Path) ->
 	    false
     end.
 
+get_version() ->
+    list_to_binary(element(2, application:get_key(ejabberd, vsn))).
+
+-spec get_myhosts() -> [binary()].
+
+get_myhosts() ->
+    ejabberd_config:get_global_option(hosts, fun(V) -> V end).
+
+-spec get_mylang() -> binary().
+
+get_mylang() ->
+    ejabberd_config:get_global_option(
+      language,
+      fun iolist_to_binary/1,
+      <<"en">>).
+
 replace_module(mod_announce_odbc) -> {mod_announce, odbc};
 replace_module(mod_blocking_odbc) -> {mod_blocking, odbc};
+replace_module(mod_caps_odbc) -> {mod_caps, odbc};
 replace_module(mod_irc_odbc) -> {mod_irc, odbc};
 replace_module(mod_last_odbc) -> {mod_last, odbc};
 replace_module(mod_muc_odbc) -> {mod_muc, odbc};
@@ -645,10 +709,161 @@ replace_modules(Modules) ->
       fun({Module, Opts}) ->
               case replace_module(Module) of
                   {NewModule, DBType} ->
+                      emit_deprecation_warning(Module, NewModule, DBType),
                       NewOpts = [{db_type, DBType} |
                                  lists:keydelete(db_type, 1, Opts)],
                       {NewModule, NewOpts};
                   NewModule ->
+                      if Module /= NewModule ->
+                              emit_deprecation_warning(Module, NewModule);
+                         true ->
+                              ok
+                      end,
                       {NewModule, Opts}
               end
       end, Modules).
+
+strings_to_binary([]) ->
+    [];
+strings_to_binary(L) when is_list(L) ->
+    case is_string(L) of
+        true ->
+            list_to_binary(L);
+        false ->
+            strings_to_binary1(L)
+    end;
+strings_to_binary(T) when is_tuple(T) ->
+    list_to_tuple(strings_to_binary(tuple_to_list(T)));
+strings_to_binary(X) ->
+    X.
+
+strings_to_binary1([El|L]) ->
+    [strings_to_binary(El)|strings_to_binary1(L)];
+strings_to_binary1([]) ->
+    [];
+strings_to_binary1(T) ->
+    T.
+
+is_string([C|T]) when (C >= 0) and (C =< 255) ->
+    is_string(T);
+is_string([]) ->
+    true;
+is_string(_) ->
+    false.
+
+binary_to_strings(B) when is_binary(B) ->
+    binary_to_list(B);
+binary_to_strings([H|T]) ->
+    [binary_to_strings(H)|binary_to_strings(T)];
+binary_to_strings(T) when is_tuple(T) ->
+    list_to_tuple(binary_to_strings(tuple_to_list(T)));
+binary_to_strings(T) ->
+    T.
+
+format_term(Bin) when is_binary(Bin) ->
+    io_lib:format("\"~s\"", [Bin]);
+format_term(S) when is_list(S), S /= [] ->
+    case lists:all(fun(C) -> (C>=0) and (C=<255) end, S) of
+        true ->
+            io_lib:format("\"~s\"", [S]);
+        false ->
+            io_lib:format("~p", [binary_to_strings(S)])
+    end;
+format_term(T) ->
+    io_lib:format("~p", [binary_to_strings(T)]).
+
+-spec convert_table_to_binary(atom(), [atom()], atom(),
+                              fun(), fun()) -> ok.
+
+convert_table_to_binary(Tab, Fields, Type, DetectFun, ConvertFun) ->
+    case is_table_still_list(Tab, DetectFun) of
+        true ->
+            ?INFO_MSG("Converting '~s' table from strings to binaries.", [Tab]),
+            TmpTab = list_to_atom(atom_to_list(Tab) ++ "_tmp_table"),
+            catch mnesia:delete_table(TmpTab),
+            case mnesia:create_table(TmpTab,
+                                     [{disc_only_copies, [node()]},
+                                      {type, Type},
+                                      {local_content, true},
+                                      {record_name, Tab},
+                                      {attributes, Fields}]) of
+                {atomic, ok} ->
+                    mnesia:transform_table(Tab, ignore, Fields),
+                    case mnesia:transaction(
+                           fun() ->
+                                   mnesia:write_lock_table(TmpTab),
+                                   mnesia:foldl(
+                                     fun(R, _) ->
+                                             NewR = ConvertFun(R),
+                                             mnesia:dirty_write(TmpTab, NewR)
+                                     end, ok, Tab)
+                           end) of
+                        {atomic, ok} ->
+                            mnesia:clear_table(Tab),
+                            case mnesia:transaction(
+                                   fun() ->
+                                           mnesia:write_lock_table(Tab),
+                                           mnesia:foldl(
+                                             fun(R, _) ->
+                                                     mnesia:dirty_write(R)
+                                             end, ok, TmpTab)
+                                   end) of
+                                {atomic, ok} ->
+                                    mnesia:delete_table(TmpTab);
+                                Err ->
+                                    report_and_stop(Tab, Err)
+                            end;
+                        Err ->
+                            report_and_stop(Tab, Err)
+                    end;
+                Err ->
+                    report_and_stop(Tab, Err)
+            end;
+        false ->
+            ok
+    end.
+
+is_table_still_list(Tab, DetectFun) ->
+    is_table_still_list(Tab, DetectFun, mnesia:dirty_first(Tab)).
+
+is_table_still_list(_Tab, _DetectFun, '$end_of_table') ->
+    false;
+is_table_still_list(Tab, DetectFun, Key) ->
+    Rs = mnesia:dirty_read(Tab, Key),
+    Res = lists:foldl(fun(_, true) ->
+                              true;
+                         (_, false) ->
+                              false;
+                         (R, _) ->
+                              case DetectFun(R) of
+                                  '$next' ->
+                                      '$next';
+                                  El ->
+                                      is_list(El)
+                              end
+                      end, '$next', Rs),
+    case Res of
+        true ->
+            true;
+        false ->
+            false;
+        '$next' ->
+            is_table_still_list(Tab, DetectFun, mnesia:dirty_next(Tab, Key))
+    end.
+
+report_and_stop(Tab, Err) ->
+    ErrTxt = lists:flatten(
+               io_lib:format(
+                 "Failed to convert '~s' table to binary: ~p",
+                 [Tab, Err])),
+    ?CRITICAL_MSG(ErrTxt, []),
+    timer:sleep(1000),
+    halt(string:substr(ErrTxt, 1, 199)).
+
+emit_deprecation_warning(Module, NewModule, DBType) ->
+    ?WARNING_MSG("Module ~s is deprecated, use {~s, [{db_type, ~s}, ...]}"
+                 " instead", [Module, NewModule, DBType]).
+
+emit_deprecation_warning(Module, NewModule) ->
+    ?WARNING_MSG("Module ~s is deprecated, use ~s instead",
+                 [Module, NewModule]).

@@ -82,6 +82,7 @@
 \newcommand{\modmuc}{\module{mod\_muc}}
 \newcommand{\modmucodbc}{\module{mod\_muc\_odbc}}
 \newcommand{\modmuclog}{\module{mod\_muc\_log}}
+\newcommand{\modmulticast}{\module{mod\_multicast}}
 \newcommand{\modoffline}{\module{mod\_offline}}
 \newcommand{\modofflineodbc}{\module{mod\_offline\_odbc}}
 \newcommand{\modping}{\module{mod\_ping}}
@@ -2610,6 +2611,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modmuc}{\modmuc{}} & Multi-User Chat (\xepref{0045}) &  \\
     \hline \ahrefloc{modmuc}{\modmucodbc{}} & Multi-User Chat (\xepref{0045}) & supported DB (*) \\
     \hline \ahrefloc{modmuclog}{\modmuclog{}} & Multi-User Chat room logging & \modmuc{} or \modmucodbc{} \\
+    \hline \ahrefloc{modmulticast}{\modmulticast{}} & Multicast service (\xepref{0033}) &  \\
     \hline \ahrefloc{modoffline}{\modoffline{}} & Offline message storage (\xepref{0160}) &  \\
     \hline \ahrefloc{modoffline}{\modofflineodbc{}} & Offline message storage (\xepref{0160}) & supported DB (*) \\
     \hline \ahrefloc{modping}{\modping{}} & XMPP Ping and periodic keepalives (\xepref{0199}) &  \\
@@ -3570,6 +3572,56 @@ Examples:
  ]}.
 \end{verbatim}
 \end{itemize}
+
+\makesubsection{modmulticast}{\modmulticast{}}
+\ind{modules!\modmulticast{}}
+
+This module implements Extended Stanza Addressing (\xepref{0033}).
+
+\begin{description}
+ \hostitem{multicast}
+ \titem{\{access, AccessName\}}\ind{options!access}
+  This option specifies the access rule that defines who can send packets to the multicast service.
+  The default value is \term{all}.
+ \titem{\{limits, [\{SenderType, StanzaType, Number\}]\}}\ind{options!limits}
+  Specify a list of custom limits which override the default ones defined
+  in (\xepref{0033}).
+  Where:
+  \begin{itemize}
+   \item SenderType can have values: local or remote.
+   \item StanzaType can have values: message or presence.
+   \item Number can be a positive integer or the key word infinite.
+  \end{itemize}
+  The default value is \term{[]}.
+\end{description}
+
+Example configuration:
+\begin{verbatim}
+%% Only admins can send packets to multicast service
+{access, multicast, [{allow, admin}, {deny, all}]}.
+
+%% If you want to allow all your users:
+%%{access, multicast, [{allow, all}]}.
+
+%% This allows both admins and remote users to send packets,
+%% but does not allow local users
+%%{acl, allservers, {server_glob, "*"}}.
+%%{access, multicast, [{allow, admin}, {deny, local}, {allow, allservers}]}.
+
+{modules, [
+  ...
+  {mod_multicast, [
+     %%{host, "multicast.@HOST@"},
+     {access, multicast},
+     {limits, [
+       {local, message, 40},
+       {local, presence, infinite},
+       {remote, message, 150}
+     ]}
+  ]},
+  ...
+]}.
+\end{verbatim}
 
 \makesubsection{modoffline}{\modoffline{}}
 \ind{modules!\modoffline{}}

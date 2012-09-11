@@ -35,7 +35,7 @@ ERLANG_CFLAGS += @ERLANG_SSLVER@
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug
-  EFLAGS+=+debug_info +export_all
+  EFLAGS+=+debug_info
 endif
 
 DEBUGTOOLS = p1_prof.erl
@@ -84,7 +84,7 @@ exec_prefix = @exec_prefix@
 
 SUBDIRS = @mod_irc@ @mod_pubsub@ @mod_muc@ @mod_proxy65@ @eldap@ @pam@ @web@ stringprep stun @tls@ @odbc@ @ejabberd_zlib@
 ERLSHLIBS += expat_erl.so
-ERLBEHAVS = cyrsasl.erl gen_mod.erl p1_fsm.erl
+ERLBEHAVS = cyrsasl.erl gen_mod.erl p1_fsm.erl ejabberd_auth.erl
 SOURCES_ALL = $(wildcard *.erl)
 SOURCES_MISC = $(ERLBEHAVS) $(DEBUGTOOLS)
 SOURCES += $(filter-out $(SOURCES_MISC),$(SOURCES_ALL))
@@ -232,6 +232,8 @@ install: all
 	install -m 644 mod_proxy65/*.hrl $(INCLUDEDIR)/mod_proxy65/
 	install -d $(INCLUDEDIR)/mod_pubsub/
 	install -m 644 mod_pubsub/*.hrl $(INCLUDEDIR)/mod_pubsub/
+	install -d $(INCLUDEDIR)/mod_pubsub_ng/
+	install -m 644 mod_pubsub_ng/*.hrl $(INCLUDEDIR)/mod_pubsub_ng/
 	install -d $(INCLUDEDIR)/web/
 	install -m 644 web/*.hrl $(INCLUDEDIR)/web/
 	#

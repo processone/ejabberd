@@ -26,9 +26,6 @@
 %%%----------------------------------------------------------------------
 -module(eldap_filter).
 
-%% TODO: remove this when new regexp module will be used
--compile({nowarn_deprecated_function, {regexp, sub, 3}}).
-
 -export([parse/1, parse/2, do_sub/2]).
 
 %%====================================================================
@@ -50,7 +47,9 @@
 %%%   {ok,{'and',[{'not',{lessOrEqual,{'AttributeValueAssertion',"uid","100"}}},
 %%%           {present,"mail"}]}}
 %%%-------------------------------------------------------------------
-parse(L) when is_list(L) ->
+-spec parse(binary()) -> {error, any()} | {ok, eldap:filter()}.
+
+parse(L) ->
     parse(L, []).
 
 %%%-------------------------------------------------------------------
@@ -80,8 +79,12 @@ parse(L) when is_list(L) ->
 %%%                              "jid",
 %%%                              "xramtsov@gmail.com"}}]}}
 %%%-------------------------------------------------------------------
-parse(L, SList) when is_list(L), is_list(SList) ->
-    case catch eldap_filter_yecc:parse(scan(L, SList)) of
+-spec parse(binary(), [{binary(), binary()} |
+                       {binary(), binary(), pos_integer()}]) ->
+                   {error, any()} | {ok, eldap:filter()}.
+
+parse(L, SList) ->
+    case catch eldap_filter_yecc:parse(scan(binary_to_list(L), SList)) of
         {'EXIT', _} = Err ->
             {error, Err};
 	{error, {_, _, Msg}} ->
@@ -95,13 +98,13 @@ parse(L, SList) when is_list(L), is_list(SList) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
--define(do_scan(L), scan(Rest, [], [{L, 1} | check(Buf, S) ++ Result], L, S)).
+-define(do_scan(L), scan(Rest, <<>>, [{L, 1} | check(Buf, S) ++ Result], L, S)).
 
 scan(L, SList) ->
-    scan(L, "", [], undefined, SList).
+    scan(L, <<"">>, [], undefined, SList).
 
 scan("=*)" ++ Rest, Buf, Result, '(', S) ->
-    scan(Rest, [], [{')', 1}, {'=*', 1} | check(Buf, S) ++ Result], ')', S);
+    scan(Rest, <<>>, [{')', 1}, {'=*', 1} | check(Buf, S) ++ Result], ')', S);
 scan(":dn" ++ Rest, Buf, Result, '(', S) -> ?do_scan(':dn');
 scan(":=" ++ Rest, Buf, Result, '(', S) -> ?do_scan(':=');
 scan(":=" ++ Rest, Buf, Result, ':dn', S) -> ?do_scan(':=');
@@ -112,35 +115,35 @@ scan("<=" ++ Rest, Buf, Result, '(', S) -> ?do_scan('<=');
 scan("="  ++ Rest, Buf, Result, '(', S) -> ?do_scan('=');
 scan(":"  ++ Rest, Buf, Result, '(', S) -> ?do_scan(':');
 scan(":"  ++ Rest, Buf, Result, ':dn', S) -> ?do_scan(':');
-scan("&"  ++ Rest, Buf, Result, '(', S) when Buf=="" -> ?do_scan('&');
-scan("|"  ++ Rest, Buf, Result, '(', S) when Buf=="" -> ?do_scan('|');
-scan("!"  ++ Rest, Buf, Result, '(', S) when Buf=="" -> ?do_scan('!');
+scan("&"  ++ Rest, Buf, Result, '(', S) when Buf==<<"">> -> ?do_scan('&');
+scan("|"  ++ Rest, Buf, Result, '(', S) when Buf==<<"">> -> ?do_scan('|');
+scan("!"  ++ Rest, Buf, Result, '(', S) when Buf==<<"">> -> ?do_scan('!');
 scan("*"  ++ Rest, Buf, Result, '*', S) -> ?do_scan('*');
 scan("*"  ++ Rest, Buf, Result, '=', S) -> ?do_scan('*');
 scan("("  ++ Rest, Buf, Result, _, S) -> ?do_scan('(');
 scan(")"  ++ Rest, Buf, Result, _, S) -> ?do_scan(')');
 scan([Letter | Rest], Buf, Result, PreviosAtom, S) ->
-    scan(Rest, [Letter|Buf], Result, PreviosAtom, S);
+    scan(Rest, <<Buf/binary, Letter>>, Result, PreviosAtom, S);
 scan([], Buf, Result, _, S) ->
     lists:reverse(check(Buf, S) ++ Result).
 
-check([], _) ->
+check(<<>>, _) ->
     [];
 check(Buf, S) ->
-    [{str, 1, do_sub(lists:reverse(Buf), S)}].
+    [{str, 1, binary_to_list(do_sub(Buf, S))}].
 
 -define(MAX_RECURSION, 100).
 
+-spec do_sub(binary(), [{binary(), binary()} |
+                        {binary(), binary(), pos_integer()}]) -> binary().
+
 do_sub(S, []) ->
     S;
-
-do_sub([], _) ->
-    [];
-
+do_sub(<<>>, _) ->
+    <<>>;
 do_sub(S, [{RegExp, New} | T]) ->
     Result = do_sub(S, {RegExp, replace_amps(New)}, 1),
     do_sub(Result, T);
-
 do_sub(S, [{RegExp, New, Times} | T]) ->
     Result = do_sub(S, {RegExp, replace_amps(New), Times}, 1),
     do_sub(Result, T).
@@ -178,8 +181,9 @@ do_sub(S, {RegExp, New, Times}, Iter) ->
             erlang:error(bad_regexp)
     end.
 
-replace_amps(String) ->
-    lists:flatmap(
-      fun($&) -> "\\&";
-	 (Chr) -> [Chr]
-      end, String).
+replace_amps(Bin) ->
+    list_to_binary(
+      lists:flatmap(
+        fun($&) -> "\\&";
+           (Chr) -> [Chr]
+        end, binary_to_list(Bin))).

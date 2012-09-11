@@ -25,28 +25,28 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_service_log).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_mod).
 
--export([start/2,
-	 stop/1,
-	 log_user_send/4,
+-export([start/2, stop/1, log_user_send/4,
 	 log_user_receive/5]).
 
 -include("ejabberd.hrl").
+
 -include("jlib.hrl").
 
 start(Host, _Opts) ->
-    ejabberd_hooks:add(user_send_packet, Host,
-		       ?MODULE, log_user_send, 50),
-    ejabberd_hooks:add(user_receive_packet, Host,
-		       ?MODULE, log_user_receive, 50),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+		       log_user_send, 50),
+    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
+		       log_user_receive, 50),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(user_send_packet, Host,
-			  ?MODULE, log_user_send, 50),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+			  log_user_send, 50),
     ejabberd_hooks:delete(user_receive_packet, Host,
 			  ?MODULE, log_user_receive, 50),
     ok.
@@ -57,20 +57,39 @@ log_user_send(_DebugFlag, From, To, Packet) ->
 log_user_receive(_DebugFlag, _JID, From, To, Packet) ->
     log_packet(From, To, Packet, To#jid.lserver).
 
-
-log_packet(From, To, {xmlelement, Name, Attrs, Els}, Host) ->
-    Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
-    ServerJID = #jid{user = "", server = Host, resource = "",
-		     luser = "", lserver = Host, lresource = ""},
-    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-					  jlib:jid_to_string(To),
-					  Attrs),
-    FixedPacket = {xmlelement, Name, NewAttrs, Els},
-    lists:foreach(
-      fun(Logger) ->
-	      ejabberd_router:route(
-		ServerJID,
-		#jid{user = "", server = Logger, resource = "",
-		     luser = "", lserver = Logger, lresource = ""},
-		{xmlelement, "route", [], [FixedPacket]})
-      end, Loggers).
+log_packet(From, To,
+	   #xmlel{name = Name, attrs = Attrs, children = Els},
+	   Host) ->
+    Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers,
+                                     fun(L) ->
+                                             lists:map(
+                                               fun(S) ->
+                                                       B = iolist_to_binary(S),
+                                                       N = jlib:nameprep(B),
+                                                       if N /= error ->
+                                                               N
+                                                       end
+                                               end, L)
+                                     end, []),
+    ServerJID = #jid{user = <<"">>, server = Host,
+		     resource = <<"">>, luser = <<"">>, lserver = Host,
+		     lresource = <<"">>},
+    NewAttrs =
+	jlib:replace_from_to_attrs(jlib:jid_to_string(From),
+				   jlib:jid_to_string(To), Attrs),
+    FixedPacket = #xmlel{name = Name, attrs = NewAttrs,
+			 children = Els},
+    lists:foreach(fun (Logger) ->
+			  ejabberd_router:route(ServerJID,
+						#jid{user = <<"">>,
+						     server = Logger,
+						     resource = <<"">>,
+						     luser = <<"">>,
+						     lserver = Logger,
+						     lresource = <<"">>},
+						#xmlel{name = <<"route">>,
+						       attrs = [],
+						       children =
+							   [FixedPacket]})
+		  end,
+		  Loggers).

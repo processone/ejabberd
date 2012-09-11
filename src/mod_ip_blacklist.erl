@@ -27,100 +27,86 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_ip_blacklist).
+
 -author('mremond@process-one.net').
 
 -behaviour(gen_mod).
 
 %% API:
--export([start/2,
-         preinit/2,
-         init/1,
-         stop/1]).
+-export([start/2, preinit/2, init/1, stop/1]).
+
 -export([update_bl_c2s/0]).
+
 %% Hooks:
 -export([is_ip_in_c2s_blacklist/2]).
 
 -include("ejabberd.hrl").
 
 -define(PROCNAME, ?MODULE).
--define(BLC2S, "http://xaai.process-one.net/bl_c2s.txt").
--define(UPDATE_INTERVAL, 6). %% in hours
+
+-define(BLC2S,
+	<<"http://xaai.process-one.net/bl_c2s.txt">>).
+
+-define(UPDATE_INTERVAL, 6).
 
 -record(state, {timer}).
--record(bl_c2s, {ip}).
 
-%% Start once for all vhost
+-record(bl_c2s, {ip = <<"">> :: binary()}).
+
 start(_Host, _Opts) ->
-   Pid = spawn(?MODULE, preinit, [self(), #state{}]),
-   receive {ok, Pid, PreinitResult} ->
-       PreinitResult
-   end.
+    Pid = spawn(?MODULE, preinit, [self(), #state{}]),
+    receive {ok, Pid, PreinitResult} -> PreinitResult end.
 
 preinit(Parent, State) ->
     Pid = self(),
     try register(?PROCNAME, Pid) of
-        true ->
-            Parent ! {ok, Pid, true},
-            init(State)
-    catch error:_ ->
-        Parent ! {ok, Pid, true}
+      true -> Parent ! {ok, Pid, true}, init(State)
+    catch
+      error:_ -> Parent ! {ok, Pid, true}
     end.
 
-%% TODO:
-stop(_Host) ->
-    ok.
+stop(_Host) -> ok.
 
-init(State)->
+init(State) ->
     inets:start(),
-    ets:new(bl_c2s, [named_table, public, {keypos, #bl_c2s.ip}]),
+    ets:new(bl_c2s,
+	    [named_table, public, {keypos, #bl_c2s.ip}]),
     update_bl_c2s(),
-    %% Register hooks for blacklist
-    ejabberd_hooks:add(check_bl_c2s, ?MODULE, is_ip_in_c2s_blacklist, 50),
-    %% Set timer: Download the blacklist file every 6 hours
-    timer:apply_interval(timer:hours(?UPDATE_INTERVAL), ?MODULE, update_bl_c2s, []),
+    ejabberd_hooks:add(check_bl_c2s, ?MODULE,
+		       is_ip_in_c2s_blacklist, 50),
+    timer:apply_interval(timer:hours(?UPDATE_INTERVAL),
+			 ?MODULE, update_bl_c2s, []),
     loop(State).
 
-%% Remove timer when stop is received.
-loop(_State) ->
-    receive
-	stop ->
-	    ok
-    end.
+loop(_State) -> receive stop -> ok end.
 
-%% Download blacklist file from ProcessOne XAAI
-%% and update the table internal table
-%% TODO: Support comment lines starting by %
 update_bl_c2s() ->
     ?INFO_MSG("Updating C2S Blacklist", []),
-    case http_p1:request(?BLC2S) of
-	{ok, {{_Version, 200, _Reason}, _Headers, Body}} ->
-	    IPs = string:tokens(Body,"\n"),
-	    ets:delete_all_objects(bl_c2s),
-	    lists:foreach(
-	      fun(IP) ->
-		      ets:insert(bl_c2s, #bl_c2s{ip=list_to_binary(IP)})
-	      end, IPs);
-	{error, Reason} ->
-	    ?ERROR_MSG("Cannot download C2S blacklist file. Reason: ~p",
-		       [Reason])
+    case http_p1:get(?BLC2S) of
+      {ok, 200, _Headers, Body} ->
+	  IPs = str:tokens(Body, <<"\n">>),
+	  ets:delete_all_objects(bl_c2s),
+	  lists:foreach(fun (IP) ->
+				ets:insert(bl_c2s,
+					   #bl_c2s{ip = IP})
+			end,
+			IPs);
+      {error, Reason} ->
+	  ?ERROR_MSG("Cannot download C2S blacklist file. "
+		     "Reason: ~p",
+		     [Reason])
     end.
 
-%% Hook is run with:
-%% ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]),
-%% Return: false: IP not blacklisted
-%%         true: IP is blacklisted
-%% IPV4 IP tuple:
 is_ip_in_c2s_blacklist(_Val, IP) when is_tuple(IP) ->
-    BinaryIP = list_to_binary(jlib:ip_to_list(IP)),
+    BinaryIP = jlib:ip_to_list(IP),
     case ets:lookup(bl_c2s, BinaryIP) of
-	[] -> %% Not in blacklist
-	    false;
-	[_] -> %% Blacklisted!
-	    {stop, true}
+      [] -> %% Not in blacklist
+	  false;
+      [_] -> {stop, true}
     end;
-is_ip_in_c2s_blacklist(_Val, _IP) ->
-    false.
+is_ip_in_c2s_blacklist(_Val, _IP) -> false.
 
 %% TODO:
 %% - For now, we do not kick user already logged on a given IP after
 %%    we update the blacklist.
+
