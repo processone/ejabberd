@@ -13,7 +13,7 @@ EJD1CTL=$EJD1/bin/ejabberd
 EJD2CTL=$EJD2/bin/ejabberd
 SUMMARIES_GLOB=$BASE'/test/ct_report/ct_run*/test.*.logs/*/suite.summary'
 
-make devrel
+make devrel testrel
 echo -n "starting ejabberd node 1: "
 $EJD1CTL start && echo ok || echo failed
 echo -n "starting ejabberd node 2: "
