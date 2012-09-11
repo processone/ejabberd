@@ -142,26 +142,42 @@ handle_cast({compute, globalUniqueSessionCount},
 
 handle_cast({compute, modPrivacyListLength},
             #state{computing_num = Num} = State) ->
-    ejabberd_snmp_core:set_counter(modPrivacyListLength,
-        ?BACKEND:privacy_list_length()),
+    case ?BACKEND:privacy_list_length() of
+        {error, Error} ->
+            ?ERROR_MSG("Error while computing privacy list length in ~p:~n~p",
+                       [?BACKEND, Error]);
+        Value -> ejabberd_snmp_core:set_counter(modPrivacyListLength, Value)
+    end,
     {noreply, State#state{computing_num = Num - 1}};
 
 handle_cast({compute, modRosterSize},
             #state{computing_num = Num} = State) ->
-    ejabberd_snmp_core:set_counter(modRosterSize,
-        ?BACKEND:roster_size()),
+    case ?BACKEND:roster_size() of
+        {error, Error} ->
+            ?ERROR_MSG("Error while computing roster size in ~p:~n~p",
+                       [?BACKEND, Error]);
+        Value -> ejabberd_snmp_core:set_counter(modRosterSize, Value)
+    end,
     {noreply, State#state{computing_num = Num - 1}};
 
 handle_cast({compute, modRosterGroups},
             #state{computing_num = Num} = State) ->
-    ejabberd_snmp_core:set_counter(modRosterGroups,
-        ?BACKEND:roster_groups()),
+    case ?BACKEND:roster_groups() of
+        {error, Error} ->
+            ?ERROR_MSG("Error while computing roster groups in ~p:~n~p",
+                       [?BACKEND, Error]);
+        Value -> ejabberd_snmp_core:set_counter(modRosterGroups, Value)
+    end,
     {noreply, State#state{computing_num = Num - 1}};
 
 handle_cast({compute, modRegisterUserCount},
             #state{computing_num = Num} = State) ->
-    ejabberd_snmp_core:set_counter(modRegisterUserCount,
-        ?BACKEND:registered_count()),
+    case ?BACKEND:registered_count() of
+        {error, Error} ->
+            ?ERROR_MSG("Error while computing registered count in ~p:~n~p",
+                       [?BACKEND, Error]);
+        Value -> ejabberd_snmp_core:set_counter(modRegisterUserCount, Value)
+    end,
     {noreply, State#state{computing_num = Num - 1}};
 
 

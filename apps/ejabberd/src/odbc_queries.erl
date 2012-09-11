@@ -45,6 +45,9 @@
 	 add_spool/2,
 	 get_and_del_spool_msg_t/2,
 	 del_spool_msg/2,
+         get_average_roster_size/1,
+         get_average_rostergroup_size/1,
+         clear_rosters/1,
 	 get_roster/2,
 	 get_roster_jid_groups/2,
 	 get_roster_groups/3,
@@ -63,6 +66,8 @@
 	 del_user_private_storage/2,
 	 get_default_privacy_list/2,
 	 get_default_privacy_list_t/1,
+         count_privacy_lists/1,
+         clear_privacy_lists/1,
 	 get_privacy_list_names/2,
 	 get_privacy_list_names_t/1,
 	 get_privacy_list_id/3,
@@ -290,6 +295,28 @@ del_spool_msg(LServer, Username) ->
       LServer,
       ["delete from spool where username='", Username, "';"]).
 
+get_average_roster_size(Server) ->
+    ejabberd_odbc:sql_query(
+        Server,
+        ["select avg(items) from
+         (select count(*) as items from rosterusers group by username) as items;"]).
+
+get_average_rostergroup_size(Server) ->
+    ejabberd_odbc:sql_query(
+        Server,
+        ["select avg(roster) from
+         (select count(*) as roster from rostergroups group by username) as roster;"]).
+
+clear_rosters(Server) ->
+    ejabberd_odbc:sql_transaction(
+      Server,
+      fun() ->
+	      ejabberd_odbc:sql_query_t(
+		["delete from rosterusers;"]),
+	      ejabberd_odbc:sql_query_t(
+		["delete from rostergroups;"])
+      end).
+
 get_roster(LServer, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
@@ -468,6 +495,12 @@ get_default_privacy_list_t(Username) ->
     ejabberd_odbc:sql_query_t(
       ["select name from privacy_default_list "
        "where username='", Username, "';"]).
+
+count_privacy_lists(LServer) ->
+    ejabberd_odbc:sql_query(LServer, ["select count(*) from privacy_list;"]).
+
+clear_privacy_lists(LServer) ->
+    ejabberd_odbc:sql_query(LServer, ["delete from privacy_list;"]).
 
 get_privacy_list_names(LServer, Username) ->
     ejabberd_odbc:sql_query(
