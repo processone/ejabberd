@@ -107,6 +107,16 @@ subscribed(NodeId) ->
      || S <- states(NodeId),
 	S#pubsub_state.subscriptions =/= []].
 
+offline_subscribers(NodeId) ->
+    lists:filter(fun ({U, S, <<"">>}) ->
+			 ejabberd_sm:get_user_resources(U, S) == [];
+		     ({U, S, R}) ->
+			 not
+			   lists:member(R, ejabberd_sm:get_user_resources(U, S))
+		 end,
+    subscribed(NodeId)).
+
+
 owners(NodeId) ->
     [stateid(S)
      || S <- states(NodeId),
@@ -254,3 +264,20 @@ pep_subscriptions(LUser, LServer, LResource) ->
 	  end;
       _ -> []
     end.
+
+purge_offline_subscriptions() ->
+    lists:foreach(fun (K) ->
+		[N] = mnesia:dirty_read({pubsub_node, K}),
+		I = element(3, N),
+		lists:foreach(fun (JID) ->
+			    case mnesia:dirty_read({pubsub_state, {JID, I}}) of
+				[{pubsub_state, K, _, _, _, [{subscribed, S}]}] ->
+				    mnesia:dirty_delete({pubsub_subscription, S});
+				_ ->
+				    ok
+			    end,
+			    mnesia:dirty_delete({pubsub_state, {JID, I}})
+		    end,
+		    offline_subscribers(I))
+	end,
+	mnesia:dirty_all_keys(pubsub_node)).
