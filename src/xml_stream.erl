@@ -89,8 +89,8 @@ process_data(CallbackPid, Stack, Data) ->
 		    catch gen_fsm:send_event(CallbackPid,
 					     {xmlstreamend, EndName}),
 		    [];
-	    [#xmlel{name = Name, attrs = Attrs, children = Els}
-	     | xmlstreamstart] ->
+	    [#xmlel{name = Name, attrs = Attrs, children = Els},
+	     xmlstreamstart] ->
 		NewEl = #xmlel{name = Name, attrs = Attrs,
 			       children = lists:reverse(Els)},
 		catch gen_fsm:send_event(CallbackPid,
