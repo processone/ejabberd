@@ -389,20 +389,13 @@ process(Handlers, Request) ->
       false -> process(HandlersLeft, Request)
     end.
 
-process_request(#state{request_method = Method,
-		       request_path = {abs_path, Path}, request_auth = Auth,
-		       request_lang = Lang, request_handlers = RequestHandlers,
-		       request_host = Host, request_port = Port,
-		       request_tp = TP, request_headers = RequestHeaders,
-		       sockmod = SockMod,
-		       websocket_handlers = WebSocketHandlers,
-		       socket = Socket} =
-		    State)
+extract_path_query(#state{request_method = Method,
+			  request_path = {abs_path, Path}})
     when Method =:= 'GET' orelse
 	   Method =:= 'HEAD' orelse
 	     Method =:= 'DELETE' orelse Method =:= 'OPTIONS' ->
     case catch url_decode_q_split(Path) of
-      {'EXIT', _} -> make_bad_request(State);
+      {'EXIT', _} -> false;
       {NPath, Query} ->
 	  LPath = [path_decode(NPE)
 		   || NPE <- str:tokens(NPath, <<"/">>)],
@@ -410,69 +403,15 @@ process_request(#state{request_method = Method,
 		     {'EXIT', _Reason} -> [];
 		     LQ -> LQ
 		   end,
-	  {ok, IPHere} = case SockMod of
-			   gen_tcp -> inet:peername(Socket);
-			   _ -> SockMod:peername(Socket)
-			 end,
-	  XFF = proplists:get_value('X-Forwarded-For',
-				    RequestHeaders, []),
-	  IP = analyze_ip_xff(IPHere, XFF, Host),
-	  case ejabberd_websocket:check(Path, RequestHeaders) of
-	    {true, VSN} ->
-		{_, Origin} = case
-				lists:keyfind(<<"Sec-Websocket-Origin">>, 1,
-					      RequestHeaders)
-				  of
-				false ->
-				    lists:keyfind(<<"Origin">>, 1,
-						  RequestHeaders);
-				Value -> Value
-			      end,
-		Ws = #ws{socket = Socket, sockmod = SockMod,
-			 ws_autoexit = false, ip = IP, path = LPath, q = LQuery,
-			 vsn = VSN, host = Host, port = Port, origin = Origin,
-			 headers = RequestHeaders},
-		process(WebSocketHandlers, Ws),
-		none;
-	    false ->
-		Request = #request{method = Method, path = LPath,
-				   q = LQuery, auth = Auth, lang = Lang,
-				   host = Host, port = Port, tp = TP,
-				   headers = RequestHeaders, ip = IP},
-		case process(RequestHandlers, Request) of
-		  El when is_record(El, xmlel) ->
-		      make_xhtml_output(State, 200, [], El);
-		  {Status, Headers, El}
-		      when is_record(El, xmlel) ->
-		      make_xhtml_output(State, Status, Headers, El);
-		  Output when is_binary(Output) or is_list(Output) ->
-		      make_text_output(State, 200, [], Output);
-		  {Status, Headers, Output}
-		      when is_binary(Output) or is_list(Output) ->
-		      make_text_output(State, Status, Headers, Output);
-		  {Status, Reason, Headers, Output}
-		      when is_binary(Output) or is_list(Output) ->
-		      make_text_output(State, Status, Reason, Headers, Output)
-		end
-	  end
+	  {LPath, LQuery, <<"">>}
     end;
-process_request(#state{request_method = Method,
-		       request_path = {abs_path, Path}, request_auth = Auth,
-		       request_content_length = Len, request_lang = Lang,
-		       sockmod = SockMod, socket = Socket, request_host = Host,
-		       request_port = Port, request_tp = TP,
-		       request_headers = RequestHeaders,
-		       request_handlers = RequestHandlers} =
-		    State)
+extract_path_query(#state{request_method = Method,
+			  request_path = {abs_path, Path},
+			  request_content_length = Len,
+			  sockmod = SockMod,
+			  socket = Socket} = State)
     when (Method =:= 'POST' orelse Method =:= 'PUT') andalso
 	   is_integer(Len) ->
-    {ok, IPHere} = case SockMod of
-		     gen_tcp -> inet:peername(Socket);
-		     _ -> SockMod:peername(Socket)
-		   end,
-    XFF = proplists:get_value('X-Forwarded-For',
-			      RequestHeaders, []),
-    IP = analyze_ip_xff(IPHere, XFF, Host),
     case SockMod of
       gen_tcp -> inet:setopts(Socket, [{packet, 0}]);
       _ -> ok
@@ -480,7 +419,7 @@ process_request(#state{request_method = Method,
     Data = recv_data(State, Len),
     ?DEBUG("client data: ~p~n", [Data]),
     case catch url_decode_q_split(Path) of
-      {'EXIT', _} -> make_bad_request(State);
+      {'EXIT', _} -> false;
       {NPath, _Query} ->
 	  LPath = [path_decode(NPE)
 		   || NPE <- str:tokens(NPath, <<"/">>)],
@@ -488,25 +427,83 @@ process_request(#state{request_method = Method,
 		     {'EXIT', _Reason} -> [];
 		     LQ -> LQ
 		   end,
-	  Request = #request{method = Method, path = LPath,
-			     q = LQuery, auth = Auth, data = Data, lang = Lang,
-			     host = Host, port = Port, tp = TP,
-			     headers = RequestHeaders, ip = IP},
-	  case process(RequestHandlers, Request) of
-	    El when is_record(El, xmlel) ->
-		make_xhtml_output(State, 200, [], El);
-	    {Status, Headers, El}
-		when is_record(El, xmlel) ->
-		make_xhtml_output(State, Status, Headers, El);
-	    Output when is_binary(Output) or is_list(Output) ->
-		make_text_output(State, 200, [], Output);
-	    {Status, Headers, Output}
-		when is_binary(Output) or is_list(Output) ->
-		make_text_output(State, Status, Headers, Output);
-	    {Status, Reason, Headers, Output}
-		when is_binary(Output) or is_list(Output) ->
-		make_text_output(State, Status, Reason, Headers, Output)
-	  end
+          {LPath, LQuery, Data}
+    end;
+extract_path_query(_State) ->
+    false.
+
+process_request(#state{request_method = Method,
+		       request_path = {abs_path, Path},
+		       request_auth = Auth,
+		       request_lang = Lang,
+		       sockmod = SockMod,
+		       socket = Socket,
+		       request_host = Host,
+		       request_port = Port,
+		       request_tp = TP,
+		       websocket_handlers = WebSocketHandlers,
+		       request_headers = RequestHeaders,
+		       request_handlers = RequestHandlers} = State) ->
+    case extract_path_query(State) of
+	false ->
+	    make_bad_request(State);
+	{LPath, LQuery, Data} ->
+	    {ok, IPHere} =
+		case SockMod of
+		    gen_tcp ->
+			inet:peername(Socket);
+		    _ ->
+			SockMod:peername(Socket)
+		end,
+	    XFF = proplists:get_value('X-Forwarded-For', RequestHeaders, []),
+	    IP = analyze_ip_xff(IPHere, XFF, Host),
+	    case Method=:='GET' andalso ejabberd_websocket:check(Path, RequestHeaders) of
+		{true, VSN} ->
+		    {_, Origin} = case lists:keyfind(<<"Sec-Websocket-Origin">>, 1, RequestHeaders) of
+				      false -> lists:keyfind(<<"Origin">>, 1, RequestHeaders);
+				      Value -> Value
+				  end,
+		    Ws = #ws{socket = Socket,
+			     sockmod = SockMod,
+			     ws_autoexit = false,
+			     ip = IP,
+			     path = LPath,
+			     q = LQuery,
+			     vsn = VSN,
+			     host = Host,
+			     port = Port,
+			     origin = Origin,
+			     headers = RequestHeaders
+			    },
+		    process(WebSocketHandlers, Ws);
+		false ->
+		    Request = #request{method = Method,
+				       path = LPath,
+				       q = LQuery,
+				       auth = Auth,
+				       data = Data,
+				       lang = Lang,
+				       host = Host,
+				       port = Port,
+				       tp = TP,
+				       headers = RequestHeaders,
+				       ip = IP},
+                    case process(RequestHandlers, Request) of
+                        El when is_record(El, xmlel) ->
+                            make_xhtml_output(State, 200, [], El);
+                        {Status, Headers, El}
+                          when is_record(El, xmlel) ->
+                            make_xhtml_output(State, Status, Headers, El);
+                        Output when is_binary(Output) or is_list(Output) ->
+                            make_text_output(State, 200, [], Output);
+                        {Status, Headers, Output}
+                          when is_binary(Output) or is_list(Output) ->
+                            make_text_output(State, Status, Headers, Output);
+                        {Status, Reason, Headers, Output}
+                          when is_binary(Output) or is_list(Output) ->
+                            make_text_output(State, Status, Reason, Headers, Output)
+                    end
+	    end
     end;
 process_request(State) -> make_bad_request(State).
 
