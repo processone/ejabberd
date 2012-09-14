@@ -261,7 +261,7 @@ handshake({'draft-hybi', _}, _Sock, _SocketMod, Headers,
     [<<"HTTP/1.1 101 Switching Protocols\r\n">>,
      <<"Upgrade: websocket\r\n">>,
      <<"Connection: Upgrade\r\n">>,
-     SubProtocolHeader
+     SubProtocolHeader,
      <<"Sec-WebSocket-Accept: ">>, Hash, <<"\r\n\r\n">>].
 
 build_challenge({'draft-hixie', 0},
