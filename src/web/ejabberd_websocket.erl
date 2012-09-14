@@ -360,7 +360,7 @@ process_hixie_68({_, L}, <<255, T/binary>>) ->
     {L2, Recv, Send} = process_hixie_68({false, <<>>}, T),
     {L2, [L | Recv], Send};
 process_hixie_68({true, L}, <<H/utf8, T/binary>>) ->
-    process_hixie_68({true, <<L/binary, H>>}, T).
+    process_hixie_68({true, <<L/binary, H/utf8>>}, T).
 
 -record(hybi_8_state,
 	{mask = none, offset = 0, left, final_frame = true,

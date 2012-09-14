@@ -143,13 +143,12 @@ handle_sync_event(close, _From, _StateName, StateData) ->
 handle_info(closed, _StateName, StateData) ->
     {stop, normal, StateData};
 handle_info({browser, Packet}, StateName, StateData) ->
-    NPacket = unicode:characters_to_binary(Packet, latin1),
     NewState = case StateData#state.waiting_input of
 		 false ->
-		     Input = <<(StateData#state.input)/binary, NPacket/binary>>,
+		     Input = <<(StateData#state.input)/binary, Packet/binary>>,
 		     StateData#state{input = Input};
 		 Receiver ->
-		     Receiver ! {tcp, StateData#state.socket, NPacket},
+		     Receiver ! {tcp, StateData#state.socket, Packet},
 		     cancel_timer(StateData#state.timer),
 		     Timer = erlang:start_timer(StateData#state.timeout,
 						self(), []),
