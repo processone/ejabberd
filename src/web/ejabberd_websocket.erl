@@ -40,7 +40,7 @@
 
 -author('ecestari@process-one.net').
 
--export([connect/2, check/2, is_acceptable/1]).
+-export([connect/2, check/2, socket_handoff/6]).
 
 -include("ejabberd.hrl").
 
@@ -48,14 +48,25 @@
 
 -include("ejabberd_http.hrl").
 
+-define(CT_XML, {<<"Content-Type">>, <<"text/xml; charset=utf-8">>}).
+-define(CT_PLAIN, {<<"Content-Type">>, <<"text/plain">>}).
+
+-define(AC_ALLOW_ORIGIN, {<<"Access-Control-Allow-Origin">>, <<"*">>}).
+-define(AC_ALLOW_METHODS, {<<"Access-Control-Allow-Methods">>, <<"GET, OPTIONS">>}).
+-define(AC_ALLOW_HEADERS, {<<"Access-Control-Allow-Headers">>, <<"Content-Type">>}).
+-define(AC_MAX_AGE, {<<"Access-Control-Max-Age">>, <<"86400">>}).
+
+-define(OPTIONS_HEADER, [?CT_PLAIN, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_METHODS,
+                          ?AC_ALLOW_HEADERS, ?AC_MAX_AGE]).
+-define(HEADER, [?CT_XML, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_HEADERS]).
+
 check(_Path, Headers) ->
     VsnSupported = [{'draft-hybi', 8}, {'draft-hybi', 13},
 		    {'draft-hixie', 0}, {'draft-hixie', 68}],
     check_websockets(VsnSupported, Headers).
 
-is_acceptable(#ws{origin = Origin, protocol = Protocol,
-		  headers = Headers, acceptable_origins = Origins,
-		  auth_module = undefined}) ->
+is_acceptable(_LocalPath, Origin, _IP, _Q, Headers, Protocol, Origins,
+              undefined) ->
     ClientProtocol = find_subprotocol(Headers),
     case {(Origins == []) or lists:member(Origin, Origins),
 	  ClientProtocol, Protocol}
@@ -68,13 +79,104 @@ is_acceptable(#ws{origin = Origin, protocol = Protocol,
       {_, false, _} -> true;
       {_, P, P} -> true;
       _ = E ->
-	  ?INFO_MSG("Wrong protocol requested : ~p", [E]), false
+	  ?INFO_MSG("Wrong protocol requested : ~p", [E]),
+	  false
     end;
-is_acceptable(#ws{local_path = LocalPath,
-		  origin = Origin, ip = IP, q = Q, protocol = Protocol,
-		  headers = Headers, auth_module = Module}) ->
-    Module:is_acceptable(LocalPath, Q, Origin, Protocol, IP,
-			 Headers).
+is_acceptable(LocalPath, Origin, IP, Q, Headers, Protocol, _Origins,
+              AuthModule) ->
+  AuthModule:is_acceptable(LocalPath, Q, Origin, Protocol, IP, Headers).
+
+socket_handoff(LocalPath, #request{method = 'GET', ip = IP, q = Q, path = Path,
+                                   headers = Headers, host = Host, port = Port},
+               Socket, SockMod, Opts, HandlerModule) ->
+    {_, Origin} = case lists:keyfind(<<"Sec-Websocket-Origin">>, 1, Headers) of
+                      false ->
+                          case lists:keyfind(<<"Origin">>, 1, Headers) of
+                              false -> {value, undefined};
+                              Value2 -> Value2
+                          end;
+                      Value -> Value
+                  end,
+    case Origin of
+        undefined ->
+            {200, ?HEADER, get_human_html_xmlel()};
+        _ ->
+            Protocol = case lists:keysearch(protocol, 1, Opts) of
+                           {value, {protocol, P}} -> P;
+                           false -> undefined
+                       end,
+            Origins =  case lists:keysearch(origins, 1, Opts) of
+                           {value, {origins, O}} -> O;
+                           false -> []
+                       end,
+            Auth =  case lists:keysearch(auth, 1, Opts) of
+                        {value, {auth, A}} -> A;
+                        false -> undefined
+                    end,
+            case is_acceptable(LocalPath, Origin, IP, Q, Headers, Protocol, Origins, Auth) of
+                true ->
+                    case check(LocalPath, Headers) of
+                        {true, Vsn} ->
+                            WS = #ws{vsn = Vsn,
+                                     socket = Socket,
+                                     sockmod = SockMod,
+                                     ws_autoexit = false,
+                                     ip = IP,
+                                     origin = Origin,
+                                     q = Q,
+                                     host = Host,
+                                     port = Port,
+                                     path = Path,
+                                     headers = Headers,
+                                     local_path = LocalPath},
+
+                            connect(WS, HandlerModule);
+                        _ ->
+                            {200, ?HEADER, get_human_html_xmlel()}
+                    end;
+                _ ->
+                    {403, ?HEADER, #xmlel{name = <<"h1">>,
+                                          children = [{xmlcdata, <<"403 Forbiden">>}]}}
+            end
+    end;
+socket_handoff(_, #request{method = 'OPTIONS'}, _, _, _, _) ->
+    {200, ?OPTIONS_HEADER, []};
+socket_handoff(_, #request{method = 'HEAD'}, _, _, _, _) ->
+    {200, ?HEADER, []};
+socket_handoff(_, _, _, _, _, _) ->
+    {400, ?HEADER, #xmlel{name = <<"h1">>,
+                          children = [{xmlcdata, <<"400 Bad Request">>}]}}.
+
+get_human_html_xmlel() ->
+    Heading = <<"ejabberd ", (jlib:atom_to_binary(?MODULE))/binary>>,
+    #xmlel{name = <<"html">>,
+           attrs =
+               [{<<"xmlns">>, <<"http://www.w3.org/1999/xhtml">>}],
+           children =
+               [#xmlel{name = <<"head">>, attrs = [],
+                       children =
+                           [#xmlel{name = <<"title">>, attrs = [],
+                                   children = [{xmlcdata, Heading}]}]},
+                #xmlel{name = <<"body">>, attrs = [],
+                       children =
+                           [#xmlel{name = <<"h1">>, attrs = [],
+                                   children = [{xmlcdata, Heading}]},
+                            #xmlel{name = <<"p">>, attrs = [],
+                                   children =
+                                       [{xmlcdata, <<"An implementation of ">>},
+                                        #xmlel{name = <<"a">>,
+                                               attrs =
+                                                   [{<<"href">>,
+                                                     <<"http://tools.ietf.org/html/rfc6455">>}],
+                                               children =
+                                                   [{xmlcdata,
+                                                     <<"WebSocket protocol">>}]}]},
+                            #xmlel{name = <<"p">>, attrs = [],
+                                   children =
+                                       [{xmlcdata,
+                                         <<"This web page is only informative. To "
+                                           "use WebSocket connection you need a Jabber/XMPP "
+                                           "client that supports it.">>}]}]}]}.
 
 connect(#ws{vsn = Vsn, socket = Socket, q = Q,
 	    origin = Origin, host = Host, port = Port,

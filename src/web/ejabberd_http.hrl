@@ -46,10 +46,7 @@
          path = []               :: [binary()],
          headers = []            :: [{atom() | binary(), binary()}],
          local_path = []         :: [binary()],
-         q = []                  :: [{binary() | nokey, binary()}],
-         protocol                :: binary(),
-	 acceptable_origins = [] :: [binary()],
-         auth_module             :: atom()}).
+         q = []                  :: [{binary() | nokey, binary()}]}).
 
 -type method() :: 'GET' | 'HEAD' | 'DELETE' | 'OPTIONS' | 'PUT' | 'POST' | 'TRACE'.
 -type protocol() :: http | https.
