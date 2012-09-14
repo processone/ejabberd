@@ -35,8 +35,7 @@
 	 handle_sync_event/4, code_change/4, handle_info/3,
 	 terminate/3, send_xml/2, setopts/2, sockname/1,
 	 peername/1, controlling_process/2, become_controller/2,
-	 close/1,
-	 socket_handoff/5]).
+	 close/1, socket_handoff/6]).
 
 -include("ejabberd.hrl").
 
@@ -98,9 +97,9 @@ become_controller(FsmRef, C2SPid) ->
 close({http_ws, FsmRef, _IP}) ->
     catch gen_fsm:sync_send_all_state_event(FsmRef, close).
 
-socket_handoff(LocalPath, Request, Socket, SockMod, Opts) ->
+socket_handoff(LocalPath, Request, Socket, SockMod, Buf, Opts) ->
     ejabberd_websocket:socket_handoff(LocalPath, Request, Socket, SockMod,
-                                      Opts, ?MODULE).
+                                      Buf, Opts, ?MODULE).
 
 %%% Internal
 

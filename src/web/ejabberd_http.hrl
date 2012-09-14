@@ -46,7 +46,8 @@
          path = []               :: [binary()],
          headers = []            :: [{atom() | binary(), binary()}],
          local_path = []         :: [binary()],
-         q = []                  :: [{binary() | nokey, binary()}]}).
+         q = []                  :: [{binary() | nokey, binary()}],
+         buf                     :: binary()}).
 
 -type method() :: 'GET' | 'HEAD' | 'DELETE' | 'OPTIONS' | 'PUT' | 'POST' | 'TRACE'.
 -type protocol() :: http | https.
