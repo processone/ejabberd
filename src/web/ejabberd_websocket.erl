@@ -413,16 +413,35 @@ process_hybi_8(#hybi_8_state{unprocessed = none,
 	  {State3, Recv, Send} = process_hybi_8(#hybi_8_state{},
 						Unprocessed),
 	  case Opcode of
-	    9 ->
-		Frame = encode_frame({'draft-hybi', 8}, Unprocessed,
-				     10),
-		{State3#hybi_8_state{unmasked_msg = UnmaskedMsg}, Recv,
-		 [Frame | Send]};
 	    X when X < 3 ->
 		{State3,
 		 [iolist_to_binary([UnmaskedMsg, UnmaskedPre, Unmasked])
 		  | Recv],
 		 Send};
+	    9 -> % Ping
+		Frame = encode_frame({'draft-hybi', 8}, Unprocessed,
+				     10),
+		{State3#hybi_8_state{unmasked_msg = UnmaskedMsg}, Recv,
+		 [Frame | Send]};
+            8 -> % Close
+                CloseCode = case Unmasked of
+                                <<Code:16/integer-big, Message/binary>> ->
+                                    ?DEBUG("WebSocket close op: ~p ~s",
+                                           [Code, Message]),
+                                    Code;
+                                <<Code:16/integer-big>> ->
+                                    ?DEBUG("WebSocket close op: ~p", [Code]),
+                                    Code;
+                                _ ->
+                                    ?DEBUG("WebSocket close op unknown: ~p",
+                                           [Unmasked]),
+                                    1000
+                            end,
+
+                Frame = encode_frame({'draft-hybi', 8},
+                                     <<CloseCode:16/integer-big>>, 8),
+                {State3#hybi_8_state{unmasked_msg=UnmaskedMsg}, Recv,
+                 [Frame | Send]};
 	    _ ->
 		{State3#hybi_8_state{unmasked_msg = UnmaskedMsg}, Recv,
 		 Send}
