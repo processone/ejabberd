@@ -56,8 +56,7 @@ check(_Path, Headers) ->
 is_acceptable(#ws{origin = Origin, protocol = Protocol,
 		  headers = Headers, acceptable_origins = Origins,
 		  auth_module = undefined}) ->
-    ClientProtocol =
-	lists:keyfind(<<"Sec-Websocket-Protocol">>, 1, Headers),
+    ClientProtocol = find_subprotocol(Headers),
     case {(Origins == []) or lists:member(Origin, Origins),
 	  ClientProtocol, Protocol}
 	of
@@ -67,7 +66,7 @@ is_acceptable(#ws{origin = Origin, protocol = Protocol,
 		    []),
 	  false;
       {_, false, _} -> true;
-      {_, {_, P}, P} -> true;
+      {_, P, P} -> true;
       _ = E ->
 	  ?INFO_MSG("Wrong protocol requested : ~p", [E]), false
     end;
@@ -209,16 +208,29 @@ handshake({'draft-hixie', 0}, Sock, SocketMod, Headers,
 		[none] -> <<"">>;
 		QParams -> <<"?", (str:join(QParams, <<"&">>))/binary>>
 	      end,
+    SubProtocolHeader = case find_subprotocol(Headers) of
+                            false ->
+                                [];
+                            V ->
+                                [<<"Sec-Websocket-Protocol:">>, V, <<"\r\n">>]
+                        end,
     [<<"HTTP/1.1 101 WebSocket Protocol Handshake\r\n">>,
      <<"Upgrade: WebSocket\r\n">>,
      <<"Connection: Upgrade\r\n">>,
      <<"Sec-WebSocket-Origin: ">>, Origin, <<"\r\n">>,
+     SubProtocolHeader,
      <<"Sec-WebSocket-Location: ws://">>, HostPort, <<"/">>,
      str:join(Path, <<"/">>), QString, <<"\r\n\r\n">>,
      build_challenge({'draft-hixie', 0},
 		     {Key1, Key2, Body})];
 handshake({'draft-hixie', 68}, _Sock, _SocketMod,
 	  Headers, {Path, _Q, Origin, Host, Port}) ->
+    SubProtocolHeader = case find_subprotocol(Headers) of
+                            false ->
+                                [];
+                            V ->
+                                [<<"Sec-Websocket-Protocol:">>, V, <<"\r\n">>]
+                        end,
     HostPort = case lists:keyfind('Host', 1, Headers) of
 		 {_, Value} -> Value;
 		 _ ->
@@ -228,19 +240,28 @@ handshake({'draft-hixie', 68}, _Sock, _SocketMod,
 	       end,
     [<<"HTTP/1.1 101 Web Socket Protocol Handshake\r\n">>,
      <<"Upgrade: WebSocket\r\n">>,
-     <<"Connection: Upgrade\r\n">>, <<"WebSocket-Origin: ">>,
-     Origin, <<"\r\n">>, <<"WebSocket-Location: ws://">>,
+     <<"Connection: Upgrade\r\n">>,
+     <<"WebSocket-Origin: ">>, Origin, <<"\r\n">>,
+     SubProtocolHeader,
+     <<"WebSocket-Location: ws://">>,
      HostPort, <<"/">>, str:join(Path, <<"/">>),
      <<"\r\n\r\n">>];
 handshake({'draft-hybi', _}, _Sock, _SocketMod, Headers,
 	  {_Path, _Q, _Origin, _Host, _Port}) ->
     {_, Key} = lists:keyfind(<<"Sec-Websocket-Key">>, 1,
 			     Headers),
+    SubProtocolHeader = case find_subprotocol(Headers) of
+                            false ->
+                                [];
+                            V ->
+                                [<<"Sec-Websocket-Protocol:">>, V, <<"\r\n">>]
+                        end,
     Hash = jlib:encode_base64(
              sha:sha1(<<Key/binary, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11">>)),
     [<<"HTTP/1.1 101 Switching Protocols\r\n">>,
      <<"Upgrade: websocket\r\n">>,
      <<"Connection: Upgrade\r\n">>,
+     SubProtocolHeader
      <<"Sec-WebSocket-Accept: ">>, Hash, <<"\r\n\r\n">>].
 
 build_challenge({'draft-hixie', 0},
@@ -254,6 +275,20 @@ build_challenge({'draft-hixie', 0},
     Ckey = <<Part1:4/big-unsigned-integer-unit:8,
 	     Part2:4/big-unsigned-integer-unit:8, Key3/binary>>,
     erlang:md5(Ckey).
+
+find_subprotocol(Headers) ->
+    case lists:keysearch(<<"Sec-Websocket-Protocol">>, 1, Headers) of
+        false ->
+            case lists:keysearch(<<"Websocket-Protocol">>, 1, Headers) of
+                false ->
+                    false;
+                {value, {_, Protocol2}} ->
+                    Protocol2
+            end;
+        {value, {_, Protocol}} ->
+            Protocol
+    end.
+
 
 ws_loop(Vsn, HandlerState, Socket, WsHandleLoopPid,
 	SocketMode, WsAutoExit) ->
