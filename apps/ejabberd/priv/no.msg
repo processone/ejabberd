@@ -163,7 +163,6 @@
 {"List of modules to start","Liste over moduler som skal startes"}.
 {"Low level update script","Lavnivå oppdaterings skript"}.
 {"Make participants list public","Gjør deltakerlisten offentlig"}.
-{"Make room captcha protected","Gjør rommet captcha beskyttet"}.
 {"Make room members-only","Gjør rommet tilgjengelig kun for medlemmer"}.
 {"Make room moderated","Gjør rommet redaktørstyrt"}.
 {"Make room password protected","Passordbeskytt rommet"}.
@@ -325,7 +324,6 @@
 {"Sunday","søndag"}.
 {"That nickname is already in use by another occupant","Det kallenavnet er allerede i bruk av en annen deltaker"}.
 {"That nickname is registered by another person","Det kallenavnet er registrert av en annen person"}.
-{"The captcha is valid.","Captchaen er ikke gyldig"}.
 {"The collections with which a node is affiliated","Samlingene som en node er assosiert med"}.
 {"the password is","passordet er"}.
 {"This participant is kicked from the room because he sent an error message","Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding"}.
@@ -343,7 +341,6 @@
 {"Transactions Logged:","Loggede Transasksjoner:"}.
 {"Transactions Restarted:","Omstartede Transasksjoner:"}.
 {"Tuesday","tirsdag"}.
-{"Unable to generate a captcha","Umulig å generere en captcha"}.
 {"Unauthorized","Uautorisert"}.
 {"Update message of the day (don't send)","Oppdater melding for dagen (ikke send)"}.
 {"Update message of the day on all hosts (don't send)","Oppdater melding for dagen på alle maskiner (ikke send)"}.

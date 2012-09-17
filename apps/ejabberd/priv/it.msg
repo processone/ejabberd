@@ -163,7 +163,6 @@
 {"List of modules to start","Elenco dei moduli da avviare"}.
 {"Low level update script","Script di aggiornamento di basso livello"}.
 {"Make participants list public","Rendere pubblica la lista dei partecipanti"}.
-{"Make room captcha protected","Rendere la stanza protetta da captcha"}.
 {"Make room members-only","Rendere la stanza riservata ai membri"}.
 {"Make room moderated","Rendere la stanza moderata"}.
 {"Make room password protected","Rendere la stanza protetta da password"}.
@@ -325,7 +324,6 @@
 {"Sunday","Domenica"}.
 {"That nickname is already in use by another occupant","Il nickname è già in uso all'interno della conferenza"}.
 {"That nickname is registered by another person","Questo nickname è registrato da un'altra persona"}.
-{"The captcha is valid.","Il captcha è valido."}.
 {"The collections with which a node is affiliated","Le collezioni a cui è affiliato un nodo"}.
 {"the password is","la password è"}.
 {"This participant is kicked from the room because he sent an error message","Partecipante espulso dalla stanza perché ha inviato un messaggio non valido"}.
@@ -343,7 +341,6 @@
 {"Transactions Logged:","Transazioni con log:"}.
 {"Transactions Restarted:","Transazioni riavviate:"}.
 {"Tuesday","Martedì"}.
-{"Unable to generate a captcha","Impossibile generare un captcha"}.
 {"Unauthorized","Non autorizzato"}.
 {"Update ","Aggiornare "}.
 {"Update","Aggiornare"}.

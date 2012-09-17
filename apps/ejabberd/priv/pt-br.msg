@@ -165,7 +165,6 @@
 {"List of modules to start","Listas de módulos para inicializar"}.
 {"Low level update script","Script de atualização low level"}.
 {"Make participants list public","Tornar pública a lista de participantes"}.
-{"Make room captcha protected","Tornar protegida a senha da sala"}.
 {"Make room members-only","Tornar sala apenas para membros"}.
 {"Make room moderated","Tornar a sala moderada"}.
 {"Make room password protected","Tornar protegida a senha da sala"}.
@@ -330,7 +329,6 @@
 {"Sunday","Domingo"}.
 {"That nickname is already in use by another occupant","O apelido (nick) já está sendo utilizado"}.
 {"That nickname is registered by another person","O nick já está registrado por outra pessoa"}.
-{"The captcha is valid.","O captcha é inválido."}.
 {"The collections with which a node is affiliated","As coleções com as quais o nó está relacionado"}.
 {"the password is","a senha é"}.
 {"The password of your Jabber account was successfully changed.","A senha da sua conta Jabber foi mudada com sucesso."}.
@@ -355,7 +353,6 @@
 {"Transactions Logged:","Transações de log:"}.
 {"Transactions Restarted:","Transações reiniciadas:"}.
 {"Tuesday","Terça"}.
-{"Unable to generate a captcha","Impossível gerar um captcha"}.
 {"Unauthorized","Não Autorizado"}.
 {"Unregister a Jabber account","Deletar conta Jabber"}.
 {"Unregister","Deletar registro"}.

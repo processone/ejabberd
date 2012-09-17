@@ -27,26 +27,6 @@ msgstr "Anstataŭigita je nova konekto"
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-msgid "Enter the text you see"
-msgstr "Enmetu montrita teksto"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr "Viaj mesaĝoj al ~s estas blokata. Por malbloki ilin, iru al ~s"
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr ""
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "La aŭtomata Turingtesto estas ĝusta"
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "Ordonoj"
@@ -832,14 +812,6 @@ msgstr "Ĉi tiu babilejo ne estas anonima"
 msgid "A password is required to enter this room"
 msgstr "Pasvorto estas bezonata por eniri ĉi tiun babilejon"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "Ne eblis krei aŭtomatas turingteston"
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "Nekorekta pasvorto"
@@ -955,14 +927,6 @@ msgstr "Permesu al vizitantoj sendi statmesaĝon en ĉeest-sciigoj"
 #: mod_muc/mod_muc_room.erl:3032
 msgid "Allow visitors to change nickname"
 msgstr "Permesu al vizitantoj ŝanĝi siajn kaŝnomojn"
-
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "Farigu babilejon protektata per aŭtomata Turingtesto"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1144,15 +1108,6 @@ msgstr "Nur liveru sciigojn al konektataj uzantoj"
 msgid "The collections with which a node is affiliated"
 msgstr "Aro kun kiu nodo estas filigita"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr ""
-
-#: mod_register.erl:220
-#, fuzzy
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "Vi bezonas klienton kun x:data-funkcio por registri kaŝnomon"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"
@@ -1161,11 +1116,6 @@ msgstr "Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "Uzanto"
-
-#: mod_register.erl:251
-#, fuzzy
-msgid "Unable to generate a CAPTCHA"
-msgstr "Ne eblis krei aŭtomatas turingteston"
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy
@@ -1787,10 +1737,6 @@ msgstr ""
 #: web/mod_register_web.erl:524
 msgid "Unregister"
 msgstr ""
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "La aŭtomata Turingtesto estas ĝusta"
 
 #~ msgid "Encodings"
 #~ msgstr "Enkodigoj"

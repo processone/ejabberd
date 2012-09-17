@@ -163,7 +163,6 @@
 {"List of modules to start","Listo de moduloj por starti"}.
 {"Low level update script","Bazanivela ĝisdatigo-skripto"}.
 {"Make participants list public","Farigu partoprento-liston publika"}.
-{"Make room captcha protected","Farigu babilejon protektata per aŭtomata Turingtesto"}.
 {"Make room members-only","Farigu babilejon sole por membroj"}.
 {"Make room moderated","Farigu babilejon moderigata"}.
 {"Make room password protected","Farigu babilejon protektata per pasvorto"}.
@@ -325,7 +324,6 @@
 {"Sunday","Dimanĉo"}.
 {"That nickname is already in use by another occupant","Tiu kaŝnomo jam estas uzata de alia partoprenanto"}.
 {"That nickname is registered by another person","Kaŝnomo estas registrita de alia persono"}.
-{"The captcha is valid.","La aŭtomata Turingtesto estas ĝusta"}.
 {"The collections with which a node is affiliated","Aro kun kiu nodo estas filigita"}.
 {"the password is","la pasvorto estas"}.
 {"This participant is kicked from the room because he sent an error message","Ĉi tiu partoprenanta estas forpelata de la babilejo pro sendado de erar-mesaĝo"}.
@@ -343,7 +341,6 @@
 {"Transactions Logged:","Transakcioj protokolitaj"}.
 {"Transactions Restarted:","Transakcioj restartitaj"}.
 {"Tuesday","Mardo"}.
-{"Unable to generate a captcha","Ne eblis krei aŭtomatas turingteston"}.
 {"Unauthorized","Nepermesita"}.
 {"Update ","Ĝisdatigu "}.
 {"Update","Ĝisdatigu"}.

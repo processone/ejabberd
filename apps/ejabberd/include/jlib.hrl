@@ -88,17 +88,11 @@
 -define(NS_FEATURE_MSGOFFLINE,<<"msgoffline">>).
 
 -define(NS_COMPRESS,     <<"http://jabber.org/protocol/compress">>).
--define(NS_COMPRESS_BIN,      <<"http://jabber.org/protocol/compress">>).
+-define(NS_COMPRESS_BIN, <<"http://jabber.org/protocol/compress">>).
 
 -define(NS_CAPS,         <<"http://jabber.org/protocol/caps">>).
 -define(NS_SHIM,         <<"http://jabber.org/protocol/shim">>).
 -define(NS_ADDRESS,      <<"http://jabber.org/protocol/address">>).
-
-%% CAPTCHA related NSes.
--define(NS_OOB,<<"jabber:x:oob">>).
--define(NS_CAPTCHA,<<"urn:xmpp:captcha">>).
--define(NS_MEDIA,<<"urn:xmpp:media-element">>).
--define(NS_BOB,<<"urn:xmpp:bob">>).
 
 % TODO: remove<<"code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),

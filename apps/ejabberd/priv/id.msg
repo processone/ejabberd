@@ -33,7 +33,6 @@
 {"Backup to File at ","Backup ke File pada"}.
 {"Bad format","Format yang buruk"}.
 {"Birthday","Hari Lahir"}.
-{"CAPTCHA web page","CAPTCHA laman web"}.
 {"Change Password","Ubah Kata Sandi"}.
 {"Change User Password","Ubah User Password"}.
 {"Characters not allowed:","Karakter tidak diperbolehkan:"}.
@@ -122,7 +121,6 @@
 {"has been kicked","telah dikick"}.
 {" has set the subject to: ","telah menetapkan topik yaitu:"}.
 {"Host","Host"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","Jika Anda tidak melihat gambar CAPTCHA disini, silahkan kunjungi halaman web."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Jika Anda ingin menentukan port yang berbeda, sandi, pengkodean untuk layanan IRC, isi daftar ini dengan nilai-nilai dalam format '{\"server irc \", \"encoding \", port, \"sandi \"}'. Secara default ini menggunakan layanan \"~s \" pengkodean, port ~p, kata sandi kosong."}.
 {"Import Directory","Impor Direktori"}.
 {"Import File","Impor File"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","Daftar modul untuk memulai"}.
 {"Low level update script","Perbaruan naskah tingkat rendah"}.
 {"Make participants list public","Buat daftar participant diketahui oleh public"}.
-{"Make room captcha protected","Buat ruangan dilindungi dengan chapta"}.
 {"Make room members-only","Buat ruangan hanya untuk member saja"}.
 {"Make room moderated","Buat ruangan hanya untuk moderator saja"}.
 {"Make room password protected","Buat ruangan yang dilindungi dengan kata sandi"}.
@@ -338,8 +335,6 @@
 {"Sunday","Minggu"}.
 {"That nickname is already in use by another occupant","Julukan itu sudah digunakan oleh penghuni lain"}.
 {"That nickname is registered by another person","Julukan tersebut telah didaftarkan oleh orang lain"}.
-{"The captcha is valid.","Captcha ini benar."}.
-{"The CAPTCHA verification has failed","Verifikasi CAPTCHA telah gagal"}.
 {"The collections with which a node is affiliated","Koleksi dengan yang berafiliasi dengan sebuah node"}.
 {"the password is","kata sandi yaitu:"}.
 {"The password is too weak","Kata sandi terlalu lemah"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","Transaksi yang ditempuh:"}.
 {"Transactions Restarted:","Transaksi yang dijalankan ulang:"}.
 {"Tuesday","Selasa"}.
-{"Unable to generate a captcha","Tidak dapat menghasilkan captcha"}.
-{"Unable to generate a CAPTCHA","Tidak dapat menghasilkan CAPTCHA"}.
 {"Unauthorized","Ditolak"}.
 {"Unregister a Jabber account","Nonaktifkan akun jabber"}.
 {"Unregister","Nonaktifkan"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","Anda dapat mengubah kata sandi anda dilain waktu dengan menggunakan klien Jabber."}.
 {"You have been banned from this room","Anda telah diblokir dari ruangan ini"}.
 {"You must fill in field \"Nickname\" in the form","Anda harus mengisi kolom \"Julukan\" dalam formulir"}.
-{"You need a client that supports x:data and CAPTCHA to register","Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"}.
 {"You need a client that supports x:data to register the nickname","Anda memerlukan klien yang mendukung x:data untuk mendaftar julukan"}.
 {"You need an x:data capable client to configure mod_irc settings","Anda memerlukan x:data klien untuk mampu mengkonfigurasi pengaturan mod_irc"}.
 {"You need an x:data capable client to configure room","Anda memerlukan x:data klien untuk dapat mengkonfigurasi ruangan"}.

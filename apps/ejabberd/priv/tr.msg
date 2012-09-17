@@ -159,7 +159,6 @@
 {"List of modules to start","Başlatılacak modüllerin listesi"}.
 {"Low level update script","Düşük seviye güncelleme betiği"}.
 {"Make participants list public","Katılımcı listesini herkese açık hale getir"}.
-{"Make room captcha protected","Odayı insan doğrulaması (captcha) korumalı hale getir"}.
 {"Make room members-only","Odayı sadece üyelere açık hale getir"}.
 {"Make room moderated","Odayı moderasyonlu hale getir"}.
 {"Make room password protected","Odayı parola korumalı hale getir"}.
@@ -319,7 +318,6 @@
 {"Sunday","Pazar"}.
 {"That nickname is already in use by another occupant","Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
 {"That nickname is registered by another person","O takma isim başka biri tarafından kaydettirilmiş"}.
-{"The captcha is valid.","İnsan doğrulaması (captcha) geçerli."}.
 {"The collections with which a node is affiliated","Bir düğüm ile bağlantılı koleksiyonlar"}.
 {"the password is","parola :"}.
 {"This participant is kicked from the room because he sent an error message","Bu katılımcı bir hata mesajı gönderdiği için odadan atıldı"}.
@@ -337,7 +335,6 @@
 {"Transactions Logged:","Kaydı Tutulan Hareketler (Transactions):"}.
 {"Transactions Restarted:","Tekrar Başlatılan Hareketler (Transactions):"}.
 {"Tuesday","Salı"}.
-{"Unable to generate a captcha","İnsan doğrulaması (captcha) oluşturulamadı"}.
 {"Unauthorized","Yetkisiz"}.
 {"Update ","Güncelle "}.
 {"Update","GÜncelle"}.

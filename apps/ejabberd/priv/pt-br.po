@@ -27,27 +27,6 @@ msgstr "Substituído por nova conexão"
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "Sua lista de privacidade ativa negou o roteamento desta estada."
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-msgid "Enter the text you see"
-msgstr "Insira o texto que você vê"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-"Suas mensagens para ~s estão bloqueadas. Para desbloquea-las, visite: ~s"
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr ""
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "O captcha é inválido."
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "Comandos"
@@ -840,14 +819,6 @@ msgstr "Essa sala não é anônima"
 msgid "A password is required to enter this room"
 msgstr "Se necessita senha para entrar em esta sala"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "Impossível gerar um captcha"
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "Senha incorreta"
@@ -963,14 +934,6 @@ msgstr "Permitir atualizações de status aos visitantes"
 #: mod_muc/mod_muc_room.erl:3032
 msgid "Allow visitors to change nickname"
 msgstr "Permitir mudança de apelido aos visitantes"
-
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "Tornar protegida a senha da sala"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1150,16 +1113,6 @@ msgstr "Solo enviar notificações aos usuários disponíveis"
 msgid "The collections with which a node is affiliated"
 msgstr "As coleções com as quais o nó está relacionado"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr ""
-
-#: mod_register.erl:220
-#, fuzzy
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr ""
-"Você precisa de um cliente com suporte de x:data para poder registrar o nick"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Escolha um nome de usuário e senha para registrar-se neste servidor"
@@ -1168,11 +1121,6 @@ msgstr "Escolha um nome de usuário e senha para registrar-se neste servidor"
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "Usuário"
-
-#: mod_register.erl:251
-#, fuzzy
-msgid "Unable to generate a CAPTCHA"
-msgstr "Impossível gerar um CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy
@@ -1811,7 +1759,3 @@ msgstr "Esta página aceita para deletar uma conta Jabber neste servidor."
 #: web/mod_register_web.erl:524
 msgid "Unregister"
 msgstr "Deletar registro"
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "O captcha é inválido."

@@ -33,7 +33,6 @@
 {"Backup","备份"}.
 {"Bad format","格式错误"}.
 {"Birthday","出生日期"}.
-{"CAPTCHA web page","验证码 Web 页面"}.
 {"Change Password","更改密码"}.
 {"Change User Password","更改用户密码"}.
 {"Characters not allowed:","禁用字符:"}.
@@ -122,7 +121,6 @@
 {"has been kicked","已被踢出"}.
 {" has set the subject to: ","已将标题设置为: "}.
 {"Host","主机"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","如果您在这里没有看到验证码图片, 请访问 Web 页面."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","如果您想为 IRC 服务器指定不同的端口, 密码, 编码, 请用 '{\"irc 服务器\", \"编码\", 端口, \"密码\"}' 格式的值填充此表单. 默认情况下此服务使用\"~s\"编码, ~p 端口, 密码为空."}.
 {"Import Directory","导入目录"}.
 {"Import File","导入文件"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","要启动的模块列表"}.
 {"Low level update script","低级别更新脚本"}.
 {"Make participants list public","公开参与人列表"}.
-{"Make room captcha protected","保护房间验证码"}.
 {"Make room members-only","设置房间只接收会员"}.
 {"Make room moderated","设置房间只接收主持人"}.
 {"Make room password protected","进入此房间需要密码"}.
@@ -338,8 +335,6 @@
 {"Sunday","星期天"}.
 {"That nickname is already in use by another occupant","该昵称已被另一用户使用"}.
 {"That nickname is registered by another person","该昵称已被另一个人注册了"}.
-{"The captcha is valid.","验证码有效."}.
-{"The CAPTCHA verification has failed","验证码检查失败"}.
 {"The collections with which a node is affiliated","加入结点的集合"}.
 {"The password is too weak","密码强度太弱"}.
 {"the password is","密码是"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","记入日志的事务:"}.
 {"Transactions Restarted:","重启的事务:"}.
 {"Tuesday","星期二"}.
-{"Unable to generate a captcha","无法产生验证码"}.
-{"Unable to generate a CAPTCHA","无法生成验证码"}.
 {"Unauthorized","未认证的"}.
 {"Unregister a Jabber account","注销 Jabber 帐户"}.
 {"Unregister","取消注册"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","你可以稍后用 Jabber 客户端修改你的密码."}.
 {"You have been banned from this room","您已被禁止进入该房间"}.
 {"You must fill in field \"Nickname\" in the form","您必须填充表单中\"昵称\"项"}.
-{"You need a client that supports x:data and CAPTCHA to register","您需要一个支持 x:data 和验证码的客户端进行注册"}.
 {"You need a client that supports x:data to register the nickname","您需要一个支持 x:data 的客户端来注册昵称"}.
 {"You need an x:data capable client to configure mod_irc settings","您需要一个兼容 x:data 的客户端来配置 mod_irc 设置"}.
 {"You need an x:data capable client to configure room","您需要一个兼容 x:data 的客户端来配置房间"}.

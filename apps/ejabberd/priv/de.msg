@@ -33,7 +33,6 @@
 {"Backup to File at ","Datensicherung in die Datei "}.
 {"Bad format","Ungültiges Format"}.
 {"Birthday","Geburtsdatum"}.
-{"CAPTCHA web page","CAPTCHA Webseite"}.
 {"Change Password","Passwort ändern"}.
 {"Change User Password","Benutzer-Passwort ändern"}.
 {"Characters not allowed:","Nicht erlaubte Zeichen:"}.
@@ -122,7 +121,6 @@
 {"has been kicked","wurde gekickt"}.
 {" has set the subject to: "," hat das Thema geändert auf: "}.
 {"Host","Host"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","Wenn sie das CAPTCHA Bild nicht sehen, besuchen sie bitte die Webseite."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Wenn sie verschiedene Ports, Passwörter und Kodierungen für IRC Server angeben wollen, erstellen sie die Liste mit folgendem Format '{\"IRC Server\", \"Kodierung\", Port, \"Passwort\"}'.  Standardmäßig benutzt dieser Dienst die \"~s\" Kodierung, den Port ~p und kein Passwort."}.
 {"Import Directory","Verzeichnis importieren"}.
 {"Import File","Datei importieren"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","Liste der zu startenden Module"}.
 {"Low level update script","Low level Aktualisierungsscript"}.
 {"Make participants list public","Teilnehmerliste öffentlich machen"}.
-{"Make room captcha protected","Raum mit Verifizierung (Captcha) versehen"}.
 {"Make room members-only","Raum nur für Mitglieder zugänglich machen"}.
 {"Make room moderated","Raum moderiert machen"}.
 {"Make room password protected","Raum mit Passwort schützen"}.
@@ -338,8 +335,6 @@
 {"Sunday","Sonntag"}.
 {"That nickname is already in use by another occupant","Dieser Benutzername wird bereits von einem Teilnehmer genutzt"}.
 {"That nickname is registered by another person","Dieser Benutzername wurde bereits von jemand anderem registriert"}.
-{"The captcha is valid.","Die Verifizierung ist gültig."}.
-{"The CAPTCHA verification has failed","Die CAPTCHA Verifizierung schlug fehl"}.
 {"The collections with which a node is affiliated","Sammlungen, mit denen ein Knoten verknüpft ist"}.
 {"the password is","das Passwort lautet"}.
 {"The password is too weak","Das Passwort ist zu einfach"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","Protokollierte Transaktionen:"}.
 {"Transactions Restarted:","Neu gestartete Transaktionen:"}.
 {"Tuesday","Dienstag"}.
-{"Unable to generate a captcha","Konnte Captcha nicht erstellen"}.
-{"Unable to generate a CAPTCHA","Konnte CAPTCHA nicht erstellen"}.
 {"Unauthorized","Nicht berechtigt"}.
 {"Unregister","Abmelden"}.
 {"Unregister a Jabber account","Jabber Konto entfernen"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","Sie können das Passwort später mit einem Jabber Client Programm ändern."}.
 {"You have been banned from this room","Sie wurden aus diesem Raum verbannt"}.
 {"You must fill in field \"Nickname\" in the form","Sie müssen das Feld \"Benutzername\" ausfüllen"}.
-{"You need a client that supports x:data and CAPTCHA to register","Sie benötigen einen Client, der x:data und CAPTCHA unterstützt, um Ihren Benutzernamen zu registrieren"}.
 {"You need a client that supports x:data to register the nickname","Sie benötigen einen Client, der x:data unterstützt, um Ihren Benutzernamen zu registrieren"}.
 {"You need an x:data capable client to configure mod_irc settings","Sie benötigen einen Client, der x:data unterstützt, um die mod_irc-Einstellungen zu konfigurieren"}.
 {"You need an x:data capable client to configure room","Sie benötigen einen Client, der x:data unterstützt, um den Raum zu konfigurieren"}.

@@ -33,7 +33,6 @@
 {"Backup","Αποθήκευση Αντιγράφου Ασφαλείας"}.
 {"Bad format","Ακατάλληλη μορφή"}.
 {"Birthday","Γενέθλια"}.
-{"CAPTCHA web page","Ιστοσελίδα CAPTCHA "}.
 {"Change Password","Αλλαγή κωδικού"}.
 {"Change User Password","Αλλαγή Κωδικού Πρόσβασης Χρήστη"}.
 {"Characters not allowed:","Χαρακτήρες δεν επιτρέπονται:"}.
@@ -122,7 +121,6 @@
 {"has been kicked","αποβλήθηκε "}.
 {" has set the subject to: "," έχει θέσει το θέμα σε: "}.
 {"Host","Κεντρικός Υπολογιστής"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","Εάν δεν βλέπετε την εικόνα CAPTCHA εδώ, επισκεφθείτε την ιστοσελίδα."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Εάν θέλετε να καθορίσετε διαφορετικές θύρες, κωδικούς πρόσβασης, κωδικοποιήσεις για IRC διακομιστές, εισάγετε πληροφορίες στη μορφή '{\"irc διακομιστής\", \"κωδικοποιήσεις\", θύρα, \"κωδικός πρόσβασης\"}'.  Προεπιλεγμενα αυτή η υπηρεσία χρησιμοποιεί \"~s\" κωδικοποιήση, θύρα ~p, κενό κωδικό πρόσβασης."}.
 {"Import Directory","Εισαγωγή κατάλογου αρχείων"}.
 {"Import File","Εισαγωγή αρχείων"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","Λίστα των Module για Εκκίνηση"}.
 {"Low level update script","Προγράμα ενημέρωσης χαμηλού επίπεδου "}.
 {"Make participants list public","Κάντε κοινό τον κατάλογο συμμετεχόντων"}.
-{"Make room captcha protected","Κάντε την αίθουσα CAPTCHA προστατεύονομενη"}.
 {"Make room members-only","Κάντε την αίθουσα μόνο για μέλη"}.
 {"Make room moderated","Κάντε την αίθουσα εποπτεύονομενη"}.
 {"Make room password protected","Κάντε την αίθουσα προστατεύομενη με κωδικό πρόσβασης"}.
@@ -338,8 +335,6 @@
 {"Sunday","Κυριακή"}.
 {"That nickname is already in use by another occupant","Αυτό το ψευδώνυμο είναι ήδη σε χρήση από άλλον συμμετέχων"}.
 {"That nickname is registered by another person","Αυτό το ψευδώνυμο είναι καταχωρημένο από άλλο πρόσωπο"}.
-{"The captcha is valid.","Το captcha είναι έγκυρο."}.
-{"The CAPTCHA verification has failed","Η επαλήθευση της εικόνας CAPTCHA απέτυχε"}.
 {"The collections with which a node is affiliated","Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"}.
 {"The password is too weak","Ο κωδικός πρόσβασης είναι πολύ ασθενές"}.
 {"the password is","ο κωδικός πρόσβασης είναι"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","Καταγραμμένες συναλλαγές:"}.
 {"Transactions Restarted:","Επανειλημμένες συναλλαγές:"}.
 {"Tuesday","Τρίτη"}.
-{"Unable to generate a captcha","Αδήνατο να δημιουργηθεί CAPTCHA"}.
-{"Unable to generate a CAPTCHA","Αδήνατο να δημιουργηθεί εικόνα CAPTCHA"}.
 {"Unauthorized","Χορίς Εξουσιοδότηση"}.
 {"Unregister a Jabber account","Καταργήστε την εγγραφή ενός λογαριασμού Jabber"}.
 {"Unregister","Καταργήση εγγραφής"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν πελάτη Jabber."}.
 {"You have been banned from this room","Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"}.
 {"You must fill in field \"Nickname\" in the form","Θα πρέπει να συμπληρώσετε το πεδίο \"Ψευδώνυμο\" στη φόρμα"}.
-{"You need a client that supports x:data and CAPTCHA to register","Χρειάζεστε ένα x:data και CAPTCHA ικανό πελάτη για εγγραφή"}.
 {"You need a client that supports x:data to register the nickname","Χρειάζεστε ένα x:data ικανό πελάτη για εγγραφή με ψευδώνυμο"}.
 {"You need an x:data capable client to configure mod_irc settings","Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε το mod_irc"}.
 {"You need an x:data capable client to configure room","Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε την αίθουσα "}.

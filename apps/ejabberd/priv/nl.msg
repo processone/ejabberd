@@ -163,7 +163,6 @@
 {"List of modules to start","Lijst met op te starten modules"}.
 {"Low level update script","Lowlevel script voor de opwaardering"}.
 {"Make participants list public","Deelnemerslijst publiek maken"}.
-{"Make room captcha protected","Chatruimte beveiligen met een geautomatiseerde Turing test"}.
 {"Make room members-only","Chatruimte enkel toegankelijk maken voor leden"}.
 {"Make room moderated","Chatruimte gemodereerd maken"}.
 {"Make room password protected","Chatruimte beveiligen met een wachtwoord"}.
@@ -325,7 +324,6 @@
 {"Sunday","Zondag"}.
 {"That nickname is already in use by another occupant","Deze bijnaam is al in gebruik door een andere aanwezige"}.
 {"That nickname is registered by another person","Deze bijnaam is al geregistreerd door iemand anders"}.
-{"The captcha is valid.","De geautomatiseerde Turing-test is geslaagd."}.
 {"The collections with which a node is affiliated","De collecties waar een node mee is gerelateerd"}.
 {"the password is","het wachtwoord is"}.
 {"This participant is kicked from the room because he sent an error message","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht"}.
@@ -343,7 +341,6 @@
 {"Transactions Logged:","Gelogde transacties:"}.
 {"Transactions Restarted:","Herstarte transacties:"}.
 {"Tuesday","Dinsdag"}.
-{"Unable to generate a captcha","Het generen van een gautomatiseerde Turing test is mislukt"}.
 {"Unauthorized","Niet geautoriseerd"}.
 {"Update","Bijwerken"}.
 {"Update message of the day (don't send)","Bericht van de dag bijwerken (niet verzenden)"}.

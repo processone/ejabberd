@@ -33,27 +33,6 @@ msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 "Маршрутизация этой строфы запрещена вашим активным списком приватности."
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-msgid "Enter the text you see"
-msgstr "Введите увиденный текст"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-"Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "Если вы не видите изображение капчи, перейдите по ссылке."
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr "Ссылка на капчу"
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Проверка капчи прошла успешно."
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "Команды"
@@ -838,14 +817,6 @@ msgstr "Эта комната не анонимная"
 msgid "A password is required to enter this room"
 msgstr "Чтобы войти в эту конференцию, нужен пароль"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "Не получилось создать капчу"
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "Неправильный пароль"
@@ -962,14 +933,6 @@ msgstr ""
 #: mod_muc/mod_muc_room.erl:3032
 msgid "Allow visitors to change nickname"
 msgstr "Разрешить посетителям изменять псевдоним"
-
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "Сделать комнату защищённой капчей"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1151,14 +1114,6 @@ msgstr "Доставлять уведомления только доступн�
 msgid "The collections with which a node is affiliated"
 msgstr "Имя коллекции, в которую входит узел"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr "Проверка капчи не пройдена"
-
-#: mod_register.erl:220
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "Чтобы зарегистрироваться, требуется x:data-совместимый клиент"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Выберите имя пользователя и пароль для регистрации на этом сервере"
@@ -1167,10 +1122,6 @@ msgstr "Выберите имя пользователя и пароль для 
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "Пользователь"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Не получилось создать капчу"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1799,7 +1750,3 @@ msgstr "Здесь Вы можете удалить Jabber-аккаунт с э�
 #: web/mod_register_web.erl:524
 msgid "Unregister"
 msgstr "Удалить"
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "Проверка капчи прошла успешно."

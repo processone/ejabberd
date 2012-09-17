@@ -94,7 +94,6 @@ process_iq(From, To,
 	   #iq{type = Type, lang = Lang1, sub_el = SubEl, id = ID} = IQ,
 	   Source) ->
     Lang = binary_to_list(Lang1),
-    IsCaptchaEnabled = false,
 
     case Type of
 	set ->
@@ -169,7 +168,7 @@ process_iq(From, To,
 		    Password = xml:get_tag_cdata(PTag),
 		    try_register_or_set_password(
 		      User, Server, Password, From,
-		      IQ, SubEl, Source, Lang, not IsCaptchaEnabled);
+		      IQ, SubEl, Source, Lang);
 		true ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_BAD_REQUEST]}
@@ -204,11 +203,11 @@ process_iq(From, To,
     end.
 
 try_register_or_set_password(User, Server, Password, From, IQ,
-			     SubEl, Source, Lang, CaptchaSucceed) ->
+			     SubEl, Source, Lang) ->
     case From of
 	#jid{user = User, lserver = Server} ->
 	    try_set_password(User, Server, Password, IQ, SubEl, Lang);
-	_ when CaptchaSucceed ->
+	_ ->
 	    case check_from(From, Server) of
 		allow ->
 		    case try_register(User, Server, Password,
@@ -223,10 +222,7 @@ try_register_or_set_password(User, Server, Password, From, IQ,
 		deny ->
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_FORBIDDEN]}
-	    end;
-	_ ->
-	    IQ#iq{type = error,
-		  sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+	    end
     end.
 
 %% @doc Try to change password and return IQ response
@@ -452,21 +448,6 @@ get_time_string() -> write_time(erlang:localtime()).
 write_time({{Y,Mo,D},{H,Mi,S}}) ->
     io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 		  [Y, Mo, D, H, Mi, S]).
-
-process_xdata_submit(El) ->
-    case xml:get_subtag(El, <<"x">>) of
-        false ->
-	    error;
-        Xdata ->
-            Fields = jlib:parse_xdata_submit(Xdata),
-            case catch {proplists:get_value(<<"username">>, Fields),
-			proplists:get_value(<<"password">>, Fields)} of
-                {[User|_], [Pass|_]} ->
-		    {ok, User, Pass};
-		_ ->
-		    error
-	    end
-    end.
 
 is_strong_password(Server, Password) ->
     LServer = jlib:nameprep(Server),

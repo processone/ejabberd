@@ -34,28 +34,6 @@ msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 "Ihre aktive Privacy Liste hat die Weiterleitung des Stanzas unterbunden."
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-msgid "Enter the text you see"
-msgstr "Geben sie den Text den sie sehen ein"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-"Ihre Nachrichten an ~s werden blockiert. Um dies zu ändern, besuchen sie ~s"
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
-"Wenn sie das CAPTCHA Bild nicht sehen, besuchen sie bitte die Webseite."
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr "CAPTCHA Webseite"
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Die Verifizierung ist gültig."
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "Befehle"
@@ -846,14 +824,6 @@ msgstr "Dieser Raum ist nicht anonym"
 msgid "A password is required to enter this room"
 msgstr "Sie brauchen ein Passwort um diesen Raum zu betreten"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "Konnte Captcha nicht erstellen"
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "Falsches Passwort"
@@ -969,14 +939,6 @@ msgstr "Erlaube Besuchern einen Text bei Statusänderung zu setzen"
 #: mod_muc/mod_muc_room.erl:3032
 msgid "Allow visitors to change nickname"
 msgstr "Erlaube Besuchern ihren Spitznamen zu ändern"
-
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "Raum mit Verifizierung (Captcha) versehen"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1161,16 +1123,6 @@ msgstr "Benachrichtigungen nur an verfügbare Benutzer schicken"
 msgid "The collections with which a node is affiliated"
 msgstr "Sammlungen, mit denen ein Knoten verknüpft ist"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr "Die CAPTCHA Verifizierung schlug fehl"
-
-#: mod_register.erl:220
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr ""
-"Sie benötigen einen Client, der x:data und CAPTCHA unterstützt, um Ihren "
-"Benutzernamen zu registrieren"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Wählen sie zum Registrieren einen Benutzernamen und ein Passwort"
@@ -1179,10 +1131,6 @@ msgstr "Wählen sie zum Registrieren einen Benutzernamen und ein Passwort"
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "Benutzer"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Konnte CAPTCHA nicht erstellen"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1819,7 +1767,3 @@ msgstr ""
 #: web/mod_register_web.erl:524
 msgid "Unregister"
 msgstr "Abmelden"
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "Die Verifizierung ist gültig."

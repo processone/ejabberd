@@ -33,7 +33,6 @@
 {"Backup to File at ","Guardar copia de seguridad en fichero en "}.
 {"Bad format","Mal formato"}.
 {"Birthday","Cumpleaños"}.
-{"CAPTCHA web page","Página web de CAPTCHA"}.
 {"Change Password","Cambiar contraseña"}.
 {"Change User Password","Cambiar contraseña de usuario"}.
 {"Characters not allowed:","Caracteres no permitidos:"}.
@@ -122,7 +121,6 @@
 {"has been kicked","ha sido expulsado"}.
 {" has set the subject to: "," ha puesto el asunto: "}.
 {"Host","Dominio"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","Si no ves la imagen CAPTCHA aquí, visita la página web."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Si quieres especificar distintos codificaciones de carácteres, contraseñas o puertos para cada servidor IRC rellena esta lista con valores en el formato '{\"servidor irc\", \"codificación\", \"puerto\", \"contrasela\"}'.  Este servicio usa por defecto la codificación \"~s\", puerto ~p, sin contraseña."}.
 {"Import Directory","Importar directorio"}.
 {"Import File","Importar fichero"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","Lista de módulos a iniciar"}.
 {"Low level update script","Script de actualización a bajo nivel"}.
 {"Make participants list public","La lista de participantes es pública"}.
-{"Make room captcha protected","Proteger la sala con captcha"}.
 {"Make room members-only","Sala sólo para miembros"}.
 {"Make room moderated","Sala moderada"}.
 {"Make room password protected","Proteger la sala con contraseña"}.
@@ -338,8 +335,6 @@
 {"Sunday","domingo"}.
 {"That nickname is already in use by another occupant","Ese apodo ya está siendo usado por otro ocupante"}.
 {"That nickname is registered by another person","El apodo ya está registrado por otra persona"}.
-{"The captcha is valid.","El captcha es válido."}.
-{"The CAPTCHA verification has failed","La verificación de CAPTCHA ha fallado"}.
 {"The collections with which a node is affiliated","Las colecciones a las que un nodo está afiliado"}.
 {"the password is","la contraseña es"}.
 {"The password is too weak","La contraseña es demasiado débil"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","Transacciones registradas:"}.
 {"Transactions Restarted:","Transacciones reiniciadas:"}.
 {"Tuesday","martes"}.
-{"Unable to generate a captcha","No se pudo generar un captcha."}.
-{"Unable to generate a CAPTCHA","No se pudo generar un CAPTCHA"}.
 {"Unauthorized","No autorizado"}.
 {"Unregister a Jabber account","Borrar una cuenta Jabber"}.
 {"Unregister","Borrar"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","Puedes cambiar tu contraseña después, usando un cliente Jabber."}.
 {"You have been banned from this room","Has sido bloqueado en esta sala"}.
 {"You must fill in field \"Nickname\" in the form","Debes rellenar el campo \"Apodo\" en el formulario"}.
-{"You need a client that supports x:data and CAPTCHA to register","Necesitas un cliente con soporte de x:data y CAPTCHA para registrarte"}.
 {"You need a client that supports x:data to register the nickname","Necesitas un cliente con soporte de x:data para poder registrar el apodo"}.
 {"You need an x:data capable client to configure mod_irc settings","Necesitas un cliente con soporte de x:data para configurar las opciones de mod_irc"}.
 {"You need an x:data capable client to configure room","Necesitas un cliente con soporte de x:data para configurar la sala"}.

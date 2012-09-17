@@ -562,30 +562,6 @@ handle_info(process_room_queue, normal_state = StateName, StateData) ->
     {empty, _} ->
         {next_state, StateName, StateData}
     end;
-handle_info({captcha_succeed, From}, normal_state, StateData) ->
-    NewState = case ?DICT:find(From, StateData#state.robots) of
-           {ok, {Nick, Packet}} ->
-               Robots = ?DICT:store(From, passed, StateData#state.robots),
-               add_new_user(From, Nick, Packet, StateData#state{robots=Robots});
-           _ ->
-               StateData
-           end,
-    {next_state, normal_state, NewState};
-handle_info({captcha_failed, From}, normal_state, StateData) ->
-    NewState = case ?DICT:find(From, StateData#state.robots) of
-           {ok, {Nick, Packet}} ->
-               Robots = ?DICT:erase(From, StateData#state.robots),
-               Err = jlib:make_error_reply(
-                   Packet, ?ERR_NOT_AUTHORIZED),
-               ejabberd_router:route( % TODO: s/Nick/<<>>/
-             jlib:jid_replace_resource(
-               StateData#state.jid, Nick),
-             From, Err),
-               StateData#state{robots=Robots};
-           _ ->
-               StateData
-           end,
-    {next_state, normal_state, NewState};
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -1526,38 +1502,6 @@ add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
             StateData#state.jid, Nick),
               From, Err),
             StateData;
-        captcha_required ->
-            SID = xml:get_attr_s(<<"id">>, Attrs),
-            RoomJID = StateData#state.jid,
-            To = jlib:jid_replace_resource(RoomJID, Nick),
-                    Limiter = {From#jid.luser, From#jid.lserver},
-            case ejabberd_captcha:create_captcha(
-               SID, RoomJID, To, Lang, Limiter, From) of
-            {ok, ID, CaptchaEls} ->
-                MsgPkt = {xmlelement, <<"message">>, [{<<"id">>, ID}], CaptchaEls},
-                Robots = ?DICT:store(From,
-                         {Nick, Packet}, StateData#state.robots),
-                ejabberd_router:route(RoomJID, From, MsgPkt),
-                StateData#state{robots = Robots};
-                        {error, limit} ->
-                            ErrText = <<"Too many CAPTCHA requests">>,
-                            Err = jlib:make_error_reply(
-                    Packet, ?ERRT_RESOURCE_CONSTRAINT(Lang, ErrText)),
-                            ejabberd_router:route( % TODO: s/Nick/<<>>/
-                              jlib:jid_replace_resource(
-                StateData#state.jid, Nick),
-                  From, Err),
-                StateData;
-                        _ ->
-                ErrText = <<"Unable to generate a captcha">>,
-                Err = jlib:make_error_reply(
-                    Packet, ?ERRT_INTERNAL_SERVER_ERROR(Lang, ErrText)),
-                ejabberd_router:route( % TODO: s/Nick/<<>>/
-                  jlib:jid_replace_resource(
-                StateData#state.jid, Nick),
-                  From, Err),
-                StateData
-            end;
         _ ->
             ErrText = <<"Incorrect password">>,
             Err = jlib:make_error_reply(
@@ -1575,52 +1519,22 @@ check_password(owner, _Affiliation, _Els, _From, _StateData) ->
     true;
 check_password(_ServiceAffiliation, Affiliation, Els, From, StateData) ->
     case (StateData#state.config)#config.password_protected of
-    false ->
-        check_captcha(Affiliation, From, StateData);
-    true ->
-        Pass = extract_password(Els),
-        case Pass of
         false ->
-            nopass;
-        _ ->
-            case (StateData#state.config)#config.password of
-            Pass ->
-                true;
-            _ ->
-                false
-            end
-        end
-    end.
-
-check_captcha(Affiliation, From, StateData) ->
-    case (StateData#state.config)#config.captcha_protected
-    andalso ejabberd_captcha:is_feature_available() of
-    true when Affiliation == none ->
-        case ?DICT:find(From, StateData#state.robots) of
-        {ok, passed} ->
+            %% Don't check password
             true;
-        _ ->
-                    WList = (StateData#state.config)#config.captcha_whitelist,
-                    #jid{luser = U, lserver = S, lresource = R} = From,
-                    case ?SETS:is_element({U, S, R}, WList) of
-                        true ->
+        true ->
+            Pass = extract_password(Els),
+            case Pass of
+                false ->
+                    nopass;
+                _ ->
+                    case (StateData#state.config)#config.password of
+                        Pass ->
                             true;
-                        false ->
-                            case ?SETS:is_element({U, S, <<>>}, WList) of
-                                true ->
-                                    true;
-                                false ->
-                                    case ?SETS:is_element({<<>>, S, <<>>}, WList) of
-                                        true ->
-                                            true;
-                                        false ->
-                                            captcha_required
-                                    end
-                            end
+                        _ ->
+                            false
                     end
-        end;
-    _ ->
-        true
+            end
     end.
 
 extract_password([]) ->
@@ -2968,17 +2882,6 @@ get_config(Lang, StateData, From) ->
              <<"muc#roomconfig_allowvisitornickchange">>,
              Config#config.allow_visitor_nickchange)
     ] ++
-%%      Temporarily turned off, no ejabberd_captcha module
-%%     case ejabberd_captcha:is_feature_available() of
-%%         true ->
-%%             [?BOOLXFIELD(<<"Make room captcha protected">>,
-%%                  <<"captcha_protected">>,
-%%                  Config#config.captcha_protected)];
-%%         false -> []
-%%     end ++
-        [?JIDMULTIXFIELD(<<"Exclude Jabber IDs from CAPTCHA challenge">>,
-                         <<"muc#roomconfig_captcha_whitelist">>,
-                         ?SETS:to_list(Config#config.captcha_whitelist))] ++
     case mod_muc_log:check_access_log(
            StateData#state.server_host, From) of
         allow ->
@@ -3100,8 +3003,6 @@ set_xoption([{<<"members_by_default">>, [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(members_by_default, Val);
 set_xoption([{<<"muc#roomconfig_membersonly">>, [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(members_only, Val);
-set_xoption([{<<"captcha_protected">>, [Val]} | Opts], Config) ->
-    ?SET_BOOL_XOPT(captcha_protected, Val);
 set_xoption([{<<"muc#roomconfig_allowinvites">>, [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(allow_user_invites, Val);
 set_xoption([{<<"muc#roomconfig_passwordprotectedroom">>, [Val]} | Opts], Config) ->
@@ -3128,9 +3029,6 @@ set_xoption([{<<"muc#roomconfig_maxusers">>, [Val]} | Opts], Config) ->
     end;
 set_xoption([{<<"muc#roomconfig_enablelogging">>, [Val]} | Opts], Config) ->
     ?SET_BOOL_XOPT(logging, Val);
-set_xoption([{<<"muc#roomconfig_captcha_whitelist">>, Vals} | Opts], Config) ->
-    JIDs = [jlib:binary_to_jid(Val) || Val <- Vals],
-    ?SET_JIDMULTI_XOPT(captcha_whitelist, JIDs);
 set_xoption([{<<"FORM_TYPE">>, _} | Opts], Config) ->
     %% Ignore our FORM_TYPE
     set_xoption(Opts, Config);
@@ -3196,11 +3094,9 @@ set_opts([{Opt, Val} | Opts], StateData) ->
           members_only -> StateData#state{config = (StateData#state.config)#config{members_only = Val}};
           allow_user_invites -> StateData#state{config = (StateData#state.config)#config{allow_user_invites = Val}};
           password_protected -> StateData#state{config = (StateData#state.config)#config{password_protected = Val}};
-          captcha_protected -> StateData#state{config = (StateData#state.config)#config{captcha_protected = Val}};
           password -> StateData#state{config = (StateData#state.config)#config{password = Val}};
           anonymous -> StateData#state{config = (StateData#state.config)#config{anonymous = Val}};
           logging -> StateData#state{config = (StateData#state.config)#config{logging = Val}};
-              captcha_whitelist -> StateData#state{config = (StateData#state.config)#config{captcha_whitelist = ?SETS:from_list(Val)}};
           max_users ->
           ServiceMaxUsers = get_service_max_users(StateData),
           MaxUsers = if
@@ -3240,13 +3136,10 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(members_only),
      ?MAKE_CONFIG_OPT(allow_user_invites),
      ?MAKE_CONFIG_OPT(password_protected),
-     ?MAKE_CONFIG_OPT(captcha_protected),
      ?MAKE_CONFIG_OPT(password),
      ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging),
      ?MAKE_CONFIG_OPT(max_users),
-     {captcha_whitelist,
-      ?SETS:to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author}
@@ -3352,17 +3245,6 @@ process_iq_disco_items(From, get, _Lang, StateData) ->
         _ ->
             {error, ?ERR_FORBIDDEN}
         end
-    end.
-
-process_iq_captcha(_From, get, _Lang, _SubEl, _StateData) ->
-    {error, ?ERR_NOT_ALLOWED};
-
-process_iq_captcha(_From, set, _Lang, SubEl, StateData) ->
-    case ejabberd_captcha:process_reply(SubEl) of
-    ok ->
-        {result, [], StateData};
-    _ ->
-        {error, ?ERR_NOT_ACCEPTABLE}
     end.
 
 get_title(StateData) ->
@@ -3856,11 +3738,6 @@ route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang},
 route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_DISCO_ITEMS, lang = Lang},
     from = From} = Routed, StateData) ->
     Res = process_iq_disco_items(From, Type, Lang, StateData),
-    do_route_iq(Res, Routed, StateData);
-
-route_iq(#routed_iq{iq = #iq{type = Type, xmlns = ?NS_CAPTCHA, lang = Lang,
-    sub_el = SubEl}, from = From} = Routed, StateData) ->
-    Res = process_iq_captcha(From, Type, Lang, SubEl, StateData),
     do_route_iq(Res, Routed, StateData);
 
 route_iq(#routed_iq{iq = reply}, StateData) ->

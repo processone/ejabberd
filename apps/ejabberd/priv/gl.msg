@@ -159,7 +159,6 @@
 {"List of modules to start","Lista de módulos a iniciar"}.
 {"Low level update script","Script de actualización a baixo nivel"}.
 {"Make participants list public","A lista de participantes é pública"}.
-{"Make room captcha protected","Protexer a sala con captcha"}.
 {"Make room members-only","Sala só para membros"}.
 {"Make room moderated","Facer sala moderada"}.
 {"Make room password protected","Protexer a sala con contrasinal"}.
@@ -319,7 +318,6 @@
 {"Sunday","Domingo"}.
 {"That nickname is already in use by another occupant","Ese alcume que xa está en uso por outro ocupante"}.
 {"That nickname is registered by another person","O alcume xa está rexistrado por outra persoa"}.
-{"The captcha is valid.","O Captcha é válido."}.
 {"The collections with which a node is affiliated","As coleccións coas que un nodo está afiliado"}.
 {"the password is","a contrasinal é"}.
 {"This participant is kicked from the room because he sent an error message","Este participante é expulsado da sala, xa que enviou unha mensaxe de erro"}.
@@ -337,7 +335,6 @@
 {"Transactions Logged:","Transaccións rexistradas:"}.
 {"Transactions Restarted:","Transaccións reiniciadas:"}.
 {"Tuesday","Martes"}.
-{"Unable to generate a captcha","Non se pode xerar un Captcha"}.
 {"Unauthorized","Non autorizado"}.
 {"Update ","Actualizar"}.
 {"Update","Actualizar"}.

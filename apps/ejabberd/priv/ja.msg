@@ -33,7 +33,6 @@
 {"Backup to File at ","ファイルにバックアップ: "}.
 {"Bad format","不正なフォーマット"}.
 {"Birthday","誕生日"}.
-{"CAPTCHA web page","CAPTCHA web ページ"}.
 {"Change Password","パスワードを変更"}.
 {"Change User Password","パスワードを変更"}.
 {"Characters not allowed:","使用できない文字:"}.
@@ -122,7 +121,6 @@
 {"has been kicked because the room has been changed to members-only","はチャットルームのメンバーのみに変更されたためキックされました"}.
 {" has set the subject to: "," は件名を設定しました: "}.
 {"Host","ホスト"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","ここに CAPTCHA 画像が表示されない場合、web ページを参照してください。"}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","別のポートやパスワード、文字エンコーディングを使用したい場合、'{\"irc server\", \"encoding\", port, \"password\"}' という形式のリストを入力してください。デフォルトでエンコーディングは \"~s\" を使用し、ポートは ~p、パスワードは空になっています。"}.
 {"Import Directory","ディレクトリインポート"}.
 {"Import File","ファイルからインポート"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","起動モジュールの一覧"}.
 {"Low level update script","低レベル更新スクリプト"}.
 {"Make participants list public","参加者一覧を公開"}.
-{"Make room captcha protected","チャットルームを CAPTCHA で保護"}.
 {"Make room members-only","チャットルームをメンバーのみに制限"}.
 {"Make room moderated","チャットルームをモデレート化"}.
 {"Make room password protected","チャットルームにパスワードを設定"}.
@@ -338,8 +335,6 @@
 {"Sunday","日曜日"}.
 {"That nickname is already in use by another occupant","ニックネームは既にほかの在室者によって使用されています"}.
 {"That nickname is registered by another person","ニックネームはほかの人によって登録されています"}.
-{"The captcha is valid.","CAPTCHA は有効です。"}.
-{"The CAPTCHA verification has failed","CAPTCHA 検証は失敗しました"}.
 {"The collections with which a node is affiliated","提携されたノードの集合です"}.
 {"the password is","パスワードは"}.
 {"The password is too weak","このパスワードは単純過ぎます"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","トランザクションのログ: "}.
 {"Transactions Restarted:","トランザクションの再起動:"}.
 {"Tuesday","火曜日"}.
-{"Unable to generate a captcha","CAPTCHA を生成することができません"}.
-{"Unable to generate a CAPTCHA","CAPTCHA を生成できませんでした"}.
 {"Unauthorized","認証されていません"}.
 {"Unregister a Jabber account","Jabber アカウントを削除"}.
 {"Unregister","削除"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","あなたは後から Jabber クライアントを使用してパスワードを変更することができます。"}.
 {"You have been banned from this room","あなたはチャットルームからバンされています"}.
 {"You must fill in field \"Nickname\" in the form","フォームの\"ニックネーム\"フィールドを入力する必要があります"}.
-{"You need a client that supports x:data and CAPTCHA to register","登録を行うにはクライアントが x:data と CAPTCHA をサポートする必要があります"}.
 {"You need a client that supports x:data to register the nickname","ニックネームを登録するにはクライアントが x:data をサポートする必要があります"}.
 {"You need an x:data capable client to configure mod_irc settings","mod_irc の設定にはクライアントが x:data をサポートする必要があります"}.
 {"You need an x:data capable client to configure room","チャットルームを設定するにはクライアントが x:data をサポートする必要があります"}.

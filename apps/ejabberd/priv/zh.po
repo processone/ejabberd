@@ -25,26 +25,6 @@ msgstr "被新的连接替换"
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "你的活跃私聊列表拒绝了在此房间进行路由分发."
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-msgid "Enter the text you see"
-msgstr "请输入您所看到的文本"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr "您发送给 ~s 的消息已被阻止. 要解除阻止, 请访问 ~s"
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "如果您在这里没有看到验证码图片, 请访问 Web 页面."
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr "验证码 Web 页面"
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "验证码有效."
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "命令"
@@ -817,14 +797,6 @@ msgstr "此房间不是匿名房间"
 msgid "A password is required to enter this room"
 msgstr "进入此房间需要密码"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "无法产生验证码"
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "密码不正确"
@@ -940,14 +912,6 @@ msgstr "更新在线状态时允许用户发送状态文本"
 #: mod_muc/mod_muc_room.erl:3032
 msgid "Allow visitors to change nickname"
 msgstr "允许用户更改昵称"
-
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "保护房间验证码"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1127,14 +1091,6 @@ msgstr "仅将通知发送给可发送的用户"
 msgid "The collections with which a node is affiliated"
 msgstr "加入结点的集合"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr "验证码检查失败"
-
-#: mod_register.erl:220
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "您需要一个支持 x:data 和验证码的客户端进行注册"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "请选择在此服务器上注册所需的用户名和密码"
@@ -1143,10 +1099,6 @@ msgstr "请选择在此服务器上注册所需的用户名和密码"
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "用户"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "无法生成验证码"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1763,9 +1715,6 @@ msgstr "此页面允许在此 Jabber 服务器上注销 Jabber 帐户"
 #: web/mod_register_web.erl:524
 msgid "Unregister"
 msgstr "取消注册"
-
-#~ msgid "Captcha test failed"
-#~ msgstr "验证码检测失败."
 
 #~ msgid "Encodings"
 #~ msgstr "编码"

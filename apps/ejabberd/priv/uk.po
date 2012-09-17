@@ -30,26 +30,6 @@ msgstr "Замінено новим з'єднанням"
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "Маршрутизація цієї строфи була відмінена активним списком приватності."
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-msgid "Enter the text you see"
-msgstr "Введіть текст, що ви бачите"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr "Ваші повідомлення до ~s блокуються. Для розблокування відвідайте ~s"
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "Якщо ви не бачите зображення капчі, перейдіть за за цією адресою."
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr "Адреса капчі"
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Перевірку капчею закінчено успішно"
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "Команди"
@@ -839,14 +819,6 @@ msgstr "Ця кімната не анонімна"
 msgid "A password is required to enter this room"
 msgstr "Щоб зайти в цю конференцію, необхідно ввести пароль"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "Не має можливості сгенерувати капчу"
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "Неправильний пароль"
@@ -963,14 +935,6 @@ msgstr ""
 #: mod_muc/mod_muc_room.erl:3032
 msgid "Allow visitors to change nickname"
 msgstr "Дозволити відвідувачам змінювати псевдонім"
-
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "Зробити кімнату захищеною капчею"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1155,15 +1119,6 @@ msgstr "Доставляти повідомленнями тільки дост�
 msgid "The collections with which a node is affiliated"
 msgstr "Колекція, до якої входить вузел"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr "Перевірку капчею не пройдено"
-
-#: mod_register.erl:220
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr ""
-"Для реєстрації псевдоніму необхідно використовувати клієнт з ідтримкою x:data"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Виберіть назву користувача та пароль для реєстрації на цьому сервері"
@@ -1172,10 +1127,6 @@ msgstr "Виберіть назву користувача та пароль д�
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "Користувач"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Нема можливості сгенерувати капчу"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1802,6 +1753,3 @@ msgstr "Ця сторінка дозволяє видалити свій ака�
 #: web/mod_register_web.erl:524
 msgid "Unregister"
 msgstr "Видалити"
-
-#~ msgid "Captcha test failed"
-#~ msgstr "Перевірка капчею закінчилась невдало"

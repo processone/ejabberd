@@ -37,7 +37,6 @@
                  public_list = true,
                  persistent = false,
                  moderated = true,
-                 captcha_protected = false,
                  members_by_default = true,
                  members_only = false,
                  allow_user_invites = false,
@@ -45,8 +44,7 @@
                  password = <<>>,
                  anonymous = true,
                  max_users = ?MAX_USERS_DEFAULT,
-                 logging = false,
-                 captcha_whitelist = ?SETS:empty()}).
+                 logging = false}).
 
 -record(user, {jid,
                nick,

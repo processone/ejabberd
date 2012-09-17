@@ -33,7 +33,6 @@
 {"Backup","Резервное копирование"}.
 {"Bad format","Неправильный формат"}.
 {"Birthday","День рождения"}.
-{"CAPTCHA web page","Ссылка на капчу"}.
 {"Change Password","Сменить пароль"}.
 {"Change User Password","Изменить пароль пользователя"}.
 {"Characters not allowed:","Недопустимые символы:"}.
@@ -122,7 +121,6 @@
 {"has been kicked","выгнали из комнаты"}.
 {" has set the subject to: "," установил(а) тему: "}.
 {"Host","Хост"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","Если вы не видите изображение капчи, перейдите по ссылке."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Чтобы указать различные порты, пароли, кодировки для разных серверов IRC, заполните список значениями в формате '{\"сервер IRC\", \"кодировка\", порт, \"пароль\"}'. По умолчанию сервис использует кодировку \"~s\", порт ~p, пустой пароль."}.
 {"Import Directory","Импорт из директории"}.
 {"Import File","Импорт из файла"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","Список запускаемых модулей"}.
 {"Low level update script","Низкоуровневый сценарий обновления"}.
 {"Make participants list public","Сделать список участников видимым всем"}.
-{"Make room captcha protected","Сделать комнату защищённой капчей"}.
 {"Make room members-only","Комната только для зарегистрированных участников"}.
 {"Make room moderated","Сделать комнату модерируемой"}.
 {"Make room password protected","Сделать комнату защищённой паролем"}.
@@ -338,8 +335,6 @@
 {"Sunday","Воскресенье"}.
 {"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
-{"The captcha is valid.","Проверка капчи прошла успешно."}.
-{"The CAPTCHA verification has failed","Проверка капчи не пройдена"}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
 {"The password is too weak","Слишком слабый пароль"}.
 {"the password is","пароль:"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","Транзакции запротоколированные:"}.
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
-{"Unable to generate a captcha","Не получилось создать капчу"}.
-{"Unable to generate a CAPTCHA","Не получилось создать капчу"}.
 {"Unauthorized","Не авторизован"}.
 {"Unregister a Jabber account","Удалить Jabber-аккаунт"}.
 {"Unregister","Удалить"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","Позже Вы можете изменить пароль через Jabber-клиент."}.
 {"You have been banned from this room","Вам запрещено входить в эту конференцию"}.
 {"You must fill in field \"Nickname\" in the form","Вы должны заполнить поле \"Псевдоним\" в форме"}.
-{"You need a client that supports x:data and CAPTCHA to register","Чтобы зарегистрироваться, требуется x:data-совместимый клиент"}.
 {"You need a client that supports x:data to register the nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure mod_irc settings","Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure room","Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.

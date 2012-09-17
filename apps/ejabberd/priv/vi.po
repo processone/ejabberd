@@ -23,27 +23,6 @@ msgstr "Được thay thế bởi kết nối mới"
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-#, fuzzy
-msgid "Enter the text you see"
-msgstr "Nhập đường dẫn đến tập tin văn bản"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr ""
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr ""
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "Lệnh"
@@ -851,14 +830,6 @@ msgstr "Phòng này không nặc danh"
 msgid "A password is required to enter this room"
 msgstr "Yêu cầu nhập mật khẩu để vào phòng này"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr ""
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "Mật khẩu sai"
@@ -980,15 +951,6 @@ msgstr "Cho phép người sử dụng gửi thư riêng"
 #, fuzzy
 msgid "Allow visitors to change nickname"
 msgstr "Cho phép người sử dụng thay đổi chủ đề"
-
-#: mod_muc/mod_muc_room.erl:3038
-#, fuzzy
-msgid "Make room captcha protected"
-msgstr "Tạo phòng được bảo vệ bằng mật khẩu"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1173,17 +1135,6 @@ msgstr "Chỉ gửi thông báo đến những người sử dụng hiện có"
 msgid "The collections with which a node is affiliated"
 msgstr ""
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr ""
-
-#: mod_register.erl:220
-#, fuzzy
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr ""
-"Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để đăng ký "
-"bí danh"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Chọn một tên truy cập và mật khẩu để đăng ký với máy chủ này"
@@ -1192,10 +1143,6 @@ msgstr "Chọn một tên truy cập và mật khẩu để đăng ký với má
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "Người sử dụng"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr ""
 
 #: mod_register.erl:316 mod_register.erl:361
 #, fuzzy

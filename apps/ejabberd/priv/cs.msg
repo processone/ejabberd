@@ -33,7 +33,6 @@
 {"Backup","Zálohovat"}.
 {"Bad format","Nesprávný formát"}.
 {"Birthday","Datum narození"}.
-{"CAPTCHA web page","Webová stránka CAPTCHA"}.
 {"Change Password","Změnit heslo"}.
 {"Change User Password","Změnit heslo uživatele"}.
 {"Characters not allowed:","Nepřípustné znaky:"}.
@@ -122,7 +121,6 @@
 {"has been kicked","byl(a) vyhozen(a) z místnosti"}.
 {" has set the subject to: "," změnil(a) téma na: "}.
 {"Host","Hostitel"}.
-{"If you don't see the CAPTCHA image here, visit the web page.","Pokud zde nevidíte obrázek CAPTCHE, přejděte na webovou stránku."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Pokud chcete zadat jiné kódování pro IRC servery, vyplňte seznam s hodnotami ve formátu '{\"irc server\",\"encoding\", port, \"password\"}'. Výchozí kódování pro tuto službu je \"~s\", port ~p, empty password."}.
 {"Import Directory","Import adresáře"}.
 {"Import File","Import souboru"}.
@@ -168,7 +166,6 @@
 {"List of modules to start","Seznam modulů, které mají být spuštěné"}.
 {"Low level update script","Nízkoúrovňový aktualizační skript"}.
 {"Make participants list public","Nastavit seznam účastníků jako veřejný"}.
-{"Make room captcha protected","Chránit místnost pomocí CAPTCHA"}.
 {"Make room members-only","Zpřístupnit místnost jen členům"}.
 {"Make room moderated","Nastavit místnost jako moderovanou"}.
 {"Make room password protected","Chránit místnost heslem"}.
@@ -338,8 +335,6 @@
 {"Sunday","Neděle"}.
 {"That nickname is already in use by another occupant","Přezdívka je již používána jiným členem"}.
 {"That nickname is registered by another person","Přezdívka je zaregistrována jinou osobou"}.
-{"The captcha is valid.","CAPTCHA souhlasí."}.
-{"The CAPTCHA verification has failed","Ověření CAPTCHA se nezdařilo"}.
 {"The collections with which a node is affiliated","Kolekce, se kterými je uzel spřízněn"}.
 {"the password is","heslo je"}.
 {"The password is too weak","Heslo je příliš slabé"}.
@@ -365,8 +360,6 @@
 {"Transactions Logged:","Transakce zaznamenána"}.
 {"Transactions Restarted:","Transakce restartována"}.
 {"Tuesday","Úterý"}.
-{"Unable to generate a captcha","Nebylo možné vygenerovat CAPTCHA"}.
-{"Unable to generate a CAPTCHA","Nebylo možné vygenerovat CAPTCHA"}.
 {"Unauthorized","Nemáte oprávnění"}.
 {"Unregister a Jabber account","Zrušte registraci účtu Jabberu"}.
 {"Unregister","Zrušit registraci"}.
@@ -396,7 +389,6 @@
 {"You can later change your password using a Jabber client.","Později můžete své heslo změnit pomocí klienta Jabberu."}.
 {"You have been banned from this room","Byl jste vyloučen z této místnosti"}.
 {"You must fill in field \"Nickname\" in the form","Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
-{"You need a client that supports x:data and CAPTCHA to register","Pro registraci potřebujete klienta s podporou x:data a CAPTCHA"}.
 {"You need a client that supports x:data to register the nickname","Pro registraci přezdívky potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to configure mod_irc settings","Pro konfiguraci mod_irc potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to configure room","Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.

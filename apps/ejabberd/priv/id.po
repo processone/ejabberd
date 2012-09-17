@@ -27,29 +27,6 @@ msgstr "Diganti dengan koneksi baru"
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "Daftar privasi aktif Anda telah menolak routing ztanza ini"
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
-msgid "Enter the text you see"
-msgstr "Masukkan teks yang Anda lihat"
-
-#: ejabberd_captcha.erl:101
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-"Pesan Anda untuk ~s sedang diblokir. Untuk membuka blokir tersebut, kunjungi "
-"~s"
-
-#: ejabberd_captcha.erl:134
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
-"Jika Anda tidak melihat gambar CAPTCHA disini, silahkan kunjungi halaman web."
-
-#: ejabberd_captcha.erl:146
-msgid "CAPTCHA web page"
-msgstr "CAPTCHA laman web"
-
-#: ejabberd_captcha.erl:307
-msgid "The captcha is valid."
-msgstr "Captcha ini benar."
-
 #: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
 msgid "Commands"
 msgstr "Perintah"
@@ -838,14 +815,6 @@ msgstr "Ruangan ini tidak dikenal"
 msgid "A password is required to enter this room"
 msgstr "Diperlukan kata sandi untuk masuk ruangan ini"
 
-#: mod_muc/mod_muc_room.erl:1645 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr ""
-
-#: mod_muc/mod_muc_room.erl:1654
-msgid "Unable to generate a captcha"
-msgstr "Tidak dapat menghasilkan captcha"
-
 #: mod_muc/mod_muc_room.erl:1664
 msgid "Incorrect password"
 msgstr "Kata sandi salah"
@@ -961,14 +930,6 @@ msgstr "Izinkan pengunjung untuk mengirim teks status terbaru"
 #: mod_muc/mod_muc_room.erl:3032
 msgid "Allow visitors to change nickname"
 msgstr "Perbolehkan visitor mengganti nama julukan"
-
-#: mod_muc/mod_muc_room.erl:3038
-msgid "Make room captcha protected"
-msgstr "Buat ruangan dilindungi dengan chapta"
-
-#: mod_muc/mod_muc_room.erl:3043
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
 
 #: mod_muc/mod_muc_room.erl:3050
 msgid "Enable logging"
@@ -1149,15 +1110,6 @@ msgstr "Hanya mengirimkan pemberitahuan kepada pengguna yang tersedia"
 msgid "The collections with which a node is affiliated"
 msgstr "Koleksi dengan yang berafiliasi dengan sebuah node"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr "Verifikasi CAPTCHA telah gagal"
-
-#: mod_register.erl:220
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr ""
-"Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"
-
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "Pilih nama pengguna dan kata sandi untuk mendaftar dengan layanan ini"
@@ -1166,10 +1118,6 @@ msgstr "Pilih nama pengguna dan kata sandi untuk mendaftar dengan layanan ini"
 #: web/ejabberd_web_admin.erl:1516 web/ejabberd_web_admin.erl:1573
 msgid "User"
 msgstr "Pengguna"
-
-#: mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "Tidak dapat menghasilkan CAPTCHA"
 
 #: mod_register.erl:316 mod_register.erl:361
 msgid "The password is too weak"
@@ -1802,7 +1750,3 @@ msgstr ""
 #: web/mod_register_web.erl:524
 msgid "Unregister"
 msgstr "Nonaktifkan"
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "Проверка капчи прошла успешно."

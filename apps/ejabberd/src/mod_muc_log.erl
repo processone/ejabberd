@@ -880,7 +880,6 @@ get_roomconfig_text(allow_user_invites) -> <<"Allow users to send invites">>;
 get_roomconfig_text(logging) ->  <<"Enable logging">>;
 get_roomconfig_text(allow_visitor_nickchange) ->  <<"Allow visitors to change nickname">>;
 get_roomconfig_text(allow_visitor_status) ->  <<"Allow visitors to send status text in presence updates">>;
-get_roomconfig_text(captcha_protected) ->  <<"Make room captcha protected">>;
 get_roomconfig_text(description) ->  <<"Room description">>;
 get_roomconfig_text(max_users) -> <<"Maximum Number of Occupants">>;
 get_roomconfig_text(_) -> undefined.
