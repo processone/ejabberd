@@ -86,7 +86,7 @@ add_iq_handler(Component, Host, NS, Module, Function,
 remove_iq_handler(Component, Host, NS) ->
     Component:unregister_iq_handler(Host, NS).
 
--spec stop_iq_handler(atom(), atom(), opts()) -> any().
+-spec stop_iq_handler(atom(), atom(), [pid()]) -> any().
 
 stop_iq_handler(_Module, _Function, Opts) ->
     case Opts of
