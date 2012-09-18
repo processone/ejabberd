@@ -129,7 +129,7 @@
          host                    :: binary(),
 	 port = 389              :: inet:port_number(),
          sockmod = gen_tcp       :: ssl | gen_tcp,
-         tls = none              :: none | tls,
+         tls = none              :: none | tls | starttls,
          tls_options = []        :: [{cacertfile, string()} |
                                      {depth, non_neg_integer()} |
                                      {verify, non_neg_integer()}],
