@@ -36,7 +36,7 @@
 -include("ejabberd.hrl").
 
 -define(LOG_LEVELS,
-	[{0, log_none},
+	[{0, none},
 	 {1, critical},
 	 {2, error},
 	 {3, warning},
@@ -46,23 +46,22 @@
 -spec get() -> {integer(), atom()}.
 get() ->
     Name = lager:get_loglevel(lager_console_backend),
-    {value, Res} = lists:keysearch(Name, 2, ?LOG_LEVELS),
-    Res.
+    lists:keyfind(Name, 2, ?LOG_LEVELS).
 
 set(Level) when is_integer(Level) ->
-    {value, {_, Name}} = lists:keysearch(Level, 1, ?LOG_LEVELS),
+    {_, Name} = lists:keyfind(Level, 1, ?LOG_LEVELS),
     set(Name);
 set(Level) ->
     ok = lager:set_loglevel(lager_console_backend, Level),
-    ok = lager:set_loglevel(lager_file_backend, "log/ejabberd.log", Level).
+    ok = lager:set_loglevel(lager_file_backend, ?LOG_PATH, Level).
 
 set_custom(Module, Level) ->
     ok = lager:set_mod_loglevel(lager_console_backend, Level, Module),
-    ok = lager:set_mod_loglevel(lager_file_backend, "log/ejabberd.log", Level, Module).
+    ok = lager:set_mod_loglevel(lager_file_backend, ?LOG_PATH, Level, Module).
     
 clear_custom() ->
     clear_custom('_').
 
 clear_custom(Module) when is_atom(Module) ->
     ok = lager:clear_mod_loglevel(lager_console_backend, Module),
-    ok = lager:clear_mod_loglevel(lager_file_backend, "log/ejabberd.log", Module).
+    ok = lager:clear_mod_loglevel(lager_file_backend, ?LOG_PATH, Module).

@@ -24,12 +24,12 @@
 -define(VERSION, element(2, application:get_key(ejabberd,vsn))).
 
 -define(MYHOSTS, ejabberd_config:get_global_option(hosts)).
--define(MYNAME, hd(ejabberd_config:get_global_option(hosts))).
--define(MYLANG, ejabberd_config:get_global_option(language)).
+-define(MYNAME,  hd(ejabberd_config:get_global_option(hosts))).
+-define(MYLANG,  ejabberd_config:get_global_option(language)).
 
--define(MSGS_DIR, "msgs").
--define(CONFIG_PATH, "ejabberd.cfg").
--define(LOG_PATH, "ejabberd.log").
+-define(MSGS_DIR,    "msgs").
+-define(CONFIG_PATH, "etc/ejabberd.cfg").
+-define(LOG_PATH,    "log/ejabberd.log").
 
 -define(EJABBERD_URI, "http://www.process-one.net/en/ejabberd/").
 
