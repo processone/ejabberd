@@ -50,7 +50,8 @@
                 check_password = fun(_, _, _, _) -> false end :: check_password_fun(),
                 auth_module :: atom(),
                 host = <<"">> :: binary(),
-                hostfqdn = <<"">> :: binary()}).
+                hostfqdn :: binary() | [binary()]}).
+
 
 start(_Opts) ->
     Fqdn = get_local_fqdn(),
