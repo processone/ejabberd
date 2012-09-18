@@ -55,7 +55,10 @@ set(Level) ->
     ok = lager:set_loglevel(lager_console_backend, Level),
     ok = lager:set_loglevel(lager_file_backend, ?LOG_PATH, Level).
 
-set_custom(Module, Level) ->
+set_custom(Module, Level) when is_integer(Level) ->
+    {_, Name} = lists:keyfind(Level, 1, ?LOG_LEVELS),
+    set_custom(Module, Name);
+set_custom(Module, Level) when is_atom(Level) ->
     ok = lager:set_mod_loglevel(lager_console_backend, Level, Module),
     ok = lager:set_mod_loglevel(lager_file_backend, ?LOG_PATH, Level, Module).
     
