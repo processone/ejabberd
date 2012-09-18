@@ -18,3 +18,6 @@
 
 ## Tweak GC to run more often
 -env ERL_FULLSWEEP_AFTER 2
+
+## With lager sasl reports are redundant so turn them off
+-sasl sasl_error_logger false
