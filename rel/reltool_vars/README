@@ -1,3 +1,4 @@
-This file contains variables for creating two differrend development versions of the project required for testing purposes. 
-details of usage are avaliable in the projects makefile
-(../../Makefile), target devrel
+This directory contains variables used for generating multiple development releases
+of the project. These releases are required for testing purposes.
+
+Details of usage are avaliable in the project's Makefile (../../Makefile), see target devrel.
