@@ -206,8 +206,10 @@ sockname(_Socket) -> {ok, {{0, 0, 0, 0}, 0}}.
 
 peername({http_bind, _FsmRef, IP}) -> {ok, IP}.
 
-migrate(FsmRef, Node, After) ->
-    erlang:send_after(After, FsmRef, {migrate, Node}).
+migrate(FsmRef, Node, After) when node(FsmRef) == node() ->
+    erlang:send_after(After, FsmRef, {migrate, Node});
+migrate(_FsmRef, _Node, _After) ->
+    ok.
 
 process_request(Data, IP, Type) ->
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),

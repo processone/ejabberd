@@ -221,8 +221,10 @@ stop_or_detach(FsmRef) ->
     end.
 
 
-migrate(FsmRef, Node, After) ->
-    erlang:send_after(After, FsmRef, {migrate, Node}).
+migrate(FsmRef, Node, After) when node(FsmRef) == node() ->
+    erlang:send_after(After, FsmRef, {migrate, Node});
+migrate(_FsmRef, _Node, _After) ->
+    ok.
 
 migrate_shutdown(FsmRef, Node, After) ->
     FsmRef ! {migrate_shutdown, Node, After}.

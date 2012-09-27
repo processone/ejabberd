@@ -117,8 +117,10 @@ start_link(StateName, StateData) ->
     (?GEN_FSM):start_link(?MODULE, [StateName, StateData],
 			  ?FSMOPTS).
 
-migrate(FsmRef, Node, After) ->
-    erlang:send_after(After, FsmRef, {migrate, Node}).
+migrate(FsmRef, Node, After) when node(FsmRef) == node() ->
+    erlang:send_after(After, FsmRef, {migrate, Node});
+migrate(_FsmRef, _Node, _After) ->
+    ok.
 
 moderate_room_history(FsmRef, Nick) ->
     (?GEN_FSM):sync_send_all_state_event(FsmRef,
