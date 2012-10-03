@@ -87,7 +87,7 @@
 
 -define(SUPERVISOR_START,
 	p1_fsm:start(ejabberd_s2s_in, [SockData, Opts],
-                     ?FSMOPTS ++ fsm_limit_opts(Opts)).
+                     ?FSMOPTS ++ fsm_limit_opts(Opts))).
 
 -else.
 
