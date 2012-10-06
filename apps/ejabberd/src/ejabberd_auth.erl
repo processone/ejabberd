@@ -290,12 +290,9 @@ get_password_s(User, Server) ->
     end.
 
 %% @doc Get the password of the user and the auth module.
-%% @spec (User::string(), Server::string()) ->
-%%     {Password::string(), AuthModule::atom()} | {false, none}
-get_password_with_authmodule(User, Server) 
-  when is_list(User), is_list(Server) ->
-    list_to_binary(get_password_with_authmodule(list_to_binary(User), 
-                                                list_to_binary(Server)));
+-spec get_password_with_authmodule(User::binary(), Server::binary()) ->
+                        {Password::binary(), AuthModule::atom()}
+                        | {false, none}.
 get_password_with_authmodule(User, Server) ->
     lists:foldl(
       fun(M, {false, _}) ->
