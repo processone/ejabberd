@@ -356,15 +356,9 @@ remove_user(User, Server) when is_list(User), is_list(Server) ->
     remove_user(list_to_binary(User), 
                 list_to_binary(Server));
 remove_user(User, Server) ->
-    R = lists:foreach(
-      fun(M) ->
-	      M:remove_user(User, Server)
-      end, auth_modules(Server)),
-    case R of
-		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
-		_ -> none
-    end,
-    R.
+    [M:remove_user(User, Server) || M <- auth_modules(Server)],
+    ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]),
+    ok.
 
 %% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error
 %% @doc Try to remove user if the provided password is correct.
