@@ -386,7 +386,7 @@ remove_user(User, Server, Password) ->
 %% @spec (IOList) -> non_negative_float()
 %% @doc Calculate informational entropy.
 entropy(IOList) ->
-    case list_to_binary(iolist_to_binary(IOList)) of
+    case binary_to_list(iolist_to_binary(IOList)) of
 	"" ->
 	    0.0;
 	S ->
