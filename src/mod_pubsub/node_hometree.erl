@@ -97,9 +97,11 @@ init(_Host, _ServerHost, _Options) ->
     pubsub_subscription:init(),
     mnesia:create_table(pubsub_state,
 			[{disc_copies, [node()]},
+             {index, [nodeidx]},
 			 {attributes, record_info(fields, pubsub_state)}]),
     mnesia:create_table(pubsub_item,
 			[{disc_only_copies, [node()]},
+             {index, [nodeidx]},
 			 {attributes, record_info(fields, pubsub_item)}]),
     ItemsFields = record_info(fields, pubsub_item),
     case mnesia:table_info(pubsub_item, attributes) of
@@ -224,7 +226,7 @@ create_node_permission(Host, ServerHost, NodeId, _ParentNodeId, Owner, Access) -
 %% @doc <p></p>
 create_node(NodeIdx, Owner) ->
     OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-    set_state(#pubsub_state{stateid = {OwnerKey, NodeIdx}, affiliation = owner}),
+    set_state(#pubsub_state{stateid = {OwnerKey, NodeIdx}, nodeidx = NodeIdx, affiliation = owner}),
     {result, {default, broadcast}}.
 
 %% @spec (Nodes) -> {result, {default, broadcast, Reply}}
@@ -507,6 +509,7 @@ publish_item(NodeIdx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 					       payload = Payload};
 		       _ ->
 			   #pubsub_item{itemid = {ItemId, NodeIdx},
+                    nodeidx = NodeIdx,
 					creation = {Now, GenKey},
 					modification = PubId,
 					payload = Payload}
@@ -860,8 +863,8 @@ get_nodes_helper(NodeTree,
 %% ```get_states(NodeIdx) ->
 %%	   node_default:get_states(NodeIdx).'''</p>
 get_states(NodeIdx) ->
-    States = case catch mnesia:match_object(
-	       #pubsub_state{stateid = {'_', NodeIdx}, _ = '_'}) of
+    States = case catch mnesia:index_read(
+	       pubsub_state, NodeIdx, #pubsub_state.nodeidx) of
 	List when is_list(List) -> List;
 	_ -> []
     end,
@@ -875,8 +878,8 @@ get_states(NodeIdx) ->
 get_state(NodeIdx, JID) ->
     StateId = {JID, NodeIdx},
     case catch mnesia:read({pubsub_state, StateId}) of
-	[State] when is_record(State, pubsub_state) -> State;
-	_ -> #pubsub_state{stateid=StateId}
+    [#pubsub_state{} = State] -> State;
+	_ -> #pubsub_state{stateid=StateId, nodeidx=NodeIdx}
     end.
 
 %% @spec (State) -> ok | {error, Reason}
@@ -911,7 +914,7 @@ del_state(NodeIdx, JID) ->
 %% ```get_items(NodeIdx, From) ->
 %%	   node_default:get_items(NodeIdx, From).'''</p>
 get_items(NodeIdx, _From) ->
-    Items = mnesia:match_object(#pubsub_item{itemid = {'_', NodeIdx}, _ = '_'}),
+    Items = mnesia:index_read(pubsub_item, NodeIdx, #pubsub_item.nodeidx),
     {result, lists:reverse(lists:keysort(#pubsub_item.modification, Items))}.
 
 get_items(NodeIdx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
