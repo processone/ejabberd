@@ -1248,7 +1248,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		    case xml:remove_cdata(Els) of
 			[{xmlelement, "item", ItemAttrs, Payload}] ->
 			    ItemId = xml:get_attr_s("id", ItemAttrs),
-			    publish_item(Host, ServerHost, Node, From, ItemId, Payload);
+			    publish_item(Host, ServerHost, Node, From, ItemId, Payload, Access);
 			[] ->
 			    %% Publisher attempts to publish to persistent node with no item
 			    {error, extended_error(?ERR_BAD_REQUEST,
@@ -2030,8 +2030,10 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
 %%</ul>
 publish_item(Host, ServerHost, Node, Publisher, "", Payload) ->
     %% if publisher does not specify an ItemId, the service MUST generate the ItemId
-    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload);
+    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, all);
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
+    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, all).
+publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
     Action = fun(#pubsub_node{options = Options, type = Type, id = NodeId}) ->
 		    Features = features(Type),
 		    PublishFeature = lists:member("publish", Features),
@@ -2122,7 +2124,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    Type = select_type(ServerHost, Host, Node),
 	    case lists:member("auto-create", features(Type)) of
 		true ->
-		    case create_node(Host, ServerHost, Node, Publisher, Type) of
+		    case create_node(Host, ServerHost, Node, Publisher, Type, Access, []) of
 			{result, [{xmlelement, "pubsub", [{"xmlns", ?NS_PUBSUB}],
 			  [{xmlelement, "create", [{"node", NewNode}], []}]}]} ->
 			    publish_item(Host, ServerHost,  list_to_binary(NewNode),
