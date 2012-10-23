@@ -38,6 +38,8 @@
 	 incoming_s2s_number/0, outgoing_s2s_number/0,
 	 clean_temporarily_blocked_table/0,
 	 list_temporarily_blocked_hosts/0,
+         get_connections_number/1, needed_connections_number/3,
+         get_connections_number_per_node/1,
 	 external_host_overloaded/1, is_temporarly_blocked/1]).
 
 %% gen_server callbacks
@@ -175,6 +177,19 @@ get_connections_pids(FromTo) ->
       _ -> []
     end.
 
+-spec get_connections_number({binary(), binary()}) -> non_neg_integer().
+
+get_connections_number(FromTo) ->
+    {ResL, _BadNodes} = rpc:multicall(
+                          ejabberd_cluster:get_nodes(),
+                          ?MODULE, get_connections_number_per_node, [FromTo]),
+    lists:sum(ResL).
+
+-spec get_connections_number_per_node({binary(), binary()}) -> non_neg_integer().
+
+get_connections_number_per_node(FromTo) ->
+    ets:select_count(s2s, [{#s2s{fromto = FromTo, _ = '_'}, [], [true]}]).
+
 -spec try_register({binary(), binary()}) -> {key, binary()} | false.
 
 try_register(FromTo) ->
@@ -183,11 +198,11 @@ try_register(FromTo) ->
 	max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
 	max_s2s_connections_number_per_node(FromTo),
+    NeededConnections = needed_connections_number(
+                          FromTo,
+                          MaxS2SConnectionsNumber,
+                          MaxS2SConnectionsNumberPerNode),
     F = fun () ->
-		L = mnesia:read({s2s, FromTo}),
-		NeededConnections = needed_connections_number(L,
-							      MaxS2SConnectionsNumber,
-							      MaxS2SConnectionsNumberPerNode),
 		if NeededConnections > 0 ->
 		       mnesia:write(#s2s{fromto = FromTo, pid = self(),
 					 key = Key}),
@@ -293,6 +308,10 @@ find_connection(From, To) ->
 	max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
 	max_s2s_connections_number_per_node(FromTo),
+    NeededConnections = needed_connections_number(
+                          FromTo,
+                          MaxS2SConnectionsNumber,
+                          MaxS2SConnectionsNumberPerNode),
     ?DEBUG("Finding connection for ~p~n", [FromTo]),
     case catch mnesia:dirty_read(s2s, FromTo) of
       {'EXIT', Reason} -> {aborted, Reason};
@@ -304,9 +323,6 @@ find_connection(From, To) ->
 		 allow_host(MyServer, Server)
 	      of
 	    true ->
-		NeededConnections = needed_connections_number([],
-							      MaxS2SConnectionsNumber,
-							      MaxS2SConnectionsNumberPerNode),
 		open_several_connections(NeededConnections, MyServer,
 					 Server, From, FromTo,
 					 MaxS2SConnectionsNumber,
@@ -314,9 +330,6 @@ find_connection(From, To) ->
 	    false -> {aborted, error}
 	  end;
       L when is_list(L) ->
-	  NeededConnections = needed_connections_number(L,
-							MaxS2SConnectionsNumber,
-							MaxS2SConnectionsNumberPerNode),
 	  if NeededConnections > 0 ->
 		 %% We establish the missing connections for this pair.
 		 open_several_connections(NeededConnections, MyServer,
@@ -362,11 +375,12 @@ new_connection(MyServer, Server, From, FromTo,
     Key = new_key(),
     {ok, Pid} = ejabberd_s2s_out:start(MyServer, Server,
 				       {new, Key}),
+    NeededConnections = needed_connections_number(
+                          FromTo,
+                          MaxS2SConnectionsNumber,
+                          MaxS2SConnectionsNumberPerNode),
     F = fun () ->
 		L = mnesia:read({s2s, FromTo}),
-		NeededConnections = needed_connections_number(L,
-							      MaxS2SConnectionsNumber,
-							      MaxS2SConnectionsNumberPerNode),
 		if NeededConnections > 0 ->
 		       mnesia:write(#s2s{fromto = FromTo, pid = Pid,
 					 key = Key}),
@@ -398,11 +412,12 @@ max_s2s_connections_number_per_node({From, To}) ->
       _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
     end.
 
-needed_connections_number(Ls, MaxS2SConnectionsNumber,
+needed_connections_number(FromTo,
+                          MaxS2SConnectionsNumber,
 			  MaxS2SConnectionsNumberPerNode) ->
-    LocalLs = [L || L <- Ls, node(L#s2s.pid) == node()],
-    lists:min([MaxS2SConnectionsNumber - length(Ls),
-	       MaxS2SConnectionsNumberPerNode - length(LocalLs)]).
+    lists:min(
+      [MaxS2SConnectionsNumber - get_connections_number(FromTo),
+       MaxS2SConnectionsNumberPerNode - get_connections_number_per_node(FromTo)]).
 
 new_key() ->
     <<(randoms:get_string())/binary, "-",
