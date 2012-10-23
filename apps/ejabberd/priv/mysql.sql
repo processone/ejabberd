@@ -70,15 +70,18 @@ CREATE INDEX i_despool USING BTREE ON spool(username);
 
 
 CREATE TABLE vcard (
-    username varchar(250) PRIMARY KEY,
+    username varchar(150),
+    server varchar(100),
     vcard mediumtext NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (username, server)
 ) CHARACTER SET utf8;
 
 
 CREATE TABLE vcard_search (
-    username varchar(250) NOT NULL,
-    lusername varchar(250) PRIMARY KEY,
+    username varchar(150) NOT NULL,
+    lusername varchar(100),
+    server varchar(250),
     fn text NOT NULL,
     lfn varchar(250) NOT NULL,
     family text NOT NULL,
@@ -100,9 +103,11 @@ CREATE TABLE vcard_search (
     orgname text NOT NULL,
     lorgname varchar(250) NOT NULL,
     orgunit text NOT NULL,
-    lorgunit varchar(250) NOT NULL
+    lorgunit varchar(250) NOT NULL,
+    PRIMARY KEY (lusername, server)
 ) CHARACTER SET utf8;
 
+CREATE INDEX i_vcard_search_server    ON vcard_search(server);
 CREATE INDEX i_vcard_search_lfn       ON vcard_search(lfn);
 CREATE INDEX i_vcard_search_lfamily   ON vcard_search(lfamily);
 CREATE INDEX i_vcard_search_lgiven    ON vcard_search(lgiven);

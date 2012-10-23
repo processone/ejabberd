@@ -30,7 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, init/3, stop/1,
-	 get_sm_features/5,
+	 get_local_features/5,
 	 process_local_iq/3,
 	 process_sm_iq/3,
 	 %reindex_vcards/0,
@@ -51,7 +51,7 @@ start(Host, Opts) ->
 				  ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_VCARD,
 				  ?MODULE, process_sm_iq, IQDisc),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, get_local_features, 50),
     MyHost = gen_mod:get_opt_host(Host, Opts, "vjud.@HOST@"),
     Search = gen_mod:get_opt(search, Opts, true),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -94,12 +94,12 @@ stop(Host) ->
     Proc ! stop,
     {wait, Proc}.
 
-get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+get_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_sm_features(Acc, _From, _To, Node, _Lang) ->
+get_local_features(Acc, _From, _To, Node, _Lang) ->
     case Node of
-	[] ->
+	<<>> ->
 	    case Acc of
 		{result, Features} ->
 		    {result, [?NS_VCARD | Features]};
@@ -137,47 +137,65 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
 	set ->
-	    #jid{user = User, lserver = LServer} = From,
-	    case lists:member(LServer, ?MYHOSTS) of
-		true ->
-		    set_vcard(User, LServer, SubEl),
+	    #jid{user = FromUser, lserver = FromVHost} = From,
+            #jid{ user = ToUser,
+                  lserver = ToVHost,
+                  resource = ToResource} = To,
+	    case lists:member(FromVHost, ?MYHOSTS) of
+		true when FromUser == ToUser,
+                          FromVHost == ToVHost,
+                          ToResource == <<>>;
+                          ToUser == <<>>, ToVHost == <<>> ->
+		    ok = set_vcard(FromUser, FromVHost, SubEl),
 		    IQ#iq{type = result, sub_el = []};
-		false ->
+		_ ->
 		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 	    end;
 	get ->
 	    #jid{luser = LUser, lserver = LServer} = To,
 	    Username = ejabberd_odbc:escape(LUser),
-	    case catch odbc_queries:get_vcard(LServer, Username) of
+	    Server = ejabberd_odbc:escape(LServer),
+	    case catch odbc_queries:get_vcard(Server, Username) of
 		{selected, ["vcard"], [{SVCARD}]} ->
 		    case xml_stream:parse_element(SVCARD) of
-			{error, _Reason} ->
+			{error, Reason} ->
+                            ?WARNING_MSG("not sending bad vcard xml ~p~n~p",
+                                         [Reason, SVCARD]),
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
 			VCARD ->
 			    IQ#iq{type = result, sub_el = [VCARD]}
 		    end;
 		{selected, ["vcard"], []} ->
-		    IQ#iq{type = result, sub_el = []};
-		_ ->
+		    IQ#iq{type = error, sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+		Else ->
+                    ?ERROR_MSG("~p", [Else]),
 		    IQ#iq{type = error,
 			  sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
 	    end
     end.
 
-set_vcard(User, LServer, VCARD) ->
-    FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
-    Family   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "FAMILY"},    cdata]),
-    Given    = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "GIVEN"},     cdata]),
-    Middle   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "MIDDLE"},    cdata]),
-    Nickname = xml:get_path_s(VCARD, [{elem, "NICKNAME"},               cdata]),
-    BDay     = xml:get_path_s(VCARD, [{elem, "BDAY"},                   cdata]),
-    CTRY     = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "CTRY"},    cdata]),
-    Locality = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "LOCALITY"},cdata]),
-    EMail1   = xml:get_path_s(VCARD, [{elem, "EMAIL"}, {elem, "USERID"},cdata]),
-    EMail2   = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
-    OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
-    OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
+set_vcard(User, LServerUnesc, VCARD) ->
+    FN       = xml:get_path_s(VCARD, [{elem, <<"FN">>}, cdata]),
+    Family   = xml:get_path_s(VCARD, [{elem, <<"N">>},
+                                      {elem, <<"FAMILY">>}, cdata]),
+    Given    = xml:get_path_s(VCARD, [{elem, <<"N">>},
+                                      {elem, <<"GIVEN">>}, cdata]),
+    Middle   = xml:get_path_s(VCARD, [{elem, <<"N">>},
+                                      {elem, <<"MIDDLE">>}, cdata]),
+    Nickname = xml:get_path_s(VCARD, [{elem, <<"NICKNAME">>}, cdata]),
+    BDay     = xml:get_path_s(VCARD, [{elem, <<"BDAY">>}, cdata]),
+    CTRY     = xml:get_path_s(VCARD, [{elem, <<"ADR">>},
+                                      {elem, <<"CTRY">>}, cdata]),
+    Locality = xml:get_path_s(VCARD, [{elem, <<"ADR">>},
+                                      {elem, <<"LOCALITY">>}, cdata]),
+    EMail1   = xml:get_path_s(VCARD, [{elem, <<"EMAIL">>},
+                                      {elem, <<"USERID">>}, cdata]),
+    EMail2   = xml:get_path_s(VCARD, [{elem, <<"EMAIL">>}, cdata]),
+    OrgName  = xml:get_path_s(VCARD, [{elem, <<"ORG">>},
+                                      {elem, <<"ORGNAME">>}, cdata]),
+    OrgUnit  = xml:get_path_s(VCARD, [{elem, <<"ORG">>},
+                                      {elem, <<"ORGUNIT">>}, cdata]),
     EMail = case EMail1 of
 		"" ->
 		    EMail2;
@@ -215,6 +233,7 @@ set_vcard(User, LServer, VCARD) ->
 	true ->
 	    Username = ejabberd_odbc:escape(User),
 	    LUsername = ejabberd_odbc:escape(LUser),
+	    LServer = ejabberd_odbc:escape(LServerUnesc),
 	    SVCARD = ejabberd_odbc:escape(
 		       xml:element_to_binary(VCARD)),
 
@@ -249,7 +268,8 @@ set_vcard(User, LServer, VCARD) ->
 				   SMiddle, SNickname, SOrgName,
 				   SOrgUnit, SVCARD, Username),
 
-	    ejabberd_hooks:run(vcard_set, LServer, [LUser, LServer, VCARD])
+	    ejabberd_hooks:run(vcard_set, LServer, [LUser, LServer, VCARD]),
+            ok
     end.
 
 -define(TLFIELD(Type, Label, Var),
@@ -263,8 +283,8 @@ set_vcard(User, LServer, VCARD) ->
 	  [{xmlcdata, translate:translate(Lang, "You need an x:data capable client to search")}]},
 	 {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
 	  [{xmlelement, "title", [],
-	    [{xmlcdata, translate:translate(Lang, "Search users in ") ++
-	      jlib:jid_to_string(JID)}]},
+	    [{xmlcdata, [translate:translate(Lang, "Search users in "),
+                         jlib:jid_to_binary(JID)]}]},
 	   {xmlelement, "instructions", [],
 	    [{xmlcdata, translate:translate(Lang, "Fill in the form to search "
 					    "for any matching Jabber User "
@@ -287,7 +307,7 @@ set_vcard(User, LServer, VCARD) ->
 do_route(ServerHost, From, To, Packet) ->
     #jid{user = User, resource = Resource} = To,
     if
-	(User /= "") or (Resource /= "") ->
+	(User /= <<"">>) or (Resource /= <<"">>) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
 	    ejabberd_router:route(To, From, Err);
 	true ->
@@ -421,7 +441,7 @@ find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
 find_xdata_el1([]) ->
     false;
 find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
-    case xml:get_attr_s("xmlns", Attrs) of
+    case xml:get_attr_s(<<"xmlns">>, Attrs) of
 	?NS_XDATA ->
 	    {xmlelement, Name, Attrs, SubEls};
 	_ ->
@@ -436,10 +456,10 @@ find_xdata_el1([_ | Els]) ->
 
 search_result(Lang, JID, ServerHost, Data) ->
     [{xmlelement, "title", [],
-      [{xmlcdata, translate:translate(Lang, "Search Results for ") ++
-	jlib:jid_to_string(JID)}]},
+      [{xmlcdata, [translate:translate(Lang, "Search Results for "),
+                   jlib:jid_to_binary(JID)]}]},
      {xmlelement, "reported", [],
-      [?TLFIELD("text-single", "Jabber ID", "jid"),
+      [?TLFIELD("jid-single", "Jabber ID", "jid"),
        ?TLFIELD("text-single", "Full Name", "fn"),
        ?TLFIELD("text-single", "Name", "first"),
        ?TLFIELD("text-single", "Middle Name", "middle"),
@@ -460,12 +480,12 @@ search_result(Lang, JID, ServerHost, Data) ->
 	   [{xmlcdata, Val}]}]}).
 
 
-record_to_item(LServer, {Username, FN, Family, Given, Middle,
+record_to_item(_CallerVHost, {Username, VCardVHost, FN, Family, Given, Middle,
 			 Nickname, BDay, CTRY, Locality,
 			 EMail, OrgName, OrgUnit}) ->
     {xmlelement, "item", [],
      [
-       ?FIELD("jid",      Username ++ "@" ++ LServer),
+       ?FIELD("jid",      [Username, "@", VCardVHost]),
        ?FIELD("fn",       FN),
        ?FIELD("last",     Family),
        ?FIELD("first",    Given),
@@ -482,11 +502,11 @@ record_to_item(LServer, {Username, FN, Family, Given, Middle,
 
 
 search(LServer, Data) ->
-    MatchSpec = make_matchspec(LServer, Data),
+    RestrictionSQL = make_restriction_sql(LServer, Data),
     AllowReturnAll = gen_mod:get_module_opt(LServer, ?MODULE,
 					    allow_return_all, false),
     if
-	(MatchSpec == "") and (not AllowReturnAll) ->
+	(RestrictionSQL == "") and (not AllowReturnAll) ->
 	    [];
 	true ->
 	    Limit = case gen_mod:get_module_opt(LServer, ?MODULE,
@@ -503,12 +523,12 @@ search(LServer, Data) ->
 		    end,
 	    case catch ejabberd_odbc:sql_query(
 			 LServer,
-			 ["select username, fn, family, given, middle, "
+			 ["select username, server, fn, family, given, middle, "
 			  "       nickname, bday, ctry, locality, "
 			  "       email, orgname, orgunit from vcard_search ",
-			  MatchSpec, Limit, ";"]) of
-		{selected, ["username", "fn", "family", "given", "middle",
-			    "nickname", "bday", "ctry", "locality",
+			  RestrictionSQL, Limit, ";"]) of
+		{selected, ["username", "server", "fn", "family", "given",
+			    "middle", "nickname", "bday", "ctry", "locality",
 			    "email", "orgname", "orgunit"],
 		 Rs} when is_list(Rs) ->
 		    Rs;
@@ -519,128 +539,58 @@ search(LServer, Data) ->
     end.
 
 
-make_matchspec(LServer, Data) ->
+make_restriction_sql(LServer, Data) ->
     filter_fields(Data, "", LServer).
 
-filter_fields([], Match, _LServer) ->
-    case Match of
+filter_fields([], RestrictionSQL, _LServer) ->
+    case RestrictionSQL of
 	"" ->
 	    "";
+        <<>> ->
+            <<>>;
 	_ ->
-	    [" where ", Match]
+	    [" where ", RestrictionSQL]
     end;
-filter_fields([{SVar, [Val]} | Ds], Match, LServer)
-  when is_list(Val) and (Val /= "") ->
+filter_fields([{SVar, [Val]} | Ds], RestrictionSQL, LServer)
+  when is_binary(Val) and (Val /= <<"">>) ->
     LVal = stringprep:tolower(Val),
-    NewMatch = case SVar of
-                   "user"     -> make_val(Match, "lusername", LVal);
-                   "fn"       -> make_val(Match, "lfn",       LVal);
-                   "last"     -> make_val(Match, "lfamily",   LVal);
-                   "first"    -> make_val(Match, "lgiven",    LVal);
-                   "middle"   -> make_val(Match, "lmiddle",   LVal);
-                   "nick"     -> make_val(Match, "lnickname", LVal);
-                   "bday"     -> make_val(Match, "lbday",     LVal);
-                   "ctry"     -> make_val(Match, "lctry",     LVal);
-                   "locality" -> make_val(Match, "llocality", LVal);
-                   "email"    -> make_val(Match, "lemail",    LVal);
-                   "orgname"  -> make_val(Match, "lorgname",  LVal);
-                   "orgunit"  -> make_val(Match, "lorgunit",  LVal);
-		   _          -> Match
-	       end,
-    filter_fields(Ds, NewMatch, LServer);
-filter_fields([_ | Ds], Match, LServer) ->
-    filter_fields(Ds, Match, LServer).
+    NewRestrictionSQL =
+        case SVar of
+            <<"user">>     -> make_val(RestrictionSQL, "lusername", LVal);
+            <<"fn">>       -> make_val(RestrictionSQL, "lfn",       LVal);
+            <<"last">>     -> make_val(RestrictionSQL, "lfamily",   LVal);
+            <<"first">>    -> make_val(RestrictionSQL, "lgiven",    LVal);
+            <<"middle">>   -> make_val(RestrictionSQL, "lmiddle",   LVal);
+            <<"nick">>     -> make_val(RestrictionSQL, "lnickname", LVal);
+            <<"bday">>     -> make_val(RestrictionSQL, "lbday",     LVal);
+            <<"ctry">>     -> make_val(RestrictionSQL, "lctry",     LVal);
+            <<"locality">> -> make_val(RestrictionSQL, "llocality", LVal);
+            <<"email">>    -> make_val(RestrictionSQL, "lemail",    LVal);
+            <<"orgname">>  -> make_val(RestrictionSQL, "lorgname",  LVal);
+            <<"orgunit">>  -> make_val(RestrictionSQL, "lorgunit",  LVal);
+            _              -> RestrictionSQL
+        end,
+    filter_fields(Ds, NewRestrictionSQL, LServer);
+filter_fields([_ | Ds], RestrictionSQL, LServer) ->
+    filter_fields(Ds,RestrictionSQL , LServer).
 
-make_val(Match, Field, Val) ->
+make_val(RestrictionSQL, Field, Val) ->
     Condition =
-	case lists:suffix("*", Val) of
-	    true ->
+	case binary:last(Val) of
+	    <<"*">> ->
 		Val1 = lists:sublist(Val, length(Val) - 1),
-		SVal = ejabberd_odbc:escape_like(Val1) ++ "%",
+		SVal = [ejabberd_odbc:escape_like(Val1), "%"],
 		[Field, " LIKE '", SVal, "'"];
 	    _ ->
 		SVal = ejabberd_odbc:escape(Val),
 		[Field, " = '", SVal, "'"]
 	end,
-    case Match of
+    case RestrictionSQL of
 	"" ->
 	    Condition;
 	_ ->
-	    [Match, " and ", Condition]
+	    [RestrictionSQL, " and ", Condition]
     end.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%set_vcard_t(R, _) ->
-%    US = R#vcard.us,
-%    User  = US,
-%    VCARD = R#vcard.vcard,
-%
-%    FN       = xml:get_path_s(VCARD, [{elem, "FN"},                     cdata]),
-%    Family   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "FAMILY"},    cdata]),
-%    Given    = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "GIVEN"},     cdata]),
-%    Middle   = xml:get_path_s(VCARD, [{elem, "N"}, {elem, "MIDDLE"},    cdata]),
-%    Nickname = xml:get_path_s(VCARD, [{elem, "NICKNAME"},               cdata]),
-%    BDay     = xml:get_path_s(VCARD, [{elem, "BDAY"},                   cdata]),
-%    CTRY     = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "CTRY"},    cdata]),
-%    Locality = xml:get_path_s(VCARD, [{elem, "ADR"}, {elem, "LOCALITY"},cdata]),
-%    EMail    = xml:get_path_s(VCARD, [{elem, "EMAIL"},                  cdata]),
-%    OrgName  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGNAME"}, cdata]),
-%    OrgUnit  = xml:get_path_s(VCARD, [{elem, "ORG"}, {elem, "ORGUNIT"}, cdata]),
-%
-%    {LUser, _LServer} = US,
-%    LFN       = stringprep:tolower(FN),
-%    LFamily   = stringprep:tolower(Family),
-%    LGiven    = stringprep:tolower(Given),
-%    LMiddle   = stringprep:tolower(Middle),
-%    LNickname = stringprep:tolower(Nickname),
-%    LBDay     = stringprep:tolower(BDay),
-%    LCTRY     = stringprep:tolower(CTRY),
-%    LLocality = stringprep:tolower(Locality),
-%    LEMail    = stringprep:tolower(EMail),
-%    LOrgName  = stringprep:tolower(OrgName),
-%    LOrgUnit  = stringprep:tolower(OrgUnit),
-%
-%    if
-%	(LUser     == error) or
-%	(LFN       == error) or
-%	(LFamily   == error) or
-%	(LGiven    == error) or
-%	(LMiddle   == error) or
-%	(LNickname == error) or
-%	(LBDay     == error) or
-%	(LCTRY     == error) or
-%	(LLocality == error) or
-%	(LEMail    == error) or
-%	(LOrgName  == error) or
-%	(LOrgUnit  == error) ->
-%	    {error, badarg};
-%	true ->
-%	    mnesia:write(
-%	      #vcard_search{us        = US,
-%			    user      = User,     luser      = LUser,
-%			    fn        = FN,       lfn        = LFN,
-%			    family    = Family,   lfamily    = LFamily,
-%			    given     = Given,    lgiven     = LGiven,
-%			    middle    = Middle,   lmiddle    = LMiddle,
-%			    nickname  = Nickname, lnickname  = LNickname,
-%			    bday      = BDay,     lbday      = LBDay,
-%			    ctry      = CTRY,     lctry      = LCTRY,
-%			    locality  = Locality, llocality  = LLocality,
-%			    email     = EMail,    lemail     = LEMail,
-%			    orgname   = OrgName,  lorgname   = LOrgName,
-%			    orgunit   = OrgUnit,  lorgunit   = LOrgUnit
-%			   })
-%    end.
-%
-%
-%reindex_vcards() ->
-%    F = fun() ->
-%		mnesia:foldl(fun set_vcard_t/2, [], vcard)
-%	end,
-%    mnesia:transaction(F).
 
 
 remove_user(User, Server) ->
