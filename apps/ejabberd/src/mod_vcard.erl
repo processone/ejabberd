@@ -7,7 +7,7 @@
 %%% Store vCards in mnesia to provide "XEP-0054: vcard-temp"
 %%% and "XEP-0055: Jabber Search"
 %%%
-%%% Most of this is not using binaries. The search fields l* in vcard_search
+%%% Most of this is now using binaries. The search fields l* in vcard_search
 %%% are still stored as lists to allow string prefix search using the match
 %%% spec with a trailing element String ++ '_'.
 %%%
