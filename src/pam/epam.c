@@ -154,6 +154,7 @@ static int write_cmd(char *buf, int len)
 static int process_reply(ETERM *pid, int cmd, int res)
 {
   ETERM *result;
+  ETERM *errbin;
   int len, retval;
   const char *errtxt;
   byte *buf;
@@ -162,7 +163,9 @@ static int process_reply(ETERM *pid, int cmd, int res)
   else
     {
       errtxt = pam_strerror(NULL, res);
-      result = erl_format("{~i, ~w, {false, ~s}}", cmd, pid, errtxt);
+      errbin = erl_mk_binary(errtxt, strlen(errtxt));
+      result = erl_format("{~i, ~w, {false, ~w}}", cmd, pid, errbin);
+      erl_free_term(errbin);
     }
   len = erl_term_len(result);
   buf = erl_malloc(len);
