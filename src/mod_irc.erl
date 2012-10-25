@@ -56,7 +56,8 @@
 
 -type conn_param() :: {binary(), binary(), inet:port_number(), binary()} |
                       {binary(), binary(), inet:port_number()} |
-                      {binary(), binary()}.
+                      {binary(), binary()} |
+                      {binary()}.
 
 -record(irc_connection,
         {jid_server_host = {#jid{}, <<"">>, <<"">>} :: {jid(), binary(), binary()},
@@ -1224,7 +1225,9 @@ data_to_binary(Data) ->
          ({connections_params, Params}) ->
               {connections_params,
                lists:map(
-                 fun({S, E}) ->
+                 fun({S}) ->
+                         {iolist_to_binary(S)};
+                    ({S, E}) ->
                          {iolist_to_binary(S), iolist_to_binary(E)};
                     ({S, E, Port}) ->
                          {iolist_to_binary(S), iolist_to_binary(E), Port};
@@ -1238,7 +1241,9 @@ data_to_binary(Data) ->
 
 conn_params_to_list(Params) ->
     lists:map(
-      fun({S, E}) ->
+      fun({S}) ->
+              {binary_to_list(S)};
+         ({S, E}) ->
               {binary_to_list(S), binary_to_list(E)};
          ({S, E, Port}) ->
               {binary_to_list(S), binary_to_list(E), Port};
