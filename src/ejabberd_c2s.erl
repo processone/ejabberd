@@ -1125,8 +1125,7 @@ resource_conflict_action(U, S, R) ->
       acceptnew -> {accept_resource, R};
       closenew -> closenew;
       setresource ->
-	  Rnew = iolist_to_binary([randoms:get_string()
-                                   | tuple_to_list(now())]),
+	  Rnew = randoms:get_string(),
 	  {accept_resource, Rnew}
     end.
 
@@ -1139,9 +1138,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 			      [{elem, <<"resource">>}, cdata]),
 	  R = case jlib:resourceprep(R1) of
 		error -> error;
-		<<"">> ->
-                      iolist_to_binary([randoms:get_string()
-                                        | tuple_to_list(now())]);
+		<<"">> -> randoms:get_string();
 		Resource -> Resource
 	      end,
 	  case R of

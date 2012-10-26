@@ -1102,8 +1102,7 @@ start_shaper_timer(Timeout) ->
     erlang:start_timer(Timeout, self(), shaper_timeout).
 
 make_random_jid(Host) ->
-    User = iolist_to_binary([randoms:get_string()
-                             | tuple_to_list(now())]),
+    User = randoms:get_string(),
     jlib:make_jid(User, Host, randoms:get_string()).
 
 make_socket(Pid, IP) -> {http_bind, Pid, IP}.

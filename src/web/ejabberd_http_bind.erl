@@ -1278,6 +1278,5 @@ get_session(SID) ->
     end.
 
 make_random_jid(Host) ->
-    User = iolist_to_binary([randoms:get_string()
-                             | tuple_to_list(now())]),
+    User = randoms:get_string(),
     jlib:make_jid(User, Host, randoms:get_string()).
