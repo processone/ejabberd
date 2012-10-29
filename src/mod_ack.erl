@@ -33,7 +33,7 @@
 %% API
 -export([start/2, stop/1, start_link/2]).
 
--export([user_send_packet/3, offline_message/3,
+-export([user_send_packet/4, offline_message/3,
 	 delayed_message/3, remove_connection/3,
 	 feature_inspect_packet/4]).
 
@@ -90,7 +90,7 @@ stop(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-user_send_packet(From, To,
+user_send_packet(_Debug, From, To,
 		 #xmlel{name = <<"message">>} = Packet) ->
     case has_receipt_request(Packet) of
       {true, _} ->
@@ -104,7 +104,7 @@ user_send_packet(From, To,
 	    false -> do_nothing
 	  end
     end;
-user_send_packet(From, _To,
+user_send_packet(_Debug, From, _To,
 		 #xmlel{name = <<"iq">>, attrs = Attrs}) ->
     case xml:get_attr_s(<<"id">>, Attrs) of
       <<"">> -> ok;
@@ -112,7 +112,7 @@ user_send_packet(From, _To,
 	  Server = From#jid.lserver,
 	  del_timer(Server, {iq, ID}, From)
     end;
-user_send_packet(_From, _To, _Packet) -> do_nothing.
+user_send_packet(_Debug, _From, _To, _Packet) -> do_nothing.
 
 offline_message(From, To, Packet) ->
     process_ack_request(<<"offline">>, From, To, Packet),
