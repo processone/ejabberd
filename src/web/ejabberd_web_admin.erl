@@ -1046,11 +1046,45 @@ term_to_string(T) ->
 			     <<"">>).
 
 term_to_paragraph(T, Cols) ->
-    Paragraph = list_to_binary(erl_prettypr:format(erl_syntax:abstract(T),
-                                                   [{paper, Cols}])),
+    P1 = erl_syntax:abstract(T),
+    P2 = erl_prettypr:format(P1, [{paper, Cols}]),
+    P3 = pretty_binaries(P2),
+    Paragraph = list_to_binary(P3),
     FieldList = ejabberd_regexp:split(Paragraph, <<"\n">>),
     NumLines = length(FieldList),
     {NumLines, Paragraph}.
+
+%% Convert a string like this:
+%%   "[{acl, admin,\n  {user, <<98, 97, 100, 108, 111, 112>>,
+%% into something like this:
+%%   "[{acl,admin,{user,<<"badlop">>,
+pretty_binaries(String) ->
+    pretty_sentence(String, "").
+
+pretty_sentence("", R) ->
+    lists:reverse(R);
+pretty_sentence([$<, $< | A], R) ->
+    {A2, Binary} = pretty_binary(A, ""),
+    pretty_sentence(A2, Binary ++ R);
+pretty_sentence([Char | A], R) ->
+    pretty_sentence(A, [Char | R]).
+
+pretty_binary([$>, $> | A], "") ->
+    {A, ">>" ++ "<<"};
+pretty_binary([$>, $> | A], R) ->
+    {A, ">>" ++ io_lib:format("~p", [lists:reverse(R)]) ++ "<<"};
+pretty_binary([$, | A], R) ->
+    pretty_binary(A, R);
+pretty_binary([32 | A], R) ->
+    pretty_binary(A, R);
+pretty_binary([$\n | A], R) ->
+    pretty_binary(A, R);
+pretty_binary([Digit1, Digit2, Other | A], R) when (Other == $>) or (Other == $,) ->
+    Integer = list_to_integer([Digit1, Digit2]),
+    pretty_binary([Other | A], [Integer | R]);
+pretty_binary([Digit1, Digit2, Digit3, Other | A], R) when (Other == $>) or (Other == $,) ->
+    Integer = list_to_integer([Digit1, Digit2, Digit3]),
+    pretty_binary([Other | A], [Integer | R]).
 
 term_to_id(T) -> jlib:encode_base64((term_to_binary(T))).
 
