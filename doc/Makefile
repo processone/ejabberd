@@ -22,9 +22,9 @@ release:
 	@echo -n "% Contributed modules (automatically generated)."  > contributed_modules.tex
 	@echo -e "$(CONTRIBUTED_MODULES)" >> contributed_modules.tex
 
-html:	guide.html dev.html features.html
+html:	guide.html dev.html features.html commercial.html
 
-pdf:	guide.pdf features.pdf
+pdf:	guide.pdf features.pdf commercial.pdf
 
 clean:
 	rm -f *.aux
@@ -60,3 +60,13 @@ guide.pdf:	guide.tex
 
 features.pdf:	features.tex
 		pdflatex features.tex
+
+guide.html:	commercial.tex
+		hevea -fix -pedantic commercial.tex
+
+guide.pdf:	commercial.tex
+		pdflatex commercial.tex
+		pdflatex commercial.tex
+		pdflatex commercial.tex
+		makeindex commercial.idx
+		pdflatex commercial.tex
