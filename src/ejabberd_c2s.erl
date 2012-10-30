@@ -1505,13 +1505,17 @@ handle_info({route, _From, _To, {broadcast, Data}},
                                                              attrs = [{<<"name">>,
                                                                        PrivListName}],
                                                              children = []}]}]},
+                    PrivFrom = jlib:jid_remove_resource(StateData#state.jid),
+                    PrivTo = StateData#state.jid,
                     PrivPushEl = jlib:replace_from_to(
-                                   jlib:jid_remove_resource(StateData#state.jid),
-                                   StateData#state.jid,
+                                   PrivFrom,
+                                   PrivTo,
                                    jlib:iq_to_xml(PrivPushIQ)),
                     send_element(StateData, PrivPushEl),
+                    StateData2 = send_or_enqueue_packet(
+                                   StateData, PrivFrom, PrivTo, PrivPushEl),
                     fsm_next_state(StateName,
-                                   StateData#state{privacy_list = NewPL})
+                                   StateData2#state{privacy_list = NewPL})
             end;
         {blocking, What} ->
             route_blocking(What, StateData),
@@ -1788,18 +1792,7 @@ handle_info({route, From, To,
 					  jlib:jid_to_string(To), NewAttrs),
 	   FixedPacket = #xmlel{name = Name, attrs = Attrs2,
 				children = Els},
-	   NewState2 = if NewState#state.reception and
-			    not
-			      (NewState#state.standby and
-				 (Name /= "message")) ->
-			      send_element(NewState, FixedPacket),
-			      ack(NewState, From, To, FixedPacket);
-			  true ->
-			      NewState1 =
-				  send_out_of_reception_message(NewState, From,
-								To, Packet),
-			      enqueue(NewState1, From, To, FixedPacket)
-		       end,
+	   NewState2 = send_or_enqueue_packet(NewState, From, To, FixedPacket),
 	   ejabberd_hooks:run(user_receive_packet,
 			      StateData#state.server,
 			      [StateData#state.debug, StateData#state.jid, From,
@@ -2133,6 +2126,19 @@ send_trailer(StateData)
 				       {xmlstreamend, <<"stream:stream">>});
 send_trailer(StateData) ->
     send_text(StateData, ?STREAM_TRAILER).
+
+send_or_enqueue_packet(State, From, To, Packet) ->
+    #xmlel{name = Name} = Packet,
+    if State#state.reception and
+       not (State#state.standby and
+            (Name /= "message")) ->
+            send_element(State, Packet),
+            ack(State, From, To, Packet);
+       true ->
+            NewState = send_out_of_reception_message(State, From, To, Packet),
+            enqueue(NewState, From, To, Packet)
+    end.
+
 
 new_id() -> randoms:get_string().
 
