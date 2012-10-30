@@ -2130,7 +2130,7 @@ send_or_enqueue_packet(State, From, To, Packet) ->
     #xmlel{name = Name} = Packet,
     if State#state.reception and
        not (State#state.standby and
-            (Name /= "message")) ->
+            (Name /= <<"message">>)) ->
             send_element(State, Packet),
             ack(State, From, To, Packet);
        true ->
