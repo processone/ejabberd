@@ -1070,14 +1070,16 @@ pretty_sentence([Char | A], R) ->
     pretty_sentence(A, [Char | R]).
 
 pretty_binary([$>, $> | A], "") ->
-    {A, ">>" ++ "<<"};
+    {A, "\"\""};
 pretty_binary([$>, $> | A], R) ->
-    {A, ">>" ++ io_lib:format("~p", [lists:reverse(R)]) ++ "<<"};
+    {A, io_lib:format("~p", [lists:reverse(R)])};
 pretty_binary([$, | A], R) ->
     pretty_binary(A, R);
 pretty_binary([32 | A], R) ->
     pretty_binary(A, R);
 pretty_binary([$\n | A], R) ->
+    pretty_binary(A, R);
+pretty_binary([$\t | A], R) ->
     pretty_binary(A, R);
 pretty_binary([Digit1, Digit2, Other | A], R) when (Other == $>) or (Other == $,) ->
     Integer = list_to_integer([Digit1, Digit2]),
