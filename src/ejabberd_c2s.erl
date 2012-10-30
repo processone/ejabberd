@@ -1511,7 +1511,6 @@ handle_info({route, _From, _To, {broadcast, Data}},
                                    PrivFrom,
                                    PrivTo,
                                    jlib:iq_to_xml(PrivPushIQ)),
-                    send_element(StateData, PrivPushEl),
                     StateData2 = send_or_enqueue_packet(
                                    StateData, PrivFrom, PrivTo, PrivPushEl),
                     fsm_next_state(StateName,
