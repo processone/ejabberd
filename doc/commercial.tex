@@ -66,6 +66,7 @@
 \newcommand{\module}[1]{\texttt{#1}}
 \newcommand{\modack}{\module{mod\_ack}}
 \newcommand{\modadhoc}{\module{mod\_adhoc}}
+\newcommand{\modadminp}{\module{mod\_admin\_p1}}
 \newcommand{\modannounce}{\module{mod\_announce}}
 \newcommand{\modannounceodbc}{\module{mod\_announce\_odbc}}
 \newcommand{\modapplepush}{\module{mod\_applepush}}
@@ -136,6 +137,7 @@ the processing discipline for #1 IQ queries (see section~\ref{modiqdiscoption}).
 
 %% Title page
 \include{version}
+\include{mod_admin}
 \newlength{\larg}
 \setlength{\larg}{14.5cm}
 \title{
@@ -2604,6 +2606,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline
     \hline \ahrefloc{modack}{\modack{}} & Reliable message delivery & \\
     \hline \modadhoc{} & Ad-Hoc Commands (\xepref{0050}) &  \\
+    \hline \modadminp{} & Extended administration commands & \\
     \hline \ahrefloc{modannounce}{\modannounce{}} & Manage announcements & recommends \modadhoc{} \\
     \hline \ahrefloc{modannounce}{\modannounceodbc{}} & Manage announcements & recommends \modadhoc{} \\
     & & supported DB (*) \\
@@ -2808,6 +2811,16 @@ using it's capabilities (\xepref{0115})), \XMPP{} pings (\xepref{0199}) are used
 to check the connection status of the recipient after every sent message.
 Since the latter procedure is not very effective, clients are encouraged
 to support \xepref{0184}.
+
+\makesubsection{modadminp}{\modadminp{}}
+\ind{modules!\modadminp{}}
+
+This module provides additional administration commands.
+Use \verb|ejabberdctl help| to get the detailed information about the commands.
+
+Currently available commands:
+
+\modadminsection{}
 
 \makesubsection{modannounce}{\modannounce{}}
 \ind{modules!\modannounce{}}\ind{MOTD}\ind{message of the day}\ind{announcements}

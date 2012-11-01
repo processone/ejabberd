@@ -21,6 +21,7 @@ release:
 	@echo "\newcommand{\version}{"`sed '/vsn/!d;s/\(.*\)"\(.*\)"\(.*\)/\2/' ../src/ejabberd.app`"}" >> version.tex
 	@echo -n "% Contributed modules (automatically generated)."  > contributed_modules.tex
 	@echo -e "$(CONTRIBUTED_MODULES)" >> contributed_modules.tex
+	@echo "% mod_admin_p1 commands list."
 
 html:	guide.html dev.html features.html commercial.html
 
@@ -61,10 +62,12 @@ guide.pdf:	guide.tex
 features.pdf:	features.tex
 		pdflatex features.tex
 
-guide.html:	commercial.tex
+commercial.html: commercial.tex
+		./mod_admin_p1_commands.sh
 		hevea -fix -pedantic commercial.tex
 
-guide.pdf:	commercial.tex
+commercial.pdf:	commercial.tex
+		./mod_admin_p1_commands.sh
 		pdflatex commercial.tex
 		pdflatex commercial.tex
 		pdflatex commercial.tex
