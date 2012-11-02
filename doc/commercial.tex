@@ -3389,6 +3389,15 @@ Module options:
   and, as a result, nothing is kept in memory. The default value is
   \term{20}. This value is global and thus affects all rooms on the
   service.
+\titem{\{persistent\_history, false|true\}} \ind{options!persistent\_history}
+  Store recent messages of persistent MUC rooms in the ODBC table 'room\_history'
+  when ejabberd or the MUC service is stopping.
+  Later, when ejabberd is started again, those messages are loaded from the database,
+  and provided as room history when the room occupants join the room.
+  The messages are stored on server shutdown, but if the server crashes
+  the recent history is lost.
+  It is also possible to force the storage immediately by calling the ejabberd
+  command 'persist\_recent\_messages', using ejabberdctl or other method.
 \titem{\{max\_users, Number\}} \ind{options!max\_users} This option defines at
   the service level, the maximum number of users allowed per
   room. It can be lowered in each room configuration but cannot be
