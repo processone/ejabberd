@@ -113,6 +113,11 @@ websocket_handle({text, Msg}, Req, State) ->
     {ok, NewState} = handle_text(Msg, State),
     {ok, Req, NewState};
 
+websocket_handle({binary, Msg}, Req, State) ->
+    ?INFO_MSG("Received binary: ~p", [Msg]),
+    {ok, NewState} = handle_text(Msg, State),
+    {ok, Req, NewState};
+
 % With this callback we can handle other kind of
 % messages, like binary.
 websocket_handle(Any, Req, State) ->
