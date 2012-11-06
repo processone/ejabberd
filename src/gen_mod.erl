@@ -209,22 +209,26 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
--spec db_type(opts()) -> odbc | mnesia.
+-spec db_type(opts()) -> odbc | mnesia | riak.
 
 db_type(Opts) ->
     get_opt(db_type, Opts,
             fun(odbc) -> odbc;
                (internal) -> mnesia;
-               (mnesia) -> mnesia end,
+               (mnesia) -> mnesia;
+               (riak) -> riak
+            end,
             mnesia).
 
--spec db_type(binary(), atom()) -> odbc | mnesia.
+-spec db_type(binary(), atom()) -> odbc | mnesia | riak.
 
 db_type(Host, Module) ->
     get_module_opt(Host, Module, db_type,
                    fun(odbc) -> odbc;
                       (internal) -> mnesia;
-                      (mnesia) -> mnesia end,
+                      (mnesia) -> mnesia;
+                      (riak) -> riak
+                   end,
                    mnesia).
 
 -spec loaded_modules(binary()) -> [atom()].
