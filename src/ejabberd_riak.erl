@@ -28,7 +28,7 @@
 -author('alexey@process-one.net').
 
 %% External exports
--export([start_link/1,
+-export([start_link/3,
          put/4,
          put/5,
          get_object/3,
@@ -44,9 +44,9 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start_link(StartInterval) ->
+start_link(Server, Port, StartInterval) ->
     {ok, Pid} = riakc_pb_socket:start_link(
-                  "127.0.0.1", 8081,
+                  Server, Port,
                   [auto_reconnect]),
     ejabberd_riak_sup:add_pid(Pid),
     {ok, Pid}.

@@ -50,6 +50,16 @@
 -record(riak_pool, {undefined, pid}).
 
 start() ->
+    StartRiak = ejabberd_config:get_local_option(
+                  riak_server, fun(_) -> true end, false),
+    if
+        StartRiak ->
+            do_start();
+        true ->
+            ok
+    end.
+
+do_start() ->
     SupervisorName = ?MODULE,
     ChildSpec =
 	{SupervisorName,
@@ -83,36 +93,26 @@ start_link() ->
 
 init([]) ->
     PoolSize =
-        case ejabberd_config:get_local_option(riak_pool_size) of
-            I when is_integer(I) ->
-                I;
-	    undefined ->
-                ?DEFAULT_POOL_SIZE;
-            Other ->
-                ?ERROR_MSG("Wrong riak_pool_size definition '~p' "
-                           "default to ~p~n",
-                           [Other, ?DEFAULT_POOL_SIZE]),
-                ?DEFAULT_POOL_SIZE
-        end,
+        ejabberd_config:get_local_option(
+          riak_pool_size,
+          fun(N) when is_integer(N), N >= 1 -> N end,
+          ?DEFAULT_POOL_SIZE),
     StartInterval =
-        case ejabberd_config:get_local_option(riak_start_interval) of
-            Interval when is_integer(Interval) ->
-                Interval;
-            undefined ->
-                ?DEFAULT_RIAK_START_INTERVAL;
-            _Other2 ->
-                ?ERROR_MSG("Wrong riak_start_interval "
-                           "definition '~p', "
-                           "defaulting to ~p~n",
-                           [_Other2,
-                            ?DEFAULT_RIAK_START_INTERVAL]),
-                ?DEFAULT_RIAK_START_INTERVAL
-        end,
+        ejabberd_config:get_local_option(
+          riak_start_interval,
+          fun(N) when is_integer(N), N >= 1 -> N end,
+          ?DEFAULT_RIAK_START_INTERVAL),
+    {Server, Port} =
+        ejabberd_config:get_local_option(
+          riak_server,
+          fun({S, P}) when is_list(S), is_integer(P), P >= 1 -> {S, P} end,
+          {"127.0.0.1", 8081}),
     {ok, {{one_for_one, PoolSize*10, 1},
 	  lists:map(
 	    fun(I) ->
 		    {I,
-		     {ejabberd_riak, start_link, [StartInterval*1000]},
+		     {ejabberd_riak, start_link,
+                      [Server, Port, StartInterval*1000]},
 		     transient,
                      2000,
 		     worker,

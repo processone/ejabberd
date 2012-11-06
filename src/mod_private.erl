@@ -89,7 +89,8 @@ process_sm_iq(#jid{luser = LUser, lserver = LServer},
 		    end,
 		case DBType of
 		  odbc -> ejabberd_odbc:sql_transaction(LServer, F);
-		  mnesia -> mnesia:transaction(F)
+		  mnesia -> mnesia:transaction(F);
+		  riak -> F()
 		end,
 		IQ#iq{type = result, sub_el = []}
 	  end;
@@ -149,7 +150,15 @@ set_data(LUser, LServer, {XMLNS, El}, odbc) ->
     LXMLNS = ejabberd_odbc:escape(XMLNS),
     SData = ejabberd_odbc:escape(xml:element_to_binary(El)),
     odbc_queries:set_private_data(LServer, Username, LXMLNS,
-				  SData).
+				  SData);
+set_data(LUser, LServer, {XMLNS, El}, riak) ->
+    Username = LUser,
+    Key = <<LUser/binary, $@, LServer/binary, $@, XMLNS/binary>>,
+    SData = xml:element_to_binary(El),
+    ejabberd_riak:put(
+      LServer, <<"private">>, Key, SData,
+      [{<<"user_bin">>, Username}]),
+    ok.
 
 get_data(LUser, LServer, Data) ->
     get_data(LUser, LServer,
@@ -182,10 +191,19 @@ get_data(LUser, LServer, odbc, [{XMLNS, El} | Els],
 	    Data when is_record(Data, xmlel) ->
 		get_data(LUser, LServer, odbc, Els, [Data | Res])
 	  end;
-      %% MREMOND: I wonder when the query could return a vcard ?
-      {selected, [<<"vcard">>], []} ->
-	  get_data(LUser, LServer, odbc, Els, [El | Res]);
       _ -> get_data(LUser, LServer, odbc, Els, [El | Res])
+    end;
+get_data(LUser, LServer, riak, [{XMLNS, El} | Els],
+	 Res) ->
+    Key = <<LUser/binary, $@, LServer/binary, $@, XMLNS/binary>>,
+    case ejabberd_riak:get(LServer, <<"private">>, Key) of
+        {ok, SData} ->
+            case xml_stream:parse_element(SData) of
+                Data when element(1, Data) == xmlelement ->
+                    get_data(LUser, LServer, riak, Els, [Data | Res])
+            end;
+        _ -> 
+            get_data(LUser, LServer, riak, Els, [El | Res])
     end.
 
 
@@ -205,6 +223,23 @@ get_all_data(LUser, LServer, odbc) ->
         {selected, [<<"namespace">>, <<"data">>], Res} ->
             lists:flatmap(
               fun([_, SData]) ->
+                      case xml_stream:parse_element(SData) of
+                          #xmlel{} = El ->
+                              [El];
+                          _ ->
+                              []
+                      end
+              end, Res);
+        _ ->
+            []
+    end;
+get_all_data(LUser, LServer, riak) ->
+    Username = LUser,
+    case ejabberd_riak:get_by_index(
+           LServer, <<"private">>, <<"user_bin">>, Username) of
+        {ok, Res} ->
+            lists:flatmap(
+              fun(SData) ->
                       case xml_stream:parse_element(SData) of
                           #xmlel{} = El ->
                               [El];
@@ -242,7 +277,19 @@ remove_user(LUser, LServer, mnesia) ->
 remove_user(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     odbc_queries:del_user_private_storage(LServer,
-					  Username).
+					  Username);
+remove_user(LUser, LServer, riak) ->
+    Username = LUser,
+    case ejabberd_riak:get_keys_by_index(
+           LServer, <<"private">>, <<"user_bin">>, Username) of
+        {ok, Keys} ->
+            lists:foreach(
+              fun(Key) ->
+                      ejabberd_riak:delete(LServer, <<"private">>, Key)
+              end, Keys);
+        _ ->
+            ok
+    end.
 
 update_table() ->
     Fields = record_info(fields, private_storage),

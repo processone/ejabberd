@@ -464,6 +464,8 @@ process_term(Term, State) ->
             add_option(rehash_timeout, Secs, State);
         {migrate_timeout, Secs} ->
             add_option(migrate_timeout, Secs, State);
+        {riak_server, ServerPort} ->
+            add_option(riak_server, ServerPort, State);
 	{_Opt, _Val} ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
 			State, State#state.hosts)

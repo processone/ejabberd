@@ -212,6 +212,19 @@ get_vcard(LUser, LServer, odbc) ->
 	  end;
       {selected, [<<"vcard">>], []} -> [];
       _ -> error
+    end;
+get_vcard(LUser, LServer, riak) ->
+    Username = LUser,
+    case catch ejabberd_riak:get(LServer, <<"vcard">>, Username) of
+        {ok, SVCARD} ->
+            case xml_stream:parse_element(SVCARD) of
+                {error, _Reason} -> error;
+                VCARD -> [VCARD]
+            end;
+        {error, notfound} ->
+            [];
+        _ ->
+            error
     end.
 
 set_vcard(User, LServer, VCARD) ->
@@ -322,7 +335,25 @@ set_vcard(User, LServer, VCARD) ->
 					SLGiven, SLLocality, SLMiddle,
 					SLNickname, SLOrgName, SLOrgUnit,
 					SLocality, SMiddle, SNickname, SOrgName,
-					SOrgUnit, SVCARD, Username)
+					SOrgUnit, SVCARD, Username);
+	     riak ->
+                   Username = LUser,
+                   SVCARD = xml:element_to_binary(VCARD),
+
+                   ejabberd_riak:put(
+                     LServer, <<"vcard">>, Username, SVCARD,
+                     [{<<"bday_bin">>, LBDay},
+                      {<<"ctry_bin">>, LCTRY},
+                      {<<"email_bin">>, LEMail},
+                      {<<"fn_bin">>, LFN},
+                      {<<"family_bin">>, LFamily},
+                      {<<"given_bin">>, LGiven},
+                      {<<"locality_bin">>, LLocality},
+                      {<<"middle_bin">>, LMiddle},
+                      {<<"nickname_bin">>, LNickname},
+                      {<<"orgname_bin">>, LOrgName},
+                      {<<"orgunit_bin">>, LOrgUnit},
+                      {<<"user_bin">>, Username}])
 	   end,
 	   ejabberd_hooks:run(vcard_set, LServer,
 			      [LUser, LServer, VCARD])
@@ -687,14 +718,18 @@ search(LServer, MatchSpec, AllowReturnAll, odbc) ->
 		 Rs;
 	     Error -> ?ERROR_MSG("~p", [Error]), []
 	   end
-    end.
+    end;
+search(_LServer, _MatchSpec, _AllowReturnAll, riak) ->
+    [].
 
 make_matchspec(LServer, Data, mnesia) ->
     GlobMatch = #vcard_search{_ = '_'},
     Match = filter_fields(Data, GlobMatch, LServer, mnesia),
     Match;
 make_matchspec(LServer, Data, odbc) ->
-    filter_fields(Data, <<"">>, LServer, odbc).
+    filter_fields(Data, <<"">>, LServer, odbc);
+make_matchspec(_LServer, _Data, riak) ->
+    [].
 
 filter_fields([], Match, _LServer, mnesia) -> Match;
 filter_fields([], Match, _LServer, odbc) ->
@@ -884,7 +919,11 @@ remove_user(LUser, LServer, odbc) ->
 				  [[<<"delete from vcard where username='">>,
 				    Username, <<"';">>],
 				   [<<"delete from vcard_search where lusername='">>,
-				    Username, <<"';">>]]).
+				    Username, <<"';">>]]);
+remove_user(LUser, LServer, riak) ->
+    Username = LUser,
+    ejabberd_riak:delete(LServer, <<"vcard">>, Username),
+    ok.
 
 update_tables() ->
     update_vcard_table(),
