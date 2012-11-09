@@ -101,5 +101,8 @@ resourceprep(String) ->
 control(Command, String) ->
     case port_control(?STRINGPREP_PORT, Command, String) of
       <<0, _/binary>> -> error;
-      <<1, Res/binary>> -> Res
+      <<1, Res/binary>> -> binary:copy(Res)  
+		%% Result is usually a very small binary,  that fit into a heap binary.
+		%% binary:copy() ensure that's the case,  instead of keeping a subbinary or
+		%% refcount binary around 
     end.
