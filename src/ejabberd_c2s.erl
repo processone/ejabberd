@@ -2390,13 +2390,8 @@ presence_broadcast_first(From, StateData, Packet) ->
     JIDs2Probe = format_and_check_privacy(From, StateData, Packet, JIDsProbe, out),
     Server = StateData#state.server,
     send_multiple(From, Server, JIDs2Probe, PacketProbe),
-    {As, JIDs} =
-	?SETS:fold(
-	   fun(JID, {A, JID_list}) ->
-		   {?SETS:add_element(JID, A), JID_list++[JID]}
-	   end,
-	   {StateData#state.pres_a, []},
-	   StateData#state.pres_f),
+    As = StateData#state.pres_f, %%Reuse existing structure, don't create a new one
+    JIDs = ?SETS:to_list(StateData#state.pres_f),
     JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs, out),
     Server = StateData#state.server,
     send_multiple(From, Server, JIDs2, Packet),
