@@ -133,7 +133,7 @@ store_offline_msg(_Host, US, Msgs, Len, MaxOfflineMsgs, mnesia) ->
                 end
         end,
     mnesia:transaction(F);
-store_offline_msg(Host, User, Msgs, Len, MaxOfflineMsgs, odbc) ->
+store_offline_msg(Host, {User, _Server}, Msgs, Len, MaxOfflineMsgs, odbc) ->
     Count = if MaxOfflineMsgs =/= infinity ->
                     Len + count_offline_messages(User, Host);
                true -> 0
