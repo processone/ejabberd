@@ -712,7 +712,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 							   conn = Conn,
 							   auth_module =
 							       AuthModule,
-							   pres_f =
+							   pres_f = 
 							       (?SETS):from_list(Fs1),
 							   pres_t =
 							       (?SETS):from_list(Ts1),
@@ -2381,11 +2381,7 @@ presence_broadcast_to_trusted(StateData, From, Trusted, JIDSet, Packet) ->
 
 %% Send presence when connecting
 presence_broadcast_first(From, StateData, Packet) ->
-    JIDsProbe =
-	?SETS:fold(
-	   fun(JID, L) -> [JID | L] end,
-	   [],
-	   StateData#state.pres_t),
+    JIDsProbe = ?SETS:to_list(StateData#state.pres_t),
     PacketProbe = #xmlel{name = <<"presence">>, attrs = [{<<"type">>,<<"probe">>}], children = []},
     JIDs2Probe = format_and_check_privacy(From, StateData, Packet, JIDsProbe, out),
     Server = StateData#state.server,
@@ -3434,13 +3430,14 @@ pack(S = #state{pres_a = A, pres_f = F,
     {NewA, Pack2} = pack_jid_set(A, gb_trees:empty()),
     {NewF, Pack3} = pack_jid_set(F, Pack2),
     {NewT, _Pack4} = pack_jid_set(T, Pack3),
-    S#state{pres_a = NewA, pres_f = NewF,
-	    pres_t = NewT}.
+    {SetF, SetT} = ?SETS:pack_sets(NewF, NewT),
+    S#state{pres_a = ?SETS:from_list(NewA), pres_f = SetF,
+	    pres_t = SetT}.
 
 pack_jid_set(Set, Pack) ->
     Jids = (?SETS):to_list(Set),
     {PackedJids, NewPack} = pack_jids(Jids, Pack, []),
-    {(?SETS):from_list(PackedJids), NewPack}.
+    {PackedJids, NewPack}.
 
 pack_jids([], Pack, Acc) -> {Acc, Pack};
 pack_jids([{U, S, R} = Jid | Jids], Pack, Acc) ->

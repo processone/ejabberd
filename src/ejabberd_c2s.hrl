@@ -25,7 +25,8 @@
 
 -endif.
 
--define(SETS, gb_sets).
+%-define(SETS, gb_sets).
+-define(SETS, ejabberd_sets).
 
 -define(DICT, dict).
 
