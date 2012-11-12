@@ -1,11 +1,5 @@
 -module(ejabberd_sets).
 
-%% Sets with adaptable storage,  use less memory if the set size isn't big. 
-%% 
-%%
-%% -Use a simple lists,  change to gb_sets only if size grows above thereshold
-%% -Function to build two sets at once, from two lists,  trying to share as much as
-%%  possible.  This avoid the intersection to be repeated on both sets structure.
 
 %%SET interface, same than gb_sets
 -export([
@@ -23,18 +17,42 @@
 		pack_sets/2
 	]).
 
--define(THRESHOLD, 100).
+%% Asumptions:
+%% 		It is common that roster items are of type "both", present in both pres_a and pres_f sets.
+%% 		There are relatively few different domains in the roster.
+%% 		There are common "resource" used by users (ie, "home", "psi", "android", ..etc).
+%%
+%% Strategy:
+%% 		map of domains, pointing to map of resources,  poiting to set of usernames in that domain and with that resource.
+%%
+%% Goals:	Reduce memory usage. 
+%% 			- Sharing is explicit and evolves better than "pack()" on changes on pres_*.
+%% 			- Message passing in erlang doesn't preserve implicit sharing. With this explicit sharing, state to transfer on migrations is smaller.
+%% 			- Hopefully, less memory overhead due to pointers (storing only usernames rather than tuples of three elements.) 
+%% 			- no need to pack()
+%%
+%% 
+%% gb_tree(
+%% 	{<<"jabber.ru">>,  
+%% 			gb_tree({<<"psi">>,  set(<<"user1">>, <<"user2>>, ..)},
+%% 				{<<"resourceN">>, set(<<"someUser">>)})}
+%% 	{<<"jabber.org">>,
+%% 			gb_tree(<<"psi">>, set(<<"userA">>, <<"UserB">>))}
+%% 	...
+%%]
+
 
 
 new() ->
-	[].
-from_list(L) when length(L) < ?THRESHOLD ->
-	L;
+	gb_trees:empty().
 from_list(L) ->
-	gb_sets:from_list(L).
+	lists:foldl(fun add_element/2, new(), L).
 
+%% Given two list, return the two respective sets,  but with the sets sharing their underling 
+%% representation as much as possible (
 pack_sets(L1, L2) ->
-	Shared = lists:filter(fun(I) -> lists:member(I, L2) end, L1),
+	Set2 = gb_sets:from_list(L2),
+	Shared = lists:filter(fun(I) -> gb_sets:is_element(I, Set2) end, L1),
 	SharedSet = from_list(Shared),
 	%% add_element already verify that the elements doesn't exists, so no need to
 	%% filter L1 and L2 before.
@@ -44,38 +62,77 @@ pack_sets(L1, L2) ->
 
 
 
-to_list(S) when is_list(S) -> S;
-to_list(S) -> gb_sets:to_list(S).
+to_list(S) -> 
+	foldl(fun(JID, Acc) -> [JID | Acc] end, [], S).
 
-is_element(El, S) when is_list(S) -> lists:member(El, S);
-is_element(El, S) -> gb_sets:is_element(El, S).
+is_element({N,D,R}, S) -> 
+	case gb_trees:lookup(D, S) of
+		none -> false;
+		{value, JIDs} ->
+			case gb_trees:lookup(R, JIDs) of
+				none ->
+					false;
+				{value, Nodes} ->
+					gb_sets:is_element(N, Nodes)
+			end
+	end.
 
-add_element(El, S) when is_list(S) ->
-	case lists:member(El, S) of
-		true ->
+
+add_element({N,D,R}, S) ->
+	case gb_trees:lookup(D, S) of
+		none ->
+			JIDs = gb_trees:insert(R, gb_sets:from_list([N]), gb_trees:empty()),
+			gb_trees:insert(D, JIDs, S);
+		{value, JIDs} ->
+			NewJIDs = case gb_trees:lookup(R, JIDs) of
+				none ->
+					gb_trees:insert(R, gb_sets:from_list([N]), JIDs);
+				{value, Nodes} ->
+					gb_trees:update(R, gb_sets:add_element(N, Nodes), JIDs)
+			end,
+			gb_trees:update(D, NewJIDs, S)
+		end.
+
+
+size(S) -> 
+	lists:foldl(fun({_Domain, JIDs}, Acc) ->
+				lists:foldl(fun({_Resource, Nodes}, Acc2) -> 
+							gb_sets:size(Nodes) + Acc2 
+					end, Acc, gb_trees:to_list(JIDs))
+		end,0, gb_trees:to_list(S)).
+
+foldl(Fun, Init, S) -> 
+	lists:foldl(fun({D,JIDs}, Acc) ->
+		lists:foldl(fun({R, Nodes}, Acc2) -> 
+				gb_sets:fold(fun(Node, Acc3) ->
+					Fun({Node,D,R}, Acc3) 
+				end, Acc2, Nodes)
+			end, Acc, gb_trees:to_list(JIDs))
+		end, Init, gb_trees:to_list(S)).
+
+del_element({N,D,R}, S) ->
+	case gb_trees:lookup(D, S) of
+		none ->
 			S;
-		false ->
-			fix_storage([El | S])
-	end;
-add_element(El, S) ->
-	gb_sets:add_element(El, S).
+		{value, JIDs} ->
+			case gb_trees:lookup(R, JIDs) of
+				none ->
+					S;
+				{value, Nodes} ->
+					NewNodes = gb_sets:del_element(N, Nodes),
+					case gb_sets:is_empty(NewNodes) of  
+						true -> %%No more users in this domain with this resource
+							NewJIDs = gb_trees:delete(R, JIDs),
+							case gb_trees:is_empty(NewJIDs) of  %% No more user/resources in this domain
+								true ->
+									gb_trees:delete(D, S);
+								false ->  %%still other resources in this domain
+									gb_trees:update(D, NewJIDs, S)
+							end;
+						false ->
+							NewJIDs = gb_trees:update(R, NewNodes, JIDs),
+							gb_trees:update(D, NewJIDs, S)
+					end
+			end
+	end.
 
-
-
-size(S) when is_list(S) -> length(S);
-size(S) -> gb_sets:size(S).
-
-foldl(Fun, Init, S) when is_list(S)-> lists:foldl(Fun, Init, S);
-foldl(Fun, Init, S) -> gb_sets:foldl(Fun, Init, S).
-
-del_element(El, S) when is_list(S) ->
-	lists:remove(El, S);
-del_element(El, S) ->   
-	fix_storage(gb_sets:del_element(El,S)).  
-
-
-
-fix_storage(S) when is_list(S), length(S) > ?THRESHOLD ->
-	gb_sets:from_list(S);
-fix_storage(S) -> S.
-	%%For now we don't shrink to lists again, not neccesarly
