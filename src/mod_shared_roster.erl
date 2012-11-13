@@ -400,6 +400,13 @@ list_groups(Host, mnesia) ->
     mnesia:dirty_select(sr_group,
 			[{#sr_group{group_host = {'$1', '$2'}, _ = '_'},
 			  [{'==', '$2', Host}], ['$1']}]);
+list_groups(Host, riak) ->
+    case ejabberd_riak:get_keys_by_index(sr_group, <<"host">>, Host) of
+        {ok, Gs} ->
+            [G || {G, _} <- Gs];
+        _ ->
+            []
+    end;
 list_groups(Host, odbc) ->
     case ejabberd_odbc:sql_query(Host,
 				 [<<"select name from sr_group;">>])
@@ -417,6 +424,13 @@ groups_with_opts(Host, mnesia) ->
 					 _ = '_'},
 			       [], [['$1', '$2']]}]),
     lists:map(fun ([G, O]) -> {G, O} end, Gs);
+groups_with_opts(Host, riak) ->
+    case ejabberd_riak:get_by_index(sr_group, <<"host">>, Host) of
+        {ok, Rs} ->
+            [{G, O} || #sr_group{group_host = {G, _}, opts = O} <- Rs];
+        _ ->
+            []
+    end;
 groups_with_opts(Host, odbc) ->
     case ejabberd_odbc:sql_query(Host,
 				 [<<"select name, opts from sr_group;">>])
@@ -438,6 +452,10 @@ create_group(Host, Group, Opts, mnesia) ->
     R = #sr_group{group_host = {Group, Host}, opts = Opts},
     F = fun () -> mnesia:write(R) end,
     mnesia:transaction(F);
+create_group(Host, Group, Opts, riak) ->
+    {atomic, ejabberd_riak:put(#sr_group{group_host = {Group, Host},
+                                         opts = Opts},
+                               [{'2i', [{<<"host">>, Host}]}])};
 create_group(Host, Group, Opts, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
     SOpts = ejabberd_odbc:encode_term(Opts),
@@ -464,6 +482,15 @@ delete_group(Host, Group, mnesia) ->
 			      Users)
 	end,
     mnesia:transaction(F);
+delete_group(Host, Group, riak) ->
+    try
+        ok = ejabberd_riak:delete(sr_group, {Group, Host}),
+        ok = ejabberd_riak:delete_by_index(sr_user, <<"group_host">>,
+                                           {Group, Host}),
+        {atomic, ok}
+    catch _:{badmatch, Err} ->
+            {atomic, Err}
+    end;
 delete_group(Host, Group, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
     F = fun () ->
@@ -482,6 +509,11 @@ get_group_opts(Host, Group, mnesia) ->
     case catch mnesia:dirty_read(sr_group, {Group, Host}) of
       [#sr_group{opts = Opts}] -> Opts;
       _ -> error
+    end;
+get_group_opts(Host, Group, riak) ->
+    case ejabberd_riak:get(sr_group, {Group, Host}) of
+        {ok, #sr_group{opts = Opts}} -> Opts;
+        _ -> error
     end;
 get_group_opts(Host, Group, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
@@ -502,6 +534,10 @@ set_group_opts(Host, Group, Opts, mnesia) ->
     R = #sr_group{group_host = {Group, Host}, opts = Opts},
     F = fun () -> mnesia:write(R) end,
     mnesia:transaction(F);
+set_group_opts(Host, Group, Opts, riak) ->
+    {atomic, ejabberd_riak:put(#sr_group{group_host = {Group, Host},
+                                         opts = Opts},
+                               [{'2i', [{<<"host">>, Host}]}])};
 set_group_opts(Host, Group, Opts, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
     SOpts = ejabberd_odbc:encode_term(Opts),
@@ -524,6 +560,13 @@ get_user_groups(US, Host, mnesia) ->
 	  [Group
 	   || #sr_user{group_host = {Group, H}} <- Rs, H == Host];
       _ -> []
+    end;
+get_user_groups(US, Host, riak) ->
+    case ejabberd_riak:get_by_index(sr_user, <<"us">>, US) of
+        {ok, Rs} ->
+            [Group || #sr_user{group_host = {Group, H}} <- Rs, H == Host];
+        _ ->
+            []
     end;
 get_user_groups(US, Host, odbc) ->
     SJID = make_jid_s(US),
@@ -594,6 +637,14 @@ get_group_explicit_users(Host, Group, mnesia) ->
     case Read of
       Rs when is_list(Rs) -> [R#sr_user.us || R <- Rs];
       _ -> []
+    end;
+get_group_explicit_users(Host, Group, riak) ->
+    case ejabberd_riak:get_by_index(sr_user, <<"group_host">>,
+                                    {Group, Host}) of
+        {ok, Rs} ->
+            [R#sr_user.us || R <- Rs];
+        _ ->
+            []
     end;
 get_group_explicit_users(Host, Group, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
@@ -681,6 +732,16 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts,
       _ -> []
     end;
 get_user_displayed_groups(LUser, LServer, GroupsOpts,
+                          riak) ->
+    case ejabberd_riak:get_by_index(sr_user,
+                                    <<"us">>, {LUser, LServer}) of
+        {ok, Rs} ->
+            [{Group, proplists:get_value(Group, GroupsOpts, [])}
+             || #sr_user{group_host = {Group, _}} <- Rs];
+        _ ->
+            []
+    end;
+get_user_displayed_groups(LUser, LServer, GroupsOpts,
 			  odbc) ->
     SJID = make_jid_s(LUser, LServer),
     case catch ejabberd_odbc:sql_query(LServer,
@@ -726,6 +787,21 @@ is_user_in_group(US, Group, Host, mnesia) ->
       [] -> lists:member(US, get_group_users(Host, Group));
       _ -> true
     end;
+is_user_in_group(US, Group, Host, riak) ->
+    case ejabberd_riak:get_by_index(sr_user, <<"us">>, US) of
+        {ok, Rs} ->
+            case lists:any(
+                   fun(#sr_user{group_host = {G, H}}) ->
+                           (Group == G) and (Host == H)
+                   end, Rs) of
+                false ->
+                    lists:member(US, get_group_users(Host, Group));
+                true ->
+                    true
+            end;
+        _Err ->
+            false
+    end;
 is_user_in_group(US, Group, Host, odbc) ->
     SJID = make_jid_s(US),
     SGroup = ejabberd_odbc:escape(Group),
@@ -765,6 +841,12 @@ add_user_to_group(Host, US, Group, mnesia) ->
     R = #sr_user{us = US, group_host = {Group, Host}},
     F = fun () -> mnesia:write(R) end,
     mnesia:transaction(F);
+add_user_to_group(Host, US, Group, riak) ->
+    {atomic, ejabberd_riak:put(
+               #sr_user{us = US, group_host = {Group, Host}},
+               [{i, {US, {Group, Host}}},
+                {'2i', [{<<"us">>, US},
+                        {<<"group_host">>, {Group, Host}}]}])};
 add_user_to_group(Host, US, Group, odbc) ->
     SJID = make_jid_s(US),
     SGroup = ejabberd_odbc:escape(Group),
@@ -816,6 +898,8 @@ remove_user_from_group(Host, US, Group, mnesia) ->
     R = #sr_user{us = US, group_host = {Group, Host}},
     F = fun () -> mnesia:delete_object(R) end,
     mnesia:transaction(F);
+remove_user_from_group(Host, US, Group, riak) ->
+    {atomic, ejabberd_riak:delete(sr_group, {US, {Group, Host}})};
 remove_user_from_group(Host, US, Group, odbc) ->
     SJID = make_jid_s(US),
     SGroup = ejabberd_odbc:escape(Group),

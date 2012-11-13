@@ -168,6 +168,16 @@ get_last(LUser, LServer, mnesia) ->
 		      status = Status}] ->
 	  {ok, TimeStamp, Status}
     end;
+get_last(LUser, LServer, riak) ->
+    case ejabberd_riak:get(last_activity, {LUser, LServer}) of
+        {ok, #last_activity{timestamp = TimeStamp,
+                            status = Status}} ->
+            {ok, TimeStamp, Status};
+        {error, notfound} ->
+            not_found;
+        Err ->
+            Err
+    end;
 get_last(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
@@ -236,6 +246,12 @@ store_last_info(LUser, LServer, TimeStamp, Status,
 	end,
     mnesia:transaction(F);
 store_last_info(LUser, LServer, TimeStamp, Status,
+                riak) ->
+    US = {LUser, LServer},
+    {atomic, ejabberd_riak:put(#last_activity{us = US,
+                                              timestamp = TimeStamp,
+                                              status = Status})};
+store_last_info(LUser, LServer, TimeStamp, Status,
 		odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     Seconds =
@@ -264,7 +280,9 @@ remove_user(LUser, LServer, mnesia) ->
     mnesia:transaction(F);
 remove_user(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:del_last(LServer, Username).
+    odbc_queries:del_last(LServer, Username);
+remove_user(LUser, LServer, riak) ->
+    {atomic, ejabberd_riak:delete(last_activity, {LUser, LServer})}.
 
 update_table() ->
     Fields = record_info(fields, last_activity),

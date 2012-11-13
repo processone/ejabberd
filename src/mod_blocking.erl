@@ -181,6 +181,37 @@ process_blocklist_block(LUser, LServer, Filter,
 		{ok, NewDefault, NewList}
 	end,
     mnesia:transaction(F);
+process_blocklist_block(LUser, LServer, Filter,
+			riak) ->
+    {atomic,
+     begin
+         case ejabberd_riak:get(privacy, {LUser, LServer}) of
+             {ok, #privacy{default = Default, lists = Lists} = P} ->
+                 case lists:keysearch(Default, 1, Lists) of
+                     {value, {_, List}} ->
+                         NewDefault = Default,
+                         NewLists1 = lists:keydelete(Default, 1, Lists);
+                     false ->
+                         NewDefault = <<"Blocked contacts">>,
+                         NewLists1 = Lists,
+                         List = []
+                 end;
+             {error, _} ->
+                 P = #privacy{us = {LUser, LServer}},
+                 NewDefault = <<"Blocked contacts">>,
+                 NewLists1 = [],
+                 List = []
+         end,
+         NewList = Filter(List),
+         NewLists = [{NewDefault, NewList} | NewLists1],
+         case ejabberd_riak:put(P#privacy{default = NewDefault,
+                                          lists = NewLists}) of
+             ok ->
+                 {ok, NewDefault, NewList};
+             Err ->
+                 Err
+         end
+     end};
 process_blocklist_block(LUser, LServer, Filter, odbc) ->
     F = fun () ->
 		Default = case
@@ -257,6 +288,30 @@ process_blocklist_unblock_all(LUser, LServer, Filter,
 	end,
     mnesia:transaction(F);
 process_blocklist_unblock_all(LUser, LServer, Filter,
+                              riak) ->
+    {atomic,
+     case ejabberd_riak:get(privacy, {LUser, LServer}) of
+         {ok, #privacy{default = Default, lists = Lists} = P} ->
+             case lists:keysearch(Default, 1, Lists) of
+                 {value, {_, List}} ->
+                     NewList = Filter(List),
+                     NewLists1 = lists:keydelete(Default, 1, Lists),
+                     NewLists = [{Default, NewList} | NewLists1],
+                     case ejabberd_riak:put(P#privacy{lists = NewLists}) of
+                         ok ->
+                             {ok, Default, NewList};
+                         Err ->
+                             Err
+                     end;
+                 false ->
+                     %% No default list, nothing to unblock
+                     ok
+             end;
+         {error, _} ->
+             %% No lists, nothing to unblock
+             ok
+     end};
+process_blocklist_unblock_all(LUser, LServer, Filter,
 			      odbc) ->
     F = fun () ->
 		case mod_privacy:sql_get_default_privacy_list_t(LUser)
@@ -331,6 +386,30 @@ process_blocklist_unblock(LUser, LServer, Filter,
 		end
 	end,
     mnesia:transaction(F);
+process_blocklist_unblock(LUser, LServer, Filter,
+                          riak) ->
+    {atomic,
+     case ejabberd_riak:get(privacy, {LUser, LServer}) of
+         {error, _} ->
+             %% No lists, nothing to unblock
+             ok;
+         {ok, #privacy{default = Default, lists = Lists} = P} ->
+             case lists:keysearch(Default, 1, Lists) of
+                 {value, {_, List}} ->
+                     NewList = Filter(List),
+                     NewLists1 = lists:keydelete(Default, 1, Lists),
+                     NewLists = [{Default, NewList} | NewLists1],
+                     case ejabberd_riak:put(P#privacy{lists = NewLists}) of
+                         ok ->
+                             {ok, Default, NewList};
+                         Err ->
+                             Err
+                     end;
+                 false ->
+                     %% No default list, nothing to unblock
+                     ok
+             end
+     end};
 process_blocklist_unblock(LUser, LServer, Filter,
 			  odbc) ->
     F = fun () ->
@@ -408,6 +487,18 @@ process_blocklist_get(LUser, LServer, mnesia) ->
 	    {value, {_, List}} -> List;
 	    _ -> []
 	  end
+    end;
+process_blocklist_get(LUser, LServer, riak) ->
+    case ejabberd_riak:get(privacy, {LUser, LServer}) of
+        {ok, #privacy{default = Default, lists = Lists}} ->
+            case lists:keysearch(Default, 1, Lists) of
+                {value, {_, List}} -> List;
+                _ -> []
+            end;
+        {error, notfound} ->
+            [];
+        {error, _} ->
+            error
     end;
 process_blocklist_get(LUser, LServer, odbc) ->
     case catch

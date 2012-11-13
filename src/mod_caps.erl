@@ -430,12 +430,49 @@ caps_read_fun(Node) ->
 	      [#caps_features{features = Features}] -> {ok, Features};
 	      _ -> error
 	    end
+    end;
+caps_read_fun(_LServer, Node, riak) ->
+    fun() ->
+            case ejabberd_riak:get(caps_features, Node) of
+                {ok, #caps_features{features = Features}} -> {ok, Features};
+                _ -> error
+            end
+    end;
+caps_read_fun(LServer, {Node, SubNode}, odbc) ->
+    fun() ->
+            SNode = ejabberd_odbc:escape(Node),
+            SSubNode = ejabberd_odbc:escape(SubNode),
+            case ejabberd_odbc:sql_query(
+                   LServer, [<<"select feature from caps_features where ">>,
+                             <<"node='">>, SNode, <<"' and subnode='">>,
+                             SSubNode, <<"';">>]) of
+                {selected, [<<"feature">>], [[H]|_] = Fs} ->
+                    case catch jlib:binary_to_integer(H) of
+                        Int when is_integer(Int), Int>=0 ->
+                            {ok, Int};
+                        _ ->
+                            {ok, lists:flatten(Fs)}
+                    end;
+                _ ->
+                    error
+            end
     end.
 
 caps_write_fun(Node, Features) ->
     fun () ->
 	    mnesia:dirty_write(#caps_features{node_pair = Node,
 					      features = Features})
+    end;
+caps_write_fun(_LServer, Node, Features, riak) ->
+    fun () ->
+            ejabberd_riak:put(#caps_features{node_pair = Node,
+                                             features = Features})
+    end;
+caps_write_fun(LServer, NodePair, Features, odbc) ->
+    fun () ->
+            ejabberd_odbc:sql_transaction(
+              LServer,
+              sql_write_features_t(NodePair, Features))
     end.
 
 make_my_disco_hash(Host) ->

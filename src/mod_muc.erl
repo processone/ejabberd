@@ -147,6 +147,9 @@ store_room(_LServer, Host, Name, Opts, mnesia) ->
 				       opts = Opts})
 	end,
     mnesia:transaction(F);
+store_room(_LServer, Host, Name, Opts, riak) ->
+    {atomic, ejabberd_riak:put(#muc_room{name_host = {Name, Host},
+                                         opts = Opts})};
 store_room(LServer, Host, Name, Opts, odbc) ->
     SName = ejabberd_odbc:escape(Name),
     SHost = ejabberd_odbc:escape(Host),
@@ -170,6 +173,11 @@ restore_room(_LServer, Host, Name, mnesia) ->
       [#muc_room{opts = Opts}] -> Opts;
       _ -> error
     end;
+restore_room(_LServer, Host, Name, riak) ->
+    case ejabberd_riak:get(muc_room, {Name, Host}) of
+        {ok, #muc_room{opts = Opts}} -> Opts;
+        _ -> error
+    end;
 restore_room(LServer, Host, Name, odbc) ->
     SName = ejabberd_odbc:escape(Name),
     SHost = ejabberd_odbc:escape(Host),
@@ -192,6 +200,8 @@ forget_room(_LServer, Host, Name, mnesia) ->
     F = fun () -> mnesia:delete({muc_room, {Name, Host}})
 	end,
     mnesia:transaction(F);
+forget_room(_LServer, Host, Name, riak) ->
+    {atomic, ejabberd_riak:delete(muc_room, {Name, Host})};
 forget_room(LServer, Host, Name, odbc) ->
     SName = ejabberd_odbc:escape(Name),
     SHost = ejabberd_odbc:escape(Host),
@@ -230,6 +240,18 @@ can_use_nick(_LServer, Host, JID, Nick, mnesia) ->
       {'EXIT', _Reason} -> true;
       [] -> true;
       [#muc_registered{us_host = {U, _Host}}] -> U == LUS
+    end;
+can_use_nick(LServer, Host, JID, Nick, riak) ->
+    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    LUS = {LUser, LServer},
+    case ejabberd_riak:get_by_index(muc_registered,
+                                    <<"nick_host">>, {Nick, Host}) of
+        {ok, []} ->
+            true;
+        {ok, [#muc_registered{us_host = {U, _Host}}]} ->
+            U == LUS;
+        {error, _} ->
+            true
     end;
 can_use_nick(LServer, Host, JID, Nick, odbc) ->
     SJID =
@@ -617,6 +639,16 @@ get_rooms(_LServer, Host, mnesia) ->
       {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]), [];
       Rs -> Rs
     end;
+get_rooms(_LServer, Host, riak) ->
+    case ejabberd_riak:get(muc_room) of
+        {ok, Rs} ->
+            lists:filter(
+              fun(#muc_room{name_host = {_, H}}) ->
+                      Host == H
+              end, Rs);
+        _Err ->
+            []
+    end;
 get_rooms(LServer, Host, odbc) ->
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
@@ -839,6 +871,13 @@ get_nick(_LServer, Host, From, mnesia) ->
       [] -> error;
       [#muc_registered{nick = Nick}] -> Nick
     end;
+get_nick(LServer, Host, From, riak) ->
+    {LUser, LServer, _} = jlib:jid_tolower(From),
+    US = {LUser, LServer},
+    case ejabberd_riak:get(muc_registered, {US, Host}) of
+        {ok, #muc_registered{nick = Nick}} -> Nick;
+        {error, _} -> error
+    end;
 get_nick(LServer, Host, From, odbc) ->
     SJID =
 	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
@@ -922,6 +961,33 @@ set_nick(_LServer, Host, From, Nick, mnesia) ->
 		end
 	end,
     mnesia:transaction(F);
+set_nick(LServer, Host, From, Nick, riak) ->
+    {LUser, LServer, _} = jlib:jid_tolower(From),
+    LUS = {LUser, LServer},
+    {atomic,
+     case Nick of
+         <<"">> ->
+             ejabberd_riak:delete(muc_registered, {LUS, Host});
+         _ ->
+             Allow = case ejabberd_riak:get_by_index(
+                            muc_registered,
+                            <<"nick_host">>, {Nick, Host}) of
+                         {ok, []} ->
+                             true;
+                         {ok, [#muc_registered{us_host = {U, _Host}}]} ->
+                             U == LUS;
+                         {error, _} ->
+                             false
+                     end,
+             if Allow ->
+                     ejabberd_riak:put(#muc_registered{us_host = {LUS, Host},
+                                                       nick = Nick},
+                                       [{'2i', [{<<"nick_host">>,
+                                                 {Nick, Host}}]}]);
+                true ->
+                     false
+             end
+     end};
 set_nick(LServer, Host, From, Nick, odbc) ->
     JID =
 	jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From))),

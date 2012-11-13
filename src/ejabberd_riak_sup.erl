@@ -105,8 +105,9 @@ init([]) ->
     {Server, Port} =
         ejabberd_config:get_local_option(
           riak_server,
-          fun({S, P}) when is_list(S), is_integer(P), P >= 1 -> {S, P} end,
-          {"127.0.0.1", 8081}),
+          fun({S, P}) when is_integer(P), P > 0, P < 65536 ->
+                  {binary_to_list(iolist_to_binary(S)), P}
+          end, {"127.0.0.1", 8081}),
     {ok, {{one_for_one, PoolSize*10, 1},
 	  lists:map(
 	    fun(I) ->
