@@ -590,7 +590,7 @@ get_subscription_lists(Acc, User, Server) ->
     DBType = gen_mod:db_type(LServer, ?MODULE),
     Items = get_subscription_lists(Acc, LUser, LServer,
 				   DBType),
-    fill_subscription_lists(LServer, Items, [], []).
+    fill_subscription_lists(LServer, Items, [], [], []).
 
 get_subscription_lists(_, LUser, LServer, mnesia) ->
     US = {LUser, LServer},
@@ -612,24 +612,24 @@ get_subscription_lists(_, LUser, LServer, odbc) ->
     end.
 
 fill_subscription_lists(LServer, [#roster{} = I | Is],
-			F, T) ->
+			F, T, B) ->
     J = element(3, I#roster.usj),
     case I#roster.subscription of
       both ->
-	  fill_subscription_lists(LServer, Is, [J | F], [J | T]);
+	  fill_subscription_lists(LServer, Is, F,  T, [J|B]);
       from ->
-	  fill_subscription_lists(LServer, Is, [J | F], T);
-      to -> fill_subscription_lists(LServer, Is, F, [J | T]);
-      _ -> fill_subscription_lists(LServer, Is, F, T)
+	  fill_subscription_lists(LServer, Is, [J | F], T, B);
+      to -> fill_subscription_lists(LServer, Is, F, [J | T], B);
+      _ -> fill_subscription_lists(LServer, Is, F, T, B)
     end;
-fill_subscription_lists(LServer, [RawI | Is], F, T) ->
+fill_subscription_lists(LServer, [RawI | Is], F, T, B) ->
     I = raw_to_record(LServer, RawI),
     case I of
       %% Bad JID in database:
-      error -> fill_subscription_lists(LServer, Is, F, T);
-      _ -> fill_subscription_lists(LServer, [I | Is], F, T)
+      error -> fill_subscription_lists(LServer, Is, F, T, B);
+      _ -> fill_subscription_lists(LServer, [I | Is], F, T, B)
     end;
-fill_subscription_lists(_LServer, [], F, T) -> {F, T}.
+fill_subscription_lists(_LServer, [], F, T, B) -> {F, T, B}.
 
 ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;

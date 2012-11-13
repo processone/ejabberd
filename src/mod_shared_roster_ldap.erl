@@ -148,7 +148,7 @@ process_item(RosterItem, _Host) ->
       _ -> RosterItem#roster{subscription = both, ask = none}
     end.
 
-get_subscription_lists({F, T}, User, Server) ->
+get_subscription_lists({F, T, B}, User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     US = {LUser, LServer},
@@ -158,7 +158,7 @@ get_subscription_lists({F, T}, User, Server) ->
 					end,
 					DisplayedGroups)),
     SRJIDs = [{U1, S1, <<"">>} || {U1, S1} <- SRUsers],
-    {lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}.
+    {F, T, lists:usort(SRJIDs ++ B)}.
 
 get_jid_info({Subscription, Groups}, User, Server,
 	     JID) ->

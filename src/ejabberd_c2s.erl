@@ -690,16 +690,17 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    Res = Res1#xmlel{children = []},
 			    send_element(StateData, Res),
 			    change_shaper(StateData, JID),
-			    {Fs, Ts} =
+			    {Fs, Ts, Bs} =
 				ejabberd_hooks:run_fold(roster_get_subscription_lists,
 							StateData#state.server,
-							{[], []},
+							{[], [], []},
 							[U,
 							 StateData#state.server]),
 			    LJID =
 				jlib:jid_tolower(jlib:jid_remove_resource(JID)),
-			    Fs1 = [LJID | Fs],
-			    Ts1 = [LJID | Ts],
+			    SharedSet = ?SETS:from_list([LJID|Bs]),
+			    FSet = lists:foldl(fun ?SETS:add_element/2, SharedSet, Fs),
+			    TSet = lists:foldl(fun ?SETS:add_element/2, SharedSet, Ts),
 			    PrivList =
 				ejabberd_hooks:run_fold(privacy_get_user_list,
 							StateData#state.server,
@@ -712,10 +713,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 							   conn = Conn,
 							   auth_module =
 							       AuthModule,
-							   pres_f = 
-							       (?SETS):from_list(Fs1),
-							   pres_t =
-							       (?SETS):from_list(Ts1),
+							   pres_f =  FSet,
+							   pres_t = TSet,
 							   privacy_list =
 							       PrivList},
 			    DebugFlag =
@@ -1203,13 +1202,14 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		Res = jlib:make_result_iq_reply(El),
 		send_element(StateData, Res),
 		change_shaper(StateData, JID),
-		{Fs, Ts} =
+		{Fs, Ts, Bs} =
 		    ejabberd_hooks:run_fold(roster_get_subscription_lists,
 					    StateData#state.server, {[], []},
 					    [U, StateData#state.server]),
 		LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
-		Fs1 = [LJID | Fs],
-		Ts1 = [LJID | Ts],
+		SharedSet = ?SETS:from_list([LJID|Bs]),
+		FSet = lists:foldl(fun ?SETS:add_element/2, SharedSet, Fs),
+		TSet = lists:foldl(fun ?SETS:add_element/2, SharedSet, Ts),
 		PrivList =
 		    ejabberd_hooks:run_fold(privacy_get_user_list,
 					    StateData#state.server, #userlist{},
@@ -1218,8 +1218,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		Conn = (StateData#state.sockmod):get_conn_type(
                          StateData#state.socket),
 		NewStateData = StateData#state{sid = SID, conn = Conn,
-					       pres_f = (?SETS):from_list(Fs1),
-					       pres_t = (?SETS):from_list(Ts1),
+					       pres_f =  FSet,
+					       pres_t = TSet,
 					       privacy_list = PrivList},
 		DebugFlag =
 		    ejabberd_hooks:run_fold(c2s_debug_start_hook,
@@ -3425,39 +3425,7 @@ route_blocking(What, StateData) ->
 %%% JID Set memory footprint reduction code
 %%%----------------------------------------------------------------------
 
-pack(S = #state{pres_a = A, pres_f = F,
-		pres_t = T}) ->
-    {NewA, Pack2} = pack_jid_set(A, gb_trees:empty()),
-    {NewF, Pack3} = pack_jid_set(F, Pack2),
-    {NewT, _Pack4} = pack_jid_set(T, Pack3),
-    {SetF, SetT} = ?SETS:pack_sets(NewF, NewT),
-    S#state{pres_a = ?SETS:from_list(NewA), pres_f = SetF,
-	    pres_t = SetT}.
-
-pack_jid_set(Set, Pack) ->
-    Jids = (?SETS):to_list(Set),
-    {PackedJids, NewPack} = pack_jids(Jids, Pack, []),
-    {PackedJids, NewPack}.
-
-pack_jids([], Pack, Acc) -> {Acc, Pack};
-pack_jids([{U, S, R} = Jid | Jids], Pack, Acc) ->
-    case gb_trees:lookup(Jid, Pack) of
-      {value, PackedJid} ->
-	  pack_jids(Jids, Pack, [PackedJid | Acc]);
-      none ->
-	  {NewU, Pack1} = pack_string(U, Pack),
-	  {NewS, Pack2} = pack_string(S, Pack1),
-	  {NewR, Pack3} = pack_string(R, Pack2),
-	  NewJid = {NewU, NewS, NewR},
-	  NewPack = gb_trees:insert(NewJid, NewJid, Pack3),
-	  pack_jids(Jids, NewPack, [NewJid | Acc])
-    end.
-
-pack_string(String, Pack) ->
-    case gb_trees:lookup(String, Pack) of
-      {value, PackedString} -> {PackedString, Pack};
-      none -> {String, gb_trees:insert(String, String, Pack)}
-    end.
+pack(S) -> S.
 
 flash_policy_string() ->
     Listen = ejabberd_config:get_local_option(listen, fun(V) -> V end),

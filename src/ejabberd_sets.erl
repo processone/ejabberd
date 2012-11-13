@@ -12,10 +12,7 @@
 		foldl/3,
 		size/1]).
 
-%% new method
--export([ 
-		pack_sets/2
-	]).
+
 
 %% Asumptions:
 %% 		It is common that roster items are of type "both", present in both pres_a and pres_f sets.
@@ -47,20 +44,6 @@ new() ->
 	gb_trees:empty().
 from_list(L) ->
 	lists:foldl(fun add_element/2, new(), L).
-
-%% Given two list, return the two respective sets,  but with the sets sharing their underling 
-%% representation as much as possible (
-pack_sets(L1, L2) ->
-	Set2 = gb_sets:from_list(L2),
-	Shared = lists:filter(fun(I) -> gb_sets:is_element(I, Set2) end, L1),
-	SharedSet = from_list(Shared),
-	%% add_element already verify that the elements doesn't exists, so no need to
-	%% filter L1 and L2 before.
-	R1 = lists:foldl( fun add_element/2, SharedSet, L1),
-	R2 = lists:foldl( fun add_element/2, SharedSet, L2),
-	{R1, R2}.
-
-
 
 to_list(S) -> 
 	foldl(fun(JID, Acc) -> [JID | Acc] end, [], S).
