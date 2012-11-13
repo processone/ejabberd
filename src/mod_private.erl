@@ -152,13 +152,9 @@ set_data(LUser, LServer, {XMLNS, El}, odbc) ->
     odbc_queries:set_private_data(LServer, Username, LXMLNS,
 				  SData);
 set_data(LUser, LServer, {XMLNS, El}, riak) ->
-    Username = LUser,
-    Key = <<LUser/binary, $@, LServer/binary, $@, XMLNS/binary>>,
-    SData = xml:element_to_binary(El),
-    ejabberd_riak:put(
-      LServer, <<"private">>, Key, SData,
-      [{<<"user_bin">>, Username}]),
-    ok.
+    ejabberd_riak:put(#private_storage{usns = {LUser, LServer, XMLNS},
+                                       xml = El},
+                      [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
 
 get_data(LUser, LServer, Data) ->
     get_data(LUser, LServer,
@@ -195,17 +191,12 @@ get_data(LUser, LServer, odbc, [{XMLNS, El} | Els],
     end;
 get_data(LUser, LServer, riak, [{XMLNS, El} | Els],
 	 Res) ->
-    Key = <<LUser/binary, $@, LServer/binary, $@, XMLNS/binary>>,
-    case ejabberd_riak:get(LServer, <<"private">>, Key) of
-        {ok, SData} ->
-            case xml_stream:parse_element(SData) of
-                Data when element(1, Data) == xmlelement ->
-                    get_data(LUser, LServer, riak, Els, [Data | Res])
-            end;
-        _ -> 
-            get_data(LUser, LServer, riak, Els, [El | Res])
+    case ejabberd_riak:get(private_storage, {LUser, LServer, XMLNS}) of
+        {ok, #private_storage{xml = NewEl}} ->
+            get_data(LUser, LServer, riak, Els, [NewEl|Res]);
+        _ ->
+            get_data(LUser, LServer, riak, Els, [El|Res])
     end.
-
 
 get_data(LUser, LServer) ->
     get_all_data(LUser, LServer,
@@ -234,19 +225,10 @@ get_all_data(LUser, LServer, odbc) ->
             []
     end;
 get_all_data(LUser, LServer, riak) ->
-    Username = LUser,
     case ejabberd_riak:get_by_index(
-           LServer, <<"private">>, <<"user_bin">>, Username) of
+           private_storage, <<"us">>, {LUser, LServer}) of
         {ok, Res} ->
-            lists:flatmap(
-              fun(SData) ->
-                      case xml_stream:parse_element(SData) of
-                          #xmlel{} = El ->
-                              [El];
-                          _ ->
-                              []
-                      end
-              end, Res);
+            [El || #private_storage{xml = El} <- Res];
         _ ->
             []
     end.
@@ -279,17 +261,8 @@ remove_user(LUser, LServer, odbc) ->
     odbc_queries:del_user_private_storage(LServer,
 					  Username);
 remove_user(LUser, LServer, riak) ->
-    Username = LUser,
-    case ejabberd_riak:get_keys_by_index(
-           LServer, <<"private">>, <<"user_bin">>, Username) of
-        {ok, Keys} ->
-            lists:foreach(
-              fun(Key) ->
-                      ejabberd_riak:delete(LServer, <<"private">>, Key)
-              end, Keys);
-        _ ->
-            ok
-    end.
+    {atomic, ejabberd_riak:delete_by_index(private_storage,
+                                           <<"us">>, {LUser, LServer})}.
 
 update_table() ->
     Fields = record_info(fields, private_storage),

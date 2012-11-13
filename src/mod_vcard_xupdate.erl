@@ -87,6 +87,9 @@ add_xupdate(LUser, LServer, Hash, mnesia) ->
 					    hash = Hash})
 	end,
     mnesia:transaction(F);
+add_xupdate(LUser, LServer, Hash, riak) ->
+    {atomic, ejabberd_riak:put(#vcard_xupdate{us = {LUser, LServer},
+                                              hash = Hash})};
 add_xupdate(LUser, LServer, Hash, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     SHash = ejabberd_odbc:escape(Hash),
@@ -108,6 +111,11 @@ get_xupdate(LUser, LServer, mnesia) ->
       [#vcard_xupdate{hash = Hash}] -> Hash;
       _ -> undefined
     end;
+get_xupdate(LUser, LServer, riak) ->
+    case ejabberd_riak:get(vcard_xupdate, {LUser, LServer}) of
+        {ok, #vcard_xupdate{hash = Hash}} -> Hash;
+        _ -> undefined
+    end;
 get_xupdate(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case ejabberd_odbc:sql_query(LServer,
@@ -128,6 +136,8 @@ remove_xupdate(LUser, LServer, mnesia) ->
 		mnesia:delete({vcard_xupdate, {LUser, LServer}})
 	end,
     mnesia:transaction(F);
+remove_xupdate(LUser, LServer, riak) ->
+    {atomic, ejabberd_riak:delete(vcard_xupdate, {LUser, LServer})};
 remove_xupdate(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     F = fun () ->

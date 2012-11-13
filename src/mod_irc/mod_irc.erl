@@ -542,6 +542,17 @@ get_data(_LServer, Host, From, mnesia) ->
       [] -> empty;
       [#irc_custom{data = Data}] -> Data
     end;
+get_data(LServer, Host, From, riak) ->
+    #jid{luser = LUser, lserver = LServer} = From,
+    US = {LUser, LServer},
+    case ejabberd_riak:get(irc_custom, {US, Host}) of
+        {ok, #irc_custom{data = Data}} ->
+            Data;
+        {error, notfound} ->
+            empty;
+        _Err ->
+            error
+    end;
 get_data(LServer, Host, From, odbc) ->
     SJID =
 	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
@@ -674,6 +685,11 @@ set_data(_LServer, Host, From, Data, mnesia) ->
 					 data = Data})
 	end,
     mnesia:transaction(F);
+set_data(LServer, Host, From, Data, riak) ->
+    {LUser, LServer, _} = jlib:jid_tolower(From),
+    US = {LUser, LServer},
+    {atomic, ejabberd_riak:put(#irc_custom{us_host = {US, Host},
+                                           data = Data})};
 set_data(LServer, Host, From, Data, odbc) ->
     SJID =
 	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),

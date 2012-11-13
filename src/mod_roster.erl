@@ -202,11 +202,9 @@ read_roster_version(LServer, LUser, odbc) ->
       {selected, [<<"version">>], []} -> error
     end;
 read_roster_version(LServer, LUser, riak) ->
-    Username = LUser,
-    case ejabberd_riak:get(LServer, <<"roster_version">>,
-                           Username) of
+    case ejabberd_riak:get(roster_version, {LUser, LServer}) of
         {ok, Version} -> Version;
-        {error, notfound} -> error
+        _Err -> error
     end.
 
 write_roster_version(LUser, LServer) ->
@@ -245,8 +243,8 @@ write_roster_version(LUser, LServer, InTransaction, Ver,
     end;
 write_roster_version(LUser, LServer, _InTransaction, Ver,
 		     riak) ->
-    Username = LUser,
-    riak_set_roster_version(LServer, Username, Ver).
+    US = {LUser, LServer},
+    ejabberd_riak:put(#roster_version{us = US, version = Ver}).
 
 process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
     LUser = From#jid.luser,
@@ -348,6 +346,11 @@ get_roster(LUser, LServer, mnesia) ->
       Items  when is_list(Items)-> Items;
       _ -> []
     end;
+get_roster(LUser, LServer, riak) ->
+    case ejabberd_riak:get_by_index(roster, <<"us">>, {LUser, LServer}) of
+        {ok, Items} -> Items;
+        _Err -> []
+    end;
 get_roster(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
@@ -389,37 +392,6 @@ get_roster(LUser, LServer, odbc) ->
 				 Items),
 	  RItems;
       _ -> []
-    end;
-get_roster(LUser, LServer, riak) ->
-    Username = LUser,
-    case catch riak_get_roster(LServer, Username) of
-	{ok, Items} when is_list(Items) ->
-	    JIDGroups = case riak_get_roster_jid_groups(LServer, Username) of
-			    {ok, JGrps} when is_list(JGrps) ->
-				JGrps;
-			    _ ->
-				[]
-			end,
-            GroupsDict = dict:from_list(JIDGroups),
-	    RItems = lists:flatmap(
-		       fun(I) ->
-			       case riak_raw_to_record(LServer, I) of
-				   %% Bad JID in database:
-				   error ->
-				       [];
-				   R ->
-				       SJID = jlib:jid_to_string(R#roster.jid),
-				       Groups =
-                                           case dict:find(SJID, GroupsDict) of
-                                               {ok, Gs} -> Gs;
-                                               error -> []
-                                           end,
-				       [R#roster{groups = Groups}]
-			       end
-		       end, Items),
-	    RItems;
-	_ ->
-	    []
     end.
 
 item_to_xml(Item) ->
@@ -489,29 +461,15 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
 	  end
     end;
 get_roster_by_jid_t(LUser, LServer, LJID, riak) ->
-    Username = LUser,
-    SJID = jlib:jid_to_string(LJID),
-    Res = riak_get_roster_by_jid(LServer, Username, SJID),
-    case Res of
-        {error, _} ->
-            #roster{usj = {LUser, LServer, LJID},
-                    us = {LUser, LServer},
-                    jid = LJID};
+    case ejabberd_riak:get(roster, {LUser, LServer, LJID}) of
         {ok, I} ->
-            R = riak_raw_to_record(LServer, I),
-            case R of
-                %% Bad JID in database:
-                error ->
-                    #roster{usj = {LUser, LServer, LJID},
-                            us = {LUser, LServer},
-                            jid = LJID};
-                _ ->
-                    R#roster{
-                      usj = {LUser, LServer, LJID},
-                      us = {LUser, LServer},
-                      jid = LJID,
-                      name = ""}
-            end
+            I#roster{jid = LJID, name = <<"">>, groups = [],
+                     xs = []};
+        {error, notfound} ->
+            #roster{usj = {LUser, LServer, LJID},
+                    us = {LUser, LServer}, jid = LJID};
+        Err ->
+            exit(Err)
     end.
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
@@ -678,12 +636,9 @@ get_subscription_lists(_, LUser, LServer, odbc) ->
       _ -> []
     end;
 get_subscription_lists(_, LUser, LServer, riak) ->
-    Username = LUser,
-    case catch riak_get_roster(LServer, Username) of
-	{ok, Items} when is_list(Items) ->
-            lists:map(fun(I) -> riak_raw_to_record(LServer, I) end, Items);
-	_ ->
-	    []
+    case ejabberd_riak:get_by_index(roster, <<"us">>, {LUser, LServer}) of
+        {ok, Items} -> Items;
+        _Err -> []
     end.
 
 fill_subscription_lists(LServer, [#roster{} = I | Is],
@@ -723,11 +678,9 @@ roster_subscribe_t(LUser, LServer, LJID, Item, odbc) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     odbc_queries:roster_subscribe(LServer, Username, SJID,
 				  ItemVals);
-roster_subscribe_t(LUser, LServer, LJID, Item, riak) ->
-    ItemVals = riak_record_to_string(Item),
-    Username = LUser,
-    SJID = jlib:jid_to_string(LJID),
-    riak_roster_subscribe(LServer, Username, SJID, ItemVals).
+roster_subscribe_t(LUser, LServer, _LJID, Item, riak) ->
+    ejabberd_riak:put(Item,
+                      [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
 
 transaction(LServer, F) ->
     case gen_mod:db_type(LServer, ?MODULE) of
@@ -786,23 +739,14 @@ get_roster_by_jid_with_groups_t(LUser, LServer, LJID,
 		  us = {LUser, LServer}, jid = LJID}
     end;
 get_roster_by_jid_with_groups_t(LUser, LServer, LJID, riak) ->
-    Username = LUser,
-    SJID = jlib:jid_to_string(LJID),
-    case riak_get_roster_by_jid(LServer, Username, SJID) of
+    case ejabberd_riak:get(roster, {LUser, LServer, LJID}) of
         {ok, I} ->
-            R = riak_raw_to_record(LServer, I),
-            Groups =
-                case riak_get_roster_groups(LServer, Username, SJID) of
-                    {ok, JGrps} when is_list(JGrps) ->
-                        JGrps;
-                    _ ->
-                        []
-                end,
-            R#roster{groups = Groups};
-        {error, _} ->
+            I;
+        {error, notfound} ->
             #roster{usj = {LUser, LServer, LJID},
-                    us = {LUser, LServer},
-                    jid = LJID}
+                    us = {LUser, LServer}, jid = LJID};
+        Err ->
+            exit(Err)
     end.
 
 process_subscription(Direction, User, Server, JID1,
@@ -1016,9 +960,7 @@ remove_user(LUser, LServer, odbc) ->
     odbc_queries:del_user_roster_t(LServer, Username),
     ok;
 remove_user(LUser, LServer, riak) ->
-    Username = LUser,
-    riak_del_user_roster(LServer, Username),
-    ok.
+    {atomic, ejabberd_riak:delete_by_index(roster, <<"us">>, {LUser, LServer})}.
 
 send_unsubscription_to_rosteritems(LUser, LServer) ->
     RosterItems = get_user_roster([], {LUser, LServer}),
@@ -1086,13 +1028,9 @@ update_roster_t(LUser, LServer, LJID, Item, odbc) ->
     ItemGroups = groups_to_string(Item),
     odbc_queries:update_roster(LServer, Username, SJID, ItemVals,
                                ItemGroups);
-update_roster_t(LUser, LServer, LJID, Item, riak) ->
-    Username = LUser,
-    SJID = jlib:jid_to_string(LJID),
-    ItemVals = riak_record_to_string(Item),
-    ItemGroups = riak_groups_to_binary(Item),
-    riak_update_roster(
-      LServer, Username, SJID, ItemVals, ItemGroups).
+update_roster_t(LUser, LServer, _LJID, Item, riak) ->
+    ejabberd_riak:put(Item,
+                      [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
 
 del_roster_t(LUser, LServer, LJID) ->
     DBType = gen_mod:db_type(LServer, ?MODULE),
@@ -1105,9 +1043,7 @@ del_roster_t(LUser, LServer, LJID, odbc) ->
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     odbc_queries:del_roster(LServer, Username, SJID);
 del_roster_t(LUser, LServer, LJID, riak) ->
-    Username = LUser,
-    SJID = jlib:jid_to_string(LJID),
-    riak_del_roster(LServer, Username, SJID).
+    ejabberd_riak:delete(roster, {LUser, LServer, LJID}).
 
 process_item_set_t(LUser, LServer,
 		   #xmlel{attrs = Attrs, children = Els}) ->
@@ -1173,40 +1109,35 @@ get_in_pending_subscriptions(Ls, User, Server) ->
     get_in_pending_subscriptions(Ls, User, Server,
 				 gen_mod:db_type(LServer, ?MODULE)).
 
-get_in_pending_subscriptions(Ls, User, Server,
-			     mnesia) ->
+get_in_pending_subscriptions(Ls, User, Server, DBType)
+  when DBType == mnesia; DBType == riak ->
     JID = jlib:make_jid(User, Server, <<"">>),
-    US = {JID#jid.luser, JID#jid.lserver},
-    case mnesia:dirty_index_read(roster, US, #roster.us) of
-      Result when is_list(Result) ->
-	  Ls ++
-	    lists:map(fun (R) ->
-			      Message = R#roster.askmessage,
-			      Status = if is_binary(Message) -> (Message);
-					  true -> <<"">>
-				       end,
-			      #xmlel{name = <<"presence">>,
-				     attrs =
-					 [{<<"from">>,
-					   jlib:jid_to_string(R#roster.jid)},
-					  {<<"to">>, jlib:jid_to_string(JID)},
-					  {<<"type">>, <<"subscribe">>}],
-				     children =
-					 [#xmlel{name = <<"status">>,
-						 attrs = [],
-						 children =
-						     [{xmlcdata, Status}]}]}
-		      end,
-		      lists:filter(fun (R) ->
-					   case R#roster.ask of
-					     in -> true;
-					     both -> true;
-					     _ -> false
-					   end
-				   end,
-				   Result));
-      _ -> Ls
-    end;
+    Result = get_roster(JID#jid.luser, JID#jid.lserver, DBType),
+    Ls ++ lists:map(fun (R) ->
+                            Message = R#roster.askmessage,
+                            Status = if is_binary(Message) -> (Message);
+                                        true -> <<"">>
+                                     end,
+                            #xmlel{name = <<"presence">>,
+                                   attrs =
+                                       [{<<"from">>,
+                                         jlib:jid_to_string(R#roster.jid)},
+                                        {<<"to">>, jlib:jid_to_string(JID)},
+                                        {<<"type">>, <<"subscribe">>}],
+                                   children =
+                                       [#xmlel{name = <<"status">>,
+                                               attrs = [],
+                                               children =
+                                                   [{xmlcdata, Status}]}]}
+                    end,
+                    lists:filter(fun (R) ->
+                                         case R#roster.ask of
+                                             in -> true;
+                                             both -> true;
+                                             _ -> false
+                                         end
+                                 end,
+                                 Result));
 get_in_pending_subscriptions(Ls, User, Server, odbc) ->
     JID = jlib:make_jid(User, Server, <<"">>),
     LUser = JID#jid.luser,
@@ -1248,44 +1179,6 @@ get_in_pending_subscriptions(Ls, User, Server, odbc) ->
 				    end,
 				    Items));
       _ -> Ls
-    end;
-get_in_pending_subscriptions(Ls, User, Server, riak) ->
-    JID = jlib:make_jid(User, Server, <<"">>),
-    LUser = JID#jid.luser,
-    LServer = JID#jid.lserver,
-    Username = LUser,
-    case catch riak_get_roster(LServer, Username) of
-	{ok, Items} when is_list(Items) ->
-    	    Ls ++ lists:map(
-		    fun(R) ->
-			    Message = R#roster.askmessage,
-                            #xmlel{name = <<"presence">>,
-                                   attrs = [{<<"from">>,
-                                             jlib:jid_to_string(R#roster.jid)},
-                                            {<<"to">>, jlib:jid_to_string(JID)},
-                                            {<<"type">>, <<"subscribe">>}],
-                                   children = [#xmlel{name = <<"status">>,
-                                                      attrs = [],
-                                                      children =
-                                                      [{xmlcdata, Message}]}]}
-		    end,
-		    lists:flatmap(
-		      fun(I) ->
-			      case riak_raw_to_record(LServer, I) of
-				  %% Bad JID in database:
-				  error ->
-				      [];
-				  R ->
-				      case R#roster.ask of
-					  in   -> [R];
-					  both -> [R];
-					  _ -> []
-				      end
-			      end
-		      end,
-		      Items));
-	_ ->
-	    Ls
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1333,18 +1226,12 @@ read_subscription_and_groups(LUser, LServer, LJID,
     end;
 read_subscription_and_groups(LUser, LServer, LJID,
 			     riak) ->
-    Username = LUser,
-    SJID = jlib:jid_to_string(LJID),
-    case catch riak_get_subscription(LServer, Username, SJID) of
-	{ok, Subscription} ->
-	    Groups = case riak_get_roster_jid_groups(LServer, Username) of
-                         {ok, JGrps} when is_list(JGrps) ->
-                             JGrps;
-                         _ ->
-                             []
-                     end,
-	  {Subscription, Groups};
-      _ -> error
+    case ejabberd_riak:get(roster, {LUser, LServer, LJID}) of
+        {ok, #roster{subscription = Subscription,
+                     groups = Groups}} ->
+            {Subscription, Groups};
+        _ ->
+            error
     end.
 
 get_jid_info(_, User, Server, JID) ->
@@ -1721,183 +1608,3 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
-
-riak_get_roster(LServer, Username) ->
-    ejabberd_riak:get_by_index(
-      LServer, <<"roster">>, <<"user_bin">>, Username).
-
-riak_get_roster_jid_groups(LServer, Username) ->
-    case ejabberd_riak:get_by_index(
-           LServer, <<"roster_groups">>, <<"user_bin">>, Username) of
-        {ok, JGs} ->
-            Res = lists:map(fun riak_binary_to_groups/1, JGs),
-            {ok, Res};
-        Error -> Error
-    end.
-
-riak_get_roster_groups(LServer, Username, SJID) ->
-    Key = <<Username/binary, $/, SJID/binary>>,
-    case ejabberd_riak:get(LServer, <<"roster_groups">>, Key) of
-        {ok, Gs} ->
-            {_, Res} = riak_binary_to_groups(Gs),
-            {ok, Res};
-        {error, notfound} ->
-            {ok, []};
-        Error -> Error
-    end.
-
-riak_get_roster_by_jid(LServer, Username, SJID) ->
-    Key = <<Username/binary, $/, SJID/binary>>,
-    ejabberd_riak:get(LServer, <<"roster">>, Key).
-
-riak_del_roster(LServer, Username, SJID) ->
-    Key = <<Username/binary, $/, SJID/binary>>,
-    ejabberd_riak:delete(LServer, <<"roster">>, Key).
-
-riak_update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
-    Key = <<Username/binary, $/, SJID/binary>>,
-    ejabberd_riak:put(
-      LServer, <<"roster">>, Key, ItemVals,
-      [{<<"user_bin">>, Username}]),
-    ejabberd_riak:put(
-      LServer, <<"roster_groups">>, Key, ItemGroups,
-      [{<<"user_bin">>, Username}]).
-
-riak_roster_subscribe(LServer, Username, SJID, ItemVals) ->
-    Key = <<Username/binary, $/, SJID/binary>>,
-    ejabberd_riak:put(
-      LServer, <<"roster">>, Key, ItemVals,
-      [{<<"user_bin">>, Username}]).
-
-riak_get_subscription(LServer, Username, SJID) ->
-    case riak_get_roster_by_jid(LServer, Username, SJID) of
-        {ok, SR} ->
-            case riak_raw_to_record(LServer, SR) of
-                error ->
-                    {error, bad_record};
-                R ->
-                    {ok, R#roster.subscription}
-            end;
-        Error ->
-            Error
-    end.
-
-riak_set_roster_version(LServer, Username, RosterVersion) ->
-    ejabberd_riak:put(LServer, <<"roster_version">>,
-                      Username, RosterVersion).
-
-
-riak_del_user_roster(LServer, Username) ->
-    case ejabberd_riak:get_keys_by_index(
-           LServer, <<"roster">>, <<"user_bin">>, Username) of
-        {ok, Keys} ->
-            lists:foreach(
-              fun(Key) ->
-                      ejabberd_riak:delete(LServer, <<"roster">>, Key)
-              end, Keys);
-        _ ->
-            ok
-    end,
-    case ejabberd_riak:get_keys_by_index(
-           LServer, <<"roster_groups">>, <<"user_bin">>, Username) of
-        {ok, GKeys} ->
-            lists:foreach(
-              fun(Key) ->
-                      ejabberd_riak:delete(LServer, <<"roster_groups">>, Key)
-              end, GKeys);
-        _ ->
-            ok
-    end,
-    ejabberd_riak:delete(LServer, <<"roster_version">>, Username).
-
-riak_raw_to_record(LServer,
-              <<UsernameLen:16, Username:UsernameLen/binary,
-               SJIDLen:16, SJID:SJIDLen/binary,
-               NickLen:16, Nick:NickLen/binary,
-               SSubscription, SAsk,
-               SAskMessageLen:16, SAskMessage:SAskMessageLen/binary>>) ->
-    User = Username,
-    case jlib:string_to_jid(SJID) of
-	error ->
-	    error;
-	JID ->
-	    LJID = jlib:jid_tolower(JID),
-	    Subscription = case SSubscription of
-			       $B -> both;
-			       $T -> to;
-			       $F -> from;
-			       _ -> none
-			   end,
-	    Ask = case SAsk of
-		      $S -> subscribe;
-		      $U -> unsubscribe;
-		      $B -> both;
-		      $O -> out;
-		      $I -> in;
-		      _ -> none
-		  end,
-	    #roster{usj = {User, LServer, LJID},
-		    us = {User, LServer},
-		    jid = LJID,
-		    name = Nick,
-		    subscription = Subscription,
-		    ask = Ask,
-		    askmessage = SAskMessage}
-    end.
-
-riak_record_to_string(#roster{us = {User, _Server},
-			 jid = JID,
-			 name = Name,
-			 subscription = Subscription,
-			 ask = Ask,
-			 askmessage = AskMessage}) ->
-    Username = User,
-    UsernameLen = size(Username),
-    SJID = jlib:jid_to_string(jlib:jid_tolower(JID)),
-    SJIDLen = size(SJID),
-    Nick = Name,
-    NickLen = size(Nick),
-    SSubscription = case Subscription of
-			both -> $B;
-			to   -> $T;
-			from -> $F;
-			none -> $N
-		    end,
-    SAsk = case Ask of
-	       subscribe   -> $S;
-	       unsubscribe -> $U;
-	       both	   -> $B;
-	       out	   -> $O;
-	       in	   -> $I;
-	       none	   -> $N
-	   end,
-    SAskMessage = iolist_to_binary(AskMessage),
-    SAskMessageLen = size(SAskMessage),
-    <<UsernameLen:16, Username/binary,
-     SJIDLen:16, SJID/binary,
-     NickLen:16, Nick/binary,
-     SSubscription, SAsk,
-     SAskMessageLen:16, SAskMessage/binary>>.
-
-riak_groups_to_binary(#roster{jid = JID, groups = Groups}) ->
-    SJID = jlib:jid_to_string(jlib:jid_tolower(JID)),
-    SJIDLen = size(SJID),
-    %% Empty groups do not need to be converted to string to be inserted in
-    %% the database
-    lists:foldl(
-      fun([], Acc) ->
-              Acc;
-	 (Group, Acc) ->
- 	      G = Group,
-              Len = size(G),
-	      <<Acc/binary, Len:16, G/binary>>
-      end, <<SJIDLen:16, SJID/binary>>, Groups).
-
-riak_binary_to_groups(<<Len:16, SJID:Len/binary, Rest/binary>>) ->
-    {SJID, riak_binary_to_groups(Rest, [])}.
-
-riak_binary_to_groups(<<Len:16, G:Len/binary, Rest/binary>>, Res) ->
-    riak_binary_to_groups(Rest, [G | Res]);
-riak_binary_to_groups(_, Res) ->
-    Res.
-

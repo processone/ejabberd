@@ -438,6 +438,13 @@ caps_read_fun(_LServer, Node, mnesia) ->
 	      _ -> error
 	    end
     end;
+caps_read_fun(_LServer, Node, riak) ->
+    fun() ->
+            case ejabberd_riak:get(caps_features, Node) of
+                {ok, #caps_features{features = Features}} -> {ok, Features};
+                _ -> error
+            end
+    end;
 caps_read_fun(LServer, {Node, SubNode}, odbc) ->
     fun() ->
             SNode = ejabberd_odbc:escape(Node),
@@ -467,6 +474,11 @@ caps_write_fun(_LServer, Node, Features, mnesia) ->
     fun () ->
 	    mnesia:dirty_write(#caps_features{node_pair = Node,
 					      features = Features})
+    end;
+caps_write_fun(_LServer, Node, Features, riak) ->
+    fun () ->
+            ejabberd_riak:put(#caps_features{node_pair = Node,
+                                             features = Features})
     end;
 caps_write_fun(LServer, NodePair, Features, odbc) ->
     fun () ->

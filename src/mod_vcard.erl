@@ -46,7 +46,7 @@
 	 lbday, ctry, lctry, locality, llocality, email, lemail,
 	 orgname, lorgname, orgunit, lorgunit}).
 
--record(vcard, {us = {<<"">>, <<"">>} :: {binary(), binary()},
+-record(vcard, {us = {<<"">>, <<"">>} :: {binary(), binary()} | binary(),
                 vcard = #xmlel{} :: xmlel()}).
 
 -define(PROCNAME, ejabberd_mod_vcard).
@@ -214,13 +214,9 @@ get_vcard(LUser, LServer, odbc) ->
       _ -> error
     end;
 get_vcard(LUser, LServer, riak) ->
-    Username = LUser,
-    case catch ejabberd_riak:get(LServer, <<"vcard">>, Username) of
-        {ok, SVCARD} ->
-            case xml_stream:parse_element(SVCARD) of
-                {error, _Reason} -> error;
-                VCARD -> [VCARD]
-            end;
+    case ejabberd_riak:get(vcard, {LUser, LServer}) of
+        {ok, R} ->
+            [R#vcard.vcard];
         {error, notfound} ->
             [];
         _ ->
@@ -302,6 +298,33 @@ set_vcard(User, LServer, VCARD) ->
 							lorgunit = LOrgUnit})
 		     end,
 		 mnesia:transaction(F);
+             riak ->
+                 US = {LUser, LServer},
+                 ejabberd_riak:put(#vcard{us = US, vcard = VCARD},
+                                   [{'2i', [{<<"user">>, User},
+                                            {<<"luser">>, LUser},
+                                            {<<"fn">>, FN},
+                                            {<<"lfn">>, LFN},
+                                            {<<"family">>, Family},
+                                            {<<"lfamily">>, LFamily},
+                                            {<<"given">>, Given},
+                                            {<<"lgiven">>, LGiven},
+                                            {<<"middle">>, Middle},
+                                            {<<"lmiddle">>, LMiddle},
+                                            {<<"nickname">>, Nickname},
+                                            {<<"lnickname">>, LNickname},
+                                            {<<"bday">>, BDay},
+                                            {<<"lbday">>, LBDay},
+                                            {<<"ctry">>, CTRY},
+                                            {<<"lctry">>, LCTRY},
+                                            {<<"locality">>, Locality},
+                                            {<<"llocality">>, LLocality},
+                                            {<<"email">>, EMail},
+                                            {<<"lemail">>, LEMail},
+                                            {<<"orgname">>, OrgName},
+                                            {<<"lorgname">>, LOrgName},
+                                            {<<"orgunit">>, OrgUnit},
+                                            {<<"lorgunit">>, LOrgUnit}]}]);
 	     odbc ->
 		 Username = ejabberd_odbc:escape(User),
 		 LUsername = ejabberd_odbc:escape(LUser),
@@ -335,25 +358,7 @@ set_vcard(User, LServer, VCARD) ->
 					SLGiven, SLLocality, SLMiddle,
 					SLNickname, SLOrgName, SLOrgUnit,
 					SLocality, SMiddle, SNickname, SOrgName,
-					SOrgUnit, SVCARD, Username);
-	     riak ->
-                   Username = LUser,
-                   SVCARD = xml:element_to_binary(VCARD),
-
-                   ejabberd_riak:put(
-                     LServer, <<"vcard">>, Username, SVCARD,
-                     [{<<"bday_bin">>, LBDay},
-                      {<<"ctry_bin">>, LCTRY},
-                      {<<"email_bin">>, LEMail},
-                      {<<"fn_bin">>, LFN},
-                      {<<"family_bin">>, LFamily},
-                      {<<"given_bin">>, LGiven},
-                      {<<"locality_bin">>, LLocality},
-                      {<<"middle_bin">>, LMiddle},
-                      {<<"nickname_bin">>, LNickname},
-                      {<<"orgname_bin">>, LOrgName},
-                      {<<"orgunit_bin">>, LOrgUnit},
-                      {<<"user_bin">>, Username}])
+					SOrgUnit, SVCARD, Username)
 	   end,
 	   ejabberd_hooks:run(vcard_set, LServer,
 			      [LUser, LServer, VCARD])
@@ -921,9 +926,7 @@ remove_user(LUser, LServer, odbc) ->
 				   [<<"delete from vcard_search where lusername='">>,
 				    Username, <<"';">>]]);
 remove_user(LUser, LServer, riak) ->
-    Username = LUser,
-    ejabberd_riak:delete(LServer, <<"vcard">>, Username),
-    ok.
+    {atomic, ejabberd_riak:delete(vcard, {LUser, LServer})}.
 
 update_tables() ->
     update_vcard_table(),
