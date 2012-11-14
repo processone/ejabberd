@@ -41,7 +41,7 @@
          remove_connection/4,
          is_carbon_copy/1]).
 
--define(NS_CC, <<"urn:xmpp:carbons:1">>).
+-define(NS_CC, <<"urn:xmpp:carbons:2">>).
 -define(NS_FORWARD, <<"urn:xmpp:forward:0">>).
 
 -include("ejabberd.hrl").
@@ -172,10 +172,13 @@ send_copies(JID, Packet, Direction)->
 				    {<<"to">>, jlib:jid_to_string(Dest)}],
 			   children = [	
 				#xmlel{name = list_to_binary(atom_to_list(Direction)), 
-				       attrs = [{<<"xmlns">>, ?NS_CC}]},
-			        #xmlel{name = <<"forwarded">>, 
-				       attrs = [{<<"xmlns">>, ?NS_FORWARD}],
-			               children = [complete_packet(JID, Packet, Direction)]}
+				       attrs = [{<<"xmlns">>, ?NS_CC}],
+			       	       children = [
+					#xmlel{name = <<"forwarded">>, 
+					       attrs = [{<<"xmlns">>, ?NS_FORWARD}],
+					       children = [
+						complete_packet(JID, Packet, Direction)]}
+				]}
 			   ]},
 		    ejabberd_router:route(Sender, Dest, New)
 	      end, TargetJIDs),
