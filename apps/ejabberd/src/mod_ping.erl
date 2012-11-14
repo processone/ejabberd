@@ -34,7 +34,6 @@
 -include("jlib.hrl").
 
 -define(SUPERVISOR, ejabberd_sup).
--define(NS_PING, "urn:xmpp:ping").
 -define(DEFAULT_SEND_PINGS, false). % bool()
 -define(DEFAULT_PING_INTERVAL, 60). % seconds
 
@@ -53,10 +52,10 @@
 %% Hook callbacks
 -export([iq_ping/3, user_online/3, user_offline/3, user_send/3]).
 
--record(state, {host = "",
+-record(state, {host = <<"">>,
                 send_pings = ?DEFAULT_SEND_PINGS,
                 ping_interval = ?DEFAULT_PING_INTERVAL,
-		timeout_action = none,
+                timeout_action = none,
                 timers = ?DICT:new()}).
 
 %%====================================================================
@@ -161,12 +160,12 @@ handle_cast(_Msg, State) ->
 
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
     IQ = #iq{type = get,
-             sub_el = [{xmlelement, "ping", [{"xmlns", ?NS_PING}], []}]},
+             sub_el = [{xmlelement, <<"ping">>, [{<<"xmlns">>, ?NS_PING}], []}]},
     Pid = self(),
     F = fun(Response) ->
 		gen_server:cast(Pid, {iq_pong, JID, Response})
 	end,
-    From = jlib:make_jid("", State#state.host, ""),
+    From = jlib:make_jid(<<"">>, State#state.host, <<"">>),
     ejabberd_local:route_iq(From, JID, IQ, F),
     Timers = add_timer(JID, State#state.ping_interval, State#state.timers),
     {noreply, State#state{timers = Timers}};
@@ -181,7 +180,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 iq_ping(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case {Type, SubEl} of
-        {get, {xmlelement, "ping", _, _}} ->
+        {get, {xmlelement, <<"ping">>, _, _}} ->
             IQ#iq{type = result, sub_el = []};
         _ ->
             IQ#iq{type = error, sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
