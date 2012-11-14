@@ -1,0 +1,11 @@
+Examples in this directory are modified files from JSJaC official repository:
+https://github.com/sstrigler/JSJaC/tree/master/examples
+
+Tested under:
+* Google Chrome 23.0.1271.64 - OK
+* Mozilla Firefox 16.0.2 - OK
+* Opera 12.10 - OK
+* Safari 6.0.2 - OK
+
+Browser officialy supporting Websockets:
+http://en.wikipedia.org/wiki/WebSocket#Browser_support

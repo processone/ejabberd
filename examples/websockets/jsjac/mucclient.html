@@ -1,0 +1,451 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>JSJaC MUC Client</title>
+
+        <script type="text/javascript" src="jsjac.js"></script>
+        <!-- comment in above and uncomment below if you want to modify/hack
+        on jsjac -->
+        <!--script type="text/javascript" src="../src/JSJaC.uncompressed.js"></script-->
+
+        <!-- if you want to enable debugging uncomment line below
+        debugger available at
+        http://svn.stefan-strigler.de/JSDebugger/trunk -->
+        <!--script type="text/javascript" src="Debugger.js"></script-->
+
+        <script type="text/javascript">
+            // <![CDATA[
+            var currentSubject = "";
+
+            function handleIQ(oIQ) {
+                if(oIQ.getType() != "result") {
+                    document.getElementById('iResp').innerHTML += "<div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div>';
+                    document.getElementById('iResp').lastChild.scrollIntoView();
+                    con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
+                }
+            }
+
+            function setSubject(from, subj) {
+                if(subj == undefined)
+                    subj = "";
+                if(subj == currentSubject)
+                    return;
+                var html = '<div class="msg"><b>Subject set by ' + from + ' to "' + subj + '"</b><br/>';
+                document.getElementById('iResp').innerHTML += html;
+                document.getElementById('iResp').lastChild.scrollIntoView();
+
+                document.getElementById('curr_subj').innerHTML = subj;
+            }
+
+            function handleMessage(oJSJaCPacket) {
+                var html = '';
+                var from = oJSJaCPacket.getFromJID().getResource();
+                if (from == '') 
+                    from = "room";
+                var subj = oJSJaCPacket.getSubject();
+                if(subj != null)
+                    setSubject(from, subj);
+                var body = oJSJaCPacket.getBody().htmlEnc();
+                if(body != '') {
+                    html += '<div class="msg"><b>Received Message from ' + from + ':</b><br/>';
+                    html += body + '</div>';
+                    document.getElementById('iResp').innerHTML += html;
+                    document.getElementById('iResp').lastChild.scrollIntoView();
+                }
+            }
+
+            function handlePresence(oJSJaCPacket) {
+                if(oJSJaCPacket.getFromJID().getResource() == document.getElementById('nick').value) {
+                    handleRoomJoin(oJSJaCPacket);
+                } else {
+                    displayPresence(oJSJaCPacket);
+                }
+            }
+
+            function getItemChild(presence) {
+                var nodes = presence.getChild("x").childNodes;
+                for(var i in nodes) {
+                    if(nodes[i].nodeName == "item")
+                    return nodes[i];
+                }
+                return false;
+            }
+
+            function handleRoomJoin(oJSJaCPacket) {
+                var item = getItemChild(oJSJaCPacket);
+                if(item.attributes.getNamedItem('affiliation').value == "owner") {
+                    var iq = new JSJaCIQ();
+                    iq.setIQ(getRoomJID(), 'set', 'create');
+                    var x = iq.buildNode('x');
+                    x.setAttribute('xmlns', 'jabber:x:data');
+                    x.setAttribute('type', 'submit');
+                    var query = iq.buildNode('query', [x]);
+                    query.setAttribute('xmlns', 'http://jabber.org/protocol/muc#owner');
+                    iq.appendNode(query);
+
+                    con.send(iq);
+                }
+            }
+
+            function displayPresence(oJSJaCPacket) {
+                var html = '<div class="msg">';
+                if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow())
+                    html += '<b>' + oJSJaCPacket.getFromJID().getResource() + ' has become available.</b>';
+                else {
+                    html += '<b>' + oJSJaCPacket.getFromJID().getResource() + ' has set his presence to ';
+                    if (oJSJaCPacket.getType())
+                        html += oJSJaCPacket.getType() + '.</b>';
+                    else
+                        html += oJSJaCPacket.getShow() + '.</b>';
+                    if (oJSJaCPacket.getStatus())
+                        html += ' (' + oJSJaCPacket.getStatus().htmlEnc() + ')';
+                }
+                html += '</div>';
+
+                document.getElementById('iResp').innerHTML += html;
+                document.getElementById('iResp').lastChild.scrollIntoView();
+            }
+
+            function handleError(e) {
+                document.getElementById('err').innerHTML = "An error occured:<br />" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName).htmlEnc();
+                document.getElementById('login_pane').style.display = '';
+                document.getElementById('sendmsg_pane').style.display = 'none';
+
+                if (con.connected())
+                    con.disconnect();
+            }
+
+            function handleStatusChanged(status) {
+                //oDbg.log("status changed: " + status);
+            }
+
+            function handleConnected() {
+                document.getElementById('login_pane').style.display = 'none';
+                document.getElementById('sendmsg_pane').style.display = '';
+                document.getElementById('err').innerHTML = '';
+
+                // Ordinary presence
+                con.send(new JSJaCPresence(), joinMUC);
+            }
+
+            function joinMUC(data) {
+                // Join room
+                var roomJID = getRoomNickJID();
+                var joinPacket = new JSJaCPresence();
+                joinPacket.setTo(roomJID);
+
+                var xnode = joinPacket.buildNode("x", []);
+                xnode.setAttribute("xmlns", "http://jabber.org/protocol/muc");
+                joinPacket.appendNode(xnode);
+                joinPacket.setStatus('available');
+
+                con.send(joinPacket);
+            }    
+
+
+            function handleDisconnected() {
+                document.getElementById('login_pane').style.display = '';
+                document.getElementById('sendmsg_pane').style.display = 'none';
+            }
+
+            function handleIqVersion(iq) {
+                con.send(iq.reply([iq.buildNode('name', 'jsjac simpleclient'), iq.buildNode('version', JSJaC.Version), iq.buildNode('os', navigator.userAgent)]));
+                return true;
+            }
+
+            function handleIqTime(iq) {
+                var now = new Date();
+                con.send(iq.reply([iq.buildNode('display', now.toLocaleString()), iq.buildNode('utc', now.jabberDate()), iq.buildNode('tz', now.toLocaleString().substring(now.toLocaleString().lastIndexOf(' ') + 1))]));
+                return true;
+            }
+
+            function doLogin(oForm) {
+                document.getElementById('err').innerHTML = '';
+                // reset
+
+                try {
+
+                    if (oForm.http_base.value.substr(0, 5) === 'ws://' || oForm.http_base.value.substr(0, 6) === 'wss://') {
+                        con = new JSJaCWebSocketConnection({
+                            httpbase : oForm.http_base.value,
+                            oDbg : new JSJaCConsoleLogger(4)
+                        });
+                    } else {
+                        con = new JSJaCHttpBindingConnection({
+                            httpbase : oForm.http_base.value,
+                            oDbg : new JSJaCConsoleLogger(4)
+                        });
+                    }
+
+                    setupCon(con);
+
+                    // setup args for connect method
+                    oArgs = new Object();
+                    oArgs.domain = oForm.server.value;
+                    oArgs.username = oForm.username.value;
+                    oArgs.resource = 'jsjac_simpleclient';
+                    oArgs.pass = oForm.password.value;
+                    oArgs.register = oForm.register.checked;
+                    con.connect(oArgs);
+                } catch (e) {
+                    document.getElementById('err').innerHTML = e.toString();
+                } finally {
+                    return false;
+                }
+            }
+
+            function setupCon(oCon) {
+                oCon.registerHandler('message', handleMessage);
+                oCon.registerHandler('presence', handlePresence);
+                oCon.registerHandler('iq', handleIQ);
+                oCon.registerHandler('onconnect', handleConnected);
+                oCon.registerHandler('onerror', handleError);
+                oCon.registerHandler('status_changed', handleStatusChanged);
+                oCon.registerHandler('ondisconnect', handleDisconnected);
+
+                oCon.registerIQGet('query', NS_VERSION, handleIqVersion);
+                oCon.registerIQGet('query', NS_TIME, handleIqTime);
+
+            }
+
+            function sendMsg(oForm) {
+                if (oForm.msg.value == '')
+                    return false;
+
+                try {
+                    var oMsg = new JSJaCMessage();
+                    oMsg.setTo(getRoomJID());
+                    oMsg.setBody(oForm.msg.value);
+                    oMsg.setType("groupchat");
+                    con.send(oMsg);
+
+                    oForm.msg.value = '';
+                    
+                    return false;
+                } catch (e) {
+                    html = "<div class='msg error''>Error: " + e.message + "</div>";
+                    document.getElementById('iResp').innerHTML += html;
+                    document.getElementById('iResp').lastChild.scrollIntoView();
+                    return false;
+                }
+            }
+
+            function sendSubj(oForm) {
+                if (oForm.subj.value != '') {
+                    try {
+                        var oMsg = new JSJaCMessage();
+                        oMsg.setTo(getRoomJID());
+                        oMsg.setType("groupchat");
+                        
+                        var subnode = oMsg.buildNode("subject", oForm.subj.value);
+                        oMsg.appendNode(subnode);
+                        con.send(oMsg);
+
+                        oForm.subj.value = '';
+                    } catch (e) {
+                         html = "<div class='msg error''>Error: " + e.message + "</div>";
+                        document.getElementById('iResp').innerHTML += html;
+                        document.getElementById('iResp').lastChild.scrollIntoView();
+                    }
+                }
+                return false;
+            }
+
+            function getRoomJID() {
+                return document.getElementById('room').value + '@' + document.getElementById('muc_server').value; 
+            }
+
+            function getRoomNickJID() {
+                return getRoomJID() + '/' + document.getElementById('nick').value;
+            }
+
+            function quit() {
+                var p = new JSJaCPresence();
+                p.setType("unavailable");
+                con.send(p);
+                con.disconnect();
+
+                document.getElementById('login_pane').style.display = '';
+                document.getElementById('sendmsg_pane').style.display = 'none';
+            }
+
+            function init() {
+                try {// try to resume a session
+                    con = new JSJaCHttpBindingConnection({
+                        'oDbg' : new JSJaCConsoleLogger(4)
+                    });
+
+                    setupCon(con);
+
+                    if (con.resume()) {
+
+                        document.getElementById('login_pane').style.display = 'none';
+                        document.getElementById('sendmsg_pane').style.display = '';
+                        document.getElementById('err').innerHTML = '';
+
+                    }
+                } catch (e) {
+                } // reading cookie failed - never mind
+
+            }
+
+            onload = init;
+
+            //onerror = function(e) {
+            //  document.getElementById('err').innerHTML = e;
+            //
+            //  document.getElementById('login_pane').style.display = '';
+            //  document.getElementById('sendmsg_pane').style.display = 'none';
+            //
+            //  if (con && con.connected())
+            //    con.disconnect();
+            //  return false;
+            //};
+
+            onunload = function() {
+                if ( typeof con != 'undefined' && con && con.connected()) {
+                    // save backend type
+                    if (con._hold)// must be binding
+                        (new JSJaCCookie('btype', 'binding')).write();
+                    else
+                        (new JSJaCCookie('btype', 'polling')).write();
+                    if (con.suspend) {
+                        con.suspend();
+                    }
+                }
+            };
+
+            // ]]>
+        </script>
+        <style type="text/css">
+            /*<![CDATA[*/
+            body {
+                font-family: "Bitstream Vera Sans", "Verdana", sans;
+                font-size: 0.8em;
+                margin: 12px;
+            }
+            h2 {
+                border-bottom: 1px solid grey;
+            }
+            input {
+                border: 1px solid grey;
+            }
+            #iResp {
+                width: 420px;
+                height: 260px;
+                overflow: auto;
+                border: 2px dashed grey;
+                padding: 4px;
+            }
+            #msgArea {
+                width: 420px;
+                height: 45px;
+                padding: 4px;
+                margin: 0;
+                border: 2px dashed grey;
+            }
+            .spaced {
+                margin-bottom: 4px;
+            }
+            .msg {
+                border-bottom: 1px solid black;
+            }
+            .error {
+                font-weight: bold;
+                color: red;
+            }
+            /*]]>*/
+        </style>
+    </head>
+    <body>
+        <h1><a href="#" onclick="location.reload();">JSJaC MUC Client</a></h1>
+
+        <div id="err"></div>
+
+        <div id="login_pane">
+            <h2>Login</h2>
+            <form name="loginForm" onSubmit="return doLogin(this);" action="#">
+                <table>
+                    <tr>
+                        <th><label for="http_base">HTTP Base</label></th><td>
+                        <input type="text" name="http_base" id="http_base" tabindex="3" size="60" value="ws://localhost:5288/ws-xmpp/"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><small>(this probably won't be user editable in your real world application)</small></td>
+                    </tr>
+                    <tr>
+                        <th colspan="2">
+                        <hr noshade size="1"/>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th><label for="server">Domain</label></th><td>
+                        <input type="text" name="server" id="server" tabindex="4" value="localhost"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="muc_server">MUC Server</label></th><td>
+                        <input type="text" name="muc_server" id="muc_server" tabindex="4" value="muc.localhost"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="username">Username</label></th><td>
+                        <input type="text" name="username" id="username" tabindex="5"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="password">Password</label></th><td>
+                        <input type="password" name="password" id="password" tabindex="6" />
+                        </td>
+                    </tr>
+					<tr>
+					    <th><label for="room">Room</label></th><td>
+						<input type="text" name="room" id="room" tabindex="7" />
+						</td>
+					</tr>
+					<tr>
+					    <th><label for="nick">Nickname</label></th><td>
+						<input type="text" name="nick" id="nick" tabindex="8" />
+						</td>
+					</tr>
+                    <tr>
+                        <th></th><td>
+                        <input type="checkbox" name="register" id="register_checkbox" />
+                        <label for="register_checkbox">Register new account</label></td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td><td>
+                        <input type="submit" value="Login" tabindex="9">
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+
+        <div id="sendmsg_pane" style="display:none;">
+            <b>Subject: </b><div id="curr_subj"></div>
+            <h2>Incoming:</h2>
+            <div id="iResp"></div>
+            <h2>Send Message</h2>
+            <form name="sendForm" onsubmit="return sendMsg(this);" action="#">
+                <div class="spaced">
+                    <textarea name="msg" id='msgArea' rows="3" cols="80" tabindex="2"></textarea>
+</div>                <div class="spaced">
+                    <input type="submit" value="Send" tabindex="3">
+                    *
+                    <input type="button" value="Quit" tabindex="4" onclick="return quit();">
+                </div>
+            </form>
+            <h2>Set subject</h2>
+            <form name="subjForm" onsubmit="return sendSubj(this);" action="#">
+                <div class="spaced">
+                    <input type="text" size="80" id="subjBox" name="subj" />
+                    <div class="spaced">
+                        <input type="submit" value="Set subject">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </body>
+</html>
