@@ -395,7 +395,12 @@ node_up(_Node) ->
 
 node_down(Node) when Node == node() ->
     copy_sessions(mnesia:dirty_first(session));
-node_down(_) -> ok.
+node_down(Node) ->
+    ets:select_delete(
+      session,
+      [{#session{sid = {'_', '$1'}, _ = '_'},
+        [{'==', {'node', '$1'}, Node}],
+        [true]}]).
 
 copy_sessions('$end_of_table') -> ok;
 copy_sessions(Key) ->

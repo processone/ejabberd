@@ -195,6 +195,7 @@ handle_info({node_down, Node}, State) ->
     {noreply, State};
 handle_info({nodedown, Node, _}, State) ->
     ?INFO_MSG("node ~p goes down", [Node]),
+    ejabberd_hooks:run(node_down, [Node]),
     delete_node(?HASHTBL, Node),
     delete_node(?HASHTBL_NEW, Node),
     {noreply, State};
