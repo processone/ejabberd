@@ -389,12 +389,13 @@ migrate(InitiatorNode, UpOrDown, After) ->
 -spec node_up(atom()) -> ok.
 
 node_up(_Node) ->
-    copy_sessions(mnesia:dirty_first(session)).
+    copy_sessions(mnesia:dirty_first(session), fun(_) -> true end).
 
 -spec node_down(atom()) -> ok.
 
 node_down(Node) when Node == node() ->
-    copy_sessions(mnesia:dirty_first(session));
+    copy_sessions(mnesia:dirty_first(session),
+                  fun ejabberd_c2s:is_remote_socket/1);
 node_down(Node) ->
     ets:select_delete(
       session,
@@ -402,18 +403,23 @@ node_down(Node) ->
         [{'==', {'node', '$1'}, Node}],
         [true]}]).
 
-copy_sessions('$end_of_table') -> ok;
-copy_sessions(Key) ->
+copy_sessions('$end_of_table', _CheckFun) -> ok;
+copy_sessions(Key, CheckFun) ->
     case mnesia:dirty_read(session, Key) of
-      [#session{us = US} = Session] ->
+      [#session{us = US, sid = {_, Pid}} = Session] ->
 	  case ejabberd_cluster:get_node_new(US) of
 	    Node when node() /= Node ->
-		rpc:cast(Node, mnesia, dirty_write, [Session]);
+                  case CheckFun(Pid) of
+                      true ->
+                          rpc:cast(Node, mnesia, dirty_write, [Session]);
+                      false ->
+                          ok
+                  end;
 	    _ -> ok
 	  end;
       _ -> ok
     end,
-    copy_sessions(mnesia:dirty_next(session, Key)).
+    copy_sessions(mnesia:dirty_next(session, Key), CheckFun).
 
 %%====================================================================
 %% gen_server callbacks
