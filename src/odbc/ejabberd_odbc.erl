@@ -172,7 +172,7 @@ to_bool(1) -> true;
 to_bool(_) -> false.
 
 encode_term(Term) ->
-    escape(erl_prettypr:format(erl_syntax:abstract(Term))).
+    escape(lists:flatten(io_lib:print(Term))).
 
 decode_term(Str) ->
     {ok, Tokens, _} = erl_scan:string(Str ++ "."),
