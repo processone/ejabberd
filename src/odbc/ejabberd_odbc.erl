@@ -186,8 +186,7 @@ to_bool(1) -> true;
 to_bool(_) -> false.
 
 encode_term(Term) ->
-    escape(list_to_binary(
-             erl_prettypr:format(erl_syntax:abstract(Term)))).
+    escape(list_to_binary(io_lib:print(Term))).
 
 decode_term(Bin) ->
     Str = binary_to_list(<<Bin/binary, ".">>),
