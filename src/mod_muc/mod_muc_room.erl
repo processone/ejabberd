@@ -931,8 +931,8 @@ load_history(Host, Room, true, Queue) ->
 				       ejabberd_odbc:escape(Room))
 	of
       {selected,
-       ["nick", "packet", "have_subject",
-	"timestamp", "size"],
+       [<<"nick">>, <<"packet">>, <<"have_subject">>,
+	<<"timestamp">>, <<"size">>],
        Items} ->
 	  ?DEBUG("Found ~p messages on history for ~s",
 		 [length(Items), Room]),
