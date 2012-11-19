@@ -37,11 +37,13 @@
 %% Hooks:
 -export([user_send_packet/4,
 	 user_receive_packet/5,
-         iq_handler/3,
+         iq_handler2/3,
+         iq_handler1/3,
          remove_connection/4,
          is_carbon_copy/1]).
 
--define(NS_CC, <<"urn:xmpp:carbons:2">>).
+-define(NS_CC_2, <<"urn:xmpp:carbons:2">>).
+-define(NS_CC_1, <<"urn:xmpp:carbons:1">>).
 -define(NS_FORWARD, <<"urn:xmpp:forward:0">>).
 
 -include("ejabberd.hrl").
@@ -49,15 +51,17 @@
 -define(PROCNAME, ?MODULE).
 -define(TABLE, carboncopy).
 
--type matchspec_atom() :: '_' | '$1' | '$2'.
+-type matchspec_atom() :: '_' | '$1' | '$2' | '$3'.
 -record(carboncopy,{us :: {binary(), binary()} | matchspec_atom(), 
-		    resource :: binary() | matchspec_atom() }).
+		    resource :: binary() | matchspec_atom(),
+		    version :: binary() }).
 
 is_carbon_copy(Packet) ->
 	case xml:get_subtag(Packet, <<"sent">>) of
 		#xmlel{name= <<"sent">>, attrs = AAttrs}  ->
 	    	case xml:get_attr_s(<<"xmlns">>, AAttrs) of
-				?NS_CC -> true;
+				?NS_CC_2 -> true;
+				?NS_CC_1 -> true;
 				_ -> false
 			end;
 		_ -> false
@@ -65,7 +69,14 @@ is_carbon_copy(Packet) ->
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts,fun gen_iq_handler:check_type/1, one_queue),
-    mod_disco:register_feature(Host, ?NS_CC),
+    mod_disco:register_feature(Host, ?NS_CC_1),
+    mod_disco:register_feature(Host, ?NS_CC_2),
+    Fields = record_info(fields, ?TABLE),
+    try mnesia:table_info(?TABLE, attributes) of
+	Fields -> ok;
+	_ -> mnesia:delete_table(?TABLE)  %% recreate..
+    catch _:_Error -> ok  %%probably table don't exist
+    end,
     mnesia:create_table(?TABLE,
 	[{ram_copies, [node()]}, 
 	 {attributes, record_info(fields, ?TABLE)}, 
@@ -75,23 +86,31 @@ start(Host, Opts) ->
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:add(user_send_packet,Host, ?MODULE, user_send_packet, 89),
     ejabberd_hooks:add(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CC, ?MODULE, iq_handler, IQDisc).
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CC_2, ?MODULE, iq_handler2, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CC_1, ?MODULE, iq_handler1, IQDisc).
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CC),
-    mod_disco:unregister_feature(Host, ?NS_CC),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CC_1),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CC_2),
+    mod_disco:unregister_feature(Host, ?NS_CC_2),
+    mod_disco:unregister_feature(Host, ?NS_CC_1),
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:delete(user_send_packet,Host, ?MODULE, user_send_packet, 89),
     ejabberd_hooks:delete(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
     ejabberd_hooks:delete(unset_presence_hook,Host, ?MODULE, remove_connection, 10).
 
-iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children = []}} = IQ)->
+iq_handler2(From, To, IQ) ->
+	iq_handler(From, To, IQ, ?NS_CC_2).
+iq_handler1(From, To, IQ) ->
+	iq_handler(From, To, IQ, ?NS_CC_1).
+
+iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children = []}} = IQ, CC)->
     ?INFO_MSG("carbons IQ received: ~p", [IQ]),
     {U, S, R} = jlib:jid_tolower(From),
     Result = case Operation of
         <<"enable">>->
 	    ?INFO_MSG("carbons enabled for user ~s@~s/~s", [U,S,R]),
-            enable(S,U,R);
+            enable(S,U,R,CC);
         <<"disable">>->
 	    ?INFO_MSG("carbons disabled for user ~s@~s/~s", [U,S,R]),
             disable(S, U, R)
@@ -105,7 +124,7 @@ iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children 
             IQ#iq{type=error,sub_el = [?ERR_BAD_REQUEST]}
     end;
 
-iq_handler(_From, _To, IQ)->
+iq_handler(_From, _To, IQ, _CC)->
     IQ#iq{type=error, sub_el = [?ERR_NOT_ALLOWED]}.
 
 user_send_packet(_Debug, From, _To, Packet) ->
@@ -157,43 +176,62 @@ send_copies(JID, Packet, Direction)->
 
     %% list of JIDs that should receive a carbon copy of this message (excluding the
     %% receiver of the original message
-    TargetJIDs = lists:delete(JID, [ jlib:make_jid({U, S, CCRes}) || CCRes <- list(U, S) ]),
+    TargetJIDs = [ {jlib:make_jid({U, S, CCRes}), CC_Version} || {CCRes, CC_Version} <- list(U, S), CCRes /= R ],
+    %TargetJIDs = lists:delete(JID, [ jlib:make_jid({U, S, CCRes}) || CCRes <- list(U, S) ]),
 
 
-    lists:map(fun(Dest) ->
+    lists:map(fun({Dest,Version}) ->
 		    {_, _, Resource} = jlib:jid_tolower(Dest),
 		    ?DEBUG("Sending:  ~p =/= ~p", [R, Resource]),
 		    Sender = jlib:make_jid({U, S, <<>>}),
 		    %{xmlelement, N, A, C} = Packet,
-		    New = #xmlel{name = <<"message">>, 
-			   attrs = [{<<"xmlns">>, <<"jabber:client">>},
-				    {<<"type">>, <<"chart">>}, 
-				    {<<"from">>, jlib:jid_to_string(Sender)},
-				    {<<"to">>, jlib:jid_to_string(Dest)}],
-			   children = [	
-				#xmlel{name = list_to_binary(atom_to_list(Direction)), 
-				       attrs = [{<<"xmlns">>, ?NS_CC}],
-			       	       children = [
-					#xmlel{name = <<"forwarded">>, 
-					       attrs = [{<<"xmlns">>, ?NS_FORWARD}],
-					       children = [
-						complete_packet(JID, Packet, Direction)]}
-				]}
-			   ]},
+		    New = build_forward_packet(JID, Packet, Sender, Dest, Direction, Version),
 		    ejabberd_router:route(Sender, Dest, New)
 	      end, TargetJIDs),
     ok.
 
-enable(Host, U, R)->
+build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CC_2) ->
+    #xmlel{name = <<"message">>, 
+	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
+		    {<<"type">>, <<"chart">>}, 
+		    {<<"from">>, jlib:jid_to_string(Sender)},
+		    {<<"to">>, jlib:jid_to_string(Dest)}],
+	   children = [	
+		#xmlel{name = list_to_binary(atom_to_list(Direction)), 
+		       attrs = [{<<"xmlns">>, ?NS_CC_2}],
+		       children = [
+			#xmlel{name = <<"forwarded">>, 
+			       attrs = [{<<"xmlns">>, ?NS_FORWARD}],
+			       children = [
+				complete_packet(JID, Packet, Direction)]}
+		]}
+	   ]};
+build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CC_1) ->
+    #xmlel{name = <<"message">>, 
+	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
+		    {<<"type">>, <<"chart">>}, 
+		    {<<"from">>, jlib:jid_to_string(Sender)},
+		    {<<"to">>, jlib:jid_to_string(Dest)}],
+	   children = [	
+		#xmlel{name = list_to_binary(atom_to_list(Direction)), 
+			attrs = [{<<"xmlns">>, ?NS_CC_1}]},
+		#xmlel{name = <<"forwarded">>, 
+		       attrs = [{<<"xmlns">>, ?NS_FORWARD}],
+		       children = [complete_packet(JID, Packet, Direction)]}
+		]}.
+
+
+enable(Host, U, R, CC)->
     ?DEBUG("enabling for ~p", [U]),
-     try mnesia:dirty_write(#carboncopy{us = {U, Host}, resource=R}) of
+     try mnesia:dirty_write(#carboncopy{us = {U, Host}, resource=R, version = CC}) of
 	ok -> ok
      catch _:Error -> {error, Error}
      end.	
 
 disable(Host, U, R)->
     ?DEBUG("disabling for ~p", [U]),
-    try mnesia:dirty_delete_object(#carboncopy{us = {U,Host}, resource=R}) of
+    ToDelete = mnesia:dirty_match_object(?TABLE, #carboncopy{us = {U, Host}, resource = R, version = '_'}),
+    try lists:foreach(fun mnesia:dirty_delete_object/1, ToDelete) of
 	ok -> ok
     catch _:Error -> {error, Error}
     end.
@@ -212,7 +250,7 @@ complete_packet(_From, #xmlel{name = <<"message">>, attrs=OrigAttrs} = Packet, r
     Attrs = lists:keystore(<<"xmlns">>, 1, OrigAttrs, {<<"xmlns">>, <<"jabber:client">>}),
     Packet#xmlel{attrs = Attrs}.
 
-%% list resources with carbons enabled for given user and host
+%% list {resource, cc_version} with carbons enabled for given user and host
 list(User, Server)->
-	mnesia:dirty_select(?TABLE, [{#carboncopy{us = {User, Server}, resource = '$2'}, [], ['$2']}]).
+	mnesia:dirty_select(?TABLE, [{#carboncopy{us = {User, Server}, resource = '$2', version = '$3'}, [], [{{'$2','$3'}}]}]).
 
