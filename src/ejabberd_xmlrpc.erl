@@ -408,6 +408,8 @@ format_result(Int, {Name, integer}) ->
     {struct, [{Name, Int}]};
 format_result(String, {Name, string}) ->
     {struct, [{Name, lists:flatten(String)}]};
+format_result(Binary, {Name, binary}) ->
+    {struct, [{Name, binary_to_list(Binary)}]};
 format_result(Code, {Name, rescode}) ->
     {struct, [{Name, make_status(Code)}]};
 format_result({Code, Text}, {Name, restuple}) ->
