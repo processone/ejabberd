@@ -1,0 +1,8 @@
+{application, xmlrpc,
+ [
+  {description, ""},
+  {vsn, git},
+  {registered, []},
+  {applications, []},
+  {env, []}
+ ]}.

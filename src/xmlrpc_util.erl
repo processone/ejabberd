@@ -3,10 +3,10 @@
 %%
 %% Redistribution and use in source and binary forms, with or without
 %% modification, are permitted provided that the following conditions
-%% are met:
+%% are met: 
 %%
 %% 1. Redistributions of source code must retain the above copyright
-%%    notice, this list of conditions and the following disclaimer.
+%%    notice, this list of conditions and the following disclaimer. 
 %% 2. Redistributions in binary form must reproduce the above
 %%    copyright notice, this list of conditions and the following
 %%    disclaimer in the documentation and/or other materials provided
@@ -25,18 +25,13 @@
 %% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -module(xmlrpc_util).
-
 -author('jocke@gleipnir.com').
-
 -export([is_string/1, is_iso8601_date/1, is_base64/1]).
 
-is_string(String) when is_binary(String) -> yes;
+is_string([C|Rest]) when C >= 0, C =< 255 -> is_string(Rest);
+is_string([]) -> yes;
 is_string(_) -> no.
 
--spec is_iso8601_date(binary()) -> yes.
+is_iso8601_date(_) -> yes. % FIXME
 
-is_iso8601_date(_) -> yes.
-
--spec is_base64(binary()) -> yes.
-
-is_base64(_) -> yes.
+is_base64(_) -> yes. % FIXME

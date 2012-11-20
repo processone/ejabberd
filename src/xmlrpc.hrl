@@ -24,15 +24,18 @@
 %% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
--define(INFO_LOG(Reason),
-	error_logger:info_report({?MODULE, ?LINE, Reason})).
+-record(header, {
+	  %% int()
+	  content_length,
+	  %% string()
+	  content_type,
+	  %% string()
+	  user_agent,
+	  %% close | undefined
+	  connection,
+	  %% string()
+	  authorization,
+	  %% list()
+	  cookies
+	 }).
 
--define(ERROR_LOG(Reason),
-	error_logger:error_report({?MODULE, ?LINE, Reason})).
-
--ifdef(DEBUG).
--define(DEBUG_LOG(Reason),
-	error_logger:info_report({debug, ?MODULE, ?LINE, Reason})).
--else.
--define(DEBUG_LOG(Reason), ok).
--endif.
