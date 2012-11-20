@@ -331,16 +331,16 @@ commands() ->
 			    "\"both\". Pending can be \"in\", \"out\" "
 			    "or \"none\".",
 			module = ?MODULE, function = get_roster,
-			args = [{user, string}, {server, string}],
+			args = [{user, binary}, {server, binary}],
 			result =
 			    {contacts,
 			     {list,
 			      {contact,
 			       {tuple,
-				[{jid, string},
-				 {groups, {list, {group, string}}},
-				 {nick, string}, {subscription, string},
-				 {pending, string}]}}}}},
+				[{jid, binary},
+				 {groups, {list, {group, binary}}},
+				 {nick, binary}, {subscription, binary},
+				 {pending, binary}]}}}}},
      #ejabberd_commands{name = get_roster_with_presence,
 			tags = [roster],
 			desc =
@@ -1204,8 +1204,8 @@ format_roster([#roster{jid = JID, name = Nick,
 		       groups = Group, subscription = Subs, ask = Ask}
 	       | Items],
 	      Structs) ->
-    {User, Server, _Resource} = JID,
-    Struct = {lists:flatten([User, <<"@">>, Server]), Group,
+    JidBinary = jlib:jid_to_string(jlib:make_jid(JID)),
+    Struct = {JidBinary, Group,
 	      Nick, iolist_to_binary(atom_to_list(Subs)),
 	      iolist_to_binary(atom_to_list(Ask))},
     format_roster(Items, [Struct | Structs]).
