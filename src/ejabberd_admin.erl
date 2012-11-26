@@ -166,7 +166,7 @@ commands() ->
 			args = [{dir, string}, {host, string}], result = {res, rescode}},
 
      #ejabberd_commands{name = export_odbc, tags = [mnesia, odbc],
-                        desc = "Export all tables as SQL queries to a file",
+                        desc = "Export virtual host information from Mnesia tables to a SQL file.",
                         module = ejd2odbc, function = export,
                         args = [{host, string}, {file, string}], result = {res, rescode}},
 
