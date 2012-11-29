@@ -3388,7 +3388,7 @@ fsm_limit_opts(Opts) ->
 
 bounce_messages() ->
     receive
-      {route, From, To, El} ->
+      {route, From, To, El = #xmlel{}} ->
 	  ejabberd_router:route(From, To, El), bounce_messages()
       after 0 -> ok
     end.
