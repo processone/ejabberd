@@ -32,7 +32,6 @@ Major steps performed:
     instead of operating on linked lists of characters,
 *   functional test coverage of the system according to corresponding
     RFCs and XEPs,
-*   introducing fine grained monitoring capability through SNMP.
 
 
 How to build

@@ -1,0 +1,26 @@
+
+                              Release Notes
+                            esl-ejabberd 1.1
+
+  Download the source code and installers from:
+    https://www.erlang-solutions.com/downloads/download-mongooseim
+
+
+New features (compared to v1.0):
+
+- Multi-User Chat implementation for Mnesia (mod_muc)
+- Discovery Service (mod_disco)
+- Last Activity module for Mnesia (mod_last)
+- Private XML storage for Mnesia (mod_private)
+- Roster module for ODBC (mod_roster_odbc)
+- Websockets support + client example using JSJaC
+
+Changes:
+
+- Switched logging from standard ejabberd logger (based on SASL logger)
+  to lager (https://github.com/basho/lager)
+
+  Bug reports
+
+  You can ask questions and report bugs to our ejabberd support e-mail:
+    ejabberd@erlang-solutions.com
