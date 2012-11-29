@@ -130,7 +130,7 @@ route_iq(From, To, IQ, F) ->
 
 route_iq(From, To, #iq{type = Type} = IQ, F, Timeout) when is_function(F) ->
     Packet = if Type == set; Type == get ->
-		     ID = randoms:get_string(),
+		     ID = list_to_binary(randoms:get_string()),
 		     Host = From#jid.lserver,
 		     register_iq_response_handler(Host, ID, undefined, F, Timeout),
 		     jlib:iq_to_xml(IQ#iq{id = ID});
