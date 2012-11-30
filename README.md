@@ -31,7 +31,7 @@ Major steps performed:
     to use Erlang's binary data type for string manipulation and storage
     instead of operating on linked lists of characters,
 *   functional test coverage of the system according to corresponding
-    RFCs and XEPs,
+    RFCs and XEPs.
 
 
 How to build
