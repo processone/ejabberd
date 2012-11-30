@@ -68,7 +68,6 @@ apps/stringprep/ebin
 apps/stringprep/priv
 apps/ejabberd/include/EJABBERD-MIB.hrl
 apps/ejabberd/priv/mibs/EJABBERD-MIB.bin
-rebar
 apps/ejabberd/ebin/ejabberd.app
 dev
 test
