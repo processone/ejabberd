@@ -32,6 +32,7 @@
 	 status/0, reopen_log/0,
          stop_migrate/1, migrate/1,
 	 stop_kindly/2, send_service_message_all_mucs/2,
+	 registered_vhosts/0,
 	 %% Erlang
 	 update_list/0, update/1,
 	 %% Accounts
@@ -141,6 +142,11 @@ commands() ->
 			module = ?MODULE, function = registered_users,
 			args = [{host, binary}],
 			result = {users, {list, {username, string}}}},
+	 #ejabberd_commands{name = registered_vhosts, tags = [server],
+			desc = "List all registered vhosts in SERVER",
+			module = ?MODULE, function = registered_vhosts,
+			args = [],
+			result = {vhosts, {list, {vhost, string}}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
 			desc = "Import user data from jabberd14 spool file",
@@ -456,6 +462,8 @@ registered_users(Host) ->
     SUsers = lists:sort(Users),
     lists:map(fun({U, _S}) -> U end, SUsers).
 
+registered_vhosts() ->
+	?MYHOSTS.
 
 %%%
 %%% Migration management
