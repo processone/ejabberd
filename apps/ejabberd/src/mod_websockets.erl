@@ -60,15 +60,11 @@ start(_Host, Opts) ->
     Port = gen_mod:get_opt(port, Opts, ?DEFAULT_PORT),
     TransportOpts = [{port, Port}],
     ProtocolOpts = [{dispatch, FullDispatch}],
-    application:start(ranch),
-    application:start(cowboy),
     cowboy:start_http(?LISTENER, NumAcceptors,
                       TransportOpts, ProtocolOpts).
 
 stop(_Host) ->
-    cowboy:stop_listener(?LISTENER),
-    application:stop(cowboy),
-    application:stop(ranch).
+    cowboy:stop_listener(?LISTENER).
 
 %%--------------------------------------------------------------------
 %% cowboy_http_handler callbacks
