@@ -34,6 +34,8 @@
 -define(LOCK, {migrate, node()}).
 
 -record(state, {}).
+-record(?HASHTBL, {hash, node}).
+-record(?HASHTBL_NEW, {hash, node}).
 
 start() ->
     ChildSpec = {?MODULE, {?MODULE, start_link, []},
@@ -119,9 +121,20 @@ init([]) ->
     {A, B, C} = now(),
     random:seed(A, B, C),
     net_kernel:monitor_nodes(true, [{node_type, visible}]),
-    ets:new(?HASHTBL, [named_table, public, ordered_set]),
-    ets:new(?HASHTBL_NEW,
-	    [named_table, public, ordered_set]),
+    mnesia:create_table(?HASHTBL,
+                        [{ram_copies, [node()]},
+                         {type, ordered_set},
+			 {local_content, true},
+			 {attributes, record_info(fields, ?HASHTBL)}]),
+    mnesia:create_table(?HASHTBL_NEW,
+                        [{ram_copies, [node()]},
+                         {type, ordered_set},
+			 {local_content, true},
+			 {attributes, record_info(fields, ?HASHTBL_NEW)}]),
+    mnesia:add_table_copy(?HASHTBL, node(), ram_copies),
+    mnesia:add_table_copy(?HASHTBL_NEW, node(), ram_copies),
+    mnesia:clear_table(?HASHTBL),
+    mnesia:clear_table(?HASHTBL_NEW),
     register_node(),
     AllNodes = get_nodes(),
     OtherNodes = case AllNodes of
@@ -210,17 +223,18 @@ append_nodes(Tab, Nodes) ->
 		  Nodes).
 
 append_node(Tab, Node) ->
-    lists:foreach(fun (I) ->
-			  Hash = erlang:phash2({I, Node}),
-			  ets:insert(Tab, {Hash, Node})
-		  end,
-		  lists:seq(1, ?POINTS)).
+    lists:foreach(
+      fun(I) ->
+              Hash = erlang:phash2({I, Node}),
+              mnesia:dirty_write({Tab, Hash, Node})
+      end, lists:seq(1, ?POINTS)).
 
 delete_node(Tab, Node) ->
-    lists:foreach(fun (I) ->
-			  Hash = erlang:phash2({I, Node}), ets:delete(Tab, Hash)
-		  end,
-		  lists:seq(1, ?POINTS)).
+    lists:foreach(
+      fun(I) ->
+              Hash = erlang:phash2({I, Node}),
+              mnesia:dirty_delete(Tab, Hash)
+      end, lists:seq(1, ?POINTS)).
 
 get_node_by_hash(Tab, Hash) ->
     NodeHash = case ets:next(Tab, Hash) of
@@ -228,12 +242,14 @@ get_node_by_hash(Tab, Hash) ->
 		 NH -> NH
 	       end,
     if NodeHash == '$end_of_table' ->
-	   erlang:error(no_running_nodes);
+            node();
        true ->
-	   case ets:lookup(Tab, NodeHash) of
-	     [] -> get_node_by_hash(Tab, Hash);
-	     [{_, Node}] -> Node
-	   end
+	    case ets:lookup(Tab, NodeHash) of
+		[] ->
+		    get_node_by_hash(Tab, Hash);
+		[{_, _, Node}] ->
+		    Node
+	    end
     end.
 
 register_node() ->
