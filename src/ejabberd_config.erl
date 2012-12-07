@@ -188,20 +188,18 @@ normalize_hosts([Host|Hosts], PrepHosts) ->
 %%% Errors reading the config file
 
 describe_config_problem(Filename, Reason) ->
-    Text1 = lists:flatten("Problem loading ejabberd config file " ++ Filename),
-    Text2 = lists:flatten(" : " ++ file:format_error(Reason)),
-    ExitText = Text1 ++ Text2,
-    ExitText.
+    ExitText = ["Problem loading ejabberd config file ", Filename,
+                ": ", file:format_error(Reason)],
+    binary_to_list(iolist_to_binary(ExitText)).
 
 describe_config_problem(Filename, Reason, LineNumber) ->
-    Text1 = lists:flatten("Problem loading ejabberd config file " ++ Filename),
-    Text2 = lists:flatten(" approximately in the line "
-			  ++ file:format_error(Reason)),
-    ExitText = Text1 ++ Text2,
+    ExitText =
+        ["Problem loading ejabberd config file ", Filename,
+         " approximately in the line ", file:format_error(Reason)],
     Lines = get_config_lines(Filename, LineNumber, 10, 3),
     ?ERROR_MSG("The following lines from your configuration file might be"
 	       " relevant to the error: ~n~s", [Lines]),
-    ExitText.
+    binary_to_list(iolist_to_binary(ExitText)).
 
 get_config_lines(Filename, TargetNumber, PreContext, PostContext) ->
     {ok, Fd} = file:open(Filename, [read]),
