@@ -46,7 +46,7 @@ handler(Socket, Timeout, Handler, State) ->
     end.
 
 parse_request(Socket, Timeout) ->
-    inet:setopts(Socket, [{packet, line}]),
+    inet:setopts(Socket, [list, {packet, line}]),
     case gen_tcp:recv(Socket, 0, Timeout) of
 	{ok, RequestLine} ->
 	    case string:tokens(RequestLine, " \r\n") of
@@ -79,7 +79,7 @@ parse_header(Socket, Timeout, Header) ->
 		{[$C,$o,$n,$t,$e,$n,$t,$-,_,$e,$n,$g,$t,$h,$:],
 		 ContentLength} ->
 		    case catch list_to_integer(ContentLength) of
-			N ->
+			N when is_integer(N) ->
 			    parse_header(Socket, Timeout,
 					 Header#header{content_length = N});
 			_ -> {status, 400}

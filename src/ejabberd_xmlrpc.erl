@@ -17,7 +17,7 @@
 
 -author('badlop@process-one.net').
 
--export([start_listener/2, handler/2, socket_type/0]).
+-export([start/2, handler/2, socket_type/0]).
 
 -include("ejabberd.hrl").
 
@@ -168,11 +168,10 @@
 %% Listener interface
 %% -----------------------------
 
-start_listener({Port, Ip, tcp = _TranportProtocol},
-	       Opts) ->
-    MaxSessions = gen_mod:get_opt(maxsessions, Opts,
-                                  fun(I) when is_integer(I), I>0 -> I end,
-                                  10),
+start({gen_tcp = _SockMod, Socket}, Opts) ->
+    %MaxSessions = gen_mod:get_opt(maxsessions, Opts,
+    %                              fun(I) when is_integer(I), I>0 -> I end,
+    %                              10),
     Timeout = gen_mod:get_opt(timeout, Opts,
                               fun(I) when is_integer(I), I>0 -> I end,
                               5000),
@@ -188,10 +187,10 @@ start_listener({Port, Ip, tcp = _TranportProtocol},
     Handler = {?MODULE, handler},
     State = #state{access_commands = AccessCommands,
 		   get_auth = GetAuth},
-    xmlrpc:start_link(Ip, Port, MaxSessions, Timeout,
-		      Handler, State).
+    Pid = proc_lib:spawn(xmlrpc_http, handler, [Socket, Timeout, Handler, State]),
+    {ok, Pid}.
 
-socket_type() -> independent.
+socket_type() -> raw.
 
 %% -----------------------------
 %% Access verification
