@@ -464,8 +464,7 @@ process_request(#state{request_method = Method,
                         _ ->
                             none
 	    end
-    end;
-process_request(State) -> make_bad_request(State).
+    end.
 
 make_bad_request(State) ->
     make_xhtml_output(State, 400, [],

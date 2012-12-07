@@ -421,13 +421,13 @@ ws_loop(Vsn, HandlerState, Socket, WsHandleLoopPid,
     receive
       {DataType, _Socket, Data} when DataType =:= tcp orelse DataType =:= raw ->
           case handle_data(DataType, Vsn, HandlerState, Data, Socket, WsHandleLoopPid, SocketMode, WsAutoExit) of
+            {error, Error} ->
+			?DEBUG("tls decode error ~p", [Error]),
+                        websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
             {NewHandlerState, ToSend} ->
               lists:foreach(fun(Pkt) -> SocketMode:send(Socket, Pkt)
                             end, ToSend),
-                        ws_loop(Vsn, NewHandlerState, Socket, WsHandleLoopPid, SocketMode, WsAutoExit);
-            Error ->
-			?DEBUG("tls decode error ~p", [Error]),
-                        websocket_close(Socket, WsHandleLoopPid, SocketMode, WsAutoExit)
+                        ws_loop(Vsn, NewHandlerState, Socket, WsHandleLoopPid, SocketMode, WsAutoExit)
           end;
       {tcp_closed, _Socket} ->
           ?DEBUG("tcp connection was closed, exit", []),
@@ -637,8 +637,8 @@ handle_data(tcp, Vsn, State, Data, Socket, WsHandleLoopPid, tls, WsAutoExit) ->
     case tls:recv_data(Socket, Data) of
         {ok, NewData} ->
             handle_data(Vsn, State, NewData, Socket, WsHandleLoopPid, tls, WsAutoExit);
-        Error ->
-            Error
+        {error, Error} ->
+            {error, Error}
     end;
 handle_data(_, Vsn, State, Data, Socket, WsHandleLoopPid, SockMod, WsAutoExit) ->
     handle_data(Vsn, State, Data, Socket, WsHandleLoopPid, SockMod, WsAutoExit).
