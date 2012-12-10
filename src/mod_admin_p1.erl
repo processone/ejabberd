@@ -331,16 +331,16 @@ commands() ->
 			    "\"both\". Pending can be \"in\", \"out\" "
 			    "or \"none\".",
 			module = ?MODULE, function = get_roster,
-			args = [{user, binary}, {server, binary}],
+			args = [{user, string}, {server, string}],
 			result =
 			    {contacts,
 			     {list,
 			      {contact,
 			       {tuple,
-				[{jid, binary},
-				 {groups, {list, {group, binary}}},
-				 {nick, binary}, {subscription, binary},
-				 {pending, binary}]}}}}},
+				[{jid, string},
+				 {groups, {list, {group, string}}},
+				 {nick, string}, {subscription, string},
+				 {pending, string}]}}}}},
      #ejabberd_commands{name = get_roster_with_presence,
 			tags = [roster],
 			desc =
