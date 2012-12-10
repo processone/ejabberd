@@ -840,6 +840,9 @@ The available modules, their purpose and the options allowed by each one are:
     Handles incoming HTTP connections.\\
     Options: \texttt{captcha}, \texttt{certfile}, \texttt{default\_host}, \texttt{http\_bind}, \texttt{http\_poll},
     \texttt{request\_handlers}, \texttt{tls}, \texttt{trusted\_proxies}, \texttt{web\_admin}\\
+  \titem{\texttt{ejabberd\_xmlrpc}}
+    Handles incoming XML-RPC requests to execute ejabberd commands (see \ref{eja-commands}).\\
+    Options: \texttt{access\_commands}, \texttt{timeout}\\
 \end{description}
 
 
@@ -849,6 +852,19 @@ This is a detailed description of each option allowed by the listening modules:
 \begin{description}
   \titem{\{access, AccessName\}} \ind{options!access}This option defines
     access to the port. The default value is \term{all}.
+  \titem{\{access\_commands, AccessCommands\}} \ind{options!accesscommands}
+    This option allows to define a list of access restrictions (see \ref{accesscommands}).
+    If this option is present, then XML-RPC calls must include as
+    first argument a struct with a user, server and password of an
+    account in ejabberd that has privileges in Access.
+    If the option is not present, such struct must not be provided.
+    The default value is to not define any restriction: \term{\[\]}
+    When one or several access restrictions are defined and the
+    XML-RPC call provides authentication for an account, each
+    restriction is verified until one matches completely:
+    the account matches the Access rule,
+    the command name is listed in CommandNames,
+    and the provided arguments do not contradict Arguments.
   \titem{\{backlog, Value\}} \ind{options!backlog}The backlog value
     defines the maximum length that the queue of pending connections may
     grow to. This should be increased if the server is going to handle
@@ -956,6 +972,9 @@ This is a detailed description of each option allowed by the listening modules:
     No unencrypted connections will be allowed.
     You should also set the \option{certfile} option.
     You can define a certificate file for a specific domain using the global option \option{domain\_certfile}.
+  \titem{\{timeout, Integer\}} \ind{options!timeout}
+    Timeout of the connections, expressed in milliseconds.
+    Default: 5000
   \titem{tls} \ind{options!tls}\ind{TLS}This option specifies that traffic on
     the port will be encrypted using SSL immediately after connecting.
     This was the traditional encryption method in the early Jabber software,
@@ -5191,9 +5210,10 @@ with a defined number and type of calling arguments and type of result
 that is registered in the \term{ejabberd\_commands} service.
 Those commands can be defined in any Erlang module and executed using any valid frontend.
 
-\ejabberd{} includes a frontend to execute \term{ejabberd commands}: the script \term{ejabberdctl}.
+\ejabberd{} includes two frontends to execute \term{ejabberd commands}:
+the \term{ejabberdctl} shell script (see \ref{ejabberdctl})
+and the \term{ejabberd\_xmlrpc} XML-RPC listener (see \ref{listened-module}).
 Other known frontends that can be installed to execute ejabberd commands in different ways are:
-\term{ejabberd\_xmlrpc} (XML-RPC service),
 \term{mod\_rest} (HTTP POST service),
 \term{mod\_shcommands} (ejabberd WebAdmin page).
 
