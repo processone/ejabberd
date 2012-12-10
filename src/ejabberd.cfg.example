@@ -154,6 +154,13 @@
   %%
   %%{{3478, udp}, ejabberd_stun, []},
 
+  %%
+  %% To handle XML-RPC requests that provide admin credentials:
+  %%
+  %%{4560, ejabberd_xmlrpc, [
+  %%			{access_commands, [{admin, all, []}]}
+  %%		       ]},
+
   {5280, ejabberd_http, [
 			 %%{request_handlers,
 			 %% [

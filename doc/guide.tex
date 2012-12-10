@@ -1121,6 +1121,8 @@ In this example, the following configuration defines that:
   example in section~\ref{webadmin} shows how exactly this can be done.
 \item All users except for the administrators have a traffic of limit 
   1,000\,Bytes/second
+\item The XML-RPC service listens in port 4560 and allows only
+  a specific account, to request registrations and unregistrations in a specific host.
 \item \ind{transports!AIM}The
   \footahref{http://www.ejabberd.im/pyaimt}{AIM transport}
   \jid{aim.example.org} is connected to port 5233 on localhost IP addresses
@@ -1151,6 +1153,8 @@ In this example, the following configuration defines that:
 {shaper, normal, {maxrate, 1000}}.
 {access, c2s_shaper, [{none, admin},
                       {normal, all}]}.
+{acl, xmlrpc_bot, {user, "xmlrpc-robot", "example.org"}}.
+{access, xmlrpc_access, [{allow, xmlrpc_bot}]}.
 {listen,
  [{5222, ejabberd_c2s, [
                         {access, c2s},
@@ -1170,6 +1174,11 @@ In this example, the following configuration defines that:
                                          http_poll,
                                          web_admin
                                         ]},
+  {4560, ejabberd_xmlrpc, [
+                           {access_commands, [
+                             {xmlrpc_access, [register, unregister], [{host, "example.org"}]}
+                           ]}
+                          ]},
   {{5233, {127, 0, 0, 1}}, ejabberd_service, [
                                               {hosts, ["aim.example.org"],
                                                  [{password, "aimsecret"}]}
