@@ -462,28 +462,28 @@ set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
     ejabberd_odbc:sql_transaction(
       LServer,
       fun() ->
-	      update_t("vcard", ["username", "vcard"],
-		       [LUsername, SVCARD],
-		       ["username='", LUsername, "'"]),
+	      update_t("vcard", ["username", "server", "vcard"],
+		       [LUsername, LServer, SVCARD],
+		       ["username='", LUsername, "' and server='", LServer, "'"]),
 	      update_t("vcard_search",
-		       ["username", "lusername", "fn", "lfn", "family",
+		       ["username", "lusername", "server", "fn", "lfn", "family",
 			"lfamily", "given", "lgiven", "middle", "lmiddle",
 			"nickname", "lnickname", "bday", "lbday", "ctry",
 			"lctry", "locality", "llocality", "email", "lemail",
 			"orgname", "lorgname", "orgunit", "lorgunit"],
-		       [Username, LUsername, SFN, SLFN, SFamily, SLFamily,
+		       [Username, LUsername, LServer, SFN, SLFN, SFamily, SLFamily,
 			SGiven, SLGiven, SMiddle, SLMiddle, SNickname,
 			SLNickname, SBDay, SLBDay, SCTRY, SLCTRY,
 			SLocality, SLLocality, SEMail, SLEMail, SOrgName,
 			SLOrgName, SOrgUnit, SLOrgUnit],
-		       ["lusername='", LUsername, "'"])
+		       ["lusername='", LUsername, "' and server='", LServer, "'"])
       end).
 
 get_vcard(LServer, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
       ["select vcard from vcard "
-       "where username='", Username, "';"]).
+       "where username='", Username, "' and server='", LServer, "';"]).
 
 get_default_privacy_list(LServer, Username) ->
     ejabberd_odbc:sql_query(
@@ -820,7 +820,8 @@ set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
 	  SNickname, SOrgName, SOrgUnit, SVCARD, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
-      ["EXECUTE dbo.set_vcard '", SVCARD, "' , '", Username, "' , '", LUsername, "' , '",
+      ["EXECUTE dbo.set_vcard '", SVCARD, "' , '", Username, "' , '",
+       LUsername, "' , '", LServer, "' , '",
        SFN, "' , '", SLFN, "' , '", SFamily, "' , '", SLFamily, "' , '",
        SGiven, "' , '", SLGiven, "' , '", SMiddle, "' , '", SLMiddle, "' , '",
        SNickname, "' , '", SLNickname, "' , '", SBDay, "' , '", SLBDay, "' , '",
@@ -831,7 +832,7 @@ set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
 get_vcard(LServer, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
-      ["EXECUTE dbo.get_vcard '", Username, "'"]).
+      ["EXECUTE dbo.get_vcard '", Username, "' , '", LServer, "'"]).
 
 get_default_privacy_list(LServer, Username) ->
     ejabberd_odbc:sql_query(
