@@ -12,7 +12,8 @@
 		foldl/3,
 		size/1]).
 
-
+-type ej_set() :: gb_tree().
+-export_type([ej_set/0]).
 
 %% Asumptions:
 %% 		It is common that roster items are of type "both", present in both pres_a and pres_f sets.
