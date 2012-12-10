@@ -347,8 +347,11 @@ format_result(Atom, {_Name, atom}) ->
 format_result(Int, {_Name, integer}) ->
     io_lib:format("~p", [Int]);
 
-format_result(String, {_Name, string}) ->
+format_result(String, {_Name, string}) when is_list(String) ->
     io_lib:format("~s", [String]);
+
+format_result(Binary, {_Name, string}) when is_binary(Binary) ->
+    io_lib:format("~s", [binary_to_list(Binary)]);
 
 format_result(Code, {_Name, rescode}) ->
     make_status(Code);
