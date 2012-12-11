@@ -69,7 +69,8 @@
 init(_Host, _ServerHost, _Options) ->
     pubsub_subscription:init(),
     mnesia:create_table(pubsub_state,
-			[{disc_copies, [node()]}, {index, [nodeidx]},
+			[{disc_copies, [node()]}, {index, [nodeidx]}, 
+				{type, ordered_set},
 			 {attributes, record_info(fields, pubsub_state)}]),
     mnesia:create_table(pubsub_item,
 			[{disc_only_copies, [node()]}, {index, [nodeidx]},
