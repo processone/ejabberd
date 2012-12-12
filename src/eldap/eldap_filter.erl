@@ -185,5 +185,6 @@ replace_amps(Bin) ->
     list_to_binary(
       lists:flatmap(
         fun($&) -> "\\&";
+           ($\\) -> "\\\\";
            (Chr) -> [Chr]
         end, binary_to_list(Bin))).
