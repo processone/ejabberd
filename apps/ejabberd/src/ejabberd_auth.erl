@@ -290,12 +290,9 @@ get_password_s(User, Server) ->
     end.
 
 %% @doc Get the password of the user and the auth module.
-%% @spec (User::string(), Server::string()) ->
-%%     {Password::string(), AuthModule::atom()} | {false, none}
-get_password_with_authmodule(User, Server) 
-  when is_list(User), is_list(Server) ->
-    list_to_binary(get_password_with_authmodule(list_to_binary(User), 
-                                                list_to_binary(Server)));
+-spec get_password_with_authmodule(User::binary(), Server::binary()) ->
+                        {Password::binary(), AuthModule::atom()}
+                        | {false, none}.
 get_password_with_authmodule(User, Server) ->
     lists:foldl(
       fun(M, {false, _}) ->
@@ -359,15 +356,9 @@ remove_user(User, Server) when is_list(User), is_list(Server) ->
     remove_user(list_to_binary(User), 
                 list_to_binary(Server));
 remove_user(User, Server) ->
-    R = lists:foreach(
-      fun(M) ->
-	      M:remove_user(User, Server)
-      end, auth_modules(Server)),
-    case R of
-		ok -> ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]);
-		_ -> none
-    end,
-    R.
+    [M:remove_user(User, Server) || M <- auth_modules(Server)],
+    ejabberd_hooks:run(remove_user, jlib:nameprep(Server), [User, Server]),
+    ok.
 
 %% @spec (User, Server, Password) -> ok | not_exists | not_allowed | bad_request | error
 %% @doc Try to remove user if the provided password is correct.
@@ -395,7 +386,7 @@ remove_user(User, Server, Password) ->
 %% @spec (IOList) -> non_negative_float()
 %% @doc Calculate informational entropy.
 entropy(IOList) ->
-    case list_to_binary(iolist_to_binary(IOList)) of
+    case binary_to_list(iolist_to_binary(IOList)) of
 	"" ->
 	    0.0;
 	S ->
