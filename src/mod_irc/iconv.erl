@@ -77,6 +77,6 @@ terminate(_Reason, Port) -> Port ! {self, close}, ok.
 
 convert(From, To, String) ->
     [{port, Port} | _] = ets:lookup(iconv_table, port),
-    Bin = term_to_binary({From, To, String}),
+    Bin = term_to_binary({binary_to_list(From), binary_to_list(To), binary_to_list(String)}),
     BRes = port_control(Port, 1, Bin),
     (BRes).
