@@ -142,23 +142,26 @@ build_script(Dir, UpdatedBeams) ->
 	release_handler_1:check_script(
 	  LowLevelScript,
 	  [{ejabberd, "", filename:join(Dir, "..")}]),
-    case Check of
-	ok -> 
-	    %% This clause is for OTP R14B03 and older.
-	    %% Newer Dialyzer reports a never match pattern; don't worry.
-	    ?DEBUG("script: ~p~n", [Script]),
-	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
-	    ?DEBUG("check: ~p~n", [Check]);
-	{ok, []} ->
-	    ?DEBUG("script: ~p~n", [Script]),
-	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
-	    ?DEBUG("check: ~p~n", [Check]);
-	_ ->
-	    ?ERROR_MSG("script: ~p~n", [Script]),
-	    ?ERROR_MSG("low level script: ~p~n", [LowLevelScript]),
-	    ?ERROR_MSG("check: ~p~n", [Check])
-    end,
-    {Script, LowLevelScript, Check}.
+    Check1 = case Check of
+                 ok ->
+                     %% This clause is for OTP R14B03 and older.
+                     %% Newer Dialyzer reports a never match pattern; don't worry.
+                     ?DEBUG("script: ~p~n", [Script]),
+                     ?DEBUG("low level script: ~p~n", [LowLevelScript]),
+                     ?DEBUG("check: ~p~n", [Check]),
+                     ok;
+                 {ok, []} ->
+                     ?DEBUG("script: ~p~n", [Script]),
+                     ?DEBUG("low level script: ~p~n", [LowLevelScript]),
+                     ?DEBUG("check: ~p~n", [Check]),
+                     ok;
+                 _ ->
+                     ?ERROR_MSG("script: ~p~n", [Script]),
+                     ?ERROR_MSG("low level script: ~p~n", [LowLevelScript]),
+                     ?ERROR_MSG("check: ~p~n", [Check]),
+                     error
+             end,
+    {Script, LowLevelScript, Check1}.
 
 %% Copied from Erlang/OTP file: lib/sasl/src/systools.hrl
 -record(application, 
