@@ -78,6 +78,7 @@
 
 -export([start/2, stop/1, restart_module/2,
 	 create_account/3, delete_account/2, change_password/3,
+	 check_account/2, check_password/3,
 	 rename_account/4, check_users_registration/1,
 	 get_presence/2, get_resources/2, set_nickname/3,
 	 add_rosteritem/6, delete_rosteritem/3,
@@ -160,6 +161,20 @@ commands() ->
 			args =
 			    [{user, string}, {server, string},
 			     {newpass, string}],
+			result = {res, integer}},
+     #ejabberd_commands{name = check_account,
+			tags = [accounts],
+			desc = "Check the account exists (0 yes, 1 no)",
+			module = ?MODULE, function = check_account,
+			args = [{user, binary}, {server, binary}],
+			result = {res, integer}},
+     #ejabberd_commands{name = check_password,
+			tags = [accounts],
+			desc = "Check the password is correct (0 yes, 1 no)",
+			module = ?MODULE, function = check_password,
+			args =
+			    [{user, binary}, {server, binary},
+			     {password, binary}],
 			result = {res, integer}},
      #ejabberd_commands{name = set_nickname, tags = [vcard],
 			desc = "Define user nickname",
@@ -479,6 +494,22 @@ delete_account(U, S) ->
 change_password(U, S, P) ->
     Fun = fun () -> ejabberd_auth:set_password(U, S, P) end,
     user_action(U, S, Fun, ok).
+
+check_account(U, H) ->
+    case ejabberd_auth:is_user_exists(U, H) of
+        true ->
+            0;
+        false ->
+            1
+    end.
+
+check_password(U, H, P) ->
+    case ejabberd_auth:check_password(U, H, P) of
+        true ->
+            0;
+        false ->
+            1
+    end.
 
 rename_account(U, S, NU, NS) ->
     case ejabberd_auth:is_user_exists(U, S) of
