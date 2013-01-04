@@ -86,6 +86,7 @@
 	 unlink_contacts/2, link_contacts/7, unlink_contacts/3,
 	 get_roster/2, get_roster_with_presence/2,
 	 add_contacts/3, remove_contacts/3, transport_register/5,
+	 set_rosternick/3,
 	 send_chat/3, send_message/4, send_stanza/3]).
 
 -include("ejabberd.hrl").
@@ -372,6 +373,14 @@ commands() ->
 				 {group, string}, {nick, string},
 				 {subscription, string}, {pending, string},
 				 {show, string}, {status, string}]}}}}},
+     #ejabberd_commands{name = set_rosternick,
+			tags = [roster],
+			desc = "Set the nick of an roster item",
+			module = ?MODULE, function = set_rosternick,
+			args =
+			    [{user, binary}, {server, binary},
+			     {nick, binary}],
+			result = {res, integer}},
      #ejabberd_commands{name = get_presence,
 			tags = [session],
 			desc =
@@ -699,6 +708,67 @@ check_users_registration(Users) ->
 		      {U, S, Registered}
 	      end,
 	      Users).
+
+set_rosternick(U, S, N) ->
+    Fun = fun() -> change_rosternick(U, S, N) end,
+    user_action(U, S, Fun, ok).
+
+change_rosternick(User, Server, Nick) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    LJID = {LUser, LServer, <<"">>},
+    JID = jlib:jid_to_string(LJID),
+    Push = fun(Subscription) ->
+        jlib:iq_to_xml(#iq{type = set, xmlns = ?NS_ROSTER, id = "push",
+                           sub_el = [#xmlel{name = <<"query">>, attrs = [{<<"xmlns">>, ?NS_ROSTER}],
+                                     children = [#xmlel{name = <<"item">>, attrs = [{<<"jid">>, JID}, {<<"name">>, Nick}, {<<"subscription">>, atom_to_list(Subscription)}]}]}]})
+        end,
+    Result = case roster_backend(Server) of
+        mnesia ->
+            %% XXX This way of doing can not work with s2s
+            mnesia:transaction(
+                fun() ->
+                    lists:foreach(fun(Roster) ->
+                        {U, S} = Roster#roster.us,
+                        mnesia:write(Roster#roster{name = Nick}),
+                        lists:foreach(fun(R) ->
+                            UJID = jlib:make_jid(U, S, R),
+                            ejabberd_router:route(UJID, UJID, Push(Roster#roster.subscription))
+                        end, get_resources(U, S))
+                    end, mnesia:match_object(#roster{jid = LJID, _ = '_'}))
+                end);
+        odbc ->
+            %%% XXX This way of doing does not work with several domains
+            ejabberd_odbc:sql_transaction(Server,
+                fun() ->
+                    SNick = ejabberd_odbc:escape(Nick),
+                    SJID = ejabberd_odbc:escape(JID),
+                    ejabberd_odbc:sql_query_t(
+                                ["update rosterusers"
+                                 " set nick='", SNick, "'"
+                                 " where jid='", SJID, "';"]),
+                    case ejabberd_odbc:sql_query_t(
+                        ["select username from rosterusers"
+                         " where jid='", SJID, "'"
+                         " and subscription = 'B';"]) of
+                        {selected, ["username"], Users} ->
+                            lists:foreach(fun({RU}) ->
+                                lists:foreach(fun(R) ->
+                                    UJID = jlib:make_jid(RU, Server, R),
+                                    ejabberd_router:route(UJID, UJID, Push(both))
+                                end, get_resources(RU, Server))
+                            end, Users);
+                        _ ->
+                            ok
+                    end
+                end);
+        none ->
+            {error, no_roster}
+    end,
+    case Result of
+        {atomic, ok} -> ok;
+        _ -> error
+    end.
 
 %%%
 %%% Groups of Roster Item
