@@ -41,10 +41,8 @@
 -define(DEFAULT_BACKEND, redis).
 -define(INACTIVITY_TIMEOUT, 120000).  %% 2 minutes
 
--record(websocket, {pid :: pid(),
-                    peername :: string()}).
-%-record(ws_state, {c2s_pid :: pid(),
-		   %parser :: exml_stream:parser()}).
+%% Request State
+-record(rstate, {body}).
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks
@@ -81,21 +79,21 @@ start_listener({Port, _InetAddr, tcp}, Opts) ->
 %%--------------------------------------------------------------------
 
 init(Transport, Req, Opts) ->
-    ?DEBUG("cowboy init: ~p~n", [{Transport, Req, Opts}]),
+    ?DEBUG("New request: ~w~n", [{Transport, Req, Opts}]),
     {Method, Req2} = cowboy_req:method(Req),
-    {Echo, Req3} = cowboy_req:qs_val(<<"echo">>, Req2),
-    {ok, _TRef} = timer:send_after(5000, {reply, echo(Method, Echo)}),
-    {loop, Req3, undefined_state, ?INACTIVITY_TIMEOUT, hibernate}.
+    {HasBody, Req3} = cowboy_req:has_body(Req2),
+    self() ! {hasbody, HasBody},
+    {loop, Req3, #rstate{}}.
 
-info({reply, {405 = Code, _Headers, _Body}}, Req, State) ->
-    {ok, Req2} = cowboy_req:reply(Code, Req),
-    {ok, Req2, State};
-info({reply, {Code, Headers, Body}}, Req, State) ->
-    {ok, Req2} = cowboy_req:reply(Code, Headers, Body, Req),
-    {ok, Req2, State};
-info(Message, Req, State) ->
-    ?DEBUG("Received (loop): ~w~n", [Message]),
-    {loop, Req, State, hibernate}.
+info({hasbody, false}, Req, State) ->
+    ?DEBUG("Missing request body: ~w~n", [Req]),
+    {ok, Req1} = no_body_error(Req),
+    {ok, Req1, State};
+info({hasbody, true} = Message, Req, S) ->
+    ?DEBUG("Loop on request: ~w~n", [{Message, Req, S}]),
+    {ok, Body, Req1} = cowboy_req:body(Req),
+    {ok, BodyElem} = exml:parse(Body),
+    process_wrapper(Req1, S#rstate{body=BodyElem}).
 
 terminate(_Req, _State) ->
     ok.
@@ -106,9 +104,8 @@ terminate(_Req, _State) ->
 
 start_cowboy(Port, Opts) ->
     Host = '_',
-    %Prefix = <<"http-bind">>,
-    %DispatchRules = [{[Prefix], ?MODULE, Opts}],
-    DispatchRules = [{[], ?MODULE, Opts}],
+    Prefix = <<"http-bind">>,
+    DispatchRules = [{[Prefix], ?MODULE, Opts}],
     FullDispatch = [{Host, DispatchRules}],
     %NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
     NumAcceptors = proplists:get_value(num_acceptors, Opts, 100),
@@ -124,31 +121,48 @@ load_backend(Opts) ->
     {Mod, Code} = dynamic_compile:from_string(mod_bosh_backend_src(Backend)),
     code:load_binary(Mod, "mod_bosh_backend.erl", Code).
 
-echo(<<"GET">>, undefined) ->
-    {400, [], <<"Missing echo parameter.">>};
-echo(<<"GET">>, Echo) ->
-    {200, [{<<"content-encoding">>, <<"utf-8">>}], Echo};
-echo(_, _) ->
-    %% Method not allowed.
-    {405, undefined, undefined}.
+process_wrapper(Req, #rstate{body=#xmlelement{attrs=Attrs} = Body} = S) ->
+    case exml_query:attr(Body, <<"sid">>) of
+        undefined ->
+            start_new_session(Req, S);
+        Sid ->
+            %% TODO: get session from BACKEND, for el in body.children(): self() ! el
+            {ok, Req, S}
+    end.
+
+start_new_session(Req, #rstate{body=Body} = S) ->
+    {ok, Req1} = not_implemented_error(Req),
+    {ok, Req1, S}.
+
+%%--------------------------------------------------------------------
+%% HTTP errors
+%%--------------------------------------------------------------------
+
+no_body_error(Req) ->
+    cowboy_req:reply(400, [], <<"Missing request body">>, Req).
+
+not_implemented_error(Req) ->
+    cowboy_req:reply(400, [], <<"Not implemented yet">>, Req).
 
 %%--------------------------------------------------------------------
 %% ejabberd_socket compatibility
 %%--------------------------------------------------------------------
 
-%% TODO: adjust for BOSH
-
+%% Should be negotiated on HTTP level.
 starttls(SocketData, TLSOpts) ->
     starttls(SocketData, TLSOpts, <<>>).
 
 starttls(_SocketData, _TLSOpts, _Data) ->
-    throw({error, tls_not_allowed_on_websockets}).
+    throw({error, negotiate_tls_on_http_level}).
 
+%% Should be negotiated on HTTP level.
 compress(SocketData) ->
     compress(SocketData, <<>>).
 
 compress(_SocketData, _Data) ->
-    throw({error, compression_not_allowed_on_websockets}).
+    throw({error, negotiate_compression_on_http_level}).
+
+%% TODO: adjust for BOSH
 
 reset_stream(#websocket{pid = Pid} = SocketData) ->
     Pid ! reset_stream,
