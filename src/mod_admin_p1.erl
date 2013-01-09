@@ -750,7 +750,7 @@ change_rosternick(User, Server, Nick) ->
     LJID = {LUser, LServer, <<"">>},
     JID = jlib:jid_to_string(LJID),
     Push = fun(Subscription) ->
-        jlib:iq_to_xml(#iq{type = set, xmlns = ?NS_ROSTER, id = "push",
+        jlib:iq_to_xml(#iq{type = set, xmlns = ?NS_ROSTER, id = <<"push">>,
                            sub_el = [#xmlel{name = <<"query">>, attrs = [{<<"xmlns">>, ?NS_ROSTER}],
                                      children = [#xmlel{name = <<"item">>, attrs = [{<<"jid">>, JID}, {<<"name">>, Nick}, {<<"subscription">>, atom_to_binary(Subscription, utf8)}]}]}]})
         end,
