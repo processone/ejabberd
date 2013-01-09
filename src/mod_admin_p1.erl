@@ -752,7 +752,7 @@ change_rosternick(User, Server, Nick) ->
     Push = fun(Subscription) ->
         jlib:iq_to_xml(#iq{type = set, xmlns = ?NS_ROSTER, id = "push",
                            sub_el = [#xmlel{name = <<"query">>, attrs = [{<<"xmlns">>, ?NS_ROSTER}],
-                                     children = [#xmlel{name = <<"item">>, attrs = [{<<"jid">>, JID}, {<<"name">>, Nick}, {<<"subscription">>, atom_to_list(Subscription)}]}]}]})
+                                     children = [#xmlel{name = <<"item">>, attrs = [{<<"jid">>, JID}, {<<"name">>, Nick}, {<<"subscription">>, atom_to_binary(Subscription, utf8)}]}]}]})
         end,
     Result = case roster_backend(Server) of
         mnesia ->
@@ -782,7 +782,7 @@ change_rosternick(User, Server, Nick) ->
                         ["select username from rosterusers"
                          " where jid='", SJID, "'"
                          " and subscription = 'B';"]) of
-                        {selected, ["username"], Users} ->
+                        {selected, [<<"username">>], Users} ->
                             lists:foreach(fun({RU}) ->
                                 lists:foreach(fun(R) ->
                                     UJID = jlib:make_jid(RU, Server, R),
