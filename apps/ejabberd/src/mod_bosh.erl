@@ -52,7 +52,15 @@
 
 start(_Host, Opts) ->
     Port = gen_mod:get_opt(port, Opts, ?DEFAULT_PORT),
-    do_start(Port, Opts).
+    case start_cowboy(Port, Opts) of
+        {error, {already_started, Pid}} ->
+            {ok, Pid};
+        {ok, Pid} ->
+            load_backend(Opts),
+            {ok, Pid};
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 stop(_Host) ->
     cowboy:stop_listener(?LISTENER).
@@ -65,7 +73,8 @@ socket_type() ->
     independent.
 
 start_listener({Port, _InetAddr, tcp}, Opts) ->
-    do_start(Port, Opts).
+    OptsWPort = lists:keystore(port, 1, Opts, {port, Port}),
+    gen_mod:start_module(?MYNAME, ?MODULE, OptsWPort).
 
 %%--------------------------------------------------------------------
 %% cowboy_loop_handler callbacks
@@ -95,19 +104,6 @@ terminate(_Req, _State) ->
 %% Callbacks implementation
 %%--------------------------------------------------------------------
 
-%% Watch out! If cowboy listener is already started, the backend won't
-%% be reloaded. This only matters if the backend is different for listener
-%% vs module sections of ejabberd.cfg.
-do_start(Port, Opts) ->
-    try
-        start_cowboy(Port, Opts),
-        start_backend(Opts),
-        ok
-    catch
-        error:{already_started, _} ->
-            ok
-    end.
-
 start_cowboy(Port, Opts) ->
     Host = '_',
     %Prefix = <<"http-bind">>,
@@ -123,7 +119,7 @@ start_cowboy(Port, Opts) ->
     cowboy:start_http(?LISTENER, NumAcceptors,
 		      TransportOpts, ProtocolOpts).
 
-start_backend(Opts) ->
+load_backend(Opts) ->
     Backend = proplists:get_value(backend, Opts, ?DEFAULT_BACKEND),
     {Mod, Code} = dynamic_compile:from_string(mod_bosh_backend_src(Backend)),
     code:load_binary(Mod, "mod_bosh_backend.erl", Code).
