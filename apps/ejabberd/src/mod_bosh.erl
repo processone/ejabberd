@@ -34,11 +34,12 @@
 
 -include("ejabberd.hrl").
 -include_lib("exml/include/exml_stream.hrl").
+-include("mod_bosh.hrl").
 
 -define(LISTENER, ?MODULE).
--define(BOSH_BACKEND, (mod_bosh_backend:backend())).
+-define(BOSH_BACKEND, (mod_bosh_dynamic:backend())).
 -define(DEFAULT_PORT, 5280).
--define(DEFAULT_BACKEND, redis).
+-define(DEFAULT_BACKEND, mnesia).
 -define(INACTIVITY_TIMEOUT, 120000).  %% 2 minutes
 
 %% Request State
@@ -118,8 +119,9 @@ start_cowboy(Port, Opts) ->
 
 load_backend(Opts) ->
     Backend = proplists:get_value(backend, Opts, ?DEFAULT_BACKEND),
-    {Mod, Code} = dynamic_compile:from_string(mod_bosh_backend_src(Backend)),
-    code:load_binary(Mod, "mod_bosh_backend.erl", Code).
+    {Mod, Code} = dynamic_compile:from_string(mod_bosh_dynamic_src(Backend)),
+    code:load_binary(Mod, "mod_bosh_dynamic.erl", Code),
+    ?BOSH_BACKEND:start(Opts).
 
 process_wrapper(Req, #rstate{body=#xmlelement{attrs=Attrs} = Body} = S) ->
     case exml_query:attr(Body, <<"sid">>) of
@@ -164,9 +166,9 @@ compress(_SocketData, _Data) ->
 
 %% TODO: adjust for BOSH
 
-reset_stream(#websocket{pid = Pid} = SocketData) ->
-    Pid ! reset_stream,
-    SocketData.
+%reset_stream(#websocket{pid = Pid} = SocketData) ->
+%    Pid ! reset_stream,
+%    SocketData.
 
 send_xml(SocketData, {xmlstreamraw, Text}) ->
     send(SocketData, Text);
@@ -176,29 +178,29 @@ send_xml(SocketData, XML) ->
     Text = exml:to_iolist(XML),
     send(SocketData, Text).
 
-send(#websocket{pid = Pid}, Data) ->
-    Pid ! {send, Data},
-    ok.
+%send(#websocket{pid = Pid}, Data) ->
+%    Pid ! {send, Data},
+%    ok.
 
 change_shaper(SocketData, _Shaper) ->
     SocketData. %% TODO: we ignore shapers for now
 
-monitor(#websocket{pid = Pid}) ->
-    erlang:monitor(process, Pid).
+%monitor(#websocket{pid = Pid}) ->
+%    erlang:monitor(process, Pid).
 
 get_sockmod(_SocketData) ->
     ?MODULE.
 
-close(#websocket{pid = Pid}) ->
-    Pid ! close.
+%close(#websocket{pid = Pid}) ->
+%    Pid ! close.
 
-peername(#websocket{peername = PeerName}) ->
-    PeerName.
+%peername(#websocket{peername = PeerName}) ->
+%    PeerName.
 
--spec mod_bosh_backend_src(atom()) -> string().
-mod_bosh_backend_src(Backend) ->
+-spec mod_bosh_dynamic_src(atom()) -> string().
+mod_bosh_dynamic_src(Backend) ->
     lists:flatten(
-      ["-module(mod_bosh_backend).
+      ["-module(mod_bosh_dynamic).
         -export([backend/0]).
 
         -spec backend() -> atom().
