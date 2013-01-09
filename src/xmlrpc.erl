@@ -77,8 +77,6 @@ open_socket(Host, Port, Options) ->
 		ssl ->
 			%% Start ssl application 
 			application:start(ssl), 
-			%% Always seed 
-			ssl:seed("wheredoyouthinkitcanbefound"),
 			%% new ssl implementation does not seem to work as of R13B01
 			%%{ok, SslSocket} = ssl:connect(Host, Port, [{ssl_imp, new}, {active, false}, {verify, verify_none}]),
 			ssl:connect(Host, Port, [{verify, 0}, {active, false}]);

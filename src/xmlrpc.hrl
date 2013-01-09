@@ -36,6 +36,6 @@
 	  %% string()
 	  authorization,
 	  %% list()
-	  cookies
+	  cookies = []
 	 }).
 
