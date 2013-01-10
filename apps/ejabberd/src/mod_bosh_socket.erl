@@ -10,8 +10,8 @@
 -export([starttls/2, starttls/3,
          compress/1, compress/2,
          %reset_stream/1,
-         %send/2,
-         %send_xml/2,
+         send/2,
+         send_xml/2,
          %change_shaper/2,
          monitor/1,
          get_sockmod/1,
@@ -29,11 +29,13 @@
          code_change/3]).
 
 -include("ejabberd.hrl").
+-include_lib("exml/include/exml_stream.hrl").
 -include("mod_bosh.hrl").
 
 -define(SERVER, ?MODULE).
 
--record(state, {}).
+-record(state, {requests = [] :: [pid()],
+                pending = []}).
 
 %%--------------------------------------------------------------------
 %% API
@@ -83,6 +85,16 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
+handle_info({newrequest, R}, #state{requests = Rs, pending = []} = S) ->
+    {noreply, S#state{requests = [R | Rs]}};
+handle_info({newrequest, R}, #state{pending = Pending} = S) ->
+    R ! {send, iolist_to_binary(lists:reverse(Pending))},
+    {noreply, S#state{pending = []}};
+handle_info({send, Data}, #state{requests = [], pending = Pending} = S) ->
+    {noreply, S#state{pending = [Data | Pending]}};
+handle_info({send, Data}, #state{requests = [R | Rs]} = S) ->
+    R ! {send, Data},
+    {noreply, S#state{requests = Rs}};
 handle_info({close, Sid}, State) ->
     %% TODO: kill waiting request handlers
     ?BOSH_BACKEND:delete_session(Sid),
@@ -121,17 +133,19 @@ compress(_SocketData, _Data) ->
 %    Pid ! reset_stream,
 %    SocketData.
 
-%send_xml(SocketData, {xmlstreamraw, Text}) ->
-%    send(SocketData, Text);
-%send_xml(SocketData, {xmlstreamelement, XML}) ->
-%    send_xml(SocketData, XML);
-%send_xml(SocketData, XML) ->
+%send_xml(Socket, {xmlstreamraw, Text}) ->
+%    send(Socket, Text);
+%send_xml(Socket, {xmlstreamelement, XML}) ->
+    %send_xml(Socket, XML);
+send_xml(Socket, #xmlstreamstart{} = XML) ->
+    send(Socket, XML).
+%send_xml(Socket, XML) ->
 %    Text = exml:to_iolist(XML),
-%    send(SocketData, Text).
+%    send(Socket, Text).
 
-%send(#websocket{pid = Pid}, Data) ->
-%    Pid ! {send, Data},
-%    ok.
+send(#bosh_socket{pid = Pid}, Data) ->
+    Pid ! {send, Data},
+    ok.
 
 %change_shaper(SocketData, _Shaper) ->
     %SocketData. %% TODO: we ignore shapers for now

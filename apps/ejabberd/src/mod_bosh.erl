@@ -150,12 +150,14 @@ start_session(Req, #rstate{body=Body} = S) ->
     {Peer, Req1} = cowboy_req:peer(Req),
     BoshSocket = #bosh_socket{sid = Sid, pid = Socket, peer = Peer},
     %% TODO: C2SOpts probably shouldn't be empty
-    C2SOpts = [],
+    C2SOpts = [{xml_socket, true}],
     {ok, C2SPid} = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
     BoshSession = #bosh_session{sid = Sid, c2s_pid = C2SPid},
     ?BOSH_BACKEND:create_session(BoshSession),
+    send_to_c2s(C2SPid, body_to_stream_start(Body)),
     %% TODO: send proper reply
-    {ok, not_implemented_error(Req1), S}.
+    Socket ! {newrequest, self()},
+    {loop, Req1, S#rstate{sid = Sid}}.
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
