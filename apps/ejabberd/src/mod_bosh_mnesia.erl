@@ -3,7 +3,8 @@
 -behaviour(mod_bosh_backend).
 
 %% mod_bosh_backend callbacks
--export([start/1]).
+-export([start/1,
+         create_session/1]).
 
 -include("mod_bosh.hrl").
 

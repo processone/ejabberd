@@ -20,24 +20,11 @@
          info/3,
          terminate/2]).
 
-%% ejabberd_socket compatibility
--export([starttls/2, starttls/3,
-         compress/1, compress/2,
-         reset_stream/1,
-         send/2,
-         send_xml/2,
-         change_shaper/2,
-         monitor/1,
-         get_sockmod/1,
-         close/1,
-         peername/1]).
-
 -include("ejabberd.hrl").
 -include_lib("exml/include/exml_stream.hrl").
 -include("mod_bosh.hrl").
 
 -define(LISTENER, ?MODULE).
--define(BOSH_BACKEND, (mod_bosh_dynamic:backend())).
 -define(DEFAULT_PORT, 5280).
 -define(DEFAULT_BACKEND, mnesia).
 -define(INACTIVITY_TIMEOUT, 120000).  %% 2 minutes
@@ -51,17 +38,17 @@
 
 start(_Host, Opts) ->
     Port = gen_mod:get_opt(port, Opts, ?DEFAULT_PORT),
-    case start_cowboy(Port, Opts) of
-        {error, {already_started, Pid}} ->
-            {ok, Pid};
-        {ok, Pid} ->
-            load_backend(Opts),
-            {ok, Pid};
-        {error, Reason} ->
-            {error, Reason}
+    try
+        ok = start_cowboy(Port, Opts),
+        ok = start_backend(Opts),
+        {ok, _Pid} = mod_bosh_socket:start_supervisor()
+    catch
+        error:{badmatch, ErrorReason} ->
+            ErrorReason
     end.
 
 stop(_Host) ->
+    %% TODO: stop backend and supervisor
     cowboy:stop_listener(?LISTENER).
 
 %%--------------------------------------------------------------------
@@ -94,7 +81,7 @@ info({hasbody, true} = Message, Req, S) ->
     ?DEBUG("Loop on request: ~w~n", [{Message, Req, S}]),
     {ok, Body, Req1} = cowboy_req:body(Req),
     {ok, BodyElem} = exml:parse(Body),
-    process_wrapper(Req1, S#rstate{body=BodyElem}).
+    process_body(Req1, S#rstate{body=BodyElem}).
 
 terminate(_Req, _State) ->
     ok.
@@ -114,25 +101,40 @@ start_cowboy(Port, Opts) ->
     ProtocolOpts = [{dispatch, FullDispatch}],
     %% TODO: since cowboy commit 1b3f510b7e this is required
     %ProtocolOpts = [{env, [{dispatch, FullDispatch}]}],
-    cowboy:start_http(?LISTENER, NumAcceptors,
-		      TransportOpts, ProtocolOpts).
+    case cowboy:start_http(?LISTENER, NumAcceptors,
+                           TransportOpts, ProtocolOpts) of
+        {error, {already_started, _Pid}} ->
+            ok;
+        {ok, _Pid} ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
-load_backend(Opts) ->
+start_backend(Opts) ->
+    %% TODO: there's completely no error checking here
     Backend = proplists:get_value(backend, Opts, ?DEFAULT_BACKEND),
     {Mod, Code} = dynamic_compile:from_string(mod_bosh_dynamic_src(Backend)),
     code:load_binary(Mod, "mod_bosh_dynamic.erl", Code),
-    ?BOSH_BACKEND:start(Opts).
+    ?BOSH_BACKEND:start(Opts),
+    ok.
 
-process_wrapper(Req, #rstate{body=#xmlelement{attrs=Attrs} = Body} = S) ->
+process_body(Req, #rstate{body=#xmlelement{attrs=Attrs} = Body} = S) ->
     case exml_query:attr(Body, <<"sid">>) of
         undefined ->
-            start_new_session(Req, S);
+            start_session(Req, S);
         Sid ->
             %% TODO: get session from BACKEND, for el in body.children(): self() ! el
             {ok, Req, S}
     end.
 
-start_new_session(Req, #rstate{body=Body} = S) ->
+start_session(Req, #rstate{body=Body} = S) ->
+    {ok, Socket} = mod_bosh_socket:start(),
+    {Peer, Req1} = cowboy_req:peer(Req),
+    BoshSocket = #bosh_socket{pid = Socket, peer = Peer},
+    %% TODO: C2SOpts probably shouldn't be empty
+    C2SOpts = [],
+    C2SPid = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
     {ok, Req1} = not_implemented_error(Req),
     {ok, Req1, S}.
 
@@ -147,55 +149,8 @@ not_implemented_error(Req) ->
     cowboy_req:reply(400, [], <<"Not implemented yet">>, Req).
 
 %%--------------------------------------------------------------------
-%% ejabberd_socket compatibility
+%% Backend configuration
 %%--------------------------------------------------------------------
-
-%% Should be negotiated on HTTP level.
-starttls(SocketData, TLSOpts) ->
-    starttls(SocketData, TLSOpts, <<>>).
-
-starttls(_SocketData, _TLSOpts, _Data) ->
-    throw({error, negotiate_tls_on_http_level}).
-
-%% Should be negotiated on HTTP level.
-compress(SocketData) ->
-    compress(SocketData, <<>>).
-
-compress(_SocketData, _Data) ->
-    throw({error, negotiate_compression_on_http_level}).
-
-%% TODO: adjust for BOSH
-
-%reset_stream(#websocket{pid = Pid} = SocketData) ->
-%    Pid ! reset_stream,
-%    SocketData.
-
-send_xml(SocketData, {xmlstreamraw, Text}) ->
-    send(SocketData, Text);
-send_xml(SocketData, {xmlstreamelement, XML}) ->
-    send_xml(SocketData, XML);
-send_xml(SocketData, XML) ->
-    Text = exml:to_iolist(XML),
-    send(SocketData, Text).
-
-%send(#websocket{pid = Pid}, Data) ->
-%    Pid ! {send, Data},
-%    ok.
-
-change_shaper(SocketData, _Shaper) ->
-    SocketData. %% TODO: we ignore shapers for now
-
-%monitor(#websocket{pid = Pid}) ->
-%    erlang:monitor(process, Pid).
-
-get_sockmod(_SocketData) ->
-    ?MODULE.
-
-%close(#websocket{pid = Pid}) ->
-%    Pid ! close.
-
-%peername(#websocket{peername = PeerName}) ->
-%    PeerName.
 
 -spec mod_bosh_dynamic_src(atom()) -> string().
 mod_bosh_dynamic_src(Backend) ->
