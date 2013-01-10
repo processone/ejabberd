@@ -21,6 +21,7 @@
          terminate/2]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 -include_lib("exml/include/exml_stream.hrl").
 -include("mod_bosh.hrl").
 
@@ -30,7 +31,8 @@
 -define(INACTIVITY_TIMEOUT, 120000).  %% 2 minutes
 
 %% Request State
--record(rstate, {body}).
+-record(rstate, {body,
+                 sid :: bosh_sid()}).
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks
@@ -160,6 +162,15 @@ send_to_c2s(C2S, #xmlelement{} = Element) ->
     send_to_c2s(C2S, {xmlstreamelement, Element});
 send_to_c2s(C2S, StreamElement) ->
     gen_fsm:send_event(C2S, StreamElement).
+
+body_to_stream_start(Body) ->
+    #xmlstreamstart{name = <<"stream:stream">>,
+                    attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
+                             {<<"to">>, exml_query:attr(Body, <<"to">>)},
+                             {<<"version">>, <<"1.0">>},
+                             {<<"xml:lang">>, <<"en">>},
+                             {<<"xmlns">>, <<"jabber:client">>},
+                             {<<"xmlns:stream">>, ?NS_STREAM}]}.
 
 %%--------------------------------------------------------------------
 %% HTTP errors
