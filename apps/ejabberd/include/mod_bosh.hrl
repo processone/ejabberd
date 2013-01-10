@@ -6,5 +6,6 @@
 -record(bosh_session, {sid :: bosh_sid(),
                        c2s_pid :: pid()}).
 
--record(bosh_socket, {pid :: pid(),
+-record(bosh_socket, {sid :: bosh_sid(),
+                      pid :: pid(),
                       peer :: {inet:ip_address(), inet:port_number()}}).

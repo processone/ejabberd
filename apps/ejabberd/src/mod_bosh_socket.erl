@@ -15,7 +15,7 @@
          %change_shaper/2,
          monitor/1,
          get_sockmod/1,
-         %close/1,
+         close/1,
          peername/1
         ]).
 
@@ -83,6 +83,11 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
+handle_info({close, Sid}, State) ->
+    %% TODO: kill waiting request handlers
+    ?BOSH_BACKEND:delete_session(Sid),
+    ?DEBUG("mod_bosh_socket closing~n", []),
+    {stop, normal, State};
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -137,8 +142,8 @@ monitor(#bosh_socket{pid = Pid}) ->
 get_sockmod(_SocketData) ->
     ?MODULE.
 
-%close(#websocket{pid = Pid}) ->
-%    Pid ! close.
+close(#bosh_socket{sid = Sid, pid = Pid}) ->
+    Pid ! {close, Sid}.
 
 -spec peername(#bosh_socket{}) -> {ok, {Addr, Port}}
     when Addr :: inet:ip_address(),

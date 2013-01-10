@@ -129,14 +129,21 @@ process_body(Req, #rstate{body=#xmlelement{attrs=Attrs} = Body} = S) ->
     end.
 
 start_session(Req, #rstate{body=Body} = S) ->
+    Sid = make_sid(),
     {ok, Socket} = mod_bosh_socket:start(),
     {Peer, Req1} = cowboy_req:peer(Req),
-    BoshSocket = #bosh_socket{pid = Socket, peer = Peer},
+    BoshSocket = #bosh_socket{sid = Sid, pid = Socket, peer = Peer},
     %% TODO: C2SOpts probably shouldn't be empty
     C2SOpts = [],
-    C2SPid = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
-    {ok, Req1} = not_implemented_error(Req),
-    {ok, Req1, S}.
+    {ok, C2SPid} = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
+    BoshSession = #bosh_session{sid = Sid, c2s_pid = C2SPid},
+    ?BOSH_BACKEND:create_session(BoshSession),
+    %% TODO: send proper reply
+    {ok, Req2} = not_implemented_error(Req1),
+    {ok, Req2, S}.
+
+make_sid() ->
+    list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
 
 %%--------------------------------------------------------------------
 %% HTTP errors
