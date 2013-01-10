@@ -68,17 +68,29 @@ start_listener({Port, _InetAddr, tcp}, Opts) ->
 
 init(Transport, Req, Opts) ->
     ?DEBUG("New request: ~w~n", [{Transport, Req, Opts}]),
-    {Method, Req2} = cowboy_req:method(Req),
-    {HasBody, Req3} = cowboy_req:has_body(Req2),
-    self() ! {hasbody, HasBody},
-    {loop, Req3, #rstate{}}.
+    {Msg, NewReq} = try
+        {<<"POST">>, Req2} = cowboy_req:method(Req),
+        {true, Req3} = cowboy_req:has_body(Req2),
+        {process_body, Req3}
+    catch
+        %% In order to issue a reply, init() must accept the request for processing.
+        %% Hence, handling of these errors is forwarded to info().
+        error:{badmatch, {false, NReq}} ->
+            {no_body, NReq};
+        error:{badmatch, {Method, NReq}} when is_binary(Method) ->
+            {wrong_method, NReq}
+    end,
+    self() ! Msg,
+    {loop, NewReq, #rstate{}}.
 
-info({hasbody, false}, Req, State) ->
+info(no_body, Req, State) ->
     ?DEBUG("Missing request body: ~w~n", [Req]),
-    {ok, Req1} = no_body_error(Req),
-    {ok, Req1, State};
-info({hasbody, true} = Message, Req, S) ->
-    ?DEBUG("Loop on request: ~w~n", [{Message, Req, S}]),
+    {ok, no_body_error(Req), State};
+info(wrong_method, Req, State) ->
+    ?DEBUG("Wrong request method: ~w~n", [Req]),
+    {ok, method_not_allowed_error(Req), State};
+info(process_body, Req, S) ->
+    ?DEBUG("Loop on request: ~w~n", [{Req, S}]),
     {ok, Body, Req1} = cowboy_req:body(Req),
     {ok, BodyElem} = exml:parse(Body),
     process_body(Req1, S#rstate{body=BodyElem}).
@@ -139,21 +151,31 @@ start_session(Req, #rstate{body=Body} = S) ->
     BoshSession = #bosh_session{sid = Sid, c2s_pid = C2SPid},
     ?BOSH_BACKEND:create_session(BoshSession),
     %% TODO: send proper reply
-    {ok, Req2} = not_implemented_error(Req1),
-    {ok, Req2, S}.
+    {ok, not_implemented_error(Req1), S}.
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
+
+send_to_c2s(C2S, #xmlelement{} = Element) ->
+    send_to_c2s(C2S, {xmlstreamelement, Element});
+send_to_c2s(C2S, StreamElement) ->
+    gen_fsm:send_event(C2S, StreamElement).
 
 %%--------------------------------------------------------------------
 %% HTTP errors
 %%--------------------------------------------------------------------
 
 no_body_error(Req) ->
-    cowboy_req:reply(400, [], <<"Missing request body">>, Req).
+    strip_ok(cowboy_req:reply(400, [], <<"Missing request body">>, Req)).
+
+method_not_allowed_error(Req) ->
+    strip_ok(cowboy_req:reply(405, [], <<"Use POST request method">>, Req)).
 
 not_implemented_error(Req) ->
-    cowboy_req:reply(400, [], <<"Not implemented yet">>, Req).
+    strip_ok(cowboy_req:reply(400, [], <<"Not implemented yet">>, Req)).
+
+strip_ok({ok, Req}) ->
+    Req.
 
 %%--------------------------------------------------------------------
 %% Backend configuration
