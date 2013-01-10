@@ -92,8 +92,10 @@ info(wrong_method, Req, State) ->
     ?DEBUG("Wrong request method: ~w~n", [Req]),
     {ok, method_not_allowed_error(Req), State};
 info(process_body, Req, S) ->
-    ?DEBUG("Loop on request: ~w~n", [{Req, S}]),
+    %?DEBUG("Loop on request: ~w~n", [{Req, S}]),
     {ok, Body, Req1} = cowboy_req:body(Req),
+    %% TODO: the parser should be stored per session,
+    %%       but the session is identified inside the to-be-parsed element
     {ok, BodyElem} = exml:parse(Body),
     process_body(Req1, S#rstate{body=BodyElem}).
 
