@@ -97,7 +97,12 @@ info(process_body, Req, S) ->
     %% TODO: the parser should be stored per session,
     %%       but the session is identified inside the to-be-parsed element
     {ok, BodyElem} = exml:parse(Body),
-    process_body(Req1, S#rstate{body=BodyElem}).
+    process_body(Req1, S#rstate{body=BodyElem});
+info({send, #xmlstreamstart{} = StreamStream}, Req, S) ->
+    ?DEBUG("Send stream start: ~w~n", [StreamStream]),
+    Body = bosh_wrap(S#rstate.sid, StreamStream),
+    {ok, Req1} = cowboy_req:reply(200, [], exml:to_binary(Body), Req),
+    {ok, Req1, S}.
 
 terminate(_Req, _State) ->
     ok.
@@ -167,6 +172,13 @@ send_to_c2s(C2S, #xmlelement{} = Element) ->
 send_to_c2s(C2S, StreamElement) ->
     gen_fsm:send_event(C2S, StreamElement).
 
+%% TODO: change this to bosh_unwrap() like:
+%% bosh_unwrap(Elem, #rstate{sid = none} = State) ->
+%%      %% <body> -> <stream:stream>
+%%      ;
+%% bosh_unwrap(Elem, #rstate{sid = Sid} = State) ->
+%%      %% body -> elem
+%%      .
 body_to_stream_start(Body) ->
     #xmlstreamstart{name = <<"stream:stream">>,
                     attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
@@ -175,6 +187,28 @@ body_to_stream_start(Body) ->
                              {<<"xml:lang">>, <<"en">>},
                              {<<"xmlns">>, <<"jabber:client">>},
                              {<<"xmlns:stream">>, ?NS_STREAM}]}.
+
+bosh_wrap(Sid, #xmlstreamstart{} = StreamStream) ->
+    #xmlelement{name = <<"body">>,
+                attrs = [{<<"wait">>, <<"60">>},
+                         {<<"inactivity">>, <<"30">>},
+                         {<<"polling">>, <<"5">>},
+                         {<<"requests">>, <<"2">>},
+                         {<<"hold">>, <<"1">>},
+                         {<<"from">>, exml_query:attr(StreamStream, <<"from">>)},
+                         {<<"accept">>, <<"deflate,gzip">>},
+                         {<<"sid">>, Sid},
+                         {<<"secure">>, <<"true">>},
+                         {<<"charsets">>, <<"ISO_8859-1 ISO-2022-JP">>},
+                         {<<"xmpp:restartlogic">>, <<"true">>},
+                         {<<"xmpp:version">>, <<"1.0">>},
+                         {<<"authid">>, <<"ServerStreamID">>},
+                         {<<"xmlns">>, ?NS_HTTPBIND},
+                         {<<"xmlns:xmpp">>, <<"urn:xmpp:xbosh">>},
+                         {<<"xmlns:stream">>, ?NS_STREAM}],
+                children = []};
+bosh_wrap(_Sid, #xmlelement{}) ->
+    'not-implemented-yet'.
 
 %%--------------------------------------------------------------------
 %% HTTP errors
