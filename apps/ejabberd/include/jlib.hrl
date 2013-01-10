@@ -94,6 +94,8 @@
 -define(NS_SHIM,         <<"http://jabber.org/protocol/shim">>).
 -define(NS_ADDRESS,      <<"http://jabber.org/protocol/address">>).
 
+-define(NS_HTTPBIND,     <<"http://jabber.org/protocol/httpbind">>).
+
 % TODO: remove<<"code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
     {xmlel,<<"error">>,
