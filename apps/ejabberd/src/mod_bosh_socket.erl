@@ -12,7 +12,7 @@
          %reset_stream/1,
          send/2,
          send_xml/2,
-         %change_shaper/2,
+         change_shaper/2,
          monitor/1,
          get_sockmod/1,
          close/1,
@@ -165,8 +165,9 @@ send(#bosh_socket{pid = Pid}, Data) ->
     Pid ! {send, Data},
     ok.
 
-%change_shaper(SocketData, _Shaper) ->
-    %SocketData. %% TODO: we ignore shapers for now
+change_shaper(SocketData, _Shaper) ->
+    %% TODO: we ignore shapers for now
+    SocketData.
 
 monitor(#bosh_socket{pid = Pid}) ->
     erlang:monitor(process, Pid).
