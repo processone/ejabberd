@@ -31,8 +31,7 @@
 -define(INACTIVITY_TIMEOUT, 120000).  %% 2 minutes
 
 %% Request State
--record(rstate, {body,
-                 sid :: bosh_sid()}).
+-record(rstate, {}).
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks
@@ -97,11 +96,10 @@ info(process_body, Req, S) ->
     %% TODO: the parser should be stored per session,
     %%       but the session is identified inside the to-be-parsed element
     {ok, BodyElem} = exml:parse(Body),
-    process_body(Req1, S#rstate{body=BodyElem});
-info({send, #xmlstreamstart{} = StreamStream}, Req, S) ->
-    ?DEBUG("Send stream start: ~w~n", [StreamStream]),
-    Body = bosh_wrap(S#rstate.sid, StreamStream),
-    {ok, Req1} = cowboy_req:reply(200, [], exml:to_binary(Body), Req),
+    process_body(Req1, BodyElem, S);
+info({send, El}, Req, S) ->
+    ?DEBUG("Send element: ~w~n", [El]),
+    {ok, Req1} = cowboy_req:reply(200, [], exml:to_binary(El), Req),
     {ok, Req1, S}.
 
 terminate(_Req, _State) ->
@@ -140,71 +138,30 @@ start_backend(Opts) ->
     ?BOSH_BACKEND:start(Opts),
     ok.
 
-process_body(Req, #rstate{body=#xmlelement{attrs=Attrs} = Body} = S) ->
+process_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
     case exml_query:attr(Body, <<"sid">>) of
         undefined ->
-            start_session(Req, S);
-        Sid ->
+            start_session(Req, Body, S);
+        _Sid ->
             %% TODO: get session from BACKEND, for el in body.children(): self() ! el
             {ok, Req, S}
     end.
 
-start_session(Req, #rstate{body=Body} = S) ->
+start_session(Req, Body, S) ->
     Sid = make_sid(),
     {Peer, Req1} = cowboy_req:peer(Req),
     {ok, Socket} = mod_bosh_socket:start(Sid, Peer),
     BoshSession = #bosh_session{sid = Sid, socket = Socket},
     ?BOSH_BACKEND:create_session(BoshSession),
-    send_to_socket(Socket, body_to_stream_start(Body)),
-    %% TODO: send proper reply
-    {loop, Req1, S#rstate{sid = Sid}}.
+    send_to_socket(Socket, Body),
+    {loop, Req1, S}.
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
 
-send_to_socket(Socket, #xmlelement{} = Element) ->
-    send_to_socket(Socket, {xmlstreamelement, Element});
 send_to_socket(Socket, StreamElement) ->
-    %% TODO: inform socket about self, i.e. a new request to send a reply on
-    gen_server:cast(Socket, StreamElement).
-
-%% TODO: change this to bosh_unwrap() like:
-%% bosh_unwrap(Elem, #rstate{sid = none} = State) ->
-%%      %% <body> -> <stream:stream>
-%%      ;
-%% bosh_unwrap(Elem, #rstate{sid = Sid} = State) ->
-%%      %% body -> elem
-%%      .
-body_to_stream_start(Body) ->
-    #xmlstreamstart{name = <<"stream:stream">>,
-                    attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
-                             {<<"to">>, exml_query:attr(Body, <<"to">>)},
-                             {<<"version">>, <<"1.0">>},
-                             {<<"xml:lang">>, <<"en">>},
-                             {<<"xmlns">>, <<"jabber:client">>},
-                             {<<"xmlns:stream">>, ?NS_STREAM}]}.
-
-bosh_wrap(Sid, #xmlstreamstart{} = StreamStream) ->
-    #xmlelement{name = <<"body">>,
-                attrs = [{<<"wait">>, <<"60">>},
-                         {<<"inactivity">>, <<"30">>},
-                         {<<"polling">>, <<"5">>},
-                         {<<"requests">>, <<"2">>},
-                         {<<"hold">>, <<"1">>},
-                         {<<"from">>, exml_query:attr(StreamStream, <<"from">>)},
-                         {<<"accept">>, <<"deflate,gzip">>},
-                         {<<"sid">>, Sid},
-                         {<<"secure">>, <<"true">>},
-                         {<<"charsets">>, <<"ISO_8859-1 ISO-2022-JP">>},
-                         {<<"xmpp:restartlogic">>, <<"true">>},
-                         {<<"xmpp:version">>, <<"1.0">>},
-                         {<<"authid">>, <<"ServerStreamID">>},
-                         {<<"xmlns">>, ?NS_HTTPBIND},
-                         {<<"xmlns:xmpp">>, <<"urn:xmpp:xbosh">>},
-                         {<<"xmlns:stream">>, ?NS_STREAM}],
-                children = []};
-bosh_wrap(_Sid, #xmlelement{}) ->
-    'not-implemented-yet'.
+    mod_bosh_socket:add_request_handler(Socket, self()),
+    mod_bosh_socket:send_to_c2s(Socket, StreamElement).
 
 %%--------------------------------------------------------------------
 %% HTTP errors
