@@ -151,26 +151,22 @@ process_body(Req, #rstate{body=#xmlelement{attrs=Attrs} = Body} = S) ->
 
 start_session(Req, #rstate{body=Body} = S) ->
     Sid = make_sid(),
-    {ok, Socket} = mod_bosh_socket:start(),
     {Peer, Req1} = cowboy_req:peer(Req),
-    BoshSocket = #bosh_socket{sid = Sid, pid = Socket, peer = Peer},
-    %% TODO: C2SOpts probably shouldn't be empty
-    C2SOpts = [{xml_socket, true}],
-    {ok, C2SPid} = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
-    BoshSession = #bosh_session{sid = Sid, c2s_pid = C2SPid},
+    {ok, Socket} = mod_bosh_socket:start(Sid, Peer),
+    BoshSession = #bosh_session{sid = Sid, socket = Socket},
     ?BOSH_BACKEND:create_session(BoshSession),
-    send_to_c2s(C2SPid, body_to_stream_start(Body)),
+    send_to_socket(Socket, body_to_stream_start(Body)),
     %% TODO: send proper reply
-    Socket ! {newrequest, self()},
     {loop, Req1, S#rstate{sid = Sid}}.
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
 
-send_to_c2s(C2S, #xmlelement{} = Element) ->
-    send_to_c2s(C2S, {xmlstreamelement, Element});
-send_to_c2s(C2S, StreamElement) ->
-    gen_fsm:send_event(C2S, StreamElement).
+send_to_socket(Socket, #xmlelement{} = Element) ->
+    send_to_socket(Socket, {xmlstreamelement, Element});
+send_to_socket(Socket, StreamElement) ->
+    %% TODO: inform socket about self, i.e. a new request to send a reply on
+    gen_server:cast(Socket, StreamElement).
 
 %% TODO: change this to bosh_unwrap() like:
 %% bosh_unwrap(Elem, #rstate{sid = none} = State) ->

@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start/0,
+-export([start/2,
          start_supervisor/0]).
 
 %% ejabberd_socket compatibility
@@ -20,7 +20,7 @@
         ]).
 
 %% gen_server callbacks
--export([start_link/0,
+-export([start_link/2,
          init/1,
          handle_call/3,
          handle_cast/2,
@@ -34,18 +34,19 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {requests = [] :: [pid()],
+-record(state, {c2s_pid :: pid(),
+                requests = [] :: [pid()],
                 pending = []}).
 
 %%--------------------------------------------------------------------
 %% API
 %%--------------------------------------------------------------------
 
-start() ->
-    supervisor:start_child(?BOSH_SOCKET_SUP, []).
+start(Sid, Peer) ->
+    supervisor:start_child(?BOSH_SOCKET_SUP, [Sid, Peer]).
 
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(Sid, Peer) ->
+    gen_server:start_link(?MODULE, [Sid, Peer], [{debug, [trace]}]).
 
 start_supervisor() ->
     ChildId = ?BOSH_SOCKET_SUP,
@@ -74,14 +75,24 @@ start_supervisor() ->
 %% gen_server callbacks
 %%--------------------------------------------------------------------
 
-init([]) ->
+init([Sid, Peer]) ->
+    BoshSocket = #bosh_socket{sid = Sid, pid = self(), peer = Peer},
+    %% TODO: C2SOpts probably shouldn't be empty
+    C2SOpts = [{xml_socket, true}],
+    {ok, C2SPid} = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
     ?DEBUG("mod_bosh_socket started~n", []),
-    {ok, #state{}}.
+    {ok, #state{c2s_pid = C2SPid}}.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
+handle_cast(#xmlstreamstart{} = El, #state{c2s_pid = C2SPid} = S) ->
+    forward_to_c2s(C2SPid, El),
+    {noreply, S};
+handle_cast(#xmlelement{} = El, #state{c2s_pid = C2SPid} = S) ->
+    forward_to_c2s(C2SPid, El),
+    {noreply, S};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -108,6 +119,13 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%%--------------------------------------------------------------------
+%% callback implementations
+%%--------------------------------------------------------------------
+
+forward_to_c2s(C2SPid, StreamElement) ->
+    gen_fsm:send_event(C2SPid, StreamElement).
 
 %%--------------------------------------------------------------------
 %% ejabberd_socket compatibility

@@ -4,7 +4,7 @@
 -type bosh_sid() :: binary().
 
 -record(bosh_session, {sid :: bosh_sid(),
-                       c2s_pid :: pid()}).
+                       socket :: pid()}).
 
 -record(bosh_socket, {sid :: bosh_sid(),
                       pid :: pid(),
