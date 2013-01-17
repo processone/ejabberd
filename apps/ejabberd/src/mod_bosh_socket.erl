@@ -340,7 +340,7 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                          {<<"hold">>, integer_to_binary(S#state.hold)},
                          {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
                          {<<"accept">>, <<"deflate,gzip">>},
-                         {<<"sid">>, integer_to_binary(S#state.hold)},
+                         {<<"sid">>, S#state.hold},
                          {<<"secure">>, <<"true">>},
                          {<<"charsets">>, <<"ISO_8859-1 ISO-2022-JP">>},
                          {<<"xmpp:restartlogic">>, <<"true">>},
@@ -355,7 +355,7 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
 bosh_body(#state{} = S) ->
     #xmlelement{name = <<"body">>,
                 attrs = [{<<"rid">>, integer_to_binary(S#state.rid)},
-                         {<<"sid">>, integer_to_binary(S#state.sid)},
+                         {<<"sid">>, S#state.sid},
                          {<<"xmlns">>, ?NS_HTTPBIND}],
                 children = []}.
 
