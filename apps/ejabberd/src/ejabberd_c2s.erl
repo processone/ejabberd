@@ -61,8 +61,7 @@
 	 code_change/4,
 	 handle_info/3,
 	 terminate/3,
-     print_state/1
-     ]).
+	 print_state/1]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -94,7 +93,7 @@
 		pres_f = ?SETS:new(),
 		pres_a = ?SETS:new(),
 		pres_i = ?SETS:new(),
-        pending_invitations = [],
+		pending_invitations = [],
 		pres_last, pres_pri,
 		pres_timestamp,
 		pres_invis = false,
