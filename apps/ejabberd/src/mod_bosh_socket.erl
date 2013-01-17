@@ -352,7 +352,7 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                          {<<"hold">>, integer_to_binary(S#state.hold)},
                          {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
                          {<<"accept">>, <<"deflate,gzip">>},
-                         {<<"sid">>, S#state.hold},
+                         {<<"sid">>, S#state.sid},
                          {<<"secure">>, <<"true">>},
                          {<<"charsets">>, <<"ISO_8859-1 ISO-2022-JP">>},
                          {<<"xmpp:restartlogic">>, <<"true">>},
