@@ -148,7 +148,7 @@ process_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
         Sid ->
             %% TODO: get session from BACKEND, for el in body.children(): self() ! el
             [BS] = ?BOSH_BACKEND:get_session(Sid),
-            send_to_socket(BS#bosh_session.socket, Body),
+            send_to_c2s(BS#bosh_session.socket, Body),
             {ok, Req, S}
     end.
 
@@ -158,13 +158,13 @@ start_session(Req, Body, S) ->
     {ok, SocketPid} = mod_bosh_socket:start(Sid, Peer),
     BoshSession = #bosh_session{sid = Sid, socket = SocketPid},
     ?BOSH_BACKEND:create_session(BoshSession),
-    send_to_socket(SocketPid, {start, Body}),
+    send_to_c2s(SocketPid, {start, Body}),
     {loop, Req1, S}.
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
 
-send_to_socket(SocketPid, Message) ->
+send_to_c2s(SocketPid, Message) ->
     mod_bosh_socket:add_request_handler(SocketPid, self()),
     mod_bosh_socket:send_to_c2s(SocketPid, Message).
 
