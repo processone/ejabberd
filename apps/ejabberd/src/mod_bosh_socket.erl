@@ -133,8 +133,8 @@ accumulate({new_handler, HandlerPid}, #state{} = S) ->
     NS = new_request_handler(accumulate, HandlerPid, S),
     {next_state, accumulate, NS};
 accumulate(acc_off, #state{pending = Pending} = S) ->
-    NS = send_or_store(Pending, S),
-    {next_state, normal, NS};
+    NS = S#state{pending = []},
+    {next_state, normal, send_or_store(Pending, NS)};
 accumulate(Event, State) ->
     ?DEBUG("Unhandled event in 'accumulate' state: ~w~n", [Event]),
     {next_state, accumulate, State}.
