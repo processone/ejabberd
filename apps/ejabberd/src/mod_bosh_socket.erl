@@ -1,9 +1,10 @@
 -module(mod_bosh_socket).
 
--behaviour(gen_server).
+-behaviour(gen_fsm).
 
 %% API
 -export([start/2,
+         start_link/2,
          start_supervisor/0,
          add_request_handler/2,
          send_to_c2s/2
@@ -22,21 +23,21 @@
          peername/1
         ]).
 
-%% gen_server callbacks
--export([start_link/2,
-         init/1,
-         handle_call/3,
-         handle_cast/2,
-         handle_info/2,
-         terminate/2,
-         code_change/3]).
+%% gen_fsm callbacks
+-export([init/1,
+         accumulate/2, accumulate/3,
+         normal/2, normal/3,
+         handle_event/3,
+         handle_sync_event/4,
+         handle_info/3,
+         terminate/3,
+         code_change/4]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 -include_lib("exml/include/exml_stream.hrl").
 -include("mod_bosh.hrl").
 
--define(SERVER, ?MODULE).
 -define(DEFAULT_WAIT, 60).
 -define(DEFAULT_HOLD, 1).
 -define(DEFAULT_INACTIVITY, 30).
@@ -59,7 +60,7 @@ start(Sid, Peer) ->
     supervisor:start_child(?BOSH_SOCKET_SUP, [Sid, Peer]).
 
 start_link(Sid, Peer) ->
-    gen_server:start_link(?MODULE, [Sid, Peer], []).
+    gen_fsm:start_link(?MODULE, [Sid, Peer], []).
 
 start_supervisor() ->
     ChildId = ?BOSH_SOCKET_SUP,
@@ -85,76 +86,204 @@ start_supervisor() ->
     end.
 
 add_request_handler(Pid, HandlerPid) ->
-    gen_server:cast(Pid, {new_handler, HandlerPid}).
+    gen_fsm:send_event(Pid, {new_handler, HandlerPid}).
 
 send_to_c2s(Pid, StreamElement) ->
-    gen_server:cast(Pid, StreamElement).
+    gen_fsm:send_all_state_event(Pid, StreamElement).
 
 %%--------------------------------------------------------------------
-%% gen_server callbacks
+%% gen_fsm callbacks
 %%--------------------------------------------------------------------
 
+%%--------------------------------------------------------------------
+%% @private
+%% @spec init(Args) -> {ok, StateName, State} |
+%%                     {ok, StateName, State, Timeout} |
+%%                     ignore |
+%%                     {stop, StopReason}
+%% @end
+%%--------------------------------------------------------------------
 init([Sid, Peer]) ->
     BoshSocket = #bosh_socket{sid = Sid, pid = self(), peer = Peer},
     %% TODO: C2SOpts probably shouldn't be empty
     C2SOpts = [{xml_socket, true}],
     {ok, C2SPid} = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
     ?DEBUG("mod_bosh_socket started~n", []),
-    {ok, #state{sid = Sid, c2s_pid = C2SPid}}.
+    {ok, accumulate, #state{sid = Sid, c2s_pid = C2SPid}}.
 
-handle_call(Request, _From, State) ->
-    ?DEBUG("Unhandled call: ~w~n", [Request]),
-    Reply = ok,
-    {reply, Reply, State}.
 
-handle_cast(#xmlelement{name = <<"body">>} = Body,
-            #state{c2s_pid = C2SPid} = S) ->
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% There should be one instance of this function for each possible
+%% state name. Whenever a gen_fsm receives an event sent using
+%% gen_fsm:send_event/2, the instance of this function with the same
+%% name as the current state name StateName is called to handle
+%% the event. It is also called if a timeout occurs.
+%%
+%% @spec state_name(Event, State) ->
+%%                   {next_state, NextStateName, NextState} |
+%%                   {next_state, NextStateName, NextState, Timeout} |
+%%                   {stop, Reason, NewState}
+%% @end
+%%--------------------------------------------------------------------
+
+%% TODO: add timer - don't stay in this state forever
+accumulate({new_handler, HandlerPid}, #state{} = S) ->
+    NS = new_request_handler(accumulate, HandlerPid, S),
+    {next_state, accumulate, NS};
+accumulate(Event, State) ->
+    ?DEBUG("Unhandled event in 'accumulate' state: ~w~n", [Event]),
+    {next_state, accumulate, State}.
+
+normal({new_handler, HandlerPid}, #state{} = S) ->
+    NS = new_request_handler(normal, HandlerPid, S),
+    {next_state, normal, NS};
+normal(Event, State) ->
+    ?DEBUG("Unhandled event in 'normal' state: ~w~n", [Event]),
+    {next_state, normal, State}.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% There should be one instance of this function for each possible
+%% state name. Whenever a gen_fsm receives an event sent using
+%% gen_fsm:sync_send_event/[2,3], the instance of this function with
+%% the same name as the current state name StateName is called to
+%% handle the event.
+%%
+%% @spec state_name(Event, From, State) ->
+%%                   {next_state, NextStateName, NextState} |
+%%                   {next_state, NextStateName, NextState, Timeout} |
+%%                   {reply, Reply, NextStateName, NextState} |
+%%                   {reply, Reply, NextStateName, NextState, Timeout} |
+%%                   {stop, Reason, NewState} |
+%%                   {stop, Reason, Reply, NewState}
+%% @end
+%%--------------------------------------------------------------------
+accumulate(Event, _From, State) ->
+    ?DEBUG("Unhandled sync event in 'accumulate' state: ~w~n", [Event]),
+    {reply, ok, state_name, State}.
+
+normal(Event, _From, State) ->
+    ?DEBUG("Unhandled sync event in 'normal' state: ~w~n", [Event]),
+    {reply, ok, state_name, State}.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Whenever a gen_fsm receives an event sent using
+%% gen_fsm:send_all_state_event/2, this function is called to handle
+%% the event.
+%%
+%% @spec handle_event(Event, StateName, State) ->
+%%                   {next_state, NextStateName, NextState} |
+%%                   {next_state, NextStateName, NextState, Timeout} |
+%%                   {stop, Reason, NewState}
+%% @end
+%%--------------------------------------------------------------------
+
+%% TODO: discriminate the stream-starting body from others
+%%       and change state to accumulate on stream start
+%%       (so stream features can be batched with stream:stream)
+handle_event(#xmlelement{name = <<"body">>} = Body,
+             StateName, #state{c2s_pid = C2SPid} = S) ->
     {StreamStart, NS} = bosh_body_to_stream_start(Body, S),
     forward_to_c2s(C2SPid, StreamStart),
-    {noreply, NS};
-handle_cast(#xmlelement{} = El, #state{c2s_pid = C2SPid} = S) ->
+    {next_state, StateName, NS};
+handle_event(#xmlelement{} = El, StateName, #state{c2s_pid = C2SPid} = S) ->
     forward_to_c2s(C2SPid, El),
-    {noreply, S};
-handle_cast({new_handler, HandlerPid}, #state{} = S) ->
-    NS = new_request_handler(HandlerPid, S),
-    {noreply, NS};
-handle_cast(Msg, State) ->
-    ?DEBUG("Unhandled cast: ~w~n", [Msg]),
-    {noreply, State}.
+    {next_state, StateName, S};
+handle_event(Event, StateName, State) ->
+    ?DEBUG("Unhandled all state event: ~w~n", [Event]),
+    {next_state, StateName, State}.
 
-handle_info({send, Data}, #state{handlers = [], pending = Pending} = S) ->
-    {noreply, S#state{pending = [Data | Pending]}};
-handle_info({send, Data}, #state{handlers = [H | Hs]} = S) ->
-    H ! {send, bosh_wrap([Data], S)},
-    {noreply, S#state{handlers = Hs}};
-handle_info({close, Sid}, State) ->
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Whenever a gen_fsm receives an event sent using
+%% gen_fsm:sync_send_all_state_event/[2,3], this function is called
+%% to handle the event.
+%%
+%% @spec handle_sync_event(Event, From, StateName, State) ->
+%%                   {next_state, NextStateName, NextState} |
+%%                   {next_state, NextStateName, NextState, Timeout} |
+%%                   {reply, Reply, NextStateName, NextState} |
+%%                   {reply, Reply, NextStateName, NextState, Timeout} |
+%%                   {stop, Reason, NewState} |
+%%                   {stop, Reason, Reply, NewState}
+%% @end
+%%--------------------------------------------------------------------
+handle_sync_event(Event, _From, StateName, State) ->
+    ?DEBUG("Unhandled sync all state event: ~w~n", [Event]),
+    Reply = ok,
+    {reply, Reply, StateName, State}.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% This function is called by a gen_fsm when it receives any
+%% message other than a synchronous or asynchronous event
+%% (or a system message).
+%%
+%% @spec handle_info(Info,StateName,State)->
+%%                   {next_state, NextStateName, NextState} |
+%%                   {next_state, NextStateName, NextState, Timeout} |
+%%                   {stop, Reason, NewState}
+%% @end
+%%--------------------------------------------------------------------
+
+handle_info({send, Data}, accumulate = SName, #state{} = S) ->
+    {next_state, SName, store(Data, S)};
+handle_info({send, Data}, normal = SName, #state{} = S) ->
+    NS = send_or_store(Data, S),
+    {next_state, SName, NS};
+handle_info({close, Sid}, _SName, State) ->
     %% TODO: kill waiting request handlers
     ?BOSH_BACKEND:delete_session(Sid),
     ?DEBUG("mod_bosh_socket closing~n", []),
     {stop, normal, State};
-handle_info(Info, State) ->
-    ?DEBUG("Unhandled info: ~w~n", [Info]),
-    {noreply, State}.
+handle_info(Info, SName, State) ->
+    ?DEBUG("Unhandled info in '~s' state: ~w~n", [SName, Info]),
+    {next_state, SName, State}.
 
-terminate(_Reason, _State) ->
+
+terminate(_Reason, _StateName, _State) ->
     ok.
 
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+code_change(_OldVsn, StateName, State, _Extra) ->
+    {ok, StateName, State}.
 
 %%--------------------------------------------------------------------
 %% callback implementations
 %%--------------------------------------------------------------------
 
+%% Send data to the client if any request handler is available.
+%% Otherwise, store for sending later.
+send_or_store(Data, #state{handlers = []} = S) ->
+    store(Data, S);
+send_or_store(Data, #state{} = S) when not is_list(Data) ->
+    send_or_store([Data], S);
+send_or_store(Data, #state{handlers = [H | Hs]} = S) ->
+    H ! {send, bosh_wrap(Data, S)},
+    S#state{handlers = Hs}.
+
+%% Store data for sending later.
+store(Data, #state{pending = Pending} = S) ->
+    S#state{pending = [Data | Pending]}.
+
 forward_to_c2s(C2SPid, StreamElement) ->
     gen_fsm:send_event(C2SPid, StreamElement).
 
-new_request_handler(Pid, #state{pending = [], handlers = Handlers} = S) ->
+new_request_handler(accumulate, Pid, #state{handlers = Handlers} = S) ->
     S#state{handlers = [Pid | Handlers]};
-new_request_handler(Pid, #state{pending = Pending} = S) ->
-    NS = S#state{pending = []},
-    Pid ! {send, bosh_wrap(Pending, NS)},
-    NS.
+new_request_handler(normal, Pid, #state{pending = [],
+                                        handlers = Handlers} = S) ->
+    S#state{handlers = [Pid | Handlers]};
+new_request_handler(normal, Pid, #state{pending = Pending,
+                                        handlers = Handlers} = S) ->
+    NS = S#state{pending = [], handlers = [Pid | Handlers]},
+    send_or_store(Pending, NS).
 
 bosh_body_to_stream_start(Body, #state{} = S) ->
     Wait = get_wait(exml_query:attr(Body, <<"wait">>)),
