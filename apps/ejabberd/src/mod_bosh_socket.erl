@@ -41,6 +41,7 @@
 -define(DEFAULT_WAIT, 60).
 -define(DEFAULT_HOLD, 1).
 -define(DEFAULT_INACTIVITY, 30).
+-define(ACCUMULATE_PERIOD, 10).
 
 -record(state, {c2s_pid :: pid(),
                 handlers = [] :: [pid()],
@@ -128,10 +129,12 @@ init([Sid, Peer]) ->
 %% @end
 %%--------------------------------------------------------------------
 
-%% TODO: add timer - don't stay in this state forever
 accumulate({new_handler, HandlerPid}, #state{} = S) ->
     NS = new_request_handler(accumulate, HandlerPid, S),
     {next_state, accumulate, NS};
+accumulate(acc_off, #state{pending = Pending} = S) ->
+    NS = send_or_store(Pending, S),
+    {next_state, normal, NS};
 accumulate(Event, State) ->
     ?DEBUG("Unhandled event in 'accumulate' state: ~w~n", [Event]),
     {next_state, accumulate, State}.
@@ -139,6 +142,8 @@ accumulate(Event, State) ->
 normal({new_handler, HandlerPid}, #state{} = S) ->
     NS = new_request_handler(normal, HandlerPid, S),
     {next_state, normal, NS};
+normal(acc_off, #state{} = S) ->
+    {next_state, normal, S};
 normal(Event, State) ->
     ?DEBUG("Unhandled event in 'normal' state: ~w~n", [Event]),
     {next_state, normal, State}.
@@ -187,10 +192,12 @@ normal(Event, _From, State) ->
 %%       and change state to accumulate on stream start
 %%       (so stream features can be batched with stream:stream)
 handle_event(#xmlelement{name = <<"body">>} = Body,
-             StateName, #state{c2s_pid = C2SPid} = S) ->
+             _StateName, #state{c2s_pid = C2SPid} = S) ->
     {StreamStart, NS} = bosh_body_to_stream_start(Body, S),
     forward_to_c2s(C2SPid, StreamStart),
-    {next_state, StateName, NS};
+    %% Temporarily accumulate everything
+    timer:apply_after(?ACCUMULATE_PERIOD, gen_fsm, send_event, [self(), acc_off]),
+    {next_state, accumulate, NS};
 handle_event(#xmlelement{} = El, StateName, #state{c2s_pid = C2SPid} = S) ->
     forward_to_c2s(C2SPid, El),
     {next_state, StateName, S};
@@ -264,6 +271,8 @@ send_or_store(Data, #state{handlers = []} = S) ->
     store(Data, S);
 send_or_store(Data, #state{} = S) when not is_list(Data) ->
     send_or_store([Data], S);
+send_or_store([], #state{} = S) ->
+    S;
 send_or_store(Data, #state{handlers = [H | Hs]} = S) ->
     H ! {send, bosh_wrap(Data, S)},
     S#state{handlers = Hs}.
