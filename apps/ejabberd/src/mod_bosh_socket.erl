@@ -202,7 +202,7 @@ handle_event({start, #xmlelement{} = Body},
 %             _StateName, #state{c2s_pid = C2SPid} = S) ->
 handle_event(#xmlelement{} = Body, StateName, #state{c2s_pid = C2SPid} = S) ->
     Els = bosh_unwrap(Body, S),
-    [ forward_to_c2s(C2SPid, El) || El <- Els ],
+    [ forward_to_c2s(C2SPid, {xmlstreamelement, El}) || El <- Els ],
     {next_state, StateName, S};
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
@@ -302,7 +302,7 @@ new_request_handler(normal, Pid, #state{pending = Pending,
 bosh_body_to_stream_start(Body, #state{} = S) ->
     Wait = get_wait(exml_query:attr(Body, <<"wait">>)),
     Hold = get_hold(exml_query:attr(Body, <<"hold">>)),
-    Rid = exml_query:attr(Body, <<"rid">>),
+    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
     E = #xmlstreamstart{name = <<"stream:stream">>,
                         attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
                                  {<<"to">>, exml_query:attr(Body, <<"to">>)},
