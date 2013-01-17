@@ -191,15 +191,18 @@ normal(Event, _From, State) ->
 %% TODO: discriminate the stream-starting body from others
 %%       and change state to accumulate on stream start
 %%       (so stream features can be batched with stream:stream)
-handle_event(#xmlelement{name = <<"body">>} = Body,
+handle_event({start, #xmlelement{} = Body},
              _StateName, #state{c2s_pid = C2SPid} = S) ->
     {StreamStart, NS} = bosh_body_to_stream_start(Body, S),
     forward_to_c2s(C2SPid, StreamStart),
-    %% Temporarily accumulate everything
-    timer:apply_after(?ACCUMULATE_PERIOD, gen_fsm, send_event, [self(), acc_off]),
+    timer:apply_after(?ACCUMULATE_PERIOD,
+                      gen_fsm, send_event, [self(), acc_off]),
     {next_state, accumulate, NS};
-handle_event(#xmlelement{} = El, StateName, #state{c2s_pid = C2SPid} = S) ->
-    forward_to_c2s(C2SPid, El),
+%handle_event({restart, #xmlelement{} = Body},
+%             _StateName, #state{c2s_pid = C2SPid} = S) ->
+handle_event(#xmlelement{} = Body, StateName, #state{c2s_pid = C2SPid} = S) ->
+    Els = bosh_unwrap(Body, S),
+    [ forward_to_c2s(C2SPid, El) || El <- Els ],
     {next_state, StateName, S};
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
@@ -294,6 +297,8 @@ new_request_handler(normal, Pid, #state{pending = Pending,
     NS = S#state{pending = [], handlers = [Pid | Handlers]},
     send_or_store(Pending, NS).
 
+-spec bosh_body_to_stream_start(#xmlelement{}, #state{})
+    -> {#xmlstreamstart{}, #state{}}.
 bosh_body_to_stream_start(Body, #state{} = S) ->
     Wait = get_wait(exml_query:attr(Body, <<"wait">>)),
     Hold = get_hold(exml_query:attr(Body, <<"hold">>)),
@@ -319,6 +324,13 @@ get_attr(undefined, Default) ->
     Default;
 get_attr(BAttr, _Default) ->
     binary_to_integer(BAttr).
+
+bosh_unwrap(Body, #state{sid = Sid}) ->
+    %% TODO: verify these
+    %Rid = exml_query:attr(Body, <<"rid">>),
+    Sid = exml_query:attr(Body, <<"sid">>),
+    ?NS_HTTPBIND = exml_query:attr(Body, <<"xmlns">>),
+    Body#xmlelement.children.
 
 bosh_wrap(Elements, #state{} = S) ->
     {Body, Children} = case lists:partition(fun is_stream_start/1, Elements) of

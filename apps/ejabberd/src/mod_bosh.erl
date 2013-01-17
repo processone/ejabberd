@@ -144,26 +144,28 @@ process_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
     case exml_query:attr(Body, <<"sid">>) of
         undefined ->
             start_session(Req, Body, S);
-        _Sid ->
+        Sid ->
             %% TODO: get session from BACKEND, for el in body.children(): self() ! el
+            [BS] = ?BOSH_BACKEND:get_session(Sid),
+            send_to_socket(BS#bosh_session.socket, Body),
             {ok, Req, S}
     end.
 
 start_session(Req, Body, S) ->
     Sid = make_sid(),
     {Peer, Req1} = cowboy_req:peer(Req),
-    {ok, Socket} = mod_bosh_socket:start(Sid, Peer),
-    BoshSession = #bosh_session{sid = Sid, socket = Socket},
+    {ok, SocketPid} = mod_bosh_socket:start(Sid, Peer),
+    BoshSession = #bosh_session{sid = Sid, socket = SocketPid},
     ?BOSH_BACKEND:create_session(BoshSession),
-    send_to_socket(Socket, Body),
+    send_to_socket(SocketPid, {start, Body}),
     {loop, Req1, S}.
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
 
-send_to_socket(Socket, StreamElement) ->
-    mod_bosh_socket:add_request_handler(Socket, self()),
-    mod_bosh_socket:send_to_c2s(Socket, StreamElement).
+send_to_socket(SocketPid, Message) ->
+    mod_bosh_socket:add_request_handler(SocketPid, self()),
+    mod_bosh_socket:send_to_c2s(SocketPid, Message).
 
 %%--------------------------------------------------------------------
 %% HTTP errors

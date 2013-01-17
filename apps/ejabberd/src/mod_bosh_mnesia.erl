@@ -5,7 +5,8 @@
 %% mod_bosh_backend callbacks
 -export([start/1,
          create_session/1,
-         delete_session/1]).
+         delete_session/1,
+         get_session/1]).
 
 -include("mod_bosh.hrl").
 
@@ -21,3 +22,12 @@ create_session(#bosh_session{} = Session) ->
 -spec delete_session(bosh_sid()) -> any().
 delete_session(Sid) ->
     mnesia:async_dirty(fun mnesia:delete/1, [{bosh_session, Sid}]).
+
+-spec get_session(bosh_sid()) -> [#bosh_session{}] | {error, any()}.
+get_session(Sid) ->
+    try
+        mnesia:dirty_read(bosh_session, Sid)
+    catch
+        exit:{aborted, _} = Reason ->
+            {error, Reason}
+    end.
