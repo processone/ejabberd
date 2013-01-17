@@ -68,7 +68,7 @@ start_listener({Port, _InetAddr, tcp}, Opts) ->
 %%--------------------------------------------------------------------
 
 init(Transport, Req, Opts) ->
-    ?DEBUG("New request: ~w~n", [{Transport, Req, Opts}]),
+    ?DEBUG("New request: ~p~n", [{Transport, Req, Opts}]),
     {Msg, NewReq} = try
         {<<"POST">>, Req2} = cowboy_req:method(Req),
         {true, Req3} = cowboy_req:has_body(Req2),
@@ -85,21 +85,23 @@ init(Transport, Req, Opts) ->
     {loop, NewReq, #rstate{}}.
 
 info(no_body, Req, State) ->
-    ?DEBUG("Missing request body: ~w~n", [Req]),
+    ?DEBUG("Missing request body: ~p~n", [Req]),
     {ok, no_body_error(Req), State};
 info(wrong_method, Req, State) ->
-    ?DEBUG("Wrong request method: ~w~n", [Req]),
+    ?DEBUG("Wrong request method: ~p~n", [Req]),
     {ok, method_not_allowed_error(Req), State};
 info(process_body, Req, S) ->
-    %?DEBUG("Loop on request: ~w~n", [{Req, S}]),
+    %?DEBUG("Loop on request: ~p~n", [{Req, S}]),
     {ok, Body, Req1} = cowboy_req:body(Req),
     %% TODO: the parser should be stored per session,
     %%       but the session is identified inside the to-be-parsed element
     {ok, BodyElem} = exml:parse(Body),
     process_body(Req1, BodyElem, S);
 info({send, El}, Req, S) ->
-    ?DEBUG("Send element: ~w~n", [El]),
-    {ok, Req1} = cowboy_req:reply(200, [], exml:to_binary(El), Req),
+    ?DEBUG("Send element: ~p~n", [El]),
+    BEl = exml:to_binary(El),
+    ?DEBUG("Send element (binary): ~s~n", [BEl]),
+    {ok, Req1} = cowboy_req:reply(200, [], BEl, Req),
     {ok, Req1, S}.
 
 terminate(_Req, _State) ->
