@@ -68,7 +68,6 @@ start_listener({Port, _InetAddr, tcp}, Opts) ->
 %%--------------------------------------------------------------------
 
 init(_Transport, Req, _Opts) ->
-    %?DEBUG("New request: ~p~n", [{Transport, Req, Opts}]),
     {Msg, NewReq} = try
         {<<"POST">>, Req2} = cowboy_req:method(Req),
         {true, Req3} = cowboy_req:has_body(Req2),
@@ -91,7 +90,6 @@ info(wrong_method, Req, State) ->
     ?DEBUG("Wrong request method: ~p~n", [Req]),
     {ok, method_not_allowed_error(Req), State};
 info(process_body, Req, S) ->
-    %?DEBUG("Loop on request: ~p~n", [{Req, S}]),
     {ok, Body, Req1} = cowboy_req:body(Req),
     %% TODO: the parser should be stored per session,
     %%       but the session is identified inside the to-be-parsed element
@@ -159,6 +157,7 @@ start_session(Req, Body, S) ->
     BoshSession = #bosh_session{sid = Sid, socket = SocketPid},
     ?BOSH_BACKEND:create_session(BoshSession),
     send_to_c2s(SocketPid, {start, Body}),
+    ?DEBUG("Created new session ~p~n", [Sid]),
     {loop, Req1, S}.
 
 make_sid() ->
