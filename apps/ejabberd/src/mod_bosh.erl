@@ -99,10 +99,10 @@ info(process_body, Req, S) ->
     ?DEBUG("Parsed body: ~p~n", [BodyElem]),
     process_body(Req1, BodyElem, S);
 info({send, El}, Req, S) ->
-    ?DEBUG("Send element: ~p~n", [El]),
-    BEl = exml:to_iolist(El),
-    ?DEBUG("Send element (binary): ~p~n", [BEl]),
-    {ok, Req1} = cowboy_req:reply(200, [], BEl, Req),
+    BEl = exml:to_binary(El),
+    ?DEBUG("Sending (binary) to ~p: ~p~n", [exml_query:attr(El, <<"sid">>), BEl]),
+    Headers = [{<<"content-type">>, <<"text/xml; charset=utf8">>}],
+    {ok, Req1} = cowboy_req:reply(200, Headers, BEl, Req),
     {ok, Req1, S}.
 
 terminate(_Req, _State) ->
@@ -149,7 +149,7 @@ process_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
             %% TODO: get session from BACKEND, for el in body.children(): self() ! el
             [BS] = ?BOSH_BACKEND:get_session(Sid),
             send_to_c2s(BS#bosh_session.socket, Body),
-            {ok, Req, S}
+            {loop, Req, S}
     end.
 
 start_session(Req, Body, S) ->
