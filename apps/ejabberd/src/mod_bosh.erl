@@ -139,14 +139,48 @@ start_backend(Opts) ->
     ?BOSH_BACKEND:start(Opts),
     ok.
 
+-spec event_type(Body)
+    -> start | restart | normal | terminate when Body::#xmlelement{}.
+event_type(Body) ->
+    %% Order of checks is important:
+    %% stream restart has got sid attribute,
+    %% so check for it at the end.
+    catch begin
+        case exml_query:attr(Body, <<"type">>) of
+            <<"terminate">> ->
+                throw(terminate);
+            _ ->
+                check_next
+        end,
+        case exml_query:attr(Body, <<"xmpp:restart">>) of
+            <<"true">> ->
+                throw(restart);
+            _ ->
+                check_next
+        end,
+        case exml_query:attr(Body, <<"sid">>) of
+            undefined ->
+                throw(start);
+            _ ->
+                normal
+        end
+    end.
+
 process_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
-    case exml_query:attr(Body, <<"sid">>) of
-        undefined ->
+    case event_type(Body) of
+        start ->
             start_session(Req, Body, S);
-        Sid ->
-            %% TODO: get session from BACKEND, for el in body.children(): self() ! el
-            [BS] = ?BOSH_BACKEND:get_session(Sid),
+        restart ->
+            [BS] = ?BOSH_BACKEND:get_session(exml_query:attr(Body, <<"sid">>)),
+            send_to_c2s(BS#bosh_session.socket, {restart, Body}),
+            {loop, Req, S};
+        normal ->
+            [BS] = ?BOSH_BACKEND:get_session(exml_query:attr(Body, <<"sid">>)),
             send_to_c2s(BS#bosh_session.socket, Body),
+            {loop, Req, S};
+        terminate ->
+            [BS] = ?BOSH_BACKEND:get_session(exml_query:attr(Body, <<"sid">>)),
+            send_to_c2s(BS#bosh_session.socket, streamend),
             {loop, Req, S}
     end.
 
@@ -156,7 +190,7 @@ start_session(Req, Body, S) ->
     {ok, SocketPid} = mod_bosh_socket:start(Sid, Peer),
     BoshSession = #bosh_session{sid = Sid, socket = SocketPid},
     ?BOSH_BACKEND:create_session(BoshSession),
-    send_to_c2s(SocketPid, {start, Body}),
+    send_to_c2s(SocketPid, {streamstart, Body}),
     ?DEBUG("Created new session ~p~n", [Sid]),
     {loop, Req1, S}.
 

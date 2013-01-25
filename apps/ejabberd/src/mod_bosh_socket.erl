@@ -13,7 +13,7 @@
 %% ejabberd_socket compatibility
 -export([starttls/2, starttls/3,
          compress/1, compress/2,
-         %reset_stream/1,
+         reset_stream/1,
          send/2,
          send_xml/2,
          change_shaper/2,
@@ -188,21 +188,21 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-%% TODO: discriminate the stream-starting body from others
-%%       and change state to accumulate on stream start
-%%       (so stream features can be batched with stream:stream)
-handle_event({start, #xmlelement{} = Body},
-             _StateName, #state{c2s_pid = C2SPid} = S) ->
+handle_event({StreamEvent, #xmlelement{} = Body},
+             _StateName, #state{c2s_pid = C2SPid} = S)
+       when StreamEvent == streamstart;
+            StreamEvent == restart ->
     {StreamStart, NS} = bosh_body_to_stream_start(Body, S),
     forward_to_c2s(C2SPid, StreamStart),
     timer:apply_after(?ACCUMULATE_PERIOD,
                       gen_fsm, send_event, [self(), acc_off]),
     {next_state, accumulate, NS};
-%handle_event({restart, #xmlelement{} = Body},
-%             _StateName, #state{c2s_pid = C2SPid} = S) ->
 handle_event(#xmlelement{} = Body, StateName, #state{c2s_pid = C2SPid} = S) ->
     Els = bosh_unwrap(Body, S),
     [ forward_to_c2s(C2SPid, {xmlstreamelement, El}) || El <- Els ],
+    {next_state, StateName, S};
+handle_event(streamend, StateName, #state{c2s_pid = C2SPid} = S) ->
+    forward_to_c2s(C2SPid, {xmlstreamend, []}),
     {next_state, StateName, S};
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
@@ -248,6 +248,10 @@ handle_info({send, Data}, accumulate = SName, #state{} = S) ->
 handle_info({send, Data}, normal = SName, #state{} = S) ->
     NS = send_or_store(Data, S),
     {next_state, SName, NS};
+handle_info(reset_stream, SName, #state{} = S) ->
+    %% TODO: actually reset the stream once it's stored per bosh session
+    ?DEBUG("Stream reset by c2s~n", []),
+    {next_state, SName, S};
 handle_info({close, Sid}, _SName, State) ->
     %% TODO: kill waiting request handlers
     ?BOSH_BACKEND:delete_session(Sid),
@@ -333,11 +337,18 @@ bosh_unwrap(Body, #state{sid = Sid}) ->
     Body#xmlelement.children.
 
 bosh_wrap(Elements, #state{} = S) ->
-    {Body, Children} = case lists:partition(fun is_stream_start/1, Elements) of
+    {Body, Children} = case lists:partition(fun is_stream_event/1, Elements) of
         {[], Stanzas} ->
             {bosh_body(S), Stanzas};
-        {[StreamStart], Stanzas} ->
-            {bosh_stream_start_body(StreamStart, S), Stanzas}
+        {[#xmlstreamstart{} = StreamStart], Stanzas} ->
+            {bosh_stream_start_body(StreamStart, S), Stanzas};
+        {[#xmlstreamend{}], [] = Stanzas} ->
+            %% TODO: this might not work as expected.
+            %% Pending stanzas added as children to session-ending
+            %% body might turn out to be discarded by the client.
+            %% We don't want that -- Stanzas is deliberately matched with []
+            %% to detect such a case and crash.
+            {bosh_stream_end_body(), Stanzas}
     end,
     Body#xmlelement{children = Children}.
 
@@ -373,9 +384,17 @@ bosh_body(#state{} = S) ->
                          {<<"xmlns">>, ?NS_HTTPBIND}],
                 children = []}.
 
-is_stream_start(#xmlstreamstart{}) ->
+bosh_stream_end_body() ->
+    #xmlelement{name = <<"body">>,
+                attrs = [{<<"type">>, <<"terminate">>},
+                         {<<"xmlns">>, ?NS_HTTPBIND}],
+                children = []}.
+
+is_stream_event(#xmlstreamstart{}) ->
     true;
-is_stream_start(_) ->
+is_stream_event(#xmlstreamend{}) ->
+    true;
+is_stream_event(_) ->
     false.
 
 %%--------------------------------------------------------------------
@@ -398,15 +417,17 @@ compress(_SocketData, _Data) ->
 
 %% TODO: adjust for BOSH
 
-%reset_stream(#websocket{pid = Pid} = SocketData) ->
-%    Pid ! reset_stream,
-%    SocketData.
+reset_stream(#bosh_socket{pid = Pid} = SocketData) ->
+    Pid ! reset_stream,
+    SocketData.
 
 %send_xml(Socket, {xmlstreamraw, Text}) ->
 %    send(Socket, Text);
 send_xml(Socket, {xmlstreamelement, XML}) ->
     send(Socket, XML);
 send_xml(Socket, #xmlstreamstart{} = XML) ->
+    send(Socket, XML);
+send_xml(Socket, #xmlstreamend{} = XML) ->
     send(Socket, XML).
 %send_xml(Socket, XML) ->
 %    Text = exml:to_iolist(XML),
