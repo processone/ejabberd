@@ -3348,7 +3348,7 @@ get_config(Lang, StateData, From) ->
 						    of
 						  N when is_integer(N) ->
 						      {N,
-						       erlang:integer_to_list(N)};
+						       erlang:integer_to_binary(N)};
 						  _ -> {0, <<"none">>}
 						end,
     Res = [#xmlel{name = <<"title">>, attrs = [],
@@ -4357,7 +4357,7 @@ check_invitation(From, Els, Lang, StateData) ->
                                    jlib:jid_to_string({StateData#state.room,
                                                        StateData#state.host,
                                                        <<"">>})]),
-				
+
 				case
 				  (StateData#state.config)#config.password_protected
 				    of
