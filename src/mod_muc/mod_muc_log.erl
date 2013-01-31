@@ -52,6 +52,8 @@
 -define(PROCNAME, ejabberd_mod_muc_log).
 -record(room, {jid, title, subject, subject_author, config}).
 
+-define(PLAINTEXT_IN, "ZZIZZ").
+-define(PLAINTEXT_OUT, "ZZOZZ").
 
 -record(logstate, {host,
 		out_dir,
@@ -311,6 +313,11 @@ write_last_lines(F, Images_dir, _FileFormat) ->
     fw(F, "  <a href=\"http://jigsaw.w3.org/css-validator/\"><img style=\"border:0;width:88px;height:31px\" src=\"~s/vcss.png\" alt=\"Valid CSS!\"/></a>", [Images_dir]),
     fw(F, "</span></div></body></html>").
 
+htmlize_nick(Nick1, html) ->
+    htmlize("<"++Nick1++">", html);
+htmlize_nick(Nick1, plaintext) ->
+    htmlize(?PLAINTEXT_IN++Nick1++?PLAINTEXT_OUT, plaintext).
+
 add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     #logstate{out_dir = OutDir,
 	   dir_type = DirType,
@@ -323,7 +330,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	   top_link = TopLink} = State,
     Room = get_room_info(RoomJID, Opts),
     Nick = htmlize(Nick1, FileFormat),
-    Nick2 = htmlize("<"++Nick1++">", FileFormat),
+    Nick2 = htmlize_nick(Nick1, FileFormat),
     Now = now(),
     TimeStamp = case Timezone of
 		    local -> calendar:now_to_local_time(Now);
@@ -662,7 +669,9 @@ fw(F, S, O, FileFormat) ->
 	     html ->
 		 S1;
 	     plaintext ->
-		 ejabberd_regexp:greplace(S1, "<[^>]*>", "")
+		 S1x = ejabberd_regexp:greplace(S1, "<[^<^>]*>", ""),
+		 S1y = ejabberd_regexp:greplace(S1x, ?PLAINTEXT_IN, "<"),
+		 ejabberd_regexp:greplace(S1y, ?PLAINTEXT_OUT, ">")
 	 end,
     io:format(F, S2, []).
 
@@ -774,7 +783,8 @@ htmlize(S1, FileFormat) ->
 %% The NoFollow parameter tell if the spam prevention should be applied to the link found
 %% true means 'apply nofollow on links'.
 htmlize(S1, _NoFollow, plaintext) ->
-    S1;
+    S1x = ejabberd_regexp:replace(S1, "<", ?PLAINTEXT_IN),
+    ejabberd_regexp:replace(S1x, ">", ?PLAINTEXT_OUT);
 htmlize(S1, NoFollow, _FileFormat) ->
     S2_list = string:tokens(S1, "\n"),
     lists:foldl(
