@@ -283,7 +283,7 @@ check_headers(Headers, RequiredHeaders) ->
     end.
 
 recv_data(#ws{buf = Buf} = Ws, Length, _Timeout) when size(Buf) >= Length->
-    <<Data:Length, Tail/binary>> = Buf,
+    <<Data:Length/binary, Tail/binary>> = Buf,
     {Ws#ws{buf = Tail}, Data};
 recv_data(#ws{buf = Buf, socket = Sock, sockmod = SockMod} = Ws, Length, Timeout) ->
     case SockMod of
@@ -318,7 +318,7 @@ handshake(#ws{vsn = {'draft-hixie', 0}, headers = Headers, path = Path,
     {NewState, Body} = recv_data(State, 8, 30*1000),
 
     QParams = lists:map(
-                fun({nokey,[]})->
+                fun({nokey,<<>>})->
                         none;
                    ({K, V})->
                         <<K/binary, "=", V/binary>>
