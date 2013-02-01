@@ -174,7 +174,9 @@ event_type(Body) ->
 forward_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
     case event_type(Body) of
         start ->
-            start_session(Req, Body, S);
+            {Peer, Req1} = cowboy_req:peer(Req),
+            start_session(Peer, Body),
+            {loop, Req1, S};
         restart ->
             SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
             register_new_handler(SocketPid),
@@ -199,16 +201,14 @@ get_session_socket(Sid) ->
     [BS] = ?BOSH_BACKEND:get_session(Sid),
     BS#bosh_session.socket.
 
-start_session(Req, Body, S) ->
+start_session(Peer, Body) ->
     Sid = make_sid(),
-    {Peer, Req1} = cowboy_req:peer(Req),
     {ok, SocketPid} = mod_bosh_socket:start(Sid, Peer),
     BoshSession = #bosh_session{sid = Sid, socket = SocketPid},
     ?BOSH_BACKEND:create_session(BoshSession),
     register_new_handler(SocketPid),
     send_to_c2s(SocketPid, {streamstart, Body}),
-    ?DEBUG("Created new session ~p~n", [Sid]),
-    {loop, Req1, S}.
+    ?DEBUG("Created new session ~p~n", [Sid]).
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
