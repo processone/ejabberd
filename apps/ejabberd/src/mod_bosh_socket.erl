@@ -270,18 +270,17 @@ handle_info(reset_stream, SName, #state{} = S) ->
     %% TODO: actually reset the stream once it's stored per bosh session
     ?DEBUG("Stream reset by c2s~n", []),
     {next_state, SName, S};
-handle_info({close, Sid}, _SName, State) ->
-    %% TODO: kill waiting request handlers
-    ?BOSH_BACKEND:delete_session(Sid),
-    ?DEBUG("mod_bosh_socket closing~n", []),
+handle_info(close, _SName, State) ->
     {stop, normal, State};
 handle_info(Info, SName, State) ->
     ?DEBUG("Unhandled info in '~s' state: ~w~n", [SName, Info]),
     {next_state, SName, State}.
 
 
-terminate(_Reason, _StateName, _State) ->
-    ok.
+terminate(_Reason, _StateName, #state{sid = Sid, handlers = Handlers}) ->
+    [ H ! {close, Sid} || H <- Handlers ],
+    ?BOSH_BACKEND:delete_session(Sid),
+    ?DEBUG("Closing session ~p. Handlers: ~p~n", [Sid, Handlers]).
 
 code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
@@ -466,8 +465,8 @@ monitor(#bosh_socket{pid = Pid}) ->
 get_sockmod(_SocketData) ->
     ?MODULE.
 
-close(#bosh_socket{sid = Sid, pid = Pid}) ->
-    Pid ! {close, Sid}.
+close(#bosh_socket{pid = Pid}) ->
+    Pid ! close.
 
 -spec peername(#bosh_socket{}) -> {ok, {Addr, Port}}
     when Addr :: inet:ip_address(),

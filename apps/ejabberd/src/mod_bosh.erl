@@ -102,6 +102,10 @@ info({send, El}, Req, S) ->
     ?DEBUG("Sending (binary) to ~p: ~p~n", [exml_query:attr(El, <<"sid">>), BEl]),
     Headers = [{<<"content-type">>, <<"text/xml; charset=utf8">>}],
     {ok, Req1} = cowboy_req:reply(200, Headers, BEl, Req),
+    {ok, Req1, S};
+info({close, Sid}, Req, S) ->
+    ?DEBUG("Closing handler for ~p~n", [Sid]),
+    {ok, Req1} = cowboy_req:reply(200, [], [], Req),
     {ok, Req1, S}.
 
 terminate(_Req, _State) ->
