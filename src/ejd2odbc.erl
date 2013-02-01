@@ -92,7 +92,7 @@
 export_passwd(Server, Output) ->
     export_common(
       Server, passwd, Output,
-      fun(Host, {passwd, {LUser, LServer}, {scram, _, _, _, _}} = _R) ->
+      fun(_Host, {passwd, {LUser, LServer}, {scram, _, _, _, _}} = _R) ->
 	      ?INFO_MSG("You are trying to export the authentication "
 	                "information of the account ~s@~s, but his password "
 	                "is stored as SCRAM, and ejabberd ODBC authentication "
