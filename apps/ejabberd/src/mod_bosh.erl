@@ -176,18 +176,28 @@ process_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
         start ->
             start_session(Req, Body, S);
         restart ->
-            [BS] = ?BOSH_BACKEND:get_session(exml_query:attr(Body, <<"sid">>)),
-            send_to_c2s(BS#bosh_session.socket, {restart, Body}),
+            SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
+            register_new_handler(SocketPid),
+            send_to_c2s(SocketPid, {restart, Body}),
             {loop, Req, S};
         normal ->
-            [BS] = ?BOSH_BACKEND:get_session(exml_query:attr(Body, <<"sid">>)),
-            send_to_c2s(BS#bosh_session.socket, Body),
+            SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
+            register_new_handler(SocketPid),
+            send_to_c2s(SocketPid, Body),
             {loop, Req, S};
         terminate ->
-            [BS] = ?BOSH_BACKEND:get_session(exml_query:attr(Body, <<"sid">>)),
-            send_to_c2s(BS#bosh_session.socket, streamend),
+            SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
+            register_new_handler(SocketPid),
+            send_to_c2s(SocketPid, streamend),
             {loop, Req, S}
     end.
+
+register_new_handler(SocketPid) ->
+    mod_bosh_socket:add_request_handler(SocketPid, self()).
+
+get_session_socket(Sid) ->
+    [BS] = ?BOSH_BACKEND:get_session(Sid),
+    BS#bosh_session.socket.
 
 start_session(Req, Body, S) ->
     Sid = make_sid(),
@@ -195,6 +205,7 @@ start_session(Req, Body, S) ->
     {ok, SocketPid} = mod_bosh_socket:start(Sid, Peer),
     BoshSession = #bosh_session{sid = Sid, socket = SocketPid},
     ?BOSH_BACKEND:create_session(BoshSession),
+    register_new_handler(SocketPid),
     send_to_c2s(SocketPid, {streamstart, Body}),
     ?DEBUG("Created new session ~p~n", [Sid]),
     {loop, Req1, S}.
@@ -203,7 +214,6 @@ make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
 
 send_to_c2s(SocketPid, Message) ->
-    mod_bosh_socket:add_request_handler(SocketPid, self()),
     mod_bosh_socket:send_to_c2s(SocketPid, Message).
 
 %%--------------------------------------------------------------------
