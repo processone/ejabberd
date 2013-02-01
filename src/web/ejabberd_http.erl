@@ -98,11 +98,6 @@ init({SockMod, Socket}, Opts) ->
 				 {tls, TLSSocket};
 			     true -> {SockMod, Socket}
 			  end,
-    case SockMod1 of
-      gen_tcp ->
-	  inet:setopts(Socket1, [{packet, http_bin}, {recbuf, 8192}]);
-      _ -> ok
-    end,
     Captcha = case lists:member(captcha, Opts) of
                   true -> [{[<<"captcha">>], ejabberd_captcha}];
                   false -> []
@@ -167,24 +162,21 @@ send_text(State, Text) ->
 	  exit(normal)
     end.
 
-receive_headers(#state{trail = Trail} = State) ->
+receive_headers(#state{trail = Trail,
+                       request_method = Method} = State) ->
     SockMod = State#state.sockmod,
     Socket = State#state.socket,
     Data = SockMod:recv(Socket, 0, 300000),
-    case State#state.sockmod of
-      gen_tcp ->
-	  NewState = process_header(State, Data),
-	  case NewState#state.end_of_request of
-	    true -> ok;
-	    _ -> receive_headers(NewState)
-	  end;
-      _ ->
-	  case Data of
-	    {ok, D} ->
-		parse_headers(State#state{trail =
-					      <<Trail/binary, D/binary>>});
-	    {error, _} -> ok
-	  end
+    case Data of
+        {error, _} -> ok;
+        {ok, D} ->
+            NewTrail = <<Trail/binary, D/binary>>,
+            case {Method, NewTrail} of
+                {undefined, <<"<policy-file-request/>\000">>} ->
+                    send_flash_policy(State);
+                _ ->
+                    parse_headers(State#state{trail = NewTrail})
+            end
     end.
 
 parse_headers(#state{trail = <<>>} = State) ->
@@ -283,10 +275,6 @@ process_header(State, Data) ->
 	  send_text(State2, Out),
 	  case State2#state.request_keepalive of
 	    true ->
-		case SockMod of
-		  gen_tcp -> inet:setopts(Socket, [{packet, http_bin}]);
-		  _ -> ok
-		end,
                   #state{sockmod = SockMod, socket = Socket,
                          request_handlers = State#state.request_handlers,
                          websocket_handlers = State#state.websocket_handlers};
@@ -391,10 +379,6 @@ extract_path_query(#state{request_method = Method,
 			  socket = Socket} = State)
     when (Method =:= 'POST' orelse Method =:= 'PUT') andalso
 	   is_integer(Len) ->
-    case SockMod of
-      gen_tcp -> inet:setopts(Socket, [{packet, 0}]);
-      _ -> ok
-    end,
     Data = recv_data(State, Len),
     ?DEBUG("client data: ~p~n", [Data]),
     case catch url_decode_q_split(Path) of
@@ -835,5 +819,32 @@ normalize_header_name(<<C:8, Rest/binary>>, Acc, true) ->
     normalize_header_name(Rest, [Acc, toupper(C)], false);
 normalize_header_name(<<C:8, Rest/binary>>, Acc, false) ->
     normalize_header_name(Rest, [Acc, tolower(C)], false).
+
+send_flash_policy(State) ->
+    Listen = ejabberd_config:get_local_option(listen, fun(V) -> V end),
+    Ports = lists:foldr(fun({{Port, _, _}, Handler, _Opts}, Acc) when
+                                  Handler == ejabberd_c2s orelse
+                                  Handler == ejabberd_http ->
+                                case Acc of
+                                    [] ->
+                                        [integer_to_list(Port)];
+                                    _ ->
+                                        [integer_to_list(Port), <<",">>, Acc]
+                                end;
+                           (_, Acc) ->
+                                Acc
+                        end, [], Listen),
+    PortsString = iolist_to_binary(Ports),
+
+    send_text(State,<<"<?xml version=\"1.0\"?>\n"
+      "<!DOCTYPE cross-domain-policy SYSTEM "
+      "\"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\n"
+      "<cross-domain-policy>\n"
+      "  <allow-access-from domain=\"*\" to-ports=\"", PortsString/binary,"\"/>\n"
+      "</cross-domain-policy>\n\000">>),
+
+    #state{end_of_request = true,
+           request_handlers = State#state.request_handlers,
+           websocket_handlers = State#state.websocket_handlers}.
 
 %% -*- tab-width:8
