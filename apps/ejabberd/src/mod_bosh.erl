@@ -68,6 +68,7 @@ start_listener({Port, _InetAddr, tcp}, Opts) ->
 %%--------------------------------------------------------------------
 
 init(_Transport, Req, _Opts) ->
+    ?DEBUG("New request~n", []),
     {Msg, NewReq} = try
         {<<"POST">>, Req2} = cowboy_req:method(Req),
         {true, Req3} = cowboy_req:has_body(Req2),

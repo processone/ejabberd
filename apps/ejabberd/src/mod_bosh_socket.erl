@@ -10,6 +10,10 @@
          send_to_c2s/2
         ]).
 
+%% Private API
+-export([get_handlers/1,
+         get_pending/1]).
+
 %% ejabberd_socket compatibility
 -export([starttls/2, starttls/3,
          compress/1, compress/2,
@@ -91,6 +95,16 @@ add_request_handler(Pid, HandlerPid) ->
 
 send_to_c2s(Pid, StreamElement) ->
     gen_fsm:send_all_state_event(Pid, StreamElement).
+
+%%--------------------------------------------------------------------
+%% Private API
+%%--------------------------------------------------------------------
+
+get_handlers(Pid) ->
+    gen_fsm:sync_send_all_state_event(Pid, get_handlers).
+
+get_pending(Pid) ->
+    gen_fsm:sync_send_all_state_event(Pid, get_pending).
 
 %%--------------------------------------------------------------------
 %% gen_fsm callbacks
@@ -224,6 +238,10 @@ handle_event(Event, StateName, State) ->
 %%                   {stop, Reason, Reply, NewState}
 %% @end
 %%--------------------------------------------------------------------
+handle_sync_event(get_handlers, _From, StateName, #state{handlers = Handlers} = S) ->
+    {reply, Handlers, StateName, S};
+handle_sync_event(get_pending, _From, StateName, #state{pending = Pending} = S) ->
+    {reply, Pending, StateName, S};
 handle_sync_event(Event, _From, StateName, State) ->
     ?DEBUG("Unhandled sync all state event: ~w~n", [Event]),
     Reply = ok,
@@ -281,6 +299,7 @@ send_or_store(Data, #state{} = S) when not is_list(Data) ->
 send_or_store([], #state{} = S) ->
     S;
 send_or_store(Data, #state{handlers = [H | Hs]} = S) ->
+    ?DEBUG("Forwarding element to handler. Handlers: ~p~n", [[H | Hs]]),
     H ! {send, bosh_wrap(Data, S)},
     S#state{handlers = Hs}.
 
