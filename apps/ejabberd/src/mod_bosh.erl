@@ -72,7 +72,7 @@ init(_Transport, Req, _Opts) ->
     {Msg, NewReq} = try
         {<<"POST">>, Req2} = cowboy_req:method(Req),
         {true, Req3} = cowboy_req:has_body(Req2),
-        {process_body, Req3}
+        {forward_body, Req3}
     catch
         %% In order to issue a reply, init() must accept the request for processing.
         %% Hence, handling of these errors is forwarded to info().
@@ -90,13 +90,13 @@ info(no_body, Req, State) ->
 info(wrong_method, Req, State) ->
     ?DEBUG("Wrong request method: ~p~n", [Req]),
     {ok, method_not_allowed_error(Req), State};
-info(process_body, Req, S) ->
+info(forward_body, Req, S) ->
     {ok, Body, Req1} = cowboy_req:body(Req),
     %% TODO: the parser should be stored per session,
     %%       but the session is identified inside the to-be-parsed element
     {ok, BodyElem} = exml:parse(Body),
     ?DEBUG("Parsed body: ~p~n", [BodyElem]),
-    process_body(Req1, BodyElem, S);
+    forward_body(Req1, BodyElem, S);
 info({send, El}, Req, S) ->
     BEl = exml:to_binary(El),
     ?DEBUG("Sending (binary) to ~p: ~p~n", [exml_query:attr(El, <<"sid">>), BEl]),
@@ -171,7 +171,7 @@ event_type(Body) ->
         end
     end.
 
-process_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
+forward_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
     case event_type(Body) of
         start ->
             start_session(Req, Body, S);
