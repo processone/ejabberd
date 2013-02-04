@@ -15,7 +15,7 @@
 %% cowboy_http_handler callbacks
 -export([init/3,
          handle/2,
-         terminate/2]).
+         terminate/3]).
 
 %% cowboy_http_websocket_handler callbacks
 -export([websocket_init/3,
@@ -77,7 +77,7 @@ init(Transport, Req, Opts) ->
 handle(Req, State) ->
         {ok, Req, State}.
 
-terminate(_Req, _State) ->
+terminate(_Reason, _Req, _State) ->
         ok.
 
 %%--------------------------------------------------------------------
