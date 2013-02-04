@@ -761,7 +761,6 @@ gen_req({bind, RootDN, Passwd}) ->
 %%  {'EXIT', Reason} - Broke
 %%-----------------------------------------------------------------------
 recvd_packet(Pkt, S) ->
-    check_tag(Pkt),
     case asn1rt:decode('ELDAPv3', 'LDAPMessage', Pkt) of
 	{ok,Msg} ->
 	    Op = Msg#'LDAPMessage'.protocolOp,
@@ -874,7 +873,6 @@ get_op_rec(Id, Dict) ->
 %%  {'EXIT', Reason} - Broken packet
 %%-----------------------------------------------------------------------
 recvd_wait_bind_response(Pkt, S) ->
-    check_tag(Pkt),
     case asn1rt:decode('ELDAPv3', 'LDAPMessage', Pkt) of
 	{ok,Msg} ->
 	    ?DEBUG("~p", [Msg]),
@@ -906,12 +904,6 @@ cancel_timer(Timer) ->
 	    ok
     end.
 
-
-%%% Sanity check of received packet
-check_tag(Data) ->
-    {_Tag, Data1, _Rb} = asn1rt_ber_bin:decode_tag(Data),
-    {{_Len,_Data2}, _Rb2} = asn1rt_ber_bin:decode_length(Data1),
-    ok.
 
 close_and_retry(S, Timeout) ->
     catch (S#eldap.sockmod):close(S#eldap.fd),
