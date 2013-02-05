@@ -1,0 +1,67 @@
+
+                              Release Notes
+                             ejabberd 2.1.12
+
+  ejabberd 2.1.12 includes a many bugfixes and a few improvements.
+
+  Read more details about the changes in:
+    http://redir.process-one.net/ejabberd-2.1.12
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+  The changes are:
+
+* Core ejabberd
+- Make terms serialization faster
+- Reduce size of XML stream state
+
+* Administration
+- Add SCRAM and remove MD5 support to ejabberd commands auth verification
+- Added command to list all the vhosts registered in an ejabberd node
+- Added export2odbc command, copied from mod_admin_extra.erl
+- Fix ejabberdctl number of arguments error report with R15
+- Check node name is available before starting ejabberd (EJAB-1572)
+- Fix ejabberd_xmlrpc commands authentication with SCRAM
+- Fix mod_offline:store_offline_msg argument (EJAB-1581)
+- Log IP address when auth attempt fails
+- Make sure update_info returns atoms only (EJAB-1595)
+- On shutdown, first stop listeners, then modules
+
+* Encryption
+- Detect OpenSSL version at runtime, not at compile time
+- Fixed signedness issue in tls_drv GET_DESCRYPTED_INPUT (EJAB-1591)
+- Enable DHE key exchange in TLS driver
+- Enable ECDHE key exchange in TSL driver
+- Disable old and unsecure ciphers in TLS driver
+- Disable SSL 2.0 in TLS driver
+
+* HTTP-Bind
+- Do not trigger item-not-found errors in mod_http_bind
+- Repeated http-bind request should abort only requests with same rid
+- Receiving missing request shouldn't close waiting out-ouf-order request
+
+* XMPP
+- Allow multiple fqdn values in configuration (EJAB-1578)
+- Fix get_subscription_lists/4
+- Fix account registration
+- Send announce Message stanzas as Headline type instead of Normal
+
+* Other
+- Guide: Fix file name of Name Service Switch
+- Guide: Document the db_type modules option (EJAB-1560)
+- LDAP: Fix broken JPEG photo (EJAB-1526)
+- LDAP: Fix compatibility with Erlang R16A (EJAB-1612)
+- MUC: Fix angle brackets handle in plaintext log (EJAB-1610)
+- MUC: Fix MUC start when Mnesia tables don't exist yet
+- MUC: New mod_muc_log option file_permissions (EJAB-1588)
+- ODBC: Merge SQL and Mnesia code into one module (EJAB-1560)
+- Translation: New Hebrew
+- Translation: Update Slovak
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/
