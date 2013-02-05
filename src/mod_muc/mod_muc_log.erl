@@ -60,6 +60,7 @@
 		dir_type,
 		dir_name,
 		file_format,
+		file_permissions,
 		css_file,
 		access,
 		lang,
@@ -123,6 +124,7 @@ init([Host, Opts]) ->
     DirType = gen_mod:get_opt(dirtype, Opts, subdirs),
     DirName = gen_mod:get_opt(dirname, Opts, room_jid),
     FileFormat = gen_mod:get_opt(file_format, Opts, html), % Allowed values: html|plaintext
+    FilePermissions = gen_mod:get_opt(file_permissions, Opts, {644, 33}),
     CSSFile = gen_mod:get_opt(cssfile, Opts, false),
     AccessLog = gen_mod:get_opt(access_log, Opts, muc_admin),
     Timezone = gen_mod:get_opt(timezone, Opts, local),
@@ -141,6 +143,7 @@ init([Host, Opts]) ->
 		dir_type = DirType,
 		dir_name = DirName,
 		file_format = FileFormat,
+		file_permissions = FilePermissions,
 		css_file = CSSFile,
 		access = AccessLog,
 		lang = Lang,
@@ -318,11 +321,16 @@ htmlize_nick(Nick1, html) ->
 htmlize_nick(Nick1, plaintext) ->
     htmlize(?PLAINTEXT_IN++Nick1++?PLAINTEXT_OUT, plaintext).
 
+set_filemode(Fn, {FileMode, FileGroup}) ->
+    ok = file:change_mode(Fn, list_to_integer(integer_to_list(FileMode), 8)),
+    ok = file:change_group(Fn, FileGroup).
+
 add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     #logstate{out_dir = OutDir,
 	   dir_type = DirType,
 	   dir_name = DirName,
 	   file_format = FileFormat,
+	   file_permissions = FilePermissions,
 	   css_file = CSSFile,
 	   lang = Lang,
 	   timezone = Timezone,
@@ -346,6 +354,8 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 	{error, enoent} ->
 	    make_dir_rec(Fd),
 	    {ok, F} = file:open(Fn, [append]),
+	    catch set_filemode(Fn, FilePermissions),
+
 	    Datestring = get_dateweek(Date, Lang),
 
 	    TimeStampYesterday = get_timestamp_daydiff(TimeStamp, -1),
@@ -499,8 +509,9 @@ make_dir_rec(Dir) ->
 	{error, enoent} ->
 	    DirS = filename:split(Dir),
 	    DirR = lists:sublist(DirS, length(DirS)-1),
-	    make_dir_rec(filename:join(DirR)),
-	    file:make_dir(Dir)
+	    ok = make_dir_rec(filename:join(DirR)),
+	    ok = file:make_dir(Dir),
+	    ok = file:change_mode(Dir, 8#00755) % -rwxr-xr-x
     end.
 
 

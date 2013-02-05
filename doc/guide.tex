@@ -3434,6 +3434,10 @@ Options:
   \term{html} stores in HTML format,
   \term{plaintext} stores in plain text.
   The default value is \term{html}.
+\titem{\{file\_permissions, \{Mode, Group\}\}}\ind{options!file\_permissions}
+  Define the permissions that must be used when creating the log files:
+  the number of the mode, and the numeric id of the group that will own the files.
+  The default value is \term{\{644, 33\}}.
 \titem{\{outdir, Path\}}\ind{options!outdir}
   This option sets the full path to the directory in which the HTML files should
   be stored. Make sure the \ejabberd{} daemon user has write access on that
@@ -3500,6 +3504,8 @@ Examples:
                  {access_log, muc_log},
                  {cssfile, false},
                  {dirtype, subdirs},
+                 {dirtype, subdirs},
+                 {file_permissions, {644, 33}},
                  {outdir, "/var/www/muclogs"},
                  {timezone, local}
                 ]},
