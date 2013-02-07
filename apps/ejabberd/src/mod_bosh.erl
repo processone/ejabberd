@@ -198,8 +198,13 @@ register_new_handler(SocketPid) ->
     mod_bosh_socket:add_request_handler(SocketPid, self()).
 
 get_session_socket(Sid) ->
-    [BS] = ?BOSH_BACKEND:get_session(Sid),
-    BS#bosh_session.socket.
+    case ?BOSH_BACKEND:get_session(Sid) of
+        [BS] ->
+            BS#bosh_session.socket;
+        [] ->
+            ?ERROR_MSG("BOSH session ~p not found!~n", [Sid]),
+            error({session_not_found, Sid})
+    end.
 
 start_session(Peer, Body) ->
     Sid = make_sid(),
