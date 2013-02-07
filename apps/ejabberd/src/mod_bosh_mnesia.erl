@@ -23,11 +23,6 @@ create_session(#bosh_session{} = Session) ->
 delete_session(Sid) ->
     mnesia:async_dirty(fun mnesia:delete/1, [{bosh_session, Sid}]).
 
--spec get_session(bosh_sid()) -> [#bosh_session{}] | {error, any()}.
+-spec get_session(bosh_sid()) -> [#bosh_session{}].
 get_session(Sid) ->
-    try
-        mnesia:dirty_read(bosh_session, Sid)
-    catch
-        exit:{aborted, _} = Reason ->
-            {error, Reason}
-    end.
+    mnesia:dirty_read(bosh_session, Sid).

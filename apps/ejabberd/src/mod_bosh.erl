@@ -100,8 +100,7 @@ info(forward_body, Req, S) ->
 info({send, El}, Req, S) ->
     BEl = exml:to_binary(El),
     ?DEBUG("Sending (binary) to ~p: ~p~n", [exml_query:attr(El, <<"sid">>), BEl]),
-    Headers = [{<<"content-type">>, <<"text/xml; charset=utf8">>}],
-    {ok, Req1} = cowboy_req:reply(200, Headers, BEl, Req),
+    {ok, Req1} = cowboy_req:reply(200, [content_type()], BEl, Req),
     {ok, Req1, S};
 info({close, Sid}, Req, S) ->
     ?DEBUG("Closing handler for ~p~n", [Sid]),
@@ -172,27 +171,34 @@ event_type(Body) ->
     end.
 
 forward_body(Req, #xmlelement{} = Body, S) ->
-    case event_type(Body) of
-        start ->
-            {Peer, Req1} = cowboy_req:peer(Req),
-            start_session(Peer, Body),
-            {loop, Req1, S};
-        restart ->
-            SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-            register_new_handler(SocketPid),
-            send_to_c2s(SocketPid, {restart, Body}),
-            {loop, Req, S};
-        normal ->
-            SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-            register_new_handler(SocketPid),
-            send_to_c2s(SocketPid, Body),
-            {loop, Req, S};
-        terminate ->
-            SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-            register_new_handler(SocketPid),
-            %% TODO: also send body contents (possibly: presence unavailable)
-            send_to_c2s(SocketPid, streamend),
-            {loop, Req, S}
+    try
+        case event_type(Body) of
+            start ->
+                {Peer, Req1} = cowboy_req:peer(Req),
+                start_session(Peer, Body),
+                {loop, Req1, S};
+            restart ->
+                Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
+                register_new_handler(Socket),
+                send_to_c2s(Socket, {restart, Body}),
+                {loop, Req, S};
+            normal ->
+                Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
+                register_new_handler(Socket),
+                send_to_c2s(Socket, Body),
+                {loop, Req, S};
+            terminate ->
+                Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
+                register_new_handler(Socket),
+                %% TODO: also send body contents (possibly: presence unavailable)
+                send_to_c2s(Socket, streamend),
+                {loop, Req, S}
+        end
+    catch
+        error:item_not_found ->
+            {ok, Req2} = cowboy_req:reply(200, [content_type()],
+                                          item_not_found_body(), Req),
+            {ok, Req2, S}
     end.
 
 register_new_handler(SocketPid) ->
@@ -204,7 +210,7 @@ get_session_socket(Sid) ->
             BS#bosh_session.socket;
         [] ->
             ?ERROR_MSG("BOSH session ~p not found!~n", [Sid]),
-            error({session_not_found, Sid})
+            error(item_not_found)
     end.
 
 start_session(Peer, Body) ->
@@ -239,6 +245,19 @@ strip_ok({ok, Req}) ->
     Req.
 
 %%--------------------------------------------------------------------
+%% BOSH errors
+%%--------------------------------------------------------------------
+
+item_not_found_body() ->
+    bosh_error_body(<<"item-not-found">>).
+
+bosh_error_body(Condition) ->
+    exml:to_binary(#xmlelement{name = <<"body">>,
+                               attrs = [{<<"type">>, <<"terminate">>},
+                                        {<<"condition">>, Condition},
+                                        {<<"xmlns">>, ?NS_HTTPBIND}]}).
+
+%%--------------------------------------------------------------------
 %% Backend configuration
 %%--------------------------------------------------------------------
 
@@ -251,3 +270,10 @@ mod_bosh_dynamic_src(Backend) ->
         -spec backend() -> atom().
         backend() ->
             mod_bosh_", atom_to_list(Backend), ".\n"]).
+
+%%--------------------------------------------------------------------
+%% Helpers
+%%--------------------------------------------------------------------
+
+content_type() ->
+    {<<"content-type">>, <<"text/xml; charset=utf8">>}.
