@@ -261,6 +261,11 @@ handle_sync_event(Event, _From, StateName, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
+handle_info({send, #xmlstreamend{} = StreamEnd}, _SName,
+            #state{pending = Pending} = S) ->
+    NS = S#state{pending = []},
+    NNS = send_or_store(Pending, NS),
+    {next_state, normal, store(StreamEnd, NNS)};
 handle_info({send, Data}, accumulate = SName, #state{} = S) ->
     {next_state, SName, store(Data, S)};
 handle_info({send, Data}, normal = SName, #state{} = S) ->
@@ -299,8 +304,9 @@ send_or_store([], #state{} = S) ->
     S;
 send_or_store(Data, #state{handlers = [H | Hs]} = S) ->
     ?DEBUG("Forwarding element to handler. Handlers: ~p~n", [[H | Hs]]),
-    H ! {send, bosh_wrap(Data, S)},
-    S#state{handlers = Hs}.
+    {Wrapped, NS} = bosh_wrap(Data, S),
+    H ! {send, Wrapped},
+    NS#state{handlers = Hs}.
 
 %% Store data for sending later.
 store(Data, #state{pending = Pending} = S) ->
@@ -355,20 +361,21 @@ bosh_unwrap(Body, #state{sid = Sid}) ->
     Body#xmlelement.children.
 
 bosh_wrap(Elements, #state{} = S) ->
-    {Body, Children} = case lists:partition(fun is_stream_event/1, Elements) of
+    {{Body, Children}, NS} = case lists:partition(fun is_stream_event/1, Elements) of
         {[], Stanzas} ->
-            {bosh_body(S), Stanzas};
+            {{bosh_body(S), Stanzas}, S};
         {[#xmlstreamstart{} = StreamStart], Stanzas} ->
-            {bosh_stream_start_body(StreamStart, S), Stanzas};
-        {[#xmlstreamend{}], [] = Stanzas} ->
-            %% TODO: this might not work as expected.
-            %% Pending stanzas added as children to session-ending
-            %% body might turn out to be discarded by the client.
-            %% We don't want that -- Stanzas is deliberately matched with []
-            %% to detect such a case and crash.
-            {bosh_stream_end_body(), Stanzas}
+            {{bosh_stream_start_body(StreamStart, S), Stanzas}, S};
+        {[#xmlstreamend{}], []} ->
+            %% No stanzas except stream end - OK.
+            {{bosh_stream_end_body(), []}, S};
+        {[#xmlstreamend{} = StreamEnd], Stanzas} ->
+            %% Can't wrap remaining stanzas in a stream end body.
+            %% Send Stanzas and forfeit sending stream end.
+            Pending = S#state.pending,
+            {{bosh_body(S), Stanzas}, S#state{pending = [StreamEnd, Pending]}}
     end,
-    Body#xmlelement{children = Children}.
+    {Body#xmlelement{children = Children}, NS}.
 
 %% Bosh body for a session creation response.
 bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
