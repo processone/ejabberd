@@ -171,7 +171,7 @@ event_type(Body) ->
         end
     end.
 
-forward_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
+forward_body(Req, #xmlelement{} = Body, S) ->
     case event_type(Body) of
         start ->
             {Peer, Req1} = cowboy_req:peer(Req),
@@ -190,6 +190,7 @@ forward_body(Req, #xmlelement{attrs=_Attrs} = Body, S) ->
         terminate ->
             SocketPid = get_session_socket(exml_query:attr(Body, <<"sid">>)),
             register_new_handler(SocketPid),
+            %% TODO: also send body contents (possibly: presence unavailable)
             send_to_c2s(SocketPid, streamend),
             {loop, Req, S}
     end.
