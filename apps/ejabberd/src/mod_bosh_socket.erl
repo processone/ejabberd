@@ -211,9 +211,10 @@ handle_event({StreamEvent, #xmlelement{} = Body},
                       gen_fsm, send_event, [self(), acc_off]),
     {next_state, accumulate, NS};
 handle_event(#xmlelement{} = Body, StateName, #state{c2s_pid = C2SPid} = S) ->
-    Els = bosh_unwrap(Body, S),
+    %% TODO: handle out-of-order requests
+    {Els, NS} = bosh_unwrap(Body, S),
     [ forward_to_c2s(C2SPid, {xmlstreamelement, El}) || El <- Els ],
-    {next_state, StateName, S};
+    {next_state, StateName, NS};
 handle_event(streamend, StateName, #state{c2s_pid = C2SPid} = S) ->
     forward_to_c2s(C2SPid, {xmlstreamend, []}),
     {next_state, StateName, S};
@@ -353,12 +354,12 @@ get_attr(undefined, Default) ->
 get_attr(BAttr, _Default) ->
     binary_to_integer(BAttr).
 
-bosh_unwrap(Body, #state{sid = Sid}) ->
+bosh_unwrap(Body, #state{sid = Sid} = S) ->
     %% TODO: verify these
-    %Rid = exml_query:attr(Body, <<"rid">>),
+    Rid = exml_query:attr(Body, <<"rid">>),
     Sid = exml_query:attr(Body, <<"sid">>),
     ?NS_HTTPBIND = exml_query:attr(Body, <<"xmlns">>),
-    Body#xmlelement.children.
+    {Body#xmlelement.children, S#state{rid = Rid}}.
 
 bosh_wrap(Elements, #state{} = S) ->
     {{Body, Children}, NS} = case lists:partition(fun is_stream_event/1, Elements) of
