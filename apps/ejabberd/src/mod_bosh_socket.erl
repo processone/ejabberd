@@ -282,10 +282,11 @@ handle_info(Info, SName, State) ->
     {next_state, SName, State}.
 
 
-terminate(_Reason, _StateName, #state{sid = Sid, handlers = Handlers}) ->
+terminate(_Reason, _StateName, #state{sid = Sid, handlers = Handlers} = S) ->
     [ H ! {close, Sid} || H <- Handlers ],
     ?BOSH_BACKEND:delete_session(Sid),
-    ?DEBUG("Closing session ~p. Handlers: ~p~n", [Sid, Handlers]).
+    ?DEBUG("Closing session ~p. Handlers: ~p Pending: ~p~n",
+           [Sid, Handlers, S#state.pending]).
 
 code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
