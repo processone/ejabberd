@@ -379,6 +379,7 @@ bosh_wrap(Elements, #state{} = S) ->
 
 %% Bosh body for a session creation response.
 bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
+    %% TODO: acks?
     #xmlelement{name = <<"body">>,
                 attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
                          {<<"inactivity">>,
@@ -403,9 +404,9 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
 
 %% Bosh body for an ordinary stream element(s).
 bosh_body(#state{} = S) ->
+    %% TODO: acks?
     #xmlelement{name = <<"body">>,
-                attrs = [{<<"rid">>, integer_to_binary(S#state.rid)},
-                         {<<"sid">>, S#state.sid},
+                attrs = [{<<"sid">>, S#state.sid},
                          {<<"xmlns">>, ?NS_HTTPBIND}],
                 children = []}.
 
