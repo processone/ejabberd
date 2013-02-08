@@ -24,8 +24,7 @@
          monitor/1,
          get_sockmod/1,
          close/1,
-         peername/1
-        ]).
+         peername/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
