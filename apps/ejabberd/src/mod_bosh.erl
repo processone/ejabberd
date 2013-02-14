@@ -199,9 +199,7 @@ forward_body(Req, #xmlelement{} = Body, S) ->
         end
     catch
         error:item_not_found ->
-            {ok, Req2} = cowboy_req:reply(200, [content_type()],
-                                          item_not_found_body(), Req),
-            {ok, Req2, S}
+            {ok, terminal_condition(<<"item-not-found">>, Req), S}
     end.
 
 register_new_handler(SocketPid) ->
@@ -218,20 +216,23 @@ get_session_socket(Sid) ->
 
 maybe_start_session(Req, Body) ->
     try
-        {hold, <<"1">>} = {hold, exml_query:attr(Body, <<"hold">>)},
+        {<<"hold">>, <<"1">>} = {<<"hold">>,
+                                 exml_query:attr(Body, <<"hold">>)},
+        Hosts = ejabberd_config:get_global_option(hosts),
+        {<<"to">>, true} = {<<"to">>,
+                            lists:member(exml_query:attr(Body, <<"to">>),
+                                         Hosts)},
         %% Version isn't checked as it would be meaningless when supporting
         %% only a subset of the specification.
         {Peer, Req1} = cowboy_req:peer(Req),
         start_session(Peer, Body),
         {true, Req1}
     catch
-        error:{badmatch, {hold, _}} ->
+        error:{badmatch, {<<"to">>, _}} ->
+            {false, terminal_condition(<<"host-unknown">>, Req)};
+        error:{badmatch, {_Attr, _Value}} ->
             %% TODO: return some sensible condition details
-            Details = [],
-            {ok, Req2} = cowboy_req:reply(200, [content_type()],
-                                          undefined_condition_body(Details),
-                                          Req),
-            {false, Req2}
+            {false, terminal_condition(<<"undefined-condition">>, [], Req)}
     end.
 
 start_session(Peer, Body) ->
@@ -266,19 +267,17 @@ strip_ok({ok, Req}) ->
     Req.
 
 %%--------------------------------------------------------------------
-%% BOSH errors
+%% BOSH Terminal Binding Error Conditions
 %%--------------------------------------------------------------------
 
-item_not_found_body() ->
-    bosh_error_body(<<"item-not-found">>).
+terminal_condition(Condition, Req) ->
+    terminal_condition(Condition, [], Req).
 
-undefined_condition_body(Details) ->
-    bosh_error_body(<<"undefined-condition">>, Details).
+terminal_condition(Condition, Details, Req) ->
+    Body = terminal_condition_body(Condition, Details),
+    strip_ok(cowboy_req:reply(200, [content_type()], Body, Req)).
 
-bosh_error_body(Condition) ->
-    bosh_error_body(Condition, []).
-
-bosh_error_body(Condition, Children) ->
+terminal_condition_body(Condition, Children) ->
     exml:to_binary(#xmlelement{name = <<"body">>,
                                attrs = [{<<"type">>, <<"terminate">>},
                                         {<<"condition">>, Condition},
