@@ -263,9 +263,8 @@ handle_sync_event(Event, _From, StateName, State) ->
 
 handle_info({send, #xmlstreamend{} = StreamEnd}, _SName,
             #state{pending = Pending} = S) ->
-    NS = S#state{pending = []},
-    NNS = send_or_store(Pending, NS),
-    {next_state, normal, store(StreamEnd, NNS)};
+    NS = send_or_store([StreamEnd | Pending], S#state{pending = []}),
+    {next_state, normal, NS};
 handle_info({send, Data}, accumulate = SName, #state{} = S) ->
     {next_state, SName, store(Data, S)};
 handle_info({send, Data}, normal = SName, #state{} = S) ->
