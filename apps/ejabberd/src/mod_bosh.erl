@@ -174,9 +174,12 @@ forward_body(Req, #xmlelement{} = Body, S) ->
     try
         case event_type(Body) of
             start ->
-                {Peer, Req1} = cowboy_req:peer(Req),
-                start_session(Peer, Body),
-                {loop, Req1, S};
+                case maybe_start_session(Req, Body) of
+                    {true, Req1} ->
+                        {loop, Req1, S};
+                    {false, Req1} ->
+                        {ok, Req1, S}
+                end;
             restart ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
                 register_new_handler(Socket),
@@ -211,6 +214,24 @@ get_session_socket(Sid) ->
         [] ->
             ?ERROR_MSG("BOSH session ~p not found!~n", [Sid]),
             error(item_not_found)
+    end.
+
+maybe_start_session(Req, Body) ->
+    try
+        {hold, <<"1">>} = {hold, exml_query:attr(Body, <<"hold">>)},
+        %% Version isn't checked as it would be meaningless when supporting
+        %% only a subset of the specification.
+        {Peer, Req1} = cowboy_req:peer(Req),
+        start_session(Peer, Body),
+        {true, Req1}
+    catch
+        error:{badmatch, {hold, _}} ->
+            %% TODO: return some sensible condition details
+            Details = [],
+            {ok, Req2} = cowboy_req:reply(200, [content_type()],
+                                          undefined_condition_body(Details),
+                                          Req),
+            {false, Req2}
     end.
 
 start_session(Peer, Body) ->
@@ -251,11 +272,18 @@ strip_ok({ok, Req}) ->
 item_not_found_body() ->
     bosh_error_body(<<"item-not-found">>).
 
+undefined_condition_body(Details) ->
+    bosh_error_body(<<"undefined-condition">>, Details).
+
 bosh_error_body(Condition) ->
+    bosh_error_body(Condition, []).
+
+bosh_error_body(Condition, Children) ->
     exml:to_binary(#xmlelement{name = <<"body">>,
                                attrs = [{<<"type">>, <<"terminate">>},
                                         {<<"condition">>, Condition},
-                                        {<<"xmlns">>, ?NS_HTTPBIND}]}).
+                                        {<<"xmlns">>, ?NS_HTTPBIND}],
+                               children = Children}).
 
 %%--------------------------------------------------------------------
 %% Backend configuration
