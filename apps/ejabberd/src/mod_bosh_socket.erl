@@ -384,15 +384,12 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                 attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
                          {<<"inactivity">>,
                           integer_to_binary(S#state.inactivity)},
-                         %% TODO: don't use polling for now, decide later
-                         %{<<"polling">>, <<"5">>},
                          {<<"requests">>, <<"2">>},
                          {<<"hold">>, integer_to_binary(S#state.hold)},
                          {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
+                         %% TODO: how to support these with cowboy?
                          {<<"accept">>, <<"deflate,gzip">>},
                          {<<"sid">>, S#state.sid},
-                         {<<"secure">>, <<"true">>},
-                         {<<"charsets">>, <<"ISO_8859-1 ISO-2022-JP">>},
                          {<<"xmpp:restartlogic">>, <<"true">>},
                          {<<"xmpp:version">>, <<"1.0">>},
                          %% TODO: what's it for?
