@@ -100,13 +100,13 @@ How to build
         The node ejabberd@localhost is started with status: started
         ejabberd 2.1.8 is running in that node
 
-4.  Building the development target and running tests.
+4.  Building the testing target and running tests.
 
-    For development purposes there's a different make target available:
+    For testing purposes there's a different make target available:
 
-        $ make devrel
+        $ make testrel
 
-    which will generate a release in `$REPO/dev/ejabberd` and prepare
+    which will generate releases in `$REPO/dev/` and prepare
     it for testing and generating coverage reports.
 
     To run the tests (from project's root directory, i.e. `$REPO`):
