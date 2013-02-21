@@ -57,9 +57,16 @@ start(_Host, Opts) ->
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
     Port = gen_mod:get_opt(port, Opts, ?DEFAULT_PORT),
     Dispatch = cowboy_router:compile([{WSHost, [{WSPrefix, ?MODULE, Opts}] }]),
-    {ok, _} = cowboy:start_http(?LISTENER, NumAcceptors,
+    case cowboy:start_http(?LISTENER, NumAcceptors,
                                 [{port, Port}],
-                                [{env, [{dispatch, Dispatch}]}]).
+                                [{env, [{dispatch, Dispatch}]}]) of
+        {error, {already_started, _Pid}} ->
+            ok;
+        {ok, _Pid} ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 stop(_Host) ->
     cowboy:stop_listener(?LISTENER).
