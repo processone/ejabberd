@@ -115,18 +115,13 @@ terminate(_Reason, _Req, _State) ->
 %%--------------------------------------------------------------------
 
 start_cowboy(Port, Opts) ->
-    Host = '_',
-    Prefix = <<"http-bind">>,
-    DispatchRules = [{[Prefix], ?MODULE, Opts}],
-    FullDispatch = [{Host, DispatchRules}],
-    %NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
+    Host = proplists:get_value(host, Opts, '_'),
+    Prefix = proplists:get_value(prefix, Opts, "/http-bind"),
     NumAcceptors = proplists:get_value(num_acceptors, Opts, 100),
-    TransportOpts = [{port, Port}],
-    ProtocolOpts = [{dispatch, FullDispatch}],
-    %% TODO: since cowboy commit 1b3f510b7e this is required
-    %ProtocolOpts = [{env, [{dispatch, FullDispatch}]}],
+    Dispatch = cowboy_router:compile([{Host, [{Prefix, ?MODULE, Opts}] }]),
     case cowboy:start_http(?LISTENER, NumAcceptors,
-                           TransportOpts, ProtocolOpts) of
+                           [{port, Port}],
+                           [{env, [{dispatch, Dispatch}]}]) of
         {error, {already_started, _Pid}} ->
             ok;
         {ok, _Pid} ->
