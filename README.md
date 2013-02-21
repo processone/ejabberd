@@ -42,7 +42,7 @@ How to build
     *   GNU Make,
     *   GCC,
     *   Libexpat 1.95 or higher,
-    *   Erlang/OTP R14B03 or higher (though may work with older R14 versions),
+    *   Erlang/OTP R15B or higher,
     *   Reltool 0.5.4 or higher,
     *   OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption,
     *   Zlib 1.2.3 or higher for Stream Compression support (XEP-0138). Optional,
