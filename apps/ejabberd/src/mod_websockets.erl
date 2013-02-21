@@ -53,15 +53,13 @@
 
 start(_Host, Opts) ->
     WSHost = gen_mod:get_opt(host, Opts, '_'), %% default to any
-    WSPrefix = gen_mod:get_opt(prefix, Opts, <<"ws-xmpp">>),
-    DispatchRules = [{[WSPrefix], ?MODULE, Opts}],
-    FullDispatch = [{WSHost, DispatchRules}],
+    WSPrefix = gen_mod:get_opt(prefix, Opts, "/ws-xmpp"),
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
     Port = gen_mod:get_opt(port, Opts, ?DEFAULT_PORT),
-    TransportOpts = [{port, Port}],
-    ProtocolOpts = [{dispatch, FullDispatch}],
-    cowboy:start_http(?LISTENER, NumAcceptors,
-                      TransportOpts, ProtocolOpts).
+    Dispatch = cowboy_router:compile([{WSHost, [{WSPrefix, ?MODULE, Opts}] }]),
+    {ok, _} = cowboy:start_http(?LISTENER, NumAcceptors,
+                                [{port, Port}],
+                                [{env, [{dispatch, Dispatch}]}]).
 
 stop(_Host) ->
     cowboy:stop_listener(?LISTENER).
