@@ -321,9 +321,15 @@ htmlize_nick(Nick1, html) ->
 htmlize_nick(Nick1, plaintext) ->
     htmlize(?PLAINTEXT_IN++Nick1++?PLAINTEXT_OUT, plaintext).
 
+%% list_to_integer/2 was introduced in OTP R14
+-ifdef(SSL40).
 set_filemode(Fn, {FileMode, FileGroup}) ->
     ok = file:change_mode(Fn, list_to_integer(integer_to_list(FileMode), 8)),
     ok = file:change_group(Fn, FileGroup).
+-else.
+set_filemode(Fn, {_FileMode, FileGroup}) ->
+    ok = file:change_group(Fn, FileGroup).
+-endif.
 
 add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     #logstate{out_dir = OutDir,
