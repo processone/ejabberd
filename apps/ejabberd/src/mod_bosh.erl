@@ -18,7 +18,7 @@
 %% cowboy_loop_handler callbacks
 -export([init/3,
          info/3,
-         terminate/2]).
+         terminate/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -107,7 +107,7 @@ info({close, Sid}, Req, S) ->
     {ok, Req1} = cowboy_req:reply(200, [], [], Req),
     {ok, Req1, S}.
 
-terminate(_Req, _State) ->
+terminate(_Reason, _Req, _State) ->
     ok.
 
 %%--------------------------------------------------------------------
