@@ -71,13 +71,13 @@ init(_Transport, Req, _Opts) ->
     ?DEBUG("New request~n", []),
     {Msg, NewReq} = try
         {<<"POST">>, Req2} = cowboy_req:method(Req),
-        {true, Req3} = cowboy_req:has_body(Req2),
-        {forward_body, Req3}
+        {has_body, true} = {has_body, cowboy_req:has_body(Req2)},
+        {forward_body, Req2}
     catch
         %% In order to issue a reply, init() must accept the request for processing.
         %% Hence, handling of these errors is forwarded to info().
-        error:{badmatch, {false, NReq}} ->
-            {no_body, NReq};
+        error:{badmatch, {has_body, false}} ->
+            {no_body, Req};
         error:{badmatch, {Method, NReq}} when is_binary(Method) ->
             {wrong_method, NReq}
     end,
