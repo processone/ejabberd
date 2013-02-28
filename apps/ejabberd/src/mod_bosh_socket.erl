@@ -313,7 +313,14 @@ handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
 process_stream_event(EventTag, Body, #state{c2s_pid = C2SPid} = State) ->
     {Els, NewState} = bosh_unwrap(EventTag, Body, State),
     [forward_to_c2s(C2SPid, El) || El <- Els],
-    NewState.
+    process_deferred_events(NewState).
+
+process_deferred_events(#state{deferred = Deferred} = S) ->
+    lists:foldl(fun({_, Event}, State) ->
+                    handle_stream_event(Event, State)
+                end,
+                S#state{deferred = []},
+                lists:sort(Deferred)).
 
 is_valid_rid(Rid, OldRid) ->
     Rid == OldRid + 1.
