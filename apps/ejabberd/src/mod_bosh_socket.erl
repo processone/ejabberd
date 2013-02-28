@@ -51,8 +51,8 @@
                 pending = [],
 
                 sid :: bosh_sid(),
-                wait,
-                hold,
+                wait = ?DEFAULT_WAIT,
+                hold = ?DEFAULT_HOLD,
                 rid,
                 inactivity = ?DEFAULT_INACTIVITY}).
 
@@ -328,17 +328,6 @@ new_request_handler(normal, Pid, #state{pending = Pending,
     NS = S#state{pending = [], handlers = [Pid | Handlers]},
     send_or_store(Pending, NS).
 
-get_wait(BWait) ->
-    get_attr(BWait, ?DEFAULT_WAIT).
-
-get_hold(BHold) ->
-    get_attr(BHold, ?DEFAULT_HOLD).
-
-get_attr(undefined, Default) ->
-    Default;
-get_attr(BAttr, _Default) ->
-    binary_to_integer(BAttr).
-
 -spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
     -> {[StreamEvent], #state{}}
     when EventTag :: streamstart | restart | normal | streamend,
@@ -348,9 +337,8 @@ get_attr(BAttr, _Default) ->
 bosh_unwrap(StreamEvent, Body, #state{} = S)
        when StreamEvent =:= streamstart;
             StreamEvent =:= restart ->
-    %% TODO: fix overwriting these values with defaults on restart!
-    Wait = get_wait(exml_query:attr(Body, <<"wait">>)),
-    Hold = get_hold(exml_query:attr(Body, <<"hold">>)),
+    Wait = get_attr(<<"wait">>, Body, S#state.wait),
+    Hold = get_attr(<<"hold">>, Body, S#state.hold),
     Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
     E = #xmlstreamstart{name = <<"stream:stream">>,
                         attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
@@ -372,6 +360,14 @@ bosh_unwrap(normal, Body, #state{sid = Sid} = S) ->
     ?NS_HTTPBIND = exml_query:attr(Body, <<"xmlns">>),
     {[{xmlstreamelement, El} || El <- Body#xmlelement.children],
      S#state{rid = Rid}}.
+
+get_attr(Attr, Element, Default) ->
+    case exml_query:attr(Element, Attr) of
+        undefined ->
+            Default;
+        Value ->
+            binary_to_integer(Value)
+    end.
 
 bosh_wrap(Elements, #state{} = S) ->
     {{Body, Children}, NS} = case lists:partition(fun is_stream_event/1, Elements) of
