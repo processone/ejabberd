@@ -57,6 +57,8 @@
                 wait = ?DEFAULT_WAIT,
                 hold = ?DEFAULT_HOLD,
                 rid,
+                deferred = [] :: [{pos_integer(),
+                                   {event_tag(), #xmlelement{}}}],
                 inactivity = ?DEFAULT_INACTIVITY}).
 
 %%--------------------------------------------------------------------
@@ -302,8 +304,7 @@ handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
         {_, true, _} ->
             process_stream_event(EventTag, Body, S#state{rid = Rid});
         {_, false, true} ->
-            %% store for in order processing
-            ok;
+            S#state{deferred = [{Rid, {EventTag, Body}} | S#state.deferred]};
         {_, false, false} ->
             %% communicate terminating condition
             ok
