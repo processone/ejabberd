@@ -105,7 +105,9 @@ info({send, El}, Req, S) ->
 info({close, Sid}, Req, S) ->
     ?DEBUG("Closing handler for ~p~n", [Sid]),
     {ok, Req1} = cowboy_req:reply(200, [], [], Req),
-    {ok, Req1, S}.
+    {ok, Req1, S};
+info(item_not_found, Req, S) ->
+    {ok, terminal_condition(<<"item-not-found">>, Req), S}.
 
 terminate(_Reason, _Req, _State) ->
     ok.

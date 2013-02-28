@@ -209,10 +209,15 @@ normal(Event, _From, State) ->
 handle_event({EventTag, #xmlelement{} = Body}, _StateName, State)
         when EventTag == streamstart;
              EventTag == restart ->
-    NewState = handle_stream_event({EventTag, Body}, State),
-    timer:apply_after(?ACCUMULATE_PERIOD,
-                      gen_fsm, send_event, [self(), acc_off]),
-    {next_state, accumulate, NewState};
+    try
+        NewState = handle_stream_event({EventTag, Body}, State),
+        timer:apply_after(?ACCUMULATE_PERIOD,
+                          gen_fsm, send_event, [self(), acc_off]),
+        {next_state, accumulate, NewState}
+    catch
+        throw:{invalid_rid, State} ->
+            {stop, invalid_rid, State}
+    end;
 handle_event({EventTag, #xmlelement{} = Body}, StateName, State)
         when EventTag == normal;
              EventTag == streamend ->
@@ -306,8 +311,8 @@ handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
         {_, false, true} ->
             S#state{deferred = [{Rid, {EventTag, Body}} | S#state.deferred]};
         {_, false, false} ->
-            %% communicate terminating condition
-            ok
+            [Pid ! item_not_found || Pid <- S#state.handlers],
+            throw({invalid_rid, S#state{handlers = []}})
     end.
 
 process_stream_event(EventTag, Body, #state{c2s_pid = C2SPid} = State) ->
