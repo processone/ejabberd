@@ -205,8 +205,8 @@ handle_event({StreamEvent, #xmlelement{} = Body},
              _StateName, #state{c2s_pid = C2SPid} = S)
        when StreamEvent == streamstart;
             StreamEvent == restart ->
-    {StreamStart, NS} = bosh_body_to_stream_start(Body, S),
-    forward_to_c2s(C2SPid, StreamStart),
+    {Els, NS} = bosh_unwrap(StreamEvent, Body, S),
+    [forward_to_c2s(C2SPid, El) || El <- Els],
     timer:apply_after(?ACCUMULATE_PERIOD,
                       gen_fsm, send_event, [self(), acc_off]),
     {next_state, accumulate, NS};
@@ -328,23 +328,6 @@ new_request_handler(normal, Pid, #state{pending = Pending,
     NS = S#state{pending = [], handlers = [Pid | Handlers]},
     send_or_store(Pending, NS).
 
--spec bosh_body_to_stream_start(#xmlelement{}, #state{})
-    -> {#xmlstreamstart{}, #state{}}.
-bosh_body_to_stream_start(Body, #state{} = S) ->
-    Wait = get_wait(exml_query:attr(Body, <<"wait">>)),
-    Hold = get_hold(exml_query:attr(Body, <<"hold">>)),
-    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-    E = #xmlstreamstart{name = <<"stream:stream">>,
-                        attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
-                                 {<<"to">>, exml_query:attr(Body, <<"to">>)},
-                                 {<<"version">>, <<"1.0">>},
-                                 {<<"xml:lang">>, <<"en">>},
-                                 {<<"xmlns">>, <<"jabber:client">>},
-                                 {<<"xmlns:stream">>, ?NS_STREAM}]},
-    {E, record_set(S, [{#state.wait, Wait},
-                       {#state.hold, Hold},
-                       {#state.rid, Rid}])}.
-
 get_wait(BWait) ->
     get_attr(BWait, ?DEFAULT_WAIT).
 
@@ -356,9 +339,32 @@ get_attr(undefined, Default) ->
 get_attr(BAttr, _Default) ->
     binary_to_integer(BAttr).
 
+-spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
+    -> {[StreamEvent], #state{}}
+    when EventTag :: streamstart | restart | normal | streamend,
+         StreamEvent    :: #xmlstreamstart{}
+                        | {xmlstreamelement, #xmlelement{}}
+                        | #xmlstreamend{}.
+bosh_unwrap(StreamEvent, Body, #state{} = S)
+       when StreamEvent =:= streamstart;
+            StreamEvent =:= restart ->
+    %% TODO: fix overwriting these values with defaults on restart!
+    Wait = get_wait(exml_query:attr(Body, <<"wait">>)),
+    Hold = get_hold(exml_query:attr(Body, <<"hold">>)),
+    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
+    E = #xmlstreamstart{name = <<"stream:stream">>,
+                        attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
+                                 {<<"to">>, exml_query:attr(Body, <<"to">>)},
+                                 {<<"version">>, <<"1.0">>},
+                                 {<<"xml:lang">>, <<"en">>},
+                                 {<<"xmlns">>, <<"jabber:client">>},
+                                 {<<"xmlns:stream">>, ?NS_STREAM}]},
+    {[E], record_set(S, [{#state.wait, Wait},
+                         {#state.hold, Hold},
+                         {#state.rid, Rid}])};
 bosh_unwrap(streamend, Body, State) ->
     {Els, NewState} = bosh_unwrap(normal, Body, State),
-    {Els ++ [{xmlstreamend, []}], NewState};
+    {Els ++ [#xmlstreamend{name = <<>>}], NewState};
 bosh_unwrap(normal, Body, #state{sid = Sid} = S) ->
     %% TODO: verify these
     Rid = exml_query:attr(Body, <<"rid">>),
