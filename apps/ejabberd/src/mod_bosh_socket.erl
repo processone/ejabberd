@@ -210,16 +210,16 @@ handle_event({StreamEvent, #xmlelement{} = Body},
     timer:apply_after(?ACCUMULATE_PERIOD,
                       gen_fsm, send_event, [self(), acc_off]),
     {next_state, accumulate, NS};
-handle_event(#xmlelement{} = Body, StateName, #state{c2s_pid = C2SPid} = S) ->
+handle_event({normal, #xmlelement{} = Body}, StateName,
+             #state{c2s_pid = C2SPid} = S) ->
     %% TODO: handle out-of-order requests
-    {Els, NS} = bosh_unwrap(Body, S),
-    [ forward_to_c2s(C2SPid, {xmlstreamelement, El}) || El <- Els ],
+    {Els, NS} = bosh_unwrap(normal, Body, S),
+    [forward_to_c2s(C2SPid, El) || El <- Els],
     {next_state, StateName, NS};
 handle_event({streamend, #xmlelement{} = Body}, StateName,
              #state{c2s_pid = C2SPid} = S) ->
-    {Els, NS} = bosh_unwrap(Body, S),
-    [ forward_to_c2s(C2SPid, {xmlstreamelement, El}) || El <- Els ],
-    forward_to_c2s(C2SPid, {xmlstreamend, []}),
+    {Els, NS} = bosh_unwrap(streamend, Body, S),
+    [forward_to_c2s(C2SPid, El) || El <- Els],
     {next_state, StateName, NS};
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
@@ -356,12 +356,16 @@ get_attr(undefined, Default) ->
 get_attr(BAttr, _Default) ->
     binary_to_integer(BAttr).
 
-bosh_unwrap(Body, #state{sid = Sid} = S) ->
+bosh_unwrap(streamend, Body, State) ->
+    {Els, NewState} = bosh_unwrap(normal, Body, State),
+    {Els ++ [{xmlstreamend, []}], NewState};
+bosh_unwrap(normal, Body, #state{sid = Sid} = S) ->
     %% TODO: verify these
     Rid = exml_query:attr(Body, <<"rid">>),
     Sid = exml_query:attr(Body, <<"sid">>),
     ?NS_HTTPBIND = exml_query:attr(Body, <<"xmlns">>),
-    {Body#xmlelement.children, S#state{rid = Rid}}.
+    {[{xmlstreamelement, El} || El <- Body#xmlelement.children],
+     S#state{rid = Rid}}.
 
 bosh_wrap(Elements, #state{} = S) ->
     {{Body, Children}, NS} = case lists:partition(fun is_stream_event/1, Elements) of

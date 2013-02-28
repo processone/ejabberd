@@ -183,7 +183,7 @@ forward_body(Req, #xmlelement{} = Body, S) ->
             normal ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
                 register_new_handler(Socket),
-                send_to_c2s(Socket, Body),
+                send_to_c2s(Socket, {normal, Body}),
                 {loop, Req, S};
             terminate ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
