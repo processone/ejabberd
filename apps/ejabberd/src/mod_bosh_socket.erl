@@ -218,12 +218,6 @@ handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
     {next_state, StateName, State}.
 
-handle_stream_event({EventTag, Body}, #state{c2s_pid = C2SPid} = S) ->
-    %% TODO: handle out-of-order requests
-    {Els, NS} = bosh_unwrap(EventTag, Body, S),
-    [forward_to_c2s(C2SPid, El) || El <- Els],
-    NS.
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -296,6 +290,36 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %% callback implementations
 %%--------------------------------------------------------------------
 
+handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
+    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
+    case {EventTag,
+          is_valid_rid(Rid, OldRid),
+          is_acceptable_rid(Rid, OldRid)} of
+        {streamstart, _, _} ->
+            process_stream_event(EventTag, Body, S#state{rid = Rid});
+        {_, true, _} ->
+            process_stream_event(EventTag, Body, S#state{rid = Rid});
+        {_, false, true} ->
+            %% store for in order processing
+            ok;
+        {_, false, false} ->
+            %% communicate terminating condition
+            ok
+    end.
+
+process_stream_event(EventTag, Body, #state{c2s_pid = C2SPid} = State) ->
+    {Els, NewState} = bosh_unwrap(EventTag, Body, State),
+    [forward_to_c2s(C2SPid, El) || El <- Els],
+    NewState.
+
+is_valid_rid(Rid, OldRid) ->
+    Rid == OldRid + 1.
+
+is_acceptable_rid(Rid, OldRid) ->
+    Rid > OldRid + 1
+    andalso
+    Rid =< OldRid + ?DEFAULT_REQUESTS.
+
 %% Send data to the client if any request handler is available.
 %% Otherwise, store for sending later.
 send_or_store(Data, #state{handlers = []} = S) ->
@@ -338,7 +362,6 @@ bosh_unwrap(StreamEvent, Body, #state{} = S)
             StreamEvent =:= restart ->
     Wait = get_attr(<<"wait">>, Body, S#state.wait),
     Hold = get_attr(<<"hold">>, Body, S#state.hold),
-    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
     E = #xmlstreamstart{name = <<"stream:stream">>,
                         attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
                                  {<<"to">>, exml_query:attr(Body, <<"to">>)},
@@ -347,18 +370,14 @@ bosh_unwrap(StreamEvent, Body, #state{} = S)
                                  {<<"xmlns">>, <<"jabber:client">>},
                                  {<<"xmlns:stream">>, ?NS_STREAM}]},
     {[E], record_set(S, [{#state.wait, Wait},
-                         {#state.hold, Hold},
-                         {#state.rid, Rid}])};
+                         {#state.hold, Hold}])};
 bosh_unwrap(streamend, Body, State) ->
     {Els, NewState} = bosh_unwrap(normal, Body, State),
     {Els ++ [#xmlstreamend{name = <<>>}], NewState};
-bosh_unwrap(normal, Body, #state{sid = Sid} = S) ->
-    %% TODO: verify these
-    Rid = exml_query:attr(Body, <<"rid">>),
+bosh_unwrap(normal, Body, #state{sid = Sid} = State) ->
     Sid = exml_query:attr(Body, <<"sid">>),
     ?NS_HTTPBIND = exml_query:attr(Body, <<"xmlns">>),
-    {[{xmlstreamelement, El} || El <- Body#xmlelement.children],
-     S#state{rid = Rid}}.
+    {[{xmlstreamelement, El} || El <- Body#xmlelement.children], State}.
 
 get_attr(Attr, Element, Default) ->
     case exml_query:attr(Element, Attr) of
