@@ -327,13 +327,17 @@ process_deferred_events(#state{deferred = Deferred} = S) ->
                 S#state{deferred = []},
                 lists:sort(Deferred)).
 
-is_valid_rid(Rid, OldRid) ->
-    Rid == OldRid + 1.
+is_valid_rid(Rid, OldRid) when Rid == OldRid + 1 ->
+    true;
+is_valid_rid(_, _) ->
+    false.
 
-is_acceptable_rid(Rid, OldRid) ->
-    Rid > OldRid + 1
-    andalso
-    Rid =< OldRid + ?DEFAULT_REQUESTS.
+is_acceptable_rid(Rid, OldRid)
+        when Rid > OldRid + 1,
+             Rid =< OldRid + ?DEFAULT_REQUESTS ->
+    true;
+is_acceptable_rid(_, _) ->
+    false.
 
 %% Send data to the client if any request handler is available.
 %% Otherwise, store for sending later.
