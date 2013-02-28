@@ -189,7 +189,7 @@ forward_body(Req, #xmlelement{} = Body, S) ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
                 register_new_handler(Socket),
                 %% TODO: also send body contents (possibly: presence unavailable)
-                send_to_c2s(Socket, streamend),
+                send_to_c2s(Socket, {streamend, Body}),
                 {loop, Req, S}
         end
     catch

@@ -215,9 +215,12 @@ handle_event(#xmlelement{} = Body, StateName, #state{c2s_pid = C2SPid} = S) ->
     {Els, NS} = bosh_unwrap(Body, S),
     [ forward_to_c2s(C2SPid, {xmlstreamelement, El}) || El <- Els ],
     {next_state, StateName, NS};
-handle_event(streamend, StateName, #state{c2s_pid = C2SPid} = S) ->
+handle_event({streamend, #xmlelement{} = Body}, StateName,
+             #state{c2s_pid = C2SPid} = S) ->
+    {Els, NS} = bosh_unwrap(Body, S),
+    [ forward_to_c2s(C2SPid, {xmlstreamelement, El}) || El <- Els ],
     forward_to_c2s(C2SPid, {xmlstreamend, []}),
-    {next_state, StateName, S};
+    {next_state, StateName, NS};
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
     {next_state, StateName, State}.
