@@ -41,10 +41,11 @@
 -include_lib("exml/include/exml_stream.hrl").
 -include("mod_bosh.hrl").
 
--define(DEFAULT_WAIT, 60).
+-define(ACCUMULATE_PERIOD, 10).
 -define(DEFAULT_HOLD, 1).
 -define(DEFAULT_INACTIVITY, 30).
--define(ACCUMULATE_PERIOD, 10).
+-define(DEFAULT_REQUESTS, 2).
+-define(DEFAULT_WAIT, 60).
 
 -record(state, {c2s_pid :: pid(),
                 handlers = [] :: [pid()],
@@ -391,7 +392,7 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                 attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
                          {<<"inactivity">>,
                           integer_to_binary(S#state.inactivity)},
-                         {<<"requests">>, <<"2">>},
+                         {<<"requests">>, integer_to_binary(?DEFAULT_REQUESTS)},
                          {<<"hold">>, integer_to_binary(S#state.hold)},
                          {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
                          %% TODO: how to support these with cowboy?
