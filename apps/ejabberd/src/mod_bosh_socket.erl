@@ -201,29 +201,27 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-handle_event({StreamEvent, #xmlelement{} = Body},
-             _StateName, #state{c2s_pid = C2SPid} = S)
-       when StreamEvent == streamstart;
-            StreamEvent == restart ->
-    {Els, NS} = bosh_unwrap(StreamEvent, Body, S),
-    [forward_to_c2s(C2SPid, El) || El <- Els],
+handle_event({EventTag, #xmlelement{} = Body}, _StateName, State)
+        when EventTag == streamstart;
+             EventTag == restart ->
+    NewState = handle_stream_event({EventTag, Body}, State),
     timer:apply_after(?ACCUMULATE_PERIOD,
                       gen_fsm, send_event, [self(), acc_off]),
-    {next_state, accumulate, NS};
-handle_event({normal, #xmlelement{} = Body}, StateName,
-             #state{c2s_pid = C2SPid} = S) ->
-    %% TODO: handle out-of-order requests
-    {Els, NS} = bosh_unwrap(normal, Body, S),
-    [forward_to_c2s(C2SPid, El) || El <- Els],
-    {next_state, StateName, NS};
-handle_event({streamend, #xmlelement{} = Body}, StateName,
-             #state{c2s_pid = C2SPid} = S) ->
-    {Els, NS} = bosh_unwrap(streamend, Body, S),
-    [forward_to_c2s(C2SPid, El) || El <- Els],
-    {next_state, StateName, NS};
+    {next_state, accumulate, NewState};
+handle_event({EventTag, #xmlelement{} = Body}, StateName, State)
+        when EventTag == normal;
+             EventTag == streamend ->
+    NewState = handle_stream_event({EventTag, Body}, State),
+    {next_state, StateName, NewState};
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
     {next_state, StateName, State}.
+
+handle_stream_event({EventTag, Body}, #state{c2s_pid = C2SPid} = S) ->
+    %% TODO: handle out-of-order requests
+    {Els, NS} = bosh_unwrap(EventTag, Body, S),
+    [forward_to_c2s(C2SPid, El) || El <- Els],
+    NS.
 
 %%--------------------------------------------------------------------
 %% @private
