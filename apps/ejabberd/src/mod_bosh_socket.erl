@@ -47,6 +47,8 @@
 -define(DEFAULT_REQUESTS, 2).
 -define(DEFAULT_WAIT, 60).
 
+-type event_tag() :: streamstart | restart | normal | streamend.
+
 -record(state, {c2s_pid :: pid(),
                 handlers = [] :: [pid()],
                 pending = [],
@@ -353,10 +355,10 @@ new_request_handler(normal, Pid, #state{pending = Pending,
 
 -spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
     -> {[StreamEvent], #state{}}
-    when EventTag :: streamstart | restart | normal | streamend,
-         StreamEvent    :: #xmlstreamstart{}
-                        | {xmlstreamelement, #xmlelement{}}
-                        | #xmlstreamend{}.
+    when EventTag :: event_tag(),
+         StreamEvent :: #xmlstreamstart{}
+                     | {xmlstreamelement, #xmlelement{}}
+                     | #xmlstreamend{}.
 bosh_unwrap(StreamEvent, Body, #state{} = S)
        when StreamEvent =:= streamstart;
             StreamEvent =:= restart ->
