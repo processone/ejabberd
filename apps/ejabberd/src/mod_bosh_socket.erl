@@ -309,8 +309,11 @@ handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
         {_, true, _} ->
             process_stream_event(EventTag, Body, S#state{rid = Rid});
         {_, false, true} ->
+            ?DEBUG("storing stream event for deferred processing: ~p~n",
+                   [{EventTag, Body}]),
             S#state{deferred = [{Rid, {EventTag, Body}} | S#state.deferred]};
         {_, false, false} ->
+            ?DEBUG("terminating - invalid rid: ~p~n", [{EventTag, Body}]),
             [Pid ! item_not_found || Pid <- S#state.handlers],
             throw({invalid_rid, S#state{handlers = []}})
     end.
@@ -322,6 +325,7 @@ process_stream_event(EventTag, Body, #state{c2s_pid = C2SPid} = State) ->
 
 process_deferred_events(#state{deferred = Deferred} = S) ->
     lists:foldl(fun({_, Event}, State) ->
+                    ?DEBUG("processing deferred event: ~p~n", [Event]),
                     handle_stream_event(Event, State)
                 end,
                 S#state{deferred = []},
