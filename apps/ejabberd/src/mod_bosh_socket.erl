@@ -400,7 +400,11 @@ bosh_unwrap(streamend, Body, State) ->
 bosh_unwrap(normal, Body, #state{sid = Sid} = State) ->
     Sid = exml_query:attr(Body, <<"sid">>),
     ?NS_HTTPBIND = exml_query:attr(Body, <<"xmlns">>),
-    {[{xmlstreamelement, El} || El <- Body#xmlelement.children], State}.
+    {[{xmlstreamelement, El}
+      || El <- Body#xmlelement.children,
+         %% Ignore whitespace keepalives.
+         El /= {xmlcdata, <<" ">>}],
+     State}.
 
 get_attr(Attr, Element, Default) ->
     case exml_query:attr(Element, Attr) of
