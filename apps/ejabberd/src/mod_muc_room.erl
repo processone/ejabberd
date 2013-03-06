@@ -906,10 +906,11 @@ handle_iq_vcard2(_FromFull, ToJID, _ToBareJID, _StanzaId, NewId, _IQ, Packet) ->
     {ToJID, change_stanzaid(NewId, Packet)}.
 
 stanzaid_pack(OriginalId, Resource) ->
-    <<"berd">>++base64:encode_to_string(<<"ejab\0">> ++ OriginalId ++ <<"\0">> ++ Resource).
+    Data64 = base64:encode(<<"ejab\0", OriginalId/binary, 0, Resource/binary>>),
+    <<"berd", Data64/binary>>.
 stanzaid_unpack(<<"berd", StanzaIdBase64/binary>>) ->
-    StanzaId = base64:decode_to_string(StanzaIdBase64),
-    [<<"ejab">>, OriginalId, Resource] = string:tokens(StanzaId, <<"\0">>),
+    StanzaId = base64:decode(StanzaIdBase64),
+    [<<"ejab">>, OriginalId, Resource] = binary:split(StanzaId, <<"\0">>),
     {OriginalId, Resource}.
 
 change_stanzaid(NewId, Packet) ->
