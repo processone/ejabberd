@@ -2713,7 +2713,7 @@ is_allowed_room_name_desc_limits(XEl, StateData) ->
     case lists:keysearch(<<"muc#roomconfig_roomname">>, 1,
                  jlib:parse_xdata_submit(XEl)) of
         {value, {_, [N]}} ->
-        length(N) =< gen_mod:get_module_opt(StateData#state.server_host,
+        byte_size(N) =< gen_mod:get_module_opt(StateData#state.server_host,
                             mod_muc, max_room_name,
                             infinite);
         _ ->
@@ -2723,7 +2723,7 @@ is_allowed_room_name_desc_limits(XEl, StateData) ->
     case lists:keysearch(<<"muc#roomconfig_roomdesc">>, 1,
                  jlib:parse_xdata_submit(XEl)) of
         {value, {_, [D]}} ->
-        length(D) =< gen_mod:get_module_opt(StateData#state.server_host,
+        byte_size(D) =< gen_mod:get_module_opt(StateData#state.server_host,
                             mod_muc, max_room_desc,
                             infinite);
         _ ->
