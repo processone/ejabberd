@@ -1650,7 +1650,7 @@ extract_history([{xmlelement, _Name, Attrs, _SubEls} = El | Els], Type) ->
                 calendar:now_to_universal_time(TS)
             end;
         _ ->
-            case catch list_to_integer(AttrVal) of
+            case catch binary_to_integer(AttrVal) of
             IntVal when is_integer(IntVal) and (IntVal >= 0) ->
                 IntVal;
             _ ->
@@ -2952,7 +2952,7 @@ set_config(XEl, StateData) ->
     end).
 
 -define(SET_NAT_XOPT(Opt, Val),
-    case catch list_to_integer(Val) of
+    case catch binary_to_integer(Val) of
         I when is_integer(I),
                I > 0 ->
         set_xoption(Opts, Config#config{Opt = I});
