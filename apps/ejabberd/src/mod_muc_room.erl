@@ -1613,7 +1613,7 @@ count_maxstanzas_shift(MaxStanzas, HistoryList) ->
     end.
 
 count_maxchars_shift(Nick, MaxSize, HistoryList) ->
-    NLen = string:len(Nick) + 1,
+    NLen = string:len(binary_to_list(Nick)) + 1,
     Sizes = lists:map(
           fun({_Nick, _Packet, _HaveSubject, _TimeStamp, Size}) ->
           Size + NLen
