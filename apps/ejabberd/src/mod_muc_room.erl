@@ -3882,3 +3882,10 @@ route_nick_iq(#routed_nick_iq{packet = Packet, lang = Lang, nick = ToNick,
     ejabberd_router:route(
         jlib:jid_replace_resource(StateData#state.jid, ToNick),
     From, Err).
+
+-ifdef(no_binary_to_integer).
+
+binary_to_integer(B) ->
+    list_to_integer(binary_to_list(B)).
+
+-endif.
