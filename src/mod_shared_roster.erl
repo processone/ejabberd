@@ -41,6 +41,10 @@
 	 get_group_explicit_users/2, is_user_in_group/3,
 	 add_user_to_group/3, remove_user_from_group/3]).
 
+-export([command_group_create/5, command_group_delete/2,
+         command_add_user/3, command_remove_user/3,
+         command_list_users/2, command_list_groups/1]).
+
 -include("ejabberd.hrl").
 
 -include("jlib.hrl").
@@ -50,6 +54,8 @@
 -include("web/ejabberd_http.hrl").
 
 -include("web/ejabberd_web_admin.hrl").
+
+-include("ejabberd_commands.hrl").
 
 -record(sr_group, {group_host = {<<"">>, <<"">>} :: {'$1' | binary(), '$2' | binary()},
                    opts = [] :: list() | '_' | '$2'}).
@@ -95,7 +101,8 @@ start(Host, Opts) ->
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
-		       remove_user, 50).
+		       remove_user, 50),
+    ejabberd_commands:register_commands(commands()).
 
 %%ejabberd_hooks:add(remove_user, Host,
 %%    	       ?MODULE, remove_user, 50),
@@ -127,8 +134,10 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user,
-			  50).%%ejabberd_hooks:delete(remove_user, Host,
-			      %%    		  ?MODULE, remove_user, 50),
+			  50),
+    %%ejabberd_hooks:delete(remove_user, Host,
+    %%    		  ?MODULE, remove_user, 50),
+    ejabberd_commands:unregister_commands(commands()).
 
 get_user_roster(Items, US) ->
     {U, S} = US,
@@ -1398,3 +1407,100 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+commands() ->
+    [
+     #ejabberd_commands{name = shared_group_create,
+                        tags = [erlang],
+                        desc = "Create new shared roster group",
+                        module = ?MODULE,
+                        function = command_group_create,
+                        args = [{host, binary}, {groupid, binary},
+                                {name, binary}, {description, binary},
+                                {displayed_groups, {list, {group, binary}}}],
+                        result = {res, restuple}},
+     #ejabberd_commands{name = shared_group_delete,
+                        tags = [erlang],
+                        desc = "Delete existing shared roster group",
+                        module = ?MODULE,
+                        function = command_group_delete,
+                        args = [{host, binary}, {groupid, binary}],
+                        result = {res, restuple}},
+     #ejabberd_commands{name = shared_group_add_user,
+                        tags = [erlang],
+                        desc = "Add user to existing shared roster group",
+                        module = ?MODULE,
+                        function = command_add_user,
+                        args = [{host, binary}, {groupid, binary}, {user, binary}],
+                        result = {res, restuple}},
+     #ejabberd_commands{name = shared_group_remove_user,
+                        tags = [erlang],
+                        desc = "Remove user from existing shared roster group",
+                        module = ?MODULE,
+                        function = command_remove_user,
+                        args = [{host, binary}, {groupid, binary}, {user, binary}],
+                        result = {res, restuple}},
+     #ejabberd_commands{name = shared_group_list_users,
+                        tags = [erlang],
+                        desc = "List users in shared roster group",
+                        module = ?MODULE,
+                        function = command_list_users,
+                        args = [{host, binary}, {groupid, binary}],
+                        result = {res, {tuple, [
+                                                {res, restuple},
+                                                {users, {list, {user, string}}}]}}},
+     #ejabberd_commands{name = shared_group_list,
+                        tags = [erlang],
+                        desc = "List all register shared roster groups",
+                        module = ?MODULE,
+                        function = command_list_groups,
+                        args = [{host, binary}],
+                        result = {res, {tuple, [
+                                                {res, restuple},
+                                                {groups, {list, {group, string}}}]}}}
+].
+
+code_to_restuple({atomic, ok}) ->
+    {ok, ""};
+code_to_restuple({_, Res}) when is_binary(Res) ->
+    {error, Res};
+code_to_restuple({_, Res}) ->
+    {error, list_to_binary(io_lib:format("~p", [Res]))}.
+
+command_group_create(Host, Id, Name, Description, DisplayedGroups) ->
+    Opts = [{name, Name},
+            {displayed_groups, DisplayedGroups},
+            {description, Description}],
+    code_to_restuple(mod_shared_roster:create_group(Host, Id, Opts)).
+
+command_group_delete(Host, Id) ->
+    code_to_restuple(mod_shared_roster:delete_group(Host, Id)).
+
+command_add_user(Host, Id, User) ->
+    Jid = jlib:string_to_jid(User),
+    case Jid of
+        error ->
+            {error, "Invalid JID"};
+        #jid{user=Node, server=Domain} ->
+            code_to_restuple(mod_shared_roster:add_user_to_group(Host, {Node, Domain}, Id))
+    end.
+
+command_remove_user(Host, Id, User) ->
+    Jid = jlib:string_to_jid(User),
+    case Jid of
+        error ->
+            {error, "Invalid JID"};
+        #jid{user=Node, server=Domain} ->
+            code_to_restuple(mod_shared_roster:remove_user_from_group(Host, {Node, Domain}, Id))
+    end.
+
+command_list_users(Host, Id) ->
+    Users = mod_shared_roster:get_group_explicit_users(Host, Id),
+    Jids = lists:map(fun({User, Server}) ->
+                             jlib:jid_to_string(jlib:make_jid(User, Server, <<"">>))
+                     end, Users),
+    {{ok, ""}, Jids}.
+
+command_list_groups(Host) ->
+    Groups = mod_shared_roster:list_groups(Host),
+    {{ok, ""}, Groups}.
