@@ -25,16 +25,15 @@
 %%%----------------------------------------------------------------------
 
 -module(jd2ejd).
+
 -author('alexey@process-one.net').
 
 %% External exports
--export([import_file/1,
-	 import_dir/1]).
+-export([import_file/1, import_dir/1]).
 
 -include("ejabberd.hrl").
+
 -include("jlib.hrl").
-
-
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -43,140 +42,135 @@
 import_file(File) ->
     User = filename:rootname(filename:basename(File)),
     Server = filename:basename(filename:dirname(File)),
-    case (jlib:nodeprep(User) /= error) andalso
-	(jlib:nameprep(Server) /= error) of
-	true ->
-	    case file:read_file(File) of
-		{ok, Text} ->
-		    case xml_stream:parse_element(Text) of
-			El when element(1, El) == xmlelement ->
-			    case catch process_xdb(User, Server, El) of
-				{'EXIT', Reason} ->
-				    ?ERROR_MSG(
-				       "Error while processing file \"~s\": ~p~n",
+    case jlib:nodeprep(User) /= error andalso
+	   jlib:nameprep(Server) /= error
+	of
+      true ->
+	  case file:read_file(File) of
+	    {ok, Text} ->
+		case xml_stream:parse_element(Text) of
+		  El when is_record(El, xmlel) ->
+		      case catch process_xdb(User, Server, El) of
+			{'EXIT', Reason} ->
+			    ?ERROR_MSG("Error while processing file \"~s\": "
+				       "~p~n",
 				       [File, Reason]),
-				    {error, Reason};
-				_ ->
-				    ok
-			    end;
-			{error, Reason} ->
-			    ?ERROR_MSG("Can't parse file \"~s\": ~p~n",
-				       [File, Reason]),
-			    {error, Reason}
-		    end;
-		{error, Reason} ->
-		    ?ERROR_MSG("Can't read file \"~s\": ~p~n", [File, Reason]),
-		    {error, Reason}
-	    end;
-	false ->
-	    ?ERROR_MSG("Illegal user/server name in file \"~s\"~n", [File]),
-	    {error, "illegal user/server"}
+			    {error, Reason};
+			_ -> ok
+		      end;
+		  {error, Reason} ->
+		      ?ERROR_MSG("Can't parse file \"~s\": ~p~n",
+				 [File, Reason]),
+		      {error, Reason}
+		end;
+	    {error, Reason} ->
+		?ERROR_MSG("Can't read file \"~s\": ~p~n",
+			   [File, Reason]),
+		{error, Reason}
+	  end;
+      false ->
+	  ?ERROR_MSG("Illegal user/server name in file \"~s\"~n",
+		     [File]),
+	  {error, <<"illegal user/server">>}
     end.
-
 
 import_dir(Dir) ->
     {ok, Files} = file:list_dir(Dir),
-    MsgFiles = lists:filter(
-		 fun(FN) ->
-			 case string:len(FN) > 4 of
-			     true ->
-				 string:substr(FN,
-					       string:len(FN) - 3) == ".xml";
-			     _ ->
-				 false
-			 end
-		 end, Files),
-    lists:foldl(
-      fun(FN, A) ->
-	      Res = import_file(filename:join([Dir, FN])),
-	      case {A, Res} of
-		  {ok, ok} -> ok;
-		  {ok, _} -> {error, "see ejabberd log for details"};
-		  _ -> A
-	      end
-      end, ok, MsgFiles).
+    MsgFiles = lists:filter(fun (FN) ->
+				    case length(FN) > 4 of
+				      true ->
+					  string:substr(FN, length(FN) - 3) ==
+					    ".xml";
+				      _ -> false
+				    end
+			    end,
+			    Files),
+    lists:foldl(fun (FN, A) ->
+			Res = import_file(filename:join([Dir, FN])),
+			case {A, Res} of
+			  {ok, ok} -> ok;
+			  {ok, _} ->
+			      {error, <<"see ejabberd log for details">>};
+			  _ -> A
+			end
+		end,
+		ok, MsgFiles).
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
-process_xdb(User, Server, {xmlelement, Name, _Attrs, Els}) ->
+process_xdb(User, Server,
+	    #xmlel{name = Name, children = Els}) ->
     case Name of
-	"xdb" ->
-	    lists:foreach(
-	      fun(El) ->
-		      xdb_data(User, Server, El)
-	      end, Els);
-	_ ->
-	    ok
+      <<"xdb">> ->
+	  lists:foreach(fun (El) -> xdb_data(User, Server, El)
+			end,
+			Els);
+      _ -> ok
     end.
 
-
-xdb_data(_User, _Server, {xmlcdata, _CData}) ->
-    ok;
-xdb_data(User, Server, {xmlelement, _Name, Attrs, _Els} = El) ->
-    From = jlib:make_jid(User, Server, ""),
-    case xml:get_attr_s("xmlns", Attrs) of
-	?NS_AUTH ->
-	    Password = xml:get_tag_cdata(El),
-	    ejabberd_auth:set_password(User, Server, Password),
-	    ok;
-	?NS_ROSTER ->
-            catch mod_roster:set_items(User, Server, El),
-	    ok;
-	?NS_LAST ->
-	    TimeStamp = xml:get_attr_s("last", Attrs),
-	    Status = xml:get_tag_cdata(El),
-            catch mod_last:store_last_info(
-                    User,
-                    Server,
-                    list_to_integer(TimeStamp),
-                    Status),
-	    ok;
-	?NS_VCARD ->
-            catch mod_vcard:process_sm_iq(
-                    From,
-                    jlib:make_jid("", Server, ""),
-                    #iq{type = set, xmlns = ?NS_VCARD, sub_el = El}),
-	    ok;
-	"jabber:x:offline" ->
-	    process_offline(Server, From, El),
-	    ok;
-	XMLNS ->
-	    case xml:get_attr_s("j_private_flag", Attrs) of
-		"1" ->
-		    catch mod_private:process_sm_iq(
-			    From,
-			    jlib:make_jid("", Server, ""),
-			    #iq{type = set, xmlns = ?NS_PRIVATE,
-				sub_el = {xmlelement, "query", [],
-					  [jlib:remove_attr(
-					     "j_private_flag",
-					     jlib:remove_attr("xdbns", El))]}});
-		_ ->
-		    ?DEBUG("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS])
-	    end,
-	    ok
+xdb_data(_User, _Server, {xmlcdata, _CData}) -> ok;
+xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
+    From = jlib:make_jid(User, Server, <<"">>),
+    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+      ?NS_AUTH ->
+	  Password = xml:get_tag_cdata(El),
+	  ejabberd_auth:set_password(User, Server, Password),
+	  ok;
+      ?NS_ROSTER ->
+	  catch mod_roster:set_items(User, Server, El), ok;
+      ?NS_LAST ->
+	  TimeStamp = xml:get_attr_s(<<"last">>, Attrs),
+	  Status = xml:get_tag_cdata(El),
+	  catch mod_last:store_last_info(User, Server,
+					 jlib:binary_to_integer(TimeStamp),
+					 Status),
+	  ok;
+      ?NS_VCARD ->
+	  catch mod_vcard:process_sm_iq(From,
+					jlib:make_jid(<<"">>, Server, <<"">>),
+					#iq{type = set, xmlns = ?NS_VCARD,
+					    sub_el = El}),
+	  ok;
+      <<"jabber:x:offline">> ->
+	  process_offline(Server, From, El), ok;
+      XMLNS ->
+	  case xml:get_attr_s(<<"j_private_flag">>, Attrs) of
+	    <<"1">> ->
+		catch mod_private:process_sm_iq(From,
+						jlib:make_jid(<<"">>, Server,
+							      <<"">>),
+						#iq{type = set,
+						    xmlns = ?NS_PRIVATE,
+						    sub_el =
+							#xmlel{name =
+								   <<"query">>,
+							       attrs = [],
+							       children =
+								   [jlib:remove_attr(<<"j_private_flag">>,
+										     jlib:remove_attr(<<"xdbns">>,
+												      El))]}});
+	    _ ->
+		?DEBUG("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS])
+	  end,
+	  ok
     end.
 
-
-process_offline(Server, To, {xmlelement, _, _, Els}) ->
+process_offline(Server, To, #xmlel{children = Els}) ->
     LServer = jlib:nameprep(Server),
-    lists:foreach(fun({xmlelement, _, Attrs, _} = El) ->
-			  FromS = xml:get_attr_s("from", Attrs),
+    lists:foreach(fun (#xmlel{attrs = Attrs} = El) ->
+			  FromS = xml:get_attr_s(<<"from">>, Attrs),
 			  From = case FromS of
-				     "" ->
-					 jlib:make_jid("", Server, "");
-				     _ ->
-					 jlib:string_to_jid(FromS)
+				   <<"">> ->
+				       jlib:make_jid(<<"">>, Server, <<"">>);
+				   _ -> jlib:string_to_jid(FromS)
 				 end,
 			  case From of
-			      error ->
-				  ok;
-			      _ ->
-				  ejabberd_hooks:run(offline_message_hook,
-						     LServer,
-						     [From, To, El])
+			    error -> ok;
+			    _ ->
+				ejabberd_hooks:run(offline_message_hook,
+						   LServer, [From, To, El])
 			  end
-		  end, Els).
-
+		  end,
+		  Els).

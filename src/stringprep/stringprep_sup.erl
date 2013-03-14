@@ -59,10 +59,6 @@ start_link() ->
 %% specifications.
 %%--------------------------------------------------------------------
 init([]) ->
-    StringPrep = {stringprep,
-	      {stringprep, start_link, []},
-	      permanent,
-	      brutal_kill,
-	      worker,
-	      [stringprep]},
-    {ok,{{one_for_all,10,1}, [StringPrep]}}.
+    StringPrep = {stringprep, {stringprep, start_link, []},
+		  permanent, brutal_kill, worker, [stringprep]},
+    {ok, {{one_for_all, 10, 1}, [StringPrep]}}.

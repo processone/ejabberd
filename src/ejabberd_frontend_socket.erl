@@ -25,6 +25,7 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_frontend_socket).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -48,8 +49,8 @@
 	 sockname/1, peername/1]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, terminate/2, code_change/3]).
 
 -record(state, {sockmod, socket, receiver}).
 
@@ -68,30 +69,30 @@ start_link(Module, SockMod, Socket, Opts, Receiver) ->
 
 start(Module, SockMod, Socket, Opts) ->
     case Module:socket_type() of
-	xml_stream ->
-	    MaxStanzaSize =
-		case lists:keysearch(max_stanza_size, 1, Opts) of
-		    {value, {_, Size}} -> Size;
-		    _ -> infinity
-		end,
-	    Receiver = ejabberd_receiver:start(Socket, SockMod, none, MaxStanzaSize),
-	    case SockMod:controlling_process(Socket, Receiver) of
-		ok ->
-		    ok;
-		{error, _Reason} ->
-		    SockMod:close(Socket)
-	    end,
-	    supervisor:start_child(ejabberd_frontend_socket_sup,
-				   [Module, SockMod, Socket, Opts, Receiver]);
-	raw ->
-	    %{ok, Pid} = Module:start({SockMod, Socket}, Opts),
-	    %case SockMod:controlling_process(Socket, Pid) of
-	    %    ok ->
-	    %        ok;
-	    %    {error, _Reason} ->
-	    %        SockMod:close(Socket)
-	    %end
-	    todo
+      xml_stream ->
+	  MaxStanzaSize = case lists:keysearch(max_stanza_size, 1,
+					       Opts)
+			      of
+			    {value, {_, Size}} -> Size;
+			    _ -> infinity
+			  end,
+	  Receiver = ejabberd_receiver:start(Socket, SockMod,
+					     none, MaxStanzaSize),
+	  case SockMod:controlling_process(Socket, Receiver) of
+	    ok -> ok;
+	    {error, _Reason} -> SockMod:close(Socket)
+	  end,
+	  supervisor:start_child(ejabberd_frontend_socket_sup,
+				 [Module, SockMod, Socket, Opts, Receiver]);
+      raw ->
+	  %{ok, Pid} = Module:start({SockMod, Socket}, Opts),
+	  %case SockMod:controlling_process(Socket, Pid) of
+	  %    ok ->
+	  %        ok;
+	  %    {error, _Reason} ->
+	  %        SockMod:close(Socket)
+	  %end
+	  todo
     end.
 
 starttls(FsmRef, _TLSOpts) ->
@@ -108,8 +109,7 @@ compress(FsmRef) ->
     FsmRef.
 
 compress(FsmRef, Data) ->
-    gen_server:call(FsmRef, {compress, Data}),
-    FsmRef.
+    gen_server:call(FsmRef, {compress, Data}), FsmRef.
 
 reset_stream(FsmRef) ->
     gen_server:call(FsmRef, reset_stream).
@@ -120,8 +120,7 @@ send(FsmRef, Data) ->
 change_shaper(FsmRef, Shaper) ->
     gen_server:call(FsmRef, {change_shaper, Shaper}).
 
-monitor(FsmRef) ->
-    erlang:monitor(process, FsmRef).
+monitor(FsmRef) -> erlang:monitor(process, FsmRef).
 
 get_sockmod(FsmRef) ->
     gen_server:call(FsmRef, get_sockmod).
@@ -132,11 +131,9 @@ get_peer_certificate(FsmRef) ->
 get_verify_result(FsmRef) ->
     gen_server:call(FsmRef, get_verify_result).
 
-close(FsmRef) ->
-    gen_server:call(FsmRef, close).
+close(FsmRef) -> gen_server:call(FsmRef, close).
 
-sockname(FsmRef) ->
-    gen_server:call(FsmRef, sockname).
+sockname(FsmRef) -> gen_server:call(FsmRef, sockname).
 
 peername(_FsmRef) ->
     %% TODO: Frontend improvements planned by Aleksey
@@ -156,7 +153,6 @@ peername(_FsmRef) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Module, SockMod, Socket, Opts, Receiver]) ->
-    %% TODO: monitor the receiver
     Node = ejabberd_node_groups:get_closest_node(backend),
     {SockMod2, Socket2} = check_starttls(SockMod, Socket, Receiver, Opts),
     {ok, Pid} =
@@ -188,7 +184,8 @@ handle_call({starttls, TLSOpts, Data}, _From, State) ->
     catch (State#state.sockmod):send(
 	    State#state.socket, Data),
     Reply = ok,
-    {reply, Reply, State#state{socket = TLSSocket, sockmod = tls},
+    {reply, Reply,
+     State#state{socket = TLSSocket, sockmod = tls},
      ?HIBERNATE_TIMEOUT};
 
 handle_call(compress, _From, State) ->
@@ -208,42 +205,35 @@ handle_call({compress, Data}, _From, State) ->
     catch (State#state.sockmod):send(
 	    State#state.socket, Data),
     Reply = ok,
-    {reply, Reply, State#state{socket = ZlibSocket, sockmod = ejabberd_zlib},
+    {reply, Reply,
+     State#state{socket = ZlibSocket, sockmod = ejabberd_zlib},
      ?HIBERNATE_TIMEOUT};
-
 handle_call(reset_stream, _From, State) ->
     ejabberd_receiver:reset_stream(State#state.receiver),
     Reply = ok,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call({send, Data}, _From, State) ->
-    catch (State#state.sockmod):send(
-	    State#state.socket, Data),
+    catch (State#state.sockmod):send(State#state.socket, Data),
     Reply = ok,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call({change_shaper, Shaper}, _From, State) ->
-    ejabberd_receiver:change_shaper(State#state.receiver, Shaper),
+    ejabberd_receiver:change_shaper(State#state.receiver,
+				    Shaper),
     Reply = ok,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call(get_sockmod, _From, State) ->
     Reply = State#state.sockmod,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call(get_peer_certificate, _From, State) ->
     Reply = tls:get_peer_certificate(State#state.socket),
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call(get_verify_result, _From, State) ->
     Reply = tls:get_verify_result(State#state.socket),
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call(close, _From, State) ->
     ejabberd_receiver:close(State#state.receiver),
     Reply = ok,
     {stop, normal, Reply, State};
-
 handle_call(sockname, _From, State) ->
     #state{sockmod = SockMod, socket = Socket} = State,
     Reply =
@@ -254,21 +244,15 @@ handle_call(sockname, _From, State) ->
 		SockMod:sockname(Socket)
 	end,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call(peername, _From, State) ->
     #state{sockmod = SockMod, socket = Socket} = State,
-    Reply =
-	case SockMod of
-	    gen_tcp ->
-		inet:peername(Socket);
-	    _ ->
-		SockMod:peername(Socket)
-	end,
+    Reply = case SockMod of
+	      gen_tcp -> inet:peername(Socket);
+	      _ -> SockMod:peername(Socket)
+	    end,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
-
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State, ?HIBERNATE_TIMEOUT}.
+    Reply = ok, {reply, Reply, State, ?HIBERNATE_TIMEOUT}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -286,7 +270,8 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info(timeout, State) ->
-    proc_lib:hibernate(gen_server, enter_loop, [?MODULE, [], State]),
+    proc_lib:hibernate(gen_server, enter_loop,
+		       [?MODULE, [], State]),
     {noreply, State, ?HIBERNATE_TIMEOUT};
 handle_info(_Info, State) ->
     {noreply, State, ?HIBERNATE_TIMEOUT}.
@@ -298,15 +283,13 @@ handle_info(_Info, State) ->
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
-    ok.
+terminate(_Reason, _State) -> ok.
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
 %% Description: Convert process state when code is changed
 %%--------------------------------------------------------------------
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
 %%% Internal functions

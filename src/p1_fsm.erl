@@ -126,8 +126,6 @@
 	 start_timer/2,send_event_after/2,cancel_timer/1,
 	 enter_loop/4, enter_loop/5, enter_loop/6, wake_hib/7]).
 
--export([behaviour_info/1]).
-
 %% Internal exports
 -export([init_it/6, print_event/3,
 	 system_continue/3,
@@ -139,17 +137,53 @@
 
 %%% Internal gen_fsm state
 %%% This state is used to defined resource control values:
--record(limits, {max_queue}).
+-record(limits, {max_queue :: non_neg_integer()}).
 
 %%% ---------------------------------------------------
 %%% Interface functions.
 %%% ---------------------------------------------------
 
-behaviour_info(callbacks) ->
-    [{init,1},{handle_event,3},{handle_sync_event,4},{handle_info,3},
-     {terminate,3},{code_change,4}, {print_state,1}];
-behaviour_info(_Other) ->
-    undefined.
+-callback init(Args :: term()) ->
+    {ok, StateName :: atom(), StateData :: term()} |
+    {ok, StateName :: atom(), StateData :: term(), timeout() | hibernate} |
+    {stop, Reason :: term()} | ignore.
+-callback handle_event(Event :: term(), StateName :: atom(),
+                       StateData :: term()) ->
+    {next_state, NextStateName :: atom(), NewStateData :: term()} |
+    {next_state, NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {migrate, NewStateData :: term(),
+     {Node :: atom(), M :: atom(), F :: atom(), A :: list()},
+     Timeout :: timeout()} |
+    {stop, Reason :: term(), NewStateData :: term()}.
+-callback handle_sync_event(Event :: term(), From :: {pid(), Tag :: term()},
+                            StateName :: atom(), StateData :: term()) ->
+    {reply, Reply :: term(), NextStateName :: atom(), NewStateData :: term()} |
+    {reply, Reply :: term(), NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {next_state, NextStateName :: atom(), NewStateData :: term()} |
+    {next_state, NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {migrate, NewStateData :: term(),
+     {Node :: atom(), M :: atom(), F :: atom(), A :: list()},
+     Timeout :: timeout()} |
+    {stop, Reason :: term(), Reply :: term(), NewStateData :: term()} |
+    {stop, Reason :: term(), NewStateData :: term()}.
+-callback handle_info(Info :: term(), StateName :: atom(),
+                      StateData :: term()) ->
+    {next_state, NextStateName :: atom(), NewStateData :: term()} |
+    {next_state, NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {migrate, NewStateData :: term(),
+     {Node :: atom(), M :: atom(), F :: atom(), A :: list()},
+     Timeout :: timeout()} |
+    {stop, Reason :: normal | term(), NewStateData :: term()}.
+-callback terminate(Reason :: normal | shutdown | {shutdown, term()}
+                    | term(), StateName :: atom(), StateData :: term()) ->
+    term().
+-callback code_change(OldVsn :: term() | {down, term()}, StateName :: atom(),
+                      StateData :: term(), Extra :: term()) ->
+    {ok, NextStateName :: atom(), NewStateData :: term()}.
 
 %%% ---------------------------------------------------
 %%% Starts a generic state machine.

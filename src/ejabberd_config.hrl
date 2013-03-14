@@ -19,10 +19,16 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(config, {key, value}).
--record(local_config, {key, value}).
--record(state, {opts = [],
-		hosts = [],
-		override_local = false,
-		override_global = false,
-		override_acls = false}).
+-record(config, {key :: any(), value :: any()}).
+
+-record(local_config, {key :: any(), value :: any()}).
+
+-type config() :: #config{}.
+-type local_config() :: #local_config{}.
+
+-record(state,
+	{opts = []               :: [acl:acl() | config() | local_config()],
+         hosts = []              :: [binary()],
+         override_local = false  :: boolean(),
+	 override_global = false :: boolean(),
+         override_acls = false   :: boolean()}).

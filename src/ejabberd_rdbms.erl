@@ -25,54 +25,51 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_rdbms).
+
 -author('alexey@process-one.net').
 
 -export([start/0]).
+
 -include("ejabberd.hrl").
 
 start() ->
-    %% Check if ejabberd has been compiled with ODBC
     case catch ejabberd_odbc_sup:module_info() of
-	{'EXIT',{undef,_}} ->
-	    ?INFO_MSG("ejabberd has not been compiled with relational database support. Skipping database startup.", []);
-	_ ->
-	    %% If compiled with ODBC, start ODBC on the needed host
-	    start_hosts()
+      {'EXIT', {undef, _}} ->
+	  ?INFO_MSG("ejabberd has not been compiled with "
+		    "relational database support. Skipping "
+		    "database startup.",
+		    []);
+      _ -> start_hosts()
     end.
 
 %% Start relationnal DB module on the nodes where it is needed
 start_hosts() ->
-    lists:foreach(
-      fun(Host) ->
-	      case needs_odbc(Host) of
-		  true  -> start_odbc(Host);
-		  false -> ok
-	      end
-      end, ?MYHOSTS).
+    lists:foreach(fun (Host) ->
+			  case needs_odbc(Host) of
+			    true -> start_odbc(Host);
+			    false -> ok
+			  end
+		  end,
+		  ?MYHOSTS).
 
 %% Start the ODBC module on the given host
 start_odbc(Host) ->
-    Supervisor_name = gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
-    ChildSpec =
-	{Supervisor_name,
-	 {ejabberd_odbc_sup, start_link, [Host]},
-	 transient,
-	 infinity,
-	 supervisor,
-	 [ejabberd_odbc_sup]},
+    Supervisor_name = gen_mod:get_module_proc(Host,
+					      ejabberd_odbc_sup),
+    ChildSpec = {Supervisor_name,
+		 {ejabberd_odbc_sup, start_link, [Host]}, transient,
+		 infinity, supervisor, [ejabberd_odbc_sup]},
     case supervisor:start_child(ejabberd_sup, ChildSpec) of
-	{ok, _PID} ->
-	    ok;
-	_Error ->
-	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n", [Supervisor_name, _Error]),
-	    start_odbc(Host)
+      {ok, _PID} -> ok;
+      _Error ->
+	  ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying."
+		     "..~n",
+		     [Supervisor_name, _Error]),
+	  start_odbc(Host)
     end.
 
 %% Returns true if we have configured odbc_server for the given host
 needs_odbc(Host) ->
     LHost = jlib:nameprep(Host),
-    case ejabberd_config:get_local_option({odbc_server, LHost}) of
-	undefined ->
-	    false;
-	_ -> true
-    end.
+    ejabberd_config:get_local_option(
+      {odbc_server, LHost}, fun(_) -> true end, false).

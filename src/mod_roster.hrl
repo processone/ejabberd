@@ -19,15 +19,24 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(roster, {usj,
-		 us,
-		 jid,
-		 name = "",
-		 subscription = none,
-		 ask = none,
-		 groups = [],
-		 askmessage = [],
-		 xs = []}).
+-record(roster,
+{
+    usj = {<<>>, <<>>, {<<>>, <<>>, <<>>}} :: {binary(), binary(), ljid()} | '_',
+    us = {<<>>, <<>>}                      :: {binary(), binary()} | '_',
+    jid = {<<>>, <<>>, <<>>}               :: ljid(),
+    name = <<>>                            :: binary() | '_',
+    subscription = none                    :: subscription() | '_',
+    ask = none                             :: ask() | '_',
+    groups = []                            :: [binary()] | '_',
+    askmessage = <<"">>                    :: binary() | '_',
+    xs = []                                :: [xmlel()] | '_'
+}).
 
--record(roster_version, {us,
-			version}).
+-record(roster_version,
+{
+    us = {<<>>, <<>>} :: {binary(), binary()},
+    version = <<>>    :: binary()
+}).
+
+-type ask() :: none | in | out | both | subscribe | unsubscribe.
+-type subscription() :: none | both | from | to | remove.

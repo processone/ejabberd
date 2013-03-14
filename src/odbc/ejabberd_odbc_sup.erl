@@ -25,79 +25,53 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_odbc_sup).
+
 -author('alexey@process-one.net').
 
 %% API
--export([start_link/1,
-	 init/1,
-	 add_pid/2,
-	 remove_pid/2,
-	 get_pids/1,
-	 get_random_pid/1
-	]).
+-export([start_link/1, init/1, add_pid/2, remove_pid/2,
+	 get_pids/1, get_random_pid/1]).
 
 -include("ejabberd.hrl").
 
 -define(DEFAULT_POOL_SIZE, 10).
--define(DEFAULT_ODBC_START_INTERVAL, 30). % 30 seconds
 
-% time to wait for the supervisor to start its child before returning
-% a timeout error to the request
--define(CONNECT_TIMEOUT, 500). % milliseconds
+-define(DEFAULT_ODBC_START_INTERVAL, 30).
 
+-define(CONNECT_TIMEOUT, 500).
 
 -record(sql_pool, {host, pid}).
 
 start_link(Host) ->
     mnesia:create_table(sql_pool,
-			[{ram_copies, [node()]},
-			 {type, bag},
+			[{ram_copies, [node()]}, {type, bag},
 			 {local_content, true},
 			 {attributes, record_info(fields, sql_pool)}]),
     mnesia:add_table_copy(sql_pool, node(), ram_copies),
-    F = fun() ->
-		mnesia:delete({sql_pool, Host})
-	end,
+    F = fun () -> mnesia:delete({sql_pool, Host}) end,
     mnesia:ets(F),
-    supervisor:start_link({local, gen_mod:get_module_proc(Host, ?MODULE)},
+    supervisor:start_link({local,
+			   gen_mod:get_module_proc(Host, ?MODULE)},
 			  ?MODULE, [Host]).
 
 init([Host]) ->
-    PoolSize = case ejabberd_config:get_local_option({odbc_pool_size, Host}) of
-		   I when is_integer(I) ->
-		       I;
-	    undefined ->
-		       ?DEFAULT_POOL_SIZE;
-		   Other ->
-		       ?ERROR_MSG("Wrong odbc_pool_size definition '~p' "
-				  "for host ~p, default to ~p~n",
-				  [Other, Host, ?DEFAULT_POOL_SIZE]),
-		       ?DEFAULT_POOL_SIZE
-	       end,
-    StartInterval = case ejabberd_config:get_local_option({odbc_start_interval,
-							   Host}) of
-			Interval when is_integer(Interval) ->
-			    Interval;
-			undefined ->
-			    ?DEFAULT_ODBC_START_INTERVAL;
-			_Other2 ->
-			    ?ERROR_MSG("Wrong odbc_start_interval "
-				       "definition '~p' for host ~p, "
-				       "defaulting to ~p~n",
-				       [_Other2, Host,
-					?DEFAULT_ODBC_START_INTERVAL]),
-			    ?DEFAULT_ODBC_START_INTERVAL
-		    end,
-    {ok, {{one_for_one, PoolSize*10, 1},
-	  lists:map(
-	    fun(I) ->
-		    {I,
-		     {ejabberd_odbc, start_link, [Host, StartInterval*1000]},
-		     transient,
-                     2000,
-		     worker,
-		     [?MODULE]}
-	    end, lists:seq(1, PoolSize))}}.
+    PoolSize = ejabberd_config:get_local_option(
+                 {odbc_pool_size, Host},
+                 fun(I) when is_integer(I), I>0 -> I end,
+                 ?DEFAULT_POOL_SIZE),
+    StartInterval = ejabberd_config:get_local_option(
+                      {odbc_start_interval, Host},
+                      fun(I) when is_integer(I), I>0 -> I end,
+                      ?DEFAULT_ODBC_START_INTERVAL),
+    {ok,
+     {{one_for_one, PoolSize * 10, 1},
+      lists:map(fun (I) ->
+			{I,
+			 {ejabberd_odbc, start_link,
+			  [Host, StartInterval * 1000]},
+			 transient, 2000, worker, [?MODULE]}
+		end,
+		lists:seq(1, PoolSize))}}.
 
 get_pids(Host) ->
     Rs = mnesia:dirty_read(sql_pool, Host),
@@ -108,17 +82,13 @@ get_random_pid(Host) ->
     lists:nth(erlang:phash(now(), length(Pids)), Pids).
 
 add_pid(Host, Pid) ->
-    F = fun() ->
-		mnesia:write(
-		  #sql_pool{host = Host,
-			    pid = Pid})
+    F = fun () ->
+		mnesia:write(#sql_pool{host = Host, pid = Pid})
 	end,
     mnesia:ets(F).
 
 remove_pid(Host, Pid) ->
-    F = fun() ->
-		mnesia:delete_object(
-		  #sql_pool{host = Host,
-			    pid = Pid})
+    F = fun () ->
+		mnesia:delete_object(#sql_pool{host = Host, pid = Pid})
 	end,
     mnesia:ets(F).

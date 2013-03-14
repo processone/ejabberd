@@ -273,3 +273,12 @@ CREATE TABLE motd (
     xml text,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
+
+CREATE TABLE caps_features (
+    node varchar(250) NOT NULL,
+    subnode varchar(250) NOT NULL,
+    feature text,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8;
+
+CREATE INDEX i_caps_features_node_subnode ON caps_features(node(75), subnode(75));

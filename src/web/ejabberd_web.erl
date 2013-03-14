@@ -2,6 +2,7 @@
 %%% File    : ejabberd_web.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : 
+%%% Purpose :
 %%% Created : 28 Feb 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -25,56 +26,80 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_web).
+
 -author('alexey@process-one.net').
 
 %% External exports
--export([make_xhtml/1, make_xhtml/2,
-         error/1]).
+-export([make_xhtml/1, make_xhtml/2, error/1]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
--include("ejabberd_http.hrl").
 
+-include("jlib.hrl").
+
+-include("ejabberd_http.hrl").
 
 %% XXX bard: there are variants of make_xhtml in ejabberd_http and
 %% ejabberd_web_admin.  It might be a good idea to centralize it here
 %% and also create an ejabberd_web.hrl file holding the macros, so
 %% that third parties can use ejabberd_web as an "utility" library.
 
-make_xhtml(Els) ->
-    make_xhtml([], Els).
+make_xhtml(Els) -> make_xhtml([], Els).
 
 make_xhtml(HeadEls, Els) ->
-    {xmlelement, "html", [{"xmlns", "http://www.w3.org/1999/xhtml"},
-			  {"xml:lang", "en"},
-			  {"lang", "en"}],
-     [{xmlelement, "head", [],
-       [{xmlelement, "meta", [{"http-equiv", "Content-Type"},
-			      {"content", "text/html; charset=utf-8"}], []}
-	| HeadEls]},
-      {xmlelement, "body", [], Els}
-     ]}.
+    #xmlel{name = <<"html">>,
+	   attrs =
+	       [{<<"xmlns">>, <<"http://www.w3.org/1999/xhtml">>},
+		{<<"xml:lang">>, <<"en">>}, {<<"lang">>, <<"en">>}],
+	   children =
+	       [#xmlel{name = <<"head">>, attrs = [],
+		       children =
+			   [#xmlel{name = <<"meta">>,
+				   attrs =
+				       [{<<"http-equiv">>, <<"Content-Type">>},
+					{<<"content">>,
+					 <<"text/html; charset=utf-8">>}],
+				   children = []}
+			    | HeadEls]},
+		#xmlel{name = <<"body">>, attrs = [], children = Els}]}.
 
+-define(X(Name),
+	#xmlel{name = Name, attrs = [], children = []}).
 
--define(X(Name), {xmlelement, Name, [], []}).
--define(XA(Name, Attrs), {xmlelement, Name, Attrs, []}).
--define(XE(Name, Els), {xmlelement, Name, [], Els}).
--define(XAE(Name, Attrs, Els), {xmlelement, Name, Attrs, Els}).
+-define(XA(Name, Attrs),
+	#xmlel{name = Name, attrs = Attrs, children = []}).
+
+-define(XE(Name, Els),
+	#xmlel{name = Name, attrs = [], children = Els}).
+
+-define(XAE(Name, Attrs, Els),
+	#xmlel{name = Name, attrs = Attrs, children = Els}).
+
 -define(C(Text), {xmlcdata, Text}).
--define(XC(Name, Text), ?XE(Name, [?C(Text)])).
--define(XAC(Name, Attrs, Text), ?XAE(Name, Attrs, [?C(Text)])).
 
--define(LI(Els), ?XE("li", Els)).
--define(A(URL, Els), ?XAE("a", [{"href", URL}], Els)).
+-define(XC(Name, Text), ?XE(Name, [?C(Text)])).
+
+-define(XAC(Name, Attrs, Text),
+	?XAE(Name, Attrs, [?C(Text)])).
+
+-define(LI(Els), ?XE(<<"li">>, Els)).
+
+-define(A(URL, Els),
+	?XAE(<<"a">>, [{<<"href">>, URL}], Els)).
+
 -define(AC(URL, Text), ?A(URL, [?C(Text)])).
--define(P, ?X("p")).
--define(BR, ?X("br")).
+
+-define(P, ?X(<<"p">>)).
+
+-define(BR, ?X(<<"br">>)).
+
 -define(INPUT(Type, Name, Value),
-	?XA("input", [{"type", Type},
-		      {"name", Name},
-		      {"value", Value}])).
+	?XA(<<"input">>,
+	    [{<<"type">>, Type}, {<<"name">>, Name},
+	     {<<"value">>, Value}])).
 
 error(not_found) ->
-    {404, [], make_xhtml([?XC("h1", "404 Not Found")])};
+    {404, [],
+     make_xhtml([?XC(<<"h1">>, <<"404 Not Found">>)])};
 error(not_allowed) ->
-    {401, [], make_xhtml([?XC("h1", "401 Unauthorized")])}.
+    {401, [],
+     make_xhtml([?XC(<<"h1">>, <<"401 Unauthorized">>)])}.

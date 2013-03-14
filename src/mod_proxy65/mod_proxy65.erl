@@ -25,9 +25,11 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_proxy65).
+
 -author('xram@jabber.ru').
 
 -behaviour(gen_mod).
+
 -behaviour(supervisor).
 
 %% gen_mod callbacks.
@@ -43,15 +45,12 @@
 
 start(Host, Opts) ->
     case mod_proxy65_service:add_listener(Host, Opts) of
-	{error, _} = Err ->
-	    erlang:error(Err);
-	_ ->
-	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	    ChildSpec = {
-	      Proc, {?MODULE, start_link, [Host, Opts]},
-	      transient, infinity, supervisor, [?MODULE]
-	     },
-	    supervisor:start_child(ejabberd_sup, ChildSpec)
+      {error, _} = Err -> erlang:error(Err);
+      _ ->
+	  Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+	  ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
+		       transient, infinity, supervisor, [?MODULE]},
+	  supervisor:start_child(ejabberd_sup, ChildSpec)
     end.
 
 stop(Host) ->
@@ -62,20 +61,22 @@ stop(Host) ->
 
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:start_link({local, Proc}, ?MODULE, [Host, Opts]).
+    supervisor:start_link({local, Proc}, ?MODULE,
+			  [Host, Opts]).
 
 init([Host, Opts]) ->
-    Service =
-	{mod_proxy65_service, {mod_proxy65_service, start_link, [Host, Opts]},
-	 transient, 5000, worker, [mod_proxy65_service]},
-    StreamSupervisor =
-	{ejabberd_mod_proxy65_sup,
-	 {ejabberd_tmp_sup, start_link,
-	  [gen_mod:get_module_proc(Host, ejabberd_mod_proxy65_sup),
-	   mod_proxy65_stream]},
-      transient, infinity, supervisor, [ejabberd_tmp_sup]},
-    StreamManager =
-	{mod_proxy65_sm, {mod_proxy65_sm, start_link, [Host, Opts]},
-	 transient, 5000, worker, [mod_proxy65_sm]},
-    {ok, {{one_for_one, 10, 1},
-	  [StreamManager, StreamSupervisor, Service]}}.
+    Service = {mod_proxy65_service,
+	       {mod_proxy65_service, start_link, [Host, Opts]},
+	       transient, 5000, worker, [mod_proxy65_service]},
+    StreamSupervisor = {ejabberd_mod_proxy65_sup,
+			{ejabberd_tmp_sup, start_link,
+			 [gen_mod:get_module_proc(Host,
+						  ejabberd_mod_proxy65_sup),
+			  mod_proxy65_stream]},
+			transient, infinity, supervisor, [ejabberd_tmp_sup]},
+    StreamManager = {mod_proxy65_sm,
+		     {mod_proxy65_sm, start_link, [Host, Opts]}, transient,
+		     5000, worker, [mod_proxy65_sm]},
+    {ok,
+     {{one_for_one, 10, 1},
+      [StreamManager, StreamSupervisor, Service]}}.

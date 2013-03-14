@@ -53,6 +53,7 @@ if [ "$EJABBERD_DOC_PATH" = "" ] ; then
 fi
 if [ "$ERLANG_NODE_ARG" != "" ] ; then
     ERLANG_NODE=$ERLANG_NODE_ARG
+    NODE=${ERLANG_NODE%@*}
 fi
 
 # check the proper system user is used

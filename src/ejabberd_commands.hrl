@@ -19,10 +19,32 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(ejabberd_commands, {name, tags = [],
-			   desc = "", longdesc = "",
-			   module, function,
-			   args = [], result = rescode}).
+-type aterm() :: {atom(), atype()}.
+-type atype() :: integer | string | binary |
+                 {tuple, [aterm()]} | {list, aterm()}.
+-type rterm() :: {atom(), rtype()}.
+-type rtype() :: integer | string | atom |
+                 {tuple, [rterm()]} | {list, rterm()} |
+                 rescode | restuple.
+
+-record(ejabberd_commands,
+	{name                    :: atom(),
+         tags = []               :: [atom()] | '_' | '$2',
+         desc = ""               :: string() | '_' | '$3',
+         longdesc = ""           :: string() | '_',
+	 module                  :: atom(),
+         function                :: atom(),
+         args = []               :: [aterm()] | '_' | '$1' | '$2',
+         result = {res, rescode} :: rterm() | '_' | '$2'}).
+
+-type ejabberd_commands() :: #ejabberd_commands{name :: atom(),
+                                                tags :: [atom()],
+                                                desc :: string(),
+                                                longdesc :: string(),
+                                                module :: atom(),
+                                                function :: atom(),
+                                                args :: [aterm()],
+                                                result :: rterm()}.
 
 %% @type ejabberd_commands() = #ejabberd_commands{
 %%    name = atom(),
@@ -50,3 +72,4 @@
 
 %% @type rterm() = {Name::atom(), Type::rtype()}.
 %% A result term is a tuple with the term name and the term type.
+

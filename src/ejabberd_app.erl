@@ -57,8 +57,6 @@ start(normal, _Args) ->
     ejabberd_config:start(),
     ejabberd_check:config(),
     connect_nodes(),
-    %% Loading ASN.1 driver explicitly to avoid races in LDAP
-    catch asn1rt:load_driver(),
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
     ejabberd_auth:start(),
@@ -135,41 +133,48 @@ db_init() ->
 start_modules() ->
     lists:foreach(
       fun(Host) ->
-	      case ejabberd_config:get_local_option({modules, Host}) of
-		  undefined ->
-		      ok;
-		  Modules ->
-		      lists:foreach(
-			fun({Module, Args}) ->
-				gen_mod:start_module(Host, Module, Args)
-			end, Modules)
-	      end
+              Modules = ejabberd_config:get_local_option(
+                          {modules, Host},
+                          fun(Mods) ->
+                                  lists:map(
+                                    fun({M, A}) when is_atom(M), is_list(A) ->
+                                            {M, A}
+                                    end, Mods)
+                          end, []),
+              lists:foreach(
+                fun({Module, Args}) ->
+                        gen_mod:start_module(Host, Module, Args)
+                end, Modules)
       end, ?MYHOSTS).
 
 %% Stop all the modules in all the hosts
 stop_modules() ->
     lists:foreach(
       fun(Host) ->
-	      case ejabberd_config:get_local_option({modules, Host}) of
-		  undefined ->
-		      ok;
-		  Modules ->
-		      lists:foreach(
-			fun({Module, _Args}) ->
-				gen_mod:stop_module_keep_config(Host, Module)
-			end, Modules)
-	      end
+              Modules = ejabberd_config:get_local_option(
+                          {modules, Host},
+                          fun(Mods) ->
+                                  lists:map(
+                                    fun({M, A}) when is_atom(M), is_list(A) ->
+                                            {M, A}
+                                    end, Mods)
+                          end, []),
+              lists:foreach(
+                fun({Module, _Args}) ->
+                        gen_mod:stop_module_keep_config(Host, Module)
+                end, Modules)
       end, ?MYHOSTS).
 
 connect_nodes() ->
-    case ejabberd_config:get_local_option(cluster_nodes) of
-	undefined ->
-	    ok;
-	Nodes when is_list(Nodes) ->
-	    lists:foreach(fun(Node) ->
-				  net_kernel:connect_node(Node)
-			  end, Nodes)
-    end.
+    Nodes = ejabberd_config:get_local_option(
+              cluster_nodes,
+              fun(Ns) ->
+                      true = lists:all(fun is_atom/1, Ns),
+                      Ns
+              end, []),
+    lists:foreach(fun(Node) ->
+                          net_kernel:connect_node(Node)
+                  end, Nodes).
 
 %% @spec () -> string()
 %% @doc Returns the full path to the ejabberd log file.

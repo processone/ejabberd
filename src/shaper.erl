@@ -25,54 +25,63 @@
 %%%----------------------------------------------------------------------
 
 -module(shaper).
+
 -author('alexey@process-one.net').
 
 -export([new/1, new1/1, update/2]).
 
 -include("ejabberd.hrl").
 
--record(maxrate, {maxrate, lastrate, lasttime}).
+-record(maxrate, {maxrate  = 0   :: integer(),
+                  lastrate = 0.0 :: float(),
+                  lasttime = 0   :: integer()}).
 
+-type maxrate() :: none | #maxrate{}.
+
+-type shaper() :: maxrate() | {maxrate(), integer()}.
+
+-export_type([shaper/0]).
+
+-spec new(atom()) -> maxrate().
 
 new(Name) ->
-    Data = case ejabberd_config:get_global_option({shaper, Name, global}) of
-	       undefined ->
-		   none;
-	       D ->
-		   D
-	   end,
+    Data = ejabberd_config:get_global_option(
+             {shaper, Name, global},
+             fun({maxrate, R}) when is_integer(R), R>0 ->
+                     {maxrate, R};
+                (none) ->
+                     none
+             end, none),
     new1(Data).
 
+-spec new1(none | {maxrate, integer()}) -> maxrate().
 
-new1(none) ->
-    none;
+new1(none) -> none;
 new1({maxrate, MaxRate}) ->
-    #maxrate{maxrate = MaxRate,
-	     lastrate = 0,
+    #maxrate{maxrate = MaxRate, lastrate = 0.0,
 	     lasttime = now_to_usec(now())}.
 
+-spec update(maxrate(), integer()) -> {maxrate(), integer()}.
 
-update(none, _Size) ->
-    {none, 0};
+update(none, _Size) -> {none, 0};
 update(#maxrate{} = State, Size) ->
     MinInterv = 1000 * Size /
-	(2 * State#maxrate.maxrate - State#maxrate.lastrate),
-    Interv = (now_to_usec(now()) - State#maxrate.lasttime) / 1000,
+		  (2 * State#maxrate.maxrate - State#maxrate.lastrate),
+    Interv = (now_to_usec(now()) - State#maxrate.lasttime) /
+	       1000,
     ?DEBUG("State: ~p, Size=~p~nM=~p, I=~p~n",
-              [State, Size, MinInterv, Interv]),
-    Pause = if
-		MinInterv > Interv ->
-		    1 + trunc(MinInterv - Interv);
-		true ->
-		    0
+	   [State, Size, MinInterv, Interv]),
+    Pause = if MinInterv > Interv ->
+		   1 + trunc(MinInterv - Interv);
+	       true -> 0
 	    end,
     NextNow = now_to_usec(now()) + Pause * 1000,
-    {State#maxrate{
-       lastrate = (State#maxrate.lastrate +
-		   1000000 * Size / (NextNow - State#maxrate.lasttime))/2,
-       lasttime = NextNow},
+    {State#maxrate{lastrate =
+		       (State#maxrate.lastrate +
+			  1000000 * Size / (NextNow - State#maxrate.lasttime))
+			 / 2,
+		   lasttime = NextNow},
      Pause}.
 
-
 now_to_usec({MSec, Sec, USec}) ->
-    (MSec*1000000 + Sec)*1000000 + USec.
+    (MSec * 1000000 + Sec) * 1000000 + USec.

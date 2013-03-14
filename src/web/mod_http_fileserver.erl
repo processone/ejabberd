@@ -25,6 +25,7 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_http_fileserver).
+
 -author('mmirra@process-one.net').
 
 -behaviour(gen_mod).
@@ -47,58 +48,66 @@
 -export([reopen_log/1]).
 
 -include("ejabberd.hrl").
+
 -include("jlib.hrl").
+
 -include_lib("kernel/include/file.hrl").
 
 %%-include("ejabberd_http.hrl").
 %% TODO: When ejabberd-modules SVN gets the new ejabberd_http.hrl, delete this code:
--record(request, {method,
-		  path,
-		  q = [],
-		  us,
-		  auth,
-		  lang = "",
-		  data = "",
-		  ip,
-		  host, % string()
-		  port, % integer()
-		  tp, % transfer protocol = http | https
-		  headers
-		 }).
+-record(request,
+	{method, path, q = [], us, auth, lang = <<"">>,
+	 data = <<"">>, ip, host, port, tp, headers}).
 
 -ifdef(SSL40).
+
 -define(STRING2LOWER, string).
+
 -else.
+
 -ifdef(SSL39).
+
 -define(STRING2LOWER, string).
+
 -else.
+
 -define(STRING2LOWER, httpd_util).
--endif.
+
 -endif.
 
--record(state, {host, docroot, accesslog, accesslogfd, directory_indices,
-                custom_headers, default_content_type, content_types = []}).
+-endif.
+
+-record(state,
+	{host, docroot, accesslog, accesslogfd,
+	 directory_indices, custom_headers, default_content_type,
+	 content_types = []}).
 
 -define(PROCNAME, ejabberd_mod_http_fileserver).
 
 %% Response is {DataSize, Code, [{HeaderKey, HeaderValue}], Data}
--define(HTTP_ERR_FILE_NOT_FOUND, {-1, 404, [], "Not found"}).
--define(HTTP_ERR_FORBIDDEN,      {-1, 403, [], "Forbidden"}).
+-define(HTTP_ERR_FILE_NOT_FOUND,
+	{-1, 404, [], <<"Not found">>}).
 
--define(DEFAULT_CONTENT_TYPE, "application/octet-stream").
--define(DEFAULT_CONTENT_TYPES, [{".css",  "text/css"},
-                                {".gif",  "image/gif"},
-                                {".html", "text/html"},
-                                {".jar",  "application/java-archive"},
-                                {".jpeg", "image/jpeg"},
-                                {".jpg",  "image/jpeg"},
-                                {".js",   "text/javascript"},
-                                {".png",  "image/png"},
-                                {".svg",  "image/svg+xml"},
-                                {".txt",  "text/plain"},
-                                {".xml",  "application/xml"},
-                                {".xpi",  "application/x-xpinstall"},
-                                {".xul",  "application/vnd.mozilla.xul+xml"}]).
+-define(HTTP_ERR_FORBIDDEN,
+	{-1, 403, [], <<"Forbidden">>}).
+
+-define(DEFAULT_CONTENT_TYPE,
+	<<"application/octet-stream">>).
+
+-define(DEFAULT_CONTENT_TYPES,
+	[{<<".css">>, <<"text/css">>},
+	 {<<".gif">>, <<"image/gif">>},
+	 {<<".html">>, <<"text/html">>},
+	 {<<".jar">>, <<"application/java-archive">>},
+	 {<<".jpeg">>, <<"image/jpeg">>},
+	 {<<".jpg">>, <<"image/jpeg">>},
+	 {<<".js">>, <<"text/javascript">>},
+	 {<<".png">>, <<"image/png">>},
+	 {<<".svg">>, <<"image/svg+xml">>},
+	 {<<".txt">>, <<"text/plain">>},
+	 {<<".xml">>, <<"application/xml">>},
+	 {<<".xpi">>, <<"application/x-xpinstall">>},
+	 {<<".xul">>, <<"application/vnd.mozilla.xul+xml">>}]).
 
 -compile(export_all).
 
@@ -162,21 +171,33 @@ init([Host, Opts]) ->
     end.
 
 initialize(Host, Opts) ->
-    DocRoot = gen_mod:get_opt(docroot, Opts, undefined),
+    DocRoot = gen_mod:get_opt(docroot, Opts, fun(A) -> A end, undefined),
     check_docroot_defined(DocRoot, Host),
     DRInfo = check_docroot_exists(DocRoot),
     check_docroot_is_dir(DRInfo, DocRoot),
     check_docroot_is_readable(DRInfo, DocRoot),
-    AccessLog = gen_mod:get_opt(accesslog, Opts, undefined),
+    AccessLog = gen_mod:get_opt(accesslog, Opts,
+                                fun iolist_to_binary/1,
+                                undefined),
     AccessLogFD = try_open_log(AccessLog, Host),
-    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts, []),
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
+    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts,
+                                       fun(L) when is_list(L) -> L end,
+                                       []),
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts,
+                                    fun(L) when is_list(L) -> L end,
+                                    []),
     DefaultContentType = gen_mod:get_opt(default_content_type, Opts,
+                                         fun iolist_to_binary/1,
                                          ?DEFAULT_CONTENT_TYPE),
-    ContentTypes = build_list_content_types(gen_mod:get_opt(content_types, Opts, []), ?DEFAULT_CONTENT_TYPES),
+    ContentTypes = build_list_content_types(
+                     gen_mod:get_opt(content_types, Opts,
+                                     fun(L) when is_list(L) -> L end,
+                                     []),
+                     ?DEFAULT_CONTENT_TYPES),
     ?INFO_MSG("initialize: ~n ~p", [ContentTypes]),%+++
     {DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
      CustomHeaders, DefaultContentType, ContentTypes}.
+
 
 %% @spec (AdminCTs::[CT], Default::[CT]) -> [CT]
 %% where CT = {Extension::string(), Value}
@@ -187,32 +208,36 @@ initialize(Host, Opts) ->
 build_list_content_types(AdminCTsUnsorted, DefaultCTsUnsorted) ->
     AdminCTs = lists:ukeysort(1, AdminCTsUnsorted),
     DefaultCTs = lists:ukeysort(1, DefaultCTsUnsorted),
-    CTsUnfiltered = lists:ukeymerge(1, AdminCTs, DefaultCTs),
-    [{Extension, Value} || {Extension, Value} <- CTsUnfiltered, Value /= undefined].
+    CTsUnfiltered = lists:ukeymerge(1, AdminCTs,
+				    DefaultCTs),
+    [{Extension, Value}
+     || {Extension, Value} <- CTsUnfiltered,
+	Value /= undefined].
 
 check_docroot_defined(DocRoot, Host) ->
     case DocRoot of
-	undefined -> throw({undefined_docroot_option, Host});
-	_ -> ok
+      undefined -> throw({undefined_docroot_option, Host});
+      _ -> ok
     end.
 
 check_docroot_exists(DocRoot) ->
     case file:read_file_info(DocRoot) of
-	{error, Reason} -> throw({error_access_docroot, DocRoot, Reason});
-	{ok, FI} -> FI
+      {error, Reason} ->
+	  throw({error_access_docroot, DocRoot, Reason});
+      {ok, FI} -> FI
     end.
 
 check_docroot_is_dir(DRInfo, DocRoot) ->
     case DRInfo#file_info.type of
-	directory -> ok;
-	_ -> throw({docroot_not_directory, DocRoot})
+      directory -> ok;
+      _ -> throw({docroot_not_directory, DocRoot})
     end.
 
 check_docroot_is_readable(DRInfo, DocRoot) ->
     case DRInfo#file_info.access of
-	read -> ok;
-	read_write -> ok;
-	_ -> throw({docroot_not_readable, DocRoot})
+      read -> ok;
+      read_write -> ok;
+      _ -> throw({docroot_not_readable, DocRoot})
     end.
 
 try_open_log(undefined, _Host) ->
@@ -341,12 +366,14 @@ serve_index(FileName, [Index | T], CH, DefaultContentType, ContentTypes) ->
 %% and serve it up.
 serve_file(FileInfo, FileName, CustomHeaders, DefaultContentType, ContentTypes) ->
     ?DEBUG("Delivering: ~s", [FileName]),
+    ContentType = content_type(FileName, DefaultContentType,
+			       ContentTypes),
     {ok, FileContents} = file:read_file(FileName),
-    ContentType = content_type(FileName, DefaultContentType, ContentTypes),
-    {FileInfo#file_info.size,
-     200, [{"Server", "ejabberd"},
-           {"Last-Modified", last_modified(FileInfo)},
-           {"Content-Type", ContentType} | CustomHeaders],
+    {FileInfo#file_info.size, 200,
+     [{<<"Server">>, <<"ejabberd">>},
+      {<<"Last-Modified">>, last_modified(FileInfo)},
+      {<<"Content-Type">>, ContentType}
+      | CustomHeaders],
      FileContents}.
 
 %%----------------------------------------------------------------------
@@ -406,8 +433,8 @@ add_to_log(File, FileSize, Code, Request) ->
 
 find_header(Header, Headers, Default) ->
     case lists:keysearch(Header, 1, Headers) of
-        {value, {_, Value}} -> Value;
-        false               -> Default
+      {value, {_, Value}} -> Value;
+      false -> Default
     end.
 
 %%----------------------------------------------------------------------
@@ -426,8 +453,8 @@ join([H | T], Separator) ->
 content_type(Filename, DefaultContentType, ContentTypes) ->
     Extension = ?STRING2LOWER:to_lower(filename:extension(Filename)),
     case lists:keysearch(Extension, 1, ContentTypes) of
-        {value, {_, ContentType}} -> ContentType;
-        false                     -> DefaultContentType
+      {value, {_, ContentType}} -> ContentType;
+      false -> DefaultContentType
     end.
 
 last_modified(FileInfo) ->

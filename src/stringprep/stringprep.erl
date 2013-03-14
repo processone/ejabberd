@@ -25,89 +25,81 @@
 %%%----------------------------------------------------------------------
 
 -module(stringprep).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
 
--export([start/0, start_link/0,
-	 tolower/1,
-	 nameprep/1,
-	 nodeprep/1,
-	 resourceprep/1]).
+-export([start/0, start_link/0, tolower/1, nameprep/1,
+	 nodeprep/1, resourceprep/1]).
 
 %% Internal exports, call-back functions.
--export([init/1,
-	 handle_call/3,
-	 handle_cast/2,
-	 handle_info/2,
-	 code_change/3,
-	 terminate/2]).
+-export([init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, code_change/3, terminate/2]).
 
 -define(STRINGPREP_PORT, stringprep_port).
 
 -define(NAMEPREP_COMMAND, 1).
+
 -define(NODEPREP_COMMAND, 2).
+
 -define(RESOURCEPREP_COMMAND, 3).
 
 start() ->
     gen_server:start({local, ?MODULE}, ?MODULE, [], []).
 
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [],
+			  []).
 
 init([]) ->
-    case erl_ddll:load_driver(ejabberd:get_so_path(), stringprep_drv) of
-	ok -> ok;
-	{error, already_loaded} -> ok
+    case erl_ddll:load_driver(ejabberd:get_so_path(),
+			      stringprep_drv)
+	of
+      ok -> ok;
+      {error, already_loaded} -> ok
     end,
     Port = open_port({spawn, "stringprep_drv"}, []),
     register(?STRINGPREP_PORT, Port),
     {ok, Port}.
 
-
 %%% --------------------------------------------------------
 %%% The call-back functions.
 %%% --------------------------------------------------------
 
-handle_call(_, _, State) ->
-    {noreply, State}.
+handle_call(_, _, State) -> {noreply, State}.
 
-handle_cast(_, State) ->
-    {noreply, State}.
+handle_cast(_, State) -> {noreply, State}.
 
 handle_info({'EXIT', Port, Reason}, Port) ->
     {stop, {port_died, Reason}, Port};
 handle_info({'EXIT', _Pid, _Reason}, Port) ->
     {noreply, Port};
-handle_info(_, State) ->
-    {noreply, State}.
+handle_info(_, State) -> {noreply, State}.
 
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-terminate(_Reason, Port) ->
-    Port ! {self, close},
-    ok.
+terminate(_Reason, Port) -> Port ! {self, close}, ok.
 
+-spec tolower(binary()) -> binary() | error.
 
+tolower(String) -> control(0, String).
 
-tolower(String) ->
-    control(0, String).
+-spec nameprep(binary()) -> binary() | error.
 
-nameprep(String) ->
-    control(?NAMEPREP_COMMAND, String).
+nameprep(String) -> control(?NAMEPREP_COMMAND, String).
 
-nodeprep(String) ->
-    control(?NODEPREP_COMMAND, String).
+-spec nodeprep(binary()) -> binary() | error.
+
+nodeprep(String) -> control(?NODEPREP_COMMAND, String).
+
+-spec resourceprep(binary()) -> binary() | error.
 
 resourceprep(String) ->
     control(?RESOURCEPREP_COMMAND, String).
 
 control(Command, String) ->
     case port_control(?STRINGPREP_PORT, Command, String) of
-	[0 | _] -> error;
-	[1 | Res] -> Res
+      <<0, _/binary>> -> error;
+      <<1, Res/binary>> -> Res
     end.
-
-
-

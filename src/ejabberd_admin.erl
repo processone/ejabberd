@@ -117,17 +117,17 @@ commands() ->
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
 			module = ?MODULE, function = register,
-			args = [{user, string}, {host, string}, {password, string}],
+			args = [{user, binary}, {host, binary}, {password, binary}],
 			result = {res, restuple}},
      #ejabberd_commands{name = unregister, tags = [accounts],
 			desc = "Unregister a user",
 			module = ?MODULE, function = unregister,
-			args = [{user, string}, {host, string}],
+			args = [{user, binary}, {host, binary}],
 			result = {res, restuple}},
      #ejabberd_commands{name = registered_users, tags = [accounts],
 			desc = "List all registered users in HOST",
 			module = ?MODULE, function = registered_users,
-			args = [{host, string}],
+			args = [{host, binary}],
 			result = {users, {list, {username, string}}}},
 	 #ejabberd_commands{name = registered_vhosts, tags = [server],
 			desc = "List all registered vhosts in SERVER",
@@ -157,6 +157,11 @@ commands() ->
 			desc = "Export data of users in a host to PIEFXIS files (XEP-0227)",
 			module = ejabberd_piefxis, function = export_host,
 			args = [{dir, string}, {host, string}], result = {res, rescode}},
+
+     #ejabberd_commands{name = export_odbc, tags = [mnesia, odbc],
+                        desc = "Export all tables as SQL queries to a file",
+                        module = ejd2odbc, function = export,
+                        args = [{host, string}, {file, string}], result = {res, rescode}},
 
      #ejabberd_commands{name = delete_expired_messages, tags = [purge],
 			desc = "Delete expired offline messages from database",
@@ -296,11 +301,12 @@ stop_kindly(DelaySeconds, AnnouncementText) ->
     ok.
 
 send_service_message_all_mucs(Subject, AnnouncementText) ->
-    Message = io_lib:format("~s~n~s", [Subject, AnnouncementText]),
+    Message = list_to_binary(
+                io_lib:format("~s~n~s", [Subject, AnnouncementText])),
     lists:foreach(
       fun(ServerHost) ->
 	      MUCHost = gen_mod:get_module_opt_host(
-			  ServerHost, mod_muc, "conference.@HOST@"),
+			  ServerHost, mod_muc, <<"conference.@HOST@">>),
 	      mod_muc:broadcast_service_message(MUCHost, Message)
       end,
       ?MYHOSTS).
@@ -320,6 +326,8 @@ update("all") ->
 update(ModStr) ->
     update_module(ModStr).
 
+update_module(ModuleNameBin) when is_binary(ModuleNameBin) ->
+    update_module(binary_to_list(ModuleNameBin));
 update_module(ModuleNameString) ->
     ModuleName = list_to_atom(ModuleNameString),
     case ejabberd_update:update([ModuleName]) of

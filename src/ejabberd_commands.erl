@@ -228,7 +228,8 @@ init() ->
     ets:new(ejabberd_commands, [named_table, set, public,
 				{keypos, #ejabberd_commands.name}]).
 
-%% @spec ([ejabberd_commands()]) -> ok
+-spec register_commands([ejabberd_commands()]) -> ok.
+
 %% @doc Register ejabberd commands.
 %% If a command is already registered, a warning is printed and the old command is preserved.
 register_commands(Commands) ->
@@ -243,7 +244,8 @@ register_commands(Commands) ->
       end,
       Commands).
 
-%% @spec ([ejabberd_commands()]) -> ok
+-spec unregister_commands([ejabberd_commands()]) -> ok.
+
 %% @doc Unregister ejabberd commands.
 unregister_commands(Commands) ->
     lists:foreach(
@@ -252,7 +254,8 @@ unregister_commands(Commands) ->
       end,
       Commands).
 
-%% @spec () -> [{Name::atom(), Args::[aterm()], Desc::string()}]
+-spec list_commands() -> [{atom(), [aterm()], string()}].
+
 %% @doc Get a list of all the available commands, arguments and description.
 list_commands() ->
     Commands = ets:match(ejabberd_commands,
@@ -262,7 +265,8 @@ list_commands() ->
 					    _ = '_'}),
     [{A, B, C} || [A, B, C] <- Commands].
 
-%% @spec (Name::atom()) -> {Args::[aterm()], Result::rterm()} | {error, command_unknown}
+-spec get_command_format(atom()) -> {[aterm()], rterm()} | {error, command_unknown}.
+
 %% @doc Get the format of arguments and result of a command.
 get_command_format(Name) ->
     Matched = ets:match(ejabberd_commands,
@@ -277,7 +281,8 @@ get_command_format(Name) ->
 	    {Args, Result}
     end.
 
-%% @spec (Name::atom()) -> ejabberd_commands() | command_not_found
+-spec get_command_definition(atom()) -> ejabberd_commands() | command_not_found.
+
 %% @doc Get the definition record of a command.
 get_command_definition(Name) ->
     case ets:lookup(ejabberd_commands, Name) of
@@ -313,6 +318,8 @@ execute_command2(Command, Arguments) ->
     Function = Command#ejabberd_commands.function,
     ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, Arguments]),
     apply(Module, Function, Arguments).
+
+-spec get_tags_commands() -> [{string(), [string()]}].
 
 %% @spec () -> [{Tag::string(), [CommandName::string()]}]
 %% @doc Get all the tags and associated commands.
@@ -377,6 +384,9 @@ check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
 	L when is_list(L) -> ok
     end.
 
+-spec check_auth(noauth) -> noauth_provided;
+                ({binary(), binary(), binary()}) -> {ok, binary(), binary()}.
+
 check_auth(noauth) ->
     no_auth_provided;
 check_auth({User, Server, Password}) ->
@@ -391,7 +401,7 @@ check_access(all, _) ->
 check_access(Access, Auth) ->
     {ok, User, Server} = check_auth(Auth),
     %% Check this user has access permission
-    case acl:match_rule(Server, Access, jlib:make_jid(User, Server, "")) of
+    case acl:match_rule(Server, Access, jlib:make_jid(User, Server, <<"">>)) of
 	allow -> true;
 	deny -> false
     end.

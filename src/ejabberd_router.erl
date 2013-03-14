@@ -25,6 +25,7 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_router).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -44,13 +45,17 @@
 -export([start_link/0]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+
 -include("jlib.hrl").
 
+-type local_hint() :: undefined | integer() | {apply, atom(), atom()}.
+
 -record(route, {domain, pid, local_hint}).
+
 -record(state, {}).
 
 %%====================================================================
@@ -63,6 +68,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec route(jid(), jid(), xmlel()) -> ok.
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -75,119 +81,131 @@ route(From, To, Packet) ->
 
 %% Route the error packet only if the originating packet is not an error itself.
 %% RFC3920 9.3.1
+-spec route_error(jid(), jid(), xmlel(), xmlel()) -> ok.
+
 route_error(From, To, ErrPacket, OrigPacket) ->
-    {xmlelement, _Name, Attrs, _Els} = OrigPacket,
-    case "error" == xml:get_attr_s("type", Attrs) of
-	false ->
-	    route(From, To, ErrPacket);
-	true ->
-	    ok
+    #xmlel{attrs = Attrs} = OrigPacket,
+    case <<"error">> == xml:get_attr_s(<<"type">>, Attrs) of
+      false -> route(From, To, ErrPacket);
+      true -> ok
     end.
+
+-spec register_route(binary()) -> term().
 
 register_route(Domain) ->
     register_route(Domain, undefined).
 
+-spec register_route(binary(), local_hint()) -> term().
+
 register_route(Domain, LocalHint) ->
     case jlib:nameprep(Domain) of
-	error ->
-	    erlang:error({invalid_domain, Domain});
-	LDomain ->
-	    Pid = self(),
-	    case get_component_number(LDomain) of
-		undefined ->
-		    F = fun() ->
-				mnesia:write(#route{domain = LDomain,
-						    pid = Pid,
-						    local_hint = LocalHint})
-			end,
-		    mnesia:transaction(F);
-		N ->
-		    F = fun() ->
-				case mnesia:wread({route, LDomain}) of
-				    [] ->
-					mnesia:write(
-					  #route{domain = LDomain,
-						 pid = Pid,
-						 local_hint = 1}),
-					lists:foreach(
-					  fun(I) ->
-						  mnesia:write(
-						    #route{domain = LDomain,
-							   pid = undefined,
-							   local_hint = I})
-					  end, lists:seq(2, N));
-				    Rs ->
-					lists:any(
-					  fun(#route{pid = undefined,
-						     local_hint = I} = R) ->
-						  mnesia:write(
-						    #route{domain = LDomain,
-							   pid = Pid,
-							   local_hint = I}),
-						  mnesia:delete_object(R),
-						  true;
-					     (_) ->
-						  false
-					  end, Rs)
-				end
-			end,
-		    mnesia:transaction(F)
-	    end
+      error -> erlang:error({invalid_domain, Domain});
+      LDomain ->
+	  Pid = self(),
+	  case get_component_number(LDomain) of
+	    undefined ->
+		F = fun () ->
+			    mnesia:write(#route{domain = LDomain, pid = Pid,
+						local_hint = LocalHint})
+		    end,
+		mnesia:transaction(F);
+	    N ->
+		F = fun () ->
+			    case mnesia:wread({route, LDomain}) of
+			      [] ->
+				  mnesia:write(#route{domain = LDomain,
+						      pid = Pid,
+						      local_hint = 1}),
+				  lists:foreach(fun (I) ->
+							mnesia:write(#route{domain
+										=
+										LDomain,
+									    pid
+										=
+										undefined,
+									    local_hint
+										=
+										I})
+						end,
+						lists:seq(2, N));
+			      Rs ->
+				  lists:any(fun (#route{pid = undefined,
+							local_hint = I} =
+						     R) ->
+						    mnesia:write(#route{domain =
+									    LDomain,
+									pid =
+									    Pid,
+									local_hint
+									    =
+									    I}),
+						    mnesia:delete_object(R),
+						    true;
+						(_) -> false
+					    end,
+					    Rs)
+			    end
+		    end,
+		mnesia:transaction(F)
+	  end
     end.
 
+-spec register_routes([binary()]) -> ok.
+
 register_routes(Domains) ->
-    lists:foreach(fun(Domain) ->
-			  register_route(Domain)
-		  end, Domains).
+    lists:foreach(fun (Domain) -> register_route(Domain)
+		  end,
+		  Domains).
+
+-spec unregister_route(binary()) -> term().
 
 unregister_route(Domain) ->
     case jlib:nameprep(Domain) of
-	error ->
-	    erlang:error({invalid_domain, Domain});
-	LDomain ->
-	    Pid = self(),
-	    case get_component_number(LDomain) of
-		undefined ->
-		    F = fun() ->
-				case mnesia:match_object(
-				       #route{domain = LDomain,
-					      pid = Pid,
-					      _ = '_'}) of
-				    [R] ->
-					mnesia:delete_object(R);
-				    _ ->
-					ok
-				end
-			end,
-		    mnesia:transaction(F);
-		_ ->
-		    F = fun() ->
-				case mnesia:match_object(#route{domain=LDomain,
-								pid = Pid,
-								_ = '_'}) of
-				    [R] ->
-					I = R#route.local_hint,
-					mnesia:write(
-					  #route{domain = LDomain,
-						 pid = undefined,
-						 local_hint = I}),
-					mnesia:delete_object(R);
-				    _ ->
-					ok
-				end
-			end,
-		    mnesia:transaction(F)
-	    end
+      error -> erlang:error({invalid_domain, Domain});
+      LDomain ->
+	  Pid = self(),
+	  case get_component_number(LDomain) of
+	    undefined ->
+		F = fun () ->
+			    case mnesia:match_object(#route{domain = LDomain,
+							    pid = Pid, _ = '_'})
+				of
+			      [R] -> mnesia:delete_object(R);
+			      _ -> ok
+			    end
+		    end,
+		mnesia:transaction(F);
+	    _ ->
+		F = fun () ->
+			    case mnesia:match_object(#route{domain = LDomain,
+							    pid = Pid, _ = '_'})
+				of
+			      [R] ->
+				  I = R#route.local_hint,
+				  mnesia:write(#route{domain = LDomain,
+						      pid = undefined,
+						      local_hint = I}),
+				  mnesia:delete_object(R);
+			      _ -> ok
+			    end
+		    end,
+		mnesia:transaction(F)
+	  end
     end.
 
-unregister_routes(Domains) ->
-    lists:foreach(fun(Domain) ->
-			  unregister_route(Domain)
-		  end, Domains).
+-spec unregister_routes([binary()]) -> ok.
 
+unregister_routes(Domains) ->
+    lists:foreach(fun (Domain) -> unregister_route(Domain)
+		  end,
+		  Domains).
+
+-spec dirty_get_all_routes() -> [binary()].
 
 dirty_get_all_routes() ->
-    lists:usort(mnesia:dirty_all_keys(route)) -- ?MYHOSTS.
+    lists:usort(mnesia:dirty_all_keys(route)) -- (?MYHOSTS).
+
+-spec dirty_get_all_domains() -> [binary()].
 
 dirty_get_all_domains() ->
     lists:usort(mnesia:dirty_all_keys(route)).
@@ -207,17 +225,14 @@ dirty_get_all_domains() ->
 init([]) ->
     update_tables(),
     mnesia:create_table(route,
-			[{ram_copies, [node()]},
-			 {type, bag},
-			 {attributes,
-			  record_info(fields, route)}]),
+			[{ram_copies, [node()]}, {type, bag},
+			 {attributes, record_info(fields, route)}]),
     mnesia:add_table_copy(route, node(), ram_copies),
     mnesia:subscribe({table, route, simple}),
-    lists:foreach(
-      fun(Pid) ->
-	      erlang:monitor(process, Pid)
-      end,
-      mnesia:dirty_select(route, [{{route, '_', '$1', '_'}, [], ['$1']}])),
+    lists:foreach(fun (Pid) -> erlang:monitor(process, Pid)
+		  end,
+		  mnesia:dirty_select(route,
+				      [{{route, '_', '$1', '_'}, [], ['$1']}])),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -230,8 +245,7 @@ init([]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    Reply = ok, {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -239,8 +253,7 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
-    {noreply, State}.
+handle_cast(_Msg, State) -> {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -250,39 +263,35 @@ handle_cast(_Msg, State) ->
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, To, Packet}]);
-	_ ->
-	    ok
+      {'EXIT', Reason} ->
+	  ?ERROR_MSG("~p~nwhen processing: ~p",
+		     [Reason, {From, To, Packet}]);
+      _ -> ok
     end,
     {noreply, State};
-handle_info({mnesia_table_event, {write, #route{pid = Pid}, _ActivityId}},
+handle_info({mnesia_table_event,
+	     {write, #route{pid = Pid}, _ActivityId}},
 	    State) ->
-    erlang:monitor(process, Pid),
-    {noreply, State};
+    erlang:monitor(process, Pid), {noreply, State};
 handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
-    F = fun() ->
-		Es = mnesia:select(
-		       route,
-		       [{#route{pid = Pid, _ = '_'},
-			 [],
-			 ['$_']}]),
-		lists:foreach(
-		  fun(E) ->
-			  if
-			      is_integer(E#route.local_hint) ->
-				  LDomain = E#route.domain,
-				  I = E#route.local_hint,
-				  mnesia:write(
-				    #route{domain = LDomain,
-					   pid = undefined,
-					   local_hint = I}),
-				  mnesia:delete_object(E);
-			      true ->
-				  mnesia:delete_object(E)
-			  end
-		  end, Es)
+    F = fun () ->
+		Es = mnesia:select(route,
+				   [{#route{pid = Pid, _ = '_'}, [], ['$_']}]),
+		lists:foreach(fun (E) ->
+				      if is_integer(E#route.local_hint) ->
+					     LDomain = E#route.domain,
+					     I = E#route.local_hint,
+					     mnesia:write(#route{domain =
+								     LDomain,
+								 pid =
+								     undefined,
+								 local_hint =
+								     I}),
+					     mnesia:delete_object(E);
+					 true -> mnesia:delete_object(E)
+				      end
+			      end,
+			      Es)
 	end,
     mnesia:transaction(F),
     {noreply, State};
@@ -310,107 +319,93 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 do_route(OrigFrom, OrigTo, OrigPacket) ->
-    ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket ~p~n",
+    ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket "
+	   "~p~n",
 	   [OrigFrom, OrigTo, OrigPacket]),
     case ejabberd_hooks:run_fold(filter_packet,
-				 {OrigFrom, OrigTo, OrigPacket}, []) of
-	{From, To, Packet} ->
-	    LDstDomain = To#jid.lserver,
-	    case mnesia:dirty_read(route, LDstDomain) of
-		[] ->
-		    ejabberd_s2s:route(From, To, Packet);
-		[R] ->
-		    Pid = R#route.pid,
-		    if
-			node(Pid) == node() ->
-			    case R#route.local_hint of
-				{apply, Module, Function} ->
-				    Module:Function(From, To, Packet);
-				_ ->
-				    Pid ! {route, From, To, Packet}
-			    end;
-			is_pid(Pid) ->
-			    Pid ! {route, From, To, Packet};
-			true ->
-			    drop
-		    end;
-		Rs ->
-		    Value = case ejabberd_config:get_local_option(
-				   {domain_balancing, LDstDomain}) of
-				undefined -> now();
-				random -> now();
-				source -> jlib:jid_tolower(From);
-				destination -> jlib:jid_tolower(To);
-				bare_source ->
-				    jlib:jid_remove_resource(
-				      jlib:jid_tolower(From));
-				bare_destination ->
-				    jlib:jid_remove_resource(
-				      jlib:jid_tolower(To))
-			    end,
-		    case get_component_number(LDstDomain) of
-			undefined ->
-			    case [R || R <- Rs, node(R#route.pid) == node()] of
-				[] ->
-				    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
-				    Pid = R#route.pid,
-				    if
-					is_pid(Pid) ->
-					    Pid ! {route, From, To, Packet};
-					true ->
-					    drop
-				    end;
-				LRs ->
-				    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
-				    Pid = R#route.pid,
-				    case R#route.local_hint of
-					{apply, Module, Function} ->
-					    Module:Function(From, To, Packet);
-					_ ->
-					    Pid ! {route, From, To, Packet}
-				    end
-			    end;
-			_ ->
-			    SRs = lists:ukeysort(#route.local_hint, Rs),
-			    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
+				 {OrigFrom, OrigTo, OrigPacket}, [])
+	of
+      {From, To, Packet} ->
+	  LDstDomain = To#jid.lserver,
+	  case mnesia:dirty_read(route, LDstDomain) of
+	    [] -> ejabberd_s2s:route(From, To, Packet);
+	    [R] ->
+		Pid = R#route.pid,
+		if node(Pid) == node() ->
+		       case R#route.local_hint of
+			 {apply, Module, Function} ->
+			     Module:Function(From, To, Packet);
+			 _ -> Pid ! {route, From, To, Packet}
+		       end;
+		   is_pid(Pid) -> Pid ! {route, From, To, Packet};
+		   true -> drop
+		end;
+	    Rs ->
+		Value = case
+			  ejabberd_config:get_local_option({domain_balancing,
+							    LDstDomain}, fun(D) when is_atom(D) -> D end)
+			    of
+			  undefined -> now();
+			  random -> now();
+			  source -> jlib:jid_tolower(From);
+			  destination -> jlib:jid_tolower(To);
+			  bare_source ->
+			      jlib:jid_remove_resource(jlib:jid_tolower(From));
+			  bare_destination ->
+			      jlib:jid_remove_resource(jlib:jid_tolower(To))
+			end,
+		case get_component_number(LDstDomain) of
+		  undefined ->
+		      case [R || R <- Rs, node(R#route.pid) == node()] of
+			[] ->
+			    R = lists:nth(erlang:phash(Value, str:len(Rs)), Rs),
 			    Pid = R#route.pid,
-			    if
-				is_pid(Pid) ->
-				    Pid ! {route, From, To, Packet};
-				true ->
-				    drop
+			    if is_pid(Pid) -> Pid ! {route, From, To, Packet};
+			       true -> drop
+			    end;
+			LRs ->
+			    R = lists:nth(erlang:phash(Value, str:len(LRs)),
+					  LRs),
+			    Pid = R#route.pid,
+			    case R#route.local_hint of
+			      {apply, Module, Function} ->
+				  Module:Function(From, To, Packet);
+			      _ -> Pid ! {route, From, To, Packet}
 			    end
-		    end
-	    end;
-	drop ->
-	    ok
+		      end;
+		  _ ->
+		      SRs = lists:ukeysort(#route.local_hint, Rs),
+		      R = lists:nth(erlang:phash(Value, str:len(SRs)), SRs),
+		      Pid = R#route.pid,
+		      if is_pid(Pid) -> Pid ! {route, From, To, Packet};
+			 true -> drop
+		      end
+		end
+	  end;
+      drop -> ok
     end.
 
 get_component_number(LDomain) ->
-    case ejabberd_config:get_local_option(
-	   {domain_balancing_component_number, LDomain}) of
-	N when is_integer(N),
-	       N > 1 ->
-	    N;
-	_ ->
-	    undefined
+    case
+      ejabberd_config:get_local_option({domain_balancing_component_number,
+					LDomain}, fun(D) -> D end)
+	of
+      N when is_integer(N), N > 1 -> N;
+      _ -> undefined
     end.
+
 
 update_tables() ->
     case catch mnesia:table_info(route, attributes) of
-	[domain, node, pid] ->
-	    mnesia:delete_table(route);
-	[domain, pid] ->
-	    mnesia:delete_table(route);
-	[domain, pid, local_hint] ->
-	    ok;
-	{'EXIT', _} ->
-	    ok
+      [domain, node, pid] -> mnesia:delete_table(route);
+      [domain, pid] -> mnesia:delete_table(route);
+      [domain, pid, local_hint] -> ok;
+      {'EXIT', _} -> ok
     end,
-    case lists:member(local_route, mnesia:system_info(tables)) of
-	true ->
-	    mnesia:delete_table(local_route);
-	false ->
-	    ok
+    case lists:member(local_route,
+		      mnesia:system_info(tables))
+	of
+      true -> mnesia:delete_table(local_route);
+      false -> ok
     end.
 

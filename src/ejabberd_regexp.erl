@@ -25,48 +25,72 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_regexp).
+
 -compile([export_all]).
 
-exec(ReM, ReF, ReA, RgM, RgF, RgA) ->
-    try apply(ReM, ReF, ReA)
-    catch
-	error:undef ->
-	    apply(RgM, RgF, RgA);
-	A:B ->
-	    {error, {A, B}}
+exec({ReM, ReF, ReA}, {RgM, RgF, RgA}) ->
+    try apply(ReM, ReF, ReA) catch
+      error:undef -> apply(RgM, RgF, RgA);
+      A:B -> {error, {A, B}}
     end.
+
+-spec run(binary(), binary()) -> match | nomatch | {error, any()}.
 
 run(String, Regexp) ->
-    case exec(re, run, [String, Regexp, [{capture, none}]], regexp, first_match, [String, Regexp]) of
-	{match, _, _} -> match;
-	{match, _} -> match;
-	match -> match;
-	nomatch -> nomatch;
-	{error, Error} -> {error, Error}
+    case exec({re, run, [String, Regexp, [{capture, none}]]},
+	      {regexp, first_match, [binary_to_list(String),
+                                     binary_to_list(Regexp)]})
+	of
+      {match, _, _} -> match;
+      {match, _} -> match;
+      match -> match;
+      nomatch -> nomatch;
+      {error, Error} -> {error, Error}
     end.
+
+-spec split(binary(), binary()) -> [binary()].
 
 split(String, Regexp) ->
-    case exec(re, split, [String, Regexp, [{return, list}]], regexp, split, [String, Regexp]) of
-	{ok, FieldList} -> FieldList;
-	{error, Error} -> throw(Error);
-	A -> A
+    case exec({re, split, [String, Regexp, [{return, binary}]]},
+	      {regexp, split, [binary_to_list(String),
+                               binary_to_list(Regexp)]})
+	of
+      {ok, FieldList} -> [iolist_to_binary(F) || F <- FieldList];
+      {error, Error} -> throw(Error);
+      A -> A
     end.
+
+-spec replace(binary(), binary(), binary()) -> binary().
 
 replace(String, Regexp, New) ->
-    case exec(re, replace, [String, Regexp, New, [{return, list}]], regexp, sub, [String, Regexp, New]) of
-	{ok, NewString, _RepCount} -> NewString;
-	{error, Error} -> throw(Error);
-	A -> A
+    case exec({re, replace, [String, Regexp, New, [{return, binary}]]},
+              {regexp, sub, [binary_to_list(String),
+                             binary_to_list(Regexp),
+                             binary_to_list(New)]})
+	of
+      {ok, NewString, _RepCount} -> iolist_to_binary(NewString);
+      {error, Error} -> throw(Error);
+      A -> A
     end.
+
+-spec greplace(binary(), binary(), binary()) -> binary().
 
 greplace(String, Regexp, New) ->
-    case exec(re, replace, [String, Regexp, New, [global, {return, list}]], regexp, sub, [String, Regexp, New]) of
-	{ok, NewString, _RepCount} -> NewString;
-	{error, Error} -> throw(Error);
-	A -> A
+    case exec({re, replace, [String, Regexp, New, [global, {return, binary}]]},
+              {regexp, sub, [binary_to_list(String),
+                             binary_to_list(Regexp),
+                             binary_to_list(New)]})
+	of
+      {ok, NewString, _RepCount} -> iolist_to_binary(NewString);
+      {error, Error} -> throw(Error);
+      A -> A
     end.
 
+-spec sh_to_awk(binary()) -> binary().
+
 sh_to_awk(ShRegExp) ->
-    case exec(xmerl_regexp, sh_to_awk, [ShRegExp], regexp, sh_to_awk, [ShRegExp]) of
-	A -> A
+    case exec({xmerl_regexp, sh_to_awk, [binary_to_list(ShRegExp)]},
+              {regexp, sh_to_awk, [binary_to_list(ShRegExp)]})
+	of
+      A -> iolist_to_binary(A)
     end.

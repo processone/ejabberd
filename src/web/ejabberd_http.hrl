@@ -19,16 +19,18 @@
 %%%
 %%%----------------------------------------------------------------------
 
--record(request, {method,
-		  path,
-		  q = [],
-		  us,
-		  auth,
-		  lang = "",
-		  data = "",
-		  ip,
-		  host, % string()
-		  port, % integer()
-		  tp, % transfer protocol = http | https
-		  headers
-		 }).
+-record(request,
+	{method, %            :: method(),
+	 path = []         :: [binary()],
+	 q = []            :: [{binary() | nokey, binary()}],
+	 us = {<<>>, <<>>} :: {binary(), binary()},
+	 auth              :: {binary(), binary()} |
+	 {auth_jid, {binary(), binary()}, jlib:jid()},
+	 lang = <<"">>     :: binary(),
+	 data = <<"">>     :: binary(),
+	 ip                :: {inet:ip_address(), inet:port_number()},
+	 host = <<"">>     :: binary(),
+	 port = 5280       :: inet:port_number(),
+	 tp = http, %         :: protocol(),
+	 headers = []      :: [{atom() | binary(), binary()}]}).
+

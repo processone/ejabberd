@@ -25,23 +25,14 @@
 %%%-------------------------------------------------------------------
 
 -module(eldap_pool).
+
 -author('xram@jabber.ru').
 
 %% API
--export([
-	 start_link/7,
-	 bind/3,
-	 search/2,
-	 modify_passwd/3
-	]).
+-export([start_link/7, bind/3, search/2,
+	 modify_passwd/3]).
 
 -include("ejabberd.hrl").
-
--ifdef(SSL40).
--define(PG2, pg2).
--else.
--define(PG2, pg2_backport).
--endif.
 
 %%====================================================================
 %% API
@@ -55,40 +46,41 @@ search(PoolName, Opts) ->
 modify_passwd(PoolName, DN, Passwd) ->
     do_request(PoolName, {modify_passwd, [DN, Passwd]}).
 
-start_link(Name, Hosts, Backups, Port, Rootdn, Passwd, Opts) ->
+start_link(Name, Hosts, Backups, Port, Rootdn, Passwd,
+	   Opts) ->
     PoolName = make_id(Name),
-    ?PG2:create(PoolName),
-    lists:foreach(
-      fun(Host) ->
-	      ID = erlang:ref_to_list(make_ref()),
-	      case catch eldap:start_link(ID, [Host|Backups], Port,
-					  Rootdn, Passwd, Opts) of
-		  {ok, Pid} ->
-		      ?PG2:join(PoolName, Pid);
-		  _ ->
-		      error
-	      end
-      end, Hosts).
+    pg2:create(PoolName),
+    lists:foreach(fun (Host) ->
+			  ID = list_to_binary(erlang:ref_to_list(make_ref())),
+			  case catch eldap:start_link(ID, [Host | Backups],
+						      Port, Rootdn, Passwd,
+						      Opts)
+			      of
+			    {ok, Pid} -> pg2:join(PoolName, Pid);
+			    Err ->
+                                  ?INFO_MSG("Err = ~p", [Err]),
+                                  error
+			  end
+		  end,
+		  Hosts).
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 do_request(Name, {F, Args}) ->
-    case ?PG2:get_closest_pid(make_id(Name)) of
-	Pid when is_pid(Pid) ->
-	    case catch apply(eldap, F, [Pid | Args]) of
-		{'EXIT', {timeout, _}} ->
-		    ?ERROR_MSG("LDAP request failed: timed out", []);
-		{'EXIT', Reason} ->
-		    ?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
-			       [F, Args, Reason]),
-		    {error, Reason};
-		Reply ->
-		    Reply
-	    end;
-	Err ->
-	    Err
+    case pg2:get_closest_pid(make_id(Name)) of
+      Pid when is_pid(Pid) ->
+	  case catch apply(eldap, F, [Pid | Args]) of
+	    {'EXIT', {timeout, _}} ->
+		?ERROR_MSG("LDAP request failed: timed out", []);
+	    {'EXIT', Reason} ->
+		?ERROR_MSG("LDAP request failed: eldap:~p(~p)~nReason: ~p",
+			   [F, Args, Reason]),
+		{error, Reason};
+	    Reply -> Reply
+	  end;
+      Err -> Err
     end.
 
 make_id(Name) ->
-    list_to_atom("eldap_pool_" ++ Name).
+    jlib:binary_to_atom(<<"eldap_pool_", Name/binary>>).
