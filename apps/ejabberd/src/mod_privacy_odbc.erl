@@ -825,13 +825,3 @@ sql_del_privacy_lists(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     Server = ejabberd_odbc:escape(LServer),
     odbc_queries:del_privacy_lists(LServer, Server, Username).
-
--ifdef(no_binary_to_integer).
-
-binary_to_integer(B) ->
-    list_to_integer(binary_to_list(B)).
-
-integer_to_binary(I) ->
-    list_to_binary(integer_to_list(I)).
-
--endif.
