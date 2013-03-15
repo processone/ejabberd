@@ -78,8 +78,8 @@ init(_Transport, Req, _Opts) ->
         %% Hence, handling of these errors is forwarded to info().
         error:{badmatch, {has_body, false}} ->
             {no_body, Req};
-        error:{badmatch, {Method, NReq}} when is_binary(Method) ->
-            {wrong_method, NReq}
+        error:{badmatch, {WrongMethod, NReq}} when is_binary(WrongMethod) ->
+            {{wrong_method, WrongMethod}, NReq}
     end,
     self() ! Msg,
     {loop, NewReq, #rstate{}}.
@@ -87,8 +87,8 @@ init(_Transport, Req, _Opts) ->
 info(no_body, Req, State) ->
     ?DEBUG("Missing request body: ~p~n", [Req]),
     {ok, no_body_error(Req), State};
-info(wrong_method, Req, State) ->
-    ?DEBUG("Wrong request method: ~p~n", [Req]),
+info({wrong_method, Method}, Req, State) ->
+    ?DEBUG("Wrong request method: ~p~n", [Method]),
     {ok, method_not_allowed_error(Req), State};
 info(forward_body, Req, S) ->
     {ok, Body, Req1} = cowboy_req:body(Req),
