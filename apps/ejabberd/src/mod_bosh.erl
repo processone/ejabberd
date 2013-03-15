@@ -116,7 +116,11 @@ info(forward_body, Req, S) ->
 info({send, El}, Req, S) ->
     BEl = exml:to_binary(El),
     ?DEBUG("Sending (binary) to ~p: ~p~n", [exml_query:attr(El, <<"sid">>), BEl]),
-    {ok, Req1} = cowboy_req:reply(200, [content_type()], BEl, Req),
+    {ok, Req1} = cowboy_req:reply(200, [content_type(),
+                                        ac_allow_origin(<<"*">>),
+                                        ac_allow_methods(),
+                                        ac_allow_headers(),
+                                        ac_max_age()], BEl, Req),
     {ok, Req1, S};
 info({close, Sid}, Req, S) ->
     ?DEBUG("Closing handler for ~p~n", [Sid]),
@@ -322,7 +326,7 @@ ac_allow_origin(Origin) ->
     {<<"Access-Control-Allow-Origin">>, Origin}.
 
 ac_allow_methods() ->
-    {<<"Access-Control-Allow-Methods">>, <<"OPTIONS, POST">>}.
+    {<<"Access-Control-Allow-Methods">>, <<"POST, OPTIONS">>}.
 
 ac_allow_headers() ->
     {<<"Access-Control-Allow-Headers">>, <<"Content-Type">>}.
