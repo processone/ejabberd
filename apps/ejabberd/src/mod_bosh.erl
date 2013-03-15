@@ -29,6 +29,7 @@
 -define(DEFAULT_PORT, 5280).
 -define(DEFAULT_BACKEND, mnesia).
 -define(INACTIVITY_TIMEOUT, 120000).  %% 2 minutes
+-define(DEFAULT_MAX_AGE, 1728000).
 
 %% Request State
 -record(rstate, {}).
@@ -70,9 +71,16 @@ start_listener({Port, _InetAddr, tcp}, Opts) ->
 init(_Transport, Req, _Opts) ->
     ?DEBUG("New request~n", []),
     {Msg, NewReq} = try
-        {<<"POST">>, Req2} = cowboy_req:method(Req),
-        {has_body, true} = {has_body, cowboy_req:has_body(Req2)},
-        {forward_body, Req2}
+        {Method, Req2} = cowboy_req:method(Req),
+        case Method of
+            <<"OPTIONS">> ->
+                {accept_options, Req2};
+            <<"POST">> ->
+                {has_body, true} = {has_body, cowboy_req:has_body(Req2)},
+                {forward_body, Req2};
+            _ ->
+                error({badmatch, {Method, Req2}})
+        end
     catch
         %% In order to issue a reply, init() must accept the request for processing.
         %% Hence, handling of these errors is forwarded to info().
@@ -84,6 +92,14 @@ init(_Transport, Req, _Opts) ->
     self() ! Msg,
     {loop, NewReq, #rstate{}}.
 
+info(accept_options, Req, State) ->
+    {Origin, Req2} = cowboy_req:header(<<"origin">>, Req),
+    Headers = [ac_allow_origin(Origin),
+               ac_allow_methods(),
+               ac_allow_headers(),
+               ac_max_age()],
+    ?DEBUG("OPTIONS response: ~p~n", [Headers]),
+    {ok, strip_ok(cowboy_req:reply(200, Headers, <<>>, Req2)), State};
 info(no_body, Req, State) ->
     ?DEBUG("Missing request body: ~p~n", [Req]),
     {ok, no_body_error(Req), State};
@@ -301,3 +317,15 @@ mod_bosh_dynamic_src(Backend) ->
 
 content_type() ->
     {<<"content-type">>, <<"text/xml; charset=utf8">>}.
+
+ac_allow_origin(Origin) ->
+    {<<"Access-Control-Allow-Origin">>, Origin}.
+
+ac_allow_methods() ->
+    {<<"Access-Control-Allow-Methods">>, <<"OPTIONS, POST">>}.
+
+ac_allow_headers() ->
+    {<<"Access-Control-Allow-Headers">>, <<"Content-Type">>}.
+
+ac_max_age() ->
+    {<<"Access-Control-Max-Age">>, integer_to_binary(?DEFAULT_MAX_AGE)}.
