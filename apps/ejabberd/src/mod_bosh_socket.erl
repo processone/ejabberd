@@ -351,9 +351,13 @@ send_or_store(Data, #state{} = S) when not is_list(Data) ->
     send_or_store([Data], S);
 send_or_store([], #state{} = S) ->
     S;
-send_or_store(Data, #state{handlers = [H | Hs]} = S) ->
-    ?DEBUG("Forwarding element to handler. Handlers: ~p~n", [[H | Hs]]),
-    {Wrapped, NS} = bosh_wrap(Data, S),
+send_or_store(Data, #state{handlers = Hs} = State) ->
+    ?DEBUG("Forwarding to handler. Handlers: ~p~n", [Hs]),
+    send_to_handler(Data, State).
+
+send_to_handler(Data, #state{handlers = [H | Hs]} = State) ->
+    {Wrapped, NS} = bosh_wrap(Data, State),
+    ?DEBUG("send to ~p: ~p~n", [H, Wrapped]),
     H ! {send, Wrapped},
     NS#state{handlers = Hs}.
 
@@ -364,14 +368,22 @@ store(Data, #state{pending = Pending} = S) ->
 forward_to_c2s(C2SPid, StreamElement) ->
     gen_fsm:send_event(C2SPid, StreamElement).
 
-new_request_handler(accumulate, Pid, #state{handlers = Handlers} = S) ->
-    S#state{handlers = [Pid | Handlers]};
+%% TODO: fix hardcoding for hold == 1
+new_request_handler(accumulate, Pid, #state{handlers = [_]} = S) ->
+    NS = send_to_handler([#xmlcdata{content = <<"">>}], S),
+    NS#state{handlers = [Pid]};
+new_request_handler(accumulate, Pid, #state{handlers = []} = S) ->
+    S#state{handlers = [Pid]};
 new_request_handler(normal, Pid, #state{pending = [],
-                                        handlers = Handlers} = S) ->
-    S#state{handlers = [Pid | Handlers]};
+                                        handlers = [_]} = S) ->
+    NS = send_to_handler([#xmlcdata{content = <<"">>}], S),
+    NS#state{handlers = [Pid]};
+new_request_handler(normal, Pid, #state{pending = [],
+                                        handlers = []} = S) ->
+    S#state{handlers = [Pid]};
 new_request_handler(normal, Pid, #state{pending = Pending,
                                         handlers = Handlers} = S) ->
-    NS = S#state{pending = [], handlers = [Pid | Handlers]},
+    NS = S#state{pending = [], handlers = Handlers ++ [Pid]},
     send_or_store(Pending, NS).
 
 -spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
