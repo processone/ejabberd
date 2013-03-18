@@ -93,13 +93,24 @@ stop() ->
     inets:stop(),
     ssl:stop().
 
-request(Method, URL, Hdrs, Body, Opts) ->
+to_list(Str) when is_binary(Str) ->
+    binary_to_list(Str);
+to_list(Str) ->
+    Str.
+
+request(Method, URLRaw, HdrsRaw, Body, Opts) ->
+    Hdrs = lists:map(fun({N, V}) ->
+                             {to_list(N), to_list(V)}
+                     end, HdrsRaw),
+    URL = to_list(URLRaw),
+
     Request = case Method of
 		get -> {URL, Hdrs};
 		head -> {URL, Hdrs};
 		_ -> % post, etc.
 		    {URL, Hdrs,
-		     proplists:get_value(<<"content-type">>, Hdrs, []), Body}
+		     to_list(proplists:get_value(<<"content-type">>, HdrsRaw, [])),
+                     Body}
 	      end,
     Options = case proplists:get_value(timeout, Opts,
 				       infinity)
