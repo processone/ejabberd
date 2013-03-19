@@ -374,7 +374,8 @@ format_args(Args, ArgsFormat) ->
 format_arg({array, Elements},
 	   {list, {ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
-    lists:map(fun ({struct, [{ElementDefName, ElementValue}]}) ->
+    lists:map(fun ({struct, [{ElementName, ElementValue}]}) when
+                        ElementDefName == ElementName ->
 		      format_arg(ElementValue, ElementDefFormat)
 	      end,
 	      Elements);
