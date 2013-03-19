@@ -371,6 +371,13 @@ format_args(Args, ArgsFormat) ->
       L when is_list(L) -> exit({additional_unused_args, L})
     end.
 
+format_arg({array, Elements},
+	   {list, {ElementDefName, ElementDefFormat}})
+    when is_list(Elements) ->
+    lists:map(fun ({struct, [{ElementDefName, ElementValue}]}) ->
+		      format_arg(ElementValue, ElementDefFormat)
+	      end,
+	      Elements);
 format_arg({array, [{struct, Elements}]},
 	   {list, {ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
