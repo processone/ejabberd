@@ -111,6 +111,7 @@ AC_CONFIG_FILES([Makefile
                  $make_eldap
                  $make_pam
                  $make_web
+                 mysql/Makefile
                  stringprep/Makefile
                  stun/Makefile
                  $make_tls

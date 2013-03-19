@@ -4696,7 +4696,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_mod_proxy65 $make_eldap $make_pam $make_web stringprep/Makefile stun/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
+ac_config_files="$ac_config_files Makefile $make_mod_irc $make_mod_muc $make_mod_pubsub $make_mod_proxy65 $make_eldap $make_pam $make_web mysql/Makefile stringprep/Makefile stun/Makefile $make_tls $make_odbc $make_ejabberd_zlib"
 
 #openssl
 
@@ -5861,6 +5861,7 @@ do
     "$make_eldap") CONFIG_FILES="$CONFIG_FILES $make_eldap" ;;
     "$make_pam") CONFIG_FILES="$CONFIG_FILES $make_pam" ;;
     "$make_web") CONFIG_FILES="$CONFIG_FILES $make_web" ;;
+    "mysql/Makefile") CONFIG_FILES="$CONFIG_FILES mysql/Makefile" ;;
     "stringprep/Makefile") CONFIG_FILES="$CONFIG_FILES stringprep/Makefile" ;;
     "stun/Makefile") CONFIG_FILES="$CONFIG_FILES stun/Makefile" ;;
     "$make_tls") CONFIG_FILES="$CONFIG_FILES $make_tls" ;;
