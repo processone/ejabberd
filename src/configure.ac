@@ -112,6 +112,7 @@ AC_CONFIG_FILES([Makefile
                  $make_pam
                  $make_web
                  mysql/Makefile
+                 pgsql/Makefile
                  stringprep/Makefile
                  stun/Makefile
                  $make_tls
