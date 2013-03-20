@@ -199,19 +199,15 @@ forward_body(Req, #xmlelement{} = Body, S) ->
                 end;
             restart ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-                register_new_handler(Socket),
-                send_to_c2s(Socket, {restart, Body}),
+                handle_request(Socket, {restart, Body}),
                 {loop, Req, S};
             normal ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-                register_new_handler(Socket),
-                send_to_c2s(Socket, {normal, Body}),
+                handle_request(Socket, {normal, Body}),
                 {loop, Req, S};
             terminate ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-                register_new_handler(Socket),
-                %% TODO: also send body contents (possibly: presence unavailable)
-                send_to_c2s(Socket, {streamend, Body}),
+                handle_request(Socket, {streamend, Body}),
                 {loop, Req, S}
         end
     catch
@@ -219,8 +215,8 @@ forward_body(Req, #xmlelement{} = Body, S) ->
             {ok, terminal_condition(<<"item-not-found">>, Req), S}
     end.
 
-register_new_handler(SocketPid) ->
-    mod_bosh_socket:add_request_handler(SocketPid, self()).
+handle_request(Socket, {EventType, Body}) ->
+    mod_bosh_socket:handle_request(Socket, {EventType, self(), Body}).
 
 get_session_socket(Sid) ->
     case ?BOSH_BACKEND:get_session(Sid) of
@@ -254,18 +250,14 @@ maybe_start_session(Req, Body) ->
 
 start_session(Peer, Body) ->
     Sid = make_sid(),
-    {ok, SocketPid} = mod_bosh_socket:start(Sid, Peer),
-    BoshSession = #bosh_session{sid = Sid, socket = SocketPid},
+    {ok, Socket} = mod_bosh_socket:start(Sid, Peer),
+    BoshSession = #bosh_session{sid = Sid, socket = Socket},
     ?BOSH_BACKEND:create_session(BoshSession),
-    register_new_handler(SocketPid),
-    send_to_c2s(SocketPid, {streamstart, Body}),
+    handle_request(Socket, {streamstart, Body}),
     ?DEBUG("Created new session ~p~n", [Sid]).
 
 make_sid() ->
     list_to_binary(sha:sha(term_to_binary({now(), make_ref()}))).
-
-send_to_c2s(SocketPid, Message) ->
-    mod_bosh_socket:send_to_c2s(SocketPid, Message).
 
 %%--------------------------------------------------------------------
 %% HTTP errors
