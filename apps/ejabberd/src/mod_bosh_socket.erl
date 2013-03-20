@@ -311,7 +311,7 @@ handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
                    [{EventTag, Body}]),
             S#state{deferred = [{Rid, {EventTag, Body}} | S#state.deferred]};
         {_, false, false} ->
-            ?DEBUG("terminating - invalid rid: ~p~n", [{EventTag, Body}]),
+            ?ERROR_MSG("terminating - invalid rid: ~p~n", [{EventTag, Body}]),
             [Pid ! item_not_found || Pid <- S#state.handlers],
             throw({invalid_rid, S#state{handlers = []}})
     end.
