@@ -45,18 +45,22 @@
 -define(DEFAULT_REQUESTS, 2).
 -define(DEFAULT_WAIT, 60).
 
+%% TODO: isn't event_tag equivalent in semantics to xmlstreamelement()?
 -type event_tag() :: streamstart | restart | normal | streamend.
+-type rid() :: pos_integer().
 
 -record(state, {c2s_pid :: pid(),
                 handlers = [] :: [pid()],
-                pending = [],
+                %% Elements buffered for sending to the client.
+                pending = [] :: [xmlstreamelement()],
 
                 sid :: bosh_sid(),
                 wait = ?DEFAULT_WAIT,
                 hold = ?DEFAULT_HOLD,
                 rid,
-                deferred = [] :: [{pos_integer(),
-                                   {event_tag(), #xmlelement{}}}],
+                %% Requests deferred for later processing because
+                %% of having Rid greater than expected.
+                deferred = [] :: [{rid(), {event_tag(), #xmlelement{}}}],
                 inactivity = ?DEFAULT_INACTIVITY}).
 
 %%--------------------------------------------------------------------
