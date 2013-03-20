@@ -44,6 +44,7 @@
 -define(DEFAULT_INACTIVITY, 30).
 -define(DEFAULT_REQUESTS, 2).
 -define(DEFAULT_WAIT, 60).
+-define(DEFAULT_MAXPAUSE, undefined).
 
 %% TODO: isn't event_tag equivalent in semantics to xmlstreamelement()?
 -type event_tag() :: streamstart | restart | normal | streamend.
@@ -53,15 +54,18 @@
                 handlers = [] :: [pid()],
                 %% Elements buffered for sending to the client.
                 pending = [] :: [xmlstreamelement()],
-
                 sid :: bosh_sid(),
                 wait = ?DEFAULT_WAIT,
                 hold = ?DEFAULT_HOLD,
-                rid,
+                rid :: rid(),
                 %% Requests deferred for later processing because
                 %% of having Rid greater than expected.
                 deferred = [] :: [{rid(), {event_tag(), #xmlelement{}}}],
-                inactivity = ?DEFAULT_INACTIVITY}).
+                %% Allowed inactivity period in seconds.
+                inactivity = ?DEFAULT_INACTIVITY :: pos_integer() | infinity,
+                inactivity_tref,
+                %% Max pause period in seconds.
+                maxpause :: pos_integer() | undefined}).
 
 %%--------------------------------------------------------------------
 %% API
@@ -450,8 +454,6 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
     %% TODO: acks?
     #xmlelement{name = <<"body">>,
                 attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
-                         {<<"inactivity">>,
-                          integer_to_binary(S#state.inactivity)},
                          {<<"requests">>, integer_to_binary(?DEFAULT_REQUESTS)},
                          {<<"hold">>, integer_to_binary(S#state.hold)},
                          {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
@@ -464,8 +466,16 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                          %{<<"authid">>, <<"ServerStreamID">>},
                          {<<"xmlns">>, ?NS_HTTPBIND},
                          {<<"xmlns:xmpp">>, <<"urn:xmpp:xbosh">>},
-                         {<<"xmlns:stream">>, ?NS_STREAM}],
+                         {<<"xmlns:stream">>, ?NS_STREAM}] ++
+                        inactivity(S#state.inactivity) ++
+                        maxpause(S#state.maxpause),
                 children = []}.
+
+inactivity(I) ->
+    [{<<"inactivity">>, integer_to_binary(I)} || is_integer(I)].
+
+maxpause(MP) ->
+    [{<<"maxpause">>, integer_to_binary(MP)} || is_integer(MP)].
 
 %% Bosh body for an ordinary stream element(s).
 bosh_body(#state{} = S) ->
