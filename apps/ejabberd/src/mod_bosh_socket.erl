@@ -6,9 +6,7 @@
 -export([start/2,
          start_link/2,
          start_supervisor/0,
-         add_request_handler/2,
-         send_to_c2s/2
-        ]).
+         handle_request/2]).
 
 %% Private API
 -export([get_handlers/1,
@@ -94,11 +92,13 @@ start_supervisor() ->
             {error, Reason}
     end.
 
-add_request_handler(Pid, HandlerPid) ->
-    gen_fsm:send_event(Pid, {new_handler, HandlerPid}).
-
-send_to_c2s(Pid, StreamElement) ->
-    gen_fsm:send_all_state_event(Pid, StreamElement).
+-spec handle_request(Pid, {EventTag, Handler, Body}) -> ok
+    when Pid :: pid(),
+         EventTag :: event_tag(),
+         Handler :: pid(),
+         Body :: #xmlelement{}.
+handle_request(Pid, Request) ->
+    gen_fsm:send_all_state_event(Pid, Request).
 
 %%--------------------------------------------------------------------
 %% Private API
@@ -147,9 +147,6 @@ init([Sid, Peer]) ->
 %% @end
 %%--------------------------------------------------------------------
 
-accumulate({new_handler, HandlerPid}, #state{} = S) ->
-    NS = new_request_handler(accumulate, HandlerPid, S),
-    {next_state, accumulate, NS};
 accumulate(acc_off, #state{pending = Pending} = S) ->
     NS = S#state{pending = []},
     {next_state, normal, send_or_store(Pending, NS)};
@@ -157,9 +154,6 @@ accumulate(Event, State) ->
     ?DEBUG("Unhandled event in 'accumulate' state: ~w~n", [Event]),
     {next_state, accumulate, State}.
 
-normal({new_handler, HandlerPid}, #state{} = S) ->
-    NS = new_request_handler(normal, HandlerPid, S),
-    {next_state, normal, NS};
 normal(acc_off, #state{} = S) ->
     {next_state, normal, S};
 normal(Event, State) ->
@@ -206,23 +200,27 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-handle_event({EventTag, #xmlelement{} = Body}, _StateName, State)
+handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         when EventTag == streamstart;
              EventTag == restart ->
     try
-        NewState = handle_stream_event({EventTag, Body}, State),
+        HandlerAddedState = new_request_handler(StateName, Handler, State),
+        EventHandledState = handle_stream_event({EventTag, Body},
+                                                HandlerAddedState),
         timer:apply_after(?ACCUMULATE_PERIOD,
                           gen_fsm, send_event, [self(), acc_off]),
-        {next_state, accumulate, NewState}
+        {next_state, accumulate, EventHandledState}
     catch
         throw:{invalid_rid, State} ->
             {stop, invalid_rid, State}
     end;
-handle_event({EventTag, #xmlelement{} = Body}, StateName, State)
+handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         when EventTag == normal;
              EventTag == streamend ->
-    NewState = handle_stream_event({EventTag, Body}, State),
-    {next_state, StateName, NewState};
+    HandlerAddedState = new_request_handler(StateName, Handler, State),
+    EventHandledState = handle_stream_event({EventTag, Body},
+                                            HandlerAddedState),
+    {next_state, StateName, EventHandledState};
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
     {next_state, StateName, State}.
