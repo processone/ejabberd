@@ -366,7 +366,7 @@ send_or_store(Data, #state{handlers = Hs} = State) ->
 send_to_handler(Data, #state{handlers = [H | Hs]} = State) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
     ?DEBUG("send to ~p: ~p~n", [H, Wrapped]),
-    H ! {send, Wrapped},
+    H ! {bosh_reply, Wrapped},
     NS#state{handlers = Hs}.
 
 %% Store data for sending later.

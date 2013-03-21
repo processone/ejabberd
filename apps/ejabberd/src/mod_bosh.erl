@@ -133,7 +133,7 @@ info(forward_body, Req, S) ->
     {ok, BodyElem} = exml:parse(Body),
     ?DEBUG("Parsed body: ~p~n", [BodyElem]),
     forward_body(Req1, BodyElem, S);
-info({send, El}, Req, S) ->
+info({bosh_reply, El}, Req, S) ->
     BEl = exml:to_binary(El),
     ?DEBUG("Sending (binary) to ~p: ~p~n", [exml_query:attr(El, <<"sid">>), BEl]),
     {ok, Req1} = cowboy_req:reply(200, [content_type(),
