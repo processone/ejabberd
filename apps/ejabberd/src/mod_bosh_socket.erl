@@ -62,7 +62,7 @@
                 %% of having Rid greater than expected.
                 deferred = [] :: [{rid(), {event_tag(), #xmlelement{}}}],
                 %% Allowed inactivity period in seconds.
-                inactivity = ?DEFAULT_INACTIVITY :: pos_integer() | infinity,
+                inactivity :: pos_integer() | infinity,
                 inactivity_tref,
                 %% Max pause period in seconds.
                 maxpause :: pos_integer() | undefined}).
@@ -136,8 +136,15 @@ init([Sid, Peer]) ->
     C2SOpts = [{xml_socket, true}],
     {ok, C2SPid} = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
     ?DEBUG("mod_bosh_socket started~n", []),
-    {ok, accumulate, #state{sid = Sid, c2s_pid = C2SPid}}.
+    {ok, accumulate, #state{sid = Sid,
+                            c2s_pid = C2SPid,
+                            inactivity = get_inactivity()}}.
 
+get_inactivity() ->
+    case mod_bosh:get_inactivity() of
+        undefined -> ?DEFAULT_INACTIVITY;
+        I -> I
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -211,21 +218,23 @@ normal(Event, _From, State) ->
 handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         when EventTag == streamstart;
              EventTag == restart ->
+    NS = cancel_inactivity_timer(State),
     try
-        HandlerAddedState = new_request_handler(StateName, Handler, State),
+        HandlerAddedState = new_request_handler(StateName, Handler, NS),
         EventHandledState = handle_stream_event({EventTag, Body},
                                                 HandlerAddedState),
         timer:apply_after(?ACCUMULATE_PERIOD,
                           gen_fsm, send_event, [self(), acc_off]),
         {next_state, accumulate, EventHandledState}
     catch
-        throw:{invalid_rid, State} ->
-            {stop, invalid_rid, State}
+        throw:{invalid_rid, TState} ->
+            {stop, invalid_rid, TState}
     end;
 handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         when EventTag == normal;
              EventTag == streamend ->
-    HandlerAddedState = new_request_handler(StateName, Handler, State),
+    NS = cancel_inactivity_timer(State),
+    HandlerAddedState = new_request_handler(StateName, Handler, NS),
     EventHandledState = handle_stream_event({EventTag, Body},
                                             HandlerAddedState),
     {next_state, StateName, EventHandledState};
@@ -289,14 +298,17 @@ handle_info(reset_stream, SName, #state{} = S) ->
     {next_state, SName, S};
 handle_info(close, _SName, State) ->
     {stop, normal, State};
+handle_info(inactivity_timeout, _SName, State) ->
+    ?DEBUG("terminating due to client inactivity~n", []),
+    {stop, {shutdown, inactivity_timeout}, State};
 handle_info(Info, SName, State) ->
     ?DEBUG("Unhandled info in '~s' state: ~w~n", [SName, Info]),
     {next_state, SName, State}.
 
-
 terminate(_Reason, StateName, #state{sid = Sid, handlers = Handlers} = S) ->
     [ H ! {close, Sid} || H <- Handlers ],
     ?BOSH_BACKEND:delete_session(Sid),
+    catch ejabberd_c2s:stop(S#state.c2s_pid),
     ?DEBUG("Closing session ~p in '~s' state. Handlers: ~p Pending: ~p~n",
            [Sid, StateName, Handlers, S#state.pending]).
 
@@ -367,7 +379,21 @@ send_to_handler(Data, #state{handlers = [H | Hs]} = State) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
     ?DEBUG("send to ~p: ~p~n", [H, Wrapped]),
     H ! {bosh_reply, Wrapped},
-    NS#state{handlers = Hs}.
+    case Hs of
+        [] ->
+            setup_inactivity_timer(NS#state{handlers = Hs});
+        _ ->
+            NS#state{handlers = Hs}
+    end.
+
+setup_inactivity_timer(S) ->
+    {ok, TRef} = timer:send_after(timer:seconds(S#state.inactivity),
+                                  inactivity_timeout),
+    S#state{inactivity_tref = TRef}.
+
+cancel_inactivity_timer(S) ->
+    timer:cancel(S#state.inactivity_tref),
+    S#state{inactivity_tref = undefined}.
 
 %% Store data for sending later.
 store(Data, #state{pending = Pending} = S) ->
