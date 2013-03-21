@@ -34,9 +34,10 @@
          get_opt/2,
          get_opt/3,
          get_opt_host/3,
+         set_opt/3,
          get_module_opt/4,
-         set_module_opt/4,
          get_module_opt_host/3,
+         set_module_opt/4,
          loaded_modules/1,
          loaded_modules_with_opts/1,
          get_hosts/2,
@@ -166,21 +167,18 @@ get_opt(Opt, Opts, Default) ->
             Val
     end.
 
+set_opt(Opt, Opts, Value) ->
+    lists:keystore(Opt, 1, Opts, {Opt, Value}).
+
 get_module_opt(global, Module, Opt, Default) ->
-    Hosts = ?MYHOSTS,
-    [Value | Values] = lists:map(
-            fun(Host) ->
-                    get_module_opt(Host, Module, Opt, Default)
-            end,
-            Hosts),
-    Same_all = lists:all(
-            fun(Other_value) ->
-                    Other_value == Value
-            end,
-            Values),
-    case Same_all of
-        true -> Value;
-        false -> Default
+    [Value | Values] = [get_module_opt(Host, Module, Opt, Default)
+                        || Host <- ?MYHOSTS],
+    AllSame = lists:all(fun(Other) -> Other == Value end, Values),
+    case AllSame of
+        true ->
+            Value;
+        false ->
+            Default
     end;
 
 get_module_opt(Host, Module, Opt, Default) ->
@@ -201,7 +199,7 @@ set_module_opt(Host, Module, Opt, Value) ->
         [] ->
             false;
         [#ejabberd_module{opts = Opts}] ->
-            Updated = lists:keystore(Opt, 1, Opts, {Opt, Value}),
+            Updated = set_opt(Opt, Opts, Value),
             ets:update_element(ejabberd_modules, Key,
                                {#ejabberd_module.opts, Updated})
     end.
