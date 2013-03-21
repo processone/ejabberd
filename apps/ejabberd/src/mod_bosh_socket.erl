@@ -405,13 +405,8 @@ bosh_unwrap(StreamEvent, Body, #state{} = S)
             StreamEvent =:= restart ->
     Wait = get_attr(<<"wait">>, Body, S#state.wait),
     Hold = get_attr(<<"hold">>, Body, S#state.hold),
-    E = #xmlstreamstart{name = <<"stream:stream">>,
-                        attrs = [{<<"from">>, exml_query:attr(Body, <<"from">>)},
-                                 {<<"to">>, exml_query:attr(Body, <<"to">>)},
-                                 {<<"version">>, <<"1.0">>},
-                                 {<<"xml:lang">>, <<"en">>},
-                                 {<<"xmlns">>, <<"jabber:client">>},
-                                 {<<"xmlns:stream">>, ?NS_STREAM}]},
+    E = stream_start(exml_query:attr(Body, <<"from">>),
+                     exml_query:attr(Body, <<"to">>)),
     {[E], record_set(S, [{#state.wait, Wait},
                          {#state.hold, Hold}])};
 bosh_unwrap(streamend, Body, State) ->
@@ -433,6 +428,15 @@ get_attr(Attr, Element, Default) ->
         Value ->
             binary_to_integer(Value)
     end.
+
+stream_start(From, To) ->
+    #xmlstreamstart{name = <<"stream:stream">>,
+                    attrs = [{<<"from">>, From},
+                             {<<"to">>, To},
+                             {<<"version">>, <<"1.0">>},
+                             {<<"xml:lang">>, <<"en">>},
+                             {<<"xmlns">>, <<"jabber:client">>},
+                             {<<"xmlns:stream">>, ?NS_STREAM}]}.
 
 bosh_wrap(Elements, #state{} = S) ->
     EventsStanzas = lists:partition(fun is_stream_event/1, Elements),
