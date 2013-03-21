@@ -35,6 +35,7 @@
          get_opt/3,
          get_opt_host/3,
          get_module_opt/4,
+         set_module_opt/4,
          get_module_opt_host/3,
          loaded_modules/1,
          loaded_modules_with_opts/1,
@@ -189,6 +190,20 @@ get_module_opt(Host, Module, Opt, Default) ->
             Default;
         [#ejabberd_module{opts = Opts} | _] ->
             get_opt(Opt, Opts, Default)
+    end.
+
+%% Non-atomic! You have been warned.
+-spec set_module_opt(_Host, _Module, _Opt, _Value) -> boolean().
+set_module_opt(Host, Module, Opt, Value) ->
+    Key = {Module, Host},
+    OptsList = ets:lookup(ejabberd_modules, Key),
+    case OptsList of
+        [] ->
+            false;
+        [#ejabberd_module{opts = Opts}] ->
+            Updated = lists:keystore(Opt, 1, Opts, {Opt, Value}),
+            ets:update_element(ejabberd_modules, Key,
+                               {#ejabberd_module.opts, Updated})
     end.
 
 get_module_opt_host(Host, Module, Default) ->
