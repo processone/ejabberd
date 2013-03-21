@@ -28,19 +28,19 @@
 -author('alexey@process-one.net').
 
 -export([start/0,
-	 start_module/3,
-	 stop_module/2,
-	 stop_module_keep_config/2,
-	 get_opt/2,
-	 get_opt/3,
-	 get_opt_host/3,
-	 get_module_opt/4,
-	 get_module_opt_host/3,
-	 loaded_modules/1,
-	 loaded_modules_with_opts/1,
-	 get_hosts/2,
-	 get_module_proc/2,
-	 is_loaded/2]).
+         start_module/3,
+         stop_module/2,
+         stop_module_keep_config/2,
+         get_opt/2,
+         get_opt/3,
+         get_opt_host/3,
+         get_module_opt/4,
+         get_module_opt_host/3,
+         loaded_modules/1,
+         loaded_modules_with_opts/1,
+         get_hosts/2,
+         get_module_proc/2,
+         is_loaded/2]).
 
 -export([behaviour_info/1]).
 
@@ -55,33 +55,39 @@ behaviour_info(_Other) ->
     undefined.
 
 start() ->
-    ets:new(ejabberd_modules, [named_table,
-			       public,
-			       {keypos, #ejabberd_module.module_host}]),
+    ets:new(ejabberd_modules,
+            [named_table,
+             public,
+             {keypos, #ejabberd_module.module_host}]),
     ok.
-
 
 start_module(Host, Module, Opts) ->
     set_module_opts_mnesia(Host, Module, Opts),
     ets:insert(ejabberd_modules,
-	       #ejabberd_module{module_host = {Module, Host},
-				opts = Opts}),
-    try Module:start(Host, Opts)
-    catch Class:Reason ->
-	    del_module_mnesia(Host, Module),
-	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ErrorText = io_lib:format("Problem starting the module ~p for host ~p ~n options: ~p~n ~p: ~p~n~p",
-		    [Module, Host, Opts, Class, Reason, erlang:get_stacktrace()]),
-	    ?CRITICAL_MSG(ErrorText, []),
-	    case is_app_running(ejabberd) of
-		true ->
-		    erlang:raise(Class, Reason, erlang:get_stacktrace());
-		false ->
-		    ?CRITICAL_MSG("ejabberd initialization was aborted because a module start failed.~n"
-                          "The trace is ~p.", [erlang:get_stacktrace()]),
-		    timer:sleep(3000),
-		    erlang:halt(string:substr(lists:flatten(ErrorText), 1, 199))
-	    end
+               #ejabberd_module{module_host = {Module, Host},
+                                opts = Opts}),
+    try
+        Module:start(Host, Opts)
+    catch
+        Class:Reason ->
+            del_module_mnesia(Host, Module),
+            ets:delete(ejabberd_modules, {Module, Host}),
+            ErrorText = io_lib:format("Problem starting the module ~p for "
+                                      "host ~p~n options: ~p~n ~p: ~p~n~p",
+                                      [Module, Host, Opts, Class, Reason,
+                                       erlang:get_stacktrace()]),
+            ?CRITICAL_MSG(ErrorText, []),
+            case is_app_running(ejabberd) of
+                true ->
+                    erlang:raise(Class, Reason, erlang:get_stacktrace());
+                false ->
+                    ?CRITICAL_MSG("ejabberd initialization was aborted "
+                                  "because a module start failed.~n"
+                                  "The trace is ~p.", [erlang:get_stacktrace()]),
+                    timer:sleep(3000),
+                    erlang:halt(string:substr(lists:flatten(ErrorText),
+                                              1, 199))
+            end
     end.
 
 is_app_running(AppName) ->
@@ -92,10 +98,10 @@ is_app_running(AppName) ->
 %% @doc Stop the module in a host, and forget its configuration.
 stop_module(Host, Module) ->
     case stop_module_keep_config(Host, Module) of
-	error ->
-	    error;
-	ok ->
-	    del_module_mnesia(Host, Module)
+        error ->
+            error;
+        ok ->
+            del_module_mnesia(Host, Module)
     end.
 
 %% @doc Stop the module in a host, but keep its configuration.
@@ -105,20 +111,20 @@ stop_module(Host, Module) ->
 %% and it stops all modules.
 stop_module_keep_config(Host, Module) ->
     case catch Module:stop(Host) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p", [Reason]),
-	    error;
-	{wait, ProcList} when is_list(ProcList) ->
-	    lists:foreach(fun wait_for_process/1, ProcList),
-	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ok;
-	{wait, Process} ->
-	    wait_for_process(Process),
-	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ok;
-	_ ->
-	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ok
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("~p", [Reason]),
+            error;
+        {wait, ProcList} when is_list(ProcList) ->
+            lists:foreach(fun wait_for_process/1, ProcList),
+            ets:delete(ejabberd_modules, {Module, Host}),
+            ok;
+        {wait, Process} ->
+            wait_for_process(Process),
+            ets:delete(ejabberd_modules, {Module, Host}),
+            ok;
+        _ ->
+            ets:delete(ejabberd_modules, {Module, Host}),
+            ok
     end.
 
 wait_for_process(Process) ->
@@ -127,62 +133,62 @@ wait_for_process(Process) ->
 
 wait_for_stop(Process, MonitorReference) ->
     receive
-	{'DOWN', MonitorReference, _Type, _Object, _Info} ->
-	    ok
+        {'DOWN', MonitorReference, _Type, _Object, _Info} ->
+            ok
     after 5000 ->
-	    catch exit(whereis(Process), kill),
-	    wait_for_stop1(MonitorReference)
+            catch exit(whereis(Process), kill),
+            wait_for_stop1(MonitorReference)
     end.
 
 wait_for_stop1(MonitorReference) ->
     receive
-	{'DOWN', MonitorReference, _Type, _Object, _Info} ->
-	    ok
+        {'DOWN', MonitorReference, _Type, _Object, _Info} ->
+            ok
     after 5000 ->
-	    ok
+            ok
     end.
 
 get_opt(Opt, Opts) ->
     case lists:keysearch(Opt, 1, Opts) of
-	false ->
-	    % TODO: replace with more appropriate function
-	    throw({undefined_option, Opt});
-	{value, {_, Val}} ->
-	    Val
+        false ->
+            % TODO: replace with more appropriate function
+            throw({undefined_option, Opt});
+        {value, {_, Val}} ->
+            Val
     end.
 
 get_opt(Opt, Opts, Default) ->
     case lists:keysearch(Opt, 1, Opts) of
-	false ->
-	    Default;
-	{value, {_, Val}} ->
-	    Val
+        false ->
+            Default;
+        {value, {_, Val}} ->
+            Val
     end.
 
 get_module_opt(global, Module, Opt, Default) ->
-	Hosts = ?MYHOSTS,
-	[Value | Values] = lists:map(
-		fun(Host) ->
-			get_module_opt(Host, Module, Opt, Default)
-		end,
-		Hosts),
-	Same_all = lists:all(
-		fun(Other_value) ->
-			Other_value == Value
-		end,
-		Values),
-	case Same_all of
-		true -> Value;
-		false -> Default
-	end;
+    Hosts = ?MYHOSTS,
+    [Value | Values] = lists:map(
+            fun(Host) ->
+                    get_module_opt(Host, Module, Opt, Default)
+            end,
+            Hosts),
+    Same_all = lists:all(
+            fun(Other_value) ->
+                    Other_value == Value
+            end,
+            Values),
+    case Same_all of
+        true -> Value;
+        false -> Default
+    end;
 
 get_module_opt(Host, Module, Opt, Default) ->
     OptsList = ets:lookup(ejabberd_modules, {Module, Host}),
     case OptsList of
-	[] ->
-	    Default;
-	[#ejabberd_module{opts = Opts} | _] ->
-	    get_opt(Opt, Opts, Default)
+        [] ->
+            Default;
+        [#ejabberd_module{opts = Opts} | _] ->
+            get_opt(Opt, Opts, Default)
     end.
 
 get_module_opt_host(Host, Module, Default) ->
@@ -195,49 +201,49 @@ get_opt_host(Host, Opts, Default) ->
 
 loaded_modules(Host) ->
     ets:select(ejabberd_modules,
-	       [{#ejabberd_module{_ = '_', module_host = {'$1', Host}},
-		 [],
-		 ['$1']}]).
+               [{#ejabberd_module{_ = '_', module_host = {'$1', Host}},
+                 [],
+                 ['$1']}]).
 
 loaded_modules_with_opts(Host) ->
     ets:select(ejabberd_modules,
-	       [{#ejabberd_module{_ = '_', module_host = {'$1', Host},
-				  opts = '$2'},
-		 [],
-		 [{{'$1', '$2'}}]}]).
+               [{#ejabberd_module{_ = '_', module_host = {'$1', Host},
+                                  opts = '$2'},
+                 [],
+                 [{{'$1', '$2'}}]}]).
 
 set_module_opts_mnesia(Host, Module, Opts) ->
     Modules = case ejabberd_config:get_local_option({modules, Host}) of
-		  undefined ->
-		      [];
-		  Ls ->
-		      Ls
-	      end,
+        undefined ->
+            [];
+        Ls ->
+            Ls
+    end,
     Modules1 = lists:keydelete(Module, 1, Modules),
     Modules2 = [{Module, Opts} | Modules1],
     ejabberd_config:add_local_option({modules, Host}, Modules2).
 
 del_module_mnesia(Host, Module) ->
     Modules = case ejabberd_config:get_local_option({modules, Host}) of
-		  undefined ->
-		      [];
-		  Ls ->
-		      Ls
-	      end,
+        undefined ->
+            [];
+        Ls ->
+            Ls
+    end,
     Modules1 = lists:keydelete(Module, 1, Modules),
     ejabberd_config:add_local_option({modules, Host}, Modules1).
 
 get_hosts(Opts, Prefix) ->
     case catch gen_mod:get_opt(hosts, Opts) of
-	{'EXIT', _Error1} ->
-	    case catch gen_mod:get_opt(host, Opts) of
-		{'EXIT', _Error2} ->
-		    [Prefix ++ Host || Host <- ?MYHOSTS];
-		Host ->
-		    [Host]
-	    end;
-	Hosts ->
-	    Hosts
+        {'EXIT', _Error1} ->
+            case catch gen_mod:get_opt(host, Opts) of
+                {'EXIT', _Error2} ->
+                    [Prefix ++ Host || Host <- ?MYHOSTS];
+                Host ->
+                    [Host]
+            end;
+        Hosts ->
+            Hosts
     end.
 
 get_module_proc(Host, Base) when erlang:is_binary(Host) ->
