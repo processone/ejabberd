@@ -249,9 +249,11 @@ handle_event(Event, StateName, State) ->
 %%                   {stop, Reason, Reply, NewState}
 %% @end
 %%--------------------------------------------------------------------
-handle_sync_event(get_handlers, _From, StateName, #state{handlers = Handlers} = S) ->
+handle_sync_event(get_handlers, _From, StateName,
+                  #state{handlers = Handlers} = S) ->
     {reply, Handlers, StateName, S};
-handle_sync_event(get_pending, _From, StateName, #state{pending = Pending} = S) ->
+handle_sync_event(get_pending, _From, StateName,
+                  #state{pending = Pending} = S) ->
     {reply, Pending, StateName, S};
 handle_sync_event(Event, _From, StateName, State) ->
     ?DEBUG("Unhandled sync all state event: ~w~n", [Event]),
@@ -319,7 +321,7 @@ handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
                    [{EventTag, Body}]),
             S#state{deferred = [{Rid, {EventTag, Body}} | S#state.deferred]};
         {_, false, false} ->
-            ?ERROR_MSG("terminating - invalid rid: ~p~n", [{EventTag, Body}]),
+            ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
             [Pid ! item_not_found || Pid <- S#state.handlers],
             throw({invalid_rid, S#state{handlers = []}})
     end.
@@ -433,7 +435,8 @@ get_attr(Attr, Element, Default) ->
     end.
 
 bosh_wrap(Elements, #state{} = S) ->
-    {{Body, Children}, NS} = case lists:partition(fun is_stream_event/1, Elements) of
+    EventsStanzas = lists:partition(fun is_stream_event/1, Elements),
+    {{Body, Children}, NS} = case EventsStanzas of
         {[], Stanzas} ->
             {{bosh_body(S), Stanzas}, S};
         {[#xmlstreamstart{} = StreamStart], Stanzas} ->
@@ -445,9 +448,17 @@ bosh_wrap(Elements, #state{} = S) ->
             %% Can't wrap remaining stanzas in a stream end body.
             %% Send Stanzas and forfeit sending stream end.
             Pending = S#state.pending,
-            {{bosh_body(S), Stanzas}, S#state{pending = [StreamEnd, Pending]}}
+            {{bosh_body(S), Stanzas},
+             S#state{pending = [StreamEnd, Pending]}}
     end,
     {Body#xmlelement{children = Children}, NS}.
+
+is_stream_event(#xmlstreamstart{}) ->
+    true;
+is_stream_event(#xmlstreamend{}) ->
+    true;
+is_stream_event(_) ->
+    false.
 
 %% Bosh body for a session creation response.
 bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
@@ -490,13 +501,6 @@ bosh_stream_end_body() ->
                 attrs = [{<<"type">>, <<"terminate">>},
                          {<<"xmlns">>, ?NS_HTTPBIND}],
                 children = []}.
-
-is_stream_event(#xmlstreamstart{}) ->
-    true;
-is_stream_event(#xmlstreamend{}) ->
-    true;
-is_stream_event(_) ->
-    false.
 
 %%--------------------------------------------------------------------
 %% ejabberd_socket compatibility
