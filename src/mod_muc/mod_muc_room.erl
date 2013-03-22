@@ -3287,7 +3287,7 @@ get_config(Lang, StateData, From) ->
 						    of
 						  N when is_integer(N) ->
 						      {N,
-						       erlang:integer_to_list(N)};
+						       erlang:integer_to_binary(N)};
 						  _ -> {0, <<"none">>}
 						end,
     Res = [#xmlel{name = <<"title">>, attrs = [],
