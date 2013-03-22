@@ -6,7 +6,8 @@
 -export([start/2,
          start_link/2,
          start_supervisor/0,
-         handle_request/2]).
+         handle_request/2,
+         pause/2]).
 
 %% Private API
 -export([get_handlers/1,
@@ -44,7 +45,7 @@
 -define(DEFAULT_INACTIVITY, 30).
 -define(DEFAULT_REQUESTS, 2).
 -define(DEFAULT_WAIT, 60).
--define(DEFAULT_MAXPAUSE, undefined).
+-define(DEFAULT_MAXPAUSE, 120).
 
 -type rid() :: pos_integer().
 
@@ -106,6 +107,12 @@ start_supervisor() ->
 handle_request(Pid, Request) ->
     gen_fsm:send_all_state_event(Pid, Request).
 
+-spec pause(Pid, Seconds) -> ok
+    when Pid :: pid(),
+         Seconds :: pos_integer().
+pause(Pid, Seconds) ->
+    gen_fsm:send_all_state_event(Pid, {pause, Seconds}).
+
 %%--------------------------------------------------------------------
 %% Private API
 %%--------------------------------------------------------------------
@@ -135,12 +142,20 @@ init([Sid, Peer]) ->
     ?DEBUG("mod_bosh_socket started~n", []),
     {ok, accumulate, #state{sid = Sid,
                             c2s_pid = C2SPid,
-                            inactivity = get_inactivity()}}.
+                            inactivity = get_inactivity(),
+                            maxpause = get_maxpause()}}.
 
 get_inactivity() ->
     case mod_bosh:get_inactivity() of
         undefined -> ?DEFAULT_INACTIVITY;
         I -> I
+    end.
+
+%% TODO: maybe make maxpause runtime configurable like inactivity?
+get_maxpause() ->
+    case gen_mod:get_module_opt(?MYNAME, mod_bosh, maxpause, undefined) of
+        undefined -> ?DEFAULT_MAXPAUSE;
+        MP -> MP
     end.
 
 %%--------------------------------------------------------------------
@@ -235,6 +250,16 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
     EventHandledState = handle_stream_event({EventTag, Body},
                                             HandlerAddedState),
     {next_state, StateName, EventHandledState};
+
+handle_event({pause, Seconds}, _StateName, #state{maxpause = MaxPause} = S)
+       when MaxPause == undefined;
+            Seconds > MaxPause ->
+    [Pid ! policy_violation || Pid <- S#state.handlers],
+    {stop, policy_violation, S#state{handlers = []}};
+handle_event({pause, Seconds}, StateName, State) ->
+    NewState = handle_pause(Seconds, State),
+    {next_state, StateName, NewState};
+
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
     {next_state, StateName, State}.
@@ -372,12 +397,15 @@ send_or_store(Data, #state{handlers = Hs} = State) ->
     ?DEBUG("Forwarding to handler. Handlers: ~p~n", [Hs]),
     send_to_handler(Data, State).
 
-send_to_handler(Data, #state{handlers = [H | Hs]} = State) ->
+send_to_handler(Data, State) ->
+    send_to_handler(Data, State, []).
+
+send_to_handler(Data, #state{handlers = [H | Hs]} = State, Opts) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
     ?DEBUG("send to ~p: ~p~n", [H, Wrapped]),
     H ! {bosh_reply, Wrapped},
-    case Hs of
-        [] ->
+    case {proplists:get_value(pause, Opts, false), Hs} of
+        {false, []} ->
             setup_inactivity_timer(NS#state{handlers = Hs});
         _ ->
             NS#state{handlers = Hs}
@@ -528,6 +556,14 @@ bosh_stream_end_body() ->
                 attrs = [{<<"type">>, <<"terminate">>},
                          {<<"xmlns">>, ?NS_HTTPBIND}],
                 children = []}.
+
+handle_pause(Seconds, State) ->
+    F = fun(_, S) ->
+            send_to_handler([#xmlcdata{content = <<"">>}], S, [pause])
+    end,
+    NS = lists:foldl(F, State,
+                     lists:seq(1, length(State#state.handlers))),
+    NS#state{inactivity = Seconds}.
 
 %%--------------------------------------------------------------------
 %% ejabberd_socket compatibility
