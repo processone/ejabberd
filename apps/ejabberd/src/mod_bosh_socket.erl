@@ -46,7 +46,6 @@
 -define(DEFAULT_WAIT, 60).
 -define(DEFAULT_MAXPAUSE, undefined).
 
--type event_tag() :: streamstart | restart | normal | streamend.
 -type rid() :: pos_integer().
 
 -record(state, {c2s_pid :: pid(),
@@ -59,7 +58,7 @@
                 rid :: rid(),
                 %% Requests deferred for later processing because
                 %% of having Rid greater than expected.
-                deferred = [] :: [{rid(), {event_tag(), #xmlelement{}}}],
+                deferred = [] :: [{rid(), {event_type(), #xmlelement{}}}],
                 %% Allowed inactivity period in seconds.
                 inactivity :: pos_integer() | infinity,
                 inactivity_tref,
@@ -101,7 +100,7 @@ start_supervisor() ->
 
 -spec handle_request(Pid, {EventTag, Handler, Body}) -> ok
     when Pid :: pid(),
-         EventTag :: event_tag(),
+         EventTag :: event_type(),
          Handler :: pid(),
          Body :: #xmlelement{}.
 handle_request(Pid, Request) ->
@@ -420,7 +419,7 @@ new_request_handler(normal, Pid, #state{pending = Pending,
 
 -spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
     -> {[StreamEvent], #state{}}
-    when EventTag :: event_tag(),
+    when EventTag :: event_type(),
          StreamEvent :: #xmlstreamstart{}
                      | {xmlstreamelement, #xmlelement{}}
                      | #xmlstreamend{}.

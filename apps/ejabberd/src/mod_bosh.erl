@@ -178,8 +178,8 @@ start_backend(Opts) ->
     ?BOSH_BACKEND:start(Opts),
     ok.
 
--spec event_type(Body)
-    -> start | restart | normal | terminate when Body::#xmlelement{}.
+-spec event_type(Body) -> event_type()
+    when Body::#xmlelement{}.
 event_type(Body) ->
     %% Order of checks is important:
     %% stream restart has got sid attribute,
@@ -187,7 +187,7 @@ event_type(Body) ->
     catch begin
         case exml_query:attr(Body, <<"type">>) of
             <<"terminate">> ->
-                throw(terminate);
+                throw(streamend);
             _ ->
                 check_next
         end,
@@ -199,7 +199,7 @@ event_type(Body) ->
         end,
         case exml_query:attr(Body, <<"sid">>) of
             undefined ->
-                throw(start);
+                throw(streamstart);
             _ ->
                 normal
         end
@@ -207,25 +207,17 @@ event_type(Body) ->
 
 forward_body(Req, #xmlelement{} = Body, S) ->
     try
-        case event_type(Body) of
-            start ->
+        case Type = event_type(Body) of
+            streamstart ->
                 case maybe_start_session(Req, Body) of
                     {true, Req1} ->
                         {loop, Req1, S};
                     {false, Req1} ->
                         {ok, Req1, S}
                 end;
-            restart ->
+            _ ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-                handle_request(Socket, {restart, Body}),
-                {loop, Req, S};
-            normal ->
-                Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-                handle_request(Socket, {normal, Body}),
-                {loop, Req, S};
-            terminate ->
-                Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-                handle_request(Socket, {streamend, Body}),
+                handle_request(Socket, {Type, Body}),
                 {loop, Req, S}
         end
     catch

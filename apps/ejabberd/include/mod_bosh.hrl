@@ -9,3 +9,10 @@
 -record(bosh_socket, {sid :: bosh_sid(),
                       pid :: pid(),
                       peer :: {inet:ip_address(), inet:port_number()}}).
+
+-type event_type()
+    :: streamstart
+    | restart
+    | normal
+    | {pause, pos_integer()}
+    | streamend.
