@@ -6,7 +6,8 @@
 -export([start/1,
          create_session/1,
          delete_session/1,
-         get_session/1]).
+         get_session/1,
+         get_sessions/0]).
 
 -include("mod_bosh.hrl").
 
@@ -26,3 +27,7 @@ delete_session(Sid) ->
 -spec get_session(bosh_sid()) -> [#bosh_session{}].
 get_session(Sid) ->
     mnesia:dirty_read(bosh_session, Sid).
+
+-spec get_sessions() -> [#bosh_session{}].
+get_sessions() ->
+    mnesia:dirty_match_object(mnesia:table_info(bosh_session, wild_pattern)).

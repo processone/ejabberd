@@ -9,6 +9,7 @@ behaviour_info(callbacks) ->
     [{start, 1},
      {create_session, 1},
      {delete_session, 1},
-     {get_session, 1}];
+     {get_session, 1},
+     {get_sessions, 0}];
 behaviour_info(_Other) ->
     undefined.
