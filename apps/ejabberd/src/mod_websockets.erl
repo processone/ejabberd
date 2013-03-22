@@ -39,7 +39,6 @@
 -include_lib("exml/include/exml_stream.hrl").
 
 -define(LISTENER, ?MODULE).
--define(DEFAULT_PORT, 5288).
 
 -record(websocket, {pid :: pid(),
                     peername :: string()}).
@@ -55,10 +54,39 @@ start(_Host, Opts) ->
     WSHost = gen_mod:get_opt(host, Opts, '_'), %% default to any
     WSPrefix = gen_mod:get_opt(prefix, Opts, "/ws-xmpp"),
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
-    Port = gen_mod:get_opt(port, Opts, ?DEFAULT_PORT),
+    Port = gen_mod:get_opt(port, Opts, undefined),
+    SSLPort = gen_mod:get_opt(ssl_port, Opts, undefined),
+    SSLCert = gen_mod:get_opt(cert, Opts, undefined),
+    SSLKey = gen_mod:get_opt(key, Opts, undefined),
+    SSLKeyPass = gen_mod:get_opt(key_pass, Opts, undefined),
     Dispatch = cowboy_router:compile([{WSHost, [{WSPrefix, ?MODULE, Opts}] }]),
+    ok = start_ws(NumAcceptors, Port, Dispatch),
+    ok = start_wss(NumAcceptors, SSLPort, SSLCert, SSLKey, SSLKeyPass, Dispatch).
+
+start_ws(_, undefined, _) ->
+    ok;
+start_ws(NumAcceptors, Port, Dispatch) ->
     case cowboy:start_http(?LISTENER, NumAcceptors,
                                 [{port, Port}],
+                                [{env, [{dispatch, Dispatch}]}]) of
+        {error, {already_started, _Pid}} ->
+            ok;
+        {ok, _Pid} ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+start_wss(_, _, undefined, undefined, undefined, _) ->
+    ok;
+start_wss(NumAcceptors, Port, Cert, Key, Pass, Dispatch) ->
+    case cowboy:start_https({?LISTENER, secure}, NumAcceptors,
+                                [
+                                    {certfile, Cert},
+                                    {keyfile, Key},
+                                    {password, Pass},
+                                    {port, Port}
+                                ],
                                 [{env, [{dispatch, Dispatch}]}]) of
         {error, {already_started, _Pid}} ->
             ok;
