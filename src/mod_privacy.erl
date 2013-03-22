@@ -491,10 +491,11 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		ejabberd_sm:route(jlib:make_jid(LUser, LServer,
                                                 <<"">>),
                                   jlib:make_jid(LUser, LServer, <<"">>),
-                                  {broadcast, {privacy_list,
+                                  #xmlel{name = <<"broadcast">>, children =
+                                  [{privacy_list,
                                                #userlist{name = Name,
                                                          list = []},
-                                               Name}}),
+                                               Name}]}),
 		{result, []};
 	    _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
 	  end;
@@ -507,11 +508,12 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		ejabberd_sm:route(jlib:make_jid(LUser, LServer,
                                                 <<"">>),
                                   jlib:make_jid(LUser, LServer, <<"">>),
-                                  {broadcast, {privacy_list,
+                                  #xmlel{name = <<"broadcast">>, children =
+                                  [{privacy_list,
                                                #userlist{name = Name,
                                                          list = List,
                                                          needdb = NeedDb},
-                                               Name}}),
+                                               Name}]}),
 		{result, []};
 	    _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
 	  end
