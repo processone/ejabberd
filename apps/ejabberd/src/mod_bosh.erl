@@ -32,8 +32,7 @@
 -define(LISTENER, ?MODULE).
 -define(DEFAULT_PORT, 5280).
 -define(DEFAULT_BACKEND, mnesia).
--define(INACTIVITY_TIMEOUT, 120000).  %% 2 minutes
--define(DEFAULT_MAX_AGE, 1728000).
+-define(DEFAULT_MAX_AGE, 1728000).  %% 20 days in seconds
 
 %% Request State
 -record(rstate, {}).
@@ -173,7 +172,6 @@ start_cowboy(Port, Opts) ->
     end.
 
 start_backend(Opts) ->
-    %% TODO: there's completely no error checking here
     Backend = proplists:get_value(backend, Opts, ?DEFAULT_BACKEND),
     {Mod, Code} = dynamic_compile:from_string(mod_bosh_dynamic_src(Backend)),
     code:load_binary(Mod, "mod_bosh_dynamic.erl", Code),

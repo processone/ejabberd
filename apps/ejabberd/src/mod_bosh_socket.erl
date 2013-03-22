@@ -46,7 +46,6 @@
 -define(DEFAULT_WAIT, 60).
 -define(DEFAULT_MAXPAUSE, undefined).
 
-%% TODO: isn't event_tag equivalent in semantics to xmlstreamelement()?
 -type event_tag() :: streamstart | restart | normal | streamend.
 -type rid() :: pos_integer().
 
@@ -132,7 +131,6 @@ get_pending(Pid) ->
 %%--------------------------------------------------------------------
 init([Sid, Peer]) ->
     BoshSocket = #bosh_socket{sid = Sid, pid = self(), peer = Peer},
-    %% TODO: C2SOpts probably shouldn't be empty
     C2SOpts = [{xml_socket, true}],
     {ok, C2SPid} = ejabberd_c2s:start({mod_bosh_socket, BoshSocket}, C2SOpts),
     ?DEBUG("mod_bosh_socket started~n", []),
@@ -402,7 +400,7 @@ store(Data, #state{pending = Pending} = S) ->
 forward_to_c2s(C2SPid, StreamElement) ->
     gen_fsm:send_event(C2SPid, StreamElement).
 
-%% TODO: fix hardcoding for hold == 1
+%% Keep in mind the hardcoding for hold == 1.
 new_request_handler(accumulate, Pid, #state{handlers = [_]} = S) ->
     NS = send_to_handler([#xmlcdata{content = <<"">>}], S),
     NS#state{handlers = [Pid]};
@@ -551,22 +549,16 @@ compress(_SocketData, _Data) ->
     throw({error, negotiate_compression_on_http_level}).
 
 %% TODO: adjust for BOSH
-
 reset_stream(#bosh_socket{pid = Pid} = SocketData) ->
     Pid ! reset_stream,
     SocketData.
 
-%send_xml(Socket, {xmlstreamraw, Text}) ->
-%    send(Socket, Text);
 send_xml(Socket, {xmlstreamelement, XML}) ->
     send(Socket, XML);
 send_xml(Socket, #xmlstreamstart{} = XML) ->
     send(Socket, XML);
 send_xml(Socket, #xmlstreamend{} = XML) ->
     send(Socket, XML).
-%send_xml(Socket, XML) ->
-%    Text = exml:to_iolist(XML),
-%    send(Socket, Text).
 
 send(#bosh_socket{pid = Pid}, Data) ->
     Pid ! {send, Data},
