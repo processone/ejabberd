@@ -2106,19 +2106,11 @@ relational databases like MySQL. To enable storage to your database, just make
 sure that your database is running well (see previous sections), and add the
 module option \term{\{db\_type, odbc\}}.
 
+
 \makesubsection{mssql}{Microsoft SQL Server}
 \ind{Microsoft SQL Server}\ind{Microsoft SQL Server!schema}
 
-Although this section will describe \ejabberd{}'s configuration when you want to
-use Microsoft SQL Server, it does not describe Microsoft SQL Server's
-installation and database creation. Check the MySQL documentation and the
-tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
-Note that the tutorial contains information about \ejabberd{}'s configuration
-which is duplicate to this section.
-
-Moreover, the file mssql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end
-of the file you can find information to update your database schema.
+ejabberd can be configured to use Microsoft SQL Server for storing authentication and other information instead of the internal database. MS SQL Server 2000 is known to be supported. You need an ejabberd with the MSSQL patch.
 
 
 \makesubsubsection{compilemssql}{Driver Compilation}
@@ -2143,23 +2135,45 @@ is the same as the configuration for
 ODBC compatible servers (see section~\ref{configureodbc}).
 
 
-\makesubsubsection{mssqlauth}{Authentication}
-\ind{Microsoft SQL Server!authentication}
+\begin{enumerate}
+\item Install Microsoft SQL Server 2000.
 
-%TODO: not sure if this section is right!!!!!!
+\item Open "SQL Server Enterprise Manager" to create and setup the database. Create a new database called 'ejabberd'.
 
+\item Use the "Query Analyzer" tool to run the database creation script.
+
+\item Create an ODBC datasource (from "Config Panel" -> "Data source (ODBC)"). The new ODBC datasource can be named ejabberd.
+
+\item Modify the config file to use your newly created MSSQL database:
 The configuration of Authentication for a Microsoft SQL Server
-is the same as the configuration for
-ODBC compatible servers (see section~\ref{odbcauth}).
+is the same as the configuration for ODBC compatible servers (see section~\ref{odbcauth}).
+\begin{verbatim}
+% Comment Internal Authentication:
+%{auth_method, internal}.
+% Define ODBC authentication:
+{auth_method, odbc}.
+{odbc_server, "DSN=ejabberd;UID=sa;PWD=nimda"}.
+Start ejabberd (from the "Start" menu, and from the console try creating a new user:
+(ejabberd@home-68006dc09b)2> ejabberd_auth:try_register("admin", "localhost", "nimda").
+{atomic,ok}
+\end{verbatim}
 
-\makesubsubsection{mssqlstorage}{Storage}
-\ind{Microsoft SQL Server!storage}
+\item Try connecting from a Jabber client, with your newly connected user.
 
-Microsoft SQL Server also can be used to store information into from several
-modules. See section~\ref{modoverview} to see which modules can be used with
+\item Check that the newly created user has been correctly added to your database using the MSSQL "Query Analyzer":
+\begin{verbatim}
+select * from [dbo].[users];
+\end{verbatim}
+
+\item Modify the config file to enable odbc storage in the modules you want.
+See section~\ref{modoverview} to see which modules can be used with
 relational databases like MySQL. To enable storage to your database, just make
 sure that your database is running well (see previous sections), and add the
 module option \term{\{db\_type, odbc\}}.
+
+\item Restart ejabberd
+\end{enumerate}
+
 
 \makesubsection{pgsql}{PostgreSQL}
 \ind{PostgreSQL}\ind{PostgreSQL!schema}
