@@ -411,6 +411,8 @@ send_to_handler(Data, #state{handlers = [H | Hs]} = State, Opts) ->
             NS#state{handlers = Hs}
     end.
 
+setup_inactivity_timer(#state{inactivity = infinity} = S) ->
+    S;
 setup_inactivity_timer(S) ->
     {ok, TRef} = timer:send_after(timer:seconds(S#state.inactivity),
                                   inactivity_timeout),
