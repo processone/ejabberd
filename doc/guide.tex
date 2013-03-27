@@ -1960,9 +1960,11 @@ You can skip this step if you installed \ejabberd{} using a binary installer or
 if the binary packages of \ejabberd{} you are using include support for MySQL.
 
 \begin{enumerate}
-\item First, install the \footahref{http://support.process-one.net/doc/display/CONTRIBS/Yxa}{Erlang
-  MySQL library}. Make sure the compiled files are in your Erlang path; you can
-  put them for example in the same directory as your \ejabberd{} .beam files.
+\item First, install the Erlang mysql library from
+  \footahref{http://www.ejabberd.im/ejabberd-modules/}{ejabberd-modules SVN repository}.
+  Make sure the compiled
+  files are in your Erlang path; you can put them for example in the same
+  directory as your \ejabberd{} .beam files.
 \item Then, configure and install \ejabberd{} with ODBC support enabled (this is
   also needed for native MySQL support!). This can be done, by using next
   commands:
@@ -2178,16 +2180,8 @@ module option \term{\{db\_type, odbc\}}.
 \makesubsection{pgsql}{PostgreSQL}
 \ind{PostgreSQL}\ind{PostgreSQL!schema}
 
-Although this section will describe \ejabberd{}'s configuration when you want to
-use the native PostgreSQL driver, it does not describe PostgreSQL's installation
-and database creation. Check the PostgreSQL documentation and the tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
-Note that the tutorial contains information about \ejabberd{}'s configuration
-which is duplicate to this section.
-
-Also the file pg.sql in the directory src/odbc might be interesting for you.
-This file contains the \ejabberd{} schema for PostgreSQL. At the end of the file
-you can find information to update your database schema.
-
+This section describes how to create a MySQL database for ejabberd,
+and configure \ejabberd{} to use it to store authentication and user data.
 
 \makesubsubsection{compilepgsql}{Driver Compilation}
 \ind{PostgreSQL!Driver Compilation}
@@ -2209,6 +2203,11 @@ PostgreSQL.
 ./configure --enable-odbc && make install
 \end{verbatim}
 \end{enumerate}
+
+\makesubsubsection{pgsqlcreatedb}{Create PostgreSQL database}
+\ind{PgSQL!Create database}
+
+Before starting ejabberd, you need to create an ejabberd database in your PostgreSQL database.
 
 
 \makesubsubsection{configurepgsql}{Database Connection}
