@@ -43,7 +43,7 @@
 -define(ACCUMULATE_PERIOD, 10).
 -define(DEFAULT_HOLD, 1).
 -define(DEFAULT_INACTIVITY, 30).
--define(DEFAULT_REQUESTS, 2).
+-define(CONCURRENT_REQUESTS, 2).
 %% TODO: support wait to discover disconnections!
 -define(DEFAULT_WAIT, 60).
 -define(DEFAULT_MAXPAUSE, 120).
@@ -381,7 +381,7 @@ is_valid_rid(_, _) ->
 
 is_acceptable_rid(Rid, OldRid)
         when Rid > OldRid + 1,
-             Rid =< OldRid + ?DEFAULT_REQUESTS ->
+             Rid =< OldRid + ?CONCURRENT_REQUESTS ->
     true;
 is_acceptable_rid(_, _) ->
     false.
@@ -523,7 +523,7 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
     %% TODO: acks?
     #xmlelement{name = <<"body">>,
                 attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
-                         {<<"requests">>, integer_to_binary(?DEFAULT_REQUESTS)},
+                         {<<"requests">>, integer_to_binary(?CONCURRENT_REQUESTS)},
                          {<<"hold">>, integer_to_binary(S#state.hold)},
                          {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
                          %% TODO: how to support these with cowboy?
