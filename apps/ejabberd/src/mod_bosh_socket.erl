@@ -42,10 +42,11 @@
 
 -define(ACCUMULATE_PERIOD, 10).
 -define(DEFAULT_HOLD, 1).
--define(DEFAULT_INACTIVITY, 30).
 -define(CONCURRENT_REQUESTS, 2).
 %% TODO: support wait to discover disconnections!
 -define(DEFAULT_WAIT, 60).
+
+-define(DEFAULT_INACTIVITY, 30).
 -define(DEFAULT_MAXPAUSE, 120).
 
 -type rid() :: pos_integer().
@@ -61,6 +62,10 @@
                 %% Requests deferred for later processing because
                 %% of having Rid greater than expected.
                 deferred = [] :: [{rid(), {event_type(), #xmlelement{}}}],
+
+                %%% Options. These have accompanying DEFAULT_* macros and
+                %%% are set up in init/1 based on ejabberd.cfg.
+
                 %% Allowed inactivity period in seconds.
                 inactivity :: pos_integer() | infinity,
                 inactivity_tref,
