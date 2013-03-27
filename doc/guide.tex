@@ -1352,7 +1352,7 @@ host specific options (see section~\ref{virtualhost}).
   multiple times in anonymous login mode if different resource are used to
   connect. This option is only useful in very special occasions. The default
   value is \term{false}.
-\titem{\{anonymous\_protocol, login\_anon | sasl\_anon | both\}
+\titem{\{anonymous\_protocol, login\_anon | sasl\_anon | both\}}
   \term{login\_anon} means that the anonymous login method will be used.
   \term{sasl\_anon} means that the SASL Anonymous method will be used.
   \term{both} means that SASL Anonymous and login anonymous are both enabled.
@@ -1950,16 +1950,8 @@ For example:
 \makesubsection{mysql}{MySQL}
 \ind{MySQL}\ind{MySQL!schema}
 
-Although this section will describe \ejabberd{}'s configuration when you want to
-use the native MySQL driver, it does not describe MySQL's installation and
-database creation. Check the MySQL documentation and the tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
-Note that the tutorial contains information about \ejabberd{}'s configuration
-which is duplicate to this section.
-
-Moreover, the file mysql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for MySQL. At the end of the file
-you can find information to update your database schema.
-
+This section describes how to create a MySQL database for ejabberd,
+and configure \ejabberd{} to use it to store authentication and user data.
 
 \makesubsubsection{compilemysql}{Driver Compilation}
 \ind{MySQL!Driver Compilation}
@@ -1977,6 +1969,75 @@ if the binary packages of \ejabberd{} you are using include support for MySQL.
 \begin{verbatim}
 ./configure --enable-odbc && make install
 \end{verbatim}
+\end{enumerate}
+
+
+\makesubsubsection{mysqlcreatedb}{Create MySQL database}
+\ind{MySQL!Create database}
+
+Before starting ejabberd, you need to create an ejabberd database in MySQL.
+This assumes the MySQL server is already installed and you have root access to it.
+
+\begin{enumerate}
+\item Create a new user 'ejabberd':
+\begin{verbatim}
+> mysql -h localhost -p -u root -S /tmp/mysql.sock
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 2 to server version: 4.1.16-max
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql> GRANT ALL ON ejabberd.* TO 'ejabberd'@'localhost'IDENTIFIED BY 'password';
+Query OK, 0 rows affected (0.00 sec)
+\end{verbatim}
+
+\item Create a new database 'ejabberd':
+\begin{verbatim}
+> mysql -h localhost -p -u ejabberd -S /tmp/mysql.sock
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 4 to server version: 4.1.16-max
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql> CREATE DATABASE ejabberd;
+Query OK, 1 row affected (0.00 sec)
+\end{verbatim}
+
+\item Get the MySQL ejabberd schema file, usually called 'mysql.sql',
+that you can find somewhere where ejabberd is installed. At the end
+of the file you can find information to update your database schema.
+
+\item Import ejabberd database schema into the ejabberd database:
+\begin{verbatim}
+> mysql -D ejabberd -h localhost -p -u ejabberd -S /tmp/mysql.sock < mysql.sql
+\end{verbatim}
+
+\item Check that the database structure has been correctly created:
+\begin{verbatim}
+> echo "show tables;" | mysql -D ejabberd -h localhost -p -u ejabberd -S /tmp/mysql.sock
+Tables_in_ejabberd
+last
+privacy_default_list
+privacy_list
+privacy_list_data
+private_storage
+pubsub_item
+pubsub_node
+pubsub_node_option
+pubsub_node_owner
+pubsub_state
+pubsub_subscription_opt
+rostergroups
+rosterusers
+roster_version
+spool
+users
+vcard
+vcard_search
+\end{verbatim}
+
 \end{enumerate}
 
 
