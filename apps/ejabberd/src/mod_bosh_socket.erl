@@ -48,6 +48,7 @@
 
 -define(DEFAULT_INACTIVITY, 30).
 -define(DEFAULT_MAXPAUSE, 120).
+-define(DEFAULT_ACKS, false).
 
 -type rid() :: pos_integer().
 
@@ -70,7 +71,9 @@
                 inactivity :: pos_integer() | infinity,
                 inactivity_tref,
                 %% Max pause period in seconds.
-                maxpause :: pos_integer() | undefined}).
+                maxpause :: pos_integer() | undefined,
+                %% Are acknowledgements used?
+                acks :: boolean()}).
 
 %%--------------------------------------------------------------------
 %% API
@@ -149,7 +152,8 @@ init([Sid, Peer]) ->
     {ok, accumulate, #state{sid = Sid,
                             c2s_pid = C2SPid,
                             inactivity = get_inactivity(),
-                            maxpause = get_maxpause()}}.
+                            maxpause = get_maxpause(),
+                            acks = get_acks()}}.
 
 get_inactivity() ->
     case mod_bosh:get_inactivity() of
@@ -162,6 +166,12 @@ get_maxpause() ->
     case gen_mod:get_module_opt(?MYNAME, mod_bosh, maxpause, undefined) of
         undefined -> ?DEFAULT_MAXPAUSE;
         MP -> MP
+    end.
+
+get_acks() ->
+    case gen_mod:get_module_opt(?MYNAME, mod_bosh, acks, undefined) of
+        undefined -> ?DEFAULT_ACKS;
+        Acks -> Acks
     end.
 
 %%--------------------------------------------------------------------
@@ -542,7 +552,8 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                          {<<"xmlns:xmpp">>, <<"urn:xmpp:xbosh">>},
                          {<<"xmlns:stream">>, ?NS_STREAM}] ++
                         inactivity(S#state.inactivity) ++
-                        maxpause(S#state.maxpause),
+                        maxpause(S#state.maxpause) ++
+                        ack(S#state.acks, S#state.rid),
                 children = []}.
 
 inactivity(I) ->
@@ -550,6 +561,9 @@ inactivity(I) ->
 
 maxpause(MP) ->
     [{<<"maxpause">>, integer_to_binary(MP)} || is_integer(MP)].
+
+ack(Acks, Rid) ->
+    [{<<"ack">>, integer_to_binary(Rid)} || Acks =:= true].
 
 %% Bosh body for an ordinary stream element(s).
 bosh_body(#state{} = S) ->
