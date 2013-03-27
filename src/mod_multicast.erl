@@ -278,7 +278,7 @@ iq_vcard(Lang) ->
 		[{xmlcdata,
 		  translate:translate(Lang,
 				      <<"ejabberd Multicast service\nCopyright "
-					"(c) 2007-2012 ProcessOne">>)}]}].
+					"(c) 2007-2013 ProcessOne">>)}]}].
 
 iq_version() ->
     [#xmlel{name = <<"name">>, attrs = [],

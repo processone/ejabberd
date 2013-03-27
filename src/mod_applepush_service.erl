@@ -4,7 +4,7 @@
 %%% Purpose : Central push infrastructure
 %%% Created :  5 Jun 2009 by Alexey Shchepin <alexey@process-one.net>
 %%%
-%%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
 %%%----------------------------------------------------------------------
 
 -module(mod_applepush_service).
