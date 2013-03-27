@@ -1317,17 +1317,33 @@ and starts three instances of the script for each virtual host defined in ejabbe
 {extauth_instances, 3}. 
 \end{verbatim}
 
-\makesubsubsection{saslanonymous}{SASL Anonymous and Anonymous Login}
+
+\makesubsubsection{saslanonymous}{Anonymous Login and SASL Anonymous}
 \ind{sasl anonymous}\ind{anonymous login}
 
-The value \term{anonymous} will enable the internal authentication method.
+The \term{anonymous} authentication method enables two modes for anonymous authentication:
+\begin{description}
+\titem{Anonymous login:} This is a standard login, that use the
+  classical login and password mechanisms, but where password is
+  accepted or preconfigured for all anonymous users. This login is
+  compliant with SASL authentication, password and digest non-SASL
+  authentication, so this option will work with almost all XMPP
+  clients
+
+\titem{SASL Anonymous:} This is a special SASL authentication
+  mechanism that allows to login without providing username or
+  password (see \xepref{0175}).  The main advantage of SASL Anonymous
+  is that the protocol was designed to give the user a login. This is
+  useful to avoid in some case, where the server has many users
+  already logged or registered and when it is hard to find a free
+  username. The main disavantage is that you need a client that
+  specifically supports the SASL Anonymous protocol.
+\end{description}
 
 %TODO: introduction; tell what people can do with this
 The anonymous authentication method can be configured with the following
 options. Remember that you can use the \term{host\_config} option to set virtual
-host specific options (see section~\ref{virtualhost}). Note that there also
-is a detailed tutorial regarding \footahref{http://support.process-one.net/doc/display/MESSENGER/Anonymous+users+support}{SASL
-Anonymous and anonymous login configuration}.
+host specific options (see section~\ref{virtualhost}).
 
 \begin{description}
 \titem{\{allow\_multiple\_connections, false|true\}} This option is only used
@@ -1336,11 +1352,10 @@ Anonymous and anonymous login configuration}.
   multiple times in anonymous login mode if different resource are used to
   connect. This option is only useful in very special occasions. The default
   value is \term{false}.
-\titem{\{anonymous\_protocol, sasl\_anon | login\_anon | both\}} 
-  \term{sasl\_anon} means
-  that the SASL Anonymous method will be used. \term{login\_anon} means that the
-  anonymous login method will be used. \term{both} means that SASL Anonymous and
-  login anonymous are both enabled.
+\titem{\{anonymous\_protocol, login\_anon | sasl\_anon | both\}
+  \term{login\_anon} means that the anonymous login method will be used.
+  \term{sasl\_anon} means that the SASL Anonymous method will be used.
+  \term{both} means that SASL Anonymous and login anonymous are both enabled.
 \end{description}
 
 Those options are defined for each virtual host with the \term{host\_config}
@@ -1380,6 +1395,10 @@ a virtual host:
                                      {anonymous_protocol, both}]}.
 \end{verbatim}
 \end{itemize}
+
+There are more configuration examples and XMPP client example stanzas in
+\footahref{http://www.ejabberd.im/Anonymous-users-support}{Anonymous users support}.
+
 
 \makesubsubsection{pam}{PAM Authentication}
 \ind{PAM authentication}\ind{Pluggable Authentication Modules}
