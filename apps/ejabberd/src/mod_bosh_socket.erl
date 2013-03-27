@@ -447,13 +447,13 @@ forward_to_c2s(C2SPid, StreamElement) ->
 
 %% Keep in mind the hardcoding for hold == 1.
 new_request_handler(accumulate, Pid, #state{handlers = [_]} = S) ->
-    NS = send_to_handler([#xmlcdata{content = <<"">>}], S),
+    NS = send_to_handler([], S),
     NS#state{handlers = [Pid]};
 new_request_handler(accumulate, Pid, #state{handlers = []} = S) ->
     S#state{handlers = [Pid]};
 new_request_handler(normal, Pid, #state{pending = [],
                                         handlers = [_]} = S) ->
-    NS = send_to_handler([#xmlcdata{content = <<"">>}], S),
+    NS = send_to_handler([], S),
     NS#state{handlers = [Pid]};
 new_request_handler(normal, Pid, #state{pending = [],
                                         handlers = []} = S) ->
@@ -581,7 +581,7 @@ bosh_stream_end_body() ->
 
 handle_pause(Seconds, State) ->
     F = fun(_, S) ->
-            send_to_handler([#xmlcdata{content = <<"">>}], S, [pause])
+            send_to_handler([], S, [pause])
     end,
     NS = lists:foldl(F, State,
                      lists:seq(1, length(State#state.handlers))),
