@@ -248,8 +248,9 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
              EventTag == restart ->
     NS = cancel_inactivity_timer(State),
     try
+        Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
         HandlerAddedState = new_request_handler(StateName, Handler, NS),
-        EventHandledState = handle_stream_event({EventTag, Body},
+        EventHandledState = handle_stream_event({Rid, EventTag, Body},
                                                 HandlerAddedState),
         timer:apply_after(?ACCUMULATE_PERIOD,
                           gen_fsm, send_event, [self(), acc_off]),
@@ -262,8 +263,9 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         when EventTag == normal;
              EventTag == streamend ->
     NS = cancel_inactivity_timer(State),
+    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
     HandlerAddedState = new_request_handler(StateName, Handler, NS),
-    EventHandledState = handle_stream_event({EventTag, Body},
+    EventHandledState = handle_stream_event({Rid, EventTag, Body},
                                             HandlerAddedState),
     {next_state, StateName, EventHandledState};
 
@@ -357,8 +359,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %% callback implementations
 %%--------------------------------------------------------------------
 
-handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
-    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
+handle_stream_event({Rid, EventTag, Body} = Event, #state{rid = OldRid} = S) ->
     case {EventTag,
           is_valid_rid(Rid, OldRid),
           is_acceptable_rid(Rid, OldRid)} of
@@ -369,7 +370,7 @@ handle_stream_event({EventTag, Body}, #state{rid = OldRid} = S) ->
         {_, false, true} ->
             ?DEBUG("storing stream event for deferred processing: ~p~n",
                    [{EventTag, Body}]),
-            S#state{deferred = [{Rid, {EventTag, Body}} | S#state.deferred]};
+            S#state{deferred = [Event | S#state.deferred]};
         {_, false, false} ->
             ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
             [Pid ! item_not_found || Pid <- S#state.handlers],
@@ -382,7 +383,7 @@ process_stream_event(EventTag, Body, #state{c2s_pid = C2SPid} = State) ->
     process_deferred_events(NewState).
 
 process_deferred_events(#state{deferred = Deferred} = S) ->
-    lists:foldl(fun({_, Event}, State) ->
+    lists:foldl(fun(Event, State) ->
                     ?DEBUG("processing deferred event: ~p~n", [Event]),
                     handle_stream_event(Event, State)
                 end,
