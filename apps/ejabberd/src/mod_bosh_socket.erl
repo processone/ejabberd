@@ -341,6 +341,18 @@ handle_info(close, _SName, State) ->
 handle_info(inactivity_timeout, _SName, State) ->
     ?DEBUG("terminating due to client inactivity~n", []),
     {stop, {shutdown, inactivity_timeout}, State};
+handle_info({wait_timeout, {Rid, Pid}}, SName,
+            #state{handlers = Handlers} = S) ->
+    ?DEBUG("'wait' limit reached for ~p~n", [Pid]),
+    %% In case some message was being handled when the timer fired
+    %% it may turn out that Pid is no longer available in Handlers.
+    case lists:keytake(Rid, 1, Handlers) of
+        false ->
+            {next_state, SName, S};
+        {value, {Rid, _, Pid}, NewHandlers} ->
+            NS = send_to_handler({Rid, Pid}, [], S, []),
+            {next_state, SName, NS#state{handlers = NewHandlers}}
+    end;
 handle_info(Info, SName, State) ->
     ?DEBUG("Unhandled info in '~s' state: ~w~n", [SName, Info]),
     {next_state, SName, State}.
@@ -417,15 +429,22 @@ send_or_store(Data, #state{handlers = Hs} = State) ->
 send_to_handler(Data, State) ->
     send_to_handler(Data, State, []).
 
-send_to_handler(Data, #state{handlers = [H | Hs]} = State, Opts) ->
+send_to_handler(Data, #state{handlers = Handlers} = S, Opts) ->
+    [{Rid, TRef, Pid} | HRest] = lists:sort(Handlers),
+    %% The cancellation might fail if the timer already fired.
+    %% Don't worry, it's handled on receiving the timeout message.
+    timer:cancel(TRef),
+    send_to_handler({Rid, Pid}, Data, S#state{handlers = HRest}, Opts).
+
+send_to_handler({_, Pid}, Data, State, Opts) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
-    ?DEBUG("send to ~p: ~p~n", [H, Wrapped]),
-    H ! {bosh_reply, Wrapped},
-    case {proplists:get_value(pause, Opts, false), Hs} of
-        {false, []} ->
-            setup_inactivity_timer(NS#state{handlers = Hs});
+    ?DEBUG("send to ~p: ~p~n", [Pid, Wrapped]),
+    Pid ! {bosh_reply, Wrapped},
+    case proplists:get_value(pause, Opts, false) of
+        false ->
+            setup_inactivity_timer(NS);
         _ ->
-            NS#state{handlers = Hs}
+            NS
     end.
 
 setup_inactivity_timer(#state{inactivity = infinity} = S) ->
@@ -465,7 +484,7 @@ new_request_handler(normal, Handler, #state{pending = Pending} = S) ->
 
 add_handler({Rid, Pid}, #state{handlers = Handlers} = S) ->
     {ok, TRef} = timer:send_after(timer:seconds(S#state.wait),
-                                  wait_timeout),
+                                  {wait_timeout, {Rid, Pid}}),
     S#state{handlers = [{Rid, TRef, Pid} | Handlers]}.
 
 -spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
