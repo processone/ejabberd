@@ -53,7 +53,7 @@
 -type rid() :: pos_integer().
 
 -record(state, {c2s_pid :: pid(),
-                handlers = [] :: [pid()],
+                handlers = [] :: [{rid(), timer:tref(), pid()}],
                 %% Elements buffered for sending to the client.
                 pending = [] :: [xmlstreamelement()],
                 sid :: bosh_sid(),
@@ -249,7 +249,7 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
     NS = cancel_inactivity_timer(State),
     try
         Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-        HandlerAddedState = new_request_handler(StateName, Handler, NS),
+        HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
         EventHandledState = handle_stream_event({Rid, EventTag, Body},
                                                 HandlerAddedState),
         timer:apply_after(?ACCUMULATE_PERIOD,
@@ -264,7 +264,7 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
              EventTag == streamend ->
     NS = cancel_inactivity_timer(State),
     Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-    HandlerAddedState = new_request_handler(StateName, Handler, NS),
+    HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
     EventHandledState = handle_stream_event({Rid, EventTag, Body},
                                             HandlerAddedState),
     {next_state, StateName, EventHandledState};
@@ -447,22 +447,26 @@ forward_to_c2s(C2SPid, StreamElement) ->
     gen_fsm:send_event(C2SPid, StreamElement).
 
 %% Keep in mind the hardcoding for hold == 1.
-new_request_handler(accumulate, Pid, #state{handlers = [_]} = S) ->
+new_request_handler(accumulate, {Rid, Pid}, #state{handlers = [_]} = S) ->
     NS = send_to_handler([], S),
-    NS#state{handlers = [Pid]};
-new_request_handler(accumulate, Pid, #state{handlers = []} = S) ->
-    S#state{handlers = [Pid]};
-new_request_handler(normal, Pid, #state{pending = [],
-                                        handlers = [_]} = S) ->
+    add_handler({Rid, Pid}, NS);
+new_request_handler(accumulate, Handler, #state{handlers = []} = S) ->
+    add_handler(Handler, S);
+new_request_handler(normal, Handler, #state{pending = [],
+                                            handlers = [_]} = S) ->
     NS = send_to_handler([], S),
-    NS#state{handlers = [Pid]};
-new_request_handler(normal, Pid, #state{pending = [],
-                                        handlers = []} = S) ->
-    S#state{handlers = [Pid]};
-new_request_handler(normal, Pid, #state{pending = Pending,
-                                        handlers = Handlers} = S) ->
-    NS = S#state{pending = [], handlers = Handlers ++ [Pid]},
+    add_handler(Handler, NS);
+new_request_handler(normal, Handler, #state{pending = [],
+                                            handlers = []} = S) ->
+    add_handler(Handler, S);
+new_request_handler(normal, Handler, #state{pending = Pending} = S) ->
+    NS = add_handler(Handler, S#state{pending = []}),
     send_or_store(Pending, NS).
+
+add_handler({Rid, Pid}, #state{handlers = Handlers} = S) ->
+    {ok, TRef} = timer:send_after(timer:seconds(S#state.wait),
+                                  wait_timeout),
+    S#state{handlers = [{Rid, TRef, Pid} | Handlers]}.
 
 -spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
     -> {[StreamEvent], #state{}}
