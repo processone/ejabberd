@@ -262,12 +262,16 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         when EventTag == normal;
              EventTag == streamend ->
     NS = cancel_inactivity_timer(State),
-    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-    HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
-    EventHandledState = handle_stream_event({Rid, EventTag, Body},
-                                            HandlerAddedState),
-    {next_state, StateName, EventHandledState};
-
+    try
+        Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
+        HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
+        EventHandledState = handle_stream_event({Rid, EventTag, Body},
+                                                HandlerAddedState),
+        {next_state, StateName, EventHandledState}
+    catch
+        throw:{invalid_rid, TState} ->
+            {stop, {shutdown, invalid_rid}, TState}
+    end;
 handle_event({pause, Seconds}, _StateName, #state{maxpause = MaxPause} = S)
        when MaxPause == undefined;
             Seconds > MaxPause ->
@@ -384,7 +388,7 @@ handle_stream_event({Rid, EventTag, Body} = Event, #state{rid = OldRid} = S) ->
             S#state{deferred = [Event | S#state.deferred]};
         {_, false, false} ->
             ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
-            [Pid ! item_not_found || Pid <- S#state.handlers],
+            [Pid ! item_not_found || {_, _, Pid} <- S#state.handlers],
             throw({invalid_rid, S#state{handlers = []}})
     end.
 
