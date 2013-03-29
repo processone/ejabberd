@@ -256,7 +256,7 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         {next_state, accumulate, EventHandledState}
     catch
         throw:{invalid_rid, TState} ->
-            {stop, invalid_rid, TState}
+            {stop, {shutdown, invalid_rid}, TState}
     end;
 handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
         when EventTag == normal;
