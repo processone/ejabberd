@@ -357,7 +357,7 @@ handle_info(Info, SName, State) ->
     {next_state, SName, State}.
 
 terminate(_Reason, StateName, #state{sid = Sid, handlers = Handlers} = S) ->
-    [ H ! {close, Sid} || H <- Handlers ],
+    [Pid ! {close, Sid} || {_, _, Pid} <- Handlers],
     ?BOSH_BACKEND:delete_session(Sid),
     catch ejabberd_c2s:stop(S#state.c2s_pid),
     ?DEBUG("Closing session ~p in '~s' state. Handlers: ~p Pending: ~p~n",
