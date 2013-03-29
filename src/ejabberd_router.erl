@@ -358,13 +358,13 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 		  undefined ->
 		      case [R || R <- Rs, node(R#route.pid) == node()] of
 			[] ->
-			    R = lists:nth(erlang:phash(Value, str:len(Rs)), Rs),
+			    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
 			    Pid = R#route.pid,
 			    if is_pid(Pid) -> Pid ! {route, From, To, Packet};
 			       true -> drop
 			    end;
 			LRs ->
-			    R = lists:nth(erlang:phash(Value, str:len(LRs)),
+			    R = lists:nth(erlang:phash(Value, length(LRs)),
 					  LRs),
 			    Pid = R#route.pid,
 			    case R#route.local_hint of
@@ -375,7 +375,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 		      end;
 		  _ ->
 		      SRs = lists:ukeysort(#route.local_hint, Rs),
-		      R = lists:nth(erlang:phash(Value, str:len(SRs)), SRs),
+		      R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
 		      Pid = R#route.pid,
 		      if is_pid(Pid) -> Pid ! {route, From, To, Packet};
 			 true -> drop

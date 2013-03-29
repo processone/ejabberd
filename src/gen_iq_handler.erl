@@ -101,7 +101,7 @@ handle(Host, Module, Function, Opts, From, To, IQ) ->
 	  process_iq(Host, Module, Function, From, To, IQ);
       {one_queue, Pid} -> Pid ! {process_iq, From, To, IQ};
       {queues, Pids} ->
-	  Pid = lists:nth(erlang:phash(now(), str:len(Pids)),
+	  Pid = lists:nth(erlang:phash(now(), length(Pids)),
 			  Pids),
 	  Pid ! {process_iq, From, To, IQ};
       parallel ->

@@ -830,9 +830,10 @@ webadmin_user_parse_query(Acc, _Action, _User, _Server,
 count_offline_messages(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:count_records_where(
-		 LServer, "spool", "where username='" ++ Username ++ "'") of
+		 LServer, "spool",
+                 <<"where username='", Username/binary, "'">>) of
         {selected, [_], [{Res}]} ->
-            list_to_integer(Res);
+            jlib:binary_to_integer(Res);
         _ ->
             0
     end.

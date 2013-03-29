@@ -822,25 +822,5 @@ old_integer_to_hex(I) when I >= 16 ->
     N = trunc(I / 16),
     old_integer_to_hex(N) ++ old_integer_to_hex(I rem 16).
 
-% The following code is mostly taken from yaws_ssl.erl
-
-toupper(C) when C >= $a andalso C =< $z -> C - 32;
-toupper(C) -> C.
-
-tolower(C) when C >= $A andalso C =< $Z -> C + 32;
-tolower(C) -> C.
-
-normalize_header_name(Name) ->
-    normalize_header_name(Name, [], true).
-
-normalize_header_name(<<"">>, Acc, _) ->
-    iolist_to_binary(Acc);
-normalize_header_name(<<"-", Rest/binary>>, Acc, _) ->
-    normalize_header_name(Rest, [Acc, "-"], true);
-normalize_header_name(<<C:8, Rest/binary>>, Acc, true) ->
-    normalize_header_name(Rest, [Acc, toupper(C)], false);
-normalize_header_name(<<C:8, Rest/binary>>, Acc, false) ->
-    normalize_header_name(Rest, [Acc, tolower(C)], false).
-
 %% strip_spaces(String, left) ->
 %%     drop_spaces(String);

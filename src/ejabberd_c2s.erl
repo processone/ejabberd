@@ -292,7 +292,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
 		    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
-			       Lang1 when length(Lang1) =< 35 ->
+			       Lang1 when size(Lang1) =< 35 ->
 				   %% As stated in BCP47, 4.4.1:
 				   %% Protocols or specifications that
 				   %% specify limited buffer sizes for

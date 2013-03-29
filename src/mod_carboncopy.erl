@@ -35,8 +35,8 @@
          stop/1]).
 
 %% Hooks:
--export([user_send_packet/4,
-	 user_receive_packet/5,
+-export([user_send_packet/3,
+	 user_receive_packet/4,
          iq_handler2/3,
          iq_handler1/3,
          remove_connection/4,
@@ -127,15 +127,15 @@ iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children 
 iq_handler(_From, _To, IQ, _CC)->
     IQ#iq{type=error, sub_el = [?ERR_NOT_ALLOWED]}.
 
-user_send_packet(_Debug, From, _To, Packet) ->
+user_send_packet(From, _To, Packet) ->
     check_and_forward(From, Packet, sent).
 
 %% Only make carbon copies if the original destination was not a bare jid. 
 %% If the original destination was a bare jid, the message is going to be delivered to all
 %% connected resources anyway. Avoid duplicate delivery. "XEP-0280 : 3.5 Receiving Messages"
-user_receive_packet(_Debug, JID, _From, #jid{resource=Resource} = _To, Packet) when Resource /= <<>> ->
+user_receive_packet(JID, _From, #jid{resource=Resource} = _To, Packet) when Resource /= <<>> ->
     check_and_forward(JID, Packet, received);
-user_receive_packet(_Debug, _JID, _From, _To, _Packet) ->
+user_receive_packet(_JID, _From, _To, _Packet) ->
 	ok.
     
 % verifier si le trafic est local

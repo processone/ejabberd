@@ -50,16 +50,14 @@
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
--type sockmod() :: ejabberd_http_poll | ejabberd_bosh |
-                   ejabberd_http_bind | ejabberd_http_bindjson |
-                   ejabberd_http_ws | ejabberd_http_wsjson |
+-type sockmod() :: ejabberd_http_poll |
+                   ejabberd_http_bind |
                    gen_tcp | tls | ejabberd_zlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   tls:tls_socket() |
                   ejabberd_zlib:zlib_socket() |
-                  ejabberd_bosh:bosh_socket() |
-                  ejabberd_http_ws:ws_socket() |
+                  ejabberd_http_bind:bind_socket() |
                   ejabberd_http_poll:poll_socket().
 
 -record(socket_state, {sockmod = gen_tcp :: sockmod(),
