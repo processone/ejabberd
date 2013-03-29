@@ -361,7 +361,7 @@ handle_info(Info, SName, State) ->
     {next_state, SName, State}.
 
 terminate(_Reason, StateName, #state{sid = Sid, handlers = Handlers} = S) ->
-    [Pid ! {close, Sid} || {_, _, Pid} <- Handlers],
+    [Pid ! {close, Sid} || {_, _, Pid} <- lists:sort(Handlers)],
     ?BOSH_BACKEND:delete_session(Sid),
     catch ejabberd_c2s:stop(S#state.c2s_pid),
     ?DEBUG("Closing session ~p in '~s' state. Handlers: ~p Pending: ~p~n",
@@ -388,7 +388,7 @@ handle_stream_event({Rid, EventTag, Body} = Event, #state{rid = OldRid} = S) ->
             S#state{deferred = [Event | S#state.deferred]};
         {_, false, false} ->
             ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
-            [Pid ! item_not_found || {_, _, Pid} <- S#state.handlers],
+            [Pid ! item_not_found || {_, _, Pid} <- lists:sort(S#state.handlers)],
             throw({invalid_rid, S#state{handlers = []}})
     end.
 
