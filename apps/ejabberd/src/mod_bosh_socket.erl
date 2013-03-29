@@ -43,7 +43,6 @@
 -define(ACCUMULATE_PERIOD, 10).
 -define(DEFAULT_HOLD, 1).
 -define(CONCURRENT_REQUESTS, 2).
-%% TODO: support wait to discover disconnections!
 -define(DEFAULT_WAIT, 60).
 
 -define(DEFAULT_INACTIVITY, 30).
