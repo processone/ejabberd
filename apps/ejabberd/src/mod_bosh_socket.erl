@@ -271,8 +271,8 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
 handle_event({pause, Seconds}, _StateName, #state{maxpause = MaxPause} = S)
        when MaxPause == undefined;
             Seconds > MaxPause ->
-    [Pid ! policy_violation || Pid <- S#state.handlers],
-    {stop, policy_violation, S#state{handlers = []}};
+    [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
+    {stop, {shutdown, policy_violation}, S#state{handlers = []}};
 handle_event({pause, Seconds}, StateName, State) ->
     NewState = handle_pause(Seconds, State),
     {next_state, StateName, NewState};
