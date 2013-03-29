@@ -234,6 +234,7 @@ forward_body(Req, #xmlelement{} = Body, S) ->
         end
     catch
         error:item_not_found ->
+            ?WARNING_MSG("session not found! ~p~n", [Body]),
             {ok, terminal_condition(<<"item-not-found">>, Req), S}
     end.
 
@@ -245,7 +246,6 @@ get_session_socket(Sid) ->
         [BS] ->
             BS#bosh_session.socket;
         [] ->
-            ?ERROR_MSG("BOSH session ~p not found!~n", [Sid]),
             error(item_not_found)
     end.
 
