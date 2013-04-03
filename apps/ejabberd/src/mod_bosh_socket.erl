@@ -428,16 +428,24 @@ send_to_handler(Data, #state{handlers = Handlers} = S, Opts) ->
     timer:cancel(TRef),
     send_to_handler({Rid, Pid}, Data, S#state{handlers = HRest}, Opts).
 
-send_to_handler({_, Pid}, Data, State, Opts) ->
+send_to_handler({Rid, Pid}, Data, State, Opts) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
-    ?DEBUG("send to ~p: ~p~n", [Pid, Wrapped]),
-    Pid ! {bosh_reply, Wrapped},
+    Acked = maybe_ack(Wrapped, Rid, NS),
+    ?DEBUG("send to ~p: ~p~n", [Pid, Acked]),
+    Pid ! {bosh_reply, Acked},
     case proplists:get_value(pause, Opts, false) of
         false ->
             setup_inactivity_timer(NS);
         _ ->
             NS
     end.
+
+maybe_ack(#xmlelement{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
+       when Rid > HandlerRid ->
+    Body#xmlelement{attrs = lists:keydelete(<<"ack">>, 1, Attrs)
+                            ++ ack(S#state.acks, Rid)};
+maybe_ack(Body, _, _) ->
+    Body.
 
 setup_inactivity_timer(#state{inactivity = infinity} = S) ->
     S;
@@ -570,6 +578,7 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                          {<<"xmlns:stream">>, ?NS_STREAM}] ++
                         inactivity(S#state.inactivity) ++
                         maxpause(S#state.maxpause) ++
+                        %% TODO: shouldn't an ack be sent on restart?
                         ack(S#state.acks, S#state.rid),
                 children = []}.
 
