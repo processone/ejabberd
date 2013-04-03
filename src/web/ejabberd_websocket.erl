@@ -189,9 +189,9 @@ connect(#ws{vsn = Vsn, socket = Socket, sockmod = SockMod, origin = Origin,
 
     ?DEBUG("Sent handshake response : ~p",
 	   [HandshakeResponse]),
-    Ws0 = ejabberd_ws:new(Ws#ws{origin = Origin,
-				host = Host},
-			  self()),
+    Ws0 = {Ws#ws{origin = Origin,
+                 host = Host},
+           self()},
     {ok, WsHandleLoopPid} = WsLoop:start_link(Ws0),
     erlang:monitor(process, WsHandleLoopPid),
 

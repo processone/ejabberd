@@ -33,30 +33,30 @@
 % NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 % POSSIBILITY OF SUCH DAMAGE.
 % ==========================================================================================================
--module(ejabberd_ws, [Ws, SocketPid]).
+-module(ejabberd_ws).
 
 -vsn("0.6.1").
 
 % API
--export([raw/0, get/1, send/1]).
+-export([raw/1, get/2, send/2]).
 
 % includes
 -include("ejabberd_http.hrl").
 
 % ============================ \/ API ======================================================================
 
-raw() -> Ws.
+raw({Ws, _SocketPid}) -> Ws.
 
-get(socket) -> Ws#ws.socket;
-get(socket_mode) -> Ws#ws.sockmod;
-get(ip) -> Ws#ws.ip;
-get(vsn) -> Ws#ws.vsn;
-get(origin) -> Ws#ws.origin;
-get(host) -> Ws#ws.host;
-get(path) -> Ws#ws.path;
-get(headers) -> Ws#ws.headers.
+get({Ws, _SocketPid}, socket) -> Ws#ws.socket;
+get({Ws, _SocketPid}, socket_mode) -> Ws#ws.sockmod;
+get({Ws, _SocketPid}, ip) -> Ws#ws.ip;
+get({Ws, _SocketPid}, vsn) -> Ws#ws.vsn;
+get({Ws, _SocketPid}, origin) -> Ws#ws.origin;
+get({Ws, _SocketPid}, host) -> Ws#ws.host;
+get({Ws, _SocketPid}, path) -> Ws#ws.path;
+get({Ws, _SocketPid}, headers) -> Ws#ws.headers.
 
-send(Data) -> SocketPid ! {send, Data}.
+send({_Ws, SocketPid}, Data) -> SocketPid ! {send, Data}.
 
 % ============================ /\ API ======================================================================
 
