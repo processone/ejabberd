@@ -377,7 +377,8 @@ handle_stream_event({Rid, EventTag, Body} = Event, #state{rid = OldRid} = S) ->
             S#state{deferred = [Event | S#state.deferred]};
         {_, false, false} ->
             ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
-            [Pid ! item_not_found || {_, _, Pid} <- lists:sort(S#state.handlers)],
+            [Pid ! item_not_found
+             || {_, _, Pid} <- lists:sort(S#state.handlers)],
             throw({invalid_rid, S#state{handlers = []}})
     end.
 
@@ -562,7 +563,8 @@ is_stream_event(_) ->
 bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
     #xmlelement{name = <<"body">>,
                 attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
-                         {<<"requests">>, integer_to_binary(?CONCURRENT_REQUESTS)},
+                         {<<"requests">>,
+                          integer_to_binary(?CONCURRENT_REQUESTS)},
                          {<<"hold">>, integer_to_binary(S#state.hold)},
                          {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
                          %% TODO: how to support these with cowboy?
