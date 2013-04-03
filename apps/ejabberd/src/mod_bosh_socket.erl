@@ -242,32 +242,21 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
-        when EventTag == streamstart;
-             EventTag == restart ->
+handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
     NS = cancel_inactivity_timer(State),
     try
         Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
         HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
         EventHandledState = handle_stream_event({Rid, EventTag, Body},
                                                 HandlerAddedState),
-        timer:apply_after(?ACCUMULATE_PERIOD,
-                          gen_fsm, send_event, [self(), acc_off]),
-        {next_state, accumulate, EventHandledState}
-    catch
-        throw:{invalid_rid, TState} ->
-            {stop, {shutdown, invalid_rid}, TState}
-    end;
-handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State)
-        when EventTag == normal;
-             EventTag == streamend ->
-    NS = cancel_inactivity_timer(State),
-    try
-        Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-        HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
-        EventHandledState = handle_stream_event({Rid, EventTag, Body},
-                                                HandlerAddedState),
-        {next_state, StateName, EventHandledState}
+        case EventTag of
+            _ when EventTag == streamstart; EventTag == restart ->
+                timer:apply_after(?ACCUMULATE_PERIOD,
+                                  gen_fsm, send_event, [self(), acc_off]),
+                {next_state, accumulate, EventHandledState};
+            _ when EventTag == normal; EventTag == streamend ->
+                {next_state, StateName, EventHandledState}
+        end
     catch
         throw:{invalid_rid, TState} ->
             {stop, {shutdown, invalid_rid}, TState}
