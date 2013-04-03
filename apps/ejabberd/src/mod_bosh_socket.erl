@@ -547,6 +547,7 @@ bosh_wrap(Elements, #state{} = S) ->
         {[#xmlstreamend{} = StreamEnd], Stanzas} ->
             %% Can't wrap remaining stanzas in a stream end body.
             %% Send Stanzas and forfeit sending stream end.
+            ?DEBUG("pending stanzas, can't send stream end", []),
             Pending = S#state.pending,
             {{bosh_body(S), Stanzas},
              S#state{pending = [StreamEnd, Pending]}}
