@@ -571,8 +571,6 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                          {<<"sid">>, S#state.sid},
                          {<<"xmpp:restartlogic">>, <<"true">>},
                          {<<"xmpp:version">>, <<"1.0">>},
-                         %% TODO: what's it for?
-                         %{<<"authid">>, <<"ServerStreamID">>},
                          {<<"xmlns">>, ?NS_HTTPBIND},
                          {<<"xmlns:xmpp">>, <<"urn:xmpp:xbosh">>},
                          {<<"xmlns:stream">>, ?NS_STREAM}] ++
