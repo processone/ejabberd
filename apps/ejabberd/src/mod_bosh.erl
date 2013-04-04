@@ -9,7 +9,9 @@
 
 %% API
 -export([get_inactivity/0,
-         set_inactivity/1]).
+         set_inactivity/1,
+         get_server_acks/0,
+         set_server_acks/1]).
 
 %% gen_mod callbacks
 -export([start/2,
@@ -34,6 +36,7 @@
 -define(DEFAULT_BACKEND, mnesia).
 -define(DEFAULT_MAX_AGE, 1728000).  %% 20 days in seconds
 -define(DEFAULT_INACTIVITY, 30).  %% seconds
+-define(DEFAULT_SERVER_ACKS, false).
 
 %% Request State
 -record(rstate, {}).
@@ -53,6 +56,15 @@ set_inactivity(infinity) ->
     gen_mod:set_module_opt(?MYNAME, ?MODULE, inactivity, infinity);
 set_inactivity(Seconds) when is_integer(Seconds), Seconds > 0 ->
     gen_mod:set_module_opt(?MYNAME, ?MODULE, inactivity, Seconds).
+
+-spec get_server_acks() -> boolean().
+get_server_acks() ->
+    gen_mod:get_module_opt(?MYNAME, ?MODULE, server_acks, ?DEFAULT_SERVER_ACKS).
+
+-spec set_server_acks(EnableServerAcks) -> boolean()
+    when EnableServerAcks :: boolean().
+set_server_acks(EnableServerAcks) ->
+    gen_mod:set_module_opt(?MYNAME, ?MODULE, server_acks, EnableServerAcks).
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks

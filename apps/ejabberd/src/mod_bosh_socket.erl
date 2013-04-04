@@ -44,9 +44,7 @@
 -define(DEFAULT_HOLD, 1).
 -define(CONCURRENT_REQUESTS, 2).
 -define(DEFAULT_WAIT, 60).
-
 -define(DEFAULT_MAXPAUSE, 120).
--define(DEFAULT_SERVER_ACKS, false).
 
 -type rid() :: pos_integer().
 
@@ -151,19 +149,13 @@ init([Sid, Peer]) ->
                             c2s_pid = C2SPid,
                             inactivity = mod_bosh:get_inactivity(),
                             maxpause = get_maxpause(),
-                            server_acks = get_server_acks()}}.
+                            server_acks = mod_bosh:get_server_acks()}}.
 
 %% TODO: maybe make maxpause runtime configurable like inactivity?
 get_maxpause() ->
     case gen_mod:get_module_opt(?MYNAME, mod_bosh, maxpause, undefined) of
         undefined -> ?DEFAULT_MAXPAUSE;
         MP -> MP
-    end.
-
-get_server_acks() ->
-    case gen_mod:get_module_opt(?MYNAME, mod_bosh, server_acks, undefined) of
-        undefined -> ?DEFAULT_SERVER_ACKS;
-        ServerAcks -> ServerAcks
     end.
 
 %%--------------------------------------------------------------------
