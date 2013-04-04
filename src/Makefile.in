@@ -198,7 +198,9 @@ install: all
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
 		&& install -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
 		|| install -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
-	install -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
+	[ -f $(ETCDIR)/inetrc ] \
+		&& install -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc-new \
+		|| install -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
 	#
 	# Administration script
 	[ -d $(SBINDIR) ] || install -d -m 755 $(SBINDIR)
