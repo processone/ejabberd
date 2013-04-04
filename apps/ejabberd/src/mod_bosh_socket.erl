@@ -47,7 +47,7 @@
 
 -define(DEFAULT_INACTIVITY, 30).
 -define(DEFAULT_MAXPAUSE, 120).
--define(DEFAULT_ACKS, false).
+-define(DEFAULT_SERVER_ACKS, false).
 
 -type rid() :: pos_integer().
 
@@ -72,7 +72,7 @@
                 %% Max pause period in seconds.
                 maxpause :: pos_integer() | undefined,
                 %% Are acknowledgements used?
-                acks :: boolean()}).
+                server_acks :: boolean()}).
 
 %%--------------------------------------------------------------------
 %% API
@@ -152,7 +152,7 @@ init([Sid, Peer]) ->
                             c2s_pid = C2SPid,
                             inactivity = get_inactivity(),
                             maxpause = get_maxpause(),
-                            acks = get_acks()}}.
+                            server_acks = get_server_acks()}}.
 
 get_inactivity() ->
     case mod_bosh:get_inactivity() of
@@ -167,10 +167,10 @@ get_maxpause() ->
         MP -> MP
     end.
 
-get_acks() ->
-    case gen_mod:get_module_opt(?MYNAME, mod_bosh, acks, undefined) of
-        undefined -> ?DEFAULT_ACKS;
-        Acks -> Acks
+get_server_acks() ->
+    case gen_mod:get_module_opt(?MYNAME, mod_bosh, server_acks, undefined) of
+        undefined -> ?DEFAULT_SERVER_ACKS;
+        ServerAcks -> ServerAcks
     end.
 
 %%--------------------------------------------------------------------
@@ -444,7 +444,7 @@ send_to_handler({Rid, Pid}, Data, State, Opts) ->
 maybe_ack(#xmlelement{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
        when Rid > HandlerRid ->
     Body#xmlelement{attrs = lists:keydelete(<<"ack">>, 1, Attrs)
-                            ++ ack(S#state.acks, Rid)};
+                            ++ server_ack(S#state.server_acks, Rid)};
 maybe_ack(Body, _, _) ->
     Body.
 
@@ -578,7 +578,7 @@ bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
                         inactivity(S#state.inactivity) ++
                         maxpause(S#state.maxpause) ++
                         %% TODO: shouldn't an ack be sent on restart?
-                        ack(S#state.acks, S#state.rid),
+                        server_ack(S#state.server_acks, S#state.rid),
                 children = []}.
 
 inactivity(I) ->
@@ -587,8 +587,8 @@ inactivity(I) ->
 maxpause(MP) ->
     [{<<"maxpause">>, integer_to_binary(MP)} || is_integer(MP)].
 
-ack(Acks, Rid) ->
-    [{<<"ack">>, integer_to_binary(Rid)} || Acks =:= true].
+server_ack(ServerAcks, Rid) ->
+    [{<<"ack">>, integer_to_binary(Rid)} || ServerAcks =:= true].
 
 %% Bosh body for an ordinary stream element(s).
 bosh_body(#state{} = S) ->
