@@ -33,6 +33,7 @@
 -define(DEFAULT_PORT, 5280).
 -define(DEFAULT_BACKEND, mnesia).
 -define(DEFAULT_MAX_AGE, 1728000).  %% 20 days in seconds
+-define(DEFAULT_INACTIVITY, 30).  %% seconds
 
 %% Request State
 -record(rstate, {}).
@@ -41,9 +42,9 @@
 %% API
 %%--------------------------------------------------------------------
 
--spec get_inactivity() -> pos_integer() | infinity | undefined.
+-spec get_inactivity() -> pos_integer() | infinity.
 get_inactivity() ->
-    gen_mod:get_module_opt(?MYNAME, ?MODULE, inactivity, undefined).
+    gen_mod:get_module_opt(?MYNAME, ?MODULE, inactivity, ?DEFAULT_INACTIVITY).
 
 %% Return true if succeeded, false otherwise.
 -spec set_inactivity(SecondsOrInfinity) -> boolean()

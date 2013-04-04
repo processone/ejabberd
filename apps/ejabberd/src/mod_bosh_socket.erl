@@ -45,7 +45,6 @@
 -define(CONCURRENT_REQUESTS, 2).
 -define(DEFAULT_WAIT, 60).
 
--define(DEFAULT_INACTIVITY, 30).
 -define(DEFAULT_MAXPAUSE, 120).
 -define(DEFAULT_SERVER_ACKS, false).
 
@@ -150,15 +149,9 @@ init([Sid, Peer]) ->
     ?DEBUG("mod_bosh_socket started~n", []),
     {ok, accumulate, #state{sid = Sid,
                             c2s_pid = C2SPid,
-                            inactivity = get_inactivity(),
+                            inactivity = mod_bosh:get_inactivity(),
                             maxpause = get_maxpause(),
                             server_acks = get_server_acks()}}.
-
-get_inactivity() ->
-    case mod_bosh:get_inactivity() of
-        undefined -> ?DEFAULT_INACTIVITY;
-        I -> I
-    end.
 
 %% TODO: maybe make maxpause runtime configurable like inactivity?
 get_maxpause() ->
