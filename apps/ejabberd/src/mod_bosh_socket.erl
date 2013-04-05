@@ -45,6 +45,7 @@
 -define(CONCURRENT_REQUESTS, 2).
 -define(DEFAULT_WAIT, 60).
 -define(DEFAULT_MAXPAUSE, 120).
+-define(DEFAULT_CLIENT_ACKS, false).
 
 -type rid() :: pos_integer().
 
@@ -59,6 +60,8 @@
                 %% Requests deferred for later processing because
                 %% of having Rid greater than expected.
                 deferred = [] :: [{rid(), {event_type(), #xmlelement{}}}],
+                client_acks = ?DEFAULT_CLIENT_ACKS :: boolean(),
+                sent = [] :: [{rid(), erlang:timestamp(), #xmlelement{}}],
 
                 %%% Options. These have accompanying DEFAULT_* macros and
                 %%% are set up in init/1 based on ejabberd.cfg.
@@ -484,10 +487,12 @@ bosh_unwrap(StreamEvent, Body, #state{} = S)
             StreamEvent =:= restart ->
     Wait = get_attr(<<"wait">>, Body, S#state.wait),
     Hold = get_attr(<<"hold">>, Body, S#state.hold),
+    ClientAcks = get_client_acks(StreamEvent, Body, S#state.client_acks),
     E = stream_start(exml_query:attr(Body, <<"from">>),
                      exml_query:attr(Body, <<"to">>)),
     {[E], record_set(S, [{#state.wait, Wait},
-                         {#state.hold, Hold}])};
+                         {#state.hold, Hold},
+                         {#state.client_acks, ClientAcks}])};
 bosh_unwrap(streamend, Body, State) ->
     {Els, NewState} = bosh_unwrap(normal, Body, State),
     {Els ++ [#xmlstreamend{name = <<>>}], NewState};
@@ -499,6 +504,19 @@ bosh_unwrap(normal, Body, #state{sid = Sid} = State) ->
          %% Ignore whitespace keepalives.
          El /= {xmlcdata, <<" ">>}],
      State}.
+
+get_client_acks(restart, _, Default) ->
+    Default;
+get_client_acks(start, Element, Default) ->
+    case exml_query:attr(Element, <<"ack">>) of
+        undefined ->
+            Default;
+        <<"1">> ->
+            true;
+        _ ->
+            ?INFO_MSG("ignoring invalid client ack on stream start~n", []),
+            false
+    end.
 
 get_attr(Attr, Element, Default) ->
     case exml_query:attr(Element, Attr) of
