@@ -353,6 +353,8 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 handle_stream_event({Rid, EventTag, Body} = Event, #state{rid = OldRid} = S) ->
     case {EventTag,
+          %% TODO: intercept retransmitted packets
+          %is_reply_cached(Rid),
           is_valid_rid(Rid, OldRid),
           is_acceptable_rid(Rid, OldRid)} of
         {streamstart, _, _} ->
