@@ -55,6 +55,7 @@
 	 terminate/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %% Timeout of 5 seconds in calls to distributed hooks
 -define(TIMEOUT_DISTRIBUTED_HOOK, 5000).

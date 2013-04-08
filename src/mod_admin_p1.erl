@@ -91,6 +91,7 @@
 	 send_chat/3, send_message/4, send_stanza/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("ejabberd_commands.hrl").
 

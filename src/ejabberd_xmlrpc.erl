@@ -20,6 +20,7 @@
 -export([start/2, handler/2, socket_type/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("mod_roster.hrl").
 

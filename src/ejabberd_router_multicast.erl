@@ -26,6 +26,7 @@
 	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 
 -record(route_multicast, {domain, pid}).

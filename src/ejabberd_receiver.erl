@@ -41,6 +41,7 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -record(state,
 	{socket :: inet:socket() | tls:tls_socket() | ejabberd_zlib:zlib_socket(),

@@ -31,6 +31,7 @@
 -export([start/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 start() ->
     case catch ejabberd_odbc_sup:module_info() of

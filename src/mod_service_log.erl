@@ -34,6 +34,7 @@
 	 log_user_receive/5]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

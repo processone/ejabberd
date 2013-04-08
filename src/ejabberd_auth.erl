@@ -46,6 +46,7 @@
 -export([auth_modules/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -type opts() :: [{prefix, binary()} | {from, integer()} |
                  {to, integer()} | {limit, integer()} |

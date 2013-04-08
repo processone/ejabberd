@@ -15,13 +15,13 @@ prepare_dirs ()
 	ERL=`which erl`
 
 	EJA_SRC_DIR=$EJA_DIR/src/
-	EJA_MSGS_DIR=$EJA_SRC_DIR/msgs/
+	EJA_MSGS_DIR=$EJA_DIR/priv/msgs/
 	EXTRACT_DIR=$EJA_DIR/contrib/extract_translations/
 	EXTRACT_ERL=$EXTRACT_DIR/extract_translations.erl
 	EXTRACT_BEAM=$EXTRACT_DIR/extract_translations.beam
 
 	SRC_DIR=$RUN_DIR/src
-	MSGS_DIR=$SRC_DIR/msgs
+	MSGS_DIR=$EJA_DIR/priv/msgs
 
 	if !([[ -n $EJA_DIR ]])
 	then 
@@ -288,8 +288,8 @@ translation_instructions ()
 	echo "  $MSGS_PATH"
 }
 
-EJA_DIR=`pwd`/..
-RUN_DIR=`pwd`/..
+EJA_DIR=`pwd`
+RUN_DIR=`pwd`
 PROJECT=ejabberd
 
 while [ $# -ne 0 ] ; do

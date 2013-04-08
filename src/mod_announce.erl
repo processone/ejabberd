@@ -46,6 +46,7 @@
 	 announce_items/4]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 -include("adhoc.hrl").
 

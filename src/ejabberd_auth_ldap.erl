@@ -47,8 +47,9 @@
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
--include("eldap/eldap.hrl").
+-include("eldap.hrl").
 
 -record(state,
 	{host = <<"">>          :: binary(),

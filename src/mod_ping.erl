@@ -33,6 +33,7 @@
 -behavior(gen_server).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

@@ -38,6 +38,7 @@
 	]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -define(DEFAULT_POOL_SIZE, 10).
 -define(DEFAULT_RIAK_START_INTERVAL, 30). % 30 seconds

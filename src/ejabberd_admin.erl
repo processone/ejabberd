@@ -55,6 +55,7 @@
 	]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("ejabberd_commands.hrl").
 
 start() ->

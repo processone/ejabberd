@@ -24,6 +24,7 @@
 -export([purge_loop/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

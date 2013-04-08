@@ -42,6 +42,7 @@
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -record(passwd, {us = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
                  password = <<"">> :: binary() | scram() | '_'}).

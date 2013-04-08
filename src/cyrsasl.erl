@@ -32,6 +32,7 @@
 	 server_new/7, server_start/3, server_step/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %%
 -export_type([

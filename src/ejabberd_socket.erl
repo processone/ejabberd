@@ -37,6 +37,7 @@
 	 change_socket/2, sockname/1, peername/1, is_remote_receiver/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 
 -type sockmod() :: ejabberd_http_poll | ejabberd_bosh |

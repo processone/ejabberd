@@ -38,6 +38,7 @@
 -endif.
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -define(DRIVER, sha_drv).
 

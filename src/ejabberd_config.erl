@@ -38,6 +38,7 @@
 -export([convert_table_to_binary/5]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("kernel/include/file.hrl").
 

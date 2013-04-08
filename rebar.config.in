@@ -1,0 +1,25 @@
+{erl_opts, [debug_info, {i, "include"}, {i, "deps/logger/include"}]}.
+
+%%{src_dirs, [asn1, src, mod_pubsub_ng]}.
+{src_dirs, [asn1, src]}.
+
+{deps, [{mysql, ".*", {git, "git://github.com/processone/mysql"}},
+        {pgsql, ".*", {git, "git://github.com/processone/pgsql"}},
+        {iconv, ".*", {git, "git://github.com/processone/eiconv"}},
+        {epam, ".*", {git, "git://github.com/processone/epam"}},
+        {logger, ".*", {git, "git://github.com/processone/p1_logger"}},
+        {tls, ".*", {git, "git://github.com/processone/tls"}},
+        {ezlib, ".*", {git, "git://github.com/processone/zlib"}},
+        {stun, ".*", {git, "git://github.com/processone/stun"}},
+        {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}]}.
+
+{port_env, [{"CFLAGS", "-g -O2 -Wall"}]}.
+
+{port_specs, [{"priv/lib/sha_drv.so", ["c_src/sha_drv.c"]},
+              {"priv/lib/expat_erl.so", ["c_src/expat_erl.c"]},
+              {"priv/lib/xml.so", ["c_src/xml.c"]}]}.
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:

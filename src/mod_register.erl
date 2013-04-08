@@ -35,6 +35,7 @@
 	 process_iq/3, send_registration_notifications/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

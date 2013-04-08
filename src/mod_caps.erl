@@ -50,6 +50,7 @@
 	 c2s_presence_in/2, c2s_broadcast_recipients/6]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

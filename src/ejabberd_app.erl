@@ -32,6 +32,7 @@
 -export([start_modules/0,start/2, get_log_path/0, prep_stop/1, stop/1, init/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 
 %%%

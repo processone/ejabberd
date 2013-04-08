@@ -41,6 +41,7 @@
 	]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %% We do not block on send anymore.
 -define(TCP_SEND_TIMEOUT, 15000).

@@ -41,6 +41,7 @@
 -export([is_ip_in_c2s_blacklist/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -define(PROCNAME, ?MODULE).
 

@@ -22,6 +22,7 @@
 
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 -include_lib("kernel/include/file.hrl").
 

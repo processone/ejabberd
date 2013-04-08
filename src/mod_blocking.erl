@@ -32,6 +32,7 @@
 	 process_iq_set/4, process_iq_get/5]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

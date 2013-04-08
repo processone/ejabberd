@@ -31,6 +31,7 @@
 -export([new/1, new1/1, update/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -record(maxrate, {maxrate  = 0   :: integer(),
                   lastrate = 0.0 :: float(),

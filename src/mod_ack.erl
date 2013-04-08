@@ -44,6 +44,7 @@
 -include("jlib.hrl").
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -define(PROCNAME, ejabberd_mod_ack).
 

@@ -38,6 +38,7 @@
 
 -include("jlib.hrl").
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %% Select at compile time how to escape characters in binary text
 %% nodes.

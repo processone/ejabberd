@@ -38,6 +38,7 @@
 %%-export([behaviour_info/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -record(ejabberd_module,
         {module_host = {undefined, <<"">>} :: {atom(), binary()},
