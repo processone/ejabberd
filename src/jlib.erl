@@ -28,7 +28,9 @@
 
 -author('alexey@process-one.net').
 
--compile({no_auto_import, [{atom_to_binary, 2}]}).
+-compile({no_auto_import, [atom_to_binary/2,
+                           binary_to_integer/1,
+                           integer_to_binary/1]}).
 
 -export([make_result_iq_reply/1, make_error_reply/3,
 	 make_error_reply/2, make_error_element/2,

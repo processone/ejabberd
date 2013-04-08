@@ -52,6 +52,7 @@
 	 c2s_broadcast_recipients/5]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 
@@ -462,42 +463,6 @@ make_my_disco_hash(Host) ->
       _Err -> <<"">>
     end.
 
--ifdef(HAVE_MD2).
-
-make_disco_hash(DiscoEls, Algo) ->
-    Concat = list_to_binary([concat_identities(DiscoEls),
-                             concat_features(DiscoEls), concat_info(DiscoEls)]),
-    jlib:encode_base64(case Algo of
-                           md2 -> sha:md2(Concat);
-                           md5 -> crypto:md5(Concat);
-                           sha1 -> crypto:sha(Concat);
-                           sha224 -> sha:sha224(Concat);
-                           sha256 -> sha:sha256(Concat);
-                           sha384 -> sha:sha384(Concat);
-                           sha512 -> sha:sha512(Concat)
-                       end).
-
-check_hash(Caps, Els) ->
-    case Caps#caps.hash of
-      <<"md2">> ->
-	  Caps#caps.version == make_disco_hash(Els, md2);
-      <<"md5">> ->
-	  Caps#caps.version == make_disco_hash(Els, md5);
-      <<"sha-1">> ->
-	  Caps#caps.version == make_disco_hash(Els, sha1);
-      <<"sha-224">> ->
-	  Caps#caps.version == make_disco_hash(Els, sha224);
-      <<"sha-256">> ->
-	  Caps#caps.version == make_disco_hash(Els, sha256);
-      <<"sha-384">> ->
-	  Caps#caps.version == make_disco_hash(Els, sha384);
-      <<"sha-512">> ->
-	  Caps#caps.version == make_disco_hash(Els, sha512);
-      _ -> true
-    end.
-
--else.
-
 make_disco_hash(DiscoEls, Algo) ->
     Concat = list_to_binary([concat_identities(DiscoEls),
                              concat_features(DiscoEls), concat_info(DiscoEls)]),
@@ -526,8 +491,6 @@ check_hash(Caps, Els) ->
 	  Caps#caps.version == make_disco_hash(Els, sha512);
       _ -> true
     end.
-
--endif.
 
 concat_features(Els) ->
     lists:usort(lists:flatmap(fun (#xmlel{name =

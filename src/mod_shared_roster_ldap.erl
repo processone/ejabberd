@@ -43,10 +43,11 @@
 	 out_subscription/4]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 -include("mod_roster.hrl").
 
--include("eldap/eldap.hrl").
+-include("eldap.hrl").
 
 -define(CACHE_SIZE, 1000).
 

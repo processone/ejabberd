@@ -46,10 +46,11 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -record(state,
-	{socket :: inet:socket() | tls:tls_socket() | ejabberd_zlib:zlib_socket(),
-         sock_mod = gen_tcp :: gen_tcp | tls | ejabberd_zlib,
+	{socket :: inet:socket() | tls:tls_socket() | ezlib:zlib_socket(),
+         sock_mod = gen_tcp :: gen_tcp | tls | ezlib,
          shaper_state = none :: shaper:shaper(),
          c2s_pid :: pid(),
 	 max_stanza_size = infinity :: non_neg_integer() | infinity,
@@ -107,10 +108,10 @@ starttls(Pid, TLSSocket) ->
     do_call(Pid, {starttls, TLSSocket}).
 
 -spec compress(pid(), iodata() | undefined) -> {error, any()} |
-                                               {ok, ejabberd_zlib:zlib_socket()}.
+                                               {ok, ezlib:zlib_socket()}.
 
-compress(Pid, ZlibSocket) ->
-    do_call(Pid, {compress, ZlibSocket}).
+compress(Pid, Data) ->
+    do_call(Pid, {compress, Data}).
 
 -spec become_controller(pid(), pid()) -> ok | {error, any()}.
 
@@ -170,21 +171,27 @@ handle_call({starttls, TLSSocket}, _From,
 	{error, _Reason} ->
 	    {stop, normal, ok, NewState}
     end;
-handle_call({compress, ZlibSocket}, _From,
+handle_call({compress, Data}, _From,
 	    #state{xml_stream_state = XMLStreamState,
-		   c2s_pid = C2SPid,
-		   max_stanza_size = MaxStanzaSize} = State) ->
+		   c2s_pid = C2SPid, socket = Socket, sock_mod = SockMod,
+		   max_stanza_size = MaxStanzaSize} =
+		State) ->
+    {ok, ZlibSocket} = ezlib:enable_zlib(SockMod,
+						 Socket),
+    if Data /= undefined -> do_send(State, Data);
+       true -> ok
+    end,
     close_stream(XMLStreamState),
     NewXMLStreamState = xml_stream:new(C2SPid,
 				       MaxStanzaSize),
     NewState = State#state{socket = ZlibSocket,
-			   sock_mod = ejabberd_zlib,
+			   sock_mod = ezlib,
 			   xml_stream_state = NewXMLStreamState},
-    case ejabberd_zlib:recv_data(ZlibSocket, <<"">>) of
-	{ok, ZlibData} ->
-	    {reply, ok, process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
-	{error, _Reason} ->
-	    {stop, normal, ok, NewState}
+    case ezlib:recv_data(ZlibSocket, <<"">>) of
+      {ok, ZlibData} ->
+	  {reply, {ok, ZlibSocket},
+	   process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
+      {error, _Reason} -> {stop, normal, ok, NewState}
     end;
 handle_call(reset_stream, _From,
 	    #state{xml_stream_state = XMLStreamState,
@@ -239,8 +246,8 @@ handle_info({Tag, _TCPSocket, Data},
 		 ?HIBERNATE_TIMEOUT};
 	    {error, _Reason} -> {stop, normal, State}
 	  end;
-      ejabberd_zlib ->
-	  case ejabberd_zlib:recv_data(Socket, Data) of
+      ezlib ->
+	  case ezlib:recv_data(Socket, Data) of
 	    {ok, ZlibData} ->
 		{noreply, process_data(ZlibData, State),
 		 ?HIBERNATE_TIMEOUT};
@@ -360,6 +367,9 @@ element_wrapper(Element) -> Element.
 close_stream(undefined) -> ok;
 close_stream(XMLStreamState) ->
     xml_stream:close(XMLStreamState).
+
+do_send(State, Data) ->
+    (State#state.sock_mod):send(State#state.socket, Data).
 
 do_call(Pid, Msg) ->
     case catch gen_server:call(Pid, Msg) of

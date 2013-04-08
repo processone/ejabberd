@@ -35,6 +35,7 @@
 	 store_last_info/4, get_last_info/2, remove_user/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

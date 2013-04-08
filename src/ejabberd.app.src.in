@@ -1,0 +1,16 @@
+%% $Id$
+
+{application, ejabberd,
+ [{description, "@PACKAGE_NAME@"},
+  {vsn, "@PACKAGE_VERSION@"},
+  {modules, []},
+  {registered, []},
+  {applications, [kernel, stdlib]},
+  {env, []},
+  {mod, {ejabberd_app, []}}]}.
+
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:

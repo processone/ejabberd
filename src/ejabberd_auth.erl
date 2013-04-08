@@ -46,6 +46,7 @@
 -export([auth_modules/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %%%----------------------------------------------------------------------
 %%% API

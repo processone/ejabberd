@@ -43,6 +43,7 @@
 	 handle_info/3, terminate/3, print_state/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

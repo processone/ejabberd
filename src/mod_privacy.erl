@@ -47,6 +47,7 @@
 	 sql_set_privacy_list/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

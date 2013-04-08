@@ -37,6 +37,7 @@
                                % TODO: Remove once XEP-0090 is Obsolete
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

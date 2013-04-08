@@ -48,6 +48,7 @@
 	 sockname/1, peername/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 
 -type sockmod() :: ejabberd_http_poll |
@@ -56,7 +57,7 @@
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   tls:tls_socket() |
-                  ejabberd_zlib:zlib_socket() |
+                  ezlib:zlib_socket() |
                   ejabberd_http_bind:bind_socket() |
                   ejabberd_http_poll:poll_socket().
 
@@ -167,12 +168,11 @@ compress(SocketData) ->
     SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
 
 compress(SocketData, Data) ->
-    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
-			 SocketData#socket_state.sockmod,
-			 SocketData#socket_state.socket),
-    ejabberd_receiver:compress(SocketData#socket_state.receiver, ZlibSocket),
-    send(SocketData, Data),
-    SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
+    {ok, ZlibSocket} =
+	ejabberd_receiver:compress(SocketData#socket_state.receiver,
+				   Data),
+    SocketData#socket_state{socket = ZlibSocket,
+			    sockmod = ezlib}.
 
 reset_stream(SocketData)
     when is_pid(SocketData#socket_state.receiver) ->

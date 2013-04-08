@@ -33,6 +33,7 @@
 	 remove_user/3, is_user_exists/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -define(INIT_TIMEOUT, 60000).
 

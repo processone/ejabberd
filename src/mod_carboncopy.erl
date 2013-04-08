@@ -47,6 +47,7 @@
 -define(NS_FORWARD, <<"urn:xmpp:forward:0">>).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 -define(PROCNAME, ?MODULE).
 -define(TABLE, carboncopy).

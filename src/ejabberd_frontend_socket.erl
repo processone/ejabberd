@@ -206,7 +206,7 @@ handle_call({compress, Data}, _From, State) ->
 	    State#state.socket, Data),
     Reply = ok,
     {reply, Reply,
-     State#state{socket = ZlibSocket, sockmod = ejabberd_zlib},
+     State#state{socket = ZlibSocket, sockmod = ezlib},
      ?HIBERNATE_TIMEOUT};
 handle_call(reset_stream, _From, State) ->
     ejabberd_receiver:reset_stream(State#state.receiver),

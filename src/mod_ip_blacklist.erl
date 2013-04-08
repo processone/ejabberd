@@ -41,6 +41,7 @@
 -export([is_ip_in_c2s_blacklist/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -define(PROCNAME, ?MODULE).
 
@@ -70,7 +71,6 @@ preinit(Parent, State) ->
 stop(_Host) -> ok.
 
 init(State) ->
-    inets:start(),
     ets:new(bl_c2s,
 	    [named_table, public, {keypos, #bl_c2s.ip}]),
     update_bl_c2s(),

@@ -45,6 +45,7 @@
 -define(CHUNK_SIZE, 1024*20). %20k
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 -include("mod_privacy.hrl").
 -include("mod_roster.hrl").

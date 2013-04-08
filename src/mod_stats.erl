@@ -33,6 +33,7 @@
 -export([start/2, stop/1, process_local_iq/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 
 start(Host, Opts) ->

@@ -13,8 +13,6 @@ To compile ejabberd you need:
  - OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
  - Zlib 1.2.3 or higher, for Stream Compression support
    (XEP-0138). Optional.
- - Erlang mysql library. Optional. MySQL authentication/storage.
- - Erlang pgsql library. Optional. PostgreSQL authentication/storage.
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
  - GNU Iconv 1.8 or higher, for the IRC Transport
    (mod_irc). Optional. Not needed on systems with GNU Libc.
@@ -24,7 +22,7 @@ To compile ejabberd you need:
 
 1. Compile and install on *nix systems
 
-To compile ejabberd, go to the directory src/ and execute the commands:
+To compile ejabberd execute the commands:
   ./configure
   make
 

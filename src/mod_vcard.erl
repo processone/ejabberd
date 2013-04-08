@@ -35,6 +35,7 @@
 	 remove_user/2, export/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

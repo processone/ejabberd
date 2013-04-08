@@ -91,6 +91,16 @@ parse_form(Dir, File, Form, Used) ->
 	{call,
 	 _,
 	 {remote, _, {atom, _, translate}, {atom, _, translate}},
+	 [_,
+	  {bin,_,
+	   [{bin_element,_,
+	     {string,Line,Str},
+	     default,default}]}]
+	} ->
+	    process_string(Dir, File, Line, Str, Used);
+	{call,
+	 _,
+	 {remote, _, {atom, _, translate}, {atom, _, translate}},
 	 [_, {var, _, Name}]
 	} ->
 	    case ets:lookup(vars, Name) of
@@ -281,8 +291,8 @@ build_additional_translators(List) ->
       List).
 
 print_translation(File, Line, Str, StrT) ->
-    StrQ = ejabberd_regexp:greplace(Str, "\\\"", "\\\\\""),
-    StrTQ = ejabberd_regexp:greplace(StrT, "\\\"", "\\\\\""),
+    StrQ = ejabberd_regexp:greplace(list_to_binary(Str), <<"\\\"">>, <<"\\\\\"">>),
+    StrTQ = ejabberd_regexp:greplace(list_to_binary(StrT), <<"\\\"">>, <<"\\\\\"">>),
     io:format("#: ~s:~p~nmsgid \"~s\"~nmsgstr \"~s\"~n~n", [File, Line, StrQ, StrTQ]).
 
 print_translation_obsolete(Str, StrT) ->

@@ -1,0 +1,51 @@
+%%%-------------------------------------------------------------------
+%%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% @copyright (C) 2013, Evgeniy Khramtsov
+%%% @doc
+%%%
+%%% @end
+%%% Created :  8 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%%-------------------------------------------------------------------
+%% Macros
+{roster_gateway_workaround, @roster_gateway_workaround@}.
+{transient_supervisors, @transient_supervisors@}.
+{full_xml, @full_xml@}.
+{nif, @nif@}.
+{db_type, @db_type@}.
+{debug, @debug@}.
+{hipe, @hipe@}.
+
+%% Ad-hoc directories with source files
+{tools, @tools@}.
+
+%% Dependencies
+{odbc, @odbc@}.
+{mysql, @mysql@}.
+{pgsql, @pgsql@}.
+{pam, @pam@}.
+{zlib, @zlib@}.
+{stun, @stun@}.
+{json, @json@}.
+{http, @http@}.
+{lager, @lager@}.
+{iconv, @iconv@}.
+
+%% Version
+{vsn, "@PACKAGE_VERSION@"}.
+
+%% Variables for overlay template files
+
+%% Platform-specific installation paths
+{release, true}.
+{release_dir, "${SCRIPT_DIR%/*}"}.
+{sysconfdir, "{{release_dir}}/etc"}.
+{installuser, "@INSTALLUSER@"}.
+{erl, "{{release_dir}}/{{erts_vsn}}/bin/erl"}.
+{localstatedir, "{{release_dir}}/var"}.
+{libdir, "{{release_dir}}/lib"}.
+{docdir, "{{release_dir}}/doc"}.
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:

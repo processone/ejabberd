@@ -16,6 +16,7 @@
 -export([update_presence/3, vcard_set/3, export/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

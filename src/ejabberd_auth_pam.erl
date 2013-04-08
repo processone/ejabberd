@@ -43,11 +43,7 @@
 	 plain_password_required/0]).
 
 start(_Host) ->
-    case epam:start() of
-      {ok, _} -> ok;
-      {error, {already_started, _}} -> ok;
-      Err -> Err
-    end.
+    ejabberd:start_app(p1_pam).
 
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.

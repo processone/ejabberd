@@ -50,14 +50,15 @@
          record_to_string/1, groups_to_string/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 
 -include("mod_roster.hrl").
 
--include("web/ejabberd_http.hrl").
+-include("ejabberd_http.hrl").
 
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -export_type([subscription/0]).
 

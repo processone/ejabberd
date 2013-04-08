@@ -33,12 +33,11 @@
 -behavior(gen_server).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 
 -define(SUPERVISOR, ejabberd_sup).
-
--define(NS_PING, <<"urn:xmpp:ping">>).
 
 -define(DEFAULT_SEND_PINGS, false).
 

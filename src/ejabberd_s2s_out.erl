@@ -59,6 +59,7 @@
 	 get_addr_port/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

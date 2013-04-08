@@ -42,14 +42,15 @@
 	 add_user_to_group/3, remove_user_from_group/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 
 -include("mod_roster.hrl").
 
--include("web/ejabberd_http.hrl").
+-include("ejabberd_http.hrl").
 
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -record(sr_group, {group_host = {<<"">>, <<"">>} :: {'$1' | binary(), '$2' | binary()},
                    opts = [] :: list() | '_' | '$2'}).

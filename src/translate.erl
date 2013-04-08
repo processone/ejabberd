@@ -32,6 +32,7 @@
 	 translate/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 start() ->
     ets:new(translations, [named_table, public]),

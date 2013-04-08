@@ -27,9 +27,10 @@
 -module(ejabberd).
 -author('alexey@process-one.net').
 
--export([start/0, stop/0,
-	 get_pid_file/0,
-	 get_so_path/0, get_bin_path/0]).
+-export([start/0, stop/0, start_app/1,
+	 get_pid_file/0]).
+
+-include("logger.hrl").
 
 start() ->
     %%ejabberd_cover:start(),
@@ -38,32 +39,6 @@ start() ->
 stop() ->
     application:stop(ejabberd).
     %%ejabberd_cover:stop().
-
-get_so_path() ->
-    case os:getenv("EJABBERD_SO_PATH") of
-	false ->
-	    case code:priv_dir(ejabberd) of
-		{error, _} ->
-		    ".";
-		Path ->
-		    filename:join([Path, "lib"])
-	    end;
-	Path ->
-	    Path
-    end.
-
-get_bin_path() ->
-    case os:getenv("EJABBERD_BIN_PATH") of
-	false ->
-	    case code:priv_dir(ejabberd) of
-		{error, _} ->
-		    ".";
-		Path ->
-		    filename:join([Path, "bin"])
-	    end;
-	Path ->
-	    Path
-    end.
 
 %% @spec () -> false | string()
 get_pid_file() ->
@@ -75,3 +50,28 @@ get_pid_file() ->
 	Path ->
 	    Path
     end.
+
+start_app(App) when not is_list(App) ->
+    start_app([App]);
+start_app([App|Apps]) ->
+    case application:start(App) of
+        ok ->
+            start_app(Apps);
+        {error, {already_started, _}} ->
+            start_app(Apps);
+        {error, {not_started, DepApp}} ->
+            case lists:member(DepApp, [App|Apps]) of
+                true ->
+                    ?CRITICAL_MSG("failed to start application '~p': "
+                                  "circular dependency on '~p' detected",
+                                  [App, DepApp]),
+                    erlang:error(application_start_failed);
+                false ->
+                    start_app([DepApp,App|Apps])
+            end;
+        Err ->
+            ?CRITICAL_MSG("failed to start application '~p': ~p", [App, Err]),
+            erlang:error(application_start_failed)
+    end;
+start_app([]) ->
+    ok.
