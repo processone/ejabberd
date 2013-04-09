@@ -193,7 +193,7 @@ send_copies(JID, Packet, Direction)->
 build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CC_2) ->
     #xmlel{name = <<"message">>, 
 	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
-		    {<<"type">>, <<"chart">>}, 
+		    {<<"type">>, <<"chat">>},
 		    {<<"from">>, jlib:jid_to_string(Sender)},
 		    {<<"to">>, jlib:jid_to_string(Dest)}],
 	   children = [	
@@ -209,7 +209,7 @@ build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CC_2) ->
 build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CC_1) ->
     #xmlel{name = <<"message">>, 
 	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
-		    {<<"type">>, <<"chart">>}, 
+		    {<<"type">>, <<"chat">>},
 		    {<<"from">>, jlib:jid_to_string(Sender)},
 		    {<<"to">>, jlib:jid_to_string(Dest)}],
 	   children = [	
