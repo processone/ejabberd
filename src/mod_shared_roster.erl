@@ -813,12 +813,13 @@ add_user_to_group(Host, US, Group) ->
 	  (?MODULE):set_group_opts(Host, Group,
 				   GroupOpts ++ MoreGroupOpts);
         nomatch ->
-            add_user_to_group(Host, US, Group,
-                              gen_mod:db_type(Host, ?MODULE)),
+            Res = add_user_to_group(Host, US, Group,
+                                    gen_mod:db_type(Host, ?MODULE)),
             push_user_to_displayed(LUser, LServer, Group, Host,
                                    both),
             push_displayed_to_user(LUser, LServer, Group, Host,
-                                   both)
+                                   both),
+            Res
     end.
 
 add_user_to_group(Host, US, Group, mnesia) ->
