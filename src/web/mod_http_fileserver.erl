@@ -59,23 +59,7 @@
 	{method, path, q = [], us, auth, lang = <<"">>,
 	 data = <<"">>, ip, host, port, tp, headers}).
 
--ifdef(SSL40).
-
 -define(STRING2LOWER, string).
-
--else.
-
--ifdef(SSL39).
-
--define(STRING2LOWER, string).
-
--else.
-
--define(STRING2LOWER, httpd_util).
-
--endif.
-
--endif.
 
 -record(state,
 	{host, docroot, accesslog, accesslogfd,

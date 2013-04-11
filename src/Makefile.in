@@ -30,8 +30,8 @@ else
   INIT_USER=$(INSTALLUSER)
 endif
 
-EFLAGS += @ERLANG_SSLVER@ -pa .
-ERLANG_CFLAGS += @ERLANG_SSLVER@
+EFLAGS += -pa .
+ERLANG_CFLAGS +=
 
 # make debug=true to compile Erlang module with debug informations.
 ifdef debug

@@ -40,11 +40,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--ifdef(SSL40).
 -define(PG2, pg2).
--else.
--define(PG2, pg2_backport).
--endif.
 
 -record(state, {}).
 

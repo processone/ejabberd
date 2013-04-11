@@ -2,20 +2,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef SSL40
-#define ENIF_ALLOC(SIZE) enif_alloc(SIZE)
-#define ENIF_FREE(PTR) enif_free(PTR)
-#define ENIF_REALLOC(PTR, SIZE) enif_realloc(PTR, SIZE)
-#define ENIF_ALLOC_BINARY(SIZE, BIN) enif_alloc_binary(SIZE, BIN)
-#define ENIF_COMPARE(TERM1, TERM2) enif_compare(TERM1, TERM2)
-#else
-#define ENIF_ALLOC(SIZE) enif_alloc(env, SIZE)
-#define ENIF_FREE(PTR) enif_free(env, PTR)
-#define ENIF_REALLOC(PTR, SIZE) enif_realloc(env, PTR, SIZE)
-#define ENIF_ALLOC_BINARY(SIZE, BIN) enif_alloc_binary(env, SIZE, BIN)
-#define ENIF_COMPARE(TERM1, TERM2) enif_compare(env, TERM1, TERM2)
-#endif
-
 static ERL_NIF_TERM atom_xmlelement;
 static ERL_NIF_TERM atom_xmlcdata;
 
@@ -36,10 +22,10 @@ static int load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 
 static struct buf *init_buf(ErlNifEnv* env)
 {
-  struct buf *rbuf = ENIF_ALLOC(sizeof(struct buf));
+  struct buf *rbuf = enif_alloc(sizeof(struct buf));
   rbuf->limit = 1024;
   rbuf->len = 0;
-  rbuf->b = ENIF_ALLOC(rbuf->limit);
+  rbuf->b = enif_alloc(rbuf->limit);
   return rbuf;
 }
 
@@ -47,9 +33,9 @@ static void destroy_buf(ErlNifEnv* env, struct buf *rbuf)
 {
   if (rbuf) {
     if (rbuf->b) {
-      ENIF_FREE(rbuf->b);
+      enif_free(rbuf->b);
     };
-    ENIF_FREE(rbuf);
+    enif_free(rbuf);
   };
 }
 
@@ -60,7 +46,7 @@ inline void resize_buf(ErlNifEnv* env, struct buf *rbuf, int len_to_add)
   if (new_len > rbuf->limit) {
      while (new_len > rbuf->limit)
 	rbuf->limit *= 2;
-     rbuf->b = ENIF_REALLOC(rbuf->b, rbuf->limit);
+     rbuf->b = enif_realloc(rbuf->b, rbuf->limit);
   }
 }
 
@@ -166,7 +152,7 @@ static int make_element(ErlNifEnv* env, struct buf *rbuf, ERL_NIF_TERM el)
 
   if (enif_get_tuple(env, el, &arity, &tuple)) {
     if (arity == 2) {
-      if (!ENIF_COMPARE(tuple[0], atom_xmlcdata)) {
+      if (!enif_compare(tuple[0], atom_xmlcdata)) {
 	if (enif_inspect_iolist_as_binary(env, tuple[1], &cdata)) {
 	  crypt(env, rbuf, cdata.data, cdata.size);
 	  ret = 1;
@@ -174,7 +160,7 @@ static int make_element(ErlNifEnv* env, struct buf *rbuf, ERL_NIF_TERM el)
       };
     };
     if (arity == 4) {
-      if (!ENIF_COMPARE(tuple[0], atom_xmlelement)) {
+      if (!enif_compare(tuple[0], atom_xmlelement)) {
 	if (enif_inspect_iolist_as_binary(env, tuple[1], &name)) {
 	  buf_add_char(env, rbuf, '<');
 	  buf_add_str(env, rbuf, (char *)name.data, name.size);
@@ -217,7 +203,7 @@ static ERL_NIF_TERM element_to(ErlNifEnv* env, int argc,
 	destroy_buf(env, rbuf);
 	return result;
       }	else {
-	if (ENIF_ALLOC_BINARY(rbuf->len, &output)) {
+	if (enif_alloc_binary(rbuf->len, &output)) {
 	  memcpy(output.data, rbuf->b, rbuf->len);
 	  result = enif_make_binary(env, &output);
 	  destroy_buf(env, rbuf);

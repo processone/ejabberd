@@ -314,8 +314,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \item GNU Make
 \item GCC
 \item Libexpat 1.95 or higher
-\item Erlang/OTP R10B-9 or higher. The recommended versions are R13B04 and R14B04.
-  Don't use R14A or R14B because \footahref{http://www.erlang.org/cgi-bin/ezmlm-cgi/4/54598}{they have a bug}.
+\item Erlang/OTP R15B or higher.
 \item OpenSSL 0.9.8 or higher, for STARTTLS, SASL and SSL encryption.
 \item Zlib 1.2.3 or higher, for Stream Compression support (\xepref{0138}). Optional.
 \item Erlang mysql library. Optional. For MySQL authentication or storage. See section \ref{compilemysql}.
@@ -390,7 +389,6 @@ Some options that you may be interested in modifying:
 
 	\titem{--enable-nif}
         Replaces some critical Erlang functions with equivalents written in C to improve performance.
-        This feature requires Erlang/OTP R13B04 or higher.
 \end{description}
 
 \makesubsection{install}{Install}
@@ -5541,8 +5539,7 @@ In order for this communication to work,
 \term{epmd} must be running and listening for name requests in the port 4369.
 You should block the port 4369 in the firewall in such a way that
 only the programs in your machine can access it.
-or configure the option \term{ERL\_EPMD\_ADDRESS} in the file \term{ejabberdctl.cfg}
-(this option works only in Erlang/OTP R14B03 or higher).
+or configure the option \term{ERL\_EPMD\_ADDRESS} in the file \term{ejabberdctl.cfg}.
 
 If you build a cluster of several \ejabberd{} instances,
 each \ejabberd{} instance is called an \ejabberd{} node.
