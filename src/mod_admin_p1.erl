@@ -1082,7 +1082,7 @@ send_stanza(FromJID, ToJID, StanzaStr) ->
 get_roster2(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    mod_roster:get_user_roster([], {LUser, LServer}).
+    ejabberd_hooks:run_fold(roster_get, LServer, [], [{LUser, LServer}]).
 
 add_rosteritem2(User, Server, JID, Nick, Group,
 		Subscription, Push) ->
