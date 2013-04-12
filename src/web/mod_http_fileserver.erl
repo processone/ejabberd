@@ -59,8 +59,6 @@
 	{method, path, q = [], us, auth, lang = <<"">>,
 	 data = <<"">>, ip, host, port, tp, headers}).
 
--define(STRING2LOWER, string).
-
 -record(state,
 	{host, docroot, accesslog, accesslogfd,
 	 directory_indices, custom_headers, default_content_type,
@@ -394,7 +392,7 @@ add_to_log(File, FileSize, Code, Request) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
     IP = ip_to_string(element(1, Request#request.ip)),
     Path = join(Request#request.path, "/"),
-    Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", element(2, E)]) end,
+    Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", binary_to_list(element(2, E))]) end,
 				Request#request.q), "&") of
 		[] ->
 		    "";
@@ -428,14 +426,16 @@ find_header(Header, Headers, Default) ->
 get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?PROCNAME).
 
 join([], _) ->
-    "";
+    <<"">>;
 join([E], _) ->
     E;
 join([H | T], Separator) ->
-    lists:foldl(fun(E, Acc) -> lists:concat([Acc, Separator, E]) end, H, T).
+    [H2 | T2] = case is_binary(H) of true -> [binary_to_list(I)||I<-[H|T]]; false -> [H | T] end,
+    Res=lists:foldl(fun(E, Acc) -> lists:concat([Acc, Separator, E]) end, H2, T2),
+    case is_binary(H) of true -> list_to_binary(Res); false -> Res end.
 
 content_type(Filename, DefaultContentType, ContentTypes) ->
-    Extension = ?STRING2LOWER:to_lower(filename:extension(Filename)),
+    Extension = str:to_lower(filename:extension(Filename)),
     case lists:keysearch(Extension, 1, ContentTypes) of
       {value, {_, ContentType}} -> ContentType;
       false -> DefaultContentType
@@ -451,4 +451,4 @@ ip_to_string(Address) when size(Address) == 4 ->
     join(tuple_to_list(Address), ".");
 ip_to_string(Address) when size(Address) == 8 ->
     Parts = lists:map(fun (Int) -> io_lib:format("~.16B", [Int]) end, tuple_to_list(Address)),
-    ?STRING2LOWER:to_lower(lists:flatten(join(Parts, ":"))).
+    string:to_lower(lists:flatten(join(Parts, ":"))).
