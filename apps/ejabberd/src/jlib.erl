@@ -428,11 +428,20 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
     if
         ID /= "" ->
             {xmlelement, <<"iq">>,
-             [{<<"id">>, ID}, {<<"type">>, iq_type_to_binary(Type)}], SubEl};
+             [{<<"id">>, ID}, {<<"type">>, iq_type_to_binary(Type)}],
+              sub_el_to_els(SubEl)};
         true ->
             {xmlelement, <<"iq">>,
-             [{<<"type">>, iq_type_to_binary(Type)}], SubEl}
+             [{<<"type">>, iq_type_to_binary(Type)}],
+              sub_el_to_els(SubEl)}
     end.
+
+%% @doc Convert `#iq.sub_el' back to `#xmlelement.children'.
+%% @end
+%% for requests.
+sub_el_to_els({xmlelement,_,_,_}=E) -> [E];
+%% for replies.
+sub_el_to_els(Es) when is_list(Es) -> Es.
 
 
 parse_xdata_submit(El) ->
