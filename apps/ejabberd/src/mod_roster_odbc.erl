@@ -466,49 +466,47 @@ push_item_version(User, Server, Resource, From, Item, RosterVersion) ->
 get_subscription_lists(_, User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
+    JID = jlib:make_jid(User, Server, <<>>),
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
         {selected, ["username", "jid", "nick", "subscription", "ask",
                     "askmessage", "server", "subscribe", "type"],
          Items} when is_list(Items) ->
-            fill_subscription_lists(LServer, Items, [], [], []);
+            fill_subscription_lists(JID, LServer, Items, [], [], []);
         _ ->
             {[], [], []}
     end.
 
-fill_subscription_lists(LServer, [IRaw | Is], F, T, P) ->
-      I = raw_to_record(LServer, IRaw),
-      J = element(3, I#roster.usj),
-      NewP = case I#roster.ask of
-                   Ask when Ask == in;
-                                Ask == both ->
-                         Message = I#roster.askmessage,
-                         Status  = if is_binary(Message) ->
-                                               Message;
-                                        true ->
-                                               <<>>
-                                       end,
-                         [{xmlelement, <<"presence">>,
-                                                [{<<"from">>, jlib:jid_to_binary(I#roster.jid)},
-                                                                       {<<"to">>, jlib:jid_to_binary(LServer)},
-                                                                       {<<"type">>, <<"subscribe">>}],
-                                                [{xmlelement, <<"status">>, [],
-                                                                         [{xmlcdata, Status}]}]} | P];
-                   _ ->
-                         P
-                 end,
-      case I#roster.subscription of
-            both ->
-                  fill_subscription_lists(LServer, Is, [J | F], [J | T], NewP);
-            from ->
-                  fill_subscription_lists(LServer, Is, [J | F], T, NewP);
-            to ->
-                  fill_subscription_lists(LServer, Is, F, [J | T], NewP);
-            _ ->
-                  fill_subscription_lists(LServer, Is, F, T, NewP)
-          end;
-fill_subscription_lists(_LServer, [], F, T, P) ->
-      {F, T, P}.
+fill_subscription_lists(JID, LServer, [IRaw | Is], F, T, P) ->
+    I = raw_to_record(LServer, IRaw),
+    J = element(3, I#roster.usj),
+    NewP = case I#roster.ask of
+        Ask when Ask == in; Ask == both ->
+            Message = I#roster.askmessage,
+            Status  = if is_binary(Message) -> Message;
+                           true -> <<>>
+                          end,
+            [{xmlelement, <<"presence">>,
+              [{<<"from">>, jlib:jid_to_binary(I#roster.jid)},
+               {<<"to">>, jlib:jid_to_binary(JID)},
+               {<<"type">>, <<"subscribe">>}],
+              [{xmlelement, <<"status">>, [],
+                [{xmlcdata, Status}]}]} | P];
+        _ -> 
+             P
+        end,
+    case I#roster.subscription of
+    both ->
+        fill_subscription_lists(JID, LServer, Is, [J | F], [J | T], NewP);
+    from ->
+        fill_subscription_lists(JID, LServer, Is, [J | F], T, NewP);
+    to ->
+        fill_subscription_lists(JID, LServer, Is, F, [J | T], NewP);
+    _ ->
+        fill_subscription_lists(JID, LServer, Is, F, T, NewP)
+    end;
+fill_subscription_lists(_JID, _LServer, [], F, T, P) ->
+   {F, T, P}.
 
 ask_to_pending(subscribe) -> out;
 ask_to_pending(unsubscribe) -> none;
