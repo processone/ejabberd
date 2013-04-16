@@ -55,7 +55,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
         true ->
             if
                 From#jid.luser == To#jid.luser ->
-                    {xmlelement, Name, Attrs, Els} = SubEl,
+                    {xmlel, Name, Attrs, Els} = SubEl,
                     case Type of
                         set ->
                             F = fun() ->
@@ -66,7 +66,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
                                 end,
                             odbc_queries:sql_transaction(LServer, F),
                             IQ#iq{type = result,
-                                  sub_el = [{xmlelement, Name, Attrs, []}]};
+                                  sub_el = [{xmlel, Name, Attrs, []}]};
                         get ->
                             case catch get_data(LUser, LServer, Els) of
                                 {'EXIT', _Reason} ->
@@ -75,7 +75,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
                                                     ?ERR_INTERNAL_SERVER_ERROR]};
                                 Res ->
                                     IQ#iq{type = result,
-                                          sub_el = [{xmlelement, Name, Attrs, Res}]}
+                                          sub_el = [{xmlel, Name, Attrs, Res}]}
                             end
                     end;
                 true ->
@@ -89,7 +89,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
 
 set_data(LUser, LServer, El) ->
     case El of
-        {xmlelement, _Name, Attrs, _Els} ->
+        {xmlel, _Name, Attrs, _Els} ->
             XMLNS = xml:get_attr_s(<<"xmlns">>, Attrs),
             case XMLNS of
                 <<>> ->
@@ -112,7 +112,7 @@ get_data(_LUser, _LServer, [], Res) ->
     lists:reverse(Res);
 get_data(LUser, LServer, [El | Els], Res) ->
     case El of
-        {xmlelement, _Name, Attrs, _} ->
+        {xmlel, _Name, Attrs, _} ->
             XMLNS = xml:get_attr_s(<<"xmlns">>, Attrs),
             Username = ejabberd_odbc:escape(LUser),
             LXMLNS = ejabberd_odbc:escape(XMLNS),

@@ -96,9 +96,9 @@
 
 % TODO: remove<<"code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
-	{xmlelement,<<"error">>,
+	{xmlel,<<"error">>,
 	 [{<<"code">>, Code}, {<<"type">>, Type}],
-	 [{xmlelement, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}).
+	 [{xmlel, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}).
 
 -define(ERR_BAD_REQUEST,
 	?STANZA_ERROR(<<"400">>,<<"modify">>,<<"bad-request">>)).
@@ -150,10 +150,10 @@
 %	?STANZA_ERROR(<<"">>,<<"">>,<<"">>)).
 
 -define(STANZA_ERRORT(Code, Type, Condition, Lang, Text),
-	{xmlelement,<<"error">>,
+	{xmlel,<<"error">>,
 	 [{<<"code">>, Code}, {<<"type">>, Type}],
-	 [{xmlelement, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []},
-	  {xmlelement,<<"text">>, [{<<"xmlns">>, ?NS_STANZAS}],
+	 [{xmlel, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []},
+	  {xmlel,<<"text">>, [{<<"xmlns">>, ?NS_STANZAS}],
 	   [{xmlcdata, translate:translate(Lang, Text)}]}]}).
 
 -define(ERRT_BAD_REQUEST(Lang, Text),
@@ -209,9 +209,9 @@
 
 
 -define(STREAM_ERROR(Condition),
-	{xmlelement,<<"stream:error">>,
+	{xmlel,<<"stream:error">>,
 	 [],
-	 [{xmlelement, Condition, [{<<"xmlns">>, ?NS_STREAMS}], []}]}).
+	 [{xmlel, Condition, [{<<"xmlns">>, ?NS_STREAMS}], []}]}).
 
 -define(SERR_BAD_FORMAT,
 	?STREAM_ERROR(<<"bad-format">>)).
@@ -264,10 +264,10 @@
 %	?STREAM_ERROR(<<"">>)).
 
 -define(STREAM_ERRORT(Condition, Lang, Text),
-	{xmlelement,<<"stream:error">>,
+	{xmlel,<<"stream:error">>,
 	 [],
-	 [{xmlelement, Condition, [{<<"xmlns">>, ?NS_STREAMS}], []},
-	  {xmlelement,<<"text">>, [{<<"xml:lang">>, Lang}, {<<"xmlns">>, ?NS_STREAMS}],
+	 [{xmlel, Condition, [{<<"xmlns">>, ?NS_STREAMS}], []},
+	  {xmlel,<<"text">>, [{<<"xml:lang">>, Lang}, {<<"xmlns">>, ?NS_STREAMS}],
 	   [{xmlcdata, translate:translate(Lang, Text)}]}]}).
 
 -define(SERRT_BAD_FORMAT(Lang, Text),

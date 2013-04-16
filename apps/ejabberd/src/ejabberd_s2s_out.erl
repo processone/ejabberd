@@ -449,16 +449,16 @@ wait_for_validation(closed, StateData) ->
 
 wait_for_features({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlelement, <<"stream:features">>, _Attrs, Els} ->
+	{xmlel, <<"stream:features">>, _Attrs, Els} ->
 	    {SASLEXT, StartTLS, StartTLSRequired} =
 		lists:foldl(
-		  fun({xmlelement, <<"mechanisms">>, Attrs1, Els1} = _El1,
+		  fun({xmlel, <<"mechanisms">>, Attrs1, Els1} = _El1,
 		      {_SEXT, STLS, STLSReq} = Acc) ->
 			  case xml:get_attr_s(<<"xmlns">>, Attrs1) of
 			      ?NS_SASL ->
 				  NewSEXT =
 				      lists:any(
-					fun({xmlelement, <<"mechanism">>, _, Els2}) ->
+					fun({xmlel, <<"mechanism">>, _, Els2}) ->
 						case xml:get_cdata(Els2) of
 						    <<"EXTERNAL">> -> true;
 						    _ -> false
@@ -469,12 +469,12 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 			      _ ->
 				  Acc
 			  end;
-		     ({xmlelement, <<"starttls">>, Attrs1, _Els1} = El1,
+		     ({xmlel, <<"starttls">>, Attrs1, _Els1} = El1,
 		      {SEXT, _STLS, _STLSReq} = Acc) ->
 			  case xml:get_attr_s(<<"xmlns">>, Attrs1) of
 			      ?NS_TLS ->
 				  Req = case xml:get_subtag(El1, <<"required">>) of
-					    {xmlelement, _, _, _} -> true;
+					    {xmlel, _, _, _} -> true;
 					    false -> false
 					end,
 				  {SEXT, true, Req};
@@ -498,7 +498,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		SASLEXT and StateData#state.try_auth and
 		(StateData#state.new /= false) ->
 		    send_element(StateData,
-				 {xmlelement, <<"auth">>,
+				 {xmlel, <<"auth">>,
 				  [{<<"xmlns">>, ?NS_SASL},
 				   {<<"mechanism">>, <<"EXTERNAL">>}],
 				  [{xmlcdata,
@@ -509,7 +509,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		StartTLS and StateData#state.tls and
 		(not StateData#state.tls_enabled) ->
 		    send_element(StateData,
-				 {xmlelement, <<"starttls">>,
+				 {xmlel, <<"starttls">>,
 				  [{<<"xmlns">>, ?NS_TLS}], []}),
 		    {next_state, wait_for_starttls_proceed, StateData,
 		     ?FSMTIMEOUT};
@@ -560,7 +560,7 @@ wait_for_features(closed, StateData) ->
 
 wait_for_auth_result({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlelement, <<"success">>, Attrs, _Els} ->
+	{xmlel, <<"success">>, Attrs, _Els} ->
 	    case xml:get_attr_s(<<"xmlns">>, Attrs) of
 		?NS_SASL ->
 		    ?DEBUG("auth: ~p", [{StateData#state.myname,
@@ -582,7 +582,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 			      [StateData#state.myname, StateData#state.server]),
 		    {stop, normal, StateData}
 	    end;
-	{xmlelement, <<"failure">>, Attrs, _Els} ->
+	{xmlel, <<"failure">>, Attrs, _Els} ->
 	    case xml:get_attr_s(<<"xmlns">>, Attrs) of
 		?NS_SASL ->
 		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
@@ -628,7 +628,7 @@ wait_for_auth_result(closed, StateData) ->
 
 wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlelement, <<"proceed">>, Attrs, _Els} ->
+	{xmlel, <<"proceed">>, Attrs, _Els} ->
 	    case xml:get_attr_s(<<"xmlns">>, Attrs) of
 		?NS_TLS ->
 		    ?DEBUG("starttls: ~p", [{StateData#state.myname,
@@ -957,7 +957,7 @@ send_queue(StateData, Q) ->
 
 %% Bounce a single message (xmlelement)
 bounce_element(El, Error) ->
-    {xmlelement, _Name, Attrs, _SubTags} = El,
+    {xmlel, _Name, Attrs, _SubTags} = El,
     case xml:get_attr_s(<<"type">>, Attrs) of
 	<<"error">> -> ok;
 	<<"result">> -> ok;
@@ -1020,7 +1020,7 @@ send_db_request(StateData) ->
 		ok;
 	    Key1 ->
 		send_element(StateData,
-			     {xmlelement,
+			     {xmlel,
 			      <<"db:result">>,
 			      [{<<"from">>, StateData#state.myname},
 			       {<<"to">>, Server}],
@@ -1031,7 +1031,7 @@ send_db_request(StateData) ->
 		ok;
 	    {_Pid, Key2, SID} ->
 		send_element(StateData,
-			     {xmlelement,
+			     {xmlel,
 			      <<"db:verify">>,
 			      [{<<"from">>, StateData#state.myname},
 			       {<<"to">>, StateData#state.server},
@@ -1045,13 +1045,13 @@ send_db_request(StateData) ->
     end.
 
 
-is_verify_res({xmlelement, Name, Attrs, _Els}) when Name == <<"db:result">> ->
+is_verify_res({xmlel, Name, Attrs, _Els}) when Name == <<"db:result">> ->
     {result,
      xml:get_attr_s(<<"to">>, Attrs),
      xml:get_attr_s(<<"from">>, Attrs),
      xml:get_attr_s(<<"id">>, Attrs),
      xml:get_attr_s(<<"type">>, Attrs)};
-is_verify_res({xmlelement, Name, Attrs, _Els}) when Name == <<"db:verify">> ->
+is_verify_res({xmlel, Name, Attrs, _Els}) when Name == <<"db:verify">> ->
     {verify,
      xml:get_attr_s(<<"to">>, Attrs),
      xml:get_attr_s(<<"from">>, Attrs),

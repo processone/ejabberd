@@ -80,7 +80,7 @@ element_to_string(El) ->
 
 element_to_string_nocatch(El) ->
     case El of
-	{xmlelement, Name, Attrs, Els} ->
+	{xmlel, Name, Attrs, Els} ->
 	    if
 		Els /= [] ->
 		    [$<, Name, attrs_to_list(Attrs), $>,
@@ -181,7 +181,7 @@ escape_cdata(CData, Index, [Pos|Positions], Acc) ->
     %% Note: We build the list in reverse to optimize construction
     escape_cdata(Rest, Pos+1, Positions, [CDATA2, Part, CDATA1|Acc]).
 
-remove_cdata_p({xmlelement, _Name, _Attrs, _Els}) -> true;
+remove_cdata_p({xmlel, _Name, _Attrs, _Els}) -> true;
 remove_cdata_p(_) -> false.
 
 remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
@@ -196,7 +196,7 @@ get_cdata([_ | L], S) ->
 get_cdata([], S) ->
     S.
 
-get_tag_cdata({xmlelement, _Name, _Attrs, Els}) ->
+get_tag_cdata({xmlel, _Name, _Attrs, Els}) ->
     get_cdata(Els).
 
 get_attr(AttrName, Attrs) ->
@@ -215,19 +215,19 @@ get_attr_s(AttrName, Attrs) ->
 	    context_default(AttrName)
     end.
 
-get_tag_attr(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
+get_tag_attr(AttrName, {xmlel, _Name, Attrs, _Els}) ->
     get_attr(AttrName, Attrs).
 
-get_tag_attr_s(AttrName, {xmlelement, _Name, Attrs, _Els}) ->
+get_tag_attr_s(AttrName, {xmlel, _Name, Attrs, _Els}) ->
     get_attr_s(AttrName, Attrs).
 
 
-get_subtag({xmlelement, _, _, Els}, Name) ->
+get_subtag({xmlel, _, _, Els}, Name) ->
     get_subtag1(Els, Name).
 
 get_subtag1([El | Els], Name) ->
     case El of
-	{xmlelement, Name, _, _} ->
+	{xmlel, Name, _, _} ->
 	    El;
 	_ ->
 	    get_subtag1(Els, Name)
@@ -235,8 +235,8 @@ get_subtag1([El | Els], Name) ->
 get_subtag1([], _) ->
     false.
 
-append_subtags({xmlelement, Name, Attrs, SubTags1}, SubTags2) ->
-    {xmlelement, Name, Attrs, SubTags1 ++ SubTags2}.
+append_subtags({xmlel, Name, Attrs, SubTags1}, SubTags2) ->
+    {xmlel, Name, Attrs, SubTags1 ++ SubTags2}.
 
 get_path_s(El, []) ->
     El;
@@ -252,10 +252,10 @@ get_path_s(El, [{attr, Name}]) ->
 get_path_s(El, [cdata]) ->
     get_tag_cdata(El).
 
-replace_tag_attr(Attr, Value, {xmlelement, Name, Attrs, Els}) ->
+replace_tag_attr(Attr, Value, {xmlel, Name, Attrs, Els}) ->
     Attrs1 = lists:keydelete(Attr, 1, Attrs),
     Attrs2 = [{Attr, Value} | Attrs1],
-    {xmlelement, Name, Attrs2, Els}.
+    {xmlel, Name, Attrs2, Els}.
 
 context_default(Attr) when is_list(Attr) ->
     "";

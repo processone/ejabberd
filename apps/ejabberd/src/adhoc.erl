@@ -43,7 +43,7 @@ parse_request(#iq{type = set, lang = Lang, sub_el = SubEl, xmlns = ?NS_COMMANDS}
     SessionID = xml:get_tag_attr_s(<<"sessionid">>, SubEl),
     Action = xml:get_tag_attr_s(<<"action">>, SubEl),
     XData = find_xdata_el(SubEl),
-    {xmlelement, _, _, AllEls} = SubEl,
+    {xmlel, _, _, AllEls} = SubEl,
     Others = case XData of
                  false ->
                      AllEls;
@@ -61,15 +61,15 @@ parse_request(_) ->
     {error, ?ERR_BAD_REQUEST}.
 
 %% Borrowed from mod_vcard.erl
-find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+find_xdata_el({xmlel, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
     false;
-find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
+find_xdata_el1([{xmlel, Name, Attrs, SubEls} | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
         ?NS_XDATA ->
-            {xmlelement, Name, Attrs, SubEls};
+            {xmlel, Name, Attrs, SubEls};
         _ ->
             find_xdata_el1(Els)
     end;
@@ -112,16 +112,16 @@ produce_response(#adhoc_response{lang = _Lang,
                 _ ->
                     ActionsElAttrs = [{<<"execute">>, DefaultAction}]
             end,
-            ActionsEls = [{xmlelement, <<"actions">>,
+            ActionsEls = [{xmlel, <<"actions">>,
                            ActionsElAttrs,
-                           [{xmlelement, Action, [], []} || Action <- Actions]}]
+                           [{xmlel, Action, [], []} || Action <- Actions]}]
     end,
     NotesEls = lists:map(fun({Type, Text}) ->
-                                 {xmlelement, <<"note">>,
+                                 {xmlel, <<"note">>,
                                   [{<<"type">>, Type}],
                                   [{xmlcdata, Text}]}
                          end, Notes),
-    {xmlelement, <<"command">>,
+    {xmlel, <<"command">>,
      [{<<"xmlns">>, ?NS_COMMANDS},
       {<<"sessionid">>, SessionID},
       {<<"node">>, Node},

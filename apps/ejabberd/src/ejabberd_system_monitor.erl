@@ -61,7 +61,7 @@ end,
 process_command(From, To, Packet) ->
     case To of
 	#jid{luser = "", lresource = "watchdog"} ->
-	    {xmlelement, Name, _Attrs, _Els} = Packet,
+	    {xmlel, Name, _Attrs, _Els} = Packet,
 	    case Name of
 		"message" ->
 		    LFrom = jlib:jid_tolower(jlib:jid_remove_resource(From)),
@@ -204,8 +204,8 @@ process_large_heap(Pid, Info) ->
 send_message(From, To, Body) ->
     ejabberd_router:route(
       From, To,
-      {xmlelement, "message", [{"type", "chat"}],
-       [{xmlelement, "body", [],
+      {xmlel, "message", [{"type", "chat"}],
+       [{xmlel, "body", [],
 	 [{xmlcdata, lists:flatten(Body)}]}]}).
 
 get_admin_jids() ->

@@ -323,7 +323,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					  end),
 				    Mechs = lists:map(
 					      fun(S) ->
-						      {xmlelement, <<"mechanism">>, [],
+						      {xmlel, <<"mechanism">>, [],
 						       [{xmlcdata, S}]}
 					      end, cyrsasl:listmech(Server)),
 				    SockMod =
@@ -335,9 +335,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    ((SockMod == gen_tcp) orelse
 					     (SockMod == tls)) of
 					    true ->
-						[{xmlelement, <<"compression">>,
+						[{xmlel, <<"compression">>,
 						  [{<<"xmlns">>, ?NS_FEATURE_COMPRESS}],
-						  [{xmlelement, <<"method">>,
+						  [{xmlel, <<"method">>,
 						    [], [{xmlcdata, <<"zlib">>}]}]}];
 					    _ ->
 						[]
@@ -352,21 +352,21 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    true ->
 						case TLSRequired of
 						    true ->
-							[{xmlelement, <<"starttls">>,
+							[{xmlel, <<"starttls">>,
 							  [{"xmlns", ?NS_TLS}],
-							  [{xmlelement, <<"required">>,
+							  [{xmlel, <<"required">>,
 							    [], []}]}];
 						    _ ->
-							[{xmlelement, <<"starttls">>,
+							[{xmlel, <<"starttls">>,
 							  [{<<"xmlns">>, ?NS_TLS}], []}]
 						end;
 					    false ->
 						[]
 					end,
 				    send_element(StateData,
-						 {xmlelement, <<"stream:features">>, [],
+						 {xmlel, <<"stream:features">>, [],
 						  TLSFeature ++ CompressFeature ++
-						  [{xmlelement, <<"mechanisms">>,
+						  [{xmlel, <<"mechanisms">>,
 						    [{<<"xmlns">>, ?NS_SASL}],
 						    Mechs}] ++
 						  ejabberd_hooks:run_fold(
@@ -386,9 +386,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						  roster_get_versioning_feature,
 						  Server, [], [Server]),
 				            StreamFeatures =
-						[{xmlelement, <<"bind">>,
+						[{xmlel, <<"bind">>,
 						  [{<<"xmlns">>, ?NS_BIND}], []},
-						 {xmlelement, <<"session">>,
+						 {xmlel, <<"session">>,
 						  [{<<"xmlns">>, ?NS_SESSION}], []}]
 						++ RosterVersioningFeature
 						++ ejabberd_hooks:run_fold(
@@ -397,7 +397,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						     [], [Server]),
 					    send_element(
 					      StateData,
-					      {xmlelement, <<"stream:features">>, [],
+					      {xmlel, <<"stream:features">>, [],
 					       StreamFeatures}),
 					    fsm_next_state(wait_for_bind,
 						       StateData#state{
@@ -406,7 +406,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					_ ->
 					    send_element(
 					      StateData,
-					      {xmlelement, <<"stream:features">>, [], []}),
+					      {xmlel, <<"stream:features">>, [], []}),
 					    fsm_next_state(wait_for_session,
 						       StateData#state{
 							 server = Server,
@@ -471,7 +471,7 @@ wait_for_stream(closed, StateData) ->
 wait_for_auth({xmlstreamelement, El}, StateData) ->
     case is_auth_packet(El) of
 	{auth, _ID, get, {U, _, _, _}} ->
-	    {xmlelement, Name, Attrs, _Els} = jlib:make_result_iq_reply(El),
+	    {xmlel, Name, Attrs, _Els} = jlib:make_result_iq_reply(El),
 	    case U of
 		<<>> ->
 		    UCdata = [];
@@ -481,19 +481,19 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    Res = case ejabberd_auth:plain_password_required(
 			 StateData#state.server) of
 		      false ->
-			  {xmlelement, Name, Attrs,
-			   [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_AUTH}],
-			     [{xmlelement, <<"username">>, [], UCdata},
-			      {xmlelement, <<"password">>, [], []},
-			      {xmlelement, <<"digest">>, [], []},
-			      {xmlelement, <<"resource">>, [], []}
+			  {xmlel, Name, Attrs,
+			   [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_AUTH}],
+			     [{xmlel, <<"username">>, [], UCdata},
+			      {xmlel, <<"password">>, [], []},
+			      {xmlel, <<"digest">>, [], []},
+			      {xmlel, <<"resource">>, [], []}
 			     ]}]};
 		      true ->
-			  {xmlelement, Name, Attrs,
-			   [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_AUTH}],
-			     [{xmlelement, <<"username">>, [], UCdata},
-			      {xmlelement, <<"password">>, [], []},
-			      {xmlelement, <<"resource">>, [], []}
+			  {xmlel, Name, Attrs,
+			   [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_AUTH}],
+			     [{xmlel, <<"username">>, [], UCdata},
+			      {xmlel, <<"password">>, [], []},
+			      {xmlel, <<"resource">>, [], []}
 			     ]}]}
 		  end,
 	    send_element(StateData, Res),
@@ -611,7 +611,7 @@ wait_for_auth(closed, StateData) ->
 
 
 wait_for_feature_request({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlel, Name, Attrs, Els} = El,
     Zlib = StateData#state.zlib,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
@@ -628,7 +628,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		    (StateData#state.sockmod):reset_stream(
 		      StateData#state.socket),
 		    send_element(StateData,
-				 {xmlelement, <<"success">>,
+				 {xmlel, <<"success">>,
 				  [{<<"xmlns">>, ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
 		    AuthModule = xml:get_attr_s(auth_module, Props),
@@ -642,7 +642,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 				     user = U });
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
-				 {xmlelement, <<"challenge">>,
+				 {xmlel, <<"challenge">>,
 				  [{<<"xmlns">>, ?NS_SASL}],
 				  [{xmlcdata,
 				    jlib:encode_base64(ServerOut)}]}),
@@ -655,16 +655,16 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 		       [StateData#state.socket,
 			Username, StateData#state.server]),
 		    send_element(StateData,
-				 {xmlelement, <<"failure">>,
+				 {xmlel, <<"failure">>,
 				  [{<<"xmlns">>, ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+				  [{xmlel, Error, [], []}]}),
 		    {next_state, wait_for_feature_request, StateData,
 		     ?C2S_OPEN_TIMEOUT};
 		{error, Error} ->
 		    send_element(StateData,
-				 {xmlelement, <<"failure">>,
+				 {xmlel, <<"failure">>,
 				  [{<<"xmlns">>, ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+				  [{xmlel, Error, [], []}]}),
 		    fsm_next_state(wait_for_feature_request, StateData)
 	    end;
 	{?NS_TLS_BIN, <<"starttls">>} when TLS == true,
@@ -683,7 +683,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
 			  xml:element_to_binary(
-			    {xmlelement, <<"proceed">>, [{<<"xmlns">>, ?NS_TLS}], []})),
+			    {xmlel, <<"proceed">>, [{<<"xmlns">>, ?NS_TLS}], []})),
 	    fsm_next_state(wait_for_stream,
 			   StateData#state{socket = TLSSocket,
 					   streamid = new_id(),
@@ -695,9 +695,9 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    case xml:get_subtag(El, <<"method">>) of
 		false ->
 		    send_element(StateData,
-				 {xmlelement, <<"failure">>,
+				 {xmlel, <<"failure">>,
 				  [{<<"xmlns">>, ?NS_COMPRESS}],
-				  [{xmlelement, <<"setup-failed">>, [], []}]}),
+				  [{xmlel, <<"setup-failed">>, [], []}]}),
 		    fsm_next_state(wait_for_feature_request, StateData);
 		Method ->
 		    case xml:get_tag_cdata(Method) of
@@ -706,7 +706,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    ZlibSocket = (StateData#state.sockmod):compress(
 					   Socket,
 					   xml:element_to_binary(
-					     {xmlelement, <<"compressed">>,
+					     {xmlel, <<"compressed">>,
 					      [{<<"xmlns">>, ?NS_COMPRESS}], []})),
 			    fsm_next_state(wait_for_stream,
 			     StateData#state{socket = ZlibSocket,
@@ -714,9 +714,9 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					    });
 			_ ->
 			    send_element(StateData,
-					 {xmlelement, <<"failure">>,
+					 {xmlel, <<"failure">>,
 					  [{<<"xmlns">>, ?NS_COMPRESS}],
-					  [{xmlelement, <<"unsupported-method">>,
+					  [{xmlel, <<"unsupported-method">>,
 					    [], []}]}),
 			    fsm_next_state(wait_for_feature_request,
 					   StateData)
@@ -754,7 +754,7 @@ wait_for_feature_request(closed, StateData) ->
 
 
 wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlel, Name, Attrs, Els} = El,
     case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
 	{?NS_SASL, <<"response">>} ->
 	    ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
@@ -764,7 +764,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		    (StateData#state.sockmod):reset_stream(
 		      StateData#state.socket),
 		    send_element(StateData,
-				 {xmlelement, <<"success">>,
+				 {xmlel, <<"success">>,
 				  [{<<"xmlns">>, ?NS_SASL}], []}),
 		    U = xml:get_attr_s(username, Props),
 		    AuthModule = xml:get_attr_s(auth_module, Props),
@@ -778,7 +778,7 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 				     user = U});
 		{continue, ServerOut, NewSASLState} ->
 		    send_element(StateData,
-				 {xmlelement, <<"challenge">>,
+				 {xmlel, <<"challenge">>,
 				  [{<<"xmlns">>, ?NS_SASL}],
 				  [{xmlcdata,
 				    jlib:encode_base64(ServerOut)}]}),
@@ -790,15 +790,15 @@ wait_for_sasl_response({xmlstreamelement, El}, StateData) ->
 		       [StateData#state.socket,
 			Username, StateData#state.server]),
 		    send_element(StateData,
-				 {xmlelement, <<"failure">>,
+				 {xmlel, <<"failure">>,
 				  [{<<"xmlns">>, ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+				  [{xmlel, Error, [], []}]}),
 		    fsm_next_state(wait_for_feature_request, StateData);
 		{error, Error} ->
 		    send_element(StateData,
-				 {xmlelement, <<"failure">>,
+				 {xmlel, <<"failure">>,
 				  [{<<"xmlns">>, ?NS_SASL}],
-				  [{xmlelement, Error, [], []}]}),
+				  [{xmlel, Error, [], []}]}),
 		    fsm_next_state(wait_for_feature_request, StateData)
 	    end;
 	_ ->
@@ -846,15 +846,15 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		    %%RosterVersioningFeature =
 		    %%	ejabberd_hooks:run_fold(
 		    %%  roster_get_versioning_feature, Server, [], [Server]),
-	            %%StreamFeatures = [{xmlelement, "session",
+	            %%StreamFeatures = [{xmlel, "session",
 		    %%		       [{"xmlns", ?NS_SESSION}], []} |
 		    %%		      RosterVersioningFeature],
-		    %%send_element(StateData, {xmlelement, "stream:features",
+		    %%send_element(StateData, {xmlel, "stream:features",
 		    %%			     [], StreamFeatures}),
 		    Res = IQ#iq{type = result,
-				sub_el = [{xmlelement, <<"bind">>,
+				sub_el = [{xmlel, <<"bind">>,
 					   [{<<"xmlns">>, ?NS_BIND}],
-					   [{xmlelement, <<"jid">>, [],
+					   [{xmlel, <<"jid">>, [],
 					     [{xmlcdata,
 					       jlib:jid_to_binary(JID)}]}]}]},
 		    send_element(StateData, jlib:iq_to_xml(Res)),
@@ -997,7 +997,7 @@ session_established(closed, StateData) ->
 %% Process packets sent by user (coming from user on c2s XMPP
 %% connection)
 session_established2(El, StateData) ->
-    {xmlelement, Name, Attrs, _Els} = El,
+    {xmlel, Name, Attrs, _Els} = El,
     User = StateData#state.user,
     Server = StateData#state.server,
     FromJID = StateData#state.jid,
@@ -1156,7 +1156,7 @@ handle_info(replaced, _StateName, StateData) ->
     {stop, normal, StateData#state{authenticated = replaced}};
 %% Process Packets that are to be send to the user
 handle_info({route, From, To, Packet}, StateName, StateData) ->
-    {xmlelement, Name, Attrs, Els} = Packet,
+    {xmlel, Name, Attrs, Els} = Packet,
     {Pass, NewAttrs, NewState} =
 	case Name of
 	    <<"presence">> ->
@@ -1276,9 +1276,9 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 				PrivPushIQ =
 				    #iq{type = set, xmlns = ?NS_PRIVACY,
 					id = list_to_binary("push" ++ randoms:get_string()),
-					sub_el = [{xmlelement, <<"query">>,
+					sub_el = [{xmlel, <<"query">>,
 						   [{<<"xmlns">>, ?NS_PRIVACY}],
-						   [{xmlelement, <<"list">>,
+						   [{xmlel, <<"list">>,
 						     [{<<"name">>, PrivListName}],
 						     []}]}]},
 				PrivPushEl =
@@ -1303,7 +1303,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 			LFrom = jlib:jid_tolower(From),
 			LBFrom = jlib:jid_remove_resource(LFrom),
 			HasFromSub = (?SETS:is_element(LFrom, StateData#state.pres_f) orelse ?SETS:is_element(LBFrom, StateData#state.pres_f))
-			    andalso is_privacy_allow(StateData, To, From, {xmlelement, <<"presence">>, [], []}, out),
+			    andalso is_privacy_allow(StateData, To, From, {xmlel, <<"presence">>, [], []}, out),
 			case HasFromSub of
 			    true ->
 				case privacy_check_packet(StateData, From, To, Packet, in) of
@@ -1353,7 +1353,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_binary(From),
 						jlib:jid_to_binary(To),
 						NewAttrs),
-	    FixedPacket = {xmlelement, Name, Attrs2, Els},
+	    FixedPacket = {xmlel, Name, Attrs2, Els},
 	    send_element(StateData, FixedPacket),
 	    ejabberd_hooks:run(user_receive_packet,
 			       StateData#state.server,
@@ -1384,7 +1384,7 @@ handle_info({force_update_presence, LUser}, StateName,
             #state{user = LUser, server = LServer} = StateData) ->
     NewStateData =
 	case StateData#state.pres_last of
-	    {xmlelement, <<"presence">>, _Attrs, _Els} ->
+	    {xmlel, <<"presence">>, _Attrs, _Els} ->
 		PresenceEl = ejabberd_hooks:run_fold(
 			       c2s_update_presence,
 			       LServer,
@@ -1441,9 +1441,9 @@ terminate(_Reason, StateName, StateData) ->
 			      [StateData#state.socket,
 			       jlib:jid_to_binary(StateData#state.jid)]),
 		    From = StateData#state.jid,
-		    Packet = {xmlelement, <<"presence">>,
+		    Packet = {xmlel, <<"presence">>,
 			      [{<<"type">>, <<"unavailable">>}],
-			      [{xmlelement, <<"status">>, [],
+			      [{xmlel, <<"status">>, [],
 				[{xmlcdata, "Replaced by new connection"}]}]},
 		    ejabberd_sm:close_session_unset_presence(
 		      StateData#state.sid,
@@ -1472,7 +1472,7 @@ terminate(_Reason, StateName, StateData) ->
 						      StateData#state.resource);
 			_ ->
 			    From = StateData#state.jid,
-			    Packet = {xmlelement, <<"presence">>,
+			    Packet = {xmlel, <<"presence">>,
 				      [{<<"type">>, <<"unavailable">>}], []},
 			    ejabberd_sm:close_session_unset_presence(
 			      StateData#state.sid,
@@ -1576,7 +1576,7 @@ new_id() ->
 is_auth_packet(El) ->
     case jlib:iq_query_info(El) of
 	#iq{id = ID, type = Type, xmlns = ?NS_AUTH, sub_el = SubEl} ->
-	    {xmlelement, _, _, Els} = SubEl,
+	    {xmlel, _, _, Els} = SubEl,
 	    {auth, ID, Type,
 	     get_auth_tags(Els, <<>>, <<>>, <<>>, <<>>)};
 	_ ->
@@ -1584,7 +1584,7 @@ is_auth_packet(El) ->
     end.
 
 
-get_auth_tags([{xmlelement, Name, _Attrs, Els}| L], U, P, D, R) ->
+get_auth_tags([{xmlel, Name, _Attrs, Els}| L], U, P, D, R) ->
     CData = xml:get_cdata(Els),
     case Name of
 	<<"username">> ->
@@ -1665,7 +1665,7 @@ process_presence_probe(From, To, StateData) ->
 		    end;
 		Cond2 ->
 		    ejabberd_router:route(To, From,
-					  {xmlelement, <<"presence">>,
+					  {xmlel, <<"presence">>,
 					   [],
 					   []});
 		true ->
@@ -1675,7 +1675,7 @@ process_presence_probe(From, To, StateData) ->
 
 %% User updates his presence (non-directed presence packet)
 presence_update(From, Packet, StateData) ->
-    {xmlelement, _Name, Attrs, _Els} = Packet,
+    {xmlel, _Name, Attrs, _Els} = Packet,
     case xml:get_attr_s(<<"type">>, Attrs) of
 	<<"unavailable">> ->
 	    Status = case xml:get_subtag(Packet, <<"status">>) of
@@ -1778,7 +1778,7 @@ presence_update(From, Packet, StateData) ->
 
 %% User sends a directed presence packet
 presence_track(From, To, Packet, StateData) ->
-    {xmlelement, _Name, Attrs, _Els} = Packet,
+    {xmlel, _Name, Attrs, _Els} = Packet,
     LTo = jlib:jid_tolower(To),
     User = StateData#state.user,
     Server = StateData#state.server,
@@ -1897,7 +1897,7 @@ presence_broadcast_first(From, StateData, Packet) ->
 		       ejabberd_router:route(
 			 From,
 			 jlib:make_jid(JID),
-			 {xmlelement, <<"presence">>,
+			 {xmlel, <<"presence">>,
 			  [{<<"type">>, <<"probe">>}],
 			  []}),
 		       X
@@ -1979,7 +1979,7 @@ roster_change(IJID, ISubscription, StateData) ->
 				    pres_t = TSet};
 		Cond2 ->
 		    ?DEBUG("C2: ~p~n", [LIJID]),
-		    PU = {xmlelement, <<"presence">>,
+		    PU = {xmlel, <<"presence">>,
 			  [{<<"type">>, <<"unavailable">>}], []},
 		    case privacy_check_packet(StateData, From, To, PU, out) of
 			deny ->
@@ -2067,7 +2067,7 @@ resend_offline_messages(StateData) ->
 	Rs when is_list(Rs) ->
 	    lists:foreach(
 	      fun({route,
-		   From, To, {xmlelement, _Name, _Attrs, _Els} = Packet}) ->
+		   From, To, {xmlel, _Name, _Attrs, _Els} = Packet}) ->
 		      Pass = case privacy_check_packet(StateData, From, To, Packet, in) of
 				 allow ->
 				     true;
@@ -2080,7 +2080,7 @@ resend_offline_messages(StateData) ->
 			      %%		 jlib:jid_to_binary(From),
 			      %%		 jlib:jid_to_binary(To),
 			      %%		 Attrs),
-			      %% FixedPacket = {xmlelement, Name, Attrs2, Els},
+			      %% FixedPacket = {xmlel, Name, Attrs2, Els},
                               %% Use route instead of send_element to go through standard workflow
                               ejabberd_router:route(From, To, Packet);
 			      %% send_element(StateData, FixedPacket),
@@ -2251,25 +2251,25 @@ route_blocking(What, StateData) ->
     SubEl =
 	case What of
 	    {block, JIDs} ->
-		{xmlelement, <<"block">>,
+		{xmlel, <<"block">>,
 		 [{<<"xmlns">>, ?NS_BLOCKING}],
 		 lists:map(
 		   fun(JID) ->
-			   {xmlelement, <<"item">>,
+			   {xmlel, <<"item">>,
 			    [{<<"jid">>, jlib:jid_to_binary(JID)}],
 			    []}
 				       end, JIDs)};
 	    {unblock, JIDs} ->
-		{xmlelement, <<"unblock">>,
+		{xmlel, <<"unblock">>,
 		 [{<<"xmlns">>, ?NS_BLOCKING}],
 		 lists:map(
 		   fun(JID) ->
-			   {xmlelement, <<"item">>,
+			   {xmlel, <<"item">>,
 			    [{<<"jid">>, jlib:jid_to_binary(JID)}],
 			    []}
 		   end, JIDs)};
 	    unblock_all ->
-		{xmlelement, <<"unblock">>,
+		{xmlel, <<"unblock">>,
 		 [{<<"xmlns">>, ?NS_BLOCKING}], []}
 	end,
     PrivPushIQ =

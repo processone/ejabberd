@@ -192,9 +192,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			    {ok, Cert} ->
 				case (StateData#state.sockmod):get_verify_result(StateData#state.socket) of
 				    0 ->
-					[{xmlelement, <<"mechanisms">>,
+					[{xmlel, <<"mechanisms">>,
 					  [{<<"xmlns">>, ?NS_SASL}],
-					  [{xmlelement, <<"mechanism">>, [],
+					  [{xmlel, <<"mechanism">>, [],
 					    [{xmlcdata, <<"EXTERNAL">>}]}]}];
 				    CertVerifyRes ->
 					case StateData#state.tls_certverify of
@@ -212,10 +212,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			   StateData#state.tls_enabled ->
 			       [];
 			   (not StateData#state.tls_enabled) and (not StateData#state.tls_required) ->
-			       [{xmlelement, <<"starttls">>, [{<<"xmlns">>, ?NS_TLS}], []}];
+			       [{xmlel, <<"starttls">>, [{<<"xmlns">>, ?NS_TLS}], []}];
 			   (not StateData#state.tls_enabled) and StateData#state.tls_required ->
-			       [{xmlelement, <<"starttls">>, [{<<"xmlns">>, ?NS_TLS}],
-						[{xmlelement, <<"required">>, [], []}]
+			       [{xmlel, <<"starttls">>, [{<<"xmlns">>, ?NS_TLS}],
+						[{xmlel, <<"required">>, [], []}]
 					   }]
 		       end,
 	    case SASL of
@@ -230,7 +230,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		    {stop, normal, StateData};
 		_ ->
 		    send_element(StateData,
-				 {xmlelement, <<"stream:features">>, [],
+				 {xmlel, <<"stream:features">>, [],
 				  SASL ++ StartTLS ++
 				  ejabberd_hooks:run_fold(
 				    s2s_stream_features,
@@ -242,7 +242,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	      StateData#state.authenticated ->
 	    send_text(StateData, ?STREAM_HEADER(<<" version='1.0'">>)),
 	    send_element(StateData,
-			 {xmlelement, <<"stream:features">>, [],
+			 {xmlel, <<"stream:features">>, [],
 			  ejabberd_hooks:run_fold(
 			    s2s_stream_features,
 			    Server,
@@ -269,7 +269,7 @@ wait_for_stream(closed, StateData) ->
 
 
 wait_for_feature_request({xmlstreamelement, El}, StateData) ->
-    {xmlelement, Name, Attrs, Els} = El,
+    {xmlel, Name, Attrs, Els} = El,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
     SockMod = (StateData#state.sockmod):get_sockmod(StateData#state.socket),
@@ -293,7 +293,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
 			  xml:element_to_binary(
-			    {xmlelement, <<"proceed">>, [{<<"xmlns">>, ?NS_TLS}], []})),
+			    {xmlel, <<"proceed">>, [{<<"xmlns">>, ?NS_TLS}], []})),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket,
 			     streamid = new_id(),
@@ -339,7 +339,7 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 			    (StateData#state.sockmod):reset_stream(
 			      StateData#state.socket),
 			    send_element(StateData,
-					 {xmlelement, <<"success">>,
+					 {xmlel, <<"success">>,
 					  [{<<"xmlns">>, ?NS_SASL}], []}),
 			    ?DEBUG("(~w) Accepted s2s authentication for ~s",
 				      [StateData#state.socket, AuthDomain]),
@@ -350,16 +350,16 @@ wait_for_feature_request({xmlstreamelement, El}, StateData) ->
 					    }};
 			true ->
 			    send_element(StateData,
-					 {xmlelement, <<"failure">>,
+					 {xmlel, <<"failure">>,
 					  [{<<"xmlns">>, ?NS_SASL}], []}),
 			    send_text(StateData, ?STREAM_TRAILER),
 			    {stop, normal, StateData}
 		    end;
 		_ ->
 		    send_element(StateData,
-				 {xmlelement, <<"failure">>,
+				 {xmlel, <<"failure">>,
 				  [{<<"xmlns">>, ?NS_SASL}],
-				  [{xmlelement, <<"invalid-mechanism">>, [], []}]}),
+				  [{xmlel, <<"invalid-mechanism">>, [], []}]}),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
@@ -421,7 +421,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    % true -> "invalid"
 	    % end,
 	    send_element(StateData,
-			 {xmlelement,
+			 {xmlel,
 			  <<"db:verify">>,
 			  [{<<"from">>, To},
 			   {<<"to">>, From},
@@ -431,7 +431,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	    {next_state, stream_established, StateData#state{timer = Timer}};
 	_ ->
 	    NewEl = jlib:remove_attr(<<"xmlns">>, El),
-	    {xmlelement, Name, Attrs, _Els} = NewEl,
+	    {xmlel, Name, Attrs, _Els} = NewEl,
 	    From_s = xml:get_attr_s(<<"from">>, Attrs),
 	    From = jlib:binary_to_jid(From_s),
 	    To_s = xml:get_attr_s(<<"to">>, Attrs),
@@ -492,7 +492,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 
 stream_established({valid, From, To}, StateData) ->
     send_element(StateData,
-		 {xmlelement,
+		 {xmlel,
 		  <<"db:result">>,
 		  [{<<"from">>, To},
 		   {<<"to">>, From},
@@ -507,7 +507,7 @@ stream_established({valid, From, To}, StateData) ->
 
 stream_established({invalid, From, To}, StateData) ->
     send_element(StateData,
-		 {xmlelement,
+		 {xmlel,
 		  <<"db:result">>,
 		  [{<<"from">>, To},
 		   {<<"to">>, From},
@@ -669,13 +669,13 @@ cancel_timer(Timer) ->
     end.
 
 
-is_key_packet({xmlelement, Name, Attrs, Els}) when Name == <<"db:result">> ->
+is_key_packet({xmlel, Name, Attrs, Els}) when Name == <<"db:result">> ->
     {key,
      xml:get_attr_s(<<"to">>, Attrs),
      xml:get_attr_s(<<"from">>, Attrs),
      xml:get_attr_s(<<"id">>, Attrs),
      xml:get_cdata(Els)};
-is_key_packet({xmlelement, Name, Attrs, Els}) when Name == <<"db:verify">> ->
+is_key_packet({xmlel, Name, Attrs, Els}) when Name == <<"db:verify">> ->
     {verify,
      xml:get_attr_s(<<"to">>, Attrs),
      xml:get_attr_s(<<"from">>, Attrs),

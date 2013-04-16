@@ -71,7 +71,7 @@ process_local_iq(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
         get ->
             Sec = get_node_uptime(),
             IQ#iq{type = result,
-                  sub_el =  [{xmlelement, <<"query">>,
+                  sub_el =  [{xmlel, <<"query">>,
                               [{<<"xmlns">>, ?NS_LAST},
                                {<<"seconds">>, list_to_binary(integer_to_list(Sec))}],
                               []}]}
@@ -117,7 +117,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
                            allow,
                            [User, Server, UserListRecord,
                             {To, From,
-                             {xmlelement, <<"presence">>, [], []}},
+                             {xmlel, <<"presence">>, [], []}},
                             out]) of
                         allow ->
                             get_last_iq(IQ, SubEl, User, Server);
@@ -161,14 +161,14 @@ get_last_iq(IQ, SubEl, LUser, LServer) ->
                     TimeStamp2 = now_to_seconds(now()),
                     Sec = TimeStamp2 - TimeStamp,
                     IQ#iq{type = result,
-                          sub_el = [{xmlelement, <<"query">>,
+                          sub_el = [{xmlel, <<"query">>,
                                      [{<<"xmlns">>, ?NS_LAST},
                                       {<<"seconds">>, integer_to_list(Sec)}],
                                      [{xmlcdata, Status}]}]}
             end;
         _ ->
             IQ#iq{type = result,
-                  sub_el = [{xmlelement, <<"query">>,
+                  sub_el = [{xmlel, <<"query">>,
                              [{<<"xmlns">>, ?NS_LAST},
                               {<<"seconds">>, <<"0">>}],
                              []}]}

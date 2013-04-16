@@ -87,7 +87,7 @@ get_local_commands(Acc, _From, #jid{lserver = LServer} = _To, <<"">>, Lang) ->
                         {result, I} -> I;
                         _ -> []
                     end,
-            Nodes = [{xmlelement,
+            Nodes = [{xmlel,
                       <<"item">>,
                       [{<<"jid">>, LServer},
                        {<<"node">>, ?NS_COMMANDS},
@@ -117,7 +117,7 @@ get_sm_commands(Acc, _From, #jid{lserver = LServer} = To, <<"">>, Lang) ->
                         {result, I} -> I;
                         _ -> []
                     end,
-            Nodes = [{xmlelement,
+            Nodes = [{xmlel,
                       <<"item">>,
                       [{<<"jid">>, jlib:jid_to_binary(To)},
                        {<<"node">>, ?NS_COMMANDS},
@@ -136,13 +136,13 @@ get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_local_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
-    [{xmlelement, <<"identity">>,
+    [{xmlel, <<"identity">>,
       [{<<"category">>, <<"automation">>},
        {<<"type">>, <<"command-list">>},
        {<<"name">>, translate:translate(Lang, <<"Commands">>)}], []} | Acc];
 
 get_local_identity(Acc, _From, _To, <<"ping">>, Lang) ->
-    [{xmlelement, <<"identity">>,
+    [{xmlel, <<"identity">>,
       [{<<"category">>, <<"automation">>},
        {<<"type">>, <<"command-node">>},
        {<<"name">>, translate:translate(Lang, <<"Ping">>)}], []} | Acc];
@@ -154,7 +154,7 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
-    [{xmlelement, <<"identity">>,
+    [{xmlel, <<"identity">>,
       [{<<"category">>, <<"automation">>},
        {<<"type">>, <<"command-list">>},
        {<<"name">>, translate:translate(Lang, <<"Commands">>)}], []} | Acc];
@@ -236,7 +236,7 @@ ping_item(Acc, _From, #jid{lserver = Server} = _To, Lang) ->
                 _ ->
                     []
             end,
-    Nodes = [{xmlelement, <<"item">>,
+    Nodes = [{xmlel, <<"item">>,
               [{<<"jid">>, Server},
                {<<"node">>, <<"ping">>},
                {<<"name">>, translate:translate(Lang, <<"Ping">>)}],

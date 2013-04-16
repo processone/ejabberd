@@ -84,10 +84,10 @@
 -endif.
 
 -define(XFIELD(Type, Label, Var, Val),
-        {xmlelement, <<"field">>, [{<<"type">>, Type},
+        {xmlel, <<"field">>, [{<<"type">>, Type},
                                    {<<"label">>, translate:translate(Lang, Label)},
                                    {<<"var">>, Var}],
-        [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
+        [{xmlel, <<"value">>, [], [{xmlcdata, Val}]}]}).
 
 -define(BOOLXFIELD(Label, Var, Val),
         ?XFIELD(<<"boolean">>, Label, Var,
@@ -106,11 +106,11 @@
         ?XFIELD(<<"jid-single">>, Label, Var, Val)).
 
 -define(JIDMULTIXFIELD(Label, Var, JIDList),
-        {xmlelement, <<"field">>,
+        {xmlel, <<"field">>,
          [{<<"type">>, <<"jid-multi">>},
           {<<"label">>, translate:translate(Lang, Label)},
           {<<"var">>, Var}],
-         [{xmlelement, <<"value">>, [], [{xmlcdata, jlib:jid_to_binary(JID)}]}
+         [{xmlel, <<"value">>, [], [{xmlcdata, jlib:jid_to_binary(JID)}]}
           || JID <- JIDList]}).
 %%%----------------------------------------------------------------------
 %%% API
@@ -206,7 +206,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
 %% for the normal_state. The fsm awaits either a confirmation
 %% or a configuration form from the creator.
 %% Responds with error to the any other queries.
-locked_error({route, From, ToNick, {xmlelement, _Name, Attrs, _} = Packet},
+locked_error({route, From, ToNick, {xmlel, _Name, Attrs, _} = Packet},
              NextState, StateData) ->
     ?INFO_MSG("Wrong stanza: ~p", [Packet]),
     ErrText = <<"This room is locked">>,
@@ -220,7 +220,7 @@ locked_error({route, From, ToNick, {xmlelement, _Name, Attrs, _} = Packet},
 %% Receive the room-creating Stanza.
 %% Will crash if any other stanza is received in this state.
 initial_state({route, From, ToNick,
-              {xmlelement, <<"presence">>, Attrs, _Body} = Presence}, StateData) ->
+              {xmlel, <<"presence">>, Attrs, _Body} = Presence}, StateData) ->
     %% this should never happen so crash if it does
     <<>> = xml:get_attr_s(<<"type">>, Attrs),
     case  xml:get_path_s(Presence,[{elem, <<"x">>}, {attr, <<"xmlns">>}]) of
@@ -242,7 +242,7 @@ is_query_allowed(Query) ->
         andalso ( xml:get_tag_attr_s(<<"type">>, X) == <<"submit">>
         orelse xml:get_tag_attr_s(<<"type">>, X)== <<"cancel">>)).
 
-locked_state_process_owner_iq(From, {xmlelement, <<"iq">>, _, _} = Packet,
+locked_state_process_owner_iq(From, {xmlel, <<"iq">>, _, _} = Packet,
                               Lang, <<"set">>, StateData) ->
     Query= xml:get_subtag(Packet, <<"query">>),
     Result = case is_query_allowed(Query) of
@@ -267,7 +267,7 @@ locked_state_process_owner_iq(_From, Packet, Lang, _Type, _StateData) ->
 
 %% Destroy room / confirm instant room / configure room
 locked_state({route, From, _ToNick,
-              {xmlelement, <<"iq">>, Attrs, _Body} = Packet}, StateData) ->
+              {xmlel, <<"iq">>, Attrs, _Body} = Packet}, StateData) ->
     ErrText = <<"This room is locked">>,
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     {Result, NextState} =
@@ -287,7 +287,7 @@ locked_state({route, From, _ToNick,
         end,
     MkQueryResult = fun(Res) ->
                         #iq{type = result,
-                            sub_el = [{xmlelement, <<"query">>,
+                            sub_el = [{xmlel, <<"query">>,
                                        [{<<"xmlns">>, ?NS_MUC_OWNER}],
                                        Res}]}
                     end,
@@ -314,7 +314,7 @@ locked_state({route, From, _ToNick,
 
 %% Let owner leave. Destroy the room.
 locked_state({route, From, ToNick,
-              {xmlelement, <<"presence">>, Attrs, _Body} = Presence} = Call,
+              {xmlel, <<"presence">>, Attrs, _Body} = Presence} = Call,
              StateData) ->
     case xml:get_attr_s(<<"type">>, Attrs) =:= <<"unavailable">>
         andalso get_affiliation(From, StateData)  =:= owner of
@@ -331,7 +331,7 @@ locked_state(Call, StateData) ->
     locked_error(Call,locked_state, StateData).
 
 normal_state({route, From, <<>>,
-              {xmlelement, <<"message">>, Attrs, _Els} = Packet},
+              {xmlel, <<"message">>, Attrs, _Els} = Packet},
              StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     Type = xml:get_attr_s(<<"type">>, Attrs),
@@ -346,7 +346,7 @@ normal_state({route, From, <<>>,
     {next_state, normal_state, NewStateData};
 
 normal_state({route, From, <<>>,
-          {xmlelement, <<"iq">>, _Attrs, _Els} = Packet},
+          {xmlel, <<"iq">>, _Attrs, _Els} = Packet},
          StateData) ->
     NewStateData = route_iq(#routed_iq{
         iq = jlib:iq_query_info(Packet),
@@ -360,7 +360,7 @@ normal_state({route, From, <<>>,
     end;
 
 normal_state({route, From, Nick,
-              {xmlelement, <<"presence">>, _Attrs, _Els} = Packet},
+              {xmlel, <<"presence">>, _Attrs, _Els} = Packet},
              StateData) ->
     Activity = get_user_activity(From, StateData),
     Now = now_to_usec(now()),
@@ -390,7 +390,7 @@ normal_state({route, From, Nick,
     end;
 
 normal_state({route, From, ToNick,
-              {xmlelement, <<"message">>, Attrs, _} = Packet},
+              {xmlel, <<"message">>, Attrs, _} = Packet},
              StateData) ->
     Type = xml:get_attr_s(<<"type">>, Attrs),
     NewStateData = route_nick_message(#routed_nick_message{
@@ -406,7 +406,7 @@ normal_state({route, From, ToNick,
     {next_state, normal_state, NewStateData};
 
 normal_state({route, From, ToNick,
-          {xmlelement, <<"iq">>, Attrs, _Els} = Packet},
+          {xmlel, <<"iq">>, Attrs, _Els} = Packet},
          StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     StanzaId = xml:get_attr_s(<<"id">>, Attrs),
@@ -433,9 +433,9 @@ normal_state(_Event, StateData) ->
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event({service_message, Msg}, _StateName, StateData) ->
-    MessagePkt = {xmlelement, <<"message">>,
+    MessagePkt = {xmlel, <<"message">>,
           [{<<"type">>, <<"groupchat">>}],
-          [{xmlelement, <<"body">>, [], [{xmlcdata, Msg}]}]},
+          [{xmlel, <<"body">>, [], [{xmlcdata, Msg}]}]},
     lists:foreach(
       fun({_LJID, Info}) ->
           ejabberd_router:route(
@@ -453,12 +453,12 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
 handle_event({destroy, Reason}, _StateName, StateData) ->
     {result, [], stop} =
         destroy_room(
-          {xmlelement, <<"destroy">>,
+          {xmlel, <<"destroy">>,
            [{<<"xmlns">>, ?NS_MUC_OWNER}],
            case Reason of
                none -> [];
                _Else ->
-                   [{xmlelement, <<"reason">>,
+                   [{xmlel, <<"reason">>,
                      [], [{xmlcdata, Reason}]}]
            end}, StateData),
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p", 
@@ -578,11 +578,11 @@ terminate(Reason, _StateName, StateData) ->
           _ -> <<"Room terminates">>
           end,
     ItemAttrs = [{<<"affiliation">>, <<"none">>}, {<<"role">>, <<"none">>}],
-    ReasonEl = {xmlelement, <<"reason">>, [], [{xmlcdata, ReasonT}]},
-    Packet = {xmlelement, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
-          [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-        [{xmlelement, <<"item">>, ItemAttrs, [ReasonEl]},
-         {xmlelement, <<"status">>, [{<<"code">>, <<"332">>}], []}
+    ReasonEl = {xmlel, <<"reason">>, [], [{xmlcdata, ReasonT}]},
+    Packet = {xmlel, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
+          [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
+        [{xmlel, <<"item">>, ItemAttrs, [ReasonEl]},
+         {xmlel, <<"status">>, [{<<"code">>, <<"332">>}], []}
         ]}]},
     ?DICT:fold(
        fun(LJID, Info, _) ->
@@ -609,7 +609,7 @@ terminate(Reason, _StateName, StateData) ->
 route(Pid, From, ToNick, Packet) ->
     gen_fsm:send_event(Pid, {route, From, ToNick, Packet}).
 
-process_groupchat_message(From, {xmlelement, <<"message">>, Attrs, _Els} = Packet,
+process_groupchat_message(From, {xmlel, <<"message">>, Attrs, _Els} = Packet,
               StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     case is_user_online(From, StateData) orelse
@@ -732,7 +732,7 @@ process_presence(From, ToNick, Presence, StateData, NewState) ->
         {stop, normal, _StateData2} = X -> X
     end.
 
-process_presence(From, Nick, {xmlelement, <<"presence">>, Attrs, _Els} = Packet,
+process_presence(From, Nick, {xmlel, <<"presence">>, Attrs, _Els} = Packet,
          StateData) ->
     Type = xml:get_attr_s(<<"type">>, Attrs),
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
@@ -852,7 +852,7 @@ handle_new_user(From, Nick = <<>>, _Packet, StateData, Attrs) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     ErrText = <<"No nickname">>,
     Error =jlib:make_error_reply(
-                {xmlelement,<<"presence">>, [], []},
+                {xmlel,<<"presence">>, [], []},
                 ?ERRT_JID_MALFORMED(Lang, ErrText)),
     %ejabberd_route(From, To, Packet),
     ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid, Nick), From, Error),
@@ -914,8 +914,8 @@ stanzaid_unpack(<<"berd", StanzaIdBase64/binary>>) ->
     {OriginalId, Resource}.
 
 change_stanzaid(NewId, Packet) ->
-    {xmlelement, Name, Attrs, Els} = jlib:remove_attr(<<"id">>, Packet),
-    {xmlelement, Name, [{<<"id">>, NewId} | Attrs], Els}.
+    {xmlel, Name, Attrs, Els} = jlib:remove_attr(<<"id">>, Packet),
+    {xmlel, Name, [{<<"id">>, NewId} | Attrs], Els}.
 change_stanzaid(PreviousId, ToJID, Packet) ->
     NewId = stanzaid_pack(PreviousId, ToJID#jid.lresource),
     change_stanzaid(NewId, Packet).
@@ -1009,8 +1009,8 @@ get_error_condition(Packet) ->
         <<"badformed error stanza">>
     end.
 get_error_condition2(Packet) ->
-    {xmlelement, _, _, EEls} = xml:get_subtag(Packet, <<"error">>),
-    [Condition] = [Name || {xmlelement, Name, [{<<"xmlns">>, ?NS_STANZAS}], []} <- EEls],
+    {xmlel, _, _, EEls} = xml:get_subtag(Packet, <<"error">>),
+    [Condition] = [Name || {xmlel, Name, [{<<"xmlns">>, ?NS_STANZAS}], []} <- EEls],
     {condition, Condition}.
 
 expulse_participant(Packet, From, StateData, Reason1) ->
@@ -1018,9 +1018,9 @@ expulse_participant(Packet, From, StateData, Reason1) ->
     Reason2 = <<Reason1/binary, ": ", ErrorCondition/binary>>,
     NewState = add_user_presence_un(
         From,
-        {xmlelement, <<"presence">>,
+        {xmlel, <<"presence">>,
         [{<<"type">>, <<"unavailable">>}],
-        [{xmlelement, <<"status">>, [],
+        [{xmlel, <<"status">>, [],
         [{xmlcdata, Reason2}]
         }]},
     StateData),
@@ -1335,13 +1335,13 @@ remove_online_user(JID, StateData, Reason) ->
     StateData#state{users = Users}.
 
 
-filter_presence({xmlelement, <<"presence">>, Attrs, Els}) ->
+filter_presence({xmlel, <<"presence">>, Attrs, Els}) ->
     FEls = lists:filter(
          fun(El) ->
              case El of
              {xmlcdata, _} ->
                  false;
-             {xmlelement, _Name1, Attrs1, _Els1} ->
+             {xmlel, _Name1, Attrs1, _Els1} ->
                  XMLNS = xml:get_attr_s(<<"xmlns">>, Attrs1),
                  case XMLNS of
                  <<?NS_MUC_S, _/binary>> ->
@@ -1351,15 +1351,15 @@ filter_presence({xmlelement, <<"presence">>, Attrs, Els}) ->
                  end
              end
          end, Els),
-    {xmlelement, <<"presence">>, Attrs, FEls}.
+    {xmlel, <<"presence">>, Attrs, FEls}.
 
-strip_status({xmlelement, <<"presence">>, Attrs, Els}) ->
+strip_status({xmlel, <<"presence">>, Attrs, Els}) ->
     FEls = lists:filter(
-         fun({xmlelement, <<"status">>, _Attrs1, _Els1}) ->
+         fun({xmlel, <<"status">>, _Attrs1, _Els1}) ->
                      false;
                 (_) -> true
          end, Els),
-    {xmlelement, <<"presence">>, Attrs, FEls}.
+    {xmlel, <<"presence">>, Attrs, FEls}.
 
 add_user_presence(JID, Presence, StateData) ->
     LJID = jlib:jid_tolower(JID),
@@ -1409,7 +1409,7 @@ is_nick_change(JID, Nick, StateData) ->
         Nick /= OldNick
     end.
 
-add_new_user(From, Nick, {xmlelement, _, Attrs, Els} = Packet, StateData) ->
+add_new_user(From, Nick, {xmlel, _, Attrs, Els} = Packet, StateData) ->
     Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
     MaxUsers = get_max_users(StateData),
     MaxAdminUsers = MaxUsers + get_max_users_admin_threshold(StateData),
@@ -1540,7 +1540,7 @@ check_password(_ServiceAffiliation, Affiliation, Els, From, StateData) ->
 
 extract_password([]) ->
     false;
-extract_password([{xmlelement, _Name, Attrs, _SubEls} = El | Els]) ->
+extract_password([{xmlel, _Name, Attrs, _SubEls} = El | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
     ?NS_MUC ->
         case xml:get_subtag(El, <<"password">>) of
@@ -1636,7 +1636,7 @@ calc_shift(MaxSize, Size, Shift, [S | TSizes]) ->
 
 extract_history([], _Type) ->
     false;
-extract_history([{xmlelement, _Name, Attrs, _SubEls} = El | Els], Type) ->
+extract_history([{xmlel, _Name, Attrs, _SubEls} = El | Els], Type) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
     ?NS_MUC ->
         AttrVal = xml:get_path_s(El,
@@ -1721,12 +1721,12 @@ send_new_presence(NJID, Reason, StateData) ->
                 <<>> ->
                 [];
                 _ ->
-                [{xmlelement, <<"reason">>, [],
+                [{xmlel, <<"reason">>, [],
                   [{xmlcdata, Reason}]}]
             end,
           Status = case StateData#state.just_created of
                true ->
-                   [{xmlelement, <<"status">>, [{<<"code">>, <<"201">>}], []}];
+                   [{xmlel, <<"status">>, [{<<"code">>, <<"201">>}], []}];
                false ->
                    []
                end,
@@ -1734,20 +1734,20 @@ send_new_presence(NJID, Reason, StateData) ->
                  true ->
                     Status0 = case ((StateData#state.config)#config.logging) of
                             true ->
-                            [{xmlelement, <<"status">>, [{<<"code">>, <<"170">>}], []}|Status];
+                            [{xmlel, <<"status">>, [{<<"code">>, <<"170">>}], []}|Status];
                             false ->
                             Status
                         end,
                     Status1 = case ((StateData#state.config)#config.anonymous==false) of
                             true ->
-                            [{xmlelement, <<"status">>, [{<<"code">>, <<"100">>}], []}
+                            [{xmlel, <<"status">>, [{<<"code">>, <<"100">>}], []}
                             | Status0];
                             false ->
                             Status0
                         end,
                     case ((NJID == Info#user.jid)==true) of
                             true ->
-                            [{xmlelement, <<"status">>, [{<<"code">>, <<"110">>}], []}
+                            [{xmlel, <<"status">>, [{<<"code">>, <<"110">>}], []}
                             | Status1];
                             false ->
                             Status1
@@ -1757,8 +1757,8 @@ send_new_presence(NJID, Reason, StateData) ->
           end,
           Packet = xml:append_subtags(
              Presence,
-             [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-               [{xmlelement, <<"item">>, ItemAttrs, ItemEls} | Status2]}]),
+             [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
+               [{xmlel, <<"item">>, ItemAttrs, ItemEls} | Status2]}]),
           ejabberd_router:route(
         jlib:jid_replace_resource(StateData#state.jid, Nick),
         Info#user.jid,
@@ -1798,8 +1798,8 @@ send_existing_presences(ToJID, StateData) ->
               end,
               Packet = xml:append_subtags(
                  Presence,
-                 [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-                   [{xmlelement, <<"item">>, ItemAttrs, []}]}]),
+                 [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
+                   [{xmlel, <<"item">>, ItemAttrs, []}]}]),
               ejabberd_router:route(
             jlib:jid_replace_resource(
               StateData#state.jid, FromNick),
@@ -1893,19 +1893,19 @@ send_nick_changing(JID, OldNick, StateData) ->
 
 		  SelfPresenceCode= if 
 		  		JID == Info#user.jid -> 
-					[{xmlelement, <<"status">>, [{<<"code">>, <<"110">>}], []}];
+					[{xmlel, <<"status">>, [{<<"code">>, <<"110">>}], []}];
 				true ->
 					[]
 				end,
           Packet1 =
-          {xmlelement, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
-           [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-             [{xmlelement, <<"item">>, ItemAttrs1, []},
-              {xmlelement, <<"status">>, [{<<"code">>, <<"303">>}], []}| SelfPresenceCode]}]},
+          {xmlel, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
+           [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
+             [{xmlel, <<"item">>, ItemAttrs1, []},
+              {xmlel, <<"status">>, [{<<"code">>, <<"303">>}], []}| SelfPresenceCode]}]},
           Packet2 = xml:append_subtags(
               Presence,
-              [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-                [{xmlelement, <<"item">>, ItemAttrs2, []}| SelfPresenceCode]}]),
+              [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
+                [{xmlel, <<"item">>, ItemAttrs2, []}| SelfPresenceCode]}]),
           ejabberd_router:route(
         jlib:jid_replace_resource(StateData#state.jid, OldNick),
         Info#user.jid,
@@ -1988,9 +1988,9 @@ send_history(JID, Shift, StateData) ->
 
 
 send_subject(JID, _Lang, StateData = #state{subject = <<>>, subject_author = <<>>}) ->
-    Packet = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
-            [{xmlelement, <<"subject">>, [], []},
-            {xmlelement, <<"body">>, [],
+    Packet = {xmlel, <<"message">>, [{<<"type">>, <<"groupchat">>}],
+            [{xmlel, <<"subject">>, [], []},
+            {xmlel, <<"body">>, [],
         []}]},
     ejabberd_router:route(
         StateData#state.jid,
@@ -1999,9 +1999,9 @@ send_subject(JID, _Lang, StateData = #state{subject = <<>>, subject_author = <<>
 
 send_subject(JID, _Lang, StateData) ->
     Subject = StateData#state.subject,
-    Packet = {xmlelement, <<"message">>, [{<<"type">>, <<"groupchat">>}],
-            [{xmlelement, <<"subject">>, [], [{xmlcdata, Subject}]},
-            {xmlelement, <<"body">>, [],
+    Packet = {xmlel, <<"message">>, [{<<"type">>, <<"groupchat">>}],
+            [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]},
+            {xmlel, <<"body">>, [],
         []}]},
     ejabberd_router:route(
         StateData#state.jid,
@@ -2028,7 +2028,7 @@ can_change_subject(Role, StateData) ->
 % Admin stuff
 
 process_iq_admin(From, set, Lang, SubEl, StateData) ->
-    {xmlelement, _, _, Items} = SubEl,
+    {xmlel, _, _, Items} = SubEl,
     process_admin_items_set(From, Items, Lang, StateData);
 
 process_iq_admin(From, get, Lang, SubEl, StateData) ->
@@ -2087,12 +2087,12 @@ items_with_role(SRole, StateData) ->
 items_with_affiliation(SAffiliation, StateData) ->
     lists:map(
       fun({JID, {Affiliation, Reason}}) ->
-          {xmlelement, <<"item">>,
+          {xmlel, <<"item">>,
            [{<<"affiliation">>, affiliation_to_list(Affiliation)},
         {<<"jid">>, jlib:jid_to_binary(JID)}],
-           [{xmlelement, <<"reason">>, [], [{xmlcdata, Reason}]}]};
+           [{xmlel, <<"reason">>, [], [{xmlcdata, Reason}]}]};
      ({JID, Affiliation}) ->
-          {xmlelement, <<"item">>,
+          {xmlel, <<"item">>,
            [{<<"affiliation">>, affiliation_to_list(Affiliation)},
         {<<"jid">>, jlib:jid_to_binary(JID)}],
            []}
@@ -2103,7 +2103,7 @@ user_to_item(#user{role = Role,
            jid = JID
           }, StateData) ->
     Affiliation = get_affiliation(JID, StateData),
-    {xmlelement, <<"item">>,
+    {xmlel, <<"item">>,
      [{<<"role">>, role_to_list(Role)},
       {<<"affiliation">>, affiliation_to_list(Affiliation)},
       {<<"nick">>, Nick},
@@ -2220,7 +2220,7 @@ find_changed_items(UJID, UAffiliation, URole, [{xmlcdata, _} | Items],
            Lang, StateData, Res) ->
     find_changed_items(UJID, UAffiliation, URole, Items, Lang, StateData, Res);
 find_changed_items(UJID, UAffiliation, URole,
-           [{xmlelement, <<"item">>, Attrs, _Els} = Item | Items],
+           [{xmlel, <<"item">>, Attrs, _Els} = Item | Items],
            Lang, StateData, Res) ->
     TJID = case xml:get_attr(<<"jid">>, Attrs) of
            {value, S} ->
@@ -2585,13 +2585,13 @@ send_kickban_presence1(UJID, Reason, Code, Affiliation, StateData) ->
                 <<>> ->
                 [];
                 _ ->
-                [{xmlelement, <<"reason">>, [],
+                [{xmlel, <<"reason">>, [],
                   [{xmlcdata, Reason}]}]
             end,
-          Packet = {xmlelement, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
-            [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-              [{xmlelement, <<"item">>, ItemAttrs, ItemEls},
-               {xmlelement, <<"status">>, [{<<"code">>, Code}], []}]}]},
+          Packet = {xmlel, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
+            [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
+              [{xmlel, <<"item">>, ItemAttrs, ItemEls},
+               {xmlel, <<"status">>, [{<<"code">>, Code}], []}]}]},
           ejabberd_router:route(
         jlib:jid_replace_resource(StateData#state.jid, Nick),
         Info#user.jid,
@@ -2608,9 +2608,9 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     case FAffiliation of
     owner ->
-        {xmlelement, _Name, _Attrs, Els} = SubEl,
+        {xmlel, _Name, _Attrs, Els} = SubEl,
         case xml:remove_cdata(Els) of
-        [{xmlelement, <<"x">>, _Attrs1, Els1} = XEl] ->
+        [{xmlel, <<"x">>, _Attrs1, Els1} = XEl] ->
             case {xml:get_tag_attr_s(<<"xmlns">>, XEl),
               xml:get_tag_attr_s(<<"type">>, XEl)} of
             {?NS_XDATA, <<"cancel">>} ->
@@ -2641,7 +2641,7 @@ process_iq_owner(From, set, Lang, SubEl, StateData) ->
             _ ->
                 {error, ?ERR_BAD_REQUEST}
             end;
-        [{xmlelement, <<"destroy">>, _Attrs1, _Els1} = SubEl1] ->
+        [{xmlel, <<"destroy">>, _Attrs1, _Els1} = SubEl1] ->
             ?INFO_MSG("Destroyed MUC room ~s by the owner ~s", 
                   [jlib:jid_to_binary(StateData#state.jid), jlib:jid_to_binary(From)]),
             add_to_log(room_existence, destroyed, StateData),
@@ -2658,7 +2658,7 @@ process_iq_owner(From, get, Lang, SubEl, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     case FAffiliation of
     owner ->
-        {xmlelement, _Name, _Attrs, Els} = SubEl,
+        {xmlel, _Name, _Attrs, Els} = SubEl,
         case xml:remove_cdata(Els) of
         [] ->
             get_config(Lang, StateData, From);
@@ -2786,12 +2786,12 @@ get_config(Lang, StateData, From) ->
         _ -> {0, <<"none">>}
     end,
     Res =
-    [{xmlelement, <<"title">>, [],
+    [{xmlel, <<"title">>, [],
       [{xmlcdata, <<(translate:translate(Lang, <<"Configuration of room ">>))/binary,
           (jlib:jid_to_binary(StateData#state.jid))/binary>>}]},
-     {xmlelement, <<"field">>, [{<<"type">>, <<"hidden">>},
+     {xmlel, <<"field">>, [{<<"type">>, <<"hidden">>},
                 {<<"var">>, <<"FORM_TYPE">>}],
-      [{xmlelement, <<"value">>, [],
+      [{xmlel, <<"value">>, [],
         [{xmlcdata, <<"http://jabber.org/protocol/muc#roomconfig">>}]}]},
      ?STRINGXFIELD(<<"Room title">>,
                <<"muc#roomconfig_roomname">>,
@@ -2823,38 +2823,38 @@ get_config(Lang, StateData, From) ->
                 true -> Config#config.password;
                 false -> <<>>
             end),
-     {xmlelement, <<"field">>,
+     {xmlel, <<"field">>,
       [{<<"type">>, <<"list-single">>},
        {<<"label">>, translate:translate(Lang, <<"Maximum Number of Occupants">>)},
        {<<"var">>, <<"muc#roomconfig_maxusers">>}],
-      [{xmlelement, <<"value">>, [], [{xmlcdata, MaxUsersRoomString}]}] ++
+      [{xmlel, <<"value">>, [], [{xmlcdata, MaxUsersRoomString}]}] ++
       if
           is_integer(ServiceMaxUsers) -> [];
           true ->
-          [{xmlelement, <<"option">>,
+          [{xmlel, <<"option">>,
             [{<<"label">>, translate:translate(Lang, <<"No limit">>)}],
-            [{xmlelement, <<"value">>, [], [{xmlcdata, <<"none">>}]}]}]
+            [{xmlel, <<"value">>, [], [{xmlcdata, <<"none">>}]}]}]
       end ++
-      [{xmlelement, <<"option">>, [{<<"label">>, erlang:integer_to_list(N)}],
-        [{xmlelement, <<"value">>, [],
+      [{xmlel, <<"option">>, [{<<"label">>, erlang:integer_to_list(N)}],
+        [{xmlel, <<"value">>, [],
           [{xmlcdata, erlang:integer_to_list(N)}]}]} ||
           N <- lists:usort([ServiceMaxUsers, DefaultRoomMaxUsers, MaxUsersRoomInteger |
                    ?MAX_USERS_DEFAULT_LIST]), N =< ServiceMaxUsers]
      },
-     {xmlelement, <<"field">>,
+     {xmlel, <<"field">>,
       [{<<"type">>, <<"list-single">>},
        {<<"label">>, translate:translate(Lang, <<"Present real Jabber IDs to">>)},
        {<<"var">>, <<"muc#roomconfig_whois">>}],
-      [{xmlelement, <<"value">>, [], [{xmlcdata,
+      [{xmlel, <<"value">>, [], [{xmlcdata,
                        if Config#config.anonymous ->
                            <<"moderators">>;
                       true ->
                            <<"anyone">>
                        end}]},
-       {xmlelement, <<"option">>, [{<<"label">>, translate:translate(Lang, <<"moderators only">>)}],
-        [{xmlelement, <<"value">>, [], [{xmlcdata, <<"moderators">>}]}]},
-       {xmlelement, <<"option">>, [{<<"label">>, translate:translate(Lang, <<"anyone">>)}],
-        [{xmlelement, <<"value">>, [], [{xmlcdata, <<"anyone">>}]}]}]},
+       {xmlel, <<"option">>, [{<<"label">>, translate:translate(Lang, <<"moderators only">>)}],
+        [{xmlel, <<"value">>, [], [{xmlcdata, <<"moderators">>}]}]},
+       {xmlel, <<"option">>, [{<<"label">>, translate:translate(Lang, <<"anyone">>)}],
+        [{xmlel, <<"value">>, [], [{xmlcdata, <<"anyone">>}]}]}]},
      ?BOOLXFIELD(<<"Make room members-only">>,
              <<"muc#roomconfig_membersonly">>,
              Config#config.members_only),
@@ -2892,11 +2892,11 @@ get_config(Lang, StateData, From) ->
             Config#config.logging)];
         _ -> []
     end,
-    {result, [{xmlelement, <<"instructions">>, [],
+    {result, [{xmlel, <<"instructions">>, [],
            [{xmlcdata,
          translate:translate(
            Lang, <<"You need an x:data capable client to configure room">>)}]},
-          {xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_XDATA},
+          {xmlel, <<"x">>, [{<<"xmlns">>, ?NS_XDATA},
                  {<<"type">>, <<"form">>}],
            Res}],
      StateData}.
@@ -3154,9 +3154,9 @@ destroy_room(DEl, StateData) ->
           Nick = Info#user.nick,
           ItemAttrs = [{<<"affiliation">>, <<"none">>},
                {<<"role">>, <<"none">>}],
-          Packet = {xmlelement, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
-            [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
-              [{xmlelement, <<"item">>, ItemAttrs, []}, DEl]}]},
+          Packet = {xmlel, <<"presence">>, [{<<"type">>, <<"unavailable">>}],
+            [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}],
+              [{xmlel, <<"item">>, ItemAttrs, []}, DEl]}]},
           ejabberd_router:route(
         jlib:jid_replace_resource(StateData#state.jid, Nick),
         Info#user.jid,
@@ -3176,7 +3176,7 @@ destroy_room(DEl, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Disco
 
--define(FEATURE(Var), {xmlelement, <<"feature">>, [{<<"var">>, Var}], []}).
+-define(FEATURE(Var), {xmlel, <<"feature">>, [{<<"var">>, Var}], []}).
 
 -define(CONFIG_OPT_TO_FEATURE(Opt, Fiftrue, Fiffalse),
     case Opt of
@@ -3191,11 +3191,11 @@ process_iq_disco_info(_From, set, _Lang, _StateData) ->
 
 process_iq_disco_info(_From, get, Lang, StateData) ->
     Config = StateData#state.config,
-    {result, [{xmlelement, <<"identity">>,
+    {result, [{xmlel, <<"identity">>,
            [{<<"category">>, <<"conference">>},
         {<<"type">>, <<"text">>},
         {<<"name">>, get_title(StateData)}], []},
-          {xmlelement, <<"feature">>,
+          {xmlel, <<"feature">>,
            [{<<"var">>, ?NS_MUC}], []},
           ?CONFIG_OPT_TO_FEATURE(Config#config.public,
                      <<"muc_public">>, <<"muc_hidden">>),
@@ -3212,18 +3212,18 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
          ] ++ iq_disco_info_extras(Lang, StateData), StateData}.
 
 -define(RFIELDT(Type, Var, Val),
-    {xmlelement, <<"field">>, [{<<"type">>, Type}, {<<"var">>, Var}],
-     [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
+    {xmlel, <<"field">>, [{<<"type">>, Type}, {<<"var">>, Var}],
+     [{xmlel, <<"value">>, [], [{xmlcdata, Val}]}]}).
 
 -define(RFIELD(Label, Var, Val),
-    {xmlelement, <<"field">>, [{<<"label">>, translate:translate(Lang, Label)},
+    {xmlel, <<"field">>, [{<<"label">>, translate:translate(Lang, Label)},
                    {<<"var">>, Var}],
-     [{xmlelement, <<"value">>, [], [{xmlcdata, Val}]}]}).
+     [{xmlel, <<"value">>, [], [{xmlcdata, Val}]}]}).
 
 iq_disco_info_extras(Lang, StateData) ->
     Len = length(?DICT:to_list(StateData#state.users)),
     RoomDescription = (StateData#state.config)#config.description,
-    [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"result">>}],
+    [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"result">>}],
       [?RFIELDT(<<"hidden">>, <<"FORM_TYPE">>,
         <<"http://jabber.org/protocol/muc#roominfo">>),
        ?RFIELD(<<"Room description">>, <<"muc#roominfo_description">>,
@@ -3284,7 +3284,7 @@ get_mucroom_disco_items(StateData) ->
     lists:map(
       fun({_LJID, Info}) ->
           Nick = Info#user.nick,
-          {xmlelement, <<"item">>,
+          {xmlel, <<"item">>,
            [{<<"jid">>, jlib:jid_to_binary({StateData#state.room,
                         StateData#state.host, Nick})},
         {<<"name">>, Nick}], []}
@@ -3293,9 +3293,9 @@ get_mucroom_disco_items(StateData) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Handle voice request or approval (XEP-0045 7.13, 8.6)
-check_voice_approval(From, [{xmlelement, <<"x">>, _Attrs, Items}], _Lang, StateData) ->
+check_voice_approval(From, [{xmlel, <<"x">>, _Attrs, Items}], _Lang, StateData) ->
     GetField = fun(Var) ->
-        lists:foldl(fun({xmlelement,<<"field">>,Attrs,_Body} = Item, Acc) ->
+        lists:foldl(fun({xmlel,<<"field">>,Attrs,_Body} = Item, Acc) ->
             case xml:get_attr(<<"var">>, Attrs) of
                 {value, Var} -> case xml:get_path_s(Item, [{elem, <<"value">>}, cdata]) of
                     <<>> -> Acc;
@@ -3334,7 +3334,7 @@ check_invitation(From, Els, Lang, StateData) ->
     CanInvite = (StateData#state.config)#config.allow_user_invites
     orelse (FAffiliation == admin) orelse (FAffiliation == owner),
     InviteEl = case xml:remove_cdata(Els) of
-           [{xmlelement, <<"x">>, _Attrs1, Els1} = XEl] ->
+           [{xmlel, <<"x">>, _Attrs1, Els1} = XEl] ->
                case xml:get_tag_attr_s(<<"xmlns">>, XEl) of
                ?NS_MUC_USER ->
                    ok;
@@ -3342,7 +3342,7 @@ check_invitation(From, Els, Lang, StateData) ->
                    throw({error, ?ERR_BAD_REQUEST})
                end,
                case xml:remove_cdata(Els1) of
-               [{xmlelement, <<"invite">>, _Attrs2, _Els2} = InviteEl1] ->
+               [{xmlel, <<"invite">>, _Attrs2, _Els2} = InviteEl1] ->
                    InviteEl1;
                _ ->
                    throw({error, ?ERR_BAD_REQUEST})
@@ -3373,15 +3373,15 @@ check_invitation(From, Els, Lang, StateData) ->
             Continue1 -> [Continue1]
         end,
         IEl =
-        [{xmlelement, <<"invite">>,
+        [{xmlel, <<"invite">>,
           [{<<"from">>,
             jlib:jid_to_binary(From)}],
-          [{xmlelement, <<"reason">>, [],
+          [{xmlel, <<"reason">>, [],
             [{xmlcdata, Reason}]}] ++ ContinueEl}],
         PasswdEl =
         case (StateData#state.config)#config.password_protected of
             true ->
-            [{xmlelement, <<"password">>, [],
+            [{xmlel, <<"password">>, [],
               [{xmlcdata, (StateData#state.config)#config.password}]}];
             _ ->
             []
@@ -3403,14 +3403,14 @@ check_invitation(From, Els, Lang, StateData) ->
                 _ -> <<" (", Reason/binary, ") ">>
             end,
         Body =
-        {xmlelement, <<"body">>, [],
+        {xmlel, <<"body">>, [],
                     [{xmlcdata, <<IMessage/binary, IPassword/binary, IReason/binary>>}]
                 },
         Msg =
-        {xmlelement, <<"message">>,
+        {xmlel, <<"message">>,
          [{<<"type">>, <<"normal">>}],
-         [{xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}], IEl ++ PasswdEl},
-          {xmlelement, <<"x">>,
+         [{xmlel, <<"x">>, [{<<"xmlns">>, ?NS_MUC_USER}], IEl ++ PasswdEl},
+          {xmlel, <<"x">>,
            [{<<"xmlns">>, ?NS_XCONFERENCE},
             {<<"jid">>, jlib:jid_to_binary(
                   {StateData#state.room,
@@ -3438,7 +3438,7 @@ handle_roommessage_from_nonparticipant(Packet, Lang, StateData, From) ->
 %% This function must be catched, 
 %% because it crashes when the packet is not a decline message.
 check_decline_invitation(Packet) ->
-    {xmlelement, <<"message">>, _, _} = Packet,
+    {xmlel, <<"message">>, _, _} = Packet,
     XEl = xml:get_subtag(Packet, <<"x">>),
     ?NS_MUC_USER = xml:get_tag_attr_s(<<"xmlns">>, XEl),
     DEl = xml:get_subtag(XEl, <<"decline">>),
@@ -3450,20 +3450,20 @@ check_decline_invitation(Packet) ->
 %% The original stanza must be slightly modified.
 send_decline_invitation({Packet, XEl, DEl, ToJID}, RoomJID, FromJID) ->
     FromString = jlib:jid_to_binary(FromJID),
-    {xmlelement, <<"decline">>, DAttrs, DEls} = DEl,
+    {xmlel, <<"decline">>, DAttrs, DEls} = DEl,
     DAttrs2 = lists:keydelete(<<"to">>, 1, DAttrs),
     DAttrs3 = [{<<"from">>, FromString} | DAttrs2],
-    DEl2 = {xmlelement, <<"decline">>, DAttrs3, DEls},
+    DEl2 = {xmlel, <<"decline">>, DAttrs3, DEls},
     XEl2 = replace_subelement(XEl, DEl2),
     Packet2 = replace_subelement(Packet, XEl2),
     ejabberd_router:route(RoomJID, ToJID, Packet2).
 
 %% Given an element and a new subelement, 
 %% replace the instance of the subelement in element with the new subelement.
-replace_subelement({xmlelement, Name, Attrs, SubEls}, NewSubEl) ->
+replace_subelement({xmlel, Name, Attrs, SubEls}, NewSubEl) ->
     {_, NameNewSubEl, _, _} = NewSubEl,
     SubEls2 = lists:keyreplace(NameNewSubEl, 2, SubEls, NewSubEl),
-    {xmlelement, Name, Attrs, SubEls2}.
+    {xmlel, Name, Attrs, SubEls2}.
 
 send_error_only_occupants(Packet, Lang, RoomJID, From) ->
     ErrText = <<"Only occupants are allowed to send messages to the conference">>,
@@ -3626,7 +3626,7 @@ route_message(#routed_message{allowed = true, type = <<"chat">>, from = From, pa
     StateData;
 
 route_message(#routed_message{allowed = true, type = Type, from = From,
-    packet = {xmlelement, <<"message">>, _Attrs, Els} = Packet, lang = Lang},
+    packet = {xmlel, <<"message">>, _Attrs, Els} = Packet, lang = Lang},
     StateData) when (Type == <<>> orelse Type == <<"normal">>) ->
 
     Invite = xml:get_path_s(Packet, [{elem, <<"x">>}, {elem, <<"invite">>}]),
@@ -3672,7 +3672,7 @@ route_voice_approval({form, RoleName}, From, _Packet, _Lang, StateData) ->
 
 route_voice_approval({role, RoleName, Nick}, From, Packet, Lang, StateData) ->
     case process_admin_items_set(From,
-        [{xmlelement, <<"item">>,
+        [{xmlel, <<"item">>,
             [{<<"role">>, RoleName}, {<<"nick">>, Nick}], []}],
               Lang, StateData) of
         {result, _Res, SD1} -> SD1;
@@ -3755,7 +3755,7 @@ do_route_iq(Res1, #routed_iq{iq = #iq{xmlns = XMLNS, sub_el = SubEl} = IQ,
     {IQRes, NewStateData} = case Res1 of
         {result, Res, SD} ->
             {IQ#iq{type = result,
-                sub_el = [{xmlelement, <<"query">>,
+                sub_el = [{xmlel, <<"query">>,
                 [{<<"xmlns">>, XMLNS}],
                 Res
             }]},

@@ -66,7 +66,7 @@ stop(Host) ->
 
 
 stream_feature_register(Acc, _Host) ->
-    [{xmlelement, <<"register">>,
+    [{xmlel, <<"register">>,
       [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}], []} | Acc].
 
 unauthenticated_iq_register(_Acc,
@@ -180,7 +180,7 @@ process_iq(From, To,
 			case ejabberd_auth:is_user_exists(User, Server) of
 			    true ->
 				{true, [{xmlcdata, User}],
-				 [{xmlelement, <<"registered">>, [], []}]};
+				 [{xmlel, <<"registered">>, [], []}]};
 			    false ->
 				{false, [{xmlcdata, User}], []}
 			end;
@@ -188,17 +188,17 @@ process_iq(From, To,
 			{false, [], []}
 		end,
 		    IQ#iq{type = result,
-			  sub_el = [{xmlelement,
+			  sub_el = [{xmlel,
 				     <<"query">>,
 				     [{<<"xmlns">>, <<"jabber:iq:register">>}],
-				     [{xmlelement, <<"instructions">>, [],
+				     [{xmlel, <<"instructions">>, [],
 				       [{xmlcdata,
 					 translate:translate(
 					   Lang,
 					   "Choose a username and password "
 					   "to register with this server")}]},
-				      {xmlelement, <<"username">>, [], UsernameSubels},
-				      {xmlelement, <<"password">>, [], []}
+				      {xmlel, <<"username">>, [], UsernameSubels},
+				      {xmlel, <<"password">>, [], []}
 				      | QuerySubels]}]}
     end.
 
@@ -308,9 +308,9 @@ send_welcome_message(JID) ->
 	    ejabberd_router:route(
 	      jlib:make_jid(<<>>, Host, <<>>),
 	      JID,
-	      {xmlelement, <<"message">>, [{<<"type">>, <<"normal">>}],
-	       [{xmlelement, <<"subject">>, [], [{xmlcdata, Subj}]},
-		{xmlelement, <<"body">>, [], [{xmlcdata, Body}]}]});
+	      {xmlel, <<"message">>, [{<<"type">>, <<"normal">>}],
+	       [{xmlel, <<"subject">>, [], [{xmlcdata, Subj}]},
+		{xmlel, <<"body">>, [], [{xmlcdata, Body}]}]});
 	_ ->
 	    ok
     end.
@@ -334,8 +334,8 @@ send_registration_notifications(UJID, Source) ->
 			      ejabberd_router:route(
 				jlib:make_jid(<<>>, Host, <<>>),
 				JID,
-				{xmlelement, <<"message">>, [{<<"type">>, <<"chat">>}],
-				 [{xmlelement, <<"body">>, [],
+				{xmlel, <<"message">>, [{<<"type">>, <<"chat">>}],
+				 [{xmlel, <<"body">>, [],
 				   [{xmlcdata, Body}]}]})
 		      end
 	      end, JIDs);

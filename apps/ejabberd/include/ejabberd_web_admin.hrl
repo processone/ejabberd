@@ -19,10 +19,10 @@
 %%%
 %%%----------------------------------------------------------------------
 
--define(X(Name), {xmlelement, Name, [], []}).
--define(XA(Name, Attrs), {xmlelement, Name, Attrs, []}).
--define(XE(Name, Els), {xmlelement, Name, [], Els}).
--define(XAE(Name, Attrs, Els), {xmlelement, Name, Attrs, Els}).
+-define(X(Name), {xmlel, Name, [], []}).
+-define(XA(Name, Attrs), {xmlel, Name, Attrs, []}).
+-define(XE(Name, Els), {xmlel, Name, [], Els}).
+-define(XAE(Name, Attrs, Els), {xmlel, Name, Attrs, Els}).
 -define(C(Text), {xmlcdata, Text}).
 -define(XC(Name, Text), ?XE(Name, [?C(Text)])).
 -define(XAC(Name, Attrs, Text), ?XAE(Name, Attrs, [?C(Text)])).

@@ -150,7 +150,7 @@ handle_text(Text, #ws_state{c2s_pid = C2S, parser = Parser} = State) ->
     [send_to_c2s(C2S, Elem) || Elem <- Elements],
     {ok, State#ws_state{parser = NewParser}}.
 
-send_to_c2s(C2S, #xmlelement{} = Element) ->
+send_to_c2s(C2S, #xmlel{} = Element) ->
     send_to_c2s(C2S, {xmlstreamelement, Element});
 send_to_c2s(C2S, StreamElement) ->
     gen_fsm:send_event(C2S, StreamElement).

@@ -89,13 +89,13 @@ user_send_packet(_,_,Packet) ->
     ejabberd_snmp_core:increment_window_counter(xmppStanzaSentW),
     user_send_packet_type(Packet).
 
-user_send_packet_type({xmlelement, <<"message">>,_,_}) ->
+user_send_packet_type({xmlel, <<"message">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppMessageSent),
     ejabberd_snmp_core:increment_window_counter(xmppMessageSentW);
-user_send_packet_type({xmlelement, <<"iq">>,_,_}) ->
+user_send_packet_type({xmlel, <<"iq">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppIqSent),
     ejabberd_snmp_core:increment_window_counter(xmppIqSentW);
-user_send_packet_type({xmlelement, <<"presence">>,_,_}) ->
+user_send_packet_type({xmlel, <<"presence">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppPresenceSent),
     ejabberd_snmp_core:increment_window_counter(xmppPresenceSentW).
 
@@ -105,13 +105,13 @@ user_receive_packet(_,_,_,Packet) ->
     ejabberd_snmp_core:increment_window_counter(xmppStanzaReceivedW),
     user_receive_packet_type(Packet).
 
-user_receive_packet_type({xmlelement, <<"message">>,_,_}) ->
+user_receive_packet_type({xmlel, <<"message">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppMessageReceived),
     ejabberd_snmp_core:increment_window_counter(xmppMessageReceivedW);
-user_receive_packet_type({xmlelement, <<"iq">>,_,_}) ->
+user_receive_packet_type({xmlel, <<"iq">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppIqReceived),
     ejabberd_snmp_core:increment_window_counter(xmppIqReceivedW);
-user_receive_packet_type({xmlelement, <<"presence">>,_,_}) ->
+user_receive_packet_type({xmlel, <<"presence">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppPresenceReceived),
     ejabberd_snmp_core:increment_window_counter(xmppPresenceReceivedW).
 
@@ -124,7 +124,7 @@ xmpp_stanza_dropped(_,_,_) ->
     ejabberd_snmp_core:increment_counter(xmppStanzaDropped).
 
 -spec xmpp_send_element(tuple()) -> term().
-xmpp_send_element({xmlelement, Name, Attrs, _}) ->
+xmpp_send_element({xmlel, Name, Attrs, _}) ->
     ejabberd_snmp_core:increment_counter(xmppStanzaCount),
     case proplists:get_value(<<"type">>, Attrs) of
         <<"error">> ->
@@ -196,12 +196,12 @@ privacy_iq_get(Acc, _, _, _, _) ->
 
 -spec privacy_iq_set(term(), term(), term(), term()) -> term().        
 privacy_iq_set(Acc, _From, _To, #iq{sub_el = SubEl}) ->
-    {xmlelement, _, _, Els} = SubEl,
+    {xmlel, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
-        [{xmlelement, <<"active">>, _, _}] ->
+        [{xmlel, <<"active">>, _, _}] ->
             ?CORE:increment_counter(modPrivacySetsActive),
             ?CORE:increment_window_counter(modPrivacySetsActiveW);
-        [{xmlelement, <<"default">>, _, _}] ->
+        [{xmlel, <<"default">>, _, _}] ->
             ?CORE:increment_counter(modPrivacySetsDefault),
             ?CORE:increment_window_counter(modPrivacySetsDefaultW);
         _ ->
@@ -214,7 +214,7 @@ privacy_iq_set(Acc, _From, _To, #iq{sub_el = SubEl}) ->
 -spec privacy_list_push(term(), term(), term()) -> term().
 privacy_list_push(_From, To, Packet) ->
     case Packet of
-        {xmlelement, <<"broadcast">>, _Attrs, [{privacy_list, _, _}]} ->
+        {xmlel, <<"broadcast">>, _Attrs, [{privacy_list, _, _}]} ->
             #jid{user = User, server = Server} = To,
             Count = length(ejabberd_sm:get_user_resources(User, Server)),
             ?CORE:update_counter(modPrivacyPush, Count),

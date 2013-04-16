@@ -50,21 +50,21 @@
 -define(JUD_MATCHES, 30).
 
 -define(TLFIELD(Type, Label, Var),
-	{xmlelement, <<"field">>, [{<<"type">>, Type},
+	{xmlel, <<"field">>, [{<<"type">>, Type},
                                    {<<"label">>, translate:translate(Lang, Label)},
                                    {<<"var">>, Var}], []}).
 
 
 -define(FORM(JID),
-	[{xmlelement, <<"instructions">>, [],
+	[{xmlel, <<"instructions">>, [],
 	  [{xmlcdata,
             translate:translate(
               Lang, <<"You need an x:data capable client to search">>)}]},
-	 {xmlelement, <<"x">>, [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"form">>}],
-	  [{xmlelement, <<"title">>, [],
+	 {xmlel, <<"x">>, [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"form">>}],
+	  [{xmlel, <<"title">>, [],
 	    [{xmlcdata, [translate:translate(Lang, <<"Search users in ">>),
                          jlib:jid_to_binary(JID)]}]},
-	   {xmlelement, <<"instructions">>, [],
+	   {xmlel, <<"instructions">>, [],
 	    [{xmlcdata, translate:translate(Lang, <<"Fill in the form to search "
                                                     "for any matching Jabber User "
                                                     "(Add * to the end of field to "
@@ -84,12 +84,12 @@
 	  ]}]).
 
 -define(LFIELD(Label, Var),
-	{xmlelement, <<"field">>, [{<<"label">>, translate:translate(Lang, Label)},
+	{xmlel, <<"field">>, [{<<"label">>, translate:translate(Lang, Label)},
                                    {<<"var">>, Var}], []}).
 
 -define(FIELD(Var, Val),
-	{xmlelement, <<"field">>, [{<<"var">>, Var}],
-	 [{xmlelement, <<"value">>, [],
+	{xmlel, <<"field">>, [{<<"var">>, Var}],
+	 [{xmlel, <<"value">>, [],
 	   [{xmlcdata, Val}]}]}).
 
 %% no idea what the l* fields were for, but now I'm using them to store
@@ -213,17 +213,17 @@ process_local_iq(_From, _To, #iq{ type = set,
 process_local_iq(_From, _To, #iq{ type = get,
                                   lang = Lang } = IQ) ->
     IQ#iq{ type = result,
-           sub_el = [{xmlelement, <<"vCard">>,
+           sub_el = [{xmlel, <<"vCard">>,
                       [{"xmlns", ?NS_VCARD}],
-                      [{xmlelement, <<"FN">>, [],
+                      [{xmlel, <<"FN">>, [],
                         [{xmlcdata, <<"ejabberd">>}]},
-                       {xmlelement, <<"URL">>, [],
+                       {xmlel, <<"URL">>, [],
                         [{xmlcdata, ?EJABBERD_URI}]},
-                       {xmlelement, <<"DESC">>, [],
+                       {xmlel, <<"DESC">>, [],
                         [{xmlcdata,
                           [translate:translate(Lang,<<"Erlang Jabber Server">>),
                            <<"\nCopyright (c) 2002-2011 ProcessOne">>]}]},
-                       {xmlelement, <<"BDAY">>, [],
+                       {xmlel, <<"BDAY">>, [],
                         [{xmlcdata, <<"2002-11-16">>}]}
                       ]}]}.
 
@@ -383,10 +383,10 @@ do_route(VHost, From, To, Packet, #iq{ type = set,
                         IQ#iq{
                           type = result,
                           sub_el =
-                              [{xmlelement,
+                              [{xmlel,
                                 <<"query">>,
                                 [{<<"xmlns">>, ?NS_SEARCH}],
-                                [{xmlelement, <<"x">>,
+                                [{xmlel, <<"x">>,
                                   [{<<"xmlns">>, ?NS_XDATA},
                                    {<<"type">>, <<"result">>}],
                                   search_result(Lang, To, VHost, XData)
@@ -399,7 +399,7 @@ do_route(_VHost, From, To, _Packet, #iq{ type = get,
                                          xmlns = ?NS_SEARCH,
                                          lang = Lang } = IQ) ->
     ResIQ = IQ#iq{ type = result,
-                   sub_el = [{xmlelement,
+                   sub_el = [{xmlel,
                               <<"query">>,
                               [{<<"xmlns">>, ?NS_SEARCH}],
                               ?FORM(To)
@@ -417,20 +417,20 @@ do_route(VHost, From, To, _Packet, #iq{ type = get,
     Info = ejabberd_hooks:run_fold(disco_info, VHost, [], [VHost, ?MODULE, "", ""]),
     ResIQ =
         IQ#iq{type = result,
-              sub_el = [{xmlelement,
+              sub_el = [{xmlel,
                          <<"query">>,
                          [{<<"xmlns">>, ?NS_DISCO_INFO}],
-                         [{xmlelement, <<"identity">>,
+                         [{xmlel, <<"identity">>,
                            [{<<"category">>, <<"directory">>},
                             {<<"type">>, <<"user">>},
                             {<<"name">>,
                              translate:translate(Lang, <<"vCard User Search">>)}],
                            []},
-                          {xmlelement, <<"feature">>,
+                          {xmlel, <<"feature">>,
                            [{<<"var">>, ?NS_DISCO_INFO}], []},
-                          {xmlelement, <<"feature">>,
+                          {xmlel, <<"feature">>,
                            [{<<"var">>, ?NS_SEARCH}], []},
-                          {xmlelement, <<"feature">>,
+                          {xmlel, <<"feature">>,
                            [{"var", ?NS_VCARD}], []}
                          ] ++ Info
                         }]},
@@ -446,7 +446,7 @@ do_route(_VHost, From, To, _Packet, #iq{ type = get,
                                          xmlns = ?NS_DISCO_ITEMS} = IQ) ->
     ResIQ =
         IQ#iq{type = result,
-              sub_el = [{xmlelement,
+              sub_el = [{xmlel,
                          <<"query">>,
                          [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
                          []}]},
@@ -457,7 +457,7 @@ do_route(_VHost, From, To, _Packet, #iq{ type = get,
                                          lang = Lang} = IQ) ->
     ResIQ =
         IQ#iq{type = result,
-              sub_el = [{xmlelement,
+              sub_el = [{xmlel,
                          <<"vCard">>,
                          [{<<"xmlns">>, ?NS_VCARD}],
                          iq_get_vcard(Lang)}]},
@@ -470,25 +470,25 @@ do_route(_VHost, From, To, Packet, _IQ) ->
 
 
 iq_get_vcard(Lang) ->
-    [{xmlelement, <<"FN">>, [],
+    [{xmlel, <<"FN">>, [],
       [{xmlcdata, <<"ejabberd/mod_vcard">>}]},
-     {xmlelement, <<"URL">>, [],
+     {xmlel, <<"URL">>, [],
       [{xmlcdata, ?EJABBERD_URI}]},
-     {xmlelement, <<"DESC">>, [],
+     {xmlel, <<"DESC">>, [],
       [{xmlcdata, [translate:translate(
                      Lang,
                      <<"ejabberd vCard module">>),
                    <<"\nCopyright (c) 2003-2011 ProcessOne">>]}]}].
 
-find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+find_xdata_el({xmlel, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
     false;
-find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
+find_xdata_el1([{xmlel, Name, Attrs, SubEls} | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
 	?NS_XDATA ->
-	    {xmlelement, Name, Attrs, SubEls};
+	    {xmlel, Name, Attrs, SubEls};
 	_ ->
 	    find_xdata_el1(Els)
     end;
@@ -496,10 +496,10 @@ find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
 search_result(Lang, JID, VHost, Data) ->
-    [{xmlelement, <<"title">>, [],
+    [{xmlel, <<"title">>, [],
       [{xmlcdata, [translate:translate(Lang, <<"Search Results for ">>),
                    jlib:jid_to_binary(JID)]}]},
-     {xmlelement, <<"reported">>, [],
+     {xmlel, <<"reported">>, [],
       [?TLFIELD(<<"jid-single">>, <<"Jabber ID">>, <<"jid">>),
        ?TLFIELD(<<"text-single">>, <<"Full Name">>, <<"fn">>),
        ?TLFIELD(<<"text-single">>, <<"Name">>, <<"first">>),
@@ -517,7 +517,7 @@ search_result(Lang, JID, VHost, Data) ->
 
 record_to_item(R) ->
     {User, Server} = R#vcard_search.user,
-    {xmlelement, <<"item">>, [],
+    {xmlel, <<"item">>, [],
      [
        ?FIELD(<<"jid">>,      [User, <<"@">>, Server]),
        ?FIELD(<<"fn">>,       R#vcard_search.fn),

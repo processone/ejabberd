@@ -116,19 +116,19 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    IQ#iq{type = result,
-		  sub_el = [{xmlelement, "vCard",
+		  sub_el = [{xmlel, "vCard",
 			     [{"xmlns", ?NS_VCARD}],
-			     [{xmlelement, "FN", [],
+			     [{xmlel, "FN", [],
 			       [{xmlcdata, "ejabberd"}]},
-			      {xmlelement, "URL", [],
+			      {xmlel, "URL", [],
 			       [{xmlcdata, ?EJABBERD_URI}]},
-			      {xmlelement, "DESC", [],
+			      {xmlel, "DESC", [],
 			       [{xmlcdata,
 				 translate:translate(
 				   Lang,
 				   "Erlang Jabber Server") ++
 				   "\nCopyright (c) 2002-2011 ProcessOne"}]},
-			      {xmlelement, "BDAY", [],
+			      {xmlel, "BDAY", [],
 			       [{xmlcdata, "2002-11-16"}]}
 			     ]}]}
     end.
@@ -273,19 +273,19 @@ set_vcard(User, LServerUnesc, VCARD) ->
     end.
 
 -define(TLFIELD(Type, Label, Var),
-	{xmlelement, "field", [{"type", Type},
+	{xmlel, "field", [{"type", Type},
 			       {"label", translate:translate(Lang, Label)},
 			       {"var", Var}], []}).
 
 
 -define(FORM(JID),
-	[{xmlelement, "instructions", [],
+	[{xmlel, "instructions", [],
 	  [{xmlcdata, translate:translate(Lang, "You need an x:data capable client to search")}]},
-	 {xmlelement, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-	  [{xmlelement, "title", [],
+	 {xmlel, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+	  [{xmlel, "title", [],
 	    [{xmlcdata, [translate:translate(Lang, "Search users in "),
                          jlib:jid_to_binary(JID)]}]},
-	   {xmlelement, "instructions", [],
+	   {xmlel, "instructions", [],
 	    [{xmlcdata, translate:translate(Lang, "Fill in the form to search "
 					    "for any matching Jabber User "
 					    "(Add * to the end of field to "
@@ -336,10 +336,10 @@ do_route(ServerHost, From, To, Packet) ->
 						IQ#iq{
 						  type = result,
 						  sub_el =
-						  [{xmlelement,
+						  [{xmlel,
 						    "query",
 						    [{"xmlns", ?NS_SEARCH}],
-						    [{xmlelement, "x",
+						    [{xmlel, "x",
 						      [{"xmlns", ?NS_XDATA},
 						       {"type", "result"}],
 						      search_result(Lang, To, ServerHost, XData)
@@ -350,7 +350,7 @@ do_route(ServerHost, From, To, Packet) ->
 			    end;
 			get ->
 			    ResIQ = IQ#iq{type = result,
-					  sub_el = [{xmlelement,
+					  sub_el = [{xmlel,
 						     "query",
 						     [{"xmlns", ?NS_SEARCH}],
 						     ?FORM(To)
@@ -371,18 +371,18 @@ do_route(ServerHost, From, To, Packet) ->
 				     [ServerHost, ?MODULE, "", ""]),
 			    ResIQ =
 				IQ#iq{type = result,
-				      sub_el = [{xmlelement,
+				      sub_el = [{xmlel,
 						 "query",
 						 [{"xmlns", ?NS_DISCO_INFO}],
-						 [{xmlelement, "identity",
+						 [{xmlel, "identity",
 						   [{"category", "directory"},
 						    {"type", "user"},
 						    {"name",
 						     translate:translate(Lang, "vCard User Search")}],
 						   []},
-						  {xmlelement, "feature",
+						  {xmlel, "feature",
 						   [{"var", ?NS_SEARCH}], []},
-						  {xmlelement, "feature",
+						  {xmlel, "feature",
 						   [{"var", ?NS_VCARD}], []}
 						 ] ++ Info
 						}]},
@@ -399,7 +399,7 @@ do_route(ServerHost, From, To, Packet) ->
 			get ->
 			    ResIQ =
 				IQ#iq{type = result,
-				      sub_el = [{xmlelement,
+				      sub_el = [{xmlel,
 						 "query",
 						 [{"xmlns", ?NS_DISCO_ITEMS}],
 						 []}]},
@@ -410,7 +410,7 @@ do_route(ServerHost, From, To, Packet) ->
 		#iq{type = get, xmlns = ?NS_VCARD, lang = Lang} ->
 		    ResIQ =
 			IQ#iq{type = result,
-			      sub_el = [{xmlelement,
+			      sub_el = [{xmlel,
 					 "vCard",
 					 [{"xmlns", ?NS_VCARD}],
 					 iq_get_vcard(Lang)}]},
@@ -425,25 +425,25 @@ do_route(ServerHost, From, To, Packet) ->
     end.
 
 iq_get_vcard(Lang) ->
-    [{xmlelement, "FN", [],
+    [{xmlel, "FN", [],
       [{xmlcdata, "ejabberd/mod_vcard"}]},
-     {xmlelement, "URL", [],
+     {xmlel, "URL", [],
       [{xmlcdata, ?EJABBERD_URI}]},
-     {xmlelement, "DESC", [],
+     {xmlel, "DESC", [],
       [{xmlcdata, translate:translate(
 		    Lang,
 		    "ejabberd vCard module") ++
 		    "\nCopyright (c) 2003-2011 ProcessOne"}]}].
 
-find_xdata_el({xmlelement, _Name, _Attrs, SubEls}) ->
+find_xdata_el({xmlel, _Name, _Attrs, SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
     false;
-find_xdata_el1([{xmlelement, Name, Attrs, SubEls} | Els]) ->
+find_xdata_el1([{xmlel, Name, Attrs, SubEls} | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
 	?NS_XDATA ->
-	    {xmlelement, Name, Attrs, SubEls};
+	    {xmlel, Name, Attrs, SubEls};
 	_ ->
 	    find_xdata_el1(Els)
     end;
@@ -451,14 +451,14 @@ find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
 -define(LFIELD(Label, Var),
-	{xmlelement, "field", [{"label", translate:translate(Lang, Label)},
+	{xmlel, "field", [{"label", translate:translate(Lang, Label)},
 			       {"var", Var}], []}).
 
 search_result(Lang, JID, ServerHost, Data) ->
-    [{xmlelement, "title", [],
+    [{xmlel, "title", [],
       [{xmlcdata, [translate:translate(Lang, "Search Results for "),
                    jlib:jid_to_binary(JID)]}]},
-     {xmlelement, "reported", [],
+     {xmlel, "reported", [],
       [?TLFIELD("jid-single", "Jabber ID", "jid"),
        ?TLFIELD("text-single", "Full Name", "fn"),
        ?TLFIELD("text-single", "Name", "first"),
@@ -475,15 +475,15 @@ search_result(Lang, JID, ServerHost, Data) ->
 		       search(ServerHost, Data)).
 
 -define(FIELD(Var, Val),
-	{xmlelement, "field", [{"var", Var}],
-	 [{xmlelement, "value", [],
+	{xmlel, "field", [{"var", Var}],
+	 [{xmlel, "value", [],
 	   [{xmlcdata, Val}]}]}).
 
 
 record_to_item(_CallerVHost, {Username, VCardVHost, FN, Family, Given, Middle,
 			 Nickname, BDay, CTRY, Locality,
 			 EMail, OrgName, OrgUnit}) ->
-    {xmlelement, "item", [],
+    {xmlel, "item", [],
      [
        ?FIELD("jid",      [Username, "@", VCardVHost]),
        ?FIELD("fn",       FN),

@@ -153,7 +153,7 @@ roster_version_on_db(Host) ->
 get_versioning_feature(Acc, Host) ->
     case roster_versioning_enabled(Host) of
 	true ->
-	    Feature = {xmlelement,
+	    Feature = {xmlel,
 		       <<"ver">>,
 		       [{<<"xmlns">>, ?NS_ROSTER_VER}],
 		       []},
@@ -219,8 +219,8 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
 		end,
 		IQ#iq{type = result, sub_el = case {ItemsToSend, VersionToSend} of
 					 	 {false, false} ->  [];
-						 {Items, false} -> [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_ROSTER}], Items}];
-						 {Items, Version} -> [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_ROSTER}, {<<"ver">>, Version}], Items}]
+						 {Items, false} -> [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_ROSTER}], Items}];
+						 {Items, Version} -> [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_ROSTER}, {<<"ver">>, Version}], Items}]
 						end}
     catch
     	_:_ ->
@@ -270,20 +270,20 @@ item_to_xml(Item) ->
 		     Attrs3
 	     end,
     SubEls1 = lists:map(fun(G) ->
-				{xmlelement, <<"group">>, [], [{xmlcdata, G}]}
+				{xmlel, <<"group">>, [], [{xmlcdata, G}]}
 			end, Item#roster.groups),
     SubEls = SubEls1 ++ Item#roster.xs,
-    {xmlelement, <<"item">>, Attrs4, SubEls}.
+    {xmlel, <<"item">>, Attrs4, SubEls}.
 
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
-    {xmlelement, _Name, _Attrs, Els} = SubEl,
+    {xmlel, _Name, _Attrs, Els} = SubEl,
     #jid{lserver = LServer} = From,
     ejabberd_hooks:run(roster_set, LServer, [From, To, SubEl]),
     lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
     IQ#iq{type = result, sub_el = []}.
 
-process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
+process_item_set(From, To, {xmlel, _Name, Attrs, Els}) ->
     JID1 = jlib:binary_to_jid(xml:get_attr_s(<<"jid">>, Attrs)),
     #jid{user = User, luser = LUser, lserver = LServer} = From,
     case JID1 of
@@ -370,7 +370,7 @@ process_item_attrs(Item, []) ->
     Item.
 
 
-process_item_els(Item, [{xmlelement, Name, Attrs, SEls} | Els]) ->
+process_item_els(Item, [{xmlel, Name, Attrs, SEls} | Els]) ->
     case Name of
 	<<"group">> ->
 	    Groups = [xml:get_cdata(SEls) | Item#roster.groups],
@@ -380,7 +380,7 @@ process_item_els(Item, [{xmlelement, Name, Attrs, SEls} | Els]) ->
 		<<>> ->
 		    process_item_els(Item, Els);
 		_ ->
-		    XEls = [{xmlelement, Name, Attrs, SEls} | Item#roster.xs],
+		    XEls = [{xmlel, Name, Attrs, SEls} | Item#roster.xs],
 		    process_item_els(Item#roster{xs = XEls}, Els)
 	    end
     end;
@@ -393,7 +393,7 @@ process_item_els(Item, []) ->
 push_item(User, Server, From, Item) ->
     ejabberd_sm:route(jlib:make_jid(<<>>, <<>>, <<>>),
 		      jlib:make_jid(User, Server, <<>>),
-		      {xmlelement, <<"broadcast">>, [],
+		      {xmlel, <<"broadcast">>, [],
 		       [{item,
 			 Item#roster.jid,
 			 Item#roster.subscription}]}),
@@ -418,7 +418,7 @@ push_item(User, Server, Resource, From, Item, RosterVersion) ->
     end,
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
 		id = list_to_binary("push" ++ randoms:get_string()),
-		sub_el = [{xmlelement, <<"query">>,
+		sub_el = [{xmlel, <<"query">>,
 			   [{<<"xmlns">>, ?NS_ROSTER}|ExtraAttrs],
 			   [item_to_xml(Item)]}]},
     ejabberd_router:route(
@@ -456,11 +456,11 @@ fill_subscription_lists(JID, [I | Is], F, T, P) ->
                                 true ->
                                      <<>>
                              end,
-                   [{xmlelement, <<"presence">>,
+                   [{xmlel, <<"presence">>,
                      [{<<"from">>, jlib:jid_to_binary(I#roster.jid)},
                       {<<"to">>, jlib:jid_to_binary(JID)},
                       {<<"type">>, <<"subscribe">>}],
-                     [{xmlelement, <<"status">>, [],
+                     [{xmlel, <<"status">>, [],
                        [{xmlcdata, Status}]}]} | P];
                _ ->
                    P
@@ -561,7 +561,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			end,
 		    ejabberd_router:route(
 		      jlib:make_jid(User, Server, <<>>), JID1,
-		      {xmlelement, <<"presence">>, [{<<"type">>, T}], []})
+		      {xmlel, <<"presence">>, [{<<"type">>, T}], []})
 	    end,
 	    case Push of
 		{push, Item} ->
@@ -732,7 +732,7 @@ send_unsubscribing_presence(From, Item) ->
 send_presence_type(From, To, Type) ->
     ejabberd_router:route(
       From, To,
-      {xmlelement, <<"presence">>,
+      {xmlel, <<"presence">>,
        [{<<"type">>, Type}],
        []}).
 
@@ -740,7 +740,7 @@ send_presence_type(From, To, Type) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 set_items(User, Server, SubEl) ->
-    {xmlelement, _Name, _Attrs, Els} = SubEl,
+    {xmlel, _Name, _Attrs, Els} = SubEl,
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     F = fun() ->
@@ -750,7 +750,7 @@ set_items(User, Server, SubEl) ->
 	end,
     mnesia:transaction(F).
 
-process_item_set_t(LUser, LServer, {xmlelement, _Name, Attrs, Els}) ->
+process_item_set_t(LUser, LServer, {xmlel, _Name, Attrs, Els}) ->
     JID1 = jlib:binary_to_jid(xml:get_attr_s(<<"jid">>, Attrs)),
     case JID1 of
 	error ->
@@ -1032,7 +1032,7 @@ user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
     UJID = jlib:make_jid(User, Server, <<>>),
     ejabberd_router:route(
-      UJID, JID, {xmlelement, <<"presence">>, [{<<"type">>, <<"subscribe">>}], []}).
+      UJID, JID, {xmlel, <<"presence">>, [{<<"type">>, <<"subscribe">>}], []}).
 
 user_roster_item_parse_query(User, Server, Items, Query) ->
     lists:foreach(
@@ -1046,7 +1046,7 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 			User, Server, JID1, subscribed),
 		      UJID = jlib:make_jid(User, Server, <<>>),
 		      ejabberd_router:route(
-			UJID, JID1, {xmlelement, <<"presence">>,
+			UJID, JID1, {xmlel, <<"presence">>,
 				     [{<<"type">>, <<"subscribed">>}], []}),
 		      throw(submitted);
 		  false ->
@@ -1057,9 +1057,9 @@ user_roster_item_parse_query(User, Server, Items, Query) ->
 			      process_iq(
 				UJID, UJID,
 				#iq{type = set,
-				    sub_el = {xmlelement, <<"query">>,
+				    sub_el = {xmlel, <<"query">>,
 					      [{<<"xmlns">>, ?NS_ROSTER}],
-					      [{xmlelement, <<"item">>,
+					      [{xmlel, <<"item">>,
 						[{<<"jid">>, jlib:jid_to_binary(JID)},
 						 {<<"subscription">>, <<"remove">>}],
 						[]}]}}),

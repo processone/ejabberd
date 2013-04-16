@@ -86,11 +86,11 @@ process_iq(_From, _To, IQ) ->
 process_iq_get(_, From, _To, #iq{sub_el = SubEl},
 	       #userlist{name = Active}) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    {xmlelement, _, _, Els} = SubEl,
+    {xmlel, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
 	[] ->
 	    process_lists_get(LUser, LServer, Active);
-	[{xmlelement, Name, Attrs, _SubEls}] ->
+	[{xmlel, Name, Attrs, _SubEls}] ->
 	    case Name of
 		<<"list">> ->
 		    ListName = xml:get_attr(<<"name">>, Attrs),
@@ -108,16 +108,16 @@ process_lists_get(LUser, LServer, Active) ->
 	{'EXIT', _Reason} ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
-	    {result, [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
+	    {result, [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
 	[#privacy{default = Default, lists = Lists}] ->
 	    case Lists of
 		[] ->
-		    {result, [{xmlelement, <<"query">>,
+		    {result, [{xmlel, <<"query">>,
 			       [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
 		_ ->
 		    LItems = lists:map(
 			       fun({N, _}) ->
-				       {xmlelement, <<"list">>,
+				       {xmlel, <<"list">>,
 					[{<<"name">>, N}], []}
 			       end, Lists),
 		    DItems =
@@ -125,7 +125,7 @@ process_lists_get(LUser, LServer, Active) ->
 			    none ->
 				LItems;
 			    _ ->
-				[{xmlelement, <<"default">>,
+				[{xmlel, <<"default">>,
 				  [{<<"name">>, Default}], []} | LItems]
 			end,
 		    ADItems =
@@ -133,11 +133,11 @@ process_lists_get(LUser, LServer, Active) ->
 			    none ->
 				DItems;
 			    _ ->
-				[{xmlelement, <<"active">>,
+				[{xmlel, <<"active">>,
 				  [{<<"name">>, Active}], []} | DItems]
 			end,
 		    {result,
-		     [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}],
+		     [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}],
 		       ADItems}]}
 	    end
     end.
@@ -148,14 +148,14 @@ process_list_get(LUser, LServer, {value, Name}) ->
 	    {error, ?ERR_INTERNAL_SERVER_ERROR};
 	[] ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
-	    %{result, [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
+	    %{result, [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}], []}]};
 	[#privacy{lists = Lists}] ->
 	    case lists:keysearch(Name, 1, Lists) of
 		{value, {_, List}} ->
 		    LItems = lists:map(fun item_to_xml/1, List),
 		    {result,
-		     [{xmlelement, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}],
-		       [{xmlelement, <<"list">>,
+		     [{xmlel, <<"query">>, [{<<"xmlns">>, ?NS_PRIVACY}],
+		       [{xmlel, <<"list">>,
 			 [{<<"name">>, Name}], LItems}]}]};
 		_ ->
 		    {error, ?ERR_ITEM_NOT_FOUND}
@@ -182,31 +182,31 @@ item_to_xml(Item) ->
 		 false ->
 		     SE1 = case Item#listitem.match_iq of
 			       true ->
-				   [{xmlelement, <<"iq">>, [], []}];
+				   [{xmlel, <<"iq">>, [], []}];
 			       false ->
 				   []
 			   end,
 		     SE2 = case Item#listitem.match_message of
 			       true ->
-				   [{xmlelement, <<"message">>, [], []} | SE1];
+				   [{xmlel, <<"message">>, [], []} | SE1];
 			       false ->
 				   SE1
 			   end,
 		     SE3 = case Item#listitem.match_presence_in of
 			       true ->
-				   [{xmlelement, <<"presence-in">>, [], []} | SE2];
+				   [{xmlel, <<"presence-in">>, [], []} | SE2];
 			       false ->
 				   SE2
 			   end,
 		     SE4 = case Item#listitem.match_presence_out of
 			       true ->
-				   [{xmlelement, <<"presence-out">>, [], []} | SE3];
+				   [{xmlel, <<"presence-out">>, [], []} | SE3];
 			       false ->
 				   SE3
 			   end,
 		     SE4
 	     end,
-    {xmlelement, <<"item">>, Attrs2, SubEls}.
+    {xmlel, <<"item">>, Attrs2, SubEls}.
 
 
 action_to_binary(Action) ->
@@ -253,9 +253,9 @@ binary_to_action(S) ->
 
 process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    {xmlelement, _, _, Els} = SubEl,
+    {xmlel, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of
-	[{xmlelement, Name, Attrs, SubEls}] ->
+	[{xmlel, Name, Attrs, SubEls}] ->
 	    ListName = xml:get_attr(<<"name">>, Attrs),
 	    case Name of
 		<<"list">> ->
@@ -367,7 +367,7 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		    ejabberd_router:route(
 		      jlib:make_jid(LUser, LServer, <<>>),
 		      jlib:make_jid(LUser, LServer, <<>>),
-		      {xmlelement, <<"broadcast">>, [],
+		      {xmlel, <<"broadcast">>, [],
 		       [{privacy_list,
 			 #userlist{name = Name, list = []},
 			 Name}]}),
@@ -399,7 +399,7 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 		    ejabberd_router:route(
 		      jlib:make_jid(LUser, LServer, <<>>),
 		      jlib:make_jid(LUser, LServer, <<>>),
-		      {xmlelement, <<"broadcast">>, [],
+		      {xmlel, <<"broadcast">>, [],
 		       [{privacy_list,
 			 #userlist{name = Name, list = List, needdb = NeedDb},
 			 Name}]}),
@@ -421,7 +421,7 @@ parse_items(Els) ->
 parse_items([], Res) ->
     %% Sort the items by their 'order' attribute
     lists:keysort(#listitem.order, Res);
-parse_items([{xmlelement, <<"item">>, Attrs, SubEls} | Els], Res) ->
+parse_items([{xmlel, <<"item">>, Attrs, SubEls} | Els], Res) ->
     Type   = xml:get_attr(<<"type">>,   Attrs),
     Value  = xml:get_attr(<<"value">>,  Attrs),
     SAction = xml:get_attr(<<"action">>, Attrs),
@@ -508,15 +508,15 @@ parse_matches(Item, Els) ->
 
 parse_matches1(Item, []) ->
     Item;
-parse_matches1(Item, [{xmlelement, <<"message">>, _, _} | Els]) ->
+parse_matches1(Item, [{xmlel, <<"message">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_message = true}, Els);
-parse_matches1(Item, [{xmlelement, <<"iq">>, _, _} | Els]) ->
+parse_matches1(Item, [{xmlel, <<"iq">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_iq = true}, Els);
-parse_matches1(Item, [{xmlelement, <<"presence-in">>, _, _} | Els]) ->
+parse_matches1(Item, [{xmlel, <<"presence-in">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_presence_in = true}, Els);
-parse_matches1(Item, [{xmlelement, <<"presence-out">>, _, _} | Els]) ->
+parse_matches1(Item, [{xmlel, <<"presence-out">>, _, _} | Els]) ->
     parse_matches1(Item#listitem{match_presence_out = true}, Els);
-parse_matches1(_Item, [{xmlelement, _, _, _} | _Els]) ->
+parse_matches1(_Item, [{xmlel, _, _, _} | _Els]) ->
     false.
 
 
@@ -564,7 +564,7 @@ get_user_list(_, User, Server) ->
 %% If Dir = in, User@Server is the destination account (To).
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
-	     {From, To, {xmlelement, PName, Attrs, _}},
+	     {From, To, {xmlel, PName, Attrs, _}},
 	     Dir) ->
     case List of
 	[] ->
