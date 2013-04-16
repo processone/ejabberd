@@ -35,7 +35,11 @@
 	 module                  :: atom(),
          function                :: atom(),
          args = []               :: [aterm()] | '_' | '$1' | '$2',
-         result = {res, rescode} :: rterm() | '_' | '$2'}).
+         result = {res, rescode} :: rterm() | '_' | '$2',
+         args_desc = none        :: none | [string()],
+         result_desc = none      :: none | string(),
+         args_example = none     :: [any()],
+         result_example = none   :: any()}).
 
 -type ejabberd_commands() :: #ejabberd_commands{name :: atom(),
                                                 tags :: [atom()],
@@ -44,7 +48,11 @@
                                                 module :: atom(),
                                                 function :: atom(),
                                                 args :: [aterm()],
-                                                result :: rterm()}.
+                                                result :: rterm(),
+                                                args_desc :: none | [string()],
+                                                result_desc :: none | string(),
+                                                args_example :: [any()],
+                                                result_example :: any()}.
 
 %% @type ejabberd_commands() = #ejabberd_commands{
 %%    name = atom(),
@@ -72,4 +80,3 @@
 
 %% @type rterm() = {Name::atom(), Type::rtype()}.
 %% A result term is a tuple with the term name and the term type.
-
