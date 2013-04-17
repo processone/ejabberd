@@ -62,6 +62,7 @@
                 deferred = [] :: [{rid(), {event_type(), #xmlelement{}}}],
                 client_acks = ?DEFAULT_CLIENT_ACKS :: boolean(),
                 sent = [] :: [{rid(), erlang:timestamp(), #xmlelement{}}],
+                last_sent :: rid(),
 
                 %%% Options. These have accompanying DEFAULT_* macros and
                 %%% are set up in init/1 based on ejabberd.cfg.
@@ -509,7 +510,7 @@ bosh_unwrap(normal, Body, #state{sid = Sid} = State) ->
 
 get_client_acks(restart, _, Default) ->
     Default;
-get_client_acks(start, Element, Default) ->
+get_client_acks(streamstart, Element, Default) ->
     case exml_query:attr(Element, <<"ack">>) of
         undefined ->
             Default;
