@@ -896,8 +896,7 @@ resource_conflict_action(U, S, R) ->
       acceptnew -> {accept_resource, R};
       closenew -> closenew;
       setresource ->
-	  Rnew = iolist_to_binary([randoms:get_string()
-                                   | tuple_to_list(now())]),
+	  Rnew = make_random_resource(),
 	  {accept_resource, Rnew}
     end.
 
@@ -911,8 +910,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	  R = case jlib:resourceprep(R1) of
 		error -> error;
 		<<"">> ->
-                      iolist_to_binary([randoms:get_string()
-                                        | tuple_to_list(now())]);
+                make_random_resource();
 		Resource -> Resource
 	      end,
 	  case R of
@@ -2368,3 +2366,11 @@ pack_string(String, Pack) ->
       {value, PackedString} -> {PackedString, Pack};
       none -> {String, gb_trees:insert(String, String, Pack)}
     end.
+
+make_random_resource() ->
+        {Mega, Sec, Micro} = now(),
+        iolist_to_binary([randoms:get_string(),
+                jlib:integer_to_binary(Mega),
+                jlib:integer_to_binary(Sec),
+                jlib:integer_to_binary(Micro)]).
+
