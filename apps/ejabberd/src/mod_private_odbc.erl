@@ -119,7 +119,7 @@ get_data(LUser, LServer, [El | Els], Res) ->
             case catch odbc_queries:get_private_data(LServer, Username, LXMLNS) of
                 {selected, ["data"], [{SData}]} ->
                     case xml_stream:parse_element(SData) of
-                        Data when element(1, Data) == xmlelement ->
+                        {xmlel, _, _, _} = Data ->
                             get_data(LUser, LServer, Els,
                                      [Data | Res])
                     end;

@@ -301,7 +301,7 @@ process_data([], State) ->
     activate_socket(State),
     State;
 process_data([Element|Els], #state{c2s_pid = C2SPid} = State)
-  when element(1, Element) == xmlelement;
+  when element(1, Element) == xmlel;
        element(1, Element) == xmlstreamstart;
       element(1, Element) == xmlstreamelement;
        element(1, Element) == xmlstreamend ->
@@ -335,8 +335,7 @@ process_data(Data,
 %% When we receive directly xmlelement tuple (from a socket module
 %% speaking directly Erlang XML), we wrap it inside the same
 %% xmlstreamelement coming from the XML parser.
-element_wrapper(XMLElement)
-  when element(1, XMLElement) == xmlelement ->
+element_wrapper({xmlel, _, _, _} = XMLElement) ->
     {xmlstreamelement, XMLElement};
 element_wrapper(Element) ->
     Element.

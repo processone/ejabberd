@@ -29,7 +29,7 @@ static int make_element(ErlNifEnv* env, struct buf *rbuf, ERL_NIF_TERM el);
 
 static int load(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
-  atom_xmlelement = enif_make_atom(env, "xmlelement");
+  atom_xmlelement = enif_make_atom(env, "xmlel");
   atom_xmlcdata = enif_make_atom(env, "xmlcdata");
   return 0;
 }
