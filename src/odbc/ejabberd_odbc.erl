@@ -509,7 +509,7 @@ mysql_connect(Server, Port, DB, Username, Password) ->
 			  binary_to_list(DB), fun log/3)
 	of
       {ok, Ref} ->
-	  mysql_conn:fetch(Ref, [<<"set names 'utf8';">>],
+	  mysql_conn:fetch(Ref, [<<"set names 'utf8' collate 'utf8_bin';">>],
 			   self()),
 	  mysql_conn:fetch(Ref,
 			   [<<"SET SESSION query_cache_type=1;">>], self()),
