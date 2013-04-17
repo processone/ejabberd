@@ -32,6 +32,8 @@
 
 -include("ejabberd.hrl").
 
+-include("jlib.hrl").
+
 -behaviour(cyrsasl).
 
 -record(state,
@@ -60,8 +62,11 @@ mech_new(_Host, GetPassword, _CheckPassword,
     {ok, #state{step = 2, get_password = GetPassword}}.
 
 mech_step(#state{step = 2} = State, ClientIn) ->
-    case str:tokens(ClientIn, <<",">>) of
-      [CBind, UserNameAttribute, ClientNonceAttribute]
+    case re:split(ClientIn, <<",">>, [{return, binary}]) of
+      [_CBind, _AuthorizationIdentity, _UserNameAttribute, _ClientNonceAttribute, ExtensionAttribute | _]
+	  when ExtensionAttribute /= [] ->
+	  {error, <<"protocol-error-extension-not-supported">>};
+      [CBind, _AuthorizationIdentity, UserNameAttribute, ClientNonceAttribute | _]
 	  when (CBind == <<"y">>) or (CBind == <<"n">>) ->
 	  case parse_attribute(UserNameAttribute) of
 	    {error, Reason} -> {error, Reason};
@@ -123,42 +128,44 @@ mech_step(#state{step = 4} = State, ClientIn) ->
       [GS2ChannelBindingAttribute, NonceAttribute,
        ClientProofAttribute] ->
 	  case parse_attribute(GS2ChannelBindingAttribute) of
-	    {$c, CVal} when (CVal == <<"biws">>) or (CVal == <<"eSws">>) ->
-		%% biws is base64 for n,, => channelbinding not supported
-		%% eSws is base64 for y,, => channelbinding supported by client only
-		Nonce = <<(State#state.client_nonce)/binary,
-			  (State#state.server_nonce)/binary>>,
-		case parse_attribute(NonceAttribute) of
-		  {$r, CompareNonce} when CompareNonce == Nonce ->
-		      case parse_attribute(ClientProofAttribute) of
-			{$p, ClientProofB64} ->
-			    ClientProof = jlib:decode_base64(ClientProofB64),
-			    AuthMessage =
-                                  iolist_to_binary(
-                                    [State#state.auth_message,
-                                     ",",
-                                     str:substr(ClientIn, 1,
-                                                str:str(ClientIn, <<",p=">>)
-                                                - 1)]),
-			    ClientSignature =
-				scram:client_signature(State#state.stored_key,
-						       AuthMessage),
-			    ClientKey = scram:client_key(ClientProof,
-							 ClientSignature),
-			    CompareStoredKey = scram:stored_key(ClientKey),
-			    if CompareStoredKey == State#state.stored_key ->
-				   ServerSignature =
-				       scram:server_signature(State#state.server_key,
-							      AuthMessage),
-				   {ok, [{username, State#state.username}],
-				    <<"v=",
-				      (jlib:encode_base64(ServerSignature))/binary>>};
-			       true -> {error, <<"bad-auth">>}
+	    {$c, CVal} ->
+		ChannelBindingSupport = binary:at(jlib:decode_base64(CVal), 0),
+		if (ChannelBindingSupport == $n)
+		  or (ChannelBindingSupport == $y) ->
+		    Nonce = <<(State#state.client_nonce)/binary,
+				(State#state.server_nonce)/binary>>,
+		    case parse_attribute(NonceAttribute) of
+			{$r, CompareNonce} when CompareNonce == Nonce ->
+			    case parse_attribute(ClientProofAttribute) of
+			    {$p, ClientProofB64} ->
+				  ClientProof = jlib:decode_base64(ClientProofB64),
+				  AuthMessage = iolist_to_binary(
+						    [State#state.auth_message,
+						     ",",
+						     str:substr(ClientIn, 1,
+								    str:str(ClientIn, <<",p=">>)
+								    - 1)]),
+				  ClientSignature =
+				    scram:client_signature(State#state.stored_key,
+							     AuthMessage),
+				  ClientKey = scram:client_key(ClientProof,
+							     ClientSignature),
+				  CompareStoredKey = scram:stored_key(ClientKey),
+				  if CompareStoredKey == State#state.stored_key ->
+					 ServerSignature =
+					     scram:server_signature(State#state.server_key,
+								    AuthMessage),
+					 {ok, [{username, State#state.username}],
+					  <<"v=",
+					    (jlib:encode_base64(ServerSignature))/binary>>};
+				     true -> {error, <<"bad-auth">>}
+				  end;
+			    _Else -> {error, <<"bad-protocol">>}
 			    end;
+			{$r, _} -> {error, <<"bad-nonce">>};
 			_Else -> {error, <<"bad-protocol">>}
-		      end;
-		  {$r, _} -> {error, <<"bad-nonce">>};
-		  _Else -> {error, <<"bad-protocol">>}
+		    end;
+		  true -> {error, <<"bad-channel-binding">>}
 		end;
 	    _Else -> {error, <<"bad-protocol">>}
 	  end;
