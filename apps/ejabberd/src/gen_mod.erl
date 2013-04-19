@@ -77,7 +77,8 @@ start_module(Host, Module, Opts) ->
 		true ->
 		    erlang:raise(Class, Reason, erlang:get_stacktrace());
 		false ->
-		    ?CRITICAL_MSG("ejabberd initialization was aborted because a module start failed.", []),
+		    ?CRITICAL_MSG("ejabberd initialization was aborted because a module start failed.~n"
+                          "The trace is ~p.", [erlang:get_stacktrace()]),
 		    timer:sleep(3000),
 		    erlang:halt(string:substr(lists:flatten(ErrorText), 1, 199))
 	    end
