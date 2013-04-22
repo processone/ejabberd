@@ -115,9 +115,15 @@ java_gen({Name, {tuple, Fields}}, Tuple, Indent) ->
     Res = lists:map(fun({A, B}) -> [java_gen(A, B, NewIndent)] end, lists:zip(Fields, tuple_to_list(Tuple))),
     [?ID_L("put"), ?OP_L("("), ?STR_A(Name), ?OP_L(", "), java_gen_map(Res, Indent), ?OP_L(")")];
 java_gen({Name, {list, ElDesc}}, List, Indent) ->
-    Res = lists:map(fun(E) -> java_gen_map([java_gen(ElDesc, E, Indent)], none) end, List),
-    [?ID_L("put"), ?OP_L("("), ?STR_A(Name), ?OP_L(", "), ?KW_L("new "), ?ID_L("Object"), ?OP_L("[] { "),
-     list_join_with(Res, [?OP_L(", ")]), ?OP_L(" });")].
+    {NI, NI2, I} = case List of
+                    [_] -> {" ", " ", Indent};
+                    _ -> {[?BR, <<"    ", Indent/binary>>],
+                          [?BR, <<"  ", Indent/binary>>],
+                          <<"      ", Indent/binary>>}
+                end,
+    Res = lists:map(fun(E) -> java_gen_map([java_gen(ElDesc, E, I)], none) end, List),
+    [?ID_L("put"), ?OP_L("("), ?STR_A(Name), ?OP_L(", "), ?KW_L("new "), ?ID_L("Object"), ?OP_L("[] {"), NI,
+     list_join_with(Res, [?OP_L(","), NI]), NI2, ?OP_L("});")].
 
 java_call(Name, ArgsDesc, Values) ->
     [?ID_L("XmlRpcClientConfigImpl config"), ?OP_L(" = "), ?KW_L("new "), ?ID_L("XmlRpcClientConfigImpl"), ?OP_L("();"), ?BR,
@@ -178,9 +184,32 @@ xml_call(Name, ArgsDesc, Values) ->
                       [?XML(value, Ind, 3,
                             [?XML(struct, Ind, 4, Res)])])])])].
 
+generate_example_input({_Name, integer}, {LastStr, LastNum}) ->
+    {LastNum+1, {LastStr, LastNum+1}};
+generate_example_input({_Name, string}, {LastStr, LastNum}) ->
+    {string:chars(LastStr+1, 5), {LastStr+1, LastNum}};
+generate_example_input({_Name, binary}, {LastStr, LastNum}) ->
+    {iolist_to_binary(string:chars(LastStr+1, 5)), {LastStr+1, LastNum}};
+generate_example_input({_Name, atom}, {LastStr, LastNum}) ->
+    {list_to_atom(string:chars(LastStr+1, 5)), {LastStr+1, LastNum}};
+generate_example_input({_Name, {tuple, Fields}}, Data) ->
+    {R, D} = lists:foldl(fun(Field, {Res2, Data2}) ->
+                                 {Res3, Data3} = generate_example_input(Field, Data2),
+                                 {[Res3 | Res2], Data3}
+                         end, {[], Data}, Fields),
+    {list_to_tuple(lists:reverse(R)), D};
+generate_example_input({_Name, {list, Desc}}, Data) ->
+    {R1, D1} = generate_example_input(Desc, Data),
+    {R2, D2} = generate_example_input(Desc, D1),
+    {[R1, R2], D2}.
 
-gen_calls(#ejabberd_commands{args_example=none}) ->
-    <<"">>;
+
+gen_calls(#ejabberd_commands{args_example=none, args=ArgsDesc} = C) ->
+    {R, D} = lists:foldl(fun(Arg, {Res2, Data2}) ->
+                                 {Res3, Data3} = generate_example_input(Arg, Data2),
+                                 {[Res3 | Res2], Data3}
+                         end, {[], {$a-1, 0}}, ArgsDesc),
+    gen_calls(C#ejabberd_commands{args_example=lists:reverse(R)});
 gen_calls(#ejabberd_commands{args_example=Values, args=ArgsDesc, name=Name}) ->
     Perl = perl_call(Name, ArgsDesc, Values),
     Java = java_call(Name, ArgsDesc, Values),
