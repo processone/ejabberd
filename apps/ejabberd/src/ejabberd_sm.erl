@@ -116,10 +116,10 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
             {stop, false}
     end.
 
-bounce_offline_message(From, To, Packet) ->
+bounce_offline_message(#jid{server = Server} = From, To, Packet) ->
     ejabberd_hooks:run(xmpp_bounce_message,
-                       From#jid.lserver,
-                       [Packet]),
+                       Server,
+                       [Server, Packet]),
     Err = jlib:make_error_reply(Packet, ?ERR_SERVICE_UNAVAILABLE),
     ejabberd_router:route(To, From, Err),
     stop.

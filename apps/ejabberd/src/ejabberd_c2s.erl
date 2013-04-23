@@ -1510,14 +1510,15 @@ send_text(StateData, Text) ->
     ?DEBUG("Send XML on stream = ~p", [Text]),
     (StateData#state.sockmod):send(StateData#state.socket, Text).
 
-send_element(StateData, El) when StateData#state.xml_socket ->
+send_element(#state{server = Server, sockmod = SockMod} = StateData, El)
+		when StateData#state.xml_socket ->
     ejabberd_hooks:run(xmpp_send_element,
-                       StateData#state.server, [El]),
-    (StateData#state.sockmod):send_xml(StateData#state.socket,
+                       Server, [El]),
+    SockMod:send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
-send_element(StateData, El) ->
+send_element(#state{server = Server} = StateData, El) ->
     ejabberd_hooks:run(xmpp_send_element,
-                       StateData#state.server, [El]),
+                       Server, [Server, El]),
     send_text(StateData, xml:element_to_binary(El)).
 
 send_header(StateData, Server, Version, Lang)

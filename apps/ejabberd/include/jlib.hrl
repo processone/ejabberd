@@ -345,3 +345,7 @@
 }).
 
 -record(rsm_out, {count, index, first, last}).
+
+-type jid() :: #jid{}.
+-type iq() :: #iq{}.
+
