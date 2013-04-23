@@ -2593,7 +2593,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 						     SD;
 						 {JID, role, none, Reason} ->
 						     catch
-						       send_kickban_presence(UJID, JID,
+						       send_kickban_presence(JID,
 									     Reason,
 									     <<"307">>,
 									     SD),
@@ -2605,7 +2605,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 							 of
 						       true ->
 							   catch
-							     send_kickban_presence(UJID, JID,
+							     send_kickban_presence(JID,
 										   Reason,
 										   <<"321">>,
 										   none,
@@ -2628,7 +2628,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 						 {JID, affiliation, outcast,
 						  Reason} ->
 						     catch
-						       send_kickban_presence(UJID, JID,
+						       send_kickban_presence(JID,
 									     Reason,
 									     <<"301">>,
 									     outcast,
@@ -2979,12 +2979,12 @@ can_change_ra(_FAffiliation, _FRole, _TAffiliation,
 	      _TRole, role, _Value, _ServiceAf) ->
     false.
 
-send_kickban_presence(UJID, JID, Reason, Code, StateData) ->
+send_kickban_presence(JID, Reason, Code, StateData) ->
     NewAffiliation = get_affiliation(JID, StateData),
-    send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
+    send_kickban_presence(JID, Reason, Code, NewAffiliation,
 			  StateData).
 
-send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
+send_kickban_presence(JID, Reason, Code, NewAffiliation,
 		      StateData) ->
     LJID = jlib:jid_tolower(JID),
     LJIDs = case LJID of
@@ -3007,27 +3007,18 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 								  StateData#state.users),
 			  add_to_log(kickban, {Nick, Reason, Code}, StateData),
 			  tab_remove_online_user(J, StateData),
-			  send_kickban_presence1(UJID, J, Reason, Code,
+			  send_kickban_presence1(J, Reason, Code,
 						 NewAffiliation, StateData)
 		  end,
 		  LJIDs).
 
-send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
+send_kickban_presence1(UJID, Reason, Code, Affiliation,
 		       StateData) ->
     {ok, #user{jid = RealJID, nick = Nick}} =
 	(?DICT):find(jlib:jid_tolower(UJID),
 		     StateData#state.users),
     SAffiliation = affiliation_to_list(Affiliation),
     BannedJIDString = jlib:jid_to_string(RealJID),
-    case MJID /= <<"">> of
-	true ->
-		{ok, #user{jid = RealMJID}} =
-		(?DICT):find(jlib:jid_tolower(MJID),
-			     StateData#state.users),
-		ActorJIDString = jlib:jid_to_string(RealMJID);
-	false ->
-		ActorJIDString = <<"">>
-    end,
     lists:foreach(fun ({_LJID, Info}) ->
 			  JidAttrList = case Info#user.role == moderator orelse
 					       (StateData#state.config)#config.anonymous
@@ -3048,12 +3039,6 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 						  children =
 						      [{xmlcdata, Reason}]}]
 				    end,
-			  ItemElsActor = case MJID of
-					   <<"">> -> [];
-					   _ -> [#xmlel{name = <<"actor">>,
-						attrs =
-						    [{<<"jid">>, ActorJIDString}]}]
-				    end,
 			  Packet = #xmlel{name = <<"presence">>,
 					  attrs =
 					      [{<<"type">>, <<"unavailable">>}],
@@ -3068,7 +3053,7 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 								  attrs =
 								      ItemAttrs,
 								  children =
-								       ItemElsActor ++  ItemEls},
+								      ItemEls},
 							   #xmlel{name =
 								      <<"status">>,
 								  attrs =
@@ -3081,7 +3066,6 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 				       Info#user.jid, Packet)
 		  end,
 		  (?DICT):to_list(StateData#state.users)).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Owner stuff
@@ -3767,7 +3751,7 @@ remove_nonmembers(StateData) ->
 			Affiliation = get_affiliation(JID, SD),
 			case Affiliation of
 			  none ->
-			      catch send_kickban_presence(<<"">>, JID, <<"">>,
+			      catch send_kickban_presence(JID, <<"">>,
 							  <<"322">>, SD),
 			      set_role(JID, none, SD);
 			  _ -> SD
