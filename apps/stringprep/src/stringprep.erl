@@ -97,15 +97,21 @@ terminate(_Reason, Port) ->
     ok.
 
 
+tolower(<<>>) ->
+    <<>>;
 tolower(Binary) ->
     control(?TOLOWER_COMMAND, Binary).
 
+nameprep(<<>>) ->
+    <<>>;
 nameprep(Binary) ->
     control(?NAMEPREP_COMMAND, Binary).
 
 nodeprep(Binary) ->
     control(?NODEPREP_COMMAND, Binary).
 
+resourceprep(<<>>) ->
+    <<>>;
 resourceprep(Binary) ->
     control(?RESOURCEPREP_COMMAND, Binary).
 
