@@ -237,7 +237,7 @@ forward_body(Req, #xmlelement{} = Body, S) ->
             {pause, Seconds} ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
                 mod_bosh_socket:pause(Socket, Seconds),
-                {loop, Req, S};
+                {ok, Req, S};
             _ ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
                 handle_request(Socket, {Type, Body}),
