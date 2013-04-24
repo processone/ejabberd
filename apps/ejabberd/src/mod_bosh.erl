@@ -214,7 +214,8 @@ event_type(Body) ->
             undefined ->
                 check_next;
             BSeconds ->
-                throw({pause, binary_to_integer(BSeconds)})
+                Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
+                throw({pause, Rid, binary_to_integer(BSeconds)})
         end,
         case exml_query:attr(Body, <<"sid">>) of
             undefined ->
@@ -234,10 +235,10 @@ forward_body(Req, #xmlelement{} = Body, S) ->
                     {false, Req1} ->
                         {ok, Req1, S}
                 end;
-            {pause, Seconds} ->
+            {pause, Rid, Seconds} ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
-                mod_bosh_socket:pause(Socket, Seconds),
-                {ok, Req, S};
+                handle_request(Socket, {pause, {Rid, Seconds}}),
+                {loop, Req, S};
             _ ->
                 Socket = get_session_socket(exml_query:attr(Body, <<"sid">>)),
                 handle_request(Socket, {Type, Body}),

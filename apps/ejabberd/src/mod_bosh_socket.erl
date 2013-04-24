@@ -231,6 +231,17 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
+handle_event({pause, Handler, {_, Seconds}}, _StateName,
+             #state{maxpause = MaxPause} = S)
+        when MaxPause == undefined;
+             Seconds > MaxPause ->
+    [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
+    Handler ! policy_violation,
+    {stop, {shutdown, policy_violation}, S#state{handlers = []}};
+handle_event({pause, Handler, {Rid, Seconds}}, StateName, State) ->
+    HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, State),
+    NewState = handle_pause(Seconds, HandlerAddedState),
+    {next_state, StateName, NewState};
 handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
     NS = cancel_inactivity_timer(State),
     try
@@ -250,14 +261,6 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
         throw:{invalid_rid, TState} ->
             {stop, {shutdown, invalid_rid}, TState}
     end;
-handle_event({pause, Seconds}, _StateName, #state{maxpause = MaxPause} = S)
-       when MaxPause == undefined;
-            Seconds > MaxPause ->
-    [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
-    {stop, {shutdown, policy_violation}, S#state{handlers = []}};
-handle_event({pause, Seconds}, StateName, State) ->
-    NewState = handle_pause(Seconds, State),
-    {next_state, StateName, NewState};
 
 handle_event(Event, StateName, State) ->
     ?DEBUG("Unhandled all state event: ~w~n", [Event]),
