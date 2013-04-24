@@ -291,8 +291,8 @@ run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
 	  end,
     case Res of
 	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nrunning hook: ~p",
-		       [Reason, {Hook, Args}]),
+	    ?ERROR_MSG("~p~n    Running hook: ~p~n    Callback: ~p:~p",
+		       [Reason, {Hook, Args}, Module, Function]),
 	    run1(Ls, Hook, Args);
 	stop ->
 	    ok;
