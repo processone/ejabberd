@@ -447,10 +447,13 @@ maybe_ack(Body, _, _) ->
 setup_inactivity_timer(#state{inactivity = infinity} = S) ->
     S;
 setup_inactivity_timer(S) ->
+    cancel_inactivity_timer(S),
     {ok, TRef} = timer:send_after(timer:seconds(S#state.inactivity),
                                   inactivity_timeout),
     S#state{inactivity_tref = TRef}.
 
+cancel_inactivity_timer(#state{inactivity_tref = undefined} = S) ->
+    S;
 cancel_inactivity_timer(S) ->
     timer:cancel(S#state.inactivity_tref),
     S#state{inactivity_tref = undefined}.
