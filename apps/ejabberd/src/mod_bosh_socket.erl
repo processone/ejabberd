@@ -63,10 +63,6 @@
                 client_acks = ?DEFAULT_CLIENT_ACKS :: boolean(),
                 sent = [] :: [{rid(), erlang:timestamp(), #xmlelement{}}],
                 last_sent :: rid(),
-
-                %%% Options. These have accompanying DEFAULT_* macros and
-                %%% are set up in init/1 based on ejabberd.cfg.
-
                 %% Allowed inactivity period in seconds.
                 inactivity :: pos_integer() | infinity,
                 inactivity_tref,
