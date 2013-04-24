@@ -37,6 +37,7 @@
 -define(DEFAULT_MAX_AGE, 1728000).  %% 20 days in seconds
 -define(DEFAULT_INACTIVITY, 30).  %% seconds
 -define(DEFAULT_SERVER_ACKS, false).
+-define(DEFAULT_ALLOW_ORIGIN, <<"*">>).
 
 %% Request State
 -record(rstate, {}).
@@ -126,10 +127,7 @@ init(_Transport, Req, _Opts) ->
 
 info(accept_options, Req, State) ->
     {Origin, Req2} = cowboy_req:header(<<"origin">>, Req),
-    Headers = [ac_allow_origin(Origin),
-               ac_allow_methods(),
-               ac_allow_headers(),
-               ac_max_age()],
+    Headers = ac_all(Origin),
     ?DEBUG("OPTIONS response: ~p~n", [Headers]),
     {ok, strip_ok(cowboy_req:reply(200, Headers, <<>>, Req2)), State};
 info(no_body, Req, State) ->
@@ -149,7 +147,7 @@ info({bosh_reply, El}, Req, S) ->
     BEl = exml:to_binary(El),
     ?DEBUG("Sending (binary) to ~p: ~p~n", [exml_query:attr(El, <<"sid">>), BEl]),
     {ok, Req1} = cowboy_req:reply(200, [content_type(),
-                                        ac_allow_origin(<<"*">>),
+                                        ac_allow_origin(?DEFAULT_ALLOW_ORIGIN),
                                         ac_allow_methods(),
                                         ac_allow_headers(),
                                         ac_max_age()], BEl, Req),
@@ -299,13 +297,16 @@ make_sid() ->
 %%--------------------------------------------------------------------
 
 no_body_error(Req) ->
-    strip_ok(cowboy_req:reply(400, [], <<"Missing request body">>, Req)).
+    strip_ok(cowboy_req:reply(400, ac_all(?DEFAULT_ALLOW_ORIGIN),
+                              <<"Missing request body">>, Req)).
 
 method_not_allowed_error(Req) ->
-    strip_ok(cowboy_req:reply(405, [], <<"Use POST request method">>, Req)).
+    strip_ok(cowboy_req:reply(405, ac_all(?DEFAULT_ALLOW_ORIGIN),
+                              <<"Use POST request method">>, Req)).
 
 not_implemented_error(Req) ->
-    strip_ok(cowboy_req:reply(400, [], <<"Not implemented yet">>, Req)).
+    strip_ok(cowboy_req:reply(400, ac_all(?DEFAULT_ALLOW_ORIGIN),
+                              <<"Not implemented yet">>, Req)).
 
 strip_ok({ok, Req}) ->
     Req.
@@ -319,7 +320,8 @@ terminal_condition(Condition, Req) ->
 
 terminal_condition(Condition, Details, Req) ->
     Body = terminal_condition_body(Condition, Details),
-    strip_ok(cowboy_req:reply(200, [content_type()], Body, Req)).
+    Headers = [content_type()] ++ ac_all(?DEFAULT_ALLOW_ORIGIN),
+    strip_ok(cowboy_req:reply(200, Headers, Body, Req)).
 
 terminal_condition_body(Condition, Children) ->
     exml:to_binary(#xmlelement{name = <<"body">>,
@@ -360,3 +362,9 @@ ac_allow_headers() ->
 
 ac_max_age() ->
     {<<"Access-Control-Max-Age">>, integer_to_binary(?DEFAULT_MAX_AGE)}.
+
+ac_all(Origin) ->
+    [ac_allow_origin(Origin),
+     ac_allow_methods(),
+     ac_allow_headers(),
+     ac_max_age()].
