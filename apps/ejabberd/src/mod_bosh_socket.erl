@@ -239,7 +239,8 @@ handle_event({pause, Handler, {_, Seconds}}, _StateName,
     Handler ! policy_violation,
     {stop, {shutdown, policy_violation}, S#state{handlers = []}};
 handle_event({pause, Handler, {Rid, Seconds}}, StateName, State) ->
-    HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, State),
+    NS = cancel_inactivity_timer(State),
+    HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
     NewState = handle_pause(Seconds, HandlerAddedState),
     {next_state, StateName, NewState};
 handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
