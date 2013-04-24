@@ -238,8 +238,9 @@ handle_event({pause, Handler, {_, Seconds}}, _StateName,
     [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
     Handler ! policy_violation,
     {stop, {shutdown, policy_violation}, S#state{handlers = []}};
-handle_event({pause, Handler, {Rid, Seconds}}, StateName, State) ->
-    NS = cancel_inactivity_timer(State),
+handle_event({pause, Handler, {Rid, Seconds}}, StateName, S) ->
+    %% TODO: pause requests might be handled out of order - fix it!
+    NS = cancel_inactivity_timer(S#state{rid=Rid}),
     HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
     NewState = handle_pause(Seconds, HandlerAddedState),
     {next_state, StateName, NewState};
