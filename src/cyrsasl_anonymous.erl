@@ -43,7 +43,9 @@ mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
     {ok, #state{server = Host}}.
 
 mech_step(#state{server = Server}, _ClientIn) ->
-    User = iolist_to_binary([randoms:get_string() | tuple_to_list(now())]),
+    User = iolist_to_binary([randoms:get_string()
+			     | [jlib:integer_to_binary(X)
+				|| X <- tuple_to_list(now())]]),
     case ejabberd_auth:is_user_exists(User, Server) of
         true  -> {error, <<"not-authorized">>};
         false -> {ok, [{username, User}, {auth_module, ejabberd_auth_anonymous}]}
