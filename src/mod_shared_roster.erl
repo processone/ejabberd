@@ -1499,6 +1499,8 @@ commands() ->
 
 code_to_restuple({atomic, ok}) ->
     {ok, ""};
+code_to_restuple({atomic, {updated,_}}) ->
+    {ok, ""};
 code_to_restuple({_, Res}) when is_binary(Res) ->
     {error, Res};
 code_to_restuple({_, Res}) ->
