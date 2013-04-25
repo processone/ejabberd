@@ -1977,7 +1977,7 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 		  [#xmlel{name = <<"item">>, attrs = ItemAttrs,
 			  children = Payload}] ->
 		      ItemId = xml:get_attr_s(<<"id">>, ItemAttrs),
-		      publish_item(Host, ServerHost, Node, From, ItemId, Payload);
+		      publish_item(Host, ServerHost, Node, From, ItemId, Payload, Access);
 		  [] ->
 		      {error,
 		       extended_error(?ERR_BAD_REQUEST, <<"item-required">>)};
@@ -2948,8 +2948,10 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
      | {error, xmlel()}
 ).
 publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload) ->
-    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload);
+    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, all);
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
+	publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, all).
+publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = NodeId}) ->
 		     Features = features(Type),
 		     PublishFeature = lists:member(<<"publish">>, Features),
@@ -3045,7 +3047,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	    Type = select_type(ServerHost, Host, Node),
 	    case lists:member("auto-create", features(Type)) of
 		true ->
-		    case create_node(Host, ServerHost, Node, Publisher, Type) of
+		    case create_node(Host, ServerHost, Node, Publisher, Type, Access, []) of
 			{result, [#xmlel{name = <<"pubsub">>,
 			   attrs = [{<<"xmlns">>, ?NS_PUBSUB}],
 			   children =
