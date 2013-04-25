@@ -509,7 +509,7 @@ generate_adhoc_form(Lang, Node, ServerHost) ->
 			       or (LNode == ?NS_ADMINL("edit-motd-allhosts")) ->
 				    get_stored_motd(ServerHost);
 			       true -> 
-				    {[], []}
+				    {<<>>, <<>>}
 			    end,
     #xmlel{
         name     = <<"x">>,
