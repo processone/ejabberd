@@ -897,7 +897,8 @@ resource_conflict_action(U, S, R) ->
       closenew -> closenew;
       setresource ->
 	  Rnew = iolist_to_binary([randoms:get_string()
-                                   | tuple_to_list(now())]),
+                                   | [jlib:integer_to_binary(X)
+                                      || X <- tuple_to_list(now())]]),
 	  {accept_resource, Rnew}
     end.
 
@@ -912,7 +913,8 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		error -> error;
 		<<"">> ->
                       iolist_to_binary([randoms:get_string()
-                                        | tuple_to_list(now())]);
+                                        | [jlib:integer_to_binary(X)
+                                           || X <- tuple_to_list(now())]]);
 		Resource -> Resource
 	      end,
 	  case R of
