@@ -60,19 +60,16 @@ get_hooks(Host) ->
      [privacy_check_packet,   Host, ?MODULE, privacy_check_packet, 55],
      [sm_broadcast,           Host, ?MODULE, privacy_list_push, 1]].
 
-%%------------------------------
-%% SNMP specific hook callbacks
-%%------------------------------
 
 -spec sm_register_connection_hook(tuple(), jid(), term()) -> term().
 sm_register_connection_hook(_,#jid{server = Server}, _) ->
     folsom_metrics:notify({Server, sessionSuccessfulLogins}, 1),
-    folsom_metrics:notify({Server, sessionCount}, 1).
+    folsom_metrics:notify({Server, sessionCount}, {inc, 1}).
 
 -spec sm_remove_connection_hook(tuple(), jid(), term()) -> term().
 sm_remove_connection_hook(_,#jid{server = Server},_) ->
     folsom_metrics:notify({Server, sessionLogouts}, 1),
-    folsom_metrics:notify({Server, sessionCount}, -1).
+    folsom_metrics:notify({Server, sessionCount}, {dec, 1}).
 
 -spec auth_failed(binary(), binary(), binary()) -> term().
 auth_failed(_,Server,_) ->

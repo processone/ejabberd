@@ -1513,7 +1513,7 @@ send_text(StateData, Text) ->
 send_element(#state{server = Server, sockmod = SockMod} = StateData, El)
 		when StateData#state.xml_socket ->
     ejabberd_hooks:run(xmpp_send_element,
-                       Server, [El]),
+                       Server, [Server, El]),
     SockMod:send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
 send_element(#state{server = Server} = StateData, El) ->

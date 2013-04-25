@@ -14,18 +14,32 @@
 
 
 -spec start(binary(), list()) -> ok.
-start(Host, Opts) ->
-    lists:foreach(fun(Name) ->
-        folsom_metrics:new_spiral(Name) end, get_general_counters(Host)),
-
-    lists:foreach(fun(Name) ->
-        folsom_metrics:new_counter(Name) end, get_total_counters(Host)),
-
+start(Host, _Opts) ->
+    init_folsom(Host),
+    metrics_hooks(add, Host),
     ok.
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
+    metrics_hooks(delete, Host),
     ok.
+
+init_folsom(Host) ->
+    folsom:start(),
+    lists:foreach(fun(Name) ->
+        folsom_metrics:new_spiral(Name),
+        folsom_metrics:tag_metric(Name, Host)
+    end, get_general_counters(Host)),
+
+    lists:foreach(fun(Name) ->
+        folsom_metrics:new_counter(Name),
+        folsom_metrics:tag_metric(Name, Host)
+    end, get_total_counters(Host)).
+
+metrics_hooks(Op, Host) ->
+    lists:foreach(fun(Hook) ->
+        apply(ejabberd_hooks, Op, Hook)
+    end, ejabberd_metrics_hooks:get_hooks(Host)).
 
 -define (GENERAL_COUNTERS, [
          sessionSuccessfulLogins,

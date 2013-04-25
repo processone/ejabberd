@@ -21,9 +21,9 @@
          auth_failed/3,
          user_send_packet/3,
          user_receive_packet/4,
-         xmpp_bounce_message/1,
+         xmpp_bounce_message/2,
          xmpp_stanza_dropped/3,
-         xmpp_send_element/1,
+         xmpp_send_element/2,
          roster_get/2,
          roster_set/3,
          roster_push/2,
@@ -115,16 +115,16 @@ user_receive_packet_type({xmlel, <<"presence">>,_,_}) ->
     ejabberd_snmp_core:increment_counter(xmppPresenceReceived),
     ejabberd_snmp_core:increment_window_counter(xmppPresenceReceivedW).
 
--spec xmpp_bounce_message(tuple()) -> term().
-xmpp_bounce_message(_) ->
+-spec xmpp_bounce_message(binary(), tuple()) -> term().
+xmpp_bounce_message(_, _) ->
     ejabberd_snmp_core:increment_counter(xmppMessageBounced).
 
 -spec xmpp_stanza_dropped(tuple(), tuple(), tuple()) -> term().
 xmpp_stanza_dropped(_,_,_) ->
     ejabberd_snmp_core:increment_counter(xmppStanzaDropped).
 
--spec xmpp_send_element(tuple()) -> term().
-xmpp_send_element({xmlel, Name, Attrs, _}) ->
+-spec xmpp_send_element(binary(), tuple()) -> term().
+xmpp_send_element(_, {xmlel, Name, Attrs, _}) ->
     ejabberd_snmp_core:increment_counter(xmppStanzaCount),
     case proplists:get_value(<<"type">>, Attrs) of
         <<"error">> ->
@@ -140,7 +140,7 @@ xmpp_send_element({xmlel, Name, Attrs, _}) ->
             end;
         _ -> ok
     end;
-xmpp_send_element(_) ->
+xmpp_send_element(_, _) ->
     ok.
 
 
@@ -194,7 +194,7 @@ privacy_iq_get(Acc, _, _, _, _) ->
     ?CORE:increment_window_counter(modPrivacyGetsW),
     Acc.
 
--spec privacy_iq_set(term(), term(), term(), term()) -> term().        
+-spec privacy_iq_set(term(), term(), term(), term()) -> term().
 privacy_iq_set(Acc, _From, _To, #iq{sub_el = SubEl}) ->
     {xmlel, _, _, Els} = SubEl,
     case xml:remove_cdata(Els) of

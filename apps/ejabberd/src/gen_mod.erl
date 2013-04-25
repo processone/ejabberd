@@ -70,8 +70,8 @@ start_module(Host, Module, Opts) ->
     catch Class:Reason ->
 	    del_module_mnesia(Host, Module),
 	    ets:delete(ejabberd_modules, {Module, Host}),
-	    ErrorText = io_lib:format("Problem starting the module ~p for host ~p ~n options: ~p~n ~p: ~p",
-		    [Module, Host, Opts, Class, Reason]),
+	    ErrorText = io_lib:format("Problem starting the module ~p for host ~p ~n options: ~p~n ~p: ~p~n~p",
+		    [Module, Host, Opts, Class, Reason, erlang:get_stacktrace()]),
 	    ?CRITICAL_MSG(ErrorText, []),
 	    case is_app_running(ejabberd) of
 		true ->
