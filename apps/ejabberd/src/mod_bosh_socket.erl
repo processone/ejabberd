@@ -300,7 +300,7 @@ handle_info({send, #xmlstreamend{} = StreamEnd}, _SName,
     NS = send_or_store([StreamEnd | Pending], S#state{pending = []}),
     {next_state, normal, NS};
 handle_info({send, Data}, accumulate = SName, #state{} = S) ->
-    {next_state, SName, store(Data, S)};
+    {next_state, SName, store([Data], S)};
 handle_info({send, Data}, normal = SName, #state{} = S) ->
     NS = send_or_store(Data, S),
     {next_state, SName, NS};
@@ -345,15 +345,13 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
-    IsPid = is_pid(Handler),
-    NS = if IsPid -> new_request_handler(SName, {Rid, Handler}, S);
-            not IsPid -> S
-    end,
-    case {EventTag,
-          %% TODO: intercept retransmitted packets
-          %is_reply_cached(Rid),
-          is_valid_rid(Rid, OldRid),
-          is_acceptable_rid(Rid, OldRid)} of
+    NS = maybe_add_handler(Handler, Rid, S),
+    NNS = case {EventTag,
+                %% TODO: intercept retransmitted packets
+                %is_reply_cached(Rid),
+                is_valid_rid(Rid, OldRid),
+                is_acceptable_rid(Rid, OldRid)}
+    of
         {streamstart, _, _} ->
             process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
         {_, true, _} ->
@@ -367,7 +365,8 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
             [Pid ! item_not_found
              || {_, _, Pid} <- lists:sort(NS#state.handlers)],
             throw({invalid_rid, NS#state{handlers = []}})
-    end.
+    end,
+    return_surplus_handlers(SName, NNS).
 
 process_stream_event(pause, Body, SName, State) ->
     Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
@@ -413,12 +412,10 @@ is_acceptable_rid(_, _) ->
 
 %% Send data to the client if any request handler is available.
 %% Otherwise, store for sending later.
+send_or_store(Data, State) when not is_list(Data) ->
+    send_or_store([Data], State);
 send_or_store(Data, #state{handlers = []} = S) ->
     store(Data, S);
-send_or_store(Data, #state{} = S) when not is_list(Data) ->
-    send_or_store([Data], S);
-send_or_store([], #state{} = S) ->
-    S;
 send_or_store(Data, #state{handlers = Hs} = State) ->
     ?DEBUG("Forwarding to handler. Handlers: ~p~n", [Hs]),
     send_to_handler(Data, State).
@@ -468,32 +465,36 @@ cancel_inactivity_timer(S) ->
 
 %% Store data for sending later.
 store(Data, #state{pending = Pending} = S) ->
-    S#state{pending = [Data | Pending]}.
+    S#state{pending = Data ++ Pending}.
 
 forward_to_c2s(C2SPid, StreamElement) ->
     gen_fsm:send_event(C2SPid, StreamElement).
 
-%% Keep in mind the hardcoding for hold == 1.
-new_request_handler(accumulate, {Rid, Pid}, #state{handlers = [_]} = S) ->
-    NS = send_to_handler([], S),
-    add_handler({Rid, Pid}, NS);
-new_request_handler(accumulate, Handler, #state{handlers = []} = S) ->
-    add_handler(Handler, S);
-new_request_handler(normal, Handler, #state{pending = [],
-                                            handlers = [_]} = S) ->
-    NS = send_to_handler([], S),
-    add_handler(Handler, NS);
-new_request_handler(normal, Handler, #state{pending = [],
-                                            handlers = []} = S) ->
-    add_handler(Handler, S);
-new_request_handler(normal, Handler, #state{pending = Pending} = S) ->
-    NS = add_handler(Handler, S#state{pending = []}),
-    send_or_store(Pending, NS).
+maybe_add_handler(Handler, Rid, S) when is_pid(Handler) ->
+    add_handler({Rid, Handler}, S);
+maybe_add_handler(_, _, S) ->
+    S.
 
 add_handler({Rid, Pid}, #state{handlers = Handlers} = S) ->
     {ok, TRef} = timer:send_after(timer:seconds(S#state.wait),
                                   {wait_timeout, {Rid, Pid}}),
     S#state{handlers = [{Rid, TRef, Pid} | Handlers]}.
+
+%% Keep in mind the hardcoding for hold == 1.
+return_surplus_handlers(accumulate, #state{handlers = []} = State) ->
+    State;
+return_surplus_handlers(accumulate, #state{handlers = [_]} = State) ->
+    State;
+return_surplus_handlers(accumulate, #state{handlers = _} = S) ->
+    NS = send_to_handler([], S),
+    return_surplus_handlers(accumulate, NS);
+return_surplus_handlers(normal, #state{handlers = []} = State) ->
+    State;
+return_surplus_handlers(normal, #state{handlers = [_], pending = []} = State) ->
+    State;
+return_surplus_handlers(normal, #state{pending = Pending} = S) ->
+    NS = send_or_store(Pending, S#state{pending = []}),
+    return_surplus_handlers(normal, NS).
 
 -spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
     -> {[StreamEvent], #state{}}
