@@ -1497,14 +1497,15 @@ commands() ->
                                                 {groups, {list, {group, string}}}]}}}
 ].
 
-code_to_restuple({atomic, ok}) ->
-    {ok, ""};
-code_to_restuple({atomic, {updated,_}}) ->
+code_to_restuple({atomic, _}) ->
     {ok, ""};
 code_to_restuple({_, Res}) when is_binary(Res) ->
-    {error, Res};
+    {false, binary_to_list(Res)};
 code_to_restuple({_, Res}) ->
-    {error, list_to_binary(io_lib:format("~p", [Res]))}.
+    {false, lists:flatten(io_lib:format("~p", [Res]))};
+code_to_restuple(_) ->
+    {false, ""}.
+
 
 command_group_create(Host, Id, Name, Description, DisplayedGroups) ->
     Opts = [{name, Name},
