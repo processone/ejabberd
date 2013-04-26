@@ -228,21 +228,6 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-handle_event({pause, Handler, {_, Seconds}}, _StateName,
-             #state{maxpause = MaxPause} = S)
-        when MaxPause == undefined;
-             Seconds > MaxPause ->
-    [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
-    Handler ! policy_violation,
-    {stop, {shutdown, policy_violation}, S#state{handlers = []}};
-
-handle_event({pause, Handler, {Rid, Seconds}}, StateName, S) ->
-    %% TODO: pause requests might be handled out of order - fix it!
-    NS = cancel_inactivity_timer(S#state{rid=Rid}),
-    HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
-    NewState = handle_pause(Seconds, HandlerAddedState),
-    {next_state, StateName, NewState};
-
 handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
     NS = cancel_inactivity_timer(State),
     try
@@ -266,7 +251,9 @@ handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
         end
     catch
         throw:{invalid_rid, TState} ->
-            {stop, {shutdown, invalid_rid}, TState}
+            {stop, {shutdown, invalid_rid}, TState};
+        throw:{invalid_pause, TState} ->
+            {stop, {shutdown, policy_violation}, TState}
     end;
 
 handle_event(Event, StateName, State) ->
@@ -622,6 +609,11 @@ bosh_stream_end_body() ->
                          {<<"xmlns">>, ?NS_HTTPBIND}],
                 children = []}.
 
+handle_pause(Seconds, #state{maxpause = MaxPause} = S)
+        when MaxPause == undefined;
+             Seconds > MaxPause ->
+    [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
+    throw({invalid_pause, S#state{handlers = []}});
 handle_pause(Seconds, State) ->
     F = fun(_, S) ->
             send_to_handler([], S, [pause])
