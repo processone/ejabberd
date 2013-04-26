@@ -112,6 +112,7 @@ start_supervisor() ->
 handle_request(Pid, Request) ->
     gen_fsm:send_all_state_event(Pid, Request).
 
+%% No check for violating maxpause is made when calling this!
 -spec pause(Pid, Seconds) -> ok
     when Pid :: pid(),
          Seconds :: pos_integer().
@@ -234,26 +235,34 @@ handle_event({pause, Handler, {_, Seconds}}, _StateName,
     [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
     Handler ! policy_violation,
     {stop, {shutdown, policy_violation}, S#state{handlers = []}};
+
 handle_event({pause, Handler, {Rid, Seconds}}, StateName, S) ->
     %% TODO: pause requests might be handled out of order - fix it!
     NS = cancel_inactivity_timer(S#state{rid=Rid}),
     HandlerAddedState = new_request_handler(StateName, {Rid, Handler}, NS),
     NewState = handle_pause(Seconds, HandlerAddedState),
     {next_state, StateName, NewState};
+
 handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
     NS = cancel_inactivity_timer(State),
     try
         Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-        EventHandledState = handle_stream_event({Rid, EventTag, Body}, NS),
-        HandlerAddedState = new_request_handler(StateName, {Rid, Handler},
-                                               EventHandledState),
+        NNS = case EventTag of
+             pause ->
+                PausedS = new_request_handler(StateName, {Rid, Handler}, NS),
+                Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
+                handle_pause(Seconds, PausedS);
+             _ ->
+                HandledS = handle_stream_event({Rid, EventTag, Body}, NS),
+                new_request_handler(StateName, {Rid, Handler}, HandledS)
+        end,
         case EventTag of
             _ when EventTag == streamstart; EventTag == restart ->
                 timer:apply_after(?ACCUMULATE_PERIOD,
                                   gen_fsm, send_event, [self(), acc_off]),
-                {next_state, accumulate, HandlerAddedState};
-            _ when EventTag == normal; EventTag == streamend ->
-                {next_state, StateName, HandlerAddedState}
+                {next_state, accumulate, NNS};
+            _ ->
+                {next_state, StateName, NNS}
         end
     catch
         throw:{invalid_rid, TState} ->

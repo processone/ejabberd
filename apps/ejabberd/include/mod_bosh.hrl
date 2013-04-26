@@ -14,5 +14,5 @@
     :: streamstart
     | restart
     | normal
-    | {pause, pos_integer(), pos_integer()}
+    | pause
     | streamend.
