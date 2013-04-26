@@ -228,26 +228,20 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-handle_event({EventTag, Handler, #xmlelement{} = Body}, StateName, State) ->
-    NS = cancel_inactivity_timer(State),
+handle_event({EventTag, Handler, #xmlelement{} = Body}, SName, S) ->
+    NS = cancel_inactivity_timer(S),
+    Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
     try
-        Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-        NNS = case EventTag of
-             pause ->
-                PausedS = new_request_handler(StateName, {Rid, Handler}, NS),
-                Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
-                handle_pause(Seconds, PausedS);
-             _ ->
-                HandledS = handle_stream_event({Rid, EventTag, Body}, NS),
-                new_request_handler(StateName, {Rid, Handler}, HandledS)
-        end,
+        NNS = handle_stream_event({EventTag, Body, Rid}, Handler, SName, NS),
+        %% TODO: it's the event which determines the next state,
+        %%       this ought to be returned from handle_stream_event
         case EventTag of
             _ when EventTag == streamstart; EventTag == restart ->
                 timer:apply_after(?ACCUMULATE_PERIOD,
                                   gen_fsm, send_event, [self(), acc_off]),
                 {next_state, accumulate, NNS};
             _ ->
-                {next_state, StateName, NNS}
+                {next_state, SName, NNS}
         end
     catch
         throw:{invalid_rid, TState} ->
@@ -349,36 +343,58 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %% callback implementations
 %%--------------------------------------------------------------------
 
-handle_stream_event({Rid, EventTag, Body} = Event, #state{rid = OldRid} = S) ->
+handle_stream_event({EventTag, Body, Rid} = Event, Handler,
+                    SName, #state{rid = OldRid} = S) ->
+    IsPid = is_pid(Handler),
+    NS = if IsPid -> new_request_handler(SName, {Rid, Handler}, S);
+            not IsPid -> S
+    end,
     case {EventTag,
           %% TODO: intercept retransmitted packets
           %is_reply_cached(Rid),
           is_valid_rid(Rid, OldRid),
           is_acceptable_rid(Rid, OldRid)} of
         {streamstart, _, _} ->
-            process_stream_event(EventTag, Body, S#state{rid = Rid});
+            process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
         {_, true, _} ->
-            process_stream_event(EventTag, Body, S#state{rid = Rid});
+            process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
         {_, false, true} ->
             ?DEBUG("storing stream event for deferred processing: ~p~n",
                    [{EventTag, Body}]),
-            S#state{deferred = [Event | S#state.deferred]};
+            NS#state{deferred = [Event | NS#state.deferred]};
         {_, false, false} ->
             ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
             [Pid ! item_not_found
-             || {_, _, Pid} <- lists:sort(S#state.handlers)],
-            throw({invalid_rid, S#state{handlers = []}})
+             || {_, _, Pid} <- lists:sort(NS#state.handlers)],
+            throw({invalid_rid, NS#state{handlers = []}})
     end.
 
-process_stream_event(EventTag, Body, #state{c2s_pid = C2SPid} = State) ->
+process_stream_event(pause, Body, SName, State) ->
+    Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
+    NewState = process_pause_event(Seconds, State),
+    process_deferred_events(SName, NewState);
+process_stream_event(EventTag, Body, SName, #state{c2s_pid = C2SPid} = State) ->
     {Els, NewState} = bosh_unwrap(EventTag, Body, State),
     [forward_to_c2s(C2SPid, El) || El <- Els],
-    process_deferred_events(NewState).
+    process_deferred_events(SName, NewState).
 
-process_deferred_events(#state{deferred = Deferred} = S) ->
+process_pause_event(Seconds, #state{maxpause = MaxPause} = S)
+        when MaxPause == undefined;
+             Seconds > MaxPause ->
+    [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
+    throw({invalid_pause, S#state{handlers = []}});
+process_pause_event(Seconds, State) ->
+    F = fun(_, S) ->
+            send_to_handler([], S, [pause])
+    end,
+    NS = lists:foldl(F, State,
+                     lists:seq(1, length(State#state.handlers))),
+    NS#state{inactivity = Seconds}.
+
+process_deferred_events(SName, #state{deferred = Deferred} = S) ->
     lists:foldl(fun(Event, State) ->
                     ?DEBUG("processing deferred event: ~p~n", [Event]),
-                    handle_stream_event(Event, State)
+                    handle_stream_event(Event, none, SName, State)
                 end,
                 S#state{deferred = []},
                 lists:sort(Deferred)).
@@ -608,19 +624,6 @@ bosh_stream_end_body() ->
                 attrs = [{<<"type">>, <<"terminate">>},
                          {<<"xmlns">>, ?NS_HTTPBIND}],
                 children = []}.
-
-handle_pause(Seconds, #state{maxpause = MaxPause} = S)
-        when MaxPause == undefined;
-             Seconds > MaxPause ->
-    [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
-    throw({invalid_pause, S#state{handlers = []}});
-handle_pause(Seconds, State) ->
-    F = fun(_, S) ->
-            send_to_handler([], S, [pause])
-    end,
-    NS = lists:foldl(F, State,
-                     lists:seq(1, length(State#state.handlers))),
-    NS#state{inactivity = Seconds}.
 
 %%--------------------------------------------------------------------
 %% ejabberd_socket compatibility
