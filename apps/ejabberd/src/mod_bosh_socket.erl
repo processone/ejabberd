@@ -112,6 +112,7 @@ start_supervisor() ->
 handle_request(Pid, Request) ->
     gen_fsm:send_all_state_event(Pid, Request).
 
+%% TODO: no handler for this call is present!
 %% No check for violating maxpause is made when calling this!
 -spec pause(Pid, Seconds) -> ok
     when Pid :: pid(),
