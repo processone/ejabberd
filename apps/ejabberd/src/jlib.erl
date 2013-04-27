@@ -490,7 +490,7 @@ rsm_decode({xmlelement, _,_,_}=SubEl)->
 
 rsm_parse_element({xmlelement, <<"max">>,[], _}=Elem, RsmIn)->
     CountStr = xml:get_tag_cdata(Elem),
-    {Count, _} = string:to_integer(CountStr),
+    {Count, _} = string:to_integer(binary_to_list(CountStr)),
     RsmIn#rsm_in{max=Count};
 
 rsm_parse_element({xmlelement, <<"before">>, [], _}=Elem, RsmIn)->
@@ -503,7 +503,7 @@ rsm_parse_element({xmlelement, <<"after">>, [], _}=Elem, RsmIn)->
 
 rsm_parse_element({xmlelement, <<"index">>,[], _}=Elem, RsmIn)->
     IndexStr = xml:get_tag_cdata(Elem),
-    {Index, _} = string:to_integer(IndexStr),
+    {Index, _} = string:to_integer(binary_to_list(IndexStr)),
     RsmIn#rsm_in{index=Index};
 
 
