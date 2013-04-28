@@ -59,7 +59,7 @@ new(Name) ->
 new1(none) -> none;
 new1({maxrate, MaxRate}) ->
     #maxrate{maxrate = MaxRate, lastrate = 0.0,
-	     lasttime = now_to_usec(now())}.
+	     lasttime = now_to_usec(os:timestamp())}.
 
 -spec update(maxrate(), integer()) -> {maxrate(), integer()}.
 
@@ -67,7 +67,7 @@ update(none, _Size) -> {none, 0};
 update(#maxrate{} = State, Size) ->
     MinInterv = 1000 * Size /
 		  (2 * State#maxrate.maxrate - State#maxrate.lastrate),
-    Interv = (now_to_usec(now()) - State#maxrate.lasttime) /
+    Interv = (now_to_usec(os:timestamp()) - State#maxrate.lasttime) /
 	       1000,
     ?DEBUG("State: ~p, Size=~p~nM=~p, I=~p~n",
 	   [State, Size, MinInterv, Interv]),
@@ -75,7 +75,7 @@ update(#maxrate{} = State, Size) ->
 		   1 + trunc(MinInterv - Interv);
 	       true -> 0
 	    end,
-    NextNow = now_to_usec(now()) + Pause * 1000,
+    NextNow = now_to_usec(os:timestamp()) + Pause * 1000,
     {State#maxrate{lastrate =
 		       (State#maxrate.lastrate +
 			  1000000 * Size / (NextNow - State#maxrate.lasttime))

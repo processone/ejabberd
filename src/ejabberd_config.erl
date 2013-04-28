@@ -63,7 +63,7 @@ start() ->
     Config = get_ejabberd_config_path(),
     load_file(Config),
     %% This start time is used by mod_last:
-    add_local_option(node_start, now()),
+    add_local_option(node_start, os:timestamp()),
     ok.
 
 %% @doc Get the filename of the ejabberd configuration file.

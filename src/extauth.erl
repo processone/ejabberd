@@ -100,7 +100,7 @@ call_port(Server, Msg) ->
     receive {eauth, Result} -> Result end.
 
 random_instance(MaxNum) ->
-    {A1, A2, A3} = now(),
+    {A1, A2, A3} = os:timestamp(),
     random:seed(A1, A2, A3),
     random:uniform(MaxNum) - 1.
 

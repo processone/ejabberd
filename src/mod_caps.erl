@@ -614,7 +614,7 @@ gb_trees_fold_iter(F, Acc, Iter) ->
     end.
 
 now_ts() ->
-    {MegaSecs, Secs, _} = now(), MegaSecs * 1000000 + Secs.
+    {MegaSecs, Secs, _} = os:timestamp(), MegaSecs * 1000000 + Secs.
 
 is_valid_node(Node) ->
     case str:tokens(Node, <<"#">>) of

@@ -57,8 +57,8 @@
 
 -record(offline_msg,
 	{us = {<<"">>, <<"">>} :: {binary(), binary()},
-         timestamp = now()     :: erlang:timestamp() | '_',
-         expire = now()        :: erlang:timestamp() | never | '_',
+         timestamp = os:timestamp()     :: erlang:timestamp() | '_',
+         expire = os:timestamp()        :: erlang:timestamp() | never | '_',
          from = #jid{}         :: jid() | '_',
          to = #jid{}           :: jid() | '_',
          packet = #xmlel{}     :: xmlel() | '_'}).
@@ -236,7 +236,7 @@ store_packet(From, To, Packet) ->
 	   case check_event(From, To, Packet) of
 	     true ->
 		 #jid{luser = LUser, lserver = LServer} = To,
-		 TimeStamp = now(),
+		 TimeStamp = os:timestamp(),
 		 #xmlel{children = Els} = Packet,
 		 Expire = find_x_expire(TimeStamp, Els),
 		 gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
@@ -364,7 +364,7 @@ pop_offline_messages(Ls, LUser, LServer, mnesia) ->
 	end,
     case mnesia:transaction(F) of
       {atomic, Rs} ->
-	  TS = now(),
+	  TS = os:timestamp(),
 	  Ls ++
 	    lists:map(fun (R) ->
 			      offline_msg_to_route(LServer, R)
@@ -408,7 +408,7 @@ remove_expired_messages(Server) ->
 			    gen_mod:db_type(LServer, ?MODULE)).
 
 remove_expired_messages(_LServer, mnesia) ->
-    TimeStamp = now(),
+    TimeStamp = os:timestamp(),
     F = fun () ->
 		mnesia:write_lock_table(offline_msg),
 		mnesia:foldl(fun (Rec, _Acc) ->
@@ -432,7 +432,7 @@ remove_old_messages(Days, Server) ->
 			gen_mod:db_type(LServer, ?MODULE)).
 
 remove_old_messages(Days, _LServer, mnesia) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
+    {MegaSecs, Secs, _MicroSecs} = os:timestamp(),
     S = MegaSecs * 1000000 + Secs - 60 * 60 * 24 * Days,
     MegaSecs1 = S div 1000000,
     Secs1 = S rem 1000000,
@@ -763,7 +763,7 @@ get_messages_subset2(Max, Length, MsgsAll, mnesia) ->
     MsgsLastN = lists:nthtail(Length - FirstN - FirstN,
 			      Msgs2),
     NoJID = jlib:make_jid(<<"...">>, <<"...">>, <<"">>),
-    IntermediateMsg = #offline_msg{timestamp = now(),
+    IntermediateMsg = #offline_msg{timestamp = os:timestamp(),
 				   from = NoJID, to = NoJID,
 				   packet =
 				       #xmlel{name = <<"...">>, attrs = [],

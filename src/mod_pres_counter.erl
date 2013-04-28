@@ -77,7 +77,7 @@ update(Server, JID, Dir) ->
     TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval,
                                           fun(I) when is_integer(I), I>0 -> I end,
                                           60),
-    {MegaSecs, Secs, _MicroSecs} = now(),
+    {MegaSecs, Secs, _MicroSecs} = os:timestamp(),
     TimeStamp = MegaSecs * 1000000 + Secs,
     case read(Dir) of
       undefined ->

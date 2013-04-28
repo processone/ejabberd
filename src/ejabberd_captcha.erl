@@ -691,5 +691,5 @@ clean_treap(Treap, CleanPriority) ->
     end.
 
 now_priority() ->
-    {MSec, Sec, USec} = now(),
+    {MSec, Sec, USec} = os:timestamp(),
     -((MSec * 1000000 + Sec) * 1000000 + USec).
