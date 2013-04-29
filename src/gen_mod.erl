@@ -44,11 +44,13 @@
          opts = [] :: opts() | '_' | '$2'}).
 
 -type opts() :: [{atom(), any()}].
+-type db_type() :: odbc | mnesia | riak.
 
 -callback start(binary(), opts()) -> any().
 -callback stop(binary()) -> any().
 
 -export_type([opts/0]).
+-export_type([db_type/0]).
 
 %%behaviour_info(callbacks) -> [{start, 2}, {stop, 1}];
 %%behaviour_info(_Other) -> undefined.
@@ -191,7 +193,7 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
--spec db_type(opts()) -> odbc | mnesia | riak.
+-spec db_type(opts()) -> db_type().
 
 db_type(Opts) ->
     get_opt(db_type, Opts,
@@ -202,7 +204,7 @@ db_type(Opts) ->
             end,
             mnesia).
 
--spec db_type(binary(), atom()) -> odbc | mnesia | riak.
+-spec db_type(binary(), atom()) -> db_type().
 
 db_type(Host, Module) ->
     get_module_opt(Host, Module, db_type,

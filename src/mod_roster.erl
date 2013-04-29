@@ -49,6 +49,9 @@
 	 roster_versioning_enabled/1, roster_version/2,
          record_to_string/1, groups_to_string/1]).
 
+%% For benchmarking
+-export([create_rosters/4]).
+
 -include("ejabberd.hrl").
 
 -include("jlib.hrl").
@@ -1608,3 +1611,48 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+%% For benchmarks
+make_roster_range(I, Total) ->
+    lists:foldl(
+      fun(K, Range) ->
+              Next = if I+K > Total -> I+K-Total;
+                        true -> I+K
+                     end,
+              Prev = if I-K =< 0 -> Total+I-K;
+                        true -> I-K
+                     end,
+              [Next, Prev | Range]
+      end, [], lists:seq(1, 9)).
+
+-spec create_rosters(binary(), binary(), pos_integer(), gen_mod:db_type()) -> any().
+
+create_rosters(UserPattern, Server, Total, DBType) ->
+    lists:foreach(
+      fun(I) ->
+              LUser = jlib:nodeprep(
+                        iolist_to_binary([UserPattern, integer_to_list(I)])),
+              LServer = jlib:nameprep(Server),
+              Range = make_roster_range(I, Total),
+              lists:foreach(
+                fun(R) ->
+                        Contact = jlib:nodeprep(
+                                    iolist_to_binary(
+                                      [UserPattern, integer_to_list(R)])),
+                        LJID = {Contact, LServer, <<"">>},
+                        RItem = #roster{subscription = both,
+                                        us = {LUser, LServer},
+                                        usj = {LUser, LServer, LJID},
+                                        jid = LJID},
+                        case DBType of
+                            riak ->
+                                ejabberd_riak:put(
+                                  RItem,
+                                  [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
+                            mnesia ->
+                                mnesia:dirty_write(RItem);
+                            odbc ->
+                                erlang:error(odbc_not_supported)
+                        end
+                end, Range)
+      end, lists:seq(1, Total)).
