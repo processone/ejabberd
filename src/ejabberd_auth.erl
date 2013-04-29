@@ -45,6 +45,12 @@
 
 -export([auth_modules/1]).
 
+%% For benchmarking
+-record(passwd, {us = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
+                 password = <<"">> :: binary() | scram() | '_'}).
+
+-export([create_users/5]).
+
 -include("ejabberd.hrl").
 
 -type opts() :: [{prefix, binary()} | {from, integer()} |
@@ -384,3 +390,28 @@ auth_modules(Server) ->
 
 export(Server) ->
     ejabberd_auth_internal:export(Server).
+
+-spec create_users(binary(), binary(), binary(),
+                   pos_integer(), gen_mod:db_type()) -> any().
+
+create_users(UserPattern, PassPattern, Server, Total, DBType) ->
+    lists:foreach(
+      fun(I) ->
+              LUser = jlib:nodeprep(
+                        iolist_to_binary([UserPattern, integer_to_list(I)])),
+              Pass = iolist_to_binary([PassPattern, integer_to_list(I)]),
+              LServer = jlib:nameprep(Server),
+              US = {LUser, LServer},
+              case DBType of
+                  mnesia ->
+                      mnesia:dirty_write(#passwd{us = US,
+                                                 password = Pass});
+                  riak ->
+                      ejabberd_riak:put(
+                        #passwd{us = US,
+                                password = Pass},
+                        [{'2i', [{<<"host">>, LServer}]}]);
+                  odbc ->
+                      erlang:error(odbc_not_supported)
+              end
+      end, lists:seq(1, Total)).
