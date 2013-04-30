@@ -500,13 +500,13 @@ fill_subscription_lists(JID, LServer, [IRaw | Is], F, T, P) ->
                  end,
       case I#roster.subscription of
             both ->
-                  fill_subscription_lists(LServer, Is, [J | F], [J | T], NewP);
+                  fill_subscription_lists(JID, LServer, Is, [J | F], [J | T], NewP);
             from ->
-                  fill_subscription_lists(LServer, Is, [J | F], T, NewP);
+                  fill_subscription_lists(JID, LServer, Is, [J | F], T, NewP);
             to ->
-                  fill_subscription_lists(LServer, Is, F, [J | T], NewP);
+                  fill_subscription_lists(JID, LServer, Is, F, [J | T], NewP);
             _ ->
-                  fill_subscription_lists(LServer, Is, F, T, NewP)
+                  fill_subscription_lists(JID, LServer, Is, F, T, NewP)
           end;
 fill_subscription_lists(_JID, _LServer, [], F, T, P) ->
       {F, T, P}.
