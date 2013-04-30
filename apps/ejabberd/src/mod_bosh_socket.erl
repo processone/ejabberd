@@ -421,6 +421,8 @@ send_or_store(Data, #state{handlers = Hs} = State) ->
     ?DEBUG("Forwarding to handler. Handlers: ~p~n", [Hs]),
     send_to_handler(Data, State).
 
+%% send_to_handler() assumes that Handlers is not empty!
+%% Be sure that's the case if calling it.
 send_to_handler(Data, State) ->
     send_to_handler(Data, State, []).
 
@@ -431,6 +433,9 @@ send_to_handler(Data, #state{handlers = Handlers} = S, Opts) ->
     timer:cancel(TRef),
     send_to_handler({Rid, Pid}, Data, S#state{handlers = HRest}, Opts).
 
+%% This is the most specific variant of send_to_handler()
+%% and the *only one* actually performing a send
+%% to the cowboy_loop_handler serving a HTTP request.
 send_to_handler({Rid, Pid}, Data, State, Opts) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
     Acked = maybe_ack(Wrapped, Rid, NS),
