@@ -69,7 +69,11 @@
                 %% Max pause period in seconds.
                 maxpause :: pos_integer() | undefined,
                 %% Are acknowledgements used?
-                server_acks :: boolean()}).
+                server_acks :: boolean(),
+                last_processed :: rid() | undefined,
+                %% Report scheduled for sending at the earliest
+                %% possible occasion.
+                report :: {rid(), timer:time()} | false}).
 
 %%--------------------------------------------------------------------
 %% API
@@ -347,27 +351,52 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
     NS = maybe_add_handler(Handler, Rid, S),
+    Ack = binary_to_integer(exml_query:attr(Body, <<"ack">>)),
     NNS = case {EventTag,
                 %% TODO: intercept retransmitted packets
                 %is_reply_cached(Rid),
                 is_valid_rid(Rid, OldRid),
+                is_valid_ack(Ack, S#state.last_processed, S#state.client_acks),
                 is_acceptable_rid(Rid, OldRid)}
     of
-        {streamstart, _, _} ->
+        {streamstart, _, _, _} ->
             process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
-        {_, true, _} ->
+        {_, true, true, _} ->
             process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
-        {_, false, true} ->
+        {_, true, false, _} ->
+            RS = schedule_report(Ack, NS),
+            PS = process_stream_event(EventTag, Body, SName,
+                                      RS#state{rid = Rid}),
+            maybe_send_report(PS);
+        {_, false, _, true} ->
             ?DEBUG("storing stream event for deferred processing: ~p~n",
                    [{EventTag, Body}]),
             NS#state{deferred = [Event | NS#state.deferred]};
-        {_, false, false} ->
+        {_, false, _, false} ->
             ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
             [Pid ! item_not_found
              || {_, _, Pid} <- lists:sort(NS#state.handlers)],
             throw({invalid_rid, NS#state{handlers = []}})
     end,
     return_surplus_handlers(SName, NNS).
+
+schedule_report(Ack, #state{} = S) ->
+    %% TODO: hardcoded report time, measure it!
+    HardcodedTime = 1000,
+    Report = {Ack+1, HardcodedTime},
+    case S#state.report of
+        false ->
+            S#state{report = Report};
+        OldReport when OldReport < Report ->
+            S#state{report = OldReport};
+        _ ->
+            S#state{report = Report}
+    end.
+
+maybe_send_report(#state{report = false} = S) ->
+    S;
+maybe_send_report(#state{} = S) ->
+    send_or_store([], S).
 
 process_stream_event(pause, Body, SName, State) ->
     Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
@@ -404,6 +433,13 @@ is_valid_rid(Rid, OldRid) when Rid == OldRid + 1 ->
 is_valid_rid(_, _) ->
     false.
 
+is_valid_ack(Ack, LastProcessed, true)
+        when LastProcessed =:= undefined;
+             Ack < LastProcessed ->
+    false;
+is_valid_ack(_, _, _) ->
+    true.
+
 is_acceptable_rid(Rid, OldRid)
         when Rid > OldRid + 1,
              Rid =< OldRid + ?CONCURRENT_REQUESTS ->
@@ -439,13 +475,14 @@ send_to_handler(Data, #state{handlers = Handlers} = S, Opts) ->
 send_to_handler({Rid, Pid}, Data, State, Opts) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
     Acked = maybe_ack(Wrapped, Rid, NS),
-    ?DEBUG("send to ~p: ~p~n", [Pid, Acked]),
-    Pid ! {bosh_reply, Acked},
+    {AckedReported, NNS} = maybe_report(Acked, NS),
+    ?DEBUG("send to ~p: ~p~n", [Pid, AckedReported]),
+    Pid ! {bosh_reply, AckedReported},
     case proplists:get_value(pause, Opts, false) of
         false ->
-            setup_inactivity_timer(NS);
+            setup_inactivity_timer(NNS);
         _ ->
-            NS
+            NNS
     end.
 
 maybe_ack(#xmlelement{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
@@ -454,6 +491,17 @@ maybe_ack(#xmlelement{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
                             ++ server_ack(S#state.server_acks, Rid)};
 maybe_ack(Body, _, _) ->
     Body.
+
+maybe_report(Body, #state{report = false} = S) ->
+    {Body, S};
+maybe_report(#xmlelement{attrs = Attrs} = Body, #state{report = Report} = S) ->
+    %% TODO: hardcoded value, use proper time
+    HardcodedTime = 1000,
+    %{ReportRid, ReportTimeDiff} = Report,
+    {ReportRid, HardcodedTime} = Report,
+    NewAttrs = [{<<"report">>, integer_to_binary(ReportRid)},
+                {<<"time">>, integer_to_binary(HardcodedTime)} | Attrs],
+    {Body#xmlelement{attrs = NewAttrs}, S#state{report = false}}.
 
 setup_inactivity_timer(#state{inactivity = infinity} = S) ->
     S;
