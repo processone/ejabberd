@@ -40,7 +40,7 @@
 	 plain_password_required/0]).
 
 start(_Host) ->
-    case epam:start() of
+    case application:start(epam) of
       {ok, _} -> ok;
       {error, {already_started, _}} -> ok;
       Err -> Err

@@ -27,7 +27,7 @@
 
 -define(MYLANG, ejabberd_config:get_mylang()).
 
--define(MSGS_DIR, <<"msgs">>).
+-define(MSGS_DIR, filename:join(["priv", "msgs"])).
 
 -define(CONFIG_PATH, <<"ejabberd.cfg">>).
 

@@ -1,0 +1,47 @@
+{sys, [
+       {lib_dirs, []},
+       {erts, [{mod_cond, derived}, {app_file, strip}]},
+       {app_file, strip},
+       {rel, "@PACKAGE_NAME@", "@PACKAGE_VERSION@",
+        [
+         kernel,
+         stdlib,
+         sasl,
+         ejabberd
+        ]},
+       {rel, "start_clean", "",
+        [
+         kernel,
+         stdlib
+        ]},
+       {boot_rel, "ejabberd"},
+       {profile, embedded},
+       {incl_cond, exclude},
+       {excl_archive_filters, [".*"]}, %% Do not archive built libs
+       {excl_sys_filters, ["^bin/.*", "^erts.*/bin/(dialyzer|typer)",
+                           "^erts.*/(doc|info|include|lib|man|src)"]},
+       {excl_app_filters, ["\.gitignore"]},
+       {app, sasl,   [{incl_cond, include}]},
+       {app, stdlib, [{incl_cond, include}]},
+       {app, kernel, [{incl_cond, include}]},
+       {app, ejabberd, [{incl_cond, include}, {lib_dir, ".."}]}
+      ]}.
+
+{target_dir, "ejabberd"}.
+
+{overlay, [
+           {mkdir, "log/sasl"},
+           {copy, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
+           {copy, "files/nodetool", "\{\{erts_vsn\}\}/bin/nodetool"},
+           {copy, "files/ejabberd", "bin/ejabberd"},
+           {copy, "files/ejabberd.cmd", "bin/ejabberd.cmd"},
+           {copy, "files/start_erl.cmd", "bin/start_erl.cmd"},
+           {copy, "files/install_upgrade.escript", "bin/install_upgrade.escript"},
+           {copy, "files/sys.config", "releases/\{\{rel_vsn\}\}/sys.config"},
+           {copy, "files/vm.args", "releases/\{\{rel_vsn\}\}/vm.args"}
+          ]}.
+
+%%% Local Variables:
+%%% mode: erlang
+%%% End:
+%%% vim: set filetype=erlang tabstop=8 foldmarker=%%%',%%%. foldmethod=marker:

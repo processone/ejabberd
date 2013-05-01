@@ -2,10 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(ejabberd, m4_esyscmd([grep -o -E "\{vsn,.\".*\"\}" src/ejabberd.app.src | cut -d \" -f 2 | tr -d '\n']), [ejabberd@process-one.net], [ejabberd])
+AC_PACKAGE_VERSION(3.0.0)
+AC_INIT(ejabberd, 3.0.0, [ejabberd@process-one.net], [ejabberd])
 
 # Checks for programs.
-AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
 AC_PROG_SED
@@ -22,43 +22,22 @@ AC_ERLANG_NEED_ERLC
 AC_ERLANG_SUBST_ROOT_DIR
 AC_ERLANG_SUBST_LIB_DIR
 
-#locating rebar
-AC_PATH_PROG([REBAR], [rebar], [])
+#locating escript
+AC_PATH_PROG([ESCRIPT], [escript], [])
+
 #locating make
 AC_CHECK_PROG([MAKE], [make], [make], [])
 
-if test "x$REBAR" = "x"; then
-   AC_MSG_ERROR(['rebar' was not found])
+if test "x$ESCRIPT" = "x"; then
+   AC_MSG_ERROR(['escript' was not found])
 fi
 
 if test "x$MAKE" = "x"; then
    AC_MSG_ERROR(['make' was not found])
 fi
 
-#locating iconv
-AM_ICONV
-#locating libexpat
-AM_WITH_EXPAT
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-
-# Check Erlang headers are installed
-#AC_CHECK_HEADER(erl_driver.h,,[AC_MSG_ERROR([cannot find Erlang header files])])
-
 # Change default prefix
 AC_PREFIX_DEFAULT(/)
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_HEADER_STDC
-
-#locating zlib
-AM_WITH_ZLIB
-
-AC_MOD_ENABLE(pam, no)
-#locating PAM
-AM_WITH_PAM
 
 AC_ARG_ENABLE(hipe,
 [AC_HELP_STRING([--enable-hipe], [compile natively with HiPE, not recommended (default: no)])],
@@ -124,25 +103,9 @@ esac],[nif=false])
 AC_SUBST(nif)
 
 AC_CONFIG_FILES([Makefile
-		 rebar.config])
-
-#openssl
-AM_WITH_OPENSSL
-# If ssl is kerberized it need krb5.h
-# On RedHat and OpenBSD, krb5.h is in an unsual place:
-KRB5_INCLUDE="`krb5-config --cflags 2>/dev/null`"
-if test -n "$KRB5_INCLUDE" ; then
-        CPPFLAGS="$CPPFLAGS $KRB5_INCLUDE"
-else
-        #         For RedHat                                  For BSD
-        for D in /usr/kerberos/include /usr/include/kerberos /usr/include/kerberosV
-        do
-                if test -d $D ; then
-                        CPPFLAGS="$CPPFLAGS -I$D"
-                fi
-        done
-fi
-AC_CHECK_HEADER(krb5.h,,)
+		 rebar.config
+		 src/ejabberd.app.src
+		 rel/reltool.config])
 
 ENABLEUSER=""
 AC_ARG_ENABLE(user,

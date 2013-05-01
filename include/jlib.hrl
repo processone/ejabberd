@@ -215,6 +215,8 @@
 
 -define(NS_BOB, <<"urn:xmpp:bob">>).
 
+-include("xml.hrl").
+
 -define(STANZA_ERROR(Code, Type, Condition),
 	#xmlel{name = <<"error">>,
 	       attrs = [{<<"code">>, Code}, {<<"type">>, Type}],
@@ -616,19 +618,6 @@
 -type(jid() :: #jid{}).
 
 -type(ljid() :: {binary(), binary(), binary()}).
-
--record(xmlel,
-{
-    name = <<"">> :: binary(),
-    attrs    = [] :: [attr()],
-    children = [] :: [xmlel() | cdata()]
-}).
-
--type(cdata() :: {xmlcdata, CData::binary()}).
-
--type(attr() :: {Name::binary(), Value::binary()}).
-
--type(xmlel() :: #xmlel{}).
 
 -record(iq, {id = <<"">>       :: binary(),
              type = get        :: get | set | result | error,

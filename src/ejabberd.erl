@@ -28,8 +28,9 @@
 -author('alexey@process-one.net').
 
 -export([start/0, stop/0,
-	 get_pid_file/0,
-	 get_so_path/0, get_bin_path/0]).
+	 get_pid_file/0]).
+
+-include("logger.hrl").
 
 start() ->
     %%ejabberd_cover:start(),
@@ -38,32 +39,6 @@ start() ->
 stop() ->
     application:stop(ejabberd).
     %%ejabberd_cover:stop().
-
-get_so_path() ->
-    case os:getenv("EJABBERD_SO_PATH") of
-	false ->
-	    case code:priv_dir(ejabberd) of
-		{error, _} ->
-		    ".";
-		Path ->
-		    filename:join([Path, "lib"])
-	    end;
-	Path ->
-	    Path
-    end.
-
-get_bin_path() ->
-    case os:getenv("EJABBERD_BIN_PATH") of
-	false ->
-	    case code:priv_dir(ejabberd) of
-		{error, _} ->
-		    ".";
-		Path ->
-		    filename:join([Path, "bin"])
-	    end;
-	Path ->
-	    Path
-    end.
 
 %% @spec () -> false | string()
 get_pid_file() ->

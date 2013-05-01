@@ -110,7 +110,7 @@ commands() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = get_loglevel, tags = [logs, server],
 			desc = "Get the current loglevel",
-			module = ejabberd_loglevel, function = get,
+			module = loglevel, function = get,
 			args = [],
                         result = {leveltuple, {tuple, [{levelnumber, integer},
                                                        {levelatom, atom},

@@ -1,7 +1,12 @@
-{erl_opts, [debug_info, {i, "include"}, {i, "deps/logger/include"}]}.
+{erl_opts, [debug_info,
+            {i, "include"},
+            {i, "deps/logger/include"},
+            {i, "deps/xml/include"}]}.
 
 %%{src_dirs, [asn1, src, mod_pubsub_ng]}.
 {src_dirs, [asn1, src]}.
+
+{sub_dirs, ["rel"]}.
 
 {deps, [{mysql, ".*", {git, "git://github.com/processone/mysql"}},
         {pgsql, ".*", {git, "git://github.com/processone/pgsql"}},
@@ -11,13 +16,13 @@
         {tls, ".*", {git, "git://github.com/processone/tls"}},
         {ezlib, ".*", {git, "git://github.com/processone/zlib"}},
         {stun, ".*", {git, "git://github.com/processone/stun"}},
+        {stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
+        {riakc, ".*", {git, "git://github.com/basho/riak-erlang-client"}},
+        {jiffy, ".*", {git, "git://github.com/davisp/jiffy"}},
+        {ibrowse, ".*", {git, "git://github.com/cmullaparthi/ibrowse"}},
+        {lhttpc, ".*", {git, "git://github.com/esl/lhttpc"}},
+        %%{xml, ".*", {git, "git://github.com/processone/xml"}},
         {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}]}.
-
-{port_env, [{"CFLAGS", "-g -O2 -Wall"}]}.
-
-{port_specs, [{"priv/lib/sha_drv.so", ["c_src/sha_drv.c"]},
-              {"priv/lib/expat_erl.so", ["c_src/expat_erl.c"]},
-              {"priv/lib/xml.so", ["c_src/xml.c"]}]}.
 
 %% Local Variables:
 %% mode: erlang

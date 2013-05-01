@@ -99,7 +99,7 @@ stop(Host) ->
 %%====================================================================
 
 init([Host, Opts]) ->
-    iconv:start(),
+    application:start(iconv),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"irc.@HOST@">>),
     case gen_mod:db_type(Opts) of

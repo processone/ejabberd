@@ -430,7 +430,6 @@ get_handle(Name) when is_binary(Name) ->
 %%%----------------------------------------------------------------------
 
 init([Hosts, Port, Rootdn, Passwd, Opts]) ->
-    catch ssl:start(),
     Encrypt = case gen_mod:get_opt(encrypt, Opts,
                                    fun(tls) -> tls;
                                       (starttls) -> starttls;

@@ -34,20 +34,16 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
-
 %%%
 %%% Application API
 %%%
 
 start(normal, _Args) ->
-    ejabberd_loglevel:set(4),
+    loglevel:set(4),
     write_pid_file(),
-    application:start(sasl),
+    start_apps(),
     randoms:start(),
     db_init(),
-    sha:start(),
-    stringprep_sup:start_link(),
-    xml:start(),
     start(),
     translate:start(),
     acl:start(),
@@ -109,19 +105,12 @@ init() ->
     %error_logger:logfile({open, ?LOG_PATH}),
     LogPath = get_log_path(),
     error_logger:add_report_handler(ejabberd_logger_h, LogPath),
-    erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
-    case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
-	ok -> ok;
-	{error, already_loaded} -> ok
-    end,
-    Port = open_port({spawn, "expat_erl"}, [binary]),
-    loop(Port).
+    loop().
 
-
-loop(Port) ->
+loop() ->
     receive
 	_ ->
-	    loop(Port)
+	    loop()
     end.
 
 db_init() ->
@@ -250,3 +239,11 @@ delete_pid_file() ->
 	PidFilename ->
 	    file:delete(PidFilename)
     end.
+
+start_apps() ->
+    application:start(sasl),
+    application:start(ssl),
+    application:start(tls),
+    application:start(xml),
+    application:start(stringprep),
+    application:start(ezlib).

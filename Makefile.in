@@ -1,4 +1,4 @@
-REBAR = @REBAR@
+REBAR = rebar
 INSTALL = @INSTALL@
 SED = @SED@
 ERL = @ERL@
@@ -94,15 +94,24 @@ edoc:
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
 
 clean:
-	rebar clean
+	$(REBAR) clean
 
 distclean: clean
 	rm -f config.status
 	rm -f config.log
 	rm -f rebar.config
-	rm -rf deps/*
+	rm -rf deps
 	rm -f Makefile
+	rm -rf rel/files
+	rm -rf rel/ejabberd
+	rm -f rel/reltool.config
+	rm -f src/ejabberd.app.src
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
+
+rel:
+	mkdir -p rel ; cd rel ; rm -rf files ejabberd ; \
+	$(REBAR) create-node nodeid=ejabberd || exit 1; \
+	$(REBAR) generate
 
 TAGS:
 	etags *.erl
@@ -112,4 +121,4 @@ Makefile: Makefile.in
 dialyzer: $(BEAMS)
 	@dialyzer -c .
 
-.PHONY: src doc edoc dialyzer Makefile TAGS clean distclean
+.PHONY: src doc edoc dialyzer Makefile TAGS clean distclean rel

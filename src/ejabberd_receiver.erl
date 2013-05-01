@@ -44,8 +44,8 @@
 -include("logger.hrl").
 
 -record(state,
-	{socket :: inet:socket() | tls:tls_socket() | ejabberd_zlib:zlib_socket(),
-         sock_mod = gen_tcp :: gen_tcp | tls | ejabberd_zlib,
+	{socket :: inet:socket() | tls:tls_socket() | ezlib:zlib_socket(),
+         sock_mod = gen_tcp :: gen_tcp | tls | ezlib,
          shaper_state = none :: shaper:shaper(),
          c2s_pid :: pid(),
 	 max_stanza_size = infinity :: non_neg_integer() | infinity,
@@ -99,7 +99,7 @@ starttls(Pid, TLSOpts, Data) ->
     do_call(Pid, {starttls, TLSOpts, Data}).
 
 -spec compress(pid(), iodata() | undefined) -> {error, any()} |
-                                               {ok, ejabberd_zlib:zlib_socket()}.
+                                               {ok, ezlib:zlib_socket()}.
 
 compress(Pid, Data) -> do_call(Pid, {compress, Data}).
 
@@ -171,7 +171,7 @@ handle_call({compress, Data}, _From,
 		   c2s_pid = C2SPid, socket = Socket, sock_mod = SockMod,
 		   max_stanza_size = MaxStanzaSize} =
 		State) ->
-    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(SockMod,
+    {ok, ZlibSocket} = ezlib:enable_zlib(SockMod,
 						 Socket),
     if Data /= undefined -> do_send(State, Data);
        true -> ok
@@ -180,9 +180,9 @@ handle_call({compress, Data}, _From,
     NewXMLStreamState = xml_stream:new(C2SPid,
 				       MaxStanzaSize),
     NewState = State#state{socket = ZlibSocket,
-			   sock_mod = ejabberd_zlib,
+			   sock_mod = ezlib,
 			   xml_stream_state = NewXMLStreamState},
-    case ejabberd_zlib:recv_data(ZlibSocket, <<"">>) of
+    case ezlib:recv_data(ZlibSocket, <<"">>) of
       {ok, ZlibData} ->
 	  {reply, {ok, ZlibSocket},
 	   process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
@@ -250,8 +250,8 @@ handle_info({Tag, _TCPSocket, Data},
 		 ?HIBERNATE_TIMEOUT};
 	    {error, _Reason} -> {stop, normal, State}
 	  end;
-      ejabberd_zlib ->
-	  case ejabberd_zlib:recv_data(Socket, Data) of
+      ezlib ->
+	  case ezlib:recv_data(Socket, Data) of
 	    {ok, ZlibData} ->
 		{noreply, process_data(ZlibData, State),
 		 ?HIBERNATE_TIMEOUT};
