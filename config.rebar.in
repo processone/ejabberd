@@ -14,3 +14,9 @@
 {stun, @stun@}.
 {riak, @riak@}.
 {json, @json@}.
+{iconv, @iconv@}.
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:

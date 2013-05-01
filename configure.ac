@@ -165,6 +165,15 @@ AC_ARG_ENABLE(json,
 esac],[json=false])
 AC_SUBST(json)
 
+AC_ARG_ENABLE(iconv,
+[AC_HELP_STRING([--enable-iconv], [enable iconv support (default: no)])],
+[case "${enableval}" in
+  yes) iconv=true ;;
+  no)  iconv=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-iconv) ;;
+esac],[iconv=false])
+AC_SUBST(iconv)
+
 AC_CONFIG_FILES([Makefile
 		 config.rebar
 		 src/ejabberd.app.src

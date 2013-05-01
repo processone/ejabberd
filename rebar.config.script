@@ -40,7 +40,6 @@ Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
         {ibrowse, ".*", {git, "git://github.com/cmullaparthi/ibrowse"}},
         {lhttpc, ".*", {git, "git://github.com/esl/lhttpc"}},
-        {iconv, ".*", {git, "git://github.com/processone/eiconv"}},
         %%{xml, ".*", {git, "git://github.com/processone/xml"}},
         {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}],
 CfgDeps = lists:flatmap(
@@ -58,6 +57,8 @@ CfgDeps = lists:flatmap(
                     [{riakc, ".*", {git, "git://github.com/basho/riak-erlang-client"}}];
                ({json, true}) ->
                     [{jiffy, ".*", {git, "git://github.com/davisp/jiffy"}}];
+               ({iconv, true}) ->
+                    [{iconv, ".*", {git, "git://github.com/processone/eiconv"}}];
                (_) ->
                     []
             end, Cfg),
