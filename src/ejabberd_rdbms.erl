@@ -34,13 +34,11 @@
 -include("logger.hrl").
 
 start() ->
-    case catch ejabberd_odbc_sup:module_info() of
-      {'EXIT', {undef, _}} ->
-	  ?INFO_MSG("ejabberd has not been compiled with "
-		    "relational database support. Skipping "
-		    "database startup.",
-		    []);
-      _ -> start_hosts()
+    case lists:any(fun needs_odbc/1, ?MYHOSTS) of
+        true ->
+            start_hosts();
+        false ->
+            ok
     end.
 
 start_hosts() ->

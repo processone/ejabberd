@@ -66,15 +66,6 @@ AC_ARG_ENABLE(flash_hack,
 esac],[flash_hack=false])
 AC_SUBST(flash_hack)
 
-AC_ARG_ENABLE(mssql,
-[AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
-[case "${enableval}" in
-  yes) db_type=mssql ;;
-  no)  db_type=generic ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
-esac],[db_type=generic])
-AC_SUBST(db_type)
-
 AC_ARG_ENABLE(transient_supervisors,
 [AC_HELP_STRING([--enable-transient_supervisors], [use Erlang supervision for transient process (default: yes)])],
 [case "${enableval}" in
@@ -102,8 +93,80 @@ AC_ARG_ENABLE(nif,
 esac],[nif=false])
 AC_SUBST(nif)
 
+AC_ARG_ENABLE(mssql,
+[AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
+[case "${enableval}" in
+  yes) db_type=mssql ;;
+  no)  db_type=generic ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
+esac],[db_type=generic])
+AC_SUBST(db_type)
+
+AC_ARG_ENABLE(mysql,
+[AC_HELP_STRING([--enable-mysql], [enable MySQL support (default: no)])],
+[case "${enableval}" in
+  yes) mysql=true ;;
+  no)  mysql=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mysql) ;;
+esac],[mysql=false])
+AC_SUBST(mysql)
+
+AC_ARG_ENABLE(pgsql,
+[AC_HELP_STRING([--enable-pgsql], [enable PostgreSQL support (default: no)])],
+[case "${enableval}" in
+  yes) pgsql=true ;;
+  no)  pgsql=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pgsql) ;;
+esac],[pgsql=false])
+AC_SUBST(pgsql)
+
+AC_ARG_ENABLE(pam,
+[AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
+[case "${enableval}" in
+  yes) pam=true ;;
+  no)  pam=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pam) ;;
+esac],[pam=false])
+AC_SUBST(pam)
+
+AC_ARG_ENABLE(zlib,
+[AC_HELP_STRING([--enable-zlib], [enable Stream Compression (XEP-0138) using zlib (default: yes)])],
+[case "${enableval}" in
+  yes) zlib=true ;;
+  no)  zlib=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
+esac],[zlib=true])
+AC_SUBST(zlib)
+
+AC_ARG_ENABLE(stun,
+[AC_HELP_STRING([--enable-stun], [enable STUN support (default: no)])],
+[case "${enableval}" in
+  yes) stun=true ;;
+  no)  stun=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-stun) ;;
+esac],[stun=false])
+AC_SUBST(stun)
+
+AC_ARG_ENABLE(riak,
+[AC_HELP_STRING([--enable-riak], [enable Riak support (default: no)])],
+[case "${enableval}" in
+  yes) riak=true ;;
+  no)  riak=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-riak) ;;
+esac],[riak=false])
+AC_SUBST(riak)
+
+AC_ARG_ENABLE(json,
+[AC_HELP_STRING([--enable-json], [enable JSON support for mod_bosh (default: no)])],
+[case "${enableval}" in
+  yes) json=true ;;
+  no)  json=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-json) ;;
+esac],[json=false])
+AC_SUBST(json)
+
 AC_CONFIG_FILES([Makefile
-		 rebar.config
+		 config.rebar
 		 src/ejabberd.app.src
 		 rel/reltool.config])
 
@@ -120,35 +183,5 @@ if test "$ENABLEUSER" != ""; then
   echo "allow this system user to start ejabberd: $ENABLEUSER"
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
-
-AC_CHECK_HEADER(openssl/md2.h, md2=true, md2=false)
-AC_SUBST(md2)
-
-AC_CANONICAL_SYSTEM
-#AC_DEFINE_UNQUOTED(CPU_VENDOR_OS, "$target")
-#AC_SUBST(target_os)
-
-
-case "$target_os" in
-    *darwin10*)
-	echo "Target OS is 'Darwin10'"
-	AC_LANG(Erlang)
-	AC_RUN_IFELSE(
-	    [AC_LANG_PROGRAM([],[dnl
-	     halt(case erlang:system_info(wordsize) of
-	     8 -> 0; 4 -> 1 end)])],
-	    [AC_MSG_NOTICE(found 64-bit Erlang)
-	     CBIT=-m64],
-	    [AC_MSG_NOTICE(found 32-bit Erlang)
-	     CBIT=-m32])
-	;;
-    *)        
-	echo "Target OS is '$target_os'"
-	CBIT=""
-	;;
-esac
-CFLAGS="$CFLAGS $CBIT"
-LD_SHARED="$LD_SHARED $CBIT"
-echo "CBIT is set to '$CBIT'"
 
 AC_OUTPUT

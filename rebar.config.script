@@ -1,0 +1,69 @@
+%%%-------------------------------------------------------------------
+%%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% @copyright (C) 2013, Evgeniy Khramtsov
+%%% @doc
+%%%
+%%% @end
+%%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%%-------------------------------------------------------------------
+Cfg = case file:consult("config.rebar") of
+          {ok, Terms} ->
+              Terms;
+          {error, _} ->
+              []
+      end,
+Macros = lists:flatmap(
+           fun({roster_gateway_workaround, true}) ->
+                   [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
+              ({flash_hack, true}) ->
+                   [{d, 'ENABLE_FLASH_HACK'}];
+              ({transient_supervisors, true}) ->
+                   [{d, 'NO_TRANSIENT_SUPERVISORS'}];
+              ({full_xml, true}) ->
+                   [{d, 'FULL_XML_SUPPORT'}];
+              ({nif, true}) ->
+                   [{d, 'NIF'}];
+              ({db_type, mssql}) ->
+                   [{d, 'mssql'}];
+              (_) ->
+                   []
+           end, Cfg),
+Head = [{erl_opts, [debug_info,
+                    {i, "include"},
+                    {i, "deps/logger/include"},
+                    {i, "deps/xml/include"}
+                    | Macros]},
+        {src_dirs, [asn1, src]},
+        {sub_dirs, ["rel"]}],
+Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
+        {tls, ".*", {git, "git://github.com/processone/tls"}},
+        {stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
+        {ibrowse, ".*", {git, "git://github.com/cmullaparthi/ibrowse"}},
+        {lhttpc, ".*", {git, "git://github.com/esl/lhttpc"}},
+        {iconv, ".*", {git, "git://github.com/processone/eiconv"}},
+        %%{xml, ".*", {git, "git://github.com/processone/xml"}},
+        {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}],
+CfgDeps = lists:flatmap(
+            fun({mysql, true}) ->
+                    [{mysql, ".*", {git, "git://github.com/processone/mysql"}}];
+               ({pgsql, true}) ->
+                    [{pgsql, ".*", {git, "git://github.com/processone/pgsql"}}];
+               ({pam, true}) ->
+                    [{epam, ".*", {git, "git://github.com/processone/epam"}}];
+               ({zlib, true}) ->
+                    [{ezlib, ".*", {git, "git://github.com/processone/zlib"}}];
+               ({stun, true}) ->
+                    [{stun, ".*", {git, "git://github.com/processone/stun"}}];
+               ({riak, true}) ->
+                    [{riakc, ".*", {git, "git://github.com/basho/riak-erlang-client"}}];
+               ({json, true}) ->
+                    [{jiffy, ".*", {git, "git://github.com/davisp/jiffy"}}];
+               (_) ->
+                    []
+            end, Cfg),
+Head ++ [{deps, Deps ++ CfgDeps}].
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:

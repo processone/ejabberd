@@ -1,0 +1,16 @@
+%% Macros
+{roster_gateway_workaround, @roster_gateway_workaround@}.
+{flash_hack, @flash_hack@}.
+{transient_supervisors, @transient_supervisors@}.
+{full_xml, @full_xml@}.
+{nif, @nif@}.
+{db_type, @db_type@}.
+
+%% Dependencies
+{mysql, @mysql@}.
+{pgsql, @pgsql@}.
+{pam, @pam@}.
+{zlib, @zlib@}.
+{stun, @stun@}.
+{riak, @riak@}.
+{json, @json@}.
