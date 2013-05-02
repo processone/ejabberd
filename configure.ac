@@ -72,7 +72,7 @@ AC_ARG_ENABLE(transient_supervisors,
   yes) transient_supervisors=true ;;
   no)  transient_supervisors=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-transient_supervisors) ;;
-esac],[transient_supervisors=true])
+esac],[transient_supervisors=false])
 AC_SUBST(transient_supervisors)
 
 AC_ARG_ENABLE(full_xml,

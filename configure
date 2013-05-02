@@ -2468,7 +2468,7 @@ if test "${enable_transient_supervisors+set}" = set; then :
   *) as_fn_error $? "bad value ${enableval} for --enable-transient_supervisors" "$LINENO" 5  ;;
 esac
 else
-  transient_supervisors=true
+  transient_supervisors=false
 fi
 
 
