@@ -14,6 +14,8 @@ Cfg = [%% Macros
        {nif, @nif@},
        {db_type, @db_type@},
        {debug, @debug@},
+       {hipe, @hipe@},
+       {pubsub_ng, @pubsub_ng@},
 
        %% Dependencies
        {mysql, @mysql@},
@@ -49,12 +51,23 @@ DebugInfo = case lists:keysearch(debug, 1, Cfg) of
                     []
             end,
 
-Head = [{erl_opts, [{i, "include"},
-                    {i, filename:join(["deps", "logger", "include"])},
-                    {i, filename:join(["deps", "xml", "include"])}]
-         ++ Macros ++ DebugInfo},
-        {src_dirs, [asn1, src]},
-        {sub_dirs, ["rel"]}],
+HiPE = case lists:keysearch(hipe, 1, Cfg) of
+           {value, {hipe, true}} ->
+               [native];
+           _ ->
+               []
+       end,
+
+Includes = [{i, "include"},
+            {i, filename:join(["deps", "logger", "include"])},
+            {i, filename:join(["deps", "xml", "include"])}],
+
+SrcDirs = lists:foldl(
+            fun({pubsub_ng, true}, Acc) ->
+                    [mod_pubsub_ng|Acc];
+               (_, Acc) ->
+                    Acc
+            end, [], Cfg),
 
 Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {tls, ".*", {git, "git://github.com/processone/tls"}},
@@ -85,7 +98,10 @@ CfgDeps = lists:flatmap(
                     []
             end, Cfg),
 
-Head ++ [{deps, Deps ++ CfgDeps}].
+[{erl_opts, Includes ++ Macros ++ HiPE ++ DebugInfo},
+ {src_dirs, [asn1, src | SrcDirs]},
+ {sub_dirs, ["rel"]},
+ {deps, Deps ++ CfgDeps}].
 
 %% Local Variables:
 %% mode: erlang

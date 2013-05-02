@@ -561,6 +561,7 @@ ac_default_prefix=/
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 INSTALLUSER
+pubsub_ng
 debug
 iconv
 json
@@ -646,6 +647,7 @@ enable_riak
 enable_json
 enable_iconv
 enable_debug
+enable_pubsub_ng
 enable_user
 '
       ac_precious_vars='build_alias
@@ -1290,6 +1292,7 @@ Optional Features:
   --enable-json           enable JSON support for mod_bosh (default: no)
   --enable-iconv          enable iconv support (default: no)
   --enable-debug          enable debug information (default: yes)
+  --enable-pubsub_ng      enable PubSub NG (default: no)
   --enable-user[[[=USER]]]
                           allow this system user to start ejabberd (default:
                           no)
@@ -2625,6 +2628,19 @@ if test "${enable_debug+set}" = set; then :
 esac
 else
   debug=true
+fi
+
+
+
+# Check whether --enable-pubsub_ng was given.
+if test "${enable_pubsub_ng+set}" = set; then :
+  enableval=$enable_pubsub_ng; case "${enableval}" in
+  yes) pubsub_ng=true ;;
+  no)  pubsub_ng=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pubsub_ng" "$LINENO" 5  ;;
+esac
+else
+  pubsub_ng=false
 fi
 
 

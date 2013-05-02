@@ -183,6 +183,15 @@ AC_ARG_ENABLE(debug,
 esac],[debug=true])
 AC_SUBST(debug)
 
+AC_ARG_ENABLE(pubsub_ng,
+[AC_HELP_STRING([--enable-pubsub_ng], [enable PubSub NG (default: no)])],
+[case "${enableval}" in
+  yes) pubsub_ng=true ;;
+  no)  pubsub_ng=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pubsub_ng) ;;
+esac],[pubsub_ng=false])
+AC_SUBST(pubsub_ng)
+
 AC_CONFIG_FILES([Makefile
 		 rebar.config.script
 		 src/ejabberd.app.src
