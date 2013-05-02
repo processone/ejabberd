@@ -561,6 +561,7 @@ ac_default_prefix=/
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 INSTALLUSER
+debug
 iconv
 json
 riak
@@ -644,6 +645,7 @@ enable_stun
 enable_riak
 enable_json
 enable_iconv
+enable_debug
 enable_user
 '
       ac_precious_vars='build_alias
@@ -1287,6 +1289,7 @@ Optional Features:
   --enable-riak           enable Riak support (default: no)
   --enable-json           enable JSON support for mod_bosh (default: no)
   --enable-iconv          enable iconv support (default: no)
+  --enable-debug          enable debug information (default: yes)
   --enable-user[[[=USER]]]
                           allow this system user to start ejabberd (default:
                           no)
@@ -2613,7 +2616,20 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile config.rebar src/ejabberd.app.src rel/reltool.config"
+# Check whether --enable-debug was given.
+if test "${enable_debug+set}" = set; then :
+  enableval=$enable_debug; case "${enableval}" in
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-debug" "$LINENO" 5  ;;
+esac
+else
+  debug=true
+fi
+
+
+
+ac_config_files="$ac_config_files Makefile rebar.config.script src/ejabberd.app.src rel/reltool.config"
 
 
 ENABLEUSER=""
@@ -3339,7 +3355,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "config.rebar") CONFIG_FILES="$CONFIG_FILES config.rebar" ;;
+    "rebar.config.script") CONFIG_FILES="$CONFIG_FILES rebar.config.script" ;;
     "src/ejabberd.app.src") CONFIG_FILES="$CONFIG_FILES src/ejabberd.app.src" ;;
     "rel/reltool.config") CONFIG_FILES="$CONFIG_FILES rel/reltool.config" ;;
 

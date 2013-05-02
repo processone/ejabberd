@@ -174,8 +174,17 @@ AC_ARG_ENABLE(iconv,
 esac],[iconv=false])
 AC_SUBST(iconv)
 
+AC_ARG_ENABLE(debug,
+[AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],
+[case "${enableval}" in
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
+esac],[debug=true])
+AC_SUBST(debug)
+
 AC_CONFIG_FILES([Makefile
-		 config.rebar
+		 rebar.config.script
 		 src/ejabberd.app.src
 		 rel/reltool.config])
 

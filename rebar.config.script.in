@@ -6,12 +6,25 @@
 %%% @end
 %%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
-Cfg = case file:consult("config.rebar") of
-          {ok, Terms} ->
-              Terms;
-          {error, _} ->
-              []
-      end,
+Cfg = [%% Macros
+       {roster_gateway_workaround, @roster_gateway_workaround@},
+       {flash_hack, @flash_hack@},
+       {transient_supervisors, @transient_supervisors@},
+       {full_xml, @full_xml@},
+       {nif, @nif@},
+       {db_type, @db_type@},
+       {debug, @debug@},
+
+       %% Dependencies
+       {mysql, @mysql@},
+       {pgsql, @pgsql@},
+       {pam, @pam@},
+       {zlib, @zlib@},
+       {stun, @stun@},
+       {riak, @riak@},
+       {json, @json@},
+       {iconv, @iconv@}],
+
 Macros = lists:flatmap(
            fun({roster_gateway_workaround, true}) ->
                    [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
@@ -28,13 +41,21 @@ Macros = lists:flatmap(
               (_) ->
                    []
            end, Cfg),
-Head = [{erl_opts, [debug_info,
-                    {i, "include"},
-                    {i, "deps/logger/include"},
-                    {i, "deps/xml/include"}
-                    | Macros]},
+
+DebugInfo = case lists:keysearch(debug, 1, Cfg) of
+                {value, {debug, true}} ->
+                    [debug_info];
+                _ ->
+                    []
+            end,
+
+Head = [{erl_opts, [{i, "include"},
+                    {i, filename:join(["deps", "logger", "include"])},
+                    {i, filename:join(["deps", "xml", "include"])}]
+         ++ Macros ++ DebugInfo},
         {src_dirs, [asn1, src]},
         {sub_dirs, ["rel"]}],
+
 Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {tls, ".*", {git, "git://github.com/processone/tls"}},
         {stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
@@ -42,6 +63,7 @@ Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {lhttpc, ".*", {git, "git://github.com/esl/lhttpc"}},
         %%{xml, ".*", {git, "git://github.com/processone/xml"}},
         {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}],
+
 CfgDeps = lists:flatmap(
             fun({mysql, true}) ->
                     [{mysql, ".*", {git, "git://github.com/processone/mysql"}}];
@@ -62,6 +84,7 @@ CfgDeps = lists:flatmap(
                (_) ->
                     []
             end, Cfg),
+
 Head ++ [{deps, Deps ++ CfgDeps}].
 
 %% Local Variables:
