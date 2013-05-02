@@ -242,6 +242,8 @@ delete_pid_file() ->
 
 start_apps() ->
     application:start(sasl),
+    application:start(crypto),
+    application:start(public_key),
     application:start(ssl),
     application:start(tls),
     application:start(xml),
