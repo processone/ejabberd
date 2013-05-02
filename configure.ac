@@ -25,6 +25,9 @@ AC_ERLANG_SUBST_LIB_DIR
 #locating escript
 AC_PATH_PROG([ESCRIPT], [escript], [])
 
+#locating rebar
+AC_PATH_PROG([REBAR], [rebar], [./rebar])
+
 #locating make
 AC_CHECK_PROG([MAKE], [make], [make], [])
 
