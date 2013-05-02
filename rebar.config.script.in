@@ -98,10 +98,12 @@ CfgDeps = lists:flatmap(
                     []
             end, Cfg),
 
-[{erl_opts, Includes ++ Macros ++ HiPE ++ DebugInfo},
- {src_dirs, [asn1, src | SrcDirs]},
- {sub_dirs, ["rel"]},
- {deps, Deps ++ CfgDeps}].
+Config = [{erl_opts, Includes ++ Macros ++ HiPE ++ DebugInfo},
+          {src_dirs, [asn1, src | SrcDirs]},
+          {sub_dirs, ["rel"]},
+          {deps, Deps ++ CfgDeps}],
+io:format("dynamic configuration:~n  ~p~n", [Config]),
+Config.
 
 %% Local Variables:
 %% mode: erlang
