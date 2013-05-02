@@ -159,7 +159,7 @@ socket_type() ->
 
 %% Return Username, Resource and presence information
 get_presence(FsmRef) ->
-    ?GEN_FSM:sync_send_all_state_event(FsmRef, {get_presence}, 1000).
+    ?GEN_FSM:sync_send_all_state_event(FsmRef, get_presence, 1000).
 
 get_aux_field(Key, #state{aux_fields = Opts}) ->
     case lists:keysearch(Key, 1, Opts) of
@@ -1116,7 +1116,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
-handle_sync_event({get_presence}, _From, StateName, StateData) ->
+handle_sync_event(get_presence, _From, StateName, StateData) ->
     User = StateData#state.user,
     PresLast = StateData#state.pres_last,
 
@@ -1741,7 +1741,7 @@ presence_update(From, Packet, StateData) ->
 				  get_priority_from_presence(OldPresence)
 			  end,
 	    NewPriority = get_priority_from_presence(Packet),
-	    Timestamp = calendar:now_to_universal_time(now()),
+	    Timestamp = calendar:now_to_universal_time(os:timestamp()),
 	    update_priority(NewPriority, Packet, StateData),
 	    FromUnavail = (StateData#state.pres_last == undefined) or
 		StateData#state.pres_invis,
@@ -2013,11 +2013,12 @@ update_priority(Priority, Packet, StateData) ->
 			     Info).
 
 get_priority_from_presence(PresencePacket) ->
+    lager:info("PresencePacket ~p", [PresencePacket]),
     case xml:get_subtag(PresencePacket, <<"priority">>) of
 	false ->
 	    0;
 	SubEl ->
-	    case catch list_to_integer(xml:get_tag_cdata(SubEl)) of
+        case catch list_to_integer(binary_to_list(xml:get_tag_cdata(SubEl))) of
 		P when is_integer(P) ->
 		    P;
 		_ ->

@@ -984,17 +984,18 @@ build_contact_jid_td(RosterJID) ->
     %% Convert {U, S, R} into {jid, U, S, R, U, S, R}:
     ContactJID = jlib:make_jid(RosterJID),
     JIDURI = case {ContactJID#jid.luser, ContactJID#jid.lserver} of
-		 {"", _} -> "";
+        {<<>>, _} -> <<>>;
 		 {CUser, CServer} ->
 		     case lists:member(CServer, ?MYHOSTS) of
-			 false -> "";
-			 true -> "/admin/server/" ++ CServer ++ "/user/" ++ CUser ++ "/"
+             false -> <<>>;
+             true  -> <<"/admin/server/", CServer/binary,
+                        "/user/", CUser/binary, "/">>
 		     end
 	     end,
     case JIDURI of
-	[] ->
+    <<>> ->
 	    ?XAC("td", [{"class", "valign"}], jlib:jid_to_binary(RosterJID));
-	URI when is_list(URI) ->
+	URI when is_binary(URI) ->
 	    ?XAE("td", [{"class", "valign"}], [?AC(JIDURI, jlib:jid_to_binary(RosterJID))])
     end.
 

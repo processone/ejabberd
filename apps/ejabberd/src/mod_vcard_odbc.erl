@@ -574,13 +574,18 @@ filter_fields([{SVar, [Val]} | Ds], RestrictionSQL, LServer)
 filter_fields([_ | Ds], RestrictionSQL, LServer) ->
     filter_fields(Ds,RestrictionSQL , LServer).
 
+-spec make_val(RestrictionSQL, Field, Val) -> Result when
+    RestrictionSQL :: iolist(),
+    Field :: string(),
+    Val :: binary(),
+    Result :: iolist().
 make_val(RestrictionSQL, Field, Val) ->
     Condition =
 	case binary:last(Val) of
-	    <<"*">> ->
-		Val1 = lists:sublist(Val, length(Val) - 1),
-		SVal = [ejabberd_odbc:escape_like(Val1), "%"],
-		[Field, " LIKE '", SVal, "'"];
+	    $* ->
+		Val1 = binary:part(Val, byte_size(Val), -1),
+		SVal = ejabberd_odbc:escape_like(Val1),
+		[Field, " LIKE '", SVal, "%'"];
 	    _ ->
 		SVal = ejabberd_odbc:escape(Val),
 		[Field, " = '", SVal, "'"]
