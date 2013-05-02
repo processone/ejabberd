@@ -93,6 +93,122 @@ edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
 
+install: all
+	#
+	# Configuration files
+	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
+	[ -f $(ETCDIR)/ejabberd.cfg ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
+	$(SED) -e "s*@rootdir@*@prefix@*" \
+		-e "s*@installuser@*@INSTALLUSER@*" \
+		-e "s*@LIBDIR@*@libdir@*" \
+		-e "s*@SYSCONFDIR@*@sysconfdir@*" \
+		-e "s*@LOCALSTATEDIR@*@localstatedir@*" \
+		-e "s*@DOCDIR@*@docdir@*" \
+		-e "s*@erl@*@ERL@*" ejabberdctl.template \
+		> ejabberdctl.example
+	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
+	$(INSTALL) -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
+	#
+	# Administration script
+	[ -d $(SBINDIR) ] || $(INSTALL) -d -m 755 $(SBINDIR)
+	$(INSTALL) -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
+	#
+	# Init script
+	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*" \
+		-e "s*@installuser@*$(INIT_USER)*" ejabberd.init.template \
+		> ejabberd.init
+	chmod 755 ejabberd.init
+	#
+	# Binary Erlang files
+	$(INSTALL) -d $(BEAMDIR)
+	$(INSTALL) -m 644 *.app $(BEAMDIR)
+	$(INSTALL) -m 644 *.beam $(BEAMDIR)
+	rm -f $(BEAMDIR)/configure.beam
+	#
+	# ejabberd header files
+	$(INSTALL) -d $(INCLUDEDIR)
+	$(INSTALL) -m 644 *.hrl $(INCLUDEDIR)
+	$(INSTALL) -d $(INCLUDEDIR)/eldap/
+	$(INSTALL) -m 644 eldap/*.hrl $(INCLUDEDIR)/eldap/
+	$(INSTALL) -d $(INCLUDEDIR)/mod_muc/
+	$(INSTALL) -m 644 mod_muc/*.hrl $(INCLUDEDIR)/mod_muc/
+	$(INSTALL) -d $(INCLUDEDIR)/mod_proxy65/
+	$(INSTALL) -m 644 mod_proxy65/*.hrl $(INCLUDEDIR)/mod_proxy65/
+	$(INSTALL) -d $(INCLUDEDIR)/mod_pubsub/
+	$(INSTALL) -m 644 mod_pubsub/*.hrl $(INCLUDEDIR)/mod_pubsub/
+	$(INSTALL) -d $(INCLUDEDIR)/mod_pubsub_ng/
+	$(INSTALL) -m 644 mod_pubsub_ng/*.hrl $(INCLUDEDIR)/mod_pubsub_ng/
+	$(INSTALL) -d $(INCLUDEDIR)/web/
+	$(INSTALL) -m 644 web/*.hrl $(INCLUDEDIR)/web/
+	#
+	# Binary C programs
+	$(INSTALL) -d $(PBINDIR)
+	$(INSTALL) -m 750 $(O_USER) ../tools/captcha.sh $(PBINDIR)
+	#
+	# Binary system libraries
+	$(INSTALL) -d $(SODIR)
+	$(INSTALL) -m 644 *.so $(SODIR)
+	#
+	# Translated strings
+	$(INSTALL) -d $(MSGSDIR)
+	$(INSTALL) -m 644 msgs/*.msg $(MSGSDIR)
+	#
+	# Spool directory
+	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(SPOOLDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(SPOOLDIR)
+	[ ! -f $(COOKIEFILE) ] || { $(CHOWN_COMMAND) @INSTALLUSER@ $(COOKIEFILE) >$(CHOWN_OUTPUT) ; chmod 400 $(COOKIEFILE) ; }
+	#
+	# ejabberdctl lock directory
+	$(INSTALL) -d -m 750 $(O_USER) $(CTLLOCKDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(CTLLOCKDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(CTLLOCKDIR)
+	#
+	# Log directory
+	$(INSTALL) -d -m 750 $(O_USER) $(LOGDIR)
+	$(CHOWN_COMMAND) -R @INSTALLUSER@ $(LOGDIR) >$(CHOWN_OUTPUT)
+	chmod -R 750 $(LOGDIR)
+	#
+	# Documentation
+	$(INSTALL) -d $(DOCDIR)
+	$(INSTALL) -m 644 ../doc/dev.html $(DOCDIR)
+	$(INSTALL) -m 644 ../doc/guide.html $(DOCDIR)
+	$(INSTALL) -m 644 ../doc/*.png $(DOCDIR)
+	$(INSTALL) -m 644 ../doc/*.txt $(DOCDIR)
+	[ -f ../doc/guide.pdf ] \
+		&& $(INSTALL) -m 644 ../doc/guide.pdf $(DOCDIR) \
+		|| echo "No ../doc/guide.pdf was built"
+	$(INSTALL) -m 644 ../COPYING $(DOCDIR)
+
+uninstall: uninstall-binary
+
+uninstall-binary:
+	rm -f  $(SBINDIR)/ejabberdctl
+	rm -fr $(DOCDIR)
+	rm -f  $(BEAMDIR)/*.beam
+	rm -f  $(BEAMDIR)/*.app
+	rm -fr $(BEAMDIR)
+	rm -f  $(INCLUDEDIR)/*.hrl
+	rm -fr $(INCLUDEDIR)
+	rm -fr $(PBINDIR)
+	rm -f  $(SODIR)/*.so
+	rm -fr $(SODIR)
+	rm -f  $(MSGSDIR)/*.msgs
+	rm -fr $(MSGSDIR)
+	rm -fr $(PRIVDIR)
+	rm -fr $(EJABBERDDIR)
+
+uninstall-all: uninstall-binary
+	rm -rf $(ETCDIR)
+	rm -rf $(EJABBERDDIR)
+	rm -rf $(SPOOLDIR)
+	rm -rf $(CTLLOCKDIR)
+	rm -rf $(LOGDIR)
+
 clean:
 	$(REBAR) clean
 
