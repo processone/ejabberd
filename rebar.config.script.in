@@ -73,7 +73,7 @@ SrcDirs = lists:foldl(
 Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {tls, ".*", {git, "git://github.com/processone/tls"}},
         {stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
-        %%{xml, ".*", {git, "git://github.com/processone/xml"}},
+        {xml, ".*", {git, "git://github.com/processone/xml"}},
         {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}],
 
 CfgDeps = lists:flatmap(
