@@ -1278,7 +1278,7 @@ Optional Features:
   --enable-flash-hack     support Adobe Flash client XML (default: no)
   --enable-transient_supervisors
                           use Erlang supervision for transient process
-                          (default: yes)
+                          (default: no)
   --enable-full-xml       use XML features in XMPP stream (ex: CDATA)
                           (default: no, requires XML compliant clients)
   --enable-nif            replace some functions with C equivalents. Requires

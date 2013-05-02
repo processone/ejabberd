@@ -70,7 +70,7 @@ esac],[flash_hack=false])
 AC_SUBST(flash_hack)
 
 AC_ARG_ENABLE(transient_supervisors,
-[AC_HELP_STRING([--enable-transient_supervisors], [use Erlang supervision for transient process (default: yes)])],
+[AC_HELP_STRING([--enable-transient_supervisors], [use Erlang supervision for transient process (default: no)])],
 [case "${enableval}" in
   yes) transient_supervisors=true ;;
   no)  transient_supervisors=false ;;
