@@ -561,6 +561,7 @@ ac_default_prefix=/
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 INSTALLUSER
+http
 pubsub_ng
 debug
 iconv
@@ -649,6 +650,7 @@ enable_json
 enable_iconv
 enable_debug
 enable_pubsub_ng
+enable_http
 enable_user
 '
       ac_precious_vars='build_alias
@@ -1294,6 +1296,8 @@ Optional Features:
   --enable-iconv          enable iconv support (default: no)
   --enable-debug          enable debug information (default: yes)
   --enable-pubsub_ng      enable PubSub NG (default: no)
+  --enable-http           build external HTTP libraries ('ibrowse' and
+                          'lhttpc', default: no)
   --enable-user[[[=USER]]]
                           allow this system user to start ejabberd (default:
                           no)
@@ -2685,6 +2689,19 @@ if test "${enable_pubsub_ng+set}" = set; then :
 esac
 else
   pubsub_ng=false
+fi
+
+
+
+# Check whether --enable-http was given.
+if test "${enable_http+set}" = set; then :
+  enableval=$enable_http; case "${enableval}" in
+  yes) http=true ;;
+  no)  http=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-http" "$LINENO" 5  ;;
+esac
+else
+  http=false
 fi
 
 

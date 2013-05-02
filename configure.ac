@@ -195,6 +195,15 @@ AC_ARG_ENABLE(pubsub_ng,
 esac],[pubsub_ng=false])
 AC_SUBST(pubsub_ng)
 
+AC_ARG_ENABLE(http,
+[AC_HELP_STRING([--enable-http], [build external HTTP libraries ('ibrowse' and 'lhttpc', default: no)])],
+[case "${enableval}" in
+  yes) http=true ;;
+  no)  http=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-http) ;;
+esac],[http=false])
+AC_SUBST(http)
+
 AC_CONFIG_FILES([Makefile
 		 rebar.config.script
 		 src/ejabberd.app.src
