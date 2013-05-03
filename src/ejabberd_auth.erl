@@ -75,7 +75,7 @@
 -callback get_vh_registered_users_number(binary()) -> number().
 -callback get_vh_registered_users_number(binary(), opts()) -> number().
 -callback get_password(binary(), binary()) -> false | binary().
--callback get_password_s(binary(), binary()) -> binary().    
+-callback get_password_s(binary(), binary()) -> binary().
 
 start() ->
     lists:foreach(fun (Host) ->
@@ -111,7 +111,7 @@ check_password(User, Server, Password) ->
 
 -spec check_password(binary(), binary(), binary(), binary(),
                      fun((binary()) -> binary())) -> boolean().
-                                 
+
 check_password(User, Server, Password, Digest,
 	       DigestGen) ->
     case check_password_with_authmodule(User, Server,
@@ -166,20 +166,34 @@ try_register(User, Server, Password) ->
     case is_user_exists(User, Server) of
       true -> {atomic, exists};
       false ->
-	  case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
+	  LServer = jlib:nameprep(Server),
+	  case lists:member(LServer, ?MYHOSTS) of
 	    true ->
-		Res = lists:foldl(fun (_M, {atomic, ok} = Res) -> Res;
-				      (M, _) ->
-					  M:try_register(User, Server, Password)
-				  end,
-				  {error, not_allowed}, auth_modules(Server)),
-		case Res of
-		  {atomic, ok} ->
-		      ejabberd_hooks:run(register_user, Server,
-					 [User, Server]),
-		      {atomic, ok};
-		  _ -> Res
-		end;
+                MaxUsers = ejabberd_config:get_local_option({max_users, LServer},
+                                                            fun(X) when is_integer(X) -> X end, no_limit),
+                RegAllowed = case MaxUsers of
+                                 no_limit ->
+                                     true;
+                                 Num ->
+                                     get_vh_registered_users_number(LServer) < Num
+                             end,
+                case RegAllowed of
+                    true ->
+                        Res = lists:foldl(fun (_M, {atomic, ok} = Res) -> Res;
+                                              (M, _) ->
+                                                  M:try_register(User, Server, Password)
+                                          end,
+                                          {error, not_allowed}, auth_modules(Server)),
+                        case Res of
+                            {atomic, ok} ->
+                                ejabberd_hooks:run(register_user, Server,
+                                                   [User, Server]),
+                                {atomic, ok};
+                            _ -> Res
+                        end;
+                    _ ->
+                        {error, too_many_users}
+                end;
 	    false -> {error, not_allowed}
 	  end
     end.
