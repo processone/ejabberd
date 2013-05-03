@@ -199,17 +199,17 @@ get_subscription(LFrom, StateData) ->
 broadcast(FsmRef, Type, From, Packet) ->
     FsmRef ! {broadcast, Type, From, Packet}.
 
-%% Used by mod_ack and mod_ping.  
+%% Used by mod_ack and mod_ping.
 %% If the client is not oor capable, we must stop the session,
 %% and be sure to not return until the c2s process has really stopped. This
-%% is to avoid race conditions when resending messages in mod_ack (EJABS-1677). 
+%% is to avoid race conditions when resending messages in mod_ack (EJABS-1677).
 %% In the other side, if the client is oor capable, then this just
 %% switch reception to false, and returns inmediately.
 stop_or_detach(FsmRef) ->
     case ?GEN_FSM:sync_send_event(FsmRef, stop_or_detach) of
 	stopped ->
 		MRef = erlang:monitor(process, FsmRef),
-		receive 
+		receive
 		   {'DOWN', MRef, process, FsmRef, _Reason}->
 			ok
 		after 5 ->
@@ -2402,8 +2402,9 @@ presence_broadcast_first(From, StateData, Packet) ->
     JIDs2Probe = format_and_check_privacy(From, StateData, Packet, JIDsProbe, out),
     Server = StateData#state.server,
     send_multiple(From, Server, JIDs2Probe, PacketProbe),
-    As = StateData#state.pres_f, %%Reuse existing structure, don't create a new one
-    JIDs = ?SETS:to_list(StateData#state.pres_f),
+    As = ?SETS:foldl(fun ?SETS:add_element/2, StateData#state.pres_f,
+                     StateData#state.pres_a),
+    JIDs = ?SETS:to_list(As),
     JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs, out),
     Server = StateData#state.server,
     send_multiple(From, Server, JIDs2, Packet),
