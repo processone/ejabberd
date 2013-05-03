@@ -444,7 +444,7 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
               sub_el_to_els(SubEl)}
     end.
 
-%% @doc Convert `#iq.sub_el' back to `#xmlelement.children'.
+%% @doc Convert `#iq.sub_el' back to `#xmlel.children'.
 %% @end
 %% for requests.
 sub_el_to_els({xmlel,_,_,_}=E) -> [E];

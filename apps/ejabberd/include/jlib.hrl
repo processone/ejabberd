@@ -98,9 +98,9 @@
 -define(STANZA_ERROR(Code, Type, Condition),
     begin
         lager:debug("New error stanza #~s.", [Code]),
-        {xmlelem,<<"error">>,
+        {xmlel,<<"error">>,
          [{<<"code">>, Code}, {<<"type">>, Type}],
-         [{xmlelement, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}
+         [{xmlel, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}
     end).
 
 -define(ERR_BAD_REQUEST,

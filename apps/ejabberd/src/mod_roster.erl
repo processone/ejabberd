@@ -149,7 +149,7 @@ roster_versioning_enabled(Host) ->
 roster_version_on_db(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, store_current_id, false).
 
-%% Returns a list that may contain an xmlelement with the XEP-237 feature if it's enabled.
+%% Returns a list that may contain an xmlel with the XEP-237 feature if it's enabled.
 get_versioning_feature(Acc, Host) ->
     case roster_versioning_enabled(Host) of
 	true ->

@@ -57,7 +57,7 @@
 			  {"cols", Cols}],
 	     Value)).
 
-%% Build an xmlelement for result
+%% Build an xmlel for result
 -define(XRES(Text), ?XAC("p", [{"class", "result"}], Text)).
 -define(XREST(Text), ?XRES(?T(Text))).
 
