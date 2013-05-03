@@ -188,13 +188,12 @@ process_large_heap(Pid, Info) ->
 		     "(~w) The process ~w is consuming too much memory:~n~p~n"
 		     "~s",
 		     [node(), Pid, Info, DetailedInfo]),
-	    From = jlib:make_jid("", Host, "watchdog"),
+        From = jlib:make_jid(<<"">>, Host, <<"watchdog">>),
 	    lists:foreach(
 	      fun(S) ->
 		      case jlib:binary_to_jid(S) of
 			  error -> ok;
-			  JID ->
-			      send_message(From, JID, Body)
+			  JID -> send_message(From, JID, Body)
 		      end
 	      end, JIDs);
 	_ ->

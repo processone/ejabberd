@@ -125,8 +125,7 @@ loop(AccessMaxOfflineMsgs) ->
 
 %% Function copied from ejabberd_sm.erl:
 get_max_user_messages(AccessRule, LUser, Host) ->
-    case acl:match_rule(
-	   Host, AccessRule, jlib:make_jid(LUser, Host, "")) of
+    case acl:match_rule(Host, AccessRule, jlib:make_jid(LUser, Host, <<>>)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
@@ -310,7 +309,7 @@ resend_offline_messages(User, Server) ->
 			       calendar:now_to_universal_time(
 				 R#offline_msg.timestamp),
 			       utc,
-			       jlib:make_jid("", Server, ""),
+                   jlib:make_jid(<<>>, Server, <<>>),
 			       "Offline Storage"),
 			     %% TODO: Delete the next three lines once XEP-0091 is Obsolete
 			     jlib:timestamp_to_xml(
