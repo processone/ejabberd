@@ -2013,7 +2013,6 @@ update_priority(Priority, Packet, StateData) ->
 			     Info).
 
 get_priority_from_presence(PresencePacket) ->
-    lager:info("PresencePacket ~p", [PresencePacket]),
     case xml:get_subtag(PresencePacket, <<"priority">>) of
 	false ->
 	    0;
