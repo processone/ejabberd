@@ -191,6 +191,11 @@ remove_attr(Attr, {xmlel, Name, Attrs, Els}) ->
     {xmlel, Name, NewAttrs, Els}.
 
 
+-spec make_jid(User, Server, Resource) -> JID when
+    User     :: binary(),
+    Server   :: binary(),
+    Resource :: binary(),
+    JID      :: #jid{}  | error.
 make_jid(User, Server, Resource) ->
     case nodeprep(User) of
         error -> error;
@@ -211,11 +216,14 @@ make_jid(User, Server, Resource) ->
             end
     end.
 
+-spec make_jid({User, Server, Resource}) -> JID when
+    User     :: binary(),
+    Server   :: binary(),
+    Resource :: binary(),
+    JID      :: #jid{} | error.
 make_jid({User, Server, Resource}) ->
     make_jid(User, Server, Resource).
 
-%% binary_to_jid(J) when erlang:is_binary(J) ->
-%%     binary_to_jid(binary_to_list(J));
 binary_to_jid(J) ->
     binary_to_jid1(J, <<>>).
 
@@ -436,7 +444,7 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
               sub_el_to_els(SubEl)}
     end.
 
-%% @doc Convert `#iq.sub_el' back to `#xmlelement.children'.
+%% @doc Convert `#iq.sub_el' back to `#xmlel.children'.
 %% @end
 %% for requests.
 sub_el_to_els({xmlel,_,_,_}=E) -> [E];

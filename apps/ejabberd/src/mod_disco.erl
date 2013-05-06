@@ -49,6 +49,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include_lib("exml/include/exml.hrl").
 
 start(Host, Opts) ->
     ejabberd_local:refresh_iq_handlers(),
@@ -401,9 +402,9 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 get_user_resources(User, Server) ->
     Rs = ejabberd_sm:get_user_resources(User, Server),
     lists:map(fun(R) ->
-		      {xmlel, <<"item">>,
-		       [{<<"jid">>, list_to_binary(User ++ "@" ++ Server ++ "/" ++ R)},
-			{<<"name">>, User}], []}
+                JID = jlib:jid_to_binary({User, Server, R}),
+                #xmlel{name = <<"item">>,
+                       attrs = [{<<"jid">>, JID}, {<<"name">>, User}]}
 	      end, lists:sort(Rs)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

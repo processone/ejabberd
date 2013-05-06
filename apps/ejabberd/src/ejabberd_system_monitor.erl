@@ -40,6 +40,7 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
+-include_lib("exml/include/exml.hrl").
 
 -record(state, {}).
 
@@ -52,23 +53,22 @@
 %%--------------------------------------------------------------------
 start_link() ->
     LH = case ejabberd_config:get_local_option(watchdog_large_heap) of
-	I when is_integer(I) -> I;
-	_ -> 1000000
-end,
+        I when is_integer(I) -> I;
+        _ -> 1000000
+    end,
     Opts = [{large_heap, LH}],
     gen_server:start_link({local, ?MODULE}, ?MODULE, Opts, []).
 
 process_command(From, To, Packet) ->
     case To of
-	#jid{luser = "", lresource = "watchdog"} ->
-	    {xmlel, Name, _Attrs, _Els} = Packet,
+    #jid{luser = <<"">>, lresource = <<"watchdog">>} ->
+	    #xmlel{name = Name} = Packet,
 	    case Name of
-		"message" ->
+        <<"message">> ->
 		    LFrom = jlib:jid_tolower(jlib:jid_remove_resource(From)),
 		    case lists:member(LFrom, get_admin_jids()) of
 			true ->
-			    Body = xml:get_path_s(
-				     Packet, [{elem, "body"}, cdata]),
+			    Body = xml:get_path_s(Packet, [{elem, <<"body">>}, cdata]),
 			    spawn(fun() ->
 					  process_flag(priority, high),
 					  process_command1(From, To, Body)
@@ -188,13 +188,12 @@ process_large_heap(Pid, Info) ->
 		     "(~w) The process ~w is consuming too much memory:~n~p~n"
 		     "~s",
 		     [node(), Pid, Info, DetailedInfo]),
-	    From = jlib:make_jid("", Host, "watchdog"),
+        From = jlib:make_jid(<<"">>, Host, <<"watchdog">>),
 	    lists:foreach(
 	      fun(S) ->
 		      case jlib:binary_to_jid(S) of
 			  error -> ok;
-			  JID ->
-			      send_message(From, JID, Body)
+			  JID -> send_message(From, JID, Body)
 		      end
 	      end, JIDs);
 	_ ->
@@ -202,12 +201,14 @@ process_large_heap(Pid, Info) ->
     end.
 
 send_message(From, To, Body) ->
-    ejabberd_router:route(
-      From, To,
-      {xmlel, "message", [{"type", "chat"}],
-       [{xmlel, "body", [],
-	 [{xmlcdata, lists:flatten(Body)}]}]}).
+    BodyEl = #xmlel{name = <<"body">>,
+                    children = [#xmlcdata{content = iolist_to_binary(Body)}]},
+    El = #xmlel{name = <<"message">>,
+                attrs = [{<<"type">>, <<"chat">>}],
+                children = [BodyEl]},
+    ejabberd_router:route(From, To, El).
 
+-spec get_admin_jids() -> [#jid{}].
 get_admin_jids() ->
     case ejabberd_config:get_local_option(watchdog_admins) of
 	JIDs when is_list(JIDs) ->
@@ -306,8 +307,7 @@ check_send_queue(Pid) ->
 			{M, F, A} ->
 			    ["\nPossible reason: the process can't process "
 			     "messages faster than they arrive.  ",
-			     io_lib:format("Current function is ~w:~w/~w",
-					   [M, F, A])
+			     io_lib:format("Current function is ~w:~w/~w", [M, F, A])
 			    ]
 		    end;
 		true ->

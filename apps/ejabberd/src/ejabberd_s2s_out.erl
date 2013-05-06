@@ -955,7 +955,7 @@ send_queue(StateData, Q) ->
 	    ok
     end.
 
-%% Bounce a single message (xmlelement)
+%% Bounce a single message (xmlel)
 bounce_element(El, Error) ->
     {xmlel, _Name, Attrs, _SubTags} = El,
     case xml:get_attr_s(<<"type">>, Attrs) of

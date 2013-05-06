@@ -414,7 +414,8 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
 		           {_, ""} ->
 			           <<"<font class=\"msm\">", (htmlize(T,NoFollow,FileFormat))/binary, "</font><br/>">>;
 		           {match, _} ->
-		               <<_Pref:32, SubStr>> = htmlize(T,FileFormat),
+                       %% Delete "/me " from the beginning.
+		               <<_Pref:32, SubStr/binary>> = htmlize(T,FileFormat),
 			           <<"<font class=\"mne\">", Nick/binary, " ", SubStr/binary, "</font><br/>">>;
 		           {nomatch, _} ->
 			           <<"<font class=\"mn\">", Nick2/binary, "</font> ",

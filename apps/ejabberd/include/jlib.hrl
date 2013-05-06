@@ -96,9 +96,9 @@
 
 % TODO: remove<<"code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
-	{xmlel,<<"error">>,
-	 [{<<"code">>, Code}, {<<"type">>, Type}],
-	 [{xmlel, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}).
+    {xmlel,<<"error">>,
+     [{<<"code">>, Code}, {<<"type">>, Type}],
+     [{xmlel, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}).
 
 -define(ERR_BAD_REQUEST,
 	?STANZA_ERROR(<<"400">>,<<"modify">>,<<"bad-request">>)).
@@ -321,8 +321,14 @@
 %	?STREAM_ERRORT(<<"">>, Lang, Text)).
 
 
--record(jid, {user, server, resource,
-	      luser, lserver, lresource}).
+-record(jid, {
+        user       :: binary(),
+        server     :: binary(),
+        resource   :: binary(),
+        luser      :: binary(),
+        lserver    :: binary(),
+        lresource  :: binary()
+}).
 
 -record(iq, {id = <<>>,
 	     type,
@@ -330,5 +336,12 @@
 	     lang = <<>>,
 	     sub_el}).
 
--record(rsm_in, {max, direction, id, index}).
+-record(rsm_in, {
+        max         :: non_neg_integer() | undefined | error,
+        direction   :: before | aft | undefined,
+        %% id is empty, if cdata does not exists.
+        id          :: binary() | undefined,
+        index       :: non_neg_integer() | undefined | error
+}).
+
 -record(rsm_out, {count, index, first, last}).

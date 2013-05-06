@@ -105,20 +105,17 @@ get_pids(Host) ->
 
 get_random_pid(Host) ->
     Pids = get_pids(Host),
+    Pids == [] andalso erlang:error({empty_sql_pool, Host}),
     lists:nth(erlang:phash(now(), length(Pids)), Pids).
 
 add_pid(Host, Pid) ->
     F = fun() ->
-		mnesia:write(
-		  #sql_pool{host = Host,
-			    pid = Pid})
+		mnesia:write(#sql_pool{host = Host, pid = Pid})
 	end,
     mnesia:ets(F).
 
 remove_pid(Host, Pid) ->
     F = fun() ->
-		mnesia:delete_object(
-		  #sql_pool{host = Host,
-			    pid = Pid})
+		mnesia:delete_object(#sql_pool{host = Host, pid = Pid})
 	end,
     mnesia:ets(F).
