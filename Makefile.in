@@ -93,7 +93,13 @@ edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
 
-install: all
+install-deps:
+	install -d priv/lib/
+	@subdirs=`ls -1 deps`; for subdir in $$subdirs; do \
+        (cd deps/$$subdir && $(MAKE) install) || exit 1; \
+        done
+
+install: all install-deps
 	#
 	# Configuration files
 	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
@@ -125,37 +131,25 @@ install: all
 	#
 	# Binary Erlang files
 	$(INSTALL) -d $(BEAMDIR)
-	$(INSTALL) -m 644 *.app $(BEAMDIR)
-	$(INSTALL) -m 644 *.beam $(BEAMDIR)
+	$(INSTALL) -m 644 ebin/*.app $(BEAMDIR)
+	$(INSTALL) -m 644 ebin/*.beam $(BEAMDIR)
 	rm -f $(BEAMDIR)/configure.beam
 	#
 	# ejabberd header files
 	$(INSTALL) -d $(INCLUDEDIR)
-	$(INSTALL) -m 644 *.hrl $(INCLUDEDIR)
-	$(INSTALL) -d $(INCLUDEDIR)/eldap/
-	$(INSTALL) -m 644 eldap/*.hrl $(INCLUDEDIR)/eldap/
-	$(INSTALL) -d $(INCLUDEDIR)/mod_muc/
-	$(INSTALL) -m 644 mod_muc/*.hrl $(INCLUDEDIR)/mod_muc/
-	$(INSTALL) -d $(INCLUDEDIR)/mod_proxy65/
-	$(INSTALL) -m 644 mod_proxy65/*.hrl $(INCLUDEDIR)/mod_proxy65/
-	$(INSTALL) -d $(INCLUDEDIR)/mod_pubsub/
-	$(INSTALL) -m 644 mod_pubsub/*.hrl $(INCLUDEDIR)/mod_pubsub/
-	$(INSTALL) -d $(INCLUDEDIR)/mod_pubsub_ng/
-	$(INSTALL) -m 644 mod_pubsub_ng/*.hrl $(INCLUDEDIR)/mod_pubsub_ng/
-	$(INSTALL) -d $(INCLUDEDIR)/web/
-	$(INSTALL) -m 644 web/*.hrl $(INCLUDEDIR)/web/
+	$(INSTALL) -m 644 include/*.hrl $(INCLUDEDIR)
 	#
 	# Binary C programs
 	$(INSTALL) -d $(PBINDIR)
-	$(INSTALL) -m 750 $(O_USER) ../tools/captcha.sh $(PBINDIR)
+	$(INSTALL) -m 750 $(O_USER) tools/captcha.sh $(PBINDIR)
 	#
 	# Binary system libraries
 	$(INSTALL) -d $(SODIR)
-	$(INSTALL) -m 644 *.so $(SODIR)
+	$(INSTALL) -m 644 priv/lib/*.so $(SODIR)
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
-	$(INSTALL) -m 644 msgs/*.msg $(MSGSDIR)
+	$(INSTALL) -m 644 priv/msgs/*.msg $(MSGSDIR)
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
@@ -175,14 +169,14 @@ install: all
 	#
 	# Documentation
 	$(INSTALL) -d $(DOCDIR)
-	$(INSTALL) -m 644 ../doc/dev.html $(DOCDIR)
-	$(INSTALL) -m 644 ../doc/guide.html $(DOCDIR)
-	$(INSTALL) -m 644 ../doc/*.png $(DOCDIR)
-	$(INSTALL) -m 644 ../doc/*.txt $(DOCDIR)
-	[ -f ../doc/guide.pdf ] \
-		&& $(INSTALL) -m 644 ../doc/guide.pdf $(DOCDIR) \
-		|| echo "No ../doc/guide.pdf was built"
-	$(INSTALL) -m 644 ../COPYING $(DOCDIR)
+	$(INSTALL) -m 644 doc/dev.html $(DOCDIR)
+	$(INSTALL) -m 644 doc/guide.html $(DOCDIR)
+	$(INSTALL) -m 644 doc/*.png $(DOCDIR)
+	$(INSTALL) -m 644 doc/*.txt $(DOCDIR)
+	[ -f doc/guide.pdf ] \
+		&& $(INSTALL) -m 644 doc/guide.pdf $(DOCDIR) \
+		|| echo "No doc/guide.pdf was built"
+	$(INSTALL) -m 644 COPYING $(DOCDIR)
 
 uninstall: uninstall-binary
 
