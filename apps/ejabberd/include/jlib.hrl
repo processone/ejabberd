@@ -96,12 +96,9 @@
 
 % TODO: remove<<"code" attribute (currently it used for backward-compatibility)
 -define(STANZA_ERROR(Code, Type, Condition),
-    begin
-        lager:debug("New error stanza #~s.", [Code]),
-        {xmlel,<<"error">>,
-         [{<<"code">>, Code}, {<<"type">>, Type}],
-         [{xmlel, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}
-    end).
+    {xmlel,<<"error">>,
+     [{<<"code">>, Code}, {<<"type">>, Type}],
+     [{xmlel, Condition, [{<<"xmlns">>, ?NS_STANZAS}], []}]}).
 
 -define(ERR_BAD_REQUEST,
 	?STANZA_ERROR(<<"400">>,<<"modify">>,<<"bad-request">>)).
