@@ -486,6 +486,8 @@ get_proto(Opts) ->
 
 normalize_proto(tcp) -> tcp;
 normalize_proto(udp) -> udp;
+normalize_proto(ws)  -> ws;
+normalize_proto(wss) -> wss;
 normalize_proto(UnknownProto) ->
     ?WARNING_MSG("There is a problem in the configuration: "
 		 "~p is an unknown IP protocol. Using tcp as fallback",

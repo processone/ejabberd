@@ -1,5 +1,5 @@
 %%%===================================================================
-%%% @copyright (C) 2012, Erlang Solutions Ltd.
+%%% @copyright (C) 2013, Erlang Solutions Ltd.
 %%% @doc Module providing support for websockets in ejabberd
 %%% @end
 %%%===================================================================
@@ -35,6 +35,13 @@
          close/1,
          peername/1]).
 
+%% ejabberd_listener compatibility
+-export([socket_type/0,
+         start_listener/2]).
+
+-export([stop/0]).
+
+
 -include("ejabberd.hrl").
 -include_lib("exml/include/exml_stream.hrl").
 
@@ -45,40 +52,59 @@
 -record(ws_state, {c2s_pid :: pid(),
                    parser :: exml_stream:parser()}).
 
+%%--------------------------------------------------------------------
+%% ejabberd_listener compatibility
+%%--------------------------------------------------------------------
+-spec socket_type() -> independent.
+socket_type() ->
+    independent.
+
+% -spec start_listener(list())
+start_listener({Port, _IP, ws}, Opts) ->
+    Dispatch = get_dispatch(Opts),
+    NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
+    start_ws(NumAcceptors, Port, Dispatch);
+
+start_listener({Port, _IP, wss}, Opts) ->
+    Dispatch = get_dispatch(Opts),
+    NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
+    SSLPort = gen_mod:get_opt(ssl_port, Opts, undefined),
+    SSLCert = gen_mod:get_opt(cert, Opts, undefined),
+    SSLKey = gen_mod:get_opt(key, Opts, undefined),
+    SSLKeyPass = gen_mod:get_opt(key_pass, Opts, undefined),
+    start_wss(NumAcceptors, Port, SSLCert, SSLKey, SSLKeyPass, Dispatch).
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks
 %%--------------------------------------------------------------------
 
 start(_Host, Opts) ->
-    WSHost = gen_mod:get_opt(host, Opts, '_'), %% default to any
-    WSPrefix = gen_mod:get_opt(prefix, Opts, "/ws-xmpp"),
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
     Port = gen_mod:get_opt(port, Opts, undefined),
     SSLPort = gen_mod:get_opt(ssl_port, Opts, undefined),
     SSLCert = gen_mod:get_opt(cert, Opts, undefined),
     SSLKey = gen_mod:get_opt(key, Opts, undefined),
     SSLKeyPass = gen_mod:get_opt(key_pass, Opts, undefined),
-    Dispatch = cowboy_router:compile([{WSHost, [{WSPrefix, ?MODULE, Opts}] }]),
-    ok = start_ws(NumAcceptors, Port, Dispatch),
-    ok = start_wss(NumAcceptors, SSLPort, SSLCert, SSLKey, SSLKeyPass, Dispatch).
+    Dispatch = get_dispatch(Opts),
+    {ok, _} = start_ws(NumAcceptors, Port, Dispatch),
+    {ok, _} = start_wss(NumAcceptors, SSLPort, SSLCert, SSLKey, SSLKeyPass, Dispatch).
 
 start_ws(_, undefined, _) ->
-    ok;
+    {ok, not_started};
 start_ws(NumAcceptors, Port, Dispatch) ->
     case cowboy:start_http(?LISTENER, NumAcceptors,
                                 [{port, Port}],
                                 [{env, [{dispatch, Dispatch}]}]) of
-        {error, {already_started, _Pid}} ->
-            ok;
-        {ok, _Pid} ->
-            ok;
+        {error, {already_started, Pid}} ->
+            {ok, Pid};
+        {ok, Pid} ->
+            {ok, Pid};
         {error, Reason} ->
             {error, Reason}
     end.
 
 start_wss(_, _, undefined, undefined, undefined, _) ->
-    ok;
+    {ok, not_started};
 start_wss(NumAcceptors, Port, Cert, Key, Pass, Dispatch) ->
     case cowboy:start_https({?LISTENER, secure}, NumAcceptors,
                                 [
@@ -88,16 +114,21 @@ start_wss(NumAcceptors, Port, Cert, Key, Pass, Dispatch) ->
                                     {port, Port}
                                 ],
                                 [{env, [{dispatch, Dispatch}]}]) of
-        {error, {already_started, _Pid}} ->
-            ok;
-        {ok, _Pid} ->
-            ok;
+        {error, {already_started, Pid}} ->
+            {ok, Pid};
+        {ok, Pid} ->
+            {ok, Pid};
         {error, Reason} ->
             {error, Reason}
     end.
 
+stop() ->
+    stop(any).
+
 stop(_Host) ->
-    cowboy:stop_listener(?LISTENER).
+    cowboy:stop_listener({?LISTENER, secure}),
+    cowboy:stop_listener(?LISTENER),
+    ok.
 
 %%--------------------------------------------------------------------
 %% cowboy_http_handler callbacks
@@ -229,3 +260,12 @@ close(#websocket{pid = Pid}) ->
 
 peername(#websocket{peername = PeerName}) ->
     PeerName.
+
+%%--------------------------------------------------------------------
+%% Helpers
+%%--------------------------------------------------------------------
+
+get_dispatch(Opts) ->
+    WSHost = gen_mod:get_opt(host, Opts, '_'), %% default to any
+    WSPrefix = gen_mod:get_opt(prefix, Opts, "/ws-xmpp"),
+    cowboy_router:compile([{WSHost, [{WSPrefix, ?MODULE, Opts}] }]).
