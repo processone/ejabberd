@@ -93,13 +93,7 @@ edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
 
-install-deps:
-	install -d priv/lib/
-	@subdirs=`ls -1 deps`; for subdir in $$subdirs; do \
-        (cd deps/$$subdir && $(MAKE) install) || exit 1; \
-        done
-
-install: all install-deps
+install: all
 	#
 	# Configuration files
 	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
@@ -133,11 +127,14 @@ install: all install-deps
 	$(INSTALL) -d $(BEAMDIR)
 	$(INSTALL) -m 644 ebin/*.app $(BEAMDIR)
 	$(INSTALL) -m 644 ebin/*.beam $(BEAMDIR)
+	$(INSTALL) -m 644 deps/*/ebin/*.app $(BEAMDIR)
+	$(INSTALL) -m 644 deps/*/ebin/*.beam $(BEAMDIR)
 	rm -f $(BEAMDIR)/configure.beam
 	#
 	# ejabberd header files
 	$(INSTALL) -d $(INCLUDEDIR)
 	$(INSTALL) -m 644 include/*.hrl $(INCLUDEDIR)
+	$(INSTALL) -m 644 deps/*/include/*.hrl $(INCLUDEDIR)
 	#
 	# Binary C programs
 	$(INSTALL) -d $(PBINDIR)
@@ -145,7 +142,8 @@ install: all install-deps
 	#
 	# Binary system libraries
 	$(INSTALL) -d $(SODIR)
-	$(INSTALL) -m 644 priv/lib/*.so $(SODIR)
+	#$(INSTALL) -m 644 priv/lib/*.so $(SODIR)
+	$(INSTALL) -m 644 deps/*/priv/lib/*.so $(SODIR)
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
