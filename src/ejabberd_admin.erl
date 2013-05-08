@@ -281,11 +281,11 @@ status() ->
 reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []),
     %% TODO: Use the Reopen log API for logger_h ?
-    ejabberd_logger_h:reopen_log(),
+    logger_h:reopen_log(),
     case application:get_env(sasl,sasl_error_logger) of
 	{ok, {file, SASLfile}} ->
 	    error_logger:delete_report_handler(sasl_report_file_h),
-	    ejabberd_logger_h:rotate_log(SASLfile),
+	    logger_h:rotate_log(SASLfile),
 	    error_logger:add_report_handler(sasl_report_file_h,
 	        {SASLfile, get_sasl_error_logger_type()});
 	_ -> false

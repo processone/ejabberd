@@ -104,7 +104,7 @@ init() ->
     %erlang:system_flag(fullsweep_after, 0),
     %error_logger:logfile({open, ?LOG_PATH}),
     LogPath = get_log_path(),
-    error_logger:add_report_handler(ejabberd_logger_h, LogPath),
+    error_logger:add_report_handler(logger_h, LogPath),
     loop().
 
 loop() ->

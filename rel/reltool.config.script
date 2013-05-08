@@ -14,7 +14,7 @@ Vars = case file:consult(filename:join(["..", "config.vars"])) of
        end,
 
 OTPApps = [sasl, crypto, public_key, ssl,
-           mnesia, inets, odbc, tools],
+           mnesia, inets, odbc, tools, compiler],
 
 DepRequiredApps = [logger, cache_tab, tls, stringprep, xml, xmlrpc],
 
