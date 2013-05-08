@@ -351,12 +351,11 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
     NS = maybe_add_handler(Handler, Rid, S),
-    Ack = binary_to_integer(exml_query:attr(Body, <<"ack">>)),
     NNS = case {EventTag,
                 %% TODO: intercept retransmitted packets
                 %is_reply_cached(Rid),
                 is_valid_rid(Rid, OldRid),
-                is_valid_ack(Ack, S#state.last_processed, S#state.client_acks),
+                is_valid_ack(Body, S#state.last_processed, S#state.client_acks),
                 is_acceptable_rid(Rid, OldRid)}
     of
         {streamstart, _, _, _} ->
@@ -364,6 +363,7 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
         {_, true, true, _} ->
             process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
         {_, true, false, _} ->
+            Ack = binary_to_integer(exml_query:attr(Body, <<"ack">>)),
             RS = schedule_report(Ack, NS),
             PS = process_stream_event(EventTag, Body, SName,
                                       RS#state{rid = Rid}),
@@ -433,11 +433,22 @@ is_valid_rid(Rid, OldRid) when Rid == OldRid + 1 ->
 is_valid_rid(_, _) ->
     false.
 
-is_valid_ack(Ack, LastProcessed, true)
+is_valid_ack(#xmlel{} = Body, LastProcessed, true) ->
+    case exml_query:attr(Body, <<"ack">>) of
+        undefined ->
+            false;
+        BAck ->
+            Ack = binary_to_integer(BAck),
+            is_valid_ack(Ack, LastProcessed)
+    end;
+is_valid_ack(_, _, false = _ClientAcks) ->
+    true.
+
+is_valid_ack(Ack, LastProcessed)
         when LastProcessed =:= undefined;
              Ack < LastProcessed ->
     false;
-is_valid_ack(_, _, _) ->
+is_valid_ack(_, _) ->
     true.
 
 is_acceptable_rid(Rid, OldRid)
