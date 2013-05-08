@@ -9,10 +9,13 @@
 ## Note that this script makes the assumption that there is a start_clean.boot
 ## file available in $ROOTDIR/release/VSN.
 
+# Determine the abspath of where this script is executing from.
+ERTS_BIN_DIR=$(cd ${0%/*} && pwd)
+
 # Now determine the root directory -- this script runs from erts-VSN/bin,
 # so we simply need to strip off two dirs from the end of the ERTS_BIN_DIR
 # path.
-ROOTDIR={{release_dir}}
+ROOTDIR=${ERTS_BIN_DIR%/*/*}
 
 # Parse out release and erts info
 START_ERL=`cat $ROOTDIR/releases/start_erl.data`

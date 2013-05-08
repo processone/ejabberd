@@ -7,6 +7,8 @@ ERL_MAX_PORTS=32000
 ERL_PROCESSES=250000
 ERL_MAX_ETS_TABLES=1400
 
+SCRIPT_DIR=$(cd ${0%/*} && pwd)
+
 # define default environment variables
 NODE=ejabberd
 HOST=localhost

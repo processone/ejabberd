@@ -37,7 +37,7 @@
 
 %% Platform-specific installation paths
 {release, true}.
-{release_dir, "@RELEASE_DIR@"}.
+{release_dir, "${SCRIPT_DIR%/*}"}.
 {sysconfdir, "{{release_dir}}/etc"}.
 {installuser, "@INSTALLUSER@"}.
 {erl, "{{release_dir}}/{{erts_vsn}}/bin/erl"}.
