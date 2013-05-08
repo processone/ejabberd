@@ -248,4 +248,5 @@ start_apps() ->
     application:start(tls),
     application:start(xml),
     application:start(stringprep),
-    application:start(ezlib).
+    application:start(ezlib),
+    application:start(cache_tab).

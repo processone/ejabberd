@@ -175,13 +175,6 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_sm_sup]},
-    CacheTabSupervisor =
-	{cache_tab_sup,
-	 {cache_tab_sup, start_link, []},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [cache_tab_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
 	   SystemMonitor,
@@ -201,7 +194,6 @@ init([]) ->
 	   HTTPPollSupervisor,
 	   IQSupervisor,
 	   FrontendSocketSupervisor,
-	   CacheTabSupervisor,
 	   Listener]}}.
 
 
