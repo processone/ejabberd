@@ -80,12 +80,6 @@ translations:
 	contrib/extract_translations/prepare-translation.sh -updateall
 
 doc:
-        @subdirs="$(SUBDIRS)"; for subdir in $$subdirs; do \
-        echo making $$target in $$subdir; \
-        (cd $$subdir && $(MAKE) $$target) || exit 1; \
-        done
-
-doc:
 	echo making $$target in doc; \
 	(cd doc && $(MAKE) $$target) || exit 1
 
@@ -225,7 +219,17 @@ TAGS:
 
 Makefile: Makefile.in
 
-dialyzer: $(BEAMS)
-	@dialyzer -c .
+erlang.plt:
+	-dialyzer --build_plt --output_plt erlang.plt \
+	--apps kernel stdlib sasl crypto public_key ssl mnesia \
+	inets odbc tools compiler erts webtool runtime_tools asn1 \
+	observer xmerl et gs wx deps/*/ebin
 
-.PHONY: src doc edoc dialyzer Makefile TAGS clean distclean rel
+plt: erlang.plt
+
+dialyzer: plt
+	-dialyzer --plt erlang.plt --add_to_plt --output_plt ejabberd.plt \
+	--get_warnings -o dialyzer.log ebin
+
+.PHONY: src doc edoc dialyzer Makefile TAGS clean clean-rel distclean rel plt \
+	install uninstall uninstall-binary uninstall-all translations
