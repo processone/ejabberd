@@ -85,16 +85,27 @@ response(Req, State) ->
 %%--------------------------------------------------------------------
 %% internal functions
 %%--------------------------------------------------------------------
+get_available_hosts() ->
+    HostsSet = lists:foldl(fun({Host, _Metric}, Hosts) ->
+                    ordsets:add_element(Host, Hosts)
+            end, ordsets:new(), folsom_metrics:get_metrics()),
+    ordsets:to_list(HostsSet).
+
+get_available_metrics(Host) ->
+    Metrics = lists:foldl(fun({CurrentHost, Metric}, Acc) ->
+                    case CurrentHost of
+                        Host ->
+                            [Metric | Acc];
+                        _ ->
+                            Acc
+                    end
+            end, [], folsom_metrics:get_metrics()),
+    lists:reverse(Metrics).
+
 get_available_hosts_metrics() ->
-    {HostsSet, MetricsSet} = lists:foldl(fun({Host, Metric}, {Hosts, Metrics}) ->
-                    NewHosts = ordsets:add_element(Host, Hosts),
-                    NewMetrics = ordsets:add_element(Metric, Metrics),
-                    {NewHosts, NewMetrics};
-                (Metric, {Hosts, Metrics}) ->
-                    NewMetrics = ordsets:add_element(Metric, Metrics),
-                    {Hosts, NewMetrics}
-            end, {ordsets:new(), ordsets:new()}, folsom_metrics:get_metrics()),
-    {ordsets:to_list(HostsSet), ordsets:to_list(MetricsSet)}.
+    Hosts = get_available_hosts(),
+    Metrics = get_available_metrics(hd(Hosts)),
+    {Hosts, Metrics}.
 
 get_sum_metrics() ->
     {Hosts, Metrics} = get_available_hosts_metrics(),
