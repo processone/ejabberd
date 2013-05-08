@@ -96,6 +96,9 @@ start_cowboy(Opts) ->
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 10),
     Port = gen_mod:get_opt(port, Opts, 8081),
     Dispatch = cowboy_router:compile([{'_', [
+                        {"/metrics", ?REST_LISTENER, [available_metrics]},
+                        {"/metrics/m", ?REST_LISTENER, [sum_metrics]},
+                        {"/metrics/m/:metric", ?REST_LISTENER, [sum_metric]},
                         {"/metrics/host/:host/:metric", ?REST_LISTENER, [host_metric]},
                         {"/metrics/host/:host", ?REST_LISTENER, [host_metrics]}
                         ]}]),

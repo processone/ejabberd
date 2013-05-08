@@ -37,6 +37,10 @@ content_types_provided(Req, State) ->
 %%--------------------------------------------------------------------
 %% response callbacks
 %%--------------------------------------------------------------------
+response(Req, #state{cmd=available_metrics}=State) ->
+    {Hosts, Metrics} = get_available_hosts_metrics(),
+    Response = response_json([{hosts, Hosts}, {metrics, Metrics}]),
+    {Response, Req, State};
 response(Req, #state{cmd=host_metrics}=State) ->
     {Host, NewReq} = cowboy_req:binding(host, Req),
     case get_host_metrics(Host) of
@@ -66,15 +70,25 @@ response(Req, State) ->
 %%--------------------------------------------------------------------
 %% internal functions
 %%--------------------------------------------------------------------
+get_available_hosts_metrics() ->
+    {HostsSet, MetricsSet} = lists:foldl(fun({Host, Metric}, {Hosts, Metrics}) ->
+                    NewHosts = ordsets:add_element(Host, Hosts),
+                    NewMetrics = ordsets:add_element(Metric, Metrics),
+                    {NewHosts, NewMetrics};
+                (Metric, {Hosts, Metrics}) ->
+                    NewMetrics = ordsets:add_element(Metric, Metrics),
+                    {Hosts, NewMetrics}
+            end, {ordsets:new(), ordsets:new()}, folsom_metrics:get_metrics()),
+    {ordsets:to_list(HostsSet), ordsets:to_list(MetricsSet)}.
+
 get_host_metrics(Host) ->
     Metrics = folsom_metrics:get_metrics_value(Host),
     [{Name, Value} || {{_Host, Name}, Value} <- Metrics].
 
 response_json(Element) ->
-    Response = fix_element(Element),
-    mochijson2:encode(Response).
+    mochijson2:encode(fix_element(Element)).
 
-fix_element({ElementName, Proplist}) when is_list(Proplist) ->
+fix_element({ElementName, [{_Key, _Val}|_Rest] = Proplist}) ->
     {ElementName, fix_element(Proplist)};
 fix_element(Proplist) when is_list(Proplist) ->
     {struct, [fix_element(Element) || Element <- Proplist]};
