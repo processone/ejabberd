@@ -73,7 +73,7 @@
                 last_processed :: rid() | undefined,
                 %% Report scheduled for sending at the earliest
                 %% possible occasion.
-                report :: {rid(), timer:time()} | false}).
+                report = false :: {rid(), timer:time()} | false}).
 
 %%--------------------------------------------------------------------
 %% API
