@@ -1,0 +1,92 @@
+%%%-------------------------------------------------------------------
+%%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% @copyright (C) 2013, Evgeniy Khramtsov
+%%% @doc
+%%%
+%%% @end
+%%% Created :  8 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%%-------------------------------------------------------------------
+Vars = case file:consult(filename:join(["..", "config.vars"])) of
+           {ok, Terms} ->
+               Terms;
+           _Err ->
+               []
+       end,
+
+OTPApps = [sasl, crypto, public_key, ssl,
+           mnesia, inets, odbc, tools],
+
+DepRequiredApps = [logger, cache_tab, tls, stringprep, xml, xmlrpc],
+
+DepConfiguredApps = lists:flatmap(
+                      fun({mysql, true}) -> [mysql];
+                         ({pgsql, true}) -> [pgsql];
+                         ({pam, true}) -> [epam];
+                         ({zlib, true}) -> [ezlib];
+                         ({stun, true}) -> [stun];
+                         ({riak, true}) -> [riakc];
+                         ({json, true}) -> [jiffy];
+                         ({iconv, true}) -> [iconv];
+                         ({http, true}) -> [ibrowse, lhttpc];
+                         (_) -> []
+                      end, Vars),
+
+DepApps = DepRequiredApps ++ DepConfiguredApps,
+
+Sys = [{lib_dirs, []},
+       {erts, [{mod_cond, derived}, {app_file, strip}]},
+       {app_file, strip},
+       {rel, "ejabberd", proplists:get_value(vsn, Vars),
+        [
+         kernel,
+         stdlib,
+         ejabberd
+        ] ++ OTPApps ++ DepApps},
+       {rel, "start_clean", "",
+        [
+         kernel,
+         stdlib
+        ]},
+       {boot_rel, "ejabberd"},
+       {profile, embedded},
+       {incl_cond, exclude},
+       {excl_archive_filters, [".*"]}, %% Do not archive built libs
+       {excl_sys_filters, ["^bin/.*", "^erts.*/bin/(dialyzer|typer)",
+                           "^erts.*/(doc|info|include|lib|man|src)"]},
+       {excl_app_filters, ["\.gitignore"]},
+       {app, stdlib, [{incl_cond, include}]},
+       {app, kernel, [{incl_cond, include}]},
+       {app, ejabberd, [{incl_cond, include}, {lib_dir, ".."}]}]
+++ lists:map(
+     fun(App) ->
+             {app, App, [{incl_cond, include},
+                         {lib_dir, "../deps/" ++ atom_to_list(App)}]}
+     end, DepApps)
+++ lists:map(
+     fun(App) ->
+             {app, App, [{incl_cond, include}]}
+     end, OTPApps).
+
+Overlay = [
+           {mkdir, "log/sasl"},
+           {copy, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
+           {copy, "files/nodetool", "\{\{erts_vsn\}\}/bin/nodetool"},
+           {copy, "files/ejabberd", "bin/ejabberd"},
+           {copy, "files/ejabberd.cmd", "bin/ejabberd.cmd"},
+           {copy, "files/start_erl.cmd", "bin/start_erl.cmd"},
+           {copy, "files/install_upgrade.escript", "bin/install_upgrade.escript"},
+           {copy, "files/sys.config", "releases/\{\{rel_vsn\}\}/sys.config"},
+           {copy, "files/vm.args", "releases/\{\{rel_vsn\}\}/vm.args"}
+          ],
+
+Config = [{sys, Sys},
+          {target_dir, "ejabberd"},
+          {overlay, Overlay}],
+
+io:format("ejabberd release:~n  ~p~n", [Config]),
+Config.
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:

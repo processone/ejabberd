@@ -2706,7 +2706,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile rebar.config.script src/ejabberd.app.src rel/reltool.config"
+ac_config_files="$ac_config_files Makefile config.vars src/ejabberd.app.src"
 
 
 ENABLEUSER=""
@@ -3432,9 +3432,8 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "rebar.config.script") CONFIG_FILES="$CONFIG_FILES rebar.config.script" ;;
+    "config.vars") CONFIG_FILES="$CONFIG_FILES config.vars" ;;
     "src/ejabberd.app.src") CONFIG_FILES="$CONFIG_FILES src/ejabberd.app.src" ;;
-    "rel/reltool.config") CONFIG_FILES="$CONFIG_FILES rel/reltool.config" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5 ;;
   esac

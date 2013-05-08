@@ -205,9 +205,8 @@ esac],[http=false])
 AC_SUBST(http)
 
 AC_CONFIG_FILES([Makefile
-		 rebar.config.script
-		 src/ejabberd.app.src
-		 rel/reltool.config])
+		 config.vars
+		 src/ejabberd.app.src])
 
 ENABLEUSER=""
 AC_ARG_ENABLE(user,

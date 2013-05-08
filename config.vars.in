@@ -1,0 +1,39 @@
+%%%-------------------------------------------------------------------
+%%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% @copyright (C) 2013, Evgeniy Khramtsov
+%%% @doc
+%%%
+%%% @end
+%%% Created :  8 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%%-------------------------------------------------------------------
+%% Macros
+{roster_gateway_workaround, @roster_gateway_workaround@}.
+{flash_hack, @flash_hack@}.
+{transient_supervisors, @transient_supervisors@}.
+{full_xml, @full_xml@}.
+{nif, @nif@}.
+{db_type, @db_type@}.
+{debug, @debug@}.
+{hipe, @hipe@}.
+
+%% Ad-hoc directories with source files
+{pubsub_ng, @pubsub_ng@}.
+
+%% Dependencies
+{mysql, @mysql@}.
+{pgsql, @pgsql@}.
+{pam, @pam@}.
+{zlib, @zlib@}.
+{stun, @stun@}.
+{riak, @riak@}.
+{json, @json@}.
+{http, @http@}.
+{iconv, @iconv@}.
+
+%% Version
+{vsn, "@PACKAGE_VERSION@"}.
+
+%% Local Variables:
+%% mode: erlang
+%% End:
+%% vim: set filetype=erlang tabstop=8:

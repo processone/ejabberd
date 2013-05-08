@@ -204,20 +204,23 @@ uninstall-all: uninstall-binary
 clean:
 	$(REBAR) clean
 
-distclean: clean
-	rm -f config.status
-	rm -f config.log
-	rm -f rebar.config.script
-	rm -rf deps
-	rm -f Makefile
+clean-rel:
 	rm -rf rel/files
 	rm -rf rel/ejabberd
 	rm -f rel/reltool.config
+
+distclean: clean clean-rel
+	rm -f config.status
+	rm -f config.log
+	rm -rf deps
+	rm -rf ebin
+	rm -f Makefile
+	rm -f config.vars
 	rm -f src/ejabberd.app.src
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
-rel:
-	mkdir -p rel ; cd rel ; rm -rf files ejabberd ; \
+rel: clean-rel
+	cd rel ; \
 	$(REBAR) create-node nodeid=ejabberd || exit 1; \
 	$(REBAR) generate
 
