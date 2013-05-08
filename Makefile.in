@@ -217,8 +217,7 @@ distclean: clean clean-rel
 	rm -f src/ejabberd.app.src
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
-rel: clean-rel all
-	cd rel ; \
+rel: all
 	$(REBAR) generate
 
 TAGS:
