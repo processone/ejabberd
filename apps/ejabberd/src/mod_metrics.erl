@@ -12,15 +12,18 @@
 
 -export ([start/2, stop/1]).
 
+-define(REST_LISTENER, ejabberd_metrics_rest).
 
 -spec start(binary(), list()) -> ok.
-start(Host, _Opts) ->
+start(Host, Opts) ->
     init_folsom(Host),
+    start_cowboy(Opts),
     metrics_hooks(add, Host),
     ok.
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
+    stop_cowboy(),
     metrics_hooks(delete, Host),
     ok.
 
@@ -89,3 +92,23 @@ get_general_counters(Host) ->
 get_total_counters(Host) ->
     [{Host, Counter} || Counter <- ?TOTAL_COUNTERS].
 
+start_cowboy(Opts) ->
+    NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 10),
+    Port = gen_mod:get_opt(port, Opts, 8081),
+    Dispatch = cowboy_router:compile([{'_', [
+                        {"/metrics/host/:host/:metric", ?REST_LISTENER, [host_metric]},
+                        {"/metrics/host/:host", ?REST_LISTENER, [host_metrics]}
+                        ]}]),
+    case cowboy:start_http(?REST_LISTENER, NumAcceptors,
+                           [{port, Port}],
+                           [{env, [{dispatch, Dispatch}]}]) of
+        {error, {already_started, _Pid}} ->
+            ok;
+        {ok, _Pid} ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+stop_cowboy() ->
+    cowboy:stop(?REST_LISTENER).
