@@ -85,7 +85,7 @@ Config = [{sys, Sys},
           {target_dir, "ejabberd"},
           {overlay, Overlay}],
 
-io:format("ejabberd release:~n  ~p~n", [Config]),
+%%io:format("ejabberd release:~n  ~p~n", [Config]),
 Config.
 
 %% Local Variables:
