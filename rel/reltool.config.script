@@ -24,7 +24,7 @@ DepConfiguredApps = lists:flatmap(
                          ({pam, true}) -> [epam];
                          ({zlib, true}) -> [ezlib];
                          ({stun, true}) -> [stun];
-                         ({riak, true}) -> [riakc];
+                         ({riak, true}) -> [riakc, riak_pb, protobuffs];
                          ({json, true}) -> [jiffy];
                          ({iconv, true}) -> [iconv];
                          ({http, true}) -> [ibrowse, lhttpc];
@@ -68,18 +68,20 @@ Sys = [{lib_dirs, []},
      end, OTPApps).
 
 Overlay = [
-           {mkdir, "log/sasl"},
-           {copy, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
-           {copy, "files/nodetool", "\{\{erts_vsn\}\}/bin/nodetool"},
-           {copy, "files/ejabberd", "bin/ejabberd"},
-           {copy, "files/ejabberd.cmd", "bin/ejabberd.cmd"},
-           {copy, "files/start_erl.cmd", "bin/start_erl.cmd"},
-           {copy, "files/install_upgrade.escript", "bin/install_upgrade.escript"},
-           {copy, "files/sys.config", "releases/\{\{rel_vsn\}\}/sys.config"},
-           {copy, "files/vm.args", "releases/\{\{rel_vsn\}\}/vm.args"}
+           {mkdir, "log"},
+           {mkdir, "lock"},
+           {mkdir, "etc/ejabberd"},
+           {mkdir, "doc"},
+           {template, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
+           {template, "../ejabberdctl.template", "bin/ejabberdctl"},
+           {copy, "../ejabberdctl.cfg.example", "etc/ejabberd/ejabberdctl.cfg"},
+           {copy, "../ejabberd.cfg.example", "etc/ejabberd/ejabberd.cfg"},
+           {copy, "../inetrc", "etc/ejabberd/inetrc"},
+           {copy, "files/install_upgrade.escript", "bin/install_upgrade.escript"}
           ],
 
 Config = [{sys, Sys},
+          {overlay_vars, "../config.vars"},
           {target_dir, "ejabberd"},
           {overlay, Overlay}],
 

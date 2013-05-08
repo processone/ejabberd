@@ -100,13 +100,13 @@ install: all
 	[ -f $(ETCDIR)/ejabberd.cfg ] \
 		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new \
 		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
-	$(SED) -e "s*@rootdir@*@prefix@*" \
-		-e "s*@installuser@*@INSTALLUSER@*" \
-		-e "s*@LIBDIR@*@libdir@*" \
-		-e "s*@SYSCONFDIR@*@sysconfdir@*" \
-		-e "s*@LOCALSTATEDIR@*@localstatedir@*" \
-		-e "s*@DOCDIR@*@docdir@*" \
-		-e "s*@erl@*@ERL@*" ejabberdctl.template \
+	$(SED) -e "s*{{rootdir}}*@prefix@*" \
+		-e "s*{{installuser}}*@INSTALLUSER@*" \
+		-e "s*{{libdir}}*@libdir@*" \
+		-e "s*{{sysconfdir}}*@sysconfdir@*" \
+		-e "s*{{localstatedir}}*@localstatedir@*" \
+		-e "s*{{docdir}}*@docdir@*" \
+		-e "s*{{erl}}*@ERL@*" ejabberdctl.template \
 		> ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
 		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
@@ -205,9 +205,7 @@ clean:
 	$(REBAR) clean
 
 clean-rel:
-	rm -rf rel/files
 	rm -rf rel/ejabberd
-	rm -f rel/reltool.config
 
 distclean: clean clean-rel
 	rm -f config.status
@@ -219,9 +217,8 @@ distclean: clean clean-rel
 	rm -f src/ejabberd.app.src
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
-rel: clean-rel
+rel: clean-rel all
 	cd rel ; \
-	$(REBAR) create-node nodeid=ejabberd || exit 1; \
 	$(REBAR) generate
 
 TAGS:

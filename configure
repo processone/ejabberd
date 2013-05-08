@@ -560,6 +560,7 @@ PACKAGE_URL=''
 ac_default_prefix=/
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+RELEASE_DIR
 INSTALLUSER
 http
 pubsub_ng
@@ -2724,6 +2725,9 @@ if test "$ENABLEUSER" != ""; then
   INSTALLUSER=$ENABLEUSER
 
 fi
+
+RELEASE_DIR=$(pwd)/rel/ejabberd
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

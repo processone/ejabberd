@@ -222,4 +222,7 @@ if test "$ENABLEUSER" != ""; then
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
 
+RELEASE_DIR=$(pwd)/rel/ejabberd
+AC_SUBST(RELEASE_DIR)
+
 AC_OUTPUT
