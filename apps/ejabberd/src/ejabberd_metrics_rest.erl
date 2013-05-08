@@ -41,6 +41,21 @@ response(Req, #state{cmd=available_metrics}=State) ->
     {Hosts, Metrics} = get_available_hosts_metrics(),
     Response = response_json([{hosts, Hosts}, {metrics, Metrics}]),
     {Response, Req, State};
+response(Req, #state{cmd=sum_metrics}=State) ->
+    Metrics = get_sum_metrics(),
+    Response = response_json([{metrics, Metrics}]),
+    {Response, Req, State};
+response(Req, #state{cmd=sum_metric}=State) ->
+    {Metric, NewReq} = cowboy_req:binding(metric, Req),
+    try
+        MetricAtom = binary_to_existing_atom(Metric, utf8),
+        Value = get_sum_metric(MetricAtom),
+        Response = response_json([{metric, Value}]),
+        {Response, NewReq, State}
+    catch _:_ ->
+        {ok, NewReq2} = cowboy_req:reply(404, NewReq),
+        {halt, NewReq2, State}
+    end;
 response(Req, #state{cmd=host_metrics}=State) ->
     {Host, NewReq} = cowboy_req:binding(host, Req),
     case get_host_metrics(Host) of
@@ -60,7 +75,7 @@ response(Req, #state{cmd=host_metric}=State) ->
         Response = response_json([{metric, Value}]),
         {Response, NewReq, State}
     catch _:_ ->
-        {ok, NewReq2} = cowboy_req:reply(404, Req),
+        {ok, NewReq2} = cowboy_req:reply(404, NewReq),
         {halt, NewReq2, State}
     end;
 response(Req, State) ->
@@ -80,6 +95,37 @@ get_available_hosts_metrics() ->
                     {Hosts, NewMetrics}
             end, {ordsets:new(), ordsets:new()}, folsom_metrics:get_metrics()),
     {ordsets:to_list(HostsSet), ordsets:to_list(MetricsSet)}.
+
+get_sum_metrics() ->
+    {Hosts, Metrics} = get_available_hosts_metrics(),
+    Sum = lists:foldl(fun({_Host, Metric}=Name, Dict) ->
+                    Value = folsom_metrics:get_metric_value(Name),
+                    case orddict:is_key(Metric, Dict) of
+                        false ->
+                            orddict:store(Metric, Value, Dict);
+                        true ->
+                            OldValue = orddict:fetch(Metric, Dict),
+                            NewMetric = update_sum_metric(OldValue, Value),
+                            orddict:store(Metric, NewMetric, Dict)
+                    end
+            end, orddict:new(), [{H, M} || H <- Hosts, M <- Metrics]),
+    orddict:to_list(Sum).
+
+get_sum_metric(Metric) ->
+    {Hosts, _Metrics} = get_available_hosts_metrics(),
+    lists:foldl(fun(Host, Acc) ->
+                Value = folsom_metrics:get_metric_value({Host, Metric}),
+                update_sum_metric(Acc, Value)
+        end, nil, Hosts).
+
+update_sum_metric(nil, Value) ->
+    Value;
+update_sum_metric(OldValue, Value) when is_integer(Value) ->
+    OldValue+Value;
+update_sum_metric([{count,OldCount},{one,OldOne}],[{count,Count},{one,One}]) ->
+    [{count, OldCount+Count}, {one, OldOne+One}];
+update_sum_metric(OldValue, _Value) ->
+    OldValue.
 
 get_host_metrics(Host) ->
     Metrics = folsom_metrics:get_metrics_value(Host),
