@@ -11,7 +11,9 @@
 
 %% Private API
 -export([get_handlers/1,
-         get_pending/1]).
+         get_pending/1,
+         get_client_acks/1,
+         set_client_acks/2]).
 
 %% ejabberd_socket compatibility
 -export([starttls/2, starttls/3,
@@ -133,6 +135,14 @@ get_handlers(Pid) ->
 
 get_pending(Pid) ->
     gen_fsm:sync_send_all_state_event(Pid, get_pending).
+
+-spec get_client_acks(pid()) -> boolean().
+get_client_acks(Pid) ->
+    gen_fsm:sync_send_all_state_event(Pid, get_client_acks).
+
+-spec set_client_acks(pid(), boolean()) -> any().
+set_client_acks(Pid, Enabled) ->
+    gen_fsm:sync_send_all_state_event(Pid, {set_client_acks, Enabled}).
 
 %%--------------------------------------------------------------------
 %% gen_fsm callbacks
@@ -281,6 +291,13 @@ handle_sync_event(get_handlers, _From, StateName,
 handle_sync_event(get_pending, _From, StateName,
                   #state{pending = Pending} = S) ->
     {reply, Pending, StateName, S};
+handle_sync_event(get_client_acks, _From, StateName,
+                  #state{client_acks = ClientAcks} = S) ->
+    {reply, ClientAcks, StateName, S};
+handle_sync_event({set_client_acks, ClientAcks}, _From, StateName,
+                  #state{} = S) ->
+    NS = S#state{client_acks = ClientAcks},
+    {reply, ok, StateName, NS};
 handle_sync_event(Event, _From, StateName, State) ->
     ?DEBUG("Unhandled sync all state event: ~w~n", [Event]),
     Reply = ok,
