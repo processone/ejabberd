@@ -35,8 +35,6 @@ Macros = lists:flatmap(
                    [{d, 'ENABLE_FLASH_HACK'}];
               ({transient_supervisors, true}) ->
                    [{d, 'NO_TRANSIENT_SUPERVISORS'}];
-              ({full_xml, true}) ->
-                   [{d, 'FULL_XML_SUPPORT'}];
               ({nif, true}) ->
                    [{d, 'NIF'}];
               ({db_type, mssql}) ->
@@ -76,6 +74,25 @@ Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {xml, ".*", {git, "git://github.com/processone/xml"}},
         {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}],
 
+ConfigureCmd = fun(Pkg, Flags) ->
+                       {'get-deps',
+                        "sh -c 'cd deps/" ++ Pkg ++
+                            " && ./configure" ++ Flags ++ "'"}
+               end,
+
+XMLFlags = lists:foldl(
+             fun({nif, true}, Acc) ->
+                     Acc ++ " --enable-nif";
+                ({full_xml, true}, Acc) ->
+                     Acc ++ " --enable-full-xml";
+                (_, Acc) ->
+                     Acc
+             end, "", Cfg),
+
+PostHooks = [ConfigureCmd("tls", ""),
+             ConfigureCmd("stringprep", ""),
+             ConfigureCmd("xml", XMLFlags)],
+
 CfgDeps = lists:flatmap(
             fun({mysql, true}) ->
                     [{mysql, ".*", {git, "git://github.com/processone/mysql"}}];
@@ -100,11 +117,23 @@ CfgDeps = lists:flatmap(
                     []
             end, Cfg),
 
+CfgPostHooks = lists:flatmap(
+                 fun({pam, true}) ->
+                         [ConfigureCmd("epam", "")];
+                    ({zlib, true}) ->
+                         [ConfigureCmd("ezlib", "")];
+                    ({iconv, true}) ->
+                         [ConfigureCmd("iconv", "")];
+                    (_) ->
+                         []
+                 end, Cfg),
+
 Config = [{erl_opts, Includes ++ Macros ++ HiPE ++ DebugInfo},
           {src_dirs, [asn1, src | SrcDirs]},
           {sub_dirs, ["rel"]},
+          {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}],
-io:format("dynamic configuration:~n  ~p~n", [Config]),
+io:format("ejabberd configuration:~n  ~p~n", [Config]),
 Config.
 
 %% Local Variables:

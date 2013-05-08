@@ -68,9 +68,9 @@ else
   INIT_USER=$(INSTALLUSER)
 endif
 
-all: deps/% src
+all: deps src
 
-deps/%:
+deps:
 	$(REBAR) get-deps
 
 src:
