@@ -68,7 +68,7 @@ Sys = [{lib_dirs, []},
      end, OTPApps).
 
 Overlay = [
-           {mkdir, "log"},
+           {mkdir, "log/ejabberd"},
            {mkdir, "lock"},
            {mkdir, "etc/ejabberd"},
            {mkdir, "doc"},
