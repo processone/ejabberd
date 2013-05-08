@@ -59,9 +59,9 @@
                 rid :: rid(),
                 %% Requests deferred for later processing because
                 %% of having Rid greater than expected.
-                deferred = [] :: [{rid(), {event_type(), #xmlelement{}}}],
+                deferred = [] :: [{rid(), {event_type(), #xmlel{}}}],
                 client_acks = ?DEFAULT_CLIENT_ACKS :: boolean(),
-                sent = [] :: [{rid(), erlang:timestamp(), #xmlelement{}}],
+                sent = [] :: [{rid(), erlang:timestamp(), #xmlel{}}],
                 last_sent :: rid(),
                 %% Allowed inactivity period in seconds.
                 inactivity :: pos_integer() | infinity,
@@ -112,7 +112,7 @@ start_supervisor() ->
     when Pid :: pid(),
          EventTag :: event_type(),
          Handler :: pid(),
-         Body :: #xmlelement{}.
+         Body :: #xmlel{}.
 handle_request(Pid, Request) ->
     gen_fsm:send_all_state_event(Pid, Request).
 
@@ -233,7 +233,7 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-handle_event({EventTag, Handler, #xmlelement{} = Body}, SName, S) ->
+handle_event({EventTag, Handler, #xmlel{} = Body}, SName, S) ->
     NS = cancel_inactivity_timer(S),
     Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
     try
@@ -485,23 +485,23 @@ send_to_handler({Rid, Pid}, Data, State, Opts) ->
             NNS
     end.
 
-maybe_ack(#xmlelement{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
+maybe_ack(#xmlel{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
        when Rid > HandlerRid ->
-    Body#xmlelement{attrs = lists:keydelete(<<"ack">>, 1, Attrs)
-                            ++ server_ack(S#state.server_acks, Rid)};
+    Body#xmlel{attrs = lists:keydelete(<<"ack">>, 1, Attrs)
+                       ++ server_ack(S#state.server_acks, Rid)};
 maybe_ack(Body, _, _) ->
     Body.
 
 maybe_report(Body, #state{report = false} = S) ->
     {Body, S};
-maybe_report(#xmlelement{attrs = Attrs} = Body, #state{report = Report} = S) ->
+maybe_report(#xmlel{attrs = Attrs} = Body, #state{report = Report} = S) ->
     %% TODO: hardcoded value, use proper time
     HardcodedTime = 1000,
     %{ReportRid, ReportTimeDiff} = Report,
     {ReportRid, HardcodedTime} = Report,
     NewAttrs = [{<<"report">>, integer_to_binary(ReportRid)},
                 {<<"time">>, integer_to_binary(HardcodedTime)} | Attrs],
-    {Body#xmlelement{attrs = NewAttrs}, S#state{report = false}}.
+    {Body#xmlel{attrs = NewAttrs}, S#state{report = false}}.
 
 setup_inactivity_timer(#state{inactivity = infinity} = S) ->
     S;
@@ -550,11 +550,11 @@ return_surplus_handlers(normal, #state{pending = Pending} = S) ->
     NS = send_or_store(Pending, S#state{pending = []}),
     return_surplus_handlers(normal, NS).
 
--spec bosh_unwrap(EventTag, #xmlelement{}, #state{})
+-spec bosh_unwrap(EventTag, #xmlel{}, #state{})
     -> {[StreamEvent], #state{}}
     when EventTag :: event_type(),
          StreamEvent :: #xmlstreamstart{}
-                     | {xmlstreamelement, #xmlelement{}}
+                     | {xmlstreamelement, #xmlel{}}
                      | #xmlstreamend{}.
 bosh_unwrap(StreamEvent, Body, #state{} = S)
        when StreamEvent =:= streamstart;
@@ -574,7 +574,7 @@ bosh_unwrap(normal, Body, #state{sid = Sid} = State) ->
     Sid = exml_query:attr(Body, <<"sid">>),
     ?NS_HTTPBIND = exml_query:attr(Body, <<"xmlns">>),
     {[{xmlstreamelement, El}
-      || El <- Body#xmlelement.children,
+      || El <- Body#xmlel.children,
          %% Ignore whitespace keepalives.
          El /= {xmlcdata, <<" ">>}],
      State}.
@@ -627,7 +627,7 @@ bosh_wrap(Elements, #state{} = S) ->
             {{bosh_body(S), Stanzas},
              S#state{pending = [StreamEnd, Pending]}}
     end,
-    {Body#xmlelement{children = Children}, NS}.
+    {Body#xmlel{children = Children}, NS}.
 
 is_stream_event(#xmlstreamstart{}) ->
     true;
@@ -638,25 +638,25 @@ is_stream_event(_) ->
 
 %% Bosh body for a session creation response.
 bosh_stream_start_body(#xmlstreamstart{attrs = Attrs}, #state{} = S) ->
-    #xmlelement{name = <<"body">>,
-                attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
-                         {<<"requests">>,
-                          integer_to_binary(?CONCURRENT_REQUESTS)},
-                         {<<"hold">>, integer_to_binary(S#state.hold)},
-                         {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
-                         %% TODO: how to support these with cowboy?
-                         {<<"accept">>, <<"deflate,gzip">>},
-                         {<<"sid">>, S#state.sid},
-                         {<<"xmpp:restartlogic">>, <<"true">>},
-                         {<<"xmpp:version">>, <<"1.0">>},
-                         {<<"xmlns">>, ?NS_HTTPBIND},
-                         {<<"xmlns:xmpp">>, <<"urn:xmpp:xbosh">>},
-                         {<<"xmlns:stream">>, ?NS_STREAM}] ++
-                        inactivity(S#state.inactivity) ++
-                        maxpause(S#state.maxpause) ++
-                        %% TODO: shouldn't an ack be sent on restart?
-                        server_ack(S#state.server_acks, S#state.rid),
-                children = []}.
+    #xmlel{name = <<"body">>,
+           attrs = [{<<"wait">>, integer_to_binary(S#state.wait)},
+                    {<<"requests">>,
+                     integer_to_binary(?CONCURRENT_REQUESTS)},
+                    {<<"hold">>, integer_to_binary(S#state.hold)},
+                    {<<"from">>, proplists:get_value(<<"from">>, Attrs)},
+                    %% TODO: how to support these with cowboy?
+                    {<<"accept">>, <<"deflate,gzip">>},
+                    {<<"sid">>, S#state.sid},
+                    {<<"xmpp:restartlogic">>, <<"true">>},
+                    {<<"xmpp:version">>, <<"1.0">>},
+                    {<<"xmlns">>, ?NS_HTTPBIND},
+                    {<<"xmlns:xmpp">>, <<"urn:xmpp:xbosh">>},
+                    {<<"xmlns:stream">>, ?NS_STREAM}] ++
+           inactivity(S#state.inactivity) ++
+           maxpause(S#state.maxpause) ++
+           %% TODO: shouldn't an ack be sent on restart?
+           server_ack(S#state.server_acks, S#state.rid),
+           children = []}.
 
 inactivity(I) ->
     [{<<"inactivity">>, integer_to_binary(I)} || is_integer(I)].
@@ -669,16 +669,16 @@ server_ack(ServerAcks, Rid) ->
 
 %% Bosh body for an ordinary stream element(s).
 bosh_body(#state{} = S) ->
-    #xmlelement{name = <<"body">>,
-                attrs = [{<<"sid">>, S#state.sid},
-                         {<<"xmlns">>, ?NS_HTTPBIND}],
-                children = []}.
+    #xmlel{name = <<"body">>,
+           attrs = [{<<"sid">>, S#state.sid},
+                    {<<"xmlns">>, ?NS_HTTPBIND}],
+           children = []}.
 
 bosh_stream_end_body() ->
-    #xmlelement{name = <<"body">>,
-                attrs = [{<<"type">>, <<"terminate">>},
-                         {<<"xmlns">>, ?NS_HTTPBIND}],
-                children = []}.
+    #xmlel{name = <<"body">>,
+           attrs = [{<<"type">>, <<"terminate">>},
+                    {<<"xmlns">>, ?NS_HTTPBIND}],
+           children = []}.
 
 %%--------------------------------------------------------------------
 %% ejabberd_socket compatibility

@@ -192,7 +192,7 @@ start_backend(Opts) ->
     ok.
 
 -spec event_type(Body) -> event_type()
-    when Body::#xmlelement{}.
+    when Body::#xmlel{}.
 event_type(Body) ->
     %% Order of checks is important:
     %% stream restart has got sid attribute,
@@ -224,7 +224,7 @@ event_type(Body) ->
         end
     end.
 
-forward_body(Req, #xmlelement{} = Body, S) ->
+forward_body(Req, #xmlel{} = Body, S) ->
     try
         case Type = event_type(Body) of
             streamstart ->
@@ -320,11 +320,11 @@ terminal_condition(Condition, Details, Req) ->
     strip_ok(cowboy_req:reply(200, Headers, Body, Req)).
 
 terminal_condition_body(Condition, Children) ->
-    exml:to_binary(#xmlelement{name = <<"body">>,
-                               attrs = [{<<"type">>, <<"terminate">>},
-                                        {<<"condition">>, Condition},
-                                        {<<"xmlns">>, ?NS_HTTPBIND}],
-                               children = Children}).
+    exml:to_binary(#xmlel{name = <<"body">>,
+                          attrs = [{<<"type">>, <<"terminate">>},
+                                   {<<"condition">>, Condition},
+                                   {<<"xmlns">>, ?NS_HTTPBIND}],
+                          children = Children}).
 
 %%--------------------------------------------------------------------
 %% Backend configuration
