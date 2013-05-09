@@ -396,10 +396,12 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
     end,
     return_surplus_handlers(SName, NNS).
 
-schedule_report(Ack, #state{} = S) ->
-    %% TODO: hardcoded report time, measure it!
-    HardcodedTime = 1000,
-    Report = {Ack+1, HardcodedTime},
+schedule_report(Ack, #state{sent = Sent} = S) ->
+    ReportRid = Ack + 1,
+    %% TODO: handle keyfind returning false
+    {ReportRid, TimeSent, _} = lists:keyfind(ReportRid, 1, Sent),
+    ElapsedTimeMillis = erlang:round(timer:now_diff(now(), TimeSent) / 1000),
+    Report = {ReportRid, ElapsedTimeMillis},
     case S#state.report of
         false ->
             S#state{report = Report};
@@ -523,12 +525,9 @@ maybe_ack(Body, _, _) ->
 maybe_report(Body, #state{report = false} = S) ->
     {Body, S};
 maybe_report(#xmlel{attrs = Attrs} = Body, #state{report = Report} = S) ->
-    %% TODO: hardcoded value, use proper time
-    HardcodedTime = 1000,
-    %{ReportRid, ReportTimeDiff} = Report,
-    {ReportRid, HardcodedTime} = Report,
+    {ReportRid, ElapsedTime} = Report,
     NewAttrs = [{<<"report">>, integer_to_binary(ReportRid)},
-                {<<"time">>, integer_to_binary(HardcodedTime)} | Attrs],
+                {<<"time">>, integer_to_binary(ElapsedTime)} | Attrs],
     {Body#xmlel{attrs = NewAttrs}, S#state{report = false}}.
 
 cache_response(Response, #state{sent = Sent} = S) ->
