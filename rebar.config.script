@@ -114,8 +114,8 @@ CfgPostHooks = lists:flatmap(
                          []
                  end, Cfg),
 
-Config = [{erl_opts, Includes ++ Macros ++ HiPE ++ DebugInfo},
-          {src_dirs, [asn1, src | SrcDirs]},
+Config = [{erl_opts, Includes ++ Macros ++ HiPE ++ DebugInfo ++
+               [{src_dirs, [asn1, src | SrcDirs]}]},
           {sub_dirs, ["rel"]},
           {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}],
