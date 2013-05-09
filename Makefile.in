@@ -219,11 +219,13 @@ TAGS:
 
 Makefile: Makefile.in
 
+deps := $(filter-out deps/riak_pb/ebin, $(wildcard deps/*/ebin))
+
 erlang.plt:
 	-dialyzer --build_plt --output_plt erlang.plt \
 	--apps kernel stdlib sasl crypto public_key ssl mnesia \
 	inets odbc tools compiler erts webtool runtime_tools asn1 \
-	observer xmerl et gs wx syntax_tools deps/*/ebin
+	observer xmerl et gs wx syntax_tools $(deps)
 
 plt: erlang.plt
 
