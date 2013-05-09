@@ -195,7 +195,7 @@ AC_ARG_ENABLE(all,
 esac],[])
 
 AC_CONFIG_FILES([Makefile
-		 config.vars
+		 vars.config
 		 src/ejabberd.app.src])
 
 ENABLEUSER=""

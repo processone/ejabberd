@@ -6,7 +6,7 @@
 %%% @end
 %%% Created :  8 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
-Vars = case file:consult(filename:join(["..", "config.vars"])) of
+Vars = case file:consult(filename:join(["..", "vars.config"])) of
            {ok, Terms} ->
                Terms;
            _Err ->
@@ -81,7 +81,7 @@ Overlay = [
           ],
 
 Config = [{sys, Sys},
-          {overlay_vars, "../config.vars"},
+          {overlay_vars, "../vars.config"},
           {target_dir, "ejabberd"},
           {overlay, Overlay}],
 

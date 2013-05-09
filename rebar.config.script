@@ -6,7 +6,7 @@
 %%% @end
 %%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
-Cfg = case file:consult("config.vars") of
+Cfg = case file:consult("vars.config") of
           {ok, Terms} ->
               Terms;
           _Err ->

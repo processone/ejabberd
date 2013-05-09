@@ -207,7 +207,7 @@ distclean: clean clean-rel
 	rm -rf deps
 	rm -rf ebin
 	rm -f Makefile
-	rm -f config.vars
+	rm -f vars.config
 	rm -f src/ejabberd.app.src
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 

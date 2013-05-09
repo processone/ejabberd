@@ -2557,7 +2557,7 @@ esac
 fi
 
 
-ac_config_files="$ac_config_files Makefile config.vars src/ejabberd.app.src"
+ac_config_files="$ac_config_files Makefile vars.config src/ejabberd.app.src"
 
 
 ENABLEUSER=""
@@ -3302,7 +3302,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "config.vars") CONFIG_FILES="$CONFIG_FILES config.vars" ;;
+    "vars.config") CONFIG_FILES="$CONFIG_FILES vars.config" ;;
     "src/ejabberd.app.src") CONFIG_FILES="$CONFIG_FILES src/ejabberd.app.src" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5 ;;
