@@ -58,7 +58,7 @@ Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {tls, ".*", {git, "git://github.com/processone/tls"}},
         {stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
         {xml, ".*", {git, "git://github.com/processone/xml"}},
-        {xmlrpc, ".*", {git, "git://github.com/etnt/xmlrpc"}}],
+        {xmlrpc, ".*", {git, "git://github.com/rds13/xmlrpc"}}],
 
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
