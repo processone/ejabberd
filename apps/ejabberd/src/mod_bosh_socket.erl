@@ -64,7 +64,6 @@
                 deferred = [] :: [{rid(), {event_type(), #xmlel{}}}],
                 client_acks = ?DEFAULT_CLIENT_ACKS :: boolean(),
                 sent = [] :: [{rid(), erlang:timestamp(), #xmlel{}}],
-                last_sent :: rid(),
                 %% Allowed inactivity period in seconds.
                 inactivity :: pos_integer() | infinity,
                 inactivity_tref,
@@ -503,14 +502,15 @@ send_to_handler(Data, #state{handlers = Handlers} = S, Opts) ->
 send_to_handler({Rid, Pid}, Data, State, Opts) ->
     {Wrapped, NS} = bosh_wrap(Data, State),
     Acked = maybe_ack(Wrapped, Rid, NS),
-    {AckedReported, NNS} = maybe_report(Acked, NS),
+    {AckedReported, NS2} = maybe_report(Acked, NS),
+    NS3 = cache_response({Rid, now(), AckedReported}, NS2),
     ?DEBUG("send to ~p: ~p~n", [Pid, AckedReported]),
     Pid ! {bosh_reply, AckedReported},
     case proplists:get_value(pause, Opts, false) of
         false ->
-            setup_inactivity_timer(NNS);
+            setup_inactivity_timer(NS3);
         _ ->
-            NNS
+            NS3
     end.
 
 maybe_ack(#xmlel{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
@@ -530,6 +530,21 @@ maybe_report(#xmlel{attrs = Attrs} = Body, #state{report = Report} = S) ->
     NewAttrs = [{<<"report">>, integer_to_binary(ReportRid)},
                 {<<"time">>, integer_to_binary(HardcodedTime)} | Attrs],
     {Body#xmlel{attrs = NewAttrs}, S#state{report = false}}.
+
+cache_response(Response, #state{sent = Sent} = S) ->
+    NewSent = elists:insert(Response, Sent),
+    case S#state.client_acks of
+        true ->
+            %% Acknowledgements are on - there's no limit on the number
+            %% of cached responses.
+            S#state{sent = NewSent};
+        false ->
+            %% Leave up to ?CONCURRENT_REQUESTS responses in cache.
+            S#state{sent = cache_up_to(?CONCURRENT_REQUESTS, NewSent)}
+    end.
+
+cache_up_to(N, Responses) ->
+    lists:nthtail(max(0, length(Responses) - N), Responses).
 
 setup_inactivity_timer(#state{inactivity = infinity} = S) ->
     S;
@@ -772,3 +787,16 @@ record_set(Record, FieldValues) ->
             setelement(Field, Rec, Value)
         end,
     lists:foldl(F, Record, FieldValues).
+
+%%--------------------------------------------------------------------
+%% Tests
+%%--------------------------------------------------------------------
+
+-ifdef(TEST).
+
+-include_lib("eunit/include/eunit.hrl").
+
+cache_up_to_test_() ->
+    [?_test(?assertEqual( [4,5], cache_up_to(2, [1,2,3,4,5]) ))].
+
+-endif.
