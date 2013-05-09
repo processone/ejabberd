@@ -223,7 +223,7 @@ erlang.plt:
 	-dialyzer --build_plt --output_plt erlang.plt \
 	--apps kernel stdlib sasl crypto public_key ssl mnesia \
 	inets odbc tools compiler erts webtool runtime_tools asn1 \
-	observer xmerl et gs wx deps/*/ebin
+	observer xmerl et gs wx syntax_tools deps/*/ebin
 
 plt: erlang.plt
 
