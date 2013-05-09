@@ -7,7 +7,9 @@
 -module(ejabberd_metrics_rest).
 -behaviour(cowboy_rest).
 
--record(state, {cmd :: atom()}).
+-type command() :: available_metrics | sum_metrics |
+    sum_metric | host_metrics | host_metric.
+-record(state, {cmd :: command()}).
 
 %% cowboy_rest callbacks
 -export([init/3,
@@ -21,15 +23,23 @@
 %%--------------------------------------------------------------------
 %% cowboy_rest callbacks
 %%--------------------------------------------------------------------
+-spec init({atom(), http}, cowboy_req:req(), any()) ->
+    {upgrade, protocol, cowboy_rest}.
 init(_Transport, _Req, _Opts) ->
     {upgrade, protocol, cowboy_rest}.
 
+-spec rest_init(cowboy_req:req(), [command()]) ->
+    {ok, cowboy_req:req(), #state{}}.
 rest_init(Req, [Command]) ->
     {ok, Req, #state{cmd = Command}}.
 
+-spec allowed_methods(cowboy_req:req(), #state{}) ->
+    {[binary()], cowboy_req:req(), #state{}}.
 allowed_methods(Req, State) ->
     {[<<"GET">>], Req, State}.
 
+-spec content_types_provided(cowboy_req:req(), #state{}) ->
+    {[{{binary(), binary(), []}, atom()}], cowboy_req:req(), #state{}}.
 content_types_provided(Req, State) ->
     TypesProvided = [{{<<"application">>, <<"json">>, []}, response}],
     {TypesProvided, Req, State}.
@@ -37,6 +47,8 @@ content_types_provided(Req, State) ->
 %%--------------------------------------------------------------------
 %% response callbacks
 %%--------------------------------------------------------------------
+-spec response(cowboy_req:req(), #state{}) ->
+    {binary(), cowboy_req:req(), #state{}} | {halt, cowboy_req:req(), #state{}}.
 response(Req, #state{cmd=available_metrics}=State) ->
     {Hosts, Metrics} = get_available_hosts_metrics(),
     Response = response_json([{hosts, Hosts}, {metrics, Metrics}]),
