@@ -560,8 +560,6 @@ PACKAGE_URL=''
 ac_default_prefix=/
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-RELEASE_DIR
-INSTALLUSER
 http
 pubsub_ng
 debug
@@ -580,6 +578,7 @@ transient_supervisors
 flash_hack
 roster_gateway_workaround
 hipe
+INSTALLUSER
 MAKE
 REBAR
 ESCRIPT
@@ -652,6 +651,7 @@ enable_iconv
 enable_debug
 enable_pubsub_ng
 enable_http
+enable_all
 enable_user
 '
       ac_precious_vars='build_alias
@@ -1299,6 +1299,11 @@ Optional Features:
   --enable-pubsub_ng      enable PubSub NG (default: no)
   --enable-http           build external HTTP libraries ('ibrowse' and
                           'lhttpc', default: no)
+  --enable-all            same as --enable-nif --enable-mysql --enable-pgsql
+                          --enable-pam --enable-zlib --enable-stun
+                          --enable-riak --enable-json --enable-iconv
+                          --enable-debug --enable-pubsub_ng --enable-http
+                          (useful for Dialyzer checks, default: no)
   --enable-user[[[=USER]]]
                           allow this system user to start ejabberd (default:
                           no)
@@ -2485,7 +2490,6 @@ else
 fi
 
 
-
 # Check whether --enable-roster_gateway_workaround was given.
 if test "${enable_roster_gateway_workaround+set}" = set; then :
   enableval=$enable_roster_gateway_workaround; case "${enableval}" in
@@ -2496,7 +2500,6 @@ esac
 else
   roster_gateway_workaround=false
 fi
-
 
 
 # Check whether --enable-flash_hack was given.
@@ -2511,7 +2514,6 @@ else
 fi
 
 
-
 # Check whether --enable-transient_supervisors was given.
 if test "${enable_transient_supervisors+set}" = set; then :
   enableval=$enable_transient_supervisors; case "${enableval}" in
@@ -2522,7 +2524,6 @@ esac
 else
   transient_supervisors=false
 fi
-
 
 
 # Check whether --enable-full_xml was given.
@@ -2537,7 +2538,6 @@ else
 fi
 
 
-
 # Check whether --enable-nif was given.
 if test "${enable_nif+set}" = set; then :
   enableval=$enable_nif; case "${enableval}" in
@@ -2548,7 +2548,6 @@ esac
 else
   nif=false
 fi
-
 
 
 # Check whether --enable-mssql was given.
@@ -2563,7 +2562,6 @@ else
 fi
 
 
-
 # Check whether --enable-mysql was given.
 if test "${enable_mysql+set}" = set; then :
   enableval=$enable_mysql; case "${enableval}" in
@@ -2574,7 +2572,6 @@ esac
 else
   mysql=false
 fi
-
 
 
 # Check whether --enable-pgsql was given.
@@ -2589,7 +2586,6 @@ else
 fi
 
 
-
 # Check whether --enable-pam was given.
 if test "${enable_pam+set}" = set; then :
   enableval=$enable_pam; case "${enableval}" in
@@ -2600,7 +2596,6 @@ esac
 else
   pam=false
 fi
-
 
 
 # Check whether --enable-zlib was given.
@@ -2615,7 +2610,6 @@ else
 fi
 
 
-
 # Check whether --enable-stun was given.
 if test "${enable_stun+set}" = set; then :
   enableval=$enable_stun; case "${enableval}" in
@@ -2626,7 +2620,6 @@ esac
 else
   stun=false
 fi
-
 
 
 # Check whether --enable-riak was given.
@@ -2641,7 +2634,6 @@ else
 fi
 
 
-
 # Check whether --enable-json was given.
 if test "${enable_json+set}" = set; then :
   enableval=$enable_json; case "${enableval}" in
@@ -2652,7 +2644,6 @@ esac
 else
   json=false
 fi
-
 
 
 # Check whether --enable-iconv was given.
@@ -2667,7 +2658,6 @@ else
 fi
 
 
-
 # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug; case "${enableval}" in
@@ -2678,7 +2668,6 @@ esac
 else
   debug=true
 fi
-
 
 
 # Check whether --enable-pubsub_ng was given.
@@ -2693,7 +2682,6 @@ else
 fi
 
 
-
 # Check whether --enable-http was given.
 if test "${enable_http+set}" = set; then :
   enableval=$enable_http; case "${enableval}" in
@@ -2705,6 +2693,15 @@ else
   http=false
 fi
 
+
+# Check whether --enable-all was given.
+if test "${enable_all+set}" = set; then :
+  enableval=$enable_all; case "${enableval}" in
+  yes) nif=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true iconv=true debug=true pubsub_ng=true http=true ;;
+  no) nif=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false pubsub_ng=false http=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-all" "$LINENO" 5  ;;
+esac
+fi
 
 
 ac_config_files="$ac_config_files Makefile config.vars src/ejabberd.app.src"
@@ -2726,7 +2723,23 @@ if test "$ENABLEUSER" != ""; then
 
 fi
 
-RELEASE_DIR=$(pwd)/rel/ejabberd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 cat >confcache <<\_ACEOF
