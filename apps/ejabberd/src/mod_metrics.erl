@@ -94,23 +94,27 @@ get_total_counters(Host) ->
 
 start_cowboy(Opts) ->
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 10),
-    Port = gen_mod:get_opt(port, Opts, 8081),
-    Dispatch = cowboy_router:compile([{'_', [
-                        {"/metrics", ?REST_LISTENER, [available_metrics]},
-                        {"/metrics/m", ?REST_LISTENER, [sum_metrics]},
-                        {"/metrics/m/:metric", ?REST_LISTENER, [sum_metric]},
-                        {"/metrics/host/:host/:metric", ?REST_LISTENER, [host_metric]},
-                        {"/metrics/host/:host", ?REST_LISTENER, [host_metrics]}
-                        ]}]),
-    case cowboy:start_http(?REST_LISTENER, NumAcceptors,
-                           [{port, Port}],
-                           [{env, [{dispatch, Dispatch}]}]) of
-        {error, {already_started, _Pid}} ->
+    case gen_mod:get_opt(port, Opts, undefined) of
+        undefined ->
             ok;
-        {ok, _Pid} ->
-            ok;
-        {error, Reason} ->
-            {error, Reason}
+        Port ->
+            Dispatch = cowboy_router:compile([{'_', [
+                                {"/metrics", ?REST_LISTENER, [available_metrics]},
+                                {"/metrics/m", ?REST_LISTENER, [sum_metrics]},
+                                {"/metrics/m/:metric", ?REST_LISTENER, [sum_metric]},
+                                {"/metrics/host/:host/:metric", ?REST_LISTENER, [host_metric]},
+                                {"/metrics/host/:host", ?REST_LISTENER, [host_metrics]}
+                                ]}]),
+            case cowboy:start_http(?REST_LISTENER, NumAcceptors,
+                                   [{port, Port}],
+                                   [{env, [{dispatch, Dispatch}]}]) of
+                {error, {already_started, _Pid}} ->
+                    ok;
+                {ok, _Pid} ->
+                    ok;
+                {error, Reason} ->
+                    {error, Reason}
+            end
     end.
 
 stop_cowboy() ->
