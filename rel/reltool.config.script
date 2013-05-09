@@ -68,8 +68,9 @@ Sys = [{lib_dirs, []},
      end, OTPApps).
 
 Overlay = [
-           {mkdir, "log/ejabberd"},
-           {mkdir, "lock"},
+           {mkdir, "var/log/ejabberd"},
+           {mkdir, "var/lock"},
+           {mkdir, "var/lib/ejabberd"},
            {mkdir, "etc/ejabberd"},
            {mkdir, "doc"},
            {template, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
