@@ -119,7 +119,7 @@ Config = [{erl_opts, Includes ++ Macros ++ HiPE ++ DebugInfo},
           {sub_dirs, ["rel"]},
           {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}],
-io:format("ejabberd configuration:~n  ~p~n", [Config]),
+%%io:format("ejabberd configuration:~n  ~p~n", [Config]),
 Config.
 
 %% Local Variables:
