@@ -377,27 +377,28 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
     NS = maybe_add_handler(Handler, Rid, S),
     NNS = case {EventTag,
-                %% TODO: intercept retransmitted packets
-                %is_reply_cached(Rid),
+                false, %is_reply_cached(Rid, S#state.sent),
                 is_valid_rid(Rid, OldRid),
                 is_valid_ack(Body, S#state.last_processed, S#state.client_acks),
                 is_acceptable_rid(Rid, OldRid)}
     of
-        {streamstart, _, _, _} ->
+        %{_, true, _, _, _} ->
+        %    resend_cached(Rid, NS);
+        {streamstart, _, _, _, _} ->
             process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
-        {_, true, true, _} ->
+        {_, _, true, true, _} ->
             process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
-        {_, true, false, _} ->
+        {_, _, true, false, _} ->
             Ack = binary_to_integer(exml_query:attr(Body, <<"ack">>)),
             RS = schedule_report(Ack, NS),
             PS = process_stream_event(EventTag, Body, SName,
                                       RS#state{rid = Rid}),
             maybe_send_report(PS);
-        {_, false, _, true} ->
+        {_, _, false, _, true} ->
             ?DEBUG("storing stream event for deferred processing: ~p~n",
                    [{EventTag, Body}]),
             NS#state{deferred = [Event | NS#state.deferred]};
-        {_, false, _, false} ->
+        {_, _, false, _, false} ->
             ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
             [Pid ! item_not_found
              || {_, _, Pid} <- lists:sort(NS#state.handlers)],
@@ -433,6 +434,16 @@ maybe_send_report(#state{report = false} = S) ->
 maybe_send_report(#state{} = S) ->
     send_or_store([], S).
 
+%resend_cached(Rid, #state{sent = Sent} = S) ->
+%    case lists:keyfind(Rid, 1, Sent) of
+%        false ->
+%            ?ERROR_MSG("no cached response for RID ~p, responses ~p~n",
+%                       [Rid, Sent]),
+%            S;
+%        {Rid, _, CachedResponse} ->
+%            send_
+%    end.
+
 process_stream_event(pause, Body, SName, State) ->
     Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
     NewState = process_pause_event(Seconds, State),
@@ -462,6 +473,9 @@ process_deferred_events(SName, #state{deferred = Deferred} = S) ->
                 end,
                 S#state{deferred = []},
                 lists:sort(Deferred)).
+
+is_reply_cached(Rid, Sent) ->
+    lists:keymember(Rid, 1, Sent).
 
 is_valid_rid(Rid, OldRid) when Rid == OldRid + 1 ->
     true;
