@@ -251,6 +251,7 @@ normal(Event, _From, State) ->
 handle_event({EventTag, Handler, #xmlel{} = Body}, SName, S) ->
     NS = cancel_inactivity_timer(S),
     Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
+    ?DEBUG("recv rid ~p~n", [Rid]),
     try
         NNS = handle_stream_event({EventTag, Body, Rid}, Handler, SName, NS),
         %% TODO: it's the event which determines the next state,
@@ -375,6 +376,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
+    ?DEBUG("handle_stream_event sent: ~p~n", [S#state.sent]),
     NS = maybe_add_handler(Handler, Rid, S),
     NNS = case {EventTag,
                 is_reply_cached(Rid, S#state.sent),
@@ -399,7 +401,7 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                    [{EventTag, Body}]),
             NS#state{deferred = [Event | NS#state.deferred]};
         {_, _, false, _, false} ->
-            ?ERROR_MSG("invalid rid: ~p~n", [{EventTag, Body}]),
+            ?ERROR_MSG("invalid rid ~p:~n~p~n", [Rid, {EventTag, Body}]),
             [Pid ! item_not_found
              || {_, _, Pid} <- lists:sort(NS#state.handlers)],
             throw({invalid_rid, NS#state{handlers = []}})
@@ -513,8 +515,7 @@ send_or_store(Data, State) when not is_list(Data) ->
     send_or_store([Data], State);
 send_or_store(Data, #state{handlers = []} = S) ->
     store(Data, S);
-send_or_store(Data, #state{handlers = Hs} = State) ->
-    ?DEBUG("Forwarding to handler. Handlers: ~p~n", [Hs]),
+send_or_store(Data, State) ->
     send_to_handler(Data, State).
 
 %% send_to_handler() assumes that Handlers is not empty!
@@ -549,7 +550,6 @@ send_to_handler({Rid, Pid}, Data, State, Opts) ->
 %% and the *only one* actually performing a send
 %% to the cowboy_loop_handler serving a HTTP request.
 send_wrapped_to_handler(Pid, Wrapped, State, Opts) ->
-    ?DEBUG("send to ~p: ~p~n", [Pid, Wrapped]),
     Pid ! {bosh_reply, Wrapped},
     case proplists:get_value(pause, Opts, false) of
         false ->

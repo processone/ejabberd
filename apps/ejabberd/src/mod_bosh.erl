@@ -241,7 +241,7 @@ forward_body(Req, #xmlel{} = Body, S) ->
         end
     catch
         error:item_not_found ->
-            ?WARNING_MSG("session not found! ~p~n", [Body]),
+            ?WARNING_MSG("session not found!~n~p~n", [Body]),
             {ok, terminal_condition(<<"item-not-found">>, Req), S}
     end.
 
