@@ -377,13 +377,13 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
     NS = maybe_add_handler(Handler, Rid, S),
     NNS = case {EventTag,
-                false, %is_reply_cached(Rid, S#state.sent),
+                is_reply_cached(Rid, S#state.sent),
                 is_valid_rid(Rid, OldRid),
                 is_valid_ack(Body, S#state.last_processed, S#state.client_acks),
                 is_acceptable_rid(Rid, OldRid)}
     of
-        %{_, true, _, _, _} ->
-        %    resend_cached(Rid, NS);
+        {_, true, _, _, _} ->
+            resend_cached(Rid, NS);
         {streamstart, _, _, _, _} ->
             process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
         {_, _, true, true, _} ->
@@ -434,15 +434,15 @@ maybe_send_report(#state{report = false} = S) ->
 maybe_send_report(#state{} = S) ->
     send_or_store([], S).
 
-%resend_cached(Rid, #state{sent = Sent} = S) ->
-%    case lists:keyfind(Rid, 1, Sent) of
-%        false ->
-%            ?ERROR_MSG("no cached response for RID ~p, responses ~p~n",
-%                       [Rid, Sent]),
-%            S;
-%        {Rid, _, CachedResponse} ->
-%            send_
-%    end.
+resend_cached(Rid, #state{sent = Sent} = S) ->
+    case lists:keyfind(Rid, 1, Sent) of
+        false ->
+            ?ERROR_MSG("no cached response for RID ~p, responses ~p~n",
+                       [Rid, Sent]),
+            S;
+        {Rid, _, CachedResponse} ->
+            send_to_handler(CachedResponse, S)
+    end.
 
 process_stream_event(pause, Body, SName, State) ->
     Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
