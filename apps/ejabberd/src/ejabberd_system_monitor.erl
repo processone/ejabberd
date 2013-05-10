@@ -208,7 +208,7 @@ process_large_heap(Pid, Info) ->
         From = jlib:make_jid(<<"">>, Host, <<"watchdog">>),
 	    lists:foreach(
 	      fun(S) ->
-		      case jlib:binary_to_jid(S) of
+		      case jlib:binary_to_jid(list_to_binary(S)) of
 			  error -> ok;
 			  JID -> send_message(From, JID, Body)
 		      end
@@ -231,7 +231,7 @@ get_admin_jids() ->
 	JIDs when is_list(JIDs) ->
 	    lists:flatmap(
 	      fun(S) ->
-		      case jlib:binary_to_jid(S) of
+		      case jlib:binary_to_jid(list_to_binary(S)) of
 			  error -> [];
 			  JID -> [jlib:jid_tolower(JID)]
 		      end
