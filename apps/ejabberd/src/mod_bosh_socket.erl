@@ -13,7 +13,8 @@
 -export([get_handlers/1,
          get_pending/1,
          get_client_acks/1,
-         set_client_acks/2]).
+         set_client_acks/2,
+         get_cached_responses/1]).
 
 %% ejabberd_socket compatibility
 -export([starttls/2, starttls/3,
@@ -49,6 +50,7 @@
 -define(DEFAULT_MAXPAUSE, 120).
 -define(DEFAULT_CLIENT_ACKS, false).
 
+-type cached_response() :: {rid(), erlang:timestamp(), #xmlel{}}.
 -type rid() :: pos_integer().
 
 -record(state, {c2s_pid :: pid(),
@@ -63,7 +65,7 @@
                 %% of having Rid greater than expected.
                 deferred = [] :: [{rid(), {event_type(), #xmlel{}}}],
                 client_acks = ?DEFAULT_CLIENT_ACKS :: boolean(),
-                sent = [] :: [{rid(), erlang:timestamp(), #xmlel{}}],
+                sent = [] :: [cached_response()],
                 %% Allowed inactivity period in seconds.
                 inactivity :: pos_integer() | infinity,
                 inactivity_tref,
@@ -142,6 +144,10 @@ get_client_acks(Pid) ->
 -spec set_client_acks(pid(), boolean()) -> any().
 set_client_acks(Pid, Enabled) ->
     gen_fsm:sync_send_all_state_event(Pid, {set_client_acks, Enabled}).
+
+-spec get_cached_responses(pid()) -> [cached_response()].
+get_cached_responses(Pid) ->
+    gen_fsm:sync_send_all_state_event(Pid, get_cached_responses).
 
 %%--------------------------------------------------------------------
 %% gen_fsm callbacks
@@ -297,6 +303,9 @@ handle_sync_event({set_client_acks, ClientAcks}, _From, StateName,
                   #state{} = S) ->
     NS = S#state{client_acks = ClientAcks},
     {reply, ok, StateName, NS};
+handle_sync_event(get_cached_responses, _From, StateName,
+                  #state{sent = CachedResponses} = S) ->
+    {reply, CachedResponses, StateName, S};
 handle_sync_event(Event, _From, StateName, State) ->
     ?DEBUG("Unhandled sync all state event: ~w~n", [Event]),
     Reply = ok,
