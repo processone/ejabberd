@@ -576,16 +576,22 @@ maybe_report(#state{report = Report} = S) ->
 
 cache_response(Response, #state{sent = Sent} = S) ->
     NewSent = elists:insert(Response, Sent),
-    case S#state.client_acks of
-        true ->
-            %% Acknowledgements are on - there's no limit on the number
-            %% of cached responses.
-            S#state{sent = NewSent};
-        false ->
-            %% Leave up to ?CONCURRENT_REQUESTS responses in cache.
-            S#state{sent = cache_up_to(?CONCURRENT_REQUESTS, NewSent)}
-    end.
+    %% TODO: base this on S#state.client_acks - see XEP for details
+    %CacheUpTo = ?CONCURRENT_REQUESTS,
+    CacheUpTo = infinity,
+    S#state{sent = cache_up_to(CacheUpTo, NewSent)}.
+    %case of
+    %    true ->
+    %        %% Acknowledgements are on - there's no limit on the number
+    %        %% of cached responses.
+    %        S#state{sent = NewSent};
+    %    false ->
+    %        %% Leave up to ?CONCURRENT_REQUESTS responses in cache.
+    %        S#state{sent = cache_up_to(?CONCURRENT_REQUESTS, NewSent)}
+    %end.
 
+cache_up_to(infinity, Responses) ->
+    Responses;
 cache_up_to(N, Responses) ->
     lists:nthtail(max(0, length(Responses) - N), Responses).
 
