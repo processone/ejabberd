@@ -522,12 +522,21 @@ send_or_store(Data, #state{handlers = Hs} = State) ->
 send_to_handler(Data, State) ->
     send_to_handler(Data, State, []).
 
-send_to_handler(Data, #state{handlers = Handlers} = S, Opts) ->
+send_to_handler(Data, State, Opts) ->
+    {Handler, NS} = pick_handler(State),
+    send_to_handler(Handler, Data, NS, Opts).
+
+%% Return handler and new state if a handler is available
+%% or `false` otherwise.
+-spec pick_handler(#state{}) -> {{rid(), pid()}, #state{}} | false.
+pick_handler(#state{handlers = []}) ->
+    false;
+pick_handler(#state{handlers = Handlers} = S) ->
     [{Rid, TRef, Pid} | HRest] = lists:sort(Handlers),
     %% The cancellation might fail if the timer already fired.
     %% Don't worry, it's handled on receiving the timeout message.
     timer:cancel(TRef),
-    send_to_handler({Rid, Pid}, Data, S#state{handlers = HRest}, Opts).
+    {{Rid, Pid}, S#state{handlers = HRest}}.
 
 %% This is the most specific variant of send_to_handler()
 %% and the *only one* actually performing a send
