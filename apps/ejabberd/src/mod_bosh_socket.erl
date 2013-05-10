@@ -533,33 +533,32 @@ send_to_handler(Data, #state{handlers = Handlers} = S, Opts) ->
 %% and the *only one* actually performing a send
 %% to the cowboy_loop_handler serving a HTTP request.
 send_to_handler({Rid, Pid}, Data, State, Opts) ->
-    {Wrapped, NS} = bosh_wrap(Data, State),
-    Acked = maybe_ack(Wrapped, Rid, NS),
-    {AckedReported, NS2} = maybe_report(Acked, NS),
-    NS3 = cache_response({Rid, now(), AckedReported}, NS2),
-    ?DEBUG("send to ~p: ~p~n", [Pid, AckedReported]),
-    Pid ! {bosh_reply, AckedReported},
+    {Wrapped, NS} = bosh_wrap(Data, Rid, State),
+    NS2 = cache_response({Rid, now(), Wrapped}, NS),
+    ?DEBUG("send to ~p: ~p~n", [Pid, Wrapped]),
+    Pid ! {bosh_reply, Wrapped},
     case proplists:get_value(pause, Opts, false) of
         false ->
-            setup_inactivity_timer(NS3);
+            setup_inactivity_timer(NS2);
         _ ->
-            NS3
+            NS2
     end.
 
-maybe_ack(#xmlel{attrs = Attrs} = Body, HandlerRid, #state{rid = Rid} = S)
-       when Rid > HandlerRid ->
-    Body#xmlel{attrs = lists:keydelete(<<"ack">>, 1, Attrs)
-                       ++ server_ack(S#state.server_acks, Rid)};
-maybe_ack(Body, _, _) ->
-    Body.
+maybe_ack(HandlerRid, #state{rid = Rid} = S) ->
+    if
+        Rid > HandlerRid ->
+            server_ack(S#state.server_acks, Rid);
+        Rid =< HandlerRid ->
+            []
+    end.
 
-maybe_report(Body, #state{report = false} = S) ->
-    {Body, S};
-maybe_report(#xmlel{attrs = Attrs} = Body, #state{report = Report} = S) ->
+maybe_report(#state{report = false} = S) ->
+    {[], S};
+maybe_report(#state{report = Report} = S) ->
     {ReportRid, ElapsedTime} = Report,
     NewAttrs = [{<<"report">>, integer_to_binary(ReportRid)},
-                {<<"time">>, integer_to_binary(ElapsedTime)} | Attrs],
-    {Body#xmlel{attrs = NewAttrs}, S#state{report = false}}.
+                {<<"time">>, integer_to_binary(ElapsedTime)}],
+    {NewAttrs, S#state{report = false}}.
 
 cache_response(Response, #state{sent = Sent} = S) ->
     NewSent = elists:insert(Response, Sent),
@@ -682,7 +681,7 @@ stream_start(From, To) ->
                              {<<"xmlns">>, <<"jabber:client">>},
                              {<<"xmlns:stream">>, ?NS_STREAM}]}.
 
-bosh_wrap(Elements, #state{} = S) ->
+bosh_wrap(Elements, Rid, #state{} = S) ->
     EventsStanzas = lists:partition(fun is_stream_event/1, Elements),
     {{Body, Children}, NS} = case EventsStanzas of
         {[], Stanzas} ->
@@ -700,7 +699,11 @@ bosh_wrap(Elements, #state{} = S) ->
             {{bosh_body(S), Stanzas},
              S#state{pending = [StreamEnd, Pending]}}
     end,
-    {Body#xmlel{children = Children}, NS}.
+    MaybeAck = maybe_ack(Rid, NS),
+    {MaybeReport, NNS} = maybe_report(NS),
+    ExtraAttrs = MaybeAck ++ MaybeReport,
+    {Body#xmlel{attrs = Body#xmlel.attrs ++ ExtraAttrs,
+                children = Children}, NNS}.
 
 is_stream_event(#xmlstreamstart{}) ->
     true;
