@@ -49,7 +49,6 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include_lib("exml/include/exml.hrl").
 
 start(Host, Opts) ->
     ejabberd_local:refresh_iq_handlers(),

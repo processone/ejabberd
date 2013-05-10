@@ -40,7 +40,6 @@
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
--include_lib("exml/include/exml.hrl").
 
 -record(state, {}).
 

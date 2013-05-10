@@ -59,7 +59,6 @@
 -include("mod_roster.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
--include_lib("exml/include/exml.hrl").
 
 
 start(Host, Opts) ->
