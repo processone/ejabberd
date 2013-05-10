@@ -398,17 +398,25 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
 
 schedule_report(Ack, #state{sent = Sent} = S) ->
     ReportRid = Ack + 1,
-    %% TODO: handle keyfind returning false
-    {ReportRid, TimeSent, _} = lists:keyfind(ReportRid, 1, Sent),
-    ElapsedTimeMillis = erlang:round(timer:now_diff(now(), TimeSent) / 1000),
-    Report = {ReportRid, ElapsedTimeMillis},
-    case S#state.report of
-        false ->
-            S#state{report = Report};
-        OldReport when OldReport < Report ->
-            S#state{report = OldReport};
-        _ ->
-            S#state{report = Report}
+    try
+        {resp,
+         {ReportRid, TimeSent, _}} = {resp, lists:keyfind(ReportRid, 1, Sent)},
+        ElapsedTimeMillis = erlang:round(timer:now_diff(now(), TimeSent)
+                                         / 1000),
+        Report = {ReportRid, ElapsedTimeMillis},
+        case S#state.report of
+            false ->
+                S#state{report = Report};
+            OldReport when OldReport < Report ->
+                S#state{report = OldReport};
+            _ ->
+                S#state{report = Report}
+        end
+    catch
+        error:{badmatch, {resp, false}} ->
+            ?ERROR_MSG("no cached response for RID ~p, responses ~p~n",
+                       [ReportRid, Sent]),
+            S
     end.
 
 maybe_send_report(#state{report = false} = S) ->
