@@ -538,19 +538,24 @@ pick_handler(#state{handlers = Handlers} = S) ->
     timer:cancel(TRef),
     {{Rid, Pid}, S#state{handlers = HRest}}.
 
-%% This is the most specific variant of send_to_handler()
-%% and the *only one* actually performing a send
-%% to the cowboy_loop_handler serving a HTTP request.
+send_to_handler({_, Pid}, #xmlel{name = <<"body">>} = Wrapped, State, Opts) ->
+    send_wrapped_to_handler(Pid, Wrapped, State, Opts);
 send_to_handler({Rid, Pid}, Data, State, Opts) ->
     {Wrapped, NS} = bosh_wrap(Data, Rid, State),
     NS2 = cache_response({Rid, now(), Wrapped}, NS),
+    send_wrapped_to_handler(Pid, Wrapped, NS2, Opts).
+
+%% This is the most specific variant of send_to_handler()
+%% and the *only one* actually performing a send
+%% to the cowboy_loop_handler serving a HTTP request.
+send_wrapped_to_handler(Pid, Wrapped, State, Opts) ->
     ?DEBUG("send to ~p: ~p~n", [Pid, Wrapped]),
     Pid ! {bosh_reply, Wrapped},
     case proplists:get_value(pause, Opts, false) of
         false ->
-            setup_inactivity_timer(NS2);
+            setup_inactivity_timer(State);
         _ ->
-            NS2
+            State
     end.
 
 maybe_ack(HandlerRid, #state{rid = Rid} = S) ->
