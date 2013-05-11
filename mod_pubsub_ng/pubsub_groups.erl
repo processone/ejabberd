@@ -76,10 +76,10 @@
 
 -type(n0des() :: [Node::n0de(),...]).
 
--type(subscription()
-  :: {NodeIdx :: exmpp_pubsub:nodeIdx(),
-      Groups  :: roster_groups()}
-).
+%% -type(subscription()
+%%   :: {NodeIdx :: exmpp_pubsub:nodeIdx(),
+%%       Groups  :: roster_groups()}
+%% ).
 
 -type(subscriptions() :: [Subscription::subscription(),...]).
 

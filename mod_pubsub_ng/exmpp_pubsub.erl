@@ -273,15 +273,15 @@
       Subscription_Options :: []}
 ).
 
--type(subscription()
-  :: {Subscription_State   :: exmpp_pubsub:subscription_state(),
-      SubId                :: exmpp_pubsub:subId(),
-      Resource             :: undefined | xmpp_jid:resource_jid() | {'caps', xmpp_jid:resource_jid()},
-      Subscription_Options :: [] | pubsub_options:options_subscription()}
-%%  :: exmpp_pubsub:subscription_subscribed()
-%%   | exmpp_pubsub:subscription_pending()
-%%   | exmpp_pubsub:subscription_unconfigured()
-).
+%% -type(subscription()
+%%   :: {Subscription_State   :: exmpp_pubsub:subscription_state(),
+%%       SubId                :: exmpp_pubsub:subId(),
+%%       Resource             :: undefined | xmpp_jid:resource_jid() | {'caps', xmpp_jid:resource_jid()},
+%%       Subscription_Options :: [] | pubsub_options:options_subscription()}
+%% %%  :: exmpp_pubsub:subscription_subscribed()
+%% %%   | exmpp_pubsub:subscription_pending()
+%% %%   | exmpp_pubsub:subscription_unconfigured()
+%% ).
 
 -type(subscriptions()
     :: [exmpp_pubsub:subscription(),...]

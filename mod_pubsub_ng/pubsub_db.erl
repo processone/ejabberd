@@ -31,7 +31,6 @@
 
 -include("pubsub_dev.hrl").
 -include("pubsub_api.hrl").
--include("logger.hrl").
 
 
 -import(pubsub_tools,

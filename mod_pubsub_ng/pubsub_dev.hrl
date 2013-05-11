@@ -2,6 +2,7 @@
 
 %-include_lib("exmpp/include/exmpp.hrl").
 %-include_lib("exmpp/include/exmpp_jid.hrl").
+-include("logger.hrl").
 -include("ejabberd.hrl").
 -include("mod_roster.hrl").
 -include("jlib.hrl").
