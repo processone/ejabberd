@@ -248,10 +248,25 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
+debug_recv(Rid, Body, _S) ->
+    Msg = exml_query:path(Body, [{element, <<"message">>},
+                                 {element, <<"body">>},
+                                 cdata]),
+    case Msg of
+        undefined ->
+            ?DEBUG("recv rid ~p~n", [Rid]);
+        _ ->
+            ?DEBUG("recv rid ~p msg ~p~n", [Rid, Msg])
+    end.
+
+debug_handlers(Tag, S) ->
+    Handlers = [Rid || {Rid,_,_} <- S#state.handlers],
+    ?DEBUG("handlers ~p ~p~n", [Tag, Handlers]).
+
 handle_event({EventTag, Handler, #xmlel{} = Body}, SName, S) ->
     NS = cancel_inactivity_timer(S),
     Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-    ?DEBUG("recv rid ~p~n", [Rid]),
+    debug_recv(Rid, Body, S),
     try
         NNS = handle_stream_event({EventTag, Body, Rid}, Handler, SName, NS),
         %% TODO: it's the event which determines the next state,
@@ -376,7 +391,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
-    ?DEBUG("handle_stream_event sent: ~p~n", [S#state.sent]),
+    debug_handlers("enter", S),
     NS = maybe_add_handler(Handler, Rid, S),
     NNS = case {EventTag,
                 is_reply_cached(Rid, S#state.sent),
@@ -406,7 +421,9 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
              || {_, _, Pid} <- lists:sort(NS#state.handlers)],
             throw({invalid_rid, NS#state{handlers = []}})
     end,
-    return_surplus_handlers(SName, NNS).
+    ZS = return_surplus_handlers(SName, NNS),
+    debug_handlers("exit", ZS),
+    ZS.
 
 schedule_report(Ack, #state{sent = Sent} = S) ->
     ReportRid = Ack + 1,
@@ -574,7 +591,19 @@ maybe_report(#state{report = Report} = S) ->
                 {<<"time">>, integer_to_binary(ElapsedTime)}],
     {NewAttrs, S#state{report = false}}.
 
+debug_cache({Rid, _, Body}, S) ->
+    Msg = exml_query:path(Body, [{element, <<"message">>},
+                                 {element, <<"body">>},
+                                 cdata]),
+    case Msg of
+        undefined ->
+            ?DEBUG("cache rid ~p~n", [Rid]);
+        _ ->
+            ?DEBUG("cache rid ~p msg ~p~n", [Rid, Msg])
+    end.
+
 cache_response(Response, #state{sent = Sent} = S) ->
+    debug_cache(Response, S),
     NewSent = elists:insert(Response, Sent),
     %% TODO: base this on S#state.client_acks - see XEP for details
     %CacheUpTo = ?CONCURRENT_REQUESTS,
