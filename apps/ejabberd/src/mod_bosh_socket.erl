@@ -444,7 +444,7 @@ determine_report_action(undefined, true, Rid, LastProcessed) ->
         Rid+1 == LastProcessed ->
             {noreport, undefined};
         Rid+1 /= LastProcessed ->
-            ?INFO_MSG("expected 'ack' attribute on ~p~n", [Rid]),
+            ?WARNING_MSG("expected 'ack' attribute on ~p~n", [Rid]),
             {noreport, undefined}
     end;
 determine_report_action(BAck, _, _, LastProcessed) ->
