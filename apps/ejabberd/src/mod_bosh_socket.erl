@@ -426,14 +426,15 @@ process_acked_stream_event({EventTag, Body, Rid}, SName,
     MaybeBAck = exml_query:attr(Body, <<"ack">>),
     {Action, Ack} = determine_report_action(MaybeBAck, S#state.client_acks,
                                             Rid, S#state.last_processed),
+    NS = maybe_trim_cache(Ack, S),
     case Action of
         noreport ->
-            process_stream_event(EventTag, Body, SName, S#state{rid = Rid});
+            process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
         report ->
-            NS = schedule_report(Ack, S),
-            NS2 = process_stream_event(EventTag, Body, SName,
-                                       NS#state{rid = Rid}),
-            maybe_send_report(NS2)
+            NS2 = schedule_report(Ack, NS),
+            NS3 = process_stream_event(EventTag, Body, SName,
+                                       NS2#state{rid = Rid}),
+            maybe_send_report(NS3)
     end.
 
 determine_report_action(undefined, false, _, _) ->
@@ -462,6 +463,17 @@ is_valid_ack(Ack, LastProcessed)
     false;
 is_valid_ack(_, _) ->
     true.
+
+maybe_trim_cache(undefined, S) ->
+    S;
+maybe_trim_cache(Ack, S) ->
+    UpToAck = fun({R,_,_}) when R =< Ack ->
+                    true;
+                 (_) ->
+                    false
+              end,
+    NewSent = lists:dropwhile(UpToAck, S#state.sent),
+    S#state{sent = NewSent}.
 
 schedule_report(Ack, #state{sent = Sent} = S) ->
     ReportRid = Ack + 1,
