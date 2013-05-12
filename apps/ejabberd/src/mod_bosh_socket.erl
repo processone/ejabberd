@@ -248,31 +248,9 @@ normal(Event, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 
-debug_recv(Rid, Body, _S) ->
-    Ack = exml_query:attr(Body, <<"ack">>),
-    Msg = exml_query:path(Body, [{element, <<"message">>},
-                                 {element, <<"body">>},
-                                 cdata]),
-    case {Ack, Msg} of
-        {undefined, undefined} ->
-            ?DEBUG("recv rid ~p~n", [Rid]);
-        {undefined, _} ->
-            ?DEBUG("recv rid ~p msg ~p~n", [Rid, Msg]);
-        {_, undefined} ->
-            ?DEBUG("recv rid ~p ack ~p~n", [Rid, binary_to_integer(Ack)]);
-        {_, _} ->
-            ?DEBUG("recv rid ~p ack ~p msg ~p~n", [Rid, binary_to_integer(Ack),
-                                                   Msg])
-    end.
-
-debug_handlers(Tag, S) ->
-    Handlers = [Rid || {Rid,_,_} <- S#state.handlers],
-    ?DEBUG("handlers ~p ~p~n", [Tag, Handlers]).
-
 handle_event({EventTag, Handler, #xmlel{} = Body}, SName, S) ->
     NS = cancel_inactivity_timer(S),
     Rid = binary_to_integer(exml_query:attr(Body, <<"rid">>)),
-    debug_recv(Rid, Body, S),
     try
         NNS = handle_stream_event({EventTag, Body, Rid}, Handler, SName, NS),
         %% TODO: it's the event which determines the next state,
@@ -623,19 +601,7 @@ maybe_report(#state{report = Report} = S) ->
                 {<<"time">>, integer_to_binary(ElapsedTime)}],
     {NewAttrs, S#state{report = false}}.
 
-debug_cache({Rid, _, Body}, _S) ->
-    Msg = exml_query:path(Body, [{element, <<"message">>},
-                                 {element, <<"body">>},
-                                 cdata]),
-    case Msg of
-        undefined ->
-            ?DEBUG("cache rid ~p~n", [Rid]);
-        _ ->
-            ?DEBUG("cache rid ~p msg ~p~n", [Rid, Msg])
-    end.
-
 cache_response({Rid,_,_} = Response, #state{sent = Sent} = S) ->
-    debug_cache(Response, S),
     NewSent = elists:insert(Response, Sent),
     CacheUpTo = case S#state.client_acks of
         true ->
