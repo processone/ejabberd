@@ -560,6 +560,7 @@ PACKAGE_URL=''
 ac_default_prefix=/
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+tools
 http
 pubsub_ng
 debug
@@ -578,14 +579,12 @@ transient_supervisors
 flash_hack
 roster_gateway_workaround
 hipe
-INSTALLUSER
-MAKE
-REBAR
-ESCRIPT
-ERLANG_LIB_VER_compiler
-ERLANG_LIB_DIR_compiler
+ERLANG_LIB_VER_runtime_tools
+ERLANG_LIB_DIR_runtime_tools
 ERLANG_LIB_VER_tools
 ERLANG_LIB_DIR_tools
+ERLANG_LIB_VER_compiler
+ERLANG_LIB_DIR_compiler
 ERLANG_LIB_VER_odbc
 ERLANG_LIB_DIR_odbc
 ERLANG_LIB_VER_inets
@@ -600,6 +599,10 @@ ERLANG_LIB_VER_crypto
 ERLANG_LIB_DIR_crypto
 ERLANG_LIB_VER_sasl
 ERLANG_LIB_DIR_sasl
+INSTALLUSER
+MAKE
+REBAR
+ESCRIPT
 ERLCFLAGS
 ERLC
 ERL
@@ -667,6 +670,7 @@ enable_iconv
 enable_debug
 enable_pubsub_ng
 enable_http
+enable_tools
 enable_all
 enable_user
 '
@@ -1315,6 +1319,8 @@ Optional Features:
   --enable-pubsub_ng      enable PubSub NG (default: no)
   --enable-http           build external HTTP libraries ('ibrowse' and
                           'lhttpc', default: no)
+  --enable-tools          build development tools (currently the ejabberd
+                          profiler only, default: no)
   --enable-all            same as --enable-nif --enable-mysql --enable-pgsql
                           --enable-pam --enable-zlib --enable-stun
                           --enable-riak --enable-json --enable-iconv
@@ -2252,6 +2258,402 @@ if test "$ERLC" = "not found"; then
 fi
 
 
+# Checks and sets ERLANG_ROOT_DIR and ERLANG_LIB_DIR variable
+# AC_ERLANG_SUBST_ROOT_DIR
+# AC_ERLANG_SUBST_LIB_DIR
+
+#locating escript
+# Extract the first word of "escript", so it can be a program name with args.
+set dummy escript; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_ESCRIPT+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ESCRIPT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ESCRIPT="$ESCRIPT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_ESCRIPT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ESCRIPT=$ac_cv_path_ESCRIPT
+if test -n "$ESCRIPT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ESCRIPT" >&5
+$as_echo "$ESCRIPT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+#locating rebar
+# Extract the first word of "rebar", so it can be a program name with args.
+set dummy rebar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_REBAR+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $REBAR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_REBAR="$REBAR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_REBAR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_REBAR" && ac_cv_path_REBAR="./rebar"
+  ;;
+esac
+fi
+REBAR=$ac_cv_path_REBAR
+if test -n "$REBAR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $REBAR" >&5
+$as_echo "$REBAR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+#locating make
+# Extract the first word of "make", so it can be a program name with args.
+set dummy make; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_MAKE+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$MAKE"; then
+  ac_cv_prog_MAKE="$MAKE" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_MAKE="make"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+MAKE=$ac_cv_prog_MAKE
+if test -n "$MAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MAKE" >&5
+$as_echo "$MAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+if test "x$ESCRIPT" = "x"; then
+   as_fn_error $? "'escript' was not found" "$LINENO" 5
+fi
+
+if test "x$MAKE" = "x"; then
+   as_fn_error $? "'make' was not found" "$LINENO" 5
+fi
+
+# Change default prefix
+
+
+# Check whether --enable-hipe was given.
+if test "${enable_hipe+set}" = set; then :
+  enableval=$enable_hipe; case "${enableval}" in
+  yes) hipe=true ;;
+  no)  hipe=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-hipe" "$LINENO" 5  ;;
+esac
+else
+  hipe=false
+fi
+
+
+# Check whether --enable-roster_gateway_workaround was given.
+if test "${enable_roster_gateway_workaround+set}" = set; then :
+  enableval=$enable_roster_gateway_workaround; case "${enableval}" in
+  yes) roster_gateway_workaround=true ;;
+  no)  roster_gateway_workaround=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-roster-gateway-workaround" "$LINENO" 5  ;;
+esac
+else
+  roster_gateway_workaround=false
+fi
+
+
+# Check whether --enable-flash_hack was given.
+if test "${enable_flash_hack+set}" = set; then :
+  enableval=$enable_flash_hack; case "${enableval}" in
+  yes) flash_hack=true ;;
+  no)  flash_hack=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-flash-hack" "$LINENO" 5  ;;
+esac
+else
+  flash_hack=false
+fi
+
+
+# Check whether --enable-transient_supervisors was given.
+if test "${enable_transient_supervisors+set}" = set; then :
+  enableval=$enable_transient_supervisors; case "${enableval}" in
+  yes) transient_supervisors=true ;;
+  no)  transient_supervisors=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-transient_supervisors" "$LINENO" 5  ;;
+esac
+else
+  transient_supervisors=false
+fi
+
+
+# Check whether --enable-full_xml was given.
+if test "${enable_full_xml+set}" = set; then :
+  enableval=$enable_full_xml; case "${enableval}" in
+  yes) full_xml=true ;;
+  no)  full_xml=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-full-xml" "$LINENO" 5  ;;
+esac
+else
+  full_xml=false
+fi
+
+
+# Check whether --enable-nif was given.
+if test "${enable_nif+set}" = set; then :
+  enableval=$enable_nif; case "${enableval}" in
+  yes) nif=true ;;
+  no)  nif=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-nif" "$LINENO" 5  ;;
+esac
+else
+  nif=false
+fi
+
+
+# Check whether --enable-mssql was given.
+if test "${enable_mssql+set}" = set; then :
+  enableval=$enable_mssql; case "${enableval}" in
+  yes) db_type=mssql ;;
+  no)  db_type=generic ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-mssql" "$LINENO" 5  ;;
+esac
+else
+  db_type=generic
+fi
+
+
+# Check whether --enable-mysql was given.
+if test "${enable_mysql+set}" = set; then :
+  enableval=$enable_mysql; case "${enableval}" in
+  yes) mysql=true ;;
+  no)  mysql=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-mysql" "$LINENO" 5  ;;
+esac
+else
+  mysql=false
+fi
+
+
+# Check whether --enable-pgsql was given.
+if test "${enable_pgsql+set}" = set; then :
+  enableval=$enable_pgsql; case "${enableval}" in
+  yes) pgsql=true ;;
+  no)  pgsql=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pgsql" "$LINENO" 5  ;;
+esac
+else
+  pgsql=false
+fi
+
+
+# Check whether --enable-pam was given.
+if test "${enable_pam+set}" = set; then :
+  enableval=$enable_pam; case "${enableval}" in
+  yes) pam=true ;;
+  no)  pam=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pam" "$LINENO" 5  ;;
+esac
+else
+  pam=false
+fi
+
+
+# Check whether --enable-zlib was given.
+if test "${enable_zlib+set}" = set; then :
+  enableval=$enable_zlib; case "${enableval}" in
+  yes) zlib=true ;;
+  no)  zlib=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-zlib" "$LINENO" 5  ;;
+esac
+else
+  zlib=true
+fi
+
+
+# Check whether --enable-stun was given.
+if test "${enable_stun+set}" = set; then :
+  enableval=$enable_stun; case "${enableval}" in
+  yes) stun=true ;;
+  no)  stun=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-stun" "$LINENO" 5  ;;
+esac
+else
+  stun=false
+fi
+
+
+# Check whether --enable-riak was given.
+if test "${enable_riak+set}" = set; then :
+  enableval=$enable_riak; case "${enableval}" in
+  yes) riak=true ;;
+  no)  riak=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-riak" "$LINENO" 5  ;;
+esac
+else
+  riak=false
+fi
+
+
+# Check whether --enable-json was given.
+if test "${enable_json+set}" = set; then :
+  enableval=$enable_json; case "${enableval}" in
+  yes) json=true ;;
+  no)  json=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-json" "$LINENO" 5  ;;
+esac
+else
+  json=false
+fi
+
+
+# Check whether --enable-iconv was given.
+if test "${enable_iconv+set}" = set; then :
+  enableval=$enable_iconv; case "${enableval}" in
+  yes) iconv=true ;;
+  no)  iconv=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-iconv" "$LINENO" 5  ;;
+esac
+else
+  iconv=false
+fi
+
+
+# Check whether --enable-debug was given.
+if test "${enable_debug+set}" = set; then :
+  enableval=$enable_debug; case "${enableval}" in
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-debug" "$LINENO" 5  ;;
+esac
+else
+  debug=true
+fi
+
+
+# Check whether --enable-pubsub_ng was given.
+if test "${enable_pubsub_ng+set}" = set; then :
+  enableval=$enable_pubsub_ng; case "${enableval}" in
+  yes) pubsub_ng=true ;;
+  no)  pubsub_ng=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pubsub_ng" "$LINENO" 5  ;;
+esac
+else
+  pubsub_ng=false
+fi
+
+
+# Check whether --enable-http was given.
+if test "${enable_http+set}" = set; then :
+  enableval=$enable_http; case "${enableval}" in
+  yes) http=true ;;
+  no)  http=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-http" "$LINENO" 5  ;;
+esac
+else
+  http=false
+fi
+
+
+# Check whether --enable-tools was given.
+if test "${enable_tools+set}" = set; then :
+  enableval=$enable_tools; case "${enableval}" in
+  yes) tools=true ;;
+  no)  tools=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-tools" "$LINENO" 5  ;;
+esac
+else
+  tools=false
+fi
+
+
+# Check whether --enable-all was given.
+if test "${enable_all+set}" = set; then :
+  enableval=$enable_all; case "${enableval}" in
+  yes) nif=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true iconv=true debug=true pubsub_ng=true http=true ;;
+  no) nif=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false pubsub_ng=false http=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-all" "$LINENO" 5  ;;
+esac
+fi
+
+
+ac_config_files="$ac_config_files Makefile vars.config src/ejabberd.app.src"
+
+
+ENABLEUSER=""
+# Check whether --enable-user was given.
+if test "${enable_user+set}" = set; then :
+  enableval=$enable_user; case "${enableval}" in
+     yes) ENABLEUSER=`whoami` ;;
+     no) ENABLEUSER="" ;;
+     *) ENABLEUSER=$enableval
+   esac
+fi
+
+if test "$ENABLEUSER" != ""; then
+  echo "allow this system user to start ejabberd: $ENABLEUSER"
+  INSTALLUSER=$ENABLEUSER
+
+fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'sasl' library subdirectory" >&5
 $as_echo_n "checking for Erlang/OTP 'sasl' library subdirectory... " >&6; }
@@ -2806,85 +3208,6 @@ if test "$ac_cv_erlang_lib_dir_odbc" = "not found"; then :
   as_fn_error $? "Erlang application 'odbc' was not found" "$LINENO" 5
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'tools' library subdirectory" >&5
-$as_echo_n "checking for Erlang/OTP 'tools' library subdirectory... " >&6; }
-if test "${ac_cv_erlang_lib_dir_tools+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_ext=erl
-ac_compile='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5'
-ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5 && echo "#!/bin/sh" > conftest$ac_exeext && $as_echo "\"$ERL\" -run conftest start -run init stop -noshell" >> conftest$ac_exeext && chmod +x conftest$ac_exeext'
-     if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5 ; }
-else
-  cat > conftest.$ac_ext <<_ACEOF
--module(conftest).
--export([start/0]).
-
-start() ->
-	    ReturnValue = case code:lib_dir("tools") of
-	    {error, bad_name} ->
-		file:write_file("conftest.out", "not found\n"),
-		1;
-	    LibDir ->
-		file:write_file("conftest.out", LibDir),
-		0
-	    end,
-	    halt(ReturnValue)
-.
-
-_ACEOF
-if ac_fn_erl_try_run "$LINENO"; then :
-  ac_cv_erlang_lib_dir_tools=`cat conftest.out`
-	 rm -f conftest.out
-else
-  if test ! -f conftest.out; then
-	     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "test Erlang program execution failed
-See \`config.log' for more details" "$LINENO" 5 ; }
-	 else
-	     ac_cv_erlang_lib_dir_tools="not found"
-	     rm -f conftest.out
-	 fi
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-     ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_lib_dir_tools" >&5
-$as_echo "$ac_cv_erlang_lib_dir_tools" >&6; }
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'tools' library version" >&5
-$as_echo_n "checking for Erlang/OTP 'tools' library version... " >&6; }
-if test "${ac_cv_erlang_lib_ver_tools+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$ac_cv_erlang_lib_dir_tools" = "not found"; then :
-  ac_cv_erlang_lib_ver_tools="not found"
-else
-  ac_cv_erlang_lib_ver_tools=`$as_echo "$ac_cv_erlang_lib_dir_tools" | sed -n -e 's,^.*-\([^/-]*\)$,\1,p'`
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_lib_ver_tools" >&5
-$as_echo "$ac_cv_erlang_lib_ver_tools" >&6; }
-ERLANG_LIB_DIR_tools=$ac_cv_erlang_lib_dir_tools
-
-ERLANG_LIB_VER_tools=$ac_cv_erlang_lib_ver_tools
-
-if test "$ac_cv_erlang_lib_dir_tools" = "not found"; then :
-  as_fn_error $? "Erlang application 'tools' was not found" "$LINENO" 5
-fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'compiler' library subdirectory" >&5
 $as_echo_n "checking for Erlang/OTP 'compiler' library subdirectory... " >&6; }
 if test "${ac_cv_erlang_lib_dir_compiler+set}" = set; then :
@@ -2964,390 +3287,167 @@ if test "$ac_cv_erlang_lib_dir_compiler" = "not found"; then :
   as_fn_error $? "Erlang application 'compiler' was not found" "$LINENO" 5
 fi
 
-
-# Checks and sets ERLANG_ROOT_DIR and ERLANG_LIB_DIR variable
-# AC_ERLANG_SUBST_ROOT_DIR
-# AC_ERLANG_SUBST_LIB_DIR
-
-#locating escript
-# Extract the first word of "escript", so it can be a program name with args.
-set dummy escript; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_ESCRIPT+set}" = set; then :
+if test "x$tools" = "xtrue"; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'tools' library subdirectory" >&5
+$as_echo_n "checking for Erlang/OTP 'tools' library subdirectory... " >&6; }
+if test "${ac_cv_erlang_lib_dir_tools+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  case $ESCRIPT in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ESCRIPT="$ESCRIPT" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_ESCRIPT="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ESCRIPT=$ac_cv_path_ESCRIPT
-if test -n "$ESCRIPT"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ESCRIPT" >&5
-$as_echo "$ESCRIPT" >&6; }
+  ac_ext=erl
+ac_compile='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5'
+ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5 && echo "#!/bin/sh" > conftest$ac_exeext && $as_echo "\"$ERL\" -run conftest start -run init stop -noshell" >> conftest$ac_exeext && chmod +x conftest$ac_exeext'
+     if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5 ; }
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  cat > conftest.$ac_ext <<_ACEOF
+-module(conftest).
+-export([start/0]).
+
+start() ->
+	    ReturnValue = case code:lib_dir("tools") of
+	    {error, bad_name} ->
+		file:write_file("conftest.out", "not found\n"),
+		1;
+	    LibDir ->
+		file:write_file("conftest.out", LibDir),
+		0
+	    end,
+	    halt(ReturnValue)
+.
+
+_ACEOF
+if ac_fn_erl_try_run "$LINENO"; then :
+  ac_cv_erlang_lib_dir_tools=`cat conftest.out`
+	 rm -f conftest.out
+else
+  if test ! -f conftest.out; then
+	     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "test Erlang program execution failed
+See \`config.log' for more details" "$LINENO" 5 ; }
+	 else
+	     ac_cv_erlang_lib_dir_tools="not found"
+	     rm -f conftest.out
+	 fi
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-#locating rebar
-# Extract the first word of "rebar", so it can be a program name with args.
-set dummy rebar; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_path_REBAR+set}" = set; then :
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_lib_dir_tools" >&5
+$as_echo "$ac_cv_erlang_lib_dir_tools" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'tools' library version" >&5
+$as_echo_n "checking for Erlang/OTP 'tools' library version... " >&6; }
+if test "${ac_cv_erlang_lib_ver_tools+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  case $REBAR in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_REBAR="$REBAR" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_REBAR="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_REBAR" && ac_cv_path_REBAR="./rebar"
-  ;;
-esac
-fi
-REBAR=$ac_cv_path_REBAR
-if test -n "$REBAR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $REBAR" >&5
-$as_echo "$REBAR" >&6; }
+  if test "$ac_cv_erlang_lib_dir_tools" = "not found"; then :
+  ac_cv_erlang_lib_ver_tools="not found"
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  ac_cv_erlang_lib_ver_tools=`$as_echo "$ac_cv_erlang_lib_dir_tools" | sed -n -e 's,^.*-\([^/-]*\)$,\1,p'`
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_lib_ver_tools" >&5
+$as_echo "$ac_cv_erlang_lib_ver_tools" >&6; }
+ERLANG_LIB_DIR_tools=$ac_cv_erlang_lib_dir_tools
+
+ERLANG_LIB_VER_tools=$ac_cv_erlang_lib_ver_tools
+
+if test "$ac_cv_erlang_lib_dir_tools" = "not found"; then :
+  as_fn_error $? "Erlang application 'tools' was not found" "$LINENO" 5
 fi
 
-
-
-#locating make
-# Extract the first word of "make", so it can be a program name with args.
-set dummy make; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_MAKE+set}" = set; then :
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'runtime_tools' library subdirectory" >&5
+$as_echo_n "checking for Erlang/OTP 'runtime_tools' library subdirectory... " >&6; }
+if test "${ac_cv_erlang_lib_dir_runtime_tools+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$MAKE"; then
-  ac_cv_prog_MAKE="$MAKE" # Let the user override the test.
+  ac_ext=erl
+ac_compile='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5'
+ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5 && echo "#!/bin/sh" > conftest$ac_exeext && $as_echo "\"$ERL\" -run conftest start -run init stop -noshell" >> conftest$ac_exeext && chmod +x conftest$ac_exeext'
+     if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5 ; }
 else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_MAKE="make"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
+  cat > conftest.$ac_ext <<_ACEOF
+-module(conftest).
+-export([start/0]).
 
-fi
-fi
-MAKE=$ac_cv_prog_MAKE
-if test -n "$MAKE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MAKE" >&5
-$as_echo "$MAKE" >&6; }
+start() ->
+	    ReturnValue = case code:lib_dir("runtime_tools") of
+	    {error, bad_name} ->
+		file:write_file("conftest.out", "not found\n"),
+		1;
+	    LibDir ->
+		file:write_file("conftest.out", LibDir),
+		0
+	    end,
+	    halt(ReturnValue)
+.
+
+_ACEOF
+if ac_fn_erl_try_run "$LINENO"; then :
+  ac_cv_erlang_lib_dir_runtime_tools=`cat conftest.out`
+	 rm -f conftest.out
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  if test ! -f conftest.out; then
+	     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "test Erlang program execution failed
+See \`config.log' for more details" "$LINENO" 5 ; }
+	 else
+	     ac_cv_erlang_lib_dir_runtime_tools="not found"
+	     rm -f conftest.out
+	 fi
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-if test "x$ESCRIPT" = "x"; then
-   as_fn_error $? "'escript' was not found" "$LINENO" 5
 fi
-
-if test "x$MAKE" = "x"; then
-   as_fn_error $? "'make' was not found" "$LINENO" 5
-fi
-
-# Change default prefix
-
-
-# Check whether --enable-hipe was given.
-if test "${enable_hipe+set}" = set; then :
-  enableval=$enable_hipe; case "${enableval}" in
-  yes) hipe=true ;;
-  no)  hipe=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-hipe" "$LINENO" 5  ;;
-esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_lib_dir_runtime_tools" >&5
+$as_echo "$ac_cv_erlang_lib_dir_runtime_tools" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'runtime_tools' library version" >&5
+$as_echo_n "checking for Erlang/OTP 'runtime_tools' library version... " >&6; }
+if test "${ac_cv_erlang_lib_ver_runtime_tools+set}" = set; then :
+  $as_echo_n "(cached) " >&6
 else
-  hipe=false
-fi
-
-
-# Check whether --enable-roster_gateway_workaround was given.
-if test "${enable_roster_gateway_workaround+set}" = set; then :
-  enableval=$enable_roster_gateway_workaround; case "${enableval}" in
-  yes) roster_gateway_workaround=true ;;
-  no)  roster_gateway_workaround=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-roster-gateway-workaround" "$LINENO" 5  ;;
-esac
+  if test "$ac_cv_erlang_lib_dir_runtime_tools" = "not found"; then :
+  ac_cv_erlang_lib_ver_runtime_tools="not found"
 else
-  roster_gateway_workaround=false
+  ac_cv_erlang_lib_ver_runtime_tools=`$as_echo "$ac_cv_erlang_lib_dir_runtime_tools" | sed -n -e 's,^.*-\([^/-]*\)$,\1,p'`
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_lib_ver_runtime_tools" >&5
+$as_echo "$ac_cv_erlang_lib_ver_runtime_tools" >&6; }
+ERLANG_LIB_DIR_runtime_tools=$ac_cv_erlang_lib_dir_runtime_tools
+
+ERLANG_LIB_VER_runtime_tools=$ac_cv_erlang_lib_ver_runtime_tools
+
+if test "$ac_cv_erlang_lib_dir_runtime_tools" = "not found"; then :
+  as_fn_error $? "Erlang application 'runtime_tools' was not found" "$LINENO" 5
 fi
 
-
-# Check whether --enable-flash_hack was given.
-if test "${enable_flash_hack+set}" = set; then :
-  enableval=$enable_flash_hack; case "${enableval}" in
-  yes) flash_hack=true ;;
-  no)  flash_hack=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-flash-hack" "$LINENO" 5  ;;
-esac
-else
-  flash_hack=false
 fi
 
-
-# Check whether --enable-transient_supervisors was given.
-if test "${enable_transient_supervisors+set}" = set; then :
-  enableval=$enable_transient_supervisors; case "${enableval}" in
-  yes) transient_supervisors=true ;;
-  no)  transient_supervisors=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-transient_supervisors" "$LINENO" 5  ;;
-esac
-else
-  transient_supervisors=false
-fi
-
-
-# Check whether --enable-full_xml was given.
-if test "${enable_full_xml+set}" = set; then :
-  enableval=$enable_full_xml; case "${enableval}" in
-  yes) full_xml=true ;;
-  no)  full_xml=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-full-xml" "$LINENO" 5  ;;
-esac
-else
-  full_xml=false
-fi
-
-
-# Check whether --enable-nif was given.
-if test "${enable_nif+set}" = set; then :
-  enableval=$enable_nif; case "${enableval}" in
-  yes) nif=true ;;
-  no)  nif=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-nif" "$LINENO" 5  ;;
-esac
-else
-  nif=false
-fi
-
-
-# Check whether --enable-mssql was given.
-if test "${enable_mssql+set}" = set; then :
-  enableval=$enable_mssql; case "${enableval}" in
-  yes) db_type=mssql ;;
-  no)  db_type=generic ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-mssql" "$LINENO" 5  ;;
-esac
-else
-  db_type=generic
-fi
-
-
-# Check whether --enable-mysql was given.
-if test "${enable_mysql+set}" = set; then :
-  enableval=$enable_mysql; case "${enableval}" in
-  yes) mysql=true ;;
-  no)  mysql=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-mysql" "$LINENO" 5  ;;
-esac
-else
-  mysql=false
-fi
-
-
-# Check whether --enable-pgsql was given.
-if test "${enable_pgsql+set}" = set; then :
-  enableval=$enable_pgsql; case "${enableval}" in
-  yes) pgsql=true ;;
-  no)  pgsql=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-pgsql" "$LINENO" 5  ;;
-esac
-else
-  pgsql=false
-fi
-
-
-# Check whether --enable-pam was given.
-if test "${enable_pam+set}" = set; then :
-  enableval=$enable_pam; case "${enableval}" in
-  yes) pam=true ;;
-  no)  pam=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-pam" "$LINENO" 5  ;;
-esac
-else
-  pam=false
-fi
-
-
-# Check whether --enable-zlib was given.
-if test "${enable_zlib+set}" = set; then :
-  enableval=$enable_zlib; case "${enableval}" in
-  yes) zlib=true ;;
-  no)  zlib=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-zlib" "$LINENO" 5  ;;
-esac
-else
-  zlib=true
-fi
-
-
-# Check whether --enable-stun was given.
-if test "${enable_stun+set}" = set; then :
-  enableval=$enable_stun; case "${enableval}" in
-  yes) stun=true ;;
-  no)  stun=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-stun" "$LINENO" 5  ;;
-esac
-else
-  stun=false
-fi
-
-
-# Check whether --enable-riak was given.
-if test "${enable_riak+set}" = set; then :
-  enableval=$enable_riak; case "${enableval}" in
-  yes) riak=true ;;
-  no)  riak=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-riak" "$LINENO" 5  ;;
-esac
-else
-  riak=false
-fi
-
-
-# Check whether --enable-json was given.
-if test "${enable_json+set}" = set; then :
-  enableval=$enable_json; case "${enableval}" in
-  yes) json=true ;;
-  no)  json=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-json" "$LINENO" 5  ;;
-esac
-else
-  json=false
-fi
-
-
-# Check whether --enable-iconv was given.
-if test "${enable_iconv+set}" = set; then :
-  enableval=$enable_iconv; case "${enableval}" in
-  yes) iconv=true ;;
-  no)  iconv=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-iconv" "$LINENO" 5  ;;
-esac
-else
-  iconv=false
-fi
-
-
-# Check whether --enable-debug was given.
-if test "${enable_debug+set}" = set; then :
-  enableval=$enable_debug; case "${enableval}" in
-  yes) debug=true ;;
-  no)  debug=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-debug" "$LINENO" 5  ;;
-esac
-else
-  debug=true
-fi
-
-
-# Check whether --enable-pubsub_ng was given.
-if test "${enable_pubsub_ng+set}" = set; then :
-  enableval=$enable_pubsub_ng; case "${enableval}" in
-  yes) pubsub_ng=true ;;
-  no)  pubsub_ng=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-pubsub_ng" "$LINENO" 5  ;;
-esac
-else
-  pubsub_ng=false
-fi
-
-
-# Check whether --enable-http was given.
-if test "${enable_http+set}" = set; then :
-  enableval=$enable_http; case "${enableval}" in
-  yes) http=true ;;
-  no)  http=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-http" "$LINENO" 5  ;;
-esac
-else
-  http=false
-fi
-
-
-# Check whether --enable-all was given.
-if test "${enable_all+set}" = set; then :
-  enableval=$enable_all; case "${enableval}" in
-  yes) nif=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true iconv=true debug=true pubsub_ng=true http=true ;;
-  no) nif=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false pubsub_ng=false http=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-all" "$LINENO" 5  ;;
-esac
-fi
-
-
-ac_config_files="$ac_config_files Makefile vars.config src/ejabberd.app.src"
-
-
-ENABLEUSER=""
-# Check whether --enable-user was given.
-if test "${enable_user+set}" = set; then :
-  enableval=$enable_user; case "${enableval}" in
-     yes) ENABLEUSER=`whoami` ;;
-     no) ENABLEUSER="" ;;
-     *) ENABLEUSER=$enableval
-   esac
-fi
-
-if test "$ENABLEUSER" != ""; then
-  echo "allow this system user to start ejabberd: $ENABLEUSER"
-  INSTALLUSER=$ENABLEUSER
-
-fi
 
 
 

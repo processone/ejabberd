@@ -49,6 +49,8 @@ Includes = [{i, "include"},
 SrcDirs = lists:foldl(
             fun({pubsub_ng, true}, Acc) ->
                     [mod_pubsub_ng|Acc];
+               ({tools, true}, Acc) ->
+                    [tools|Acc];
                (_, Acc) ->
                     Acc
             end, [], Cfg),

@@ -18,6 +18,7 @@
 
 %% Ad-hoc directories with source files
 {pubsub_ng, @pubsub_ng@}.
+{tools, @tools@}.
 
 %% Dependencies
 {mysql, @mysql@}.

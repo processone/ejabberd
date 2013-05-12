@@ -18,25 +18,6 @@ fi
 AC_ERLANG_NEED_ERL
 AC_ERLANG_NEED_ERLC
 
-AC_ERLANG_CHECK_LIB([sasl], [],
-    [AC_MSG_ERROR([Erlang application 'sasl' was not found])])
-AC_ERLANG_CHECK_LIB([crypto], [],
-    [AC_MSG_ERROR([Erlang application 'crypto' was not found])])
-AC_ERLANG_CHECK_LIB([public_key], [],
-    [AC_MSG_ERROR([Erlang application 'public_key' was not found])])
-AC_ERLANG_CHECK_LIB([ssl], [],
-    [AC_MSG_ERROR([Erlang application 'ssl' was not found])])
-AC_ERLANG_CHECK_LIB([mnesia], [],
-    [AC_MSG_ERROR([Erlang application 'mnesia' was not found])])
-AC_ERLANG_CHECK_LIB([inets], [],
-    [AC_MSG_ERROR([Erlang application 'inets' was not found])])
-AC_ERLANG_CHECK_LIB([odbc], [],
-    [AC_MSG_ERROR([Erlang application 'odbc' was not found])])
-AC_ERLANG_CHECK_LIB([tools], [],
-    [AC_MSG_ERROR([Erlang application 'tools' was not found])])
-AC_ERLANG_CHECK_LIB([compiler], [],
-    [AC_MSG_ERROR([Erlang application 'compiler' was not found])])
-
 # Checks and sets ERLANG_ROOT_DIR and ERLANG_LIB_DIR variable
 # AC_ERLANG_SUBST_ROOT_DIR
 # AC_ERLANG_SUBST_LIB_DIR
@@ -205,6 +186,14 @@ AC_ARG_ENABLE(http,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-http) ;;
 esac],[http=false])
 
+AC_ARG_ENABLE(tools,
+[AC_HELP_STRING([--enable-tools], [build development tools (currently the ejabberd profiler only, default: no)])],
+[case "${enableval}" in
+  yes) tools=true ;;
+  no)  tools=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-tools) ;;
+esac],[tools=false])
+
 AC_ARG_ENABLE(all,
 [AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-riak --enable-json --enable-iconv --enable-debug --enable-pubsub_ng --enable-http (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
@@ -231,6 +220,29 @@ if test "$ENABLEUSER" != ""; then
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
 
+AC_ERLANG_CHECK_LIB([sasl], [],
+    [AC_MSG_ERROR([Erlang application 'sasl' was not found])])
+AC_ERLANG_CHECK_LIB([crypto], [],
+    [AC_MSG_ERROR([Erlang application 'crypto' was not found])])
+AC_ERLANG_CHECK_LIB([public_key], [],
+    [AC_MSG_ERROR([Erlang application 'public_key' was not found])])
+AC_ERLANG_CHECK_LIB([ssl], [],
+    [AC_MSG_ERROR([Erlang application 'ssl' was not found])])
+AC_ERLANG_CHECK_LIB([mnesia], [],
+    [AC_MSG_ERROR([Erlang application 'mnesia' was not found])])
+AC_ERLANG_CHECK_LIB([inets], [],
+    [AC_MSG_ERROR([Erlang application 'inets' was not found])])
+AC_ERLANG_CHECK_LIB([odbc], [],
+    [AC_MSG_ERROR([Erlang application 'odbc' was not found])])
+AC_ERLANG_CHECK_LIB([compiler], [],
+    [AC_MSG_ERROR([Erlang application 'compiler' was not found])])
+if test "x$tools" = "xtrue"; then
+   AC_ERLANG_CHECK_LIB([tools], [],
+      [AC_MSG_ERROR([Erlang application 'tools' was not found])])
+   AC_ERLANG_CHECK_LIB([runtime_tools], [],
+      [AC_MSG_ERROR([Erlang application 'runtime_tools' was not found])])
+fi
+
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(flash_hack)
@@ -249,5 +261,6 @@ AC_SUBST(iconv)
 AC_SUBST(debug)
 AC_SUBST(pubsub_ng)
 AC_SUBST(http)
+AC_SUBST(tools)
 
 AC_OUTPUT
