@@ -110,7 +110,7 @@ commands() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = get_loglevel, tags = [logs, server],
 			desc = "Get the current loglevel",
-			module = loglevel, function = get,
+			module = ejabberd_logger, function = get,
 			args = [],
                         result = {leveltuple, {tuple, [{levelnumber, integer},
                                                        {levelatom, atom},
@@ -280,27 +280,7 @@ status() ->
 
 reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []),
-    %% TODO: Use the Reopen log API for logger_h ?
-    logger_h:reopen_log(),
-    case application:get_env(sasl,sasl_error_logger) of
-	{ok, {file, SASLfile}} ->
-	    error_logger:delete_report_handler(sasl_report_file_h),
-	    logger_h:rotate_log(SASLfile),
-	    error_logger:add_report_handler(sasl_report_file_h,
-	        {SASLfile, get_sasl_error_logger_type()});
-	_ -> false
-	end,
-    ok.
-
-%% Function copied from Erlang/OTP lib/sasl/src/sasl.erl which doesn't export it
-get_sasl_error_logger_type () ->
-    case application:get_env (sasl, errlog_type) of
-	{ok, error} -> error;
-	{ok, progress} -> progress;
-	{ok, all} -> all;
-	{ok, Bad} -> exit ({bad_config, {sasl, {errlog_type, Bad}}});
-	_ -> all
-    end.
+    ejabberd_logger:reopen_log().
 
 %%%
 %%% Stop Kindly

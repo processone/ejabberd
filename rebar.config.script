@@ -43,7 +43,6 @@ HiPE = case lists:keysearch(hipe, 1, Cfg) of
        end,
 
 Includes = [{i, "include"},
-            {i, filename:join(["deps", "logger", "include"])},
             {i, filename:join(["deps", "xml", "include"])}],
 
 SrcDirs = lists:foldl(
@@ -55,7 +54,7 @@ SrcDirs = lists:foldl(
                     Acc
             end, [], Cfg),
 
-Deps = [{logger, ".*", {git, "git://github.com/processone/p1_logger"}},
+Deps = [{p1_logger, ".*", {git, "git://github.com/processone/p1_logger"}},
         {cache_tab, ".*", {git, "git://github.com/processone/cache_tab"}},
         {tls, ".*", {git, "git://github.com/processone/tls"}},
         {stringprep, ".*", {git, "git://github.com/processone/stringprep"}},

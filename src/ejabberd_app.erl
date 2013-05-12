@@ -39,7 +39,7 @@
 %%%
 
 start(normal, _Args) ->
-    loglevel:set(4),
+    ejabberd_logger:set(4),
     write_pid_file(),
     start_apps(),
     randoms:start(),
@@ -104,7 +104,7 @@ init() ->
     %erlang:system_flag(fullsweep_after, 0),
     %error_logger:logfile({open, ?LOG_PATH}),
     LogPath = get_log_path(),
-    error_logger:add_report_handler(logger_h, LogPath),
+    ejabberd_logger:set_logfile(LogPath),
     loop().
 
 loop() ->
