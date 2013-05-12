@@ -622,7 +622,7 @@ debug_cache({Rid, _, Body}, _S) ->
             ?DEBUG("cache rid ~p msg ~p~n", [Rid, Msg])
     end.
 
-cache_response(Response, #state{sent = Sent} = S) ->
+cache_response({Rid,_,_} = Response, #state{sent = Sent} = S) ->
     debug_cache(Response, S),
     NewSent = elists:insert(Response, Sent),
     CacheUpTo = case S#state.client_acks of
@@ -634,12 +634,18 @@ cache_response(Response, #state{sent = Sent} = S) ->
             %% Leave up to ?CONCURRENT_REQUESTS responses in cache.
             ?CONCURRENT_REQUESTS
     end,
-    S#state{sent = cache_up_to(CacheUpTo, NewSent)}.
+    S#state{sent = cache_up_to(CacheUpTo, NewSent),
+            last_processed = last_processed(Rid, S#state.last_processed)}.
 
 cache_up_to(infinity, Responses) ->
     Responses;
 cache_up_to(N, Responses) ->
     lists:nthtail(max(0, length(Responses) - N), Responses).
+
+last_processed(Rid, undefined) ->
+    Rid;
+last_processed(Rid1, Rid2) ->
+    max(Rid1, Rid2).
 
 setup_inactivity_timer(#state{inactivity = infinity} = S) ->
     S;
