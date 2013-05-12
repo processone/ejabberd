@@ -396,26 +396,19 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
     NNS = case {EventTag,
                 is_reply_cached(Rid, S#state.sent),
                 is_valid_rid(Rid, OldRid),
-                is_valid_ack(Body, S#state.last_processed, S#state.client_acks),
                 is_acceptable_rid(Rid, OldRid)}
     of
-        {_, true, _, _, _} ->
+        {_, true, _, _} ->
             resend_cached(Rid, NS);
-        {streamstart, _, _, _, _} ->
-            process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
-        {_, _, true, true, _} ->
-            process_stream_event(EventTag, Body, SName, NS#state{rid = Rid});
-        {_, _, true, false, _} ->
-            Ack = binary_to_integer(exml_query:attr(Body, <<"ack">>)),
-            RS = schedule_report(Ack, NS),
-            PS = process_stream_event(EventTag, Body, SName,
-                                      RS#state{rid = Rid}),
-            maybe_send_report(PS);
-        {_, _, false, _, true} ->
+        {streamstart, _, _, _} ->
+            process_acked_stream_event(Event, SName, NS);
+        {_, _, true, _} ->
+            process_acked_stream_event(Event, SName, NS);
+        {_, _, false, true} ->
             ?DEBUG("storing stream event for deferred processing: ~p~n",
                    [{EventTag, Body}]),
             NS#state{deferred = [Event | NS#state.deferred]};
-        {_, _, false, _, false} ->
+        {_, _, false, false} ->
             ?ERROR_MSG("invalid rid ~p:~n~p~n", [Rid, {EventTag, Body}]),
             [Pid ! item_not_found
              || {_, _, Pid} <- lists:sort(NS#state.handlers)],
@@ -424,6 +417,48 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
     ZS = return_surplus_handlers(SName, NNS),
     debug_handlers("exit", ZS),
     ZS.
+
+process_acked_stream_event({EventTag, Body, Rid}, SName,
+                           #state{} = S) ->
+    MaybeBAck = exml_query:attr(Body, <<"ack">>),
+    {Action, Ack} = case {MaybeBAck, S#state.client_acks} of
+        {undefined, false} ->
+            {noreport, undefined};
+        {undefined, true} ->
+            if
+                Rid+1 == S#state.last_processed ->
+                    {noreport, undefined};
+                Rid+1 /= S#state.last_processed ->
+                    ?INFO_MSG("expected 'ack' attribute on ~p~n", [Rid]),
+                    {noreport, undefined}
+            end;
+        {BAck, _} ->
+            A = binary_to_integer(BAck),
+            case {S#state.last_processed,
+                  is_valid_ack(A, S#state.last_processed)} of
+                {undefined, _} ->
+                    {noreport, A};
+                {_, true} ->
+                    {noreport, A};
+                {_, false} ->
+                    {report, A}
+            end
+    end,
+    case Action of
+        noreport ->
+            process_stream_event(EventTag, Body, SName, S#state{rid = Rid});
+        report ->
+            NS = schedule_report(Ack, S),
+            NS2 = process_stream_event(EventTag, Body, SName,
+                                       NS#state{rid = Rid}),
+            maybe_send_report(NS2)
+    end.
+
+is_valid_ack(Ack, LastProcessed)
+        when Ack < LastProcessed ->
+    false;
+is_valid_ack(_, _) ->
+    true.
 
 schedule_report(Ack, #state{sent = Sent} = S) ->
     ReportRid = Ack + 1,
@@ -500,24 +535,6 @@ is_valid_rid(Rid, OldRid) when Rid == OldRid + 1 ->
     true;
 is_valid_rid(_, _) ->
     false.
-
-is_valid_ack(#xmlel{} = Body, LastProcessed, true) ->
-    case exml_query:attr(Body, <<"ack">>) of
-        undefined ->
-            false;
-        BAck ->
-            Ack = binary_to_integer(BAck),
-            is_valid_ack(Ack, LastProcessed)
-    end;
-is_valid_ack(_, _, false = _ClientAcks) ->
-    true.
-
-is_valid_ack(Ack, LastProcessed)
-        when LastProcessed =:= undefined;
-             Ack < LastProcessed ->
-    false;
-is_valid_ack(_, _) ->
-    true.
 
 is_acceptable_rid(Rid, OldRid)
         when Rid > OldRid + 1,
