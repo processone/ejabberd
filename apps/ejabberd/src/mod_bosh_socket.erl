@@ -249,14 +249,20 @@ normal(Event, _From, State) ->
 %%--------------------------------------------------------------------
 
 debug_recv(Rid, Body, _S) ->
+    Ack = exml_query:attr(Body, <<"ack">>),
     Msg = exml_query:path(Body, [{element, <<"message">>},
                                  {element, <<"body">>},
                                  cdata]),
-    case Msg of
-        undefined ->
+    case {Ack, Msg} of
+        {undefined, undefined} ->
             ?DEBUG("recv rid ~p~n", [Rid]);
-        _ ->
-            ?DEBUG("recv rid ~p msg ~p~n", [Rid, Msg])
+        {undefined, _} ->
+            ?DEBUG("recv rid ~p msg ~p~n", [Rid, Msg]);
+        {_, undefined} ->
+            ?DEBUG("recv rid ~p ack ~p~n", [Rid, binary_to_integer(Ack)]);
+        {_, _} ->
+            ?DEBUG("recv rid ~p ack ~p msg ~p~n", [Rid, binary_to_integer(Ack),
+                                                   Msg])
     end.
 
 debug_handlers(Tag, S) ->
@@ -391,7 +397,6 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
-    debug_handlers("enter", S),
     NS = maybe_add_handler(Handler, Rid, S),
     NNS = case {EventTag,
                 is_reply_cached(Rid, S#state.sent),
@@ -414,9 +419,7 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
              || {_, _, Pid} <- lists:sort(NS#state.handlers)],
             throw({invalid_rid, NS#state{handlers = []}})
     end,
-    ZS = return_surplus_handlers(SName, NNS),
-    debug_handlers("exit", ZS),
-    ZS.
+    return_surplus_handlers(SName, NNS).
 
 process_acked_stream_event({EventTag, Body, Rid}, SName,
                            #state{} = S) ->
