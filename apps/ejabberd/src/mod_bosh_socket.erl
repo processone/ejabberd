@@ -591,7 +591,7 @@ maybe_report(#state{report = Report} = S) ->
                 {<<"time">>, integer_to_binary(ElapsedTime)}],
     {NewAttrs, S#state{report = false}}.
 
-debug_cache({Rid, _, Body}, S) ->
+debug_cache({Rid, _, Body}, _S) ->
     Msg = exml_query:path(Body, [{element, <<"message">>},
                                  {element, <<"body">>},
                                  cdata]),
