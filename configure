@@ -1309,7 +1309,7 @@ Optional Features:
   --enable-all            same as --enable-nif --enable-mysql --enable-pgsql
                           --enable-pam --enable-zlib --enable-stun
                           --enable-riak --enable-json --enable-iconv
-                          --enable-debug --enable-pubsub_ng --enable-http
+                          --enable-debug --enable-pubsub-ng --enable-http
                           (useful for Dialyzer checks, default: no)
   --enable-nif            replace some functions with C equivalents. Requires
                           Erlang R13B04 or higher (default: no)
@@ -1323,7 +1323,7 @@ Optional Features:
   --enable-json           enable JSON support for mod_bosh (default: no)
   --enable-iconv          enable iconv support (default: yes)
   --enable-debug          enable debug information (default: yes)
-  --enable-pubsub_ng      enable PubSub NG (default: no)
+  --enable-pubsub-ng      enable PubSub NG (default: no)
   --enable-http           build external HTTP libraries ('ibrowse' and
                           'lhttpc', default: no)
   --enable-user[[[=USER]]]
@@ -2616,7 +2616,7 @@ if test "${enable_pubsub_ng+set}" = set; then :
   enableval=$enable_pubsub_ng; case "${enableval}" in
   yes) pubsub_ng=true ;;
   no)  pubsub_ng=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-pubsub_ng" "$LINENO" 5  ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pubsub-ng" "$LINENO" 5  ;;
 esac
 else
   if test "x$pubsub_ng" = "x"; then pubsub_ng=false; fi

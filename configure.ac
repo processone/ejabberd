@@ -99,7 +99,7 @@ AC_ARG_ENABLE(tools,
 esac],[tools=false])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-riak --enable-json --enable-iconv --enable-debug --enable-pubsub_ng --enable-http (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-riak --enable-json --enable-iconv --enable-debug --enable-pubsub-ng --enable-http (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
   yes) nif=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true iconv=true debug=true pubsub_ng=true http=true ;;
   no) nif=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false pubsub_ng=false http=false ;;
@@ -187,11 +187,11 @@ AC_ARG_ENABLE(debug,
 esac],[if test "x$debug" = "x"; then debug=true; fi])
 
 AC_ARG_ENABLE(pubsub_ng,
-[AC_HELP_STRING([--enable-pubsub_ng], [enable PubSub NG (default: no)])],
+[AC_HELP_STRING([--enable-pubsub-ng], [enable PubSub NG (default: no)])],
 [case "${enableval}" in
   yes) pubsub_ng=true ;;
   no)  pubsub_ng=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pubsub_ng) ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pubsub-ng) ;;
 esac],[if test "x$pubsub_ng" = "x"; then pubsub_ng=false; fi])
 
 AC_ARG_ENABLE(http,
