@@ -82,14 +82,6 @@ AC_ARG_ENABLE(full_xml,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-full-xml) ;;
 esac],[full_xml=false])
 
-AC_ARG_ENABLE(nif,
-[AC_HELP_STRING([--enable-nif], [replace some functions with C equivalents. Requires Erlang R13B04 or higher (default: no)])],
-[case "${enableval}" in
-  yes) nif=true ;;
-  no)  nif=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-nif) ;;
-esac],[nif=false])
-
 AC_ARG_ENABLE(mssql,
 [AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
 [case "${enableval}" in
@@ -97,94 +89,6 @@ AC_ARG_ENABLE(mssql,
   no)  db_type=generic ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
 esac],[db_type=generic])
-
-AC_ARG_ENABLE(mysql,
-[AC_HELP_STRING([--enable-mysql], [enable MySQL support (default: no)])],
-[case "${enableval}" in
-  yes) mysql=true ;;
-  no)  mysql=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mysql) ;;
-esac],[mysql=false])
-
-AC_ARG_ENABLE(pgsql,
-[AC_HELP_STRING([--enable-pgsql], [enable PostgreSQL support (default: no)])],
-[case "${enableval}" in
-  yes) pgsql=true ;;
-  no)  pgsql=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pgsql) ;;
-esac],[pgsql=false])
-
-AC_ARG_ENABLE(pam,
-[AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
-[case "${enableval}" in
-  yes) pam=true ;;
-  no)  pam=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pam) ;;
-esac],[pam=false])
-
-AC_ARG_ENABLE(zlib,
-[AC_HELP_STRING([--enable-zlib], [enable Stream Compression (XEP-0138) using zlib (default: yes)])],
-[case "${enableval}" in
-  yes) zlib=true ;;
-  no)  zlib=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
-esac],[zlib=true])
-
-AC_ARG_ENABLE(stun,
-[AC_HELP_STRING([--enable-stun], [enable STUN support (default: no)])],
-[case "${enableval}" in
-  yes) stun=true ;;
-  no)  stun=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-stun) ;;
-esac],[stun=false])
-
-AC_ARG_ENABLE(riak,
-[AC_HELP_STRING([--enable-riak], [enable Riak support (default: no)])],
-[case "${enableval}" in
-  yes) riak=true ;;
-  no)  riak=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-riak) ;;
-esac],[riak=false])
-
-AC_ARG_ENABLE(json,
-[AC_HELP_STRING([--enable-json], [enable JSON support for mod_bosh (default: no)])],
-[case "${enableval}" in
-  yes) json=true ;;
-  no)  json=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-json) ;;
-esac],[json=false])
-
-AC_ARG_ENABLE(iconv,
-[AC_HELP_STRING([--enable-iconv], [enable iconv support (default: no)])],
-[case "${enableval}" in
-  yes) iconv=true ;;
-  no)  iconv=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-iconv) ;;
-esac],[iconv=false])
-
-AC_ARG_ENABLE(debug,
-[AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],
-[case "${enableval}" in
-  yes) debug=true ;;
-  no)  debug=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
-esac],[debug=true])
-
-AC_ARG_ENABLE(pubsub_ng,
-[AC_HELP_STRING([--enable-pubsub_ng], [enable PubSub NG (default: no)])],
-[case "${enableval}" in
-  yes) pubsub_ng=true ;;
-  no)  pubsub_ng=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pubsub_ng) ;;
-esac],[pubsub_ng=false])
-
-AC_ARG_ENABLE(http,
-[AC_HELP_STRING([--enable-http], [build external HTTP libraries ('ibrowse' and 'lhttpc', default: no)])],
-[case "${enableval}" in
-  yes) http=true ;;
-  no)  http=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-http) ;;
-esac],[http=false])
 
 AC_ARG_ENABLE(tools,
 [AC_HELP_STRING([--enable-tools], [build development tools (currently the ejabberd profiler only, default: no)])],
@@ -201,6 +105,102 @@ AC_ARG_ENABLE(all,
   no) nif=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false pubsub_ng=false http=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
+
+AC_ARG_ENABLE(nif,
+[AC_HELP_STRING([--enable-nif], [replace some functions with C equivalents. Requires Erlang R13B04 or higher (default: no)])],
+[case "${enableval}" in
+  yes) nif=true ;;
+  no)  nif=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-nif) ;;
+esac],[if test "x$nif" = "x"; then nif=false; fi])
+
+AC_ARG_ENABLE(mysql,
+[AC_HELP_STRING([--enable-mysql], [enable MySQL support (default: no)])],
+[case "${enableval}" in
+  yes) mysql=true ;;
+  no)  mysql=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mysql) ;;
+esac],[if test "x$mysql" = "x"; then mysql=false; fi])
+
+AC_ARG_ENABLE(pgsql,
+[AC_HELP_STRING([--enable-pgsql], [enable PostgreSQL support (default: no)])],
+[case "${enableval}" in
+  yes) pgsql=true ;;
+  no)  pgsql=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pgsql) ;;
+esac],[if test "x$pgsql" = "x"; then pgsql=false; fi])
+
+AC_ARG_ENABLE(pam,
+[AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
+[case "${enableval}" in
+  yes) pam=true ;;
+  no)  pam=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pam) ;;
+esac],[if test "x$pam" = "x"; then pam=false; fi])
+
+AC_ARG_ENABLE(zlib,
+[AC_HELP_STRING([--enable-zlib], [enable Stream Compression (XEP-0138) using zlib (default: yes)])],
+[case "${enableval}" in
+  yes) zlib=true ;;
+  no)  zlib=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
+esac],[if test "x$zlib" = "x"; then zlib=true; fi])
+
+AC_ARG_ENABLE(stun,
+[AC_HELP_STRING([--enable-stun], [enable STUN support (default: no)])],
+[case "${enableval}" in
+  yes) stun=true ;;
+  no)  stun=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-stun) ;;
+esac],[if test "x$stun" = "x"; then stun=false; fi])
+
+AC_ARG_ENABLE(riak,
+[AC_HELP_STRING([--enable-riak], [enable Riak support (default: no)])],
+[case "${enableval}" in
+  yes) riak=true ;;
+  no)  riak=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-riak) ;;
+esac],[if test "x$riak" = "x"; then riak=false; fi])
+
+AC_ARG_ENABLE(json,
+[AC_HELP_STRING([--enable-json], [enable JSON support for mod_bosh (default: no)])],
+[case "${enableval}" in
+  yes) json=true ;;
+  no)  json=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-json) ;;
+esac],[if test "x$json" = "x"; then json=false; fi])
+
+AC_ARG_ENABLE(iconv,
+[AC_HELP_STRING([--enable-iconv], [enable iconv support (default: yes)])],
+[case "${enableval}" in
+  yes) iconv=true ;;
+  no)  iconv=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-iconv) ;;
+esac],[if test "x$iconv" = "x"; then iconv=true; fi])
+
+AC_ARG_ENABLE(debug,
+[AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],
+[case "${enableval}" in
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
+esac],[if test "x$debug" = "x"; then debug=true; fi])
+
+AC_ARG_ENABLE(pubsub_ng,
+[AC_HELP_STRING([--enable-pubsub_ng], [enable PubSub NG (default: no)])],
+[case "${enableval}" in
+  yes) pubsub_ng=true ;;
+  no)  pubsub_ng=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pubsub_ng) ;;
+esac],[if test "x$pubsub_ng" = "x"; then pubsub_ng=false; fi])
+
+AC_ARG_ENABLE(http,
+[AC_HELP_STRING([--enable-http], [build external HTTP libraries ('ibrowse' and 'lhttpc', default: no)])],
+[case "${enableval}" in
+  yes) http=true ;;
+  no)  http=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-http) ;;
+esac],[if test "x$http" = "x"; then http=false; fi])
 
 AC_CONFIG_FILES([Makefile
 		 vars.config

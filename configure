@@ -657,8 +657,10 @@ enable_roster_gateway_workaround
 enable_flash_hack
 enable_transient_supervisors
 enable_full_xml
-enable_nif
 enable_mssql
+enable_tools
+enable_all
+enable_nif
 enable_mysql
 enable_pgsql
 enable_pam
@@ -670,8 +672,6 @@ enable_iconv
 enable_debug
 enable_pubsub_ng
 enable_http
-enable_tools
-enable_all
 enable_user
 '
       ac_precious_vars='build_alias
@@ -1302,10 +1302,17 @@ Optional Features:
                           (default: no)
   --enable-full-xml       use XML features in XMPP stream (ex: CDATA)
                           (default: no, requires XML compliant clients)
-  --enable-nif            replace some functions with C equivalents. Requires
-                          Erlang R13B04 or higher (default: no)
   --enable-mssql          use Microsoft SQL Server database (default: no,
                           requires --enable-odbc)
+  --enable-tools          build development tools (currently the ejabberd
+                          profiler only, default: no)
+  --enable-all            same as --enable-nif --enable-mysql --enable-pgsql
+                          --enable-pam --enable-zlib --enable-stun
+                          --enable-riak --enable-json --enable-iconv
+                          --enable-debug --enable-pubsub_ng --enable-http
+                          (useful for Dialyzer checks, default: no)
+  --enable-nif            replace some functions with C equivalents. Requires
+                          Erlang R13B04 or higher (default: no)
   --enable-mysql          enable MySQL support (default: no)
   --enable-pgsql          enable PostgreSQL support (default: no)
   --enable-pam            enable PAM support (default: no)
@@ -1314,18 +1321,11 @@ Optional Features:
   --enable-stun           enable STUN support (default: no)
   --enable-riak           enable Riak support (default: no)
   --enable-json           enable JSON support for mod_bosh (default: no)
-  --enable-iconv          enable iconv support (default: no)
+  --enable-iconv          enable iconv support (default: yes)
   --enable-debug          enable debug information (default: yes)
   --enable-pubsub_ng      enable PubSub NG (default: no)
   --enable-http           build external HTTP libraries ('ibrowse' and
                           'lhttpc', default: no)
-  --enable-tools          build development tools (currently the ejabberd
-                          profiler only, default: no)
-  --enable-all            same as --enable-nif --enable-mysql --enable-pgsql
-                          --enable-pam --enable-zlib --enable-stun
-                          --enable-riak --enable-json --enable-iconv
-                          --enable-debug --enable-pubsub_ng --enable-http
-                          (useful for Dialyzer checks, default: no)
   --enable-user[[[=USER]]]
                           allow this system user to start ejabberd (default:
                           no)
@@ -2457,18 +2457,6 @@ else
 fi
 
 
-# Check whether --enable-nif was given.
-if test "${enable_nif+set}" = set; then :
-  enableval=$enable_nif; case "${enableval}" in
-  yes) nif=true ;;
-  no)  nif=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-nif" "$LINENO" 5  ;;
-esac
-else
-  nif=false
-fi
-
-
 # Check whether --enable-mssql was given.
 if test "${enable_mssql+set}" = set; then :
   enableval=$enable_mssql; case "${enableval}" in
@@ -2478,138 +2466,6 @@ if test "${enable_mssql+set}" = set; then :
 esac
 else
   db_type=generic
-fi
-
-
-# Check whether --enable-mysql was given.
-if test "${enable_mysql+set}" = set; then :
-  enableval=$enable_mysql; case "${enableval}" in
-  yes) mysql=true ;;
-  no)  mysql=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-mysql" "$LINENO" 5  ;;
-esac
-else
-  mysql=false
-fi
-
-
-# Check whether --enable-pgsql was given.
-if test "${enable_pgsql+set}" = set; then :
-  enableval=$enable_pgsql; case "${enableval}" in
-  yes) pgsql=true ;;
-  no)  pgsql=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-pgsql" "$LINENO" 5  ;;
-esac
-else
-  pgsql=false
-fi
-
-
-# Check whether --enable-pam was given.
-if test "${enable_pam+set}" = set; then :
-  enableval=$enable_pam; case "${enableval}" in
-  yes) pam=true ;;
-  no)  pam=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-pam" "$LINENO" 5  ;;
-esac
-else
-  pam=false
-fi
-
-
-# Check whether --enable-zlib was given.
-if test "${enable_zlib+set}" = set; then :
-  enableval=$enable_zlib; case "${enableval}" in
-  yes) zlib=true ;;
-  no)  zlib=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-zlib" "$LINENO" 5  ;;
-esac
-else
-  zlib=true
-fi
-
-
-# Check whether --enable-stun was given.
-if test "${enable_stun+set}" = set; then :
-  enableval=$enable_stun; case "${enableval}" in
-  yes) stun=true ;;
-  no)  stun=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-stun" "$LINENO" 5  ;;
-esac
-else
-  stun=false
-fi
-
-
-# Check whether --enable-riak was given.
-if test "${enable_riak+set}" = set; then :
-  enableval=$enable_riak; case "${enableval}" in
-  yes) riak=true ;;
-  no)  riak=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-riak" "$LINENO" 5  ;;
-esac
-else
-  riak=false
-fi
-
-
-# Check whether --enable-json was given.
-if test "${enable_json+set}" = set; then :
-  enableval=$enable_json; case "${enableval}" in
-  yes) json=true ;;
-  no)  json=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-json" "$LINENO" 5  ;;
-esac
-else
-  json=false
-fi
-
-
-# Check whether --enable-iconv was given.
-if test "${enable_iconv+set}" = set; then :
-  enableval=$enable_iconv; case "${enableval}" in
-  yes) iconv=true ;;
-  no)  iconv=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-iconv" "$LINENO" 5  ;;
-esac
-else
-  iconv=false
-fi
-
-
-# Check whether --enable-debug was given.
-if test "${enable_debug+set}" = set; then :
-  enableval=$enable_debug; case "${enableval}" in
-  yes) debug=true ;;
-  no)  debug=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-debug" "$LINENO" 5  ;;
-esac
-else
-  debug=true
-fi
-
-
-# Check whether --enable-pubsub_ng was given.
-if test "${enable_pubsub_ng+set}" = set; then :
-  enableval=$enable_pubsub_ng; case "${enableval}" in
-  yes) pubsub_ng=true ;;
-  no)  pubsub_ng=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-pubsub_ng" "$LINENO" 5  ;;
-esac
-else
-  pubsub_ng=false
-fi
-
-
-# Check whether --enable-http was given.
-if test "${enable_http+set}" = set; then :
-  enableval=$enable_http; case "${enableval}" in
-  yes) http=true ;;
-  no)  http=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-http" "$LINENO" 5  ;;
-esac
-else
-  http=false
 fi
 
 
@@ -2632,6 +2488,150 @@ if test "${enable_all+set}" = set; then :
   no) nif=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false pubsub_ng=false http=false ;;
   *) as_fn_error $? "bad value ${enableval} for --enable-all" "$LINENO" 5  ;;
 esac
+fi
+
+
+# Check whether --enable-nif was given.
+if test "${enable_nif+set}" = set; then :
+  enableval=$enable_nif; case "${enableval}" in
+  yes) nif=true ;;
+  no)  nif=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-nif" "$LINENO" 5  ;;
+esac
+else
+  if test "x$nif" = "x"; then nif=false; fi
+fi
+
+
+# Check whether --enable-mysql was given.
+if test "${enable_mysql+set}" = set; then :
+  enableval=$enable_mysql; case "${enableval}" in
+  yes) mysql=true ;;
+  no)  mysql=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-mysql" "$LINENO" 5  ;;
+esac
+else
+  if test "x$mysql" = "x"; then mysql=false; fi
+fi
+
+
+# Check whether --enable-pgsql was given.
+if test "${enable_pgsql+set}" = set; then :
+  enableval=$enable_pgsql; case "${enableval}" in
+  yes) pgsql=true ;;
+  no)  pgsql=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pgsql" "$LINENO" 5  ;;
+esac
+else
+  if test "x$pgsql" = "x"; then pgsql=false; fi
+fi
+
+
+# Check whether --enable-pam was given.
+if test "${enable_pam+set}" = set; then :
+  enableval=$enable_pam; case "${enableval}" in
+  yes) pam=true ;;
+  no)  pam=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pam" "$LINENO" 5  ;;
+esac
+else
+  if test "x$pam" = "x"; then pam=false; fi
+fi
+
+
+# Check whether --enable-zlib was given.
+if test "${enable_zlib+set}" = set; then :
+  enableval=$enable_zlib; case "${enableval}" in
+  yes) zlib=true ;;
+  no)  zlib=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-zlib" "$LINENO" 5  ;;
+esac
+else
+  if test "x$zlib" = "x"; then zlib=true; fi
+fi
+
+
+# Check whether --enable-stun was given.
+if test "${enable_stun+set}" = set; then :
+  enableval=$enable_stun; case "${enableval}" in
+  yes) stun=true ;;
+  no)  stun=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-stun" "$LINENO" 5  ;;
+esac
+else
+  if test "x$stun" = "x"; then stun=false; fi
+fi
+
+
+# Check whether --enable-riak was given.
+if test "${enable_riak+set}" = set; then :
+  enableval=$enable_riak; case "${enableval}" in
+  yes) riak=true ;;
+  no)  riak=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-riak" "$LINENO" 5  ;;
+esac
+else
+  if test "x$riak" = "x"; then riak=false; fi
+fi
+
+
+# Check whether --enable-json was given.
+if test "${enable_json+set}" = set; then :
+  enableval=$enable_json; case "${enableval}" in
+  yes) json=true ;;
+  no)  json=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-json" "$LINENO" 5  ;;
+esac
+else
+  if test "x$json" = "x"; then json=false; fi
+fi
+
+
+# Check whether --enable-iconv was given.
+if test "${enable_iconv+set}" = set; then :
+  enableval=$enable_iconv; case "${enableval}" in
+  yes) iconv=true ;;
+  no)  iconv=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-iconv" "$LINENO" 5  ;;
+esac
+else
+  if test "x$iconv" = "x"; then iconv=true; fi
+fi
+
+
+# Check whether --enable-debug was given.
+if test "${enable_debug+set}" = set; then :
+  enableval=$enable_debug; case "${enableval}" in
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-debug" "$LINENO" 5  ;;
+esac
+else
+  if test "x$debug" = "x"; then debug=true; fi
+fi
+
+
+# Check whether --enable-pubsub_ng was given.
+if test "${enable_pubsub_ng+set}" = set; then :
+  enableval=$enable_pubsub_ng; case "${enableval}" in
+  yes) pubsub_ng=true ;;
+  no)  pubsub_ng=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-pubsub_ng" "$LINENO" 5  ;;
+esac
+else
+  if test "x$pubsub_ng" = "x"; then pubsub_ng=false; fi
+fi
+
+
+# Check whether --enable-http was given.
+if test "${enable_http+set}" = set; then :
+  enableval=$enable_http; case "${enableval}" in
+  yes) http=true ;;
+  no)  http=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-http" "$LINENO" 5  ;;
+esac
+else
+  if test "x$http" = "x"; then http=false; fi
 fi
 
 
