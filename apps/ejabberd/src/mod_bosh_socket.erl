@@ -424,29 +424,8 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
 process_acked_stream_event({EventTag, Body, Rid}, SName,
                            #state{} = S) ->
     MaybeBAck = exml_query:attr(Body, <<"ack">>),
-    {Action, Ack} = case {MaybeBAck, S#state.client_acks} of
-        {undefined, false} ->
-            {noreport, undefined};
-        {undefined, true} ->
-            if
-                Rid+1 == S#state.last_processed ->
-                    {noreport, undefined};
-                Rid+1 /= S#state.last_processed ->
-                    ?INFO_MSG("expected 'ack' attribute on ~p~n", [Rid]),
-                    {noreport, undefined}
-            end;
-        {BAck, _} ->
-            A = binary_to_integer(BAck),
-            case {S#state.last_processed,
-                  is_valid_ack(A, S#state.last_processed)} of
-                {undefined, _} ->
-                    {noreport, A};
-                {_, true} ->
-                    {noreport, A};
-                {_, false} ->
-                    {report, A}
-            end
-    end,
+    {Action, Ack} = determine_report_action(MaybeBAck, S#state.client_acks,
+                                            Rid, S#state.last_processed),
     case Action of
         noreport ->
             process_stream_event(EventTag, Body, SName, S#state{rid = Rid});
@@ -455,6 +434,27 @@ process_acked_stream_event({EventTag, Body, Rid}, SName,
             NS2 = process_stream_event(EventTag, Body, SName,
                                        NS#state{rid = Rid}),
             maybe_send_report(NS2)
+    end.
+
+determine_report_action(undefined, false, _, _) ->
+    {noreport, undefined};
+determine_report_action(undefined, true, Rid, LastProcessed) ->
+    if
+        Rid+1 == LastProcessed ->
+            {noreport, undefined};
+        Rid+1 /= LastProcessed ->
+            ?INFO_MSG("expected 'ack' attribute on ~p~n", [Rid]),
+            {noreport, undefined}
+    end;
+determine_report_action(BAck, _, _, LastProcessed) ->
+    Ack = binary_to_integer(BAck),
+    case {LastProcessed, is_valid_ack(Ack, LastProcessed)} of
+        {undefined, _} ->
+            {noreport, Ack};
+        {_, true} ->
+            {noreport, Ack};
+        {_, false} ->
+            {report, Ack}
     end.
 
 is_valid_ack(Ack, LastProcessed)
