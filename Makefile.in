@@ -204,6 +204,7 @@ clean-rel:
 distclean: clean clean-rel
 	rm -f config.status
 	rm -f config.log
+	rm -rf autom4te.cache
 	rm -rf deps
 	rm -rf ebin
 	rm -f Makefile
