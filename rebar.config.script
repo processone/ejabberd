@@ -72,6 +72,8 @@ XMLFlags = lists:foldl(
                      Acc ++ " --enable-nif";
                 ({full_xml, true}, Acc) ->
                      Acc ++ " --enable-full-xml";
+                ({flash_hack, true}, Acc) ->
+                     Acc ++ " --enable-flash-hack";
                 (_, Acc) ->
                      Acc
              end, "", Cfg),
