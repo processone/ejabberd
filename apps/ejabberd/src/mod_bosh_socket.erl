@@ -640,8 +640,10 @@ cancel_inactivity_timer(S) ->
     S#state{inactivity_tref = undefined}.
 
 %% Store data for sending later.
+store(Data, #state{pending = Pending} = S) when is_list(Data) ->
+    S#state{pending = Pending ++ Data};
 store(Data, #state{pending = Pending} = S) ->
-    S#state{pending = Data ++ Pending}.
+    S#state{pending = Pending ++ [Data]}.
 
 forward_to_c2s(C2SPid, StreamElement) ->
     gen_fsm:send_event(C2SPid, StreamElement).
