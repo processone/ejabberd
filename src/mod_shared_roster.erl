@@ -580,17 +580,16 @@ is_group_enabled(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
     case get_group_opts(Host, Group) of
       error -> false;
-      Opts -> not lists:member(disabled, Opts)
+      Opts -> is_group_enabled(Opts)
     end.
 
-get_group_opt(Host, Group, Opt, Default) ->
-    case get_group_opts(Host, Group) of
-      error -> Default;
-      Opts ->
-	  case lists:keysearch(Opt, 1, Opts) of
-	    {value, {_, Val}} -> Val;
-	    false -> Default
-	  end
+is_group_enabled(Opts) ->
+    not lists:member(disabled, Opts).
+
+get_group_opt(Opt, Opts, Default) ->
+    case lists:keysearch(Opt, 1, Opts) of
+        {value, {_, Val}} -> Val;
+        false -> Default
     end.
 
 get_online_users(Host) ->
@@ -599,12 +598,13 @@ get_online_users(Host) ->
 
 get_group_users(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
-    case get_group_opt(Host, Group, all_users, false) of
+    Opts = get_group_opts(Host, Group),
+    case get_group_opt(all_users, Opts, false) of
       true -> ejabberd_auth:get_vh_registered_users(Host);
       false -> []
     end
       ++
-      case get_group_opt(Host, Group, online_users, false) of
+      case get_group_opt(online_users, Opts, false) of
 	true -> get_online_users(Host);
 	false -> []
       end
@@ -660,20 +660,21 @@ get_group_explicit_users(Host, Group, odbc) ->
 
 get_group_name(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
-    get_group_opt(Host, Group, name, Group).
+    Opts = get_group_opts(Host, Group),
+    get_group_opt(name, Opts, Group).
 
 get_special_users_groups(Host) ->
-    lists:filter(fun (Group) ->
-			 get_group_opt(Host, Group, all_users, false) orelse
-			   get_group_opt(Host, Group, online_users, false)
+    lists:filter(fun ({_Group, Opts}) ->
+			 get_group_opt(all_users, Opts, false) orelse
+			   get_group_opt(online_users, Opts, false)
 		 end,
-		 list_groups(Host)).
+		 groups_with_opts(Host)).
 
 get_special_users_groups_online(Host) ->
-    lists:filter(fun (Group) ->
-			 get_group_opt(Host, Group, online_users, false)
+    lists:filter(fun ({_Group, Opts}) ->
+			 get_group_opt(online_users, Opts, false)
 		 end,
-		 list_groups(Host)).
+                 groups_with_opts(Host)).
 
 displayed_groups(GroupsOpts, SelectedGroupsOpts) ->
     DisplayedGroups = lists:usort(lists:flatmap(fun
@@ -742,24 +743,20 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts,
 
 get_user_displayed_groups(US) ->
     Host = element(2, US),
-    DisplayedGroups1 = lists:usort(lists:flatmap(fun
-						   (Group) ->
-						       case
-							 is_group_enabled(Host,
-									  Group)
-							   of
-							 true ->
-							     get_group_opt(Host,
-									   Group,
-									   displayed_groups,
-									   []);
-							 false -> []
-						       end
-						 end,
-						 get_user_groups(US))),
-    [Group
-     || Group <- DisplayedGroups1,
-	is_group_enabled(Host, Group)].
+    DisplayedGroups1 =
+        lists:usort(
+          lists:flatmap(
+            fun(Group) ->
+                    Opts = get_group_opts(Host, Group),
+                    case is_group_enabled(Opts) of
+                        true ->
+                            get_group_opt(displayed_groups, Opts, []);
+                        false ->
+                            []
+                    end
+            end,
+            get_user_groups(US))),
+    [Group || Group <- DisplayedGroups1, is_group_enabled(Host, Group)].
 
 is_user_in_group(US, Group, Host) ->
     is_user_in_group(US, Group, Host,
