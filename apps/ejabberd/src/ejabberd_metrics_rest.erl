@@ -5,7 +5,6 @@
 %%%===================================================================
 
 -module(ejabberd_metrics_rest).
--behaviour(cowboy_rest).
 
 -type command() :: available_metrics | sum_metrics |
     sum_metric | host_metrics | host_metric.
