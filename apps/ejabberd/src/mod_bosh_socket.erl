@@ -327,7 +327,7 @@ handle_sync_event(Event, _From, StateName, State) ->
 
 handle_info({send, #xmlstreamend{} = StreamEnd}, _SName,
             #state{pending = Pending} = S) ->
-    NS = send_or_store([StreamEnd | Pending], S#state{pending = []}),
+    NS = send_or_store(Pending ++ [StreamEnd], S#state{pending = []}),
     {next_state, normal, NS};
 handle_info({send, Data}, accumulate = SName, #state{} = S) ->
     {next_state, SName, store([Data], S)};
@@ -640,10 +640,8 @@ cancel_inactivity_timer(S) ->
     S#state{inactivity_tref = undefined}.
 
 %% Store data for sending later.
-store(Data, #state{pending = Pending} = S) when is_list(Data) ->
-    S#state{pending = Pending ++ Data};
 store(Data, #state{pending = Pending} = S) ->
-    S#state{pending = Pending ++ [Data]}.
+    S#state{pending = Pending ++ Data}.
 
 forward_to_c2s(C2SPid, StreamElement) ->
     gen_fsm:send_event(C2SPid, StreamElement).
@@ -749,7 +747,7 @@ bosh_wrap(Elements, Rid, #state{} = S) ->
             ?DEBUG("pending stanzas, can't send stream end", []),
             Pending = S#state.pending,
             {{bosh_body(S), Stanzas},
-             S#state{pending = [StreamEnd, Pending]}}
+             S#state{pending = Pending ++ [StreamEnd]}}
     end,
     MaybeAck = maybe_ack(Rid, NS),
     {MaybeReport, NNS} = maybe_report(NS),
