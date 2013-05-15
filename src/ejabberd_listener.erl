@@ -624,7 +624,7 @@ prepare_ip(IP) when is_binary(IP) ->
 prepare_mod(ejabberd_stun) ->
     prepare_mod(stun);
 prepare_mod(stun) ->
-    application:start(stun),
+    application:start(p1_stun),
     stun;
 prepare_mod(Mod) ->
     Mod.

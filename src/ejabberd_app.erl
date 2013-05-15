@@ -245,8 +245,8 @@ start_apps() ->
     application:start(crypto),
     application:start(public_key),
     application:start(ssl),
-    application:start(tls),
-    application:start(xml),
-    application:start(stringprep),
-    application:start(ezlib),
-    application:start(cache_tab).
+    application:start(p1_tls),
+    application:start(p1_xml),
+    application:start(p1_stringprep),
+    application:start(p1_zlib),
+    application:start(p1_cache_tab).
