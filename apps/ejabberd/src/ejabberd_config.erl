@@ -364,6 +364,8 @@ process_term(Term, State) ->
             State#state{override_acls = true};
         {acl, _ACLName, _ACLData} ->
             process_host_term(Term, global, State);
+        {alarms, Env} ->
+            add_option(alarms, Env, State);
         {access, _RuleName, _Rules} ->
             process_host_term(Term, global, State);
         {shaper, _Name, _Data} ->

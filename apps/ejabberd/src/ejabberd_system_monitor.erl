@@ -6,6 +6,7 @@
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2011   ProcessOne
+%%%           Copyright (C) 2013        Erlang Solutions
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -27,16 +28,14 @@
 -module(ejabberd_system_monitor).
 -author('alexey@process-one.net').
 
--behaviour(gen_server).
+-behaviour(gen_event).
 
 %% API
--export([start_link/0,
-	 process_command/3,
-	 process_remote_command/1]).
+-export([add_handler/0, process_command/3, process_remote_command/1]).
 
-%% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+%% gen_event callbacks
+-export([init/1, handle_event/2, handle_call/2,
+         handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -47,17 +46,15 @@
 %%====================================================================
 %% API
 %%====================================================================
+
 %%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
+%% @doc
+%% Adds this event handler to alarm_handler
+%% @end
 %%--------------------------------------------------------------------
-start_link() ->
-    LH = case ejabberd_config:get_local_option(watchdog_large_heap) of
-        I when is_integer(I) -> I;
-        _ -> 1000000
-    end,
-    Opts = [{large_heap, LH}],
-    gen_server:start_link({local, ?MODULE}, ?MODULE, Opts, []).
+-spec add_handler() ->  ok | {'EXIT', term()} | term().
+add_handler() ->
+    gen_event:add_handler(alarms_utils:event_manager(), ?MODULE, []).
 
 process_command(From, To, Packet) ->
     case To of
@@ -71,7 +68,7 @@ process_command(From, To, Packet) ->
 			    Body = xml:get_path_s(Packet, [{elem, <<"body">>}, cdata]),
 			    spawn(fun() ->
 					  process_flag(priority, high),
-					  process_command1(From, To, Body)
+					  process_command1(From, To, binary_to_list(Body))
 				  end),
 			    stop;
 			false ->
@@ -85,7 +82,7 @@ process_command(From, To, Packet) ->
     end.
 
 %%====================================================================
-%% gen_server callbacks
+%% gen_event callbacks
 %%====================================================================
 
 %%--------------------------------------------------------------------
@@ -95,10 +92,7 @@ process_command(From, To, Packet) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init(Opts) ->
-    LH = proplists:get_value(large_heap, Opts),
-    process_flag(priority, high),
-    erlang:system_monitor(self(), [{large_heap, LH}]),
+init(_) ->
     lists:foreach(
       fun(Host) ->
 	      ejabberd_hooks:add(local_send_to_resource_hook, Host,
@@ -107,76 +101,99 @@ init(Opts) ->
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
+%% @private
+%% @doc
+%% Whenever an event manager receives an event sent using
+%% gen_event:notify/2 or gen_event:sync_notify/2, this function is
+%% called for each installed event handler to handle the event.
+%%
+%% @spec handle_event(Event, State) ->
+%%                          {ok, State} |
+%%                          {swap_handler, Args1, State1, Mod2, Args2} |
+%%                          remove_handler
+%% @end
 %%--------------------------------------------------------------------
-handle_call({get, large_heap}, _From, State) ->
-    {reply, get_large_heap(), State};
-handle_call({set, large_heap, NewValue}, _From, State) ->
-    MonSettings = erlang:system_monitor(self(), [{large_heap, NewValue}]),
-    OldLH = get_large_heap(MonSettings),
-    NewLH = get_large_heap(),
-    {reply, {lh_changed, OldLH, NewLH}, State};
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
-
-get_large_heap() ->
-    MonSettings = erlang:system_monitor(),
-    get_large_heap(MonSettings).
-get_large_heap(MonSettings) ->
-    {_MonitorPid, Options} = MonSettings,
-    proplists:get_value(large_heap, Options).
-
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
-handle_info({monitor, Pid, large_heap, Info}, State) ->
+handle_event({set_alarm, {large_heap, {Pid, Info}}}, State) ->
     spawn(fun() ->
-		  process_flag(priority, high),
-		  process_large_heap(Pid, Info)
-	  end),
-    {noreply, State};
-handle_info(_Info, State) ->
-    {noreply, State}.
+                  process_flag(priority, high),
+                  process_large_heap(Pid, Info)
+          end),
+    {ok, State};
+handle_event(_, State) ->
+    {ok, State}.
 
 %%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
+%% @private
+%% @doc
+%% Whenever an event manager receives a request sent using
+%% gen_event:call/3,4, this function is called for the specified
+%% event handler to handle the request.
+%%
+%% @spec handle_call(Request, State) ->
+%%                   {ok, Reply, State} |
+%%                   {swap_handler, Reply, Args1, State1, Mod2, Args2} |
+%%                   {remove_handler, Reply}
+%% @end
+%%--------------------------------------------------------------------
+handle_call({get, large_heap}, State) ->
+    {ok, get_large_heap(), State};
+handle_call({set, large_heap, NewValue}, State) ->
+    Options = alarms_server:get_monitor_options(),
+    OldValue = proplists:get_value(large_heap, Options),
+    NewOptions = lists:keystore(large_heap, 1, Options, {large_heap, NewValue}),
+    alarms_server:set_monitor_options(NewOptions),
+    {ok, {lh_changed, OldValue, get_large_heap()}, State};
+handle_call(_Request, State) ->
+    Reply = ok,
+    {ok, Reply, State}.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% This function is called for each installed event handler when
+%% an event manager receives any other message than an event or a
+%% synchronous request (or a system message).
+%%
+%% @spec handle_info(Info, State) ->
+%%                         {ok, State} |
+%%                         {swap_handler, Args1, State1, Mod2, Args2} |
+%%                         remove_handler
+%% @end
+%%--------------------------------------------------------------------
+handle_info(_Info, State) ->
+    {ok, State}.
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Whenever an event handler is deleted from an event manager, this
+%% function is called. It should be the opposite of Module:init/1 and
+%% do any necessary cleaning up.
+%%
+%% @spec terminate(Reason, State) -> void()
+%% @end
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
     ok.
 
 %%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
+%% @private
+%% @doc
+%% Convert process state when code is changed
+%%
+%% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
+%% @end
 %%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-%%--------------------------------------------------------------------
+%%%===================================================================
 %%% Internal functions
-%%--------------------------------------------------------------------
+%%%===================================================================
+
+get_large_heap() ->
+    Options = alarms_server:get_monitor_options(),
+    proplists:get_value(large_heap, Options).
 
 process_large_heap(Pid, Info) ->
     Host = ?MYNAME,
@@ -191,7 +208,7 @@ process_large_heap(Pid, Info) ->
         From = jlib:make_jid(<<"">>, Host, <<"watchdog">>),
 	    lists:foreach(
 	      fun(S) ->
-		      case jlib:binary_to_jid(S) of
+		      case jlib:binary_to_jid(list_to_binary(S)) of
 			  error -> ok;
 			  JID -> send_message(From, JID, Body)
 		      end
@@ -214,7 +231,7 @@ get_admin_jids() ->
 	JIDs when is_list(JIDs) ->
 	    lists:flatmap(
 	      fun(S) ->
-		      case jlib:binary_to_jid(S) of
+		      case jlib:binary_to_jid(list_to_binary(S)) of
 			  error -> [];
 			  JID -> [jlib:jid_tolower(JID)]
 		      end
@@ -251,7 +268,6 @@ detailed_info1(Pid) ->
 	      process_info(Pid, initial_call),
 	      process_info(Pid, message_queue_len),
 	      process_info(Pid, links),
-	      process_info(Pid, dictionary),
 	      process_info(Pid, heap_size),
 	      process_info(Pid, stack_size)
 	     ]]).
@@ -357,11 +373,13 @@ process_remote_command([kill, SPid]) ->
     exit(list_to_pid(SPid), kill),
     "ok";
 process_remote_command([showlh]) ->
-    Res = gen_server:call(ejabberd_system_monitor, {get, large_heap}),
+    Res = gen_event:call(alarms_utils:event_manager(),
+                         ?MODULE, {get, large_heap}),
     io_lib:format("Current large heap: ~p", [Res]);
 process_remote_command([setlh, NewValue]) ->
-    {lh_changed, OldLH, NewLH} = gen_server:call(ejabberd_system_monitor, {set, large_heap, NewValue}),
+    {lh_changed, OldLH, NewLH} =
+        gen_event:call(alarms_utils:event_manager(),
+                       ?MODULE, {set, large_heap, NewValue}),
     io_lib:format("Result of set large heap: ~p --> ~p", [OldLH, NewLH]);
 process_remote_command(_) ->
     throw(unknown_command).
-
