@@ -40,6 +40,7 @@
 -define(PARSE_COMMAND, 0).
 -define(PARSE_FINAL_COMMAND, 1).
 
+-include("jlib.hrl").
 -record(xml_stream_state, {callback_pid, port, stack, size, maxsize}).
 
 process_data(CallbackPid, Stack, Data) ->

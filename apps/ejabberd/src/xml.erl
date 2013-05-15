@@ -41,6 +41,7 @@
 	 replace_tag_attr/3]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 %% Select at compile time how to escape characters in binary text
 %% nodes.
