@@ -60,7 +60,7 @@ CREATE TABLE rostergroups (
 CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 
 CREATE TABLE sr_group (
-    name varchar(250) NOT NULL,
+    name varchar(250) NOT NULL PRIMARY KEY,
     opts text NOT NULL,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8;
