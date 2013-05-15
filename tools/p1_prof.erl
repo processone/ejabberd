@@ -34,56 +34,64 @@
 	 reds/0, reds/1, trace/1, help/0,
 	 q/0, m/0, r/0, q/1, m/1, r/1]).
 
--define(APPS, [ejabberd, mnesia]).
+-define(TRACE_FILE, "/tmp/fprof.trace").
+-define(ANALYSIS_FILE, "/tmp/fprof.analysis").
 
 %%====================================================================
 %% API
 %%====================================================================
 eprof_start() ->
     eprof:start(),
-    case lists:keyfind(running, 1, application:info()) of
-	{_, Apps} ->
-	    case get_procs(?APPS, Apps) of
-		[] ->
-		    {error, no_procs_found};
-		Procs ->
-		    eprof:start_profiling(Procs)
-	    end;
-	_ ->
-	    {error, no_app_info}
+    case get_procs() of
+        [] ->
+            {error, no_procs_found};
+        Procs ->
+            eprof:start_profiling(Procs)
     end.
 
 fprof_start() ->
     fprof_start(0).
 
 fprof_start(Duration) ->
-    case lists:keyfind(running, 1, application:info()) of
-	{_, Apps} ->
-	    case get_procs(?APPS, Apps) of
-		[] ->
-		    {error, no_procs_found};
-		Procs ->
-		    fprof:trace([start, {procs, Procs}]),
-		    io:format("Profiling started~n"),
-		    if Duration > 0 ->
-			    timer:sleep(Duration*1000),
-			    fprof:trace([stop]),
-			    fprof:stop();
-		       true->
-			    ok
-		    end
-	    end;
-	_ ->
-	    {error, no_app_info}
+    case get_procs() of
+        [] ->
+            {error, no_procs_found};
+        Procs ->
+            case fprof:trace([start, {procs, Procs}, {file, ?TRACE_FILE}]) of
+                ok ->
+                    io:format("Profiling started, writing trace data to ~s~n",
+                              [?TRACE_FILE]),
+                    if Duration > 0 ->
+                            timer:sleep(Duration*1000),
+                            fprof:trace([stop]),
+                            fprof:stop();
+                       true->
+                            ok
+                    end;
+                Err ->
+                    io:format("Couldn't start profiling: ~p~n", [Err]),
+                    Err
+            end
     end.
 
 fprof_stop() ->
     fprof:trace([stop]),
-    fprof:profile(),
-    fprof:analyse([totals, no_details, {sort, own},
-		   no_callers, {dest, "fprof.analysis"}]),
-    fprof:stop(),
-    format_fprof_analyze().
+    case fprof:profile([{file, ?TRACE_FILE}]) of
+        ok ->
+            case fprof:analyse([totals, no_details, {sort, own},
+                                no_callers, {dest, ?ANALYSIS_FILE}]) of
+                ok ->
+                    fprof:stop(),
+                    format_fprof_analyze();
+                Err ->
+                    io:format("Couldn't analyze: ~p~n", [Err]),
+                    Err
+            end;
+        Err ->
+            io:format("Couldn't compile a trace into profile data: ~p~n",
+                      [Err]),
+            Err
+    end.
 
 fprof_analyze() ->
     fprof_stop().
@@ -175,35 +183,11 @@ trace_loop() ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-get_procs(Apps, AppList) ->
-    io:format("Searching for processes to profile...~n", []),
-    Procs = lists:flatmap(
-	      fun({App, Leader}) when is_pid(Leader) ->
-		      case lists:member(App, Apps) of
-			  true ->
-			      get_procs(Leader);
-			  false ->
-			      []
-		      end;
-		 (_) ->
-		      []
-	      end, AppList),
-    io:format("Found ~p processes~n", [length(Procs)]),
-    Procs.
-
-get_procs(Leader) ->
-    lists:filter(
-      fun(Pid) ->
-	      case process_info(Pid, group_leader) of
-		  {_, Leader} ->
-		      true;
-		  _ ->
-		      false
-	      end
-      end, processes()).
+get_procs() ->
+    processes().
 
 format_fprof_analyze() ->
-    case file:consult("fprof.analysis") of
+    case file:consult(?ANALYSIS_FILE) of
 	{ok, [_, [{totals, _, _, TotalOWN}] | Rest]} ->
 	    OWNs = lists:flatmap(
 		     fun({MFA, _, _, OWN}) ->
