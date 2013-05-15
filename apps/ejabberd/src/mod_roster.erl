@@ -384,7 +384,7 @@ process_item_els(Item, [XE = #xmlel{name = Name, attrs = Attrs,
 		<<>> ->
 		    process_item_els(Item, Els);
 		_ ->
-		    XEls = [XE#xmlel{} | Item#roster.xs],
+		    XEls = [XE | Item#roster.xs],
 		    process_item_els(Item#roster{xs = XEls}, Els)
 	    end
     end;

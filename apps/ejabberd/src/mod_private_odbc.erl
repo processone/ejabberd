@@ -66,7 +66,7 @@ process_sm_iq(From, To, #iq{type = Type, sub_el = SubEl} = IQ) ->
                                 end,
                             odbc_queries:sql_transaction(LServer, F),
                             IQ#iq{type = result,
-                                  sub_el = [SubEl#xmlel{}]};
+                                  sub_el = [SubEl]};
                         get ->
                             case catch get_data(LUser, LServer, Els) of
                                 {'EXIT', _Reason} ->

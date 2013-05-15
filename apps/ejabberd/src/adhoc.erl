@@ -69,7 +69,7 @@ find_xdata_el1([]) ->
 find_xdata_el1([XE = #xmlel{attrs = Attrs} | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
         ?NS_XDATA ->
-            XE#xmlel{};
+            XE;
         _ ->
             find_xdata_el1(Els)
     end;
