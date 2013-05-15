@@ -352,7 +352,7 @@ handle_info({wait_timeout, {Rid, Pid}}, SName,
         false ->
             {next_state, SName, S};
         {value, {Rid, _, Pid}, NewHandlers} ->
-            NS = send_to_handler({Rid, Pid}, [], S, []),
+            NS = send_to_handler({Rid, Pid}, [], S),
             {next_state, SName, NS#state{handlers = NewHandlers}}
     end;
 handle_info(Info, SName, State) ->
@@ -506,12 +506,11 @@ process_pause_event(Seconds, #state{maxpause = MaxPause} = S)
     [Pid ! policy_violation || {_, _, Pid} <- S#state.handlers],
     throw({invalid_pause, S#state{handlers = []}});
 process_pause_event(Seconds, State) ->
+    NS = State#state{inactivity = Seconds},
     F = fun(_, S) ->
-            send_to_handler([], S, [pause])
+            send_to_handler([], S)
     end,
-    NS = lists:foldl(F, State,
-                     lists:seq(1, length(State#state.handlers))),
-    NS#state{inactivity = Seconds}.
+    lists:foldl(F, NS, lists:seq(1, length(State#state.handlers))).
 
 process_deferred_events(SName, #state{deferred = Deferred} = S) ->
     lists:foldl(fun(Event, State) ->
@@ -548,11 +547,8 @@ send_or_store(Data, State) ->
 %% send_to_handler() assumes that Handlers is not empty!
 %% Be sure that's the case if calling it.
 send_to_handler(Data, State) ->
-    send_to_handler(Data, State, []).
-
-send_to_handler(Data, State, Opts) ->
     {Handler, NS} = pick_handler(State),
-    send_to_handler(Handler, Data, NS, Opts).
+    send_to_handler(Handler, Data, NS).
 
 %% Return handler and new state if a handler is available
 %% or `false` otherwise.
@@ -566,24 +562,19 @@ pick_handler(#state{handlers = Handlers} = S) ->
     timer:cancel(TRef),
     {{Rid, Pid}, S#state{handlers = HRest}}.
 
-send_to_handler({_, Pid}, #xmlel{name = <<"body">>} = Wrapped, State, Opts) ->
-    send_wrapped_to_handler(Pid, Wrapped, State, Opts);
-send_to_handler({Rid, Pid}, Data, State, Opts) ->
+send_to_handler({_, Pid}, #xmlel{name = <<"body">>} = Wrapped, State) ->
+    send_wrapped_to_handler(Pid, Wrapped, State);
+send_to_handler({Rid, Pid}, Data, State) ->
     {Wrapped, NS} = bosh_wrap(Data, Rid, State),
     NS2 = cache_response({Rid, now(), Wrapped}, NS),
-    send_wrapped_to_handler(Pid, Wrapped, NS2, Opts).
+    send_wrapped_to_handler(Pid, Wrapped, NS2).
 
 %% This is the most specific variant of send_to_handler()
 %% and the *only one* actually performing a send
 %% to the cowboy_loop_handler serving a HTTP request.
-send_wrapped_to_handler(Pid, Wrapped, State, Opts) ->
+send_wrapped_to_handler(Pid, Wrapped, State) ->
     Pid ! {bosh_reply, Wrapped},
-    case proplists:get_value(pause, Opts, false) of
-        false ->
-            setup_inactivity_timer(State);
-        _ ->
-            State
-    end.
+    setup_inactivity_timer(State).
 
 maybe_ack(HandlerRid, #state{rid = Rid} = S) ->
     if
