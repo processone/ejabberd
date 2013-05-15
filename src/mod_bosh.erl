@@ -186,10 +186,8 @@ start_jiffy(Opts) ->
         false ->
             ok;
         true ->
-            case application:start(jiffy) of
+            case catch ejabberd:start_app(jiffy) of
                 ok ->
-                    ok;
-                {error, {already_started, _}} ->
                     ok;
                 Err ->
                     ?WARNING_MSG("Failed to start JSON codec (jiffy): ~p. "

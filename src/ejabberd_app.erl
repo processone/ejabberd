@@ -241,12 +241,10 @@ delete_pid_file() ->
     end.
 
 start_apps() ->
-    application:start(sasl),
-    application:start(crypto),
-    application:start(public_key),
-    application:start(ssl),
-    application:start(p1_tls),
-    application:start(p1_xml),
-    application:start(p1_stringprep),
-    application:start(p1_zlib),
-    application:start(p1_cache_tab).
+    ejabberd:start_app(sasl),
+    ejabberd:start_app(ssl),
+    ejabberd:start_app(p1_tls),
+    ejabberd:start_app(p1_xml),
+    ejabberd:start_app(p1_stringprep),
+    ejabberd:start_app(p1_zlib),
+    ejabberd:start_app(p1_cache_tab).

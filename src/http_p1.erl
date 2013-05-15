@@ -39,7 +39,7 @@
 -ifdef(USE_IBROWSE).
 
 start() ->
-    application:start(ibrowse).
+    ejabberd:start_app(ibrowse).
 
 stop() ->
     application:stop(ibrowse).
@@ -61,7 +61,7 @@ request(Method, URL, Hdrs, Body, Opts) ->
 -ifdef(USE_LHTTPC).
 
 start() ->
-    application:start(lhttpc).
+    ejabberd:start_app(lhttpc).
 
 stop() ->
     application:stop(lhttpc).
@@ -82,10 +82,10 @@ request(Method, URL, Hdrs, Body, Opts) ->
 -else.
 
 start() ->
-    application:start(inets).
+    ejabberd:start_app(inets).
 
 stop() ->
-    application:start(inets).
+    ejabberd:start_app(inets).
 
 to_list(Str) when is_binary(Str) ->
     binary_to_list(Str);

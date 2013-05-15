@@ -463,7 +463,7 @@ abort_on_driver_error(Reply, From) ->
 %% == pure ODBC code
 
 odbc_connect(SQLServer) ->
-    application:start(odbc),
+    ejabberd:start_app(odbc),
     odbc:connect(SQLServer, [{scrollable_cursors, off}]).
 
 %% == Native PostgreSQL code

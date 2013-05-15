@@ -55,6 +55,7 @@ start() ->
                   riak_server, fun(_) -> true end, false),
     if
         StartRiak ->
+            ejabberd:start_app(riakc),
             do_start();
         true ->
             ok
