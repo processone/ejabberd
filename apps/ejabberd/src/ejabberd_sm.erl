@@ -127,8 +127,8 @@ bounce_offline_message(#jid{server = Server} = From, To, Packet) ->
 disconnect_removed_user(User, Server) ->
     ejabberd_sm:route(jlib:make_jid(<<>>, <<>>, <<>>),
                       jlib:make_jid(User, Server, <<>>),
-                      {xmlel,<<"broadcast">>, [],
-                       [{exit, <<"User removed">>}]}).
+                      #xmlel{name = <<"broadcast">>,
+                             children = [{exit, <<"User removed">>}]}).
 
 get_user_resources(User, Server) ->
     LUser = jlib:nodeprep(User),
@@ -351,7 +351,7 @@ do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket ~P~n",
            [From, To, Packet, 8]),
     #jid{ luser = LUser, lserver = LServer, lresource = LResource} = To,
-    {xmlel, Name, Attrs, _Els} = Packet,
+    #xmlel{name = Name, attrs = Attrs} = Packet,
     case LResource of
         <<>> ->
             do_route_no_resource(Name, xml:get_attr_s(<<"type">>, Attrs),

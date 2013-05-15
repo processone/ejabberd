@@ -87,12 +87,10 @@ get_local_commands(Acc, _From, #jid{lserver = LServer} = _To, <<"">>, Lang) ->
                         {result, I} -> I;
                         _ -> []
                     end,
-            Nodes = [{xmlel,
-                      <<"item">>,
-                      [{<<"jid">>, LServer},
-                       {<<"node">>, ?NS_COMMANDS},
-                       {<<"name">>, translate:translate(Lang, <<"Commands">>)}],
-                      []}],
+            Nodes = [#xmlel{name = <<"item">>,
+                            attrs = [{<<"jid">>, LServer},
+                                     {<<"node">>, ?NS_COMMANDS},
+                                     {<<"name">>, translate:translate(Lang, <<"Commands">>)}]}],
             {result, Items ++ Nodes}
     end;
 
@@ -117,12 +115,10 @@ get_sm_commands(Acc, _From, #jid{lserver = LServer} = To, <<"">>, Lang) ->
                         {result, I} -> I;
                         _ -> []
                     end,
-            Nodes = [{xmlel,
-                      <<"item">>,
-                      [{<<"jid">>, jlib:jid_to_binary(To)},
-                       {<<"node">>, ?NS_COMMANDS},
-                       {<<"name">>, translate:translate(Lang, <<"Commands">>)}],
-                      []}],
+            Nodes = [#xmlel{name = <<"item">>,
+                            attrs = [{<<"jid">>, jlib:jid_to_binary(To)},
+                                     {<<"node">>, ?NS_COMMANDS},
+                                     {<<"name">>, translate:translate(Lang, <<"Commands">>)}]}],
             {result, Items ++ Nodes}
     end;
 
@@ -136,16 +132,16 @@ get_sm_commands(Acc, _From, _To, _Node, _Lang) ->
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_local_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
-    [{xmlel, <<"identity">>,
-      [{<<"category">>, <<"automation">>},
-       {<<"type">>, <<"command-list">>},
-       {<<"name">>, translate:translate(Lang, <<"Commands">>)}], []} | Acc];
+    [#xmlel{name = <<"identity">>,
+            attrs = [{<<"category">>, <<"automation">>},
+                     {<<"type">>, <<"command-list">>},
+                     {<<"name">>, translate:translate(Lang, <<"Commands">>)}]} | Acc];
 
 get_local_identity(Acc, _From, _To, <<"ping">>, Lang) ->
-    [{xmlel, <<"identity">>,
-      [{<<"category">>, <<"automation">>},
-       {<<"type">>, <<"command-node">>},
-       {<<"name">>, translate:translate(Lang, <<"Ping">>)}], []} | Acc];
+    [#xmlel{name = <<"identity">>,
+            attrs = [{<<"category">>, <<"automation">>},
+                     {<<"type">>, <<"command-node">>},
+                     {<<"name">>, translate:translate(Lang, <<"Ping">>)}]} | Acc];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -154,10 +150,10 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
-    [{xmlel, <<"identity">>,
-      [{<<"category">>, <<"automation">>},
-       {<<"type">>, <<"command-list">>},
-       {<<"name">>, translate:translate(Lang, <<"Commands">>)}], []} | Acc];
+    [#xmlel{name = <<"identity">>,
+            attrs = [{<<"category">>, <<"automation">>},
+                     {<<"type">>, <<"command-list">>},
+                     {<<"name">>, translate:translate(Lang, <<"Commands">>)}]} | Acc];
 
 get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -236,11 +232,10 @@ ping_item(Acc, _From, #jid{lserver = Server} = _To, Lang) ->
                 _ ->
                     []
             end,
-    Nodes = [{xmlel, <<"item">>,
-              [{<<"jid">>, Server},
-               {<<"node">>, <<"ping">>},
-               {<<"name">>, translate:translate(Lang, <<"Ping">>)}],
-              []}],
+    Nodes = [#xmlel{name = <<"item">>,
+                    attrs = [{<<"jid">>, Server},
+                             {<<"node">>, <<"ping">>},
+                             {<<"name">>, translate:translate(Lang, <<"Ping">>)}]}],
     {result, Items ++ Nodes}.
 
 

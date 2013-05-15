@@ -449,16 +449,18 @@ wait_for_validation(closed, StateData) ->
 
 wait_for_features({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlel, <<"stream:features">>, _Attrs, Els} ->
+	#xmlel{name = <<"stream:features">>, children = Els} ->
 	    {SASLEXT, StartTLS, StartTLSRequired} =
 		lists:foldl(
-		  fun({xmlel, <<"mechanisms">>, Attrs1, Els1} = _El1,
+		  fun(#xmlel{name = <<"mechanisms">>, attrs = Attrs1,
+                             children = Els1} = _El1,
 		      {_SEXT, STLS, STLSReq} = Acc) ->
 			  case xml:get_attr_s(<<"xmlns">>, Attrs1) of
 			      ?NS_SASL ->
 				  NewSEXT =
 				      lists:any(
-					fun({xmlel, <<"mechanism">>, _, Els2}) ->
+					fun(#xmlel{name = <<"mechanism">>,
+                                                   children = Els2}) ->
 						case xml:get_cdata(Els2) of
 						    <<"EXTERNAL">> -> true;
 						    _ -> false
@@ -469,12 +471,12 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 			      _ ->
 				  Acc
 			  end;
-		     ({xmlel, <<"starttls">>, Attrs1, _Els1} = El1,
+		     (#xmlel{name = <<"starttls">>, attrs = Attrs1} = El1,
 		      {SEXT, _STLS, _STLSReq} = Acc) ->
 			  case xml:get_attr_s(<<"xmlns">>, Attrs1) of
 			      ?NS_TLS ->
 				  Req = case xml:get_subtag(El1, <<"required">>) of
-					    {xmlel, _, _, _} -> true;
+					    #xmlel{} -> true;
 					    false -> false
 					end,
 				  {SEXT, true, Req};
@@ -498,37 +500,36 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		SASLEXT and StateData#state.try_auth and
 		(StateData#state.new /= false) ->
 		    send_element(StateData,
-				 {xmlel, <<"auth">>,
-				  [{<<"xmlns">>, ?NS_SASL},
-				   {<<"mechanism">>, <<"EXTERNAL">>}],
-				  [{xmlcdata,
-				    jlib:encode_base64(
-				      StateData#state.myname)}]}),
-		    {next_state, wait_for_auth_result,
-		     StateData#state{try_auth = false}, ?FSMTIMEOUT};
-		StartTLS and StateData#state.tls and
-		(not StateData#state.tls_enabled) ->
-		    send_element(StateData,
-				 {xmlel, <<"starttls">>,
-				  [{<<"xmlns">>, ?NS_TLS}], []}),
-		    {next_state, wait_for_starttls_proceed, StateData,
-		     ?FSMTIMEOUT};
-		StartTLSRequired and (not StateData#state.tls) ->
-		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
-					      StateData#state.server}]),
-		    ejabberd_socket:close(StateData#state.socket),
-		    {next_state, reopen_socket,
-		     StateData#state{socket = undefined,
-				     use_v10 = false}, ?FSMTIMEOUT};
-		StateData#state.db_enabled ->
-		    send_db_request(StateData);
-		true ->
-		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
-					      StateData#state.server}]),
-						% TODO: clear message queue
-		    ejabberd_socket:close(StateData#state.socket),
-		    {next_state, reopen_socket, StateData#state{socket = undefined,
-								use_v10 = false}, ?FSMTIMEOUT}
+				  #xmlel{name = <<"auth">>,
+				         attrs = [{<<"xmlns">>, ?NS_SASL},
+				                  {<<"mechanism">>, <<"EXTERNAL">>}],
+				          children = [#xmlcdata{content = jlib:encode_base64(
+				                                            StateData#state.myname)}]}),
+		     {next_state, wait_for_auth_result,
+		      StateData#state{try_auth = false}, ?FSMTIMEOUT};
+		 StartTLS and StateData#state.tls and
+		  (not StateData#state.tls_enabled) ->
+		     send_element(StateData,
+				  #xmlel{name = <<"starttls">>,
+				         attrs = [{<<"xmlns">>, ?NS_TLS}]}),
+		     {next_state, wait_for_starttls_proceed, StateData,
+		      ?FSMTIMEOUT};
+		 StartTLSRequired and (not StateData#state.tls) ->
+		     ?DEBUG("restarted: ~p", [{StateData#state.myname,
+					       StateData#state.server}]),
+		     ejabberd_socket:close(StateData#state.socket),
+		     {next_state, reopen_socket,
+		      StateData#state{socket = undefined,
+				      use_v10 = false}, ?FSMTIMEOUT};
+		 StateData#state.db_enabled ->
+		     send_db_request(StateData);
+		 true ->
+		     ?DEBUG("restarted: ~p", [{StateData#state.myname,
+					       StateData#state.server}]),
+		     % TODO: clear message queue
+		     ejabberd_socket:close(StateData#state.socket),
+		     {next_state, reopen_socket, StateData#state{socket = undefined,
+								 use_v10 = false}, ?FSMTIMEOUT}
 	    end;
 	_ ->
 	    send_text(StateData,
@@ -560,7 +561,7 @@ wait_for_features(closed, StateData) ->
 
 wait_for_auth_result({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlel, <<"success">>, Attrs, _Els} ->
+	#xmlel{name = <<"success">>, attrs = Attrs} ->
 	    case xml:get_attr_s(<<"xmlns">>, Attrs) of
 		?NS_SASL ->
 		    ?DEBUG("auth: ~p", [{StateData#state.myname,
@@ -582,7 +583,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 			      [StateData#state.myname, StateData#state.server]),
 		    {stop, normal, StateData}
 	    end;
-	{xmlel, <<"failure">>, Attrs, _Els} ->
+	#xmlel{name = <<"failure">>, attrs = Attrs} ->
 	    case xml:get_attr_s(<<"xmlns">>, Attrs) of
 		?NS_SASL ->
 		    ?DEBUG("restarted: ~p", [{StateData#state.myname,
@@ -628,7 +629,7 @@ wait_for_auth_result(closed, StateData) ->
 
 wait_for_starttls_proceed({xmlstreamelement, El}, StateData) ->
     case El of
-	{xmlel, <<"proceed">>, Attrs, _Els} ->
+	#xmlel{name = <<"proceed">>, attrs = Attrs} ->
 	    case xml:get_attr_s(<<"xmlns">>, Attrs) of
 		?NS_TLS ->
 		    ?DEBUG("starttls: ~p", [{StateData#state.myname,
@@ -957,7 +958,7 @@ send_queue(StateData, Q) ->
 
 %% Bounce a single message (xmlel)
 bounce_element(El, Error) ->
-    {xmlel, _Name, Attrs, _SubTags} = El,
+    #xmlel{attrs = Attrs} = El,
     case xml:get_attr_s(<<"type">>, Attrs) of
 	<<"error">> -> ok;
 	<<"result">> -> ok;
@@ -1020,23 +1021,21 @@ send_db_request(StateData) ->
 		ok;
 	    Key1 ->
 		send_element(StateData,
-			     {xmlel,
-			      <<"db:result">>,
-			      [{<<"from">>, StateData#state.myname},
-			       {<<"to">>, Server}],
-			      [{xmlcdata, Key1}]})
+			     #xmlel{name = <<"db:result">>,
+			            attrs = [{<<"from">>, StateData#state.myname},
+			                     {<<"to">>, Server}],
+			            children = [#xmlcdata{content = Key1}]})
 	end,
 	case StateData#state.verify of
 	    false ->
 		ok;
 	    {_Pid, Key2, SID} ->
 		send_element(StateData,
-			     {xmlel,
-			      <<"db:verify">>,
-			      [{<<"from">>, StateData#state.myname},
-			       {<<"to">>, StateData#state.server},
-			       {<<"id">>, SID}],
-			      [{xmlcdata, Key2}]})
+			     #xmlel{name = <<"db:verify">>,
+			            attrs = [{<<"from">>, StateData#state.myname},
+			                     {<<"to">>, StateData#state.server},
+			                     {<<"id">>, SID}],
+			            children = [#xmlcdata{content = Key2}]})
 	end,
 	{next_state, wait_for_validation, NewStateData, ?FSMTIMEOUT*6}
     catch
@@ -1045,13 +1044,15 @@ send_db_request(StateData) ->
     end.
 
 
-is_verify_res({xmlel, Name, Attrs, _Els}) when Name == <<"db:result">> ->
+is_verify_res(#xmlel{name = Name,
+                     attrs = Attrs}) when Name == <<"db:result">> ->
     {result,
      xml:get_attr_s(<<"to">>, Attrs),
      xml:get_attr_s(<<"from">>, Attrs),
      xml:get_attr_s(<<"id">>, Attrs),
      xml:get_attr_s(<<"type">>, Attrs)};
-is_verify_res({xmlel, Name, Attrs, _Els}) when Name == <<"db:verify">> ->
+is_verify_res(#xmlel{name = Name,
+                     attrs = Attrs}) when Name == <<"db:verify">> ->
     {verify,
      xml:get_attr_s(<<"to">>, Attrs),
      xml:get_attr_s(<<"from">>, Attrs),

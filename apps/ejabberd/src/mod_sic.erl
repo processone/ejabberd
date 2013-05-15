@@ -72,14 +72,13 @@ process_sm_iq(_From, _To, #iq{type = 'set', sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
 get_ip({User, Server, Resource},
-       #iq{sub_el = {xmlel, Name, Attrs, _} = SubEl} = IQ) ->
+       #iq{sub_el = #xmlel{} = SubEl} = IQ) ->
     case ejabberd_sm:get_user_ip(User, Server, Resource) of
 	{IP, _} when is_tuple(IP) ->
 	    IQ#iq{
 	      type = 'result',
 	      sub_el = [
-			{xmlel, Name, Attrs,
-			 [{xmlcdata, list_to_binary(inet_parse:ntoa(IP))}]}
+			SubEl#xmlel{children = [#xmlcdata{content = list_to_binary(inet_parse:ntoa(IP))}]}
 		       ]
 	     };
 	_ ->

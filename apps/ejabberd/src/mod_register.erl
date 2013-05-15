@@ -66,8 +66,8 @@ stop(Host) ->
 
 
 stream_feature_register(Acc, _Host) ->
-    [{xmlel, <<"register">>,
-      [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}], []} | Acc].
+    [#xmlel{name = <<"register">>,
+            attrs = [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}]} | Acc].
 
 unauthenticated_iq_register(_Acc,
 			    Server, #iq{xmlns = ?NS_REGISTER} = IQ, IP) ->
@@ -179,27 +179,26 @@ process_iq(From, To,
 		    #jid{user = User, lserver = Server} ->
 			case ejabberd_auth:is_user_exists(User, Server) of
 			    true ->
-				{true, [{xmlcdata, User}],
-				 [{xmlel, <<"registered">>, [], []}]};
+				{true, [#xmlcdata{content = User}],
+				 [#xmlel{name = <<"registered">>}]};
 			    false ->
-				{false, [{xmlcdata, User}], []}
+				{false, [#xmlcdata{content = User}], []}
 			end;
 		    _ ->
 			{false, [], []}
 		end,
 		    IQ#iq{type = result,
-			  sub_el = [{xmlel,
-				     <<"query">>,
-				     [{<<"xmlns">>, <<"jabber:iq:register">>}],
-				     [{xmlel, <<"instructions">>, [],
-				       [{xmlcdata,
-					 translate:translate(
-					   Lang,
-					   "Choose a username and password "
-					   "to register with this server")}]},
-				      {xmlel, <<"username">>, [], UsernameSubels},
-				      {xmlel, <<"password">>, [], []}
-				      | QuerySubels]}]}
+		  sub_el = [#xmlel{name = <<"query">>,
+				   attrs = [{<<"xmlns">>, <<"jabber:iq:register">>}],
+				   children = [#xmlel{name = <<"instructions">>,
+				              children = [#xmlcdata{content = translate:translate(
+				                                                Lang,
+					                                        "Choose a username and password "
+					                                        "to register with this server")}]},
+				       #xmlel{name = <<"username">>,
+					      children = UsernameSubels},
+				       #xmlel{name = <<"password">>}
+				       | QuerySubels]}]}
     end.
 
 try_register_or_set_password(User, Server, Password, From, IQ,
@@ -308,9 +307,11 @@ send_welcome_message(JID) ->
 	    ejabberd_router:route(
 	      jlib:make_jid(<<>>, Host, <<>>),
 	      JID,
-	      {xmlel, <<"message">>, [{<<"type">>, <<"normal">>}],
-	       [{xmlel, <<"subject">>, [], [{xmlcdata, Subj}]},
-		{xmlel, <<"body">>, [], [{xmlcdata, Body}]}]});
+	      #xmlel{name = <<"message">>, attrs = [{<<"type">>, <<"normal">>}],
+	             children = [#xmlel{name = <<"subject">>,
+		                        children = [#xmlcdata{content = Subj}]},
+                                 #xmlel{name = <<"body">>,
+                                        children = [#xmlcdata{content = Body}]}]});
 	_ ->
 	    ok
     end.
@@ -334,9 +335,10 @@ send_registration_notifications(UJID, Source) ->
 			      ejabberd_router:route(
 				jlib:make_jid(<<>>, Host, <<>>),
 				JID,
-				{xmlel, <<"message">>, [{<<"type">>, <<"chat">>}],
-				 [{xmlel, <<"body">>, [],
-				   [{xmlcdata, Body}]}]})
+				#xmlel{name = <<"message">>,
+				       attrs = [{<<"type">>, <<"chat">>}],
+				       children = [#xmlel{name = <<"body">>,
+                                                          children = [#xmlcdata{content = Body}]}]})
 		      end
 	      end, JIDs);
 	_ ->

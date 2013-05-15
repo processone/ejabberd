@@ -698,7 +698,7 @@ bosh_unwrap(normal, Body, #state{sid = Sid} = State) ->
     {[{xmlstreamelement, El}
       || El <- Body#xmlel.children,
          %% Ignore whitespace keepalives.
-         El /= {xmlcdata, <<" ">>}],
+         El /= #xmlcdata{content = <<" ">>}],
      State}.
 
 get_client_acks(restart, _, Default) ->

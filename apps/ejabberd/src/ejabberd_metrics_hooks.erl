@@ -80,11 +80,11 @@ user_send_packet(#jid{server = Server},_,Packet) ->
     folsom_metrics:notify({Server, xmppStanzaSent}, 1),
     user_send_packet_type(Server, Packet).
 
-user_send_packet_type(Server, {xmlel, <<"message">>,_,_}) ->
+user_send_packet_type(Server, #xmlel{name = <<"message">>}) ->
     folsom_metrics:notify({Server, xmppMessageSent}, 1);
-user_send_packet_type(Server, {xmlel, <<"iq">>,_,_}) ->
+user_send_packet_type(Server, #xmlel{name = <<"iq">>}) ->
     folsom_metrics:notify({Server, xmppIqSent}, 1);
-user_send_packet_type(Server, {xmlel, <<"presence">>,_,_}) ->
+user_send_packet_type(Server, #xmlel{name = <<"presence">>}) ->
     folsom_metrics:notify({Server, xmppPresenceSent}, 1).
 
 -spec user_receive_packet(jid(), tuple(), tuple(), tuple()) -> term().
@@ -92,11 +92,11 @@ user_receive_packet(#jid{server = Server} ,_,_,Packet) ->
     folsom_metrics:notify({Server, xmppStanzaReceived},1),
     user_receive_packet_type(Server, Packet).
 
-user_receive_packet_type(Server, {xmlel, <<"message">>,_,_}) ->
+user_receive_packet_type(Server, #xmlel{name = <<"message">>}) ->
     folsom_metrics:notify({Server, xmppMessageReceived}, 1);
-user_receive_packet_type(Server, {xmlel, <<"iq">>,_,_}) ->
+user_receive_packet_type(Server, #xmlel{name = <<"iq">>}) ->
     folsom_metrics:notify({Server, xmppIqReceived}, 1);
-user_receive_packet_type(Server, {xmlel, <<"presence">>,_,_}) ->
+user_receive_packet_type(Server, #xmlel{name = <<"presence">>}) ->
     folsom_metrics:notify({Server, xmppPresenceReceived}, 1).
 
 -spec xmpp_bounce_message(binary(), tuple()) -> term().
@@ -108,7 +108,7 @@ xmpp_stanza_dropped(#jid{server = Server} ,_,_) ->
    folsom_metrics:notify({Server, xmppStanzaDropped}, 1).
 
 -spec xmpp_send_element(binary(), tuple()) -> term().
-xmpp_send_element(Server, {xmlel, Name, Attrs, _}) ->
+xmpp_send_element(Server, #xmlel{name = Name, attrs = Attrs}) ->
     folsom_metrics:notify({Server, xmppStanzaCount}, 1),
     case lists:keyfind(<<"type">>, 1, Attrs) of
         {<<"type">>, <<"error">>} ->
@@ -171,11 +171,11 @@ privacy_iq_get(Acc, #jid{server  = Server}, _, _, _) ->
 
 -spec privacy_iq_set(term(), jid(), jid(), term()) -> term().
 privacy_iq_set(Acc, #jid{server = Server}, _To, #iq{sub_el = SubEl}) ->
-    {xmlel, _, _, Els} = SubEl,
+    #xmlel{children = Els} = SubEl,
     case xml:remove_cdata(Els) of
-        [{xmlel, <<"active">>, _, _}] ->
+        [#xmlel{name = <<"active">>}] ->
             folsom_metrics:notify({Server, modPrivacySetsActive}, 1);
-        [{xmlel, <<"default">>, _, _}] ->
+        [#xmlel{name = <<"default">>}] ->
             folsom_metrics:notify({Server, modPrivacySetsDefault}, 1);
         _ ->
             ok
@@ -186,7 +186,7 @@ privacy_iq_set(Acc, #jid{server = Server}, _To, #iq{sub_el = SubEl}) ->
 -spec privacy_list_push(jid(), jid(), term()) -> term().
 privacy_list_push(_From, #jid{server = Server} = To, Packet) ->
     case Packet of
-        {xmlel, <<"broadcast">>, _Attrs, [{privacy_list, _, _}]} ->
+        #xmlel{name = <<"broadcast">>, children = [{privacy_list, _, _}]} ->
             #jid{user = User, server = Server} = To,
             Count = length(ejabberd_sm:get_user_resources(User, Server)),
             folsom_metrics:notify({Server, modPrivacyPush}, Count);

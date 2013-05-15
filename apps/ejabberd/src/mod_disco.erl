@@ -134,10 +134,9 @@ process_local_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} =
 				_ -> [{<<"node">>, Node}]
 		    end,
 		    IQ#iq{type = result,
-			  sub_el = [{xmlel, <<"query">>,
-				     [{<<"xmlns">>, ?NS_DISCO_ITEMS} | ANode],
-				     Items
-				    }]};
+			  sub_el = [#xmlel{name = <<"query">>,
+				           attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS} | ANode],
+				           children = Items}]};
 		{error, Error} ->
 		    IQ#iq{type = error, sub_el = [SubEl, Error]}
 	    end
@@ -168,22 +167,21 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 				_ -> [{<<"node">>, Node}]
 			    end,
 		    IQ#iq{type = result,
-			  sub_el = [{xmlel, <<"query">>,
-				     [{<<"xmlns">>, ?NS_DISCO_INFO} | ANode],
-				     Identity ++ 
-				     Info ++
-				     features_to_xml(Features)
-				    }]};
+			  sub_el = [#xmlel{name = <<"query">>,
+				           attrs = [{<<"xmlns">>, ?NS_DISCO_INFO} | ANode],
+				           children = Identity ++
+				                      Info ++
+				                      features_to_xml(Features)}]};
 		{error, Error} ->
 		    IQ#iq{type = error, sub_el = [SubEl, Error]}
 	    end
     end.
 
 get_local_identity(Acc, _From, _To, [], _Lang) ->
-    Acc ++ [{xmlel, <<"identity">>,
-	     [{<<"category">>, <<"server">>},
-	      {<<"type">>, <<"im">>},
-	      {<<"name">>, <<"ejabberd">>}], []}];
+    Acc ++ [#xmlel{name = <<"identity">>,
+	           attrs = [{<<"category">>, <<"server">>},
+	                    {<<"type">>, <<"im">>},
+	                    {<<"name">>, <<"ejabberd">>}]}];
 
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -211,19 +209,19 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
 
 features_to_xml(FeatureList) ->
     %% Avoid duplicating features
-    [{xmlel, <<"feature">>, [{<<"var">>, Feat}], []} ||
-	Feat <- lists:usort(
-		  lists:map(
-		    fun({{Feature, _Host}}) ->
-			Feature;
-		       (Feature) when is_binary(Feature) ->
-                Feature
-		    end, FeatureList))].
+    [#xmlel{name = <<"feature">>, attrs = [{<<"var">>, Feat}]} ||
+	          Feat <- lists:usort(
+		            lists:map(
+		              fun({{Feature, _Host}}) ->
+			          Feature;
+		                 (Feature) when is_binary(Feature) ->
+                          Feature
+		              end, FeatureList))].
 
 domain_to_xml({Domain}) ->
-    {xmlel, <<"item">>, [{<<"jid">>, Domain}], []};
+    #xmlel{name = <<"item">>, attrs = [{<<"jid">>, Domain}]};
 domain_to_xml(Domain) ->
-    {xmlel, <<"item">>, [{<<"jid">>, Domain}], []}.
+    #xmlel{name = <<"item">>, attrs = [{<<"jid">>, Domain}]}.
 
 get_local_services({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
@@ -284,10 +282,9 @@ process_sm_iq_items(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ
                                         _ -> [{<<"node">>, Node}]
                                     end,
                             IQ#iq{type = result,
-                                  sub_el = [{xmlel, <<"query">>,
-                                             [{<<"xmlns">>, ?NS_DISCO_ITEMS} | ANode],
-                                             Items
-                                            }]};
+                                  sub_el = [#xmlel{name = <<"query">>,
+                                                   attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS} | ANode],
+                                                   children = Items}]};
                         {error, Error} ->
                             IQ#iq{type = error, sub_el = [SubEl, Error]}
                     end;
@@ -362,11 +359,10 @@ process_sm_iq_info(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
                                         _ -> [{<<"node">>, Node}]
                                     end,
                             IQ#iq{type = result,
-                                  sub_el = [{xmlel, <<"query">>,
-                                             [{<<"xmlns">>, ?NS_DISCO_INFO} | ANode],
-                                             Identity ++
-					     features_to_xml(Features)
-                                            }]};
+                                  sub_el = [#xmlel{name = <<"query">>,
+                                                   attrs = [{<<"xmlns">>, ?NS_DISCO_INFO} | ANode],
+                                                   children = Identity ++
+					                      features_to_xml(Features)}]};
                         {error, Error} ->
                             IQ#iq{type = error, sub_el = [SubEl, Error]}
                     end;
@@ -378,11 +374,12 @@ process_sm_iq_info(From, To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 get_sm_identity(Acc, _From, #jid{luser = LUser, lserver=LServer}, _Node, _Lang) ->
     Acc ++  case ejabberd_auth:is_user_exists(LUser, LServer) of
         true ->
-            [{xmlel, <<"identity">>, [{<<"category">>, <<"account">>},
-            {<<"type">>, <<"registered">>}], []}];
-        _ ->
-            []
-    end.
+           [#xmlel{name = <<"identity">>,
+                   attrs = [{<<"category">>, <<"account">>},
+  {<<"type">>, <<"registered">>}]}];
+       _ ->
+           []
+           end.
 
 
 get_sm_features(empty, From, To, _Node, _Lang) ->
@@ -418,17 +415,13 @@ get_info(_A, Host, Mod, Node, _Lang) when Node == [] ->
 		     Mod
 	     end,
     Serverinfo_fields = get_fields_xml(Host, Module),
-    [{xmlel, <<"x">>,
-      [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"result">>}],
-      [{xmlel, <<"field">>,
-	[{<<"var">>, <<"FORM_TYPE">>}, {<<"type">>, <<"hidden">>}],
-	[{xmlel, <<"value">>,
-	  [],
-	  [{xmlcdata, ?NS_SERVERINFO}]
-	 }]
-       }]
-      ++ Serverinfo_fields
-     }];
+    [#xmlel{name = <<"x">>,
+            attrs = [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"result">>}],
+            children = [#xmlel{name = <<"field">>,
+	                       attrs = [{<<"var">>, <<"FORM_TYPE">>}, {<<"type">>, <<"hidden">>}],
+	                       children = [#xmlel{name = <<"value">>,
+	                                          children = [#xmlcdata{content = ?NS_SERVERINFO}]}]}]
+	             ++ Serverinfo_fields}];
 
 get_info(Acc, _, _, _Node, _) ->
     Acc.
@@ -453,18 +446,13 @@ fields_to_xml(Fields) ->
 
 field_to_xml({_, Var, Values}) ->
     Values_xml = values_to_xml(Values),
-    {xmlel, <<"field">>,
-     [{<<"var">>, Var}],
-     Values_xml
-    }.
+    #xmlel{name = <<"field">>, attrs = [{<<"var">>, Var}],
+           children = Values_xml}.
 
 values_to_xml(Values) ->
     lists:map(
       fun(Value) ->
-	      {xmlel, <<"value">>, 
-	       [],
-	       [{xmlcdata, Value}]
-	      }
+	      #xmlel{name = <<"value">>, children = [#xmlcdata{content = Value}]}
       end,
       Values
      ).
