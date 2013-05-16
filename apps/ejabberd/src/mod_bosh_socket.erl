@@ -377,12 +377,17 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
                     SName, #state{rid = OldRid} = S) ->
     NS = maybe_add_handler(Handler, Rid, S),
     NNS = case {EventTag,
-                is_reply_cached(Rid, S#state.sent),
+                maybe_is_retransmission(Rid, OldRid, S#state.sent),
                 is_valid_rid(Rid, OldRid),
                 is_acceptable_rid(Rid, OldRid)}
     of
-        {_, true, _, _} ->
-            resend_cached(Rid, NS);
+        {_, {true, CachedResponse}, _, _} ->
+            case CachedResponse of
+                none ->
+                    NS;
+                _ ->
+                    resend_cached(CachedResponse, NS)
+            end;
         {streamstart, _, _, _} ->
             process_acked_stream_event(Event, SName, NS);
         {_, _, true, _} ->
@@ -398,6 +403,23 @@ handle_stream_event({EventTag, Body, Rid} = Event, Handler,
             throw({invalid_rid, NS#state{handlers = []}})
     end,
     return_surplus_handlers(SName, NNS).
+
+-spec maybe_is_retransmission(rid(), rid(), [cached_response()])
+    -> false | {true, none} | {true, cached_response()}.
+maybe_is_retransmission(Rid, OldRid, Sent) ->
+    case {lists:keyfind(Rid, 1, Sent), Rid =:= OldRid} of
+        {false, false} ->
+            false;
+        {false, true} ->
+            ?INFO_MSG("request ~p repeated but no response found in cache ~p~n",
+                      [Rid, Sent]),
+            {true, none};
+        {CachedResponse, _} ->
+            {true, CachedResponse}
+    end.
+
+resend_cached({_Rid, _, CachedBody}, S) ->
+    send_to_handler(CachedBody, S).
 
 process_acked_stream_event({EventTag, Body, Rid}, SName,
                            #state{} = S) ->
@@ -481,16 +503,6 @@ maybe_send_report(#state{report = false} = S) ->
 maybe_send_report(#state{} = S) ->
     send_or_store([], S).
 
-resend_cached(Rid, #state{sent = Sent} = S) ->
-    case lists:keyfind(Rid, 1, Sent) of
-        false ->
-            ?ERROR_MSG("no cached response for RID ~p, responses ~p~n",
-                       [Rid, Sent]),
-            S;
-        {Rid, _, CachedResponse} ->
-            send_to_handler(CachedResponse, S)
-    end.
-
 process_stream_event(pause, Body, SName, State) ->
     Seconds = binary_to_integer(exml_query:attr(Body, <<"pause">>)),
     NewState = process_pause_event(Seconds, State),
@@ -519,9 +531,6 @@ process_deferred_events(SName, #state{deferred = Deferred} = S) ->
                 end,
                 S#state{deferred = []},
                 lists:sort(Deferred)).
-
-is_reply_cached(Rid, Sent) ->
-    lists:keymember(Rid, 1, Sent).
 
 is_valid_rid(Rid, OldRid) when Rid == OldRid + 1 ->
     true;
