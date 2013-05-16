@@ -143,7 +143,6 @@
   %%{8888, ejabberd_service, [
   %%			    {access, all},
   %%			    {shaper_rule, fast},
-  %%			    {ip, {127, 0, 0, 1}},
   %%			    {hosts, ["icq.example.org", "sms.example.org"],
   %%			     [{password, "secret"}]
   %%			    }
