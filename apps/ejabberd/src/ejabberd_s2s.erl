@@ -254,7 +254,7 @@ do_route(From, To, Packet) ->
     case find_connection(From, To) of
 	{atomic, Pid} when is_pid(Pid) ->
 	    ?DEBUG("sending to process ~p~n", [Pid]),
-	    {xmlel, Name, Attrs, Els} = Packet,
+	    #xmlel{attrs = Attrs} = Packet,
 	    NewAttrs = jlib:replace_from_to_attrs(jlib:jid_to_binary(From),
 						  jlib:jid_to_binary(To),
 						  Attrs),
@@ -263,7 +263,7 @@ do_route(From, To, Packet) ->
 	      s2s_send_packet,
 	      MyServer,
 	      [From, To, Packet]),
-	    send_element(Pid, {xmlel, Name, NewAttrs, Els}),
+	    send_element(Pid, Packet#xmlel{attrs = NewAttrs}),
 	    ok;
 	{aborted, _Reason} ->
 	    case xml:get_tag_attr_s(<<"type">>, Packet) of

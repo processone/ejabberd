@@ -116,21 +116,20 @@ process_local_iq(_From, _To, #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ)
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
 	get ->
 	    IQ#iq{type = result,
-		  sub_el = [{xmlel, "vCard",
-			     [{"xmlns", ?NS_VCARD}],
-			     [{xmlel, "FN", [],
-			       [{xmlcdata, "ejabberd"}]},
-			      {xmlel, "URL", [],
-			       [{xmlcdata, ?EJABBERD_URI}]},
-			      {xmlel, "DESC", [],
-			       [{xmlcdata,
-				 translate:translate(
-				   Lang,
-				   "Erlang Jabber Server") ++
-				   "\nCopyright (c) 2002-2011 ProcessOne"}]},
-			      {xmlel, "BDAY", [],
-			       [{xmlcdata, "2002-11-16"}]}
-			     ]}]}
+		  sub_el = [#xmlel{name = "vCard",
+			           attrs = [{"xmlns", ?NS_VCARD}],
+			           children = [#xmlel{name = "FN",
+			                              children = [#xmlcdata{content = "ejabberd"}]},
+			                       #xmlel{name = "URL",
+			                              children = [#xmlcdata{content = ?EJABBERD_URI}]},
+			                       #xmlel{name = "DESC",
+			                              children = [#xmlcdata{content = translate:translate(
+				                                                        Lang,
+				                                                        "Erlang Jabber Server") ++
+				                                                        "\nCopyright (c) 2002-2011 ProcessOne"}]},
+			                       #xmlel{name = "BDAY",
+			                              children = [#xmlcdata{content = "2002-11-16"}]}
+			                      ]}]}
     end.
 
 
@@ -273,36 +272,37 @@ set_vcard(User, LServerUnesc, VCARD) ->
     end.
 
 -define(TLFIELD(Type, Label, Var),
-	{xmlel, "field", [{"type", Type},
-			       {"label", translate:translate(Lang, Label)},
-			       {"var", Var}], []}).
+	#xmlel{name = "field",
+	       attrs = [{"type", Type},
+			     {"label", translate:translate(Lang, Label)},
+                             {"var", Var}]}).
 
 
 -define(FORM(JID),
-	[{xmlel, "instructions", [],
-	  [{xmlcdata, translate:translate(Lang, "You need an x:data capable client to search")}]},
-	 {xmlel, "x", [{"xmlns", ?NS_XDATA}, {"type", "form"}],
-	  [{xmlel, "title", [],
-	    [{xmlcdata, [translate:translate(Lang, "Search users in "),
-                         jlib:jid_to_binary(JID)]}]},
-	   {xmlel, "instructions", [],
-	    [{xmlcdata, translate:translate(Lang, "Fill in the form to search "
-					    "for any matching Jabber User "
-					    "(Add * to the end of field to "
-					    "match substring)")}]},
-	   ?TLFIELD("text-single", "User", "user"),
-	   ?TLFIELD("text-single", "Full Name", "fn"),
-	   ?TLFIELD("text-single", "Name", "first"),
-	   ?TLFIELD("text-single", "Middle Name", "middle"),
-	   ?TLFIELD("text-single", "Family Name", "last"),
-	   ?TLFIELD("text-single", "Nickname", "nick"),
-	   ?TLFIELD("text-single", "Birthday", "bday"),
-	   ?TLFIELD("text-single", "Country", "ctry"),
-	   ?TLFIELD("text-single", "City", "locality"),
-	   ?TLFIELD("text-single", "Email", "email"),
-	   ?TLFIELD("text-single", "Organization Name", "orgname"),
-	   ?TLFIELD("text-single", "Organization Unit", "orgunit")
-	  ]}]).
+	[#xmlel{name = "instructions",
+	        children = [#xmlcdata{content = translate:translate(Lang, "You need an x:data capable client to search")}]},
+	 #xmlel{name = "x", attrs = [{"xmlns", ?NS_XDATA}, {"type", "form"}],
+	        children = [#xmlel{name = "title",
+	                           children = [#xmlcdata{content = [translate:translate(Lang, "Search users in "),
+                                                                    jlib:jid_to_binary(JID)]}]},
+	                    #xmlel{name = "instructions",
+	                           children = [#xmlcdata{content = translate:translate(Lang, "Fill in the form to search "
+					                                                     "for any matching Jabber User "
+					                                                     "(Add * to the end of field to "
+					                                                     "match substring)")}]},
+	                    ?TLFIELD("text-single", "User", "user"),
+	                    ?TLFIELD("text-single", "Full Name", "fn"),
+	                    ?TLFIELD("text-single", "Name", "first"),
+	                    ?TLFIELD("text-single", "Middle Name", "middle"),
+	                    ?TLFIELD("text-single", "Family Name", "last"),
+	                    ?TLFIELD("text-single", "Nickname", "nick"),
+	                    ?TLFIELD("text-single", "Birthday", "bday"),
+	                    ?TLFIELD("text-single", "Country", "ctry"),
+	                    ?TLFIELD("text-single", "City", "locality"),
+	                    ?TLFIELD("text-single", "Email", "email"),
+	                    ?TLFIELD("text-single", "Organization Name", "orgname"),
+	                    ?TLFIELD("text-single", "Organization Unit", "orgunit")
+	                   ]}]).
 
 do_route(ServerHost, From, To, Packet) ->
     #jid{user = User, resource = Resource} = To,
@@ -336,114 +336,102 @@ do_route(ServerHost, From, To, Packet) ->
 						IQ#iq{
 						  type = result,
 						  sub_el =
-						  [{xmlel,
-						    "query",
-						    [{"xmlns", ?NS_SEARCH}],
-						    [{xmlel, "x",
-						      [{"xmlns", ?NS_XDATA},
-						       {"type", "result"}],
-						      search_result(Lang, To, ServerHost, XData)
-						     }]}]},
-					    ejabberd_router:route(
-					      To, From, jlib:iq_to_xml(ResIQ))
-				    end
-			    end;
-			get ->
-			    ResIQ = IQ#iq{type = result,
-					  sub_el = [{xmlel,
-						     "query",
-						     [{"xmlns", ?NS_SEARCH}],
-						     ?FORM(To)
-						    }]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(ResIQ))
-		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang} ->
-		    case Type of
-			set ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_NOT_ALLOWED),
-			    ejabberd_router:route(To, From, Err);
-			get ->
-			    Info = ejabberd_hooks:run_fold(
-				     disco_info, ServerHost, [],
-				     [ServerHost, ?MODULE, "", ""]),
-			    ResIQ =
-				IQ#iq{type = result,
-				      sub_el = [{xmlel,
-						 "query",
-						 [{"xmlns", ?NS_DISCO_INFO}],
-						 [{xmlel, "identity",
-						   [{"category", "directory"},
-						    {"type", "user"},
-						    {"name",
-						     translate:translate(Lang, "vCard User Search")}],
-						   []},
-						  {xmlel, "feature",
-						   [{"var", ?NS_SEARCH}], []},
-						  {xmlel, "feature",
-						   [{"var", ?NS_VCARD}], []}
-						 ] ++ Info
-						}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(ResIQ))
-		    end;
-		#iq{type = Type, xmlns = ?NS_DISCO_ITEMS} ->
-		    case Type of
-			set ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_NOT_ALLOWED),
-			    ejabberd_router:route(To, From, Err);
-			get ->
-			    ResIQ =
-				IQ#iq{type = result,
-				      sub_el = [{xmlel,
-						 "query",
-						 [{"xmlns", ?NS_DISCO_ITEMS}],
-						 []}]},
-			    ejabberd_router:route(To,
-						  From,
-						  jlib:iq_to_xml(ResIQ))
-		    end;
-		#iq{type = get, xmlns = ?NS_VCARD, lang = Lang} ->
-		    ResIQ =
-			IQ#iq{type = result,
-			      sub_el = [{xmlel,
-					 "vCard",
-					 [{"xmlns", ?NS_VCARD}],
-					 iq_get_vcard(Lang)}]},
-		    ejabberd_router:route(To,
-					  From,
-					  jlib:iq_to_xml(ResIQ));
-		_ ->
-		    Err = jlib:make_error_reply(Packet,
-						?ERR_SERVICE_UNAVAILABLE),
-		    ejabberd_router:route(To, From, Err)
-	    end
+						   [#xmlel{name = "query",
+						           attrs = [{"xmlns", ?NS_SEARCH}],
+						           children = [#xmlel{name = "x",
+						                              attrs = [{"xmlns", ?NS_XDATA},
+						                                       {"type", "result"}],
+						                              children = search_result(Lang, To, ServerHost, XData)}]}]},
+					     ejabberd_router:route(
+					       To, From, jlib:iq_to_xml(ResIQ))
+				     end
+			     end;
+			 get ->
+			     ResIQ = IQ#iq{type = result,
+			                   sub_el = [#xmlel{name = "query",
+			                                    attrs = [{"xmlns", ?NS_SEARCH}],
+					                    children = ?FORM(To)}]},
+			     ejabberd_router:route(To,
+						   From,
+						   jlib:iq_to_xml(ResIQ))
+		     end;
+		 #iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang} ->
+		     case Type of
+			 set ->
+		             Err = jlib:make_error_reply(
+		                     Packet, ?ERR_NOT_ALLOWED),
+		             ejabberd_router:route(To, From, Err);
+			 get ->
+			     Info = ejabberd_hooks:run_fold(
+				      disco_info, ServerHost, [],
+			              [ServerHost, ?MODULE, "", ""]),
+			     ResIQ =
+			         IQ#iq{type = result,
+				       sub_el = [#xmlel{name = "query",
+				                        attrs = [{"xmlns", ?NS_DISCO_INFO}],
+			                                children = [#xmlel{name = "identity",
+				                                           attrs = [{"category", "directory"},
+				                                                    {"type", "user"},
+						                                    {"name",
+						                                     translate:translate(Lang, "vCard User Search")}]},
+						                    #xmlel{name = "feature",
+						                           attrs = [{"var", ?NS_SEARCH}]},
+						                    #xmlel{name = "feature",
+						                           attrs = [{"var", ?NS_VCARD}]}
+						                   ] ++ Info}]},
+			     ejabberd_router:route(To,
+						   From,
+						   jlib:iq_to_xml(ResIQ))
+		     end;
+		 #iq{type = Type, xmlns = ?NS_DISCO_ITEMS} ->
+		     case Type of
+			 set ->
+			     Err = jlib:make_error_reply(
+				     Packet, ?ERR_NOT_ALLOWED),
+			     ejabberd_router:route(To, From, Err);
+		         get ->
+		             ResIQ =
+		                 IQ#iq{type = result,
+			               sub_el = [#xmlel{name = "query",
+			                                attrs = [{"xmlns", ?NS_DISCO_ITEMS}]}]},
+			     ejabberd_router:route(To,
+			                           From,
+			                           jlib:iq_to_xml(ResIQ))
+		     end;
+		 #iq{type = get, xmlns = ?NS_VCARD, lang = Lang} ->
+		     ResIQ =
+			 IQ#iq{type = result,
+			       sub_el = [#xmlel{name = "vCard",
+						attrs = [{"xmlns", ?NS_VCARD}],
+			                        children = iq_get_vcard(Lang)}]},
+		     ejabberd_router:route(To,
+					   From,
+		                           jlib:iq_to_xml(ResIQ));
+		 _ ->
+		     Err = jlib:make_error_reply(Packet,
+			                         ?ERR_SERVICE_UNAVAILABLE),
+		     ejabberd_router:route(To, From, Err)
+	     end
     end.
 
 iq_get_vcard(Lang) ->
-    [{xmlel, "FN", [],
-      [{xmlcdata, "ejabberd/mod_vcard"}]},
-     {xmlel, "URL", [],
-      [{xmlcdata, ?EJABBERD_URI}]},
-     {xmlel, "DESC", [],
-      [{xmlcdata, translate:translate(
-		    Lang,
-		    "ejabberd vCard module") ++
-		    "\nCopyright (c) 2003-2011 ProcessOne"}]}].
+    [#xmlel{name = "FN", children = [#xmlcdata{content = "ejabberd/mod_vcard"}]},
+     #xmlel{name = "URL", children = [#xmlcdata{content = ?EJABBERD_URI}]},
+     #xmlel{name = "DESC",
+            children = [#xmlcdata{content = translate:translate(
+                                              Lang,
+                                              "ejabberd vCard module") ++
+		                              "\nCopyright (c) 2003-2011 ProcessOne"}]}].
 
-find_xdata_el({xmlel, _Name, _Attrs, SubEls}) ->
+find_xdata_el(#xmlel{children = SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
     false;
-find_xdata_el1([{xmlel, Name, Attrs, SubEls} | Els]) ->
+find_xdata_el1([XE = #xmlel{attrs = Attrs} | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
 	?NS_XDATA ->
-	    {xmlel, Name, Attrs, SubEls};
+	    XE;
 	_ ->
 	    find_xdata_el1(Els)
     end;
@@ -451,54 +439,54 @@ find_xdata_el1([_ | Els]) ->
     find_xdata_el1(Els).
 
 -define(LFIELD(Label, Var),
-	{xmlel, "field", [{"label", translate:translate(Lang, Label)},
-			       {"var", Var}], []}).
+	#xmlel{name = "field",
+	       attrs = [{"label", translate:translate(Lang, Label)},
+                             {"var", Var}]}).
 
 search_result(Lang, JID, ServerHost, Data) ->
-    [{xmlel, "title", [],
-      [{xmlcdata, [translate:translate(Lang, "Search Results for "),
-                   jlib:jid_to_binary(JID)]}]},
-     {xmlel, "reported", [],
-      [?TLFIELD("jid-single", "Jabber ID", "jid"),
-       ?TLFIELD("text-single", "Full Name", "fn"),
-       ?TLFIELD("text-single", "Name", "first"),
-       ?TLFIELD("text-single", "Middle Name", "middle"),
-       ?TLFIELD("text-single", "Family Name", "last"),
-       ?TLFIELD("text-single", "Nickname", "nick"),
-       ?TLFIELD("text-single", "Birthday", "bday"),
-       ?TLFIELD("text-single", "Country", "ctry"),
-       ?TLFIELD("text-single", "City", "locality"),
-       ?TLFIELD("text-single", "Email", "email"),
-       ?TLFIELD("text-single", "Organization Name", "orgname"),
-       ?TLFIELD("text-single", "Organization Unit", "orgunit")
-      ]}] ++ lists:map(fun(R) -> record_to_item(ServerHost, R) end,
-		       search(ServerHost, Data)).
+    [#xmlel{name = "title",
+            children = [#xmlcdata{content = [translate:translate(Lang, "Search Results for "),
+                                             jlib:jid_to_binary(JID)]}]},
+     #xmlel{name = "reported",
+            children = [?TLFIELD("jid-single", "Jabber ID", "jid"),
+                        ?TLFIELD("text-single", "Full Name", "fn"),
+                        ?TLFIELD("text-single", "Name", "first"),
+                        ?TLFIELD("text-single", "Middle Name", "middle"),
+                        ?TLFIELD("text-single", "Family Name", "last"),
+                        ?TLFIELD("text-single", "Nickname", "nick"),
+                        ?TLFIELD("text-single", "Birthday", "bday"),
+                        ?TLFIELD("text-single", "Country", "ctry"),
+                        ?TLFIELD("text-single", "City", "locality"),
+                        ?TLFIELD("text-single", "Email", "email"),
+                        ?TLFIELD("text-single", "Organization Name", "orgname"),
+                        ?TLFIELD("text-single", "Organization Unit", "orgunit")
+                       ]}] ++ lists:map(fun(R) -> record_to_item(ServerHost, R) end,
+		                        search(ServerHost, Data)).
 
 -define(FIELD(Var, Val),
-	{xmlel, "field", [{"var", Var}],
-	 [{xmlel, "value", [],
-	   [{xmlcdata, Val}]}]}).
+	#xmlel{name = "field", attrs = [{"var", Var}],
+	       children = [#xmlel{name = "value",
+	                          children = [#xmlcdata{content = Val}]}]}).
 
 
 record_to_item(_CallerVHost, {Username, VCardVHost, FN, Family, Given, Middle,
 			 Nickname, BDay, CTRY, Locality,
 			 EMail, OrgName, OrgUnit}) ->
-    {xmlel, "item", [],
-     [
-       ?FIELD("jid",      [Username, "@", VCardVHost]),
-       ?FIELD("fn",       FN),
-       ?FIELD("last",     Family),
-       ?FIELD("first",    Given),
-       ?FIELD("middle",   Middle),
-       ?FIELD("nick",     Nickname),
-       ?FIELD("bday",     BDay),
-       ?FIELD("ctry",     CTRY),
-       ?FIELD("locality", Locality),
-       ?FIELD("email",    EMail),
-       ?FIELD("orgname",  OrgName),
-       ?FIELD("orgunit",  OrgUnit)
-      ]
-     }.
+    #xmlel{name = "item",
+           children = [
+                        ?FIELD("jid", [Username, "@", VCardVHost]),
+                        ?FIELD("fn", FN),
+                        ?FIELD("last", Family),
+                        ?FIELD("first", Given),
+                        ?FIELD("middle", Middle),
+                        ?FIELD("nick", Nickname),
+                        ?FIELD("bday", BDay),
+                        ?FIELD("ctry", CTRY),
+                        ?FIELD("locality", Locality),
+                        ?FIELD("email", EMail),
+                        ?FIELD("orgname", OrgName),
+                        ?FIELD("orgunit", OrgUnit)
+                       ]}.
 
 
 search(LServer, Data) ->

@@ -45,6 +45,7 @@
 	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -record(state, {socket,
 		sock_mod,
@@ -335,7 +336,7 @@ process_data(Data,
 %% When we receive directly xmlel tuple (from a socket module
 %% speaking directly Erlang XML), we wrap it inside the same
 %% xmlstreamelement coming from the XML parser.
-element_wrapper({xmlel, _, _, _} = XMLElement) ->
+element_wrapper(#xmlel{} = XMLElement) ->
     {xmlstreamelement, XMLElement};
 element_wrapper(Element) ->
     Element.

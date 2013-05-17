@@ -40,6 +40,7 @@
 -define(PARSE_COMMAND, 0).
 -define(PARSE_FINAL_COMMAND, 1).
 
+-include("jlib.hrl").
 -record(xml_stream_state, {callback_pid, port, stack, size, maxsize}).
 
 process_data(CallbackPid, Stack, Data) ->
@@ -52,11 +53,11 @@ process_data(CallbackPid, Stack, Data) ->
 		true ->
 		    ok
 	    end,
-	    [{xmlel, Name, Attrs, []} | Stack];
+	    [#xmlel{name = Name, attrs = Attrs} | Stack];
 	{?XML_END, EndName} ->
 	    case Stack of
-		[{xmlel, Name, Attrs, Els} | Tail] ->
-		    NewEl = {xmlel, Name, Attrs, lists:reverse(Els)},
+		[XE = #xmlel{children = Els} | Tail] ->
+		    NewEl = XE#xmlel{children = lists:reverse(Els)},
 		    case Tail of
 			[] ->
 			    catch gen_fsm:send_event(CallbackPid,
@@ -66,9 +67,9 @@ process_data(CallbackPid, Stack, Data) ->
 			    catch gen_fsm:send_event(CallbackPid,
 						     {xmlstreamelement, NewEl}),
 			    Tail;
-			[{xmlel, Name1, Attrs1, Els1} | Tail1] ->
-			    [{xmlel, Name1, Attrs1, [NewEl | Els1]} |
-			     Tail1]
+			[XE1 = #xmlel{children = Els1} | Tail1] ->
+			    [XE1#xmlel{children = [NewEl | Els1]} |
+			   Tail1]
 		    end
 	    end;
 	{?XML_CDATA, CData} ->
@@ -79,14 +80,15 @@ process_data(CallbackPid, Stack, Data) ->
 		%% This does not change the semantic: the split in
 		%% several CDATA nodes depends on the TCP/IP packet
 		%% fragmentation
-		[{xmlel, Name, Attrs,
-		  [{xmlcdata, PreviousCData}|Els]} | Tail] ->
-		    [{xmlel, Name, Attrs,
-		      [{xmlcdata, list_to_binary([PreviousCData, CData])} | Els]} | Tail];
+		[XE2 = #xmlel{children = [#xmlcdata{content = PreviousCData}
+		                          | Els]} | Tail] ->
+		    [XE2#xmlel{children = [#xmlcdata{content = list_to_binary([PreviousCData,
+		                                                               CData])}
+                                           | Els]} | Tail];
 		%% No previous CDATA
-		[{xmlel, Name, Attrs, Els} | Tail] ->
-		    [{xmlel, Name, Attrs, [{xmlcdata, CData} | Els]} |
-		     Tail];
+		[XE3 = #xmlel{children = Els} | Tail] ->
+		    [XE3#xmlel{children = [#xmlcdata{content = CData} | Els]} |
+		              Tail];
 		[] -> []
 	    end;
 	{?XML_ERROR, Err} ->
@@ -149,11 +151,11 @@ process_element_events([Event | Events], Stack) ->
     case Event of
 	{?XML_START, {Name, Attrs}} ->
 	    process_element_events(
-	      Events, [{xmlel, Name, Attrs, []} | Stack]);
+	      Events, [#xmlel{name = Name, attrs = Attrs} | Stack]);
 	{?XML_END, _EndName} ->
 	    case Stack of
-		[{xmlel, Name, Attrs, Els} | Tail] ->
-		    NewEl = {xmlel, Name, Attrs, lists:reverse(Els)},
+		[XE = #xmlel{children = Els} | Tail] ->
+		    NewEl = XE#xmlel{children = lists:reverse(Els)},
 		    case Tail of
 			[] ->
 			    if
@@ -162,20 +164,21 @@ process_element_events([Event | Events], Stack) ->
 				true ->
 				    {error, parse_error}
 			    end;
-			[{xmlel, Name1, Attrs1, Els1} | Tail1] ->
+			[XE1 = #xmlel{children = Els1} | Tail1] ->
 			    process_element_events(
 			      Events,
-			      [{xmlel, Name1, Attrs1, [NewEl | Els1]} |
-			       Tail1])
+			      [XE1#xmlel{children = [NewEl | Els1]} |
+			     Tail1])
 		    end
 	    end;
 	{?XML_CDATA, CData} ->
 	    case Stack of
-		[{xmlel, Name, Attrs, Els} | Tail] ->
+		[XE2 = #xmlel{children = Els} | Tail] ->
 		    process_element_events(
 		      Events,
-		      [{xmlel, Name, Attrs, [{xmlcdata, CData} | Els]} |
-		       Tail]);
+		      [XE2#xmlel{children = [#xmlcdata{content = CData}
+		                             | Els]} |
+     Tail]);
 		[] ->
 		    process_element_events(Events, [])
 	    end;

@@ -160,7 +160,8 @@ handle_cast(_Msg, State) ->
 
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
     IQ = #iq{type = get,
-             sub_el = [{xmlel, <<"ping">>, [{<<"xmlns">>, ?NS_PING}], []}]},
+             sub_el = [#xmlel{name = <<"ping">>,
+                              attrs = [{<<"xmlns">>, ?NS_PING}]}]},
     Pid = self(),
     F = fun(Response) ->
 		gen_server:cast(Pid, {iq_pong, JID, Response})
@@ -180,7 +181,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 iq_ping(_From, _To, #iq{type = Type, sub_el = SubEl} = IQ) ->
     case {Type, SubEl} of
-        {get, {xmlel, <<"ping">>, _, _}} ->
+        {get, #xmlel{name = <<"ping">>}} ->
             IQ#iq{type = result, sub_el = []};
         _ ->
             IQ#iq{type = error, sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}

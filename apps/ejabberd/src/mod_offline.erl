@@ -185,7 +185,7 @@ store_packet(From, To, Packet) ->
 		true ->
 		    #jid{luser = LUser, lserver = LServer} = To,
 		    TimeStamp = now(),
-		    {xmlel, _Name, _Attrs, Els} = Packet,
+		    #xmlel{children = Els} = Packet,
 		    Expire = find_x_expire(TimeStamp, Els),
 		    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
 			#offline_msg{us = {LUser, LServer},
@@ -204,7 +204,7 @@ store_packet(From, To, Packet) ->
 
 %% Check if the packet has any content about XEP-0022 or XEP-0085
 check_event_chatstates(From, To, Packet) ->
-    {xmlel, Name, Attrs, Els} = Packet,
+    #xmlel{children = Els} = Packet,
     case find_x_event_chatstates(Els, {false, false, false}) of
 	%% There wasn't any x:event or chatstates subelements
 	{false, false, _} ->
@@ -226,18 +226,17 @@ check_event_chatstates(From, To, Packet) ->
 			_ ->
 			    ID = case xml:get_tag_attr_s("id", Packet) of
 				     "" ->
-					 {xmlel, "id", [], []};
+					 #xmlel{name = "id"};
 				     S ->
-					 {xmlel, "id", [],
-					  [{xmlcdata, S}]}
+					 #xmlel{name = "id",
+					        children = [#xmlcdata{content = S}]}
 				 end,
 			    ejabberd_router:route(
-			      To, From, {xmlel, Name, Attrs,
-					 [{xmlel, "x",
-					   [{"xmlns", ?NS_EVENT}],
-					   [ID,
-					    {xmlel, "offline", [], []}]}]
-					}),
+			      To, From, Packet#xmlel{children = [#xmlel{name = "x",
+					                                attrs = [{"xmlns",
+					                                          ?NS_EVENT}],
+					                                children = [ID,
+					                                            #xmlel{name = "offline"}]}]}),
 			    true
 		    end;
 		_ ->
@@ -248,7 +247,7 @@ check_event_chatstates(From, To, Packet) ->
 %% Check if the packet has subelements about XEP-0022, XEP-0085 or other
 find_x_event_chatstates([], Res) ->
     Res;
-find_x_event_chatstates([{xmlcdata, _} | Els], Res) ->
+find_x_event_chatstates([#xmlcdata{} | Els], Res) ->
     find_x_event_chatstates(Els, Res);
 find_x_event_chatstates([El | Els], {A, B, C}) ->
     case xml:get_tag_attr_s("xmlns", El) of
@@ -262,7 +261,7 @@ find_x_event_chatstates([El | Els], {A, B, C}) ->
 
 find_x_expire(_, []) ->
     never;
-find_x_expire(TimeStamp, [{xmlcdata, _} | Els]) ->
+find_x_expire(TimeStamp, [#xmlcdata{} | Els]) ->
     find_x_expire(TimeStamp, Els);
 find_x_expire(TimeStamp, [El | Els]) ->
     case xml:get_tag_attr_s("xmlns", El) of
@@ -298,23 +297,19 @@ resend_offline_messages(User, Server) ->
 	{atomic, Rs} ->
 	    lists:foreach(
 	      fun(R) ->
-		      {xmlel, Name, Attrs, Els} = R#offline_msg.packet,
+		      XE = #xmlel{children = Els} = R#offline_msg.packet,
 		      ejabberd_sm !
 			  {route,
 			   R#offline_msg.from,
 			   R#offline_msg.to,
-			   {xmlel, Name, Attrs,
-			    Els ++
-			    [jlib:timestamp_to_xml(
-			       calendar:now_to_universal_time(
-				 R#offline_msg.timestamp),
-			       utc,
-                   jlib:make_jid(<<>>, Server, <<>>),
-			       "Offline Storage"),
-			     %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-			     jlib:timestamp_to_xml(
-			       calendar:now_to_universal_time(
-				 R#offline_msg.timestamp))]}}
+			   XE#xmlel{children = Els ++
+			                         [jlib:timestamp_to_xml(calendar:now_to_universal_time(R#offline_msg.timestamp),
+			                                                utc,
+			                                                jlib:make_jid(<<>>,
+				                                                      Server,
+			                                                              <<>>),
+                                                                        "Offline Storage"),%% TODO: Delete the next three lines once XEP-0091 is Obsolete
+			                                                                   jlib:timestamp_to_xml(calendar:now_to_universal_time(R#offline_msg.timestamp))]}}
 	      end,
 	      lists:keysort(#offline_msg.timestamp, Rs));
 	_ ->
@@ -335,22 +330,18 @@ pop_offline_messages(Ls, User, Server) ->
 	    TS = now(),
 	    Ls ++ lists:map(
 		    fun(R) ->
-			    {xmlel, Name, Attrs, Els} = R#offline_msg.packet,
+			    XE = #xmlel{children = Els} = R#offline_msg.packet,
 			    {route,
 			     R#offline_msg.from,
 			     R#offline_msg.to,
-			     {xmlel, Name, Attrs,
-			      Els ++
-			      [jlib:timestamp_to_xml(
-			         calendar:now_to_universal_time(
-				   R#offline_msg.timestamp),
-				 utc,
-				 jlib:make_jid(<<>>, Server, <<>>),
-				 "Offline Storage"),
-			       %% TODO: Delete the next three lines once XEP-0091 is Obsolete
-			       jlib:timestamp_to_xml(
-			         calendar:now_to_universal_time(
-				   R#offline_msg.timestamp))]}}
+			     XE#xmlel{children = Els ++
+			                           [jlib:timestamp_to_xml(calendar:now_to_universal_time(R#offline_msg.timestamp),
+			                                                  utc,
+			                                                  jlib:make_jid(<<>>,
+				                                                        Server,
+				                                                        <<>>),
+				                                          "Offline Storage"),%% TODO: Delete the next three lines once XEP-0091 is Obsolete
+				                                                             jlib:timestamp_to_xml(calendar:now_to_universal_time(R#offline_msg.timestamp))]}}
 		    end,
 		    lists:filter(
 		      fun(R) ->
@@ -465,7 +456,7 @@ update_table() ->
 	    mnesia:transform_table(
 	      offline_msg,
 	      fun({_, U, TS, F, T, P}) ->
-		      {xmlel, _Name, _Attrs, Els} = P,
+		      #xmlel{children = Els} = P,
 		      Expire = find_x_expire(TS, Els),
 		      #offline_msg{us = U,
 				   timestamp = TS,
@@ -535,7 +526,7 @@ user_queue(User, Server, Query, Lang) ->
     FMsgs =
 	lists:map(
 	  fun(#offline_msg{timestamp = TimeStamp, from = From, to = To,
-			   packet = {xmlel, Name, Attrs, Els}} = Msg) ->
+			   packet = XE = #xmlel{attrs = Attrs}} = Msg) ->
 		  ID = jlib:encode_base64(binary_to_list(term_to_binary(Msg))),
 		  {{Year, Month, Day}, {Hour, Minute, Second}} =
 		      calendar:now_to_local_time(TimeStamp),
@@ -546,7 +537,7 @@ user_queue(User, Server, Query, Lang) ->
 		  SFrom = jlib:jid_to_binary(From),
 		  STo = jlib:jid_to_binary(To),
 		  Attrs2 = jlib:replace_from_to_attrs(SFrom, STo, Attrs),
-		  Packet = {xmlel, Name, Attrs2, Els},
+		  Packet = XE#xmlel{attrs = Attrs2},
 		  FPacket = ejabberd_web_admin:pretty_print_xml(Packet),
 		  ?XE("tr",
 		      [?XAE("td", [{"class", "valign"}], [?INPUT("checkbox", "selected", ID)]),
@@ -556,8 +547,8 @@ user_queue(User, Server, Query, Lang) ->
 		       ?XAE("td", [{"class", "valign"}], [?XC("pre", FPacket)])]
 		     )
 	  end, Msgs),
-    [?XC("h1", io_lib:format(?T("~s's Offline Messages Queue"),
-			     [us_to_list(US)]))] ++
+    [?XC("h1", (io_lib:format(?T("~s's Offline Messages Queue"),
+			      [us_to_list(US)])))] ++
 	case Res of
 	    ok -> [?XREST("Submitted")];
 	    nothing -> []
@@ -634,7 +625,7 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     MsgsLastN = lists:nthtail(Length - FirstN - FirstN, Msgs2),
     NoJID = jlib:make_jid("...", "...", ""),
     IntermediateMsg = #offline_msg{timestamp = now(), from = NoJID, to = NoJID,
-				   packet = {xmlel, "...", [], []}},
+				   packet = #xmlel{name = "..."}},
     MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->

@@ -41,6 +41,7 @@
 	 replace_tag_attr/3]).
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 %% Select at compile time how to escape characters in binary text
 %% nodes.
@@ -80,7 +81,7 @@ element_to_string(El) ->
 
 element_to_string_nocatch(El) ->
     case El of
-	{xmlel, Name, Attrs, Els} ->
+	#xmlel{name = Name, attrs = Attrs, children = Els} ->
 	    if
 		Els /= [] ->
 		    [$<, Name, attrs_to_list(Attrs), $>,
@@ -90,11 +91,11 @@ element_to_string_nocatch(El) ->
 		    [$<, Name, attrs_to_list(Attrs), $/, $>]
 	       end;
 	%% We do not crypt CDATA binary, but we enclose it in XML CDATA
-	{xmlcdata, CData} when is_binary(CData) ->
+	#xmlcdata{content = CData} when is_binary(CData) ->
 	    ?ESCAPE_BINARY(CData);
 	%% We crypt list and possibly binaries if full XML usage is
 	%% disabled unsupported (implies a conversion to list).
-	{xmlcdata, CData} ->
+	#xmlcdata{content = CData} ->
 	    crypt(CData)
     end.
 
@@ -181,7 +182,7 @@ escape_cdata(CData, Index, [Pos|Positions], Acc) ->
     %% Note: We build the list in reverse to optimize construction
     escape_cdata(Rest, Pos+1, Positions, [CDATA2, Part, CDATA1|Acc]).
 
-remove_cdata_p({xmlel, _Name, _Attrs, _Els}) -> true;
+remove_cdata_p(#xmlel{}) -> true;
 remove_cdata_p(_) -> false.
 
 remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
@@ -189,14 +190,14 @@ remove_cdata(L) -> [E || E <- L, remove_cdata_p(E)].
 get_cdata(L) ->
     list_to_binary(get_cdata(L, "")).
 
-get_cdata([{xmlcdata, CData} | L], S) ->
+get_cdata([#xmlcdata{content = CData} | L], S) ->
     get_cdata(L, [S, CData]);
 get_cdata([_ | L], S) ->
     get_cdata(L, S);
 get_cdata([], S) ->
     S.
 
-get_tag_cdata({xmlel, _Name, _Attrs, Els}) ->
+get_tag_cdata(#xmlel{children = Els}) ->
     get_cdata(Els).
 
 get_attr(AttrName, Attrs) ->
@@ -215,19 +216,19 @@ get_attr_s(AttrName, Attrs) ->
 	    context_default(AttrName)
     end.
 
-get_tag_attr(AttrName, {xmlel, _Name, Attrs, _Els}) ->
+get_tag_attr(AttrName, #xmlel{attrs = Attrs}) ->
     get_attr(AttrName, Attrs).
 
-get_tag_attr_s(AttrName, {xmlel, _Name, Attrs, _Els}) ->
+get_tag_attr_s(AttrName, #xmlel{attrs = Attrs}) ->
     get_attr_s(AttrName, Attrs).
 
 
-get_subtag({xmlel, _, _, Els}, Name) ->
+get_subtag(#xmlel{children = Els}, Name) ->
     get_subtag1(Els, Name).
 
 get_subtag1([El | Els], Name) ->
     case El of
-	{xmlel, Name, _, _} ->
+	#xmlel{name = Name} ->
 	    El;
 	_ ->
 	    get_subtag1(Els, Name)
@@ -235,8 +236,8 @@ get_subtag1([El | Els], Name) ->
 get_subtag1([], _) ->
     false.
 
-append_subtags({xmlel, Name, Attrs, SubTags1}, SubTags2) ->
-    {xmlel, Name, Attrs, SubTags1 ++ SubTags2}.
+append_subtags(XE = #xmlel{children = SubTags1}, SubTags2) ->
+    XE#xmlel{children = SubTags1 ++ SubTags2}.
 
 get_path_s(El, []) ->
     El;
@@ -252,10 +253,10 @@ get_path_s(El, [{attr, Name}]) ->
 get_path_s(El, [cdata]) ->
     get_tag_cdata(El).
 
-replace_tag_attr(Attr, Value, {xmlel, Name, Attrs, Els}) ->
+replace_tag_attr(Attr, Value, XE = #xmlel{attrs = Attrs}) ->
     Attrs1 = lists:keydelete(Attr, 1, Attrs),
     Attrs2 = [{Attr, Value} | Attrs1],
-    {xmlel, Name, Attrs2, Els}.
+    XE#xmlel{attrs = Attrs2}.
 
 context_default(Attr) when is_list(Attr) ->
     "";

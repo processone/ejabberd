@@ -303,7 +303,7 @@ do_route(From, To, Packet) ->
 	To#jid.luser /= <<>> ->
 	    ejabberd_sm:route(From, To, Packet);
 	To#jid.lresource == <<>> ->
-	    {xmlel, Name, _Attrs, _Els} = Packet,
+	    #xmlel{name = Name} = Packet,
 	    case Name of
 		<<"iq">> ->
 		    process_iq(From, To, Packet);
@@ -315,7 +315,7 @@ do_route(From, To, Packet) ->
 		    ok
 	    end;
 	true ->
-	    {xmlel, _Name, Attrs, _Els} = Packet,
+	    #xmlel{attrs = Attrs} = Packet,
 	    case xml:get_attr_s(<<"type">>, Attrs) of
 		<<"error">> -> ok;
 		<<"result">> -> ok;

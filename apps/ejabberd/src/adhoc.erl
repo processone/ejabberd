@@ -43,7 +43,7 @@ parse_request(#iq{type = set, lang = Lang, sub_el = SubEl, xmlns = ?NS_COMMANDS}
     SessionID = xml:get_tag_attr_s(<<"sessionid">>, SubEl),
     Action = xml:get_tag_attr_s(<<"action">>, SubEl),
     XData = find_xdata_el(SubEl),
-    {xmlel, _, _, AllEls} = SubEl,
+    #xmlel{children = AllEls} = SubEl,
     Others = case XData of
                  false ->
                      AllEls;
@@ -61,15 +61,15 @@ parse_request(_) ->
     {error, ?ERR_BAD_REQUEST}.
 
 %% Borrowed from mod_vcard.erl
-find_xdata_el({xmlel, _Name, _Attrs, SubEls}) ->
+find_xdata_el(#xmlel{children = SubEls}) ->
     find_xdata_el1(SubEls).
 
 find_xdata_el1([]) ->
     false;
-find_xdata_el1([{xmlel, Name, Attrs, SubEls} | Els]) ->
+find_xdata_el1([XE = #xmlel{attrs = Attrs} | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
         ?NS_XDATA ->
-            {xmlel, Name, Attrs, SubEls};
+            XE;
         _ ->
             find_xdata_el1(Els)
     end;
@@ -112,18 +112,17 @@ produce_response(#adhoc_response{lang = _Lang,
                 _ ->
                     ActionsElAttrs = [{<<"execute">>, DefaultAction}]
             end,
-            ActionsEls = [{xmlel, <<"actions">>,
-                           ActionsElAttrs,
-                           [{xmlel, Action, [], []} || Action <- Actions]}]
+            ActionsEls = [#xmlel{name = <<"actions">>, attrs = ActionsElAttrs,
+                                 children = [#xmlel{name = Action} || Action <- Actions]}]
     end,
     NotesEls = lists:map(fun({Type, Text}) ->
-                                 {xmlel, <<"note">>,
-                                  [{<<"type">>, Type}],
-                                  [{xmlcdata, Text}]}
+                                 #xmlel{name = <<"note">>,
+                                        attrs = [{<<"type">>, Type}],
+                                        children = [#xmlcdata{content = Text}]}
                          end, Notes),
-    {xmlel, <<"command">>,
-     [{<<"xmlns">>, ?NS_COMMANDS},
-      {<<"sessionid">>, SessionID},
-      {<<"node">>, Node},
-      {"status", list_to_binary(atom_to_list(Status))}],
-     ActionsEls ++ NotesEls ++ Elements}.
+    #xmlel{name = <<"command">>,
+           attrs = [{<<"xmlns">>, ?NS_COMMANDS},
+                    {<<"sessionid">>, SessionID},
+                    {<<"node">>, Node},
+                    {"status", list_to_binary(atom_to_list(Status))}],
+           children = ActionsEls ++ NotesEls ++ Elements}.
