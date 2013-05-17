@@ -26,7 +26,8 @@
 -module(ejabberd_loglevel).
 -author('piotr.nosek@erlang-solutions.com').
 
--export([set/1,
+-export([init/0,
+     set/1,
 	 get/0,
 	 set_custom/2,
 	 clear_custom/0,
@@ -42,6 +43,11 @@
 	 {3, warning},
 	 {4, info},
 	 {5, debug}]).
+
+-define(ETS_TRACE_TAB, ejabberd_lager_traces).
+
+init() ->
+    ets:new(?ETS_TRACE_TAB, [set, named_table, public]).
 
 -spec get() -> {integer(), atom()}.
 get() ->
@@ -59,12 +65,21 @@ set_custom(Module, Level) when is_integer(Level) ->
     {_, Name} = lists:keyfind(Level, 1, ?LOG_LEVELS),
     set_custom(Module, Name);
 set_custom(Module, Level) when is_atom(Level) ->
-    ok = lager:set_mod_loglevel(lager_console_backend, Level, Module),
-    ok = lager:set_mod_loglevel(lager_file_backend, ?LOG_PATH, Level, Module).
+    clear_custom(Module),
+    {ok, ConsoleTrace} = lager:trace_console([{module, Module}], Level),
+    {ok, FileTrace}  = lager:trace_file(?LOG_PATH, [{module, Module}], Level),
+    ets:insert(?ETS_TRACE_TAB, {Module, ConsoleTrace, FileTrace}).
     
 clear_custom() ->
     clear_custom('_').
 
 clear_custom(Module) when is_atom(Module) ->
-    ok = lager:clear_mod_loglevel(lager_console_backend, Module),
-    ok = lager:clear_mod_loglevel(lager_file_backend, ?LOG_PATH, Module).
+    case ets:lookup(?ETS_TRACE_TAB, Module) of
+        [{_, ConsoleTrace, FileTrace}] ->
+            lager:stop_trace(ConsoleTrace),
+            lager:stop_trace(FileTrace),
+            ets:delete(?ETS_TRACE_TAB, Module);
+        [] ->
+            ok
+    end.
+

@@ -39,6 +39,7 @@
 %%%
 
 start(normal, _Args) ->
+    ejabberd_loglevel:init(),
     ejabberd_loglevel:set(4),
     write_pid_file(),
     db_init(),
