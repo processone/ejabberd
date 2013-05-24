@@ -720,7 +720,7 @@ strings_to_binary(L) when is_list(L) ->
             strings_to_binary1(L)
     end;
 strings_to_binary(T) when is_tuple(T) ->
-    list_to_tuple(strings_to_binary(tuple_to_list(T)));
+    list_to_tuple(strings_to_binary1(tuple_to_list(T)));
 strings_to_binary(X) ->
     X.
 
