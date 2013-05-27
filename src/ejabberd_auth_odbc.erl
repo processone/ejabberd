@@ -42,6 +42,7 @@
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 start(_Host) -> ok.
 

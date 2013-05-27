@@ -42,6 +42,7 @@
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 start(Host) ->
     Cmd = ejabberd_config:get_local_option(

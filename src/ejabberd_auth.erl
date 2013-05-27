@@ -52,6 +52,7 @@
 -export([create_users/5]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -type opts() :: [{prefix, binary()} | {from, integer()} |
                  {to, integer()} | {limit, integer()} |

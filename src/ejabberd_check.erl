@@ -29,6 +29,7 @@
 -export([libs/0, config/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("ejabberd_config.hrl").
 
 %% TODO:

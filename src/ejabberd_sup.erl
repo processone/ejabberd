@@ -175,21 +175,6 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_sm_sup]},
-    STUNSupervisor =
-	{ejabberd_stun_sup,
-	 {ejabberd_tmp_sup, start_link,
-	  [ejabberd_stun_sup, ejabberd_stun]},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [ejabberd_tmp_sup]},
-    CacheTabSupervisor =
-	{cache_tab_sup,
-	 {cache_tab_sup, start_link, []},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [cache_tab_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
 	   SystemMonitor,
@@ -208,9 +193,7 @@ init([]) ->
 	   HTTPSupervisor,
 	   HTTPPollSupervisor,
 	   IQSupervisor,
-	   STUNSupervisor,
 	   FrontendSocketSupervisor,
-	   CacheTabSupervisor,
 	   Listener]}}.
 
 

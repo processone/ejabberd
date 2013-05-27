@@ -386,9 +386,33 @@ Some options that you may be interested in modifying:
 	\titem{--enable-pam}
 	Enable the PAM authentication method (see section \ref{pam}).
 
-	\titem{--enable-odbc or --enable-mssql}
+	\titem{--enable-mssql}
 	Required if you want to use an external database.
 	See section~\ref{database} for more information.
+
+        \titem{--enable-tools}
+        Enable the use of development tools.
+
+        \titem{--enable-mysql}
+        Enable MySQL support (see section \ref{mysql}).
+
+        \titem{--enable-pgsql}
+        Enable PostgreSQL support (see section \ref{pgsql}).
+
+        \titem{--enable-zlib}
+        Enable Stream Compression (XEP-0138) using zlib.
+
+        \titem{--enable-stun}
+        Enable STUN support (see section \ref{stun}).
+
+        \titem{--enable-riak}
+        Enable Riak support.
+
+        \titem{--enable-iconv}
+        Enable iconv support. This is needed for \term{mod\_irc} (see seciont \ref{modirc}).
+
+        \titem{--enable-debug}
+        Compile with \term{+debug\_info} enabled.
 
 	\titem{--enable-full-xml}
 	Enable the use of XML based optimisations.
@@ -1257,6 +1281,7 @@ The following authentication methods are supported by \ejabberd{}:
   \ref{mssql} and \ref{odbc}.
 \item anonymous --- See section~\ref{saslanonymous}.
 \item pam --- See section~\ref{pam}.
+\item riak --- See section~\ref{riak}.
 \end{itemize}
 
 Account creation is only supported by internal, external and odbc methods.
@@ -1972,14 +1997,8 @@ For example:
 \makesubsection{mysql}{MySQL}
 \ind{MySQL}\ind{MySQL!schema}
 
-Although this section will describe \ejabberd{}'s configuration when you want to
-use the native MySQL driver, it does not describe MySQL's installation and
-database creation. Check the MySQL documentation and the tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
-Note that the tutorial contains information about \ejabberd{}'s configuration
-which is duplicate to this section.
-
-Moreover, the file mysql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for MySQL. At the end of the file
+There is a file \term{mysql.sql} in the directory \term{odbc}.
+This file contains the \ejabberd{} schema for MySQL. At the end of the file
 you can find information to update your database schema.
 
 
@@ -1987,19 +2006,13 @@ you can find information to update your database schema.
 \ind{MySQL!Driver Compilation}
 
 You can skip this step if you installed \ejabberd{} using a binary installer or
-if the binary packages of \ejabberd{} you are using include support for MySQL.
+if the binary packages of \ejabberd{} you are using include support for ODBC.
 
-\begin{enumerate}
-\item First, install the \footahref{http://support.process-one.net/doc/display/CONTRIBS/Yxa}{Erlang
-  MySQL library}. Make sure the compiled files are in your Erlang path; you can
-  put them for example in the same directory as your \ejabberd{} .beam files.
-\item Then, configure and install \ejabberd{} with ODBC support enabled (this is
-  also needed for native MySQL support!). This can be done, by using next
-  commands:
+Use \term{--enable-mysql} configure option in order to build \ejabberd{} with
+MySQL support:
 \begin{verbatim}
-./configure --enable-odbc && make install
+./configure --enable-mysql && make install
 \end{verbatim}
-\end{enumerate}
 
 
 \makesubsubsection{configuremysql}{Database Connection}
@@ -2072,16 +2085,9 @@ that you cannot have several variants of the same module loaded!
 \makesubsection{mssql}{Microsoft SQL Server}
 \ind{Microsoft SQL Server}\ind{Microsoft SQL Server!schema}
 
-Although this section will describe \ejabberd{}'s configuration when you want to
-use Microsoft SQL Server, it does not describe Microsoft SQL Server's
-installation and database creation. Check the MySQL documentation and the
-tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
-Note that the tutorial contains information about \ejabberd{}'s configuration
-which is duplicate to this section.
-
-Moreover, the file mssql.sql in the directory src/odbc might be interesting for
-you. This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end
-of the file you can find information to update your database schema.
+There is a file \term{mssql.sql} in the directory \term{odbc}.
+This file contains the \ejabberd{} schema for Microsoft SQL Server. At the end of the file
+you can find information to update your database schema.
 
 
 \makesubsubsection{compilemssql}{Driver Compilation}
@@ -2090,11 +2096,10 @@ of the file you can find information to update your database schema.
 You can skip this step if you installed \ejabberd{} using a binary installer or
 if the binary packages of \ejabberd{} you are using include support for ODBC.
 
-If you want to use Microsoft SQL Server with ODBC, you need to configure,
-compile and install \ejabberd{} with support for ODBC and Microsoft SQL Server
-enabled. This can be done, by using next commands:
+Use \term{--enable-mssql} configure option in order to build \ejabberd{} with
+Microsoft SQL Server support:
 \begin{verbatim}
-./configure --enable-odbc --enable-mssql && make install
+./configure --enable-mssql && make install
 \end{verbatim}
 
 
@@ -2139,13 +2144,7 @@ module loaded!
 \makesubsection{pgsql}{PostgreSQL}
 \ind{PostgreSQL}\ind{PostgreSQL!schema}
 
-Although this section will describe \ejabberd{}'s configuration when you want to
-use the native PostgreSQL driver, it does not describe PostgreSQL's installation
-and database creation. Check the PostgreSQL documentation and the tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} for information regarding these topics.
-Note that the tutorial contains information about \ejabberd{}'s configuration
-which is duplicate to this section.
-
-Also the file pg.sql in the directory src/odbc might be interesting for you.
+There is a file \term{pg.sql} in the directory \term{odbc}.
 This file contains the \ejabberd{} schema for PostgreSQL. At the end of the file
 you can find information to update your database schema.
 
@@ -2157,19 +2156,11 @@ You can skip this step if you installed \ejabberd{} using a binary installer or
 if the binary packages of \ejabberd{} you are using include support for
 PostgreSQL.
 
-\begin{enumerate}
-\item First, install the Erlang pgsql library from
-  \footahref{http://www.ejabberd.im/ejabberd-modules/}{ejabberd-modules SVN repository}.
-  Make sure the compiled
-  files are in your Erlang path; you can put them for example in the same
-  directory as your \ejabberd{} .beam files.
-\item Then, configure, compile and install \ejabberd{} with ODBC support enabled
-  (this is also needed for native PostgreSQL support!). This can be done, by
-  using next commands:
+Use \term{--enable-pgsql} configure option in order to build \ejabberd{} with
+PostgreSQL support:
 \begin{verbatim}
-./configure --enable-odbc && make install
+./configure --enable-pgsql && make install
 \end{verbatim}
-\end{enumerate}
 
 
 \makesubsubsection{configurepgsql}{Database Connection}
@@ -2235,31 +2226,6 @@ Keep in mind that you cannot have several variants of the same module loaded!
 
 \makesubsection{odbc}{ODBC Compatible}
 \ind{databases!ODBC}
-
-Although this section will describe \ejabberd{}'s configuration when you want to
-use the ODBC driver, it does not describe the installation and database creation
-of your database. Check the documentation of your database. The tutorial \footahref{http://support.process-one.net/doc/display/MESSENGER/Using+ejabberd+with+MySQL+native+driver}{Using ejabberd with MySQL native driver} also can help you. Note that the tutorial
-contains information about \ejabberd{}'s configuration which is duplicate to
-this section.
-
-
-\makesubsubsection{compileodbc}{Driver Compilation}
-
-You can skip this step if you installed \ejabberd{} using a binary installer or
-if the binary packages of \ejabberd{} you are using include support for
-ODBC.
-
-\begin{enumerate}
-\item First, install the \footahref{http://support.process-one.net/doc/display/CONTRIBS/Yxa}{Erlang
-  MySQL library}. Make sure the compiled files are in your Erlang path; you can
-  put them for example in the same directory as your \ejabberd{} .beam files.
-\item Then, configure, compile and install \ejabberd{} with ODBC support
-  enabled. This can be done, by using next commands:
-\begin{verbatim}
-./configure --enable-odbc && make install
-\end{verbatim}
-\end{enumerate}
-
 
 \makesubsubsection{configureodbc}{Database Connection}
 \ind{ODBC!Database Connection}

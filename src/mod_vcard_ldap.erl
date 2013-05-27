@@ -41,8 +41,9 @@
 	 remove_user/1, route/4]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
--include("eldap/eldap.hrl").
+-include("eldap.hrl").
 
 -include("jlib.hrl").
 

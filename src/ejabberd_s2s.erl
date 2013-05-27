@@ -50,6 +50,7 @@
 -export([get_info_s2s_connections/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

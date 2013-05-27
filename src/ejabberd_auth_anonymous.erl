@@ -48,6 +48,7 @@
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

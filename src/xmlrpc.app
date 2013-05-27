@@ -1,9 +1,0 @@
-{application,xmlrpc,
-             [{description,[]},
-              {vsn,"80389e7"},
-              {registered,[]},
-              {applications,[]},
-              {env,[]},
-              {modules,[beam_util,example_serv,tcp_serv,url_util,xmlrpc,
-                        xmlrpc_decode,xmlrpc_encode,xmlrpc_http,
-                        xmlrpc_util]}]}.

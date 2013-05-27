@@ -39,11 +39,10 @@
 -ifdef(USE_IBROWSE).
 
 start() ->
-    ibrowse:start(),
-    ssl:start().
+    ejabberd:start_app(ibrowse).
 
 stop() ->
-    ibrowse:stop().
+    application:stop(ibrowse).
 
 request(Method, URL, Hdrs, Body, Opts) ->
     TimeOut = proplists:get_value(timeout, Opts, infinity),
@@ -62,13 +61,10 @@ request(Method, URL, Hdrs, Body, Opts) ->
 -ifdef(USE_LHTTPC).
 
 start() ->
-    application:start(crypto),
-    application:start(ssl),
-    lhttpc:start().
+    ejabberd:start_app(lhttpc).
 
 stop() ->
-    lhttpc:stop(),
-    application:stop(ssl).
+    application:stop(lhttpc).
 
 request(Method, URL, Hdrs, Body, Opts) ->
     TimeOut = proplists:get_value(timeout, Opts, infinity),
@@ -86,12 +82,10 @@ request(Method, URL, Hdrs, Body, Opts) ->
 -else.
 
 start() ->
-    inets:start(),
-    ssl:start().
+    ejabberd:start_app(inets).
 
 stop() ->
-    inets:stop(),
-    ssl:stop().
+    ejabberd:start_app(inets).
 
 to_list(Str) when is_binary(Str) ->
     binary_to_list(Str);

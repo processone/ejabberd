@@ -39,6 +39,7 @@
 	 register_extra_domain/2, unregister_extra_domain/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

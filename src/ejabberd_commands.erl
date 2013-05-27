@@ -222,6 +222,7 @@
 
 -include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 
 init() ->

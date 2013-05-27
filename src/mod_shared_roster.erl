@@ -46,14 +46,15 @@
          command_list_users/2, command_list_groups/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 
 -include("mod_roster.hrl").
 
--include("web/ejabberd_http.hrl").
+-include("ejabberd_http.hrl").
 
--include("web/ejabberd_web_admin.hrl").
+-include("ejabberd_web_admin.hrl").
 
 -include("ejabberd_commands.hrl").
 

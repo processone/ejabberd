@@ -38,6 +38,7 @@
 -export([convert_table_to_binary/5]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("kernel/include/file.hrl").
 
@@ -452,7 +453,7 @@ process_term(Term, State) ->
 	{ejabberdctl_access_commands, ACs} ->
 	    add_option(ejabberdctl_access_commands, ACs, State);
 	{loglevel, Loglevel} ->
-	    ejabberd_loglevel:set(Loglevel),
+	    ejabberd_logger:set(Loglevel),
 	    State;
 	{max_fsm_queue, N} ->
 	    add_option(max_fsm_queue, N, State);

@@ -37,16 +37,17 @@
 	 change_socket/2, sockname/1, peername/1, is_remote_receiver/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 
 -type sockmod() :: ejabberd_http_poll | ejabberd_bosh |
                    ejabberd_http_bind | ejabberd_http_bindjson |
                    ejabberd_http_ws | ejabberd_http_wsjson |
-                   gen_tcp | tls | ejabberd_zlib.
+                   gen_tcp | tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   tls:tls_socket() |
-                  ejabberd_zlib:zlib_socket() |
+                  ezlib:zlib_socket() |
                   ejabberd_bosh:bosh_socket() |
                   ejabberd_http_ws:ws_socket() |
                   ejabberd_http_poll:poll_socket().
@@ -151,7 +152,7 @@ compress(SocketData, Data) ->
 	ejabberd_receiver:compress(SocketData#socket_state.receiver,
 				   Data),
     SocketData#socket_state{socket = ZlibSocket,
-			    sockmod = ejabberd_zlib}.
+			    sockmod = ezlib}.
 
 reset_stream(SocketData)
     when is_pid(SocketData#socket_state.receiver) ->
@@ -254,8 +255,8 @@ get_conn_type(#socket_state{sockmod = SockMod, socket = Socket}) ->
     case SockMod of
         gen_tcp -> c2s;
         tls -> c2s_tls;
-        ejabberd_zlib ->
-            case ejabberd_zlib:get_sockmod(Socket) of
+        ezlib ->
+            case ezlib:get_sockmod(Socket) of
                 gen_tcp -> c2s_compressed;
                 tls -> c2s_compressed_tls
             end;

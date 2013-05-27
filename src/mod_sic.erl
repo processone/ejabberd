@@ -34,6 +34,7 @@
 	 process_sm_iq/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

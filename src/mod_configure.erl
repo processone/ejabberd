@@ -40,6 +40,7 @@
 	 adhoc_sm_items/4, adhoc_sm_commands/4]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

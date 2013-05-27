@@ -31,6 +31,7 @@
 -export([start/2, stop/1, check_packet/6]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

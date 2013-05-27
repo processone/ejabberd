@@ -32,21 +32,18 @@
 -export([start_modules/0,start/2, get_log_path/0, prep_stop/1, stop/1, init/0]).
 
 -include("ejabberd.hrl").
-
+-include("logger.hrl").
 
 %%%
 %%% Application API
 %%%
 
 start(normal, _Args) ->
-    ejabberd_loglevel:set(4),
+    ejabberd_logger:set(4),
     write_pid_file(),
-    application:start(sasl),
+    start_apps(),
     randoms:start(),
     db_init(),
-    sha:start(),
-    stringprep_sup:start_link(),
-    xml:start(),
     start(),
     translate:start(),
     acl:start(),
@@ -107,20 +104,13 @@ init() ->
     %erlang:system_flag(fullsweep_after, 0),
     %error_logger:logfile({open, ?LOG_PATH}),
     LogPath = get_log_path(),
-    error_logger:add_report_handler(ejabberd_logger_h, LogPath),
-    erl_ddll:load_driver(ejabberd:get_so_path(), tls_drv),
-    case erl_ddll:load_driver(ejabberd:get_so_path(), expat_erl) of
-	ok -> ok;
-	{error, already_loaded} -> ok
-    end,
-    Port = open_port({spawn, "expat_erl"}, [binary]),
-    loop(Port).
+    ejabberd_logger:set_logfile(LogPath),
+    loop().
 
-
-loop(Port) ->
+loop() ->
     receive
 	_ ->
-	    loop(Port)
+	    loop()
     end.
 
 db_init() ->
@@ -249,3 +239,12 @@ delete_pid_file() ->
 	PidFilename ->
 	    file:delete(PidFilename)
     end.
+
+start_apps() ->
+    ejabberd:start_app(sasl),
+    ejabberd:start_app(ssl),
+    ejabberd:start_app(p1_tls),
+    ejabberd:start_app(p1_xml),
+    ejabberd:start_app(p1_stringprep),
+    ejabberd:start_app(p1_zlib),
+    ejabberd:start_app(p1_cache_tab).

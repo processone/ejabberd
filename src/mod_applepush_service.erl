@@ -22,6 +22,7 @@
 
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 -include_lib("kernel/include/file.hrl").
 
@@ -65,7 +66,6 @@ start_link(Host, Opts) ->
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 start(Host, Opts) ->
-    ssl:start(),
     MyHosts = case catch gen_mod:get_opt(
                            hosts, Opts,
                            fun(L) when is_list(L) ->

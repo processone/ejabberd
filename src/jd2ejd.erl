@@ -32,6 +32,7 @@
 -export([import_file/1, import_dir/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

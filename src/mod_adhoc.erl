@@ -37,6 +37,7 @@
 	 ping_item/4, ping_command/4]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -include("jlib.hrl").
 

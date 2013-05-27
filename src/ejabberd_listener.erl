@@ -41,6 +41,7 @@
 	]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %% We do not block on send anymore.
 -define(TCP_SEND_TIMEOUT, 15000).
@@ -597,7 +598,8 @@ check_rate_limit(Interval) ->
 
 validate_cfg(L) ->
     lists:map(
-      fun({PortIPTransport, Mod, Opts}) when is_atom(Mod), is_list(Opts) ->
+      fun({PortIPTransport, Mod1, Opts}) when is_atom(Mod1), is_list(Opts) ->
+              Mod = prepare_mod(Mod1),
               case PortIPTransport of
                   Port when ?IS_PORT(Port) ->
                       {Port, Mod, Opts};
@@ -622,3 +624,11 @@ prepare_ip(IP) when is_list(IP) ->
     Addr;
 prepare_ip(IP) when is_binary(IP) ->
     prepare_ip(binary_to_list(IP)).
+
+prepare_mod(ejabberd_stun) ->
+    prepare_mod(stun);
+prepare_mod(stun) ->
+    ejabberd:start_app(p1_stun),
+    stun;
+prepare_mod(Mod) ->
+    Mod.

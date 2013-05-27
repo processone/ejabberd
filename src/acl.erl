@@ -32,6 +32,7 @@
 	 match_rule/3, match_acl/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("jlib.hrl").
 
 -record(acl, {aclname, aclspec}).

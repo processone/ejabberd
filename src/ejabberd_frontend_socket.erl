@@ -157,7 +157,7 @@ handle_call({compress, Data}, _From, State) ->
     Reply = ok,
     {reply, Reply,
      State#socket_state{socket = ZlibSocket,
-		 sockmod = ejabberd_zlib},
+		 sockmod = ezlib},
      ?HIBERNATE_TIMEOUT};
 handle_call(reset_stream, _From, State) ->
     ejabberd_receiver:reset_stream(State#socket_state.receiver),
