@@ -533,7 +533,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			?INFO_MSG("(~w) Accepted legacy authentication for ~s by ~p",
 				[StateData#state.socket,
 				 jlib:jid_to_string(JID), AuthModule]),
-			SID = {now(), self()},
+			SID = {os:timestamp(), self()},
 			Conn = (StateData#state.sockmod):get_conn_type(
 				    StateData#state.socket),
 			Info = [{ip, StateData#state.ip}, {conn, Conn},
@@ -898,7 +898,7 @@ resource_conflict_action(U, S, R) ->
       setresource ->
 	  Rnew = iolist_to_binary([randoms:get_string()
                                    | [jlib:integer_to_binary(X)
-                                      || X <- tuple_to_list(now())]]),
+                                      || X <- tuple_to_list(os:timestamp())]]),
 	  {accept_resource, Rnew}
     end.
 
@@ -914,7 +914,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		<<"">> ->
                       iolist_to_binary([randoms:get_string()
                                         | [jlib:integer_to_binary(X)
-                                           || X <- tuple_to_list(now())]]);
+                                           || X <- tuple_to_list(os:timestamp())]]);
 		Resource -> Resource
 	      end,
 	  case R of
@@ -991,7 +991,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			  privacy_get_user_list, StateData#state.server,
 			  #userlist{},
 			  [U, StateData#state.server]),
-		    SID = {now(), self()},
+		    SID = {os:timestamp(), self()},
 		    Conn = get_conn_type(StateData),
 		    Info = [{ip, StateData#state.ip}, {conn, Conn},
 			    {auth_module, StateData#state.auth_module}],
@@ -1833,7 +1833,7 @@ presence_update(From, Packet, StateData) ->
 			  OldPresence -> get_priority_from_presence(OldPresence)
 			end,
 	  NewPriority = get_priority_from_presence(Packet),
-	  Timestamp = calendar:now_to_universal_time(now()),
+	  Timestamp = calendar:now_to_universal_time(os:timestamp()),
 	  update_priority(NewPriority, Packet, StateData),
 	  FromUnavail = (StateData#state.pres_last == undefined),
 	  ?DEBUG("from unavail = ~p~n", [FromUnavail]),

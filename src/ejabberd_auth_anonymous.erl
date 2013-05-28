@@ -55,7 +55,7 @@
 %% Create the anonymous table if at least one virtual host has anonymous features enabled
 %% Register to login / logout events
 -record(anonymous, {us = {<<"">>, <<"">>} :: {binary(), binary()},
-                    sid = {now(), self()} :: ejabberd_sm:sid()}).
+                    sid = {os:timestamp(), self()} :: ejabberd_sm:sid()}).
 
 start(Host) ->
     %% TODO: Check cluster mode

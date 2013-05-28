@@ -121,7 +121,7 @@ produce_response(
   }) ->
     SessionID = if is_binary(ProvidedSessionID),
         ProvidedSessionID /= <<"">> -> ProvidedSessionID;
-        true                        -> jlib:now_to_utc_string(now())
+        true                        -> jlib:now_to_utc_string(os:timestamp())
     end,
     case Actions of
         [] ->

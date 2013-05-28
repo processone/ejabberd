@@ -78,7 +78,7 @@ process_local_iq(_From, _To,
       set ->
 	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
       get ->
-	  Now = now(),
+	  Now = os:timestamp(),
 	  Now_universal = calendar:now_to_universal_time(Now),
 	  Now_local = calendar:now_to_local_time(Now),
 	  {UTC, UTC_diff} = jlib:timestamp_to_iso(Now_universal,

@@ -399,7 +399,7 @@ get_all_procs(Tab) ->
     [get_proc(Tab, N) || N <- lists:seq(1, get_proc_num())].
 
 now_priority() ->
-    {MSec, Sec, USec} = now(),
+    {MSec, Sec, USec} = os:timestamp(),
     -((MSec*1000000 + Sec)*1000000 + USec).
 
 clean_priority(LifeTime) ->
@@ -586,20 +586,20 @@ test2() ->
 test3(Iter) ->
     ok = new(test_tbl, [{max_size, unlimited}, {life_time, unlimited}]),
     L = lists:seq(1, Iter),
-    T1 = now(),
+    T1 = os:timestamp(),
     lists:foreach(
       fun(N) ->
 	      ok = ?insert(test_tbl, N, N, fun() -> ok end)
       end, L),
     io:format("** average insert (size = ~p): ~p usec~n",
-	      [Iter, round(timer:now_diff(now(), T1)/Iter)]),
-    T2 = now(),
+	      [Iter, round(timer:now_diff(os:timestamp(), T1)/Iter)]),
+    T2 = os:timestamp(),
     lists:foreach(
       fun(N) ->
 	      {ok, N} = ?lookup(test_tbl, N, fun() -> ok end)
       end, L),
     io:format("** average lookup (size = ~p): ~p usec~n",
-	      [Iter, round(timer:now_diff(now(), T2)/Iter)]),
+	      [Iter, round(timer:now_diff(os:timestamp(), T2)/Iter)]),
     {ok, Iter} = info(test_tbl, size),
     delete(test_tbl).
 

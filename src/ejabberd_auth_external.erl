@@ -267,7 +267,7 @@ set_password_internal(User, Server, Password) ->
 					Password).
 
 is_fresh_enough(TimeStampLast, CacheTime) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
+    {MegaSecs, Secs, _MicroSecs} = os:timestamp(),
     Now = MegaSecs * 1000000 + Secs,
     TimeStampLast + CacheTime > Now.
 

@@ -36,7 +36,7 @@ start() ->
     register(random_generator, spawn(randoms, init, [])).
 
 init() ->
-    {A1, A2, A3} = now(), random:seed(A1, A2, A3), loop().
+    {A1, A2, A3} = os:timestamp(), random:seed(A1, A2, A3), loop().
 
 loop() ->
     receive

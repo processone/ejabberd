@@ -68,7 +68,7 @@
 -record(state, {}).
 
 -record(temporarily_blocked, {host = <<"">>     :: binary(),
-                              timestamp = now() :: erlang:timestamp()}).
+                              timestamp = os:timestamp() :: erlang:timestamp()}).
 
 -type temporarily_blocked() :: #temporarily_blocked{}.
 
@@ -110,7 +110,7 @@ external_host_overloaded(Host) ->
     mnesia:transaction(fun () ->
 			       mnesia:write(#temporarily_blocked{host = Host,
 								 timestamp =
-								     now()})
+								     os:timestamp()})
 		       end).
 
 -spec is_temporarly_blocked(binary()) -> boolean().
@@ -119,7 +119,7 @@ is_temporarly_blocked(Host) ->
     case mnesia:dirty_read(temporarily_blocked, Host) of
       [] -> false;
       [#temporarily_blocked{timestamp = T} = Entry] ->
-	  case timer:now_diff(now(), T) of
+	  case timer:now_diff(os:timestamp(), T) of
 	    N when N > (?S2S_OVERLOAD_BLOCK_PERIOD) * 1000 * 1000 ->
 		mnesia:dirty_delete_object(Entry), false;
 	    _ -> true

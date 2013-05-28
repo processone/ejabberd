@@ -492,7 +492,7 @@ check_timeout(Source) ->
                         infinity
                 end, 600),
     if is_integer(Timeout) ->
-	   {MSec, Sec, _USec} = now(),
+	   {MSec, Sec, _USec} = os:timestamp(),
 	   Priority = -(MSec * 1000000 + Sec),
 	   CleanPriority = Priority + Timeout,
 	   F = fun () ->

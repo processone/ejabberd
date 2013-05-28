@@ -210,7 +210,7 @@ write_roster_version_t(LUser, LServer) ->
     write_roster_version(LUser, LServer, true).
 
 write_roster_version(LUser, LServer, InTransaction) ->
-    Ver = sha:sha(term_to_binary(now())),
+    Ver = sha:sha(term_to_binary(os:timestamp())),
     write_roster_version(LUser, LServer, InTransaction, Ver,
 			 gen_mod:db_type(LServer, ?MODULE)),
     Ver.
