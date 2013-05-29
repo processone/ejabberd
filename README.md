@@ -67,8 +67,8 @@ How to build
 
         $ ./rebar generate
 
-    These commands will generate a self-contained OTP system image in
-    project's `rel/ejabberd` subdirectory. Contents of that directory look as
+    These commands will generate a self-contained OTP system image in the
+    project's `rel/ejabberd` subdirectory. The contents of that directory are as
     follows:
     *   `rel/ejabberd/bin` - startup/administration scripts,
     *   `rel/ejabberd/etc` - configuration files,
@@ -107,7 +107,7 @@ How to build
         $ make testrel
 
     which will generate releases in `$REPO/dev/` and prepare
-    it for testing and generating coverage reports.
+    them for testing and generating coverage reports.
 
     To run the tests (from project's root directory, i.e. `$REPO`):
 
