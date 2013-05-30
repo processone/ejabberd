@@ -52,6 +52,7 @@
 -define(PROCNAME, ejabberd_mod_muc_log).
 -record(room, {jid, title, subject, subject_author, config}).
 
+-define(PLAINTEXT_CO, "ZZCZZ").
 -define(PLAINTEXT_IN, "ZZIZZ").
 -define(PLAINTEXT_OUT, "ZZOZZ").
 
@@ -680,7 +681,8 @@ fw(F, S, O, FileFormat) ->
 	     html ->
 		 S1;
 	     plaintext ->
-		 S1x = ejabberd_regexp:greplace(S1, "<[^<^>]*>", ""),
+		 S1a = ejabberd_regexp:greplace(S1, "<[^<^>]*>", ""),
+		 S1x = ejabberd_regexp:greplace(S1a, ?PLAINTEXT_CO, "~~"),
 		 S1y = ejabberd_regexp:greplace(S1x, ?PLAINTEXT_IN, "<"),
 		 ejabberd_regexp:greplace(S1y, ?PLAINTEXT_OUT, ">")
 	 end,
@@ -787,14 +789,14 @@ htmlize(S1) ->
     htmlize(S1, html).
 
 htmlize(S1, plaintext) ->
-    ejabberd_regexp:replace(S1, "~", "~~");
+    ejabberd_regexp:greplace(S1, "~", ?PLAINTEXT_CO);
 htmlize(S1, FileFormat) ->
     htmlize(S1, false, FileFormat).
 
 %% The NoFollow parameter tell if the spam prevention should be applied to the link found
 %% true means 'apply nofollow on links'.
 htmlize(S0, _NoFollow, plaintext) ->
-    S1  = ejabberd_regexp:replace(S0, "~", "~~"),
+    S1 = ejabberd_regexp:greplace(S0, "~", ?PLAINTEXT_CO),
     S1x = ejabberd_regexp:replace(S1, "<", ?PLAINTEXT_IN),
     ejabberd_regexp:replace(S1x, ">", ?PLAINTEXT_OUT);
 htmlize(S1, NoFollow, _FileFormat) ->
