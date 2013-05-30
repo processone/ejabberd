@@ -455,7 +455,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts, State) ->
     STimeUnique = io_lib:format("~s.~w", [STime, Microsecs]),
 
     %% Write message
-    fw(F, io_lib:format("<a id=\"~s\" name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ", 
+    catch fw(F, io_lib:format("<a id=\"~s\" name=\"~s\" href=\"#~s\" class=\"ts\">[~s]</a> ",
 			[STimeUnique, STimeUnique, STimeUnique, STime]) ++ Text, FileFormat),
 
     %% Close file
@@ -787,13 +787,14 @@ htmlize(S1) ->
     htmlize(S1, html).
 
 htmlize(S1, plaintext) ->
-    S1;
+    ejabberd_regexp:replace(S1, "~", "~~");
 htmlize(S1, FileFormat) ->
     htmlize(S1, false, FileFormat).
 
 %% The NoFollow parameter tell if the spam prevention should be applied to the link found
 %% true means 'apply nofollow on links'.
-htmlize(S1, _NoFollow, plaintext) ->
+htmlize(S0, _NoFollow, plaintext) ->
+    S1  = ejabberd_regexp:replace(S0, "~", "~~"),
     S1x = ejabberd_regexp:replace(S1, "<", ?PLAINTEXT_IN),
     ejabberd_regexp:replace(S1x, ">", ?PLAINTEXT_OUT);
 htmlize(S1, NoFollow, _FileFormat) ->
