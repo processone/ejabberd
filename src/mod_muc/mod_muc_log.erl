@@ -977,9 +977,9 @@ htmlize(S1, FileFormat) ->
 %% The NoFollow parameter tell if the spam prevention should be applied to the link found
 %% true means 'apply nofollow on links'.
 htmlize(S0, _NoFollow, plaintext) ->
-    S1 = ejabberd_regexp:greplace(S0, <<"~">>, ?PLAINTEXT_CO),
-    S1x = ejabberd_regexp:replace(S1, <<"<">>, ?PLAINTEXT_IN),
-    ejabberd_regexp:replace(S1x, <<">">>, ?PLAINTEXT_OUT);
+    S1  = ejabberd_regexp:greplace(S0, <<"~">>, ?PLAINTEXT_CO),
+    S1x = ejabberd_regexp:greplace(S1, <<"<">>, ?PLAINTEXT_IN),
+    ejabberd_regexp:greplace(S1x, <<">">>, ?PLAINTEXT_OUT);
 htmlize(S1, NoFollow, _FileFormat) ->
     S2_list = str:tokens(S1, <<"\n">>),
     lists:foldl(fun (Si, Res) ->
