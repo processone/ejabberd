@@ -123,39 +123,19 @@ init([{SockMod, Socket}, Opts]) ->
 	       {value, {_, A}} -> A;
 	       _ -> all
 	     end,
-    {Hosts, Password} = case lists:keysearch(hosts, 1, Opts)
-			    of
+    {Hosts, Password, Shaper, CheckFrom} =
+	case lists:keysearch(hosts, 1, Opts) of
 			  {value, {_, Hs, HOpts}} ->
-			      case lists:keysearch(password, 1, HOpts) of
-				{value, {_, P}} -> {Hs, P};
-				_ ->
-				    % TODO: generate error
-				    false
-			      end;
+	       parse_opts(Hs, HOpts);
 			  _ ->
 			      case lists:keysearch(host, 1, Opts) of
 				{value, {_, H, HOpts}} ->
-				    case lists:keysearch(password, 1, HOpts) of
-				      {value, {_, P}} -> {[H], P};
-				      _ ->
-					  % TODO: generate error
-					  false
-				    end;
+	       parse_opts([H], HOpts);
 				_ ->
 				    % TODO: generate error
 				    false
 			      end
 			end,
-    Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
-	       {value, {_, S}} -> S;
-	       _ -> none
-	     end,
-    CheckFrom = case lists:keysearch(service_check_from, 1,
-				     Opts)
-		    of
-		  {value, {_, CF}} -> CF;
-		  _ -> true
-		end,
     SockMod:change_shaper(Socket, Shaper),
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,
@@ -373,6 +353,22 @@ print_state(State) -> State.
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
+
+parse_opts(Hosts, Opts) ->
+    Password = case lists:keysearch(password, 1, Opts) of
+		 {value, {_, P}} -> P;
+		 % TODO: generate error
+		 _ -> ""
+	     end,
+    Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
+		 {value, {_, S}} -> S;
+		 _ -> none
+	     end,
+    CheckFrom = case lists:keysearch(service_check_from, 1, Opts) of
+		 {value, {_, CF}} -> CF;
+		 _ -> true
+	     end,
+    {Hosts, Password, Shaper, CheckFrom}.
 
 send_text(StateData, Text) ->
     (StateData#state.sockmod):send(StateData#state.socket,
