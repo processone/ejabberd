@@ -4872,10 +4872,9 @@ transaction_retry(Host, Fun, Trans, Count) ->
 	  {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-odbc_conn({_U, Host, _R})->
-    Host;
-odbc_conn(Host) ->
-    lists:dropwhile(fun(A) -> A/=$. end, Host) -- ".".
+odbc_conn({_U, Host, _R})-> Host;
+odbc_conn(<<$., Host/binary>>) -> Host;
+odbc_conn(<<_, Host/binary>>) -> odbc_conn(Host).
 
 %% escape value for database storage
 escape({_U, _H, _R}=JID)->
