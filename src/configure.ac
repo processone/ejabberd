@@ -157,8 +157,8 @@ AC_CANONICAL_SYSTEM
 
 
 case "$target_os" in
-    *darwin10*)
-	echo "Target OS is 'Darwin10'"
+    *darwin*)
+	echo "Target OS is 'Darwin'"
 	AC_LANG(Erlang)
 	AC_RUN_IFELSE(
 	    [AC_LANG_PROGRAM([],[dnl

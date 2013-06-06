@@ -4984,8 +4984,8 @@ test -n "$target_alias" &&
 
 
 case "$target_os" in
-    *darwin10*)
-	echo "Target OS is 'Darwin10'"
+    *darwin*)
+	echo "Target OS is 'Darwin'"
 	ac_ext=erl
 ac_compile='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5'
 ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5 && echo "#!/bin/sh" > conftest$ac_exeext && $as_echo "\"$ERL\" -run conftest start -run init stop -noshell" >> conftest$ac_exeext && chmod +x conftest$ac_exeext'
