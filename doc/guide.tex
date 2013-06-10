@@ -818,7 +818,7 @@ The available modules, their purpose and the options allowed by each one are:
     Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component}
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts}, \texttt{max\_fsm\_queue},
-    \texttt{service\_check\_from}, \texttt{shaper}
+    \texttt{service\_check\_from}, \texttt{shaper\_rule}
   \titem{\texttt{ejabberd\_stun}}
     Handles STUN Binding requests as defined in
     \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}.\\
@@ -934,6 +934,9 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{\{shaper, none|ShaperName\}} \ind{options!shaper}This option defines a
     shaper for the port (see section~\ref{shapers}). The default value
     is \term{none}.
+  \titem{\{shaper\_rule, none|ShaperRule\}} \ind{options!shaperrule}This option defines a
+    shaper rule for the \term{ejabberd\_service} (see section~\ref{shapers}). The recommended value
+    is \term{fast}.
   \titem{starttls} \ind{options!starttls}\ind{STARTTLS}This option
     specifies that STARTTLS encryption is available on connections to the port.
     You should also set the \option{certfile} option.
