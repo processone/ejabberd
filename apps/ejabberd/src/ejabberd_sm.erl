@@ -97,13 +97,16 @@ open_session(SID, User, Server, Resource, Info) ->
                        [SID, JID, Info]).
 
 close_session(SID, User, Server, Resource) ->
-    Info = case ?SM_BACKEND:get_sessions(User, Server, Resource) of
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Server),
+    LResource = jlib:resourceprep(Resource),
+    Info = case ?SM_BACKEND:get_sessions(LUser, LServer, LResource) of
                [Session] ->
                    Session#session.info;
                _ ->
                    []
            end,
-    ?SM_BACKEND:delete_session(SID, User, Server, Resource),
+    ?SM_BACKEND:delete_session(SID, LUser, LServer, LResource),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
                        [SID, JID, Info]).
