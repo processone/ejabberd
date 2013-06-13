@@ -137,6 +137,18 @@ options() ->
 %% @doc Returns the node features
 -spec(features/0 :: () -> Features::[binary(),...]).
 features() ->
+    [<<"create-nodes">>, <<"auto-create">>,
+     <<"access-authorize">>, <<"delete-nodes">>,
+     <<"delete-items">>, <<"get-pending">>,
+     <<"instant-nodes">>, <<"manage-subscriptions">>,
+     <<"modify-affiliations">>, <<"multi-subscribe">>,
+     <<"outcast-affiliation">>, <<"persistent-items">>,
+     <<"publish">>, <<"purge-nodes">>, <<"retract-items">>,
+     <<"retrieve-affiliations">>, <<"retrieve-items">>,
+     <<"retrieve-subscriptions">>, <<"subscribe">>,
+     <<"subscription-notifications">>,
+     <<"subscription-options">>].
+
 %% @spec (Host, ServerHost, NodeId, ParentNodeId, Owner, Access) -> {result, Allowed}
 %%	 Host         = mod_pubsub:hostPubsub()
 %%	 ServerHost   = string()
@@ -157,18 +169,6 @@ features() ->
 %% module by implementing this function like this:
 %% ```check_create_user_permission(Host, ServerHost, NodeId, ParentNodeId, Owner, Access) ->
 %%	   node_default:check_create_user_permission(Host, ServerHost, NodeId, ParentNodeId, Owner, Access).'''</p>
-    [<<"create-nodes">>, <<"auto-create">>,
-     <<"access-authorize">>, <<"delete-nodes">>,
-     <<"delete-items">>, <<"get-pending">>,
-     <<"instant-nodes">>, <<"manage-subscriptions">>,
-     <<"modify-affiliations">>, <<"multi-subscribe">>,
-     <<"outcast-affiliation">>, <<"persistent-items">>,
-     <<"publish">>, <<"purge-nodes">>, <<"retract-items">>,
-     <<"retrieve-affiliations">>, <<"retrieve-items">>,
-     <<"retrieve-subscriptions">>, <<"subscribe">>,
-     <<"subscription-notifications">>,
-     <<"subscription-options">>].
-
 -spec(create_node_permission/6 ::
 (
   Host          :: mod_pubsub:host(),
@@ -1073,14 +1073,14 @@ get_state(NodeIdx, JID) ->
     -> ok
 ).
 set_state(State) when is_record(State, pubsub_state) ->
+    mnesia:write(State).
+%set_state(_) -> {error, ?ERR_INTERNAL_SERVER_ERROR}.
+
 %% @spec (NodeIdx, JID) -> ok | {error, Reason}
 %%	 NodeIdx = mod_pubsub:nodeIdx()
 %%	 JID     = mod_pubsub:jid()
 %%	 Reason  = mod_pubsub:stanzaError()
 %% @doc <p>Delete a state from database.</p>
-    mnesia:write(State).
-%set_state(_) -> {error, ?ERR_INTERNAL_SERVER_ERROR}.
-
 -spec(del_state/2 ::
 (
   NodeIdx :: mod_pubsub:nodeIdx(),
@@ -1251,14 +1251,14 @@ get_item(NodeIdx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup,
     -> ok
 ).
 set_item(Item) when is_record(Item, pubsub_item) ->
+    mnesia:write(Item).
+%set_item(_) -> {error, ?ERR_INTERNAL_SERVER_ERROR}.
+
 %% @spec (NodeIdx, ItemId) -> ok | {error, Reason}
 %%	 NodeIdx = mod_pubsub:nodeIdx()
 %%	 ItemId  = mod_pubsub:itemId()
 %%	 Reason  = mod_pubsub:stanzaError()
 %% @doc <p>Delete an item from database.</p>
-    mnesia:write(Item).
-%set_item(_) -> {error, ?ERR_INTERNAL_SERVER_ERROR}.
-
 -spec(del_item/2 ::
 (
   NodeIdx :: mod_pubsub:nodeIdx(),
@@ -1299,13 +1299,13 @@ node_to_path(Node) -> str:tokens((Node), <<"/">>).
 
 path_to_node([]) -> <<>>;
 path_to_node(Path) ->
+    iolist_to_binary(str:join([<<"">> | Path], <<"/">>)).
+
 %% @spec (Affiliation, Subscription) -> true | false
 %%       Affiliation = owner | member | publisher | outcast | none
 %%       Subscription = subscribed | none
 %% @doc Determines if the combination of Affiliation and Subscribed
 %% are allowed to get items from a node.
-    iolist_to_binary(str:join([<<"">> | Path], <<"/">>)).
-
 can_fetch_item(owner, _) -> true;
 can_fetch_item(member, _) -> true;
 can_fetch_item(publisher, _) -> true;

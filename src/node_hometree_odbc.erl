@@ -132,6 +132,18 @@ options() ->
 %% @doc Returns the node features
 -spec(features/0 :: () -> Features::[Feature::binary(),...]).
 features() ->
+    [<<"create-nodes">>, <<"auto-create">>,
+     <<"access-authorize">>, <<"delete-nodes">>,
+     <<"delete-items">>, <<"get-pending">>,
+     <<"instant-nodes">>, <<"manage-subscriptions">>,
+     <<"modify-affiliations">>, <<"multi-subscribe">>,
+     <<"outcast-affiliation">>, <<"persistent-items">>,
+     <<"publish">>, <<"purge-nodes">>, <<"retract-items">>,
+     <<"retrieve-affiliations">>, <<"retrieve-items">>,
+     <<"retrieve-subscriptions">>, <<"subscribe">>,
+     <<"subscription-notifications">>,
+     <<"subscription-options">>, <<"rsm">>].
+
 %% @spec (Host, ServerHost, Node, ParentNode, Owner, Access) -> bool()
 %%	 Host = mod_pubsub:host()
 %%	 ServerHost = mod_pubsub:host()
@@ -151,18 +163,6 @@ features() ->
 %% module by implementing this function like this:
 %% ```check_create_user_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
 %%	   node_default:check_create_user_permission(Host, ServerHost, Node, ParentNode, Owner, Access).'''</p>
-    [<<"create-nodes">>, <<"auto-create">>,
-     <<"access-authorize">>, <<"delete-nodes">>,
-     <<"delete-items">>, <<"get-pending">>,
-     <<"instant-nodes">>, <<"manage-subscriptions">>,
-     <<"modify-affiliations">>, <<"multi-subscribe">>,
-     <<"outcast-affiliation">>, <<"persistent-items">>,
-     <<"publish">>, <<"purge-nodes">>, <<"retract-items">>,
-     <<"retrieve-affiliations">>, <<"retrieve-items">>,
-     <<"retrieve-subscriptions">>, <<"subscribe">>,
-     <<"subscription-notifications">>,
-     <<"subscription-options">>, <<"rsm">>].
-
 -spec(create_node_permission/6 ::
 (
   Host        :: mod_pubsub:host(),
@@ -1503,8 +1503,6 @@ del_item(NodeId, ItemId) ->
 del_items(_, []) -> ok;
 del_items(NodeId, [ItemId]) -> del_item(NodeId, ItemId);
 del_items(NodeId, ItemIds) ->
-%% @doc <p>Return the name of the node if known: Default is to return
-%% node id.</p>
     I = str:join([[<<"'">>, (?PUBSUB):escape(X), <<"'">>]
 		  || X <- ItemIds],
 		 <<",">>),
@@ -1519,13 +1517,13 @@ node_to_path(Node) -> str:tokens((Node), <<"/">>).
 
 path_to_node([]) -> <<>>;
 path_to_node(Path) ->
+    iolist_to_binary(str:join([<<"">> | Path], <<"/">>)).
+
 %% @spec (Affiliation, Subscription) -> true | false
 %%       Affiliation = owner | member | publisher | outcast | none
 %%       Subscription = subscribed | none
 %% @doc Determines if the combination of Affiliation and Subscribed
 %% are allowed to get items from a node.
-    iolist_to_binary(str:join([<<"">> | Path], <<"/">>)).
-
 can_fetch_item(owner, _) -> true;
 can_fetch_item(member, _) -> true;
 can_fetch_item(publisher, _) -> true;
