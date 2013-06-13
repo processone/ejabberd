@@ -1,44 +1,47 @@
 -record(last, {seconds, text}).
 
--record(version, {name, version, os}).
-
--record(roster, {item = [], ver}).
+-record(version,
+	{version_name, version_ver, version_os}).
 
 -record(roster_item,
 	{jid, name, groups = [], subscription = none, ask}).
 
+-record(roster, {item = [], ver}).
+
 -record(privacy_item,
 	{order, action, type, value, stanza}).
 
--record(privacy, {list = [], default, active}).
+-record(privacy_list, {name, items = []}).
 
--record(privacy_list, {name, privacy_item = []}).
+-record(privacy, {lists = [], default, active}).
 
--record(block, {block_item = []}).
+-record(block, {items = []}).
 
--record(unblock, {block_item = []}).
+-record(unblock, {items = []}).
 
 -record(block_list, {}).
+
+-record(identity, {category, type, name}).
 
 -record(disco_info,
 	{node, identity = [], feature = [], xdata = []}).
 
--record(disco_items, {node, items = []}).
-
 -record(disco_item, {jid, name, node}).
+
+-record(disco_items, {node, items = []}).
 
 -record(private, {sub_els = []}).
 
 -record(bookmark_conference,
 	{name, jid, autojoin = false, nick, password}).
 
--record(bookmark_storage, {conference = [], url = []}).
-
 -record(bookmark_url, {name, url}).
 
--record(stats, {stat = []}).
+-record(bookmark_storage, {conference = [], url = []}).
 
 -record(stat, {name, units, value, error = []}).
+
+-record(stats, {stat = []}).
 
 -record(iq,
 	{id, type, lang, from, to, error, sub_els = []}).
@@ -51,27 +54,27 @@
 	{id, type, lang, from, to, show, status = [], priority,
 	 error, sub_els = []}).
 
--record(error, {error_type, by, reason, text}).
+-record(gone, {uri}).
 
--record(redirect, {cdata}).
+-record(redirect, {uri}).
 
--record(gone, {cdata}).
+-record(error, {type, by, reason, text}).
 
 -record(bind, {jid, resource}).
 
--record(sasl_auth, {mechanism, cdata}).
+-record(sasl_auth, {mechanism, text}).
 
 -record(sasl_abort, {}).
 
--record(sasl_challenge, {cdata}).
+-record(sasl_challenge, {text}).
 
--record(sasl_response, {cdata}).
+-record(sasl_response, {text}).
 
--record(sasl_success, {cdata}).
+-record(sasl_success, {text}).
 
--record(sasl_failure, {reason, text}).
+-record(sasl_failure, {reason, text = []}).
 
--record(sasl_mechanisms, {mechanism = []}).
+-record(sasl_mechanisms, {list = []}).
 
 -record(starttls, {required = false}).
 
@@ -89,7 +92,7 @@
 
 -record(caps, {hash, node, ver}).
 
--record(register, {}).
+-record(register_feature, {}).
 
 -record(session, {}).
 
@@ -97,9 +100,9 @@
 
 -record(time, {tzo, utc}).
 
--record(stream_error, {reason, text}).
+-record('see-other-host', {host}).
 
--record('see-other-host', {cdata}).
+-record(stream_error, {reason, text}).
 
 -record(vcard_name,
 	{family, given, middle, prefix, suffix}).
@@ -136,14 +139,16 @@
 
 -record(vcard_key, {type, cred}).
 
+-record(vcard_agent, {vcard, extval}).
+
 -record(vcard,
 	{version, fn, n, nickname, photo, bday, adr = [],
 	 label = [], tel = [], email = [], jabberid, mailer, tz,
 	 geo, title, role, logo, org, categories = [], note,
-	 prodid, rev, 'sort-string', sound, uid, url, class, key,
-	 desc}).
+	 prodid, agent, rev, sort_string, sound, uid, url, class,
+	 key, desc}).
 
--record(xfield,
+-record(xdata_field,
 	{label, type, var, required = false, desc, values = [],
 	 options = []}).
 
@@ -158,7 +163,12 @@
 -record(pubsub_item, {id, sub_els = []}).
 
 -record(pubsub_items,
-	{node, max_items, subid, item = []}).
+	{node, max_items, subid, items = []}).
+
+-record(pubsub_event_item, {id, node, publisher}).
+
+-record(pubsub_event_items,
+	{node, retract = [], items = []}).
 
 -record(pubsub_event, {items = []}).
 

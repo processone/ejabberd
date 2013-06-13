@@ -11,6 +11,7 @@
 -compile(export_all).
 
 -include_lib("common_test/include/ct.hrl").
+-include("xml.hrl").
 -include("ns.hrl").
 -include("ejabberd.hrl").
 -include("xmpp_codec.hrl").
@@ -82,7 +83,7 @@ end_per_testcase(_TestCase, _Config) ->
 groups() ->
     [].
 
-%%all() -> [start_ejabberd, pubsub].
+%%all() -> [start_ejabberd, vcard].
 
 all() ->
     [start_ejabberd,
@@ -134,7 +135,7 @@ connect(Config) ->
     <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
     #stream_features{sub_els = Fs} = recv(),
     Mechs = lists:flatmap(
-              fun(#sasl_mechanisms{mechanism = Ms}) ->
+              fun(#sasl_mechanisms{list = Ms}) ->
                       Ms;
                  (_) ->
                       []
@@ -279,20 +280,20 @@ privacy(Config) ->
     I2 = send(Config,
               #iq{type = set,
                   sub_els = [#privacy{
-                                list = [#privacy_list{
-                                           name = <<"public">>,
-                                           privacy_item =
-                                               [#privacy_item{
-                                                   type = jid,
-                                                   order = 3,
-                                                   action = deny,
-                                                   stanza = 'presence-in',
-                                                   value = JID}]}]}]}),
+                                lists = [#privacy_list{
+                                            name = <<"public">>,
+                                            items =
+                                                [#privacy_item{
+                                                    type = jid,
+                                                    order = 3,
+                                                    action = deny,
+                                                    stanza = 'presence-in',
+                                                    value = JID}]}]}]}),
     #iq{type = result, id = I2, sub_els = []} = recv(),
     _Push1 = #iq{type = set, id = PushI1,
                    sub_els = [#privacy{
-                                 list = [#privacy_list{
-                                            name = <<"public">>}]}]} = recv(),
+                                 lists = [#privacy_list{
+                                             name = <<"public">>}]}]} = recv(),
     %% BUG: ejabberd replies on this result
     %% TODO: this should be fixed in ejabberd
     %% _ = send(Config, Push1#iq{type = result, sub_els = []}),
@@ -306,7 +307,7 @@ privacy(Config) ->
     #iq{type = result, id = I5,
         sub_els = [#privacy{default = <<"public">>,
                             active = <<"public">>,
-                            list = [#privacy_list{name = <<"public">>}]}]} = recv(),
+                            lists = [#privacy_list{name = <<"public">>}]}]} = recv(),
     I6 = send(Config,
               #iq{type = set, sub_els = [#privacy{default = none}]}),
     #iq{type = result, id = I6, sub_els = []} = recv(),
@@ -314,7 +315,7 @@ privacy(Config) ->
     #iq{type = result, id = I7, sub_els = []} = recv(),
     I8 = send(Config, #iq{type = set,
                           sub_els = [#privacy{
-                                        list =
+                                        lists =
                                             [#privacy_list{
                                                 name = <<"public">>}]}]}),
     #iq{type = result, id = I8, sub_els = []} = recv(),
@@ -323,8 +324,8 @@ privacy(Config) ->
     %% TODO: this should be fixed in ejabberd
     _Push2 = #iq{type = set, id = PushI2,
                    sub_els = [#privacy{
-                                 list = [#privacy_list{
-                                            name = <<"public">>}]}]} = recv(),
+                                 lists = [#privacy_list{
+                                             name = <<"public">>}]}]} = recv(),
     disconnect(Config).
 
 blocking(Config) ->
@@ -333,19 +334,19 @@ blocking(Config) ->
     I1 = send(Config, #iq{type = get, sub_els = [#block_list{}]}),
     #iq{type = result, id = I1, sub_els = [#block_list{}]} = recv(),
     I2 = send(Config, #iq{type = set,
-                          sub_els = [#block{block_item = [JID]}]}),
+                          sub_els = [#block{items = [JID]}]}),
     #iq{type = result, id = I2, sub_els = []} = recv(),
     #iq{type = set, id = _,
-          sub_els = [#privacy{list = [#privacy_list{}]}]} = recv(),
+          sub_els = [#privacy{lists = [#privacy_list{}]}]} = recv(),
     #iq{type = set, id = _,
-          sub_els = [#block{block_item = [JID]}]} = recv(),
+          sub_els = [#block{items = [JID]}]} = recv(),
     I3 = send(Config, #iq{type = set,
-                          sub_els = [#unblock{block_item = [JID]}]}),
+                          sub_els = [#unblock{items = [JID]}]}),
     #iq{type = result, id = I3, sub_els = []} = recv(),
     #iq{type = set, id = _,
-        sub_els = [#privacy{list = [#privacy_list{}]}]} = recv(),
+        sub_els = [#privacy{lists = [#privacy_list{}]}]} = recv(),
     #iq{type = set, id = _,
-        sub_els = [#unblock{block_item = [JID]}]} = recv(),
+        sub_els = [#unblock{items = [JID]}]} = recv(),
     disconnect(Config).
 
 vcard(Config) ->
@@ -403,20 +404,6 @@ stats(Config) ->
 
 pubsub(Config) ->
     true = is_feature_advertised(Config, ?NS_PUBSUB),
-    %% Get subscriptions
-    %% true = is_feature_advertised(Config, ?PUBSUB("retrieve-subscriptions")),
-    %% I1 = send(Config, #iq{type = get, to = pubsub_jid(Config),
-    %%                       sub_els = [#pubsub{subscriptions = {none, []}}]}),
-    %% #iq{type = result, id = I1,
-    %%     sub_els = [#pubsub{subscriptions = {none, []}}]} = recv(),
-    %% %% Get affiliations
-    %% true = is_feature_advertised(Config, ?PUBSUB("retrieve-affiliations")),
-    %% I2 = send(Config, #iq{type = get, to = pubsub_jid(Config),
-    %%                       sub_els = [#pubsub{affiliations = []}]}),
-    %% #iq{type = result, id = I2,
-    %%     sub_els = [#pubsub{affiliations = []}]} = recv(),
-
-    true = is_feature_advertised(Config, ?NS_PUBSUB),
     %% Publish <presence/> element within node "presence"
     ItemID = randoms:get_string(),
     Node = <<"presence">>,
@@ -433,6 +420,23 @@ pubsub(Config) ->
                   sub_els = [#pubsub{subscribe = {Node, my_jid(Config)}}]}),
     #message{sub_els = [#pubsub_event{}, #delay{}]} = recv(),
     #iq{type = result, id = I2} = recv(),
+    %% Get subscriptions
+    true = is_feature_advertised(Config, ?PUBSUB("retrieve-subscriptions")),
+    I3 = send(Config, #iq{type = get, to = pubsub_jid(Config),
+                          sub_els = [#pubsub{subscriptions = {none, []}}]}),
+    #iq{type = result, id = I3,
+        sub_els =
+            [#pubsub{subscriptions =
+                         {none, [#pubsub_subscription{node = Node}]}}]} = recv(),
+    %% Get affiliations
+    true = is_feature_advertised(Config, ?PUBSUB("retrieve-affiliations")),
+    I4 = send(Config, #iq{type = get, to = pubsub_jid(Config),
+                          sub_els = [#pubsub{affiliations = []}]}),
+    #iq{type = result, id = I4,
+        sub_els = [#pubsub{
+                      affiliations =
+                          [#pubsub_affiliation{node = Node, type = owner}]}]}
+        = recv(),
     disconnect(Config).
 
 auth_md5(Config) ->
@@ -460,7 +464,7 @@ auth_SASL(Mech, Config) ->
                                 ?config(user, Config),
                                 ?config(server, Config),
                                 ?config(password, Config)),
-    send(Config, #sasl_auth{mechanism = Mech, cdata = Response}),
+    send(Config, #sasl_auth{mechanism = Mech, text = Response}),
     wait_auth_SASL_result([{sasl, SASL}|Config]).
 
 wait_auth_SASL_result(Config) ->
@@ -475,9 +479,9 @@ wait_auth_SASL_result(Config) ->
             <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
             #stream_features{} = recv(),
             Config;
-        #sasl_challenge{cdata = ClientIn} ->
+        #sasl_challenge{text = ClientIn} ->
             {Response, SASL} = (?config(sasl, Config))(ClientIn),
-            send(Config, #sasl_response{cdata = Response}),
+            send(Config, #sasl_response{text = Response}),
             Config1 = proplists:delete(sasl, Config),
             wait_auth_SASL_result([{sasl, SASL}|Config1]);
         #sasl_failure{} ->
@@ -498,10 +502,23 @@ recv() ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
             ct:log("recv: ~p", [El]),
-            xmpp_codec:decode(El);
+            xmpp_codec:decode(fix_ns(El));
         {'$gen_event', Event} ->
             Event
     end.
+
+fix_ns(#xmlel{name = Tag, attrs = Attrs} = El)
+  when Tag == <<"stream:features">>; Tag == <<"stream:error">> ->
+    NewAttrs = [{<<"xmlns">>, <<"http://etherx.jabber.org/streams">>}
+                |lists:keydelete(<<"xmlns">>, 1, Attrs)],
+    El#xmlel{attrs = NewAttrs};
+fix_ns(#xmlel{name = Tag, attrs = Attrs} = El)
+  when Tag == <<"message">>; Tag == <<"iq">>; Tag == <<"presence">> ->
+    NewAttrs = [{<<"xmlns">>, <<"jabber:client">>}
+                |lists:keydelete(<<"xmlns">>, 1, Attrs)],
+    El#xmlel{attrs = NewAttrs};
+fix_ns(El) ->
+    El.
 
 send_text(Config, Text) ->
     ejabberd_socket:send(?config(socket, Config), Text).
