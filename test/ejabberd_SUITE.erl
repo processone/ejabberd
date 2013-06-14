@@ -43,24 +43,23 @@ init_per_suite(Config) ->
     application:set_env(ejabberd, log_path, LogPath),
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
     application:set_env(mnesia, dir, MnesiaDir),
+    ok = application:start(ejabberd),
     [{server, <<"localhost">>},
      {port, 5222},
-     {user, <<"test_suite">>},
-     {password, <<"pass">>},
-     {certfile, CertFile}
+     {certfile, CertFile},
+     {password, <<"password">>}
      |Config].
 
 end_per_suite(_Config) ->
     ok.
 
-init_per_group(_GroupName, Config) ->
-    Config.
+init_per_group(GroupName, Config) ->
+    User = list_to_binary(atom_to_list(GroupName)),
+    set_opt(user, User, Config).
 
 end_per_group(_GroupName, _Config) ->
     ok.
 
-init_per_testcase(start_ejabberd, Config) ->
-    Config;
 init_per_testcase(TestCase, OrigConfig) ->
     Resource = list_to_binary(atom_to_list(TestCase)),
     Config = set_opt(resource, Resource, OrigConfig),
@@ -83,6 +82,9 @@ init_per_testcase(TestCase, OrigConfig) ->
             auth(connect(Config));
         test_open_session ->
             bind(auth(connect(Config)));
+        stop_ejabberd ->
+            Config1 = set_opt(user, <<"stop_ejabberd">>, Config),
+            open_session(bind(auth(register(connect(Config1)))));
         _ ->
             open_session(bind(auth(connect(Config))))
     end.
@@ -91,39 +93,32 @@ end_per_testcase(_TestCase, _Config) ->
     ok.
 
 groups() ->
-    [].
-
-%%all() -> [start_ejabberd, test_zlib].
+    [{single_user, [sequence],
+      [test_connect,
+       test_starttls,
+       test_zlib,
+       test_register,
+       auth_plain,
+       auth_md5,
+       test_auth,
+       test_bind,
+       test_open_session,
+       roster_get,
+       presence_broadcast,
+       ping,
+       version,
+       time,
+       stats,
+       disco,
+       last,
+       private,
+       privacy,
+       blocking,
+       vcard,
+       pubsub]}].
 
 all() ->
-    [start_ejabberd,
-     test_connect,
-     test_starttls,
-     test_zlib,
-     test_register,
-     auth_plain,
-     auth_md5,
-     test_auth,
-     test_bind,
-     test_open_session,
-     roster_get,
-     presence_broadcast,
-     ping,
-     version,
-     time,
-     stats,
-     disco,
-     last,
-     private,
-     privacy,
-     blocking,
-     vcard,
-     pubsub,
-     stop_ejabberd].
-
-start_ejabberd(Config) ->
-    ok = application:start(ejabberd),
-    Config.
+    [{group, single_user}, stop_ejabberd].
 
 stop_ejabberd(Config) ->
     ok = application:stop(ejabberd),
@@ -175,7 +170,7 @@ disconnect(Config) ->
 test_starttls(Config) ->
     case ?config(starttls, Config) of
         true ->
-            starttls(Config);
+            disconnect(starttls(Config));
         _ ->
             {skipped, 'starttls_not_available'}
     end.
@@ -187,14 +182,14 @@ starttls(Config) ->
                   ?config(socket, Config),
                   [{certfile, ?config(certfile, Config)},
                    connect]),
-    disconnect(init_stream(set_opt(socket, TLSSocket, Config))).
+    init_stream(set_opt(socket, TLSSocket, Config)).
 
 test_zlib(Config) ->
     case ?config(compression, Config) of
         [_|_] = Ms ->
             case lists:member(<<"zlib">>, Ms) of
                 true ->
-                    zlib(Config);
+                    disconnect(zlib(Config));
                 false ->
                     {skipped, 'zlib_not_available'}
             end;
@@ -206,12 +201,12 @@ zlib(Config) ->
     _ = send(Config, #compress{methods = [<<"zlib">>]}),
     #compressed{} = recv(),
     ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
-    disconnect(init_stream(set_opt(socket, ZlibSocket, Config))).
+    init_stream(set_opt(socket, ZlibSocket, Config)).
 
 test_register(Config) ->
     case ?config(register, Config) of
         true ->
-            register(Config);
+            disconnect(register(Config));
         _ ->
             {skipped, 'registration_not_available'}
     end.
@@ -231,7 +226,7 @@ register(Config) ->
     %% TODO: fix in ejabberd
     %% #iq{type = result, id = I2, sub_els = []} = recv(),
     #iq{type = result, id = I2, sub_els = [#register{}]} = recv(),
-    disconnect(Config).
+    Config.
 
 test_auth(Config) ->
     disconnect(auth(Config)).
@@ -587,7 +582,7 @@ re_register(Config) ->
 recv() ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
-            ct:log("recv: ~p", [El]),
+            ct:pal("recv: ~p", [El]),
             xmpp_codec:decode(fix_ns(El));
         {'$gen_event', Event} ->
             Event
@@ -624,7 +619,7 @@ send(State, Pkt) ->
                               {undefined, Pkt}
                       end,
     El = xmpp_codec:encode(NewPkt),
-    ct:log("sent: ~p", [El]),
+    ct:pal("sent: ~p", [El]),
     ok = send_text(State, xml:element_to_binary(El)),
     NewID.
 

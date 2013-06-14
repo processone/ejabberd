@@ -251,7 +251,7 @@ dialyzer: plt
 	--get_warnings -o dialyzer.log ebin
 
 test:
-	$(REBAR) skip_deps=true ct
+	$(REBAR) -v skip_deps=true ct
 
 .PHONY: src doc edoc dialyzer Makefile TAGS clean clean-rel distclean rel plt \
 	install uninstall uninstall-binary uninstall-all translations deps test spec
