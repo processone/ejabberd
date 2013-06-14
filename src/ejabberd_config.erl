@@ -410,20 +410,22 @@ process_term(Term, State) ->
 	{s2s_use_starttls, Port} ->
 	    add_option(s2s_use_starttls, Port, State);
 	{s2s_certfile, CertFile} ->
-	    case ejabberd_config:is_file_readable(CertFile) of
+            CertFileS = binary_to_list(CertFile),
+	    case ejabberd_config:is_file_readable(CertFileS) of
 		true -> add_option(s2s_certfile, CertFile, State);
 		false ->
 		    ErrorText = "There is a problem in the configuration: "
 			"the specified file is not readable: ",
-		    throw({error, ErrorText ++ CertFile})
+		    throw({error, ErrorText ++ CertFileS})
 	    end;
 	{domain_certfile, Domain, CertFile} ->
-	    case ejabberd_config:is_file_readable(CertFile) of
+            CertFileS = binary_to_list(CertFile),
+	    case ejabberd_config:is_file_readable(CertFileS) of
 		true -> add_option({domain_certfile, Domain}, CertFile, State);
 		false ->
 		    ErrorText = "There is a problem in the configuration: "
 			"the specified file is not readable: ",
-		    throw({error, ErrorText ++ CertFile})
+		    throw({error, ErrorText ++ CertFileS})
 	    end;
 	{node_type, NodeType} ->
 	    add_option(node_type, NodeType, State);

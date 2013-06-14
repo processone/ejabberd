@@ -491,9 +491,10 @@ certfile_readable(Opts) ->
     case proplists:lookup(certfile, Opts) of
 	none -> true;
 	{certfile, Path} ->
-	    case ejabberd_config:is_file_readable(Path) of
+            PathS = binary_to_list(Path),
+	    case ejabberd_config:is_file_readable(PathS) of
 		true -> true;
-		false -> {false, Path}
+		false -> {false, PathS}
 	    end
     end.
 
