@@ -36,6 +36,7 @@ init_per_suite(Config) ->
     LogPath = filename:join([PrivDir, "ejabberd.log"]),
     SASLPath = filename:join([PrivDir, "sasl.log"]),
     MnesiaDir = filename:join([PrivDir, "mnesia"]),
+    CertFile = filename:join([DataDir, "cert.pem"]),
     application:set_env(ejabberd, config, ConfigPath),
     application:set_env(ejabberd, log_path, LogPath),
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
@@ -43,7 +44,8 @@ init_per_suite(Config) ->
     [{server, <<"localhost">>},
      {port, 5222},
      {user, <<"test_suite">>},
-     {password, <<"pass">>}
+     {password, <<"pass">>},
+     {certfile, CertFile}
      |Config].
 
 end_per_suite(_Config) ->
@@ -65,7 +67,9 @@ init_per_testcase(TestCase, OrigConfig) ->
             Config;
         test_auth ->
             connect(Config);
-        register ->
+        test_starttls ->
+            connect(Config);
+        test_register ->
             connect(Config);
         auth_md5 ->
             connect(Config);
@@ -85,12 +89,13 @@ end_per_testcase(_TestCase, _Config) ->
 groups() ->
     [].
 
-%%all() -> [start_ejabberd, register].
+%%all() -> [start_ejabberd, test_starttls].
 
 all() ->
     [start_ejabberd,
      test_connect,
-     register,
+     test_starttls,
+     test_register,
      auth_plain,
      auth_md5,
      test_auth,
@@ -129,9 +134,11 @@ connect(Config) ->
                    binary_to_list(?config(server, Config)),
                    ?config(port, Config),
                    [binary, {packet, 0}, {active, false}]),
-    Config1 = [{socket, Sock}|Config],
-    ok = send_text(Config1, io_lib:format(?STREAM_HEADER,
-                                          [?config(server, Config1)])),
+    init_stream([{socket, Sock}|Config]).
+
+init_stream(Config) ->
+    ok = send_text(Config, io_lib:format(?STREAM_HEADER,
+                                          [?config(server, Config)])),
     {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
     <<"jabber:client">> = xml:get_attr_s(<<"xmlns">>, Attrs),
     <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
@@ -142,13 +149,15 @@ connect(Config) ->
                  (_) ->
                       []
               end, Fs),
-    Feats = lists:flatmap(
-              fun(#feature_register{}) ->
-                      [{register, true}];
-                 (_) ->
-                      []
-              end, Fs),
-    [{mechs, Mechs}|Feats ++ Config1].
+    Feats = lists:foldl(
+              fun(#feature_register{}, Acc) ->
+                      [{register, true}|Acc];
+                 (#starttls{}, Acc) ->
+                      [{starttls, true}|Acc];
+                 (_, Acc) ->
+                      Acc
+              end, [], Fs),
+    [{mechs, Mechs}|Feats ++ Config].
 
 disconnect(Config) ->
     Socket = ?config(socket, Config),
@@ -157,15 +166,33 @@ disconnect(Config) ->
     ejabberd_socket:close(Socket),
     Config.
 
-register(Config) ->
-    case ?config(register, Config) of
-        false ->
-            {skipped, 'registration_not_available'};
+test_starttls(Config) ->
+    case ?config(starttls, Config) of
         true ->
-            try_register(Config)
+            starttls(Config);
+        _ ->
+            {skipped, 'starttls_not_available'}
     end.
 
-try_register(Config) ->
+starttls(Config) ->
+    _ = send(Config, #starttls{}),
+    #starttls_proceed{} = recv(),
+    TLSSocket = ejabberd_socket:starttls(
+                  ?config(socket, Config),
+                  [{certfile, ?config(certfile, Config)},
+                   connect]),
+    NewConfig = [{socket, TLSSocket}|lists:keydelete(socket, 1, Config)],
+    disconnect(init_stream(NewConfig)).
+
+test_register(Config) ->
+    case ?config(register, Config) of
+        true ->
+            register(Config);
+        _ ->
+            {skipped, 'registration_not_available'}
+    end.
+
+register(Config) ->
     I1 = send(Config,
               #iq{type = get, to = server_jid(Config),
                   sub_els = [#register{}]}),
