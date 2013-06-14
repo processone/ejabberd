@@ -1,3 +1,7 @@
+%% Created automatically by XML generator (xml_gen.erl)
+%% Source: xmpp_codec.spec
+%% Date: Fri, 14 Jun 2013 08:43:04 GMT
+
 -record(last, {seconds, text}).
 
 -record(version,
@@ -92,7 +96,12 @@
 
 -record(caps, {hash, node, ver}).
 
--record(register_feature, {}).
+-record(feature_register, {}).
+
+-record(register,
+	{registered = false, instructions, username, nick,
+	 password, name, first, last, email, address, city,
+	 state, zip, phone, url, date, misc, text, key}).
 
 -record(session, {}).
 
@@ -176,3 +185,5 @@
 	{subscriptions, affiliations, publish, subscribe}).
 
 -record(delay, {stamp, from}).
+
+-record(legacy_delay, {stamp, from}).

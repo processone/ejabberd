@@ -1,9 +1,15 @@
+%% Created automatically by XML generator (xml_gen.erl)
+%% Source: xmpp_codec.spec
+%% Date: Fri, 14 Jun 2013 08:43:04 GMT
+
 -module(xmpp_codec).
 
 -export([decode/1, encode/1]).
 
 decode({xmlel, _name, _attrs, _} = _el) ->
     case {_name, xml:get_attr_s(<<"xmlns">>, _attrs)} of
+      {<<"x">>, <<"jabber:x:delay">>} ->
+	  decode_legacy_delay(_el);
       {<<"delay">>, <<"urn:xmpp:delay">>} ->
 	  decode_delay(_el);
       {<<"pubsub">>,
@@ -290,9 +296,49 @@ decode({xmlel, _name, _attrs, _} = _el) ->
       {<<"session">>,
        <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
 	  decode_session(_el);
+      {<<"query">>, <<"jabber:iq:register">>} ->
+	  decode_register(_el);
+      {<<"key">>, <<"jabber:iq:register">>} ->
+	  decode_register_key(_el);
+      {<<"text">>, <<"jabber:iq:register">>} ->
+	  decode_register_text(_el);
+      {<<"misc">>, <<"jabber:iq:register">>} ->
+	  decode_register_misc(_el);
+      {<<"date">>, <<"jabber:iq:register">>} ->
+	  decode_register_date(_el);
+      {<<"url">>, <<"jabber:iq:register">>} ->
+	  decode_register_url(_el);
+      {<<"phone">>, <<"jabber:iq:register">>} ->
+	  decode_register_phone(_el);
+      {<<"zip">>, <<"jabber:iq:register">>} ->
+	  decode_register_zip(_el);
+      {<<"state">>, <<"jabber:iq:register">>} ->
+	  decode_register_state(_el);
+      {<<"city">>, <<"jabber:iq:register">>} ->
+	  decode_register_city(_el);
+      {<<"address">>, <<"jabber:iq:register">>} ->
+	  decode_register_address(_el);
+      {<<"email">>, <<"jabber:iq:register">>} ->
+	  decode_register_email(_el);
+      {<<"last">>, <<"jabber:iq:register">>} ->
+	  decode_register_last(_el);
+      {<<"first">>, <<"jabber:iq:register">>} ->
+	  decode_register_first(_el);
+      {<<"name">>, <<"jabber:iq:register">>} ->
+	  decode_register_name(_el);
+      {<<"password">>, <<"jabber:iq:register">>} ->
+	  decode_register_password(_el);
+      {<<"nick">>, <<"jabber:iq:register">>} ->
+	  decode_register_nick(_el);
+      {<<"username">>, <<"jabber:iq:register">>} ->
+	  decode_register_username(_el);
+      {<<"instructions">>, <<"jabber:iq:register">>} ->
+	  decode_register_instructions(_el);
+      {<<"registered">>, <<"jabber:iq:register">>} ->
+	  decode_register_registered(_el);
       {<<"register">>,
        <<"http://jabber.org/features/iq-register">>} ->
-	  decode_register_feature(_el);
+	  decode_feature_register(_el);
       {<<"c">>, <<"http://jabber.org/protocol/caps">>} ->
 	  decode_caps(_el);
       {<<"ack">>, <<"p1:ack">>} -> decode_p1_ack(_el);
@@ -543,6 +589,9 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 	  erlang:error({unknown_tag, _name, _xmlns})
     end.
 
+encode({legacy_delay, _, _} = X) ->
+    encode_legacy_delay(X,
+			[{<<"xmlns">>, <<"jabber:x:delay">>}]);
 encode({delay, _, _} = Delay) ->
     encode_delay(Delay,
 		 [{<<"xmlns">>, <<"urn:xmpp:delay">>}]);
@@ -643,8 +692,13 @@ encode({session} = Session) ->
     encode_session(Session,
 		   [{<<"xmlns">>,
 		     <<"urn:ietf:params:xml:ns:xmpp-session">>}]);
-encode({register_feature} = Register) ->
-    encode_register_feature(Register,
+encode({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _, _, _, _, _} =
+	   Query) ->
+    encode_register(Query,
+		    [{<<"xmlns">>, <<"jabber:iq:register">>}]);
+encode({feature_register} = Register) ->
+    encode_feature_register(Register,
 			    [{<<"xmlns">>,
 			      <<"http://jabber.org/features/iq-register">>}]);
 encode({caps, _, _, _} = C) ->
@@ -4683,15 +4737,966 @@ encode_caps_attr_ver(undefined, _acc) -> _acc;
 encode_caps_attr_ver(_val, _acc) ->
     [{<<"ver">>, base64:encode(_val)} | _acc].
 
-decode_register_feature({xmlel, <<"register">>, _attrs,
+decode_feature_register({xmlel, <<"register">>, _attrs,
 			 _els}) ->
-    {register_feature}.
+    {feature_register}.
 
-encode_register_feature({register_feature},
+encode_feature_register({feature_register},
 			_xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"register">>, _attrs, _els}.
+
+decode_register_registered({xmlel, <<"registered">>,
+			    _attrs, _els}) ->
+    true.
+
+encode_register_registered(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"registered">>, _attrs, _els}.
+
+decode_register_instructions({xmlel, <<"instructions">>,
+			      _attrs, _els}) ->
+    Cdata = decode_register_instructions_els(_els, <<>>),
+    Cdata.
+
+decode_register_instructions_els([], Cdata) ->
+    decode_register_instructions_cdata(Cdata);
+decode_register_instructions_els([{xmlcdata, _data}
+				  | _els],
+				 Cdata) ->
+    decode_register_instructions_els(_els,
+				     <<Cdata/binary, _data/binary>>);
+decode_register_instructions_els([_ | _els], Cdata) ->
+    decode_register_instructions_els(_els, Cdata).
+
+encode_register_instructions(Cdata, _xmlns_attrs) ->
+    _els = encode_register_instructions_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"instructions">>, _attrs, _els}.
+
+decode_register_instructions_cdata(<<>>) -> undefined;
+decode_register_instructions_cdata(_val) -> _val.
+
+encode_register_instructions_cdata(undefined, _acc) ->
+    _acc;
+encode_register_instructions_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_username({xmlel, <<"username">>, _attrs,
+			  _els}) ->
+    Cdata = decode_register_username_els(_els, <<>>), Cdata.
+
+decode_register_username_els([], Cdata) ->
+    decode_register_username_cdata(Cdata);
+decode_register_username_els([{xmlcdata, _data} | _els],
+			     Cdata) ->
+    decode_register_username_els(_els,
+				 <<Cdata/binary, _data/binary>>);
+decode_register_username_els([_ | _els], Cdata) ->
+    decode_register_username_els(_els, Cdata).
+
+encode_register_username(Cdata, _xmlns_attrs) ->
+    _els = encode_register_username_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"username">>, _attrs, _els}.
+
+decode_register_username_cdata(<<>>) -> none;
+decode_register_username_cdata(_val) -> _val.
+
+encode_register_username_cdata(none, _acc) -> _acc;
+encode_register_username_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_nick({xmlel, <<"nick">>, _attrs,
+		      _els}) ->
+    Cdata = decode_register_nick_els(_els, <<>>), Cdata.
+
+decode_register_nick_els([], Cdata) ->
+    decode_register_nick_cdata(Cdata);
+decode_register_nick_els([{xmlcdata, _data} | _els],
+			 Cdata) ->
+    decode_register_nick_els(_els,
+			     <<Cdata/binary, _data/binary>>);
+decode_register_nick_els([_ | _els], Cdata) ->
+    decode_register_nick_els(_els, Cdata).
+
+encode_register_nick(Cdata, _xmlns_attrs) ->
+    _els = encode_register_nick_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"nick">>, _attrs, _els}.
+
+decode_register_nick_cdata(<<>>) -> none;
+decode_register_nick_cdata(_val) -> _val.
+
+encode_register_nick_cdata(none, _acc) -> _acc;
+encode_register_nick_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_password({xmlel, <<"password">>, _attrs,
+			  _els}) ->
+    Cdata = decode_register_password_els(_els, <<>>), Cdata.
+
+decode_register_password_els([], Cdata) ->
+    decode_register_password_cdata(Cdata);
+decode_register_password_els([{xmlcdata, _data} | _els],
+			     Cdata) ->
+    decode_register_password_els(_els,
+				 <<Cdata/binary, _data/binary>>);
+decode_register_password_els([_ | _els], Cdata) ->
+    decode_register_password_els(_els, Cdata).
+
+encode_register_password(Cdata, _xmlns_attrs) ->
+    _els = encode_register_password_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"password">>, _attrs, _els}.
+
+decode_register_password_cdata(<<>>) -> none;
+decode_register_password_cdata(_val) -> _val.
+
+encode_register_password_cdata(none, _acc) -> _acc;
+encode_register_password_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_name({xmlel, <<"name">>, _attrs,
+		      _els}) ->
+    Cdata = decode_register_name_els(_els, <<>>), Cdata.
+
+decode_register_name_els([], Cdata) ->
+    decode_register_name_cdata(Cdata);
+decode_register_name_els([{xmlcdata, _data} | _els],
+			 Cdata) ->
+    decode_register_name_els(_els,
+			     <<Cdata/binary, _data/binary>>);
+decode_register_name_els([_ | _els], Cdata) ->
+    decode_register_name_els(_els, Cdata).
+
+encode_register_name(Cdata, _xmlns_attrs) ->
+    _els = encode_register_name_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"name">>, _attrs, _els}.
+
+decode_register_name_cdata(<<>>) -> none;
+decode_register_name_cdata(_val) -> _val.
+
+encode_register_name_cdata(none, _acc) -> _acc;
+encode_register_name_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_first({xmlel, <<"first">>, _attrs,
+		       _els}) ->
+    Cdata = decode_register_first_els(_els, <<>>), Cdata.
+
+decode_register_first_els([], Cdata) ->
+    decode_register_first_cdata(Cdata);
+decode_register_first_els([{xmlcdata, _data} | _els],
+			  Cdata) ->
+    decode_register_first_els(_els,
+			      <<Cdata/binary, _data/binary>>);
+decode_register_first_els([_ | _els], Cdata) ->
+    decode_register_first_els(_els, Cdata).
+
+encode_register_first(Cdata, _xmlns_attrs) ->
+    _els = encode_register_first_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"first">>, _attrs, _els}.
+
+decode_register_first_cdata(<<>>) -> none;
+decode_register_first_cdata(_val) -> _val.
+
+encode_register_first_cdata(none, _acc) -> _acc;
+encode_register_first_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_last({xmlel, <<"last">>, _attrs,
+		      _els}) ->
+    Cdata = decode_register_last_els(_els, <<>>), Cdata.
+
+decode_register_last_els([], Cdata) ->
+    decode_register_last_cdata(Cdata);
+decode_register_last_els([{xmlcdata, _data} | _els],
+			 Cdata) ->
+    decode_register_last_els(_els,
+			     <<Cdata/binary, _data/binary>>);
+decode_register_last_els([_ | _els], Cdata) ->
+    decode_register_last_els(_els, Cdata).
+
+encode_register_last(Cdata, _xmlns_attrs) ->
+    _els = encode_register_last_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"last">>, _attrs, _els}.
+
+decode_register_last_cdata(<<>>) -> none;
+decode_register_last_cdata(_val) -> _val.
+
+encode_register_last_cdata(none, _acc) -> _acc;
+encode_register_last_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_email({xmlel, <<"email">>, _attrs,
+		       _els}) ->
+    Cdata = decode_register_email_els(_els, <<>>), Cdata.
+
+decode_register_email_els([], Cdata) ->
+    decode_register_email_cdata(Cdata);
+decode_register_email_els([{xmlcdata, _data} | _els],
+			  Cdata) ->
+    decode_register_email_els(_els,
+			      <<Cdata/binary, _data/binary>>);
+decode_register_email_els([_ | _els], Cdata) ->
+    decode_register_email_els(_els, Cdata).
+
+encode_register_email(Cdata, _xmlns_attrs) ->
+    _els = encode_register_email_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"email">>, _attrs, _els}.
+
+decode_register_email_cdata(<<>>) -> none;
+decode_register_email_cdata(_val) -> _val.
+
+encode_register_email_cdata(none, _acc) -> _acc;
+encode_register_email_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_address({xmlel, <<"address">>, _attrs,
+			 _els}) ->
+    Cdata = decode_register_address_els(_els, <<>>), Cdata.
+
+decode_register_address_els([], Cdata) ->
+    decode_register_address_cdata(Cdata);
+decode_register_address_els([{xmlcdata, _data} | _els],
+			    Cdata) ->
+    decode_register_address_els(_els,
+				<<Cdata/binary, _data/binary>>);
+decode_register_address_els([_ | _els], Cdata) ->
+    decode_register_address_els(_els, Cdata).
+
+encode_register_address(Cdata, _xmlns_attrs) ->
+    _els = encode_register_address_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"address">>, _attrs, _els}.
+
+decode_register_address_cdata(<<>>) -> none;
+decode_register_address_cdata(_val) -> _val.
+
+encode_register_address_cdata(none, _acc) -> _acc;
+encode_register_address_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_city({xmlel, <<"city">>, _attrs,
+		      _els}) ->
+    Cdata = decode_register_city_els(_els, <<>>), Cdata.
+
+decode_register_city_els([], Cdata) ->
+    decode_register_city_cdata(Cdata);
+decode_register_city_els([{xmlcdata, _data} | _els],
+			 Cdata) ->
+    decode_register_city_els(_els,
+			     <<Cdata/binary, _data/binary>>);
+decode_register_city_els([_ | _els], Cdata) ->
+    decode_register_city_els(_els, Cdata).
+
+encode_register_city(Cdata, _xmlns_attrs) ->
+    _els = encode_register_city_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"city">>, _attrs, _els}.
+
+decode_register_city_cdata(<<>>) -> none;
+decode_register_city_cdata(_val) -> _val.
+
+encode_register_city_cdata(none, _acc) -> _acc;
+encode_register_city_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_state({xmlel, <<"state">>, _attrs,
+		       _els}) ->
+    Cdata = decode_register_state_els(_els, <<>>), Cdata.
+
+decode_register_state_els([], Cdata) ->
+    decode_register_state_cdata(Cdata);
+decode_register_state_els([{xmlcdata, _data} | _els],
+			  Cdata) ->
+    decode_register_state_els(_els,
+			      <<Cdata/binary, _data/binary>>);
+decode_register_state_els([_ | _els], Cdata) ->
+    decode_register_state_els(_els, Cdata).
+
+encode_register_state(Cdata, _xmlns_attrs) ->
+    _els = encode_register_state_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"state">>, _attrs, _els}.
+
+decode_register_state_cdata(<<>>) -> none;
+decode_register_state_cdata(_val) -> _val.
+
+encode_register_state_cdata(none, _acc) -> _acc;
+encode_register_state_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_zip({xmlel, <<"zip">>, _attrs, _els}) ->
+    Cdata = decode_register_zip_els(_els, <<>>), Cdata.
+
+decode_register_zip_els([], Cdata) ->
+    decode_register_zip_cdata(Cdata);
+decode_register_zip_els([{xmlcdata, _data} | _els],
+			Cdata) ->
+    decode_register_zip_els(_els,
+			    <<Cdata/binary, _data/binary>>);
+decode_register_zip_els([_ | _els], Cdata) ->
+    decode_register_zip_els(_els, Cdata).
+
+encode_register_zip(Cdata, _xmlns_attrs) ->
+    _els = encode_register_zip_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"zip">>, _attrs, _els}.
+
+decode_register_zip_cdata(<<>>) -> none;
+decode_register_zip_cdata(_val) -> _val.
+
+encode_register_zip_cdata(none, _acc) -> _acc;
+encode_register_zip_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_phone({xmlel, <<"phone">>, _attrs,
+		       _els}) ->
+    Cdata = decode_register_phone_els(_els, <<>>), Cdata.
+
+decode_register_phone_els([], Cdata) ->
+    decode_register_phone_cdata(Cdata);
+decode_register_phone_els([{xmlcdata, _data} | _els],
+			  Cdata) ->
+    decode_register_phone_els(_els,
+			      <<Cdata/binary, _data/binary>>);
+decode_register_phone_els([_ | _els], Cdata) ->
+    decode_register_phone_els(_els, Cdata).
+
+encode_register_phone(Cdata, _xmlns_attrs) ->
+    _els = encode_register_phone_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"phone">>, _attrs, _els}.
+
+decode_register_phone_cdata(<<>>) -> none;
+decode_register_phone_cdata(_val) -> _val.
+
+encode_register_phone_cdata(none, _acc) -> _acc;
+encode_register_phone_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_url({xmlel, <<"url">>, _attrs, _els}) ->
+    Cdata = decode_register_url_els(_els, <<>>), Cdata.
+
+decode_register_url_els([], Cdata) ->
+    decode_register_url_cdata(Cdata);
+decode_register_url_els([{xmlcdata, _data} | _els],
+			Cdata) ->
+    decode_register_url_els(_els,
+			    <<Cdata/binary, _data/binary>>);
+decode_register_url_els([_ | _els], Cdata) ->
+    decode_register_url_els(_els, Cdata).
+
+encode_register_url(Cdata, _xmlns_attrs) ->
+    _els = encode_register_url_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"url">>, _attrs, _els}.
+
+decode_register_url_cdata(<<>>) -> none;
+decode_register_url_cdata(_val) -> _val.
+
+encode_register_url_cdata(none, _acc) -> _acc;
+encode_register_url_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_date({xmlel, <<"date">>, _attrs,
+		      _els}) ->
+    Cdata = decode_register_date_els(_els, <<>>), Cdata.
+
+decode_register_date_els([], Cdata) ->
+    decode_register_date_cdata(Cdata);
+decode_register_date_els([{xmlcdata, _data} | _els],
+			 Cdata) ->
+    decode_register_date_els(_els,
+			     <<Cdata/binary, _data/binary>>);
+decode_register_date_els([_ | _els], Cdata) ->
+    decode_register_date_els(_els, Cdata).
+
+encode_register_date(Cdata, _xmlns_attrs) ->
+    _els = encode_register_date_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"date">>, _attrs, _els}.
+
+decode_register_date_cdata(<<>>) -> none;
+decode_register_date_cdata(_val) -> _val.
+
+encode_register_date_cdata(none, _acc) -> _acc;
+encode_register_date_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_misc({xmlel, <<"misc">>, _attrs,
+		      _els}) ->
+    Cdata = decode_register_misc_els(_els, <<>>), Cdata.
+
+decode_register_misc_els([], Cdata) ->
+    decode_register_misc_cdata(Cdata);
+decode_register_misc_els([{xmlcdata, _data} | _els],
+			 Cdata) ->
+    decode_register_misc_els(_els,
+			     <<Cdata/binary, _data/binary>>);
+decode_register_misc_els([_ | _els], Cdata) ->
+    decode_register_misc_els(_els, Cdata).
+
+encode_register_misc(Cdata, _xmlns_attrs) ->
+    _els = encode_register_misc_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"misc">>, _attrs, _els}.
+
+decode_register_misc_cdata(<<>>) -> none;
+decode_register_misc_cdata(_val) -> _val.
+
+encode_register_misc_cdata(none, _acc) -> _acc;
+encode_register_misc_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_text({xmlel, <<"text">>, _attrs,
+		      _els}) ->
+    Cdata = decode_register_text_els(_els, <<>>), Cdata.
+
+decode_register_text_els([], Cdata) ->
+    decode_register_text_cdata(Cdata);
+decode_register_text_els([{xmlcdata, _data} | _els],
+			 Cdata) ->
+    decode_register_text_els(_els,
+			     <<Cdata/binary, _data/binary>>);
+decode_register_text_els([_ | _els], Cdata) ->
+    decode_register_text_els(_els, Cdata).
+
+encode_register_text(Cdata, _xmlns_attrs) ->
+    _els = encode_register_text_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"text">>, _attrs, _els}.
+
+decode_register_text_cdata(<<>>) -> none;
+decode_register_text_cdata(_val) -> _val.
+
+encode_register_text_cdata(none, _acc) -> _acc;
+encode_register_text_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register_key({xmlel, <<"key">>, _attrs, _els}) ->
+    Cdata = decode_register_key_els(_els, <<>>), Cdata.
+
+decode_register_key_els([], Cdata) ->
+    decode_register_key_cdata(Cdata);
+decode_register_key_els([{xmlcdata, _data} | _els],
+			Cdata) ->
+    decode_register_key_els(_els,
+			    <<Cdata/binary, _data/binary>>);
+decode_register_key_els([_ | _els], Cdata) ->
+    decode_register_key_els(_els, Cdata).
+
+encode_register_key(Cdata, _xmlns_attrs) ->
+    _els = encode_register_key_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"key">>, _attrs, _els}.
+
+decode_register_key_cdata(<<>>) -> none;
+decode_register_key_cdata(_val) -> _val.
+
+encode_register_key_cdata(none, _acc) -> _acc;
+encode_register_key_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_register({xmlel, <<"query">>, _attrs, _els}) ->
+    {Zip, Misc, Address, Instructions, Text, Last, First,
+     Password, Registered, Date, Phone, State, Name,
+     Username, Key, City, Nick, Url, Email} =
+	decode_register_els(_els, undefined, undefined,
+			    undefined, undefined, undefined, undefined,
+			    undefined, undefined, false, undefined, undefined,
+			    undefined, undefined, undefined, undefined,
+			    undefined, undefined, undefined, undefined),
+    {register, Registered, Instructions, Username, Nick,
+     Password, Name, First, Last, Email, Address, City,
+     State, Zip, Phone, Url, Date, Misc, Text, Key}.
+
+decode_register_els([], Zip, Misc, Address,
+		    Instructions, Text, Last, First, Password, Registered,
+		    Date, Phone, State, Name, Username, Key, City, Nick,
+		    Url, Email) ->
+    {Zip, Misc, Address, Instructions, Text, Last, First,
+     Password, Registered, Date, Phone, State, Name,
+     Username, Key, City, Nick, Url, Email};
+decode_register_els([{xmlel, <<"registered">>, _attrs,
+		      _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       decode_register_registered(_el), Date, Phone,
+			       State, Name, Username, Key, City, Nick, Url,
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"instructions">>, _attrs,
+		      _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       decode_register_instructions(_el), Text, Last,
+			       First, Password, Registered, Date, Phone, State,
+			       Name, Username, Key, City, Nick, Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"username">>, _attrs,
+		      _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name,
+			       decode_register_username(_el), Key, City, Nick,
+			       Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"nick">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, decode_register_nick(_el), Url,
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"password">>, _attrs,
+		      _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First,
+			       decode_register_password(_el), Registered, Date,
+			       Phone, State, Name, Username, Key, City, Nick,
+			       Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"name">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State,
+			       decode_register_name(_el), Username, Key, City,
+			       Nick, Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"first">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last,
+			       decode_register_first(_el), Password, Registered,
+			       Date, Phone, State, Name, Username, Key, City,
+			       Nick, Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"last">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, decode_register_last(_el),
+			       First, Password, Registered, Date, Phone, State,
+			       Name, Username, Key, City, Nick, Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"email">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url,
+			       decode_register_email(_el));
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"address">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc,
+			       decode_register_address(_el), Instructions, Text,
+			       Last, First, Password, Registered, Date, Phone,
+			       State, Name, Username, Key, City, Nick, Url,
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"city">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, decode_register_city(_el), Nick, Url,
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"state">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone,
+			       decode_register_state(_el), Name, Username, Key,
+			       City, Nick, Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"zip">>, _attrs, _} = _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, decode_register_zip(_el),
+			       Misc, Address, Instructions, Text, Last, First,
+			       Password, Registered, Date, Phone, State, Name,
+			       Username, Key, City, Nick, Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"phone">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, decode_register_phone(_el),
+			       State, Name, Username, Key, City, Nick, Url,
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"url">>, _attrs, _} = _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, decode_register_url(_el),
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"date">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, decode_register_date(_el), Phone,
+			       State, Name, Username, Key, City, Nick, Url,
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"misc">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip,
+			       decode_register_misc(_el), Address, Instructions,
+			       Text, Last, First, Password, Registered, Date,
+			       Phone, State, Name, Username, Key, City, Nick,
+			       Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"text">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, decode_register_text(_el), Last,
+			       First, Password, Registered, Date, Phone, State,
+			       Name, Username, Key, City, Nick, Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"key">>, _attrs, _} = _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       decode_register_key(_el), City, Nick, Url,
+			       Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Key, City, Nick, Url, Email)
+    end;
+decode_register_els([_ | _els], Zip, Misc, Address,
+		    Instructions, Text, Last, First, Password, Registered,
+		    Date, Phone, State, Name, Username, Key, City, Nick,
+		    Url, Email) ->
+    decode_register_els(_els, Zip, Misc, Address,
+			Instructions, Text, Last, First, Password, Registered,
+			Date, Phone, State, Name, Username, Key, City, Nick,
+			Url, Email).
+
+encode_register({register, Registered, Instructions,
+		 Username, Nick, Password, Name, First, Last, Email,
+		 Address, City, State, Zip, Phone, Url, Date, Misc, Text,
+		 Key},
+		_xmlns_attrs) ->
+    _els = 'encode_register_$email'(Email,
+				    'encode_register_$url'(Url,
+							   'encode_register_$nick'(Nick,
+										   'encode_register_$city'(City,
+													   'encode_register_$key'(Key,
+																  'encode_register_$username'(Username,
+																			      'encode_register_$name'(Name,
+																						      'encode_register_$state'(State,
+																									       'encode_register_$phone'(Phone,
+																													'encode_register_$date'(Date,
+																																'encode_register_$registered'(Registered,
+																																			      'encode_register_$password'(Password,
+																																							  'encode_register_$first'(First,
+																																										   'encode_register_$last'(Last,
+																																													   'encode_register_$text'(Text,
+																																																   'encode_register_$instructions'(Instructions,
+																																																				   'encode_register_$address'(Address,
+																																																							      'encode_register_$misc'(Misc,
+																																																										      'encode_register_$zip'(Zip,
+																																																													     []))))))))))))))))))),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"query">>, _attrs, _els}.
+
+'encode_register_$zip'(undefined, _acc) -> _acc;
+'encode_register_$zip'(Zip, _acc) ->
+    [encode_register_zip(Zip, []) | _acc].
+
+'encode_register_$misc'(undefined, _acc) -> _acc;
+'encode_register_$misc'(Misc, _acc) ->
+    [encode_register_misc(Misc, []) | _acc].
+
+'encode_register_$address'(undefined, _acc) -> _acc;
+'encode_register_$address'(Address, _acc) ->
+    [encode_register_address(Address, []) | _acc].
+
+'encode_register_$instructions'(undefined, _acc) ->
+    _acc;
+'encode_register_$instructions'(Instructions, _acc) ->
+    [encode_register_instructions(Instructions, []) | _acc].
+
+'encode_register_$text'(undefined, _acc) -> _acc;
+'encode_register_$text'(Text, _acc) ->
+    [encode_register_text(Text, []) | _acc].
+
+'encode_register_$last'(undefined, _acc) -> _acc;
+'encode_register_$last'(Last, _acc) ->
+    [encode_register_last(Last, []) | _acc].
+
+'encode_register_$first'(undefined, _acc) -> _acc;
+'encode_register_$first'(First, _acc) ->
+    [encode_register_first(First, []) | _acc].
+
+'encode_register_$password'(undefined, _acc) -> _acc;
+'encode_register_$password'(Password, _acc) ->
+    [encode_register_password(Password, []) | _acc].
+
+'encode_register_$registered'(false, _acc) -> _acc;
+'encode_register_$registered'(Registered, _acc) ->
+    [encode_register_registered(Registered, []) | _acc].
+
+'encode_register_$date'(undefined, _acc) -> _acc;
+'encode_register_$date'(Date, _acc) ->
+    [encode_register_date(Date, []) | _acc].
+
+'encode_register_$phone'(undefined, _acc) -> _acc;
+'encode_register_$phone'(Phone, _acc) ->
+    [encode_register_phone(Phone, []) | _acc].
+
+'encode_register_$state'(undefined, _acc) -> _acc;
+'encode_register_$state'(State, _acc) ->
+    [encode_register_state(State, []) | _acc].
+
+'encode_register_$name'(undefined, _acc) -> _acc;
+'encode_register_$name'(Name, _acc) ->
+    [encode_register_name(Name, []) | _acc].
+
+'encode_register_$username'(undefined, _acc) -> _acc;
+'encode_register_$username'(Username, _acc) ->
+    [encode_register_username(Username, []) | _acc].
+
+'encode_register_$key'(undefined, _acc) -> _acc;
+'encode_register_$key'(Key, _acc) ->
+    [encode_register_key(Key, []) | _acc].
+
+'encode_register_$city'(undefined, _acc) -> _acc;
+'encode_register_$city'(City, _acc) ->
+    [encode_register_city(City, []) | _acc].
+
+'encode_register_$nick'(undefined, _acc) -> _acc;
+'encode_register_$nick'(Nick, _acc) ->
+    [encode_register_nick(Nick, []) | _acc].
+
+'encode_register_$url'(undefined, _acc) -> _acc;
+'encode_register_$url'(Url, _acc) ->
+    [encode_register_url(Url, []) | _acc].
+
+'encode_register_$email'(undefined, _acc) -> _acc;
+'encode_register_$email'(Email, _acc) ->
+    [encode_register_email(Email, []) | _acc].
 
 decode_session({xmlel, <<"session">>, _attrs, _els}) ->
     {session}.
@@ -10453,4 +11458,51 @@ decode_delay_attr_from(_val) ->
 
 encode_delay_attr_from(undefined, _acc) -> _acc;
 encode_delay_attr_from(_val, _acc) ->
+    [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_legacy_delay({xmlel, <<"x">>, _attrs, _els}) ->
+    {Stamp, From} = decode_legacy_delay_attrs(_attrs,
+					      undefined, undefined),
+    {legacy_delay, Stamp, From}.
+
+decode_legacy_delay_attrs([{<<"stamp">>, _val}
+			   | _attrs],
+			  _Stamp, From) ->
+    decode_legacy_delay_attrs(_attrs, _val, From);
+decode_legacy_delay_attrs([{<<"from">>, _val} | _attrs],
+			  Stamp, _From) ->
+    decode_legacy_delay_attrs(_attrs, Stamp, _val);
+decode_legacy_delay_attrs([_ | _attrs], Stamp, From) ->
+    decode_legacy_delay_attrs(_attrs, Stamp, From);
+decode_legacy_delay_attrs([], Stamp, From) ->
+    {decode_legacy_delay_attr_stamp(Stamp),
+     decode_legacy_delay_attr_from(From)}.
+
+encode_legacy_delay({legacy_delay, Stamp, From},
+		    _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_legacy_delay_attr_from(From,
+					   encode_legacy_delay_attr_stamp(Stamp,
+									  _xmlns_attrs)),
+    {xmlel, <<"x">>, _attrs, _els}.
+
+decode_legacy_delay_attr_stamp(undefined) ->
+    erlang:error({missing_attr, <<"stamp">>, <<"x">>,
+		  <<"jabber:x:delay">>});
+decode_legacy_delay_attr_stamp(_val) -> _val.
+
+encode_legacy_delay_attr_stamp(_val, _acc) ->
+    [{<<"stamp">>, _val} | _acc].
+
+decode_legacy_delay_attr_from(undefined) -> undefined;
+decode_legacy_delay_attr_from(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"from">>, <<"x">>,
+			<<"jabber:x:delay">>});
+      _res -> _res
+    end.
+
+encode_legacy_delay_attr_from(undefined, _acc) -> _acc;
+encode_legacy_delay_attr_from(_val, _acc) ->
     [{<<"from">>, enc_jid(_val)} | _acc].

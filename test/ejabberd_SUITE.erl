@@ -65,6 +65,8 @@ init_per_testcase(TestCase, OrigConfig) ->
             Config;
         test_auth ->
             connect(Config);
+        register ->
+            connect(Config);
         auth_md5 ->
             connect(Config);
         auth_plain ->
@@ -83,11 +85,12 @@ end_per_testcase(_TestCase, _Config) ->
 groups() ->
     [].
 
-%%all() -> [start_ejabberd, vcard].
+%%all() -> [start_ejabberd, register].
 
 all() ->
     [start_ejabberd,
      test_connect,
+     register,
      auth_plain,
      auth_md5,
      test_auth,
@@ -110,7 +113,6 @@ all() ->
 
 start_ejabberd(Config) ->
     ok = application:start(ejabberd),
-    ok = re_register(Config),
     Config.
 
 stop_ejabberd(Config) ->
@@ -140,7 +142,13 @@ connect(Config) ->
                  (_) ->
                       []
               end, Fs),
-    [{mechs, Mechs}|Config1].
+    Feats = lists:flatmap(
+              fun(#feature_register{}) ->
+                      [{register, true}];
+                 (_) ->
+                      []
+              end, Fs),
+    [{mechs, Mechs}|Feats ++ Config1].
 
 disconnect(Config) ->
     Socket = ?config(socket, Config),
@@ -148,6 +156,31 @@ disconnect(Config) ->
     {xmlstreamend, <<"stream:stream">>} = recv(),
     ejabberd_socket:close(Socket),
     Config.
+
+register(Config) ->
+    case ?config(register, Config) of
+        false ->
+            {skipped, 'registration_not_available'};
+        true ->
+            try_register(Config)
+    end.
+
+try_register(Config) ->
+    I1 = send(Config,
+              #iq{type = get, to = server_jid(Config),
+                  sub_els = [#register{}]}),
+    #iq{type = result, id = I1,
+        sub_els = [#register{username = none,
+                             password = none}]} = recv(),
+    I2 = send(Config,
+              #iq{type = set,
+                  sub_els = [#register{username = ?config(user, Config),
+                                       password = ?config(password, Config)}]}),
+    %% BUG: we should receive empty sub_els
+    %% TODO: fix in ejabberd
+    %% #iq{type = result, id = I2, sub_els = []} = recv(),
+    #iq{type = result, id = I2, sub_els = [#register{}]} = recv(),
+    disconnect(Config).
 
 test_auth(Config) ->
     disconnect(auth(Config)).
@@ -199,6 +232,9 @@ roster_get(Config) ->
 presence_broadcast(Config) ->
     send(Config, #presence{}),
     JID = my_jid(Config),
+    %% We receive the welcome message first
+    #message{type = normal} = recv(),
+    %% Then we receive back our presence
     #presence{from = JID, to = JID} = recv(),
     disconnect(Config).
 
