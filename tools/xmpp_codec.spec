@@ -748,10 +748,6 @@
        xmlns = <<"urn:ietf:params:xml:ns:xmpp-tls">>,
        result = {starttls_failure}}}.
 
-        %% <xs:element name='setup-failed' type='empty'/>
-        %% <xs:element name='processing-failed' type='empty'/>
-        %% <xs:element name='unsupported-method' type='empty'/>
-
 {compress_failure_setup_failed,
  #elem{name = <<"setup-failed">>,
        xmlns = <<"http://jabber.org/protocol/compress">>,
