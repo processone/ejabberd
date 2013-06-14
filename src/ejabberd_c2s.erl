@@ -539,8 +539,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				    StateData#state.socket),
 			Info = [{ip, StateData#state.ip}, {conn, Conn},
 				    {auth_module, AuthModule}],
-			Res1 = jlib:make_result_iq_reply(El),
-			Res = Res1#xmlel{children = []},
+                        Res = jlib:make_result_iq_reply(
+                                El#xmlel{children = []}),
 			send_element(StateData, Res),
 			ejabberd_sm:open_session(SID, U, StateData#state.server, R, Info),
 			change_shaper(StateData, JID),
@@ -976,7 +976,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
 			      [StateData#state.socket,
 			       jlib:jid_to_string(JID)]),
-		    Res = jlib:make_result_iq_reply(El),
+                    Res = jlib:make_result_iq_reply(El#xmlel{children = []}),
 		    send_element(StateData, Res),
 		    change_shaper(StateData, JID),
 		    {Fs, Ts} = ejabberd_hooks:run_fold(

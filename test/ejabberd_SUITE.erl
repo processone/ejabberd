@@ -223,10 +223,7 @@ register(Config) ->
               #iq{type = set,
                   sub_els = [#register{username = ?config(user, Config),
                                        password = ?config(password, Config)}]}),
-    %% BUG: we should receive empty sub_els
-    %% TODO: fix in ejabberd
-    %% #iq{type = result, id = I2, sub_els = []} = recv(),
-    #iq{type = result, id = I2, sub_els = [#register{}]} = recv(),
+    #iq{type = result, id = I2, sub_els = []} = recv(),
     Config.
 
 test_unregister(Config) ->
@@ -242,10 +239,7 @@ try_unregister(Config) ->
     I = send(Config,
              #iq{type = set,
                  sub_els = [#register{remove = true}]}),
-    %% BUG: we should receive empty sub_els
-    %% TODO: fix in ejabberd
-    %% #iq{type = result, id = I, sub_els = []} = recv(),
-    #iq{type = result, id = I, sub_els = [#register{}]} = recv(),
+    #iq{type = result, id = I, sub_els = []} = recv(),
     #stream_error{reason = conflict} = recv(),
     Config.
 
@@ -279,15 +273,7 @@ test_open_session(Config) ->
 
 open_session(Config) ->
     ID = send(Config, #iq{type = set, sub_els = [#session{}]}),
-    #iq{type = result, id = ID, sub_els = SubEls} = recv(),
-    case SubEls of
-        [] ->
-            ok;
-        [#session{}] ->
-            %% BUG: we should not receive this!
-            %% TODO: should be fixed in ejabberd
-            ok
-    end,
+    #iq{type = result, id = ID, sub_els = []} = recv(),
     Config.
 
 roster_get(Config) ->

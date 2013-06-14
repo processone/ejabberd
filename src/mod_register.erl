@@ -123,14 +123,14 @@ process_iq(From, To,
 		 case From of
 		   #jid{user = User, lserver = Server} ->
 		       ejabberd_auth:remove_user(User, Server),
-		       IQ#iq{type = result, sub_el = [SubEl]};
+		       IQ#iq{type = result, sub_el = []};
 		   _ ->
 		       if PTag /= false ->
 			      Password = xml:get_tag_cdata(PTag),
 			      case ejabberd_auth:remove_user(User, Server,
 							     Password)
 				  of
-				ok -> IQ#iq{type = result, sub_el = [SubEl]};
+				ok -> IQ#iq{type = result, sub_el = []};
 				%% TODO FIXME: This piece of
 				%% code does not work since
 				%% the code have been changed
@@ -160,7 +160,7 @@ process_iq(From, To,
 		   #jid{user = User, lserver = Server,
 			resource = Resource} ->
 		       ResIQ = #iq{type = result, xmlns = ?NS_REGISTER,
-				   id = ID, sub_el = [SubEl]},
+				   id = ID, sub_el = []},
 		       ejabberd_router:route(jlib:make_jid(User, Server,
 							   Resource),
 					     jlib:make_jid(User, Server,
@@ -326,7 +326,7 @@ try_register_or_set_password(User, Server, Password,
 	    allow ->
 		case try_register(User, Server, Password, Source, Lang)
 		    of
-		  ok -> IQ#iq{type = result, sub_el = [SubEl]};
+		  ok -> IQ#iq{type = result, sub_el = []};
 		  {error, Error} ->
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}
 		end;
@@ -344,7 +344,7 @@ try_set_password(User, Server, Password, IQ, SubEl,
       true ->
 	  case ejabberd_auth:set_password(User, Server, Password)
 	      of
-	    ok -> IQ#iq{type = result, sub_el = [SubEl]};
+	    ok -> IQ#iq{type = result, sub_el = []};
 	    {error, empty_password} ->
 		IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
 	    {error, not_allowed} ->
