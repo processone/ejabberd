@@ -115,7 +115,8 @@ groups() ->
        privacy,
        blocking,
        vcard,
-       pubsub]}].
+       pubsub,
+       test_unregister]}].
 
 all() ->
     [{group, single_user}, stop_ejabberd].
@@ -226,6 +227,24 @@ register(Config) ->
     %% TODO: fix in ejabberd
     %% #iq{type = result, id = I2, sub_els = []} = recv(),
     #iq{type = result, id = I2, sub_els = [#register{}]} = recv(),
+    Config.
+
+test_unregister(Config) ->
+    case ?config(register, Config) of
+        true ->
+            disconnect(try_unregister(Config));
+        _ ->
+            {skipped, 'registration_not_available'}
+    end.
+
+try_unregister(Config) ->
+    I = send(Config,
+             #iq{type = set,
+                 sub_els = [#register{remove = true}]}),
+    %% BUG: we should receive empty sub_els
+    %% TODO: fix in ejabberd
+    %% #iq{type = result, id = I, sub_els = []} = recv(),
+    #iq{type = result, id = I, sub_els = [#register{}]} = recv(),
     Config.
 
 test_auth(Config) ->

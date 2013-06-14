@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Fri, 14 Jun 2013 14:30:53 GMT
+%% Date: Fri, 14 Jun 2013 16:48:12 GMT
 
 -record(last, {seconds, text}).
 
@@ -107,9 +107,10 @@
 -record(feature_register, {}).
 
 -record(register,
-	{registered = false, instructions, username, nick,
-	 password, name, first, last, email, address, city,
-	 state, zip, phone, url, date, misc, text, key}).
+	{registered = false, remove = false, instructions,
+	 username, nick, password, name, first, last, email,
+	 address, city, state, zip, phone, url, date, misc, text,
+	 key}).
 
 -record(session, {}).
 

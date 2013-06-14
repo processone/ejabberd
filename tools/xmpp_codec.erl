@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Fri, 14 Jun 2013 14:30:53 GMT
+%% Date: Fri, 14 Jun 2013 16:48:12 GMT
 
 -module(xmpp_codec).
 
@@ -334,6 +334,8 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 	  decode_register_username(_el);
       {<<"instructions">>, <<"jabber:iq:register">>} ->
 	  decode_register_instructions(_el);
+      {<<"remove">>, <<"jabber:iq:register">>} ->
+	  decode_register_remove(_el);
       {<<"registered">>, <<"jabber:iq:register">>} ->
 	  decode_register_registered(_el);
       {<<"register">>,
@@ -720,7 +722,7 @@ encode({session} = Session) ->
 		   [{<<"xmlns">>,
 		     <<"urn:ietf:params:xml:ns:xmpp-session">>}]);
 encode({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _, _, _, _, _} =
+	_, _, _, _, _, _, _} =
 	   Query) ->
     encode_register(Query,
 		    [{<<"xmlns">>, <<"jabber:iq:register">>}]);
@@ -5027,6 +5029,15 @@ encode_register_registered(true, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"registered">>, _attrs, _els}.
 
+decode_register_remove({xmlel, <<"remove">>, _attrs,
+			_els}) ->
+    true.
+
+encode_register_remove(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"remove">>, _attrs, _els}.
+
 decode_register_instructions({xmlel, <<"instructions">>,
 			      _attrs, _els}) ->
     Cdata = decode_register_instructions_els(_els, <<>>),
@@ -5480,42 +5491,61 @@ encode_register_key_cdata(_val, _acc) ->
 decode_register({xmlel, <<"query">>, _attrs, _els}) ->
     {Zip, Misc, Address, Instructions, Text, Last, First,
      Password, Registered, Date, Phone, State, Name,
-     Username, Key, City, Nick, Url, Email} =
+     Username, Remove, Key, City, Nick, Url, Email} =
 	decode_register_els(_els, undefined, undefined,
 			    undefined, undefined, undefined, undefined,
 			    undefined, undefined, false, undefined, undefined,
-			    undefined, undefined, undefined, undefined,
+			    undefined, undefined, undefined, false, undefined,
 			    undefined, undefined, undefined, undefined),
-    {register, Registered, Instructions, Username, Nick,
-     Password, Name, First, Last, Email, Address, City,
+    {register, Registered, Remove, Instructions, Username,
+     Nick, Password, Name, First, Last, Email, Address, City,
      State, Zip, Phone, Url, Date, Misc, Text, Key}.
 
 decode_register_els([], Zip, Misc, Address,
 		    Instructions, Text, Last, First, Password, Registered,
-		    Date, Phone, State, Name, Username, Key, City, Nick,
-		    Url, Email) ->
+		    Date, Phone, State, Name, Username, Remove, Key, City,
+		    Nick, Url, Email) ->
     {Zip, Misc, Address, Instructions, Text, Last, First,
      Password, Registered, Date, Phone, State, Name,
-     Username, Key, City, Nick, Url, Email};
+     Username, Remove, Key, City, Nick, Url, Email};
 decode_register_els([{xmlel, <<"registered">>, _attrs,
 		      _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       decode_register_registered(_el), Date, Phone,
-			       State, Name, Username, Key, City, Nick, Url,
-			       Email);
+			       State, Name, Username, Remove, Key, City, Nick,
+			       Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"remove">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Remove, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       decode_register_remove(_el), Key, City, Nick,
+			       Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"instructions">>, _attrs,
 		      _} =
@@ -5523,18 +5553,19 @@ decode_register_els([{xmlel, <<"instructions">>, _attrs,
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       decode_register_instructions(_el), Text, Last,
 			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Key, City, Nick, Url, Email);
+			       Name, Username, Remove, Key, City, Nick, Url,
+			       Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"username">>, _attrs,
 		      _} =
@@ -5542,38 +5573,38 @@ decode_register_els([{xmlel, <<"username">>, _attrs,
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name,
-			       decode_register_username(_el), Key, City, Nick,
-			       Url, Email);
+			       decode_register_username(_el), Remove, Key, City,
+			       Nick, Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"nick">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, decode_register_nick(_el), Url,
-			       Email);
+			       Remove, Key, City, decode_register_nick(_el),
+			       Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"password">>, _attrs,
 		      _} =
@@ -5581,314 +5612,317 @@ decode_register_els([{xmlel, <<"password">>, _attrs,
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First,
 			       decode_register_password(_el), Registered, Date,
-			       Phone, State, Name, Username, Key, City, Nick,
-			       Url, Email);
+			       Phone, State, Name, Username, Remove, Key, City,
+			       Nick, Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"name">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State,
-			       decode_register_name(_el), Username, Key, City,
-			       Nick, Url, Email);
+			       decode_register_name(_el), Username, Remove, Key,
+			       City, Nick, Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"first">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last,
 			       decode_register_first(_el), Password, Registered,
-			       Date, Phone, State, Name, Username, Key, City,
-			       Nick, Url, Email);
+			       Date, Phone, State, Name, Username, Remove, Key,
+			       City, Nick, Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"last">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, decode_register_last(_el),
 			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Key, City, Nick, Url, Email);
+			       Name, Username, Remove, Key, City, Nick, Url,
+			       Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"email">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url,
+			       Remove, Key, City, Nick, Url,
 			       decode_register_email(_el));
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"address">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc,
 			       decode_register_address(_el), Instructions, Text,
 			       Last, First, Password, Registered, Date, Phone,
-			       State, Name, Username, Key, City, Nick, Url,
-			       Email);
+			       State, Name, Username, Remove, Key, City, Nick,
+			       Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"city">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, decode_register_city(_el), Nick, Url,
-			       Email);
+			       Remove, Key, decode_register_city(_el), Nick,
+			       Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"state">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone,
-			       decode_register_state(_el), Name, Username, Key,
-			       City, Nick, Url, Email);
+			       decode_register_state(_el), Name, Username,
+			       Remove, Key, City, Nick, Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"zip">>, _attrs, _} = _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, decode_register_zip(_el),
 			       Misc, Address, Instructions, Text, Last, First,
 			       Password, Registered, Date, Phone, State, Name,
-			       Username, Key, City, Nick, Url, Email);
+			       Username, Remove, Key, City, Nick, Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"phone">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, decode_register_phone(_el),
-			       State, Name, Username, Key, City, Nick, Url,
-			       Email);
+			       State, Name, Username, Remove, Key, City, Nick,
+			       Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"url">>, _attrs, _} = _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, decode_register_url(_el),
-			       Email);
+			       Remove, Key, City, Nick,
+			       decode_register_url(_el), Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"date">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, decode_register_date(_el), Phone,
-			       State, Name, Username, Key, City, Nick, Url,
-			       Email);
+			       State, Name, Username, Remove, Key, City, Nick,
+			       Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"misc">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip,
 			       decode_register_misc(_el), Address, Instructions,
 			       Text, Last, First, Password, Registered, Date,
-			       Phone, State, Name, Username, Key, City, Nick,
-			       Url, Email);
+			       Phone, State, Name, Username, Remove, Key, City,
+			       Nick, Url, Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([{xmlel, <<"text">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, decode_register_text(_el), Last,
 			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(_els, Zip, Misc, Address,
-			       Instructions, Text, Last, First, Password,
-			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
-    end;
-decode_register_els([{xmlel, <<"key">>, _attrs, _} = _el
-		     | _els],
-		    Zip, Misc, Address, Instructions, Text, Last, First,
-		    Password, Registered, Date, Phone, State, Name,
-		    Username, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
-	   decode_register_els(_els, Zip, Misc, Address,
-			       Instructions, Text, Last, First, Password,
-			       Registered, Date, Phone, State, Name, Username,
-			       decode_register_key(_el), City, Nick, Url,
+			       Name, Username, Remove, Key, City, Nick, Url,
 			       Email);
        true ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
 			       Registered, Date, Phone, State, Name, Username,
-			       Key, City, Nick, Url, Email)
+			       Remove, Key, City, Nick, Url, Email)
+    end;
+decode_register_els([{xmlel, <<"key">>, _attrs, _} = _el
+		     | _els],
+		    Zip, Misc, Address, Instructions, Text, Last, First,
+		    Password, Registered, Date, Phone, State, Name,
+		    Username, Remove, Key, City, Nick, Url, Email) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Remove, decode_register_key(_el), City, Nick,
+			       Url, Email);
+       true ->
+	   decode_register_els(_els, Zip, Misc, Address,
+			       Instructions, Text, Last, First, Password,
+			       Registered, Date, Phone, State, Name, Username,
+			       Remove, Key, City, Nick, Url, Email)
     end;
 decode_register_els([_ | _els], Zip, Misc, Address,
 		    Instructions, Text, Last, First, Password, Registered,
-		    Date, Phone, State, Name, Username, Key, City, Nick,
-		    Url, Email) ->
+		    Date, Phone, State, Name, Username, Remove, Key, City,
+		    Nick, Url, Email) ->
     decode_register_els(_els, Zip, Misc, Address,
 			Instructions, Text, Last, First, Password, Registered,
-			Date, Phone, State, Name, Username, Key, City, Nick,
-			Url, Email).
+			Date, Phone, State, Name, Username, Remove, Key, City,
+			Nick, Url, Email).
 
-encode_register({register, Registered, Instructions,
-		 Username, Nick, Password, Name, First, Last, Email,
-		 Address, City, State, Zip, Phone, Url, Date, Misc, Text,
-		 Key},
+encode_register({register, Registered, Remove,
+		 Instructions, Username, Nick, Password, Name, First,
+		 Last, Email, Address, City, State, Zip, Phone, Url,
+		 Date, Misc, Text, Key},
 		_xmlns_attrs) ->
     _els = 'encode_register_$email'(Email,
 				    'encode_register_$url'(Url,
 							   'encode_register_$nick'(Nick,
 										   'encode_register_$city'(City,
 													   'encode_register_$key'(Key,
-																  'encode_register_$username'(Username,
-																			      'encode_register_$name'(Name,
-																						      'encode_register_$state'(State,
-																									       'encode_register_$phone'(Phone,
-																													'encode_register_$date'(Date,
-																																'encode_register_$registered'(Registered,
-																																			      'encode_register_$password'(Password,
-																																							  'encode_register_$first'(First,
-																																										   'encode_register_$last'(Last,
-																																													   'encode_register_$text'(Text,
-																																																   'encode_register_$instructions'(Instructions,
-																																																				   'encode_register_$address'(Address,
-																																																							      'encode_register_$misc'(Misc,
-																																																										      'encode_register_$zip'(Zip,
-																																																													     []))))))))))))))))))),
+																  'encode_register_$remove'(Remove,
+																			    'encode_register_$username'(Username,
+																							'encode_register_$name'(Name,
+																										'encode_register_$state'(State,
+																													 'encode_register_$phone'(Phone,
+																																  'encode_register_$date'(Date,
+																																			  'encode_register_$registered'(Registered,
+																																							'encode_register_$password'(Password,
+																																										    'encode_register_$first'(First,
+																																													     'encode_register_$last'(Last,
+																																																     'encode_register_$text'(Text,
+																																																			     'encode_register_$instructions'(Instructions,
+																																																							     'encode_register_$address'(Address,
+																																																											'encode_register_$misc'(Misc,
+																																																														'encode_register_$zip'(Zip,
+																																																																       [])))))))))))))))))))),
     _attrs = _xmlns_attrs,
     {xmlel, <<"query">>, _attrs, _els}.
 
@@ -5948,6 +5982,10 @@ encode_register({register, Registered, Instructions,
 'encode_register_$username'(undefined, _acc) -> _acc;
 'encode_register_$username'(Username, _acc) ->
     [encode_register_username(Username, []) | _acc].
+
+'encode_register_$remove'(false, _acc) -> _acc;
+'encode_register_$remove'(Remove, _acc) ->
+    [encode_register_remove(Remove, []) | _acc].
 
 'encode_register_$key'(undefined, _acc) -> _acc;
 'encode_register_$key'(Key, _acc) ->
