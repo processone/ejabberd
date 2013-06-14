@@ -748,6 +748,62 @@
        xmlns = <<"urn:ietf:params:xml:ns:xmpp-tls">>,
        result = {starttls_failure}}}.
 
+        %% <xs:element name='setup-failed' type='empty'/>
+        %% <xs:element name='processing-failed' type='empty'/>
+        %% <xs:element name='unsupported-method' type='empty'/>
+
+{compress_failure_setup_failed,
+ #elem{name = <<"setup-failed">>,
+       xmlns = <<"http://jabber.org/protocol/compress">>,
+       result = 'setup-failed'}}.
+{compress_failure_processing_failed,
+ #elem{name = <<"processing-failed">>,
+       xmlns = <<"http://jabber.org/protocol/compress">>,
+       result = 'processing-failed'}}.
+{compress_failure_unsupported_method,
+ #elem{name = <<"unsupported-method">>,
+       xmlns = <<"http://jabber.org/protocol/compress">>,
+       result = 'unsupported-method'}}.
+
+{compress_failure,
+ #elem{name = <<"failure">>,
+       xmlns = <<"http://jabber.org/protocol/compress">>,
+       result = {compress_failure, '$reason'},
+       refs = [#ref{name = compress_failure_setup_failed,
+                    min = 0, max = 1, label = '$reason'},
+               #ref{name = compress_failure_processing_failed,
+                    min = 0, max = 1, label = '$reason'},
+               #ref{name = compress_failure_unsupported_method,
+                    min = 0, max = 1, label = '$reason'}]}}.
+
+{compress_method,
+ #elem{name = <<"method">>,
+       xmlns = <<"http://jabber.org/protocol/compress">>,
+       result = '$cdata'}}.
+
+{compress,
+ #elem{name = <<"compress">>,
+       xmlns = <<"http://jabber.org/protocol/compress">>,
+       result = {compress, '$methods'},
+       refs = [#ref{name = compress_method,
+                    label = '$methods'}]}}.
+
+{compressed,
+ #elem{name = <<"compressed">>,
+       xmlns = <<"http://jabber.org/protocol/compress">>,
+       result = {compressed}}}.
+
+{compression_method,
+ #elem{name = <<"method">>,
+       xmlns = <<"http://jabber.org/features/compress">>,
+       result = '$cdata'}}.
+
+{compression,
+ #elem{name = <<"compression">>,
+       xmlns = <<"http://jabber.org/features/compress">>,
+       result = {compression, '$methods'},
+       refs = [#ref{name = compression_method, label = '$methods'}]}}.
+ 
 {stream_features,
  #elem{name = <<"stream:features">>,
        xmlns = <<"http://etherx.jabber.org/streams">>,

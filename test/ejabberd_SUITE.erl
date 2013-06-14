@@ -61,13 +61,15 @@ init_per_testcase(start_ejabberd, Config) ->
     Config;
 init_per_testcase(TestCase, OrigConfig) ->
     Resource = list_to_binary(atom_to_list(TestCase)),
-    Config = [{resource, Resource}|OrigConfig],
+    Config = set_opt(resource, Resource, OrigConfig),
     case TestCase of
         test_connect ->
             Config;
         test_auth ->
             connect(Config);
         test_starttls ->
+            connect(Config);
+        test_zlib ->
             connect(Config);
         test_register ->
             connect(Config);
@@ -89,12 +91,13 @@ end_per_testcase(_TestCase, _Config) ->
 groups() ->
     [].
 
-%%all() -> [start_ejabberd, test_starttls].
+%%all() -> [start_ejabberd, test_zlib].
 
 all() ->
     [start_ejabberd,
      test_connect,
      test_starttls,
+     test_zlib,
      test_register,
      auth_plain,
      auth_md5,
@@ -134,7 +137,7 @@ connect(Config) ->
                    binary_to_list(?config(server, Config)),
                    ?config(port, Config),
                    [binary, {packet, 0}, {active, false}]),
-    init_stream([{socket, Sock}|Config]).
+    init_stream(set_opt(socket, Sock, Config)).
 
 init_stream(Config) ->
     ok = send_text(Config, io_lib:format(?STREAM_HEADER,
@@ -149,15 +152,16 @@ init_stream(Config) ->
                  (_) ->
                       []
               end, Fs),
-    Feats = lists:foldl(
-              fun(#feature_register{}, Acc) ->
-                      [{register, true}|Acc];
-                 (#starttls{}, Acc) ->
-                      [{starttls, true}|Acc];
-                 (_, Acc) ->
-                      Acc
-              end, [], Fs),
-    [{mechs, Mechs}|Feats ++ Config].
+    lists:foldl(
+      fun(#feature_register{}, Acc) ->
+              set_opt(register, true, Acc);
+         (#starttls{}, Acc) ->
+              set_opt(starttls, true, Acc);
+         (#compression{methods = Ms}, Acc) ->
+              set_opt(compression, Ms, Acc);
+         (_, Acc) ->
+              Acc
+      end, set_opt(mechs, Mechs, Config), Fs).
 
 disconnect(Config) ->
     Socket = ?config(socket, Config),
@@ -181,8 +185,26 @@ starttls(Config) ->
                   ?config(socket, Config),
                   [{certfile, ?config(certfile, Config)},
                    connect]),
-    NewConfig = [{socket, TLSSocket}|lists:keydelete(socket, 1, Config)],
-    disconnect(init_stream(NewConfig)).
+    disconnect(init_stream(set_opt(socket, TLSSocket, Config))).
+
+test_zlib(Config) ->
+    case ?config(compression, Config) of
+        [_|_] = Ms ->
+            case lists:member(<<"zlib">>, Ms) of
+                true ->
+                    zlib(Config);
+                false ->
+                    {skipped, 'zlib_not_available'}
+            end;
+        _ ->
+            {skipped, 'compression_not_available'}
+    end.
+
+zlib(Config) ->
+    _ = send(Config, #compress{methods = [<<"zlib">>]}),
+    #compressed{} = recv(),
+    ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
+    disconnect(init_stream(set_opt(socket, ZlibSocket, Config))).
 
 test_register(Config) ->
     case ?config(register, Config) of
@@ -528,7 +550,7 @@ auth_SASL(Mech, Config) ->
                                 ?config(server, Config),
                                 ?config(password, Config)),
     send(Config, #sasl_auth{mechanism = Mech, text = Response}),
-    wait_auth_SASL_result([{sasl, SASL}|Config]).
+    wait_auth_SASL_result(set_opt(sasl, SASL, Config)).
 
 wait_auth_SASL_result(Config) ->
     case recv() of
@@ -545,8 +567,7 @@ wait_auth_SASL_result(Config) ->
         #sasl_challenge{text = ClientIn} ->
             {Response, SASL} = (?config(sasl, Config))(ClientIn),
             send(Config, #sasl_response{text = Response}),
-            Config1 = proplists:delete(sasl, Config),
-            wait_auth_SASL_result([{sasl, SASL}|Config1]);
+            wait_auth_SASL_result(set_opt(sasl, SASL, Config));
         #sasl_failure{} ->
             ct:fail(sasl_auth_failed)
     end.
@@ -716,3 +737,6 @@ bookmark_conference() ->
                                  <<"some">>,
                                  <<"some.conference.org">>,
                                  <<>>)}.
+
+set_opt(Opt, Val, Config) ->
+    [{Opt, Val}|lists:keydelete(Opt, 1, Config)].

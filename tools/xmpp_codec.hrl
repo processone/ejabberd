@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Fri, 14 Jun 2013 08:43:04 GMT
+%% Date: Fri, 14 Jun 2013 14:30:53 GMT
 
 -record(last, {seconds, text}).
 
@@ -85,6 +85,14 @@
 -record(starttls_proceed, {}).
 
 -record(starttls_failure, {}).
+
+-record(compress_failure, {reason}).
+
+-record(compress, {methods = []}).
+
+-record(compressed, {}).
+
+-record(compression, {methods = []}).
 
 -record(stream_features, {sub_els = []}).
 

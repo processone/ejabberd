@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Fri, 14 Jun 2013 08:43:04 GMT
+%% Date: Fri, 14 Jun 2013 14:30:53 GMT
 
 -module(xmpp_codec).
 
@@ -348,6 +348,33 @@ decode({xmlel, _name, _attrs, _} = _el) ->
       {<<"stream:features">>,
        <<"http://etherx.jabber.org/streams">>} ->
 	  decode_stream_features(_el);
+      {<<"compression">>,
+       <<"http://jabber.org/features/compress">>} ->
+	  decode_compression(_el);
+      {<<"method">>,
+       <<"http://jabber.org/features/compress">>} ->
+	  decode_compression_method(_el);
+      {<<"compressed">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  decode_compressed(_el);
+      {<<"compress">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  decode_compress(_el);
+      {<<"method">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  decode_compress_method(_el);
+      {<<"failure">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  decode_compress_failure(_el);
+      {<<"unsupported-method">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  decode_compress_failure_unsupported_method(_el);
+      {<<"processing-failed">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  decode_compress_failure_processing_failed(_el);
+      {<<"setup-failed">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  decode_compress_failure_setup_failed(_el);
       {<<"failure">>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  decode_starttls_failure(_el);
@@ -715,6 +742,22 @@ encode({stream_features, _} = Stream_features) ->
     encode_stream_features(Stream_features,
 			   [{<<"xmlns">>,
 			     <<"http://etherx.jabber.org/streams">>}]);
+encode({compression, _} = Compression) ->
+    encode_compression(Compression,
+		       [{<<"xmlns">>,
+			 <<"http://jabber.org/features/compress">>}]);
+encode({compressed} = Compressed) ->
+    encode_compressed(Compressed,
+		      [{<<"xmlns">>,
+			<<"http://jabber.org/protocol/compress">>}]);
+encode({compress, _} = Compress) ->
+    encode_compress(Compress,
+		    [{<<"xmlns">>,
+		      <<"http://jabber.org/protocol/compress">>}]);
+encode({compress_failure, _} = Failure) ->
+    encode_compress_failure(Failure,
+			    [{<<"xmlns">>,
+			      <<"http://jabber.org/protocol/compress">>}]);
 encode({starttls_failure} = Failure) ->
     encode_starttls_failure(Failure,
 			    [{<<"xmlns">>,
@@ -4637,6 +4680,234 @@ encode_starttls_failure({starttls_failure},
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"failure">>, _attrs, _els}.
+
+decode_compress_failure_setup_failed({xmlel,
+				      <<"setup-failed">>, _attrs, _els}) ->
+    'setup-failed'.
+
+encode_compress_failure_setup_failed('setup-failed',
+				     _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"setup-failed">>, _attrs, _els}.
+
+decode_compress_failure_processing_failed({xmlel,
+					   <<"processing-failed">>, _attrs,
+					   _els}) ->
+    'processing-failed'.
+
+encode_compress_failure_processing_failed('processing-failed',
+					  _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"processing-failed">>, _attrs, _els}.
+
+decode_compress_failure_unsupported_method({xmlel,
+					    <<"unsupported-method">>, _attrs,
+					    _els}) ->
+    'unsupported-method'.
+
+encode_compress_failure_unsupported_method('unsupported-method',
+					   _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"unsupported-method">>, _attrs, _els}.
+
+decode_compress_failure({xmlel, <<"failure">>, _attrs,
+			 _els}) ->
+    Reason = decode_compress_failure_els(_els, undefined),
+    {compress_failure, Reason}.
+
+decode_compress_failure_els([], Reason) -> Reason;
+decode_compress_failure_els([{xmlel, <<"setup-failed">>,
+			      _attrs, _} =
+				 _el
+			     | _els],
+			    Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/compress">> ->
+	   decode_compress_failure_els(_els,
+				       decode_compress_failure_setup_failed(_el));
+       true -> decode_compress_failure_els(_els, Reason)
+    end;
+decode_compress_failure_els([{xmlel,
+			      <<"processing-failed">>, _attrs, _} =
+				 _el
+			     | _els],
+			    Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/compress">> ->
+	   decode_compress_failure_els(_els,
+				       decode_compress_failure_processing_failed(_el));
+       true -> decode_compress_failure_els(_els, Reason)
+    end;
+decode_compress_failure_els([{xmlel,
+			      <<"unsupported-method">>, _attrs, _} =
+				 _el
+			     | _els],
+			    Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/compress">> ->
+	   decode_compress_failure_els(_els,
+				       decode_compress_failure_unsupported_method(_el));
+       true -> decode_compress_failure_els(_els, Reason)
+    end;
+decode_compress_failure_els([_ | _els], Reason) ->
+    decode_compress_failure_els(_els, Reason).
+
+encode_compress_failure({compress_failure, Reason},
+			_xmlns_attrs) ->
+    _els = 'encode_compress_failure_$reason'(Reason, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"failure">>, _attrs, _els}.
+
+'encode_compress_failure_$reason'(undefined, _acc) ->
+    _acc;
+'encode_compress_failure_$reason'('setup-failed' =
+				      Reason,
+				  _acc) ->
+    [encode_compress_failure_setup_failed(Reason, [])
+     | _acc];
+'encode_compress_failure_$reason'('processing-failed' =
+				      Reason,
+				  _acc) ->
+    [encode_compress_failure_processing_failed(Reason, [])
+     | _acc];
+'encode_compress_failure_$reason'('unsupported-method' =
+				      Reason,
+				  _acc) ->
+    [encode_compress_failure_unsupported_method(Reason, [])
+     | _acc].
+
+decode_compress_method({xmlel, <<"method">>, _attrs,
+			_els}) ->
+    Cdata = decode_compress_method_els(_els, <<>>), Cdata.
+
+decode_compress_method_els([], Cdata) ->
+    decode_compress_method_cdata(Cdata);
+decode_compress_method_els([{xmlcdata, _data} | _els],
+			   Cdata) ->
+    decode_compress_method_els(_els,
+			       <<Cdata/binary, _data/binary>>);
+decode_compress_method_els([_ | _els], Cdata) ->
+    decode_compress_method_els(_els, Cdata).
+
+encode_compress_method(Cdata, _xmlns_attrs) ->
+    _els = encode_compress_method_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"method">>, _attrs, _els}.
+
+decode_compress_method_cdata(<<>>) -> undefined;
+decode_compress_method_cdata(_val) -> _val.
+
+encode_compress_method_cdata(undefined, _acc) -> _acc;
+encode_compress_method_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_compress({xmlel, <<"compress">>, _attrs,
+		 _els}) ->
+    Methods = decode_compress_els(_els, []),
+    {compress, Methods}.
+
+decode_compress_els([], Methods) ->
+    lists:reverse(Methods);
+decode_compress_els([{xmlel, <<"method">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Methods) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/compress">> ->
+	   decode_compress_els(_els,
+			       [decode_compress_method(_el) | Methods]);
+       true -> decode_compress_els(_els, Methods)
+    end;
+decode_compress_els([_ | _els], Methods) ->
+    decode_compress_els(_els, Methods).
+
+encode_compress({compress, Methods}, _xmlns_attrs) ->
+    _els = 'encode_compress_$methods'(Methods, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"compress">>, _attrs, _els}.
+
+'encode_compress_$methods'([], _acc) -> _acc;
+'encode_compress_$methods'([Methods | _els], _acc) ->
+    'encode_compress_$methods'(_els,
+			       [encode_compress_method(Methods, []) | _acc]).
+
+decode_compressed({xmlel, <<"compressed">>, _attrs,
+		   _els}) ->
+    {compressed}.
+
+encode_compressed({compressed}, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"compressed">>, _attrs, _els}.
+
+decode_compression_method({xmlel, <<"method">>, _attrs,
+			   _els}) ->
+    Cdata = decode_compression_method_els(_els, <<>>),
+    Cdata.
+
+decode_compression_method_els([], Cdata) ->
+    decode_compression_method_cdata(Cdata);
+decode_compression_method_els([{xmlcdata, _data}
+			       | _els],
+			      Cdata) ->
+    decode_compression_method_els(_els,
+				  <<Cdata/binary, _data/binary>>);
+decode_compression_method_els([_ | _els], Cdata) ->
+    decode_compression_method_els(_els, Cdata).
+
+encode_compression_method(Cdata, _xmlns_attrs) ->
+    _els = encode_compression_method_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"method">>, _attrs, _els}.
+
+decode_compression_method_cdata(<<>>) -> undefined;
+decode_compression_method_cdata(_val) -> _val.
+
+encode_compression_method_cdata(undefined, _acc) ->
+    _acc;
+encode_compression_method_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_compression({xmlel, <<"compression">>, _attrs,
+		    _els}) ->
+    Methods = decode_compression_els(_els, []),
+    {compression, Methods}.
+
+decode_compression_els([], Methods) ->
+    lists:reverse(Methods);
+decode_compression_els([{xmlel, <<"method">>, _attrs,
+			 _} =
+			    _el
+			| _els],
+		       Methods) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/features/compress">> ->
+	   decode_compression_els(_els,
+				  [decode_compression_method(_el) | Methods]);
+       true -> decode_compression_els(_els, Methods)
+    end;
+decode_compression_els([_ | _els], Methods) ->
+    decode_compression_els(_els, Methods).
+
+encode_compression({compression, Methods},
+		   _xmlns_attrs) ->
+    _els = 'encode_compression_$methods'(Methods, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"compression">>, _attrs, _els}.
+
+'encode_compression_$methods'([], _acc) -> _acc;
+'encode_compression_$methods'([Methods | _els], _acc) ->
+    'encode_compression_$methods'(_els,
+				  [encode_compression_method(Methods, [])
+				   | _acc]).
 
 decode_stream_features({xmlel, <<"stream:features">>,
 			_attrs, _els}) ->
