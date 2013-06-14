@@ -232,12 +232,13 @@ register(Config) ->
 test_unregister(Config) ->
     case ?config(register, Config) of
         true ->
-            disconnect(try_unregister(Config));
+            try_unregister(Config);
         _ ->
             {skipped, 'registration_not_available'}
     end.
 
 try_unregister(Config) ->
+    true = is_feature_advertised(Config, ?NS_REGISTER),
     I = send(Config,
              #iq{type = set,
                  sub_els = [#register{remove = true}]}),
@@ -245,6 +246,7 @@ try_unregister(Config) ->
     %% TODO: fix in ejabberd
     %% #iq{type = result, id = I, sub_els = []} = recv(),
     #iq{type = result, id = I, sub_els = [#register{}]} = recv(),
+    #stream_error{reason = conflict} = recv(),
     Config.
 
 test_auth(Config) ->
