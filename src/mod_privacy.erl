@@ -64,6 +64,7 @@ start(Host, Opts) ->
 	  update_table();
       _ -> ok
     end,
+    mod_disco:register_feature(Host, ?NS_PRIVACY),
     ejabberd_hooks:add(privacy_iq_get, Host, ?MODULE,
 		       process_iq_get, 50),
     ejabberd_hooks:add(privacy_iq_set, Host, ?MODULE,
@@ -80,6 +81,7 @@ start(Host, Opts) ->
 				  ?NS_PRIVACY, ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
+    mod_disco:unregister_feature(Host, ?NS_PRIVACY),
     ejabberd_hooks:delete(privacy_iq_get, Host, ?MODULE,
 			  process_iq_get, 50),
     ejabberd_hooks:delete(privacy_iq_set, Host, ?MODULE,

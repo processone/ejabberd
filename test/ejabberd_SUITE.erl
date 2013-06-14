@@ -356,13 +356,7 @@ last(Config) ->
     disconnect(Config).
 
 privacy(Config) ->
-    %% BUG: the feature MUST be advertised via disco#info:
-    %%      http://xmpp.org/extensions/xep-0016.html#disco
-    %% It seems like this bug exists because Privacy Lists
-    %% were implemented according to the old RFC where support
-    %% needn't be advertised via service discovery.
-    %% TODO: fix in ejabberd
-    %% true = is_feature_advertised(Config, ?NS_PRIVACY),
+    true = is_feature_advertised(Config, ?NS_PRIVACY),
     I1 = send(Config, #iq{type = get, sub_els = [#privacy{}]}),
     #iq{type = result, id = I1, sub_els = [#privacy{}]} = recv(),
     JID = <<"tybalt@example.com">>,
