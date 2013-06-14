@@ -37,6 +37,8 @@ init_per_suite(Config) ->
     SASLPath = filename:join([PrivDir, "sasl.log"]),
     MnesiaDir = filename:join([PrivDir, "mnesia"]),
     CertFile = filename:join([DataDir, "cert.pem"]),
+    {ok, CWD} = file:get_cwd(),
+    {ok, _} = file:copy(CertFile, filename:join([CWD, "cert.pem"])),
     application:set_env(ejabberd, config, ConfigPath),
     application:set_env(ejabberd, log_path, LogPath),
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
