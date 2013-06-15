@@ -645,7 +645,6 @@ roster_master(Config) ->
                        sub_els =
                            [#roster{items = [#roster_item{
                                                 jid = LPeer,
-                                                groups = Groups,
                                                 subscription = both}]}]},
                    #iq{type = result, id = I1, sub_els = []}),
     send(Config, make_iq_result(Push5)),
@@ -659,19 +658,21 @@ roster_master(Config) ->
                sub_els =
                    [#roster{items = [#roster_item{
                                         jid = LPeer,
-                                        groups = Groups,
                                         subscription = to}]}]},
            #iq{type = set,
                sub_els =
                    [#roster{items = [#roster_item{
                                         jid = LPeer,
-                                        groups = Groups,
                                         subscription = none}]}]},
            #presence{type = unsubscribe, from = LPeer},
            #presence{type = unsubscribed, from = LPeer},
            #presence{type = unavailable, from = Peer}),
     send(Config, make_iq_result(Push6)),
     send(Config, make_iq_result(Push7)),
+    #iq{sub_els = [#roster{items = [#roster_item{groups = G1}]}]} = Push5,
+    #iq{sub_els = [#roster{items = [#roster_item{groups = G2}]}]} = Push6,
+    #iq{sub_els = [#roster{items = [#roster_item{groups = G3}]}]} = Push7,
+    Groups = lists:sort(G1), Groups = lists:sort(G2), Groups = lists:sort(G3),
     disconnect(Config).
 
 roster_slave(Config) ->
