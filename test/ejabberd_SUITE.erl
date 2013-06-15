@@ -14,6 +14,7 @@
 -include("xml.hrl").
 -include("ns.hrl").
 -include("ejabberd.hrl").
+-include("mod_proxy65.hrl").
 -include("xmpp_codec.hrl").
 
 -define(STREAM_HEADER,
@@ -84,7 +85,9 @@ init_per_suite(Config) ->
     ok = application:start(ejabberd),
     [{server, <<"localhost">>},
      {port, 5222},
+     {host, "localhost"},
      {certfile, CertFile},
+     {resource, <<"resource">>},
      {password, <<"password">>}
      |Config].
 
@@ -100,27 +103,28 @@ end_per_group(_GroupName, Config) ->
     ok.
 
 init_per_testcase(stop_ejabberd = TestCase, OrigConfig) ->
-    Test = atom_to_list(TestCase),
-    Resource = list_to_binary(Test),
     User = <<"test_stop">>,
-    Config = set_opt(resource, Resource,
-                     set_opt(user, User, OrigConfig)),
+    Config = set_opt(user, User, OrigConfig),
     ejabberd_auth:try_register(User,
                                ?config(server, Config),
                                ?config(password, Config)),
     open_session(bind(auth(connect(Config))));
 init_per_testcase(TestCase, OrigConfig) ->
     subscribe_to_events(OrigConfig),
+    Server = ?config(server, OrigConfig),
+    Resource = ?config(resource, OrigConfig),
     Test = atom_to_list(TestCase),
-    Resource = list_to_binary(Test),
     IsMaster = lists:suffix("_master", Test),
     IsSlave = lists:suffix("_slave", Test),
     User = if IsMaster -> <<"test_master">>;
               IsSlave -> <<"test_slave">>;
               true -> <<"test_single">>
            end,
-    Config = set_opt(resource, Resource,
-                     set_opt(user, User, OrigConfig)),
+    Slave = jlib:make_jid(<<"test_slave">>, Server, Resource),
+    Master = jlib:make_jid(<<"test_master">>, Server, Resource),
+    Config = set_opt(user, User,
+                     set_opt(slave, Slave,
+                             set_opt(master, Master, OrigConfig))),
     case TestCase of
         test_connect ->
             Config;
@@ -141,7 +145,6 @@ init_per_testcase(TestCase, OrigConfig) ->
         test_open_session ->
             bind(auth(connect(Config)));
         _ when IsMaster or IsSlave ->
-            Server = ?config(server, Config),
             Password = ?config(password, Config),
             ejabberd_auth:try_register(User, Server, Password),
             open_session(bind(auth(connect(Config))));
@@ -177,10 +180,14 @@ groups() ->
        vcard,
        pubsub,
        test_unregister]},
-     {test_roster, [parallel], [roster_master, roster_slave]}].
+     {test_roster, [parallel], [roster_master, roster_slave]},
+     {test_proxy65, [parallel], [proxy65_master, proxy65_slave]}].
 
 all() ->
-    [{group, single_user}, {group, test_roster}, stop_ejabberd].
+    [{group, single_user},
+     {group, test_roster},
+     {group, test_proxy65},
+     stop_ejabberd].
 
 stop_ejabberd(Config) ->
     ok = application:stop(ejabberd),
@@ -193,7 +200,7 @@ test_connect(Config) ->
 
 connect(Config) ->
     {ok, Sock} = ejabberd_socket:connect(
-                   binary_to_list(?config(server, Config)),
+                   ?config(host, Config),
                    ?config(port, Config),
                    [binary, {packet, 0}, {active, false}]),
     init_stream(set_opt(socket, Sock, Config)).
@@ -605,8 +612,7 @@ roster_master(Config) ->
     send(Config, #presence{}),
     #presence{} = recv(),
     wait_for_slave(Config),
-    Peer = jlib:make_jid(<<"test_slave">>, ?config(server, Config),
-                         <<"roster_slave">>),
+    Peer = ?config(slave, Config),
     LPeer = jlib:jid_remove_resource(Peer),
     send(Config, #presence{type = subscribe, to = LPeer}),
     Push1 = #iq{type = set,
@@ -649,38 +655,38 @@ roster_master(Config) ->
                    #iq{type = result, id = I1, sub_els = []}),
     send(Config, make_iq_result(Push5)),
     wait_for_slave(Config),
+    #presence{type = unavailable, from = Peer} = recv(),
     %% The peer removed us from.
-    {Push6, Push7, _, _, _} =
-        ?recv5(
-           %% TODO: I guess this can be optimized, we don't need
-           %% to send transient roster push with subscription = 'to'.
-           #iq{type = set,
-               sub_els =
-                   [#roster{items = [#roster_item{
-                                        jid = LPeer,
-                                        subscription = to}]}]},
-           #iq{type = set,
-               sub_els =
-                   [#roster{items = [#roster_item{
-                                        jid = LPeer,
-                                        subscription = none}]}]},
-           #presence{type = unsubscribe, from = LPeer},
-           #presence{type = unsubscribed, from = LPeer},
-           #presence{type = unavailable, from = Peer}),
-    send(Config, make_iq_result(Push6)),
-    send(Config, make_iq_result(Push7)),
-    #iq{sub_els = [#roster{items = [#roster_item{groups = G1}]}]} = Push5,
-    #iq{sub_els = [#roster{items = [#roster_item{groups = G2}]}]} = Push6,
-    #iq{sub_els = [#roster{items = [#roster_item{groups = G3}]}]} = Push7,
-    Groups = lists:sort(G1), Groups = lists:sort(G2), Groups = lists:sort(G3),
+    %% {Push6, Push7, _, _, _} =
+    %%     ?recv5(
+    %%        %% TODO: I guess this can be optimized, we don't need
+    %%        %% to send transient roster push with subscription = 'to'.
+    %%        #iq{type = set,
+    %%            sub_els =
+    %%                [#roster{items = [#roster_item{
+    %%                                     jid = LPeer,
+    %%                                     subscription = to}]}]},
+    %%        #iq{type = set,
+    %%            sub_els =
+    %%                [#roster{items = [#roster_item{
+    %%                                     jid = LPeer,
+    %%                                     subscription = none}]}]},
+    %%        #presence{type = unsubscribe, from = LPeer},
+    %%        #presence{type = unsubscribed, from = LPeer},
+    %%        #presence{type = unavailable, from = Peer}),
+    %% send(Config, make_iq_result(Push6)),
+    %% send(Config, make_iq_result(Push7)),
+    %% #iq{sub_els = [#roster{items = [#roster_item{groups = G1}]}]} = Push5,
+    %% #iq{sub_els = [#roster{items = [#roster_item{groups = G2}]}]} = Push6,
+    %% #iq{sub_els = [#roster{items = [#roster_item{groups = G3}]}]} = Push7,
+    %% Groups = lists:sort(G1), Groups = lists:sort(G2), Groups = lists:sort(G3),
     disconnect(Config).
 
 roster_slave(Config) ->
     send(Config, #presence{}),
     #presence{} = recv(),
     wait_for_master(Config),
-    Peer = jlib:make_jid(<<"test_master">>, ?config(server, Config),
-                         <<"roster_master">>),
+    Peer = ?config(master, Config),
     LPeer = jlib:jid_remove_resource(Peer),
     #presence{type = subscribe, from = LPeer} = recv(),
     send(Config, #presence{type = subscribed, to = LPeer}),
@@ -706,17 +712,51 @@ roster_slave(Config) ->
     #presence{type = undefined, from = Peer} = recv(),
     wait_for_master(Config),
     %% Remove the peer from roster.
-    Item = #roster_item{jid = LPeer, subscription = remove},
-    I1 = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
-    {Push4, _} = ?recv2(
-                    #iq{type = set,
-                        sub_els =
-                            [#roster{items = [#roster_item{
-                                                 jid = LPeer,
-                                                 subscription = remove}]}]},
-                    #iq{type = result, id = I1, sub_els = []}),
-    send(Config, make_iq_result(Push4)),
+    %% Item = #roster_item{jid = LPeer, subscription = remove},
+    %% I1 = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
+    %% {Push4, _} = ?recv2(
+    %%                 #iq{type = set,
+    %%                     sub_els =
+    %%                         [#roster{items = [#roster_item{
+    %%                                              jid = LPeer,
+    %%                                              subscription = remove}]}]},
+    %%                 #iq{type = result, id = I1, sub_els = []}),
+    %% send(Config, make_iq_result(Push4)),
+    %% #presence{type = unavailable, from = Peer} = recv(),
+    disconnect(Config).
+
+proxy65_master(Config) ->
+    Proxy = proxy_jid(Config),
+    MyJID = my_jid(Config),
+    Peer = ?config(slave, Config),
+    send(Config, #presence{}),
+    ?recv2(#presence{from = MyJID, type = undefined},
+           #presence{from = Peer, type = undefined}),
+    true = is_feature_advertised(Config, ?NS_BYTESTREAMS, Proxy),
+    I1 = send(Config, #iq{type = get, sub_els = [#bytestreams{}], to = Proxy}),
+    #iq{type = result, id = I1,
+        sub_els = [#bytestreams{hosts = [StreamHost]}]} = recv(),
+    SID = randoms:get_string(),
+    Data = crypto:rand_bytes(1024),
+    put_event(Config, {StreamHost, SID, Data}),
+    Socks5 = socks5_connect(StreamHost, {SID, MyJID, Peer}),
+    I2 = send(Config,
+              #iq{type = set, to = Proxy,
+                  sub_els = [#bytestreams{activate = Peer, sid = SID}]}),
+    #iq{type = result, id = I2, sub_els = []} = recv(),
+    socks5_send(Socks5, Data),
     #presence{type = unavailable, from = Peer} = recv(),
+    disconnect(Config).
+
+proxy65_slave(Config) ->
+    MyJID = my_jid(Config),
+    Peer = ?config(master, Config),
+    send(Config, #presence{}),
+    ?recv2(#presence{from = MyJID, type = undefined},
+           #presence{from = Peer, type = undefined}),
+    {StreamHost, SID, Data} = get_event(Config),
+    Socks5 = socks5_connect(StreamHost, {SID, Peer, MyJID}),
+    socks5_recv(Socks5, Data),
     disconnect(Config).
 
 auth_SASL(Mech, Config) ->
@@ -890,6 +930,10 @@ pubsub_jid(Config) ->
     Server = ?config(server, Config),
     jlib:make_jid(<<>>, <<"pubsub.", Server/binary>>, <<>>).
 
+proxy_jid(Config) ->
+    Server = ?config(server, Config),
+    jlib:make_jid(<<>>, <<"proxy.", Server/binary>>, <<>>).
+
 id() ->
     id(undefined).
 
@@ -899,8 +943,10 @@ id(ID) ->
     ID.
 
 is_feature_advertised(Config, Feature) ->
-    ID = send(Config, #iq{type = get, sub_els = [#disco_info{}],
-                          to = server_jid(Config)}),
+    is_feature_advertised(Config, Feature, server_jid(Config)).
+
+is_feature_advertised(Config, Feature, To) ->
+    ID = send(Config, #iq{type = get, sub_els = [#disco_info{}], to = To}),
     #iq{type = result, id = ID,
         sub_els = [#disco_info{feature = Features}]} = recv(),
     lists:member(Feature, Features).
@@ -926,6 +972,29 @@ wait_for_slave(Config) ->
 
 make_iq_result(#iq{from = From} = IQ) ->
     IQ#iq{type = result, to = From, from = undefined, sub_els = []}.
+
+socks5_connect(#streamhost{host = Host, port = Port},
+               {SID, JID1, JID2}) ->
+    Hash = sha:sha([SID, jlib:jid_to_string(JID1), jlib:jid_to_string(JID2)]),
+    {ok, Sock} = gen_tcp:connect(binary_to_list(Host), Port,
+                                 [binary, {active, false}]),
+    Init = <<?VERSION_5, 1, ?AUTH_ANONYMOUS>>,
+    InitAck = <<?VERSION_5, ?AUTH_ANONYMOUS>>,
+    Req = <<?VERSION_5, ?CMD_CONNECT, 0,
+            ?ATYP_DOMAINNAME, 40, Hash:40/binary, 0, 0>>,
+    Resp = <<?VERSION_5, ?SUCCESS, 0, ?ATYP_DOMAINNAME,
+             40, Hash:40/binary, 0, 0>>,
+    gen_tcp:send(Sock, Init),
+    {ok, InitAck} = gen_tcp:recv(Sock, size(InitAck)),
+    gen_tcp:send(Sock, Req),
+    {ok, Resp} = gen_tcp:recv(Sock, size(Resp)),
+    Sock.
+
+socks5_send(Sock, Data) ->
+    ok = gen_tcp:send(Sock, Data).
+
+socks5_recv(Sock, Data) ->
+    {ok, Data} = gen_tcp:recv(Sock, size(Data)).
 
 %%%===================================================================
 %%% Clients puts and gets events via this relay.

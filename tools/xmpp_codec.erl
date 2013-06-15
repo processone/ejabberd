@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Sat, 15 Jun 2013 09:36:14 GMT
+%% Date: Sat, 15 Jun 2013 16:36:04 GMT
 
 -module(xmpp_codec).
 
@@ -8,6 +8,18 @@
 
 decode({xmlel, _name, _attrs, _} = _el) ->
     case {_name, xml:get_attr_s(<<"xmlns">>, _attrs)} of
+      {<<"query">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  decode_bytestreams(_el);
+      {<<"activate">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  decode_bytestreams_activate(_el);
+      {<<"streamhost-used">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  decode_bytestreams_streamhost_used(_el);
+      {<<"streamhost">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  decode_bytestreams_streamhost(_el);
       {<<"x">>, <<"jabber:x:delay">>} ->
 	  decode_legacy_delay(_el);
       {<<"delay">>, <<"urn:xmpp:delay">>} ->
@@ -618,6 +630,14 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 	  erlang:error({unknown_tag, _name, _xmlns})
     end.
 
+encode({bytestreams, _, _, _, _, _, _} = Query) ->
+    encode_bytestreams(Query,
+		       [{<<"xmlns">>,
+			 <<"http://jabber.org/protocol/bytestreams">>}]);
+encode({streamhost, _, _, _} = Streamhost) ->
+    encode_bytestreams_streamhost(Streamhost,
+				  [{<<"xmlns">>,
+				    <<"http://jabber.org/protocol/bytestreams">>}]);
 encode({legacy_delay, _, _} = X) ->
     encode_legacy_delay(X,
 			[{<<"xmlns">>, <<"jabber:x:delay">>}]);
@@ -11815,3 +11835,293 @@ decode_legacy_delay_attr_from(_val) ->
 encode_legacy_delay_attr_from(undefined, _acc) -> _acc;
 encode_legacy_delay_attr_from(_val, _acc) ->
     [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_bytestreams_streamhost({xmlel, <<"streamhost">>,
+			       _attrs, _els}) ->
+    {Jid, Host, Port} =
+	decode_bytestreams_streamhost_attrs(_attrs, undefined,
+					    undefined, undefined),
+    {streamhost, Jid, Host, Port}.
+
+decode_bytestreams_streamhost_attrs([{<<"jid">>, _val}
+				     | _attrs],
+				    _Jid, Host, Port) ->
+    decode_bytestreams_streamhost_attrs(_attrs, _val, Host,
+					Port);
+decode_bytestreams_streamhost_attrs([{<<"host">>, _val}
+				     | _attrs],
+				    Jid, _Host, Port) ->
+    decode_bytestreams_streamhost_attrs(_attrs, Jid, _val,
+					Port);
+decode_bytestreams_streamhost_attrs([{<<"port">>, _val}
+				     | _attrs],
+				    Jid, Host, _Port) ->
+    decode_bytestreams_streamhost_attrs(_attrs, Jid, Host,
+					_val);
+decode_bytestreams_streamhost_attrs([_ | _attrs], Jid,
+				    Host, Port) ->
+    decode_bytestreams_streamhost_attrs(_attrs, Jid, Host,
+					Port);
+decode_bytestreams_streamhost_attrs([], Jid, Host,
+				    Port) ->
+    {decode_bytestreams_streamhost_attr_jid(Jid),
+     decode_bytestreams_streamhost_attr_host(Host),
+     decode_bytestreams_streamhost_attr_port(Port)}.
+
+encode_bytestreams_streamhost({streamhost, Jid, Host,
+			       Port},
+			      _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_bytestreams_streamhost_attr_port(Port,
+						     encode_bytestreams_streamhost_attr_host(Host,
+											     encode_bytestreams_streamhost_attr_jid(Jid,
+																    _xmlns_attrs))),
+    {xmlel, <<"streamhost">>, _attrs, _els}.
+
+decode_bytestreams_streamhost_attr_jid(undefined) ->
+    erlang:error({missing_attr, <<"jid">>, <<"streamhost">>,
+		  <<"http://jabber.org/protocol/bytestreams">>});
+decode_bytestreams_streamhost_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>,
+			<<"streamhost">>,
+			<<"http://jabber.org/protocol/bytestreams">>});
+      _res -> _res
+    end.
+
+encode_bytestreams_streamhost_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_bytestreams_streamhost_attr_host(undefined) ->
+    erlang:error({missing_attr, <<"host">>,
+		  <<"streamhost">>,
+		  <<"http://jabber.org/protocol/bytestreams">>});
+decode_bytestreams_streamhost_attr_host(_val) -> _val.
+
+encode_bytestreams_streamhost_attr_host(_val, _acc) ->
+    [{<<"host">>, _val} | _acc].
+
+decode_bytestreams_streamhost_attr_port(undefined) ->
+    1080;
+decode_bytestreams_streamhost_attr_port(_val) ->
+    case catch xml_gen:dec_int(_val, 0, 65535) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"port">>,
+			<<"streamhost">>,
+			<<"http://jabber.org/protocol/bytestreams">>});
+      _res -> _res
+    end.
+
+encode_bytestreams_streamhost_attr_port(1080, _acc) ->
+    _acc;
+encode_bytestreams_streamhost_attr_port(_val, _acc) ->
+    [{<<"port">>, xml_gen:enc_int(_val)} | _acc].
+
+decode_bytestreams_streamhost_used({xmlel,
+				    <<"streamhost-used">>, _attrs, _els}) ->
+    Jid = decode_bytestreams_streamhost_used_attrs(_attrs,
+						   undefined),
+    Jid.
+
+decode_bytestreams_streamhost_used_attrs([{<<"jid">>,
+					   _val}
+					  | _attrs],
+					 _Jid) ->
+    decode_bytestreams_streamhost_used_attrs(_attrs, _val);
+decode_bytestreams_streamhost_used_attrs([_ | _attrs],
+					 Jid) ->
+    decode_bytestreams_streamhost_used_attrs(_attrs, Jid);
+decode_bytestreams_streamhost_used_attrs([], Jid) ->
+    decode_bytestreams_streamhost_used_attr_jid(Jid).
+
+encode_bytestreams_streamhost_used(Jid, _xmlns_attrs) ->
+    _els = [],
+    _attrs =
+	encode_bytestreams_streamhost_used_attr_jid(Jid,
+						    _xmlns_attrs),
+    {xmlel, <<"streamhost-used">>, _attrs, _els}.
+
+decode_bytestreams_streamhost_used_attr_jid(undefined) ->
+    erlang:error({missing_attr, <<"jid">>,
+		  <<"streamhost-used">>,
+		  <<"http://jabber.org/protocol/bytestreams">>});
+decode_bytestreams_streamhost_used_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>,
+			<<"streamhost-used">>,
+			<<"http://jabber.org/protocol/bytestreams">>});
+      _res -> _res
+    end.
+
+encode_bytestreams_streamhost_used_attr_jid(_val,
+					    _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_bytestreams_activate({xmlel, <<"activate">>,
+			     _attrs, _els}) ->
+    Cdata = decode_bytestreams_activate_els(_els, <<>>),
+    Cdata.
+
+decode_bytestreams_activate_els([], Cdata) ->
+    decode_bytestreams_activate_cdata(Cdata);
+decode_bytestreams_activate_els([{xmlcdata, _data}
+				 | _els],
+				Cdata) ->
+    decode_bytestreams_activate_els(_els,
+				    <<Cdata/binary, _data/binary>>);
+decode_bytestreams_activate_els([_ | _els], Cdata) ->
+    decode_bytestreams_activate_els(_els, Cdata).
+
+encode_bytestreams_activate(Cdata, _xmlns_attrs) ->
+    _els = encode_bytestreams_activate_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"activate">>, _attrs, _els}.
+
+decode_bytestreams_activate_cdata(<<>>) -> undefined;
+decode_bytestreams_activate_cdata(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_cdata_value, <<>>, <<"activate">>,
+			<<"http://jabber.org/protocol/bytestreams">>});
+      _res -> _res
+    end.
+
+encode_bytestreams_activate_cdata(undefined, _acc) ->
+    _acc;
+encode_bytestreams_activate_cdata(_val, _acc) ->
+    [{xmlcdata, enc_jid(_val)} | _acc].
+
+decode_bytestreams({xmlel, <<"query">>, _attrs,
+		    _els}) ->
+    {Hosts, Used, Activate} = decode_bytestreams_els(_els,
+						     [], undefined, undefined),
+    {Dstaddr, Sid, Mode} = decode_bytestreams_attrs(_attrs,
+						    undefined, undefined,
+						    undefined),
+    {bytestreams, Hosts, Used, Activate, Dstaddr, Mode,
+     Sid}.
+
+decode_bytestreams_els([], Hosts, Used, Activate) ->
+    {lists:reverse(Hosts), Used, Activate};
+decode_bytestreams_els([{xmlel, <<"streamhost">>,
+			 _attrs, _} =
+			    _el
+			| _els],
+		       Hosts, Used, Activate) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns ==
+	 <<"http://jabber.org/protocol/bytestreams">> ->
+	   decode_bytestreams_els(_els,
+				  [decode_bytestreams_streamhost(_el) | Hosts],
+				  Used, Activate);
+       true ->
+	   decode_bytestreams_els(_els, Hosts, Used, Activate)
+    end;
+decode_bytestreams_els([{xmlel, <<"streamhost-used">>,
+			 _attrs, _} =
+			    _el
+			| _els],
+		       Hosts, Used, Activate) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns ==
+	 <<"http://jabber.org/protocol/bytestreams">> ->
+	   decode_bytestreams_els(_els, Hosts,
+				  decode_bytestreams_streamhost_used(_el),
+				  Activate);
+       true ->
+	   decode_bytestreams_els(_els, Hosts, Used, Activate)
+    end;
+decode_bytestreams_els([{xmlel, <<"activate">>, _attrs,
+			 _} =
+			    _el
+			| _els],
+		       Hosts, Used, Activate) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns ==
+	 <<"http://jabber.org/protocol/bytestreams">> ->
+	   decode_bytestreams_els(_els, Hosts, Used,
+				  decode_bytestreams_activate(_el));
+       true ->
+	   decode_bytestreams_els(_els, Hosts, Used, Activate)
+    end;
+decode_bytestreams_els([_ | _els], Hosts, Used,
+		       Activate) ->
+    decode_bytestreams_els(_els, Hosts, Used, Activate).
+
+decode_bytestreams_attrs([{<<"dstaddr">>, _val}
+			  | _attrs],
+			 _Dstaddr, Sid, Mode) ->
+    decode_bytestreams_attrs(_attrs, _val, Sid, Mode);
+decode_bytestreams_attrs([{<<"sid">>, _val} | _attrs],
+			 Dstaddr, _Sid, Mode) ->
+    decode_bytestreams_attrs(_attrs, Dstaddr, _val, Mode);
+decode_bytestreams_attrs([{<<"mode">>, _val} | _attrs],
+			 Dstaddr, Sid, _Mode) ->
+    decode_bytestreams_attrs(_attrs, Dstaddr, Sid, _val);
+decode_bytestreams_attrs([_ | _attrs], Dstaddr, Sid,
+			 Mode) ->
+    decode_bytestreams_attrs(_attrs, Dstaddr, Sid, Mode);
+decode_bytestreams_attrs([], Dstaddr, Sid, Mode) ->
+    {decode_bytestreams_attr_dstaddr(Dstaddr),
+     decode_bytestreams_attr_sid(Sid),
+     decode_bytestreams_attr_mode(Mode)}.
+
+encode_bytestreams({bytestreams, Hosts, Used, Activate,
+		    Dstaddr, Mode, Sid},
+		   _xmlns_attrs) ->
+    _els = 'encode_bytestreams_$activate'(Activate,
+					  'encode_bytestreams_$used'(Used,
+								     'encode_bytestreams_$hosts'(Hosts,
+												 []))),
+    _attrs = encode_bytestreams_attr_mode(Mode,
+					  encode_bytestreams_attr_sid(Sid,
+								      encode_bytestreams_attr_dstaddr(Dstaddr,
+												      _xmlns_attrs))),
+    {xmlel, <<"query">>, _attrs, _els}.
+
+'encode_bytestreams_$hosts'([], _acc) -> _acc;
+'encode_bytestreams_$hosts'([Hosts | _els], _acc) ->
+    'encode_bytestreams_$hosts'(_els,
+				[encode_bytestreams_streamhost(Hosts, [])
+				 | _acc]).
+
+'encode_bytestreams_$used'(undefined, _acc) -> _acc;
+'encode_bytestreams_$used'(Used, _acc) ->
+    [encode_bytestreams_streamhost_used(Used, []) | _acc].
+
+'encode_bytestreams_$activate'(undefined, _acc) -> _acc;
+'encode_bytestreams_$activate'(Activate, _acc) ->
+    [encode_bytestreams_activate(Activate, []) | _acc].
+
+decode_bytestreams_attr_dstaddr(undefined) -> undefined;
+decode_bytestreams_attr_dstaddr(_val) -> _val.
+
+encode_bytestreams_attr_dstaddr(undefined, _acc) ->
+    _acc;
+encode_bytestreams_attr_dstaddr(_val, _acc) ->
+    [{<<"dstaddr">>, _val} | _acc].
+
+decode_bytestreams_attr_sid(undefined) -> undefined;
+decode_bytestreams_attr_sid(_val) -> _val.
+
+encode_bytestreams_attr_sid(undefined, _acc) -> _acc;
+encode_bytestreams_attr_sid(_val, _acc) ->
+    [{<<"sid">>, _val} | _acc].
+
+decode_bytestreams_attr_mode(undefined) -> tcp;
+decode_bytestreams_attr_mode(_val) ->
+    case catch xml_gen:dec_enum(_val, [tcp, udp]) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"mode">>, <<"query">>,
+			<<"http://jabber.org/protocol/bytestreams">>});
+      _res -> _res
+    end.
+
+encode_bytestreams_attr_mode(tcp, _acc) -> _acc;
+encode_bytestreams_attr_mode(_val, _acc) ->
+    [{<<"mode">>, xml_gen:enc_enum(_val)} | _acc].

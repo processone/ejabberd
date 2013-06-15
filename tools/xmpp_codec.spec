@@ -1715,6 +1715,53 @@
                       dec = {dec_jid, []},
                       enc = {enc_jid, []}}]}}.
 
+{bytestreams_streamhost,
+ #elem{name = <<"streamhost">>,
+       xmlns = <<"http://jabber.org/protocol/bytestreams">>,
+       result = {streamhost, '$jid', '$host', '$port'},
+       attrs = [#attr{name = <<"jid">>,
+                      required = true,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}},
+                #attr{name = <<"host">>,
+                      required = true},
+                #attr{name = <<"port">>,
+                      default = 1080,
+                      dec = {dec_int, [0, 65535]},
+                      enc = {enc_int, []}}]}}.
+
+{bytestreams_streamhost_used,
+ #elem{name = <<"streamhost-used">>,
+       xmlns = <<"http://jabber.org/protocol/bytestreams">>,
+       result = '$jid',
+       attrs = [#attr{name = <<"jid">>,
+                      required = true,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}}]}}.
+
+{bytestreams_activate,
+ #elem{name = <<"activate">>,
+       xmlns = <<"http://jabber.org/protocol/bytestreams">>,
+       cdata = #cdata{enc = {enc_jid, []}, dec = {dec_jid, []}},
+       result = '$cdata'}}.
+
+{bytestreams,
+ #elem{name = <<"query">>,
+       xmlns = <<"http://jabber.org/protocol/bytestreams">>,
+       result = {bytestreams, '$hosts', '$used', '$activate',
+                 '$dstaddr', '$mode', '$sid'},
+       attrs = [#attr{name = <<"dstaddr">>},
+                #attr{name = <<"sid">>},
+                #attr{name = <<"mode">>,
+                      default = tcp,
+                      dec = {dec_enum, [[tcp, udp]]},
+                      enc = {enc_enum, []}}],
+       refs = [#ref{name = bytestreams_streamhost, label = '$hosts'},
+               #ref{name = bytestreams_streamhost_used,
+                    min = 0, max = 1, label = '$used'},
+               #ref{name = bytestreams_activate,
+                    min = 0, max = 1, label = '$activate'}]}}.
+
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
     H = erlang:binary_to_integer(H1),

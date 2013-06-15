@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Sat, 15 Jun 2013 09:36:14 GMT
+%% Date: Sat, 15 Jun 2013 16:36:04 GMT
 
 -record(last, {seconds, text}).
 
@@ -196,3 +196,8 @@
 -record(delay, {stamp, from}).
 
 -record(legacy_delay, {stamp, from}).
+
+-record(streamhost, {jid, host, port = 1080}).
+
+-record(bytestreams,
+	{hosts = [], used, activate, dstaddr, mode = tcp, sid}).
