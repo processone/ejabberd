@@ -26,8 +26,46 @@
 
 -define(PUBSUB(Node), <<(?NS_PUBSUB)/binary, "#", Node>>).
 
+-define(recv2(P1, P2),
+        (fun() ->
+                 case {R1 = recv(), R2 = recv()} of
+                     {P1, P2} -> {R1, R2};
+                     {P2, P1} -> {R2, R1}
+                 end
+         end)()).
+
+-define(recv3(P1, P2, P3),
+        (fun() ->
+                 case R3 = recv() of
+                     P1 -> insert(R3, 1, ?recv2(P2, P3));
+                     P2 -> insert(R3, 2, ?recv2(P1, P3));
+                     P3 -> insert(R3, 3, ?recv2(P1, P2))
+                 end
+         end)()).
+
+-define(recv4(P1, P2, P3, P4),
+        (fun() ->
+                 case R4 = recv() of
+                     P1 -> insert(R4, 1, ?recv3(P2, P3, P4));
+                     P2 -> insert(R4, 2, ?recv3(P1, P3, P4));
+                     P3 -> insert(R4, 3, ?recv3(P1, P2, P4));
+                     P4 -> insert(R4, 4, ?recv3(P1, P2, P3))
+                 end
+         end)()).
+
+-define(recv5(P1, P2, P3, P4, P5),
+        (fun() ->
+                 case R5 = recv() of
+                     P1 -> insert(R5, 1, ?recv4(P2, P3, P4, P5));
+                     P2 -> insert(R5, 2, ?recv4(P1, P3, P4, P5));
+                     P3 -> insert(R5, 3, ?recv4(P1, P2, P4, P5));
+                     P4 -> insert(R5, 4, ?recv4(P1, P2, P3, P5));
+                     P5 -> insert(R5, 5, ?recv4(P1, P2, P3, P4))
+                 end
+         end)()).
+
 suite() ->
-    [{timetrap,{seconds,30}}].
+    [{timetrap, {seconds,10}}].
 
 init_per_suite(Config) ->
     DataDir = proplists:get_value(data_dir, Config),
@@ -53,16 +91,36 @@ init_per_suite(Config) ->
 end_per_suite(_Config) ->
     ok.
 
-init_per_group(GroupName, Config) ->
-    User = list_to_binary(atom_to_list(GroupName)),
-    set_opt(user, User, Config).
+init_per_group(_GroupName, Config) ->
+    Pid = start_event_relay(),
+    set_opt(event_relay, Pid, Config).
 
-end_per_group(_GroupName, _Config) ->
+end_per_group(_GroupName, Config) ->
+    stop_event_relay(Config),
     ok.
 
+init_per_testcase(stop_ejabberd = TestCase, OrigConfig) ->
+    Test = atom_to_list(TestCase),
+    Resource = list_to_binary(Test),
+    User = <<"test_stop">>,
+    Config = set_opt(resource, Resource,
+                     set_opt(user, User, OrigConfig)),
+    ejabberd_auth:try_register(User,
+                               ?config(server, Config),
+                               ?config(password, Config)),
+    open_session(bind(auth(connect(Config))));
 init_per_testcase(TestCase, OrigConfig) ->
-    Resource = list_to_binary(atom_to_list(TestCase)),
-    Config = set_opt(resource, Resource, OrigConfig),
+    subscribe_to_events(OrigConfig),
+    Test = atom_to_list(TestCase),
+    Resource = list_to_binary(Test),
+    IsMaster = lists:suffix("_master", Test),
+    IsSlave = lists:suffix("_slave", Test),
+    User = if IsMaster -> <<"test_master">>;
+              IsSlave -> <<"test_slave">>;
+              true -> <<"test_single">>
+           end,
+    Config = set_opt(resource, Resource,
+                     set_opt(user, User, OrigConfig)),
     case TestCase of
         test_connect ->
             Config;
@@ -82,9 +140,11 @@ init_per_testcase(TestCase, OrigConfig) ->
             auth(connect(Config));
         test_open_session ->
             bind(auth(connect(Config)));
-        stop_ejabberd ->
-            Config1 = set_opt(user, <<"stop_ejabberd">>, Config),
-            open_session(bind(auth(register(connect(Config1)))));
+        _ when IsMaster or IsSlave ->
+            Server = ?config(server, Config),
+            Password = ?config(password, Config),
+            ejabberd_auth:try_register(User, Server, Password),
+            open_session(bind(auth(connect(Config))));
         _ ->
             open_session(bind(auth(connect(Config))))
     end.
@@ -116,10 +176,11 @@ groups() ->
        blocking,
        vcard,
        pubsub,
-       test_unregister]}].
+       test_unregister]},
+     {test_roster, [parallel], [roster_master, roster_slave]}].
 
 all() ->
-    [{group, single_user}, stop_ejabberd].
+    [{group, single_user}, {group, test_roster}, stop_ejabberd].
 
 stop_ejabberd(Config) ->
     ok = application:stop(ejabberd),
@@ -177,7 +238,7 @@ test_starttls(Config) ->
     end.
 
 starttls(Config) ->
-    _ = send(Config, #starttls{}),
+    send(Config, #starttls{}),
     #starttls_proceed{} = recv(),
     TLSSocket = ejabberd_socket:starttls(
                   ?config(socket, Config),
@@ -199,7 +260,7 @@ test_zlib(Config) ->
     end.
 
 zlib(Config) ->
-    _ = send(Config, #compress{methods = [<<"zlib">>]}),
+    send(Config, #compress{methods = [<<"zlib">>]}),
     #compressed{} = recv(),
     ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
     init_stream(set_opt(socket, ZlibSocket, Config)).
@@ -279,7 +340,7 @@ open_session(Config) ->
 roster_get(Config) ->
     ID = send(Config, #iq{type = get, sub_els = [#roster{}]}),
     #iq{type = result, id = ID,
-          sub_els = [#roster{item = []}]} = recv(),
+          sub_els = [#roster{items = []}]} = recv(),
     disconnect(Config).
 
 presence_broadcast(Config) ->
@@ -373,13 +434,11 @@ privacy(Config) ->
                                                     stanza = 'presence-in',
                                                     value = JID}]}]}]}),
     #iq{type = result, id = I2, sub_els = []} = recv(),
-    _Push1 = #iq{type = set, id = PushI1,
-                   sub_els = [#privacy{
-                                 lists = [#privacy_list{
-                                             name = <<"public">>}]}]} = recv(),
-    %% BUG: ejabberd replies on this result
-    %% TODO: this should be fixed in ejabberd
-    %% _ = send(Config, Push1#iq{type = result, sub_els = []}),
+    Push1 = #iq{type = set,
+                sub_els = [#privacy{
+                              lists = [#privacy_list{
+                                          name = <<"public">>}]}]} = recv(),
+    send(Config, make_iq_result(Push1)),
     I3 = send(Config, #iq{type = set,
                           sub_els = [#privacy{active = <<"public">>}]}),
     #iq{type = result, id = I3, sub_els = []} = recv(),
@@ -405,10 +464,11 @@ privacy(Config) ->
     %% BUG: We should receive this:
     %% _Push2 = #iq{type = set, id = PushI2, sub_els = []} = recv(),
     %% TODO: this should be fixed in ejabberd
-    _Push2 = #iq{type = set, id = PushI2,
-                   sub_els = [#privacy{
-                                 lists = [#privacy_list{
-                                             name = <<"public">>}]}]} = recv(),
+    Push2 = #iq{type = set,
+                sub_els = [#privacy{
+                              lists = [#privacy_list{
+                                          name = <<"public">>}]}]} = recv(),
+    send(Config, make_iq_result(Push2)),
     disconnect(Config).
 
 blocking(Config) ->
@@ -472,12 +532,11 @@ vcard(Config) ->
     disconnect(Config).
 
 stats(Config) ->
-    ServerJID = server_jid(Config),
     ID = send(Config, #iq{type = get, sub_els = [#stats{}],
                           to = server_jid(Config)}),
     #iq{type = result, id = ID, sub_els = [#stats{stat = Stats}]} = recv(),
     lists:foreach(
-      fun(#stat{name = Name} = Stat) ->
+      fun(#stat{} = Stat) ->
               I = send(Config, #iq{type = get,
                                    sub_els = [#stats{stat = [Stat]}],
                                    to = server_jid(Config)}),
@@ -541,6 +600,123 @@ auth_plain(Config) ->
             disconnect(Config),
             {skipped, 'PLAIN_not_available'}
     end.
+
+roster_master(Config) ->
+    send(Config, #presence{}),
+    #presence{} = recv(),
+    wait_for_slave(Config),
+    Peer = jlib:make_jid(<<"test_slave">>, ?config(server, Config),
+                         <<"roster_slave">>),
+    LPeer = jlib:jid_remove_resource(Peer),
+    send(Config, #presence{type = subscribe, to = LPeer}),
+    Push1 = #iq{type = set,
+                sub_els = [#roster{items = [#roster_item{
+                                               ask = subscribe,
+                                               subscription = none,
+                                               jid = LPeer}]}]} = recv(),
+    send(Config, make_iq_result(Push1)),
+    {Push2, _} = ?recv2(
+                    #iq{type = set,
+                        sub_els = [#roster{items = [#roster_item{
+                                                       subscription = to,
+                                                       jid = LPeer}]}]},
+                    #presence{type = subscribed, from = LPeer}),
+    send(Config, make_iq_result(Push2)),
+    #presence{type = undefined, from = Peer} = recv(),
+    %% BUG: ejabberd sends previous push again. Is it ok?
+    Push3 = #iq{type = set,
+                sub_els = [#roster{items = [#roster_item{
+                                               subscription = to,
+                                               jid = LPeer}]}]} = recv(),
+    send(Config, make_iq_result(Push3)),
+    #presence{type = subscribe, from = LPeer} = recv(),
+    send(Config, #presence{type = subscribed, to = LPeer}),
+    Push4 = #iq{type = set,
+                sub_els = [#roster{items = [#roster_item{
+                                               subscription = both,
+                                               jid = LPeer}]}]} = recv(),
+    send(Config, make_iq_result(Push4)),
+    %% Move into a group
+    Groups = [<<"A">>, <<"B">>],
+    Item = #roster_item{jid = LPeer, groups = Groups},
+    I1 = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
+    {Push5, _} = ?recv2(
+                   #iq{type = set,
+                       sub_els =
+                           [#roster{items = [#roster_item{
+                                                jid = LPeer,
+                                                groups = Groups,
+                                                subscription = both}]}]},
+                   #iq{type = result, id = I1, sub_els = []}),
+    send(Config, make_iq_result(Push5)),
+    wait_for_slave(Config),
+    %% The peer removed us from.
+    {Push6, Push7, _, _, _} =
+        ?recv5(
+           %% TODO: I guess this can be optimized, we don't need
+           %% to send transient roster push with subscription = 'to'.
+           #iq{type = set,
+               sub_els =
+                   [#roster{items = [#roster_item{
+                                        jid = LPeer,
+                                        groups = Groups,
+                                        subscription = to}]}]},
+           #iq{type = set,
+               sub_els =
+                   [#roster{items = [#roster_item{
+                                        jid = LPeer,
+                                        groups = Groups,
+                                        subscription = none}]}]},
+           #presence{type = unsubscribe, from = LPeer},
+           #presence{type = unsubscribed, from = LPeer},
+           #presence{type = unavailable, from = Peer}),
+    send(Config, make_iq_result(Push6)),
+    send(Config, make_iq_result(Push7)),
+    disconnect(Config).
+
+roster_slave(Config) ->
+    send(Config, #presence{}),
+    #presence{} = recv(),
+    wait_for_master(Config),
+    Peer = jlib:make_jid(<<"test_master">>, ?config(server, Config),
+                         <<"roster_master">>),
+    LPeer = jlib:jid_remove_resource(Peer),
+    #presence{type = subscribe, from = LPeer} = recv(),
+    send(Config, #presence{type = subscribed, to = LPeer}),
+    Push1 = #iq{type = set,
+                sub_els = [#roster{items = [#roster_item{
+                                               subscription = from,
+                                               jid = LPeer}]}]} = recv(),
+    send(Config, make_iq_result(Push1)),
+    send(Config, #presence{type = subscribe, to = LPeer}),
+    Push2 = #iq{type = set,
+                sub_els = [#roster{items = [#roster_item{
+                                               ask = subscribe,
+                                               subscription = from,
+                                               jid = LPeer}]}]} = recv(),
+    send(Config, make_iq_result(Push2)),
+    {Push3, _} = ?recv2(
+                    #iq{type = set,
+                        sub_els = [#roster{items = [#roster_item{
+                                                       subscription = both,
+                                                       jid = LPeer}]}]},
+                    #presence{type = subscribed, from = LPeer}),
+    send(Config, make_iq_result(Push3)),
+    #presence{type = undefined, from = Peer} = recv(),
+    wait_for_master(Config),
+    %% Remove the peer from roster.
+    Item = #roster_item{jid = LPeer, subscription = remove},
+    I1 = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
+    {Push4, _} = ?recv2(
+                    #iq{type = set,
+                        sub_els =
+                            [#roster{items = [#roster_item{
+                                                 jid = LPeer,
+                                                 subscription = remove}]}]},
+                    #iq{type = result, id = I1, sub_els = []}),
+    send(Config, make_iq_result(Push4)),
+    #presence{type = unavailable, from = Peer} = recv(),
+    disconnect(Config).
 
 auth_SASL(Mech, Config) ->
     {Response, SASL} = sasl_new(Mech,
@@ -738,3 +914,74 @@ bookmark_conference() ->
 
 set_opt(Opt, Val, Config) ->
     [{Opt, Val}|lists:keydelete(Opt, 1, Config)].
+
+wait_for_master(Config) ->
+    put_event(Config, slave_ready),
+    master_ready = get_event(Config).
+
+wait_for_slave(Config) ->
+    put_event(Config, master_ready),
+    slave_ready = get_event(Config).
+
+make_iq_result(#iq{from = From} = IQ) ->
+    IQ#iq{type = result, to = From, from = undefined, sub_els = []}.
+
+%%%===================================================================
+%%% Clients puts and gets events via this relay.
+%%%===================================================================
+start_event_relay() ->
+    spawn(fun event_relay/0).
+
+stop_event_relay(Config) ->
+    Pid = ?config(event_relay, Config),
+    exit(Pid, normal).
+
+event_relay() ->
+    event_relay([], []).
+
+event_relay(Events, Subscribers) ->
+    receive
+        {subscribe, From} ->
+            From ! {ok, self()},
+            lists:foreach(
+              fun(Event) -> From ! {event, Event, self()}
+              end, Events),
+            event_relay(Events, [From|Subscribers]);
+        {put, Event, From} ->
+            From ! {ok, self()},
+            lists:foreach(
+              fun(Pid) when Pid /= From ->
+                      Pid ! {event, Event, self()};
+                 (_) ->
+                      ok
+              end, Subscribers),
+            event_relay([Event|Events], Subscribers)
+    end.
+
+subscribe_to_events(Config) ->
+    Relay = ?config(event_relay, Config),
+    Relay ! {subscribe, self()},
+    receive
+        {ok, Relay} ->
+            ok
+    end.
+
+put_event(Config, Event) ->
+    Relay = ?config(event_relay, Config),
+    Relay ! {put, Event, self()},
+    receive
+        {ok, Relay} ->
+            ok
+    end.
+
+get_event(Config) ->
+    Relay = ?config(event_relay, Config),
+    receive
+        {event, Event, Relay} ->
+            Event
+    end.
+
+insert(Val, N, Tuple) ->
+    L = tuple_to_list(Tuple),
+    {H, T} = lists:split(N-1, L),
+    list_to_tuple(H ++ [Val|T]).

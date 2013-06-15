@@ -66,9 +66,9 @@
 {roster,
  #elem{name = <<"query">>,
        xmlns = <<"jabber:iq:roster">>,
-       result = {roster, '$item', '$ver'},
+       result = {roster, '$items', '$ver'},
        attrs = [#attr{name = <<"ver">>}],
-       refs = [#ref{name = roster_item, label = '$item'}]}}.
+       refs = [#ref{name = roster_item, label = '$items'}]}}.
 
 {privacy_message, #elem{name = <<"message">>, xmlns = <<"jabber:iq:privacy">>,
                         result = message}}.

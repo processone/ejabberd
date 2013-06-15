@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Fri, 14 Jun 2013 16:48:12 GMT
+%% Date: Sat, 15 Jun 2013 09:36:14 GMT
 
 -record(last, {seconds, text}).
 
@@ -10,7 +10,7 @@
 -record(roster_item,
 	{jid, name, groups = [], subscription = none, ask}).
 
--record(roster, {item = [], ver}).
+-record(roster, {items = [], ver}).
 
 -record(privacy_item,
 	{order, action, type, value, stanza}).

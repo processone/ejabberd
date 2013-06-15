@@ -1,6 +1,6 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Fri, 14 Jun 2013 16:48:12 GMT
+%% Date: Sat, 15 Jun 2013 09:36:14 GMT
 
 -module(xmpp_codec).
 
@@ -1265,22 +1265,22 @@ encode_roster_item_attr_ask(_val, _acc) ->
     [{<<"ask">>, xml_gen:enc_enum(_val)} | _acc].
 
 decode_roster({xmlel, <<"query">>, _attrs, _els}) ->
-    Item = decode_roster_els(_els, []),
+    Items = decode_roster_els(_els, []),
     Ver = decode_roster_attrs(_attrs, undefined),
-    {roster, Item, Ver}.
+    {roster, Items, Ver}.
 
-decode_roster_els([], Item) -> lists:reverse(Item);
+decode_roster_els([], Items) -> lists:reverse(Items);
 decode_roster_els([{xmlel, <<"item">>, _attrs, _} = _el
 		   | _els],
-		  Item) ->
+		  Items) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:roster">> ->
 	   decode_roster_els(_els,
-			     [decode_roster_item(_el) | Item]);
-       true -> decode_roster_els(_els, Item)
+			     [decode_roster_item(_el) | Items]);
+       true -> decode_roster_els(_els, Items)
     end;
-decode_roster_els([_ | _els], Item) ->
-    decode_roster_els(_els, Item).
+decode_roster_els([_ | _els], Items) ->
+    decode_roster_els(_els, Items).
 
 decode_roster_attrs([{<<"ver">>, _val} | _attrs],
 		    _Ver) ->
@@ -1290,15 +1290,15 @@ decode_roster_attrs([_ | _attrs], Ver) ->
 decode_roster_attrs([], Ver) ->
     decode_roster_attr_ver(Ver).
 
-encode_roster({roster, Item, Ver}, _xmlns_attrs) ->
-    _els = 'encode_roster_$item'(Item, []),
+encode_roster({roster, Items, Ver}, _xmlns_attrs) ->
+    _els = 'encode_roster_$items'(Items, []),
     _attrs = encode_roster_attr_ver(Ver, _xmlns_attrs),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_roster_$item'([], _acc) -> _acc;
-'encode_roster_$item'([Item | _els], _acc) ->
-    'encode_roster_$item'(_els,
-			  [encode_roster_item(Item, []) | _acc]).
+'encode_roster_$items'([], _acc) -> _acc;
+'encode_roster_$items'([Items | _els], _acc) ->
+    'encode_roster_$items'(_els,
+			   [encode_roster_item(Items, []) | _acc]).
 
 decode_roster_attr_ver(undefined) -> undefined;
 decode_roster_attr_ver(_val) -> _val.
