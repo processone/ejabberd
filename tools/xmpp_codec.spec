@@ -85,7 +85,7 @@
  #elem{name = <<"item">>,
        xmlns = <<"jabber:iq:privacy">>,
        result = {privacy_item, '$order', '$action', '$type',
-                 '$value', '$stanza'},
+                 '$value', '$kinds'},
        attrs = [#attr{name = <<"action">>,
                       required = true,
                       dec = {dec_enum, [[allow, deny]]},
@@ -99,17 +99,13 @@
                       enc = {enc_enum, []}},
                 #attr{name = <<"value">>}],
        refs = [#ref{name = privacy_message,
-                    min = 0, max = 1,
-                    label = '$stanza'},
+                    label = '$kinds'},
                #ref{name = privacy_iq,
-                    min = 0, max = 1,
-                    label = '$stanza'},
+                    label = '$kinds'},
                #ref{name = privacy_presence_in,
-                    min = 0, max = 1,
-                    label = '$stanza'},
+                    label = '$kinds'},
                #ref{name = privacy_presence_out,
-                    min = 0, max = 1,
-                    label = '$stanza'}]}}.
+                    label = '$kinds'}]}}.
 
 {privacy_list,
  #elem{name = <<"list">>,
@@ -328,13 +324,15 @@
 {message_subject,
  #elem{name = <<"subject">>,
        xmlns = <<"jabber:client">>,
-       result = {'$lang', '$cdata'},
+       result = {text, '$lang', '$data'},
+       cdata = #cdata{label = '$data'},
        attrs = [#attr{name = <<"xml:lang">>, label = '$lang'}]}}.
 
 {message_body,
  #elem{name = <<"body">>,
        xmlns = <<"jabber:client">>,
-       result = {'$lang', '$cdata'},
+       result = {text, '$lang', '$data'},
+       cdata = #cdata{label = '$data'},
        attrs = [#attr{name = <<"xml:lang">>, label = '$lang'}]}}.
 
 {message_thread,
@@ -376,7 +374,8 @@
 {presence_status,
  #elem{name = <<"status">>,
        xmlns = <<"jabber:client">>,
-       result = {'$lang', '$cdata'},
+       result = {text, '$lang', '$data'},
+       cdata = #cdata{label = '$data'},
        attrs = [#attr{name = <<"xml:lang">>,
                       label = '$lang'}]}}.
 
@@ -505,7 +504,8 @@
 
 {error_text,
  #elem{name = <<"text">>,
-       result = {'$lang', '$cdata'},
+       result = {text, '$lang', '$data'},
+       cdata = #cdata{label = '$data'},
        xmlns = <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
        attrs = [#attr{name = <<"xml:lang">>,
                       label = '$lang'}]}}.
@@ -634,7 +634,8 @@
 {sasl_failure_text,
  #elem{name = <<"text">>,
        xmlns = <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
-       result = {'$lang', '$cdata'},
+       result = {text, '$lang', '$data'},
+       cdata = #cdata{label = '$data'},
        attrs = [#attr{name = <<"xml:lang">>,
                       label = '$lang'}]}}.
 
@@ -1019,8 +1020,8 @@
 
 {stream_error_text,
  #elem{name = <<"text">>,
-       result = {'$lang', '$text'},
-       cdata = #cdata{label = '$text'},
+       result = {text, '$lang', '$data'},
+       cdata = #cdata{label = '$data'},
        xmlns = <<"urn:ietf:params:xml:ns:xmpp-streams">>,
        attrs = [#attr{name = <<"xml:lang">>,
                       label = '$lang'}]}}.
@@ -1761,6 +1762,164 @@
                     min = 0, max = 1, label = '$used'},
                #ref{name = bytestreams_activate,
                     min = 0, max = 1, label = '$activate'}]}}.
+
+{muc_history,
+ #elem{name = <<"history">>,
+       xmlns = <<"http://jabber.org/protocol/muc">>,
+       result = {muc_history, '$maxchars', '$maxstanzas',
+                 '$seconds', '$since'},
+       attrs = [#attr{name = <<"maxchars">>,
+                      dec = {dec_int, [0, infinity]},
+                      enc = {enc_int, []}},
+                #attr{name = <<"maxstanzas">>,
+                      dec = {dec_int, [0, infinity]},
+                      enc = {enc_int, []}},
+                #attr{name = <<"seconds">>,
+                      dec = {dec_int, [0, infinity]},
+                      enc = {enc_int, []}},
+                #attr{name = <<"since">>,
+                      dec = {dec_utc, []},
+                      enc = {enc_utc, []}}]}}.
+
+{muc_user_reason,
+ #elem{name = <<"reason">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = '$cdata'}}.
+
+{muc_user_decline,
+ #elem{name = <<"decline">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = {muc_decline, '$reason', '$from', '$to'},
+       attrs = [#attr{name = <<"to">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}},
+                #attr{name = <<"from">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}}],
+       refs = [#ref{name = muc_user_reason, min = 0,
+                    max = 1, label = '$reason'}]}}.
+
+{muc_user_destroy,
+ #elem{name = <<"destroy">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = {muc_user_destroy, '$reason', '$jid'},
+       attrs = [#attr{name = <<"jid">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}}],
+       refs = [#ref{name = muc_user_reason, min = 0,
+                    max = 1, label = '$reason'}]}}.
+
+{muc_user_invite,
+ #elem{name = <<"invite">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = {muc_invite, '$reason', '$from', '$to'},
+       attrs = [#attr{name = <<"to">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}},
+                #attr{name = <<"from">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}}],
+       refs = [#ref{name = muc_user_reason, min = 0,
+                    max = 1, label = '$reason'}]}}.
+
+{muc_user_actor,
+ #elem{name = <<"actor">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = {muc_actor, '$jid', '$nick'},
+       attrs = [#attr{name = <<"jid">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}},
+                #attr{name = <<"nick">>}]}}.
+
+{muc_user_continue,
+ #elem{name = <<"continue">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = '$thread',
+       attrs = [#attr{name = <<"thread">>}]}}.
+
+{muc_user_status,
+ #elem{name = <<"status">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = '$code',
+       attrs = [#attr{name = <<"code">>,
+                      dec = {dec_int, [100, 999]},
+                      enc = {enc_int, []}}]}}.
+
+{muc_user_item,
+ #elem{name = <<"item">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = {muc_item, '$actor', '$continue', '$reason',
+                 '$affiliation', '$role', '$jid', '$nick'},
+       refs = [#ref{name = muc_user_actor,
+                    min = 0, max = 1, label = '$actor'},
+               #ref{name = muc_user_continue,
+                    min = 0, max = 1, label = '$continue'},
+               #ref{name = muc_user_reason,
+                    min = 0, max = 1, label = '$reason'}],
+       attrs = [#attr{name = <<"affiliation">>,
+                      dec = {dec_enum, [[admin, member, none,
+                                         outcast, owner]]},
+                      enc = {enc_enum, []}},
+                #attr{name = <<"role">>,
+                      dec = {dec_enum, [[moderator, none,
+                                         participant, visitor]]},
+                      enc = {enc_enum, []}},
+                #attr{name = <<"jid">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}},
+                #attr{name = <<"nick">>}]}}.
+
+{muc_user,
+ #elem{name = <<"x">>,
+       xmlns = <<"http://jabber.org/protocol/muc#user">>,
+       result = {muc_user, '$decline', '$destroy', '$invites',
+                 '$items', '$status_codes', '$password'},
+       attrs = [#attr{name = <<"password">>}],
+       refs = [#ref{name = muc_user_decline, min = 0,
+                    max = 1, label = '$decline'},
+               #ref{name = muc_user_destroy, min = 0, max = 1,
+                    label = '$destroy'},
+               #ref{name = muc_user_invite, label = '$invites'},
+               #ref{name = muc_user_item, label = '$items'},
+               #ref{name = muc_user_status, label = '$status_codes'}]}}.
+
+{muc_owner_password,
+ #elem{name = <<"password">>,
+       xmlns = <<"http://jabber.org/protocol/muc#owner">>,
+       result = '$cdata'}}.
+
+{muc_owner_reason,
+ #elem{name = <<"reason">>,
+       xmlns = <<"http://jabber.org/protocol/muc#owner">>,
+       result = '$cdata'}}.
+
+{muc_owner_destroy,
+ #elem{name = <<"destroy">>,
+       xmlns = <<"http://jabber.org/protocol/muc#owner">>,
+       result = {muc_owner_destroy, '$jid', '$reason', '$password'},
+       attrs = [#attr{name = <<"jid">>,
+                      dec = {dec_jid, []},
+                      enc = {enc_jid, []}}],
+       refs = [#ref{name = muc_owner_password, min = 0, max = 1,
+                    label = '$password'},
+               #ref{name = muc_owner_reason, min = 0, max = 1,
+                    label = '$reason'}]}}.
+
+{muc_owner,
+ #elem{name = <<"query">>,
+       xmlns = <<"http://jabber.org/protocol/muc#owner">>,
+       result = {muc_owner, '$destroy', '$config'},
+       refs = [#ref{name = muc_owner_destroy, min = 0, max = 1,
+                    label = '$destroy'},
+               #ref{name = xdata, min = 0, max = 1, label = '$config'}]}}.
+
+{muc,
+ #elem{name = <<"x">>,
+       xmlns = <<"http://jabber.org/protocol/muc">>,
+       result = {muc, '$history', '$password'},
+       attrs = [#attr{name = <<"password">>}],
+       refs = [#ref{name = muc_history, min = 0, max = 1,
+                    label = '$history'}]}}.
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),

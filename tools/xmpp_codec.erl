@@ -1,13 +1,54 @@
 %% Created automatically by XML generator (xml_gen.erl)
 %% Source: xmpp_codec.spec
-%% Date: Sat, 15 Jun 2013 16:36:04 GMT
 
 -module(xmpp_codec).
 
--export([decode/1, encode/1]).
+-export([pp/1, decode/1, encode/1]).
 
 decode({xmlel, _name, _attrs, _} = _el) ->
     case {_name, xml:get_attr_s(<<"xmlns">>, _attrs)} of
+      {<<"x">>, <<"http://jabber.org/protocol/muc">>} ->
+	  decode_muc(_el);
+      {<<"query">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  decode_muc_owner(_el);
+      {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  decode_muc_owner_destroy(_el);
+      {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  decode_muc_owner_reason(_el);
+      {<<"password">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  decode_muc_owner_password(_el);
+      {<<"x">>, <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user(_el);
+      {<<"item">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_item(_el);
+      {<<"status">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_status(_el);
+      {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_continue(_el);
+      {<<"actor">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_actor(_el);
+      {<<"invite">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_invite(_el);
+      {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_destroy(_el);
+      {<<"decline">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_decline(_el);
+      {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user_reason(_el);
+      {<<"history">>, <<"http://jabber.org/protocol/muc">>} ->
+	  decode_muc_history(_el);
       {<<"query">>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  decode_bytestreams(_el);
@@ -630,6 +671,44 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 	  erlang:error({unknown_tag, _name, _xmlns})
     end.
 
+encode({muc, _, _} = X) ->
+    encode_muc(X,
+	       [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]);
+encode({muc_owner, _, _} = Query) ->
+    encode_muc_owner(Query,
+		     [{<<"xmlns">>,
+		       <<"http://jabber.org/protocol/muc#owner">>}]);
+encode({muc_owner_destroy, _, _, _} = Destroy) ->
+    encode_muc_owner_destroy(Destroy,
+			     [{<<"xmlns">>,
+			       <<"http://jabber.org/protocol/muc#owner">>}]);
+encode({muc_user, _, _, _, _, _, _} = X) ->
+    encode_muc_user(X,
+		    [{<<"xmlns">>,
+		      <<"http://jabber.org/protocol/muc#user">>}]);
+encode({muc_item, _, _, _, _, _, _, _} = Item) ->
+    encode_muc_user_item(Item,
+			 [{<<"xmlns">>,
+			   <<"http://jabber.org/protocol/muc#user">>}]);
+encode({muc_actor, _, _} = Actor) ->
+    encode_muc_user_actor(Actor,
+			  [{<<"xmlns">>,
+			    <<"http://jabber.org/protocol/muc#user">>}]);
+encode({muc_invite, _, _, _} = Invite) ->
+    encode_muc_user_invite(Invite,
+			   [{<<"xmlns">>,
+			     <<"http://jabber.org/protocol/muc#user">>}]);
+encode({muc_user_destroy, _, _} = Destroy) ->
+    encode_muc_user_destroy(Destroy,
+			    [{<<"xmlns">>,
+			      <<"http://jabber.org/protocol/muc#user">>}]);
+encode({muc_decline, _, _, _} = Decline) ->
+    encode_muc_user_decline(Decline,
+			    [{<<"xmlns">>,
+			      <<"http://jabber.org/protocol/muc#user">>}]);
+encode({muc_history, _, _, _, _} = History) ->
+    encode_muc_history(History,
+		       [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]);
 encode({bytestreams, _, _, _, _, _, _} = Query) ->
     encode_bytestreams(Query,
 		       [{<<"xmlns">>,
@@ -912,6 +991,131 @@ encode({last, _, _} = Query) ->
     encode_last(Query,
 		[{<<"xmlns">>, <<"jabber:iq:last">>}]).
 
+pp(Term) -> io_lib_pretty:print(Term, fun pp/2).
+
+pp(last, 2) -> [seconds, text];
+pp(version, 3) ->
+    [version_name, version_ver, version_os];
+pp(roster_item, 5) ->
+    [jid, name, groups, subscription, ask];
+pp(roster, 2) -> [items, ver];
+pp(privacy_item, 5) ->
+    [order, action, type, value, kinds];
+pp(privacy_list, 2) -> [name, items];
+pp(privacy, 3) -> [lists, default, active];
+pp(block, 1) -> [items];
+pp(unblock, 1) -> [items];
+pp(block_list, 0) -> [];
+pp(identity, 3) -> [category, type, name];
+pp(disco_info, 4) -> [node, identity, feature, xdata];
+pp(disco_item, 3) -> [jid, name, node];
+pp(disco_items, 2) -> [node, items];
+pp(private, 1) -> [sub_els];
+pp(bookmark_conference, 5) ->
+    [name, jid, autojoin, nick, password];
+pp(bookmark_url, 2) -> [name, url];
+pp(bookmark_storage, 2) -> [conference, url];
+pp(stat, 4) -> [name, units, value, error];
+pp(stats, 1) -> [stat];
+pp(iq, 7) -> [id, type, lang, from, to, error, sub_els];
+pp(message, 10) ->
+    [id, type, lang, from, to, subject, body, thread, error,
+     sub_els];
+pp(presence, 10) ->
+    [id, type, lang, from, to, show, status, priority,
+     error, sub_els];
+pp(gone, 1) -> [uri];
+pp(redirect, 1) -> [uri];
+pp(error, 4) -> [type, by, reason, text];
+pp(bind, 2) -> [jid, resource];
+pp(sasl_auth, 2) -> [mechanism, text];
+pp(sasl_abort, 0) -> [];
+pp(sasl_challenge, 1) -> [text];
+pp(sasl_response, 1) -> [text];
+pp(sasl_success, 1) -> [text];
+pp(sasl_failure, 2) -> [reason, text];
+pp(sasl_mechanisms, 1) -> [list];
+pp(starttls, 1) -> [required];
+pp(starttls_proceed, 0) -> [];
+pp(starttls_failure, 0) -> [];
+pp(compress_failure, 1) -> [reason];
+pp(compress, 1) -> [methods];
+pp(compressed, 0) -> [];
+pp(compression, 1) -> [methods];
+pp(stream_features, 1) -> [sub_els];
+pp(p1_push, 0) -> [];
+pp(p1_rebind, 0) -> [];
+pp(p1_ack, 0) -> [];
+pp(caps, 3) -> [hash, node, ver];
+pp(feature_register, 0) -> [];
+pp(register, 20) ->
+    [registered, remove, instructions, username, nick,
+     password, name, first, last, email, address, city,
+     state, zip, phone, url, date, misc, text, key];
+pp(session, 0) -> [];
+pp(ping, 0) -> [];
+pp(time, 2) -> [tzo, utc];
+pp(text, 2) -> [lang, data];
+pp('see-other-host', 1) -> [host];
+pp(stream_error, 2) -> [reason, text];
+pp(vcard_name, 5) ->
+    [family, given, middle, prefix, suffix];
+pp(vcard_adr, 14) ->
+    [home, work, postal, parcel, dom, intl, pref, pobox,
+     extadd, street, locality, region, pcode, ctry];
+pp(vcard_label, 8) ->
+    [home, work, postal, parcel, dom, intl, pref, line];
+pp(vcard_tel, 14) ->
+    [home, work, voice, fax, pager, msg, cell, video, bbs,
+     modem, isdn, pcs, pref, number];
+pp(vcard_email, 6) ->
+    [home, work, internet, pref, x400, userid];
+pp(vcard_geo, 2) -> [lat, lon];
+pp(vcard_logo, 3) -> [type, binval, extval];
+pp(vcard_photo, 3) -> [type, binval, extval];
+pp(vcard_org, 2) -> [name, units];
+pp(vcard_sound, 3) -> [phonetic, binval, extval];
+pp(vcard_key, 2) -> [type, cred];
+pp(vcard_agent, 2) -> [vcard, extval];
+pp(vcard, 30) ->
+    [version, fn, n, nickname, photo, bday, adr, label, tel,
+     email, jabberid, mailer, tz, geo, title, role, logo,
+     org, categories, note, prodid, agent, rev, sort_string,
+     sound, uid, url, class, key, desc];
+pp(xdata_field, 7) ->
+    [label, type, var, required, desc, values, options];
+pp(xdata, 6) ->
+    [type, instructions, title, reported, items, fields];
+pp(pubsub_subscription, 4) -> [jid, node, subid, type];
+pp(pubsub_affiliation, 2) -> [node, type];
+pp(pubsub_item, 2) -> [id, sub_els];
+pp(pubsub_items, 4) -> [node, max_items, subid, items];
+pp(pubsub_event_item, 3) -> [id, node, publisher];
+pp(pubsub_event_items, 3) -> [node, retract, items];
+pp(pubsub_event, 1) -> [items];
+pp(pubsub, 4) ->
+    [subscriptions, affiliations, publish, subscribe];
+pp(delay, 2) -> [stamp, from];
+pp(legacy_delay, 2) -> [stamp, from];
+pp(streamhost, 3) -> [jid, host, port];
+pp(bytestreams, 6) ->
+    [hosts, used, activate, dstaddr, mode, sid];
+pp(muc_history, 4) ->
+    [maxchars, maxstanzas, seconds, since];
+pp(muc_decline, 3) -> [reason, from, to];
+pp(muc_user_destroy, 2) -> [reason, jid];
+pp(muc_invite, 3) -> [reason, from, to];
+pp(muc_actor, 2) -> [jid, nick];
+pp(muc_item, 7) ->
+    [actor, continue, reason, affiliation, role, jid, nick];
+pp(muc_user, 6) ->
+    [decline, destroy, invites, items, status_codes,
+     password];
+pp(muc_owner_destroy, 3) -> [jid, reason, password];
+pp(muc_owner, 2) -> [destroy, config];
+pp(muc, 2) -> [history, password];
+pp(_, _) -> no.
+
 enc_bool(false) -> <<"false">>;
 enc_bool(true) -> <<"true">>.
 
@@ -1185,7 +1389,10 @@ decode_roster_item_els([{xmlel, <<"group">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:roster">> ->
 	   decode_roster_item_els(_els,
-				  [decode_roster_group(_el) | Groups]);
+				  case decode_roster_group(_el) of
+				    undefined -> Groups;
+				    _new_el -> [_new_el | Groups]
+				  end);
        true -> decode_roster_item_els(_els, Groups)
     end;
 decode_roster_item_els([_ | _els], Groups) ->
@@ -1296,7 +1503,10 @@ decode_roster_els([{xmlel, <<"item">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:roster">> ->
 	   decode_roster_els(_els,
-			     [decode_roster_item(_el) | Items]);
+			     case decode_roster_item(_el) of
+			       undefined -> Items;
+			       _new_el -> [_new_el | Items]
+			     end);
        true -> decode_roster_els(_els, Items)
     end;
 decode_roster_els([_ | _els], Items) ->
@@ -1366,57 +1576,55 @@ encode_privacy_presence_out('presence-out',
 
 decode_privacy_item({xmlel, <<"item">>, _attrs,
 		     _els}) ->
-    Stanza = decode_privacy_item_els(_els, undefined),
+    Kinds = decode_privacy_item_els(_els, []),
     {Action, Order, Type, Value} =
 	decode_privacy_item_attrs(_attrs, undefined, undefined,
 				  undefined, undefined),
-    {privacy_item, Order, Action, Type, Value, Stanza}.
+    {privacy_item, Order, Action, Type, Value, Kinds}.
 
-decode_privacy_item_els([], Stanza) -> Stanza;
+decode_privacy_item_els([], Kinds) ->
+    lists:reverse(Kinds);
 decode_privacy_item_els([{xmlel, <<"message">>, _attrs,
 			  _} =
 			     _el
 			 | _els],
-			Stanza) ->
+			Kinds) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
-	   decode_privacy_item_els(_els,
-				   decode_privacy_message(_el));
-       true -> decode_privacy_item_els(_els, Stanza)
+	   decode_privacy_item_els(_els, Kinds);
+       true -> decode_privacy_item_els(_els, Kinds)
     end;
 decode_privacy_item_els([{xmlel, <<"iq">>, _attrs, _} =
 			     _el
 			 | _els],
-			Stanza) ->
+			Kinds) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
-	   decode_privacy_item_els(_els, decode_privacy_iq(_el));
-       true -> decode_privacy_item_els(_els, Stanza)
+	   decode_privacy_item_els(_els, Kinds);
+       true -> decode_privacy_item_els(_els, Kinds)
     end;
 decode_privacy_item_els([{xmlel, <<"presence-in">>,
 			  _attrs, _} =
 			     _el
 			 | _els],
-			Stanza) ->
+			Kinds) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
-	   decode_privacy_item_els(_els,
-				   decode_privacy_presence_in(_el));
-       true -> decode_privacy_item_els(_els, Stanza)
+	   decode_privacy_item_els(_els, Kinds);
+       true -> decode_privacy_item_els(_els, Kinds)
     end;
 decode_privacy_item_els([{xmlel, <<"presence-out">>,
 			  _attrs, _} =
 			     _el
 			 | _els],
-			Stanza) ->
+			Kinds) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
-	   decode_privacy_item_els(_els,
-				   decode_privacy_presence_out(_el));
-       true -> decode_privacy_item_els(_els, Stanza)
+	   decode_privacy_item_els(_els, Kinds);
+       true -> decode_privacy_item_els(_els, Kinds)
     end;
-decode_privacy_item_els([_ | _els], Stanza) ->
-    decode_privacy_item_els(_els, Stanza).
+decode_privacy_item_els([_ | _els], Kinds) ->
+    decode_privacy_item_els(_els, Kinds).
 
 decode_privacy_item_attrs([{<<"action">>, _val}
 			   | _attrs],
@@ -1449,9 +1657,9 @@ decode_privacy_item_attrs([], Action, Order, Type,
      decode_privacy_item_attr_value(Value)}.
 
 encode_privacy_item({privacy_item, Order, Action, Type,
-		     Value, Stanza},
+		     Value, Kinds},
 		    _xmlns_attrs) ->
-    _els = 'encode_privacy_item_$stanza'(Stanza, []),
+    _els = 'encode_privacy_item_$kinds'(Kinds, []),
     _attrs = encode_privacy_item_attr_value(Value,
 					    encode_privacy_item_attr_type(Type,
 									  encode_privacy_item_attr_order(Order,
@@ -1459,17 +1667,27 @@ encode_privacy_item({privacy_item, Order, Action, Type,
 																	 _xmlns_attrs)))),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_privacy_item_$stanza'(undefined, _acc) -> _acc;
-'encode_privacy_item_$stanza'(message = Stanza, _acc) ->
-    [encode_privacy_message(Stanza, []) | _acc];
-'encode_privacy_item_$stanza'(iq = Stanza, _acc) ->
-    [encode_privacy_iq(Stanza, []) | _acc];
-'encode_privacy_item_$stanza'('presence-in' = Stanza,
-			      _acc) ->
-    [encode_privacy_presence_in(Stanza, []) | _acc];
-'encode_privacy_item_$stanza'('presence-out' = Stanza,
-			      _acc) ->
-    [encode_privacy_presence_out(Stanza, []) | _acc].
+'encode_privacy_item_$kinds'([], _acc) -> _acc;
+'encode_privacy_item_$kinds'([message = Kinds | _els],
+			     _acc) ->
+    'encode_privacy_item_$kinds'(_els,
+				 [encode_privacy_message(Kinds, []) | _acc]);
+'encode_privacy_item_$kinds'([iq = Kinds | _els],
+			     _acc) ->
+    'encode_privacy_item_$kinds'(_els,
+				 [encode_privacy_iq(Kinds, []) | _acc]);
+'encode_privacy_item_$kinds'(['presence-in' = Kinds
+			      | _els],
+			     _acc) ->
+    'encode_privacy_item_$kinds'(_els,
+				 [encode_privacy_presence_in(Kinds, [])
+				  | _acc]);
+'encode_privacy_item_$kinds'(['presence-out' = Kinds
+			      | _els],
+			     _acc) ->
+    'encode_privacy_item_$kinds'(_els,
+				 [encode_privacy_presence_out(Kinds, [])
+				  | _acc]).
 
 decode_privacy_item_attr_action(undefined) ->
     erlang:error({missing_attr, <<"action">>, <<"item">>,
@@ -1537,7 +1755,10 @@ decode_privacy_list_els([{xmlel, <<"item">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_list_els(_els,
-				   [decode_privacy_item(_el) | Items]);
+				   case decode_privacy_item(_el) of
+				     undefined -> Items;
+				     _new_el -> [_new_el | Items]
+				   end);
        true -> decode_privacy_list_els(_els, Items)
     end;
 decode_privacy_list_els([_ | _els], Items) ->
@@ -1643,8 +1864,11 @@ decode_privacy_els([{xmlel, <<"list">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_els(_els,
-			      [decode_privacy_list(_el) | Lists], Default,
-			      Active);
+			      case decode_privacy_list(_el) of
+				undefined -> Lists;
+				_new_el -> [_new_el | Lists]
+			      end,
+			      Default, Active);
        true -> decode_privacy_els(_els, Lists, Default, Active)
     end;
 decode_privacy_els([{xmlel, <<"default">>, _attrs, _} =
@@ -1733,7 +1957,10 @@ decode_block_els([{xmlel, <<"item">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"urn:xmpp:blocking">> ->
 	   decode_block_els(_els,
-			    [decode_block_item(_el) | Items]);
+			    case decode_block_item(_el) of
+			      undefined -> Items;
+			      _new_el -> [_new_el | Items]
+			    end);
        true -> decode_block_els(_els, Items)
     end;
 decode_block_els([_ | _els], Items) ->
@@ -1759,7 +1986,10 @@ decode_unblock_els([{xmlel, <<"item">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"urn:xmpp:blocking">> ->
 	   decode_unblock_els(_els,
-			      [decode_block_item(_el) | Items]);
+			      case decode_block_item(_el) of
+				undefined -> Items;
+				_new_el -> [_new_el | Items]
+			      end);
        true -> decode_unblock_els(_els, Items)
     end;
 decode_unblock_els([_ | _els], Items) ->
@@ -1893,7 +2123,10 @@ decode_disco_info_els([{xmlel, <<"identity">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
 	   decode_disco_info_els(_els, Xdata, Feature,
-				 [decode_disco_identity(_el) | Identity]);
+				 case decode_disco_identity(_el) of
+				   undefined -> Identity;
+				   _new_el -> [_new_el | Identity]
+				 end);
        true ->
 	   decode_disco_info_els(_els, Xdata, Feature, Identity)
     end;
@@ -1906,7 +2139,10 @@ decode_disco_info_els([{xmlel, <<"feature">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
 	   decode_disco_info_els(_els, Xdata,
-				 [decode_disco_feature(_el) | Feature],
+				 case decode_disco_feature(_el) of
+				   undefined -> Feature;
+				   _new_el -> [_new_el | Feature]
+				 end,
 				 Identity);
        true ->
 	   decode_disco_info_els(_els, Xdata, Feature, Identity)
@@ -1916,7 +2152,11 @@ decode_disco_info_els([{xmlel, <<"x">>, _attrs, _} = _el
 		      Xdata, Feature, Identity) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<"jabber:x:data">> ->
-	   decode_disco_info_els(_els, [decode_xdata(_el) | Xdata],
+	   decode_disco_info_els(_els,
+				 case decode_xdata(_el) of
+				   undefined -> Xdata;
+				   _new_el -> [_new_el | Xdata]
+				 end,
 				 Feature, Identity);
        true ->
 	   decode_disco_info_els(_els, Xdata, Feature, Identity)
@@ -1947,7 +2187,10 @@ encode_disco_info({disco_info, Node, Identity, Feature,
 'encode_disco_info_$xdata'([], _acc) -> _acc;
 'encode_disco_info_$xdata'([Xdata | _els], _acc) ->
     'encode_disco_info_$xdata'(_els,
-			       [encode_xdata(Xdata, []) | _acc]).
+			       [encode_xdata(Xdata,
+					     [{<<"xmlns">>,
+					       <<"jabber:x:data">>}])
+				| _acc]).
 
 'encode_disco_info_$feature'([], _acc) -> _acc;
 'encode_disco_info_$feature'([Feature | _els], _acc) ->
@@ -2044,7 +2287,10 @@ decode_disco_items_els([{xmlel, <<"item">>, _attrs, _} =
        _xmlns ==
 	 <<"http://jabber.org/protocol/disco#items">> ->
 	   decode_disco_items_els(_els,
-				  [decode_disco_item(_el) | Items]);
+				  case decode_disco_item(_el) of
+				    undefined -> Items;
+				    _new_el -> [_new_el | Items]
+				  end);
        true -> decode_disco_items_els(_els, Items)
     end;
 decode_disco_items_els([_ | _els], Items) ->
@@ -2330,8 +2576,10 @@ decode_bookmarks_storage_els([{xmlel, <<"conference">>,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmarks_storage_els(_els,
-					[decode_bookmark_conference(_el)
-					 | Conference],
+					case decode_bookmark_conference(_el) of
+					  undefined -> Conference;
+					  _new_el -> [_new_el | Conference]
+					end,
 					Url);
        true ->
 	   decode_bookmarks_storage_els(_els, Conference, Url)
@@ -2344,7 +2592,10 @@ decode_bookmarks_storage_els([{xmlel, <<"url">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmarks_storage_els(_els, Conference,
-					[decode_bookmark_url(_el) | Url]);
+					case decode_bookmark_url(_el) of
+					  undefined -> Url;
+					  _new_el -> [_new_el | Url]
+					end);
        true ->
 	   decode_bookmarks_storage_els(_els, Conference, Url)
     end;
@@ -2438,7 +2689,11 @@ decode_stat_els([{xmlel, <<"error">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/stats">> ->
-	   decode_stat_els(_els, [decode_stat_error(_el) | Error]);
+	   decode_stat_els(_els,
+			   case decode_stat_error(_el) of
+			     undefined -> Error;
+			     _new_el -> [_new_el | Error]
+			   end);
        true -> decode_stat_els(_els, Error)
     end;
 decode_stat_els([_ | _els], Error) ->
@@ -2506,7 +2761,11 @@ decode_stats_els([{xmlel, <<"stat">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/stats">> ->
-	   decode_stats_els(_els, [decode_stat(_el) | Stat]);
+	   decode_stats_els(_els,
+			    case decode_stat(_el) of
+			      undefined -> Stat;
+			      _new_el -> [_new_el | Stat]
+			    end);
        true -> decode_stats_els(_els, Stat)
     end;
 decode_stats_els([_ | _els], Stat) ->
@@ -2644,18 +2903,18 @@ encode_iq_attr_to(_val, _acc) ->
 
 decode_message_subject({xmlel, <<"subject">>, _attrs,
 			_els}) ->
-    Cdata = decode_message_subject_els(_els, <<>>),
+    Data = decode_message_subject_els(_els, <<>>),
     Lang = decode_message_subject_attrs(_attrs, undefined),
-    {Lang, Cdata}.
+    {text, Lang, Data}.
 
-decode_message_subject_els([], Cdata) ->
-    decode_message_subject_cdata(Cdata);
+decode_message_subject_els([], Data) ->
+    decode_message_subject_cdata(Data);
 decode_message_subject_els([{xmlcdata, _data} | _els],
-			   Cdata) ->
+			   Data) ->
     decode_message_subject_els(_els,
-			       <<Cdata/binary, _data/binary>>);
-decode_message_subject_els([_ | _els], Cdata) ->
-    decode_message_subject_els(_els, Cdata).
+			       <<Data/binary, _data/binary>>);
+decode_message_subject_els([_ | _els], Data) ->
+    decode_message_subject_els(_els, Data).
 
 decode_message_subject_attrs([{<<"xml:lang">>, _val}
 			      | _attrs],
@@ -2666,8 +2925,9 @@ decode_message_subject_attrs([_ | _attrs], Lang) ->
 decode_message_subject_attrs([], Lang) ->
     'decode_message_subject_attr_xml:lang'(Lang).
 
-encode_message_subject({Lang, Cdata}, _xmlns_attrs) ->
-    _els = encode_message_subject_cdata(Cdata, []),
+encode_message_subject({text, Lang, Data},
+		       _xmlns_attrs) ->
+    _els = encode_message_subject_cdata(Data, []),
     _attrs = 'encode_message_subject_attr_xml:lang'(Lang,
 						    _xmlns_attrs),
     {xmlel, <<"subject">>, _attrs, _els}.
@@ -2691,18 +2951,18 @@ encode_message_subject_cdata(_val, _acc) ->
 
 decode_message_body({xmlel, <<"body">>, _attrs,
 		     _els}) ->
-    Cdata = decode_message_body_els(_els, <<>>),
+    Data = decode_message_body_els(_els, <<>>),
     Lang = decode_message_body_attrs(_attrs, undefined),
-    {Lang, Cdata}.
+    {text, Lang, Data}.
 
-decode_message_body_els([], Cdata) ->
-    decode_message_body_cdata(Cdata);
+decode_message_body_els([], Data) ->
+    decode_message_body_cdata(Data);
 decode_message_body_els([{xmlcdata, _data} | _els],
-			Cdata) ->
+			Data) ->
     decode_message_body_els(_els,
-			    <<Cdata/binary, _data/binary>>);
-decode_message_body_els([_ | _els], Cdata) ->
-    decode_message_body_els(_els, Cdata).
+			    <<Data/binary, _data/binary>>);
+decode_message_body_els([_ | _els], Data) ->
+    decode_message_body_els(_els, Data).
 
 decode_message_body_attrs([{<<"xml:lang">>, _val}
 			   | _attrs],
@@ -2713,8 +2973,8 @@ decode_message_body_attrs([_ | _attrs], Lang) ->
 decode_message_body_attrs([], Lang) ->
     'decode_message_body_attr_xml:lang'(Lang).
 
-encode_message_body({Lang, Cdata}, _xmlns_attrs) ->
-    _els = encode_message_body_cdata(Cdata, []),
+encode_message_body({text, Lang, Data}, _xmlns_attrs) ->
+    _els = encode_message_body_cdata(Data, []),
     _attrs = 'encode_message_body_attr_xml:lang'(Lang,
 						 _xmlns_attrs),
     {xmlel, <<"body">>, _attrs, _els}.
@@ -2793,8 +3053,11 @@ decode_message_els([{xmlel, <<"subject">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, Error, Thread,
-			      [decode_message_subject(_el) | Subject], Body,
-			      __Els);
+			      case decode_message_subject(_el) of
+				undefined -> Subject;
+				_new_el -> [_new_el | Subject]
+			      end,
+			      Body, __Els);
        true ->
 	   decode_message_els(_els, Error, Thread, Subject, Body,
 			      __Els)
@@ -2817,7 +3080,11 @@ decode_message_els([{xmlel, <<"body">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, Error, Thread, Subject,
-			      [decode_message_body(_el) | Body], __Els);
+			      case decode_message_body(_el) of
+				undefined -> Body;
+				_new_el -> [_new_el | Body]
+			      end,
+			      __Els);
        true ->
 	   decode_message_els(_els, Error, Thread, Subject, Body,
 			      __Els)
@@ -2983,18 +3250,18 @@ encode_presence_show_cdata(_val, _acc) ->
 
 decode_presence_status({xmlel, <<"status">>, _attrs,
 			_els}) ->
-    Cdata = decode_presence_status_els(_els, <<>>),
+    Data = decode_presence_status_els(_els, <<>>),
     Lang = decode_presence_status_attrs(_attrs, undefined),
-    {Lang, Cdata}.
+    {text, Lang, Data}.
 
-decode_presence_status_els([], Cdata) ->
-    decode_presence_status_cdata(Cdata);
+decode_presence_status_els([], Data) ->
+    decode_presence_status_cdata(Data);
 decode_presence_status_els([{xmlcdata, _data} | _els],
-			   Cdata) ->
+			   Data) ->
     decode_presence_status_els(_els,
-			       <<Cdata/binary, _data/binary>>);
-decode_presence_status_els([_ | _els], Cdata) ->
-    decode_presence_status_els(_els, Cdata).
+			       <<Data/binary, _data/binary>>);
+decode_presence_status_els([_ | _els], Data) ->
+    decode_presence_status_els(_els, Data).
 
 decode_presence_status_attrs([{<<"xml:lang">>, _val}
 			      | _attrs],
@@ -3005,8 +3272,9 @@ decode_presence_status_attrs([_ | _attrs], Lang) ->
 decode_presence_status_attrs([], Lang) ->
     'decode_presence_status_attr_xml:lang'(Lang).
 
-encode_presence_status({Lang, Cdata}, _xmlns_attrs) ->
-    _els = encode_presence_status_cdata(Cdata, []),
+encode_presence_status({text, Lang, Data},
+		       _xmlns_attrs) ->
+    _els = encode_presence_status_cdata(Data, []),
     _attrs = 'encode_presence_status_attr_xml:lang'(Lang,
 						    _xmlns_attrs),
     {xmlel, <<"status">>, _attrs, _els}.
@@ -3105,8 +3373,11 @@ decode_presence_els([{xmlel, <<"status">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_presence_els(_els, Error,
-			       [decode_presence_status(_el) | Status], Show,
-			       Priority, __Els);
+			       case decode_presence_status(_el) of
+				 undefined -> Status;
+				 _new_el -> [_new_el | Status]
+			       end,
+			       Show, Priority, __Els);
        true ->
 	   decode_presence_els(_els, Error, Status, Show, Priority,
 			       __Els)
@@ -3506,18 +3777,18 @@ encode_error_unexpected_request('unexpected-request',
     {xmlel, <<"unexpected-request">>, _attrs, _els}.
 
 decode_error_text({xmlel, <<"text">>, _attrs, _els}) ->
-    Cdata = decode_error_text_els(_els, <<>>),
+    Data = decode_error_text_els(_els, <<>>),
     Lang = decode_error_text_attrs(_attrs, undefined),
-    {Lang, Cdata}.
+    {text, Lang, Data}.
 
-decode_error_text_els([], Cdata) ->
-    decode_error_text_cdata(Cdata);
+decode_error_text_els([], Data) ->
+    decode_error_text_cdata(Data);
 decode_error_text_els([{xmlcdata, _data} | _els],
-		      Cdata) ->
+		      Data) ->
     decode_error_text_els(_els,
-			  <<Cdata/binary, _data/binary>>);
-decode_error_text_els([_ | _els], Cdata) ->
-    decode_error_text_els(_els, Cdata).
+			  <<Data/binary, _data/binary>>);
+decode_error_text_els([_ | _els], Data) ->
+    decode_error_text_els(_els, Data).
 
 decode_error_text_attrs([{<<"xml:lang">>, _val}
 			 | _attrs],
@@ -3528,8 +3799,8 @@ decode_error_text_attrs([_ | _attrs], Lang) ->
 decode_error_text_attrs([], Lang) ->
     'decode_error_text_attr_xml:lang'(Lang).
 
-encode_error_text({Lang, Cdata}, _xmlns_attrs) ->
-    _els = encode_error_text_cdata(Cdata, []),
+encode_error_text({text, Lang, Data}, _xmlns_attrs) ->
+    _els = encode_error_text_cdata(Data, []),
     _attrs = 'encode_error_text_attr_xml:lang'(Lang,
 					       _xmlns_attrs),
     {xmlel, <<"text">>, _attrs, _els}.
@@ -3850,73 +4121,140 @@ encode_error({error, Type, By, Reason, Text},
 
 'encode_error_$text'(undefined, _acc) -> _acc;
 'encode_error_$text'(Text, _acc) ->
-    [encode_error_text(Text, []) | _acc].
+    [encode_error_text(Text,
+		       [{<<"xmlns">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc].
 
 'encode_error_$reason'(undefined, _acc) -> _acc;
 'encode_error_$reason'('bad-request' = Reason, _acc) ->
-    [encode_error_bad_request(Reason, []) | _acc];
+    [encode_error_bad_request(Reason,
+			      [{<<"xmlns">>,
+				<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'(conflict = Reason, _acc) ->
-    [encode_error_conflict(Reason, []) | _acc];
+    [encode_error_conflict(Reason,
+			   [{<<"xmlns">>,
+			     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('feature-not-implemented' =
 			   Reason,
 		       _acc) ->
-    [encode_error_feature_not_implemented(Reason, [])
+    [encode_error_feature_not_implemented(Reason,
+					  [{<<"xmlns">>,
+					    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
      | _acc];
 'encode_error_$reason'(forbidden = Reason, _acc) ->
-    [encode_error_forbidden(Reason, []) | _acc];
+    [encode_error_forbidden(Reason,
+			    [{<<"xmlns">>,
+			      <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'({gone, _} = Reason, _acc) ->
-    [encode_error_gone(Reason, []) | _acc];
+    [encode_error_gone(Reason,
+		       [{<<"xmlns">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('internal-server-error' = Reason,
 		       _acc) ->
-    [encode_error_internal_server_error(Reason, []) | _acc];
+    [encode_error_internal_server_error(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('item-not-found' = Reason,
 		       _acc) ->
-    [encode_error_item_not_found(Reason, []) | _acc];
+    [encode_error_item_not_found(Reason,
+				 [{<<"xmlns">>,
+				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('jid-malformed' = Reason,
 		       _acc) ->
-    [encode_error_jid_malformed(Reason, []) | _acc];
+    [encode_error_jid_malformed(Reason,
+				[{<<"xmlns">>,
+				  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('not-acceptable' = Reason,
 		       _acc) ->
-    [encode_error_not_acceptable(Reason, []) | _acc];
+    [encode_error_not_acceptable(Reason,
+				 [{<<"xmlns">>,
+				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('not-allowed' = Reason, _acc) ->
-    [encode_error_not_allowed(Reason, []) | _acc];
+    [encode_error_not_allowed(Reason,
+			      [{<<"xmlns">>,
+				<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('not-authorized' = Reason,
 		       _acc) ->
-    [encode_error_not_authorized(Reason, []) | _acc];
+    [encode_error_not_authorized(Reason,
+				 [{<<"xmlns">>,
+				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('policy-violation' = Reason,
 		       _acc) ->
-    [encode_error_policy_violation(Reason, []) | _acc];
+    [encode_error_policy_violation(Reason,
+				   [{<<"xmlns">>,
+				     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('recipient-unavailable' = Reason,
 		       _acc) ->
-    [encode_error_recipient_unavailable(Reason, []) | _acc];
+    [encode_error_recipient_unavailable(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'({redirect, _} = Reason, _acc) ->
-    [encode_error_redirect(Reason, []) | _acc];
+    [encode_error_redirect(Reason,
+			   [{<<"xmlns">>,
+			     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('registration-required' = Reason,
 		       _acc) ->
-    [encode_error_registration_required(Reason, []) | _acc];
+    [encode_error_registration_required(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('remote-server-not-found' =
 			   Reason,
 		       _acc) ->
-    [encode_error_remote_server_not_found(Reason, [])
+    [encode_error_remote_server_not_found(Reason,
+					  [{<<"xmlns">>,
+					    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
      | _acc];
 'encode_error_$reason'('remote-server-timeout' = Reason,
 		       _acc) ->
-    [encode_error_remote_server_timeout(Reason, []) | _acc];
+    [encode_error_remote_server_timeout(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('resource-constraint' = Reason,
 		       _acc) ->
-    [encode_error_resource_constraint(Reason, []) | _acc];
+    [encode_error_resource_constraint(Reason,
+				      [{<<"xmlns">>,
+					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('service-unavailable' = Reason,
 		       _acc) ->
-    [encode_error_service_unavailable(Reason, []) | _acc];
+    [encode_error_service_unavailable(Reason,
+				      [{<<"xmlns">>,
+					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('subscription-required' = Reason,
 		       _acc) ->
-    [encode_error_subscription_required(Reason, []) | _acc];
+    [encode_error_subscription_required(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('undefined-condition' = Reason,
 		       _acc) ->
-    [encode_error_undefined_condition(Reason, []) | _acc];
+    [encode_error_undefined_condition(Reason,
+				      [{<<"xmlns">>,
+					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc];
 'encode_error_$reason'('unexpected-request' = Reason,
 		       _acc) ->
-    [encode_error_unexpected_request(Reason, []) | _acc].
+    [encode_error_unexpected_request(Reason,
+				     [{<<"xmlns">>,
+				       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+     | _acc].
 
 decode_error_attr_type(undefined) ->
     erlang:error({missing_attr, <<"type">>, <<"error">>,
@@ -4204,19 +4542,19 @@ encode_sasl_success_cdata(_val, _acc) ->
 
 decode_sasl_failure_text({xmlel, <<"text">>, _attrs,
 			  _els}) ->
-    Cdata = decode_sasl_failure_text_els(_els, <<>>),
+    Data = decode_sasl_failure_text_els(_els, <<>>),
     Lang = decode_sasl_failure_text_attrs(_attrs,
 					  undefined),
-    {Lang, Cdata}.
+    {text, Lang, Data}.
 
-decode_sasl_failure_text_els([], Cdata) ->
-    decode_sasl_failure_text_cdata(Cdata);
+decode_sasl_failure_text_els([], Data) ->
+    decode_sasl_failure_text_cdata(Data);
 decode_sasl_failure_text_els([{xmlcdata, _data} | _els],
-			     Cdata) ->
+			     Data) ->
     decode_sasl_failure_text_els(_els,
-				 <<Cdata/binary, _data/binary>>);
-decode_sasl_failure_text_els([_ | _els], Cdata) ->
-    decode_sasl_failure_text_els(_els, Cdata).
+				 <<Data/binary, _data/binary>>);
+decode_sasl_failure_text_els([_ | _els], Data) ->
+    decode_sasl_failure_text_els(_els, Data).
 
 decode_sasl_failure_text_attrs([{<<"xml:lang">>, _val}
 				| _attrs],
@@ -4227,8 +4565,9 @@ decode_sasl_failure_text_attrs([_ | _attrs], Lang) ->
 decode_sasl_failure_text_attrs([], Lang) ->
     'decode_sasl_failure_text_attr_xml:lang'(Lang).
 
-encode_sasl_failure_text({Lang, Cdata}, _xmlns_attrs) ->
-    _els = encode_sasl_failure_text_cdata(Cdata, []),
+encode_sasl_failure_text({text, Lang, Data},
+			 _xmlns_attrs) ->
+    _els = encode_sasl_failure_text_cdata(Data, []),
     _attrs = 'encode_sasl_failure_text_attr_xml:lang'(Lang,
 						      _xmlns_attrs),
     {xmlel, <<"text">>, _attrs, _els}.
@@ -4383,7 +4722,10 @@ decode_sasl_failure_els([{xmlel, <<"text">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els,
-				   [decode_sasl_failure_text(_el) | Text],
+				   case decode_sasl_failure_text(_el) of
+				     undefined -> Text;
+				     _new_el -> [_new_el | Text]
+				   end,
 				   Reason);
        true -> decode_sasl_failure_els(_els, Text, Reason)
     end;
@@ -4627,7 +4969,10 @@ decode_sasl_mechanisms_els([{xmlel, <<"mechanism">>,
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_mechanisms_els(_els,
-				      [decode_sasl_mechanism(_el) | List]);
+				      case decode_sasl_mechanism(_el) of
+					undefined -> List;
+					_new_el -> [_new_el | List]
+				      end);
        true -> decode_sasl_mechanisms_els(_els, List)
     end;
 decode_sasl_mechanisms_els([_ | _els], List) ->
@@ -4844,7 +5189,10 @@ decode_compress_els([{xmlel, <<"method">>, _attrs, _} =
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/compress">> ->
 	   decode_compress_els(_els,
-			       [decode_compress_method(_el) | Methods]);
+			       case decode_compress_method(_el) of
+				 undefined -> Methods;
+				 _new_el -> [_new_el | Methods]
+			       end);
        true -> decode_compress_els(_els, Methods)
     end;
 decode_compress_els([_ | _els], Methods) ->
@@ -4913,7 +5261,10 @@ decode_compression_els([{xmlel, <<"method">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/features/compress">> ->
 	   decode_compression_els(_els,
-				  [decode_compression_method(_el) | Methods]);
+				  case decode_compression_method(_el) of
+				    undefined -> Methods;
+				    _new_el -> [_new_el | Methods]
+				  end);
        true -> decode_compression_els(_els, Methods)
     end;
 decode_compression_els([_ | _els], Methods) ->
@@ -6144,19 +6495,19 @@ encode_time({time, Tzo, Utc}, _xmlns_attrs) ->
 
 decode_stream_error_text({xmlel, <<"text">>, _attrs,
 			  _els}) ->
-    Text = decode_stream_error_text_els(_els, <<>>),
+    Data = decode_stream_error_text_els(_els, <<>>),
     Lang = decode_stream_error_text_attrs(_attrs,
 					  undefined),
-    {Lang, Text}.
+    {text, Lang, Data}.
 
-decode_stream_error_text_els([], Text) ->
-    decode_stream_error_text_cdata(Text);
+decode_stream_error_text_els([], Data) ->
+    decode_stream_error_text_cdata(Data);
 decode_stream_error_text_els([{xmlcdata, _data} | _els],
-			     Text) ->
+			     Data) ->
     decode_stream_error_text_els(_els,
-				 <<Text/binary, _data/binary>>);
-decode_stream_error_text_els([_ | _els], Text) ->
-    decode_stream_error_text_els(_els, Text).
+				 <<Data/binary, _data/binary>>);
+decode_stream_error_text_els([_ | _els], Data) ->
+    decode_stream_error_text_els(_els, Data).
 
 decode_stream_error_text_attrs([{<<"xml:lang">>, _val}
 				| _attrs],
@@ -6167,8 +6518,9 @@ decode_stream_error_text_attrs([_ | _attrs], Lang) ->
 decode_stream_error_text_attrs([], Lang) ->
     'decode_stream_error_text_attr_xml:lang'(Lang).
 
-encode_stream_error_text({Lang, Text}, _xmlns_attrs) ->
-    _els = encode_stream_error_text_cdata(Text, []),
+encode_stream_error_text({text, Lang, Data},
+			 _xmlns_attrs) ->
+    _els = encode_stream_error_text_cdata(Data, []),
     _attrs = 'encode_stream_error_text_attr_xml:lang'(Lang,
 						      _xmlns_attrs),
     {xmlel, <<"text">>, _attrs, _els}.
@@ -6805,112 +7157,175 @@ encode_stream_error({stream_error, Reason, Text},
 
 'encode_stream_error_$text'(undefined, _acc) -> _acc;
 'encode_stream_error_$text'(Text, _acc) ->
-    [encode_stream_error_text(Text, []) | _acc].
+    [encode_stream_error_text(Text,
+			      [{<<"xmlns">>,
+				<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc].
 
 'encode_stream_error_$reason'(undefined, _acc) -> _acc;
 'encode_stream_error_$reason'('bad-format' = Reason,
 			      _acc) ->
-    [encode_stream_error_bad_format(Reason, []) | _acc];
+    [encode_stream_error_bad_format(Reason,
+				    [{<<"xmlns">>,
+				      <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('bad-namespace-prefix' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_bad_namespace_prefix(Reason, [])
+    [encode_stream_error_bad_namespace_prefix(Reason,
+					      [{<<"xmlns">>,
+						<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'(conflict = Reason,
 			      _acc) ->
-    [encode_stream_error_conflict(Reason, []) | _acc];
+    [encode_stream_error_conflict(Reason,
+				  [{<<"xmlns">>,
+				    <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('connection-timeout' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_connection_timeout(Reason, [])
+    [encode_stream_error_connection_timeout(Reason,
+					    [{<<"xmlns">>,
+					      <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('host-gone' = Reason,
 			      _acc) ->
-    [encode_stream_error_host_gone(Reason, []) | _acc];
+    [encode_stream_error_host_gone(Reason,
+				   [{<<"xmlns">>,
+				     <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('host-unknown' = Reason,
 			      _acc) ->
-    [encode_stream_error_host_unknown(Reason, []) | _acc];
+    [encode_stream_error_host_unknown(Reason,
+				      [{<<"xmlns">>,
+					<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('improper-addressing' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_improper_addressing(Reason, [])
+    [encode_stream_error_improper_addressing(Reason,
+					     [{<<"xmlns">>,
+					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('internal-server-error' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_internal_server_error(Reason, [])
+    [encode_stream_error_internal_server_error(Reason,
+					       [{<<"xmlns">>,
+						 <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('invalid-from' = Reason,
 			      _acc) ->
-    [encode_stream_error_invalid_from(Reason, []) | _acc];
+    [encode_stream_error_invalid_from(Reason,
+				      [{<<"xmlns">>,
+					<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('invalid-id' = Reason,
 			      _acc) ->
-    [encode_stream_error_invalid_id(Reason, []) | _acc];
+    [encode_stream_error_invalid_id(Reason,
+				    [{<<"xmlns">>,
+				      <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('invalid-namespace' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_invalid_namespace(Reason, [])
+    [encode_stream_error_invalid_namespace(Reason,
+					   [{<<"xmlns">>,
+					     <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('invalid-xml' = Reason,
 			      _acc) ->
-    [encode_stream_error_invalid_xml(Reason, []) | _acc];
+    [encode_stream_error_invalid_xml(Reason,
+				     [{<<"xmlns">>,
+				       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('not-authorized' = Reason,
 			      _acc) ->
-    [encode_stream_error_not_authorized(Reason, []) | _acc];
+    [encode_stream_error_not_authorized(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('not-well-formed' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_not_well_formed(Reason, [])
+    [encode_stream_error_not_well_formed(Reason,
+					 [{<<"xmlns">>,
+					   <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('policy-violation' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_policy_violation(Reason, [])
+    [encode_stream_error_policy_violation(Reason,
+					  [{<<"xmlns">>,
+					    <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('remote-connection-failed' =
 				  Reason,
 			      _acc) ->
     [encode_stream_error_remote_connection_failed(Reason,
-						  [])
+						  [{<<"xmlns">>,
+						    <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'(reset = Reason, _acc) ->
-    [encode_stream_error_reset(Reason, []) | _acc];
+    [encode_stream_error_reset(Reason,
+			       [{<<"xmlns">>,
+				 <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('resource-constraint' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_resource_constraint(Reason, [])
+    [encode_stream_error_resource_constraint(Reason,
+					     [{<<"xmlns">>,
+					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('restricted-xml' = Reason,
 			      _acc) ->
-    [encode_stream_error_restricted_xml(Reason, []) | _acc];
+    [encode_stream_error_restricted_xml(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'({'see-other-host', _} =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_see_other_host(Reason, []) | _acc];
+    [encode_stream_error_see_other_host(Reason,
+					[{<<"xmlns">>,
+					  <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+     | _acc];
 'encode_stream_error_$reason'('system-shutdown' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_system_shutdown(Reason, [])
+    [encode_stream_error_system_shutdown(Reason,
+					 [{<<"xmlns">>,
+					   <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('undefined-condition' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_undefined_condition(Reason, [])
+    [encode_stream_error_undefined_condition(Reason,
+					     [{<<"xmlns">>,
+					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('unsupported-encoding' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_unsupported_encoding(Reason, [])
+    [encode_stream_error_unsupported_encoding(Reason,
+					      [{<<"xmlns">>,
+						<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('unsupported-stanza-type' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_unsupported_stanza_type(Reason, [])
+    [encode_stream_error_unsupported_stanza_type(Reason,
+						 [{<<"xmlns">>,
+						   <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc];
 'encode_stream_error_$reason'('unsupported-version' =
 				  Reason,
 			      _acc) ->
-    [encode_stream_error_unsupported_version(Reason, [])
+    [encode_stream_error_unsupported_version(Reason,
+					     [{<<"xmlns">>,
+					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
      | _acc].
 
 decode_vcard_HOME({xmlel, <<"HOME">>, _attrs, _els}) ->
@@ -8615,8 +9030,11 @@ decode_vcard_LABEL_els([{xmlel, <<"LINE">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els,
-				  [decode_vcard_LINE(_el) | Line], Home, Pref,
-				  Work, Intl, Parcel, Postal, Dom);
+				  case decode_vcard_LINE(_el) of
+				    undefined -> Line;
+				    _new_el -> [_new_el | Line]
+				  end,
+				  Home, Pref, Work, Intl, Parcel, Postal, Dom);
        true ->
 	   decode_vcard_LABEL_els(_els, Line, Home, Pref, Work,
 				  Intl, Parcel, Postal, Dom)
@@ -8892,9 +9310,12 @@ decode_vcard_TEL_els([{xmlel, <<"NUMBER">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els,
-				[decode_vcard_NUMBER(_el) | Number], Pager, Pcs,
-				Bbs, Voice, Home, Pref, Msg, Fax, Work, Cell,
-				Modem, Isdn, Video);
+				case decode_vcard_NUMBER(_el) of
+				  undefined -> Number;
+				  _new_el -> [_new_el | Number]
+				end,
+				Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
+				Work, Cell, Modem, Isdn, Video);
        true ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, Msg, Fax, Work, Cell, Modem,
@@ -9063,8 +9484,11 @@ decode_vcard_EMAIL_els([{xmlel, <<"USERID">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, X400,
-				  [decode_vcard_USERID(_el) | Userid], Internet,
-				  Home, Pref, Work);
+				  case decode_vcard_USERID(_el) of
+				    undefined -> Userid;
+				    _new_el -> [_new_el | Userid]
+				  end,
+				  Internet, Home, Pref, Work);
        true ->
 	   decode_vcard_EMAIL_els(_els, X400, Userid, Internet,
 				  Home, Pref, Work)
@@ -9122,7 +9546,11 @@ decode_vcard_GEO_els([{xmlel, <<"LAT">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_GEO_els(_els,
-				[decode_vcard_LAT(_el) | Lat], Lon);
+				case decode_vcard_LAT(_el) of
+				  undefined -> Lat;
+				  _new_el -> [_new_el | Lat]
+				end,
+				Lon);
        true -> decode_vcard_GEO_els(_els, Lat, Lon)
     end;
 decode_vcard_GEO_els([{xmlel, <<"LON">>, _attrs, _} =
@@ -9132,7 +9560,10 @@ decode_vcard_GEO_els([{xmlel, <<"LON">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_GEO_els(_els, Lat,
-				[decode_vcard_LON(_el) | Lon]);
+				case decode_vcard_LON(_el) of
+				  undefined -> Lon;
+				  _new_el -> [_new_el | Lon]
+				end);
        true -> decode_vcard_GEO_els(_els, Lat, Lon)
     end;
 decode_vcard_GEO_els([_ | _els], Lat, Lon) ->
@@ -9332,7 +9763,10 @@ decode_vcard_ORG_els([{xmlel, <<"ORGNAME">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ORG_els(_els, Units,
-				[decode_vcard_ORGNAME(_el) | Name]);
+				case decode_vcard_ORGNAME(_el) of
+				  undefined -> Name;
+				  _new_el -> [_new_el | Name]
+				end);
        true -> decode_vcard_ORG_els(_els, Units, Name)
     end;
 decode_vcard_ORG_els([{xmlel, <<"ORGUNIT">>, _attrs,
@@ -9343,7 +9777,11 @@ decode_vcard_ORG_els([{xmlel, <<"ORGUNIT">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ORG_els(_els,
-				[decode_vcard_ORGUNIT(_el) | Units], Name);
+				case decode_vcard_ORGUNIT(_el) of
+				  undefined -> Units;
+				  _new_el -> [_new_el | Units]
+				end,
+				Name);
        true -> decode_vcard_ORG_els(_els, Units, Name)
     end;
 decode_vcard_ORG_els([_ | _els], Units, Name) ->
@@ -9458,7 +9896,11 @@ decode_vcard_KEY_els([{xmlel, <<"CRED">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_KEY_els(_els,
-				[decode_vcard_CRED(_el) | Cred], Type);
+				case decode_vcard_CRED(_el) of
+				  undefined -> Cred;
+				  _new_el -> [_new_el | Cred]
+				end,
+				Type);
        true -> decode_vcard_KEY_els(_els, Cred, Type)
     end;
 decode_vcard_KEY_els([_ | _els], Cred, Type) ->
@@ -9493,7 +9935,10 @@ decode_vcard_CATEGORIES_els([{xmlel, <<"KEYWORD">>,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_CATEGORIES_els(_els,
-				       [decode_vcard_KEYWORD(_el) | Keywords]);
+				       case decode_vcard_KEYWORD(_el) of
+					 undefined -> Keywords;
+					 _new_el -> [_new_el | Keywords]
+				       end);
        true -> decode_vcard_CATEGORIES_els(_els, Keywords)
     end;
 decode_vcard_CATEGORIES_els([_ | _els], Keywords) ->
@@ -9667,11 +10112,14 @@ decode_vcard_els([{xmlel, <<"ADR">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer,
-			    [decode_vcard_ADR(_el) | Adr], Class, Categories,
-			    Desc, Uid, Agent, Prodid, Jabberid, Sound, Note,
-			    Role, Title, Nickname, Rev, Sort_string, Org, Bday,
-			    Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
-			    Photo, Logo, Geo);
+			    case decode_vcard_ADR(_el) of
+			      undefined -> Adr;
+			      _new_el -> [_new_el | Adr]
+			    end,
+			    Class, Categories, Desc, Uid, Agent, Prodid,
+			    Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
+			    Label, Fn, Version, N, Photo, Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Agent, Prodid, Jabberid, Sound, Note,
@@ -9691,8 +10139,11 @@ decode_vcard_els([{xmlel, <<"LABEL">>, _attrs, _} = _el
 			    Desc, Uid, Agent, Prodid, Jabberid, Sound, Note,
 			    Role, Title, Nickname, Rev, Sort_string, Org, Bday,
 			    Key, Tz, Url, Email, Tel,
-			    [decode_vcard_LABEL(_el) | Label], Fn, Version, N,
-			    Photo, Logo, Geo);
+			    case decode_vcard_LABEL(_el) of
+			      undefined -> Label;
+			      _new_el -> [_new_el | Label]
+			    end,
+			    Fn, Version, N, Photo, Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Agent, Prodid, Jabberid, Sound, Note,
@@ -9711,7 +10162,11 @@ decode_vcard_els([{xmlel, <<"TEL">>, _attrs, _} = _el
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Agent, Prodid, Jabberid, Sound, Note,
 			    Role, Title, Nickname, Rev, Sort_string, Org, Bday,
-			    Key, Tz, Url, Email, [decode_vcard_TEL(_el) | Tel],
+			    Key, Tz, Url, Email,
+			    case decode_vcard_TEL(_el) of
+			      undefined -> Tel;
+			      _new_el -> [_new_el | Tel]
+			    end,
 			    Label, Fn, Version, N, Photo, Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
@@ -9731,7 +10186,11 @@ decode_vcard_els([{xmlel, <<"EMAIL">>, _attrs, _} = _el
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Agent, Prodid, Jabberid, Sound, Note,
 			    Role, Title, Nickname, Rev, Sort_string, Org, Bday,
-			    Key, Tz, Url, [decode_vcard_EMAIL(_el) | Email],
+			    Key, Tz, Url,
+			    case decode_vcard_EMAIL(_el) of
+			      undefined -> Email;
+			      _new_el -> [_new_el | Email]
+			    end,
 			    Tel, Label, Fn, Version, N, Photo, Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
@@ -10497,8 +10956,10 @@ decode_xdata_field_option_els([{xmlel, <<"value">>,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_option_els(_els,
-					 [decode_xdata_field_value(_el)
-					  | Value]);
+					 case decode_xdata_field_value(_el) of
+					   undefined -> Value;
+					   _new_el -> [_new_el | Value]
+					 end);
        true -> decode_xdata_field_option_els(_els, Value)
     end;
 decode_xdata_field_option_els([_ | _els], Value) ->
@@ -10559,7 +11020,10 @@ decode_xdata_field_els([{xmlel, <<"value">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_els(_els, Options,
-				  [decode_xdata_field_value(_el) | Values],
+				  case decode_xdata_field_value(_el) of
+				    undefined -> Values;
+				    _new_el -> [_new_el | Values]
+				  end,
 				  Desc, Required);
        true ->
 	   decode_xdata_field_els(_els, Options, Values, Desc,
@@ -10573,7 +11037,10 @@ decode_xdata_field_els([{xmlel, <<"option">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_els(_els,
-				  [decode_xdata_field_option(_el) | Options],
+				  case decode_xdata_field_option(_el) of
+				    undefined -> Options;
+				    _new_el -> [_new_el | Options]
+				  end,
 				  Values, Desc, Required);
        true ->
 	   decode_xdata_field_els(_els, Options, Values, Desc,
@@ -10732,7 +11199,10 @@ decode_xdata_reported_els([{xmlel, <<"field">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_reported_els(_els,
-				     [decode_xdata_field(_el) | Fields]);
+				     case decode_xdata_field(_el) of
+				       undefined -> Fields;
+				       _new_el -> [_new_el | Fields]
+				     end);
        true -> decode_xdata_reported_els(_els, Fields)
     end;
 decode_xdata_reported_els([_ | _els], Fields) ->
@@ -10761,7 +11231,10 @@ decode_xdata_item_els([{xmlel, <<"field">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_item_els(_els,
-				 [decode_xdata_field(_el) | Fields]);
+				 case decode_xdata_field(_el) of
+				   undefined -> Fields;
+				   _new_el -> [_new_el | Fields]
+				 end);
        true -> decode_xdata_item_els(_els, Fields)
     end;
 decode_xdata_item_els([_ | _els], Fields) ->
@@ -10797,7 +11270,10 @@ decode_xdata_els([{xmlel, <<"instructions">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els, Fields, Items,
-			    [decode_xdata_instructions(_el) | Instructions],
+			    case decode_xdata_instructions(_el) of
+			      undefined -> Instructions;
+			      _new_el -> [_new_el | Instructions]
+			    end,
 			    Reported, Title);
        true ->
 	   decode_xdata_els(_els, Fields, Items, Instructions,
@@ -10832,8 +11308,11 @@ decode_xdata_els([{xmlel, <<"item">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els, Fields,
-			    [decode_xdata_item(_el) | Items], Instructions,
-			    Reported, Title);
+			    case decode_xdata_item(_el) of
+			      undefined -> Items;
+			      _new_el -> [_new_el | Items]
+			    end,
+			    Instructions, Reported, Title);
        true ->
 	   decode_xdata_els(_els, Fields, Items, Instructions,
 			    Reported, Title)
@@ -10844,8 +11323,11 @@ decode_xdata_els([{xmlel, <<"field">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els,
-			    [decode_xdata_field(_el) | Fields], Items,
-			    Instructions, Reported, Title);
+			    case decode_xdata_field(_el) of
+			      undefined -> Fields;
+			      _new_el -> [_new_el | Fields]
+			    end,
+			    Items, Instructions, Reported, Title);
        true ->
 	   decode_xdata_els(_els, Fields, Items, Instructions,
 			    Reported, Title)
@@ -11136,7 +11618,10 @@ decode_pubsub_items_els([{xmlel, <<"item">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_items_els(_els,
-				   [decode_pubsub_item(_el) | Items]);
+				   case decode_pubsub_item(_el) of
+				     undefined -> Items;
+				     _new_el -> [_new_el | Items]
+				   end);
        true -> decode_pubsub_items_els(_els, Items)
     end;
 decode_pubsub_items_els([_ | _els], Items) ->
@@ -11328,8 +11813,11 @@ decode_pubsub_event_items_els([{xmlel, <<"retract">>,
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
 	   decode_pubsub_event_items_els(_els, Items,
-					 [decode_pubsub_event_retract(_el)
-					  | Retract]);
+					 case decode_pubsub_event_retract(_el)
+					     of
+					   undefined -> Retract;
+					   _new_el -> [_new_el | Retract]
+					 end);
        true ->
 	   decode_pubsub_event_items_els(_els, Items, Retract)
     end;
@@ -11343,8 +11831,10 @@ decode_pubsub_event_items_els([{xmlel, <<"item">>,
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
 	   decode_pubsub_event_items_els(_els,
-					 [decode_pubsub_event_item(_el)
-					  | Items],
+					 case decode_pubsub_event_item(_el) of
+					   undefined -> Items;
+					   _new_el -> [_new_el | Items]
+					 end,
 					 Retract);
        true ->
 	   decode_pubsub_event_items_els(_els, Items, Retract)
@@ -11412,7 +11902,10 @@ decode_pubsub_event_els([{xmlel, <<"items">>, _attrs,
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
 	   decode_pubsub_event_els(_els,
-				   [decode_pubsub_event_items(_el) | Items]);
+				   case decode_pubsub_event_items(_el) of
+				     undefined -> Items;
+				     _new_el -> [_new_el | Items]
+				   end);
        true -> decode_pubsub_event_els(_els, Items)
     end;
 decode_pubsub_event_els([_ | _els], Items) ->
@@ -11448,8 +11941,12 @@ decode_pubsub_subscriptions_els([{xmlel,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_subscriptions_els(_els,
-					   [decode_pubsub_subscription(_el)
-					    | Subscriptions]);
+					   case decode_pubsub_subscription(_el)
+					       of
+					     undefined -> Subscriptions;
+					     _new_el ->
+						 [_new_el | Subscriptions]
+					   end);
        true ->
 	   decode_pubsub_subscriptions_els(_els, Subscriptions)
     end;
@@ -11511,8 +12008,10 @@ decode_pubsub_affiliations_els([{xmlel,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_affiliations_els(_els,
-					  [decode_pubsub_affiliation(_el)
-					   | Affiliations]);
+					  case decode_pubsub_affiliation(_el) of
+					    undefined -> Affiliations;
+					    _new_el -> [_new_el | Affiliations]
+					  end);
        true ->
 	   decode_pubsub_affiliations_els(_els, Affiliations)
     end;
@@ -11607,7 +12106,10 @@ decode_pubsub_publish_els([{xmlel, <<"item">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_publish_els(_els,
-				     [decode_pubsub_item(_el) | Items]);
+				     case decode_pubsub_item(_el) of
+				       undefined -> Items;
+				       _new_el -> [_new_el | Items]
+				     end);
        true -> decode_pubsub_publish_els(_els, Items)
     end;
 decode_pubsub_publish_els([_ | _els], Items) ->
@@ -12015,7 +12517,10 @@ decode_bytestreams_els([{xmlel, <<"streamhost">>,
        _xmlns ==
 	 <<"http://jabber.org/protocol/bytestreams">> ->
 	   decode_bytestreams_els(_els,
-				  [decode_bytestreams_streamhost(_el) | Hosts],
+				  case decode_bytestreams_streamhost(_el) of
+				    undefined -> Hosts;
+				    _new_el -> [_new_el | Hosts]
+				  end,
 				  Used, Activate);
        true ->
 	   decode_bytestreams_els(_els, Hosts, Used, Activate)
@@ -12125,3 +12630,1002 @@ decode_bytestreams_attr_mode(_val) ->
 encode_bytestreams_attr_mode(tcp, _acc) -> _acc;
 encode_bytestreams_attr_mode(_val, _acc) ->
     [{<<"mode">>, xml_gen:enc_enum(_val)} | _acc].
+
+decode_muc_history({xmlel, <<"history">>, _attrs,
+		    _els}) ->
+    {Maxchars, Maxstanzas, Seconds, Since} =
+	decode_muc_history_attrs(_attrs, undefined, undefined,
+				 undefined, undefined),
+    {muc_history, Maxchars, Maxstanzas, Seconds, Since}.
+
+decode_muc_history_attrs([{<<"maxchars">>, _val}
+			  | _attrs],
+			 _Maxchars, Maxstanzas, Seconds, Since) ->
+    decode_muc_history_attrs(_attrs, _val, Maxstanzas,
+			     Seconds, Since);
+decode_muc_history_attrs([{<<"maxstanzas">>, _val}
+			  | _attrs],
+			 Maxchars, _Maxstanzas, Seconds, Since) ->
+    decode_muc_history_attrs(_attrs, Maxchars, _val,
+			     Seconds, Since);
+decode_muc_history_attrs([{<<"seconds">>, _val}
+			  | _attrs],
+			 Maxchars, Maxstanzas, _Seconds, Since) ->
+    decode_muc_history_attrs(_attrs, Maxchars, Maxstanzas,
+			     _val, Since);
+decode_muc_history_attrs([{<<"since">>, _val} | _attrs],
+			 Maxchars, Maxstanzas, Seconds, _Since) ->
+    decode_muc_history_attrs(_attrs, Maxchars, Maxstanzas,
+			     Seconds, _val);
+decode_muc_history_attrs([_ | _attrs], Maxchars,
+			 Maxstanzas, Seconds, Since) ->
+    decode_muc_history_attrs(_attrs, Maxchars, Maxstanzas,
+			     Seconds, Since);
+decode_muc_history_attrs([], Maxchars, Maxstanzas,
+			 Seconds, Since) ->
+    {decode_muc_history_attr_maxchars(Maxchars),
+     decode_muc_history_attr_maxstanzas(Maxstanzas),
+     decode_muc_history_attr_seconds(Seconds),
+     decode_muc_history_attr_since(Since)}.
+
+encode_muc_history({muc_history, Maxchars, Maxstanzas,
+		    Seconds, Since},
+		   _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_muc_history_attr_since(Since,
+					   encode_muc_history_attr_seconds(Seconds,
+									   encode_muc_history_attr_maxstanzas(Maxstanzas,
+													      encode_muc_history_attr_maxchars(Maxchars,
+																	       _xmlns_attrs)))),
+    {xmlel, <<"history">>, _attrs, _els}.
+
+decode_muc_history_attr_maxchars(undefined) ->
+    undefined;
+decode_muc_history_attr_maxchars(_val) ->
+    case catch xml_gen:dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"maxchars">>,
+			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+      _res -> _res
+    end.
+
+encode_muc_history_attr_maxchars(undefined, _acc) ->
+    _acc;
+encode_muc_history_attr_maxchars(_val, _acc) ->
+    [{<<"maxchars">>, xml_gen:enc_int(_val)} | _acc].
+
+decode_muc_history_attr_maxstanzas(undefined) ->
+    undefined;
+decode_muc_history_attr_maxstanzas(_val) ->
+    case catch xml_gen:dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"maxstanzas">>,
+			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+      _res -> _res
+    end.
+
+encode_muc_history_attr_maxstanzas(undefined, _acc) ->
+    _acc;
+encode_muc_history_attr_maxstanzas(_val, _acc) ->
+    [{<<"maxstanzas">>, xml_gen:enc_int(_val)} | _acc].
+
+decode_muc_history_attr_seconds(undefined) -> undefined;
+decode_muc_history_attr_seconds(_val) ->
+    case catch xml_gen:dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"seconds">>,
+			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+      _res -> _res
+    end.
+
+encode_muc_history_attr_seconds(undefined, _acc) ->
+    _acc;
+encode_muc_history_attr_seconds(_val, _acc) ->
+    [{<<"seconds">>, xml_gen:enc_int(_val)} | _acc].
+
+decode_muc_history_attr_since(undefined) -> undefined;
+decode_muc_history_attr_since(_val) ->
+    case catch dec_utc(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"since">>,
+			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+      _res -> _res
+    end.
+
+encode_muc_history_attr_since(undefined, _acc) -> _acc;
+encode_muc_history_attr_since(_val, _acc) ->
+    [{<<"since">>, enc_utc(_val)} | _acc].
+
+decode_muc_user_reason({xmlel, <<"reason">>, _attrs,
+			_els}) ->
+    Cdata = decode_muc_user_reason_els(_els, <<>>), Cdata.
+
+decode_muc_user_reason_els([], Cdata) ->
+    decode_muc_user_reason_cdata(Cdata);
+decode_muc_user_reason_els([{xmlcdata, _data} | _els],
+			   Cdata) ->
+    decode_muc_user_reason_els(_els,
+			       <<Cdata/binary, _data/binary>>);
+decode_muc_user_reason_els([_ | _els], Cdata) ->
+    decode_muc_user_reason_els(_els, Cdata).
+
+encode_muc_user_reason(Cdata, _xmlns_attrs) ->
+    _els = encode_muc_user_reason_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"reason">>, _attrs, _els}.
+
+decode_muc_user_reason_cdata(<<>>) -> undefined;
+decode_muc_user_reason_cdata(_val) -> _val.
+
+encode_muc_user_reason_cdata(undefined, _acc) -> _acc;
+encode_muc_user_reason_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_muc_user_decline({xmlel, <<"decline">>, _attrs,
+			 _els}) ->
+    Reason = decode_muc_user_decline_els(_els, undefined),
+    {To, From} = decode_muc_user_decline_attrs(_attrs,
+					       undefined, undefined),
+    {muc_decline, Reason, From, To}.
+
+decode_muc_user_decline_els([], Reason) -> Reason;
+decode_muc_user_decline_els([{xmlel, <<"reason">>,
+			      _attrs, _} =
+				 _el
+			     | _els],
+			    Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_decline_els(_els,
+				       decode_muc_user_reason(_el));
+       true -> decode_muc_user_decline_els(_els, Reason)
+    end;
+decode_muc_user_decline_els([_ | _els], Reason) ->
+    decode_muc_user_decline_els(_els, Reason).
+
+decode_muc_user_decline_attrs([{<<"to">>, _val}
+			       | _attrs],
+			      _To, From) ->
+    decode_muc_user_decline_attrs(_attrs, _val, From);
+decode_muc_user_decline_attrs([{<<"from">>, _val}
+			       | _attrs],
+			      To, _From) ->
+    decode_muc_user_decline_attrs(_attrs, To, _val);
+decode_muc_user_decline_attrs([_ | _attrs], To, From) ->
+    decode_muc_user_decline_attrs(_attrs, To, From);
+decode_muc_user_decline_attrs([], To, From) ->
+    {decode_muc_user_decline_attr_to(To),
+     decode_muc_user_decline_attr_from(From)}.
+
+encode_muc_user_decline({muc_decline, Reason, From, To},
+			_xmlns_attrs) ->
+    _els = 'encode_muc_user_decline_$reason'(Reason, []),
+    _attrs = encode_muc_user_decline_attr_from(From,
+					       encode_muc_user_decline_attr_to(To,
+									       _xmlns_attrs)),
+    {xmlel, <<"decline">>, _attrs, _els}.
+
+'encode_muc_user_decline_$reason'(undefined, _acc) ->
+    _acc;
+'encode_muc_user_decline_$reason'(Reason, _acc) ->
+    [encode_muc_user_reason(Reason, []) | _acc].
+
+decode_muc_user_decline_attr_to(undefined) -> undefined;
+decode_muc_user_decline_attr_to(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"to">>, <<"decline">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_decline_attr_to(undefined, _acc) ->
+    _acc;
+encode_muc_user_decline_attr_to(_val, _acc) ->
+    [{<<"to">>, enc_jid(_val)} | _acc].
+
+decode_muc_user_decline_attr_from(undefined) ->
+    undefined;
+decode_muc_user_decline_attr_from(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"from">>, <<"decline">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_decline_attr_from(undefined, _acc) ->
+    _acc;
+encode_muc_user_decline_attr_from(_val, _acc) ->
+    [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_muc_user_destroy({xmlel, <<"destroy">>, _attrs,
+			 _els}) ->
+    Reason = decode_muc_user_destroy_els(_els, undefined),
+    Jid = decode_muc_user_destroy_attrs(_attrs, undefined),
+    {muc_user_destroy, Reason, Jid}.
+
+decode_muc_user_destroy_els([], Reason) -> Reason;
+decode_muc_user_destroy_els([{xmlel, <<"reason">>,
+			      _attrs, _} =
+				 _el
+			     | _els],
+			    Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_destroy_els(_els,
+				       decode_muc_user_reason(_el));
+       true -> decode_muc_user_destroy_els(_els, Reason)
+    end;
+decode_muc_user_destroy_els([_ | _els], Reason) ->
+    decode_muc_user_destroy_els(_els, Reason).
+
+decode_muc_user_destroy_attrs([{<<"jid">>, _val}
+			       | _attrs],
+			      _Jid) ->
+    decode_muc_user_destroy_attrs(_attrs, _val);
+decode_muc_user_destroy_attrs([_ | _attrs], Jid) ->
+    decode_muc_user_destroy_attrs(_attrs, Jid);
+decode_muc_user_destroy_attrs([], Jid) ->
+    decode_muc_user_destroy_attr_jid(Jid).
+
+encode_muc_user_destroy({muc_user_destroy, Reason, Jid},
+			_xmlns_attrs) ->
+    _els = 'encode_muc_user_destroy_$reason'(Reason, []),
+    _attrs = encode_muc_user_destroy_attr_jid(Jid,
+					      _xmlns_attrs),
+    {xmlel, <<"destroy">>, _attrs, _els}.
+
+'encode_muc_user_destroy_$reason'(undefined, _acc) ->
+    _acc;
+'encode_muc_user_destroy_$reason'(Reason, _acc) ->
+    [encode_muc_user_reason(Reason, []) | _acc].
+
+decode_muc_user_destroy_attr_jid(undefined) ->
+    undefined;
+decode_muc_user_destroy_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>, <<"destroy">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_destroy_attr_jid(undefined, _acc) ->
+    _acc;
+encode_muc_user_destroy_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_muc_user_invite({xmlel, <<"invite">>, _attrs,
+			_els}) ->
+    Reason = decode_muc_user_invite_els(_els, undefined),
+    {To, From} = decode_muc_user_invite_attrs(_attrs,
+					      undefined, undefined),
+    {muc_invite, Reason, From, To}.
+
+decode_muc_user_invite_els([], Reason) -> Reason;
+decode_muc_user_invite_els([{xmlel, <<"reason">>,
+			     _attrs, _} =
+				_el
+			    | _els],
+			   Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_invite_els(_els,
+				      decode_muc_user_reason(_el));
+       true -> decode_muc_user_invite_els(_els, Reason)
+    end;
+decode_muc_user_invite_els([_ | _els], Reason) ->
+    decode_muc_user_invite_els(_els, Reason).
+
+decode_muc_user_invite_attrs([{<<"to">>, _val}
+			      | _attrs],
+			     _To, From) ->
+    decode_muc_user_invite_attrs(_attrs, _val, From);
+decode_muc_user_invite_attrs([{<<"from">>, _val}
+			      | _attrs],
+			     To, _From) ->
+    decode_muc_user_invite_attrs(_attrs, To, _val);
+decode_muc_user_invite_attrs([_ | _attrs], To, From) ->
+    decode_muc_user_invite_attrs(_attrs, To, From);
+decode_muc_user_invite_attrs([], To, From) ->
+    {decode_muc_user_invite_attr_to(To),
+     decode_muc_user_invite_attr_from(From)}.
+
+encode_muc_user_invite({muc_invite, Reason, From, To},
+		       _xmlns_attrs) ->
+    _els = 'encode_muc_user_invite_$reason'(Reason, []),
+    _attrs = encode_muc_user_invite_attr_from(From,
+					      encode_muc_user_invite_attr_to(To,
+									     _xmlns_attrs)),
+    {xmlel, <<"invite">>, _attrs, _els}.
+
+'encode_muc_user_invite_$reason'(undefined, _acc) ->
+    _acc;
+'encode_muc_user_invite_$reason'(Reason, _acc) ->
+    [encode_muc_user_reason(Reason, []) | _acc].
+
+decode_muc_user_invite_attr_to(undefined) -> undefined;
+decode_muc_user_invite_attr_to(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"to">>, <<"invite">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_invite_attr_to(undefined, _acc) -> _acc;
+encode_muc_user_invite_attr_to(_val, _acc) ->
+    [{<<"to">>, enc_jid(_val)} | _acc].
+
+decode_muc_user_invite_attr_from(undefined) ->
+    undefined;
+decode_muc_user_invite_attr_from(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"from">>, <<"invite">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_invite_attr_from(undefined, _acc) ->
+    _acc;
+encode_muc_user_invite_attr_from(_val, _acc) ->
+    [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_muc_user_actor({xmlel, <<"actor">>, _attrs,
+		       _els}) ->
+    {Jid, Nick} = decode_muc_user_actor_attrs(_attrs,
+					      undefined, undefined),
+    {muc_actor, Jid, Nick}.
+
+decode_muc_user_actor_attrs([{<<"jid">>, _val}
+			     | _attrs],
+			    _Jid, Nick) ->
+    decode_muc_user_actor_attrs(_attrs, _val, Nick);
+decode_muc_user_actor_attrs([{<<"nick">>, _val}
+			     | _attrs],
+			    Jid, _Nick) ->
+    decode_muc_user_actor_attrs(_attrs, Jid, _val);
+decode_muc_user_actor_attrs([_ | _attrs], Jid, Nick) ->
+    decode_muc_user_actor_attrs(_attrs, Jid, Nick);
+decode_muc_user_actor_attrs([], Jid, Nick) ->
+    {decode_muc_user_actor_attr_jid(Jid),
+     decode_muc_user_actor_attr_nick(Nick)}.
+
+encode_muc_user_actor({muc_actor, Jid, Nick},
+		      _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_muc_user_actor_attr_nick(Nick,
+					     encode_muc_user_actor_attr_jid(Jid,
+									    _xmlns_attrs)),
+    {xmlel, <<"actor">>, _attrs, _els}.
+
+decode_muc_user_actor_attr_jid(undefined) -> undefined;
+decode_muc_user_actor_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>, <<"actor">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_actor_attr_jid(undefined, _acc) -> _acc;
+encode_muc_user_actor_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_muc_user_actor_attr_nick(undefined) -> undefined;
+decode_muc_user_actor_attr_nick(_val) -> _val.
+
+encode_muc_user_actor_attr_nick(undefined, _acc) ->
+    _acc;
+encode_muc_user_actor_attr_nick(_val, _acc) ->
+    [{<<"nick">>, _val} | _acc].
+
+decode_muc_user_continue({xmlel, <<"continue">>, _attrs,
+			  _els}) ->
+    Thread = decode_muc_user_continue_attrs(_attrs,
+					    undefined),
+    Thread.
+
+decode_muc_user_continue_attrs([{<<"thread">>, _val}
+				| _attrs],
+			       _Thread) ->
+    decode_muc_user_continue_attrs(_attrs, _val);
+decode_muc_user_continue_attrs([_ | _attrs], Thread) ->
+    decode_muc_user_continue_attrs(_attrs, Thread);
+decode_muc_user_continue_attrs([], Thread) ->
+    decode_muc_user_continue_attr_thread(Thread).
+
+encode_muc_user_continue(Thread, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_muc_user_continue_attr_thread(Thread,
+						  _xmlns_attrs),
+    {xmlel, <<"continue">>, _attrs, _els}.
+
+decode_muc_user_continue_attr_thread(undefined) ->
+    undefined;
+decode_muc_user_continue_attr_thread(_val) -> _val.
+
+encode_muc_user_continue_attr_thread(undefined, _acc) ->
+    _acc;
+encode_muc_user_continue_attr_thread(_val, _acc) ->
+    [{<<"thread">>, _val} | _acc].
+
+decode_muc_user_status({xmlel, <<"status">>, _attrs,
+			_els}) ->
+    Code = decode_muc_user_status_attrs(_attrs, undefined),
+    Code.
+
+decode_muc_user_status_attrs([{<<"code">>, _val}
+			      | _attrs],
+			     _Code) ->
+    decode_muc_user_status_attrs(_attrs, _val);
+decode_muc_user_status_attrs([_ | _attrs], Code) ->
+    decode_muc_user_status_attrs(_attrs, Code);
+decode_muc_user_status_attrs([], Code) ->
+    decode_muc_user_status_attr_code(Code).
+
+encode_muc_user_status(Code, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_muc_user_status_attr_code(Code,
+					      _xmlns_attrs),
+    {xmlel, <<"status">>, _attrs, _els}.
+
+decode_muc_user_status_attr_code(undefined) ->
+    undefined;
+decode_muc_user_status_attr_code(_val) ->
+    case catch xml_gen:dec_int(_val, 100, 999) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"code">>, <<"status">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_status_attr_code(undefined, _acc) ->
+    _acc;
+encode_muc_user_status_attr_code(_val, _acc) ->
+    [{<<"code">>, xml_gen:enc_int(_val)} | _acc].
+
+decode_muc_user_item({xmlel, <<"item">>, _attrs,
+		      _els}) ->
+    {Actor, Continue, Reason} =
+	decode_muc_user_item_els(_els, undefined, undefined,
+				 undefined),
+    {Affiliation, Role, Jid, Nick} =
+	decode_muc_user_item_attrs(_attrs, undefined, undefined,
+				   undefined, undefined),
+    {muc_item, Actor, Continue, Reason, Affiliation, Role,
+     Jid, Nick}.
+
+decode_muc_user_item_els([], Actor, Continue, Reason) ->
+    {Actor, Continue, Reason};
+decode_muc_user_item_els([{xmlel, <<"actor">>, _attrs,
+			   _} =
+			      _el
+			  | _els],
+			 Actor, Continue, Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_item_els(_els,
+				    decode_muc_user_actor(_el), Continue,
+				    Reason);
+       true ->
+	   decode_muc_user_item_els(_els, Actor, Continue, Reason)
+    end;
+decode_muc_user_item_els([{xmlel, <<"continue">>,
+			   _attrs, _} =
+			      _el
+			  | _els],
+			 Actor, Continue, Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_item_els(_els, Actor,
+				    decode_muc_user_continue(_el), Reason);
+       true ->
+	   decode_muc_user_item_els(_els, Actor, Continue, Reason)
+    end;
+decode_muc_user_item_els([{xmlel, <<"reason">>, _attrs,
+			   _} =
+			      _el
+			  | _els],
+			 Actor, Continue, Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_item_els(_els, Actor, Continue,
+				    decode_muc_user_reason(_el));
+       true ->
+	   decode_muc_user_item_els(_els, Actor, Continue, Reason)
+    end;
+decode_muc_user_item_els([_ | _els], Actor, Continue,
+			 Reason) ->
+    decode_muc_user_item_els(_els, Actor, Continue, Reason).
+
+decode_muc_user_item_attrs([{<<"affiliation">>, _val}
+			    | _attrs],
+			   _Affiliation, Role, Jid, Nick) ->
+    decode_muc_user_item_attrs(_attrs, _val, Role, Jid,
+			       Nick);
+decode_muc_user_item_attrs([{<<"role">>, _val}
+			    | _attrs],
+			   Affiliation, _Role, Jid, Nick) ->
+    decode_muc_user_item_attrs(_attrs, Affiliation, _val,
+			       Jid, Nick);
+decode_muc_user_item_attrs([{<<"jid">>, _val} | _attrs],
+			   Affiliation, Role, _Jid, Nick) ->
+    decode_muc_user_item_attrs(_attrs, Affiliation, Role,
+			       _val, Nick);
+decode_muc_user_item_attrs([{<<"nick">>, _val}
+			    | _attrs],
+			   Affiliation, Role, Jid, _Nick) ->
+    decode_muc_user_item_attrs(_attrs, Affiliation, Role,
+			       Jid, _val);
+decode_muc_user_item_attrs([_ | _attrs], Affiliation,
+			   Role, Jid, Nick) ->
+    decode_muc_user_item_attrs(_attrs, Affiliation, Role,
+			       Jid, Nick);
+decode_muc_user_item_attrs([], Affiliation, Role, Jid,
+			   Nick) ->
+    {decode_muc_user_item_attr_affiliation(Affiliation),
+     decode_muc_user_item_attr_role(Role),
+     decode_muc_user_item_attr_jid(Jid),
+     decode_muc_user_item_attr_nick(Nick)}.
+
+encode_muc_user_item({muc_item, Actor, Continue, Reason,
+		      Affiliation, Role, Jid, Nick},
+		     _xmlns_attrs) ->
+    _els = 'encode_muc_user_item_$reason'(Reason,
+					  'encode_muc_user_item_$continue'(Continue,
+									   'encode_muc_user_item_$actor'(Actor,
+													 []))),
+    _attrs = encode_muc_user_item_attr_nick(Nick,
+					    encode_muc_user_item_attr_jid(Jid,
+									  encode_muc_user_item_attr_role(Role,
+													 encode_muc_user_item_attr_affiliation(Affiliation,
+																	       _xmlns_attrs)))),
+    {xmlel, <<"item">>, _attrs, _els}.
+
+'encode_muc_user_item_$actor'(undefined, _acc) -> _acc;
+'encode_muc_user_item_$actor'(Actor, _acc) ->
+    [encode_muc_user_actor(Actor, []) | _acc].
+
+'encode_muc_user_item_$continue'(undefined, _acc) ->
+    _acc;
+'encode_muc_user_item_$continue'(Continue, _acc) ->
+    [encode_muc_user_continue(Continue, []) | _acc].
+
+'encode_muc_user_item_$reason'(undefined, _acc) -> _acc;
+'encode_muc_user_item_$reason'(Reason, _acc) ->
+    [encode_muc_user_reason(Reason, []) | _acc].
+
+decode_muc_user_item_attr_affiliation(undefined) ->
+    undefined;
+decode_muc_user_item_attr_affiliation(_val) ->
+    case catch xml_gen:dec_enum(_val,
+				[admin, member, none, outcast, owner])
+	of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"affiliation">>,
+			<<"item">>, <<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_item_attr_affiliation(undefined,
+				      _acc) ->
+    _acc;
+encode_muc_user_item_attr_affiliation(_val, _acc) ->
+    [{<<"affiliation">>, xml_gen:enc_enum(_val)} | _acc].
+
+decode_muc_user_item_attr_role(undefined) -> undefined;
+decode_muc_user_item_attr_role(_val) ->
+    case catch xml_gen:dec_enum(_val,
+				[moderator, none, participant, visitor])
+	of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"role">>, <<"item">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_item_attr_role(undefined, _acc) -> _acc;
+encode_muc_user_item_attr_role(_val, _acc) ->
+    [{<<"role">>, xml_gen:enc_enum(_val)} | _acc].
+
+decode_muc_user_item_attr_jid(undefined) -> undefined;
+decode_muc_user_item_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>, <<"item">>,
+			<<"http://jabber.org/protocol/muc#user">>});
+      _res -> _res
+    end.
+
+encode_muc_user_item_attr_jid(undefined, _acc) -> _acc;
+encode_muc_user_item_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_muc_user_item_attr_nick(undefined) -> undefined;
+decode_muc_user_item_attr_nick(_val) -> _val.
+
+encode_muc_user_item_attr_nick(undefined, _acc) -> _acc;
+encode_muc_user_item_attr_nick(_val, _acc) ->
+    [{<<"nick">>, _val} | _acc].
+
+decode_muc_user({xmlel, <<"x">>, _attrs, _els}) ->
+    {Status_codes, Items, Invites, Decline, Destroy} =
+	decode_muc_user_els(_els, [], [], [], undefined,
+			    undefined),
+    Password = decode_muc_user_attrs(_attrs, undefined),
+    {muc_user, Decline, Destroy, Invites, Items,
+     Status_codes, Password}.
+
+decode_muc_user_els([], Status_codes, Items, Invites,
+		    Decline, Destroy) ->
+    {lists:reverse(Status_codes), lists:reverse(Items),
+     lists:reverse(Invites), Decline, Destroy};
+decode_muc_user_els([{xmlel, <<"decline">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Status_codes, Items, Invites, Decline, Destroy) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_els(_els, Status_codes, Items, Invites,
+			       decode_muc_user_decline(_el), Destroy);
+       true ->
+	   decode_muc_user_els(_els, Status_codes, Items, Invites,
+			       Decline, Destroy)
+    end;
+decode_muc_user_els([{xmlel, <<"destroy">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Status_codes, Items, Invites, Decline, Destroy) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_els(_els, Status_codes, Items, Invites,
+			       Decline, decode_muc_user_destroy(_el));
+       true ->
+	   decode_muc_user_els(_els, Status_codes, Items, Invites,
+			       Decline, Destroy)
+    end;
+decode_muc_user_els([{xmlel, <<"invite">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Status_codes, Items, Invites, Decline, Destroy) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_els(_els, Status_codes, Items,
+			       case decode_muc_user_invite(_el) of
+				 undefined -> Invites;
+				 _new_el -> [_new_el | Invites]
+			       end,
+			       Decline, Destroy);
+       true ->
+	   decode_muc_user_els(_els, Status_codes, Items, Invites,
+			       Decline, Destroy)
+    end;
+decode_muc_user_els([{xmlel, <<"item">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Status_codes, Items, Invites, Decline, Destroy) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_els(_els, Status_codes,
+			       case decode_muc_user_item(_el) of
+				 undefined -> Items;
+				 _new_el -> [_new_el | Items]
+			       end,
+			       Invites, Decline, Destroy);
+       true ->
+	   decode_muc_user_els(_els, Status_codes, Items, Invites,
+			       Decline, Destroy)
+    end;
+decode_muc_user_els([{xmlel, <<"status">>, _attrs, _} =
+			 _el
+		     | _els],
+		    Status_codes, Items, Invites, Decline, Destroy) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
+	   decode_muc_user_els(_els,
+			       case decode_muc_user_status(_el) of
+				 undefined -> Status_codes;
+				 _new_el -> [_new_el | Status_codes]
+			       end,
+			       Items, Invites, Decline, Destroy);
+       true ->
+	   decode_muc_user_els(_els, Status_codes, Items, Invites,
+			       Decline, Destroy)
+    end;
+decode_muc_user_els([_ | _els], Status_codes, Items,
+		    Invites, Decline, Destroy) ->
+    decode_muc_user_els(_els, Status_codes, Items, Invites,
+			Decline, Destroy).
+
+decode_muc_user_attrs([{<<"password">>, _val} | _attrs],
+		      _Password) ->
+    decode_muc_user_attrs(_attrs, _val);
+decode_muc_user_attrs([_ | _attrs], Password) ->
+    decode_muc_user_attrs(_attrs, Password);
+decode_muc_user_attrs([], Password) ->
+    decode_muc_user_attr_password(Password).
+
+encode_muc_user({muc_user, Decline, Destroy, Invites,
+		 Items, Status_codes, Password},
+		_xmlns_attrs) ->
+    _els = 'encode_muc_user_$destroy'(Destroy,
+				      'encode_muc_user_$decline'(Decline,
+								 'encode_muc_user_$invites'(Invites,
+											    'encode_muc_user_$items'(Items,
+														     'encode_muc_user_$status_codes'(Status_codes,
+																		     []))))),
+    _attrs = encode_muc_user_attr_password(Password,
+					   _xmlns_attrs),
+    {xmlel, <<"x">>, _attrs, _els}.
+
+'encode_muc_user_$status_codes'([], _acc) -> _acc;
+'encode_muc_user_$status_codes'([Status_codes | _els],
+				_acc) ->
+    'encode_muc_user_$status_codes'(_els,
+				    [encode_muc_user_status(Status_codes, [])
+				     | _acc]).
+
+'encode_muc_user_$items'([], _acc) -> _acc;
+'encode_muc_user_$items'([Items | _els], _acc) ->
+    'encode_muc_user_$items'(_els,
+			     [encode_muc_user_item(Items, []) | _acc]).
+
+'encode_muc_user_$invites'([], _acc) -> _acc;
+'encode_muc_user_$invites'([Invites | _els], _acc) ->
+    'encode_muc_user_$invites'(_els,
+			       [encode_muc_user_invite(Invites, []) | _acc]).
+
+'encode_muc_user_$decline'(undefined, _acc) -> _acc;
+'encode_muc_user_$decline'(Decline, _acc) ->
+    [encode_muc_user_decline(Decline, []) | _acc].
+
+'encode_muc_user_$destroy'(undefined, _acc) -> _acc;
+'encode_muc_user_$destroy'(Destroy, _acc) ->
+    [encode_muc_user_destroy(Destroy, []) | _acc].
+
+decode_muc_user_attr_password(undefined) -> undefined;
+decode_muc_user_attr_password(_val) -> _val.
+
+encode_muc_user_attr_password(undefined, _acc) -> _acc;
+encode_muc_user_attr_password(_val, _acc) ->
+    [{<<"password">>, _val} | _acc].
+
+decode_muc_owner_password({xmlel, <<"password">>,
+			   _attrs, _els}) ->
+    Cdata = decode_muc_owner_password_els(_els, <<>>),
+    Cdata.
+
+decode_muc_owner_password_els([], Cdata) ->
+    decode_muc_owner_password_cdata(Cdata);
+decode_muc_owner_password_els([{xmlcdata, _data}
+			       | _els],
+			      Cdata) ->
+    decode_muc_owner_password_els(_els,
+				  <<Cdata/binary, _data/binary>>);
+decode_muc_owner_password_els([_ | _els], Cdata) ->
+    decode_muc_owner_password_els(_els, Cdata).
+
+encode_muc_owner_password(Cdata, _xmlns_attrs) ->
+    _els = encode_muc_owner_password_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"password">>, _attrs, _els}.
+
+decode_muc_owner_password_cdata(<<>>) -> undefined;
+decode_muc_owner_password_cdata(_val) -> _val.
+
+encode_muc_owner_password_cdata(undefined, _acc) ->
+    _acc;
+encode_muc_owner_password_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_muc_owner_reason({xmlel, <<"reason">>, _attrs,
+			 _els}) ->
+    Cdata = decode_muc_owner_reason_els(_els, <<>>), Cdata.
+
+decode_muc_owner_reason_els([], Cdata) ->
+    decode_muc_owner_reason_cdata(Cdata);
+decode_muc_owner_reason_els([{xmlcdata, _data} | _els],
+			    Cdata) ->
+    decode_muc_owner_reason_els(_els,
+				<<Cdata/binary, _data/binary>>);
+decode_muc_owner_reason_els([_ | _els], Cdata) ->
+    decode_muc_owner_reason_els(_els, Cdata).
+
+encode_muc_owner_reason(Cdata, _xmlns_attrs) ->
+    _els = encode_muc_owner_reason_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"reason">>, _attrs, _els}.
+
+decode_muc_owner_reason_cdata(<<>>) -> undefined;
+decode_muc_owner_reason_cdata(_val) -> _val.
+
+encode_muc_owner_reason_cdata(undefined, _acc) -> _acc;
+encode_muc_owner_reason_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_muc_owner_destroy({xmlel, <<"destroy">>, _attrs,
+			  _els}) ->
+    {Password, Reason} = decode_muc_owner_destroy_els(_els,
+						      undefined, undefined),
+    Jid = decode_muc_owner_destroy_attrs(_attrs, undefined),
+    {muc_owner_destroy, Jid, Reason, Password}.
+
+decode_muc_owner_destroy_els([], Password, Reason) ->
+    {Password, Reason};
+decode_muc_owner_destroy_els([{xmlel, <<"password">>,
+			       _attrs, _} =
+				  _el
+			      | _els],
+			     Password, Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#owner">> ->
+	   decode_muc_owner_destroy_els(_els,
+					decode_muc_owner_password(_el), Reason);
+       true ->
+	   decode_muc_owner_destroy_els(_els, Password, Reason)
+    end;
+decode_muc_owner_destroy_els([{xmlel, <<"reason">>,
+			       _attrs, _} =
+				  _el
+			      | _els],
+			     Password, Reason) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#owner">> ->
+	   decode_muc_owner_destroy_els(_els, Password,
+					decode_muc_owner_reason(_el));
+       true ->
+	   decode_muc_owner_destroy_els(_els, Password, Reason)
+    end;
+decode_muc_owner_destroy_els([_ | _els], Password,
+			     Reason) ->
+    decode_muc_owner_destroy_els(_els, Password, Reason).
+
+decode_muc_owner_destroy_attrs([{<<"jid">>, _val}
+				| _attrs],
+			       _Jid) ->
+    decode_muc_owner_destroy_attrs(_attrs, _val);
+decode_muc_owner_destroy_attrs([_ | _attrs], Jid) ->
+    decode_muc_owner_destroy_attrs(_attrs, Jid);
+decode_muc_owner_destroy_attrs([], Jid) ->
+    decode_muc_owner_destroy_attr_jid(Jid).
+
+encode_muc_owner_destroy({muc_owner_destroy, Jid,
+			  Reason, Password},
+			 _xmlns_attrs) ->
+    _els = 'encode_muc_owner_destroy_$reason'(Reason,
+					      'encode_muc_owner_destroy_$password'(Password,
+										   [])),
+    _attrs = encode_muc_owner_destroy_attr_jid(Jid,
+					       _xmlns_attrs),
+    {xmlel, <<"destroy">>, _attrs, _els}.
+
+'encode_muc_owner_destroy_$password'(undefined, _acc) ->
+    _acc;
+'encode_muc_owner_destroy_$password'(Password, _acc) ->
+    [encode_muc_owner_password(Password, []) | _acc].
+
+'encode_muc_owner_destroy_$reason'(undefined, _acc) ->
+    _acc;
+'encode_muc_owner_destroy_$reason'(Reason, _acc) ->
+    [encode_muc_owner_reason(Reason, []) | _acc].
+
+decode_muc_owner_destroy_attr_jid(undefined) ->
+    undefined;
+decode_muc_owner_destroy_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>, <<"destroy">>,
+			<<"http://jabber.org/protocol/muc#owner">>});
+      _res -> _res
+    end.
+
+encode_muc_owner_destroy_attr_jid(undefined, _acc) ->
+    _acc;
+encode_muc_owner_destroy_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_muc_owner({xmlel, <<"query">>, _attrs, _els}) ->
+    {Config, Destroy} = decode_muc_owner_els(_els,
+					     undefined, undefined),
+    {muc_owner, Destroy, Config}.
+
+decode_muc_owner_els([], Config, Destroy) ->
+    {Config, Destroy};
+decode_muc_owner_els([{xmlel, <<"destroy">>, _attrs,
+		       _} =
+			  _el
+		      | _els],
+		     Config, Destroy) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#owner">> ->
+	   decode_muc_owner_els(_els, Config,
+				decode_muc_owner_destroy(_el));
+       true -> decode_muc_owner_els(_els, Config, Destroy)
+    end;
+decode_muc_owner_els([{xmlel, <<"x">>, _attrs, _} = _el
+		      | _els],
+		     Config, Destroy) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<"jabber:x:data">> ->
+	   decode_muc_owner_els(_els, decode_xdata(_el), Destroy);
+       true -> decode_muc_owner_els(_els, Config, Destroy)
+    end;
+decode_muc_owner_els([_ | _els], Config, Destroy) ->
+    decode_muc_owner_els(_els, Config, Destroy).
+
+encode_muc_owner({muc_owner, Destroy, Config},
+		 _xmlns_attrs) ->
+    _els = 'encode_muc_owner_$destroy'(Destroy,
+				       'encode_muc_owner_$config'(Config, [])),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"query">>, _attrs, _els}.
+
+'encode_muc_owner_$config'(undefined, _acc) -> _acc;
+'encode_muc_owner_$config'(Config, _acc) ->
+    [encode_xdata(Config,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+'encode_muc_owner_$destroy'(undefined, _acc) -> _acc;
+'encode_muc_owner_$destroy'(Destroy, _acc) ->
+    [encode_muc_owner_destroy(Destroy, []) | _acc].
+
+decode_muc({xmlel, <<"x">>, _attrs, _els}) ->
+    History = decode_muc_els(_els, undefined),
+    Password = decode_muc_attrs(_attrs, undefined),
+    {muc, History, Password}.
+
+decode_muc_els([], History) -> History;
+decode_muc_els([{xmlel, <<"history">>, _attrs, _} = _el
+		| _els],
+	       History) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc">> ->
+	   decode_muc_els(_els, decode_muc_history(_el));
+       true -> decode_muc_els(_els, History)
+    end;
+decode_muc_els([_ | _els], History) ->
+    decode_muc_els(_els, History).
+
+decode_muc_attrs([{<<"password">>, _val} | _attrs],
+		 _Password) ->
+    decode_muc_attrs(_attrs, _val);
+decode_muc_attrs([_ | _attrs], Password) ->
+    decode_muc_attrs(_attrs, Password);
+decode_muc_attrs([], Password) ->
+    decode_muc_attr_password(Password).
+
+encode_muc({muc, History, Password}, _xmlns_attrs) ->
+    _els = 'encode_muc_$history'(History, []),
+    _attrs = encode_muc_attr_password(Password,
+				      _xmlns_attrs),
+    {xmlel, <<"x">>, _attrs, _els}.
+
+'encode_muc_$history'(undefined, _acc) -> _acc;
+'encode_muc_$history'(History, _acc) ->
+    [encode_muc_history(History, []) | _acc].
+
+decode_muc_attr_password(undefined) -> undefined;
+decode_muc_attr_password(_val) -> _val.
+
+encode_muc_attr_password(undefined, _acc) -> _acc;
+encode_muc_attr_password(_val, _acc) ->
+    [{<<"password">>, _val} | _acc].

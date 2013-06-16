@@ -102,7 +102,7 @@ end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
     ok.
 
-init_per_testcase(stop_ejabberd = TestCase, OrigConfig) ->
+init_per_testcase(stop_ejabberd, OrigConfig) ->
     User = <<"test_stop">>,
     Config = set_opt(user, User, OrigConfig),
     ejabberd_auth:try_register(User,
@@ -179,14 +179,22 @@ groups() ->
        blocking,
        vcard,
        pubsub,
+       muc_single,
        test_unregister]},
-     {test_roster, [parallel], [roster_master, roster_slave]},
-     {test_proxy65, [parallel], [proxy65_master, proxy65_slave]}].
+     {test_roster_subscribe, [parallel],
+      [roster_subscribe_master,
+       roster_subscribe_slave]},
+     {test_proxy65, [parallel],
+      [proxy65_master, proxy65_slave]},
+     {test_roster_remove, [parallel],
+      [roster_remove_master,
+       roster_remove_slave]}].
 
 all() ->
     [{group, single_user},
-     {group, test_roster},
+     {group, test_roster_subscribe},
      {group, test_proxy65},
+     {group, test_roster_remove},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->
@@ -281,17 +289,17 @@ test_register(Config) ->
     end.
 
 register(Config) ->
-    I1 = send(Config,
-              #iq{type = get, to = server_jid(Config),
-                  sub_els = [#register{}]}),
-    #iq{type = result, id = I1,
+    #iq{type = result,
         sub_els = [#register{username = none,
-                             password = none}]} = recv(),
-    I2 = send(Config,
-              #iq{type = set,
-                  sub_els = [#register{username = ?config(user, Config),
-                                       password = ?config(password, Config)}]}),
-    #iq{type = result, id = I2, sub_els = []} = recv(),
+                             password = none}]} =
+        send_recv(Config, #iq{type = get, to = server_jid(Config),
+                              sub_els = [#register{}]}),
+    #iq{type = result, sub_els = []} =
+        send_recv(
+          Config,
+          #iq{type = set,
+              sub_els = [#register{username = ?config(user, Config),
+                                   password = ?config(password, Config)}]}),
     Config.
 
 test_unregister(Config) ->
@@ -304,10 +312,11 @@ test_unregister(Config) ->
 
 try_unregister(Config) ->
     true = is_feature_advertised(Config, ?NS_REGISTER),
-    I = send(Config,
-             #iq{type = set,
-                 sub_els = [#register{remove = true}]}),
-    #iq{type = result, id = I, sub_els = []} = recv(),
+    #iq{type = result, sub_els = []} =
+        send_recv(
+          Config,
+          #iq{type = set,
+              sub_els = [#register{remove = true}]}),
     #stream_error{reason = conflict} = recv(),
     Config.
 
@@ -330,75 +339,74 @@ test_bind(Config) ->
     disconnect(bind(Config)).
 
 bind(Config) ->
-    ID = send(Config,
-              #iq{type = set,
-                  sub_els = [#bind{resource = ?config(resource, Config)}]}),
-    #iq{type = result, id = ID, sub_els = [#bind{}]} = recv(),
+    #iq{type = result, sub_els = [#bind{}]} =
+        send_recv(
+          Config,
+          #iq{type = set,
+              sub_els = [#bind{resource = ?config(resource, Config)}]}),
     Config.
 
 test_open_session(Config) ->
     disconnect(open_session(Config)).
 
 open_session(Config) ->
-    ID = send(Config, #iq{type = set, sub_els = [#session{}]}),
-    #iq{type = result, id = ID, sub_els = []} = recv(),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = set, sub_els = [#session{}]}),
     Config.
 
 roster_get(Config) ->
-    ID = send(Config, #iq{type = get, sub_els = [#roster{}]}),
-    #iq{type = result, id = ID,
-          sub_els = [#roster{items = []}]} = recv(),
+    #iq{type = result, sub_els = [#roster{items = []}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#roster{}]}),
     disconnect(Config).
 
 presence_broadcast(Config) ->
     send(Config, #presence{}),
     JID = my_jid(Config),
-    %% We receive the welcome message first
-    #message{type = normal} = recv(),
-    %% Then we receive back our presence
-    #presence{from = JID, to = JID} = recv(),
+    %% We receive the welcome message and the presence broadcast
+    ?recv2(#message{type = normal},
+           #presence{from = JID, to = JID}),
     disconnect(Config).
 
 ping(Config) ->
     true = is_feature_advertised(Config, ?NS_PING),
-    ID = send(Config,
-              #iq{type = get, sub_els = [#ping{}], to = server_jid(Config)}),
-    #iq{type = result, id = ID, sub_els = []} = recv(),
+    #iq{type = result, sub_els = []} =
+        send_recv(
+          Config,
+          #iq{type = get, sub_els = [#ping{}], to = server_jid(Config)}),
     disconnect(Config).
 
 version(Config) ->
     true = is_feature_advertised(Config, ?NS_VERSION),
-    ID = send(Config, #iq{type = get, sub_els = [#version{}],
-                          to = server_jid(Config)}),
-    #iq{type = result, id = ID, sub_els = [#version{}]} = recv(),
+    #iq{type = result, sub_els = [#version{}]} =
+        send_recv(
+          Config, #iq{type = get, sub_els = [#version{}],
+                      to = server_jid(Config)}),
     disconnect(Config).
 
 time(Config) ->
     true = is_feature_advertised(Config, ?NS_TIME),
-    ID = send(Config, #iq{type = get, sub_els = [#time{}],
-                          to = server_jid(Config)}),
-    #iq{type = result, id = ID, sub_els = [#time{}]} = recv(),
+    #iq{type = result, sub_els = [#time{}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#time{}],
+                              to = server_jid(Config)}),
     disconnect(Config).
 
 disco(Config) ->
     true = is_feature_advertised(Config, ?NS_DISCO_INFO),
     true = is_feature_advertised(Config, ?NS_DISCO_ITEMS),
-    I1 = send(Config, #iq{type = get, sub_els = [#disco_items{}],
-                          to = server_jid(Config)}),
-    #iq{type = result, id = I1, sub_els = [#disco_items{items = Items}]} = recv(),
+    #iq{type = result, sub_els = [#disco_items{items = Items}]} =
+        send_recv(
+          Config, #iq{type = get, sub_els = [#disco_items{}],
+                      to = server_jid(Config)}),
     lists:foreach(
       fun(#disco_item{jid = JID, node = Node}) ->
-              I = send(Config,
-                       #iq{type = get, to = JID,
-                           sub_els = [#disco_info{node = Node}]}),
-              #iq{type = result, id = I, sub_els = _} = recv()
+              #iq{type = result} =
+                  send_recv(Config,
+                            #iq{type = get, to = JID,
+                                sub_els = [#disco_info{node = Node}]})
       end, Items),
     disconnect(Config).
 
 private(Config) ->
-    I1 = send(Config, #iq{type = get, sub_els = [#private{}],
-                          to = server_jid(Config)}),
-    #iq{type = error, id = I1} = recv(),
     Conference = #bookmark_conference{name = <<"Some name">>,
                                       autojoin = true,
                                       jid = jlib:make_jid(
@@ -406,29 +414,34 @@ private(Config) ->
                                               <<"some.conference.org">>,
                                               <<>>)},
     Storage = #bookmark_storage{conference = [Conference]},
-    I2 = send(Config, #iq{type = set,
-                          sub_els = [#private{sub_els = [Storage]}]}),
-    #iq{type = result, id = I2, sub_els = []} = recv(),
-    I3 = send(Config,
-              #iq{type = get,
-                  sub_els = [#private{sub_els = [#bookmark_storage{}]}]}),
-    #iq{type = result, id = I3,
-        sub_els = [#private{sub_els = [Storage]}]} = recv(),
+    #iq{type = error} =
+        send_recv(Config, #iq{type = get, sub_els = [#private{}],
+                              to = server_jid(Config)}),
+    #iq{type = result, sub_els = []} =
+        send_recv(
+          Config, #iq{type = set,
+                      sub_els = [#private{sub_els = [Storage]}]}),
+    #iq{type = result,
+        sub_els = [#private{sub_els = [Storage]}]} =
+        send_recv(
+          Config,
+          #iq{type = get,
+              sub_els = [#private{sub_els = [#bookmark_storage{}]}]}),
     disconnect(Config).
 
 last(Config) ->
     true = is_feature_advertised(Config, ?NS_LAST),
-    ID = send(Config, #iq{type = get, sub_els = [#last{}],
-                          to = server_jid(Config)}),
-    #iq{type = result, id = ID, sub_els = [#last{}]} = recv(),
+    #iq{type = result, sub_els = [#last{}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#last{}],
+                              to = server_jid(Config)}),
     disconnect(Config).
 
 privacy(Config) ->
     true = is_feature_advertised(Config, ?NS_PRIVACY),
-    I1 = send(Config, #iq{type = get, sub_els = [#privacy{}]}),
-    #iq{type = result, id = I1, sub_els = [#privacy{}]} = recv(),
+    #iq{type = result, sub_els = [#privacy{}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#privacy{}]}),
     JID = <<"tybalt@example.com">>,
-    I2 = send(Config,
+    I1 = send(Config,
               #iq{type = set,
                   sub_els = [#privacy{
                                 lists = [#privacy_list{
@@ -438,65 +451,74 @@ privacy(Config) ->
                                                     type = jid,
                                                     order = 3,
                                                     action = deny,
-                                                    stanza = 'presence-in',
+                                                    kinds = ['presence-in'],
                                                     value = JID}]}]}]}),
-    #iq{type = result, id = I2, sub_els = []} = recv(),
-    Push1 = #iq{type = set,
-                sub_els = [#privacy{
-                              lists = [#privacy_list{
-                                          name = <<"public">>}]}]} = recv(),
+    {Push1, _} =
+        ?recv2(
+           #iq{type = set,
+               sub_els = [#privacy{
+                             lists = [#privacy_list{
+                                         name = <<"public">>}]}]},
+           #iq{type = result, id = I1, sub_els = []}),
     send(Config, make_iq_result(Push1)),
-    I3 = send(Config, #iq{type = set,
-                          sub_els = [#privacy{active = <<"public">>}]}),
-    #iq{type = result, id = I3, sub_els = []} = recv(),
-    I4 = send(Config, #iq{type = set,
-                          sub_els = [#privacy{default = <<"public">>}]}),
-    #iq{type = result, id = I4, sub_els = []} = recv(),
-    I5 = send(Config, #iq{type = get, sub_els = [#privacy{}]}),
-    #iq{type = result, id = I5,
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = set,
+                              sub_els = [#privacy{active = <<"public">>}]}),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = set,
+                              sub_els = [#privacy{default = <<"public">>}]}),
+    #iq{type = result,
         sub_els = [#privacy{default = <<"public">>,
                             active = <<"public">>,
-                            lists = [#privacy_list{name = <<"public">>}]}]} = recv(),
-    I6 = send(Config,
-              #iq{type = set, sub_els = [#privacy{default = none}]}),
-    #iq{type = result, id = I6, sub_els = []} = recv(),
-    I7 = send(Config, #iq{type = set, sub_els = [#privacy{active = none}]}),
-    #iq{type = result, id = I7, sub_els = []} = recv(),
-    I8 = send(Config, #iq{type = set,
+                            lists = [#privacy_list{name = <<"public">>}]}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#privacy{}]}),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config,
+                  #iq{type = set, sub_els = [#privacy{default = none}]}),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = set, sub_els = [#privacy{active = none}]}),
+    I2 = send(Config, #iq{type = set,
                           sub_els = [#privacy{
                                         lists =
                                             [#privacy_list{
                                                 name = <<"public">>}]}]}),
-    #iq{type = result, id = I8, sub_els = []} = recv(),
-    %% BUG: We should receive this:
-    %% _Push2 = #iq{type = set, id = PushI2, sub_els = []} = recv(),
-    %% TODO: this should be fixed in ejabberd
-    Push2 = #iq{type = set,
-                sub_els = [#privacy{
-                              lists = [#privacy_list{
-                                          name = <<"public">>}]}]} = recv(),
+    {Push2, _} =
+        ?recv2(
+           #iq{type = set,
+               sub_els = [#privacy{
+                             lists = [#privacy_list{
+                                         name = <<"public">>}]}]},
+           #iq{type = result, id = I2, sub_els = []}),
     send(Config, make_iq_result(Push2)),
     disconnect(Config).
 
 blocking(Config) ->
     true = is_feature_advertised(Config, ?NS_BLOCKING),
     JID = jlib:make_jid(<<"romeo">>, <<"montague.net">>, <<>>),
-    I1 = send(Config, #iq{type = get, sub_els = [#block_list{}]}),
-    #iq{type = result, id = I1, sub_els = [#block_list{}]} = recv(),
-    I2 = send(Config, #iq{type = set,
+    #iq{type = result, sub_els = [#block_list{}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#block_list{}]}),
+    I1 = send(Config, #iq{type = set,
                           sub_els = [#block{items = [JID]}]}),
-    #iq{type = result, id = I2, sub_els = []} = recv(),
-    #iq{type = set, id = _,
-          sub_els = [#privacy{lists = [#privacy_list{}]}]} = recv(),
-    #iq{type = set, id = _,
-          sub_els = [#block{items = [JID]}]} = recv(),
-    I3 = send(Config, #iq{type = set,
+    {Push1, Push2, _} =
+        ?recv3(
+           #iq{type = set,
+               sub_els = [#privacy{lists = [#privacy_list{}]}]},
+           #iq{type = set,
+               sub_els = [#block{items = [JID]}]},
+           #iq{type = result, id = I1, sub_els = []}),
+    send(Config, make_iq_result(Push1)),
+    send(Config, make_iq_result(Push2)),
+    I2 = send(Config, #iq{type = set,
                           sub_els = [#unblock{items = [JID]}]}),
-    #iq{type = result, id = I3, sub_els = []} = recv(),
-    #iq{type = set, id = _,
-        sub_els = [#privacy{lists = [#privacy_list{}]}]} = recv(),
-    #iq{type = set, id = _,
-        sub_els = [#unblock{items = [JID]}]} = recv(),
+    {Push3, Push4, _} =
+        ?recv3(
+           #iq{type = set,
+               sub_els = [#privacy{lists = [#privacy_list{}]}]},
+           #iq{type = set,
+               sub_els = [#unblock{items = [JID]}]},
+           #iq{type = result, id = I2, sub_els = []}),
+    send(Config, make_iq_result(Push3)),
+    send(Config, make_iq_result(Push4)),
     disconnect(Config).
 
 vcard(Config) ->
@@ -531,23 +553,23 @@ vcard(Config) ->
                url = <<"http://www.xmpp.org/xsf/people/stpeter.shtml">>,
                desc = <<"More information about me is located on my "
                         "personal website: http://www.saint-andre.com/">>},
-    I1 = send(Config, #iq{type = set, sub_els = [VCard]}),
-    #iq{type = result, id = I1, sub_els = []} = recv(),
-    I2 = send(Config, #iq{type = get, sub_els = [#vcard{}]}),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = set, sub_els = [VCard]}),
     %% TODO: check if VCard == VCard1.
-    #iq{type = result, id = I2, sub_els = [_VCard1]} = recv(),
+    #iq{type = result, sub_els = [_VCard1]} =
+        send_recv(Config, #iq{type = get, sub_els = [#vcard{}]}),
     disconnect(Config).
 
 stats(Config) ->
-    ID = send(Config, #iq{type = get, sub_els = [#stats{}],
-                          to = server_jid(Config)}),
-    #iq{type = result, id = ID, sub_els = [#stats{stat = Stats}]} = recv(),
+    #iq{type = result, sub_els = [#stats{stat = Stats}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#stats{}],
+                              to = server_jid(Config)}),
     lists:foreach(
       fun(#stat{} = Stat) ->
-              I = send(Config, #iq{type = get,
-                                   sub_els = [#stats{stat = [Stat]}],
-                                   to = server_jid(Config)}),
-              #iq{type = result, id = I, sub_els = [_|_]} = recv()
+              #iq{type = result, sub_els = [_|_]} =
+                  send_recv(Config, #iq{type = get,
+                                        sub_els = [#stats{stat = [Stat]}],
+                                        to = server_jid(Config)})
       end, Stats),
     disconnect(Config).
 
@@ -557,35 +579,35 @@ pubsub(Config) ->
     ItemID = randoms:get_string(),
     Node = <<"presence">>,
     Item = #pubsub_item{id = ItemID, sub_els = [#presence{}]},
-    I1 = send(Config,
-              #iq{type = set, to = pubsub_jid(Config),
-                  sub_els = [#pubsub{publish = {Node, [Item]}}]}),
-    #iq{type = result, id = I1,
+    #iq{type = result,
         sub_els = [#pubsub{publish = {<<"presence">>,
-                                      [#pubsub_item{id = ItemID}]}}]} = recv(),
+                                      [#pubsub_item{id = ItemID}]}}]} =
+        send_recv(Config,
+                  #iq{type = set, to = pubsub_jid(Config),
+                      sub_els = [#pubsub{publish = {Node, [Item]}}]}),
     %% Subscribe to node "presence"
-    I2 = send(Config,
-              #iq{type = set, to = pubsub_jid(Config),
-                  sub_els = [#pubsub{subscribe = {Node, my_jid(Config)}}]}),
-    #message{sub_els = [#pubsub_event{}, #delay{}]} = recv(),
-    #iq{type = result, id = I2} = recv(),
+    I = send(Config,
+             #iq{type = set, to = pubsub_jid(Config),
+                 sub_els = [#pubsub{subscribe = {Node, my_jid(Config)}}]}),
+    ?recv2(
+       #message{sub_els = [#pubsub_event{}, #delay{}]},
+       #iq{type = result, id = I}),
     %% Get subscriptions
     true = is_feature_advertised(Config, ?PUBSUB("retrieve-subscriptions")),
-    I3 = send(Config, #iq{type = get, to = pubsub_jid(Config),
-                          sub_els = [#pubsub{subscriptions = {none, []}}]}),
-    #iq{type = result, id = I3,
+    #iq{type = result,
         sub_els =
             [#pubsub{subscriptions =
-                         {none, [#pubsub_subscription{node = Node}]}}]} = recv(),
+                         {none, [#pubsub_subscription{node = Node}]}}]} =
+        send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
+                              sub_els = [#pubsub{subscriptions = {none, []}}]}),
     %% Get affiliations
     true = is_feature_advertised(Config, ?PUBSUB("retrieve-affiliations")),
-    I4 = send(Config, #iq{type = get, to = pubsub_jid(Config),
-                          sub_els = [#pubsub{affiliations = []}]}),
-    #iq{type = result, id = I4,
+    #iq{type = result,
         sub_els = [#pubsub{
                       affiliations =
-                          [#pubsub_affiliation{node = Node, type = owner}]}]}
-        = recv(),
+                          [#pubsub_affiliation{node = Node, type = owner}]}]} =
+        send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
+                              sub_els = [#pubsub{affiliations = []}]}),
     disconnect(Config).
 
 auth_md5(Config) ->
@@ -608,7 +630,7 @@ auth_plain(Config) ->
             {skipped, 'PLAIN_not_available'}
     end.
 
-roster_master(Config) ->
+roster_subscribe_master(Config) ->
     send(Config, #presence{}),
     #presence{} = recv(),
     wait_for_slave(Config),
@@ -654,35 +676,13 @@ roster_master(Config) ->
                                                 subscription = both}]}]},
                    #iq{type = result, id = I1, sub_els = []}),
     send(Config, make_iq_result(Push5)),
+    #iq{sub_els = [#roster{items = [#roster_item{groups = G1}]}]} = Push5,
+    Groups = lists:sort(G1),
     wait_for_slave(Config),
     #presence{type = unavailable, from = Peer} = recv(),
-    %% The peer removed us from.
-    %% {Push6, Push7, _, _, _} =
-    %%     ?recv5(
-    %%        %% TODO: I guess this can be optimized, we don't need
-    %%        %% to send transient roster push with subscription = 'to'.
-    %%        #iq{type = set,
-    %%            sub_els =
-    %%                [#roster{items = [#roster_item{
-    %%                                     jid = LPeer,
-    %%                                     subscription = to}]}]},
-    %%        #iq{type = set,
-    %%            sub_els =
-    %%                [#roster{items = [#roster_item{
-    %%                                     jid = LPeer,
-    %%                                     subscription = none}]}]},
-    %%        #presence{type = unsubscribe, from = LPeer},
-    %%        #presence{type = unsubscribed, from = LPeer},
-    %%        #presence{type = unavailable, from = Peer}),
-    %% send(Config, make_iq_result(Push6)),
-    %% send(Config, make_iq_result(Push7)),
-    %% #iq{sub_els = [#roster{items = [#roster_item{groups = G1}]}]} = Push5,
-    %% #iq{sub_els = [#roster{items = [#roster_item{groups = G2}]}]} = Push6,
-    %% #iq{sub_els = [#roster{items = [#roster_item{groups = G3}]}]} = Push7,
-    %% Groups = lists:sort(G1), Groups = lists:sort(G2), Groups = lists:sort(G3),
     disconnect(Config).
 
-roster_slave(Config) ->
+roster_subscribe_slave(Config) ->
     send(Config, #presence{}),
     #presence{} = recv(),
     wait_for_master(Config),
@@ -711,39 +711,86 @@ roster_slave(Config) ->
     send(Config, make_iq_result(Push3)),
     #presence{type = undefined, from = Peer} = recv(),
     wait_for_master(Config),
+    disconnect(Config).
+
+roster_remove_master(Config) ->
+    MyJID = my_jid(Config),
+    Peer = ?config(slave, Config),
+    LPeer = jlib:jid_remove_resource(Peer),
+    Groups = [<<"A">>, <<"B">>],
+    wait_for_slave(Config),
+    send(Config, #presence{}),
+    ?recv2(#presence{from = MyJID, type = undefined},
+           #presence{from = Peer, type = undefined}),
+    %% The peer removed us from its roster.
+    {Push1, Push2, _, _, _} =
+        ?recv5(
+           %% TODO: I guess this can be optimized, we don't need
+           %% to send transient roster push with subscription = 'to'.
+           #iq{type = set,
+               sub_els =
+                   [#roster{items = [#roster_item{
+                                        jid = LPeer,
+                                        subscription = to}]}]},
+           #iq{type = set,
+               sub_els =
+                   [#roster{items = [#roster_item{
+                                        jid = LPeer,
+                                        subscription = none}]}]},
+           #presence{type = unsubscribe, from = LPeer},
+           #presence{type = unsubscribed, from = LPeer},
+           #presence{type = unavailable, from = Peer}),
+    send(Config, make_iq_result(Push1)),
+    send(Config, make_iq_result(Push2)),
+    #iq{sub_els = [#roster{items = [#roster_item{groups = G1}]}]} = Push1,
+    #iq{sub_els = [#roster{items = [#roster_item{groups = G2}]}]} = Push2,
+    Groups = lists:sort(G1), Groups = lists:sort(G2),
+    disconnect(Config).
+
+roster_remove_slave(Config) ->
+    MyJID = my_jid(Config),
+    Peer = ?config(master, Config),
+    LPeer = jlib:jid_remove_resource(Peer),
+    send(Config, #presence{}),
+    #presence{from = MyJID, type = undefined} = recv(),
+    wait_for_master(Config),
+    #presence{from = Peer, type = undefined} = recv(),
     %% Remove the peer from roster.
-    %% Item = #roster_item{jid = LPeer, subscription = remove},
-    %% I1 = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
-    %% {Push4, _} = ?recv2(
-    %%                 #iq{type = set,
-    %%                     sub_els =
-    %%                         [#roster{items = [#roster_item{
-    %%                                              jid = LPeer,
-    %%                                              subscription = remove}]}]},
-    %%                 #iq{type = result, id = I1, sub_els = []}),
-    %% send(Config, make_iq_result(Push4)),
-    %% #presence{type = unavailable, from = Peer} = recv(),
+    Item = #roster_item{jid = LPeer, subscription = remove},
+    I = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
+    {Push, _} = ?recv2(
+                   #iq{type = set,
+                       sub_els =
+                           [#roster{items = [#roster_item{
+                                                jid = LPeer,
+                                                subscription = remove}]}]},
+                   #iq{type = result, id = I, sub_els = []}),
+    send(Config, make_iq_result(Push)),
+    #presence{type = unavailable, from = Peer} = recv(),
     disconnect(Config).
 
 proxy65_master(Config) ->
     Proxy = proxy_jid(Config),
     MyJID = my_jid(Config),
     Peer = ?config(slave, Config),
+    wait_for_slave(Config),
     send(Config, #presence{}),
     ?recv2(#presence{from = MyJID, type = undefined},
            #presence{from = Peer, type = undefined}),
     true = is_feature_advertised(Config, ?NS_BYTESTREAMS, Proxy),
-    I1 = send(Config, #iq{type = get, sub_els = [#bytestreams{}], to = Proxy}),
-    #iq{type = result, id = I1,
-        sub_els = [#bytestreams{hosts = [StreamHost]}]} = recv(),
+    #iq{type = result, sub_els = [#bytestreams{hosts = [StreamHost]}]} =
+        send_recv(
+          Config,
+          #iq{type = get, sub_els = [#bytestreams{}], to = Proxy}),
     SID = randoms:get_string(),
     Data = crypto:rand_bytes(1024),
     put_event(Config, {StreamHost, SID, Data}),
     Socks5 = socks5_connect(StreamHost, {SID, MyJID, Peer}),
-    I2 = send(Config,
-              #iq{type = set, to = Proxy,
-                  sub_els = [#bytestreams{activate = Peer, sid = SID}]}),
-    #iq{type = result, id = I2, sub_els = []} = recv(),
+    wait_for_slave(Config),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config,
+                  #iq{type = set, to = Proxy,
+                      sub_els = [#bytestreams{activate = Peer, sid = SID}]}),
     socks5_send(Socks5, Data),
     #presence{type = unavailable, from = Peer} = recv(),
     disconnect(Config).
@@ -752,11 +799,87 @@ proxy65_slave(Config) ->
     MyJID = my_jid(Config),
     Peer = ?config(master, Config),
     send(Config, #presence{}),
-    ?recv2(#presence{from = MyJID, type = undefined},
-           #presence{from = Peer, type = undefined}),
+    #presence{from = MyJID, type = undefined} = recv(),
+    wait_for_master(Config),
+    #presence{from = Peer, type = undefined} = recv(),
     {StreamHost, SID, Data} = get_event(Config),
     Socks5 = socks5_connect(StreamHost, {SID, Peer, MyJID}),
+    wait_for_master(Config),
     socks5_recv(Socks5, Data),
+    disconnect(Config).
+
+muc_single(Config) ->
+    MyJID = my_jid(Config),
+    MUC = muc_jid(Config),
+    Room = muc_room_jid(Config),
+    Nick = ?config(user, Config),
+    NickJID = jlib:jid_replace_resource(Room, Nick),
+    true = is_feature_advertised(Config, ?NS_MUC, MUC),
+    %% Joining
+    send(Config, #presence{to = NickJID, sub_els = [#muc{}]}),
+    %% As per XEP-0045 we MUST receive stanzas in the following order:
+    %% 1. In-room presence from other occupants
+    %% 2. In-room presence from the joining entity itself (so-called "self-presence")
+    %% 3. Room history (if any)
+    %% 4. The room subject
+    %% 5. Live messages, presence updates, new user joins, etc.
+    %% As this is the newly created room, we receive only the 2nd stanza.
+    #presence{
+          from = NickJID,
+          sub_els = [#muc_user{
+                        status_codes = Codes,
+                        items = [#muc_item{role = moderator,
+                                           jid = MyJID,
+                                           affiliation = owner}]}]} = recv(),
+    %% 110 -> Inform user that presence refers to itself
+    %% 201 -> Inform user that a new room has been created
+    true = lists:member(110, Codes),
+    true = lists:member(201, Codes),
+    %% Request the configuration
+    #iq{type = result, sub_els = [#muc_owner{config = #xdata{} = RoomCfg}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#muc_owner{}],
+                              to = Room}),
+    NewFields =
+        lists:flatmap(
+          fun(#xdata_field{var = Var, values = OrigVals}) ->
+                  Vals = case Var of
+                             <<"FORM_TYPE">> ->
+                                 OrigVals;
+                             <<"muc#roomconfig_roomname">> ->
+                                 [<<"Test room">>];
+                             <<"muc#roomconfig_roomdesc">> ->
+                                 [<<"Trying to break the server">>];
+                             <<"muc#roomconfig_persistentroom">> ->
+                                 [<<"1">>];
+                             <<"muc#roomconfig_changesubject">> ->
+                                 [<<"0">>];
+                             <<"muc#roomconfig_allowinvites">> ->
+                                 [<<"1">>];
+                             _ ->
+                                 []
+                         end,
+                  if Vals /= [] ->
+                          [#xdata_field{values = Vals, var = Var}];
+                     true ->
+                          []
+                  end
+          end, RoomCfg#xdata.fields),
+    NewRoomCfg = #xdata{type = submit, fields = NewFields},
+    %% BUG: We should not receive any sub_els!
+    %% TODO: fix this crap in ejabberd.
+    #iq{type = result, sub_els = [_|_]} =
+        send_recv(Config, #iq{type = set, to = Room,
+                              sub_els = [#muc_owner{config = NewRoomCfg}]}),
+    %% Set subject
+    send(Config, #message{to = Room, type = groupchat,
+                          body = [#text{data = <<"Subject">>}]}),
+    #message{from = NickJID, type = groupchat,
+             body = [#text{data = <<"Subject">>}]} = recv(),
+    %% Leaving
+    send(Config, #presence{type = unavailable, to = NickJID}),
+    #presence{from = NickJID, type = unavailable,
+              sub_els = [#muc_user{status_codes = NewCodes}]} = recv(),
+    true = lists:member(110, NewCodes),
     disconnect(Config).
 
 auth_SASL(Mech, Config) ->
@@ -800,8 +923,9 @@ re_register(Config) ->
 recv() ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
-            ct:pal("recv: ~p", [El]),
-            xmpp_codec:decode(fix_ns(El));
+            Pkt = xmpp_codec:decode(fix_ns(El)),
+            ct:pal("recv: ~p ->~n~s", [El, xmpp_codec:pp(Pkt)]),
+            Pkt;
         {'$gen_event', Event} ->
             Event
     end.
@@ -837,9 +961,13 @@ send(State, Pkt) ->
                               {undefined, Pkt}
                       end,
     El = xmpp_codec:encode(NewPkt),
-    ct:pal("sent: ~p", [El]),
+    ct:pal("sent: ~p <-~n~s", [El, xmpp_codec:pp(NewPkt)]),
     ok = send_text(State, xml:element_to_binary(El)),
     NewID.
+
+send_recv(State, IQ) ->
+    ID = send(State, IQ),
+    #iq{id = ID} = recv().
 
 sasl_new(<<"PLAIN">>, User, Server, Password) ->
     {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
@@ -933,6 +1061,14 @@ pubsub_jid(Config) ->
 proxy_jid(Config) ->
     Server = ?config(server, Config),
     jlib:make_jid(<<>>, <<"proxy.", Server/binary>>, <<>>).
+
+muc_jid(Config) ->
+    Server = ?config(server, Config),
+    jlib:make_jid(<<>>, <<"conference.", Server/binary>>, <<>>).
+
+muc_room_jid(Config) ->
+    Server = ?config(server, Config),
+    jlib:make_jid(<<"test">>, <<"conference.", Server/binary>>, <<>>).
 
 id() ->
     id(undefined).
