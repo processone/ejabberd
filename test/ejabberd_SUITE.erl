@@ -186,6 +186,8 @@ groups() ->
        roster_subscribe_slave]},
      {test_proxy65, [parallel],
       [proxy65_master, proxy65_slave]},
+     {test_offline, [sequence],
+      [offline_master, offline_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}].
@@ -194,6 +196,7 @@ all() ->
     [{group, single_user},
      {group, test_roster_subscribe},
      {group, test_proxy65},
+     {group, test_offline},
      {group, test_roster_remove},
      stop_ejabberd].
 
@@ -880,6 +883,28 @@ muc_single(Config) ->
     #presence{from = NickJID, type = unavailable,
               sub_els = [#muc_user{status_codes = NewCodes}]} = recv(),
     true = lists:member(110, NewCodes),
+    disconnect(Config).
+
+offline_master(Config) ->
+    Peer = ?config(slave, Config),
+    LPeer = jlib:jid_remove_resource(Peer),
+    send(Config, #message{to = LPeer,
+                          body = [#text{data = <<"body">>}],
+                          subject = [#text{data = <<"subject">>}]}),
+    disconnect(Config).
+
+offline_slave(Config) ->
+    Peer = ?config(master, Config),
+    send(Config, #presence{}),
+    {_, #message{sub_els = SubEls}} =
+        ?recv2(#presence{},
+               #message{from = Peer,
+                        body = [#text{data = <<"body">>}],
+                        subject = [#text{data = <<"subject">>}]}),
+    lists:foreach(
+      fun(#legacy_delay{}) -> ok;
+         (#delay{}) -> ok
+      end, SubEls),
     disconnect(Config).
 
 auth_SASL(Mech, Config) ->
