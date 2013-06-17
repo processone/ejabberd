@@ -177,19 +177,19 @@ process_local_iq_info(From, To, #iq{type = Type, lang = Lang,
 	    end
     end.
 
-get_local_identity(Acc, _From, _To, [], _Lang) ->
+get_local_identity(Acc, _From, _To, <<>>, _Lang) ->
     Acc ++ [#xmlel{name = <<"identity">>,
 	           attrs = [{<<"category">>, <<"server">>},
 	                    {<<"type">>, <<"im">>},
 	                    {<<"name">>, <<"ejabberd">>}]}];
 
-get_local_identity(Acc, _From, _To, _Node, _Lang) ->
+get_local_identity(Acc, _From, _To, Node, _Lang) when is_binary(Node) ->
     Acc.
 
 get_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 
-get_local_features(Acc, _From, To, [], _Lang) ->
+get_local_features(Acc, _From, To, <<>>, _Lang) ->
     Feats = case Acc of
 		{result, Features} -> Features;
 		empty -> []
@@ -198,7 +198,7 @@ get_local_features(Acc, _From, To, [], _Lang) ->
     {result,
      ets:select(disco_features, [{{{'_', Host}}, [], ['$_']}]) ++ Feats};
 
-get_local_features(Acc, _From, _To, _Node, _Lang) ->
+get_local_features(Acc, _From, _To, Node, _Lang) when is_binary(Node) ->
     case Acc of
 	{result, _Features} ->
 	    Acc;
