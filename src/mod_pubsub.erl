@@ -3036,7 +3036,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 	    %% for automatic node creation. we'll take the default node type:
 	    %% first listed into the plugins configuration option, or pep
 	    Type = select_type(ServerHost, Host, Node),
-	    case lists:member("auto-create", features(Type)) of
+	    case lists:member(<<"auto-create">>, features(Type)) of
 		true ->
 		    case create_node(Host, ServerHost, Node, Publisher, Type, Access, []) of
 			{result, [#xmlel{name = <<"pubsub">>,
