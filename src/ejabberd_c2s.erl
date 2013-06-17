@@ -1739,8 +1739,8 @@ get_conn_type(StateData) ->
     case (StateData#state.sockmod):get_sockmod(StateData#state.socket) of
     gen_tcp -> c2s;
     tls -> c2s_tls;
-    ejabberd_zlib ->
-	case ejabberd_zlib:get_sockmod((StateData#state.socket)#socket_state.socket) of
+    ezlib ->
+	case ezlib:get_sockmod((StateData#state.socket)#socket_state.socket) of
 	    gen_tcp -> c2s_compressed;
 	    tls -> c2s_compressed_tls
 	end;

@@ -53,7 +53,7 @@
 
 -type sockmod() :: ejabberd_http_poll |
                    ejabberd_http_bind |
-                   gen_tcp | tls | ejabberd_zlib.
+                   gen_tcp | tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   tls:tls_socket() |
@@ -160,12 +160,7 @@ starttls(SocketData, TLSOpts, Data) ->
     send(SocketData, Data),
     SocketData#socket_state{socket = TLSSocket, sockmod = tls}.
 
-compress(SocketData) ->
-    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
-			 SocketData#socket_state.sockmod,
-			 SocketData#socket_state.socket),
-    ejabberd_receiver:compress(SocketData#socket_state.receiver, ZlibSocket),
-    SocketData#socket_state{socket = ZlibSocket, sockmod = ejabberd_zlib}.
+compress(SocketData) -> compress(SocketData, undefined).
 
 compress(SocketData, Data) ->
     {ok, ZlibSocket} =
@@ -181,7 +176,8 @@ reset_stream(SocketData)
     when is_atom(SocketData#socket_state.receiver) ->
     (SocketData#socket_state.receiver):reset_stream(SocketData#socket_state.socket).
 
-%% sockmod=gen_tcp|tls|ejabberd_zlib
+-spec send(socket_state(), iodata()) -> ok.
+
 send(SocketData, Data) ->
     case catch (SocketData#socket_state.sockmod):send(
 	     SocketData#socket_state.socket, Data) of

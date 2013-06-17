@@ -104,9 +104,7 @@ starttls(FsmRef, TLSOpts, Data) ->
     gen_server:call(FsmRef, {starttls, TLSOpts, Data}),
     FsmRef.
 
-compress(FsmRef) ->
-    gen_server:call(FsmRef, compress),
-    FsmRef.
+compress(FsmRef) -> compress(FsmRef, undefined).
 
 compress(FsmRef, Data) ->
     gen_server:call(FsmRef, {compress, Data}), FsmRef.
@@ -188,22 +186,9 @@ handle_call({starttls, TLSOpts, Data}, _From, State) ->
      State#state{socket = TLSSocket, sockmod = tls},
      ?HIBERNATE_TIMEOUT};
 
-handle_call(compress, _From, State) ->
-    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
-			 State#state.sockmod,
-			 State#state.socket),
-    ejabberd_receiver:compress(State#state.receiver, ZlibSocket),
-    Reply = ok,
-    {reply, Reply, State#state{socket = ZlibSocket, sockmod = ejabberd_zlib},
-     ?HIBERNATE_TIMEOUT};
-
 handle_call({compress, Data}, _From, State) ->
-    {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
-			 State#state.sockmod,
-			 State#state.socket),
-    ejabberd_receiver:compress(State#state.receiver, ZlibSocket),
-    catch (State#state.sockmod):send(
-	    State#state.socket, Data),
+    {ok, ZlibSocket} =
+        ejabberd_receiver:compress(State#state.receiver, Data),
     Reply = ok,
     {reply, Reply,
      State#state{socket = ZlibSocket, sockmod = ezlib},
