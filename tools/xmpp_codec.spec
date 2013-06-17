@@ -1432,12 +1432,12 @@
                #ref{name = vcard_PRIVATE, min = 0, max = 1, label = '$class'},
                #ref{name = vcard_CONFIDENTIAL, min = 0, max = 1, label = '$class'}]}}.
 
-{vcard_AGENT,
- #elem{name = <<"AGENT">>,
-       xmlns = <<"vcard-temp">>,
-       result = {vcard_agent, '$vcard', '$extval'},
-       refs = [#ref{name = vcard, min = 0, max = 1, label = '$vcard'},
-               #ref{name = vcard_EXTVAL, min = 0, max = 1, label = '$extval'}]}}.
+%% {vcard_AGENT,
+%%  #elem{name = <<"AGENT">>,
+%%        xmlns = <<"vcard-temp">>,
+%%        result = {vcard_agent, '$vcard', '$extval'},
+%%        refs = [#ref{name = vcard, min = 0, max = 1, label = '$vcard'},
+%%                #ref{name = vcard_EXTVAL, min = 0, max = 1, label = '$extval'}]}}.
 
 {vcard,
  #elem{name = <<"vCard">>,
@@ -1445,7 +1445,7 @@
        result = {vcard, '$version', '$fn', '$n', '$nickname', '$photo',
                  '$bday', '$adr', '$label', '$tel', '$email', '$jabberid',
                  '$mailer', '$tz', '$geo', '$title', '$role', '$logo',
-                 '$org', '$categories', '$note', '$prodid', '$agent',
+                 '$org', '$categories', '$note', '$prodid', %% '$agent',
                  '$rev', '$sort_string', '$sound', '$uid', '$url', '$class',
                  '$key', '$desc'},
        refs = [#ref{name = vcard_N, min = 0, max = 1, label = '$n'},
@@ -1471,7 +1471,7 @@
                #ref{name = vcard_NOTE, min = 0, max = 1, label = '$note'},
                #ref{name = vcard_PRODID, min = 0, max = 1, label = '$prodid'},
                #ref{name = vcard_REV, min = 0, max = 1, label = '$rev'},
-               #ref{name = vcard_AGENT, min = 0, max = 1, label = '$agent'},
+               %%#ref{name = vcard_AGENT, min = 0, max = 1, label = '$agent'},
                #ref{name = vcard_SORT_STRING, min = 0, max = 1,
                     label = '$sort_string'},
                #ref{name = vcard_UID, min = 0, max = 1, label = '$uid'},
