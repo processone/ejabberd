@@ -455,7 +455,28 @@ recount_session_table(Node) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-do_route(From, To, Packet) ->
+do_route(From, To, {broadcast, _} = Packet) ->
+    case To#jid.lresource of
+        <<"">> ->
+            lists:foreach(fun(R) ->
+                                  do_route(From,
+                                           jlib:jid_replace_resource(To, R),
+                                           Packet)
+                          end,
+                          get_user_resources(To#jid.user, To#jid.server));
+        _ ->
+            USR = jlib:jid_tolower(To),
+            case mnesia:dirty_index_read(session, USR, #session.usr) of
+                [] ->
+                    ?DEBUG("packet dropped~n", []);
+                Ss ->
+                    Session = lists:max(Ss),
+                    Pid = element(2, Session#session.sid),
+                    ?DEBUG("sending to process ~p~n", [Pid]),
+                    Pid ! {route, From, To, Packet}
+            end
+    end;
+do_route(From, To, #xmlel{} = Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket "
 	   "~P~n",
 	   [From, To, Packet, 8]),
