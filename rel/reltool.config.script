@@ -14,11 +14,14 @@ Vars = case file:consult(filename:join(["..", "vars.config"])) of
        end,
 
 RequiredOTPApps = [sasl, crypto, public_key, ssl,
-                   mnesia, inets, compiler],
+                   mnesia, inets, compiler, asn1,
+                   syntax_tools, os_mon, xmerl],
 
 ConfiguredOTPApps = lists:flatmap(
                       fun({tools, true}) ->
                               [tools, runtime_tools];
+                         ({odbc, true}) ->
+                              [odbc];
                          (_) ->
                               []
                       end, Vars),
@@ -36,7 +39,7 @@ DepConfiguredApps = lists:flatmap(
                          ({json, true}) -> [jiffy];
                          ({iconv, true}) -> [p1_iconv];
                          ({http, true}) -> [ibrowse, lhttpc];
-                         ({odbc, true}) -> [odbc];
+                         ({lager, true}) -> [lager];
                          (_) -> []
                       end, Vars),
 
