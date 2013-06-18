@@ -154,6 +154,7 @@ install: all
 	$(INSTALL) -d $(SODIR)
 	#$(INSTALL) -m 644 priv/lib/*.so $(SODIR)
 	$(INSTALL) -m 644 deps/*/priv/lib/*.so $(SODIR)
+	$(INSTALL) -m 644 deps/*/priv/*.so $(SODIR)
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
