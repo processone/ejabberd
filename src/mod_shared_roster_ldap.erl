@@ -326,10 +326,11 @@ get_user_displayed_groups({User, Host}) ->
 			   [eldap_filter:do_sub(State#state.rfilter,
 						[{<<"%u">>, User}])],
 			   [GroupAttr]),
+    SGroupAttr = binary_to_list(iolist_to_binary(GroupAttr)),
     Reply = lists:flatmap(fun (#eldap_entry{attributes =
 						Attrs}) ->
 				  case Attrs of
-				    [{GroupAttr, ValuesList}] -> ValuesList;
+				    [{SGroupAttr, ValuesList}] -> [list_to_binary(X) || X <- ValuesList];
 				    _ -> []
 				  end
 			  end,
@@ -374,12 +375,12 @@ search_group_info(State, Group) ->
     Extractor = case State#state.uid_format_re of
 		  <<"">> ->
 		      fun (UID) ->
-			      catch eldap_utils:get_user_part(UID,
+			      catch eldap_utils:get_user_part(iolist_to_binary(UID),
 							      State#state.uid_format)
 		      end;
 		  _ ->
 		      fun (UID) ->
-			      catch get_user_part_re(UID,
+			      catch get_user_part_re(iolist_to_binary(UID),
 						     State#state.uid_format_re)
 		      end
 		end,
@@ -396,16 +397,19 @@ search_group_info(State, Group) ->
 	of
       [] -> error;
       LDAPEntries ->
+      SGroupMemberAttr = binary_to_list(iolist_to_binary(State#state.uid)),
+      SGroupAttr = binary_to_list(iolist_to_binary(State#state.group_attr)),
+      SGroupDesc = binary_to_list(iolist_to_binary(State#state.group_desc)),
 	  {GroupDesc, MembersLists} = lists:foldl(fun
 						    (#eldap_entry{attributes =
 								      Attrs},
 						     {DescAcc, JIDsAcc}) ->
 							case
-							  {eldap_utils:get_ldap_attr(State#state.group_attr,
+							  {eldap_utils:get_ldap_attr(SGroupAttr,
 										     Attrs),
-							   eldap_utils:get_ldap_attr(State#state.group_desc,
+							   eldap_utils:get_ldap_attr(SGroupDesc,
 										     Attrs),
-							   lists:keysearch(State#state.uid,
+							   lists:keysearch(SGroupMemberAttr,
 									   1,
 									   Attrs)}
 							    of
@@ -416,7 +420,7 @@ search_group_info(State, Group) ->
 							      when ID /= <<"">>,
 								   GroupMemberAttr
 								     ==
-								     State#state.uid ->
+								     SGroupMemberAttr ->
 							      JIDs =
 								  lists:foldl(fun
 										({ok,
@@ -449,7 +453,7 @@ search_group_info(State, Group) ->
 									      [],
 									      lists:map(Extractor,
 											Members)),
-							      {Desc,
+							      {iolist_to_binary(Desc),
 							       [JIDs
 								| JIDsAcc]};
 							  _ ->
@@ -469,11 +473,13 @@ search_user_name(State, User) ->
 		      [State#state.user_desc, State#state.user_uid])
 	of
       [#eldap_entry{attributes = Attrs} | _] ->
-	  case {eldap_utils:get_ldap_attr(State#state.user_uid,
+	  SUid = binary_to_list(iolist_to_binary(State#state.user_uid)),
+	  SUDesc = binary_to_list(iolist_to_binary(State#state.user_desc)),
+	  case {eldap_utils:get_ldap_attr(SUid,
 					  Attrs),
-		eldap_utils:get_ldap_attr(State#state.user_desc, Attrs)}
+		eldap_utils:get_ldap_attr(SUDesc, Attrs)}
 	      of
-	    {UID, Desc} when UID /= <<"">> -> {ok, Desc};
+	    {UID, Desc} when UID /= <<"">> -> {ok, iolist_to_binary(Desc)};
 	    _ -> error
 	  end;
       [] -> error
