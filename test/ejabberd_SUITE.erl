@@ -761,15 +761,15 @@ roster_remove_slave(Config) ->
     %% Remove the peer from roster.
     Item = #roster_item{jid = LPeer, subscription = remove},
     I = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
-    {Push, _} = ?recv2(
+    {Push, _, _} = ?recv3(
                    #iq{type = set,
                        sub_els =
                            [#roster{items = [#roster_item{
                                                 jid = LPeer,
                                                 subscription = remove}]}]},
-                   #iq{type = result, id = I, sub_els = []}),
+                   #iq{type = result, id = I, sub_els = []},
+                   #presence{type = unavailable, from = Peer}),
     send(Config, make_iq_result(Push)),
-    #presence{type = unavailable, from = Peer} = recv(),
     disconnect(Config).
 
 proxy65_master(Config) ->
