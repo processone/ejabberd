@@ -1,5 +1,7 @@
 You need MySQL and PostgreSQL up and running.
-Both of them should grant access to user 'ejabberd_test' with
+MySQL should be accepting TCP connections on localhost:3306.
+PostgreSQL should be accepting TCP connections on localhost:5432.
+Both of them should grant full access to user 'ejabberd_test' with
 password 'ejabberd_test' on database 'ejabberd_test'.
 
 Here is a quick setup example:
