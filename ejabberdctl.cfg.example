@@ -55,11 +55,10 @@
 #
 # This communication is used by ejabberdctl command line tool,
 # and in a cluster of several ejabberd nodes.
-# Notice that the IP address must be specified in the Erlang syntax.
 #
-# Default: {127,0,0,1}
+# Default: 127.0.0.1
 #
-INET_DIST_INTERFACE={127,0,0,1}
+#INET_DIST_INTERFACE=127.0.0.1
 
 #.
 #' ERL_EPMD_ADDRESS: IP addresses where epmd listens for connections
