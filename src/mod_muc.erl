@@ -41,6 +41,7 @@
 	 restore_room/3,
 	 forget_room/3,
 	 create_room/5,
+         shutdown_rooms/1,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
 	 can_use_nick/4]).
@@ -96,10 +97,23 @@ start(Host, Opts) ->
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
+    Rooms = shutdown_rooms(Host),
     stop_supervisor(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    {wait, Rooms}.
+
+shutdown_rooms(Host) ->
+    MyHost = gen_mod:get_module_opt_host(Host, mod_muc,
+					 <<"conference.@HOST@">>),
+    Rooms = mnesia:dirty_select(muc_online_room,
+				[{#muc_online_room{name_host = '$1',
+						   pid = '$2'},
+				  [{'==', {element, 2, '$1'}, MyHost}],
+				  ['$2']}]),
+    [Pid ! shutdown || Pid <- Rooms],
+    Rooms.
 
 %% This function is called by a room in three situations:
 %% A) The owner of the room destroyed it

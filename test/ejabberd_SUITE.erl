@@ -110,10 +110,12 @@ init_per_group(no_db, Config) ->
     {atomic, ok} = ejabberd_auth:try_register(User, Server, Password),
     Config;
 init_per_group(mnesia, Config) ->
+    mod_muc:shutdown_rooms(?MNESIA_VHOST),
     set_opt(server, ?MNESIA_VHOST, Config);
 init_per_group(mysql, Config) ->
     case catch ejabberd_odbc:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
+            mod_muc:shutdown_rooms(?MYSQL_VHOST),
             create_sql_tables(mysql, ?config(base_dir, Config)),
             set_opt(server, ?MYSQL_VHOST, Config);
         Err ->
@@ -122,6 +124,7 @@ init_per_group(mysql, Config) ->
 init_per_group(pgsql, Config) ->
     case catch ejabberd_odbc:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
+            mod_muc:shutdown_rooms(?PGSQL_VHOST),
             create_sql_tables(pgsql, ?config(base_dir, Config)),
             set_opt(server, ?PGSQL_VHOST, Config);
         Err ->

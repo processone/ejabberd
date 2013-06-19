@@ -830,6 +830,8 @@ handle_info({captcha_failed, From}, normal_state,
 		 _ -> StateData
 	       end,
     {next_state, normal_state, NewState};
+handle_info(shutdown, _StateName, StateData) ->
+    {stop, shutdown, StateData};
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
