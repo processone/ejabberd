@@ -103,6 +103,8 @@ spec:
 	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
 	'case xml_gen:compile("tools/xmpp_codec.spec") of ok -> halt(0); _ -> halt(1) end.'
 
+DLLs := $(wildcard deps/*/priv/*.so) $(wildcard deps/*/priv/lib/*.so)
+
 install: all
 	#
 	# Configuration files
@@ -152,9 +154,7 @@ install: all
 	#
 	# Binary system libraries
 	$(INSTALL) -d $(SODIR)
-	#$(INSTALL) -m 644 priv/lib/*.so $(SODIR)
-	$(INSTALL) -m 644 deps/*/priv/lib/*.so $(SODIR)
-	$(INSTALL) -m 644 deps/*/priv/*.so $(SODIR)
+	$(INSTALL) -m 644 $(DLLs) $(SODIR)
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
