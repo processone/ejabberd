@@ -116,9 +116,9 @@ fi
 if [ "$INET_DIST_INTERFACE" != "" ] ; then
     INET_DIST_INTERFACE2="$(echo $INET_DIST_INTERFACE | sed 's/\./,/g')"
     if [ "$INET_DIST_INTERFACE" != "$INET_DIST_INTERFACE2" ] ; then
-	INET_DIST_INTERFACE2="{$INET_DIST_INTERFACE2}"
+        INET_DIST_INTERFACE2="{$INET_DIST_INTERFACE2}"
     fi
-    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_use_interface $INET_DIST_INTERFACE2"
+    KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_use_interface \"${INET_DIST_INTERFACE2}\""
 fi
 if [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] ; then
     NAME="-sname"
