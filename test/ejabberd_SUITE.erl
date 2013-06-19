@@ -65,12 +65,19 @@
                  end
          end)()).
 
+-define(COMMON_VHOST, <<"localhost">>).
+-define(MNESIA_VHOST, <<"mnesia.localhost">>).
+-define(MYSQL_VHOST, <<"mysql.localhost">>).
+-define(PGSQL_VHOST, <<"pgsql.localhost">>).
+
 suite() ->
     [{timetrap, {seconds,10}}].
 
 init_per_suite(Config) ->
     DataDir = proplists:get_value(data_dir, Config),
     PrivDir = proplists:get_value(priv_dir, Config),
+    [_, _|Tail] = lists:reverse(filename:split(DataDir)),
+    BaseDir = filename:join(lists:reverse(Tail)),
     ConfigPath = filename:join([DataDir, "ejabberd.cfg"]),
     LogPath = filename:join([PrivDir, "ejabberd.log"]),
     SASLPath = filename:join([PrivDir, "sasl.log"]),
@@ -83,10 +90,12 @@ init_per_suite(Config) ->
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
     application:set_env(mnesia, dir, MnesiaDir),
     ok = application:start(ejabberd),
-    [{server, <<"localhost">>},
-     {port, 5222},
-     {host, "localhost"},
+    [{server_port, 5222},
+     {server_host, "localhost"},
+     {server, ?COMMON_VHOST},
+     {user, <<"test_single">>},
      {certfile, CertFile},
+     {base_dir, BaseDir},
      {resource, <<"resource">>},
      {password, <<"password">>}
      |Config].
@@ -94,20 +103,47 @@ init_per_suite(Config) ->
 end_per_suite(_Config) ->
     ok.
 
+init_per_group(no_db, Config) ->
+    User = ?config(user, Config),
+    Server = ?config(server, Config),
+    Password = ?config(password, Config),
+    {atomic, ok} = ejabberd_auth:try_register(User, Server, Password),
+    Config;
+init_per_group(mnesia, Config) ->
+    set_opt(server, ?MNESIA_VHOST, Config);
+init_per_group(mysql, Config) ->
+    case catch ejabberd_odbc:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
+        {selected, _, _} ->
+            create_sql_tables(mysql, ?config(base_dir, Config)),
+            set_opt(server, ?MYSQL_VHOST, Config);
+        Err ->
+            {skip, {mysql_not_available, Err}}
+    end;
+init_per_group(pgsql, Config) ->
+    case catch ejabberd_odbc:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
+        {selected, _, _} ->
+            create_sql_tables(pgsql, ?config(base_dir, Config)),
+            set_opt(server, ?PGSQL_VHOST, Config);
+        Err ->
+            {skip, {pgsql_not_available, Err}}
+    end;
 init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
     set_opt(event_relay, Pid, Config).
 
+end_per_group(mnesia, _Config) ->
+    ok;
+end_per_group(mysql, _Config) ->
+    ok;
+end_per_group(pgsql, _Config) ->
+    ok;
+end_per_group(no_db, _Config) ->
+    ok;
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
     ok.
 
-init_per_testcase(stop_ejabberd, OrigConfig) ->
-    User = <<"test_stop">>,
-    Config = set_opt(user, User, OrigConfig),
-    ejabberd_auth:try_register(User,
-                               ?config(server, Config),
-                               ?config(password, Config)),
+init_per_testcase(stop_ejabberd, Config) ->
     open_session(bind(auth(connect(Config))));
 init_per_testcase(TestCase, OrigConfig) ->
     subscribe_to_events(OrigConfig),
@@ -155,49 +191,58 @@ init_per_testcase(TestCase, OrigConfig) ->
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
-groups() ->
-    [{single_user, [sequence],
+generic_tests() ->
+    [{generic, [sequence],
       [test_connect,
        test_starttls,
        test_zlib,
-       test_register,
-       auth_plain,
-       auth_md5,
        test_auth,
        test_bind,
        test_open_session,
-       roster_get,
-       presence_broadcast,
+       presence,
        ping,
        version,
        time,
        stats,
-       disco,
+       disco]},
+     {test_proxy65, [parallel],
+      [proxy65_master, proxy65_slave]}].
+
+tests() ->
+    [{single_user, [sequence],
+      [test_register,
+       auth_plain,
+       auth_md5,
+       presence_broadcast,
        last,
+       roster_get,
        private,
        privacy,
        blocking,
        vcard,
-       pubsub,
        muc_single,
+       pubsub,
        test_unregister]},
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
-     {test_proxy65, [parallel],
-      [proxy65_master, proxy65_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}].
 
+groups() ->
+    [{no_db, [sequence], generic_tests()},
+     {mnesia, [sequence], tests()},
+     {mysql, [sequence], tests()},
+     {pgsql, [sequence], tests()}].
+
 all() ->
-    [{group, single_user},
-     {group, test_roster_subscribe},
-     {group, test_proxy65},
-     {group, test_offline},
-     {group, test_roster_remove},
+    [{group, no_db},
+     {group, mnesia},
+     {group, mysql},
+     {group, pgsql},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->
@@ -211,8 +256,8 @@ test_connect(Config) ->
 
 connect(Config) ->
     {ok, Sock} = ejabberd_socket:connect(
-                   ?config(host, Config),
-                   ?config(port, Config),
+                   ?config(server_host, Config),
+                   ?config(server_port, Config),
                    [binary, {packet, 0}, {active, false}]),
     init_stream(set_opt(socket, Sock, Config)).
 
@@ -360,6 +405,12 @@ open_session(Config) ->
 roster_get(Config) ->
     #iq{type = result, sub_els = [#roster{items = []}]} =
         send_recv(Config, #iq{type = get, sub_els = [#roster{}]}),
+    disconnect(Config).
+
+presence(Config) ->
+    send(Config, #presence{}),
+    JID = my_jid(Config),
+    #presence{from = JID, to = JID} = recv(),
     disconnect(Config).
 
 presence_broadcast(Config) ->
@@ -778,8 +829,7 @@ proxy65_master(Config) ->
     Peer = ?config(slave, Config),
     wait_for_slave(Config),
     send(Config, #presence{}),
-    ?recv2(#presence{from = MyJID, type = undefined},
-           #presence{from = Peer, type = undefined}),
+    #presence{from = MyJID, type = undefined} = recv(),
     true = is_feature_advertised(Config, ?NS_BYTESTREAMS, Proxy),
     #iq{type = result, sub_els = [#bytestreams{hosts = [StreamHost]}]} =
         send_recv(
@@ -795,7 +845,7 @@ proxy65_master(Config) ->
                   #iq{type = set, to = Proxy,
                       sub_els = [#bytestreams{activate = Peer, sid = SID}]}),
     socks5_send(Socks5, Data),
-    #presence{type = unavailable, from = Peer} = recv(),
+    %%#presence{type = unavailable, from = Peer} = recv(),
     disconnect(Config).
 
 proxy65_slave(Config) ->
@@ -804,7 +854,6 @@ proxy65_slave(Config) ->
     send(Config, #presence{}),
     #presence{from = MyJID, type = undefined} = recv(),
     wait_for_master(Config),
-    #presence{from = Peer, type = undefined} = recv(),
     {StreamHost, SID, Data} = get_event(Config),
     Socks5 = socks5_connect(StreamHost, {SID, Peer, MyJID}),
     wait_for_master(Config),
@@ -1216,3 +1265,78 @@ insert(Val, N, Tuple) ->
     L = tuple_to_list(Tuple),
     {H, T} = lists:split(N-1, L),
     list_to_tuple(H ++ [Val|T]).
+
+%%%===================================================================
+%%% SQL stuff
+%%%===================================================================
+create_sql_tables(Type, BaseDir) ->
+    {VHost, File} = case Type of
+                        mysql ->
+                            {?MYSQL_VHOST, "mysql.sql"};
+                        pgsql ->
+                            {?PGSQL_VHOST, "pg.sql"}
+                    end,
+    SQLFile = filename:join([BaseDir, "sql", File]),
+    CreationQueries = read_sql_queries(SQLFile),
+    DropTableQueries = drop_table_queries(CreationQueries),
+    case ejabberd_odbc:sql_transaction(
+           VHost, DropTableQueries ++ CreationQueries) of
+        {atomic, ok} ->
+            ok;
+        Err ->
+            ct:fail({failed_to_create_sql_tables, Type, Err})
+    end.
+
+read_sql_queries(File) ->
+    case file:open(File, [read, binary]) of
+        {ok, Fd} ->
+            read_lines(Fd, File, []);
+        Err ->
+            ct:fail({open_file_failed, File, Err})
+    end.
+
+drop_table_queries(Queries) ->
+    lists:foldl(
+      fun(Query, Acc) ->
+              case split(str:to_lower(Query)) of
+                  [<<"create">>, <<"table">>, Table|_] ->
+                      [<<"DROP TABLE IF EXISTS ", Table/binary, ";">>|Acc];
+                  _ ->
+                      Acc
+              end
+      end, [], Queries).
+
+read_lines(Fd, File, Acc) ->
+    case file:read_line(Fd) of
+        {ok, Line} ->
+            NewAcc = case str:strip(str:strip(Line, both, $\r), both, $\n) of
+                         <<"--", _/binary>> ->
+                             Acc;
+                         <<>> ->
+                             Acc;
+                         _ ->
+                             [Line|Acc]
+                     end,
+            read_lines(Fd, File, NewAcc);
+        eof ->
+            QueryList = str:tokens(list_to_binary(lists:reverse(Acc)), <<";">>),
+            lists:flatmap(
+              fun(Query) ->
+                      case str:strip(str:strip(Query, both, $\r), both, $\n) of
+                          <<>> ->
+                              [];
+                          Q ->
+                              [<<Q/binary, $;>>]
+                      end
+              end, QueryList);
+        {error, _} = Err ->
+            ct:fail({read_file_failed, File, Err})
+    end.
+
+split(Data) ->
+    lists:filter(
+      fun(<<>>) ->
+              false;
+         (_) ->
+              true
+      end, re:split(Data, <<"\s">>)).

@@ -252,6 +252,9 @@ dialyzer: plt
 	--get_warnings -o dialyzer.log ebin
 
 test:
+	@echo "************************** NOTICE ***************************************"
+	@cat test/README
+	@echo "*************************************************************************"
 	$(REBAR) skip_deps=true ct
 
 .PHONY: src doc edoc dialyzer Makefile TAGS clean clean-rel distclean rel plt \

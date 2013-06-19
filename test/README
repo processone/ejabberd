@@ -1,0 +1,15 @@
+You need MySQL and PostgreSQL up and running.
+Both of them should grant access to user 'ejabberd_test' with
+password 'ejabberd_test' on database 'ejabberd_test'.
+
+Here is a quick setup example:
+
+$ psql template1
+template1=# CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';
+template1=# CREATE DATABASE ejabberd_test;
+template1=# GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;
+
+$ mysql
+mysql> CREATE USER ejabberd_test IDENTIFIED BY 'ejabberd_test';
+mysql> CREATE DATABASE ejabberd_test;
+mysql> GRANT ALL ON ejabberd_test.* TO ejabberd_test;
