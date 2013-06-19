@@ -210,12 +210,12 @@ AC_ARG_ENABLE(http,
 esac],[if test "x$http" = "x"; then http=false; fi])
 
 AC_ARG_ENABLE(lager,
-[AC_HELP_STRING([--enable-lager], [enable lager support (default: yes)])],
+[AC_HELP_STRING([--enable-lager], [enable lager support (default: no)])],
 [case "${enableval}" in
   yes) lager=true ;;
   no)  lager=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-lager) ;;
-esac],[if test "x$lager" = "x"; then lager=true; fi])
+esac],[if test "x$lager" = "x"; then lager=false; fi])
 
 AC_CONFIG_FILES([Makefile
 		 vars.config
