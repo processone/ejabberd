@@ -197,7 +197,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
     #xmlel{name = Name, children = Els} = El,
     case {Name, xml:get_cdata(Els)} of
       {<<"handshake">>, Digest} ->
-	  case sha:sha(<<(StateData#state.streamid)/binary,
+	  case p1_sha:sha(<<(StateData#state.streamid)/binary,
 			 (StateData#state.password)/binary>>)
 	      of
 	    Digest ->

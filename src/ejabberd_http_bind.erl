@@ -217,7 +217,7 @@ process_request(Data, IP) ->
 		   "dressing' xmlns='",
 		   (?NS_HTTP_BIND)/binary, "'/>">>};
 	    XmppDomain ->
-		Sid = sha:sha(term_to_binary({now(), make_ref()})),
+		Sid = p1_sha:sha(term_to_binary({now(), make_ref()})),
 		case start(XmppDomain, Sid, <<"">>, IP) of
 		  {error, _} ->
 		      {500, ?HEADER,
@@ -615,7 +615,7 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs,
 		     case StateData#state.key of
 		       <<"">> -> true;
 		       OldKey ->
-			   NextKey = sha:sha(Key),
+			   NextKey = p1_sha:sha(Key),
 			   ?DEBUG("Key/OldKey/NextKey: ~s/~s/~s",
 				  [Key, OldKey, NextKey]),
 			   if OldKey == NextKey -> true;

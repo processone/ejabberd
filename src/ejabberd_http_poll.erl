@@ -112,7 +112,7 @@ process([],
 	{ok, ID1, Key, NewKey, Packet} ->
 	    ID = if
 		     (ID1 == <<"0">>) or (ID1 == <<"mobile">>) ->
-			 NewID = sha:sha(term_to_binary({now(), make_ref()})),
+			 NewID = p1_sha:sha(term_to_binary({now(), make_ref()})),
 			 {ok, Pid} = start(NewID, <<"">>, IP),
 			 mnesia:transaction(
 			   fun() ->

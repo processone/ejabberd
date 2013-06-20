@@ -147,7 +147,7 @@ process_local_iq(From, To, #iq{type = Type} = IQ) ->
     end.
 
 roster_hash(Items) ->
-    sha:sha(term_to_binary(lists:sort([R#roster{groups =
+    p1_sha:sha(term_to_binary(lists:sort([R#roster{groups =
 						    lists:sort(Grs)}
 				       || R = #roster{groups = Grs}
 					      <- Items]))).
@@ -211,7 +211,7 @@ write_roster_version_t(LUser, LServer) ->
     write_roster_version(LUser, LServer, true).
 
 write_roster_version(LUser, LServer, InTransaction) ->
-    Ver = sha:sha(term_to_binary(now())),
+    Ver = p1_sha:sha(term_to_binary(now())),
     write_roster_version(LUser, LServer, InTransaction, Ver,
 			 gen_mod:db_type(LServer, ?MODULE)),
     Ver.

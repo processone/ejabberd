@@ -469,10 +469,10 @@ make_disco_hash(DiscoEls, Algo) ->
     jlib:encode_base64(case Algo of
                            md5 -> crypto:md5(Concat);
                            sha1 -> crypto:sha(Concat);
-                           sha224 -> sha:sha224(Concat);
-                           sha256 -> sha:sha256(Concat);
-                           sha384 -> sha:sha384(Concat);
-                           sha512 -> sha:sha512(Concat)
+                           sha224 -> p1_sha:sha224(Concat);
+                           sha256 -> p1_sha:sha256(Concat);
+                           sha384 -> p1_sha:sha384(Concat);
+                           sha512 -> p1_sha:sha512(Concat)
                        end).
 
 check_hash(Caps, Els) ->

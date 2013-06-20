@@ -93,7 +93,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 	  Id = <<(randoms:get_string())/binary>>,
 	  B64Image = jlib:encode_base64((Image)),
 	  JID = jlib:jid_to_string(From),
-	  CID = <<"sha1+", (sha:sha(Image))/binary,
+	  CID = <<"sha1+", (p1_sha:sha(Image))/binary,
 		  "@bob.xmpp.org">>,
 	  Data = #xmlel{name = <<"data">>,
 			attrs =
@@ -185,7 +185,7 @@ create_captcha_x(SID, To, Lang, Limiter, HeadEls,
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
 	  B64Image = jlib:encode_base64((Image)),
-	  CID = <<"sha1+", (sha:sha(Image))/binary,
+	  CID = <<"sha1+", (p1_sha:sha(Image))/binary,
 		  "@bob.xmpp.org">>,
 	  Data = #xmlel{name = <<"data">>,
 			attrs =

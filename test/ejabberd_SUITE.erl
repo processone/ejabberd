@@ -1096,7 +1096,7 @@ sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
      end}.
 
 hex(S) ->
-    sha:to_hexlist(S).
+    p1_sha:to_hexlist(S).
 
 response(User, Passwd, Nonce, AuthzId, Realm, CNonce,
 	 DigestURI, NC, QOP, A2Prefix) ->
@@ -1188,7 +1188,7 @@ make_iq_result(#iq{from = From} = IQ) ->
 
 socks5_connect(#streamhost{host = Host, port = Port},
                {SID, JID1, JID2}) ->
-    Hash = sha:sha([SID, jlib:jid_to_string(JID1), jlib:jid_to_string(JID2)]),
+    Hash = p1_sha:sha([SID, jlib:jid_to_string(JID1), jlib:jid_to_string(JID2)]),
     {ok, Sock} = gen_tcp:connect(binary_to_list(Host), Port,
                                  [binary, {active, false}]),
     Init = <<?VERSION_5, 1, ?AUTH_ANONYMOUS>>,

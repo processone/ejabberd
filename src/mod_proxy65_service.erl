@@ -190,7 +190,7 @@ process_iq(InitiatorJID,
 		    jlib:jid_to_string(jlib:jid_tolower(TargetJID)),
 		Initiator =
 		    jlib:jid_to_string(jlib:jid_tolower(InitiatorJID)),
-		SHA1 = sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
+		SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
 		case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID,
 						    TargetJID, ServerHost)
 		    of

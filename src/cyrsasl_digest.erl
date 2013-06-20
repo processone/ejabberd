@@ -220,7 +220,7 @@ get_local_fqdn2() ->
     end.
 
 hex(S) ->
-    sha:to_hexlist(S).
+    p1_sha:to_hexlist(S).
 
 proplists_get_bin_value(Key, Pairs, Default) ->
     case proplists:get_value(Key, Pairs, Default) of

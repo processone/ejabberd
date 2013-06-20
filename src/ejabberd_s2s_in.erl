@@ -249,7 +249,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		     end,
 	  case SASL of
 	    {error_cert_verif, CertVerifyResult, Certificate} ->
-		CertError = tls:get_cert_verify_string(CertVerifyResult,
+		CertError = p1_tls:get_cert_verify_string(CertVerifyResult,
 						       Certificate),
 		RemoteServer = xml:get_attr_s(<<"from">>, Attrs),
 		?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)",
