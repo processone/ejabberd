@@ -303,7 +303,7 @@ get_entity_subscriptions(_Host, Owner) ->
 	       [<<"host">>, <<"node">>, <<"type">>, <<"nodeid">>,
 		<<"jid">>, <<"subscriptions">>],
 	       RItems} ->
-		  lists:map(fun ({H, N, T, I, J, S}) ->
+		  lists:map(fun ([H, N, T, I, J, S]) ->
 				    O = node_hometree_odbc:decode_jid(H),
 				    Node = nodetree_tree_odbc:raw_to_node(O,
 									  {N,
@@ -351,7 +351,7 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
 	       [<<"host">>, <<"node">>, <<"type">>, <<"nodeid">>,
 		<<"jid">>, <<"subscriptions">>],
 	       RItems} ->
-		  lists:map(fun ({H, N, T, I, J, S}) ->
+		  lists:map(fun ([H, N, T, I, J, S]) ->
 				    O = node_hometree_odbc:decode_jid(H),
 				    Node = nodetree_tree_odbc:raw_to_node(O,
 									  {N,

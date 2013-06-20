@@ -3004,8 +3004,7 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 					   ModifNow, ModifUSR)
     end,
     ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
-send_items(Host, Node, NodeId, Type, {U, S, R} = LJID,
-	   Number) ->
+send_items(Host, Node, NodeId, Type, LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items,
 			      [NodeId, LJID])
 		 of
@@ -4017,7 +4016,7 @@ broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTy
     From = service_jid(Host),
     Stanza = case NotificationType of
 	normal -> BaseStanza;
-	MsgType -> add_message_type(BaseStanza, atom_to_list(MsgType))
+	MsgType -> add_message_type(BaseStanza, iolist_to_binary(atom_to_list(MsgType)))
 	end,
     %% Handles explicit subscriptions
     SubIDsByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
@@ -4060,7 +4059,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	C2SPid when is_pid(C2SPid) ->
 	    Stanza = case get_option(NodeOptions, notification_type, headline) of
 		normal -> BaseStanza;
-		MsgType -> add_message_type(BaseStanza, atom_to_list(MsgType))
+		MsgType -> add_message_type(BaseStanza, iolist_to_binary(atom_to_list(MsgType)))
 		end,
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner

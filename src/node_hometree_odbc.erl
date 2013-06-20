@@ -232,8 +232,8 @@ delete_node(Removed) ->
 						 [<<"jid">>,
 						  <<"subscriptions">>],
 						 RItems} ->
-						    lists:map(fun ({SJID,
-								    Subscriptions}) ->
+						    lists:map(fun ([SJID,
+								    Subscriptions]) ->
 								      {decode_jid(SJID),
 								       decode_subscriptions(Subscriptions)}
 							      end,
@@ -658,12 +658,12 @@ get_entity_affiliations(Host, Owner) ->
 	       [<<"node">>, <<"type">>, <<"nodeid">>,
 		<<"affiliation">>],
 	       RItems} ->
-		  lists:map(fun ({N, T, I, A}) ->
+		  lists:map(fun ([N, T, I, A]) ->
 				    Node = nodetree_tree_odbc:raw_to_node(Host,
-									  {N,
+									  [N,
 									   <<"">>,
 									   T,
-									   I}),
+									   I]),
 				    {Node, decode_affiliation(A)}
 			    end,
 			    RItems);
@@ -683,7 +683,7 @@ get_node_affiliations(NodeIdx) ->
 					      NodeIdx, <<"';">>])
 		of
 	      {selected, [<<"jid">>, <<"affiliation">>], RItems} ->
-		  lists:map(fun ({J, A}) ->
+		  lists:map(fun ([J, A]) ->
 				    {decode_jid(J), decode_affiliation(A)}
 			    end,
 			    RItems);
@@ -708,7 +708,7 @@ get_affiliation(NodeIdx, Owner) ->
 					      NodeIdx, <<"' and jid='">>, J,
 					      <<"';">>])
 		of
-	      {selected, [<<"affiliation">>], [{A}]} ->
+	      {selected, [<<"affiliation">>], [[A]]} ->
 		  decode_affiliation(A);
 	      _ -> none
 	    end,
@@ -777,13 +777,13 @@ get_entity_subscriptions(Host, Owner) ->
 	       [<<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>,
 		<<"subscriptions">>],
 	       RItems} ->
-		  lists:foldl(fun ({N, T, I, J, S}, Acc) ->
+		  lists:foldl(fun ([N, T, I, J, S], Acc) ->
 				      Node =
 					  nodetree_tree_odbc:raw_to_node(Host,
-									 {N,
+									 [N,
 									  <<"">>,
 									  T,
-									  I}),
+									  I]),
 				      Jid = decode_jid(J),
 				      case decode_subscriptions(S) of
 					[] -> [{Node, none, Jid} | Acc];
@@ -852,13 +852,13 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
 	       [<<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>,
 		<<"subscriptions">>],
 	       RItems} ->
-		  lists:foldl(fun ({N, T, I, J, S}, Acc) ->
+		  lists:foldl(fun ([N, T, I, J, S], Acc) ->
 				      Node =
 					  nodetree_tree_odbc:raw_to_node(Host,
-									 {N,
+									 [N,
 									  <<"">>,
 									  T,
-									  I}),
+									  I]),
 				      Jid = decode_jid(J),
 				      case decode_subscriptions(S) of
 					[] -> [{Node, none, Jid} | Acc];
@@ -886,7 +886,7 @@ get_node_subscriptions(NodeIdx) ->
 					      NodeIdx, <<"';">>])
 		of
 	      {selected, [<<"jid">>, <<"subscriptions">>], RItems} ->
-		  lists:foldl(fun ({J, S}, Acc) ->
+		  lists:foldl(fun ([J, S], Acc) ->
 				      Jid = decode_jid(J),
 				      case decode_subscriptions(S) of
 					[] -> [{Jid, none} | Acc];
@@ -917,7 +917,7 @@ get_subscriptions(NodeIdx, Owner) ->
 					      NodeIdx, <<"' and jid='">>, J,
 					      <<"';">>])
 		of
-	      {selected, [<<"subscriptions">>], [{S}]} ->
+	      {selected, [<<"subscriptions">>], [[S]]} ->
 		  decode_subscriptions(S);
 	      _ -> []
 	    end,
@@ -1104,7 +1104,7 @@ get_states(NodeIdx) ->
        [<<"jid">>, <<"affiliation">>, <<"subscriptions">>],
        RItems} ->
 	  {result,
-	   lists:map(fun ({SJID, Affiliation, Subscriptions}) ->
+	   lists:map(fun ([SJID, Affiliation, Subscriptions]) ->
 			     #pubsub_state{stateid = {decode_jid(SJID), NodeIdx},
 					   items = itemids(NodeIdx, SJID),
 					   affiliation = decode_affiliation(Affiliation),
@@ -1147,7 +1147,7 @@ get_state_without_itemids(NodeIdx, JID) ->
 	of
       {selected,
        [<<"jid">>, <<"affiliation">>, <<"subscriptions">>],
-       [{SJID, Affiliation, Subscriptions}]} ->
+       [[SJID, Affiliation, Subscriptions]]} ->
 	  #pubsub_state{stateid = {decode_jid(SJID), NodeIdx},
 			affiliation = decode_affiliation(Affiliation),
 			subscriptions = decode_subscriptions(Subscriptions)};
@@ -1243,7 +1243,7 @@ get_items(NodeId, From, none) ->
 						 NodeId,
 						 <<"' and name='max_items';">>])
 		   of
-		 {selected, [<<"val">>], [{Value}]} ->
+		 {selected, [<<"val">>], [[Value]]} ->
 		     Tokens = element(2,
 				      erl_scan:string(<<Value/binary, ".">>)),
 		     element(2, erl_parse:parse_term(Tokens));
@@ -1274,7 +1274,7 @@ get_items(NodeId, _From,
 							     (?PUBSUB):escape(i2l(IncIndex)),
 							     <<" );">>])
 			       of
-			     {selected, [_], [{O}]} ->
+			     {selected, [_], [[O]]} ->
 				 [<<"modification">>, <<"'", O/binary, "'">>];
 			     _ -> [<<"modification">>, <<"null">>]
 			   end;
@@ -1290,7 +1290,7 @@ get_items(NodeId, _From,
 						"nodeid='">>,
 					      NodeId, <<"';">>])
 		of
-	      {selected, [_], [{C}]} -> C;
+	      {selected, [_], [[C]]} -> C;
 	      _ -> <<"0">>
 	    end,
     case catch
@@ -1309,7 +1309,7 @@ get_items(NodeId, _From,
 	  case str:len(RItems) of
 	    0 -> {result, {[], #rsm_out{count = Count}}};
 	    _ ->
-		{_, _, _, F, _} = hd(RItems),
+		[_, _, _, F, _] = hd(RItems),
 		Index = case catch
 			       ejabberd_odbc:sql_query_t([<<"select count(*) from pubsub_item where "
 							    "nodeid='">>,
@@ -1318,10 +1318,10 @@ get_items(NodeId, _From,
 							  F, <<"';">>])
 			    of
 			  %{selected, [_], [{C}, {In}]} -> [string:strip(C, both, $"), string:strip(In, both, $")];
-			  {selected, [_], [{In}]} -> In;
+			  {selected, [_], [[In]]} -> In;
 			  _ -> <<"0">>
 			end,
-		{_, _, _, L, _} = lists:last(RItems),
+		[_, _, _, L, _] = lists:last(RItems),
 		RsmOut = #rsm_out{count = Count, index = Index,
 				  first = <<"modification@", F/binary>>,
 				  last = <<"modification@", (i2l(L))/binary>>},
@@ -1462,14 +1462,9 @@ set_item(Item) ->
     {M, JID} = Item#pubsub_item.modification,
     P = encode_jid(JID),
     Payload = Item#pubsub_item.payload,
-    XML = (?PUBSUB):escape(lists:flatten(lists:map(fun
-						     (X) ->
-							 xml:element_to_binary(X)
-						   end,
-						   Payload))),
+    XML = (?PUBSUB):escape(str:join([xml:element_to_binary(X) || X<-Payload], <<>>)),
     S = fun ({T1, T2, T3}) ->
-		lists:flatten([i2l(T1, 6), <<":">>, i2l(T2, 6), <<":">>,
-			       i2l(T3, 6)])
+		str:join([i2l(T1, 6), i2l(T2, 6), i2l(T3, 6)], <<":">>)
 	end,
     case catch
 	   ejabberd_odbc:sql_query_t([<<"update pubsub_item set publisher='">>,
@@ -1557,7 +1552,7 @@ itemids(NodeId, SJID) ->
 				      <<"%' order by modification desc;">>])
 	of
       {selected, [<<"itemid">>], RItems} ->
-	  lists:map(fun ({ItemId}) -> ItemId end, RItems);
+	  lists:map(fun ([ItemId]) -> ItemId end, RItems);
       _ -> []
     end.
 
@@ -1569,7 +1564,7 @@ select_affiliation_subscriptions(NodeId, JID) ->
 				      NodeId, <<"' and jid='">>, J, <<"';">>])
 	of
       {selected, [<<"affiliation">>, <<"subscriptions">>],
-       [{A, S}]} ->
+       [[A, S]]} ->
 	  {decode_affiliation(A), decode_subscriptions(S)};
       _ -> {none, []}
     end.
@@ -1681,7 +1676,7 @@ state_to_raw(NodeId, State) ->
      <<"', '">>, S, <<"'">>].
 
 raw_to_item(NodeId,
-	    {ItemId, SJID, Creation, Modification, XML}) ->
+	    [ItemId, SJID, Creation, Modification, XML]) ->
     JID = decode_jid(SJID),
     ToTime = fun (Str) ->
 		     [T1, T2, T3] = str:tokens(Str, <<":">>),

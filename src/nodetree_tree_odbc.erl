@@ -122,8 +122,8 @@ get_node(NodeIdx) ->
 	of
       {selected,
        [<<"host">>, <<"node">>, <<"parent">>, <<"type">>],
-       [{Host, Node, Parent, Type}]} ->
-	  raw_to_node(Host, {Node, Parent, Type, NodeIdx});
+       [[Host, Node, Parent, Type]]} ->
+	  raw_to_node(Host, [Node, Parent, Type, NodeIdx]);
       {'EXIT', _Reason} ->
 	  {error, ?ERR_INTERNAL_SERVER_ERROR};
       _ -> {error, ?ERR_ITEM_NOT_FOUND}
@@ -331,19 +331,19 @@ delete_node(Host, Node) ->
            NodeIdx::mod_pubsub:nodeIdx()})
     -> mod_pubsub:pubsubNode()
 ).
-raw_to_node(Host, {Node, Parent, Type, NodeIdx}) ->
+raw_to_node(Host, [Node, Parent, Type, NodeIdx]) ->
     Options = case catch
 		     ejabberd_odbc:sql_query_t([<<"select name,val from pubsub_node_option "
 						  "where nodeid='">>,
 						NodeIdx, <<"';">>])
 		  of
 		{selected, [<<"name">>, <<"val">>], ROptions} ->
-		    DbOpts = lists:map(fun ({Key, Value}) ->
+		    DbOpts = lists:map(fun ([Key, Value]) ->
 					       RKey =
 						   jlib:binary_to_atom(Key),
 					       Tokens = element(2,
-								erl_scan:string(<<Value/binary,
-										  ".">>)),
+								erl_scan:string(
+								    binary_to_list(<<Value/binary, ".">>))),
 					       RValue = element(2,
 								erl_parse:parse_term(Tokens)),
 					       {RKey, RValue}
@@ -415,8 +415,8 @@ set_node(Record) ->
 	  lists:foreach(fun ({Key, Value}) ->
 				SKey = iolist_to_binary(atom_to_list(Key)),
 				SValue =
-				    (?PUBSUB):escape(lists:flatten(io_lib:fwrite("~p",
-										 [Value]))),
+				    (?PUBSUB):escape(list_to_binary(lists:flatten(io_lib:fwrite("~p",
+						    [Value])))),
 				catch
 				  ejabberd_odbc:sql_query_t([<<"insert into pubsub_node_option(nodeid, "
 							       "name, val) values('">>,
@@ -445,7 +445,7 @@ nodeid(Host, NodeId) ->
 					"host='">>,
 				      H, <<"' and node='">>, N, <<"';">>])
 	of
-      {selected, [<<"nodeid">>], [{NodeIdx}]} ->
+      {selected, [<<"nodeid">>], [[NodeIdx]]} ->
 	  {result, NodeIdx};
       {'EXIT', _Reason} ->
 	  {error, ?ERR_INTERNAL_SERVER_ERROR};
