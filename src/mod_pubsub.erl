@@ -2938,10 +2938,10 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
     %%%
      | {error, xmlel()}
 ).
-publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload) ->
-    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, all);
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
 	publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, all).
+publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload, Access) ->
+    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, Access);
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = NodeId}) ->
 		     Features = features(Type),
