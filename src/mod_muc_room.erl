@@ -1140,6 +1140,7 @@ is_occupant_or_admin(JID, StateData) ->
     FAffiliation = get_affiliation(JID, StateData),
     FRole = get_role(JID, StateData),
     case FRole /= none orelse
+	   FAffiliation == member orelse
 	   FAffiliation == admin orelse FAffiliation == owner
 	of
       true -> true;
