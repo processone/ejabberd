@@ -1343,7 +1343,7 @@
                #ref{name = vcard_PREF, default = false,
                     min = 0, max = 1, label = '$pref'},
                #ref{name = vcard_NUMBER,
-                    min = 1, max = 1, label = '$number'}]}}.
+                    min = 0, max = 1, label = '$number'}]}}.
 
 {vcard_EMAIL,
  #elem{name = <<"EMAIL">>,
@@ -1361,14 +1361,14 @@
                #ref{name = vcard_X400, default = false,
                     min = 0, max = 1, label = '$x400'},
                #ref{name = vcard_USERID,
-                    min = 1, max = 1, label = '$userid'}]}}.
+                    min = 0, max = 1, label = '$userid'}]}}.
 
 {vcard_GEO,
  #elem{name = <<"GEO">>,
        xmlns = <<"vcard-temp">>,
        result = {vcard_geo, '$lat', '$lon'},
-       refs = [#ref{name = vcard_LAT, min = 1, max = 1, label = '$lat'},
-               #ref{name = vcard_LON, min = 1, max = 1, label = '$lon'}]}}.
+       refs = [#ref{name = vcard_LAT, min = 0, max = 1, label = '$lat'},
+               #ref{name = vcard_LON, min = 0, max = 1, label = '$lon'}]}}.
 
 {vcard_BINVAL,
  #elem{name = <<"BINVAL">>,
@@ -1399,7 +1399,7 @@
        result = {vcard_org, '$name', '$units'},
        refs = [#ref{name = vcard_ORGNAME,
                     label = '$name',
-                    min = 1, max = 1},
+                    min = 0, max = 1},
                #ref{name = vcard_ORGUNIT,
                     label = '$units'}]}}.
 
@@ -1416,7 +1416,7 @@
        xmlns = <<"vcard-temp">>,
        result = {vcard_key, '$type', '$cred'},
        refs = [#ref{name = vcard_TYPE, min = 0, max = 1, label = '$type'},
-               #ref{name = vcard_CRED, min = 1, max = 1, label = '$cred'}]}}.
+               #ref{name = vcard_CRED, min = 0, max = 1, label = '$cred'}]}}.
 
 {vcard_CATEGORIES,
  #elem{name = <<"CATEGORIES">>,

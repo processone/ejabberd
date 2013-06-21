@@ -1,0 +1,35 @@
+dn: dc=localhost
+dc: localhost
+objectclass: dcObject
+
+dn: cn=admin,dc=localhost
+cn: admin
+objectclass: organizationalRole
+
+dn: ou=users,dc=localhost
+ou: users
+objectClass: organizationalUnit
+
+dn: uid=test_single,ou=users,dc=localhost
+uid: test_single
+mail: test_single@localhost
+objectClass: person
+jpegPhoto:: /9g=
+cn: Test Single
+password: password
+
+dn: uid=test_master,ou=users,dc=localhost
+uid: test_master
+mail: test_master@localhost
+objectClass: person
+jpegPhoto:: /9g=
+cn: Test Master
+password: password
+
+dn: uid=test_slave,ou=users,dc=localhost
+uid: test_slave
+mail: test_slave@localhost
+objectClass: person
+jpegPhoto:: /9g=
+cn: Test Slave
+password: password

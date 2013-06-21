@@ -69,6 +69,7 @@
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).
 -define(MYSQL_VHOST, <<"mysql.localhost">>).
 -define(PGSQL_VHOST, <<"pgsql.localhost">>).
+-define(LDAP_VHOST, <<"ldap.localhost">>).
 
 suite() ->
     [{timetrap, {seconds,10}}].
@@ -83,6 +84,7 @@ init_per_suite(Config) ->
     SASLPath = filename:join([PrivDir, "sasl.log"]),
     MnesiaDir = filename:join([PrivDir, "mnesia"]),
     CertFile = filename:join([DataDir, "cert.pem"]),
+    LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
     {ok, CWD} = file:get_cwd(),
     {ok, _} = file:copy(CertFile, filename:join([CWD, "cert.pem"])),
     application:set_env(ejabberd, config, ConfigPath),
@@ -96,6 +98,7 @@ init_per_suite(Config) ->
      {user, <<"test_single">>},
      {certfile, CertFile},
      {base_dir, BaseDir},
+     {ldif_file, LDIFFile},
      {resource, <<"resource">>},
      {password, <<"password">>}
      |Config].
@@ -130,6 +133,9 @@ init_per_group(pgsql, Config) ->
         Err ->
             {skip, {pgsql_not_available, Err}}
     end;
+init_per_group(ldap, Config) ->
+    {ok, _} = ldap_srv:start(?config(ldif_file, Config)),
+    set_opt(server, ?LDAP_VHOST, Config);
 init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
     set_opt(event_relay, Pid, Config).
@@ -141,6 +147,8 @@ end_per_group(mysql, _Config) ->
 end_per_group(pgsql, _Config) ->
     ok;
 end_per_group(no_db, _Config) ->
+    ok;
+end_per_group(ldap, _Config) ->
     ok;
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
@@ -194,7 +202,7 @@ init_per_testcase(TestCase, OrigConfig) ->
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
-generic_tests() ->
+no_db_tests() ->
     [{generic, [sequence],
       [test_connect,
        test_starttls,
@@ -211,7 +219,7 @@ generic_tests() ->
      {test_proxy65, [parallel],
       [proxy65_master, proxy65_slave]}].
 
-tests() ->
+db_tests() ->
     [{single_user, [sequence],
       [test_register,
        auth_plain,
@@ -235,14 +243,21 @@ tests() ->
       [roster_remove_master,
        roster_remove_slave]}].
 
+ldap_tests() ->
+    [{ldap_tests, [sequence],
+      [test_auth,
+       vcard_get]}].
+
 groups() ->
-    [{no_db, [sequence], generic_tests()},
-     {mnesia, [sequence], tests()},
-     {mysql, [sequence], tests()},
-     {pgsql, [sequence], tests()}].
+    [{ldap, [sequence], ldap_tests()},
+     {no_db, [sequence], no_db_tests()},
+     {mnesia, [sequence], db_tests()},
+     {mysql, [sequence], db_tests()},
+     {pgsql, [sequence], db_tests()}].
 
 all() ->
-    [{group, no_db},
+    [{group, ldap},
+     {group, no_db},
      {group, mnesia},
      {group, mysql},
      {group, pgsql},
@@ -614,6 +629,13 @@ vcard(Config) ->
         send_recv(Config, #iq{type = set, sub_els = [VCard]}),
     %% TODO: check if VCard == VCard1.
     #iq{type = result, sub_els = [_VCard1]} =
+        send_recv(Config, #iq{type = get, sub_els = [#vcard{}]}),
+    disconnect(Config).
+
+vcard_get(Config) ->
+    true = is_feature_advertised(Config, ?NS_VCARD),
+    %% TODO: check if VCard corresponds to LDIF data from ejabberd.ldif
+    #iq{type = result, sub_els = [_VCard]} =
         send_recv(Config, #iq{type = get, sub_els = [#vcard{}]}),
     disconnect(Config).
 

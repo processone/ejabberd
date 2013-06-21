@@ -4782,11 +4782,11 @@ encode_vcard_CATEGORIES(Keywords, _xmlns_attrs) ->
 					 | _acc]).
 
 decode_vcard_KEY({xmlel, <<"KEY">>, _attrs, _els}) ->
-    {Cred, Type} = decode_vcard_KEY_els(_els, [],
+    {Cred, Type} = decode_vcard_KEY_els(_els, undefined,
 					undefined),
     {vcard_key, Type, Cred}.
 
-decode_vcard_KEY_els([], [Cred], Type) -> {Cred, Type};
+decode_vcard_KEY_els([], Cred, Type) -> {Cred, Type};
 decode_vcard_KEY_els([{xmlel, <<"TYPE">>, _attrs, _} =
 			  _el
 		      | _els],
@@ -4803,11 +4803,7 @@ decode_vcard_KEY_els([{xmlel, <<"CRED">>, _attrs, _} =
 		     Cred, Type) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
-	   decode_vcard_KEY_els(_els,
-				case decode_vcard_CRED(_el) of
-				  undefined -> Cred;
-				  _new_el -> [_new_el | Cred]
-				end,
+	   decode_vcard_KEY_els(_els, decode_vcard_CRED(_el),
 				Type);
        true -> decode_vcard_KEY_els(_els, Cred, Type)
     end;
@@ -4821,6 +4817,7 @@ encode_vcard_KEY({vcard_key, Type, Cred},
     _attrs = _xmlns_attrs,
     {xmlel, <<"KEY">>, _attrs, _els}.
 
+'encode_vcard_KEY_$cred'(undefined, _acc) -> _acc;
 'encode_vcard_KEY_$cred'(Cred, _acc) ->
     [encode_vcard_CRED(Cred, []) | _acc].
 
@@ -4900,10 +4897,11 @@ encode_vcard_SOUND({vcard_sound, Phonetic, Binval,
     [encode_vcard_BINVAL(Binval, []) | _acc].
 
 decode_vcard_ORG({xmlel, <<"ORG">>, _attrs, _els}) ->
-    {Units, Name} = decode_vcard_ORG_els(_els, [], []),
+    {Units, Name} = decode_vcard_ORG_els(_els, [],
+					 undefined),
     {vcard_org, Name, Units}.
 
-decode_vcard_ORG_els([], Units, [Name]) ->
+decode_vcard_ORG_els([], Units, Name) ->
     {lists:reverse(Units), Name};
 decode_vcard_ORG_els([{xmlel, <<"ORGNAME">>, _attrs,
 		       _} =
@@ -4913,10 +4911,7 @@ decode_vcard_ORG_els([{xmlel, <<"ORGNAME">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ORG_els(_els, Units,
-				case decode_vcard_ORGNAME(_el) of
-				  undefined -> Name;
-				  _new_el -> [_new_el | Name]
-				end);
+				decode_vcard_ORGNAME(_el));
        true -> decode_vcard_ORG_els(_els, Units, Name)
     end;
 decode_vcard_ORG_els([{xmlel, <<"ORGUNIT">>, _attrs,
@@ -4949,6 +4944,7 @@ encode_vcard_ORG({vcard_org, Name, Units},
     'encode_vcard_ORG_$units'(_els,
 			      [encode_vcard_ORGUNIT(Units, []) | _acc]).
 
+'encode_vcard_ORG_$name'(undefined, _acc) -> _acc;
 'encode_vcard_ORG_$name'(Name, _acc) ->
     [encode_vcard_ORGNAME(Name, []) | _acc].
 
@@ -5121,22 +5117,18 @@ encode_vcard_BINVAL_cdata(_val, _acc) ->
     [{xmlcdata, base64:encode(_val)} | _acc].
 
 decode_vcard_GEO({xmlel, <<"GEO">>, _attrs, _els}) ->
-    {Lat, Lon} = decode_vcard_GEO_els(_els, [], []),
+    {Lat, Lon} = decode_vcard_GEO_els(_els, undefined,
+				      undefined),
     {vcard_geo, Lat, Lon}.
 
-decode_vcard_GEO_els([], [Lat], [Lon]) -> {Lat, Lon};
+decode_vcard_GEO_els([], Lat, Lon) -> {Lat, Lon};
 decode_vcard_GEO_els([{xmlel, <<"LAT">>, _attrs, _} =
 			  _el
 		      | _els],
 		     Lat, Lon) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
-	   decode_vcard_GEO_els(_els,
-				case decode_vcard_LAT(_el) of
-				  undefined -> Lat;
-				  _new_el -> [_new_el | Lat]
-				end,
-				Lon);
+	   decode_vcard_GEO_els(_els, decode_vcard_LAT(_el), Lon);
        true -> decode_vcard_GEO_els(_els, Lat, Lon)
     end;
 decode_vcard_GEO_els([{xmlel, <<"LON">>, _attrs, _} =
@@ -5145,11 +5137,7 @@ decode_vcard_GEO_els([{xmlel, <<"LON">>, _attrs, _} =
 		     Lat, Lon) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
-	   decode_vcard_GEO_els(_els, Lat,
-				case decode_vcard_LON(_el) of
-				  undefined -> Lon;
-				  _new_el -> [_new_el | Lon]
-				end);
+	   decode_vcard_GEO_els(_els, Lat, decode_vcard_LON(_el));
        true -> decode_vcard_GEO_els(_els, Lat, Lon)
     end;
 decode_vcard_GEO_els([_ | _els], Lat, Lon) ->
@@ -5161,21 +5149,23 @@ encode_vcard_GEO({vcard_geo, Lat, Lon}, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"GEO">>, _attrs, _els}.
 
+'encode_vcard_GEO_$lat'(undefined, _acc) -> _acc;
 'encode_vcard_GEO_$lat'(Lat, _acc) ->
     [encode_vcard_LAT(Lat, []) | _acc].
 
+'encode_vcard_GEO_$lon'(undefined, _acc) -> _acc;
 'encode_vcard_GEO_$lon'(Lon, _acc) ->
     [encode_vcard_LON(Lon, []) | _acc].
 
 decode_vcard_EMAIL({xmlel, <<"EMAIL">>, _attrs,
 		    _els}) ->
     {X400, Userid, Internet, Home, Pref, Work} =
-	decode_vcard_EMAIL_els(_els, false, [], false, false,
-			       false, false),
+	decode_vcard_EMAIL_els(_els, false, undefined, false,
+			       false, false, false),
     {vcard_email, Home, Work, Internet, Pref, X400, Userid}.
 
-decode_vcard_EMAIL_els([], X400, [Userid], Internet,
-		       Home, Pref, Work) ->
+decode_vcard_EMAIL_els([], X400, Userid, Internet, Home,
+		       Pref, Work) ->
     {X400, Userid, Internet, Home, Pref, Work};
 decode_vcard_EMAIL_els([{xmlel, <<"HOME">>, _attrs, _} =
 			    _el
@@ -5246,11 +5236,8 @@ decode_vcard_EMAIL_els([{xmlel, <<"USERID">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, X400,
-				  case decode_vcard_USERID(_el) of
-				    undefined -> Userid;
-				    _new_el -> [_new_el | Userid]
-				  end,
-				  Internet, Home, Pref, Work);
+				  decode_vcard_USERID(_el), Internet, Home,
+				  Pref, Work);
        true ->
 	   decode_vcard_EMAIL_els(_els, X400, Userid, Internet,
 				  Home, Pref, Work)
@@ -5277,6 +5264,7 @@ encode_vcard_EMAIL({vcard_email, Home, Work, Internet,
 'encode_vcard_EMAIL_$x400'(X400, _acc) ->
     [encode_vcard_X400(X400, []) | _acc].
 
+'encode_vcard_EMAIL_$userid'(undefined, _acc) -> _acc;
 'encode_vcard_EMAIL_$userid'(Userid, _acc) ->
     [encode_vcard_USERID(Userid, []) | _acc].
 
@@ -5299,15 +5287,14 @@ encode_vcard_EMAIL({vcard_email, Home, Work, Internet,
 decode_vcard_TEL({xmlel, <<"TEL">>, _attrs, _els}) ->
     {Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
      Work, Cell, Modem, Isdn, Video} =
-	decode_vcard_TEL_els(_els, [], false, false, false,
+	decode_vcard_TEL_els(_els, undefined, false, false,
 			     false, false, false, false, false, false, false,
-			     false, false, false),
+			     false, false, false, false),
     {vcard_tel, Home, Work, Voice, Fax, Pager, Msg, Cell,
      Video, Bbs, Modem, Isdn, Pcs, Pref, Number}.
 
-decode_vcard_TEL_els([], [Number], Pager, Pcs, Bbs,
-		     Voice, Home, Pref, Msg, Fax, Work, Cell, Modem, Isdn,
-		     Video) ->
+decode_vcard_TEL_els([], Number, Pager, Pcs, Bbs, Voice,
+		     Home, Pref, Msg, Fax, Work, Cell, Modem, Isdn, Video) ->
     {Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
      Work, Cell, Modem, Isdn, Video};
 decode_vcard_TEL_els([{xmlel, <<"HOME">>, _attrs, _} =
@@ -5513,11 +5500,7 @@ decode_vcard_TEL_els([{xmlel, <<"NUMBER">>, _attrs, _} =
 		     Work, Cell, Modem, Isdn, Video) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
-	   decode_vcard_TEL_els(_els,
-				case decode_vcard_NUMBER(_el) of
-				  undefined -> Number;
-				  _new_el -> [_new_el | Number]
-				end,
+	   decode_vcard_TEL_els(_els, decode_vcard_NUMBER(_el),
 				Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 				Work, Cell, Modem, Isdn, Video);
        true ->
@@ -5554,6 +5537,7 @@ encode_vcard_TEL({vcard_tel, Home, Work, Voice, Fax,
     _attrs = _xmlns_attrs,
     {xmlel, <<"TEL">>, _attrs, _els}.
 
+'encode_vcard_TEL_$number'(undefined, _acc) -> _acc;
 'encode_vcard_TEL_$number'(Number, _acc) ->
     [encode_vcard_NUMBER(Number, []) | _acc].
 
