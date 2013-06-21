@@ -26,10 +26,7 @@
 /doc/version.tex
 /ebin/*.beam
 /ebin/ejabberd.app
-/include/ELDAPv3.hrl
 /include/XmppAddr.hrl
-/src/ELDAPv3.asn1db
-/src/ELDAPv3.erl
 /src/XmppAddr.asn1db
 /src/XmppAddr.erl
 /src/ejabberd.app.src
