@@ -1256,7 +1256,7 @@ get_items(NodeId, _From,
     Max = (?PUBSUB):escape(i2l(M)),
     {Way, Order} = case Direction of
 		     aft -> {<<"<">>, <<"desc">>};
-		     before when I == [] -> {<<"is not">>, <<"asc">>};
+		     before when I == <<>> -> {<<"is not">>, <<"asc">>};
 		     before -> {<<">">>, <<"asc">>};
 		     _ when IncIndex =/= undefined ->
 			 {<<"<">>, <<"desc">>}; % using index
@@ -1279,7 +1279,7 @@ get_items(NodeId, _From,
 			     _ -> [<<"modification">>, <<"null">>]
 			   end;
 		       undefined -> [<<"modification">>, <<"null">>];
-		       [] -> [<<"modification">>, <<"null">>];
+		       <<>> -> [<<"modification">>, <<"null">>];
 		       I ->
 			   [A, B] = str:tokens((?PUBSUB):escape(i2l(I)),
 					       <<"@">>),
@@ -1306,10 +1306,8 @@ get_items(NodeId, _From,
        [<<"itemid">>, <<"publisher">>, <<"creation">>,
 	<<"modification">>, <<"payload">>],
        RItems} ->
-	  case str:len(RItems) of
-	    0 -> {result, {[], #rsm_out{count = Count}}};
-	    _ ->
-		[_, _, _, F, _] = hd(RItems),
+	  case RItems of
+	    [[_, _, _, F, _]|_] ->
 		Index = case catch
 			       ejabberd_odbc:sql_query_t([<<"select count(*) from pubsub_item where "
 							    "nodeid='">>,
@@ -1325,11 +1323,8 @@ get_items(NodeId, _From,
 		RsmOut = #rsm_out{count = Count, index = Index,
 				  first = <<"modification@", F/binary>>,
 				  last = <<"modification@", (i2l(L))/binary>>},
-		{result,
-		 {lists:map(fun (RItem) -> raw_to_item(NodeId, RItem)
-			    end,
-			    RItems),
-		  RsmOut}}
+		{result, {[raw_to_item(NodeId, RItem) || RItem <- RItems], RsmOut}};
+	    0 -> {result, {[], #rsm_out{count = Count}}}
 	  end;
       _ -> {result, {[], none}}
     end.
@@ -1523,9 +1518,7 @@ can_fetch_item(owner, _) -> true;
 can_fetch_item(member, _) -> true;
 can_fetch_item(publisher, _) -> true;
 can_fetch_item(outcast, _) -> false;
-can_fetch_item(none, Subscriptions) ->
-    is_subscribed(Subscriptions);
-can_fetch_item(_Affiliation, _Subscription) -> false.
+can_fetch_item(none, Subscriptions) -> is_subscribed(Subscriptions).
 
 is_subscribed(Subscriptions) ->
     lists:any(fun ({subscribed, _SubId}) -> true;
@@ -1691,8 +1684,8 @@ raw_to_item(NodeId,
 		 modification = {ToTime(Modification), JID},
 		 payload = Payload}.
 
-l2i(L) when is_binary(L) -> jlib:binary_to_integer(L);
-l2i(I) when is_integer(I) -> I.
+l2i(I) when is_integer(I) -> I;
+l2i(L) when is_binary(L) -> jlib:binary_to_integer(L).
 
 i2l(I) when is_integer(I) ->
     iolist_to_binary(integer_to_list(I));
