@@ -126,7 +126,7 @@
 
 -define(TREE_PREFIX, <<"nodetree_">>).
 
--define(ODBC_SUFFIX, <<"_odbc">>),
+-define(ODBC_SUFFIX, <<"_odbc">>).
 
 %
 -export_type([
