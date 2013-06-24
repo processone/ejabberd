@@ -62,11 +62,11 @@
 
 -include("pubsub.hrl").
 
--define(STDTREE, <<"tree_odbc">>).
+-define(STDTREE, <<"tree">>).
 
--define(STDNODE, <<"flat_odbc">>).
+-define(STDNODE, <<"flat">>).
 
--define(PEPNODE, <<"pep_odbc">>).
+-define(PEPNODE, <<"pep">>).
 
 %% exports for hooks
 -export([presence_probe/3, caps_update/3,
@@ -125,6 +125,8 @@
 -define(PLUGIN_PREFIX, <<"node_">>).
 
 -define(TREE_PREFIX, <<"nodetree_">>).
+
+-define(ODBC_SUFFIX, <<"_odbc">>),
 
 %
 -export_type([
@@ -384,7 +386,8 @@ init_plugins(Host, ServerHost, Opts) ->
     TreePlugin =
 	jlib:binary_to_atom(<<(?TREE_PREFIX)/binary,
 				(gen_mod:get_opt(nodetree, Opts, fun(A) when is_list(A) -> A end,
-						 ?STDTREE))/binary>>),
+						 ?STDTREE))/binary,
+				(?ODBC_SUFFIX)/binary>>),
     ?DEBUG("** tree plugin is ~p", [TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
     Plugins = gen_mod:get_opt(plugins, Opts,
@@ -395,7 +398,8 @@ init_plugins(Host, ServerHost, Opts) ->
     PluginsOK = lists:foldl(fun (Name, Acc) ->
 				    Plugin =
 					jlib:binary_to_atom(<<(?PLUGIN_PREFIX)/binary,
-								Name/binary>>),
+								Name/binary,
+								(?ODBC_SUFFIX)/binary>>),
 				    case catch apply(Plugin, init,
 						     [Host, ServerHost, Opts])
 					of
@@ -414,7 +418,8 @@ terminate_plugins(Host, ServerHost, Plugins,
 			  ?DEBUG("** terminate ~s plugin", [Name]),
 			  Plugin =
 			      jlib:binary_to_atom(<<(?PLUGIN_PREFIX)/binary,
-						      Name/binary>>),
+						      Name/binary,
+						      (?ODBC_SUFFIX)/binary>>),
 			  Plugin:terminate(Host, ServerHost)
 		  end,
 		  Plugins),
@@ -4205,12 +4210,14 @@ get_option(Options, Var, Def) ->
 node_options(Type) ->
     Module =
 	jlib:binary_to_atom(<<(?PLUGIN_PREFIX)/binary,
-				Type/binary>>),
+				Type/binary,
+				(?ODBC_SUFFIX)/binary>>),
     case catch Module:options() of
       {'EXIT', {undef, _}} ->
 	  DefaultModule =
 	      jlib:binary_to_atom(<<(?PLUGIN_PREFIX)/binary,
-				      (?STDNODE)/binary>>),
+				      (?STDNODE)/binary,
+				      (?ODBC_SUFFIX)/binary>>),
 	  DefaultModule:options();
       Result -> Result
     end.
@@ -4681,7 +4688,8 @@ features() ->
 features(Type) ->
     Module =
 	jlib:binary_to_atom(<<(?PLUGIN_PREFIX)/binary,
-				Type/binary>>),
+				Type/binary,
+				(?ODBC_SUFFIX)/binary>>),
     features() ++
       case catch Module:features() of
 	{'EXIT', {undef, _}} -> [];
@@ -4739,7 +4747,8 @@ tree_call(Host, Function, Args) ->
 	       [{nodetree, N}] -> N;
 	       _ ->
 		   jlib:binary_to_atom(<<(?TREE_PREFIX)/binary,
-					   (?STDTREE)/binary>>)
+					   (?STDTREE)/binary,
+					   (?ODBC_SUFFIX)/binary>>)
 	     end,
     catch apply(Module, Function, Args).
 
@@ -4759,7 +4768,8 @@ node_call(Type, Function, Args) ->
     ?DEBUG("node_call ~p ~p ~p", [Type, Function, Args]),
     Module =
 	jlib:binary_to_atom(<<(?PLUGIN_PREFIX)/binary,
-				Type/binary>>),
+				Type/binary,
+				(?ODBC_SUFFIX)/binary>>),
     case apply(Module, Function, Args) of
       {result, Result} -> {result, Result};
       {error, Error} -> {error, Error};

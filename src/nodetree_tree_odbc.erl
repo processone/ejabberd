@@ -46,6 +46,7 @@
 -define(PUBSUB, mod_pubsub_odbc).
 
 -define(PLUGIN_PREFIX, <<"node_">>).
+-define(ODBC_SUFFIX, <<"_odbc">>).
 
 -behaviour(gen_pubsub_nodetree).
 
@@ -351,7 +352,8 @@ raw_to_node(Host, [Node, Parent, Type, NodeIdx]) ->
 				       ROptions),
 		    Module =
 			jlib:binary_to_atom(<<(?PLUGIN_PREFIX)/binary,
-						Type/binary>>),
+						Type/binary,
+						(?ODBC_SUFFIX)/binary>>),
 		    StdOpts = Module:options(),
 		    lists:foldl(fun ({Key, Value}, Acc) ->
 					lists:keyreplace(Key, 1, Acc,
