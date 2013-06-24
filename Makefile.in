@@ -262,13 +262,16 @@ dialyzer/ejabberd.plt:
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
 erlang_plt: dialyzer/erlang.plt
-	@dialyzer --plt dialyzer/erlang.plt --check_plt
+	@dialyzer --plt dialyzer/erlang.plt --check_plt -o dialyzer/erlang.log; \
+	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
 deps_plt: dialyzer/deps.plt
-	@dialyzer --plt dialyzer/deps.plt --check_plt
+	@dialyzer --plt dialyzer/deps.plt --check_plt -o dialyzer/deps.log; \
+	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
 ejabberd_plt: dialyzer/ejabberd.plt
-	@dialyzer --plt dialyzer/ejabberd.plt --check_plt
+	@dialyzer --plt dialyzer/ejabberd.plt --check_plt -o dialyzer/ejabberd.log; \
+	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
 dialyzer: erlang_plt deps_plt ejabberd_plt
 	@dialyzer --plts dialyzer/*.plt --no_check_plt \
