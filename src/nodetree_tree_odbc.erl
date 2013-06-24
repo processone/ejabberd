@@ -325,7 +325,7 @@ delete_node(Host, Node) ->
 %% helpers
 -spec(raw_to_node/2 ::
 (
-  Host :: mod_pubusb:host(),
+  Host :: mod_pubsub:host(),
   _    :: {NodeId::mod_pubsub:nodeId(),
            Parent::mod_pubsub:nodeId(),
            Type::binary(),
