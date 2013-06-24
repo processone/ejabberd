@@ -3034,14 +3034,14 @@ The following example will use node_tune instead of node_pep for every PEP node 
                ]},
   ...
  ]}.
-</PRE><P>Using ODBC database requires use of dedicated plugins. The following example shows previous configuration
-with ODBC usage:
+</PRE><P>Using ODBC database requires using mod_pubsub_odbc without option changes. Only flat, hometree and pep plugins supports ODBC.
+The following example shows previous configuration with ODBC usage:
 </P><PRE CLASS="verbatim">{modules,
  [
   ...
   {mod_pubsub_odbc, [
                 {access_createnode, pubsub_createnode},
-                {plugins, ["flat_odbc", "hometree_odbc", "pep_odbc"]}
+                {plugins, ["flat", "hometree", "pep"]}
                ]},
   ...
  ]}.

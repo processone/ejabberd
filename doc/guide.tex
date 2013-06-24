@@ -3903,15 +3903,15 @@ Example of configuration that uses flat nodes as default, and allows use of flat
  ]}.
 \end{verbatim}
 
-Using ODBC database requires use of dedicated plugins. The following example shows previous configuration
-with ODBC usage:
+Using ODBC database requires using mod\_pubsub\_odbc without option changes. Only flat, hometree and pep plugins supports ODBC.
+The following example shows previous configuration with ODBC usage:
 \begin{verbatim}
 {modules,
  [
   ...
   {mod_pubsub_odbc, [
                 {access_createnode, pubsub_createnode},
-                {plugins, ["flat_odbc", "hometree_odbc", "pep_odbc"]}
+                {plugins, ["flat", "hometree", "pep"]}
                ]},
   ...
  ]}.
