@@ -1245,7 +1245,7 @@ get_items(NodeId, From, none) ->
 		   of
 		 {selected, [<<"val">>], [[Value]]} ->
 		     Tokens = element(2,
-				      erl_scan:string(<<Value/binary, ".">>)),
+				erl_scan:string(binary_to_list(<<Value/binary, ".">>))),
 		     element(2, erl_parse:parse_term(Tokens));
 		 _ -> ?MAXITEMS
 	       end,
