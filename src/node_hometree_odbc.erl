@@ -68,7 +68,7 @@
 	 set_item/1, get_item_name/3, get_last_items/3,
 	 path_to_node/1, node_to_path/1]).
 
--export([decode_jid/1, decode_node/1,
+-export([decode_jid/1,
 	 decode_affiliation/1, decode_subscriptions/1,
 	 encode_jid/1, encode_affiliation/1,
 	 encode_subscriptions/1]).
@@ -1612,10 +1612,10 @@ update_subscription(NodeId, JID, Subscription) ->
 				       S, <<"');">>])
     end.
 
-decode_jid(SJID) ->
-    jlib:jid_tolower(jlib:string_to_jid(SJID)).
-
-decode_node(N) -> (?PUBSUB):string_to_node(N).
+decode_jid(SJID) when is_list(SJID) ->
+    jlib:jid_tolower(jlib:string_to_jid(SJID));
+decode_jid(BJID) when is_binary(BJID) ->
+    decode_jid(binary_to_list(BJID)).
 
 decode_affiliation(<<"o">>) -> owner;
 decode_affiliation(<<"p">>) -> publisher;
