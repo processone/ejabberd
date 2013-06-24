@@ -362,13 +362,13 @@ raw_to_node(Host, [Node, Parent, Type, NodeIdx]) ->
 				StdOpts, DbOpts);
 		_ -> []
 	      end,
-%% @spec (NodeRecord) -> ok | {error, Reason}
-%%	 Record = mod_pubsub:pubsub_node()
     #pubsub_node{nodeid =
 		     {Host, Node},
 		 parents = [Parent],
 		 id = NodeIdx, type = Type, options = Options}.
 
+% @spec (NodeRecord) -> ok | {error, Reason}
+%%	 Record = mod_pubsub:pubsub_node()
 -spec(set_node/1 ::
 (
   Record::mod_pubsub:pubsubNode())
