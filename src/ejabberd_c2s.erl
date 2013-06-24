@@ -283,10 +283,7 @@ get_subscribed(FsmRef) ->
 %%----------------------------------------------------------------------
 
 wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
-    DefaultLang = case ?MYLANG of
-	undefined -> <<"en">>;
-	DL -> DL
-    end,
+    DefaultLang = ?MYLANG,
     case xml:get_attr_s(<<"xmlns:stream">>, Attrs) of
 	?NS_STREAM ->
 	    Server = jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs)),

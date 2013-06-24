@@ -60,8 +60,9 @@
                    opts = [] :: list() | '_'}).
 
 -record(muc_online_room,
-        {name_host = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
-         pid = self() :: pid() | '$2' | '_'}).
+        {name_host = {<<"">>, <<"">>} :: {binary(), binary()} | '$1' |
+                                         {'_', binary()} | '_',
+         pid = self() :: pid() | '$2' | '_' | '$1'}).
 
 -record(muc_registered,
         {us_host = {{<<"">>, <<"">>}, <<"">>} :: {{binary(), binary()}, binary()} | '$1',
@@ -1104,7 +1105,7 @@ update_tables(Host) ->
     update_muc_room_table(Host),
     update_muc_registered_table(Host).
 
-update_muc_room_table(Host) ->
+update_muc_room_table(_Host) ->
     Fields = record_info(fields, muc_room),
     case mnesia:table_info(muc_room, attributes) of
       Fields ->
@@ -1122,7 +1123,7 @@ update_muc_room_table(Host) ->
 	  mnesia:transform_table(muc_room, ignore, Fields)
     end.
 
-update_muc_registered_table(Host) ->
+update_muc_registered_table(_Host) ->
     Fields = record_info(fields, muc_registered),
     case mnesia:table_info(muc_registered, attributes) of
       Fields ->
