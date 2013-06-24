@@ -67,8 +67,8 @@ terminate(Host, ServerHost) ->
 options() ->
     [{deliver_payloads, true}, {notify_config, false},
      {notify_delete, false}, {notify_retract, false},
-     {purge_offline, false}, {persist_items, false},
-     {max_items, ?MAXITEMS}, {subscribe, true},
+     {purge_offline, false}, {persist_items, true},
+     {max_items, 1}, {subscribe, true},
      {access_model, presence}, {roster_groups_allowed, []},
      {publish_model, publishers},
      {notification_type, headline},
