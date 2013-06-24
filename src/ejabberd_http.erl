@@ -293,9 +293,6 @@ process_header(State, Data) ->
 		#state{end_of_request = true,
 		       request_handlers = State#state.request_handlers}
 	  end;
-      {error, _Reason} ->
-	  #state{end_of_request = true,
-		 request_handlers = State#state.request_handlers};
       _ ->
 	  #state{end_of_request = true,
 		 request_handlers = State#state.request_handlers}
