@@ -100,7 +100,7 @@ eprof_stop() ->
     eprof:stop_profiling(),
     case erlang:function_exported(eprof, analyse, 0) of
 	true ->
-	    eprof:analyse();
+	    apply(eprof, analyse, []);
 	false ->
 	    eprof:analyze()
     end.
