@@ -43,6 +43,7 @@
 	 remove_old_messages/2,
 	 remove_user/2,
 	 get_queue_length/2,
+         get_offline_els/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
@@ -519,6 +520,40 @@ webadmin_page(_, Host,
 		  _Request) ->
     Res = user_queue(U, Host, Query, Lang), {stop, Res};
 webadmin_page(Acc, _, _) -> Acc.
+
+get_offline_els(LUser, LServer) ->
+    get_offline_els(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
+
+get_offline_els(LUser, LServer, mnesia) ->
+    Msgs = read_all_msgs(LUser, LServer, mnesia),
+    lists:map(
+      fun(Msg) ->
+              {route, From, To, Packet} = offline_msg_to_route(LServer, Msg),
+              jlib:replace_from_to(From, To, Packet)
+      end, Msgs);
+get_offline_els(LUser, LServer, odbc) ->
+    Username = ejabberd_odbc:escape(LUser),
+    case catch ejabberd_odbc:sql_query(LServer,
+                                       [<<"select xml from spool where username='">>,
+                                        Username, <<"' order by seq;">>]) of
+        {selected, [<<"xml">>], Rs} ->
+            lists:flatmap(
+              fun([XML]) ->
+                      case xml_stream:parse_element(XML) of
+                          #xmlel{} = El ->
+                              case offline_msg_to_route(LServer, El) of
+                                  {route, _, _, NewEl} ->
+                                      [NewEl];
+                                  error ->
+                                      []
+                              end;
+                          _ ->
+                              []
+                      end
+              end, Rs);
+        _ ->
+            []
+    end.
 
 offline_msg_to_route(LServer, #offline_msg{} = R) ->
     El = #xmlel{children = Els} = R#offline_msg.packet,

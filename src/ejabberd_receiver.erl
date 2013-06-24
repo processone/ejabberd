@@ -102,7 +102,7 @@ change_shaper(Pid, Shaper) ->
 
 reset_stream(Pid) -> do_call(Pid, reset_stream).
 
--spec starttls(pid(), iodata()) -> {ok, p1_tls:tls_socket()} | {error, any()}.
+-spec starttls(pid(), p1_tls:tls_socket()) -> ok.
 
 starttls(Pid, TLSSocket) ->
     do_call(Pid, {starttls, TLSSocket}).

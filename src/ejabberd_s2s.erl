@@ -62,8 +62,8 @@
 
 %% once a server is temporarly blocked, it stay blocked for 60 seconds
 
--record(s2s, {fromto = {<<"">>, <<"">>} :: {binary(), binary()},
-              pid = self()              :: pid() | '_',
+-record(s2s, {fromto = {<<"">>, <<"">>} :: {binary(), binary()} | '_',
+              pid = self()              :: pid() | '_' | '$1',
               key = <<"">>              :: binary() | '_'}).
 
 -record(state, {}).

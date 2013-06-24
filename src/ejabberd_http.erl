@@ -198,7 +198,7 @@ parse_headers(#state{request_method = Method,
                   undefined -> http;
                   _ -> httph
               end,
-    case erlang:decode_packet(PktType, Data) of
+    case erlang:decode_packet(PktType, Data, []) of
         {ok, Pkt, Rest} ->
             NewState = process_header(State#state{trail = Rest}, {ok, Pkt}),
 	    case NewState#state.end_of_request of
@@ -293,9 +293,6 @@ process_header(State, Data) ->
 		#state{end_of_request = true,
 		       request_handlers = State#state.request_handlers}
 	  end;
-      {error, _Reason} ->
-	  #state{end_of_request = true,
-		 request_handlers = State#state.request_handlers};
       _ ->
 	  #state{end_of_request = true,
 		 request_handlers = State#state.request_handlers}
