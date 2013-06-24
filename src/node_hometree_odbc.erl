@@ -1605,10 +1605,8 @@ update_subscription(NodeId, JID, Subscription) ->
 				       S, <<"');">>])
     end.
 
-decode_jid(SJID) when is_list(SJID) ->
-    jlib:jid_tolower(jlib:string_to_jid(SJID));
-decode_jid(BJID) when is_binary(BJID) ->
-    decode_jid(binary_to_list(BJID)).
+decode_jid(JID) ->
+    jlib:jid_tolower(jlib:string_to_jid(JID)).
 
 decode_affiliation(<<"o">>) -> owner;
 decode_affiliation(<<"p">>) -> publisher;
@@ -1630,13 +1628,8 @@ decode_subscriptions(Subscriptions) ->
 		end,
 		[], str:tokens(Subscriptions, <<",">>)).
 
-%-spec(encode_jid/1 ::
-%(
-%  JID :: jid() | jid())
-%    -> binary()
-%).
 encode_jid(JID) ->
-    (?PUBSUB):escape(jlib:jid_to_string(JID)).
+    (?PUBSUB):escape(JID).
 
 encode_affiliation(owner) -> <<"o">>;
 encode_affiliation(publisher) -> <<"p">>;
