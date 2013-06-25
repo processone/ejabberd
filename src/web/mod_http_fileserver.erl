@@ -303,7 +303,7 @@ process(LocalPath, Request) ->
 	    add_to_log(FileSize, Code, Request),
 	    {Code, Headers, Contents}
     catch
-	exit:{noproc, _} -> 
+	exit:{noproc, _} ->
 	    ?ERROR_MSG("Received an HTTP request with Host ~p, but couldn't find the related "
 		       "ejabberd virtual host", [Request#request.host]),
 	    ejabberd_web:error(not_found)
@@ -313,6 +313,7 @@ serve(LocalPath, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType, C
     FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
     case file:read_file_info(FileName) of
         {error, enoent}                    -> ?HTTP_ERR_FILE_NOT_FOUND;
+        {error, enotdir}                   -> ?HTTP_ERR_FILE_NOT_FOUND;
         {error, eacces}                    -> ?HTTP_ERR_FORBIDDEN;
         {ok, #file_info{type = directory}} -> serve_index(FileName,
                                                           DirectoryIndices,
